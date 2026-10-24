@@ -1,4 +1,5 @@
 {
   "specs": "specs",
-  "diagrams": "model"
+  "diagrams": "model",
+  "checks": "lathe-checks"
 }
