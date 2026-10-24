@@ -531,3 +531,11 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 .pattern-domain h3 { margin: 16px 0 6px; font-size: 1rem; }
 .markdown a.mention { font-family: var(--mono); font-size: 0.9em; }
 .markdown .mention.broken { font-family: var(--mono); font-size: 0.9em; color: var(--spark); text-decoration: underline wavy; text-decoration-thickness: 1px; text-underline-offset: 3px; cursor: help; }
+
+/* ---------- Owed proof and tests by state (brief 27) ---------- */
+.bar-more { grid-column: 2 / -1; font: italic 0.72rem var(--body); color: var(--muted); cursor: help; }
+.test-counts { margin: 6px 0 0; font-size: 0.78rem; color: var(--muted); }
+.test-counts-label { font-weight: 600; color: var(--ink); }
+.test-counts.unmeasured { font-style: italic; }
+.test-count { font-family: var(--mono); font-size: 0.75rem; }
+.test-count.planned { font-style: italic; }
