@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Lathe">
+  <!-- An L built from a lathe: the headstock rises on the left, the turned work runs along the bottom to the tailstock point, and the tool cuts a groove. -->
+  <path style="fill:var(--b,#2E6A88)" d="M12 8H20Q24 8 24 12V38H32V42.5H36V38H44V42.5H48V38H52L58 47L52 56H12Q8 56 8 52V12Q8 8 12 8Z"/>
+  <path style="fill:var(--a,#B5512A)" d="M41 20H51L46 41.5Z"/>
+</svg>
