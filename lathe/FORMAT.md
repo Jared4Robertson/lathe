@@ -86,9 +86,11 @@ The engine runs every SQL file in `lathe/checks/`. Each returns rows of `(severi
 
 ## 6. Coverage
 
-Coverage follows the meta-model. A kind marked `obligation: yes` in `kinds.csv` (by default `domain_rule`, `requirement` and `interaction_requirement`) is something that must be designed, built and proved. A relation's `role` in `relations.csv` says what a link does: `design` (such as a component `satisfies` it) or `proof` (such as a test `proves` it).
+Coverage follows the meta-model. A kind marked `obligation: yes` in `kinds.csv` (by default `domain_rule`, `requirement`, `interaction_requirement` and `pattern_rule`) is something that must be designed, built and proved. A relation's `role` in `relations.csv` says what a link does: `design` (such as a component `satisfies` it) or `proof` (such as a test `proves` it).
 
-For each domain and each obligation kind: how many records exist; how many are **designed** (a `design` link targets them), **built** (a `design` link from a component whose file exists), **proved** (a `proof` link from an automated or manual test), and **planned** (not proved, but a planned test is meant to prove them); plus the list of gaps. A product's own obligation kinds and relations, added by extension, are counted the same way.
+Each obligation is counted in the domain that owes it. A record that sits in a domain is owed by that domain. A pattern rule sits under a pattern, outside every domain, and is owed instead by each domain that follows the pattern, where only that domain's own components and tests design and prove it (section 11). Any other obligation that sits in no domain is counted nowhere and reported as an `obligation-outside-domain` warning.
+
+For each domain and each obligation kind: how many obligations it owes; how many are **designed** (a `design` link targets them), **built** (a `design` link from a component whose file exists), **proved** (a `proof` link from an automated or manual test), and **planned** (not proved, but a planned test is meant to prove them); plus the list of gaps. A pattern rule owed by several domains is counted, and has its gaps, in each of them. A product's own obligation kinds and relations, added by extension, are counted the same way.
 
 ## 7. Fitness
 
@@ -171,3 +173,46 @@ In YAML, a value containing `: ` must be quoted, so write `audit: "Not applicabl
 - A setting that a following use case does not give, or gives as `Not applicable:` with no reason, is a `pattern-setting-missing` error.
 - A setting name that is not a valid field name is a `bad-pattern-settings` error on the pattern.
 - A use case that follows two patterns sharing a setting name has one field for both: a `pattern-setting-clash` warning. Rename the setting in one of the patterns.
+
+## 11. Pattern rules
+
+A pattern's rules are records, so that each domain that follows the pattern must design and prove them, as S2's "Patterns we follow" tables do. A `pattern_rule` sits under its pattern and states one rule with MUST / MUST NOT / SHOULD / MAY. Its ID is the pattern's ID with `-R<nn>`, such as `TL-PAT-LIBRARIAN-ACTION-R01`. When the rule depends on one of the pattern's settings, it names it in `setting`.
+
+```markdown
+---
+id: TL-PAT-LIBRARIAN-ACTION-R01
+kind: pattern_rule
+title: An action missing its required input is refused and saves nothing
+parent: TL-PAT-LIBRARIAN-ACTION
+setting: required_input
+---
+When the librarian leaves out any of the `required_input`, the library MUST refuse the action, say what is missing, and save nothing.
+```
+
+A domain **follows** a pattern when any of its use cases `follows` it. Each rule of the pattern is then an obligation **of that domain**, counted on the domain's Pattern rule coverage line:
+
+- **designed** when a component in that domain `satisfies` it, and **built** when that component's file exists;
+- **proved** when an automated or manual test in that domain `proves` it, and **planned** when only a planned test there does.
+
+A component or test in another domain does not count: each domain applies the rule with its own setting values, so it proves the rule for itself. The rule's gaps, and its `unsatisfied` and `unproved` warnings, name the domain, such as "Pattern rule TL-PAT-LIBRARIAN-ACTION-R01 is not proved in TL-LEND".
+
+```markdown
+---
+id: TL-LEND-T33
+kind: test
+title: Each librarian action missing its required input is refused, says what is missing, and saves nothing
+parent: TL-LEND
+test_type: acceptance
+run_by: examples/tool-library/test/api.test.ts
+links:
+  proves: [TL-PAT-LIBRARIAN-ACTION-R01]
+---
+```
+
+**Not applicable.** When a rule names a `setting` and every use case in a domain that follows the pattern gives that setting as `Not applicable:` with a reason, the rule does not apply in that domain and is not counted there. If even one following use case there gives the setting a value, the domain owes the rule. A rule with no `setting` applies in every domain that follows the pattern.
+
+The checks for pattern rules:
+
+- A rule's `setting` that is not one of its pattern's settings is a `pattern-rule-setting-unknown` error.
+- A pattern that no use case follows is a `pattern-not-followed` warning: its rules are counted in no domain.
+- Any other obligation that sits in no domain (possible only through an extension or a broken parent) is an `obligation-outside-domain` warning, never silently dropped.
