@@ -224,7 +224,7 @@ function Shell() {
   }
 
   return (
-    <div className={`app${collapsed && !narrow ? ' nav-collapsed' : ''}${narrow ? ' is-narrow' : ''}`}>
+    <div className={`app${collapsed && !narrow ? ' nav-collapsed' : ''}${narrow ? ' is-narrow' : ''}`} data-specs={spec.index ? 'ready' : spec.error ? 'error' : 'loading'}>
       <a href="#main" className="skip-link">Skip to the page</a>
       {narrow && (
         <div className="topbar">
