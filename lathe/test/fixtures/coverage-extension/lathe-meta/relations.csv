@@ -1,0 +1,4 @@
+relation,source_kind,target_kind,role,description
+enforces,component,invariant,design,"The component enforces the invariant."
+sketches,sketch,invariant,design,"The sketch designs the invariant."
+checks,test,invariant,proof,"The test checks the invariant."

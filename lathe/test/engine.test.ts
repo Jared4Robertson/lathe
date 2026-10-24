@@ -95,13 +95,13 @@ describe('loading', () => {
   it('LA-CHK-T18 loadWorkspace returns the Workspace contract', async () => {
     const ws = await loadWorkspace(fixture('unfinished'));
     expect(Object.keys(ws).sort()).toEqual(['coverage', 'kinds', 'links', 'problems', 'records', 'relations']);
-    expect(Object.keys(ws.kinds[0]).sort()).toEqual(['description', 'kind', 'label', 'parent_kinds', 'required_fields', 'stage']);
-    expect(Object.keys(ws.relations[0]).sort()).toEqual(['description', 'relation', 'source_kind', 'target_kind']);
+    expect(Object.keys(ws.kinds[0]).sort()).toEqual(['description', 'kind', 'label', 'obligation', 'parent_kinds', 'required_fields', 'stage']);
+    expect(Object.keys(ws.relations[0]).sort()).toEqual(['description', 'relation', 'role', 'source_kind', 'target_kind']);
     expect(Object.keys(ws.records[0]).sort()).toEqual(['body', 'domain', 'fields', 'id', 'kind', 'parent', 'path', 'product', 'title']);
     expect(Object.keys(ws.links[0]).sort()).toEqual(['relation', 'source', 'target']);
     expect(Object.keys(ws.problems[0]).sort()).toEqual(['check', 'message', 'record', 'severity']);
     expect(Object.keys(ws.coverage[0]).sort()).toEqual([
-      'domain', 'gaps', 'requirements', 'requirements_built', 'requirements_proved', 'requirements_satisfied',
+      'domain', 'gaps', 'obligations', 'requirements', 'requirements_built', 'requirements_proved', 'requirements_satisfied',
       'rules', 'rules_built', 'rules_proved', 'rules_satisfied',
     ]);
     expect(Object.keys(ws.coverage[0].gaps[0]).sort()).toEqual(['id', 'kind', 'missing']);
@@ -140,7 +140,7 @@ describe('loading', () => {
 
     // Add a kind by editing the CSV only: the memo is now valid.
     const kinds = path.join(meta, 'kinds.csv');
-    writeFileSync(kinds, `${readFileSync(kinds, 'utf8').trimEnd()}\nmemo,Memo,,domain,,"A short note."\n`);
+    writeFileSync(kinds, `${readFileSync(kinds, 'utf8').trimEnd()}\nmemo,Memo,,domain,,no,"A short note."\n`);
     const added = await loadWorkspace(root, { metaDir: meta });
     expect(added.kinds.map((k) => k.kind)).toContain('memo');
     expect(added.problems.filter((p) => p.severity === 'error')).toEqual([]);

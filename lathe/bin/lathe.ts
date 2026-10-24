@@ -13,7 +13,8 @@ const USAGE = `Usage: lathe <command> [options]
 Commands:
   init     Set up Lathe in a product repo: writes ${CONFIG_FILE} and a first product record.
            --name "Tool Library" --prefix TL
-  check    Load and check the specs. Prints errors, warnings and coverage; exits 1 on any error.
+  check    Load and check the specs. Prints errors, warnings and coverage (one line per domain and
+           obligation kind); exits 1 on any error.
            --json prints the whole workspace instead.
   serve    Serve the web app for the product repo.  --port 5330 (default)
 
@@ -54,10 +55,15 @@ async function check() {
     if (workspace.coverage.length) {
       console.log('\nCoverage:');
       for (const c of workspace.coverage) {
-        console.log(
-          `  ${c.domain}: requirements ${c.requirements_satisfied}/${c.requirements} designed, ${c.requirements_built}/${c.requirements} built, ${c.requirements_proved}/${c.requirements} proved;` +
-            ` rules ${c.rules_satisfied}/${c.rules} designed, ${c.rules_built}/${c.rules} built, ${c.rules_proved}/${c.rules} proved; ${c.gaps.length} gaps`,
-        );
+        const counted = c.obligations.filter((o) => o.total > 0);
+        if (!counted.length) console.log(`  ${c.domain}: no obligations`);
+        for (const o of counted) {
+          const gaps = c.gaps.filter((g) => g.kind === o.kind).length;
+          const of = (n: number) => `${n}/${o.total}`;
+          console.log(
+            `  ${c.domain} ${o.kind}: ${of(o.designed)} designed, ${of(o.built)} built, ${of(o.proved)} proved, ${of(o.planned)} planned; ${gaps} ${gaps === 1 ? 'gap' : 'gaps'}`,
+          );
+        }
       }
     }
     console.log(`\n${errors.length} errors, ${warnings.length} warnings.`);
