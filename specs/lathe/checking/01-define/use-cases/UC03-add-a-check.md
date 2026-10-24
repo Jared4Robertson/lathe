@@ -2,7 +2,7 @@
 id: LA-CHK-UC03
 kind: use_case
 title: Add a check
-parent: LA-CHK
+parent: LA-CHK-CAP01
 actor: AI agent, Jared
 links:
   applies: [LA-CHK-DR08, LA-CHK-DR09]

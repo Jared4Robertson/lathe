@@ -2,7 +2,7 @@
 id: LA-CHK-UC02
 kind: use_case
 title: See a domain's coverage
-parent: LA-CHK
+parent: LA-CHK-CAP02
 actor: Jared
 links:
   applies: [LA-CHK-DR07]

@@ -2,7 +2,7 @@
 id: LA-CHK-UC04
 kind: use_case
 title: Load the workspace in code
-parent: LA-CHK
+parent: LA-CHK-CAP04
 actor: AI agent
 links:
   applies: [LA-CHK-DR04, LA-MOD-DR08]

@@ -2,7 +2,7 @@
 id: LA-CHK-UC10
 kind: use_case
 title: Organise a domain's use cases into capabilities and patterns
-parent: LA-CHK
+parent: LA-CHK-CAP03
 actor: Jared, AI agent
 links:
   applies: [LA-CHK-DR40, LA-CHK-DR41, LA-CHK-DR42, LA-CHK-DR43, LA-CHK-DR44]

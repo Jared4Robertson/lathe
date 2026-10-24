@@ -2,7 +2,7 @@
 id: LA-CHK-UC09
 kind: use_case
 title: Adapt one of Lathe's default kinds in a product
-parent: LA-CHK
+parent: LA-CHK-CAP03
 actor: Jared, AI agent
 links:
   applies: [LA-CHK-DR31, LA-CHK-DR32]

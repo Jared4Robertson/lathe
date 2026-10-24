@@ -2,7 +2,7 @@
 id: LA-CHK-UC01
 kind: use_case
 title: Check the workspace from the command line
-parent: LA-CHK
+parent: LA-CHK-CAP01
 actor: AI agent, Jared
 links:
   applies: [LA-CHK-DR05, LA-CHK-DR06, LA-CHK-DR09, LA-MOD-DR06, LA-MOD-DR10, LA-MOD-DR11, LA-MOD-DR12]

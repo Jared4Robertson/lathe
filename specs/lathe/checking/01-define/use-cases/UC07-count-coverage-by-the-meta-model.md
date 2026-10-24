@@ -2,7 +2,7 @@
 id: LA-CHK-UC07
 kind: use_case
 title: Count coverage by the meta-model
-parent: LA-CHK
+parent: LA-CHK-CAP02
 actor: Jared
 links:
   applies: [LA-CHK-DR20, LA-CHK-DR21, LA-CHK-DR22]

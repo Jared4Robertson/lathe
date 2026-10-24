@@ -2,7 +2,7 @@
 id: LA-CHK-UC05
 kind: use_case
 title: Change the meta-model
-parent: LA-CHK
+parent: LA-CHK-CAP03
 actor: Jared
 links:
   applies: [LA-CHK-DR01, LA-CHK-DR02, LA-CHK-DR10, LA-CHK-DR32]
