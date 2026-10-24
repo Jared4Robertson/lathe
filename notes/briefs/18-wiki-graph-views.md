@@ -19,8 +19,9 @@ Jared wants the wiki page and the graph to be two views of the same thing at the
    - **Clarity:** consistent icons (Tabler-style line icons drawn inline, no icon font), counts as quiet badges (checks show errors in red and warnings in amber), long names truncated with a tooltip, comfortable hit targets (at least 32 px high), and a footer with the record format link and the source note.
    - **Quick find:** a search field at the top of the nav (shortcut `/` or Cmd/Ctrl+K) that jumps to any record, domain, product or diagram by ID or title, with arrow keys and Enter.
    - Keep the colours and fonts of the existing tokens in `styles.css`, in both light and dark.
-8. Keyboard: a shortcut for each mode, focus never lost when switching, and a visible focus ring on the toggle.
-9. Tests, and Lathe's own spec in `specs/lathe/browsing/` using only use case `LA-BRW-UC50` with its requirements, domain rules `LA-BRW-DR50`–`DR59`, components `LA-BRW-C50`–`C59`, tests `LA-BRW-T120`–`T139`. Update `LA-BRW-A1` (Page) for the new addresses. All new obligations satisfied and proved.
+8. **The inspector (the third column):** Jared calls the right-hand panel of a record page and of the graph (kind, fields, parent, children, links, problems) **the inspector**; use that name in the UI, code and spec. The page has three columns: **nav**, **main view**, **inspector**. Make the inspector collapsible like the nav: a toggle on its edge, a keyboard shortcut (for example `]`, with `[` for the nav), the state remembered, and on narrow screens it becomes a drawer. When collapsed the main view takes the space; in Split mode the two panes share it. One inspector serves the whole page, showing the focused record, whichever view is open.
+9. Keyboard: a shortcut for each mode, focus never lost when switching, and a visible focus ring on the toggle.
+10. Tests, and Lathe's own spec in `specs/lathe/browsing/` using only use case `LA-BRW-UC50` with its requirements, domain rules `LA-BRW-DR50`–`DR59`, components `LA-BRW-C50`–`C59`, tests `LA-BRW-T120`–`T139`. Update `LA-BRW-A1` (Page) for the new addresses. All new obligations satisfied and proved.
 
 ## Scope
 Read first: the whole of `app/src/` (especially `router.tsx`, `App.tsx`, `specs/*`, `graph/*`) after the pass-4 graph-groups and spec-pages work has merged. You own `app/**` and the spec records above.
