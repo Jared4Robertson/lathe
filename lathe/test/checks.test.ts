@@ -7,11 +7,12 @@ const fixture = (name: string) => path.join(path.dirname(fileURLToPath(import.me
 const ofCheck = (ws: Workspace, check: string) => ws.problems.filter((p) => p.check === check);
 const records = (problems: Problem[]) => problems.map((p) => p.record).sort();
 
+const FIXTURES = ['good', 'broken-links', 'broken-tests', 'broken-parse', 'broken-structure', 'configured', 'unfinished', 'fitness'];
+const WARNINGS = ['unsatisfied', 'unproved', 'use-case-without-requirements', 'component-file-missing'];
 const workspaces: Record<string, Workspace> = {};
 beforeAll(async () => {
-  for (const name of ['good', 'broken-links', 'broken-tests', 'broken-parse', 'broken-structure', 'configured']) {
-    workspaces[name] = await loadWorkspace(fixture(name));
-  }
+  for (const name of FIXTURES) workspaces[name] = await loadWorkspace(fixture(name));
+  workspaces['broken-meta'] = await loadWorkspace(fixture('broken-meta'), { metaDir: fixture('broken-meta/meta') });
 });
 
 describe('Lathe-cited checks', () => {
@@ -49,15 +50,17 @@ describe('Lathe-cited checks', () => {
     expect(ws.problems.some((p) => p.record === 'BX-D-T03')).toBe(false);
   });
 
-  it('LA-CHK-T05 Coverage counts satisfied and proved requirements', () => {
+  it('LA-CHK-T05 Coverage counts satisfied and proved requirements and lists the gaps', () => {
     expect(workspaces.good.coverage).toEqual([
       {
         domain: 'EX-NOTE',
         requirements: 1,
         requirements_satisfied: 1,
+        requirements_built: 1,
         requirements_proved: 1,
         rules: 1,
         rules_satisfied: 1,
+        rules_built: 1,
         rules_proved: 1,
         gaps: [],
       },
@@ -67,9 +70,11 @@ describe('Lathe-cited checks', () => {
         domain: 'BX-D',
         requirements: 1,
         requirements_satisfied: 0,
+        requirements_built: 0,
         requirements_proved: 0,
         rules: 0,
         rules_satisfied: 0,
+        rules_built: 0,
         rules_proved: 0,
         gaps: [
           { id: 'BX-D-UC01-R01', kind: 'requirement', missing: 'satisfies' },
@@ -105,6 +110,77 @@ describe('product configuration', () => {
     expect(ws.kinds.map((k) => k.kind)).toEqual(expect.arrayContaining(['product', 'requirement', 'report']));
     expect(ws.relations).toContainEqual(expect.objectContaining({ relation: 'summarises', source_kind: 'report', target_kind: 'aggregate' }));
     expect(ws.problems.filter((p) => p.severity === 'error')).toEqual([]);
+  });
+});
+
+describe('coverage, meta-model and fitness', () => {
+  it('LA-CHK-T12 Coverage counts designed, built and proved separately', () => {
+    expect(workspaces.unfinished.coverage).toEqual([
+      {
+        domain: 'UX-D',
+        requirements: 3,
+        requirements_satisfied: 2,
+        requirements_built: 1,
+        requirements_proved: 1,
+        rules: 1,
+        rules_satisfied: 1,
+        rules_built: 1,
+        rules_proved: 0,
+        gaps: [
+          { id: 'UX-D-DR01', kind: 'domain_rule', missing: 'proves' },
+          { id: 'UX-D-UC01-R02', kind: 'requirement', missing: 'proves' },
+          { id: 'UX-D-UC01-R03', kind: 'requirement', missing: 'satisfies' },
+          { id: 'UX-D-UC01-R03', kind: 'requirement', missing: 'proves' },
+        ],
+      },
+    ]);
+    // Built never exceeds designed.
+    for (const ws of Object.values(workspaces)) {
+      for (const c of ws.coverage) {
+        expect(c.requirements_built).toBeLessThanOrEqual(c.requirements_satisfied);
+        expect(c.rules_built).toBeLessThanOrEqual(c.rules_satisfied);
+      }
+    }
+  });
+
+  it('LA-CHK-T13 Coverage gaps are warnings, so an unfinished design has no errors', () => {
+    const ws = workspaces.unfinished;
+    expect(ws.problems.filter((p) => p.severity === 'error')).toEqual([]);
+    expect(records(ofCheck(ws, 'unsatisfied'))).toEqual(['UX-D-UC01-R03']);
+    expect(records(ofCheck(ws, 'unproved'))).toEqual(['UX-D-DR01', 'UX-D-UC01-R02', 'UX-D-UC01-R03']);
+    expect(ofCheck(ws, 'component-file-missing')).toMatchObject([{ severity: 'warning', record: 'UX-D-C02' }]);
+  });
+
+  it('LA-CHK-T22 A meta-model that names undefined kinds or repeats itself is reported as errors', () => {
+    const ws = workspaces['broken-meta'];
+    const meta = ws.problems.filter((p) => p.check.startsWith('meta-'));
+    expect(meta.every((p) => p.severity === 'error' && p.record === null)).toBe(true);
+    const messages = (check: string) => ofCheck(ws, check).map((p) => p.message);
+    expect(messages('meta-duplicate-kind')).toEqual([expect.stringContaining('"domain" 2 times')]);
+    expect(messages('meta-unknown-parent-kind')).toEqual([expect.stringContaining('parent kind "gadget"')]);
+    expect(messages('meta-unknown-relation-kind')).toEqual([
+      expect.stringContaining('source kind "sprocket"'),
+      expect.stringContaining('target kind "gizmo"'),
+    ]);
+    expect(messages('meta-duplicate-relation')).toEqual([expect.stringContaining('"uses" from widget to domain 2 times')]);
+    expect(messages('meta-bad-required-field')).toHaveLength(2);
+    expect(messages('meta-bad-required-field').join(' ')).toContain('"Bad-Name"');
+    expect(messages('meta-bad-required-field').join(' ')).toContain('"title"');
+    // Lathe's own meta-model, and a product's extension of it, are consistent.
+    for (const name of ['good', 'configured']) {
+      expect(workspaces[name].problems.filter((p) => p.check.startsWith('meta-'))).toEqual([]);
+    }
+  });
+
+  it("LA-CHK-T23 A fitness record's date must be a real YYYY-MM-DD date and its score 1 to 5", () => {
+    const ws = workspaces.fitness;
+    expect(records(ofCheck(ws, 'bad-fitness-date'))).toEqual(['FX-FIT02', 'FX-FIT05']);
+    expect(records(ofCheck(ws, 'bad-fitness-score'))).toEqual(['FX-FIT03', 'FX-FIT04']);
+    expect(records(ofCheck(ws, 'missing-required-field'))).toEqual(['FX-FIT06']);
+    for (const p of ws.problems) expect(p.severity).toBe('error');
+    expect(ws.problems.some((p) => p.record === 'FX-FIT01')).toBe(false);
+    // A leap day is a real date.
+    expect(ws.problems.some((p) => p.record === 'FX-FIT06' && p.check === 'bad-fitness-date')).toBe(false);
   });
 });
 
@@ -159,10 +235,33 @@ describe('structural checks', () => {
     expect(at('use-case-without-requirements')).toEqual(['BX-D-UC01']);
   });
 
-  it('marks every structural problem as an error and work-to-do as a warning', () => {
-    for (const p of workspaces['broken-structure'].problems) {
-      const warning = ['unsatisfied', 'unproved', 'use-case-without-requirements', 'component-file-missing'].includes(p.check);
-      expect(p.severity).toBe(warning ? 'warning' : 'error');
+  it('LA-CHK-T24 Broken records are errors and work to do is a warning', () => {
+    const seen = new Set<string>();
+    for (const ws of Object.values(workspaces)) {
+      for (const p of ws.problems) {
+        seen.add(p.check);
+        expect(p.severity, `${p.check}: ${p.message}`).toBe(WARNINGS.includes(p.check) ? 'warning' : 'error');
+      }
+    }
+    // Every kind of work to do, and the main kinds of breakage, appear in the fixtures.
+    for (const check of [...WARNINGS, 'parse-error', 'duplicate-id', 'dangling-link', 'meta-duplicate-kind', 'bad-fitness-score']) {
+      expect(seen).toContain(check);
+    }
+  });
+
+  it('LA-CHK-T25 Every problem names its check and, when it has one, its record', () => {
+    for (const ws of Object.values(workspaces)) {
+      for (const p of ws.problems) {
+        expect(p.check).toMatch(/^[a-z][a-z-]*$/);
+        expect(p.message.trim().endsWith('.')).toBe(true);
+        if (p.record !== null) {
+          expect(p.message, p.check).toContain(p.record);
+        } else {
+          // Problems with no record are about a file, the meta-model, or a record that has no ID.
+          const ok = p.check === 'parse-error' || p.check.startsWith('meta-') || /\.md\b/.test(p.message);
+          expect(ok, `${p.check}: ${p.message}`).toBe(true);
+        }
+      }
     }
   });
 

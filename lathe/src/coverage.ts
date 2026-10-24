@@ -1,11 +1,15 @@
 // Coverage queries: for each domain, its requirements and domain rules, and whether a
-// component satisfies each one and a test proves it.
+// component satisfies each one (designed), a component whose file exists satisfies it (built),
+// and a test proves it (proved).
 
 const ITEMS = `
   WITH items AS (
     SELECT DISTINCT r.domain, r.id, r.kind,
       EXISTS (SELECT 1 FROM links l JOIN records s ON s.id = l.source
               WHERE l.target = r.id AND l.relation = 'satisfies' AND s.kind = 'component') AS satisfied,
+      EXISTS (SELECT 1 FROM links l JOIN records s ON s.id = l.source
+                                    JOIN file_facts f ON f.path = s.path AND f.file_exists
+              WHERE l.target = r.id AND l.relation = 'satisfies' AND s.kind = 'component') AS built,
       EXISTS (SELECT 1 FROM links l JOIN records s ON s.id = l.source
               WHERE l.target = r.id AND l.relation = 'proves' AND s.kind = 'test') AS proved
     FROM records r
@@ -17,9 +21,11 @@ export const COVERAGE_COUNTS_SQL = `${ITEMS}
   SELECT d.id AS domain,
     count(i.id) FILTER (WHERE i.kind = 'requirement')::INTEGER AS requirements,
     count(i.id) FILTER (WHERE i.kind = 'requirement' AND i.satisfied)::INTEGER AS requirements_satisfied,
+    count(i.id) FILTER (WHERE i.kind = 'requirement' AND i.built)::INTEGER AS requirements_built,
     count(i.id) FILTER (WHERE i.kind = 'requirement' AND i.proved)::INTEGER AS requirements_proved,
     count(i.id) FILTER (WHERE i.kind = 'domain_rule')::INTEGER AS rules,
     count(i.id) FILTER (WHERE i.kind = 'domain_rule' AND i.satisfied)::INTEGER AS rules_satisfied,
+    count(i.id) FILTER (WHERE i.kind = 'domain_rule' AND i.built)::INTEGER AS rules_built,
     count(i.id) FILTER (WHERE i.kind = 'domain_rule' AND i.proved)::INTEGER AS rules_proved
   FROM (SELECT DISTINCT id FROM records WHERE kind = 'domain' AND id <> '') d
   LEFT JOIN items i ON i.domain = d.id
