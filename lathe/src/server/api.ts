@@ -58,8 +58,11 @@ export async function handleApi(root: string, req: IncomingMessage, res: ServerR
 /** The folders whose changes should make open pages reload, and the event each sends. */
 export function watchTargets(root: string): { dir: string; event: 'spec:changed' | 'model:changed' }[] {
   const config = loadConfig(root);
+  // A product's own checks and meta-model extensions change what the spec pages show, as its records do.
+  const extras = [config.checksDir, ...config.metaDirs.slice(1)].filter((dir): dir is string => Boolean(dir));
   return [
     { dir: config.specsDir, event: 'spec:changed' },
+    ...extras.map((dir) => ({ dir, event: 'spec:changed' as const })),
     { dir: config.diagramsDir, event: 'model:changed' },
   ];
 }

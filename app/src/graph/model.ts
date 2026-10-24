@@ -116,6 +116,8 @@ export const HIERARCHY_TIERS: Record<string, number> = {
   view: 4,
   endpoint: 4,
   component: 4,
+  // A flow's steps sit one tier to its right, under it (through a group when the flow has more than a handful).
+  flow_step: 5,
   test: 5,
   [FILE_KIND]: 6,
 };
@@ -128,6 +130,8 @@ export const TRACE_TIERS: Record<string, number> = {
   flow: 1,
   view: 1,
   endpoint: 1,
+  // A step that fulfills the rule sits between its flow and the components it uses.
+  flow_step: 1.5,
   component: 2,
   test: 3,
   [FILE_KIND]: 4,
@@ -383,9 +387,10 @@ export const canTrace = (index: SpecIndex, id: string) => {
 export const fileNodeId = (path: string) => `file:${path}`;
 
 /**
- * A requirement or domain rule's traceability chain: the flows, views and endpoints that fulfill
- * it, the components that satisfy it, the tests that prove it, the components that implement
- * those views and endpoints, and the files the components and tests name.
+ * A requirement or domain rule's traceability chain: the flows, flow steps, views and endpoints
+ * that fulfill it, the components that satisfy it, the tests that prove it, the components that
+ * implement those views and endpoints, a fulfilling step's flow and the components it uses, and
+ * the files the components and tests name.
  */
 export function traceChain(index: SpecIndex, focus: string, filters: Filters = NO_FILTERS): Neighbourhood {
   if (!canTrace(index, focus)) return { focus, mode: 'trace', nodes: [], edges: [], via: new Map() };
@@ -412,6 +417,16 @@ export function traceChain(index: SpecIndex, focus: string, filters: Filters = N
   for (const l of direct.filter((d) => d.relation === 'fulfills' && nodes.has(d.source))) {
     for (const impl of (index.incoming.get(l.source) ?? []).filter((i) => i.relation === 'implements')) {
       add(impl.source, impl.relation, impl.target, impl.source, l.source, 2);
+    }
+  }
+
+  // A fulfilling flow step brings its flow (its parent) and the components it uses.
+  for (const l of direct.filter((d) => d.relation === 'fulfills' && nodes.has(d.source))) {
+    const step = index.byId.get(l.source)!;
+    if (step.kind !== 'flow_step') continue;
+    if (step.parent && index.byId.get(step.parent)?.kind === 'flow') add(step.parent, PARENT, step.id, step.parent, step.id, 2);
+    for (const use of (index.outgoing.get(step.id) ?? []).filter((u) => u.relation === 'uses' && index.byId.get(u.target)?.kind === 'component')) {
+      add(use.source, use.relation, use.target, use.target, step.id, 2);
     }
   }
 

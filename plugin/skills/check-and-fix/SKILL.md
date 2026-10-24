@@ -94,3 +94,14 @@ One mistake gives one error: a duplicated ID is reported as `duplicate-id`, with
 | `obligation-outside-domain` | The obligation sits above every domain, so no domain owes it. Move it under a domain (or under a pattern, for a shared rule). |
 | `unknown-id-in-prose` | The body cites an ID that is not a record: correct it to the current ID, or remove the citation. |
 
+## Flow steps and product checks
+
+| Problem | Fix |
+| --- | --- |
+| `flow-step-order` (error) | Give each step of a flow a different whole number in `order`. |
+| `flow-step-fulfills-outside-flow` | The step fulfills something the flow does not carry out. Link the use case to the flow with `carries_out`, or move the step's `fulfills` to the flow that really does it. |
+| `flow-fulfills-differs-from-steps` | Once a flow has steps, put each `fulfills` on the step that does it; drop it from the flow, or add the step. |
+| `product-check-name-clash` (error) | Rename the product's check file so its name differs from Lathe's checks. |
+| `product-checks-missing` (error) | `lathe.config.json` names a `checks` folder that does not exist: create it or fix the path. |
+| Any other check name you do not recognise | It is the product's own check (in the folder `lathe.config.json` names in `checks`); read that SQL file to see what it wants. |
+

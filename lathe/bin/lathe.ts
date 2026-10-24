@@ -60,10 +60,13 @@ async function check() {
         for (const o of counted) {
           const gaps = c.gaps.filter((g) => g.kind === o.kind).length;
           const of = (n: number) => `${n}/${o.total}`;
+          // planned_any is shown only where it differs: some proved obligations still have planned tests.
+          const owed = o.planned_any !== undefined && o.planned_any !== o.planned ? `; ${of(o.planned_any)} with a planned test` : '';
           console.log(
-            `  ${c.domain} ${o.kind}: ${of(o.designed)} designed, ${of(o.built)} built, ${of(o.proved)} proved, ${of(o.planned)} planned; ${gaps} ${gaps === 1 ? 'gap' : 'gaps'}`,
+            `  ${c.domain} ${o.kind}: ${of(o.designed)} designed, ${of(o.built)} built, ${of(o.proved)} proved, ${of(o.planned)} planned; ${gaps} ${gaps === 1 ? 'gap' : 'gaps'}${owed}`,
           );
         }
+        if (c.tests) console.log(`  ${c.domain} tests: ${c.tests.automated} automated, ${c.tests.manual} manual, ${c.tests.planned} planned`);
       }
     }
     const count = (n: number, noun: string) => `${n} ${noun}${n === 1 ? '' : 's'}`;
