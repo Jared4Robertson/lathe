@@ -1,0 +1,4 @@
+name,kind,context,status,definition
+Shelf,aggregate,making_software,decided,One.
+Shelf,aggregate,making_software,decided,Two.
+Gadget,widget,making_software,decided,Unknown kind.
