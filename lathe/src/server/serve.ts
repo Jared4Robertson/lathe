@@ -7,7 +7,8 @@ import path from 'node:path';
 import { PACKAGE_DIR } from '../config.ts';
 import { handleApi, watchTargets } from './api.ts';
 
-const APP_DIR = path.join(PACKAGE_DIR, 'dist', 'app');
+/** Where `npm --prefix lathe run build` puts the built web app. */
+export const APP_DIR = path.join(PACKAGE_DIR, 'dist', 'app');
 const TYPES: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
@@ -27,11 +28,13 @@ export interface ServeOptions {
   root: string;
   port: number;
   host?: string;
+  /** The built web app's folder. Defaults to the package's dist/app. */
+  appDir?: string;
 }
 
-export function serve({ root, port, host = '127.0.0.1' }: ServeOptions) {
-  if (!existsSync(path.join(APP_DIR, 'index.html'))) {
-    throw new Error(`The web app is not built (${APP_DIR} is missing). In the Lathe repo, run: npm --prefix lathe run build`);
+export function serve({ root, port, host = '127.0.0.1', appDir = APP_DIR }: ServeOptions) {
+  if (!existsSync(path.join(appDir, 'index.html'))) {
+    throw new Error(`The web app is not built (${appDir} is missing). In the Lathe repo, run: npm --prefix lathe run build`);
   }
 
   const clients = new Set<ServerResponse>();
@@ -68,10 +71,10 @@ export function serve({ root, port, host = '127.0.0.1' }: ServeOptions) {
         return;
       }
       // Static files, falling back to index.html so client-side routes such as /records/<id> load.
-      const file = path.join(APP_DIR, pathname);
-      const insideApp = path.relative(APP_DIR, file).startsWith('..') === false;
+      const file = path.join(appDir, pathname);
+      const insideApp = path.relative(appDir, file).startsWith('..') === false;
       if (insideApp && existsSync(file) && (await stat(file)).isFile()) return await sendFile(res, file);
-      return await sendFile(res, path.join(APP_DIR, 'index.html'));
+      return await sendFile(res, path.join(appDir, 'index.html'));
     } catch (error) {
       res.statusCode = 500;
       res.end(error instanceof Error ? error.message : String(error));

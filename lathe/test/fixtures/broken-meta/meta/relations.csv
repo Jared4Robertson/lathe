@@ -1,0 +1,6 @@
+relation,source_kind,target_kind,description
+uses,widget,domain,"Fine."
+uses,widget,domain,"Listed twice."
+uses,widget,gizmo,"Unknown target."
+about,sprocket,*,"Unknown source."
+about,widget,*,"Star target is fine."
