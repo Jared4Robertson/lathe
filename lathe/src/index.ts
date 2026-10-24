@@ -281,13 +281,66 @@ async function readRows<T>(connection: DuckDBConnection, sql: string): Promise<T
   return (await connection.runAndReadAll(sql)).getRowObjectsJson() as unknown as T[];
 }
 
-// Runs every check file in name order. A check that fails to run becomes an error problem.
-async function runChecks(connection: DuckDBConnection, checksDir: string): Promise<Problem[]> {
-  const files = existsSync(checksDir) ? (await readdir(checksDir)).filter((f) => f.endsWith('.sql')).sort() : [];
+/** A check file's name without its number and .sql: 16-unproved.sql is the check unproved. */
+const checkName = (file: string) => file.replace(/\.sql$/, '').replace(/^\d+[-_]/, '');
+const sqlFiles = async (dir: string) => (existsSync(dir) ? (await readdir(dir)).filter((f) => f.endsWith('.sql')).sort() : []);
+
+/** Names of the problems the engine reports itself, outside any check file; a product check may not take them. */
+const ENGINE_CHECKS = ['parse-error', 'parent-cycle', 'product-check-name-clash', 'product-checks-missing'];
+
+// Runs Lathe's checks, then the product's own checks folder if it has one (FORMAT.md section 13), against the
+// same tables and with the same row contract. A product check named like one of Lathe's checks is not run:
+// it is a product-check-name-clash error, so the two never mix in a report.
+async function runChecks(
+  connection: DuckDBConnection,
+  checksDir: string,
+  productChecksDir: string | null,
+  root: string,
+): Promise<Problem[]> {
+  const latheFiles = await sqlFiles(checksDir);
+  const problems = await runCheckFolder(connection, checksDir, latheFiles, (file) => file);
+  if (productChecksDir === null) return problems;
+  const where = (file: string) => toPosix(path.relative(root, path.join(productChecksDir, file)));
+  if (!existsSync(productChecksDir)) {
+    const folder = toPosix(path.relative(root, productChecksDir)) || '.';
+    problems.push({
+      severity: 'error',
+      check: 'product-checks-missing',
+      record: null,
+      message: `lathe.config.json names the checks folder ${folder}, but there is no such folder.`,
+    });
+    return problems;
+  }
+  const taken = new Set([...latheFiles.map(checkName), ...ENGINE_CHECKS]);
+  const productFiles: string[] = [];
+  for (const file of await sqlFiles(productChecksDir)) {
+    if (!taken.has(checkName(file))) {
+      productFiles.push(file);
+      continue;
+    }
+    problems.push({
+      severity: 'error',
+      check: 'product-check-name-clash',
+      record: null,
+      message: `The product check ${where(file)} is named ${checkName(file)}, as one of Lathe's checks is, so it was not run; rename the file.`,
+    });
+  }
+  problems.push(...(await runCheckFolder(connection, productChecksDir, productFiles, where)));
+  return problems;
+}
+
+// Runs the given check files of one folder in name order. A check that fails to run becomes an error
+// problem naming the file as `label` writes it.
+async function runCheckFolder(
+  connection: DuckDBConnection,
+  dir: string,
+  files: string[],
+  label: (file: string) => string,
+): Promise<Problem[]> {
   const problems: Problem[] = [];
   for (const file of files) {
-    const check = file.replace(/\.sql$/, '').replace(/^\d+[-_]/, '');
-    const sql = await readFile(path.join(checksDir, file), 'utf8');
+    const check = checkName(file);
+    const sql = await readFile(path.join(dir, file), 'utf8');
     try {
       // The check's own "check" column is ignored: the file name is the check's name.
       const rows = await readRows<{ severity: string; record: string | null; message: string }>(connection, sql);
@@ -304,7 +357,7 @@ async function runChecks(connection: DuckDBConnection, checksDir: string): Promi
         severity: 'error',
         check,
         record: null,
-        message: `The check ${file} could not run: ${error instanceof Error ? error.message.split('\n')[0] : String(error)}`,
+        message: `The check ${label(file)} could not run: ${error instanceof Error ? error.message.split('\n')[0] : String(error)}`,
       });
     }
   }
@@ -381,7 +434,7 @@ export async function loadWorkspace(root: string, options: LoadOptions = {}): Pr
     await connection.run('CREATE TABLE prose_mentions (path VARCHAR, record VARCHAR, cited VARCHAR)');
     await append(connection, 'prose_mentions', citations.map((c) => [c.path, c.record, c.cited]));
 
-    problems.push(...(await runChecks(connection, checksDir)));
+    problems.push(...(await runChecks(connection, checksDir, config.checksDir, root)));
     const coverage = await computeCoverage(connection);
     const kinds = await readRows<Kind>(connection, 'SELECT * FROM kinds');
     const relations = await readRows<RelationRule>(connection, 'SELECT * FROM relations');

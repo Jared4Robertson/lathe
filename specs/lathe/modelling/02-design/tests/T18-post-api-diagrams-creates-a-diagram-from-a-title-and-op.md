@@ -6,6 +6,6 @@ parent: LA-MOD
 test_type: integration
 run_by: lathe/test/diagrams.test.ts
 links:
-  proves: [LA-MOD-UC01-R01]
+  proves: [LA-MOD-UC01-R01, LA-MOD-E01-R01, LA-MOD-E02-R01]
 ---
 Calls the API handler with a fake request, with and without a description, and expects `201` with the trimmed title, the derived slug and the new diagram in the list.

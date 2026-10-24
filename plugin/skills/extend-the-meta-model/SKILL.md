@@ -76,6 +76,14 @@ Returning a loan MUST be refused unless the caller is the member who borrowed it
 
 Pick an ID pattern for the new kind (here `<P>-<D>-SC<nn>`) and use it consistently; Lathe checks only the format and uniqueness.
 
+## A product's own checks
+
+A house rule that the meta-model cannot express, such as S2's "each aggregate has exactly one Record view use case", is a product check, not an extension. Name a folder in `lathe.config.json` (`"checks": "lathe-checks"`) and add one `<number>-<check-name>.sql` file per rule, written as Lathe's own checks are: one `SELECT` over the same tables (`records`, `fields`, `links`, ...) returning `severity`, `"check"`, `record` and `message`. See section 13 of `FORMAT.md`.
+
+- The check's name is the file name without its number and `.sql`. Do not reuse one of Lathe's check names: that file is not run, and is a `product-check-name-clash` error.
+- Use `warning` for work still to do and `error` only for a broken workspace, as Lathe does.
+- Product checks run after Lathe's, and a check whose SQL fails is an error naming its file. Run `lathe check` after adding one and fix what it finds.
+
 ## Rules
 
 - Keep each row's `description` a plain sentence; the web app shows it.
