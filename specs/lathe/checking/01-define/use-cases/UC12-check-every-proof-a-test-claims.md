@@ -5,7 +5,7 @@ title: "Check every proof a test claims"
 parent: LA-CHK-CAP01
 actor: Jared, AI agent
 links:
-  applies: [LA-CHK-DR60, LA-CHK-DR61, LA-CHK-DR62, LA-CHK-DR63, LA-CHK-DR30]
+  applies: [LA-CHK-DR60, LA-CHK-DR61, LA-CHK-DR62, LA-CHK-DR63, LA-CHK-DR30, LA-CHK-DR93]
 ---
 A test record says which records it proves. A person, or an AI agent, writes the test and its code, and `lathe check` confirms that the code backs every claim:
 
@@ -14,3 +14,5 @@ A test record says which records it proves. A person, or an AI agent, writes the
 3. A test whose code names no ID at all, such as a pattern proof kept in its own file, gives a `key`: text the file must contain, such as a test function name.
 
 The person fixes each error by naming the missing ID in the test's name, by naming the test's own ID, or by removing a claim the test does not really prove.
+
+A claim the code does not back proves nothing: its obligation stays unproved, in the `unproved` warnings and in coverage alike.
