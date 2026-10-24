@@ -1,0 +1,3 @@
+source,relation,target,cardinality,status,note
+Shelf,likes,Maybe,,decided,
+Shelf,serves,Maybe,,unsure,

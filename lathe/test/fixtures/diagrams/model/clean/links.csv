@@ -1,0 +1,7 @@
+source,relation,target,cardinality,status,note
+Shelf,contains,Book,one to many,decided,
+Shelf,contains,Label,one to one,decided,
+Shelf,raises,Book shelved,,decided,
+Book shelved,prompts,Reader,,open,maybe
+Reading,includes,Finding books,,decided,
+Reading,includes,Choosing books,,decided,
