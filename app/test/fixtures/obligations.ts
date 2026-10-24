@@ -28,7 +28,7 @@ const records: SpecRecord[] = [
 ];
 
 const obligation = (kind: string, label: string, total: number, designed: number, built: number, proved: number, planned: number): ObligationCoverage =>
-  ({ kind, label, total, designed, built, proved, planned });
+  ({ kind, label, total, designed, built, proved, planned }) as ObligationCoverage; // no planned_any: as an older engine reports it
 
 const coverage: Record<string, ObligationCoverage[]> = {
   'DM-SHOP': [

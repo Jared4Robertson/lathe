@@ -34,7 +34,7 @@ describe('the pattern rule kind', () => {
 describe('coverage of pattern rules', () => {
   it('LA-CHK-T91 Each domain that follows a pattern owes its rules, on one pattern rule line', () => {
     const lines = coverageOf(good, 'PX-A')?.obligations.filter((o) => o.kind === 'pattern_rule');
-    expect(lines).toEqual([{ kind: 'pattern_rule', label: 'Pattern rule', total: 2, designed: 2, built: 2, proved: 2, planned: 0 }]);
+    expect(lines).toEqual([{ kind: 'pattern_rule', label: 'Pattern rule', total: 2, designed: 2, built: 2, proved: 2, planned: 0, planned_any: 0 }]);
     expect(patternRules(good, 'PX-B')?.total).toBe(2);
     expect(patternRules(good, 'PX-D')?.total).toBe(2);
   });

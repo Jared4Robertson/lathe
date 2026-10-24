@@ -4,10 +4,10 @@ import { existsSync } from 'node:fs';
 import { readdir, readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { DuckDBInstance, type DuckDBConnection } from '@duckdb/node-api';
-import { COVERAGE_COUNTS_SQL, COVERAGE_GAPS_SQL } from './coverage.ts';
+import { COVERAGE_COUNTS_SQL, COVERAGE_GAPS_SQL, COVERAGE_TESTS_SQL } from './coverage.ts';
 import { loadConfig, PACKAGE_DIR } from './config.ts';
 import { idTokensInProse, parseRecordFile } from './parse.ts';
-import type { Coverage, CoverageGap, Kind, ObligationCoverage, Problem, RelationRule, SpecLink, SpecRecord, Workspace } from './types.ts';
+import type { Coverage, CoverageGap, Kind, ObligationCoverage, Problem, RelationRule, SpecLink, SpecRecord, TestCounts, Workspace } from './types.ts';
 
 export type * from './types.ts';
 export { loadConfig, PACKAGE_DIR, CONFIG_FILE, type LatheConfig } from './config.ts';
@@ -369,6 +369,7 @@ async function runCheckFolder(
 async function computeCoverage(connection: DuckDBConnection): Promise<Coverage[]> {
   const rows = await readRows<ObligationCoverage & { domain: string }>(connection, COVERAGE_COUNTS_SQL);
   const gaps = await readRows<CoverageGap & { domain: string }>(connection, COVERAGE_GAPS_SQL);
+  const tests = await readRows<TestCounts & { domain: string }>(connection, COVERAGE_TESTS_SQL);
   const domains = await readRows<{ id: string }>(connection, "SELECT DISTINCT id FROM records WHERE kind = 'domain' AND id <> '' ORDER BY id");
   return domains.map(({ id: domain }) => {
     const obligations = rows.filter((r) => r.domain === domain).map(({ domain: _domain, ...o }) => o);
@@ -386,6 +387,7 @@ async function computeCoverage(connection: DuckDBConnection): Promise<Coverage[]
       rules_built: rule?.built ?? 0,
       rules_proved: rule?.proved ?? 0,
       obligations,
+      tests: (({ automated, manual, planned }) => ({ automated, manual, planned }))(tests.find((t) => t.domain === domain) ?? { automated: 0, manual: 0, planned: 0 }),
       gaps: gaps.filter((g) => g.domain === domain).map(({ id, kind, missing }) => ({ id, kind, missing })),
     };
   });

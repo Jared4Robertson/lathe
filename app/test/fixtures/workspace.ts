@@ -64,7 +64,8 @@ export const links: SpecLink[] = [
   { source: 'DM-SHOP-Q01', relation: 'about', target: 'DM-SHOP-A1' },
 ];
 
-const shopCoverage: Coverage = {
+// No tests counts in these: as an older engine reports coverage (shown as not yet measured).
+const shopCoverage = {
   domain: 'DM-SHOP',
   requirements: 2, requirements_satisfied: 2, requirements_built: 1, requirements_proved: 1,
   rules: 1, rules_satisfied: 1, rules_built: 1, rules_proved: 0,
@@ -74,7 +75,7 @@ const shopCoverage: Coverage = {
   ],
   // Empty on purpose: the pages fall back to the requirement and rule fields above.
   obligations: [],
-};
+} as unknown as Coverage;
 
 // Built counts left out on purpose: they must show as "not yet measured", never as zero.
 const payCoverage = {
@@ -87,13 +88,13 @@ const payCoverage = {
   ],
 } as unknown as Coverage;
 
-const noteCoverage: Coverage = {
+const noteCoverage = {
   domain: 'NF-NOTE',
   requirements: 0, requirements_satisfied: 0, requirements_built: 0, requirements_proved: 0,
   rules: 0, rules_satisfied: 0, rules_built: 0, rules_proved: 0,
   gaps: [],
   obligations: [],
-};
+} as unknown as Coverage;
 
 export function workspace(): Workspace {
   return {

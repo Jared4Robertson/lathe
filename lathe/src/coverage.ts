@@ -2,8 +2,11 @@
 // counted; a link counts as design or proof by its relation rule's role in relations.csv.
 // For each obligation a domain owes: designed (a 'design' link targets it), built (a 'design' link from
 // a component whose file exists), proved (a 'proof' link from an automated or manual source; a
-// source with no state is automated) and planned (not proved, but a 'proof' link from a planned
-// source targets it).
+// source with no state is automated), planned (not proved, but a 'proof' link from a planned
+// source targets it) and planned_any (a 'proof' link from a planned source targets it, proved or
+// not, so proof still owed by a planned test is not hidden by another test that already proves it).
+// Each domain's tests are also counted by state: the test records whose domain it is, a test with
+// no state being automated.
 //
 // An obligation that sits in a domain is owed by that domain. A pattern rule sits under a pattern,
 // outside every domain, and is owed instead by each domain that follows the pattern (one of the
@@ -85,7 +88,8 @@ export const COVERAGE_COUNTS_SQL = `${ITEMS}
     count(i.id) FILTER (WHERE i.designed)::INTEGER AS designed,
     count(i.id) FILTER (WHERE i.built)::INTEGER AS built,
     count(i.id) FILTER (WHERE i.proved)::INTEGER AS proved,
-    count(i.id) FILTER (WHERE NOT i.proved AND i.planned_proof)::INTEGER AS planned
+    count(i.id) FILTER (WHERE NOT i.proved AND i.planned_proof)::INTEGER AS planned,
+    count(i.id) FILTER (WHERE i.planned_proof)::INTEGER AS planned_any
   FROM (SELECT DISTINCT id FROM records WHERE kind = 'domain' AND id <> '') d
   CROSS JOIN obligation_kinds k
   LEFT JOIN items i ON i.domain = d.id AND i.kind = k.kind
@@ -98,3 +102,22 @@ export const COVERAGE_GAPS_SQL = `${ITEMS}
   UNION ALL
   SELECT domain, id, kind, 'proves' AS missing FROM items WHERE NOT proved
   ORDER BY domain, id, missing DESC`;
+
+/** One row per domain record: its tests by state (automated, manual, planned). A test with no state is automated. */
+export const COVERAGE_TESTS_SQL = `
+  WITH states AS (
+    SELECT path, record, lower(trim(any_value(value))) AS state FROM fields WHERE name = 'state' GROUP BY path, record
+  ),
+  tests AS (
+    SELECT DISTINCT t.domain, t.id, coalesce(nullif(st.state, ''), 'automated') AS state
+    FROM records t LEFT JOIN states st ON st.path = t.path AND st.record = t.id
+    WHERE t.kind = 'test' AND t.id <> '' AND t.domain IS NOT NULL
+  )
+  SELECT d.id AS domain,
+    count(t.id) FILTER (WHERE t.state = 'automated')::INTEGER AS automated,
+    count(t.id) FILTER (WHERE t.state = 'manual')::INTEGER AS manual,
+    count(t.id) FILTER (WHERE t.state = 'planned')::INTEGER AS planned
+  FROM (SELECT DISTINCT id FROM records WHERE kind = 'domain' AND id <> '') d
+  LEFT JOIN tests t ON t.domain = d.id
+  GROUP BY d.id
+  ORDER BY d.id`;
