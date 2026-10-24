@@ -1,45 +1,73 @@
 import { readFile } from 'node:fs/promises';
+import type { ServerResponse } from 'node:http';
 import path from 'node:path';
-import type { Plugin } from 'vite';
+import type { Plugin, ViteDevServer } from 'vite';
 
 type ApiModule = typeof import('../../lathe/src/server/api.ts');
+type Watched = { dir: string; event: 'spec:changed' | 'model:changed' };
 
 // Serves Lathe's API (lathe/src/server/api.ts) inside the Vite dev server. The module is loaded
 // through Vite, so edits to the engine are picked up without a restart, and its packages resolve
-// from lathe/node_modules. LATHE_SPEC_FIXTURE=1 serves the sample workspace for /api/spec.
-// Sends spec:changed or model:changed when the product's specs or diagrams change.
-export function latheApi(root: string): Plugin {
-  const engineDir = path.resolve(import.meta.dirname, '../../lathe');
+// from lathe/node_modules. GET /api/spec serves the sample workspace, with `x-lathe-source: fixture`,
+// when LATHE_SPEC_FIXTURE=1 is set or the engine cannot be loaded.
+// Sends spec:changed or model:changed when the product's specs or diagrams, or the engine's checks
+// and meta-model, change.
+export function latheApi(root: string, engineDir = path.resolve(import.meta.dirname, '../../lathe')): Plugin {
+  const sendFixture = async (res: ServerResponse, reason: string) => {
+    res.statusCode = 200;
+    res.setHeader('content-type', 'application/json');
+    res.setHeader('x-lathe-source', 'fixture');
+    res.setHeader('x-lathe-source-reason', encodeURIComponent(reason));
+    res.end(await readFile(path.join(engineDir, 'fixtures/workspace.sample.json')));
+  };
+  const message = (error: unknown) => (error instanceof Error ? error.message : String(error));
+
   return {
     name: 'lathe-api',
-    async configureServer(server) {
+    async configureServer(server: ViteDevServer) {
       const api = () => server.ssrLoadModule(path.join(engineDir, 'src/server/api.ts')) as Promise<ApiModule>;
 
       server.middlewares.use(async (req, res, next) => {
         const pathname = decodeURIComponent((req.url ?? '/').split('?')[0]);
         if (!pathname.startsWith('/api/')) return next();
         if (pathname === '/api/spec' && process.env.LATHE_SPEC_FIXTURE === '1') {
+          return sendFixture(res, 'LATHE_SPEC_FIXTURE=1 is set');
+        }
+        let module: ApiModule;
+        try {
+          module = await api();
+        } catch (error) {
+          if (pathname === '/api/spec') return sendFixture(res, `the engine could not be loaded: ${message(error)}`);
+          res.statusCode = 500;
           res.setHeader('content-type', 'application/json');
-          res.setHeader('x-lathe-source', 'fixture');
-          res.setHeader('x-lathe-source-reason', encodeURIComponent('LATHE_SPEC_FIXTURE=1 is set'));
-          res.end(await readFile(path.join(engineDir, 'fixtures/workspace.sample.json')));
+          res.end(JSON.stringify({ error: `The engine could not be loaded: ${message(error)}` }));
           return;
         }
         try {
-          if (!(await (await api()).handleApi(root, req, res, pathname))) next();
+          if (!(await module.handleApi(root, req, res, pathname))) next();
         } catch (error) {
           res.statusCode = 500;
           res.setHeader('content-type', 'application/json');
-          res.end(JSON.stringify({ error: error instanceof Error ? error.message : String(error) }));
+          res.end(JSON.stringify({ error: message(error) }));
         }
       });
 
-      for (const { dir, event } of (await api()).watchTargets(root)) {
-        server.watcher.add(dir);
-        server.watcher.on('all', (_kind, changed) => {
-          if (changed === dir || changed.startsWith(dir + path.sep)) server.ws.send({ type: 'custom', event });
-        });
+      let watched: Watched[];
+      try {
+        watched = (await api()).watchTargets(root);
+      } catch {
+        watched = [
+          { dir: path.resolve(root, 'specs'), event: 'spec:changed' },
+          { dir: path.resolve(root, 'model'), event: 'model:changed' },
+        ];
       }
+      // The engine's checks and meta-model decide the problems and coverage a spec page shows.
+      watched.push({ dir: path.join(engineDir, 'checks'), event: 'spec:changed' }, { dir: path.join(engineDir, 'meta'), event: 'spec:changed' });
+      for (const { dir } of watched) server.watcher.add(dir);
+      server.watcher.on('all', (_kind: string, changed: string) => {
+        const events = new Set(watched.filter(({ dir }) => changed === dir || changed.startsWith(dir + path.sep)).map((w) => w.event));
+        for (const event of events) server.ws.send({ type: 'custom', event });
+      });
     },
   };
 }

@@ -8,7 +8,8 @@ const root = process.env.LATHE_ROOT ?? fileURLToPath(new URL('..', import.meta.u
 
 export default defineConfig({
   plugins: [react(), latheApi(root)],
-  server: { port: 5199, strictPort: true },
+  // The record format page imports lathe/FORMAT.md, which sits outside app/.
+  server: { port: 5199, strictPort: true, fs: { allow: [fileURLToPath(new URL('..', import.meta.url))] } },
   // `npm --prefix lathe run build` builds the app into the package, for `lathe serve`.
   build: { outDir: fileURLToPath(new URL('../lathe/dist/app', import.meta.url)), emptyOutDir: true },
 });
