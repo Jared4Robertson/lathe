@@ -1,7 +1,7 @@
 ---
 id: LA-CHK-T121
 kind: test
-title: "IDs in code spans and fenced code blocks are not citations"
+title: "IDs in fenced code blocks and in code spans with other text are not citations, but a code span holding one lone ID is"
 parent: LA-CHK
 test_type: unit
 run_by: lathe/test/mentions.test.ts

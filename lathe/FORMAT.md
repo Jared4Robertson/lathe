@@ -233,7 +233,7 @@ The checks for pattern rules:
 A record's body may cite other records by ID in plain text, such as "the loan follows TL-LEND-DR05". The engine reads these citations so that a renamed or removed record does not leave a stale reference behind.
 
 - A **citation** is a whole ID-shaped token in the body (the `id` format in section 2) that equals the ID of a `product` record or starts with one followed by `-`. `TL-LEND-DR05` is cited in "(TL-LEND-DR05)." and in a Markdown link `[TL-LEND-DR05](…)`, but nothing is cited in `TL-LEND-DR05a`, and a token with a prefix no product has, such as `ZZ-D-UC01`, is not read.
-- Text in inline code spans and fenced code blocks (`` ``` `` or `~~~`) is not read, so an example ID can be written in code.
+- Text in fenced code blocks (`` ``` `` or `~~~`), and in inline code spans holding anything more than one ID, is not read, so an example ID can be written in code (`see TL-LEND-DR99`). A code span holding exactly one ID and nothing else (`` `TL-LEND-DR05` ``) is a citation, because writers often format IDs that way.
 - A record's **mentions** (`SpecRecord.mentions`) are the IDs it cites that exist, in order of first mention, without repeats and without its own ID.
 - A cited ID that is not a record is an `unknown-id-in-prose` warning on the citing record: fix the wording, or put the ID in code if it is an example.
 - Mentions are not links. They do not count for coverage and are not checked against `relations.csv`; write a link in the header when a record satisfies, proves or applies another.

@@ -79,8 +79,10 @@ export function parseRecordFile(text: string): ParseResult {
 // "TL-LEND-DR05." and "[TL-LEND-DR05](x.md)", but nothing is found in "TL-LEND-DR05a" or "tl-LEND-DR05".
 const ID_TOKEN = /(?<![A-Za-z0-9_-])[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*(?![A-Za-z0-9_]|-[A-Za-z0-9])/g;
 const FENCE = /^ {0,3}(`{3,}|~{3,})/;
+const LONE_ID = /^[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)+$/;
 
-// Blanks out fenced code blocks and inline code spans, so that IDs in code are not read as citations.
+// Blanks out fenced code blocks and inline code spans, so that IDs in code are not read as citations,
+// except a code span holding exactly one ID and nothing else (`TL-LEND-DR05`): writers format IDs that way.
 function withoutCode(body: string): string {
   const kept: string[] = [];
   let fence: string | null = null;
@@ -96,10 +98,11 @@ function withoutCode(body: string): string {
     kept.push('');
   }
   // A code span opens with a run of backticks and closes with the next run of the same length.
-  return kept.join('\n').replace(/(?<!`)(`+)(?!`)[\s\S]*?(?<!`)\1(?!`)/g, ' ');
+  return kept.join('\n').replace(/(?<!`)(`+)(?!`)([\s\S]*?)(?<!`)\1(?!`)/g, (_span, _ticks, inner: string) =>
+    LONE_ID.test(inner.trim()) ? ` ${inner.trim()} ` : ' ');
 }
 
-/** The ID-shaped tokens a record body has outside code spans and fenced code blocks, in order, repeats included. */
+/** The ID-shaped tokens a record body has outside fenced code blocks and code spans (a span holding one lone ID counts), in order, repeats included. */
 export function idTokensInProse(body: string): string[] {
   return withoutCode(body).match(ID_TOKEN) ?? [];
 }
