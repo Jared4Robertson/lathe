@@ -22,6 +22,7 @@ export class MemberService {
   /** TL-LEND-UC01: register a member. */
   register(input: RegisterMemberInput): Member {
     // TL-LEND-UC01-R01: name and email are required.
+    // TL-PAT-LIBRARIAN-ACTION-R01: missing input is refused, naming it, before anything is saved.
     const name = typeof input.name === 'string' ? input.name.trim() : '';
     const rawEmail = typeof input.email === 'string' ? input.email.trim() : '';
     if (!name) throw new LendingError(400, 'invalid_request', 'A member needs a name.');

@@ -2,6 +2,8 @@
 // Spec: TL-LEND-C06 (specs/tool-library/lending/02-design/components/C06-router.md)
 // Every error response is JSON: { "error": "<code>", "message": "<sentence>" }.
 // Each route's statuses and bodies are its endpoint's interaction requirements (TL-LEND-E0n-R0n).
+// TL-PAT-LIBRARIAN-ACTION-R02: each librarian action answers with the record as the store saved it
+// (the store returns rows with RETURNING *), so what the librarian sees is what is stored.
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { LendingService } from './lending-service.ts';
 import { MemberService } from './member-service.ts';

@@ -92,6 +92,7 @@ export class LendingService {
   /** TL-LEND-UC04: return a tool and record its condition. */
   return(loanId: number, input: ReturnInput): ReturnedLoan {
     // TL-LEND-UC04-R01 / DR10: the condition is required and is good or needs repair (DR04).
+    // TL-PAT-LIBRARIAN-ACTION-R01: a missing condition is refused before anything is saved.
     if (!isCondition(input.condition)) {
       throw new LendingError(400, 'invalid_condition', 'Record the condition as "good" or "needs_repair".');
     }
