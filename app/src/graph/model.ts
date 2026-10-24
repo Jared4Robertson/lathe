@@ -10,6 +10,8 @@ export const PARENT = 'parent';
 export const NAMES = 'names';
 /** The pseudo-kind of a file node in trace mode. */
 export const FILE_KIND = 'file';
+/** The stage of a group node: a folder of one kind of child between a record and its children. */
+export const GROUP_STAGE = 'group';
 
 export interface GraphNode {
   id: string;
@@ -17,10 +19,12 @@ export interface GraphNode {
   distance: number;
   kind: string;
   title: string;
-  /** 'define', 'design', '' for structural kinds, or 'file'. */
+  /** 'define', 'design', '' for structural kinds, 'file', or 'group'. */
   stage: string;
-  /** The tier the layout puts this node in (see tierOf). */
+  /** The tier the layout puts this node in (see tierOf); a group sits half a tier before its members. */
   tier: number;
+  /** Set on a group node: its parent record, how many members it has, and whether it is open. */
+  group?: { parent: string; count: number; open: boolean };
 }
 
 /** The hierarchy reads left to right by record level; trace mode reads left to right along the chain. */
@@ -66,7 +70,7 @@ export function edgesOf(index: SpecIndex, id: string): GraphEdge[] {
   return edges.filter((e) => index.byId.has(e.source) && index.byId.has(e.target)).map((e) => ({ ...e, id: edgeId(e) }));
 }
 
-const STAGE_ORDER: Record<string, number> = { '': 0, define: 1, design: 2, file: 3 };
+const STAGE_ORDER: Record<string, number> = { group: 0, '': 0, define: 1, design: 2, file: 3 };
 
 export const stageOf = (index: SpecIndex, kind: string) => (kind === FILE_KIND ? 'file' : index.kinds.get(kind)?.stage ?? '');
 
@@ -174,45 +178,194 @@ export function sameTierCycle(n: Neighbourhood): string[] | null {
 }
 
 /**
- * The focused record and every record within `depth` hops of it, following links both ways and
- * the parent/child relation, with every edge between the records shown. Filters hide kinds and
- * relations, and nothing is reached through a hidden record or relation; the focus is never hidden.
+ * The focus (a record or a group) and every record within `depth` hops of it, following links
+ * both ways and the parent/child relation, with every edge between the nodes shown. A record
+ * whose children are grouped (see isGrouped) reaches them through one group node per child kind:
+ * the group is always shown, its members only when it is open. Groups do not count as a hop.
+ * Filters hide kinds and relations, and nothing is reached through a hidden record or relation;
+ * the focus is never hidden. `open` holds the groups the person has opened or closed; any other
+ * group is open when it is the focus or the focus is one of its members.
  */
-export function neighbourhood(index: SpecIndex, focus: string, depth: number, filters: Filters = NO_FILTERS): Neighbourhood {
-  if (!index.byId.has(focus)) return { focus, mode: 'hierarchy', nodes: [], edges: [], via: new Map() };
+export function neighbourhood(
+  index: SpecIndex,
+  focus: string,
+  depth: number,
+  filters: Filters = NO_FILTERS,
+  open: ReadonlyMap<string, boolean> = NO_OPEN,
+): Neighbourhood {
+  if (!isGraphNode(index, focus)) return { focus, mode: 'hierarchy', nodes: [], edges: [], via: new Map() };
   const shownRelation = (relation: string) => !filters.hiddenRelations.has(relation);
-  const shownKind = (id: string) => id === focus || !filters.hiddenKinds.has(index.byId.get(id)!.kind);
+  const kindOfNode = (id: string) => index.byId.get(id)?.kind ?? parseGroupId(id)!.kind;
+  const shownKind = (id: string) => id === focus || !filters.hiddenKinds.has(kindOfNode(id));
+  const focusRecord = index.byId.get(focus);
+  const home = focusRecord?.parent ? groupId(focusRecord.parent, focusRecord.kind) : null;
+  const isOpen = (gid: string) => gid === focus || (open.get(gid) ?? gid === home);
 
-  const distance = new Map([[focus, 0]]);
+  // Steps from a node, counted in half hops: record to record is 2, record to group or group to record is 1.
+  type Step = { to: string; cost: number; relation: string };
+  const steps = (id: string): Step[] => {
+    const group = parseGroupId(id);
+    if (group) {
+      return [
+        { to: group.parent, cost: 1, relation: PARENT },
+        ...(isOpen(id) ? groupMembers(index, id).map((m) => ({ to: m.id, cost: 1, relation: PARENT })) : []),
+      ];
+    }
+    const out: Step[] = [];
+    for (const e of edgesOf(index, id)) {
+      if (e.relation !== PARENT) out.push({ to: e.source === id ? e.target : e.source, cost: 2, relation: e.relation });
+    }
+    const record = index.byId.get(id)!;
+    if (record.parent && index.byId.has(record.parent)) {
+      out.push(isGrouped(index, record.parent)
+        ? { to: groupId(record.parent, record.kind), cost: 1, relation: PARENT }
+        : { to: record.parent, cost: 2, relation: PARENT });
+    }
+    if (isGrouped(index, id)) {
+      for (const kind of childKinds(index, id)) out.push({ to: groupId(id, kind), cost: 1, relation: PARENT });
+    } else {
+      for (const child of index.children.get(id) ?? []) out.push({ to: child.id, cost: 2, relation: PARENT });
+    }
+    return out;
+  };
+
+  const half = new Map([[focus, 0]]);
   const via = new Map<string, string>();
-  let frontier = [focus];
-  for (let hop = 1; hop <= depth; hop++) {
-    const next: string[] = [];
+  const limit = 2 * depth;
+  for (let level = 0; level < limit; level++) {
+    const frontier = [...half].filter(([, h]) => h === level).map(([id]) => id).sort((a, b) => a.localeCompare(b, 'en', { numeric: true }));
     for (const id of frontier) {
-      for (const e of edgesOf(index, id)) {
-        if (!shownRelation(e.relation)) continue;
-        const other = e.source === id ? e.target : e.source;
-        if (distance.has(other) || !shownKind(other)) continue;
-        distance.set(other, hop);
-        via.set(other, id);
-        next.push(other);
+      for (const s of steps(id)) {
+        const reached = level + s.cost;
+        if (reached > limit || !shownRelation(s.relation) || !shownKind(s.to)) continue;
+        const known = half.get(s.to);
+        if (known !== undefined && known <= reached) continue;
+        half.set(s.to, reached);
+        via.set(s.to, id);
       }
     }
-    frontier = next.sort((a, b) => a.localeCompare(b, 'en', { numeric: true }));
+  }
+
+  // The spine always runs through the group between a shown parent and a shown child.
+  if (shownRelation(PARENT)) {
+    for (const id of [...half.keys()]) {
+      const record = index.byId.get(id);
+      if (!record?.parent || !half.has(record.parent) || !isGrouped(index, record.parent)) continue;
+      const gid = groupId(record.parent, record.kind);
+      if (half.has(gid)) continue;
+      half.set(gid, Math.max(half.get(id)!, half.get(record.parent)!) + 1);
+      via.set(gid, id);
+    }
   }
 
   const edges = new Map<string, GraphEdge>();
-  for (const id of distance.keys()) {
-    for (const e of edgesOf(index, id)) {
-      if (shownRelation(e.relation) && distance.has(e.source) && distance.has(e.target)) edges.set(e.id, e);
+  const addParentEdge = (source: string, target: string) => {
+    const e = { source, relation: PARENT, target };
+    edges.set(edgeId(e), { ...e, id: edgeId(e) });
+  };
+  for (const id of half.keys()) {
+    const group = parseGroupId(id);
+    if (group) {
+      if (half.has(group.parent) && shownRelation(PARENT)) addParentEdge(group.parent, id);
+      continue;
     }
+    for (const e of edgesOf(index, id)) {
+      if (e.relation !== PARENT && shownRelation(e.relation) && half.has(e.source) && half.has(e.target)) edges.set(e.id, e);
+    }
+    const record = index.byId.get(id)!;
+    if (!record.parent || !shownRelation(PARENT)) continue;
+    const gid = groupId(record.parent, record.kind);
+    if (half.has(gid)) addParentEdge(gid, id);
+    else if (half.has(record.parent) && !isGrouped(index, record.parent)) addParentEdge(record.parent, id);
   }
+
+  const nodes = [...half].map(([id, h]) =>
+    parseGroupId(id) ? groupNode(index, id, Math.ceil(h / 2), isOpen(id)) : recordNode(index, id, Math.ceil(h / 2), 'hierarchy'),
+  );
   return {
     focus,
     mode: 'hierarchy',
-    nodes: sortNodes(index, [...distance].map(([id, d]) => recordNode(index, id, d, 'hierarchy'))),
+    nodes: sortNodes(index, nodes),
     edges: [...edges.values()].sort((a, b) => a.id.localeCompare(b.id)),
     via,
+  };
+}
+
+// ---- Group nodes: a folder per kind of child between a record and its children ----
+
+/** A record with more children than this, all of one kind, has them grouped. */
+export const GROUP_HANDFUL = 5;
+export const NO_OPEN: ReadonlyMap<string, boolean> = new Map();
+
+/** A group's ID: its parent's ID and the kind of its members. Record IDs never contain a slash. */
+export const groupId = (parent: string, kind: string) => `${parent}/${kind}`;
+
+/** The parent and member kind of a group ID, or null for any other ID. */
+export function parseGroupId(id: string): { parent: string; kind: string } | null {
+  if (id.startsWith('file:')) return null;
+  const at = id.indexOf('/');
+  if (at <= 0 || at === id.length - 1 || id.indexOf('/', at + 1) >= 0) return null;
+  return { parent: id.slice(0, at), kind: id.slice(at + 1) };
+}
+
+/** The kinds of a record's children, in the meta-model's order. */
+export function childKinds(index: SpecIndex, id: string): string[] {
+  const rank = kindOrder(index);
+  return [...new Set((index.children.get(id) ?? []).map((c) => c.kind))].sort((a, b) => rank(a) - rank(b));
+}
+
+/** Whether a record's children are drawn through groups: more than one kind of child, or more than a handful of one kind. */
+export function isGrouped(index: SpecIndex, id: string): boolean {
+  return childKinds(index, id).length > 1 || (index.children.get(id) ?? []).length > GROUP_HANDFUL;
+}
+
+/** The records in a group: the parent's children of the group's kind, in ID order. */
+export function groupMembers(index: SpecIndex, gid: string) {
+  const g = parseGroupId(gid);
+  return g ? (index.children.get(g.parent) ?? []).filter((c) => c.kind === g.kind) : [];
+}
+
+/** Whether an ID names a group that exists: a record with at least one child of that kind. */
+export const isGroup = (index: SpecIndex, id: string) => groupMembers(index, id).length > 0;
+
+/** Whether the graph can centre on an ID: a record or a group. */
+export const isGraphNode = (index: SpecIndex, id: string) => index.byId.has(id) || isGroup(index, id);
+
+/** A kind's label in the plural: "Use cases", "Open questions", "Fitness". */
+export function pluralLabel(index: SpecIndex, kind: string): string {
+  const label = kindLabel(index, kind);
+  if (/s$/i.test(label)) return label;
+  if (/[^aeiou]y$/i.test(label)) return `${label.slice(0, -1)}ies`;
+  return `${label}s`;
+}
+
+/** A group's label with its count, such as "Use cases (5)". */
+export const groupLabel = (index: SpecIndex, gid: string) => `${pluralLabel(index, parseGroupId(gid)!.kind)} (${groupMembers(index, gid).length})`;
+
+/** The problems and coverage gaps of a group's members and everything beneath them, summed for the group's mark. */
+export function groupMarks(index: SpecIndex, gid: string): { errors: number; warnings: number; gaps: ('satisfies' | 'proves')[] } {
+  let errors = 0;
+  let warnings = 0;
+  const gaps = new Set<'satisfies' | 'proves'>();
+  const visit = (id: string) => {
+    for (const p of index.problemsFor.get(id) ?? []) if (p.severity === 'error') errors++; else warnings++;
+    for (const g of gapsFor(index, id)) gaps.add(g);
+    for (const c of index.children.get(id) ?? []) visit(c.id);
+  };
+  for (const m of groupMembers(index, gid)) visit(m.id);
+  return { errors, warnings, gaps: [...gaps].sort() };
+}
+
+function groupNode(index: SpecIndex, id: string, distance: number, open: boolean): GraphNode {
+  const g = parseGroupId(id)!;
+  return {
+    id,
+    distance,
+    kind: g.kind,
+    title: groupLabel(index, id),
+    stage: GROUP_STAGE,
+    tier: tierOf(index, g.kind, 'hierarchy') - 0.5,
+    group: { parent: g.parent, count: groupMembers(index, id).length, open },
   };
 }
 

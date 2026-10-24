@@ -352,3 +352,10 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .long-list-empty { margin: 6px 0; }
 .menu .long-list-tools input { font-size: 0.8rem; }
 /* ---------- End of obligation kinds, test states and record content ---------- */
+/* ---- Graph groups (brief 15): a folder of one kind of child, with a tab and a count. ---- */
+.graph-node.stage-group { border: 1.5px solid var(--muted); background: var(--paper); border-radius: 2px 10px 10px 10px; padding-inline: 10px; border-top-width: 5px; }
+.graph-node.stage-group.is-folded { border-style: solid; box-shadow: 3px 3px 0 -1px var(--paper), 3px 3px 0 0 var(--muted); }
+.graph-node.stage-group.is-open { border-style: dashed; border-top-style: solid; }
+.graph-node.stage-group.is-focus { box-shadow: 0 0 0 3px var(--ink); }
+.graph-group-caret { color: var(--ink); }
+.graph-swatch.stage-group { border-color: var(--muted); border-top-width: 4px; background: var(--paper); border-radius: 1px 4px 4px 4px; }
