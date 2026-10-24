@@ -40,6 +40,8 @@ When two or more use cases would state the same rules, write those rules once as
 - The use case's requirements do not restate the pattern's rules. Write a requirement only for what this use case adds.
 - Avoid two patterns with the same setting name: a use case following both has only one field for it (a warning). Rename one of the settings.
 - Do not make a pattern for one use case. If only one use case has the behaviour, it is that use case's requirements.
+- Write each of the pattern's rules as a `pattern_rule` record under the pattern (ID: the pattern's ID with `-R<nn>`, such as `TL-PAT-LIBRARIAN-ACTION-R01`), not in its body. A rule that depends on a setting names it in `setting`.
+- Every domain whose use cases follow the pattern owes each of its rules: a component in that domain `satisfies` it and a test in that domain `proves` it. A rule whose `setting` all of a domain's following use cases mark `Not applicable:` is not owed there.
 
 ## Example
 

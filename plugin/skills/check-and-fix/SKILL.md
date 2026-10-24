@@ -83,3 +83,14 @@ These warnings say where two stages do not join up yet. Fix the link, not the ch
 | `test-type-mismatch` | A `domain_rule` test proves domain rules and an `acceptance` test proves requirements. Correct the `test_type`, or the `proves` links if they name the wrong record. |
 
 One mistake gives one error: a duplicated ID is reported as `duplicate-id`, without an error for each link to it, so fix the duplicate first and re-run the check. A relation rule restated in a product's `metaExtensions` `relations.csv` is the same rule, so only a rule listed twice in one file is `meta-duplicate-relation`.
+
+## Pattern rules and citations
+
+| Problem | Fix |
+| --- | --- |
+| `pattern-rule-setting-unknown` (error) | The rule's `setting` must be one of its pattern's `settings`. Fix the name, or add the setting to the pattern. |
+| `unsatisfied` / `unproved` naming a pattern rule "in <domain>" | That domain follows the pattern, so a component in it must `satisfies` the rule and a test in it must `proves` it. Proof from another domain does not count. |
+| `pattern-not-followed` | No use case follows the pattern, so its rules are owed nowhere. Link the use cases that behave this way with `follows`, or remove the pattern. |
+| `obligation-outside-domain` | The obligation sits above every domain, so no domain owes it. Move it under a domain (or under a pattern, for a shared rule). |
+| `unknown-id-in-prose` | The body cites an ID that is not a record: correct it to the current ID, or remove the citation. |
+
