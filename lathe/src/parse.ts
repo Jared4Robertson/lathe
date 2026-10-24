@@ -39,11 +39,13 @@ export function parseRecordFile(text: string): ParseResult {
   const structural: Record<string, string | null> = { id: null, kind: null, title: null, parent: null };
   for (const [name, value] of Object.entries(header)) {
     if (name === 'links' || value === null || value === undefined) continue;
-    if (typeof value !== 'string') {
-      return { ok: false, reason: `field "${name}" is not a plain string` };
+    // Plain values are kept as text, so `score: 4` and `score: "4"` mean the same. Lists and maps are not plain values.
+    if (typeof value !== 'string' && typeof value !== 'number' && typeof value !== 'boolean') {
+      return { ok: false, reason: `field "${name}" is not a plain value (text, a number or true/false)` };
     }
-    if (STRUCTURAL.has(name)) structural[name] = value.trim();
-    else fields[name] = value;
+    const text = String(value);
+    if (STRUCTURAL.has(name)) structural[name] = text.trim();
+    else fields[name] = text;
   }
 
   const links: ParsedRecord['links'] = [];

@@ -2,8 +2,10 @@
 // Spec: TL-LEND-C05 (specs/tool-library/lending/02-design/components/C05-lending-service.md)
 import {
   LendingError,
+  DEFAULT_TIME_ZONE,
   MAX_ACTIVE_LOANS,
-  dueAt,
+  assertTimeZone,
+  dueDate,
   isCondition,
   isLate,
   isOverdue,
@@ -34,10 +36,13 @@ function id(value: unknown, field: string): number {
 export class LendingService {
   private readonly store: Store;
   private readonly now: Clock;
+  private readonly timeZone: string;
 
-  constructor(store: Store, now: Clock) {
+  /** `timeZone` is the library's time zone, in which due dates and overdue loans are counted. */
+  constructor(store: Store, now: Clock, timeZone: string = DEFAULT_TIME_ZONE) {
     this.store = store;
     this.now = now;
+    this.timeZone = assertTimeZone(timeZone);
   }
 
   /**
@@ -60,7 +65,7 @@ export class LendingService {
 
       // TL-LEND-UC03-R03: the member must be able to borrow.
       const active = this.store.activeLoansForMember(memberId);
-      if (active.some((loan) => isOverdue(loan, now))) {
+      if (active.some((loan) => isOverdue(loan, now, this.timeZone))) {
         // TL-LEND-DR03
         throw new LendingError(409, 'member_overdue', 'The member has an overdue loan and cannot borrow until it is returned.');
       }
@@ -79,8 +84,8 @@ export class LendingService {
         throw new LendingError(409, 'tool_on_loan', `Tool ${toolId} is already on loan.`);
       }
 
-      // TL-LEND-DR07 / UC03-R01: the loan is due 14 days from now.
-      return this.store.insertLoan(memberId, toolId, now.toISOString(), dueAt(now).toISOString());
+      // TL-LEND-DR07 / UC03-R01: the loan is due 14 calendar days after today, in the library's time zone.
+      return this.store.insertLoan(memberId, toolId, now.toISOString(), dueDate(now, this.timeZone));
     });
   }
 
@@ -104,12 +109,13 @@ export class LendingService {
       const returned = this.store.markReturned(loanId, now.toISOString(), condition, note);
 
       // TL-LEND-UC04-R02 / R03: the recorded condition decides whether the tool can be lent again.
-      // A return in good condition does not clear damage reported during the loan (TL-LEND-Q01).
+      // TL-LEND-DR11: a return in good condition does not clear damage reported during the loan,
+      // so a return only ever sets the tool's condition to needs repair, never back to good.
       if (condition === 'needs_repair') {
         this.store.setToolCondition(loan.toolId, 'needs_repair', note ?? 'Returned needing repair.');
       }
-      // TL-LEND-UC04-R04: a late return is flagged.
-      return { ...returned, late: isLate(loan, now) };
+      // TL-LEND-UC04-R04: a return on a day after the due date is flagged as late.
+      return { ...returned, late: isLate(loan, now, this.timeZone) };
     });
   }
 }

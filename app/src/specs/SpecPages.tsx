@@ -1,17 +1,19 @@
-import { lazy, Suspense, useMemo, useState, type ReactNode } from 'react';
-import { marked } from 'marked';
-import DOMPurify from 'dompurify';
+import { lazy, Suspense, useState, type ReactNode } from 'react';
 import { Link } from '../router';
+import { OpenInGraph } from '../graph/route';
+import { FormatPage } from './FormatPage';
+import { Markdown } from './Markdown';
+import { CoverageBars, EvidencePanel, FitnessPanel } from './ProductHealth';
 import {
   byIdOrder,
   checksPath,
   domainPath,
+  formatPath,
   kindLabel,
   problemOrder,
   productPath,
   recordPath,
   relationLabel,
-  type Coverage,
   type Problem,
   type SpecIndex,
   type SpecLink,
@@ -58,6 +60,9 @@ export function SpecMenu({ spec, path }: { spec: SpecState; path: string }) {
               Checks <span className={`count ${errors ? 'has-errors' : ''}`}>{total}</span>
             </Link>
           </li>
+          <li>
+            <Link to={formatPath} aria-current={current(formatPath)}>Record format</Link>
+          </li>
         </ul>
       )}
     </>
@@ -74,39 +79,6 @@ function RecordLink({ index, id, showTitle = true }: { index: SpecIndex; id: str
       <code>{id}</code>
       {showTitle && <span>{record.title}</span>}
     </Link>
-  );
-}
-
-function Markdown({ source }: { source: string }) {
-  const html = useMemo(() => DOMPurify.sanitize(marked.parse(source, { async: false })), [source]);
-  if (!source.trim()) return <p className="hint">No body text.</p>;
-  return <div className="markdown" dangerouslySetInnerHTML={{ __html: html }} />;
-}
-
-function Bar({ label, value, total }: { label: string; value: number; total: number }) {
-  const percent = total === 0 ? 0 : Math.round((value / total) * 100);
-  return (
-    <div className="bar">
-      <span className="bar-label">{label}</span>
-      <span className="bar-track" role="img" aria-label={`${label}: ${value} of ${total}`}>
-        <span className={`bar-fill ${total > 0 && value === total ? 'full' : ''}`} style={{ width: `${percent}%` }} />
-      </span>
-      <span className="bar-value">{value}/{total}</span>
-    </div>
-  );
-}
-
-function CoverageBars({ coverage }: { coverage: Coverage | undefined }) {
-  if (!coverage) return <p className="hint">No coverage figures for this domain.</p>;
-  return (
-    <div className="coverage">
-      <p className="coverage-heading">Requirements <span>{coverage.requirements}</span></p>
-      <Bar label="satisfied" value={coverage.requirements_satisfied} total={coverage.requirements} />
-      <Bar label="proved" value={coverage.requirements_proved} total={coverage.requirements} />
-      <p className="coverage-heading">Domain rules <span>{coverage.rules}</span></p>
-      <Bar label="satisfied" value={coverage.rules_satisfied} total={coverage.rules} />
-      <Bar label="proved" value={coverage.rules_proved} total={coverage.rules} />
-    </div>
   );
 }
 
@@ -143,7 +115,7 @@ function PageHeader({ eyebrow, title, id, children }: { eyebrow: ReactNode; titl
       <div>
         <p className="eyebrow">{eyebrow}</p>
         <h1>{title}</h1>
-        {id && <p className="record-id"><code>{id}</code></p>}
+        {id && <p className="record-id"><Link to={recordPath(id)} className="record-link"><code>{id}</code></Link></p>}
       </div>
       {children}
     </header>
@@ -187,6 +159,8 @@ export function SpecView({ spec, route }: { spec: SpecState; route: SpecRoute })
     page = <ProductPage index={index} id={route.product} />;
   } else if (route.page === 'domain') {
     page = <DomainPage index={index} productId={route.product} id={route.domain} tab={route.tab} />;
+  } else if (route.page === 'format') {
+    page = <FormatPage hash={window.location.hash} />;
   } else if (route.page === 'specs') {
     page = <SpecsHome index={index} />;
   } else {
@@ -253,6 +227,12 @@ function ProductPage({ index, id }: { index: SpecIndex; id: string }) {
             </article>
           ))}
         </div>
+      </Section>
+      <Section title="Fitness">
+        <FitnessPanel index={index} productId={id} />
+      </Section>
+      <Section title="Evidence">
+        <EvidencePanel index={index} productId={id} />
       </Section>
       <Section title="Open questions" count={questions.length}>
         <QuestionList index={index} questions={questions} />
@@ -353,6 +333,7 @@ function DomainPage({ index, productId, id, tab }: { index: SpecIndex; productId
         id={id}
       >
         <ProblemBadge problems={problems} />
+        <OpenInGraph id={id} />
       </PageHeader>
       <nav className="tabs" aria-label="Domain views">
         <Link to={listPath} aria-current={tab === 'list' ? 'page' : undefined}>Records</Link>
@@ -455,7 +436,7 @@ function LinkGroups({ index, links, direction }: { index: SpecIndex; links: Spec
       {groupByRelation(links).map(([relation, group]) => (
         <div key={relation}>
           <dt>{direction === 'out' ? relationLabel(relation) : `${relationLabel(relation)} this`}</dt>
-          {group.map((l) => (
+          {[...group].sort((a, b) => (direction === 'out' ? a.target.localeCompare(b.target, 'en', { numeric: true }) : a.source.localeCompare(b.source, 'en', { numeric: true }))).map((l) => (
             <dd key={`${l.source}-${l.target}`}>
               <RecordLink index={index} id={direction === 'out' ? l.target : l.source} />
             </dd>
@@ -487,6 +468,7 @@ function RecordPage({ index, id }: { index: SpecIndex; id: string }) {
         id={id}
       >
         <ProblemBadge problems={problems} />
+        <OpenInGraph id={id} />
       </PageHeader>
       <div className="record-layout">
         <div className="record-main">

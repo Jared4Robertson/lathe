@@ -13,4 +13,6 @@ This product is Lathe's own specification, written in Lathe, so the tool is held
 
 The actors are **Jared**, who decides what Lathe is for and reviews its output, and **an AI agent**, which writes records and code on Jared's behalf. Following the people-and-tools foundation, an agent is a Tool acting for a Person, so every agent action traces back to Jared.
 
-Requirements with no test yet are left unproved on purpose: they show as coverage gaps, which is the honest state of the design.
+**How Lathe is delivered.** Lathe is a package, `@jaredrob/lathe`, installed into each product's own repo, where `lathe.config.json` names the product's specs and diagrams folders and any additions to the meta-model. One Lathe instance reads one product repo. The meta-model ships with Lathe as defaults and travels with the package; a product adds to it without forking. Lathe's own repo keeps Lathe's specification and the Tool Library example, because they are how Lathe is developed. Publishing the package waits until the record format settles, and needs Jared's approval. The Claude Code plugin comes before a CI action, because agents do most of the writing.
+
+**How Lathe judges whether it is improving.** Following the foundation, only the person a tool serves judges its Fitness. Jared records that judgment as `fitness` records (a date, a score from 1 to 5, and the experiences behind it). Signals Lathe can count, such as coverage, open questions and checks, are shown as evidence beside the judgment and never become the score. Lathe never writes a fitness record itself.

@@ -5,7 +5,7 @@ export type LatheEvent = 'spec:changed' | 'model:changed';
 export function onLatheEvent(event: LatheEvent, callback: () => void): () => void {
   if (import.meta.hot) {
     import.meta.hot.on(event, callback);
-    return () => import.meta.hot?.off(event, callback);
+    return () => import.meta.hot?.off?.(event, callback);
   }
   const source = new EventSource('/api/events');
   source.onmessage = (message) => {

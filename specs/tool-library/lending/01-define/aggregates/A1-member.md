@@ -15,4 +15,4 @@ A person registered to borrow tools. A member's loans are held by the [Loan](A3-
 | Email | How the library contacts the member. Stored in lower case. | Email address, unique. | ada@example.org |
 | Joined at | When the member was registered. | Date and time. | 2026-03-02T10:00:00Z |
 | Active loans | The member's loans that are not yet returned. | Derived count. | 2 |
-| Overdue | Whether any active loan is past its due time. | Derived Boolean. | No |
+| Overdue | Whether any active loan is past its due date, counted in calendar days in the library's time zone. | Derived Boolean. | No |

@@ -1,0 +1,11 @@
+---
+id: LA-MOD-T24
+kind: test
+title: A record points at the code that builds it (file) and the code that proves it (run_by)
+parent: LA-MOD
+test_type: unit
+run_by: lathe/test/diagrams.test.ts
+links:
+  proves: [LA-MOD-UC03-R04]
+---
+Expects a component's `file` and a test's `run_by` to be loaded as repo-relative paths and the test to count towards coverage.

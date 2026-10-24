@@ -9,4 +9,4 @@ links:
 ---
 Design only; no UI is built in the example.
 
-A list of every tool: name, description and a status badge (Available, On loan, Needs repair). Each available tool has a **Borrow** button. After borrowing, the view shows "Due back by <date>". A refused borrow shows the reason in plain words, for example "You have an overdue loan; please return it first" or "This tool is out for repair".
+A list of every tool: name, description and a status badge (Available, On loan, Needs repair). Each available tool has a **Borrow** button. After borrowing, the view shows "Due back by <due date>", a date with no time, for example "Due back by Monday 16 March". A refused borrow shows the reason in plain words, for example "You have an overdue loan; please return it first" or "This tool is out for repair".
