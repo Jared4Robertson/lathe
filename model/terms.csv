@@ -1,0 +1,12 @@
+name,kind,context,status,definition
+Person,aggregate,people_and_tools,decided,"A being who has experiences and can act on purpose. AI agents are not People for now; they are Tools."
+Tool,aggregate,people_and_tools,decided,"Anything made or used to bring about an outcome more easily, reliably or widely than could be done without it."
+Experience,entity,people_and_tools,decided,"What it is like for someone to go through something: what they perceive, feel and think. Positive, negative or neutral, and unique to the person having it."
+Value,value_object,people_and_tools,decided,"How good or bad something is, as judged by someone. Value is always to someone; nothing has value in the abstract."
+Purpose,value_object,people_and_tools,decided,"The outcome something is meant to bring about; what it is for."
+Condition,value_object,people_and_tools,decided,"What a tool can actually do right now, and how well. Changes with use, wear and improvement."
+Fitness,value_object,people_and_tools,decided,"How well a tool's Condition serves its Purpose. Held by the Tool, but set by the Person it serves; a tool never sets its own fitness."
+Action,domain_event,people_and_tools,decided,"Something done on purpose, by a Person directly or by a Tool on a Person's behalf."
+Occurrence,domain_event,people_and_tools,decided,"Something that happens with no purpose behind it, such as rain starting or a tool breaking."
+Software,term,making_software,draft,"Instructions written precisely enough for a computer to carry them out."
+Lathe,term,making_software,draft,"This project: tools, frameworks and ways of thinking for making software, designed to improve itself."
