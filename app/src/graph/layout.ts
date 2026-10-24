@@ -1,9 +1,9 @@
 import ELK, { type ElkNode } from 'elkjs/lib/elk.bundled.js';
 import { sameTierCycle, type Neighbourhood } from './model';
 
-// Lays out an ego graph in tiers with ELK's layered algorithm: top to bottom by record level
+// Lays out an ego graph in tiers with ELK's layered algorithm, left to right: by record level
 // (product, domain, aggregates and use cases, rules and requirements, design records, tests), or
-// left to right along a trace. Each node's tier becomes an ELK partition, so a tier is one layer;
+// along a trace. Each node's tier becomes an ELK partition, so a tier is one layer;
 // within a tier nodes keep the model's order (stage, kind, ID), so re-centring is predictable.
 // Links between records in the same tier are drawn but do not shape the layout. When those links
 // form a cycle the graph cannot be read as tiers, and it is drawn radially around the focus instead.
@@ -42,10 +42,10 @@ export function layeredGraph(n: Neighbourhood): ElkNode {
     id: 'root',
     layoutOptions: {
       'elk.algorithm': 'layered',
-      'elk.direction': n.mode === 'trace' ? 'RIGHT' : 'DOWN',
+      'elk.direction': 'RIGHT',
       'elk.partitioning.activate': 'true',
       'elk.separateConnectedComponents': 'false',
-      'elk.layered.considerModelOrder.strategy': 'NODES_AND_EDGES',      'elk.layered.spacing.nodeNodeBetweenLayers': n.mode === 'trace' ? '110' : '80',
+      'elk.layered.considerModelOrder.strategy': 'NODES_AND_EDGES',      'elk.layered.spacing.nodeNodeBetweenLayers': '110',
       'elk.spacing.nodeNode': '28',
     },
     children: n.nodes.map((node) => ({

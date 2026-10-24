@@ -74,8 +74,8 @@ function GraphNodeView({ data }: NodeProps<FlowNode>) {
       className={`graph-node stage-${node.stage || 'structural'} kind-${node.kind}${data.isFocus ? ' is-focus' : ''}`}
       title={`${node.title} (${node.id})`}
     >
-      <Handle type="target" position={Position.Top} className="graph-handle" isConnectable={false} />
-      <Handle type="source" position={Position.Bottom} className="graph-handle" isConnectable={false} />
+      <Handle type="target" position={Position.Left} className="graph-handle" isConnectable={false} />
+      <Handle type="source" position={Position.Right} className="graph-handle" isConnectable={false} />
       <small>{data.kindLabel}{node.kind !== FILE_KIND && <> · {node.id}</>}</small>
       <strong>{node.title}</strong>
       {(data.errors > 0 || data.warnings > 0 || data.gaps.length > 0) && (
@@ -270,7 +270,7 @@ function FilterControls({ index, filters, setFilters }: { index: SpecIndex; filt
   );
 }
 
-/** Nodes in reading order for the keyboard: row by row for tiers top to bottom, column by column for a trace, ring by ring for the radial fallback. */
+/** Nodes in reading order for the keyboard: column by column (tiers and traces both read left to right), ring by ring for the radial fallback. */
 function keyboardOrder(graph: Neighbourhood, placed: Placed) {
   const at = (id: string) => placed.positions.get(id) ?? { x: 0, y: 0 };
   const angle = (id: string) => {
@@ -281,9 +281,7 @@ function keyboardOrder(graph: Neighbourhood, placed: Placed) {
   const compare =
     placed.layout === 'radial'
       ? (a: GraphNode, b: GraphNode) => a.distance - b.distance || angle(a.id) - angle(b.id)
-      : graph.mode === 'trace'
-        ? (a: GraphNode, b: GraphNode) => at(a.id).x - at(b.id).x || at(a.id).y - at(b.id).y
-        : (a: GraphNode, b: GraphNode) => at(a.id).y - at(b.id).y || at(a.id).x - at(b.id).x;
+      : (a: GraphNode, b: GraphNode) => at(a.id).x - at(b.id).x || at(a.id).y - at(b.id).y;
   return [...graph.nodes].sort(compare).map((n) => n.id);
 }
 
@@ -520,7 +518,7 @@ function Legend() {
         <li><span className="graph-line rel-other" /> other links</li>
         <li><span className="graph-mark error">!</span> has errors <span className="graph-mark gap">gap</span> not satisfied or not proved</li>
       </ul>
-      <p className="hint">Tiers run top to bottom: product, domain, aggregates and use cases, rules and requirements, design records, tests. A trace runs left to right from the rule to the files that build and test it.</p>
+      <p className="hint">Tiers run left to right: product, domain, aggregates and use cases, rules and requirements, design records, tests. A trace also runs left to right, from the rule to the files that build and test it.</p>
       <p className="hint">Click a box, or press Enter on it, to centre the graph there. Arrow keys or Tab move between boxes.</p>
     </section>
   );

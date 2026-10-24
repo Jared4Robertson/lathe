@@ -23,7 +23,7 @@ export interface GraphNode {
   tier: number;
 }
 
-/** The hierarchy reads top to bottom by record level; trace mode reads left to right along the chain. */
+/** The hierarchy reads left to right by record level; trace mode reads left to right along the chain. */
 export type GraphMode = 'hierarchy' | 'trace';
 
 export interface GraphEdge {
@@ -92,7 +92,7 @@ function recordNode(index: SpecIndex, id: string, distance: number, mode: GraphM
 }
 
 /**
- * Tiers of the hierarchy, top to bottom: product, domain, aggregates and use cases, domain rules
+ * Tiers of the hierarchy, left to right: product, domain, aggregates and use cases, domain rules
  * and requirements, design records, tests. Open questions sit with the records they are about.
  */
 export const HIERARCHY_TIERS: Record<string, number> = {
