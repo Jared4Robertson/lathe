@@ -1,6 +1,7 @@
 // The HTTP API: maps routes to services and service errors to HTTP responses.
 // Spec: TL-LEND-C06 (specs/tool-library/lending/02-design/components/C06-router.md)
 // Every error response is JSON: { "error": "<code>", "message": "<sentence>" }.
+// Each route's statuses and bodies are its endpoint's interaction requirements (TL-LEND-E0n-R0n).
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { LendingService } from './lending-service.ts';
 import { MemberService } from './member-service.ts';
@@ -16,6 +17,7 @@ interface Route {
   handler: Handler;
 }
 
+// TL-LEND-E06-R03: a body over 64 KB is refused with 413 before it is parsed (for every endpoint).
 const MAX_BODY_BYTES = 64 * 1024;
 
 async function readJson(req: IncomingMessage): Promise<Record<string, unknown>> {
@@ -58,27 +60,27 @@ export function createRouter(
   const lending = new LendingService(store, now, settings.timeZone);
 
   const routes: Route[] = [
-    // TL-LEND-E01
+    // TL-LEND-E01: R01-R03
     { method: 'POST', pattern: /^\/members$/, handler: (_p, b) => ({ status: 201, body: members.register(b) }) },
-    // TL-LEND-E02
+    // TL-LEND-E02: R01-R02
     { method: 'POST', pattern: /^\/tools$/, handler: (_p, b) => ({ status: 201, body: tools.add(b) }) },
-    // TL-LEND-E03
+    // TL-LEND-E03: R01
     { method: 'GET', pattern: /^\/tools$/, handler: () => ({ status: 200, body: tools.list() }) },
-    // TL-LEND-E04
+    // TL-LEND-E04: R01-R05
     { method: 'POST', pattern: /^\/loans$/, handler: (_p, b) => ({ status: 201, body: lending.borrow(b) }) },
-    // TL-LEND-E05
+    // TL-LEND-E05: R01-R03
     {
       method: 'POST',
       pattern: /^\/loans\/(\d+)\/return$/,
       handler: ([loanId], b) => ({ status: 200, body: lending.return(loanId, b) }),
     },
-    // TL-LEND-E06
+    // TL-LEND-E06: R01-R03
     {
       method: 'POST',
       pattern: /^\/tools\/(\d+)\/damage$/,
       handler: ([toolId], b) => ({ status: 200, body: tools.reportDamage(toolId, b.note) }),
     },
-    // TL-LEND-E07
+    // TL-LEND-E07: R01-R02
     {
       method: 'POST',
       pattern: /^\/tools\/(\d+)\/repair$/,

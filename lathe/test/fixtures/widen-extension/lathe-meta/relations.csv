@@ -1,0 +1,3 @@
+relation,source_kind,target_kind,role,description
+proves,test,domain_rule,proof,"The test proves the domain rule."
+proves,test,policy,proof,"The test proves the policy."

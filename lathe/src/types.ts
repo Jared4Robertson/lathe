@@ -8,6 +8,8 @@ export interface Kind {
   stage: string;
   parent_kinds: string[];
   required_fields: string[];
+  /** An obligation must be designed (satisfied), built and proved; coverage counts every obligation kind. */
+  obligation: boolean;
   description: string;
 }
 
@@ -16,6 +18,8 @@ export interface RelationRule {
   source_kind: string;
   /** A kind, or '*' for any kind. */
   target_kind: string;
+  /** 'design': the link designs its target (counts as satisfied); 'proof': it proves it; '' otherwise. */
+  role: 'design' | 'proof' | '';
   description: string;
 }
 
@@ -53,8 +57,24 @@ export interface Problem {
 
 export interface CoverageGap {
   id: string;
-  kind: 'requirement' | 'domain_rule';
+  /** Any obligation kind, such as requirement, domain_rule or interaction_requirement. */
+  kind: string;
   missing: 'satisfies' | 'proves';
+}
+
+/** Coverage of one obligation kind in one domain. */
+export interface ObligationCoverage {
+  kind: string;
+  label: string;
+  total: number;
+  /** A record linked to it by a 'design' relation exists. */
+  designed: number;
+  /** A component whose file exists designs it. */
+  built: number;
+  /** An automated or manual test proves it. */
+  proved: number;
+  /** Not proved, but a planned test is meant to prove it. */
+  planned: number;
 }
 
 export interface Coverage {
@@ -69,6 +89,8 @@ export interface Coverage {
   rules_satisfied: number;
   rules_built: number;
   rules_proved: number;
+  /** Every obligation kind in the meta-model, in meta-model order, including requirement and domain_rule (whose counts above are kept for older readers). */
+  obligations: ObligationCoverage[];
   gaps: CoverageGap[];
 }
 
