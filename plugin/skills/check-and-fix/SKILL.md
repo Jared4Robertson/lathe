@@ -33,7 +33,8 @@ An error means the specs are broken. Do not leave one behind.
 | `bad-test-state` | Set `state` to `automated`, `manual` or `planned` (or remove it for automated). |
 | `test-run-by-missing` | An automated test needs `run_by`. Add the file, or set `state: planned` if the test is not written yet. |
 | `test-file-missing` | Fix `run_by`. For a manual or planned test whose file does not exist yet, remove `run_by`. |
-| `test-file-missing-id` | Put the test's ID, or the ID of a record it `proves`, in the test's name in that file. |
+| `test-file-missing-id` | If the test has a `key`, put that exact text in the file (or fix the key). Otherwise the test proves nothing: put its ID in the test's name, and add the `proves` links it should have. |
+| `proof-not-in-file` | The file names neither the test's ID nor the proved ID in the message. Put the test's ID in the test's name, or name every ID it proves. If the test does not really prove that record, remove the link. |
 | `meta-duplicate-kind` | One meta-model folder defines a kind twice. Merge the two rows. (A row in `metaExtensions` for a default kind is allowed: it widens that kind.) |
 | `meta-duplicate-relation` | Remove the repeated relation row. |
 | `meta-unknown-parent-kind`, `meta-unknown-relation-kind` | Define the kind it names, or fix the name, in the meta-model CSV. |

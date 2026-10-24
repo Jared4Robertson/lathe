@@ -8,4 +8,4 @@ run_by: lathe/test/diagrams.test.ts
 links:
   proves: [LA-MOD-DR12]
 ---
-Loads tests whose files are missing or do not mention their IDs, and a component whose file is not built yet, and expects two errors and one warning.
+Loads tests whose files are missing or do not mention their IDs, and a component whose file is not built yet, and expects two errors (`test-file-missing` and `proof-not-in-file`) and one warning.

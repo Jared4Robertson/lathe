@@ -105,8 +105,10 @@ function mentionsId(content: string, id: string): boolean {
   return new RegExp(`(?<![A-Za-z0-9-])${escaped}(?![A-Za-z0-9]|-[A-Za-z0-9])`).test(content);
 }
 
-// Facts about the files records name: a test's run_by and a component's file. For a test, also which
-// IDs its run_by file mentions (its own and its link targets), so a check can accept the ID of a record it proves.
+// Facts about the files records name: a test's run_by and a component's file. For a test, contains_id says
+// whether the file names the test's own ID or, when the test has a `key`, whether the file contains that key
+// text instead. Also which IDs the file mentions (its own and its link targets), so a check can accept a test
+// whose file names every ID it proves.
 async function gatherFileFacts(root: string, records: LoadedRecord[]): Promise<{ facts: FileFact[]; mentions: FileMention[] }> {
   const facts: FileFact[] = [];
   const mentions: FileMention[] = [];
@@ -119,7 +121,8 @@ async function gatherFileFacts(root: string, records: LoadedRecord[]): Promise<{
     let containsId: boolean | null = null;
     if (r.kind === 'test') {
       const content = found ? await readFile(resolved!, 'utf8') : '';
-      containsId = r.id !== '' && mentionsId(content, r.id);
+      const key = r.fields.key?.trim();
+      containsId = key ? content.includes(key) : r.id !== '' && mentionsId(content, r.id);
       const candidates = new Set([r.id, ...r.links.map((l) => l.target)].filter((id) => id !== ''));
       for (const id of candidates) if (mentionsId(content, id)) mentions.push({ path: r.path, record: r.id, mentioned: id });
     }
