@@ -12,7 +12,7 @@ Request: `{ "condition": "good" | "needs_repair", "note"?: string }`.
 
 | Status | When | Body |
 | --- | --- | --- |
-| 200 | Returned. | The loan with `returnedAt`, `returnCondition`, `returnNote`, and `late` (Boolean). |
+| 200 | Returned. | The loan with `dueDate`, `returnedAt`, `returnCondition`, `returnNote`, and `late`: true when returned on a day after the due date in the library's time zone. A `good` return leaves a tool marked needing repair during the loan as it is. |
 | 400 `invalid_condition` | Condition missing or not one of the two values. | Error. |
 | 404 `loan_not_found` | No such loan. | Error. |
 | 409 `already_returned` | The loan was already returned. | Error. |

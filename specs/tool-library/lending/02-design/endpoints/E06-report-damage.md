@@ -12,7 +12,7 @@ Request: `{ "note": string }`.
 
 | Status | When | Body |
 | --- | --- | --- |
-| 200 | Marked as needing repair. Any active loan is left as it is. | The catalog entry. |
+| 200 | Marked as needing repair. Any active loan is left as it is, and a later `good` return does not clear the damage. | The catalog entry. |
 | 400 `invalid_request` | Note blank. | Error. |
 | 404 `tool_not_found` | No such tool. | Error. |
 

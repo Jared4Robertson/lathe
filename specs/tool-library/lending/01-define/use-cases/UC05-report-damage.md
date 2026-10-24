@@ -5,7 +5,7 @@ title: Report damage
 parent: TL-LEND
 actor: Librarian
 links:
-  applies: [TL-LEND-DR04, TL-LEND-DR05]
+  applies: [TL-LEND-DR04, TL-LEND-DR05, TL-LEND-DR11]
 ---
 A librarian takes a tool out of lending when it is found damaged outside a return (for example on the shelf, or reported by a borrower by phone), and puts it back once fixed.
 
