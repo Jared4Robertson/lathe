@@ -74,6 +74,7 @@ export function relationStyle(relation: string): string {
   if (['satisfies', 'proves', 'fulfills'].includes(relation)) return 'trace';
   if (['uses', 'implements', 'depends_on'].includes(relation)) return 'design';
   if (relation === 'names') return 'file';
+  if (relation === 'follows') return 'pattern';
   return 'other';
 }
 

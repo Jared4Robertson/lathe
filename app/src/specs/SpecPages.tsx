@@ -1,7 +1,9 @@
 import { useState, type ReactNode } from 'react';
 import { Link } from '../router';
 import { FormatPage } from './FormatPage';
-import { Markdown } from './Markdown';
+import { RecordMarkdown } from './mentions';
+import { DomainPatterns } from './PatternParts';
+import { patternsFollowedBy } from './patterns';
 import { CoverageBars, EvidencePanel, FitnessPanel, pluralLabel } from './ProductHealth';
 import { LongList } from '../components/LongList';
 import { PageHeader, ProblemBadge, ProblemList, RecordLink, RecordTree, Section, idText, recordText } from './parts';
@@ -102,7 +104,7 @@ export function ProductWiki({ index, id }: { index: SpecIndex; id: string }) {
   const problems = problemsUnder(index, 'product', id);
   return (
     <div className="spec-body">
-      <Markdown source={product.body} />
+      <RecordMarkdown index={index} record={product} />
       <Section title="Domains" count={domains.length}>
         {domains.length === 0 && <p className="hint">No domains yet.</p>}
         <div className="cards">
@@ -209,7 +211,7 @@ export function DomainWiki({ index, id }: { index: SpecIndex; id: string }) {
 
   return (
     <div className="spec-body">
-      <Markdown source={domain.body} />
+      <RecordMarkdown index={index} record={domain} />
       <div className="search">
         <label htmlFor="record-search">Filter records</label>
         <input id="record-search" type="search" value={query} placeholder="ID or title" onChange={(e) => setQuery(e.target.value)} />
@@ -220,6 +222,9 @@ export function DomainWiki({ index, id }: { index: SpecIndex; id: string }) {
           {stage.kinds.map(kindSection)}
         </div>
       ))}
+      <Section title="Patterns we follow" count={patternsFollowedBy(index, id).length}>
+        <DomainPatterns index={index} domainId={id} query={query} />
+      </Section>
       {otherKinds.map(kindSection)}
       {others.length > 0 && (
         <Section title="Other records" count={others.length}>

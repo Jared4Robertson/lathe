@@ -1,3 +1,4 @@
+import './graph/setup';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
@@ -19,7 +20,7 @@ describe('side navigation', () => {
     fireEvent.click(within(nav()).getByRole('button', { name: 'Collapse the navigation' }));
     expect(nav().className).toContain('is-rail');
     expect(document.querySelector('.app')!.className).toContain('nav-collapsed');
-    for (const name of ['Lathe home', 'Diagrams', 'Specs', 'Graph', 'Record format']) {
+    for (const name of ['Lathe home', 'Diagrams', 'Specs', 'Record format']) {
       const item = within(nav()).getByLabelText(name);
       expect(item.getAttribute('title'), name).toBeTruthy();
     }
@@ -115,5 +116,29 @@ describe('side navigation', () => {
     await user.keyboard('{Enter}');
     expect(window.location.pathname).toContain(second);
     expect(find).toHaveValue('');
+  });
+
+  it('LA-BRW-T179 The nav has no Graph item, open or as a rail; the graph stays one view, Ctrl+2 or a palette command away, and /graph still redirects', async () => {
+    await openApp('/specs/DM/DM-SHOP', { diagrams });
+    await screen.findByRole('heading', { level: 1, name: 'Shopping' });
+    expect(within(nav()).queryByRole('link', { name: /Graph/ })).toBeNull();
+    expect(within(nav()).queryByText('Graph')).toBeNull();
+    fireEvent.click(within(nav()).getByRole('button', { name: 'Collapse the navigation' }));
+    expect(within(nav()).queryByLabelText('Graph')).toBeNull();
+    fireEvent.click(within(nav()).getByRole('button', { name: 'Expand the navigation' }));
+
+    // The page's Graph view and Ctrl+2.
+    expect(within(screen.getByRole('group', { name: 'View' })).getByRole('button', { name: /Graph/ })).toBeInTheDocument();
+    fireEvent.keyDown(document.body, { key: '2', code: 'Digit2', ctrlKey: true });
+    expect(window.location.search).toBe('?view=graph');
+
+    // The command palette.
+    fireEvent.keyDown(document.body, { key: 'P', code: 'KeyP', ctrlKey: true, shiftKey: true });
+    const user = userEvent.setup();
+    await user.type(within(screen.getByRole('dialog', { name: 'Command palette' })).getByRole('combobox'), 'graph view');
+    expect(within(screen.getByRole('dialog')).getAllByRole('option')[0]).toHaveTextContent('Graph view');
+
+    await openApp('/graph');
+    await waitFor(() => expect(window.location.pathname + window.location.search).toBe('/specs/DM?view=graph'));
   });
 });
