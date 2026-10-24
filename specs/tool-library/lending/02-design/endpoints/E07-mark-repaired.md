@@ -8,12 +8,8 @@ route: "/tools/{toolId}/repair"
 links:
   fulfills: [TL-LEND-UC05-R02]
 ---
-No request body.
+No request body. Responds 200 with the catalog entry, or 404 / 409 with an error.
 
-| Status | When | Body |
-| --- | --- | --- |
-| 200 | Repaired: condition `good`, damage note cleared. | The catalog entry. |
-| 404 `tool_not_found` | No such tool. | Error. |
-| 409 `tool_not_damaged` | The tool is already in good condition. | Error. |
+Each rule for its body and responses is one of its interaction requirements.
 
 Errors are JSON: `{ "error": "<code>", "message": "<sentence>" }`.

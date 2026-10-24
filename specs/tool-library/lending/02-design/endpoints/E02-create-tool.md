@@ -8,11 +8,8 @@ route: /tools
 links:
   fulfills: [TL-LEND-UC02-R01]
 ---
-Request: `{ "name": string, "description"?: string }`.
+Request: `{ "name": string, "description"?: string }`. Responds 201 with the catalog entry, or 400 with an error.
 
-| Status | When | Body |
-| --- | --- | --- |
-| 201 | Added. | The catalog entry: `id`, `name`, `description`, `condition` (`good`), `damageNote` (null), `addedAt`, `status` (`available`). |
-| 400 `invalid_request` | Name blank. | Error. |
+Each rule for its body and responses is one of its interaction requirements.
 
 Errors are JSON: `{ "error": "<code>", "message": "<sentence>" }`.
