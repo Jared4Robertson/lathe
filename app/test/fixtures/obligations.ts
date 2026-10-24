@@ -15,7 +15,7 @@ const extraKinds: Kind[] = [
 ];
 
 function record(id: string, kind: string, title: string, parent: string, fields: Record<string, string> = {}, body = ''): SpecRecord {
-  return { id, kind, title, parent, product: 'DM', domain: 'DM-SHOP', fields, body, path: `specs/dm/${id}.md` };
+  return { id, kind, title, parent, product: 'DM', domain: 'DM-SHOP', fields, body, path: `specs/dm/${id}.md`, mentions: [] };
 }
 
 const records: SpecRecord[] = [

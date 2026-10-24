@@ -98,6 +98,8 @@ function recordNode(index: SpecIndex, id: string, distance: number, mode: GraphM
 /**
  * Tiers of the hierarchy, left to right: product, domain, aggregates and use cases, domain rules
  * and requirements, design records, tests. Open questions sit with the records they are about.
+ * A pattern sits with the use cases (so a use case's `follows` link is a cross-link within the
+ * tier, drawn but not shaping the layout), and its rules sit under it with the requirements.
  */
 export const HIERARCHY_TIERS: Record<string, number> = {
   product: 0,
@@ -106,8 +108,10 @@ export const HIERARCHY_TIERS: Record<string, number> = {
   aggregate: 2,
   use_case: 2,
   question: 2,
+  pattern: 2,
   domain_rule: 3,
   requirement: 3,
+  pattern_rule: 3,
   flow: 4,
   view: 4,
   endpoint: 4,
@@ -120,6 +124,7 @@ export const HIERARCHY_TIERS: Record<string, number> = {
 export const TRACE_TIERS: Record<string, number> = {
   requirement: 0,
   domain_rule: 0,
+  pattern_rule: 0,
   flow: 1,
   view: 1,
   endpoint: 1,
@@ -369,10 +374,10 @@ function groupNode(index: SpecIndex, id: string, distance: number, open: boolean
   };
 }
 
-/** Trace mode is offered for requirements and domain rules only. */
+/** Trace mode is offered for requirements, domain rules and pattern rules only. */
 export const canTrace = (index: SpecIndex, id: string) => {
   const kind = index.byId.get(id)?.kind;
-  return kind === 'requirement' || kind === 'domain_rule';
+  return kind === 'requirement' || kind === 'domain_rule' || kind === 'pattern_rule';
 };
 
 export const fileNodeId = (path: string) => `file:${path}`;
