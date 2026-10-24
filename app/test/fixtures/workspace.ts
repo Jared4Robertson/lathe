@@ -6,13 +6,13 @@ import sample from '../../../lathe/fixtures/workspace.sample.json';
 //   built counts; DM-PAY's has none, as the engine reported before it measured built coverage.
 // - NF (No fitness): one domain and no fitness record.
 
-const kinds: Kind[] = (sample as Workspace).kinds.some((k) => k.kind === 'fitness')
-  ? (sample as Workspace).kinds
+const kinds: Kind[] = (sample as unknown as Workspace).kinds.some((k) => k.kind === 'fitness')
+  ? (sample as unknown as Workspace).kinds
   : [
-      ...(sample as Workspace).kinds,
+      ...(sample as unknown as Workspace).kinds,
       { kind: 'fitness', label: 'Fitness', stage: '', parent_kinds: ['product'], required_fields: ['date', 'score'], obligation: false, description: 'How well the product serves its purpose.' },
     ];
-const relations: RelationRule[] = (sample as Workspace).relations;
+const relations: RelationRule[] = (sample as unknown as Workspace).relations;
 
 function record(id: string, kind: string, title: string, parent: string | null, fields: Record<string, string> = {}, body = ''): SpecRecord {
   const parts = id.split('-');
