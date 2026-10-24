@@ -6,6 +6,9 @@ export const LOAN_DAYS = 14;
 /** TL-LEND-DR02: a member holds at most 3 active loans. */
 export const MAX_ACTIVE_LOANS = 3;
 
+/** The library's time zone when none is set. Due dates and overdue loans are counted in it. */
+export const DEFAULT_TIME_ZONE = 'America/New_York';
+
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** TL-LEND-DR04: a tool's condition is good or needs repair, nothing else. */
@@ -39,7 +42,8 @@ export interface Loan {
   memberId: number;
   toolId: number;
   borrowedAt: string;
-  dueAt: string;
+  /** The last day of the loan, as YYYY-MM-DD in the library's time zone. */
+  dueDate: string;
   returnedAt: string | null;
   returnCondition: Condition | null;
   returnNote: string | null;
@@ -49,19 +53,50 @@ export function isCondition(value: unknown): value is Condition {
   return typeof value === 'string' && (CONDITIONS as readonly string[]).includes(value);
 }
 
-/** TL-LEND-DR07: the due time is exactly LOAN_DAYS after the loan starts. */
-export function dueAt(borrowedAt: Date): Date {
-  return new Date(borrowedAt.getTime() + LOAN_DAYS * DAY_MS);
+/** Library settings. `timeZone` is an IANA name such as `America/New_York`. */
+export interface LibrarySettings {
+  timeZone: string;
 }
 
-/** TL-LEND-DR08: a loan is overdue when it is still active after its due time. */
-export function isOverdue(loan: Pick<Loan, 'dueAt' | 'returnedAt'>, now: Date): boolean {
-  return loan.returnedAt === null && now.getTime() > Date.parse(loan.dueAt);
+/** Throws a RangeError unless `timeZone` is a time zone this runtime knows. */
+export function assertTimeZone(timeZone: string): string {
+  new Intl.DateTimeFormat('en-US', { timeZone });
+  return timeZone;
 }
 
-/** A return is late when it happens after the due time. */
-export function isLate(loan: Pick<Loan, 'dueAt'>, returnedAt: Date): boolean {
-  return returnedAt.getTime() > Date.parse(loan.dueAt);
+/** The calendar date (YYYY-MM-DD) of `instant` in `timeZone`. */
+export function localDate(instant: Date, timeZone: string): string {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(instant);
+  const part = (type: string) => parts.find((p) => p.type === type)?.value ?? '';
+  return `${part('year')}-${part('month')}-${part('day')}`;
+}
+
+/** The date `days` calendar days after `date` (both YYYY-MM-DD). */
+export function addDays(date: string, days: number): string {
+  return new Date(Date.parse(`${date}T00:00:00Z`) + days * DAY_MS).toISOString().slice(0, 10);
+}
+
+/** TL-LEND-DR07: the due date is LOAN_DAYS calendar days after the borrow date, in the library's time zone. */
+export function dueDate(borrowedAt: Date, timeZone: string): string {
+  return addDays(localDate(borrowedAt, timeZone), LOAN_DAYS);
+}
+
+/**
+ * TL-LEND-DR08: a loan is overdue when it is still active and today, in the library's
+ * time zone, is after its due date. It is never overdue during its due date.
+ */
+export function isOverdue(loan: Pick<Loan, 'dueDate' | 'returnedAt'>, now: Date, timeZone: string): boolean {
+  return loan.returnedAt === null && localDate(now, timeZone) > loan.dueDate;
+}
+
+/** A return is late when it happens on a day after the due date, in the library's time zone. */
+export function isLate(loan: Pick<Loan, 'dueDate'>, returnedAt: Date, timeZone: string): boolean {
+  return localDate(returnedAt, timeZone) > loan.dueDate;
 }
 
 /** A tool on loan shows as on loan; otherwise a damaged tool shows as needing repair. */

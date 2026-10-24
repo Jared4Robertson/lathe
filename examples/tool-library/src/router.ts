@@ -4,7 +4,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { LendingService } from './lending-service.ts';
 import { MemberService } from './member-service.ts';
-import { LendingError, type Clock } from './model.ts';
+import { DEFAULT_TIME_ZONE, LendingError, type Clock, type LibrarySettings } from './model.ts';
 import type { Store } from './store.ts';
 import { ToolService } from './tool-service.ts';
 
@@ -44,11 +44,18 @@ function send(res: ServerResponse, status: number, body: unknown): void {
   res.end(JSON.stringify(body));
 }
 
-/** Builds the request handler for a store. `now` is the clock, so tests can move time. */
-export function createRouter(store: Store, now: Clock = () => new Date()) {
+/**
+ * Builds the request handler for a store. `now` is the clock, so tests can move time;
+ * `settings.timeZone` is the library's time zone (default America/New_York).
+ */
+export function createRouter(
+  store: Store,
+  now: Clock = () => new Date(),
+  settings: LibrarySettings = { timeZone: DEFAULT_TIME_ZONE },
+) {
   const members = new MemberService(store, now);
   const tools = new ToolService(store, now);
-  const lending = new LendingService(store, now);
+  const lending = new LendingService(store, now, settings.timeZone);
 
   const routes: Route[] = [
     // TL-LEND-E01
