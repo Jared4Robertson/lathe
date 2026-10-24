@@ -1,6 +1,6 @@
 ---
 name: write-use-cases
-description: Write or change Lathe use cases and their requirements. Use when adding what an actor does with the product, splitting a use case, or stating the rules a use case must follow, in a repo with lathe.config.json.
+description: Write or change Lathe use cases and their requirements. Use when adding what an actor does with the product, splitting a use case, or stating the rules a use case must follow (and deciding which rules belong at a view or endpoint instead), in a repo with lathe.config.json.
 ---
 
 # Write use cases
@@ -54,6 +54,7 @@ Borrowing MUST be refused when the tool is on loan or needs repair, and the resp
 
 - A requirement does not restate a domain rule; the use case `applies` the rule instead. Write a requirement only for what this use case adds: an order of checks, what the actor sees, what is refused and how.
 - A requirement says what, not how. Screens, routes and code belong to the design (see `design-the-domain`).
+- A rule that only makes sense at one screen, endpoint or flow is an **interaction requirement** under that view, endpoint or flow, not a use case requirement. Examples: a field's type and limits, the status and error code of a refusal, what a success response returns, which button is disabled. Keep the use case requirement for what the actor must be able to do or must be refused ("an unavailable tool is refused with the reason"), and let the interaction requirement say how that shows at the endpoint ("POST /loans answers 409 `tool_on_loan`") and `fulfill` it. Test: if the rule names a route, a status code, a field limit or a screen element, it belongs in the design.
 - Every use case needs at least one requirement; one with none is a warning.
 - Something undecided is an open `question` with an `owner`, linked `about` the use case, never "TBD" in a requirement.
 - Finish with the `check-and-fix` skill.

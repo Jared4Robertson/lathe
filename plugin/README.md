@@ -10,9 +10,10 @@ Most Lathe specs are written by agents. This plugin teaches them Lathe's way of 
 | --- | --- |
 | `model-a-domain` | The domain record, aggregates and domain rules. |
 | `write-use-cases` | Use cases and their requirements. |
-| `design-the-domain` | Flows, views, endpoints and components, with the links that trace them. |
-| `plan-tests` | Test records, and test names that carry the record's ID. |
-| `check-and-fix` | Running `lathe check`, fixing errors, and reporting warnings and coverage. |
+| `design-the-domain` | Flows, views, endpoints, their interaction requirements, and components, with the links that trace them. |
+| `plan-tests` | Test records (automated, manual or planned), and test names that carry the test's ID or the ID of what it proves. |
+| `check-and-fix` | Running `lathe check`, fixing errors, and reporting warnings and coverage (designed, built, proved, planned). |
+| `extend-the-meta-model` | A product's own kinds and relations, widening a default kind, and marking obligation kinds and relation roles. |
 
 **Hook.** After every `Write`, `Edit` or `MultiEdit`, [scripts/check-after-edit.mjs](scripts/check-after-edit.mjs):
 
@@ -46,7 +47,7 @@ plugin/
   .claude-plugin/marketplace.json   a one-plugin marketplace, so the folder can be added with /plugin marketplace add
   hooks/hooks.json                  the PostToolUse hook
   scripts/check-after-edit.mjs      what the hook runs
-  skills/<name>/SKILL.md            the five skills
+  skills/<name>/SKILL.md            the six skills
 ```
 
 Validate after changing it: `claude plugin validate plugin`.
