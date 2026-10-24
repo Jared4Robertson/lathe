@@ -102,3 +102,22 @@ The definitions and relationships now live as data in [model/terms.csv](model/te
 - **The rules are data.** Kinds of record and the relations allowed between them live in `lathe/meta/kinds.csv` and `lathe/meta/relations.csv`, built from the SDLC Brainstorm tree and S2's structure. Each check is its own SQL file in `lathe/checks/`. Changing a rule is a recorded, checked change, which is the self-improvement hook.
 - **Errors versus warnings.** Errors mean the workspace is broken (bad IDs, parents or links; a test whose code does not carry its ID). Warnings mean work is still to do (a requirement no component satisfies or no test proves). Coverage per domain is S2's "design complete" check, as a query.
 - The CSV diagrams under `model/` stay as they are for now: they're brainstorm canvases. How they relate to spec records is an open question.
+
+## Session 3 (2026-10-24): settling the open questions
+
+Jared asked for every recommendation to be applied, so these were decided on his behalf with the recommended option. Each answer now lives in the records it affects; the question records are removed.
+
+| Question | Decision |
+| --- | --- |
+| LA-Q01 How is Fitness measured? | Both: Jared records his judgment as `fitness` records (date, score 1 to 5, the experiences behind it); coverage, open questions and checks are shown as evidence beside it, never as the score. Lathe never writes a fitness record. |
+| LA-Q02 When do specs move into product repos? | Already done by packaging: each product keeps its specs in its own repo with `lathe.config.json`; one Lathe instance reads one repo; the meta-model travels with the package as defaults plus product extensions. Lathe's repo keeps Lathe's spec and the Tool Library example. |
+| LA-Q03 Package name | `@jaredrob/lathe`. Publishing waits until the format settles and needs Jared's approval. |
+| LA-Q04 CI action or plugin first? | The Claude Code plugin first. |
+| LA-MOD-Q01 Diagrams and records | Separate: CSV diagrams are brainstorm canvases; a specified domain is drawn from its records (the Graph tab). No merge. |
+| LA-MOD-Q02 Status on records | No status field. A record in the specs is in force, uncertainty is an open question, git keeps history (FORMAT.md section 8). |
+| LA-CHK-Q01 Edit the meta-model in the app | No. It changes in files, reviewed like records. |
+| LA-CHK-Q02 Do planned components count? | Report designed, built and proved separately. |
+| LA-CHK-Q03 Check the meta-model? | Yes, with error checks for consistency. |
+| LA-BRW-Q01 Read-only browser? | Yes: spec pages stay read-only; records change in files and are reviewed in git. |
+| TL-LEND-Q01 Damage reported during a loan | Kept: a good return does not clear it; a librarian marks it repaired. |
+| TL-LEND-Q02 Overdue grace | Overdue by calendar day in the library's time zone (default America/New_York): due at the end of the due date. No override. |
