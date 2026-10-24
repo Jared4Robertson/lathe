@@ -1,6 +1,7 @@
 relation,source_kind,target_kind,role,description
 relates_to,aggregate,aggregate,,"One aggregate refers to another by ID."
 applies,use_case,domain_rule,,"The use case relies on the domain rule."
+follows,use_case,pattern,,"The use case follows the pattern and gives a value for each of its settings."
 fulfills,flow,requirement,,"The flow carries out the requirement."
 fulfills,view,requirement,,"The view carries out the requirement."
 fulfills,endpoint,requirement,,"The endpoint carries out the requirement."

@@ -54,6 +54,8 @@ Product prefix, domain code, then a kind code and number. The engine only checks
 | --- | --- | --- |
 | product | `<P>` | `TL` |
 | domain | `<P>-<D>` | `TL-LEND` |
+| capability | `<P>-<D>-CAP<nn>` | `TL-LEND-CAP01` |
+| pattern | `<P>-PAT-<name>` | `TL-PAT-LIBRARIAN-ACTION` |
 | aggregate | `<P>-<D>-A<n>` | `TL-LEND-A1` |
 | domain_rule | `<P>-<D>-DR<nn>` | `TL-LEND-DR01` |
 | use_case | `<P>-<D>-UC<nn>` | `TL-LEND-UC01` |
@@ -79,8 +81,8 @@ A `test` record has a `state`: `automated` (the default when the field is absent
 
 The engine runs every SQL file in `lathe/checks/`. Each returns rows of `(severity, check, record, message)`:
 
-- **error**: the workspace is broken (duplicate ID, unknown kind, bad parent, missing required field, disallowed or dangling link, an automated test with no `run_by`, or whose `run_by` file is missing or mentions neither its ID nor an ID it proves). `lathe check` exits non-zero.
-- **warning**: work still to do, not breakage (a requirement or domain rule that no component satisfies or no test proves, a use case with no requirements, a component file that does not exist yet).
+- **error**: the workspace is broken (duplicate ID, unknown kind, bad parent, missing required field, disallowed or dangling link, an automated test with no `run_by`, or whose `run_by` file is missing or mentions neither its ID nor an ID it proves, a bad or repeated capability order, a pattern setting a use case does not give, a pattern setting that is not a valid field name). `lathe check` exits non-zero.
+- **warning**: work still to do, not breakage (a requirement or domain rule that no component satisfies or no test proves, a use case with no requirements, a component file that does not exist yet, a use case left outside its domain's capabilities, two followed patterns sharing a setting).
 
 ## 6. Coverage
 
@@ -104,3 +106,68 @@ A product adds to Lathe's meta-model with a `metaExtensions` folder (see the pac
 - A row whose `kind` already exists **widens** that kind: its `parent_kinds` and `required_fields` are added to the default's, and a non-empty `label`, `stage`, `obligation` or `description` replaces the default's. A product can, for example, let a `domain_rule` sit directly under a `domain`.
 - A relation row identical to an existing one changes nothing.
 - Two rows for the same kind within one folder are an error (`meta-duplicate-kind`).
+
+## 10. Capabilities and patterns
+
+A domain with more than a handful of use cases groups them into **capabilities**, and behaviour that several use cases share is written once as a **pattern**.
+
+### Capabilities
+
+A `capability` sits under a domain and gives its place in the domain in `order`, a whole number. Use cases, flows and tests may sit under a capability instead of directly under the domain, so that a capability is a slice through Define and Design: its use cases, the flows that carry them out, and the acceptance tests that prove them. Records under a capability still belong to its domain and count in that domain's coverage. Domain rules stay under their aggregates, and tests that prove only domain rules may stay under the domain.
+
+```markdown
+---
+id: TL-LEND-CAP03
+kind: capability
+title: Lending
+parent: TL-LEND
+order: 3
+---
+Loans themselves: a member borrows a tool, and a librarian takes it back.
+```
+
+A use case then names the capability as its parent (`parent: TL-LEND-CAP03`). Its ID does not change: IDs are never renumbered, so moving a use case into a capability changes only its `parent`. Folder names are for people; a domain may keep its files where they are, or use folders such as `01-define/use-cases/03-lending/`.
+
+- Each capability in a domain needs its own order (`capability-order` error); `1` and `01` are the same.
+- Once a domain has capabilities, a use case left directly under the domain is a `use-case-outside-capability` warning. A domain with no capabilities is fine.
+
+The domain's **use case index** comes from the records: its capabilities in order, each with its use cases, and the patterns each use case follows (or none).
+
+### Patterns
+
+A `pattern` sits under the product, since domains share it, and lists its **settings** in `settings`: setting names separated by spaces, each a valid field name (lower-case letters, digits and underscores, starting with a letter, and not `id`, `kind`, `title`, `parent` or `links`). Its body says what it is for, what each setting decides, and its rules, using MUST / MUST NOT / SHOULD / MAY.
+
+```markdown
+---
+id: TL-PAT-LIBRARIAN-ACTION
+kind: pattern
+title: Librarian action
+parent: TL
+settings: record required_input result
+---
+A librarian at the desk enters a few details, and the library saves one record and shows what it saved.
+```
+
+A use case **follows** the pattern with a `follows` link and gives each setting as a plain header field named exactly as the pattern lists it: a value, or `Not applicable:` (in any letter case) followed by a reason. The pattern's rules apply to the use case with those values; the use case's own requirements add only what is specific to it.
+
+```markdown
+---
+id: TL-LEND-UC01
+kind: use_case
+title: Register a member
+parent: TL-LEND-CAP01
+actor: Librarian
+record: Member
+required_input: The member's name and a valid email address.
+result: The new member with their ID, which goes on their card.
+links:
+  applies: [TL-LEND-DR01]
+  follows: [TL-PAT-LIBRARIAN-ACTION]
+---
+```
+
+In YAML, a value containing `: ` must be quoted, so write `audit: "Not applicable: nothing changes"`.
+
+- A setting that a following use case does not give, or gives as `Not applicable:` with no reason, is a `pattern-setting-missing` error.
+- A setting name that is not a valid field name is a `bad-pattern-settings` error on the pattern.
+- A use case that follows two patterns sharing a setting name has one field for both: a `pattern-setting-clash` warning. Rename the setting in one of the patterns.
