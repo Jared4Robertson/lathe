@@ -1,7 +1,7 @@
 // Acceptance tests over HTTP: each proves one use case requirement.
 // Each test name starts with its test record ID (specs/tool-library/lending/02-design/tests/).
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { DAY_MS, startApi, type Api } from './helpers.ts';
+import { LAST_MINUTE_OF_DUE_DATE, START_DUE_DATE, START_OF_NEXT_DAY, startApi, type Api } from './helpers.ts';
 
 let api: Api;
 beforeEach(async () => {
@@ -76,8 +76,14 @@ describe('TL-LEND-UC03 Borrow a tool', () => {
     const res = await borrow(await member(), await tool());
     expect(res.status).toBe(201);
     expect(res.body.borrowedAt).toBe(api.clock.now().toISOString());
-    expect(Date.parse(res.body.dueAt) - Date.parse(res.body.borrowedAt)).toBe(14 * DAY_MS);
+    expect(res.body.dueDate).toBe(START_DUE_DATE);
+    expect(res.body).not.toHaveProperty('dueAt');
     expect(res.body.returnedAt).toBeNull();
+
+    // Borrowed at 23:30 in New York, when UTC is already on the next day: the New York date counts.
+    api.clock.set('2026-03-03T04:30:00.000Z');
+    const late = await borrow(await member('Uma'), await tool('Saw'));
+    expect(late.body.dueDate).toBe('2026-03-16');
   });
 
   it('TL-LEND-T17 An unavailable tool is refused with the reason', async () => {
@@ -105,8 +111,10 @@ describe('TL-LEND-UC03 Borrow a tool', () => {
 
     const late = await member('Quinn');
     await borrow(late, await tool('E'));
-    api.clock.advanceDays(15);
-    const r2 = await borrow(late, await tool('F'));
+    api.clock.set(LAST_MINUTE_OF_DUE_DATE);
+    expect((await borrow(late, await tool('F'))).status).toBe(201);
+    api.clock.set(START_OF_NEXT_DAY);
+    const r2 = await borrow(late, await tool('G'));
     expect(r2.status).toBe(409);
     expect(r2.body.error).toBe('member_overdue');
   });
@@ -154,13 +162,15 @@ describe('TL-LEND-UC04 Return a tool', () => {
     expect(res.body.error).toBe('tool_needs_repair');
   });
 
-  it('TL-LEND-T23 A return after the due date is flagged as late', async () => {
+  it('TL-LEND-T23 A return on a day after the due date is flagged as late', async () => {
     const m = await member();
     const onTime = (await borrow(m, await tool('A'))).body;
     const late = (await borrow(m, await tool('B'))).body;
-    api.clock.advanceDays(14);
+    // 23:59 on the due date in New York (already the next day in UTC): on time.
+    api.clock.set(LAST_MINUTE_OF_DUE_DATE);
     expect((await api.call('POST', `/loans/${onTime.id}/return`, { condition: 'good' })).body.late).toBe(false);
-    api.clock.advanceMs(1);
+    // 00:00 the next day in New York: late.
+    api.clock.set(START_OF_NEXT_DAY);
     expect((await api.call('POST', `/loans/${late.id}/return`, { condition: 'good' })).body.late).toBe(true);
   });
 });
@@ -195,7 +205,7 @@ describe('TL-LEND-UC05 Report damage', () => {
     await api.call('POST', `/tools/${t}/damage`, { note: 'Reported by phone' });
     expect(await statusOf(t)).toBe('on_loan');
 
-    // The loan is still active and can be returned; the reported damage stays (TL-LEND-Q01).
+    // The loan is still active and can be returned; the reported damage stays (TL-LEND-DR11).
     const res = await api.call('POST', `/loans/${loan.id}/return`, { condition: 'good' });
     expect(res.status).toBe(200);
     expect(await statusOf(t)).toBe('needs_repair');

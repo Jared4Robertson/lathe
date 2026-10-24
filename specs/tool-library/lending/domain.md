@@ -16,9 +16,10 @@ Lending covers everything the library does: its members, its catalog of tools, a
 | Condition | The state of a tool: `good` or `needs_repair`. |
 | Loan | One member holding one tool from when it is borrowed until it is returned. |
 | Active loan | A loan that has not been returned. |
-| Due time | When a loan should end: 14 days after it starts. |
-| Overdue | An active loan past its due time. |
+| Library time zone | The time zone in which the library counts days. A setting; `America/New_York` unless set. |
+| Due date | The last day of a loan: 14 calendar days after it starts, in the library's time zone. |
+| Overdue | An active loan on any day after its due date, in the library's time zone. |
 
 ## Example values
 
-These are decided for this example: a loan lasts 14 days; a member holds at most 3 active loans; a tool that needs repair cannot be lent; a member with an overdue loan cannot borrow.
+These are decided for this example: a loan is due 14 calendar days after it starts; days are counted in the library's time zone, `America/New_York` by default; a member holds at most 3 active loans; a tool that needs repair cannot be lent, and a good return does not clear damage reported during the loan; a member with an overdue loan cannot borrow, with no grace period and no librarian override.
