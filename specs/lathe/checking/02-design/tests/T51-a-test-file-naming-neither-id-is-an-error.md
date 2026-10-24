@@ -8,4 +8,4 @@ run_by: lathe/test/tests-and-meta.test.ts
 links:
   proves: [LA-CHK-UC08-R01]
 ---
-Loads an automated test that proves one rule while its file names another, and expects a `test-file-missing-id` error naming the file.
+Loads an automated test that proves one rule while its file names another, and expects a `proof-not-in-file` error naming the file, the test and the rule it proves.
