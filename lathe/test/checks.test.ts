@@ -8,7 +8,7 @@ const ofCheck = (ws: Workspace, check: string) => ws.problems.filter((p) => p.ch
 const records = (problems: Problem[]) => problems.map((p) => p.record).sort();
 
 const FIXTURES = ['good', 'broken-links', 'broken-tests', 'broken-parse', 'broken-structure', 'configured', 'unfinished', 'fitness'];
-const WARNINGS = ['unsatisfied', 'unproved', 'use-case-without-requirements', 'component-file-missing'];
+const WARNINGS = ['unsatisfied', 'unproved', 'use-case-without-requirements', 'component-file-missing', 'rule-not-applied', 'use-case-without-flow', 'interaction-requirement-fulfills-nothing', 'test-type-mismatch'];
 const workspaces: Record<string, Workspace> = {};
 beforeAll(async () => {
   for (const name of FIXTURES) workspaces[name] = await loadWorkspace(fixture(name));
@@ -244,8 +244,10 @@ describe('structural checks', () => {
         expect(p.severity, `${p.check}: ${p.message}`).toBe(WARNINGS.includes(p.check) ? 'warning' : 'error');
       }
     }
-    // Every kind of work to do, and the main kinds of breakage, appear in the fixtures.
-    for (const check of [...WARNINGS, 'parse-error', 'duplicate-id', 'dangling-link', 'meta-duplicate-kind', 'bad-fitness-score']) {
+    // Every kind of work to do, and the main kinds of breakage, appear in the fixtures. The structural
+    // warnings (rule-not-applied and the rest) have their own fixtures in structure.test.ts.
+    const structural = ['rule-not-applied', 'use-case-without-flow', 'interaction-requirement-fulfills-nothing', 'test-type-mismatch'];
+    for (const check of [...WARNINGS.filter((w) => !structural.includes(w)), 'parse-error', 'duplicate-id', 'dangling-link', 'meta-duplicate-kind', 'bad-fitness-score']) {
       expect(seen).toContain(check);
     }
   });
