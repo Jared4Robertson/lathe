@@ -2,7 +2,7 @@
 id: LA-BRW-UC02
 kind: use_case
 title: Find a record in a domain
-parent: LA-BRW
+parent: LA-BRW-CAP01
 actor: Jared
 links:
   applies: [LA-BRW-DR02]

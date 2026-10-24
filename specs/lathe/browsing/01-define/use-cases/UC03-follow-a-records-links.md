@@ -2,7 +2,7 @@
 id: LA-BRW-UC03
 kind: use_case
 title: Follow a record's links
-parent: LA-BRW
+parent: LA-BRW-CAP01
 actor: Jared
 links:
   applies: [LA-BRW-DR01, LA-BRW-DR02, LA-BRW-DR04]

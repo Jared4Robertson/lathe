@@ -2,7 +2,7 @@
 id: LA-BRW-UC50
 kind: use_case
 title: Read a record as a wiki page, as a graph, or both
-parent: LA-BRW
+parent: LA-BRW-CAP02
 actor: Jared
 links:
   applies: [LA-BRW-DR50, LA-BRW-DR51, LA-BRW-DR52, LA-BRW-DR53, LA-BRW-DR54, LA-BRW-DR55, LA-BRW-DR01]

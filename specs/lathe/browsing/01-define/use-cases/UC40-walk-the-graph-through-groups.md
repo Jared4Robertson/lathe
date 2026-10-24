@@ -2,7 +2,7 @@
 id: LA-BRW-UC40
 kind: use_case
 title: Walk the graph through folder-like groups
-parent: LA-BRW
+parent: LA-BRW-CAP03
 actor: Jared
 links:
   applies: [LA-BRW-DR40, LA-BRW-DR41, LA-BRW-DR20]

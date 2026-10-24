@@ -8,4 +8,4 @@ run_by: app/test/obligations.test.tsx
 links:
   proves: [LA-BRW-UC30-R06]
 ---
-Renders the record content on its own with an `onNavigate` spy and expects clicks on links in the body, side panel and header to call it with the address while the browser address stays put, the container class that lets it fold at half width, and a message for an unknown ID.
+Renders the record content on its own with an `onNavigate` spy and expects clicks on links in the body, aside and header to call it with the address while the browser address stays put, the container class that lets it fold at half width, and a message for an unknown ID.

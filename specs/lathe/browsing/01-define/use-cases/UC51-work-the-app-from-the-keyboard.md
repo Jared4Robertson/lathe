@@ -2,7 +2,7 @@
 id: LA-BRW-UC51
 kind: use_case
 title: Work the app from the keyboard
-parent: LA-BRW
+parent: LA-BRW-CAP02
 actor: Jared
 links:
   applies: [LA-BRW-DR60, LA-BRW-DR61, LA-BRW-DR62]

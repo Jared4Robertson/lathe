@@ -2,7 +2,7 @@
 id: LA-BRW-UC30
 kind: use_case
 title: See every obligation kind and test state
-parent: LA-BRW
+parent: LA-BRW-CAP01
 actor: Jared
 links:
   applies: [LA-BRW-DR30, LA-BRW-DR31]
