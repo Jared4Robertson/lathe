@@ -158,10 +158,10 @@ describe('graph page', () => {
     await showGraph('/graph/P-D-UC01-R01');
     await waitFor(() => expect(node('P-D-T01')).not.toBeNull());
     expect(screen.queryByRole('status')).toBeNull();
-    const top = (id: string) => Number(/translate\(([-\d.]+)px, ?([-\d.]+)px\)/.exec(node(id)!.style.transform)![2]);
-    expect(top('P-D-UC01')).toBeLessThan(top('P-D-UC01-R01'));
-    expect(top('P-D-UC01-R01')).toBeLessThan(top('P-D-C01'));
-    expect(top('P-D-C01')).toBeLessThan(top('P-D-T01'));
+    const left = (id: string) => Number(/translate\(([-\d.]+)px, ?([-\d.]+)px\)/.exec(node(id)!.style.transform)![1]);
+    expect(left('P-D-UC01')).toBeLessThan(left('P-D-UC01-R01'));
+    expect(left('P-D-UC01-R01')).toBeLessThan(left('P-D-C01'));
+    expect(left('P-D-C01')).toBeLessThan(left('P-D-T01'));
     const spine = document.querySelector('.react-flow__edge-path.rel-structure');
     expect(spine).not.toBeNull();
     expect(spine!.getAttribute('class')).not.toContain('distant');

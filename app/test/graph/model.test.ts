@@ -139,22 +139,22 @@ describe('graph neighbourhood', () => {
     expect(neighbourhood(index, 'P-D-UC01-R01', 1).nodes.find((x) => x.id === 'P-D-T01')!.tier).toBe(5);
   });
 
-  it('LA-BRW-T64 The graph reads top to bottom by tier, and a trace reads left to right', async () => {
+  it('LA-BRW-T64 The graph reads left to right by tier, and so does a trace', async () => {
     const n = neighbourhood(index, 'P-D-UC01-R01', 2);
     const { positions } = await layoutNeighbourhood(n);
-    const y = (id: string) => positions.get(id)!.y;
-    // One row per tier, rows in tier order.
-    const rows = new Map<number, Set<number>>();
-    for (const node of n.nodes) rows.set(node.tier, (rows.get(node.tier) ?? new Set()).add(y(node.id)));
-    for (const ys of rows.values()) expect(ys.size).toBe(1);
-    const tiers = [...rows.keys()].sort((a, b) => a - b);
-    for (let i = 1; i < tiers.length; i++) expect([...rows.get(tiers[i])!][0]).toBeGreaterThan([...rows.get(tiers[i - 1])!][0]);
-    // Ancestors above the focus, design records and tests below it.
-    expect(y('P-D')).toBeLessThan(y('P-D-UC01'));
-    expect(y('P-D-UC01')).toBeLessThan(y('P-D-UC01-R01'));
-    expect(y('P-D-UC01-R01')).toBeLessThan(y('P-D-C01'));
-    expect(y('P-D-C01')).toBeLessThan(y('P-D-T01'));
-    expect(y('P-D-DR01')).toBe(y('P-D-UC01-R01'));
+    const col = (id: string) => positions.get(id)!.x;
+    // One column per tier, columns in tier order.
+    const columns = new Map<number, Set<number>>();
+    for (const node of n.nodes) columns.set(node.tier, (columns.get(node.tier) ?? new Set()).add(col(node.id)));
+    for (const xs of columns.values()) expect(xs.size).toBe(1);
+    const tiers = [...columns.keys()].sort((a, b) => a - b);
+    for (let i = 1; i < tiers.length; i++) expect([...columns.get(tiers[i])!][0]).toBeGreaterThan([...columns.get(tiers[i - 1])!][0]);
+    // Ancestors to the left of the focus, design records and tests to its right.
+    expect(col('P-D')).toBeLessThan(col('P-D-UC01'));
+    expect(col('P-D-UC01')).toBeLessThan(col('P-D-UC01-R01'));
+    expect(col('P-D-UC01-R01')).toBeLessThan(col('P-D-C01'));
+    expect(col('P-D-C01')).toBeLessThan(col('P-D-T01'));
+    expect(col('P-D-DR01')).toBe(col('P-D-UC01-R01'));
 
     const traced = (await layoutNeighbourhood(traceChain(index, 'P-D-UC01-R01'))).positions;
     const x = (id: string) => traced.get(id)!.x;
