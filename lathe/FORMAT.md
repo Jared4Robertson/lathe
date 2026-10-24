@@ -83,7 +83,7 @@ For each domain: how many requirements and domain rules exist; how many are **de
 
 ## 7. Fitness
 
-A `fitness` record is the judgment of the person a product serves: on a `date` (YYYY-MM-DD), a `score` from 1 (does not serve its purpose) to 5 (serves it fully), and in the body the experiences behind it. Lathe never writes these itself. Signals it can count (coverage, open questions, checks) are evidence for that judgment, never the score.
+A `fitness` record is the judgment of the person a product serves: on a `date` (YYYY-MM-DD), a `score` (written `score: 4` or `score: "4"`) from 1 (does not serve its purpose) to 5 (serves it fully), and in the body the experiences behind it. Lathe never writes these itself. Signals it can count (coverage, open questions, checks) are evidence for that judgment, never the score.
 
 ## 8. What records do not carry
 
