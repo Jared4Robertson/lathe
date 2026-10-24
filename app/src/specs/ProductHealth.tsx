@@ -1,5 +1,6 @@
 import { Link } from '../router';
 import { byIdOrder, recordPath, type Coverage, type SpecIndex, type SpecRecord } from './data';
+import { LongList } from './LongList';
 import { Markdown } from './Markdown';
 
 // Coverage (designed, built, proved, planned) per obligation kind, and a product's fitness with the evidence beside it.
@@ -147,15 +148,21 @@ export function FitnessPanel({ index, productId }: { index: SpecIndex; productId
         <Markdown source={latest.body} />
       </div>
       <h3>History <span className="section-count">{history.length}</span></h3>
-      <ol className="record-list fitness-history">
-        {history.map((f) => (
-          <li key={f.id}>
+      <LongList
+        label="Fitness history"
+        ordered
+        className="record-list fitness-history"
+        items={history}
+        itemKey={(f) => f.id}
+        searchText={(f) => `${f.id} ${f.title} ${f.fields.date ?? ''}`}
+        render={(f) => (
+          <>
             <time dateTime={f.fields.date}>{f.fields.date}</time>
             <Score value={f.fields.score} />
             <Link to={recordPath(f.id)} className="record-link"><code>{f.id}</code><span>{f.title}</span></Link>
-          </li>
-        ))}
-      </ol>
+          </>
+        )}
+      />
     </div>
   );
 }

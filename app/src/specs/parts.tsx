@@ -1,6 +1,7 @@
 import { createContext, useContext, type AnchorHTMLAttributes, type ReactNode } from 'react';
 import { Link } from '../router';
 import { problemOrder, recordPath, type Problem, type SpecIndex, type SpecRecord } from './data';
+import { LongList } from './LongList';
 
 // Pieces shared by the spec pages and the record content.
 
@@ -27,6 +28,11 @@ export function SpecLink({ to, onClick, ...rest }: { to: string } & AnchorHTMLAt
   );
 }
 
+/** What a long list of records is searched by: the ID and the title. */
+export const recordText = (r: SpecRecord) => `${r.id} ${r.title}`;
+/** The text for a record ID, with its title when the record exists. */
+export const idText = (index: SpecIndex, id: string) => `${id} ${index.byId.get(id)?.title ?? ''}`;
+
 export function RecordLink({ index, id, showTitle = true }: { index: SpecIndex; id: string; showTitle?: boolean }) {
   const record = index.byId.get(id);
   if (!record) return <span className="record-link missing" title="No record has this ID"><code>{id}</code></span>;
@@ -40,19 +46,26 @@ export function RecordLink({ index, id, showTitle = true }: { index: SpecIndex; 
 
 export function ProblemList({ index, problems, showRecord = true, showCheck = true }: { index: SpecIndex; problems: Problem[]; showRecord?: boolean; showCheck?: boolean }) {
   if (problems.length === 0) return <p className="hint">No problems.</p>;
+  const items = [...problems].sort(problemOrder).map((p, i) => ({ p, key: String(i) }));
   return (
-    <ul className="problems">
-      {[...problems].sort(problemOrder).map((p, i) => (
-        <li key={i} className={`problem ${p.severity}`}>
+    <LongList
+      label="Problems"
+      className="problems"
+      items={items}
+      itemKey={(item) => item.key}
+      itemClassName={({ p }) => `problem ${p.severity}`}
+      searchText={({ p }) => `${p.record ?? 'workspace'} ${index.byId.get(p.record ?? '')?.title ?? ''} ${p.message} ${p.check}`}
+      render={({ p }) => (
+        <>
           <span className="severity">{p.severity}</span>
           <span className="problem-text">
             {showRecord && (p.record ? <RecordLink index={index} id={p.record} showTitle={false} /> : <code>workspace</code>)}{' '}
             {p.message}
           </span>
           {showCheck && <code className="check-name">{p.check}</code>}
-        </li>
-      ))}
-    </ul>
+        </>
+      )}
+    />
   );
 }
 

@@ -4,7 +4,8 @@ import { OpenInGraph } from '../graph/route';
 import { FormatPage } from './FormatPage';
 import { Markdown } from './Markdown';
 import { CoverageBars, EvidencePanel, FitnessPanel, pluralLabel } from './ProductHealth';
-import { PageHeader, ProblemBadge, ProblemList, RecordLink, Section, TestStateTag, testState } from './parts';
+import { LongList } from './LongList';
+import { PageHeader, ProblemBadge, ProblemList, RecordLink, Section, TestStateTag, idText, recordText, testState } from './parts';
 import { RecordContent } from './RecordContent';
 import {
   byIdOrder,
@@ -45,15 +46,18 @@ export function SpecMenu({ spec, path }: { spec: SpecState; path: string }) {
                 {product.title}
               </Link>
               {(index.domainsOf.get(product.id) ?? []).length > 0 && (
-                <ul className="submenu">
-                  {index.domainsOf.get(product.id)!.map((domain) => (
-                    <li key={domain.id}>
-                      <Link to={domainPath(product.id, domain.id)} aria-current={current(domainPath(product.id, domain.id))}>
-                        {domain.title}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
+                <LongList
+                  label={`Domains of ${product.title}`}
+                  className="submenu"
+                  items={index.domainsOf.get(product.id)!}
+                  itemKey={(d) => d.id}
+                  searchText={recordText}
+                  render={(domain) => (
+                    <Link to={domainPath(product.id, domain.id)} aria-current={current(domainPath(product.id, domain.id))}>
+                      {domain.title}
+                    </Link>
+                  )}
+                />
               )}
             </li>
           ))}
@@ -188,9 +192,14 @@ function ProductPage({ index, id }: { index: SpecIndex; id: string }) {
 function QuestionList({ index, questions }: { index: SpecIndex; questions: SpecRecord[] }) {
   if (questions.length === 0) return <p className="hint">No open questions.</p>;
   return (
-    <ul className="record-list">
-      {questions.map((q) => (
-        <li key={q.id}>
+    <LongList
+      label="Open questions"
+      className="record-list"
+      items={questions}
+      itemKey={(q) => q.id}
+      searchText={recordText}
+      render={(q) => (
+        <>
           <RecordLink index={index} id={q.id} />
           <small className="meta">
             {q.fields.owner && <>owner {q.fields.owner}</>}
@@ -198,9 +207,9 @@ function QuestionList({ index, questions }: { index: SpecIndex; questions: SpecR
               <span key={l.target}> · about <RecordLink index={index} id={l.target} showTitle={false} /></span>
             ))}
           </small>
-        </li>
-      ))}
-    </ul>
+        </>
+      )}
+    />
   );
 }
 
@@ -244,8 +253,9 @@ function DomainPage({ index, productId, id, tab }: { index: SpecIndex; productId
 
   const placed = new Set<string>();
   const ofKind = (kind: string) => all.filter((r) => r.kind === kind);
-  const row = (r: SpecRecord) => (
-    <RecordRow key={r.id} index={index} record={r} gaps={gaps.get(r.id) ?? []} />
+  const row = (r: SpecRecord) => <RecordRowBody index={index} record={r} gaps={gaps.get(r.id) ?? []} />;
+  const recordList = (label: string, records: SpecRecord[], className = 'record-list') => (
+    <LongList label={label} className={className} items={records} itemKey={(r) => r.id} searchText={recordText} render={row} />
   );
 
   const isObligation = (kind: string) => index.kinds.get(kind)?.obligation === true;
@@ -264,17 +274,21 @@ function DomainPage({ index, productId, id, tab }: { index: SpecIndex; productId
   };
   const defineGroups = DEFINE_GROUPS.map((g) => fill(g, false));
   const designGroups = DESIGN_GROUPS.map((g) => fill(g, g.nested.length > 0));
-  const groupList = (items: ReturnType<typeof fill>['items']) => (
-    <ul className="record-list">
-      {items.map(({ parent, nested }) => (
-        <li key={parent.id} className="group">
-          <RecordRowBody index={index} record={parent} gaps={gaps.get(parent.id) ?? []} />
-          {nested.length > 0 && (
-            <ul className="record-list nested" aria-label={`${pluralLabel(kindLabel(index, nested[0].kind))} at ${parent.id}`}>{nested.map(row)}</ul>
-          )}
-        </li>
-      ))}
-    </ul>
+  const groupList = (title: string, items: ReturnType<typeof fill>['items']) => (
+    <LongList
+      label={title}
+      className="record-list"
+      items={items}
+      itemKey={(i) => i.parent.id}
+      itemClassName={() => 'group'}
+      searchText={(i) => [i.parent, ...i.nested].map(recordText).join(' ')}
+      render={({ parent, nested }) => (
+        <>
+          {row(parent)}
+          {nested.length > 0 && recordList(`${pluralLabel(kindLabel(index, nested[0].kind))} at ${parent.id}`, nested, 'record-list nested')}
+        </>
+      )}
+    />
   );
   const questions = ofKind('question');
   questions.forEach((r) => placed.add(r.id));
@@ -310,7 +324,7 @@ function DomainPage({ index, productId, id, tab }: { index: SpecIndex; productId
             <h2 className="stage-title">Define</h2>
             {defineGroups.map((g) => (
               <Section key={g.kind} title={g.title} count={g.items.length}>
-                {g.items.length === 0 ? <p className="hint">{q ? 'Nothing matches.' : 'None yet.'}</p> : groupList(g.items)}
+                {g.items.length === 0 ? <p className="hint">{q ? 'Nothing matches.' : 'None yet.'}</p> : groupList(g.title, g.items)}
               </Section>
             ))}
           </div>
@@ -318,13 +332,13 @@ function DomainPage({ index, productId, id, tab }: { index: SpecIndex; productId
             <h2 className="stage-title">Design</h2>
             {designGroups.map((g) => (
               <Section key={g.kind} title={g.title} count={g.items.length}>
-                {g.items.length === 0 ? <p className="hint">{q ? 'Nothing matches.' : 'None yet.'}</p> : groupList(g.items)}
+                {g.items.length === 0 ? <p className="hint">{q ? 'Nothing matches.' : 'None yet.'}</p> : groupList(g.title, g.items)}
               </Section>
             ))}
           </div>
           {others.length > 0 && (
             <Section title="Other records" count={others.length}>
-              <ul className="record-list">{others.map(row)}</ul>
+              {recordList("Other records", others)}
             </Section>
           )}
           <Section title="Open questions" count={questions.length}>
@@ -333,14 +347,19 @@ function DomainPage({ index, productId, id, tab }: { index: SpecIndex; productId
           <Section title="Coverage">
             <CoverageBars coverage={index.coverage.get(id)} />
             {(index.coverage.get(id)?.gaps.length ?? 0) > 0 && (
-              <ul className="record-list gaps">
-                {index.coverage.get(id)!.gaps.map((g) => (
-                  <li key={`${g.id}-${g.missing}`}>
+              <LongList
+                label="Coverage gaps"
+                className="record-list gaps"
+                items={index.coverage.get(id)!.gaps}
+                itemKey={(g) => `${g.id}-${g.missing}`}
+                searchText={(g) => idText(index, g.id)}
+                render={(g) => (
+                  <>
                     <RecordLink index={index} id={g.id} />
                     <small className="meta">{kindLabel(index, g.kind)} with nothing that {g.missing === 'satisfies' ? 'satisfies' : 'proves'} it</small>
-                  </li>
-                ))}
-              </ul>
+                  </>
+                )}
+              />
             )}
           </Section>
           <Section title="Problems" count={problems.length}>
@@ -350,10 +369,6 @@ function DomainPage({ index, productId, id, tab }: { index: SpecIndex; productId
       )}
     </div>
   );
-}
-
-function RecordRow(props: { index: SpecIndex; record: SpecRecord; gaps: string[] }) {
-  return <li><RecordRowBody {...props} /></li>;
 }
 
 function RecordRowBody({ index, record, gaps }: { index: SpecIndex; record: SpecRecord; gaps: string[] }) {

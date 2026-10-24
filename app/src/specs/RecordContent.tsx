@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
 import { domainPath, kindLabel, productPath, relationLabel, type SpecIndex, type SpecLink as Link, type SpecRecord } from './data';
 import { Markdown } from './Markdown';
-import { NavigateContext, PageHeader, ProblemBadge, ProblemList, RecordLink, Section, SpecLink, TestStateTag, testState } from './parts';
+import { LongList } from './LongList';
+import { NavigateContext, PageHeader, ProblemBadge, ProblemList, RecordLink, Section, SpecLink, TestStateTag, idText, recordText, testState } from './parts';
 
 // One record's content: header, body, problems, fields, parent, children and links both ways.
 // Kept apart from the page chrome so another view (such as the graph, side by side) can host it.
@@ -17,16 +18,25 @@ function LinkGroups({ index, links, direction }: { index: SpecIndex; links: Link
   if (links.length === 0) return <p className="hint">{direction === 'out' ? 'This record links to nothing.' : 'Nothing links to this record.'}</p>;
   return (
     <dl className="link-groups">
-      {groupByRelation(links).map(([relation, group]) => (
-        <div key={relation}>
-          <dt>{direction === 'out' ? relationLabel(relation) : `${relationLabel(relation)} this`}</dt>
-          {[...group].sort((a, b) => (direction === 'out' ? a.target.localeCompare(b.target, 'en', { numeric: true }) : a.source.localeCompare(b.source, 'en', { numeric: true }))).map((l) => (
-            <dd key={`${l.source}-${l.target}`}>
-              <RecordLink index={index} id={direction === 'out' ? l.target : l.source} />
+      {groupByRelation(links).map(([relation, group]) => {
+        const name = direction === 'out' ? relationLabel(relation) : `${relationLabel(relation)} this`;
+        const ids = group.map((l) => (direction === 'out' ? l.target : l.source)).sort((a, b) => a.localeCompare(b, 'en', { numeric: true }));
+        return (
+          <div key={relation}>
+            <dt>{name}</dt>
+            <dd>
+              <LongList
+                label={`${direction === 'out' ? 'Links out' : 'Links in'}: ${name}`}
+                className="plain link-list"
+                items={ids}
+                itemKey={(id) => id}
+                searchText={(id) => idText(index, id)}
+                render={(id) => <RecordLink index={index} id={id} />}
+              />
             </dd>
-          ))}
-        </div>
-      ))}
+          </div>
+        );
+      })}
     </dl>
   );
 }
@@ -45,17 +55,22 @@ function Fulfills({ index, record }: { index: SpecIndex; record: SpecRecord }) {
       {targets.length === 0 ? (
         <p className="hint">It fulfills nothing yet. Link it with <code>fulfills</code> to the requirement or domain rule it carries out.</p>
       ) : (
-        <ul className="record-list fulfills">
-          {targets.map((t) => {
+        <LongList
+          label="Fulfills"
+          className="record-list fulfills"
+          items={targets}
+          itemKey={(t) => t}
+          searchText={(t) => idText(index, t)}
+          render={(t) => {
             const target = index.byId.get(t);
             return (
-              <li key={t}>
+              <>
                 <RecordLink index={index} id={t} />
                 {target && <small className="meta">{kindLabel(index, target.kind)}</small>}
-              </li>
+              </>
             );
-          })}
-        </ul>
+          }}
+        />
       )}
     </Section>
   );
@@ -137,9 +152,14 @@ function RecordBody({ index, record, actions }: { index: SpecIndex; record: Spec
           {record.parent ? <RecordLink index={index} id={record.parent} /> : <p className="hint">None (top level).</p>}
           <h3>Children <span className="section-count">{children.length}</span></h3>
           {children.length === 0 ? <p className="hint">None.</p> : (
-            <ul className="plain">
-              {children.map((c) => <li key={c.id}><RecordLink index={index} id={c.id} /> <small className="meta">{kindLabel(index, c.kind)}</small></li>)}
-            </ul>
+            <LongList
+              label="Children"
+              className="plain"
+              items={children}
+              itemKey={(c) => c.id}
+              searchText={recordText}
+              render={(c) => <><RecordLink index={index} id={c.id} /> <small className="meta">{kindLabel(index, c.kind)}</small></>}
+            />
           )}
           <h3>Links out</h3>
           <LinkGroups index={index} links={index.outgoing.get(id) ?? []} direction="out" />
