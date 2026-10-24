@@ -82,7 +82,13 @@ A `test` record has a `state`: `automated` (the default when the field is absent
 The engine runs every SQL file in `lathe/checks/`. Each returns rows of `(severity, check, record, message)`:
 
 - **error**: the workspace is broken (duplicate ID, unknown kind, bad parent, missing required field, disallowed or dangling link, an automated test with no `run_by`, or whose `run_by` file is missing or mentions neither its ID nor an ID it proves, a bad or repeated capability order, a pattern setting a use case does not give, a pattern setting that is not a valid field name). `lathe check` exits non-zero.
-- **warning**: work still to do, not breakage (a requirement or domain rule that no component satisfies or no test proves, a use case with no requirements, a component file that does not exist yet, a use case left outside its domain's capabilities, two followed patterns sharing a setting).
+- **warning**: work still to do, not breakage (a requirement or domain rule that no component satisfies or no test proves, a use case with no requirements, a component file that does not exist yet, a use case left outside its domain's capabilities, two followed patterns sharing a setting). The structural warnings say where two stages do not join up yet:
+  - `rule-not-applied`: a domain rule that no use case `applies`.
+  - `use-case-without-flow`: a use case that no flow `carries_out`, in a domain that has flows. A domain with no flows yet is not reported.
+  - `interaction-requirement-fulfills-nothing`: an interaction requirement with no `fulfills` link.
+  - `test-type-mismatch`: a test with `test_type: domain_rule` that proves requirements but no domain rule, or with `test_type: acceptance` that proves domain rules but no requirement. Other types, such as `unit`, are not compared.
+
+One mistake gives one error. When an ID is duplicated, a link or parent that points at it is judged against every record with that ID, and is reported only if none of them allows it. A record whose parent does not exist is reported as `unknown-parent` only.
 
 ## 6. Coverage
 
@@ -104,8 +110,8 @@ A product adds to Lathe's meta-model with a `metaExtensions` folder (see the pac
 
 - A **new kind** or **new relation** row is added as it is.
 - A row whose `kind` already exists **widens** that kind: its `parent_kinds` and `required_fields` are added to the default's, and a non-empty `label`, `stage`, `obligation` or `description` replaces the default's. A product can, for example, let a `domain_rule` sit directly under a `domain`.
-- A relation row identical to an existing one changes nothing.
-- Two rows for the same kind within one folder are an error (`meta-duplicate-kind`).
+- A relation row with the same `relation`, `source_kind` and `target_kind` as an existing one is the same rule: a non-empty `role` or `description` replaces the default's, and an empty one keeps it. So restating a default rule, identically or in other words, changes nothing else, and a product can, for example, give a default relation the `design` role.
+- Two rows for the same kind within one folder are an error (`meta-duplicate-kind`), and so are two rows for the same relation rule within one folder (`meta-duplicate-relation`). Each message names the folder's file.
 
 ## 10. Capabilities and patterns
 

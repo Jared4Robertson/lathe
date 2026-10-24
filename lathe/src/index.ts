@@ -161,9 +161,10 @@ const union = (a: string[], b: string[]) => [...a, ...b.filter((x) => !a.include
 
 // Loads the meta-model from one or more folders: Lathe's defaults first, then a product's extensions.
 // A later row for a kind already defined widens it: parent_kinds and required_fields are unioned, and a
-// non-empty label, stage, obligation or description replaces the earlier one. A relation row identical to
-// one in an earlier folder is dropped. Every kind row is also kept, with the file it came from, in
-// meta_kind_rows, so that a kind defined twice within one folder can be reported.
+// non-empty label, stage, obligation or description replaces the earlier one. Relations work the same
+// way: a later row with the same relation, source kind and target kind is the same rule, and its non-empty
+// role or description replaces the earlier one. Every kind and relation row is also kept, with the file it
+// came from, in meta_kind_rows and meta_relation_rows, so that a duplicate within one folder can be reported.
 async function loadMeta(connection: DuckDBConnection, metaDirs: string[], root: string) {
   const defaultMeta = path.join(PACKAGE_DIR, 'meta');
   const where = (dir: string, name: string) =>
@@ -180,8 +181,10 @@ async function loadMeta(connection: DuckDBConnection, metaDirs: string[], root: 
   const kindRows: string[][] = [];
   const kinds: MetaKind[] = [];
   const byKind = new Map<string, MetaKind>();
-  const relations: { folder: number; row: string[] }[] = [];
-  for (const [index, dir] of metaDirs.entries()) {
+  const relationRows: string[][] = [];
+  const relations: string[][] = [];
+  const byRule = new Map<string, string[]>();
+  for (const dir of metaDirs) {
     for (const row of await read(dir, 'kinds.csv')) {
       const name = csvText(row.kind).trim();
       kindRows.push([where(dir, 'kinds.csv'), name]);
@@ -207,15 +210,25 @@ async function loadMeta(connection: DuckDBConnection, metaDirs: string[], root: 
       }
     }
     for (const row of await read(dir, 'relations.csv')) {
-      const values = [row.relation, row.source_kind, row.target_kind, row.role].map((v) => csvText(v).trim());
-      const full = [...values, csvText(row.description)];
-      if (relations.some((r) => r.folder < index && r.row.every((v, i) => v === full[i]))) continue;
-      relations.push({ folder: index, row: full });
+      const [relation, source, target, role] = [row.relation, row.source_kind, row.target_kind, row.role].map((v) => csvText(v).trim());
+      const description = csvText(row.description);
+      relationRows.push([where(dir, 'relations.csv'), relation, source, target]);
+      const key = JSON.stringify([relation, source, target]);
+      const known = byRule.get(key);
+      if (!known) {
+        const incoming = [relation, source, target, role, description];
+        relations.push(incoming);
+        byRule.set(key, incoming);
+        continue;
+      }
+      if (role !== '') known[3] = role;
+      if (description.trim() !== '') known[4] = description;
     }
   }
 
   await connection.run(`
     CREATE TABLE meta_kind_rows (folder VARCHAR, kind VARCHAR);
+    CREATE TABLE meta_relation_rows (folder VARCHAR, relation VARCHAR, source_kind VARCHAR, target_kind VARCHAR);
     CREATE TABLE meta_kinds_in (kind VARCHAR, label VARCHAR, stage VARCHAR, parent_kinds VARCHAR,
                                 required_fields VARCHAR, obligation VARCHAR, description VARCHAR);
     CREATE TABLE relations (relation VARCHAR, source_kind VARCHAR, target_kind VARCHAR, role VARCHAR, description VARCHAR);
@@ -226,7 +239,8 @@ async function loadMeta(connection: DuckDBConnection, metaDirs: string[], root: 
     'meta_kinds_in',
     kinds.map((k) => [k.kind, k.label, k.stage, k.parent_kinds.join(' '), k.required_fields.join(' '), k.obligation, k.description]),
   );
-  await append(connection, 'relations', relations.map((r) => r.row));
+  await append(connection, 'meta_relation_rows', relationRows);
+  await append(connection, 'relations', relations);
   const list = (col: string) => `CASE WHEN ${col} = '' THEN []::VARCHAR[] ELSE string_split(${col}, ' ') END AS ${col}`;
   await connection.run(`
     CREATE TABLE kinds AS
