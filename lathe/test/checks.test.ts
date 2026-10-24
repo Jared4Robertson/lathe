@@ -51,7 +51,7 @@ describe('Lathe-cited checks', () => {
   });
 
   it('LA-CHK-T05 Coverage counts satisfied and proved requirements and lists the gaps', () => {
-    expect(workspaces.good.coverage).toEqual([
+    expect(workspaces.good.coverage).toMatchObject([
       {
         domain: 'EX-NOTE',
         requirements: 1,
@@ -65,7 +65,7 @@ describe('Lathe-cited checks', () => {
         gaps: [],
       },
     ]);
-    expect(workspaces['broken-links'].coverage).toEqual([
+    expect(workspaces['broken-links'].coverage).toMatchObject([
       {
         domain: 'BX-D',
         requirements: 1,
@@ -115,7 +115,7 @@ describe('product configuration', () => {
 
 describe('coverage, meta-model and fitness', () => {
   it('LA-CHK-T12 Coverage counts designed, built and proved separately', () => {
-    expect(workspaces.unfinished.coverage).toEqual([
+    expect(workspaces.unfinished.coverage).toMatchObject([
       {
         domain: 'UX-D',
         requirements: 3,

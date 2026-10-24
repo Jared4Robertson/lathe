@@ -4,4 +4,4 @@ kind: requirement
 title: Coverage gaps are warnings, not errors
 parent: LA-CHK-UC02
 ---
-An unsatisfied or unproved requirement or rule MUST be reported as a warning, so that an honest, unfinished design still passes `lathe check`.
+An unsatisfied or unproved obligation MUST be reported as a warning, so that an honest, unfinished design still passes `lathe check`.
