@@ -2,6 +2,7 @@ import { lazy, Suspense, useMemo, useState, type ReactNode } from 'react';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { Link } from '../router';
+import { OpenInGraph } from '../graph/route';
 import {
   byIdOrder,
   checksPath,
@@ -353,6 +354,7 @@ function DomainPage({ index, productId, id, tab }: { index: SpecIndex; productId
         id={id}
       >
         <ProblemBadge problems={problems} />
+        <OpenInGraph id={id} />
       </PageHeader>
       <nav className="tabs" aria-label="Domain views">
         <Link to={listPath} aria-current={tab === 'list' ? 'page' : undefined}>Records</Link>
@@ -487,6 +489,7 @@ function RecordPage({ index, id }: { index: SpecIndex; id: string }) {
         id={id}
       >
         <ProblemBadge problems={problems} />
+        <OpenInGraph id={id} />
       </PageHeader>
       <div className="record-layout">
         <div className="record-main">

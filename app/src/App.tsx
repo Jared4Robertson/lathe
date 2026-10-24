@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Background,
   BaseEdge,
@@ -19,6 +19,9 @@ import { Link, navigate, usePath } from './router';
 import { parseSpecRoute, useSpec } from './specs/data';
 import { SpecMenu, SpecView } from './specs/SpecPages';
 import { onLatheEvent } from './events';
+import { GraphMenu, parseGraphPath } from './graph/route';
+
+const GraphPage = lazy(() => import('./graph/GraphPage'));
 
 type ModelNode = Node<ModelNodeData>;
 type ModelEdge = Edge<ModelEdgeData>;
@@ -95,6 +98,7 @@ export default function App() {
   const path = usePath();
   const specRoute = parseSpecRoute(path);
   const slug = specRoute ? null : slugFromPath(path);
+  const graphFocus = parseGraphPath(path);
   const spec = useSpec();
   const [diagrams, setDiagrams] = useState<DiagramSummary[]>([]);
   const [listError, setListError] = useState<string | null>(null);
@@ -118,8 +122,8 @@ export default function App() {
 
   // With neither a diagram nor a spec page in the address, open the first diagram.
   useEffect(() => {
-    if (!specRoute && !slug && diagrams.length > 0) navigate(diagramPath(diagrams[0].slug), true);
-  }, [specRoute, slug, diagrams]);
+    if (!specRoute && !slug && graphFocus === undefined && diagrams.length > 0) navigate(diagramPath(diagrams[0].slug), true);
+  }, [specRoute, slug, graphFocus, diagrams]);
 
   const current = diagrams.find((d) => d.slug === slug);
 
@@ -140,8 +144,13 @@ export default function App() {
         {listError && <p className="error">{listError}</p>}
         <NewDiagram onCreated={async (created) => { await loadDiagrams(); navigate(diagramPath(created.slug)); }} />
         <SpecMenu spec={spec} path={path} />
+        <GraphMenu path={path} />
       </nav>
-      {specRoute ? (
+      {graphFocus !== undefined ? (
+        <Suspense fallback={<main className="placeholder"><p>Loading the graph…</p></main>}>
+          <GraphPage spec={spec} focus={graphFocus} />
+        </Suspense>
+      ) : specRoute ? (
         <SpecView spec={spec} route={specRoute} />
       ) : current ? (
         <DiagramView key={current.slug} diagram={current} />
