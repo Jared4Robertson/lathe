@@ -70,3 +70,16 @@ Say, in a few lines:
 2. Each error you fixed and how.
 3. The coverage lines for each domain you touched (designed, built, proved and planned for each obligation kind, as `lathe check` prints them), and the warnings your change added or cleared.
 4. Any planned tests your change added, and why they are planned.
+
+## Structural warnings
+
+These warnings say where two stages do not join up yet. Fix the link, not the check:
+
+| Warning | Fix |
+| --- | --- |
+| `rule-not-applied` | Add the rule to `applies` on each use case that relies on it. If no use case does, ask whether the rule is still needed. |
+| `use-case-without-flow` | Add the use case to `carries_out` on the flow that walks through it, or write that flow (see `design-the-domain`). Only reported once the domain has a flow. |
+| `interaction-requirement-fulfills-nothing` | Add `fulfills` with the use case requirement or domain rule it carries out at its view, endpoint or flow. |
+| `test-type-mismatch` | A `domain_rule` test proves domain rules and an `acceptance` test proves requirements. Correct the `test_type`, or the `proves` links if they name the wrong record. |
+
+One mistake gives one error: a duplicated ID is reported as `duplicate-id`, without an error for each link to it, so fix the duplicate first and re-run the check. A relation rule restated in a product's `metaExtensions` `relations.csv` is the same rule, so only a rule listed twice in one file is `meta-duplicate-relation`.

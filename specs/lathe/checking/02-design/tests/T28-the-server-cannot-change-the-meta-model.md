@@ -3,7 +3,7 @@ id: LA-CHK-T28
 kind: test
 title: The server has no way to change the meta-model
 parent: LA-CHK
-test_type: acceptance
+test_type: domain_rule
 run_by: lathe/test/serve.test.ts
 links:
   proves: [LA-CHK-DR10]
