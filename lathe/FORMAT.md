@@ -4,6 +4,8 @@ Lathe stores a product's specifications as **records**: one Markdown file per re
 
 ## 1. Where records live
 
+Records live in the product's own repo, in the specs folder its `lathe.config.json` names (default `specs/`). See the [package README](README.md) for the config.
+
 ```
 specs/
   <product-folder>/            one folder per product, e.g. tool-library, lathe

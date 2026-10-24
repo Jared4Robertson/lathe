@@ -18,6 +18,7 @@ import type { DiagramSummary, Model } from './types';
 import { Link, navigate, usePath } from './router';
 import { parseSpecRoute, useSpec } from './specs/data';
 import { SpecMenu, SpecView } from './specs/SpecPages';
+import { onLatheEvent } from './events';
 
 type ModelNode = Node<ModelNodeData>;
 type ModelEdge = Edge<ModelEdgeData>;
@@ -112,8 +113,7 @@ export default function App() {
 
   useEffect(() => {
     loadDiagrams();
-    import.meta.hot?.on('model:changed', loadDiagrams);
-    return () => import.meta.hot?.off('model:changed', loadDiagrams);
+    return onLatheEvent('model:changed', loadDiagrams);
   }, [loadDiagrams]);
 
   // With neither a diagram nor a spec page in the address, open the first diagram.
@@ -220,8 +220,7 @@ function DiagramView({ diagram }: { diagram: DiagramSummary }) {
 
   useEffect(() => {
     load();
-    import.meta.hot?.on('model:changed', load);
-    return () => import.meta.hot?.off('model:changed', load);
+    return onLatheEvent('model:changed', load);
   }, [load]);
 
   // Highlight the selected term, its links and the terms at their other ends.
