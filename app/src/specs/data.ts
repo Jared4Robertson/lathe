@@ -103,13 +103,17 @@ export function useSpec(): SpecState {
 export const productPath = (id: string) => `/specs/${encodeURIComponent(id)}`;
 export const domainPath = (product: string, domain: string) => `/specs/${encodeURIComponent(product)}/${encodeURIComponent(domain)}`;
 export const recordPath = (id: string) => `/records/${encodeURIComponent(id)}`;
+/** A group's address: its parent record and the kind of its members. */
+export const groupPath = (parent: string, kind: string) => `/records/${encodeURIComponent(parent)}/${encodeURIComponent(kind)}`;
 export const checksPath = '/checks';
 export const formatPath = '/format';
 
 export type SpecRoute =
   | { page: 'product'; product: string }
-  | { page: 'domain'; product: string; domain: string; tab: 'list' | 'graph' }
+  | { page: 'domain'; product: string; domain: string }
   | { page: 'record'; id: string }
+  | { page: 'group'; parent: string; kind: string }
+  | { page: 'redirect'; to: string }
   | { page: 'checks' }
   | { page: 'format' }
   | { page: 'specs' }
@@ -120,12 +124,17 @@ export function parseSpecRoute(pathname: string): SpecRoute | null {
   const parts = pathname.split('/').filter(Boolean).map(decodeURIComponent);
   if (parts[0] === 'checks') return parts.length === 1 ? { page: 'checks' } : { page: 'missing' };
   if (parts[0] === 'format') return parts.length === 1 ? { page: 'format' } : { page: 'missing' };
-  if (parts[0] === 'records') return parts.length === 2 ? { page: 'record', id: parts[1] } : { page: 'missing' };
+  if (parts[0] === 'records') {
+    if (parts.length === 2) return { page: 'record', id: parts[1] };
+    if (parts.length === 3) return { page: 'group', parent: parts[1], kind: parts[2] };
+    return { page: 'missing' };
+  }
   if (parts[0] !== 'specs') return null;
   if (parts.length === 1) return { page: 'specs' };
   if (parts.length === 2) return { page: 'product', product: parts[1] };
-  if (parts.length === 3) return { page: 'domain', product: parts[1], domain: parts[2], tab: 'list' };
-  if (parts.length === 4 && parts[3] === 'graph') return { page: 'domain', product: parts[1], domain: parts[2], tab: 'graph' };
+  if (parts.length === 3) return { page: 'domain', product: parts[1], domain: parts[2] };
+  // The old graph tab of a domain is now the domain page in the Graph view.
+  if (parts.length === 4 && parts[3] === 'graph') return { page: 'redirect', to: `${domainPath(parts[1], parts[2])}?view=graph` };
   return { page: 'missing' };
 }
 

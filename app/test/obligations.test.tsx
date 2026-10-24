@@ -78,10 +78,14 @@ describe('obligation kinds and test states', () => {
   it('LA-BRW-T83 The domain page lists interaction requirements under their view, endpoint or flow', async () => {
     await openApp('/specs/DM/DM-SHOP', served());
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
+    const user = userEvent.setup();
     const view = within(section(/^Views/)).getByRole('link', { name: /^DM-SHOP-V01\s*Basket page/ }).closest('li') as HTMLElement;
-    expect(ids(within(view).getByRole('list', { name: 'Interaction requirements at DM-SHOP-V01' }))).toEqual(['DM-SHOP-V01-R01']);
+    expect(view).toHaveTextContent('1 interaction requirement');
+    await user.click(within(view).getByRole('button', { name: 'Expand DM-SHOP-V01' }));
+    expect(ids(within(view).getByRole('list', { name: 'Children of DM-SHOP-V01' }))).toEqual(['DM-SHOP-V01-R01']);
     // An endpoint lists its interaction requirements and a product's own obligation kind under it.
     const endpoint = within(section(/^Endpoints/)).getByRole('link', { name: /^DM-SHOP-E01\s*Add to basket/ }).closest('li') as HTMLElement;
+    await user.click(within(endpoint).getByRole('button', { name: 'Expand DM-SHOP-E01' }));
     expect(ids(endpoint.querySelector('ul.nested') as HTMLElement)).toEqual(['DM-SHOP-E01-R01', 'DM-SHOP-E01-R02', 'DM-SHOP-E01-S01']);
     // Their gaps show on their rows, and they are not listed again under "Other records".
     const row = within(endpoint).getByRole('link', { name: /DM-SHOP-E01-R02/ }).closest('.record-row') as HTMLElement;
@@ -91,7 +95,7 @@ describe('obligation kinds and test states', () => {
     expect(section(/^Endpoints/).querySelector('.section-count')).toHaveTextContent('1');
 
     // Searching for an interaction requirement keeps its endpoint above it.
-    const user = userEvent.setup();
+    await user.click(within(endpoint).getByRole('button', { name: 'Collapse DM-SHOP-E01' }));
     await user.type(screen.getByLabelText('Filter records'), '409');
     expect(ids(section(/^Endpoints/))).toEqual(['DM-SHOP-E01', 'DM-SHOP-E01-R01']);
     expect(within(section(/^Views/)).getByText('Nothing matches.')).toBeInTheDocument();

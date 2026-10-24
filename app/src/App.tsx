@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Background,
   BaseEdge,
@@ -15,15 +15,18 @@ import {
 } from '@xyflow/react';
 import { layoutModel, type ModelEdgeData, type ModelNodeData } from './layout';
 import type { DiagramSummary, Model } from './types';
-import { Link, navigate, usePath } from './router';
-import { parseSpecRoute, useSpec } from './specs/data';
-import { SpecMenu, SpecView } from './specs/SpecPages';
+import { navigate, useLocation } from './router';
+import { checksPath, formatPath, parseSpecRoute, useSpec } from './specs/data';
+import { SpecView } from './specs/SpecPages';
 import { onLatheEvent } from './events';
-import { GraphMenu, parseGraphPath } from './graph/route';
-
-const GraphPage = lazy(() => import('./graph/GraphPage'));
 import { LatheLogo } from './LatheLogo';
-
+import { Icon } from './components/icons';
+import { CommandsProvider, useAnnounce, useCommand, useShortcut } from './shell/commands';
+import { Nav } from './shell/Nav';
+import { isBool, usePref } from './shell/prefs';
+import { useNarrow } from './shell/useNarrow';
+import { FocusPage } from './views/FocusPage';
+import { graphRedirect, isFocusRoute, withView } from './views/address';
 type ModelNode = Node<ModelNodeData>;
 type ModelEdge = Edge<ModelEdgeData>;
 
@@ -96,11 +99,23 @@ const diagramPath = (slug: string) => `/diagrams/${slug}`;
 const slugFromPath = (path: string) => path.match(/^\/diagrams\/([a-z0-9-]+)/)?.[1] ?? null;
 
 export default function App() {
-  const path = usePath();
+  return (
+    <CommandsProvider>
+      <Shell />
+    </CommandsProvider>
+  );
+}
+
+const NAV_KEY = 'lathe:nav-collapsed';
+
+/** The app shell: the nav, the page for the address, and the commands that work everywhere. */
+function Shell() {
+  const { path, search } = useLocation();
   const specRoute = parseSpecRoute(path);
+  const isGraphPath = path === '/graph' || path.startsWith('/graph/');
   const slug = specRoute ? null : slugFromPath(path);
-  const graphFocus = parseGraphPath(path);
   const spec = useSpec();
+  const announce = useAnnounce();
   const [diagrams, setDiagrams] = useState<DiagramSummary[]>([]);
   const [listError, setListError] = useState<string | null>(null);
 
@@ -121,48 +136,151 @@ export default function App() {
     return onLatheEvent('model:changed', loadDiagrams);
   }, [loadDiagrams]);
 
+  // Old addresses: /graph/<id> is now the same thing in the Graph view; /specs/<p>/<d>/graph too.
+  const redirectTo = specRoute?.page === 'redirect' ? specRoute.to : isGraphPath && spec.index ? graphRedirect(spec.index, path) : null;
+  useEffect(() => { if (redirectTo) navigate(redirectTo, true); }, [redirectTo]);
+
   // With neither a diagram nor a spec page in the address, open the first diagram.
   useEffect(() => {
-    if (!specRoute && !slug && graphFocus === undefined && diagrams.length > 0) navigate(diagramPath(diagrams[0].slug), true);
-  }, [specRoute, slug, graphFocus, diagrams]);
+    if (!specRoute && !slug && !isGraphPath && diagrams.length > 0) navigate(diagramPath(diagrams[0].slug), true);
+  }, [specRoute, slug, isGraphPath, diagrams]);
+
+  // The nav: collapsed to a rail (remembered), or a drawer on a narrow screen.
+  const narrow = useNarrow();
+  const [collapsed, setCollapsed] = usePref<boolean>(NAV_KEY, false, isBool);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const navRef = useRef<HTMLElement>(null);
+  const findRef = useRef<HTMLInputElement>(null);
+  const menuButton = useRef<HTMLButtonElement>(null);
+  useEffect(() => { setDrawerOpen(false); }, [path, narrow]);
+  const closeDrawer = useCallback(() => { setDrawerOpen(false); setTimeout(() => menuButton.current?.focus(), 0); }, []);
+  // An opened drawer takes focus (the quick find); closing it gives focus back to the menu button.
+  useEffect(() => { if (narrow && drawerOpen) setTimeout(() => findRef.current?.focus(), 0); }, [narrow, drawerOpen]);
+  const showNav = useCallback(() => {
+    if (narrow) setDrawerOpen(true);
+    else if (collapsed) setCollapsed(false);
+  }, [narrow, collapsed, setCollapsed]);
+  const navShortcut = useShortcut('toggleNav');
+
+  useCommand('toggleNav', () => {
+    if (narrow) { if (drawerOpen) closeDrawer(); else setDrawerOpen(true); announce(drawerOpen ? 'Navigation closed' : 'Navigation opened'); return; }
+    setCollapsed(!collapsed);
+    announce(collapsed ? 'Navigation expanded' : 'Navigation collapsed');
+  });
+  useCommand('quickOpen', () => { showNav(); setTimeout(() => findRef.current?.focus(), 0); });
+  useCommand('focusNav', () => {
+    showNav();
+    setTimeout(() => (navRef.current?.querySelector<HTMLElement>('[aria-current="page"]') ?? findRef.current)?.focus(), 0);
+  });
+  useCommand('goBack', () => window.history.back());
+  useCommand('goForward', () => window.history.forward());
+  useCommand('openChecks', () => navigate(checksPath));
+  useCommand('goChecks', () => navigate(checksPath));
+  useCommand('goFormat', () => navigate(formatPath));
+  useCommand('goDiagrams', () => navigate(diagrams[0] ? diagramPath(diagrams[0].slug) : '/'));
+  useCommand('goHome', () => navigate('/specs'));
+  useCommand('goToDefinition', () => {
+    const link = (document.activeElement as HTMLElement | null)?.closest?.('a[href]') as HTMLAnchorElement | null;
+    const href = link?.getAttribute('href');
+    if (href && href.startsWith('/')) navigate(href);
+    else announce('Focus a link first, then press F12 to open its record.');
+  });
+  useCommand('nextProblem', () => stepProblem(1, announce));
+  useCommand('previousProblem', () => stepProblem(-1, announce));
+  useCommand('focusSearch', () => {
+    let el = document.activeElement as HTMLElement | null;
+    while (el && el !== document.body) {
+      const box = el.querySelector?.<HTMLInputElement>('input[type="search"]');
+      if (box) { box.focus(); return; }
+      el = el.parentElement;
+    }
+    const inPage = document.querySelector<HTMLInputElement>('#main input[type="search"]');
+    if (inPage) inPage.focus();
+    else { showNav(); setTimeout(() => findRef.current?.focus(), 0); }
+  });
 
   const current = diagrams.find((d) => d.slug === slug);
+  const focusRoute = isFocusRoute(specRoute) ? specRoute : null;
+  const graphHref = focusRoute ? withView(path, 'graph') : '/graph';
+  const newDiagram = <NewDiagram onCreated={async (created) => { await loadDiagrams(); navigate(diagramPath(created.slug)); }} />;
+
+  let page;
+  if (redirectTo || (isGraphPath && !spec.index)) {
+    page = <main className="placeholder" id="main"><p>{spec.error ? `Couldn't load the specs: ${spec.error}` : 'Opening…'}</p></main>;
+  } else if (isGraphPath) {
+    page = <main className="placeholder" id="main"><p>No products yet. Add a <code>product.md</code> under <code>specs/</code>.</p></main>;
+  } else if (focusRoute) {
+    page = <FocusPage spec={spec} route={focusRoute} search={search} />;
+  } else if (specRoute) {
+    page = <SpecView spec={spec} route={specRoute} />;
+  } else if (current) {
+    page = <DiagramView key={current.slug} diagram={current} />;
+  } else {
+    page = (
+      <main className="placeholder" id="main">
+        <p>{diagrams.length > 0 && slug ? `There's no diagram called "${slug}".` : 'Loading diagrams…'}</p>
+      </main>
+    );
+  }
 
   return (
-    <div className="app">
-      <nav className="menu" aria-label="Main">
-        <p className="brand"><LatheLogo /> Lathe</p>
-        <p className="eyebrow">Diagrams</p>
-        <ul>
-          {diagrams.map((d) => (
-            <li key={d.slug}>
-              <Link to={diagramPath(d.slug)} aria-current={d.slug === slug ? 'page' : undefined}>
-                {d.title}
-              </Link>
-            </li>
-          ))}
-        </ul>
-        {listError && <p className="error">{listError}</p>}
-        <NewDiagram onCreated={async (created) => { await loadDiagrams(); navigate(diagramPath(created.slug)); }} />
-        <SpecMenu spec={spec} path={path} />
-        <GraphMenu path={path} />
-      </nav>
-      {graphFocus !== undefined ? (
-        <Suspense fallback={<main className="placeholder"><p>Loading the graph…</p></main>}>
-          <GraphPage spec={spec} focus={graphFocus} />
-        </Suspense>
-      ) : specRoute ? (
-        <SpecView spec={spec} route={specRoute} />
-      ) : current ? (
-        <DiagramView key={current.slug} diagram={current} />
-      ) : (
-        <main className="placeholder">
-          <p>{diagrams.length > 0 && slug ? `There's no diagram called "${slug}".` : 'Loading diagrams…'}</p>
-        </main>
+    <div className={`app${collapsed && !narrow ? ' nav-collapsed' : ''}${narrow ? ' is-narrow' : ''}`}>
+      <a href="#main" className="skip-link">Skip to the page</a>
+      {narrow && (
+        <div className="topbar">
+          <button
+            ref={menuButton}
+            type="button"
+            className="icon-button"
+            aria-label="Open the navigation"
+            aria-expanded={drawerOpen}
+            aria-controls="nav"
+            title={`Open the navigation${navShortcut ? ` (${navShortcut})` : ''}`}
+            onClick={() => setDrawerOpen(true)}
+          >
+            <Icon name="menu" />
+          </button>
+          <span className="brand"><LatheLogo size={22} /> Lathe</span>
+        </div>
       )}
+      {narrow && drawerOpen && <div className="drawer-backdrop" onMouseDown={closeDrawer} />}
+      {(!narrow || drawerOpen) && (
+        <Nav
+          ref={navRef}
+          spec={spec}
+          path={path}
+          diagrams={diagrams}
+          diagramError={listError}
+          newDiagram={newDiagram}
+          graphHref={graphHref}
+          collapsed={collapsed}
+          onToggleCollapsed={() => setCollapsed(!collapsed)}
+          drawer={narrow}
+          drawerOpen={drawerOpen}
+          onCloseDrawer={closeDrawer}
+          findRef={findRef}
+        />
+      )}
+      {page}
     </div>
   );
 }
+
+/** F8 and Shift+F8: move focus to the next or previous problem on the page, and say what it is. */
+function stepProblem(step: 1 | -1, announce: (text: string) => void) {
+  const items = [...document.querySelectorAll<HTMLElement>('#main li.problem')];
+  if (items.length === 0) { announce('No problems on this page.'); return; }
+  const at = items.findIndex((el) => el === document.activeElement || el.contains(document.activeElement));
+  const next = at < 0 ? (step === 1 ? 0 : items.length - 1) : (at + step + items.length) % items.length;
+  const el = items[next];
+  el.tabIndex = -1;
+  el.classList.add('is-current-problem');
+  items.forEach((other) => { if (other !== el) other.classList.remove('is-current-problem'); });
+  el.focus();
+  el.scrollIntoView?.({ block: 'nearest' });
+  announce(`Problem ${next + 1} of ${items.length}: ${el.textContent?.trim() ?? ''}`);
+}
+
 
 function NewDiagram({ onCreated }: { onCreated: (d: DiagramSummary) => void }) {
   const [open, setOpen] = useState(false);
@@ -250,7 +368,7 @@ function DiagramView({ diagram }: { diagram: DiagramSummary }) {
   const empty = model !== null && model.terms.length === 0;
 
   return (
-    <main className="diagram">
+    <main className="diagram" id="main">
       <header>
         <div>
           <p className="eyebrow">Diagram · model/{diagram.slug}/*.csv via DuckDB</p>

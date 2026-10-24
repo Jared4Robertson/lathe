@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import {
   Background,
   BaseEdge,
@@ -15,8 +15,9 @@ import {
   type Node,
   type NodeProps,
 } from '@xyflow/react';
-import { Link, navigate } from '../router';
-import { kindLabel, problemOrder, recordPath, type SpecIndex, type SpecState } from '../specs/data';
+import { kindLabel, type SpecIndex } from '../specs/data';
+import { useCommand } from '../shell/commands';
+import { NodeLink, type GraphInfo } from './panel';
 import {
   FILE_KIND,
   NO_FILTERS,
@@ -27,7 +28,6 @@ import {
   graphRelationLabel,
   groupLabel,
   groupMarks,
-  groupMembers,
   isFiltered,
   isGraphNode,
   kindGroups,
@@ -36,21 +36,21 @@ import {
   parseGroupId,
   pluralLabel,
   relationsOf,
-  summary,
   traceChain,
   type Filters,
   type GraphNode,
   type Neighbourhood,
 } from './model';
 import { boxExit, layoutNeighbourhood, NODE_HEIGHT, NODE_WIDTH, type Placed } from './layout';
-import { GRAPH_ROOT, graphPath } from './route';
 
-// The graph view at /graph/<id> (or /graph/<parent-id>/<kind> for a group): an ego graph
-// centred on one record or group. Clicking a record re-centres on it and changes the address, so
-// Back walks back along the path; clicking a group opens or closes it.
+// The graph view: an ego graph centred on one record or group. Clicking a record re-centres on it
+// (through onNavigate, so the host changes the address and Back walks back along the path);
+// clicking a group opens or closes it.
 //
 // GraphView is the graph on its own: it takes the focus and an onNavigate callback and never reads
-// the address, so it can sit in any pane. GraphPage is the /graph page around it.
+// the address, so it can sit in any pane. The focus page (app/src/views/FocusPage.tsx) hosts it in
+// the Graph and Split views, keeps its settings across pages, and shows what it connects in the
+// inspector.
 
 interface NodeData extends Record<string, unknown> {
   node: GraphNode;
@@ -158,22 +158,14 @@ function writeTrail(trail: string[]) {
   try { window.sessionStorage.setItem(TRAIL_KEY, JSON.stringify(trail)); } catch { /* storage unavailable */ }
 }
 
-/** The page: waits for the workspace, opens the first product for /graph, then shows the graph. */
-export default function GraphPage({ spec, focus }: { spec: SpecState; focus: string | null }) {
-  const { index } = spec;
-  const first = index?.products[0]?.id;
-  useEffect(() => {
-    if (focus === null && first) navigate(graphPath(first), true);
-  }, [focus, first]);
-  const onNavigate = useCallback((id: string) => navigate(graphPath(id)), []);
-  if (!index) {
-    return <main className="placeholder"><p>{spec.error ? `Couldn't load the specs: ${spec.error}` : 'Loading specs…'}</p></main>;
-  }
-  if (focus === null) {
-    return <main className="placeholder"><p>{first ? 'Opening the graph…' : <>No products yet. Add a <code>product.md</code> under <code>specs/</code>.</>}</p></main>;
-  }
-  return <GraphView index={index} focus={focus} onNavigate={onNavigate} />;
+/** What the person set on the graph: depth, filters, trace mode, and the groups they opened or closed. */
+export interface GraphSettings {
+  depth: number;
+  filters: Filters;
+  trace: boolean;
+  openGroups: ReadonlyMap<string, boolean>;
 }
+export const DEFAULT_GRAPH_SETTINGS: GraphSettings = { depth: 1, filters: NO_FILTERS, trace: false, openGroups: new Map() };
 
 export interface GraphViewProps {
   index: SpecIndex;
@@ -181,18 +173,13 @@ export interface GraphViewProps {
   focus: string;
   /** Called with a record or group ID when the person moves the centre there. */
   onNavigate: (id: string) => void;
-  /** The address a node's link points to, for opening in a new tab. Defaults to its /graph address. */
-  hrefFor?: (id: string) => string;
-}
-
-/** A link to another centre: a real address for new tabs, onNavigate on a plain click. */
-function NodeLink({ id, onNavigate, hrefFor, children, title }: { id: string; onNavigate: (id: string) => void; hrefFor: (id: string) => string; children: ReactNode; title?: string }) {
-  const onClick = (e: MouseEvent<HTMLAnchorElement>) => {
-    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-    e.preventDefault();
-    onNavigate(id);
-  };
-  return <a href={hrefFor(id)} onClick={onClick} title={title}>{children}</a>;
+  /** The address a node's link points to, for opening in a new tab. */
+  hrefFor: (id: string) => string;
+  /** The settings, when the host keeps them (so they survive moving between pages and views). */
+  settings?: GraphSettings;
+  onSettingsChange?: (settings: GraphSettings) => void;
+  /** Called with the drawn graph, so the host's inspector can list what it connects. */
+  onGraph?: (info: GraphInfo) => void;
 }
 
 /** How a node is named in the trail and lists: its ID, or a group's parent and plural kind. */
@@ -201,13 +188,21 @@ const shortName = (index: SpecIndex, id: string) => {
   return g && !index.byId.has(id) ? `${g.parent} / ${pluralLabel(index, g.kind)}` : id;
 };
 
-export function GraphView({ index, focus, onNavigate, hrefFor = graphPath }: GraphViewProps) {
-  const [depth, setDepth] = useState(1);
-  const [filters, setFilters] = useState<Filters>(NO_FILTERS);
-  const [trace, setTrace] = useState(false);
+export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted, onSettingsChange, onGraph }: GraphViewProps) {
+  const [own, setOwn] = useState<GraphSettings>(DEFAULT_GRAPH_SETTINGS);
+  const settings = hosted ?? own;
+  const { depth, filters, trace, openGroups } = settings;
+  const latest = useRef(settings);
+  latest.current = settings;
+  const update = useCallback((patch: Partial<GraphSettings>) => {
+    const next = { ...latest.current, ...patch };
+    latest.current = next;
+    if (onSettingsChange) onSettingsChange(next); else setOwn(next);
+  }, [onSettingsChange]);
+  const setDepth = (d: number) => update({ depth: d });
+  const setFilters = (f: Filters) => update({ filters: f });
+  const setTrace = (t: boolean) => update({ trace: t });
   const [trail, setTrail] = useState<string[]>(readTrail);
-  // Groups the person opened (true) or closed (false), remembered while walking the graph.
-  const [openGroups, setOpenGroups] = useState<ReadonlyMap<string, boolean>>(new Map());
 
   useEffect(() => {
     if (!isGraphNode(index, focus)) return;
@@ -223,27 +218,32 @@ export function GraphView({ index, focus, onNavigate, hrefFor = graphPath }: Gra
     () => (tracing ? traceChain(index, focus, filters) : neighbourhood(index, focus, depth, filters, openGroups)),
     [index, focus, depth, filters, tracing, openGroups],
   );
+  useEffect(() => { onGraph?.({ graph, tracing }); }, [graph, tracing, onGraph]);
 
   const toggleGroup = useCallback((id: string, nowOpen: boolean) => {
-    setOpenGroups((m) => new Map(m).set(id, !nowOpen));
-  }, []);
+    update({ openGroups: new Map(latest.current.openGroups).set(id, !nowOpen) });
+  }, [update]);
 
-  const clearFilters = useCallback(() => { setFilters(NO_FILTERS); setTrace(false); }, []);
+  const clearFilters = useCallback(() => update({ filters: NO_FILTERS, trace: false }), [update]);
   const onPageKey = (e: KeyboardEvent<HTMLElement>) => {
     if (e.key === 'Escape' && (isFiltered(filters) || trace)) { e.preventDefault(); clearFilters(); }
   };
+  const valid = isGraphNode(index, focus);
+  useCommand('graphDepthUp', () => update({ depth: 2 }), valid && !tracing);
+  useCommand('graphDepthDown', () => update({ depth: 1 }), valid && !tracing);
+  useCommand('graphTrace', () => update({ trace: !latest.current.trace }), valid && canTrace(index, focus));
 
-  if (!isGraphNode(index, focus)) {
+  if (!valid) {
     return (
-      <main className="placeholder">
-        <p>There's no record or group <code>{focus}</code>. <Link to={GRAPH_ROOT}>Open the graph</Link>.</p>
-      </main>
+      <div className="placeholder graph-missing">
+        <p>There's no record or group <code>{focus}</code>.</p>
+      </div>
     );
   }
   const groups = graph.nodes.filter((n) => n.group).length;
 
   return (
-    <main className="graph-page" onKeyDown={onPageKey}>
+    <section className="graph-page" aria-label="Graph" onKeyDown={onPageKey}>
       <header className="graph-header">
         <nav className="graph-trail" aria-label="Records visited">
           <ol>
@@ -281,11 +281,8 @@ export function GraphView({ index, focus, onNavigate, hrefFor = graphPath }: Gra
             <GraphCanvas index={index} graph={graph} onNavigate={onNavigate} onToggle={toggleGroup} />
           </ReactFlowProvider>
         </div>
-        {index.byId.has(focus)
-          ? <SidePanel index={index} graph={graph} tracing={tracing} recordId={focus} onNavigate={onNavigate} hrefFor={hrefFor} />
-          : <GroupPanel index={index} groupId={focus} onNavigate={onNavigate} hrefFor={hrefFor} />}
       </div>
-    </main>
+    </section>
   );
 }
 
@@ -495,6 +492,13 @@ function GraphCanvas({ index, graph, onNavigate, onToggle }: {
     return () => observer.disconnect();
   }, [fit]);
 
+  useCommand('graphFit', () => fit(300), !!placed);
+  useCommand('graphToggleGroup', () => {
+    const id = active.current;
+    const node = id ? placed?.graph.nodes.find((n) => n.id === id) : undefined;
+    if (node?.group && id) { refocus.current = id; onToggle(id, node.group.open); }
+  }, !!placed);
+
   /** A click or Enter on a node: a group opens or closes, a record becomes the centre. */
   const activate = (id: string, fromKeyboard: boolean) => {
     if (!placed || id.startsWith('file:') || id === placed.graph.focus) return;
@@ -558,124 +562,3 @@ function GraphCanvas({ index, graph, onNavigate, onToggle }: {
   );
 }
 
-interface PanelLinks {
-  onNavigate: (id: string) => void;
-  hrefFor: (id: string) => string;
-}
-
-function SidePanel({ index, graph, tracing, recordId, onNavigate, hrefFor }: { index: SpecIndex; graph: Neighbourhood; tracing: boolean; recordId: string } & PanelLinks) {
-  const record = index.byId.get(recordId)!;
-  const problems = [...(index.problemsFor.get(recordId) ?? [])].sort(problemOrder);
-  const gaps = gapsFor(index, recordId);
-  const text = summary(record.body);
-  const near = graph.nodes.filter((n) => n.distance === 1);
-  const relationTo = (id: string) => {
-    const group = parseGroupId(id);
-    if (group && !index.byId.has(id)) return group.parent === recordId ? 'child group' : 'its group';
-    if (record.parent === id) return 'parent';
-    if (index.byId.get(id)?.parent === recordId) return 'child';
-    return graph.edges
-      .filter((e) => e.relation !== PARENT && ((e.source === recordId && e.target === id) || (e.target === recordId && e.source === id)))
-      .map((e) => (e.source === recordId ? graphRelationLabel(e.relation) : `${graphRelationLabel(e.relation)} this`))
-      .join(', ');
-  };
-  const files = graph.nodes.filter((n) => n.kind === FILE_KIND);
-  return (
-    <aside className="graph-side" aria-label="Focused record">
-      <p className="eyebrow">{kindLabel(index, record.kind)}</p>
-      <h1>{record.title}</h1>
-      <p className="record-id"><code>{record.id}</code></p>
-      {text ? <p className="graph-summary">{text}</p> : <p className="hint">No body text.</p>}
-      <p><Link to={recordPath(record.id)} className="graph-open">Open page</Link></p>
-      <h2>Problems <span className="section-count">{problems.length}</span></h2>
-      {problems.length === 0 ? <p className="hint">No problems.</p> : (
-        <ul className="graph-problems">
-          {problems.map((p, i) => <li key={i} className={`problem ${p.severity}`}><span className="severity">{p.severity}</span> {p.message}</li>)}
-        </ul>
-      )}
-      {(record.kind === 'requirement' || record.kind === 'domain_rule') && (
-        <>
-          <h2>Coverage gaps <span className="section-count">{gaps.length}</span></h2>
-          {gaps.length === 0 ? <p className="hint">Satisfied and proved.</p> : (
-            <ul className="graph-gaps">
-              {gaps.map((g) => <li key={g}>{g === 'satisfies' ? 'No component satisfies it.' : 'No test proves it.'}</li>)}
-            </ul>
-          )}
-        </>
-      )}
-      <h2>{tracing ? 'Traceability chain' : 'Connected records'} <span className="section-count">{near.length}</span></h2>
-      {near.length === 0 ? <p className="hint">{tracing ? 'Nothing fulfills, satisfies or proves it yet.' : 'Nothing connected (check the filters).'}</p> : (
-        <ul className="plain graph-near">
-          {near.map((n) => (
-            <li key={n.id}>
-              <NodeLink id={n.id} onNavigate={onNavigate} hrefFor={hrefFor}>{n.group ? <>{n.title}</> : <><code>{n.id}</code> {n.title}</>}</NodeLink>
-              <small className="meta"> {relationTo(n.id)}</small>
-            </li>
-          ))}
-        </ul>
-      )}
-      {files.length > 0 && (
-        <>
-          <h2>Files <span className="section-count">{files.length}</span></h2>
-          <ul className="plain">{files.map((f) => <li key={f.id}><code>{f.title}</code></li>)}</ul>
-        </>
-      )}
-      <Legend />
-    </aside>
-  );
-}
-
-/** The side panel when a group is the centre: its parent, a summary of its members' problems and gaps, and every member. */
-function GroupPanel({ index, groupId, onNavigate, hrefFor }: { index: SpecIndex; groupId: string } & PanelLinks) {
-  const { parent, kind } = parseGroupId(groupId)!;
-  const parentRecord = index.byId.get(parent)!;
-  const members = groupMembers(index, groupId);
-  const marks = groupMarks(index, groupId);
-  return (
-    <aside className="graph-side" aria-label="Focused group">
-      <p className="eyebrow">Group</p>
-      <h1>{groupLabel(index, groupId)}</h1>
-      <p className="record-id">
-        {pluralLabel(index, kind)} of <NodeLink id={parent} onNavigate={onNavigate} hrefFor={hrefFor}><code>{parent}</code> {parentRecord.title}</NodeLink>
-      </p>
-      <p><Link to={recordPath(parent)} className="graph-open">Open parent page</Link></p>
-      <h2>Problems and gaps among its members</h2>
-      {marks.errors + marks.warnings === 0 && marks.gaps.length === 0 ? <p className="hint">None.</p> : (
-        <ul className="graph-problems">
-          {marks.errors > 0 && <li className="problem error">{marks.errors} error{marks.errors > 1 ? 's' : ''}</li>}
-          {marks.warnings > 0 && <li className="problem warning">{marks.warnings} warning{marks.warnings > 1 ? 's' : ''}</li>}
-          {marks.gaps.map((g) => <li key={g} className="graph-gaps">{g === 'satisfies' ? 'Some are not satisfied.' : 'Some are not proved.'}</li>)}
-        </ul>
-      )}
-      <h2>Members <span className="section-count">{members.length}</span></h2>
-      <ul className="plain graph-near">
-        {members.map((m) => (
-          <li key={m.id}><NodeLink id={m.id} onNavigate={onNavigate} hrefFor={hrefFor}><code>{m.id}</code> {m.title}</NodeLink></li>
-        ))}
-      </ul>
-      <Legend />
-    </aside>
-  );
-}
-
-function Legend() {
-  return (
-    <section className="graph-legend" aria-label="Legend">
-      <h2>Legend</h2>
-      <ul className="plain">
-        <li><span className="graph-swatch stage-define" /> Define (aggregate, rule, use case, requirement)</li>
-        <li><span className="graph-swatch stage-design" /> Design (flow, view, endpoint, component, test)</li>
-        <li><span className="graph-swatch stage-structural" /> Structural (product, domain, question)</li>
-        <li><span className="graph-swatch stage-group" /> Group of one kind of child, with its count (▸ folded, ▾ open)</li>
-        <li><span className="graph-swatch stage-file" /> File named by a component or test</li>
-        <li><span className="graph-line rel-structure" /> parent / child (the tree, through groups)</li>
-        <li><span className="graph-line rel-trace" /> satisfies, proves, fulfills</li>
-        <li><span className="graph-line rel-design" /> uses, implements, depends on</li>
-        <li><span className="graph-line rel-other" /> other links</li>
-        <li><span className="graph-mark error">!</span> has errors <span className="graph-mark gap">gap</span> not satisfied or not proved (on a group: among its members)</li>
-      </ul>
-      <p className="hint">Tiers run left to right: product, domain, aggregates and use cases, rules and requirements, design records, tests. A record with several kinds of child, or many of one kind, reaches them through a group in its own column. A trace also runs left to right, from the rule to the files that build and test it.</p>
-      <p className="hint">Click a record, or press Enter on it, to centre the graph there. Click a group, or press Enter on it, to open or close it; centre on a group from the side panel. Arrow keys or Tab move between boxes.</p>
-    </section>
-  );
-}
