@@ -62,24 +62,31 @@ Product prefix, domain code, then a kind code and number. The engine only checks
 | view | `<P>-<D>-V<nn>` | `TL-LEND-V01` |
 | endpoint | `<P>-<D>-E<nn>` | `TL-LEND-E01` |
 | component | `<P>-<D>-C<nn>` | `TL-LEND-C01` |
+| interaction_requirement | `<view, endpoint or flow>-R<nn>` | `TL-LEND-E03-R01` |
 | test | `<P>-<D>-T<nn>` | `TL-LEND-T01` |
 | question | `<P>-<D>-Q<nn>` (or `<P>-Q<nn>`) | `TL-LEND-Q01` |
 | fitness | `<P>-FIT<nn>` | `LA-FIT01` |
 
 ## 4. Code traceability
 
-A `test` record names the file that runs it in `run_by` (a path relative to the repo root). That file MUST contain the test record's ID, for example in the test's name: `it('TL-LEND-T01 A loan cannot start on an unavailable tool', …)`. A `component` record names its file in `file` (relative to the repo root); the design may name a file that does not exist yet, which is reported as a warning.
+A `test` record has a `state`: `automated` (the default when the field is absent), `manual`, or `planned`.
+
+- An **automated** test names the file that runs it in `run_by` (a path relative to the repo root). That file MUST contain the test record's ID **or** the ID of a record the test proves, for example in the test's name: `it('TL-LEND-T01 A loan cannot start on an unavailable tool', …)` or `it('TL-LEND-DR05 …', …)`. Products that key their tests by the rule they prove, as S2 does, need no separate test IDs in code.
+- A **manual** test describes its procedure in its body; `run_by` is optional.
+- A **planned** test is not written yet. It shows what is meant to prove an obligation, but it does not count as proof. A `component` record names its file in `file` (relative to the repo root); the design may name a file that does not exist yet, which is reported as a warning.
 
 ## 5. Checks
 
 The engine runs every SQL file in `lathe/checks/`. Each returns rows of `(severity, check, record, message)`:
 
-- **error**: the workspace is broken (duplicate ID, unknown kind, bad parent, missing required field, disallowed or dangling link, a test whose `run_by` file is missing or does not mention its ID). `lathe check` exits non-zero.
+- **error**: the workspace is broken (duplicate ID, unknown kind, bad parent, missing required field, disallowed or dangling link, an automated test with no `run_by`, or whose `run_by` file is missing or mentions neither its ID nor an ID it proves). `lathe check` exits non-zero.
 - **warning**: work still to do, not breakage (a requirement or domain rule that no component satisfies or no test proves, a use case with no requirements, a component file that does not exist yet).
 
 ## 6. Coverage
 
-For each domain: how many requirements and domain rules exist; how many are **designed** (a component satisfies them), how many are **built** (a component whose file exists satisfies them) and how many are **proved** (a test proves them); plus the list of gaps. Designed is S2's "design complete" view; built shows how much of that design exists as code.
+Coverage follows the meta-model. A kind marked `obligation: yes` in `kinds.csv` (by default `domain_rule`, `requirement` and `interaction_requirement`) is something that must be designed, built and proved. A relation's `role` in `relations.csv` says what a link does: `design` (such as a component `satisfies` it) or `proof` (such as a test `proves` it).
+
+For each domain and each obligation kind: how many records exist; how many are **designed** (a `design` link targets them), **built** (a `design` link from a component whose file exists), **proved** (a `proof` link from an automated or manual test), and **planned** (not proved, but a planned test is meant to prove them); plus the list of gaps. A product's own obligation kinds and relations, added by extension, are counted the same way.
 
 ## 7. Fitness
 
@@ -88,3 +95,12 @@ A `fitness` record is the judgment of the person a product serves: on a `date` (
 ## 8. What records do not carry
 
 Records carry no status, approval or decision history: a record in the specs is in force, uncertainty is an open `question`, and git keeps the history. A decided question is removed and its answer written into the records it affects.
+
+## 9. Extending the meta-model
+
+A product adds to Lathe's meta-model with a `metaExtensions` folder (see the package README) holding a `kinds.csv` and/or `relations.csv` with the same columns.
+
+- A **new kind** or **new relation** row is added as it is.
+- A row whose `kind` already exists **widens** that kind: its `parent_kinds` and `required_fields` are added to the default's, and a non-empty `label`, `stage`, `obligation` or `description` replaces the default's. A product can, for example, let a `domain_rule` sit directly under a `domain`.
+- A relation row identical to an existing one changes nothing.
+- Two rows for the same kind within one folder are an error (`meta-duplicate-kind`).
