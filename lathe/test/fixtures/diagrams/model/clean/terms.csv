@@ -1,0 +1,9 @@
+name,kind,context,status,definition
+Shelf,aggregate,people_and_tools,decided,"Holds books, in order."
+Book,entity,people_and_tools,decided,A book on a shelf.
+Label,value_object,people_and_tools,draft,The shelf's printed label.
+Book shelved,domain_event,people_and_tools,decided,A book was put on a shelf.
+Reader,term,people_and_tools,open,Someone who may read the book.
+Reading,topic,sdlc,decided,The whole subject.
+Finding books,topic,sdlc,decided,A subtopic.
+Choosing books,topic,sdlc,decided,Another subtopic.

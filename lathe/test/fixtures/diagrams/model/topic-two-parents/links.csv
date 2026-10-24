@@ -1,0 +1,4 @@
+source,relation,target,cardinality,status,note
+Reading,includes,Notes,,decided,
+Writing,includes,Notes,,decided,
+Writing,includes,Pen,,decided,

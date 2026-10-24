@@ -1,0 +1,4 @@
+source,relation,target,cardinality,status,note
+Shelf,contains,Book,,decided,
+Shelf,contains,Ghost,,decided,
+Phantom,serves,Shelf,,decided,
