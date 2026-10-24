@@ -9,6 +9,7 @@ requirement,Requirement,define,use_case,,yes,"One rule a use case must follow, s
 pattern,Pattern,define,product,settings,no,"Behaviour several use cases share, stated once with the settings each use case that follows it fills in. Its settings are a space-separated list of field names."
 pattern_rule,Pattern rule,define,pattern,,yes,"One rule of a pattern, stated with MUST, MUST NOT, SHOULD or MAY. Every domain that follows the pattern designs and proves it, unless the rule names a setting (in `setting`) that all of that domain's following use cases mark Not applicable."
 flow,Flow,design,domain capability,,no,"An end-to-end path through views and endpoints that carries out one or more use cases."
+flow_step,Flow step,design,flow,order,no,"One step of a flow, in order: what happens, through which view, endpoint or component, and what the step carries out."
 view,View,design,domain,,no,"A screen or page a person uses."
 endpoint,Endpoint,design,domain,method route,no,"An HTTP endpoint: its method, route, request and responses."
 interaction_requirement,Interaction requirement,design,view endpoint flow,,yes,"One rule a view, endpoint or flow must follow, such as a field's limits or an error's response, stated with MUST, MUST NOT, SHOULD or MAY."
