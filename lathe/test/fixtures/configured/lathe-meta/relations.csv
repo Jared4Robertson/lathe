@@ -1,0 +1,2 @@
+relation,source_kind,target_kind,description
+summarises,report,aggregate,"The report summarises the aggregate."
