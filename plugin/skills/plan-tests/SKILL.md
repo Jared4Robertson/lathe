@@ -12,7 +12,7 @@ A `test` record says what one test proves and how it is run. An obligation (a re
 | Field | Meaning |
 | --- | --- |
 | `id` | `<P>-<D>-T<nn>`, the next free number in the domain. |
-| `parent` | The domain. |
+| `parent` | The domain, or, when the domain has capabilities, the capability of the use cases whose requirements it proves. A test that proves only domain rules stays under the domain. |
 | `title` | What the test shows, as a sentence. |
 | `test_type` | Required. For example `domain_rule`, `requirement`, `endpoint`. |
 | `state` | `automated` (the default when absent), `manual` or `planned`. Any other value is an error. |

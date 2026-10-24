@@ -2,9 +2,13 @@
 id: TL-LEND-UC04
 kind: use_case
 title: Return a tool
-parent: TL-LEND
+parent: TL-LEND-CAP03
 actor: Librarian
+record: Loan
+required_input: The tool's condition, good or needs repair; a note is optional.
+result: The returned loan, saying whether it came back late.
 links:
+  follows: [TL-PAT-LIBRARIAN-ACTION]
   applies: [TL-LEND-DR04, TL-LEND-DR08, TL-LEND-DR09, TL-LEND-DR10, TL-LEND-DR11]
 ---
 A member brings a tool back; the librarian checks it and records the return.
