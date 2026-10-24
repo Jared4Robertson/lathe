@@ -56,6 +56,7 @@ Product prefix, domain code, then a kind code and number. The engine only checks
 | domain | `<P>-<D>` | `TL-LEND` |
 | capability | `<P>-<D>-CAP<nn>` | `TL-LEND-CAP01` |
 | pattern | `<P>-PAT-<name>` | `TL-PAT-LIBRARIAN-ACTION` |
+| pattern_rule | `<pattern>-R<nn>` | `TL-PAT-LIBRARIAN-ACTION-R01` |
 | aggregate | `<P>-<D>-A<n>` | `TL-LEND-A1` |
 | domain_rule | `<P>-<D>-DR<nn>` | `TL-LEND-DR01` |
 | use_case | `<P>-<D>-UC<nn>` | `TL-LEND-UC01` |
@@ -73,7 +74,11 @@ Product prefix, domain code, then a kind code and number. The engine only checks
 
 A `test` record has a `state`: `automated` (the default when the field is absent), `manual`, or `planned`.
 
-- An **automated** test names the file that runs it in `run_by` (a path relative to the repo root). That file MUST contain the test record's ID **or** the ID of a record the test proves, for example in the test's name: `it('TL-LEND-T01 A loan cannot start on an unavailable tool', …)` or `it('TL-LEND-DR05 …', …)`. Products that key their tests by the rule they prove, as Client does, need no separate test IDs in code.
+- An **automated** test names the file that runs it in `run_by` (a path relative to the repo root). That file MUST name the test record's own ID **or else every** ID the test proves (each target of a `proof`-role link such as `proves`), for example in the test's name: `it('TL-LEND-T01 A loan cannot start on an unavailable tool', …)` or `it('TL-LEND-DR05 …', …)`. IDs are matched as whole IDs.
+  - When the file names the test's own ID, the test record vouches for all its claims.
+  - Otherwise each proved ID the file leaves out is its own `proof-not-in-file` error. Products that key their tests by the rule they prove, as Client does, need no separate test IDs in code, but a test that proves two rules must name both.
+  - A test that proves nothing and whose file does not name its own ID is a `test-file-missing-id` error.
+- An optional `key` field on a test gives other text the file must contain instead, for example a test function name or a pattern proof's heading: `key: test_librarian_actions_are_checked`. When `key` is present, the file MUST contain that text exactly, and the ID rules above do not apply; a file without it is a `test-file-missing-id` error.
 - A **manual** test describes its procedure in its body; `run_by` is optional.
 - A **planned** test is not written yet. It shows what is meant to prove an obligation, but it does not count as proof. A `component` record names its file in `file` (relative to the repo root); the design may name a file that does not exist yet, which is reported as a warning.
 
@@ -81,14 +86,22 @@ A `test` record has a `state`: `automated` (the default when the field is absent
 
 The engine runs every SQL file in `lathe/checks/`. Each returns rows of `(severity, check, record, message)`:
 
-- **error**: the workspace is broken (duplicate ID, unknown kind, bad parent, missing required field, disallowed or dangling link, an automated test with no `run_by`, or whose `run_by` file is missing or mentions neither its ID nor an ID it proves, a bad or repeated capability order, a pattern setting a use case does not give, a pattern setting that is not a valid field name). `lathe check` exits non-zero.
-- **warning**: work still to do, not breakage (a requirement or domain rule that no component satisfies or no test proves, a use case with no requirements, a component file that does not exist yet, a use case left outside its domain's capabilities, two followed patterns sharing a setting).
+- **error**: the workspace is broken (duplicate ID, unknown kind, bad parent, missing required field, disallowed or dangling link, an automated test with no `run_by`, or whose `run_by` file is missing or mentions neither its ID nor an ID it proves, a bad or repeated capability order, a pattern setting a use case does not give, a pattern setting that is not a valid field name, a pattern rule naming a setting its pattern does not have, a proof claim the test's file does not back (`proof-not-in-file`)). `lathe check` exits non-zero.
+- **warning**: work still to do, not breakage (a requirement or domain rule that no component satisfies or no test proves, a use case with no requirements, a component file that does not exist yet, a use case left outside its domain's capabilities, two followed patterns sharing a setting, a pattern nobody follows, an obligation outside every domain, a record ID cited in prose that does not exist). The structural warnings say where two stages do not join up yet:
+  - `rule-not-applied`: a domain rule that no use case `applies`.
+  - `use-case-without-flow`: a use case that no flow `carries_out`, in a domain that has flows. A domain with no flows yet is not reported.
+  - `interaction-requirement-fulfills-nothing`: an interaction requirement with no `fulfills` link.
+  - `test-type-mismatch`: a test with `test_type: domain_rule` that proves requirements but no domain rule, or with `test_type: acceptance` that proves domain rules but no requirement. Other types, such as `unit`, are not compared.
+
+One mistake gives one error. When an ID is duplicated, a link or parent that points at it is judged against every record with that ID, and is reported only if none of them allows it. A record whose parent does not exist is reported as `unknown-parent` only.
 
 ## 6. Coverage
 
-Coverage follows the meta-model. A kind marked `obligation: yes` in `kinds.csv` (by default `domain_rule`, `requirement` and `interaction_requirement`) is something that must be designed, built and proved. A relation's `role` in `relations.csv` says what a link does: `design` (such as a component `satisfies` it) or `proof` (such as a test `proves` it).
+Coverage follows the meta-model. A kind marked `obligation: yes` in `kinds.csv` (by default `domain_rule`, `requirement`, `interaction_requirement` and `pattern_rule`) is something that must be designed, built and proved. A relation's `role` in `relations.csv` says what a link does: `design` (such as a component `satisfies` it) or `proof` (such as a test `proves` it).
 
-For each domain and each obligation kind: how many records exist; how many are **designed** (a `design` link targets them), **built** (a `design` link from a component whose file exists), **proved** (a `proof` link from an automated or manual test), and **planned** (not proved, but a planned test is meant to prove them); plus the list of gaps. A product's own obligation kinds and relations, added by extension, are counted the same way.
+Each obligation is counted in the domain that owes it. A record that sits in a domain is owed by that domain. A pattern rule sits under a pattern, outside every domain, and is owed instead by each domain that follows the pattern, where only that domain's own components and tests design and prove it (section 11). Any other obligation that sits in no domain is counted nowhere and reported as an `obligation-outside-domain` warning.
+
+For each domain and each obligation kind: how many obligations it owes; how many are **designed** (a `design` link targets them), **built** (a `design` link from a component whose file exists), **proved** (a `proof` link from an automated or manual test), and **planned** (not proved, but a planned test is meant to prove them); plus the list of gaps. A pattern rule owed by several domains is counted, and has its gaps, in each of them. A product's own obligation kinds and relations, added by extension, are counted the same way.
 
 ## 7. Fitness
 
@@ -104,8 +117,8 @@ A product adds to Lathe's meta-model with a `metaExtensions` folder (see the pac
 
 - A **new kind** or **new relation** row is added as it is.
 - A row whose `kind` already exists **widens** that kind: its `parent_kinds` and `required_fields` are added to the default's, and a non-empty `label`, `stage`, `obligation` or `description` replaces the default's. A product can, for example, let a `domain_rule` sit directly under a `domain`.
-- A relation row identical to an existing one changes nothing.
-- Two rows for the same kind within one folder are an error (`meta-duplicate-kind`).
+- A relation row with the same `relation`, `source_kind` and `target_kind` as an existing one is the same rule: a non-empty `role` or `description` replaces the default's, and an empty one keeps it. So restating a default rule, identically or in other words, changes nothing else, and a product can, for example, give a default relation the `design` role.
+- Two rows for the same kind within one folder are an error (`meta-duplicate-kind`), and so are two rows for the same relation rule within one folder (`meta-duplicate-relation`). Each message names the folder's file.
 
 ## 10. Capabilities and patterns
 
@@ -135,7 +148,7 @@ The domain's **use case index** comes from the records: its capabilities in orde
 
 ### Patterns
 
-A `pattern` sits under the product, since domains share it, and lists its **settings** in `settings`: setting names separated by spaces, each a valid field name (lower-case letters, digits and underscores, starting with a letter, and not `id`, `kind`, `title`, `parent` or `links`). Its body says what it is for, what each setting decides, and its rules, using MUST / MUST NOT / SHOULD / MAY.
+A `pattern` sits under the product, since domains share it, and lists its **settings** in `settings`: setting names separated by spaces, each a valid field name (lower-case letters, digits and underscores, starting with a letter, and not `id`, `kind`, `title`, `parent` or `links`). Its body says what it is for and what each setting decides; its rules are `pattern_rule` records under it (section 11).
 
 ```markdown
 ---
@@ -171,3 +184,56 @@ In YAML, a value containing `: ` must be quoted, so write `audit: "Not applicabl
 - A setting that a following use case does not give, or gives as `Not applicable:` with no reason, is a `pattern-setting-missing` error.
 - A setting name that is not a valid field name is a `bad-pattern-settings` error on the pattern.
 - A use case that follows two patterns sharing a setting name has one field for both: a `pattern-setting-clash` warning. Rename the setting in one of the patterns.
+
+## 11. Pattern rules
+
+A pattern's rules are records, so that each domain that follows the pattern must design and prove them, as Client's "Patterns we follow" tables do. A `pattern_rule` sits under its pattern and states one rule with MUST / MUST NOT / SHOULD / MAY. Its ID is the pattern's ID with `-R<nn>`, such as `TL-PAT-LIBRARIAN-ACTION-R01`. When the rule depends on one of the pattern's settings, it names it in `setting`.
+
+```markdown
+---
+id: TL-PAT-LIBRARIAN-ACTION-R01
+kind: pattern_rule
+title: An action missing its required input is refused and saves nothing
+parent: TL-PAT-LIBRARIAN-ACTION
+setting: required_input
+---
+When the librarian leaves out any of the `required_input`, the library MUST refuse the action, say what is missing, and save nothing.
+```
+
+A domain **follows** a pattern when any of its use cases `follows` it. Each rule of the pattern is then an obligation **of that domain**, counted on the domain's Pattern rule coverage line:
+
+- **designed** when a component in that domain `satisfies` it, and **built** when that component's file exists;
+- **proved** when an automated or manual test in that domain `proves` it, and **planned** when only a planned test there does.
+
+A component or test in another domain does not count: each domain applies the rule with its own setting values, so it proves the rule for itself. The rule's gaps, and its `unsatisfied` and `unproved` warnings, name the domain, such as "Pattern rule TL-PAT-LIBRARIAN-ACTION-R01 is not proved in TL-LEND".
+
+```markdown
+---
+id: TL-LEND-T33
+kind: test
+title: Each librarian action missing its required input is refused, says what is missing, and saves nothing
+parent: TL-LEND
+test_type: acceptance
+run_by: examples/tool-library/test/api.test.ts
+links:
+  proves: [TL-PAT-LIBRARIAN-ACTION-R01]
+---
+```
+
+**Not applicable.** When a rule names a `setting` and every use case in a domain that follows the pattern gives that setting as `Not applicable:` with a reason, the rule does not apply in that domain and is not counted there. If even one following use case there gives the setting a value, the domain owes the rule. A rule with no `setting` applies in every domain that follows the pattern.
+
+The checks for pattern rules:
+
+- A rule's `setting` that is not one of its pattern's settings is a `pattern-rule-setting-unknown` error.
+- A pattern that no use case follows is a `pattern-not-followed` warning: its rules are counted in no domain.
+- Any other obligation that sits in no domain (possible only through an extension or a broken parent) is an `obligation-outside-domain` warning, never silently dropped.
+
+## 12. Citing records in prose
+
+A record's body may cite other records by ID in plain text, such as "the loan follows TL-LEND-DR05". The engine reads these citations so that a renamed or removed record does not leave a stale reference behind.
+
+- A **citation** is a whole ID-shaped token in the body (the `id` format in section 2) that equals the ID of a `product` record or starts with one followed by `-`. `TL-LEND-DR05` is cited in "(TL-LEND-DR05)." and in a Markdown link `[TL-LEND-DR05](…)`, but nothing is cited in `TL-LEND-DR05a`, and a token with a prefix no product has, such as `ZZ-D-UC01`, is not read.
+- Text in fenced code blocks (`` ``` `` or `~~~`), and in inline code spans holding anything more than one ID, is not read, so an example ID can be written in code (`see TL-LEND-DR99`). A code span holding exactly one ID and nothing else (`` `TL-LEND-DR05` ``) is a citation, because writers often format IDs that way.
+- A record's **mentions** (`SpecRecord.mentions`) are the IDs it cites that exist, in order of first mention, without repeats and without its own ID.
+- A cited ID that is not a record is an `unknown-id-in-prose` warning on the citing record: fix the wording, or put the ID in code if it is an example.
+- Mentions are not links. They do not count for coverage and are not checked against `relations.csv`; write a link in the header when a record satisfies, proves or applies another.

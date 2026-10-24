@@ -38,6 +38,8 @@ export interface SpecRecord {
   body: string;
   /** The file path relative to the repo root. */
   path: string;
+  /** IDs of existing records this record's body cites in its prose, in order of first mention. */
+  mentions: string[];
 }
 
 export interface SpecLink {

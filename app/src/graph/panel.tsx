@@ -90,6 +90,7 @@ export function Legend() {
           <li><span className="graph-line rel-structure" /> parent / child (the tree, through groups)</li>
           <li><span className="graph-line rel-trace" /> satisfies, proves, fulfills</li>
           <li><span className="graph-line rel-design" /> uses, implements, depends on</li>
+          <li><span className="graph-line rel-pattern" /> follows (a use case's pattern, a cross-link)</li>
           <li><span className="graph-line rel-other" /> other links</li>
           <li><span className="graph-mark error">!</span> has errors <span className="graph-mark gap">gap</span> not satisfied or not proved (on a group: among its members)</li>
         </ul>

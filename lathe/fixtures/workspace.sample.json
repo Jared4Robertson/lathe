@@ -272,7 +272,8 @@
       "domain": null,
       "fields": {},
       "body": "A tiny product used to build the app before real data exists.",
-      "path": "specs/example/product.md"
+      "path": "specs/example/product.md",
+      "mentions": []
     },
     {
       "id": "EX-NOTE",
@@ -283,7 +284,8 @@
       "domain": "EX-NOTE",
       "fields": {},
       "body": "People write and share short notes.",
-      "path": "specs/example/notes/domain.md"
+      "path": "specs/example/notes/domain.md",
+      "mentions": []
     },
     {
       "id": "EX-NOTE-A1",
@@ -294,7 +296,8 @@
       "domain": "EX-NOTE",
       "fields": {},
       "body": "A short piece of text a person writes.",
-      "path": "specs/example/notes/01-define/aggregates/note.md"
+      "path": "specs/example/notes/01-define/aggregates/note.md",
+      "mentions": []
     },
     {
       "id": "EX-NOTE-DR01",
@@ -305,7 +308,8 @@
       "domain": "EX-NOTE",
       "fields": {},
       "body": "A Note MUST have between 1 and 500 characters of text.",
-      "path": "specs/example/notes/01-define/aggregates/note-rules.md"
+      "path": "specs/example/notes/01-define/aggregates/note-rules.md",
+      "mentions": []
     },
     {
       "id": "EX-NOTE-UC01",
@@ -318,7 +322,8 @@
         "actor": "Person"
       },
       "body": "A person writes a note.",
-      "path": "specs/example/notes/01-define/use-cases/UC01.md"
+      "path": "specs/example/notes/01-define/use-cases/UC01.md",
+      "mentions": []
     },
     {
       "id": "EX-NOTE-UC01-R01",
@@ -329,7 +334,8 @@
       "domain": "EX-NOTE",
       "fields": {},
       "body": "When a person saves a note, the note MUST appear in their list immediately.",
-      "path": "specs/example/notes/01-define/use-cases/UC01-R01.md"
+      "path": "specs/example/notes/01-define/use-cases/UC01-R01.md",
+      "mentions": []
     },
     {
       "id": "EX-NOTE-E01",
@@ -343,7 +349,8 @@
         "route": "/notes"
       },
       "body": "Creates a note and returns it.",
-      "path": "specs/example/notes/02-design/endpoints/E01.md"
+      "path": "specs/example/notes/02-design/endpoints/E01.md",
+      "mentions": []
     },
     {
       "id": "EX-NOTE-C01",
@@ -357,7 +364,8 @@
         "file": "examples/notes/src/note_service.ts"
       },
       "body": "Creates and lists notes.",
-      "path": "specs/example/notes/02-design/components/C01.md"
+      "path": "specs/example/notes/02-design/components/C01.md",
+      "mentions": []
     },
     {
       "id": "EX-NOTE-T01",
@@ -371,7 +379,8 @@
         "run_by": "examples/notes/test/notes.test.ts"
       },
       "body": "Saves a note and reads the list.",
-      "path": "specs/example/notes/02-design/tests/T01.md"
+      "path": "specs/example/notes/02-design/tests/T01.md",
+      "mentions": []
     },
     {
       "id": "EX-NOTE-Q01",
@@ -384,7 +393,8 @@
         "owner": "the Owner"
       },
       "body": "Undecided.",
-      "path": "specs/example/notes/questions/Q01.md"
+      "path": "specs/example/notes/questions/Q01.md",
+      "mentions": []
     }
   ],
   "links": [

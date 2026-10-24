@@ -1,20 +1,26 @@
--- An automated test's run_by file must mention the test's ID or the ID of a record it proves
--- (the target of any relation whose role is 'proof'), for example in the test's name.
+-- An automated test's run_by file must name the test's own ID, or else every ID the test proves
+-- (each target of a relation whose role is 'proof'); a missing proved ID is proof-not-in-file.
+-- This check reports the two cases that leave no proved ID to name:
+--   * a test with a `key` whose file does not contain that key text (the ID rules then do not apply);
+--   * a test that proves no record and whose file does not name its own ID.
 -- A test with no state is automated; manual and planned tests are not checked here.
 SELECT 'error' AS severity, 'test-file-missing-id' AS "check", nullif(f.record, '') AS record,
-       'Test ' || coalesce(nullif(f.record, ''), f.path) || ' is run by ' || f.file || ', but that file mentions neither '
-       || coalesce(nullif(f.record, ''), 'its ID') || ' nor the ID of a record it proves.' AS message
+       'Test ' || coalesce(nullif(f.record, ''), f.path) || ' is run by ' || f.file || ', but that file '
+       || CASE WHEN k.key IS NOT NULL THEN 'does not contain its key "' || k.key || '".'
+               ELSE 'does not mention ' || coalesce(nullif(f.record, ''), 'its ID') || ', and the test proves no record whose ID it could name instead.'
+          END AS message
 FROM file_facts f
+LEFT JOIN (SELECT path, max(trim(value)) AS key FROM fields WHERE name = 'key' AND trim(value) <> '' GROUP BY path) k
+       ON k.path = f.path
 WHERE f.kind = 'test' AND f.file_exists AND NOT f.contains_id
   AND coalesce((SELECT max(lower(trim(s.value))) FROM fields s WHERE s.path = f.path AND s.name = 'state'), '')
       NOT IN ('manual', 'planned')
-  AND NOT EXISTS (
+  AND (k.key IS NOT NULL OR NOT EXISTS (
     SELECT 1
-    FROM file_mentions m
-    JOIN links l ON l.path = m.path AND l.target = m.mentioned
+    FROM links l
     JOIN records t ON t.id = l.target
     JOIN relations rr ON rr.relation = l.relation AND rr.role = 'proof' AND rr.source_kind = f.kind
                      AND (rr.target_kind = t.kind OR rr.target_kind = '*')
-    WHERE m.path = f.path
-  )
+    WHERE l.path = f.path
+  ))
 ORDER BY f.path

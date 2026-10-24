@@ -22,6 +22,7 @@ describe('coverage by the meta-model', () => {
     expect(states.coverage[0].obligations).toEqual([
       { kind: 'domain_rule', label: 'Domain rule', total: 1, designed: 0, built: 0, proved: 0, planned: 0 },
       { kind: 'requirement', label: 'Requirement', total: 2, designed: 2, built: 2, proved: 1, planned: 1 },
+      { kind: 'pattern_rule', label: 'Pattern rule', total: 0, designed: 0, built: 0, proved: 0, planned: 0 },
       { kind: 'interaction_requirement', label: 'Interaction requirement', total: 2, designed: 2, built: 2, proved: 2, planned: 0 },
     ]);
     // The order is the meta-model's.
@@ -50,7 +51,7 @@ describe('coverage by the meta-model', () => {
     // EXT-D-INV01 is enforced by a component whose file exists and checked by a test;
     // EXT-D-INV02 is designed only by a sketch, so it is designed but not built.
     expect(invariant).toEqual({ kind: 'invariant', label: 'Invariant', total: 2, designed: 2, built: 1, proved: 1, planned: 0 });
-    expect(extension.coverage[0].obligations.map((o) => o.kind)).toEqual(['domain_rule', 'requirement', 'interaction_requirement', 'invariant']);
+    expect(extension.coverage[0].obligations.map((o) => o.kind)).toEqual(['domain_rule', 'requirement', 'pattern_rule', 'interaction_requirement', 'invariant']);
     // A kind not marked as an obligation is not counted.
     expect(extension.coverage[0].obligations.some((o) => o.kind === 'sketch')).toBe(false);
     expect(ofCheck(extension, 'unsatisfied')).toEqual([]);
@@ -81,11 +82,13 @@ describe('coverage by the meta-model', () => {
 
   it("LA-CHK-T44 The meta-model's obligation and role columns are loaded into the workspace", async () => {
     const obligations = states.kinds.filter((k) => k.obligation).map((k) => k.kind);
-    expect(obligations).toEqual(['domain_rule', 'requirement', 'interaction_requirement']);
+    expect(obligations).toEqual(['domain_rule', 'requirement', 'pattern_rule', 'interaction_requirement']);
     expect(states.relations.filter((r) => r.role === 'design').map((r) => `${r.relation} ${r.target_kind}`)).toEqual([
-      'satisfies requirement', 'satisfies domain_rule', 'satisfies interaction_requirement',
+      'satisfies requirement', 'satisfies domain_rule', 'satisfies interaction_requirement', 'satisfies pattern_rule',
     ]);
-    expect(states.relations.filter((r) => r.role === 'proof').map((r) => r.relation)).toEqual(['proves', 'proves', 'proves']);
+    expect(states.relations.filter((r) => r.role === 'proof').map((r) => `${r.relation} ${r.target_kind}`)).toEqual([
+      'proves requirement', 'proves domain_rule', 'proves interaction_requirement', 'proves pattern_rule',
+    ]);
     expect(states.relations.find((r) => r.relation === 'fulfills')?.role).toBe('');
     expect(extension.relations.find((r) => r.relation === 'sketches')?.role).toBe('design');
     expect(extension.kinds.find((k) => k.kind === 'invariant')?.obligation).toBe(true);

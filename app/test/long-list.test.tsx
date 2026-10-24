@@ -14,7 +14,7 @@ const list = (items: Item[]) => (
 
 const pad = (n: number) => String(n).padStart(2, '0');
 function record(id: string, kind: string, title: string, parent: string | null, product: string, domain: string | null, fields: Record<string, string> = {}): SpecRecord {
-  return { id, kind, title, parent, product, domain, fields, body: '', path: `specs/big/${id}.md` };
+  return { id, kind, title, parent, product, domain, fields, body: '', path: `specs/big/${id}.md`, mentions: [] };
 }
 
 /** A product with 12 domains; its first domain has 12 use cases, the first with 12 requirements, and 12 problems. */

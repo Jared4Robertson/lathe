@@ -263,3 +263,70 @@ describe('TL-LEND-UC05 Report damage', () => {
     expect(await statusOf(t)).toBe('needs_repair');
   });
 });
+
+// The Librarian action pattern's rules, proved for every TL-LEND use case that follows it:
+// UC01 register a member, UC02 add a tool, UC04 return a tool, UC05 report damage.
+describe('TL-PAT-LIBRARIAN-ACTION Librarian action', () => {
+  async function catalog(): Promise<{ id: number }[]> {
+    return (await api.call('GET', '/tools')).body;
+  }
+
+  it('TL-LEND-T33 Each librarian action missing its required input is refused, says what is missing, and saves nothing', async () => {
+    // TL-LEND-UC01: no name. The email stays free, so nothing was saved.
+    const noName = await api.call('POST', '/members', { email: 'ana@example.org' });
+    expect(noName).toMatchObject({ status: 400, body: { error: 'invalid_request' } });
+    expect(noName.body.message).toMatch(/name/);
+    const noEmail = await api.call('POST', '/members', { name: 'Ana' });
+    expect(noEmail.status).toBe(400);
+    expect(noEmail.body.message).toMatch(/email/);
+    expect((await api.call('POST', '/members', { name: 'Ana', email: 'ana@example.org' })).status).toBe(201);
+
+    // TL-LEND-UC02: no name. The catalog is still empty.
+    const noToolName = await api.call('POST', '/tools', { description: 'Cordless' });
+    expect(noToolName).toMatchObject({ status: 400, body: { error: 'invalid_request' } });
+    expect(noToolName.body.message).toMatch(/name/);
+    expect(await catalog()).toEqual([]);
+
+    // TL-LEND-UC04: no condition. The loan stays active and the tool stays on loan.
+    const t = await tool();
+    const loan = (await borrow(await member('Bo'), t)).body;
+    const noCondition = await api.call('POST', `/loans/${loan.id}/return`, { note: 'Fine' });
+    expect(noCondition).toMatchObject({ status: 400, body: { error: 'invalid_condition' } });
+    expect(noCondition.body.message).toMatch(/condition/);
+    expect(await statusOf(t)).toBe('on_loan');
+
+    // TL-LEND-UC05: no note. The tool keeps its condition.
+    const spare = await tool('Sander');
+    const noNote = await api.call('POST', `/tools/${spare}/damage`, { note: '  ' });
+    expect(noNote).toMatchObject({ status: 400, body: { error: 'invalid_request' } });
+    expect(noNote.body.message).toMatch(/note/);
+    expect((await catalog()).find((x) => x.id === spare)).toMatchObject({ condition: 'good', damageNote: null, status: 'available' });
+  });
+
+  it('TL-LEND-T34 Each successful librarian action saves its record and shows it as stored', async () => {
+    // TL-LEND-UC01: the member shown is saved: the same email cannot register again.
+    const registered = await api.call('POST', '/members', { name: ' Cy ', email: 'CY@example.org' });
+    expect(registered.status).toBe(201);
+    expect(registered.body).toMatchObject({ id: expect.any(Number), name: 'Cy', email: 'cy@example.org' });
+    expect((await api.call('POST', '/members', { name: 'Cy', email: 'cy@example.org' })).body.error).toBe('email_taken');
+
+    // TL-LEND-UC02: the tool shown is the catalog entry.
+    const added = await api.call('POST', '/tools', { name: ' Ladder ', description: '3 m' });
+    expect(added.status).toBe(201);
+    expect(await catalog()).toEqual([added.body]);
+
+    // TL-LEND-UC05: the entry shown after reporting damage is the catalog entry.
+    const damaged = await api.call('POST', `/tools/${added.body.id}/damage`, { note: 'Bent rung' });
+    expect(damaged.status).toBe(200);
+    expect((await catalog()).find((x) => x.id === added.body.id)).toEqual(damaged.body);
+
+    // TL-LEND-UC04: the returned loan shown is saved: it cannot be returned again, and the tool reflects it.
+    const t = await tool('Clamp');
+    const loan = (await borrow(registered.body.id, t)).body;
+    const returned = await api.call('POST', `/loans/${loan.id}/return`, { condition: 'needs_repair', note: 'Jaw loose' });
+    expect(returned.status).toBe(200);
+    expect(returned.body).toMatchObject({ id: loan.id, returnCondition: 'needs_repair', returnNote: 'Jaw loose', late: false });
+    expect((await api.call('POST', `/loans/${loan.id}/return`, { condition: 'good' })).body.error).toBe('already_returned');
+    expect((await catalog()).find((x) => x.id === t)).toMatchObject({ condition: 'needs_repair', damageNote: 'Jaw loose' });
+  });
+});

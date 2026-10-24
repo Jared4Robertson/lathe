@@ -430,7 +430,7 @@ describe('spec records', () => {
 
   it('LA-MOD-T32 A test whose run_by file is missing or lacks its ID is an error; a missing component file is only a warning', () => {
     expect(broken('test-file-missing')).toEqual(['BA-D-T01']);
-    expect(broken('test-file-missing-id')).toEqual(['BA-D-T02']);
+    expect(broken('proof-not-in-file')).toEqual(['BA-D-T02']);
     const later = workspaces['records-broken'].problems.filter((p) => p.record === 'BA-D-C01');
     expect(later).toEqual([expect.objectContaining({ severity: 'warning', check: 'component-file-missing' })]);
   });

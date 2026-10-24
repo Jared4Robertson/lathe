@@ -6,7 +6,7 @@ import path from 'node:path';
 import { DuckDBInstance, type DuckDBConnection } from '@duckdb/node-api';
 import { COVERAGE_COUNTS_SQL, COVERAGE_GAPS_SQL } from './coverage.ts';
 import { loadConfig, PACKAGE_DIR } from './config.ts';
-import { parseRecordFile } from './parse.ts';
+import { idTokensInProse, parseRecordFile } from './parse.ts';
 import type { Coverage, CoverageGap, Kind, ObligationCoverage, Problem, RelationRule, SpecLink, SpecRecord, Workspace } from './types.ts';
 
 export type * from './types.ts';
@@ -72,6 +72,29 @@ async function exists(file: string | null, allowFolder: boolean): Promise<boolea
   }
 }
 
+/** An ID-shaped token a record's body cites with a product prefix of this workspace; it may not exist. */
+interface ProseCitation {
+  path: string;
+  record: string;
+  cited: string;
+}
+
+// Reads the IDs each record's body cites (FORMAT.md section 12). A token counts only if it equals a product's ID
+// or starts with one followed by "-". Each record's mentions are the cited IDs that exist, in order of first
+// mention, without repeats or its own ID; every distinct cited token is also returned so a check can report unknown ones.
+function readProseCitations(records: LoadedRecord[]): ProseCitation[] {
+  const ids = new Set(records.map((r) => r.id).filter((id) => id !== ''));
+  const products = records.filter((r) => r.kind === 'product' && r.id !== '').map((r) => r.id);
+  const known = (token: string) => products.some((p) => token === p || token.startsWith(`${p}-`));
+  const citations: ProseCitation[] = [];
+  for (const r of records) {
+    const cited = [...new Set(idTokensInProse(r.body))].filter((token) => token !== r.id && known(token));
+    r.mentions = cited.filter((id) => ids.has(id));
+    citations.push(...cited.map((id) => ({ path: r.path, record: r.id, cited: id })));
+  }
+  return citations;
+}
+
 // Walks parent links to find each record's product and domain; reports records on a parent loop.
 function placeRecords(records: LoadedRecord[], problems: Problem[]) {
   const byId = new Map<string, LoadedRecord>();
@@ -105,8 +128,10 @@ function mentionsId(content: string, id: string): boolean {
   return new RegExp(`(?<![A-Za-z0-9-])${escaped}(?![A-Za-z0-9]|-[A-Za-z0-9])`).test(content);
 }
 
-// Facts about the files records name: a test's run_by and a component's file. For a test, also which
-// IDs its run_by file mentions (its own and its link targets), so a check can accept the ID of a record it proves.
+// Facts about the files records name: a test's run_by and a component's file. For a test, contains_id says
+// whether the file names the test's own ID or, when the test has a `key`, whether the file contains that key
+// text instead. Also which IDs the file mentions (its own and its link targets), so a check can accept a test
+// whose file names every ID it proves.
 async function gatherFileFacts(root: string, records: LoadedRecord[]): Promise<{ facts: FileFact[]; mentions: FileMention[] }> {
   const facts: FileFact[] = [];
   const mentions: FileMention[] = [];
@@ -119,7 +144,8 @@ async function gatherFileFacts(root: string, records: LoadedRecord[]): Promise<{
     let containsId: boolean | null = null;
     if (r.kind === 'test') {
       const content = found ? await readFile(resolved!, 'utf8') : '';
-      containsId = r.id !== '' && mentionsId(content, r.id);
+      const key = r.fields.key?.trim();
+      containsId = key ? content.includes(key) : r.id !== '' && mentionsId(content, r.id);
       const candidates = new Set([r.id, ...r.links.map((l) => l.target)].filter((id) => id !== ''));
       for (const id of candidates) if (mentionsId(content, id)) mentions.push({ path: r.path, record: r.id, mentioned: id });
     }
@@ -161,9 +187,10 @@ const union = (a: string[], b: string[]) => [...a, ...b.filter((x) => !a.include
 
 // Loads the meta-model from one or more folders: Lathe's defaults first, then a product's extensions.
 // A later row for a kind already defined widens it: parent_kinds and required_fields are unioned, and a
-// non-empty label, stage, obligation or description replaces the earlier one. A relation row identical to
-// one in an earlier folder is dropped. Every kind row is also kept, with the file it came from, in
-// meta_kind_rows, so that a kind defined twice within one folder can be reported.
+// non-empty label, stage, obligation or description replaces the earlier one. Relations work the same
+// way: a later row with the same relation, source kind and target kind is the same rule, and its non-empty
+// role or description replaces the earlier one. Every kind and relation row is also kept, with the file it
+// came from, in meta_kind_rows and meta_relation_rows, so that a duplicate within one folder can be reported.
 async function loadMeta(connection: DuckDBConnection, metaDirs: string[], root: string) {
   const defaultMeta = path.join(PACKAGE_DIR, 'meta');
   const where = (dir: string, name: string) =>
@@ -180,8 +207,10 @@ async function loadMeta(connection: DuckDBConnection, metaDirs: string[], root: 
   const kindRows: string[][] = [];
   const kinds: MetaKind[] = [];
   const byKind = new Map<string, MetaKind>();
-  const relations: { folder: number; row: string[] }[] = [];
-  for (const [index, dir] of metaDirs.entries()) {
+  const relationRows: string[][] = [];
+  const relations: string[][] = [];
+  const byRule = new Map<string, string[]>();
+  for (const dir of metaDirs) {
     for (const row of await read(dir, 'kinds.csv')) {
       const name = csvText(row.kind).trim();
       kindRows.push([where(dir, 'kinds.csv'), name]);
@@ -207,15 +236,25 @@ async function loadMeta(connection: DuckDBConnection, metaDirs: string[], root: 
       }
     }
     for (const row of await read(dir, 'relations.csv')) {
-      const values = [row.relation, row.source_kind, row.target_kind, row.role].map((v) => csvText(v).trim());
-      const full = [...values, csvText(row.description)];
-      if (relations.some((r) => r.folder < index && r.row.every((v, i) => v === full[i]))) continue;
-      relations.push({ folder: index, row: full });
+      const [relation, source, target, role] = [row.relation, row.source_kind, row.target_kind, row.role].map((v) => csvText(v).trim());
+      const description = csvText(row.description);
+      relationRows.push([where(dir, 'relations.csv'), relation, source, target]);
+      const key = JSON.stringify([relation, source, target]);
+      const known = byRule.get(key);
+      if (!known) {
+        const incoming = [relation, source, target, role, description];
+        relations.push(incoming);
+        byRule.set(key, incoming);
+        continue;
+      }
+      if (role !== '') known[3] = role;
+      if (description.trim() !== '') known[4] = description;
     }
   }
 
   await connection.run(`
     CREATE TABLE meta_kind_rows (folder VARCHAR, kind VARCHAR);
+    CREATE TABLE meta_relation_rows (folder VARCHAR, relation VARCHAR, source_kind VARCHAR, target_kind VARCHAR);
     CREATE TABLE meta_kinds_in (kind VARCHAR, label VARCHAR, stage VARCHAR, parent_kinds VARCHAR,
                                 required_fields VARCHAR, obligation VARCHAR, description VARCHAR);
     CREATE TABLE relations (relation VARCHAR, source_kind VARCHAR, target_kind VARCHAR, role VARCHAR, description VARCHAR);
@@ -226,7 +265,8 @@ async function loadMeta(connection: DuckDBConnection, metaDirs: string[], root: 
     'meta_kinds_in',
     kinds.map((k) => [k.kind, k.label, k.stage, k.parent_kinds.join(' '), k.required_fields.join(' '), k.obligation, k.description]),
   );
-  await append(connection, 'relations', relations.map((r) => r.row));
+  await append(connection, 'meta_relation_rows', relationRows);
+  await append(connection, 'relations', relations);
   const list = (col: string) => `CASE WHEN ${col} = '' THEN []::VARCHAR[] ELSE string_split(${col}, ' ') END AS ${col}`;
   await connection.run(`
     CREATE TABLE kinds AS
@@ -313,9 +353,10 @@ export async function loadWorkspace(root: string, options: LoadOptions = {}): Pr
       problems.push({ severity: 'error', check: 'parse-error', record: null, message: `${file} cannot be read: ${result.reason}.` });
       continue;
     }
-    records.push({ ...result.record, product: null, domain: null, path: file });
+    records.push({ ...result.record, product: null, domain: null, path: file, mentions: [] });
   }
   placeRecords(records, problems);
+  const citations = readProseCitations(records);
   const { facts, mentions } = await gatherFileFacts(root, records);
 
   const instance = await DuckDBInstance.create(':memory:');
@@ -336,6 +377,9 @@ export async function loadWorkspace(root: string, options: LoadOptions = {}): Pr
     await append(connection, 'links', records.flatMap((r) => r.links.map((l) => [r.path, r.id, l.relation, l.target])));
     await append(connection, 'file_facts', facts.map((f) => [f.path, f.record, f.kind, f.file, f.file_exists, f.contains_id]));
     await append(connection, 'file_mentions', mentions.map((m) => [m.path, m.record, m.mentioned]));
+    // Every distinct ID-shaped token with a workspace product prefix that a record's body cites, existing or not.
+    await connection.run('CREATE TABLE prose_mentions (path VARCHAR, record VARCHAR, cited VARCHAR)');
+    await append(connection, 'prose_mentions', citations.map((c) => [c.path, c.record, c.cited]));
 
     problems.push(...(await runChecks(connection, checksDir)));
     const coverage = await computeCoverage(connection);

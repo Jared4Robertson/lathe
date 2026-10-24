@@ -110,13 +110,12 @@ describe('graph page', () => {
     expect((screen.getByRole('checkbox', { name: 'Test' }) as HTMLInputElement).checked).toBe(true);
   });
 
-  it('LA-BRW-T61 Record, domain and product pages show the graph in their Graph view, and the menu has a Graph item', async () => {
+  it('LA-BRW-T61 Record, domain and product pages show the graph in their Graph view, and the nav has no Graph item', async () => {
     for (const path of ['/records/P-D-UC01-R01', '/specs/P/P-D', '/specs/P']) {
       await openApp(path, { workspace: testWorkspace() });
       await screen.findByRole('heading', { level: 1 });
       const graph = within(screen.getByRole('group', { name: 'View' })).getByRole('button', { name: /Graph/ });
-      const item = within(screen.getByRole('navigation', { name: 'Main' })).getByRole('link', { name: 'Graph' });
-      expect(item.getAttribute('href')).toBe(`${path}?view=graph`);
+      expect(within(screen.getByRole('navigation', { name: 'Main' })).queryByRole('link', { name: 'Graph' })).toBeNull();
       fireEvent.click(graph);
       expect(window.location.pathname + window.location.search).toBe(`${path}?view=graph`);
       await waitFor(() => expect(document.querySelector('.react-flow__node.is-focus, .graph-node.is-focus')).not.toBeNull());
