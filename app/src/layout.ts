@@ -51,8 +51,8 @@ export async function layoutModel(model: Model): Promise<{ nodes: Node<ModelNode
   const contains = model.links.filter((l) => l.relation === 'contains');
   const others = model.links.filter((l) => l.relation !== 'contains');
 
-  // A part can sit in more than one aggregate (Purpose is in both Person and Tool), so each
-  // placement gets its own node.
+  // The diagram checks forbid a part in more than one aggregate, but a diagram is drawn even while
+  // its checks fail, so each placement still gets its own node rather than breaking the layout.
   const placements = new Map<string, string[]>();
   for (const l of contains) placements.set(l.target, [...(placements.get(l.target) ?? []), partId(l.source, l.target)]);
   const nodeIdsFor = (name: string) => placements.get(name) ?? [name];
