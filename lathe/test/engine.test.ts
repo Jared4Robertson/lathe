@@ -102,7 +102,7 @@ describe('loading', () => {
     expect(Object.keys(ws.problems[0]).sort()).toEqual(['check', 'message', 'record', 'severity']);
     expect(Object.keys(ws.coverage[0]).sort()).toEqual([
       'domain', 'gaps', 'obligations', 'requirements', 'requirements_built', 'requirements_proved', 'requirements_satisfied',
-      'rules', 'rules_built', 'rules_proved', 'rules_satisfied',
+      'rules', 'rules_built', 'rules_proved', 'rules_satisfied', 'tests',
     ]);
     expect(Object.keys(ws.coverage[0].gaps[0]).sort()).toEqual(['id', 'kind', 'missing']);
     // The result is plain JSON, as the app reads it from /api/spec.

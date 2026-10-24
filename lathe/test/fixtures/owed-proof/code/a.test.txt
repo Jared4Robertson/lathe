@@ -1,0 +1,1 @@
+OW-A-T01 and OW-A-T02 prove the lending rules in domain A.
