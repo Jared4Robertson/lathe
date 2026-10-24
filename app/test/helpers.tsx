@@ -1,4 +1,4 @@
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import { expect, vi } from 'vitest';
 import App from '../src/App';
 import type { DiagramSummary } from '../src/types';
@@ -41,8 +41,8 @@ export async function openApp(path: string, served: Served = {}) {
   window.history.replaceState(null, '', path);
   const requests = serve(served);
   const view = render(<App />);
-  await screen.findByRole('navigation', { name: 'Main' });
-  await within(screen.getByRole('navigation', { name: 'Main' })).findByRole('link', { name: /Checks/ });
+  // The specs have loaded (or failed to) once the shell says so.
+  await waitFor(() => expect(document.querySelector('.app[data-specs]')?.getAttribute('data-specs')).not.toBe('loading'));
   return { ...view, requests };
 }
 

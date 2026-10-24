@@ -55,7 +55,7 @@ describe('product page', () => {
       expect.stringMatching(/DM-SHOP-Q01.*What happens to a basket overnight\?.*owner Ana.*about DM-SHOP-A1/),
     ]);
 
-    const problems = within(section(/^Problems/)).getAllByRole('listitem');
+    const problems = within(section(/^Problems in this product/)).getAllByRole('listitem');
     // Only this product's problems, errors first.
     expect(problems.map((li) => li.querySelector('.severity')?.textContent)).toEqual(['error', 'warning', 'warning', 'warning']);
     expect(problems[0]).toHaveTextContent('DM-SHOP-T01');

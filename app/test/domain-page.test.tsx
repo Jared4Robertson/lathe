@@ -13,16 +13,22 @@ async function openShop() {
 describe('domain page', () => {
   it('LA-BRW-T07 The domain page groups records by stage, with rules and requirements nested', async () => {
     await openShop();
+    const user = userEvent.setup();
     const [define, design] = within(main()).getAllByRole('heading', { level: 2, name: /^(Define|Design)$/ }).map((h) => h.parentElement as HTMLElement);
     expect(define).toHaveTextContent(/^Define/);
     expect(design).toHaveTextContent(/^Design/);
 
-    // Define: aggregates with their rules nested, use cases with their requirements nested.
-    const aggregates = section(/^Aggregates and domain rules/);
+    // Define: aggregates with their rules folded under them, use cases with their requirements.
+    const aggregates = section(/^Aggregates/);
     const basket = within(aggregates).getByRole('link', { name: /^DM-SHOP-A1\s*Basket/ }).closest('li') as HTMLElement;
+    expect(basket).toHaveTextContent('1 domain rule');
+    expect(basket.querySelector('ul.nested')).toBeNull();
+    await user.click(within(basket).getByRole('button', { name: 'Expand DM-SHOP-A1' }));
     expect(ids(basket.querySelector('ul.nested') as HTMLElement)).toEqual(['DM-SHOP-DR01']);
-    const useCases = section(/^Use cases and requirements/);
+    const useCases = section(/^Use cases/);
     const add = within(useCases).getByRole('link', { name: /^DM-SHOP-UC01\s*Add/ }).closest('li') as HTMLElement;
+    expect(add).toHaveTextContent('2 requirements');
+    await user.click(within(add).getByRole('button', { name: 'Expand DM-SHOP-UC01' }));
     expect(ids(add.querySelector('ul.nested') as HTMLElement)).toEqual(['DM-SHOP-UC01-R01', 'DM-SHOP-UC01-R02']);
     expect(add).toHaveTextContent('Shopper');
     expect(define.contains(aggregates) && define.contains(useCases)).toBe(true);
@@ -42,8 +48,9 @@ describe('domain page', () => {
     const search = screen.getByLabelText('Filter records');
 
     await user.type(search, 'full basket');
-    expect(ids(section(/^Use cases and requirements/))).toEqual(['DM-SHOP-UC01', 'DM-SHOP-UC01-R02']);
-    expect(within(section(/^Aggregates and domain rules/)).getByText('Nothing matches.')).toBeInTheDocument();
+    // A match inside a folded use case opens it, just for the match.
+    expect(ids(section(/^Use cases/))).toEqual(['DM-SHOP-UC01', 'DM-SHOP-UC01-R02']);
+    expect(within(section(/^Aggregates/)).getByText('Nothing matches.')).toBeInTheDocument();
     expect(within(section(/^Components/)).getByText('Nothing matches.')).toBeInTheDocument();
 
     await user.clear(search);
@@ -53,7 +60,8 @@ describe('domain page', () => {
 
     await user.clear(search);
     expect(ids(section(/^Tests/))).toEqual(['DM-SHOP-T01']);
-    expect(ids(section(/^Aggregates and domain rules/))).toEqual(['DM-SHOP-A1', 'DM-SHOP-DR01']);
+    expect(ids(section(/^Aggregates/))).toEqual(['DM-SHOP-A1']);
+    expect(ids(section(/^Use cases/))).toEqual(['DM-SHOP-UC01']);
   });
 
   it('LA-BRW-T09 The domain page lists its coverage gaps, each with the missing link, and its problems', async () => {
@@ -65,10 +73,11 @@ describe('domain page', () => {
       expect.stringMatching(/DM-SHOP-DR01.*Domain rule with nothing that proves it/),
     ]);
     // Gaps also show on the record's row.
-    const row = within(section(/^Use cases and requirements/)).getByRole('link', { name: /DM-SHOP-UC01-R02/ }).closest('.record-row') as HTMLElement;
+    await userEvent.setup().click(within(section(/^Use cases/)).getByRole('button', { name: 'Expand all' }));
+    const row = within(section(/^Use cases/)).getByRole('link', { name: /DM-SHOP-UC01-R02/ }).closest('.record-row') as HTMLElement;
     expect(within(row).getByText('not proved')).toBeInTheDocument();
 
-    const problems = within(section(/^Problems/)).getAllByRole('listitem');
+    const problems = within(section(/^Problems in this domain/)).getAllByRole('listitem');
     expect(problems.map((li) => li.textContent)).toEqual([
       expect.stringMatching(/^error.*DM-SHOP-T01.*does not exist.*test-file-missing$/),
       expect.stringMatching(/^warning.*DM-SHOP-DR01.*unproved$/),

@@ -15,7 +15,7 @@ import {
   type Neighbourhood,
 } from '../../src/graph/model';
 import { layoutNeighbourhood } from '../../src/graph/layout';
-import { graphPath, parseGraphPath } from '../../src/graph/route';
+import { addressOf, graphRedirect } from '../../src/views/address';
 import { indexWorkspace } from '../../src/specs/data';
 import { groupedWorkspace, testIndex } from './workspace';
 
@@ -95,9 +95,10 @@ describe('graph groups', () => {
     // A group that does not exist shows nothing.
     expect(neighbourhood(index, 'P-D/flow', 1).nodes).toEqual([]);
     // Its address.
-    expect(graphPath('P-D/use_case')).toBe('/graph/P-D/use_case');
-    expect(parseGraphPath('/graph/P-D/use_case')).toBe('P-D/use_case');
-    expect(graphPath('P-D-UC01')).toBe('/graph/P-D-UC01');
+    // Its address: /records/<parent-id>/<kind>, and the old /graph address leads there in the Graph view.
+    expect(addressOf(grouped, 'P-D/use_case')).toBe('/records/P-D/use_case');
+    expect(graphRedirect(grouped, '/graph/P-D/use_case')).toBe('/records/P-D/use_case?view=graph');
+    expect(addressOf(grouped, 'P-D-UC01')).toBe('/records/P-D-UC01');
   });
 
   it('LA-BRW-T103 Groups take their own column between the parent and its children, left to right', async () => {

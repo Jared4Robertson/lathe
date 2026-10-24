@@ -1,4 +1,4 @@
-import { useId, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 
 // A list that stays short. Up to `limit` items it is a plain list. With more, it shows the first
 // `limit` rows' height and scrolls inside, under a search box that filters the items, with a count
@@ -9,8 +9,8 @@ export const LONG_LIST_LIMIT = 10;
 
 export interface LongListProps<T> {
   items: readonly T[];
-  /** The contents of one item's row (the list item itself is made here). */
-  render: (item: T) => ReactNode;
+  /** The contents of one item's row (the list item itself is made here), given the current search. */
+  render: (item: T, query: string) => ReactNode;
   /** The text the search box matches against, such as an ID and a title. */
   searchText: (item: T) => string;
   /** A stable key for an item. */
@@ -24,9 +24,13 @@ export interface LongListProps<T> {
   ordered?: boolean;
   /** How many rows show before the list scrolls. */
   limit?: number;
+  /** Extra controls beside the search box, or above a short list (such as "Expand all"). */
+  tools?: ReactNode;
+  /** Keys pressed on an item's row (such as the arrow keys of a tree). */
+  onItemKeyDown?: (item: T, e: KeyboardEvent<HTMLLIElement>) => void;
 }
 
-export function LongList<T>({ items, render, searchText, itemKey, label, className, itemClassName, ordered = false, limit = LONG_LIST_LIMIT }: LongListProps<T>) {
+export function LongList<T>({ items, render, searchText, itemKey, label, className, itemClassName, ordered = false, limit = LONG_LIST_LIMIT, tools, onItemKeyDown }: LongListProps<T>) {
   const [query, setQuery] = useState('');
   const [height, setHeight] = useState<number | null>(null);
   const scroller = useRef<HTMLDivElement>(null);
@@ -48,10 +52,14 @@ export function LongList<T>({ items, render, searchText, itemKey, label, classNa
   const Tag = ordered ? 'ol' : 'ul';
   const list = (
     <Tag className={className} aria-label={label}>
-      {shown.map((item) => <li key={itemKey(item)} className={itemClassName?.(item)}>{render(item)}</li>)}
+      {shown.map((item) => (
+        <li key={itemKey(item)} className={itemClassName?.(item)} onKeyDown={onItemKeyDown ? (e) => onItemKeyDown(item, e) : undefined}>
+          {render(item, long ? q : '')}
+        </li>
+      ))}
     </Tag>
   );
-  if (!long) return list;
+  if (!long) return tools ? <div className="long-list"><div className="long-list-tools short">{tools}</div>{list}</div> : list;
 
   return (
     <div className="long-list">
@@ -72,6 +80,7 @@ export function LongList<T>({ items, render, searchText, itemKey, label, classNa
           }}
         />
         <span className="long-list-count" aria-live="polite">{shown.length} of {items.length}</span>
+        {tools}
       </div>
       <div
         ref={scroller}

@@ -2,7 +2,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import type { Coverage, SpecLink, SpecRecord, Workspace } from '../../lathe/src/types';
-import { LongList } from '../src/specs/LongList';
+import { LongList } from '../src/components/LongList';
 import { workspace as baseWorkspace } from './fixtures/workspace';
 import { main, openApp, section } from './helpers';
 
@@ -94,15 +94,16 @@ describe('long lists', () => {
     // The domain page: groups, a long nested list, gaps and problems.
     await openApp('/specs/BG/BG-D01', served);
     await screen.findByRole('heading', { level: 1, name: 'Domain 1' });
-    const useCases = section(/^Use cases and requirements/);
-    const search = within(useCases).getByRole('searchbox', { name: 'Filter use cases and requirements' });
-    expect(within(useCases).getByRole('searchbox', { name: 'Filter requirements at BG-D01-UC01' })).toBeInTheDocument();
+    const useCases = section(/^Use cases/);
+    const search = within(useCases).getByRole('searchbox', { name: 'Filter use cases' });
+    await user.click(within(useCases).getByRole('button', { name: 'Expand BG-D01-UC01' }));
+    expect(within(useCases).getByRole('searchbox', { name: 'Filter children of BG-D01-UC01' })).toBeInTheDocument();
     await user.type(search, 'close the month');
-    const region = within(useCases).getByRole('region', { name: 'Use cases and requirements (scrolls)' });
+    const region = within(useCases).getByRole('region', { name: 'Use cases (scrolls)' });
     expect(within(useCases).getByText('1 of 12')).toBeInTheDocument();
     expect(within(region).getAllByRole('listitem').map((li) => li.textContent)).toEqual([expect.stringMatching(/^BG-D01-UC09\s*Close the month/)]);
     expect(within(section(/^Coverage/)).getByRole('searchbox', { name: 'Filter coverage gaps' })).toBeInTheDocument();
-    expect(within(section(/^Problems/)).getByRole('searchbox', { name: 'Filter problems' })).toBeInTheDocument();
+    expect(within(section(/^Problems in this domain/)).getByRole('searchbox', { name: 'Filter problems' })).toBeInTheDocument();
 
     // The record page: children and links in.
     await openApp('/records/BG-D01', served);
