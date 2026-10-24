@@ -35,12 +35,11 @@ describe('lathe check', () => {
     expect(coverage).toBeGreaterThan(warnings);
     expect(stdout.slice(errors, warnings)).toContain('[dangling-link] BX-D-UC01:');
     expect(stdout.slice(warnings, coverage)).toContain('[unproved] BX-D-UC01-R01:');
-    expect(stdout.slice(coverage)).toContain(
-      'BX-D: requirements 0/1 designed, 0/1 built, 0/1 proved; rules 0/0 designed, 0/0 built, 0/0 proved; 2 gaps',
-    );
+    expect(stdout.slice(coverage)).toContain('BX-D requirement: 0/1 designed, 0/1 built, 0/1 proved, 0/1 planned; 2 gaps');
 
     const unfinished = lathe('check', '--root', fixture('unfinished')).stdout;
-    expect(unfinished).toContain('UX-D: requirements 2/3 designed, 1/3 built, 1/3 proved; rules 1/1 designed, 1/1 built, 0/1 proved; 4 gaps');
+    expect(unfinished).toContain('UX-D domain_rule: 1/1 designed, 1/1 built, 0/1 proved, 0/1 planned; 1 gap');
+    expect(unfinished).toContain('UX-D requirement: 2/3 designed, 1/3 built, 1/3 proved, 0/3 planned; 3 gaps');
   });
 
   it('LA-CHK-T10 The check exits 1 on any error and 0 otherwise, whatever the warnings', () => {

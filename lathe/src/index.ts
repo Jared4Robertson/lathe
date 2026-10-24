@@ -7,7 +7,7 @@ import { DuckDBInstance, type DuckDBConnection } from '@duckdb/node-api';
 import { COVERAGE_COUNTS_SQL, COVERAGE_GAPS_SQL } from './coverage.ts';
 import { loadConfig, PACKAGE_DIR } from './config.ts';
 import { parseRecordFile } from './parse.ts';
-import type { Coverage, CoverageGap, Kind, Problem, RelationRule, SpecLink, SpecRecord, Workspace } from './types.ts';
+import type { Coverage, CoverageGap, Kind, ObligationCoverage, Problem, RelationRule, SpecLink, SpecRecord, Workspace } from './types.ts';
 
 export type * from './types.ts';
 export { loadConfig, PACKAGE_DIR, CONFIG_FILE, type LatheConfig } from './config.ts';
@@ -135,12 +135,15 @@ async function loadMeta(connection: DuckDBConnection, metaDirs: string[]) {
   await connection.run(`
     CREATE TABLE kinds AS
     SELECT trim(kind) AS kind, coalesce(label, '') AS label, coalesce(stage, '') AS stage,
-           ${list('parent_kinds')}, ${list('required_fields')}, coalesce(description, '') AS description
-    FROM ${csv('kinds.csv')};
+           ${list('parent_kinds')}, ${list('required_fields')},
+           coalesce(lower(trim(obligation)) IN ('yes', 'true'), false) AS obligation,
+           coalesce(description, '') AS description
+    FROM (SELECT * FROM ${csv('kinds.csv')} UNION ALL BY NAME SELECT NULL::VARCHAR AS obligation WHERE false);
     CREATE TABLE relations AS
     SELECT trim(relation) AS relation, trim(source_kind) AS source_kind, trim(target_kind) AS target_kind,
+           CASE lower(trim(coalesce(role, ''))) WHEN 'design' THEN 'design' WHEN 'proof' THEN 'proof' ELSE '' END AS role,
            coalesce(description, '') AS description
-    FROM ${csv('relations.csv')};
+    FROM (SELECT * FROM ${csv('relations.csv')} UNION ALL BY NAME SELECT NULL::VARCHAR AS role WHERE false);
   `);
 }
 
@@ -178,13 +181,31 @@ async function runChecks(connection: DuckDBConnection, checksDir: string): Promi
   return problems;
 }
 
+// Coverage per domain: one entry per obligation kind in meta-model order, with the older
+// requirements_* and rules_* fields filled from the requirement and domain_rule entries.
 async function computeCoverage(connection: DuckDBConnection): Promise<Coverage[]> {
-  const counts = await readRows<Omit<Coverage, 'gaps'>>(connection, COVERAGE_COUNTS_SQL);
+  const rows = await readRows<ObligationCoverage & { domain: string }>(connection, COVERAGE_COUNTS_SQL);
   const gaps = await readRows<CoverageGap & { domain: string }>(connection, COVERAGE_GAPS_SQL);
-  return counts.map((c) => ({
-    ...c,
-    gaps: gaps.filter((g) => g.domain === c.domain).map(({ id, kind, missing }) => ({ id, kind, missing })),
-  }));
+  const domains = await readRows<{ id: string }>(connection, "SELECT DISTINCT id FROM records WHERE kind = 'domain' AND id <> '' ORDER BY id");
+  return domains.map(({ id: domain }) => {
+    const obligations = rows.filter((r) => r.domain === domain).map(({ domain: _domain, ...o }) => o);
+    const of = (kind: string) => obligations.find((o) => o.kind === kind);
+    const req = of('requirement');
+    const rule = of('domain_rule');
+    return {
+      domain,
+      requirements: req?.total ?? 0,
+      requirements_satisfied: req?.designed ?? 0,
+      requirements_built: req?.built ?? 0,
+      requirements_proved: req?.proved ?? 0,
+      rules: rule?.total ?? 0,
+      rules_satisfied: rule?.designed ?? 0,
+      rules_built: rule?.built ?? 0,
+      rules_proved: rule?.proved ?? 0,
+      obligations,
+      gaps: gaps.filter((g) => g.domain === domain).map(({ id, kind, missing }) => ({ id, kind, missing })),
+    };
+  });
 }
 
 /** Loads, checks and measures the spec workspace under root (the repo root). */
