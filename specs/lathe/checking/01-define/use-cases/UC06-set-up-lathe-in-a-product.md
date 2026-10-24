@@ -2,7 +2,7 @@
 id: LA-CHK-UC06
 kind: use_case
 title: Set up Lathe in a product repo
-parent: LA-CHK
+parent: LA-CHK-CAP04
 actor: Jared, AI agent
 links:
   applies: [LA-CHK-DR01]

@@ -2,7 +2,7 @@
 id: TL-LEND-UC03
 kind: use_case
 title: Borrow a tool
-parent: TL-LEND
+parent: TL-LEND-CAP03
 actor: Member
 links:
   applies: [TL-LEND-DR02, TL-LEND-DR03, TL-LEND-DR05, TL-LEND-DR06, TL-LEND-DR07]

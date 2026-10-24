@@ -2,7 +2,7 @@
 id: LA-BRW-UC21
 kind: use_case
 title: Trace a requirement in the graph
-parent: LA-BRW
+parent: LA-BRW-CAP03
 actor: Jared
 links:
   applies: [LA-BRW-DR20, LA-BRW-DR21]

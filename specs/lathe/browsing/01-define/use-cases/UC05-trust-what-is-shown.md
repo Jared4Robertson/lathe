@@ -2,7 +2,7 @@
 id: LA-BRW-UC05
 kind: use_case
 title: Trust that the page shows the files on disk
-parent: LA-BRW
+parent: LA-BRW-CAP04
 actor: Jared
 links:
   applies: [LA-BRW-DR03, LA-CHK-DR04]

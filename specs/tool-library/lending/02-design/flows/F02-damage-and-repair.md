@@ -2,7 +2,7 @@
 id: TL-LEND-F02
 kind: flow
 title: Damage and repair
-parent: TL-LEND
+parent: TL-LEND-CAP02
 links:
   uses: [TL-LEND-V01, TL-LEND-V02, TL-LEND-E03, TL-LEND-E06, TL-LEND-E07]
   fulfills: [TL-LEND-UC05-R01, TL-LEND-UC05-R02, TL-LEND-UC05-R03]

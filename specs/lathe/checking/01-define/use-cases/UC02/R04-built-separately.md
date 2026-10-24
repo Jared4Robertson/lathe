@@ -4,4 +4,4 @@ kind: requirement
 title: Coverage reports built separately from designed
 parent: LA-CHK-UC02
 ---
-For each domain, coverage MUST give how many requirements and how many domain rules are built: satisfied by at least one component whose `file` exists. The built count MUST never be more than the designed (satisfied) count, so a domain whose code does not exist yet shows as designed but not built.
+For each domain, coverage MUST give how many obligations of each kind are built: satisfied by at least one component whose `file` exists. The built count MUST never be more than the designed (satisfied) count, so a domain whose code does not exist yet shows as designed but not built.

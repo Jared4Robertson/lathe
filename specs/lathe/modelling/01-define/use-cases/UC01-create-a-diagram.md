@@ -2,7 +2,7 @@
 id: LA-MOD-UC01
 kind: use_case
 title: Create a diagram
-parent: LA-MOD
+parent: LA-MOD-CAP01
 actor: Jared
 links:
   applies: [LA-MOD-DR01]

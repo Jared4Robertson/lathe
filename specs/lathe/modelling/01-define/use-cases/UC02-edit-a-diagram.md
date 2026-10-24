@@ -2,7 +2,7 @@
 id: LA-MOD-UC02
 kind: use_case
 title: Edit a diagram's terms and links
-parent: LA-MOD
+parent: LA-MOD-CAP01
 actor: Jared, AI agent
 links:
   applies: [LA-MOD-DR02, LA-MOD-DR03, LA-MOD-DR04, LA-MOD-DR05, LA-MOD-DR13, LA-MOD-DR14, LA-MOD-DR15]

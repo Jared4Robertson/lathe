@@ -10,7 +10,7 @@ const kinds: Kind[] = (sample as Workspace).kinds.some((k) => k.kind === 'fitnes
   ? (sample as Workspace).kinds
   : [
       ...(sample as Workspace).kinds,
-      { kind: 'fitness', label: 'Fitness', stage: '', parent_kinds: ['product'], required_fields: ['date', 'score'], description: 'How well the product serves its purpose.' },
+      { kind: 'fitness', label: 'Fitness', stage: '', parent_kinds: ['product'], required_fields: ['date', 'score'], obligation: false, description: 'How well the product serves its purpose.' },
     ];
 const relations: RelationRule[] = (sample as Workspace).relations;
 
@@ -72,6 +72,8 @@ const shopCoverage: Coverage = {
     { id: 'DM-SHOP-UC01-R02', kind: 'requirement', missing: 'proves' },
     { id: 'DM-SHOP-DR01', kind: 'domain_rule', missing: 'proves' },
   ],
+  // Empty on purpose: the pages fall back to the requirement and rule fields above.
+  obligations: [],
 };
 
 // Built counts left out on purpose: they must show as "not yet measured", never as zero.
@@ -90,6 +92,7 @@ const noteCoverage: Coverage = {
   requirements: 0, requirements_satisfied: 0, requirements_built: 0, requirements_proved: 0,
   rules: 0, rules_satisfied: 0, rules_built: 0, rules_proved: 0,
   gaps: [],
+  obligations: [],
 };
 
 export function workspace(): Workspace {

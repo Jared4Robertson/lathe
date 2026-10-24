@@ -10,9 +10,10 @@ const heading = () => within(main()).getByRole('heading', { level: 1 });
 describe('routing', () => {
   it('LA-BRW-T01 Every page has its own address, and back and forward move between pages', async () => {
     expect(parseSpecRoute('/specs/DM')).toEqual({ page: 'product', product: 'DM' });
-    expect(parseSpecRoute('/specs/DM/DM-SHOP')).toEqual({ page: 'domain', product: 'DM', domain: 'DM-SHOP', tab: 'list' });
-    expect(parseSpecRoute('/specs/DM/DM-SHOP/graph')).toEqual({ page: 'domain', product: 'DM', domain: 'DM-SHOP', tab: 'graph' });
+    expect(parseSpecRoute('/specs/DM/DM-SHOP')).toEqual({ page: 'domain', product: 'DM', domain: 'DM-SHOP' });
+    expect(parseSpecRoute('/specs/DM/DM-SHOP/graph')).toEqual({ page: 'redirect', to: '/specs/DM/DM-SHOP?view=graph' });
     expect(parseSpecRoute('/records/DM-SHOP-C01')).toEqual({ page: 'record', id: 'DM-SHOP-C01' });
+    expect(parseSpecRoute('/records/DM-SHOP/use_case')).toEqual({ page: 'group', parent: 'DM-SHOP', kind: 'use_case' });
     expect(parseSpecRoute('/checks')).toEqual({ page: 'checks' });
     expect(parseSpecRoute('/format')).toEqual({ page: 'format' });
     expect(parseSpecRoute('/diagrams/people')).toBeNull();

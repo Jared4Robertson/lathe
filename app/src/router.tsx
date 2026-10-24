@@ -13,9 +13,19 @@ export function navigate(to: string, replace = false) {
 
 /** The current pathname, updated on back/forward and on navigate(). */
 export function usePath() {
-  const [path, setPath] = useState(() => window.location.pathname);
+  return useLocation().path;
+}
+
+/** The current pathname and query string, updated on back/forward and on navigate(). */
+export function useLocation() {
+  const read = () => ({ path: window.location.pathname, search: window.location.search });
+  const [location, setLocation] = useState(read);
   useEffect(() => {
-    const update = () => setPath(window.location.pathname);
+    const update = () => setLocation((l) => {
+      const next = read();
+      return next.path === l.path && next.search === l.search ? l : next;
+    });
+    update();
     window.addEventListener('popstate', update);
     window.addEventListener(NAVIGATE, update);
     return () => {
@@ -23,7 +33,7 @@ export function usePath() {
       window.removeEventListener(NAVIGATE, update);
     };
   }, []);
-  return path;
+  return location;
 }
 
 /** A real <a href> that navigates in place on a plain click, and opens normally with a modifier key. */

@@ -2,10 +2,14 @@
 id: TL-LEND-UC01
 kind: use_case
 title: Register a member
-parent: TL-LEND
+parent: TL-LEND-CAP01
 actor: Librarian
+record: Member
+required_input: The member's name and a valid email address.
+result: The new member with their ID, which goes on their card.
 links:
   applies: [TL-LEND-DR01]
+  follows: [TL-PAT-LIBRARIAN-ACTION]
 ---
 A librarian registers a new member so that the member can borrow tools.
 

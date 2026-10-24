@@ -2,7 +2,7 @@
 id: TL-LEND-F01
 kind: flow
 title: Borrow and return a tool
-parent: TL-LEND
+parent: TL-LEND-CAP03
 links:
   uses: [TL-LEND-V01, TL-LEND-V02, TL-LEND-E03, TL-LEND-E04, TL-LEND-E05]
   fulfills: [TL-LEND-UC03-R01, TL-LEND-UC03-R02, TL-LEND-UC03-R03, TL-LEND-UC04-R01, TL-LEND-UC04-R02, TL-LEND-UC04-R03, TL-LEND-UC04-R04]

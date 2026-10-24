@@ -140,3 +140,104 @@ These ran in `probe-root/`, which is the trial plus five records:
 9. **Add a home for shared rules** (a `standard` kind, or a shared domain that other domains can link into). Reason: S2's cross-domain standards and pattern rules are applied and proved in every domain.
 10. **Plan for structured tables (later).** Flow steps, value tables, state transitions, access rows and record fields are where S2 keeps most of its precision. A first step is to let flow steps be child records (`ACC-F022-W1`) that carry their own `fulfills` links. Reason: S2 reports traceability per flow step, and that is impossible while a flow is one record.
 11. **Suppress cascaded errors.** When an ID is duplicated, skip the relation errors whose target is that ID. Reason: probe P5 turned 1 real error into 16.
+
+## 6. Pass 4 re-run
+
+The same slice, reworked for the pass-4 format and checked with the pass-4 engine. The re-run lives at `/private/tmp/claude-501/s2-accounting-trial-pass4/` (a copy of the first trial's folder, which is kept as it was). Its `tools/gen.py` writes both `specs/` and `probe-root/specs/`, so the main records and the probes stay in step.
+
+### 6.1 What changed in the trial
+
+- **Before any rework,** the unchanged first-trial folder gave 4 `meta-duplicate-relation` errors and no others. Its extension restated four relation rules that pass 4 now has as defaults, with different descriptions (see 6.4, item A). The six false rule-test errors had already gone.
+- **Interaction requirements** use the default kind. The extension no longer defines the kind, nor its `fulfills`, `satisfies` and `proves` rules.
+- **Rule tests** keep their `-RT` record IDs, but their code needs no test ID: each file names only the rule, and the check accepts it.
+- **Design checks** are now `test` records with `state: manual` and `test_type: design review`, which prove the view's interaction requirements. The `design_check` kind and the `checks` relation are gone.
+- **A domain-wide rule** (`ACC-DM-R029`) now sits directly under the domain, because the extension widens `domain_rule`'s parents. It has its rule test, a component that satisfies it, and the use case that applies it. In the first trial this was probe P1.
+- **Pattern proofs,** the domain's own proof of each shared rule it adopts, are new: one `planned` test (S2 marks it "not automated yet") and one automated contract test.
+- **The extension shrank** from 4 kinds and 15 relations to 3 kind rows and 10 relations. The kind rows are 1 widening (`domain_rule` under `domain`) and 2 new kinds (`design_flow`, and `shared_rule` marked `obligation: yes`). The 10 relations are `carries_out`, `fulfills` from flow to domain rule and to interaction requirement, `fulfills` and `applies` to shared rule, `satisfies` (design) and `proves` (proof) to shared rule, `runs`, `deepens`, and `uses` from design flow to component.
+
+That comes to 74 records and 175 links. The 24 tests are 21 automated, 2 manual and 1 planned.
+
+### 6.2 Check result and coverage compared
+
+`node lathe/bin/lathe.ts check --root /private/tmp/claude-501/s2-accounting-trial-pass4`:
+
+```
+Checked 74 records
+Errors (1): [test-file-missing-id] ACC-SYS-API-R004-PT (the automated pattern proof; its file names no ID)
+Coverage:
+  ACC domain_rule: 7/7 designed, 7/7 built, 7/7 proved, 0/7 planned; 0 gaps
+  ACC requirement: 4/4 designed, 4/4 built, 4/4 proved, 0/4 planned; 0 gaps
+  ACC interaction_requirement: 8/8 designed, 8/8 built, 8/8 proved, 0/8 planned; 0 gaps
+1 errors, 0 warnings.  (exit 1)
+```
+
+| Obligation kind (slice count) | S2 traceability | Lathe, pass 4 | First trial |
+| --- | --- | --- | --- |
+| Use-case requirement (4) | All have a design file, all proved by scenarios | 4/4 designed, built, proved. These agree. | 4/4, agreed |
+| Domain rule (7) | Each has its one automated rule test, and a design file | 7/7 designed, built, proved, with no false errors. These agree. | 6/6, with 6 false errors |
+| Interaction requirement (8) | Each fulfills something; 5 are covered by contract tests and 3 by design-review checks | 8/8 designed, built, proved (3 by manual tests). These agree. | Not counted |
+| Shared rule (2) | One pattern proof automated, one not automated yet | **Not counted at all** (6.4, B), and the automated pattern proof is a false error (6.4, D) | Not counted |
+| Flow steps per requirement | Listed | Still not expressible | Not expressible |
+| Test run state | Automated, manual, not automated yet | Expressible, and it drives "proved" and "planned". Lathe does not count tests by state, as S2's report does. | Not expressible |
+| Built | Not reported | Reported: every component file exists | Not reported |
+
+All three default obligation kinds now agree with S2. The disagreements that are left are about shared rules and flow steps.
+
+### 6.3 The first report's recommendations
+
+| # | Recommendation | Status | Evidence |
+| --- | --- | --- | --- |
+| 1 | Meta-model-driven coverage | **Done** | The extension kind `shared_rule` is counted once it sits in a domain (probe P7). An obligation outside a domain is still not counted (6.4, B). |
+| 2 | Default `interaction_requirement` | **Done** | Also allowed under a flow. It needed no extension. |
+| 3 | A test proves what its file names, plus test state | **Done**, with gaps | The rule tests pass. `manual` and `planned` work (P10 shows "planned 1/9"). Gaps: the record still needs its own ID, and see 6.4, items C, D, E and F. |
+| 4 | Widening and meta-model checks | **Done** for kinds | P2 (a requirement under a view) now passes, and the meta checks catch duplicates. Relation rules cannot be restated or widened (6.4, A). |
+| 5 | Default relations, and a rule under a domain | **Partly done** | A rule under a domain is possible by widening, not by default. `carries_out`, `fulfills` from flow to rule, `runs`, and a test-to-component relation are still extensions. |
+| 6 | Resolve IDs cited in prose | **Open** | P3: a made-up ID in a body is still not reported. |
+| 7 | Structural warnings | **Open** | P3: an interaction requirement that fulfills nothing gives only "unsatisfied" and "unproved". P4: a rule that no use case applies, proved at the wrong level, gives nothing beyond those two. |
+| 8 | Product checks folder | **Open** | `lathe.config.json` has no `checks` key. |
+| 9 | A home for shared rules | **Partly done** | An extension kind under a shared domain works and is counted (P7). But the count lands in the shared domain, not in the domain that adopts the rule, and a rule under the product is not counted. |
+| 10 | Structured tables | **Open** | Flow steps and the other tables are still prose. |
+| 11 | Suppress cascaded errors | **Open** | P5 still gives 1 duplicate-ID error plus 15 cascaded `relation-not-allowed` errors. |
+
+### 6.4 What is new, broken or still awkward
+
+- **A. Restating a default relation is an error.** FORMAT.md section 9 says an identical row changes nothing, but "identical" includes the description and the role. So a product's existing extension broke on upgrade with 4 `meta-duplicate-relation` errors (P6 reproduces it). The message does not say which folders list the rule, and a product cannot change a default relation's role or description.
+- **B. An obligation outside a domain is silently left out.** Coverage counts only records that sit in a domain. Shared rules under the product are marked `obligation: yes`, yet they get no coverage line and no note, while `unsatisfied` and `unproved` still check them. S2's shared rules sit outside every domain.
+- **C. One mention covers every proof.** If a test's file names any one ID it proves, the test passes for all of them. In P4, a test claims to prove two rules, its file names only one, and nothing is reported.
+- **D. Pattern proofs keyed by file are false errors.** S2 records a pattern proof in its test plan as the path of a dedicated file, and that file names no ID at all. Lathe calls it `test-file-missing-id`. That is the main trial's only error.
+- **E. A planned test cannot name its future file.** P8: a planned test whose `run_by` does not exist yet is an error (`test-file-missing`). A component that names a future file is only a warning.
+- **F. `state` is matched case-sensitively in some places and not in others.** P11 (`state: Manual`): the checks give `bad-test-state` and `test-run-by-missing`, but coverage lower-cases the value and counts the test as manual proof. The record is both broken and counted.
+- **G. "Planned" hides behind other proof.** The access rule's planned pattern proof is not visible, because scenarios already prove the rule. S2 reports "pattern proofs still needed" separately (20 in Accounting). Lathe cannot say that one kind of proof is still owed.
+- **H. Smaller points.** The CLI prints "1 errors". A manual test may name a `run_by` file that never mentions it, and nothing checks it (P9). The coverage output keeps the older fixed fields (`requirements`, `rules`) next to the per-kind list.
+
+### 6.5 Probes on pass 4
+
+These run in `probe-root/`: the main records plus 13 probe records, and one more relation row in its extension.
+
+| Probe | First trial | Pass 4 |
+| --- | --- | --- |
+| P1: a domain rule under the domain | Error | Passes by widening (now in the main trial) |
+| P2: a requirement under a view, by widening | Error, and the duplicate row went unreported | Passes |
+| P3: an interaction requirement that fulfills nothing, citing a made-up ID | Nothing reported | Only `unsatisfied` and `unproved`. The prose ID goes unreported. |
+| P4: a rule that no use case applies, proved at the wrong level | Only `unsatisfied` | Same. The test also passes the file check when its file names only the other ID it proves (C). |
+| P5: a rule test keyed by its rule's ID | 1 + 15 errors | Same, 1 + 15 |
+| P6: an extension restates a default relation rule with other words | (new) | `meta-duplicate-relation`, with no folder named |
+| P7: an extension `shared_rule` in a shared domain, proved by a manual test | (new) | Counted under the shared domain: 1/1 proved, 0/1 designed |
+| P8: a planned test whose `run_by` file does not exist yet | (new) | Error `test-file-missing` |
+| P9: a manual test naming a file that never mentions it | (new) | Nothing reported |
+| P10: a rule that only a planned test proves | (new) | "planned 1/9", and the warning "its test is only planned". This works as documented. |
+| P11: `state: Manual`, with a capital letter | (new) | Two errors, but counted as proof |
+
+### 6.6 What to change next, by priority
+
+1. **Count every obligation, and give shared rules a home.** Count obligations that sit outside a domain (a product-level line), or at least report that they are left out. Then decide where adoption is counted: S2 proves each shared rule once per adopting domain, so a "proved in domain X" link, or counting by the proving test's domain, would match S2. Reason: this is the only default-format gap left in the coverage comparison (B, recommendation 9).
+2. **Make every proof claim checkable.** When a file does not name the test's own ID, require it to name each ID the test proves, or report each one it leaves out. Add an optional `key` field (the text the file must contain, such as a test function name) for files that name no ID. Reason: C lets a claim go unchecked, and D is the main trial's one false error.
+3. **Resolve IDs cited in prose** (unchanged recommendation 6). Reason: this is S2's most common kind of drift, and P3 still passes silently.
+4. **Add the structural warnings** (unchanged recommendation 7): a rule no use case applies, a use case with no flow, an interaction requirement that fulfills nothing, and a level mismatch. Reason: each is a small SQL file, and P3 and P4 show they are still missing.
+5. **Make the S2 shapes default** (rest of recommendation 5): `carries_out`, `fulfills` from flow to domain rule and to interaction requirement, `runs`, a test-to-component relation, and `domain` among `domain_rule`'s parents. Reason: 4 of the trial's 10 extension relations (and its one widening) are generic, not specific to S2.
+6. **Let extensions restate or widen relation rules.** Treat a row with the same relation, source and target as the same rule, with a non-empty role or description replacing the default's, and name the folders in `meta-duplicate-relation`. Reason: A breaks existing product extensions on upgrade.
+7. **Make test state consistent and planned-friendly.** Read `state` the same way in every check and in coverage (either lower-case it everywhere or reject it everywhere). Make a missing `run_by` file a warning for a planned test. Reason: F and E.
+8. **Suppress cascaded errors** (unchanged recommendation 11). Reason: P5 still turns 1 error into 16.
+9. **Let a product add its own checks** (unchanged recommendation 8). Reason: S2's level matching and access-row citations still have no home.
+10. **Show owed proof, and count tests by state.** Let coverage report a planned proof even when other tests already prove the obligation, and add a count of tests by state. Reason: G, and S2's test-coverage table.
+11. **Plan for structured tables, later** (unchanged recommendation 10), starting with flow steps as child records.

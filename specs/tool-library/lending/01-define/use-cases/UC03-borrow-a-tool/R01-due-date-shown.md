@@ -4,4 +4,4 @@ kind: requirement
 title: The loan is shown with its due date
 parent: TL-LEND-UC03
 ---
-A successful borrow MUST return the loan with its start time and its due date: a date (YYYY-MM-DD) 14 calendar days after the start, in the library's time zone.
+A successful borrow MUST tell the member the loan's due date (TL-LEND-DR07): a date, not a time.

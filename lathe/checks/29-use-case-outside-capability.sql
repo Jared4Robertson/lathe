@@ -1,0 +1,9 @@
+-- Work to do: once a domain has capabilities, each of its use cases sits in one of them.
+SELECT 'warning' AS severity, 'use-case-outside-capability' AS "check", u.id AS record,
+       'Use case ' || u.id || ' sits directly under domain ' || u.parent
+       || ', which has capabilities; move it under the capability it belongs to.' AS message
+FROM records u
+JOIN records d ON d.id = u.parent AND d.kind = 'domain'
+WHERE u.kind = 'use_case' AND u.id <> ''
+  AND EXISTS (SELECT 1 FROM records c WHERE c.kind = 'capability' AND c.parent = d.id)
+ORDER BY record

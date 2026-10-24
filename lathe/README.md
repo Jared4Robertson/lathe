@@ -21,7 +21,7 @@ npx lathe serve            # http://127.0.0.1:5330
 }
 ```
 
-All three keys are optional (`specs` and `diagrams` are the defaults). A `metaExtensions` folder holds a `kinds.csv` and/or `relations.csv` with the same columns as [meta/](meta/); their rows are added to Lathe's defaults for this product only. The record format is in [FORMAT.md](FORMAT.md).
+All three keys are optional (`specs` and `diagrams` are the defaults). A `metaExtensions` folder holds a `kinds.csv` and/or `relations.csv` with the same columns as [meta/](meta/); their rows are added to Lathe's defaults for this product only, and a row for a kind Lathe already has widens that kind (see FORMAT.md section 9). The record format is in [FORMAT.md](FORMAT.md).
 
 ## Build the package
 

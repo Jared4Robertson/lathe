@@ -2,7 +2,7 @@
 id: LA-BRW-UC20
 kind: use_case
 title: Walk the model as a graph
-parent: LA-BRW
+parent: LA-BRW-CAP03
 actor: Jared
 links:
   applies: [LA-BRW-DR01, LA-BRW-DR20, LA-BRW-DR21]
