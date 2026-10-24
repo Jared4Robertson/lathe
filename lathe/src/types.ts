@@ -77,6 +77,15 @@ export interface ObligationCoverage {
   proved: number;
   /** Not proved, but a planned test is meant to prove it. */
   planned: number;
+  /** Has a planned test meant to prove it, whether or not other tests already prove it (proof still owed). */
+  planned_any: number;
+}
+
+/** How many tests a domain has, by state. */
+export interface TestCounts {
+  automated: number;
+  manual: number;
+  planned: number;
 }
 
 export interface Coverage {
@@ -93,6 +102,8 @@ export interface Coverage {
   rules_proved: number;
   /** Every obligation kind in the meta-model, in meta-model order, including requirement and domain_rule (whose counts above are kept for older readers). */
   obligations: ObligationCoverage[];
+  /** The domain's tests by state (a test with no state is automated). */
+  tests: TestCounts;
   gaps: CoverageGap[];
 }
 
