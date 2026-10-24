@@ -55,8 +55,8 @@ async function check() {
       console.log('\nCoverage:');
       for (const c of workspace.coverage) {
         console.log(
-          `  ${c.domain}: requirements ${c.requirements_satisfied}/${c.requirements} satisfied, ${c.requirements_proved}/${c.requirements} proved;` +
-            ` rules ${c.rules_satisfied}/${c.rules} satisfied, ${c.rules_proved}/${c.rules} proved; ${c.gaps.length} gaps`,
+          `  ${c.domain}: requirements ${c.requirements_satisfied}/${c.requirements} designed, ${c.requirements_built}/${c.requirements} built, ${c.requirements_proved}/${c.requirements} proved;` +
+            ` rules ${c.rules_satisfied}/${c.rules} designed, ${c.rules_built}/${c.rules} built, ${c.rules_proved}/${c.rules} proved; ${c.gaps.length} gaps`,
         );
       }
     }
@@ -89,7 +89,12 @@ async function init() {
 function startServer() {
   const port = Number(values.port ?? 5330);
   if (!Number.isInteger(port) || port <= 0) fail('--port must be a port number.');
-  const server = serve({ root, port });
+  let server: ReturnType<typeof serve>;
+  try {
+    server = serve({ root, port });
+  } catch (error) {
+    fail(error instanceof Error ? error.message : String(error));
+  }
   server.on('listening', () => console.log(`Lathe is serving ${root} at http://127.0.0.1:${port}`));
   server.on('error', (error) => fail(`Could not start the server: ${error.message}`));
 }
