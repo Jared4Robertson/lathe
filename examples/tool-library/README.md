@@ -4,7 +4,7 @@ Lathe's example product: the HTTP API of a neighbourhood tool library. Librarian
 
 Due dates are dates (YYYY-MM-DD), counted in the library's time zone: a loan is due 14 calendar days after it starts and becomes overdue at 00:00 on the day after its due date in that zone.
 
-The specification is in [specs/tool-library/](../../specs/tool-library/). Every source file names its component record (`TL-LEND-C..`), and every test name starts with its test record ID (`TL-LEND-T..`), so Lathe can trace each requirement and domain rule to code and tests.
+The specification is in [specs/tool-library/](../../specs/tool-library/). Every source file names its component record (`TL-LEND-C..`), and every automated test's name starts with its test record ID (`TL-LEND-T..`) or, in one case, the ID of the rule it proves (`TL-LEND-DR05`, the style Client uses), so Lathe can trace each requirement, domain rule and interaction requirement to code and tests. The API's own rules (each body's fields, each error's status and code, what a success returns) are interaction requirements under the endpoint records (`TL-LEND-E0n-R0n`).
 
 ## Requirements
 
@@ -24,8 +24,10 @@ npm test            # vitest, at most 2 workers
 npm run typecheck   # tsc --noEmit
 ```
 
-- `test/domain-rules.test.ts`: one test per domain rule (TL-LEND-T01 to T10, and T27), against the services and an in-memory database.
-- `test/api.test.ts`: one test per use case requirement (TL-LEND-T11 to T26), over HTTP on a free local port.
+- `test/domain-rules.test.ts`: one test per domain rule (TL-LEND-T01 to T10, and T27), against the services and an in-memory database. The DR05 test is named by its rule ID.
+- `test/api.test.ts`: one test per use case requirement and its endpoint rules (TL-LEND-T11 to T26), plus endpoint rules of their own (T28, T31, T32), over HTTP on a free local port.
+
+Two tests are not automated: TL-LEND-T29 is a manual smoke test of the curl steps below, and TL-LEND-T30 (a body over 64 KB is refused with 413) is planned; their records say why.
 
 ## Run
 
@@ -51,7 +53,7 @@ Stop it with Ctrl-C.
 | POST | `/tools/{toolId}/damage` | Mark a tool as needing repair: `{ "note" }`. |
 | POST | `/tools/{toolId}/repair` | Mark a damaged tool repaired. |
 
-Errors are JSON: `{ "error": "<code>", "message": "<sentence>" }`, for example `409 { "error": "member_overdue", … }`. The endpoint records in `specs/tool-library/lending/02-design/endpoints/` list every status and code.
+Errors are JSON: `{ "error": "<code>", "message": "<sentence>" }`, for example `409 { "error": "member_overdue", … }`. The interaction requirements under the endpoint records in `specs/tool-library/lending/02-design/endpoints/` give every status and code. A body over 64 KB gets 413 `body_too_large`.
 
 ```sh
 curl -s -X POST localhost:5310/members -H 'content-type: application/json' -d '{"name":"Ada","email":"ada@example.org"}'
