@@ -13,8 +13,10 @@ describe('spec pages only read', () => {
       const { requests } = await openApp(page);
       await screen.findAllByRole('heading', { level: 1 }).catch(() => screen.findByText(/Lathe spec format/));
       const area = main();
-      // No forms, buttons, editable fields or editors; the domain page's search box is the only input.
-      expect(area.querySelectorAll('form, button, textarea, select, [contenteditable]'), page).toHaveLength(0);
+      // No forms, editable fields or editors; the search boxes are the only inputs, and the buttons
+      // only change the view (wiki, graph, split, full screen, inspector, folded rows), never a record.
+      expect(area.querySelectorAll('form, textarea, select, [contenteditable]'), page).toHaveLength(0);
+      for (const button of area.querySelectorAll('button')) expect(button.type, page).toBe('button');
       for (const input of area.querySelectorAll('input')) expect(input.type, page).toBe('search');
       // Use the page: type in the search box.
       for (const input of area.querySelectorAll('input')) await user.type(input, 'basket');

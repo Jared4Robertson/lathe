@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
 import { domainPath, kindLabel, productPath, relationLabel, type SpecIndex, type SpecLink as Link, type SpecRecord } from './data';
 import { Markdown } from './Markdown';
-import { LongList } from './LongList';
-import { NavigateContext, PageHeader, ProblemBadge, ProblemList, RecordLink, Section, SpecLink, TestStateTag, idText, recordText, testState } from './parts';
+import { LongList } from '../components/LongList';
+import { NavigateContext, PageHeader, ProblemBadge, ProblemList, RecordLink, RecordTree, Section, SpecLink, TestStateTag, idText, testState } from './parts';
 
 // One record's content: header, body, problems, fields, parent, children and links both ways.
 // Kept apart from the page chrome so another view (such as the graph, side by side) can host it.
@@ -84,13 +84,20 @@ export interface RecordContentProps {
    * whole app moves to that address. Links stay real links, so a modified click opens a new tab.
    */
   onNavigate?: (to: string) => void;
-  /** Extra controls for the header, such as "Open in graph". */
+  /** Extra controls for the header. */
   actions?: ReactNode;
+  /** Draw the header (title, ID, kind). Off when the host draws its own, as the focus page does. */
+  header?: boolean;
+  /**
+   * Draw the record's facts (fields, parent, children, links, problems) beside the body. Off when
+   * the host shows them in its inspector; the body then lists the direct children itself.
+   */
+  side?: boolean;
 }
 
-export function RecordContent({ index, id, onNavigate, actions }: RecordContentProps) {
+export function RecordContent({ index, id, onNavigate, actions, header = true, side = true }: RecordContentProps) {
   const record = index.byId.get(id);
-  const body = record ? <RecordBody index={index} record={record} actions={actions} /> : (
+  const body = record ? <RecordBody index={index} record={record} actions={actions} header={header} side={side} /> : (
     <div className="placeholder"><p>There's no record with the ID <code>{id}</code>.</p></div>
   );
   return (
@@ -100,31 +107,34 @@ export function RecordContent({ index, id, onNavigate, actions }: RecordContentP
   );
 }
 
-function RecordBody({ index, record, actions }: { index: SpecIndex; record: SpecRecord; actions?: ReactNode }) {
-  const { id } = record;
+/** The eyebrow over a record's title: its product, its domain and its kind, as links. */
+export function RecordEyebrow({ index, record }: { index: SpecIndex; record: SpecRecord }) {
   const kind = index.kinds.get(record.kind);
-  const children = index.children.get(id) ?? [];
-  const problems = index.problemsFor.get(id) ?? [];
-  const isTest = record.kind === 'test';
-  // A test's state gets its own row, with its tag.
-  const fields = Object.entries(record.fields).filter(([name]) => !(isTest && name === 'state'));
   const product = record.product ? index.byId.get(record.product) : undefined;
   const domain = record.domain ? index.byId.get(record.domain) : undefined;
   return (
     <>
-      <PageHeader
-        eyebrow={<>
-          {product && record.kind !== 'product' && <><SpecLink to={productPath(product.id)}>{product.title}</SpecLink> · </>}
-          {domain && product && record.kind !== 'domain' && <><SpecLink to={domainPath(product.id, domain.id)}>{domain.title}</SpecLink> · </>}
-          {kind?.label ?? record.kind}
-        </>}
-        title={record.title}
-        id={id}
-      >
-        <ProblemBadge problems={problems} />
-        {actions}
-      </PageHeader>
-      <div className="record-layout">
+      {product && record.kind !== 'product' && <><SpecLink to={productPath(product.id)}>{product.title}</SpecLink> · </>}
+      {domain && product && record.kind !== 'domain' && <><SpecLink to={domainPath(product.id, domain.id)}>{domain.title}</SpecLink> · </>}
+      {kind?.label ?? record.kind}
+    </>
+  );
+}
+
+function RecordBody({ index, record, actions, header, side }: { index: SpecIndex; record: SpecRecord; actions?: ReactNode; header: boolean; side: boolean }) {
+  const { id } = record;
+  const children = index.children.get(id) ?? [];
+  const problems = index.problemsFor.get(id) ?? [];
+  const isTest = record.kind === 'test';
+  return (
+    <>
+      {header && (
+        <PageHeader eyebrow={<RecordEyebrow index={index} record={record} />} title={record.title} id={id}>
+          <ProblemBadge problems={problems} />
+          {actions}
+        </PageHeader>
+      )}
+      <div className={side ? 'record-layout' : 'record-layout single'}>
         <div className="record-main">
           {isTest && testState(record) === 'planned' && (
             <p className="planned-note" role="note">
@@ -133,40 +143,53 @@ function RecordBody({ index, record, actions }: { index: SpecIndex; record: Spec
           )}
           <Markdown source={record.body} />
           {record.kind === 'interaction_requirement' && <Fulfills index={index} record={record} />}
-          <Section title="Problems" count={problems.length}>
-            <ProblemList index={index} problems={problems} showRecord={false} />
-          </Section>
+          {side ? (
+            <Section title="Problems" count={problems.length}>
+              <ProblemList index={index} problems={problems} showRecord={false} />
+            </Section>
+          ) : children.length > 0 && (
+            <Section title="Children" count={children.length}>
+              <RecordTree index={index} records={children} label={`Children of ${id}`} showKind />
+            </Section>
+          )}
           {record.kind === 'product' && <p><SpecLink to={productPath(id)}>Open the product overview</SpecLink></p>}
           {record.kind === 'domain' && record.product && <p><SpecLink to={domainPath(record.product, id)}>Open the domain overview</SpecLink></p>}
         </div>
-        <aside className="record-side">
-          <dl className="fields">
-            <div><dt>Kind</dt><dd title={kind?.description}>{kind?.label ?? record.kind}</dd></div>
-            {isTest && <div><dt>State</dt><dd><TestStateTag record={record} /></dd></div>}
-            {fields.map(([name, value]) => (
-              <div key={name}><dt>{name.replaceAll('_', ' ')}</dt><dd>{value}</dd></div>
-            ))}
-            <div><dt>Spec file</dt><dd><code>{record.path}</code></dd></div>
-          </dl>
-          <h3>Parent</h3>
-          {record.parent ? <RecordLink index={index} id={record.parent} /> : <p className="hint">None (top level).</p>}
-          <h3>Children <span className="section-count">{children.length}</span></h3>
-          {children.length === 0 ? <p className="hint">None.</p> : (
-            <LongList
-              label="Children"
-              className="plain"
-              items={children}
-              itemKey={(c) => c.id}
-              searchText={recordText}
-              render={(c) => <><RecordLink index={index} id={c.id} /> <small className="meta">{kindLabel(index, c.kind)}</small></>}
-            />
-          )}
-          <h3>Links out</h3>
-          <LinkGroups index={index} links={index.outgoing.get(id) ?? []} direction="out" />
-          <h3>Links in</h3>
-          <LinkGroups index={index} links={index.incoming.get(id) ?? []} direction="in" />
-        </aside>
+        {side && <aside className="record-side"><RecordFacts index={index} record={record} /></aside>}
       </div>
+    </>
+  );
+}
+
+/**
+ * A record's facts: kind, fields, spec file, parent, children (their own children folded) and its
+ * links both ways. Shown beside the body, or in the inspector.
+ */
+export function RecordFacts({ index, record }: { index: SpecIndex; record: SpecRecord }) {
+  const { id } = record;
+  const kind = index.kinds.get(record.kind);
+  const children = index.children.get(id) ?? [];
+  const isTest = record.kind === 'test';
+  // A test's state gets its own row, with its tag.
+  const fields = Object.entries(record.fields).filter(([name]) => !(isTest && name === 'state'));
+  return (
+    <>
+      <dl className="fields">
+        <div><dt>Kind</dt><dd title={kind?.description}>{kind?.label ?? record.kind}</dd></div>
+        {isTest && <div><dt>State</dt><dd><TestStateTag record={record} /></dd></div>}
+        {fields.map(([name, value]) => (
+          <div key={name}><dt>{name.replaceAll('_', ' ')}</dt><dd>{value}</dd></div>
+        ))}
+        <div><dt>Spec file</dt><dd><code>{record.path}</code></dd></div>
+      </dl>
+      <h3>Parent</h3>
+      {record.parent ? <RecordLink index={index} id={record.parent} /> : <p className="hint">None (top level).</p>}
+      <h3>Children <span className="section-count">{children.length}</span></h3>
+      {children.length === 0 ? <p className="hint">None.</p> : <RecordTree index={index} records={children} label="Children" showKind bulk={false} />}
+      <h3>Links out</h3>
+      <LinkGroups index={index} links={index.outgoing.get(id) ?? []} direction="out" />
+      <h3 id={`links-in-${id}`} tabIndex={-1} className="links-in-heading">Links in</h3>
+      <LinkGroups index={index} links={index.incoming.get(id) ?? []} direction="in" />
     </>
   );
 }

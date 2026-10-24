@@ -4,8 +4,8 @@ kind: component
 title: Graph group addresses
 parent: LA-BRW
 component_type: module
-file: app/src/graph/route.tsx
+file: app/src/views/address.ts
 links:
   satisfies: [LA-BRW-UC40-R03]
 ---
-Builds and reads `/graph/<parent-id>/<kind>` for a group, alongside `/graph/<record-id>` for a record.
+Builds and reads a group's address, `/records/<parent-id>/<kind>`, alongside `/records/<record-id>` for a record, and leads the older `/graph/<parent-id>/<kind>` there in the Graph view.

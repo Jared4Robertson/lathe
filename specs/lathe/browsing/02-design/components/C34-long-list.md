@@ -4,7 +4,7 @@ kind: component
 title: Long list
 parent: LA-BRW
 component_type: react component
-file: app/src/specs/LongList.tsx
+file: app/src/components/LongList.tsx
 links:
   satisfies: [LA-BRW-UC30-R07]
 ---

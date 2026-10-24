@@ -1,6 +1,6 @@
 import { Link } from '../router';
 import { byIdOrder, recordPath, type Coverage, type SpecIndex, type SpecRecord } from './data';
-import { LongList } from './LongList';
+import { LongList } from '../components/LongList';
 import { Markdown } from './Markdown';
 
 // Coverage (designed, built, proved, planned) per obligation kind, and a product's fitness with the evidence beside it.
