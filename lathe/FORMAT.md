@@ -237,3 +237,26 @@ A record's body may cite other records by ID in plain text, such as "the loan fo
 - A record's **mentions** (`SpecRecord.mentions`) are the IDs it cites that exist, in order of first mention, without repeats and without its own ID.
 - A cited ID that is not a record is an `unknown-id-in-prose` warning on the citing record: fix the wording, or put the ID in code if it is an example.
 - Mentions are not links. They do not count for coverage and are not checked against `relations.csv`; write a link in the header when a record satisfies, proves or applies another.
+
+## 13. A product's own checks
+
+A product can add checks of its own, so that its house rules live with the product instead of in Lathe. For example, Client requires each aggregate to have exactly one use case that follows its Record view pattern. Lathe does not ship that rule, but Client can keep it as its own check.
+
+- `lathe.config.json` names a folder of the product's checks in `checks`, relative to the root (see the package README). Every `*.sql` file in it is a check, written exactly as Lathe's checks are (section 5): one `SELECT` over the same tables, returning rows of `(severity, check, record, message)`.
+- The product's checks run after all of Lathe's checks, in file name order. Their problems are ordinary problems: `lathe check`, `--json` and the app show them with the others.
+- A check's name is its file name without the leading number and `.sql`, as for Lathe's checks: `lathe-checks/01-endpoint-without-interaction-requirement.sql` is the check `endpoint-without-interaction-requirement`. The `check` column the SQL returns is ignored.
+- A product check whose name equals one of Lathe's checks is not run. It is a `product-check-name-clash` error naming the file, so the two never mix in a report. Rename the file.
+- A product check that fails to run is an error naming its file, as for Lathe's checks.
+- A `checks` folder that the config names but that does not exist is a `product-checks-missing` error.
+
+```sql
+-- lathe-checks/01-one-record-view-per-aggregate.sql: Client's house rule
+SELECT 'warning' AS severity, 'one-record-view-per-aggregate' AS "check", a.id AS record,
+       'Aggregate ' || a.id || ' needs exactly one Record view use case.' AS message
+FROM records a
+WHERE a.kind = 'aggregate'
+  AND (SELECT count(*) FROM records u
+       JOIN links l ON l.path = u.path AND l.relation = 'follows' AND l.target = 'Client-PAT-RECORD-VIEW'
+       JOIN fields f ON f.path = u.path AND f.name = 'record' AND f.value = a.id
+       WHERE u.kind = 'use_case') <> 1
+```

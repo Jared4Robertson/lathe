@@ -17,11 +17,12 @@ npx lathe serve            # http://127.0.0.1:5330
 {
   "specs": "specs",
   "diagrams": "diagrams",
-  "metaExtensions": "lathe-meta"
+  "metaExtensions": "lathe-meta",
+  "checks": "lathe-checks"
 }
 ```
 
-All three keys are optional (`specs` and `diagrams` are the defaults). A `metaExtensions` folder holds a `kinds.csv` and/or `relations.csv` with the same columns as [meta/](meta/); their rows are added to Lathe's defaults for this product only, and a row for a kind Lathe already has widens that kind (see FORMAT.md section 9). The record format is in [FORMAT.md](FORMAT.md).
+All four keys are optional (`specs` and `diagrams` are the defaults). A `metaExtensions` folder holds a `kinds.csv` and/or `relations.csv` with the same columns as [meta/](meta/); their rows are added to Lathe's defaults for this product only, and a row for a kind Lathe already has widens that kind (see FORMAT.md section 9). A `checks` folder holds the product's own checks (see [Add a product's own check](#add-a-products-own-check)). The record format is in [FORMAT.md](FORMAT.md).
 
 ## Build the package
 
@@ -40,7 +41,7 @@ The engine turns the product's spec records into a checked database. It:
 2. Reads every `*.md` file in the configured specs folder except `README.md`, and parses its YAML header and body (see [FORMAT.md](FORMAT.md)). A file it cannot parse becomes a `parse-error` problem, and loading carries on.
 3. Works out each record's product and domain by walking its `parent` chain. A loop in that chain is a `parent-cycle` error.
 4. Checks each test's `run_by` file and each component's `file`: does it exist, and does a test's file mention the test's ID.
-5. Loads all of this into an in-memory DuckDB database, runs every check in `lathe/checks/` (including checks that the meta-model itself is consistent), and computes coverage per domain: how many requirements and domain rules are designed (a component satisfies them), built (that component's file exists) and proved (a test proves them).
+5. Loads all of this into an in-memory DuckDB database, runs every check in `lathe/checks/` (including checks that the meta-model itself is consistent) and then the product's own checks, and computes coverage per domain: how many requirements and domain rules are designed (a component satisfies them), built (that component's file exists) and proved (a test proves them).
 
 It returns a `Workspace` (see [src/types.ts](src/types.ts)): kinds, relations, records, links, problems and coverage. Nothing is written to disk. The files are the source of truth, and the database is rebuilt on every load.
 
@@ -90,3 +91,13 @@ The fixture workspaces in `test/fixtures/` are small: `good` passes every check,
 4. Add a fixture and a test in `test/checks.test.ts`.
 
 If a check's SQL fails to run, the engine reports that as an error problem for that check rather than crashing.
+
+## Add a product's own check
+
+A rule that belongs to one product, not to Lathe, goes in the product's own `checks` folder (FORMAT.md section 13). This repo's `lathe.config.json` names `lathe-checks/`, which holds `01-endpoint-without-interaction-requirement.sql`.
+
+1. Name the folder in `lathe.config.json`: `"checks": "lathe-checks"`.
+2. Add `<number>-<check-name>.sql` files to it, written as Lathe's checks are (steps 1 to 3 above), against the same tables.
+3. They run after all of Lathe's checks, in file name order, and their problems are reported with the others.
+
+A product check named like one of Lathe's checks is not run and is a `product-check-name-clash` error; a product check that fails to run is an error naming its file; and a `checks` folder that does not exist is a `product-checks-missing` error.
