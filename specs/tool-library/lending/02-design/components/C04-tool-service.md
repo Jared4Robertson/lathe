@@ -1,0 +1,12 @@
+---
+id: TL-LEND-C04
+kind: component
+title: tool-service.ts
+parent: TL-LEND
+component_type: service
+file: examples/tool-library/src/tool-service.ts
+links:
+  satisfies: [TL-LEND-DR04, TL-LEND-UC02-R01, TL-LEND-UC02-R02, TL-LEND-UC05-R01, TL-LEND-UC05-R02, TL-LEND-UC05-R03]
+  depends_on: [TL-LEND-C01, TL-LEND-C02]
+---
+The catalog: adds tools in good condition, lists them with their status, marks a tool as needing repair (with a required note, leaving any loan alone), and marks a damaged tool repaired.
