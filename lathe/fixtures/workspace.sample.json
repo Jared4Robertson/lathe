@@ -1,0 +1,431 @@
+{
+  "kinds": [
+    {
+      "kind": "product",
+      "label": "Product",
+      "stage": "",
+      "parent_kinds": [],
+      "required_fields": [],
+      "description": "A product: the root of a set of specifications."
+    },
+    {
+      "kind": "domain",
+      "label": "Domain",
+      "stage": "",
+      "parent_kinds": [
+        "product"
+      ],
+      "required_fields": [],
+      "description": "A part of the product with its own model, language and owner."
+    },
+    {
+      "kind": "aggregate",
+      "label": "Aggregate",
+      "stage": "define",
+      "parent_kinds": [
+        "domain"
+      ],
+      "required_fields": [],
+      "description": "A cluster of records changed together as one unit, with its own identity and rules."
+    },
+    {
+      "kind": "domain_rule",
+      "label": "Domain rule",
+      "stage": "define",
+      "parent_kinds": [
+        "aggregate"
+      ],
+      "required_fields": [],
+      "description": "A fact that must always hold for an aggregate's records, whatever use case changes them."
+    },
+    {
+      "kind": "use_case",
+      "label": "Use case",
+      "stage": "define",
+      "parent_kinds": [
+        "domain"
+      ],
+      "required_fields": [
+        "actor"
+      ],
+      "description": "Something an actor does with the product to reach a goal."
+    },
+    {
+      "kind": "requirement",
+      "label": "Requirement",
+      "stage": "define",
+      "parent_kinds": [
+        "use_case"
+      ],
+      "required_fields": [],
+      "description": "One rule a use case must follow, stated with MUST, MUST NOT, SHOULD or MAY."
+    },
+    {
+      "kind": "flow",
+      "label": "Flow",
+      "stage": "design",
+      "parent_kinds": [
+        "domain"
+      ],
+      "required_fields": [],
+      "description": "An end-to-end path through views and endpoints that carries out one or more use cases."
+    },
+    {
+      "kind": "view",
+      "label": "View",
+      "stage": "design",
+      "parent_kinds": [
+        "domain"
+      ],
+      "required_fields": [],
+      "description": "A screen or page a person uses."
+    },
+    {
+      "kind": "endpoint",
+      "label": "Endpoint",
+      "stage": "design",
+      "parent_kinds": [
+        "domain"
+      ],
+      "required_fields": [
+        "method",
+        "route"
+      ],
+      "description": "An HTTP endpoint: its method, route, request and responses."
+    },
+    {
+      "kind": "component",
+      "label": "Component",
+      "stage": "design",
+      "parent_kinds": [
+        "domain"
+      ],
+      "required_fields": [
+        "component_type",
+        "file"
+      ],
+      "description": "A unit of code in the target design, such as a model, service or router."
+    },
+    {
+      "kind": "test",
+      "label": "Test",
+      "stage": "design",
+      "parent_kinds": [
+        "domain"
+      ],
+      "required_fields": [
+        "test_type",
+        "run_by"
+      ],
+      "description": "A test that proves requirements or domain rules, and the file that runs it."
+    },
+    {
+      "kind": "question",
+      "label": "Open question",
+      "stage": "",
+      "parent_kinds": [
+        "product",
+        "domain",
+        "aggregate",
+        "use_case",
+        "component"
+      ],
+      "required_fields": [
+        "owner"
+      ],
+      "description": "Something undecided, with the person who decides it."
+    }
+  ],
+  "relations": [
+    {
+      "relation": "relates_to",
+      "source_kind": "aggregate",
+      "target_kind": "aggregate",
+      "description": "One aggregate refers to another by ID."
+    },
+    {
+      "relation": "applies",
+      "source_kind": "use_case",
+      "target_kind": "domain_rule",
+      "description": "The use case relies on the domain rule."
+    },
+    {
+      "relation": "fulfills",
+      "source_kind": "flow",
+      "target_kind": "requirement",
+      "description": "The flow carries out the requirement."
+    },
+    {
+      "relation": "fulfills",
+      "source_kind": "view",
+      "target_kind": "requirement",
+      "description": "The view carries out the requirement."
+    },
+    {
+      "relation": "fulfills",
+      "source_kind": "endpoint",
+      "target_kind": "requirement",
+      "description": "The endpoint carries out the requirement."
+    },
+    {
+      "relation": "uses",
+      "source_kind": "flow",
+      "target_kind": "view",
+      "description": "The flow passes through the view."
+    },
+    {
+      "relation": "uses",
+      "source_kind": "flow",
+      "target_kind": "endpoint",
+      "description": "The flow calls the endpoint."
+    },
+    {
+      "relation": "uses",
+      "source_kind": "view",
+      "target_kind": "endpoint",
+      "description": "The view calls the endpoint."
+    },
+    {
+      "relation": "satisfies",
+      "source_kind": "component",
+      "target_kind": "requirement",
+      "description": "The component designs or implements the requirement."
+    },
+    {
+      "relation": "satisfies",
+      "source_kind": "component",
+      "target_kind": "domain_rule",
+      "description": "The component enforces the domain rule."
+    },
+    {
+      "relation": "implements",
+      "source_kind": "component",
+      "target_kind": "endpoint",
+      "description": "The component serves the endpoint."
+    },
+    {
+      "relation": "implements",
+      "source_kind": "component",
+      "target_kind": "view",
+      "description": "The component renders the view."
+    },
+    {
+      "relation": "depends_on",
+      "source_kind": "component",
+      "target_kind": "component",
+      "description": "The component calls or imports the other."
+    },
+    {
+      "relation": "proves",
+      "source_kind": "test",
+      "target_kind": "requirement",
+      "description": "The test proves the requirement."
+    },
+    {
+      "relation": "proves",
+      "source_kind": "test",
+      "target_kind": "domain_rule",
+      "description": "The test proves the domain rule."
+    },
+    {
+      "relation": "about",
+      "source_kind": "question",
+      "target_kind": "*",
+      "description": "The open question concerns that record."
+    }
+  ],
+  "records": [
+    {
+      "id": "EX",
+      "kind": "product",
+      "title": "Example product",
+      "parent": null,
+      "product": "EX",
+      "domain": null,
+      "fields": {},
+      "body": "A tiny product used to build the app before real data exists.",
+      "path": "specs/example/product.md"
+    },
+    {
+      "id": "EX-NOTE",
+      "kind": "domain",
+      "title": "Notes",
+      "parent": "EX",
+      "product": "EX",
+      "domain": "EX-NOTE",
+      "fields": {},
+      "body": "People write and share short notes.",
+      "path": "specs/example/notes/domain.md"
+    },
+    {
+      "id": "EX-NOTE-A1",
+      "kind": "aggregate",
+      "title": "Note",
+      "parent": "EX-NOTE",
+      "product": "EX",
+      "domain": "EX-NOTE",
+      "fields": {},
+      "body": "A short piece of text a person writes.",
+      "path": "specs/example/notes/01-define/aggregates/note.md"
+    },
+    {
+      "id": "EX-NOTE-DR01",
+      "kind": "domain_rule",
+      "title": "A note has text",
+      "parent": "EX-NOTE-A1",
+      "product": "EX",
+      "domain": "EX-NOTE",
+      "fields": {},
+      "body": "A Note MUST have between 1 and 500 characters of text.",
+      "path": "specs/example/notes/01-define/aggregates/note-rules.md"
+    },
+    {
+      "id": "EX-NOTE-UC01",
+      "kind": "use_case",
+      "title": "Write a note",
+      "parent": "EX-NOTE",
+      "product": "EX",
+      "domain": "EX-NOTE",
+      "fields": {
+        "actor": "Person"
+      },
+      "body": "A person writes a note.",
+      "path": "specs/example/notes/01-define/use-cases/UC01.md"
+    },
+    {
+      "id": "EX-NOTE-UC01-R01",
+      "kind": "requirement",
+      "title": "A saved note is visible at once",
+      "parent": "EX-NOTE-UC01",
+      "product": "EX",
+      "domain": "EX-NOTE",
+      "fields": {},
+      "body": "When a person saves a note, the note MUST appear in their list immediately.",
+      "path": "specs/example/notes/01-define/use-cases/UC01-R01.md"
+    },
+    {
+      "id": "EX-NOTE-E01",
+      "kind": "endpoint",
+      "title": "Create a note",
+      "parent": "EX-NOTE",
+      "product": "EX",
+      "domain": "EX-NOTE",
+      "fields": {
+        "method": "POST",
+        "route": "/notes"
+      },
+      "body": "Creates a note and returns it.",
+      "path": "specs/example/notes/02-design/endpoints/E01.md"
+    },
+    {
+      "id": "EX-NOTE-C01",
+      "kind": "component",
+      "title": "note_service.ts",
+      "parent": "EX-NOTE",
+      "product": "EX",
+      "domain": "EX-NOTE",
+      "fields": {
+        "component_type": "service",
+        "file": "examples/notes/src/note_service.ts"
+      },
+      "body": "Creates and lists notes.",
+      "path": "specs/example/notes/02-design/components/C01.md"
+    },
+    {
+      "id": "EX-NOTE-T01",
+      "kind": "test",
+      "title": "Saving a note shows it in the list",
+      "parent": "EX-NOTE",
+      "product": "EX",
+      "domain": "EX-NOTE",
+      "fields": {
+        "test_type": "acceptance",
+        "run_by": "examples/notes/test/notes.test.ts"
+      },
+      "body": "Saves a note and reads the list.",
+      "path": "specs/example/notes/02-design/tests/T01.md"
+    },
+    {
+      "id": "EX-NOTE-Q01",
+      "kind": "question",
+      "title": "How long are notes kept?",
+      "parent": "EX-NOTE",
+      "product": "EX",
+      "domain": "EX-NOTE",
+      "fields": {
+        "owner": "the Owner"
+      },
+      "body": "Undecided.",
+      "path": "specs/example/notes/questions/Q01.md"
+    }
+  ],
+  "links": [
+    {
+      "source": "EX-NOTE-UC01",
+      "relation": "applies",
+      "target": "EX-NOTE-DR01"
+    },
+    {
+      "source": "EX-NOTE-E01",
+      "relation": "fulfills",
+      "target": "EX-NOTE-UC01-R01"
+    },
+    {
+      "source": "EX-NOTE-C01",
+      "relation": "satisfies",
+      "target": "EX-NOTE-UC01-R01"
+    },
+    {
+      "source": "EX-NOTE-C01",
+      "relation": "satisfies",
+      "target": "EX-NOTE-DR01"
+    },
+    {
+      "source": "EX-NOTE-C01",
+      "relation": "implements",
+      "target": "EX-NOTE-E01"
+    },
+    {
+      "source": "EX-NOTE-T01",
+      "relation": "proves",
+      "target": "EX-NOTE-UC01-R01"
+    },
+    {
+      "source": "EX-NOTE-Q01",
+      "relation": "about",
+      "target": "EX-NOTE-A1"
+    }
+  ],
+  "problems": [
+    {
+      "severity": "warning",
+      "check": "unproved",
+      "record": "EX-NOTE-DR01",
+      "message": "No test proves this domain rule."
+    },
+    {
+      "severity": "warning",
+      "check": "component-file-missing",
+      "record": "EX-NOTE-C01",
+      "message": "examples/notes/src/note_service.ts does not exist yet."
+    }
+  ],
+  "coverage": [
+    {
+      "domain": "EX-NOTE",
+      "requirements": 1,
+      "requirements_satisfied": 1,
+      "requirements_proved": 1,
+      "rules": 1,
+      "rules_satisfied": 1,
+      "rules_proved": 0,
+      "gaps": [
+        {
+          "id": "EX-NOTE-DR01",
+          "kind": "domain_rule",
+          "missing": "proves"
+        }
+      ]
+    }
+  ]
+}

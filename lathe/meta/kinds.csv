@@ -1,0 +1,13 @@
+kind,label,stage,parent_kinds,required_fields,description
+product,Product,,,,"A product: the root of a set of specifications."
+domain,Domain,,product,,"A part of the product with its own model, language and owner."
+aggregate,Aggregate,define,domain,,"A cluster of records changed together as one unit, with its own identity and rules."
+domain_rule,Domain rule,define,aggregate,,"A fact that must always hold for an aggregate's records, whatever use case changes them."
+use_case,Use case,define,domain,actor,"Something an actor does with the product to reach a goal."
+requirement,Requirement,define,use_case,,"One rule a use case must follow, stated with MUST, MUST NOT, SHOULD or MAY."
+flow,Flow,design,domain,,"An end-to-end path through views and endpoints that carries out one or more use cases."
+view,View,design,domain,,"A screen or page a person uses."
+endpoint,Endpoint,design,domain,method route,"An HTTP endpoint: its method, route, request and responses."
+component,Component,design,domain,component_type file,"A unit of code in the target design, such as a model, service or router."
+test,Test,design,domain,test_type run_by,"A test that proves requirements or domain rules, and the file that runs it."
+question,Open question,,product domain aggregate use_case component,owner,"Something undecided, with the person who decides it."
