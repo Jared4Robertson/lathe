@@ -2,6 +2,7 @@
 // Spec: TL-LEND-C02 (specs/tool-library/lending/02-design/components/C02-store.md)
 // The schema backs up two domain rules even if a service forgets them:
 // TL-LEND-DR01 (unique email) and TL-LEND-DR06 (one active loan per tool).
+// A loan's due date is stored as a date (YYYY-MM-DD), not a time (TL-LEND-DR07).
 import { DatabaseSync } from 'node:sqlite';
 import type { Condition, Loan, Member, Tool } from './model.ts';
 
@@ -28,7 +29,7 @@ CREATE TABLE IF NOT EXISTS loans (
   member_id INTEGER NOT NULL REFERENCES members (id),
   tool_id INTEGER NOT NULL REFERENCES tools (id),
   borrowed_at TEXT NOT NULL,
-  due_at TEXT NOT NULL,
+  due_date TEXT NOT NULL CHECK (due_date GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]'),
   returned_at TEXT,
   return_condition TEXT CHECK (return_condition IN ('good', 'needs_repair')),
   return_note TEXT
@@ -59,7 +60,7 @@ function toLoan(r: Row): Loan {
     memberId: Number(r.member_id),
     toolId: Number(r.tool_id),
     borrowedAt: String(r.borrowed_at),
-    dueAt: String(r.due_at),
+    dueDate: String(r.due_date),
     returnedAt: r.returned_at == null ? null : String(r.returned_at),
     returnCondition: r.return_condition == null ? null : (r.return_condition as Condition),
     returnNote: r.return_note == null ? null : String(r.return_note),
@@ -133,10 +134,10 @@ export class Store {
     return toTool(r);
   }
 
-  insertLoan(memberId: number, toolId: number, borrowedAt: string, dueAt: string): Loan {
+  insertLoan(memberId: number, toolId: number, borrowedAt: string, dueDate: string): Loan {
     const r = this.db
-      .prepare('INSERT INTO loans (member_id, tool_id, borrowed_at, due_at) VALUES (?, ?, ?, ?) RETURNING *')
-      .get(memberId, toolId, borrowedAt, dueAt) as Row;
+      .prepare('INSERT INTO loans (member_id, tool_id, borrowed_at, due_date) VALUES (?, ?, ?, ?) RETURNING *')
+      .get(memberId, toolId, borrowedAt, dueDate) as Row;
     return toLoan(r);
   }
 

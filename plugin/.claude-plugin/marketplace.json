@@ -1,0 +1,12 @@
+{
+  "name": "lathe",
+  "description": "The Lathe plugin for Claude Code.",
+  "owner": { "name": "Jared A Robertson" },
+  "plugins": [
+    {
+      "name": "lathe",
+      "source": "./",
+      "description": "Skills for writing Lathe spec records, and a hook that runs lathe check after spec edits."
+    }
+  ]
+}

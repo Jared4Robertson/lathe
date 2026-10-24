@@ -60,10 +60,14 @@ export interface CoverageGap {
 export interface Coverage {
   domain: string;
   requirements: number;
+  /** Designed: a component satisfies it (the component's file may not exist yet). */
   requirements_satisfied: number;
+  /** Built: a component whose file exists satisfies it. Never more than requirements_satisfied. */
+  requirements_built: number;
   requirements_proved: number;
   rules: number;
   rules_satisfied: number;
+  rules_built: number;
   rules_proved: number;
   gaps: CoverageGap[];
 }
