@@ -1,0 +1,79 @@
+# Lathe spec format
+
+Lathe stores a product's specifications as **records**: one Markdown file per record, with a YAML header for its structured fields. The files are the source of truth (readable, diffable, reviewable in git). The Lathe engine loads them into DuckDB, checks them against the **meta-model**, computes traceability, and serves them to the web app.
+
+## 1. Where records live
+
+```
+specs/
+  <product-folder>/            one folder per product, e.g. tool-library, lathe
+    product.md                 the product record (kind: product)
+    <domain-folder>/           one folder per domain
+      domain.md                the domain record (kind: domain)
+      ...                      any nesting below; organise by SDLC stage, e.g.
+      01-define/aggregates/loan.md
+      01-define/use-cases/UC01-borrow-a-tool.md
+      02-design/...
+```
+
+Every `*.md` file under `specs/` is a record, except files named `README.md`, which are ignored. Folder names are for people; the engine relies only on each record's fields.
+
+## 2. Record file
+
+```markdown
+---
+id: TL-LEND-UC01
+kind: use_case
+title: Borrow a tool
+parent: TL-LEND
+actor: Member
+links:
+  applies: [TL-LEND-DR01, TL-LEND-DR02]
+---
+A member borrows an available tool for a fixed loan period.
+```
+
+| Field | Required | Meaning |
+| --- | --- | --- |
+| `id` | Yes | Unique across the whole workspace. Matches `^[A-Z][A-Z0-9]*(-[A-Z0-9]+)*$`. Never reused or renumbered. |
+| `kind` | Yes | One of the kinds in [meta/kinds.csv](meta/kinds.csv). |
+| `title` | Yes | A short name. For a rule or requirement, the title is the rule in a few words ("A tool is lent to one member at a time"). |
+| `parent` | Yes, except for `product` | The ID of the record this one belongs to. Its kind must be one of the kind's `parent_kinds`. |
+| kind fields | As the kind requires | Plain string values, such as `actor` or `run_by`. A kind's `required_fields` must be present and non-empty. Any other plain string field is allowed and kept. |
+| `links` | No | A map from relation name to a list of target IDs. Each relation must be allowed for this source kind and the target's kind by [meta/relations.csv](meta/relations.csv). |
+
+The body (after the header) is Markdown prose. Requirements and domain rules state their rule in full in the body, using MUST / MUST NOT / SHOULD / MAY.
+
+## 3. ID convention
+
+Product prefix, domain code, then a kind code and number. The engine only checks the format and uniqueness; the convention keeps IDs readable.
+
+| Kind | Pattern | Example |
+| --- | --- | --- |
+| product | `<P>` | `TL` |
+| domain | `<P>-<D>` | `TL-LEND` |
+| aggregate | `<P>-<D>-A<n>` | `TL-LEND-A1` |
+| domain_rule | `<P>-<D>-DR<nn>` | `TL-LEND-DR01` |
+| use_case | `<P>-<D>-UC<nn>` | `TL-LEND-UC01` |
+| requirement | `<use case>-R<nn>` | `TL-LEND-UC01-R01` |
+| flow | `<P>-<D>-F<nn>` | `TL-LEND-F01` |
+| view | `<P>-<D>-V<nn>` | `TL-LEND-V01` |
+| endpoint | `<P>-<D>-E<nn>` | `TL-LEND-E01` |
+| component | `<P>-<D>-C<nn>` | `TL-LEND-C01` |
+| test | `<P>-<D>-T<nn>` | `TL-LEND-T01` |
+| question | `<P>-<D>-Q<nn>` (or `<P>-Q<nn>`) | `TL-LEND-Q01` |
+
+## 4. Code traceability
+
+A `test` record names the file that runs it in `run_by` (a path relative to the repo root). That file MUST contain the test record's ID, for example in the test's name: `it('TL-LEND-T01 A loan cannot start on an unavailable tool', …)`. A `component` record names its file in `file` (relative to the repo root); the design may name a file that does not exist yet, which is reported as a warning.
+
+## 5. Checks
+
+The engine runs every SQL file in `lathe/checks/`. Each returns rows of `(severity, check, record, message)`:
+
+- **error**: the workspace is broken (duplicate ID, unknown kind, bad parent, missing required field, disallowed or dangling link, a test whose `run_by` file is missing or does not mention its ID). `lathe check` exits non-zero.
+- **warning**: work still to do, not breakage (a requirement or domain rule that no component satisfies or no test proves, a use case with no requirements, a component file that does not exist yet).
+
+## 6. Coverage
+
+For each domain: how many requirements and domain rules exist, how many are satisfied by a component, and how many are proved by a test, plus the list of gaps. This is the strict "design complete" view from S2, as a query.
