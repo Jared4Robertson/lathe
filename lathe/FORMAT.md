@@ -57,6 +57,7 @@ Product prefix, domain code, then a kind code and number. The engine only checks
 | capability | `<P>-<D>-CAP<nn>` | `TL-LEND-CAP01` |
 | pattern | `<P>-PAT-<name>` | `TL-PAT-LIBRARIAN-ACTION` |
 | pattern_rule | `<pattern>-R<nn>` | `TL-PAT-LIBRARIAN-ACTION-R01` |
+| flow_step | `<flow>-S<nn>` | `TL-LEND-F01-S01` |
 | aggregate | `<P>-<D>-A<n>` | `TL-LEND-A1` |
 | domain_rule | `<P>-<D>-DR<nn>` | `TL-LEND-DR01` |
 | use_case | `<P>-<D>-UC<nn>` | `TL-LEND-UC01` |
@@ -86,8 +87,8 @@ A `test` record has a `state`: `automated` (the default when the field is absent
 
 The engine runs every SQL file in `lathe/checks/`. Each returns rows of `(severity, check, record, message)`:
 
-- **error**: the workspace is broken (duplicate ID, unknown kind, bad parent, missing required field, disallowed or dangling link, an automated test with no `run_by`, or whose `run_by` file is missing or mentions neither its ID nor an ID it proves, a bad or repeated capability order, a pattern setting a use case does not give, a pattern setting that is not a valid field name, a pattern rule naming a setting its pattern does not have, a proof claim the test's file does not back (`proof-not-in-file`)). `lathe check` exits non-zero.
-- **warning**: work still to do, not breakage (a requirement or domain rule that no component satisfies or no test proves, a use case with no requirements, a component file that does not exist yet, a use case left outside its domain's capabilities, two followed patterns sharing a setting, a pattern nobody follows, an obligation outside every domain, a record ID cited in prose that does not exist). The structural warnings say where two stages do not join up yet:
+- **error**: the workspace is broken (duplicate ID, unknown kind, bad parent, missing required field, disallowed or dangling link, an automated test with no `run_by`, or whose `run_by` file is missing or mentions neither its ID nor an ID it proves, a bad or repeated capability order, a pattern setting a use case does not give, a pattern setting that is not a valid field name, a pattern rule naming a setting its pattern does not have, a proof claim the test's file does not back (`proof-not-in-file`), a bad or repeated flow step order, a product check named like one of Lathe's or a product checks folder that does not exist). `lathe check` exits non-zero.
+- **warning**: work still to do, not breakage (a requirement or domain rule that no component satisfies or no test proves, a use case with no requirements, a component file that does not exist yet, a use case left outside its domain's capabilities, two followed patterns sharing a setting, a pattern nobody follows, an obligation outside every domain, a record ID cited in prose that does not exist, a flow step fulfilling something outside its flow, a flow fulfilling something none of its steps do). The structural warnings say where two stages do not join up yet:
   - `rule-not-applied`: a domain rule that no use case `applies`.
   - `use-case-without-flow`: a use case that no flow `carries_out`, in a domain that has flows. A domain with no flows yet is not reported.
   - `interaction-requirement-fulfills-nothing`: an interaction requirement with no `fulfills` link.
