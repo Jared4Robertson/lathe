@@ -26,6 +26,9 @@ Jared wants the wiki page and the graph to be two views of the same thing at the
 ## Added during the work: keyboard shortcuts
 A VS Code-style keymap (one table driving handlers, a command palette and a shortcuts sheet), sent to the agent as a message on 2026-10-24: Cmd/Ctrl+P or K quick open, Cmd/Ctrl+Shift+P command palette, Cmd/Ctrl+B nav, Cmd/Ctrl+Alt+B inspector, Cmd/Ctrl+\ split, Ctrl+1/2/3 views, Ctrl+- and Ctrl+Shift+- back and forward, F12 and Shift+F12 links, Cmd/Ctrl+Shift+M checks, F8 problems, `/` search, `?` help, graph keys, and `g` sequences; overridable from local storage. Extra IDs: LA-BRW-UC51, DR60–DR69, C60–C69, T140–T159.
 
+## Added during the work: one level deeper by default
+Every wiki page (product, domain, record, group) and the inspector show only one level below the page's record; deeper levels are collapsed under disclosure triangles with counts and coverage marks still visible, with Expand all / Collapse all per section, remembered state, search that reveals matches, VS Code tree keys (Right expands, Left collapses), and palette commands. Recorded as a domain rule. Sent to the agent as a message on 2026-10-24.
+
 ## Scope
 Read first: the whole of `app/src/` (especially `router.tsx`, `App.tsx`, `specs/*`, `graph/*`) after the pass-4 graph-groups and spec-pages work has merged. You own `app/**` and the spec records above.
 
