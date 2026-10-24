@@ -237,3 +237,31 @@ A record's body may cite other records by ID in plain text, such as "the loan fo
 - A record's **mentions** (`SpecRecord.mentions`) are the IDs it cites that exist, in order of first mention, without repeats and without its own ID.
 - A cited ID that is not a record is an `unknown-id-in-prose` warning on the citing record: fix the wording, or put the ID in code if it is an example.
 - Mentions are not links. They do not count for coverage and are not checked against `relations.csv`; write a link in the header when a record satisfies, proves or applies another.
+
+## 14. Flow steps
+
+A flow can be written as **steps**, so that each step says what happens, where, and what it carries out, as S2's flow tables do. A `flow_step` sits under its flow and gives its place in the flow in `order`, a whole number. Its ID is the flow's ID with `-S<nn>`, such as `TL-LEND-F01-S01`. Its title says what happens in a few words, and its body may say more.
+
+A step links to what it goes through with `uses` (a view, an endpoint or a component) and to what it carries out with `fulfills` (a requirement, an interaction requirement or a domain rule).
+
+```markdown
+---
+id: TL-LEND-F01-S02
+kind: flow_step
+title: The member borrows the tool and sees the due date
+parent: TL-LEND-F01
+order: 2
+links:
+  uses: [TL-LEND-V01, TL-LEND-E04]
+  fulfills: [TL-LEND-UC03-R01, TL-LEND-UC03-R02, TL-LEND-UC03-R03]
+---
+The member picks an available tool in the catalog and borrows it (`POST /loans`). The catalog shows the due date, or the reason the borrow was refused.
+```
+
+Once a flow has steps, what the flow fulfills is what its steps fulfill, so each `fulfills` link goes on the step that does it, and the flow itself need not repeat them. Steps are read in `order`; the IDs need not follow it, since IDs are never renumbered.
+
+The checks for flow steps:
+
+- A step's `order` that is not a whole number, or that another step of the same flow also has, is a `flow-step-order` error (`1` and `01` are the same). A missing order is `missing-required-field`.
+- `flow-step-fulfills-outside-flow` (warning): a step fulfills something its flow does not carry out. A target is inside the flow when it is a requirement of a use case the flow `carries_out`, a domain rule one of those use cases `applies`, or an interaction requirement that fulfills one of those or sits under the flow. A step whose flow carries out no use case is not compared, and a target that does not exist is reported only as a `dangling-link`.
+- `flow-fulfills-differs-from-steps` (warning): a flow that has steps fulfills something none of its steps fulfills. Move the link onto the step that carries it out. A flow without steps is not compared.
