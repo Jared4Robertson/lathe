@@ -18,7 +18,7 @@ function record(id: string, kind: string, title: string, parent: string | null, 
   const parts = id.split('-');
   const product = parts[0];
   const domain = kind === 'product' || kind === 'fitness' || (kind === 'question' && parts.length === 2) ? null : parts.slice(0, 2).join('-');
-  return { id, kind, title, parent, product, domain, fields, body, path: `specs/${product.toLowerCase()}/${id}.md` };
+  return { id, kind, title, parent, product, domain, fields, body, path: `specs/${product.toLowerCase()}/${id}.md`, mentions: [] };
 }
 
 export const records: SpecRecord[] = [

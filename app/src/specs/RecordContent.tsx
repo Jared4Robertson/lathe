@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { domainPath, kindLabel, productPath, relationLabel, type SpecIndex, type SpecLink as Link, type SpecRecord } from './data';
-import { Markdown } from './Markdown';
+import { RecordMarkdown } from './mentions';
+import { PatternRuleSections, PatternSections } from './PatternParts';
 import { LongList } from '../components/LongList';
 import { NavigateContext, PageHeader, ProblemBadge, ProblemList, RecordLink, RecordTree, Section, SpecLink, TestStateTag, idText, testState } from './parts';
 
@@ -141,13 +142,15 @@ function RecordBody({ index, record, actions, header, side }: { index: SpecIndex
               <strong>Planned test.</strong> It is not written yet, so it does not count as proof of what it proves.
             </p>
           )}
-          <Markdown source={record.body} />
+          <RecordMarkdown index={index} record={record} />
           {record.kind === 'interaction_requirement' && <Fulfills index={index} record={record} />}
+          {record.kind === 'pattern' && <PatternSections index={index} pattern={record} />}
+          {record.kind === 'pattern_rule' && <PatternRuleSections index={index} rule={record} />}
           {side ? (
             <Section title="Problems" count={problems.length}>
               <ProblemList index={index} problems={problems} showRecord={false} />
             </Section>
-          ) : children.length > 0 && (
+          ) : children.length > 0 && record.kind !== 'pattern' && (
             <Section title="Children" count={children.length}>
               <RecordTree index={index} records={children} label={`Children of ${id}`} showKind />
             </Section>

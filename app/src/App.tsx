@@ -26,7 +26,7 @@ import { Nav } from './shell/Nav';
 import { isBool, usePref } from './shell/prefs';
 import { useNarrow } from './shell/useNarrow';
 import { FocusPage } from './views/FocusPage';
-import { graphRedirect, isFocusRoute, withView } from './views/address';
+import { graphRedirect, isFocusRoute } from './views/address';
 type ModelNode = Node<ModelNodeData>;
 type ModelEdge = Edge<ModelEdgeData>;
 
@@ -201,7 +201,6 @@ function Shell() {
 
   const current = diagrams.find((d) => d.slug === slug);
   const focusRoute = isFocusRoute(specRoute) ? specRoute : null;
-  const graphHref = focusRoute ? withView(path, 'graph') : '/graph';
   const newDiagram = <NewDiagram onCreated={async (created) => { await loadDiagrams(); navigate(diagramPath(created.slug)); }} />;
 
   let page;
@@ -252,7 +251,6 @@ function Shell() {
           diagrams={diagrams}
           diagramError={listError}
           newDiagram={newDiagram}
-          graphHref={graphHref}
           collapsed={collapsed}
           onToggleCollapsed={() => setCollapsed(!collapsed)}
           drawer={narrow}
