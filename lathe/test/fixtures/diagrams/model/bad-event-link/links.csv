@@ -1,0 +1,5 @@
+source,relation,target,cardinality,status,note
+Book,raises,Shelved,,decided,
+Shelf,raises,Book,,decided,
+Shelf,changes,Book,,decided,
+Shelved,changes,Book,,decided,

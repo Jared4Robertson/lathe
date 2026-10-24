@@ -1,0 +1,3 @@
+source,relation,target,cardinality,status,note
+Book,contains,Page,,decided,
+Shelf,contains,Shelved,,decided,
