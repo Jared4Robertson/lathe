@@ -64,6 +64,7 @@ Product prefix, domain code, then a kind code and number. The engine only checks
 | component | `<P>-<D>-C<nn>` | `TL-LEND-C01` |
 | test | `<P>-<D>-T<nn>` | `TL-LEND-T01` |
 | question | `<P>-<D>-Q<nn>` (or `<P>-Q<nn>`) | `TL-LEND-Q01` |
+| fitness | `<P>-FIT<nn>` | `LA-FIT01` |
 
 ## 4. Code traceability
 
@@ -78,4 +79,12 @@ The engine runs every SQL file in `lathe/checks/`. Each returns rows of `(severi
 
 ## 6. Coverage
 
-For each domain: how many requirements and domain rules exist, how many are satisfied by a component, and how many are proved by a test, plus the list of gaps. This is the strict "design complete" view from S2, as a query.
+For each domain: how many requirements and domain rules exist; how many are **designed** (a component satisfies them), how many are **built** (a component whose file exists satisfies them) and how many are **proved** (a test proves them); plus the list of gaps. Designed is S2's "design complete" view; built shows how much of that design exists as code.
+
+## 7. Fitness
+
+A `fitness` record is the judgment of the person a product serves: on a `date` (YYYY-MM-DD), a `score` from 1 (does not serve its purpose) to 5 (serves it fully), and in the body the experiences behind it. Lathe never writes these itself. Signals it can count (coverage, open questions, checks) are evidence for that judgment, never the score.
+
+## 8. What records do not carry
+
+Records carry no status, approval or decision history: a record in the specs is in force, uncertainty is an open `question`, and git keeps the history. A decided question is removed and its answer written into the records it affects.
