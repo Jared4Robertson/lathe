@@ -1,6 +1,6 @@
 ---
 name: check-and-fix
-description: Run lathe check, fix every error it reports, and report warnings and coverage. Use after changing any Lathe spec record or meta-model file, before committing spec changes, or when asked whether the specs are consistent or how much is designed, built and proved.
+description: Run lathe check, fix every error it reports, and report warnings and coverage. Use after changing any Lathe spec record or meta-model file, before committing spec changes, or when asked whether the specs are consistent or how much is designed, built, proved and planned.
 ---
 
 # Check and fix
@@ -30,14 +30,33 @@ An error means the specs are broken. Do not leave one behind.
 | `unknown-parent`, `parent-kind-not-allowed`, `product-has-parent`, `parent-cycle` | Point `parent` at an existing record of an allowed kind, so the chain ends at the product. |
 | `unknown-relation`, `relation-not-allowed` | Use a relation `relations.csv` allows from this kind to the target's kind. |
 | `dangling-link` | Fix the target ID, or remove the link if the target is gone. |
-| `test-file-missing`, `test-file-missing-id` | Fix `run_by`, or write the test with the record's ID in its name. |
+| `bad-test-state` | Set `state` to `automated`, `manual` or `planned` (or remove it for automated). |
+| `test-run-by-missing` | An automated test needs `run_by`. Add the file, or set `state: planned` if the test is not written yet. |
+| `test-file-missing` | Fix `run_by`. For a manual or planned test whose file does not exist yet, remove `run_by`. |
+| `test-file-missing-id` | Put the test's ID, or the ID of a record it `proves`, in the test's name in that file. |
+| `meta-duplicate-kind` | One meta-model folder defines a kind twice. Merge the two rows. (A row in `metaExtensions` for a default kind is allowed: it widens that kind.) |
+| `meta-duplicate-relation` | Remove the repeated relation row. |
+| `meta-unknown-parent-kind`, `meta-unknown-relation-kind` | Define the kind it names, or fix the name, in the meta-model CSV. |
+| `meta-bad-required-field` | Use a field name of lower-case letters, digits and underscores, and not `id`, `kind`, `title`, `parent` or `links`. |
+| `bad-fitness-date`, `bad-fitness-score` | A fitness record needs `date: YYYY-MM-DD` and a `score` from 1 to 5. |
 | `parse-error` | Fix the YAML header: `---` lines, indentation, quotes around titles with colons. |
 
-Fix the record that is wrong, not the one that reports it: a dangling link is usually a typo in the link, not a missing record. Never change the meta-model to make an error go away unless the user asked for a new kind or relation.
+Fix the record that is wrong, not the one that reports it: a dangling link is usually a typo in the link, not a missing record. Never change the meta-model to make an error go away unless the user asked for a new kind or relation (see `extend-the-meta-model`).
 
 ## Warnings: work still to do
 
-Warnings do not fail the check. They are gaps: a requirement or domain rule that no component satisfies (`unsatisfied`) or no test proves (`unproved`), a use case without requirements, a component whose file does not exist yet. Fix the ones your task is about; leave the rest and mention them.
+Warnings do not fail the check. They are gaps: an obligation (a requirement, domain rule, interaction requirement, or a product's own obligation kind) that nothing designs (`unsatisfied`) or no automated or manual test proves (`unproved`), a use case without requirements, a component whose file does not exist yet. A planned test does not clear `unproved`. Fix the ones your task is about; leave the rest and mention them.
+
+## Coverage
+
+Coverage has one line per domain and obligation kind, with four counts out of the total:
+
+- **designed**: a `design` link (by default a component's `satisfies`) targets it;
+- **built**: a component whose file exists designs it;
+- **proved**: an automated or manual test `proves` it (any `proof` relation);
+- **planned**: not proved, but a planned test is meant to prove it.
+
+A planned obligation has a test still to write; one neither proved nor planned has no test at all.
 
 ## Report
 
@@ -45,4 +64,5 @@ Say, in a few lines:
 
 1. Whether the check passes (the last line: `N errors, M warnings.`).
 2. Each error you fixed and how.
-3. The coverage line for each domain you touched, for example `TL-LEND: requirements 16/16 satisfied, 16/16 proved; rules 10/10 satisfied, 10/10 proved; 0 gaps`, and the warnings your change added or cleared.
+3. The coverage lines for each domain you touched (designed, built, proved and planned for each obligation kind, as `lathe check` prints them), and the warnings your change added or cleared.
+4. Any planned tests your change added, and why they are planned.
