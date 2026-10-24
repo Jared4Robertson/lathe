@@ -73,7 +73,11 @@ Product prefix, domain code, then a kind code and number. The engine only checks
 
 A `test` record has a `state`: `automated` (the default when the field is absent), `manual`, or `planned`.
 
-- An **automated** test names the file that runs it in `run_by` (a path relative to the repo root). That file MUST contain the test record's ID **or** the ID of a record the test proves, for example in the test's name: `it('TL-LEND-T01 A loan cannot start on an unavailable tool', …)` or `it('TL-LEND-DR05 …', …)`. Products that key their tests by the rule they prove, as Client does, need no separate test IDs in code.
+- An **automated** test names the file that runs it in `run_by` (a path relative to the repo root). That file MUST name the test record's own ID **or else every** ID the test proves (each target of a `proof`-role link such as `proves`), for example in the test's name: `it('TL-LEND-T01 A loan cannot start on an unavailable tool', …)` or `it('TL-LEND-DR05 …', …)`. IDs are matched as whole IDs.
+  - When the file names the test's own ID, the test record vouches for all its claims.
+  - Otherwise each proved ID the file leaves out is its own `proof-not-in-file` error. Products that key their tests by the rule they prove, as Client does, need no separate test IDs in code, but a test that proves two rules must name both.
+  - A test that proves nothing and whose file does not name its own ID is a `test-file-missing-id` error.
+- An optional `key` field on a test gives other text the file must contain instead, for example a test function name or a pattern proof's heading: `key: test_librarian_actions_are_checked`. When `key` is present, the file MUST contain that text exactly, and the ID rules above do not apply; a file without it is a `test-file-missing-id` error.
 - A **manual** test describes its procedure in its body; `run_by` is optional.
 - A **planned** test is not written yet. It shows what is meant to prove an obligation, but it does not count as proof. A `component` record names its file in `file` (relative to the repo root); the design may name a file that does not exist yet, which is reported as a warning.
 
