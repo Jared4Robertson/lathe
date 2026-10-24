@@ -21,5 +21,7 @@ The use case links the pattern with `follows` and gives each setting as a header
 
 ## Rules
 
-- When the librarian leaves out any of the `required_input`, the library MUST refuse the action, say what is missing, and save nothing.
-- When the action succeeds, the library MUST save the `record` and show the `result` as now stored, so that the librarian can copy an ID onto a card or tag or tell the member the outcome.
+The pattern's rules are records under it, and every domain that follows the pattern designs and proves each one in its own components and tests:
+
+- `TL-PAT-LIBRARIAN-ACTION-R01`: an action missing its required input is refused and saves nothing (setting `required_input`).
+- `TL-PAT-LIBRARIAN-ACTION-R02`: a successful action saves the record and shows it as stored.
