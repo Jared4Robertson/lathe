@@ -1,0 +1,12 @@
+name,kind,context,status,definition
+Product,topic,sdlc,draft,
+Domain,topic,sdlc,draft,
+Define,topic,sdlc,draft,
+Domain Model,topic,sdlc,draft,
+Use Case,topic,sdlc,draft,
+Design,topic,sdlc,draft,
+Interaction Design,topic,sdlc,draft,
+Technical Spec,topic,sdlc,draft,
+Test Plan,topic,sdlc,draft,
+Shared,topic,sdlc,draft,
+Patterns,topic,sdlc,draft,

@@ -1,0 +1,12 @@
+---
+id: LA-BRW-F01
+kind: flow
+title: Trace a requirement to the tests that prove it
+parent: LA-BRW
+links:
+  uses: [LA-BRW-V01, LA-BRW-V02, LA-BRW-V03, LA-BRW-V04, LA-BRW-E01]
+  fulfills: [LA-BRW-UC03-R02]
+---
+1. Jared picks a product in the Specs menu and sees its domain cards.
+2. He opens a domain, searches for a requirement and opens it.
+3. On the record page he follows an incoming `proves` link to a test, and from the test its `run_by` file and its other `proves` links.
