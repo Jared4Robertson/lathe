@@ -201,6 +201,7 @@ describe('the good workspace', () => {
       fields: { actor: 'Person' },
       body: 'A person writes a note.',
       path: 'specs/example/notes/01-define/use-cases/UC01.md',
+      mentions: [],
     });
     const product = workspaces.good.records.find((r) => r.id === 'EX');
     expect(product).toMatchObject({ parent: null, product: 'EX', domain: null });
