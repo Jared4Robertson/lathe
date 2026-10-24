@@ -23,6 +23,9 @@ Jared wants the wiki page and the graph to be two views of the same thing at the
 9. Keyboard: a shortcut for each mode, focus never lost when switching, and a visible focus ring on the toggle.
 10. Tests, and Lathe's own spec in `specs/lathe/browsing/` using only use case `LA-BRW-UC50` with its requirements, domain rules `LA-BRW-DR50`–`DR59`, components `LA-BRW-C50`–`C59`, tests `LA-BRW-T120`–`T139`. Update `LA-BRW-A1` (Page) for the new addresses. All new obligations satisfied and proved.
 
+## Added during the work: keyboard shortcuts
+A VS Code-style keymap (one table driving handlers, a command palette and a shortcuts sheet), sent to the agent as a message on 2026-10-24: Cmd/Ctrl+P or K quick open, Cmd/Ctrl+Shift+P command palette, Cmd/Ctrl+B nav, Cmd/Ctrl+Alt+B inspector, Cmd/Ctrl+\ split, Ctrl+1/2/3 views, Ctrl+- and Ctrl+Shift+- back and forward, F12 and Shift+F12 links, Cmd/Ctrl+Shift+M checks, F8 problems, `/` search, `?` help, graph keys, and `g` sequences; overridable from local storage. Extra IDs: LA-BRW-UC51, DR60–DR69, C60–C69, T140–T159.
+
 ## Scope
 Read first: the whole of `app/src/` (especially `router.tsx`, `App.tsx`, `specs/*`, `graph/*`) after the pass-4 graph-groups and spec-pages work has merged. You own `app/**` and the spec records above.
 
