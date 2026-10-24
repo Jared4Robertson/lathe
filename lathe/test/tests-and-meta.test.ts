@@ -121,3 +121,24 @@ describe('extensions widen default kinds', () => {
     expect(kind(duplicate, 'domain_rule')?.parent_kinds).toEqual(['aggregate', 'domain', 'product']);
   });
 });
+
+describe('test state edges found by the Client re-trial', () => {
+  let edges: Workspace;
+  beforeAll(async () => {
+    edges = await loadWorkspace(fixture('proof-edges'));
+  });
+
+  it('LA-CHK-T60 A test state is read in any letter case, the same way by the checks and by coverage', () => {
+    expect(recordsOf(edges, 'bad-test-state')).toEqual([]);
+    const rules = edges.coverage[0].obligations.find((o) => o.kind === 'domain_rule')!;
+    expect(rules.proved).toBe(1);
+  });
+
+  it('LA-CHK-T61 A planned test that names a file not written yet is a warning, not an error', () => {
+    const found = edges.problems.filter((p) => p.check === 'test-file-missing');
+    expect(found).toEqual([
+      { severity: 'warning', check: 'test-file-missing', record: 'QX-D-T02', message: expect.stringContaining('does not exist yet') },
+    ]);
+    expect(edges.problems.filter((p) => p.severity === 'error')).toEqual([]);
+  });
+});
