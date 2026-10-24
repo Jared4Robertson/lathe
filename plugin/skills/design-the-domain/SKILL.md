@@ -22,7 +22,7 @@ The design says how the product carries out its use cases: the paths people take
 | `interaction_requirement` | `<view, endpoint or flow>-R<nn>`, such as `TL-LEND-E04-R01` | | `fulfills` the use case requirements and domain rules it carries out at this view, endpoint or flow |
 | `component` | `<P>-<D>-C<nn>` | `component_type` (model, service, router, ...), `file` (path from the repo root) | `satisfies` requirements, domain rules and interaction requirements; `implements` endpoints and views; `depends_on` components |
 
-Every design record's parent is the domain, except an interaction requirement, whose parent is the view, endpoint or flow it constrains. Any link not in the meta-model's `relations.csv` is an error.
+Every design record's parent is the domain, except an interaction requirement, whose parent is the view, endpoint or flow it constrains, and a flow, whose parent is the capability of the use cases it carries out when the domain has capabilities (see `write-use-cases`). Any link not in the meta-model's `relations.csv` is an error.
 
 ## Interaction requirements
 
