@@ -1,0 +1,7 @@
+---
+id: LA-BRW-UC20-R05
+kind: requirement
+title: Kinds and relations can be switched off
+parent: LA-BRW-UC20
+---
+Jared MUST be able to hide and show each kind and each relation, and MUST be able to keep only the traceability links (satisfies, proves, fulfills) in one step.
