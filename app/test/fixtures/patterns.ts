@@ -53,7 +53,7 @@ const bodies: Record<string, { body: string; mentions: string[] }> = {
 };
 
 const patternRuleLine = (total: number, designed: number, built: number, proved: number, planned: number): ObligationCoverage =>
-  ({ kind: 'pattern_rule', label: 'Pattern rule', total, designed, built, proved, planned });
+  ({ kind: 'pattern_rule', label: 'Pattern rule', total, designed, built, proved, planned }) as ObligationCoverage; // no planned_any: as an older engine reports it
 
 export function patternWorkspace(): Workspace {
   const ws = baseWorkspace();
@@ -76,8 +76,8 @@ export function patternWorkspace(): Workspace {
     { severity: 'warning', check: 'unsatisfied', record: 'DM-PAT-CHECKOUT-R02', message: 'DM-PAT-CHECKOUT-R02 is not satisfied in DM-PAY.' },
   );
   const legacy = (c: Workspace['coverage'][number]): ObligationCoverage[] => [
-    { kind: 'domain_rule', label: 'Domain rule', total: c.rules, designed: c.rules_satisfied, built: c.rules_built ?? 0, proved: c.rules_proved, planned: 0 },
-    { kind: 'requirement', label: 'Requirement', total: c.requirements, designed: c.requirements_satisfied, built: c.requirements_built ?? 0, proved: c.requirements_proved, planned: 0 },
+    { kind: 'domain_rule', label: 'Domain rule', total: c.rules, designed: c.rules_satisfied, built: c.rules_built ?? 0, proved: c.rules_proved, planned: 0 } as ObligationCoverage,
+    { kind: 'requirement', label: 'Requirement', total: c.requirements, designed: c.requirements_satisfied, built: c.requirements_built ?? 0, proved: c.requirements_proved, planned: 0 } as ObligationCoverage,
   ];
   for (const c of ws.coverage) {
     if (c.domain === 'DM-SHOP') c.obligations = [...legacy(c), patternRuleLine(1, 1, 1, 1, 0)];

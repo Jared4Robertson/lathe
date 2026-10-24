@@ -1,9 +1,12 @@
+import type { ReactNode } from 'react';
 import { Link } from '../router';
 import { byIdOrder, recordPath, type Coverage, type SpecIndex, type SpecRecord } from './data';
 import { LongList } from '../components/LongList';
 import { Markdown } from './Markdown';
 
-// Coverage (designed, built, proved, planned) per obligation kind, and a product's fitness with the evidence beside it.
+// Coverage (designed, built, proved, planned) per obligation kind, proof still owed by planned tests, each domain's
+// tests by state, and a product's fitness with the evidence beside it. A count the engine does not report is unknown,
+// never zero.
 
 /** The address of the format section that explains fitness records. */
 export const FITNESS_FORMAT_PATH = '/format#7-fitness';
@@ -11,7 +14,10 @@ export const FITNESS_FORMAT_PATH = '/format#7-fitness';
 /** A count the engine may not report yet (built counts before the engine measures them). */
 const measured = (value: unknown): number | null => (typeof value === 'number' && Number.isFinite(value) ? value : null);
 
-function Bar({ label, value, total, title, planned = false }: { label: string; value: number | null; total: number; title: string; planned?: boolean }) {
+/** The total, or null (unknown) when any value is unknown. */
+const sum = (values: (number | null)[]) => (values.some((v) => v === null) ? null : values.reduce<number>((a, v) => a + (v ?? 0), 0));
+
+function Bar({ label, value, total, title, planned = false, children }: { label: string; value: number | null; total: number; title: string; planned?: boolean; children?: ReactNode }) {
   if (value === null) {
     return (
       <div className="bar unmeasured" title={title}>
@@ -28,6 +34,7 @@ function Bar({ label, value, total, title, planned = false }: { label: string; v
         <span className={`bar-fill ${!planned && total > 0 && value === total ? 'full' : ''}`} style={{ width: `${percent}%` }} />
       </span>
       <span className="bar-value">{value}/{total}</span>
+      {children}
     </div>
   );
 }
@@ -36,6 +43,7 @@ const DESIGNED = 'Designed: a record designs it, such as a component that satisf
 const BUILT = 'Built: a component whose file exists designs it.';
 const PROVED = 'Proved: an automated or manual test proves it.';
 const PLANNED = 'Planned: not proved yet, but a planned test is meant to prove it. A planned test is not proof.';
+const MORE_PLANNED = 'Already proved, but a planned test is meant to prove them too: proof still owed by tests not written yet.';
 
 /** One bar group: an obligation kind's counts in a domain. A null count is one the engine does not report. */
 export interface ObligationGroup {
@@ -46,6 +54,8 @@ export interface ObligationGroup {
   built: number | null;
   proved: number;
   planned: number | null;
+  /** Has a planned test meant to prove it, proved or not (null when the engine does not report it). */
+  plannedAny: number | null;
 }
 
 /** "Requirement" -> "Requirements", "Domain rule" -> "Domain rules". */
@@ -66,11 +76,12 @@ export function obligationGroups(coverage: Coverage): ObligationGroup[] {
       built: measured(o.built),
       proved: o.proved,
       planned: measured(o.planned),
+      plannedAny: measured((o as Partial<typeof o>).planned_any),
     }));
   }
   return [
-    { kind: 'requirement', label: 'Requirement', total: coverage.requirements, designed: coverage.requirements_satisfied, built: measured(coverage.requirements_built), proved: coverage.requirements_proved, planned: null },
-    { kind: 'domain_rule', label: 'Domain rule', total: coverage.rules, designed: coverage.rules_satisfied, built: measured(coverage.rules_built), proved: coverage.rules_proved, planned: null },
+    { kind: 'requirement', label: 'Requirement', total: coverage.requirements, designed: coverage.requirements_satisfied, built: measured(coverage.requirements_built), proved: coverage.requirements_proved, planned: null, plannedAny: null },
+    { kind: 'domain_rule', label: 'Domain rule', total: coverage.rules, designed: coverage.rules_satisfied, built: measured(coverage.rules_built), proved: coverage.rules_proved, planned: null, plannedAny: null },
   ];
 }
 
@@ -85,8 +96,69 @@ function CoverageGroup({ group }: { group: ObligationGroup }) {
       <Bar label="designed" value={group.designed} total={total} title={DESIGNED} />
       <Bar label="built" value={group.built} total={total} title={BUILT} />
       <Bar label="proved" value={group.proved} total={total} title={PROVED} />
-      {group.planned !== null && <Bar label="planned" value={group.planned} total={total} title={PLANNED} planned />}
+      {group.planned !== null && (
+        <Bar label="planned" value={group.planned} total={total} title={PLANNED} planned>
+          <MorePlanned group={group} />
+        </Bar>
+      )}
     </div>
+  );
+}
+
+/** Obligations already proved that a planned test is still meant to prove, or null when unknown. */
+export const morePlanned = (group: ObligationGroup) =>
+  group.planned === null || group.plannedAny === null ? null : Math.max(0, group.plannedAny - group.planned);
+
+/** "2 more planned" beside the planned bar: proof still owed for obligations other tests already prove. */
+function MorePlanned({ group }: { group: ObligationGroup }) {
+  const more = morePlanned(group);
+  if (!more) return null;
+  return <span className="bar-more" title={MORE_PLANNED} data-more={more}>{more} more planned</span>;
+}
+
+// ---------- Tests by state ----------
+
+/** Tests by state; a null count is one the engine does not report. */
+export interface TestStateCounts {
+  automated: number | null;
+  manual: number | null;
+  planned: number | null;
+}
+
+const TEST_STATES = ['automated', 'manual', 'planned'] as const;
+
+/** A domain's tests by state, each count unknown (null) when the engine does not report it. */
+export function testCounts(coverage: Coverage | undefined): TestStateCounts {
+  const tests = (coverage as Partial<Coverage> | undefined)?.tests as Partial<Coverage['tests']> | undefined;
+  return { automated: measured(tests?.automated), manual: measured(tests?.manual), planned: measured(tests?.planned) };
+}
+
+/** Sums several domains' test counts; a state is unknown when any domain's count of it is. */
+export function sumTestCounts(counts: TestStateCounts[]): TestStateCounts {
+  const add = (state: (typeof TEST_STATES)[number]) => sum(counts.map((c) => c[state]));
+  return { automated: add('automated'), manual: add('manual'), planned: add('planned') };
+}
+
+const TEST_TITLES: Record<(typeof TEST_STATES)[number], string> = {
+  automated: 'Automated: run by a test runner (a test with no state is automated).',
+  manual: 'Manual: a person runs it by following its steps.',
+  planned: 'Planned: not written yet. It does not count as proof.',
+};
+
+/** "12 automated, 1 manual, 2 planned", or that the counts are not yet measured. */
+export function TestCountsLine({ counts }: { counts: TestStateCounts }) {
+  if (TEST_STATES.every((s) => counts[s] === null)) {
+    return <p className="test-counts unmeasured" aria-label="Tests by state"><span className="test-counts-label">Tests</span> not yet measured</p>;
+  }
+  return (
+    <p className="test-counts" aria-label="Tests by state">
+      <span className="test-counts-label">Tests</span>{' '}
+      {TEST_STATES.map((state, i) => (
+        <span key={state} className={`test-count ${state}`} data-state={state} title={TEST_TITLES[state]}>
+          {i > 0 && ', '}{counts[state] === null ? `${state} not yet measured` : `${counts[state]} ${state}`}
+        </span>
+      ))}
+    </p>
   );
 }
 
@@ -96,6 +168,7 @@ export function CoverageBars({ coverage }: { coverage: Coverage | undefined }) {
   return (
     <div className="coverage">
       {obligationGroups(coverage).map((g) => <CoverageGroup key={g.kind} group={g} />)}
+      <TestCountsLine counts={testCounts(coverage)} />
     </div>
   );
 }
@@ -169,7 +242,6 @@ export function FitnessPanel({ index, productId }: { index: SpecIndex; productId
 
 // ---------- Evidence ----------
 
-const sum = (values: (number | null)[]) => (values.some((v) => v === null) ? null : values.reduce<number>((a, v) => a + (v ?? 0), 0));
 
 /** Signals Lathe can count about a product. Evidence for the fitness judgment, never the score. */
 export function EvidencePanel({ index, productId }: { index: SpecIndex; productId: string }) {
@@ -183,6 +255,11 @@ export function EvidencePanel({ index, productId }: { index: SpecIndex; productI
   const built = sum(groups.map((g) => g.built));
   const proved = groups.reduce((a, g) => a + g.proved, 0);
   const planned = byKind ? sum(groups.map((g) => g.planned)) : null;
+  const more = planned === null ? null : sum(groups.map(morePlanned));
+  const tests = coverage.length > 0 ? sumTestCounts(coverage.map(testCounts)) : null;
+  const testsText = tests === null || TEST_STATES.every((s) => tests[s] === null)
+    ? 'not yet measured'
+    : TEST_STATES.map((s) => (tests[s] === null ? `${s} not yet measured` : `${tests[s]} ${s}`)).join(', ');
   const noun = byKind ? 'obligations' : 'requirements and rules';
   const questions = index.workspace.records.filter((r) => r.kind === 'question' && r.product === productId).length;
   const problems = index.workspace.problems.filter((p) => p.record && index.byId.get(p.record)?.product === productId);
@@ -195,7 +272,8 @@ export function EvidencePanel({ index, productId }: { index: SpecIndex; productI
         <div><dt>Designed</dt><dd>{of(designed)} {noun}</dd></div>
         <div><dt>Built</dt><dd>{built === null ? 'not yet measured' : `${of(built)} ${noun}`}</dd></div>
         <div><dt>Proved</dt><dd>{of(proved)} {noun}</dd></div>
-        {planned !== null && <div><dt>Planned</dt><dd>{of(planned)} {noun}, by tests not written yet</dd></div>}
+        {planned !== null && <div><dt>Planned</dt><dd>{of(planned)} {noun}, by tests not written yet{more ? `; ${more} more planned beside proof` : ''}</dd></div>}
+        <div><dt>Tests</dt><dd>{testsText}</dd></div>
         <div><dt>Open questions</dt><dd>{questions}</dd></div>
         <div><dt>Errors</dt><dd>{errors}</dd></div>
         <div><dt>Warnings</dt><dd>{problems.length - errors}</dd></div>

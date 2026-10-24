@@ -1,0 +1,10 @@
+---
+id: LA-BRW-UC80
+kind: use_case
+title: Read a flow step by step
+parent: LA-BRW-CAP01
+actor: Jared
+links:
+  applies: [LA-BRW-DR90, LA-BRW-DR91, LA-BRW-DR92]
+---
+Jared opens a flow and reads its steps in order as a table, as S2's flow tables read: what happens at each step, the view, endpoint or component it goes through, and what it carries out. He unfolds a step to read more. In the graph, the steps sit under their flow, and a requirement's trace shows the step that carries it out.

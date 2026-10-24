@@ -20,10 +20,10 @@ describe('coverage by the meta-model', () => {
     expect(states.problems.filter((p) => p.severity === 'error')).toEqual([]);
     expect(states.coverage).toHaveLength(1);
     expect(states.coverage[0].obligations).toEqual([
-      { kind: 'domain_rule', label: 'Domain rule', total: 1, designed: 0, built: 0, proved: 0, planned: 0 },
-      { kind: 'requirement', label: 'Requirement', total: 2, designed: 2, built: 2, proved: 1, planned: 1 },
-      { kind: 'pattern_rule', label: 'Pattern rule', total: 0, designed: 0, built: 0, proved: 0, planned: 0 },
-      { kind: 'interaction_requirement', label: 'Interaction requirement', total: 2, designed: 2, built: 2, proved: 2, planned: 0 },
+      { kind: 'domain_rule', label: 'Domain rule', total: 1, designed: 0, built: 0, proved: 0, planned: 0, planned_any: 0 },
+      { kind: 'requirement', label: 'Requirement', total: 2, designed: 2, built: 2, proved: 1, planned: 1, planned_any: 2 },
+      { kind: 'pattern_rule', label: 'Pattern rule', total: 0, designed: 0, built: 0, proved: 0, planned: 0, planned_any: 0 },
+      { kind: 'interaction_requirement', label: 'Interaction requirement', total: 2, designed: 2, built: 2, proved: 2, planned: 0, planned_any: 0 },
     ]);
     // The order is the meta-model's.
     const order = states.kinds.filter((k) => k.obligation).map((k) => k.kind);
@@ -50,7 +50,7 @@ describe('coverage by the meta-model', () => {
     const invariant = extension.coverage[0].obligations.find((o) => o.kind === 'invariant');
     // EXT-D-INV01 is enforced by a component whose file exists and checked by a test;
     // EXT-D-INV02 is designed only by a sketch, so it is designed but not built.
-    expect(invariant).toEqual({ kind: 'invariant', label: 'Invariant', total: 2, designed: 2, built: 1, proved: 1, planned: 0 });
+    expect(invariant).toEqual({ kind: 'invariant', label: 'Invariant', total: 2, designed: 2, built: 1, proved: 1, planned: 0, planned_any: 0 });
     expect(extension.coverage[0].obligations.map((o) => o.kind)).toEqual(['domain_rule', 'requirement', 'pattern_rule', 'interaction_requirement', 'invariant']);
     // A kind not marked as an obligation is not counted.
     expect(extension.coverage[0].obligations.some((o) => o.kind === 'sketch')).toBe(false);

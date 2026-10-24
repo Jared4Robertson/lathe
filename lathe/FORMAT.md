@@ -57,6 +57,7 @@ Product prefix, domain code, then a kind code and number. The engine only checks
 | capability | `<P>-<D>-CAP<nn>` | `TL-LEND-CAP01` |
 | pattern | `<P>-PAT-<name>` | `TL-PAT-LIBRARIAN-ACTION` |
 | pattern_rule | `<pattern>-R<nn>` | `TL-PAT-LIBRARIAN-ACTION-R01` |
+| flow_step | `<flow>-S<nn>` | `TL-LEND-F01-S01` |
 | aggregate | `<P>-<D>-A<n>` | `TL-LEND-A1` |
 | domain_rule | `<P>-<D>-DR<nn>` | `TL-LEND-DR01` |
 | use_case | `<P>-<D>-UC<nn>` | `TL-LEND-UC01` |
@@ -86,8 +87,8 @@ A `test` record has a `state`: `automated` (the default when the field is absent
 
 The engine runs every SQL file in `lathe/checks/`. Each returns rows of `(severity, check, record, message)`:
 
-- **error**: the workspace is broken (duplicate ID, unknown kind, bad parent, missing required field, disallowed or dangling link, an automated test with no `run_by`, or whose `run_by` file is missing or mentions neither its ID nor an ID it proves, a bad or repeated capability order, a pattern setting a use case does not give, a pattern setting that is not a valid field name, a pattern rule naming a setting its pattern does not have, a proof claim the test's file does not back (`proof-not-in-file`)). `lathe check` exits non-zero.
-- **warning**: work still to do, not breakage (a requirement or domain rule that no component satisfies or no test proves, a use case with no requirements, a component file that does not exist yet, a use case left outside its domain's capabilities, two followed patterns sharing a setting, a pattern nobody follows, an obligation outside every domain, a record ID cited in prose that does not exist). The structural warnings say where two stages do not join up yet:
+- **error**: the workspace is broken (duplicate ID, unknown kind, bad parent, missing required field, disallowed or dangling link, an automated test with no `run_by`, or whose `run_by` file is missing or mentions neither its ID nor an ID it proves, a bad or repeated capability order, a pattern setting a use case does not give, a pattern setting that is not a valid field name, a pattern rule naming a setting its pattern does not have, a proof claim the test's file does not back (`proof-not-in-file`), a bad or repeated flow step order, a product check named like one of Lathe's or a product checks folder that does not exist). `lathe check` exits non-zero.
+- **warning**: work still to do, not breakage (a requirement or domain rule that no component satisfies or no test proves, a use case with no requirements, a component file that does not exist yet, a use case left outside its domain's capabilities, two followed patterns sharing a setting, a pattern nobody follows, an obligation outside every domain, a record ID cited in prose that does not exist, a flow step fulfilling something outside its flow, a flow fulfilling something none of its steps do). The structural warnings say where two stages do not join up yet:
   - `rule-not-applied`: a domain rule that no use case `applies`.
   - `use-case-without-flow`: a use case that no flow `carries_out`, in a domain that has flows. A domain with no flows yet is not reported.
   - `interaction-requirement-fulfills-nothing`: an interaction requirement with no `fulfills` link.
@@ -237,3 +238,54 @@ A record's body may cite other records by ID in plain text, such as "the loan fo
 - A record's **mentions** (`SpecRecord.mentions`) are the IDs it cites that exist, in order of first mention, without repeats and without its own ID.
 - A cited ID that is not a record is an `unknown-id-in-prose` warning on the citing record: fix the wording, or put the ID in code if it is an example.
 - Mentions are not links. They do not count for coverage and are not checked against `relations.csv`; write a link in the header when a record satisfies, proves or applies another.
+
+## 13. A product's own checks
+
+A product can add checks of its own, so that its house rules live with the product instead of in Lathe. For example, S2 requires each aggregate to have exactly one use case that follows its Record view pattern. Lathe does not ship that rule, but S2 can keep it as its own check.
+
+- `lathe.config.json` names a folder of the product's checks in `checks`, relative to the root (see the package README). Every `*.sql` file in it is a check, written exactly as Lathe's checks are (section 5): one `SELECT` over the same tables, returning rows of `(severity, check, record, message)`.
+- The product's checks run after all of Lathe's checks, in file name order. Their problems are ordinary problems: `lathe check`, `--json` and the app show them with the others.
+- A check's name is its file name without the leading number and `.sql`, as for Lathe's checks: `lathe-checks/01-endpoint-without-interaction-requirement.sql` is the check `endpoint-without-interaction-requirement`. The `check` column the SQL returns is ignored.
+- A product check whose name equals one of Lathe's checks is not run. It is a `product-check-name-clash` error naming the file, so the two never mix in a report. Rename the file.
+- A product check that fails to run is an error naming its file, as for Lathe's checks.
+- A `checks` folder that the config names but that does not exist is a `product-checks-missing` error.
+
+```sql
+-- lathe-checks/01-one-record-view-per-aggregate.sql: S2's house rule
+SELECT 'warning' AS severity, 'one-record-view-per-aggregate' AS "check", a.id AS record,
+       'Aggregate ' || a.id || ' needs exactly one Record view use case.' AS message
+FROM records a
+WHERE a.kind = 'aggregate'
+  AND (SELECT count(*) FROM records u
+       JOIN links l ON l.path = u.path AND l.relation = 'follows' AND l.target = 'S2-PAT-RECORD-VIEW'
+       JOIN fields f ON f.path = u.path AND f.name = 'record' AND f.value = a.id
+       WHERE u.kind = 'use_case') <> 1
+```
+
+## 14. Flow steps
+
+A flow can be written as **steps**, so that each step says what happens, where, and what it carries out, as S2's flow tables do. A `flow_step` sits under its flow and gives its place in the flow in `order`, a whole number. Its ID is the flow's ID with `-S<nn>`, such as `TL-LEND-F01-S01`. Its title says what happens in a few words, and its body may say more.
+
+A step links to what it goes through with `uses` (a view, an endpoint or a component) and to what it carries out with `fulfills` (a requirement, an interaction requirement or a domain rule).
+
+```markdown
+---
+id: TL-LEND-F01-S02
+kind: flow_step
+title: The member borrows the tool and sees the due date
+parent: TL-LEND-F01
+order: 2
+links:
+  uses: [TL-LEND-V01, TL-LEND-E04]
+  fulfills: [TL-LEND-UC03-R01, TL-LEND-UC03-R02, TL-LEND-UC03-R03]
+---
+The member picks an available tool in the catalog and borrows it (`POST /loans`). The catalog shows the due date, or the reason the borrow was refused.
+```
+
+Once a flow has steps, what the flow fulfills is what its steps fulfill, so each `fulfills` link goes on the step that does it, and the flow itself need not repeat them. Steps are read in `order`; the IDs need not follow it, since IDs are never renumbered.
+
+The checks for flow steps:
+
+- A step's `order` that is not a whole number, or that another step of the same flow also has, is a `flow-step-order` error (`1` and `01` are the same). A missing order is `missing-required-field`.
+- `flow-step-fulfills-outside-flow` (warning): a step fulfills something its flow does not carry out. A target is inside the flow when it is a requirement of a use case the flow `carries_out`, a domain rule one of those use cases `applies`, or an interaction requirement that fulfills one of those or sits under the flow. A step whose flow carries out no use case is not compared, and a target that does not exist is reported only as a `dangling-link`.
+- `flow-fulfills-differs-from-steps` (warning): a flow that has steps fulfills something none of its steps fulfills. Move the link onto the step that carries it out. A flow without steps is not compared.

@@ -14,6 +14,8 @@ export interface LatheConfig {
   diagramsDir: string;
   /** Meta-model folders, in order: Lathe's defaults first, then the product's extensions. */
   metaDirs: string[];
+  /** The product's own checks folder (SQL files run after Lathe's checks), or null when it has none. */
+  checksDir: string | null;
 }
 
 interface ConfigFile {
@@ -21,6 +23,8 @@ interface ConfigFile {
   diagrams?: string;
   /** A folder with kinds.csv and/or relations.csv whose rows are added to Lathe's defaults. */
   metaExtensions?: string;
+  /** A folder of the product's own check SQL files, run after Lathe's checks (FORMAT.md section 13). */
+  checks?: string;
 }
 
 /** The installed Lathe package's own folder (holding meta/, checks/ and diagrams/), from source or from dist. */
@@ -53,5 +57,6 @@ export function loadConfig(root: string): LatheConfig {
     specsDir: inside(config.specs, 'specs'),
     diagramsDir: inside(config.diagrams, 'diagrams'),
     metaDirs,
+    checksDir: config.checks ? inside(config.checks, '') : null,
   };
 }

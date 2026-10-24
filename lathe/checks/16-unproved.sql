@@ -3,9 +3,11 @@
 -- A pattern rule is owed by each domain that follows its pattern (unless its setting is Not applicable
 -- in every following use case there, as in lathe/src/coverage.ts), and only a test in that domain
 -- proves it there, so it is reported once for each domain that owes it and lacks one.
+-- An automated test's proof counts only when its file backs it, as in coverage: the file names the test's
+-- own ID (or its key), or names that target. An unbacked claim is also a proof-not-in-file error.
 SELECT severity, "check", record, message FROM (
-WITH proof_links AS (
-  SELECT DISTINCT l.target, t.kind AS target_kind, s.domain AS source_domain,
+WITH stated AS (
+  SELECT DISTINCT l.target, t.kind AS target_kind, s.domain AS source_domain, s.kind AS source_kind, s.path,
          coalesce(nullif((SELECT lower(trim(any_value(f.value))) FROM fields f
                           WHERE f.path = s.path AND f.record = s.id AND f.name = 'state'), ''), 'automated') AS state
   FROM links l
@@ -13,6 +15,13 @@ WITH proof_links AS (
   JOIN records t ON t.id = l.target
   JOIN relations ro ON ro.role = 'proof' AND ro.relation = l.relation AND ro.source_kind = s.kind
                    AND ro.target_kind IN (t.kind, '*')
+),
+proof_links AS (
+  SELECT DISTINCT target, target_kind, source_domain, state
+  FROM stated x
+  WHERE x.source_kind <> 'test' OR x.state <> 'automated'
+     OR coalesce((SELECT bool_or(f.contains_id) FROM file_facts f WHERE f.path = x.path), false)
+     OR EXISTS (SELECT 1 FROM file_mentions m WHERE m.path = x.path AND m.mentioned = x.target)
 ),
 follows AS (
   SELECT DISTINCT u.domain, l.target AS pattern, u.path
