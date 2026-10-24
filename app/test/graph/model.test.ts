@@ -5,6 +5,8 @@ import { layoutNeighbourhood, NODE_HEIGHT, NODE_WIDTH } from '../../src/graph/la
 import { testIndex, testWorkspace } from './workspace';
 
 const ids = (n: { nodes: { id: string }[] }) => n.nodes.map((x) => x.id).sort();
+const recordIds = (n: { nodes: { id: string; group?: unknown }[] }) => n.nodes.filter((x) => !x.group).map((x) => x.id).sort();
+const groupIds = (n: { nodes: { id: string; group?: unknown }[] }) => n.nodes.filter((x) => x.group).map((x) => x.id).sort();
 const filters = (kinds: string[] = [], relations: string[] = []): Filters => ({ hiddenKinds: new Set(kinds), hiddenRelations: new Set(relations) });
 
 describe('graph neighbourhood', () => {
@@ -23,13 +25,16 @@ describe('graph neighbourhood', () => {
       'P-D-V01 fulfills P-D-UC01-R01',
     ]);
     // Outgoing links and children are followed too.
-    expect(ids(neighbourhood(index, 'P-D-C01', 1))).toEqual(['P-D', 'P-D-C01', 'P-D-C02', 'P-D-DR01', 'P-D-UC01-R01', 'P-D-V01']);
-    expect(ids(neighbourhood(index, 'P-D-A1', 1))).toEqual(['P-D', 'P-D-A1', 'P-D-DR01', 'P-D-DR02', 'P-D-Q01']);
+    // The domain is reached through the components' group; the view's group joins the spine too.
+    expect(groupIds(neighbourhood(index, 'P-D-C01', 1))).toEqual(['P-D/component', 'P-D/view']);
+    expect(recordIds(neighbourhood(index, 'P-D-C01', 1))).toEqual(['P-D', 'P-D-C01', 'P-D-C02', 'P-D-DR01', 'P-D-UC01-R01', 'P-D-V01']);
+    expect(recordIds(neighbourhood(index, 'P-D-A1', 1))).toEqual(['P-D', 'P-D-A1', 'P-D-DR01', 'P-D-DR02', 'P-D-Q01']);
   });
 
   it('LA-BRW-T51 At depth 2 the graph adds the records two steps away, each at its distance', () => {
     const n = neighbourhood(index, 'P-D-UC01-R01', 2);
-    expect(ids(n)).toEqual(['P-D', 'P-D-C01', 'P-D-C02', 'P-D-DR01', 'P-D-E01', 'P-D-T01', 'P-D-UC01', 'P-D-UC01-R01', 'P-D-V01']);
+    expect(groupIds(n)).toEqual(['P-D/component', 'P-D/endpoint', 'P-D/test', 'P-D/use_case', 'P-D/view']);
+    expect(recordIds(n)).toEqual(['P-D', 'P-D-C01', 'P-D-C02', 'P-D-DR01', 'P-D-E01', 'P-D-T01', 'P-D-UC01', 'P-D-UC01-R01', 'P-D-V01']);
     const distance = new Map(n.nodes.map((x) => [x.id, x.distance]));
     expect(distance.get('P-D-E01')).toBe(2);
     expect(distance.get('P-D-V01')).toBe(1);
@@ -133,7 +138,7 @@ describe('graph neighbourhood', () => {
     expect(trace('flow')).toBe(trace('endpoint'));
     // A kind a product adds goes one tier below its highest parent.
     const base = testWorkspace();
-    const extra = indexWorkspace({ ...base, kinds: [...base.kinds, { kind: 'scenario', label: 'Scenario', stage: 'define', parent_kinds: ['use_case'], required_fields: [], description: '' }] });
+    const extra = indexWorkspace({ ...base, kinds: [...base.kinds, { kind: 'scenario', label: 'Scenario', stage: 'define', parent_kinds: ['use_case'], required_fields: [], obligation: false, description: '' }] });
     expect(tierOf(extra, 'scenario', 'hierarchy')).toBe(HIERARCHY_TIERS.use_case + 1);
     // Nodes carry their tier.
     expect(neighbourhood(index, 'P-D-UC01-R01', 1).nodes.find((x) => x.id === 'P-D-T01')!.tier).toBe(5);

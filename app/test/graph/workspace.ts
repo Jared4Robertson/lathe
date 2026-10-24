@@ -48,7 +48,7 @@ export const PROBLEMS: Problem[] = [
 const COVERAGE: Coverage[] = [{
   domain: 'P-D',
   requirements: 1, requirements_satisfied: 1, requirements_built: 1, requirements_proved: 1,
-  rules: 2, rules_satisfied: 1, rules_built: 1, rules_proved: 0,
+  rules: 2, rules_satisfied: 1, rules_built: 1, rules_proved: 0, obligations: [],
   gaps: [
     { id: 'P-D-DR01', kind: 'domain_rule', missing: 'proves' },
     { id: 'P-D-DR02', kind: 'domain_rule', missing: 'satisfies' },
@@ -68,3 +68,15 @@ export function testWorkspace(): Workspace {
 }
 
 export const testIndex = () => indexWorkspace(testWorkspace());
+
+/** The test workspace with a second use case that has six requirements: more than a handful of one kind. */
+export function groupedWorkspace(): Workspace {
+  const w = testWorkspace();
+  const base = w.records.find((r) => r.id === 'P-D-UC01')!;
+  w.records.push({ ...base, id: 'P-D-UC02', title: 'Return a thing', path: 'specs/P-D-UC02.md' });
+  const req = w.records.find((r) => r.id === 'P-D-UC01-R01')!;
+  for (let i = 1; i <= 6; i++) {
+    w.records.push({ ...req, id: `P-D-UC02-R0${i}`, title: `Return rule ${i}`, parent: 'P-D-UC02', path: `specs/P-D-UC02-R0${i}.md` });
+  }
+  return w;
+}
