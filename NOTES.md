@@ -121,3 +121,17 @@ Jared asked for every recommendation to be applied, so these were decided on his
 | LA-BRW-Q01 Read-only browser? | Yes: spec pages stay read-only; records change in files and are reviewed in git. |
 | TL-LEND-Q01 Damage reported during a loan | Kept: a good return does not clear it; a librarian marks it repaired. |
 | TL-LEND-Q02 Overdue grace | Overdue by calendar day in the library's time zone (default America/New_York): due at the end of the due date. No override. |
+
+## Session 4 (2026-10-24): S2 parity and the app shell
+
+### Decisions (Jared's requests, or decided on his instruction to apply the recommended option)
+| Topic | Decision |
+| --- | --- |
+| Coverage | Driven by the meta-model: kinds marked `obligation`, relations with a `design` or `proof` role. Counted per domain and obligation kind: designed, built, proved, planned. |
+| Interaction requirements | A default kind under views, endpoints and flows, for API and screen rules (about a third of a mature product's rules). |
+| Tests | A state (automated, manual, planned); an automated test's file names its own ID or the IDs it proves; planned tests show intent but are never proof. |
+| Extensions | A product's meta-model rows add kinds and relations, or widen default kinds; duplicates within one folder are errors. |
+| Capabilities and patterns | From S2: ordered capabilities group a domain's use cases, flows and tests; patterns state shared behaviour once with settings that following use cases fill in. |
+| LA-CHK-Q10 Proving pattern rules | Pattern rules are records (`pattern_rule`) and obligations of every domain that follows the pattern (through any of its use cases); proof counts where the test sits. A rule tied to a setting does not apply in a domain whose following use cases all mark that setting Not applicable. |
+| App shell | One address per record or group, with Wiki, Graph and Split views; a collapsible nav with quick find; a collapsible inspector (the "third column"); one level deeper by default with folded lists; VS Code-style shortcuts. The Graph item left the nav: the graph is a view of every page. |
+| Logo | The chuck in a chuck; the simple chuck is the favicon. |
