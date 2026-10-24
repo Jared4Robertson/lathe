@@ -4,7 +4,7 @@ kind: component
 title: Diagram checks
 parent: LA-MOD
 component_type: sql check
-file: model/checks.sql
+file: lathe/diagrams/checks.sql
 links:
   satisfies: [LA-MOD-DR02, LA-MOD-DR03, LA-MOD-DR04, LA-MOD-DR05, LA-MOD-UC02-R02]
 ---

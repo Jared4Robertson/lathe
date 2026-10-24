@@ -6,7 +6,7 @@ parent: LA-CHK
 component_type: cli
 file: lathe/bin/lathe.ts
 links:
-  satisfies: [LA-CHK-UC01-R01, LA-CHK-UC01-R02, LA-CHK-UC01-R03]
-  depends_on: [LA-CHK-C01]
+  satisfies: [LA-CHK-UC01-R01, LA-CHK-UC01-R02, LA-CHK-UC01-R03, LA-CHK-UC06-R01]
+  depends_on: [LA-CHK-C01, LA-CHK-C07, LA-CHK-C08]
 ---
-`npm --prefix lathe run check`: calls `loadWorkspace` on the repo root and prints the report, or the whole workspace with `--json`, and sets the exit status.
+The `lathe` command: `init` writes the product's config and first record; `check` calls `loadWorkspace` on the product repo and prints the report, or the whole workspace with `--json`, and sets the exit status; `serve` starts the static server. In this repo, `npm --prefix lathe run check` runs `check` on the repo root.

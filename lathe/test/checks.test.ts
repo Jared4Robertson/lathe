@@ -9,7 +9,7 @@ const records = (problems: Problem[]) => problems.map((p) => p.record).sort();
 
 const workspaces: Record<string, Workspace> = {};
 beforeAll(async () => {
-  for (const name of ['good', 'broken-links', 'broken-tests', 'broken-parse', 'broken-structure']) {
+  for (const name of ['good', 'broken-links', 'broken-tests', 'broken-parse', 'broken-structure', 'configured']) {
     workspaces[name] = await loadWorkspace(fixture(name));
   }
 });
@@ -88,6 +88,23 @@ describe('Lathe-cited checks', () => {
     for (const file of files) expect(found.some((p) => p.message.includes(`specs/p/d/${file}`))).toBe(true);
     // Loading carries on: the good files are still records.
     expect(ws.records.map((r) => r.id).sort()).toEqual(['BX', 'BX-D', 'BX-D-A5']);
+  });
+});
+
+describe('product configuration', () => {
+  it("LA-CHK-T07 A product's lathe.config.json chooses the specs folder", () => {
+    const ws = workspaces.configured;
+    expect(ws.records.map((r) => r.id).sort()).toEqual(['CX', 'CX-D', 'CX-D-A1', 'CX-D-RP1']);
+    expect(ws.records.find((r) => r.id === 'CX')?.path).toBe('docs/specs/cx/product.md');
+    // specs/stray.md is outside the configured folder, so it is not read (and not a parse error).
+    expect(ofCheck(ws, 'parse-error')).toEqual([]);
+  });
+
+  it("LA-CHK-T08 A product's meta-model extension adds kinds and relations", () => {
+    const ws = workspaces.configured;
+    expect(ws.kinds.map((k) => k.kind)).toEqual(expect.arrayContaining(['product', 'requirement', 'report']));
+    expect(ws.relations).toContainEqual(expect.objectContaining({ relation: 'summarises', source_kind: 'report', target_kind: 'aggregate' }));
+    expect(ws.problems.filter((p) => p.severity === 'error')).toEqual([]);
   });
 });
 

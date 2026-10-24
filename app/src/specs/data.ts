@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Coverage, Kind, Problem, SpecLink, SpecRecord, Workspace } from '../../../lathe/src/types';
+import { onLatheEvent } from '../events';
 
 export type { Coverage, Kind, Problem, SpecLink, SpecRecord, Workspace };
 
@@ -92,8 +93,7 @@ export function useSpec(): SpecState {
 
   useEffect(() => {
     load();
-    import.meta.hot?.on('spec:changed', load);
-    return () => import.meta.hot?.off('spec:changed', load);
+    return onLatheEvent('spec:changed', load);
   }, [load]);
 
   const index = useMemo(() => (workspace ? indexWorkspace(workspace) : null), [workspace]);

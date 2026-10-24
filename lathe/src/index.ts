@@ -3,23 +3,21 @@
 import { existsSync } from 'node:fs';
 import { readdir, readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { DuckDBInstance, type DuckDBConnection } from '@duckdb/node-api';
 import { COVERAGE_COUNTS_SQL, COVERAGE_GAPS_SQL } from './coverage.ts';
+import { loadConfig, PACKAGE_DIR } from './config.ts';
 import { parseRecordFile } from './parse.ts';
 import type { Coverage, CoverageGap, Kind, Problem, RelationRule, SpecLink, SpecRecord, Workspace } from './types.ts';
 
 export type * from './types.ts';
+export { loadConfig, PACKAGE_DIR, CONFIG_FILE, type LatheConfig } from './config.ts';
 
-/** The folder holding the engine (lathe/), whatever root is being loaded. */
-const ENGINE_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-export const CHECKS_DIR = path.join(ENGINE_DIR, 'checks');
-const META_DIR = path.join(ENGINE_DIR, 'meta');
+export const CHECKS_DIR = path.join(PACKAGE_DIR, 'checks');
 
 export interface LoadOptions {
-  /** Folder of check SQL files. Defaults to lathe/checks. */
+  /** Folder of check SQL files. Defaults to the package's checks/. */
   checksDir?: string;
-  /** Folder holding kinds.csv and relations.csv. Defaults to <root>/lathe/meta, then the engine's own meta folder. */
+  /** One folder holding kinds.csv and relations.csv, replacing the configured meta-model (used by tests). */
   metaDir?: string;
 }
 
@@ -39,9 +37,8 @@ interface FileFact {
   contains_id: boolean | null;
 }
 
-// Finds every specs/**/*.md except README.md, as paths relative to root, sorted.
-async function findRecordFiles(root: string): Promise<string[]> {
-  const specsDir = path.join(root, 'specs');
+// Finds every *.md under the specs folder except README.md, as paths relative to root, sorted.
+async function findRecordFiles(root: string, specsDir: string): Promise<string[]> {
   if (!existsSync(specsDir)) return [];
   const entries = await readdir(specsDir, { recursive: true, withFileTypes: true });
   return entries
@@ -127,8 +124,12 @@ async function append(
   appender.closeSync();
 }
 
-async function loadMeta(connection: DuckDBConnection, metaDir: string) {
-  const csv = (name: string) => `read_csv(${sqlString(path.join(metaDir, name))}, header = true, all_varchar = true)`;
+// Loads the meta-model from one or more folders; later folders add rows to earlier ones.
+async function loadMeta(connection: DuckDBConnection, metaDirs: string[]) {
+  const csv = (name: string) => {
+    const files = metaDirs.map((dir) => path.join(dir, name)).filter((file) => existsSync(file));
+    return `read_csv([${files.map(sqlString).join(', ')}], header = true, all_varchar = true, union_by_name = true)`;
+  };
   const list = (col: string) =>
     `CASE WHEN trim(coalesce(${col}, '')) = '' THEN []::VARCHAR[] ELSE string_split(regexp_replace(trim(${col}), '\\s+', ' ', 'g'), ' ') END AS ${col}`;
   await connection.run(`
@@ -188,14 +189,14 @@ async function computeCoverage(connection: DuckDBConnection): Promise<Coverage[]
 
 /** Loads, checks and measures the spec workspace under root (the repo root). */
 export async function loadWorkspace(root: string, options: LoadOptions = {}): Promise<Workspace> {
-  root = path.resolve(root);
-  const rootMeta = path.join(root, 'lathe', 'meta');
-  const metaDir = options.metaDir ?? (existsSync(path.join(rootMeta, 'kinds.csv')) ? rootMeta : META_DIR);
+  const config = loadConfig(root);
+  root = config.root;
+  const metaDirs = options.metaDir ? [options.metaDir] : config.metaDirs;
   const checksDir = options.checksDir ?? CHECKS_DIR;
   const problems: Problem[] = [];
 
   const records: LoadedRecord[] = [];
-  for (const file of await findRecordFiles(root)) {
+  for (const file of await findRecordFiles(root, config.specsDir)) {
     const result = parseRecordFile(await readFile(path.join(root, file), 'utf8'));
     if (!result.ok) {
       problems.push({ severity: 'error', check: 'parse-error', record: null, message: `${file} cannot be read: ${result.reason}.` });
@@ -209,7 +210,7 @@ export async function loadWorkspace(root: string, options: LoadOptions = {}): Pr
   const instance = await DuckDBInstance.create(':memory:');
   const connection = await instance.connect();
   try {
-    await loadMeta(connection, metaDir);
+    await loadMeta(connection, metaDirs);
     await connection.run(`
       CREATE TABLE records (path VARCHAR, id VARCHAR, kind VARCHAR, title VARCHAR, parent VARCHAR,
                             product VARCHAR, domain VARCHAR, body VARCHAR);

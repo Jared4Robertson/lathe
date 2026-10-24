@@ -7,7 +7,7 @@ The Lathe domain model, stored as plain CSV files that you can read, edit by han
 | `diagrams.csv` | One row per diagram: `slug` (its folder name), `title`, `description`. This is the app's menu. |
 | `<slug>/terms.csv` | One row per term: `name`, `kind`, `context`, `status`, `definition`. This is the diagram's glossary. |
 | `<slug>/links.csv` | One row per relationship: `source`, `relation`, `target`, `cardinality`, `status`, `note`. |
-| `checks.sql` | Consistency checks, shared by every diagram. Run them after every edit. |
+| `../lathe/diagrams/checks.sql` | Consistency checks, shared by every diagram and shipped with Lathe. Run them after every edit. |
 | `queries.sql` | Example questions to ask a diagram. |
 
 Current diagrams:
@@ -24,7 +24,7 @@ Current diagrams:
 From a diagram's folder:
 
 ```bash
-cd model/people-and-tools && duckdb < ../checks.sql
+cd model/people-and-tools && duckdb < ../../lathe/diagrams/checks.sql
 ```
 
 ```bash
@@ -38,7 +38,7 @@ SELECT * FROM 'links.csv' WHERE target = 'Experience';
 ```
 
 ## Viewing
-The app in `app/` draws every diagram and has a menu to switch between them and create new ones. Each diagram has its own link, such as `http://localhost:5199/diagrams/people-and-tools`.
+The app draws every diagram and has a menu to switch between them and create new ones. Each diagram has its own link, such as `http://localhost:5199/diagrams/people-and-tools`. This folder is named as the diagrams folder in the repo's `lathe.config.json`.
 
 ```bash
 npm --prefix app run dev

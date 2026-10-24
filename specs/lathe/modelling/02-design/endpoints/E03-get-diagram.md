@@ -8,4 +8,4 @@ route: "/api/diagrams/<slug>"
 links:
   fulfills: [LA-MOD-UC02-R02]
 ---
-Responses: `200` with `{terms, links, checks: {ok, message}}`, where `checks` is the result of running `model/checks.sql` against the diagram; `404` with `{error}` when no diagram has that slug.
+Responses: `200` with `{terms, links, checks: {ok, message}}`, where `checks` is the result of running `lathe/diagrams/checks.sql` against the diagram; `404` with `{error}` when no diagram has that slug.

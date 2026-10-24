@@ -1,9 +1,43 @@
-# Lathe engine
+# Lathe
 
-The engine turns the folder of spec records under `specs/` into a checked database. It:
+Lathe organises a product's lifecycle (domain model, use cases, interaction design, technical specification, test plan) as records in the product's own repo, checks them, traces them to the code and tests, and serves a web app to browse them.
 
-1. Reads the meta-model from `lathe/meta/kinds.csv` and `lathe/meta/relations.csv`.
-2. Reads every `specs/**/*.md` file except `README.md`, and parses its YAML header and body (see [FORMAT.md](FORMAT.md)). A file it cannot parse becomes a `parse-error` problem, and loading carries on.
+## Use it in a product repo
+
+```sh
+npm install --save-dev /path/to/jaredrob-lathe-0.1.0.tgz   # until it is published
+npx lathe init --name "Tool Library" --prefix TL
+npx lathe check
+npx lathe serve            # http://127.0.0.1:5330
+```
+
+`lathe init` writes `lathe.config.json` and a first product record. The config names the product's folders and, optionally, its own additions to the meta-model:
+
+```json
+{
+  "specs": "specs",
+  "diagrams": "diagrams",
+  "metaExtensions": "lathe-meta"
+}
+```
+
+All three keys are optional (`specs` and `diagrams` are the defaults). A `metaExtensions` folder holds a `kinds.csv` and/or `relations.csv` with the same columns as [meta/](meta/); their rows are added to Lathe's defaults for this product only. The record format is in [FORMAT.md](FORMAT.md).
+
+## Build the package
+
+From the Lathe repo:
+
+```sh
+npm --prefix lathe run build   # compiles src/ and bin/ to dist/, and builds the web app into dist/app
+cd lathe && npm pack           # writes jaredrob-lathe-<version>.tgz
+```
+
+## The engine
+
+The engine turns the product's spec records into a checked database. It:
+
+1. Reads the meta-model: Lathe's `meta/kinds.csv` and `meta/relations.csv`, plus the product's extensions.
+2. Reads every `*.md` file in the configured specs folder except `README.md`, and parses its YAML header and body (see [FORMAT.md](FORMAT.md)). A file it cannot parse becomes a `parse-error` problem, and loading carries on.
 3. Works out each record's product and domain by walking its `parent` chain. A loop in that chain is a `parent-cycle` error.
 4. Checks each test's `run_by` file and each component's `file`: does it exist, and does a test's file mention the test's ID.
 5. Loads all of this into an in-memory DuckDB database, runs every check in `lathe/checks/`, and computes coverage per domain.
@@ -11,27 +45,20 @@ The engine turns the folder of spec records under `specs/` into a checked databa
 It returns a `Workspace` (see [src/types.ts](src/types.ts)): kinds, relations, records, links, problems and coverage. Nothing is written to disk. The files are the source of truth, and the database is rebuilt on every load.
 
 ```ts
-import { loadWorkspace } from './lathe/src/index.ts';
+import { loadWorkspace } from '@jaredrob/lathe';
 const workspace = await loadWorkspace('/path/to/repo');
 ```
 
-## Setup
+## Work on Lathe itself
 
 ```sh
 npm --prefix lathe install
+npm --prefix lathe run check                          # check this repo (Lathe dogfooding itself)
+npm --prefix lathe run lathe -- check --root path     # any command, against another root
+npm --prefix lathe run check -- --json                # print the whole Workspace as JSON
 ```
 
-## Run the checks
-
-```sh
-npm --prefix lathe run check                    # check the repo that holds lathe/
-npm --prefix lathe run check -- path/to/root    # check another root
-npm --prefix lathe run check -- --json          # print the whole Workspace as JSON
-```
-
-The CLI prints errors, then warnings, then one coverage line per domain. It exits 1 if there is any error. Warnings alone do not fail it.
-
-It runs on Node 26's built-in TypeScript support, so it needs no build step.
+`check` prints errors, then warnings, then one coverage line per domain. It exits 1 if there is any error. Warnings alone do not fail it. In this repo the CLI runs from source on Node 26's built-in TypeScript support; the package ships compiled JavaScript, because Node does not run TypeScript from `node_modules`.
 
 ## Tests and type checks
 
