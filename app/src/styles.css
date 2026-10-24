@@ -20,7 +20,7 @@ body { background: var(--paper); color: var(--ink); font: 15px/1.5 var(--body); 
 .diagram { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
 .placeholder { display: grid; place-items: center; color: var(--muted); }
 .menu { border-right: 1px solid var(--rule); background: var(--sheet); padding: 20px 14px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
-.brand { margin: 0 6px 8px; font: 700 1.4rem var(--display); }
+.brand { margin: 0 6px 8px; font: 700 1.4rem var(--display); display: flex; align-items: center; gap: 8px; }
 .menu .eyebrow { margin: 0 6px; }
 .menu ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
 .menu a { display: block; padding: 7px 8px; border-radius: 6px; color: var(--ink); text-decoration: none; font-size: 0.92rem; }
@@ -302,3 +302,24 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 @media (prefers-reduced-motion: reduce) { .graph-flow .react-flow__node, .graph-flow .react-flow__edge-path.graph-edge { transition: none; } }
 @media (max-width: 900px) { .graph-workspace { grid-template-columns: 1fr; grid-template-rows: minmax(420px, 1fr) auto; } .graph-side { border-left: 0; border-top: 1px solid var(--rule); } }
 /* ---------- End of graph view ---------- */
+
+/* Coverage, fitness and evidence */
+.bar.unmeasured { grid-template-columns: 64px 1fr; }
+.bar-unknown { font: italic 0.75rem var(--body); color: var(--muted); }
+.fitness { display: grid; gap: 10px; }
+.fitness-latest { display: grid; gap: 8px; padding: 14px; border: 1px solid var(--rule); border-radius: 10px; background: var(--sheet); }
+.fitness-score { margin: 0; display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: baseline; }
+.score { display: inline-flex; gap: 6px; align-items: center; font: 0.9rem var(--mono); color: var(--muted); }
+.score strong { font: 700 1.6rem var(--display); color: var(--ink); }
+.score.invalid { color: var(--spark); }
+.score-pips { display: inline-flex; gap: 3px; }
+.score-pips span { width: 10px; height: 10px; border-radius: 50%; border: 1px solid var(--steel); }
+.score-pips span.on { background: var(--steel); }
+.fitness-history > li { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; }
+.fitness-history .score strong { font-size: 1rem; }
+.fitness-history time { font: 0.8rem var(--mono); color: var(--muted); }
+.empty-fitness p { margin: 0; }
+.evidence { display: grid; gap: 8px; padding: 12px 14px; border: 1px dashed var(--rule); border-radius: 10px; }
+.evidence-list > div { grid-template-columns: 130px 1fr; }
+.spec-body > * { min-width: 0; }
+.markdown table { display: block; max-width: 100%; overflow-x: auto; }

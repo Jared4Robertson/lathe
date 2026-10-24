@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Lathe">
+  <!-- A chuck gripping the same chuck, smaller: a tool that makes tools, including better versions of itself. -->
+  <defs>
+    <mask id="rec-cut">
+      <rect width="64" height="64" fill="#fff"/>
+      <circle cx="32" cy="32" r="13.5" fill="#000"/>
+      <rect id="rec-slot" x="27.5" y="0" width="9" height="20" fill="#000"/>
+      <use href="#rec-slot" transform="rotate(120 32 32)"/>
+      <use href="#rec-slot" transform="rotate(240 32 32)"/>
+    </mask>
+    <g id="rec-chuck">
+      <circle cx="32" cy="32" r="29" style="fill:var(--b,#2E6A88)" mask="url(#rec-cut)"/>
+      <g style="fill:var(--a,#B5512A)">
+        <path id="rec-jaw" d="M29.6 20.9V14H28.6V8H35.4V14H34.4V20.9Z"/>
+        <use href="#rec-jaw" transform="rotate(120 32 32)"/>
+        <use href="#rec-jaw" transform="rotate(240 32 32)"/>
+      </g>
+    </g>
+  </defs>
+  <use href="#rec-chuck"/>
+  <use href="#rec-chuck" transform="translate(32 32) rotate(60) scale(0.38) translate(-32 -32)"/>
+</svg>

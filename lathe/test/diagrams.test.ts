@@ -206,9 +206,7 @@ describe('creating a diagram', () => {
     }
   });
 
-  // Known bug in slugify: NFKD splits an accented letter into the letter and a combining mark, and the
-  // mark becomes a hyphen ("déjà" gives "de-ja"). The slug is still URL-safe, so LA-MOD-DR01 holds.
-  it.fails('drops accents from letters instead of splitting the word', () => {
+  it('drops accents from letters instead of splitting the word', () => {
     expect(slugify('Café déjà vu')).toBe('cafe-deja-vu');
   });
 

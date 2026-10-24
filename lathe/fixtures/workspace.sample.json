@@ -425,7 +425,9 @@
           "kind": "domain_rule",
           "missing": "proves"
         }
-      ]
+      ],
+      "requirements_built": 0,
+      "rules_built": 0
     }
   ]
 }
