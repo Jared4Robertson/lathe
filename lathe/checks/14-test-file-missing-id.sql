@@ -6,7 +6,7 @@ SELECT 'error' AS severity, 'test-file-missing-id' AS "check", nullif(f.record, 
        || coalesce(nullif(f.record, ''), 'its ID') || ' nor the ID of a record it proves.' AS message
 FROM file_facts f
 WHERE f.kind = 'test' AND f.file_exists AND NOT f.contains_id
-  AND coalesce((SELECT max(trim(s.value)) FROM fields s WHERE s.path = f.path AND s.name = 'state'), '')
+  AND coalesce((SELECT max(lower(trim(s.value))) FROM fields s WHERE s.path = f.path AND s.name = 'state'), '')
       NOT IN ('manual', 'planned')
   AND NOT EXISTS (
     SELECT 1

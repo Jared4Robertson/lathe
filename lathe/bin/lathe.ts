@@ -66,7 +66,8 @@ async function check() {
         }
       }
     }
-    console.log(`\n${errors.length} errors, ${warnings.length} warnings.`);
+    const count = (n: number, noun: string) => `${n} ${noun}${n === 1 ? '' : 's'}`;
+    console.log(`\n${count(errors.length, 'error')}, ${count(warnings.length, 'warning')}.`);
   }
   process.exitCode = errors.length ? 1 : 0;
 }

@@ -49,7 +49,7 @@ describe('lathe check', () => {
     expect(good.status).toBe(0);
     expect(good.stdout).toContain('0 errors, 0 warnings.');
     const warningsOnly = lathe('check', '--root', fixture('unfinished'));
-    expect(warningsOnly.stdout).toMatch(/0 errors, [1-9]\d* warnings\./);
+    expect(warningsOnly.stdout).toMatch(/0 errors, [1-9]\d* warnings?\./);
     expect(warningsOnly.status).toBe(0);
   });
 
