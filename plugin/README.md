@@ -9,7 +9,7 @@ Most Lathe specs are written by agents. This plugin teaches them Lathe's way of 
 | Skill | For |
 | --- | --- |
 | `model-a-domain` | The domain record, aggregates and domain rules. |
-| `write-use-cases` | Use cases and their requirements. |
+| `write-use-cases` | Use cases and their requirements, the capabilities that group them, and the patterns they follow. |
 | `design-the-domain` | Flows, views, endpoints, their interaction requirements, and components, with the links that trace them. |
 | `plan-tests` | Test records (automated, manual or planned), and test names that carry the test's ID or the ID of what it proves. |
 | `check-and-fix` | Running `lathe check`, fixing errors, and reporting warnings and coverage (designed, built, proved, planned). |
