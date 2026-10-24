@@ -16,7 +16,7 @@ The design says how the product carries out its use cases: the paths people take
 
 | Kind | ID | Required fields | Links |
 | --- | --- | --- | --- |
-| `flow` | `<P>-<D>-F<nn>` | | `uses` views and endpoints; `fulfills` requirements |
+| `flow` | `<P>-<D>-F<nn>` | | `carries_out` the use cases it walks through; `uses` views and endpoints; `fulfills` requirements, domain rules and interaction requirements |
 | `view` | `<P>-<D>-V<nn>` | | `uses` endpoints; `fulfills` requirements |
 | `endpoint` | `<P>-<D>-E<nn>` | `method`, `route` | `fulfills` requirements |
 | `interaction_requirement` | `<view, endpoint or flow>-R<nn>`, such as `TL-LEND-E04-R01` | | `fulfills` the use case requirements and domain rules it carries out at this view, endpoint or flow |
@@ -29,7 +29,7 @@ Every design record's parent is the domain, except an interaction requirement, w
 An interaction requirement is one rule a view, endpoint or flow must follow: a field's type and limits, the status and error code of each refusal, what a success returns, what a screen shows or disables. Like a requirement, it is an obligation: Lathe counts it as designed, built, proved or planned, and warns while no component satisfies it or no test proves it.
 
 - One rule per record. Title: the rule in a few words. Body: the rule in full with MUST / MUST NOT / SHOULD / MAY.
-- `fulfills` the use case requirement or domain rule it carries out here, so the trace runs from the use case down to the response. A rule with nothing above it (a field limit, say) needs no `fulfills`.
+- `fulfills` the use case requirement or domain rule it carries out here, so the trace runs from the use case down to the response. Even a rule that looks free-standing, such as a body size limit, protects something above it: link the requirement it serves. An interaction requirement that fulfills nothing is a warning (`interaction-requirement-fulfills-nothing`).
 - Keep the endpoint's body as the overview (request shape, table of responses); state each rule that must be built and tested as an interaction requirement.
 - Put the files next to their parent: `02-design/endpoints/E04-borrow-a-tool.md` and `02-design/endpoints/E04-borrow-a-tool/R01-tool-on-loan-is-409.md`.
 
@@ -90,4 +90,6 @@ The component that enforces it adds it to its `satisfies` list (`satisfies: [...
 - Link a component to the requirements, rules and interaction requirements it actually enforces, not to everything it touches. An obligation no component satisfies is a warning (not designed).
 - A component's `file` may not exist yet; that is a warning, and it clears when the code is written. Coverage counts it as **built** once the file exists.
 - An endpoint's body lists every response, including each refusal and its code; each refusal that must be built and tested is also an interaction requirement.
+- Once a domain has a flow, every use case in it needs a flow that `carries_out` it (otherwise `use-case-without-flow`). One flow may carry out several use cases. A flow that only `fulfills` a use case's requirements does not carry out the use case.
+- Tests link to design records too: a test `runs` a flow it walks end to end, and `covers` a component it exercises. Neither link counts as proof.
 - Finish with the `check-and-fix` skill.
