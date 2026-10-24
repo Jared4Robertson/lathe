@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react';
 import {
   Background,
   BaseEdge,
@@ -25,10 +25,16 @@ import {
   canTrace,
   gapsFor,
   graphRelationLabel,
+  groupLabel,
+  groupMarks,
+  groupMembers,
   isFiltered,
+  isGraphNode,
   kindGroups,
   neighbourhood,
   nextTrail,
+  parseGroupId,
+  pluralLabel,
   relationsOf,
   summary,
   traceChain,
@@ -39,8 +45,12 @@ import {
 import { boxExit, layoutNeighbourhood, NODE_HEIGHT, NODE_WIDTH, type Placed } from './layout';
 import { GRAPH_ROOT, graphPath } from './route';
 
-// The graph view at /graph/<id>: an ego graph centred on one record. Clicking a node re-centres
-// on it and changes the address, so Back walks back along the path.
+// The graph view at /graph/<id> (or /graph/<parent-id>/<kind> for a group): an ego graph
+// centred on one record or group. Clicking a record re-centres on it and changes the address, so
+// Back walks back along the path; clicking a group opens or closes it.
+//
+// GraphView is the graph on its own: it takes the focus and an onNavigate callback and never reads
+// the address, so it can sit in any pane. GraphPage is the /graph page around it.
 
 interface NodeData extends Record<string, unknown> {
   node: GraphNode;
@@ -67,6 +77,18 @@ export function relationStyle(relation: string): string {
   return 'other';
 }
 
+function Marks({ data }: { data: NodeData }) {
+  if (data.errors === 0 && data.warnings === 0 && data.gaps.length === 0) return null;
+  const within = data.node.group ? ' among its members' : '';
+  return (
+    <span className="graph-marks">
+      {data.errors > 0 && <span className="graph-mark error" title={`${data.errors} error${data.errors > 1 ? 's' : ''}${within}`} aria-label="has errors">!</span>}
+      {data.errors === 0 && data.warnings > 0 && <span className="graph-mark warning" title={`${data.warnings} warning${data.warnings > 1 ? 's' : ''}${within}`} aria-label="has warnings">!</span>}
+      {data.gaps.length > 0 && <span className="graph-mark gap" title={data.gaps.map((g) => (g === 'satisfies' ? 'not satisfied' : 'not proved')).join(', ') + within} aria-label="has coverage gaps">gap</span>}
+    </span>
+  );
+}
+
 function GraphNodeView({ data }: NodeProps<FlowNode>) {
   const { node } = data;
   return (
@@ -78,13 +100,26 @@ function GraphNodeView({ data }: NodeProps<FlowNode>) {
       <Handle type="source" position={Position.Right} className="graph-handle" isConnectable={false} />
       <small>{data.kindLabel}{node.kind !== FILE_KIND && <> · {node.id}</>}</small>
       <strong>{node.title}</strong>
-      {(data.errors > 0 || data.warnings > 0 || data.gaps.length > 0) && (
-        <span className="graph-marks">
-          {data.errors > 0 && <span className="graph-mark error" title={`${data.errors} error${data.errors > 1 ? 's' : ''}`} aria-label="has errors">!</span>}
-          {data.errors === 0 && data.warnings > 0 && <span className="graph-mark warning" title={`${data.warnings} warning${data.warnings > 1 ? 's' : ''}`} aria-label="has warnings">!</span>}
-          {data.gaps.length > 0 && <span className="graph-mark gap" title={data.gaps.map((g) => (g === 'satisfies' ? 'not satisfied' : 'not proved')).join(', ')} aria-label="has coverage gaps">gap</span>}
-        </span>
-      )}
+      <Marks data={data} />
+    </div>
+  );
+}
+
+/** A group: a folder of one kind of child, showing its count, open or folded. */
+function GroupNodeView({ data }: NodeProps<FlowNode>) {
+  const { node } = data;
+  const open = node.group!.open;
+  return (
+    <div
+      className={`graph-node stage-group kind-${node.kind}${open ? ' is-open' : ' is-folded'}${data.isFocus ? ' is-focus' : ''}`}
+      title={`${node.title} in ${node.group!.parent} (${open ? 'open' : 'folded'})`}
+      data-open={open}
+    >
+      <Handle type="target" position={Position.Left} className="graph-handle" isConnectable={false} />
+      <Handle type="source" position={Position.Right} className="graph-handle" isConnectable={false} />
+      <small><span className="graph-group-caret" aria-hidden="true">{open ? '▾' : '▸'}</span> Group · {node.group!.parent}</small>
+      <strong>{node.title}</strong>
+      <Marks data={data} />
     </div>
   );
 }
@@ -107,7 +142,7 @@ function GraphEdgeView({ id, data, markerEnd }: EdgeProps<FlowEdge>) {
   );
 }
 
-const nodeTypes = { record: GraphNodeView };
+const nodeTypes = { record: GraphNodeView, folder: GroupNodeView };
 const edgeTypes = { link: GraphEdgeView };
 
 const TRAIL_KEY = 'lathe:graph-trail';
@@ -130,23 +165,52 @@ export default function GraphPage({ spec, focus }: { spec: SpecState; focus: str
   useEffect(() => {
     if (focus === null && first) navigate(graphPath(first), true);
   }, [focus, first]);
+  const onNavigate = useCallback((id: string) => navigate(graphPath(id)), []);
   if (!index) {
     return <main className="placeholder"><p>{spec.error ? `Couldn't load the specs: ${spec.error}` : 'Loading specs…'}</p></main>;
   }
   if (focus === null) {
     return <main className="placeholder"><p>{first ? 'Opening the graph…' : <>No products yet. Add a <code>product.md</code> under <code>specs/</code>.</>}</p></main>;
   }
-  return <GraphView index={index} focus={focus} />;
+  return <GraphView index={index} focus={focus} onNavigate={onNavigate} />;
 }
 
-export function GraphView({ index, focus }: { index: SpecIndex; focus: string }) {
+export interface GraphViewProps {
+  index: SpecIndex;
+  /** A record ID, or a group as `<parent-id>/<kind>`. */
+  focus: string;
+  /** Called with a record or group ID when the person moves the centre there. */
+  onNavigate: (id: string) => void;
+  /** The address a node's link points to, for opening in a new tab. Defaults to its /graph address. */
+  hrefFor?: (id: string) => string;
+}
+
+/** A link to another centre: a real address for new tabs, onNavigate on a plain click. */
+function NodeLink({ id, onNavigate, hrefFor, children, title }: { id: string; onNavigate: (id: string) => void; hrefFor: (id: string) => string; children: ReactNode; title?: string }) {
+  const onClick = (e: MouseEvent<HTMLAnchorElement>) => {
+    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
+    onNavigate(id);
+  };
+  return <a href={hrefFor(id)} onClick={onClick} title={title}>{children}</a>;
+}
+
+/** How a node is named in the trail and lists: its ID, or a group's parent and plural kind. */
+const shortName = (index: SpecIndex, id: string) => {
+  const g = parseGroupId(id);
+  return g && !index.byId.has(id) ? `${g.parent} / ${pluralLabel(index, g.kind)}` : id;
+};
+
+export function GraphView({ index, focus, onNavigate, hrefFor = graphPath }: GraphViewProps) {
   const [depth, setDepth] = useState(1);
   const [filters, setFilters] = useState<Filters>(NO_FILTERS);
   const [trace, setTrace] = useState(false);
   const [trail, setTrail] = useState<string[]>(readTrail);
+  // Groups the person opened (true) or closed (false), remembered while walking the graph.
+  const [openGroups, setOpenGroups] = useState<ReadonlyMap<string, boolean>>(new Map());
 
   useEffect(() => {
-    if (!index.byId.has(focus)) return;
+    if (!isGraphNode(index, focus)) return;
     setTrail((t) => {
       const next = nextTrail(t, focus);
       writeTrail(next);
@@ -156,34 +220,38 @@ export function GraphView({ index, focus }: { index: SpecIndex; focus: string })
 
   const tracing = trace && canTrace(index, focus);
   const graph = useMemo(
-    () => (tracing ? traceChain(index, focus, filters) : neighbourhood(index, focus, depth, filters)),
-    [index, focus, depth, filters, tracing],
+    () => (tracing ? traceChain(index, focus, filters) : neighbourhood(index, focus, depth, filters, openGroups)),
+    [index, focus, depth, filters, tracing, openGroups],
   );
+
+  const toggleGroup = useCallback((id: string, nowOpen: boolean) => {
+    setOpenGroups((m) => new Map(m).set(id, !nowOpen));
+  }, []);
 
   const clearFilters = useCallback(() => { setFilters(NO_FILTERS); setTrace(false); }, []);
   const onPageKey = (e: KeyboardEvent<HTMLElement>) => {
     if (e.key === 'Escape' && (isFiltered(filters) || trace)) { e.preventDefault(); clearFilters(); }
   };
 
-  if (!index.byId.has(focus)) {
+  if (!isGraphNode(index, focus)) {
     return (
       <main className="placeholder">
-        <p>There's no record with the ID <code>{focus}</code>. <Link to={GRAPH_ROOT}>Open the graph</Link>.</p>
+        <p>There's no record or group <code>{focus}</code>. <Link to={GRAPH_ROOT}>Open the graph</Link>.</p>
       </main>
     );
   }
-  const record = index.byId.get(focus)!;
+  const groups = graph.nodes.filter((n) => n.group).length;
 
   return (
     <main className="graph-page" onKeyDown={onPageKey}>
       <header className="graph-header">
         <nav className="graph-trail" aria-label="Records visited">
           <ol>
-            {trail.filter((id) => index.byId.has(id)).map((id) => (
+            {trail.filter((id) => isGraphNode(index, id)).map((id) => (
               <li key={id}>
                 {id === focus
-                  ? <span aria-current="page"><code>{id}</code></span>
-                  : <Link to={graphPath(id)} title={index.byId.get(id)!.title}><code>{id}</code></Link>}
+                  ? <span aria-current="page"><code>{shortName(index, id)}</code></span>
+                  : <NodeLink id={id} onNavigate={onNavigate} hrefFor={hrefFor} title={index.byId.get(id)?.title ?? groupLabel(index, id)}><code>{shortName(index, id)}</code></NodeLink>}
               </li>
             ))}
           </ol>
@@ -202,16 +270,20 @@ export function GraphView({ index, focus }: { index: SpecIndex; focus: string })
             </label>
           )}
           <FilterControls index={index} filters={filters} setFilters={setFilters} />
-          <span className="graph-count">{graph.nodes.length} records · {graph.edges.length} links</span>
+          <span className="graph-count">
+            {graph.nodes.length - groups} records{groups > 0 && <> · {groups} group{groups > 1 ? 's' : ''}</>} · {graph.edges.length} links
+          </span>
         </div>
       </header>
       <div className="graph-workspace">
         <div className="graph-canvas">
           <ReactFlowProvider>
-            <GraphCanvas index={index} graph={graph} />
+            <GraphCanvas index={index} graph={graph} onNavigate={onNavigate} onToggle={toggleGroup} />
           </ReactFlowProvider>
         </div>
-        <SidePanel index={index} graph={graph} tracing={tracing} recordId={record.id} />
+        {index.byId.has(focus)
+          ? <SidePanel index={index} graph={graph} tracing={tracing} recordId={focus} onNavigate={onNavigate} hrefFor={hrefFor} />
+          : <GroupPanel index={index} groupId={focus} onNavigate={onNavigate} hrefFor={hrefFor} />}
       </div>
     </main>
   );
@@ -296,12 +368,18 @@ export function fitPositions(positions: Map<string, { x: number; y: number }>, w
   return { x: width / 2 - ((minX + maxX) / 2) * zoom, y: height / 2 - ((minY + maxY) / 2) * zoom, zoom };
 }
 
-function GraphCanvas({ index, graph }: { index: SpecIndex; graph: Neighbourhood }) {
+function GraphCanvas({ index, graph, onNavigate, onToggle }: {
+  index: SpecIndex;
+  graph: Neighbourhood;
+  onNavigate: (id: string) => void;
+  onToggle: (id: string, nowOpen: boolean) => void;
+}) {
   const [placed, setPlaced] = useState<(Placed & { graph: Neighbourhood }) | null>(null);
   const [error, setError] = useState<string | null>(null);
   const wrapper = useRef<HTMLDivElement>(null);
   const active = useRef<string | null>(null);
-  const refocus = useRef(false);
+  /** After a keyboard action, the node to put keyboard focus on once the new picture is drawn. */
+  const refocus = useRef<string | null>(null);
   const { setViewport } = useReactFlow();
 
   useEffect(() => {
@@ -321,25 +399,38 @@ function GraphCanvas({ index, graph }: { index: SpecIndex; graph: Neighbourhood 
     const byId = new Map(g.nodes.map((n) => [n.id, n]));
     const nodes: FlowNode[] = order.map((id) => {
       const node = byId.get(id)!;
-      const problems = node.kind === FILE_KIND ? [] : index.problemsFor.get(id) ?? [];
-      const errors = problems.filter((p) => p.severity === 'error').length;
-      return {
+      const isFocus = id === g.focus;
+      const base = {
         id,
-        type: 'record',
         position: positions.get(id) ?? { x: 0, y: 0 },
         width: NODE_WIDTH,
         height: NODE_HEIGHT,
         draggable: false,
         connectable: false,
         selectable: false,
-        ariaLabel: `${node.kind === FILE_KIND ? 'File' : kindLabel(index, node.kind)} ${node.id === g.focus ? '(centre) ' : ''}${node.title}`,
+      };
+      if (node.group) {
+        const marks = groupMarks(index, id);
+        return {
+          ...base,
+          type: 'folder',
+          ariaLabel: `Group ${node.title} in ${node.group.parent}, ${node.group.open ? 'open' : 'folded'}${isFocus ? ' (centre)' : ''}`,
+          data: { node, kindLabel: 'Group', ...marks, isFocus },
+        };
+      }
+      const problems = node.kind === FILE_KIND ? [] : index.problemsFor.get(id) ?? [];
+      const errors = problems.filter((p) => p.severity === 'error').length;
+      return {
+        ...base,
+        type: 'record',
+        ariaLabel: `${node.kind === FILE_KIND ? 'File' : kindLabel(index, node.kind)} ${isFocus ? '(centre) ' : ''}${node.title}`,
         data: {
           node,
           kindLabel: node.kind === FILE_KIND ? 'File' : kindLabel(index, node.kind),
           errors,
           warnings: problems.length - errors,
           gaps: node.kind === FILE_KIND ? [] : gapsFor(index, id),
-          isFocus: id === g.focus,
+          isFocus,
         },
       };
     });
@@ -371,21 +462,46 @@ function GraphCanvas({ index, graph }: { index: SpecIndex; graph: Neighbourhood 
   const domNode = (id: string) =>
     [...(wrapper.current?.querySelectorAll<HTMLElement>('.react-flow__node') ?? [])].find((el) => el.dataset.id === id) ?? null;
 
-  // Fit the new picture, and after a keyboard re-centre put focus on the new centre.
-  useEffect(() => {
-    if (!placed) return;
+  const fit = useCallback((duration: number) => {
     const box = wrapper.current?.getBoundingClientRect();
-    if (box && box.width > 0 && box.height > 0) setViewport(fitPositions(placed.positions, box.width, box.height), { duration: 300 });
-    if (refocus.current) {
-      refocus.current = false;
-      domNode(placed.graph.focus)?.focus();
-      active.current = placed.graph.focus;
-    }
+    if (placed && box && box.width > 0 && box.height > 0) setViewport(fitPositions(placed.positions, box.width, box.height), { duration });
   }, [placed, setViewport]);
 
-  const recentre = (id: string) => {
-    if (id.startsWith('file:') || id === placed?.graph.focus) return;
-    navigate(graphPath(id));
+  // Fit the new picture, and after a keyboard action put focus back on the right node.
+  useEffect(() => {
+    if (!placed) return;
+    fit(300);
+    if (refocus.current) {
+      const id = placed.graph.nodes.some((n) => n.id === refocus.current) ? refocus.current : placed.graph.focus;
+      refocus.current = null;
+      domNode(id)?.focus();
+      active.current = id;
+    }
+  }, [placed, fit]);
+
+  // Fit again whenever the container changes size (a split pane, full screen, a window resize).
+  useEffect(() => {
+    const el = wrapper.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    let last = '';
+    const observer = new ResizeObserver(() => {
+      const box = el.getBoundingClientRect();
+      const size = `${Math.round(box.width)}x${Math.round(box.height)}`;
+      if (size === last) return;
+      last = size;
+      fit(0);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [fit]);
+
+  /** A click or Enter on a node: a group opens or closes, a record becomes the centre. */
+  const activate = (id: string, fromKeyboard: boolean) => {
+    if (!placed || id.startsWith('file:') || id === placed.graph.focus) return;
+    const node = placed.graph.nodes.find((n) => n.id === id);
+    if (fromKeyboard) refocus.current = id;
+    if (node?.group) onToggle(id, node.group.open);
+    else onNavigate(id);
   };
 
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
@@ -401,8 +517,7 @@ function GraphCanvas({ index, graph }: { index: SpecIndex; graph: Neighbourhood 
     else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') move(current < 0 ? 0 : -1);
     else if (e.key === 'Enter' && active.current) {
       e.preventDefault();
-      refocus.current = true;
-      recentre(active.current);
+      activate(active.current, true);
     }
   };
 
@@ -432,7 +547,7 @@ function GraphCanvas({ index, graph }: { index: SpecIndex; graph: Neighbourhood 
         nodesConnectable={false}
         elementsSelectable={false}
         edgesFocusable={false}
-        onNodeClick={(_, n) => recentre(n.id)}
+        onNodeClick={(_, n) => activate(n.id, false)}
         minZoom={0.1}
         proOptions={{ hideAttribution: true }}
       >
@@ -443,20 +558,27 @@ function GraphCanvas({ index, graph }: { index: SpecIndex; graph: Neighbourhood 
   );
 }
 
-function SidePanel({ index, graph, tracing, recordId }: { index: SpecIndex; graph: Neighbourhood; tracing: boolean; recordId: string }) {
+interface PanelLinks {
+  onNavigate: (id: string) => void;
+  hrefFor: (id: string) => string;
+}
+
+function SidePanel({ index, graph, tracing, recordId, onNavigate, hrefFor }: { index: SpecIndex; graph: Neighbourhood; tracing: boolean; recordId: string } & PanelLinks) {
   const record = index.byId.get(recordId)!;
   const problems = [...(index.problemsFor.get(recordId) ?? [])].sort(problemOrder);
   const gaps = gapsFor(index, recordId);
   const text = summary(record.body);
   const near = graph.nodes.filter((n) => n.distance === 1);
-  const relationTo = (id: string) =>
-    graph.edges
-      .filter((e) => (e.source === recordId && e.target === id) || (e.target === recordId && e.source === id))
-      .map((e) => {
-        if (e.relation === PARENT) return e.source === recordId ? 'child' : 'parent';
-        return e.source === recordId ? graphRelationLabel(e.relation) : `${graphRelationLabel(e.relation)} this`;
-      })
+  const relationTo = (id: string) => {
+    const group = parseGroupId(id);
+    if (group && !index.byId.has(id)) return group.parent === recordId ? 'child group' : 'its group';
+    if (record.parent === id) return 'parent';
+    if (index.byId.get(id)?.parent === recordId) return 'child';
+    return graph.edges
+      .filter((e) => e.relation !== PARENT && ((e.source === recordId && e.target === id) || (e.target === recordId && e.source === id)))
+      .map((e) => (e.source === recordId ? graphRelationLabel(e.relation) : `${graphRelationLabel(e.relation)} this`))
       .join(', ');
+  };
   const files = graph.nodes.filter((n) => n.kind === FILE_KIND);
   return (
     <aside className="graph-side" aria-label="Focused record">
@@ -486,7 +608,7 @@ function SidePanel({ index, graph, tracing, recordId }: { index: SpecIndex; grap
         <ul className="plain graph-near">
           {near.map((n) => (
             <li key={n.id}>
-              <Link to={graphPath(n.id)}><code>{n.id}</code> {n.title}</Link>
+              <NodeLink id={n.id} onNavigate={onNavigate} hrefFor={hrefFor}>{n.group ? <>{n.title}</> : <><code>{n.id}</code> {n.title}</>}</NodeLink>
               <small className="meta"> {relationTo(n.id)}</small>
             </li>
           ))}
@@ -503,6 +625,39 @@ function SidePanel({ index, graph, tracing, recordId }: { index: SpecIndex; grap
   );
 }
 
+/** The side panel when a group is the centre: its parent, a summary of its members' problems and gaps, and every member. */
+function GroupPanel({ index, groupId, onNavigate, hrefFor }: { index: SpecIndex; groupId: string } & PanelLinks) {
+  const { parent, kind } = parseGroupId(groupId)!;
+  const parentRecord = index.byId.get(parent)!;
+  const members = groupMembers(index, groupId);
+  const marks = groupMarks(index, groupId);
+  return (
+    <aside className="graph-side" aria-label="Focused group">
+      <p className="eyebrow">Group</p>
+      <h1>{groupLabel(index, groupId)}</h1>
+      <p className="record-id">
+        {pluralLabel(index, kind)} of <NodeLink id={parent} onNavigate={onNavigate} hrefFor={hrefFor}><code>{parent}</code> {parentRecord.title}</NodeLink>
+      </p>
+      <p><Link to={recordPath(parent)} className="graph-open">Open parent page</Link></p>
+      <h2>Problems and gaps among its members</h2>
+      {marks.errors + marks.warnings === 0 && marks.gaps.length === 0 ? <p className="hint">None.</p> : (
+        <ul className="graph-problems">
+          {marks.errors > 0 && <li className="problem error">{marks.errors} error{marks.errors > 1 ? 's' : ''}</li>}
+          {marks.warnings > 0 && <li className="problem warning">{marks.warnings} warning{marks.warnings > 1 ? 's' : ''}</li>}
+          {marks.gaps.map((g) => <li key={g} className="graph-gaps">{g === 'satisfies' ? 'Some are not satisfied.' : 'Some are not proved.'}</li>)}
+        </ul>
+      )}
+      <h2>Members <span className="section-count">{members.length}</span></h2>
+      <ul className="plain graph-near">
+        {members.map((m) => (
+          <li key={m.id}><NodeLink id={m.id} onNavigate={onNavigate} hrefFor={hrefFor}><code>{m.id}</code> {m.title}</NodeLink></li>
+        ))}
+      </ul>
+      <Legend />
+    </aside>
+  );
+}
+
 function Legend() {
   return (
     <section className="graph-legend" aria-label="Legend">
@@ -511,15 +666,16 @@ function Legend() {
         <li><span className="graph-swatch stage-define" /> Define (aggregate, rule, use case, requirement)</li>
         <li><span className="graph-swatch stage-design" /> Design (flow, view, endpoint, component, test)</li>
         <li><span className="graph-swatch stage-structural" /> Structural (product, domain, question)</li>
+        <li><span className="graph-swatch stage-group" /> Group of one kind of child, with its count (▸ folded, ▾ open)</li>
         <li><span className="graph-swatch stage-file" /> File named by a component or test</li>
-        <li><span className="graph-line rel-structure" /> parent / child (the tree)</li>
+        <li><span className="graph-line rel-structure" /> parent / child (the tree, through groups)</li>
         <li><span className="graph-line rel-trace" /> satisfies, proves, fulfills</li>
         <li><span className="graph-line rel-design" /> uses, implements, depends on</li>
         <li><span className="graph-line rel-other" /> other links</li>
-        <li><span className="graph-mark error">!</span> has errors <span className="graph-mark gap">gap</span> not satisfied or not proved</li>
+        <li><span className="graph-mark error">!</span> has errors <span className="graph-mark gap">gap</span> not satisfied or not proved (on a group: among its members)</li>
       </ul>
-      <p className="hint">Tiers run left to right: product, domain, aggregates and use cases, rules and requirements, design records, tests. A trace also runs left to right, from the rule to the files that build and test it.</p>
-      <p className="hint">Click a box, or press Enter on it, to centre the graph there. Arrow keys or Tab move between boxes.</p>
+      <p className="hint">Tiers run left to right: product, domain, aggregates and use cases, rules and requirements, design records, tests. A record with several kinds of child, or many of one kind, reaches them through a group in its own column. A trace also runs left to right, from the rule to the files that build and test it.</p>
+      <p className="hint">Click a record, or press Enter on it, to centre the graph there. Click a group, or press Enter on it, to open or close it; centre on a group from the side panel. Arrow keys or Tab move between boxes.</p>
     </section>
   );
 }

@@ -4,9 +4,10 @@ import { Link } from '../router';
 // spec pages can link to the graph without loading React Flow and ELK.
 
 export const GRAPH_ROOT = '/graph';
-export const graphPath = (id: string) => `${GRAPH_ROOT}/${encodeURIComponent(id)}`;
+/** The address of a record, or of a group (`<parent-id>/<kind>`, at /graph/<parent-id>/<kind>). */
+export const graphPath = (id: string) => `${GRAPH_ROOT}/${id.split('/').map(encodeURIComponent).join('/')}`;
 
-/** The focused record for a graph address: an ID, null for `/graph` itself, or undefined for any other path. */
+/** The focus for a graph address: a record ID or a group's `<parent-id>/<kind>`, null for `/graph` itself, or undefined for any other path. */
 export function parseGraphPath(pathname: string): string | null | undefined {
   const parts = pathname.split('/').filter(Boolean);
   if (parts[0] !== 'graph') return undefined;
