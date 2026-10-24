@@ -539,3 +539,13 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 .test-counts.unmeasured { font-style: italic; }
 .test-count { font-family: var(--mono); font-size: 0.75rem; }
 .test-count.planned { font-style: italic; }
+
+/* ---------- Brief 28: flow steps ---------- */
+.data-table.flow-steps { width: 100%; }
+.flow-steps .step-head { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.flow-steps .step-order { font: 600 0.8rem var(--mono); min-width: 1.6em; text-align: right; color: var(--muted); }
+.flow-steps .step-ids { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 2px 8px; }
+.flow-steps tr.flow-step-detail > td { background: var(--paper); padding: 6px 10px 8px 32px; }
+.flow-step-more { display: grid; gap: 6px; }
+.flow-step-more h4 { margin: 4px 0 2px; font-size: 0.8rem; color: var(--muted); font-weight: 600; }
+/* ---------- End of brief 28 ---------- */
