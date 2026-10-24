@@ -74,3 +74,32 @@ export function parseRecordFile(text: string): ParseResult {
     },
   };
 }
+
+// An ID-shaped token: the ID format from FORMAT.md section 2, as a whole word. TL-LEND-DR05 is found in
+// "TL-LEND-DR05." and "[TL-LEND-DR05](x.md)", but nothing is found in "TL-LEND-DR05a" or "tl-LEND-DR05".
+const ID_TOKEN = /(?<![A-Za-z0-9_-])[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*(?![A-Za-z0-9_]|-[A-Za-z0-9])/g;
+const FENCE = /^ {0,3}(`{3,}|~{3,})/;
+
+// Blanks out fenced code blocks and inline code spans, so that IDs in code are not read as citations.
+function withoutCode(body: string): string {
+  const kept: string[] = [];
+  let fence: string | null = null;
+  for (const line of body.split(/\r?\n/)) {
+    const open = FENCE.exec(line);
+    if (fence === null) {
+      if (open) fence = open[1];
+      else kept.push(line);
+      continue;
+    }
+    // A fence closes on a line holding only a run of the same character, at least as long as the opening one.
+    if (open && open[1][0] === fence[0] && open[1].length >= fence.length && line.trim() === open[1]) fence = null;
+    kept.push('');
+  }
+  // A code span opens with a run of backticks and closes with the next run of the same length.
+  return kept.join('\n').replace(/(?<!`)(`+)(?!`)[\s\S]*?(?<!`)\1(?!`)/g, ' ');
+}
+
+/** The ID-shaped tokens a record body has outside code spans and fenced code blocks, in order, repeats included. */
+export function idTokensInProse(body: string): string[] {
+  return withoutCode(body).match(ID_TOKEN) ?? [];
+}
