@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { domainPath, kindLabel, productPath, relationLabel, type SpecIndex, type SpecLink as Link, type SpecRecord } from './data';
 import { RecordMarkdown } from './mentions';
 import { PatternRuleSections, PatternSections } from './PatternParts';
+import { FlowSteps } from './FlowSteps';
 import { LongList } from '../components/LongList';
 import { NavigateContext, PageHeader, ProblemBadge, ProblemList, RecordLink, RecordTree, Section, SpecLink, TestStateTag, idText, testState } from './parts';
 
@@ -146,6 +147,7 @@ function RecordBody({ index, record, actions, header, side }: { index: SpecIndex
           {record.kind === 'interaction_requirement' && <Fulfills index={index} record={record} />}
           {record.kind === 'pattern' && <PatternSections index={index} pattern={record} />}
           {record.kind === 'pattern_rule' && <PatternRuleSections index={index} rule={record} />}
+          {record.kind === 'flow' && <FlowSteps index={index} flow={record} />}
           {side ? (
             <Section title="Problems" count={problems.length}>
               <ProblemList index={index} problems={problems} showRecord={false} />
