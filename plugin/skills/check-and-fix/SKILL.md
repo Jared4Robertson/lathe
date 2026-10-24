@@ -33,7 +33,8 @@ An error means the specs are broken. Do not leave one behind.
 | `bad-test-state` | Set `state` to `automated`, `manual` or `planned` (or remove it for automated). |
 | `test-run-by-missing` | An automated test needs `run_by`. Add the file, or set `state: planned` if the test is not written yet. |
 | `test-file-missing` | Fix `run_by`. For a manual or planned test whose file does not exist yet, remove `run_by`. |
-| `test-file-missing-id` | Put the test's ID, or the ID of a record it `proves`, in the test's name in that file. |
+| `test-file-missing-id` | If the test has a `key`, put that exact text in the file (or fix the key). Otherwise the test proves nothing: put its ID in the test's name, and add the `proves` links it should have. |
+| `proof-not-in-file` | The file names neither the test's ID nor the proved ID in the message. Put the test's ID in the test's name, or name every ID it proves. If the test does not really prove that record, remove the link. |
 | `meta-duplicate-kind` | One meta-model folder defines a kind twice. Merge the two rows. (A row in `metaExtensions` for a default kind is allowed: it widens that kind.) |
 | `meta-duplicate-relation` | Remove the repeated relation row. |
 | `meta-unknown-parent-kind`, `meta-unknown-relation-kind` | Define the kind it names, or fix the name, in the meta-model CSV. |
@@ -69,3 +70,27 @@ Say, in a few lines:
 2. Each error you fixed and how.
 3. The coverage lines for each domain you touched (designed, built, proved and planned for each obligation kind, as `lathe check` prints them), and the warnings your change added or cleared.
 4. Any planned tests your change added, and why they are planned.
+
+## Structural warnings
+
+These warnings say where two stages do not join up yet. Fix the link, not the check:
+
+| Warning | Fix |
+| --- | --- |
+| `rule-not-applied` | Add the rule to `applies` on each use case that relies on it. If no use case does, ask whether the rule is still needed. |
+| `use-case-without-flow` | Add the use case to `carries_out` on the flow that walks through it, or write that flow (see `design-the-domain`). Only reported once the domain has a flow. |
+| `interaction-requirement-fulfills-nothing` | Add `fulfills` with the use case requirement or domain rule it carries out at its view, endpoint or flow. |
+| `test-type-mismatch` | A `domain_rule` test proves domain rules and an `acceptance` test proves requirements. Correct the `test_type`, or the `proves` links if they name the wrong record. |
+
+One mistake gives one error: a duplicated ID is reported as `duplicate-id`, without an error for each link to it, so fix the duplicate first and re-run the check. A relation rule restated in a product's `metaExtensions` `relations.csv` is the same rule, so only a rule listed twice in one file is `meta-duplicate-relation`.
+
+## Pattern rules and citations
+
+| Problem | Fix |
+| --- | --- |
+| `pattern-rule-setting-unknown` (error) | The rule's `setting` must be one of its pattern's `settings`. Fix the name, or add the setting to the pattern. |
+| `unsatisfied` / `unproved` naming a pattern rule "in <domain>" | That domain follows the pattern, so a component in it must `satisfies` the rule and a test in it must `proves` it. Proof from another domain does not count. |
+| `pattern-not-followed` | No use case follows the pattern, so its rules are owed nowhere. Link the use cases that behave this way with `follows`, or remove the pattern. |
+| `obligation-outside-domain` | The obligation sits above every domain, so no domain owes it. Move it under a domain (or under a pattern, for a shared rule). |
+| `unknown-id-in-prose` | The body cites an ID that is not a record: correct it to the current ID, or remove the citation. |
+

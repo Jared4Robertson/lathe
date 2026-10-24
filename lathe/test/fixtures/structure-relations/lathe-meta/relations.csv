@@ -1,0 +1,5 @@
+relation,source_kind,target_kind,role,description
+proves,test,domain_rule,,"The test checks the domain rule in code."
+fulfills,flow,requirement,design,
+owns,component,aggregate,,"The component owns the aggregate."
+owns,component,aggregate,,"The component stores the aggregate."

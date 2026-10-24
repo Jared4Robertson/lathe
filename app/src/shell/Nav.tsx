@@ -11,7 +11,7 @@ import { isBool, usePref } from './prefs';
 import { QuickFind } from './QuickFind';
 
 // The side navigation: a quick find at the top, then Diagrams, Specs and tools, each a section
-// that folds on its own, and a footer with the record format and where the specs come from. It
+// that folds on its own (the graph is not an item here: every page opens it in its Graph view), and a footer with the record format and where the specs come from. It
 // collapses to a rail of icons (remembered), and on a narrow screen it is a drawer.
 
 export interface NavProps {
@@ -21,8 +21,6 @@ export interface NavProps {
   diagramError: string | null;
   /** The form or button for a new diagram. */
   newDiagram: ReactNode;
-  /** Where the Graph item goes: this page in the Graph view, or the first product's. */
-  graphHref: string;
   collapsed: boolean;
   onToggleCollapsed: () => void;
   /** On a narrow screen: shown as a drawer. */
@@ -48,7 +46,7 @@ function sectionOf(path: string): SectionId | null {
 }
 
 export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
-  const { spec, path, diagrams, diagramError, newDiagram, graphHref, collapsed, onToggleCollapsed, drawer, drawerOpen, onCloseDrawer, findRef } = props;
+  const { spec, path, diagrams, diagramError, newDiagram, collapsed, onToggleCollapsed, drawer, drawerOpen, onCloseDrawer, findRef } = props;
   const { index } = spec;
   const [sections, setSections] = usePref<Record<string, boolean>>(SECTIONS_KEY, {}, isOpenMap);
   const [products, setProducts] = usePref<Record<string, boolean>>(PRODUCTS_KEY, {}, isOpenMap);
@@ -112,9 +110,6 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
           <Link to={checksPath} className="rail-item" aria-label={checksLabel} title={checksLabel} aria-current={here(path, checksPath)}>
             <Icon name="checks" />
             {errors > 0 ? <span className="rail-dot error" /> : warnings > 0 ? <span className="rail-dot warning" /> : null}
-          </Link>
-          <Link to={graphHref} className="rail-item" aria-label="Graph" title="Graph: this page in the graph">
-            <Icon name="graph" />
           </Link>
           <Link to={formatPath} className="rail-item" aria-label="Record format" title="Record format" aria-current={here(path, formatPath)}>
             <Icon name="format" />
@@ -212,11 +207,6 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
             <li>
               <Link to={checksPath} aria-current={here(path, checksPath)} aria-label={checksLabel}>
                 <Icon name="checks" size={16} /> <span className="nav-label">Checks</span> {checkBadges}
-              </Link>
-            </li>
-            <li>
-              <Link to={graphHref} title="This page in the graph">
-                <Icon name="graph" size={16} /> <span className="nav-label">Graph</span>
               </Link>
             </li>
           </ul>

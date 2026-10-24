@@ -6,6 +6,7 @@ parent: LA-BRW
 links:
   uses: [LA-BRW-V01, LA-BRW-V02, LA-BRW-V03, LA-BRW-V04, LA-BRW-E01]
   fulfills: [LA-BRW-UC03-R02]
+  carries_out: [LA-BRW-UC01, LA-BRW-UC02, LA-BRW-UC03]
 ---
 1. Jared picks a product in the Specs menu and sees its domain cards.
 2. He opens a domain, searches for a requirement and opens it.

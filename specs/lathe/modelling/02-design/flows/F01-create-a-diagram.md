@@ -6,6 +6,7 @@ parent: LA-MOD
 links:
   uses: [LA-MOD-V02, LA-MOD-E02, LA-MOD-E01, LA-MOD-V01]
   fulfills: [LA-MOD-UC01-R01]
+  carries_out: [LA-MOD-UC01]
 ---
 1. Jared opens the New diagram form and submits a title.
 2. The form calls `POST /api/diagrams`.

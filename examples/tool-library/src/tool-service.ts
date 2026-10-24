@@ -20,6 +20,7 @@ export class ToolService {
   /** TL-LEND-UC02: add a tool to the catalog. */
   add(input: AddToolInput): CatalogEntry {
     // TL-LEND-UC02-R01: a tool needs a name.
+    // TL-PAT-LIBRARIAN-ACTION-R01: missing input is refused, naming it, before anything is saved.
     const name = typeof input.name === 'string' ? input.name.trim() : '';
     if (!name) throw new LendingError(400, 'invalid_request', 'A tool needs a name.');
     const description = typeof input.description === 'string' ? input.description.trim() : '';
@@ -42,6 +43,7 @@ export class ToolService {
    * TL-LEND-UC05-R03: an active loan on the tool is left as it is.
    */
   reportDamage(id: number, note: unknown): CatalogEntry {
+    // TL-PAT-LIBRARIAN-ACTION-R01: a missing note is refused before anything is saved.
     const text = typeof note === 'string' ? note.trim() : '';
     if (!text) throw new LendingError(400, 'invalid_request', 'Describe the damage in a note.');
     this.require(id);

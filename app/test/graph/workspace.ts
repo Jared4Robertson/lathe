@@ -62,6 +62,7 @@ export function testWorkspace(): Workspace {
     product: 'P',
     domain: kind === 'product' ? null : 'P-D',
     path: `specs/${id}.md`,
+    mentions: [],
   }));
   const links: SpecLink[] = LINKS.map(([source, relation, target]) => ({ source, relation, target }));
   return { kinds: sample.kinds, relations: sample.relations, records, links, problems: PROBLEMS, coverage: COVERAGE };
