@@ -1,0 +1,18 @@
+{
+  "description": "Run lathe check after a spec record, lathe.config.json or the meta-model is edited, and report any errors to the agent.",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": ["${CLAUDE_PLUGIN_ROOT}/scripts/check-after-edit.mjs"],
+            "timeout": 60
+          }
+        ]
+      }
+    ]
+  }
+}
