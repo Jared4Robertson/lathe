@@ -83,8 +83,10 @@ describe('extensions widen default kinds', () => {
     expect(errorsAbout(widened, 'WX-D-DR02').map((p) => p.check)).toEqual(['missing-required-field']);
     expect(widened.kinds.filter((k) => k.kind === 'domain_rule')).toHaveLength(1);
     expect(recordsOf(widened, 'meta-duplicate-kind')).toEqual([]);
-    // Without the extension the same kind has only its default parent.
-    expect(kind(plain, 'domain_rule')?.parent_kinds).toEqual(['aggregate']);
+    // Without the extension the same kind has only its default parents (a domain is one of them since pass 5),
+    // and no required field: the extension's widening is what adds 'source'.
+    expect(kind(plain, 'domain_rule')?.parent_kinds).toEqual(['aggregate', 'domain']);
+    expect(kind(plain, 'domain_rule')?.required_fields).toEqual([]);
   });
 
   it("LA-CHK-T57 An extension's non-empty values replace the default's and empty ones keep it", () => {
