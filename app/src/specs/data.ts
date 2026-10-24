@@ -104,12 +104,14 @@ export const productPath = (id: string) => `/specs/${encodeURIComponent(id)}`;
 export const domainPath = (product: string, domain: string) => `/specs/${encodeURIComponent(product)}/${encodeURIComponent(domain)}`;
 export const recordPath = (id: string) => `/records/${encodeURIComponent(id)}`;
 export const checksPath = '/checks';
+export const formatPath = '/format';
 
 export type SpecRoute =
   | { page: 'product'; product: string }
   | { page: 'domain'; product: string; domain: string; tab: 'list' | 'graph' }
   | { page: 'record'; id: string }
   | { page: 'checks' }
+  | { page: 'format' }
   | { page: 'specs' }
   | { page: 'missing' };
 
@@ -117,6 +119,7 @@ export type SpecRoute =
 export function parseSpecRoute(pathname: string): SpecRoute | null {
   const parts = pathname.split('/').filter(Boolean).map(decodeURIComponent);
   if (parts[0] === 'checks') return parts.length === 1 ? { page: 'checks' } : { page: 'missing' };
+  if (parts[0] === 'format') return parts.length === 1 ? { page: 'format' } : { page: 'missing' };
   if (parts[0] === 'records') return parts.length === 2 ? { page: 'record', id: parts[1] } : { page: 'missing' };
   if (parts[0] !== 'specs') return null;
   if (parts.length === 1) return { page: 'specs' };

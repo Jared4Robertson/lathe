@@ -57,7 +57,7 @@ export function loadDiagram(diagramsDir: string, slug: string): Promise<DiagramM
 const csvField = (value: string) => (/[",\n]/.test(value) ? `"${value.replaceAll('"', '""')}"` : value);
 
 export function slugify(title: string) {
-  return title.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60);
+  return title.toLowerCase().normalize('NFKD').replace(/\p{M}+/gu, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60);
 }
 
 /** Creates a diagram folder with empty terms and links files, and registers it. */

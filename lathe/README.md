@@ -40,7 +40,7 @@ The engine turns the product's spec records into a checked database. It:
 2. Reads every `*.md` file in the configured specs folder except `README.md`, and parses its YAML header and body (see [FORMAT.md](FORMAT.md)). A file it cannot parse becomes a `parse-error` problem, and loading carries on.
 3. Works out each record's product and domain by walking its `parent` chain. A loop in that chain is a `parent-cycle` error.
 4. Checks each test's `run_by` file and each component's `file`: does it exist, and does a test's file mention the test's ID.
-5. Loads all of this into an in-memory DuckDB database, runs every check in `lathe/checks/`, and computes coverage per domain.
+5. Loads all of this into an in-memory DuckDB database, runs every check in `lathe/checks/` (including checks that the meta-model itself is consistent), and computes coverage per domain: how many requirements and domain rules are designed (a component satisfies them), built (that component's file exists) and proved (a test proves them).
 
 It returns a `Workspace` (see [src/types.ts](src/types.ts)): kinds, relations, records, links, problems and coverage. Nothing is written to disk. The files are the source of truth, and the database is rebuilt on every load.
 

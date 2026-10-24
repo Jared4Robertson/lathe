@@ -22,6 +22,7 @@ import { onLatheEvent } from './events';
 import { GraphMenu, parseGraphPath } from './graph/route';
 
 const GraphPage = lazy(() => import('./graph/GraphPage'));
+import { LatheLogo } from './LatheLogo';
 
 type ModelNode = Node<ModelNodeData>;
 type ModelEdge = Edge<ModelEdgeData>;
@@ -130,7 +131,7 @@ export default function App() {
   return (
     <div className="app">
       <nav className="menu" aria-label="Main">
-        <p className="brand">Lathe</p>
+        <p className="brand"><LatheLogo /> Lathe</p>
         <p className="eyebrow">Diagrams</p>
         <ul>
           {diagrams.map((d) => (
