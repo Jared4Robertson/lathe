@@ -5,6 +5,6 @@ title: Change the meta-model
 parent: LA-CHK
 actor: Jared
 links:
-  applies: [LA-CHK-DR01, LA-CHK-DR02]
+  applies: [LA-CHK-DR01, LA-CHK-DR02, LA-CHK-DR10]
 ---
-Jared adds a kind of record or allows a new relation, for example a `fitness` kind, by editing `lathe/meta/*.csv`, and the change is reviewed in git like any other.
+Jared adds a kind of record or allows a new relation, for example a `fitness` kind, by editing `lathe/meta/*.csv`, and the change is reviewed in git like any other. The app does not edit the meta-model. The next `lathe check` shows both records the change breaks and any mistake in the meta-model itself.
