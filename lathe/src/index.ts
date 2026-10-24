@@ -57,10 +57,12 @@ function resolveInside(root: string, file: string): string | null {
   return rel.startsWith('..') || path.isAbsolute(rel) ? null : resolved;
 }
 
-async function isFile(file: string | null): Promise<boolean> {
+// A test's run_by must be a file; a component's file may also be a folder of files.
+async function exists(file: string | null, allowFolder: boolean): Promise<boolean> {
   if (!file) return false;
   try {
-    return (await stat(file)).isFile();
+    const info = await stat(file);
+    return info.isFile() || (allowFolder && info.isDirectory());
   } catch {
     return false;
   }
@@ -100,10 +102,10 @@ async function gatherFileFacts(root: string, records: LoadedRecord[]): Promise<F
     const file = field ? r.fields[field]?.trim() : undefined;
     if (!file) continue;
     const resolved = resolveInside(root, file);
-    const exists = await isFile(resolved);
+    const found = await exists(resolved, r.kind === 'component');
     let containsId: boolean | null = null;
-    if (r.kind === 'test') containsId = exists && r.id !== '' && (await readFile(resolved!, 'utf8')).includes(r.id);
-    facts.push({ path: r.path, record: r.id, kind: r.kind, file, file_exists: exists, contains_id: containsId });
+    if (r.kind === 'test') containsId = found && r.id !== '' && (await readFile(resolved!, 'utf8')).includes(r.id);
+    facts.push({ path: r.path, record: r.id, kind: r.kind, file, file_exists: found, contains_id: containsId });
   }
   return facts;
 }
