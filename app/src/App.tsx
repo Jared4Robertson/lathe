@@ -15,6 +15,9 @@ import {
 } from '@xyflow/react';
 import { layoutModel, type ModelEdgeData, type ModelNodeData } from './layout';
 import type { DiagramSummary, Model } from './types';
+import { Link, navigate, usePath } from './router';
+import { parseSpecRoute, useSpec } from './specs/data';
+import { SpecMenu, SpecView } from './specs/SpecPages';
 
 type ModelNode = Node<ModelNodeData>;
 type ModelEdge = Edge<ModelEdgeData>;
@@ -85,11 +88,14 @@ const nodeTypes = { context: ContextNode, aggregate: AggregateNode, leaf: LeafNo
 const edgeTypes = { model: ModelEdgeView };
 
 const diagramPath = (slug: string) => `/diagrams/${slug}`;
-const slugFromPath = () => window.location.pathname.match(/^\/diagrams\/([a-z0-9-]+)/)?.[1] ?? null;
+const slugFromPath = (path: string) => path.match(/^\/diagrams\/([a-z0-9-]+)/)?.[1] ?? null;
 
 export default function App() {
+  const path = usePath();
+  const specRoute = parseSpecRoute(path);
+  const slug = specRoute ? null : slugFromPath(path);
+  const spec = useSpec();
   const [diagrams, setDiagrams] = useState<DiagramSummary[]>([]);
-  const [slug, setSlug] = useState<string | null>(slugFromPath);
   const [listError, setListError] = useState<string | null>(null);
 
   const loadDiagrams = useCallback(async () => {
@@ -107,55 +113,37 @@ export default function App() {
   useEffect(() => {
     loadDiagrams();
     import.meta.hot?.on('model:changed', loadDiagrams);
-    const onPop = () => setSlug(slugFromPath());
-    window.addEventListener('popstate', onPop);
-    return () => {
-      import.meta.hot?.off('model:changed', loadDiagrams);
-      window.removeEventListener('popstate', onPop);
-    };
+    return () => import.meta.hot?.off('model:changed', loadDiagrams);
   }, [loadDiagrams]);
 
-  const open = useCallback((next: string) => {
-    if (window.location.pathname !== diagramPath(next)) window.history.pushState(null, '', diagramPath(next));
-    setSlug(next);
-  }, []);
-
-  // With no diagram in the address, open the first one.
+  // With neither a diagram nor a spec page in the address, open the first diagram.
   useEffect(() => {
-    if (!slug && diagrams.length > 0) {
-      window.history.replaceState(null, '', diagramPath(diagrams[0].slug));
-      setSlug(diagrams[0].slug);
-    }
-  }, [slug, diagrams]);
+    if (!specRoute && !slug && diagrams.length > 0) navigate(diagramPath(diagrams[0].slug), true);
+  }, [specRoute, slug, diagrams]);
 
   const current = diagrams.find((d) => d.slug === slug);
 
   return (
     <div className="app">
-      <nav className="menu" aria-label="Diagrams">
+      <nav className="menu" aria-label="Main">
         <p className="brand">Lathe</p>
         <p className="eyebrow">Diagrams</p>
         <ul>
           {diagrams.map((d) => (
             <li key={d.slug}>
-              <a
-                href={diagramPath(d.slug)}
-                aria-current={d.slug === slug ? 'page' : undefined}
-                onClick={(e) => {
-                  if (e.metaKey || e.ctrlKey || e.shiftKey) return;
-                  e.preventDefault();
-                  open(d.slug);
-                }}
-              >
+              <Link to={diagramPath(d.slug)} aria-current={d.slug === slug ? 'page' : undefined}>
                 {d.title}
-              </a>
+              </Link>
             </li>
           ))}
         </ul>
         {listError && <p className="error">{listError}</p>}
-        <NewDiagram onCreated={async (created) => { await loadDiagrams(); open(created.slug); }} />
+        <NewDiagram onCreated={async (created) => { await loadDiagrams(); navigate(diagramPath(created.slug)); }} />
+        <SpecMenu spec={spec} path={path} />
       </nav>
-      {current ? (
+      {specRoute ? (
+        <SpecView spec={spec} route={specRoute} />
+      ) : current ? (
         <DiagramView key={current.slug} diagram={current} />
       ) : (
         <main className="placeholder">
