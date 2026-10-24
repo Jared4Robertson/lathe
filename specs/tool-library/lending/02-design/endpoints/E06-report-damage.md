@@ -8,12 +8,8 @@ route: "/tools/{toolId}/damage"
 links:
   fulfills: [TL-LEND-UC05-R01, TL-LEND-UC05-R03]
 ---
-Request: `{ "note": string }`.
+Request: `{ "note": string }`. Responds 200 with the catalog entry, or 400 / 404 / 413 with an error.
 
-| Status | When | Body |
-| --- | --- | --- |
-| 200 | Marked as needing repair. Any active loan is left as it is, and a later `good` return does not clear the damage. | The catalog entry. |
-| 400 `invalid_request` | Note blank. | Error. |
-| 404 `tool_not_found` | No such tool. | Error. |
+Each rule for its body and responses is one of its interaction requirements.
 
 Errors are JSON: `{ "error": "<code>", "message": "<sentence>" }`.

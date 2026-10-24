@@ -4,4 +4,4 @@ kind: requirement
 title: A late return is flagged
 parent: TL-LEND-UC04
 ---
-The response to a return SHOULD say whether the return was late, that is, on a day after the due date in the library's time zone. A return at any time on the due date is not late.
+The librarian SHOULD be told whether the return was late, that is, on a day after the due date in the library's time zone. A return at any time on the due date is not late.
