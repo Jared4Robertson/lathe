@@ -14,7 +14,7 @@ import {
   type NodeProps,
 } from '@xyflow/react';
 import { layoutModel, type ModelEdgeData, type ModelNodeData } from './layout';
-import type { Model } from './types';
+import type { DiagramSummary, Model } from './types';
 
 type ModelNode = Node<ModelNodeData>;
 type ModelEdge = Edge<ModelEdgeData>;
@@ -69,12 +69,14 @@ function ModelEdgeView({ id, data, markerEnd }: EdgeProps<ModelEdge>) {
   const y = (points[best].y + points[best + 1].y) / 2;
   const link = data!.link;
   const label = `${RELATION_LABELS[link.relation] ?? link.relation}${data!.uncertain ? ' ?' : ''}`;
+  // A tree reads without "includes" on every branch.
+  const showLabel = link.relation !== 'includes';
   return (
     <>
       <BaseEdge id={id} path={path} markerEnd={markerEnd} className={data!.uncertain ? 'uncertain' : ''} />
-      <EdgeLabelRenderer>
+      {showLabel && <EdgeLabelRenderer>
         <div className="edge-label" style={{ transform: `translate(-50%, -50%) translate(${x}px, ${y}px)` }}>{label}</div>
-      </EdgeLabelRenderer>
+      </EdgeLabelRenderer>}
     </>
   );
 }
@@ -82,7 +84,134 @@ function ModelEdgeView({ id, data, markerEnd }: EdgeProps<ModelEdge>) {
 const nodeTypes = { context: ContextNode, aggregate: AggregateNode, leaf: LeafNode };
 const edgeTypes = { model: ModelEdgeView };
 
+const diagramPath = (slug: string) => `/diagrams/${slug}`;
+const slugFromPath = () => window.location.pathname.match(/^\/diagrams\/([a-z0-9-]+)/)?.[1] ?? null;
+
 export default function App() {
+  const [diagrams, setDiagrams] = useState<DiagramSummary[]>([]);
+  const [slug, setSlug] = useState<string | null>(slugFromPath);
+  const [listError, setListError] = useState<string | null>(null);
+
+  const loadDiagrams = useCallback(async () => {
+    try {
+      const response = await fetch('/api/diagrams');
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error ?? response.statusText);
+      setDiagrams(body);
+      setListError(null);
+    } catch (e) {
+      setListError(e instanceof Error ? e.message : String(e));
+    }
+  }, []);
+
+  useEffect(() => {
+    loadDiagrams();
+    import.meta.hot?.on('model:changed', loadDiagrams);
+    const onPop = () => setSlug(slugFromPath());
+    window.addEventListener('popstate', onPop);
+    return () => {
+      import.meta.hot?.off('model:changed', loadDiagrams);
+      window.removeEventListener('popstate', onPop);
+    };
+  }, [loadDiagrams]);
+
+  const open = useCallback((next: string) => {
+    if (window.location.pathname !== diagramPath(next)) window.history.pushState(null, '', diagramPath(next));
+    setSlug(next);
+  }, []);
+
+  // With no diagram in the address, open the first one.
+  useEffect(() => {
+    if (!slug && diagrams.length > 0) {
+      window.history.replaceState(null, '', diagramPath(diagrams[0].slug));
+      setSlug(diagrams[0].slug);
+    }
+  }, [slug, diagrams]);
+
+  const current = diagrams.find((d) => d.slug === slug);
+
+  return (
+    <div className="app">
+      <nav className="menu" aria-label="Diagrams">
+        <p className="brand">Lathe</p>
+        <p className="eyebrow">Diagrams</p>
+        <ul>
+          {diagrams.map((d) => (
+            <li key={d.slug}>
+              <a
+                href={diagramPath(d.slug)}
+                aria-current={d.slug === slug ? 'page' : undefined}
+                onClick={(e) => {
+                  if (e.metaKey || e.ctrlKey || e.shiftKey) return;
+                  e.preventDefault();
+                  open(d.slug);
+                }}
+              >
+                {d.title}
+              </a>
+            </li>
+          ))}
+        </ul>
+        {listError && <p className="error">{listError}</p>}
+        <NewDiagram onCreated={async (created) => { await loadDiagrams(); open(created.slug); }} />
+      </nav>
+      {current ? (
+        <DiagramView key={current.slug} diagram={current} />
+      ) : (
+        <main className="placeholder">
+          <p>{diagrams.length > 0 && slug ? `There's no diagram called "${slug}".` : 'Loading diagrams…'}</p>
+        </main>
+      )}
+    </div>
+  );
+}
+
+function NewDiagram({ onCreated }: { onCreated: (d: DiagramSummary) => void }) {
+  const [open, setOpen] = useState(false);
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  if (!open) return <button className="new-diagram" onClick={() => setOpen(true)}>+ New diagram</button>;
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim()) { setError('Enter a title first.'); return; }
+    setSaving(true);
+    try {
+      const response = await fetch('/api/diagrams', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ title, description }),
+      });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error ?? response.statusText);
+      setOpen(false); setTitle(''); setDescription(''); setError(null);
+      onCreated(body);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <form className="new-diagram-form" onSubmit={submit}>
+      <label htmlFor="new-title">Title</label>
+      <input id="new-title" value={title} autoFocus onChange={(e) => { setTitle(e.target.value); setError(null); }} placeholder="Making software" />
+      <label htmlFor="new-description">Description <span>(optional)</span></label>
+      <textarea id="new-description" rows={2} value={description} onChange={(e) => setDescription(e.target.value)} />
+      {error && <p className="error">{error}</p>}
+      <div className="form-actions">
+        <button type="submit" disabled={saving}>{saving ? 'Creating…' : 'Create diagram'}</button>
+        <button type="button" className="secondary" onClick={() => { setOpen(false); setError(null); }}>Cancel</button>
+      </div>
+    </form>
+  );
+}
+
+function DiagramView({ diagram }: { diagram: DiagramSummary }) {
   const [model, setModel] = useState<Model | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [graph, setGraph] = useState<{ nodes: ModelNode[]; edges: ModelEdge[] }>({ nodes: [], edges: [] });
@@ -90,7 +219,7 @@ export default function App() {
 
   const load = useCallback(async () => {
     try {
-      const response = await fetch('/api/model');
+      const response = await fetch(`/api/diagrams/${diagram.slug}`);
       const body = await response.json();
       if (!response.ok) throw new Error(body.error ?? response.statusText);
       setModel(body);
@@ -99,7 +228,7 @@ export default function App() {
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
-  }, []);
+  }, [diagram.slug]);
 
   useEffect(() => {
     load();
@@ -121,13 +250,15 @@ export default function App() {
 
   const term = model?.terms.find((t) => t.name === selected);
   const links = model?.links.filter((l) => l.source === selected || l.target === selected) ?? [];
+  const empty = model !== null && model.terms.length === 0;
 
   return (
-    <div className="app">
+    <main className="diagram">
       <header>
         <div>
-          <p className="eyebrow">Domain model · live from model/*.csv via DuckDB</p>
-          <h1>Lathe</h1>
+          <p className="eyebrow">Diagram · model/{diagram.slug}/*.csv via DuckDB</p>
+          <h1>{diagram.title}</h1>
+          {diagram.description && <p className="description">{diagram.description}</p>}
         </div>
         {model && (
           <p className={`checks ${model.checks.ok ? 'ok' : 'failed'}`} title={model.checks.message}>
@@ -135,25 +266,32 @@ export default function App() {
           </p>
         )}
       </header>
-      {error && <p className="error">Couldn't load the model: {error}</p>}
+      {error && <p className="error">Couldn't load the diagram: {error}</p>}
       {model && !model.checks.ok && <p className="error">{model.checks.message}</p>}
       <div className="workspace">
         <div className="canvas">
-          {graph.nodes.length > 0 && <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            nodeTypes={nodeTypes}
-            edgeTypes={edgeTypes}
-            nodesDraggable={false}
-            nodesConnectable={false}
-            onNodeClick={(_, n) => n.data.term && setSelected(n.data.term === selected ? null : n.data.term)}
-            onPaneClick={() => setSelected(null)}
-            fitView
-            minZoom={0.2}
-          >
-            <Background gap={24} size={1} />
-            <Controls showInteractive={false} />
-          </ReactFlow>}
+          {empty ? (
+            <div className="empty">
+              <h2>This diagram is empty</h2>
+              <p>Add terms to <code>model/{diagram.slug}/terms.csv</code> and links to <code>model/{diagram.slug}/links.csv</code>. The diagram redraws as soon as you save.</p>
+            </div>
+          ) : graph.nodes.length > 0 && (
+            <ReactFlow
+              nodes={nodes}
+              edges={edges}
+              nodeTypes={nodeTypes}
+              edgeTypes={edgeTypes}
+              nodesDraggable={false}
+              nodesConnectable={false}
+              onNodeClick={(_, n) => n.data.term && setSelected(n.data.term === selected ? null : n.data.term)}
+              onPaneClick={() => setSelected(null)}
+              fitView
+              minZoom={0.2}
+            >
+              <Background gap={24} size={1} />
+              <Controls showInteractive={false} />
+            </ReactFlow>
+          )}
         </div>
         <aside>
           {term ? (
@@ -176,11 +314,11 @@ export default function App() {
               <h2>Select a term</h2>
               <p>Click any box to see its definition and links, and to highlight what it connects to.</p>
               <p className="legend"><span className="swatch agg" /> aggregate <span className="swatch evt" /> domain event <span className="dash" /> open or unclear ("?")</p>
-              <p className="hint">Edit model/terms.csv or model/links.csv and this view reloads.</p>
+              <p className="hint">Edit this diagram's CSV files and the view reloads.</p>
             </>
           )}
         </aside>
       </div>
-    </div>
+    </main>
   );
 }

@@ -1,7 +1,7 @@
 source,relation,target,cardinality,status,note
 Person,contains,Experience,one to many,decided,
 Person,contains,Value,one to many,decided,
-Person,contains,Purpose,one to many,decided,The person's goals
+Person,contains,Goal,one to many,decided,
 Tool,contains,Purpose,one to one,decided,What the tool is for; set by the person it serves
 Tool,contains,Condition,one to one,decided,
 Tool,contains,Fitness,one to one,open,One Fitness per person if a tool serves many people

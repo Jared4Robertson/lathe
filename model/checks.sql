@@ -1,9 +1,9 @@
--- Consistency checks for the domain model. Run from the repo root:
---   duckdb < model/checks.sql
+-- Consistency checks for one diagram. Run from that diagram's folder, for example:
+--   cd model/people-and-tools && duckdb < ../checks.sql
 -- A clean run prints "All checks passed". Otherwise it stops with an error listing every problem.
 
-CREATE VIEW terms AS SELECT * FROM read_csv('model/terms.csv', header = true, all_varchar = true);
-CREATE VIEW links AS SELECT * FROM read_csv('model/links.csv', header = true, all_varchar = true);
+CREATE VIEW terms AS SELECT * FROM read_csv('terms.csv', header = true, all_varchar = true);
+CREATE VIEW links AS SELECT * FROM read_csv('links.csv', header = true, all_varchar = true);
 CREATE VIEW link_names AS SELECT *, source || ' ' || relation || ' ' || target AS label FROM links;
 
 CREATE VIEW problems AS
@@ -12,12 +12,12 @@ SELECT 'Duplicate term' AS problem, name AS item FROM terms GROUP BY name HAVING
 UNION ALL
 -- Kinds, contexts, relations and statuses come from fixed lists.
 SELECT 'Unknown kind, context or status', name FROM terms
-WHERE kind NOT IN ('aggregate', 'entity', 'value_object', 'domain_event', 'term')
-   OR context NOT IN ('people_and_tools', 'making_software')
+WHERE kind NOT IN ('aggregate', 'entity', 'value_object', 'domain_event', 'term', 'topic')
+   OR context NOT IN ('people_and_tools', 'making_software', 'sdlc')
    OR status NOT IN ('decided', 'draft', 'open')
 UNION ALL
 SELECT 'Unknown relation or status', label FROM link_names
-WHERE relation NOT IN ('contains', 'serves', 'raises', 'prompts', 'changes', 'sets', 'is_a')
+WHERE relation NOT IN ('contains', 'serves', 'raises', 'prompts', 'changes', 'sets', 'is_a', 'includes')
    OR status NOT IN ('decided', 'draft', 'open')
 UNION ALL
 -- Every link points at terms that exist.
@@ -29,11 +29,23 @@ SELECT 'Bad containment', l.label FROM link_names l
 JOIN terms s ON s.name = l.source JOIN terms t ON t.name = l.target
 WHERE l.relation = 'contains' AND (s.kind <> 'aggregate' OR t.kind NOT IN ('entity', 'value_object'))
 UNION ALL
+-- Each part belongs to exactly one aggregate, so links to it are never ambiguous.
+SELECT 'Part in more than one aggregate', target || ' (in ' || string_agg(source, ', ') || ')' FROM links
+WHERE relation = 'contains' GROUP BY target HAVING count(*) > 1
+UNION ALL
 -- Aggregates raise domain events, and only domain events prompt, change or set things.
 SELECT 'Bad event link', l.label FROM link_names l
 JOIN terms s ON s.name = l.source JOIN terms t ON t.name = l.target
 WHERE (l.relation = 'raises' AND (s.kind <> 'aggregate' OR t.kind <> 'domain_event'))
    OR (l.relation IN ('prompts', 'changes', 'sets') AND s.kind <> 'domain_event')
+UNION ALL
+-- Topics form trees: 'includes' only joins topics, and each topic has at most one parent.
+SELECT 'Bad includes link', l.label FROM link_names l
+JOIN terms s ON s.name = l.source JOIN terms t ON t.name = l.target
+WHERE l.relation = 'includes' AND (s.kind <> 'topic' OR t.kind <> 'topic')
+UNION ALL
+SELECT 'Topic with more than one parent', target FROM links
+WHERE relation = 'includes' GROUP BY target HAVING count(*) > 1
 UNION ALL
 -- Every term in the people-and-tools context is connected to something.
 SELECT 'Term with no links', name FROM terms

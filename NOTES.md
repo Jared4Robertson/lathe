@@ -87,3 +87,4 @@ The definitions and relationships now live as data in [model/terms.csv](model/te
 ### Decisions
 - **Project name: Lathe.** A lathe is a machine tool that can make parts for other machines, including another lathe ("the mother of machine tools"). Like a lathe, this project is a tool-making tool that improves itself. (Previously called "SDLC RSI".)
 - **AI agents are Tools, for now.** An agent acts on purpose, but on a Person's behalf, so its work counts as Actions taken for that person. Could be revisited if agents ever need to be treated as having their own experiences.
+- **Person has Goals; Tool has a Purpose.** Purpose used to sit in both aggregates, which made links to it ambiguous ("Action sets Purpose": whose?). Now a Goal is an outcome a person wants, and a Purpose is what a tool is for, set by the person it serves. A check in model/checks.sql now stops any part from sitting in more than one aggregate.
