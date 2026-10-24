@@ -88,3 +88,17 @@ The definitions and relationships now live as data in [model/terms.csv](model/te
 - **Project name: Lathe.** A lathe is a machine tool that can make parts for other machines, including another lathe ("the mother of machine tools"). Like a lathe, this project is a tool-making tool that improves itself. (Previously called "SDLC RSI".)
 - **AI agents are Tools, for now.** An agent acts on purpose, but on a Person's behalf, so its work counts as Actions taken for that person. Could be revisited if agents ever need to be treated as having their own experiences.
 - **Person has Goals; Tool has a Purpose.** Purpose used to sit in both aggregates, which made links to it ambiguous ("Action sets Purpose": whose?). Now a Goal is an outcome a person wants, and a Purpose is what a tool is for, set by the person it serves. A check in model/checks.sql now stops any part from sitting in more than one aggregate.
+
+## Session 2 (2026-10-24): Lathe as a structured spec store
+
+### What Lathe is for
+- Organise a product's lifecycle the way S2_sandbox's `docs/` does (domain model, use cases, interaction design, technical spec, test plan), but as **structured records** that a database checks and a web app navigates. S2 already behaves like a database written in Markdown (IDs, fixed table columns, regex layout checks, a trace generator); Lathe makes that explicit.
+- **Dogfood it:** Lathe's own spec lives in Lathe.
+- **Keep an example product** alongside, so the model stays concrete: the Tool Library (members borrow tools; a tool's condition decides whether it can be lent). It deliberately echoes the people-and-tools foundation.
+
+### Decisions
+- **Two apps per product.** Building a product with Lathe means two things: the product itself (its own code, tests, deployment), and a Lathe instance (engine and browser) pointed at that product's specs. The spec IDs are the link: the product's tests carry them, and Lathe checks that they do. For now both live in this repo (`specs/`, `examples/`); later the specs would live in the product's own repo, as S2's `docs/` does.
+- **Files stay the source of truth; DuckDB is the engine.** One Markdown file per record, with a YAML header for its fields and links (see `lathe/FORMAT.md`). The engine rebuilds an in-memory DuckDB from the files on every load, so git review, diffs and agent edits keep working.
+- **The rules are data.** Kinds of record and the relations allowed between them live in `lathe/meta/kinds.csv` and `lathe/meta/relations.csv`, built from the SDLC Brainstorm tree and S2's structure. Each check is its own SQL file in `lathe/checks/`. Changing a rule is a recorded, checked change, which is the self-improvement hook.
+- **Errors versus warnings.** Errors mean the workspace is broken (bad IDs, parents or links; a test whose code does not carry its ID). Warnings mean work is still to do (a requirement no component satisfies or no test proves). Coverage per domain is S2's "design complete" check, as a query.
+- The CSV diagrams under `model/` stay as they are for now: they're brainstorm canvases. How they relate to spec records is an open question.
