@@ -22,11 +22,13 @@ describe('mentions', () => {
     expect(mentionsOf('MX-D')).toEqual([]);
   });
 
-  it('LA-CHK-T121 IDs in code spans and fenced code blocks are not citations', () => {
+  it('LA-CHK-T121 IDs in fenced code blocks and in code spans with other text are not citations, but a code span holding one lone ID is', () => {
     const cited = ws.records.flatMap((r) => r.mentions);
     for (const id of ['MX-D-UC94', 'MX-D-UC95', 'MX-D-UC96', 'MX-D-UC97', 'MX-D-UC98']) expect(cited).not.toContain(id);
     expect(ws.problems.filter((p) => p.message.includes('UC9'))).toEqual([]);
-    expect(idTokensInProse('A `B-1` C\n```js\nD-2\n```\nE ``F-3 ` x`` G\n~~~\nH-4\n```\n~~~\nI-5')).toEqual(['A', 'C', 'E', 'G', 'I-5']);
+    expect(idTokensInProse('A `B-1 x` C\n```js\nD-2\n```\nE ``F-3 ` x`` G\n~~~\nH-4\n```\n~~~\nI-5')).toEqual(['A', 'C', 'E', 'G', 'I-5']);
+    // A code span with one ID and nothing else is how writers format IDs, so it is a citation.
+    expect(idTokensInProse('See `TL-LEND-DR05` and ` TL-LEND-UC01 `, not `TL-LEND-DR06 x`.')).toEqual(['TL-LEND-DR05', 'TL-LEND-UC01']);
     // A fence left open runs to the end of the body.
     expect(idTokensInProse('A-1\n````\nB-2\n```\nC-3')).toEqual(['A-1']);
   });
