@@ -1,7 +1,8 @@
 import { createContext, useContext, type AnchorHTMLAttributes, type ReactNode } from 'react';
 import { Link } from '../router';
 import { problemOrder, recordPath, type Problem, type SpecIndex, type SpecRecord } from './data';
-import { LongList } from './LongList';
+import { LongList } from '../components/LongList';
+import { TreeList } from '../components/TreeList';
 
 // Pieces shared by the spec pages and the record content.
 
@@ -122,5 +123,86 @@ export function TestStateTag({ record }: { record: SpecRecord }) {
     <span className={`test-state ${known ? state : 'unknown'}`} title={known ? STATE_MEANING[state as TestState] : 'Not a known test state.'}>
       {state}
     </span>
+  );
+}
+
+// ---------- Record rows and trees ----------
+
+/** The coverage gaps of one record: what is missing ('satisfies' or 'proves'). */
+export function gapsOf(index: SpecIndex, id: string): string[] {
+  const domain = index.byId.get(id)?.domain;
+  if (!domain) return [];
+  return (index.coverage.get(domain)?.gaps ?? []).filter((g) => g.id === id).map((g) => g.missing);
+}
+
+// Fields worth showing in a list row, by kind.
+const ROW_FIELDS: Record<string, string[]> = {
+  use_case: ['actor'],
+  endpoint: ['method', 'route'],
+  component: ['component_type', 'file'],
+  test: ['test_type', 'run_by'],
+};
+
+/** One record as a list row: its link, a few fields, its test state, coverage marks and problems. */
+export function RecordRowBody({ index, record, showKind = false }: { index: SpecIndex; record: SpecRecord; showKind?: boolean }) {
+  const fields = (ROW_FIELDS[record.kind] ?? []).map((f) => record.fields[f]).filter(Boolean);
+  const isTest = record.kind === 'test';
+  const gaps = gapsOf(index, record.id);
+  return (
+    <div className={`record-row ${isTest && testState(record) === 'planned' ? 'planned' : ''}`}>
+      <RecordLink index={index} id={record.id} />
+      <span className="row-tags">
+        {showKind && <small className="meta">{index.kinds.get(record.kind)?.label ?? record.kind}</small>}
+        {fields.length > 0 && <small className="meta">{fields.join(' · ')}</small>}
+        {isTest && <TestStateTag record={record} />}
+        {(index.outgoing.get(record.id) ?? []).filter((l) => l.relation === 'follows').map((l) => (
+          <span key={l.target} className="pattern-tag" title={`Follows the pattern ${l.target}`}>{index.byId.get(l.target)?.title ?? l.target}</span>
+        ))}
+        {gaps.map((g) => <span key={g} className="badge warning">{g === 'satisfies' ? 'not satisfied' : 'not proved'}</span>)}
+        <ProblemBadge problems={index.problemsFor.get(record.id) ?? []} />
+      </span>
+    </div>
+  );
+}
+
+const plural = (label: string, n: number) => {
+  const lower = label.toLowerCase();
+  if (n === 1 || /s$/.test(lower)) return lower;
+  if (/[^aeiou]y$/.test(lower)) return `${lower.slice(0, -1)}ies`;
+  return `${lower}s`;
+};
+
+/** "4 requirements", or "3 children" when the nested records are of several kinds. */
+export function nestedCount(index: SpecIndex, nested: readonly SpecRecord[]): string {
+  const kinds = new Set(nested.map((n) => n.kind));
+  if (kinds.size === 1) return `${nested.length} ${plural(index.kinds.get(nested[0].kind)?.label ?? nested[0].kind, nested.length)}`;
+  return `${nested.length} ${nested.length === 1 ? 'child' : 'children'}`;
+}
+
+/**
+ * Records one level below the page's record, each with its own children folded under it: the
+ * shape of every list of children on a wiki page and in the inspector.
+ */
+export function RecordTree({ index, records, label, query, showKind = false, bulk = true }: {
+  index: SpecIndex;
+  records: readonly SpecRecord[];
+  label: string;
+  query?: string;
+  showKind?: boolean;
+  bulk?: boolean;
+}) {
+  return (
+    <TreeList
+      label={label}
+      items={records}
+      itemKey={(r) => r.id}
+      nestedOf={(r) => index.children.get(r.id) ?? []}
+      renderRow={(r) => <RecordRowBody index={index} record={r} showKind={showKind} />}
+      searchText={recordText}
+      countLabel={(_, nested) => nestedCount(index, nested)}
+      nestedLabel={(r) => `Children of ${r.id}`}
+      query={query}
+      bulk={bulk}
+    />
   );
 }

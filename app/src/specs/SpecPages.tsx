@@ -1,21 +1,16 @@
-import { lazy, Suspense, useState, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Link } from '../router';
-import { OpenInGraph } from '../graph/route';
 import { FormatPage } from './FormatPage';
 import { Markdown } from './Markdown';
 import { CoverageBars, EvidencePanel, FitnessPanel, pluralLabel } from './ProductHealth';
-import { LongList } from './LongList';
-import { PageHeader, ProblemBadge, ProblemList, RecordLink, Section, TestStateTag, idText, recordText, testState } from './parts';
-import { RecordContent } from './RecordContent';
+import { LongList } from '../components/LongList';
+import { PageHeader, ProblemBadge, ProblemList, RecordLink, RecordTree, Section, idText, recordText } from './parts';
 import {
   byIdOrder,
-  checksPath,
   domainPath,
-  formatPath,
   kindLabel,
   problemOrder,
   productPath,
-  recordPath,
   type Problem,
   type SpecIndex,
   type SpecRecord,
@@ -25,59 +20,13 @@ import {
 
 export { RecordContent } from './RecordContent';
 
-const DomainGraph = lazy(() => import('./DomainGraph'));
-
-// ---------- Menu ----------
-
-export function SpecMenu({ spec, path }: { spec: SpecState; path: string }) {
-  const current = (to: string) => (path === to || path.startsWith(`${to}/`) ? 'page' : undefined);
-  const { index } = spec;
-  const errors = index?.workspace.problems.filter((p) => p.severity === 'error').length ?? 0;
-  const total = index?.workspace.problems.length ?? 0;
-  return (
-    <>
-      <p className="eyebrow">Specs</p>
-      {spec.error && !index && <p className="error">{spec.error}</p>}
-      {index && (
-        <ul>
-          {index.products.map((product) => (
-            <li key={product.id}>
-              <Link to={productPath(product.id)} aria-current={path === productPath(product.id) ? 'page' : undefined}>
-                {product.title}
-              </Link>
-              {(index.domainsOf.get(product.id) ?? []).length > 0 && (
-                <LongList
-                  label={`Domains of ${product.title}`}
-                  className="submenu"
-                  items={index.domainsOf.get(product.id)!}
-                  itemKey={(d) => d.id}
-                  searchText={recordText}
-                  render={(domain) => (
-                    <Link to={domainPath(product.id, domain.id)} aria-current={current(domainPath(product.id, domain.id))}>
-                      {domain.title}
-                    </Link>
-                  )}
-                />
-              )}
-            </li>
-          ))}
-          <li>
-            <Link to={checksPath} aria-current={current(checksPath)}>
-              Checks <span className={`count ${errors ? 'has-errors' : ''}`}>{total}</span>
-            </Link>
-          </li>
-          <li>
-            <Link to={formatPath} aria-current={current(formatPath)}>Record format</Link>
-          </li>
-        </ul>
-      )}
-    </>
-  );
-}
+// The spec pages that are not about one record: the products, the checks and the record format;
+// and the wiki content of a product and a domain, which the focus page (app/src/views) shows in
+// its Wiki pane beside or instead of the graph.
 
 // ---------- Shared pieces ----------
 
-function SourceNote({ spec }: { spec: SpecState }) {
+export function SourceNote({ spec }: { spec: SpecState }) {
   if (spec.source !== 'fixture') return null;
   return (
     <p className="source-note" role="note">
@@ -91,6 +40,7 @@ const recordsIn = (index: SpecIndex, predicate: (r: SpecRecord) => boolean) => i
 
 // ---------- Pages ----------
 
+/** The pages without a focus record: Products, Checks, the record format, and unknown addresses. */
 export function SpecView({ spec, route }: { spec: SpecState; route: SpecRoute }) {
   const { index } = spec;
   let page: ReactNode;
@@ -98,12 +48,6 @@ export function SpecView({ spec, route }: { spec: SpecState; route: SpecRoute })
     page = <div className="placeholder"><p>{spec.error ? `Couldn't load the specs: ${spec.error}` : 'Loading specs…'}</p></div>;
   } else if (route.page === 'checks') {
     page = <ChecksPage index={index} />;
-  } else if (route.page === 'record') {
-    page = <RecordPage index={index} id={route.id} />;
-  } else if (route.page === 'product') {
-    page = <ProductPage index={index} id={route.product} />;
-  } else if (route.page === 'domain') {
-    page = <DomainPage index={index} productId={route.product} id={route.domain} tab={route.tab} />;
   } else if (route.page === 'format') {
     page = <FormatPage hash={window.location.hash} />;
   } else if (route.page === 'specs') {
@@ -112,7 +56,7 @@ export function SpecView({ spec, route }: { spec: SpecState; route: SpecRoute })
     page = <NotFound what="page" />;
   }
   return (
-    <main className="spec-page">
+    <main className="spec-page" id="main">
       <SourceNote spec={spec} />
       {spec.error && index && <p className="error">Couldn't reload the specs: {spec.error}</p>}
       {page}
@@ -120,7 +64,7 @@ export function SpecView({ spec, route }: { spec: SpecState; route: SpecRoute })
   );
 }
 
-function NotFound({ what, id }: { what: string; id?: string }) {
+export function NotFound({ what, id }: { what: string; id?: string }) {
   return (
     <div className="placeholder">
       <p>{id ? <>There's no {what} with the ID <code>{id}</code>.</> : `There's no such ${what}.`} <Link to="/specs">See all products</Link>.</p>
@@ -146,17 +90,18 @@ function SpecsHome({ index }: { index: SpecIndex }) {
   );
 }
 
-function ProductPage({ index, id }: { index: SpecIndex; id: string }) {
-  const product = index.byId.get(id);
-  if (!product || product.kind !== 'product') return <NotFound what="product" id={id} />;
+/** The problems in a product's or a domain's records. */
+export const problemsUnder = (index: SpecIndex, key: 'product' | 'domain', id: string) =>
+  index.workspace.problems.filter((p) => p.record && index.byId.get(p.record)?.[key] === id);
+
+/** A product's wiki: its body, its domains (not their contents), fitness, evidence, open questions and problems. */
+export function ProductWiki({ index, id }: { index: SpecIndex; id: string }) {
+  const product = index.byId.get(id)!;
   const domains = index.domainsOf.get(id) ?? [];
   const questions = recordsIn(index, (r) => r.kind === 'question' && r.product === id);
-  const problems = index.workspace.problems.filter((p) => p.record && index.byId.get(p.record)?.product === id);
+  const problems = problemsUnder(index, 'product', id);
   return (
     <div className="spec-body">
-      <PageHeader eyebrow={<>Product · <Link to={recordPath(id)}>{product.path}</Link></>} title={product.title} id={id}>
-        <ProblemBadge problems={problems} />
-      </PageHeader>
       <Markdown source={product.body} />
       <Section title="Domains" count={domains.length}>
         {domains.length === 0 && <p className="hint">No domains yet.</p>}
@@ -182,7 +127,7 @@ function ProductPage({ index, id }: { index: SpecIndex; id: string }) {
       <Section title="Open questions" count={questions.length}>
         <QuestionList index={index} questions={questions} />
       </Section>
-      <Section title="Problems" count={problems.length}>
+      <Section title="Problems in this product" count={problems.length}>
         <ProblemList index={index} problems={problems} />
       </Section>
     </div>
@@ -213,186 +158,98 @@ function QuestionList({ index, questions }: { index: SpecIndex; questions: SpecR
   );
 }
 
-// Fields worth showing in a list row, by kind.
-const ROW_FIELDS: Record<string, string[]> = {
-  use_case: ['actor'],
-  endpoint: ['method', 'route'],
-  component: ['component_type', 'file'],
-  test: ['test_type', 'run_by'],
-};
+/** Kinds that get a section only when the domain has some (a product's own extensions). */
+const OPTIONAL_KINDS = new Set(['capability']);
+/** Capabilities read in their `order`, then by ID. */
+const byOrder = (a: SpecRecord, b: SpecRecord) => (Number(a.fields.order) || Infinity) - (Number(b.fields.order) || Infinity) || byIdOrder(a, b);
 
-/** A list of records of one kind, each with its children of the nested kinds listed under it. */
-interface RecordGroup { kind: string; nested: string[]; title: string }
-
-const DEFINE_GROUPS: RecordGroup[] = [
-  { kind: 'aggregate', nested: ['domain_rule'], title: 'Aggregates and domain rules' },
-  { kind: 'use_case', nested: ['requirement'], title: 'Use cases and requirements' },
-];
-// Flows, views and endpoints list their interaction requirements, and any obligation kind a product puts under them.
-const AT_DESIGN = ['interaction_requirement'];
-const DESIGN_GROUPS: RecordGroup[] = [
-  { kind: 'flow', nested: AT_DESIGN, title: 'Flows' },
-  { kind: 'view', nested: AT_DESIGN, title: 'Views' },
-  { kind: 'endpoint', nested: AT_DESIGN, title: 'Endpoints' },
-  { kind: 'component', nested: [], title: 'Components' },
-  { kind: 'test', nested: [], title: 'Tests' },
+/** The sections of a domain page: its direct children by kind, under the stage they belong to. */
+const DOMAIN_STAGES: { title: string; kinds: string[] }[] = [
+  { title: 'Define', kinds: ['capability', 'aggregate', 'use_case'] },
+  { title: 'Design', kinds: ['flow', 'view', 'endpoint', 'component', 'test'] },
 ];
 
-function DomainPage({ index, productId, id, tab }: { index: SpecIndex; productId: string; id: string; tab: 'list' | 'graph' }) {
+/**
+ * A domain's wiki: its direct children grouped by kind (Aggregates, Use cases, Flows, Views,
+ * Endpoints, Components, Tests, Open questions), each a row with its count of children, which are
+ * folded under it; then coverage and problems.
+ */
+export function DomainWiki({ index, id }: { index: SpecIndex; id: string }) {
   const [query, setQuery] = useState('');
-  const domain = index.byId.get(id);
-  if (!domain || domain.kind !== 'domain' || domain.product !== productId) return <NotFound what="domain" id={id} />;
-  const product = index.byId.get(productId)!;
-
-  const all = recordsIn(index, (r) => r.domain === id && r.id !== id);
+  const domain = index.byId.get(id)!;
   const q = query.trim().toLowerCase();
-  const matches = (r: SpecRecord) => !q || r.id.toLowerCase().includes(q) || r.title.toLowerCase().includes(q);
-  const gaps = new Map<string, string[]>();
-  for (const g of index.coverage.get(id)?.gaps ?? []) gaps.set(g.id, [...(gaps.get(g.id) ?? []), g.missing]);
-  const problems = index.workspace.problems.filter((p) => p.record && index.byId.get(p.record)?.domain === id);
+  const matches = (r: SpecRecord) => !q || recordText(r).toLowerCase().includes(q);
+  const problems = problemsUnder(index, 'domain', id);
 
-  const placed = new Set<string>();
-  const ofKind = (kind: string) => all.filter((r) => r.kind === kind);
-  const row = (r: SpecRecord) => <RecordRowBody index={index} record={r} gaps={gaps.get(r.id) ?? []} />;
-  const recordList = (label: string, records: SpecRecord[], className = 'record-list') => (
-    <LongList label={label} className={className} items={records} itemKey={(r) => r.id} searchText={recordText} render={row} />
-  );
-
-  const isObligation = (kind: string) => index.kinds.get(kind)?.obligation === true;
-  const fill = (g: RecordGroup, nestObligations: boolean) => {
-    const parents = ofKind(g.kind);
-    parents.forEach((p) => placed.add(p.id));
-    const items = parents
-      .map((p) => {
-        const nested = (index.children.get(p.id) ?? []).filter((c) => g.nested.includes(c.kind) || (nestObligations && isObligation(c.kind)));
-        nested.forEach((c) => placed.add(c.id));
-        const shown = matches(p) ? nested : nested.filter(matches);
-        return { parent: p, nested: shown, visible: matches(p) || shown.length > 0 };
-      })
-      .filter((i) => i.visible);
-    return { ...g, items };
+  const direct = index.children.get(id) ?? [];
+  const ofKind = (kind: string) => {
+    const records = direct.filter((r) => r.kind === kind);
+    return kind === 'capability' ? [...records].sort(byOrder) : records;
   };
-  const defineGroups = DEFINE_GROUPS.map((g) => fill(g, false));
-  const designGroups = DESIGN_GROUPS.map((g) => fill(g, g.nested.length > 0));
-  const groupList = (title: string, items: ReturnType<typeof fill>['items']) => (
-    <LongList
-      label={title}
-      className="record-list"
-      items={items}
-      itemKey={(i) => i.parent.id}
-      itemClassName={() => 'group'}
-      searchText={(i) => [i.parent, ...i.nested].map(recordText).join(' ')}
-      render={({ parent, nested }) => (
-        <>
-          {row(parent)}
-          {nested.length > 0 && recordList(`${pluralLabel(kindLabel(index, nested[0].kind))} at ${parent.id}`, nested, 'record-list nested')}
-        </>
-      )}
-    />
-  );
+  const staged = new Set([...DOMAIN_STAGES.flatMap((s) => s.kinds), 'question']);
+  const otherKinds = [...new Set(direct.map((r) => r.kind))].filter((k) => !staged.has(k));
+  // Records of the domain that are neither its children nor theirs (deeper, or misplaced).
+  const shown = new Set([...direct.map((r) => r.id), ...direct.flatMap((r) => (index.children.get(r.id) ?? []).map((c) => c.id))]);
+  const others = recordsIn(index, (r) => r.domain === id && r.id !== id && !shown.has(r.id) && matches(r));
   const questions = ofKind('question');
-  questions.forEach((r) => placed.add(r.id));
-  const others = all.filter((r) => !placed.has(r.id) && matches(r));
 
-  const listPath = domainPath(productId, id);
-  return (
-    <div className={`spec-body ${tab === 'graph' ? 'with-graph' : ''}`}>
-      <PageHeader
-        eyebrow={<><Link to={productPath(productId)}>{product.title}</Link> · Domain · <Link to={recordPath(id)}>{domain.path}</Link></>}
-        title={domain.title}
-        id={id}
-      >
-        <ProblemBadge problems={problems} />
-        <OpenInGraph id={id} />
-      </PageHeader>
-      <nav className="tabs" aria-label="Domain views">
-        <Link to={listPath} aria-current={tab === 'list' ? 'page' : undefined}>Records</Link>
-        <Link to={`${listPath}/graph`} aria-current={tab === 'graph' ? 'page' : undefined}>Graph</Link>
-      </nav>
-      {tab === 'graph' ? (
-        <Suspense fallback={<p className="hint">Loading the graph…</p>}>
-          <DomainGraph index={index} domain={id} />
-        </Suspense>
-      ) : (
-        <>
-          <Markdown source={domain.body} />
-          <div className="search">
-            <label htmlFor="record-search">Filter records</label>
-            <input id="record-search" type="search" value={query} placeholder="ID or title" onChange={(e) => setQuery(e.target.value)} />
-          </div>
-          <div className="stage">
-            <h2 className="stage-title">Define</h2>
-            {defineGroups.map((g) => (
-              <Section key={g.kind} title={g.title} count={g.items.length}>
-                {g.items.length === 0 ? <p className="hint">{q ? 'Nothing matches.' : 'None yet.'}</p> : groupList(g.title, g.items)}
-              </Section>
-            ))}
-          </div>
-          <div className="stage">
-            <h2 className="stage-title">Design</h2>
-            {designGroups.map((g) => (
-              <Section key={g.kind} title={g.title} count={g.items.length}>
-                {g.items.length === 0 ? <p className="hint">{q ? 'Nothing matches.' : 'None yet.'}</p> : groupList(g.title, g.items)}
-              </Section>
-            ))}
-          </div>
-          {others.length > 0 && (
-            <Section title="Other records" count={others.length}>
-              {recordList("Other records", others)}
-            </Section>
-          )}
-          <Section title="Open questions" count={questions.length}>
-            <QuestionList index={index} questions={questions.filter(matches)} />
-          </Section>
-          <Section title="Coverage">
-            <CoverageBars coverage={index.coverage.get(id)} />
-            {(index.coverage.get(id)?.gaps.length ?? 0) > 0 && (
-              <LongList
-                label="Coverage gaps"
-                className="record-list gaps"
-                items={index.coverage.get(id)!.gaps}
-                itemKey={(g) => `${g.id}-${g.missing}`}
-                searchText={(g) => idText(index, g.id)}
-                render={(g) => (
-                  <>
-                    <RecordLink index={index} id={g.id} />
-                    <small className="meta">{kindLabel(index, g.kind)} with nothing that {g.missing === 'satisfies' ? 'satisfies' : 'proves'} it</small>
-                  </>
-                )}
-              />
-            )}
-          </Section>
-          <Section title="Problems" count={problems.length}>
-            <ProblemList index={index} problems={problems} />
-          </Section>
-        </>
-      )}
-    </div>
-  );
-}
+  const kindSection = (kind: string) => {
+    const records = ofKind(kind);
+    if (records.length === 0 && OPTIONAL_KINDS.has(kind)) return null;
+    const title = pluralLabel(kindLabel(index, kind));
+    const visible = records.filter((r) => matches(r) || (index.children.get(r.id) ?? []).some(matches)).length;
+    return (
+      <Section key={kind} title={title} count={records.length}>
+        {records.length === 0 ? <p className="hint">None yet.</p>
+          : visible === 0 ? <p className="hint">Nothing matches.</p>
+          : <RecordTree index={index} records={records} label={title} query={query} />}
+      </Section>
+    );
+  };
 
-function RecordRowBody({ index, record, gaps }: { index: SpecIndex; record: SpecRecord; gaps: string[] }) {
-  const fields = (ROW_FIELDS[record.kind] ?? []).map((f) => record.fields[f]).filter(Boolean);
-  const isTest = record.kind === 'test';
-  return (
-    <div className={`record-row ${isTest && testState(record) === 'planned' ? 'planned' : ''}`}>
-      <RecordLink index={index} id={record.id} />
-      <span className="row-tags">
-        {fields.length > 0 && <small className="meta">{fields.join(' · ')}</small>}
-        {isTest && <TestStateTag record={record} />}
-        {gaps.map((g) => <span key={g} className="badge warning">{g === 'satisfies' ? 'not satisfied' : 'not proved'}</span>)}
-        <ProblemBadge problems={index.problemsFor.get(record.id) ?? []} />
-      </span>
-    </div>
-  );
-}
-
-/** The record page: the page chrome around the record content. */
-function RecordPage({ index, id }: { index: SpecIndex; id: string }) {
-  if (!index.byId.has(id)) return <NotFound what="record" id={id} />;
   return (
     <div className="spec-body">
-      <RecordContent index={index} id={id} actions={<OpenInGraph id={id} />} />
+      <Markdown source={domain.body} />
+      <div className="search">
+        <label htmlFor="record-search">Filter records</label>
+        <input id="record-search" type="search" value={query} placeholder="ID or title" onChange={(e) => setQuery(e.target.value)} />
+      </div>
+      {DOMAIN_STAGES.map((stage) => (
+        <div key={stage.title} className="stage">
+          <h2 className="stage-title">{stage.title}</h2>
+          {stage.kinds.map(kindSection)}
+        </div>
+      ))}
+      {otherKinds.map(kindSection)}
+      {others.length > 0 && (
+        <Section title="Other records" count={others.length}>
+          <RecordTree index={index} records={others} label="Other records" showKind />
+        </Section>
+      )}
+      <Section title="Open questions" count={questions.length}>
+        <QuestionList index={index} questions={questions.filter(matches)} />
+      </Section>
+      <Section title="Coverage">
+        <CoverageBars coverage={index.coverage.get(id)} />
+        {(index.coverage.get(id)?.gaps.length ?? 0) > 0 && (
+          <LongList
+            label="Coverage gaps"
+            className="record-list gaps"
+            items={index.coverage.get(id)!.gaps}
+            itemKey={(g) => `${g.id}-${g.missing}`}
+            searchText={(g) => idText(index, g.id)}
+            render={(g) => (
+              <>
+                <RecordLink index={index} id={g.id} />
+                <small className="meta">{kindLabel(index, g.kind)} with nothing that {g.missing === 'satisfies' ? 'satisfies' : 'proves'} it</small>
+              </>
+            )}
+          />
+        )}
+      </Section>
+      <Section title="Problems in this domain" count={problems.length}>
+        <ProblemList index={index} problems={problems} />
+      </Section>
     </div>
   );
 }
