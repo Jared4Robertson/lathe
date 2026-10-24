@@ -226,6 +226,7 @@ function ShortcutSheet({ commands, mac, onClose }: { commands: Command[]; mac: b
                     <tr key={c.id}>
                       <th scope="row">{c.title}</th>
                       <td>{c.keys.map((k, i) => <span key={k}>{i > 0 && <span className="kbd-or"> or </span>}<Keys binding={k} mac={mac} /></span>)}</td>
+                      <td className="cmd-id"><code>{c.id}</code></td>
                     </tr>
                   ))}
                 </tbody>
@@ -237,7 +238,7 @@ function ShortcutSheet({ commands, mac, onClose }: { commands: Command[]; mac: b
       </div>
       <p className="hint shortcut-note">
         To change a shortcut, put a JSON map of command to keys in local storage under <code>{OVERRIDES_KEY}</code>, for
-        example <code>{'{"toggleNav": "Mod+J"}'}</code> (Mod is {mac ? '⌘' : 'Ctrl'}), and reload. Command names are in the palette ({formatBinding('Mod+Shift+P', mac)}).
+        example <code>{'{"toggleNav": "Mod+J"}'}</code> (Mod is {mac ? '⌘' : 'Ctrl'}), and reload. Each command's name is in the last column.
       </p>
     </Dialog>
   );
