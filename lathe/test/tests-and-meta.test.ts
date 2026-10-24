@@ -9,7 +9,7 @@ const recordsOf = (ws: Workspace, check: string) =>
   ws.problems.filter((p) => p.check === check).map((p) => p.record).sort();
 const errorsAbout = (ws: Workspace, id: string) => ws.problems.filter((p) => p.severity === 'error' && p.record === id);
 
-const TEST_CHECKS = ['test-file-missing', 'test-file-missing-id', 'bad-test-state', 'test-run-by-missing'];
+const TEST_CHECKS = ['test-file-missing', 'test-file-missing-id', 'proof-not-in-file', 'bad-test-state', 'test-run-by-missing'];
 
 let proof: Workspace;
 let widened: Workspace;
@@ -29,16 +29,16 @@ describe('tests prove what their files name', () => {
   });
 
   it('LA-CHK-T51 A test file that names neither the test nor a record it proves is an error', () => {
-    expect(recordsOf(proof, 'test-file-missing-id')).toEqual(['PX-D-T02', 'PX-D-T09']);
+    expect(recordsOf(proof, 'proof-not-in-file')).toEqual(['PX-D-T02', 'PX-D-T09']);
     const [problem] = proof.problems.filter((p) => p.record === 'PX-D-T02');
-    expect(problem).toMatchObject({ severity: 'error', check: 'test-file-missing-id' });
+    expect(problem).toMatchObject({ severity: 'error', check: 'proof-not-in-file' });
     expect(problem.message).toContain('code/rules.test.txt');
-    expect(problem.message).toContain('nor the ID of a record it proves');
+    expect(problem.message).toContain('names neither PX-D-T02 nor PX-D-DR02');
   });
 
   it('LA-CHK-T52 A test file names an ID only as a whole ID', () => {
     // PX-D-T09 proves PX-D-DR03; its file names PX-D-DR030 and PX-D-DR03-R01, which are other IDs.
-    expect(errorsAbout(proof, 'PX-D-T09').map((p) => p.check)).toEqual(['test-file-missing-id']);
+    expect(errorsAbout(proof, 'PX-D-T09').map((p) => p.check)).toEqual(['proof-not-in-file']);
   });
 });
 

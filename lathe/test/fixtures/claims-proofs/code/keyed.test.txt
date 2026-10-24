@@ -1,0 +1,2 @@
+// loan access pattern proof
+it('every librarian action is checked', () => {});
