@@ -31,11 +31,30 @@ const ID_TOKEN = /(?<![A-Za-z0-9_-])[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*(?![A-Za-z0-9_]
 /** Text inside these is never linked. */
 const SKIP = new Set(['CODE', 'PRE', 'A', 'KBD', 'SAMP', 'SCRIPT', 'STYLE']);
 
-/** Turns every mentioned ID in the HTML's text (outside code and links) into a link, and marks unknown IDs. */
+/** Turns every mentioned ID in the HTML's text (outside code and links, plus code spans holding one lone ID) into a link, and marks unknown IDs. */
 export function linkMentions(html: string, links: ProseLinks): string {
   if (links.titles.size === 0 && links.broken.size === 0) return html;
   const template = document.createElement('template');
   template.innerHTML = html;
+  // An inline code span holding one lone ID is a citation (FORMAT.md section 12): wrap the code in the link.
+  for (const code of Array.from(template.content.querySelectorAll('code'))) {
+    if (code.closest('pre, a')) continue;
+    const id = (code.textContent ?? '').trim();
+    const title = links.titles.get(id);
+    if (title === undefined && !links.broken.has(id)) continue;
+    const wrap = title !== undefined ? document.createElement('a') : document.createElement('span');
+    if (wrap instanceof HTMLAnchorElement) {
+      wrap.href = links.href(id);
+      wrap.className = 'mention';
+      wrap.title = title!;
+      wrap.dataset.mention = id;
+    } else {
+      wrap.className = 'mention broken';
+      wrap.title = `No record has the ID ${id}`;
+    }
+    code.replaceWith(wrap);
+    wrap.appendChild(code);
+  }
   const walker = document.createTreeWalker(template.content, NodeFilter.SHOW_TEXT);
   const texts: Text[] = [];
   for (let n = walker.nextNode(); n; n = walker.nextNode()) {
