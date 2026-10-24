@@ -19,6 +19,7 @@ import { Link, navigate, usePath } from './router';
 import { parseSpecRoute, useSpec } from './specs/data';
 import { SpecMenu, SpecView } from './specs/SpecPages';
 import { onLatheEvent } from './events';
+import { LatheLogo } from './LatheLogo';
 
 type ModelNode = Node<ModelNodeData>;
 type ModelEdge = Edge<ModelEdgeData>;
@@ -126,7 +127,7 @@ export default function App() {
   return (
     <div className="app">
       <nav className="menu" aria-label="Main">
-        <p className="brand">Lathe</p>
+        <p className="brand"><LatheLogo /> Lathe</p>
         <p className="eyebrow">Diagrams</p>
         <ul>
           {diagrams.map((d) => (

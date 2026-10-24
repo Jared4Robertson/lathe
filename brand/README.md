@@ -1,4 +1,8 @@
-# Lathe logo options
+# Lathe logo
+
+**Chosen:** `recursive.svg` (a chuck gripping the same chuck, smaller) is Lathe's logo, and `chuck.svg` is its favicon. The app uses them as `app/src/LatheLogo.tsx` in the menu and `app/public/favicon.svg`.
+
+## The options considered
 
 Three concepts, each hand-built as SVG on a 64 by 64 grid in Lathe's two colours: steel for the body and spark orange for the part that does the work. Open `preview.html` (served, for example, with `python3 -m http.server` in this folder) to see each at 256 to 16 px on light and dark backgrounds, with a wordmark lockup.
 
