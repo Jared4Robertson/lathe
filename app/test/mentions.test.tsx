@@ -32,15 +32,21 @@ describe('prose mentions', () => {
     expect(div.textContent).toContain('See TL-LEND-DR01, and again TL-LEND-DR01.');
   });
 
-  it('LA-BRW-T171 IDs inside code, inside links and inside longer IDs are never linked', () => {
+  it('LA-BRW-T171 IDs inside code blocks, code with other text, links and longer IDs are never linked; a code span of one lone ID is', () => {
     const html = renderMarkdown(
-      'Code `TL-LEND-DR01` and\n\n```\nTL-LEND-DR01\n```\n\n[a link to TL-LEND-DR01](https://example.com) and TL-LEND-DR01-R01 and XTL-LEND-DR01.',
+      'Code `see TL-LEND-DR01` and\n\n```\nTL-LEND-DR01\n```\n\n[a link to TL-LEND-DR01](https://example.com) and TL-LEND-DR01-R01 and XTL-LEND-DR01.',
       links({ 'TL-LEND-DR01': 'One loan at a time' }),
     );
     const div = document.createElement('div');
     div.innerHTML = html;
     expect(div.querySelectorAll('a.mention')).toHaveLength(0);
-    expect(div.querySelector('code')!.textContent).toBe('TL-LEND-DR01');
+    expect(div.querySelector('code')!.textContent).toBe('see TL-LEND-DR01');
+    // A code span holding one lone ID is how writers format IDs, so it links, keeping its code style.
+    const lone = document.createElement('div');
+    lone.innerHTML = renderMarkdown('Rule `TL-LEND-DR01` applies.', links({ 'TL-LEND-DR01': 'One loan at a time' }));
+    const a = lone.querySelector('a.mention')!;
+    expect(a.getAttribute('href')).toBe('/records/TL-LEND-DR01');
+    expect(a.querySelector('code')!.textContent).toBe('TL-LEND-DR01');
     // Nothing to link leaves the HTML as it was.
     expect(linkMentions('<p>TL-LEND-DR01</p>', links({}))).toBe('<p>TL-LEND-DR01</p>');
   });
@@ -60,12 +66,13 @@ describe('prose mentions', () => {
     await openApp('/records/DM-SHOP-UC01', { workspace: patternWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     const prose = within(body());
-    expect(prose.getAllByRole('link').map((a) => a.textContent)).toEqual(['DM-PAT-CHECKOUT', 'DM-SHOP-DR01']);
+    // The body cites DM-SHOP-DR01 twice: in the text, and as code holding just that ID.
+    expect(prose.getAllByRole('link').map((a) => a.textContent)).toEqual(['DM-PAT-CHECKOUT', 'DM-SHOP-DR01', 'DM-SHOP-DR01']);
     expect(prose.getByText('DM-SHOP-DR99')).toHaveClass('mention', 'broken');
     expect(prose.getByText('DM-SHOP-DR99')).toHaveAttribute('title', 'No record has the ID DM-SHOP-DR99');
-    // The ID in code stays plain.
-    expect(body().querySelector('code')!.textContent).toBe('DM-SHOP-DR01');
-    fireEvent.click(prose.getByRole('link', { name: 'DM-SHOP-DR01' }));
+    // The ID in code keeps its code style inside the link.
+    expect(body().querySelector('a.mention code')!.textContent).toBe('DM-SHOP-DR01');
+    fireEvent.click(prose.getAllByRole('link', { name: 'DM-SHOP-DR01' })[0]);
     expect(window.location.pathname).toBe('/records/DM-SHOP-DR01');
     await screen.findByRole('heading', { level: 1, name: 'A basket holds at most 50 items' });
   });
