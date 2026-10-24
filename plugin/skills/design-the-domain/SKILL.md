@@ -16,13 +16,14 @@ The design says how the product carries out its use cases: the paths people take
 
 | Kind | ID | Required fields | Links |
 | --- | --- | --- | --- |
-| `flow` | `<P>-<D>-F<nn>` | | `carries_out` the use cases it walks through; `uses` views and endpoints; `fulfills` requirements, domain rules and interaction requirements |
+| `flow` | `<P>-<D>-F<nn>` | | `carries_out` the use cases it walks through; `uses` views and endpoints; `fulfills` requirements, domain rules and interaction requirements (left to its steps once it has them) |
+| `flow_step` | `<flow>-S<nn>`, such as `TL-LEND-F01-S01` | `order` (a whole number) | `uses` the view, endpoint or component the step goes through; `fulfills` the requirements, domain rules and interaction requirements the step carries out |
 | `view` | `<P>-<D>-V<nn>` | | `uses` endpoints; `fulfills` requirements |
 | `endpoint` | `<P>-<D>-E<nn>` | `method`, `route` | `fulfills` requirements |
 | `interaction_requirement` | `<view, endpoint or flow>-R<nn>`, such as `TL-LEND-E04-R01` | | `fulfills` the use case requirements and domain rules it carries out at this view, endpoint or flow |
 | `component` | `<P>-<D>-C<nn>` | `component_type` (model, service, router, ...), `file` (path from the repo root) | `satisfies` requirements, domain rules and interaction requirements; `implements` endpoints and views; `depends_on` components |
 
-Every design record's parent is the domain, except an interaction requirement, whose parent is the view, endpoint or flow it constrains, and a flow, whose parent is the capability of the use cases it carries out when the domain has capabilities (see `write-use-cases`). Any link not in the meta-model's `relations.csv` is an error.
+Every design record's parent is the domain, except an interaction requirement, whose parent is the view, endpoint or flow it constrains, a flow step, whose parent is its flow, and a flow, whose parent is the capability of the use cases it carries out when the domain has capabilities (see `write-use-cases`). Any link not in the meta-model's `relations.csv` is an error.
 
 ## Interaction requirements
 
@@ -32,6 +33,35 @@ An interaction requirement is one rule a view, endpoint or flow must follow: a f
 - `fulfills` the use case requirement or domain rule it carries out here, so the trace runs from the use case down to the response. Even a rule that looks free-standing, such as a body size limit, protects something above it: link the requirement it serves. An interaction requirement that fulfills nothing is a warning (`interaction-requirement-fulfills-nothing`).
 - Keep the endpoint's body as the overview (request shape, table of responses); state each rule that must be built and tested as an interaction requirement.
 - Put the files next to their parent: `02-design/endpoints/E04-borrow-a-tool.md` and `02-design/endpoints/E04-borrow-a-tool/R01-tool-on-loan-is-409.md`.
+
+## Flow steps
+
+Write a flow of more than a couple of steps as `flow_step` records, so traceability reads per step (FORMAT.md section 14):
+
+- One record per step, under the flow: `order` gives its place (1, 2, 3; each step of a flow its own), the title says what happens in a few words, the body may say more.
+- `uses` names where the step happens (a view), what it calls (an endpoint), or the component that does it.
+- `fulfills` names what this step carries out. Move each `fulfills` link from the flow onto the step that does it; the flow then needs none of its own.
+- Put the files in a folder named after the flow: `02-design/flows/F01-borrow-and-return.md` and `02-design/flows/F01-borrow-and-return/S02-borrow-the-tool.md`.
+
+```markdown
+---
+id: TL-LEND-F01-S02
+kind: flow_step
+title: The member borrows an available tool, or is told why not
+parent: TL-LEND-F01
+order: 2
+links:
+  uses: [TL-LEND-V01, TL-LEND-E04]
+  fulfills: [TL-LEND-UC03-R02, TL-LEND-UC03-R03]
+---
+The member picks an available tool and borrows it (`POST /loans`). If the tool is not available, or the member cannot borrow, the catalog shows the reason.
+```
+
+What the checks say:
+
+- `flow-step-order` (error): an order that is not a whole number, or two steps of one flow with the same order (`1` and `01` clash). Renumbering an order is fine; it is not an ID.
+- `flow-step-fulfills-outside-flow` (warning): the step fulfills something that is not a requirement of a use case its flow `carries_out`, a domain rule one of them `applies`, or an interaction requirement reached from either or under the flow. Link it from a step of the right flow, or add the use case to this flow's `carries_out`.
+- `flow-fulfills-differs-from-steps` (warning): the flow fulfills something none of its steps does. Move the link onto the step that carries it out.
 
 ## Example
 
