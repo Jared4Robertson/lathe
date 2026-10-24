@@ -6,7 +6,8 @@
       "stage": "",
       "parent_kinds": [],
       "required_fields": [],
-      "description": "A product: the root of a set of specifications."
+      "description": "A product: the root of a set of specifications.",
+      "obligation": false
     },
     {
       "kind": "domain",
@@ -16,7 +17,8 @@
         "product"
       ],
       "required_fields": [],
-      "description": "A part of the product with its own model, language and owner."
+      "description": "A part of the product with its own model, language and owner.",
+      "obligation": false
     },
     {
       "kind": "aggregate",
@@ -26,7 +28,8 @@
         "domain"
       ],
       "required_fields": [],
-      "description": "A cluster of records changed together as one unit, with its own identity and rules."
+      "description": "A cluster of records changed together as one unit, with its own identity and rules.",
+      "obligation": false
     },
     {
       "kind": "domain_rule",
@@ -36,7 +39,8 @@
         "aggregate"
       ],
       "required_fields": [],
-      "description": "A fact that must always hold for an aggregate's records, whatever use case changes them."
+      "description": "A fact that must always hold for an aggregate's records, whatever use case changes them.",
+      "obligation": true
     },
     {
       "kind": "use_case",
@@ -48,7 +52,8 @@
       "required_fields": [
         "actor"
       ],
-      "description": "Something an actor does with the product to reach a goal."
+      "description": "Something an actor does with the product to reach a goal.",
+      "obligation": false
     },
     {
       "kind": "requirement",
@@ -58,7 +63,8 @@
         "use_case"
       ],
       "required_fields": [],
-      "description": "One rule a use case must follow, stated with MUST, MUST NOT, SHOULD or MAY."
+      "description": "One rule a use case must follow, stated with MUST, MUST NOT, SHOULD or MAY.",
+      "obligation": true
     },
     {
       "kind": "flow",
@@ -68,7 +74,8 @@
         "domain"
       ],
       "required_fields": [],
-      "description": "An end-to-end path through views and endpoints that carries out one or more use cases."
+      "description": "An end-to-end path through views and endpoints that carries out one or more use cases.",
+      "obligation": false
     },
     {
       "kind": "view",
@@ -78,7 +85,8 @@
         "domain"
       ],
       "required_fields": [],
-      "description": "A screen or page a person uses."
+      "description": "A screen or page a person uses.",
+      "obligation": false
     },
     {
       "kind": "endpoint",
@@ -91,7 +99,8 @@
         "method",
         "route"
       ],
-      "description": "An HTTP endpoint: its method, route, request and responses."
+      "description": "An HTTP endpoint: its method, route, request and responses.",
+      "obligation": false
     },
     {
       "kind": "component",
@@ -104,7 +113,8 @@
         "component_type",
         "file"
       ],
-      "description": "A unit of code in the target design, such as a model, service or router."
+      "description": "A unit of code in the target design, such as a model, service or router.",
+      "obligation": false
     },
     {
       "kind": "test",
@@ -117,7 +127,8 @@
         "test_type",
         "run_by"
       ],
-      "description": "A test that proves requirements or domain rules, and the file that runs it."
+      "description": "A test that proves requirements or domain rules, and the file that runs it.",
+      "obligation": false
     },
     {
       "kind": "question",
@@ -133,7 +144,8 @@
       "required_fields": [
         "owner"
       ],
-      "description": "Something undecided, with the person who decides it."
+      "description": "Something undecided, with the person who decides it.",
+      "obligation": false
     }
   ],
   "relations": [
@@ -141,97 +153,113 @@
       "relation": "relates_to",
       "source_kind": "aggregate",
       "target_kind": "aggregate",
-      "description": "One aggregate refers to another by ID."
+      "description": "One aggregate refers to another by ID.",
+      "role": ""
     },
     {
       "relation": "applies",
       "source_kind": "use_case",
       "target_kind": "domain_rule",
-      "description": "The use case relies on the domain rule."
+      "description": "The use case relies on the domain rule.",
+      "role": ""
     },
     {
       "relation": "fulfills",
       "source_kind": "flow",
       "target_kind": "requirement",
-      "description": "The flow carries out the requirement."
+      "description": "The flow carries out the requirement.",
+      "role": ""
     },
     {
       "relation": "fulfills",
       "source_kind": "view",
       "target_kind": "requirement",
-      "description": "The view carries out the requirement."
+      "description": "The view carries out the requirement.",
+      "role": ""
     },
     {
       "relation": "fulfills",
       "source_kind": "endpoint",
       "target_kind": "requirement",
-      "description": "The endpoint carries out the requirement."
+      "description": "The endpoint carries out the requirement.",
+      "role": ""
     },
     {
       "relation": "uses",
       "source_kind": "flow",
       "target_kind": "view",
-      "description": "The flow passes through the view."
+      "description": "The flow passes through the view.",
+      "role": ""
     },
     {
       "relation": "uses",
       "source_kind": "flow",
       "target_kind": "endpoint",
-      "description": "The flow calls the endpoint."
+      "description": "The flow calls the endpoint.",
+      "role": ""
     },
     {
       "relation": "uses",
       "source_kind": "view",
       "target_kind": "endpoint",
-      "description": "The view calls the endpoint."
+      "description": "The view calls the endpoint.",
+      "role": ""
     },
     {
       "relation": "satisfies",
       "source_kind": "component",
       "target_kind": "requirement",
-      "description": "The component designs or implements the requirement."
+      "description": "The component designs or implements the requirement.",
+      "role": "design"
     },
     {
       "relation": "satisfies",
       "source_kind": "component",
       "target_kind": "domain_rule",
-      "description": "The component enforces the domain rule."
+      "description": "The component enforces the domain rule.",
+      "role": "design"
     },
     {
       "relation": "implements",
       "source_kind": "component",
       "target_kind": "endpoint",
-      "description": "The component serves the endpoint."
+      "description": "The component serves the endpoint.",
+      "role": ""
     },
     {
       "relation": "implements",
       "source_kind": "component",
       "target_kind": "view",
-      "description": "The component renders the view."
+      "description": "The component renders the view.",
+      "role": ""
     },
     {
       "relation": "depends_on",
       "source_kind": "component",
       "target_kind": "component",
-      "description": "The component calls or imports the other."
+      "description": "The component calls or imports the other.",
+      "role": ""
     },
     {
       "relation": "proves",
       "source_kind": "test",
       "target_kind": "requirement",
-      "description": "The test proves the requirement."
+      "description": "The test proves the requirement.",
+      "role": "proof"
     },
     {
       "relation": "proves",
       "source_kind": "test",
       "target_kind": "domain_rule",
-      "description": "The test proves the domain rule."
+      "description": "The test proves the domain rule.",
+      "role": "proof"
     },
     {
       "relation": "about",
       "source_kind": "question",
       "target_kind": "*",
-      "description": "The open question concerns that record."
+      "description": "The open question concerns that record.",
+      "role": ""
     }
   ],
   "records": [
@@ -427,7 +455,27 @@
         }
       ],
       "requirements_built": 0,
-      "rules_built": 0
+      "rules_built": 0,
+      "obligations": [
+        {
+          "kind": "domain_rule",
+          "label": "Domain rule",
+          "total": 1,
+          "designed": 1,
+          "built": 0,
+          "proved": 0,
+          "planned": 0
+        },
+        {
+          "kind": "requirement",
+          "label": "Requirement",
+          "total": 1,
+          "designed": 1,
+          "built": 0,
+          "proved": 1,
+          "planned": 0
+        }
+      ]
     }
   ]
 }
