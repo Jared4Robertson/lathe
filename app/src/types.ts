@@ -1,4 +1,4 @@
-export type Kind = 'aggregate' | 'entity' | 'value_object' | 'domain_event' | 'term';
+export type Kind = 'aggregate' | 'entity' | 'value_object' | 'domain_event' | 'term' | 'topic';
 export type Status = 'decided' | 'draft' | 'open';
 
 export interface Term {
@@ -16,6 +16,12 @@ export interface Link {
   cardinality: string | null;
   status: Status;
   note: string | null;
+}
+
+export interface DiagramSummary {
+  slug: string;
+  title: string;
+  description: string | null;
 }
 
 export interface Model {

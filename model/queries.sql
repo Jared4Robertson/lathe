@@ -1,9 +1,9 @@
--- Example questions to ask the domain model. Run from the repo root:
---   duckdb < model/queries.sql
--- Or open an interactive session with `duckdb` and paste any one of them.
+-- Example questions to ask a diagram. Run from that diagram's folder, for example:
+--   cd model/people-and-tools && duckdb < ../queries.sql
+-- Or open an interactive session with `duckdb` there and paste any one of them.
 
-CREATE VIEW terms AS SELECT * FROM read_csv('model/terms.csv', header = true, all_varchar = true);
-CREATE VIEW links AS SELECT * FROM read_csv('model/links.csv', header = true, all_varchar = true);
+CREATE VIEW terms AS SELECT * FROM read_csv('terms.csv', header = true, all_varchar = true);
+CREATE VIEW links AS SELECT * FROM read_csv('links.csv', header = true, all_varchar = true);
 
 -- What is inside each aggregate?
 SELECT l.source AS aggregate, l.target AS part, t.kind, l.cardinality, l.note

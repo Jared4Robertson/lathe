@@ -9,7 +9,7 @@ flowchart LR
     subgraph person["Person (aggregate)"]
       exp["Experience (entity)"]
       val["Value (value object)"]
-      goal["Purpose: goals (value object)"]
+      goal["Goal (value object)"]
     end
     subgraph tool["Tool (aggregate)"]
       tpurpose["Purpose (value object)"]

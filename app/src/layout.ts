@@ -23,6 +23,7 @@ const SIZES: Record<string, { width: number; height: number }> = {
   value_object: { width: 170, height: 50 },
   domain_event: { width: 150, height: 56 },
   term: { width: 120, height: 44 },
+  topic: { width: 170, height: 44 },
 };
 
 const KIND_LABELS: Record<Kind, string> = {
@@ -31,11 +32,13 @@ const KIND_LABELS: Record<Kind, string> = {
   value_object: 'value object',
   domain_event: 'domain event',
   term: 'term',
+  topic: 'topic',
 };
 
 const CONTEXT_LABELS: Record<string, string> = {
   people_and_tools: 'People and tools',
   making_software: 'Making software',
+  sdlc: 'Software development lifecycle',
 };
 
 const contextId = (context: string) => `context:${context}`;
