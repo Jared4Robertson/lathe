@@ -1,4 +1,5 @@
-// Acceptance tests over HTTP: each proves one use case requirement.
+// Acceptance tests over HTTP: each proves a use case requirement and the endpoint's
+// interaction requirements that carry it out (TL-LEND-E0n-R0n), or an interaction requirement alone.
 // Each test name starts with its test record ID (specs/tool-library/lending/02-design/tests/).
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { LAST_MINUTE_OF_DUE_DATE, START_DUE_DATE, START_OF_NEXT_DAY, startApi, type Api } from './helpers.ts';
@@ -129,6 +130,37 @@ describe('TL-LEND-UC03 Borrow a tool', () => {
     expect(r2.status).toBe(404);
     expect(r2.body.error).toBe('tool_not_found');
   });
+
+  it('TL-LEND-T28 A borrow with a missing or malformed ID is rejected', async () => {
+    const m = await member();
+    const t = await tool();
+    for (const body of [{ toolId: t }, { memberId: m, toolId: 0 }, { memberId: String(m), toolId: t }, { memberId: m, toolId: 1.5 }]) {
+      const res = await api.call('POST', '/loans', body);
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('invalid_request');
+    }
+  });
+
+  it('TL-LEND-T31 When several borrow checks fail, the first in order is reported', async () => {
+    const errorOf = async (memberId: unknown, toolId: unknown) =>
+      (await api.call('POST', '/loans', { memberId, toolId })).body.error;
+
+    expect(await errorOf('999', 999)).toBe('invalid_request');
+    expect(await errorOf(999, 999)).toBe('member_not_found');
+
+    // A member at the loan limit, borrowing a tool that is both on loan and damaged.
+    const full = await member('Vic');
+    for (const name of ['A', 'B', 'C']) await borrow(full, await tool(name));
+    const busy = await tool('Lathe');
+    await borrow(await member('Wren'), busy);
+    await api.call('POST', `/tools/${busy}/damage`, { note: 'Belt slipping' });
+    expect(await errorOf(full, busy)).toBe('loan_limit_reached');
+    expect(await errorOf(await member('Xan'), busy)).toBe('tool_needs_repair');
+
+    // Once Vic's loans are overdue, being overdue comes before being at the limit.
+    api.clock.set(START_OF_NEXT_DAY);
+    expect(await errorOf(full, busy)).toBe('member_overdue');
+  });
 });
 
 describe('TL-LEND-UC04 Return a tool', () => {
@@ -173,6 +205,22 @@ describe('TL-LEND-UC04 Return a tool', () => {
     api.clock.set(START_OF_NEXT_DAY);
     expect((await api.call('POST', `/loans/${late.id}/return`, { condition: 'good' })).body.late).toBe(true);
   });
+
+  it('TL-LEND-T32 Returning an unknown or already returned loan is refused', async () => {
+    const unknown = await api.call('POST', '/loans/999/return', { condition: 'good' });
+    expect(unknown.status).toBe(404);
+    expect(unknown.body.error).toBe('loan_not_found');
+
+    const t = await tool();
+    const loan = (await borrow(await member(), t)).body;
+    await api.call('POST', `/loans/${loan.id}/return`, { condition: 'needs_repair', note: 'Blade chipped' });
+    const again = await api.call('POST', `/loans/${loan.id}/return`, { condition: 'good', note: 'Fine' });
+    expect(again.status).toBe(409);
+    expect(again.body.error).toBe('already_returned');
+    // The second return changed nothing: the tool still needs repair with the first note.
+    const entry = (await api.call('GET', '/tools')).body.find((x: { id: number }) => x.id === t);
+    expect(entry).toMatchObject({ condition: 'needs_repair', damageNote: 'Blade chipped' });
+  });
 });
 
 describe('TL-LEND-UC05 Report damage', () => {
@@ -187,6 +235,10 @@ describe('TL-LEND-UC05 Report damage', () => {
   });
 
   it('TL-LEND-T25 Marking a tool repaired returns it to lending', async () => {
+    const unknown = await api.call('POST', '/tools/999/repair');
+    expect(unknown.status).toBe(404);
+    expect(unknown.body.error).toBe('tool_not_found');
+
     const t = await tool();
     const notDamaged = await api.call('POST', `/tools/${t}/repair`);
     expect(notDamaged.status).toBe(409);

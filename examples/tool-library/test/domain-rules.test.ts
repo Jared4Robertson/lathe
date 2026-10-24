@@ -1,5 +1,6 @@
 // Domain rule tests: each proves one domain rule against the services and store.
-// Each test name starts with its test record ID (specs/tool-library/lending/02-design/tests/).
+// Each test name starts with its test record ID (specs/tool-library/lending/02-design/tests/),
+// except the test for TL-LEND-DR05, which is keyed by the rule it proves, as Client keys its tests.
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_TIME_ZONE, LOAN_DAYS, LendingError, dueDate, isCondition, isOverdue } from '../src/model.ts';
 import { LAST_MINUTE_OF_DUE_DATE, START_DUE_DATE, START_OF_NEXT_DAY, services } from './helpers.ts';
@@ -73,7 +74,7 @@ describe('Tool rules', () => {
     expect(() => store.db.prepare("UPDATE tools SET condition = 'broken' WHERE id = ?").run(t.id)).toThrow();
   });
 
-  it('TL-LEND-T05 A tool that needs repair cannot be lent', () => {
+  it('TL-LEND-DR05 A tool that needs repair cannot be lent', () => {
     const { members, tools, lending } = services();
     const m = members.register({ name: 'Ed', email: 'ed@example.org' });
     const t = tools.add({ name: 'Sander' });
