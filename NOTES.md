@@ -135,3 +135,18 @@ Jared asked for every recommendation to be applied, so these were decided on his
 | LA-CHK-Q10 Proving pattern rules | Pattern rules are records (`pattern_rule`) and obligations of every domain that follows the pattern (through any of its use cases); proof counts where the test sits. A rule tied to a setting does not apply in a domain whose following use cases all mark that setting Not applicable. |
 | App shell | One address per record or group, with Wiki, Graph and Split views; a collapsible nav with quick find; a collapsible inspector (the "third column"); one level deeper by default with folded lists; VS Code-style shortcuts. The Graph item left the nav: the graph is a view of every page. |
 | Logo | The chuck in a chuck; the simple chuck is the favicon. |
+
+## Session 5 (2026-10-24, while Jared was away): passes 5 and 6
+
+### Done
+- **Pass 5** (merged into main as `5833a80`): pattern rules are records owed by every domain that follows the pattern (LA-CHK-Q10, decided S2's way); every proof claim is checked, with an optional `key`; coverage counts only claims a test's file backs; IDs cited in prose (including a code span holding one lone ID) are resolved and shown as links; structural warnings (rule not applied, use case without flow, interaction requirement fulfilling nothing, test type mismatch); extension rows restate or widen relations; a duplicate ID gives one error, not sixteen; the app has "Patterns we follow" and pattern pages; the Graph item left the nav.
+- **Pass 6** (merged as `8c4ebd7`): a product's own checks (a `checks` folder in `lathe.config.json`; answers LA-CHK-Q11: S2's "one Record view use case per aggregate" belongs there, and a test fixture shows it working); this repo's own check (`lathe-checks/`) found four endpoints without interaction requirements; coverage shows proof still owed (`planned_any`) and each domain's tests by state; flows can be written as ordered `flow_step` records with their own links, and the Tool Library's two flows are.
+- Every Lathe use case now has a flow; 862 records check with 0 errors and one intended warning (a deliberately planned test); 315 tests pass.
+
+### Decisions taken on Jared's instruction to apply the recommended option
+| Topic | Decision |
+| --- | --- |
+| Pattern rules (LA-CHK-Q10) | Records under the pattern; owed by each following domain; proof counts where the test sits; a rule tied to a setting that all of a domain's following use cases mark Not applicable is not owed there. |
+| House rules (LA-CHK-Q11) | Not Lathe defaults: a product writes them as its own checks. |
+| Citations in code | A code span holding exactly one ID is a citation; fenced code and code with other text are not. |
+| Unbacked proof | A test whose file names neither its own ID, its key, nor a target does not prove that target, in coverage and in warnings alike. |
