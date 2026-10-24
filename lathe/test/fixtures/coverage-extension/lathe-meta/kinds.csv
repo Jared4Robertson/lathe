@@ -1,0 +1,3 @@
+kind,label,stage,parent_kinds,required_fields,obligation,description
+invariant,Invariant,define,aggregate,,yes,"A product-specific obligation."
+sketch,Sketch,design,domain,,no,"A design sketch."
