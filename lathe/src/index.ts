@@ -37,6 +37,13 @@ interface FileFact {
   contains_id: boolean | null;
 }
 
+/** For a test's run_by file: each of the test's own ID and its link targets that the file mentions. */
+interface FileMention {
+  path: string;
+  record: string;
+  mentioned: string;
+}
+
 // Finds every *.md under the specs folder except README.md, as paths relative to root, sorted.
 async function findRecordFiles(root: string, specsDir: string): Promise<string[]> {
   if (!existsSync(specsDir)) return [];
@@ -92,8 +99,17 @@ function placeRecords(records: LoadedRecord[], problems: Problem[]) {
   }
 }
 
-async function gatherFileFacts(root: string, records: LoadedRecord[]): Promise<FileFact[]> {
+// True if the text names the ID as a whole ID: TL-LEND-DR05 is not found in TL-LEND-DR050 or TL-LEND-DR05-R01.
+function mentionsId(content: string, id: string): boolean {
+  const escaped = id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`(?<![A-Za-z0-9-])${escaped}(?![A-Za-z0-9]|-[A-Za-z0-9])`).test(content);
+}
+
+// Facts about the files records name: a test's run_by and a component's file. For a test, also which
+// IDs its run_by file mentions (its own and its link targets), so a check can accept the ID of a record it proves.
+async function gatherFileFacts(root: string, records: LoadedRecord[]): Promise<{ facts: FileFact[]; mentions: FileMention[] }> {
   const facts: FileFact[] = [];
+  const mentions: FileMention[] = [];
   for (const r of records) {
     const field = r.kind === 'test' ? 'run_by' : r.kind === 'component' ? 'file' : null;
     const file = field ? r.fields[field]?.trim() : undefined;
@@ -101,10 +117,15 @@ async function gatherFileFacts(root: string, records: LoadedRecord[]): Promise<F
     const resolved = resolveInside(root, file);
     const found = await exists(resolved, r.kind === 'component');
     let containsId: boolean | null = null;
-    if (r.kind === 'test') containsId = found && r.id !== '' && (await readFile(resolved!, 'utf8')).includes(r.id);
+    if (r.kind === 'test') {
+      const content = found ? await readFile(resolved!, 'utf8') : '';
+      containsId = r.id !== '' && mentionsId(content, r.id);
+      const candidates = new Set([r.id, ...r.links.map((l) => l.target)].filter((id) => id !== ''));
+      for (const id of candidates) if (mentionsId(content, id)) mentions.push({ path: r.path, record: r.id, mentioned: id });
+    }
     facts.push({ path: r.path, record: r.id, kind: r.kind, file, file_exists: found, contains_id: containsId });
   }
-  return facts;
+  return { facts, mentions };
 }
 
 async function append(
@@ -124,23 +145,95 @@ async function append(
   appender.closeSync();
 }
 
-// Loads the meta-model from one or more folders; later folders add rows to earlier ones.
-async function loadMeta(connection: DuckDBConnection, metaDirs: string[]) {
-  const csv = (name: string) => {
-    const files = metaDirs.map((dir) => path.join(dir, name)).filter((file) => existsSync(file));
-    return `read_csv([${files.map(sqlString).join(', ')}], header = true, all_varchar = true, union_by_name = true)`;
+interface MetaKind {
+  kind: string;
+  label: string;
+  stage: string;
+  parent_kinds: string[];
+  required_fields: string[];
+  obligation: string;
+  description: string;
+}
+
+const csvText = (value: unknown) => (typeof value === 'string' ? value : '');
+const csvWords = (value: unknown) => csvText(value).trim().split(/\s+/).filter(Boolean);
+const union = (a: string[], b: string[]) => [...a, ...b.filter((x) => !a.includes(x))];
+
+// Loads the meta-model from one or more folders: Lathe's defaults first, then a product's extensions.
+// A later row for a kind already defined widens it: parent_kinds and required_fields are unioned, and a
+// non-empty label, stage, obligation or description replaces the earlier one. A relation row identical to
+// one in an earlier folder is dropped. Every kind row is also kept, with the file it came from, in
+// meta_kind_rows, so that a kind defined twice within one folder can be reported.
+async function loadMeta(connection: DuckDBConnection, metaDirs: string[], root: string) {
+  const defaultMeta = path.join(PACKAGE_DIR, 'meta');
+  const where = (dir: string, name: string) =>
+    path.resolve(dir) === defaultMeta ? `Lathe's meta/${name}` : `${toPosix(path.relative(root, path.resolve(dir))) || '.'}/${name}`;
+  const read = async (dir: string, name: string) => {
+    const file = path.join(dir, name);
+    if (!existsSync(file)) return [];
+    return readRows<Record<string, string | null>>(
+      connection,
+      `SELECT * FROM read_csv(${sqlString(file)}, header = true, all_varchar = true, null_padding = true)`,
+    );
   };
-  const list = (col: string) =>
-    `CASE WHEN trim(coalesce(${col}, '')) = '' THEN []::VARCHAR[] ELSE string_split(regexp_replace(trim(${col}), '\\s+', ' ', 'g'), ' ') END AS ${col}`;
+
+  const kindRows: string[][] = [];
+  const kinds: MetaKind[] = [];
+  const byKind = new Map<string, MetaKind>();
+  const relations: { folder: number; row: string[] }[] = [];
+  for (const [index, dir] of metaDirs.entries()) {
+    for (const row of await read(dir, 'kinds.csv')) {
+      const name = csvText(row.kind).trim();
+      kindRows.push([where(dir, 'kinds.csv'), name]);
+      const incoming: MetaKind = {
+        kind: name,
+        label: csvText(row.label),
+        stage: csvText(row.stage).trim(),
+        parent_kinds: csvWords(row.parent_kinds),
+        required_fields: csvWords(row.required_fields),
+        obligation: csvText(row.obligation).trim(),
+        description: csvText(row.description),
+      };
+      const known = name === '' ? undefined : byKind.get(name);
+      if (!known) {
+        kinds.push(incoming);
+        if (name !== '') byKind.set(name, incoming);
+        continue;
+      }
+      known.parent_kinds = union(known.parent_kinds, incoming.parent_kinds);
+      known.required_fields = union(known.required_fields, incoming.required_fields);
+      for (const key of ['label', 'stage', 'obligation', 'description'] as const) {
+        if (incoming[key].trim() !== '') known[key] = incoming[key];
+      }
+    }
+    for (const row of await read(dir, 'relations.csv')) {
+      const values = [row.relation, row.source_kind, row.target_kind, row.role].map((v) => csvText(v).trim());
+      const full = [...values, csvText(row.description)];
+      if (relations.some((r) => r.folder < index && r.row.every((v, i) => v === full[i]))) continue;
+      relations.push({ folder: index, row: full });
+    }
+  }
+
+  await connection.run(`
+    CREATE TABLE meta_kind_rows (folder VARCHAR, kind VARCHAR);
+    CREATE TABLE meta_kinds_in (kind VARCHAR, label VARCHAR, stage VARCHAR, parent_kinds VARCHAR,
+                                required_fields VARCHAR, obligation VARCHAR, description VARCHAR);
+    CREATE TABLE relations (relation VARCHAR, source_kind VARCHAR, target_kind VARCHAR, role VARCHAR, description VARCHAR);
+  `);
+  await append(connection, 'meta_kind_rows', kindRows);
+  await append(
+    connection,
+    'meta_kinds_in',
+    kinds.map((k) => [k.kind, k.label, k.stage, k.parent_kinds.join(' '), k.required_fields.join(' '), k.obligation, k.description]),
+  );
+  await append(connection, 'relations', relations.map((r) => r.row));
+  const list = (col: string) => `CASE WHEN ${col} = '' THEN []::VARCHAR[] ELSE string_split(${col}, ' ') END AS ${col}`;
   await connection.run(`
     CREATE TABLE kinds AS
-    SELECT trim(kind) AS kind, coalesce(label, '') AS label, coalesce(stage, '') AS stage,
-           ${list('parent_kinds')}, ${list('required_fields')}, coalesce(description, '') AS description
-    FROM ${csv('kinds.csv')};
-    CREATE TABLE relations AS
-    SELECT trim(relation) AS relation, trim(source_kind) AS source_kind, trim(target_kind) AS target_kind,
-           coalesce(description, '') AS description
-    FROM ${csv('relations.csv')};
+    SELECT kind, label, stage, ${list('parent_kinds')}, ${list('required_fields')},
+           lower(obligation) IN ('yes', 'true') AS obligation, description
+    FROM meta_kinds_in;
+    DROP TABLE meta_kinds_in;
   `);
 }
 
@@ -205,12 +298,12 @@ export async function loadWorkspace(root: string, options: LoadOptions = {}): Pr
     records.push({ ...result.record, product: null, domain: null, path: file });
   }
   placeRecords(records, problems);
-  const facts = await gatherFileFacts(root, records);
+  const { facts, mentions } = await gatherFileFacts(root, records);
 
   const instance = await DuckDBInstance.create(':memory:');
   const connection = await instance.connect();
   try {
-    await loadMeta(connection, metaDirs);
+    await loadMeta(connection, metaDirs, root);
     await connection.run(`
       CREATE TABLE records (path VARCHAR, id VARCHAR, kind VARCHAR, title VARCHAR, parent VARCHAR,
                             product VARCHAR, domain VARCHAR, body VARCHAR);
@@ -218,11 +311,13 @@ export async function loadWorkspace(root: string, options: LoadOptions = {}): Pr
       CREATE TABLE links (path VARCHAR, source VARCHAR, relation VARCHAR, target VARCHAR);
       CREATE TABLE file_facts (path VARCHAR, record VARCHAR, kind VARCHAR, file VARCHAR,
                                file_exists BOOLEAN, contains_id BOOLEAN);
+      CREATE TABLE file_mentions (path VARCHAR, record VARCHAR, mentioned VARCHAR);
     `);
     await append(connection, 'records', records.map((r) => [r.path, r.id, r.kind, r.title, r.parent, r.product, r.domain, r.body]));
     await append(connection, 'fields', records.flatMap((r) => Object.entries(r.fields).map(([name, value]) => [r.path, r.id, name, value])));
     await append(connection, 'links', records.flatMap((r) => r.links.map((l) => [r.path, r.id, l.relation, l.target])));
     await append(connection, 'file_facts', facts.map((f) => [f.path, f.record, f.kind, f.file, f.file_exists, f.contains_id]));
+    await append(connection, 'file_mentions', mentions.map((m) => [m.path, m.record, m.mentioned]));
 
     problems.push(...(await runChecks(connection, checksDir)));
     const coverage = await computeCoverage(connection);
