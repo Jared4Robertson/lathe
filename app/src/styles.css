@@ -323,3 +323,32 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .evidence-list > div { grid-template-columns: 130px 1fr; }
 .spec-body > * { min-width: 0; }
 .markdown table { display: block; max-width: 100%; overflow-x: auto; }
+
+/* ---------- Obligation kinds, test states and record content (brief 14) ---------- */
+.coverage-group { display: grid; gap: 4px; }
+.bar.planned .bar-fill { background: repeating-linear-gradient(135deg, var(--muted) 0 3px, transparent 3px 6px); }
+.bar.planned .bar-label { font-style: italic; }
+.test-state { display: inline-block; font: 500 0.68rem var(--mono); padding: 0 6px; border-radius: 4px; border: 1px solid var(--rule); color: var(--muted); white-space: nowrap; }
+.test-state.automated { color: var(--steel); border-color: var(--steel); background: var(--steel-bg); }
+.test-state.manual { color: var(--ink); border-color: var(--muted); }
+.test-state.planned { border-style: dashed; font-style: italic; background: transparent; }
+.test-state.unknown { color: var(--spark); border-color: var(--spark); }
+.record-row.planned > .record-link { opacity: 0.65; font-style: italic; }
+.planned-note { margin: 0; padding: 8px 12px; border: 1px dashed var(--muted); border-radius: 8px; color: var(--muted); font-size: 0.88rem; }
+.fulfills-at { margin: 0 0 6px; font-size: 0.88rem; color: var(--muted); }
+/* The record content lays itself out by its own width, so it reads at half the screen beside the graph. */
+.record-content { container-type: inline-size; display: grid; gap: 18px; min-width: 0; }
+@container (max-width: 760px) {
+  .record-content .record-layout { grid-template-columns: 1fr; }
+  .record-content .spec-header { flex-wrap: wrap; }
+}
+/* Long lists: past 10 items, a search box and a box 10 rows high that scrolls (the height is measured; this is the fallback). */
+.long-list { display: grid; gap: 6px; min-width: 0; }
+.long-list-tools { display: flex; gap: 8px; align-items: center; }
+.long-list-tools input { flex: 1; min-width: 0; font: inherit; font-size: 0.85rem; padding: 4px 8px; border: 1px solid var(--rule); border-radius: 5px; background: var(--paper); color: var(--ink); }
+.long-list-count { font: 0.75rem var(--mono); color: var(--muted); white-space: nowrap; }
+.long-list-scroll { max-height: 26rem; overflow-y: auto; overscroll-behavior: contain; border-radius: 6px; }
+.long-list-scroll:focus-visible, .long-list-tools input:focus-visible { outline: 2px solid var(--steel); outline-offset: 1px; }
+.long-list-empty { margin: 6px 0; }
+.menu .long-list-tools input { font-size: 0.8rem; }
+/* ---------- End of obligation kinds, test states and record content ---------- */
