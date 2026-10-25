@@ -62,7 +62,7 @@ export function spaceOf(product: SpecRecord): Space {
   };
 }
 
-/** The product a page belongs to, or null for a page above every product (Checks, the format, Diagrams, Specs). */
+/** The product a page belongs to, or null for a page above every product (Checks, the format, Specs). */
 export function productOfPath(index: SpecIndex | null, path: string): string | null {
   const route = parseSpecRoute(path, index);
   if (!route || !index) return null;

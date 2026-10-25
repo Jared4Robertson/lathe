@@ -1,5 +1,5 @@
 // `lathe serve`: serves the built web app and the API for one product repo, with no build tools.
-// Pages reload through server-sent events (GET /api/events) when specs or diagrams change.
+// Pages reload through server-sent events (GET /api/events) when specs change.
 import { existsSync, watch, type FSWatcher } from 'node:fs';
 import { readFile, stat } from 'node:fs/promises';
 import { createServer, type ServerResponse } from 'node:http';

@@ -154,9 +154,6 @@ describe('shortcut hints', () => {
     expect(screen.getByRole('button', { name: 'Hide the side bar', expanded: true })).toHaveAttribute('aria-keyshortcuts', 'Control+Alt+B');
     expect(within(screen.getByRole('complementary', { name: 'Side bar' })).getByRole('button', { name: 'Hide the side bar' })).toHaveAttribute('aria-keyshortcuts', 'Control+Alt+B');
 
-    // A control whose only shortcut is a sequence has none: Diagrams is "g then d".
-    expect(within(nav()).getByRole('link', { name: 'Diagrams' })).not.toHaveAttribute('aria-keyshortcuts');
-
     // In the graph: the depth buttons and full screen.
     fireEvent.keyDown(document.body, { key: '2', code: 'Digit2', ctrlKey: true });
     await waitFor(() => expect(screen.getByRole('group', { name: 'Depth' })).toBeInTheDocument());

@@ -86,9 +86,9 @@ describe('dev API plugin', () => {
     expect(fallback.body).toBe(await sample());
 
     // Other API paths report the failure; non-API paths pass through.
-    const diagrams = await request(broken.middlewares[0], '/api/diagrams');
-    expect(diagrams.status).toBe(500);
-    expect(JSON.parse(diagrams.body).error).toMatch(/engine could not be loaded/);
+    const format = await request(broken.middlewares[0], '/api/format');
+    expect(format.status).toBe(500);
+    expect(JSON.parse(format.body).error).toMatch(/engine could not be loaded/);
     expect((await request(broken.middlewares[0], '/LA')).nextCalled).toBe(true);
   });
 
@@ -96,10 +96,9 @@ describe('dev API plugin', () => {
     const root = await mkdtemp(path.join(tmpdir(), 'lathe-app-'));
     try {
       const specs = path.join(root, 'specs');
-      const model = path.join(root, 'model');
       await mkdir(specs);
-      const fake = await start(engine(() => [{ dir: specs, event: 'spec:changed' }, { dir: model, event: 'model:changed' }]), root);
-      expect(fake.watched).toEqual([specs, model, path.join(engineDir, 'checks'), path.join(engineDir, 'meta')]);
+      const fake = await start(engine(() => [{ dir: specs, event: 'spec:changed' }]), root);
+      expect(fake.watched).toEqual([specs, path.join(engineDir, 'checks'), path.join(engineDir, 'meta')]);
       const change = (file: string) => {
         fake.sent.length = 0;
         for (const listener of fake.listeners) listener('change', file);
@@ -111,7 +110,6 @@ describe('dev API plugin', () => {
       expect(change(record)).toEqual([{ type: 'custom', event: 'spec:changed' }]);
       expect(change(path.join(engineDir, 'checks', '01-duplicate-id.sql'))).toEqual([{ type: 'custom', event: 'spec:changed' }]);
       expect(change(path.join(engineDir, 'meta', 'kinds.csv'))).toEqual([{ type: 'custom', event: 'spec:changed' }]);
-      expect(change(path.join(model, 'people', 'terms.csv'))).toEqual([{ type: 'custom', event: 'model:changed' }]);
       expect(change(path.join(root, 'specs-old', 'x.md'))).toEqual([]);
       expect(change(path.join(root, 'README.md'))).toEqual([]);
     } finally {

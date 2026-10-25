@@ -1,7 +1,6 @@
 // Tabler-style line icons, drawn inline (24 x 24, 2 px stroke, round caps). No icon font.
 
 const PATHS: Record<string, string[]> = {
-  diagrams: ['M3 5a2 2 0 0 1 2-2h4v6H3z', 'M15 15h6v6h-4a2 2 0 0 1-2-2z', 'M15 3h4a2 2 0 0 1 2 2v4h-6z', 'M3 15h6v6H5a2 2 0 0 1-2-2z', 'M9 6h6', 'M18 9v6', 'M6 9v6', 'M9 18h6'],
   specs: ['M14 3v4a1 1 0 0 0 1 1h4', 'M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z', 'M9 13h6', 'M9 17h6'],
   checks: ['M9 11l3 3l8-8', 'M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9'],
   graph: ['M6 6m-2 0a2 2 0 1 0 4 0a2 2 0 1 0-4 0', 'M18 6m-2 0a2 2 0 1 0 4 0a2 2 0 1 0-4 0', 'M12 18m-2 0a2 2 0 1 0 4 0a2 2 0 1 0-4 0', 'M7.5 7.5l3.5 8.5', 'M16.5 7.5l-3.5 8.5', 'M8 6h8'],

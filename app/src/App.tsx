@@ -1,12 +1,10 @@
 import { ResizeHandle } from './components/ResizeHandle';
 import { lazy, Suspense, useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
-import type { DiagramSummary } from './types';
 import { navigate, useLocation } from './router';
 import { checksPath, formatPath, parseSpecRoute, useSpec } from './specs/data';
 import { SpecView } from './specs/SpecPages';
 import { FormatPages, isFormatRoute } from './format/FormatPages';
 import { FormatProvider, useFormatStore } from './format/reference';
-import { onLatheEvent } from './events';
 import { CommandsProvider, useAnnounce, useCommand } from './shell/commands';
 import { SPACE_KEYS, spaceCommandId } from './shell/keymap';
 import { Nav } from './shell/Nav';
@@ -20,15 +18,9 @@ import { FocusPage } from './views/FocusPage';
 import { HOME_PATH, isFocusRoute } from './views/address';
 import { ThemeProvider } from './theme/ThemeProvider';
 import { APPEARANCE_PATH, ThemeCommands } from './theme/ThemeCommands';
-import { Button } from './components/Button';
-// The first load ships only the wiki (LA-PAT-APP-UX-R11): the theme editor and the diagrams, with
-// React Flow and ELK, load when first opened, as the graph and the Model view do (views/FocusPage.tsx).
+// The first load ships only the wiki (LA-PAT-APP-UX-R11): the theme editor loads when first opened,
+// as the graph and the Model view do (views/FocusPage.tsx).
 const AppearancePage = lazy(() => import('./theme/AppearancePage').then((m) => ({ default: m.AppearancePage })));
-const DiagramView = lazy(() => import('./diagrams/DiagramView').then((m) => ({ default: m.DiagramView })));
-
-const DIAGRAMS_PATH = '/diagrams';
-const diagramPath = (slug: string) => `${DIAGRAMS_PATH}/${slug}`;
-const slugFromPath = (path: string) => path.match(/^\/diagrams\/([a-z0-9-]+)/)?.[1] ?? null;
 
 export default function App() {
   return (
@@ -50,38 +42,9 @@ function Shell() {
   const { path, search } = useLocation();
   const spec = useSpec();
   const specRoute = parseSpecRoute(path, spec.index);
-  const slug = specRoute ? null : slugFromPath(path);
   const isAppearance = path === APPEARANCE_PATH;
   const format = useFormatStore();
   const announce = useAnnounce();
-  const [diagrams, setDiagrams] = useState<DiagramSummary[]>([]);
-  const [listError, setListError] = useState<string | null>(null);
-  // Whether the diagrams list has come back once (or failed): the nav draws its lists only then, with the specs (UX-R08).
-  const [diagramsLoaded, setDiagramsLoaded] = useState(false);
-
-  const loadDiagrams = useCallback(async () => {
-    try {
-      const response = await fetch('/api/diagrams');
-      const body = await response.json();
-      if (!response.ok) throw new Error(body.error ?? response.statusText);
-      setDiagrams(body);
-      setListError(null);
-    } catch (e) {
-      setListError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setDiagramsLoaded(true);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadDiagrams();
-    return onLatheEvent('model:changed', loadDiagrams);
-  }, [loadDiagrams]);
-
-  // Diagrams alone opens the first diagram.
-  useEffect(() => {
-    if (path === DIAGRAMS_PATH && diagrams.length > 0) navigate(diagramPath(diagrams[0].slug), true);
-  }, [path, diagrams]);
 
   // The nav: collapsed to a rail (remembered), or a drawer on a narrow screen.
   const narrow = useNarrow();
@@ -123,7 +86,6 @@ function Shell() {
   useCommand('openChecks', () => navigate(checksPath));
   useCommand('goChecks', () => navigate(checksPath));
   useCommand('goFormat', () => navigate(formatPath));
-  useCommand('goDiagrams', () => navigate(diagrams[0] ? diagramPath(diagrams[0].slug) : DIAGRAMS_PATH));
   useCommand('goHome', () => navigate(HOME_PATH));
   useCommand('goToDefinition', () => {
     const link = (document.activeElement as HTMLElement | null)?.closest?.('a[href]') as HTMLAnchorElement | null;
@@ -146,9 +108,7 @@ function Shell() {
     else { showNav(); setTimeout(() => findRef.current?.focus(), 0); }
   });
 
-  const current = diagrams.find((d) => d.slug === slug);
   const focusRoute = isFocusRoute(specRoute) ? specRoute : null;
-  const newDiagram = <NewDiagram onCreated={async (created) => { await loadDiagrams(); navigate(diagramPath(created.slug)); }} />;
 
   let page;
   if (isAppearance) {
@@ -159,14 +119,6 @@ function Shell() {
     page = <FocusPage spec={spec} route={focusRoute} search={search} />;
   } else if (specRoute) {
     page = <SpecView spec={spec} route={specRoute} />;
-  } else if (current) {
-    page = <Suspense fallback={<LoadingPage />}><DiagramView key={current.slug} diagram={current} /></Suspense>;
-  } else if (slug || path === DIAGRAMS_PATH) {
-    page = (
-      <main className="placeholder panel" id="main">
-        <p>{!diagramsLoaded ? 'Loading diagrams…' : slug ? `There's no diagram called "${slug}".` : 'No diagrams yet.'}</p>
-      </main>
-    );
   } else {
     // A lowercase address that is no page (`/settings/…` other than Appearance).
     page = <SpecView spec={spec} route={{ page: 'missing' }} />;
@@ -186,23 +138,19 @@ function Shell() {
       {narrow && (
         <TopBar
           ref={menuButton}
-          heading={pageHeading(spec.index, path, search, diagrams)}
+          heading={pageHeading(spec.index, path, search)}
           navOpen={drawerOpen}
           onMenu={() => setDrawerOpen(true)}
           onFind={() => setFindOpen(true)}
         />
       )}
-      {narrow && findOpen && <QuickFindSheet index={spec.index} diagrams={diagrams} space={spaces.current} onClose={() => setFindOpen(false)} />}
+      {narrow && findOpen && <QuickFindSheet index={spec.index} space={spaces.current} onClose={() => setFindOpen(false)} />}
       {narrow && drawerOpen && <div className="drawer-backdrop" onMouseDown={closeDrawer} />}
       {(!narrow || drawerOpen) && (
         <Nav
           ref={navRef}
           spec={spec}
           path={path}
-          diagrams={diagrams}
-          diagramError={listError}
-          newDiagram={newDiagram}
-          diagramsLoaded={diagramsLoaded}
           collapsed={collapsed}
           onToggleCollapsed={() => setCollapsed(!collapsed)}
           drawer={narrow}
@@ -270,48 +218,3 @@ function stepProblem(step: 1 | -1, announce: (text: string) => void) {
   announce(`Problem ${next + 1} of ${items.length}: ${el.textContent?.trim() ?? ''}`);
 }
 
-
-function NewDiagram({ onCreated }: { onCreated: (d: DiagramSummary) => void }) {
-  const [open, setOpen] = useState(false);
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
-
-  if (!open) return <Button className="new-diagram" icon="plus" onClick={() => setOpen(true)}>New diagram</Button>;
-
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title.trim()) { setError('Enter a title first.'); return; }
-    setSaving(true);
-    try {
-      const response = await fetch('/api/diagrams', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ title, description }),
-      });
-      const body = await response.json();
-      if (!response.ok) throw new Error(body.error ?? response.statusText);
-      setOpen(false); setTitle(''); setDescription(''); setError(null);
-      onCreated(body);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <form className="new-diagram-form" onSubmit={submit}>
-      <label htmlFor="new-title">Title</label>
-      <input id="new-title" value={title} autoFocus onChange={(e) => { setTitle(e.target.value); setError(null); }} placeholder="Making software" />
-      <label htmlFor="new-description">Description <span>(optional)</span></label>
-      <textarea id="new-description" rows={2} value={description} onChange={(e) => setDescription(e.target.value)} />
-      {error && <p className="error">{error}</p>}
-      <div className="form-actions">
-        <Button variant="primary" type="submit" disabled={saving}>{saving ? 'Creating…' : 'Create diagram'}</Button>
-        <Button onClick={() => { setOpen(false); setError(null); }}>Cancel</Button>
-      </div>
-    </form>
-  );
-}
