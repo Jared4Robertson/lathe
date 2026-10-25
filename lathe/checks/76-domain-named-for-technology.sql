@@ -11,21 +11,6 @@
 --
 -- severity: warning
 -- kinds: domain
-WITH domains AS (
-  SELECT id, title,
-         CASE WHEN parent IS NOT NULL AND starts_with(id, parent || '-') THEN substr(id, length(parent) + 2)
-              ELSE id END AS code
-  FROM records
-  WHERE kind = 'domain' AND id <> ''
-),
-named AS (
-  SELECT id, title, code,
-         regexp_extract(lower(coalesce(title, '')), '(^|[^a-z])(' || words || ')([^a-z]|$)', 2) AS in_title,
-         regexp_extract(lower(code), '(^|[^a-z])(' || words || ')([^a-z]|$)', 2) AS in_code
-  FROM domains,
-       (SELECT 'web[ -]?apps?|front[ -]?ends?|back[ -]?ends?|apis?|uis?|servers?|databases?|dbs?|desktops?|mobile'
-               || '|engines?|infrastructure|infra|electron' AS words)
-)
 SELECT 'warning' AS severity, 'domain-named-for-technology' AS "check", id AS record,
        'Domain ' || id || ' is named for a technology, not a business capability: '
        || CASE WHEN in_title <> '' THEN 'its title "' || trim(title) || '" says "' || in_title || '"' ELSE '' END
@@ -33,6 +18,20 @@ SELECT 'warning' AS severity, 'domain-named-for-technology' AS "check", id AS re
        || CASE WHEN in_code <> '' THEN 'its code ' || code || ' says "' || in_code || '"' ELSE '' END
        || '; name the domain for the capability it serves, and make the technology a layer in each domain''s '
        || 'Design stage.' AS message
-FROM named
+FROM (
+  SELECT id, title, code,
+         regexp_extract(lower(coalesce(title, '')), '(^|[^a-z])(' || words || ')([^a-z]|$)', 2) AS in_title,
+         regexp_extract(lower(code), '(^|[^a-z])(' || words || ')([^a-z]|$)', 2) AS in_code
+  FROM (
+    -- Each domain's code is its ID after the product prefix.
+    SELECT id, title,
+           CASE WHEN parent IS NOT NULL AND starts_with(id, parent || '-') THEN substr(id, length(parent) + 2)
+                ELSE id END AS code
+    FROM records
+    WHERE kind = 'domain' AND id <> ''
+  ),
+  (SELECT 'web[ -]?apps?|front[ -]?ends?|back[ -]?ends?|apis?|uis?|servers?|databases?|dbs?|desktops?|mobile'
+          || '|engines?|infrastructure|infra|electron' AS words)
+)
 WHERE in_title <> '' OR in_code <> ''
 ORDER BY record
