@@ -6,7 +6,7 @@ import { layeredGraph } from '../../src/graph/layout';
 import { canTrace, neighborhood, traceChain } from '../../src/graph/model';
 import { indexWorkspace } from '../../src/specs/data';
 import { patternWorkspace } from '../fixtures/patterns';
-import { openApp } from '../helpers';
+import { openApp, startAtDepth } from '../helpers';
 
 // Patterns in the graph: a pattern's rules sit under it, one column to its right, and a use
 // case's `follows` link is a cross-link.
@@ -17,7 +17,7 @@ const edge = (e: { source: string; relation: string; target: string }) => `${e.s
 describe('patterns in the graph', () => {
   it('LA-BRW-T175 A pattern\'s rules appear under it, one column to its right', () => {
     const ix = index();
-    const n = neighborhood(ix, 'DM-PAT-CHECKOUT', 1);
+    const n = neighborhood(ix, 'DM-PAT-CHECKOUT', 2);
     const edges = n.edges.map(edge);
     expect(edges).toEqual(expect.arrayContaining([
       'DM/pattern parent DM-PAT-CHECKOUT',
@@ -30,7 +30,7 @@ describe('patterns in the graph', () => {
 
   it('LA-BRW-T176 A use case\'s follows link is drawn as a cross-link: shown, styled as a pattern link, the use case one column after the pattern', () => {
     const ix = index();
-    const n = neighborhood(ix, 'DM-PAT-CHECKOUT', 1);
+    const n = neighborhood(ix, 'DM-PAT-CHECKOUT', 2);
     expect(n.edges.map(edge)).toEqual(expect.arrayContaining(['DM-PAY-UC01 follows DM-PAT-CHECKOUT', 'DM-SHOP-UC01 follows DM-PAT-CHECKOUT']));
     expect(relationStyle('follows')).toBe('pattern');
     expect(relationStyle('uses')).toBe('design');
@@ -44,7 +44,7 @@ describe('patterns in the graph', () => {
     }
     expect(pairs).toContain('DM-PAT-CHECKOUT>DM-PAT-CHECKOUT-R01');
     // From a use case, its pattern is one step away.
-    expect(neighborhood(ix, 'DM-PAY-UC01', 1).nodes.map((x) => x.id)).toContain('DM-PAT-CHECKOUT');
+    expect(neighborhood(ix, 'DM-PAY-UC01', 2).nodes.map((x) => x.id)).toContain('DM-PAT-CHECKOUT');
   });
 
   it('LA-BRW-T177 Trace mode is offered for a pattern rule and shows what satisfies and proves it in every domain', () => {
@@ -56,6 +56,7 @@ describe('patterns in the graph', () => {
   });
 
   it('LA-BRW-T178 The graph view of a pattern draws its rules and the follows lines with their own style', async () => {
+    startAtDepth(2);
     await openApp('/records/DM-PAT-CHECKOUT?view=graph', { workspace: patternWorkspace() });
     await waitFor(() => expect(document.querySelector('.react-flow__node[data-id="DM-PAT-CHECKOUT-R01"]')).not.toBeNull());
     await waitFor(() => expect(document.querySelector('.react-flow__edge-path.rel-pattern')).not.toBeNull());

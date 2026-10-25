@@ -2,8 +2,8 @@ import { fireResize } from './setup';
 import { describe, expect, it } from 'vitest';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { Workspace } from '../../../lathe/src/types';
-import { GraphView } from '../../src/graph/GraphPage';
-import { openApp } from '../helpers';
+import { DEFAULT_GRAPH_SETTINGS, GraphView } from '../../src/graph/GraphPage';
+import { openApp, startAtDepth } from '../helpers';
 import { testIndex, testWorkspace } from './workspace';
 
 // The graph as the focus page hosts it: in the Graph view of a record's, group's, product's or
@@ -22,7 +22,9 @@ async function back() {
   });
 }
 
-async function showGraph(path: string, workspace: Workspace = testWorkspace()) {
+/** Opens a graph page. Most tests here are about links, so the graph starts at depth 2 unless one asks for another. */
+async function showGraph(path: string, workspace: Workspace = testWorkspace(), depth = 2) {
+  startAtDepth(depth);
   await openApp(path.includes('?') ? path : `${path}?view=graph`, { workspace });
   await waitFor(() => expect(document.querySelectorAll('.react-flow__node').length).toBeGreaterThan(0));
 }
@@ -64,6 +66,20 @@ describe('graph page', () => {
     expect(side.getByRole('link', { name: 'P-D-DR02' }).getAttribute('href')).toBe('/records/P-D-DR02');
   });
 
+  it('LA-BRW-T278 The graph opens at depth 1 with the parent and children only; depth 2 and 3 bring in the links', async () => {
+    await showGraph('/records/P-D-UC01-R01', testWorkspace(), 1);
+    const depth = within(screen.getByRole('group', { name: 'Depth' }));
+    expect(depth.getAllByRole('button').map((b) => b.textContent)).toEqual(['1', '2', '3']);
+    expect(depth.getByRole('button', { name: '1' })).toHaveAttribute('aria-pressed', 'true');
+    await waitFor(() => expect(node('P-D-UC01')).not.toBeNull());
+    expect(node('P-D-V01')).toBeNull();
+    expect(node('P-D-T01')).toBeNull();
+    expect(document.querySelector('.react-flow__edge-path.graph-edge:not(.rel-structure)')).toBeNull();
+    fireEvent.click(depth.getByRole('button', { name: '2' }));
+    await waitFor(() => expect(node('P-D-V01')).not.toBeNull());
+    expect(node('P-D-T01')).not.toBeNull();
+  });
+
   it('LA-BRW-T59 Nodes show their stage and kind, records with errors or gaps are marked, edges carry their relation, and there is a legend', async () => {
     await showGraph('/records/P-D-UC01-R01');
     await waitFor(() => expect(node('P-D-T01')).not.toBeNull());
@@ -74,8 +90,8 @@ describe('graph page', () => {
     expect(node('P-D-V01')!.querySelector('.graph-mark')).toBeNull();
     expect(screen.getByRole('region', { name: 'Legend' })).toBeTruthy();
 
-    // A depth-2 graph reaches P-D-DR01, which has a coverage gap, and the domain, a structural record.
-    fireEvent.click(screen.getByRole('button', { name: '2' }));
+    // Depth 3 (two steps of links) reaches P-D-DR01, which has a coverage gap, and the domain, a structural record.
+    fireEvent.click(screen.getByRole('button', { name: '3' }));
     await waitFor(() => expect(node('P-D-DR01')).not.toBeNull());
     expect(node('P-D-DR01')!.querySelector('.graph-mark.gap')).not.toBeNull();
     expect(node('P-D')!.querySelector('.graph-node')!.className).toContain('stage-structural');
@@ -260,14 +276,14 @@ describe('graph groups on the page', () => {
     const moves: string[] = [];
     const index = testIndex();
     const props = { index, onNavigate: (id: string) => moves.push(id), hrefFor: (id: string) => `/records/${id}` };
-    const { rerender } = render(<GraphView {...props} focus="P-D-UC01-R01" />);
+    const { rerender } = render(<GraphView {...props} settings={{ ...DEFAULT_GRAPH_SETTINGS, depth: 2 }} focus="P-D-UC01-R01" />);
     await waitFor(() => expect(node('P-D-V01')).not.toBeNull());
     fireEvent.click(node('P-D-V01')!);
     expect(moves).toEqual(['P-D-V01']);
     expect(window.location.pathname).toBe('/somewhere-else');
 
     // Its links carry the host's addresses; a plain click goes through onNavigate.
-    rerender(<GraphView {...props} focus="P-D-V01" />);
+    rerender(<GraphView {...props} settings={{ ...DEFAULT_GRAPH_SETTINGS, depth: 2 }} focus="P-D-V01" />);
     const link = within(screen.getByRole('navigation', { name: 'Records visited' })).getByRole('link', { name: 'P-D-UC01-R01' });
     expect(link.getAttribute('href')).toBe('/records/P-D-UC01-R01');
     fireEvent.click(link);

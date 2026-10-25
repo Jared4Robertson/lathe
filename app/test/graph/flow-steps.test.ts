@@ -35,7 +35,7 @@ const spine = (n: { edges: { source: string; target: string; relation: string }[
 describe('flow steps in the graph', () => {
   it('LA-BRW-T204 A flow step sits one column to the right of its flow, joined to it by the parent line', () => {
     const index = indexWorkspace(flowWorkspace(3));
-    const n = neighborhood(index, 'P-D-F01', 1);
+    const n = neighborhood(index, 'P-D-F01', 2);
     expect(isGrouped(index, 'P-D-F01')).toBe(false);
     expect(recordIds(n)).toEqual(expect.arrayContaining(['P-D-F01', 'P-D-F01-S01', 'P-D-F01-S02', 'P-D-F01-S03']));
     expect(spine(n)).toEqual(expect.arrayContaining(['P-D-F01 > P-D-F01-S01', 'P-D-F01 > P-D-F01-S02', 'P-D-F01 > P-D-F01-S03']));
@@ -47,13 +47,13 @@ describe('flow steps in the graph', () => {
     const index = indexWorkspace(flowWorkspace(6));
     expect(isGrouped(index, 'P-D-F01')).toBe(true);
     const gid = groupId('P-D-F01', 'flow_step');
-    const folded = neighborhood(index, 'P-D-F01', 1);
+    const folded = neighborhood(index, 'P-D-F01', 2);
     const group = folded.nodes.find((x) => x.id === gid);
     expect(group).toMatchObject({ title: 'Flow steps (6)', group: { parent: 'P-D-F01', count: 6, open: false } });
     expect(group!.column).toBe(folded.nodes.find((x) => x.id === 'P-D-F01')!.column + 1);
     expect(recordIds(folded)).not.toContain('P-D-F01-S01');
     // Focusing a step opens its own group, which sits between the flow and the steps.
-    const fromStep = neighborhood(index, 'P-D-F01-S02', 1);
+    const fromStep = neighborhood(index, 'P-D-F01-S02', 2);
     expect(spine(fromStep)).toEqual(expect.arrayContaining([`P-D-F01 > ${gid}`, `${gid} > P-D-F01-S02`]));
   });
 

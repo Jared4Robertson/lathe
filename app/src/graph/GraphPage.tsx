@@ -183,6 +183,13 @@ export interface GraphSettings {
   trace: boolean;
   openGroups: ReadonlyMap<string, boolean>;
 }
+/** Depth 1 is the tree around the focus (parent and children); each depth after it walks one more hop of links. */
+/** "1 record", "2 records". */
+const count = (n: number, noun: string) => `${n} ${n === 1 ? noun : `${noun}s`}`;
+
+export const MAX_DEPTH = 3;
+const DEPTHS = [1, 2, 3];
+const DEPTH_LABELS = ['Parent and children only', 'Plus links one step away', 'Plus links two steps away'];
 export const DEFAULT_GRAPH_SETTINGS: GraphSettings = { depth: 1, filters: NO_FILTERS, trace: false, openGroups: new Map() };
 
 export interface GraphViewProps {
@@ -247,8 +254,8 @@ export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted,
     if (e.key === 'Escape' && (isFiltered(filters) || trace)) { e.preventDefault(); clearFilters(); }
   };
   const valid = isGraphNode(index, focus);
-  useCommand('graphDepthUp', () => update({ depth: 2 }), valid && !tracing);
-  useCommand('graphDepthDown', () => update({ depth: 1 }), valid && !tracing);
+  useCommand('graphDepthUp', () => update({ depth: Math.min(MAX_DEPTH, latest.current.depth + 1) }), valid && !tracing);
+  useCommand('graphDepthDown', () => update({ depth: Math.max(1, latest.current.depth - 1) }), valid && !tracing);
   useCommand('graphTrace', () => update({ trace: !latest.current.trace }), valid && canTrace(index, focus));
 
   if (!valid) {
@@ -277,8 +284,8 @@ export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted,
         <div className="graph-toolbar">
           <div className="graph-depth" role="group" aria-label="Depth">
             <span>Depth</span>
-            {[1, 2].map((d) => (
-              <Tooltip key={d} label={d === 1 ? 'Less depth' : 'More depth'} command={d === 1 ? 'graphDepthDown' : 'graphDepthUp'}>
+            {DEPTHS.map((d) => (
+              <Tooltip key={d} label={DEPTH_LABELS[d - 1]} command={d === depth + 1 ? 'graphDepthUp' : d === depth - 1 ? 'graphDepthDown' : undefined}>
                 <button type="button" aria-pressed={depth === d} disabled={tracing} onClick={() => setDepth(d)}>{d}</button>
               </Tooltip>
             ))}
@@ -293,7 +300,7 @@ export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted,
           )}
           <FilterControls index={index} filters={filters} setFilters={setFilters} />
           <span className="graph-count">
-            {graph.nodes.length - groups} records{groups > 0 && <> · {groups} group{groups > 1 ? 's' : ''}</>} · {graph.edges.length} links
+            {count(graph.nodes.length - groups, 'record')}{groups > 0 && <> · {count(groups, 'group')}</>} · {count(graph.edges.length, 'link')}
           </span>
         </div>
       </header>
