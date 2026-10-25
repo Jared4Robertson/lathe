@@ -36,24 +36,18 @@ function readPage(): PageState {
 const samePage = (a: PageState, b: PageState) =>
   a.title === b.title && a.navShown === b.navShown && a.inspectorShown === b.inspectorShown && a.inspectorOffered === b.inspectorOffered;
 
-/** The page's state, kept current as the page changes (coalesced to one read a frame). */
+/** The page's state, kept current as the page changes (the observer batches each turn's changes into one read). */
 function usePageState(): PageState {
   const [page, setPage] = useState<PageState>({ title: '', navShown: true, inspectorShown: false, inspectorOffered: false });
   useLayoutEffect(() => {
-    let frame = 0;
     const read = () => {
-      frame = 0;
       const next = readPage();
       setPage((prev) => (samePage(prev, next) ? prev : next));
     };
-    const schedule = () => { if (!frame) frame = requestAnimationFrame(read); };
     read();
-    const observer = new MutationObserver(schedule);
+    const observer = new MutationObserver(read);
     observer.observe(document.getElementById('root') ?? document.body, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['class'] });
-    return () => {
-      observer.disconnect();
-      if (frame) cancelAnimationFrame(frame);
-    };
+    return () => observer.disconnect();
   }, []);
   return page;
 }
