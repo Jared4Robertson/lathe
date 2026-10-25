@@ -3,7 +3,7 @@ id: LA
 kind: product
 title: Lathe
 ---
-Lathe is a toolkit for organising a product's lifecycle (domain model, use cases, interaction design, technical design and tests) as structured records that a database checks and a web app navigates.
+Lathe is a toolkit for organizing a product's lifecycle (domain model, use cases, interaction design, technical design and tests) as structured records that a database checks and a web app navigates.
 
 This product is Lathe's own specification, written in Lathe, so the tool is held to its own process. It has three domains:
 

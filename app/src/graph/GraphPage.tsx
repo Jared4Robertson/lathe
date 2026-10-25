@@ -32,7 +32,7 @@ import {
   isFiltered,
   isGraphNode,
   kindGroups,
-  neighbourhood,
+  neighborhood,
   nextTrail,
   parseGroupId,
   pluralLabel,
@@ -40,11 +40,11 @@ import {
   traceChain,
   type Filters,
   type GraphNode,
-  type Neighbourhood,
+  type Neighborhood,
 } from './model';
-import { boxExit, layoutNeighbourhood, NODE_HEIGHT, NODE_WIDTH, type Placed } from './layout';
+import { boxExit, layoutNeighborhood, NODE_HEIGHT, NODE_WIDTH, type Placed } from './layout';
 
-// The graph view: an ego graph centred on one record or group. Clicking a record re-centres on it
+// The graph view: an ego graph centered on one record or group. Clicking a record re-centers on it
 // (through onNavigate, so the host changes the address and Back walks back along the path);
 // clicking a group opens or closes it.
 //
@@ -173,7 +173,7 @@ export interface GraphViewProps {
   index: SpecIndex;
   /** A record ID, or a group as `<parent-id>/<kind>`. */
   focus: string;
-  /** Called with a record or group ID when the person moves the centre there. */
+  /** Called with a record or group ID when the person moves the center there. */
   onNavigate: (id: string) => void;
   /** The address a node's link points to, for opening in a new tab. */
   hrefFor: (id: string) => string;
@@ -217,7 +217,7 @@ export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted,
 
   const tracing = trace && canTrace(index, focus);
   const graph = useMemo(
-    () => (tracing ? traceChain(index, focus, filters) : neighbourhood(index, focus, depth, filters, openGroups)),
+    () => (tracing ? traceChain(index, focus, filters) : neighborhood(index, focus, depth, filters, openGroups)),
     [index, focus, depth, filters, tracing, openGroups],
   );
   useEffect(() => { onGraph?.({ graph, tracing }); }, [graph, tracing, onGraph]);
@@ -346,7 +346,7 @@ function FilterControls({ index, filters, setFilters }: { index: SpecIndex; filt
 }
 
 /** Nodes in reading order for the keyboard: column by column (tiers and traces both read left to right), ring by ring for the radial fallback. */
-function keyboardOrder(graph: Neighbourhood, placed: Placed) {
+function keyboardOrder(graph: Neighborhood, placed: Placed) {
   const at = (id: string) => placed.positions.get(id) ?? { x: 0, y: 0 };
   const angle = (id: string) => {
     const p = at(id);
@@ -360,7 +360,7 @@ function keyboardOrder(graph: Neighbourhood, placed: Placed) {
   return [...graph.nodes].sort(compare).map((n) => n.id);
 }
 
-/** The viewport that fits every box in the canvas, centred, never zoomed in past 1. */
+/** The viewport that fits every box in the canvas, centered, never zoomed in past 1. */
 export function fitPositions(positions: Map<string, { x: number; y: number }>, width: number, height: number, padding = 40) {
   const all = [...positions.values()];
   const minX = Math.min(...all.map((p) => p.x));
@@ -373,11 +373,11 @@ export function fitPositions(positions: Map<string, { x: number; y: number }>, w
 
 function GraphCanvas({ index, graph, onNavigate, onToggle }: {
   index: SpecIndex;
-  graph: Neighbourhood;
+  graph: Neighborhood;
   onNavigate: (id: string) => void;
   onToggle: (id: string, nowOpen: boolean) => void;
 }) {
-  const [placed, setPlaced] = useState<(Placed & { graph: Neighbourhood }) | null>(null);
+  const [placed, setPlaced] = useState<(Placed & { graph: Neighborhood }) | null>(null);
   const [error, setError] = useState<string | null>(null);
   const wrapper = useRef<HTMLDivElement>(null);
   const active = useRef<string | null>(null);
@@ -387,7 +387,7 @@ function GraphCanvas({ index, graph, onNavigate, onToggle }: {
 
   useEffect(() => {
     let live = true;
-    layoutNeighbourhood(graph).then(
+    layoutNeighborhood(graph).then(
       (result) => { if (live) { setPlaced({ ...result, graph }); setError(null); } },
       (e) => { if (live) setError(e instanceof Error ? e.message : String(e)); },
     );
@@ -417,7 +417,7 @@ function GraphCanvas({ index, graph, onNavigate, onToggle }: {
         return {
           ...base,
           type: 'folder',
-          ariaLabel: `Group ${node.title} in ${node.group.parent}, ${node.group.open ? 'open' : 'folded'}${isFocus ? ' (centre)' : ''}`,
+          ariaLabel: `Group ${node.title} in ${node.group.parent}, ${node.group.open ? 'open' : 'folded'}${isFocus ? ' (center)' : ''}`,
           data: { node, kindLabel: 'Group', ...marks, isFocus },
         };
       }
@@ -426,7 +426,7 @@ function GraphCanvas({ index, graph, onNavigate, onToggle }: {
       return {
         ...base,
         type: 'record',
-        ariaLabel: `${node.kind === FILE_KIND ? 'File' : kindLabel(index, node.kind)} ${isFocus ? '(centre) ' : ''}${node.title}`,
+        ariaLabel: `${node.kind === FILE_KIND ? 'File' : kindLabel(index, node.kind)} ${isFocus ? '(center) ' : ''}${node.title}`,
         data: {
           node,
           kindLabel: node.kind === FILE_KIND ? 'File' : kindLabel(index, node.kind),
@@ -437,13 +437,13 @@ function GraphCanvas({ index, graph, onNavigate, onToggle }: {
         },
       };
     });
-    const centre = (id: string) => {
+    const center = (id: string) => {
       const p = positions.get(id) ?? { x: 0, y: 0 };
       return { x: p.x + NODE_WIDTH / 2, y: p.y + NODE_HEIGHT / 2 };
     };
     const edges: FlowEdge[] = g.edges.map((e) => {
-      const s = centre(e.source);
-      const t = centre(e.target);
+      const s = center(e.source);
+      const t = center(e.target);
       return {
         id: e.id,
         source: e.source,
@@ -505,7 +505,7 @@ function GraphCanvas({ index, graph, onNavigate, onToggle }: {
     if (node?.group && id) { refocus.current = id; onToggle(id, node.group.open); }
   }, !!placed);
 
-  /** A click or Enter on a node: a group opens or closes, a record becomes the centre. */
+  /** A click or Enter on a node: a group opens or closes, a record becomes the center. */
   const activate = (id: string, fromKeyboard: boolean) => {
     if (!placed || id.startsWith('file:') || id === placed.graph.focus) return;
     const node = placed.graph.nodes.find((n) => n.id === id);
@@ -545,7 +545,7 @@ function GraphCanvas({ index, graph, onNavigate, onToggle }: {
       {!placed && <p className="hint graph-loading">Laying out the graph…</p>}
       {placed?.layout === 'radial' && placed.cycle && (
         <p className="graph-notice" role="status">
-          Drawn around the centre instead of in tiers: {placed.cycle.join(' → ')} → {placed.cycle[0]} link in a circle within one tier.
+          Drawn around the center instead of in tiers: {placed.cycle.join(' → ')} → {placed.cycle[0]} link in a circle within one tier.
         </p>
       )}
       <ReactFlow

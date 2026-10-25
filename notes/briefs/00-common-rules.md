@@ -3,7 +3,7 @@
 These apply to every brief in this folder.
 
 ## Context
-Lathe is a toolkit for organising a product's lifecycle (domain model, use cases, interaction design, technical spec, test plan) as structured records that a database checks and a web app navigates. It is modelled on `~/Development/S2_sandbox/docs` (read-only reference; never open any `.env*` file there). The record format and meta-model are in [lathe/FORMAT.md](../../lathe/FORMAT.md), [lathe/meta/kinds.csv](../../lathe/meta/kinds.csv), [lathe/meta/relations.csv](../../lathe/meta/relations.csv); the engine/app contract is [lathe/src/types.ts](../../lathe/src/types.ts). A sample workspace is [lathe/fixtures/workspace.sample.json](../../lathe/fixtures/workspace.sample.json).
+Lathe is a toolkit for organizing a product's lifecycle (domain model, use cases, interaction design, technical spec, test plan) as structured records that a database checks and a web app navigates. It is modeled on `~/Development/S2_sandbox/docs` (read-only reference; never open any `.env*` file there). The record format and meta-model are in [lathe/FORMAT.md](../../lathe/FORMAT.md), [lathe/meta/kinds.csv](../../lathe/meta/kinds.csv), [lathe/meta/relations.csv](../../lathe/meta/relations.csv); the engine/app contract is [lathe/src/types.ts](../../lathe/src/types.ts). A sample workspace is [lathe/fixtures/workspace.sample.json](../../lathe/fixtures/workspace.sample.json).
 
 ## Rules
 - **First, before anything else:** your worktree may have been created from an older commit. Run `git merge --ff-only <base>` with the base branch your launch message names, and confirm `notes/briefs/` and your brief exist. If the fast-forward fails, stop and report.

@@ -12,7 +12,7 @@ Describe Lathe in Lathe, so the tool is held to its own process: the domain mode
 
 ## What to write
 Product `LA` with three domains:
-- `LA-MOD` Modelling: diagrams (the `model/` CSV diagrams and the app's Diagrams pages) and spec records (the Markdown record format).
+- `LA-MOD` Modeling: diagrams (the `model/` CSV diagrams and the app's Diagrams pages) and spec records (the Markdown record format).
 - `LA-CHK` Checking: loading the workspace, the meta-model, checks and coverage (the engine).
 - `LA-BRW` Browsing: the web app's navigation of diagrams and specs.
 

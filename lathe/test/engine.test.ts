@@ -1,4 +1,4 @@
-// Engine behaviour that needs its own temporary folders: adding checks, changing the meta-model,
+// Engine behavior that needs its own temporary folders: adding checks, changing the meta-model,
 // and rebuilding the workspace on every load.
 import { cpSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';

@@ -1,6 +1,6 @@
 # Tool Library
 
-Lathe's example product: the HTTP API of a neighbourhood tool library. Librarians register members and add tools; members borrow tools for 14 days (at most 3 at once, none while one is overdue); on return the librarian records the tool's condition, and a tool that needs repair is not lent until it is marked repaired. Damage reported while a tool is on loan is not cleared by a good return.
+Lathe's example product: the HTTP API of a neighborhood tool library. Librarians register members and add tools; members borrow tools for 14 days (at most 3 at once, none while one is overdue); on return the librarian records the tool's condition, and a tool that needs repair is not lent until it is marked repaired. Damage reported while a tool is on loan is not cleared by a good return.
 
 Due dates are dates (YYYY-MM-DD), counted in the library's time zone: a loan is due 14 calendar days after it starts and becomes overdue at 00:00 on the day after its due date in that zone.
 

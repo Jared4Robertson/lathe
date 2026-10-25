@@ -23,7 +23,7 @@ export const withView = (path: string, view: ViewMode) => `${path}?view=${view}`
 export type FocusRoute = Extract<SpecRoute, { page: 'product' | 'domain' | 'record' | 'group' }>;
 export const isFocusRoute = (r: SpecRoute | null): r is FocusRoute => !!r && ['product', 'domain', 'record', 'group'].includes(r.page);
 
-/** The graph's centre for a page: the record's ID, or a group's `<parent-id>/<kind>`. */
+/** The graph's center for a page: the record's ID, or a group's `<parent-id>/<kind>`. */
 export function focusOf(route: FocusRoute): string {
   switch (route.page) {
     case 'product': return route.product;

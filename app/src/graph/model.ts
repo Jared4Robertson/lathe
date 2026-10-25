@@ -43,7 +43,7 @@ export interface GraphEdge {
   relation: string;
 }
 
-export interface Neighbourhood {
+export interface Neighborhood {
   focus: string;
   mode: GraphMode;
   /** In a stable order: the focus first, then by distance, stage, kind and ID. */
@@ -229,13 +229,13 @@ function rowsInOrder(nodes: GraphNode[]): Map<string, number> {
  * the focus is never hidden. `open` holds the groups the person has opened or closed; any other
  * group is open when it is the focus or the focus is one of its members.
  */
-export function neighbourhood(
+export function neighborhood(
   index: SpecIndex,
   focus: string,
   depth: number,
   filters: Filters = NO_FILTERS,
   open: ReadonlyMap<string, boolean> = NO_OPEN,
-): Neighbourhood {
+): Neighborhood {
   if (!isGraphNode(index, focus)) return { focus, mode: 'hierarchy', nodes: [], edges: [], via: new Map() };
   const shownRelation = (relation: string) => !filters.hiddenRelations.has(relation);
   const kindOfNode = (id: string) => index.byId.get(id)?.kind ?? parseGroupId(id)!.kind;
@@ -376,7 +376,7 @@ export function groupMembers(index: SpecIndex, gid: string) {
 /** Whether an ID names a group that exists: a record with at least one child of that kind. */
 export const isGroup = (index: SpecIndex, id: string) => groupMembers(index, id).length > 0;
 
-/** Whether the graph can centre on an ID: a record or a group. */
+/** Whether the graph can center on an ID: a record or a group. */
 export const isGraphNode = (index: SpecIndex, id: string) => index.byId.has(id) || isGroup(index, id);
 
 /** A kind's label in the plural: "Use cases", "Open questions", "Fitness". */
@@ -429,7 +429,7 @@ export const fileNodeId = (path: string) => `file:${path}`;
  * implement those views and endpoints, a fulfilling step's flow and the components it uses, and
  * the files the components and tests name.
  */
-export function traceChain(index: SpecIndex, focus: string, filters: Filters = NO_FILTERS): Neighbourhood {
+export function traceChain(index: SpecIndex, focus: string, filters: Filters = NO_FILTERS): Neighborhood {
   if (!canTrace(index, focus)) return { focus, mode: 'trace', nodes: [], edges: [], via: new Map() };
   const shownRelation = (relation: string) => !filters.hiddenRelations.has(relation);
   const shownKind = (kind: string) => !filters.hiddenKinds.has(kind);

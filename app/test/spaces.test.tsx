@@ -36,7 +36,7 @@ function spacesWorkspace(): Workspace {
 }
 
 describe('product spaces', () => {
-  it('LA-BRW-T220 The rail lists the products in order, each with its icon or its monogram on a stable colour', async () => {
+  it('LA-BRW-T220 The rail lists the products in order, each with its icon or its monogram on a stable color', async () => {
     // The icon field: one emoji or up to two characters; otherwise the ID's monogram.
     expect(iconField('📓')).toBe('📓');
     expect(iconField('TL')).toBe('TL');

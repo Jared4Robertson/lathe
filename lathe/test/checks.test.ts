@@ -108,7 +108,7 @@ describe('product configuration', () => {
   it("LA-CHK-T08 A product's meta-model extension adds kinds and relations", () => {
     const ws = workspaces.configured;
     expect(ws.kinds.map((k) => k.kind)).toEqual(expect.arrayContaining(['product', 'requirement', 'report']));
-    expect(ws.relations).toContainEqual(expect.objectContaining({ relation: 'summarises', source_kind: 'report', target_kind: 'aggregate' }));
+    expect(ws.relations).toContainEqual(expect.objectContaining({ relation: 'summarizes', source_kind: 'report', target_kind: 'aggregate' }));
     expect(ws.problems.filter((p) => p.severity === 'error')).toEqual([]);
   });
 });

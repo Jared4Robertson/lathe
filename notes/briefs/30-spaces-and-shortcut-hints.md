@@ -10,7 +10,7 @@ Two requests from Jared for the app shell:
 ## What to build
 **Spaces**
 - A rail about 56 px wide at the far left of the nav: one square icon button per product, then a separator and the cross-product items (Diagrams, and Checks for all products), with a tooltip naming each. The current space is clearly marked (an accent bar and `aria-current`).
-- A product's icon: an `icon` field on its product record if it has one (one emoji or up to two characters), otherwise its ID prefix as a monogram (`TL`, `LA`), with a stable colour derived from the ID; optional `color` field. Document both optional fields in `lathe/FORMAT.md` (product record, a short paragraph in section 2).
+- A product's icon: an `icon` field on its product record if it has one (one emoji or up to two characters), otherwise its ID prefix as a monogram (`TL`, `LA`), with a stable color derived from the ID; optional `color` field. Document both optional fields in `lathe/FORMAT.md` (product record, a short paragraph in section 2).
 - The current space is the product of the page you are on; choosing a space opens that product's page, or the last page you visited in it (remember per space for the session). The nav lists only that space's domains and items; quick find searches the current space first, then everything else under a divider; Checks can be filtered to the space.
 - Keyboard: Alt+1 … Alt+9 (⌥1 … ⌥9 on macOS) switch spaces in rail order; add "Switch to <product>" commands to the command palette. Keep every existing shortcut working.
 - On narrow screens the rail stays visible inside the nav drawer.

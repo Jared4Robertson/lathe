@@ -21,7 +21,7 @@
     "vitest": "^4.0.0"
   },
   "version": "0.1.0",
-  "description": "Organise a product's lifecycle as checked, traceable records.",
+  "description": "Organize a product's lifecycle as checked, traceable records.",
   "types": "dist/src/index.d.ts",
   "bin": {
     "lathe": "dist/bin/lathe.js"

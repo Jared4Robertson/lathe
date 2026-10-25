@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Lathe">
-  <!-- A three-jaw lathe chuck: the body in steel, and the jaws, stepped like real chuck jaws, gripping at the centre in spark orange. -->
+  <!-- A three-jaw lathe chuck: the body in steel, and the jaws, stepped like real chuck jaws, gripping at the center in spark orange. -->
   <defs>
     <mask id="chuck-cut">
       <rect width="64" height="64" fill="#fff"/>

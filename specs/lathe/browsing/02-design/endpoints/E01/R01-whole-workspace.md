@@ -1,7 +1,7 @@
 ---
 id: LA-BRW-E01-R01
 kind: interaction_requirement
-title: GET /api/spec answers with the whole workspace, labelled when it is the fixture
+title: GET /api/spec answers with the whole workspace, labeled when it is the fixture
 parent: LA-BRW-E01
 links:
   fulfills: [LA-BRW-UC05-R02]

@@ -8,4 +8,4 @@ run_by: app/test/graph/model.test.ts
 links:
   proves: [LA-BRW-UC20-R01]
 ---
-Builds a small workspace and expects the depth-1 neighbourhood of a requirement, a component and an aggregate to hold exactly the records one link or parent step away, with every link between them.
+Builds a small workspace and expects the depth-1 neighborhood of a requirement, a component and an aggregate to hold exactly the records one link or parent step away, with every link between them.

@@ -18,7 +18,7 @@ S2_sandbox is a client product. Its content must not enter the Lathe repo, which
 ## What to do
 1. Pick one slice of Accounting end to end: one or two aggregates with their domain rules, one or two use cases with their requirements, the interaction design and technical-spec components that satisfy them, and the tests that prove them. Express it as Lathe records in your scratch product. Where S2 has something Lathe cannot express, use a `metaExtensions` folder in the trial to add kinds or relations, and note each one.
 2. Run the check, and compare its coverage with S2's own traceability for the same slice.
-3. Write `notes/trials/s2-accounting.md`: what mapped cleanly; what needed a meta-model extension (and whether it belongs in Lathe's defaults); what Lathe could not express at all (for example value tables, permissions, flows' step tables, IDs that cite other IDs inside prose); how S2's quality checks compare with Lathe's; and a short, prioritised list of recommended changes to Lathe, each with its reason. Keep the scratch folder; give its path in the report.
+3. Write `notes/trials/s2-accounting.md`: what mapped cleanly; what needed a meta-model extension (and whether it belongs in Lathe's defaults); what Lathe could not express at all (for example value tables, permissions, flows' step tables, IDs that cite other IDs inside prose); how S2's quality checks compare with Lathe's; and a short, prioritized list of recommended changes to Lathe, each with its reason. Keep the scratch folder; give its path in the report.
 
 ## Checks
 The trial's `lathe check` result, and confirm with `git status` that nothing outside `notes/trials/` changed in the repo.

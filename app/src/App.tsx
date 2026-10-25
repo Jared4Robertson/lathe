@@ -376,10 +376,10 @@ function DiagramView({ diagram }: { diagram: DiagramSummary }) {
   const { nodes, edges } = useMemo(() => {
     if (!selected) return { nodes: graph.nodes, edges: graph.edges.map((e) => ({ ...e, markerEnd: { type: MarkerType.ArrowClosed } })) };
     const touches = (e: ModelEdge) => e.data!.link.source === selected || e.data!.link.target === selected;
-    const neighbours = new Set([selected]);
-    for (const l of model?.links ?? []) if (l.source === selected || l.target === selected) { neighbours.add(l.source); neighbours.add(l.target); }
+    const neighbors = new Set([selected]);
+    for (const l of model?.links ?? []) if (l.source === selected || l.target === selected) { neighbors.add(l.source); neighbors.add(l.target); }
     return {
-      nodes: graph.nodes.map((n) => ({ ...n, className: n.type === 'context' || neighbours.has(n.data.term) ? (n.data.term === selected ? 'selected-term' : '') : 'dimmed' })),
+      nodes: graph.nodes.map((n) => ({ ...n, className: n.type === 'context' || neighbors.has(n.data.term) ? (n.data.term === selected ? 'selected-term' : '') : 'dimmed' })),
       edges: graph.edges.map((e) => ({ ...e, markerEnd: { type: MarkerType.ArrowClosed }, className: touches(e) ? 'highlighted' : 'dimmed' })),
     };
   }, [graph, model, selected]);

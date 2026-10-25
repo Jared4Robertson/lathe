@@ -103,7 +103,7 @@ One mistake gives one error: a duplicated ID is reported as `duplicate-id`, with
 | `flow-fulfills-differs-from-steps` | Once a flow has steps, put each `fulfills` on the step that does it; drop it from the flow, or add the step. |
 | `product-check-name-clash` (error) | Rename the product's check file so its name differs from Lathe's checks. |
 | `product-checks-missing` (error) | `lathe.config.json` names a `checks` folder that does not exist: create it or fix the path. |
-| Any other check name you do not recognise | It is the product's own check (in the folder `lathe.config.json` names in `checks`); read that SQL file to see what it wants. |
+| Any other check name you do not recognize | It is the product's own check (in the folder `lathe.config.json` names in `checks`); read that SQL file to see what it wants. |
 
 ## Owed and silent proofs
 

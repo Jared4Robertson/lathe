@@ -1,7 +1,7 @@
 ---
 id: LA-BRW-T17
 kind: test
-title: "GET /api/spec serves the labelled fixture when asked to or when the engine cannot load"
+title: "GET /api/spec serves the labeled fixture when asked to or when the engine cannot load"
 parent: LA-BRW
 test_type: integration
 run_by: app/test/server.test.ts

@@ -64,7 +64,7 @@ export const COMMANDS: readonly Command[] = [
   { id: 'collapseAll', title: 'Collapse all rows on this page', group: 'View', keys: [], when: 'page' },
   // Graph
   { id: 'graphMove', title: 'Move between boxes', group: 'Graph', keys: ['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp'], when: 'graph', local: true },
-  { id: 'graphActivate', title: 'Centre on the focused box, or open or close a group', group: 'Graph', keys: ['Enter'], when: 'graph', local: true },
+  { id: 'graphActivate', title: 'Center on the focused box, or open or close a group', group: 'Graph', keys: ['Enter'], when: 'graph', local: true },
   { id: 'graphDepthUp', title: 'More depth', group: 'Graph', keys: ['+', '='], when: 'graph' },
   { id: 'graphDepthDown', title: 'Less depth', group: 'Graph', keys: ['-'], when: 'graph' },
   { id: 'graphTrace', title: 'Trace mode on or off', group: 'Graph', keys: ['t'], when: 'graph' },
