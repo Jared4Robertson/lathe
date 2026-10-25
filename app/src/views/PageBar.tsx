@@ -74,7 +74,7 @@ export function PageBar(props: PageBarProps) {
         ref={pagesButton}
         type="button"
         className={`page-bar-pages${pagesOpen ? ' is-on' : ''}`}
-        aria-label={`Open pages (${count})`}
+        aria-label={`Open pages: ${count}`}
         aria-expanded={pagesOpen}
         aria-haspopup="dialog"
         onClick={onPages}

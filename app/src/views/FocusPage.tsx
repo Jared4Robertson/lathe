@@ -151,8 +151,12 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
     }
   }, [narrow, showOnly, offered, open, setViews, announce]);
 
-  // Keep focus when the element that had it went away with a pane: on the toggle just used.
+  // Keep focus when the element that had it went away with a pane: on the toggle just used. Only
+  // when the panes change: on a first load focus stays at the start, where Tab finds the skip link.
+  const shownPanes = useRef(openKey);
   useEffect(() => {
+    if (shownPanes.current === openKey) return;
+    shownPanes.current = openKey;
     const active = document.activeElement;
     if (active && active !== document.body && active.isConnected) return;
     const view = lastToggled.current && toggles.current[lastToggled.current] ? lastToggled.current : open[0];

@@ -93,8 +93,8 @@ describe('Lathe on a phone', () => {
     phone();
     await openApp('/P-D-UC01', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
-    const pagesButton = () => within(pageBar()).getByRole('button', { name: /^Open pages \(\d+\)$/ });
-    expect(pagesButton()).toHaveAccessibleName('Open pages (1)');
+    const pagesButton = () => within(pageBar()).getByRole('button', { name: /^Open pages: \d+$/ });
+    expect(pagesButton()).toHaveAccessibleName('Open pages: 1');
     // The first page opens as the preview; keep it from its row.
     fireEvent.click(pagesButton());
     let sheet = screen.getByRole('dialog', { name: 'Open pages' });
@@ -106,7 +106,7 @@ describe('Lathe on a phone', () => {
     // Another page opens in a second tab.
     await openApp('/P-D-V01', served());
     await screen.findByRole('heading', { level: 1, name: 'Thing page' });
-    expect(pagesButton()).toHaveAccessibleName('Open pages (2)');
+    expect(pagesButton()).toHaveAccessibleName('Open pages: 2');
     fireEvent.click(pagesButton());
     sheet = screen.getByRole('dialog', { name: 'Open pages' });
     const rows = within(within(sheet).getByRole('list', { name: 'Open pages' })).getAllByRole('listitem');
@@ -119,7 +119,7 @@ describe('Lathe on a phone', () => {
     // A row's close button closes its tab.
     fireEvent.click(pagesButton());
     fireEvent.click(within(screen.getByRole('dialog', { name: 'Open pages' })).getByRole('button', { name: /^Close P-D-V01 Thing page/ }));
-    await waitFor(() => expect(pagesButton()).toHaveAccessibleName('Open pages (1)'));
+    await waitFor(() => expect(pagesButton()).toHaveAccessibleName('Open pages: 1'));
   });
 
   it('LA-BRW-T464 Quick find on a phone is a full-screen sheet: the results list under the box, choosing one goes there, Escape closes it and focus returns', async () => {

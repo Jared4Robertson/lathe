@@ -74,41 +74,52 @@ export function TabStrip({ index, set, onActivate, onClose, onKeep }: TabStripPr
         const active = tab.key === set.active;
         const name = id ? `${id} ${title}` : title;
         return (
-          <Tooltip key={tab.key} label={tab.preview ? `${name} (preview: double-click to keep open)` : name} command={tab.preview && active ? 'keepTab' : undefined}>
-            <div
-              id={tabId(tab.key)}
-              role="tab"
-              aria-selected={active}
-              aria-controls={active ? TAB_PANEL_ID : undefined}
-              aria-label={tab.preview ? `${name}, preview` : name}
-              tabIndex={active ? 0 : -1}
-              className={`tab${active ? ' is-active' : ''}${tab.preview ? ' is-preview' : ''}`}
-              data-page={tab.page}
-              onClick={() => onActivate(tab.key)}
-              onDoubleClick={() => onKeep(tab.key)}
-              onMouseDown={(e: MouseEvent) => { if (e.button === 1) e.preventDefault(); }}
-              onAuxClick={(e: MouseEvent) => { if (e.button === 1) { e.preventDefault(); onClose(tab.key); } }}
-              onKeyDown={(e) => onKeyDown(e, tab, i)}
-            >
-              {/* Keyed by its page: a new page in the tab is new text, drawn in place, never the old text moved (UX-R08). */}
-              <span key={tab.page} className="tab-label">
-                {id && <span className="tab-id">{id}</span>}
-                <span className="tab-title">{title}</span>
-              </span>
-              <Tooltip label="Close" command={active ? 'closeTab' : undefined}>
-                <button
-                  type="button"
-                  className="tab-close"
-                  tabIndex={-1}
-                  aria-label={`Close ${name}`}
-                  onClick={(e) => { e.stopPropagation(); onClose(tab.key); }}
-                  onDoubleClick={(e) => e.stopPropagation()}
-                >
-                  <Icon name="x" size={13} />
-                </button>
-              </Tooltip>
-            </div>
-          </Tooltip>
+          // The tab and its close button sit side by side in the .tab wrapper, never one inside the
+          // other (LA-BRW-DR321); the tab is named by what it shows (LA-BRW-DR320). The close button is
+          // for the pointer: a tablist holds only tabs, so it is hidden from the accessibility tree, and
+          // the keyboard closes a tab with Delete or Alt+Shift+W.
+          <div
+            key={tab.key}
+            className={`tab${active ? ' is-active' : ''}${tab.preview ? ' is-preview' : ''}`}
+            data-page={tab.page}
+            onClick={() => onActivate(tab.key)}
+            onDoubleClick={() => onKeep(tab.key)}
+            onMouseDown={(e: MouseEvent) => { if (e.button === 1) e.preventDefault(); }}
+            onAuxClick={(e: MouseEvent) => { if (e.button === 1) { e.preventDefault(); onClose(tab.key); } }}
+          >
+            <Tooltip label={tab.preview ? `${name} (preview: double-click to keep open)` : name} command={tab.preview && active ? 'keepTab' : undefined}>
+              <div
+                id={tabId(tab.key)}
+                role="tab"
+                aria-selected={active}
+                aria-controls={active ? TAB_PANEL_ID : undefined}
+                tabIndex={active ? 0 : -1}
+                className="tab-label"
+                onKeyDown={(e) => onKeyDown(e, tab, i)}
+              >
+                {/* Keyed by its page: a new page in the tab is new text, drawn in place, never the old text moved (UX-R08). */}
+                <span key={tab.page} className="tab-text">
+                  {id && <span className="tab-id">{id}</span>}
+                  {id && ' '}
+                  <span className="tab-title">{title}</span>
+                  {tab.preview && <span className="sr-only">, preview</span>}
+                </span>
+              </div>
+            </Tooltip>
+            <Tooltip label="Close" command={active ? 'closeTab' : undefined}>
+              <button
+                type="button"
+                className="tab-close"
+                tabIndex={-1}
+                aria-hidden="true"
+                aria-label={`Close ${name}`}
+                onClick={(e) => { e.stopPropagation(); onClose(tab.key); }}
+                onDoubleClick={(e) => e.stopPropagation()}
+              >
+                <Icon name="x" size={13} />
+              </button>
+            </Tooltip>
+          </div>
         );
       })}
     </div>

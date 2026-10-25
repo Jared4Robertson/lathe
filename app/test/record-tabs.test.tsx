@@ -14,7 +14,7 @@ import { testWorkspace } from './graph/workspace';
 const served = () => ({ workspace: testWorkspace() });
 const strip = () => screen.getByRole('tablist', { name: 'Open pages' });
 /** The tabs as "name" with "*" for the preview and "<" for the active one. */
-const tabs = () => within(strip()).getAllByRole('tab').map((t) => `${t.querySelector('.tab-title')!.textContent}${t.classList.contains('is-preview') ? '*' : ''}${t.getAttribute('aria-selected') === 'true' ? '<' : ''}`);
+const tabs = () => within(strip()).getAllByRole('tab').map((t) => `${t.querySelector('.tab-title')!.textContent}${t.closest('.tab')!.classList.contains('is-preview') ? '*' : ''}${t.getAttribute('aria-selected') === 'true' ? '<' : ''}`);
 const tab = (title: string) => within(strip()).getAllByRole('tab').find((t) => t.querySelector('.tab-title')!.textContent === title)!;
 const title = () => screen.getByRole('heading', { level: 1 }).textContent;
 const address = () => window.location.pathname + window.location.search;
@@ -31,11 +31,11 @@ describe('tabs for open pages', () => {
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     expect(tabs()).toEqual(['Lend a thing*<']);
     const first = tab('Lend a thing');
-    expect(first).toHaveAttribute('aria-label', 'P-D-UC01 Lend a thing, preview');
+    expect(first).toHaveAccessibleName('P-D-UC01 Lend a thing, preview');
     expect(first.querySelector('.tab-id')).toHaveTextContent('P-D-UC01');
     expect(screen.getByRole('tabpanel')).toHaveAttribute('aria-labelledby', first.id);
     // The active preview tab's tooltip names the keep command; its close button, the close command.
-    expect(within(first).getByRole('button', { name: 'Close P-D-UC01 Lend a thing' })).toHaveAttribute('aria-keyshortcuts', 'Alt+Shift+W');
+    expect(first.closest('.tab')!.querySelector('.tab-close[aria-label="Close P-D-UC01 Lend a thing"]')).toHaveAttribute('aria-keyshortcuts', 'Alt+Shift+W');
 
     // A wiki link opens in the preview tab, replacing it.
     fireEvent.click(within(screen.getByRole('region', { name: 'Wiki pane' })).getAllByRole('link', { name: /P-D-UC01-R01/ })[0]);
@@ -62,7 +62,7 @@ describe('tabs for open pages', () => {
     expect(window.location.pathname).toBe('/P-D-A1/domain_rule');
 
     // Close the group tab; Back to it reopens it, as the preview.
-    fireEvent.click(within(tab('Domain rules (2)')).getByRole('button', { name: 'Close Domain rules (2)' }));
+    fireEvent.click(tab('Domain rules (2)').closest('.tab')!.querySelector('.tab-close[aria-label="Close Domain rules (2)"]')!);
     await waitFor(() => expect(title()).toBe('The owner is shown'));
     expect(tabs()).toEqual(['The owner is shown<']);
     await act(async () => {

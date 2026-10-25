@@ -250,7 +250,7 @@ function ShortcutSheet({ commands, mac, available, titleOf, onClose }: ListProps
         <Button variant="icon" label="Close" onClick={onClose}>×</Button>
       </div>
       <input type="search" className="dialog-search" aria-label="Search shortcuts" placeholder="Search shortcuts" value={query} onChange={(e) => setQuery(e.target.value)} />
-      <div className="shortcut-groups">
+      <div className="shortcut-groups" tabIndex={0} role="region" aria-label="Shortcuts">
         {GROUPS.map((g) => {
           const rows = shown.filter((c) => c.group === g);
           if (rows.length === 0) return null;

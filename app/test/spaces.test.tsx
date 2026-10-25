@@ -54,7 +54,7 @@ describe('product spaces', () => {
     await openApp('/DM', { workspace: spacesWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     const items = within(rail()).getAllByRole('link');
-    expect(items.map((a) => a.getAttribute('aria-label'))).toEqual(['Alpha beta', 'Demo shop', 'Notebook']);
+    expect(items.map((a) => a.querySelector('.sr-only')!.textContent)).toEqual(['Alpha beta', 'Demo shop', 'Notebook']);
     expect(items.map((a) => a.querySelector('.space-mark')!.textContent)).toEqual(['AB', 'DM', '📓']);
     expect(items[0].querySelector('.space-mark')).toHaveClass('is-monogram');
     expect(items[2].querySelector('.space-mark')).toHaveClass('is-icon');
@@ -82,7 +82,7 @@ describe('product spaces', () => {
     expect(css).toMatch(/\.space-item\[aria-current\]::before/);
 
     // Checks belongs to no product: the space stays Notebook.
-    await userEvent.setup().click(within(nav()).getByRole('link', { name: /^Checks:/ }));
+    await userEvent.setup().click(within(nav()).getByRole('link', { name: /^Checks \d+ (errors?|warnings?|problems)/ }));
     expect(window.location.pathname).toBe('/checks');
     expect(spaceLink('Notebook')).toHaveAttribute('aria-current', 'true');
     expect(within(panel()).getByRole('link', { name: 'Notes' })).toBeInTheDocument();
@@ -197,7 +197,7 @@ describe('product spaces', () => {
   it('LA-BRW-T226 Checks can be filtered to the current space', async () => {
     await openApp('/NF', { workspace: spacesWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Notebook' });
-    await userEvent.setup().click(within(nav()).getByRole('link', { name: /^Checks:/ }));
+    await userEvent.setup().click(within(nav()).getByRole('link', { name: /^Checks \d+ (errors?|warnings?|problems)/ }));
     const scope = within(main()).getByRole('group', { name: 'Show checks for' });
     expect(within(scope).getByRole('link', { name: 'All products' })).toHaveAttribute('aria-current', 'true');
     expect(within(main()).getByText('3 errors · 3 warnings')).toBeInTheDocument();

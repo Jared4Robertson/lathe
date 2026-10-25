@@ -112,7 +112,7 @@ export function ErdKey({ erd, highlight }: { erd: Erd; highlight: boolean }) {
     );
   };
   return (
-    <div className="erd-key" role="group" aria-label="Key">
+    <div className="erd-key" role="group" aria-label="Key" tabIndex={0}>
       <table className="erd-key-table">
         <thead><tr><th scope="col">Color</th><th scope="col">Owner</th></tr></thead>
         <tbody>
