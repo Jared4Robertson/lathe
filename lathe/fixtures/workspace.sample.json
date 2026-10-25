@@ -121,18 +121,34 @@
       "proof_only": false
     },
     {
-      "kind": "component",
-      "label": "Component",
+      "kind": "layer",
+      "label": "Layer",
       "stage": "design",
       "section": "technical-specification",
       "parent_kinds": [
         "domain"
       ],
       "required_fields": [
+        "order"
+      ],
+      "description": "An ordered part of a domain's technical specification that groups its components by what they are, such as Models, Services or Web app. Its order is a whole number giving its place in the domain.",
+      "obligation": false,
+      "proof_only": false
+    },
+    {
+      "kind": "component",
+      "label": "Component",
+      "stage": "design",
+      "section": "technical-specification",
+      "parent_kinds": [
+        "domain",
+        "layer"
+      ],
+      "required_fields": [
         "component_type",
         "file"
       ],
-      "description": "A unit of code in the target design, such as a model, service or router.",
+      "description": "A unit of code in the target design, such as a model, service or router. It sits in its domain's layer, or in the domain when the domain has no layers.",
       "obligation": false,
       "proof_only": false
     },
@@ -421,10 +437,24 @@
       "mentions": []
     },
     {
+      "id": "EX-NOTE-LAY01",
+      "kind": "layer",
+      "title": "Services",
+      "parent": "EX-NOTE",
+      "product": "EX",
+      "domain": "EX-NOTE",
+      "fields": {
+        "order": "1"
+      },
+      "body": "The note services, in `examples/notes/src/`.",
+      "path": "specs/example/notes/02-design/components/01-services.md",
+      "mentions": []
+    },
+    {
       "id": "EX-NOTE-C01",
       "kind": "component",
       "title": "note_service.ts",
-      "parent": "EX-NOTE",
+      "parent": "EX-NOTE-LAY01",
       "product": "EX",
       "domain": "EX-NOTE",
       "fields": {
@@ -432,7 +462,7 @@
         "file": "examples/notes/src/note_service.ts"
       },
       "body": "Creates and lists notes.",
-      "path": "specs/example/notes/02-design/components/C01.md",
+      "path": "specs/example/notes/02-design/components/01-services/C01.md",
       "mentions": []
     },
     {
