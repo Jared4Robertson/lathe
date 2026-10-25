@@ -45,9 +45,9 @@ import {
 } from './model';
 import { boxExit, layoutNeighborhood, NODE_HEIGHT, NODE_WIDTH, type Placed } from './layout';
 
-// The graph view: an ego graph centered on one record or group. Clicking a record re-centers on it
-// (through onNavigate, so the host changes the address and Back walks back along the path);
-// clicking a group opens or closes it.
+// The graph view: an ego graph centered on one record or group. Clicking a record or a group
+// re-centers on it (through onNavigate, so the host changes the address and Back walks back along
+// the path); a group's chevron opens or closes it in place.
 //
 // GraphView is the graph on its own: it takes the focus and an onNavigate callback and never reads
 // the address, so it can sit in any pane. The focus page (app/src/views/FocusPage.tsx) hosts it in
@@ -61,6 +61,8 @@ interface NodeData extends Record<string, unknown> {
   warnings: number;
   gaps: string[];
   isFocus: boolean;
+  /** A group's open-or-fold action, from its chevron (records have none). */
+  onToggle?: () => void;
 }
 interface EdgeData extends Record<string, unknown> {
   relation: string;
@@ -123,7 +125,19 @@ function GroupNodeView({ data }: NodeProps<FlowNode>) {
       <small>Group · {node.group!.parent}</small>
       <strong>{node.title}</strong>
       <Marks data={data} />
-      <span className="graph-group-chevron" aria-hidden="true"><Icon name={open ? 'chevron-down' : 'chevron-right'} size={14} /></span>
+      {/* Clicking the group goes to it; its chevron opens or folds it in place. The center group is always open. */}
+      {data.onToggle && (
+        <button
+          type="button"
+          className="graph-group-chevron nodrag nopan"
+          aria-expanded={open}
+          aria-label={`${open ? 'Fold' : 'Open'} ${node.title} in place`}
+          tabIndex={-1}
+          onClick={(e) => { e.stopPropagation(); data.onToggle!(); }}
+        >
+          <Icon name={open ? 'chevron-down' : 'chevron-right'} size={14} />
+        </button>
+      )}
     </div>
   );
 }
@@ -420,7 +434,7 @@ function GraphCanvas({ index, graph, onNavigate, onToggle }: {
           ...base,
           type: 'folder',
           ariaLabel: `Group ${node.title} in ${node.group.parent}, ${node.group.open ? 'open' : 'folded'}${isFocus ? ' (center)' : ''}`,
-          data: { node, kindLabel: 'Group', ...marks, isFocus },
+          data: { node, kindLabel: 'Group', ...marks, isFocus, onToggle: isFocus ? undefined : () => onToggle(id, node.group!.open) },
         };
       }
       const problems = node.kind === FILE_KIND ? [] : index.problemsFor.get(id) ?? [];
@@ -501,19 +515,20 @@ function GraphCanvas({ index, graph, onNavigate, onToggle }: {
   }, [fit]);
 
   useCommand('graphFit', () => fit(300), !!placed);
-  useCommand('graphToggleGroup', () => {
-    const id = active.current;
-    const node = id ? placed?.graph.nodes.find((n) => n.id === id) : undefined;
-    if (node?.group && id) { refocus.current = id; onToggle(id, node.group.open); }
-  }, !!placed);
+  /** Opens or folds a group in place, keeping keyboard focus on it (its chevron, or o). The center group stays open. */
+  const toggle = (id: string) => {
+    const node = placed?.graph.nodes.find((n) => n.id === id);
+    if (!node?.group || id === placed?.graph.focus) return;
+    refocus.current = id;
+    onToggle(id, node.group.open);
+  };
+  useCommand('graphToggleGroup', () => { if (active.current) toggle(active.current); }, !!placed);
 
-  /** A click or Enter on a node: a group opens or closes, a record becomes the center. */
+  /** A click or Enter on a node, record or group: it becomes the center, at its own address. */
   const activate = (id: string, fromKeyboard: boolean) => {
     if (!placed || id.startsWith('file:') || id === placed.graph.focus) return;
-    const node = placed.graph.nodes.find((n) => n.id === id);
     if (fromKeyboard) refocus.current = id;
-    if (node?.group) onToggle(id, node.group.open);
-    else onNavigate(id);
+    onNavigate(id);
   };
 
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
