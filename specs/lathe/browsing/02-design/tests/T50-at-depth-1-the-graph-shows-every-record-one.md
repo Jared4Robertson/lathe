@@ -1,7 +1,7 @@
 ---
 id: LA-BRW-T50
 kind: test
-title: At depth 1 the graph shows every record one step away, both ways
+title: At depth 2 the graph shows every record one step away, both ways
 parent: LA-BRW
 test_type: unit
 run_by: app/test/graph/model.test.ts

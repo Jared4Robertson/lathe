@@ -85,7 +85,7 @@ describe('prose mentions', () => {
     // A mention is not a link between records: not in the links out, not in the graph.
     expect(within(screen.getByRole('complementary', { name: 'Inspector' })).queryByRole('link', { name: /^DM-SHOP-UC01/ })).toBeNull();
     const ix = indexWorkspace(patternWorkspace());
-    expect(neighborhood(ix, 'DM-PAY-UC01', 1).nodes.map((n) => n.id)).not.toContain('DM-SHOP-UC01');
+    expect(neighborhood(ix, 'DM-PAY-UC01', 2).nodes.map((n) => n.id)).not.toContain('DM-SHOP-UC01');
 
     const ws = patternWorkspace();
     const domain = ws.records.find((r) => r.id === 'DM-SHOP')!;

@@ -221,7 +221,9 @@ function rowsInOrder(nodes: GraphNode[]): Map<string, number> {
 }
 
 /**
- * The focus (a record or a group) and every record within `depth` hops of it, following links
+ * At depth 1, the tree around the focus: its parent or folder one level up and its children or their
+ * folders one level down, and nothing else. At depth 2 and more, the focus (a record or a group) and
+ * every record within `depth - 1` hops of it, following links
  * both ways and the parent/child relation, with every edge between the nodes shown. A record
  * whose children are grouped (see isGrouped) reaches them through one group node per child kind:
  * the group is always shown, its members only when it is open. Groups do not count as a hop.
@@ -242,7 +244,8 @@ export function neighborhood(
   const shownKind = (id: string) => id === focus || !filters.hiddenKinds.has(kindOfNode(id));
   const focusRecord = index.byId.get(focus);
   const home = focusRecord?.parent ? groupId(focusRecord.parent, focusRecord.kind) : null;
-  const isOpen = (gid: string) => gid === focus || (open.get(gid) ?? gid === home);
+  // At depth 1 the focus's own folder stays folded unless opened, so its siblings do not crowd the picture.
+  const isOpen = (gid: string) => gid === focus || (open.get(gid) ?? (depth > 1 && gid === home));
 
   // Steps from a node, counted in half hops: record to record is 2, record to group or group to record is 1.
   // A group at the center is a level of its own: its parent and members are a full hop away, so depth 1
@@ -277,8 +280,28 @@ export function neighborhood(
 
   const half = new Map([[focus, 0]]);
   const via = new Map<string, string>();
-  const limit = 2 * depth;
-  for (let level = 0; level < limit; level++) {
+  // Depth 1 is the tree alone; each depth after it walks one more hop of links (depth 2 walks one).
+  const limit = 2 * Math.max(1, depth - 1);
+  if (depth <= 1) {
+    // Depth 1 is the tree around the focus: its parent (or the folder it sits in) one level up and its
+    // children (or their folders) one level down, with no other links. A folder opened here shows its members.
+    if (shownRelation(PARENT)) {
+      for (const s of steps(focus)) {
+        if (s.relation !== PARENT || !shownKind(s.to)) continue;
+        half.set(s.to, s.cost);
+        via.set(s.to, focus);
+      }
+      for (const [id, h] of [...half]) {
+        if (id === focus || !parseGroupId(id) || !isOpen(id)) continue;
+        for (const m of groupMembers(index, id)) {
+          if (half.has(m.id) || !shownKind(m.id)) continue;
+          half.set(m.id, h + 1);
+          via.set(m.id, id);
+        }
+      }
+    }
+  }
+  for (let level = 0; depth > 1 && level < limit; level++) {
     const frontier = [...half].filter(([, h]) => h === level).map(([id]) => id).sort((a, b) => a.localeCompare(b, 'en', { numeric: true }));
     for (const id of frontier) {
       for (const s of steps(id)) {
