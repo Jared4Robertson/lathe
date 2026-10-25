@@ -699,13 +699,21 @@ function GraphCanvas({ index, graph, onNavigate: navigate, onToggle, minimap, on
   /** The positions last laid out, in world coordinates, so the next picture can anchor on its focus. */
   const laidOut = useRef<Map<string, { x: number; y: number }> | null>(null);
 
-  // Laid out before paint: the layout is quick and synchronous, so no frame shows the old picture.
+  // The layout itself takes well under a millisecond, but drawing a new picture of 200 boxes does
+  // not: the first picture is drawn before paint, so no frame shows an empty canvas, and each later
+  // one in a task of its own, after the frame of the click that asked for it has painted, so that
+  // frame stays short (LA-PAT-APP-UX-R11) and the old picture holds still until the new one glides in.
   useLayoutEffect(() => {
-    const result = layoutNeighborhood(graph);
-    // The new focus keeps its place in the world when it was in the last picture (LA-BRW-DR180).
-    const positions = anchorLayout(result.positions, graph.focus, laidOut.current);
-    laidOut.current = positions;
-    setPlaced({ ...result, positions, graph });
+    const draw = () => {
+      const result = layoutNeighborhood(graph);
+      // The new focus keeps its place in the world when it was in the last picture (LA-BRW-DR180).
+      const positions = anchorLayout(result.positions, graph.focus, laidOut.current);
+      laidOut.current = positions;
+      setPlaced({ ...result, positions, graph });
+    };
+    if (laidOut.current === null) { draw(); return; }
+    const timer = setTimeout(draw, 0);
+    return () => clearTimeout(timer);
   }, [graph]);
 
   const order = useMemo(() => (placed ? keyboardOrder(placed.graph, placed) : []), [placed]);
