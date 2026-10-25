@@ -1,4 +1,7 @@
 :root {
+  /* Shadows, the dimmed backdrop behind drawers and dialogs, and text on a colored mark. */
+  --shadow-soft: rgb(0 0 0 / 0.12); --shadow: rgb(0 0 0 / 0.16); --shadow-strong: rgb(0 0 0 / 0.2); --shadow-deep: rgb(0 0 0 / 0.25);
+  --backdrop: rgb(0 0 0 / 0.35); --on-mark: #fff;
   --node-radius: 4px; /* every graph node is the same rectangle; color tells the stage */
   --paper: #F4F6F5; --sheet: #FFFFFF; --ink: #1D2830; --muted: #5A6870; --rule: #CBD3D6;
   --steel: #2E6A88; --steel-bg: #E4EEF3; --spark: #B5512A; --spark-bg: #F8E8DF; --warn: #9A6A00;
@@ -236,7 +239,7 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-trace-toggle { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
 .graph-filters { position: relative; }
 .graph-filters > summary { cursor: pointer; display: inline-flex; gap: 6px; align-items: baseline; }
-.graph-filter-body { position: absolute; z-index: 10; top: calc(100% + 6px); left: 0; width: min(560px, 80vw); display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px 14px; padding: 12px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; box-shadow: 0 6px 20px rgb(0 0 0 / 0.12); }
+.graph-filter-body { position: absolute; z-index: 10; top: calc(100% + 6px); left: 0; width: min(560px, 80vw); display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px 14px; padding: 12px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; box-shadow: 0 6px 20px var(--shadow-soft); }
 .graph-filter-body fieldset { border: 0; margin: 0; padding: 0; display: grid; gap: 2px; align-content: start; }
 .graph-filter-body legend { font-weight: 600; font-size: 0.78rem; margin-bottom: 2px; }
 .graph-filter-body label { display: flex; gap: 6px; align-items: center; font-size: 0.82rem; }
@@ -280,7 +283,7 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-node.kind-question { border-style: dashed; border-color: var(--warn); }
 .graph-node.is-focus { box-shadow: 0 0 0 3px var(--ink); }
 .graph-marks { position: absolute; top: 3px; right: 8px; display: flex; gap: 3px; }
-.graph-mark { display: inline-grid; place-items: center; min-width: 15px; height: 15px; padding: 0 3px; box-sizing: border-box; border-radius: 8px; font: 700 9.5px var(--mono); color: #fff; background: var(--muted); }
+.graph-mark { display: inline-grid; place-items: center; min-width: 15px; height: 15px; padding: 0 3px; box-sizing: border-box; border-radius: 8px; font: 700 9.5px var(--mono); color: var(--on-mark); background: var(--muted); }
 .graph-mark.error { background: var(--spark); }
 .graph-mark.warning, .graph-mark.gap { background: var(--warn); }
 .graph-handle { opacity: 0; pointer-events: none; top: 50% !important; bottom: auto !important; }
@@ -410,7 +413,7 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .quick-find { position: relative; display: flex; align-items: center; gap: 6px; padding: 0 8px; border: 1px solid var(--rule); border-radius: 6px; background: var(--paper); color: var(--muted); }
 .quick-find:focus-within { border-color: var(--steel); box-shadow: 0 0 0 1px var(--steel); }
 .quick-find input { flex: 1; min-width: 0; min-height: 32px; border: 0; background: none; color: var(--ink); font: inherit; font-size: 0.88rem; outline: none; }
-.quick-find-results { position: absolute; z-index: 40; top: calc(100% + 4px); left: 0; width: max(100%, 300px); max-height: 60vh; overflow-y: auto; margin: 0; padding: 4px; list-style: none; background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; box-shadow: 0 8px 24px rgb(0 0 0 / 0.16); }
+.quick-find-results { position: absolute; z-index: 40; top: calc(100% + 4px); left: 0; width: max(100%, 300px); max-height: 60vh; overflow-y: auto; margin: 0; padding: 4px; list-style: none; background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; box-shadow: 0 8px 24px var(--shadow); }
 .quick-find-results li { display: grid; gap: 1px; padding: 6px 8px; border-radius: 6px; cursor: pointer; }
 .quick-find-results li.active { background: var(--steel-bg); }
 .qf-title { color: var(--ink); font-size: 0.88rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -427,8 +430,8 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 /* Narrow screens: a top bar and drawers. */
 .topbar { grid-row: 1; display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-bottom: 1px solid var(--rule); background: var(--sheet); }
 .topbar .brand { font-size: 1.1rem; }
-.drawer-backdrop { position: fixed; inset: 0; z-index: 70; background: rgb(0 0 0 / 0.35); }
-.menu.is-drawer { position: fixed; z-index: 80; inset: 0 auto 0 0; width: min(300px, 86vw); box-shadow: 4px 0 24px rgb(0 0 0 / 0.2); }
+.drawer-backdrop { position: fixed; inset: 0; z-index: 70; background: var(--backdrop); }
+.menu.is-drawer { position: fixed; z-index: 80; inset: 0 auto 0 0; width: min(300px, 86vw); box-shadow: 4px 0 24px var(--shadow-strong); }
 
 /* The focus page: header, views, inspector. */
 .focus-page { display: flex; flex-direction: column; min-width: 0; min-height: 0; height: 100%; overflow: hidden; }
@@ -472,7 +475,7 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .inspector-section { display: grid; gap: 6px; }
 .inspector-gaps li { color: var(--warn); font-size: 0.85rem; }
 .links-in-heading:focus-visible { outline: 2px solid var(--steel); outline-offset: 2px; }
-.inspector-drawer { position: fixed; z-index: 80; inset: 0 0 0 auto; width: min(360px, 90vw); box-shadow: -4px 0 24px rgb(0 0 0 / 0.2); }
+.inspector-drawer { position: fixed; z-index: 80; inset: 0 0 0 auto; width: min(360px, 90vw); box-shadow: -4px 0 24px var(--shadow-strong); }
 .graph-legend summary { cursor: pointer; font-weight: 600; font-size: 0.85rem; margin-top: 10px; }
 .graph-legend ul { margin-top: 6px; }
 
@@ -491,8 +494,8 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 
 /* Shortcuts: the sheet, the palette, the pending-key hint. */
-.dialog-backdrop { position: fixed; inset: 0; z-index: 120; display: grid; place-items: start center; padding-top: 10vh; background: rgb(0 0 0 / 0.35); }
-.dialog { width: min(640px, calc(100vw - 32px)); max-height: 76vh; display: flex; flex-direction: column; gap: 10px; padding: 14px; box-sizing: border-box; background: var(--sheet); color: var(--ink); border: 1px solid var(--rule); border-radius: 10px; box-shadow: 0 16px 48px rgb(0 0 0 / 0.25); }
+.dialog-backdrop { position: fixed; inset: 0; z-index: 120; display: grid; place-items: start center; padding-top: 10vh; background: var(--backdrop); }
+.dialog { width: min(640px, calc(100vw - 32px)); max-height: 76vh; display: flex; flex-direction: column; gap: 10px; padding: 14px; box-sizing: border-box; background: var(--sheet); color: var(--ink); border: 1px solid var(--rule); border-radius: 10px; box-shadow: 0 16px 48px var(--shadow-deep); }
 .dialog-head { display: flex; justify-content: space-between; align-items: center; }
 .dialog-search { font: inherit; padding: 8px 10px; border: 1px solid var(--rule); border-radius: 6px; background: var(--paper); color: var(--ink); }
 .dialog-search:focus-visible { outline: 2px solid var(--steel); outline-offset: 0; }
@@ -572,7 +575,7 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 .menu .rail-item.space-item:hover::before { opacity: 0.5; height: 16px; }
 .menu .rail-item.space-item[aria-current]::before { opacity: 1; height: 28px; background: var(--steel); }
 .space-mark { display: inline-grid; place-items: center; box-sizing: border-box; border-radius: 8px; font: 700 0.8rem var(--display); letter-spacing: 0.02em; line-height: 1; flex: none; }
-.space-mark.is-monogram { color: #fff; }
+.space-mark.is-monogram { color: var(--on-mark); }
 .space-mark.is-icon { font-size: 1.05rem; background: var(--sheet); border: 1px solid var(--rule); color: var(--ink); }
 .space-item[aria-current] .space-mark { box-shadow: 0 0 0 2px var(--paper), 0 0 0 4px var(--steel); }
 .menu a .space-mark { border-radius: 5px; font-size: 0.6rem; }
@@ -589,7 +592,7 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 /* The checks page's space filter. */
 .checks-scope { display: inline-flex; gap: 2px; padding: 2px; margin: 0 0 12px; border: 1px solid var(--rule); border-radius: 8px; background: var(--paper); }
 .checks-scope .scope-option { padding: 4px 10px; border-radius: 6px; color: var(--muted); text-decoration: none; font-size: 0.86rem; }
-.checks-scope .scope-option[aria-current] { background: var(--sheet); color: var(--ink); font-weight: 600; box-shadow: 0 1px 2px rgb(0 0 0 / 0.12); }
+.checks-scope .scope-option[aria-current] { background: var(--sheet); color: var(--ink); font-weight: 600; box-shadow: 0 1px 2px var(--shadow-soft); }
 .checks-scope .scope-option:focus-visible { outline: 2px solid var(--steel); outline-offset: 1px; }
 /* Quick find: the current space first, then everything else under a divider. */
 .quick-find-results li.qf-group { display: block; padding: 0; cursor: default; }
@@ -597,7 +600,7 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 .quick-find-results .qf-group.is-divided { margin-top: 4px; padding-top: 4px; border-top: 1px solid var(--rule); border-radius: 0; }
 .qf-group-name { display: block; padding: 4px 8px 2px; font: 500 0.68rem var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
 /* Tooltips: a name and the keys, after a short hover or on keyboard focus. */
-.tooltip { position: fixed; z-index: 200; display: inline-flex; align-items: center; gap: 8px; max-width: 280px; padding: 4px 8px; border-radius: 6px; background: var(--ink); color: var(--paper); font: 500 0.78rem/1.3 var(--body); pointer-events: none; white-space: nowrap; box-shadow: 0 4px 12px rgb(0 0 0 / 0.2); }
+.tooltip { position: fixed; z-index: 200; display: inline-flex; align-items: center; gap: 8px; max-width: 280px; padding: 4px 8px; border-radius: 6px; background: var(--ink); color: var(--paper); font: 500 0.78rem/1.3 var(--body); pointer-events: none; white-space: nowrap; box-shadow: 0 4px 12px var(--shadow-strong); }
 .tooltip-bottom { transform: translateX(-50%); }
 .tooltip-top { transform: translate(-50%, -100%); }
 .tooltip-right { transform: translateY(-50%); }
