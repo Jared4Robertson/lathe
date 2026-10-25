@@ -1,0 +1,64 @@
+/* The desktop app's own title bar (DesktopTitleBar.tsx, LA-DSK-UC04): 38 px on the shell, so the bar and
+   the shell are one surface, with the page laid out under it. Three columns of which the outer two share
+   what is left, so the command center stays centered on the window. Tokens only. */
+:root[data-title-bar] #root { display: flex; flex-direction: column; }
+:root[data-title-bar] #root > .app { flex: 1 1 0; height: auto; min-height: 0; }
+
+.desktop-title-bar {
+  --title-bar-height: 38px;
+  /* Room for the window's own controls: the traffic lights on macOS; the native buttons elsewhere, from the
+     window controls overlay where the browser says where they are, else a constant. */
+  --title-bar-start: 8px;
+  --title-bar-end: 8px;
+  flex: none;
+  display: grid;
+  grid-template-columns: minmax(max-content, 1fr) minmax(0, 520px) minmax(max-content, 1fr);
+  align-items: center;
+  gap: 8px;
+  height: var(--title-bar-height);
+  box-sizing: border-box;
+  padding: 0 var(--title-bar-end) 0 var(--title-bar-start);
+  background: var(--shell);
+  color: var(--muted);
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-app-region: drag;
+  app-region: drag;
+}
+.desktop-title-bar.is-mac { --title-bar-start: 78px; }
+.desktop-title-bar.is-overlay {
+  --title-bar-end: max(8px, calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, calc(100vw - 138px))));
+}
+
+.title-bar-side { display: flex; align-items: center; gap: 2px; min-width: 0; }
+.title-bar-end { justify-content: flex-end; }
+.title-bar-center { display: flex; justify-content: center; min-width: 0; }
+
+.desktop-title-bar button { -webkit-app-region: no-drag; app-region: no-drag; }
+.desktop-title-bar .title-bar-button { min-width: 28px; min-height: 28px; }
+.desktop-title-bar .icon-button:disabled { opacity: 0.4; cursor: default; background: none; border-color: transparent; color: var(--muted); }
+
+.command-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+  height: 26px;
+  box-sizing: border-box;
+  padding: 0 12px;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  background: var(--paper);
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: background-color var(--hover-speed), border-color var(--hover-speed), color var(--hover-speed);
+}
+.command-center .icon { flex: none; }
+.command-center-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.command-center:hover { color: var(--ink); background: var(--hover-bg); border-color: var(--hover-ring); }
+.command-center:focus-visible { outline: 2px solid var(--steel); outline-offset: 1px; }
+@media (prefers-reduced-motion: reduce) { .command-center { transition: none; } }

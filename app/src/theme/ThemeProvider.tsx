@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { applyTheme } from './apply';
+import { useDesktopChrome } from '../shell/desktopChrome';
 import { themeStore, type ThemeState } from './store';
 import {
   BUILT_IN_THEMES,
@@ -68,6 +69,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     kept.current = key;
     themeStore().save(state, css);
   }, [active, state, shown]);
+
+  // In the desktop app, the window's chrome follows what shows (LA-DSK-UC04-R06).
+  useDesktopChrome(shown?.theme ?? active, shown?.mode ?? state.mode);
 
   const choose = useCallback((id: string) => { setShown(null); setState((s) => ({ ...s, chosen: id })); }, []);
   const setMode = useCallback((mode: ModeChoice) => { setShown(null); setState((s) => ({ ...s, mode })); }, []);
