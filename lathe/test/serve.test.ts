@@ -93,6 +93,9 @@ describe.skipIf(!prebuilt && !canBuild)('lathe serve', () => {
     const js = await fetch(`${BASE}${script}`);
     expect(js.status).toBe(200);
     expect(js.headers.get('content-type')).toContain('javascript');
+    // The self-hosted fonts are served as fonts.
+    const font = html.match(/href="([^"]+\.woff2)"/)?.[1];
+    if (font) expect((await fetch(`${BASE}${font}`)).headers.get('content-type')).toBe('font/woff2');
 
     const spec = await fetch(`${BASE}/api/spec`);
     expect(spec.status).toBe(200);
