@@ -1,4 +1,5 @@
 import { forwardRef, useEffect, useRef, type ReactNode } from 'react';
+import { APPEARANCE_PATH, PaletteIcon } from '../theme/ThemeCommands';
 import { Icon } from '../components/icons';
 import { LongList } from '../components/LongList';
 import { childKinds, pluralLabel } from '../graph/model';
@@ -190,6 +191,7 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
         </div>
         <footer className="nav-foot">
           <Link to={formatPath} aria-current={here(path, formatPath)}><Icon name="format" size={16} /> <span className="nav-label">Record format</span></Link>
+          <Link to={APPEARANCE_PATH} aria-current={here(path, APPEARANCE_PATH)}><PaletteIcon size={16} /> <span className="nav-label">Appearance</span></Link>
           <p className={`nav-source ${spec.source === 'fixture' ? 'is-fixture' : ''}`}>{sourceNote}</p>
         </footer>
       </div>

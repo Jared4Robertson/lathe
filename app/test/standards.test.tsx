@@ -3,6 +3,11 @@ import { join, relative } from 'node:path';
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { openApp } from './helpers';
+import { REQUIRED_PAIRS, colorOf } from '../src/theme/audit';
+import { contrast } from '../src/theme/contrast';
+import { themeCss } from '../src/theme/css';
+import { BUILT_IN_THEMES } from '../src/theme/theme';
+import { COLOR_NAMES, SETTING_NAMES } from '../src/theme/tokens';
 // The split view loads the graph, which needs a ResizeObserver in jsdom.
 import './graph/setup';
 
@@ -243,6 +248,34 @@ describe('LA-PAT-APP-CODE App code', () => {
     // Code that animates frame by frame takes its timing from the shared motion, not numbers of its own.
     const ownTiming = animators.filter((f) => !/readMotion\(\)/.test(readFileSync(f, 'utf8'))).map((f) => relative(ROOT, f));
     expect(ownTiming).toEqual([]);
+  });
+
+  it('LA-BRW-T426 Themes only set tokens: a theme file holds token names only, its stylesheet sets them on :root, and every built-in passes AA for text in both modes', () => {
+    const dir = join(SRC, 'theme', 'themes');
+    const files = readdirSync(dir).filter((f) => f.endsWith('.json'));
+    expect(files.length).toBe(BUILT_IN_THEMES.length);
+    // Every name a theme file sets is a token the stylesheet's :root defines, and nothing else.
+    const rootTokens = new Set(styleRules(CSS).filter((r) => r.selector === ':root').flatMap((r) => [...r.body.matchAll(/(--[\w-]+)\s*:/g)].map((m) => m[1])));
+    const notTokens = files.flatMap((f) => {
+      const file = JSON.parse(readFileSync(join(dir, f), 'utf8')) as Record<string, unknown>;
+      const extra = Object.keys(file).filter((k) => !['format', 'version', 'name', 'light', 'dark', 'tokens'].includes(k)).map((k) => `${f}: ${k}`);
+      const names = ['light', 'dark', 'tokens'].flatMap((set) => Object.keys((file[set] ?? {}) as object).map((n) => ({ set, n })));
+      return [...extra, ...names.filter(({ set, n }) => !rootTokens.has(n) || (set === 'tokens' ? !SETTING_NAMES.has(n) : !COLOR_NAMES.has(n))).map(({ set, n }) => `${f}: ${set}.${n}`)];
+    });
+    expect(notTokens).toEqual([]);
+    // A theme's stylesheet has no selector but :root, and sets only custom properties (and the color scheme).
+    for (const theme of BUILT_IN_THEMES) {
+      const rules = styleRules(themeCss(theme));
+      expect(rules.map((r) => r.selector)).toEqual([':root[data-theme]', ':root[data-theme]:not([data-mode="light"])', ':root[data-theme][data-mode="dark"]']);
+      const declarations = rules.flatMap((r) => r.body.split(';').map((d) => d.trim()).filter(Boolean));
+      expect(declarations.filter((d) => !/^--[\w-]+:/.test(d) && !/^color-scheme: (light|dark)$/.test(d))).toEqual([]);
+    }
+    // Body text, muted text and the accent pass AA (4.5:1) on the page and on a sheet, for every built-in in both modes.
+    const failing = BUILT_IN_THEMES.flatMap((theme) => (['light', 'dark'] as const).flatMap((mode) => REQUIRED_PAIRS.flatMap(([fg, bg]) => {
+      const ratio = contrast(colorOf(theme, mode, fg)!, colorOf(theme, mode, bg)!);
+      return ratio >= 4.5 ? [] : [`${theme.id} ${mode}: ${fg} on ${bg} is ${ratio.toFixed(2)}:1`];
+    })));
+    expect(failing).toEqual([]);
   });
 
   it('LA-BRW-T262 Code, specs and docs use American spelling', () => {
