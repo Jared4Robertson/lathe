@@ -113,8 +113,10 @@ describe('one address, three views', () => {
     fireEvent.keyDown(divider, { key: 'End' });
     expect(divider).toHaveAttribute('aria-valuenow', '80');
     const views = document.querySelector<HTMLElement>('.focus-views')!;
-    // Each pane's weight as a fraction, with a least width per pane.
-    expect(views.style.gridTemplateColumns).toBe('minmax(220px, 160fr) var(--panel-gap) minmax(220px, 40fr)');
+    // Each pane's weight as a fraction, with a least width per pane, or an even share when there is no room for it.
+    expect(views.style.gridTemplateColumns).toBe('minmax(min(220px, calc((100% - 1 * var(--panel-gap)) / 2)), 160fr) var(--panel-gap) minmax(min(220px, calc((100% - 1 * var(--panel-gap)) / 2)), 40fr)');
+    // The side bar gives way to the panes' least widths, down to its own (LA-PAT-APP-UX-R02).
+    expect(document.querySelector<HTMLElement>('.focus-layout')!.style.getPropertyValue('--panes-min')).toBe('calc(2 * 220px + 1 * var(--panel-gap))');
     expect(window.localStorage.getItem('lathe:pane-size:wiki')).toBe('160');
     // Double-click shares the two panes' space evenly.
     fireEvent.doubleClick(divider);

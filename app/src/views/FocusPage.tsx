@@ -443,12 +443,16 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   }
 
 
-  const columns = open.map((v) => `minmax(${PANE_MIN_PX}px, ${sizes[v][0]}fr)`).join(' var(--panel-gap) ');
+  // Each pane keeps its least width while there is room, and shares the width evenly when there isn't, so a pane
+  // never runs under the side bar (LA-PAT-APP-UX-R02).
+  const share = `calc((100% - ${open.length - 1} * var(--panel-gap)) / ${open.length})`;
+  const columns = open.map((v) => `minmax(min(${PANE_MIN_PX}px, ${share}), ${sizes[v][0]}fr)`).join(' var(--panel-gap) ');
+  const panesMin = `calc(${open.length} * ${PANE_MIN_PX}px + ${open.length - 1} * var(--panel-gap))`;
   return (
     <div
       ref={layout}
       className={`focus-layout${showing ? ' with-inspector' : ''}`}
-      style={{ '--inspector-width': `${inspectorWidth}px` } as CSSProperties}
+      style={{ '--inspector-width': `${inspectorWidth}px`, '--panes-min': panesMin } as CSSProperties}
     >
       <div className="focus-main">
         <PageBar

@@ -7,6 +7,7 @@ import { DomainPatterns } from './PatternParts';
 import { patternsFollowedBy } from './patterns';
 import { CoverageBars, EvidencePanel, FitnessPanel, pluralLabel } from './ProductHealth';
 import { LongList } from '../components/LongList';
+import { countOf } from '../plural';
 import { PageHeader, ProblemBadge, ProblemList, RecordLink, RecordTree, Section, idText, levelBelow, recordText } from './parts';
 import { domainFolders, ungrouped, type Folder } from './folders';
 import { GroupSections, groupMatches } from './FolderGroups';
@@ -86,7 +87,7 @@ function SpecsHome({ index }: { index: SpecIndex }) {
           <Link key={p.id} to={addressOf(p.id)} className="card">
             <code>{p.id}</code>
             <strong>{p.title}</strong>
-            <small>{(index.domainsOf.get(p.id) ?? []).length} domains</small>
+            <small>{countOf((index.domainsOf.get(p.id) ?? []).length, 'domain')}</small>
           </Link>
         ))}
       </div>

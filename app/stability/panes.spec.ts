@@ -15,6 +15,17 @@ const WIKI_BAR = '.pane-wiki > .pane-bar';
 const FIRST_NODE = (view: 'graph' | 'model') => `.pane-${view} .react-flow__node`;
 
 test.describe('panes', () => {
+  test('LA-BRW-T625 at 1024 px with three panes and the inspector open, no two panels overlap', async ({ page }) => {
+    await page.setViewportSize({ width: 1024, height: 700 });
+    await openPage(page, `${AGGREGATE.split('?')[0]}?view=wiki,graph,model`);
+    await page.locator('.inspector-column').waitFor();
+    const spans = await page.evaluate(() => [document.querySelector('nav#nav'), ...document.querySelectorAll('.focus-views > .pane'), document.querySelector('.inspector-column')]
+      .map((e) => { const b = e!.getBoundingClientRect(); return { left: b.left, right: b.right }; }));
+    expect(spans).toHaveLength(5);
+    for (let i = 1; i < spans.length; i++) expect(spans[i].left, `panel ${i} starts after panel ${i - 1} ends`).toBeGreaterThanOrEqual(spans[i - 1].right);
+    expect(spans[spans.length - 1].right).toBeLessThanOrEqual(1024);
+  });
+
   test('LA-BRW-T482 open and close the Graph pane', async ({ page }) => {
     await openPage(page, RECORD);
     const open = await step(page, 'panes', 'open Graph (Ctrl+2)', { keys: [NAV, INSPECTOR, '.pane-wiki .pane-title h1', FIRST_NODE('graph')], allow: PANES, resizes: ['.pane-wiki .pane-title h1'] }, async () => {
