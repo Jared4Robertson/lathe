@@ -1,7 +1,7 @@
 ---
 id: LA-EXP-DR58
 kind: domain_rule
-title: "Every node in a level has one width, wide enough for each label in it, and its text is in proportion to its box"
+title: "One width per level, wide enough for its labels; text in proportion to its box"
 parent: LA-EXP-EN06
 ---
 Every node in one level of the map MUST have the same width: the larger of its proportional width and its widest label. The proportional width MUST shrink toward the leaves in proportion to the level's typical height (its median weighted by height), never narrower than the proportional width below and at most three times as wide, and the products' level at most one and a half times its domains' level, so the product's picture stays usable. The gaps between siblings and between levels grow with the proportional width, so a parent's height never depends on its children's titles.
