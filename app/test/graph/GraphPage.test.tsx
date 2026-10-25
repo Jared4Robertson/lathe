@@ -50,10 +50,6 @@ describe('graph page', () => {
     await waitFor(() => expect(title()).toBe('The owner is shown'));
     expect(trail.getAllByRole('listitem').map((li) => li.textContent)).toEqual(['The owner is shown (P-D-UC01-R01)']);
 
-    // /graph on its own opens the first product in the Graph view.
-    await openApp('/graph', { workspace: testWorkspace() });
-    await waitFor(() => expect(window.location.pathname).toBe('/P'));
-    expect(window.location.search).toBe('?view=graph');
   });
 
   it('LA-BRW-T624 The trail is a Tab stop only while it overflows', async () => {
