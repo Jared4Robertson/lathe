@@ -1,3 +1,4 @@
+import { lowerLabel } from '../plural';
 import type { ReactNode } from 'react';
 import { domainPath, kindLabel, productPath, relationLabel, type SpecIndex, type SpecLink as Link, type SpecRecord } from './data';
 import { RecordMarkdown } from './mentions';
@@ -51,7 +52,7 @@ function Fulfills({ index, record }: { index: SpecIndex; record: SpecRecord }) {
     <Section title="Fulfills" count={targets.length}>
       {parent && (
         <p className="fulfills-at">
-          At the {kindLabel(index, parent.kind).toLowerCase()} <RecordLink index={index} id={parent.id} />
+          At the {lowerLabel(kindLabel(index, parent.kind))} <RecordLink index={index} id={parent.id} />
         </p>
       )}
       {targets.length === 0 ? (

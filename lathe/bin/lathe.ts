@@ -8,6 +8,9 @@ import { CONFIG_FILE, loadConfig, loadWorkspace, type Problem } from '../src/ind
 import { slugify } from '../src/server/diagrams.ts';
 import { serve } from '../src/server/serve.ts';
 
+/** A label inside a sentence: "Use case" -> "use case", but an acronym keeps its case ("UC requirement"). */
+const lowerLabel = (label: string) => (/^[A-Z]{2}/.test(label) ? label : label.charAt(0).toLowerCase() + label.slice(1));
+
 const USAGE = `Usage: lathe <command> [options]
 
 Commands:
@@ -66,7 +69,7 @@ async function check() {
           const proofOnly = workspace.kinds.find((k) => k.kind === o.kind)?.proof_only;
           const design = proofOnly ? 'proof only' : `${of(o.designed)} designed, ${of(o.built)} built`;
           console.log(
-            `  ${c.domain} ${o.label.toLowerCase()}: ${design}, ${of(o.proved)} proved, ${of(o.planned)} planned; ${gaps} ${gaps === 1 ? 'gap' : 'gaps'}${owed}`,
+            `  ${c.domain} ${lowerLabel(o.label)}: ${design}, ${of(o.proved)} proved, ${of(o.planned)} planned; ${gaps} ${gaps === 1 ? 'gap' : 'gaps'}${owed}`,
           );
         }
         if (c.tests) console.log(`  ${c.domain} tests: ${c.tests.automated} automated, ${c.tests.manual} manual, ${c.tests.planned} planned`);

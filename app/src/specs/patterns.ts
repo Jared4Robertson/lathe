@@ -43,9 +43,16 @@ export function followingDomains(index: SpecIndex, patternId: string): { domain:
     .map(([domain, useCases]) => ({ domain, useCases }));
 }
 
-/** The patterns a domain follows, each with the domain's use cases that follow it, in pattern ID order. */
-export function patternsFollowedBy(index: SpecIndex, domainId: string): { pattern: SpecRecord; useCases: SpecRecord[] }[] {
+/**
+ * The patterns a domain follows, in pattern ID order: those the domain itself follows (FORMAT
+ * section 10; `byDomain`, so every rule applies) and those its use cases follow, each with them.
+ */
+export function patternsFollowedBy(index: SpecIndex, domainId: string): { pattern: SpecRecord; useCases: SpecRecord[]; byDomain: boolean }[] {
   const byPattern = new Map<string, SpecRecord[]>();
+  const ownFollows = new Set(
+    (index.outgoing.get(domainId) ?? []).filter((l) => l.relation === 'follows' && index.byId.get(l.target)?.kind === 'pattern').map((l) => l.target),
+  );
+  for (const id of ownFollows) byPattern.set(id, []);
   for (const r of index.workspace.records) {
     if (r.kind !== 'use_case' || r.domain !== domainId) continue;
     for (const l of index.outgoing.get(r.id) ?? []) {
@@ -54,7 +61,7 @@ export function patternsFollowedBy(index: SpecIndex, domainId: string): { patter
     }
   }
   return [...byPattern.entries()]
-    .map(([id, useCases]) => ({ pattern: index.byId.get(id)!, useCases: useCases.sort(byIdOrder) }))
+    .map(([id, useCases]) => ({ pattern: index.byId.get(id)!, useCases: useCases.sort(byIdOrder), byDomain: ownFollows.has(id) }))
     .sort((a, b) => byIdOrder(a.pattern, b.pattern));
 }
 

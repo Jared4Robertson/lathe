@@ -1,6 +1,6 @@
 ---
 name: design-the-domain
-description: Write or change a Lathe domain's design - flows, views, endpoints, their interaction requirements, and components, with the links that trace them to requirements and domain rules. Use when designing screens, routes, request and response rules, or code units for use cases in a repo with lathe.config.json.
+description: Write or change a Lathe domain's design - flows, views, endpoints, their interaction requirements, and components and the layers that hold them, with the links that trace them to requirements and domain rules. Use when designing screens, routes, request and response rules, or code units for use cases in a repo with lathe.config.json.
 ---
 
 # Design the domain
@@ -21,9 +21,21 @@ The design says how the product carries out its use cases: the paths people take
 | `view` | `<P>-<D>-V<nn>` | | `uses` endpoints; `fulfills` requirements |
 | `endpoint` | `<P>-<D>-E<nn>` | `method`, `route` | `fulfills` requirements |
 | `interaction_requirement` | `<view, endpoint or flow>-R<nn>`, such as `TL-LEND-E04-R01` | | `fulfills` the use case requirements and domain rules it carries out at this view, endpoint or flow |
+| `layer` | `<P>-<D>-LAY<nn>` | `order` (a whole number, its place in the domain, unique within the domain) | none; it holds the domain's components |
 | `component` | `<P>-<D>-C<nn>` | `component_type` (model, service, router, ...), `file` (path from the repo root) | `satisfies` requirements, domain rules and interaction requirements; `implements` endpoints and views; `depends_on` components |
 
-Every design record's parent is the domain, except an interaction requirement, whose parent is the view, endpoint or flow it constrains, a flow step, whose parent is its flow, and a flow, whose parent is the capability of the use cases it carries out when the domain has capabilities (see `write-use-cases`). Any link not in the meta-model's `relations.csv` is an error.
+Every design record's parent is the domain, except an interaction requirement, whose parent is the view, endpoint or flow it constrains, a flow step, whose parent is its flow, a flow, whose parent is the capability of the use cases it carries out when the domain has capabilities (see `write-use-cases`), and a component, whose parent is its layer when the domain has layers (see below). Any link not in the meta-model's `relations.csv` is an error.
+
+## Layers
+
+A domain's components go in **layers**: ordered groups by what the code is, such as 01 Models, 02 Accessors, 03 Services, 04 Connectors, 05 Routers and API app, 06 Web app, 07 Infrastructure and configuration. Each product names its own layers to fit its code; that set is only a starting point. See section 16 of `FORMAT.md`.
+
+- Read the domain's layers before adding a component, and put it in the layer it belongs to. Add a layer only when no existing one fits.
+- Keep each layer to about 15 components at most. Split a bigger one, for example by aggregate or capability, into layers with clear titles.
+- Keep a layer's record at `02-design/components/<NN>-<slug>.md` and its components in the folder beside it, `02-design/components/<NN>-<slug>/`. Its body says in two or three sentences what the layer holds and where its code lives.
+- Moving a component into a layer changes only its `parent`. Never change its ID.
+- Once a domain has one layer, every component of the domain belongs in one; a component left under the domain is a `component-outside-layer` warning. A repeated or non-whole `order` is a `layer-order` error.
+- A component in a layer still counts in its domain: coverage, owed pattern rules and flow steps treat it exactly as one directly under the domain.
 
 ## Interaction requirements
 
@@ -86,10 +98,21 @@ Request: `{ "memberId": number, "toolId": number }`.
 
 ```markdown
 ---
+id: TL-LEND-LAY03
+kind: layer
+title: Services
+parent: TL-LEND
+order: 3
+---
+The lending rules, one service per aggregate, in `src/`.
+```
+
+```markdown
+---
 id: TL-LEND-C05
 kind: component
 title: lending-service.ts
-parent: TL-LEND
+parent: TL-LEND-LAY03
 component_type: service
 file: src/lending-service.ts
 links:

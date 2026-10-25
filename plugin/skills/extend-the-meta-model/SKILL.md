@@ -34,7 +34,7 @@ A widening can only add: it cannot remove a default parent kind, required field 
 
 ## Folders
 
-Each kind's `section` column names the folder it is read in, as Client lays out a domain's specs: `domain-model` and `use-cases` in the Define stage, `interaction-design`, `technical-specification` and `test-plan` in the Design stage, and `shared` (patterns) at product level. The folders, their order and labels are the rows of `sections.csv` (`section, stage, order, label, description`). A new kind should name a folder of its own stage; one with no `section` gets a folder of its own in the app. To move a default kind, widen it with just its `section`, such as `domain_rule,,,use-cases,,,,`; to add a folder, add a `sections.csv` row. See section 15 of `FORMAT.md`.
+Each kind's `section` column names the folder it is read in, as Client lays out a domain's specs: `domain-model` and `use-cases` in the Define stage, `interaction-design`, `technical-specification` and `test-plan` in the Design stage, and `shared` (patterns) at product level. The folders, their order and labels are the rows of `sections.csv` (`section, stage, order, label, description`). A new kind should name a folder of its own stage; one with no `section` gets a folder of its own in the app. Components go in layers: a `layer` sits under a domain in the `technical-specification` folder, and a `component` sits in a layer, or in the domain when it has none. Layers are records each product names, not a field, so a product needs no extension to add its own. To move a default kind, widen it with just its `section`, such as `domain_rule,,,use-cases,,,,`; to add a folder, add a `sections.csv` row. See section 15 of `FORMAT.md`.
 
 ## Obligations and roles
 

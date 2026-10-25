@@ -104,17 +104,17 @@ describe('LA-PAT-APP-CODE App code', () => {
     expect(inline).toEqual([]);
   });
 
-  it('LA-BRW-T259 Generic components know nothing of specs, the graph or the shell: they import only React and each other', () => {
+  it('LA-BRW-T259 Generic components know nothing of specs, the graph or the shell: they import only React, each other and the text helpers', () => {
     const imports = filesUnder(join(SRC, 'components'), /\.tsx?$/).flatMap((f) =>
-      where(f, readFileSync(f, 'utf8'), /^import .* from '(?!react\b|react-dom\b|\.\/)/),
+      where(f, readFileSync(f, 'utf8'), /^import .* from '(?!react\b|react-dom\b|\.\/|\.\.\/plural')/),
     );
     expect(imports).toEqual([]);
   });
 
-  it('LA-BRW-T260 Kind labels become plural only through plural(): no template adds an "s" to a label', () => {
+  it('LA-BRW-T260 Kind labels become plural only through plural() and lowercase only through lowerLabel()', () => {
     const naive = filesUnder(SRC, /\.tsx?$/)
       .filter((f) => !f.endsWith('plural.ts'))
-      .flatMap((f) => where(f, readFileSync(f, 'utf8'), /\$\{[^}]*[lL]abel[^}]*\}s\b|[lL]abel\)?\s*\+\s*'s'/));
+      .flatMap((f) => where(f, readFileSync(f, 'utf8'), /\$\{[^}]*[lL]abel[^}]*\}s\b|[lL]abel\)?\s*\+\s*'s'|[lL]abel(?:\([^)]*\))?\.(?:charAt\(0\)\.)?toLowerCase\(\)/));
     expect(naive).toEqual([]);
   });
 

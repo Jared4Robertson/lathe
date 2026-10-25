@@ -1,5 +1,5 @@
 // The Lending model: records, values and the rules that need no storage.
-// Spec: TL-LEND-C01 (specs/tool-library/lending/02-design/components/C01-model.md)
+// Spec: TL-LEND-C01 (specs/tool-library/lending/02-design/components/01-models-and-accessors/C01-model.md)
 
 /** TL-LEND-DR07: a loan lasts 14 days. */
 export const LOAN_DAYS = 14;

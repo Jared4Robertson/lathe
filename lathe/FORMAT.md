@@ -63,10 +63,11 @@ Product prefix, domain code, then a kind code and number. The engine only checks
 | aggregate | `<P>-<D>-A<n>` | `TL-LEND-A1` |
 | domain_rule | `<P>-<D>-DR<nn>` | `TL-LEND-DR01` |
 | use_case | `<P>-<D>-UC<nn>` | `TL-LEND-UC01` |
-| requirement (shown as *use-case requirement*) | `<use case>-R<nn>` | `TL-LEND-UC01-R01` |
+| requirement (shown as *UC requirement*, short for use case requirement) | `<use case>-R<nn>` | `TL-LEND-UC01-R01` |
 | flow | `<P>-<D>-F<nn>` | `TL-LEND-F01` |
 | view | `<P>-<D>-V<nn>` | `TL-LEND-V01` |
 | endpoint | `<P>-<D>-E<nn>` | `TL-LEND-E01` |
+| layer | `<P>-<D>-LAY<nn>` | `TL-LEND-LAY01` |
 | component | `<P>-<D>-C<nn>` | `TL-LEND-C01` |
 | interaction_requirement | `<view, endpoint or flow>-R<nn>` | `TL-LEND-E03-R01` |
 | test | `<P>-<D>-T<nn>` | `TL-LEND-T01` |
@@ -89,12 +90,16 @@ A `test` record has a `state`: `automated` (the default when the field is absent
 
 The engine runs every SQL file in `lathe/checks/`. Each returns rows of `(severity, check, record, message)`:
 
-- **error**: the workspace is broken (duplicate ID, unknown kind, bad parent, missing required field, disallowed or dangling link, an automated test with no `run_by`, or whose `run_by` file is missing or mentions neither its ID nor an ID it proves, a bad or repeated capability order, a pattern setting a use case does not give, a pattern setting that is not a valid field name, a pattern rule naming a setting its pattern does not have, a proof claim the test's file does not back (`proof-not-in-file`), a bad or repeated flow step order, a product check named like one of Lathe's or a product checks folder that does not exist). `lathe check` exits non-zero.
-- **warning**: work still to do, not breakage (a requirement or domain rule that no component satisfies or no test proves, a use case with no requirements, a component file that does not exist yet, a use case left outside its domain's capabilities, two followed patterns sharing a setting, a pattern nobody follows, an obligation outside every domain, a record ID cited in prose that does not exist, a flow step fulfilling something outside its flow, a flow fulfilling something none of its steps do). The structural warnings say where two stages do not join up yet:
+- **error**: the workspace is broken (duplicate ID, unknown kind, bad parent, missing required field, disallowed or dangling link, an automated test with no `run_by`, or whose `run_by` file is missing or mentions neither its ID nor an ID it proves, a bad or repeated capability or layer order, a pattern setting a use case does not give, a pattern setting that is not a valid field name, a pattern rule naming a setting its pattern does not have, a proof claim the test's file does not back (`proof-not-in-file`), a bad or repeated flow step order, a product check named like one of Lathe's or a product checks folder that does not exist). `lathe check` exits non-zero.
+- **warning**: work still to do, not breakage (a requirement or domain rule that no component satisfies or no test proves, a use case with no requirements, a component file that does not exist yet, a use case left outside its domain's capabilities, a component left outside its domain's layers, two followed patterns sharing a setting, a pattern nobody follows, an obligation outside every domain, a record ID cited in prose that does not exist, a flow step fulfilling something outside its flow, a flow fulfilling something none of its steps do). The structural warnings say where two stages do not join up yet:
   - `rule-not-applied`: a domain rule that no use case `applies`.
   - `use-case-without-flow`: a use case that no flow `carries_out`, in a domain that has flows. A domain with no flows yet is not reported.
   - `interaction-requirement-fulfills-nothing`: an interaction requirement with no `fulfills` link.
   - `test-type-mismatch`: a test with `test_type: domain_rule` that proves requirements but no domain rule, or with `test_type: acceptance` that proves domain rules but no requirement. Other types, such as `unit`, are not compared.
+
+  The structure warnings say where a level of the spec is the wrong size: a parent with one child, or with hundreds, usually means the structure is off.
+  - `too-many-children`: a record with more children of one kind than the product's `structure.maxChildren` setting in `lathe.config.json` (default 15; see the package README). The message names the parent, the kind and the count; add a level between them, such as a capability, a layer or another aggregate. Children are counted per kind, so a domain with 10 use cases and 10 components is not reported at 15. Tests are never counted: the app groups them by what they prove (section 15), so they are never shown as one list.
+  - `lone-child`: a capability or a layer with exactly one child, of any kind (only its own children, not theirs). Merge it into a neighboring capability or layer, or give it more. One with no children is not reported.
 
   The proof warnings say where proof is still owed or is counted nowhere:
   - `proof-still-owed`: an obligation that is already proved, but that a planned test is also meant to prove, such as "TL-LEND-E06-R03 is proved, but planned test TL-LEND-T30 still owes a proof of it". There is one warning for each obligation and planned test, so the obligations that coverage counts in `planned_any` beyond `planned` are named. A pattern rule is judged in each domain that owes it, with only that domain's tests. An obligation not yet proved, whose test is only planned, is `unproved` instead.
@@ -160,6 +165,7 @@ A use case then names the capability as its parent (`parent: TL-LEND-CAP03`). It
 
 - Each capability in a domain needs its own order (`capability-order` error); `1` and `01` are the same.
 - Once a domain has capabilities, a use case left directly under the domain is a `use-case-outside-capability` warning. A domain with no capabilities is fine.
+- A capability that holds only one record is a `lone-child` warning: merge it into a neighbor or give it more. A domain with more use cases, or flows, than `structure.maxChildren` directly under it is a `too-many-children` warning, the sign that it needs capabilities (section 5).
 
 The domain's **use case index** comes from the records: its capabilities in order, each with its use cases, and the patterns each use case follows (or none).
 
@@ -299,7 +305,7 @@ WHERE a.kind = 'aggregate'
 
 A flow can be written as **steps**, so that each step says what happens, where, and what it carries out, as Client's flow tables do. A `flow_step` sits under its flow and gives its place in the flow in `order`, a whole number. Its ID is the flow's ID with `-S<nn>`, such as `TL-LEND-F01-S01`. Its title says what happens in a few words, and its body may say more.
 
-A step links to what it goes through with `uses` (a view, an endpoint or a component) and to what it carries out with `fulfills` (a use-case requirement, an interaction requirement, a domain rule, or a rule of a pattern the flow's use cases or domain follow).
+A step links to what it goes through with `uses` (a view, an endpoint or a component) and to what it carries out with `fulfills` (a UC requirement, an interaction requirement, a domain rule, or a rule of a pattern the flow's use cases or domain follow).
 
 ```markdown
 ---
@@ -334,7 +340,7 @@ Client lays out each domain's specs in folders: `01-define/01-domain-model`, `01
 | Define | Domain model (`domain-model`) | aggregate, domain_rule |
 | Define | Use cases (`use-cases`) | capability, use_case, requirement |
 | Design | Interaction design (`interaction-design`) | flow, flow_step, view, endpoint, interaction_requirement |
-| Design | Technical specification (`technical-specification`) | component |
+| Design | Technical specification (`technical-specification`) | layer, component |
 | Design | Test plan (`test-plan`) | test |
 | (product) | Shared (`shared`) | pattern, pattern_rule |
 
@@ -342,3 +348,39 @@ Structural kinds (product, domain, question, fitness) sit in no folder. The engi
 
 - `unknown-section` (error): a kind names a section that `sections.csv` does not list.
 - `section-stage-mismatch` (error): a kind's section belongs to another stage than the kind's own. A product-level folder (no stage) may hold a kind of any stage.
+
+The app groups the Test plan folder by what each test proves, not by records of its own. Each test goes in the first group that applies to it:
+
+1. **Acceptance tests**: it proves a UC requirement. Grouped by capability in order, with use cases outside any capability last, then by use case: the first use case it proves a requirement of, in ID order.
+2. **Domain rule tests**: it proves a domain rule.
+3. **Pattern tests**: it proves a pattern rule. Grouped by pattern.
+4. **Interaction tests**: it proves an interaction requirement.
+5. **Engineering checks**: everything else.
+
+A group with no tests is not shown.
+
+## 16. Layers
+
+A domain's technical specification groups its components into **layers**, as its use cases are grouped into capabilities (section 10). A `layer` sits under a domain and gives its place in the domain in `order`, a whole number. Its ID is the domain's ID with `-LAY<nn>`, such as `TL-LEND-LAY01`. Its title names what it holds, and its body may say where that code lives.
+
+```markdown
+---
+id: TL-LEND-LAY03
+kind: layer
+title: Services
+parent: TL-LEND
+order: 3
+---
+The lending rules, one service per aggregate, in `src/services/`.
+```
+
+A component then names the layer as its parent (`parent: TL-LEND-LAY03`). Its ID does not change, so moving a component into a layer changes only its `parent`. A component in a layer still belongs to the layer's domain everywhere a domain matters: its design and build count in that domain's coverage, it designs the pattern rules that domain owes, and the proof and flow step checks judge it there, exactly as if it sat directly in the domain. A domain with no layers keeps its components directly under it.
+
+Layers are records, not a fixed list, so each product names its own. A good starting point, from Client, is: Models, Accessors, Services, Connectors, Routers and API app, Web app, and Infrastructure and configuration. A layer much larger than the others, say more than about 15 components, is split, for example by aggregate or capability, each part its own layer with a clear title.
+
+The checks for layers:
+
+- A layer's `order` that is not a whole number, or that another layer of the same domain also has, is a `layer-order` error (`1` and `01` are the same). Layers in different domains may share an order. A missing order is `missing-required-field`.
+- `component-outside-layer` (warning): once a domain has layers, a component left directly under the domain. Move it into the layer it belongs to. A domain with no layers is not reported.
+- `lone-child` (warning): a layer that holds only one component. Merge it into a neighboring layer or give it more.
+- `too-many-children` (warning): a layer, or a domain without layers, holding more components than `structure.maxChildren` (default 15). Split the layer, or add layers (section 5).

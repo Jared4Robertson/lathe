@@ -7,8 +7,9 @@ import { DomainPatterns } from './PatternParts';
 import { patternsFollowedBy } from './patterns';
 import { CoverageBars, EvidencePanel, FitnessPanel, pluralLabel } from './ProductHealth';
 import { LongList } from '../components/LongList';
-import { PageHeader, ProblemBadge, ProblemList, RecordLink, RecordTree, Section, idText, recordText } from './parts';
-import { domainFolders, type Folder } from './folders';
+import { PageHeader, ProblemBadge, ProblemList, RecordLink, RecordTree, Section, idText, levelBelow, recordText } from './parts';
+import { domainFolders, ungrouped, type Folder } from './folders';
+import { GroupSections, groupMatches } from './FolderGroups';
 import {
   byIdOrder,
   checksPath,
@@ -167,7 +168,9 @@ function QuestionList({ index, questions }: { index: SpecIndex; questions: SpecR
  * A domain's wiki, read in the same folders as the side nav and as Client lays out its specs: under
  * Define, Domain model and Use cases; under Design, Interaction design, Technical specification
  * and Test plan (names and order from the workspace's sections). A folder lists its records
- * directly, or under one heading per kind when it holds several kinds. Each record is a row with
+ * directly, or under one heading per kind when it holds several kinds; Technical specification
+ * lists its layers, each heading its components, and Test plan its test groups (as the nav does).
+ * Each record is a row with
  * its count of children, which are folded under it. Then the patterns the domain follows, its
  * open questions, coverage and problems.
  */
@@ -196,6 +199,21 @@ export function DomainWiki({ index, id }: { index: SpecIndex; id: string }) {
     return visible === 0 ? <p className="hint">Nothing matches.</p> : <RecordTree index={index} records={records} label={label} query={query} />;
   };
   const folderSection = (folder: Folder, level: 2 | 3) => {
+    if (folder.groups.length > 0) {
+      // Technical specification by layer, Test plan by what each test proves, as in the nav.
+      const rest = ungrouped(folder);
+      const visible = folder.groups.some((g) => groupMatches(index, g, query)) || rest.some(matches);
+      return (
+        <Section key={folder.key} level={level} title={folder.label} count={folder.count} className="folder">
+          {!visible ? <p className="hint">Nothing matches.</p> : (
+            <>
+              <GroupSections index={index} groups={folder.groups} level={levelBelow(level)} query={query} />
+              {rest.length > 0 && tree(rest, `Others in ${folder.label}`)}
+            </>
+          )}
+        </Section>
+      );
+    }
     const kinds = folder.kinds.filter((k) => folder.records.some((r) => r.kind === k));
     // In a folder that holds capabilities, its other records are those outside any capability
     // (the ones under a capability are folded under it).

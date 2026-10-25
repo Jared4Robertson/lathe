@@ -92,10 +92,23 @@ describe('Patterns we follow, on the domain page', () => {
     expect(within(coverage).getAllByRole('listitem').map((li) => li.textContent)).toContainEqual(expect.stringMatching(/DM-PAT-CHECKOUT-R02.*Pattern rule with nothing that satisfies it/));
   });
 
+  it('LA-BRW-T293 A pattern the domain itself follows is listed, followed by the whole domain, and every rule applies', async () => {
+    const ws = patternWorkspace();
+    ws.links.push({ source: 'NF-NOTE', relation: 'follows', target: 'DM-PAT-CHECKOUT' } as (typeof ws.links)[number]);
+    const ix = indexWorkspace(ws);
+    expect(patternsFollowedBy(ix, 'NF-NOTE').map((f) => [f.pattern.id, f.byDomain, f.useCases.length])).toEqual([['DM-PAT-CHECKOUT', true, 0]]);
+    // A rule with a setting still applies: no use case of the domain can mark it not applicable.
+    const ruleWithSetting = ix.workspace.records.find((r) => r.parent === 'DM-PAT-CHECKOUT' && r.fields.setting)!;
+    expect(ruleStatus(ix, ruleWithSetting, 'NF-NOTE', [])).toMatchObject({ applies: true });
+    await openApp('/specs/NF/NF-NOTE', { workspace: ws });
+    await screen.findByRole('heading', { level: 1, name: 'Notes' });
+    expect(rowOf(section(/^Patterns we follow/), 'DM-PAT-CHECKOUT')).toHaveTextContent('followed by the whole domain');
+  });
+
   it('LA-BRW-T166 A domain that follows no pattern says so', async () => {
     await openApp('/specs/NF/NF-NOTE', { workspace: patternWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Notes' });
-    expect(within(section(/^Patterns we follow/)).getByText('No use case in this domain follows a pattern.')).toBeInTheDocument();
+    expect(within(section(/^Patterns we follow/)).getByText('This domain follows no pattern.')).toBeInTheDocument();
   });
 });
 

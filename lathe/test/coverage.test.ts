@@ -21,7 +21,7 @@ describe('coverage by the meta-model', () => {
     expect(states.coverage).toHaveLength(1);
     expect(states.coverage[0].obligations).toEqual([
       { kind: 'domain_rule', label: 'Domain rule', total: 1, designed: 0, built: 0, proved: 0, planned: 0, planned_any: 0 },
-      { kind: 'requirement', label: 'Use-case requirement', total: 2, designed: 2, built: 2, proved: 1, planned: 1, planned_any: 2 },
+      { kind: 'requirement', label: 'UC requirement', total: 2, designed: 2, built: 2, proved: 1, planned: 1, planned_any: 2 },
       { kind: 'pattern_rule', label: 'Pattern rule', total: 0, designed: 0, built: 0, proved: 0, planned: 0, planned_any: 0 },
       { kind: 'interaction_requirement', label: 'Interaction requirement', total: 2, designed: 2, built: 2, proved: 2, planned: 0, planned_any: 0 },
     ]);
@@ -105,7 +105,7 @@ describe('coverage by the meta-model', () => {
     expect(run.status).toBe(0);
     const coverage = run.stdout.slice(run.stdout.indexOf('\nCoverage:'));
     expect(coverage).toContain('  CS-D domain rule: 0/1 designed, 0/1 built, 0/1 proved, 0/1 planned; 2 gaps');
-    expect(coverage).toContain('  CS-D use-case requirement: 2/2 designed, 2/2 built, 1/2 proved, 1/2 planned; 1 gap');
+    expect(coverage).toContain('  CS-D UC requirement: 2/2 designed, 2/2 built, 1/2 proved, 1/2 planned; 1 gap');
     expect(coverage).toContain('  CS-D interaction requirement: 2/2 designed, 2/2 built, 2/2 proved, 0/2 planned; 0 gaps');
   });
 });

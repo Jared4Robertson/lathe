@@ -41,6 +41,7 @@ An error means the specs are broken. Do not leave one behind.
 | `meta-bad-required-field` | Use a field name of lower-case letters, digits and underscores, and not `id`, `kind`, `title`, `parent` or `links`. |
 | `bad-fitness-date`, `bad-fitness-score` | A fitness record needs `date: YYYY-MM-DD` and a `score` from 1 to 5. |
 | `capability-order` | Give each capability in the domain its own whole-number `order` (`1` and `01` are the same). Renumbering an order is fine; it is not an ID. |
+| `layer-order` | Give each layer in the domain its own whole-number `order` (`1` and `01` are the same), as for capabilities. |
 | `pattern-setting-missing` | Add the setting to the use case as a header field named exactly as the pattern lists it, with a value or `"Not applicable: <reason>"`. If the use case does not really share the pattern, remove the `follows` link instead. |
 | `bad-pattern-settings` | Rename the pattern's setting to lower-case letters, digits and underscores, not `id`, `kind`, `title`, `parent` or `links`, and rename the field in every use case that follows it. |
 | `parse-error` | Fix the YAML header: `---` lines, indentation, quotes around titles with colons. |
@@ -49,7 +50,13 @@ Fix the record that is wrong, not the one that reports it: a dangling link is us
 
 ## Warnings: work still to do
 
-Warnings do not fail the check. They are gaps: an obligation (a requirement, domain rule, interaction requirement, or a product's own obligation kind) that nothing designs (`unsatisfied`) or no automated or manual test proves (`unproved`), a use case without requirements, a component whose file does not exist yet, a use case left directly under a domain that has capabilities (`use-case-outside-capability`: move it under its capability by changing its `parent`), or a use case following two patterns that share a setting name (`pattern-setting-clash`: rename the setting in one pattern). A planned test does not clear `unproved`. Fix the ones your task is about; leave the rest and mention them.
+Warnings do not fail the check. They are gaps: an obligation (a requirement, domain rule, interaction requirement, or a product's own obligation kind) that nothing designs (`unsatisfied`) or no automated or manual test proves (`unproved`), a use case without requirements, a component whose file does not exist yet, a use case left directly under a domain that has capabilities (`use-case-outside-capability`: move it under its capability by changing its `parent`), a component left directly under a domain that has layers (`component-outside-layer`: move it into its layer by changing its `parent`), or a use case following two patterns that share a setting name (`pattern-setting-clash`: rename the setting in one pattern).
+
+Two warnings say a level of the spec is the wrong size:
+- `too-many-children`: a record has more children of one kind than `structure.maxChildren` in `lathe.config.json` (default 15). Add a level between them: a capability for use cases or flows, a layer for components, another aggregate for domain rules. Tests are never counted. Moving a record changes only its `parent`, never its ID.
+- `lone-child`: a capability or a layer holds only one record. Merge it into a neighboring capability or layer, or give it more.
+
+Do not raise `structure.maxChildren` to silence the warning unless the user asks. A planned test does not clear `unproved`. Fix the ones your task is about; leave the rest and mention them.
 
 ## Coverage
 

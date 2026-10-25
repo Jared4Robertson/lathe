@@ -38,7 +38,7 @@ describe('folders', () => {
     expect(ws.sections.map((s) => [s.stage, s.order, s.section, s.label])).toEqual([
       ['', 1, 'shared', 'Shared'],
       ['define', 1, 'domain-model', 'Domain model'],
-      ['define', 2, 'use-cases', 'Use cases'],
+      ['define', 2, 'use-cases', 'Capabilities'],
       ['design', 1, 'interaction-design', 'Interaction design'],
       ['design', 2, 'technical-specification', 'Technical specification'],
       ['design', 3, 'test-plan', 'Test plan'],

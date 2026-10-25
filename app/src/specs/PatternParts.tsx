@@ -51,8 +51,10 @@ export function RuleMarks({ index, status }: { index: SpecIndex; status: RuleSta
  */
 export function DomainPatterns({ index, domainId, query }: { index: SpecIndex; domainId: string; query?: string }) {
   const followed = patternsFollowedBy(index, domainId);
-  if (followed.length === 0) return <p className="hint">No use case in this domain follows a pattern.</p>;
+  if (followed.length === 0) return <p className="hint">This domain follows no pattern.</p>;
   const useCasesOf = new Map(followed.map((f) => [f.pattern.id, f.useCases]));
+  // A pattern the domain itself follows applies in full: no use case can mark its rules not applicable.
+  const byDomain = new Set(followed.filter((f) => f.byDomain).map((f) => f.pattern.id));
   const patternOfRule = (rule: SpecRecord) => rule.parent ?? '';
   return (
     <TreeList<SpecRecord>
@@ -71,12 +73,12 @@ export function DomainPatterns({ index, domainId, query }: { index: SpecIndex; d
             <div className="record-row">
               <RecordLink index={index} id={r.id} />
               <span className="row-tags">
-                <small className="meta">followed by {ucs.map((u, i) => <Fragment key={u.id}>{i > 0 && ', '}<RecordLink index={index} id={u.id} showTitle={false} /></Fragment>)}</small>
+                <small className="meta">followed by {byDomain.has(r.id) && 'the whole domain'}{byDomain.has(r.id) && ucs.length > 0 && ', '}{ucs.map((u, i) => <Fragment key={u.id}>{i > 0 && ', '}<RecordLink index={index} id={u.id} showTitle={false} /></Fragment>)}</small>
               </span>
             </div>
           );
         }
-        const status = ruleStatus(index, r, domainId, useCasesOf.get(patternOfRule(r)) ?? []);
+        const status = ruleStatus(index, r, domainId, byDomain.has(patternOfRule(r)) ? [] : useCasesOf.get(patternOfRule(r)) ?? []);
         return (
           <div className="record-row pattern-rule-row">
             <RecordLink index={index} id={r.id} />

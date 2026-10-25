@@ -27,7 +27,7 @@ describe('obligation kinds and test states', () => {
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     expect(groups(card('Shopping'))).toEqual([
       'Domain rules 1: designed 1/1, built 1/1, proved 1/1, planned 0/1',
-      'Use-case requirements 2: designed 2/2, built 1/2, proved 1/2, planned 0/2',
+      'UC requirements 2: designed 2/2, built 1/2, proved 1/2, planned 0/2',
       'Interaction requirements 3: designed 1/3, built 1/3, proved 0/3, planned 1/3',
       'Security controls 1: designed 0/1, built 0/1, proved 0/1, planned 0/1',
     ]);
@@ -49,11 +49,11 @@ describe('obligation kinds and test states', () => {
     await openApp('/specs/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     expect(groups(card('Shopping'))).toEqual([
-      'Use-case requirements 2: designed 2/2, built 1/2, proved 1/2',
+      'UC requirements 2: designed 2/2, built 1/2, proved 1/2',
       'Domain rules 1: designed 1/1, built 1/1, proved 0/1',
     ]);
     expect(groups(card('Paying'))).toEqual([
-      'Use-case requirements 1: designed 0/1, built not yet measured, proved 0/1',
+      'UC requirements 1: designed 0/1, built not yet measured, proved 0/1',
       'Domain rules 0: designed 0/0, built not yet measured, proved 0/0',
     ]);
     expect(main().querySelector('.bar.planned')).toBeNull();
@@ -140,7 +140,7 @@ describe('obligation kinds and test states', () => {
     expect(fulfills).toHaveTextContent(/At the endpoint\s*DM-SHOP-E01\s*Add to basket/);
     expect(within(fulfills).getByRole('link', { name: /^DM-SHOP-E01\s*Add to basket$/ })).toHaveAttribute('href', '/records/DM-SHOP-E01');
     const items = within(fulfills).getAllByRole('listitem');
-    expect(items.map((li) => li.textContent)).toEqual([expect.stringMatching(/DM-SHOP-UC01-R02.*A full basket refuses the item.*Use-case requirement/)]);
+    expect(items.map((li) => li.textContent)).toEqual([expect.stringMatching(/DM-SHOP-UC01-R02.*A full basket refuses the item.*UC requirement/)]);
     expect(within(items[0]).getByRole('link')).toHaveAttribute('href', '/records/DM-SHOP-UC01-R02');
 
     // One that fulfills nothing yet says how to link it.
