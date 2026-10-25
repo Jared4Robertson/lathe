@@ -19,21 +19,59 @@ interface Route {
   handler: Handler;
 }
 
-// TL-LEND-E06-R03: a body over 64 KB is refused with 413 before it is parsed (for every endpoint).
-const MAX_BODY_BYTES = 64 * 1024;
+// TL-LEND-E06-R03: a body over 64 KB is refused with 413 `body_too_large` before it is parsed,
+// for every endpoint. A declared Content-Length over the limit is refused before any byte is read;
+// a chunked or endless body is read only up to the limit, then reading stops and the connection closes.
+export const MAX_BODY_BYTES = 64 * 1024;
+/** How long a refused connection stays open after its 413 is written, so the client can read it before the socket closes. */
+const CLOSE_GRACE_MS = 1000;
+
+function bodyTooLarge(): LendingError {
+  return new LendingError(413, 'body_too_large', `The request body is over ${MAX_BODY_BYTES / 1024} KB.`);
+}
+
+/** Reads the raw body, stopping (and pausing the request) as soon as it passes MAX_BODY_BYTES. */
+function readBody(req: IncomingMessage): Promise<Buffer> {
+  const declared = Number(req.headers['content-length']);
+  if (declared > MAX_BODY_BYTES) return Promise.reject(bodyTooLarge());
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    let size = 0;
+    const stop = () => {
+      req.off('data', onData);
+      req.off('end', onEnd);
+      req.off('error', onError);
+    };
+    const onData = (chunk: Buffer) => {
+      size += chunk.length;
+      if (size > MAX_BODY_BYTES) {
+        stop();
+        req.pause();
+        reject(bodyTooLarge());
+        return;
+      }
+      chunks.push(chunk);
+    };
+    const onEnd = () => {
+      stop();
+      resolve(Buffer.concat(chunks));
+    };
+    const onError = (err: Error) => {
+      stop();
+      reject(err);
+    };
+    req.on('data', onData);
+    req.on('end', onEnd);
+    req.on('error', onError);
+  });
+}
 
 async function readJson(req: IncomingMessage): Promise<Record<string, unknown>> {
-  const chunks: Buffer[] = [];
-  let size = 0;
-  for await (const chunk of req) {
-    size += (chunk as Buffer).length;
-    if (size > MAX_BODY_BYTES) throw new LendingError(413, 'body_too_large', 'The request body is too large.');
-    chunks.push(chunk as Buffer);
-  }
-  if (size === 0) return {};
+  const raw = await readBody(req);
+  if (raw.length === 0) return {};
   let parsed: unknown;
   try {
-    parsed = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+    parsed = JSON.parse(raw.toString('utf8'));
   } catch {
     throw new LendingError(400, 'invalid_json', 'The request body is not valid JSON.');
   }
@@ -41,6 +79,24 @@ async function readJson(req: IncomingMessage): Promise<Record<string, unknown>> 
     throw new LendingError(400, 'invalid_json', 'The request body must be a JSON object.');
   }
   return parsed as Record<string, unknown>;
+}
+
+/**
+ * Answers a refused body and closes the connection without reading the rest of the body.
+ * The request stays paused, so the server reads nothing more and TCP flow control holds the
+ * client back. The whole answer (with its length and `Connection: close`) is written at once,
+ * and the response is ended, which makes Node close the socket, only after a short grace:
+ * closing a socket with unread data resets it, and a client still sending would lose the answer.
+ */
+function sendAndClose(res: ServerResponse, status: number, body: unknown): void {
+  const text = JSON.stringify(body);
+  res.writeHead(status, {
+    'content-type': 'application/json; charset=utf-8',
+    'content-length': Buffer.byteLength(text),
+    connection: 'close',
+  });
+  res.write(text);
+  setTimeout(() => res.end(), CLOSE_GRACE_MS);
 }
 
 function send(res: ServerResponse, status: number, body: unknown): void {
@@ -102,7 +158,9 @@ export function createRouter(
       const result = route.handler(params, body);
       send(res, result.status, result.body);
     } catch (err) {
-      if (err instanceof LendingError) {
+      if (err instanceof LendingError && err.code === 'body_too_large') {
+        sendAndClose(res, err.status, { error: err.code, message: err.message });
+      } else if (err instanceof LendingError) {
         send(res, err.status, { error: err.code, message: err.message });
       } else {
         console.error(err);
