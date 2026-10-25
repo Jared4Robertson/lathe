@@ -90,7 +90,7 @@ export function TabStrip({ index, set, onActivate, onClose, onKeep }: TabStripPr
               onAuxClick={(e: MouseEvent) => { if (e.button === 1) { e.preventDefault(); onClose(tab.key); } }}
               onKeyDown={(e) => onKeyDown(e, tab, i)}
             >
-              {id && <code className="tab-id">{id}</code>}
+              {id && <span className="tab-id">{id}</span>}
               <span className="tab-title">{title}</span>
               <Tooltip label="Close" command={active ? 'closeTab' : undefined}>
                 <button

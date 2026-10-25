@@ -32,7 +32,7 @@ describe('tabs for open pages', () => {
     expect(tabs()).toEqual(['Lend a thing*<']);
     const first = tab('Lend a thing');
     expect(first).toHaveAttribute('aria-label', 'P-D-UC01 Lend a thing, preview');
-    expect(first.querySelector('code.tab-id')).toHaveTextContent('P-D-UC01');
+    expect(first.querySelector('.tab-id')).toHaveTextContent('P-D-UC01');
     expect(screen.getByRole('tabpanel')).toHaveAttribute('aria-labelledby', first.id);
     // The active preview tab's tooltip names the keep command; its close button, the close command.
     expect(within(first).getByRole('button', { name: 'Close P-D-UC01 Lend a thing' })).toHaveAttribute('aria-keyshortcuts', 'Alt+Shift+W');
