@@ -2,7 +2,7 @@ import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { openApp } from './helpers';
 
-const PAGES = ['/', '/DM', '/DM-SHOP', '/DM-SHOP-C01', '/checks', '/format'];
+const PAGES = ['/', '/DM', '/DM-SHOP', '/DM-SHOP-C01', '/DM/checks', '/format'];
 
 describe('fixture source note', () => {
   it('LA-EXP-T11 Every spec page says when it shows the sample fixture, and why', async () => {

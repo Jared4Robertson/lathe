@@ -7,22 +7,23 @@ import { childKinds, pluralLabel } from '../graph/model';
 import { treeParent } from '../graph/tree';
 import { LatheLogo } from '../LatheLogo';
 import { Link } from '../router';
-import { checksPath, parseSpecRoute, type SpecIndex, type SpecRecord, type SpecState } from '../specs/data';
+import { parseSpecRoute, type SpecIndex, type SpecRecord, type SpecState } from '../specs/data';
 import { branchOf, domainFolders, productFolderKinds, productFolders, ungrouped, type Folder, type FolderGroup } from '../specs/folders';
 import { recordText } from '../specs/parts';
+import { useShortcutHint } from './commands';
 import { SPACE_KEYS, spaceCommandId } from './keymap';
 import { isBool, usePref } from './prefs';
 import { QuickFind } from './QuickFind';
 import { SpaceMark, useSpaces, type Space } from './spaces';
 import { Tooltip } from './Tooltip';
 import { trapTab } from './useNarrow';
-import { addressOf, HOME_PATH } from '../views/address';
+import { addressOf, checksPathOf, HOME_PATH } from '../views/address';
 
 // The side navigation. At its far left is the space rail: one square icon per product (each
-// product is its own space), a separator, then the item above every product (Checks for all
-// products). Beside it, the panel: a quick find, the current space's overview,
-// its shared folder, its domains (folded into stages and folders, as Client lays out its specs) and groups, then Tools, a section that
-// folds on its own, and a footer with Appearance and where the specs come from (the record format is a command and a
+// product is its own space). Beside it, the panel, all of it the current space's: a quick find of
+// the space, its overview, its shared folder, its domains (folded into stages and folders, as Client
+// lays out its specs) and groups, then Tools (the space's Checks), a section that folds on its
+// own, and a footer with Appearance and where the specs come from (the record format is a command and a
 // link in the shortcuts sheet). The nav
 // collapses to the rail alone (remembered), and on a narrow screen it is a drawer that keeps
 // the rail.
@@ -35,6 +36,7 @@ import { addressOf, HOME_PATH } from '../views/address';
 // opening it opens the branch down to the page.
 
 export interface NavProps {
+  /** The specs as the current space sees them: its own index. */
   spec: SpecState;
   path: string;
   collapsed: boolean;
@@ -54,7 +56,7 @@ const here = (path: string, to: string) => (path === to ? 'page' : undefined);
 
 /** Which section holds the current page. */
 function sectionOf(path: string): SectionId | null {
-  if (path.startsWith('/checks')) return 'tools';
+  if (parseSpecRoute(path)?.page === 'checks') return 'tools';
   return null;
 }
 
@@ -67,6 +69,7 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
   const isOpen = (id: SectionId) => sections[id] !== false;
   const toggle = (id: SectionId) => setSections((s) => ({ ...s, [id]: !(s[id] !== false) }));
   const scroller = useRef<HTMLDivElement>(null);
+  const checksKeys = useShortcutHint('openChecks');
   // Whether the nav is used from the keyboard: then the selected row also shows a focus outline, as in VS Code.
   const [keyboard, setKeyboard] = useState(false);
 
@@ -110,7 +113,6 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
   const problems = index?.workspace.problems ?? [];
   const errors = problems.filter((p) => p.severity === 'error').length;
   const warnings = problems.length - errors;
-  const checksLabel = `Checks: ${errors} error${errors === 1 ? '' : 's'}, ${warnings} warning${warnings === 1 ? '' : 's'}`;
   const checkBadges = (
     <span className="nav-badges">
       {/* The words beside each count are for a screen reader, so the row's name holds what it shows (LA-PLT-DR21). */}
@@ -127,12 +129,9 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
 
   const rail = (
     <SpaceRail
-      path={path}
       spaces={spaces?.spaces ?? []}
       current={space}
       lastPage={spaces?.lastPage}
-      checksLabel={`Checks for all products: ${checksLabel.slice('Checks: '.length)}`}
-      checkDot={errors > 0 ? 'error' : warnings > 0 ? 'warning' : null}
       loaded={loaded}
       top={collapsed && !drawer ? (
         <>
@@ -190,7 +189,7 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
             </Button>
           </Tooltip>
         </div>
-        <QuickFind ref={findRef} index={index} space={space} />
+        <QuickFind ref={findRef} index={index} />
         <div className="nav-scroll" ref={scroller} aria-busy={!loaded || undefined}>
           {loaded && <>
           {/* The current space needs no heading of its own: the rail names it, and its first row is its overview. */}
@@ -199,17 +198,19 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
             {index && space && <SpaceItems index={index} space={space} path={path} reveal={fromNav} />}
             {index && !space && <p className="hint">No products yet.</p>}
           </div>
-          <NavSection id="tools" icon="checks" title="Tools" open={isOpen('tools')} onToggle={() => toggle('tools')}>
-            <ul>
-              <li>
-                <NavRow depth={0} selected={path === checksPath}>
-                  <Link to={checksPath} aria-current={here(path, checksPath)}>
-                    <Icon name="checks" size={16} /> <span className="nav-label">Checks</span> {checkBadges}
-                  </Link>
-                </NavRow>
-              </li>
-            </ul>
-          </NavSection>
+          {space && (
+            <NavSection id="tools" icon="checks" title="Tools" open={isOpen('tools')} onToggle={() => toggle('tools')}>
+              <ul>
+                <li>
+                  <NavRow depth={0} selected={path === checksPathOf(space.id)}>
+                    <Link to={checksPathOf(space.id)} aria-current={here(path, checksPathOf(space.id))} aria-keyshortcuts={checksKeys.aria}>
+                      <Icon name="checks" size={16} /> <span className="nav-label">Checks</span> {checkBadges}
+                    </Link>
+                  </NavRow>
+                </li>
+              </ul>
+            </NavSection>
+          )}
           </>}
         </div>
         <footer className="nav-foot">
@@ -224,20 +225,17 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
 });
 
 interface SpaceRailProps {
-  path: string;
   spaces: readonly Space[];
   current: Space | null;
   lastPage?: (id: string) => string | undefined;
-  checksLabel: string;
-  checkDot: 'error' | 'warning' | null;
   /** Until the specs have loaded the spaces are unknown, so the items below them wait too, rather than be pushed down. */
   loaded: boolean;
   top: ReactNode;
   bottom: ReactNode;
 }
 
-/** The rail at the far left: the spaces in order, a separator, then Checks for all products. */
-function SpaceRail({ path, spaces, current, lastPage, checksLabel, checkDot, loaded, top, bottom }: SpaceRailProps) {
+/** The rail at the far left: the spaces in order. */
+function SpaceRail({ spaces, current, lastPage, loaded, top, bottom }: SpaceRailProps) {
   return (
     <div className="rail space-rail">
       {top}
@@ -265,13 +263,6 @@ function SpaceRail({ path, spaces, current, lastPage, checksLabel, checkDot, loa
           })}
         </ul>
       )}
-      <hr className="rail-sep" />
-      <Tooltip label="Checks for all products" command="openChecks" placement="right">
-        <Link to={checksPath} className="rail-item" aria-label={checksLabel} aria-current={here(path, checksPath)}>
-          <Icon name="checks" />
-          {checkDot && <span className={`rail-dot ${checkDot}`} />}
-        </Link>
-      </Tooltip>
       </>}
       {bottom}
     </div>

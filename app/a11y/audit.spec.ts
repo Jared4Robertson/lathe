@@ -26,7 +26,7 @@ const PAGES: State[] = [
   { name: 'group page', url: GROUP, ready: '.pane-title' },
   { name: 'graph', url: `${RECORD}?view=graph`, ready: '.pane-graph .graph-flow .react-flow__node' },
   { name: 'Model view', url: `${AGGREGATE}?view=model`, ready: '.pane-model .model-canvas' },
-  { name: 'Checks', url: '/checks', ready: '#main h1' },
+  { name: 'Checks', url: `${PRODUCT}/checks`, ready: '#main h1' },
   { name: 'Format', url: '/format', ready: '#main h1' },
   { name: 'Appearance', url: '/settings/appearance', ready: '#main h1' },
 ].map((p) => ({ name: p.name, run: (page: Page) => open(page, p.url, p.ready) }));

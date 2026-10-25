@@ -4,7 +4,7 @@ import { addressOf } from '../src/views/address';
 import { records } from './fixtures/workspace';
 import { main, openApp } from './helpers';
 
-const PAGES = ['/', '/DM', '/NF', '/DM-SHOP', '/DM-PAY', '/checks',
+const PAGES = ['/', '/DM', '/NF', '/DM-SHOP', '/DM-PAY', '/DM/checks',
   ...records.map((r) => addressOf(r.id))];
 
 describe('record IDs are links', () => {

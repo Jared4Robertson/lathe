@@ -496,11 +496,10 @@ function KindBody({ index, reference, kind }: { index: SpecIndex; reference: For
   const folder = sectionOf(reference, kind);
   const relations = relationsOf(reference, kind.kind);
   const checks = checksOf(reference, kind.kind);
-  const all = index.workspace.records.filter((r) => r.kind === kind.kind).sort(byIdOrder);
-  // The product's own records first: the current space's, when it has any of this kind.
+  // The current space's records: `index` is the space's own, so no other product's are counted.
+  const records = index.workspace.records.filter((r) => r.kind === kind.kind).sort(byIdOrder);
   const space = spaces?.current ?? null;
-  const own = space ? all.filter((r) => r.product === space.id) : [];
-  const records = own.length > 0 ? own : all;
+  const inSpace = space ? ` in ${space.title}` : '';
   const example = records[0];
   const groups = new Map<string, SpecRecord[]>();
   for (const r of records) if (r.parent) groups.set(r.parent, [...(groups.get(r.parent) ?? []), r]);
@@ -548,13 +547,13 @@ function KindBody({ index, reference, kind }: { index: SpecIndex; reference: For
       <Section title="Example">
         {example ? (
           <>
-            <p>The first {lowerLabel(kind.label)}{own.length > 0 && space ? ` in ${space.title}` : ''}: <RecordLink index={index} id={example.id} /></p>
+            <p>The first {lowerLabel(kind.label)}{inSpace}: <RecordLink index={index} id={example.id} /></p>
             <div className="markdown"><pre className="record-header" tabIndex={0}><code>{headerOf(index, example)}</code></pre></div>
           </>
         ) : <p className="hint">No record of this kind yet.</p>}
       </Section>
       <Section title="Records" count={records.length}>
-        <p>{records.length === 0 ? `No ${name} yet.` : `${records.length} ${records.length === 1 ? lowerLabel(kind.label) : name}${own.length > 0 && space ? ` in ${space.title}` : ''}${parents.length > 0 ? ', under:' : '.'}`}</p>
+        <p>{records.length === 0 ? `No ${name} yet.` : `${records.length} ${records.length === 1 ? lowerLabel(kind.label) : name}${inSpace}${parents.length > 0 ? ', under:' : '.'}`}</p>
         {parents.length > 0 && (
           <LongList
             label={`Where the ${name} are`}

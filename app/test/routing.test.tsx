@@ -19,7 +19,7 @@ describe('routing', () => {
     expect(parseSpecRoute('/DM-SHOP-C01', index)).toEqual({ page: 'record', id: 'DM-SHOP-C01' });
     expect(parseSpecRoute('/DM-SHOP/use_case')).toEqual({ page: 'group', parent: 'DM-SHOP', kind: 'use_case' });
     expect(parseSpecRoute('/')).toEqual({ page: 'specs' });
-    expect(parseSpecRoute('/checks')).toEqual({ page: 'checks' });
+    expect(parseSpecRoute('/DM/checks')).toEqual({ page: 'checks', product: 'DM' });
     expect(parseSpecRoute('/format')).toEqual({ page: 'format' });
     expect(parseSpecRoute('/settings/appearance')).toBeNull();
     expect(parseSpecRoute('/nothing-here')).toEqual({ page: 'missing' });
@@ -34,7 +34,7 @@ describe('routing', () => {
     expect(window.location.pathname).toBe('/DM-SHOP');
     expect(heading()).toHaveTextContent('Shopping');
     await user.click(within(menu()).getByRole('link', { name: /^Checks \d+ (errors?|warnings?|problems)/ }));
-    expect(window.location.pathname).toBe('/checks');
+    expect(window.location.pathname).toBe('/DM/checks');
     expect(heading()).toHaveTextContent('Checks');
 
     // Back and forward move between the pages.

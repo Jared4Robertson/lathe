@@ -186,7 +186,7 @@ test.describe('graph', () => {
     for (const b of boxes.filter((x) => x.onScreen < 6.9)) expect(b.title, `${b.id} is plain`).toBeNull();
   });
 
-  test('LA-EXP-T179 no label is clipped: each line fits its width and height, and the label fits its box, in light and dark, focused or not, at several zooms', async ({ page }) => {
+  test('LA-EXP-T183 no label is clipped: each line fits its width and height, and the label fits its box, in light and dark, focused or not, at several zooms', async ({ page }) => {
     const clipped = () => page.evaluate(() => {
       const out: string[] = [];
       const canvas = document.querySelector('.pane-graph .graph-flow')!.getBoundingClientRect();
@@ -226,7 +226,7 @@ test.describe('graph', () => {
     }
   });
 
-  test('LA-EXP-T180 a label keeps its size in the map when the focus changes and the camera zooms', async ({ page }) => {
+  test('LA-EXP-T184 a label keeps its size in the map when the focus changes and the camera zooms', async ({ page }) => {
     await openPage(page, `${DOMAIN}?view=graph`);
     await nodes(page);
     const target = `${DOMAIN.slice(1)}/design`;

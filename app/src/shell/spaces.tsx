@@ -1,15 +1,16 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { navigate } from '../router';
-import { parseSpecRoute, type SpecIndex, type SpecRecord } from '../specs/data';
-import { addressOf, isFocusPath } from '../views/address';
+import { parseSpecRoute, spaceIndex, type SpecIndex, type SpecRecord } from '../specs/data';
+import { addressOf, isSpacePath } from '../views/address';
 import { usePref } from './prefs';
 
-// Spaces: each product is its own space, as a workspace is in Slack, Discord, Linear or Notion.
-// The rail at the far left of the nav has one icon per product; the current space is the product
-// of the page you are on (or the last one you chose, on a page that belongs to no product). The
-// nav lists only that space's domains, capabilities and groups, quick find searches it first,
-// and Checks can be filtered to it. Choosing a space opens the last page you visited in it this
-// session, or its product page.
+// Spaces: each product is its own space, as a workspace is in Slack, Discord, Linear or Notion, and
+// the spaces are kept hard apart. The rail at the far left of the nav has one icon per product; the
+// current space is the product of the page you are on (or the last one you chose, on a page that
+// belongs to no product). Everything inside a space reads the space's own index (spaceIndex): the
+// nav, quick find, the space's Checks page, the graph, the Model view, the side bar and the format
+// reference's records, so nothing of another product shows in it. Choosing a space opens the last
+// page you visited in it this session, or its product page.
 
 export interface Space {
   id: string;
@@ -62,7 +63,7 @@ export function spaceOf(product: SpecRecord): Space {
   };
 }
 
-/** The product a page belongs to, or null for a page above every product (Checks, the format, Specs). */
+/** The product a page belongs to, or null for a page outside every space (the products, the format, Settings). */
 export function productOfPath(index: SpecIndex | null, path: string): string | null {
   const route = parseSpecRoute(path, index);
   if (!route || !index) return null;
@@ -73,6 +74,7 @@ export function productOfPath(index: SpecIndex | null, path: string): string | n
     case 'domain': return known(route.product) ?? productOfRecord(route.domain);
     case 'record': return productOfRecord(route.id);
     case 'group': return productOfRecord(route.parent);
+    case 'checks': return known(route.product);
     default: return null;
   }
 }
@@ -87,6 +89,8 @@ export interface SpacesApi {
   spaces: Space[];
   /** The current space, or null while there are no products. */
   current: Space | null;
+  /** The current space's index: its own records and problems only (the whole workspace while there are no products). */
+  index: SpecIndex | null;
   /** True when the page on screen belongs to the current space. */
   onPage: boolean;
   /** Opens a space: the last page visited in it this session, or its product page. */
@@ -105,8 +109,8 @@ export function useSpaceState(index: SpecIndex | null, path: string, search: str
   const spaces = useMemo(() => (index?.products ?? []).map(spaceOf), [index]);
   const [chosen, setChosen] = usePref<string>(SPACE_KEY, '', isString, 'session');
   const [stored, setPages] = usePref<Record<string, string>>(PAGES_KEY, {}, isPages, 'session');
-  // A saved page that is not a focus page's address is dropped.
-  const pages = useMemo(() => Object.fromEntries(Object.entries(stored).filter(([, page]) => isFocusPath(page.split('?')[0]))), [stored]);
+  // A saved page that is not a page of a space is dropped.
+  const pages = useMemo(() => Object.fromEntries(Object.entries(stored).filter(([, page]) => isSpacePath(page.split('?')[0]))), [stored]);
   const pagesRef = useRef(pages);
   pagesRef.current = pages;
   const pageProduct = productOfPath(index, path);
@@ -120,12 +124,13 @@ export function useSpaceState(index: SpecIndex | null, path: string, search: str
 
   const currentId = pageProduct ?? (spaces.some((s) => s.id === chosen) ? chosen : spaces[0]?.id ?? null);
   const current = spaces.find((s) => s.id === currentId) ?? null;
+  const scoped = useMemo(() => (index && current ? spaceIndex(index, current.id) : index), [index, current?.id]);
   const go = useCallback((id: string) => {
     setChosen(id);
     navigate(pagesRef.current[id] ?? addressOf(id));
   }, [setChosen]);
   const lastPage = useCallback((id: string) => pages[id], [pages]);
-  return useMemo(() => ({ spaces, current, onPage: !!pageProduct && pageProduct === current?.id, go, lastPage }), [spaces, current, pageProduct, go, lastPage]);
+  return useMemo(() => ({ spaces, current, index: scoped, onPage: !!pageProduct && pageProduct === current?.id, go, lastPage }), [spaces, current, scoped, pageProduct, go, lastPage]);
 }
 
 export function SpacesProvider({ value, children }: { value: SpacesApi; children: ReactNode }) {

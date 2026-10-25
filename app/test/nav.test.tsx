@@ -28,13 +28,12 @@ describe('side navigation', () => {
       expect(screen.getByRole('tooltip'), name).toHaveTextContent(tip);
       fireEvent.blur(within(nav()).getByLabelText(name));
     }
-    fireEvent.keyDown(document.body, { key: 'Tab', code: 'Tab' });
-    fireEvent.focus(within(nav()).getByRole('link', { name: /^Checks for all products: \d+ errors?, \d+ warning/ }));
-    expect(screen.getByRole('tooltip')).toHaveTextContent('Checks for all products Ctrl+Shift+M');
+    // No rail item stands above the products: Checks is each space's own.
+    expect(within(nav()).queryByRole('link', { name: /^Checks/ })).toBeNull();
     expect(window.localStorage.getItem('lathe:nav-collapsed')).toBe('true');
 
     // Remembered on the next visit; the rail still lists the spaces, and expands again.
-    await openApp('/checks');
+    await openApp('/DM/checks');
     await screen.findByRole('heading', { level: 1, name: 'Checks' });
     expect(nav().className).toContain('is-rail');
     expect(within(within(nav()).getByRole('list', { name: 'Spaces' })).getAllByRole('link').map((a) => a.querySelector('.sr-only')!.textContent)).toEqual(['Demo shop', 'Notebook']);
@@ -79,7 +78,7 @@ describe('side navigation', () => {
     expect(within(nav()).queryByRole('link', { name: /^Checks \d+/ })).toBeNull();
 
     // Opening a page in a folded section opens it, and marks the page.
-    await openApp('/checks');
+    await openApp('/DM/checks');
     await screen.findByRole('heading', { level: 1, name: 'Checks' });
     expect(head(/^Tools/)).toHaveAttribute('aria-expanded', 'true');
     await openApp('/DM-PAY');
@@ -91,7 +90,9 @@ describe('side navigation', () => {
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     expect(within(nav()).getByRole('link', { name: 'Shopping' })).toHaveAttribute('title', 'Shopping');
     const checks = within(nav()).getByRole('link', { name: /^Checks \d+ (errors?|warnings?|problems)/ });
-    expect(checks.querySelector('.nav-badge.error')).toHaveTextContent(String(workspace().problems.filter((p) => p.severity === 'error').length));
+    // The space's own errors and the workspace's (Demo shop: test-file-missing and meta-model), not Notebook's.
+    expect(checks).toHaveAttribute('href', '/DM/checks');
+    expect(checks.querySelector('.nav-badge.error')).toHaveTextContent(String(workspace().problems.filter((p) => p.severity === 'error' && !p.record?.startsWith('NF')).length));
     expect(checks.querySelector('.nav-badge.warning')).not.toBeNull();
     const foot = nav().querySelector('footer')!;
     // The record format left the footer (LA-AUT-UC14): it is a command and a link in the shortcuts sheet.
@@ -106,7 +107,7 @@ describe('side navigation', () => {
     expect(rankItems(items, 'basket').map((i) => i.id)).toContain('DM-SHOP-A1');
     expect(rankItems(items, 'shopping')[0].to).toBe('/DM-SHOP');
 
-    await openApp('/checks');
+    await openApp('/DM/checks');
     const user = userEvent.setup();
     const find = within(nav()).getByRole('combobox', { name: 'Quick find' });
     await user.click(find);
