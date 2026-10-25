@@ -8,7 +8,8 @@
     "lathe": "node bin/lathe.ts",
     "test": "vitest run --maxWorkers=2",
     "typecheck": "tsc --noEmit",
-    "build": "rm -rf dist && tsc -p tsconfig.build.json && npm --prefix ../app run build",
+    "reference": "node bin/lathe.ts format --root . --out REFERENCE.md",
+    "build": "rm -rf dist && tsc -p tsconfig.build.json && npm run reference && npm --prefix ../app run build",
     "prepack": "npm run build"
   },
   "dependencies": {
@@ -32,6 +33,7 @@
     "meta",
     "diagrams",
     "FORMAT.md",
+    "REFERENCE.md",
     "README.md"
   ]
 }

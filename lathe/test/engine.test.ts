@@ -32,6 +32,10 @@ describe('checks', () => {
     writeFileSync(
       path.join(checks, '99-every-note-has-a-body.sql'),
       `-- A made-up check, added with no change to the engine.
+--
+-- It reports each use case in the notes domain. Its header documents it, as every check's must.
+--
+-- severity: warning
 SELECT 'warning' AS severity, 'ignored' AS "check", id AS record, 'Record ' || id || ' is in the notes domain.' AS message
 FROM records WHERE domain = 'EX-NOTE' AND kind = 'use_case'`,
     );

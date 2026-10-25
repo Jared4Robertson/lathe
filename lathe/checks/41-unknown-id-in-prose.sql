@@ -1,5 +1,10 @@
--- Drift: a record's body cites an ID with one of the workspace's known prefixes, but no record has that ID.
--- Code spans and fenced code blocks are not read (FORMAT.md section 12).
+-- A record's body cites an ID that no record has.
+--
+-- A citation is an ID-shaped token with one of the workspace's known prefixes (FORMAT.md section 12). Code
+-- spans and fenced code blocks are not read. Fix the wording, or put the ID in code if it is only an
+-- example.
+--
+-- severity: warning
 SELECT 'warning' AS severity, 'unknown-id-in-prose' AS "check", nullif(m.record, '') AS record,
        coalesce(nullif(m.record, ''), m.path) || ' mentions ' || m.cited || ', which does not exist.' AS message
 FROM prose_mentions m

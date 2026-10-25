@@ -7,9 +7,12 @@ import { DuckDBInstance, type DuckDBConnection } from '@duckdb/node-api';
 import { COVERAGE_COUNTS_SQL, COVERAGE_GAPS_SQL, COVERAGE_TESTS_SQL } from './coverage.ts';
 import { loadConfig, PACKAGE_DIR } from './config.ts';
 import { hasFieldsColumns, parseRecordFile, proseTokens, readFieldsTable, type ProseToken } from './parse.ts';
+import { ENGINE_CHECKS as ENGINE_CHECK_DOCS, parseCheckHeader, type CheckHeader, type CheckReference, type FormatReference, type KindReference } from './reference.ts';
 import type { Coverage, CoverageGap, EntityField, Kind, ObligationCoverage, Problem, RelationRule, SectionRule, SpecLink, SpecRecord, TestCounts, Workspace } from './types.ts';
 
 export type * from './types.ts';
+export type * from './reference.ts';
+export { renderReference, parseCheckHeader, kindAnchor, relationAnchor, sectionAnchor, checkAnchor } from './reference.ts';
 export { loadConfig, PACKAGE_DIR, CONFIG_FILE, DEFAULT_MAX_CHILDREN, type LatheConfig } from './config.ts';
 
 export const CHECKS_DIR = path.join(PACKAGE_DIR, 'checks');
@@ -17,7 +20,7 @@ export const CHECKS_DIR = path.join(PACKAGE_DIR, 'checks');
 export interface LoadOptions {
   /** Folder of check SQL files. Defaults to the package's checks/. */
   checksDir?: string;
-  /** One folder holding kinds.csv, relations.csv and sections.csv, replacing the configured meta-model (used by tests). */
+  /** One folder holding kinds.csv, relations.csv, sections.csv and ids.csv, replacing the configured meta-model (used by tests). */
   metaDir?: string;
 }
 
@@ -260,7 +263,15 @@ async function loadMeta(connection: DuckDBConnection, metaDirs: string[], root: 
   const byRule = new Map<string, string[]>();
   const sections: MetaSection[] = [];
   const bySection = new Map<string, MetaSection>();
+  const ids = new Map<string, { pattern: string; example: string }>();
   for (const dir of metaDirs) {
+    // ids.csv gives each kind's ID convention; a later row for a kind replaces its pattern or example with any that is non-empty.
+    for (const row of await read(dir, 'ids.csv')) {
+      const kind = csvText(row.kind).trim();
+      if (kind === '') continue;
+      const known = ids.get(kind) ?? { pattern: '', example: '' };
+      ids.set(kind, { pattern: csvText(row.pattern).trim() || known.pattern, example: csvText(row.example).trim() || known.example });
+    }
     for (const row of await read(dir, 'kinds.csv')) {
       const name = csvText(row.kind).trim();
       kindRows.push([where(dir, 'kinds.csv'), name]);
@@ -329,7 +340,9 @@ async function loadMeta(connection: DuckDBConnection, metaDirs: string[], root: 
                                 required_fields VARCHAR, obligation VARCHAR, description VARCHAR);
     CREATE TABLE relations (relation VARCHAR, source_kind VARCHAR, target_kind VARCHAR, role VARCHAR, description VARCHAR);
     CREATE TABLE meta_sections_in (section VARCHAR, stage VARCHAR, "order" VARCHAR, label VARCHAR, description VARCHAR);
+    CREATE TABLE kind_ids (kind VARCHAR, pattern VARCHAR, example VARCHAR);
   `);
+  await append(connection, 'kind_ids', [...ids].map(([kind, id]) => [kind, id.pattern, id.example]));
   await append(connection, 'meta_kind_rows', kindRows);
   await append(
     connection,
@@ -365,20 +378,43 @@ const checkName = (file: string) => file.replace(/\.sql$/, '').replace(/^\d+[-_]
 const sqlFiles = async (dir: string) => (existsSync(dir) ? (await readdir(dir)).filter((f) => f.endsWith('.sql')).sort() : []);
 
 /** Names of the problems the engine reports itself, outside any check file; a product check may not take them. */
-const ENGINE_CHECKS = ['parse-error', 'parent-cycle', 'product-check-name-clash', 'product-checks-missing'];
+const ENGINE_CHECKS = ENGINE_CHECK_DOCS.map((c) => c.check);
 
-// Runs Lathe's checks, then the product's own checks folder if it has one (FORMAT.md section 13), against the
-// same tables and with the same row contract. A product check named like one of Lathe's checks is not run:
-// it is a product-check-name-clash error, so the two never mix in a report.
-async function runChecks(
-  connection: DuckDBConnection,
-  checksDir: string,
-  productChecksDir: string | null,
-  root: string,
-): Promise<Problem[]> {
+/** A check file, with where it is from and what its header says. */
+interface CheckFile {
+  file: string;
+  dir: string;
+  check: string;
+  origin: 'lathe' | 'product';
+  /** Lathe's checks as checks/<file>; the product's as a path from the root. */
+  source: string;
+  header: CheckHeader;
+}
+
+/** The check files that run, Lathe's then the product's, and the problems found reading the folders. */
+interface CheckFiles {
+  files: CheckFile[];
+  /** A product check name clash, or a missing product checks folder. */
+  problems: Problem[];
+}
+
+// Finds Lathe's check files, then the product's own checks folder if it has one (FORMAT.md section 13), and
+// reads each file's header. A product check named like one of Lathe's checks is not run: it is a
+// product-check-name-clash error, so the two never mix in a report.
+async function findCheckFiles(checksDir: string, productChecksDir: string | null, root: string): Promise<CheckFiles> {
+  const read = async (dir: string, file: string, origin: 'lathe' | 'product', source: string): Promise<CheckFile> => ({
+    file,
+    dir,
+    check: checkName(file),
+    origin,
+    source,
+    header: parseCheckHeader(await readFile(path.join(dir, file), 'utf8')),
+  });
   const latheFiles = await sqlFiles(checksDir);
-  const problems = await runCheckFolder(connection, checksDir, latheFiles, (file) => file);
-  if (productChecksDir === null) return problems;
+  const files: CheckFile[] = [];
+  for (const file of latheFiles) files.push(await read(checksDir, file, 'lathe', `checks/${file}`));
+  const problems: Problem[] = [];
+  if (productChecksDir === null) return { files, problems };
   const where = (file: string) => toPosix(path.relative(root, path.join(productChecksDir, file)));
   if (!existsSync(productChecksDir)) {
     const folder = toPosix(path.relative(root, productChecksDir)) || '.';
@@ -388,13 +424,12 @@ async function runChecks(
       record: null,
       message: `lathe.config.json names the checks folder ${folder}, but there is no such folder.`,
     });
-    return problems;
+    return { files, problems };
   }
   const taken = new Set([...latheFiles.map(checkName), ...ENGINE_CHECKS]);
-  const productFiles: string[] = [];
   for (const file of await sqlFiles(productChecksDir)) {
     if (!taken.has(checkName(file))) {
-      productFiles.push(file);
+      files.push(await read(productChecksDir, file, 'product', where(file)));
       continue;
     }
     problems.push({
@@ -404,21 +439,34 @@ async function runChecks(
       message: `The product check ${where(file)} is named ${checkName(file)}, as one of Lathe's checks is, so it was not run; rename the file.`,
     });
   }
-  problems.push(...(await runCheckFolder(connection, productChecksDir, productFiles, where)));
-  return problems;
+  return { files, problems };
 }
 
-// Runs the given check files of one folder in name order. A check that fails to run becomes an error
-// problem naming the file as `label` writes it.
-async function runCheckFolder(
-  connection: DuckDBConnection,
-  dir: string,
-  files: string[],
-  label: (file: string) => string,
-): Promise<Problem[]> {
+// Runs Lathe's checks, then the product's, against the same tables and with the same row contract. The
+// folder problems (a name clash, a missing product folder) come between the two.
+async function runChecks(connection: DuckDBConnection, found: CheckFiles): Promise<Problem[]> {
+  const lathe = found.files.filter((f) => f.origin === 'lathe');
+  const product = found.files.filter((f) => f.origin === 'product');
+  return [...(await runCheckFiles(connection, lathe)), ...found.problems, ...(await runCheckFiles(connection, product))];
+}
+
+// Loads what each check file's header says into check_docs, for the undocumented check: one row per file
+// that runs, with what its header lacks in `missing` (empty when it is complete).
+async function loadCheckDocs(connection: DuckDBConnection, files: CheckFile[]) {
+  await connection.run(
+    'CREATE TABLE check_docs (source VARCHAR, "check" VARCHAR, origin VARCHAR, summary VARCHAR, explanation VARCHAR, severity VARCHAR, missing VARCHAR)',
+  );
+  await append(
+    connection,
+    'check_docs',
+    files.map((f) => [f.source, f.check, f.origin, f.header.summary, f.header.explanation, f.header.severities.join(', '), f.header.missing.join(', ')]),
+  );
+}
+
+// Runs the given check files in order. A check that fails to run becomes an error problem naming its file.
+async function runCheckFiles(connection: DuckDBConnection, files: CheckFile[]): Promise<Problem[]> {
   const problems: Problem[] = [];
-  for (const file of files) {
-    const check = checkName(file);
+  for (const { file, dir, check, source } of files) {
     const sql = await readFile(path.join(dir, file), 'utf8');
     try {
       // The check's own "check" column is ignored: the file name is the check's name.
@@ -436,7 +484,7 @@ async function runCheckFolder(
         severity: 'error',
         check,
         record: null,
-        message: `The check ${label(file)} could not run: ${error instanceof Error ? error.message.split('\n')[0] : String(error)}`,
+        message: `The check ${source} could not run:${error instanceof Error ? error.message.split('\n')[0] : String(error)}`,
       });
     }
   }
@@ -532,7 +580,9 @@ export async function loadWorkspace(root: string, options: LoadOptions = {}): Pr
     await connection.run('CREATE TABLE settings (name VARCHAR, value VARCHAR)');
     await append(connection, 'settings', [['structure.maxChildren', String(config.maxChildren)]]);
 
-    problems.push(...(await runChecks(connection, checksDir, config.checksDir, root)));
+    const checkFiles = await findCheckFiles(checksDir, config.checksDir, root);
+    await loadCheckDocs(connection, checkFiles.files);
+    problems.push(...(await runChecks(connection, checkFiles)));
     const coverage = await computeCoverage(connection);
     const kinds = await readRows<Kind>(connection, 'SELECT * FROM kinds');
     const relations = await readRows<RelationRule>(connection, 'SELECT * FROM relations');
@@ -541,6 +591,67 @@ export async function loadWorkspace(root: string, options: LoadOptions = {}): Pr
     const links: SpecLink[] = records.flatMap((r) => r.links.map((l) => ({ source: r.id, relation: l.relation, target: l.target })));
     const specRecords: SpecRecord[] = records.map(({ links: _links, ...r }) => r);
     return { kinds, sections, relations, records: specRecords, links, problems, coverage };
+  } finally {
+    connection.closeSync();
+    instance.closeSync();
+  }
+}
+
+/** Lathe's record format concepts, the Markdown that starts the reference. */
+export const FORMAT_FILE = path.join(PACKAGE_DIR, 'FORMAT.md');
+
+/**
+ * The format reference for the product under root: its kinds, relations and folders after its extensions, and
+ * every check (Lathe's, the engine's own, then the product's) as its header documents it. Reads no records.
+ */
+export async function formatReference(root: string, options: LoadOptions = {}): Promise<FormatReference> {
+  const config = loadConfig(root);
+  const metaDirs = options.metaDir ? [options.metaDir] : config.metaDirs;
+  const found = await findCheckFiles(options.checksDir ?? CHECKS_DIR, config.checksDir, config.root);
+  const instance = await DuckDBInstance.create(':memory:');
+  const connection = await instance.connect();
+  try {
+    await loadMeta(connection, metaDirs, config.root);
+    const kinds = await readRows<Kind>(connection, 'SELECT * FROM kinds');
+    const ids = await readRows<{ kind: string; pattern: string; example: string }>(connection, 'SELECT * FROM kind_ids');
+    const relations = await readRows<RelationRule>(connection, 'SELECT * FROM relations');
+    const sections = await readRows<SectionRule>(connection, 'SELECT * FROM sections ORDER BY stage, "order", section');
+    const kindRefs: KindReference[] = kinds.map((k) => {
+      const id = ids.find((i) => i.kind === k.kind);
+      return {
+        kind: k.kind,
+        label: k.label,
+        description: k.description,
+        stage: k.stage,
+        section: k.section,
+        parent_kinds: k.parent_kinds,
+        child_kinds: kinds.filter((c) => c.parent_kinds.includes(k.kind)).map((c) => c.kind),
+        required_fields: k.required_fields,
+        obligation: k.proof_only ? 'proof' : k.obligation ? 'yes' : 'no',
+        id: id && id.pattern ? { pattern: id.pattern, example: id.example } : null,
+      };
+    });
+    const fromFile = (f: CheckFile): CheckReference => ({
+      check: f.check,
+      severity: f.header.severities[0] ?? 'error',
+      severities: f.header.severities,
+      summary: f.header.summary,
+      explanation: f.header.explanation,
+      origin: f.origin,
+      source: f.source,
+      kinds: f.header.kinds,
+    });
+    return {
+      concepts: await readFile(FORMAT_FILE, 'utf8'),
+      kinds: kindRefs,
+      relations: relations.map(({ relation, source_kind, target_kind, role, description }) => ({ relation, source_kind, target_kind, role, description })),
+      sections,
+      checks: [
+        ...found.files.filter((f) => f.origin === 'lathe').map(fromFile),
+        ...ENGINE_CHECK_DOCS,
+        ...found.files.filter((f) => f.origin === 'product').map(fromFile),
+      ],
+    };
   } finally {
     connection.closeSync();
     instance.closeSync();

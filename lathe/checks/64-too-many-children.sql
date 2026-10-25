@@ -1,8 +1,12 @@
--- Work to do: a record with more children of one kind than the product's structure.maxChildren setting
--- (lathe.config.json, default 15), read from the settings table. A level is missing between them, such as a
--- capability, a layer or another aggregate. Tests are exempt: the app groups them by what they prove
+-- A record with more children of one kind than the product's `structure.maxChildren` setting.
+--
+-- The setting is read from `lathe.config.json` (default 15) through the settings table. A parent with that
+-- many children of one kind is missing a level between them, such as a capability, a layer or another
+-- aggregate. Children are counted per kind. Tests are exempt: the app groups them by what they prove
 -- (FORMAT.md section 15), so they are never shown as one list. A child whose parent does not exist is only
--- unknown-parent.
+-- unknown-parent. Add a level and move the children into it.
+--
+-- severity: warning
 SELECT 'warning' AS severity, 'too-many-children' AS "check", c.parent AS record,
        upper(left(p.kind, 1)) || replace(substr(p.kind, 2), '_', ' ') || ' ' || c.parent || ' has ' || c.n
        || ' children of kind ' || c.kind || ', more than the ' || m.max_children

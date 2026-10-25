@@ -1,5 +1,9 @@
--- Each kind's required fields are valid field names: lower-case letters, digits and underscores,
--- starting with a letter, and not one of the fields every record has (id, kind, title, parent, links).
+-- Each kind's required fields are valid field names.
+--
+-- A field name is lower-case letters, digits and underscores, starting with a letter, and not one of the
+-- fields every record has (`id`, `kind`, `title`, `parent`, `links`). Rename the field in `kinds.csv`.
+--
+-- severity: error
 SELECT DISTINCT 'error' AS severity, 'meta-bad-required-field' AS "check", NULL AS record,
        'Kind "' || kind || '" requires field "' || name || '", which is not a valid field name'
        || CASE WHEN name IN ('id', 'kind', 'title', 'parent', 'links') THEN ': every record already has it.'
