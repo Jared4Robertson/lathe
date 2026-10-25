@@ -8,4 +8,4 @@ run_by: app/test/views.test.tsx
 links:
   proves: [LA-BRW-UC50-R02]
 ---
-Focuses a button in the graph pane, switches to Wiki with Ctrl+1 and expects focus on the Wiki toggle; checks the toggle tooltips and the focus ring style.
+Focuses a button in the graph pane, switches to Wiki with Ctrl+1 and expects focus on the pressed Wiki view toggle; checks the toggle tooltips and the focus ring style.

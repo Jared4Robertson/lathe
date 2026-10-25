@@ -1,11 +1,11 @@
 ---
 id: LA-BRW-T121
 kind: test
-title: "A pane's tabs pick Wiki or Graph and Open beside splits; remembered, with the view in the link"
+title: "A pane's view toggles pick Wiki or Graph and Open beside splits; remembered, with the view in the link"
 parent: LA-BRW
 test_type: acceptance
 run_by: app/test/views.test.tsx
 links:
   proves: [LA-BRW-UC50-R02, LA-BRW-DR52]
 ---
-Switches a record page from Wiki to Graph, expects the address and the panes to follow, opens another record and expects Graph again, then opens a link with `?view=split` and expects both panes, each with a button that closes it, remembered.
+Switches a record page from Wiki to Graph with the pressed view toggles, expects the address and the panes to follow, opens another record and expects Graph again, then opens a link with `?view=split` and expects both panes, each with a button that closes it and no view toggles, remembered.
