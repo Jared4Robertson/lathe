@@ -184,8 +184,8 @@ describe('the Model view', () => {
     expect(second).toHaveAttribute('aria-valuenow', '55');
     expect(first).toHaveAttribute('aria-valuenow', '48');
     const views = document.querySelector<HTMLElement>('.focus-views')!;
-    expect(views.style.gridTemplateColumns).toBe('minmax(220px, 100fr) var(--panel-gap) minmax(220px, 110fr) var(--panel-gap) minmax(220px, 90fr)');
+    expect(views.style.gridTemplateColumns).toBe('minmax(min(220px, calc((100% - 2 * var(--panel-gap)) / 3)), 100fr) var(--panel-gap) minmax(min(220px, calc((100% - 2 * var(--panel-gap)) / 3)), 110fr) var(--panel-gap) minmax(min(220px, calc((100% - 2 * var(--panel-gap)) / 3)), 90fr)');
     fireEvent.doubleClick(second);
-    expect(views.style.gridTemplateColumns).toBe('minmax(220px, 100fr) var(--panel-gap) minmax(220px, 100fr) var(--panel-gap) minmax(220px, 100fr)');
+    expect(views.style.gridTemplateColumns).toBe('minmax(min(220px, calc((100% - 2 * var(--panel-gap)) / 3)), 100fr) var(--panel-gap) minmax(min(220px, calc((100% - 2 * var(--panel-gap)) / 3)), 100fr) var(--panel-gap) minmax(min(220px, calc((100% - 2 * var(--panel-gap)) / 3)), 100fr)');
   });
 });

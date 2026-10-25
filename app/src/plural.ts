@@ -12,3 +12,8 @@ export function plural(label: string): string {
 export function lowerLabel(label: string): string {
   return /^[A-Z]{2}/.test(label) ? label : label.charAt(0).toLowerCase() + label.slice(1);
 }
+
+/** A count with its noun, singular for one: "1 domain", "4 domains". */
+export function countOf(n: number, label: string): string {
+  return `${n} ${n === 1 ? label : plural(label)}`;
+}
