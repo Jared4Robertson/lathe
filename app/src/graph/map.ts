@@ -1,5 +1,6 @@
 import type { SpecIndex } from '../specs/data';
 import { contentScale, NODE_HEIGHT, NODE_WIDTH } from './layout';
+import { hasMarks, labelLines, labelWidth, textScaleOf } from './text';
 import { treeChildren, treeOf } from './tree';
 
 // The graph's one map (LA-EXP-DR57): the whole tree, the nav's (tree.ts), laid out once per spec
@@ -9,11 +10,15 @@ import { treeChildren, treeOf } from './tree';
 // - A leaf is NODE_WIDTH by NODE_HEIGHT. A parent is exactly as tall as its children stacked, the
 //   gaps between them included, and their stack starts at its top edge.
 // - Every node in one level (its depth in the tree, a product at 0) has the same width
-//   (LA-EXP-DR58). Widths shrink toward the leaves in proportion to the level's typical height (its
-//   median by height: the height of the node a point of the level most likely lies in), but a level
-//   is never narrower than the one below it nor more than MAX_LEVEL_STEP times as wide, and the
-//   product's level no more than MAX_ROOT_STEP times, so it stays usable. The gap between two siblings, and between two
-//   levels, grows with the level's width, so the map reads the same at every zoom.
+//   (LA-EXP-DR58), the larger of two:
+//   - its proportional width: shrinking toward the leaves in proportion to the level's typical height
+//     (its median by height: the height of the node a point of the level most likely lies in), never
+//     narrower than the proportional width below it nor more than MAX_LEVEL_STEP times as wide, and
+//     the product's level no more than MAX_ROOT_STEP times, so it stays usable;
+//   - the widest label in it on one line, at each box's text scale (text.ts), so no title is cut off.
+//   The gap between two siblings, and between two levels, grows with the proportional width, so the
+//   map reads the same at every zoom and a parent's height never depends on its children's titles.
+// - Each node's text scale is fixed here, by its height (text.ts): the camera never changes it.
 // - Filters do not change the map: a hidden kind is not drawn, but keeps its place.
 //
 // Pure and deterministic: the same index always gives the same map, and it is built once per index.
@@ -39,12 +44,16 @@ export interface MapNode {
   y: number;
   w: number;
   h: number;
+  /** Its label's scale (LA-EXP-DR58): its height over a leaf's, fixed by the map. */
+  text: number;
 }
 
 export interface MapLevel {
-  /** Its left edge and its width, shared by every node in it. */
+  /** Its left edge and its width, shared by every node in it: its proportional width, or its widest label if wider. */
   x: number;
   width: number;
+  /** Its width in proportion to its typical height, within the caps; its gaps grow with it. */
+  proportional: number;
   /** The gap between two siblings in it. */
   rowGap: number;
 }
@@ -93,8 +102,11 @@ export function rootsOf(index: SpecIndex): string[] {
   return roots;
 }
 
-/** Lays out a tree given by its roots and a children function (exported for tests). */
-export function layoutTree(roots: readonly string[], childrenOf: (id: string) => readonly string[]): GraphMap {
+/**
+ * Lays out a tree given by its roots, a children function and, for each node, how wide its label is
+ * on one line at text scale 1 (exported for tests; a leaf's width when not given).
+ */
+export function layoutTree(roots: readonly string[], childrenOf: (id: string) => readonly string[], labelWidthOf: (id: string) => number = () => NODE_WIDTH): GraphMap {
   // Levels, by a walk from the roots; a node reached twice keeps its first place.
   const parent = new Map<string, string | null>();
   const level = new Map<string, number>();
@@ -118,25 +130,31 @@ export function layoutTree(roots: readonly string[], childrenOf: (id: string) =>
   // Heights and widths, from the deepest level up: a level's heights need only the level below.
   const depth = byLevelIds.length;
   const h = new Map<string, number>();
+  /** Each level's proportional width, which sets its gaps; its width is that or its widest label. */
+  const proportional: number[] = new Array(depth).fill(NODE_WIDTH);
   const widths: number[] = new Array(depth).fill(NODE_WIDTH);
   const rowGaps: number[] = new Array(depth).fill(ROW_GAP);
   for (let l = depth - 1; l >= 0; l--) {
+    let widest = 0;
     for (const id of byLevelIds[l]) {
       const own = kids.get(id)!;
-      h.set(id, own.length === 0 ? NODE_HEIGHT : own.reduce((sum, k) => sum + h.get(k)!, 0) + rowGaps[l + 1] * (own.length - 1));
+      const height = own.length === 0 ? NODE_HEIGHT : own.reduce((sum, k) => sum + h.get(k)!, 0) + rowGaps[l + 1] * (own.length - 1);
+      h.set(id, height);
+      widest = Math.max(widest, textScaleOf(height) * labelWidthOf(id));
     }
     const wanted = LEVEL_ASPECT * typicalHeight(byLevelIds[l].map((id) => h.get(id)!));
-    const below = l + 1 < depth ? widths[l + 1] : NODE_WIDTH;
-    widths[l] = even(Math.min((l === 0 ? MAX_ROOT_STEP : MAX_LEVEL_STEP) * below, Math.max(below, wanted)));
-    rowGaps[l] = even((ROW_GAP * widths[l]) / NODE_WIDTH);
+    const below = l + 1 < depth ? proportional[l + 1] : NODE_WIDTH;
+    proportional[l] = even(Math.min((l === 0 ? MAX_ROOT_STEP : MAX_LEVEL_STEP) * below, Math.max(below, wanted)));
+    widths[l] = Math.max(proportional[l], 2 * Math.ceil(widest / 2));
+    rowGaps[l] = even((ROW_GAP * proportional[l]) / NODE_WIDTH);
   }
 
   // Each level's left edge: the levels before it, each at its width, a gap apart that grows with the narrower.
   const levels: MapLevel[] = [];
   let x = 0;
   for (let l = 0; l < depth; l++) {
-    levels.push({ x, width: widths[l], rowGap: rowGaps[l] });
-    if (l + 1 < depth) x += widths[l] + even((COLUMN_GAP * widths[l + 1]) / NODE_WIDTH);
+    levels.push({ x, width: widths[l], proportional: proportional[l], rowGap: rowGaps[l] });
+    if (l + 1 < depth) x += widths[l] + even((COLUMN_GAP * proportional[l + 1]) / NODE_WIDTH);
   }
 
   // Places: the roots stacked a root gap apart; each node's children stacked from its top edge.
@@ -144,7 +162,7 @@ export function layoutTree(roots: readonly string[], childrenOf: (id: string) =>
   const place = (id: string, y: number) => {
     const l = level.get(id)!;
     const own = kids.get(id)!;
-    nodes.set(id, { id, parent: parent.get(id)!, children: own, level: l, x: levels[l].x, y, w: widths[l], h: h.get(id)! });
+    nodes.set(id, { id, parent: parent.get(id)!, children: own, level: l, x: levels[l].x, y, w: widths[l], h: h.get(id)!, text: textScaleOf(h.get(id)!) });
     let at = y;
     for (const k of own) { place(k, at); at += h.get(k)! + rowGaps[l + 1]; }
   };
@@ -169,7 +187,7 @@ const cache = new WeakMap<SpecIndex, GraphMap>();
 export function graphMap(index: SpecIndex): GraphMap {
   const known = cache.get(index);
   if (known) return known;
-  const map = layoutTree(rootsOf(index), (id) => treeChildren(index, id));
+  const map = layoutTree(rootsOf(index), (id) => treeChildren(index, id), (id) => labelWidth(labelLines(index, id), { hexagon: index.byId.get(id)?.kind === 'domain', marked: hasMarks(index, id) }));
   cache.set(index, map);
   return map;
 }

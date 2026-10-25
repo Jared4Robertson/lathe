@@ -1,5 +1,6 @@
 import type { GraphMap, MapNode } from './map';
-import { contentScale, heightOf, widthOf, type Point } from './layout';
+import { heightOf, widthOf, type Point } from './layout';
+import { labelShown, MIN_LABEL_PX, TITLE_FONT } from './text';
 
 // The camera over the one map (LA-EXP-DR59). Focusing a node, by a click, the address, Back and
 // Forward, the step keys or the trail, moves the camera only: it frames the focus and the levels
@@ -25,6 +26,9 @@ export const FRAME_MAX_ZOOM = 1;
  * levels below it fill the pane, the parent's level showing in a strip at the left edge (the frame
  * starts at the parent's right edge, past the strip). A node with fewer levels below it frames what
  * it has. Zoomed in no further than FRAME_MAX_ZOOM, and centered in the space right of the strip.
+ * Never zoomed out so far that the focus's own title is under MIN_LABEL_PX on screen: a level
+ * widened by its labels (LA-EXP-DR58) may then run past the pane's right edge, the frame starting
+ * at the strip, and is reached by panning.
  */
 export function frameOnMap(map: GraphMap, focus: string, depth: number, width: number, height: number): Viewport {
   const node = map.nodes.get(focus);
@@ -43,10 +47,12 @@ export function frameOnMap(map: GraphMap, focus: string, depth: number, width: n
   const right = last.x + last.width;
   const strip = parent ? Math.min(PARENT_STRIP_MAX, width * PARENT_STRIP) : 0;
   const room = { w: width - strip - 2 * FRAME_PADDING, h: height - 2 * FRAME_PADDING };
-  const zoom = Math.min(FRAME_MAX_ZOOM, room.w / (right - left), room.h / node.h);
-  const cx = (left + right) / 2;
+  const fits = room.w / (right - left);
+  const readable = MIN_LABEL_PX / (TITLE_FONT * node.text);
+  const zoom = Math.min(FRAME_MAX_ZOOM, room.h / node.h, Math.max(fits, readable));
   const cy = node.y + node.h / 2;
-  return { x: strip + FRAME_PADDING + room.w / 2 - cx * zoom, y: height / 2 - cy * zoom, zoom };
+  const x = zoom <= fits ? strip + FRAME_PADDING + room.w / 2 - ((left + right) / 2) * zoom : strip + FRAME_PADDING - left * zoom;
+  return { x, y: height / 2 - cy * zoom, zoom };
 }
 
 /** The whole map in the pane: the overview's camera, and the least the camera zooms out. */
@@ -119,31 +125,11 @@ export const glideDuration = (speed: number, S: number) => speed * Math.min(2, M
 
 /** A node too small to see on screen (in pixels) is not drawn: its parent draws a bar for it and its siblings that are as small. */
 export const MIN_DRAWN = 3;
-/** A node is labeled when its text reads on screen at this share of a leaf's size or more, and it is at least LABEL_MIN_HEIGHT pixels tall. */
-export const LABEL_SCALE = 0.6;
-export const LABEL_MIN_HEIGHT = 18;
-/** The size a label's text keeps on screen, as a share of a leaf's, while its box has room for it: never smaller as the camera zooms out. */
-export const TEXT_ON_SCREEN = 0.9;
-
-/**
- * A box's text scale at a zoom (LA-EXP-DR60), in map units: its content scale, or as much more as
- * keeps the text at TEXT_ON_SCREEN of a leaf's size on screen, while the box has room for a
- * wrapped word or two (50 by 40 map units per unit of scale: a narrow box wraps its title). Rounded down on
- * screen to tenths, so a small zoom does not draw the boxes anew. Labeled when it reads (LABEL_SCALE)
- * and the box is LABEL_MIN_HEIGHT pixels tall on screen.
- */
-export function textScale(w: number, h: number, zoom: number): { label: boolean; text: number } {
-  const base = contentScale(w, h);
-  const room = Math.max(base, Math.min(w / 50, h / 40));
-  const want = Math.max(base, TEXT_ON_SCREEN / zoom);
-  const onScreen = Math.floor(Math.min(want, room) * zoom * 10 + 1e-9) / 10;
-  return { label: onScreen >= LABEL_SCALE && h * zoom >= LABEL_MIN_HEIGHT, text: Math.max(base, onScreen / zoom) };
-}
 /** The most boxes a picture draws (LA-PAT-APP-UX-R11): a level that would pass it is drawn as bars. */
 export const MAX_DRAWN = 260;
 
-/** A drawn box: labeled, with its text scale (map units), or a plain filled box too small for text. */
-export interface DrawnBox { id: string; label: boolean; text: number }
+/** A drawn box: labeled, or a plain filled box too small on screen for its text. Its text's size is the map's (MapNode.text), never the camera's. */
+export interface DrawnBox { id: string; label: boolean }
 /** A bar standing for some children too small to draw (or past the budget): in their level, from the first's top to the last's bottom. */
 export interface DrawnBar { id: string; parent: string; level: number; y: number; h: number }
 export interface Drawn { boxes: DrawnBox[]; bars: DrawnBar[] }
@@ -157,8 +143,8 @@ export function viewRect(v: Viewport, width: number, height: number) {
 
 /**
  * What a viewport draws of the map (LA-EXP-DR60), level by level from the roots: a node in view
- * and at least MIN_DRAWN pixels tall is drawn, labeled when its text reads on screen at this zoom
- * (`textScale`), plain otherwise. A run of drawn parent's children too small to see is one bar.
+ * and at least MIN_DRAWN pixels tall is drawn, labeled when its title is at least MIN_LABEL_PX on
+ * screen at this zoom (`labelShown`), plain otherwise. A run of drawn parent's children too small to see is one bar.
  * A level that would take the boxes past MAX_DRAWN is drawn as one bar per parent instead, and
  * nothing below it. `always` adds nodes drawn whatever their size or place (the focus, linked
  * records). The same viewport always draws the same.
@@ -171,7 +157,7 @@ export function drawnFor(map: GraphMap, v: Viewport, width: number, height: numb
   const drawn = new Set<string>();
   const inY = (n: MapNode) => n.y + n.h >= rect.y0 && n.y <= rect.y1;
   const inX = (n: MapNode) => n.x + n.w >= rect.x0 && n.x <= rect.x1;
-  const box = (n: MapNode): DrawnBox => ({ id: n.id, ...textScale(n.w, n.h, z) });
+  const box = (n: MapNode): DrawnBox => ({ id: n.id, label: labelShown(n.h, z) });
   /** The bars for a parent's children too small to draw, one per run of them. */
   const barsOf = (p: MapNode, small: (c: MapNode) => boolean) => {
     let run: MapNode[] = [];
@@ -227,4 +213,4 @@ export function mergeDrawn(pictures: readonly Drawn[]): Drawn {
 }
 
 /** A key that changes only when what is drawn changes. */
-export const drawnKey = (d: Drawn) => `${d.boxes.map((b) => `${b.id}${b.label ? `+${b.text}` : ''}`).join(' ')}|${d.bars.map((b) => b.id).join(' ')}`;
+export const drawnKey = (d: Drawn) => `${d.boxes.map((b) => `${b.id}${b.label ? '+' : ''}`).join(' ')}|${d.bars.map((b) => b.id).join(' ')}`;
