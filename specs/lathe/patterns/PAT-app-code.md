@@ -28,3 +28,4 @@ The domain links the pattern with `follows`. The pattern has no settings: every 
 - `LA-PAT-APP-CODE-R12`: motion is shared and optional.
 - `LA-PAT-APP-CODE-R13`: a row or card that leads to one record is one link.
 - `LA-PAT-APP-CODE-R14`: every open thing has an address.
+- `LA-PAT-APP-CODE-R15`: themes only set tokens.
