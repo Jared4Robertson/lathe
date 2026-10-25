@@ -95,7 +95,7 @@ export function Legend() {
           <li><span className="graph-mark error">!</span> has errors <span className="graph-mark gap">gap</span> not satisfied or not proved (on a group: among its members)</li>
         </ul>
         <p className="hint">Tiers run left to right: product, domain, aggregates and use cases, rules and requirements, design records, tests. A record with several kinds of child, or many of one kind, reaches them through a group in its own column. A trace also runs left to right, from the rule to the files that build and test it.</p>
-        <p className="hint">Click a record, or press Enter on it, to center the graph there. Click a group, or press Enter or o on it, to open or close it; center on a group from the inspector. Arrow keys or Tab move between boxes; + and - change the depth, t switches trace mode, and . fits the graph to the view.</p>
+        <p className="hint">Click a record or a group, or press Enter on it, to center the graph there. A group's chevron, or o, opens or closes it in place. Arrow keys or Tab move between boxes; + and - change the depth, t switches trace mode, and . fits the graph to the view.</p>
       </section>
     </details>
   );
