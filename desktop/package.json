@@ -1,0 +1,55 @@
+{
+  "name": "lathe-desktop",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Lathe as a desktop app: an Electron shell around the Lathe web app and server.",
+  "author": "Jared A Robertson",
+  "type": "module",
+  "main": "out/main.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "node scripts/dev.ts",
+    "start": "npm --prefix ../lathe run build && npm run build && electron .",
+    "pack": "npm --prefix ../lathe run build && npm run build && node scripts/stage-lathe.ts && electron-builder --mac --dir",
+    "pack:dmg": "npm --prefix ../lathe run build && npm run build && node scripts/stage-lathe.ts && electron-builder --mac dmg",
+    "icon": "node scripts/icon.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --maxWorkers=2"
+  },
+  "build": {
+    "appId": "dev.lathe.desktop",
+    "productName": "Lathe",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "out/**",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "build/stage/node_modules",
+        "to": "node_modules"
+      }
+    ],
+    "npmRebuild": false,
+    "electronDist": "node_modules/electron/dist",
+    "publish": null,
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "icon": "build/icon.png",
+      "identity": null
+    },
+    "dmg": {
+      "sign": false
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "electron": "^45.0.0",
+    "electron-builder": "^26.18.0",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.12"
+  }
+}

@@ -11,13 +11,13 @@ Lathe is a toolkit for organizing a product's lifecycle (domain model, use cases
 - Never push or deploy. Never check out another branch in the main checkout (`/Users/jaredrobertson/Development/Lathe` stays on `main`; Jared's dev server runs from it).
 - **Finish with your branch ready to merge.** The worktree sandbox blocks writing to the main checkout, so the coordinator merges. Before you report:
   1. Merge current `main` into your branch and resolve any conflicts, keeping both sides.
-  2. Run the full checks on your branch: `npm --prefix lathe run typecheck`, `npm --prefix lathe test`, `cd app && npx tsc --noEmit`, `npm --prefix app test` (the test scripts already cap workers at 2) and `npm --prefix lathe run check` with 0 errors.
+  2. Run the full checks on your branch: `npm --prefix lathe run typecheck`, `npm --prefix lathe test`, `cd app && npx tsc --noEmit`, `npm --prefix app test`, `npm --prefix desktop run typecheck`, `npm --prefix desktop test` (the test scripts already cap workers at 2; the desktop smoke test runs only on macOS) and `npm --prefix lathe run check` with 0 errors.
   3. Report the branch and its last commit. The coordinator merges it into `main` straight away.
 - The contract files are fixed: do not edit `lathe/FORMAT.md`, `lathe/meta/*`, `lathe/src/types.ts` or `lathe/fixtures/workspace.sample.json`. If you need a change, work around it and put the request in your report.
 - Do not edit files you do not own, even to fix something small; report it instead.
 - Never use port 5199 (Jared's running dev server). If you must run a server, use the port your brief gives and stop it before you finish.
 - While you work, run only static checks and the narrow tests for what you wrote, with at most 2 test workers; run the full checks once, before you merge.
-- Node 26 and npm are installed; so is the `duckdb` CLI. Install npm packages only inside the folder you own. A fresh worktree has no `node_modules`: run `npm install` in each package folder you need (`lathe/`, `app/`, `examples/tool-library/`).
+- Node 26 and npm are installed; so is the `duckdb` CLI. Install npm packages only inside the folder you own. A fresh worktree has no `node_modules`: run `npm install` in each package folder you need (`lathe/`, `app/`, `desktop/`, `examples/tool-library/`).
 - Run `npm --prefix lathe run check` before you finish if you touched anything under `specs/`, and report its last lines. Leave no errors.
 - A decided open question is removed (delete its record and every `about` link to it) and its answer written into the records it affects, as FORMAT.md section 8 says. Records carry no status or decision history.
 - Decide small questions yourself using the recommended option, and list each decision in your report. Write plain, direct English, with American spelling (modeling, color, center, organize), in code, specs and docs.
