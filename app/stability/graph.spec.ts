@@ -441,7 +441,9 @@ const PARITY: { feature: string; run: (page: Page, layout: Layout) => Promise<vo
       const { id, x, y } = await labeledInView(page);
       await page.mouse.move(x, y);
       await expect(page.locator('.pane-graph .graph-flow.has-spotlight')).toBeAttached();
-      await expect(page.locator('.side-bar')).toContainText(id);
+      // Details names what is under the pointer: its title, as its box shows it.
+      const title = (await page.locator(`.pane-graph .react-flow__node[data-id="${id}"] strong`).textContent()) ?? '';
+      await expect(page.locator('.side-bar')).toContainText(title.trim());
       await page.mouse.move(2, 2);
     },
   },
