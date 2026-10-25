@@ -9,37 +9,33 @@
 --
 -- severity: error
 -- kinds: entity domain_event
-WITH field_tables AS (
-  SELECT t.*, CASE WHEN r.kind = 'domain_event' THEN 'Event' ELSE 'Entity' END AS noun
-  FROM entity_tables t LEFT JOIN records r ON r.path = t.path
-),
-field_rows AS (
-  SELECT f.*, CASE WHEN r.kind = 'domain_event' THEN 'Event' ELSE 'Entity' END AS noun
-  FROM entity_fields f LEFT JOIN records r ON r.path = f.path
-)
 SELECT 'error' AS severity, 'entity-fields' AS "check", nullif(t.record, '') AS record,
-       t.noun || ' ' || coalesce(nullif(t.record, ''), t.path) || CASE
+       CASE WHEN r.kind = 'domain_event' THEN 'Event' ELSE 'Entity' END || ' ' || coalesce(nullif(t.record, ''), t.path) || CASE
          WHEN NOT t.heading THEN ' has no ## Fields table; add a "## Fields" heading with a table of the columns '
                                  || w.wanted || ', one row per field.'
          WHEN t.columns IS NULL THEN ' has a ## Fields heading but no table under it; add a table of the columns '
                                      || w.wanted || ', one row per field.'
          ELSE '''s Fields table has the columns ' || t.columns || '; use the columns ' || w.wanted || ', in that order.'
        END AS message
-FROM field_tables t CROSS JOIN (SELECT 'Field, Meaning, Kind of value and Example' AS wanted) w
+FROM entity_tables t
+LEFT JOIN records r ON r.path = t.path
+CROSS JOIN (SELECT 'Field, Meaning, Kind of value and Example' AS wanted) w
 WHERE NOT t.heading OR NOT t.columns_ok
 UNION ALL
 SELECT 'error', 'entity-fields', nullif(any_value(f.record), ''),
-       any_value(f.noun) || ' ' || coalesce(nullif(any_value(f.record), ''), f.path) || '''s Fields table lists the field "'
-       || arg_min(trim(f.field, ' `'), f.position) || '" ' || count(*) || ' times, in rows '
-       || string_agg(f.position::VARCHAR, ', ' ORDER BY f.position) || '; name each field once.'
-FROM field_rows f
+       any_value(CASE WHEN r.kind = 'domain_event' THEN 'Event' ELSE 'Entity' END) || ' ' || coalesce(nullif(any_value(f.record), ''), f.path)
+       || '''s Fields table lists the field "' || arg_min(trim(f.field, ' `'), f.position) || '" ' || count(*)
+       || ' times, in rows ' || string_agg(f.position::VARCHAR, ', ' ORDER BY f.position) || '; name each field once.'
+FROM entity_fields f
+LEFT JOIN records r ON r.path = f.path
 WHERE trim(f.field, ' `') <> ''
 GROUP BY f.path, lower(trim(f.field, ' `'))
 HAVING count(*) > 1
 UNION ALL
 SELECT 'error', 'entity-fields', nullif(f.record, ''),
-       f.noun || ' ' || coalesce(nullif(f.record, ''), f.path) || '''s Fields table has no field name in row '
+       CASE WHEN r.kind = 'domain_event' THEN 'Event' ELSE 'Entity' END || ' ' || coalesce(nullif(f.record, ''), f.path) || '''s Fields table has no field name in row '
        || f.position || '; name the field, or remove the row.'
-FROM field_rows f
+FROM entity_fields f
+LEFT JOIN records r ON r.path = f.path
 WHERE trim(f.field, ' `') = ''
 ORDER BY record, message
