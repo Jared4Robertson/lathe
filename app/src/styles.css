@@ -320,7 +320,7 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 /* The center's own links, with Links on: dashed in their own color. */
 .graph-flow .react-flow__edge-path.is-link { stroke: var(--link-edge); stroke-dasharray: 6 4; }
 .graph-line.is-link { border-top: 1.5px dashed var(--link-edge); }
-/* Domain events in the graph (LA-EXP-UC04-R07, LA-EXP-DR52): a rounded pill in the spark colors, and their reacts_to and
+/* Domain events in the graph (LA-EXP-UC04-R07, LA-EXP-DR52): a pill in the spark colors (its ends round to a one-line leaf's half height, so a taller event's wrapped lines stay clear of them), and their reacts_to and
    raised_by links dashed in spark, with Links on too. */
 /* A domain is a hexagon (LA-EXP-DR61): flat top and bottom, pointed left and right ends whose chamfer grows with the node's
    content scale (at most a quarter of its width), so a tall domain still reads as a hexagon. The node is clipped to the
