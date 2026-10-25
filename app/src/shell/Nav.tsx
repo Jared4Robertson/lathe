@@ -38,7 +38,7 @@ export interface NavProps {
   findRef: { current: HTMLInputElement | null };
 }
 
-type SectionId = 'diagrams' | 'specs' | 'tools';
+type SectionId = 'diagrams' | 'tools';
 const SECTIONS_KEY = 'lathe:nav-sections';
 const isOpenMap = (v: unknown): v is Record<string, boolean> => !!v && typeof v === 'object' && !Array.isArray(v) && Object.values(v).every(isBool);
 
@@ -47,7 +47,6 @@ const here = (path: string, to: string) => (path === to ? 'page' : undefined);
 /** Which section holds the current page. */
 function sectionOf(path: string): SectionId | null {
   if (path.startsWith('/diagrams')) return 'diagrams';
-  if (path.startsWith('/specs') || path.startsWith('/records')) return 'specs';
   if (path.startsWith('/checks')) return 'tools';
   return null;
 }
@@ -160,11 +159,12 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
         </div>
         <QuickFind ref={findRef} index={index} diagrams={diagrams} space={space} />
         <div className="nav-scroll" ref={scroller}>
-          <NavSection id="specs" icon="specs" title={space?.title ?? 'Specs'} count={space && index ? index.domainsOf.get(space.id)?.length ?? 0 : undefined} open={isOpen('specs')} onToggle={() => toggle('specs')}>
+          {/* The current space needs no heading of its own: the rail names it, and its first row is its overview. */}
+          <div className="nav-space">
             {spec.error && !index && <p className="error">{spec.error}</p>}
             {index && space && <SpaceItems index={index} space={space} path={path} />}
             {index && !space && <p className="hint">No products yet.</p>}
-          </NavSection>
+          </div>
           <NavSection id="diagrams" icon="diagrams" title="Diagrams" count={diagrams.length} open={isOpen('diagrams')} onToggle={() => toggle('diagrams')}>
             <ul>
               {diagrams.map((d) => (
