@@ -2,14 +2,13 @@ import { forwardRef, useId, useMemo, useState, type KeyboardEvent, type ReactNod
 import { Icon } from '../components/icons';
 import { navigate } from '../router';
 import { kindLabel, type SpecIndex } from '../specs/data';
-import type { DiagramSummary } from '../types';
 import { addressOf } from '../views/address';
 import { checkPagePath, kindPagePath, useFormat } from '../format/reference';
 import { useShortcutHint } from './commands';
 import type { Space } from './spaces';
 
-// Quick find (quick open): a search at the top of the nav that jumps to any record, domain,
-// product or diagram by ID or title. The current space's matches come first, then everything
+// Quick find (quick open): a search at the top of the nav that jumps to any record, domain
+// or product by ID or title. The current space's matches come first, then everything
 // else under a divider. The format's kinds and checks are found too, as "Kind: Use case" and
 // "Check: too-many-children", leading to their pages in the format reference. Arrow keys move through the results, Enter opens one, Escape clears the
 // search.
@@ -20,12 +19,12 @@ export interface FindItem {
   title: string;
   kind: string;
   to: string;
-  /** The product the item belongs to, or null (a diagram). */
+  /** The product the item belongs to, or null (a kind or check of the format). */
   product: string | null;
 }
 
-export function findItems(index: SpecIndex | null, diagrams: readonly DiagramSummary[], checks: readonly string[] = []): FindItem[] {
-  const items: FindItem[] = diagrams.map((d) => ({ key: `diagram:${d.slug}`, id: d.slug, title: d.title, kind: 'Diagram', to: `/diagrams/${d.slug}`, product: null }));
+export function findItems(index: SpecIndex | null, checks: readonly string[] = []): FindItem[] {
+  const items: FindItem[] = [];
   if (index) {
     for (const r of index.workspace.records) {
       items.push({ key: r.id, id: r.id, title: r.title, kind: kindLabel(index, r.kind), to: addressOf(r.id), product: r.product });
@@ -43,7 +42,7 @@ export function findItems(index: SpecIndex | null, diagrams: readonly DiagramSum
 export interface ScopedResults {
   /** The best matches in the current space. */
   here: FindItem[];
-  /** The best matches everywhere else (other products and diagrams). */
+  /** The best matches everywhere else (other products and the format). */
   elsewhere: FindItem[];
 }
 
@@ -80,7 +79,6 @@ export function rankItems(items: readonly FindItem[], query: string, limit = 8):
 
 export interface QuickFindProps {
   index: SpecIndex | null;
-  diagrams: readonly DiagramSummary[];
   space?: Space | null;
   onGo?: () => void;
   /** In a sheet (the phone): the results are a list under the box rather than a dropdown, and more of them show. */
@@ -90,7 +88,7 @@ export interface QuickFindProps {
 }
 
 export const QuickFind = forwardRef<HTMLInputElement, QuickFindProps>(
-  function QuickFind({ index, diagrams, space = null, onGo, inline = false, trailing }, ref) {
+  function QuickFind({ index, space = null, onGo, inline = false, trailing }, ref) {
     const [query, setQuery] = useState('');
     const [active, setActive] = useState(0);
     const [open, setOpen] = useState(false);
@@ -99,7 +97,7 @@ export const QuickFind = forwardRef<HTMLInputElement, QuickFindProps>(
     // The format's checks are fetched once something is typed.
     const { reference } = useFormat(index, query.trim() !== '');
     const checks = useMemo(() => reference?.checks.map((c) => c.check) ?? [], [reference]);
-    const all = useMemo(() => findItems(index, diagrams, checks), [index, diagrams, checks]);
+    const all = useMemo(() => findItems(index, checks), [index, checks]);
     const scoped = useMemo(() => rankScoped(all, query, space?.id ?? null, inline ? 20 : 8), [all, query, space]);
     const results = useMemo(() => [...scoped.here, ...scoped.elsewhere], [scoped]);
     const at = Math.min(active, Math.max(0, results.length - 1));

@@ -1,5 +1,0 @@
-name,kind,context,status,definition
-Reading,topic,sdlc,decided,Root one.
-Writing,topic,sdlc,decided,Root two.
-Notes,topic,sdlc,decided,Has two parents.
-Pen,term,sdlc,decided,Not a topic.

@@ -1,4 +1,0 @@
-name,kind,context,status,definition
-Shelf,aggregate,making_software,decided,A shelf.
-Book,entity,making_software,decided,A book.
-Shelved,domain_event,making_software,decided,An event.
