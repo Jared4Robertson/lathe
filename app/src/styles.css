@@ -42,7 +42,8 @@ body { background: var(--paper); color: var(--ink); font: 15px/1.5 var(--body); 
 .empty { height: 100%; display: grid; place-content: center; gap: 8px; max-width: 460px; margin: 0 auto; padding: 24px; color: var(--muted); }
 .empty h2 { color: var(--ink); }
 .empty code { font: 0.85em var(--mono); color: var(--ink); }
-header { display: flex; justify-content: space-between; align-items: end; gap: 16px; padding: 20px 24px 12px; }
+/* Page headers (by class: a bare `header` rule would also style every section's header row). */
+.diagram-header, .spec-header, .graph-header { display: flex; justify-content: space-between; align-items: end; gap: 16px; padding: 20px 24px 12px; }
 h1, h2, h3 { font-family: var(--display); margin: 0; line-height: 1.15; }
 h1 { font-size: 1.9rem; }
 h2 { font-size: 1.3rem; }
@@ -117,6 +118,11 @@ code { font: 0.86em var(--mono); }
 .spec-page > .error { margin: 12px 24px 0; }
 .spec-section { display: grid; gap: 8px; }
 .spec-section h2 { font-size: 1.05rem; display: flex; align-items: baseline; gap: 8px; }
+/* The header row: heading at the left, its actions at the right, as tall as the taller of the two. */
+.spec-section-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; }
+.spec-section-head h2 { margin: 0; min-width: 0; }
+.spec-section-actions { display: flex; gap: 8px; align-items: center; flex: none; }
+.spec-section-actions:empty { display: none; }
 .section-count { font: 500 0.75rem var(--mono); color: var(--muted); }
 .stage { display: grid; gap: 14px; padding-top: 6px; border-top: 1px solid var(--rule); }
 .stage-title { font: 500 0.78rem var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--steel); padding-top: 6px; }
@@ -603,7 +609,3 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 .palette-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* ---------- End of brief 30 ---------- */
 
-/* Section headings: a short list's Expand all / Collapse all sits on the heading's row, at the right. */
-.spec-section { position: relative; }
-.spec-section > h2 + .long-list > .long-list-tools.short { position: absolute; top: 0; right: 0; }
-.spec-section > h2 + .long-list > .long-list-tools.short + * { margin-top: 0; }

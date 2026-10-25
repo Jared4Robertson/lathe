@@ -390,7 +390,7 @@ function DiagramView({ diagram }: { diagram: DiagramSummary }) {
 
   return (
     <main className="diagram" id="main">
-      <header>
+      <header className="diagram-header">
         <div>
           <p className="eyebrow">Diagram · model/{diagram.slug}/*.csv via DuckDB</p>
           <h1>{diagram.title}</h1>
