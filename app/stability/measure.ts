@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-// What the stability suite measures in each step of a scenario (LA-PAT-APP-CODE-R17):
+// What the stability suite measures in each step of a scenario (LA-PAT-APP-UX-R08):
 // - every layout shift, from a PerformanceObserver for `layout-shift`, including the ones the
 //   browser leaves out of CLS because they came just after input (`hadRecentInput`), flagged;
 // - long animation frames (`long-animation-frame`), where the page could not paint in time;
@@ -9,9 +9,9 @@ import { expect, test, type Page } from '@playwright/test';
 // A shift is "allowed" when every node it moved sits inside one of the step's `allow` selectors:
 // the thing the step means to change, such as the panes when a pane opens. Everything else is
 // unexpected, and a step's unexpected shifts must add up to at most BUDGET. Transforms and
-// opacity never count as layout shifts, so a tokened glide or fade (R12) is free.
+// opacity never count as layout shifts, so a tokened glide or fade (UX-R04) is free.
 
-/** The unexpected layout shift a step may have (R17). */
+/** The unexpected layout shift a step may have (UX-R08). */
 export const BUDGET = 0.01;
 
 /**
@@ -265,7 +265,7 @@ export function explain(r: StepResult): string {
   return [`${r.scenario} / ${r.step}: unexpected ${r.unexpected} (total ${r.total})`, ...shifts.slice(0, 12), ...moved].join('\n');
 }
 
-/** R17: at most BUDGET of unexpected shift, and no key element moves. */
+/** UX-R08: at most BUDGET of unexpected shift, and no key element moves. */
 export function expectStable(r: StepResult) {
   expect.soft(r.unexpected, explain(r)).toBeLessThanOrEqual(BUDGET);
   expect.soft(r.moved, explain(r)).toEqual([]);

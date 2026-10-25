@@ -7,11 +7,11 @@ import { VIEW_LABELS, type ViewName } from './address';
 import { TabStrip } from './TabStrip';
 import type { PageTabsApi } from './useTabs';
 
-// The page bar (LA-PAT-APP-CODE-R11): one strip across the top of the open panes, as the top of
+// The page bar (LA-PAT-APP-UX-R03): one strip across the top of the open panes, as the top of
 // VS Code's editor area. A tab is a page and the panes are views of it, so the bar holds what is
 // the page's: at its left the page's tabs, at its right the View group (Wiki, Graph, Model), a
 // divider, and the inspector toggle at the far right, beside the inspector. It is one line high
-// whatever it holds (the tabs scroll sideways), so nothing below it moves (R17).
+// whatever it holds (the tabs scroll sideways), so nothing below it moves (UX-R08).
 //
 // On a phone it is the same bar, compact (notes/mobile-design.md): the tabs fold into an "Open
 // pages" button that opens them as a sheet, the View group shows one view at a time, and the

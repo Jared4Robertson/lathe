@@ -78,7 +78,7 @@ export function ModelView({ index, focus, onNavigate }: ModelViewProps) {
   return (
     <section className="model-page" aria-label="Model">
       <header className="model-header">
-        {/* One line of one text, cut with an ellipsis, its whole text in its tooltip: a new caption never moves anything (LA-PAT-APP-CODE-R17). */}
+        {/* One line of one text, cut with an ellipsis, its whole text in its tooltip: a new caption never moves anything (LA-PAT-APP-UX-R08). */}
         <p className="model-caption" title={`${caption} · ${counts}`}>{`${caption} · ${counts}`}</p>
       </header>
       {empty ? (
@@ -198,14 +198,14 @@ function ErdCanvas({ erd, focus, onNavigate }: { erd: Erd; focus: string; onNavi
     return { nodes, edges };
   }, [placed, focus]);
 
-  // Fit the picture, moving there with the shared motion (LA-PAT-APP-CODE-R12), or at once.
+  // Fit the picture, moving there with the shared motion (LA-PAT-APP-UX-R04), or at once.
   const fit = useCallback((animate: boolean) => {
     const box = wrapper.current?.getBoundingClientRect();
     if (!placed || placed.rects.size === 0 || !box || box.width <= 0 || box.height <= 0) return;
     const motion = readMotion();
     setViewport(fitRects(placed.rects, box.width, box.height), animate && motion.duration > 0 ? { duration: motion.duration, ease: motion.ease } : { duration: 0 });
   }, [placed, setViewport]);
-  // Before paint (LA-PAT-APP-CODE-R17): the first picture appears already fitted, never drawn at
+  // Before paint (LA-PAT-APP-UX-R08): the first picture appears already fitted, never drawn at
   // the default viewport and then moved; each picture after it glides from the view before.
   const fitted = useRef(false);
   useLayoutEffect(() => {

@@ -42,12 +42,12 @@ Today depth 1 is the tree (parent and children), but depths 2 and 3 are the old 
 1. **A context ring.** At every depth, the graph also draws the next ring out, as **context**:
    - At depth 1 that is the tree's next level: the parent's parent (or its folder) and the children's children (or their folders, folded). Hierarchy only, as depth 1 is.
    - At depth 2 and 3 it is the next tree level out each way (depth N+1's levels), hierarchy only. With Links on, the records one hop from the linked records do not join the ring; the ring is the tree's.
-   - Model: `Neighborhood` nodes and edges gain `context: true` for the ring. Compute it once and deterministically, so it never jitters (R17).
+   - Model: `Neighborhood` nodes and edges gain `context: true` for the ring. Compute it once and deterministically, so it never jitters (UX-R08).
 2. **How context looks:**
    - Context nodes are drawn faded (about 35% opacity) and slightly smaller (scale about 0.9 around their center).
    - Their marks (errors, gaps) are faded too, and their labels stay readable on hover.
    - Edges to or between context nodes are faded and thinner.
-   - Use tokens: a new `--context-opacity`, and the motion tokens for the fade (R12).
+   - Use tokens: a new `--context-opacity`, and the motion tokens for the fade (UX-R04).
 3. **Context is out of focus:**
    - Context nodes are not in the canvas's keyboard order: the arrow keys and Tab skip them.
    - They carry `aria-hidden="true"` and are left out of the canvas's accessible list.
@@ -75,7 +75,7 @@ The intent: a sense of place without noise. Also build:
     - On a domain's ERD, the aggregates of other domains that this domain's aggregates refer to are faded context. They are already gray, so fade them too.
     - Apply the same framing (focus only) and edge hints.
 14. **Quiet labels.** Context nodes show only their kind and a short title. Their ID and full title appear on hover.
-15. **Budget.** At most about 40 context nodes, with chips for the rest. Re-centers stay within the R17 stability budget, and a frame takes under 16 ms at depth 3 on Lathe's own spec. Measure it with the stability suite, and report it.
+15. **Budget.** At most about 40 context nodes, with chips for the rest. Re-centers stay within the UX-R08 stability budget, and a frame takes under 16 ms at depth 3 on Lathe's own spec. Measure it with the stability suite, and report it.
 
 Records: requirements for 7 to 14 under `UC20` (the graph), and under `UC113` (the ERD) for 13, from the next free R numbers. Tests from the T range below.
 
@@ -91,7 +91,7 @@ Records: requirements for 7 to 14 under `UC20` (the graph), and under `UC113` (t
 ## Scope
 - **You own:** `app/src/graph/**`, `app/src/model/**` (for 13), the graph and model styles in `styles.css`, the step commands in `keymap.ts`, the graph and model tests, and the records above.
 - Check which agents are running when you start, and stay out of their files.
-- Never use port 5199. Use `npx vite --port 5417` in `app/` and stop it. Run brief 53's stability suite before reporting: re-centers must stay within the R17 budget.
+- Never use port 5199. Use `npx vite --port 5417` in `app/` and stop it. Run brief 53's stability suite before reporting: re-centers must stay within the UX-R08 budget.
 
 ## Report
 Use the format in 00-common-rules, with your branch and its last commit, and what you saw in the browser at depth 1, 2 and 3.

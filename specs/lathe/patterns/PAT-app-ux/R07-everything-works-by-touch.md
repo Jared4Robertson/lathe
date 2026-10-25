@@ -1,8 +1,8 @@
 ---
-id: LA-PAT-APP-CODE-R16
+id: LA-PAT-APP-UX-R07
 kind: pattern_rule
 title: Everything works by touch
-parent: LA-PAT-APP-CODE
+parent: LA-PAT-APP-UX
 ---
 The app MUST work with a finger as well as a mouse:
 

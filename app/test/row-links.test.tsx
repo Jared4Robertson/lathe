@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { patternWorkspace } from './fixtures/patterns';
 import { openApp, section } from './helpers';
 
-// A row that leads to one record is one link (LA-PAT-APP-CODE-R13): anywhere on the row opens the
+// A row that leads to one record is one link (LA-PAT-APP-UX-R05): anywhere on the row opens the
 // record, and the row's other controls keep doing what they do.
 //
 // jsdom has no layout, so it cannot find the element under the pointer. `clickAt` sends the click

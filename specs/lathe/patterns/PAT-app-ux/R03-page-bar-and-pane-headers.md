@@ -1,8 +1,8 @@
 ---
-id: LA-PAT-APP-CODE-R11
+id: LA-PAT-APP-UX-R03
 kind: pattern_rule
 title: The page bar holds the page's tabs and layout controls; each pane's header holds only that pane's actions
-parent: LA-PAT-APP-CODE
+parent: LA-PAT-APP-UX
 ---
 A tab is a page and the panes are views of it, so the page's controls and each pane's controls MUST sit apart, as in VS Code's editor area:
 
