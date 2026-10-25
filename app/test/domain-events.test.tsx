@@ -72,6 +72,12 @@ describe('domain events in the ERD', () => {
     // Clicking a pill goes to the event.
     fireEvent.click(pill);
     expect(window.location.pathname).toBe(addressOf('P-D-EV01'));
+    // The event's own page offers the Model view: its aggregate's ERD with the pill picked out.
+    await openApp(`${addressOf('P-D-EV02')}?view=model`, served());
+    await screen.findByRole('heading', { level: 1, name: 'Thing returned' });
+    await boxesShown();
+    expect(box('P-D-EV02')!.querySelector('.erd-box')).toHaveClass('is-highlight');
+    expect(box('P-D-EV01')!.querySelector('.erd-box')).not.toHaveClass('is-highlight');
     // Spark tokens for the pill and its lines (LA-BRW-DR307).
     expect(CSS).toMatch(/\.erd-box\.erd-event\s*\{[^}]*var\(--spark\)[^}]*var\(--spark-bg\)[^}]*border-radius:\s*999px/);
     expect(CSS).toMatch(/\.rel-raised_by, \.rel-reacts_to\) :is\(\.erd-line-path, \.erd-end\) \{ stroke: var\(--spark\)/);
