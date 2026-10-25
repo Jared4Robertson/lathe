@@ -2,11 +2,31 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!-- The browser chrome takes the top bar's color; app/src/shell/themeColor.ts keeps it in step with the theme. -->
+    <meta name="theme-color" content="#FFFFFF" />
     <title>Lathe</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700&family=Public+Sans:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap" />
+    <script>
+      // The chosen theme and mode, before first paint, so the page never flashes another theme
+      // (app/src/theme/store.ts writes these keys; app/src/theme/apply.ts does the same once the app runs).
+      try {
+        var root = document.documentElement;
+        var mode = JSON.parse(localStorage.getItem('lathe:color-mode') || '"system"');
+        if (mode === 'light' || mode === 'dark') root.setAttribute('data-mode', mode);
+        var css = localStorage.getItem('lathe:theme-css');
+        var chosen = JSON.parse(localStorage.getItem('lathe:theme') || '"lathe"');
+        if (css) {
+          var style = document.createElement('style');
+          style.id = 'lathe-theme';
+          style.textContent = css;
+          document.head.appendChild(style);
+          root.setAttribute('data-theme', String(chosen));
+        }
+      } catch (e) { /* no storage: the stylesheet's own Lathe theme, following the system */ }
+    </script>
   </head>
   <body>
     <div id="root"></div>

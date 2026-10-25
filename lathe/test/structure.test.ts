@@ -68,14 +68,23 @@ describe('extensions restate default relation rules', () => {
   const rule = (ws: Workspace, relation: string, source: string, target: string) =>
     ws.relations.filter((r) => r.relation === relation && r.source_kind === source && r.target_kind === target);
 
-  it("LA-CHK-T136 An extension row for an existing relation rule is the same rule, and its non-empty role or description replaces the default's", () => {
+  it("LA-CHK-T136 An extension row for an existing relation rule is the same rule, and its non-empty role, description or label replaces the default's", () => {
     // Reworded: the description is replaced and the empty role keeps the default's.
     expect(rule(relations, 'proves', 'test', 'domain_rule')).toEqual([
-      { relation: 'proves', source_kind: 'test', target_kind: 'domain_rule', role: 'proof', description: 'The test checks the domain rule in code.' },
+      {
+        relation: 'proves',
+        source_kind: 'test',
+        target_kind: 'domain_rule',
+        role: 'proof',
+        description: 'The test checks the domain rule in code.',
+        forward_label: 'Proves',
+        reverse_label: 'Proved by',
+      },
     ]);
-    // Re-roled: the role is replaced and the empty description keeps the default's.
+    // Re-roled and relabeled: the role and the reverse label are replaced, and the empty description and
+    // forward label keep the default's.
     const [defaultFulfills] = rule(plain, 'fulfills', 'flow', 'requirement');
-    expect(rule(relations, 'fulfills', 'flow', 'requirement')).toEqual([{ ...defaultFulfills, role: 'design' }]);
+    expect(rule(relations, 'fulfills', 'flow', 'requirement')).toEqual([{ ...defaultFulfills, role: 'design', reverse_label: 'Built by flow' }]);
     // So the flow now designs the requirement it fulfills.
     const requirement = relations.coverage[0].obligations.find((o) => o.kind === 'requirement');
     expect(requirement).toMatchObject({ total: 1, designed: 1 });
@@ -100,6 +109,8 @@ describe('extensions restate default relation rules', () => {
     expect(errors(relations).map((p) => p.check)).toEqual(['meta-duplicate-relation']);
     // The later row's description wins, as for a restatement.
     expect(rule(relations, 'owns', 'component', 'aggregate')[0].description).toBe('The component stores the aggregate.');
+    // An empty label in the later row keeps the earlier row's.
+    expect(rule(relations, 'owns', 'component', 'aggregate')[0]).toMatchObject({ forward_label: 'Owns', reverse_label: 'Owned by' });
   });
 });
 

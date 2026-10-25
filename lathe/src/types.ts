@@ -35,6 +35,10 @@ export interface RelationRule {
   /** 'design': the link designs its target (counts as satisfied); 'proof': it proves it; '' otherwise. */
   role: 'design' | 'proof' | '';
   description: string;
+  /** The link in plain words read from the source, in sentence case: "Satisfies". */
+  forward_label: string;
+  /** The link in plain words read from the target, in sentence case: "Designed by". */
+  reverse_label: string;
 }
 
 export interface SpecRecord {

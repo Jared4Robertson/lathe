@@ -1,5 +1,10 @@
--- Each meta-model folder defines a kind at most once. A row in a later folder (a product's extension)
--- for a kind already defined widens that kind; it is not a duplicate.
+-- Each meta-model folder defines a kind at most once.
+--
+-- A row in a later folder (a product's extension) for a kind already defined widens that kind; it is not a
+-- duplicate. Two rows for one kind in the same `kinds.csv` are reported, naming the file. Merge them into one
+-- row.
+--
+-- severity: error
 SELECT 'error' AS severity, 'meta-duplicate-kind' AS "check", NULL AS record,
        folder || ' defines kind "' || kind || '" ' || count(*) || ' times; each kind must be defined once in a folder.' AS message
 FROM meta_kind_rows

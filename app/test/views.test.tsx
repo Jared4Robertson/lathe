@@ -98,9 +98,9 @@ describe('one address, three views', () => {
     expect(screen.getByRole('button', { name: 'Close the wiki pane' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Close the graph pane' })).toBeInTheDocument();
     expect(window.localStorage.getItem('lathe:view')).toBe('"wiki,graph"');
-    // The View toggles appear once, on the rightmost pane.
+    // The View toggles appear once, in the page bar above the panes.
     expect(screen.getAllByRole('group', { name: 'View' })).toHaveLength(1);
-    expect(within(screen.getByRole('region', { name: 'Graph pane' })).getByRole('group', { name: 'View' })).toBeInTheDocument();
+    expect(within(document.querySelector<HTMLElement>('.page-bar')!).getByRole('group', { name: 'View' })).toBeInTheDocument();
   });
 
   it('LA-BRW-T122 Every gap between open panes is a handle moved by keys, remembered and reset evenly, and any pane goes full screen until Escape', async () => {
@@ -223,32 +223,35 @@ describe('one address, three views', () => {
     expect(css).toMatch(/\.icon-button\.is-on\s*\{/);
   });
 
-  it('LA-BRW-T310 The title bar names its view at the left; the rightmost pane holds the view toggles, a divider, Full screen and the inspector, the pressed views and a shown inspector in one on look', async () => {
+  it('LA-BRW-T310 The page bar holds the tabs at its left and the view toggles, a divider and the inspector toggle at its right; each pane header names its view and holds its close and Full screen buttons; the pressed views and a shown inspector share one on look', async () => {
     await openApp('/records/P-D-UC01', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
-    const bar = screen.getByRole('region', { name: 'Wiki pane' }).querySelector<HTMLElement>('.pane-bar')!;
-    expect(bar.querySelector('.pane-head .pane-name')).toHaveTextContent(/^\s*Wiki$/);
-    const actions = bar.querySelector<HTMLElement>('.pane-actions')!;
+    const page = document.querySelector<HTMLElement>('.page-bar')!;
+    expect(within(page.querySelector<HTMLElement>('.page-bar-start')!).getByRole('tab', { selected: true })).toHaveTextContent('P-D-UC01Lend a thing');
     const order = (el: HTMLElement) => [...el.querySelectorAll<HTMLElement>('button, .pane-divider')].map((b) => b.classList.contains('pane-divider') ? '|' : b.getAttribute('aria-label'));
     // A use case offers no Model view.
-    expect(order(actions)).toEqual(['Wiki', 'Graph', '|', 'Full screen: Wiki', 'Hide the inspector']);
+    expect(order(page.querySelector<HTMLElement>('.page-bar-actions')!)).toEqual(['Wiki', 'Graph', '|', 'Hide the inspector']);
     expect(viewToggle('Wiki')).toHaveClass('icon-button', 'is-on');
     expect(viewToggle('Graph')).not.toHaveClass('is-on');
-    expect(within(actions).getByRole('button', { name: 'Hide the inspector' })).toHaveClass('icon-button', 'is-on');
+    expect(within(page).getByRole('button', { name: 'Hide the inspector' })).toHaveClass('icon-button', 'is-on');
+    // One pane: its header names its view and holds only Full screen.
+    const wiki = () => screen.getByRole('region', { name: 'Wiki pane' });
+    expect(wiki().querySelector('.pane-bar .pane-name')).toHaveTextContent(/^\s*Wiki$/);
+    expect(order(wiki().querySelector<HTMLElement>('.pane-actions')!)).toEqual(['Full screen: Wiki']);
 
-    // With two panes each names its view with a close button beside it; the toggles move to the rightmost.
+    // With two panes each header gains its close button; the page bar stays as it was.
+    viewToggle('Graph')!.focus();
     fireEvent.click(viewToggle('Graph'));
-    for (const [pane, name] of [['Wiki pane', 'Wiki'], ['Graph pane', 'Graph']]) {
-      const head = screen.getByRole('region', { name: pane }).querySelector<HTMLElement>('.pane-head')!;
-      expect(head.querySelector('.pane-name')).toHaveTextContent(new RegExp(`^\\s*${name}$`));
-      expect(within(head).getByRole('button', { name: `Close the ${name.toLowerCase()} pane` })).toBeInTheDocument();
-    }
-    expect(order(screen.getByRole('region', { name: 'Wiki pane' }).querySelector<HTMLElement>('.pane-actions')!)).toEqual(['Full screen: Wiki']);
-    expect(order(screen.getByRole('region', { name: 'Graph pane' }).querySelector<HTMLElement>('.pane-actions')!)).toEqual(['Wiki', 'Graph', '|', 'Full screen: Graph', 'Hide the inspector']);
-    // The toggle that was clicked moved with the bar: focus follows it.
+    const graph = screen.getByRole('region', { name: 'Graph pane' });
+    expect(graph.querySelector('.pane-name')).toHaveTextContent(/^\s*Graph$/);
+    expect(order(wiki().querySelector<HTMLElement>('.pane-actions')!)).toEqual(['Close the wiki pane', 'Full screen: Wiki']);
+    expect(order(graph.querySelector<HTMLElement>('.pane-actions')!)).toEqual(['Close the graph pane', 'Full screen: Graph']);
+    expect(order(page.querySelector<HTMLElement>('.page-bar-actions')!)).toEqual(['Wiki', 'Graph', '|', 'Hide the inspector']);
+    expect(wiki().querySelector('[role="tablist"]')).toBeNull();
+    // The toggle that was clicked keeps focus: it does not move.
     await waitFor(() => expect(viewToggle('Graph')).toHaveFocus());
     // The title sits at the top of the leftmost pane.
-    expect(screen.getByRole('heading', { level: 1 }).closest('.pane')).toBe(screen.getByRole('region', { name: 'Wiki pane' }));
+    expect(screen.getByRole('heading', { level: 1 }).closest('.pane')).toBe(wiki());
   });
 });
 
@@ -276,7 +279,7 @@ describe('the inspector', () => {
     expect(screen.getAllByRole('complementary', { name: 'Inspector' })).toHaveLength(1);
   });
 
-  it('LA-BRW-T132 On a narrow screen the inspector is a drawer: focus moves in, and Escape closes it and gives focus back', async () => {
+  it('LA-BRW-T132 On a narrow screen the inspector is a bottom sheet: focus moves in, and Escape closes it and gives focus back', async () => {
     narrowScreen();
     await openApp('/records/P-D-UC01', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });

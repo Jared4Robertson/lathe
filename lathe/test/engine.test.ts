@@ -32,6 +32,10 @@ describe('checks', () => {
     writeFileSync(
       path.join(checks, '99-every-note-has-a-body.sql'),
       `-- A made-up check, added with no change to the engine.
+--
+-- It reports each use case in the notes domain. Its header documents it, as every check's must.
+--
+-- severity: warning
 SELECT 'warning' AS severity, 'ignored' AS "check", id AS record, 'Record ' || id || ' is in the notes domain.' AS message
 FROM records WHERE domain = 'EX-NOTE' AND kind = 'use_case'`,
     );
@@ -97,7 +101,7 @@ describe('loading', () => {
     expect(Object.keys(ws).sort()).toEqual(['coverage', 'kinds', 'links', 'problems', 'records', 'relations', 'sections']);
     expect(Object.keys(ws.kinds[0]).sort()).toEqual(['description', 'kind', 'label', 'obligation', 'parent_kinds', 'proof_only', 'required_fields', 'section', 'stage']);
     expect(Object.keys(ws.sections[0]).sort()).toEqual(['description', 'label', 'order', 'section', 'stage']);
-    expect(Object.keys(ws.relations[0]).sort()).toEqual(['description', 'relation', 'role', 'source_kind', 'target_kind']);
+    expect(Object.keys(ws.relations[0]).sort()).toEqual(['description', 'forward_label', 'relation', 'reverse_label', 'role', 'source_kind', 'target_kind']);
     expect(Object.keys(ws.records[0]).sort()).toEqual(['body', 'domain', 'fields', 'id', 'kind', 'mentions', 'parent', 'path', 'product', 'title']);
     expect(Object.keys(ws.links[0]).sort()).toEqual(['relation', 'source', 'target']);
     expect(Object.keys(ws.problems[0]).sort()).toEqual(['check', 'message', 'record', 'severity']);

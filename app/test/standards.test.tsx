@@ -1,8 +1,13 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { screen, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { openApp } from './helpers';
+import { REQUIRED_PAIRS, colorOf } from '../src/theme/audit';
+import { contrast } from '../src/theme/contrast';
+import { themeCss } from '../src/theme/css';
+import { BUILT_IN_THEMES } from '../src/theme/theme';
+import { COLOR_NAMES, SETTING_NAMES } from '../src/theme/tokens';
 // The split view loads the graph, which needs a ResizeObserver in jsdom.
 import './graph/setup';
 
@@ -171,46 +176,68 @@ describe('LA-PAT-APP-CODE App code', () => {
     expect(unsized).toEqual([]);
   });
 
-  it('LA-BRW-T298 Each pane has one title bar naming its view and holding the view toggles and layout actions as icon buttons, and nothing else switches views', async () => {
-    for (const path of ['/records/DM-SHOP-UC01?view=wiki', '/records/DM-SHOP-UC01?view=wiki,graph']) {
+  it('LA-BRW-T298 The page bar holds the page\'s tabs and layout controls; each pane\'s header holds only that pane\'s actions, on wide and narrow screens alike', async () => {
+    for (const [path, narrow] of [['/records/DM-SHOP-UC01?view=wiki', false], ['/records/DM-SHOP-UC01?view=wiki,graph', false], ['/records/DM-SHOP-UC01?view=wiki,graph', true]] as const) {
+      if (narrow) vi.stubGlobal('matchMedia', (query: string) => ({ matches: true, media: query, addEventListener: () => {}, removeEventListener: () => {} }));
       await openApp(path);
       await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
-      const panes = [...document.querySelectorAll<HTMLElement>('.pane')];
-      expect(panes.length).toBeGreaterThan(0);
-      for (const pane of panes) {
-        expect(pane).toHaveClass('panel');
-        expect(pane.firstElementChild).toHaveClass('pane-bar');
-        expect(pane.querySelectorAll(':scope > .pane-bar')).toHaveLength(1);
-        // At the left, a quiet label names the pane's view; it is not a control.
-        const label = pane.querySelector('.pane-bar > .pane-head > .pane-name');
-        expect(label?.textContent?.trim()).toMatch(/^(Wiki|Graph|Model)$/);
-        expect(label?.querySelector('button, a, [tabindex]')).toBeNull();
-        // At the right, every control is an icon button in one style.
-        for (const b of pane.querySelectorAll('.pane-actions button')) expect(b).toHaveClass('icon-button');
+      // One page bar, at the top of the editor area, outside every pane and outside the inspector.
+      const bars = [...document.querySelectorAll<HTMLElement>('.page-bar')];
+      expect(bars).toHaveLength(1);
+      const bar = bars[0];
+      expect(bar.closest('.pane')).toBeNull();
+      expect(bar.closest('.inspector, .inspector-column')).toBeNull();
+      // Its left: the tabs (on a phone, the Open pages control that opens them as a sheet).
+      if (narrow) {
+        expect(within(bar).getByRole('button', { name: /^Open pages \(\d+\)$/ })).toBeInTheDocument();
+        expect(screen.queryAllByRole('tablist')).toEqual([]);
+      } else {
+        expect(screen.getAllByRole('tablist')).toHaveLength(1);
+        expect(bar.querySelector('.page-bar-start [role="tablist"]')).not.toBeNull();
       }
-      expect(screen.queryAllByRole('tab')).toEqual([]);
-      // The view toggles: icon buttons with a pressed state, once, in the rightmost pane's bar, one pressed per open pane.
+      // Its right: the View group, then the inspector toggle last.
       const groups = screen.queryAllByRole('group', { name: 'View' });
       expect(groups).toHaveLength(1);
-      expect(groups[0].closest('.pane')).toBe(panes[panes.length - 1]);
-      const toggles = groups.flatMap((g) => within(g).getAllByRole('button'));
-      for (const t of toggles) {
-        expect(t.closest('.pane-actions')).not.toBeNull();
-        expect(t).toHaveClass('icon-button');
-        expect(t).toHaveAttribute('aria-pressed');
-      }
+      expect(bar.contains(groups[0])).toBe(true);
+      const toggles = within(groups[0]).getAllByRole('button');
+      for (const t of toggles) expect(t).toHaveAttribute('aria-pressed');
+      const panes = [...document.querySelectorAll<HTMLElement>('.pane')];
       expect(toggles.filter((t) => t.getAttribute('aria-pressed') === 'true')).toHaveLength(panes.length);
-      // Every view and layout control lives in a title bar.
-      const controls = [
-        ...toggles,
-        ...screen.queryAllByRole('button', { name: /^Close the (wiki|graph|model) pane$|^Full screen|^Leave full screen/ }),
-        screen.getByRole('button', { name: /the inspector$/, expanded: true }),
-      ];
-      for (const c of controls) expect(c.closest('.pane-bar')).not.toBeNull();
-      // The title belongs to the content of a pane.
-      expect(screen.getByRole('heading', { level: 1 }).closest('.pane')).not.toBeNull();
+      const inspector = screen.getByRole('button', { name: /the inspector$/, expanded: !narrow });
+      expect(bar.contains(inspector)).toBe(true);
+      const actions = [...bar.querySelectorAll('.page-bar-actions button')];
+      expect(actions[actions.length - 1]).toBe(inspector);
+      if (narrow) {
+        // A phone shows one view at a time, with no pane headers.
+        expect(panes).toHaveLength(1);
+        expect(document.querySelector('.pane-bar')).toBeNull();
+      } else {
+        for (const t of toggles) expect(t).toHaveClass('icon-button');
+        for (const pane of panes) {
+          // Each pane's slim header: a quiet label naming its view, then only the pane's own actions.
+          expect(pane).toHaveClass('panel');
+          expect(pane.firstElementChild).toHaveClass('pane-bar');
+          const label = pane.querySelector('.pane-bar > .pane-head > .pane-name');
+          expect(label?.textContent?.trim()).toMatch(/^(Wiki|Graph|Model)$/);
+          expect(label?.querySelector('button, a, [tabindex]')).toBeNull();
+          const own = [...pane.querySelectorAll<HTMLElement>('.pane-bar button')];
+          for (const b of own) {
+            expect(b).toHaveClass('icon-button');
+            expect(b.getAttribute('aria-label')).toMatch(/^Close the (wiki|graph|model) pane$|^Full screen|^Leave full screen/);
+          }
+          // Close shows only when more than one pane is open.
+          expect(own.some((b) => /^Close the/.test(b.getAttribute('aria-label') ?? ''))).toBe(panes.length > 1);
+          expect(pane.querySelector('.pane-bar [role="tablist"], .pane-bar [role="group"]')).toBeNull();
+        }
+      }
+      // The title belongs to the content of the leftmost pane.
+      expect(screen.getByRole('heading', { level: 1 }).closest('.pane')).toBe(panes[0]);
     }
+    // The page bar and the pane headers keep one height whatever they hold.
+    expect(CSS).toMatch(/\.page-bar \{[^}]*height: var\(--page-bar-height\)/);
+    expect(CSS).toMatch(/\.pane-bar \{[^}]*height: var\(--pane-bar-height\)/);
   });
+
 
   it('LA-BRW-T304 Motion is shared and optional: every transition and animation uses the motion or hover tokens and is turned off under reduced motion', () => {
     const rules = styleRules(CSS);
@@ -244,6 +271,34 @@ describe('LA-PAT-APP-CODE App code', () => {
     // Code that animates frame by frame takes its timing from the shared motion, not numbers of its own.
     const ownTiming = animators.filter((f) => !/readMotion\(\)/.test(readFileSync(f, 'utf8'))).map((f) => relative(ROOT, f));
     expect(ownTiming).toEqual([]);
+  });
+
+  it('LA-BRW-T426 Themes only set tokens: a theme file holds token names only, its stylesheet sets them on :root, and every built-in passes AA for text in both modes', () => {
+    const dir = join(SRC, 'theme', 'themes');
+    const files = readdirSync(dir).filter((f) => f.endsWith('.json'));
+    expect(files.length).toBe(BUILT_IN_THEMES.length);
+    // Every name a theme file sets is a token the stylesheet's :root defines, and nothing else.
+    const rootTokens = new Set(styleRules(CSS).filter((r) => r.selector === ':root').flatMap((r) => [...r.body.matchAll(/(--[\w-]+)\s*:/g)].map((m) => m[1])));
+    const notTokens = files.flatMap((f) => {
+      const file = JSON.parse(readFileSync(join(dir, f), 'utf8')) as Record<string, unknown>;
+      const extra = Object.keys(file).filter((k) => !['format', 'version', 'name', 'light', 'dark', 'tokens'].includes(k)).map((k) => `${f}: ${k}`);
+      const names = ['light', 'dark', 'tokens'].flatMap((set) => Object.keys((file[set] ?? {}) as object).map((n) => ({ set, n })));
+      return [...extra, ...names.filter(({ set, n }) => !rootTokens.has(n) || (set === 'tokens' ? !SETTING_NAMES.has(n) : !COLOR_NAMES.has(n))).map(({ set, n }) => `${f}: ${set}.${n}`)];
+    });
+    expect(notTokens).toEqual([]);
+    // A theme's stylesheet has no selector but :root, and sets only custom properties (and the color scheme).
+    for (const theme of BUILT_IN_THEMES) {
+      const rules = styleRules(themeCss(theme));
+      expect(rules.map((r) => r.selector)).toEqual([':root[data-theme]', ':root[data-theme]:not([data-mode="light"])', ':root[data-theme][data-mode="dark"]']);
+      const declarations = rules.flatMap((r) => r.body.split(';').map((d) => d.trim()).filter(Boolean));
+      expect(declarations.filter((d) => !/^--[\w-]+:/.test(d) && !/^color-scheme: (light|dark)$/.test(d))).toEqual([]);
+    }
+    // Body text, muted text and the accent pass AA (4.5:1) on the page and on a sheet, for every built-in in both modes.
+    const failing = BUILT_IN_THEMES.flatMap((theme) => (['light', 'dark'] as const).flatMap((mode) => REQUIRED_PAIRS.flatMap(([fg, bg]) => {
+      const ratio = contrast(colorOf(theme, mode, fg)!, colorOf(theme, mode, bg)!);
+      return ratio >= 4.5 ? [] : [`${theme.id} ${mode}: ${fg} on ${bg} is ${ratio.toFixed(2)}:1`];
+    })));
+    expect(failing).toEqual([]);
   });
 
   it('LA-BRW-T400 A row that leads to one record is one link: every record row on the domain and record pages has exactly one row link, stretched over the row', async () => {
@@ -290,5 +345,84 @@ describe('LA-PAT-APP-CODE App code', () => {
     ];
     const hits = files.flatMap((f) => where(f, readFileSync(f, 'utf8'), word));
     expect(hits).toEqual([]);
+  });
+
+  it('LA-BRW-T468 Everything works by touch: on a coarse pointer every clickable control is at least 44 x 44 px, as itself or through a target stretched around it', () => {
+    const rules = styleRules(CSS);
+    const coarse = (r: { within: string[] }) => r.within.some((w) => /pointer:\s*coarse/.test(w));
+    expect(CSS).toMatch(/--touch-target:\s*44px/);
+    // The class a selector targets: the last class in it, before any pseudo-element.
+    const keyOf = (s: string) => { const classes = s.replace(/::[\w-]+/g, '').match(/\.[\w-]+/g); return classes?.[classes.length - 1] ?? null; };
+    const sized = (body: string) => /min-height:\s*var\(--touch-target\)|height:\s*var\(--touch-target\)/.test(body);
+    // Covered: a coarse-pointer rule sizes the control or its stretched ::before, or its own rule is touch-sized everywhere.
+    const covered = new Set(rules
+      .filter((r) => (coarse(r) && (sized(r.body) || /--nav-row-height:\s*var\(--touch-target\)/.test(r.body))) || (!coarse(r) && sized(r.body)))
+      .flatMap((r) => topLevel(r.selector).flatMap((s) => {
+        const inner = s.match(/^\s*:is\(([\s\S]*)\)(::before)?\s*$/);
+        return (inner ? topLevel(inner[1]) : [s]).map((x) => keyOf(x.trim()));
+      }))
+      .filter(Boolean));
+    // The nav's rows take their height from --nav-row-height, which the coarse pointer sets to the touch target.
+    for (const k of ['.nav-row', '.nav-chevron', '.nav-folder-head', '.nav-section-head']) covered.add(k);
+    // Canvas nodes are sized by the layout and grow with pinch-zoom; cards are whole panels of text.
+    const exempt = new Set(['.graph-node', '.aggregate-node', '.leaf-node', '.spec-node', '.erd-box', '.card', '.domain-card']);
+    const missing = rules
+      .filter((r) => !coarse(r) && /cursor:\s*pointer/.test(r.body))
+      .flatMap((r) => topLevel(r.selector).map((s) => ({ key: keyOf(s.trim()), s: s.trim(), line: r.line })))
+      .filter(({ key }) => key && !covered.has(key) && !exempt.has(key))
+      .map(({ s, line }) => `app/src/styles.css:${line}: ${s}`);
+    expect(missing).toEqual([]);
+    // Small controls inside a row or a node keep their look and get a target stretched around them.
+    expect(CSS).toMatch(/:is\([^)]*\.tree-toggle[^)]*\)::before\s*\{[^}]*width:\s*var\(--touch-target\);\s*height:\s*var\(--touch-target\)/);
+  });
+
+  it('LA-BRW-T469 Nothing is reachable only by hover: a control a hover reveals is always shown on a coarse pointer, and every tooltip also shows on keyboard focus', () => {
+    const rules = styleRules(CSS);
+    const coarse = (r: { within: string[] }) => r.within.some((w) => /pointer:\s*coarse/.test(w));
+    const keyOf = (s: string) => { const classes = s.replace(/:[\w-]+(\([^)]*\))?/g, '').match(/\.[\w-]+/g); return classes?.[classes.length - 1] ?? null; };
+    // Rules a hover turns on: they show something (opacity 1, visible, or a display other than none).
+    const reveals = rules
+      .filter((r) => !coarse(r) && /:hover/.test(r.selector) && /opacity:\s*1\b|visibility:\s*visible|display:\s*(?!none)/.test(r.body))
+      .flatMap((r) => topLevel(r.selector).filter((s) => s.includes(':hover')).map((s) => ({ key: keyOf(s.trim().split(/\s+/).pop()!), s: s.trim(), line: r.line })));
+    const shownOnTouch = new Set(rules.filter((r) => coarse(r) && /opacity:\s*1\b|visibility:\s*visible/.test(r.body)).flatMap((r) => topLevel(r.selector).map((s) => keyOf(s.trim()))));
+    const hoverOnly = reveals.filter(({ key }) => key && !shownOnTouch.has(key)).map(({ s, line }) => `app/src/styles.css:${line}: ${s}`);
+    expect(hoverOnly).toEqual([]);
+    // Tooltips name a control that already has its accessible name; they open on focus as well as hover.
+    const tooltip = readFileSync(join(SRC, 'shell', 'Tooltip.tsx'), 'utf8');
+    expect(tooltip).toMatch(/onFocus/);
+  });
+
+  it('LA-BRW-T470 No page scrolls sideways at 320 px: no fixed width wider than the phone\'s content, tables and code scroll in their own box, and IDs wrap', async () => {
+    // What jsdom cannot do: lay pages out. So this reads the stylesheet for any fixed least width over 288 px (320 px less
+    // the 16 px gutters) outside a wide-screen media query, and renders the main pages on a phone to check that every
+    // table and code block sits in a box that scrolls sideways and no inline style fixes a width over 288 px.
+    // The real layout at 320 px and 375 px is checked in a browser (notes/mobile-design.md).
+    const rules = styleRules(CSS);
+    const wideOnly = (r: { within: string[] }) => r.within.some((w) => /min-width:\s*\d+px/.test(w));
+    const tooWide = rules
+      .filter((r) => !wideOnly(r))
+      .flatMap((r) => {
+        const fixed = [...r.body.matchAll(/(?:^|;)\s*(min-width|width|flex-basis)\s*:\s*(\d+)px/g)].map((m) => Number(m[2]));
+        const mins = [...r.body.matchAll(/minmax\(\s*(\d+)px/g)].map((m) => Number(m[1]));
+        const floors = /max-width:/.test(r.body) ? [] : [...r.body.matchAll(/(?:^|;)\s*width\s*:\s*max\([^;]*?(\d+)px/g)].map((m) => Number(m[1]));
+        return [...fixed, ...mins, ...floors].some((n) => n > 288) ? [`app/src/styles.css:${r.line}: ${r.selector}`] : [];
+      });
+    expect(tooWide).toEqual([]);
+    // Tables and code blocks scroll in their own box.
+    expect(CSS).toMatch(/\.markdown table \{[^}]*display:\s*block;[^}]*overflow-x:\s*auto/);
+    expect(CSS).toMatch(/\.table-scroll \{[^}]*overflow-x:\s*auto/);
+    expect(CSS).toMatch(/\.markdown pre, \.spec-body pre \{[^}]*overflow-x:\s*auto/);
+    expect(CSS).toMatch(/\.record-id[^{]*\{[^}]*overflow-wrap:\s*anywhere/);
+    vi.stubGlobal('matchMedia', (query: string) => ({ matches: true, media: query, addEventListener: () => {}, removeEventListener: () => {} }));
+    for (const path of ['/specs/DM', '/specs/DM/DM-SHOP', '/records/DM-SHOP-UC01', '/records/DM-SHOP-C01', '/checks', '/format']) {
+      await openApp(path);
+      await screen.findAllByRole('heading', { level: 1 });
+      const loose = [...document.querySelectorAll('table')].filter((t) => !t.closest('.table-scroll') && !t.closest('.markdown') && !t.matches('.erd-key-table, .shortcut-table'));
+      expect(loose.map((t) => `${path}: ${t.outerHTML.slice(0, 120)}`)).toEqual([]);
+      const code = [...document.querySelectorAll('pre')].filter((p) => !p.closest('.markdown, .spec-body'));
+      expect(code.map((p) => `${path}: ${p.outerHTML.slice(0, 120)}`)).toEqual([]);
+      const fixed = [...document.querySelectorAll<HTMLElement>('[style]')].filter((el) => /(?:^|;)\s*(?:min-)?width:\s*(\d{3,})px/.test(el.getAttribute('style') ?? '') && Number(/(\d{3,})px/.exec(el.getAttribute('style')!)![1]) > 288);
+      expect(fixed.map((el) => `${path}: ${el.outerHTML.slice(0, 120)}`)).toEqual([]);
+    }
   });
 });

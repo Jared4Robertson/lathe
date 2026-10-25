@@ -1,4 +1,10 @@
--- Work to do: once a domain has capabilities, each of its use cases sits in one of them.
+-- Once a domain has capabilities, each of its use cases sits in one of them.
+--
+-- A use case left directly under the domain is missing from the domain's use case index. Make one of the
+-- domain's capabilities its `parent`; its ID does not change. A domain with no capabilities is not reported.
+--
+-- severity: warning
+-- kinds: use_case capability
 SELECT 'warning' AS severity, 'use-case-outside-capability' AS "check", u.id AS record,
        'Use case ' || u.id || ' sits directly under domain ' || u.parent
        || ', which has capabilities; move it under the capability it belongs to.' AS message

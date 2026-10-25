@@ -20,6 +20,7 @@ import { useCommand } from '../shell/commands';
 import { Tooltip } from '../shell/Tooltip';
 import { Icon } from '../components/icons';
 import { NodeLink, type GraphInfo } from './panel';
+import { TapCard, useTapToOpen } from './touch';
 import {
   FILE_KIND,
   NO_FILTERS,
@@ -742,6 +743,10 @@ function GraphCanvas({ index, graph, onNavigate, onToggle }: {
     if (fromKeyboard) refocus.current = id;
     onNavigate(id);
   };
+  // By touch, a first tap selects a node and a second tap (or the card's Open chip) opens it.
+  const canOpen = useCallback((id: string) => !!placed && !id.startsWith('file:') && !id.startsWith(LEAVING) && id !== placed.graph.focus, [placed]);
+  const tap = useTapToOpen(onNavigate, canOpen, wrapper, graph.focus);
+  const armedNode = tap.armed ? placed?.graph.nodes.find((n) => n.id === tap.armed) : undefined;
 
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     if (order.length === 0) return;
@@ -786,13 +791,22 @@ function GraphCanvas({ index, graph, onNavigate, onToggle }: {
         nodesConnectable={false}
         elementsSelectable={false}
         edgesFocusable={false}
-        onNodeClick={(_, n) => activate(n.id, false)}
+        onNodeClick={(e, n) => tap.onNodeClick(e, n.id)}
+        onPaneClick={tap.clear}
         minZoom={0.1}
         proOptions={{ hideAttribution: true }}
       >
         <Background gap={24} size={1} />
         <Controls showInteractive={false} />
       </ReactFlow>
+      {armedNode && (
+        <TapCard
+          kind={armedNode.group ? 'Group' : kindLabel(index, armedNode.kind)}
+          name={armedNode.title}
+          onOpen={tap.openArmed}
+          onDismiss={tap.clear}
+        />
+      )}
     </div>
   );
 }

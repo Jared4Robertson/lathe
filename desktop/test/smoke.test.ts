@@ -32,7 +32,7 @@ beforeAll(() => {
 afterAll(() => rmSync(temp, { recursive: true, force: true }));
 
 describe.skipIf(process.platform !== 'darwin')('LA-DSK-T06 The desktop app opens a product folder in a window, bridges only window.latheDesktop and runs a menu command', () => {
-  it('shows the product, answers GET /api/spec, names the window and runs Help › Keyboard Shortcuts', async () => {
+  it('shows the product, answers GET /api/spec, names the window, draws its own title bar and runs Help › Keyboard Shortcuts', async () => {
     const resultFile = path.join(temp, 'result.json');
     const env: NodeJS.ProcessEnv = { ...process.env, LATHE_DESKTOP_SMOKE: resultFile, LATHE_DESKTOP_USER_DATA: path.join(temp, 'user-data') };
     delete env.ELECTRON_RUN_AS_NODE;
@@ -53,7 +53,14 @@ describe.skipIf(process.platform !== 'darwin')('LA-DSK-T06 The desktop app opens
     expect(result.apiSpecStatus).toBe(200);
     expect(result.text).toContain('Smoke Shop');
     expect(result.title).toBe(`Smoke Shop — ${product.replace(os.homedir(), '~')}`);
-    expect(result.bridge).toEqual({ keys: ['isDesktop', 'onCommand', 'platform'], isDesktop: true, hasOnCommand: true, nodeInPage: false });
+    expect(result.bridge).toEqual({ keys: ['isDesktop', 'onCommand', 'platform', 'setChrome'], isDesktop: true, hasOnCommand: true, nodeInPage: false });
+    // No system title bar: the app draws its own, and its theme's colors reach the window.
+    expect(result.titleBarStyle).toBe('hidden');
+    expect(result.titleBar?.height).toBe(38);
+    expect(result.titleBar?.center).toMatch(/^Lathe/);
+    expect(result.titleBar?.buttons).toEqual(['Go back', 'Go forward', expect.stringMatching(/^Lathe.*Quick find$/), 'Show or hide the navigation', 'Show or hide the inspector']);
+    expect(result.chrome?.background).toMatch(/^#[0-9A-F]{6}$/);
+    expect(result.chrome?.foreground).toMatch(/^#[0-9A-F]{6}$/);
     expect(result.shortcutsOpened).toBe(true);
     const recent = JSON.parse(readFileSync(path.join(temp, 'user-data', 'recent-folders.json'), 'utf8'));
     expect(recent).toEqual([product]);
