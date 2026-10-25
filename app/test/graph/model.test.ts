@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { canTrace, fileNodeId, HIERARCHY_TIERS, neighbourhood, nextTrail, sameTierCycle, tierOf, traceChain, type Filters } from '../../src/graph/model';
+import { canTrace, fileNodeId, neighbourhood, nextTrail, TRACE_COLUMNS, traceChain, traceColumn, type Filters } from '../../src/graph/model';
 import { indexWorkspace } from '../../src/specs/data';
-import { layoutNeighbourhood, NODE_HEIGHT, NODE_WIDTH } from '../../src/graph/layout';
+import { layeredGraph, layoutNeighbourhood, NODE_HEIGHT, NODE_WIDTH } from '../../src/graph/layout';
 import { testIndex, testWorkspace } from './workspace';
 
 const ids = (n: { nodes: { id: string }[] }) => n.nodes.map((x) => x.id).sort();
@@ -104,11 +104,12 @@ describe('graph neighbourhood', () => {
       expect(overlap).toBe(false);
     }
     expect((await layoutNeighbourhood(neighbourhood(index, 'P-D-UC01-R01', 2))).positions).toEqual(positions);
-    // Re-centring on a neighbour keeps the order within a tier.
+    // Re-centring on a neighbour keeps the order within a column.
     const fromView = (await layoutNeighbourhood(neighbourhood(index, 'P-D-V01', 2))).positions;
-    const xOrder = (ps: Map<string, { x: number }>, list: string[]) => [...list].sort((a, b) => ps.get(a)!.x - ps.get(b)!.x);
-    const design = ['P-D-C01', 'P-D-V01'];
-    expect(xOrder(fromView, design)).toEqual(xOrder(positions, design));
+    const yOrder = (ps: Map<string, { y: number }>, list: string[]) => [...list].sort((a, b) => ps.get(a)!.y - ps.get(b)!.y);
+    const siblings = ['P-D-UC01', 'P-D-V01', 'P-D-E01', 'P-D-C01', 'P-D-T01'];
+    expect(new Set(siblings.map((id) => positions.get(id)!.x)).size).toBe(1);
+    expect(yOrder(fromView, siblings)).toEqual(yOrder(positions, siblings));
     // A single record sits at the centre on its own.
     expect((await layoutNeighbourhood(traceChain(index, 'P-D-DR02'))).positions.get('P-D-DR02')).toEqual({ x: -NODE_WIDTH / 2, y: -NODE_HEIGHT / 2 });
   });
@@ -121,45 +122,42 @@ describe('graph neighbourhood', () => {
     expect(nextTrail(['1', '2', '3'], '4', 3)).toEqual(['2', '3', '4']);
   });
 
-  it('LA-BRW-T63 Each kind gets the tier of its level in the hierarchy, and trace mode has its own columns', () => {
-    const tier = (kind: string) => tierOf(index, kind, 'hierarchy');
-    expect(['product', 'domain', 'aggregate', 'domain_rule', 'flow', 'test'].map(tier)).toEqual([0, 1, 2, 3, 4, 5]);
-    expect(tier('use_case')).toBe(tier('aggregate'));
-    expect(tier('requirement')).toBe(tier('domain_rule'));
-    for (const k of ['view', 'endpoint', 'component']) expect(tier(k)).toBe(tier('flow'));
-    // Every kind sits below its parent kinds, except a question, which sits with what it is about.
-    for (const k of index.workspace.kinds.filter((k) => k.kind !== 'question')) {
-      for (const parent of k.parent_kinds) expect(tier(parent)).toBeLessThan(tier(k.kind));
-    }
-    // Trace columns, left to right.
-    const trace = (kind: string) => tierOf(index, kind, 'trace');
-    expect(['requirement', 'view', 'component', 'test', 'file'].map(trace)).toEqual([0, 1, 2, 3, 4]);
-    expect(trace('domain_rule')).toBe(0);
-    expect(trace('flow')).toBe(trace('endpoint'));
-    // A kind a product adds goes one tier below its highest parent.
-    const base = testWorkspace();
-    const extra = indexWorkspace({ ...base, kinds: [...base.kinds, { kind: 'scenario', label: 'Scenario', stage: 'define', parent_kinds: ['use_case'], required_fields: [], obligation: false, proof_only: false, description: '' }] });
-    expect(tierOf(extra, 'scenario', 'hierarchy')).toBe(HIERARCHY_TIERS.use_case + 1);
-    // Nodes carry their tier.
-    expect(neighbourhood(index, 'P-D-UC01-R01', 1).nodes.find((x) => x.id === 'P-D-T01')!.tier).toBe(5);
+  it('LA-BRW-T63 Columns follow the parent/child tree around the focus, and trace mode has its own columns', () => {
+    const n = neighbourhood(index, 'P-D-UC01-R01', 2);
+    const column = new Map(n.nodes.map((x) => [x.id, x.column]));
+    // Ancestors one column each to the left, the leftmost column is 0.
+    expect(['P-D', 'P-D/use_case', 'P-D-UC01', 'P-D-UC01-R01'].map((id) => column.get(id))).toEqual([0, 1, 2, 3]);
+    // The domain's other children sit with the use case, whatever their kind (their tree position wins over the cross-link).
+    for (const id of ['P-D-C01', 'P-D-T01', 'P-D-V01', 'P-D-E01']) expect(column.get(id)).toBe(column.get('P-D-UC01'));
+    for (const id of ['P-D/component', 'P-D/test', 'P-D/view', 'P-D/endpoint']) expect(column.get(id)).toBe(column.get('P-D/use_case'));
+    // Every node's parent line runs from one column to the next.
+    for (const e of n.edges.filter((e) => e.relation === 'parent')) expect(column.get(e.target)).toBe(column.get(e.source)! + 1);
+    // Trace columns, left to right; a kind a product adds goes with the components.
+    expect(['requirement', 'view', 'component', 'test', 'file'].map(traceColumn)).toEqual([0, 1, 2, 3, 4]);
+    expect(traceColumn('domain_rule')).toBe(0);
+    expect(traceColumn('flow')).toBe(traceColumn('endpoint'));
+    expect(traceColumn('scenario')).toBe(TRACE_COLUMNS.component);
+    const t = traceChain(index, 'P-D-UC01-R01');
+    for (const node of t.nodes) expect(node.column).toBe(traceColumn(node.kind));
   });
 
-  it('LA-BRW-T64 The graph reads left to right by tier, and so does a trace', async () => {
+  it('LA-BRW-T64 The graph reads left to right by column, and so does a trace', async () => {
     const n = neighbourhood(index, 'P-D-UC01-R01', 2);
     const { positions } = await layoutNeighbourhood(n);
     const col = (id: string) => positions.get(id)!.x;
-    // One column per tier, columns in tier order.
+    // One x per column, columns in order.
     const columns = new Map<number, Set<number>>();
-    for (const node of n.nodes) columns.set(node.tier, (columns.get(node.tier) ?? new Set()).add(col(node.id)));
+    for (const node of n.nodes) columns.set(node.column, (columns.get(node.column) ?? new Set()).add(col(node.id)));
     for (const xs of columns.values()) expect(xs.size).toBe(1);
-    const tiers = [...columns.keys()].sort((a, b) => a - b);
-    for (let i = 1; i < tiers.length; i++) expect([...columns.get(tiers[i])!][0]).toBeGreaterThan([...columns.get(tiers[i - 1])!][0]);
-    // Ancestors to the left of the focus, design records and tests to its right.
-    expect(col('P-D')).toBeLessThan(col('P-D-UC01'));
+    const order = [...columns.keys()].sort((a, b) => a - b);
+    for (let i = 1; i < order.length; i++) expect([...columns.get(order[i])!][0]).toBeGreaterThan([...columns.get(order[i - 1])!][0]);
+    // Ancestors to the left of the focus.
+    expect(col('P-D')).toBeLessThan(col('P-D/use_case'));
+    expect(col('P-D/use_case')).toBeLessThan(col('P-D-UC01'));
     expect(col('P-D-UC01')).toBeLessThan(col('P-D-UC01-R01'));
-    expect(col('P-D-UC01-R01')).toBeLessThan(col('P-D-C01'));
-    expect(col('P-D-C01')).toBeLessThan(col('P-D-T01'));
-    expect(col('P-D-DR01')).toBe(col('P-D-UC01-R01'));
+    // At depth 1 the domain is not shown, so what satisfies, fulfills and proves the requirement sits one column to its right.
+    const near = (await layoutNeighbourhood(neighbourhood(index, 'P-D-UC01-R01', 1))).positions;
+    for (const id of ['P-D-C01', 'P-D-T01', 'P-D-V01']) expect(near.get(id)!.x).toBeGreaterThan(near.get('P-D-UC01-R01')!.x);
 
     const traced = (await layoutNeighbourhood(traceChain(index, 'P-D-UC01-R01'))).positions;
     const x = (id: string) => traced.get(id)!.x;
@@ -170,22 +168,21 @@ describe('graph neighbourhood', () => {
     expect(x('file:src/thing.ts')).toBe(x('file:test/thing.test.ts'));
   });
 
-  it('LA-BRW-T65 A cycle among records in one tier falls back to a radial layout that names the cycle', async () => {
+  it('LA-BRW-T65 Links between records in one column, even in a ring, are drawn but never stop the layout in columns', async () => {
     const w = testWorkspace();
     w.records.push({ ...w.records.find((r) => r.id === 'P-D-A1')!, id: 'P-D-A2', title: 'Owner', path: 'specs/P-D-A2.md' });
     w.links.push({ source: 'P-D-A1', relation: 'relates_to', target: 'P-D-A2' }, { source: 'P-D-A2', relation: 'relates_to', target: 'P-D-A1' });
-    const n = neighbourhood(indexWorkspace(w), 'P-D-A1', 1);
-    expect(sameTierCycle(n)).toEqual(['P-D-A1', 'P-D-A2']);
+    const n = neighbourhood(indexWorkspace(w), 'P-D-A1', 2);
+    const column = new Map(n.nodes.map((x) => [x.id, x.column]));
+    // The two aggregates are siblings, so they share a column, and both links are drawn.
+    expect(column.get('P-D-A2')).toBe(column.get('P-D-A1'));
+    expect(n.edges.filter((e) => e.relation === 'relates_to')).toHaveLength(2);
+    // Neither link reaches the layout, which stays in columns.
+    const pairs = (layeredGraph(n).edges ?? []).map((e) => `${e.sources[0]}>${e.targets[0]}`);
+    expect(pairs.some((p) => p.includes('P-D-A1') && p.includes('P-D-A2'))).toBe(false);
     const placed = await layoutNeighbourhood(n);
-    expect(placed.layout).toBe('radial');
-    expect(placed.cycle).toEqual(['P-D-A1', 'P-D-A2']);
-    expect(placed.positions.get('P-D-A1')).toEqual({ x: -NODE_WIDTH / 2, y: -NODE_HEIGHT / 2 });
-    // One link between aggregates is not a cycle: still tiers.
-    w.links.pop();
-    const n2 = neighbourhood(indexWorkspace(w), 'P-D-A1', 1);
-    expect(sameTierCycle(n2)).toBeNull();
-    expect((await layoutNeighbourhood(n2)).layout).toBe('layered');
-    // Links across tiers never count as a cycle.
-    expect(sameTierCycle(neighbourhood(index, 'P-D-UC01-R01', 2))).toBeNull();
+    expect(placed.layout).toBe('layered');
+    expect(placed.cycle).toBeNull();
+    expect(placed.positions.get('P-D-A2')!.x).toBe(placed.positions.get('P-D-A1')!.x);
   });
 });

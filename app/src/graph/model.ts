@@ -22,13 +22,18 @@ export interface GraphNode {
   title: string;
   /** 'define', 'design', '' for structural kinds, 'file', or 'group'. */
   stage: string;
-  /** The tier the layout puts this node in (see tierOf); a group sits half a tier before its members. */
-  tier: number;
+  /**
+   * The column the layout puts this node in, counted from 0 at the left. In the hierarchy it is the
+   * node's depth in the parent/child tree (see treeColumns); in trace mode it comes from TRACE_COLUMNS.
+   */
+  column: number;
+  /** The node's place within its column, from the top (0 first). */
+  row: number;
   /** Set on a group node: its parent record, how many members it has, and whether it is open. */
   group?: { parent: string; count: number; open: boolean };
 }
 
-/** The hierarchy reads left to right by record level; trace mode reads left to right along the chain. */
+/** The hierarchy reads left to right by depth in the parent/child tree; trace mode reads left to right along the chain. */
 export type GraphMode = 'hierarchy' | 'trace';
 
 export interface GraphEdge {
@@ -93,38 +98,12 @@ function sortNodes(index: SpecIndex, nodes: GraphNode[]): GraphNode[] {
 
 function recordNode(index: SpecIndex, id: string, distance: number, mode: GraphMode): GraphNode {
   const r = index.byId.get(id)!;
-  return { id, distance, kind: r.kind, title: r.title, stage: stageOf(index, r.kind), tier: tierOf(index, r.kind, mode) };
+  const column = mode === 'trace' ? traceColumn(r.kind) : 0;
+  return { id, distance, kind: r.kind, title: r.title, stage: stageOf(index, r.kind), column, row: 0 };
 }
 
-/**
- * Tiers of the hierarchy, left to right: product, domain, aggregates and use cases, domain rules
- * and requirements, design records, tests. Open questions sit with the records they are about.
- * A pattern sits with the use cases (so a use case's `follows` link is a cross-link within the
- * tier, drawn but not shaping the layout), and its rules sit under it with the requirements.
- */
-export const HIERARCHY_TIERS: Record<string, number> = {
-  product: 0,
-  domain: 1,
-  fitness: 1,
-  aggregate: 2,
-  use_case: 2,
-  question: 2,
-  pattern: 2,
-  domain_rule: 3,
-  requirement: 3,
-  pattern_rule: 3,
-  flow: 4,
-  view: 4,
-  endpoint: 4,
-  component: 4,
-  // A flow's steps sit one tier to its right, under it (through a group when the flow has more than a handful).
-  flow_step: 5,
-  test: 5,
-  [FILE_KIND]: 6,
-};
-
 /** Columns of a trace, left to right: the rule, what fulfills it, components, tests, files. */
-export const TRACE_TIERS: Record<string, number> = {
+export const TRACE_COLUMNS: Record<string, number> = {
   requirement: 0,
   domain_rule: 0,
   pattern_rule: 0,
@@ -138,53 +117,107 @@ export const TRACE_TIERS: Record<string, number> = {
   [FILE_KIND]: 4,
 };
 
+/** The trace column of a kind; a kind the table does not know (one a product adds) goes with the components. */
+export const traceColumn = (kind: string) => TRACE_COLUMNS[kind] ?? TRACE_COLUMNS.component;
+
 /**
- * The tier a kind is drawn in. A kind the tables do not know (one a product adds to the
- * meta-model) goes one tier below its highest possible parent, or just below the domain.
+ * The column of every node in the hierarchy: its depth in the parent/child tree around the focus.
+ * The tree is made of the parent lines shown (record to group, group to member, or record to child),
+ * so every node with the same parent is in the same column, whatever its kind, and a group sits in
+ * its own column between its parent and its members. The focus's tree is placed first, the focus's
+ * ancestors to its left and its descendants to its right. A record reached only by a cross-link
+ * (satisfies, proves, uses and the rest) goes one column after the node it was reached from on the
+ * shortest path from the focus, and the rest of its own tree is placed around it. A record in a tree
+ * that is already placed keeps its tree position. Columns are shifted so the leftmost is 0.
+ *
+ * `order` lists the nodes nearest the focus first (the walk's order); `via` is the node each was reached from.
  */
-export function tierOf(index: SpecIndex, kind: string, mode: GraphMode, seen = new Set<string>()): number {
-  const table = mode === 'trace' ? TRACE_TIERS : HIERARCHY_TIERS;
-  if (kind in table) return table[kind];
-  if (mode === 'trace') return TRACE_TIERS.component;
-  const parents = (index.kinds.get(kind)?.parent_kinds ?? []).filter((p) => !seen.has(p));
-  if (parents.length === 0) return HIERARCHY_TIERS.aggregate;
-  seen.add(kind);
-  return Math.min(...parents.map((p) => tierOf(index, p, mode, seen))) + 1;
+export function treeColumns(
+  focus: string,
+  order: readonly string[],
+  edges: readonly GraphEdge[],
+  via: ReadonlyMap<string, string>,
+): Map<string, number> {
+  const parentOf = new Map<string, string>();
+  const childrenOf = new Map<string, string[]>();
+  for (const e of edges) {
+    if (e.relation !== PARENT) continue;
+    parentOf.set(e.target, e.source);
+    childrenOf.set(e.source, [...(childrenOf.get(e.source) ?? []), e.target]);
+  }
+  const column = new Map<string, number>();
+  const placeTree = (anchor: string, at: number) => {
+    column.set(anchor, at);
+    const queue = [anchor];
+    while (queue.length > 0) {
+      const id = queue.shift()!;
+      const c = column.get(id)!;
+      const near: [string, number][] = (childrenOf.get(id) ?? []).map((k) => [k, c + 1]);
+      const parent = parentOf.get(id);
+      if (parent !== undefined) near.push([parent, c - 1]);
+      for (const [next, nc] of near) {
+        if (column.has(next)) continue;
+        column.set(next, nc);
+        queue.push(next);
+      }
+    }
+  };
+  placeTree(focus, 0);
+  for (const id of order) {
+    if (column.has(id)) continue;
+    const from = via.get(id);
+    placeTree(id, (from !== undefined ? column.get(from) ?? 0 : 0) + 1);
+  }
+  const min = Math.min(...column.values());
+  for (const [id, c] of column) column.set(id, c - min);
+  return column;
 }
 
 /**
- * A cycle among links between records in the same tier (for example aggregates that relate to
- * each other in a ring), as the IDs around it, or null. Such a graph is not drawn in tiers.
+ * The place of each hierarchy node within its column, top to bottom: by the place of the node that
+ * put it there (its tree parent, or the record it was reached from when that sits to its left), then
+ * kind order, groups before records, then ID. So a parent's children stay together, in the same
+ * order as their parents, and re-centring is predictable.
  */
-export function sameTierCycle(n: Neighbourhood): string[] | null {
-  const tier = new Map(n.nodes.map((x) => [x.id, x.tier]));
-  const next = new Map<string, string[]>();
-  for (const e of n.edges) {
-    if (e.source === e.target || tier.get(e.source) !== tier.get(e.target)) continue;
-    next.set(e.source, [...(next.get(e.source) ?? []), e.target]);
-  }
-  const state = new Map<string, 'open' | 'done'>();
-  const path: string[] = [];
-  const visit = (id: string): string[] | null => {
-    state.set(id, 'open');
-    path.push(id);
-    for (const to of next.get(id) ?? []) {
-      if (state.get(to) === 'open') return path.slice(path.indexOf(to));
-      if (!state.has(to)) {
-        const found = visit(to);
-        if (found) return found;
-      }
-    }
-    path.pop();
-    state.set(id, 'done');
-    return null;
+function rowsByPlacer(index: SpecIndex, nodes: GraphNode[], edges: readonly GraphEdge[], via: ReadonlyMap<string, string>): Map<string, number> {
+  const kindRank = kindOrder(index);
+  const parentOf = new Map(edges.filter((e) => e.relation === PARENT).map((e) => [e.target, e.source]));
+  const columnOf = new Map(nodes.map((n) => [n.id, n.column]));
+  const placer = (n: GraphNode) => {
+    const parent = parentOf.get(n.id);
+    if (parent !== undefined) return parent;
+    const from = via.get(n.id);
+    return from !== undefined && (columnOf.get(from) ?? Infinity) < n.column ? from : undefined;
   };
-  for (const node of n.nodes) {
-    if (state.has(node.id)) continue;
-    const found = visit(node.id);
-    if (found) return found;
+  const row = new Map<string, number>();
+  const columns = [...new Set(nodes.map((n) => n.column))].sort((a, b) => a - b);
+  for (const c of columns) {
+    const rank = (n: GraphNode) => {
+      const p = placer(n);
+      return p === undefined ? -1 : row.get(p) ?? -1;
+    };
+    const inColumn = nodes.filter((n) => n.column === c).sort(
+      (a, b) =>
+        rank(a) - rank(b) ||
+        kindRank(a.kind) - kindRank(b.kind) ||
+        Number(!a.group) - Number(!b.group) ||
+        byIdOrder(a, b),
+    );
+    inColumn.forEach((n, i) => row.set(n.id, i));
   }
-  return null;
+  return row;
+}
+
+/** Trace rows: the order the chain's nodes are sorted in (distance, stage, kind, ID), counted within each column. */
+function rowsInOrder(nodes: GraphNode[]): Map<string, number> {
+  const next = new Map<number, number>();
+  const row = new Map<string, number>();
+  for (const n of nodes) {
+    const r = next.get(n.column) ?? 0;
+    row.set(n.id, r);
+    next.set(n.column, r + 1);
+  }
+  return row;
 }
 
 /**
@@ -289,14 +322,19 @@ export function neighbourhood(
     else if (half.has(record.parent) && !isGrouped(index, record.parent)) addParentEdge(record.parent, id);
   }
 
-  const nodes = [...half].map(([id, h]) =>
-    parseGroupId(id) ? groupNode(index, id, Math.ceil(h / 2), isOpen(id)) : recordNode(index, id, Math.ceil(h / 2), 'hierarchy'),
-  );
+  const edgeList = [...edges.values()].sort((a, b) => a.id.localeCompare(b.id));
+  const walkOrder = [...half].sort(([a, ha], [b, hb]) => ha - hb || a.localeCompare(b, 'en', { numeric: true })).map(([id]) => id);
+  const columns = treeColumns(focus, walkOrder, edgeList, via);
+  const nodes = [...half].map(([id, h]) => {
+    const node = parseGroupId(id) ? groupNode(index, id, Math.ceil(h / 2), isOpen(id)) : recordNode(index, id, Math.ceil(h / 2), 'hierarchy');
+    return { ...node, column: columns.get(id)! };
+  });
+  const rows = rowsByPlacer(index, nodes, edgeList, via);
   return {
     focus,
     mode: 'hierarchy',
-    nodes: sortNodes(index, nodes),
-    edges: [...edges.values()].sort((a, b) => a.id.localeCompare(b.id)),
+    nodes: sortNodes(index, nodes.map((node) => ({ ...node, row: rows.get(node.id)! }))),
+    edges: edgeList,
     via,
   };
 }
@@ -371,7 +409,8 @@ function groupNode(index: SpecIndex, id: string, distance: number, open: boolean
     kind: g.kind,
     title: groupLabel(index, id),
     stage: GROUP_STAGE,
-    tier: tierOf(index, g.kind, 'hierarchy') - 0.5,
+    column: 0,
+    row: 0,
     group: { parent: g.parent, count: groupMembers(index, id).length, open },
   };
 }
@@ -436,7 +475,7 @@ export function traceChain(index: SpecIndex, focus: string, filters: Filters = N
       if (!path) continue;
       const id = fileNodeId(path);
       if (!nodes.has(id)) {
-        nodes.set(id, { id, distance: node.distance + 1, kind: FILE_KIND, title: path, stage: 'file', tier: TRACE_TIERS[FILE_KIND] });
+        nodes.set(id, { id, distance: node.distance + 1, kind: FILE_KIND, title: path, stage: 'file', column: TRACE_COLUMNS[FILE_KIND], row: 0 });
         via.set(id, node.id);
       }
       const e = { source: node.id, relation: NAMES, target: id };
@@ -444,10 +483,12 @@ export function traceChain(index: SpecIndex, focus: string, filters: Filters = N
     }
   }
 
+  const sorted = sortNodes(index, [...nodes.values()]);
+  const rows = rowsInOrder(sorted);
   return {
     focus,
     mode: 'trace',
-    nodes: sortNodes(index, [...nodes.values()]),
+    nodes: sorted.map((node) => ({ ...node, row: rows.get(node.id)! })),
     edges: [...edges.values()].sort((a, b) => a.id.localeCompare(b.id)),
     via,
   };
