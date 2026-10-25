@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { graphMap } from '../../src/graph/map';
 import { labelWidth, metaWidth, titleWidth } from '../../src/graph/text';
-import { HEADER, HEADER_SHARE_MAX, HEADER_SHARE_MIN, HEADER_WIDTH_SHARE, headerShare, leafTextScale, LEAF_AREA, layoutNested, NESTED_ASPECT, nestedMap, nestedTextScale, squarify, type NestedMap } from '../../src/graph/nested';
+import { fitScale, headerRoom, HEADER_SHARE_MAX, HEADER_SHARE_MIN, headerShare, LEAF_AREA, layoutNested, LEVEL_FIT_SHARE, levelScale, NESTED_ASPECT, nestedMap, squarify, type NestedMap } from '../../src/graph/nested';
 import { indexWorkspace } from '../../src/specs/data';
 import { groupedWorkspace, manyOfOneKindWorkspace, testIndex } from './workspace';
 
@@ -29,7 +29,6 @@ describe('the Nested map', () => {
         expect(n.w).toBeGreaterThanOrEqual(0);
         expect(n.h).toBeGreaterThanOrEqual(0);
         if (n.children.length === 0) { expect(n.header).toBe(0); continue; }
-        expect(n.header).toBeCloseTo(HEADER * n.text, 6);
         const kids = n.children.map((c) => map.nodes.get(c)!);
         for (const k of kids) {
           expect(k.level).toBe(n.level + 1);
@@ -96,39 +95,49 @@ describe('the Nested map', () => {
     expect(squarify([], r)).toEqual([]);
   });
 
-  it("LA-EXP-T187 A box's text is in proportion to it, fixed by the map: a leaf's title wraps at its spaces to fit, a parent's header band within its share of its height", () => {
+  it("LA-EXP-T187 One text scale per nesting level, fixed by the map: labels wrap on whole words, and a box whose label does not fit is plain", () => {
     const label = { title: 'Walk the model as a graph', meta: 'Use case · LA-EXP-UC03' };
     const oneLine = labelWidth(label);
-    // A leaf as wide as its label on one line, two lines tall: about scale 1, never more than fits.
-    const leaf = leafTextScale({ w: oneLine + 6, h: 44 }, label);
+    // A box as wide as its label on one line, two lines tall: about scale 1, never more than fits.
+    const leaf = fitScale({ w: oneLine + 6, h: 44 }, label);
     expect(leaf).toBeGreaterThan(0.95);
     expect(leaf).toBeLessThanOrEqual(1);
-    // A square leaf half as wide: the title wraps at its spaces, so its text is larger than one line would allow.
+    // A square box half as wide: the title wraps on whole words, so it holds larger text than one line would.
     const square = { w: oneLine / 2, h: oneLine / 2 };
-    const wrapped = leafTextScale(square, label);
+    const wrapped = fitScale(square, label);
     expect(wrapped).toBeGreaterThan(square.w / oneLine);
     // No word is ever wider than the box, nor any word of the kind and ID line: a word is never broken.
     expect(titleWidth('model') * wrapped).toBeLessThan(square.w);
     expect(metaWidth('LA-EXP-UC03') * wrapped).toBeLessThan(square.w);
-    // Twice the box, twice the text: in proportion to it.
-    expect(leafTextScale({ w: square.w * 2, h: square.h * 2 }, label)).toBeCloseTo(2 * wrapped, 6);
-    // A parent's header band takes at most its share of its height, 0.4 over one leaf and falling with the root of the leaves to a fifth, of its size; its label at most 0.9 of its width.
+    // A parent's label fits its header band's room: its share of the box's size, 0.4 over one leaf, falling with the root of the leaves to a fifth, and at most 0.4 of its height.
     expect(headerShare(1)).toBe(HEADER_SHARE_MAX);
     expect(headerShare(4)).toBe(0.2);
     expect(headerShare(400)).toBe(HEADER_SHARE_MIN);
-    // Square boxes: the header is its share of the box's side.
-    expect(nestedTextScale({ w: HEADER / HEADER_SHARE_MAX, h: HEADER / HEADER_SHARE_MAX }, 1, 1)).toBeCloseTo(1, 9);
-    expect(nestedTextScale({ w: HEADER / HEADER_SHARE_MIN, h: HEADER / HEADER_SHARE_MIN }, 1, 400)).toBeCloseTo(1, 9);
-    // A squat box: never more than HEADER_SHARE_MAX of its height.
-    expect(nestedTextScale({ w: 1e6, h: HEADER / HEADER_SHARE_MAX }, 1, 1)).toBeCloseTo(1, 9);
-    // A narrow one: its label within HEADER_WIDTH_SHARE of its width.
-    expect(nestedTextScale({ w: 190 / HEADER_WIDTH_SHARE, h: 1e6 }, 190, 1)).toBeCloseTo(1, 9);
-    for (const map of maps()) {
+    expect(headerRoom({ w: 100, h: 100 }, 1)).toBeCloseTo(40, 9);
+    expect(headerRoom({ w: 100, h: 100 }, 400)).toBeCloseTo(20, 9);
+    expect(headerRoom({ w: 1e6, h: 100 }, 1)).toBeCloseTo(40, 9);
+    expect(fitScale({ w: 1e6, h: 1e6 }, label, 44)).toBeLessThanOrEqual(1);
+    // A level's scale is the largest that LEVEL_FIT_SHARE of its boxes, counted by size, can hold: small boxes do not drag it down.
+    expect(LEVEL_FIT_SHARE).toBe(0.75);
+    expect(levelScale([1, 2, 3, 4].map((fit) => ({ fit, size: 1 })))).toBe(2);
+    expect(levelScale([{ fit: 0.1, size: 1 }, { fit: 2, size: 10 }])).toBe(2);
+    expect(levelScale([{ fit: 0, size: 1 }])).toBe(0);
+    for (const map of [...maps(), wide(1, 6), wide(3, 4)]) {
+      for (const level of map.byLevel) {
+        // One text scale for every box at a level.
+        for (const n of level) expect(n.text, n.id).toBe(level[0].text);
+      }
       for (const n of map.nodes.values()) {
-        if (n.children.length > 0) {
-          expect(n.header).toBeLessThanOrEqual(Math.sqrt(n.w * n.h) * headerShare(leafCount(map, n.id)) + eps);
-          expect(n.header).toBeLessThanOrEqual(n.h * HEADER_SHARE_MAX + eps);
-        }
+        if (n.children.length === 0 || !n.fits) { if (n.children.length > 0) expect(n.header, n.id).toBe(0); continue; }
+        expect(n.header).toBeGreaterThan(0);
+        expect(n.header).toBeLessThanOrEqual(headerRoom(n, leafCount(map, n.id)) + eps);
+      }
+    }
+    // At least LEVEL_FIT_SHARE of each level, counted by size, fits its scale.
+    for (const map of [...maps(), wide(1, 6), wide(3, 4)]) {
+      for (const level of map.byLevel) {
+        const size = (ns: readonly { w: number; h: number }[]) => ns.reduce((sum, n) => sum + Math.sqrt(n.w * n.h), 0);
+        if (level[0].text > 0) expect(size(level.filter((n) => map.nodes.get(n.id)!.fits))).toBeGreaterThanOrEqual(LEVEL_FIT_SHARE * size(level) - eps);
       }
     }
     // Built once per index: the same map object, whatever the focus.

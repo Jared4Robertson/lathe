@@ -1,7 +1,7 @@
 import type { SpecIndex } from '../specs/data';
 import { NODE_HEIGHT, NODE_WIDTH } from './layout';
 import type { MapNode, PlacedMap } from './map';
-import { BADGE_ROOM, hasMarks, HEX_ROOM, LABEL_PAD, labelLines, labelWidth, META_FONT, metaWidth, TITLE_FONT, titleWidth, WIDTH_MARGIN } from './text';
+import { BADGE_ROOM, hasMarks, HEX_ROOM, LABEL_PAD, labelLines, META_FONT, metaWidth, TITLE_FONT, titleWidth, WIDTH_MARGIN } from './text';
 import { treeChildren } from './tree';
 
 // The graph's Nested map (LA-EXP-DR62): the same tree as the Tree map (map.ts), one product's, the
@@ -14,28 +14,28 @@ import { treeChildren } from './tree';
 // - Each box with children has a header band with its label at the top; its children sit below it,
 //   inside a padding, squarified (Bruls, Huizing and van Wijk) without sorting, so they keep the
 //   tree's order row by row where the shapes allow.
-// - A box's text scale is fixed here, in proportion to the box (LA-EXP-DR58): its label on one
-//   line fits its width (a parent's within 0.6 of it), and a header band takes at most 0.4 of its
-//   box's height over the square root of the leaves under it (between an eighth and 0.4). The camera
-//   never changes it, and hides a label too small to read (LA-EXP-DR60).
+// - Every box at one nesting level has one text scale, fixed here (LA-EXP-DR58): the scale that
+//   three quarters of the level's boxes, counted by size, can hold their labels at, the kind and ID line and the title each
+//   wrapped on whole words, a leaf's in its height and a parent's in its header band's share. A box
+//   whose label does not fit at it is a plain shape. The camera never changes it, and hides a label
+//   too small to read (LA-EXP-DR60).
 //
 // Pure and deterministic: the same tree always gives the same map.
 
-/** A header band's height at text scale 1: the kind and ID line and the title, with their padding. */
-export const HEADER = 46;
 /** The padding inside a box around its children, and the gap between two siblings, at its text scale 1. */
 export const NEST_PAD = 8;
 export const NEST_GAP = 6;
 /**
- * How tall a header band is at most, as a share of its box's size (the square root of its area):
+ * How tall a header band may be, as a share of its box's size (the square root of its area):
  * HEADER_SHARE_MAX over the square root of the leaves under it, never more than HEADER_SHARE_MAX
  * nor less than HEADER_SHARE_MIN, so a parent of one record has room for its name and a parent of
  * hundreds does not crowd them; and never more than HEADER_SHARE_MAX of its height, so a squat box
- * keeps room for its children. A header's label takes at most HEADER_WIDTH_SHARE of its box's width.
+ * keeps room for its children.
  */
 export const HEADER_SHARE_MAX = 0.4;
 export const HEADER_SHARE_MIN = 0.2;
-export const HEADER_WIDTH_SHARE = 0.9;
+/** The share of a level's boxes, counted by size, its text scale is chosen to fit (`levelScale`). */
+export const LEVEL_FIT_SHARE = 0.75;
 export const headerShare = (leaves: number) => Math.min(HEADER_SHARE_MAX, Math.max(HEADER_SHARE_MIN, HEADER_SHARE_MAX / Math.sqrt(Math.max(1, leaves))));
 /** The map area one leaf record stands for: a little more than a Tree leaf, for the headers and padding above it. */
 export const LEAF_AREA = NODE_WIDTH * NODE_HEIGHT * 4;
@@ -43,7 +43,9 @@ export const LEAF_AREA = NODE_WIDTH * NODE_HEIGHT * 4;
 export const NESTED_ASPECT = 1.6;
 
 export interface NestedNode extends MapNode {
-  /** The header band's height, in map units: 0 for a box with no children (its label is centered in it). */
+  /** Whether its label fits it at its level's text scale (LA-EXP-DR58); when not, it is a plain shape, its name in its tooltip. */
+  fits: boolean;
+  /** The header band's height, in map units: 0 for a box with no children (its label is centered in it) or whose label does not fit. */
   header: number;
   /** Its place in the tree's order, a parent before its children: the keyboard's order. */
   order: number;
@@ -103,17 +105,6 @@ export function squarify(weights: readonly number[], r: Rect): Rect[] {
   return out;
 }
 
-/**
- * A parent's text scale in the Nested map (LA-EXP-DR58): as large as keeps its label on one line
- * within HEADER_WIDTH_SHARE of its width, and its header band within its share of its size
- * (`headerShare`, by the leaves under it) and HEADER_SHARE_MAX of its height.
- */
-export function nestedTextScale(r: Pick<Rect, 'w' | 'h'>, labelWidth: number, leaves: number): number {
-  const across = (HEADER_WIDTH_SHARE * r.w) / Math.max(1, labelWidth);
-  const down = Math.min(HEADER_SHARE_MAX * r.h, headerShare(leaves) * Math.sqrt(r.w * r.h)) / HEADER;
-  return Math.max(0, Math.min(across, down));
-}
-
 /** What a box's label says, and what it keeps room for: a domain's hexagon mark, the problem badge. */
 export interface NestedLabel { title: string; meta: string; hexagon?: boolean; marked?: boolean }
 
@@ -146,18 +137,19 @@ function wrappedHeight(label: NestedLabel, width: number): number {
   return 2 * LABEL_PAD_Y + meta * META_FONT * LINE + title * TITLE_FONT * LINE;
 }
 
+/** The width a label wraps in, at text scale 1, in a box this wide at scale `s`: inside its padding, a domain keeping room for its hexagon mark. */
+const wrapWidth = (w: number, s: number, label: NestedLabel) => w / s - 2 * LABEL_PAD - (label.hexagon ? 2 * HEX_ROOM : 0) - 4;
+
 /**
- * A leaf's text scale in the Nested map (LA-EXP-DR58): the largest at which its kind and ID line
- * and its title, each wrapped at its spaces (never inside a word), fit its width and height. A
- * leaf is a block, not a line, so a long title takes two or three lines rather than a tiny one.
+ * The largest text scale at which a box's label fits it (LA-EXP-DR58): its kind and ID line and
+ * its title, each wrapped at its spaces (never inside a word), across the box's width and within
+ * `room` of its height (a leaf's whole height; a parent's header band, at most its share). 0 when
+ * a word can never fit.
  */
-export function leafTextScale(r: Pick<Rect, 'w' | 'h'>, label: NestedLabel): number {
-  const fits = (s: number) => {
-    const width = r.w / s - 2 * LABEL_PAD - (label.hexagon ? 2 * HEX_ROOM : 0) - 4;
-    return wrappedHeight(label, width) <= r.h / s;
-  };
+export function fitScale(r: Pick<Rect, 'w' | 'h'>, label: NestedLabel, room = r.h): number {
+  const fits = (s: number) => wrappedHeight(label, wrapWidth(r.w, s, label)) <= room / s;
   let lo = 0;
-  let hi = r.h / (2 * LABEL_PAD_Y + (META_FONT + TITLE_FONT) * LINE);
+  let hi = room / (2 * LABEL_PAD_Y + (META_FONT + TITLE_FONT) * LINE);
   if (hi <= 0) return 0;
   if (fits(hi)) return hi;
   for (let i = 0; i < 40; i++) {
@@ -165,6 +157,24 @@ export function leafTextScale(r: Pick<Rect, 'w' | 'h'>, label: NestedLabel): num
     if (fits(mid)) lo = mid; else hi = mid;
   }
   return lo;
+}
+
+/** The room a parent's header band may take: its share of the box's size, by the leaves under it, and never more than HEADER_SHARE_MAX of its height. */
+export const headerRoom = (r: Pick<Rect, 'w' | 'h'>, leaves: number) => Math.min(HEADER_SHARE_MAX * r.h, headerShare(leaves) * Math.sqrt(r.w * r.h));
+
+/**
+ * One text scale for a nesting level (LA-EXP-DR58): the largest scale that LEVEL_FIT_SHARE of the
+ * level's boxes, each counted by its size (the square root of its area), can hold their labels
+ * at, so every box at the level has the same text size and most of it is labeled, its smallest
+ * boxes not dragging it down. A box whose label does not fit at it is a plain shape, its name in
+ * its tooltip. Each fit is given with its box's size.
+ */
+export function levelScale(fits: readonly { fit: number; size: number }[]): number {
+  const sorted = fits.filter((f) => f.fit > 0 && f.size > 0).sort((a, b) => b.fit - a.fit);
+  const total = sorted.reduce((sum, f) => sum + f.size, 0);
+  let covered = 0;
+  for (const f of sorted) { covered += f.size; if (covered >= LEVEL_FIT_SHARE * total - 1e-9) return f.fit; }
+  return 0;
 }
 
 /**
@@ -198,32 +208,45 @@ export function layoutNested(roots: readonly string[], childrenOf: (id: string) 
   const height = Math.sqrt((total * LEAF_AREA) / NESTED_ASPECT);
   const world = { x: 0, y: 0, w: total === 0 ? 0 : height * NESTED_ASPECT, h: total === 0 ? 0 : height };
 
-  const nodes = new Map<string, NestedNode>();
-  let order = 0;
-  /** Places a box, then its children inside it below its header band. */
-  const place = (id: string, r: Rect) => {
-    const own = kids.get(id)!;
-    const label = labelOf(id);
-    const text = own.length > 0 ? nestedTextScale(r, labelWidth(label, label), leaves.get(id)!) : leafTextScale(r, label);
-    const header = own.length > 0 ? HEADER * text : 0;
-    nodes.set(id, { id, parent: parent.get(id)!, children: own, level: level.get(id)!, x: r.x, y: r.y, w: r.w, h: r.h, text, header, order: order++ });
-    if (own.length === 0) return;
-    const pad = NEST_PAD * text;
-    const gap = NEST_GAP * text;
-    const inner = { x: r.x + pad - gap / 2, y: r.y + header - gap / 2, w: r.w - 2 * pad + gap, h: r.h - header - pad + gap };
-    const cells = squarify(own.map((c) => leaves.get(c)!), inner);
-    own.forEach((c, i) => {
-      const cell = cells[i];
-      place(c, { x: cell.x + gap / 2, y: cell.y + gap / 2, w: Math.max(0, cell.w - gap), h: Math.max(0, cell.h - gap) });
-    });
-  };
-  // Several roots share the world as one box's children would, with a root gap between them.
+  // Level by level from the roots: each level's boxes are placed, then its one text scale is
+  // chosen from what its boxes can hold, then its headers, and then the next level inside them.
+  const rects = new Map<string, Rect>();
   const rootGap = NEST_GAP * 4;
-  const cells = squarify(top.map((r) => leaves.get(r)!), { x: -rootGap / 2, y: -rootGap / 2, w: world.w + rootGap, h: world.h + rootGap });
+  const rootCells = squarify(top.map((r) => leaves.get(r)!), { x: -rootGap / 2, y: -rootGap / 2, w: world.w + rootGap, h: world.h + rootGap });
   top.forEach((r, i) => {
-    const c = cells[i];
-    place(r, top.length === 1 ? world : { x: c.x + rootGap / 2, y: c.y + rootGap / 2, w: Math.max(0, c.w - rootGap), h: Math.max(0, c.h - rootGap) });
+    const c = rootCells[i];
+    rects.set(r, top.length === 1 ? world : { x: c.x + rootGap / 2, y: c.y + rootGap / 2, w: Math.max(0, c.w - rootGap), h: Math.max(0, c.h - rootGap) });
   });
+  const nodes = new Map<string, NestedNode>();
+  for (const ids of byLevelIds) {
+    const fit = new Map(ids.map((id) => {
+      const r = rects.get(id)!;
+      const own = kids.get(id)!;
+      return [id, fitScale(r, labelOf(id), own.length > 0 ? headerRoom(r, leaves.get(id)!) : r.h)];
+    }));
+    const text = levelScale(ids.map((id) => ({ fit: fit.get(id)!, size: Math.sqrt(rects.get(id)!.w * rects.get(id)!.h) })));
+    for (const id of ids) {
+      const r = rects.get(id)!;
+      const own = kids.get(id)!;
+      const label = labelOf(id);
+      const fits = text > 0 && fit.get(id)! >= text;
+      const header = own.length > 0 && fits ? text * wrappedHeight(label, wrapWidth(r.w, text, label)) : 0;
+      nodes.set(id, { id, parent: parent.get(id)!, children: own, level: level.get(id)!, x: r.x, y: r.y, w: r.w, h: r.h, text, fits, header, order: 0 });
+      if (own.length === 0) continue;
+      const pad = NEST_PAD * text;
+      const gap = NEST_GAP * text;
+      const inner = { x: r.x + pad - gap / 2, y: r.y + Math.max(header, pad) - gap / 2, w: r.w - 2 * pad + gap, h: r.h - Math.max(header, pad) - pad + gap };
+      const cells = squarify(own.map((c) => leaves.get(c)!), inner);
+      own.forEach((c, i) => {
+        const cell = cells[i];
+        rects.set(c, { x: cell.x + gap / 2, y: cell.y + gap / 2, w: Math.max(0, cell.w - gap), h: Math.max(0, cell.h - gap) });
+      });
+    }
+  }
+  // The keyboard's order: the tree's, a parent before its children.
+  let order = 0;
+  const number = (id: string) => { nodes.get(id)!.order = order++; for (const c of kids.get(id)!) number(c); };
+  for (const r of top) number(r);
 
   return {
     view: 'nested',
