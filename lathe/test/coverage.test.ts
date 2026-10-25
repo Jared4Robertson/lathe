@@ -59,27 +59,6 @@ describe('coverage by the meta-model', () => {
     expect(extension.coverage[0].gaps).toEqual([{ id: 'EXT-D-INV02', kind: 'invariant', missing: 'proves' }]);
   });
 
-  it('LA-CHK-T43 The requirement and rule counts are kept, filled from the obligation counts', async () => {
-    const c = states.coverage[0];
-    expect(c).toMatchObject({
-      requirements: 2, requirements_satisfied: 2, requirements_built: 2, requirements_proved: 1,
-      rules: 1, rules_satisfied: 0, rules_built: 0, rules_proved: 0,
-    });
-    const workspaces = [states, extension, ...(await Promise.all(['good', 'unfinished', 'broken-links'].map((n) => loadWorkspace(fixture(n)))))];
-    for (const ws of workspaces) {
-      for (const cov of ws.coverage) {
-        const req = cov.obligations.find((o) => o.kind === 'requirement')!;
-        const rule = cov.obligations.find((o) => o.kind === 'domain_rule')!;
-        expect([cov.requirements, cov.requirements_satisfied, cov.requirements_built, cov.requirements_proved]).toEqual([req.total, req.designed, req.built, req.proved]);
-        expect([cov.rules, cov.rules_satisfied, cov.rules_built, cov.rules_proved]).toEqual([rule.total, rule.designed, rule.built, rule.proved]);
-        for (const o of cov.obligations) {
-          expect(o.built).toBeLessThanOrEqual(o.designed);
-          expect(o.proved + o.planned).toBeLessThanOrEqual(o.total);
-        }
-      }
-    }
-  });
-
   it("LA-CHK-T44 The meta-model's obligation and role columns are loaded into the workspace", async () => {
     const obligations = states.kinds.filter((k) => k.obligation).map((k) => k.kind);
     expect(obligations).toEqual(['domain_rule', 'requirement', 'pattern_rule', 'interaction_requirement']);

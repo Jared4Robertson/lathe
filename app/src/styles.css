@@ -427,8 +427,6 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 /* ---------- End of graph view ---------- */
 
 /* Coverage, fitness and evidence */
-.bar.unmeasured { grid-template-columns: 64px 1fr; }
-.bar-unknown { font: italic 0.75rem var(--body); color: var(--muted); }
 .fitness { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
 .fitness-latest { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 14px; border: 1px solid var(--rule); border-radius: 10px; background: var(--sheet); }
 .fitness-score { margin: 0; display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: baseline; }
@@ -696,7 +694,6 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 .bar-more { grid-column: 2 / -1; font: italic 0.72rem var(--body); color: var(--muted); cursor: help; }
 .test-counts { margin: 6px 0 0; font-size: 0.78rem; color: var(--muted); }
 .test-counts-label { font-weight: 600; color: var(--ink); }
-.test-counts.unmeasured { font-style: italic; }
 .test-count { font-family: var(--mono); font-size: 0.75rem; }
 .test-count.planned { font-style: italic; }
 

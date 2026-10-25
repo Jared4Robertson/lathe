@@ -1,8 +1,7 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { obligationWorkspace } from './fixtures/obligations';
 import { owedWorkspace } from './fixtures/owed-proof';
-import { main, openApp, section } from './helpers';
+import { openApp, section } from './helpers';
 
 // Proof still owed by planned tests beside the planned bar, and each domain's tests by state.
 
@@ -30,13 +29,6 @@ describe('owed proof and tests by state', () => {
     expect(more(section(/^Coverage/), 'domain_rule')?.textContent).toBe('1 more planned');
   });
 
-  it('LA-BRW-T181 When the engine does not report planned_any, nothing more is claimed', async () => {
-    await openApp('/DM', { workspace: obligationWorkspace() });
-    await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
-    expect(main().querySelector('.bar-more')).toBeNull();
-    expect(evidence('Planned')).toBe('1 of 8 obligations, by tests not written yet');
-  });
-
   it("LA-BRW-T182 Each domain's coverage shows its tests by state, on the product and domain pages", async () => {
     await openApp('/DM', { workspace: owedWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
@@ -48,23 +40,6 @@ describe('owed proof and tests by state', () => {
     const line = within(section(/^Coverage/)).getByLabelText('Tests by state');
     expect(line.textContent).toBe('Tests 1 automated, 1 manual, 1 planned');
     expect(line.querySelector('[data-state="planned"]')?.getAttribute('title')).toMatch(/does not count as proof/);
-  });
-
-  it('LA-BRW-T183 Tests the engine does not count show as not yet measured, never as zero', async () => {
-    await openApp('/DM', { workspace: owedWorkspace({ withoutTests: ['DM-PAY'] }) });
-    await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
-    expect(testsLine(card('Paying'))).toBe('Tests not yet measured');
-    expect(testsLine(card('Shopping'))).toBe('Tests 1 automated, 1 manual, 1 planned');
-    // One domain unknown makes the product's total unknown.
-    expect(evidence('Tests')).toBe('not yet measured');
-
-    // A count left out on its own is unknown on its own.
-    const ws = owedWorkspace();
-    delete (ws.coverage.find((c) => c.domain === 'DM-PAY')!.tests as Partial<typeof ws.coverage[number]['tests']>).manual;
-    await openApp('/DM', { workspace: ws });
-    await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
-    expect(testsLine(card('Paying'))).toBe('Tests 2 automated, manual not yet measured, 0 planned');
-    expect(evidence('Tests')).toBe('3 automated, manual not yet measured, 1 planned');
   });
 
   it("LA-BRW-T184 The evidence counts the product's tests by state, and planned beside proof", async () => {
