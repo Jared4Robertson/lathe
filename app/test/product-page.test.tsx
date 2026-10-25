@@ -7,7 +7,7 @@ const bars = (element: HTMLElement) =>
   [...element.querySelectorAll('.bar')].map((bar) => [...bar.children].map((c) => c.textContent).filter(Boolean).join(' '));
 
 describe('product page', () => {
-  it('LA-BRW-T03 The product page shows each domain as a card with its coverage bars and counts', async () => {
+  it('LA-TRC-T82 The product page shows each domain as a card with its coverage bars and counts', async () => {
     await openApp('/DM');
     expect(await screen.findByRole('heading', { level: 1, name: 'Demo shop' })).toBeInTheDocument();
     const cards = within(section(/^Domains/)).getAllByRole('article');
@@ -28,7 +28,7 @@ describe('product page', () => {
     ]);
   });
 
-  it('LA-BRW-T04 Coverage shows designed, built and proved on the product and domain pages', async () => {
+  it('LA-TRC-T83 Coverage shows designed, built and proved on the product and domain pages', async () => {
     await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     expect(bars(card('Shopping'))).toEqual([
@@ -49,7 +49,7 @@ describe('product page', () => {
     expect(bars(section('Coverage'))).toEqual(bars(pay));
   });
 
-  it('LA-BRW-T05 The product page lists its open questions with owners, and the problems in its records', async () => {
+  it('LA-TRC-T84 The product page lists its open questions with owners, and the problems in its records', async () => {
     await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     const questions = section(/^Open questions/);
@@ -66,7 +66,7 @@ describe('product page', () => {
     expect(main()).not.toHaveTextContent('NF-NOTE links to NF-NOTE-X9');
   });
 
-  it('LA-BRW-T06 The product page shows the latest fitness and its history apart from the evidence, or says how to add one', async () => {
+  it('LA-TRC-T85 The product page shows the latest fitness and its history apart from the evidence, or says how to add one', async () => {
     await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     const fitness = section('Fitness');
@@ -104,7 +104,7 @@ describe('product page', () => {
     expect(within(section('Evidence')).getByText('Built').nextElementSibling).toHaveTextContent('0 of 0 obligations');
   });
 
-  it('LA-BRW-T06 The format page shows the fitness section the product page links to', async () => {
+  it('LA-TRC-T85 The format page shows the fitness section the product page links to', async () => {
     await openApp('/format#7-fitness');
     const heading = await screen.findByRole('heading', { name: '7. Fitness' });
     expect(heading).toHaveAttribute('id', '7-fitness');

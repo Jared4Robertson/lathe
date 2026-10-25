@@ -44,7 +44,7 @@ async function showGraph(path: string, workspace: Workspace = testWorkspace()) {
 }
 
 describe('the graph tree and its context ring', () => {
-  it('LA-BRW-T540 The model draws the context ring at each depth: the tree\'s next level out each way, marked as context, the same every time', () => {
+  it('LA-EXP-T139 The model draws the context ring at each depth: the tree\'s next level out each way, marked as context, the same every time', () => {
     const index = testIndex();
     for (const [depth, focus, context] of [
       [1, ['P-D-UC01', 'P-D-UC01-R01', 'P-D/define/use-cases'], ['P-D/define']],
@@ -68,7 +68,7 @@ describe('the graph tree and its context ring', () => {
     expect(contextOf(neighborhood(index, 'P-D-UC01', 2, undefined, undefined, { context: false }))).toEqual([]);
   });
 
-  it('LA-BRW-T541 A group at the center has its ring too: one level out above its parent and below its members', () => {
+  it('LA-EXP-T140 A group at the center has its ring too: one level out above its parent and below its members', () => {
     const index = testIndex();
     const one = neighborhood(index, 'P-D/design', 1);
     expect(focusOf(one)).toEqual(['P-D', 'P-D/design', 'P-D/design/interaction-design', 'P-D/design/technical-specification', 'P-D/design/test-plan']);
@@ -78,7 +78,7 @@ describe('the graph tree and its context ring', () => {
     expect(contextOf(two)).toEqual(['P-D-E01', 'P-D-T01', 'P-D-V01']);
   });
 
-  it('LA-BRW-T542 A light ring: a parent shows at most six context children and a chip for the rest that leads to their group or parent, and the ring holds at most forty', () => {
+  it('LA-EXP-T141 A light ring: a parent shows at most six context children and a chip for the rest that leads to their group or parent, and the ring holds at most forty', () => {
     const index = indexWorkspace(manyOfOneKindWorkspace());
     const n = neighborhood(index, 'P-D/define/use-cases', 1);
     const shown = n.nodes.filter((x) => x.context && x.id.startsWith('P-D-UC02-'));
@@ -100,7 +100,7 @@ describe('the graph tree and its context ring', () => {
     expect(crowded.nodes.some((x) => x.id.startsWith('P-D-UC08-') || x.id === moreId('P-D-UC09'))).toBe(false);
   });
 
-  it('LA-BRW-T543 Depth counts levels from a domain and from a use case, as a file explorer does', () => {
+  it('LA-EXP-T142 Depth counts levels from a domain and from a use case, as a file explorer does', () => {
     const index = indexWorkspace(layerWorkspace());
     // From the domain: depth 1 its stages, depth 2 their folders, depth 3 what is in them.
     expect(focusOf(neighborhood(index, 'DM-SHOP', 1))).toEqual(expect.arrayContaining(['DM-SHOP/define', 'DM-SHOP/design']));
@@ -119,7 +119,7 @@ describe('the graph tree and its context ring', () => {
     expect(contextOf(neighborhood(index, 'DM-SHOP-UC02', 3))).toEqual(['DM-SHOP']);
   });
 
-  it('LA-BRW-T544 The graph\'s tree is the nav\'s: a domain\'s stages, their folders and records, the one-kind rule, and a product\'s Shared folder and domains', () => {
+  it('LA-EXP-T143 The graph\'s tree is the nav\'s: a domain\'s stages, their folders and records, the one-kind rule, and a product\'s Shared folder and domains', () => {
     const index = indexWorkspace(layerWorkspace());
     const { stages } = domainFolders(index, 'DM-SHOP');
     expect(treeChildren(index, 'DM-SHOP').slice(0, 2)).toEqual(['DM-SHOP/define', 'DM-SHOP/design']);
@@ -151,7 +151,7 @@ describe('the graph tree and its context ring', () => {
     }
   });
 
-  it('LA-BRW-T545 The Links switch beside Depth is off by default, has a tooltip and the shortcut l, draws the center\'s links dashed, and is kept while walking', async () => {
+  it('LA-EXP-T144 The Links switch beside Depth is off by default, has a tooltip and the shortcut l, draws the center\'s links dashed, and is kept while walking', async () => {
     await showGraph('/P-D-UC01-R01');
     const links = screen.getByRole('button', { name: 'Links' });
     expect(links).toHaveAttribute('aria-pressed', 'false');
@@ -170,7 +170,7 @@ describe('the graph tree and its context ring', () => {
     expect(screen.getByRole('button', { name: 'Links' })).toHaveAttribute('aria-pressed', 'true');
   });
 
-  it('LA-BRW-T546 Context nodes are out of focus: faded, hidden from assistive technology, skipped by the keyboard, left out of the summary and the side bar', async () => {
+  it('LA-EXP-T145 Context nodes are out of focus: faded, hidden from assistive technology, skipped by the keyboard, left out of the summary and the side bar', async () => {
     await showGraph('/P-D-UC01-R01');
     await waitFor(() => expect(node('P-D/define/use-cases')).not.toBeNull());
     const ring = node('P-D/define/use-cases')!;
@@ -197,7 +197,7 @@ describe('the graph tree and its context ring', () => {
     expect(near.textContent).toMatch(/^Connected in the graph ?1$/);
   });
 
-  it('LA-BRW-T547 The camera frames the focus nodes only, so the context ring may run past the canvas, and Fit does too', async () => {
+  it('LA-EXP-T146 The camera frames the focus nodes only, so the context ring may run past the canvas, and Fit does too', async () => {
     const index = indexWorkspace(crowdedWorkspace());
     const n = neighborhood(index, 'P-D/define/use-cases', 1);
     const { positions, heights } = layoutNeighborhood(n);
@@ -217,14 +217,14 @@ describe('the graph tree and its context ring', () => {
     expect(graphSummary(n)).toMatch(/^9 records · 2 groups · \d+ links · \d+ more faded$/);
   });
 
-  it('LA-BRW-T548 Filters have a Show context ring switch, on by default, and a Minimap switch, off by default; both are kept while walking', async () => {
+  it('LA-EXP-T147 Filters have a Show context ring switch, on by default, and a Minimap switch, off by default; both are kept while walking', async () => {
     await showGraph('/P-D-UC01-R01');
     fireEvent.click(screen.getByText('Filters'));
     const ring = screen.getByRole('switch', { name: 'Show context ring' }) as HTMLInputElement;
     const minimap = screen.getByRole('switch', { name: 'Minimap' }) as HTMLInputElement;
     expect(ring.checked).toBe(true);
     expect(minimap.checked).toBe(false);
-    // The trace preset is worded with the relations' labels, never their codes (LA-BRW-DR243).
+    // The trace preset is worded with the relations' labels, never their codes (LA-EXP-V03-R07).
     expect(screen.getByRole('button', { name: 'Only satisfies, proves and carries out links' })).toBeInTheDocument();
     expect(document.querySelector('.react-flow__minimap')).toBeNull();
     await waitFor(() => expect(document.querySelector('.react-flow__node.is-context')).not.toBeNull());
@@ -240,7 +240,7 @@ describe('the graph tree and its context ring', () => {
     await waitFor(() => expect(document.querySelector('.react-flow__node.is-context:not(.is-leaving)')).toBeNull());
   });
 
-  it('LA-BRW-T549 Alt+Up steps out to the parent, Alt+Down in to the first child, Alt+Shift+Left and Right to a sibling, from the keyboard and from buttons with their keys', async () => {
+  it('LA-EXP-T148 Alt+Up steps out to the parent, Alt+Down in to the first child, Alt+Shift+Left and Right to a sibling, from the keyboard and from buttons with their keys', async () => {
     const index = testIndex();
     expect(stepTarget(index, 'P-D-UC01', 'out')).toBe('P-D/define/use-cases');
     expect(stepTarget(index, 'P-D-UC01', 'in')).toBe('P-D-UC01-R01');
@@ -267,7 +267,7 @@ describe('the graph tree and its context ring', () => {
     await waitFor(() => expect(window.location.pathname).toBe('/P-D/define/domain-model'));
   });
 
-  it('LA-BRW-T550 A chip of the light ring leads to the group or parent of the children it counts, and the edge hints count the ring past each edge and pan that way', async () => {
+  it('LA-EXP-T149 A chip of the light ring leads to the group or parent of the children it counts, and the edge hints count the ring past each edge and pan that way', async () => {
     // The hints' arithmetic: a box's center past an edge counts for that edge, and a pan moves half the canvas.
     const view = { x: 0, y: 0, zoom: 1 };
     expect(pastEdges([{ x: -10, y: 50 }, { x: 1200, y: -5 }, { x: 500, y: 900 }, { x: 500, y: 400 }], view, 1000, 800)).toEqual({ up: 1, down: 1, left: 1, right: 1 });
@@ -284,7 +284,7 @@ describe('the graph tree and its context ring', () => {
     await waitFor(() => expect(window.location.pathname).toBe('/P-D-UC02'));
   });
 
-  it('LA-BRW-T551 Hovering or focusing a focus node spotlights it, its lines and the nodes it joins, and leaving restores the picture', async () => {
+  it('LA-EXP-T150 Hovering or focusing a focus node spotlights it, its lines and the nodes it joins, and leaving restores the picture', async () => {
     await showGraph('/P-D-UC01-R01');
     fireEvent.click(screen.getByRole('button', { name: 'Links' }));
     await waitFor(() => expect(node('P-D-V01')).not.toBeNull());
@@ -307,7 +307,7 @@ describe('the graph tree and its context ring', () => {
 describe('the context ring in the Model view', () => {
   const index = () => indexWorkspace(entityWorkspace());
 
-  it('LA-BRW-T552 An aggregate\'s ERD shows what its referenced entities refer to one ring out, faded; a domain\'s ERD fades the aggregates of other domains', () => {
+  it('LA-EXP-T151 An aggregate\'s ERD shows what its referenced entities refer to one ring out, faded; a domain\'s ERD fades the aggregates of other domains', () => {
     const loan = aggregateErd(index(), 'P-D-A3');
     const box = (id: string) => loan.boxes.find((b) => b.id === id);
     // Its own entities and those they refer to are in focus; Member's Account, in another domain, is the ring.
@@ -322,7 +322,7 @@ describe('the context ring in the Model view', () => {
     expect(domain.lines.filter((l) => l.context).map((l) => l.target)).toEqual(['P-E-A1']);
   });
 
-  it('LA-BRW-T553 The ERD frames its boxes in focus only, its context boxes are out of focus, and its edge hints count them', async () => {
+  it('LA-EXP-T152 The ERD frames its boxes in focus only, its context boxes are out of focus, and its edge hints count them', async () => {
     const erd = aggregateErd(index(), 'P-D-A3');
     const rects = new Map(erd.boxes.map((b, i) => [b.id, { x: i * 300, y: 0, width: 240, height: 80 }]));
     expect([...focusRects(erd, rects).keys()]).not.toContain('P-E-EN01');

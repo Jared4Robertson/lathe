@@ -35,7 +35,7 @@ const shape = (groups: FolderGroup[]): Shape[] => groups.map((g) => ({
 const tree = (f: Folder) => shape(f.groups);
 
 describe('layers and test groups', () => {
-  it('LA-BRW-T280 Technical specification lists the layers in their order, each with its components, then those outside any layer', () => {
+  it('LA-EXP-T94 Technical specification lists the layers in their order, each with its components, then those outside any layer', () => {
     const index = indexWorkspace(layerWorkspace());
     const spec = designFolder(index, 'DM-SHOP', 'technical-specification');
     expect(tree(spec)).toEqual([
@@ -56,7 +56,7 @@ describe('layers and test groups', () => {
     expect(plain.count).toBe(1);
   });
 
-  it('LA-BRW-T281 Test plan groups each test by family, then by what it proves: acceptance, domain rule, pattern, interaction, UI, design and engineering; empty groups are left out', () => {
+  it('LA-EXP-T95 Test plan groups each test by family, then by what it proves: acceptance, domain rule, pattern, interaction, UI, design and engineering; empty groups are left out', () => {
     const index = indexWorkspace(layerWorkspace());
     expect(tree(designFolder(index, 'DM-SHOP', 'test-plan'))).toEqual([
       {
@@ -87,7 +87,7 @@ describe('layers and test groups', () => {
     ]);
   });
 
-  it('LA-BRW-T282 In the nav, layers are foldable rows that link to their pages, and test groups are rows that only fold, each with its count', async () => {
+  it('LA-EXP-T96 In the nav, layers are foldable rows that link to their pages, and test groups are rows that only fold, each with its count', async () => {
     await openApp('/DM', { workspace: layerWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     const user = userEvent.setup();
@@ -116,7 +116,7 @@ describe('layers and test groups', () => {
     expect(within(list('Empty the basket of Shopping')).getAllByRole('link').map((a) => a.textContent)).toEqual(['Emptying a basket clears it', 'A priced item can be emptied out']);
   });
 
-  it("LA-BRW-T283 The current page's branch opens through its layer or its test groups", async () => {
+  it("LA-EXP-T97 The current page's branch opens through its layer or its test groups", async () => {
     const index = indexWorkspace(layerWorkspace());
     const spec = 'DM-SHOP/design/technical-specification';
     const plan = 'DM-SHOP/design/test-plan';
@@ -141,7 +141,7 @@ describe('layers and test groups', () => {
     expect(within(panel()).queryByRole('list', { name: 'Acceptance tests of Shopping' })).toBeNull();
   });
 
-  it('LA-BRW-T284 The domain page heads the same layers and test groups, layers linking to their pages, with rows folded one level deep', async () => {
+  it('LA-EXP-T98 The domain page heads the same layers and test groups, layers linking to their pages, with rows folded one level deep', async () => {
     await openApp('/DM-SHOP', { workspace: layerWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     const user = userEvent.setup();
@@ -174,7 +174,7 @@ describe('layers and test groups', () => {
     expect(within(folder(/^Test plan/)).getByText('Nothing matches.')).toBeInTheDocument();
   });
 
-  it("LA-BRW-T285 A layer's record page lists its components as its children, as a capability's lists its own", async () => {
+  it("LA-EXP-T99 A layer's record page lists its components as its children, as a capability's lists its own", async () => {
     await openApp('/DM-SHOP-LAY02', { workspace: layerWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Models' });
     expect(main().querySelector('.eyebrow')).toHaveTextContent('Demo shop · Shopping · Layer');
@@ -184,7 +184,7 @@ describe('layers and test groups', () => {
     expect([...listed.querySelectorAll('a.record-link code')].map((c) => c.textContent)).toEqual(['DM-SHOP-C02', 'DM-SHOP-C03']);
   });
 
-  it('LA-BRW-T286 In the graph a domain reaches its components through Design, Technical specification, then a layer, one level each, read left to right', async () => {
+  it('LA-EXP-T100 In the graph a domain reaches its components through Design, Technical specification, then a layer, one level each, read left to right', async () => {
     const index = indexWorkspace(layerWorkspace());
     // Depth 1 from the domain: its product and its stages; their folders are the faded ring.
     const domain = neighborhood(index, 'DM-SHOP', 1);
@@ -214,7 +214,7 @@ describe('layers and test groups', () => {
     expect(x('DM-SHOP-C03')).toBe(x('DM-SHOP-C02'));
   });
 
-  it("LA-BRW-T287 A group page of tests reads them in the test plan's groups", async () => {
+  it("LA-EXP-T101 A group page of tests reads them in the test plan's groups", async () => {
     await openApp('/DM-SHOP/design/test-plan', { workspace: layerWorkspace() });
     await screen.findByRole('heading', { level: 1, name: /^Test plan/ });
     const members = within(main()).getByRole('heading', { level: 2, name: /^Tests/ }).closest('section') as HTMLElement;
@@ -224,7 +224,7 @@ describe('layers and test groups', () => {
     expect([...engineering.querySelectorAll('a.record-link code')].map((c) => c.textContent)).toEqual(['DM-SHOP-T08']);
   });
 
-  it('LA-BRW-T288 Group labels name kinds through plural(), and what is folded in a group lasts for the session', async () => {
+  it('LA-EXP-T102 Group labels name kinds through plural(), and what is folded in a group lasts for the session', async () => {
     const w = layerWorkspace();
     w.kinds = w.kinds.map((k) => (k.kind === 'component' ? { ...k, label: 'Part' } : k.kind === 'use_case' ? { ...k, label: 'Story' } : k));
     const index = indexWorkspace(w);
@@ -238,7 +238,7 @@ describe('layers and test groups', () => {
     expect(window.localStorage.getItem('lathe:nav-folders')).toBeNull();
   });
 
-  it('LA-BRW-T289 In the graph a capability with 7 use cases shows them directly, with no folder', () => {
+  it('LA-EXP-T103 In the graph a capability with 7 use cases shows them directly, with no folder', () => {
     const w = layerWorkspace();
     for (let i = 4; i <= 8; i++) {
       w.records.push({ id: `DM-SHOP-UC0${i}`, kind: 'use_case', title: `Browse ${i}`, parent: 'DM-SHOP-CAP02', product: 'DM', domain: 'DM-SHOP', fields: { actor: 'Shopper' }, body: '', path: `specs/dm/DM-SHOP-UC0${i}.md`, mentions: [] });
@@ -254,7 +254,7 @@ describe('layers and test groups', () => {
     expect(neighborhood(index, 'DM-SHOP-LAY02', 1).edges.map((e) => `${e.source} > ${e.target}`)).toEqual(expect.arrayContaining(['DM-SHOP-LAY02 > DM-SHOP-C02', 'DM-SHOP-LAY02 > DM-SHOP-C03']));
   });
 
-  it('LA-BRW-T290 A split by kind or by test group appears only when there is more than one to tell apart', async () => {
+  it('LA-EXP-T104 A split by kind or by test group appears only when there is more than one to tell apart', async () => {
     // The side bar starts closed in the Wiki view (brief 64); this test reads it open.
     openSideBar('details', ['wiki', 'graph', 'model']);
     const user = userEvent.setup();
@@ -291,7 +291,7 @@ describe('layers and test groups', () => {
     expect(within(productChildren).getAllByText('Domain', { selector: 'small' }).length).toBeGreaterThan(0);
   });
 
-  it("LA-BRW-T291 In the graph a domain's Test plan folder holds the test plan's groups, from the same folder model, each a group node that opens", async () => {
+  it("LA-EXP-T105 In the graph a domain's Test plan folder holds the test plan's groups, from the same folder model, each a group node that opens", async () => {
     const index = indexWorkspace(layerWorkspace());
     const plan = 'DM-SHOP/design/test-plan';
     const acceptance = `${plan}/acceptance`;
@@ -334,7 +334,7 @@ describe('layers and test groups', () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'Acceptance tests (5)' })).toBeInTheDocument();
   });
 
-  it('LA-BRW-T292 The graph trail names each record by its title with its ID in parentheses, and a group by its name alone', async () => {
+  it('LA-EXP-T106 The graph trail names each record by its title with its ID in parentheses, and a group by its name alone', async () => {
     const trail = () => within(screen.getByRole('navigation', { name: 'Records visited' }));
     const w = layerWorkspace();
     w.records.find((r) => r.id === 'DM-SHOP-LAY02')!.title = 'Models, entities, value objects and every other kind of stored record';

@@ -1,8 +1,8 @@
 import type { SpecIndex, SpecRoute } from '../specs/data';
 
 // One address per thing, whichever views show it (LA-PAT-APP-CODE-R19). A record is at its bare
-// ID (`/LA-BRW-UC01`), a product and a domain included, whose one page is their overview (`/LA`,
-// `/LA-BRW`). A group is at its place in the graph's tree (a stage or folder, `/LA-BRW/define/use-cases`, or a record's
+// ID (`/LA-TRC-UC09`), a product and a domain included, whose one page is their overview (`/LA`,
+// `/LA-EXP`). A group is at its place in the graph's tree (a stage or folder, `/LA-EXP/define/use-cases`, or a record's
 // group of one kind of child, `/<parent-id>/<kind>`), and a group within one adds its parts
 // (`/DM-SHOP/design/test-plan/acceptance/…`).
 // App pages are lowercase words (`/`, `/checks`, `/format`, `/settings/appearance`,
@@ -22,7 +22,7 @@ export const APP_PAGES: readonly string[] = ['checks', 'format', 'settings', 'di
 
 /**
  * The address of a record (its bare ID) or of a group (its parent's ID, its kind and the parts of a
- * group within it, as in `LA-BRW/define/use-cases`). The index is not needed: an ID is its own address.
+ * group within it, as in `LA-EXP/define/use-cases`). The index is not needed: an ID is its own address.
  */
 export function addressOf(id: string): string {
   return `/${id.split('/').map(encodeURIComponent).join('/')}`;

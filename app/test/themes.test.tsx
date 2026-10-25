@@ -9,7 +9,7 @@ import { themeCss } from '../src/theme/css';
 import { STORAGE_KEYS } from '../src/theme/store';
 import { BUILT_IN_THEMES, parseTheme, toFile } from '../src/theme/theme';
 
-// Themes (LA-BRW-UC114): choosing one with a live preview, the mode, the Appearance page and its
+// Themes (LA-PLT-UC06): choosing one with a live preview, the mode, the Appearance page and its
 // editor, files in and out, and the theme on the page before first paint.
 
 const press = (key: string, code: string, mods: Partial<Record<'ctrlKey' | 'altKey' | 'shiftKey' | 'metaKey', boolean>> = {}) =>
@@ -19,7 +19,7 @@ const themeStyle = () => document.getElementById('lathe-theme')?.textContent ?? 
 const stored = (key: string) => window.localStorage.getItem(key);
 
 describe('themes', () => {
-  it('LA-BRW-T420 Color theme (g then t) shows each theme as it is arrowed to; Enter keeps it and Escape puts back the one before', async () => {
+  it('LA-PLT-T50 Color theme (g then t) shows each theme as it is arrowed to; Enter keeps it and Escape puts back the one before', async () => {
     await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     // Lathe and System at first, already written as the stylesheet the early script reads.
@@ -60,7 +60,7 @@ describe('themes', () => {
     await waitFor(() => expect(screen.getByTestId('announcer')).toHaveTextContent('Color theme: Midnight'));
   });
 
-  it('LA-BRW-T421 Light, dark or system is a command and a choice on the Appearance page; it applies at once and is remembered', async () => {
+  it('LA-PLT-T51 Light, dark or system is a command and a choice on the Appearance page; it applies at once and is remembered', async () => {
     const user = userEvent.setup();
     await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
@@ -94,7 +94,7 @@ describe('themes', () => {
     expect(root().getAttribute('data-mode')).toBe('light');
   });
 
-  it('LA-BRW-T422 The Appearance page lists every theme with a preview; Duplicate and edit makes a copy in use, which is renamed, edited live, reset and deleted', async () => {
+  it('LA-PLT-T52 The Appearance page lists every theme with a preview; Duplicate and edit makes a copy in use, which is renamed, edited live, reset and deleted', async () => {
     await openApp('/settings/appearance');
     await screen.findByRole('heading', { level: 1, name: 'Appearance' });
     const list = screen.getByRole('list', { name: 'Themes' });
@@ -153,7 +153,7 @@ describe('themes', () => {
     expect(root().getAttribute('data-theme')).toBe('lathe');
   });
 
-  it('LA-BRW-T423 While editing, a color below WCAG AA contrast on what it is drawn on gets a warning beside its swatch', async () => {
+  it('LA-PLT-T53 While editing, a color below WCAG AA contrast on what it is drawn on gets a warning beside its swatch', async () => {
     await openApp('/settings/appearance');
     fireEvent.click(await screen.findByRole('button', { name: 'Duplicate and edit Lathe' }));
     await screen.findByRole('heading', { level: 2, name: 'Edit “Lathe copy”' });
@@ -173,7 +173,7 @@ describe('themes', () => {
     expect(themeStyle()).not.toContain('display: none');
   });
 
-  it('LA-BRW-T424 A theme exports as a small versioned JSON file and imports back; a file with anything but known tokens and their values is refused', async () => {
+  it('LA-PLT-T54 A theme exports as a small versioned JSON file and imports back; a file with anything but known tokens and their values is refused', async () => {
     // The file: format, version, name and token names only.
     const file = toFile(BUILT_IN_THEMES[2]);
     expect(Object.keys(file)).toEqual(['format', 'version', 'name', 'light', 'dark', 'tokens']);
@@ -206,7 +206,7 @@ describe('themes', () => {
     expect(JSON.parse(stored(STORAGE_KEYS.themes)!)[0]).toMatchObject({ id: 'custom-shared', name: 'Shared', light: file.light });
   });
 
-  it('LA-BRW-T425 The early script in index.html puts the chosen theme and mode on the page before the app runs', () => {
+  it('LA-PLT-T55 The early script in index.html puts the chosen theme and mode on the page before the app runs', () => {
     const html = readFileSync(resolve(process.cwd(), 'index.html'), 'utf8');
     const script = html.match(/<script>([\s\S]*?)<\/script>/)?.[1];
     expect(script).toBeTruthy();
@@ -233,7 +233,7 @@ describe('themes', () => {
     expect(root().hasAttribute('data-mode')).toBe(false);
   });
 
-  it('LA-BRW-T427 The built-in themes: Lathe is the stylesheet unchanged, High contrast reaches AAA for text, and each passes AA for its text and controls in both modes', () => {
+  it('LA-PLT-T57 The built-in themes: Lathe is the stylesheet unchanged, High contrast reaches AAA for text, and each passes AA for its text and controls in both modes', () => {
     const css = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
     const block = (re: RegExp) => Object.fromEntries([...(css.match(re)?.[1] ?? '').matchAll(/(--[\w-]+):\s*([^;]+);/g)].map((m) => [m[1], m[2].trim()]));
     const rootLight = block(/^:root \{([\s\S]*?)\n\}/m);

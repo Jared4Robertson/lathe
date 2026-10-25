@@ -16,14 +16,14 @@ import { eventAggregate, eventsOf, raisedByLinks, reactingAggregates, reactionsO
 // - Boxes owned by the current domain are blue; boxes from another domain are gray, labeled with
 //   their owner in parentheses. A box from another aggregate of the same domain stays blue and is
 //   labeled with its aggregate, as Client does.
-// - Context (LA-BRW-UC113-R06): on an aggregate's ERD, the entities that its referenced entities
+// - Context (LA-EXP-UC11-R06): on an aggregate's ERD, the entities that its referenced entities
 //   refer to sit one ring out, faded and out of focus; on a domain's ERD, the aggregates of other
 //   domains are context too. The camera frames the boxes in focus only.
-// - Domain events (LA-BRW-UC113-R07, R08): on an aggregate's ERD, each of its events is a pill beside
+// - Domain events (LA-EXP-UC11-R07, R08): on an aggregate's ERD, each of its events is a pill beside
 //   its entities, with a short line from the entity that raises it (`raised_by`), and the aggregates
 //   that react to it, from this domain or another, are faded context at the end of a dashed
 //   "reacts to" line. On a domain's ERD, a dashed "reacts to" line runs from the aggregate raising
-//   an event to each aggregate reacting to it: one line per aggregate pair and event (LA-BRW-DR306).
+//   an event to each aggregate reacting to it: one line per aggregate pair and event (LA-EXP-DR51).
 
 export type ErdLevel = 'domain' | 'aggregate';
 /** A line end: exactly one (two bars), many (a crow's foot), none (a plain end) or an arrowhead (where an event leads). */

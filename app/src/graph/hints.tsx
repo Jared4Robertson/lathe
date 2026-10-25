@@ -2,7 +2,7 @@ import { useReactFlow, useStore } from '@xyflow/react';
 import { Button } from '../components/Button';
 import { readMotion } from './motion';
 
-// Edge hints (LA-BRW-UC20-R12): the context ring may run past the canvas's edges, so at each edge a
+// Edge hints (LA-EXP-UC03-R12): the context ring may run past the canvas's edges, so at each edge a
 // small chip counts the faded boxes past it ("3 ↑", "8 →"). A click pans the camera that way by
 // about half the canvas, with the shared motion, without changing the focus. The chips follow the
 // camera, and an edge with nothing past it shows none. The graph and the Model view (ERD) share it.

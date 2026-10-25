@@ -5,14 +5,14 @@ import { PARENT, type Neighborhood } from './model';
 // computed here directly, on the main thread: they are deterministic, and far quicker than a
 // general layout engine.
 //
-// The hierarchy is an icicle (LA-BRW-DR330): a horizontal partition chart. A node whose children are
+// The hierarchy is an icicle (LA-EXP-DR53): a horizontal partition chart. A node whose children are
 // drawn in the next column is exactly as tall as those children stacked, gaps included, and the
 // stack starts at its top edge, so each parent spans its children and every child sits right beside
 // it: the parent line is short and straight, and nothing fans out. A leaf, and a node whose children
 // are not drawn, keeps the one node height; a "+N more" chip is one child slot. A tree that is not
 // the focus's (a record the Links switch brings, with any drawn tree of its own) goes in the nearest
 // free place in its columns to the node it was reached from, so it never overlaps. Each column is as
-// wide as its tallest node's scale makes it (LA-BRW-DR331), at most MAX_COLUMN_SCALE leaf widths, so
+// wide as its tallest node's scale makes it (LA-EXP-DR54), at most MAX_COLUMN_SCALE leaf widths, so
 // every node in a level shares one width; columns sit a gap apart at their own widths.
 //
 // A trace is a chain, not a tree: each of its columns is a stack of leaf boxes in the model's row
@@ -27,7 +27,7 @@ export const ROW_GAP = 28;
 export type Point = { x: number; y: number };
 
 /**
- * The most a column widens (LA-BRW-DR331): four leaf widths, 760 px. A domain at depth 2 or 3 is
+ * The most a column widens (LA-EXP-DR54): four leaf widths, 760 px. A domain at depth 2 or 3 is
  * dozens of leaf heights tall, so the framed picture is zoomed to a fifth or less and is far taller
  * than wide. At four widths a parent's text reads at about a leaf's size when that picture is framed,
  * and the depth-3 picture stays about as wide as it is tall, so the zoom is still set by its height,
@@ -50,7 +50,7 @@ export const heightOf = (heights: ReadonlyMap<string, number> | undefined, id: s
 export const widthOf = (widths: ReadonlyMap<string, number> | undefined, id: string) => widths?.get(id) ?? NODE_WIDTH;
 
 /**
- * Each column's width (LA-BRW-DR331): a leaf's width times the largest scale in the column (its
+ * Each column's width (LA-EXP-DR54): a leaf's width times the largest scale in the column (its
  * tallest node's height over a leaf's), at most MAX_COLUMN_SCALE; a column of leaves keeps a leaf's.
  */
 export function columnWidths(columns: ReadonlyMap<string, number>, heights: ReadonlyMap<string, number>): Map<number, number> {
@@ -101,7 +101,7 @@ export function isTreeEdge(parentOf: ReadonlyMap<string, string>, e: { source: s
 }
 
 /**
- * The icicle (LA-BRW-DR330): every node's top-left corner and height, the focus's center at the
+ * The icicle (LA-EXP-DR53): every node's top-left corner and height, the focus's center at the
  * origin. Pure and deterministic: the same picture always gives the same layout.
  */
 export function icicle(n: Neighborhood): Placed {
@@ -169,7 +169,7 @@ export function icicle(n: Neighborhood): Placed {
   return { positions, heights, widths };
 }
 
-/** A trace's columns (LA-BRW-UC20): each column a stack of leaf boxes in row order, centered on the focus's middle. */
+/** A trace's columns (LA-EXP-UC03): each column a stack of leaf boxes in row order, centered on the focus's middle. */
 export function traceGrid(n: Neighborhood): Placed {
   const columns = [...new Set(n.nodes.map((x) => x.column))].sort((a, b) => a - b);
   const rank = new Map(columns.map((c, i) => [c, i]));
@@ -208,7 +208,7 @@ export function boxExit(cx: number, cy: number, tx: number, ty: number, w = NODE
 }
 
 /**
- * How much a node's content grows (LA-BRW-DR331): by the smaller of its width over a leaf's and its
+ * How much a node's content grows (LA-EXP-DR54): by the smaller of its width over a leaf's and its
  * height over a leaf's, so its text, kind, ID, chevron, padding and marks keep their proportions and
  * fit the box whichever way it is short. A leaf's scale is 1, and no node's is below 1. Rounded
  * down to hundredths. From the layout alone, once per picture, never by measuring text.

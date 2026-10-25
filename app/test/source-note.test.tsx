@@ -5,7 +5,7 @@ import { openApp } from './helpers';
 const PAGES = ['/', '/DM', '/DM-SHOP', '/DM-SHOP-C01', '/checks', '/format'];
 
 describe('fixture source note', () => {
-  it('LA-BRW-T16 Every spec page says when it shows the sample fixture, and why', async () => {
+  it('LA-EXP-T11 Every spec page says when it shows the sample fixture, and why', async () => {
     for (const page of PAGES) {
       await openApp(page, { source: 'fixture', reason: 'LATHE_SPEC_FIXTURE=1 is set' });
       const note = await screen.findByRole('note');
@@ -13,7 +13,7 @@ describe('fixture source note', () => {
     }
   });
 
-  it('LA-BRW-T16 No note is shown when the engine serves the workspace', async () => {
+  it('LA-EXP-T11 No note is shown when the engine serves the workspace', async () => {
     for (const page of PAGES) {
       await openApp(page, { source: 'engine' });
       await screen.findAllByRole('heading', { level: 1 }).catch(() => screen.findByText(/Lathe spec format/));

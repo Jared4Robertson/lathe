@@ -33,7 +33,7 @@ const spine = (n: { edges: { source: string; target: string; relation: string }[
   n.edges.filter((e) => e.relation === 'parent').map((e) => `${e.source} > ${e.target}`).sort();
 
 describe('flow steps in the graph', () => {
-  it('LA-BRW-T204 A flow step sits one column to the right of its flow, joined to it by the parent line', () => {
+  it('LA-EXP-T67 A flow step sits one column to the right of its flow, joined to it by the parent line', () => {
     const index = indexWorkspace(flowWorkspace(3));
     const n = neighborhood(index, 'P-D-F01', 2);
     expect(isGrouped(index, 'P-D-F01')).toBe(false);
@@ -43,7 +43,7 @@ describe('flow steps in the graph', () => {
     for (const step of ['P-D-F01-S01', 'P-D-F01-S02', 'P-D-F01-S03']) expect(column.get(step)).toBe(column.get('P-D-F01')! + 1);
   });
 
-  it('LA-BRW-T205 A flow with only steps shows them directly, however many; with another kind of child too it reaches them through a "Flow steps" group, folded until opened', () => {
+  it('LA-EXP-T68 A flow with only steps shows them directly, however many; with another kind of child too it reaches them through a "Flow steps" group, folded until opened', () => {
     // Six steps and nothing else: one kind, so no group.
     const plain = indexWorkspace(flowWorkspace(6));
     expect(isGrouped(plain, 'P-D-F01')).toBe(false);
@@ -69,7 +69,7 @@ describe('flow steps in the graph', () => {
     expect(spine(fromStep)).toEqual(expect.arrayContaining([`P-D-F01 > ${gid}`, `${gid} > P-D-F01-S02`]));
   });
 
-  it("LA-BRW-T206 A requirement's trace shows the step that fulfills it, the step's flow and the components the step uses", async () => {
+  it("LA-EXP-T69 A requirement's trace shows the step that fulfills it, the step's flow and the components the step uses", async () => {
     const index = indexWorkspace(flowWorkspace(3));
     const n = traceChain(index, 'P-D-UC01-R01');
     expect(recordIds(n)).toEqual(expect.arrayContaining(['P-D-F01', 'P-D-F01-S01', 'P-D-C01']));

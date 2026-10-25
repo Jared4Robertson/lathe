@@ -1,4 +1,4 @@
-// The side bar's History (LA-BRW-UC119-R05): the client of GET /api/history, and a unified diff
+// The side bar's History (LA-EXP-UC12-R05): the client of GET /api/history, and a unified diff
 // read into lines to draw. The answers' shapes are those of lathe/src/server/history.ts.
 
 export interface HistoryCommit { hash: string; short: string; date: string; author: string; subject: string }

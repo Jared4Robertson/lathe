@@ -2,7 +2,7 @@ import { test } from '@playwright/test';
 import { expectStable, openPage, step } from './measure';
 import { GRAPH_CANVAS, GRAPH_HEADER, RECORD } from './scenarios';
 
-// LA-BRW-T599: the side bar (brief 64). Switching its view between Details, Outline and History,
+// LA-PLT-T86: the side bar (brief 64). Switching its view between Details, Outline and History,
 // and the node under the pointer changing what Details shows, change only the side bar's own
 // content: the nav, the panes, the canvas, the side bar's box and its switcher hold still.
 
@@ -14,7 +14,7 @@ const KEYS = [NAV, '.pane-wiki > .pane-bar', '.pane-wiki .pane-title', '.pane-gr
 const ALLOW = ['.side-bar'];
 
 test.describe('side bar', () => {
-  test('LA-BRW-T599 switching the side bar\'s view moves nothing outside it', async ({ page }) => {
+  test('LA-PLT-T86 switching the side bar\'s view moves nothing outside it', async ({ page }) => {
     await openPage(page, `${RECORD}?view=wiki,graph`);
     await page.locator('.graph-flow .react-flow__node').first().waitFor();
     await page.waitForTimeout(600);
@@ -27,7 +27,7 @@ test.describe('side bar', () => {
     }
   });
 
-  test('LA-BRW-T599 Details following the node under the pointer moves nothing outside it', async ({ page }) => {
+  test('LA-PLT-T86 Details following the node under the pointer moves nothing outside it', async ({ page }) => {
     await openPage(page, `${RECORD}?view=wiki,graph`);
     const nodes = page.locator('.graph-flow .react-flow__node[data-id^="LA-"]:not(.is-context)');
     await nodes.first().waitFor();

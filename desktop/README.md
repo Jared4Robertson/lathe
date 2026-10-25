@@ -1,6 +1,6 @@
 # Lathe desktop
 
-Lathe as a desktop app: an Electron shell around the Lathe web app and server. Each window shows one product folder (a folder with `lathe.config.json`), served by Lathe's own `serve()` on a free local port. Its specification is the `LA-DSK` domain in [specs/lathe/desktop/](../specs/lathe/desktop/).
+Lathe as a desktop app: an Electron shell around the Lathe web app and server. Each window shows one product folder (a folder with `lathe.config.json`), served by Lathe's own `serve()` on a free local port. Its specification is part of the Platform domain (`LA-PLT`) in [specs/lathe/platform/](../specs/lathe/platform/).
 
 ## Run it
 

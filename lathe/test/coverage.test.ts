@@ -16,7 +16,7 @@ beforeAll(async () => {
 });
 
 describe('coverage by the meta-model', () => {
-  it('LA-CHK-T40 Coverage counts every obligation kind in meta-model order, including interaction requirements', () => {
+  it('LA-TRC-T04 Coverage counts every obligation kind in meta-model order, including interaction requirements', () => {
     expect(states.problems.filter((p) => p.severity === 'error')).toEqual([]);
     expect(states.coverage).toHaveLength(1);
     expect(states.coverage[0].obligations).toEqual([
@@ -30,7 +30,7 @@ describe('coverage by the meta-model', () => {
     expect(states.coverage[0].obligations.map((o) => o.kind)).toEqual(order);
   });
 
-  it('LA-CHK-T41 Only automated and manual tests prove; a planned test makes an obligation planned', () => {
+  it('LA-TRC-T05 Only automated and manual tests prove; a planned test makes an obligation planned', () => {
     // CS-D-V01-IR01 is proved by a test with no state (automated); CS-D-V01-IR02 by a manual test.
     // CS-D-UC01-R01 has only a planned test; CS-D-UC01-R02 has a planned and an automated one, so it is proved.
     const unproved = ofCheck(states, 'unproved');
@@ -45,7 +45,7 @@ describe('coverage by the meta-model', () => {
     ]);
   });
 
-  it("LA-CHK-T42 An extension's obligation kind and design and proof relations are counted like the defaults", () => {
+  it("LA-TRC-T06 An extension's obligation kind and design and proof relations are counted like the defaults", () => {
     expect(extension.problems.filter((p) => p.severity === 'error')).toEqual([]);
     const invariant = extension.coverage[0].obligations.find((o) => o.kind === 'invariant');
     // EXT-D-INV01 is enforced by a component whose file exists and checked by a test;
@@ -59,7 +59,7 @@ describe('coverage by the meta-model', () => {
     expect(extension.coverage[0].gaps).toEqual([{ id: 'EXT-D-INV02', kind: 'invariant', missing: 'proves' }]);
   });
 
-  it("LA-CHK-T44 The meta-model's obligation and role columns are loaded into the workspace", async () => {
+  it("LA-TRC-T07 The meta-model's obligation and role columns are loaded into the workspace", async () => {
     const obligations = states.kinds.filter((k) => k.obligation).map((k) => k.kind);
     expect(obligations).toEqual(['domain_rule', 'requirement', 'pattern_rule', 'interaction_requirement']);
     expect(states.relations.filter((r) => r.role === 'design').map((r) => `${r.relation} ${r.target_kind}`)).toEqual([
@@ -79,7 +79,7 @@ describe('coverage by the meta-model', () => {
     expect(configured.relations.find((r) => r.relation === 'summarizes')?.role).toBe('');
   });
 
-  it('LA-CHK-T45 The check prints one coverage line per domain and obligation kind, with planned counts', () => {
+  it('LA-TRC-T08 The check prints one coverage line per domain and obligation kind, with planned counts', () => {
     const run = spawnSync(process.execPath, [path.join(here, '..', 'bin', 'lathe.ts'), 'check', '--root', fixture('coverage-states')], { encoding: 'utf8' });
     expect(run.status).toBe(0);
     const coverage = run.stdout.slice(run.stdout.indexOf('\nCoverage:'));

@@ -12,7 +12,7 @@ const index = () => indexWorkspace(patternWorkspace());
 const rowOf = (scope: HTMLElement, id: string) => within(scope).getByRole('link', { name: new RegExp(`^${id}(?!-)`) }).closest('.record-row') as HTMLElement;
 
 describe('pattern logic', () => {
-  it('LA-BRW-T160 A domain follows the patterns its use cases follow, and a pattern lists its following domains', () => {
+  it('LA-TRC-T98 A domain follows the patterns its use cases follow, and a pattern lists its following domains', () => {
     const ix = index();
     expect(patternsFollowedBy(ix, 'DM-SHOP').map((f) => [f.pattern.id, f.useCases.map((u) => u.id)])).toEqual([['DM-PAT-CHECKOUT', ['DM-SHOP-UC01']]]);
     expect(patternsFollowedBy(ix, 'NF-NOTE')).toEqual([]);
@@ -24,7 +24,7 @@ describe('pattern logic', () => {
     expect(notApplicableReason(undefined)).toBeNull();
   });
 
-  it('LA-BRW-T161 A rule is designed, built and proved per domain, by records in that domain only', () => {
+  it('LA-TRC-T99 A rule is designed, built and proved per domain, by records in that domain only', () => {
     const ix = index();
     const r01 = ix.byId.get('DM-PAT-CHECKOUT-R01')!;
     const shop = ruleStatus(ix, r01, 'DM-SHOP', patternsFollowedBy(ix, 'DM-SHOP')[0].useCases);
@@ -34,7 +34,7 @@ describe('pattern logic', () => {
     expect(pay).toEqual({ applies: true, designedBy: ['DM-PAY-C01'], builtBy: [], provedBy: [], plannedBy: ['DM-PAY-T01'] });
   });
 
-  it('LA-BRW-T162 A rule that names a setting every following use case marks Not applicable does not apply in that domain', () => {
+  it('LA-TRC-T100 A rule that names a setting every following use case marks Not applicable does not apply in that domain', () => {
     const ix = index();
     const r02 = ix.byId.get('DM-PAT-CHECKOUT-R02')!;
     expect(ruleStatus(ix, r02, 'DM-SHOP', patternsFollowedBy(ix, 'DM-SHOP')[0].useCases)).toEqual({
@@ -47,7 +47,7 @@ describe('pattern logic', () => {
 });
 
 describe('Patterns we follow, on the domain page', () => {
-  it('LA-BRW-T163 The domain page lists each pattern it follows, its rules folded under it, with what the domain designs, builds and proves', async () => {
+  it('LA-TRC-T101 The domain page lists each pattern it follows, its rules folded under it, with what the domain designs, builds and proves', async () => {
     await openApp('/DM-PAY', { workspace: patternWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Paying' });
     const patterns = section(/^Patterns we follow/);
@@ -68,7 +68,7 @@ describe('Patterns we follow, on the domain page', () => {
     expect(within(r02).getByText('not designed')).toBeInTheDocument();
   });
 
-  it('LA-BRW-T164 A rule the domain marks Not applicable shows so, with the use case and its reason', async () => {
+  it('LA-TRC-T102 A rule the domain marks Not applicable shows so, with the use case and its reason', async () => {
     await openApp('/DM-SHOP', { workspace: patternWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     const patterns = section(/^Patterns we follow/);
@@ -81,7 +81,7 @@ describe('Patterns we follow, on the domain page', () => {
     for (const mark of ['designed', 'built', 'proved']) expect(within(r01).getByText(mark)).toBeInTheDocument();
   });
 
-  it('LA-BRW-T165 Coverage shows the pattern rule line, and its gaps name the rule', async () => {
+  it('LA-TRC-T103 Coverage shows the pattern rule line, and its gaps name the rule', async () => {
     await openApp('/DM-PAY', { workspace: patternWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Paying' });
     const coverage = section(/^Coverage/);
@@ -92,7 +92,7 @@ describe('Patterns we follow, on the domain page', () => {
     expect(within(coverage).getAllByRole('listitem').map((li) => li.textContent)).toContainEqual(expect.stringMatching(/DM-PAT-CHECKOUT-R02.*Pattern rule with nothing that satisfies it/));
   });
 
-  it('LA-BRW-T293 A pattern the domain itself follows is listed, followed by the whole domain, and every rule applies', async () => {
+  it('LA-TRC-T111 A pattern the domain itself follows is listed, followed by the whole domain, and every rule applies', async () => {
     const ws = patternWorkspace();
     ws.links.push({ source: 'NF-NOTE', relation: 'follows', target: 'DM-PAT-CHECKOUT' } as (typeof ws.links)[number]);
     const ix = indexWorkspace(ws);
@@ -105,7 +105,7 @@ describe('Patterns we follow, on the domain page', () => {
     expect(rowOf(section(/^Patterns we follow/), 'DM-PAT-CHECKOUT')).toHaveTextContent('followed by the whole domain');
   });
 
-  it('LA-BRW-T166 A domain that follows no pattern says so', async () => {
+  it('LA-TRC-T104 A domain that follows no pattern says so', async () => {
     await openApp('/NF-NOTE', { workspace: patternWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Notes' });
     expect(within(section(/^Patterns we follow/)).getByText('This domain follows no pattern.')).toBeInTheDocument();
@@ -113,7 +113,7 @@ describe('Patterns we follow, on the domain page', () => {
 });
 
 describe('pattern pages', () => {
-  it('LA-BRW-T167 A pattern page shows its settings table, its rules, and each following domain with its use cases and settings', async () => {
+  it('LA-TRC-T105 A pattern page shows its settings table, its rules, and each following domain with its use cases and settings', async () => {
     await openApp('/DM-PAT-CHECKOUT', { workspace: patternWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Checkout step' });
     const settings = within(section(/^Settings/)).getByRole('table');
@@ -140,7 +140,7 @@ describe('pattern pages', () => {
     expect(within(shop).getByText('Not applicable: adding to a basket changes nothing worth auditing')).toHaveClass('setting-na');
   });
 
-  it('LA-BRW-T168 A pattern page shows each following domain\'s proof status per rule', async () => {
+  it('LA-TRC-T106 A pattern page shows each following domain\'s proof status per rule', async () => {
     await openApp('/DM-PAT-CHECKOUT', { workspace: patternWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Checkout step' });
     const followed = section(/^Followed by/);
@@ -154,7 +154,7 @@ describe('pattern pages', () => {
     expect(statusOf('DM-PAY', 'DM-PAT-CHECKOUT-R02')).toHaveTextContent(/not designed\s*not built\s*not proved/);
   });
 
-  it('LA-BRW-T169 A pattern rule page lists the domains that owe it, and a pattern nobody follows says so', async () => {
+  it('LA-TRC-T107 A pattern rule page lists the domains that owe it, and a pattern nobody follows says so', async () => {
     await openApp('/DM-PAT-CHECKOUT-R02', { workspace: patternWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'The step writes an audit line' });
     const owed = section(/^Owed by/);

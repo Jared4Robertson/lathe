@@ -36,7 +36,7 @@ const rowOf = (scope: HTMLElement, id: string) =>
   within(scope).getByRole('link', { name: new RegExp(`^${id}(?![-\\d])`) }).closest(ROWS) as HTMLElement;
 
 describe('the whole row is clickable', () => {
-  it('LA-BRW-T401 A click on a row opens its record, and a click on its chevron or second link does what that control does', async () => {
+  it('LA-EXP-T132 A click on a row opens its record, and a click on its chevron or second link does what that control does', async () => {
     await openApp('/DM-SHOP');
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     const uc = rowOf(section(/^Capabilities/), 'DM-SHOP-UC01');

@@ -74,7 +74,7 @@ interface NodeData extends Record<string, unknown> {
   onToggle?: () => void;
   /** A box that left the picture and fades out where it was: it can't be clicked or focused. */
   leaving?: boolean;
-  /** How much its content grows with its height (LA-BRW-DR331): 1 for a leaf. */
+  /** How much its content grows with its height (LA-EXP-DR54): 1 for a leaf. */
   scale?: number;
 }
 interface EdgeData extends Record<string, unknown> {
@@ -101,7 +101,7 @@ export function relationStyle(relation: string): string {
   if (['uses', 'implements', 'depends_on'].includes(relation)) return 'design';
   if (relation === 'names') return 'file';
   if (relation === 'follows') return 'pattern';
-  // A domain event's links (LA-BRW-UC40-R07): dashed, in the spark colors events are drawn in.
+  // A domain event's links (LA-EXP-UC04-R07): dashed, in the spark colors events are drawn in.
   if (['reacts_to', 'raised_by'].includes(relation)) return 'event';
   return 'other';
 }
@@ -118,7 +118,7 @@ function Marks({ data }: { data: NodeData }) {
   );
 }
 
-/** A context node's quiet title: short, cut at a word; the whole title and the ID are in its tooltip (LA-BRW-DR302). */
+/** A context node's quiet title: short, cut at a word; the whole title and the ID are in its tooltip (LA-EXP-DR47). */
 export function shortTitle(title: string, max = 28): string {
   if (title.length <= max) return title;
   const cut = title.slice(0, max - 1);
@@ -126,7 +126,7 @@ export function shortTitle(title: string, max = 28): string {
   return `${(space > max / 2 ? cut.slice(0, space) : cut).trimEnd()}…`;
 }
 
-/** The node's content scale as a CSS variable: its text, padding, marks and chevron grow in step (LA-BRW-DR331). */
+/** The node's content scale as a CSS variable: its text, padding, marks and chevron grow in step (LA-EXP-DR54). */
 const scaleStyle = (data: NodeData): CSSProperties | undefined =>
   data.scale && data.scale !== 1 ? ({ '--node-scale': data.scale } as CSSProperties) : undefined;
 /** A scaled node's class: its content is centered both ways. */
@@ -387,8 +387,8 @@ export interface GraphViewProps {
 }
 
 /**
- * How a node is named in the trail: a record's title with its ID in parentheses, "Browsing
- * (LA-BRW)"; a group, which has no ID of its own, by its name alone ("Use cases", no count), with
+ * How a node is named in the trail: a record's title with its ID in parentheses, "Exploring
+ * (LA-EXP)"; a group, which has no ID of its own, by its name alone ("Use cases", no count), with
  * its parent's ID in the full text (tooltip and accessible name) so two groups of one name differ.
  */
 function trailItem(index: SpecIndex, id: string): { body: ReactNode; full: string } {
@@ -564,7 +564,7 @@ export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted,
   );
 }
 
-/** The trace preset's button, worded with the relations' labels (LA-BRW-DR243): "Only satisfies, proves and carries out links". */
+/** The trace preset's button, worded with the relations' labels (LA-EXP-V03-R07): "Only satisfies, proves and carries out links". */
 export function traceOnlyLabel(index: SpecIndex): string {
   const words = ['satisfies', 'proves', 'fulfills'].map((r) => lowerLabel(graphRelationLabel(r, index)));
   return `Only ${words.slice(0, -1).join(', ')} and ${words.at(-1)} links`;
@@ -706,7 +706,7 @@ function GraphCanvas({ index, graph, onNavigate: navigate, onToggle, minimap, on
   useLayoutEffect(() => {
     const draw = () => {
       const result = layoutNeighborhood(graph);
-      // The new focus keeps its place in the world when it was in the last picture (LA-BRW-DR180).
+      // The new focus keeps its place in the world when it was in the last picture (LA-EXP-DR39).
       const positions = anchorLayout(result.positions, graph.focus, laidOut.current);
       laidOut.current = positions;
       setPlaced({ ...result, positions, graph });
@@ -897,7 +897,7 @@ function GraphCanvas({ index, graph, onNavigate: navigate, onToggle, minimap, on
   /**
    * Moves the camera: to frame the focus (a new picture, or a resize), or to fit the whole picture
    * (the Fit command); with the shared motion, or at once. It always starts from the view as it is,
-   * so a view zoomed or panned by hand glides from there (LA-BRW-DR181). Both frame the focus nodes
+   * so a view zoomed or panned by hand glides from there (LA-EXP-DR40). Both frame the focus nodes
    * only: the context ring may run past the canvas's edges, cut off by the vignette.
    */
   const fit = useCallback((animate: boolean, whole = false) => {

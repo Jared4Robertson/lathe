@@ -9,7 +9,7 @@ import { main, openApp, openSideBar, section, sideBar } from './helpers';
 const row = (scope: HTMLElement, id: string) => within(scope).getByRole('link', { name: new RegExp(`^${id}(?![-\\d])`) }).closest('li') as HTMLElement;
 
 describe('one level deep', () => {
-  it('LA-BRW-T133 Folded rows keep their counts and marks, open and close by button, Expand all or arrow keys, and stay open while moving around', async () => {
+  it('LA-EXP-T50 Folded rows keep their counts and marks, open and close by button, Expand all or arrow keys, and stay open while moving around', async () => {
     await openApp('/DM-SHOP');
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     const useCases = section(/^Capabilities/);
@@ -54,7 +54,7 @@ describe('one level deep', () => {
     expect(row(section(/^Capabilities/), 'DM-SHOP-UC01').querySelector('ul.nested')).not.toBeNull();
   });
 
-  it('LA-BRW-T134 A record page shows its direct children with theirs folded, in the wiki and the side bar, and a product page lists its domains but not their contents', async () => {
+  it('LA-EXP-T51 A record page shows its direct children with theirs folded, in the wiki and the side bar, and a product page lists its domains but not their contents', async () => {
     openSideBar();
     await openApp('/DM-SHOP');
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });

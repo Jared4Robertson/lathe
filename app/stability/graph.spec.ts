@@ -2,14 +2,14 @@ import { expect, test, type Page } from '@playwright/test';
 import { expectStable, openPage, step } from './measure';
 import { DOMAIN, GRAPH_CANVAS, GRAPH_HEADER, MODEL_CANVAS, RECORD } from './scenarios';
 
-// LA-BRW-T485: re-centering the graph at depth 1, 2 and 3, and moving around the ERD. The boxes
+// LA-PLT-T73: re-centering the graph at depth 1, 2 and 3, and moving around the ERD. The boxes
 // glide (a transform, which is no layout shift) and the camera moves; the pane's title, the
 // graph's header and its canvas must hold still, and the canvas must not be drawn anew.
 
 const PANE_TITLE = '.pane-graph .pane-title';
 /**
  * The graph's boxes. In the icicle a re-center glides each box's height as well as its place
- * (LA-BRW-UC40-R08), and a box's content, centered in it, moves with its height: that motion is the
+ * (LA-EXP-UC04-R08), and a box's content, centered in it, moves with its height: that motion is the
  * picture changing, inside the canvas. The canvas, its header and the pane around it are keys and
  * must hold still, and anything else that shifts is still unexpected.
  */
@@ -36,7 +36,7 @@ async function visibleNode(page: Page, n: number): Promise<string> {
 
 test.describe('graph', () => {
   for (const depth of [1, 2, 3]) {
-    test(`LA-BRW-T485 re-center at depth ${depth}`, async ({ page }) => {
+    test(`LA-PLT-T73 re-center at depth ${depth}`, async ({ page }) => {
       await openPage(page, `${RECORD}?view=graph`);
       await nodes(page);
       if (depth > 1) {
@@ -57,7 +57,7 @@ test.describe('graph', () => {
     });
   }
 
-  test('LA-BRW-T485 change the depth', async ({ page }) => {
+  test('LA-PLT-T73 change the depth', async ({ page }) => {
     await openPage(page, `${RECORD}?view=graph`);
     await nodes(page);
     const keys = [PANE_BAR, PANE_TITLE, GRAPH_HEADER, GRAPH_CANVAS];
@@ -67,7 +67,7 @@ test.describe('graph', () => {
     }
   });
 
-  test('LA-BRW-T485 move around the ERD', async ({ page }) => {
+  test('LA-PLT-T73 move around the ERD', async ({ page }) => {
     await openPage(page, `${DOMAIN}?view=model`);
     await page.locator('.model-flow .react-flow__node').first().waitFor();
     await page.waitForTimeout(500);
@@ -89,7 +89,7 @@ test.describe('graph', () => {
     const back = await step(page, 'graph', 'ERD: Back to the domain', { keys, allow: ['.side-bar'] }, async () => {
       await page.goBack();
       await page.goBack();
-      await expect(page).toHaveURL(/\/LA-BRW(\?|$)/);
+      await expect(page).toHaveURL(/\/LA-EXP(\?|$)/);
     });
     expectStable(back);
   });

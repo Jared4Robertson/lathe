@@ -14,8 +14,8 @@ import { patternWorkspace } from './fixtures/patterns';
 import { workspace } from './fixtures/workspace';
 import { openApp } from './helpers';
 
-// A record's Traceability section (LA-BRW-UC118): its links grouped and titled by their labels
-// (LA-BRW-DR243), gap callouts that agree with coverage, a use case's requirement table, and the
+// A record's Traceability section (LA-TRC-UC14): its links grouped and titled by their labels
+// (LA-EXP-V03-R07), gap callouts that agree with coverage, a use case's requirement table, and the
 // structure Client trial 4 asked for (flow paths, sub-layers, rules under an entity).
 
 afterEach(() => cleanup());
@@ -38,7 +38,7 @@ function rec(id: string, kind: string, title: string, parent: string, fields: Re
 }
 
 describe('traceability', () => {
-  it('LA-BRW-T491 An obligation lists Designed by, Proved by and Carried out in, in that order, each component marked built', () => {
+  it('LA-TRC-T112 An obligation lists Designed by, Proved by and Carried out in, in that order, each component marked built', () => {
     const index = indexWorkspace(workspace());
     const trace = show(index, 'DM-SHOP-UC01-R01');
     expect(groupTitles(trace)).toEqual(['Designed by', 'Proved by', 'Carried out in']);
@@ -54,7 +54,7 @@ describe('traceability', () => {
     expect(trace.querySelector('.trace-gap')).toBeNull();
   });
 
-  it('LA-BRW-T492 Gap callouts say not designed, not built and not proved (or only planned), agree with coverage, link to their check, and a pattern rule has one line per domain', () => {
+  it('LA-TRC-T113 Gap callouts say not designed, not built and not proved (or only planned), agree with coverage, link to their check, and a pattern rule has one line per domain', () => {
     const index = indexWorkspace(workspace());
     // Coverage reports DM-SHOP-UC01-R02 unproved, and DM-PAY-UC01-R01 neither designed nor proved.
     let trace = show(index, 'DM-SHOP-UC01-R02');
@@ -89,7 +89,7 @@ describe('traceability', () => {
     }
   });
 
-  it("LA-BRW-T493 A use case shows a requirement table (Designed, Built, Proved), then what carries it out, follows and applies", () => {
+  it("LA-TRC-T114 A use case shows a requirement table (Designed, Built, Proved), then what carries it out, follows and applies", () => {
     const w = workspace();
     w.records.push(rec('DM-SHOP-F02', 'flow', 'Fill and check out', 'DM-SHOP'));
     w.links.push({ source: 'DM-SHOP-F02', relation: 'carries_out', target: 'DM-SHOP-UC01' });
@@ -109,7 +109,7 @@ describe('traceability', () => {
     expect(within(trace).getByText('not proved', { selector: '.record-row .badge' })).toBeInTheDocument();
   });
 
-  it('LA-BRW-T494 A component shows Satisfies and Proved through; a test shows Proves and the file that runs it, with its state', () => {
+  it('LA-TRC-T115 A component shows Satisfies and Proved through; a test shows Proves and the file that runs it, with its state', () => {
     const index = indexWorkspace(workspace());
     let trace = show(index, 'DM-SHOP-C01');
     expect(groupTitles(trace)).toEqual(['Satisfies', 'Proved through', 'Implements']);
@@ -123,7 +123,7 @@ describe('traceability', () => {
     expect(within(runBy).getByRole('link', { name: 'test-file-missing' })).toHaveAttribute('href', '/format/checks/test-file-missing');
   });
 
-  it('LA-BRW-T495 Supports links show as Supported by on the obligation and Supports on the test, never as proof', () => {
+  it('LA-TRC-T116 Supports links show as Supported by on the obligation and Supports on the test, never as proof', () => {
     const index = indexWorkspace(layerWorkspace());
     let trace = show(index, 'DM-SHOP-DR01');
     expect(groupTitles(trace)).toContain('Supported by');
@@ -135,7 +135,7 @@ describe('traceability', () => {
     expect(traceOf(index, index.byId.get('DM-SHOP-T12')!).groups.map((g) => g.role)).toEqual(['plain']);
   });
 
-  it('LA-BRW-T496 No page shows a relation code as a heading or label: wiki, record facts, graph and Model view read the labels', async () => {
+  it('LA-EXP-T135 No page shows a relation code as a heading or label: wiki, record facts, graph and Model view read the labels', async () => {
     const w = layerWorkspace();
     const index = indexWorkspace(w);
     const codes = new Set(w.relations.map((r) => r.relation));
@@ -162,7 +162,7 @@ describe('traceability', () => {
     expect(linkLabel(index, { source: 'DM-SHOP-T12', relation: 'supports', target: 'DM-SHOP-DR01' }, 'target')).toBe('Supported by');
   });
 
-  it('LA-BRW-T497 A flow with several paths shows a table per path, the main path first, then the others by name', () => {
+  it('LA-EXP-T136 A flow with several paths shows a table per path, the main path first, then the others by name', () => {
     const w: Workspace = stepsWorkspace();
     const step = (id: string, order: string, title: string, path?: string): SpecRecord => ({ ...rec(id, 'flow_step', title, 'DM-SHOP-F01', { order, ...(path ? { path } : {}) }) });
     w.records.push(step('DM-SHOP-F01-S04', '1', 'The basket is full', 'Refused'), step('DM-SHOP-F01-S05', '2', 'The page says so', 'refused'), step('DM-SHOP-F01-S06', '1', 'A saved basket opens', 'api'));
@@ -181,7 +181,7 @@ describe('traceability', () => {
     ]);
   });
 
-  it('LA-BRW-T498 Sub-layers nest as groups in Technical specification, and a domain rule under an entity sits under that entity', async () => {
+  it('LA-EXP-T137 Sub-layers nest as groups in Technical specification, and a domain rule under an entity sits under that entity', async () => {
     const w = layerWorkspace();
     w.records.push(
       rec('DM-SHOP-LAY04', 'layer', 'Basket services', 'DM-SHOP-LAY03', { order: '1' }),

@@ -11,7 +11,7 @@ const testsLine = (element: HTMLElement) => within(element).getByLabelText('Test
 const evidence = (name: string) => within(section('Evidence')).getByText(name, { selector: 'dt' }).nextElementSibling?.textContent;
 
 describe('owed proof and tests by state', () => {
-  it('LA-BRW-T180 The planned bar says how many more obligations, already proved, still have a planned test', async () => {
+  it('LA-TRC-T108 The planned bar says how many more obligations, already proved, still have a planned test', async () => {
     await openApp('/DM', { workspace: owedWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     // DM-SHOP's domain rule: planned 0, planned_any 1.
@@ -29,7 +29,7 @@ describe('owed proof and tests by state', () => {
     expect(more(section(/^Coverage/), 'domain_rule')?.textContent).toBe('1 more planned');
   });
 
-  it("LA-BRW-T182 Each domain's coverage shows its tests by state, on the product and domain pages", async () => {
+  it("LA-TRC-T109 Each domain's coverage shows its tests by state, on the product and domain pages", async () => {
     await openApp('/DM', { workspace: owedWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     expect(testsLine(card('Shopping'))).toBe('Tests 1 automated, 1 manual, 1 planned');
@@ -42,7 +42,7 @@ describe('owed proof and tests by state', () => {
     expect(line.querySelector('[data-state="planned"]')?.getAttribute('title')).toMatch(/does not count as proof/);
   });
 
-  it("LA-BRW-T184 The evidence counts the product's tests by state, and planned beside proof", async () => {
+  it("LA-TRC-T110 The evidence counts the product's tests by state, and planned beside proof", async () => {
     await openApp('/DM', { workspace: owedWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     expect(evidence('Tests')).toBe('3 automated, 1 manual, 1 planned');

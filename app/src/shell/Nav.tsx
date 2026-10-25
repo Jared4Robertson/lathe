@@ -121,7 +121,7 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
   const checksLabel = `Checks: ${errors} error${errors === 1 ? '' : 's'}, ${warnings} warning${warnings === 1 ? '' : 's'}`;
   const checkBadges = (
     <span className="nav-badges">
-      {/* The words beside each count are for a screen reader, so the row's name holds what it shows (LA-BRW-DR320). */}
+      {/* The words beside each count are for a screen reader, so the row's name holds what it shows (LA-PLT-DR21). */}
       {errors > 0 && <span className="nav-badge error" title={`${errors} error${errors === 1 ? '' : 's'}`}>{errors}{' '}<span className="sr-only">error{errors === 1 ? '' : 's'}</span></span>}{' '}
       {warnings > 0 && <span className="nav-badge warning" title={`${warnings} warning${warnings === 1 ? '' : 's'}`}>{warnings}{' '}<span className="sr-only">warning{warnings === 1 ? '' : 's'}</span></span>}
       {problems.length === 0 && index && <span className="nav-badge">0{' '}<span className="sr-only">problems</span></span>}
@@ -281,7 +281,7 @@ function SpaceRail({ path, spaces, current, lastPage, diagramsTo, checksLabel, c
                     aria-current={isCurrent ? 'true' : undefined}
                     data-space={s.id}
                   >
-                    {/* Named by its title in hidden text, not an aria-label the drawn mark is no part of (LA-BRW-DR320). */}
+                    {/* Named by its title in hidden text, not an aria-label the drawn mark is no part of (LA-PLT-DR21). */}
                     <SpaceMark space={s} />
                     <span className="sr-only">{s.title}</span>
                   </Link>
@@ -359,7 +359,7 @@ function SpaceItems({ index, space, path, reveal }: { index: SpecIndex; space: S
   });
 
   // The current page's branch opens itself on the nav's first draw and after a move made in the nav,
-  // before paint; a move made elsewhere leaves the rows where they are (LA-BRW-UC117-R02).
+  // before paint; a move made elsewhere leaves the rows where they are (LA-PLT-UC08-R02).
   const firstDraw = useRef(true);
   useLayoutEffect(() => {
     const first = firstDraw.current;
@@ -523,7 +523,7 @@ function SpaceItems({ index, space, path, reveal }: { index: SpecIndex; space: S
 /**
  * One row of the nav, as in VS Code's explorer: as wide as the nav panel, indented by padding for
  * its depth, with the indent guides drawn inside it and its fold chevron (or the chevron's space)
- * at its start. The current page's row carries the selection over the whole row (LA-BRW-DR220).
+ * at its start. The current page's row carries the selection over the whole row (LA-EXP-DR41).
  * Its link stretches over the row, so a click anywhere on it follows the link.
  */
 function NavRow({ depth, selected = false, holds = false, chevron, children }: { depth: number; selected?: boolean; holds?: boolean; chevron?: ReactNode; children: ReactNode }) {

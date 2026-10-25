@@ -5,9 +5,9 @@ import { MORE_KIND, neighborhood, traceChain, type Neighborhood } from '../../sr
 import { indexWorkspace } from '../../src/specs/data';
 import { manyOfOneKindWorkspace, testIndex } from './workspace';
 
-// The hierarchy is an icicle (LA-BRW-DR330): each parent exactly as tall as its children stacked,
+// The hierarchy is an icicle (LA-EXP-DR53): each parent exactly as tall as its children stacked,
 // each child right beside it, joined by a short level line; a tall node's content grows with it as
-// far as the column allows (LA-BRW-DR331).
+// far as the column allows (LA-EXP-DR54).
 
 const index = testIndex();
 
@@ -25,7 +25,7 @@ function pictures(): Neighborhood[] {
 }
 
 describe('the icicle', () => {
-  it('LA-BRW-T640 A parent is as tall as its children stacked, starting at its top, each child beside it, nothing overlapping', () => {
+  it('LA-EXP-T165 A parent is as tall as its children stacked, starting at its top, each child beside it, nothing overlapping', () => {
     for (const n of pictures()) {
       const { positions, heights, widths } = layoutNeighborhood(n);
       expect(positions.size).toBe(n.nodes.length);
@@ -74,7 +74,7 @@ describe('the icicle', () => {
     }
   });
 
-  it('LA-BRW-T640 At depth 1 the parent spans only the center; a domain spans its stages', () => {
+  it('LA-EXP-T165 At depth 1 the parent spans only the center; a domain spans its stages', () => {
     const n = neighborhood(index, 'P-D-UC01-R01', 1, undefined, undefined, { context: false });
     const { heights } = layoutNeighborhood(n);
     expect(heights.get('P-D-UC01')).toBe(heights.get('P-D-UC01-R01'));
@@ -84,7 +84,7 @@ describe('the icicle', () => {
     expect(laid.heights.get('P-D')).toBeGreaterThan(laid.heights.get('P-D/define')! + laid.heights.get('P-D/design')!);
   });
 
-  it("LA-BRW-T640 A trace's columns stay stacks of leaf-high boxes", () => {
+  it("LA-EXP-T165 A trace's columns stay stacks of leaf-high boxes", () => {
     const { heights, widths, positions } = layoutNeighborhood(traceChain(index, 'P-D-UC01-R01'));
     expect(new Set(heights.values())).toEqual(new Set([NODE_HEIGHT]));
     expect(new Set(widths.values())).toEqual(new Set([NODE_WIDTH]));
@@ -93,7 +93,7 @@ describe('the icicle', () => {
 });
 
 describe("a tall node's content", () => {
-  it('LA-BRW-T641 grows by the smaller of its width and height over a leaf\'s, never below 1', () => {
+  it('LA-EXP-T166 grows by the smaller of its width and height over a leaf\'s, never below 1', () => {
     expect(contentScale(NODE_WIDTH, NODE_HEIGHT)).toBe(1);
     expect(contentScale(NODE_WIDTH, NODE_HEIGHT / 2)).toBe(1);
     // Limited by the shorter way.
@@ -103,7 +103,7 @@ describe("a tall node's content", () => {
     expect(contentScale(NODE_WIDTH, NODE_HEIGHT * 10)).toBe(1);
   });
 
-  it('LA-BRW-T641 A column is as wide as its tallest node allows, up to the cap, and leaf columns keep a leaf\'s width', () => {
+  it('LA-EXP-T166 A column is as wide as its tallest node allows, up to the cap, and leaf columns keep a leaf\'s width', () => {
     const { widths, heights } = layoutNeighborhood(neighborhood(index, 'P-D', 3));
     expect(Math.max(...widths.values())).toBeLessThanOrEqual(NODE_WIDTH * MAX_COLUMN_SCALE);
     for (const [id, h] of heights) if (h === NODE_HEIGHT) expect(widths.get(id)!).toBeGreaterThanOrEqual(NODE_WIDTH);
@@ -115,7 +115,7 @@ describe("a tall node's content", () => {
 });
 
 describe('a parent line', () => {
-  it("LA-BRW-T642 runs level from the parent's right edge to the child's left edge, at the child's middle", () => {
+  it("LA-EXP-T167 runs level from the parent's right edge to the child's left edge, at the child's middle", () => {
     const parent = { x: 0, y: 0 };
     const child = { x: NODE_WIDTH + COLUMN_GAP, y: -150 };
     const ends = { source: parent, target: child, sourceWidth: NODE_WIDTH, sourceHeight: 500, targetHeight: NODE_HEIGHT, tree: true };
