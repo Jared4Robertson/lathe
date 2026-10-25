@@ -31,12 +31,9 @@ import {
   TRACE_RELATIONS,
   canTrace,
   filterKind,
-  gapsFor,
   graphEdgeLabel,
   graphRelationLabel,
-  groupLabel,
   groupName,
-  groupMarks,
   isFiltered,
   isGraphNode,
   kindGroups,
@@ -54,6 +51,7 @@ import {
 import { boxExit, contentScale, traceGrid, type Point } from './layout';
 import { centerOf, graphMap, linkEnds, parentLine, type GraphMap } from './map';
 import { treeGroup } from './tree';
+import { labelLines, marksOf } from './text';
 import { drawnFor, drawnKey, fitBoxes, frameOnMap, glideDuration, MAX_ZOOM, mergeDrawn, zoomPath, type Drawn, type Viewport } from './camera';
 import { EdgeHints, type Side } from './hints';
 import { readMotion } from './motion';
@@ -85,11 +83,9 @@ interface NodeData extends Record<string, unknown> {
   isFocus: boolean;
   /** Whether it is big enough on screen for its text; a plain box is a filled box with no text. */
   label: boolean;
-  /** A group's chevron: down while its members are drawn beside it, right when they are not. */
-  open?: boolean;
   /** How much its box's border and shape grow with its size (LA-EXP-DR58): 1 for a leaf. */
   scale: number;
-  /** How much its text, padding, marks and chevron grow: its scale, or more while zoomed out, so a label reads on screen (LA-EXP-DR60). */
+  /** How much its text, padding and marks grow: its height over a leaf's, fixed by the map, never by the camera (LA-EXP-DR58). */
   text: number;
 }
 interface EdgeData extends Record<string, unknown> {
@@ -131,7 +127,7 @@ function Marks({ data }: { data: NodeData }) {
   );
 }
 
-/** The node's scales as CSS variables: its border and shape (`--box-scale`, LA-EXP-DR58), its text, padding, marks and chevron (`--node-scale`, LA-EXP-DR60). */
+/** The node's scales as CSS variables (LA-EXP-DR58): its border and shape (`--box-scale`), its text, padding and marks (`--node-scale`). */
 const scaleStyle = (scale: number, text: number): CSSProperties | undefined =>
   scale !== 1 || text !== 1 ? ({ '--box-scale': scale, '--node-scale': text } as CSSProperties) : undefined;
 
@@ -143,6 +139,7 @@ function GraphNodeView({ data }: NodeProps<Node<NodeData>>) {
     data.isFocus ? 'is-focus' : '',
     data.text !== 1 ? 'is-scaled' : '',
     data.label ? '' : 'is-plain',
+    data.errors + data.warnings + data.gaps.length > 0 ? 'has-marks' : '',
     // A domain is a hexagon (LA-EXP-DR61).
     data.kind === 'domain' && !data.group ? 'is-hexagon' : '',
   ].filter(Boolean).join(' ');
@@ -155,11 +152,6 @@ function GraphNodeView({ data }: NodeProps<Node<NodeData>>) {
           <small>{data.meta}</small>
           <strong>{data.title}</strong>
           <Marks data={data} />
-          {data.group && (
-            <span className="graph-group-chevron" aria-hidden="true">
-              <Icon name={data.open ? 'chevron-down' : 'chevron-right'} size={14} />
-            </span>
-          )}
         </>
       )}
     </div>
@@ -543,39 +535,19 @@ export function hiddenNodes(index: SpecIndex, map: GraphMap, filters: Filters, f
   return hidden;
 }
 
-/** The marks of a node, records' and groups' (summed over the members), cached per index: a group's sum walks everything beneath it. */
-const marksCache = new WeakMap<SpecIndex, Map<string, { errors: number; warnings: number; gaps: string[] }>>();
-function marksOf(index: SpecIndex, id: string) {
-  let cache = marksCache.get(index);
-  if (!cache) { cache = new Map(); marksCache.set(index, cache); }
-  const known = cache.get(id);
-  if (known) return known;
-  let marks: { errors: number; warnings: number; gaps: string[] };
-  if (!index.byId.has(id)) marks = groupMarks(index, id);
-  else {
-    const problems = index.problemsFor.get(id) ?? [];
-    const errors = problems.filter((p) => p.severity === 'error').length;
-    marks = { errors, warnings: problems.length - errors, gaps: gapsFor(index, id) };
-  }
-  cache.set(id, marks);
-  return marks;
-}
-
 /** A box's data: what it shows and how it is named. */
-function boxData(index: SpecIndex, id: string, focus: string, label: boolean, scale: number, text: number, open: boolean, graph: Neighborhood): NodeData {
+function boxData(index: SpecIndex, id: string, focus: string, label: boolean, scale: number, text: number, graph: Neighborhood): NodeData {
+  // The same lines the map sized its level for (text.ts), so the label always fits on one line.
+  const { title, meta } = labelLines(index, id);
   const record = index.byId.get(id);
   if (record) {
-    const kl = kindLabel(index, record.kind);
-    return { id, kind: record.kind, stage: stageOf(index, record.kind), title: record.title, kindLabel: kl, meta: `${kl} · ${id}`, group: false, ...marksOf(index, id), isFocus: id === focus, label, scale, text };
+    return { id, kind: record.kind, stage: stageOf(index, record.kind), title, kindLabel: kindLabel(index, record.kind), meta, group: false, ...marksOf(index, id), isFocus: id === focus, label, scale, text };
   }
   if (id.startsWith('file:')) {
     const node = graph.nodes.find((n) => n.id === id);
-    return { id, kind: FILE_KIND, stage: 'file', title: node?.title ?? id.slice(5), kindLabel: 'File', meta: 'File', group: false, errors: 0, warnings: 0, gaps: [], isFocus: false, label, scale, text };
+    return { id, kind: FILE_KIND, stage: 'file', title: node?.title ?? title, kindLabel: 'File', meta, group: false, errors: 0, warnings: 0, gaps: [], isFocus: false, label, scale, text };
   }
-  const owner = parseGroupId(id)?.parent ?? id;
-  const node = graph.nodes.find((n) => n.id === id);
-  const gOwner = node?.group?.owner ?? owner;
-  return { id, kind: treeGroup(index, id)?.kind ?? 'folder', stage: 'group', title: groupLabel(index, id), kindLabel: 'Group', meta: `Group · ${gOwner}`, group: true, ...marksOf(index, id), isFocus: id === focus, label, scale, text, open };
+  return { id, kind: treeGroup(index, id)?.kind ?? 'folder', stage: 'group', title, kindLabel: 'Group', meta, group: true, ...marksOf(index, id), isFocus: id === focus, label, scale, text };
 }
 
 /** The accessible name of a labeled box. */
@@ -760,16 +732,14 @@ function GraphCanvas({ index, graph, depth, filters, onNavigate, minimap, onPeek
       return graph.nodes.map((n) => ({ id: n.id, ...tracePlaced.positions.get(n.id)!, w: tracePlaced.widths.get(n.id)!, h: tracePlaced.heights.get(n.id)!, label: true, text: 1 }));
     }
     if (!drawn) return [];
-    return drawn.boxes.map((b) => { const n = map.nodes.get(b.id)!; return { id: b.id, x: n.x, y: n.y, w: n.w, h: n.h, label: b.label, text: b.text }; });
+    return drawn.boxes.map((b) => { const n = map.nodes.get(b.id)!; return { id: b.id, x: n.x, y: n.y, w: n.w, h: n.h, label: b.label, text: n.text }; });
   }, [tracePlaced, graph, drawn, map]);
   const order = useMemo(() => keyboardOrder(boxes), [boxes]);
 
   const { nodes, edges } = useMemo(() => {
     const byId = new Map(boxes.map((b) => [b.id, b]));
     const nodes: FlowNode[] = boxes.map((b) => {
-      const n = map.nodes.get(b.id);
-      const open = !tracing && !!n && n.children.some((c) => byId.has(c));
-      const data = boxData(index, b.id, focus, b.label, contentScale(b.w, b.h), b.text, open, graph);
+      const data = boxData(index, b.id, focus, b.label, contentScale(b.w, b.h), b.text, graph);
       return {
         id: b.id,
         type: 'box',

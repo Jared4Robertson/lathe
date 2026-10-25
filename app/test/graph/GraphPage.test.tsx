@@ -5,6 +5,7 @@ import type { Workspace } from '../../../lathe/src/types';
 import { DEFAULT_GRAPH_SETTINGS, GraphView } from '../../src/graph/GraphPage';
 import { openApp, startAtDepth } from '../helpers';
 import { testIndex, testWorkspace } from './workspace';
+import { marksOf } from '../../src/graph/text';
 
 // The graph as the focus page hosts it: in the Graph view of a record's, group's, product's or
 // domain's own address, with the side bar beside it.
@@ -208,24 +209,21 @@ describe('graph page', () => {
 describe('graph groups on the page', () => {
   const groupNode = (id: string) => node(id)?.querySelector<HTMLElement>('.graph-node') ?? null;
 
-  it('LA-EXP-T33 A group\'s chevron points down while its members are drawn beside it and right when they are not; clicking the group, or Enter on it, goes to it', async () => {
+  it('LA-EXP-T33 A group shows its name and count, with no chevron; clicking the group, or Enter on it, goes to it', async () => {
     await showGraph('/P-D', testWorkspace(), 1, false);
     await waitFor(() => expect(node('P-D/question')).not.toBeNull());
     expect(groupNode('P-D/question')!.className).toContain('stage-group');
-    expect(groupNode('P-D/question')!.textContent).toContain('Open questions (1)');
-    // The chevron is a mark, not a button: there is nothing to open in place, every member is in the map.
-    const chevron = (id: string) => node(id)!.querySelector('.graph-group-chevron')!;
+    // Nothing to open or fold in place: every member is in the map, so a group has no chevron and no button.
     expect(node('P-D/question')!.querySelector('button')).toBeNull();
-    const memberDrawn = !!node('P-D-Q01');
-    expect(chevron('P-D/question').querySelector('path')!.getAttribute('d')).toBe(memberDrawn ? 'M6 9l6 6l6-6' : 'M9 6l6 6l-6 6');
+    expect(document.querySelector('.graph-group-chevron')).toBeNull();
 
-    // Clicking the group itself goes to its address, where it is the center.
+    // Clicking the group itself goes to its address, where it is the center, framed and labeled with its name and count.
     fireEvent.click(node('P-D/question')!);
     await waitFor(() => expect(window.location.pathname).toBe('/P-D/question'));
     await waitFor(() => expect(groupNode('P-D/question')!.className).toContain('is-focus'));
-    // Its member is drawn beside it now: the chevron points down.
-    await waitFor(() => expect(node('P-D-Q01')).not.toBeNull());
-    expect(chevron('P-D/question').querySelector('path')!.getAttribute('d')).toBe('M6 9l6 6l6-6');
+    // Its name and count: in its label once its title reads on screen (LA-EXP-DR60), and always in its tooltip.
+    expect(groupNode('P-D/question')!.getAttribute('title')).toBe('Open questions (1) (in P-D)');
+    expect(document.querySelector('.graph-group-chevron')).toBeNull();
 
     // Enter on a group goes to it too.
     await back();
@@ -270,10 +268,11 @@ describe('graph groups on the page', () => {
     await waitFor(() => expect(node('P-D/design')).not.toBeNull());
     expect(groupNode('P-D/design')!.querySelector('.graph-mark.error')).not.toBeNull();
     expect(groupNode('P-D/define')!.querySelector('.graph-mark.gap')).not.toBeNull();
-    expect(groupNode('P-D/question')!.querySelector('.graph-mark')).toBeNull();
-    expect(node('P-D/question')!.getAttribute('aria-label')).toBe('Group Open questions (1) in P-D');
     const legend = within(screen.getByRole('region', { name: 'Legend' }));
     expect(legend.getByText(/Stage, folder or group/)).toBeTruthy();
+    // A labeled group is named for assistive technology by its name, count and owner; one with nothing wrong beneath it carries no mark.
+    expect(node('P-D/design')!.getAttribute('aria-label')).toMatch(/^Group Design \(\d+\) in P-D$/);
+    expect(marksOf(testIndex(), 'P-D/question')).toEqual({ errors: 0, warnings: 0, gaps: [] });
   });
 
   it('LA-EXP-T37 The graph is a component that takes its focus and reports moves through onNavigate, without reading or changing the address', async () => {

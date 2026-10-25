@@ -2,6 +2,7 @@ import './setup';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, waitFor } from '@testing-library/react';
 import { frameMap, frameOnMap, FRAME_MAX_ZOOM, FRAME_PADDING, glideDuration, PARENT_STRIP, PARENT_STRIP_MAX, zoomPath } from '../../src/graph/camera';
+import { MIN_LABEL_PX, TITLE_FONT } from '../../src/graph/text';
 import { graphMap } from '../../src/graph/map';
 import { MOTION_SPEED_MS } from '../../src/graph/motion';
 import { openApp, startAtDepth } from '../helpers';
@@ -46,7 +47,7 @@ describe('graph camera', () => {
     const w = 1000;
     const h = 800;
     const strip = Math.min(PARENT_STRIP_MAX, w * PARENT_STRIP);
-    for (const [focus, depth] of [['P-D', 1], ['P-D', 2], ['P-D/define', 3], ['P-D-UC01', 1]] as const) {
+    for (const [focus, depth] of [['P-D', 1], ['P-D', 2], ['P-D/define', 3], ['P-D-UC01', 1], ['P-D/question', 1]] as const) {
       const v = frameOnMap(map, focus, depth, w, h);
       const f = map.nodes.get(focus)!;
       const screen = (x: number, y: number) => ({ x: x * v.zoom + v.x, y: y * v.zoom + v.y });
@@ -56,6 +57,8 @@ describe('graph camera', () => {
       expect(top.y).toBeGreaterThanOrEqual(FRAME_PADDING - 0.5);
       expect(bottom.y).toBeLessThanOrEqual(h - FRAME_PADDING + 0.5);
       expect(v.zoom).toBeLessThanOrEqual(FRAME_MAX_ZOOM);
+      // Never so far out that the focus's own title is under MIN_LABEL_PX on screen (LA-EXP-DR60).
+      expect(TITLE_FONT * f.text * v.zoom).toBeGreaterThanOrEqual(MIN_LABEL_PX - 1e-9);
       // Centered on the focus's middle, top to bottom.
       expect((top.y + bottom.y) / 2).toBeCloseTo(h / 2, 6);
       // The parent is in view at the left edge, a strip of it at least, and the focus right of it.
