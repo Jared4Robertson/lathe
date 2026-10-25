@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { SpecRecord, Workspace } from '../../../lathe/src/types';
 import { groupId, isGrouped, neighborhood, TRACE_COLUMNS, traceChain } from '../../src/graph/model';
-import { layoutNeighborhood } from '../../src/graph/layout';
+import { traceGrid } from '../../src/graph/layout';
+import { graphMap } from '../../src/graph/map';
 import { indexWorkspace } from '../../src/specs/data';
 import { testWorkspace } from './workspace';
 
@@ -43,7 +44,7 @@ describe('flow steps in the graph', () => {
     for (const step of ['P-D-F01-S01', 'P-D-F01-S02', 'P-D-F01-S03']) expect(column.get(step)).toBe(column.get('P-D-F01')! + 1);
   });
 
-  it('LA-BRW-T205 A flow with only steps shows them directly, however many; with another kind of child too it reaches them through a "Flow steps" group, folded until opened', () => {
+  it('LA-BRW-T205 A flow with only steps shows them directly, however many; with another kind of child too it reaches them through a "Flow steps" group', () => {
     // Six steps and nothing else: one kind, so no group.
     const plain = indexWorkspace(flowWorkspace(6));
     expect(isGrouped(plain, 'P-D-F01')).toBe(false);
@@ -59,14 +60,16 @@ describe('flow steps in the graph', () => {
     const gid = groupId('P-D-F01', 'flow_step');
     const folded = neighborhood(index, 'P-D-F01', 1);
     const group = folded.nodes.find((x) => x.id === gid);
-    expect(group).toMatchObject({ title: 'Flow steps (6)', group: { parent: 'P-D-F01', count: 6, open: false } });
+    expect(group).toMatchObject({ title: 'Flow steps (6)', group: { parent: 'P-D-F01', count: 6 } });
     expect(group!.column).toBe(folded.nodes.find((x) => x.id === 'P-D-F01')!.column + 1);
-    // Folded at the edge of depth 1: its steps are only the faded ring.
-    expect(folded.nodes.filter((x) => x.id.startsWith('P-D-F01-S')).every((x) => x.context)).toBe(true);
-    expect(recordIds(neighborhood(index, 'P-D-F01', 1, undefined, undefined, { context: false }))).not.toContain('P-D-F01-S01');
-    // From a step, its group sits between the flow and the steps.
-    const fromStep = neighborhood(index, 'P-D-F01-S02', 1);
-    expect(spine(fromStep)).toEqual(expect.arrayContaining([`P-D-F01 > ${gid}`, `${gid} > P-D-F01-S02`]));
+    // At depth 1 the group is the last level framed; its steps are the next, at depth 2.
+    expect(recordIds(folded)).not.toContain('P-D-F01-S01');
+    expect(recordIds(neighborhood(index, 'P-D-F01', 2))).toContain('P-D-F01-S01');
+    // From a step, its group is the parent at the left edge, and in the map the group sits between the flow and the steps.
+    expect(spine(neighborhood(index, 'P-D-F01-S02', 1))).toEqual([`${gid} > P-D-F01-S02`]);
+    const map = graphMap(index);
+    expect(map.nodes.get('P-D-F01-S02')!.parent).toBe(gid);
+    expect(map.nodes.get(gid)!.parent).toBe('P-D-F01');
   });
 
   it("LA-BRW-T206 A requirement's trace shows the step that fulfills it, the step's flow and the components the step uses", async () => {
@@ -82,7 +85,7 @@ describe('flow steps in the graph', () => {
     expect(column.get('P-D-F01')!).toBeLessThan(column.get('P-D-F01-S01')!);
     expect(column.get('P-D-F01-S01')!).toBeLessThan(column.get('P-D-C01')!);
     // It lays out in columns, left to right.
-    const { positions } = layoutNeighborhood(n);
+    const { positions } = traceGrid(n);
     expect(positions.get('P-D-F01')!.x).toBeLessThan(positions.get('P-D-F01-S01')!.x);
     expect(positions.get('P-D-F01-S01')!.x).toBeLessThan(positions.get('P-D-C01')!.x);
   });

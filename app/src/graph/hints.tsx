@@ -2,10 +2,11 @@ import { useReactFlow, useStore } from '@xyflow/react';
 import { Button } from '../components/Button';
 import { readMotion } from './motion';
 
-// Edge hints (LA-BRW-UC20-R12): the context ring may run past the canvas's edges, so at each edge a
-// small chip counts the faded boxes past it ("3 ↑", "8 →"). A click pans the camera that way by
-// about half the canvas, with the shared motion, without changing the focus. The chips follow the
-// camera, and an edge with nothing past it shows none. The graph and the Model view (ERD) share it.
+// Edge hints (LA-BRW-UC20-R12): at each edge of a canvas a small chip counts the boxes of interest
+// past it ("3 ↑", "8 →"): the records the graph's center links to (the Links switch), or the Model
+// view's faded context boxes. A click pans the camera that way, with the shared motion, without
+// changing the focus: by about half the canvas, or as the host asks (the graph brings the nearest
+// linked record into view). The chips follow the camera, and an edge with nothing past it shows none.
 
 export type Point = { x: number; y: number };
 export type Side = 'up' | 'down' | 'left' | 'right';
@@ -37,8 +38,12 @@ export function panToward(view: { x: number; y: number; zoom: number }, side: Si
   return { x: view.x + (h.dx * width) / 2, y: view.y + (h.dy * height) / 2, zoom: view.zoom };
 }
 
-/** The chips, inside a React Flow provider. `centers` are the world centers of the context boxes; `wrapper` is the canvas element. */
-export function EdgeHints({ centers, wrapper }: { centers: readonly Point[]; wrapper: { current: HTMLElement | null } }) {
+/**
+ * The chips, inside a React Flow provider. `centers` are the world centers of the boxes they count;
+ * `wrapper` is the canvas element; `noun` says what they are ("faded", "linked"); `onPan`, when
+ * given, moves the camera toward a side in place of the half-canvas pan.
+ */
+export function EdgeHints({ centers, wrapper, noun = 'faded', onPan }: { centers: readonly Point[]; wrapper: { current: HTMLElement | null }; noun?: string; onPan?: (side: Side) => void }) {
   const { getViewport, setViewport } = useReactFlow();
   const width = wrapper.current?.clientWidth ?? 0;
   const height = wrapper.current?.clientHeight ?? 0;
@@ -53,6 +58,7 @@ export function EdgeHints({ centers, wrapper }: { centers: readonly Point[]; wra
   const [up, down, left, right] = key.split(' ').map(Number);
   const past: Record<Side, number> = { up, down, left, right };
   const pan = (side: Side) => {
+    if (onPan) { onPan(side); return; }
     const motion = readMotion();
     setViewport(panToward(getViewport(), side, width, height), motion.duration > 0 ? { duration: motion.duration, ease: motion.ease, interpolate: 'linear' } : { duration: 0 });
   };
@@ -62,8 +68,8 @@ export function EdgeHints({ centers, wrapper }: { centers: readonly Point[]; wra
         <Button
           key={h.side}
           className={`graph-edge-hint is-${h.side}`}
-          aria-label={`${past[h.side]} faded ${past[h.side] === 1 ? 'box' : 'boxes'} ${h.label}: pan that way`}
-          title={`${past[h.side]} faded ${h.label}`}
+          aria-label={`${past[h.side]} ${noun} ${past[h.side] === 1 ? 'box' : 'boxes'} ${h.label}: pan that way`}
+          title={`${past[h.side]} ${noun} ${h.label}`}
           onClick={() => pan(h.side)}
         >
           {past[h.side]} {h.mark}

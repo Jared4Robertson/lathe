@@ -11,7 +11,7 @@
   /* Motion: the speed and easing every move and fade shares, in CSS and in JS (app/src/graph/motion.ts); reduced motion turns each off (LA-PAT-APP-UX-R04). */
   --motion-speed: 320ms; --motion-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
   --node-radius: 4px; /* every graph node is the same rectangle; color tells the stage */
-  /* The graph's context ring (LA-BRW-DR302): faded and a little smaller; the hover spotlight dims the rest a step; the vignette's width at the canvas's edges. */
+  /* The Model view's context ring (LA-BRW-UC113-R06): faded and a little smaller; the graph's hover spotlight dims the rest a step; the vignette's width at a canvas's edges. */
   --context-opacity: 0.35; --context-scale: 0.9; --spotlight-dim: 0.5; --vignette: 56px;
   /* The graph's cross-links (the Links switch), dashed apart from the tree's solid lines, and the minimap's mask. */
   --link-edge: var(--spark); --minimap-mask: color-mix(in srgb, var(--ink) 8%, transparent);
@@ -317,53 +317,49 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-legend { margin-top: 10px; font-size: 0.8rem; }
 .graph-legend li { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 
-/* Nodes: color and shape by stage, a ring on the center. A parent of the icicle (LA-BRW-DR330) is as tall as its children and its
-   column as wide as its tallest node's scale allows; it sets --node-scale, and its text, padding, marks and chevron grow in step,
-   centered both ways (LA-BRW-DR331); a leaf's scale is 1. Registered, so it glides on a re-center. */
-@property --node-scale { syntax: "<number>"; inherits: true; initial-value: 1; }
-.graph-node { width: 100%; height: 100%; box-sizing: border-box; padding: calc(6px * var(--node-scale)) calc(10px * var(--node-scale)); border: 1.5px solid var(--g-structural); background: var(--g-structural-bg); display: flex; flex-direction: column; justify-content: center; cursor: pointer; overflow: hidden; position: relative; border-radius: var(--node-radius); }
+/* Nodes: color and shape by stage, a ring on the center. In the one map (LA-BRW-DR390) a parent is as tall as its children and
+   its level as wide as the level's typical height allows; it sets --node-scale, and its text, padding, borders, marks and
+   chevron grow in step, centered both ways (LA-BRW-DR391); a leaf's scale is 1. Nothing in the map changes size: the camera
+   zooms. A box too small on screen for its text is plain: filled, with no text (LA-BRW-DR393). */
+.graph-node { --node-scale: 1; --node-border: calc(1.5px * var(--node-scale)); width: 100%; height: 100%; box-sizing: border-box; padding: calc(6px * var(--node-scale)) calc(10px * var(--node-scale)); border: var(--node-border) solid var(--g-structural); background: var(--g-structural-bg); display: flex; flex-direction: column; justify-content: center; cursor: pointer; overflow: hidden; position: relative; border-radius: var(--node-radius); }
 .graph-node small { font: calc(0.65625rem * var(--node-scale)) var(--mono); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: calc(30px * var(--node-scale)); }
 .graph-node.is-scaled, .graph-node.stage-group.is-scaled { align-items: center; text-align: center; padding-inline: calc(30px * var(--node-scale)); }
 .graph-node.is-scaled small { padding-right: 0; max-width: 100%; }
 .graph-node strong { font-size: calc(0.78125rem * var(--node-scale)); font-weight: 600; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; color: var(--ink); }
 .graph-node.stage-define { border-color: var(--g-define); background: var(--g-define-bg); padding-inline: calc(10px * var(--node-scale)); }
 .graph-node.stage-design { border-color: var(--g-design); background: var(--g-design-bg); padding-inline: calc(10px * var(--node-scale)); }
-.graph-node.stage-file { border: 1.5px dashed var(--g-file); background: var(--paper); cursor: default; padding-inline: calc(10px * var(--node-scale)); }
+.graph-node.stage-file { border: var(--node-border) dashed var(--g-file); background: var(--paper); cursor: default; padding-inline: calc(10px * var(--node-scale)); }
 .graph-node.stage-file strong { font: calc(0.6875rem * var(--node-scale)) var(--mono); overflow-wrap: anywhere; }
 .graph-node.kind-question { border-style: dashed; border-color: var(--warn); }
-.graph-node.is-focus { box-shadow: 0 0 0 3px var(--ink); }
+.graph-node.is-focus { box-shadow: 0 0 0 calc(2px * var(--node-scale)) var(--ink); }
 .graph-marks { position: absolute; top: calc(3px * var(--node-scale)); right: calc(8px * var(--node-scale)); display: flex; gap: calc(3px * var(--node-scale)); }
 .graph-mark { display: inline-grid; place-items: center; min-width: calc(15px * var(--node-scale)); height: calc(15px * var(--node-scale)); padding: 0 calc(3px * var(--node-scale)); box-sizing: border-box; border-radius: calc(8px * var(--node-scale)); font: 700 calc(0.59375rem * var(--node-scale)) var(--mono); color: var(--on-mark); background: var(--muted); }
 .graph-mark.error { background: var(--error); }
 .graph-mark.warning, .graph-mark.gap { background: var(--warn); }
 .graph-handle { opacity: 0; pointer-events: none; top: 50% !important; bottom: auto !important; }
-/* Nodes glide to their new places and sizes when the graph re-centers; each edge tweens with them in JS, on the same tokens (app/src/graph/motion.ts). */
-.graph-flow .react-flow__node { transition: transform var(--motion-speed) var(--motion-ease), width var(--motion-speed) var(--motion-ease), height var(--motion-speed) var(--motion-ease); }
-/* Records new to the picture fade in at their place, and records leaving fade out where they were (app/src/graph/camera.ts). */
-.graph-flow .react-flow__node.is-leaving { opacity: 0; pointer-events: none; }
-@media (prefers-reduced-motion: no-preference) {
-  .graph-flow .react-flow__node.is-entering { animation: graph-fade-in var(--motion-speed) var(--motion-ease) both; }
-  .graph-flow .react-flow__node.is-leaving { animation: graph-fade-out var(--motion-speed) var(--motion-ease) both; }
-}
-@keyframes graph-fade-in { from { opacity: 0; } to { opacity: 1; } }
-@keyframes graph-fade-out { from { opacity: 1; } to { opacity: 0; } }
 .graph-flow .react-flow__node:focus { outline: none; }
-.graph-flow .react-flow__node:focus-visible .graph-node { outline: 3px solid var(--steel); outline-offset: 3px; }
+.graph-flow .react-flow__node:focus-visible .graph-node { outline: calc(3px * var(--node-scale)) solid var(--steel); outline-offset: calc(3px * var(--node-scale)); }
+/* A plain box and a bar (LA-BRW-DR393): too small on screen for text, so a filled shape in its stage's color. */
+.graph-node.is-plain { padding: 0; }
+.graph-bar { width: 100%; height: 100%; background: var(--rule); opacity: 0.6; border-radius: var(--node-radius); }
+.graph-flow .react-flow__node.is-bar { pointer-events: none; }
 
-/* Edges: parent/child is the solid spine of the tree; every other relation is a lighter, dashed cross-link. */
-.graph-flow .react-flow__edge-path.graph-edge { stroke-width: 1.2; }
+/* Edges: parent/child is the solid spine of the tree; every other relation is a lighter, dashed cross-link. Lines keep their
+   width on screen whatever the zoom. */
+.graph-flow .react-flow__edge-path.graph-edge { stroke-width: 1.2; vector-effect: non-scaling-stroke; }
 .graph-flow .react-flow__edge-path.rel-structure { stroke: var(--ink); stroke-width: 2; opacity: 0.75; }
 .graph-flow .react-flow__edge-path.rel-trace { stroke: var(--steel); stroke-dasharray: 6 4; }
 .graph-flow .react-flow__edge-path.rel-design { stroke: var(--spark); stroke-dasharray: 2 4; opacity: 0.8; }
 .graph-flow .react-flow__edge-path.rel-file { stroke: var(--muted); stroke-dasharray: 1 3; }
 .graph-flow .react-flow__edge-path.rel-pattern { stroke: var(--steel); stroke-dasharray: 10 3 2 3; opacity: 0.9; }
 .graph-flow .react-flow__edge-path.rel-other { stroke: var(--muted); stroke-dasharray: 3 3; }
-.graph-flow .react-flow__edge-path.distant { opacity: 0.35; }
 .graph-edge-label { font-size: 0.625rem; }
 .graph-swatch { display: inline-block; width: 18px; height: 11px; border: 1.5px solid var(--g-structural); background: var(--g-structural-bg); border-radius: 2px; }
 .graph-swatch.stage-define { border-color: var(--g-define); background: var(--g-define-bg); }
 .graph-swatch.stage-design { border-color: var(--g-design); background: var(--g-design-bg); }
 .graph-swatch.stage-file { border-style: dashed; border-color: var(--g-file); background: var(--paper); }
+.graph-swatch.stage-plain { background: var(--g-design-bg); border-color: var(--g-design); }
+.graph-swatch.stage-bar { background: var(--rule); border-color: var(--rule); opacity: 0.6; }
 .graph-line { display: inline-block; width: 22px; height: 0; border-top: 1.5px solid var(--muted); vertical-align: middle; }
 .graph-line.rel-structure { border-top: 2.5px solid var(--ink); }
 .graph-line.rel-trace { border-top: 1.5px dashed var(--steel); }
@@ -372,7 +368,6 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-line.rel-pattern { border-top: 1.5px dashed var(--steel); border-top-style: dashed; opacity: 0.9; }
 .graph-line.rel-other { border-top: 1.5px dashed var(--muted); }
 .open-in-graph { font-size: 0.86rem; font-weight: 600; color: var(--steel); white-space: nowrap; }
-@media (prefers-reduced-motion: reduce) { .graph-flow .react-flow__node { transition: none; } }
 /* Links, a toggle beside the depth, and the steps through the tree. */
 .graph-links { display: inline-flex; flex: none; }
 .graph-links button { font: inherit; font-size: 0.82rem; padding: 3px 10px; border: 1px solid var(--rule); border-radius: 5px; background: var(--sheet); color: var(--ink); cursor: pointer; }
@@ -380,10 +375,6 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-links button[aria-pressed="true"] { background: var(--steel); border-color: var(--steel); color: var(--sheet); font-weight: 600; }
 .graph-links button:disabled { opacity: 0.5; cursor: default; }
 .graph-steps { display: inline-flex; gap: 2px; flex: none; }
-/* The context ring: faded and a little smaller around its center, its marks with it, readable on hover; out of focus. */
-.graph-flow .react-flow__node.is-context .graph-node { opacity: var(--context-opacity); scale: var(--context-scale); }
-.graph-flow .react-flow__node.is-context:hover .graph-node { opacity: 1; }
-.graph-flow .graph-edge-motion.is-context .react-flow__edge-path { opacity: var(--context-opacity); stroke-width: 1; }
 /* The center's own links, with Links on: dashed in their own color. */
 .graph-flow .react-flow__edge-path.is-link { stroke: var(--link-edge); stroke-dasharray: 6 4; }
 .graph-line.is-link { border-top: 1.5px dashed var(--link-edge); }
@@ -392,25 +383,20 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-node.kind-domain_event:not(.stage-group) { border-color: var(--spark); background: var(--spark-bg); border-radius: 999px; padding-inline: calc(14px * var(--node-scale)); }
 .graph-flow .react-flow__edge-path.rel-event, .graph-flow .react-flow__edge-path.rel-event.is-link { stroke: var(--spark); stroke-dasharray: 4 4; }
 .graph-line.rel-event { border-top: 1.5px dashed var(--spark); }
-.graph-swatch.stage-context { opacity: var(--context-opacity); scale: var(--context-scale); }
-.graph-swatch.stage-more, .graph-node.stage-more { border: 1.5px dashed var(--muted); background: var(--paper); }
-.graph-node.stage-more { align-items: center; }
-.graph-node.stage-more strong { color: var(--muted); }
 /* The hover spotlight: the hovered or focused node, its edges and its neighbors stay bright, the rest dims a step. */
 .graph-flow.has-spotlight .react-flow__node:not(.is-lit) .graph-node { opacity: var(--spotlight-dim); }
-.graph-flow.has-spotlight .react-flow__node.is-context:not(.is-lit) .graph-node { opacity: calc(var(--context-opacity) * var(--spotlight-dim)); }
-.graph-flow.has-spotlight .react-flow__node.is-lit .graph-node { opacity: 1; scale: 1; }
-.graph-flow.has-spotlight .graph-edge-motion:not(.is-lit) .react-flow__edge-path { opacity: calc(var(--context-opacity) * var(--spotlight-dim)); }
-.graph-flow.has-spotlight .graph-edge-motion.is-lit .react-flow__edge-path { opacity: 1; }
-/* Hand-offs: a node going from focus to context fades down and shrinks as the camera moves, and back, on the motion tokens; under reduced motion it changes at once. */
+.graph-flow.has-spotlight .react-flow__node.is-lit .graph-node { opacity: 1; }
+.graph-flow.has-spotlight .graph-edge-group:not(.is-lit) .react-flow__edge-path { opacity: calc(var(--context-opacity) * var(--spotlight-dim)); }
+.graph-flow.has-spotlight .graph-edge-group.is-lit .react-flow__edge-path { opacity: 1; }
+/* The spotlight fades on the motion tokens; under reduced motion it changes at once. */
 @media (prefers-reduced-motion: no-preference) {
-  .graph-flow .react-flow__node .graph-node { transition: opacity var(--motion-speed) var(--motion-ease), scale var(--motion-speed) var(--motion-ease), --node-scale var(--motion-speed) var(--motion-ease); }
-  .graph-flow .react-flow__edge-path.graph-edge { transition: opacity var(--motion-speed) var(--motion-ease), stroke-width var(--motion-speed) var(--motion-ease); }
+  .graph-flow .react-flow__node .graph-node { transition: opacity var(--motion-speed) var(--motion-ease); }
+  .graph-flow .react-flow__edge-path.graph-edge { transition: opacity var(--motion-speed) var(--motion-ease); }
   .graph-edge-hint { transition: background var(--hover-speed), color var(--hover-speed); }
 }
 /* The cut-off at the frame reads as meant: a soft vignette of the canvas's own background at its edges. */
 .graph-flow::after { content: ""; position: absolute; inset: 0; z-index: 4; pointer-events: none; box-shadow: inset 0 0 var(--vignette) calc(var(--vignette) / 3) var(--paper); }
-/* Edge hints: how many context nodes lie past each edge; a click pans that way. */
+/* Edge hints: how many linked records lie past each edge; a click brings the nearest into view. */
 .graph-edge-hints { position: absolute; inset: 0; z-index: 6; pointer-events: none; }
 .graph-edge-hint { position: absolute; pointer-events: auto; font: 600 0.75rem var(--body); font-variant-numeric: tabular-nums; padding: 2px 8px; border: 1px solid var(--rule); border-radius: 10px; background: var(--sheet); color: var(--muted); cursor: pointer; white-space: nowrap; }
 .graph-edge-hint:hover { background: var(--hover-bg); color: var(--steel); }
@@ -419,14 +405,14 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-edge-hint.is-down { bottom: 8px; left: 50%; translate: -50% 0; }
 .graph-edge-hint.is-left { left: 8px; top: 50%; translate: 0 -50%; }
 .graph-edge-hint.is-right { right: 8px; top: 50%; translate: 0 -50%; }
-/* The minimap: focus nodes solid, context faint, the viewport outlined, all from tokens. */
-.graph-minimap { --xy-minimap-background-color: var(--sheet); --xy-minimap-mask-background-color: var(--minimap-mask); --xy-minimap-mask-stroke-color: var(--steel); --xy-minimap-mask-stroke-width: 2; --xy-minimap-node-background-color: var(--muted); --xy-minimap-node-stroke-color: var(--muted); border: 1px solid var(--rule); border-radius: 6px; }
-.graph-minimap .react-flow__minimap-node.is-context { opacity: var(--context-opacity); }
-.graph-minimap .react-flow__minimap-node.is-focus { fill: var(--steel); }
-/* By touch: the toolbar's toggles and the edge hints are touch-sized, and a tapped context node shows in full, as a hover would. */
+/* The minimap (LA-BRW-UC20-R15): the whole map's upper levels, the focus solid, the viewport outlined, all from tokens. */
+.graph-minimap { position: absolute; right: 12px; bottom: 12px; z-index: 5; padding: 4px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; line-height: 0; pointer-events: none; }
+.graph-minimap-node { fill: var(--muted); opacity: 0.35; }
+.graph-minimap-node.is-focus { fill: var(--steel); opacity: 1; }
+.graph-minimap-view { fill: var(--minimap-mask); stroke: var(--steel); stroke-width: 2; }
+/* By touch: the toolbar's toggles and the edge hints are touch-sized. */
 @media (pointer: coarse) {
   :is(.graph-links button, .graph-step, .graph-edge-hint) { min-width: var(--touch-target); min-height: var(--touch-target); }
-  .graph-flow .react-flow__node.is-context.is-armed .graph-node { opacity: 1; }
 }
 /* ---------- End of graph view ---------- */
 
@@ -479,12 +465,13 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .menu .long-list-tools input { font-size: 0.8rem; }
 /* ---------- End of obligation kinds, test states and record content ---------- */
 /* ---- Graph groups (brief 15): a folder of one kind of child, with a tab and a count. ---- */
-.graph-node.stage-group { border: 1.5px solid var(--muted); background: var(--paper); padding: calc(6px * var(--node-scale)) calc(30px * var(--node-scale)) calc(6px * var(--node-scale)) calc(10px * var(--node-scale)); border-top-width: 5px; }
-.graph-node.stage-group.is-folded { border-style: solid; box-shadow: 3px 3px 0 -1px var(--paper), 3px 3px 0 0 var(--muted); }
-.graph-node.stage-group.is-focus { box-shadow: 0 0 0 3px var(--ink); }
-.graph-group-chevron { position: absolute; right: calc(4px * var(--node-scale)); top: 50%; translate: 0 -50%; display: grid; place-items: center; width: calc(24px * var(--node-scale)); height: calc(24px * var(--node-scale)); padding: 0; border: 0; border-radius: var(--node-radius); background: none; color: var(--ink); cursor: pointer; }
+.graph-node.stage-group { border: var(--node-border) solid var(--muted); background: var(--sheet); padding: calc(6px * var(--node-scale)) calc(30px * var(--node-scale)) calc(6px * var(--node-scale)) calc(10px * var(--node-scale)); border-top-width: calc(5px * var(--node-scale)); }
+.graph-node.stage-group.is-plain { padding: 0; }
+.graph-node.stage-group.is-focus { box-shadow: 0 0 0 calc(2px * var(--node-scale)) var(--ink); }
+/* A group's chevron sits beside its title: down while its members are drawn beside it, right when they are not. */
+.graph-group-chevron { position: absolute; right: calc(4px * var(--node-scale)); top: 50%; translate: 0 -50%; display: grid; place-items: center; width: calc(24px * var(--node-scale)); height: calc(24px * var(--node-scale)); color: var(--ink); }
+.graph-node.is-scaled .graph-group-chevron { position: static; translate: none; }
 .graph-group-chevron svg { width: calc(14px * var(--node-scale)); height: calc(14px * var(--node-scale)); }
-.graph-group-chevron:hover { background: var(--steel-bg); color: var(--steel); }
 .graph-swatch.stage-group { border-color: var(--muted); border-top-width: 4px; background: var(--paper); }
 
 /* ---------- App shell, nav, focus page, sideBar, trees and shortcuts (brief 18) ---------- */
@@ -793,8 +780,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 .spec-body a.card:hover, .spec-body .domain-card:hover { border-color: var(--steel); box-shadow: 0 0 0 3px var(--hover-ring); }
 .spec-body .domain-card:hover .card-title strong { color: var(--steel); }
 .graph-node.is-focus, .graph-node.stage-file { cursor: default; }
-.graph-flow .react-flow__node:hover .graph-node:not(.is-focus):not(.stage-file) { box-shadow: 0 0 0 3px var(--hover-ring); }
-.graph-flow .react-flow__node:hover .graph-node.stage-group.is-folded:not(.is-focus) { box-shadow: 3px 3px 0 -1px var(--paper), 3px 3px 0 0 var(--muted), 0 0 0 3px var(--hover-ring); }
+.graph-flow .react-flow__node:hover .graph-node:not(.is-focus):not(.stage-file) { box-shadow: 0 0 0 calc(3px * var(--node-scale)) var(--hover-ring); }
 .aggregate-node:hover, .leaf-node:hover, .spec-node:hover { box-shadow: 0 0 0 3px var(--hover-ring); }
 .graph-depth button:not([aria-pressed="true"]):not(:disabled):hover { background: var(--hover-bg); border-color: var(--steel); }
 .quick-find-results li:not(.active):hover, .palette-list li:not(.active):hover { background: var(--hover-bg); }
@@ -1118,8 +1104,8 @@ a.row-link.row-link:focus-visible { outline: none; }
     .palette-list li, .tab, .checks-scope .scope-option, .long-list-tools input, .quick-find input, .dialog-search, .segment, .file-button) { min-width: var(--touch-target); min-height: var(--touch-target); }
   .menu .rail-item { width: var(--touch-target); height: var(--touch-target); }
   .record-list.tree .tree-row, .record-list > li, .problems > li { min-height: var(--touch-target); box-sizing: border-box; }
-  :is(.tree-toggle, .tab-close, .pane-close, .graph-group-chevron, .color-swatch) { position: relative; }
-  :is(.tree-toggle, .tab-close, .pane-close, .graph-group-chevron, .color-swatch)::before { content: ""; position: absolute; inset: 50% auto auto 50%; width: var(--touch-target); height: var(--touch-target); translate: -50% -50%; }
+  :is(.tree-toggle, .tab-close, .pane-close, .color-swatch) { position: relative; }
+  :is(.tree-toggle, .tab-close, .pane-close, .color-swatch)::before { content: ""; position: absolute; inset: 50% auto auto 50%; width: var(--touch-target); height: var(--touch-target); translate: -50% -50%; }
   .tree-toggle { width: 32px; height: 32px; }
   .tab-close { opacity: 1; }
   .topbar-up { position: relative; }

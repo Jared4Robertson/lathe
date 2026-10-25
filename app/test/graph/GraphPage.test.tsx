@@ -77,22 +77,23 @@ describe('graph page', () => {
     expect(side.getByRole('link', { name: 'P-D-DR02' }).getAttribute('href')).toBe('/P-D-DR02');
   });
 
-  it('LA-BRW-T278 The graph opens at depth 1 with the parent and children only; depth 2 and 3 climb more levels, and Links brings in the links', async () => {
-    await showGraph('/P-D-UC01-R01', testWorkspace(), 1, false);
+  it('LA-BRW-T278 The graph opens at depth 1, framing the parent and the children; depth 2 and 3 frame more levels below, and Links brings in the links', async () => {
+    await showGraph('/P-D/define', testWorkspace(), 1, false);
     const depth = within(screen.getByRole('group', { name: 'Depth' }));
     expect(depth.getAllByRole('button').map((b) => b.textContent)).toEqual(['1', '2', '3']);
     expect(depth.getByRole('button', { name: '1' })).toHaveAttribute('aria-pressed', 'true');
-    await waitFor(() => expect(node('P-D-UC01')).not.toBeNull());
-    expect(node('P-D-V01')).toBeNull();
-    expect(node('P-D-T01')).toBeNull();
+    await waitFor(() => expect(node('P-D/define/use-cases')).not.toBeNull());
     expect(document.querySelector('.react-flow__edge-path.graph-edge:not(.rel-structure)')).toBeNull();
-    // Depth 2 brings the Capabilities folder into focus, and Define faded beyond it; still no links.
+    const count = () => document.querySelector('.graph-count')!.textContent;
+    const viewport = () => document.querySelector<HTMLElement>('.react-flow__viewport')!.style.transform;
+    const one = count();
+    // Depth 2 frames the folders' records too: more in the picture, and the camera takes them in.
     fireEvent.click(depth.getByRole('button', { name: '2' }));
-    await waitFor(() => expect(node('P-D/define')).not.toBeNull());
-    expect(node('P-D/define')!.className).toContain('is-context');
-    expect(node('P-D/define/use-cases')!.className).not.toContain('is-context');
-    expect(node('P-D-V01')).toBeNull();
-    // Links brings in what the requirement links to, one step, dashed in their own color.
+    await waitFor(() => expect(count()).not.toBe(one));
+    expect(count()).toBe('3 records · 3 groups · 5 links');
+    expect(viewport()).toMatch(/scale\(/);
+    // Links brings in what the focus links to, dashed in their own color; a stage links to nothing.
+    await showGraph('/P-D-UC01-R01', testWorkspace(), 1, false);
     fireEvent.click(screen.getByRole('button', { name: 'Links' }));
     await waitFor(() => expect(node('P-D-V01')).not.toBeNull());
     expect(node('P-D-T01')).not.toBeNull();
@@ -113,11 +114,12 @@ describe('graph page', () => {
     expect(edges.some((c) => c?.includes('rel-trace'))).toBe(true);
     expect(edges.some((c) => c?.includes('rel-structure'))).toBe(true);
 
-    // From the aggregate at depth 3: its rule P-D-DR01 has a coverage gap, and the domain is a structural record.
+    // From the aggregate: its rule P-D-DR01 has a coverage gap; from the domain, the domain is a structural record.
     await showGraph('/P-D-A1', testWorkspace(), 1, false);
-    fireEvent.click(screen.getByRole('button', { name: '3' }));
-    await waitFor(() => expect(node('P-D')).not.toBeNull());
+    await waitFor(() => expect(node('P-D-DR01')).not.toBeNull());
     expect(node('P-D-DR01')!.querySelector('.graph-mark.gap')).not.toBeNull();
+    await showGraph('/P-D', testWorkspace(), 1, false);
+    await waitFor(() => expect(node('P-D')).not.toBeNull());
     expect(node('P-D')!.querySelector('.graph-node')!.className).toContain('stage-structural');
   });
 
@@ -180,83 +182,57 @@ describe('graph page', () => {
     expect(screen.queryByRole('checkbox', { name: 'Trace mode' })).toBeNull();
   });
 
-  it('LA-BRW-T66 The page draws columns with a solid parent/child spine, and draws even a ring of links in columns, without a notice', async () => {
+  it('LA-BRW-T66 The page draws the map in columns with a solid parent/child spine, and links between siblings never move anything', async () => {
     await showGraph('/P-D-UC01-R01');
     await waitFor(() => expect(node('P-D-T01')).not.toBeNull());
     const left = (id: string) => Number(/translate\(([-\d.]+)px, ?([-\d.]+)px\)/.exec(node(id)!.style.transform)![1]);
     expect(left('P-D-UC01')).toBeLessThan(left('P-D-UC01-R01'));
-    expect(left('P-D-UC01-R01')).toBeLessThan(left('P-D-C01'));
-    // What satisfies and proves the requirement sits in one column after it.
-    expect(left('P-D-C01')).toBe(left('P-D-T01'));
-    const spine = document.querySelector('.react-flow__edge-path.rel-structure');
-    expect(spine).not.toBeNull();
-    expect(spine!.getAttribute('class')).not.toContain('distant');
+    // What satisfies and proves the requirement keeps its own place in the map: a component and a test, one level apart.
+    expect(left('P-D-C01')).toBeLessThan(left('P-D-T01'));
+    expect(document.querySelector('.react-flow__edge-path.rel-structure')).not.toBeNull();
 
     const w = testWorkspace();
     w.records.push({ ...w.records.find((r) => r.id === 'P-D-A1')!, id: 'P-D-A2', title: 'Owner', path: 'specs/P-D-A2.md' });
     w.links.push({ source: 'P-D-A1', relation: 'relates_to', target: 'P-D-A2' }, { source: 'P-D-A2', relation: 'relates_to', target: 'P-D-A1' });
-    await showGraph('/P-D-A1', w);
-    // The aggregates' folder opened: the two aggregates are siblings, in one column, with both links drawn.
-    fireEvent.click(node('P-D/define/domain-model')!.querySelector<HTMLElement>('button.graph-group-chevron')!);
+    await showGraph('/P-D-A1', w, 1, false);
+    const links = screen.getByRole('button', { name: 'Links' });
+    if (links.getAttribute('aria-pressed') !== 'true') fireEvent.click(links);
+    // The two aggregates are siblings, in one column, with both links drawn between them.
     await waitFor(() => expect(node('P-D-A2')).not.toBeNull());
-    await waitFor(() => expect(left('P-D-A2')).toBe(left('P-D-A1')));
+    expect(left('P-D-A2')).toBe(left('P-D-A1'));
+    await waitFor(() => expect(document.querySelector('.graph-edge-group[data-source="P-D-A1"][data-target="P-D-A2"] .is-link')).not.toBeNull());
+    expect(document.querySelector('.graph-edge-group[data-source="P-D-A2"][data-target="P-D-A1"] .is-link')).not.toBeNull();
   });
 });
 
 describe('graph groups on the page', () => {
   const groupNode = (id: string) => node(id)?.querySelector<HTMLElement>('.graph-node') ?? null;
 
-  const chevron = (id: string) => node(id)!.querySelector<HTMLElement>('button.graph-group-chevron')!;
-
-  it('LA-BRW-T110 A group\'s chevron opens it in place and closes it again, open groups are remembered while walking, and clicking the group goes to it', async () => {
+  it('LA-BRW-T110 A group\'s chevron points down while its members are drawn beside it and right when they are not; clicking the group, or Enter on it, goes to it', async () => {
     await showGraph('/P-D', testWorkspace(), 1, false);
     await waitFor(() => expect(node('P-D/question')).not.toBeNull());
     expect(groupNode('P-D/question')!.className).toContain('stage-group');
-    expect(groupNode('P-D/question')!.className).toContain('is-folded');
     expect(groupNode('P-D/question')!.textContent).toContain('Open questions (1)');
-    // Folded at the edge, its question is only the faded ring.
-    expect(node('P-D-Q01')!.className).toContain('is-context');
+    // The chevron is a mark, not a button: there is nothing to open in place, every member is in the map.
+    const chevron = (id: string) => node(id)!.querySelector('.graph-group-chevron')!;
+    expect(node('P-D/question')!.querySelector('button')).toBeNull();
+    const memberDrawn = !!node('P-D-Q01');
+    expect(chevron('P-D/question').querySelector('path')!.getAttribute('d')).toBe(memberDrawn ? 'M6 9l6 6l6-6' : 'M9 6l6 6l-6 6');
 
-    expect(chevron('P-D/question').getAttribute('aria-expanded')).toBe('false');
-    fireEvent.click(chevron('P-D/question'));
-    await waitFor(() => expect(node('P-D-Q01')!.className).not.toContain('is-context'));
-    expect(window.location.pathname).toBe('/P-D');
-    expect(groupNode('P-D/question')!.className).toContain('is-open');
-    expect(chevron('P-D/question').getAttribute('aria-label')).toBe('Fold Open questions (1) in place');
-
-    // Walk to the question and back: the group is still open.
-    fireEvent.click(node('P-D-Q01')!);
-    await waitFor(() => expect(window.location.pathname).toBe('/P-D-Q01'));
-    await back();
-    await waitFor(() => expect(title()).toBe('Domain'));
-    await waitFor(() => expect(node('P-D-Q01')!.className).not.toContain('is-context'));
-
-    fireEvent.click(chevron('P-D/question'));
-    await waitFor(() => expect(node('P-D-Q01')!.className).toContain('is-context'));
-    expect(groupNode('P-D/question')!.className).toContain('is-folded');
-
-    // Clicking the group itself goes to its address, where it is the center and has no chevron.
+    // Clicking the group itself goes to its address, where it is the center.
     fireEvent.click(node('P-D/question')!);
     await waitFor(() => expect(window.location.pathname).toBe('/P-D/question'));
     await waitFor(() => expect(groupNode('P-D/question')!.className).toContain('is-focus'));
-    expect(node('P-D/question')!.querySelector('button.graph-group-chevron')).toBeNull();
-  });
+    // Its member is drawn beside it now: the chevron points down.
+    await waitFor(() => expect(node('P-D-Q01')).not.toBeNull());
+    expect(chevron('P-D/question').querySelector('path')!.getAttribute('d')).toBe('M6 9l6 6l6-6');
 
-  it('LA-BRW-T111 o on a group opens or closes it and keeps keyboard focus on it; Enter goes to it', async () => {
-    await showGraph('/P-D', testWorkspace(), 1, false);
+    // Enter on a group goes to it too.
+    await back();
     await waitFor(() => expect(node('P-D/design')).not.toBeNull());
-    const folderInFocus = () => !node('P-D/design/technical-specification')!.className.includes('is-context');
-    expect(folderInFocus()).toBe(false);
     const group = node('P-D/design')!;
     group.focus();
-    fireEvent.keyDown(group, { key: 'o' });
-    await waitFor(() => expect(folderInFocus()).toBe(true));
-    expect(window.location.pathname).toBe('/P-D');
-    await waitFor(() => expect(document.activeElement).toBe(node('P-D/design')));
-    fireEvent.keyDown(document.activeElement!, { key: 'o' });
-    await waitFor(() => expect(folderInFocus()).toBe(false));
-    await waitFor(() => expect(document.activeElement).toBe(node('P-D/design')));
-    fireEvent.keyDown(document.activeElement!, { key: 'Enter' });
+    fireEvent.keyDown(group, { key: 'Enter' });
     await waitFor(() => expect(window.location.pathname).toBe('/P-D/design'));
   });
 
@@ -295,7 +271,7 @@ describe('graph groups on the page', () => {
     expect(groupNode('P-D/design')!.querySelector('.graph-mark.error')).not.toBeNull();
     expect(groupNode('P-D/define')!.querySelector('.graph-mark.gap')).not.toBeNull();
     expect(groupNode('P-D/question')!.querySelector('.graph-mark')).toBeNull();
-    expect(node('P-D/question')!.getAttribute('aria-label')).toBe('Group Open questions (1) in P-D, folded');
+    expect(node('P-D/question')!.getAttribute('aria-label')).toBe('Group Open questions (1) in P-D');
     const legend = within(screen.getByRole('region', { name: 'Legend' }));
     expect(legend.getByText(/Stage, folder or group/)).toBeTruthy();
   });
@@ -333,7 +309,7 @@ describe('graph groups on the page', () => {
   });
 });
 
-describe('the icicle on the page', () => {
+describe('the map on the page', () => {
   it('LA-BRW-T643 Tall parents carry their height and content scale, and every parent line is level', async () => {
     await showGraph('/P-D', testWorkspace(), 2, false);
     await waitFor(() => expect(node('P-D/define')).not.toBeNull());

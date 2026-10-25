@@ -219,7 +219,7 @@ describe('domain events in the graph', () => {
     expect(treeChildren(i, 'P-D-A3/domain_event')).toEqual(['P-D-EV01', 'P-D-EV02', 'P-D-EV03']);
     expect(treeParent(i, 'P-D-EV01')).toBe('P-D-A3/domain_event');
     // Links on: the event's raised_by and every reacts_to, one hop.
-    const links = neighborhood(i, 'P-D-EV01', 1, undefined, undefined, { links: true });
+    const links = neighborhood(i, 'P-D-EV01', 1, undefined, { links: true });
     expect(links.edges.filter((e) => e.relation === 'reacts_to').map((e) => e.source).sort()).toEqual(['P-D-A1', 'P-D-A2', 'P-D-UC01', 'P-E-A1']);
     expect(links.edges.some((e) => e.relation === 'raised_by' && e.target === 'P-D-EN03')).toBe(true);
     const off = neighborhood(i, 'P-D-EV01', 1);

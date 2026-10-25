@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { openApp, openSideBar } from './helpers';
 import { testWorkspace } from './graph/workspace';
+import { COMMANDS } from '../src/shell/keymap';
 
 // Shortcuts end to end: each key press goes to the window's listener, as in the browser. The test
 // browser is not a Mac, so Mod is Ctrl.
@@ -166,21 +167,17 @@ describe('keyboard shortcuts', () => {
     expect(window.location.pathname).toBe('/');
   });
 
-  it('LA-BRW-T150 In the graph, + and - change the depth, t switches trace mode, . fits the view and o opens or closes the focused group', async () => {
+  it('LA-BRW-T150 In the graph, + and - change the depth, t switches trace mode and . frames the focus again', async () => {
     await openApp('/P-D?view=graph', { workspace: testWorkspace() });
     await waitFor(() => expect(node('P-D/question')).not.toBeNull());
     press(document.body, '+', 'Equal', { shiftKey: true });
     expect(screen.getByRole('button', { name: '2' })).toHaveAttribute('aria-pressed', 'true');
     press(document.body, '-', 'Minus');
     expect(screen.getByRole('button', { name: '1' })).toHaveAttribute('aria-pressed', 'true');
+    // . frames the focus again, and there is no command to open or fold a group in place: every child is in the map.
     press(document.body, '.', 'Period');
-    // o opens the open questions in place (their question leaves the faded ring), and closes them again.
-    const group = node('P-D/question')!;
-    group.focus();
-    press(group, 'o', 'KeyO');
-    await waitFor(() => expect(node('P-D-Q01')?.className).not.toContain('is-context'));
-    press(document.activeElement ?? document.body, 'o', 'KeyO');
-    await waitFor(() => expect(node('P-D-Q01')?.className).toContain('is-context'));
+    expect(node('P-D')?.querySelector('.is-focus')).not.toBeNull();
+    expect(COMMANDS.some((c) => c.id === 'graphToggleGroup')).toBe(false);
 
     await openApp('/P-D-UC01-R01?view=graph', { workspace: testWorkspace() });
     await waitFor(() => expect(node('P-D-UC01')).not.toBeNull());

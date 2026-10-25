@@ -2,7 +2,7 @@ import './graph/setup';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { layoutNeighborhood } from '../src/graph/layout';
+import { graphMap } from '../src/graph/map';
 import { neighborhood } from '../src/graph/model';
 import { indexWorkspace } from '../src/specs/data';
 import { branchOf, domainFolders, type Folder, type FolderGroup } from '../src/specs/folders';
@@ -186,12 +186,14 @@ describe('layers and test groups', () => {
 
   it('LA-BRW-T286 In the graph a domain reaches its components through Design, Technical specification, then a layer, one level each, read left to right', async () => {
     const index = indexWorkspace(layerWorkspace());
-    // Depth 1 from the domain: its product and its stages; their folders are the faded ring.
+    // Depth 1 from the domain: its product and its stages; their folders are the next level, one more down.
     const domain = neighborhood(index, 'DM-SHOP', 1);
-    const inFocus = domain.nodes.filter((n) => !n.context).map((n) => n.id);
-    expect(inFocus).toContain('DM-SHOP/design');
-    expect(domain.nodes.find((n) => n.id === 'DM-SHOP/design/technical-specification')).toMatchObject({ context: true, title: expect.stringMatching(/^Technical specification \(\d+\)$/) });
-    expect(domain.nodes.map((n) => n.id).filter((id) => id.startsWith('DM-SHOP-LAY') || id.startsWith('DM-SHOP-C0'))).toEqual([]);
+    const framed = domain.nodes.map((n) => n.id);
+    expect(framed).toContain('DM-SHOP/design');
+    expect(framed).toContain('DM');
+    expect(framed).not.toContain('DM-SHOP/design/technical-specification');
+    expect(neighborhood(index, 'DM-SHOP', 2).nodes.find((n) => n.id === 'DM-SHOP/design/technical-specification')).toMatchObject({ title: expect.stringMatching(/^Technical specification \(\d+\)$/) });
+    expect(framed.filter((id) => id.startsWith('DM-SHOP-LAY') || id.startsWith('DM-SHOP-C0'))).toEqual([]);
     expect(domain.edges.every((e) => e.relation === 'parent')).toBe(true);
 
     // Depth 3 reaches the layers, Technical specification's records, in order; a layer's components would be the next level.
@@ -199,16 +201,16 @@ describe('layers and test groups', () => {
     const column = new Map(walk.nodes.map((n) => [n.id, n.column]));
     expect(['DM', 'DM-SHOP', 'DM-SHOP/design', 'DM-SHOP/design/technical-specification', 'DM-SHOP-LAY02'].map((id) => column.get(id))).toEqual([0, 1, 2, 3, 4]);
     for (const id of ['DM-SHOP-LAY01', 'DM-SHOP-LAY03']) expect(column.get(id)).toBe(column.get('DM-SHOP-LAY02'));
-    expect(walk.nodes.find((n) => n.id === 'DM-SHOP-C02')).toMatchObject({ context: true });
+    expect(walk.nodes.find((n) => n.id === 'DM-SHOP-C02')).toBeUndefined();
 
-    // From a layer at depth 1: Technical specification to its left, its components to its right, the stage faded.
+    // From a layer at depth 1: Technical specification to its left, its components to its right.
     const layer = neighborhood(index, 'DM-SHOP-LAY02', 1);
     const lc = new Map(layer.nodes.map((n) => [n.id, n.column]));
-    expect(layer.nodes.filter((n) => !n.context).map((n) => n.id).sort()).toEqual(['DM-SHOP-C02', 'DM-SHOP-C03', 'DM-SHOP-LAY02', 'DM-SHOP/design/technical-specification']);
-    expect(layer.nodes.filter((n) => n.context).map((n) => n.id)).toEqual(['DM-SHOP/design']);
-    expect([lc.get('DM-SHOP/design/technical-specification'), lc.get('DM-SHOP-LAY02'), lc.get('DM-SHOP-C02')]).toEqual([1, 2, 3]);
-    const { positions } = layoutNeighborhood(layer);
-    const x = (id: string) => positions.get(id)!.x;
+    expect(layer.nodes.map((n) => n.id).sort()).toEqual(['DM-SHOP-C02', 'DM-SHOP-C03', 'DM-SHOP-LAY02', 'DM-SHOP/design/technical-specification']);
+    expect([lc.get('DM-SHOP/design/technical-specification'), lc.get('DM-SHOP-LAY02'), lc.get('DM-SHOP-C02')]).toEqual([0, 1, 2]);
+    // In the one map, one level after another, left to right.
+    const map = graphMap(index);
+    const x = (id: string) => map.nodes.get(id)!.x;
     expect(x('DM-SHOP/design/technical-specification')).toBeLessThan(x('DM-SHOP-LAY02'));
     expect(x('DM-SHOP-LAY02')).toBeLessThan(x('DM-SHOP-C02'));
     expect(x('DM-SHOP-C03')).toBe(x('DM-SHOP-C02'));
@@ -297,7 +299,7 @@ describe('layers and test groups', () => {
     const acceptance = `${plan}/acceptance`;
     // Depth 1 from the Test plan: the Design stage and the groups, labeled with their counts.
     const folder = neighborhood(index, plan, 1);
-    const titles = Object.fromEntries(folder.nodes.filter((x) => x.group && !x.context && x.id !== plan && x.id !== 'DM-SHOP/design').map((x) => [x.id, x.title]));
+    const titles = Object.fromEntries(folder.nodes.filter((x) => x.group && x.id !== plan && x.id !== 'DM-SHOP/design').map((x) => [x.id, x.title]));
     expect(titles).toEqual({
       // The capability's own test is listed here too, under its capability, as the nav lists it.
       [acceptance]: 'Acceptance tests (5)',
@@ -308,17 +310,16 @@ describe('layers and test groups', () => {
       [`${plan}/design`]: 'Design checks (2)',
       [`${plan}/engineering`]: 'Engineering checks (1)',
     });
-    expect(folder.nodes.filter((x) => !x.group && !x.context).map((x) => x.id)).toEqual([]);
+    expect(folder.nodes.filter((x) => !x.group).map((x) => x.id)).toEqual([]);
 
-    // A test's place: the Test plan, then acceptance, its capability and its use case, one column each, left to right.
-    const fromTest = neighborhood(index, 'DM-SHOP-T04', 3);
-    const column = new Map(fromTest.nodes.map((x) => [x.id, x.column]));
+    // A test's place in the map: the Test plan, then acceptance, its capability and its use case, one level each, left to right.
+    const placed = graphMap(index).nodes;
     const path = [plan, acceptance, `${acceptance}/DM-SHOP-CAP01`, `${acceptance}/DM-SHOP-CAP01/DM-SHOP-UC02`, 'DM-SHOP-T04'];
-    expect(path.map((id) => column.get(id))).toEqual(path.map((_, i) => column.get(plan)! + i));
-    const spine = fromTest.edges.filter((e) => e.relation === 'parent').map((e) => `${e.source} > ${e.target}`);
-    for (let i = 1; i < path.length; i++) expect(spine).toContain(`${path[i - 1]} > ${path[i]}`);
-    const { positions } = layoutNeighborhood(fromTest);
-    for (let i = 1; i < path.length; i++) expect(positions.get(path[i - 1])!.x).toBeLessThan(positions.get(path[i])!.x);
+    expect(path.map((id) => placed.get(id)!.level)).toEqual(path.map((_, i) => placed.get(plan)!.level + i));
+    for (let i = 1; i < path.length; i++) expect(placed.get(path[i])!.parent).toBe(path[i - 1]);
+    // From the test, its use case's group is the parent the camera keeps at the left edge.
+    expect(neighborhood(index, 'DM-SHOP-T04', 3).edges.map((e) => `${e.source} > ${e.target}`)).toContain(`${path[3]} > DM-SHOP-T04`);
+    for (let i = 1; i < path.length; i++) expect(placed.get(path[i - 1])!.x).toBeLessThan(placed.get(path[i])!.x);
 
     // Every graph group is the Test plan folder's group, by its key and label.
     const folderModel = designFolder(index, 'DM-SHOP', 'test-plan');
@@ -327,7 +328,7 @@ describe('layers and test groups', () => {
 
     // With one test group only, the tests hang straight under the Test plan.
     const pay = neighborhood(index, 'DM-PAY-T01', 1);
-    expect(pay.edges.filter((e) => !e.context).map((e) => `${e.source} > ${e.target}`)).toEqual(['DM-PAY/design/test-plan > DM-PAY-T01']);
+    expect(pay.edges.map((e) => `${e.source} > ${e.target}`)).toEqual(['DM-PAY/design/test-plan > DM-PAY-T01']);
 
     // A test-plan group has its own page.
     await openApp(`/${acceptance}`, { workspace: layerWorkspace() });
