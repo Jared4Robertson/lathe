@@ -22,6 +22,9 @@ const PATHS: Record<string, string[]> = {
   keyboard: ['M2 8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z', 'M6 10v.01', 'M10 10v.01', 'M14 10v.01', 'M18 10v.01', 'M6 14v.01', 'M18 14v.01', 'M10 14h4'],
   x: ['M18 6L6 18', 'M6 6l12 12'],
   plus: ['M12 5v14', 'M5 12h14'],
+  // The side bar's views (brief 64): Details is `info`; Outline and History.
+  outline: ['M9 6h11', 'M12 12h8', 'M15 18h5', 'M5 6v.01', 'M8 12v.01', 'M11 18v.01'],
+  history: ['M12 8v4l2 2', 'M3.05 11a9 9 0 1 1 .5 4m-.5 5v-5h5'],
 };
 
 export type IconName = keyof typeof PATHS;

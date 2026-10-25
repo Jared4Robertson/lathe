@@ -105,13 +105,13 @@ describe('long lists', () => {
     expect(within(section(/^Coverage/)).getByRole('searchbox', { name: 'Filter coverage gaps' })).toBeInTheDocument();
     expect(within(section(/^Problems in this domain/)).getByRole('searchbox', { name: 'Filter problems' })).toBeInTheDocument();
 
-    // The record page: children and links in.
+    // The record page: its children and its Traceability, in the wiki.
     await openApp('/records/BG-D01', served);
     await screen.findByRole('heading', { level: 1, name: 'Domain 1' });
-    expect(within(main()).getByRole('searchbox', { name: 'Filter children' })).toBeInTheDocument();
+    expect(within(main()).getByRole('searchbox', { name: /^Filter children of BG-D01$/i })).toBeInTheDocument();
     await openApp('/records/BG-D01-DR01', served);
     await screen.findByRole('heading', { level: 1, name: 'A ledger balances' });
-    const linksIn = within(main()).getByRole('searchbox', { name: 'Filter links in: Applied by' });
+    const linksIn = within(main()).getByRole('searchbox', { name: /^Filter applied by$/i });
     await user.type(linksIn, 'UC09');
     expect(within(main()).getByText('1 of 12')).toBeInTheDocument();
 
