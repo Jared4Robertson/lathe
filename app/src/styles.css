@@ -4,16 +4,16 @@
   --backdrop: rgb(0 0 0 / 0.35); --on-mark: #fff;
   /* Text on a product's own color, which is always dark enough for white; no theme changes it. */
   --on-space: #fff;
-  /* Hover: the tint, the ring and the speed every clickable thing shares (LA-PAT-APP-CODE-R08). */
+  /* Hover: the tint, the ring and the speed every clickable thing shares (LA-PAT-APP-UX-R01). */
   --hover-bg: color-mix(in srgb, var(--steel) 10%, transparent);
   --hover-ring: color-mix(in srgb, var(--steel) 45%, transparent);
   --hover-speed: 120ms;
-  /* Motion: the speed and easing every move and fade shares, in CSS and in JS (app/src/graph/motion.ts); reduced motion turns each off (LA-PAT-APP-CODE-R12). */
+  /* Motion: the speed and easing every move and fade shares, in CSS and in JS (app/src/graph/motion.ts); reduced motion turns each off (LA-PAT-APP-UX-R04). */
   --motion-speed: 320ms; --motion-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
   --node-radius: 4px; /* every graph node is the same rectangle; color tells the stage */
   --paper: #F4F6F5; --sheet: #FFFFFF; --ink: #1D2830; --muted: #5A6870; --rule: #CBD3D6;
   --steel: #2E6A88; --steel-bg: #E4EEF3; --spark: #B5512A; --spark-bg: #F8E8DF; --warn: #875C00;
-  /* The workbench: panels sit on the shell, a gap apart, and every gap between two panels resizes them (LA-PAT-APP-CODE-R09). */
+  /* The workbench: panels sit on the shell, a gap apart, and every gap between two panels resizes them (LA-PAT-APP-UX-R02). */
   --shell: #DDE3E6; --panel-gap: 6px; --panel-radius: 8px;
   /* Errors take the spark color, and the graph's stages follow the accent, spark and ink, unless a theme sets them apart. */
   --error: #9E4320; --error-bg: var(--spark-bg); /* darker than --spark, so error text passes AA on its tint */
@@ -23,11 +23,11 @@
   --g-file: var(--muted);
   /* The title above a graph or a model pane: one fixed height, so the canvas below it never moves. */
   --pane-title-height: 104px;
-  /* The page bar above the panes and each pane's slim header: one fixed height each, so nothing below them moves (R11, R17). */
+  /* The page bar above the panes and each pane's slim header: one fixed height each, so nothing below them moves (UX-R03, UX-R08). */
   --page-bar-height: 40px; --pane-bar-height: 32px;
-  /* Touch (LA-PAT-APP-CODE-R16): the least size of a target under a finger, and the radius of a sheet's top corners. */
+  /* Touch (LA-PAT-APP-UX-R07): the least size of a target under a finger, and the radius of a sheet's top corners. */
   --touch-target: 44px; --sheet-radius: 14px;
-  /* The ERD's key under the Model view: one height for every ERD, so the canvas never resizes (LA-PAT-APP-CODE-R17). */
+  /* The ERD's key under the Model view: one height for every ERD, so the canvas never resizes (LA-PAT-APP-UX-R08). */
   --erd-key-height: 5.5rem;
   --display: "Archivo", "Helvetica Neue", Arial, sans-serif;
   --body: "Public Sans", "Segoe UI", system-ui, sans-serif;
@@ -267,13 +267,13 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-trail a:hover { text-decoration: underline; }
 /* A trail item: the name, cut short with an ellipsis (the full text is its tooltip), then the ID in code style. */
 .graph-trail li { min-width: 0; max-width: 22rem; display: flex; white-space: nowrap; }
-/* The center (always the last item) keeps its name; the earlier ones shrink first (LA-PAT-APP-CODE-R17). */
+/* The center (always the last item) keeps its name; the earlier ones shrink first (LA-PAT-APP-UX-R08). */
 .graph-trail li:last-child { flex-shrink: 0; }
 .graph-trail .trail-item { display: inline-flex; align-items: baseline; gap: 4px; min-width: 0; max-width: 100%; }
 .graph-trail .trail-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .graph-trail .trail-id { flex: none; color: var(--muted); font-size: 0.78rem; }
 .graph-trail [aria-current="page"] .trail-name { font-weight: 700; }
-/* One line whatever the center (LA-PAT-APP-CODE-R17): the count takes what is left and is cut with an ellipsis, so the canvas below never moves; trace and filters sit at the right end. */
+/* One line whatever the center (LA-PAT-APP-UX-R08): the count takes what is left and is cut with an ellipsis, so the canvas below never moves; trace and filters sit at the right end. */
 .graph-toolbar { display: flex; flex-wrap: nowrap; gap: 10px 18px; align-items: center; font-size: 0.88rem; white-space: nowrap; }
 .graph-depth { display: inline-flex; align-items: center; gap: 4px; flex: none; }
 .graph-depth span { margin-right: 4px; color: var(--muted); }
@@ -455,7 +455,7 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 /* Nav rows, as in VS Code's explorer (LA-BRW-DR220). Each row is as wide as the nav panel, indented by padding for its
    depth (--depth, set by the row), with its indent guides drawn inside it, one under each ancestor's chevron. The
    current page's row carries the selection tint over all of it, the indent and the chevron included; a hovered row
-   takes the hover tint (R08); while the nav is used from the keyboard, the selected and the focused row show a 1px
+   takes the hover tint (UX-R01); while the nav is used from the keyboard, the selected and the focused row show a 1px
    outline. The lists stay nested for screen readers, with no margins of their own. */
 .menu { --nav-indent: 12px; --nav-twistie: 20px; --nav-pad: 8px; --nav-row-height: calc(16px + 12px * var(--density, 1)); }
 .menu .nav-panel ul { gap: 0; }
@@ -545,7 +545,7 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .tree-row-body { flex: 1; min-width: 0; }
 .tree-count { color: var(--muted); font-size: 0.78rem; white-space: nowrap; }
 .tree-nested { margin: 1px 10px 7px 32px; }
-/* A tree item's padding sits on its row, so the row's stretched link (R13) covers all of it. */
+/* A tree item's padding sits on its row, so the row's stretched link (UX-R05) covers all of it. */
 .record-list.tree > li { padding: 0; }
 .record-list.tree .tree-row { padding: 5px 10px 5px 4px; }
 .tree-bulk { font: inherit; font-size: 0.78rem; padding: 2px 8px; min-height: 26px; border: 1px solid var(--rule); border-radius: 5px; background: var(--sheet); color: var(--ink); cursor: pointer; white-space: nowrap; }
@@ -675,14 +675,14 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 .palette-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* ---------- End of brief 30 ---------- */
 
-/* Hover: everything clickable answers the pointer the same way (LA-PAT-APP-CODE-R08).
+/* Hover: everything clickable answers the pointer the same way (LA-PAT-APP-UX-R01).
    Cards and graph nodes take a ring; rows and plain buttons take a tint; small text controls turn steel.
    The center node and file nodes are not clickable, so they keep the default cursor and no hover. */
 .card, .graph-node, .aggregate-node, .leaf-node, .spec-node, .tree-bulk, .form-actions button, .graph-depth button, .graph-filter-actions button,
 .quick-find-results li, .palette-list li, .graph-trace-toggle, .graph-filters > summary, .graph-legend summary {
   transition: background-color var(--hover-speed), border-color var(--hover-speed), box-shadow var(--hover-speed), color var(--hover-speed);
 }
-/* A row that leads to one record is one link (LA-PAT-APP-CODE-R13): its record link, marked row-link, stretches over
+/* A row that leads to one record is one link (LA-PAT-APP-UX-R05): its record link, marked row-link, stretches over
    the row, so anywhere on it opens the record, as a plain link (Cmd/Ctrl-click and middle-click open a new tab).
    The row's other controls sit above the stretched link and keep working. The link's hover and focus are the row's. */
 :is(.record-list > li:not(.tree-item), .problems > li, .tree-row) { position: relative; }
@@ -712,7 +712,7 @@ a.row-link.row-link:focus-visible { outline: none; }
   .quick-find-results li, .palette-list li, .graph-trace-toggle, .graph-filters > summary, .graph-legend summary { transition: none; }
 }
 
-/* The workbench (LA-PAT-APP-CODE-R09): each panel is a rounded box on the shell; the gap between two
+/* The workbench (LA-PAT-APP-UX-R02): each panel is a rounded box on the shell; the gap between two
    panels is a ResizeHandle with a three-dot grip, which turns steel when hovered, focused or dragged. */
 .panel { box-sizing: border-box; min-width: 0; min-height: 0; overflow: hidden; border: 1px solid var(--rule); border-radius: var(--panel-radius); }
 .app.is-narrow .panel { border: 0; border-radius: 0; }
@@ -724,7 +724,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 .resize-handle:focus-visible { outline: none; }
 @media (prefers-reduced-motion: reduce) { .resize-handle::before { transition: none; } }
 
-/* A pane's title bar (LA-PAT-APP-CODE-R11), as an editor group's in VS Code: a quiet label naming the pane's
+/* A pane's title bar (LA-PAT-APP-UX-R03), as an editor group's in VS Code: a quiet label naming the pane's
    view at the left; at the right, icon buttons in one style: the view toggles, a divider, then the layout
    actions (open beside, full screen, the inspector); then the pane's content. */
 .pane { background: var(--paper); }
@@ -767,7 +767,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 /* The current domain is blue (--steel, --steel-bg), another domain gray (--muted on --paper, dashed), as Client's domain models draw them. */
 .model-page { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .model-header { padding: 10px 20px; border-bottom: 1px solid var(--rule); }
-/* One line, cut with an ellipsis (its whole text in its tooltip), so the canvas below never moves (LA-PAT-APP-CODE-R17). */
+/* One line, cut with an ellipsis (its whole text in its tooltip), so the canvas below never moves (LA-PAT-APP-UX-R08). */
 .model-caption { margin: 0; font-size: 0.86rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .model-canvas { position: relative; flex: 1; min-height: 360px; }
 .model-flow { position: absolute; inset: 0; }
@@ -792,7 +792,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 .erd-line-path, .erd-end { fill: none; stroke: var(--steel); stroke-width: 1.4; }
 .erd-line.is-dashed .erd-line-path, .erd-key-line.is-dashed .erd-line-path { stroke-dasharray: 6 4; }
 /* The key keeps one height whichever ERD it explains (a domain's has two line ends, an aggregate's up to five, in up to three rows),
-   so moving between a domain, an aggregate and an entity never resizes the canvas above it (LA-PAT-APP-CODE-R17). */
+   so moving between a domain, an aggregate and an entity never resizes the canvas above it (LA-PAT-APP-UX-R08). */
 .erd-key { flex: none; box-sizing: border-box; block-size: var(--erd-key-height); overflow-y: auto; scrollbar-gutter: stable; display: flex; flex-wrap: wrap; gap: 8px 28px; align-items: flex-start; padding: 10px 20px 12px; border-top: 1px solid var(--rule); font-size: 0.8rem; color: var(--muted); }
 .erd-key-table { border-collapse: collapse; }
 .erd-key-table th { text-align: left; font-weight: 600; color: var(--ink); padding: 0 12px 2px 0; }
@@ -876,9 +876,9 @@ a.row-link.row-link:focus-visible { outline: none; }
 .spec-page select:focus-visible, .color-text:focus-visible, .color-swatch:focus-visible { outline: 2px solid var(--steel); outline-offset: 1px; }
 /* ---------- End of themes ---------- */
 
-/* ---------- The page bar (LA-PAT-APP-CODE-R11) ----------
+/* ---------- The page bar (LA-PAT-APP-UX-R03) ----------
    One strip across the top of the open panes: the page's tabs at its left; the View group, a divider and the inspector
-   toggle at its right. One line high whatever it holds; the tabs scroll sideways (R17). */
+   toggle at its right. One line high whatever it holds; the tabs scroll sideways (UX-R08). */
 .focus-main { gap: var(--panel-gap); }
 .page-bar { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 8px; height: var(--page-bar-height); box-sizing: border-box; padding: 0 4px 0 4px; background: var(--sheet); }
 .page-bar-start { flex: 1 1 auto; display: flex; align-items: center; min-width: 0; height: 100%; }
@@ -989,7 +989,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 .record-id, .tab-id, .qf-meta code { overflow-wrap: anywhere; }
 .markdown pre, .spec-body pre { max-width: 100%; overflow-x: auto; }
 
-/* ---------- Everything works by touch (LA-PAT-APP-CODE-R16) ----------
+/* ---------- Everything works by touch (LA-PAT-APP-UX-R07) ----------
    On a coarse pointer every control's target is at least --touch-target square: the control itself, or for a control
    drawn small inside a row or a node, its ::before stretched around it. Nothing shows only on hover. */
 @media (pointer: coarse) {

@@ -1,6 +1,6 @@
 # Jitter audit (brief 53)
 
-Every shift the stability suite found, grouped by cause, ranked by size times how often the Reader meets it. The rule is `LA-PAT-APP-CODE-R17` ("Nothing jumps"); the use case is `LA-BRW-UC117`.
+Every shift the stability suite found, grouped by cause, ranked by size times how often the Reader meets it. The rule is `LA-PAT-APP-UX-R08` ("Nothing jumps"); the use case is `LA-BRW-UC117`.
 
 ## How it is measured
 

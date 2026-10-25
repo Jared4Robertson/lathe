@@ -132,7 +132,7 @@ describe('the Model view', () => {
     // Enter on a focused box goes to it too.
     fireEvent.keyDown(box('P-D-EN05')!, { key: 'Enter' });
     expect(window.location.pathname).toBe('/records/P-D-EN05');
-    // Hover (LA-PAT-APP-CODE-R08) on the shared ring and speed, off under reduced motion.
+    // Hover (LA-PAT-APP-UX-R01) on the shared ring and speed, off under reduced motion.
     expect(CSS).toMatch(/\.erd-box:not\(\.is-focus\):hover\s*\{[^}]*var\(--hover-ring\)/);
     expect(CSS).toMatch(/\.erd-box\s*\{[^}]*transition:\s*box-shadow var\(--hover-speed\)/);
     // Colors come from tokens: blue for the current domain, gray for another.

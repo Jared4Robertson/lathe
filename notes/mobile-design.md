@@ -1,6 +1,6 @@
 # Lathe on a phone: design decisions
 
-Brief 52. The records are `LA-BRW-UC116` (and its requirements), `LA-BRW-DR220` to `DR223`, components `C210` to `C215`, tests `T460` to `T471`, and the standard `LA-PAT-APP-CODE-R16`. The page bar (`LA-PAT-APP-CODE-R11`) was designed at the same time, at the Owner's request, so the wide and the narrow layouts are one design at two widths.
+Brief 52. The records are `LA-BRW-UC116` (and its requirements), `LA-BRW-DR220` to `DR223`, components `C210` to `C215`, tests `T460` to `T471`, and the standard `LA-PAT-APP-UX-R07`. The page bar (`LA-PAT-APP-UX-R03`) was designed at the same time, at the Owner's request, so the wide and the narrow layouts are one design at two widths.
 
 ## The principle
 
@@ -25,7 +25,7 @@ Each decision lists the options weighed, the choice and why.
 ### 3. One view at a time, without forgetting the wide screen's views
 
 - **Chosen:** the phone shows the first view the address names (`?view=wiki,graph` shows the wiki). Tapping Graph shows the graph alone and writes `?view=graph` (replacing the history entry, as the desktop toggles do) and the tab's views. It does not write the views remembered for a wide screen (`lathe:view`), so a phone visit never collapses the Owner's desktop set.
-- **Why:** the address must say what is on screen (R14); the remembered set is a wide-screen preference.
+- **Why:** the address must say what is on screen (UX-R06); the remembered set is a wide-screen preference.
 - No pane headers (nothing to close or maximize when only one pane shows) and no resize handles.
 
 ### 4. The top bar
@@ -50,7 +50,7 @@ Each decision lists the options weighed, the choice and why.
 │ UC requirements 13                   │
 │ [ Filter by ID or title ]  13 of 13  │
 │ ┌──────────────────────────────────┐ │
-│ │ LA-BRW-UC50-R01 A record or…     │ │  rows stay whole-row links (R13)
+│ │ LA-BRW-UC50-R01 A record or…     │ │  rows stay whole-row links (UX-R05)
 │ └──────────────────────────────────┘ │
 └──────────────────────────────────────┘
 ```
@@ -67,7 +67,7 @@ Each decision lists the options weighed, the choice and why.
 
 - Every sheet takes focus, keeps Tab inside it (`trapTab`) and gives focus back to the control that opened it (`LA-BRW-DR223`).
 - **The bottom sheet's drag** (`settle` in `BottomSheet.tsx`): from half, a drag up of 40 px or a flick goes to full and a drag down of 90 px or a flick closes; from full, 60 px down goes to half and 240 px (or a hard flick past 120 px) closes. The sheet follows the finger down while dragged. Tapping the handle toggles half and full, so the keyboard and switch users have the same sizes.
-- **Motion:** sheets slide with `--motion-speed` and `--motion-ease` and appear at once under reduced motion (R12). While dragged, the sheet's transition time is zero (`--motion-sheet: 0ms`), so it tracks the finger.
+- **Motion:** sheets slide with `--motion-speed` and `--motion-ease` and appear at once under reduced motion (UX-R04). While dragged, the sheet's transition time is zero (`--motion-sheet: 0ms`), so it tracks the finger.
 
 ```
 ┌──────────────────────────────────────┐      ┌───────┬──────────────────────────────┐
@@ -94,7 +94,7 @@ Each decision lists the options weighed, the choice and why.
 ### 6. The nav rows, like VS Code's explorer (wide and narrow)
 
 - Each row is one full-width element (`NavRow`), indented by `padding-left: calc(--nav-pad + depth × --nav-indent)`, with the indent guides drawn inside it (a repeating gradient sized to its depth) and its fold chevron at its start. The lists stay nested `ul`s for screen readers.
-- The current page's row carries the selection over the whole row (`--steel-bg`, text and chevron in `--steel`), with no inset bar. A hovered row takes the hover tint over the whole row (R08). While the nav is used from the keyboard (`is-keyboard`, set by a key press and cleared by a pointer), the selected and the focused row show a 1 px steel outline with a small radius.
+- The current page's row carries the selection over the whole row (`--steel-bg`, text and chevron in `--steel`), with no inset bar. A hovered row takes the hover tint over the whole row (UX-R01). While the nav is used from the keyboard (`is-keyboard`, set by a key press and cleared by a pointer), the selected and the focused row show a 1 px steel outline with a small radius.
 - Each row's link stretches over the row (`::after`), so a tap anywhere on it follows the link; the chevron sits above it.
 - On a coarse pointer the rows are 44 px tall, the chevrons 44 px wide, the indent 24 px. Rule: `LA-BRW-DR220`.
 
@@ -159,9 +159,9 @@ The page bar's ⧉ button shows the count and opens a bottom sheet: one row per 
 - `viewport-fit=cover`, and `env(safe-area-inset-*)` on the top bar, the app's sides, the sheets, quick find and the full-screen palette.
 - `100dvh` for the app and the sheets; every other `vh` in the stylesheet became `dvh`.
 - `<meta name="theme-color">` in `index.html`, kept at the theme's `--sheet` by `useThemeColor` (it follows system dark mode, `data-theme` and `data-mode` on the root, and theme stylesheets added to the head).
-- Reduced motion: every sheet animation is inside `prefers-reduced-motion: no-preference` (R12).
+- Reduced motion: every sheet animation is inside `prefers-reduced-motion: no-preference` (UX-R04).
 
-### 12. Everything works by touch (`LA-PAT-APP-CODE-R16`)
+### 12. Everything works by touch (`LA-PAT-APP-UX-R07`)
 
 - On a coarse pointer every control's target is at least `--touch-target` (44 px): the control itself, or for a small control inside a row or a node (tree and tab chevrons, tab and pane close buttons, the graph group chevron, theme swatches), a `::before` stretched to 44 × 44 around it. The resize gaps of a tablet's workbench reach 19 px over the panels' edges, so a finger can grab them.
 - Nothing only by hover: a tab's close button shows always on touch; tooltips only repeat names and keys and also open on focus; the graph and ERD give a tap card instead of a hover title.

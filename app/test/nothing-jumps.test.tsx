@@ -6,7 +6,7 @@ import { openApp, startAtDepth } from './helpers';
 import './graph/setup';
 import { testWorkspace } from './graph/workspace';
 
-// "Nothing jumps" (LA-PAT-APP-CODE-R17), at the level jsdom can check: the causes of jitter that
+// "Nothing jumps" (LA-PAT-APP-UX-R08), at the level jsdom can check: the causes of jitter that
 // show in the source. The stability suite (app/stability, `npm --prefix app run test:stability`)
 // measures the rest in a real browser.
 
@@ -84,7 +84,7 @@ function keepsGutter(selector: string): boolean {
   return ALL.some((r) => r.decls.get('scrollbar-gutter') === 'stable' && selectors(r).some((s) => s === selector || selector.endsWith(` ${s}`)));
 }
 
-describe('nothing jumps (LA-PAT-APP-CODE-R17)', () => {
+describe('nothing jumps (LA-PAT-APP-UX-R08)', () => {
   it('LA-BRW-T488 every scroll box keeps room for its scrollbar, so it never comes and goes with the content', () => {
     const boxes = ALL.filter(scrollsVertically).flatMap((r) => selectors(r).map((s) => ({ s, line: r.line })));
     expect(boxes.length).toBeGreaterThan(5);

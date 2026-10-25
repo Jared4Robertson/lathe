@@ -9,7 +9,7 @@ import { testWorkspace } from './graph/workspace';
 
 // Tabs for open pages, as editors are in VS Code (LA-BRW-UC112): the preview tab, lasting tabs,
 // closing and cycling, each tab's own views, scroll and graph settings, and the address following
-// the active tab, so a reload brings every tab back (LA-PAT-APP-CODE-R14).
+// the active tab, so a reload brings every tab back (LA-PAT-APP-UX-R06).
 
 const served = () => ({ workspace: testWorkspace() });
 const strip = () => screen.getByRole('tablist', { name: 'Open pages' });
