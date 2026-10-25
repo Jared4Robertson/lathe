@@ -1,4 +1,5 @@
 import { useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react';
+import { lowerLabel } from '../plural';
 import { trapTab } from './useNarrow';
 
 // A bottom sheet, as on a phone (notes/mobile-design.md): it rises from the bottom edge to half
@@ -41,7 +42,7 @@ export function BottomSheet({ label, onClose, className, children }: BottomSheet
   const start = useRef<{ y: number; t: number } | null>(null);
   const moved = useRef(false);
   const box = useRef<HTMLDivElement>(null);
-  const name = label.toLowerCase();
+  const name = lowerLabel(label);
 
   const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
     if (e.button !== 0) return;
