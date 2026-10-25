@@ -50,25 +50,42 @@ describe('keyboard shortcuts', () => {
     expect(screen.getByRole('complementary', { name: 'Inspector' })).toBeInTheDocument();
   });
 
-  it('LA-BRW-T146 Ctrl+\\ toggles Split, Ctrl+1, 2 and 3 pick a view, and Ctrl+Shift+Enter and Escape enter and leave full screen', async () => {
+  it('LA-BRW-T146 Alt+W, Alt+G and Alt+M (or Ctrl+1, 2 and 4) toggle the views off a Mac, Ctrl+3 shows only the focused pane, and Ctrl+3 or Escape restores', async () => {
     await openApp('/records/P-D-UC01', { workspace: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
-    press(document.body, '\\', 'Backslash', { ctrlKey: true });
-    expect(window.location.search).toBe('?view=split');
-    await waitFor(() => expect(announcer()).toHaveTextContent('Split view'));
-    press(document.body, '\\', 'Backslash', { ctrlKey: true });
-    expect(window.location.search).toBe('?view=wiki');
     press(document.body, '2', 'Digit2', { ctrlKey: true });
+    expect(window.location.search).toBe('?view=wiki,graph');
+    await waitFor(() => expect(announcer()).toHaveTextContent('Graph view opened'));
+    press(document.body, 'w', 'KeyW', { altKey: true });
     expect(window.location.search).toBe('?view=graph');
-    press(document.body, '3', 'Digit3', { ctrlKey: true });
-    expect(window.location.search).toBe('?view=split');
+    // The last open view stays open.
+    press(document.body, 'g', 'KeyG', { altKey: true });
+    expect(window.location.search).toBe('?view=graph');
+    await waitFor(() => expect(announcer()).toHaveTextContent('stays open'));
     press(document.body, '1', 'Digit1', { ctrlKey: true });
-    expect(window.location.search).toBe('?view=wiki');
+    expect(window.location.search).toBe('?view=wiki,graph');
+    // Ctrl+4 and Alt+M do nothing where Model is not offered; Ctrl+3 is not Split any more.
+    press(document.body, '4', 'Digit4', { ctrlKey: true });
+    press(document.body, 'm', 'KeyM', { altKey: true });
+    expect(window.location.search).toBe('?view=wiki,graph');
 
-    press(document.body, 'Enter', 'Enter', { ctrlKey: true, shiftKey: true });
+    // Ctrl+3 maximizes the focused pane; Ctrl+3 again restores, and so does Escape.
+    screen.getByRole('button', { name: 'Full screen: Graph' }).focus();
+    press(document.activeElement!, '3', 'Digit3', { ctrlKey: true });
+    expect(screen.getByRole('region', { name: 'Graph pane' }).className).toContain('is-fullscreen');
+    expect(screen.getByRole('region', { name: 'Wiki pane' })).toHaveAttribute('inert');
+    press(document.body, '3', 'Digit3', { ctrlKey: true });
+    expect(screen.getByRole('region', { name: 'Graph pane' }).className).not.toContain('is-fullscreen');
+    // With focus outside every pane, the leftmost one.
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Full screen: Graph' })).toHaveFocus());
+    act(() => (document.activeElement as HTMLElement).blur());
+    press(document.body, '3', 'Digit3', { ctrlKey: true });
     expect(screen.getByRole('region', { name: 'Wiki pane' }).className).toContain('is-fullscreen');
     press(document.body, 'Escape', 'Escape');
     expect(screen.getByRole('region', { name: 'Wiki pane' }).className).not.toContain('is-fullscreen');
+    // The old full-screen key is gone.
+    press(document.body, 'Enter', 'Enter', { ctrlKey: true, shiftKey: true });
+    expect(document.querySelector('.is-fullscreen')).toBeNull();
   });
 
   it('LA-BRW-T147 F8 and Shift+F8 move through the problems on the page and say each one', async () => {
@@ -112,12 +129,12 @@ describe('keyboard shortcuts', () => {
     const palette = screen.getByRole('dialog', { name: 'Command palette' });
     const input = within(palette).getByRole('combobox', { name: 'Type a command' });
     await waitFor(() => expect(input).toHaveFocus());
-    await user.type(input, 'split');
+    await user.type(input, 'graph view');
     const options = within(palette).getAllByRole('option');
-    expect(options[0]).toHaveTextContent('Toggle Split view');
-    expect(options[0]).toHaveTextContent('Ctrl+\\');
+    expect(options[0]).toHaveTextContent('Graph view on or off');
+    expect(options[0]).toHaveTextContent('Alt+G');
     await user.keyboard('{Enter}');
-    await waitFor(() => expect(window.location.search).toBe('?view=split'));
+    await waitFor(() => expect(window.location.search).toBe('?view=wiki,graph'));
     // The palette has Expand all and Collapse all.
     press(document.body, 'P', 'KeyP', { ctrlKey: true, shiftKey: true });
     await user.type(within(screen.getByRole('dialog', { name: 'Command palette' })).getByRole('combobox'), 'all rows');
