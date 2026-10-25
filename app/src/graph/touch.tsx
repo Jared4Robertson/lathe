@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type RefObject, type SyntheticEvent } from 'react';
 import { Icon } from '../components/icons';
 import { useCoarsePointer } from '../shell/useNarrow';
+import { Button } from '../components/Button';
 
 // Touch on a canvas (the graph and the ERD). A finger has no hover, so the first tap on a node
 // selects it: the node is outlined and a card at the bottom of the canvas names it with an Open
@@ -61,8 +62,8 @@ export function TapCard({ kind, name, onOpen, onDismiss }: { kind: string; name:
         <small>{kind}</small>
         <strong>{name}</strong>
       </span>
-      <button type="button" className="tap-open" onClick={onOpen} aria-label={`Open ${name}`}>Open</button>
-      <button type="button" className="icon-button tap-dismiss" onClick={onDismiss} aria-label="Let go of the selection"><Icon name="x" size={16} /></button>
+      <Button variant="primary" className="tap-open" label={`Open ${name}`} onClick={onOpen}>Open</Button>
+      <Button variant="icon" className="tap-dismiss" label="Let go of the selection" onClick={onDismiss}><Icon name="x" size={16} /></Button>
     </div>
   );
 }

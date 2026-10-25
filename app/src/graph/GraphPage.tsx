@@ -47,6 +47,7 @@ import {
 import { layoutNeighborhood, NODE_HEIGHT, NODE_WIDTH, type Placed } from './layout';
 import { anchorLayout, fadeSets, frameFocus } from './camera';
 import { edgeMove, readMotion, transitionProgress, tweenEdge, type EdgeEnds, type EdgeFrame, type EdgePhase } from './motion';
+import { Button } from '../components/Button';
 
 // The graph view: an ego graph centered on one record or group. Clicking a record or a group
 // re-centers on it (through onNavigate, so the host changes the address and Back walks back along
@@ -482,10 +483,10 @@ function FilterControls({ index, filters, setFilters }: { index: SpecIndex; filt
           ))}
         </fieldset>
         <div className="graph-filter-actions">
-          <button type="button" onClick={() => setFilters({ ...filters, hiddenRelations: new Set(relations.filter((r) => !TRACE_RELATIONS.has(r))) })}>
+          <Button onClick={() => setFilters({ ...filters, hiddenRelations: new Set(relations.filter((r) => !TRACE_RELATIONS.has(r))) })}>
             Only satisfies, proves and fulfills
-          </button>
-          <button type="button" className="secondary" onClick={() => setFilters(NO_FILTERS)} disabled={hidden === 0}>Clear filters</button>
+          </Button>
+          <Button onClick={() => setFilters(NO_FILTERS)} disabled={hidden === 0}>Clear filters</Button>
         </div>
         <p className="hint">Escape clears every filter.</p>
       </div>

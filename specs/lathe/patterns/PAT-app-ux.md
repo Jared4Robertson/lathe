@@ -4,7 +4,7 @@ kind: pattern
 title: App experience
 parent: LA
 ---
-How the web app behaves for the person using it, so that every page feels the same to the hand and the eye: what shows a hover, how the workbench's panels sit and resize, what the page bar and each pane's header hold, how things move, how a row leads to its record, how every open thing keeps an address, how it all works by touch, and that nothing jumps. The app lives in `app/src`; Browsing (`LA-BRW`) follows this pattern for all of it. How the code itself is written (layout in markup, classes, tokens, generic components, labels, names and spelling) is the App code pattern, `LA-PAT-APP-CODE`.
+How the web app behaves for the person using it, so that every page feels the same to the hand and the eye: what shows a hover, how the workbench's panels sit and resize, what the page bar and each pane's header hold, how things move, how a row leads to its record, how every open thing keeps an address, how it all works by touch, that nothing jumps, and that actions look like actions. The app lives in `app/src`; Browsing (`LA-BRW`) follows this pattern for all of it. How the code itself is written (layout in markup, classes, tokens, generic components, labels, names and spelling) is the App code pattern, `LA-PAT-APP-CODE`.
 
 ## How a domain uses the pattern
 
@@ -20,5 +20,6 @@ The domain links the pattern with `follows`. The pattern has no settings: every 
 - `LA-PAT-APP-UX-R06`: every open thing has an address.
 - `LA-PAT-APP-UX-R07`: everything works by touch.
 - `LA-PAT-APP-UX-R08`: nothing jumps.
+- `LA-PAT-APP-UX-R09`: actions look like actions.
 
-New rules continue from UX-R09.
+New rules continue from UX-R10.

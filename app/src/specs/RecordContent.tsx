@@ -10,6 +10,7 @@ import { FlowSteps } from './FlowSteps';
 import { LongList } from '../components/LongList';
 import { DesktopRecordActions } from '../shell/desktopRecord';
 import { NavigateContext, PageHeader, ProblemBadge, ProblemList, RecordLink, RecordTree, Section, SpecLink, TestStateTag, idText, listTitle, testState } from './parts';
+import { buttonClass } from '../components/Button';
 
 // One record's content: header, body, problems, fields, parent, children and links both ways.
 // Kept apart from the page chrome so another view (such as the graph, side by side) can host it.
@@ -162,8 +163,8 @@ function RecordBody({ index, record, actions, header, side }: { index: SpecIndex
               <RecordTree index={index} records={children} label={`${childrenTitle} of ${id}`} showKind />
             </Section>
           )}
-          {record.kind === 'product' && <p><SpecLink to={productPath(id)}>Open the product overview</SpecLink></p>}
-          {record.kind === 'domain' && record.product && <p><SpecLink to={domainPath(record.product, id)}>Open the domain overview</SpecLink></p>}
+          {record.kind === 'product' && <p><SpecLink to={productPath(id)} className={buttonClass()}>Open the product overview</SpecLink></p>}
+          {record.kind === 'domain' && record.product && <p><SpecLink to={domainPath(record.product, id)} className={buttonClass()}>Open the domain overview</SpecLink></p>}
         </div>
         {side && <aside className="record-side"><RecordFacts index={index} record={record} /></aside>}
       </div>

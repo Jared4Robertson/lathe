@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { Button } from '../components/Button';
 import { Icon } from '../components/icons';
 import { LongList } from '../components/LongList';
 import { ResizeHandle } from '../components/ResizeHandle';
@@ -121,9 +122,9 @@ function Workbench({ index, reference, route, fromEngine }: PageProps & { route:
       <div className="inspector-head">
         <h2 className="inspector-title">Inspector</h2>
         <Tooltip label="Hide the inspector" command="toggleInspector" placement="left">
-          <button type="button" className="icon-button" onClick={() => setShowing(false)} aria-label="Hide the inspector">
+          <Button variant="icon" label="Hide the inspector" onClick={() => setShowing(false)}>
             <Icon name={narrow ? 'x' : 'sidebar-right'} />
-          </button>
+          </Button>
         </Tooltip>
       </div>
       {page.facts}
@@ -138,17 +139,17 @@ function Workbench({ index, reference, route, fromEngine }: PageProps & { route:
         </div>
         <div className="pane-actions">
           <Tooltip label={inspectorLabel} command="toggleInspector" placement="left">
-            <button
-              type="button"
+            <Button
+              variant="icon"
               ref={toggle}
-              className={`icon-button inspector-toggle${showing ? ' is-on' : ''}`}
-              aria-label={inspectorLabel}
+              className={`inspector-toggle${showing ? ' is-on' : ''}`}
+              label={inspectorLabel}
               aria-expanded={showing}
               aria-controls="inspector"
               onClick={() => setShowing(!showing)}
             >
               <Icon name={narrow ? 'info' : 'sidebar-right'} size={16} />
-            </button>
+            </Button>
           </Tooltip>
         </div>
       </div>
