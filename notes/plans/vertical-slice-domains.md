@@ -27,6 +27,20 @@ S2, the product Lathe is measured against, is organized by business area. Its sh
 5. **CSV diagrams are removed from Lathe** (brief 77): the feature, its specs and the brainstorm diagrams in `model/`. Lathe is spec records only.
 6. **Vertical slices become Lathe's standard,** in FORMAT.md, the generated reference, the plugin's modeling skill, and a check that warns on domains named for a technology.
 
+7. **Lathe is opinionated:** it gives one common language and approach for building a product. Authoring's domain model names Lathe's concepts concretely, and one generic Product extension covers what a product adds.
+8. **Authoring's aggregates:**
+   - **Product:** Product, Role, Product extension.
+   - **Domain:** Domain, Capability.
+   - **Aggregate:** Aggregate, Entity, Field, Domain rule, Domain event.
+   - **Use case:** Use case, Requirement.
+   - **Pattern:** Pattern, Pattern rule, Setting.
+   - **Layer:** Layer, Component.
+   - **Flow:** Flow, Flow step.
+   - **View, Endpoint, Test and Open question:** one entity each.
+
+   What every record shares (ID, title, parent, header fields, links and citations) is described once, as what a record is, not as an aggregate.
+9. **Domain rules that hold across aggregates** sit under the domain and name the aggregates they involve, with an `involves` link (brief 78). A rule about one aggregate sits on that aggregate.
+
 ## Decisions settled by recommendation (for the Owner to review)
 - **IDs:** each new domain numbers its records afresh, keeping their old relative order.
 - **Platform:** a domain like the others (`specs/lathe/platform/`), not a folder under Shared, so Lathe needs no new kind.
