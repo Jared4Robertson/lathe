@@ -1,6 +1,6 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { openApp } from './helpers';
+import { openApp, openSideBar } from './helpers';
 import type { Chrome } from '../src/shell/desktopChrome';
 
 // The desktop app's own title bar (LA-DSK-UC04): drawn only in the desktop shell, with back and
@@ -84,6 +84,8 @@ describe('desktop title bar', () => {
   });
 
   it('LA-DSK-T15 The layout toggles run the navigation and inspector commands and show whether each panel shows', async () => {
+    // The side bar starts closed in the Wiki view (brief 64); this test reads it open.
+    openSideBar('details', ['wiki', 'graph', 'model']);
     desktop();
     await openApp('/DM-SHOP-UC01');
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });

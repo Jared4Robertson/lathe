@@ -1,7 +1,7 @@
 import type { MouseEvent, ReactNode } from 'react';
 import { Button } from '../components/Button';
 import { LongList } from '../components/LongList';
-import { kindPagePath } from '../format/reference';
+import { kindFieldPath, kindPagePath } from '../format/reference';
 import { groupLabel, groupMarks, groupMembers, parseGroupId } from '../graph/model';
 import { GraphConnections, type GraphInfo } from '../graph/panel';
 import { lowerLabel } from '../plural';
@@ -62,8 +62,8 @@ function Part({ title, count, id, children }: { title: string; count?: number; i
 const HOW: Record<'hover' | 'selected', string> = { hover: 'Under the pointer', selected: 'Selected' };
 
 /** The name block: the kind, the title and the ID, with Open when it is not the page's own record. */
-function Identity({ eyebrow, title, id, target, focus, how, onNavigate, hrefFor }: {
-  eyebrow: string; title: string; id?: string; target: string; focus: string; how: SideBarDetailsProps['how']; onNavigate: (id: string) => void; hrefFor: (id: string) => string;
+function Identity({ index, eyebrow, title, id, target, focus, how, onNavigate, hrefFor }: {
+  index: SpecIndex; eyebrow: string; title: string; id?: string; target: string; focus: string; how: SideBarDetailsProps['how']; onNavigate: (id: string) => void; hrefFor: (id: string) => string;
 }) {
   const open = (e: MouseEvent<HTMLAnchorElement>) => {
     if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
@@ -75,7 +75,7 @@ function Identity({ eyebrow, title, id, target, focus, how, onNavigate, hrefFor 
       <p className="eyebrow">{how === 'page' ? eyebrow : `${HOW[how]} · ${eyebrow}`}</p>
       <p className="inspector-name">{title}</p>
       <div className="side-identity-row">
-        {id && <code className="record-id">{id}</code>}
+        {id && <span className="record-id"><RecordLink index={index} id={id} showTitle={false} /></span>}
         {target !== focus && <Button href={hrefFor(target)} onClick={open} className="side-open">Open</Button>}
       </div>
     </div>
@@ -90,11 +90,17 @@ function RecordDetails({ index, record, focus, how, onNavigate, hrefFor }: { ind
   const problems = [...(index.problemsFor.get(record.id) ?? [])].sort(problemOrder);
   return (
     <>
-      <Identity eyebrow={kindLabel(index, record.kind)} title={record.title} id={record.id} target={record.id} focus={focus} how={how} onNavigate={onNavigate} hrefFor={hrefFor} />
+      <Identity index={index} eyebrow={kindLabel(index, record.kind)} title={record.title} id={record.id} target={record.id} focus={focus} how={how} onNavigate={onNavigate} hrefFor={hrefFor} />
       <dl className="fields">
         <div><dt>Kind</dt><dd title={kind?.description}><Link to={kindPagePath(record.kind)}>{kind?.label ?? record.kind}</Link></dd></div>
         {isTest && <div><dt>State</dt><dd><TestStateTag record={record} /></dd></div>}
-        {fields.map(([name, value]) => <div key={name}><dt>{name.replaceAll('_', ' ')}</dt><dd>{value}</dd></div>)}
+        {fields.map(([name, value]) => (
+          <div key={name}>
+            {/* A required field's label leads to the field on the kind's page in the format reference. */}
+            <dt>{kind?.required_fields.includes(name) ? <Link to={kindFieldPath(record.kind, name)} title={`Required of every ${lowerLabel(kind.label)}`}>{name.replaceAll('_', ' ')}</Link> : name.replaceAll('_', ' ')}</dt>
+            <dd>{value}</dd>
+          </div>
+        ))}
         <div><dt>Spec file</dt><dd><code>{record.path}</code><DesktopRecordActions id={record.id} /></dd></div>
         <div><dt>Parent</dt><dd>{record.parent ? <RecordLink index={index} id={record.parent} /> : <span className="hint">None (top level)</span>}</dd></div>
       </dl>
@@ -158,7 +164,7 @@ function GroupDetails({ index, gid, focus, how, onNavigate, hrefFor }: { index: 
   const marks = groupMarks(index, gid);
   return (
     <>
-      <Identity eyebrow="Group" title={groupLabel(index, gid)} target={gid} focus={focus} how={how} onNavigate={onNavigate} hrefFor={hrefFor} />
+      <Identity index={index} eyebrow="Group" title={groupLabel(index, gid)} target={gid} focus={focus} how={how} onNavigate={onNavigate} hrefFor={hrefFor} />
       <dl className="fields">
         <div><dt>Kind</dt><dd title={index.kinds.get(parsed.kind)?.description}><Link to={kindPagePath(parsed.kind)}>{kindLabel(index, parsed.kind)}</Link></dd></div>
         <div><dt>Members</dt><dd>{members.length}</dd></div>
@@ -261,10 +267,11 @@ function RawGroupFacts({ index, gid }: { index: SpecIndex; gid: string }) {
   return (
     <section className="inspector-section" aria-labelledby="side-group">
       <h3 id="side-group">Group</h3>
-      <p className="hint">A group has no spec file of its own: it is the {lowerLabel(kindLabel(index, parsed.kind))} records under its parent. Select a row to see its details.</p>
+      <p className="hint">A group has no spec file of its own: its address names it by its parent and its place in the tree. Select a row to see that record's details.</p>
       <dl className="fields side-raw">
+        <div><dt>Name</dt><dd>{groupLabel(index, gid)}</dd></div>
         <div><dt><code>parent</code></dt><dd><RecordLink index={index} id={parsed.parent} showTitle={false} /></dd></div>
-        <div><dt><code>kind</code></dt><dd><code>{parsed.kind}</code></dd></div>
+        <div><dt><code>path</code></dt><dd><code>{parsed.kind}</code></dd></div>
       </dl>
     </section>
   );

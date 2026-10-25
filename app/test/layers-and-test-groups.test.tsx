@@ -8,7 +8,7 @@ import { indexWorkspace } from '../src/specs/data';
 import { branchOf, domainFolders, type Folder, type FolderGroup } from '../src/specs/folders';
 import { layerWorkspace } from './fixtures/layers';
 import { workspace } from './fixtures/workspace';
-import { main, openApp } from './helpers';
+import { main, openApp, openSideBar } from './helpers';
 
 // Technical specification lists a domain's layers in order, each holding its components, then the
 // components outside any layer; Test plan groups its tests by what they prove (computed, not
@@ -255,6 +255,8 @@ describe('layers and test groups', () => {
   });
 
   it('LA-BRW-T290 A split by kind or by test group appears only when there is more than one to tell apart', async () => {
+    // The side bar starts closed in the Wiki view (brief 64); this test reads it open.
+    openSideBar('details', ['wiki', 'graph', 'model']);
     const user = userEvent.setup();
     // Test plan with one group (DM-PAY: an engineering check only): its tests are listed directly, in the nav and on the domain page.
     await openApp('/DM-PAY', { workspace: layerWorkspace() });

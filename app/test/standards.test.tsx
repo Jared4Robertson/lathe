@@ -2,7 +2,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { openApp } from './helpers';
+import { openApp, openSideBar } from './helpers';
 import { REQUIRED_PAIRS, colorOf } from '../src/theme/audit';
 import { contrast } from '../src/theme/contrast';
 import { themeCss } from '../src/theme/css';
@@ -180,6 +180,8 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
   });
 
   it('LA-BRW-T298 The page bar holds the page\'s tabs and layout controls; each pane\'s header holds only that pane\'s actions, on wide and narrow screens alike', async () => {
+    // The side bar starts closed in the Wiki view (brief 64); this test reads it open.
+    openSideBar('details', ['wiki', 'graph', 'model']);
     for (const [path, narrow] of [['/DM-SHOP-UC01?view=wiki', false], ['/DM-SHOP-UC01?view=wiki,graph', false], ['/DM-SHOP-UC01?view=wiki,graph', true]] as const) {
       if (narrow) vi.stubGlobal('matchMedia', (query: string) => ({ matches: true, media: query, addEventListener: () => {}, removeEventListener: () => {} }));
       await openApp(path);
