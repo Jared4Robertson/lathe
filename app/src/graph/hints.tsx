@@ -1,4 +1,4 @@
-import { useReactFlow, useViewport } from '@xyflow/react';
+import { useReactFlow, useStore } from '@xyflow/react';
 import { Button } from '../components/Button';
 import { readMotion } from './motion';
 
@@ -39,15 +39,22 @@ export function panToward(view: { x: number; y: number; zoom: number }, side: Si
 
 /** The chips, inside a React Flow provider. `centers` are the world centers of the context boxes; `wrapper` is the canvas element. */
 export function EdgeHints({ centers, wrapper }: { centers: readonly Point[]; wrapper: { current: HTMLElement | null } }) {
-  const view = useViewport();
-  const { setViewport } = useReactFlow();
+  const { getViewport, setViewport } = useReactFlow();
   const width = wrapper.current?.clientWidth ?? 0;
   const height = wrapper.current?.clientHeight ?? 0;
+  // The counts, as one key: the camera moves every frame of a glide, but the chips are drawn again
+  // only when a count changes (LA-PAT-APP-UX-R30). The canvas's size in the store redraws them on a resize.
+  const key = useStore((s) => {
+    const [x, y, zoom] = s.transform;
+    const p = pastEdges(centers, { x, y, zoom }, wrapper.current?.clientWidth ?? s.width, wrapper.current?.clientHeight ?? s.height);
+    return `${p.up} ${p.down} ${p.left} ${p.right} ${s.width}x${s.height}`;
+  });
   if (width <= 0 || height <= 0 || centers.length === 0) return null;
-  const past = pastEdges(centers, view, width, height);
+  const [up, down, left, right] = key.split(' ').map(Number);
+  const past: Record<Side, number> = { up, down, left, right };
   const pan = (side: Side) => {
     const motion = readMotion();
-    setViewport(panToward(view, side, width, height), motion.duration > 0 ? { duration: motion.duration, ease: motion.ease, interpolate: 'linear' } : { duration: 0 });
+    setViewport(panToward(getViewport(), side, width, height), motion.duration > 0 ? { duration: motion.duration, ease: motion.ease, interpolate: 'linear' } : { duration: 0 });
   };
   return (
     <div className="graph-edge-hints">

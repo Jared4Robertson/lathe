@@ -7,7 +7,8 @@
     "build": "vite build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --maxWorkers=2",
-    "test:stability": "playwright test -c stability/playwright.config.ts"
+    "test:stability": "playwright test -c stability/playwright.config.ts",
+    "test:perf": "playwright test -c perf/playwright.config.ts && npm --prefix ../lathe run test:perf"
   },
   "dependencies": {
     "@duckdb/node-api": "^2.0.0-r.1",

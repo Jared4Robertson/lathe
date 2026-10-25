@@ -138,3 +138,32 @@ export function transitionProgress(elements: (Element | null | undefined)[], dur
   }
   return null;
 }
+
+/** The clock last read for each canvas, and the frame it was read in. */
+const clocks = new WeakMap<Element, { frame: number; progress: number | null }>();
+
+/**
+ * How far through the nodes' move a canvas is (0 to 1), or null when none of its nodes is moving:
+ * the nodes' transition clock, read once per frame for the whole canvas. Every node of a re-center
+ * glides with the same transition, started in the same frame, so one moving node's clock is every
+ * node's clock. Reading it once per frame, rather than once per edge, keeps a re-center's frames
+ * short (LA-PAT-APP-UX-R30): each read makes the browser bring its styles up to date, and a picture
+ * of 200 edges read it 400 times a frame (480 ms in one frame). `frame` is the time
+ * requestAnimationFrame passed in, the same for every callback of one frame.
+ */
+export function canvasProgress(root: Element | null | undefined, duration: number, frame: number): number | null {
+  if (!root || duration <= 0) return null;
+  const known = clocks.get(root);
+  if (known && known.frame === frame) return known.progress;
+  let progress: number | null = null;
+  const all = typeof document !== 'undefined' && typeof document.getAnimations === 'function' ? document.getAnimations() : [];
+  for (const a of all) {
+    const target = (a.effect as KeyframeEffect | null)?.target;
+    if ((a as CSSTransition).transitionProperty !== 'transform' || a.currentTime === null) continue;
+    if (!target || !target.classList.contains('react-flow__node') || !root.contains(target)) continue;
+    progress = Math.min(1, Math.max(0, Number(a.currentTime) / duration));
+    break;
+  }
+  clocks.set(root, { frame, progress });
+  return progress;
+}

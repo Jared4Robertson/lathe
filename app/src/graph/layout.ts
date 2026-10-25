@@ -1,4 +1,5 @@
-import ELK, { type ElkNode } from 'elkjs/lib/elk.bundled.js';
+import type { ElkNode } from 'elkjs/lib/elk-api';
+import { elkLayout } from '../elk';
 import type { Neighborhood } from './model';
 
 // Lays out an ego graph in columns with ELK's layered algorithm, left to right: by depth in the
@@ -12,8 +13,6 @@ import type { Neighborhood } from './model';
 
 export const NODE_WIDTH = 190;
 export const NODE_HEIGHT = 56;
-
-const elk = new ELK();
 
 export type Point = { x: number; y: number };
 
@@ -72,7 +71,7 @@ export async function layoutNeighborhood(n: Neighborhood): Promise<Placed> {
     positions.set(n.focus, { x: -NODE_WIDTH / 2, y: -NODE_HEIGHT / 2 });
     return placed;
   }
-  const laid = await elk.layout(layeredGraph(n));
+  const laid = await elkLayout(layeredGraph(n));
   const focus = laid.children?.find((c) => c.id === n.focus);
   const dx = (focus?.x ?? 0) + NODE_WIDTH / 2;
   const dy = (focus?.y ?? 0) + NODE_HEIGHT / 2;
