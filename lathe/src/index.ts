@@ -6,7 +6,7 @@ import path from 'node:path';
 import { DuckDBInstance, type DuckDBConnection } from '@duckdb/node-api';
 import { COVERAGE_COUNTS_SQL, COVERAGE_GAPS_SQL, COVERAGE_TESTS_SQL } from './coverage.ts';
 import { loadConfig, PACKAGE_DIR } from './config.ts';
-import { idTokensInProse, parseRecordFile } from './parse.ts';
+import { parseRecordFile, proseTokens, type ProseToken } from './parse.ts';
 import type { Coverage, CoverageGap, Kind, ObligationCoverage, Problem, RelationRule, SpecLink, SpecRecord, TestCounts, Workspace } from './types.ts';
 
 export type * from './types.ts';
@@ -72,23 +72,28 @@ async function exists(file: string | null, allowFolder: boolean): Promise<boolea
   }
 }
 
-/** An ID-shaped token a record's body cites with a product prefix of this workspace; it may not exist. */
+/** An ID-shaped token a record's body cites (FORMAT.md section 12); it may not exist. */
 interface ProseCitation {
   path: string;
   record: string;
   cited: string;
 }
 
-// Reads the IDs each record's body cites (FORMAT.md section 12). A token counts only if it equals a product's ID
-// or starts with one followed by "-". Each record's mentions are the cited IDs that exist, in order of first
-// mention, without repeats or its own ID; every distinct cited token is also returned so a check can report unknown ones.
-function readProseCitations(records: LoadedRecord[]): ProseCitation[] {
+// Reads the IDs each record's body cites (FORMAT.md section 12). A token is a citation when it is the ID of a
+// record, or starts with a known prefix followed by "-": every product's and domain's ID, and the config's
+// idPrefixes. A product's or domain's own ID is too common a word to count in plain prose, so it is a citation
+// only when written as a code span holding just that ID. Each record's mentions are the cited IDs that exist, in
+// order of first mention, without repeats or its own ID; every distinct cited token is also returned so a check
+// can report unknown ones.
+function readProseCitations(records: LoadedRecord[], idPrefixes: string[]): ProseCitation[] {
   const ids = new Set(records.map((r) => r.id).filter((id) => id !== ''));
-  const products = records.filter((r) => r.kind === 'product' && r.id !== '').map((r) => r.id);
-  const known = (token: string) => products.some((p) => token === p || token.startsWith(`${p}-`));
+  const bare = new Set(records.filter((r) => (r.kind === 'product' || r.kind === 'domain') && r.id !== '').map((r) => r.id));
+  const prefixes = [...bare, ...idPrefixes];
+  const isCitation = ({ token, inCode }: ProseToken) =>
+    bare.has(token) ? inCode : ids.has(token) || prefixes.some((p) => token.startsWith(`${p}-`));
   const citations: ProseCitation[] = [];
   for (const r of records) {
-    const cited = [...new Set(idTokensInProse(r.body))].filter((token) => token !== r.id && known(token));
+    const cited = [...new Set(proseTokens(r.body).filter(isCitation).map((t) => t.token))].filter((token) => token !== r.id);
     r.mentions = cited.filter((id) => ids.has(id));
     citations.push(...cited.map((id) => ({ path: r.path, record: r.id, cited: id })));
   }
@@ -191,6 +196,8 @@ const union = (a: string[], b: string[]) => [...a, ...b.filter((x) => !a.include
 // way: a later row with the same relation, source kind and target kind is the same rule, and its non-empty
 // role or description replaces the earlier one. Every kind and relation row is also kept, with the file it
 // came from, in meta_kind_rows and meta_relation_rows, so that a duplicate within one folder can be reported.
+// A kind's obligation value is read in any letter case: `yes` or `true` makes it an obligation, `proof` an
+// obligation that needs proof only (proof_only), and anything else not an obligation.
 async function loadMeta(connection: DuckDBConnection, metaDirs: string[], root: string) {
   const defaultMeta = path.join(PACKAGE_DIR, 'meta');
   const where = (dir: string, name: string) =>
@@ -271,7 +278,8 @@ async function loadMeta(connection: DuckDBConnection, metaDirs: string[], root: 
   await connection.run(`
     CREATE TABLE kinds AS
     SELECT kind, label, stage, ${list('parent_kinds')}, ${list('required_fields')},
-           lower(obligation) IN ('yes', 'true') AS obligation, description
+           lower(trim(obligation)) IN ('yes', 'true', 'proof') AS obligation,
+           lower(trim(obligation)) = 'proof' AS proof_only, description
     FROM meta_kinds_in;
     DROP TABLE meta_kinds_in;
   `);
@@ -411,7 +419,7 @@ export async function loadWorkspace(root: string, options: LoadOptions = {}): Pr
     records.push({ ...result.record, product: null, domain: null, path: file, mentions: [] });
   }
   placeRecords(records, problems);
-  const citations = readProseCitations(records);
+  const citations = readProseCitations(records, config.idPrefixes);
   const { facts, mentions } = await gatherFileFacts(root, records);
 
   const instance = await DuckDBInstance.create(':memory:');
@@ -432,7 +440,7 @@ export async function loadWorkspace(root: string, options: LoadOptions = {}): Pr
     await append(connection, 'links', records.flatMap((r) => r.links.map((l) => [r.path, r.id, l.relation, l.target])));
     await append(connection, 'file_facts', facts.map((f) => [f.path, f.record, f.kind, f.file, f.file_exists, f.contains_id]));
     await append(connection, 'file_mentions', mentions.map((m) => [m.path, m.record, m.mentioned]));
-    // Every distinct ID-shaped token with a workspace product prefix that a record's body cites, existing or not.
+    // Every distinct ID a record's body cites (a record's ID, or a token with a known prefix), existing or not.
     await connection.run('CREATE TABLE prose_mentions (path VARCHAR, record VARCHAR, cited VARCHAR)');
     await append(connection, 'prose_mentions', citations.map((c) => [c.path, c.record, c.cited]));
 

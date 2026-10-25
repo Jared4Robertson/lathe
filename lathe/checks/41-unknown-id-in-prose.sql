@@ -1,4 +1,4 @@
--- Drift: a record's body cites an ID with one of the workspace's product prefixes, but no record has that ID.
+-- Drift: a record's body cites an ID with one of the workspace's known prefixes, but no record has that ID.
 -- Code spans and fenced code blocks are not read (FORMAT.md section 12).
 SELECT 'warning' AS severity, 'unknown-id-in-prose' AS "check", nullif(m.record, '') AS record,
        coalesce(nullif(m.record, ''), m.path) || ' mentions ' || m.cited || ', which does not exist.' AS message

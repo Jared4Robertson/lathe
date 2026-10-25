@@ -2,6 +2,7 @@ import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { main, openApp, section } from './helpers';
+import { workspace as demoWorkspace } from './fixtures/workspace';
 
 const ids = (element: HTMLElement) => [...element.querySelectorAll('a.record-link code')].map((c) => c.textContent);
 
@@ -84,5 +85,15 @@ describe('domain page', () => {
       expect.stringMatching(/^warning.*DM-SHOP-UC01-R02.*unproved$/),
     ]);
     expect(main()).not.toHaveTextContent('DM-PAY-UC01-R01');
+  });
+
+  it('hides an empty Use cases section when the domain keeps its use cases under capabilities', async () => {
+    const w = demoWorkspace();
+    const shop = w.records.find((r) => r.id === 'DM-SHOP')!;
+    w.records.push({ ...shop, id: 'DM-SHOP-CAP01', kind: 'capability', title: 'Buying', parent: 'DM-SHOP', fields: { order: '1' }, body: '', path: 'specs/dm/cap01.md', mentions: [] });
+    for (const r of w.records) if (r.kind === 'use_case' && r.parent === 'DM-SHOP') r.parent = 'DM-SHOP-CAP01';
+    await openApp('/specs/DM/DM-SHOP', { workspace: w });
+    await screen.findByRole('heading', { level: 1, name: 'Shopping' });
+    expect(screen.queryByRole('heading', { level: 2, name: /^Use cases/ })).toBeNull();
   });
 });

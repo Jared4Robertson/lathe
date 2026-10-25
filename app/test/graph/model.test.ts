@@ -138,7 +138,7 @@ describe('graph neighbourhood', () => {
     expect(trace('flow')).toBe(trace('endpoint'));
     // A kind a product adds goes one tier below its highest parent.
     const base = testWorkspace();
-    const extra = indexWorkspace({ ...base, kinds: [...base.kinds, { kind: 'scenario', label: 'Scenario', stage: 'define', parent_kinds: ['use_case'], required_fields: [], obligation: false, description: '' }] });
+    const extra = indexWorkspace({ ...base, kinds: [...base.kinds, { kind: 'scenario', label: 'Scenario', stage: 'define', parent_kinds: ['use_case'], required_fields: [], obligation: false, proof_only: false, description: '' }] });
     expect(tierOf(extra, 'scenario', 'hierarchy')).toBe(HIERARCHY_TIERS.use_case + 1);
     // Nodes carry their tier.
     expect(neighbourhood(index, 'P-D-UC01-R01', 1).nodes.find((x) => x.id === 'P-D-T01')!.tier).toBe(5);

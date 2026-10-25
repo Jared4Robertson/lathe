@@ -25,7 +25,7 @@ describe('flow steps', () => {
     expect(kind).toMatchObject({ parent_kinds: ['flow'], required_fields: ['order'], obligation: false, stage: 'design' });
     const rules = good.relations.filter((r) => r.source_kind === 'flow_step').map((r) => `${r.relation} ${r.target_kind}`).sort();
     expect(rules).toEqual([
-      'fulfills domain_rule', 'fulfills interaction_requirement', 'fulfills requirement',
+      'fulfills domain_rule', 'fulfills interaction_requirement', 'fulfills pattern_rule', 'fulfills requirement',
       'uses component', 'uses endpoint', 'uses view',
     ]);
     const step = good.records.find((r) => r.id === 'FS-D-F01-S02');
@@ -67,7 +67,8 @@ describe('flow steps', () => {
     expect(messages[0]).toContain('which its flow FB-D-F01 does not carry out');
     expect(messages[0]).toContain('a use case the flow carries out (FB-D-UC01)');
     expect(messages[0]).toContain('a domain rule one of them applies');
-    expect(messages[0]).toContain('an interaction requirement that fulfills either or sits under the flow');
+    expect(messages[0]).toContain('nor a rule of a pattern one of them or the domain follows');
+    expect(messages[0]).toContain('an interaction requirement that fulfills any of these or sits under the flow');
     for (const p of broken.problems.filter((x) => x.check === 'flow-step-fulfills-outside-flow')) expect(p.severity).toBe('warning');
   });
 

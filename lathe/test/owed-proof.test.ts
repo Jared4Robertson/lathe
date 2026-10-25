@@ -62,9 +62,9 @@ describe('proof still owed by planned tests', () => {
     expect(run.status).toBe(0);
     const coverage = run.stdout.slice(run.stdout.indexOf('\nCoverage:'));
     expect(coverage).toContain('  OW-A use-case requirement: 4/4 designed, 4/4 built, 3/4 proved, 1/4 planned; 1 gap; 3/4 with a planned test\n');
-    expect(coverage).toContain('  OW-A pattern rule: 1/1 designed, 1/1 built, 1/1 proved, 0/1 planned; 0 gaps; 1/1 with a planned test\n');
+    expect(coverage).toContain('  OW-A pattern rule: proof only, 1/1 proved, 0/1 planned; 0 gaps; 1/1 with a planned test\n');
     // Where planned_any equals planned, nothing is added.
-    expect(coverage).toContain('  OW-B pattern rule: 1/1 designed, 1/1 built, 1/1 proved, 0/1 planned; 0 gaps\n');
+    expect(coverage).toContain('  OW-B pattern rule: proof only, 1/1 proved, 0/1 planned; 0 gaps\n');
     expect(coverage).toContain('  OW-A tests: 2 automated, 1 manual, 2 planned\n');
     expect(coverage).toContain('  OW-B tests: 1 automated, 0 manual, 0 planned\n');
     expect(coverage).toContain('  OW-E: no obligations\n  OW-E tests: 0 automated, 0 manual, 0 planned\n');
