@@ -26,13 +26,13 @@ afterEach(() => {
 
 describe('desktop title bar', () => {
   it('LA-DSK-T12 The title bar is drawn only in the desktop app, with room for the window\'s controls on each platform', async () => {
-    await openApp('/records/DM-SHOP-UC01');
+    await openApp('/DM-SHOP-UC01');
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     expect(screen.queryByRole('banner', { name: 'Title bar' })).toBeNull();
     expect(document.documentElement.hasAttribute('data-title-bar')).toBe(false);
 
     desktop('darwin');
-    await openApp('/records/DM-SHOP-UC01');
+    await openApp('/DM-SHOP-UC01');
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     expect(titleBar()).toHaveClass('desktop-title-bar', 'is-mac');
     expect(document.documentElement.hasAttribute('data-title-bar')).toBe(true);
@@ -40,7 +40,7 @@ describe('desktop title bar', () => {
     expect(titleBar().nextElementSibling).toHaveClass('app');
 
     desktop('win32');
-    await openApp('/records/DM-SHOP-UC01');
+    await openApp('/DM-SHOP-UC01');
     expect(titleBar()).toHaveClass('is-overlay');
   });
 
@@ -48,7 +48,7 @@ describe('desktop title bar', () => {
     desktop();
     const ends = { canGoBack: false, canGoForward: false };
     host.navigation = { get canGoBack() { return ends.canGoBack; }, get canGoForward() { return ends.canGoForward; }, addEventListener() {}, removeEventListener() {} };
-    await openApp('/records/DM-SHOP-UC01');
+    await openApp('/DM-SHOP-UC01');
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     expect(bar().getByRole('button', { name: 'Go back' })).toBeDisabled();
     expect(bar().getByRole('button', { name: 'Go forward' })).toBeDisabled();
@@ -57,7 +57,7 @@ describe('desktop title bar', () => {
     const forward = vi.spyOn(window.history, 'forward').mockImplementation(() => {});
     ends.canGoBack = true;
     fireEvent(window, new PopStateEvent('popstate'));
-    window.history.pushState(null, '', '/specs/DM');
+    window.history.pushState(null, '', '/DM');
     fireEvent(window, new PopStateEvent('popstate'));
     await waitFor(() => expect(bar().getByRole('button', { name: 'Go back' })).toBeEnabled());
     expect(bar().getByRole('button', { name: 'Go forward' })).toBeDisabled();
@@ -66,7 +66,7 @@ describe('desktop title bar', () => {
 
     ends.canGoForward = true;
     fireEvent(window, new PopStateEvent('popstate'));
-    window.history.replaceState(null, '', '/records/DM-SHOP-UC01');
+    window.history.replaceState(null, '', '/DM-SHOP-UC01');
     fireEvent(window, new PopStateEvent('popstate'));
     await waitFor(() => expect(bar().getByRole('button', { name: 'Go forward' })).toBeEnabled());
     fireEvent.click(bar().getByRole('button', { name: 'Go forward' }));
@@ -75,7 +75,7 @@ describe('desktop title bar', () => {
 
   it('LA-DSK-T14 The command center names the page and opens quick find', async () => {
     desktop();
-    await openApp('/records/DM-SHOP-UC01');
+    await openApp('/DM-SHOP-UC01');
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     const center = await waitFor(() => bar().getByRole('button', { name: 'Lathe — Add an item to the basket. Quick find' }));
     expect(center).toHaveTextContent('Lathe — Add an item to the basket');
@@ -85,7 +85,7 @@ describe('desktop title bar', () => {
 
   it('LA-DSK-T15 The layout toggles run the navigation and inspector commands and show whether each panel shows', async () => {
     desktop();
-    await openApp('/records/DM-SHOP-UC01');
+    await openApp('/DM-SHOP-UC01');
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     const nav = bar().getByRole('button', { name: 'Show or hide the navigation' });
     const inspector = bar().getByRole('button', { name: 'Show or hide the inspector' });
@@ -107,7 +107,7 @@ describe('desktop title bar', () => {
 
   it('LA-DSK-T16 The window\'s chrome follows the theme: setChrome gets its shell and ink as hex colors', async () => {
     const setChrome = desktop();
-    await openApp('/records/DM-SHOP-UC01');
+    await openApp('/DM-SHOP-UC01');
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     await waitFor(() => expect(setChrome).toHaveBeenCalled());
     expect(setChrome).toHaveBeenLastCalledWith({ background: '#dde3e6', foreground: '#1d2830' });

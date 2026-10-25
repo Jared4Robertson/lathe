@@ -3,7 +3,7 @@ import { Icon } from '../components/icons';
 import { ResizeHandle } from '../components/ResizeHandle';
 import { expandAllOnPage } from '../components/TreeList';
 import type { GraphSettings } from '../graph/GraphPage';
-import { groupLabel, groupMembers, isGroup, parseGroupId, pluralLabel } from '../graph/model';
+import { groupLabel, groupMembers, groupName, isGroup, parseGroupId } from '../graph/model';
 import type { GraphInfo } from '../graph/panel';
 import { entryState, lastAddressMove, Link, navigate, noteInEntry, onLeaveEntry } from '../router';
 import { useAnnounce, useCommand } from '../shell/commands';
@@ -11,18 +11,19 @@ import { BottomSheet } from '../shell/BottomSheet';
 import { Tooltip } from '../shell/Tooltip';
 import { isBool, usePanelSize, usePref, writePref } from '../shell/prefs';
 import { useNarrow } from '../shell/useNarrow';
-import { recordPath, type Problem, type SpecIndex, type SpecState } from '../specs/data';
+import type { Problem, SpecIndex, SpecState } from '../specs/data';
 import { Markdown } from '../specs/Markdown';
 import { PageHeader, ProblemBadge, RecordTree, Section, listTitle } from '../specs/parts';
 import { RecordContent, RecordEyebrow } from '../specs/RecordContent';
 import { folderPath, testGroups } from '../specs/folders';
 import { GroupSections } from '../specs/FolderGroups';
 import { DomainWiki, NotFound, ProductWiki, SourceNote, problemsUnder } from '../specs/SpecPages';
-import { addressOf, focusOf, VIEW_LABELS, VIEW_NAMES, viewsFromSearch, viewsOffered, viewsShown, withView, type FocusRoute, type ViewName } from './address';
+import { addressOf, HOME_PATH, focusOf, VIEW_LABELS, VIEW_NAMES, viewsFromSearch, viewsOffered, viewsShown, withView, type FocusRoute, type ViewName } from './address';
 import { Inspector } from './Inspector';
 import { PageBar, ViewIcon } from './PageBar';
 import { TAB_PANEL_ID, tabId, tabLabel } from './TabStrip';
 import { PANE_SIZE_KEY, PANE_WEIGHT, PANE_WEIGHT_MAX, PANE_WEIGHT_MIN, VIEW_KEY, saveLastSettings, usePageTabs, type PageTabsApi, type TabView } from './useTabs';
+import { Button } from '../components/Button';
 
 // One page for one thing (a record, a group, a product or a domain), at one address, in up to
 // three views, each a pane you open and close: Wiki (the page to read), Graph (the graph centered
@@ -79,7 +80,7 @@ function invalid(index: SpecIndex, route: FocusRoute): ReactNode | null {
   if (route.page === 'record' ? index.byId.has(id) : isGroup(index, id)) return null;
   return (
     <div className="placeholder">
-      <p>There's no record or group <code>{id}</code>. <Link to="/specs">See all products</Link>.</p>
+      <p>There's no record or group <code>{id}</code>. <Link to={HOME_PATH}>See all products</Link>.</p>
     </div>
   );
 }
@@ -325,22 +326,21 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
           <div className="pane-actions">
             {open.length > 1 && (
               <Tooltip label={`Close the ${lower(view)} pane`}>
-                <button type="button" className="icon-button pane-close" aria-label={`Close the ${lower(view)} pane`} onClick={() => toggleView(view)}>
+                <Button variant="icon" className="pane-close" label={`Close the ${lower(view)} pane`} onClick={() => toggleView(view)}>
                   <Icon name="x" size={14} />
-                </button>
+                </Button>
               </Tooltip>
             )}
             <Tooltip label={isFull ? 'Leave full screen' : 'Full screen'} command={isFull ? 'escape' : 'maximizePane'} placement="left">
-              <button
-                type="button"
+              <Button
+                variant="icon"
                 ref={(el) => { fullButtons.current[view] = el; }}
-                className="icon-button"
                 aria-pressed={isFull}
-                aria-label={isFull ? `Leave full screen (${name})` : `Full screen: ${name}`}
+                label={isFull ? `Leave full screen (${name})` : `Full screen: ${name}`}
                 onClick={() => (isFull ? leaveFull() : toggleFull(view))}
               >
                 <Icon name={isFull ? 'minimize' : 'maximize'} size={16} />
-              </button>
+              </Button>
             </Tooltip>
           </div>
         </div>
@@ -549,7 +549,7 @@ function PhoneLayout(props: PhoneLayoutProps) {
         <BottomSheet label="Open pages" className="pages-sheet" onClose={closePages}>
           <div className="sheet-head">
             <h2 className="sheet-title">Open pages <span className="section-count">{count}</span></h2>
-            <button type="button" className="icon-button" aria-label="Close the open pages" onClick={closePages}><Icon name="x" /></button>
+            <Button variant="icon" label="Close the open pages" onClick={closePages}><Icon name="x" /></Button>
           </div>
           <ul ref={pagesSheet} className="pages-list" aria-label="Open pages">
             {tabs.set.tabs.map((t) => {
@@ -569,11 +569,11 @@ function PhoneLayout(props: PhoneLayoutProps) {
                     <span className="tab-title">{title}</span>
                   </button>
                   {t.preview && (
-                    <button type="button" className="pages-keep" aria-label={`Keep ${name} open`} onClick={() => tabs.keep(t.key)}>Keep</button>
+                    <Button className="pages-keep" label={`Keep ${name} open`} onClick={() => tabs.keep(t.key)}>Keep</Button>
                   )}
-                  <button type="button" className="icon-button" aria-label={`Close ${name}`} onClick={() => tabs.close(t.key)}>
+                  <Button variant="icon" label={`Close ${name}`} onClick={() => tabs.close(t.key)}>
                     <Icon name="x" size={16} />
-                  </button>
+                  </Button>
                 </li>
               );
             })}
@@ -596,13 +596,13 @@ function PageTitle({ index, route, fixed = false }: { index: SpecIndex; route: F
   let problems: Problem[];
   if (route.page === 'product') {
     const product = index.byId.get(focus)!;
-    eyebrow = <>Product · <Link to={recordPath(focus)}>{product.path}</Link></>;
+    eyebrow = <>Product · {product.path}</>;
     title = product.title;
     problems = problemsUnder(index, 'product', focus);
   } else if (route.page === 'domain') {
     const domain = index.byId.get(focus)!;
     const product = index.byId.get(route.product)!;
-    eyebrow = <><Link to={addressOf(index, product.id)}>{product.title}</Link> · Domain · <Link to={recordPath(focus)}>{domain.path}</Link></>;
+    eyebrow = <><Link to={addressOf(index, product.id)}>{product.title}</Link> · Domain · {domain.path}</>;
     title = domain.title;
     problems = problemsUnder(index, 'domain', focus);
   } else if (route.page === 'record') {
@@ -654,7 +654,7 @@ function GroupWiki({ index, gid }: { index: SpecIndex; gid: string }) {
   return (
     <div className="spec-body">
       <p className="group-intro">
-        {pluralLabel(index, kind)} of <Link to={addressOf(index, parent)} className="record-link"><code>{parent}</code> <span>{parentRecord.title}</span></Link>
+        {groupName(index, gid)} of <Link to={addressOf(index, parent)} className="record-link"><code>{parent}</code> <span>{parentRecord.title}</span></Link>
       </p>
       {description && <Markdown source={description} />}
       <Section title={membersTitle} count={members.length}>

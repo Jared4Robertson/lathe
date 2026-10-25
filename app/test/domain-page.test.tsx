@@ -7,7 +7,7 @@ import { workspace as demoWorkspace } from './fixtures/workspace';
 const ids = (element: HTMLElement) => [...element.querySelectorAll('a.record-link code')].map((c) => c.textContent);
 
 async function openShop() {
-  await openApp('/specs/DM/DM-SHOP');
+  await openApp('/DM-SHOP');
   await screen.findByRole('heading', { level: 1, name: 'Shopping' });
 }
 
@@ -99,7 +99,7 @@ describe('domain page', () => {
     const shop = w.records.find((r) => r.id === 'DM-SHOP')!;
     w.records.push({ ...shop, id: 'DM-SHOP-CAP01', kind: 'capability', title: 'Buying', parent: 'DM-SHOP', fields: { order: '1' }, body: '', path: 'specs/dm/cap01.md', mentions: [] });
     for (const r of w.records) if (r.kind === 'use_case' && r.parent === 'DM-SHOP') r.parent = 'DM-SHOP-CAP01';
-    await openApp('/specs/DM/DM-SHOP', { workspace: w });
+    await openApp('/DM-SHOP', { workspace: w });
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     expect(ids(section(/^Capabilities/))).toEqual(['DM-SHOP-CAP01']);
     expect(section(/^Capabilities/).querySelector('h4')).toBeNull();

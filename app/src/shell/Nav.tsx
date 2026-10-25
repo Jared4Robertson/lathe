@@ -1,11 +1,12 @@
 import { forwardRef, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from 'react';
+import { Button } from '../components/Button';
 import { APPEARANCE_PATH, PaletteIcon } from '../theme/ThemeCommands';
 import { Icon } from '../components/icons';
 import { LongList } from '../components/LongList';
 import { childKinds, pluralLabel } from '../graph/model';
 import { LatheLogo } from '../LatheLogo';
 import { Link } from '../router';
-import { checksPath, domainPath, groupPath, parseSpecRoute, productPath, recordPath, type SpecIndex, type SpecRecord, type SpecState } from '../specs/data';
+import { checksPath, parseSpecRoute, type SpecIndex, type SpecRecord, type SpecState } from '../specs/data';
 import { branchOf, domainFolders, groupBranchOf, productFolderKinds, productFolders, ungrouped, type Folder, type FolderGroup } from '../specs/folders';
 import { recordText } from '../specs/parts';
 import type { DiagramSummary } from '../types';
@@ -15,6 +16,7 @@ import { QuickFind } from './QuickFind';
 import { SpaceMark, useSpaces, type Space } from './spaces';
 import { Tooltip } from './Tooltip';
 import { trapTab } from './useNarrow';
+import { addressOf, HOME_PATH } from '../views/address';
 
 // The side navigation. At its far left is the space rail: one square icon per product (each
 // product is its own space), a separator, then the items above every product (Diagrams, and
@@ -143,7 +145,7 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
       top={collapsed && !drawer ? (
         <>
           <Tooltip label="Lathe home" command="goHome" placement="right">
-            <Link to="/specs" className="rail-item brand-mark" aria-label="Lathe home"><LatheLogo size={24} /></Link>
+            <Link to={HOME_PATH} className="rail-item brand-mark" aria-label="Lathe home"><LatheLogo size={24} /></Link>
           </Tooltip>
           <Tooltip label="Expand the navigation" command="toggleNav" placement="right">
             <button type="button" className="rail-item" aria-label="Expand the navigation" aria-expanded={false} aria-controls="nav" onClick={onToggleCollapsed}>
@@ -183,18 +185,17 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
       {rail}
       <div className="nav-panel">
         <div className="nav-head">
-          <Link to="/specs" className="brand"><LatheLogo /> <span>Lathe</span></Link>
+          <Link to={HOME_PATH} className="brand"><LatheLogo /> <span>Lathe</span></Link>
           <Tooltip label={drawer ? 'Close the navigation' : 'Collapse the navigation'} command="toggleNav">
-            <button
-              type="button"
-              className="icon-button"
-              aria-label={drawer ? 'Close the navigation' : 'Collapse the navigation'}
+            <Button
+              variant="icon"
+              label={drawer ? 'Close the navigation' : 'Collapse the navigation'}
               aria-expanded={true}
               aria-controls="nav"
               onClick={drawer ? onCloseDrawer : onToggleCollapsed}
             >
               <Icon name={drawer ? 'x' : 'sidebar-left'} />
-            </button>
+            </Button>
           </Tooltip>
         </div>
         <QuickFind ref={findRef} index={index} diagrams={diagrams} space={space} />
@@ -273,7 +274,7 @@ function SpaceRail({ path, spaces, current, lastPage, diagramsTo, checksLabel, c
               <li key={s.id}>
                 <Tooltip label={s.title} command={i < SPACE_KEYS ? spaceCommandId(i + 1) : undefined} placement="right">
                   <Link
-                    to={lastPage?.(s.id) ?? productPath(s.id)}
+                    to={lastPage?.(s.id) ?? addressOf(s.id)}
                     className={`rail-item space-item${isCurrent ? ' is-current' : ''}`}
                     aria-label={s.title}
                     aria-current={isCurrent ? 'true' : undefined}
@@ -309,7 +310,7 @@ const FOLDERS_KEY = 'lathe:nav-folders';
 
 /** The nav rows open on the current page: the page's record's domain, stage and folder (or the product's folder). */
 function currentBranch(index: SpecIndex, path: string): string[] {
-  const route = parseSpecRoute(path.split('?')[0]);
+  const route = parseSpecRoute(path.split('?')[0], index);
   if (!route) return [];
   if (route.page === 'domain') return [`domain:${route.domain}`];
   if (route.page === 'record') return branchOf(index, route.id);
@@ -363,8 +364,8 @@ function SpaceItems({ index, space, path, reveal }: { index: SpecIndex; space: S
       itemKey={(r) => r.id}
       searchText={recordText}
       render={(r) => (
-        <NavRow depth={depth} selected={path === recordPath(r.id)}>
-          <Link to={recordPath(r.id)} aria-current={here(path, recordPath(r.id))} title={`${r.id} ${r.title}`}>
+        <NavRow depth={depth} selected={path === addressOf(r.id)}>
+          <Link to={addressOf(r.id)} aria-current={here(path, addressOf(r.id))} title={`${r.id} ${r.title}`}>
             <span className="nav-label">{r.title}</span>
           </Link>
         </NavRow>
@@ -393,7 +394,7 @@ function SpaceItems({ index, space, path, reveal }: { index: SpecIndex; space: S
       );
     }
     const open = isOpen(group.key);
-    const to = recordPath(group.record.id);
+    const to = addressOf(group.record.id);
     const bodyId = `nav-folder-${group.key.replace(/[^A-Za-z0-9_-]/g, '-')}`;
     return (
       <li key={group.key} className="nav-folder is-record">
@@ -428,8 +429,8 @@ function SpaceItems({ index, space, path, reveal }: { index: SpecIndex; space: S
     <div className="space-items" data-space={space.id}>
       <ul>
         <li>
-          <NavRow depth={0} selected={path === productPath(space.id)}>
-            <Link to={productPath(space.id)} aria-current={here(path, productPath(space.id))} title={space.title}>
+          <NavRow depth={0} selected={path === addressOf(space.id)}>
+            <Link to={addressOf(space.id)} aria-current={here(path, addressOf(space.id))} title={space.title}>
               <SpaceMark space={space} size={18} /> <span className="nav-label">{space.title}</span>
             </Link>
           </NavRow>
@@ -456,7 +457,7 @@ function SpaceItems({ index, space, path, reveal }: { index: SpecIndex; space: S
               <>
                 <NavRow
                   depth={0}
-                  selected={path === domainPath(space.id, domain.id)}
+                  selected={path === addressOf(domain.id)}
                   holds={holds(key)}
                   chevron={(
                     <button type="button" className="nav-chevron" aria-expanded={open} aria-controls={bodyId} aria-label={`${open ? 'Fold' : 'Unfold'} ${domain.title}`} onClick={() => toggle(key)}>
@@ -464,7 +465,7 @@ function SpaceItems({ index, space, path, reveal }: { index: SpecIndex; space: S
                     </button>
                   )}
                 >
-                  <Link to={domainPath(space.id, domain.id)} aria-current={here(path, domainPath(space.id, domain.id))} title={domain.title}>
+                  <Link to={addressOf(domain.id)} aria-current={here(path, addressOf(domain.id))} title={domain.title}>
                     <span className="nav-label">{domain.title}</span>
                   </Link>
                 </NavRow>
@@ -488,7 +489,7 @@ function SpaceItems({ index, space, path, reveal }: { index: SpecIndex; space: S
       {groups.length > 0 && (
         <ul className="nav-groups" aria-label={`Groups of ${space.title}`}>
           {groups.map((kind) => {
-            const to = groupPath(space.id, kind);
+            const to = addressOf(`${space.id}/${kind}`);
             const count = (index.children.get(space.id) ?? []).filter((c) => c.kind === kind).length;
             return (
               <li key={kind}>

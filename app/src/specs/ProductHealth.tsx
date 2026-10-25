@@ -1,7 +1,8 @@
 import { plural } from '../plural';
 import type { ReactNode } from 'react';
 import { Link } from '../router';
-import { byIdOrder, recordPath, type Coverage, type SpecIndex, type SpecRecord } from './data';
+import { byIdOrder, type Coverage, type SpecIndex, type SpecRecord } from './data';
+import { addressOf } from '../views/address';
 import { LongList } from '../components/LongList';
 import { Markdown } from './Markdown';
 
@@ -217,7 +218,7 @@ export function FitnessPanel({ index, productId }: { index: SpecIndex; productId
         <p className="fitness-score">
           <Score value={latest.fields.score} />
           <span className="meta">judged on <time dateTime={latest.fields.date}>{latest.fields.date}</time> in{' '}
-            <Link to={recordPath(latest.id)} className="record-link"><code>{latest.id}</code></Link></span>
+            <Link to={addressOf(latest.id)} className="record-link"><code>{latest.id}</code></Link></span>
         </p>
         <Markdown source={latest.body} />
       </div>
@@ -233,7 +234,7 @@ export function FitnessPanel({ index, productId }: { index: SpecIndex; productId
           <>
             <time dateTime={f.fields.date}>{f.fields.date}</time>
             <Score value={f.fields.score} />
-            <Link to={recordPath(f.id)} className="record-link row-link"><code>{f.id}</code><span>{f.title}</span></Link>
+            <Link to={addressOf(f.id)} className="record-link row-link"><code>{f.id}</code><span>{f.title}</span></Link>
           </>
         )}
       />

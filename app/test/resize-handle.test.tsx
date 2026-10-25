@@ -9,7 +9,7 @@ const handle = (name: string) => screen.getByRole('separator', { name });
 
 describe('resizable panels', () => {
   it('LA-BRW-T296 A handle resizes its panel with the arrow keys, Shift, Home and End, remembers it, and double-click resets it', async () => {
-    await openApp('/records/DM-SHOP-UC01');
+    await openApp('/DM-SHOP-UC01');
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     const nav = handle('Resize the navigation');
     expect(nav).toHaveAttribute('aria-valuenow', '304');
@@ -36,14 +36,14 @@ describe('resizable panels', () => {
   it('LA-BRW-T297 Remembered sizes come back, out-of-range ones fall back to the default, and the narrow layout has no handles', async () => {
     window.localStorage.setItem('lathe:nav-width', '400');
     window.localStorage.setItem('lathe:inspector-width', '9999');
-    await openApp('/records/DM-SHOP-UC01');
+    await openApp('/DM-SHOP-UC01');
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     expect(handle('Resize the navigation')).toHaveAttribute('aria-valuenow', '400');
     expect(handle('Resize the inspector')).toHaveAttribute('aria-valuenow', '340');
 
     // On a narrow screen the nav and the inspector are drawers: nothing to resize.
     vi.stubGlobal('matchMedia', (query: string) => ({ matches: true, media: query, addEventListener: () => {}, removeEventListener: () => {} }));
-    await openApp('/records/DM-SHOP-UC01');
+    await openApp('/DM-SHOP-UC01');
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     expect(within(document.body).queryAllByRole('separator').filter((s) => s.hasAttribute('aria-valuenow'))).toEqual([]);
   });

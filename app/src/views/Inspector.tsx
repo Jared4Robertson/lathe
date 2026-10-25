@@ -1,7 +1,8 @@
 import { forwardRef, type ReactNode } from 'react';
+import { Button } from '../components/Button';
 import { Icon } from '../components/icons';
 import { GraphConnections, type GraphInfo } from '../graph/panel';
-import { groupMarks, groupMembers, parseGroupId, pluralLabel } from '../graph/model';
+import { groupLabel, groupMarks, groupMembers, parseGroupId } from '../graph/model';
 import { kindLabel, problemOrder, type SpecIndex } from '../specs/data';
 import { ProblemList, RecordLink, RecordTree, listTitle } from '../specs/parts';
 import { RecordFacts } from '../specs/RecordContent';
@@ -52,9 +53,9 @@ export const Inspector = forwardRef<HTMLElement, InspectorProps>(function Inspec
       <div className="inspector-head">
         <h2 className="inspector-title">Inspector</h2>
         <Tooltip label="Hide the inspector" command="toggleInspector" placement="left">
-          <button type="button" className="icon-button" onClick={onClose} aria-label="Hide the inspector">
+          <Button variant="icon" onClick={onClose} label="Hide the inspector">
             <Icon name={drawer ? 'x' : 'sidebar-right'} />
-          </button>
+          </Button>
         </Tooltip>
       </div>
       {record && (
@@ -112,7 +113,7 @@ function GroupFacts({ index, gid }: { index: SpecIndex; gid: string }) {
     <>
       <div className="inspector-identity">
         <p className="eyebrow">Group</p>
-        <p className="inspector-name">{pluralLabel(index, kind)} ({members.length})</p>
+        <p className="inspector-name">{groupLabel(index, gid)}</p>
       </div>
       <dl className="fields">
         <div><dt>Kind</dt><dd title={index.kinds.get(kind)?.description}><Link to={kindPagePath(kind)}>{kindLabel(index, kind)}</Link></dd></div>

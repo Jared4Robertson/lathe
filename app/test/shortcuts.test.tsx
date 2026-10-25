@@ -35,7 +35,7 @@ describe('keyboard shortcuts', () => {
   });
 
   it('LA-BRW-T145 Ctrl+B hides and shows the nav, Ctrl+Alt+B the inspector, each announced', async () => {
-    await openApp('/records/P-D-UC01', { workspace: testWorkspace() });
+    await openApp('/P-D-UC01', { workspace: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     press(document.body, 'b', 'KeyB', { ctrlKey: true });
     expect(nav().className).toContain('is-rail');
@@ -51,7 +51,7 @@ describe('keyboard shortcuts', () => {
   });
 
   it('LA-BRW-T146 Alt+W, Alt+G and Alt+M (or Ctrl+1, 2 and 4) toggle the views off a Mac, Ctrl+3 shows only the focused pane, and Ctrl+3 or Escape restores', async () => {
-    await openApp('/records/P-D-UC01', { workspace: testWorkspace() });
+    await openApp('/P-D-UC01', { workspace: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     press(document.body, '2', 'Digit2', { ctrlKey: true });
     expect(window.location.search).toBe('?view=wiki,graph');
@@ -105,7 +105,7 @@ describe('keyboard shortcuts', () => {
   });
 
   it('LA-BRW-T148 ? opens the shortcuts sheet and Ctrl+Shift+P the command palette, both searchable; the palette runs a command', async () => {
-    await openApp('/records/P-D-UC01', { workspace: testWorkspace() });
+    await openApp('/P-D-UC01', { workspace: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     press(document.body, '?', 'Slash', { shiftKey: true });
     const sheet = screen.getByRole('dialog', { name: 'Keyboard shortcuts' });
@@ -142,7 +142,7 @@ describe('keyboard shortcuts', () => {
   });
 
   it('LA-BRW-T149 g then c, f, d or h jumps to Checks, the format, Diagrams or home, with a hint while it waits', async () => {
-    await openApp('/specs/DM');
+    await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     press(document.body, 'g', 'KeyG');
     expect(document.querySelector('.key-pending')).toHaveTextContent('G…');
@@ -154,31 +154,32 @@ describe('keyboard shortcuts', () => {
     expect(window.location.pathname).toBe('/format');
     press(document.body, 'g', 'KeyG');
     press(document.body, 'h', 'KeyH');
-    expect(window.location.pathname).toBe('/specs');
+    expect(window.location.pathname).toBe('/');
     // Not while typing.
     const find = within(nav()).getByRole('combobox', { name: 'Quick find' });
     find.focus();
     press(find, 'g', 'KeyG');
     press(find, 'c', 'KeyC');
-    expect(window.location.pathname).toBe('/specs');
+    expect(window.location.pathname).toBe('/');
   });
 
   it('LA-BRW-T150 In the graph, + and - change the depth, t switches trace mode, . fits the view and o opens or closes the focused group', async () => {
-    await openApp('/specs/P/P-D?view=graph', { workspace: testWorkspace() });
-    await waitFor(() => expect(node('P-D/use_case')).not.toBeNull());
+    await openApp('/P-D?view=graph', { workspace: testWorkspace() });
+    await waitFor(() => expect(node('P-D/question')).not.toBeNull());
     press(document.body, '+', 'Equal', { shiftKey: true });
     expect(screen.getByRole('button', { name: '2' })).toHaveAttribute('aria-pressed', 'true');
     press(document.body, '-', 'Minus');
     expect(screen.getByRole('button', { name: '1' })).toHaveAttribute('aria-pressed', 'true');
     press(document.body, '.', 'Period');
-    const group = node('P-D/use_case')!;
+    // o opens the open questions in place (their question leaves the faded ring), and closes them again.
+    const group = node('P-D/question')!;
     group.focus();
     press(group, 'o', 'KeyO');
-    await waitFor(() => expect(node('P-D-UC01')).not.toBeNull());
+    await waitFor(() => expect(node('P-D-Q01')?.className).not.toContain('is-context'));
     press(document.activeElement ?? document.body, 'o', 'KeyO');
-    await waitFor(() => expect(node('P-D-UC01')).toBeNull());
+    await waitFor(() => expect(node('P-D-Q01')?.className).toContain('is-context'));
 
-    await openApp('/records/P-D-UC01-R01?view=graph', { workspace: testWorkspace() });
+    await openApp('/P-D-UC01-R01?view=graph', { workspace: testWorkspace() });
     await waitFor(() => expect(node('P-D-UC01')).not.toBeNull());
     press(document.body, 't', 'KeyT');
     expect(screen.getByRole('checkbox', { name: 'Trace mode' })).toBeChecked();
@@ -186,7 +187,7 @@ describe('keyboard shortcuts', () => {
   });
 
   it('LA-BRW-T151 F12, Shift+F12, Ctrl+Shift+E, Ctrl+Shift+I, / and Ctrl+- reach links, incoming links, the nav, the inspector, search and Back', async () => {
-    await openApp('/records/P-D-UC01', { workspace: testWorkspace() });
+    await openApp('/P-D-UC01', { workspace: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     const inspector = screen.getByRole('complementary', { name: 'Inspector' });
 
@@ -194,7 +195,7 @@ describe('keyboard shortcuts', () => {
     const link = within(inspector).getAllByRole('link', { name: /P-D-DR01/ })[0];
     link.focus();
     press(link, 'F12', 'F12');
-    expect(window.location.pathname).toBe('/records/P-D-DR01');
+    expect(window.location.pathname).toBe('/P-D-DR01');
     await screen.findByRole('heading', { level: 1, name: 'A thing has one owner' });
 
     // Shift+F12 shows the incoming links in the inspector.
@@ -210,7 +211,7 @@ describe('keyboard shortcuts', () => {
     // / focuses the nearest search box: the page's, or quick find.
     press(document.body, '/', 'Slash');
     await waitFor(() => expect(within(nav()).getByRole('combobox', { name: 'Quick find' })).toHaveFocus());
-    await openApp('/specs/P/P-D', { workspace: testWorkspace() });
+    await openApp('/P-D', { workspace: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Domain' });
     press(document.body, '/', 'Slash');
     expect(screen.getByRole('searchbox', { name: 'Filter records' })).toHaveFocus();
@@ -222,6 +223,6 @@ describe('keyboard shortcuts', () => {
       press(document.body, '-', 'Minus', { ctrlKey: true });
       await new Promise((resolve) => window.addEventListener('popstate', resolve, { once: true }));
     });
-    expect(window.location.pathname).toBe('/specs/P/P-D');
+    expect(window.location.pathname).toBe('/P-D');
   });
 });
