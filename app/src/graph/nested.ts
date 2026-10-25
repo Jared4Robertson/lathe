@@ -1,7 +1,7 @@
 import type { SpecIndex } from '../specs/data';
 import { NODE_HEIGHT, NODE_WIDTH } from './layout';
 import type { MapNode, PlacedMap } from './map';
-import { nodeLabelWidth } from './text';
+import { BADGE_ROOM, hasMarks, HEX_ROOM, LABEL_PAD, labelLines, labelWidth, META_FONT, metaWidth, TITLE_FONT, titleWidth, WIDTH_MARGIN } from './text';
 import { treeChildren } from './tree';
 
 // The graph's Nested map (LA-EXP-DR62): the same tree as the Tree map (map.ts), one product's, the
@@ -27,14 +27,15 @@ export const HEADER = 46;
 export const NEST_PAD = 8;
 export const NEST_GAP = 6;
 /**
- * The most of its box's height a header band takes: HEADER_SHARE_MAX over the square root of the
- * leaves under it, never more than HEADER_SHARE_MAX nor less than HEADER_SHARE_MIN, so a parent of
- * one record has room for its name and a parent of hundreds does not crowd them. A header's label
- * takes at most HEADER_WIDTH_SHARE of its box's width.
+ * How tall a header band is at most, as a share of its box's size (the square root of its area):
+ * HEADER_SHARE_MAX over the square root of the leaves under it, never more than HEADER_SHARE_MAX
+ * nor less than HEADER_SHARE_MIN, so a parent of one record has room for its name and a parent of
+ * hundreds does not crowd them; and never more than HEADER_SHARE_MAX of its height, so a squat box
+ * keeps room for its children. A header's label takes at most HEADER_WIDTH_SHARE of its box's width.
  */
 export const HEADER_SHARE_MAX = 0.4;
 export const HEADER_SHARE_MIN = 0.2;
-export const HEADER_WIDTH_SHARE = 0.6;
+export const HEADER_WIDTH_SHARE = 0.9;
 export const headerShare = (leaves: number) => Math.min(HEADER_SHARE_MAX, Math.max(HEADER_SHARE_MIN, HEADER_SHARE_MAX / Math.sqrt(Math.max(1, leaves))));
 /** The map area one leaf record stands for: a little more than a Tree leaf, for the headers and padding above it. */
 export const LEAF_AREA = NODE_WIDTH * NODE_HEIGHT * 4;
@@ -103,22 +104,74 @@ export function squarify(weights: readonly number[], r: Rect): Rect[] {
 }
 
 /**
- * A box's text scale (LA-EXP-DR58): a leaf's as large as fits its label on one line across its
- * width and in its height; a parent's as large as keeps its label within HEADER_WIDTH_SHARE of its
- * width and its header band within its share of its height (`headerShare`, by the leaves under it).
+ * A parent's text scale in the Nested map (LA-EXP-DR58): as large as keeps its label on one line
+ * within HEADER_WIDTH_SHARE of its width, and its header band within its share of its size
+ * (`headerShare`, by the leaves under it) and HEADER_SHARE_MAX of its height.
  */
-export function nestedTextScale(r: Pick<Rect, 'w' | 'h'>, labelWidth: number, leaves = 0): number {
-  const container = leaves > 0;
-  const across = ((container ? HEADER_WIDTH_SHARE : 1) * r.w) / Math.max(1, labelWidth);
-  const down = container ? (r.h * headerShare(leaves)) / HEADER : r.h / NODE_HEIGHT;
+export function nestedTextScale(r: Pick<Rect, 'w' | 'h'>, labelWidth: number, leaves: number): number {
+  const across = (HEADER_WIDTH_SHARE * r.w) / Math.max(1, labelWidth);
+  const down = Math.min(HEADER_SHARE_MAX * r.h, headerShare(leaves) * Math.sqrt(r.w * r.h)) / HEADER;
   return Math.max(0, Math.min(across, down));
 }
 
+/** What a box's label says, and what it keeps room for: a domain's hexagon mark, the problem badge. */
+export interface NestedLabel { title: string; meta: string; hexagon?: boolean; marked?: boolean }
+
+/** A label's line height, as a share of its font size, and its padding top and bottom, at text scale 1 (the stylesheet's). */
+const LINE = 1.4;
+const LABEL_PAD_Y = 6;
+
+/** How many lines some words take, wrapped at their spaces in a width (all at one scale), or Infinity when a word is wider. */
+function wrap(words: readonly number[], space: number, width: number): number {
+  if (width <= 0 || words.some((w) => w > width)) return Infinity;
+  let lines = words.length > 0 ? 1 : 0;
+  let line = 0;
+  for (const w of words) {
+    if (line === 0) line = w;
+    else if (line + space + w <= width) line += space + w;
+    else { lines++; line = w; }
+  }
+  return lines;
+}
+
 /**
- * Lays out a tree given by its roots, a children function and, for each node, how wide its label
- * is on one line at text scale 1 (a leaf's width when not given) as nested boxes (exported for tests).
+ * The height a leaf's label takes at text scale 1 in a width: its kind and ID line and its title,
+ * each wrapped at its spaces (never inside a word), the kind and ID line keeping room for the
+ * problem badge on both sides; Infinity when a word does not fit.
  */
-export function layoutNested(roots: readonly string[], childrenOf: (id: string) => readonly string[], labelWidthOf: (id: string) => number = () => NODE_WIDTH): NestedMap {
+function wrappedHeight(label: NestedLabel, width: number): number {
+  const split = (text: string) => text.split(/\s+/).filter(Boolean);
+  const meta = wrap(split(label.meta).map((w) => metaWidth(w) * WIDTH_MARGIN), metaWidth(' '), width - (label.marked ? 2 * BADGE_ROOM : 0));
+  const title = wrap(split(label.title).map((w) => titleWidth(w) * WIDTH_MARGIN), titleWidth(' ') * WIDTH_MARGIN, width);
+  return 2 * LABEL_PAD_Y + meta * META_FONT * LINE + title * TITLE_FONT * LINE;
+}
+
+/**
+ * A leaf's text scale in the Nested map (LA-EXP-DR58): the largest at which its kind and ID line
+ * and its title, each wrapped at its spaces (never inside a word), fit its width and height. A
+ * leaf is a block, not a line, so a long title takes two or three lines rather than a tiny one.
+ */
+export function leafTextScale(r: Pick<Rect, 'w' | 'h'>, label: NestedLabel): number {
+  const fits = (s: number) => {
+    const width = r.w / s - 2 * LABEL_PAD - (label.hexagon ? 2 * HEX_ROOM : 0) - 4;
+    return wrappedHeight(label, width) <= r.h / s;
+  };
+  let lo = 0;
+  let hi = r.h / (2 * LABEL_PAD_Y + (META_FONT + TITLE_FONT) * LINE);
+  if (hi <= 0) return 0;
+  if (fits(hi)) return hi;
+  for (let i = 0; i < 40; i++) {
+    const mid = (lo + hi) / 2;
+    if (fits(mid)) lo = mid; else hi = mid;
+  }
+  return lo;
+}
+
+/**
+ * Lays out a tree given by its roots, a children function and, for each node, its label (its ID
+ * when not given) as nested boxes (exported for tests).
+ */
+export function layoutNested(roots: readonly string[], childrenOf: (id: string) => readonly string[], labelOf: (id: string) => NestedLabel = (id) => ({ title: id, meta: '' })): NestedMap {
   // The tree, by a walk from the roots; a node reached twice keeps its first place.
   const parent = new Map<string, string | null>();
   const level = new Map<string, number>();
@@ -150,7 +203,8 @@ export function layoutNested(roots: readonly string[], childrenOf: (id: string) 
   /** Places a box, then its children inside it below its header band. */
   const place = (id: string, r: Rect) => {
     const own = kids.get(id)!;
-    const text = nestedTextScale(r, labelWidthOf(id), own.length > 0 ? leaves.get(id)! : 0);
+    const label = labelOf(id);
+    const text = own.length > 0 ? nestedTextScale(r, labelWidth(label, label), leaves.get(id)!) : leafTextScale(r, label);
     const header = own.length > 0 ? HEADER * text : 0;
     nodes.set(id, { id, parent: parent.get(id)!, children: own, level: level.get(id)!, x: r.x, y: r.y, w: r.w, h: r.h, text, header, order: order++ });
     if (own.length === 0) return;
@@ -189,7 +243,7 @@ export function nestedMap(index: SpecIndex, root: string): NestedMap {
   if (!maps) { maps = new Map(); cache.set(index, maps); }
   const known = maps.get(root);
   if (known) return known;
-  const map = layoutNested([root], (id) => treeChildren(index, id), (id) => nodeLabelWidth(index, id));
+  const map = layoutNested([root], (id) => treeChildren(index, id), (id) => ({ ...labelLines(index, id), hexagon: index.byId.get(id)?.kind === 'domain', marked: hasMarks(index, id) }));
   maps.set(root, map);
   return map;
 }
