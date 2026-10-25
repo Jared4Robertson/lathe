@@ -149,7 +149,7 @@ describe('one address, three views', () => {
     expect(within(members[1]).getByText('2 warnings')).toBeInTheDocument();
   });
 
-  it('LA-BRW-T125 Product and domain pages have the same views, their graph centred on the product or domain', async () => {
+  it('LA-BRW-T125 Product and domain pages have the same views, their graph centered on the product or domain', async () => {
     for (const [path, id, name] of [['/specs/P', 'P', 'Product'], ['/specs/P/P-D', 'P-D', 'Domain']]) {
       await openApp(`${path}?view=split`, served());
       await screen.findByRole('heading', { level: 1, name });

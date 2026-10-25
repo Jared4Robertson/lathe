@@ -1,7 +1,7 @@
 ---
 id: SD-PAT
 kind: pattern
-title: Shared behaviour
+title: Shared behavior
 parent: SD
 ---
-Shared behaviour, shared by several use cases.
+Shared behavior, shared by several use cases.

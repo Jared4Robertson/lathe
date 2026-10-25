@@ -1,6 +1,6 @@
 ---
 name: write-use-cases
-description: Write or change Lathe use cases, their requirements, the capabilities that group them and the patterns they follow. Use when adding what an actor does with the product, splitting a use case, grouping a domain's use cases into capabilities, writing behaviour several use cases share as a pattern, or stating the rules a use case must follow (and deciding which rules belong at a view or endpoint instead), in a repo with lathe.config.json.
+description: Write or change Lathe use cases, their requirements, the capabilities that group them and the patterns they follow. Use when adding what an actor does with the product, splitting a use case, grouping a domain's use cases into capabilities, writing behavior several use cases share as a pattern, or stating the rules a use case must follow (and deciding which rules belong at a view or endpoint instead), in a repo with lathe.config.json.
 ---
 
 # Write use cases
@@ -11,7 +11,7 @@ A use case is something an actor does with the product to reach a goal. Its requ
 
 1. Read the domain record (its language table) and the aggregates and domain rules the use case touches. Use those terms exactly.
 2. Read the domain's existing use cases and take the next free number. IDs are never reused or renumbered.
-3. Read the domain's capabilities (if it has any), the product's patterns, and the patterns the domain itself follows. Put the use case in the capability it belongs to, and follow every pattern whose behaviour it shares and that the domain does not already follow as a whole.
+3. Read the domain's capabilities (if it has any), the product's patterns, and the patterns the domain itself follows. Put the use case in the capability it belongs to, and follow every pattern whose behavior it shares and that the domain does not already follow as a whole.
 
 ## The records
 
@@ -44,7 +44,7 @@ When a pattern applies to a whole domain, as Client adopts most of its patterns,
 - A use case that `follows` a pattern with settings gives every setting as a plain header field named exactly as the pattern lists it: a value, or `"Not applicable: <reason>"` (quoted, because of the colon). A missing setting, or `Not applicable:` without a reason, is an error.
 - The use case's requirements do not restate the pattern's rules. Write a requirement only for what this use case adds; a use case whose rules all come from its patterns may have none.
 - Avoid two patterns with the same setting name: a use case following both has only one field for it (a warning). Rename one of the settings.
-- Do not make a pattern for one use case. If only one use case has the behaviour, it is that use case's requirements.
+- Do not make a pattern for one use case. If only one use case has the behavior, it is that use case's requirements.
 - Write each of the pattern's rules as a `pattern_rule` record under the pattern (ID: the pattern's ID with `-R<nn>`, such as `TL-PAT-LIBRARIAN-ACTION-R01`), not in its body. A rule that depends on a setting names it in `setting`.
 - Every domain that follows the pattern, itself or through any of its use cases, owes each of its rules: a test in that domain `proves` it. Pattern rules need proof only by default, so no component has to `satisfy` one, though a component may, to say which code carries it out. A rule whose `setting` all of a domain's following use cases mark `Not applicable:` is not owed there, unless the domain itself follows the pattern. A rule with no `setting` is owed wherever the pattern is followed.
 - An interaction requirement or a flow step may `fulfill` a pattern rule, to say where it is carried out. A step may fulfill only the rules of the patterns its flow's use cases or its domain follow.

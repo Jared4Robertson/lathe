@@ -18,9 +18,9 @@ import { addressOf, focusOf, isViewMode, VIEW_LABELS, VIEW_MODES, viewFromSearch
 import { Inspector } from './Inspector';
 
 // One page for one thing (a record, a group, a product or a domain), at one address, in three
-// views: Wiki (the page to read), Graph (the graph centred on it) and Split (both side by side,
+// views: Wiki (the page to read), Graph (the graph centered on it) and Split (both side by side,
 // with a divider to drag). Both panes show the same focus: clicking a node changes the address and
-// the wiki follows; following a link in the wiki re-centres the graph. Either pane can go full
+// the wiki follows; following a link in the wiki re-centers the graph. Either pane can go full
 // screen. The inspector, the page's third column, shows the focused record whichever view is open.
 
 const GraphView = lazy(() => import('../graph/GraphPage').then((m) => ({ default: m.GraphView })));

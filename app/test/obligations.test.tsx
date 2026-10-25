@@ -22,7 +22,7 @@ const side = () => main().querySelector('aside.record-side') as HTMLElement;
 const field = (name: string) => within(side()).getByText(name, { selector: 'dt' }).nextElementSibling as HTMLElement;
 
 describe('obligation kinds and test states', () => {
-  it('LA-BRW-T80 Coverage shows one group per obligation kind, labelled, with designed, built, proved and planned', async () => {
+  it('LA-BRW-T80 Coverage shows one group per obligation kind, labeled, with designed, built, proved and planned', async () => {
     await openApp('/specs/DM', served());
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     expect(groups(card('Shopping'))).toEqual([
