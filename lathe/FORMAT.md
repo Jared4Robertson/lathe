@@ -90,3 +90,14 @@ An aggregate is drawn as an ERD of the records it keeps. Each is an `entity` und
 ## 18. Domain events
 
 A `domain_event` is an unchangeable record that something happened in the domain, named in the past tense (Loan opened, Tool returned). It sits under the aggregate that raises it, and `raised_by` may name the entity of that aggregate whose change raises it; an event raised by time passing, or in an aggregate with no entities, has none. Its body says in a sentence what happened, then lists what the event carries in a `## Fields` table with the same columns as an entity's. What happens next is said by the records that react: an aggregate that changes, a use case that starts or a component that handles the event links to it with `reacts_to`, from any aggregate or domain. An event that nothing reacts to is reported as a warning, since that can be fine but is often a missing link.
+
+## 19. Domains
+
+A domain is a vertical slice of the product: one business capability with its own language, such as Lending or Billing. It owns everything about that capability. Its Define stage holds its domain model (aggregates, entities, events and rules) and its use cases; its Design stage holds its flows, views, endpoints, components and tests. Technology is a layer inside a domain's Design stage, such as Web app, Engine or Desktop, never a domain of its own, so each capability is specified, built and proved in one place. What every domain shares, such as the app shell, sign-in or the server, goes in a platform domain or a pattern, not in a domain named for a technology.
+
+A capability is something a person using the product would name, with its own terms and rules, that would still exist if the product were rebuilt on other technology. A layer is how some capability is delivered.
+
+- **Good:** a library's domains are Membership, Catalog and Lending. Lending holds the loan, its rules and use cases, the screens and endpoints for borrowing and returning, the components in its Web app and Server layers, and the tests that prove them.
+- **Bad:** the same library split into Frontend, Backend and Database. Borrowing a tool is then designed in three domains, its rules sit apart from the screens that enforce them, and no domain can say whether borrowing is done.
+
+A domain whose title or code names a technology layer or delivery channel is a `domain-named-for-technology` warning.
