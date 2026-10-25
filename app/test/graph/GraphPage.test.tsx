@@ -128,12 +128,15 @@ describe('graph page', () => {
 
   it('LA-BRW-T61 Record, domain and product pages show the graph in their Graph view, and the nav has no Graph item', async () => {
     for (const path of ['/records/P-D-UC01-R01', '/specs/P/P-D', '/specs/P']) {
+      // Each page starts with the wiki alone (no view remembered, no tab to take one from); the Graph toggle opens the graph beside it.
+      window.localStorage.removeItem('lathe:view');
+      window.sessionStorage.removeItem('lathe:tabs');
       await openApp(path, { workspace: testWorkspace() });
       await screen.findByRole('heading', { level: 1 });
       const graph = within(screen.getByRole('group', { name: 'View' })).getByRole('button', { name: 'Graph' });
       expect(within(screen.getByRole('navigation', { name: 'Main' })).queryByRole('link', { name: 'Graph' })).toBeNull();
       fireEvent.click(graph);
-      expect(window.location.pathname + window.location.search).toBe(`${path}?view=graph`);
+      expect(window.location.pathname + window.location.search).toBe(`${path}?view=wiki,graph`);
       await waitFor(() => expect(document.querySelector('.react-flow__node.is-focus, .graph-node.is-focus')).not.toBeNull());
     }
   });

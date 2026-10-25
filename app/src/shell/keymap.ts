@@ -15,7 +15,10 @@ export interface Command {
   id: string;
   title: string;
   group: CommandGroup;
+  /** The bindings, first one shown; on every platform unless `otherKeys` says otherwise. */
   keys: string[];
+  /** The bindings off a Mac, when they differ (Ctrl+W closes the tab there, so Alt+W instead). */
+  otherKeys?: string[];
   when: CommandContext;
   /** Handled by the component it belongs to (arrow keys in the graph), listed here so the sheet shows it. */
   local?: boolean;
@@ -48,17 +51,23 @@ export const COMMANDS: readonly Command[] = [
   { id: 'goFormat', title: 'Go to the record format', group: 'Navigate', keys: ['g f'], when: 'global' },
   { id: 'goDiagrams', title: 'Go to Diagrams', group: 'Navigate', keys: ['g d'], when: 'global' },
   { id: 'goHome', title: 'Go home (all products)', group: 'Navigate', keys: ['g h'], when: 'global' },
+  // Tabs, as VS Code's editors: Ctrl+K Enter keeps the preview tab (Alt+K Enter off a Mac, where Ctrl+K is quick open);
+  // Alt+Shift+W closes, since Ctrl+W toggles the wiki on a Mac and the browser keeps it elsewhere.
+  { id: 'keepTab', title: 'Keep the tab open (no longer a preview)', group: 'Navigate', keys: ['Ctrl+K Enter'], otherKeys: ['Alt+K Enter'], when: 'page' },
+  { id: 'closeTab', title: 'Close the tab', group: 'Navigate', keys: ['Alt+Shift+W'], when: 'page' },
+  { id: 'nextTab', title: 'Next tab', group: 'Navigate', keys: ['Ctrl+Tab'], when: 'page' },
+  { id: 'previousTab', title: 'Previous tab', group: 'Navigate', keys: ['Ctrl+Shift+Tab'], when: 'page' },
   { id: 'showShortcuts', title: 'Keyboard shortcuts', group: 'Navigate', keys: ['?', 'Mod+/'], when: 'global' },
   // Spaces: one per product, in rail order. Each is titled "Switch to <product>" by whoever handles it.
   ...Array.from({ length: SPACE_KEYS }, (_, i): Command => ({ id: spaceCommandId(i + 1), title: `Switch to space ${i + 1}`, group: 'Navigate', keys: [`Alt+${i + 1}`], when: 'global', dynamic: true })),
   // View
   { id: 'toggleNav', title: 'Show or hide the navigation', group: 'View', keys: ['Mod+B'], when: 'global' },
   { id: 'toggleInspector', title: 'Show or hide the inspector', group: 'View', keys: ['Mod+Alt+B'], when: 'page' },
-  { id: 'toggleSplit', title: 'Toggle Split view', group: 'View', keys: ['Mod+\\'], when: 'page' },
-  { id: 'viewWiki', title: 'Wiki view', group: 'View', keys: ['Ctrl+1'], when: 'page' },
-  { id: 'viewGraph', title: 'Graph view', group: 'View', keys: ['Ctrl+2'], when: 'page' },
-  { id: 'viewSplit', title: 'Split view', group: 'View', keys: ['Ctrl+3'], when: 'page' },
-  { id: 'toggleFullScreen', title: 'Full screen for the focused pane', group: 'View', keys: ['Mod+Shift+Enter'], when: 'page' },
+  // Ctrl is the Control key on a Mac too, where Cmd+W stays the browser's; elsewhere Ctrl+W closes the tab and Ctrl+G finds the next match, so Alt.
+  { id: 'viewWiki', title: 'Wiki view on or off', group: 'View', keys: ['Ctrl+W', 'Ctrl+1'], otherKeys: ['Alt+W', 'Ctrl+1'], when: 'page' },
+  { id: 'viewGraph', title: 'Graph view on or off', group: 'View', keys: ['Ctrl+G', 'Ctrl+2'], otherKeys: ['Alt+G', 'Ctrl+2'], when: 'page' },
+  { id: 'viewModel', title: 'Model view on or off', group: 'View', keys: ['Ctrl+M', 'Ctrl+4'], otherKeys: ['Alt+M', 'Ctrl+4'], when: 'page' },
+  { id: 'maximizePane', title: 'Full screen for the focused pane, or back to every pane', group: 'View', keys: ['Ctrl+3'], when: 'page' },
   { id: 'escape', title: 'Leave full screen, or clear or close the innermost thing', group: 'View', keys: ['Escape'], when: 'global' },
   { id: 'expandAll', title: 'Expand all rows on this page', group: 'View', keys: [], when: 'page' },
   { id: 'collapseAll', title: 'Collapse all rows on this page', group: 'View', keys: [], when: 'page' },
@@ -83,7 +92,10 @@ export const COMMANDS: readonly Command[] = [
 export const GROUPS: readonly CommandGroup[] = ['Navigate', 'View', 'Graph', 'Lists'];
 
 /** Browser essentials a binding may never take, on any platform. */
-export const RESERVED = ['Mod+W', 'Mod+T', 'Mod+L', 'Mod+R', 'Mod+N', 'Mod+Q', 'Tab', 'Shift+Tab', 'F5', 'F11'];
+export const RESERVED = ['Mod+W', 'Mod+T', 'Mod+L', 'Mod+R', 'Mod+N', 'Mod+Q', 'Mod+G', 'Tab', 'Shift+Tab', 'F5', 'F11'];
+
+/** A command's own bindings on this platform, before overrides. */
+export const platformKeys = (c: Command, mac: boolean): string[] => (mac ? c.keys : c.otherKeys ?? c.keys);
 
 // ---------- Platform ----------
 
@@ -171,7 +183,7 @@ export function readOverrides(): Record<string, string[]> {
 export function resolveCommands(overrides: Record<string, string[]>, mac: boolean, commands: readonly Command[] = COMMANDS): Command[] {
   const reserved = new Set(RESERVED.map((r) => normalizeBinding(r, mac)));
   return commands.map((c) => {
-    const keys = (overrides[c.id] ?? c.keys).filter((k) => k.trim() && !reserved.has(normalizeBinding(k, mac)));
+    const keys = (overrides[c.id] ?? platformKeys(c, mac)).filter((k) => k.trim() && !reserved.has(normalizeBinding(k, mac)));
     return { ...c, keys };
   });
 }
@@ -182,7 +194,7 @@ const overlap = (a: CommandContext, b: CommandContext) => a === b || a === 'glob
 /** Bindings used by two commands whose contexts can be active at the same time. */
 export function duplicateBindings(commands: readonly Command[], mac: boolean): string[] {
   const clashes: string[] = [];
-  const all = commands.flatMap((c) => c.keys.map((k) => ({ c, b: normalizeBinding(k, mac) })));
+  const all = commands.flatMap((c) => platformKeys(c, mac).map((k) => ({ c, b: normalizeBinding(k, mac) })));
   all.forEach((x, i) => all.slice(i + 1).forEach((y) => {
     if (x.b === y.b && x.c.id !== y.c.id && overlap(x.c.when, y.c.when)) clashes.push(`${x.b}: ${x.c.id} and ${y.c.id}`);
     // A sequence must not start with a key that is a whole binding on its own.

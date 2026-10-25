@@ -36,11 +36,16 @@ export const recordText = (r: SpecRecord) => `${r.id} ${r.title}`;
 /** The text for a record ID, with its title when the record exists. */
 export const idText = (index: SpecIndex, id: string) => `${id} ${index.byId.get(id)?.title ?? ''}`;
 
-export function RecordLink({ index, id, showTitle = true }: { index: SpecIndex; id: string; showTitle?: boolean }) {
+/**
+ * A link to a record: its ID and, by default, its title. With `row`, it is its row's one link
+ * (LA-PAT-APP-CODE-R13): it stretches over the whole row, so anywhere on the row opens the record,
+ * while the row's other controls sit above it and keep working.
+ */
+export function RecordLink({ index, id, showTitle = true, row = false }: { index: SpecIndex; id: string; showTitle?: boolean; row?: boolean }) {
   const record = index.byId.get(id);
   if (!record) return <span className="record-link missing" title="No record has this ID"><code>{id}</code></span>;
   return (
-    <SpecLink to={recordPath(id)} className="record-link">
+    <SpecLink to={recordPath(id)} className={row ? 'record-link row-link' : 'record-link'}>
       <code>{id}</code>
       {showTitle && <span>{record.title}</span>}
     </SpecLink>
@@ -62,7 +67,7 @@ export function ProblemList({ index, problems, showRecord = true, showCheck = tr
         <>
           <span className="severity">{p.severity}</span>
           <span className="problem-text">
-            {showRecord && (p.record ? <RecordLink index={index} id={p.record} showTitle={false} /> : <code>workspace</code>)}{' '}
+            {showRecord && (p.record ? <RecordLink index={index} id={p.record} showTitle={false} row /> : <code>workspace</code>)}{' '}
             {p.message}
           </span>
           {showCheck && <code className="check-name">{p.check}</code>}
@@ -168,7 +173,7 @@ export function RecordRowBody({ index, record, showKind = false }: { index: Spec
   const gaps = gapsOf(index, record.id);
   return (
     <div className={`record-row ${isTest && testState(record) === 'planned' ? 'planned' : ''}`}>
-      <RecordLink index={index} id={record.id} />
+      <RecordLink index={index} id={record.id} row />
       <span className="row-tags">
         {showKind && <small className="meta">{index.kinds.get(record.kind)?.label ?? record.kind}</small>}
         {fields.length > 0 && <small className="meta">{fields.join(' · ')}</small>}

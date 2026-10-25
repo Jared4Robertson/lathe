@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { screen, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { openApp } from './helpers';
 import { REQUIRED_PAIRS, colorOf } from '../src/theme/audit';
 import { contrast } from '../src/theme/contrast';
@@ -160,12 +160,12 @@ describe('LA-PAT-APP-CODE App code', () => {
     // One implementation: no other component draws a separator of its own.
     const separators = filesUnder(SRC, /\.tsx$/).filter((f) => !f.endsWith('ResizeHandle.tsx')).flatMap((f) => where(f, readFileSync(f, 'utf8'), /role="separator"/));
     expect(separators).toEqual([]);
-    // On a record in the Split view with the inspector open: nav, wiki, graph and inspector, each gap a handle.
-    await openApp('/records/DM-SHOP-UC01?view=split');
+    // On a record with the wiki and graph open and the inspector shown: nav, wiki, graph and inspector, each gap a handle.
+    await openApp('/records/DM-SHOP-UC01?view=wiki,graph');
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     // A focusable separator (one with a value) is a splitter; a plain divider line such as the rail's is not.
     const handles = screen.getAllByRole('separator').filter((h) => h.hasAttribute('aria-valuenow')).map((h) => [h.getAttribute('aria-label'), h.classList.contains('resize-handle')]);
-    expect(handles).toEqual([['Resize the navigation', true], ['Resize the panes', true], ['Resize the inspector', true]]);
+    expect(handles).toEqual([['Resize the navigation', true], ['Resize the wiki and graph panes', true], ['Resize the inspector', true]]);
     for (const panel of [document.querySelector('#nav'), ...document.querySelectorAll('.pane'), document.querySelector('.inspector-column')]) expect(panel).toHaveClass('panel');
   });
 
@@ -176,41 +176,54 @@ describe('LA-PAT-APP-CODE App code', () => {
     expect(unsized).toEqual([]);
   });
 
-  it('LA-BRW-T298 Each pane has one title bar naming its view and holding the view toggles and layout actions as icon buttons, and nothing else switches views', async () => {
-    for (const path of ['/records/DM-SHOP-UC01?view=wiki', '/records/DM-SHOP-UC01?view=split']) {
+  it('LA-BRW-T298 Each pane has one title bar, the leftmost holding the tabs and the others naming their view, with the view toggles and layout actions as icon buttons, on wide and narrow screens alike', async () => {
+    for (const [path, narrow] of [['/records/DM-SHOP-UC01?view=wiki', false], ['/records/DM-SHOP-UC01?view=wiki,graph', false], ['/records/DM-SHOP-UC01?view=wiki,graph', true]] as const) {
+      // A narrow screen (under 900 px) stacks the panes; their bars hold the same controls.
+      if (narrow) vi.stubGlobal('matchMedia', (query: string) => ({ matches: true, media: query, addEventListener: () => {}, removeEventListener: () => {} }));
       await openApp(path);
       await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
       const panes = [...document.querySelectorAll<HTMLElement>('.pane')];
       expect(panes.length).toBeGreaterThan(0);
-      for (const pane of panes) {
+      panes.forEach((pane, i) => {
         expect(pane).toHaveClass('panel');
         expect(pane.firstElementChild).toHaveClass('pane-bar');
         expect(pane.querySelectorAll(':scope > .pane-bar')).toHaveLength(1);
-        // At the left, a quiet label names the pane's view; it is not a control.
-        const label = pane.querySelector('.pane-bar > .pane-head > .pane-name');
-        expect(label?.textContent?.trim()).toMatch(/^(Wiki|Graph)$/);
-        expect(label?.querySelector('button, a, [tabindex]')).toBeNull();
+        if (i === 0) {
+          // At the left of the leftmost pane, the tab strip, in place of the view's name.
+          expect(pane.querySelector('.pane-bar > .pane-head > [role="tablist"]')).not.toBeNull();
+          expect(pane.querySelector('.pane-name')).toBeNull();
+        } else {
+          // At the left of the others, a quiet label names the pane's view; it is not a control.
+          const label = pane.querySelector('.pane-bar > .pane-head > .pane-name');
+          expect(label?.textContent?.trim()).toMatch(/^(Wiki|Graph|Model)$/);
+          expect(label?.querySelector('button, a, [tabindex]')).toBeNull();
+        }
         // At the right, every control is an icon button in one style.
         for (const b of pane.querySelectorAll('.pane-actions button')) expect(b).toHaveClass('icon-button');
-      }
-      expect(screen.queryAllByRole('tab')).toEqual([]);
-      // The view toggles: pressed icon buttons inside the bar's actions, one pressed; none in a split.
+      });
+      // One tab strip on the page, its tabs inside a title bar.
+      expect(screen.getAllByRole('tablist')).toHaveLength(1);
+      for (const t of screen.getAllByRole('tab')) expect(t.closest('.pane-bar')).not.toBeNull();
+      // The view toggles: icon buttons with a pressed state, once, in the rightmost pane's bar, one pressed per open pane.
       const groups = screen.queryAllByRole('group', { name: 'View' });
-      expect(groups).toHaveLength(path.endsWith('split') ? 0 : 1);
+      expect(groups).toHaveLength(1);
+      expect(groups[0].closest('.pane')).toBe(panes[panes.length - 1]);
       const toggles = groups.flatMap((g) => within(g).getAllByRole('button'));
       for (const t of toggles) {
         expect(t.closest('.pane-actions')).not.toBeNull();
         expect(t).toHaveClass('icon-button');
         expect(t).toHaveAttribute('aria-pressed');
       }
-      if (toggles.length > 0) expect(toggles.filter((t) => t.getAttribute('aria-pressed') === 'true')).toHaveLength(1);
+      expect(toggles.filter((t) => t.getAttribute('aria-pressed') === 'true')).toHaveLength(panes.length);
       // Every view and layout control lives in a title bar.
       const controls = [
         ...toggles,
-        ...screen.queryAllByRole('button', { name: /beside$|^Close the (wiki|graph) pane$|^Full screen|^Leave full screen/ }),
-        screen.getByRole('button', { name: /the inspector$/, expanded: true }),
+        ...screen.queryAllByRole('button', { name: /^Close the (wiki|graph|model) pane$|^Full screen|^Leave full screen/ }),
+        screen.getByRole('button', { name: /the inspector$/, expanded: !narrow }),
       ];
       for (const c of controls) expect(c.closest('.pane-bar')).not.toBeNull();
+      // No row of its own for any layout control, on a narrow screen either.
+      expect(document.querySelector('.pane-narrow-actions')).toBeNull();
       // The title belongs to the content of a pane.
       expect(screen.getByRole('heading', { level: 1 }).closest('.pane')).not.toBeNull();
     }
@@ -276,6 +289,36 @@ describe('LA-PAT-APP-CODE App code', () => {
       return ratio >= 4.5 ? [] : [`${theme.id} ${mode}: ${fg} on ${bg} is ${ratio.toFixed(2)}:1`];
     })));
     expect(failing).toEqual([]);
+  });
+
+  it('LA-BRW-T400 A row that leads to one record is one link: every record row on the domain and record pages has exactly one row link, stretched over the row', async () => {
+    // The stylesheet: rows are positioned, the row link's ::after covers the row and shows its hover
+    // and focus, and one rule lifts the row's other controls above it.
+    const rules = styleRules(CSS);
+    const ruleFor = (test: (selector: string) => boolean) => rules.filter((r) => topLevel(r.selector).some((s) => test(s.trim())));
+    const stretch = ruleFor((s) => s === '.row-link::after');
+    expect(stretch.map((r) => r.body).join(';')).toMatch(/position:\s*absolute[\s\S]*inset:\s*0/);
+    const rows = ruleFor((s) => /\.record-list > li/.test(s) && /\.tree-row/.test(s) && !/:not\(\.row-link\)/.test(s));
+    expect(rows.map((r) => r.body).join(';')).toMatch(/position:\s*relative/);
+    const lifted = ruleFor((s) => /:not\(\.row-link\)$/.test(s) && /\bbutton\b/.test(s) && /\ba\b/.test(s) && /\[title\]/.test(s));
+    expect(lifted.map((r) => r.body).join(';')).toMatch(/position:\s*relative[\s\S]*z-index:\s*1/);
+    expect(ruleFor((s) => s === '.row-link:hover::after').map((r) => r.body).join(';')).toContain('var(--hover-bg)');
+    expect(ruleFor((s) => s === '.row-link:focus-visible::after').map((r) => r.body).join(';')).toMatch(/outline:/);
+
+    // The pages: each row that holds a record link has exactly one row link, a real link to a record.
+    for (const path of ['/specs/DM/DM-SHOP', '/records/DM-SHOP-UC01', '/records/DM-SHOP']) {
+      await openApp(path);
+      await screen.findByRole('heading', { level: 1 });
+      const lists = [...document.querySelectorAll('.record-list')];
+      expect(lists.length).toBeGreaterThan(0);
+      const rowsOnPage = lists.flatMap((list) => [...list.querySelectorAll(':scope > li')].map((li) => (li.classList.contains('tree-item') ? li.querySelector(':scope > .tree-row')! : li)));
+      const withLinks = rowsOnPage.filter((row) => row.querySelector('a.record-link'));
+      expect(withLinks.length).toBeGreaterThan(0);
+      const wrong = withLinks
+        .filter((row) => row.querySelectorAll('.row-link').length !== 1 || !/^\/records\//.test(row.querySelector('.row-link')?.getAttribute('href') ?? ''))
+        .map((row) => `${path}: ${row.outerHTML.slice(0, 160)}`);
+      expect(wrong).toEqual([]);
+    }
   });
 
   it('LA-BRW-T262 Code, specs and docs use American spelling', () => {
