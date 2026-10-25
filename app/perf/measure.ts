@@ -13,7 +13,7 @@ import { MAX_LOAD } from './budgets';
 export interface PerfResult {
   name: string;
   value: number;
-  unit: 'ms' | 'KB' | 'MB';
+  unit: 'ms' | 'KB' | 'MB' | 'frames';
   budget: number | null;
   /** 'ok', 'over', 'measured' (no budget) or 'not judged' (the machine was busy). */
   verdict: string;

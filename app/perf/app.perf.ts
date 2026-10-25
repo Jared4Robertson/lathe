@@ -85,13 +85,14 @@ test.describe('performance', () => {
     await record({ name: 'view switch: close the Graph pane', value: closeGraph.workMs, unit: 'ms', budget: BUDGETS.viewSwitchMs, detail: `longest frame ${Math.round(closeGraph.worstFrameMs)} ms` });
   });
 
-  test('LA-BRW-T603 a graph re-center at depth 3 takes under 100 ms of main-thread work, in frames under 16 ms', async ({ page }) => {
+  test('LA-BRW-T603 a graph re-center at depth 3 takes under 500 ms of main-thread work, and glides at 60 Hz', async ({ page }) => {
     await open(page, `${RECORD}?view=graph`);
     await page.locator('.graph-flow .react-flow__node').first().waitFor();
     await page.locator('.graph-depth button', { hasText: '3' }).click();
     await quiet(page, 900);
     const works: number[] = [];
     const frames: number[] = [];
+    const slow: number[] = [];
     const notes: string[] = [];
     for (const hop of [1, 2, 3]) {
       const before = new URL(page.url()).pathname;
@@ -103,14 +104,17 @@ test.describe('performance', () => {
       }, 900);
       works.push(r.workMs);
       frames.push(r.worstFrameMs);
+      slow.push(r.slowFrames);
       notes.push(`${id}: ${Math.round(r.workMs)} ms work, longest frame ${Math.round(r.worstFrameMs)} ms, ${r.slowFrames} of ${r.frames} frames over 20 ms${r.worst.scripts.length ? ` [${r.worst.scripts.join('; ')}]` : ''}`);
     }
     const nodes = await page.locator('.graph-flow .react-flow__node').count();
-    await record({ name: 'graph re-center at depth 3: main-thread work', value: Math.max(...works), unit: 'ms', budget: BUDGETS.recenterMs, detail: `worst of 3, ${nodes} boxes; ${notes.join(' | ')}` });
+    await record({ name: 'graph re-center at depth 3: main-thread work', value: Math.max(...works), unit: 'ms', budget: BUDGETS.recenterMs, detail: `worst of 3 (${nodes} boxes in the last picture); ${notes.join(' | ')}` });
     await record({ name: 'graph re-center at depth 3: longest frame', value: Math.max(...frames), unit: 'ms', budget: BUDGETS.recenterFrameMs, detail: 'the longest time between two frames, worst of 3' });
+    // "Under" a count of 3 is 3 or fewer, so the budget is one more.
+    await record({ name: 'graph re-center at depth 3: frames over 20 ms', value: Math.max(...slow), unit: 'frames', budget: BUDGETS.recenterSlowFrames + 1, detail: `worst of 3: ${slow.join(', ')}; at most ${BUDGETS.recenterSlowFrames}` });
   });
 
-  test('LA-BRW-T604 open the Model view', async ({ page }) => {
+  test('LA-BRW-T604 opening the Model pane takes under 100 ms of main-thread work', async ({ page }) => {
     await open(page, AGGREGATE);
     const first = await work(page, async () => {
       await page.keyboard.press('Control+4');

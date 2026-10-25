@@ -72,6 +72,8 @@ interface NodeData extends Record<string, unknown> {
   isFocus: boolean;
   /** A group's open-or-fold action, from its chevron (records have none). */
   onToggle?: () => void;
+  /** A box that left the picture and fades out where it was: it can't be clicked or focused. */
+  leaving?: boolean;
 }
 interface EdgeData extends Record<string, unknown> {
   relation: string;
@@ -184,8 +186,8 @@ function GroupNodeView({ data }: NodeProps<FlowNode>) {
   );
 }
 
-/** The ID prefix of a record fading out of the picture. */
-const LEAVING = 'leaving:';
+/** Whether a drawn node is a box fading out of the picture. */
+const isLeaving = (n: FlowNode) => n.data.leaving === true;
 
 const NO_ENDS: EdgeEnds = { source: { x: 0, y: 0 }, target: { x: 0, y: 0 } };
 const sameEnds = (a: EdgeEnds, b: EdgeEnds) =>
@@ -725,7 +727,7 @@ function GraphCanvas({ index, graph, onNavigate: navigate, onToggle, minimap, on
     const byId = new Map(g.nodes.map((n) => [n.id, n]));
     const reduced = readMotion().reduced;
     // Records new to the picture fade in at their place; records that left fade out where they were.
-    const drawnBefore = shownNodes.current?.filter((n) => !n.id.startsWith(LEAVING)) ?? null;
+    const drawnBefore = shownNodes.current?.filter((n) => !isLeaving(n)) ?? null;
     const fades = fadeSets(drawnBefore?.map((n) => n.id) ?? null, g.nodes.map((n) => n.id));
     // Focus nodes in keyboard order, then the context ring, which is out of focus: no keyboard stop,
     // hidden from assistive technology, faded and a little smaller (the CSS fades it as it changes).
@@ -817,13 +819,16 @@ function GraphCanvas({ index, graph, onNavigate: navigate, onToggle, minimap, on
         data: { ...e.data!, phase: 'leave', ends: { source: keep(e.source, e.data!.ends.source), target: keep(e.target, e.data!.ends.target) } },
       };
     });
-    // A leaving record is drawn under its own ID, so it is never taken for the record (which may come back), and can't be clicked or focused.
-    const stillLeaving = (shownNodes.current ?? []).filter((n) => n.id.startsWith(LEAVING) && !byId.has(n.id.slice(LEAVING.length)));
+    // A leaving record keeps its ID and its element, marked as leaving, so React Flow keeps the box it
+    // drew rather than drawing it anew under another ID (which made a re-center of 200 boxes
+    // remount every box that left; LA-PAT-APP-UX-R30). It can't be clicked or focused. A record that
+    // comes back into the picture is drawn as itself again, and its leaving box is dropped.
+    const stillLeaving = (shownNodes.current ?? []).filter((n) => isLeaving(n) && !byId.has(n.id));
     const leavingNodes: FlowNode[] = reduced ? [] : [
       ...stillLeaving,
       ...(drawnBefore ?? []).filter((n) => fades.leaving.has(n.id)).map((n) => ({
         ...n,
-        id: LEAVING + n.id,
+        data: { ...n.data, leaving: true, onToggle: undefined },
         // A context node leaves as it was, faded, so nothing pops.
         className: n.className?.split(' ').includes('is-context') ? 'is-context is-leaving' : 'is-leaving',
         focusable: false,
@@ -947,12 +952,12 @@ function GraphCanvas({ index, graph, onNavigate: navigate, onToggle, minimap, on
 
   /** A click or Enter on a node, record or group: it becomes the center, at its own address. */
   const activate = (id: string, fromKeyboard: boolean) => {
-    if (!placed || id.startsWith('file:') || id.startsWith(LEAVING) || id === placed.graph.focus) return;
+    if (!placed || id.startsWith('file:') || !placed.graph.nodes.some((n) => n.id === id) || id === placed.graph.focus) return;
     if (fromKeyboard) refocus.current = id;
     onNavigate(id);
   };
   // By touch, a first tap selects a node and a second tap (or the card's Open chip) opens it.
-  const canOpen = useCallback((id: string) => !!placed && !id.startsWith('file:') && !id.startsWith(LEAVING) && id !== placed.graph.focus, [placed]);
+  const canOpen = useCallback((id: string) => !!placed && !id.startsWith('file:') && placed.graph.nodes.some((n) => n.id === id) && id !== placed.graph.focus, [placed]);
   const tap = useTapToOpen(onNavigate, canOpen, wrapper, graph.focus);
   const armedNode = tap.armed ? placed?.graph.nodes.find((n) => n.id === tap.armed) : undefined;
   useEffect(() => { onPeek?.('selected', tap.armed); }, [tap.armed, onPeek]);
