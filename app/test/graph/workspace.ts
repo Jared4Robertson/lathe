@@ -65,7 +65,7 @@ export function testWorkspace(): Workspace {
     mentions: [],
   }));
   const links: SpecLink[] = LINKS.map(([source, relation, target]) => ({ source, relation, target }));
-  return { kinds: sample.kinds, relations: sample.relations, records, links, problems: PROBLEMS, coverage: COVERAGE };
+  return { kinds: sample.kinds, sections: sample.sections, relations: sample.relations, records, links, problems: PROBLEMS, coverage: COVERAGE };
 }
 
 export const testIndex = () => indexWorkspace(testWorkspace());
