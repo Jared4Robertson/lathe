@@ -212,7 +212,7 @@ describe('layers and test groups', () => {
   it("LA-BRW-T287 A group page of tests reads them in the test plan's groups", async () => {
     await openApp('/records/DM-SHOP/test', { workspace: layerWorkspace() });
     await screen.findByRole('heading', { level: 1, name: /^Tests/ });
-    const members = within(main()).getByRole('heading', { level: 2, name: /^Members/ }).closest('section') as HTMLElement;
+    const members = within(main()).getByRole('heading', { level: 2, name: /^Tests/ }).closest('section') as HTMLElement;
     // The domain's own tests (not the capability's) in their groups.
     expect([...members.querySelectorAll('h3')].map((h) => h.firstChild?.textContent)).toEqual(['Acceptance tests', 'Domain rule tests', 'Pattern tests', 'Interaction tests', 'Engineering checks']);
     const engineering = within(members).getByRole('heading', { level: 3, name: /^Engineering checks/ }).closest('section') as HTMLElement;
