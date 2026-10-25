@@ -8,4 +8,4 @@ run_by: app/test/spaces.test.tsx
 links:
   proves: [LA-BRW-UC90-R08]
 ---
-On a narrow screen, opens the drawer, expects the rail, and switches space from it.
+On a narrow screen, opens the nav sheet, expects the rail, and switches space from it.

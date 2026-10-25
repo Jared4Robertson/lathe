@@ -6,6 +6,7 @@ parent: LA-BRW-LAY10
 component_type: react component
 file: app/src/theme/ThemeProvider.tsx
 links:
+  reacts_to: [LA-BRW-EV02, LA-BRW-EV03]
   satisfies: [LA-BRW-UC114-R02, LA-BRW-UC114-R06, LA-BRW-UC114-R07, LA-BRW-DR203, LA-BRW-DR204]
   depends_on: [LA-BRW-C191, LA-BRW-C192]
 ---
