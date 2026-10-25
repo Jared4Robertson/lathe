@@ -238,8 +238,9 @@ describe('domain events in the graph', () => {
     const labels = [...document.querySelectorAll('.graph-edge-label')].map((l) => l.textContent);
     expect(labels.filter((l) => l === 'Reacts to')).toHaveLength(4);
     expect(labels).toContain('Raised by');
-    // Dashed, in spark, with Links on too; an event node is a spark pill, its group is not.
+    // Dashed, in spark, with Links on too; an event node is a spark pill, its group is not. Its ends are
+    // round to a one-line leaf's half height, so a taller event, its title wrapped, keeps its lines clear of them.
     expect(CSS).toMatch(/\.react-flow__edge-path\.rel-event, \.graph-flow \.react-flow__edge-path\.rel-event\.is-link \{ stroke: var\(--spark\); stroke-dasharray/);
-    expect(CSS).toMatch(/\.graph-node\.kind-domain_event:not\(\.stage-group\)\s*\{[^}]*var\(--spark\)[^}]*var\(--spark-bg\)[^}]*999px/);
+    expect(CSS).toMatch(/\.graph-node\.kind-domain_event:not\(\.stage-group\)\s*\{[^}]*var\(--spark\)[^}]*var\(--spark-bg\)[^}]*border-radius: calc\(28px \* var\(--node-scale\)\)/);
   });
 });
