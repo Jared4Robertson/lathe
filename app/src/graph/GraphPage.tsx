@@ -200,11 +200,11 @@ function useEdgeFrame(ends: EdgeEnds, phase: EdgePhase, parts: EdgeParts): EdgeF
     const start = performance.now();
     let raf = 0;
     let synced = false;
-    const step = (now: number) => {
+    const step = () => {
       // Follow the nodes' own transition when one of them is moving; once it has ended, so has the move.
       const clock = transitionProgress(parts.nodes(), motion.duration);
       if (clock !== null) synced = true;
-      const t = clock ?? (synced ? 1 : Math.min(1, Math.max(0, (now - start) / motion.duration)));
+      const t = clock ?? (synced ? 1 : Math.min(1, Math.max(0, (performance.now() - start) / motion.duration)));
       const f = tweenEdge(from, to, t, motion.ease);
       drawn.current = f;
       paintEdge(parts, f);
