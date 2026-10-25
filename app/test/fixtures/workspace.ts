@@ -10,7 +10,7 @@ const kinds: Kind[] = (sample as unknown as Workspace).kinds.some((k) => k.kind 
   ? (sample as unknown as Workspace).kinds
   : [
       ...(sample as unknown as Workspace).kinds,
-      { kind: 'fitness', label: 'Fitness', stage: '', parent_kinds: ['product'], required_fields: ['date', 'score'], obligation: false, description: 'How well the product serves its purpose.' },
+      { kind: 'fitness', label: 'Fitness', stage: '', parent_kinds: ['product'], required_fields: ['date', 'score'], obligation: false, proof_only: false, description: 'How well the product serves its purpose.' },
     ];
 const relations: RelationRule[] = (sample as unknown as Workspace).relations;
 

@@ -11,9 +11,9 @@ import { workspace as baseWorkspace } from './workspace';
 //   DM-PAY-UC01 cites DM-SHOP-UC01 next to a requirement ID it does not mention.
 
 const patternKinds: Kind[] = [
-  { kind: 'capability', label: 'Capability', stage: 'define', parent_kinds: ['domain'], required_fields: ['order'], obligation: false, description: 'An ordered slice of a domain.' },
-  { kind: 'pattern', label: 'Pattern', stage: 'define', parent_kinds: ['product'], required_fields: ['settings'], obligation: false, description: 'Behaviour several use cases share.' },
-  { kind: 'pattern_rule', label: 'Pattern rule', stage: 'define', parent_kinds: ['pattern'], required_fields: [], obligation: true, description: 'One rule of a pattern.' },
+  { kind: 'capability', label: 'Capability', stage: 'define', parent_kinds: ['domain'], required_fields: ['order'], obligation: false, proof_only: false, description: 'An ordered slice of a domain.' },
+  { kind: 'pattern', label: 'Pattern', stage: 'define', parent_kinds: ['product'], required_fields: ['settings'], obligation: false, proof_only: false, description: 'Behaviour several use cases share.' },
+  { kind: 'pattern_rule', label: 'Pattern rule', stage: 'define', parent_kinds: ['pattern'], required_fields: [], obligation: true, proof_only: false, description: 'One rule of a pattern.' },
 ];
 
 const patternRelations: RelationRule[] = [

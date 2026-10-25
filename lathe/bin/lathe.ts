@@ -62,8 +62,11 @@ async function check() {
           const of = (n: number) => `${n}/${o.total}`;
           // planned_any is shown only where it differs: some proved obligations still have planned tests.
           const owed = o.planned_any !== undefined && o.planned_any !== o.planned ? `; ${of(o.planned_any)} with a planned test` : '';
+          // A proof-only kind (such as a pattern rule) is not asked to be designed or built.
+          const proofOnly = workspace.kinds.find((k) => k.kind === o.kind)?.proof_only;
+          const design = proofOnly ? 'proof only' : `${of(o.designed)} designed, ${of(o.built)} built`;
           console.log(
-            `  ${c.domain} ${o.label.toLowerCase()}: ${of(o.designed)} designed, ${of(o.built)} built, ${of(o.proved)} proved, ${of(o.planned)} planned; ${gaps} ${gaps === 1 ? 'gap' : 'gaps'}${owed}`,
+            `  ${c.domain} ${o.label.toLowerCase()}: ${design}, ${of(o.proved)} proved, ${of(o.planned)} planned; ${gaps} ${gaps === 1 ? 'gap' : 'gaps'}${owed}`,
           );
         }
         if (c.tests) console.log(`  ${c.domain} tests: ${c.tests.automated} automated, ${c.tests.manual} manual, ${c.tests.planned} planned`);
