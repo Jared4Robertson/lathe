@@ -13,12 +13,17 @@ const KEYS = [...SHELL, ...FOCUS];
 const TITLE = [FOCUS[1]];
 
 /** The IDs of the graph's boxes wholly inside its canvas, in DOM order (the map runs past the canvas's edges). */
+/**
+ * A level is as wide as its widest label (LA-EXP-DR58), so a box may run past the canvas's right
+ * edge: a box is in view when its left part is and it is 24 px tall or more, and is clicked or hovered there.
+ */
+const AT_LEFT = { x: 20, y: 12 };
 async function boxesInView(page: Page, except = ''): Promise<string[]> {
   return page.evaluate((except) => {
     const canvas = document.querySelector('.graph-flow')!.getBoundingClientRect();
     return [...document.querySelectorAll<HTMLElement>('.graph-flow .react-flow__node[data-id^="LA-"]')]
       .filter((el) => el.dataset.id !== except)
-      .filter((el) => { const r = el.getBoundingClientRect(); return r.left >= canvas.left && r.right <= canvas.right && r.top >= canvas.top && r.bottom <= canvas.bottom - 40; })
+      .filter((el) => { const r = el.getBoundingClientRect(); return r.height >= 24 && r.left >= canvas.left && r.left + 40 <= canvas.right && r.top >= canvas.top && r.bottom <= canvas.bottom - 40; })
       .map((el) => el.dataset.id!);
   }, except);
 }
@@ -53,7 +58,7 @@ test.describe('navigate', () => {
     expect(inView, 'a box in view').toBeTruthy();
     const node = page.locator(`.graph-flow .react-flow__node[data-id="${inView}"]`);
     const r = await step(page, 'navigate', 'graph click', { keys, allow: CONTENT, resizes: TITLE }, async () => {
-      await node.click();
+      await node.click({ position: AT_LEFT });
       await page.waitForURL((u) => !u.pathname.endsWith('LA-PLT-UC05'));
     });
     expectStable(r);

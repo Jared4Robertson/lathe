@@ -23,13 +23,18 @@ async function nodes(page: Page) {
   await page.waitForTimeout(500);
 }
 
+/**
+ * A level is as wide as its widest label (LA-EXP-DR58), so a box may run past the canvas's right
+ * edge: a box is in view when its left part is and it is 24 px tall or more, and is clicked or hovered there.
+ */
+const AT_LEFT = { x: 20, y: 12 };
 /** The ID of the n-th record box (not the center) that is wholly inside the canvas. */
 async function visibleNode(page: Page, n: number): Promise<string> {
   const ids = await page.evaluate(() => {
     const canvas = document.querySelector('.pane-graph .graph-flow')!.getBoundingClientRect();
     return [...document.querySelectorAll<HTMLElement>('.graph-flow .react-flow__node[data-id^="LA-"]')]
       .filter((el) => !el.querySelector('.is-focus'))
-      .filter((el) => { const r = el.getBoundingClientRect(); return r.left >= canvas.left && r.right <= canvas.right && r.top >= canvas.top && r.bottom <= canvas.bottom - 40; })
+      .filter((el) => { const r = el.getBoundingClientRect(); return r.height >= 24 && r.left >= canvas.left && r.left + 40 <= canvas.right && r.top >= canvas.top && r.bottom <= canvas.bottom - 40; })
       .map((el) => el.dataset.id!);
   });
   expect(ids.length, 'a record box in view').toBeGreaterThan(0);
@@ -51,7 +56,7 @@ test.describe('graph', () => {
         const before = new URL(page.url()).pathname;
         const id = await visibleNode(page, hop);
         const r = await step(page, 'graph', `depth ${depth}: re-center ${hop}`, { keys, allow: ['.side-bar', GRAPH_BOXES] }, async () => {
-          await page.locator(`.graph-flow .react-flow__node[data-id="${id}"]`).click();
+          await page.locator(`.graph-flow .react-flow__node[data-id="${id}"]`).click({ position: AT_LEFT });
           await page.waitForURL((u) => u.pathname !== before);
         });
         expectStable(r);

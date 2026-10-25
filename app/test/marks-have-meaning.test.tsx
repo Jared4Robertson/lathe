@@ -25,9 +25,9 @@ const meaning = (el: Element | null) => (el?.closest('li, tr')?.textContent ?? '
 afterEach(cleanup);
 
 describe('the Graph view key', () => {
-  // Classes that change how a box is laid out, not what it looks like it means: a grown label centered, room kept for the
-  // problem badge (the badge itself is in the key), and a Nested box's label moved into its header band.
-  const LAYOUT = new Set(['is-scaled', 'has-marks', 'is-container']);
+  // Classes that change how a box is laid out, not what it looks like it means: a grown label centered, and a Nested
+  // box's label moved into its header band.
+  const LAYOUT = new Set(['is-scaled', 'is-container']);
   // A node class shown in the key by a swatch of another name.
   const SWATCH: Record<string, string> = { 'is-hexagon': 'stage-hexagon', 'is-plain': 'stage-plain' };
 

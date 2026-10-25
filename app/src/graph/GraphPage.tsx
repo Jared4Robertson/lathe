@@ -142,7 +142,6 @@ function GraphNodeView({ data }: NodeProps<Node<NodeData>>) {
     data.isFocus ? 'is-focus' : '',
     data.text !== 1 ? 'is-scaled' : '',
     data.label ? '' : 'is-plain',
-    data.errors + data.warnings + data.gaps.length > 0 ? 'has-marks' : '',
     // A domain is a hexagon in the Tree view (LA-EXP-DR61), a box with a hexagon mark in the Nested view (LA-EXP-DR62).
     data.kind === 'domain' && !data.group ? (data.header === undefined ? 'is-hexagon' : 'has-hexagon-mark') : '',
     data.header ? 'is-container' : '',
@@ -154,7 +153,8 @@ function GraphNodeView({ data }: NodeProps<Node<NodeData>>) {
       <Handle type="source" position={Position.Right} className="graph-handle" isConnectable={false} />
       {data.label && (
         <>
-          <small>{data.kind === 'domain' && data.header !== undefined && !data.group && <span className="graph-hexagon-mark" aria-hidden="true" />}{data.meta}</small>
+          {/* A marked box keeps room beside its kind and ID line for the badge, as text.ts sizes its level. */}
+          <small className={data.errors + data.warnings + data.gaps.length > 0 ? 'graph-badge-room' : undefined}>{data.kind === 'domain' && data.header !== undefined && !data.group && <span className="graph-hexagon-mark" aria-hidden="true" />}{data.meta}</small>
           <strong>{data.title}</strong>
           <Marks data={data} />
         </>
