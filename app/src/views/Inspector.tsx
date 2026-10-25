@@ -3,8 +3,10 @@ import { Icon } from '../components/icons';
 import { GraphConnections, type GraphInfo } from '../graph/panel';
 import { groupMarks, groupMembers, parseGroupId, pluralLabel } from '../graph/model';
 import { kindLabel, problemOrder, type SpecIndex } from '../specs/data';
-import { ProblemList, RecordLink, RecordTree, gapsOf, listTitle } from '../specs/parts';
+import { ProblemList, RecordLink, RecordTree, listTitle } from '../specs/parts';
 import { RecordFacts } from '../specs/RecordContent';
+import { GAP_TEXT } from '../specs/Traceability';
+import { judge, owingDomains } from '../specs/trace';
 import { Tooltip } from '../shell/Tooltip';
 import { Link } from '../router';
 import { kindPagePath } from '../format/reference';
@@ -66,15 +68,7 @@ export const Inspector = forwardRef<HTMLElement, InspectorProps>(function Inspec
           <Part title="Problems" count={(index.problemsFor.get(focus) ?? []).length} id="inspector-problems">
             <ProblemList index={index} problems={[...(index.problemsFor.get(focus) ?? [])].sort(problemOrder)} showRecord={false} />
           </Part>
-          {index.kinds.get(record.kind)?.obligation && (
-            <Part title="Coverage gaps" count={gapsOf(index, focus).length} id="inspector-gaps">
-              {gapsOf(index, focus).length === 0 ? <p className="hint">Satisfied and proved.</p> : (
-                <ul className="plain inspector-gaps">
-                  {gapsOf(index, focus).map((g) => <li key={g}>{g === 'satisfies' ? 'No component satisfies it.' : 'No test proves it.'}</li>)}
-                </ul>
-              )}
-            </Part>
-          )}
+          {index.kinds.get(record.kind)?.obligation && <CoverageGaps index={index} id={focus} />}
         </>
       )}
       {group && <GroupFacts index={index} gid={focus} />}
@@ -82,6 +76,30 @@ export const Inspector = forwardRef<HTMLElement, InspectorProps>(function Inspec
     </aside>
   );
 });
+
+/**
+ * An obligation's coverage gaps, in the words of the wiki's Traceability callouts (specs/trace.ts
+ * judges them, so the two never disagree): "Not designed yet", "Not built yet", "Not proved yet".
+ * A pattern rule names the domain owing each gap.
+ */
+function CoverageGaps({ index, id }: { index: SpecIndex; id: string }) {
+  const record = index.byId.get(id)!;
+  const domains = record.domain ? [record.domain] : owingDomains(index, record);
+  const gaps = domains.flatMap((d) => judge(index, record, d).gaps.map((g) => ({ domain: d, gap: g })));
+  return (
+    <Part title="Coverage gaps" count={gaps.length} id="inspector-gaps">
+      {gaps.length === 0 ? <p className="hint">{domains.length === 0 ? 'No domain owes it yet.' : 'Designed, built and proved.'}</p> : (
+        <ul className="plain inspector-gaps">
+          {gaps.map(({ domain, gap }) => (
+            <li key={`${domain} ${gap.kind}`} data-gap={gap.kind}>
+              {!record.domain && <><code>{domain}</code> </>}<strong>{GAP_TEXT[gap.kind].title}:</strong> {GAP_TEXT[gap.kind].detail}
+            </li>
+          ))}
+        </ul>
+      )}
+    </Part>
+  );
+}
 
 /** A group's facts: its parent, the kind of its members, their problems and gaps, and the members (folded). */
 function GroupFacts({ index, gid }: { index: SpecIndex; gid: string }) {
