@@ -266,7 +266,7 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   const leftmost: ViewName = full ?? open[0];
 
   /**
-   * One pane: a panel with one slim header (LA-PAT-APP-CODE-R11), naming its view at the left and
+   * One pane: a panel with one slim header (LA-PAT-APP-UX-R03), naming its view at the left and
    * holding only the pane's own actions at the right, all icon buttons in one style: its close
    * button when more than one pane is open, and its full screen button. The page's tabs, the View
    * toggles and the inspector toggle are the page bar's.

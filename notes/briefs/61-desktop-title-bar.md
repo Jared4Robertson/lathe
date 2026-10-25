@@ -16,7 +16,7 @@ In the desktop app (brief 47, `desktop/`), the window has the default macOS titl
    - **Center, a command center:** a pill showing the product and the current page ("Lathe — Reading the spec"). Clicking it opens quick find, and its tooltip shows the shortcut. It stays centered on the window, not on the leftover space, and truncates with an ellipsis.
    - **Right:** layout toggles for the sidebar (`toggleNav`) and the inspector (`toggleInspector`), as `aria-pressed` icon buttons with tooltips and keys, the same commands as the menus and shortcuts.
    - **Dragging:** the bar is a drag region (`-webkit-app-region: drag`) and its controls are `no-drag`. Double-clicking the empty bar zooms or maximizes the window, following the system setting. This goes through the preload; macOS does it natively with `hiddenInset`.
-   - **Tokens only and accessible:** names on every control, focus rings, and hover states (R08, R15, R16).
+   - **Tokens only and accessible:** names on every control, focus rings, and hover states (UX-R01, R15, UX-R07).
 3. **Follows the theme:** when the theme or the light/dark mode changes (brief 49's ThemeProvider), the app tells the main process through the preload, for example `latheDesktop.setChrome({ background, foreground })`. The main process updates `titleBarOverlay` (Windows and Linux) and `backgroundColor`. Expose only that one method, validate its input in main, and keep the preload tiny.
 4. **The page** keeps its layout under the bar. The nav's own search box stays for now.
 5. **In a browser** nothing changes: no bar.

@@ -6,6 +6,6 @@ parent: LA-BRW
 test_type: unit
 run_by: app/test/standards.test.tsx
 links:
-  proves: [LA-PAT-APP-CODE-R08]
+  proves: [LA-PAT-APP-UX-R01]
 ---
 Reads every style rule in `app/src/styles.css` that sets a pointer cursor and expects a `:hover` rule naming the same class, and expects the shared hover tokens to be defined.

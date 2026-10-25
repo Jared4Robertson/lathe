@@ -11,7 +11,7 @@ import { COLOR_NAMES, SETTING_NAMES } from '../src/theme/tokens';
 // The split view loads the graph, which needs a ResizeObserver in jsdom.
 import './graph/setup';
 
-// The app's coding standards (LA-PAT-APP-CODE): each test proves one of the pattern's rules,
+// The app's standards (LA-PAT-APP-CODE and LA-PAT-APP-UX): each test proves one of the patterns' rules,
 // by reading the source or by rendering pages. A failure names the file and line to fix.
 
 const ROOT = join(__dirname, '..', '..');
@@ -79,7 +79,7 @@ function topLevel(selector: string): string[] {
 /** Elements the base styles may set on their own: the page, its text and its plain controls. */
 const BASE_ELEMENTS = new Set(['html', 'body', 'h1', 'h2', 'h3', 'h4', 'p', 'a', 'code', 'pre', 'kbd', 'small', 'strong', 'button', 'input', 'textarea', 'select', 'table', 'th', 'td', 'svg']);
 
-describe('LA-PAT-APP-CODE App code', () => {
+describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
   it('LA-BRW-T256 Layout lives in the markup: no stylesheet rule moves or restyles an element from outside its component', async () => {
     expect(where('app/src/styles.css', CSS, /display:\s*contents|:has\(/)).toEqual([]);
     // A section's own header row holds its list's Expand all: the button sits inside the header.

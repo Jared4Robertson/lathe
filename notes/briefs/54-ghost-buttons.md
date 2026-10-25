@@ -9,7 +9,7 @@ Standalone actions are styled as links today, for example "Open the product over
 
 ## Decisions already made (Jared, and the coordinator's recommendations)
 1. **One `Button` component** (`app/src/components/Button.tsx`) with three variants:
-   - **`ghost`**, the default for standalone actions: no border or fill, padded, `--hover-bg` on hover, the shared focus ring, an optional leading icon, and 44 px targets on coarse pointers (R16);
+   - **`ghost`**, the default for standalone actions: no border or fill, padded, `--hover-bg` on hover, the shared focus ring, an optional leading icon, and 44 px targets on coarse pointers (UX-R07);
    - **`primary`**: filled with the accent, used for the one main action of a form or dialog;
    - **`icon`**: a square ghost button with an accessible name, which the pane bar, nav and inspector icon buttons become.
    
@@ -21,7 +21,7 @@ Standalone actions are styled as links today, for example "Open the product over
    - the graph toolbar's buttons where they are text actions;
    - dialog actions: Cancel is ghost, Create is primary;
    - the Appearance page's actions, once brief 49 has landed.
-3. **What stays a link:** links inside prose (Markdown, sentences), links inside lists and rows (record references, R13 row links), breadcrumbs and trails, and nav items. These are navigation in context, not controls.
+3. **What stays a link:** links inside prose (Markdown, sentences), links inside lists and rows (record references, UX-R05 row links), breadcrumbs and trails, and nav items. These are navigation in context, not controls.
 4. **Clean up:** delete `.secondary`, `.tree-bulk` and the scattered text-button rules in favor of the component's classes.
 5. **Proactive standard:** add `LA-PAT-APP-UX-R09`, "Actions look like actions" (in the App experience pattern, brief 63): standalone actions use `Button` (ghost by default, primary for the main action), and links are kept for navigation in context.
    - Prove it in `app/test/standards.test.tsx`: render the main pages and expect no `p > a:only-child` used as a standalone action, no `button.secondary` or `.tree-bulk`, and every `<button>` outside the component to be one of an allowed list (tabs, toggles in groups, tree chevrons). If that list would be long, move those into the component too.

@@ -39,7 +39,7 @@ export const idText = (index: SpecIndex, id: string) => `${id} ${index.byId.get(
 
 /**
  * A link to a record: its ID and, by default, its title. With `row`, it is its row's one link
- * (LA-PAT-APP-CODE-R13): it stretches over the whole row, so anywhere on the row opens the record,
+ * (LA-PAT-APP-UX-R05): it stretches over the whole row, so anywhere on the row opens the record,
  * while the row's other controls sit above it and keep working.
  */
 export function RecordLink({ index, id, showTitle = true, row = false }: { index: SpecIndex; id: string; showTitle?: boolean; row?: boolean }) {

@@ -15,7 +15,7 @@ Show domain events: the `domain_event` kind under aggregates, with `raised_by` a
    - On a domain's ERD, dashed "reacts to" lines between aggregates show cause and effect: aggregate A raises an event, aggregate B reacts. One line per aggregate pair and event, with the event's name as the line's label on hover.
    - The key explains the pill and the dashed line.
 3. **Graph:** events sit under their aggregate through a "Domain events" folder, by the one-kind rule. `reacts_to` edges are dashed, use their labels, and appear with the Links switch (brief 56).
-4. **Style:** tokens (spark for events), clickable rows (R13), hover states (R08), motion (R12) and the stability budget (R17).
+4. **Style:** tokens (spark for events), clickable rows (UX-R05), hover states (UX-R01), motion (UX-R04) and the stability budget (UX-R08).
 
 ## Records
 Requirements under `LA-BRW-UC113` (the ERD) and `UC118` (Traceability), and the graph's UC20, from the next free numbers, with domain rules, components and tests from the next free LA-BRW numbers.

@@ -26,8 +26,14 @@ Today the wiki body shows problems and children. The links sit only in the side 
    - **For a test:** Proves, and the file that runs it, with its state.
    - **For any other kind:** its outgoing links under their `forward_label` and its incoming links under their `reverse_label`. An empty group isn't shown.
 2. **Labels everywhere:** the inspector's Links out and Links in, the record facts beside the body, graph edge labels and tooltips, and the ERD's line labels all use `forward_label` and `reverse_label`. The inspector stays compact.
-3. **Rows:** every listed record is a clickable row (R13) showing its kind tag only when the list mixes kinds (DR144). A list is titled by its label (DR160). Long lists stay short with search (the 10-row rule). Use ghost or text actions per brief 54, if it has landed.
+3. **Rows:** every listed record is a clickable row (UX-R05) showing its kind tag only when the list mixes kinds (DR144). A list is titled by its label (DR160). Long lists stay short with search (the 10-row rule). Use ghost or text actions per brief 54, if it has landed.
 4. **Proactive standard:** add a Browsing domain rule, "Links are shown by their labels, never by relation codes". Prove it with a test that no rendered page shows a raw relation code ("satisfies", "proves") as a heading or label.
+
+## Also: the test plan groups (from S2 trial 4, gap 7)
+The Test plan folder's grouping (`app/src/specs/folders.ts`, briefs 37 and 52) misplaced S2's material: 143 acceptance scenarios landed in other groups, and UI tests and design checks fell into Engineering. Fix it here, since you own `app/src/specs/**`:
+- **Acceptance:** a test that sits under a capability is an acceptance test, as is one that proves a UC requirement. It is grouped under that capability and its use case.
+- **New groups:** add **UI tests** (`test_type` of `ui`, or a test proving an interaction requirement through a view) and **Design checks** (a test with only `supports` links, from brief 71, or a `test_type` of `design`). They sit before Engineering checks, in that order.
+- **Order:** keep the one-kind and empty-group rules. Update the group order in the domain rules (DR142 and the group list) and the tests (T280 and onward).
 
 ## Records
 - Use case `LA-BRW-UC118` "See what designs, proves and carries out a record" under `LA-BRW-CAP01`, with requirements.

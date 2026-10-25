@@ -10,7 +10,7 @@ A domain model says what the product's records are, how they hold and refer to e
 ## Before you write
 
 1. Find the repo root (the folder with `lathe.config.json`) and its specs folder (`specs` unless the config says otherwise).
-2. Read the record format: run `npx lathe format` (in the Lathe repo, `npm --prefix lathe run lathe -- format --root .`), which prints the concepts and then every kind, relation, folder and check of this product, its extensions and own checks included. Lathe's defaults alone are in `REFERENCE.md` in the Lathe package (`lathe/REFERENCE.md` in the Lathe repo).
+2. Read the record format: run `npx lathe format` (in the Lathe repo, `npm --prefix lathe run lathe -- format --root ..`), which prints the concepts and then every kind, relation, folder and check of this product, its extensions and own checks included. Lathe's defaults alone are in `REFERENCE.md` in the Lathe package (`lathe/REFERENCE.md` in the Lathe repo).
 3. Read the product record and the domain's existing records. Find the highest number in use for each kind before adding one. IDs are never reused or renumbered.
 
 ## The records
@@ -44,7 +44,7 @@ Put the files under the domain folder, for example `<domain>/01-define/aggregate
 
 - A statement about records, fields and their states only is a **domain rule** on the aggregate it constrains.
 - A statement that needs an actor or an action is a **requirement** on a use case (see the `write-use-cases` skill).
-- Something undecided is an open `question` with an `owner`, linked `about` the records it concerns. Never write "TBD" into a rule.
+- Something undecided is an open `question` with an `owner`, linked `about` the records it concerns. The owner is a role, such as Owner, never a person's name. Never write "TBD" into a rule.
 
 ## Example
 
@@ -139,6 +139,6 @@ A tool MUST NOT have more than one active loan. It can be lent again once its lo
 - Records carry no status, approval or history. A record in the specs is in force.
 - One rule per `domain_rule` record. Use the domain's terms exactly as its language table defines them.
 - When a question is decided, delete the question record and every `about` link to it, and write the answer into the records it affects.
-- The entity checks are errors except `entity-unreferenced`: a `role` other than root or child, an aggregate without exactly one root, a missing or malformed Fields table (an entity's or an event's), a repeated field name, and a `has_one` or `has_many` into another aggregate.
-- The event checks: `raised-by-outside-aggregate` is an error; `event-unheard` and `event-tense` are warnings.
+- Specs name roles, never people: write "a librarian" or "the owner", not someone's name.
+- The entity and event checks (`entity-role`, `aggregate-root`, `entity-fields`, `has-crosses-aggregate`, `entity-unreferenced`, `raised-by-outside-aggregate`, `event-unheard`, `event-tense`) are explained in the reference (`lathe format`), with how to fix each.
 - Finish with the `check-and-fix` skill. A new domain rule shows as a warning until a component satisfies it and a test proves it; that is expected.

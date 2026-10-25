@@ -7,7 +7,7 @@ import { openApp, startAtDepth } from '../helpers';
 import { testWorkspace } from './workspace';
 
 // The graph moves as one picture when it re-centers (LA-BRW-UC20-R09): each edge tweens with its
-// nodes on the shared motion (LA-PAT-APP-CODE-R12), new edges fade in, leaving ones fade out, and
+// nodes on the shared motion (LA-PAT-APP-UX-R04), new edges fade in, leaving ones fade out, and
 // under reduced motion everything jumps.
 
 const linear = (t: number) => t;
