@@ -136,7 +136,7 @@ describe('nothing jumps (LA-PAT-APP-UX-R08)', () => {
     expect(document.querySelector('.graph-flow .react-flow')).toBe(flow);
   });
 
-  it('LA-BRW-T488 what the graph connects reaches the inspector before paint, not an effect later', () => {
+  it('LA-BRW-T488 what the graph connects reaches the side bar before paint, not an effect later', () => {
     const source = readFileSync(join(__dirname, '..', 'src', 'graph', 'GraphPage.tsx'), 'utf8');
     expect(source).toMatch(/useLayoutEffect\(\(\) => \{ onGraph\?\.\(/);
     const model = readFileSync(join(__dirname, '..', 'src', 'model', 'ModelView.tsx'), 'utf8');

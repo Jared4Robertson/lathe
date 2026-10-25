@@ -7,11 +7,11 @@ import { GRAPH_CANVAS, GRAPH_HEADER, RECORD } from './scenarios';
 // content: the nav, the panes, the canvas, the side bar's box and its switcher hold still.
 
 const NAV = 'nav#nav';
-const SIDE = '.inspector-column';
-const SWITCH = '.inspector .side-switch';
+const SIDE = '.side-bar-column';
+const SWITCH = '.side-bar .side-switch';
 const KEYS = [NAV, '.pane-wiki > .pane-bar', '.pane-wiki .pane-title', '.pane-graph > .pane-bar', GRAPH_HEADER, GRAPH_CANVAS, SIDE, SWITCH];
 /** The side bar's content is what changes. */
-const ALLOW = ['.inspector'];
+const ALLOW = ['.side-bar'];
 
 test.describe('side bar', () => {
   test('LA-BRW-T599 switching the side bar\'s view moves nothing outside it', async ({ page }) => {
@@ -21,7 +21,7 @@ test.describe('side bar', () => {
     for (const view of ['Outline', 'History', 'Details']) {
       const r = await step(page, 'side bar', `switch to ${view}`, { keys: KEYS, allow: ALLOW }, async () => {
         await page.locator(SWITCH).getByRole('button', { name: view }).click();
-        await page.locator('.inspector .side-view > h2', { hasText: view }).waitFor();
+        await page.locator('.side-bar .side-view > h2', { hasText: view }).waitFor();
       });
       expectStable(r);
     }

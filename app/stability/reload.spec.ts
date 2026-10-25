@@ -56,7 +56,7 @@ test.describe('live reload', () => {
     expect(anchor, 'something is in view').not.toBeNull();
     let restore = () => {};
     try {
-      const r = await step(page, 'reload', 'spec edited while scrolled', { keys: ['nav#nav', '.pane-wiki > .pane-bar', '.pane-wiki .pane-scroll', '.inspector-column'], settle: 1500 }, async () => {
+      const r = await step(page, 'reload', 'spec edited while scrolled', { keys: ['nav#nav', '.pane-wiki > .pane-bar', '.pane-wiki .pane-scroll', '.side-bar-column'], settle: 1500 }, async () => {
         restore = edit(DOMAIN_FILE, 'A paragraph the stability suite adds while the page is open, above what is in view, to see that nothing in view moves when the specs reload.', 'top');
         await expect(page.locator('.pane-wiki')).toContainText('the stability suite adds', { timeout: 20_000 });
       });
@@ -74,7 +74,7 @@ test.describe('live reload', () => {
     let restore = () => {};
     try {
       const keys = ['.pane-graph .graph-canvas', '.pane-graph .graph-header', '.pane-graph .graph-flow .react-flow__renderer', '.pane-wiki > .pane-bar'];
-      const r = await step(page, 'reload', 'spec edited with the graph open', { keys, allow: ['.pane-wiki .pane-scroll', '.inspector'], settle: 1500 }, async () => {
+      const r = await step(page, 'reload', 'spec edited with the graph open', { keys, allow: ['.pane-wiki .pane-scroll', '.side-bar'], settle: 1500 }, async () => {
         restore = edit(RECORD_FILE, 'Another paragraph from the stability suite, with the graph open.', 'end');
         await expect(page.locator('.pane-wiki')).toContainText('with the graph open', { timeout: 20_000 });
       });

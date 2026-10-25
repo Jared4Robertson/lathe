@@ -9,9 +9,9 @@ import { openApp } from './helpers';
 import { testWorkspace } from './graph/workspace';
 
 // Lathe on a phone (notes/mobile-design.md): a compact top bar, the page bar compact under it, one
-// view at a time, sheets for the nav, the inspector, the open pages and quick find, and taps that
+// view at a time, sheets for the nav, the side bar, the open pages and quick find, and taps that
 // select before they open on the graph and the ERD. Proves LA-BRW-UC116-R01 to R07 and R09, LA-BRW-DR221,
-// LA-BRW-DR222 and LA-BRW-DR223, and the inspector sheet of LA-BRW-UC50-R11.
+// LA-BRW-DR222 and LA-BRW-DR223, and the side bar sheet of LA-BRW-UC50-R11.
 
 const served = () => ({ workspace: testWorkspace() });
 
@@ -53,19 +53,19 @@ describe('Lathe on a phone', () => {
     expect(within(topbar()).getByRole('link', { name: 'Up to Product' })).toHaveAttribute('href', '/P?view=wiki');
   });
 
-  it('LA-BRW-T461 The inspector is a bottom sheet: it opens at half height with focus inside, its handle takes it to full height and back, Escape closes it and focus returns', async () => {
+  it('LA-BRW-T461 The side bar is a bottom sheet: it opens at half height with focus inside, its handle takes it to full height and back, Escape closes it and focus returns', async () => {
     phone();
     await openApp('/P-D-UC01', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
-    const toggle = within(pageBar()).getByRole('button', { name: 'Show the inspector' });
+    const toggle = within(pageBar()).getByRole('button', { name: 'Show the side bar' });
     fireEvent.click(toggle);
-    const sheet = screen.getByRole('dialog', { name: 'Inspector' });
+    const sheet = screen.getByRole('dialog', { name: 'Side bar' });
     expect(sheet).toHaveClass('bottom-sheet', 'is-half');
     expect(sheet).toHaveAttribute('aria-modal', 'true');
-    await waitFor(() => expect(screen.getByRole('complementary', { name: 'Inspector' })).toHaveFocus());
-    fireEvent.click(within(sheet).getByRole('button', { name: 'Expand the inspector to full height' }));
+    await waitFor(() => expect(screen.getByRole('complementary', { name: 'Side bar' })).toHaveFocus());
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Expand the side bar to full height' }));
     expect(sheet).toHaveClass('is-full');
-    fireEvent.click(within(sheet).getByRole('button', { name: 'Shrink the inspector to half height' }));
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Shrink the side bar to half height' }));
     expect(sheet).toHaveClass('is-half');
     // Tab stays inside the sheet.
     const buttons = within(sheet).getAllByRole('button');
@@ -73,8 +73,8 @@ describe('Lathe on a phone', () => {
     fireEvent.keyDown(buttons[buttons.length - 1], { key: 'Tab' });
     expect(document.activeElement && sheet.contains(document.activeElement)).toBe(true);
     fireEvent.keyDown(sheet, { key: 'Escape' });
-    expect(screen.queryByRole('dialog', { name: 'Inspector' })).toBeNull();
-    await waitFor(() => expect(within(pageBar()).getByRole('button', { name: 'Show the inspector' })).toHaveFocus());
+    expect(screen.queryByRole('dialog', { name: 'Side bar' })).toBeNull();
+    await waitFor(() => expect(within(pageBar()).getByRole('button', { name: 'Show the side bar' })).toHaveFocus());
   });
 
   it('LA-BRW-T462 A drag on a sheet\'s handle settles by distance and speed: up to full height, down to half, down from half away', () => {

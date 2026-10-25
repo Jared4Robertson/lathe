@@ -23,7 +23,7 @@ export const VIEW_COMMANDS: readonly MenuCommand[] = [
   { id: 'viewGraph', label: 'Graph View', keys: 'Ctrl+2' },
   { id: 'viewModel', label: 'Model View', keys: 'Ctrl+4' },
   { id: 'toggleNav', label: 'Show or Hide Navigation', keys: 'Mod+B' },
-  { id: 'toggleInspector', label: 'Show or Hide Inspector', keys: 'Mod+Alt+B' },
+  { id: 'toggleSideBar', label: 'Show or Hide Side Bar', keys: 'Mod+Alt+B' },
 ];
 
 /** The record tabs (app/src/views/useTabs.ts), in View › Tabs. */

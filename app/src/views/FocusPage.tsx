@@ -31,7 +31,7 @@ import { Button } from '../components/Button';
 // on it) and Model (the ERD of a domain, an aggregate or an entity's aggregate; offered only there).
 // The open panes sit side by side in the order Wiki, Graph, Model, with a handle to drag in every
 // gap. Every pane shows the same focus: clicking a node or a box changes the address and the others
-// follow. Any pane can be maximized. The side bar (the inspector), the page's last column, shows
+// follow. Any pane can be maximized. The side bar, the page's last column, shows
 // Details, Outline or History for what the open views show (SideBar.tsx); it is open or closed,
 // and on one view, per view mode and per tab.
 //
@@ -41,7 +41,7 @@ import { Button } from '../components/Button';
 const GraphView = lazy(() => import('../graph/GraphPage').then((m) => ({ default: m.GraphView })));
 const ModelView = lazy(() => import('../model/ModelView').then((m) => ({ default: m.ModelView })));
 
-const INSPECTOR_WIDTH_KEY = 'lathe:inspector-width';
+const SIDE_BAR_WIDTH_KEY = 'lathe:side-bar-width';
 /** The narrowest a pane gets, and the limits of one pane's share of the two panes beside a gap, in percent. */
 const PANE_MIN_PX = 220;
 const GAP_MIN = 20;
@@ -192,7 +192,7 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   const views = useRef<HTMLDivElement>(null);
   const paneEl = (v: ViewName) => views.current?.querySelector<HTMLElement>(`:scope > .pane-${v}`) ?? null;
 
-  // The side bar (the inspector): open or not, and its view, per view mode and per tab; the last
+  // The side bar: open or not, and its view, per view mode and per tab; the last
   // choices made start a space's first tab. On a phone it is a sheet, opened on demand.
   const sideMode = sideModeOf(open, narrow);
   const side = sideFor(tab.state.side, sideMode);
@@ -201,16 +201,16 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
     update((s) => ({ ...s, side: { ...s.side, [sideMode]: next } }));
     saveLastSide(sideMode, next);
   }, [side, sideMode, update]);
-  const [inspectorWidth, setInspectorWidth, resetInspectorWidth] = usePanelSize(INSPECTOR_WIDTH_KEY, 340, 260, 640);
+  const [sideBarWidth, setSideBarWidth, resetSideBarWidth] = usePanelSize(SIDE_BAR_WIDTH_KEY, 340, 260, 640);
   const layout = useRef<HTMLDivElement>(null);
   const [drawer, setDrawer] = useState(false);
-  const inspector = useRef<HTMLElement>(null);
-  const inspectorButton = useRef<HTMLButtonElement>(null);
+  const sideBarEl = useRef<HTMLElement>(null);
+  const sideBarButton = useRef<HTMLButtonElement>(null);
   const showing = narrow ? drawer : side.open;
   const setShowing = useCallback((show: boolean) => {
     if (narrow) setDrawer(show); else setSide({ open: show });
-    announce(show ? 'Inspector shown' : 'Inspector hidden');
-    if (!show) setTimeout(() => inspectorButton.current?.focus(), 0);
+    announce(show ? 'Side bar shown' : 'Side bar hidden');
+    if (!show) setTimeout(() => sideBarButton.current?.focus(), 0);
   }, [narrow, setSide, announce]);
   const setSideView = useCallback((view: SideView) => {
     if (view === side.view) return;
@@ -221,11 +221,11 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   // What the canvases and the wiki tell the side bar: the node under the pointer, the one selected.
   const [peek] = useState(createPeekStore);
   useLayoutEffect(() => { peek.clear(); }, [peek, focus]);
-  const openInspectorAt = useCallback((selector?: string) => {
+  const openSideBarAt = useCallback((selector?: string) => {
     if (!showing) setShowing(true);
     if (selector && side.view !== 'details') setSide({ view: 'details' });
     setTimeout(() => {
-      const target = (selector && inspector.current?.querySelector<HTMLElement>(selector)) || inspector.current;
+      const target = (selector && sideBarEl.current?.querySelector<HTMLElement>(selector)) || sideBarEl.current;
       target?.focus();
       target?.scrollIntoView?.({ block: 'nearest' });
     }, 0);
@@ -238,7 +238,7 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   const onGraph = useCallback((info: GraphInfo) => setGraphInfo(info), []);
 
   // A link keeps the views asked for; the page it leads to shows those it offers.
-  const hrefFor = useCallback((id: string) => withView(addressOf(index, id), asked), [index, askedKey]);
+  const hrefFor = useCallback((id: string) => withView(addressOf(id), asked), [index, askedKey]);
   const onNavigate = useCallback((id: string) => navigate(hrefFor(id)), [hrefFor]);
 
   // The wiki's scroll is the tab's: it comes back when the tab is active again. Within a tab, a new
@@ -294,9 +294,9 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
     toggleFull(open.find((v) => v === inPane) ?? open[0]);
   });
   useCommand('escape', leaveFull, full !== null);
-  useCommand('toggleInspector', () => setShowing(!showing));
-  useCommand('focusInspector', () => openInspectorAt());
-  useCommand('showReferences', () => openInspectorAt('.links-in-heading'), index.byId.has(focus));
+  useCommand('toggleSideBar', () => setShowing(!showing));
+  useCommand('focusSideBar', () => openSideBarAt());
+  useCommand('showReferences', () => openSideBarAt('.links-in-heading'), index.byId.has(focus));
   useCommand('expandAll', () => { expandAllOnPage(true); announce('Expanded every row'); });
   useCommand('collapseAll', () => { expandAllOnPage(false); announce('Collapsed every row'); });
   // Tabs.
@@ -326,7 +326,7 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
    * One pane: a panel with one slim header (LA-PAT-APP-UX-R03), naming its view at the left and
    * holding only the pane's own actions at the right, all icon buttons in one style: its close
    * button when more than one pane is open, and its full screen button. The page's tabs, the View
-   * toggles and the inspector toggle are the page bar's.
+   * toggles and the side bar toggle are the page bar's.
    */
   const pane = (view: ViewName) => {
     const isFull = full === view;
@@ -404,7 +404,7 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
 
   const sideBar = (drawer: boolean) => (
     <SideBar
-      ref={inspector}
+      ref={sideBarEl}
       index={index}
       focus={focus}
       mode={sideMode}
@@ -433,11 +433,11 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
         wikiPane={wikiPane}
         onWikiScroll={onWikiScroll}
         content={content[open[0]]}
-        inspectorShown={showing}
-        onInspector={setShowing}
-        inspectorButton={inspectorButton}
-        inspector={sideBar(true)}
-        inspectorRef={inspector}
+        sideBarShown={showing}
+        onSideBar={setShowing}
+        sideBarButton={sideBarButton}
+        sideBar={sideBar(true)}
+        sideBarRef={sideBarEl}
       />
     );
   }
@@ -451,8 +451,8 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   return (
     <div
       ref={layout}
-      className={`focus-layout${showing ? ' with-inspector' : ''}`}
-      style={{ '--inspector-width': `${inspectorWidth}px`, '--panes-min': panesMin } as CSSProperties}
+      className={`focus-layout${showing ? ' with-side-bar' : ''}`}
+      style={{ '--side-bar-width': `${sideBarWidth}px`, '--panes-min': panesMin } as CSSProperties}
     >
       <div className="focus-main">
         <PageBar
@@ -462,9 +462,9 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
           open={open}
           onView={toggleView}
           compact={false}
-          inspectorShown={showing}
-          onInspector={setShowing}
-          inspectorButton={inspectorButton}
+          sideBarShown={showing}
+          onSideBar={setShowing}
+          sideBarButton={sideBarButton}
           toggles={toggles}
         />
         <div
@@ -482,20 +482,20 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
       {showing ? (
         <>
           <ResizeHandle
-            label="Resize the inspector"
+            label="Resize the side bar"
             side="after"
-            value={inspectorWidth}
+            value={sideBarWidth}
             min={260}
             max={640}
             step={16}
             bigStep={64}
             valueAt={(x) => (layout.current?.getBoundingClientRect().right ?? x) - x}
-            onChange={setInspectorWidth}
-            onReset={resetInspectorWidth}
+            onChange={setSideBarWidth}
+            onReset={resetSideBarWidth}
             collapseBelow={160}
             onCollapse={() => setShowing(false)}
           />
-          <div className="inspector-column panel">{sideBar(false)}</div>
+          <div className="side-bar-column panel">{sideBar(false)}</div>
         </>
       ) : null}
     </div>
@@ -515,29 +515,29 @@ interface PhoneLayoutProps {
   wikiPane: RefObject<HTMLDivElement | null>;
   onWikiScroll: () => void;
   content: ReactNode;
-  inspectorShown: boolean;
-  onInspector: (show: boolean) => void;
-  inspectorButton: RefObject<HTMLButtonElement | null>;
-  inspector: ReactNode;
-  inspectorRef: RefObject<HTMLElement | null>;
+  sideBarShown: boolean;
+  onSideBar: (show: boolean) => void;
+  sideBarButton: RefObject<HTMLButtonElement | null>;
+  sideBar: ReactNode;
+  sideBarRef: RefObject<HTMLElement | null>;
 }
 
 /**
  * On a phone (notes/mobile-design.md) the page shows one view at a time, full width, with no pane
  * headers and no handles. The page bar is the same bar as on a wide screen, compact, under the
  * shell's top bar (which names the page): the open pages as a sheet, the View switch, and the
- * inspector as a bottom sheet.
+ * side bar as a bottom sheet.
  */
 function PhoneLayout(props: PhoneLayoutProps) {
-  const { index, route, front, offered, tabs, onView, wikiPane, onWikiScroll, content, inspectorShown, onInspector, inspectorButton, inspector, inspectorRef } = props;
+  const { index, route, front, offered, tabs, onView, wikiPane, onWikiScroll, content, sideBarShown, onSideBar, sideBarButton, sideBar, sideBarRef } = props;
   const [pagesOpen, setPagesOpen] = useState(false);
   const pagesButton = useRef<HTMLButtonElement>(null);
   const pagesSheet = useRef<HTMLUListElement>(null);
   const count = tabs.set.tabs.length;
   const closePages = useCallback(() => { setPagesOpen(false); setTimeout(() => pagesButton.current?.focus(), 0); }, []);
   useEffect(() => { if (pagesOpen) pagesSheet.current?.querySelector<HTMLElement>('[aria-current], button')?.focus(); }, [pagesOpen]);
-  // The inspector sheet takes focus as it opens; closing it gives focus back to its button.
-  useEffect(() => { if (inspectorShown) inspectorRef.current?.focus(); }, [inspectorShown, inspectorRef]);
+  // The side bar sheet takes focus as it opens; closing it gives focus back to its button.
+  useEffect(() => { if (sideBarShown) sideBarRef.current?.focus(); }, [sideBarShown, sideBarRef]);
   const page = focusOf(route);
   useEffect(() => { setPagesOpen(false); }, [page]);
 
@@ -550,9 +550,9 @@ function PhoneLayout(props: PhoneLayoutProps) {
         open={[front]}
         onView={onView}
         compact
-        inspectorShown={inspectorShown}
-        onInspector={onInspector}
-        inspectorButton={inspectorButton}
+        sideBarShown={sideBarShown}
+        onSideBar={onSideBar}
+        sideBarButton={sideBarButton}
         pagesOpen={pagesOpen}
         onPages={() => setPagesOpen(true)}
         pagesButton={pagesButton}
@@ -563,9 +563,9 @@ function PhoneLayout(props: PhoneLayoutProps) {
           {content}
         </div>
       </section>
-      {inspectorShown && (
-        <BottomSheet label="Inspector" className="inspector-sheet" onClose={() => onInspector(false)}>
-          {inspector}
+      {sideBarShown && (
+        <BottomSheet label="Side bar" className="side-bar-sheet" onClose={() => onSideBar(false)}>
+          {sideBar}
         </BottomSheet>
       )}
       {pagesOpen && (
@@ -625,7 +625,7 @@ function PageTitle({ index, route, fixed = false }: { index: SpecIndex; route: F
   } else if (route.page === 'domain') {
     const domain = index.byId.get(focus)!;
     const product = index.byId.get(route.product)!;
-    eyebrow = <><Link to={addressOf(index, product.id)}>{product.title}</Link> · Domain · {domain.path}</>;
+    eyebrow = <><Link to={addressOf(product.id)}>{product.title}</Link> · Domain · {domain.path}</>;
     title = domain.title;
     problems = problemsUnder(index, 'domain', focus);
   } else if (route.page === 'record') {
@@ -637,7 +637,7 @@ function PageTitle({ index, route, fixed = false }: { index: SpecIndex; route: F
     const parent = index.byId.get(route.parent)!;
     // The folder the group's kind sits in, named as in the side nav and the domain page: "Define › Use cases".
     const folder = folderPath(index, route.kind.split('/')[0]);
-    eyebrow = <><Link to={addressOf(index, parent.id)}>{parent.title}</Link> · {folder.length > 0 && <span className="group-folder">{folder.join(' › ')} · </span>}Group</>;
+    eyebrow = <><Link to={addressOf(parent.id)}>{parent.title}</Link> · {folder.length > 0 && <span className="group-folder">{folder.join(' › ')} · </span>}Group</>;
     title = groupLabel(index, focus);
     id = undefined;
     problems = groupMembers(index, focus).flatMap((m) => index.problemsFor.get(m.id) ?? []);
@@ -677,7 +677,7 @@ function GroupWiki({ index, gid }: { index: SpecIndex; gid: string }) {
   return (
     <div className="spec-body">
       <p className="group-intro">
-        {groupName(index, gid)} of <Link to={addressOf(index, parent)} className="record-link"><code>{parent}</code> <span>{parentRecord.title}</span></Link>
+        {groupName(index, gid)} of <Link to={addressOf(parent)} className="record-link"><code>{parent}</code> <span>{parentRecord.title}</span></Link>
       </p>
       {description && <Markdown source={description} />}
       <Section title={membersTitle} count={members.length}>

@@ -170,7 +170,7 @@ describe('the graph tree and its context ring', () => {
     expect(screen.getByRole('button', { name: 'Links' })).toHaveAttribute('aria-pressed', 'true');
   });
 
-  it('LA-BRW-T546 Context nodes are out of focus: faded, hidden from assistive technology, skipped by the keyboard, left out of the summary and the inspector', async () => {
+  it('LA-BRW-T546 Context nodes are out of focus: faded, hidden from assistive technology, skipped by the keyboard, left out of the summary and the side bar', async () => {
     await showGraph('/P-D-UC01-R01');
     await waitFor(() => expect(node('P-D/define/use-cases')).not.toBeNull());
     const ring = node('P-D/define/use-cases')!;
@@ -191,9 +191,9 @@ describe('the graph tree and its context ring', () => {
       visited.add((document.activeElement as HTMLElement).dataset.id!);
     }
     expect([...visited].sort()).toEqual(['P-D-UC01', 'P-D-UC01-R01']);
-    // The summary counts the focus picture, then how many more are faded; the inspector lists the focus only.
+    // The summary counts the focus picture, then how many more are faded; the side bar lists the focus only.
     expect(document.querySelector('.graph-count')!.textContent).toBe('2 records · 1 link · 1 more faded');
-    const near = within(screen.getByRole('complementary', { name: 'Inspector' })).getByRole('heading', { name: /Connected in the graph/ });
+    const near = within(screen.getByRole('complementary', { name: 'Side bar' })).getByRole('heading', { name: /Connected in the graph/ });
     expect(near.textContent).toMatch(/^Connected in the graph ?1$/);
   });
 

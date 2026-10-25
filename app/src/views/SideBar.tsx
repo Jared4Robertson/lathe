@@ -14,8 +14,8 @@ import './SideBar.css';
 
 // The side bar (LA-BRW-UC119), the page's last column, as VS Code's secondary side bar: one panel
 // with a small switcher of three views at its top, Details, Outline and History, each earning its
-// place by showing what the main view does not. It keeps the inspector's name, toggle, shortcut and
-// width handle; whether it is open, and which view it shows, is kept per view mode and per tab
+// place by showing what the main view does not. It has its toggle, shortcut and width handle;
+// whether it is open, and which view it shows, is kept per view mode and per tab
 // (sideBar.ts). On a phone it is the same panel in a bottom sheet.
 
 export interface SideBarProps {
@@ -58,8 +58,8 @@ export const SideBar = forwardRef<HTMLElement, SideBarProps>(function SideBar(pr
   const historyOf = chosen ?? focus;
 
   return (
-    <aside ref={ref} id="inspector" className={`inspector record-side side-bar${drawer ? ' is-drawer' : ''}`} aria-label="Inspector" tabIndex={-1} data-side-view={view} data-side-mode={mode}>
-      <div className="inspector-head">
+    <aside ref={ref} id="side-bar" className={`side-bar record-side${drawer ? ' is-drawer' : ''}`} aria-label="Side bar" tabIndex={-1} data-side-view={view} data-side-mode={mode}>
+      <div className="side-bar-head">
         <div className="side-switch" role="group" aria-label="Side bar views">
           {SIDE_VIEWS.map((v) => (
             <Tooltip key={v} label={SIDE_VIEW_LABELS[v]}>
@@ -69,14 +69,14 @@ export const SideBar = forwardRef<HTMLElement, SideBarProps>(function SideBar(pr
             </Tooltip>
           ))}
         </div>
-        <Tooltip label="Hide the inspector" command="toggleInspector" placement="left">
-          <Button variant="icon" onClick={onClose} label="Hide the inspector">
+        <Tooltip label="Hide the side bar" command="toggleSideBar" placement="left">
+          <Button variant="icon" onClick={onClose} label="Hide the side bar">
             <Icon name={drawer ? 'x' : 'sidebar-right'} />
           </Button>
         </Tooltip>
       </div>
       <section id="side-view" className={`side-view side-${view}`} aria-labelledby="side-view-title">
-        <h2 id="side-view-title" className="inspector-title" tabIndex={-1}>{SIDE_VIEW_LABELS[view]}</h2>
+        <h2 id="side-view-title" className="side-bar-title" tabIndex={-1}>{SIDE_VIEW_LABELS[view]}</h2>
         {/* Keyed by what it describes: a new node's details are new content drawn in place, never the last one's rows pushed along (UX-R08). */}
         {view === 'details' && <SideBarDetails key={`${focus} ${target} ${how}`} index={index} focus={focus} target={target} mode={mode} how={how} graph={graph} onNavigate={onNavigate} hrefFor={hrefFor} />}
         {view === 'outline' && <SideBarOutline index={index} focus={focus} mode={mode} graph={graph} wikiPane={wikiPane} onNavigate={onNavigate} hrefFor={hrefFor} />}

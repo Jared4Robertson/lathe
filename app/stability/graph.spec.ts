@@ -43,12 +43,12 @@ test.describe('graph', () => {
         await page.locator('.graph-depth button', { hasText: String(depth) }).click();
         await page.waitForTimeout(900);
       }
-      const keys = [PANE_BAR, PANE_TITLE, GRAPH_HEADER, GRAPH_CANVAS, '.pane-graph .graph-flow .react-flow__renderer', '.inspector-column'];
+      const keys = [PANE_BAR, PANE_TITLE, GRAPH_HEADER, GRAPH_CANVAS, '.pane-graph .graph-flow .react-flow__renderer', '.side-bar-column'];
       // Two re-centers: out to a neighbor, then on to one of its neighbors.
       for (const hop of [1, 2]) {
         const before = new URL(page.url()).pathname;
         const id = await visibleNode(page, hop);
-        const r = await step(page, 'graph', `depth ${depth}: re-center ${hop}`, { keys, allow: ['.inspector', GRAPH_BOXES] }, async () => {
+        const r = await step(page, 'graph', `depth ${depth}: re-center ${hop}`, { keys, allow: ['.side-bar', GRAPH_BOXES] }, async () => {
           await page.locator(`.graph-flow .react-flow__node[data-id="${id}"]`).click();
           await page.waitForURL((u) => u.pathname !== before);
         });
@@ -62,7 +62,7 @@ test.describe('graph', () => {
     await nodes(page);
     const keys = [PANE_BAR, PANE_TITLE, GRAPH_HEADER, GRAPH_CANVAS];
     for (const d of ['2', '3', '1']) {
-      const r = await step(page, 'graph', `depth to ${d}`, { keys, allow: ['.inspector', GRAPH_BOXES] }, () => page.locator('.graph-depth button', { hasText: d }).click());
+      const r = await step(page, 'graph', `depth to ${d}`, { keys, allow: ['.side-bar', GRAPH_BOXES] }, () => page.locator('.graph-depth button', { hasText: d }).click());
       expectStable(r);
     }
   });
@@ -73,7 +73,7 @@ test.describe('graph', () => {
     await page.waitForTimeout(500);
     const keys = ['.pane-model > .pane-bar', '.pane-model .pane-title', '.pane-model .model-header', MODEL_CANVAS, '.pane-model .erd-key'];
     const box = page.locator('.model-flow .react-flow__node').first();
-    const r = await step(page, 'graph', 'ERD: domain to aggregate', { keys, allow: ['.inspector'] }, async () => {
+    const r = await step(page, 'graph', 'ERD: domain to aggregate', { keys, allow: ['.side-bar'] }, async () => {
       await box.click();
       await page.waitForURL(/\/LA-[A-Z0-9]+-[A-Z0-9]+/);
       await page.locator('.model-flow .react-flow__node').first().waitFor();
@@ -81,12 +81,12 @@ test.describe('graph', () => {
     expectStable(r);
     const entity = page.locator('.model-flow .react-flow__node:not(:has(.is-focus))').first();
     const before = new URL(page.url()).pathname;
-    const e = await step(page, 'graph', 'ERD: aggregate to entity', { keys, allow: ['.inspector'] }, async () => {
+    const e = await step(page, 'graph', 'ERD: aggregate to entity', { keys, allow: ['.side-bar'] }, async () => {
       await entity.click();
       await page.waitForURL((u) => u.pathname !== before);
     });
     expectStable(e);
-    const back = await step(page, 'graph', 'ERD: Back to the domain', { keys, allow: ['.inspector'] }, async () => {
+    const back = await step(page, 'graph', 'ERD: Back to the domain', { keys, allow: ['.side-bar'] }, async () => {
       await page.goBack();
       await page.goBack();
       await expect(page).toHaveURL(/\/LA-BRW(\?|$)/);

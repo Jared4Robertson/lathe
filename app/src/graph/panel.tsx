@@ -3,8 +3,8 @@ import { LongList } from '../components/LongList';
 import type { SpecIndex } from '../specs/data';
 import { FILE_KIND, PARENT, graphEdgeLabel, nodeParent, parseGroupId, type Neighborhood } from './model';
 
-// The graph's part of the inspector: what the drawn graph connects to the center, the files a
-// trace reaches, and the legend. Kept apart from GraphPage (React Flow and ELK) so the inspector
+// The graph's part of the side bar: what the drawn graph connects to the center, the files a
+// trace reaches, and the legend. Kept apart from GraphPage (React Flow and ELK) so the side bar
 // can show it without loading the graph.
 
 /** A link to another center: a real address for new tabs, onNavigate on a plain click. */
@@ -39,7 +39,7 @@ export interface GraphInfo {
   tracing: boolean;
 }
 
-/** The inspector's graph section: the records drawn next to the center and the files a trace reaches. */
+/** The side bar's graph section: the records drawn next to the center and the files a trace reaches. */
 export function GraphConnections({ index, info, onNavigate, hrefFor }: { index: SpecIndex; info: GraphInfo; onNavigate: (id: string) => void; hrefFor: (id: string) => string }) {
   const { graph, tracing } = info;
   // Focus records only: the context ring is out of focus.
@@ -47,8 +47,8 @@ export function GraphConnections({ index, info, onNavigate, hrefFor }: { index: 
   const files = graph.nodes.filter((n) => n.kind === FILE_KIND);
   return (
     <>
-      <section className="inspector-section" aria-labelledby="inspector-near">
-        <h3 id="inspector-near">{tracing ? 'Traceability chain' : 'Connected in the graph'} <span className="section-count">{near.length}</span></h3>
+      <section className="side-bar-section" aria-labelledby="side-bar-near">
+        <h3 id="side-bar-near">{tracing ? 'Traceability chain' : 'Connected in the graph'} <span className="section-count">{near.length}</span></h3>
         {near.length === 0 ? <p className="hint">{tracing ? 'Nothing fulfills, satisfies or proves it yet.' : 'Nothing connected (check the filters).'}</p> : (
           <LongList
             label="Connected records"
@@ -66,8 +66,8 @@ export function GraphConnections({ index, info, onNavigate, hrefFor }: { index: 
         )}
       </section>
       {files.length > 0 && (
-        <section className="inspector-section" aria-labelledby="inspector-files">
-          <h3 id="inspector-files">Files <span className="section-count">{files.length}</span></h3>
+        <section className="side-bar-section" aria-labelledby="side-bar-files">
+          <h3 id="side-bar-files">Files <span className="section-count">{files.length}</span></h3>
           <LongList label="Files" className="plain" items={files} itemKey={(f) => f.id} searchText={(f) => f.title} render={(f) => <code>{f.title}</code>} />
         </section>
       )}

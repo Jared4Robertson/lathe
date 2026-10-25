@@ -15,7 +15,7 @@ describe('routing', () => {
     expect(parseSpecRoute('/DM', index)).toEqual({ page: 'product', product: 'DM' });
     expect(parseSpecRoute('/DM-SHOP', index)).toEqual({ page: 'domain', product: 'DM', domain: 'DM-SHOP' });
     expect(parseSpecRoute('/DM-SHOP')).toEqual({ page: 'record', id: 'DM-SHOP' });
-    expect(parseSpecRoute('/specs/DM/DM-SHOP/graph')).toEqual({ page: 'redirect', to: '/DM-SHOP?view=graph' });
+    expect(parseSpecRoute('/specs/DM/DM-SHOP/graph')).toEqual({ page: 'missing' });
     expect(parseSpecRoute('/DM-SHOP-C01', index)).toEqual({ page: 'record', id: 'DM-SHOP-C01' });
     expect(parseSpecRoute('/DM-SHOP/use_case')).toEqual({ page: 'group', parent: 'DM-SHOP', kind: 'use_case' });
     expect(parseSpecRoute('/')).toEqual({ page: 'specs' });

@@ -51,12 +51,12 @@ function useSystemDark(follow: boolean) {
 /** In the desktop app, sends the shown theme's chrome to the window whenever the theme, the mode or the system's appearance changes. */
 export function useDesktopChrome(theme: ThemeFile, mode: ModeChoice) {
   const bridge = desktopBridge();
-  const systemDark = useSystemDark(!!bridge?.setChrome && mode === 'system');
+  const systemDark = useSystemDark(!!bridge && mode === 'system');
   const shown: Mode = mode === 'system' ? (systemDark ? 'dark' : 'light') : mode;
   const chrome = chromeOf(theme, shown);
   const key = chrome ? `${chrome.background} ${chrome.foreground}` : '';
   useEffect(() => {
-    if (!chrome || !bridge?.setChrome) return;
+    if (!chrome || !bridge) return;
     bridge.setChrome(chrome);
     // The key holds the colors; the chrome object is new on every render.
   }, [key, bridge]);

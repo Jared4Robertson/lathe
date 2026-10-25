@@ -3,7 +3,7 @@ import { expectStable, openPage, step } from './measure';
 import { FOCUS, GRAPH_CANVAS, RECORD, SHELL } from './scenarios';
 
 // LA-BRW-T489: switching theme changes colors only. LA-BRW-T490: at phone width (375 px) the
-// nav drawer, quick find and the inspector sheet open and close over the page without moving it.
+// nav drawer, quick find and the side bar sheet open and close over the page without moving it.
 
 test.describe('theme', () => {
   test('LA-BRW-T489 switching theme moves nothing', async ({ page }) => {
@@ -47,14 +47,14 @@ test.describe('mobile at 375 px', () => {
       await page.locator('.find-sheet .sheet-close').click();
     });
     expectStable(find);
-    const inspector = page.getByRole('button', { name: 'Show the inspector' });
-    if (await inspector.count()) {
-      const sheet = await step(page, 'mobile', 'open and close the inspector sheet', { keys: behind, allow: sheets }, async () => {
-        await inspector.first().click();
-        await page.locator('.inspector-sheet').waitFor();
+    const sideBar = page.getByRole('button', { name: 'Show the side bar' });
+    if (await sideBar.count()) {
+      const sheet = await step(page, 'mobile', 'open and close the side bar sheet', { keys: behind, allow: sheets }, async () => {
+        await sideBar.first().click();
+        await page.locator('.side-bar-sheet').waitFor();
         await page.waitForTimeout(500);
         await page.keyboard.press('Escape');
-        await expect(page.locator('.inspector-sheet')).toHaveCount(0);
+        await expect(page.locator('.side-bar-sheet')).toHaveCount(0);
       });
       expectStable(sheet);
     }

@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { navigate } from '../router';
 import { parseSpecRoute, type SpecIndex, type SpecRecord } from '../specs/data';
-import { addressOf, currentAddress } from '../views/address';
+import { addressOf, isFocusPath } from '../views/address';
 import { usePref } from './prefs';
 
 // Spaces: each product is its own space, as a workspace is in Slack, Discord, Linear or Notion.
@@ -105,8 +105,8 @@ export function useSpaceState(index: SpecIndex | null, path: string, search: str
   const spaces = useMemo(() => (index?.products ?? []).map(spaceOf), [index]);
   const [chosen, setChosen] = usePref<string>(SPACE_KEY, '', isString, 'session');
   const [stored, setPages] = usePref<Record<string, string>>(PAGES_KEY, {}, isPages, 'session');
-  // A page saved under an old address (/records, /specs) is read in today's form.
-  const pages = useMemo(() => Object.fromEntries(Object.entries(stored).map(([space, page]) => [space, currentAddress(page)])), [stored]);
+  // A saved page that is not a focus page's address is dropped.
+  const pages = useMemo(() => Object.fromEntries(Object.entries(stored).filter(([, page]) => isFocusPath(page.split('?')[0]))), [stored]);
   const pagesRef = useRef(pages);
   pagesRef.current = pages;
   const pageProduct = productOfPath(index, path);

@@ -34,7 +34,7 @@ describe('keyboard shortcuts', () => {
     expect(other.defaultPrevented).toBe(false);
   });
 
-  it('LA-BRW-T145 Ctrl+B hides and shows the nav, Ctrl+Alt+B the inspector, each announced', async () => {
+  it('LA-BRW-T145 Ctrl+B hides and shows the nav, Ctrl+Alt+B the side bar, each announced', async () => {
     await openApp('/P-D-UC01', { workspace: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     press(document.body, 'b', 'KeyB', { ctrlKey: true });
@@ -43,14 +43,14 @@ describe('keyboard shortcuts', () => {
     press(document.body, 'b', 'KeyB', { ctrlKey: true });
     expect(nav().className).not.toContain('is-rail');
 
-    // In the Wiki view the inspector (the side bar) starts closed (brief 64).
-    expect(screen.queryByRole('complementary', { name: 'Inspector' })).toBeNull();
+    // In the Wiki view the side bar starts closed (brief 64).
+    expect(screen.queryByRole('complementary', { name: 'Side bar' })).toBeNull();
     press(document.body, '∫', 'KeyB', { ctrlKey: true, altKey: true });
-    expect(screen.getByRole('complementary', { name: 'Inspector' })).toBeInTheDocument();
-    await waitFor(() => expect(announcer()).toHaveTextContent('Inspector shown'));
+    expect(screen.getByRole('complementary', { name: 'Side bar' })).toBeInTheDocument();
+    await waitFor(() => expect(announcer()).toHaveTextContent('Side bar shown'));
     press(document.body, '∫', 'KeyB', { ctrlKey: true, altKey: true });
-    expect(screen.queryByRole('complementary', { name: 'Inspector' })).toBeNull();
-    await waitFor(() => expect(announcer()).toHaveTextContent('Inspector hidden'));
+    expect(screen.queryByRole('complementary', { name: 'Side bar' })).toBeNull();
+    await waitFor(() => expect(announcer()).toHaveTextContent('Side bar hidden'));
   });
 
   it('LA-BRW-T146 Alt+W, Alt+G and Alt+M (or Ctrl+1, 2 and 4) toggle the views off a Mac, Ctrl+3 shows only the focused pane, and Ctrl+3 or Escape restores', async () => {
@@ -116,9 +116,9 @@ describe('keyboard shortcuts', () => {
     expect(within(sheet).getByRole('rowheader', { name: 'Command palette' }).nextElementSibling).toHaveTextContent('Ctrl+Shift+P');
     expect(within(sheet).getByText(/lathe:keybindings/)).toBeInTheDocument();
     const user = userEvent.setup();
-    await user.type(within(sheet).getByRole('searchbox', { name: 'Search shortcuts' }), 'inspector');
+    await user.type(within(sheet).getByRole('searchbox', { name: 'Search shortcuts' }), 'side bar');
     expect(within(sheet).queryByRole('heading', { name: 'Graph' })).toBeNull();
-    expect(within(sheet).getByRole('rowheader', { name: 'Show or hide the inspector' })).toBeInTheDocument();
+    expect(within(sheet).getByRole('rowheader', { name: 'Show or hide the side bar' })).toBeInTheDocument();
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).toBeNull();
 
@@ -189,29 +189,29 @@ describe('keyboard shortcuts', () => {
     await waitFor(() => expect(node('file:src/thing.ts')).not.toBeNull());
   });
 
-  it('LA-BRW-T151 F12, Shift+F12, Ctrl+Shift+E, Ctrl+Shift+I, / and Ctrl+- reach links, incoming links, the nav, the inspector, search and Back', async () => {
+  it('LA-BRW-T151 F12, Shift+F12, Ctrl+Shift+E, Ctrl+Shift+I, / and Ctrl+- reach links, incoming links, the nav, the side bar, search and Back', async () => {
     // The side bar starts closed in the Wiki view (brief 64); this test reads it open.
     openSideBar('details', ['wiki', 'graph', 'model']);
     await openApp('/P-D-UC01', { workspace: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
-    const inspector = screen.getByRole('complementary', { name: 'Inspector' });
+    const sideBar = screen.getByRole('complementary', { name: 'Side bar' });
 
     // F12 on a focused link opens its record.
-    const link = within(inspector).getAllByRole('link', { name: /P-D-DR01/ })[0];
+    const link = within(sideBar).getAllByRole('link', { name: /P-D-DR01/ })[0];
     link.focus();
     press(link, 'F12', 'F12');
     expect(window.location.pathname).toBe('/P-D-DR01');
     await screen.findByRole('heading', { level: 1, name: 'A thing has one owner' });
 
-    // Shift+F12 shows the incoming links in the inspector.
+    // Shift+F12 shows the incoming links in the side bar.
     press(document.body, 'F12', 'F12', { shiftKey: true });
-    await waitFor(() => expect(within(screen.getByRole('complementary', { name: 'Inspector' })).getByRole('heading', { name: /^Links in/ })).toHaveFocus());
+    await waitFor(() => expect(within(screen.getByRole('complementary', { name: 'Side bar' })).getByRole('heading', { name: /^Links in/ })).toHaveFocus());
 
-    // Ctrl+Shift+E: the nav; Ctrl+Shift+I: the inspector.
+    // Ctrl+Shift+E: the nav; Ctrl+Shift+I: the side bar.
     press(document.body, 'E', 'KeyE', { ctrlKey: true, shiftKey: true });
     await waitFor(() => expect(nav().contains(document.activeElement)).toBe(true));
     press(document.body, 'I', 'KeyI', { ctrlKey: true, shiftKey: true });
-    await waitFor(() => expect(screen.getByRole('complementary', { name: 'Inspector' })).toHaveFocus());
+    await waitFor(() => expect(screen.getByRole('complementary', { name: 'Side bar' })).toHaveFocus());
 
     // / focuses the nearest search box: the page's, or quick find.
     press(document.body, '/', 'Slash');

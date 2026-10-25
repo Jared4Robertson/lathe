@@ -4,7 +4,7 @@ import type { SpecIndex } from './data';
 // The words a link is shown by (LA-BRW-DR243): each relation rule's `forward_label`, read from the
 // link's source ("Satisfies"), and `reverse_label`, read from its target ("Designed by"), from
 // lathe/meta/relations.csv. Every page that shows a link reads them from here, never the relation's
-// code, so the wiki, the inspector, the graph and the Model view say the same thing.
+// code, so the wiki, the side bar, the graph and the Model view say the same thing.
 
 type Rules = readonly RelationRule[];
 
