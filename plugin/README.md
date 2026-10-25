@@ -10,7 +10,7 @@ The skills teach the way of working, not the lists: for every kind, relation, fo
 
 | Skill | For |
 | --- | --- |
-| `model-a-domain` | The domain record, aggregates, their entities (for the ERDs), the domain events they raise, and domain rules. |
+| `model-a-domain` | Domains as vertical slices of business capability, then the domain record, aggregates, their entities (for the ERDs), the domain events they raise, and domain rules. |
 | `write-use-cases` | Use cases and their requirements, the roles that act in them, the capabilities that group them, and the patterns they follow. |
 | `design-the-domain` | Flows and their steps, views, endpoints, their interaction requirements, and components in their layers, with the links that trace them. |
 | `plan-tests` | Test records (automated, manual or planned), and test names that carry the test's ID or the ID of what it proves. |
