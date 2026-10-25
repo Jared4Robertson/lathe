@@ -131,6 +131,23 @@ describe('LA-PAT-APP-CODE App code', () => {
     }
   });
 
+  it('LA-BRW-T276 Everything clickable shows a hover state: each pointer-cursor rule has a :hover rule for the same class', () => {
+    const rules = styleRules(CSS);
+    const hovers = rules.flatMap((r) => topLevel(r.selector)).filter((s) => s.includes(':hover'));
+    const missing = rules
+      .filter((r) => /cursor:\s*pointer/.test(r.body))
+      .flatMap((r) => topLevel(r.selector).map((s) => ({ s: s.trim(), line: r.line })))
+      .filter(({ s }) => {
+        const classes = s.match(/\.[\w-]+/g);
+        const key = classes?.[classes.length - 1];
+        return !key || !hovers.some((h) => new RegExp(`\\${key}(?![\\w-])`).test(h));
+      })
+      .map(({ s, line }) => `app/src/styles.css:${line}: ${s}`);
+    expect(missing).toEqual([]);
+    // The tint, ring and speed are shared tokens.
+    for (const token of ['--hover-bg', '--hover-ring', '--hover-speed']) expect(CSS).toContain(`${token}:`);
+  });
+
   it('LA-BRW-T262 Code, specs and docs use American spelling', () => {
     // Built from parts, so this file does not trip its own check.
     const british = ['col' + 'our', 'behavi' + 'our', 'neighb' + 'our', 'fav' + 'our', 'hon' + 'our', 'cent' + 're', 'model' + 'ling', 'model' + 'led',
