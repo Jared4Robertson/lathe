@@ -6,6 +6,8 @@ import { findItems, rankItems } from '../src/shell/QuickFind';
 import { indexWorkspace } from '../src/specs/data';
 import { workspace } from './fixtures/workspace';
 import { main, openApp, section } from './helpers';
+// The Graph view, where the side bar's Details shows a record's facts, needs a ResizeObserver in jsdom.
+import './graph/setup';
 
 const inspector = () => document.getElementById('inspector') as HTMLElement;
 const pane = () => main().querySelector('.pane') as HTMLElement;
@@ -102,7 +104,8 @@ describe('format reference pages', () => {
   });
 
   it('LA-BRW-T443 The inspector\'s kind, each problem code and each required field label link to their format pages', async () => {
-    await openApp('/DM-SHOP-UC01');
+    // The side bar's Details, open in the Graph view (brief 64).
+    await openApp('/DM-SHOP-UC01?view=wiki,graph');
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     expect(within(inspector()).getByRole('link', { name: 'Use case' })).toHaveAttribute('href', '/format/kinds/use_case');
     expect(within(inspector()).getByRole('link', { name: 'actor' })).toHaveAttribute('href', '/format/kinds/use_case#field-actor');

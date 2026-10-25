@@ -2,7 +2,7 @@ import './graph/setup';
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { openApp } from './helpers';
+import { openApp, openSideBar } from './helpers';
 import { testWorkspace } from './graph/workspace';
 
 // Shortcuts end to end: each key press goes to the window's listener, as in the browser. The test
@@ -43,11 +43,14 @@ describe('keyboard shortcuts', () => {
     press(document.body, 'b', 'KeyB', { ctrlKey: true });
     expect(nav().className).not.toContain('is-rail');
 
+    // In the Wiki view the inspector (the side bar) starts closed (brief 64).
+    expect(screen.queryByRole('complementary', { name: 'Inspector' })).toBeNull();
+    press(document.body, '∫', 'KeyB', { ctrlKey: true, altKey: true });
+    expect(screen.getByRole('complementary', { name: 'Inspector' })).toBeInTheDocument();
+    await waitFor(() => expect(announcer()).toHaveTextContent('Inspector shown'));
     press(document.body, '∫', 'KeyB', { ctrlKey: true, altKey: true });
     expect(screen.queryByRole('complementary', { name: 'Inspector' })).toBeNull();
     await waitFor(() => expect(announcer()).toHaveTextContent('Inspector hidden'));
-    press(document.body, '∫', 'KeyB', { ctrlKey: true, altKey: true });
-    expect(screen.getByRole('complementary', { name: 'Inspector' })).toBeInTheDocument();
   });
 
   it('LA-BRW-T146 Alt+W, Alt+G and Alt+M (or Ctrl+1, 2 and 4) toggle the views off a Mac, Ctrl+3 shows only the focused pane, and Ctrl+3 or Escape restores', async () => {
@@ -187,6 +190,8 @@ describe('keyboard shortcuts', () => {
   });
 
   it('LA-BRW-T151 F12, Shift+F12, Ctrl+Shift+E, Ctrl+Shift+I, / and Ctrl+- reach links, incoming links, the nav, the inspector, search and Back', async () => {
+    // The side bar starts closed in the Wiki view (brief 64); this test reads it open.
+    openSideBar('details', ['wiki', 'graph', 'model']);
     await openApp('/P-D-UC01', { workspace: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     const inspector = screen.getByRole('complementary', { name: 'Inspector' });
@@ -200,7 +205,7 @@ describe('keyboard shortcuts', () => {
 
     // Shift+F12 shows the incoming links in the inspector.
     press(document.body, 'F12', 'F12', { shiftKey: true });
-    await waitFor(() => expect(within(screen.getByRole('complementary', { name: 'Inspector' })).getByRole('heading', { name: 'Links in' })).toHaveFocus());
+    await waitFor(() => expect(within(screen.getByRole('complementary', { name: 'Inspector' })).getByRole('heading', { name: /^Links in/ })).toHaveFocus());
 
     // Ctrl+Shift+E: the nav; Ctrl+Shift+I: the inspector.
     press(document.body, 'E', 'KeyE', { ctrlKey: true, shiftKey: true });
