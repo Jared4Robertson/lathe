@@ -1,4 +1,4 @@
-import { test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { expectStable, openPage, step } from './measure';
 import { GRAPH_CANVAS, GRAPH_HEADER, RECORD } from './scenarios';
 
@@ -12,6 +12,17 @@ const SWITCH = '.side-bar .side-switch';
 const KEYS = [NAV, '.pane-wiki > .pane-bar', '.pane-wiki .pane-title', '.pane-graph > .pane-bar', GRAPH_HEADER, GRAPH_CANVAS, SIDE, SWITCH];
 /** The side bar's content is what changes. */
 const ALLOW = ['.side-bar'];
+
+/** The IDs of the graph's boxes wholly inside its canvas, in DOM order (the map runs past the canvas's edges). */
+async function boxesInView(page: Page, except = ''): Promise<string[]> {
+  return page.evaluate((except) => {
+    const canvas = document.querySelector('.graph-flow')!.getBoundingClientRect();
+    return [...document.querySelectorAll<HTMLElement>('.graph-flow .react-flow__node[data-id^="LA-"]')]
+      .filter((el) => el.dataset.id !== except)
+      .filter((el) => { const r = el.getBoundingClientRect(); return r.left >= canvas.left && r.right <= canvas.right && r.top >= canvas.top && r.bottom <= canvas.bottom - 40; })
+      .map((el) => el.dataset.id!);
+  }, except);
+}
 
 test.describe('side bar', () => {
   test('LA-PLT-T89 switching the side bar\'s view moves nothing outside it', async ({ page }) => {
@@ -29,13 +40,14 @@ test.describe('side bar', () => {
 
   test('LA-PLT-T89 Details following the node under the pointer moves nothing outside it', async ({ page }) => {
     await openPage(page, `${RECORD}?view=wiki,graph`);
-    const nodes = page.locator('.graph-flow .react-flow__node[data-id^="LA-"]:not(.is-plain)');
+    const nodes = page.locator('.graph-flow .react-flow__node[data-id^="LA-"]');
     await nodes.first().waitFor();
     await page.waitForTimeout(600);
     const r = await step(page, 'side bar', 'hover nodes, then leave', { keys: KEYS, allow: ALLOW }, async () => {
-      const count = Math.min(3, await nodes.count());
-      for (let i = 0; i < count; i++) {
-        await nodes.nth(i).hover();
+      const ids = (await boxesInView(page)).slice(0, 3);
+      expect(ids.length, 'boxes in view').toBeGreaterThan(0);
+      for (const id of ids) {
+        await page.locator(`.graph-flow .react-flow__node[data-id="${id}"]`).hover();
         await page.waitForTimeout(150);
       }
       await page.mouse.move(5, 5);
