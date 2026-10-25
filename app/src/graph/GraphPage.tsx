@@ -28,6 +28,7 @@ import {
   TRACE_RELATIONS,
   canTrace,
   gapsFor,
+  graphEdgeLabel,
   graphRelationLabel,
   groupName,
   groupMarks,
@@ -73,6 +74,8 @@ interface EdgeData extends Record<string, unknown> {
   /** Whether it was in the last picture, is new, or is leaving (fading out until the move ends). */
   phase: EdgePhase;
   showLabel: boolean;
+  /** The words drawn on the edge: its relation's label, read from its source. */
+  label: string;
 }
 type FlowNode = Node<NodeData>;
 type FlowEdge = Edge<EdgeData>;
@@ -243,7 +246,7 @@ function GraphEdgeView({ id, data, markerEnd, source, target }: EdgeProps<FlowEd
       {data.showLabel && data.relation !== PARENT && (
         <EdgeLabelRenderer>
           <div ref={label} className="edge-label graph-edge-label" style={{ opacity: frame.opacity, transform: labelTransform(frame.points) }}>
-            {graphRelationLabel(data.relation)}
+            {data.label}
           </div>
         </EdgeLabelRenderer>
       )}
@@ -474,7 +477,7 @@ function FilterControls({ index, filters, setFilters }: { index: SpecIndex; filt
                 onChange={() => setFilters({ ...filters, hiddenRelations: toggle(filters.hiddenRelations, r) })}
               />
               <span className={`graph-line rel-${relationStyle(r)}`} aria-hidden="true" />
-              {graphRelationLabel(r)}
+              {graphRelationLabel(r, index)}
             </label>
           ))}
         </fieldset>
@@ -628,6 +631,7 @@ function GraphCanvas({ index, graph, onNavigate, onToggle }: {
         ends: { source: center(e.source), target: center(e.target) },
         phase: hadPicture && !before.has(e.id) ? 'enter' : 'persist',
         showLabel: e.source === g.focus || e.target === g.focus,
+        label: graphEdgeLabel(index, e),
       },
     }));
     const now = new Set(edges.map((e) => e.id));

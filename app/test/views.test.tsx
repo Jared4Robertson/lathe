@@ -139,7 +139,7 @@ describe('one address, three views', () => {
 
     // A link in the wiki moves the graph.
     const wiki = within(screen.getByRole('region', { name: 'Wiki pane' }));
-    await userEvent.setup().click(wiki.getByRole('link', { name: /P-D-UC01-R01/ }));
+    await userEvent.setup().click(wiki.getAllByRole('link', { name: /P-D-UC01-R01/ })[0]);
     expect(window.location.pathname).toBe('/records/P-D-UC01-R01');
     await waitFor(() => expect(title()).toBe('The owner is shown'));
     await waitFor(() => expect(node('P-D-UC01-R01')?.querySelector('.graph-node')?.className).toContain('is-focus'));

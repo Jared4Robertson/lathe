@@ -111,7 +111,7 @@ describe('long lists', () => {
     expect(within(main()).getByRole('searchbox', { name: 'Filter children' })).toBeInTheDocument();
     await openApp('/records/BG-D01-DR01', served);
     await screen.findByRole('heading', { level: 1, name: 'A ledger balances' });
-    const linksIn = within(main()).getByRole('searchbox', { name: 'Filter links in: applies this' });
+    const linksIn = within(main()).getByRole('searchbox', { name: 'Filter links in: Applied by' });
     await user.type(linksIn, 'UC09');
     expect(within(main()).getByText('1 of 12')).toBeInTheDocument();
 

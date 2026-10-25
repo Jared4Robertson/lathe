@@ -148,4 +148,3 @@ export function parseSpecRoute(pathname: string): SpecRoute | null {
 }
 
 export const kindLabel = (index: SpecIndex, kind: string) => index.kinds.get(kind)?.label ?? kind.replaceAll('_', ' ');
-export const relationLabel = (relation: string) => relation.replaceAll('_', ' ');

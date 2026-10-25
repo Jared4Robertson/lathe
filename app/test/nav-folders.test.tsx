@@ -138,8 +138,8 @@ describe('folders like Client', () => {
     });
     expect(loose.map((f) => [f.label, f.records.map((r) => r.id)])).toEqual([['Open questions', ['DM-SHOP-Q01']]]);
     expect(branchOf(index, 'DM-SHOP-UC02')).toEqual(['domain:DM-SHOP', 'DM-SHOP/define', 'DM-SHOP/define/use-cases']);
-    // A test proving nothing sits in Test plan's Engineering checks, which opens with it.
-    expect(branchOf(index, 'DM-SHOP-T02')).toEqual(['domain:DM-SHOP', 'DM-SHOP/design', 'DM-SHOP/design/test-plan', 'DM-SHOP/design/test-plan/engineering']);
+    // A capability's test is an acceptance test, in its capability, which opens with it.
+    expect(branchOf(index, 'DM-SHOP-T02')).toEqual(['domain:DM-SHOP', 'DM-SHOP/design', 'DM-SHOP/design/test-plan', 'DM-SHOP/design/test-plan/acceptance/DM-SHOP-CAP01']);
 
     // The domain page: Use cases holds the capabilities and then the use cases outside any capability.
     await openApp('/specs/DM/DM-SHOP', { workspace: w });

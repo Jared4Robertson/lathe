@@ -2,6 +2,7 @@ import { plural } from '../plural';
 import type { SpecIndex, SpecRecord } from '../specs/data';
 import { byIdOrder, kindLabel } from '../specs/data';
 import { testGroupOf, testGroups, type FolderGroup } from '../specs/folders';
+import { linkLabel, relationLabelOf } from '../specs/labels';
 
 // Pure graph logic for the graph view: the ego graph around a record, filters and trace mode.
 // Nothing here touches React or the DOM, so it is tested directly.
@@ -622,7 +623,11 @@ export function relationsOf(index: SpecIndex): string[] {
 }
 
 export const RELATION_LABELS: Record<string, string> = { [PARENT]: 'parent / child', [NAMES]: 'names file' };
-export const graphRelationLabel = (relation: string) => RELATION_LABELS[relation] ?? relation.replaceAll('_', ' ');
+/** A relation's label by its code (legends, filters), from the meta-model's labels (LA-BRW-DR243). */
+export const graphRelationLabel = (relation: string, index?: SpecIndex) => RELATION_LABELS[relation] ?? relationLabelOf(index?.workspace.relations ?? [], relation);
+/** One edge's label, read from its source, or from its target with `from`. */
+export const graphEdgeLabel = (index: SpecIndex, e: { source: string; relation: string; target: string }, from: 'source' | 'target' = 'source') =>
+  RELATION_LABELS[e.relation] ?? linkLabel(index, e, from);
 
 /** The kinds a person can filter on, grouped by stage in the meta-model's order. */
 export function kindGroups(index: SpecIndex): { stage: string; title: string; kinds: { kind: string; label: string }[] }[] {

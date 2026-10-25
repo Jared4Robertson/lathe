@@ -136,7 +136,7 @@ describe('obligation kinds and test states', () => {
   it('LA-BRW-T86 The record page shows where an interaction requirement sits and what it fulfills', async () => {
     await openApp('/records/DM-SHOP-E01-R01', served());
     await screen.findByRole('heading', { level: 1, name: 'Adding to a full basket answers 409' });
-    const fulfills = section(/^Fulfills/);
+    const fulfills = section(/^Carries out/);
     expect(fulfills).toHaveTextContent(/At the endpoint\s*DM-SHOP-E01\s*Add to basket/);
     expect(within(fulfills).getByRole('link', { name: /^DM-SHOP-E01\s*Add to basket$/ })).toHaveAttribute('href', '/records/DM-SHOP-E01');
     const items = within(fulfills).getAllByRole('listitem');
@@ -146,12 +146,12 @@ describe('obligation kinds and test states', () => {
     // One that fulfills nothing yet says how to link it.
     await openApp('/records/DM-SHOP-E01-R02', served());
     await screen.findByRole('heading', { level: 1, name: 'An unknown item answers 404' });
-    expect(section(/^Fulfills/)).toHaveTextContent('It fulfills nothing yet.');
+    expect(section(/^Carries out/)).toHaveTextContent('It carries out nothing yet.');
 
     // Other kinds have no such section.
     await openApp('/records/DM-SHOP-UC01-R02', served());
     await screen.findByRole('heading', { level: 1, name: 'A full basket refuses the item' });
-    expect(within(main()).queryByRole('heading', { name: /^Fulfills/ })).toBeNull();
+    expect(within(main()).queryByRole('heading', { name: /^Carries out/ })).toBeNull();
   });
 
   it('LA-BRW-T87 The record content takes a record ID and sends the links it follows to its host', async () => {
@@ -165,7 +165,7 @@ describe('obligation kinds and test states', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Adding to a full basket answers 409' })).toBeInTheDocument();
 
     const user = userEvent.setup();
-    const fulfills = screen.getByRole('heading', { name: /^Fulfills/ }).closest('section') as HTMLElement;
+    const fulfills = screen.getByRole('heading', { name: /^Carries out/ }).closest('section') as HTMLElement;
     const link = within(fulfills).getByRole('link', { name: /DM-SHOP-UC01-R02/ });
     expect(link).toHaveAttribute('href', '/records/DM-SHOP-UC01-R02');
     await user.click(link);
