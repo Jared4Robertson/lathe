@@ -1,5 +1,5 @@
 // Storage for members, tools and loans in SQLite (node:sqlite).
-// Spec: TL-LEND-C02 (specs/tool-library/lending/02-design/components/C02-store.md)
+// Spec: TL-LEND-C02 (specs/tool-library/lending/02-design/components/01-models-and-accessors/C02-store.md)
 // The schema backs up two domain rules even if a service forgets them:
 // TL-LEND-DR01 (unique email) and TL-LEND-DR06 (one active loan per tool).
 // A loan's due date is stored as a date (YYYY-MM-DD), not a time (TL-LEND-DR07).

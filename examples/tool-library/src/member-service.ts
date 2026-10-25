@@ -1,5 +1,5 @@
 // Registers members.
-// Spec: TL-LEND-C03 (specs/tool-library/lending/02-design/components/C03-member-service.md)
+// Spec: TL-LEND-C03 (specs/tool-library/lending/02-design/components/02-services/C03-member-service.md)
 import { LendingError, type Clock, type Member } from './model.ts';
 import type { Store } from './store.ts';
 
