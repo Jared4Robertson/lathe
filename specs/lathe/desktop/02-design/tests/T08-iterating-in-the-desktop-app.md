@@ -10,7 +10,7 @@ links:
 ---
 Manual because it changes files while the shell runs and builds the app. Run it after changing `desktop/scripts/` or the servers.
 
-1. With Jared's dev server running (`npm --prefix app run dev`), run `npm --prefix desktop run dev`. The terminal says Lathe's folder comes "from shared dev server at http://localhost:5199".
+1. With the owner's dev server running (`npm --prefix app run dev`), run `npm --prefix desktop run dev`. The terminal says Lathe's folder comes "from shared dev server at http://localhost:5199".
 2. Change a style in `app/src/styles.css`: the window updates without reloading, as the browser does.
 3. Open another product folder with Cmd+O: the terminal says it comes "from own dev server" on a port other than 5199.
 4. Edit a record's title under that folder's `specs/`: the page shows the new title within a second or two. Do the same in a window started with `npm --prefix desktop start`.

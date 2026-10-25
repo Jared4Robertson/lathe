@@ -7,4 +7,4 @@ links:
   carries_out: [LA-BRW-UC90, LA-BRW-UC100]
   uses: [LA-BRW-V01, LA-BRW-V05]
 ---
-How Jared works in one product and moves to another.
+How the reader works in one product and moves to another.

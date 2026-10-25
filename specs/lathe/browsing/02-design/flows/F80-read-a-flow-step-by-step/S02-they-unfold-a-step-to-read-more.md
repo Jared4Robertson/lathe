@@ -1,7 +1,7 @@
 ---
 id: LA-BRW-F80-S02
 kind: flow_step
-title: He unfolds a step to read more
+title: They unfold a step to read more
 parent: LA-BRW-F80
 order: 2
 links:

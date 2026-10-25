@@ -1,7 +1,7 @@
 ---
 id: LA-BRW-F90-S05
 kind: flow_step
-title: He filters Checks to the space
+title: They filter Checks to the space
 parent: LA-BRW-F90
 order: 5
 links:

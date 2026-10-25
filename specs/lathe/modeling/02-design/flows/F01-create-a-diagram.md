@@ -8,6 +8,6 @@ links:
   fulfills: [LA-MOD-UC01-R01]
   carries_out: [LA-MOD-UC01]
 ---
-1. Jared opens the New diagram form and submits a title.
+1. The owner opens the New diagram form and submits a title.
 2. The form calls `POST /api/diagrams`.
 3. On success the menu reloads from `GET /api/diagrams` and the app opens `/diagrams/<slug>`, which shows the empty-diagram message.

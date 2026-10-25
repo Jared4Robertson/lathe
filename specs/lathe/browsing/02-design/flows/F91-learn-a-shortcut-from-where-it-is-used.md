@@ -7,4 +7,4 @@ links:
   carries_out: [LA-BRW-UC91]
   uses: [LA-BRW-V01, LA-BRW-V04]
 ---
-How Jared learns a shortcut without opening the sheet.
+How the reader learns a shortcut without opening the sheet.

@@ -1,7 +1,7 @@
 ---
 id: LA-BRW-F91-S02
 kind: flow_step
-title: "He opens the palette and reads each command's keys"
+title: "They open the palette and read each command's keys"
 parent: LA-BRW-F91
 order: 2
 links:
