@@ -42,7 +42,7 @@ function BoxView({ data }: NodeProps<BoxNode>) {
       {box.kind === 'entity' && !box.foreign && (
         box.fields.length > 0 ? (
           <ul className="erd-fields" aria-label={`Fields of ${box.title}`}>
-            {box.fields.map((f) => <li key={f.field}><span className="erd-field">{f.field}</span><span className="erd-field-kind">{f.kind}</span></li>)}
+            {box.fields.map((f) => <li key={f.field} title={`${f.field}: ${f.kind}`}><span className="erd-field">{f.field}</span><span className="erd-field-kind">{f.kind}</span></li>)}
           </ul>
         ) : <small className="erd-summary">No fields listed</small>
       )}

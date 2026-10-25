@@ -9,4 +9,4 @@ links:
   satisfies: [LA-BRW-UC91-R01, LA-BRW-UC91-R03]
   depends_on: [LA-BRW-C105]
 ---
-The view toggles, the Open beside button, the inspector toggles and the full-screen buttons (and, in the graph and the inspector, the depth buttons, trace switch and hide button) show their keys through `Tooltip`.
+The view toggles, the inspector toggles and the full-screen buttons (and, in the graph and the inspector, the depth buttons, trace switch and hide button) show their keys, for the current platform, through `Tooltip`.

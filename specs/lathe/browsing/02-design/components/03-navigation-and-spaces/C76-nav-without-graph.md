@@ -9,4 +9,4 @@ links:
   satisfies: [LA-BRW-UC20-R07, LA-BRW-DR74]
   depends_on: [LA-BRW-C53]
 ---
-The side navigation and its rail list no Graph item; the graph is reached from each page's Graph view toggle, Ctrl+2 and the command palette, and `/graph` addresses still redirect to a page's Graph view.
+The side navigation and its rail list no Graph item; the graph is reached from each page's Graph view toggle, Ctrl+G or Alt+G, Ctrl+2 and the command palette, and `/graph` addresses still redirect to a page's Graph view.
