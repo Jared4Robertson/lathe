@@ -273,3 +273,237 @@ test.describe('graph', () => {
     expectStable(back);
   });
 });
+
+// LA-EXP-T189 (LA-EXP-UC03-R16, LA-EXP-UC03-R06, LA-EXP-UC03-R10): one table of the graph's
+// features, run in the Tree and the Nested layout alike, so neither falls behind the other.
+const LAYOUT_NAMES = { tree: 'Tree', nested: 'Nested' } as const;
+type Layout = keyof typeof LAYOUT_NAMES;
+
+const path = (page: Page) => new URL(page.url()).pathname;
+const camera = (page: Page) => page.evaluate(() => document.querySelector<HTMLElement>('.pane-graph .react-flow__viewport')!.style.transform);
+const labeledCount = (page: Page) => page.locator('.pane-graph .react-flow__node:not(.is-plain):not(.is-bar)').count();
+/** Every drawn box's place and size in the map. */
+const places = (page: Page) => page.evaluate(() => Object.fromEntries([...document.querySelectorAll<HTMLElement>('.pane-graph .react-flow__node')].map((el) => [el.dataset.id!, `${el.style.transform} ${el.style.width} ${el.style.height}`])));
+
+/** A labeled record box, not the focus, with a good part of it in the canvas, and a point on that part to click or hover. */
+async function labeledInView(page: Page): Promise<{ id: string; x: number; y: number }> {
+  const found = await page.evaluate(() => {
+    const c = document.querySelector('.pane-graph .graph-flow')!.getBoundingClientRect();
+    // Clear of the zoom buttons at the bottom left and the edge hints.
+    const area = { left: c.left + 60, right: c.right - 30, top: c.top + 20, bottom: c.bottom - 30 };
+    for (const el of document.querySelectorAll<HTMLElement>('.pane-graph .react-flow__node[data-id^="LA-"]:not(.is-plain)')) {
+      if (el.querySelector('.is-focus')) continue;
+      const r = el.getBoundingClientRect();
+      const l = Math.max(r.left, area.left); const rt = Math.min(r.right, area.right);
+      const t = Math.max(r.top, area.top); const b = Math.min(r.bottom, area.bottom);
+      if (rt - l < 40 || b - t < 16) continue;
+      // The point must hit this box, not a child drawn over it.
+      const x = (l + rt) / 2; const y = t + Math.min(12, (b - t) / 2);
+      if (document.elementFromPoint(x, y)?.closest('.react-flow__node') !== el) continue;
+      return { id: el.dataset.id!, x, y };
+    }
+    return null;
+  });
+  expect(found, 'a labeled record box in view').not.toBeNull();
+  return found!;
+}
+
+/** The table: each feature of the graph, checked the same way in either layout. */
+const PARITY: { feature: string; run: (page: Page, layout: Layout) => Promise<void> }[] = [
+  {
+    feature: 'the Layout switch and its v command',
+    run: async (page, layout) => {
+      await expect(page.locator('.pane-graph .graph-layout button[aria-pressed="true"]')).toHaveText(LAYOUT_NAMES[layout]);
+      await expect(page.locator('.pane-graph .graph-flow')).toHaveAttribute('data-layout', layout);
+    },
+  },
+  {
+    feature: 'Links draws the focus\'s links as curves (on a use case with links)',
+    run: async (page) => {
+      await page.locator('.pane-graph .graph-links button').click();
+      await expect(page.locator('.pane-graph .graph-edge.is-link').first()).toBeAttached();
+      await page.locator('.pane-graph .graph-links button').click();
+      await expect(page.locator('.pane-graph .graph-edge.is-link')).toHaveCount(0);
+    },
+  },
+  {
+    feature: 'a click focuses a box, and the trail grows',
+    run: async (page) => {
+      const before = path(page);
+      const { id, x, y } = await labeledInView(page);
+      await page.mouse.click(x, y);
+      await page.waitForURL((u) => u.pathname !== before);
+      await expect(page.locator(`.pane-graph .react-flow__node[data-id="${id}"] .graph-node.is-focus`)).toBeVisible();
+      expect(await page.locator('.pane-graph .graph-trail li').count()).toBeGreaterThanOrEqual(2);
+      await page.waitForTimeout(1300);
+    },
+  },
+  {
+    feature: 'Back and Forward glide the camera',
+    run: async (page) => {
+      const here = path(page);
+      const framed = await camera(page);
+      await page.goBack();
+      await page.waitForURL((u) => u.pathname !== here);
+      await page.waitForTimeout(1300);
+      expect(await camera(page)).not.toBe(framed);
+      await page.goForward();
+      await page.waitForURL((u) => u.pathname === here);
+      await page.waitForTimeout(1300);
+      expect(await camera(page)).toBe(framed);
+    },
+  },
+  {
+    feature: 'the step keys step out to the parent and back in',
+    run: async (page) => {
+      const here = path(page);
+      await page.locator('.pane-graph .graph-count').click();
+      await page.keyboard.press('Alt+ArrowUp');
+      await page.waitForURL((u) => u.pathname !== here);
+      await page.goBack();
+      await page.waitForURL((u) => u.pathname === here);
+      await page.waitForTimeout(900);
+    },
+  },
+  {
+    feature: 'Tab and the arrow keys reach the labeled boxes with a visible focus ring, and Enter focuses one',
+    run: async (page) => {
+      const here = path(page);
+      await page.locator('.pane-graph .react-flow__node[data-id]:not(.is-plain)').first().focus();
+      await page.keyboard.press('ArrowRight');
+      const ring = await page.evaluate(() => {
+        const el = document.activeElement as HTMLElement | null;
+        const box = el?.querySelector<HTMLElement>('.graph-node');
+        return { node: !!el?.classList.contains('react-flow__node'), outline: box ? getComputedStyle(box).outlineStyle : 'none', id: el?.dataset.id ?? '' };
+      });
+      expect(ring.node, 'keyboard focus is on a box').toBe(true);
+      expect(ring.outline, 'the focus ring shows').not.toBe('none');
+      await page.keyboard.press('Enter');
+      if (ring.id !== here.slice(1)) await page.waitForURL((u) => u.pathname !== here);
+      await page.goBack();
+      await page.waitForURL((u) => u.pathname === here);
+      await page.waitForTimeout(900);
+    },
+  },
+  {
+    feature: 'the . command frames the focus again after a free zoom',
+    run: async (page) => {
+      const framed = await camera(page);
+      await page.locator('.pane-graph .react-flow__controls-zoomout').click();
+      await page.waitForTimeout(600);
+      expect(await camera(page)).not.toBe(framed);
+      await page.locator('.pane-graph .graph-count').click();
+      await page.keyboard.press('.');
+      await page.waitForTimeout(1300);
+      expect(await camera(page)).toBe(framed);
+    },
+  },
+  {
+    feature: 'depth 1 to 3 labels or frames more',
+    run: async (page) => {
+      const counts: number[] = [];
+      for (const d of ['1', '2', '3']) {
+        await page.locator('.pane-graph .graph-depth button', { hasText: d }).click();
+        await expect(page.locator('.pane-graph .graph-depth button', { hasText: d })).toHaveAttribute('aria-pressed', 'true');
+        await page.waitForTimeout(1300);
+        counts.push(await labeledCount(page));
+      }
+      expect(counts.every((c) => c > 0), `labeled boxes at depths 1-3: ${counts}`).toBe(true);
+      await page.locator('.pane-graph .graph-depth button', { hasText: '1' }).click();
+      await page.waitForTimeout(1300);
+    },
+  },
+  {
+    feature: 'a hidden kind keeps its space, and the minimap shows',
+    run: async (page) => {
+      const before = await places(page);
+      await page.locator('.pane-graph .graph-filters > summary').click();
+      const kind = page.locator('.pane-graph .graph-filter-body fieldset').nth(1).locator('input[type="checkbox"]').first();
+      await kind.uncheck();
+      await page.waitForTimeout(600);
+      const after = await places(page);
+      for (const [id, place] of Object.entries(after)) if (before[id] && !id.startsWith('bar:')) expect(place, id).toBe(before[id]);
+      await kind.check();
+      await page.locator('.pane-graph .graph-filter-body input[role="switch"]').check();
+      await expect(page.locator('.pane-graph .graph-minimap')).toBeVisible();
+      await page.locator('.pane-graph .graph-filter-body input[role="switch"]').uncheck();
+      await page.locator('.pane-graph .graph-filters > summary').click();
+    },
+  },
+  {
+    feature: 'hovering a box spotlights it and Details follows the hover',
+    run: async (page) => {
+      const { id, x, y } = await labeledInView(page);
+      await page.mouse.move(x, y);
+      await expect(page.locator('.pane-graph .graph-flow.has-spotlight')).toBeAttached();
+      await expect(page.locator('.side-bar')).toContainText(id);
+      await page.mouse.move(2, 2);
+    },
+  },
+  {
+    feature: 'the side bar\'s Outline lists what the camera frames, and History opens',
+    run: async (page) => {
+      for (const view of ['Outline', 'History', 'Details']) {
+        await page.locator('.side-bar .side-switch button', { hasText: view }).or(page.locator(`.side-bar .side-switch button[aria-label="${view}"]`)).first().click();
+        await page.locator('.side-bar .side-view > h2', { hasText: view }).waitFor();
+        if (view === 'Outline') expect(await page.locator('.side-bar .side-view a, .side-bar .side-view li').count()).toBeGreaterThan(0);
+      }
+    },
+  },
+  {
+    feature: 'no label is clipped',
+    run: async (page) => {
+      const clipped = await page.evaluate(() => {
+        const out: string[] = [];
+        for (const node of document.querySelectorAll<HTMLElement>('.pane-graph .react-flow__node[data-id]')) {
+          const box = node.querySelector<HTMLElement>('.graph-node');
+          if (!box) continue;
+          for (const line of box.querySelectorAll<HTMLElement>('small, strong')) {
+            if (line.scrollWidth > line.clientWidth + 0.5) out.push(`${node.dataset.id} ${line.tagName}: ${line.scrollWidth} wide in ${line.clientWidth}`);
+            if (line.scrollHeight > line.clientHeight + 0.5) out.push(`${node.dataset.id} ${line.tagName}: ${line.scrollHeight} tall in ${line.clientHeight}`);
+            if (line.offsetTop + line.offsetHeight > box.clientHeight + 1) out.push(`${node.dataset.id} ${line.tagName}: below its box`);
+          }
+        }
+        return out;
+      });
+      expect(clipped).toEqual([]);
+    },
+  },
+];
+
+for (const layout of ['tree', 'nested'] as const) {
+  test(`LA-EXP-T189 every graph feature works in the ${LAYOUT_NAMES[layout]} layout`, async ({ page }) => {
+    await openPage(page, `${RECORD}?view=graph`);
+    await nodes(page);
+    await page.locator('.pane-graph .react-flow__node[data-id^="LA-"]:not(.is-plain)').nth(1).waitFor();
+    await page.waitForTimeout(900);
+    if (layout === 'nested') {
+      await page.locator('.pane-graph .graph-count').click();
+      await page.keyboard.press('v');
+      await page.waitForTimeout(1300);
+    }
+    for (const row of PARITY) await test.step(row.feature, () => row.run(page, layout));
+    if (layout === 'nested') {
+      await test.step('every drawn child lies inside its parent on screen', async () => {
+        const outside = await page.evaluate(() => {
+          const rects = new Map([...document.querySelectorAll<HTMLElement>('.pane-graph .react-flow__node[data-id]')].map((el) => [el.dataset.id!, el.getBoundingClientRect()]));
+          const out: string[] = [];
+          for (const [id, r] of rects) {
+            // A child's ID extends its parent's here: a group's by "/", a record's own children by "-".
+            for (const [pid, p] of rects) {
+              if (pid === id || !(id.startsWith(`${pid}/`))) continue;
+              if (r.left < p.left - 1 || r.right > p.right + 1 || r.top < p.top - 1 || r.bottom > p.bottom + 1) out.push(`${id} outside ${pid}`);
+            }
+          }
+          return out;
+        });
+        expect(outside).toEqual([]);
+      });
+      await test.step('the layout is kept with the tab across a reload', async () => {
+        await page.reload();
+        await nodes(page);
+        await expect(page.locator('.pane-graph .graph-layout button[aria-pressed="true"]')).toHaveText('Nested');
+      });
+    }
+  });
+}
