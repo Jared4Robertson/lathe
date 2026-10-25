@@ -1358,7 +1358,8 @@ A record with more children of one kind than the product's `structure.maxChildre
 The setting is read from `lathe.config.json` (default 15) through the settings table. A parent with that
 many children of one kind is missing a level between them, such as a capability, a layer or another
 aggregate. Children are counted per kind. Tests are exempt: the app groups them by what they prove
-(FORMAT.md section 15), so they are never shown as one list. A child whose parent does not exist is only
+(FORMAT.md section 15), so they are never shown as one list. A flow's steps are counted per path
+(FORMAT.md section 14), since each path reads as its own list. A child whose parent does not exist is only
 unknown-parent. Add a level and move the children into it.
 
 <a id="check-lone-child"></a>

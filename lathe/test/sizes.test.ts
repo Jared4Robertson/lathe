@@ -18,6 +18,13 @@ beforeAll(async () => {
 });
 
 describe('too-many-children', () => {
+  it('LA-CHK-T333 A flow\'s steps are counted per path, and the message names a path other than main', () => {
+    // SZ-D-F01 has 3 steps on main and 3 on refused: 6 steps, but no path has more than 3.
+    expect(recordsOf(sizes, 'too-many-children')).not.toContain('SZ-D-F01');
+    const f02 = ofCheck(sizes, 'too-many-children').filter((p) => p.record === 'SZ-D-F02');
+    expect(f02.map((p) => p.message)).toEqual([expect.stringContaining('has 4 children of kind flow_step on path refused, more than the 3')]);
+  });
+
   it('LA-CHK-T277 A record with more children of one kind than maxChildren is a warning naming the parent, kind and count', () => {
     const found = ofCheck(sizes, 'too-many-children').find((p) => p.record === 'SZ-D-A1');
     expect(found).toEqual({
