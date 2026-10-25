@@ -10,7 +10,7 @@ import { parseRecordFile, proseTokens, type ProseToken } from './parse.ts';
 import type { Coverage, CoverageGap, Kind, ObligationCoverage, Problem, RelationRule, SectionRule, SpecLink, SpecRecord, TestCounts, Workspace } from './types.ts';
 
 export type * from './types.ts';
-export { loadConfig, PACKAGE_DIR, CONFIG_FILE, type LatheConfig } from './config.ts';
+export { loadConfig, PACKAGE_DIR, CONFIG_FILE, DEFAULT_MAX_CHILDREN, type LatheConfig } from './config.ts';
 
 export const CHECKS_DIR = path.join(PACKAGE_DIR, 'checks');
 
@@ -484,6 +484,9 @@ export async function loadWorkspace(root: string, options: LoadOptions = {}): Pr
     // Every distinct ID a record's body cites (a record's ID, or a token with a known prefix), existing or not.
     await connection.run('CREATE TABLE prose_mentions (path VARCHAR, record VARCHAR, cited VARCHAR)');
     await append(connection, 'prose_mentions', citations.map((c) => [c.path, c.record, c.cited]));
+    // The product's settings from lathe.config.json that checks read, one row each, such as structure.maxChildren.
+    await connection.run('CREATE TABLE settings (name VARCHAR, value VARCHAR)');
+    await append(connection, 'settings', [['structure.maxChildren', String(config.maxChildren)]]);
 
     problems.push(...(await runChecks(connection, checksDir, config.checksDir, root)));
     const coverage = await computeCoverage(connection);
