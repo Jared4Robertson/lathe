@@ -10,6 +10,8 @@ export interface Kind {
   required_fields: string[];
   /** An obligation must be designed (satisfied), built and proved; coverage counts every obligation kind. */
   obligation: boolean;
+  /** An obligation that needs proof only (kinds.csv obligation value `proof`): designed and built are not asked of it. */
+  proof_only: boolean;
   description: string;
 }
 
