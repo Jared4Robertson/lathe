@@ -907,6 +907,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 .app.is-narrow .graph-toolbar { flex-wrap: wrap; row-gap: 4px; }
 .app.is-narrow .erd-key { max-height: 30dvh; overflow-y: auto; padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
 .app.is-narrow .model-header { padding: 8px 16px; }
+.app.is-narrow .placeholder { padding: 16px; }
 
 /* The nav sheet: the whole screen, the rail kept at its left, sliding in from the left edge. */
 .menu.is-drawer, .menu.is-drawer.has-spaces { inset: 0; width: auto; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); border: 0; border-radius: 0; box-shadow: none; }
@@ -967,8 +968,8 @@ a.row-link.row-link:focus-visible { outline: none; }
 /* A canvas by touch: the selected node is outlined, and a card at the bottom names it with an Open chip. */
 .graph-flow, .model-flow { touch-action: none; }
 .react-flow__node.is-armed :is(.graph-node, .erd-box) { box-shadow: 0 0 0 3px var(--steel); }
-.tap-card { position: absolute; z-index: 6; left: 50%; bottom: calc(12px + env(safe-area-inset-bottom)); translate: -50% 0; display: flex; align-items: center; gap: 8px; max-width: calc(100% - 24px); box-sizing: border-box; padding: 6px 6px 6px 14px; background: var(--sheet); color: var(--ink); border: 1px solid var(--rule); border-radius: 12px; box-shadow: 0 6px 20px var(--shadow); }
-.tap-card-text { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr); }
+.tap-card { position: absolute; z-index: 6; left: 56px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 8px; max-width: 420px; box-sizing: border-box; padding: 6px 6px 6px 14px; background: var(--sheet); color: var(--ink); border: 1px solid var(--rule); border-radius: 12px; box-shadow: 0 6px 20px var(--shadow); }
+.tap-card-text { flex: 1; min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr); }
 .tap-card-text small { color: var(--muted); font-size: 0.72rem; }
 .tap-card-text strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.92rem; }
 .tap-open { flex: none; min-height: var(--touch-target); padding: 0 16px; border: 0; border-radius: 999px; background: var(--steel); color: var(--on-mark); font: inherit; font-weight: 600; cursor: pointer; }
@@ -995,6 +996,8 @@ a.row-link.row-link:focus-visible { outline: none; }
   :is(.tree-toggle, .tab-close, .pane-close, .graph-group-chevron, .color-swatch)::before { content: ""; position: absolute; inset: 50% auto auto 50%; width: var(--touch-target); height: var(--touch-target); translate: -50% -50%; }
   .tree-toggle { width: 32px; height: 32px; }
   .tab-close { opacity: 1; }
+  .topbar-up { position: relative; }
+  .topbar-up::before { content: ""; position: absolute; inset: -14px 0; }
   .tab { padding-right: 4px; }
   .sheet-handle { min-height: var(--touch-target); }
 }
