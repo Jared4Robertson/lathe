@@ -1,12 +1,14 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import './graph/setup';
-import { openApp } from './helpers';
+import { openApp, openSideBar } from './helpers';
 
 // Follow-ups from brief 56: a stage or folder group is named by its own name, and a tab keeps the graph's switches.
 
 describe('group names and tab settings', () => {
   it('LA-BRW-T554 A stage or folder group page names the group by its own name, not by a kind ("Define", never "Defines")', async () => {
+    // The side bar starts closed in the Wiki view (brief 64); this test reads it open.
+    openSideBar('details', ['wiki', 'graph', 'model']);
     await openApp('/DM-SHOP/define?view=wiki');
     await screen.findByRole('heading', { level: 1, name: /^Define/ });
     expect(document.querySelector('.group-intro')).toHaveTextContent(/^Define of DM-SHOP/);

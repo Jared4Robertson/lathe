@@ -1,6 +1,6 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { main, openApp } from './helpers';
+import { main, openApp, openSideBar } from './helpers';
 
 // Addresses are bare IDs (LA-PAT-APP-CODE-R19): tabs and space pages saved under the old
 // addresses open at the new ones, and a product's and a domain's one page loses nothing the
@@ -26,6 +26,7 @@ describe('bare-ID addresses', () => {
   });
 
   it('LA-BRW-T523 A product\'s and a domain\'s one page, at its ID, shows its body, its facts, its links both ways and its problems', async () => {
+    openSideBar();
     for (const [path, title, body] of [['/DM', 'Demo shop', /A demo product for the/], ['/DM-SHOP', 'Shopping', /People pick goods and pay/]] as const) {
       await openApp(path);
       await screen.findByRole('heading', { level: 1, name: title });

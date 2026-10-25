@@ -23,6 +23,8 @@ export interface ModelViewProps {
   index: SpecIndex;
   focus: string;
   onNavigate: (id: string) => void;
+  /** Called with the box under the pointer or keyboard focus (`hover`) and the one selected by a first tap (`selected`), for the side bar. */
+  onPeek?: (kind: 'hover' | 'selected', id: string | null) => void;
 }
 
 interface BoxData extends Record<string, unknown> { box: ErdBox; focus: boolean }
@@ -99,7 +101,7 @@ export function lineWords(line: ErdLine, label: string, titles: ReadonlyMap<stri
 const nodeTypes = { box: BoxView };
 const edgeTypes = { line: LineView };
 
-export function ModelView({ index, focus, onNavigate }: ModelViewProps) {
+export function ModelView({ index, focus, onNavigate, onPeek }: ModelViewProps) {
   const erd = useMemo(() => erdFor(index, focus), [index, focus]);
   if (!erd) return <p className="hint model-missing">The Model view shows a domain, an aggregate or an entity.</p>;
   const scope = index.byId.get(erd.scope);
@@ -120,7 +122,7 @@ export function ModelView({ index, focus, onNavigate }: ModelViewProps) {
       ) : (
         <div className="model-canvas">
           <ReactFlowProvider>
-            <ErdCanvas relations={index.workspace.relations} erd={erd} focus={focus} onNavigate={onNavigate} />
+            <ErdCanvas relations={index.workspace.relations} erd={erd} focus={focus} onNavigate={onNavigate} onPeek={onPeek} />
           </ReactFlowProvider>
         </div>
       )}
@@ -205,7 +207,7 @@ function fitRects(rects: Map<string, Rect>, width: number, height: number, paddi
   return { x: width / 2 - ((minX + maxX) / 2) * zoom, y: height / 2 - ((minY + maxY) / 2) * zoom, zoom };
 }
 
-function ErdCanvas({ relations, erd, focus, onNavigate }: { relations: readonly RelationRule[]; erd: Erd; focus: string; onNavigate: (id: string) => void }) {
+function ErdCanvas({ relations, erd, focus, onNavigate, onPeek }: { relations: readonly RelationRule[]; erd: Erd; focus: string; onNavigate: (id: string) => void; onPeek?: ModelViewProps['onPeek'] }) {
   const [placed, setPlaced] = useState<{ erd: Erd; rects: Map<string, Rect> } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const wrapper = useRef<HTMLDivElement>(null);
@@ -305,6 +307,10 @@ function ErdCanvas({ relations, erd, focus, onNavigate }: { relations: readonly 
   const canOpen = useCallback((id: string) => id !== focus, [focus]);
   const tap = useTapToOpen(onNavigate, canOpen, wrapper, focus);
   const armedBox = tap.armed ? erd.boxes.find((b) => b.id === tap.armed) : undefined;
+  useEffect(() => { onPeek?.('selected', tap.armed); }, [tap.armed, onPeek]);
+  // A new diagram starts with nothing under the pointer.
+  useEffect(() => () => onPeek?.('hover', null), [erd, onPeek]);
+  const boxAt = (target: EventTarget | null) => (target instanceof Element ? target.closest('.react-flow__node')?.getAttribute('data-id') ?? null : null);
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     if (e.key !== 'Enter' && e.key !== ' ') return;
     const id = (e.target as HTMLElement).closest?.('.react-flow__node')?.getAttribute('data-id');
@@ -315,7 +321,7 @@ function ErdCanvas({ relations, erd, focus, onNavigate }: { relations: readonly 
 
   if (error) return <p className="error">Couldn't draw the diagram: {error}</p>;
   return (
-    <div ref={wrapper} className="model-flow" onKeyDown={onKeyDown}>
+    <div ref={wrapper} className="model-flow" onKeyDown={onKeyDown} onFocus={(e) => onPeek?.('hover', boxAt(e.target))} onBlur={() => onPeek?.('hover', null)}>
       {!placed && <p className="hint graph-loading">Laying out the diagram…</p>}
       <ReactFlow
         nodes={nodes}
@@ -327,6 +333,8 @@ function ErdCanvas({ relations, erd, focus, onNavigate }: { relations: readonly 
         elementsSelectable={false}
         edgesFocusable={false}
         onNodeClick={(e, n) => tap.onNodeClick(e, n.id)}
+        onNodeMouseEnter={(_, n) => onPeek?.('hover', n.id)}
+        onNodeMouseLeave={() => onPeek?.('hover', null)}
         onPaneClick={tap.clear}
         minZoom={0.1}
         proOptions={{ hideAttribution: true }}

@@ -188,6 +188,16 @@ function probes({ firstKeys, deferred }: { firstKeys: string[]; deferred: string
 /** Starts the probes on a page; `firstKeys` are tracked from the very first frame (for a first load). */
 export async function installProbes(page: Page, firstKeys: string[] = []) {
   await page.addInitScript(probes, { firstKeys, deferred: DEFERRED });
+  // The scenarios read every page with the side bar (the inspector) open, as a Reader who opened it
+  // in the Wiki view too (it starts closed there, brief 64); a choice made in a scenario is kept.
+  await page.addInitScript(() => {
+    try {
+      if (!localStorage.getItem('lathe:side-bar')) {
+        const open = { open: true, view: 'details' };
+        localStorage.setItem('lathe:side-bar', JSON.stringify({ wiki: open, graph: open, model: open }));
+      }
+    } catch { /* storage unavailable: the defaults apply */ }
+  });
 }
 
 const sum = (shifts: Shift[]) => Math.round(shifts.reduce((n, s) => n + s.value, 0) * 10000) / 10000;

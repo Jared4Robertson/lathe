@@ -369,6 +369,11 @@ export interface GraphViewProps {
   onSettingsChange?: (settings: GraphSettings) => void;
   /** Called with the drawn graph, so the host's inspector can list what it connects. */
   onGraph?: (info: GraphInfo) => void;
+  /**
+   * Called with the node under the pointer or keyboard focus (the spotlight's, `hover`) and the one
+   * selected by a first tap (`selected`), or null, so the host's side bar can describe it.
+   */
+  onPeek?: (kind: 'hover' | 'selected', id: string | null) => void;
 }
 
 /**
@@ -388,7 +393,7 @@ function trailItem(index: SpecIndex, id: string): { body: ReactNode; full: strin
   return { body: <span className="trail-name">{name}</span>, full: `${name} of ${parseGroupId(id)!.parent}` };
 }
 
-export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted, onSettingsChange, onGraph }: GraphViewProps) {
+export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted, onSettingsChange, onGraph, onPeek }: GraphViewProps) {
   const [own, setOwn] = useState<GraphSettings>(DEFAULT_GRAPH_SETTINGS);
   const settings = hosted ?? own;
   const { depth, filters, trace, openGroups } = settings;
@@ -534,7 +539,7 @@ export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted,
       <div className="graph-workspace">
         <div className="graph-canvas">
           <ReactFlowProvider>
-            <GraphCanvas index={index} graph={graph} onNavigate={onNavigate} onToggle={toggleGroup} minimap={minimap} />
+            <GraphCanvas index={index} graph={graph} onNavigate={onNavigate} onToggle={toggleGroup} minimap={minimap} onPeek={onPeek} />
           </ReactFlowProvider>
         </div>
       </div>
@@ -669,12 +674,13 @@ export function fitPositions(positions: Map<string, { x: number; y: number }>, w
   return { x: width / 2 - ((minX + maxX) / 2) * zoom, y: height / 2 - ((minY + maxY) / 2) * zoom, zoom };
 }
 
-function GraphCanvas({ index, graph, onNavigate: navigate, onToggle, minimap }: {
+function GraphCanvas({ index, graph, onNavigate: navigate, onToggle, minimap, onPeek }: {
   index: SpecIndex;
   graph: Neighborhood;
   onNavigate: (id: string) => void;
   onToggle: (id: string, nowOpen: boolean) => void;
   minimap: boolean;
+  onPeek?: GraphViewProps['onPeek'];
 }) {
   // A chip of the light ring re-centers on the folder it stands for.
   const chipTargets = useMemo(() => new Map(graph.nodes.filter((n) => n.more).map((n) => [n.id, n.more!.target])), [graph]);
@@ -921,6 +927,8 @@ function GraphCanvas({ index, graph, onNavigate: navigate, onToggle, minimap }: 
     if (!root) return;
     for (const el of root.querySelectorAll('.is-lit')) el.classList.remove('is-lit');
     const node = id && placed?.graph.nodes.find((n) => n.id === id);
+    // The side bar's Details shows the node lit, a context node too (it has no spotlight of its own).
+    onPeek?.('hover', node && node.kind !== FILE_KIND && !node.more ? node.id : null);
     if (!node || node.context) { root.classList.remove('has-spotlight'); return; }
     const lit = new Set([id]);
     const edgeIds = new Set<string>();
@@ -933,7 +941,7 @@ function GraphCanvas({ index, graph, onNavigate: navigate, onToggle, minimap }: 
     root.classList.add('has-spotlight');
     for (const el of root.querySelectorAll<HTMLElement>('.react-flow__node')) if (lit.has(el.dataset.id ?? '')) el.classList.add('is-lit');
     for (const el of root.querySelectorAll<SVGGElement>('g.graph-edge-motion')) if (edgeIds.has(`${el.dataset.source} ${el.dataset.target}`)) el.classList.add('is-lit');
-  }, [placed]);
+  }, [placed, onPeek]);
   // A new picture starts without a spotlight.
   useEffect(() => () => spot(null), [spot]);
 
@@ -947,6 +955,7 @@ function GraphCanvas({ index, graph, onNavigate: navigate, onToggle, minimap }: 
   const canOpen = useCallback((id: string) => !!placed && !id.startsWith('file:') && !id.startsWith(LEAVING) && id !== placed.graph.focus, [placed]);
   const tap = useTapToOpen(onNavigate, canOpen, wrapper, graph.focus);
   const armedNode = tap.armed ? placed?.graph.nodes.find((n) => n.id === tap.armed) : undefined;
+  useEffect(() => { onPeek?.('selected', tap.armed); }, [tap.armed, onPeek]);
 
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     if (order.length === 0) return;

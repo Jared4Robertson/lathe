@@ -1,7 +1,7 @@
 import { fireEvent, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { main, openApp, section } from './helpers';
+import { main, openApp, openSideBar, section, sideBar } from './helpers';
 
 // Wiki pages and the inspector show one level below their record; deeper levels are folded under
 // a disclosure triangle, with their counts and marks still on the folded row.
@@ -55,6 +55,7 @@ describe('one level deep', () => {
   });
 
   it('LA-BRW-T134 A record page shows its direct children with theirs folded, in the wiki and the inspector, and a product page lists its domains but not their contents', async () => {
+    openSideBar();
     await openApp('/DM-SHOP');
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     const wiki = screen.getByRole('region', { name: 'Wiki pane' });
@@ -64,10 +65,12 @@ describe('one level deep', () => {
     expect(uc).toHaveTextContent('2 UC requirements');
     expect(uc.querySelector('ul.nested')).toBeNull();
     expect(within(children).queryByRole('link', { name: /DM-SHOP-UC01-R01/ })).toBeNull();
-    const inspector = screen.getByRole('complementary', { name: 'Inspector' });
-    const inInspector = within(within(inspector).getByRole('list', { name: 'Children' }));
-    expect(inInspector.getByRole('button', { name: 'Expand DM-SHOP-UC01' })).toHaveAttribute('aria-expanded', 'false');
-    expect(inInspector.queryByRole('link', { name: /DM-SHOP-UC01-R01/ })).toBeNull();
+
+    // On a record's page the side bar does not repeat the children the wiki lists (brief 64).
+    await openApp('/DM-SHOP-UC01');
+    await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
+    expect(within(main()).getByRole('list', { name: 'UC requirements of DM-SHOP-UC01' })).toBeInTheDocument();
+    expect(within(sideBar()).queryByRole('list', { name: /^UC requirements/ })).toBeNull();
 
     await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });

@@ -62,9 +62,9 @@ describe('graph page', () => {
     expect(side.getAllByText('Domain rule').length).toBeGreaterThan(0);
     expect(side.getByText('A thing is never deleted', { selector: '.inspector-name' })).toBeTruthy();
     expect(side.getByText('No component satisfies P-D-DR02')).toBeTruthy();
-    // The gaps in the words of the wiki's Traceability callouts.
-    const gaps = side.getByRole('region', { name: /Coverage gaps/ });
-    expect([...gaps.querySelectorAll('li')].map((li) => li.textContent)).toEqual(['Not designed yet: nothing designs it.', 'Not proved yet: no automated or manual test proves it.']);
+    // The gaps in the words of the wiki's Traceability callouts, in the side bar's compact Traceability (brief 64).
+    const gaps = side.getByRole('region', { name: /^Traceability/ });
+    expect([...gaps.querySelectorAll('li[data-gap]')].map((li) => li.textContent)).toEqual(['Not designed yet', 'Not proved yet']);
     expect(side.getByRole('link', { name: 'P-D-DR02' }).getAttribute('href')).toBe('/P-D-DR02');
   });
 

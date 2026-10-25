@@ -157,15 +157,15 @@ function RecordBody({ index, record, actions, header, side }: { index: SpecIndex
           {record.kind === 'aggregate' && <DomainEvents index={index} aggregate={record} />}
           {/* After the body and its kind's own sections, before the children. A pattern's followers have their own section. */}
           <Traceability index={index} record={record} skip={record.kind === 'pattern' ? PATTERN_SKIP : undefined} />
-          {side ? (
-            <Section title="Problems" count={problems.length}>
-              <ProblemList index={index} problems={problems} showRecord={false} />
-            </Section>
-          ) : children.length > 0 && record.kind !== 'pattern' && (
+          {/* Without the facts beside it, the body lists the direct children itself; the problems show either way (the side bar does not repeat them). */}
+          {!side && children.length > 0 && record.kind !== 'pattern' && (
             <Section title={childrenTitle} count={children.length}>
               <RecordTree index={index} records={children} label={`${childrenTitle} of ${id}`} showKind />
             </Section>
           )}
+          <Section title="Problems" count={problems.length}>
+            <ProblemList index={index} problems={problems} showRecord={false} />
+          </Section>
         </div>
         {side && <aside className="record-side"><RecordFacts index={index} record={record} /></aside>}
       </div>
