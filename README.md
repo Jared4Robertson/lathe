@@ -35,6 +35,7 @@ npm --prefix lathe install && npm --prefix app install && npm --prefix desktop i
 | The record format | `npm --prefix lathe run lathe -- format --root ..` prints the concepts, then every kind, relation, folder and check of this repo. |
 | Serve a built app | `npm --prefix lathe run build`, then `npm --prefix lathe run lathe -- serve --root ..` serves the built app at http://127.0.0.1:5330. |
 | The desktop app | `npm --prefix desktop run dev` (hot-reloading), `npm --prefix desktop run start` (from the built package) or `npm --prefix desktop run pack` (a `Lathe.app` in `desktop/release/`). |
+| Tests | `npm --prefix lathe test`, `npm --prefix app test` and `npm --prefix desktop test` (at most 2 workers each), with `run typecheck` in each package. `npm --prefix app run test:stability` runs the stability suite: Playwright in Chromium, checking that nothing on the page jumps, in about two minutes. |
 
 The npm scripts run in `lathe/`, so `--root ..` names this repo. In a product repo, the same commands are `npx lathe check`, `npx lathe format` and `npx lathe serve`; the [package README](lathe/README.md) has every option.
 
