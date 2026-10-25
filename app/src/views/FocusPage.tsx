@@ -23,6 +23,7 @@ import { Inspector } from './Inspector';
 import { PageBar, ViewIcon } from './PageBar';
 import { TAB_PANEL_ID, tabId, tabLabel } from './TabStrip';
 import { PANE_SIZE_KEY, PANE_WEIGHT, PANE_WEIGHT_MAX, PANE_WEIGHT_MIN, VIEW_KEY, saveLastSettings, usePageTabs, type PageTabsApi, type TabView } from './useTabs';
+import { Button } from '../components/Button';
 
 // One page for one thing (a record, a group, a product or a domain), at one address, in up to
 // three views, each a pane you open and close: Wiki (the page to read), Graph (the graph centered
@@ -534,7 +535,7 @@ function PhoneLayout(props: PhoneLayoutProps) {
                     <span className="tab-title">{title}</span>
                   </button>
                   {t.preview && (
-                    <button type="button" className="pages-keep" aria-label={`Keep ${name} open`} onClick={() => tabs.keep(t.key)}>Keep</button>
+                    <Button className="pages-keep" label={`Keep ${name} open`} onClick={() => tabs.keep(t.key)}>Keep</Button>
                   )}
                   <button type="button" className="icon-button" aria-label={`Close ${name}`} onClick={() => tabs.close(t.key)}>
                     <Icon name="x" size={16} />
