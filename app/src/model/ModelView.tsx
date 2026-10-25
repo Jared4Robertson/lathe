@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { Background, Controls, Handle, Position, ReactFlow, ReactFlowProvider, useReactFlow, type Edge, type EdgeProps, type Node, type NodeProps } from '@xyflow/react';
 import type { SpecIndex } from '../specs/data';
 import { readMotion } from '../graph/motion';
@@ -72,13 +72,13 @@ export function ModelView({ index, focus, onNavigate }: ModelViewProps) {
   if (!erd) return <p className="hint model-missing">The Model view shows a domain, an aggregate or an entity.</p>;
   const scope = index.byId.get(erd.scope);
   const empty = erd.boxes.length === 0;
+  const counts = `${erd.boxes.length} ${erd.boxes.length === 1 ? 'box' : 'boxes'} · ${erd.lines.length} ${erd.lines.length === 1 ? 'line' : 'lines'}`;
+  const caption = erd.level === 'domain' ? `The aggregates of ${scope?.title} and how they refer to each other` : `The entities of ${scope?.title} and their relationships`;
   return (
     <section className="model-page" aria-label="Model">
       <header className="model-header">
-        <p className="model-caption">
-          {erd.level === 'domain' ? <>The aggregates of <strong>{scope?.title}</strong> and how they refer to each other</> : <>The entities of <strong>{scope?.title}</strong> and their relationships</>}
-          {' · '}{erd.boxes.length} {erd.boxes.length === 1 ? 'box' : 'boxes'} · {erd.lines.length} {erd.lines.length === 1 ? 'line' : 'lines'}
-        </p>
+        {/* One line of one text, cut with an ellipsis, its whole text in its tooltip: a new caption never moves anything (LA-PAT-APP-CODE-R17). */}
+        <p className="model-caption" title={`${caption} · ${counts}`}>{`${caption} · ${counts}`}</p>
       </header>
       {empty ? (
         <p className="placeholder model-empty">{erd.level === 'domain' ? 'This domain has no aggregates yet.' : 'This aggregate has no entities yet: add entity records under it, each with a Fields table.'}</p>
@@ -202,16 +202,35 @@ function ErdCanvas({ erd, focus, onNavigate }: { erd: Erd; focus: string; onNavi
     const box = wrapper.current?.getBoundingClientRect();
     if (!placed || placed.rects.size === 0 || !box || box.width <= 0 || box.height <= 0) return;
     const motion = readMotion();
-    setViewport(fitRects(placed.rects, box.width, box.height), animate ? { duration: motion.duration, ease: motion.ease } : { duration: 0 });
+    setViewport(fitRects(placed.rects, box.width, box.height), animate && motion.duration > 0 ? { duration: motion.duration, ease: motion.ease } : { duration: 0 });
   }, [placed, setViewport]);
-  useEffect(() => { fit(true); }, [fit]);
+  // Before paint (LA-PAT-APP-CODE-R17): the first picture appears already fitted, never drawn at
+  // the default viewport and then moved; each picture after it glides from the view before.
+  const fitted = useRef(false);
+  useLayoutEffect(() => {
+    if (!placed) return;
+    fit(fitted.current);
+    fitted.current = true;
+  }, [placed, fit]);
+  // Fit again whenever the canvas changes size. It observes once, for the canvas's life, and only
+  // acts on a real change: observing anew with each picture reported the size again at once and
+  // cut each glide short with a jump.
+  const latestFit = useRef(fit);
+  latestFit.current = fit;
   useEffect(() => {
     const el = wrapper.current;
     if (!el || typeof ResizeObserver === 'undefined') return;
-    const observer = new ResizeObserver(() => fit(false));
+    let last = '';
+    const observer = new ResizeObserver(() => {
+      const box = el.getBoundingClientRect();
+      const size = `${Math.round(box.width)}x${Math.round(box.height)}`;
+      if (size === last) return;
+      last = size;
+      latestFit.current(false);
+    });
     observer.observe(el);
     return () => observer.disconnect();
-  }, [fit]);
+  }, []);
 
   const go = (id: string) => { if (id !== focus) onNavigate(id); };
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {

@@ -15,6 +15,8 @@
   --shell: #DDE3E6; --panel-gap: 6px; --panel-radius: 8px;
   /* The title above a graph or a model pane: one fixed height, so the canvas below it never moves. */
   --pane-title-height: 104px;
+  /* The ERD's key under the Model view: one height for every ERD, so the canvas never resizes (LA-PAT-APP-CODE-R17). */
+  --erd-key-height: 5.5rem;
   --display: "Archivo", "Helvetica Neue", Arial, sans-serif;
   --body: "Public Sans", "Segoe UI", system-ui, sans-serif;
   --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
@@ -117,7 +119,7 @@ h3 { font-size: 0.95rem; margin-top: 8px; }
 .menu .nav-domains a { font-size: 0.86rem; padding: 5px 8px; }
 .menu .count { margin-left: 4px; font: 500 0.72rem var(--mono); color: var(--muted); }
 .menu .count.has-errors { color: var(--spark); }
-.spec-page { min-width: 0; min-height: 0; overflow-y: auto; }
+.spec-page { min-width: 0; min-height: 0; overflow-y: auto; scrollbar-gutter: stable; }
 .spec-page .placeholder { min-height: 60vh; }
 .spec-body { max-width: 1080px; padding: 24px 24px 48px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; align-content: start; }
 .spec-body.with-graph { max-width: none; }
@@ -244,33 +246,36 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
   display: flex; flex-direction: column; min-width: 0; min-height: 0; height: 100%;
 }
 .graph-header { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 14px 20px 10px; border-bottom: 1px solid var(--rule); align-items: stretch; }
-.graph-trail ol { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px; font-size: 0.82rem; }
+.graph-trail ol { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: nowrap; gap: 4px; font-size: 0.82rem; line-height: 1.5; block-size: 1.5em; overflow: auto hidden; scrollbar-width: none; }
 .graph-trail li + li::before { content: "›"; color: var(--muted); margin-right: 4px; }
 .graph-trail a { color: var(--steel); text-decoration: none; }
 .graph-trail a:hover { text-decoration: underline; }
 /* A trail item: the name, cut short with an ellipsis (the full text is its tooltip), then the ID in code style. */
-.graph-trail li { min-width: 0; max-width: 22rem; display: flex; }
+.graph-trail li { min-width: 0; max-width: 22rem; display: flex; white-space: nowrap; }
+/* The center (always the last item) keeps its name; the earlier ones shrink first (LA-PAT-APP-CODE-R17). */
+.graph-trail li:last-child { flex-shrink: 0; }
 .graph-trail .trail-item { display: inline-flex; align-items: baseline; gap: 4px; min-width: 0; max-width: 100%; }
 .graph-trail .trail-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .graph-trail .trail-id { flex: none; color: var(--muted); font-size: 0.78rem; }
 .graph-trail [aria-current="page"] .trail-name { font-weight: 700; }
-.graph-toolbar { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; font-size: 0.88rem; }
-.graph-depth { display: inline-flex; align-items: center; gap: 4px; }
+/* One line whatever the center (LA-PAT-APP-CODE-R17): the count takes what is left and is cut with an ellipsis, so the canvas below never moves; trace and filters sit at the right end. */
+.graph-toolbar { display: flex; flex-wrap: nowrap; gap: 10px 18px; align-items: center; font-size: 0.88rem; white-space: nowrap; }
+.graph-depth { display: inline-flex; align-items: center; gap: 4px; flex: none; }
 .graph-depth span { margin-right: 4px; color: var(--muted); }
 .graph-depth button, .graph-filter-actions button { font: inherit; font-size: 0.82rem; padding: 3px 10px; border: 1px solid var(--rule); border-radius: 5px; background: var(--sheet); color: var(--ink); cursor: pointer; }
 .graph-depth button[aria-pressed="true"] { background: var(--steel); border-color: var(--steel); color: var(--sheet); font-weight: 600; }
 .graph-depth button:disabled { opacity: 0.5; cursor: default; }
-.graph-trace-toggle { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
-.graph-filters { position: relative; }
+.graph-trace-toggle { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; flex: none; }
+.graph-filters { position: relative; flex: none; }
 .graph-filters > summary { cursor: pointer; display: inline-flex; gap: 6px; align-items: baseline; }
-.graph-filter-body { position: absolute; z-index: 10; top: calc(100% + 6px); left: 0; width: min(560px, 80vw); display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px 14px; padding: 12px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; box-shadow: 0 6px 20px var(--shadow-soft); }
+.graph-filter-body { position: absolute; z-index: 10; top: calc(100% + 6px); right: 0; width: min(560px, 80vw); display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px 14px; padding: 12px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; box-shadow: 0 6px 20px var(--shadow-soft); }
 .graph-filter-body fieldset { border: 0; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; align-content: start; }
 .graph-filter-body legend { font-weight: 600; font-size: 0.78rem; margin-bottom: 2px; }
 .graph-filter-body label { display: flex; gap: 6px; align-items: center; font-size: 0.82rem; }
 .graph-filter-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; }
 .graph-filter-actions button.secondary { color: var(--muted); }
 .graph-filter-body .hint { grid-column: 1 / -1; margin: 0; font-size: 0.78rem; }
-.graph-count { color: var(--muted); margin-left: auto; font-size: 0.8rem; }
+.graph-count { color: var(--muted); font-size: 0.8rem; flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
 .graph-page :is(button, input, summary, a):focus-visible { outline: 2px solid var(--steel); outline-offset: 2px; }
 
 .graph-workspace { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr); }
@@ -278,7 +283,7 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-flow { position: absolute; inset: 0; }
 .graph-loading { position: absolute; top: 12px; left: 16px; z-index: 5; margin: 0; }
 .graph-notice { position: absolute; top: 10px; left: 12px; right: 12px; z-index: 5; margin: 0; padding: 6px 10px; font-size: 0.82rem; border: 1px solid var(--warn); border-radius: 6px; background: var(--sheet); }
-.graph-side { border-left: 1px solid var(--rule); padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+.graph-side { border-left: 1px solid var(--rule); padding: 16px; overflow-y: auto; scrollbar-gutter: stable; display: flex; flex-direction: column; gap: 6px; }
 .graph-side h1 { margin: 0; font: 700 1.25rem var(--display); overflow-wrap: anywhere; }
 .graph-side h2 { margin: 12px 0 2px; font-size: 0.9rem; display: flex; gap: 6px; align-items: baseline; }
 .graph-side p { margin: 0; }
@@ -394,7 +399,7 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .long-list-tools { display: flex; gap: 8px; align-items: center; }
 .long-list-tools input { flex: 1; min-width: 0; font: inherit; font-size: 0.85rem; padding: 4px 8px; border: 1px solid var(--rule); border-radius: 5px; background: var(--paper); color: var(--ink); }
 .long-list-count { font: 0.75rem var(--mono); color: var(--muted); white-space: nowrap; }
-.long-list-scroll { max-height: 26rem; overflow-y: auto; overscroll-behavior: contain; border-radius: 6px; }
+.long-list-scroll { max-height: 26rem; overflow-y: auto; scrollbar-gutter: stable; overscroll-behavior: contain; border-radius: 6px; }
 .long-list-scroll:focus-visible, .long-list-tools input:focus-visible { outline: 2px solid var(--steel); outline-offset: 1px; }
 .long-list-empty { margin: 6px 0; }
 .menu .long-list-tools input { font-size: 0.8rem; }
@@ -725,7 +730,8 @@ a.row-link.row-link:focus-visible { outline: none; }
 /* The current domain is blue (--steel, --steel-bg), another domain gray (--muted on --paper, dashed), as Client's domain models draw them. */
 .model-page { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .model-header { padding: 10px 20px; border-bottom: 1px solid var(--rule); }
-.model-caption { margin: 0; font-size: 0.86rem; color: var(--muted); }
+/* One line, cut with an ellipsis (its whole text in its tooltip), so the canvas below never moves (LA-PAT-APP-CODE-R17). */
+.model-caption { margin: 0; font-size: 0.86rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .model-canvas { position: relative; flex: 1; min-height: 360px; }
 .model-flow { position: absolute; inset: 0; }
 .model-empty, .model-missing { flex: 1; margin: 0; padding: 24px; }
@@ -748,11 +754,13 @@ a.row-link.row-link:focus-visible { outline: none; }
 .erd-field-kind { flex: 0 1 auto; min-width: 0; max-width: 55%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 10.5px var(--mono); color: var(--muted); }
 .erd-line-path, .erd-end { fill: none; stroke: var(--steel); stroke-width: 1.4; }
 .erd-line.is-dashed .erd-line-path, .erd-key-line.is-dashed .erd-line-path { stroke-dasharray: 6 4; }
-.erd-key { display: flex; flex-wrap: wrap; gap: 8px 28px; align-items: flex-start; padding: 10px 20px 12px; border-top: 1px solid var(--rule); font-size: 0.8rem; color: var(--muted); }
+/* The key keeps one height whichever ERD it explains (a domain's has two line ends, an aggregate's up to five, in up to three rows),
+   so moving between a domain, an aggregate and an entity never resizes the canvas above it (LA-PAT-APP-CODE-R17). */
+.erd-key { flex: none; box-sizing: border-box; block-size: var(--erd-key-height); overflow-y: auto; scrollbar-gutter: stable; display: flex; flex-wrap: wrap; gap: 8px 28px; align-items: flex-start; padding: 10px 20px 12px; border-top: 1px solid var(--rule); font-size: 0.8rem; color: var(--muted); }
 .erd-key-table { border-collapse: collapse; }
 .erd-key-table th { text-align: left; font-weight: 600; color: var(--ink); padding: 0 12px 2px 0; }
 .erd-key-table td { padding: 1px 12px 1px 0; }
-.erd-key-ends { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 3px; }
+.erd-key-ends { list-style: none; margin: 0; padding: 0; display: grid; grid-template-rows: repeat(3, auto); grid-auto-flow: column; grid-auto-columns: max-content; gap: 3px 24px; }
 .erd-key-ends li { display: flex; align-items: center; gap: 8px; }
 .erd-key-line { flex: none; overflow: visible; }
 .erd-key-highlight { display: inline-block; width: 14px; height: 10px; border: 1.5px solid var(--steel); background: var(--steel-bg); box-shadow: 0 0 0 2px var(--ink); border-radius: 2px; }
