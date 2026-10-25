@@ -5,7 +5,6 @@ import { expandAllOnPage } from '../components/TreeList';
 import type { GraphSettings } from '../graph/GraphPage';
 import { groupLabel, groupMembers, isGroup, parseGroupId, pluralLabel } from '../graph/model';
 import type { GraphInfo } from '../graph/panel';
-import { ModelIcon } from '../model/ModelIcon';
 import { Link, navigate } from '../router';
 import { useAnnounce, useCommand } from '../shell/commands';
 import { BottomSheet } from '../shell/BottomSheet';
@@ -21,7 +20,8 @@ import { GroupSections } from '../specs/FolderGroups';
 import { DomainWiki, NotFound, ProductWiki, SourceNote, problemsUnder } from '../specs/SpecPages';
 import { addressOf, focusOf, VIEW_LABELS, VIEW_NAMES, viewsFromSearch, viewsOffered, viewsShown, withView, type FocusRoute, type ViewName } from './address';
 import { Inspector } from './Inspector';
-import { TAB_PANEL_ID, TabStrip, tabId, tabLabel } from './TabStrip';
+import { PageBar, ViewIcon } from './PageBar';
+import { TAB_PANEL_ID, tabId, tabLabel } from './TabStrip';
 import { PANE_SIZE_KEY, PANE_WEIGHT, PANE_WEIGHT_MAX, PANE_WEIGHT_MIN, VIEW_KEY, saveLastSettings, usePageTabs, type PageTabsApi, type TabView } from './useTabs';
 
 // One page for one thing (a record, a group, a product or a domain), at one address, in up to
@@ -40,16 +40,11 @@ const ModelView = lazy(() => import('../model/ModelView').then((m) => ({ default
 
 const INSPECTOR_KEY = 'lathe:inspector-open';
 const INSPECTOR_WIDTH_KEY = 'lathe:inspector-width';
-const VIEW_COMMANDS: Record<ViewName, string> = { wiki: 'viewWiki', graph: 'viewGraph', model: 'viewModel' };
 /** The narrowest a pane gets, and the limits of one pane's share of the two panes beside a gap, in percent. */
 const PANE_MIN_PX = 220;
 const GAP_MIN = 20;
 const GAP_MAX = 80;
 const lower = (v: ViewName) => VIEW_LABELS[v].toLowerCase();
-
-function ViewIcon({ view, size = 16 }: { view: ViewName; size?: number }) {
-  return view === 'model' ? <ModelIcon size={size} /> : <Icon name={view} size={size} />;
-}
 
 // ---------- The page ----------
 
@@ -253,21 +248,6 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   useCommand('nextTab', () => tabs.cycle(1), tabs.set.tabs.length > 1);
   useCommand('previousTab', () => tabs.cycle(-1), tabs.set.tabs.length > 1);
 
-  const inspectorToggle = (
-    <Tooltip label={`${showing ? 'Hide' : 'Show'} the inspector`} command="toggleInspector" placement="left">
-      <button
-        type="button"
-        ref={inspectorButton}
-        className={`icon-button inspector-toggle${showing ? ' is-on' : ''}`}
-        aria-label={`${showing ? 'Hide' : 'Show'} the inspector`}
-        aria-expanded={showing}
-        aria-controls="inspector"
-        onClick={() => setShowing(!showing)}
-      >
-        <Icon name="sidebar-right" size={16} />
-      </button>
-    </Tooltip>
-  );
   const content: Record<ViewName, ReactNode> = {
     wiki: <WikiContent index={index} route={route} />,
     graph: (
@@ -282,36 +262,18 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
     ),
   };
 
-  /** The pane shown furthest right (the maximized one, when one is), whose bar holds the View toggles. */
-  const rightmost: ViewName = full ?? open[open.length - 1];
-  /** The pane shown furthest left, which carries the page's title. */
+  /** The pane shown furthest left (the maximized one, when one is), which carries the page's title. */
   const leftmost: ViewName = full ?? open[0];
 
-  /** A view toggle's tooltip: what a click does, and that the last open view stays open. */
-  const toggleLabel = (v: ViewName) => {
-    return open.length === 1 && open[0] === v ? `${VIEW_LABELS[v]} view (stays open: it is the only one)` : `${VIEW_LABELS[v]} view`;
-  };
-
   /**
-   * One pane: a panel with one title bar (LA-PAT-APP-CODE-R11), as an editor group in VS Code. At the
-   * left of the leftmost pane, the tab strip; at the left of the others, a quiet label names the
-   * view, with a button that closes the pane. At the right, all icon buttons in one style: on the
-   * rightmost pane only, the View toggles and a divider; on the leftmost, when more than one pane is
-   * open, its close button; on every pane its maximize button; on the rightmost pane the inspector
-   * toggle (which opens the drawer on a narrow screen).
+   * One pane: a panel with one slim header (LA-PAT-APP-CODE-R11), naming its view at the left and
+   * holding only the pane's own actions at the right, all icon buttons in one style: its close
+   * button when more than one pane is open, and its full screen button. The page's tabs, the View
+   * toggles and the inspector toggle are the page bar's.
    */
   const pane = (view: ViewName) => {
     const isFull = full === view;
     const name = VIEW_LABELS[view];
-    const last = view === rightmost;
-    const first = view === leftmost;
-    const closeButton = open.length > 1 && (
-      <Tooltip label={`Close the ${lower(view)} pane`}>
-        <button type="button" className="icon-button pane-close" aria-label={`Close the ${lower(view)} pane`} onClick={() => toggleView(view)}>
-          <Icon name="x" size={14} />
-        </button>
-      </Tooltip>
-    );
     return (
       <section
         key={view}
@@ -322,40 +284,17 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
         onKeyDown={isFull ? (e: KeyboardEvent) => { if (e.key === 'Escape' && !e.defaultPrevented) { e.preventDefault(); leaveFull(); } } : undefined}
       >
         <div className="pane-bar">
-          <div className={`pane-head${first ? ' has-tabs' : ''}`}>
-            {first ? (
-              <TabStrip index={index} set={tabs.set} onActivate={tabs.activate} onClose={tabs.close} onKeep={tabs.keep} />
-            ) : (
-              <>
-                <span className="pane-name"><ViewIcon view={view} size={15} /> {name}</span>
-                {closeButton}
-              </>
-            )}
+          <div className="pane-head">
+            <span className="pane-name"><ViewIcon view={view} size={15} /> {name}</span>
           </div>
           <div className="pane-actions">
-            {last && (
-              <>
-                <div className="pane-views" role="group" aria-label="View">
-                  {offered.map((t) => (
-                    <Tooltip key={t} label={toggleLabel(t)} command={VIEW_COMMANDS[t]}>
-                      <button
-                        type="button"
-                        ref={(el) => { toggles.current[t] = el; }}
-                        className={`icon-button${open.includes(t) ? ' is-on' : ''}`}
-                        aria-label={VIEW_LABELS[t]}
-                        aria-pressed={open.includes(t)}
-                        data-command={VIEW_COMMANDS[t]}
-                        onClick={() => toggleView(t)}
-                      >
-                        <ViewIcon view={t} />
-                      </button>
-                    </Tooltip>
-                  ))}
-                </div>
-                <span className="pane-divider" aria-hidden="true" />
-              </>
+            {open.length > 1 && (
+              <Tooltip label={`Close the ${lower(view)} pane`}>
+                <button type="button" className="icon-button pane-close" aria-label={`Close the ${lower(view)} pane`} onClick={() => toggleView(view)}>
+                  <Icon name="x" size={14} />
+                </button>
+              </Tooltip>
             )}
-            {first && closeButton}
             <Tooltip label={isFull ? 'Leave full screen' : 'Full screen'} command={isFull ? 'escape' : 'maximizePane'} placement="left">
               <button
                 type="button"
@@ -368,7 +307,6 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
                 <Icon name={isFull ? 'minimize' : 'maximize'} size={16} />
               </button>
             </Tooltip>
-            {last && inspectorToggle}
           </div>
         </div>
         <div className={view === 'wiki' ? 'pane-scroll' : 'pane-body'} ref={view === 'wiki' ? wikiPane : undefined} onScroll={view === 'wiki' ? onWikiScroll : undefined}>
@@ -378,6 +316,7 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
       </section>
     );
   };
+
 
   /** The handle in the gap between two open panes: the left one's share of the two, in percent. */
   const gap = (a: ViewName, b: ViewName) => {
@@ -448,6 +387,18 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
       style={{ '--inspector-width': `${inspectorWidth}px` } as CSSProperties}
     >
       <div className="focus-main">
+        <PageBar
+          index={index}
+          tabs={tabs}
+          offered={offered}
+          open={open}
+          onView={toggleView}
+          compact={false}
+          inspectorShown={showing}
+          onInspector={setShowing}
+          inspectorButton={inspectorButton}
+          toggles={toggles}
+        />
         <div
           ref={views}
           id={TAB_PANEL_ID}
@@ -514,10 +465,10 @@ interface PhoneLayoutProps {
 }
 
 /**
- * On a phone (notes/mobile-design.md) the page shows one view at a time, full width, with no
- * pane bar and no handles. A bar at the bottom, in thumb reach, switches between the views the
- * page offers, opens the open pages (the tabs) and the inspector, each as a bottom sheet. The top
- * bar (the shell's) names the page.
+ * On a phone (notes/mobile-design.md) the page shows one view at a time, full width, with no pane
+ * headers and no handles. The page bar is the same bar as on a wide screen, compact, under the
+ * shell's top bar (which names the page): the open pages as a sheet, the View switch, and the
+ * inspector as a bottom sheet.
  */
 function PhoneLayout(props: PhoneLayoutProps) {
   const { index, route, front, offered, tabs, onView, wikiPane, onWikiScroll, content, inspectorShown, onInspector, inspectorButton, inspector, inspectorRef } = props;
@@ -534,48 +485,26 @@ function PhoneLayout(props: PhoneLayoutProps) {
 
   return (
     <div className="focus-layout is-phone">
+      <PageBar
+        index={index}
+        tabs={tabs}
+        offered={offered}
+        open={[front]}
+        onView={onView}
+        compact
+        inspectorShown={inspectorShown}
+        onInspector={onInspector}
+        inspectorButton={inspectorButton}
+        pagesOpen={pagesOpen}
+        onPages={() => setPagesOpen(true)}
+        pagesButton={pagesButton}
+      />
       <section data-view={front} className={`pane panel pane-${front}`} aria-label={`${VIEW_LABELS[front]} pane`}>
         <div className={front === 'wiki' ? 'pane-scroll' : 'pane-body'} ref={front === 'wiki' ? wikiPane : undefined} onScroll={front === 'wiki' ? onWikiScroll : undefined}>
           {front === 'wiki' && <PageTitle index={index} route={route} />}
           {content}
         </div>
       </section>
-      <nav className="view-bar" aria-label="Page">
-        {offered.length > 1 && (
-          <div className="view-switch" role="group" aria-label="View">
-            {offered.map((v) => (
-              <button key={v} type="button" className={`view-segment${v === front ? ' is-on' : ''}`} aria-pressed={v === front} onClick={() => onView(v)}>
-                <ViewIcon view={v} size={20} />
-                <span>{VIEW_LABELS[v]}</span>
-              </button>
-            ))}
-          </div>
-        )}
-        <button
-          ref={pagesButton}
-          type="button"
-          className={`view-bar-button${pagesOpen ? ' is-on' : ''}`}
-          aria-label={`Open pages (${count})`}
-          aria-expanded={pagesOpen}
-          aria-haspopup="dialog"
-          onClick={() => setPagesOpen(true)}
-        >
-          <span className="view-bar-icon"><Icon name="pages" size={20} /><span className="view-bar-count" aria-hidden="true">{count}</span></span>
-          <span>Pages</span>
-        </button>
-        <button
-          ref={inspectorButton}
-          type="button"
-          className={`view-bar-button inspector-toggle${inspectorShown ? ' is-on' : ''}`}
-          aria-label={`${inspectorShown ? 'Hide' : 'Show'} the inspector`}
-          aria-expanded={inspectorShown}
-          aria-controls="inspector"
-          onClick={() => onInspector(!inspectorShown)}
-        >
-          <Icon name="info" size={20} />
-          <span>Inspector</span>
-        </button>
-      </nav>
       {inspectorShown && (
         <BottomSheet label="Inspector" className="inspector-sheet" onClose={() => onInspector(false)}>
           {inspector}

@@ -27,6 +27,8 @@ export function useThemeColor() {
     scheme?.addEventListener?.('change', update);
     const observer = typeof MutationObserver === 'function' ? new MutationObserver(update) : null;
     observer?.observe(document.documentElement, { attributes: true });
+    // A theme can also arrive as a stylesheet in the head (app/src/theme/apply.ts).
+    observer?.observe(document.head, { childList: true, subtree: true, characterData: true });
     return () => { scheme?.removeEventListener?.('change', update); observer?.disconnect(); };
   }, []);
 }
