@@ -1,7 +1,8 @@
 import { plural as pluralOf } from '../plural';
-import { createContext, useContext, type AnchorHTMLAttributes, type ReactNode } from 'react';
+import { createContext, useContext, useState, type AnchorHTMLAttributes, type ReactNode } from 'react';
 import { Link } from '../router';
 import { problemOrder, recordPath, type Problem, type SpecIndex, type SpecRecord } from './data';
+import { ActionsSlotContext } from '../components/ActionsSlot';
 import { LongList } from '../components/LongList';
 import { TreeList } from '../components/TreeList';
 
@@ -71,11 +72,16 @@ export function ProblemList({ index, problems, showRecord = true, showCheck = tr
   );
 }
 
+/** A titled part of a page. Its header row holds the heading and, at the right, any actions its contents offer (such as a list's "Expand all"). */
 export function Section({ title, count, children }: { title: string; count?: number; children: ReactNode }) {
+  const [actions, setActions] = useState<HTMLDivElement | null>(null);
   return (
     <section className="spec-section">
-      <h2>{title}{count !== undefined && <span className="section-count">{count}</span>}</h2>
-      {children}
+      <header className="spec-section-head">
+        <h2>{title}{count !== undefined && <span className="section-count">{count}</span>}</h2>
+        <div className="spec-section-actions" ref={setActions} />
+      </header>
+      <ActionsSlotContext.Provider value={actions}>{children}</ActionsSlotContext.Provider>
     </section>
   );
 }
