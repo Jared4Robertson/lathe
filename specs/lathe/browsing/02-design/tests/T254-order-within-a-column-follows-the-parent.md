@@ -1,7 +1,7 @@
 ---
 id: LA-BRW-T254
 kind: test
-title: Order within a column follows the parent, then kind, then ID
+title: Within a column nodes follow their parent's place, then the nav's order, and keep it when the graph re-centers
 parent: LA-BRW
 test_type: unit
 run_by: app/test/graph/columns.test.ts

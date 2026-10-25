@@ -11,7 +11,7 @@ describe('desktop menu commands', () => {
     let listener: ((id: string) => void) | null = null;
     let unsubscribed = false;
     window.latheDesktop = { isDesktop: true, onCommand: (l) => { listener = l; return () => { unsubscribed = true; }; } };
-    await openApp('/records/DM-SHOP-UC01');
+    await openApp('/DM-SHOP-UC01');
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     expect(screen.getByRole('complementary', { name: 'Inspector' })).toBeInTheDocument();
     act(() => listener!('toggleInspector'));
@@ -19,7 +19,7 @@ describe('desktop menu commands', () => {
     act(() => listener!('toggleInspector'));
     expect(screen.getByRole('complementary', { name: 'Inspector' })).toBeInTheDocument();
     act(() => listener!('noSuchCommand'));
-    await openApp('/records/DM-SHOP-UC01');
+    await openApp('/DM-SHOP-UC01');
     expect(unsubscribed).toBe(true);
   });
 });

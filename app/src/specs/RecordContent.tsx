@@ -1,6 +1,7 @@
 import { lowerLabel } from '../plural';
 import type { ReactNode } from 'react';
-import { domainPath, kindLabel, productPath, type SpecIndex, type SpecLink as Link, type SpecRecord } from './data';
+import { kindLabel, type SpecIndex, type SpecLink as Link, type SpecRecord } from './data';
+import { addressOf } from '../views/address';
 import { groupByLabel, relationLabelOf } from './labels';
 import { Traceability } from './Traceability';
 import { RecordMarkdown } from './mentions';
@@ -117,8 +118,8 @@ export function RecordEyebrow({ index, record }: { index: SpecIndex; record: Spe
   const domain = record.domain ? index.byId.get(record.domain) : undefined;
   return (
     <>
-      {product && record.kind !== 'product' && <><SpecLink to={productPath(product.id)}>{product.title}</SpecLink> · </>}
-      {domain && product && record.kind !== 'domain' && <><SpecLink to={domainPath(product.id, domain.id)}>{domain.title}</SpecLink> · </>}
+      {product && record.kind !== 'product' && <><SpecLink to={addressOf(product.id)}>{product.title}</SpecLink> · </>}
+      {domain && product && record.kind !== 'domain' && <><SpecLink to={addressOf(domain.id)}>{domain.title}</SpecLink> · </>}
       {kind?.label ?? record.kind}
     </>
   );
@@ -162,8 +163,6 @@ function RecordBody({ index, record, actions, header, side }: { index: SpecIndex
               <RecordTree index={index} records={children} label={`${childrenTitle} of ${id}`} showKind />
             </Section>
           )}
-          {record.kind === 'product' && <p><SpecLink to={productPath(id)}>Open the product overview</SpecLink></p>}
-          {record.kind === 'domain' && record.product && <p><SpecLink to={domainPath(record.product, id)}>Open the domain overview</SpecLink></p>}
         </div>
         {side && <aside className="record-side"><RecordFacts index={index} record={record} /></aside>}
       </div>

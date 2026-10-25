@@ -89,7 +89,7 @@ describe('dev API plugin', () => {
     const diagrams = await request(broken.middlewares[0], '/api/diagrams');
     expect(diagrams.status).toBe(500);
     expect(JSON.parse(diagrams.body).error).toMatch(/engine could not be loaded/);
-    expect((await request(broken.middlewares[0], '/records/LA')).nextCalled).toBe(true);
+    expect((await request(broken.middlewares[0], '/LA')).nextCalled).toBe(true);
   });
 
   it('LA-BRW-T18 The server sends spec:changed when a spec record or the engine\'s checks or meta-model change', async () => {

@@ -3,6 +3,7 @@ import { Icon } from '../components/icons';
 import { kindLabel, type SpecIndex, type SpecRecord } from './data';
 import { RecordMarkdown } from './mentions';
 import { ProblemBadge, RecordLink, Section } from './parts';
+import { Button } from '../components/Button';
 
 // A flow's steps as a table, in order (FORMAT.md section 14): the step, what happens, what it uses
 // and what it carries out. A flow with several paths shows a table per path, main first, then the
@@ -155,9 +156,9 @@ export function FlowSteps({ index, flow }: { index: SpecIndex; flow: SpecRecord 
   return (
     <Section title="Steps" count={steps.length}>
       <div className="long-list-tools short">
-        <button type="button" className="tree-bulk" onClick={() => setOpen(allOpen ? new Set() : new Set(steps.map((s) => s.id)))}>
+        <Button onClick={() => setOpen(allOpen ? new Set() : new Set(steps.map((s) => s.id)))}>
           {allOpen ? 'Collapse all' : 'Expand all'}
-        </button>
+        </Button>
       </div>
       {/* One path is one table; several are a table each, the main path first. */}
       {paths.length === 1 ? table(paths[0].steps, `Steps of ${flow.id}, in order`) : paths.map(({ path, steps: pathSteps }) => (

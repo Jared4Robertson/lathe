@@ -32,10 +32,11 @@ import { useThemeColor } from './shell/themeColor';
 import { isBool, usePanelSize, usePref } from './shell/prefs';
 import { useNarrow } from './shell/useNarrow';
 import { FocusPage } from './views/FocusPage';
-import { graphRedirect, isFocusRoute } from './views/address';
+import { HOME_PATH, isFocusRoute, redirectTarget } from './views/address';
 import { ThemeProvider } from './theme/ThemeProvider';
 import { APPEARANCE_PATH, ThemeCommands } from './theme/ThemeCommands';
 import { AppearancePage } from './theme/AppearancePage';
+import { Button } from './components/Button';
 type ModelNode = Node<ModelNodeData>;
 type ModelEdge = Edge<ModelEdgeData>;
 
@@ -104,7 +105,8 @@ function ModelEdgeView({ id, data, markerEnd }: EdgeProps<ModelEdge>) {
 const nodeTypes = { context: ContextNode, aggregate: AggregateNode, leaf: LeafNode };
 const edgeTypes = { model: ModelEdgeView };
 
-const diagramPath = (slug: string) => `/diagrams/${slug}`;
+const DIAGRAMS_PATH = '/diagrams';
+const diagramPath = (slug: string) => `${DIAGRAMS_PATH}/${slug}`;
 const slugFromPath = (path: string) => path.match(/^\/diagrams\/([a-z0-9-]+)/)?.[1] ?? null;
 
 export default function App() {
@@ -125,11 +127,10 @@ const NAV_WIDTH = { key: 'lathe:nav-width', fallback: 304, min: 256, max: 560, c
 /** The app shell: the nav, the page for the address, and the commands that work everywhere. */
 function Shell() {
   const { path, search } = useLocation();
-  const specRoute = parseSpecRoute(path);
-  const isGraphPath = path === '/graph' || path.startsWith('/graph/');
+  const spec = useSpec();
+  const specRoute = parseSpecRoute(path, spec.index);
   const slug = specRoute ? null : slugFromPath(path);
   const isAppearance = path === APPEARANCE_PATH;
-  const spec = useSpec();
   const format = useFormatStore();
   const announce = useAnnounce();
   const [diagrams, setDiagrams] = useState<DiagramSummary[]>([]);
@@ -156,14 +157,15 @@ function Shell() {
     return onLatheEvent('model:changed', loadDiagrams);
   }, [loadDiagrams]);
 
-  // Old addresses: /graph/<id> is now the same thing in the Graph view; /specs/<p>/<d>/graph too.
-  const redirectTo = specRoute?.page === 'redirect' ? specRoute.to : isGraphPath && spec.index ? graphRedirect(spec.index, path) : null;
+  // Old addresses (/records, /specs, /graph) go to the same thing at its ID, keeping the query and hash.
+  const redirecting = specRoute?.page === 'redirect';
+  const redirectTo = specRoute?.page === 'redirect' && specRoute.to !== null ? redirectTarget(specRoute.to, search, window.location.hash) : null;
   useEffect(() => { if (redirectTo) navigate(redirectTo, true); }, [redirectTo]);
 
-  // With neither a diagram nor a spec page in the address, open the first diagram.
+  // Diagrams alone opens the first diagram.
   useEffect(() => {
-    if (!specRoute && !slug && !isGraphPath && !isAppearance && diagrams.length > 0) navigate(diagramPath(diagrams[0].slug), true);
-  }, [specRoute, slug, isGraphPath, isAppearance, diagrams]);
+    if (path === DIAGRAMS_PATH && diagrams.length > 0) navigate(diagramPath(diagrams[0].slug), true);
+  }, [path, diagrams]);
 
   // The nav: collapsed to a rail (remembered), or a drawer on a narrow screen.
   const narrow = useNarrow();
@@ -205,8 +207,8 @@ function Shell() {
   useCommand('openChecks', () => navigate(checksPath));
   useCommand('goChecks', () => navigate(checksPath));
   useCommand('goFormat', () => navigate(formatPath));
-  useCommand('goDiagrams', () => navigate(diagrams[0] ? diagramPath(diagrams[0].slug) : '/'));
-  useCommand('goHome', () => navigate('/specs'));
+  useCommand('goDiagrams', () => navigate(diagrams[0] ? diagramPath(diagrams[0].slug) : DIAGRAMS_PATH));
+  useCommand('goHome', () => navigate(HOME_PATH));
   useCommand('goToDefinition', () => {
     const link = (document.activeElement as HTMLElement | null)?.closest?.('a[href]') as HTMLAnchorElement | null;
     const href = link?.getAttribute('href');
@@ -233,12 +235,10 @@ function Shell() {
   const newDiagram = <NewDiagram onCreated={async (created) => { await loadDiagrams(); navigate(diagramPath(created.slug)); }} />;
 
   let page;
-  if (redirectTo || (isGraphPath && !spec.index)) {
+  if (redirecting) {
     page = <main className="placeholder panel" id="main"><p>{spec.error ? `Couldn't load the specs: ${spec.error}` : 'Opening…'}</p></main>;
   } else if (isAppearance) {
     page = <AppearancePage />;
-  } else if (isGraphPath) {
-    page = <main className="placeholder panel" id="main"><p>No products yet. Add a <code>product.md</code> under <code>specs/</code>.</p></main>;
   } else if (isFormatRoute(specRoute)) {
     page = <FormatPages spec={spec} route={specRoute} />;
   } else if (focusRoute) {
@@ -247,12 +247,15 @@ function Shell() {
     page = <SpecView spec={spec} route={specRoute} />;
   } else if (current) {
     page = <DiagramView key={current.slug} diagram={current} />;
-  } else {
+  } else if (slug || path === DIAGRAMS_PATH) {
     page = (
       <main className="placeholder panel" id="main">
-        <p>{diagrams.length > 0 && slug ? `There's no diagram called "${slug}".` : 'Loading diagrams…'}</p>
+        <p>{!diagramsLoaded ? 'Loading diagrams…' : slug ? `There's no diagram called "${slug}".` : 'No diagrams yet.'}</p>
       </main>
     );
+  } else {
+    // A lowercase address that is no page (`/settings/…` other than Appearance).
+    page = <SpecView spec={spec} route={{ page: 'missing' }} />;
   }
 
   return (
@@ -356,7 +359,7 @@ function NewDiagram({ onCreated }: { onCreated: (d: DiagramSummary) => void }) {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  if (!open) return <button className="new-diagram" onClick={() => setOpen(true)}>+ New diagram</button>;
+  if (!open) return <Button className="new-diagram" icon="plus" onClick={() => setOpen(true)}>New diagram</Button>;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -387,8 +390,8 @@ function NewDiagram({ onCreated }: { onCreated: (d: DiagramSummary) => void }) {
       <textarea id="new-description" rows={2} value={description} onChange={(e) => setDescription(e.target.value)} />
       {error && <p className="error">{error}</p>}
       <div className="form-actions">
-        <button type="submit" disabled={saving}>{saving ? 'Creating…' : 'Create diagram'}</button>
-        <button type="button" className="secondary" onClick={() => { setOpen(false); setError(null); }}>Cancel</button>
+        <Button variant="primary" type="submit" disabled={saving}>{saving ? 'Creating…' : 'Create diagram'}</Button>
+        <Button onClick={() => { setOpen(false); setError(null); }}>Cancel</Button>
       </div>
     </form>
   );

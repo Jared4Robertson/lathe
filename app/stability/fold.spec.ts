@@ -29,7 +29,7 @@ test.describe('fold', () => {
 
   test('LA-BRW-T483 Expand all and Collapse all', async ({ page }) => {
     await openPage(page, DOMAIN);
-    const bulk = page.locator('.pane-wiki .tree-bulk').first();
+    const bulk = page.locator('.pane-wiki').getByRole('button', { name: /^(Expand|Collapse) all$/ }).first();
     await bulk.scrollIntoViewIfNeeded();
     await bulk.evaluate((el) => el.closest('.spec-section')?.setAttribute('data-stability', 'section'));
     const keys = [...SHELL, ...FOCUS, '[data-stability="section"] > .spec-section-head'];

@@ -1,7 +1,7 @@
 ---
 id: LA-BRW-UC20-R01
 kind: requirement
-title: Depth 1 shows a record's parent and children; depth 2 and 3 add its neighbors
+title: Depth counts levels of the nav's tree, with the next level faded
 parent: LA-BRW-UC20
 ---
-The graph view of `/records/<record-id>` (`?view=graph`, or its graph pane beside others) MUST, at depth 1 (the default), show only the record, its parent one level up (the folder it sits in, when its parent groups its children) and its children one level down (or their folders), with no other links; its own folder stays folded until opened. At depth 2 and 3 it MUST show the record and every record one or two links away, following outgoing links, incoming links and the parent/child relation, with every link between the records shown. `/graph` on its own MUST open the first product.
+The graph view of `/<record-id>` (`?view=graph`, or its graph pane beside others) MUST walk the nav's tree, stages and folders included (see LA-BRW-DR300), and at depth N (1 by default, up to 3) MUST show the record's ancestors up to N levels and its descendants down to N levels, with no siblings and no cross-links (see LA-BRW-DR301): at depth 1 its parent (or folder) and its children (or their folders), its own folder folded until opened. Around that it MUST draw the context ring, the next level out each way, faded and out of focus (see LA-BRW-DR302), unless the person switches it off under Filters. A Links switch beside Depth, off by default, MUST add the record's own links, one hop (see LA-BRW-DR304). `/graph` on its own MUST open the first product.

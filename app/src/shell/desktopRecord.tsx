@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { parseSpecRoute, type SpecIndex } from '../specs/data';
 import { focusOf, isFocusRoute } from '../views/address';
 import { desktopBridge } from './desktopChrome';
+import { Button } from '../components/Button';
 import './desktopRecord.css';
 
 // The desktop app's record actions and Dock badge (LA-DSK-UC05). In the desktop shell a record's facts
@@ -66,9 +67,9 @@ export function DesktopRecordActions({ id }: { id: string }) {
   const reveal = isMac(bridge.platform) ? 'Reveal in Finder' : 'Show in folder';
   return (
     <span className="desktop-record-actions" role="group" aria-label={`Spec file of ${id}`}>
-      <button type="button" className="desktop-record-action" onClick={() => revealRecord(id)}>{reveal}</button>
-      <button type="button" className="desktop-record-action" onClick={() => openRecordInEditor(id)}>Open in editor</button>
-      <button type="button" className="desktop-record-action" onClick={() => copyRecordId(id)}>Copy ID</button>
+      <Button onClick={() => revealRecord(id)}>{reveal}</Button>
+      <Button onClick={() => openRecordInEditor(id)}>Open in editor</Button>
+      <Button onClick={() => copyRecordId(id)}>Copy ID</Button>
     </span>
   );
 }

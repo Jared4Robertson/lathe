@@ -5,7 +5,7 @@ import { navigate } from '../router';
 import { isNumber, readPref, writePref } from '../shell/prefs';
 import { productOfPath } from '../shell/spaces';
 import type { SpecIndex } from '../specs/data';
-import { focusOf, parseViews, pathOf, VIEW_NAMES, viewsFromSearch, withView, type FocusRoute, type ViewName } from './address';
+import { currentAddress, focusOf, parseViews, pathOf, VIEW_NAMES, viewsFromSearch, withView, type FocusRoute, type ViewName } from './address';
 import { activateTab, activeTab, closeTab, cycleTab, emptyTabs, keepTab, openTab, parseTabSet, tabFor, updateTab, type Tab, type TabSet } from './tabs';
 
 // The open tabs of the focus page, one tab set per space, kept for the browser session, and the
@@ -42,7 +42,7 @@ const isWeight = (v: unknown): v is number => isNumber(v) && v >= PANE_WEIGHT_MI
 
 // ---------- Graph settings, stored ----------
 
-interface StoredSettings { depth: number; trace: boolean; hiddenKinds: string[]; hiddenRelations: string[]; openGroups: [string, boolean][] }
+interface StoredSettings { depth: number; trace: boolean; hiddenKinds: string[]; hiddenRelations: string[]; openGroups: [string, boolean][]; links?: boolean; context?: boolean; minimap?: boolean }
 const isStored = (v: unknown): v is StoredSettings => !!v && typeof v === 'object' && isNumber((v as StoredSettings).depth) && Array.isArray((v as StoredSettings).hiddenKinds);
 
 export const DEFAULT_SETTINGS: GraphSettings = { depth: 1, trace: false, filters: NO_FILTERS, openGroups: new Map() };
@@ -54,10 +54,14 @@ function settingsFrom(s: unknown): GraphSettings | null {
     trace: s.trace === true,
     filters: { hiddenKinds: new Set(s.hiddenKinds), hiddenRelations: new Set(s.hiddenRelations ?? []) },
     openGroups: new Map((s.openGroups ?? []).filter((e) => Array.isArray(e) && typeof e[0] === 'string')),
+    // The graph's switches (brief 56): Links off, the context ring on and the minimap off unless stored.
+    links: s.links === true,
+    context: s.context !== false,
+    minimap: s.minimap === true,
   };
 }
 function storedFrom(s: GraphSettings): StoredSettings {
-  return { depth: s.depth, trace: s.trace, hiddenKinds: [...s.filters.hiddenKinds], hiddenRelations: [...s.filters.hiddenRelations], openGroups: [...s.openGroups] as [string, boolean][] };
+  return { depth: s.depth, trace: s.trace, hiddenKinds: [...s.filters.hiddenKinds], hiddenRelations: [...s.filters.hiddenRelations], openGroups: [...s.openGroups] as [string, boolean][], links: s.links === true, context: s.context !== false, minimap: s.minimap === true };
 }
 
 /** The graph settings last used, for a space's first tab. */
@@ -94,7 +98,8 @@ function loadAll(scrolls: Map<string, number>): Record<string, PageTabs> {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
   const out: Record<string, PageTabs> = {};
   for (const [space, value] of Object.entries(raw as Record<string, unknown>)) {
-    const set = parseTabSet(value, tabViewFrom);
+    // A tab saved under an old address (/records/<id>, /specs/<product>) opens at today's.
+    const set = parseTabSet(value, tabViewFrom, currentAddress);
     if (!set) continue;
     out[space] = {
       active: set.active,
