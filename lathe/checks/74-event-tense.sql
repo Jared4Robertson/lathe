@@ -26,9 +26,25 @@
 --
 -- severity: warning
 -- kinds: domain_event
-WITH
-  irregular (word) AS (
-    SELECT unnest(string_split(
+SELECT 'warning' AS severity, 'event-tense' AS "check", nullif(e.id, '') AS record,
+       'Event ' || coalesce(nullif(e.id, ''), e.path) || ' is titled "' || trim(e.title)
+       || '", which does not read as past tense; name it for what happened, such as "Loan opened" or "Tool '
+       || 'returned".' AS message
+FROM records e
+WHERE e.kind = 'domain_event' AND regexp_matches(lower(coalesce(e.title, '')), '[a-z]')
+  AND e.path NOT IN (
+    -- Events with a past form as the title's last word, or as any word after its first.
+    SELECT w.path
+    FROM (
+      SELECT path, unnest(words) AS word, unnest(generate_series(1, len(words))) AS position, len(words) AS count
+      FROM (
+        SELECT path, string_split(trim(regexp_replace(lower(title), '[^a-z]+', ' ', 'g')), ' ') AS words
+        FROM records
+        WHERE kind = 'domain_event'
+      )
+    ) w
+    WHERE (w.position > 1 OR w.position = w.count)
+      AND (list_contains(string_split(
       'arose arisen ate eaten awoke awoken became begun began bent bound bit bitten blew blown broke broken bred '
       || 'brought built burnt bought caught chose chosen came cost crept cut dealt dug did done drew drawn dreamt '
       || 'drank drunk drove driven fell fallen fed felt fought found fled flew flown forbade forbidden forgot '
@@ -39,33 +55,8 @@ WITH
       || 'ran run said saw seen sought sold sent set shook shaken shone shot showed shown shut sang sung sank sunk '
       || 'sat slept slid spoke spoken sped spent spun split spread sprang sprung stood stole stolen stuck struck '
       || 'swore sworn swept swam swum swung took taken taught tore torn told thought threw thrown understood undid '
-      || 'undone upheld upset withdrew withdrawn withheld woke woken wore worn won wound wrote written', ' '))
-  ),
-  not_past (word) AS (
-    SELECT unnest(string_split(
-      'need seed feed speed breed bleed embed proceed exceed succeed hundred naked sacred wicked', ' '))
-  ),
-  events AS (
-    SELECT path, id, title,
-           string_split(trim(regexp_replace(lower(title), '[^a-z]+', ' ', 'g')), ' ') AS words
-    FROM records
-    WHERE kind = 'domain_event' AND regexp_matches(lower(coalesce(title, '')), '[a-z]')
-  ),
-  title_words AS (
-    SELECT path, unnest(words) AS word, unnest(generate_series(1, len(words))) AS position, len(words) AS count
-    FROM events
-  ),
-  past AS (
-    SELECT DISTINCT w.path
-    FROM title_words w
-    WHERE (w.position > 1 OR w.position = w.count)
-      AND (w.word IN (SELECT word FROM irregular)
-           OR (length(w.word) >= 4 AND w.word LIKE '%ed' AND w.word NOT IN (SELECT word FROM not_past)))
+      || 'undone upheld upset withdrew withdrawn withheld woke woken wore worn won wound wrote written', ' '), w.word)
+           OR (length(w.word) >= 4 AND w.word LIKE '%ed' AND NOT list_contains(string_split(
+      'need seed feed speed breed bleed embed proceed exceed succeed hundred naked sacred wicked', ' '), w.word)))
   )
-SELECT 'warning' AS severity, 'event-tense' AS "check", nullif(e.id, '') AS record,
-       'Event ' || coalesce(nullif(e.id, ''), e.path) || ' is titled "' || trim(e.title)
-       || '", which does not read as past tense; name it for what happened, such as "Loan opened" or "Tool '
-       || 'returned".' AS message
-FROM events e
-WHERE e.path NOT IN (SELECT path FROM past)
 ORDER BY record, message
