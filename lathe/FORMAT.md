@@ -296,7 +296,7 @@ WHERE a.kind = 'aggregate'
 
 A flow can be written as **steps**, so that each step says what happens, where, and what it carries out, as Client's flow tables do. A `flow_step` sits under its flow and gives its place in the flow in `order`, a whole number. Its ID is the flow's ID with `-S<nn>`, such as `TL-LEND-F01-S01`. Its title says what happens in a few words, and its body may say more.
 
-A step links to what it goes through with `uses` (a view, an endpoint or a component) and to what it carries out with `fulfills` (a requirement, an interaction requirement or a domain rule).
+A step links to what it goes through with `uses` (a view, an endpoint or a component) and to what it carries out with `fulfills` (a use-case requirement, an interaction requirement, a domain rule, or a rule of a pattern the flow's use cases or domain follow).
 
 ```markdown
 ---

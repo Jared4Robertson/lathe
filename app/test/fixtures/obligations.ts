@@ -10,8 +10,8 @@ import { workspace as baseWorkspace } from './workspace';
 const OBLIGATIONS = ['domain_rule', 'requirement', 'interaction_requirement', 'security_control'];
 
 const extraKinds: Kind[] = [
-  { kind: 'interaction_requirement', label: 'Interaction requirement', stage: 'design', parent_kinds: ['view', 'endpoint', 'flow'], required_fields: [], obligation: true, description: 'One rule a view, endpoint or flow must follow.' },
-  { kind: 'security_control', label: 'Security control', stage: 'design', parent_kinds: ['endpoint'], required_fields: [], obligation: true, description: 'A product kind: a control an endpoint must enforce.' },
+  { kind: 'interaction_requirement', label: 'Interaction requirement', stage: 'design', parent_kinds: ['view', 'endpoint', 'flow'], required_fields: [], obligation: true, proof_only: false, description: 'One rule a view, endpoint or flow must follow.' },
+  { kind: 'security_control', label: 'Security control', stage: 'design', parent_kinds: ['endpoint'], required_fields: [], obligation: true, proof_only: false, description: 'A product kind: a control an endpoint must enforce.' },
 ];
 
 function record(id: string, kind: string, title: string, parent: string, fields: Record<string, string> = {}, body = ''): SpecRecord {
