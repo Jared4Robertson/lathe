@@ -416,10 +416,19 @@ export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted,
   // The trail is one line (LA-PAT-APP-UX-R08): its items shrink, cut with an ellipsis, and when
   // they still overflow it scrolls to the end, so the center is always in view and the canvas
   // below never moves as the trail grows.
+  // It is a Tab stop only while it overflows, so the keyboard can scroll it (LA-PAT-APP-UX-R10).
   const trailList = useRef<HTMLOListElement>(null);
+  const [trailOverflows, setTrailOverflows] = useState(false);
   useLayoutEffect(() => {
     const ol = trailList.current;
-    if (ol) ol.scrollLeft = ol.scrollWidth;
+    if (!ol) return;
+    ol.scrollLeft = ol.scrollWidth;
+    const measure = () => setTrailOverflows(ol.scrollWidth > ol.clientWidth);
+    measure();
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(ol);
+    return () => observer.disconnect();
   }, [trail, focus]);
 
   useEffect(() => {
@@ -482,7 +491,7 @@ export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted,
     <section className="graph-page" aria-label="Graph" onKeyDown={onPageKey}>
       <header className="graph-header">
         <nav className="graph-trail" aria-label="Records visited">
-          <ol ref={trailList} tabIndex={0}>
+          <ol ref={trailList} tabIndex={trailOverflows ? 0 : undefined}>
             {trail.filter((id) => isGraphNode(index, id)).map((id) => {
               const item = trailItem(index, id);
               return (
