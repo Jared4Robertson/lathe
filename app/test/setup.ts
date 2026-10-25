@@ -33,7 +33,7 @@ beforeEach(() => {
   vi.stubGlobal('EventSource', FakeEventSource);
   window.scrollTo = () => {};
   window.history.replaceState(null, '', '/');
-  // Remembered choices (view, nav, inspector, open rows) start fresh in every test.
+  // Remembered choices (view, nav, sideBar, open rows) start fresh in every test.
   window.localStorage.clear();
   window.sessionStorage.clear();
   resetExpanded();

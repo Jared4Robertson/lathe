@@ -1,6 +1,6 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
-import { screen, waitFor, within } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { openApp, openSideBar } from './helpers';
 import { REQUIRED_PAIRS, colorOf } from '../src/theme/audit';
@@ -9,7 +9,7 @@ import { themeCss } from '../src/theme/css';
 import { BUILT_IN_THEMES } from '../src/theme/theme';
 import { COLOR_NAMES, SETTING_NAMES } from '../src/theme/tokens';
 import { indexWorkspace, parseSpecRoute } from '../src/specs/data';
-import { APP_PAGES, OLD_PREFIXES, isRecordId, legacyAddress, redirectTarget } from '../src/views/address';
+import { APP_PAGES, isRecordId } from '../src/views/address';
 import { workspace } from './fixtures/workspace';
 // The split view loads the graph, which needs a ResizeObserver in jsdom.
 import './graph/setup';
@@ -163,13 +163,13 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     // One implementation: no other component draws a separator of its own.
     const separators = filesUnder(SRC, /\.tsx$/).filter((f) => !f.endsWith('ResizeHandle.tsx')).flatMap((f) => where(f, readFileSync(f, 'utf8'), /role="separator"/));
     expect(separators).toEqual([]);
-    // On a record with the wiki and graph open and the inspector shown: nav, wiki, graph and inspector, each gap a handle.
+    // On a record with the wiki and graph open and the side bar shown: nav, wiki, graph and sideBar, each gap a handle.
     await openApp('/DM-SHOP-UC01?view=wiki,graph');
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     // A focusable separator (one with a value) is a splitter; a plain divider line such as the rail's is not.
     const handles = screen.getAllByRole('separator').filter((h) => h.hasAttribute('aria-valuenow')).map((h) => [h.getAttribute('aria-label'), h.classList.contains('resize-handle')]);
-    expect(handles).toEqual([['Resize the navigation', true], ['Resize the wiki and graph panes', true], ['Resize the inspector', true]]);
-    for (const panel of [document.querySelector('#nav'), ...document.querySelectorAll('.pane'), document.querySelector('.inspector-column')]) expect(panel).toHaveClass('panel');
+    expect(handles).toEqual([['Resize the navigation', true], ['Resize the wiki and graph panes', true], ['Resize the side bar', true]]);
+    for (const panel of [document.querySelector('#nav'), ...document.querySelectorAll('.pane'), document.querySelector('.side-bar-column')]) expect(panel).toHaveClass('panel');
   });
 
   it('LA-BRW-T295 Every grid says its columns, a single column being minmax(0, 1fr), so content shrinks with its panel', () => {
@@ -186,12 +186,12 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
       if (narrow) vi.stubGlobal('matchMedia', (query: string) => ({ matches: true, media: query, addEventListener: () => {}, removeEventListener: () => {} }));
       await openApp(path);
       await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
-      // One page bar, at the top of the editor area, outside every pane and outside the inspector.
+      // One page bar, at the top of the editor area, outside every pane and outside the side bar.
       const bars = [...document.querySelectorAll<HTMLElement>('.page-bar')];
       expect(bars).toHaveLength(1);
       const bar = bars[0];
       expect(bar.closest('.pane')).toBeNull();
-      expect(bar.closest('.inspector, .inspector-column')).toBeNull();
+      expect(bar.closest('.side-bar, .side-bar-column')).toBeNull();
       // Its left: the tabs (on a phone, the Open pages control that opens them as a sheet).
       if (narrow) {
         expect(within(bar).getByRole('button', { name: /^Open pages: \d+$/ })).toBeInTheDocument();
@@ -200,7 +200,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
         expect(screen.getAllByRole('tablist')).toHaveLength(1);
         expect(bar.querySelector('.page-bar-start [role="tablist"]')).not.toBeNull();
       }
-      // Its right: the View group, then the inspector toggle last.
+      // Its right: the View group, then the side bar toggle last.
       const groups = screen.queryAllByRole('group', { name: 'View' });
       expect(groups).toHaveLength(1);
       expect(bar.contains(groups[0])).toBe(true);
@@ -209,10 +209,10 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
       for (const t of toggles) expect(t).toHaveAttribute('aria-pressed');
       const panes = [...document.querySelectorAll<HTMLElement>('.pane')];
       expect(toggles.filter((t) => t.getAttribute('aria-pressed') === 'true')).toHaveLength(panes.length);
-      const inspector = screen.getByRole('button', { name: /the inspector$/, expanded: !narrow });
-      expect(bar.contains(inspector)).toBe(true);
+      const sideBar = screen.getByRole('button', { name: /the side bar$/, expanded: !narrow });
+      expect(bar.contains(sideBar)).toBe(true);
       const actions = [...bar.querySelectorAll('.page-bar-actions button')];
-      expect(actions[actions.length - 1]).toBe(inspector);
+      expect(actions[actions.length - 1]).toBe(sideBar);
       if (narrow) {
         // A phone shows one view at a time, with no pane headers.
         expect(panes).toHaveLength(1);
@@ -491,8 +491,8 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     const handBuilt = sources.flatMap((f) => where(f, readFileSync(f, 'utf8'), /[`'"]\/(records|specs|graph)\b|`\/\$\{/));
     expect(handBuilt).toEqual([]);
 
-    // The router: every app page is a lowercase word that no ID can match, and the old prefixes are lowercase too.
-    for (const word of [...APP_PAGES, ...OLD_PREFIXES]) {
+    // The router: every app page is a lowercase word that no ID can match.
+    for (const word of APP_PAGES) {
       expect(word, word).toMatch(/^[a-z][a-z-]*$/);
       expect(isRecordId(word), word).toBe(false);
     }
@@ -513,38 +513,25 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     }
   });
 
-  it('LA-BRW-T521 Old addresses redirect to the same thing at its ID, replacing the history entry and keeping the query and hash', async () => {
-    const OLD: [string, string][] = [
-      ['/records/DM-SHOP-UC01', '/DM-SHOP-UC01'],
-      ['/records/DM-SHOP/use_case', '/DM-SHOP/use_case'],
-      ['/records/DM-SHOP/test/acceptance', '/DM-SHOP/test/acceptance'],
-      ['/records/DM', '/DM'],
-      ['/specs', '/'],
-      ['/specs/DM', '/DM'],
-      ['/specs/DM/DM-SHOP', '/DM-SHOP'],
-      ['/specs/DM/DM-SHOP/graph', '/DM-SHOP?view=graph'],
-      ['/graph/DM-SHOP-UC01', '/DM-SHOP-UC01?view=graph'],
-      ['/graph/DM-SHOP/use_case', '/DM-SHOP/use_case?view=graph'],
-      ['/graph', '/DM?view=graph'],
-    ];
-    for (const [old, now] of OLD) expect(redirectTarget(legacyAddress(old, 'DM')!, ''), old).toBe(now);
-    // An address that is not old is left alone.
-    for (const path of ['/', '/DM-SHOP-UC01', '/checks', '/format/kinds/use_case', '/settings/appearance']) expect(legacyAddress(path, 'DM'), path).toBeUndefined();
-    // The query and hash come along; a view the old address implies wins.
-    expect(redirectTarget('/DM-SHOP-UC01', '?view=wiki,graph', '#links-in-DM-SHOP-UC01')).toBe('/DM-SHOP-UC01?view=wiki,graph#links-in-DM-SHOP-UC01');
-    expect(redirectTarget('/DM-SHOP?view=graph', '?view=wiki&product=DM')).toBe('/DM-SHOP?view=graph&product=DM');
+  it('LA-BRW-T660 An old address is no page: /records, /specs and /graph addresses say so, and the address stays as typed', async () => {
+    for (const path of ['/records/DM-SHOP-UC01', '/records/DM-SHOP/use_case', '/specs', '/specs/DM/DM-SHOP', '/graph', '/graph/DM-SHOP-UC01']) {
+      expect(parseSpecRoute(path, indexWorkspace(workspace())), path).toEqual({ page: 'missing' });
+      await openApp(path);
+      expect(await screen.findByText(/There's no such page\./), path).toBeInTheDocument();
+      expect(window.location.pathname, path).toBe(path);
+    }
+    // `?view=split` is no view name: the page opens with the views last used, the wiki at first.
+    await openApp('/DM-SHOP-UC01?view=split');
+    await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
+    expect(screen.queryByRole('region', { name: 'Graph pane' })).toBeNull();
+  });
 
-    // In the app the redirect replaces the entry, so Back does not return to the old address.
-    const before = window.history.length;
-    await openApp('/records/DM-SHOP-UC01?view=wiki#links-in-DM-SHOP-UC01');
-    await waitFor(() => expect(window.location.pathname + window.location.search + window.location.hash).toBe('/DM-SHOP-UC01?view=wiki#links-in-DM-SHOP-UC01'));
-    expect(window.history.length).toBe(before);
-    expect(await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' })).toBeInTheDocument();
-    await openApp('/specs/DM/DM-SHOP');
-    await waitFor(() => expect(window.location.pathname).toBe('/DM-SHOP'));
-    expect(await screen.findByRole('heading', { level: 1, name: 'Shopping' })).toBeInTheDocument();
-    await openApp('/specs');
-    await waitFor(() => expect(window.location.pathname).toBe('/'));
-    expect(await screen.findByRole('heading', { level: 1, name: 'Products' })).toBeInTheDocument();
+  it('LA-BRW-T661 Changes are hard cutovers: no redirect, alias, legacy path or second addressOf signature in the app or the engine', () => {
+    const sources = [...filesUnder(SRC, /\.(tsx?|css)$/), ...filesUnder(join(ROOT, 'lathe', 'src'), /\.ts$/)];
+    const kept = sources.flatMap((f) => where(f, readFileSync(f, 'utf8'), /legacy|redirect|\balias/i));
+    expect(kept).toEqual([]);
+    // One addressOf, taking the ID alone: a second signature (an overload or another declaration) is a compatibility layer.
+    const signatures = sources.flatMap((f) => where(f, readFileSync(f, 'utf8'), /function addressOf\b|\baddressOf\s*[:=]/));
+    expect(signatures.map((s) => s.replace(/^.*?:\d+: /, ''))).toEqual(['export function addressOf(id: string): string {']);
   });
 });

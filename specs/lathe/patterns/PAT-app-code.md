@@ -24,5 +24,6 @@ The domain links the pattern with `follows`. The pattern has no settings: every 
 - `LA-PAT-APP-CODE-R10`: every grid says its columns.
 - `LA-PAT-APP-CODE-R15`: themes only set tokens.
 - `LA-PAT-APP-CODE-R19`: one address per thing, made by `addressOf`.
+- `LA-PAT-APP-CODE-R20`: changes are hard cutovers, with no compatibility layer.
 
-The numbers of the rules that moved to App experience (R08, R09, R11 to R14, R16 and R17) are not reused; new rules here continue from R20.
+The numbers of the rules that moved to App experience (R08, R09, R11 to R14, R16 and R17) are not reused; new rules here continue from R21.

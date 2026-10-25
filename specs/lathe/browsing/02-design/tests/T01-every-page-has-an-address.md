@@ -8,4 +8,4 @@ run_by: app/test/routing.test.tsx
 links:
   proves: [LA-BRW-DR01]
 ---
-Parses every spec address into its page, opens a record page directly from its address, follows menu links, and checks that the browser's back and forward buttons return to the earlier pages.
+Parses every spec address into its page, and an old one as missing, opens a record page directly from its address, follows menu links, and checks that the browser's back and forward buttons return to the earlier pages.

@@ -44,7 +44,7 @@ describe('the keymap', () => {
     expect(keysOf('quickOpen')).toEqual(['Mod+P', 'Mod+K']);
     expect(keysOf('commandPalette')).toEqual(['Mod+Shift+P']);
     expect(keysOf('toggleNav')).toEqual(['Mod+B']);
-    expect(keysOf('toggleInspector')).toEqual(['Mod+Alt+B']);
+    expect(keysOf('toggleSideBar')).toEqual(['Mod+Alt+B']);
     expect(keysOf('viewGraph')).toEqual(['Ctrl+G', 'Ctrl+2']);
     expect(keysOf('maximizePane')).toEqual(['Ctrl+3']);
     expect(COMMANDS.some((c) => ['viewSplit', 'toggleSplit', 'toggleFullScreen'].includes(c.id))).toBe(false);

@@ -13,7 +13,7 @@ describe('group names and tab settings', () => {
     await screen.findByRole('heading', { level: 1, name: /^Define/ });
     expect(document.querySelector('.group-intro')).toHaveTextContent(/^Define of DM-SHOP/);
     expect(document.body).not.toHaveTextContent('Defines');
-    expect(within(screen.getByRole('complementary', { name: 'Inspector' })).getByText(/^Define \(\d+\)$/)).toBeInTheDocument();
+    expect(within(screen.getByRole('complementary', { name: 'Side bar' })).getByText(/^Define \(\d+\)$/)).toBeInTheDocument();
   });
 
   it('LA-BRW-T555 A tab keeps the graph\'s Links switch across a reload', async () => {

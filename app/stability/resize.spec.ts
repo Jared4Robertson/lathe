@@ -25,10 +25,10 @@ test.describe('resize', () => {
   test('LA-BRW-T484 drag the nav gap, then collapse the nav by drag', async ({ page }) => {
     await openPage(page, RECORD);
     const handle = page.locator('.app-nav-handle');
-    const keys = ['nav#nav', '#main', '.inspector-column'];
+    const keys = ['nav#nav', '#main', '.side-bar-column'];
     const r = await step(page, 'resize', 'drag the nav gap', { keys, allow: ALL, resizes: ['nav#nav', '#main'] }, () => drag(page, handle, 120));
     expectStable(r);
-    const c = await step(page, 'resize', 'collapse the nav by drag', { keys: ['.inspector-column'], allow: ALL }, () => drag(page, handle, -400, 16));
+    const c = await step(page, 'resize', 'collapse the nav by drag', { keys: ['.side-bar-column'], allow: ALL }, () => drag(page, handle, -400, 16));
     await expect(page.locator('nav#nav.is-rail')).toHaveCount(1);
     expectStable(c);
   });
@@ -37,19 +37,19 @@ test.describe('resize', () => {
     await openPage(page, `${RECORD}?view=wiki,graph`);
     await page.locator('.pane-graph .graph-flow .react-flow__node').first().waitFor();
     const handle = page.locator('.pane-gap').first();
-    const keys = ['nav#nav', '.inspector-column', '.pane-wiki', '.pane-graph', '.pane-graph .graph-canvas'];
+    const keys = ['nav#nav', '.side-bar-column', '.pane-wiki', '.pane-graph', '.pane-graph .graph-canvas'];
     const r = await step(page, 'resize', 'drag the pane gap', { keys, allow: ALL, resizes: ['.pane-wiki', '.pane-graph', '.pane-graph .graph-canvas'] }, () => drag(page, handle, -160));
     expectStable(r);
   });
 
-  test('LA-BRW-T484 drag the inspector gap, then collapse it by drag', async ({ page }) => {
+  test('LA-BRW-T484 drag the side bar gap, then collapse it by drag', async ({ page }) => {
     await openPage(page, RECORD);
     const handle = page.locator('.focus-layout > .resize-handle');
-    const keys = ['nav#nav', '.inspector-column', '.pane-wiki > .pane-bar'];
-    const r = await step(page, 'resize', 'drag the inspector gap', { keys, allow: ALL, resizes: ['.inspector-column', '.pane-wiki > .pane-bar'] }, () => drag(page, handle, -120));
+    const keys = ['nav#nav', '.side-bar-column', '.pane-wiki > .pane-bar'];
+    const r = await step(page, 'resize', 'drag the side bar gap', { keys, allow: ALL, resizes: ['.side-bar-column', '.pane-wiki > .pane-bar'] }, () => drag(page, handle, -120));
     expectStable(r);
-    const c = await step(page, 'resize', 'collapse the inspector by drag', { keys: ['nav#nav'], allow: ALL }, () => drag(page, handle, 500, 16));
-    await expect(page.locator('.inspector-column')).toHaveCount(0);
+    const c = await step(page, 'resize', 'collapse the side bar by drag', { keys: ['nav#nav'], allow: ALL }, () => drag(page, handle, 500, 16));
+    await expect(page.locator('.side-bar-column')).toHaveCount(0);
     expectStable(c);
   });
 });

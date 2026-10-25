@@ -8,4 +8,4 @@ run_by: app/test/format-pages.test.tsx
 links:
   proves: [LA-BRW-UC115-R03, LA-BRW-DR211]
 ---
-Opens a check's page and expects its summary, rendered explanation, source file and its problems as clickable rows, with the inspector's facts; a check that reports nothing says so, and an unknown check or kind says it is not in the format.
+Opens a check's page and expects its summary, rendered explanation, source file and its problems as clickable rows, with the side bar's facts; a check that reports nothing says so, and an unknown check or kind says it is not in the format.

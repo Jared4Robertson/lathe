@@ -1,7 +1,7 @@
 ---
 id: LA-BRW-C52
 kind: component
-title: The side bar (the inspector)
+title: The side bar
 parent: LA-BRW-LAY06
 component_type: react component
 file: app/src/views/SideBar.tsx

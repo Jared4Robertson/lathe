@@ -11,5 +11,5 @@ One part of the page's layout, which always shows the page's focus and can be hi
 
 | Field | Meaning | Kind of value | Example |
 | --- | --- | --- | --- |
-| Panel | Which part of the page it is. | Navigation, wiki pane, graph pane or inspector. | Inspector |
+| Panel | Which part of the page it is. | Navigation, wiki pane, graph pane or side bar. | Side bar |
 | Shown | Whether it is on screen; a hidden panel keeps a control that brings it back. | Yes or no. | Yes |

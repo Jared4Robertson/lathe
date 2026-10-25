@@ -122,7 +122,7 @@ describe('side navigation', () => {
     expect(find).toHaveValue('');
   });
 
-  it('LA-BRW-T179 The nav has no Graph item, open or as a rail; the graph stays one view, Ctrl+2 or a palette command away, and /graph still redirects', async () => {
+  it('LA-BRW-T179 The nav has no Graph item, open or as a rail; the graph stays one view, Ctrl+2 or a palette command away', async () => {
     await openApp('/DM-SHOP', { diagrams });
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     expect(within(nav()).queryByRole('link', { name: /Graph/ })).toBeNull();
@@ -141,9 +141,6 @@ describe('side navigation', () => {
     const user = userEvent.setup();
     await user.type(within(screen.getByRole('dialog', { name: 'Command palette' })).getByRole('combobox'), 'graph view');
     expect(within(screen.getByRole('dialog')).getAllByRole('option')[0]).toHaveTextContent('Graph view');
-
-    await openApp('/graph');
-    await waitFor(() => expect(window.location.pathname + window.location.search).toBe('/DM?view=graph'));
   });
 
   it('LA-BRW-T471 A selected row is the whole row: the current page\'s nav row carries the selection over the panel\'s width, chevron included, with no inset bar', async () => {

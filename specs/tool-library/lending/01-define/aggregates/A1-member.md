@@ -10,7 +10,7 @@ A person registered to borrow tools. A member's loans are held by the [Loan](A3-
 
 **Business identity:** Email.
 
-| Field | Business meaning | Kind of value | Example |
+| Field | Meaning | Kind of value | Example |
 | --- | --- | --- | --- |
 | Member ID | The library's number for the member. | Whole number, assigned. | 12 |
 | Name | What the member is called. | Text, not blank. | Ada Lovelace |

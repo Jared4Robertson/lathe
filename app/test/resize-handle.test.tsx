@@ -26,26 +26,26 @@ describe('resizable panels', () => {
     fireEvent.doubleClick(nav);
     expect(nav).toHaveAttribute('aria-valuenow', '304');
 
-    // The inspector sits after its handle, so Left grows it.
-    const inspector = handle('Resize the inspector');
-    expect(inspector).toHaveAttribute('aria-valuenow', '340');
-    fireEvent.keyDown(inspector, { key: 'ArrowLeft' });
-    expect(inspector).toHaveAttribute('aria-valuenow', '356');
-    fireEvent.keyDown(inspector, { key: 'Home' });
-    expect(inspector).toHaveAttribute('aria-valuenow', '260');
+    // The side bar sits after its handle, so Left grows it.
+    const sideBar = handle('Resize the side bar');
+    expect(sideBar).toHaveAttribute('aria-valuenow', '340');
+    fireEvent.keyDown(sideBar, { key: 'ArrowLeft' });
+    expect(sideBar).toHaveAttribute('aria-valuenow', '356');
+    fireEvent.keyDown(sideBar, { key: 'Home' });
+    expect(sideBar).toHaveAttribute('aria-valuenow', '260');
   });
 
   it('LA-BRW-T297 Remembered sizes come back, out-of-range ones fall back to the default, and the narrow layout has no handles', async () => {
     // The side bar starts closed in the Wiki view (brief 64); this test reads it open.
     openSideBar('details', ['wiki', 'graph', 'model']);
     window.localStorage.setItem('lathe:nav-width', '400');
-    window.localStorage.setItem('lathe:inspector-width', '9999');
+    window.localStorage.setItem('lathe:side-bar-width', '9999');
     await openApp('/DM-SHOP-UC01');
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     expect(handle('Resize the navigation')).toHaveAttribute('aria-valuenow', '400');
-    expect(handle('Resize the inspector')).toHaveAttribute('aria-valuenow', '340');
+    expect(handle('Resize the side bar')).toHaveAttribute('aria-valuenow', '340');
 
-    // On a narrow screen the nav and the inspector are drawers: nothing to resize.
+    // On a narrow screen the nav and the side bar are drawers: nothing to resize.
     vi.stubGlobal('matchMedia', (query: string) => ({ matches: true, media: query, addEventListener: () => {}, removeEventListener: () => {} }));
     await openApp('/DM-SHOP-UC01');
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });

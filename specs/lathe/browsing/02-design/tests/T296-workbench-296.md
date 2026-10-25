@@ -8,4 +8,4 @@ run_by: app/test/resize-handle.test.tsx
 links:
   proves: [LA-BRW-UC111-R01, LA-BRW-UC111-R02]
 ---
-Steps the navigation's gap with Right, Shift and Left, and End, expects the stored and applied width, resets it by double-click, and steps the inspector's gap, where Left grows it, and Home.
+Steps the navigation's gap with Right, Shift and Left, and End, expects the stored and applied width, resets it by double-click, and steps the side bar's gap, where Left grows it, and Home.

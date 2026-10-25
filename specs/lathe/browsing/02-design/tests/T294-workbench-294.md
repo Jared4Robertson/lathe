@@ -8,4 +8,4 @@ run_by: app/test/standards.test.tsx
 links:
   proves: [LA-PAT-APP-UX-R02]
 ---
-Expects the shell, gap and radius tokens, no separator drawn outside ResizeHandle, and on a record with the wiki and graph open the navigation, the gap between the panes and the inspector as resize handles beside panels.
+Expects the shell, gap and radius tokens, no separator drawn outside ResizeHandle, and on a record with the wiki and graph open the navigation, the gap between the panes and the side bar as resize handles beside panels.

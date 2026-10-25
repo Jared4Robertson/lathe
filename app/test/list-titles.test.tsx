@@ -9,12 +9,12 @@ import { openApp, openSideBar } from './helpers';
 
 const wiki = () => screen.getByRole('region', { name: 'Wiki pane' });
 // The side bar's Details holds a product's and a domain's own facts, their overview being the page (brief 64).
-const inspector = () => screen.getByRole('complementary', { name: 'Inspector' });
+const sideBar = () => screen.getByRole('complementary', { name: 'Side bar' });
 /** The side bar never repeats a list the wiki shows (brief 64). */
-const noListInSideBar = (name: RegExp) => { expect(within(inspector()).queryByRole('list', { name })).toBeNull(); expect(within(inspector()).queryByRole('heading', { name })).toBeNull(); };
+const noListInSideBar = (name: RegExp) => { expect(within(sideBar()).queryByRole('list', { name })).toBeNull(); expect(within(sideBar()).queryByRole('heading', { name })).toBeNull(); };
 
 describe('list titles', () => {
-  it('LA-BRW-T340 A list of children or members of one kind is titled by that kind, in the wiki and the inspector', async () => {
+  it('LA-BRW-T340 A list of children or members of one kind is titled by that kind, in the wiki and the side bar', async () => {
     // An aggregate's domain rules: the record page says "Domain rules"; the side bar does not repeat them.
     openSideBar();
     await openApp('/DM-SHOP-A1');
@@ -38,8 +38,8 @@ describe('list titles', () => {
     // side bar's Details, as the product's overview does not list them as children.
     await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
-    expect(within(inspector()).getByRole('heading', { level: 3, name: /^Children/ })).toBeInTheDocument();
-    const mixed = within(inspector()).getByRole('list', { name: 'Children' });
+    expect(within(sideBar()).getByRole('heading', { level: 3, name: /^Children/ })).toBeInTheDocument();
+    const mixed = within(sideBar()).getByRole('list', { name: 'Children' });
     expect(within(mixed).getAllByText('Domain', { selector: 'small' }).length).toBeGreaterThan(0);
 
     // A group's members are titled by their kind, in the wiki only.

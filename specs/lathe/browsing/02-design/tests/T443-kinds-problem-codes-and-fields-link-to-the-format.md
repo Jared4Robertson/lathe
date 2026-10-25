@@ -1,7 +1,7 @@
 ---
 id: LA-BRW-T443
 kind: test
-title: "The inspector's kind, each problem code and each required field label link to their format pages"
+title: "The side bar's kind, each problem code and each required field label link to their format pages"
 parent: LA-BRW
 test_type: component
 run_by: app/test/format-pages.test.tsx

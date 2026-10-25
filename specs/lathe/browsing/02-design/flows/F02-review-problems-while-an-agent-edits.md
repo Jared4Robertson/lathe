@@ -11,4 +11,4 @@ links:
 1. While an agent edits records, the owner keeps the Checks page (`/checks`) open: every problem, errors first, grouped by check.
 2. Each time a record file or the engine's rules change, the page reloads `GET /api/spec` and shows the problems as they are on disk now.
 3. They open a problem's record page to see the record and its problems, and go back to the list.
-4. When a check is unfamiliar, they follow its code to the check's page in the format reference: what it asks, how to fix it, and every problem it reports now. From the record's inspector, its Kind leads to what the format says about that kind.
+4. When a check is unfamiliar, they follow its code to the check's page in the format reference: what it asks, how to fix it, and every problem it reports now. From the record's side bar, its Kind leads to what the format says about that kind.
