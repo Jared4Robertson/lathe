@@ -1,0 +1,20 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": [
+    "src/main.ts",
+    "src/preload.cts",
+    "src/local-preload.cts",
+    "scripts/*.ts"
+  ],
+  "project": [
+    "src/**/*.{ts,cts}",
+    "test/**/*.ts",
+    "scripts/**/*.ts"
+  ],
+  "ignoreExportsUsedInFile": true,
+  "ignoreBinaries": [
+    "rsvg-convert",
+    "iconutil",
+    "magick"
+  ]
+}

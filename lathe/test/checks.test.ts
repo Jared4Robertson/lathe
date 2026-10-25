@@ -10,7 +10,7 @@ const records = (problems: Problem[]) => problems.map((p) => p.record).sort();
 const line = (kind: string, total: number, designed: number, built: number, proved: number) => expect.objectContaining({ kind, total, designed, built, proved });
 
 const FIXTURES = ['good', 'broken-links', 'broken-tests', 'broken-parse', 'broken-structure', 'configured', 'unfinished', 'fitness'];
-const WARNINGS = ['unsatisfied', 'unproved', 'use-case-without-requirements', 'component-file-missing', 'rule-not-applied', 'use-case-without-flow', 'interaction-requirement-fulfills-nothing', 'test-type-mismatch'];
+const WARNINGS = ['unsatisfied', 'unproved', 'use-case-without-requirements', 'component-file-missing', 'rule-not-applied', 'use-case-without-flow', 'interaction-requirement-fulfills-nothing', 'test-type-mismatch', 'component-satisfies-nothing', 'test-proves-nothing'];
 const workspaces: Record<string, Workspace> = {};
 beforeAll(async () => {
   for (const name of FIXTURES) workspaces[name] = await loadWorkspace(fixture(name));
@@ -49,7 +49,8 @@ describe('Lathe-cited checks', () => {
     const ws = workspaces['broken-tests'];
     expect(ofCheck(ws, 'test-file-missing-id')).toMatchObject([{ severity: 'error', record: 'BX-D-T01' }]);
     expect(ofCheck(ws, 'test-file-missing')).toMatchObject([{ severity: 'error', record: 'BX-D-T02' }]);
-    expect(ws.problems.some((p) => p.record === 'BX-D-T03')).toBe(false);
+    // BX-D-T03's file names it, so neither file check reports it.
+    expect(ws.problems.some((p) => p.record === 'BX-D-T03' && p.check.startsWith('test-file'))).toBe(false);
   });
 
   it('LA-TRC-T01 Coverage counts satisfied and proved requirements and lists the gaps', () => {
@@ -237,8 +238,8 @@ describe('structural checks', () => {
       }
     }
     // Every kind of work to do, and the main kinds of breakage, appear in the fixtures. The structural
-    // warnings (rule-not-applied and the rest) have their own fixtures in structure.test.ts.
-    const structural = ['rule-not-applied', 'use-case-without-flow', 'interaction-requirement-fulfills-nothing', 'test-type-mismatch'];
+    // warnings (rule-not-applied and the rest) have their own fixtures in structure.test.ts and purpose.test.ts.
+    const structural = ['rule-not-applied', 'use-case-without-flow', 'interaction-requirement-fulfills-nothing', 'test-type-mismatch', 'component-satisfies-nothing', 'test-proves-nothing'];
     for (const check of [...WARNINGS.filter((w) => !structural.includes(w)), 'parse-error', 'duplicate-id', 'dangling-link', 'meta-duplicate-kind', 'bad-fitness-score']) {
       expect(seen).toContain(check);
     }

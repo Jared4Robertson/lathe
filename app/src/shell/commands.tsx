@@ -59,11 +59,6 @@ export function useKeymap() {
   return api ? { commands: api.commands, mac: api.mac } : fallback;
 }
 
-/** The shortcut text for a command, such as "⌘B" or "Ctrl+B", or '' when it has none. */
-export function useShortcut(id: string): string {
-  return useShortcutHint(id).text;
-}
-
 export interface ShortcutHint {
   /** The first binding as shown: "⌘B", "Ctrl+B", "g then c"; '' when the command has none. */
   text: string;
