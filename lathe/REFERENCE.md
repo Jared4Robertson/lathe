@@ -107,7 +107,7 @@ A product: the root of a set of specifications.
 - **Obligation:** no
 - **ID:** `<P>`, such as `TL`
 - **Links out:** none
-- **Links in:** [`about`](#relation-about)
+- **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`product-has-parent`](#check-product-has-parent)
 
 <a id="kind-domain"></a>
@@ -123,8 +123,8 @@ A part of the product with its own model, language and owner.
 - **Required fields:** none
 - **Obligation:** no
 - **ID:** `<P>-<D>`, such as `TL-LEND`
-- **Links out:** [`follows`](#relation-follows)
-- **Links in:** [`about`](#relation-about)
+- **Links out:** Follows ([`follows`](#relation-follows))
+- **Links in:** Questions about this ([`about`](#relation-about))
 
 <a id="kind-capability"></a>
 
@@ -140,7 +140,7 @@ An ordered slice of a domain that groups its use cases, flows and tests, such as
 - **Obligation:** no
 - **ID:** `<P>-<D>-CAP<nn>`, such as `TL-LEND-CAP01`
 - **Links out:** none
-- **Links in:** [`about`](#relation-about)
+- **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`capability-order`](#check-capability-order), [`use-case-outside-capability`](#check-use-case-outside-capability), [`lone-child`](#check-lone-child)
 
 <a id="kind-aggregate"></a>
@@ -152,12 +152,12 @@ A cluster of records changed together as one unit, with its own identity and rul
 - **Stage:** Define
 - **Folder:** [Domain model](#folder-domain-model)
 - **Parents:** [`domain`](#kind-domain)
-- **Children:** [`entity`](#kind-entity), [`domain_rule`](#kind-domain_rule), [`question`](#kind-question)
+- **Children:** [`entity`](#kind-entity), [`domain_event`](#kind-domain_event), [`domain_rule`](#kind-domain_rule), [`question`](#kind-question)
 - **Required fields:** none
 - **Obligation:** no
 - **ID:** `<P>-<D>-A<n>`, such as `TL-LEND-A1`
-- **Links out:** [`relates_to`](#relation-relates_to)
-- **Links in:** [`relates_to`](#relation-relates_to), [`about`](#relation-about)
+- **Links out:** Relates to ([`relates_to`](#relation-relates_to)), Reacts to ([`reacts_to`](#relation-reacts_to))
+- **Links in:** Related to by ([`relates_to`](#relation-relates_to)), Questions about this ([`about`](#relation-about))
 - **Checks:** [`aggregate-root`](#check-aggregate-root)
 
 <a id="kind-entity"></a>
@@ -173,9 +173,25 @@ A record the domain keeps, as one box of an aggregate's ERD: the aggregate's roo
 - **Required fields:** `role`
 - **Obligation:** no
 - **ID:** `<P>-<D>-EN<nn>`, such as `TL-LEND-EN01`
-- **Links out:** [`has_one`](#relation-has_one), [`has_many`](#relation-has_many), [`refers_to`](#relation-refers_to)
-- **Links in:** [`about`](#relation-about), [`has_one`](#relation-has_one), [`has_many`](#relation-has_many), [`refers_to`](#relation-refers_to)
+- **Links out:** Has one ([`has_one`](#relation-has_one)), Has many ([`has_many`](#relation-has_many)), Refers to ([`refers_to`](#relation-refers_to))
+- **Links in:** Questions about this ([`about`](#relation-about)), Part of ([`has_one`](#relation-has_one)), Part of ([`has_many`](#relation-has_many)), Referred to by ([`refers_to`](#relation-refers_to)), Raises ([`raised_by`](#relation-raised_by))
 - **Checks:** [`entity-role`](#check-entity-role), [`aggregate-root`](#check-aggregate-root), [`entity-fields`](#check-entity-fields), [`has-crosses-aggregate`](#check-has-crosses-aggregate), [`entity-unreferenced`](#check-entity-unreferenced)
+
+<a id="kind-domain_event"></a>
+
+### Domain event (`domain_event`)
+
+An unchangeable record that something happened in the domain, raised by its aggregate and named in the past tense (Loan opened). Its body holds a Fields table of what it carries: Field, Meaning, Kind of value, Example.
+
+- **Stage:** Define
+- **Folder:** [Domain model](#folder-domain-model)
+- **Parents:** [`aggregate`](#kind-aggregate)
+- **Children:** none
+- **Required fields:** none
+- **Obligation:** no
+- **ID:** `<P>-<D>-EV<nn>`, such as `TL-LEND-EV01`
+- **Links out:** Raised by ([`raised_by`](#relation-raised_by))
+- **Links in:** Questions about this ([`about`](#relation-about)), Reacted to by ([`reacts_to`](#relation-reacts_to))
 
 <a id="kind-domain_rule"></a>
 
@@ -191,7 +207,7 @@ A fact that must always hold for an aggregate's records, whatever use case chang
 - **Obligation:** yes: designed, built and proved
 - **ID:** `<P>-<D>-DR<nn>`, such as `TL-LEND-DR01`
 - **Links out:** none
-- **Links in:** [`applies`](#relation-applies), [`fulfills`](#relation-fulfills), [`satisfies`](#relation-satisfies), [`proves`](#relation-proves), [`about`](#relation-about)
+- **Links in:** Applied by ([`applies`](#relation-applies)), Carried out in ([`fulfills`](#relation-fulfills)), Designed by ([`satisfies`](#relation-satisfies)), Proved by ([`proves`](#relation-proves)), Questions about this ([`about`](#relation-about))
 - **Checks:** [`unsatisfied`](#check-unsatisfied), [`unproved`](#check-unproved), [`obligation-outside-domain`](#check-obligation-outside-domain), [`rule-not-applied`](#check-rule-not-applied)
 
 <a id="kind-use_case"></a>
@@ -207,8 +223,8 @@ Something an actor does with the product to reach a goal.
 - **Required fields:** `actor`
 - **Obligation:** no
 - **ID:** `<P>-<D>-UC<nn>`, such as `TL-LEND-UC01`
-- **Links out:** [`applies`](#relation-applies), [`follows`](#relation-follows)
-- **Links in:** [`about`](#relation-about), [`carries_out`](#relation-carries_out)
+- **Links out:** Applies ([`applies`](#relation-applies)), Follows ([`follows`](#relation-follows)), Reacts to ([`reacts_to`](#relation-reacts_to))
+- **Links in:** Questions about this ([`about`](#relation-about)), Carried out by flow ([`carries_out`](#relation-carries_out))
 - **Checks:** [`use-case-without-requirements`](#check-use-case-without-requirements), [`use-case-outside-capability`](#check-use-case-outside-capability), [`pattern-setting-missing`](#check-pattern-setting-missing), [`pattern-setting-clash`](#check-pattern-setting-clash), [`use-case-without-flow`](#check-use-case-without-flow)
 
 <a id="kind-requirement"></a>
@@ -225,7 +241,7 @@ One rule a use case must follow, stated with MUST, MUST NOT, SHOULD or MAY. Show
 - **Obligation:** yes: designed, built and proved
 - **ID:** `<use case>-R<nn>`, such as `TL-LEND-UC01-R01`
 - **Links out:** none
-- **Links in:** [`fulfills`](#relation-fulfills), [`satisfies`](#relation-satisfies), [`proves`](#relation-proves), [`about`](#relation-about)
+- **Links in:** Carried out in ([`fulfills`](#relation-fulfills)), Designed by ([`satisfies`](#relation-satisfies)), Proved by ([`proves`](#relation-proves)), Questions about this ([`about`](#relation-about))
 - **Checks:** [`unsatisfied`](#check-unsatisfied), [`unproved`](#check-unproved), [`obligation-outside-domain`](#check-obligation-outside-domain)
 
 <a id="kind-pattern"></a>
@@ -242,7 +258,7 @@ Behavior several use cases share, stated once with the settings each use case th
 - **Obligation:** no
 - **ID:** `<P>-PAT-<name>`, such as `TL-PAT-LIBRARIAN-ACTION`
 - **Links out:** none
-- **Links in:** [`follows`](#relation-follows), [`about`](#relation-about)
+- **Links in:** Followed by ([`follows`](#relation-follows)), Questions about this ([`about`](#relation-about))
 - **Checks:** [`pattern-setting-missing`](#check-pattern-setting-missing), [`pattern-setting-clash`](#check-pattern-setting-clash), [`bad-pattern-settings`](#check-bad-pattern-settings), [`pattern-rule-setting-unknown`](#check-pattern-rule-setting-unknown), [`pattern-not-followed`](#check-pattern-not-followed)
 
 <a id="kind-pattern_rule"></a>
@@ -259,7 +275,7 @@ One rule of a pattern, stated with MUST, MUST NOT, SHOULD or MAY. Every domain t
 - **Obligation:** proof only
 - **ID:** `<pattern>-R<nn>`, such as `TL-PAT-LIBRARIAN-ACTION-R01`
 - **Links out:** none
-- **Links in:** [`about`](#relation-about), [`satisfies`](#relation-satisfies), [`proves`](#relation-proves), [`fulfills`](#relation-fulfills)
+- **Links in:** Questions about this ([`about`](#relation-about)), Designed by ([`satisfies`](#relation-satisfies)), Proved by ([`proves`](#relation-proves)), Carried out in ([`fulfills`](#relation-fulfills))
 - **Checks:** [`unproved`](#check-unproved), [`pattern-rule-setting-unknown`](#check-pattern-rule-setting-unknown)
 
 <a id="kind-flow"></a>
@@ -275,8 +291,8 @@ An end-to-end path through views and endpoints that carries out one or more use 
 - **Required fields:** none
 - **Obligation:** no
 - **ID:** `<P>-<D>-F<nn>`, such as `TL-LEND-F01`
-- **Links out:** [`fulfills`](#relation-fulfills), [`uses`](#relation-uses), [`carries_out`](#relation-carries_out)
-- **Links in:** [`about`](#relation-about), [`runs`](#relation-runs)
+- **Links out:** Carries out ([`fulfills`](#relation-fulfills)), Uses ([`uses`](#relation-uses)), Carries out ([`carries_out`](#relation-carries_out))
+- **Links in:** Questions about this ([`about`](#relation-about)), Run by ([`runs`](#relation-runs))
 - **Checks:** [`use-case-without-flow`](#check-use-case-without-flow), [`flow-step-fulfills-outside-flow`](#check-flow-step-fulfills-outside-flow), [`flow-fulfills-differs-from-steps`](#check-flow-fulfills-differs-from-steps)
 
 <a id="kind-flow_step"></a>
@@ -292,8 +308,8 @@ One step of a flow, in order: what happens, through which view, endpoint or comp
 - **Required fields:** `order`
 - **Obligation:** no
 - **ID:** `<flow>-S<nn>`, such as `TL-LEND-F01-S01`
-- **Links out:** [`fulfills`](#relation-fulfills), [`uses`](#relation-uses)
-- **Links in:** [`about`](#relation-about)
+- **Links out:** Carries out ([`fulfills`](#relation-fulfills)), Uses ([`uses`](#relation-uses))
+- **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`flow-step-order`](#check-flow-step-order), [`flow-step-fulfills-outside-flow`](#check-flow-step-fulfills-outside-flow), [`flow-fulfills-differs-from-steps`](#check-flow-fulfills-differs-from-steps)
 
 <a id="kind-view"></a>
@@ -309,8 +325,8 @@ A screen or page a person uses.
 - **Required fields:** none
 - **Obligation:** no
 - **ID:** `<P>-<D>-V<nn>`, such as `TL-LEND-V01`
-- **Links out:** [`fulfills`](#relation-fulfills), [`uses`](#relation-uses)
-- **Links in:** [`uses`](#relation-uses), [`implements`](#relation-implements), [`about`](#relation-about)
+- **Links out:** Carries out ([`fulfills`](#relation-fulfills)), Uses ([`uses`](#relation-uses))
+- **Links in:** Used by ([`uses`](#relation-uses)), Implemented by ([`implements`](#relation-implements)), Questions about this ([`about`](#relation-about))
 
 <a id="kind-endpoint"></a>
 
@@ -325,8 +341,8 @@ An HTTP endpoint: its method, route, request and responses.
 - **Required fields:** `method`, `route`
 - **Obligation:** no
 - **ID:** `<P>-<D>-E<nn>`, such as `TL-LEND-E01`
-- **Links out:** [`fulfills`](#relation-fulfills)
-- **Links in:** [`uses`](#relation-uses), [`implements`](#relation-implements), [`about`](#relation-about)
+- **Links out:** Carries out ([`fulfills`](#relation-fulfills))
+- **Links in:** Used by ([`uses`](#relation-uses)), Implemented by ([`implements`](#relation-implements)), Questions about this ([`about`](#relation-about))
 
 <a id="kind-interaction_requirement"></a>
 
@@ -341,8 +357,8 @@ One rule a view, endpoint or flow must follow, such as a field's limits or an er
 - **Required fields:** none
 - **Obligation:** yes: designed, built and proved
 - **ID:** `<view, endpoint or flow>-R<nn>`, such as `TL-LEND-E03-R01`
-- **Links out:** [`fulfills`](#relation-fulfills)
-- **Links in:** [`satisfies`](#relation-satisfies), [`proves`](#relation-proves), [`about`](#relation-about), [`fulfills`](#relation-fulfills)
+- **Links out:** Carries out ([`fulfills`](#relation-fulfills))
+- **Links in:** Designed by ([`satisfies`](#relation-satisfies)), Proved by ([`proves`](#relation-proves)), Questions about this ([`about`](#relation-about)), Carried out in ([`fulfills`](#relation-fulfills))
 - **Checks:** [`unsatisfied`](#check-unsatisfied), [`unproved`](#check-unproved), [`obligation-outside-domain`](#check-obligation-outside-domain), [`interaction-requirement-fulfills-nothing`](#check-interaction-requirement-fulfills-nothing)
 
 <a id="kind-layer"></a>
@@ -359,7 +375,7 @@ An ordered part of a domain's technical specification that groups its components
 - **Obligation:** no
 - **ID:** `<P>-<D>-LAY<nn>`, such as `TL-LEND-LAY01`
 - **Links out:** none
-- **Links in:** [`about`](#relation-about)
+- **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`layer-order`](#check-layer-order), [`component-outside-layer`](#check-component-outside-layer), [`lone-child`](#check-lone-child)
 
 <a id="kind-component"></a>
@@ -375,8 +391,8 @@ A unit of code in the target design, such as a model, service or router. It sits
 - **Required fields:** `component_type`, `file`
 - **Obligation:** no
 - **ID:** `<P>-<D>-C<nn>`, such as `TL-LEND-C01`
-- **Links out:** [`satisfies`](#relation-satisfies), [`implements`](#relation-implements), [`depends_on`](#relation-depends_on)
-- **Links in:** [`depends_on`](#relation-depends_on), [`about`](#relation-about), [`covers`](#relation-covers), [`uses`](#relation-uses)
+- **Links out:** Satisfies ([`satisfies`](#relation-satisfies)), Implements ([`implements`](#relation-implements)), Depends on ([`depends_on`](#relation-depends_on)), Reacts to ([`reacts_to`](#relation-reacts_to))
+- **Links in:** Depended on by ([`depends_on`](#relation-depends_on)), Questions about this ([`about`](#relation-about)), Covered by ([`covers`](#relation-covers)), Used by ([`uses`](#relation-uses))
 - **Checks:** [`component-file-missing`](#check-component-file-missing), [`component-outside-layer`](#check-component-outside-layer)
 
 <a id="kind-test"></a>
@@ -392,8 +408,8 @@ A test that proves obligations. Its state is automated (the default; it names th
 - **Required fields:** `test_type`
 - **Obligation:** no
 - **ID:** `<P>-<D>-T<nn>`, such as `TL-LEND-T01`
-- **Links out:** [`proves`](#relation-proves), [`runs`](#relation-runs), [`covers`](#relation-covers)
-- **Links in:** [`about`](#relation-about)
+- **Links out:** Proves ([`proves`](#relation-proves)), Runs ([`runs`](#relation-runs)), Covers ([`covers`](#relation-covers))
+- **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`bad-test-state`](#check-bad-test-state), [`test-run-by-missing`](#check-test-run-by-missing), [`proof-not-in-file`](#check-proof-not-in-file), [`test-type-mismatch`](#check-test-type-mismatch), [`proof-still-owed`](#check-proof-still-owed), [`proof-counts-nowhere`](#check-proof-counts-nowhere), [`manual-test-file-silent`](#check-manual-test-file-silent)
 
 <a id="kind-question"></a>
@@ -409,8 +425,8 @@ Something undecided, with the person who decides it.
 - **Required fields:** `owner`
 - **Obligation:** no
 - **ID:** `<P>-<D>-Q<nn> or <P>-Q<nn>`, such as `TL-LEND-Q01`
-- **Links out:** [`about`](#relation-about)
-- **Links in:** [`about`](#relation-about)
+- **Links out:** About ([`about`](#relation-about))
+- **Links in:** Questions about this ([`about`](#relation-about))
 
 <a id="kind-fitness"></a>
 
@@ -426,164 +442,182 @@ How well the product serves its purpose, as judged by the person it serves on a 
 - **Obligation:** no
 - **ID:** `<P>-FIT<nn>`, such as `LA-FIT01`
 - **Links out:** none
-- **Links in:** [`about`](#relation-about)
+- **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`bad-fitness-date`](#check-bad-fitness-date), [`bad-fitness-score`](#check-bad-fitness-score)
 
 ## Relations
 
-Every relation, from `meta/relations.csv`: which kind may link to which, and what the link does.
+Every relation, from `meta/relations.csv`: which kind may link to which, what the link does, and the plain words it reads as from the source (forward) and from the target (reverse).
 
 <a id="relation-relates_to"></a>
 
 ### `relates_to`
 
-| From | To | Role | Meaning |
-| --- | --- | --- | --- |
-| [`aggregate`](#kind-aggregate) | [`aggregate`](#kind-aggregate) | - | One aggregate refers to another by ID. |
+| From | To | Role | Forward | Reverse | Meaning |
+| --- | --- | --- | --- | --- | --- |
+| [`aggregate`](#kind-aggregate) | [`aggregate`](#kind-aggregate) | - | Relates to | Related to by | One aggregate refers to another by ID. |
 
 <a id="relation-applies"></a>
 
 ### `applies`
 
-| From | To | Role | Meaning |
-| --- | --- | --- | --- |
-| [`use_case`](#kind-use_case) | [`domain_rule`](#kind-domain_rule) | - | The use case relies on the domain rule. |
+| From | To | Role | Forward | Reverse | Meaning |
+| --- | --- | --- | --- | --- | --- |
+| [`use_case`](#kind-use_case) | [`domain_rule`](#kind-domain_rule) | - | Applies | Applied by | The use case relies on the domain rule. |
 
 <a id="relation-follows"></a>
 
 ### `follows`
 
-| From | To | Role | Meaning |
-| --- | --- | --- | --- |
-| [`use_case`](#kind-use_case) | [`pattern`](#kind-pattern) | - | The use case follows the pattern and gives a value for each of its settings. |
-| [`domain`](#kind-domain) | [`pattern`](#kind-pattern) | - | The whole domain follows the pattern, and so owes each of its rules. |
+| From | To | Role | Forward | Reverse | Meaning |
+| --- | --- | --- | --- | --- | --- |
+| [`use_case`](#kind-use_case) | [`pattern`](#kind-pattern) | - | Follows | Followed by | The use case follows the pattern and gives a value for each of its settings. |
+| [`domain`](#kind-domain) | [`pattern`](#kind-pattern) | - | Follows | Followed by | The whole domain follows the pattern, and so owes each of its rules. |
 
 <a id="relation-fulfills"></a>
 
 ### `fulfills`
 
-| From | To | Role | Meaning |
-| --- | --- | --- | --- |
-| [`flow`](#kind-flow) | [`requirement`](#kind-requirement) | - | The flow carries out the requirement. |
-| [`view`](#kind-view) | [`requirement`](#kind-requirement) | - | The view carries out the requirement. |
-| [`endpoint`](#kind-endpoint) | [`requirement`](#kind-requirement) | - | The endpoint carries out the requirement. |
-| [`interaction_requirement`](#kind-interaction_requirement) | [`requirement`](#kind-requirement) | - | The interaction requirement carries out the use case requirement at a view, endpoint or flow. |
-| [`interaction_requirement`](#kind-interaction_requirement) | [`domain_rule`](#kind-domain_rule) | - | The interaction requirement carries out the domain rule at a view, endpoint or flow. |
-| [`flow`](#kind-flow) | [`domain_rule`](#kind-domain_rule) | - | The flow carries out the domain rule. |
-| [`flow`](#kind-flow) | [`interaction_requirement`](#kind-interaction_requirement) | - | The flow carries out the interaction requirement. |
-| [`flow_step`](#kind-flow_step) | [`requirement`](#kind-requirement) | - | The step carries out the requirement. |
-| [`flow_step`](#kind-flow_step) | [`interaction_requirement`](#kind-interaction_requirement) | - | The step carries out the interaction requirement. |
-| [`flow_step`](#kind-flow_step) | [`domain_rule`](#kind-domain_rule) | - | The step carries out the domain rule. |
-| [`interaction_requirement`](#kind-interaction_requirement) | [`pattern_rule`](#kind-pattern_rule) | - | The interaction requirement carries out the pattern rule at its view, endpoint or flow. |
-| [`flow_step`](#kind-flow_step) | [`pattern_rule`](#kind-pattern_rule) | - | The step carries out the pattern rule. |
+| From | To | Role | Forward | Reverse | Meaning |
+| --- | --- | --- | --- | --- | --- |
+| [`flow`](#kind-flow) | [`requirement`](#kind-requirement) | - | Carries out | Carried out in | The flow carries out the requirement. |
+| [`view`](#kind-view) | [`requirement`](#kind-requirement) | - | Carries out | Carried out in | The view carries out the requirement. |
+| [`endpoint`](#kind-endpoint) | [`requirement`](#kind-requirement) | - | Carries out | Carried out in | The endpoint carries out the requirement. |
+| [`interaction_requirement`](#kind-interaction_requirement) | [`requirement`](#kind-requirement) | - | Carries out | Carried out in | The interaction requirement carries out the use case requirement at a view, endpoint or flow. |
+| [`interaction_requirement`](#kind-interaction_requirement) | [`domain_rule`](#kind-domain_rule) | - | Carries out | Carried out in | The interaction requirement carries out the domain rule at a view, endpoint or flow. |
+| [`flow`](#kind-flow) | [`domain_rule`](#kind-domain_rule) | - | Carries out | Carried out in | The flow carries out the domain rule. |
+| [`flow`](#kind-flow) | [`interaction_requirement`](#kind-interaction_requirement) | - | Carries out | Carried out in | The flow carries out the interaction requirement. |
+| [`flow_step`](#kind-flow_step) | [`requirement`](#kind-requirement) | - | Carries out | Carried out in | The step carries out the requirement. |
+| [`flow_step`](#kind-flow_step) | [`interaction_requirement`](#kind-interaction_requirement) | - | Carries out | Carried out in | The step carries out the interaction requirement. |
+| [`flow_step`](#kind-flow_step) | [`domain_rule`](#kind-domain_rule) | - | Carries out | Carried out in | The step carries out the domain rule. |
+| [`interaction_requirement`](#kind-interaction_requirement) | [`pattern_rule`](#kind-pattern_rule) | - | Carries out | Carried out in | The interaction requirement carries out the pattern rule at its view, endpoint or flow. |
+| [`flow_step`](#kind-flow_step) | [`pattern_rule`](#kind-pattern_rule) | - | Carries out | Carried out in | The step carries out the pattern rule. |
 
 <a id="relation-uses"></a>
 
 ### `uses`
 
-| From | To | Role | Meaning |
-| --- | --- | --- | --- |
-| [`flow`](#kind-flow) | [`view`](#kind-view) | - | The flow passes through the view. |
-| [`flow`](#kind-flow) | [`endpoint`](#kind-endpoint) | - | The flow calls the endpoint. |
-| [`view`](#kind-view) | [`endpoint`](#kind-endpoint) | - | The view calls the endpoint. |
-| [`flow_step`](#kind-flow_step) | [`view`](#kind-view) | - | The step happens in the view. |
-| [`flow_step`](#kind-flow_step) | [`endpoint`](#kind-endpoint) | - | The step calls the endpoint. |
-| [`flow_step`](#kind-flow_step) | [`component`](#kind-component) | - | The step is carried out by the component. |
+| From | To | Role | Forward | Reverse | Meaning |
+| --- | --- | --- | --- | --- | --- |
+| [`flow`](#kind-flow) | [`view`](#kind-view) | - | Uses | Used by | The flow passes through the view. |
+| [`flow`](#kind-flow) | [`endpoint`](#kind-endpoint) | - | Uses | Used by | The flow calls the endpoint. |
+| [`view`](#kind-view) | [`endpoint`](#kind-endpoint) | - | Uses | Used by | The view calls the endpoint. |
+| [`flow_step`](#kind-flow_step) | [`view`](#kind-view) | - | Uses | Used by | The step happens in the view. |
+| [`flow_step`](#kind-flow_step) | [`endpoint`](#kind-endpoint) | - | Uses | Used by | The step calls the endpoint. |
+| [`flow_step`](#kind-flow_step) | [`component`](#kind-component) | - | Uses | Used by | The step is carried out by the component. |
 
 <a id="relation-satisfies"></a>
 
 ### `satisfies`
 
-| From | To | Role | Meaning |
-| --- | --- | --- | --- |
-| [`component`](#kind-component) | [`requirement`](#kind-requirement) | design | The component designs or implements the requirement. |
-| [`component`](#kind-component) | [`domain_rule`](#kind-domain_rule) | design | The component enforces the domain rule. |
-| [`component`](#kind-component) | [`interaction_requirement`](#kind-interaction_requirement) | design | The component designs or implements the interaction requirement. |
-| [`component`](#kind-component) | [`pattern_rule`](#kind-pattern_rule) | design | The component designs or implements the pattern rule, for the domain it sits in. |
+| From | To | Role | Forward | Reverse | Meaning |
+| --- | --- | --- | --- | --- | --- |
+| [`component`](#kind-component) | [`requirement`](#kind-requirement) | design | Satisfies | Designed by | The component designs or implements the requirement. |
+| [`component`](#kind-component) | [`domain_rule`](#kind-domain_rule) | design | Satisfies | Designed by | The component enforces the domain rule. |
+| [`component`](#kind-component) | [`interaction_requirement`](#kind-interaction_requirement) | design | Satisfies | Designed by | The component designs or implements the interaction requirement. |
+| [`component`](#kind-component) | [`pattern_rule`](#kind-pattern_rule) | design | Satisfies | Designed by | The component designs or implements the pattern rule, for the domain it sits in. |
 
 <a id="relation-implements"></a>
 
 ### `implements`
 
-| From | To | Role | Meaning |
-| --- | --- | --- | --- |
-| [`component`](#kind-component) | [`endpoint`](#kind-endpoint) | - | The component serves the endpoint. |
-| [`component`](#kind-component) | [`view`](#kind-view) | - | The component renders the view. |
+| From | To | Role | Forward | Reverse | Meaning |
+| --- | --- | --- | --- | --- | --- |
+| [`component`](#kind-component) | [`endpoint`](#kind-endpoint) | - | Implements | Implemented by | The component serves the endpoint. |
+| [`component`](#kind-component) | [`view`](#kind-view) | - | Implements | Implemented by | The component renders the view. |
 
 <a id="relation-depends_on"></a>
 
 ### `depends_on`
 
-| From | To | Role | Meaning |
-| --- | --- | --- | --- |
-| [`component`](#kind-component) | [`component`](#kind-component) | - | The component calls or imports the other. |
+| From | To | Role | Forward | Reverse | Meaning |
+| --- | --- | --- | --- | --- | --- |
+| [`component`](#kind-component) | [`component`](#kind-component) | - | Depends on | Depended on by | The component calls or imports the other. |
 
 <a id="relation-proves"></a>
 
 ### `proves`
 
-| From | To | Role | Meaning |
-| --- | --- | --- | --- |
-| [`test`](#kind-test) | [`requirement`](#kind-requirement) | proof | The test proves the requirement. |
-| [`test`](#kind-test) | [`domain_rule`](#kind-domain_rule) | proof | The test proves the domain rule. |
-| [`test`](#kind-test) | [`interaction_requirement`](#kind-interaction_requirement) | proof | The test proves the interaction requirement. |
-| [`test`](#kind-test) | [`pattern_rule`](#kind-pattern_rule) | proof | The test proves the pattern rule, for the domain it sits in. |
+| From | To | Role | Forward | Reverse | Meaning |
+| --- | --- | --- | --- | --- | --- |
+| [`test`](#kind-test) | [`requirement`](#kind-requirement) | proof | Proves | Proved by | The test proves the requirement. |
+| [`test`](#kind-test) | [`domain_rule`](#kind-domain_rule) | proof | Proves | Proved by | The test proves the domain rule. |
+| [`test`](#kind-test) | [`interaction_requirement`](#kind-interaction_requirement) | proof | Proves | Proved by | The test proves the interaction requirement. |
+| [`test`](#kind-test) | [`pattern_rule`](#kind-pattern_rule) | proof | Proves | Proved by | The test proves the pattern rule, for the domain it sits in. |
 
 <a id="relation-about"></a>
 
 ### `about`
 
-| From | To | Role | Meaning |
-| --- | --- | --- | --- |
-| [`question`](#kind-question) | any kind | - | The open question concerns that record. |
+| From | To | Role | Forward | Reverse | Meaning |
+| --- | --- | --- | --- | --- | --- |
+| [`question`](#kind-question) | any kind | - | About | Questions about this | The open question concerns that record. |
 
 <a id="relation-carries_out"></a>
 
 ### `carries_out`
 
-| From | To | Role | Meaning |
-| --- | --- | --- | --- |
-| [`flow`](#kind-flow) | [`use_case`](#kind-use_case) | - | The flow carries out the use case. |
+| From | To | Role | Forward | Reverse | Meaning |
+| --- | --- | --- | --- | --- | --- |
+| [`flow`](#kind-flow) | [`use_case`](#kind-use_case) | - | Carries out | Carried out by flow | The flow carries out the use case. |
 
 <a id="relation-runs"></a>
 
 ### `runs`
 
-| From | To | Role | Meaning |
-| --- | --- | --- | --- |
-| [`test`](#kind-test) | [`flow`](#kind-flow) | - | The test runs the flow end to end. |
+| From | To | Role | Forward | Reverse | Meaning |
+| --- | --- | --- | --- | --- | --- |
+| [`test`](#kind-test) | [`flow`](#kind-flow) | - | Runs | Run by | The test runs the flow end to end. |
 
 <a id="relation-covers"></a>
 
 ### `covers`
 
-| From | To | Role | Meaning |
-| --- | --- | --- | --- |
-| [`test`](#kind-test) | [`component`](#kind-component) | - | The test exercises the component. |
+| From | To | Role | Forward | Reverse | Meaning |
+| --- | --- | --- | --- | --- | --- |
+| [`test`](#kind-test) | [`component`](#kind-component) | - | Covers | Covered by | The test exercises the component. |
 
 <a id="relation-has_one"></a>
 
 ### `has_one`
 
-| From | To | Role | Meaning |
-| --- | --- | --- | --- |
-| [`entity`](#kind-entity) | [`entity`](#kind-entity) | - | The entity holds exactly one of the other entity, as a part of it (one to one). |
+| From | To | Role | Forward | Reverse | Meaning |
+| --- | --- | --- | --- | --- | --- |
+| [`entity`](#kind-entity) | [`entity`](#kind-entity) | - | Has one | Part of | The entity holds exactly one of the other entity, as a part of it (one to one). |
 
 <a id="relation-has_many"></a>
 
 ### `has_many`
 
-| From | To | Role | Meaning |
-| --- | --- | --- | --- |
-| [`entity`](#kind-entity) | [`entity`](#kind-entity) | - | The entity holds any number of the other entity, as parts of it (one to many). |
+| From | To | Role | Forward | Reverse | Meaning |
+| --- | --- | --- | --- | --- | --- |
+| [`entity`](#kind-entity) | [`entity`](#kind-entity) | - | Has many | Part of | The entity holds any number of the other entity, as parts of it (one to many). |
 
 <a id="relation-refers_to"></a>
 
 ### `refers_to`
 
-| From | To | Role | Meaning |
-| --- | --- | --- | --- |
-| [`entity`](#kind-entity) | [`entity`](#kind-entity) | - | The entity holds a reference to one of the other entity, which may sit in another aggregate or domain (many to one). |
+| From | To | Role | Forward | Reverse | Meaning |
+| --- | --- | --- | --- | --- | --- |
+| [`entity`](#kind-entity) | [`entity`](#kind-entity) | - | Refers to | Referred to by | The entity holds a reference to one of the other entity, which may sit in another aggregate or domain (many to one). |
+
+<a id="relation-raised_by"></a>
+
+### `raised_by`
+
+| From | To | Role | Forward | Reverse | Meaning |
+| --- | --- | --- | --- | --- | --- |
+| [`domain_event`](#kind-domain_event) | [`entity`](#kind-entity) | - | Raised by | Raises | The event is raised when that entity of its aggregate changes. |
+
+<a id="relation-reacts_to"></a>
+
+### `reacts_to`
+
+| From | To | Role | Forward | Reverse | Meaning |
+| --- | --- | --- | --- | --- | --- |
+| [`aggregate`](#kind-aggregate) | [`domain_event`](#kind-domain_event) | - | Reacts to | Reacted to by | The aggregate changes in response to the event, which may come from another aggregate or domain. |
+| [`use_case`](#kind-use_case) | [`domain_event`](#kind-domain_event) | - | Reacts to | Reacted to by | The use case starts when the event happens. |
+| [`component`](#kind-component) | [`domain_event`](#kind-domain_event) | - | Reacts to | Reacted to by | The component handles the event. |
 
 ## Folders
 
@@ -605,7 +639,7 @@ What a product's domains share: patterns and their rules.
 The aggregates and their domain rules.
 
 - **Stage:** Define, order 1
-- **Kinds:** [`aggregate`](#kind-aggregate), [`entity`](#kind-entity), [`domain_rule`](#kind-domain_rule)
+- **Kinds:** [`aggregate`](#kind-aggregate), [`entity`](#kind-entity), [`domain_event`](#kind-domain_event), [`domain_rule`](#kind-domain_rule)
 
 <a id="folder-use-cases"></a>
 
@@ -1386,6 +1420,20 @@ product's, whose header comment lacks a summary sentence, an explanation or a se
 header is one summary sentence, a blank comment line, the explanation ending with how to fix what it
 reports, a blank comment line, then `-- severity: error` (or `warning`, or `error, warning`) and an optional
 `-- kinds: ...` line. Write what is missing.
+
+<a id="check-relation-unlabeled"></a>
+
+### `relation-unlabeled`
+
+**Error** · Lathe's `checks/72-relation-unlabeled.sql`
+
+Every relation rule says in plain words what its link means, read from either end.
+
+Each row of `relations.csv`, Lathe's or an extension's, carries a `forward_label`, the link read from the
+source ("Satisfies"), and a `reverse_label`, the link read from the target ("Designed by"). The wiki, the
+inspector, the graph and the format reference show links by these words. An extension that restates a
+rule may leave them empty to keep the earlier labels, so the rule is reported only when, after every
+extension is merged, a label is still empty. Write the missing label, in sentence case.
 
 <a id="check-parse-error"></a>
 

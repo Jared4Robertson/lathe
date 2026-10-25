@@ -1,2 +1,2 @@
-relation,source_kind,target_kind,role,description
-proves,test,aggregate,proof,"A test may claim to prove an aggregate, which is no obligation."
+relation,source_kind,target_kind,role,description,forward_label,reverse_label
+proves,test,aggregate,proof,"A test may claim to prove an aggregate, which is no obligation.",Proves,Proved by
