@@ -203,7 +203,7 @@ describe('the inspector', () => {
     expect(facts.getByRole('heading', { name: 'Links out' })).toBeInTheDocument();
     expect(document.querySelector('.focus-layout')!.className).toContain('with-inspector');
 
-    // Hide it from its edge: the main view takes the space, and a button on the edge brings it back.
+    // Hide it: the main view takes the space, and the toggle in the page's top-right corner brings it back.
     fireEvent.click(facts.getByRole('button', { name: 'Hide the inspector' }));
     expect(screen.queryByRole('complementary', { name: 'Inspector' })).toBeNull();
     expect(document.querySelector('.focus-layout')!.className).not.toContain('with-inspector');
@@ -223,7 +223,7 @@ describe('the inspector', () => {
     await openApp('/records/P-D-UC01', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     expect(screen.queryByRole('complementary', { name: 'Inspector' })).toBeNull();
-    const toggle = screen.getByRole('button', { name: /^Inspector$/ });
+    const toggle = screen.getByRole('button', { name: 'Show the inspector' });
     fireEvent.click(toggle);
     const drawer = inspector();
     expect(drawer.className).toContain('is-drawer');
