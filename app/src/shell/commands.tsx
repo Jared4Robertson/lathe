@@ -144,6 +144,9 @@ export function CommandsProvider({ children }: { children: ReactNode }) {
   const titleOf = useCallback((c: Command) => handlers.current.get(c.id)?.at(-1)?.title ?? c.title, []);
   const api = useMemo(() => ({ commands, mac, register, run, available, titleOf, announce }), [commands, mac, register, run, available, titleOf, announce]);
 
+  // In the desktop app, a native menu choice arrives as a command ID and runs like its keys would (LA-DSK-UC03-R02).
+  useEffect(() => window.latheDesktop?.onCommand?.((id: string) => { run(id); }), [run]);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.defaultPrevented || e.isComposing) return;
@@ -322,4 +325,11 @@ function CommandPalette({ commands, mac, available, titleOf, onClose, onRun }: L
       </ul>
     </Dialog>
   );
+}
+
+declare global {
+  interface Window {
+    /** Set by the desktop app's preload (desktop/src/preload.cts); absent in a browser. */
+    latheDesktop?: { isDesktop: boolean; onCommand?: (listener: (id: string) => void) => () => void };
+  }
 }
