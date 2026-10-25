@@ -1,5 +1,5 @@
 ---
-id: LA-CHK-T49
+id: LA-CHK-T52
 kind: test
 title: A link into another product is an error
 parent: LA-CHK

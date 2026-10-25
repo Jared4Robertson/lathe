@@ -1604,21 +1604,6 @@ is a leftover, or its purpose is unwritten. Shared infrastructure is no exceptio
 domain rules or pattern rules it makes possible. A link to a record that does not exist does not count (it
 is only a dangling-link). Link what the component designs or implements with "satisfies", or remove it.
 
-<a id="check-link-crosses-product"></a>
-
-### `link-crosses-product`
-
-**Error** · Lathe's `checks/78-link-crosses-product.sql`
-
-A link stays inside its product.
-
-Each product is a space of its own: its records link only to records of the same product, whatever the
-relation (`satisfies`, `involves`, `applies` and every other). A link from a record of one product to a
-record of another is reported once for each source, relation and target. A record that sits under no
-product, and a link to a record that does not exist, are reported by other checks instead. When the target
-ID is duplicated, the link is reported only if no record with that ID is in the source's product. Remove
-the link; to point a reader at the other product, name the ID in prose, where it is a plain citation.
-
 <a id="check-test-proves-nothing"></a>
 
 ### `test-proves-nothing`
@@ -1632,6 +1617,21 @@ A test exists to prove obligations (a `proof` link such as `proves`) or to check
 component (`covers`) says what it touches, not what it shows. A link to a record that does not exist does
 not count (it is only a dangling-link). Link the obligation it proves with "proves", or the one it backs
 with "supports", or remove the test.
+
+<a id="check-link-crosses-product"></a>
+
+### `link-crosses-product`
+
+**Error** · Lathe's `checks/80-link-crosses-product.sql`
+
+A link stays inside its product.
+
+Each product is a space of its own: its records link only to records of the same product, whatever the
+relation (`satisfies`, `involves`, `applies` and every other). A link from a record of one product to a
+record of another is reported once for each source, relation and target. A record that sits under no
+product, and a link to a record that does not exist, are reported by other checks instead. When the target
+ID is duplicated, the link is reported only if no record with that ID is in the source's product. Remove
+the link; to point a reader at the other product, name the ID in prose, where it is a plain citation.
 
 <a id="check-parse-error"></a>
 

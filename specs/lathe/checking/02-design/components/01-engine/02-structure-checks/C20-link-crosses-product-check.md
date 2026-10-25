@@ -1,10 +1,10 @@
 ---
-id: LA-CHK-C18
+id: LA-CHK-C20
 kind: component
 title: Link crosses product check
 parent: LA-CHK-LAY03
 component_type: sql check
-file: lathe/checks/78-link-crosses-product.sql
+file: lathe/checks/80-link-crosses-product.sql
 links:
   satisfies: [LA-CHK-UC01-R04, LA-AUT-DR75]
 ---
