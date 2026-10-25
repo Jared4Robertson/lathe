@@ -8,4 +8,4 @@ file: lathe/meta/relations.csv
 links:
   satisfies: [LA-CHK-UC10-R05]
 ---
-The `follows` relation rule, from `use_case` to `pattern`, with no role: following a pattern is neither design nor proof.
+The `follows` relation rules, from `use_case` and from `domain` to `pattern`, with no role: following a pattern is neither design nor proof.

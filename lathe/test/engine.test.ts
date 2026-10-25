@@ -95,7 +95,7 @@ describe('loading', () => {
   it('LA-CHK-T18 loadWorkspace returns the Workspace contract', async () => {
     const ws = await loadWorkspace(fixture('unfinished'));
     expect(Object.keys(ws).sort()).toEqual(['coverage', 'kinds', 'links', 'problems', 'records', 'relations']);
-    expect(Object.keys(ws.kinds[0]).sort()).toEqual(['description', 'kind', 'label', 'obligation', 'parent_kinds', 'required_fields', 'stage']);
+    expect(Object.keys(ws.kinds[0]).sort()).toEqual(['description', 'kind', 'label', 'obligation', 'parent_kinds', 'proof_only', 'required_fields', 'stage']);
     expect(Object.keys(ws.relations[0]).sort()).toEqual(['description', 'relation', 'role', 'source_kind', 'target_kind']);
     expect(Object.keys(ws.records[0]).sort()).toEqual(['body', 'domain', 'fields', 'id', 'kind', 'mentions', 'parent', 'path', 'product', 'title']);
     expect(Object.keys(ws.links[0]).sort()).toEqual(['relation', 'source', 'target']);

@@ -46,15 +46,17 @@ describe('coverage of pattern rules', () => {
   });
 
   it("LA-CHK-T93 Only the domain's own components and tests design and prove a pattern rule there", () => {
-    // PX-A's component and test cover both rules, but count only in PX-A.
-    expect(patternRules(good, 'PX-B')).toMatchObject({ total: 2, designed: 1, proved: 0 });
-    expect(patternRules(good, 'PX-D')).toMatchObject({ total: 2, designed: 0, proved: 0 });
+    // PX-A's test proves both rules, but counts only in PX-A. Pattern rules are proof-only by default, so
+    // designed equals total; per-domain design is tested with an extension in patterns-like-s2.test.ts.
+    expect(patternRules(good, 'PX-B')).toMatchObject({ total: 2, designed: 2, proved: 0 });
+    expect(patternRules(good, 'PX-D')).toMatchObject({ total: 2, designed: 2, proved: 0 });
   });
 
   it('LA-CHK-T94 Built and planned are counted per domain too', () => {
-    expect(patternRules(good, 'PX-B')).toMatchObject({ designed: 1, built: 1 });
-    // PX-C's component file does not exist, and its only test of R01 is planned.
-    expect(patternRules(good, 'PX-C')).toMatchObject({ total: 1, designed: 1, built: 0, proved: 0, planned: 1 });
+    // Proof-only: designed and built equal total, whatever the components.
+    expect(patternRules(good, 'PX-B')).toMatchObject({ total: 2, designed: 2, built: 2 });
+    // PX-C's only test of R01 is planned.
+    expect(patternRules(good, 'PX-C')).toMatchObject({ total: 1, designed: 1, built: 1, proved: 0, planned: 1 });
   });
 
   it('LA-CHK-T95 A rule whose setting every following use case marks Not applicable does not apply in that domain', () => {
@@ -65,9 +67,7 @@ describe('coverage of pattern rules', () => {
 
   it('LA-CHK-T96 A rule still applies when only some following use cases mark its setting Not applicable', () => {
     expect(ruleGaps(good, 'PX-D')).toEqual([
-      { id: R01, kind: 'pattern_rule', missing: 'satisfies' },
       { id: R01, kind: 'pattern_rule', missing: 'proves' },
-      { id: R02, kind: 'pattern_rule', missing: 'satisfies' },
       { id: R02, kind: 'pattern_rule', missing: 'proves' },
     ]);
   });
@@ -84,7 +84,6 @@ describe('coverage of pattern rules', () => {
     expect(ruleGaps(good, 'PX-A')).toEqual([]);
     expect(ruleGaps(good, 'PX-B')).toEqual([
       { id: R01, kind: 'pattern_rule', missing: 'proves' },
-      { id: R02, kind: 'pattern_rule', missing: 'satisfies' },
       { id: R02, kind: 'pattern_rule', missing: 'proves' },
     ]);
   });
@@ -92,16 +91,9 @@ describe('coverage of pattern rules', () => {
 
 describe('unsatisfied and unproved pattern rules', () => {
   it('LA-CHK-T99 An undesigned pattern rule is reported once for each domain that owes it', () => {
-    const found = ofCheck(good, 'unsatisfied').filter((p) => p.record?.startsWith('PX-PAT'));
-    expect(found.map((p) => [p.record, p.message.match(/ in (PX-[A-E])/)?.[1]])).toEqual([
-      [R01, 'PX-D'],
-      [R02, 'PX-B'],
-      [R02, 'PX-D'],
-    ]);
-    expect(found.every((p) => p.severity === 'warning')).toBe(true);
-    expect(found[0].message).toBe(
-      'Pattern rule PX-PAT-ACT-R01 is not designed in PX-D: no component in PX-D satisfies it, though the domain follows its pattern.',
-    );
+    // Pattern rules are proof-only by default, so none is unsatisfied; the per-domain message is tested
+    // with an extension that makes them full obligations, in patterns-like-s2.test.ts.
+    expect(ofCheck(good, 'unsatisfied').filter((p) => p.record?.startsWith('PX-PAT'))).toEqual([]);
   });
 
   it('LA-CHK-T100 An unproved pattern rule is reported once for each domain that owes it, saying when its test is only planned', () => {

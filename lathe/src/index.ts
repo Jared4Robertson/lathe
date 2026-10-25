@@ -191,6 +191,8 @@ const union = (a: string[], b: string[]) => [...a, ...b.filter((x) => !a.include
 // way: a later row with the same relation, source kind and target kind is the same rule, and its non-empty
 // role or description replaces the earlier one. Every kind and relation row is also kept, with the file it
 // came from, in meta_kind_rows and meta_relation_rows, so that a duplicate within one folder can be reported.
+// A kind's obligation value is read in any letter case: `yes` or `true` makes it an obligation, `proof` an
+// obligation that needs proof only (proof_only), and anything else not an obligation.
 async function loadMeta(connection: DuckDBConnection, metaDirs: string[], root: string) {
   const defaultMeta = path.join(PACKAGE_DIR, 'meta');
   const where = (dir: string, name: string) =>
@@ -271,7 +273,8 @@ async function loadMeta(connection: DuckDBConnection, metaDirs: string[], root: 
   await connection.run(`
     CREATE TABLE kinds AS
     SELECT kind, label, stage, ${list('parent_kinds')}, ${list('required_fields')},
-           lower(obligation) IN ('yes', 'true') AS obligation, description
+           lower(trim(obligation)) IN ('yes', 'true', 'proof') AS obligation,
+           lower(trim(obligation)) = 'proof' AS proof_only, description
     FROM meta_kinds_in;
     DROP TABLE meta_kinds_in;
   `);
