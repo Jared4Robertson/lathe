@@ -5,7 +5,8 @@ import { renderMarkdown } from '../src/specs/Markdown';
 import { main, openApp, section } from './helpers';
 
 const side = () => main().querySelector('aside.record-side') as HTMLElement;
-const field = (name: string) => within(side()).getByText(name, { selector: 'dt' }).nextElementSibling?.textContent;
+// A required field's label is a link to the kind's page, so the label may sit in a link inside the dt.
+const field = (name: string) => within(side()).getByText(name, { selector: 'dt, dt a' }).closest('div')?.querySelector('dd')?.textContent;
 
 /** The link groups under a "Links out" or "Links in" heading, as relation -> linked IDs. */
 function linkGroups(heading: 'Links out' | 'Links in') {

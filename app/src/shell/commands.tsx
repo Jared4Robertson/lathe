@@ -24,6 +24,8 @@ import {
   resolveCommands,
   type Command,
 } from './keymap';
+import { Link } from '../router';
+import { formatPath } from '../specs/data';
 
 // The command dispatcher: components register handlers for command ids (useCommand), one key
 // listener matches key presses against the keymap, and the command palette and the shortcuts
@@ -273,6 +275,9 @@ function ShortcutSheet({ commands, mac, available, titleOf, onClose }: ListProps
       <p className="hint shortcut-note">
         To change a shortcut, put a JSON map of command to keys in local storage under <code>{OVERRIDES_KEY}</code>, for
         example <code>{'{"toggleNav": "Mod+J"}'}</code> (Mod is {mac ? '⌘' : 'Ctrl'}), and reload. Each command's name is in the last column.
+      </p>
+      <p className="hint shortcut-note">
+        How records are written, and every kind and check: <Link to={formatPath} onClick={onClose}>Record format</Link>.
       </p>
     </Dialog>
   );

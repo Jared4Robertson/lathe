@@ -2,6 +2,7 @@ import { lowerLabel } from '../plural';
 import type { ReactNode } from 'react';
 import { domainPath, kindLabel, productPath, relationLabel, type SpecIndex, type SpecLink as Link, type SpecRecord } from './data';
 import { RecordMarkdown } from './mentions';
+import { kindFieldPath, kindPagePath } from '../format/reference';
 import { PatternRuleSections, PatternSections } from './PatternParts';
 import { FlowSteps } from './FlowSteps';
 import { LongList } from '../components/LongList';
@@ -184,10 +185,14 @@ export function RecordFacts({ index, record }: { index: SpecIndex; record: SpecR
   return (
     <>
       <dl className="fields">
-        <div><dt>Kind</dt><dd title={kind?.description}>{kind?.label ?? record.kind}</dd></div>
+        <div><dt>Kind</dt><dd title={kind?.description}><SpecLink to={kindPagePath(record.kind)} title={`How a ${lowerLabel(kind?.label ?? record.kind)} works`}>{kind?.label ?? record.kind}</SpecLink></dd></div>
         {isTest && <div><dt>State</dt><dd><TestStateTag record={record} /></dd></div>}
         {fields.map(([name, value]) => (
-          <div key={name}><dt>{name.replaceAll('_', ' ')}</dt><dd>{value}</dd></div>
+          <div key={name}>
+            {/* A required field's label leads to the field on the kind's page in the format reference. */}
+            <dt>{kind?.required_fields.includes(name) ? <SpecLink to={kindFieldPath(record.kind, name)} title={`Required of every ${lowerLabel(kind.label)}`}>{name.replaceAll('_', ' ')}</SpecLink> : name.replaceAll('_', ' ')}</dt>
+            <dd>{value}</dd>
+          </div>
         ))}
         <div><dt>Spec file</dt><dd><code>{record.path}</code></dd></div>
       </dl>
