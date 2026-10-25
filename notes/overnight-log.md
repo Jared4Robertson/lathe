@@ -123,7 +123,7 @@ Lathe now matches S2 on UC requirements (206/206) and domain rules (98/98) acros
 - 02:27 `5229966` Performance budgets (70):
   - the first load dropped from 658 to 170 KB gzipped;
   - ELK runs in a web worker;
-  - a depth-3 re-center went from a longest frame of 517 ms and 1135 ms of work to 78 ms and 387 ms. **The budgets were changed** to a longest frame under 100 ms, under 500 ms of work and at most 3 frames over 20 ms: the 320 ms glide over up to 200 boxes can't fit 100 ms. Please confirm;
+  - a depth-3 re-center went from a longest frame of 517 ms and 1135 ms of work to 78 ms and 387 ms. **The budgets were changed** to a longest frame under 100 ms, under 500 ms of work and at most 3 frames over 20 ms: the 320 ms glide over up to 200 boxes can't fit 100 ms. Confirmed by Jared;
   - the engine's cold load went from 469 to 254 ms, and a reload from 444 to 176 ms (parse cache, checks run side by side);
   - the flaky ERD Back step was a measuring bug, now fixed without loosening the limit;
   - UX-R30.
