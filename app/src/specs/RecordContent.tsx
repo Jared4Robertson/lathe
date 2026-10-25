@@ -68,7 +68,7 @@ function Fulfills({ index, record }: { index: SpecIndex; record: SpecRecord }) {
             const target = index.byId.get(t);
             return (
               <>
-                <RecordLink index={index} id={t} />
+                <RecordLink index={index} id={t} row />
                 {target && <small className="meta">{kindLabel(index, target.kind)}</small>}
               </>
             );

@@ -377,7 +377,8 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .test-state.manual { color: var(--ink); border-color: var(--muted); }
 .test-state.planned { border-style: dashed; font-style: italic; background: transparent; }
 .test-state.unknown { color: var(--spark); border-color: var(--spark); }
-.record-row.planned > .record-link { opacity: 0.65; font-style: italic; }
+.record-row.planned > .record-link { font-style: italic; }
+.record-row.planned > .record-link > * { opacity: 0.65; }
 .planned-note { margin: 0; padding: 8px 12px; border: 1px dashed var(--muted); border-radius: 8px; color: var(--muted); font-size: 0.88rem; }
 .fulfills-at { margin: 0 0 6px; font-size: 0.88rem; color: var(--muted); }
 /* The record content lays itself out by its own width, so it reads at half the screen beside the graph. */
@@ -506,8 +507,10 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .tree-toggle-space { width: 24px; flex: none; }
 .tree-row-body { flex: 1; min-width: 0; }
 .tree-count { color: var(--muted); font-size: 0.78rem; white-space: nowrap; }
-.tree-nested { margin: 6px 0 2px 28px; }
-.record-list.tree > li { padding: 5px 10px 5px 4px; }
+.tree-nested { margin: 1px 10px 7px 32px; }
+/* A tree item's padding sits on its row, so the row's stretched link (R13) covers all of it. */
+.record-list.tree > li { padding: 0; }
+.record-list.tree .tree-row { padding: 5px 10px 5px 4px; }
 .tree-bulk { font: inherit; font-size: 0.78rem; padding: 2px 8px; min-height: 26px; border: 1px solid var(--rule); border-radius: 5px; background: var(--sheet); color: var(--ink); cursor: pointer; white-space: nowrap; }
 .long-list-tools.short { justify-content: flex-end; }
 .pattern-tag { font: 500 0.68rem var(--mono); padding: 0 6px; border-radius: 4px; border: 1px dashed var(--steel); color: var(--steel); white-space: nowrap; }
@@ -651,6 +654,17 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 .quick-find-results li, .palette-list li, .graph-trace-toggle, .graph-filters > summary, .graph-legend summary {
   transition: background-color var(--hover-speed), border-color var(--hover-speed), box-shadow var(--hover-speed), color var(--hover-speed);
 }
+/* A row that leads to one record is one link (LA-PAT-APP-CODE-R13): its record link, marked row-link, stretches over
+   the row, so anywhere on it opens the record, as a plain link (Cmd/Ctrl-click and middle-click open a new tab).
+   The row's other controls sit above the stretched link and keep working. The link's hover and focus are the row's. */
+:is(.record-list > li:not(.tree-item), .problems > li, .tree-row) { position: relative; }
+:is(.record-list > li:not(.tree-item), .problems > li, .tree-row) :is(a, button, input, select, textarea, summary, [title], [tabindex]):not(.row-link) { position: relative; z-index: 1; }
+.row-link::after { content: ''; position: absolute; inset: 0; border-radius: 5px; transition: background-color var(--hover-speed); }
+.row-link:hover::after { background: var(--hover-bg); }
+:is(.spec-body, .inspector) a.row-link:hover span { color: var(--steel); text-decoration: none; }
+a.row-link.row-link:focus-visible { outline: none; }
+.row-link:focus-visible::after { outline: 2px solid var(--steel); outline-offset: -1px; }
+@media (prefers-reduced-motion: reduce) { .row-link::after { transition: none; } }
 /* A domain card is one link: its title's link stretches over the whole card, so anywhere on it goes to the domain. */
 .domain-card { position: relative; }
 .domain-card .card-title::after { content: ''; position: absolute; inset: 0; border-radius: inherit; }
