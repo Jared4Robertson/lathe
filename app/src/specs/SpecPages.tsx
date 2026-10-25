@@ -23,8 +23,6 @@ import {
 } from './data';
 import { addressOf, HOME_PATH } from '../views/address';
 
-export { RecordContent } from './RecordContent';
-
 // The spec pages that are not about one record: the products and the checks (the record format's
 // pages are in app/src/format);
 // and the wiki content of a product and a domain, which the focus page (app/src/views) shows in

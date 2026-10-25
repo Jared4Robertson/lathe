@@ -51,7 +51,6 @@ export type ViewName = 'wiki' | 'graph' | 'model';
 /** Every view, in the order its panes sit, left to right. */
 export const VIEW_NAMES: readonly ViewName[] = ['wiki', 'graph', 'model'];
 export const VIEW_LABELS: Record<ViewName, string> = { wiki: 'Wiki', graph: 'Graph', model: 'Model' };
-export const isViewName = (v: unknown): v is ViewName => typeof v === 'string' && (VIEW_NAMES as readonly string[]).includes(v);
 
 /** True for a page a space remembers as its last: a focus page or the space's Checks page. */
 export function isSpacePath(path: string): boolean {

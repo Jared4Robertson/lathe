@@ -42,11 +42,6 @@ export function navigate(to: string, replace = false) {
   window.dispatchEvent(new Event(NAVIGATE));
 }
 
-/** The current pathname, updated on back/forward and on navigate(). */
-export function usePath() {
-  return useLocation().path;
-}
-
 /** The current pathname and query string, updated on back/forward and on navigate(). */
 export function useLocation() {
   const read = () => ({ path: window.location.pathname, search: window.location.search });

@@ -37,6 +37,8 @@ A `test` has a `state`: `automated` (the default), `manual` or `planned`. An aut
 
 Each check is one SQL file in `lathe/checks/`: a `SELECT` over the loaded tables that returns rows of `(severity, check, record, message)`. Its name is its file name without the number and `.sql`. An **error** means the workspace is broken, and `lathe check` exits non-zero; a **warning** is work still to do, such as an obligation not yet proved, two stages that do not join up yet, or a level of the spec that is the wrong size: a record with more children of one kind than `structure.maxChildren` in `lathe.config.json` (default 15), or a capability or layer with only one child. One mistake gives one error.
 
+Nothing outlives its purpose: a component that satisfies no obligation is a `component-satisfies-nothing` warning, and a test that proves and supports nothing is a `test-proves-nothing` warning. There are no waivers; shared infrastructure links the obligations it makes possible.
+
 A check documents itself in its header comment: one summary sentence, a blank comment line, the explanation ending with how to fix what it reports, a blank comment line, then `-- severity: error` (or `warning`, or `error, warning`) and an optional `-- kinds:` line naming the kinds it concerns. The reference is built from these headers, and `undocumented` reports a check, kind or relation that lacks its text.
 
 ## 6. Coverage

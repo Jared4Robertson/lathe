@@ -51,7 +51,7 @@ export function useThemes(): ThemesApi {
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<ThemeState>(() => {
-    const loaded = themeStore().load();
+    const loaded = themeStore.load();
     return { custom: loaded.custom ?? [], chosen: loaded.chosen ?? DEFAULT_THEME_ID, mode: loaded.mode ?? 'system' };
   });
   const [shown, setShown] = useState<{ theme?: Theme; mode?: ModeChoice } | null>(null);
@@ -67,7 +67,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const key = JSON.stringify([state, css]);
     if (kept.current === key) return;
     kept.current = key;
-    themeStore().save(state, css);
+    themeStore.save(state, css);
   }, [active, state, shown]);
 
   // In the desktop app, the window's chrome follows what shows (LA-PLT-UC14-R06).
