@@ -1,8 +1,9 @@
 import './setup';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, waitFor } from '@testing-library/react';
-import { frameMap, frameOnMap, FRAME_MAX_ZOOM, FRAME_PADDING, glideDuration, PARENT_STRIP, PARENT_STRIP_MAX, zoomPath } from '../../src/graph/camera';
-import { MIN_LABEL_PX, TITLE_FONT } from '../../src/graph/text';
+import { drawnNested, frameMap, frameNested, frameOnMap, FRAME_MAX_ZOOM, FRAME_PADDING, glideDuration, MAX_DRAWN, MAX_ZOOM, MIN_DRAWN, PARENT_STRIP, PARENT_STRIP_MAX, REVEAL_ZOOM, viewRect, zoomPath } from '../../src/graph/camera';
+import { nestedMap } from '../../src/graph/nested';
+import { labelShown, MIN_LABEL_PX, TITLE_FONT } from '../../src/graph/text';
 import { graphMap } from '../../src/graph/map';
 import { MOTION_SPEED_MS } from '../../src/graph/motion';
 import { openApp, startAtDepth } from '../helpers';
@@ -144,5 +145,69 @@ describe('graph camera on the page', () => {
     await waitFor(() => expect(isCenter('P-D-UC01-R01')).toBe(true));
     await waitFor(() => expect(calls.length).toBe(first + 1));
     expect(calls[first]).toEqual({ viewport: frameOnMap(graphMap(testIndex(), 'P'), 'P-D-UC01-R01', 1, 1000, 800), options: { duration: 0 } });
+  });
+});
+
+describe('graph camera in the Nested layout', () => {
+  const map = nestedMap(testIndex(), 'P');
+  /** How many levels a node lies inside another, or -1. */
+  const inside = (id: string, focus: string) => {
+    let d = 0;
+    for (let at: string | null = id; at !== null; at = map.nodes.get(at)!.parent, d++) if (at === focus) return d;
+    return -1;
+  };
+
+  it('LA-EXP-T188 The camera frames the focus box, and depth labels the levels inside it until the person zooms in', () => {
+    for (const focus of ['P', 'P-D', 'P-D/define', 'P-D-UC01', 'P-D-UC01-R01']) {
+      const n = map.nodes.get(focus)!;
+      const v = frameNested(map, focus, 1000, 800);
+      // Centered, within the padding, never past MAX_ZOOM.
+      expect(v.x + (n.x + n.w / 2) * v.zoom).toBeCloseTo(500, 6);
+      expect(v.y + (n.y + n.h / 2) * v.zoom).toBeCloseTo(400, 6);
+      expect(n.w * v.zoom).toBeLessThanOrEqual(1000 - 2 * FRAME_PADDING + 1e-6);
+      expect(n.h * v.zoom).toBeLessThanOrEqual(800 - 2 * FRAME_PADDING + 1e-6);
+      expect(v.zoom).toBeLessThanOrEqual(MAX_ZOOM);
+      for (const depth of [1, 2, 3]) {
+        const limit = { focus, depth, framed: v.zoom };
+        const d = drawnNested(map, v, 1000, 800, [], limit);
+        const rect = viewRect(v, 1000, 800);
+        const order = d.boxes.map((b) => b.id);
+        expect(d.bars).toEqual([]);
+        expect(d.boxes.length).toBeLessThanOrEqual(MAX_DRAWN);
+        for (const b of d.boxes) {
+          const m = map.nodes.get(b.id)!;
+          // In view and big enough each way, its parent drawn before it.
+          expect(m.x + m.w >= rect.x0 && m.x <= rect.x1 && m.y + m.h >= rect.y0 && m.y <= rect.y1, b.id).toBe(true);
+          expect(Math.min(m.w, m.h) * v.zoom).toBeGreaterThanOrEqual(MIN_DRAWN);
+          if (m.parent !== null) expect(order.indexOf(m.parent), b.id).toBeLessThan(order.indexOf(b.id));
+          // Deeper than the depth inside the focus, or a label that does not fit its box: plain. Otherwise labeled while its title reads.
+          expect(b.label, `${b.id} at depth ${depth}`).toBe(map.nodes.get(b.id)!.fits && inside(b.id, focus) <= depth && labelShown(m.text, v.zoom));
+        }
+        // Zoomed in REVEAL_ZOOM times past the frame, the deeper boxes are labeled as their titles read.
+        const z = { ...v, zoom: v.zoom * REVEAL_ZOOM };
+        for (const b of drawnNested(map, z, 1000, 800, [], limit).boxes) expect(b.label).toBe(map.nodes.get(b.id)!.fits && labelShown(map.nodes.get(b.id)!.text, z.zoom));
+      }
+    }
+    // A focus whose label fits is labeled at its frame: its title reads.
+    for (const focus of ['P', 'P-D', 'P-D-UC01'].filter((id) => map.nodes.get(id)!.fits)) {
+      const v = frameNested(map, focus, 1000, 800);
+      expect(drawnNested(map, v, 1000, 800, [], { focus, depth: 1, framed: v.zoom }).boxes.find((b) => b.id === focus)?.label).toBe(true);
+    }
+  });
+
+  it('LA-EXP-T188 On the page, focusing a child in the Nested layout glides to its box, and Back glides back', async () => {
+    calls.length = 0;
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({ x: 0, y: 0, top: 0, left: 0, width: 1000, height: 800, right: 1000, bottom: 800, toJSON: () => ({}) } as DOMRect);
+    startAtDepth(1, 'nested');
+    await openApp('/P-D-UC01?view=graph', { workspace: testWorkspace() });
+    await waitFor(() => expect(isCenter('P-D-UC01')).toBe(true));
+    await waitFor(() => expect(calls.at(-1)?.viewport).toEqual(frameNested(nestedMap(testIndex(), 'P'), 'P-D-UC01', 1000, 800)));
+    expect(document.querySelector('.graph-flow.is-nested')).not.toBeNull();
+    fireEvent.click(node('P-D-UC01-R01')!);
+    await waitFor(() => expect(isCenter('P-D-UC01-R01')).toBe(true));
+    await waitFor(() => expect(calls.at(-1)!.viewport).toEqual(frameNested(nestedMap(testIndex(), 'P'), 'P-D-UC01-R01', 1000, 800)), { timeout: 3000 });
+    window.history.back();
+    await waitFor(() => expect(isCenter('P-D-UC01')).toBe(true));
+    await waitFor(() => expect(calls.at(-1)!.viewport).toEqual(frameNested(nestedMap(testIndex(), 'P'), 'P-D-UC01', 1000, 800)), { timeout: 3000 });
   });
 });

@@ -61,16 +61,23 @@ export interface MapLevel {
   rowGap: number;
 }
 
-export interface GraphMap {
+/** What both views' maps share (the Tree map here, the Nested map in nested.ts): what the camera, the minimap and the filters read. */
+export interface PlacedMap {
+  /** Which view it lays out (LA-EXP-UC03-R16). */
+  view: 'tree' | 'nested';
   nodes: ReadonlyMap<string, MapNode>;
   /** The roots, top to bottom: the product (or the top of a tree no product reaches). */
   roots: readonly string[];
-  levels: readonly MapLevel[];
-  /** The nodes of each level, top to bottom. */
+  /** The nodes of each level, in the tree's order (top to bottom in the Tree map). */
   byLevel: readonly (readonly MapNode[])[];
   /** The whole map's size; it starts at (0, 0). */
   width: number;
   height: number;
+}
+
+export interface GraphMap extends PlacedMap {
+  view: 'tree';
+  levels: readonly MapLevel[];
 }
 
 /** The typical height of a level: its median weighted by height, so a level of a few tall nodes and many short ones takes the tall ones' scale. */
@@ -186,6 +193,7 @@ export function layoutTree(roots: readonly string[], childrenOf: (id: string) =>
   const byLevel = byLevelIds.map((ids) => ids.map((id) => nodes.get(id)!).sort((a, b) => a.y - b.y));
   const last = levels.at(-1);
   return {
+    view: 'tree',
     nodes,
     roots: top,
     levels,

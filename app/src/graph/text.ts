@@ -111,11 +111,11 @@ export const isCentered = (text: number, parent: boolean) => parent || text !== 
 /**
  * A label broken into lines for its box (LA-EXP-DR58). Wrapping is the same at every text scale (a
  * level's width and its text grow together), so lines are broken once, at text scale 1 in a leaf's
- * width, less the padding, a domain's chamfer, and the badge's room beside the kind and ID line (on
- * both sides once centered), all erring wide.
+ * width (or `width`, a Nested box's width over its text scale), less the padding, a domain's chamfer,
+ * and the badge's room beside the kind and ID line (on both sides once centered), all erring wide.
  */
-export function wrapLabel(lines: { title: string; meta: string }, { hexagon = false, marked = false, centered = false, file = false } = {}): WrappedLabel {
-  const inner = NODE_WIDTH - 2 * LABEL_PAD - (hexagon ? 2 * HEX_ROOM : 0);
+export function wrapLabel(lines: { title: string; meta: string }, { hexagon = false, marked = false, centered = false, file = false, width = NODE_WIDTH } = {}): WrappedLabel {
+  const inner = width - 2 * LABEL_PAD - (hexagon ? 2 * HEX_ROOM : 0);
   const titleOf = file ? (s: string) => metaWidth(s, FILE_FONT) * WIDTH_MARGIN : (s: string) => titleWidth(s) * WIDTH_MARGIN;
   return {
     title: wrapText(lines.title, inner, titleOf, file ? '/-' : '-'),

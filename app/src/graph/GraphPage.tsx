@@ -49,10 +49,11 @@ import {
   type Neighborhood,
 } from './model';
 import { boxExit, contentScale, traceGrid, type Point } from './layout';
-import { centerOf, graphMap, linkEnds, mapRootOf, parentLine, type GraphMap } from './map';
+import { centerOf, graphMap, linkEnds, mapRootOf, parentLine, type GraphMap, type PlacedMap } from './map';
+import { nestedMap, type NestedMap, type NestedNode } from './nested';
 import { treeGroup } from './tree';
 import { isCentered, labelFor, labelHeight, labelLines, marksOf, type WrappedLabel } from './text';
-import { drawnFor, drawnKey, fitBoxes, frameOnMap, glideDuration, MAX_ZOOM, mergeDrawn, zoomPath, type Drawn, type Viewport } from './camera';
+import { drawnFor, drawnKey, drawnNested, fitBoxes, frameNested, frameOnMap, glideDuration, MAX_ZOOM, mergeDrawn, zoomPath, type Drawn, type Viewport } from './camera';
 import { EdgeHints, type Side } from './hints';
 import { readMotion } from './motion';
 import { Button } from '../components/Button';
@@ -85,11 +86,13 @@ interface NodeData extends Record<string, unknown> {
   label: boolean;
   /** How much its box's border and shape grow with its size (LA-EXP-DR58): 1 for a leaf. */
   scale: number;
-  /** How much its text, padding and marks grow: its level's width over a leaf's, fixed by the map, never by the camera (LA-EXP-DR58). */
+  /** How much its text, padding and marks grow: its level's, fixed by the map, never by the camera (LA-EXP-DR58). */
   text: number;
-  /** Its label's lines as the map broke them (text.ts), and whether it is centered: a parent's, or in a level wider than a leaf. */
+  /** Its label's lines as the map broke them (text.ts, or nested.ts in the Nested view), and whether it is centered. */
   lines: WrappedLabel;
   centered: boolean;
+  /** In the Nested view (LA-EXP-DR62): a box drawn with its children inside it has a header band of this height (map units) holding its label at the top; 0 for a leaf, whose label is centered. */
+  header?: number;
 }
 interface EdgeData extends Record<string, unknown> {
   relation: string;
@@ -142,8 +145,9 @@ function GraphNodeView({ data }: NodeProps<Node<NodeData>>) {
     data.isFocus ? 'is-focus' : '',
     data.centered ? 'is-centered' : '',
     data.label ? '' : 'is-plain',
-    // A domain is a hexagon (LA-EXP-DR61).
-    data.kind === 'domain' && !data.group ? 'is-hexagon' : '',
+    // A domain is a hexagon in the Tree view (LA-EXP-DR61), a box with a hexagon mark in the Nested view (LA-EXP-DR62).
+    data.kind === 'domain' && !data.group ? (data.header === undefined ? 'is-hexagon' : 'has-hexagon-mark') : '',
+    data.header ? 'is-container' : '',
   ].filter(Boolean).join(' ');
   return (
     <div className={classes} title={data.group ? `${data.title} (${data.meta.replace(/^Group · /, 'in ')})` : `${data.title} (${data.id})`} style={scaleStyle(data.scale, data.text)}>
@@ -151,8 +155,8 @@ function GraphNodeView({ data }: NodeProps<Node<NodeData>>) {
       <Handle type="source" position={Position.Right} className="graph-handle" isConnectable={false} />
       {data.label && (
         <>
-          {/* The lines as the map broke them (text.ts); a marked box keeps room beside its kind and ID line for the badge. */}
-          <small className={data.errors + data.warnings + data.gaps.length > 0 ? 'graph-badge-room' : undefined}>{data.lines.meta.map((l, i) => <span key={i}>{l}</span>)}</small>
+          {/* The lines as the map broke them; a marked box keeps room beside its kind and ID line for the badge. */}
+          <small className={data.errors + data.warnings + data.gaps.length > 0 ? 'graph-badge-room' : undefined}>{data.lines.meta.map((l, i) => <span key={i}>{i === 0 && data.kind === 'domain' && data.header !== undefined && !data.group && <span className="graph-hexagon-mark" aria-hidden="true" />}{l}</span>)}</small>
           <strong>{data.lines.title.map((l, i) => <span key={i}>{l}</span>)}</strong>
           <Marks data={data} />
         </>
@@ -214,8 +218,17 @@ function writeTrail(trail: string[]) {
   try { window.sessionStorage.setItem(TRAIL_KEY, JSON.stringify(trail)); } catch { /* storage unavailable */ }
 }
 
-/** What the person set on the graph: depth, filters, trace mode, the Links switch and the minimap. */
+/** How the graph draws the tree (LA-EXP-UC03-R16): Tree, parents beside their children; Nested, parents made of them. */
+export type GraphLayout = 'tree' | 'nested';
+export const GRAPH_LAYOUTS: readonly { layout: GraphLayout; label: string; tip: string }[] = [
+  { layout: 'tree', label: 'Tree', tip: 'Tree: each parent beside its children' },
+  { layout: 'nested', label: 'Nested', tip: 'Nested: each parent made of its children' },
+];
+
+/** What the person set on the graph: the view, depth, filters, trace mode, the Links switch and the minimap. */
 export interface GraphSettings {
+  /** Tree or Nested (LA-EXP-UC03-R16). Tree by default. */
+  layout: GraphLayout;
   depth: number;
   filters: Filters;
   trace: boolean;
@@ -229,9 +242,14 @@ const count = (n: number, noun: string) => `${n} ${n === 1 ? noun : `${noun}s`}`
 
 export const MAX_DEPTH = 3;
 const DEPTHS = [1, 2, 3];
-/** Depth is how many levels below the focus the camera frames, folders and stages included. */
-const DEPTH_LABELS = ['Frame the focus and its children', 'Frame two levels below the focus', 'Frame three levels below the focus'];
-export const DEFAULT_GRAPH_SETTINGS: GraphSettings = { depth: 1, filters: NO_FILTERS, trace: false, links: false, minimap: false };
+/** Depth is how many levels below the focus the camera frames (Tree), or how many levels inside it are labeled (Nested), folders and stages included. */
+const DEPTH_LABELS: Record<GraphLayout, string[]> = {
+  tree: ['Frame the focus and its children', 'Frame two levels below the focus', 'Frame three levels below the focus'],
+  nested: ['Label the focus and its children', 'Label two levels inside the focus', 'Label three levels inside the focus'],
+};
+export const DEFAULT_GRAPH_SETTINGS: GraphSettings = { layout: 'tree', depth: 1, filters: NO_FILTERS, trace: false, links: false, minimap: false };
+/** The view after this one, for the switch's command. */
+export const nextLayout = (layout: GraphLayout): GraphLayout => GRAPH_LAYOUTS[(GRAPH_LAYOUTS.findIndex((l) => l.layout === layout) + 1) % GRAPH_LAYOUTS.length].layout;
 
 /** Where a step command goes from a node: its parent, its first child, or its previous or next sibling in the tree. */
 export function stepTarget(index: SpecIndex, focus: string, step: 'out' | 'in' | 'previous' | 'next'): string | null {
@@ -292,7 +310,7 @@ function trailItem(index: SpecIndex, id: string): { body: ReactNode; full: strin
 export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted, onSettingsChange, onGraph, onPeek }: GraphViewProps) {
   const [own, setOwn] = useState<GraphSettings>(DEFAULT_GRAPH_SETTINGS);
   const settings = hosted ?? own;
-  const { depth, filters, trace, links, minimap } = settings;
+  const { layout, depth, filters, trace, links, minimap } = settings;
   const latest = useRef(settings);
   latest.current = settings;
   const update = useCallback((patch: Partial<GraphSettings>) => {
@@ -349,6 +367,7 @@ export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted,
   useCommand('graphDepthDown', () => update({ depth: Math.max(1, latest.current.depth - 1) }), valid && !tracing);
   useCommand('graphTrace', () => update({ trace: !latest.current.trace }), valid && canTrace(index, focus));
   useCommand('graphLinks', () => update({ links: !latest.current.links }), valid && !tracing);
+  useCommand('graphLayout', () => update({ layout: nextLayout(latest.current.layout) }), valid && !tracing);
   // Stepping through the tree moves the focus, as a click does.
   const stepTo = (step: 'out' | 'in' | 'previous' | 'next') => () => {
     const to = stepTarget(index, focus, step);
@@ -392,10 +411,17 @@ export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted,
           </ol>
         </nav>
         <div className="graph-toolbar">
+          <div className="graph-depth graph-layout" role="group" aria-label="Layout">
+            {GRAPH_LAYOUTS.map((l) => (
+              <Tooltip key={l.layout} label={l.tip} command={l.layout !== layout ? 'graphLayout' : undefined}>
+                <button type="button" aria-pressed={layout === l.layout} disabled={tracing} onClick={() => update({ layout: l.layout })}>{l.label}</button>
+              </Tooltip>
+            ))}
+          </div>
           <div className="graph-depth" role="group" aria-label="Depth">
             <span>Depth</span>
             {DEPTHS.map((d) => (
-              <Tooltip key={d} label={DEPTH_LABELS[d - 1]} command={d === depth + 1 ? 'graphDepthUp' : d === depth - 1 ? 'graphDepthDown' : undefined}>
+              <Tooltip key={d} label={DEPTH_LABELS[layout][d - 1]} command={d === depth + 1 ? 'graphDepthUp' : d === depth - 1 ? 'graphDepthDown' : undefined}>
                 <button type="button" aria-pressed={depth === d} disabled={tracing} onClick={() => setDepth(d)}>{d}</button>
               </Tooltip>
             ))}
@@ -429,7 +455,7 @@ export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted,
       <div className="graph-workspace">
         <div className="graph-canvas">
           <ReactFlowProvider>
-            <GraphCanvas index={index} graph={graph} depth={depth} filters={filters} onNavigate={onNavigate} minimap={minimap} onPeek={onPeek} />
+            <GraphCanvas index={index} graph={graph} layout={layout} depth={depth} filters={filters} onNavigate={onNavigate} minimap={minimap} onPeek={onPeek} />
           </ReactFlowProvider>
         </div>
       </div>
@@ -514,16 +540,21 @@ function FilterControls({ index, filters, setFilters, minimap, setMinimap }: Fil
 /** A box on the canvas with its place and size, in world coordinates. */
 export interface Box { id: string; x: number; y: number; w: number; h: number; label: boolean; text: number; parent: boolean }
 
-/** The labeled boxes in reading order for the keyboard: column by column, left to right, then top to bottom. Plain boxes are out of the keyboard order. */
-export function keyboardOrder(boxes: readonly Pick<Box, 'id' | 'x' | 'y' | 'label'>[]): string[] {
-  return boxes.filter((b) => b.label).sort((a, b) => a.x - b.x || a.y - b.y).map((b) => b.id);
+/**
+ * The labeled boxes in reading order for the keyboard: in the Tree view column by column, left to
+ * right, then top to bottom; in the Nested view (given each box's place in the tree's order) a
+ * parent before its children. Plain boxes are out of the keyboard order.
+ */
+export function keyboardOrder(boxes: readonly Pick<Box, 'id' | 'x' | 'y' | 'label'>[], treeOrder?: (id: string) => number): string[] {
+  const labeled = boxes.filter((b) => b.label);
+  return (treeOrder ? labeled.sort((a, b) => treeOrder(a.id) - treeOrder(b.id)) : labeled.sort((a, b) => a.x - b.x || a.y - b.y)).map((b) => b.id);
 }
 
 /**
  * The nodes hidden by the kind filters (LA-EXP-UC03-R05): a node of a hidden kind and everything
  * beneath it. The focus and its ancestors are never hidden. The map keeps their places.
  */
-export function hiddenNodes(index: SpecIndex, map: GraphMap, filters: Filters, focus: string): Set<string> {
+export function hiddenNodes(index: SpecIndex, map: PlacedMap, filters: Filters, focus: string): Set<string> {
   const hidden = new Set<string>();
   if (filters.hiddenKinds.size === 0) return hidden;
   const keep = new Set<string>();
@@ -539,11 +570,11 @@ export function hiddenNodes(index: SpecIndex, map: GraphMap, filters: Filters, f
 }
 
 /** A box's data: what it shows and how it is named. */
-function boxData(index: SpecIndex, id: string, focus: string, label: boolean, scale: number, text: number, parent: boolean, graph: Neighborhood): NodeData {
-  // The same lines the map sized the box for (text.ts), so the label always fits it.
+function boxData(index: SpecIndex, id: string, focus: string, label: boolean, scale: number, text: number, parent: boolean, graph: Neighborhood, nested?: NestedNode): NodeData {
+  // The same lines the map sized the box for (text.ts, or the Nested map's), so the label always fits it.
   const { title, meta } = labelLines(index, id);
-  const centered = isCentered(text, parent);
-  const lines = labelFor(index, id, centered);
+  const centered = nested ? nested.centered : isCentered(text, parent);
+  const lines = nested ? nested.lines : labelFor(index, id, centered);
   const record = index.byId.get(id);
   if (record) {
     return { id, kind: record.kind, stage: stageOf(index, record.kind), title, kindLabel: kindLabel(index, record.kind), meta, group: false, ...marksOf(index, id), isFocus: id === focus, label, scale, text, lines, centered };
@@ -575,7 +606,7 @@ function MapBackground() {
  * as stay readable, at most about 400), the focus solid, and the viewport outlined as the camera
  * moves.
  */
-function MapOverview({ map, focus, hidden }: { map: GraphMap; focus: string; hidden: ReadonlySet<string> }) {
+function MapOverview({ map, focus, hidden }: { map: PlacedMap; focus: string; hidden: ReadonlySet<string> }) {
   const boxes = useMemo(() => {
     const out = [];
     for (const level of map.byLevel) {
@@ -606,9 +637,10 @@ function MapOverview({ map, focus, hidden }: { map: GraphMap; focus: string; hid
 
 const sameView = (a: Viewport, b: Viewport) => Math.abs(a.x - b.x) < 0.5 && Math.abs(a.y - b.y) < 0.5 && Math.abs(a.zoom - b.zoom) < 1e-6;
 
-function GraphCanvas({ index, graph, depth, filters, onNavigate, minimap, onPeek }: {
+function GraphCanvas({ index, graph, layout, depth, filters, onNavigate, minimap, onPeek }: {
   index: SpecIndex;
   graph: Neighborhood;
+  layout: GraphLayout;
   depth: number;
   filters: Filters;
   onNavigate: (id: string) => void;
@@ -617,9 +649,10 @@ function GraphCanvas({ index, graph, depth, filters, onNavigate, minimap, onPeek
 }) {
   const tracing = graph.mode === 'trace';
   const focus = graph.focus;
-  // The focus's own product's map: no other product's nodes are in it.
+  // The focus's own product's map (no other product's nodes are in it), in either layout (LA-EXP-UC03-R16): the Tree map (map.ts) or the Nested map (nested.ts), under one camera.
   const root = useMemo(() => mapRootOf(index, focus), [index, focus]);
-  const map = useMemo(() => graphMap(index, root), [index, root]);
+  const nested = layout === 'nested';
+  const map: GraphMap | NestedMap = useMemo(() => (nested ? nestedMap(index, root) : graphMap(index, root)), [index, root, nested]);
   const wrapper = useRef<HTMLDivElement>(null);
   const active = useRef<string | null>(null);
   /** After a keyboard action, the node to put keyboard focus on once the camera has framed it. */
@@ -644,9 +677,11 @@ function GraphCanvas({ index, graph, depth, filters, onNavigate, minimap, onPeek
   }, []);
   const drawnAt = useCallback((v: Viewport): Drawn => {
     if (!size) return { boxes: [], bars: [] };
-    const d = drawnFor(map, v, size.w, size.h, always);
+    const d = map.view === 'nested'
+      ? drawnNested(map, v, size.w, size.h, always, { focus, depth, framed: frameNested(map, focus, size.w, size.h).zoom })
+      : drawnFor(map, v, size.w, size.h, always);
     return { boxes: d.boxes.filter((b) => !hidden.has(b.id)), bars: d.bars.filter((b) => !hidden.has(b.parent)) };
-  }, [map, size, always, hidden]);
+  }, [map, size, always, hidden, focus, depth]);
 
   const latestDrawnAt = useRef(drawnAt);
   latestDrawnAt.current = drawnAt;
@@ -686,7 +721,7 @@ function GraphCanvas({ index, graph, depth, filters, onNavigate, minimap, onPeek
   const framing = useCallback((): Viewport | null => {
     if (!size) return null;
     if (tracePlaced) return fitBoxes(tracePlaced.positions, size.w, size.h, 40, tracePlaced.heights, tracePlaced.widths);
-    return frameOnMap(map, focus, depth, size.w, size.h);
+    return map.view === 'nested' ? frameNested(map, focus, size.w, size.h) : frameOnMap(map, focus, depth, size.w, size.h);
   }, [size, tracePlaced, map, focus, depth]);
 
   // Frame the focus whenever it, the depth or the pane's size changes: a glide, except the first
@@ -740,14 +775,23 @@ function GraphCanvas({ index, graph, depth, filters, onNavigate, minimap, onPeek
       return graph.nodes.map((n) => ({ id: n.id, ...tracePlaced.positions.get(n.id)!, w: tracePlaced.widths.get(n.id)!, h: tracePlaced.heights.get(n.id)!, label: true, text: 1, parent: false }));
     }
     if (!drawn) return [];
-    return drawn.boxes.map((b) => { const n = map.nodes.get(b.id)!; return { id: b.id, x: n.x, y: n.y, w: n.w, h: n.h, label: b.label, text: n.text, parent: n.children.length > 0 }; });
+    const placed = drawn.boxes.map((b) => { const n = map.nodes.get(b.id)!; return { id: b.id, x: n.x, y: n.y, w: n.w, h: n.h, label: b.label, text: n.text, parent: n.children.length > 0 }; });
+    // Nested, a parent is drawn before its children, so each child lies over its parent (LA-EXP-DR63).
+    if (map.view === 'nested') placed.sort((a, b) => map.nodes.get(a.id)!.order - map.nodes.get(b.id)!.order);
+    return placed;
   }, [tracePlaced, graph, drawn, map]);
-  const order = useMemo(() => keyboardOrder(boxes), [boxes]);
+  const order = useMemo(() => {
+    if (tracing || map.view !== 'nested') return keyboardOrder(boxes);
+    return keyboardOrder(boxes, (id) => map.nodes.get(id)?.order ?? Infinity);
+  }, [boxes, map, tracing]);
 
   const { nodes, edges } = useMemo(() => {
     const byId = new Map(boxes.map((b) => [b.id, b]));
     const nodes: FlowNode[] = boxes.map((b) => {
-      const data = boxData(index, b.id, focus, b.label, contentScale(b.w, b.h), b.text, b.parent, graph);
+      const inNested = !tracing && map.view === 'nested' ? map.nodes.get(b.id) : undefined;
+      // Nested, a box's border grows with its text, so a large box's edge stays in proportion to its label, and its lines are the Nested map's (LA-EXP-DR62).
+      const data = boxData(index, b.id, focus, b.label, inNested ? Math.max(0.5, b.text) : contentScale(b.w, b.h), b.text, b.parent, graph, inNested);
+      if (inNested) data.header = inNested.header;
       return {
         id: b.id,
         type: 'box',
@@ -765,7 +809,7 @@ function GraphCanvas({ index, graph, depth, filters, onNavigate, minimap, onPeek
           : { focusable: false, className: 'is-plain', domAttributes: { 'aria-hidden': true } }),
       };
     });
-    if (!tracing && drawn) {
+    if (!tracing && drawn && map.view === 'tree') {
       for (const bar of drawn.bars) {
         const level = map.levels[bar.level];
         nodes.push({ id: bar.id, type: 'bar', position: { x: level.x, y: bar.y }, width: level.width, height: bar.h, draggable: false, connectable: false, selectable: false, focusable: false, handles: nodeHandles(level.width, bar.h), data: { bar: true }, className: 'is-bar', domAttributes: { 'aria-hidden': true } });
@@ -787,7 +831,8 @@ function GraphCanvas({ index, graph, depth, filters, onNavigate, minimap, onPeek
       return { nodes, edges };
     }
     // The tree's parent lines: level, from the parent's right edge to the child's left edge, at the child's middle.
-    if (parentShown) {
+    // Nested has none: holding is the parent link (LA-EXP-DR62).
+    if (parentShown && map.view === 'tree') {
       for (const b of boxes) {
         const up = map.nodes.get(b.id)?.parent;
         const p = up ? byId.get(up) : undefined;
@@ -841,6 +886,13 @@ function GraphCanvas({ index, graph, depth, filters, onNavigate, minimap, onPeek
       lit.add(e.source);
       lit.add(e.target);
       edgeIds.add(`${e.source} ${e.target}`);
+    }
+    // Nested, holding is the parent link: the box lights its parent and everything inside it, as the Tree view's parent lines light theirs.
+    const held = map.view === 'nested' ? map.nodes.get(id!) : undefined;
+    if (held) {
+      if (held.parent) lit.add(held.parent);
+      const within = (n: string) => { for (const c of map.nodes.get(n)?.children ?? []) { lit.add(c); within(c); } };
+      within(held.id);
     }
     root.classList.add('has-spotlight');
     for (const el of root.querySelectorAll<HTMLElement>('.react-flow__node')) if (lit.has(el.dataset.id ?? '')) el.classList.add('is-lit');
@@ -897,7 +949,8 @@ function GraphCanvas({ index, graph, depth, filters, onNavigate, minimap, onPeek
   return (
     <div
       ref={wrapper}
-      className="graph-flow"
+      className={`graph-flow${nested && !tracing ? ' is-nested' : ''}`}
+      data-layout={tracing ? 'trace' : layout}
       onKeyDown={onKeyDown}
       onFocus={(e) => {
         const id = (e.target as HTMLElement).closest?.('.react-flow__node')?.getAttribute('data-id');
