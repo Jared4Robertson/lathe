@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import {
   Background,
   BaseEdge,
@@ -28,7 +28,7 @@ import {
   canTrace,
   gapsFor,
   graphRelationLabel,
-  groupLabel,
+  groupName,
   groupMarks,
   isFiltered,
   isGraphNode,
@@ -36,7 +36,6 @@ import {
   neighborhood,
   nextTrail,
   parseGroupId,
-  pluralLabel,
   relationsOf,
   traceChain,
   type Filters,
@@ -207,11 +206,22 @@ export interface GraphViewProps {
   onGraph?: (info: GraphInfo) => void;
 }
 
-/** How a node is named in the trail and lists: its ID, or a group's parent and plural kind. */
-const shortName = (index: SpecIndex, id: string) => {
-  const g = parseGroupId(id);
-  return g && !index.byId.has(id) ? `${g.parent} / ${pluralLabel(index, g.kind)}` : id;
-};
+/**
+ * How a node is named in the trail: a record's title with its ID in parentheses, "Browsing
+ * (LA-BRW)"; a group, which has no ID of its own, by its name alone ("Use cases", no count), with
+ * its parent's ID in the full text (tooltip and accessible name) so two groups of one name differ.
+ */
+function trailItem(index: SpecIndex, id: string): { body: ReactNode; full: string } {
+  const record = index.byId.get(id);
+  if (record) {
+    return {
+      body: <><span className="trail-name">{record.title}</span> <code className="trail-id">({id})</code></>,
+      full: `${record.title} (${id})`,
+    };
+  }
+  const name = groupName(index, id);
+  return { body: <span className="trail-name">{name}</span>, full: `${name} of ${parseGroupId(id)!.parent}` };
+}
 
 export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted, onSettingsChange, onGraph }: GraphViewProps) {
   const [own, setOwn] = useState<GraphSettings>(DEFAULT_GRAPH_SETTINGS);
@@ -272,13 +282,16 @@ export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted,
       <header className="graph-header">
         <nav className="graph-trail" aria-label="Records visited">
           <ol>
-            {trail.filter((id) => isGraphNode(index, id)).map((id) => (
-              <li key={id}>
-                {id === focus
-                  ? <span aria-current="page"><code>{shortName(index, id)}</code></span>
-                  : <NodeLink id={id} onNavigate={onNavigate} hrefFor={hrefFor} title={index.byId.get(id)?.title ?? groupLabel(index, id)}><code>{shortName(index, id)}</code></NodeLink>}
-              </li>
-            ))}
+            {trail.filter((id) => isGraphNode(index, id)).map((id) => {
+              const item = trailItem(index, id);
+              return (
+                <li key={id}>
+                  {id === focus
+                    ? <span className="trail-item" aria-current="page" title={item.full} aria-label={item.full}>{item.body}</span>
+                    : <NodeLink id={id} onNavigate={onNavigate} hrefFor={hrefFor} title={item.full} ariaLabel={item.full} className="trail-item">{item.body}</NodeLink>}
+                </li>
+              );
+            })}
           </ol>
         </nav>
         <div className="graph-toolbar">

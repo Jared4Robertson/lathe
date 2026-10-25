@@ -43,8 +43,18 @@ describe('flow steps in the graph', () => {
     for (const step of ['P-D-F01-S01', 'P-D-F01-S02', 'P-D-F01-S03']) expect(column.get(step)).toBe(column.get('P-D-F01')! + 1);
   });
 
-  it('LA-BRW-T205 A flow with more than a handful of steps reaches them through a "Flow steps" group, folded until opened', () => {
-    const index = indexWorkspace(flowWorkspace(6));
+  it('LA-BRW-T205 A flow with only steps shows them directly, however many; with another kind of child too it reaches them through a "Flow steps" group, folded until opened', () => {
+    // Six steps and nothing else: one kind, so no group.
+    const plain = indexWorkspace(flowWorkspace(6));
+    expect(isGrouped(plain, 'P-D-F01')).toBe(false);
+    expect(spine(neighborhood(plain, 'P-D-F01', 1))).toEqual(expect.arrayContaining(['P-D-F01 > P-D-F01-S01', 'P-D-F01 > P-D-F01-S06']));
+    // An interaction requirement on the flow makes two kinds of child.
+    const w = flowWorkspace(6);
+    if (!w.kinds.some((k) => k.kind === 'interaction_requirement')) {
+      w.kinds.push({ kind: 'interaction_requirement', label: 'Interaction requirement', stage: 'design', section: 'interaction-design', parent_kinds: ['view', 'endpoint', 'flow'], required_fields: [], obligation: true, proof_only: false, description: 'One rule a view, endpoint or flow must follow.' });
+    }
+    w.records.push({ id: 'P-D-F01-IR01', kind: 'interaction_requirement', title: 'Each step saves', parent: 'P-D-F01', fields: {}, body: '', product: 'P', domain: 'P-D', path: 'specs/P-D-F01-IR01.md', mentions: [] });
+    const index = indexWorkspace(w);
     expect(isGrouped(index, 'P-D-F01')).toBe(true);
     const gid = groupId('P-D-F01', 'flow_step');
     const folded = neighborhood(index, 'P-D-F01', 2);
