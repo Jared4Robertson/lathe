@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { SpecRecord, Workspace } from '../../lathe/src/types';
@@ -8,6 +10,7 @@ import { pathsOf } from '../src/specs/FlowSteps';
 import { linkLabel, relationLabelOf } from '../src/specs/labels';
 import { RecordContent } from '../src/specs/RecordContent';
 import { judge, owingDomains, traceOf } from '../src/specs/trace';
+import { entityWorkspace } from './fixtures/entities';
 import { stepsWorkspace } from './fixtures/flow-steps';
 import { layerWorkspace } from './fixtures/layers';
 import { patternWorkspace } from './fixtures/patterns';
@@ -204,5 +207,36 @@ describe('traceability', () => {
     const entity = screen.getAllByRole('link', { name: /DM-SHOP-EN01/ })[0].closest('li') as HTMLElement;
     expect(entity).toHaveTextContent(/1 domain rule/);
     expect(branchOf(index, 'DM-SHOP-DR02')).toEqual(['domain:DM-SHOP', 'DM-SHOP/define', 'DM-SHOP/define/domain-model']);
+  });
+
+  it('LA-TRC-T117 A domain rule under its domain shows the aggregates it involves under "Involves", and each aggregate shows it under "Involved in"; an interaction requirement\'s Carries out is not repeated', () => {
+    // The involves rule as lathe/meta/relations.csv has it, labels and all.
+    const row = readFileSync(resolve(process.cwd(), '../lathe/meta/relations.csv'), 'utf8').split('\n').find((l) => l.startsWith('involves,'))!;
+    const [relation, source_kind, target_kind, role, forward_label, reverse_label] = row.split(',');
+    expect([source_kind, target_kind, role, forward_label, reverse_label]).toEqual(['domain_rule', 'aggregate', '', 'Involves', 'Involved in']);
+    const w = entityWorkspace();
+    w.relations = [...w.relations, { relation, source_kind, target_kind, role: '', forward_label, reverse_label, description: '' }];
+    w.records.push({ id: 'P-D-DR90', kind: 'domain_rule', title: 'A loan and its thing change together', parent: 'P-D', product: 'P', domain: 'P-D', fields: {}, body: '', path: 'specs/p/d/DR90.md', mentions: [] });
+    w.links.push({ source: 'P-D-DR90', relation: 'involves', target: 'P-D-A3' }, { source: 'P-D-DR90', relation: 'involves', target: 'P-D-A1' });
+    const index = indexWorkspace(w);
+    let trace = show(index, 'P-D-DR90');
+    // After what designs and proves it (here nothing), its links out under their forward label.
+    expect(groupTitles(trace)).toEqual(['Involves']);
+    expect(groupIds(trace, 'Involves')).toEqual(['P-D-A1', 'P-D-A3']);
+    expect(traceOf(index, index.byId.get('P-D-DR90')!).groups.map((g) => g.key)).toEqual(['out:Involves']);
+    cleanup();
+    trace = show(index, 'P-D-A1');
+    expect(groupIds(trace, 'Involved in')).toEqual(['P-D-DR90']);
+    expect(trace).not.toHaveTextContent('involves');
+    cleanup();
+
+    // An interaction requirement's Carries out has its own section on its page, so its Traceability leaves it out.
+    const lw = layerWorkspace();
+    const id = 'DM-SHOP-V01-IR01';
+    lw.links.push({ source: id, relation: 'fulfills', target: 'DM-SHOP-UC02-R01' });
+    const ir = indexWorkspace(lw);
+    trace = show(ir, id);
+    expect(groupTitles(trace)).not.toContain('Carries out');
+    expect(traceOf(ir, ir.byId.get(id)!).groups.map((g) => g.key)).toContain('out:Carries out');
   });
 });

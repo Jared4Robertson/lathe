@@ -2,7 +2,7 @@
 id: LA-PLT-UC09
 kind: use_case
 title: Use Lathe with a keyboard and a screen reader
-parent: LA-PLT-CAP02
+parent: LA-PLT-CAP01
 actor: Reader
 links:
   applies: [LA-PLT-DR21, LA-PLT-DR22, LA-PLT-DR23, LA-PLT-DR24, LA-PLT-DR25]

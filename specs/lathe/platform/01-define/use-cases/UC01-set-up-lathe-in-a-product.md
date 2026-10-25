@@ -2,7 +2,7 @@
 id: LA-PLT-UC01
 kind: use_case
 title: Set up Lathe in a product repo
-parent: LA-PLT-CAP01
+parent: LA-PLT-CAP03
 actor: Owner, Agent
 links:
   applies: [LA-AUT-DR08]

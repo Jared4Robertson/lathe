@@ -2,7 +2,7 @@
 id: LA-AUT-UC05
 kind: use_case
 title: Adapt one of Lathe's default kinds in a product
-parent: LA-AUT-CAP01
+parent: LA-AUT-CAP02
 actor: Owner, Agent
 links:
   applies: [LA-AUT-DR13, LA-AUT-DR14]

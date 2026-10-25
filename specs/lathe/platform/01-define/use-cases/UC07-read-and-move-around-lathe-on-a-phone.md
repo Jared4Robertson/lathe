@@ -2,7 +2,7 @@
 id: LA-PLT-UC07
 kind: use_case
 title: Read and move around Lathe on a phone
-parent: LA-PLT-CAP02
+parent: LA-PLT-CAP01
 actor: Reader
 links:
   applies: [LA-EXP-DR41, LA-PLT-DR16, LA-EXP-DR42, LA-PLT-DR17]

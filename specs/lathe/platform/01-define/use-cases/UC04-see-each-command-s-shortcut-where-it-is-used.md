@@ -2,7 +2,7 @@
 id: LA-PLT-UC04
 kind: use_case
 title: See each command's shortcut where it is used
-parent: LA-PLT-CAP03
+parent: LA-PLT-CAP02
 actor: Reader
 links:
   applies: [LA-PLT-DR07, LA-PLT-DR08, LA-PLT-DR09, LA-PLT-DR10]

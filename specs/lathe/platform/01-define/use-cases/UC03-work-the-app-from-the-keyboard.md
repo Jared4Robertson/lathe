@@ -2,7 +2,7 @@
 id: LA-PLT-UC03
 kind: use_case
 title: Work the app from the keyboard
-parent: LA-PLT-CAP03
+parent: LA-PLT-CAP02
 actor: Reader
 links:
   applies: [LA-PLT-DR04, LA-PLT-DR05, LA-PLT-DR06]

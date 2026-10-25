@@ -2,7 +2,7 @@
 id: LA-AUT-UC07
 kind: use_case
 title: Write a flow as ordered steps and have them checked
-parent: LA-AUT-CAP02
+parent: LA-AUT-CAP03
 actor: Owner, Agent
 links:
   applies: [LA-AUT-DR24, LA-AUT-DR25, LA-AUT-DR26, LA-CHK-DR12]

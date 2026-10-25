@@ -2,7 +2,7 @@
 id: LA-PLT-UC08
 kind: use_case
 title: Read and move around without anything jumping
-parent: LA-PLT-CAP02
+parent: LA-PLT-CAP01
 actor: Reader
 links:
   applies: [LA-PLT-DR18, LA-PLT-DR19, LA-EXP-DR43]

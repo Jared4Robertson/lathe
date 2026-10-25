@@ -2,7 +2,7 @@
 id: LA-PLT-UC02
 kind: use_case
 title: Trust that the page shows the files on disk
-parent: LA-PLT-CAP01
+parent: LA-PLT-CAP03
 actor: Reader
 links:
   applies: [LA-EXP-DR02, LA-PLT-DR01]

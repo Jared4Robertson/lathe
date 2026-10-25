@@ -2,7 +2,7 @@
 id: LA-PLT-F01
 kind: flow
 title: Start using Lathe in a product
-parent: LA-PLT-CAP01
+parent: LA-PLT-CAP03
 links:
   carries_out: [LA-AUT-UC03, LA-PLT-UC01]
 ---

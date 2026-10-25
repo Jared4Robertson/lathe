@@ -2,7 +2,7 @@
 id: LA-AUT-UC12
 kind: use_case
 title: Read the format reference generated from the meta-model
-parent: LA-AUT-CAP01
+parent: LA-AUT-CAP02
 actor: Owner, Agent
 links:
   applies: [LA-CHK-DR24, LA-CHK-DR25, LA-AUT-DR58, LA-CHK-DR26, LA-AUT-DR59, LA-AUT-DR60, LA-AUT-DR61, LA-AUT-DR62]

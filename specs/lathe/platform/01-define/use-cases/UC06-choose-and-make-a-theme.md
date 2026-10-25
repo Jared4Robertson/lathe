@@ -2,7 +2,7 @@
 id: LA-PLT-UC06
 kind: use_case
 title: Choose and make a theme
-parent: LA-PLT-CAP02
+parent: LA-PLT-CAP01
 actor: Reader
 links:
   applies: [LA-PLT-DR11, LA-PLT-DR12, LA-PLT-DR13, LA-PLT-DR14, LA-PLT-DR15]

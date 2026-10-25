@@ -14,7 +14,7 @@ const pane = () => main().querySelector('.pane') as HTMLElement;
 const fact = (box: HTMLElement, name: string) => within(box).getByText(name, { selector: 'dt' }).nextElementSibling?.textContent;
 
 describe('format reference pages', () => {
-  it('LA-AUT-T108 The format page shows the concepts, then the kinds by stage and folder, the relations and the checks by severity, as clickable rows', async () => {
+  it('LA-AUT-T112 The format page shows the concepts, then the kinds by stage and folder, the relations and the checks by severity, as clickable rows', async () => {
     await openApp('/format');
     expect(await screen.findByRole('heading', { level: 1, name: 'Record format' })).toBeInTheDocument();
     // It opens in the workbench: one pane with the title in it, and the side bar beside it.
@@ -40,7 +40,7 @@ describe('format reference pages', () => {
     expect(within(errors).queryByRole('link', { name: /unproved/ })).toBeNull();
   });
 
-  it('LA-AUT-T109 A kind page shows where the kind sits, its fields, its links in and out by their labels, its checks, an example and its records', async () => {
+  it('LA-AUT-T113 A kind page shows where the kind sits, its fields, its links in and out by their labels, its checks, an example and its records', async () => {
     await openApp('/format/kinds/use_case');
     expect(await screen.findByRole('heading', { level: 1, name: 'Use case' })).toBeInTheDocument();
     expect(within(main()).getByText('Something an actor does with the product to reach a goal.')).toBeInTheDocument();
@@ -80,7 +80,7 @@ describe('format reference pages', () => {
     expect(within(sideBar()).getByRole('link', { name: 'actor' })).toHaveAttribute('href', '#field-actor');
   });
 
-  it('LA-AUT-T110 A check page shows its severity, explanation and source file, and its problems now as clickable rows', async () => {
+  it('LA-AUT-T114 A check page shows its severity, explanation and source file, and its problems now as clickable rows', async () => {
     await openApp('/format/checks/unproved');
     expect(await screen.findByRole('heading', { level: 1, name: 'unproved' })).toBeInTheDocument();
     expect(within(main()).getByText('Every obligation is proved by a test.')).toBeInTheDocument();
@@ -103,7 +103,7 @@ describe('format reference pages', () => {
     expect(await screen.findByText(/The format has no kind called/)).toBeInTheDocument();
   });
 
-  it('LA-AUT-T111 The side bar\'s kind, each problem code and each required field label link to their format pages', async () => {
+  it('LA-AUT-T115 The side bar\'s kind, each problem code and each required field label link to their format pages', async () => {
     // The side bar's Details, open in the Graph view (brief 64).
     await openApp('/DM-SHOP-UC01?view=wiki,graph');
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
@@ -127,7 +127,7 @@ describe('format reference pages', () => {
     expect(within(sideBar()).getByRole('link', { name: 'View' })).toHaveAttribute('href', '/format/kinds/view');
   });
 
-  it('LA-AUT-T112 The record format is a palette command and a link in the shortcuts sheet, not a nav footer link', async () => {
+  it('LA-AUT-T116 The record format is a palette command and a link in the shortcuts sheet, not a nav footer link', async () => {
     await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     expect(within(screen.getByRole('navigation', { name: 'Main' })).queryByRole('link', { name: 'Record format' })).toBeNull();
@@ -144,7 +144,7 @@ describe('format reference pages', () => {
     expect(within(palette).getAllByRole('option').map((o) => o.querySelector('.palette-title')?.textContent)).toEqual(['Record format']);
   });
 
-  it('LA-AUT-T113 Quick find finds kinds and checks by name and leads to their pages', async () => {
+  it('LA-AUT-T117 Quick find finds kinds and checks by name and leads to their pages', async () => {
     const items = findItems(indexWorkspace(workspace()), ['use-case-without-flow']);
     const kind = rankItems(items, 'Kind: Use case')[0];
     expect(kind).toMatchObject({ title: 'Kind: Use case', to: '/format/kinds/use_case' });
@@ -160,7 +160,7 @@ describe('format reference pages', () => {
     expect(window.location.pathname).toBe('/format/checks/unproved');
   });
 
-  it('LA-AUT-T114 Without the engine\'s reference the pages are built from the loaded specs, and say what is missing', async () => {
+  it('LA-AUT-T118 Without the engine\'s reference the pages are built from the loaded specs, and say what is missing', async () => {
     const { requests } = await openApp('/format', { format: null });
     await screen.findByRole('heading', { level: 1, name: 'Record format' });
     await waitFor(() => expect(requests).toContain('GET /api/format'));
@@ -171,7 +171,7 @@ describe('format reference pages', () => {
     expect(within(section(/^Problems now/)).getAllByRole('link').length).toBe(2);
   });
 
-  it('LA-AUT-T115 Format addresses parse to their pages', () => {
+  it('LA-AUT-T119 Format addresses parse to their pages', () => {
     expect(parseSpecRoute('/format')).toEqual({ page: 'format' });
     expect(parseSpecRoute('/format/kinds/use_case')).toEqual({ page: 'format-kind', kind: 'use_case' });
     expect(parseSpecRoute('/format/checks/too-many-children')).toEqual({ page: 'format-check', check: 'too-many-children' });

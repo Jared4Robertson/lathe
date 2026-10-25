@@ -2,7 +2,7 @@
 id: LA-AUT-UC08
 kind: use_case
 title: Cite records by the IDs a product writes
-parent: LA-AUT-CAP03
+parent: LA-AUT-CAP01
 actor: Owner, Agent
 links:
   applies: [LA-AUT-DR27, LA-AUT-DR28, LA-AUT-DR29, LA-AUT-DR30, LA-AUT-DR31]

@@ -2,7 +2,7 @@
 id: LA-PLT-UC11
 kind: use_case
 title: Iterate on Lathe with hot reload in the desktop app
-parent: LA-PLT-CAP01
+parent: LA-PLT-CAP03
 actor: Owner
 links:
   applies: [LA-PLT-DR33, LA-PLT-DR34, LA-PLT-DR35]

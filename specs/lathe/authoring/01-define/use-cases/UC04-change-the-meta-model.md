@@ -2,7 +2,7 @@
 id: LA-AUT-UC04
 kind: use_case
 title: Change the meta-model
-parent: LA-AUT-CAP01
+parent: LA-AUT-CAP02
 actor: Owner
 links:
   applies: [LA-AUT-DR08, LA-AUT-DR09, LA-AUT-DR10, LA-AUT-DR11, LA-AUT-DR14]

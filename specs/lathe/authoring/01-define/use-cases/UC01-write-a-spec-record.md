@@ -2,7 +2,7 @@
 id: LA-AUT-UC01
 kind: use_case
 title: Write a spec record
-parent: LA-AUT-CAP03
+parent: LA-AUT-CAP01
 actor: Agent, Owner
 links:
   applies: [LA-AUT-DR01, LA-AUT-DR02, LA-AUT-DR03, LA-AUT-DR04, LA-AUT-DR05, LA-AUT-DR06, LA-AUT-DR07]
