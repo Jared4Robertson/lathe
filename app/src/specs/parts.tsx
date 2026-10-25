@@ -1,6 +1,7 @@
 import { lowerLabel, plural as pluralOf } from '../plural';
 import { createContext, useContext, useState, type AnchorHTMLAttributes, type ReactNode } from 'react';
 import { Link } from '../router';
+import { checkPagePath } from '../format/reference';
 import { kindLabel, problemOrder, recordPath, type Problem, type SpecIndex, type SpecRecord } from './data';
 import { ActionsSlotContext } from '../components/ActionsSlot';
 import { LongList } from '../components/LongList';
@@ -70,7 +71,7 @@ export function ProblemList({ index, problems, showRecord = true, showCheck = tr
             {showRecord && (p.record ? <RecordLink index={index} id={p.record} showTitle={false} row /> : <code>workspace</code>)}{' '}
             {p.message}
           </span>
-          {showCheck && <code className="check-name">{p.check}</code>}
+          {showCheck && <SpecLink to={checkPagePath(p.check)} className="check-link" title={`How the ${p.check} check works`}><code className="check-name">{p.check}</code></SpecLink>}
         </>
       )}
     />

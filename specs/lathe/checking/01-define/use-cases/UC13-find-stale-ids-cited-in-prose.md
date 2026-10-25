@@ -3,7 +3,7 @@ id: LA-CHK-UC13
 kind: use_case
 title: Find stale IDs cited in prose
 parent: LA-CHK-CAP01
-actor: Jared, AI agent
+actor: Owner, Agent
 links:
   applies: [LA-CHK-DR70, LA-CHK-DR71, LA-CHK-DR72, LA-CHK-DR73]
 ---

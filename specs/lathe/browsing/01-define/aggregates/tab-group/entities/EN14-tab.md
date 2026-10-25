@@ -7,7 +7,7 @@ role: child
 links:
   refers_to: [LA-BRW-EN01]
 ---
-One open page, with what it shows and where Jared was in it.
+One open page, with what it shows and where the reader was in it.
 
 ## Fields
 

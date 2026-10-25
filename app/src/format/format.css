@@ -1,0 +1,15 @@
+/* The format reference's pages (FormatPages.tsx). Tokens only, so themes apply. */
+
+.format-page .relation-head { display: inline-flex; flex-wrap: wrap; gap: 6px; align-items: baseline; }
+.format-page .relation-rows > li { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; }
+.format-page .any-kind { color: var(--muted); font-style: italic; }
+.format-page .format-facts { margin: 8px 0; }
+.format-page .field-list { margin: 8px 0; }
+.format-page .field-list li:target, .format-page .spec-section:target > .spec-section-head { background: var(--hover-bg); border-radius: 4px; }
+.format-page pre.record-header { margin: 8px 0 0; }
+
+.severity-tag { display: inline-block; font: 500 0.7rem var(--mono); padding: 1px 7px; border-radius: 999px; border: 1px solid var(--rule); color: var(--muted); }
+.severity-tag.error { color: var(--error); border-color: var(--error); }
+.severity-tag.warning { color: var(--warn); border-color: var(--warn); }
+a.check-link { color: var(--muted); }
+a.check-link:hover { color: var(--steel); }

@@ -44,7 +44,7 @@ export async function startServe(modulePath: string, folder: string): Promise<Ap
   throw new Error('Could not start Lathe on a free local port.');
 }
 
-/** In development: Jared's 5199 server when it serves this folder, else a dev server of the shell's own. */
+/** In development: the owner's 5199 server when it serves this folder, else a dev server of the shell's own. */
 export async function startDev(repoRoot: string, folder: string, log: (line: string) => void): Promise<AppServer> {
   const source = await chooseDevSource(folder, repoRoot, httpProbe);
   if (source.kind === 'shared') return { url: source.url, label: 'shared dev server', stop: () => {} };

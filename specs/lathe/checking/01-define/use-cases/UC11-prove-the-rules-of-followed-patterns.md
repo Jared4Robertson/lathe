@@ -3,7 +3,7 @@ id: LA-CHK-UC11
 kind: use_case
 title: Prove the rules of the patterns a domain follows
 parent: LA-CHK-CAP02
-actor: Jared, AI agent
+actor: Owner, Agent
 links:
   applies: [LA-CHK-DR50, LA-CHK-DR51, LA-CHK-DR52, LA-CHK-DR53, LA-CHK-DR54]
 ---

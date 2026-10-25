@@ -8,4 +8,4 @@ links:
   uses: [LA-CHK-C110, LA-CHK-C114]
   fulfills: [LA-CHK-UC17-R01]
 ---
-Jared, or an agent, writes one `flow_step` record per step under the flow, following FORMAT.md section 14: its order, what happens, what it `uses` and what it `fulfills`.
+The owner, or an agent, writes one `flow_step` record per step under the flow, following FORMAT.md section 14: its order, what happens, what it `uses` and what it `fulfills`.

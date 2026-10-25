@@ -6,6 +6,8 @@ import { kindLabel, problemOrder, type SpecIndex } from '../specs/data';
 import { ProblemList, RecordLink, RecordTree, gapsOf, listTitle } from '../specs/parts';
 import { RecordFacts } from '../specs/RecordContent';
 import { Tooltip } from '../shell/Tooltip';
+import { Link } from '../router';
+import { kindPagePath } from '../format/reference';
 
 // The inspector: the third column of a record, group, product or domain page (nav, main view,
 // inspector). One inspector serves the whole page and shows the focused record, whichever view is
@@ -95,7 +97,7 @@ function GroupFacts({ index, gid }: { index: SpecIndex; gid: string }) {
         <p className="inspector-name">{pluralLabel(index, kind)} ({members.length})</p>
       </div>
       <dl className="fields">
-        <div><dt>Kind</dt><dd title={index.kinds.get(kind)?.description}>{kindLabel(index, kind)}</dd></div>
+        <div><dt>Kind</dt><dd title={index.kinds.get(kind)?.description}><Link to={kindPagePath(kind)}>{kindLabel(index, kind)}</Link></dd></div>
         <div><dt>Members</dt><dd>{members.length}</dd></div>
       </dl>
       <h3>Parent</h3>
