@@ -39,9 +39,12 @@ describe('list titles', () => {
     expect(within(wiki()).getByRole('list', { name: 'Children of DM' })).toBeInTheDocument();
     expect(within(inspector()).getByRole('list', { name: 'Children' })).toBeInTheDocument();
 
-    // A group's members in the inspector are titled by their kind.
+    // A group's members, in the wiki and the inspector, are titled by their kind.
     await openApp('/records/DM-SHOP/use_case');
     await screen.findByRole('heading', { level: 1, name: /^Use cases/ });
+    expect(within(wiki()).getByRole('heading', { level: 2, name: /^Use cases/ })).toHaveTextContent('Use cases1');
+    expect(within(wiki()).queryByRole('heading', { name: /^Members/ })).toBeNull();
+    expect(within(wiki()).getByRole('list', { name: 'Use cases of DM-SHOP/use_case' })).toBeInTheDocument();
     expect(within(inspector()).getByRole('heading', { level: 3, name: /^Use cases/ })).toBeInTheDocument();
     expect(within(inspector()).getByRole('list', { name: 'Use cases' })).toBeInTheDocument();
 

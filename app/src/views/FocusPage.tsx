@@ -12,7 +12,7 @@ import { isBool, isNumber, readPref, usePanelSize, usePref, writePref } from '..
 import { useNarrow } from '../shell/useNarrow';
 import { recordPath, type Problem, type SpecIndex, type SpecState } from '../specs/data';
 import { Markdown } from '../specs/Markdown';
-import { PageHeader, ProblemBadge, RecordTree, Section } from '../specs/parts';
+import { PageHeader, ProblemBadge, RecordTree, Section, listTitle } from '../specs/parts';
 import { RecordContent, RecordEyebrow } from '../specs/RecordContent';
 import { folderPath, testGroups } from '../specs/folders';
 import { GroupSections } from '../specs/FolderGroups';
@@ -465,17 +465,19 @@ function GroupWiki({ index, gid }: { index: SpecIndex; gid: string }) {
   const members = groupMembers(index, gid);
   const parentRecord = index.byId.get(parent)!;
   const description = index.kinds.get(kind)?.description;
+  // A list of one kind is titled by that kind ("Use cases", "Tests"); a mixed one stays "Members".
+  const membersTitle = listTitle(index, members, 'Members');
   return (
     <div className="spec-body">
       <p className="group-intro">
         {pluralLabel(index, kind)} of <Link to={addressOf(index, parent)} className="record-link"><code>{parent}</code> <span>{parentRecord.title}</span></Link>
       </p>
       {description && <Markdown source={description} />}
-      <Section title="Members" count={members.length}>
+      <Section title={membersTitle} count={members.length}>
         {/* Tests are read in the test plan's groups, as on the domain page and in the nav. */}
         {kind === 'test' && testGroups(index, gid, members).length > 0
           ? <GroupSections index={index} groups={testGroups(index, gid, members)} level={3} />
-          : <RecordTree index={index} records={members} label={`Members of ${gid}`} />}
+          : <RecordTree index={index} records={members} label={`${membersTitle} of ${gid}`} />}
       </Section>
     </div>
   );
