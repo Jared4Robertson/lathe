@@ -11,14 +11,14 @@ import { BottomSheet } from '../shell/BottomSheet';
 import { Tooltip } from '../shell/Tooltip';
 import { isBool, usePanelSize, usePref, writePref } from '../shell/prefs';
 import { useNarrow } from '../shell/useNarrow';
-import { recordPath, type Problem, type SpecIndex, type SpecState } from '../specs/data';
+import type { Problem, SpecIndex, SpecState } from '../specs/data';
 import { Markdown } from '../specs/Markdown';
 import { PageHeader, ProblemBadge, RecordTree, Section, listTitle } from '../specs/parts';
 import { RecordContent, RecordEyebrow } from '../specs/RecordContent';
 import { folderPath, testGroups } from '../specs/folders';
 import { GroupSections } from '../specs/FolderGroups';
 import { DomainWiki, NotFound, ProductWiki, SourceNote, problemsUnder } from '../specs/SpecPages';
-import { addressOf, focusOf, VIEW_LABELS, VIEW_NAMES, viewsFromSearch, viewsOffered, viewsShown, withView, type FocusRoute, type ViewName } from './address';
+import { addressOf, HOME_PATH, focusOf, VIEW_LABELS, VIEW_NAMES, viewsFromSearch, viewsOffered, viewsShown, withView, type FocusRoute, type ViewName } from './address';
 import { Inspector } from './Inspector';
 import { PageBar, ViewIcon } from './PageBar';
 import { TAB_PANEL_ID, tabId, tabLabel } from './TabStrip';
@@ -80,7 +80,7 @@ function invalid(index: SpecIndex, route: FocusRoute): ReactNode | null {
   if (route.page === 'record' ? index.byId.has(id) : isGroup(index, id)) return null;
   return (
     <div className="placeholder">
-      <p>There's no record or group <code>{id}</code>. <Link to="/specs">See all products</Link>.</p>
+      <p>There's no record or group <code>{id}</code>. <Link to={HOME_PATH}>See all products</Link>.</p>
     </div>
   );
 }
@@ -597,13 +597,13 @@ function PageTitle({ index, route, fixed = false }: { index: SpecIndex; route: F
   let problems: Problem[];
   if (route.page === 'product') {
     const product = index.byId.get(focus)!;
-    eyebrow = <>Product · <Link to={recordPath(focus)}>{product.path}</Link></>;
+    eyebrow = <>Product · {product.path}</>;
     title = product.title;
     problems = problemsUnder(index, 'product', focus);
   } else if (route.page === 'domain') {
     const domain = index.byId.get(focus)!;
     const product = index.byId.get(route.product)!;
-    eyebrow = <><Link to={addressOf(index, product.id)}>{product.title}</Link> · Domain · <Link to={recordPath(focus)}>{domain.path}</Link></>;
+    eyebrow = <><Link to={addressOf(index, product.id)}>{product.title}</Link> · Domain · {domain.path}</>;
     title = domain.title;
     problems = problemsUnder(index, 'domain', focus);
   } else if (route.page === 'record') {

@@ -51,7 +51,7 @@ describe('product spaces', () => {
     expect(colorOf('TL')).toBe(colorOf('TL'));
     expect(colorOf('TL')).not.toBe(colorOf('LA'));
 
-    await openApp('/specs/DM', { workspace: spacesWorkspace() });
+    await openApp('/DM', { workspace: spacesWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     const items = within(rail()).getAllByRole('link');
     expect(items.map((a) => a.getAttribute('aria-label'))).toEqual(['Alpha beta', 'Demo shop', 'Notebook']);
@@ -69,12 +69,12 @@ describe('product spaces', () => {
 
   it('LA-BRW-T221 The current space is the product of the page, marked with aria-current and an accent bar, and stays on pages above every product', async () => {
     const index = indexWorkspace(spacesWorkspace());
-    expect(productOfPath(index, '/specs/NF/NF-NOTE')).toBe('NF');
-    expect(productOfPath(index, '/records/DM-SHOP-UC01-R01')).toBe('DM');
-    expect(productOfPath(index, '/records/DM-SHOP/use_case')).toBe('DM');
+    expect(productOfPath(index, '/NF-NOTE')).toBe('NF');
+    expect(productOfPath(index, '/DM-SHOP-UC01-R01')).toBe('DM');
+    expect(productOfPath(index, '/DM-SHOP/use_case')).toBe('DM');
     expect(productOfPath(index, '/checks')).toBeNull();
 
-    await openApp('/records/NF-NOTE', { workspace: spacesWorkspace() });
+    await openApp('/NF-NOTE', { workspace: spacesWorkspace() });
     await waitFor(() => expect(spaceLink('Notebook')).toHaveAttribute('aria-current', 'true'));
     expect(spaceLink('Demo shop')).not.toHaveAttribute('aria-current');
     expect(spaceLink('Notebook')).toHaveClass('is-current');
@@ -89,9 +89,9 @@ describe('product spaces', () => {
   });
 
   it('LA-BRW-T222 Choosing a space scopes the nav to its domains, capabilities and groups', async () => {
-    await openApp('/specs/DM', { workspace: spacesWorkspace() });
+    await openApp('/DM', { workspace: spacesWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
-    expect(within(nav().querySelector<HTMLElement>('.nav-space')!).getByRole('link', { name: 'Demo shop' })).toHaveAttribute('href', '/specs/DM');
+    expect(within(nav().querySelector<HTMLElement>('.nav-space')!).getByRole('link', { name: 'Demo shop' })).toHaveAttribute('href', '/DM');
     expect(within(within(panel()).getByRole('list', { name: 'Domains of Demo shop' })).getAllByRole('link', { name: /^(Paying|Shopping)$/ }).map((a) => a.textContent)).toEqual(['Paying', 'Shopping']);
     // Capabilities in their order, in their domain's Define › Use cases folder, before the use cases outside any capability.
     const user = userEvent.setup();
@@ -101,33 +101,33 @@ describe('product spaces', () => {
     expect(within(panel()).getByRole('list', { name: 'Capabilities of Shopping' }).textContent).toBe('Filling the basketPaying for the basketAdd an item to the basket');
     // The product's groups (its open questions and fitness records), in the meta-model's order.
     const groups = within(panel()).getByRole('list', { name: 'Groups of Demo shop' });
-    expect(within(groups).getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual(['/records/DM/question', '/records/DM/fitness']);
+    expect(within(groups).getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual(['/DM/question', '/DM/fitness']);
     expect(within(nav()).queryByRole('link', { name: 'Notes' })).toBeNull();
 
     await userEvent.setup().click(spaceLink('Notebook'));
-    expect(window.location.pathname).toBe('/specs/NF');
-    expect(within(nav().querySelector<HTMLElement>('.nav-space')!).getByRole('link', { name: 'Notebook' })).toHaveAttribute('href', '/specs/NF');
+    expect(window.location.pathname).toBe('/NF');
+    expect(within(nav().querySelector<HTMLElement>('.nav-space')!).getByRole('link', { name: 'Notebook' })).toHaveAttribute('href', '/NF');
     expect(within(panel()).getByRole('link', { name: 'Notes' })).toBeInTheDocument();
     expect(within(nav()).queryByRole('link', { name: 'Shopping' })).toBeNull();
     expect(within(nav()).queryByRole('list', { name: 'Groups of Demo shop' })).toBeNull();
   });
 
   it('LA-BRW-T223 Choosing a space opens the last page visited in it this session, or its product page', async () => {
-    await openApp('/records/DM-SHOP-UC01', { workspace: spacesWorkspace() });
+    await openApp('/DM-SHOP-UC01', { workspace: spacesWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     const user = userEvent.setup();
-    expect(spaceLink('Notebook')).toHaveAttribute('href', '/specs/NF');
+    expect(spaceLink('Notebook')).toHaveAttribute('href', '/NF');
     await user.click(spaceLink('Notebook'));
-    expect(window.location.pathname).toBe('/specs/NF');
+    expect(window.location.pathname).toBe('/NF');
     await user.click(within(panel()).getByRole('link', { name: 'Notes' }));
-    expect(window.location.pathname).toBe('/specs/NF/NF-NOTE');
-    expect(spaceLink('Demo shop')).toHaveAttribute('href', '/records/DM-SHOP-UC01');
+    expect(window.location.pathname).toBe('/NF-NOTE');
+    expect(spaceLink('Demo shop')).toHaveAttribute('href', '/DM-SHOP-UC01');
     await user.click(spaceLink('Demo shop'));
-    expect(window.location.pathname).toBe('/records/DM-SHOP-UC01');
+    expect(window.location.pathname).toBe('/DM-SHOP-UC01');
     await user.click(spaceLink('Notebook'));
-    expect(window.location.pathname).toBe('/specs/NF/NF-NOTE');
+    expect(window.location.pathname).toBe('/NF-NOTE');
     // Remembered for the session, not for ever.
-    expect(JSON.parse(window.sessionStorage.getItem('lathe:space-pages')!)).toMatchObject({ DM: '/records/DM-SHOP-UC01', NF: '/specs/NF/NF-NOTE' });
+    expect(JSON.parse(window.sessionStorage.getItem('lathe:space-pages')!)).toMatchObject({ DM: '/DM-SHOP-UC01', NF: '/NF-NOTE' });
     expect(window.localStorage.getItem('lathe:space-pages')).toBeNull();
   });
 
@@ -136,15 +136,15 @@ describe('product spaces', () => {
     await screen.findByRole('heading', { level: 1, name: 'Checks' });
     const press = (n: number) => fireEvent.keyDown(document.body, { key: String(n), code: `Digit${n}`, altKey: true });
     press(3);
-    expect(window.location.pathname).toBe('/specs/NF');
+    expect(window.location.pathname).toBe('/NF');
     await waitFor(() => expect(announcer()).toHaveTextContent('Switched to Notebook'));
     press(1);
-    expect(window.location.pathname).toBe('/specs/AB');
+    expect(window.location.pathname).toBe('/AB');
     // A number with no space does nothing.
     const event = new KeyboardEvent('keydown', { key: '4', code: 'Digit4', altKey: true, bubbles: true, cancelable: true });
     document.body.dispatchEvent(event);
     expect(event.defaultPrevented).toBe(false);
-    expect(window.location.pathname).toBe('/specs/AB');
+    expect(window.location.pathname).toBe('/AB');
     // Every other shortcut still works: Ctrl+Shift+M opens Checks.
     fireEvent.keyDown(document.body, { key: 'M', code: 'KeyM', ctrlKey: true, shiftKey: true });
     expect(window.location.pathname).toBe('/checks');
@@ -158,7 +158,7 @@ describe('product spaces', () => {
       ['Switch to Notebook', 'Alt+3'],
     ]);
     await userEvent.setup().keyboard('{ArrowDown}{Enter}');
-    await waitFor(() => expect(window.location.pathname).toBe('/specs/DM'));
+    await waitFor(() => expect(window.location.pathname).toBe('/DM'));
   });
 
   it('LA-BRW-T225 Quick find lists the current space first, then everything else under a divider', async () => {
@@ -168,7 +168,7 @@ describe('product spaces', () => {
     expect(scoped.elsewhere.map((i) => i.id)).toContain('notes-diagram');
     expect(rankScoped(items, 'not', null).here).toEqual([]);
 
-    await openApp('/specs/DM', { workspace: spacesWorkspace(), diagrams: [{ slug: 'notes-diagram', title: 'Notes diagram', description: null }] });
+    await openApp('/DM', { workspace: spacesWorkspace(), diagrams: [{ slug: 'notes-diagram', title: 'Notes diagram', description: null }] });
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     const user = userEvent.setup();
     const find = within(nav()).getByRole('combobox', { name: 'Quick find' });
@@ -195,7 +195,7 @@ describe('product spaces', () => {
   });
 
   it('LA-BRW-T226 Checks can be filtered to the current space', async () => {
-    await openApp('/specs/NF', { workspace: spacesWorkspace() });
+    await openApp('/NF', { workspace: spacesWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Notebook' });
     await userEvent.setup().click(within(nav()).getByRole('link', { name: /^Checks:/ }));
     const scope = within(main()).getByRole('group', { name: 'Show checks for' });
@@ -205,19 +205,19 @@ describe('product spaces', () => {
     expect(window.location.pathname + window.location.search).toBe('/checks?product=NF');
     expect(within(main()).getByText('1 error · 0 warnings')).toBeInTheDocument();
     expect(within(main()).getByText('Specs · checks in Notebook')).toBeInTheDocument();
-    expect([...main().querySelectorAll('section li a')].map((a) => a.getAttribute('href'))).toEqual(['/records/NF-NOTE']);
+    expect([...main().querySelectorAll('section li a')].map((a) => a.getAttribute('href'))).toEqual(['/NF-NOTE']);
     expect(within(main()).getByRole('link', { name: 'Notebook' })).toHaveAttribute('aria-current', 'true');
   });
 
   it('LA-BRW-T227 On a narrow screen the rail stays visible inside the nav drawer', async () => {
     vi.stubGlobal('matchMedia', (query: string) => ({ matches: true, media: query, addEventListener: () => {}, removeEventListener: () => {} }));
-    await openApp('/specs/DM', { workspace: spacesWorkspace() });
+    await openApp('/DM', { workspace: spacesWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     fireEvent.click(screen.getByRole('button', { name: 'Open the navigation' }));
     expect(nav()).toHaveClass('is-drawer');
     expect(within(rail()).getAllByRole('link')).toHaveLength(3);
     await userEvent.setup().click(spaceLink('Notebook'));
-    expect(window.location.pathname).toBe('/specs/NF');
+    expect(window.location.pathname).toBe('/NF');
     await waitFor(() => expect(screen.queryByRole('navigation', { name: 'Main' })).toBeNull());
   });
 });

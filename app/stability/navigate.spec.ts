@@ -15,18 +15,18 @@ const TITLE = [FOCUS[1]];
 test.describe('navigate', () => {
   test('LA-BRW-T481 through the nav', async ({ page }) => {
     await openPage(page, DOMAIN);
-    const link = page.locator('nav#nav .nav-space a[href^="/records/"]:not([aria-current])').first();
+    const link = page.locator('nav#nav .nav-space a[href^="/LA-BRW-"]:not([aria-current])').first();
     await expect(link).toBeVisible();
     const r = await step(page, 'navigate', 'through the nav', { keys: KEYS, allow: CONTENT, resizes: TITLE }, async () => {
       await link.click();
-      await page.waitForURL(/\/records\//);
+      await page.waitForURL(/\/LA-[A-Z0-9]+-[A-Z0-9]+/);
     });
     expectStable(r);
   });
 
   test('LA-BRW-T481 through a link in the page', async ({ page }) => {
     await openPage(page, RECORD);
-    const link = page.locator('.pane-wiki .spec-body a[href^="/records/"]').first();
+    const link = page.locator('.pane-wiki .spec-body a.record-link[href^="/LA-"]').first();
     const r = await step(page, 'navigate', 'through a link', { keys: KEYS, allow: CONTENT, resizes: TITLE }, async () => {
       await link.click();
       await page.waitForURL((u) => !u.pathname.endsWith('LA-BRW-UC91'));
@@ -89,7 +89,7 @@ test.describe('navigate', () => {
     });
     const before = await page.locator('.pane-wiki .pane-title h1').textContent();
     // A link already in view, so the click does not scroll the page to reach it first.
-    const links = '.pane-wiki .pane-scroll a.row-link[href^="/records/"]';
+    const links = '.pane-wiki .pane-scroll a.row-link[href^="/LA-BRW-"]';
     const inView = await page.evaluate((sel) => {
       const box = document.querySelector('.pane-wiki .pane-scroll')!.getBoundingClientRect();
       return [...document.querySelectorAll(sel)].findIndex((a) => {
@@ -104,7 +104,7 @@ test.describe('navigate', () => {
     const r = await step(page, 'navigate', 'link from a scrolled page', { keys: KEYS, allow: CONTENT, resizes: TITLE }, async () => {
       scrolledTo = await topRow();
       await link.click();
-      await page.waitForURL(/\/records\//);
+      await page.waitForURL(/\/LA-[A-Z0-9]+-[A-Z0-9]+/);
     });
     expectStable(r);
     const forward = await stop();
@@ -114,7 +114,7 @@ test.describe('navigate', () => {
     await frames();
     const b = await step(page, 'navigate', 'Back to the scrolled page', { keys: KEYS, allow: CONTENT, resizes: TITLE }, async () => {
       await page.goBack();
-      await page.waitForURL(/\/specs\/LA\/LA-BRW/);
+      await page.waitForURL(/\/LA-BRW(\?|$)/);
     });
     expectStable(b);
     const after = await page.locator('.pane-wiki .pane-title h1').textContent();

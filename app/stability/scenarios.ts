@@ -1,11 +1,11 @@
 // Shared addresses and key elements for the stability scenarios.
 
-export const PRODUCT = '/specs/LA';
-export const DOMAIN = '/specs/LA/LA-BRW';
+export const PRODUCT = '/LA';
+export const DOMAIN = '/LA-BRW';
 /** A use case with requirements, links and a long body. */
-export const RECORD = '/records/LA-BRW-UC91';
+export const RECORD = '/LA-BRW-UC91';
 /** An aggregate: its page offers the Model view. */
-export const AGGREGATE = '/records/LA-BRW-A4';
+export const AGGREGATE = '/LA-BRW-A4';
 
 /** The shell's frame: the nav and the page beside it. */
 export const SHELL = ['nav#nav', '#main'];

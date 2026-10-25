@@ -106,7 +106,7 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 /** Opens Lend a thing's graph, then re-centers on its requirement; returns the edge between them as first drawn and just after the click. */
 async function recenter() {
   startAtDepth(2); // at depth 1 the two records keep their places (the new focus is anchored), so nothing would move
-  await openApp('/records/P-D-UC01?view=graph', { workspace: testWorkspace() });
+  await openApp('/P-D-UC01?view=graph', { workspace: testWorkspace() });
   await waitFor(() => expect(path()).not.toBeNull());
   await waitFor(() => expect(isCenter('P-D-UC01')).toBe(true));
   const element = path()!;

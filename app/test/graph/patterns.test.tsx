@@ -57,7 +57,7 @@ describe('patterns in the graph', () => {
 
   it('LA-BRW-T178 The graph view of a pattern draws its rules and the follows lines with their own style', async () => {
     startAtDepth(2);
-    await openApp('/records/DM-PAT-CHECKOUT?view=graph', { workspace: patternWorkspace() });
+    await openApp('/DM-PAT-CHECKOUT?view=graph', { workspace: patternWorkspace() });
     await waitFor(() => expect(document.querySelector('.react-flow__node[data-id="DM-PAT-CHECKOUT-R01"]')).not.toBeNull());
     await waitFor(() => expect(document.querySelector('.react-flow__edge-path.rel-pattern')).not.toBeNull());
     expect(screen.getByRole('region', { name: 'Legend' })).toHaveTextContent('follows');

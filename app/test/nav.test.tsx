@@ -17,7 +17,7 @@ const diagrams = [{ slug: 'people', title: 'People and tools with a long name th
 
 describe('side navigation', () => {
   it('LA-BRW-T127 The nav collapses to a rail of icons with tooltips, is remembered, and expands again', async () => {
-    await openApp('/specs/DM', { diagrams });
+    await openApp('/DM', { diagrams });
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     fireEvent.click(within(nav()).getByRole('button', { name: 'Collapse the navigation' }));
     expect(nav().className).toContain('is-rail');
@@ -41,12 +41,12 @@ describe('side navigation', () => {
     expect(within(within(nav()).getByRole('list', { name: 'Spaces' })).getAllByRole('link').map((a) => a.getAttribute('aria-label'))).toEqual(['Demo shop', 'Notebook']);
     fireEvent.click(within(nav()).getByRole('button', { name: 'Expand the navigation' }));
     expect(nav().className).not.toContain('is-rail');
-    expect(within(nav().querySelector<HTMLElement>('.nav-space')!).getByRole('link', { name: 'Demo shop' })).toHaveAttribute('href', '/specs/DM');
+    expect(within(nav().querySelector<HTMLElement>('.nav-space')!).getByRole('link', { name: 'Demo shop' })).toHaveAttribute('href', '/DM');
   });
 
   it('LA-BRW-T128 On a narrow screen the nav is a full-screen sheet opened from a menu button, closed by Escape, a click outside or choosing a page', async () => {
     vi.stubGlobal('matchMedia', (query: string) => ({ matches: true, media: query, addEventListener: () => {}, removeEventListener: () => {} }));
-    await openApp('/specs/DM');
+    await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     expect(screen.queryByRole('navigation', { name: 'Main' })).toBeNull();
     const menu = screen.getByRole('button', { name: 'Open the navigation' });
@@ -63,18 +63,18 @@ describe('side navigation', () => {
 
     fireEvent.click(menu);
     await userEvent.setup().click(within(nav()).getByRole('link', { name: 'Shopping' }));
-    expect(window.location.pathname).toBe('/specs/DM/DM-SHOP');
+    expect(window.location.pathname).toBe('/DM-SHOP');
     await waitFor(() => expect(screen.queryByRole('navigation', { name: 'Main' })).toBeNull());
   });
 
   it('LA-BRW-T129 Sections fold on their own, the current place is marked and its section opens itself, counts are quiet badges, and the footer says where the specs come from', async () => {
-    await openApp('/specs/DM/DM-SHOP', { diagrams });
+    await openApp('/DM-SHOP', { diagrams });
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     const head = (name: RegExp) => within(nav()).getByRole('button', { name });
     for (const name of [/^Diagrams/, /^Tools/]) expect(head(name)).toHaveAttribute('aria-expanded', 'true');
     // The current space has no heading of its own: its overview is its first row.
     expect(within(nav()).queryByRole('button', { name: /^Demo shop/ })).toBeNull();
-    expect(nav().querySelector('.nav-space a')).toHaveAttribute('href', '/specs/DM');
+    expect(nav().querySelector('.nav-space a')).toHaveAttribute('href', '/DM');
     fireEvent.click(head(/^Diagrams/));
     expect(head(/^Diagrams/)).toHaveAttribute('aria-expanded', 'false');
     expect(within(nav()).queryByRole('link', { name: /People and tools/ })).toBeNull();
@@ -82,7 +82,7 @@ describe('side navigation', () => {
     // Opening a page in a folded section opens it, and marks the page.
     await openApp('/diagrams/people', { diagrams });
     expect(head(/^Diagrams/)).toHaveAttribute('aria-expanded', 'true');
-    await openApp('/specs/DM/DM-PAY');
+    await openApp('/DM-PAY');
     await screen.findByRole('heading', { level: 1, name: 'Paying' });
     expect(within(nav()).getByRole('link', { name: 'Paying' })).toHaveAttribute('aria-current', 'page');
 
@@ -104,7 +104,7 @@ describe('side navigation', () => {
     expect(rankItems(items, 'dm-shop')[0].id).toBe('DM-SHOP');
     expect(rankItems(items, 'basket').map((i) => i.id)).toContain('DM-SHOP-A1');
     expect(rankItems(items, 'people')[0].to).toBe('/diagrams/people');
-    expect(rankItems(items, 'shopping')[0].to).toBe('/specs/DM/DM-SHOP');
+    expect(rankItems(items, 'shopping')[0].to).toBe('/DM-SHOP');
 
     await openApp('/checks', { diagrams });
     const user = userEvent.setup();
@@ -123,7 +123,7 @@ describe('side navigation', () => {
   });
 
   it('LA-BRW-T179 The nav has no Graph item, open or as a rail; the graph stays one view, Ctrl+2 or a palette command away, and /graph still redirects', async () => {
-    await openApp('/specs/DM/DM-SHOP', { diagrams });
+    await openApp('/DM-SHOP', { diagrams });
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     expect(within(nav()).queryByRole('link', { name: /Graph/ })).toBeNull();
     expect(within(nav()).queryByText('Graph')).toBeNull();
@@ -143,13 +143,13 @@ describe('side navigation', () => {
     expect(within(screen.getByRole('dialog')).getAllByRole('option')[0]).toHaveTextContent('Graph view');
 
     await openApp('/graph');
-    await waitFor(() => expect(window.location.pathname + window.location.search).toBe('/specs/DM?view=graph'));
+    await waitFor(() => expect(window.location.pathname + window.location.search).toBe('/DM?view=graph'));
   });
 
   it('LA-BRW-T471 A selected row is the whole row: the current page\'s nav row carries the selection over the panel\'s width, chevron included, with no inset bar', async () => {
     const css = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
     // A domain's page: its row (fold chevron and link) is the one selected element.
-    await openApp('/specs/DM/DM-SHOP');
+    await openApp('/DM-SHOP');
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     const selected = [...nav().querySelectorAll<HTMLElement>('.is-selected')];
     expect(selected).toHaveLength(1);
@@ -162,7 +162,7 @@ describe('side navigation', () => {
     expect(row.style.getPropertyValue('--depth')).toBe('0');
     expect(row.closest('ul')).not.toBeNull();
     // A record's row, deeper in: also one selected row, holding the link, indented deeper.
-    await openApp('/records/DM-SHOP-UC01');
+    await openApp('/DM-SHOP-UC01');
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     const deep = nav().querySelector<HTMLElement>('.nav-row.is-selected')!;
     expect(within(deep).getByRole('link')).toHaveAttribute('aria-current', 'page');

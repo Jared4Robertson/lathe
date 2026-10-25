@@ -96,7 +96,7 @@ describe('graph camera on the page', () => {
 
   async function open() {
     startAtDepth(2);
-    await openApp('/records/P-D-UC01?view=graph', { workspace: testWorkspace() });
+    await openApp('/P-D-UC01?view=graph', { workspace: testWorkspace() });
     await waitFor(() => expect(isCenter('P-D-UC01')).toBe(true));
     await waitFor(() => expect(calls.length).toBeGreaterThan(0));
   }
