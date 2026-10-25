@@ -13,8 +13,8 @@
     "--steel-bg": "#E4EEF3",
     "--spark": "#B5512A",
     "--spark-bg": "#F8E8DF",
-    "--warn": "#9A6A00",
-    "--error": "var(--spark)",
+    "--warn": "#875C00",
+    "--error": "#9E4320",
     "--error-bg": "var(--spark-bg)",
     "--g-define": "var(--steel)",
     "--g-define-bg": "var(--steel-bg)",
@@ -41,7 +41,9 @@
     "--steel-bg": "#1A2E3A",
     "--spark": "#E88A5E",
     "--spark-bg": "#3A2219",
-    "--warn": "#E0B44C"
+    "--warn": "#E0B44C",
+    "--on-mark": "#11171B",
+    "--error": "var(--spark)"
   },
   "tokens": {
     "--display": "\"Archivo\", \"Helvetica Neue\", Arial, sans-serif",

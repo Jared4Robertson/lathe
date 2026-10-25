@@ -12,11 +12,11 @@
   --motion-speed: 320ms; --motion-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
   --node-radius: 4px; /* every graph node is the same rectangle; color tells the stage */
   --paper: #F4F6F5; --sheet: #FFFFFF; --ink: #1D2830; --muted: #5A6870; --rule: #CBD3D6;
-  --steel: #2E6A88; --steel-bg: #E4EEF3; --spark: #B5512A; --spark-bg: #F8E8DF; --warn: #9A6A00;
+  --steel: #2E6A88; --steel-bg: #E4EEF3; --spark: #B5512A; --spark-bg: #F8E8DF; --warn: #875C00;
   /* The workbench: panels sit on the shell, a gap apart, and every gap between two panels resizes them (LA-PAT-APP-CODE-R09). */
   --shell: #DDE3E6; --panel-gap: 6px; --panel-radius: 8px;
   /* Errors take the spark color, and the graph's stages follow the accent, spark and ink, unless a theme sets them apart. */
-  --error: var(--spark); --error-bg: var(--spark-bg);
+  --error: #9E4320; --error-bg: var(--spark-bg); /* darker than --spark, so error text passes AA on its tint */
   --g-define: var(--steel); --g-define-bg: var(--steel-bg);
   --g-design: var(--spark); --g-design-bg: var(--spark-bg);
   --g-structural: var(--ink); --g-structural-bg: var(--sheet);
@@ -43,6 +43,8 @@
   :root {
     --paper: #11171B; --sheet: #182026; --ink: #E2E8EA; --muted: #93A2A9; --rule: #2C373D;
     --steel: #7DB4D0; --steel-bg: #1A2E3A; --spark: #E88A5E; --spark-bg: #3A2219; --warn: #E0B44C;
+    --on-mark: #11171B; /* dark text on the bright dark-mode marks passes AA; white did not */
+    --error: var(--spark);
     --shell: #0A0F12;
     color-scheme: dark;
   }
