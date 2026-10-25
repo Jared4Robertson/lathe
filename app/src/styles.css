@@ -13,6 +13,8 @@
   --steel: #2E6A88; --steel-bg: #E4EEF3; --spark: #B5512A; --spark-bg: #F8E8DF; --warn: #9A6A00;
   /* The workbench: panels sit on the shell, a gap apart, and every gap between two panels resizes them (LA-PAT-APP-CODE-R09). */
   --shell: #DDE3E6; --panel-gap: 6px; --panel-radius: 8px;
+  /* The title above a graph or a model pane: one fixed height, so the canvas below it never moves. */
+  --pane-title-height: 104px;
   --display: "Archivo", "Helvetica Neue", Arial, sans-serif;
   --body: "Public Sans", "Segoe UI", system-ui, sans-serif;
   --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
@@ -406,7 +408,7 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .icon-button:hover { color: var(--ink); background: var(--paper); border-color: var(--rule); }
 /* A toggle that is on (the pressed view, a shown inspector): one look for every such icon button. */
 .icon-button.is-on { color: var(--steel); background: var(--steel-bg); }
-:is(.icon-button, .nav-section-head, .nav-chevron, .rail-item, .tree-toggle, .tree-bulk, .split-divider, .menu a, .menu button):focus-visible { outline: 2px solid var(--steel); outline-offset: 1px; }
+:is(.icon-button, .nav-section-head, .nav-chevron, .rail-item, .tree-toggle, .tree-bulk, .pane-gap, .menu a, .menu button):focus-visible { outline: 2px solid var(--steel); outline-offset: 1px; }
 
 /* The nav */
 .app.nav-collapsed { grid-template-columns: 56px var(--panel-gap) minmax(0, 1fr); }
@@ -465,13 +467,15 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .focus-layout.with-inspector { grid-template-columns: minmax(0, 1fr) var(--panel-gap) var(--inspector-width, 340px); column-gap: 0; }
 .focus-main { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
 .focus-views { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr); }
-.focus-views.mode-split { grid-template-columns: minmax(0, 1fr) var(--panel-gap) minmax(0, 1fr); }
+/* Open panes sit side by side, a gap apart; FocusPage sets each pane's column (minmax(<least>, <weight>fr)). */
+.focus-views.panes-2 { grid-template-columns: minmax(0, 1fr) var(--panel-gap) minmax(0, 1fr); }
+.focus-views.panes-3 { grid-template-columns: minmax(0, 1fr) var(--panel-gap) minmax(0, 1fr) var(--panel-gap) minmax(0, 1fr); }
 .pane { position: relative; min-width: 0; min-height: 0; display: flex; flex-direction: column; background: var(--paper); }
 .pane-scroll { flex: 1; min-height: 0; overflow-y: auto; }
 .pane-graph > .graph-page { flex: 1; }
 .pane.is-fullscreen { position: fixed; inset: 0; z-index: 90; }
-/* Inside the page panel the split's gap shows the shell, so the two panes read as panels too. */
-.split-divider { background: var(--shell); }
+/* Inside the page panel each gap between panes shows the shell, so the panes read as panels too. */
+.pane-gap { background: var(--shell); }
 .group-intro { margin: 16px 0 0; }
 .record-layout.single { grid-template-columns: minmax(0, 1fr); }
 .inspector-column { min-height: 0; overflow: hidden; background: var(--sheet); }
@@ -530,8 +534,8 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 @keyframes lathe-slide { from { opacity: 0.4; } to { opacity: 1; } }
 @media (max-width: 900px) {
     .focus-layout, .focus-layout.with-inspector { grid-template-columns: minmax(0, 1fr); }
-  .focus-views.mode-split { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); }
-  .focus-views.mode-split .split-divider { display: none; }
+  .focus-views.panes-2, .focus-views.panes-3 { grid-template-columns: minmax(0, 1fr); grid-auto-rows: minmax(0, 1fr); }
+  .focus-views .pane-gap { display: none; }
 }
 /* ---------- End of brief 18 ---------- */
 
@@ -686,4 +690,47 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 .pane-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .pane-body > .graph-page { flex: 1; }
 .pane-title .spec-header { padding: 16px 24px 0; flex-wrap: wrap; }
+/* Above a graph or a model the title has one height whatever the record, so the canvas never moves on a re-center: one line each, cut with an ellipsis. */
+.pane-title.is-fixed { flex: none; height: var(--pane-title-height); box-sizing: border-box; overflow: hidden; }
+.pane-title.is-fixed .spec-header { flex-wrap: nowrap; align-items: center; }
+.pane-title.is-fixed .spec-header > div { min-width: 0; }
+.pane-title.is-fixed :is(.eyebrow, h1, .record-id) { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pane-title.is-fixed h1 { font-size: 1.45rem; overflow-wrap: normal; }
 .pane-narrow-actions { display: flex; justify-content: flex-end; padding: 4px 8px; }
+.pane-model > .pane-body > .model-page { flex: 1; }
+
+/* ---------- The Model view: ERDs of a domain and of an aggregate (app/src/model) ---------- */
+/* The current domain is blue (--steel, --steel-bg), another domain gray (--muted on --paper, dashed), as S2's domain models draw them. */
+.model-page { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.model-header { padding: 10px 20px; border-bottom: 1px solid var(--rule); }
+.model-caption { margin: 0; font-size: 0.86rem; color: var(--muted); }
+.model-canvas { position: relative; flex: 1; min-height: 360px; }
+.model-flow { position: absolute; inset: 0; }
+.model-empty, .model-missing { flex: 1; margin: 0; padding: 24px; }
+.model-flow .react-flow__node:focus { outline: none; }
+.model-flow .react-flow__node:focus-visible .erd-box { outline: 3px solid var(--steel); outline-offset: 3px; }
+.erd-handle { opacity: 0; pointer-events: none; }
+.erd-box { width: 100%; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; overflow: hidden; border: 1.5px solid var(--steel); border-radius: var(--node-radius); background: var(--steel-bg); color: var(--ink); cursor: pointer; transition: box-shadow var(--hover-speed); }
+.erd-box:not(.is-focus):hover { box-shadow: 0 0 0 3px var(--hover-ring); }
+.erd-box.is-focus { cursor: default; }
+.erd-box.tone-other { border-style: dashed; border-color: var(--muted); background: var(--paper); }
+.erd-box.is-highlight, .erd-box.is-highlight:hover { box-shadow: 0 0 0 3px var(--ink); }
+@media (prefers-reduced-motion: reduce) { .erd-box { transition: none; } }
+.erd-box-head { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; min-width: 0; }
+.erd-box-head strong { font: 700 13px/1.25 var(--display); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.erd-owner, .erd-summary { font: 10.5px/1.3 var(--mono); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.erd-root { flex: none; font: 600 9.5px/1.4 var(--mono); text-transform: uppercase; letter-spacing: 0.06em; padding: 0 5px; border-radius: 3px; color: var(--on-mark); background: var(--steel); }
+.erd-fields { list-style: none; margin: 4px 0 0; padding: 4px 0 0; border-top: 1px solid var(--rule); display: grid; grid-template-columns: minmax(0, 1fr); }
+.erd-fields li { display: flex; justify-content: space-between; gap: 8px; min-height: 20px; align-items: center; font-size: 11.5px; }
+.erd-field { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.erd-field-kind { flex: none; font: 10.5px var(--mono); color: var(--muted); }
+.erd-line-path, .erd-end { fill: none; stroke: var(--steel); stroke-width: 1.4; }
+.erd-line.is-dashed .erd-line-path, .erd-key-line.is-dashed .erd-line-path { stroke-dasharray: 6 4; }
+.erd-key { display: flex; flex-wrap: wrap; gap: 8px 28px; align-items: flex-start; padding: 10px 20px 12px; border-top: 1px solid var(--rule); font-size: 0.8rem; color: var(--muted); }
+.erd-key-table { border-collapse: collapse; }
+.erd-key-table th { text-align: left; font-weight: 600; color: var(--ink); padding: 0 12px 2px 0; }
+.erd-key-table td { padding: 1px 12px 1px 0; }
+.erd-key-ends { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 3px; }
+.erd-key-ends li { display: flex; align-items: center; gap: 8px; }
+.erd-key-line { flex: none; overflow: visible; }
+.erd-key-highlight { display: inline-block; width: 14px; height: 10px; border: 1.5px solid var(--steel); background: var(--steel-bg); box-shadow: 0 0 0 2px var(--ink); border-radius: 2px; }
