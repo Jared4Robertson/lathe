@@ -5,7 +5,7 @@ title: Read a record as wiki, graph or model, from the keyboard
 parent: LA-BRW
 links:
   uses: [LA-BRW-V01, LA-BRW-V04, LA-BRW-V20, LA-BRW-E01, LA-BRW-V21]
-  carries_out: [LA-BRW-UC50, LA-BRW-UC51, LA-BRW-UC111, LA-BRW-UC113, LA-BRW-UC112]
+  carries_out: [LA-BRW-UC50, LA-BRW-UC51, LA-BRW-UC111, LA-BRW-UC113, LA-BRW-UC112, LA-BRW-UC117]
 ---
 1. The reader opens quick find from the keyboard, types part of an ID or title, and opens the record at its one address.
 2. They open and close the Wiki, Graph and Model panes with their shortcuts; following a link in any pane moves them all, and the inspector shows the record's facts.
