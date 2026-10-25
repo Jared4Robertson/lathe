@@ -88,7 +88,7 @@ interface NodeData extends Record<string, unknown> {
   scale: number;
   /** How much its text, padding and marks grow: fixed by the map, never by the camera (LA-EXP-DR58). */
   text: number;
-  /** In the Nested view (LA-EXP-DR62): a box drawn with its children inside it, its label in a header band of this height (map units), or 0 for a leaf. */
+  /** In the Nested view (LA-EXP-DR62): a box drawn with its children inside it has a header band of this height (map units) holding its label at the top; 0 for a leaf, whose label is centered. */
   header?: number;
 }
 interface EdgeData extends Record<string, unknown> {
@@ -146,9 +146,8 @@ function GraphNodeView({ data }: NodeProps<Node<NodeData>>) {
     data.kind === 'domain' && !data.group ? (data.header === undefined ? 'is-hexagon' : 'has-hexagon-mark') : '',
     data.header ? 'is-container' : '',
   ].filter(Boolean).join(' ');
-  const header = data.header ? ({ '--header': `${data.header}px` } as CSSProperties) : undefined;
   return (
-    <div className={classes} title={data.group ? `${data.title} (${data.meta.replace(/^Group · /, 'in ')})` : `${data.title} (${data.id})`} style={{ ...scaleStyle(data.scale, data.text), ...header }}>
+    <div className={classes} title={data.group ? `${data.title} (${data.meta.replace(/^Group · /, 'in ')})` : `${data.title} (${data.id})`} style={scaleStyle(data.scale, data.text)}>
       <Handle type="target" position={Position.Left} className="graph-handle" isConnectable={false} />
       <Handle type="source" position={Position.Right} className="graph-handle" isConnectable={false} />
       {data.label && (

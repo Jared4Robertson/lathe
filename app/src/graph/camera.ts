@@ -234,7 +234,7 @@ export interface NestedDepth { focus: string; depth: number; framed: number }
 /**
  * What a viewport draws of the Nested map (LA-EXP-DR63), level by level from the roots, a parent
  * before its children so each child is drawn over its parent: a box in view and at least MIN_DRAWN
- * pixels each way on screen is drawn, labeled when its title reads (`labelShown`) and, when it lies
+ * pixels each way on screen is drawn, labeled when its label fits it and its title reads (`labelShown`) and, when it lies
  * more levels inside the focus than the depth, only once the camera is REVEAL_ZOOM times past the
  * framed zoom. A level that would take the drawing past MAX_DRAWN is not drawn, nor anything below
  * it: its parents stand for it, so there are no bars. `always` adds boxes drawn whatever their size or place.
@@ -251,7 +251,9 @@ export function drawnNested(map: PlacedMap, v: Viewport, width: number, height: 
     while (at && at.level > focus.level) at = at.parent === null ? undefined : map.nodes.get(at.parent);
     return at?.id === focus.id ? n.level - focus.level : -1;
   };
-  const box = (n: MapNode): DrawnBox => ({ id: n.id, label: !(!revealed && limit && inside(n) > limit.depth) && labelShown(n.text, z) });
+  // A box whose label does not fit it at its level's text scale is always plain (LA-EXP-DR62).
+  const fits = (n: MapNode) => !('fits' in n) || n.fits !== false;
+  const box = (n: MapNode): DrawnBox => ({ id: n.id, label: fits(n) && !(!revealed && limit && inside(n) > limit.depth) && labelShown(n.text, z) });
   const seen = (n: MapNode) => n.x + n.w >= rect.x0 && n.x <= rect.x1 && n.y + n.h >= rect.y0 && n.y <= rect.y1 && n.w * z >= MIN_DRAWN && n.h * z >= MIN_DRAWN;
   const boxes: DrawnBox[] = [];
   const drawn = new Set<string>();

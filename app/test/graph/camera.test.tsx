@@ -180,16 +180,16 @@ describe('graph camera in the Nested layout', () => {
           expect(m.x + m.w >= rect.x0 && m.x <= rect.x1 && m.y + m.h >= rect.y0 && m.y <= rect.y1, b.id).toBe(true);
           expect(Math.min(m.w, m.h) * v.zoom).toBeGreaterThanOrEqual(MIN_DRAWN);
           if (m.parent !== null) expect(order.indexOf(m.parent), b.id).toBeLessThan(order.indexOf(b.id));
-          // Deeper than the depth inside the focus: plain. Otherwise labeled while its title reads.
-          expect(b.label, `${b.id} at depth ${depth}`).toBe(inside(b.id, focus) <= depth && labelShown(m.text, v.zoom));
+          // Deeper than the depth inside the focus, or a label that does not fit its box: plain. Otherwise labeled while its title reads.
+          expect(b.label, `${b.id} at depth ${depth}`).toBe(map.nodes.get(b.id)!.fits && inside(b.id, focus) <= depth && labelShown(m.text, v.zoom));
         }
         // Zoomed in REVEAL_ZOOM times past the frame, the deeper boxes are labeled as their titles read.
         const z = { ...v, zoom: v.zoom * REVEAL_ZOOM };
-        for (const b of drawnNested(map, z, 1000, 800, [], limit).boxes) expect(b.label).toBe(labelShown(map.nodes.get(b.id)!.text, z.zoom));
+        for (const b of drawnNested(map, z, 1000, 800, [], limit).boxes) expect(b.label).toBe(map.nodes.get(b.id)!.fits && labelShown(map.nodes.get(b.id)!.text, z.zoom));
       }
     }
-    // The focus is labeled at its frame whatever its size: its title reads.
-    for (const focus of ['P', 'P-D', 'P-D-UC01']) {
+    // A focus whose label fits is labeled at its frame: its title reads.
+    for (const focus of ['P', 'P-D', 'P-D-UC01'].filter((id) => map.nodes.get(id)!.fits)) {
       const v = frameNested(map, focus, 1000, 800);
       expect(drawnNested(map, v, 1000, 800, [], { focus, depth: 1, framed: v.zoom }).boxes.find((b) => b.id === focus)?.label).toBe(true);
     }
