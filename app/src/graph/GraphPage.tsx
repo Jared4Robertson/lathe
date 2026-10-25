@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import {
   Background,
   BaseEdge,
@@ -42,7 +42,8 @@ import {
   type GraphNode,
   type Neighborhood,
 } from './model';
-import { boxExit, layoutNeighborhood, NODE_HEIGHT, NODE_WIDTH, type Placed } from './layout';
+import { layoutNeighborhood, NODE_HEIGHT, NODE_WIDTH, type Placed } from './layout';
+import { edgeMove, readMotion, transitionProgress, tweenEdge, type EdgeEnds, type EdgeFrame, type EdgePhase } from './motion';
 
 // The graph view: an ego graph centered on one record or group. Clicking a record or a group
 // re-centers on it (through onNavigate, so the host changes the address and Back walks back along
@@ -65,7 +66,10 @@ interface NodeData extends Record<string, unknown> {
 }
 interface EdgeData extends Record<string, unknown> {
   relation: string;
-  points: [{ x: number; y: number }, { x: number; y: number }];
+  /** The centers of the two boxes it joins, in the picture now drawn. */
+  ends: EdgeEnds;
+  /** Whether it was in the last picture, is new, or is leaving (fading out until the move ends). */
+  phase: EdgePhase;
   showLabel: boolean;
 }
 type FlowNode = Node<NodeData>;
@@ -141,23 +145,112 @@ function GroupNodeView({ data }: NodeProps<FlowNode>) {
   );
 }
 
-function GraphEdgeView({ id, data, markerEnd }: EdgeProps<FlowEdge>) {
+const NO_ENDS: EdgeEnds = { source: { x: 0, y: 0 }, target: { x: 0, y: 0 } };
+const sameEnds = (a: EdgeEnds, b: EdgeEnds) =>
+  a.source.x === b.source.x && a.source.y === b.source.y && a.target.x === b.target.x && a.target.y === b.target.y;
+
+const linePath = ([a, b]: [{ x: number; y: number }, { x: number; y: number }]) => `M ${a.x} ${a.y} L ${b.x} ${b.y}`;
+const labelTransform = ([a, b]: [{ x: number; y: number }, { x: number; y: number }]) =>
+  `translate(-50%, -50%) translate(${(a.x + b.x) / 2}px, ${(a.y + b.y) / 2}px)`;
+
+/** What an edge draws on: its group, its line and its label, found when it paints a frame. */
+interface EdgeParts {
+  /** The edge's group, the line and the label, as drawn now. */
+  group: SVGGElement | null;
+  label: HTMLDivElement | null;
+  /** The node boxes it joins, whose transition it follows. */
+  nodes: () => (Element | null)[];
+}
+
+/** Writes one frame straight to the edge's elements, so it shows in the same frame as the nodes' move (a React render would come a frame late). */
+function paintEdge(parts: EdgeParts, frame: EdgeFrame) {
+  if (parts.group) {
+    parts.group.style.opacity = String(frame.opacity);
+    parts.group.querySelector('path.react-flow__edge-path')?.setAttribute('d', linePath(frame.points));
+  }
+  if (parts.label) {
+    parts.label.style.opacity = String(frame.opacity);
+    parts.label.style.transform = labelTransform(frame.points);
+  }
+}
+
+/**
+ * Where an edge is drawn, frame by frame. When its boxes move (the graph re-centers) it tweens from
+ * where it was drawn to where it goes, with the shared motion (LA-PAT-APP-CODE-R12): the same
+ * duration and easing as the nodes' transform transition, and on the nodes' own transition clock,
+ * so its ends stay on the boxes. A new edge fades in and a leaving one fades out over the same
+ * time. Under reduced motion it jumps.
+ */
+function useEdgeFrame(ends: EdgeEnds, phase: EdgePhase, parts: EdgeParts): EdgeFrame {
+  const [frame, setFrame] = useState<EdgeFrame>(() => {
+    const { from } = edgeMove(phase, ends, null);
+    return tweenEdge(from, from, 1);
+  });
+  const drawn = useRef<EdgeFrame | null>(null);
+  const key = `${ends.source.x} ${ends.source.y} ${ends.target.x} ${ends.target.y} ${phase}`;
+  useLayoutEffect(() => {
+    const { from, to } = edgeMove(phase, ends, drawn.current);
+    const motion = readMotion();
+    const settle = (f: EdgeFrame) => { drawn.current = f; setFrame(f); };
+    if (motion.duration === 0 || (sameEnds(from.ends, to.ends) && from.opacity === to.opacity)) {
+      settle(tweenEdge(to, to, 1));
+      return;
+    }
+    drawn.current = tweenEdge(from, from, 1);
+    const start = performance.now();
+    let raf = 0;
+    let synced = false;
+    const step = (now: number) => {
+      // Follow the nodes' own transition when one of them is moving; once it has ended, so has the move.
+      const clock = transitionProgress(parts.nodes(), motion.duration);
+      if (clock !== null) synced = true;
+      const t = clock ?? (synced ? 1 : Math.min(1, Math.max(0, (now - start) / motion.duration)));
+      const f = tweenEdge(from, to, t, motion.ease);
+      drawn.current = f;
+      paintEdge(parts, f);
+      if (t < 1) raf = requestAnimationFrame(step);
+      else setFrame(f);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+    // The key stands for ends and phase: the move restarts only when where it goes changes.
+  }, [key]);
+  return frame;
+}
+
+function GraphEdgeView({ id, data, markerEnd, source, target }: EdgeProps<FlowEdge>) {
+  const group = useRef<SVGGElement>(null);
+  const label = useRef<HTMLDivElement>(null);
+  const parts: EdgeParts = {
+    get group() { return group.current; },
+    get label() { return label.current; },
+    nodes: () => {
+      const flow = group.current?.closest('.react-flow');
+      const node = (nodeId: string) => [...(flow?.querySelectorAll<HTMLElement>('.react-flow__node') ?? [])].find((el) => el.dataset.id === nodeId) ?? null;
+      return [node(source), node(target)];
+    },
+  };
+  const frame = useEdgeFrame(data?.ends ?? NO_ENDS, data?.phase ?? 'persist', parts);
   if (!data) return null;
-  const [a, b] = data.points;
-  const path = `M ${a.x} ${a.y} L ${b.x} ${b.y}`;
   return (
-    <>
-      <BaseEdge id={id} path={path} markerEnd={markerEnd} className={`graph-edge rel-${relationStyle(data.relation)}${data.showLabel || data.relation === PARENT ? '' : ' distant'}`} />
+    <g ref={group} className="graph-edge-motion" style={{ opacity: frame.opacity }} data-phase={data.phase}>
+      <BaseEdge id={id} path={linePath(frame.points)} markerEnd={markerEnd} interactionWidth={0} className={`graph-edge rel-${relationStyle(data.relation)}${data.showLabel || data.relation === PARENT ? '' : ' distant'}`} />
       {data.showLabel && data.relation !== PARENT && (
         <EdgeLabelRenderer>
-          <div className="edge-label graph-edge-label" style={{ transform: `translate(-50%, -50%) translate(${(a.x + b.x) / 2}px, ${(a.y + b.y) / 2}px)` }}>
+          <div ref={label} className="edge-label graph-edge-label" style={{ opacity: frame.opacity, transform: labelTransform(frame.points) }}>
             {graphRelationLabel(data.relation)}
           </div>
         </EdgeLabelRenderer>
       )}
-    </>
+    </g>
   );
 }
+
+/** Where each node's two handles are: the middle of its left and right sides. */
+const NODE_HANDLES = [
+  { type: 'target' as const, position: Position.Left, x: 0, y: NODE_HEIGHT / 2, width: 1, height: 1 },
+  { type: 'source' as const, position: Position.Right, x: NODE_WIDTH, y: NODE_HEIGHT / 2, width: 1, height: 1 },
+];
 
 const nodeTypes = { record: GraphNodeView, folder: GroupNodeView };
 const edgeTypes = { link: GraphEdgeView };
@@ -432,8 +525,11 @@ function GraphCanvas({ index, graph, onNavigate, onToggle }: {
 
   const order = useMemo(() => (placed ? keyboardOrder(placed.graph, placed) : []), [placed]);
 
-  const { nodes, edges } = useMemo(() => {
-    if (!placed) return { nodes: [] as FlowNode[], edges: [] as FlowEdge[] };
+  /** The edges last drawn, so the next picture knows which edges persist, which are new and which leave. */
+  const shown = useRef<FlowEdge[]>([]);
+  const drewPicture = useRef(false);
+  const { nodes, edges, leaving } = useMemo(() => {
+    if (!placed) return { nodes: [] as FlowNode[], edges: [] as FlowEdge[], leaving: [] as FlowEdge[] };
     const { graph: g, positions } = placed;
     const byId = new Map(g.nodes.map((n) => [n.id, n]));
     const nodes: FlowNode[] = order.map((id) => {
@@ -447,6 +543,10 @@ function GraphCanvas({ index, graph, onNavigate, onToggle }: {
         draggable: false,
         connectable: false,
         selectable: false,
+        // Saying where the handles are means React Flow never has to measure a node again when the
+        // picture changes; while it measured, every edge was dropped for a frame and drawn anew, so
+        // nothing could carry it from its old place to its new one.
+        handles: NODE_HANDLES,
       };
       if (node.group) {
         const marks = groupMarks(index, id);
@@ -477,39 +577,70 @@ function GraphCanvas({ index, graph, onNavigate, onToggle }: {
       const p = positions.get(id) ?? { x: 0, y: 0 };
       return { x: p.x + NODE_WIDTH / 2, y: p.y + NODE_HEIGHT / 2 };
     };
-    const edges: FlowEdge[] = g.edges.map((e) => {
-      const s = center(e.source);
-      const t = center(e.target);
+    // Edges in the last picture keep moving with their boxes; new ones fade in (not on the first
+    // picture, which appears at once); edges that are gone fade out where their boxes go, or stay,
+    // until the move is over. A leaving edge is drawn from its own ends, so it is hung on boxes that
+    // are still in the picture to keep React Flow drawing it.
+    const before = new Map(shown.current.map((e) => [e.id, e]));
+    const hadPicture = drewPicture.current;
+    const edges: FlowEdge[] = g.edges.map((e) => ({
+      id: e.id,
+      source: e.source,
+      target: e.target,
+      type: 'link',
+      markerEnd: { type: MarkerType.ArrowClosed },
+      focusable: false,
+      selectable: false,
+      data: {
+        relation: e.relation,
+        ends: { source: center(e.source), target: center(e.target) },
+        phase: hadPicture && !before.has(e.id) ? 'enter' : 'persist',
+        showLabel: e.source === g.focus || e.target === g.focus,
+      },
+    }));
+    const now = new Set(edges.map((e) => e.id));
+    const leaving: FlowEdge[] = readMotion().reduced ? [] : [...before.values()].filter((e) => !now.has(e.id) && e.data).map((e) => {
+      if (e.data!.phase === 'leave') return e; // already fading out from the picture before
+      const keep = (id: string, old: { x: number; y: number }) => (positions.has(id) ? center(id) : old);
       return {
-        id: e.id,
-        source: e.source,
-        target: e.target,
-        type: 'link',
-        markerEnd: { type: MarkerType.ArrowClosed },
-        focusable: false,
-        selectable: false,
-        data: {
-          relation: e.relation,
-          points: [boxExit(s.x, s.y, t.x, t.y), boxExit(t.x, t.y, s.x, s.y)],
-          showLabel: e.source === g.focus || e.target === g.focus,
-        },
+        ...e,
+        source: positions.has(e.source) ? e.source : g.focus,
+        target: positions.has(e.target) ? e.target : g.focus,
+        data: { ...e.data!, phase: 'leave', ends: { source: keep(e.source, e.data!.ends.source), target: keep(e.target, e.data!.ends.target) } },
       };
     });
-    return { nodes, edges };
+    return { nodes, edges, leaving };
+    // `shown` is read, not watched: it is the picture drawn before this one.
   }, [placed, order, index]);
+
+  // Leaving edges are dropped once they have faded out.
+  const [settled, setSettled] = useState<object | null>(null);
+  useEffect(() => {
+    if (leaving.length === 0) return;
+    const timer = setTimeout(() => setSettled(leaving), readMotion().duration);
+    return () => clearTimeout(timer);
+  }, [leaving]);
+  const drawnEdges = useMemo(() => (settled === leaving || leaving.length === 0 ? edges : [...edges, ...leaving]), [edges, leaving, settled]);
+  useEffect(() => {
+    shown.current = drawnEdges;
+    if (placed) drewPicture.current = true;
+  }, [drawnEdges, placed]);
 
   const domNode = (id: string) =>
     [...(wrapper.current?.querySelectorAll<HTMLElement>('.react-flow__node') ?? [])].find((el) => el.dataset.id === id) ?? null;
 
-  const fit = useCallback((duration: number) => {
+  /** Fits the picture: moving there with the shared motion, or at once. */
+  const fit = useCallback((animate: boolean) => {
     const box = wrapper.current?.getBoundingClientRect();
-    if (placed && box && box.width > 0 && box.height > 0) setViewport(fitPositions(placed.positions, box.width, box.height), { duration });
+    if (!placed || !box || box.width <= 0 || box.height <= 0) return;
+    const motion = readMotion();
+    setViewport(fitPositions(placed.positions, box.width, box.height), animate ? { duration: motion.duration, ease: motion.ease } : { duration: 0 });
   }, [placed, setViewport]);
 
   // Fit the new picture, and after a keyboard action put focus back on the right node.
   useEffect(() => {
     if (!placed) return;
-    fit(300);
+    fit(true);
     if (refocus.current) {
       const id = placed.graph.nodes.some((n) => n.id === refocus.current) ? refocus.current : placed.graph.focus;
       refocus.current = null;
@@ -528,13 +659,13 @@ function GraphCanvas({ index, graph, onNavigate, onToggle }: {
       const size = `${Math.round(box.width)}x${Math.round(box.height)}`;
       if (size === last) return;
       last = size;
-      fit(0);
+      fit(false);
     });
     observer.observe(el);
     return () => observer.disconnect();
   }, [fit]);
 
-  useCommand('graphFit', () => fit(300), !!placed);
+  useCommand('graphFit', () => fit(true), !!placed);
   /** Opens or folds a group in place, keeping keyboard focus on it (its chevron, or o). The center group stays open. */
   const toggle = (id: string) => {
     const node = placed?.graph.nodes.find((n) => n.id === id);
@@ -587,7 +718,7 @@ function GraphCanvas({ index, graph, onNavigate, onToggle }: {
       )}
       <ReactFlow
         nodes={nodes}
-        edges={edges}
+        edges={drawnEdges}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         nodesDraggable={false}

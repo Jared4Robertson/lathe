@@ -6,6 +6,8 @@
   --hover-bg: color-mix(in srgb, var(--steel) 10%, transparent);
   --hover-ring: color-mix(in srgb, var(--steel) 45%, transparent);
   --hover-speed: 120ms;
+  /* Motion: the speed and easing every move and fade shares, in CSS and in JS (app/src/graph/motion.ts); reduced motion turns each off (LA-PAT-APP-CODE-R12). */
+  --motion-speed: 320ms; --motion-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
   --node-radius: 4px; /* every graph node is the same rectangle; color tells the stage */
   --paper: #F4F6F5; --sheet: #FFFFFF; --ink: #1D2830; --muted: #5A6870; --rule: #CBD3D6;
   --steel: #2E6A88; --steel-bg: #E4EEF3; --spark: #B5512A; --spark-bg: #F8E8DF; --warn: #9A6A00;
@@ -85,7 +87,8 @@ h3 { font-size: 0.95rem; margin-top: 8px; }
 
 /* Flow */
 .react-flow { --xy-background-color: var(--paper); --xy-background-pattern-color: var(--rule); }
-.react-flow__node { font-family: var(--body); transition: opacity 0.15s; }
+.react-flow__node { font-family: var(--body); transition: opacity var(--hover-speed); }
+@media (prefers-reduced-motion: reduce) { .react-flow__node { transition: none; } }
 .react-flow__node.dimmed, .react-flow__edge.dimmed, .react-flow__edge.dimmed + .edge-label { opacity: 0.25; }
 .handle { opacity: 0; pointer-events: none; }
 .context-node { width: 100%; height: 100%; box-sizing: border-box; border: 1px dashed var(--rule); border-radius: 14px; }
@@ -306,12 +309,13 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-mark.error { background: var(--spark); }
 .graph-mark.warning, .graph-mark.gap { background: var(--warn); }
 .graph-handle { opacity: 0; pointer-events: none; top: 50% !important; bottom: auto !important; }
-.graph-flow .react-flow__node { transition: transform 320ms ease; }
+/* Nodes glide to their new places when the graph re-centers; each edge tweens with them in JS, on the same tokens (app/src/graph/motion.ts). */
+.graph-flow .react-flow__node { transition: transform var(--motion-speed) var(--motion-ease); }
 .graph-flow .react-flow__node:focus { outline: none; }
 .graph-flow .react-flow__node:focus-visible .graph-node { outline: 3px solid var(--steel); outline-offset: 3px; }
 
 /* Edges: parent/child is the solid spine of the tree; every other relation is a lighter, dashed cross-link. */
-.graph-flow .react-flow__edge-path.graph-edge { stroke-width: 1.2; transition: d 320ms ease; }
+.graph-flow .react-flow__edge-path.graph-edge { stroke-width: 1.2; }
 .graph-flow .react-flow__edge-path.rel-structure { stroke: var(--ink); stroke-width: 2; opacity: 0.75; }
 .graph-flow .react-flow__edge-path.rel-trace { stroke: var(--steel); stroke-dasharray: 6 4; }
 .graph-flow .react-flow__edge-path.rel-design { stroke: var(--spark); stroke-dasharray: 2 4; opacity: 0.8; }
@@ -332,7 +336,7 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-line.rel-pattern { border-top: 1.5px dashed var(--steel); border-top-style: dashed; opacity: 0.9; }
 .graph-line.rel-other { border-top: 1.5px dashed var(--muted); }
 .open-in-graph { font-size: 0.86rem; font-weight: 600; color: var(--steel); white-space: nowrap; }
-@media (prefers-reduced-motion: reduce) { .graph-flow .react-flow__node, .graph-flow .react-flow__edge-path.graph-edge { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .graph-flow .react-flow__node { transition: none; } }
 /* ---------- End of graph view ---------- */
 
 /* Coverage, fitness and evidence */
@@ -525,7 +529,7 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 .palette-list li { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 6px 8px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; }
 .palette-list li.active { background: var(--steel-bg); color: var(--steel); }
 .key-pending { position: fixed; right: 16px; bottom: 16px; z-index: 130; padding: 4px 10px; font: 500 0.85rem var(--mono); background: var(--ink); color: var(--paper); border-radius: 6px; }
-@media (prefers-reduced-motion: no-preference) { .menu.is-drawer, .inspector-drawer { animation: lathe-slide 160ms ease-out; } }
+@media (prefers-reduced-motion: no-preference) { .menu.is-drawer, .inspector-drawer { animation: lathe-slide var(--motion-speed) var(--motion-ease); } }
 @keyframes lathe-slide { from { opacity: 0.4; } to { opacity: 1; } }
 @media (max-width: 900px) {
     .focus-layout, .focus-layout.with-inspector { grid-template-columns: minmax(0, 1fr); }
@@ -578,7 +582,8 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 .menu .rail-spaces { display: flex; flex-direction: column; align-items: center; gap: 6px; }
 .rail-sep { width: 28px; margin: 4px 0; border: 0; border-top: 1px solid var(--rule); flex: none; }
 .menu .rail-item.space-item[aria-current] { background: none; }
-.menu .rail-item.space-item::before { content: ""; position: absolute; left: -8px; top: 50%; width: 4px; height: 8px; border-radius: 0 3px 3px 0; background: var(--ink); opacity: 0; transform: translateY(-50%); transition: height 120ms ease, opacity 120ms ease; }
+.menu .rail-item.space-item::before { content: ""; position: absolute; left: -8px; top: 50%; width: 4px; height: 8px; border-radius: 0 3px 3px 0; background: var(--ink); opacity: 0; transform: translateY(-50%); transition: height var(--hover-speed), opacity var(--hover-speed); }
+@media (prefers-reduced-motion: reduce) { .menu .rail-item.space-item::before { transition: none; } }
 .menu .rail-item.space-item:hover::before { opacity: 0.5; height: 16px; }
 .menu .rail-item.space-item[aria-current]::before { opacity: 1; height: 28px; background: var(--steel); }
 .space-mark { display: inline-grid; place-items: center; box-sizing: border-box; border-radius: 8px; font: 700 0.8rem var(--display); letter-spacing: 0.02em; line-height: 1; flex: none; }
@@ -627,7 +632,7 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 .tooltip-right { transform: translateY(-50%); }
 .tooltip-left { transform: translate(-100%, -50%); }
 .tooltip .kbd { background: transparent; color: inherit; border-color: color-mix(in srgb, var(--paper) 45%, transparent); font-size: 0.72rem; padding: 0 5px; }
-@media (prefers-reduced-motion: no-preference) { .tooltip { animation: lathe-tip 90ms ease-out; } }
+@media (prefers-reduced-motion: no-preference) { .tooltip { animation: lathe-tip var(--hover-speed) var(--motion-ease); } }
 @keyframes lathe-tip { from { opacity: 0; } to { opacity: 1; } }
 /* Shortcuts right-aligned in the palette (and any menu). */
 .kbd-hint { margin-left: auto; flex: none; }
