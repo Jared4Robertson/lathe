@@ -40,7 +40,12 @@ export interface DomainFolders {
 /** A stage's label, from its name: "define" -> "Define". */
 export const stageLabel = (stage: string) => stage.charAt(0).toUpperCase() + stage.slice(1);
 
-const sectionsOf = (index: SpecIndex): readonly SectionRule[] => index.workspace.sections ?? [];
+/** The workspace's sections, stage by stage in the order the stages first appear, each stage's folders in their order. */
+function sectionsOf(index: SpecIndex): readonly SectionRule[] {
+  const sections = index.workspace.sections ?? [];
+  const stages = [...new Set(sections.map((s) => s.stage))];
+  return [...sections].sort((a, b) => stages.indexOf(a.stage) - stages.indexOf(b.stage) || a.order - b.order);
+}
 
 /** The folder a kind sits in, when it names one the workspace lists. */
 export function sectionOfKind(index: SpecIndex, kind: string): SectionRule | null {
@@ -164,12 +169,11 @@ export function branchOf(index: SpecIndex, id: string): string[] {
   };
   if (record.domain) {
     const { stages, loose } = domainFolders(index, record.domain);
-    for (const stage of stages) {
-      const folder = listedIn(stage.folders);
-      if (folder) return [`domain:${record.domain}`, stage.key, folder.key];
-    }
-    const folder = listedIn(loose);
-    return folder ? [`domain:${record.domain}`, folder.key] : [`domain:${record.domain}`];
+    // The nearest listed record wins: a capability's test is in Test plan, not under its capability.
+    const folder = listedIn([...stages.flatMap((s) => s.folders), ...loose]);
+    const stage = folder && stages.find((s) => s.folders.includes(folder));
+    if (!folder) return [`domain:${record.domain}`];
+    return stage ? [`domain:${record.domain}`, stage.key, folder.key] : [`domain:${record.domain}`, folder.key];
   }
   if (record.product) {
     const folder = listedIn(productFolders(index, record.product));

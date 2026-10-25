@@ -93,8 +93,12 @@ describe('product spaces', () => {
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     expect(within(nav()).getByRole('button', { name: /^Demo shop/ })).toBeInTheDocument();
     expect(within(within(panel()).getByRole('list', { name: 'Domains of Demo shop' })).getAllByRole('link', { name: /^(Paying|Shopping)$/ }).map((a) => a.textContent)).toEqual(['Paying', 'Shopping']);
-    // Capabilities in their order, under their domain.
-    expect(within(panel()).getByRole('list', { name: 'Capabilities of Shopping' }).textContent).toBe('Filling the basketPaying for the basket');
+    // Capabilities in their order, in their domain's Define › Use cases folder, before the use cases outside any capability.
+    const user = userEvent.setup();
+    await user.click(within(panel()).getByRole('button', { name: 'Unfold Shopping' }));
+    await user.click(within(within(panel()).getByRole('list', { name: 'Folders of Shopping' })).getByRole('button', { name: /^Define/ }));
+    await user.click(within(within(panel()).getByRole('list', { name: 'Define of Shopping' })).getByRole('button', { name: /^Use cases/ }));
+    expect(within(panel()).getByRole('list', { name: 'Use cases of Shopping' }).textContent).toBe('Filling the basketPaying for the basketAdd an item to the basket');
     // The product's groups (its open questions and fitness records), in the meta-model's order.
     const groups = within(panel()).getByRole('list', { name: 'Groups of Demo shop' });
     expect(within(groups).getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual(['/records/DM/question', '/records/DM/fitness']);
