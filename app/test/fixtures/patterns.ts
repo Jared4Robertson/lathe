@@ -77,7 +77,7 @@ export function patternWorkspace(): Workspace {
   );
   const legacy = (c: Workspace['coverage'][number]): ObligationCoverage[] => [
     { kind: 'domain_rule', label: 'Domain rule', total: c.rules, designed: c.rules_satisfied, built: c.rules_built ?? 0, proved: c.rules_proved, planned: 0 } as ObligationCoverage,
-    { kind: 'requirement', label: 'Requirement', total: c.requirements, designed: c.requirements_satisfied, built: c.requirements_built ?? 0, proved: c.requirements_proved, planned: 0 } as ObligationCoverage,
+    { kind: 'requirement', label: 'Use-case requirement', total: c.requirements, designed: c.requirements_satisfied, built: c.requirements_built ?? 0, proved: c.requirements_proved, planned: 0 } as ObligationCoverage,
   ];
   for (const c of ws.coverage) {
     if (c.domain === 'DM-SHOP') c.obligations = [...legacy(c), patternRuleLine(1, 1, 1, 1, 0)];

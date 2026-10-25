@@ -17,7 +17,7 @@ describe('one level deep', () => {
     // Folded by default, with the count of what it holds and a mark for a gap below it.
     const toggle = within(uc).getByRole('button', { name: 'Expand DM-SHOP-UC01' });
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
-    expect(uc).toHaveTextContent('2 requirements');
+    expect(uc).toHaveTextContent('2 use-case requirements');
     expect(uc.querySelector('ul.nested')).toBeNull();
     const aggregates = section(/^Aggregates/);
     expect(row(aggregates, 'DM-SHOP-A1')).toHaveTextContent('1 domain rule');
@@ -60,7 +60,7 @@ describe('one level deep', () => {
     const wiki = screen.getByRole('region', { name: 'Wiki pane' });
     const children = within(wiki).getByRole('heading', { name: /^Children/ }).closest('section') as HTMLElement;
     const uc = row(children, 'DM-SHOP-UC01');
-    expect(uc).toHaveTextContent('2 requirements');
+    expect(uc).toHaveTextContent('2 use-case requirements');
     expect(uc.querySelector('ul.nested')).toBeNull();
     expect(within(children).queryByRole('link', { name: /DM-SHOP-UC01-R01/ })).toBeNull();
     const inspector = screen.getByRole('complementary', { name: 'Inspector' });

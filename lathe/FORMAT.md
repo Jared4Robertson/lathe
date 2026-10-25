@@ -61,7 +61,7 @@ Product prefix, domain code, then a kind code and number. The engine only checks
 | aggregate | `<P>-<D>-A<n>` | `TL-LEND-A1` |
 | domain_rule | `<P>-<D>-DR<nn>` | `TL-LEND-DR01` |
 | use_case | `<P>-<D>-UC<nn>` | `TL-LEND-UC01` |
-| requirement | `<use case>-R<nn>` | `TL-LEND-UC01-R01` |
+| requirement (shown as *use-case requirement*) | `<use case>-R<nn>` | `TL-LEND-UC01-R01` |
 | flow | `<P>-<D>-F<nn>` | `TL-LEND-F01` |
 | view | `<P>-<D>-V<nn>` | `TL-LEND-V01` |
 | endpoint | `<P>-<D>-E<nn>` | `TL-LEND-E01` |

@@ -27,7 +27,7 @@ describe('domain page', () => {
     expect(ids(basket.querySelector('ul.nested') as HTMLElement)).toEqual(['DM-SHOP-DR01']);
     const useCases = section(/^Use cases/);
     const add = within(useCases).getByRole('link', { name: /^DM-SHOP-UC01\s*Add/ }).closest('li') as HTMLElement;
-    expect(add).toHaveTextContent('2 requirements');
+    expect(add).toHaveTextContent('2 use-case requirements');
     await user.click(within(add).getByRole('button', { name: 'Expand DM-SHOP-UC01' }));
     expect(ids(add.querySelector('ul.nested') as HTMLElement)).toEqual(['DM-SHOP-UC01-R01', 'DM-SHOP-UC01-R02']);
     expect(add).toHaveTextContent('Shopper');
@@ -69,7 +69,7 @@ describe('domain page', () => {
     const coverage = section(/^Coverage/);
     const gaps = within(coverage).getAllByRole('listitem');
     expect(gaps.map((li) => li.textContent)).toEqual([
-      expect.stringMatching(/DM-SHOP-UC01-R02.*Requirement with nothing that proves it/),
+      expect.stringMatching(/DM-SHOP-UC01-R02.*Use-case requirement with nothing that proves it/),
       expect.stringMatching(/DM-SHOP-DR01.*Domain rule with nothing that proves it/),
     ]);
     // Gaps also show on the record's row.
