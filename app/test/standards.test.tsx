@@ -26,10 +26,10 @@ function where(file: string, text: string, pattern: RegExp): string[] {
   return text.split('\n').flatMap((line, i) => (pattern.test(line) ? [`${relative(ROOT, file)}:${i + 1}: ${line.trim()}`] : []));
 }
 
-/** Every style rule in the stylesheet, with its selectors and whether it sits in a `:root` block. */
-function styleRules(css: string): { selector: string; body: string; line: number }[] {
+/** Every style rule in the stylesheet, with its selectors, its line and the at-rules it sits in (`within`, such as a media query). */
+function styleRules(css: string): { selector: string; body: string; line: number; within: string[] }[] {
   const text = css.replace(/\/\*[\s\S]*?\*\//g, (c) => c.replace(/[^\n]/g, ' '));
-  const rules: { selector: string; body: string; line: number }[] = [];
+  const rules: { selector: string; body: string; line: number; within: string[] }[] = [];
   let depth = 0;
   let start = 0;
   const stack: string[] = [];
@@ -41,7 +41,7 @@ function styleRules(css: string): { selector: string; body: string; line: number
       start = i + 1;
       if (!head.startsWith('@') && !stack.slice(0, -1).some((h) => h.startsWith('@keyframes'))) {
         const end = text.indexOf('}', i);
-        rules.push({ selector: head, body: text.slice(i + 1, end), line: text.slice(0, i).split('\n').length });
+        rules.push({ selector: head, body: text.slice(i + 1, end), line: text.slice(0, i).split('\n').length, within: stack.slice(0, -1) });
         stack.pop();
         depth--;
         i = end;
@@ -209,6 +209,40 @@ describe('LA-PAT-APP-CODE App code', () => {
       // The title belongs to the content of a pane.
       expect(screen.getByRole('heading', { level: 1 }).closest('.pane')).not.toBeNull();
     }
+  });
+
+  it('LA-BRW-T304 Motion is shared and optional: every transition and animation uses the motion or hover tokens and is turned off under reduced motion', () => {
+    const rules = styleRules(CSS);
+    const reduce = (r: { within: string[] }) => r.within.some((w) => /prefers-reduced-motion:\s*reduce/.test(w));
+    const onlyWithMotion = (r: { within: string[] }) => r.within.some((w) => /prefers-reduced-motion:\s*no-preference/.test(w));
+    // The rules that move something (those inside a reduced-motion query only turn motion off).
+    const moving = rules.filter((r) => !reduce(r) && /(^|;)\s*(transition|animation)[\w-]*\s*:/.test(r.body));
+    // Every duration and easing comes from a token: no literal times or easing keywords.
+    const literal = moving
+      .filter((r) => {
+        const values = [...r.body.matchAll(/(?:^|;)\s*(?:transition|animation)[\w-]*\s*:\s*([^;]*)/g)].map((m) => m[1]);
+        return values.some((v) => /\d(ms|s)\b|\b(ease|ease-in|ease-out|ease-in-out|linear)\b|cubic-bezier/.test(v.replace(/var\([^)]*\)/g, '')) || !/var\(--(motion-[\w-]+|hover-speed)\)/.test(v));
+      })
+      .map((r) => `app/src/styles.css:${r.line}: ${r.selector}`);
+    expect(literal).toEqual([]);
+    // Every rule that moves is either turned off by a reduced-motion rule for the same selector, or only applies when motion is welcome.
+    const stilled = new Set(rules.filter((r) => reduce(r) && /(transition|animation)\s*:\s*none/.test(r.body)).flatMap((r) => topLevel(r.selector).map((s) => s.trim().replace(/\s+/g, ' '))));
+    const uncovered = moving
+      .filter((r) => !onlyWithMotion(r))
+      .flatMap((r) => topLevel(r.selector).map((s) => ({ s: s.trim().replace(/\s+/g, ' '), line: r.line })))
+      .filter(({ s }) => !stilled.has(s))
+      .map(({ s, line }) => `app/src/styles.css:${line}: ${s}`);
+    expect(uncovered).toEqual([]);
+    // The tokens are defined, and the JS motion reads them and checks for reduced motion.
+    for (const token of ['--motion-speed', '--motion-ease', '--hover-speed']) expect(CSS).toMatch(new RegExp(`${token}:`));
+    const animators = filesUnder(SRC, /\.tsx?$/).filter((f) => /requestAnimationFrame\(/.test(readFileSync(f, 'utf8')));
+    expect(animators.length).toBeGreaterThan(0);
+    const motion = readFileSync(join(SRC, 'graph', 'motion.ts'), 'utf8');
+    expect(motion).toContain("'(prefers-reduced-motion: reduce)'");
+    expect(motion).toMatch(/--motion-speed[\s\S]*--motion-ease/);
+    // Code that animates frame by frame takes its timing from the shared motion, not numbers of its own.
+    const ownTiming = animators.filter((f) => !/readMotion\(\)/.test(readFileSync(f, 'utf8'))).map((f) => relative(ROOT, f));
+    expect(ownTiming).toEqual([]);
   });
 
   it('LA-BRW-T262 Code, specs and docs use American spelling', () => {
