@@ -238,7 +238,7 @@ const union = (a: string[], b: string[]) => [...a, ...b.filter((x) => !a.include
 // the folders kinds sit in) merge the same way: a later row for a section already listed replaces its stage,
 // order, label or description with any that is non-empty. Relations work the same
 // way: a later row with the same relation, source kind and target kind is the same rule, and its non-empty
-// role or description replaces the earlier one. Every kind and relation row is also kept, with the file it
+// role, description, forward_label or reverse_label replaces the earlier one. Every kind and relation row is also kept, with the file it
 // came from, in meta_kind_rows and meta_relation_rows, so that a duplicate within one folder can be reported.
 // A kind's obligation value is read in any letter case: `yes` or `true` makes it an obligation, `proof` an
 // obligation that needs proof only (proof_only), and anything else not an obligation.
@@ -319,17 +319,20 @@ async function loadMeta(connection: DuckDBConnection, metaDirs: string[], root: 
     for (const row of await read(dir, 'relations.csv')) {
       const [relation, source, target, role] = [row.relation, row.source_kind, row.target_kind, row.role].map((v) => csvText(v).trim());
       const description = csvText(row.description);
+      const [forward, reverse] = [row.forward_label, row.reverse_label].map((v) => csvText(v).trim());
       relationRows.push([where(dir, 'relations.csv'), relation, source, target]);
       const key = JSON.stringify([relation, source, target]);
       const known = byRule.get(key);
       if (!known) {
-        const incoming = [relation, source, target, role, description];
+        const incoming = [relation, source, target, role, description, forward, reverse];
         relations.push(incoming);
         byRule.set(key, incoming);
         continue;
       }
       if (role !== '') known[3] = role;
       if (description.trim() !== '') known[4] = description;
+      if (forward !== '') known[5] = forward;
+      if (reverse !== '') known[6] = reverse;
     }
   }
 
@@ -338,7 +341,8 @@ async function loadMeta(connection: DuckDBConnection, metaDirs: string[], root: 
     CREATE TABLE meta_relation_rows (folder VARCHAR, relation VARCHAR, source_kind VARCHAR, target_kind VARCHAR);
     CREATE TABLE meta_kinds_in (kind VARCHAR, label VARCHAR, stage VARCHAR, section VARCHAR, parent_kinds VARCHAR,
                                 required_fields VARCHAR, obligation VARCHAR, description VARCHAR);
-    CREATE TABLE relations (relation VARCHAR, source_kind VARCHAR, target_kind VARCHAR, role VARCHAR, description VARCHAR);
+    CREATE TABLE relations (relation VARCHAR, source_kind VARCHAR, target_kind VARCHAR, role VARCHAR, description VARCHAR,
+                            forward_label VARCHAR, reverse_label VARCHAR);
     CREATE TABLE meta_sections_in (section VARCHAR, stage VARCHAR, "order" VARCHAR, label VARCHAR, description VARCHAR);
     CREATE TABLE kind_ids (kind VARCHAR, pattern VARCHAR, example VARCHAR);
   `);
@@ -644,7 +648,9 @@ export async function formatReference(root: string, options: LoadOptions = {}): 
     return {
       concepts: await readFile(FORMAT_FILE, 'utf8'),
       kinds: kindRefs,
-      relations: relations.map(({ relation, source_kind, target_kind, role, description }) => ({ relation, source_kind, target_kind, role, description })),
+      relations: relations.map(({ relation, source_kind, target_kind, role, description, forward_label, reverse_label }) => ({
+        relation, source_kind, target_kind, role, description, forward_label, reverse_label,
+      })),
       sections,
       checks: [
         ...found.files.filter((f) => f.origin === 'lathe').map(fromFile),

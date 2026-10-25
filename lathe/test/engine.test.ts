@@ -101,7 +101,7 @@ describe('loading', () => {
     expect(Object.keys(ws).sort()).toEqual(['coverage', 'kinds', 'links', 'problems', 'records', 'relations', 'sections']);
     expect(Object.keys(ws.kinds[0]).sort()).toEqual(['description', 'kind', 'label', 'obligation', 'parent_kinds', 'proof_only', 'required_fields', 'section', 'stage']);
     expect(Object.keys(ws.sections[0]).sort()).toEqual(['description', 'label', 'order', 'section', 'stage']);
-    expect(Object.keys(ws.relations[0]).sort()).toEqual(['description', 'relation', 'role', 'source_kind', 'target_kind']);
+    expect(Object.keys(ws.relations[0]).sort()).toEqual(['description', 'forward_label', 'relation', 'reverse_label', 'role', 'source_kind', 'target_kind']);
     expect(Object.keys(ws.records[0]).sort()).toEqual(['body', 'domain', 'fields', 'id', 'kind', 'mentions', 'parent', 'path', 'product', 'title']);
     expect(Object.keys(ws.links[0]).sort()).toEqual(['relation', 'source', 'target']);
     expect(Object.keys(ws.problems[0]).sort()).toEqual(['check', 'message', 'record', 'severity']);
