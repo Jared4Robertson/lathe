@@ -1,5 +1,5 @@
 ---
-id: LA-BRW-T263
+id: LA-BRW-T271
 kind: test
 title: Folder names and order come from the workspace, in the nav and on the domain page alike
 parent: LA-BRW

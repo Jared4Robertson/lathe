@@ -1,5 +1,5 @@
 ---
-id: LA-BRW-T264
+id: LA-BRW-T272
 kind: test
 title: The product shows Shared only when it has patterns
 parent: LA-BRW

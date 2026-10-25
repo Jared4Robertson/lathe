@@ -8,4 +8,4 @@ links:
   uses: [LA-BRW-V01, LA-BRW-C101, LA-BRW-C100]
   fulfills: [LA-BRW-UC90-R03, LA-BRW-DR100]
 ---
-The nav now lists that product's domains, capabilities and groups.
+The nav now lists that product's domains, each folding into its Define and Design folders, and its groups.

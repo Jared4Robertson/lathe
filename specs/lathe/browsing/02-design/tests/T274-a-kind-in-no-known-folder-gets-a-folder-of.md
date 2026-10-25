@@ -1,5 +1,5 @@
 ---
-id: LA-BRW-T266
+id: LA-BRW-T274
 kind: test
 title: A kind in no known folder gets a folder of its own
 parent: LA-BRW

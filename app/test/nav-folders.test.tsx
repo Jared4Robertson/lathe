@@ -15,6 +15,8 @@ import { main, openApp } from './helpers';
 const nav = () => screen.getByRole('navigation', { name: 'Main' });
 const panel = () => nav().querySelector<HTMLElement>('.space-items')!;
 const list = (name: string) => within(panel()).getByRole('list', { name });
+/** A nav list that may appear a moment after the page, once the nav opens the current page's branch. */
+const findList = (name: string) => within(panel()).findByRole('list', { name });
 /** The folder rows (buttons) directly in a nav list, as "Label count". */
 const rows = (el: HTMLElement) => [...el.querySelectorAll(':scope > li > .nav-folder-head')].map((b) => b.textContent);
 const head = (el: HTMLElement, name: RegExp) => within(el).getAllByRole('button', { name }).find((b) => b.closest('ul') === el)!;
@@ -23,7 +25,7 @@ const rec = (id: string, kind: string, title: string, parent: string, fields: Re
   ({ id, kind, title, parent, product: 'DM', domain: 'DM-SHOP', fields, body: '', path: `specs/dm/${id}.md`, mentions: [] });
 
 describe('folders like S2', () => {
-  it('LA-BRW-T260 Under the space, one level shows: domains are folded rows, and a domain unfolds into Define, Design and Open questions with counts', async () => {
+  it('LA-BRW-T268 Under the space, one level shows: domains are folded rows, and a domain unfolds into Define, Design and Open questions with counts', async () => {
     await openApp('/specs/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     const user = userEvent.setup();
@@ -50,7 +52,7 @@ describe('folders like S2', () => {
     expect(within(panel()).queryByRole('list', { name: 'Design of Shopping' })).toBeNull();
   });
 
-  it('LA-BRW-T261 A stage or folder with no records is left out of the nav', async () => {
+  it('LA-BRW-T269 A stage or folder with no records is left out of the nav', async () => {
     await openApp('/specs/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     const user = userEvent.setup();
@@ -61,31 +63,31 @@ describe('folders like S2', () => {
     expect(rows(list('Define of Paying'))).toEqual(['Use cases1']);
   });
 
-  it("LA-BRW-T262 The current page's branch opens itself: a record's domain, stage and folder, or a group's folder", async () => {
+  it("LA-BRW-T270 The current page's branch opens itself: a record's domain, stage and folder, or a group's folder", async () => {
     // A requirement is not listed; the use case it sits under is, so that use case's branch opens.
     await openApp('/records/DM-SHOP-UC01-R01');
     await screen.findByRole('heading', { level: 1, name: 'The basket shows the new item' });
-    expect(within(list('Use cases of Shopping')).getByRole('link', { name: 'Add an item to the basket' })).toHaveAttribute('href', '/records/DM-SHOP-UC01');
+    expect(within(await findList('Use cases of Shopping')).getByRole('link', { name: 'Add an item to the basket' })).toHaveAttribute('href', '/records/DM-SHOP-UC01');
     expect(within(panel()).queryByRole('list', { name: 'Design of Shopping' })).toBeNull();
 
     await openApp('/records/DM-SHOP-C01');
     await screen.findByRole('heading', { level: 1, name: 'Basket service' });
-    expect(within(list('Technical specification of Shopping')).getByRole('link', { name: 'Basket service' })).toHaveAttribute('aria-current', 'page');
+    expect(within(await findList('Technical specification of Shopping')).getByRole('link', { name: 'Basket service' })).toHaveAttribute('aria-current', 'page');
 
     // A group page opens the folder of its kind, and names it as the nav does.
     await openApp('/records/DM-SHOP/view');
     await screen.findByRole('heading', { level: 1, name: /^Views/ });
-    expect(within(list('Interaction design of Shopping')).getByRole('link', { name: 'Basket page' })).toBeInTheDocument();
+    expect(within(await findList('Interaction design of Shopping')).getByRole('link', { name: 'Basket page' })).toBeInTheDocument();
     expect(main().querySelector('.group-folder')).toHaveTextContent('Design › Interaction design');
 
     // The domain page opens its domain.
     await openApp('/specs/DM/DM-PAY');
     await screen.findByRole('heading', { level: 1, name: 'Paying' });
-    expect(within(panel()).getByRole('button', { name: 'Fold Paying' })).toHaveAttribute('aria-expanded', 'true');
+    expect(await within(panel()).findByRole('button', { name: 'Fold Paying' })).toHaveAttribute('aria-expanded', 'true');
     expect(window.sessionStorage.getItem('lathe:nav-folders')).toContain('domain:DM-PAY');
   });
 
-  it('LA-BRW-T263 Folder names and order come from Workspace.sections, in the nav and on the domain page alike', async () => {
+  it('LA-BRW-T271 Folder names and order come from Workspace.sections, in the nav and on the domain page alike', async () => {
     const w: Workspace = workspace();
     w.sections = w.sections.map((s) => (s.section === 'test-plan' ? { ...s, label: 'Tests and checks', order: 0 } : s));
     await openApp('/specs/DM/DM-SHOP', { workspace: w });
@@ -97,7 +99,7 @@ describe('folders like S2', () => {
     expect([...design.querySelectorAll('h3')].map((h) => h.firstChild?.textContent)).toEqual(['Tests and checks', 'Interaction design', 'Technical specification']);
   });
 
-  it('LA-BRW-T264 The product shows a Shared folder only when it has patterns, and patterns leave its groups', async () => {
+  it('LA-BRW-T272 The product shows a Shared folder only when it has patterns, and patterns leave its groups', async () => {
     await openApp('/specs/DM', { workspace: patternWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     const shared = list('Shared by Demo shop');
@@ -116,7 +118,7 @@ describe('folders like S2', () => {
     expect(within(panel()).queryByRole('list', { name: 'Shared by Demo shop' })).toBeNull();
   });
 
-  it("LA-BRW-T265 A capability's flows and tests sit in Interaction design and Test plan, its use cases under it; Use cases lists capabilities, then use cases outside any", async () => {
+  it("LA-BRW-T273 A capability's flows and tests sit in Interaction design and Test plan, its use cases under it; Use cases lists capabilities, then use cases outside any", async () => {
     const w = workspace();
     w.records.push(
       rec('DM-SHOP-CAP01', 'capability', 'Filling the basket', 'DM-SHOP', { order: '1' }),
@@ -149,7 +151,7 @@ describe('folders like S2', () => {
     await waitFor(() => expect(list('Use cases of Shopping').textContent).toBe('Filling the basketAdd an item to the basket'));
   });
 
-  it('LA-BRW-T266 A kind in no known folder gets its own folder at the end of its stage, or after the stages when it has no stage; the path names its folder', () => {
+  it('LA-BRW-T274 A kind in no known folder gets its own folder at the end of its stage, or after the stages when it has no stage; the path names its folder', () => {
     const w = workspace();
     w.kinds.push(
       { kind: 'risk', label: 'Risk', stage: 'define', section: '', parent_kinds: ['domain'], required_fields: [], obligation: false, proof_only: false, description: 'A risk.' },
@@ -165,7 +167,7 @@ describe('folders like S2', () => {
     expect(folderPath(index, 'question')).toEqual([]);
   });
 
-  it('LA-BRW-T267 What is folded is remembered for the session, and an older engine with no sections still lists every record', async () => {
+  it('LA-BRW-T275 What is folded is remembered for the session, and an older engine with no sections still lists every record', async () => {
     await openApp('/specs/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     const user = userEvent.setup();

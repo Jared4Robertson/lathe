@@ -1,5 +1,5 @@
 ---
-id: LA-BRW-T262
+id: LA-BRW-T270
 kind: test
 title: The current page's branch opens itself
 parent: LA-BRW
