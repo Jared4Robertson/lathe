@@ -139,7 +139,7 @@ test.describe('graph', () => {
     expect(product).toBe('none');
   });
 
-  test('LA-EXP-T177 at depth 2 on a domain, every framed box at least 40 px tall on screen shows its title', async ({ page }) => {
+  test('LA-EXP-T177 at depth 2 on a domain, every framed box whose title is 7 px or more on screen shows it in full on one line', async ({ page }) => {
     await openPage(page, `${DOMAIN}?view=graph`);
     await nodes(page);
     await page.locator('.graph-depth button', { hasText: '2' }).click();
@@ -147,25 +147,103 @@ test.describe('graph', () => {
     const domain = DOMAIN.slice(1);
     const boxes = await page.evaluate((domain) => {
       const canvas = document.querySelector('.pane-graph .graph-flow')!.getBoundingClientRect();
+      const zoom = Number(/scale\(([\d.e-]+)\)/.exec(document.querySelector<HTMLElement>('.pane-graph .react-flow__viewport')!.style.transform)![1]);
       // The framed picture: the domain, its product at the left edge, and two levels below it (its stages, their folders).
       const framed = new RegExp(`^(LA|${domain}(/[^/]+){0,2})$`);
       return [...document.querySelectorAll<HTMLElement>('.pane-graph .react-flow__node[data-id]')]
         .filter((el) => framed.test(el.dataset.id!))
         .map((el) => {
           const r = el.getBoundingClientRect();
+          const box = el.querySelector<HTMLElement>('.graph-node')!;
+          const scale = Number(getComputedStyle(box).getPropertyValue('--node-scale')) || 1;
           const title = el.querySelector<HTMLElement>('strong');
-          const t = title?.getBoundingClientRect();
+          const lineHeight = title ? parseFloat(getComputedStyle(title).lineHeight) : 0;
           return {
             id: el.dataset.id!,
-            tall: Math.min(r.bottom, canvas.bottom) - Math.max(r.top, canvas.top) >= 40 && r.left >= canvas.left && r.right <= canvas.right,
-            title: title?.textContent?.trim() ?? '',
-            shown: !!t && t.width > 0 && t.height > 0 && getComputedStyle(title!).visibility !== 'hidden',
+            inView: r.left >= canvas.left && r.right <= canvas.right && r.top >= canvas.top && r.bottom <= canvas.bottom,
+            // Its title's size on screen: 12.5 map units at its text scale, times the camera's zoom.
+            onScreen: 12.5 * scale * zoom,
+            full: box.getAttribute('title') ?? '',
+            title: title?.textContent ?? null,
+            oneLine: !!title && title.scrollHeight <= lineHeight + 1 && title.scrollWidth <= title.clientWidth,
           };
         });
     }, domain);
-    const tall = boxes.filter((b) => b.tall);
-    expect(tall.length, 'framed boxes 40 px tall or more').toBeGreaterThan(4);
-    for (const b of tall) expect(b.title && b.shown, `${b.id} shows its title`).toBeTruthy();
+    const readable = boxes.filter((b) => b.inView && b.onScreen >= 7);
+    expect(readable.length, 'framed boxes whose title reads').toBeGreaterThanOrEqual(3);
+    for (const b of readable) {
+      expect(b.title, `${b.id} is labeled`).not.toBeNull();
+      // The tooltip is "title (ID)" or, for a group, "title (in owner)": the label shows the whole title.
+      expect(b.full.startsWith(`${b.title} (`), `${b.id} shows its full title`).toBe(true);
+      expect(b.oneLine, `${b.id} fits its title on one line`).toBe(true);
+    }
+    // Below 7 px a box draws no label.
+    for (const b of boxes.filter((x) => x.onScreen < 6.9)) expect(b.title, `${b.id} is plain`).toBeNull();
+  });
+
+  test('LA-EXP-T179 no label is clipped: each line fits its width and height, and the label fits its box, in light and dark, focused or not, at several zooms', async ({ page }) => {
+    const clipped = () => page.evaluate(() => {
+      const out: string[] = [];
+      const canvas = document.querySelector('.pane-graph .graph-flow')!.getBoundingClientRect();
+      for (const node of document.querySelectorAll<HTMLElement>('.pane-graph .react-flow__node[data-id]')) {
+        const box = node.querySelector<HTMLElement>('.graph-node');
+        if (!box || !box.querySelector('strong')) continue;
+        const b = box.getBoundingClientRect();
+        if (b.bottom < canvas.top || b.top > canvas.bottom || b.right < canvas.left || b.left > canvas.right) continue;
+        // On screen sizes are scaled by the zoom; compare in the box's own units, with half a unit to spare.
+        for (const line of box.querySelectorAll<HTMLElement>('small, strong')) {
+          const r = line.getBoundingClientRect();
+          const tol = 0.5 * (b.width / box.offsetWidth) + 0.5;
+          if (line.scrollWidth > line.clientWidth + 0.5) out.push(`${node.dataset.id} ${line.tagName}: ${line.scrollWidth} wide in ${line.clientWidth}`);
+          if (line.scrollHeight > line.clientHeight + 0.5) out.push(`${node.dataset.id} ${line.tagName}: ${line.scrollHeight} tall in ${line.clientHeight}`);
+          if (r.left < b.left - tol || r.right > b.right + tol || r.top < b.top - tol || r.bottom > b.bottom + tol) out.push(`${node.dataset.id} ${line.tagName}: outside its box`);
+        }
+      }
+      return out;
+    });
+    for (const scheme of ['light', 'dark'] as const) {
+      await page.emulateMedia({ colorScheme: scheme });
+      for (const focus of [DOMAIN, `${DOMAIN}/define`]) {
+        await openPage(page, `${focus}?view=graph`);
+        await nodes(page);
+        for (const depth of [1, 2, 3]) {
+          await page.locator('.graph-depth button', { hasText: String(depth) }).click();
+          await page.waitForTimeout(1300);
+          expect(await clipped(), `${scheme} ${focus} at depth ${depth}`).toEqual([]);
+        }
+        // Zoomed in on the framed picture, twice.
+        for (const z of [1, 2]) {
+          await page.locator('.pane-graph .react-flow__controls-zoomin').click();
+          await page.waitForTimeout(600);
+          expect(await clipped(), `${scheme} ${focus} zoomed in ${z}`).toEqual([]);
+        }
+      }
+    }
+  });
+
+  test('LA-EXP-T180 a label keeps its size in the map when the focus changes and the camera zooms', async ({ page }) => {
+    await openPage(page, `${DOMAIN}?view=graph`);
+    await nodes(page);
+    const target = `${DOMAIN.slice(1)}/design`;
+    const label = page.locator(`.pane-graph .react-flow__node[data-id="${target}"] strong`);
+    await expect(label).toBeVisible();
+    const size = () => label.evaluate((el) => ({ font: getComputedStyle(el).fontSize, screen: el.getBoundingClientRect().height }));
+    const zoom = () => page.evaluate(() => Number(/scale\(([\d.e-]+)\)/.exec(document.querySelector<HTMLElement>('.pane-graph .react-flow__viewport')!.style.transform)![1]));
+    const before = { ...(await size()), zoom: await zoom() };
+    // Focusing it moves the camera only: its font size in map units stays, and its size on screen follows the zoom.
+    await page.locator(`.pane-graph .react-flow__node[data-id="${target}"]`).click();
+    await page.waitForURL(/\/design(\?|$)/);
+    await page.waitForTimeout(1300);
+    const focused = { ...(await size()), zoom: await zoom() };
+    expect(focused.font).toBe(before.font);
+    expect(focused.screen / before.screen).toBeCloseTo(focused.zoom / before.zoom, 1);
+    // Zooming in by the camera's control: the same.
+    await page.locator('.pane-graph .react-flow__controls-zoomin').click();
+    await page.waitForTimeout(600);
+    const zoomed = { ...(await size()), zoom: await zoom() };
+    expect(zoomed.zoom).toBeGreaterThan(focused.zoom);
+    expect(zoomed.font).toBe(before.font);
+    expect(zoomed.screen / focused.screen).toBeCloseTo(zoomed.zoom / focused.zoom, 1);
   });
 
   test('LA-PLT-T76 move around the ERD', async ({ page }) => {

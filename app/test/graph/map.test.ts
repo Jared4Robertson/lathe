@@ -1,15 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { contentScale, NODE_HEIGHT, NODE_WIDTH } from '../../src/graph/layout';
 import { graphMap, layoutTree, LEVEL_ASPECT, linkEnds, MAX_LEVEL_STEP, MAX_ROOT_STEP, parentLine, typicalHeight, type GraphMap } from '../../src/graph/map';
-import { drawnFor, frameOnMap, LABEL_MIN_HEIGHT, LABEL_SCALE, MAX_DRAWN, MIN_DRAWN, textScale, TEXT_ON_SCREEN, viewRect } from '../../src/graph/camera';
-import { indexWorkspace } from '../../src/specs/data';
+import { drawnFor, frameOnMap, MAX_DRAWN, MIN_DRAWN, viewRect } from '../../src/graph/camera';
+import { hasMarks, labelLines, labelShown, labelWidth, metaWidth, MIN_LABEL_PX, textScaleOf, TITLE_FONT, titleWidth } from '../../src/graph/text';
+import { indexWorkspace, type SpecIndex } from '../../src/specs/data';
 import { groupedWorkspace, manyOfOneKindWorkspace, testIndex } from './workspace';
 
 // The graph is one fixed map of the whole tree (LA-EXP-DR57): each parent exactly as tall as its
 // children stacked, each child right beside it, one width per level (LA-EXP-DR58); the camera
 // draws only what is in view and big enough to see (LA-EXP-DR60).
 
-const maps = (): GraphMap[] => [graphMap(testIndex()), graphMap(indexWorkspace(groupedWorkspace())), graphMap(indexWorkspace(manyOfOneKindWorkspace()))];
+const indexes = (): SpecIndex[] => [testIndex(), indexWorkspace(groupedWorkspace()), indexWorkspace(manyOfOneKindWorkspace())];
+const maps = (): GraphMap[] => indexes().map(graphMap);
 
 /** A synthetic tree: `n` roots, each with `k` children, each with `k` leaves. */
 function wide(n: number, k: number): GraphMap {
@@ -57,25 +59,54 @@ describe('levels and content', () => {
     expect(contentScale(NODE_WIDTH, NODE_HEIGHT * 10)).toBe(1);
   });
 
-  it("LA-EXP-T166 Every node in a level has its width, shrinking toward the leaves with the level's typical height, within the caps", () => {
+  it("LA-EXP-T166 Every node in a level has its width: in proportion to the level's typical height within the caps, or wider for its widest label", () => {
     for (const map of [...maps(), wide(3, 8), wide(1, 30)]) {
       const deepest = map.levels.length - 1;
       for (let l = 0; l <= deepest; l++) {
-        for (const n of map.byLevel[l]) expect(n.w).toBe(map.levels[l].width);
-        const below = l < deepest ? map.levels[l + 1].width : NODE_WIDTH;
-        // Never narrower than the level below, nor more than the step allows.
-        expect(map.levels[l].width).toBeGreaterThanOrEqual(below);
-        expect(map.levels[l].width).toBeLessThanOrEqual((l === 0 ? MAX_ROOT_STEP : MAX_LEVEL_STEP) * below + 2);
+        const level = map.levels[l];
+        for (const n of map.byLevel[l]) expect(n.w).toBe(level.width);
+        const below = l < deepest ? map.levels[l + 1].proportional : NODE_WIDTH;
+        // The proportional width: never narrower than the level below's, nor more than the step allows.
+        expect(level.proportional).toBeGreaterThanOrEqual(below);
+        expect(level.proportional).toBeLessThanOrEqual((l === 0 ? MAX_ROOT_STEP : MAX_LEVEL_STEP) * below + 2);
         // In proportion to the level's typical height where no cap applies.
         const wanted = LEVEL_ASPECT * typicalHeight(map.byLevel[l].map((n) => n.h));
-        if (wanted > below && wanted < (l === 0 ? MAX_ROOT_STEP : MAX_LEVEL_STEP) * below) expect(Math.abs(map.levels[l].width - wanted)).toBeLessThanOrEqual(2);
+        if (wanted > below && wanted < (l === 0 ? MAX_ROOT_STEP : MAX_LEVEL_STEP) * below) expect(Math.abs(level.proportional - wanted)).toBeLessThanOrEqual(2);
+        // The width is the proportional width or, when wider, the widest label at its box's text scale.
+        expect(level.width).toBeGreaterThanOrEqual(level.proportional);
       }
-      // A level of leaves keeps a leaf's width.
-      expect(map.levels[deepest].width).toBe(NODE_WIDTH);
+    }
+    // A synthetic tree's labels are a leaf wide: a level of leaves keeps a leaf's width, and a level is as wide as its tallest box's label.
+    for (const map of [wide(3, 8), wide(1, 30)]) {
+      map.levels.forEach((level, l) => {
+        const widest = Math.max(...map.byLevel[l].map((n) => n.text * NODE_WIDTH));
+        expect(level.width).toBe(Math.max(level.proportional, 2 * Math.ceil(widest / 2)));
+      });
+      expect(map.levels.at(-1)!.width).toBe(NODE_WIDTH);
     }
     // The typical height is the median by height: a few tall nodes outweigh many short ones.
     expect(typicalHeight([56, 56, 56, 56, 1000, 1000])).toBe(1000);
     expect(typicalHeight([56, 56, 56])).toBe(56);
+  });
+
+  it('LA-EXP-T178 Every level is wide enough for each label in it on one line at its fixed text scale, so no title is cut off', () => {
+    for (const index of indexes()) {
+      const map = graphMap(index);
+      for (const n of map.nodes.values()) {
+        // The text scale is the box's height over a leaf's, fixed by the map.
+        expect(n.text).toBe(Math.max(1, n.h / NODE_HEIGHT));
+        const lines = labelLines(index, n.id);
+        expect(n.w, n.id).toBeGreaterThanOrEqual(n.text * labelWidth(lines, { hexagon: index.byId.get(n.id)?.kind === 'domain', marked: hasMarks(index, n.id) }) - 1);
+      }
+    }
+    // The estimate errs wide: a title is at least its characters at 0.45 em, and a kind and ID line 0.6 em a character.
+    expect(titleWidth("Capabilities")).toBeGreaterThan(12 * 0.45 * TITLE_FONT);
+    expect(metaWidth('Use case · LA-EXP-UC03')).toBeGreaterThanOrEqual(22 * 0.6 * 10.5);
+    // A wider title needs a wider box; the badge's room and a hexagon's chamfer add to it.
+    const lines = { title: 'Walk the model as a graph', meta: 'Use case · LA-EXP-UC03' };
+    expect(labelWidth({ ...lines, title: lines.title + ' and more' })).toBeGreaterThan(labelWidth(lines));
+    expect(labelWidth(lines, { marked: true })).toBeGreaterThanOrEqual(labelWidth(lines));
+    expect(labelWidth(lines, { hexagon: true })).toBeGreaterThan(labelWidth(lines));
   });
 
   it("LA-EXP-T167 A parent line runs level from the parent's right edge to the child's left edge, at the child's middle", () => {
@@ -109,10 +140,9 @@ describe('the level of detail', () => {
       const n = map.nodes.get(b.id)!;
       expect(n.x + n.w >= rect.x0 && n.x <= rect.x1 && n.y + n.h >= rect.y0 && n.y <= rect.y1, b.id).toBe(true);
       expect(n.h * view.zoom).toBeGreaterThanOrEqual(MIN_DRAWN);
-      // Labeled exactly when the text reads at this zoom.
-      expect(b).toEqual({ id: b.id, ...textScale(n.w, n.h, view.zoom) });
-      // A box tall and wide enough on screen for a line of text is labeled, whatever its size in the map.
-      if (n.h * view.zoom >= 40 && n.w * view.zoom >= 100) expect(b.label, b.id).toBe(true);
+      // Labeled exactly when its title is MIN_LABEL_PX or more on screen; a drawn box carries no text size of its own.
+      expect(b).toEqual({ id: b.id, label: labelShown(n.h, view.zoom) });
+      if (n.h * view.zoom >= 40) expect(b.label, b.id).toBe(true);
     }
     // Zoomed far out, the leaves are too small: they are not drawn, and each run of them is one bar in its parent's next level.
     const far = { x: 0, y: 0, zoom: 0.02 };
@@ -131,24 +161,26 @@ describe('the level of detail', () => {
     expect(drawnFor(map, view, 1000, 800)).toEqual(d);
   });
 
-  it('LA-EXP-T176 A label reads on screen whenever its box has room for it: its text keeps its on-screen size as the camera zooms out', () => {
-    // A leaf at its own size: its own scale, labeled.
-    expect(textScale(NODE_WIDTH, NODE_HEIGHT, 1)).toEqual({ label: true, text: 1 });
-    // A folder 110 by 100 pixels on screen, in a map zoomed to a tenth: its content scale alone would read at 0.58, so its text grows to read.
-    const folder = textScale(1100, 1000, 0.1);
-    expect(contentScale(1100, 1000) * 0.1).toBeLessThan(LABEL_SCALE);
-    expect(folder.label).toBe(true);
-    expect(folder.text * 0.1).toBeGreaterThanOrEqual(TEXT_ON_SCREEN);
-    // Never more text than the box has room for, and never less than its own scale.
-    const narrow = textScale(400, 4000, 0.05);
-    expect(narrow.text).toBeLessThanOrEqual(400 / 50 + 1e-9);
-    expect(narrow.text).toBeGreaterThanOrEqual(contentScale(400, 4000));
-    // Too small on screen: plain.
-    expect(textScale(NODE_WIDTH, NODE_HEIGHT, 0.2).label).toBe(false);
-    expect(textScale(NODE_WIDTH, NODE_HEIGHT * 3, 0.1).label).toBe(false);
-    // Rounded on screen to tenths, so a small zoom keeps the same text on screen.
-    expect(textScale(1100, 1000, 0.1004).text * 0.1004).toBeCloseTo(folder.text * 0.1, 6);
-    expect(LABEL_MIN_HEIGHT).toBe(18);
+  it('LA-EXP-T176 A label keeps its size in the map: the camera only shows or hides it, by its size on screen', () => {
+    // The text scale is the box's height over a leaf's: a leaf's is 1, a box ten leaves tall has ten.
+    expect(textScaleOf(NODE_HEIGHT)).toBe(1);
+    expect(textScaleOf(NODE_HEIGHT * 10)).toBe(10);
+    // Shown exactly when the title is MIN_LABEL_PX or more on screen: a leaf at its own size, not at a fifth of it.
+    expect(MIN_LABEL_PX).toBe(7);
+    expect(labelShown(NODE_HEIGHT, 1)).toBe(true);
+    expect(labelShown(NODE_HEIGHT, MIN_LABEL_PX / TITLE_FONT)).toBe(true);
+    expect(labelShown(NODE_HEIGHT, MIN_LABEL_PX / TITLE_FONT - 0.01)).toBe(false);
+    expect(labelShown(NODE_HEIGHT * 10, 0.06)).toBe(true);
+    expect(labelShown(NODE_HEIGHT * 10, 0.05)).toBe(false);
+    // Every zoom draws each box with the same text scale, the map's: zooming changes what is labeled, never a label's size.
+    const view = frameOnMap(map, 'P-D', 2, 1000, 800);
+    for (const zoom of [view.zoom / 4, view.zoom, view.zoom * 4]) {
+      for (const b of drawnFor(map, { ...view, zoom }, 1000, 800).boxes) {
+        expect(Object.keys(b).sort()).toEqual(['id', 'label']);
+        const n = map.nodes.get(b.id)!;
+        expect(b.label).toBe(TITLE_FONT * n.text * zoom >= MIN_LABEL_PX);
+      }
+    }
   });
 
   it('LA-EXP-T170 A product of thousands of records stays within the drawing budget at every zoom', () => {
