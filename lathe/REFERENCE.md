@@ -91,6 +91,17 @@ An aggregate is drawn as an ERD of the records it keeps. Each is an `entity` und
 
 A `domain_event` is an unchangeable record that something happened in the domain, named in the past tense (Loan opened, Tool returned). It sits under the aggregate that raises it, and `raised_by` may name the entity of that aggregate whose change raises it; an event raised by time passing, or in an aggregate with no entities, has none. Its body says in a sentence what happened, then lists what the event carries in a `## Fields` table with the same columns as an entity's. What happens next is said by the records that react: an aggregate that changes, a use case that starts or a component that handles the event links to it with `reacts_to`, from any aggregate or domain. An event that nothing reacts to is reported as a warning, since that can be fine but is often a missing link.
 
+## 19. Domains
+
+A domain is a vertical slice of the product: one business capability with its own language, such as Lending or Billing. It owns everything about that capability. Its Define stage holds its domain model (aggregates, entities, events and rules) and its use cases; its Design stage holds its flows, views, endpoints, components and tests. Technology is a layer inside a domain's Design stage, such as Web app, Engine or Desktop, never a domain of its own, so each capability is specified, built and proved in one place. What every domain shares, such as the app shell, sign-in or the server, goes in a platform domain or a pattern, not in a domain named for a technology.
+
+A capability is something a person using the product would name, with its own terms and rules, that would still exist if the product were rebuilt on other technology. A layer is how some capability is delivered.
+
+- **Good:** a library's domains are Membership, Catalog and Lending. Lending holds the loan, its rules and use cases, the screens and endpoints for borrowing and returning, the components in its Web app and Server layers, and the tests that prove them.
+- **Bad:** the same library split into Frontend, Backend and Database. Borrowing a tool is then designed in three domains, its rules sit apart from the screens that enforce them, and no domain can say whether borrowing is done.
+
+A domain whose title or code names a technology layer or delivery channel is a `domain-named-for-technology` warning.
+
 <!-- Everything below is generated from the meta-model and the check files by `lathe format`. Do not edit it here. -->
 
 ## Kinds
@@ -129,6 +140,7 @@ A part of the product with its own model, language and owner.
 - **ID:** `<P>-<D>`, such as `TL-LEND`
 - **Links out:** Follows ([`follows`](#relation-follows))
 - **Links in:** Questions about this ([`about`](#relation-about))
+- **Checks:** [`domain-named-for-technology`](#check-domain-named-for-technology)
 
 <a id="kind-capability"></a>
 
@@ -1531,6 +1543,23 @@ event with no `raised_by` is not reported. A link to a record that does not exis
 entity, is reported by dangling-link or relation-not-allowed instead. When the target ID is duplicated, the
 link is reported only if no entity with that ID shares the event's aggregate. Point `raised_by` at an
 entity of the event's aggregate, or move the event under the aggregate that raises it.
+
+<a id="check-domain-named-for-technology"></a>
+
+### `domain-named-for-technology`
+
+**Warning** · Lathe's `checks/76-domain-named-for-technology.sql` · Kinds: [`domain`](#kind-domain)
+
+A domain is named for a technology layer or delivery channel rather than a business capability.
+
+A domain is a vertical slice of business capability (FORMAT.md section 19): it owns its records and rules,
+its views, its code and its tests, and technology is a layer inside its Design stage. A domain whose title
+or domain code (its ID after the product prefix, such as LEND in TL-LEND) names a technology splits one
+capability across several domains. The words are web app, frontend, front end, backend, back end, API, UI,
+server, database, DB, desktop, mobile, engine, infrastructure, infra and Electron, matched as whole words
+in any letter case, with or without a space or hyphen inside the two-word ones, and in the plural. Only the
+title and code are read, never the body, which may well say which technologies the domain uses. Name the
+domain for the capability it serves, and make the technology a layer in each domain's Design stage.
 
 <a id="check-parse-error"></a>
 

@@ -1,11 +1,25 @@
 ---
 name: model-a-domain
-description: Write or change a Lathe domain model - the domain record, its aggregates, their entities (the records each aggregate keeps, with their fields and the links an ERD draws), the domain events they raise and their domain rules. Use when adding a domain, an aggregate, an entity, a domain event or a domain rule to a repo with lathe.config.json, or when deciding whether a rule belongs on an aggregate or in a use case.
+description: Split a product into domains by business capability, then write or change a Lathe domain model - the domain record, its aggregates, their entities (the records each aggregate keeps, with their fields and the links an ERD draws), the domain events they raise and their domain rules. Use when deciding a product's domains, adding a domain, an aggregate, an entity, a domain event or a domain rule to a repo with lathe.config.json, or when deciding whether a rule belongs on an aggregate or in a use case.
 ---
 
 # Model a domain
 
 A domain model says what the product's records are, how they hold and refer to each other, and what must always be true of them, whoever changes them. It has no actors, screens or code. The app draws it as ERDs (entity-relationship diagrams): one of each domain at aggregate level, and one of each aggregate's entities.
+
+## Step one: find the slices
+
+Before you write any record, find the product's business capabilities and make each one a domain: a vertical slice that owns its domain model, use cases, flows, views, endpoints, components and tests (FORMAT.md section 19). Technology is a layer inside each domain's Design stage, such as Web app, Server or Desktop, never a domain. What every domain shares, such as the app shell or sign-in, goes in a platform domain or a pattern.
+
+Ask of each candidate domain:
+
+- Would a person who uses the product name it, in their own words? Lending is; the frontend is not.
+- Does it have its own terms, records and rules, which its language table can hold?
+- Would it still exist if the product were rebuilt on other technology? A capability would; a layer would not.
+- Can one use case be specified, built and proved inside it, from rule to screen to test, without another domain designing the same thing again?
+- Is it named for what it does for someone, rather than where its code runs (web app, API, server, database, desktop, mobile, engine)?
+
+A candidate that fails these is a layer or a platform concern, not a domain. A domain named for a technology is a `domain-named-for-technology` warning.
 
 ## Before you write
 
