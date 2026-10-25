@@ -21,7 +21,13 @@ export interface Command {
   local?: boolean;
   /** Left to the browser (Alt+Left): listed, never intercepted. */
   browser?: boolean;
+  /** Listed in the shortcuts sheet only while something handles it (Switch to space 4 when there are four products). */
+  dynamic?: boolean;
 }
+
+/** How many spaces have a key of their own: Alt+1 to Alt+9, in rail order. */
+export const SPACE_KEYS = 9;
+export const spaceCommandId = (n: number) => `switchSpace${n}`;
 
 export const COMMANDS: readonly Command[] = [
   // Navigate
@@ -43,6 +49,8 @@ export const COMMANDS: readonly Command[] = [
   { id: 'goDiagrams', title: 'Go to Diagrams', group: 'Navigate', keys: ['g d'], when: 'global' },
   { id: 'goHome', title: 'Go home (all products)', group: 'Navigate', keys: ['g h'], when: 'global' },
   { id: 'showShortcuts', title: 'Keyboard shortcuts', group: 'Navigate', keys: ['?', 'Mod+/'], when: 'global' },
+  // Spaces: one per product, in rail order. Each is titled "Switch to <product>" by whoever handles it.
+  ...Array.from({ length: SPACE_KEYS }, (_, i): Command => ({ id: spaceCommandId(i + 1), title: `Switch to space ${i + 1}`, group: 'Navigate', keys: [`Alt+${i + 1}`], when: 'global', dynamic: true })),
   // View
   { id: 'toggleNav', title: 'Show or hide the navigation', group: 'View', keys: ['Mod+B'], when: 'global' },
   { id: 'toggleInspector', title: 'Show or hide the inspector', group: 'View', keys: ['Mod+Alt+B'], when: 'page' },
@@ -221,6 +229,24 @@ export function match(pressed: string[], commands: readonly Command[], mac: bool
     }
   }
   return { pending };
+}
+
+/**
+ * A command's keys in the form `aria-keyshortcuts` takes: "Control+Shift+P Control+K", modifiers
+ * named as the DOM names them. A sequence ("g c") cannot be said that way, so it is left out.
+ */
+export function ariaKeyShortcuts(keys: readonly string[], mac: boolean): string {
+  const ARIA_KEYS: Record<string, string> = { '+': 'Plus', Space: 'Space' };
+  return keys
+    .map((k) => normalizeBinding(k, mac))
+    .filter((b) => b && !b.includes(' '))
+    .map((b) => {
+      const parts = b.split('+');
+      let key = parts.pop()!;
+      if (key === '') { parts.pop(); key = '+'; }
+      return [...parts.map((p) => (p === 'Ctrl' ? 'Control' : p)), ARIA_KEYS[key] ?? key].join('+');
+    })
+    .join(' ');
 }
 
 /** The display of a command's first binding, or '' when it has none. */

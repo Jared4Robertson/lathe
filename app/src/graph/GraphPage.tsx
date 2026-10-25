@@ -17,6 +17,7 @@ import {
 } from '@xyflow/react';
 import { kindLabel, type SpecIndex } from '../specs/data';
 import { useCommand } from '../shell/commands';
+import { Tooltip } from '../shell/Tooltip';
 import { NodeLink, type GraphInfo } from './panel';
 import {
   FILE_KIND,
@@ -261,12 +262,16 @@ export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted,
           <div className="graph-depth" role="group" aria-label="Depth">
             <span>Depth</span>
             {[1, 2].map((d) => (
-              <button key={d} type="button" aria-pressed={depth === d} disabled={tracing} onClick={() => setDepth(d)}>{d}</button>
+              <Tooltip key={d} label={d === 1 ? 'Less depth' : 'More depth'} command={d === 1 ? 'graphDepthDown' : 'graphDepthUp'}>
+                <button type="button" aria-pressed={depth === d} disabled={tracing} onClick={() => setDepth(d)}>{d}</button>
+              </Tooltip>
             ))}
           </div>
           {canTrace(index, focus) && (
             <label className="graph-trace-toggle">
-              <input type="checkbox" checked={trace} onChange={(e) => setTrace(e.target.checked)} />
+              <Tooltip label="Trace mode on or off" command="graphTrace">
+                <input type="checkbox" checked={trace} onChange={(e) => setTrace(e.target.checked)} />
+              </Tooltip>
               Trace mode
             </label>
           )}

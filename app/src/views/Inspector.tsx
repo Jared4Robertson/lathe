@@ -5,7 +5,7 @@ import { groupMarks, groupMembers, parseGroupId, pluralLabel } from '../graph/mo
 import { kindLabel, problemOrder, type SpecIndex } from '../specs/data';
 import { ProblemList, RecordLink, RecordTree, gapsOf } from '../specs/parts';
 import { RecordFacts } from '../specs/RecordContent';
-import { useShortcut } from '../shell/commands';
+import { Tooltip } from '../shell/Tooltip';
 
 // The inspector: the third column of a record, group, product or domain page (nav, main view,
 // inspector). One inspector serves the whole page and shows the focused record, whichever view is
@@ -35,7 +35,6 @@ function Part({ title, count, id, children }: { title: string; count?: number; i
 }
 
 export const Inspector = forwardRef<HTMLElement, InspectorProps>(function Inspector({ index, focus, graph, onNavigate, hrefFor, onClose, drawer }, ref) {
-  const shortcut = useShortcut('toggleInspector');
   const record = index.byId.get(focus);
   const group = record ? null : parseGroupId(focus);
   return (
@@ -48,9 +47,11 @@ export const Inspector = forwardRef<HTMLElement, InspectorProps>(function Inspec
     >
       <div className="inspector-head">
         <h2 className="inspector-title">Inspector</h2>
-        <button type="button" className="icon-button" onClick={onClose} aria-label="Hide the inspector" title={`Hide the inspector${shortcut ? ` (${shortcut})` : ''}`}>
-          <Icon name={drawer ? 'x' : 'sidebar-right'} />
-        </button>
+        <Tooltip label="Hide the inspector" command="toggleInspector" placement="left">
+          <button type="button" className="icon-button" onClick={onClose} aria-label="Hide the inspector">
+            <Icon name={drawer ? 'x' : 'sidebar-right'} />
+          </button>
+        </Tooltip>
       </div>
       {record && (
         <>

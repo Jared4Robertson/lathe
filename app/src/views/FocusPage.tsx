@@ -5,7 +5,8 @@ import type { GraphSettings } from '../graph/GraphPage';
 import { NO_FILTERS, groupLabel, groupMembers, isGroup, parseGroupId, pluralLabel } from '../graph/model';
 import type { GraphInfo } from '../graph/panel';
 import { Link, navigate } from '../router';
-import { useAnnounce, useCommand, useShortcut } from '../shell/commands';
+import { useAnnounce, useCommand } from '../shell/commands';
+import { Tooltip } from '../shell/Tooltip';
 import { isBool, isNumber, readPref, usePref, writePref } from '../shell/prefs';
 import { useNarrow } from '../shell/useNarrow';
 import { recordPath, type Problem, type SpecIndex, type SpecState } from '../specs/data';
@@ -186,10 +187,6 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   useCommand('expandAll', () => { expandAllOnPage(true); announce('Expanded every row'); });
   useCommand('collapseAll', () => { expandAllOnPage(false); announce('Collapsed every row'); });
 
-  const shortcuts = { wiki: useShortcut('viewWiki'), graph: useShortcut('viewGraph'), split: useShortcut('viewSplit') };
-  const inspectorShortcut = useShortcut('toggleInspector');
-  const fullShortcut = useShortcut('toggleFullScreen');
-
   const wiki = <WikiContent index={index} route={route} />;
   const graph = (
     <Suspense fallback={<p className="hint graph-loading">Loading the graph…</p>}>
@@ -207,17 +204,18 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
         inert={full !== null && !isFull ? true : undefined}
         onKeyDown={isFull ? (e: KeyboardEvent) => { if (e.key === 'Escape' && !e.defaultPrevented) { e.preventDefault(); leaveFull(); } } : undefined}
       >
-        <button
-          type="button"
-          ref={(el) => { fullButtons.current[kind] = el; }}
-          className="icon-button pane-full"
-          aria-pressed={isFull}
-          aria-label={isFull ? `Leave full screen (${name})` : `Full screen: ${name}`}
-          title={isFull ? 'Leave full screen (Escape)' : `Full screen${fullShortcut ? ` (${fullShortcut})` : ''}`}
-          onClick={() => (isFull ? leaveFull() : toggleFull(kind))}
-        >
-          <Icon name={isFull ? 'minimize' : 'maximize'} />
-        </button>
+        <Tooltip label={isFull ? 'Leave full screen' : 'Full screen'} command={isFull ? 'escape' : 'toggleFullScreen'} placement="left">
+          <button
+            type="button"
+            ref={(el) => { fullButtons.current[kind] = el; }}
+            className="icon-button pane-full"
+            aria-pressed={isFull}
+            aria-label={isFull ? `Leave full screen (${name})` : `Full screen: ${name}`}
+            onClick={() => (isFull ? leaveFull() : toggleFull(kind))}
+          >
+            <Icon name={isFull ? 'minimize' : 'maximize'} />
+          </button>
+        </Tooltip>
         {kind === 'wiki' ? <div className="pane-scroll" ref={wikiPane}>{content}</div> : content}
       </section>
     );
@@ -248,30 +246,31 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
         <FocusHeader index={index} route={route}>
           <div className="view-toggle" role="group" aria-label="View">
             {VIEW_MODES.map((m) => (
-              <button
-                key={m}
-                type="button"
-                ref={(el) => { toggles.current[m] = el; }}
-                aria-pressed={mode === m}
-                title={`${VIEW_LABELS[m]} view${shortcuts[m] ? ` (${shortcuts[m]})` : ''}`}
-                onClick={() => setMode(m)}
-                data-command={VIEW_COMMANDS[m]}
-              >
-                <Icon name={VIEW_ICONS[m]} size={16} /> {VIEW_LABELS[m]}
-              </button>
+              <Tooltip key={m} label={`${VIEW_LABELS[m]} view`} command={VIEW_COMMANDS[m]}>
+                <button
+                  type="button"
+                  ref={(el) => { toggles.current[m] = el; }}
+                  aria-pressed={mode === m}
+                  onClick={() => setMode(m)}
+                  data-command={VIEW_COMMANDS[m]}
+                >
+                  <Icon name={VIEW_ICONS[m]} size={16} /> {VIEW_LABELS[m]}
+                </button>
+              </Tooltip>
             ))}
           </div>
-          <button
-            type="button"
-            ref={inspectorButton}
-            className="inspector-toggle"
-            aria-expanded={showing}
-            aria-controls="inspector"
-            title={`${showing ? 'Hide' : 'Show'} the inspector${inspectorShortcut ? ` (${inspectorShortcut})` : ''}`}
-            onClick={() => setShowing(!showing)}
-          >
-            <Icon name="sidebar-right" size={16} /> Inspector
-          </button>
+          <Tooltip label={`${showing ? 'Hide' : 'Show'} the inspector`} command="toggleInspector">
+            <button
+              type="button"
+              ref={inspectorButton}
+              className="inspector-toggle"
+              aria-expanded={showing}
+              aria-controls="inspector"
+              onClick={() => setShowing(!showing)}
+            >
+              <Icon name="sidebar-right" size={16} /> Inspector
+            </button>
+          </Tooltip>
         </FocusHeader>
         <div
           ref={views}
@@ -315,9 +314,11 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
         </>
       ) : !narrow && (
         <div className="inspector-rail">
-          <button type="button" className="icon-button" aria-label="Show the inspector" aria-expanded={false} aria-controls="inspector" title={`Show the inspector${inspectorShortcut ? ` (${inspectorShortcut})` : ''}`} onClick={() => setShowing(true)}>
-            <Icon name="sidebar-right" />
-          </button>
+          <Tooltip label="Show the inspector" command="toggleInspector" placement="left">
+            <button type="button" className="icon-button" aria-label="Show the inspector" aria-expanded={false} aria-controls="inspector" onClick={() => setShowing(true)}>
+              <Icon name="sidebar-right" />
+            </button>
+          </Tooltip>
         </div>
       )}
     </div>

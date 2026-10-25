@@ -549,3 +549,56 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 .flow-step-more { display: grid; gap: 6px; }
 .flow-step-more h4 { margin: 4px 0 2px; font-size: 0.8rem; color: var(--muted); font-weight: 600; }
 /* ---------- End of brief 28 ---------- */
+
+/* ---------- Brief 30: product spaces and shortcut hints ---------- */
+.app { grid-template-columns: 304px minmax(0, 1fr); }
+.app.nav-collapsed { grid-template-columns: 56px minmax(0, 1fr); }
+.app.is-narrow { grid-template-columns: minmax(0, 1fr); }
+.menu.has-spaces { flex-direction: row; gap: 0; padding: 0; }
+.menu.has-spaces.is-rail { padding: 0; align-items: stretch; }
+.space-rail { flex: none; width: 56px; box-sizing: border-box; padding: 10px 0; display: flex; flex-direction: column; align-items: center; gap: 6px; border-right: 1px solid var(--rule); background: var(--paper); overflow-y: auto; overflow-x: hidden; }
+.menu.is-rail .space-rail { border-right: 0; background: none; }
+.menu .rail-spaces { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.rail-sep { width: 28px; margin: 4px 0; border: 0; border-top: 1px solid var(--rule); flex: none; }
+.menu .rail-item.space-item[aria-current] { background: none; }
+.menu .rail-item.space-item::before { content: ""; position: absolute; left: -8px; top: 50%; width: 4px; height: 8px; border-radius: 0 3px 3px 0; background: var(--ink); opacity: 0; transform: translateY(-50%); transition: height 120ms ease, opacity 120ms ease; }
+.menu .rail-item.space-item:hover::before { opacity: 0.5; height: 16px; }
+.menu .rail-item.space-item[aria-current]::before { opacity: 1; height: 28px; background: var(--steel); }
+.space-mark { display: inline-grid; place-items: center; box-sizing: border-box; border-radius: 8px; font: 700 0.8rem var(--display); letter-spacing: 0.02em; line-height: 1; flex: none; }
+.space-mark.is-monogram { color: #fff; }
+.space-mark.is-icon { font-size: 1.05rem; background: var(--sheet); border: 1px solid var(--rule); color: var(--ink); }
+.space-item[aria-current] .space-mark { box-shadow: 0 0 0 2px var(--paper), 0 0 0 4px var(--steel); }
+.menu a .space-mark { border-radius: 5px; font-size: 0.6rem; }
+.menu a .space-mark.is-icon { font-size: 0.8rem; }
+.nav-panel { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 8px; padding: 12px 10px; box-sizing: border-box; }
+.space-items { display: grid; gap: 4px; min-width: 0; }
+.menu.has-spaces .nav-scroll { overflow-x: hidden; }
+.menu .nav-capabilities { margin: 0 0 2px 12px; padding-left: 6px; border-left: 1px solid var(--rule); }
+.menu .nav-capabilities a { font-size: 0.82rem; min-height: 28px; padding: 3px 8px; color: var(--muted); }
+.menu .nav-capabilities a[aria-current="page"] { color: var(--steel); }
+.menu .nav-groups { margin-top: 2px; }
+.menu .nav-groups a { font-size: 0.86rem; }
+.menu.is-drawer.has-spaces { width: min(356px, 92vw); }
+/* The checks page's space filter. */
+.checks-scope { display: inline-flex; gap: 2px; padding: 2px; margin: 0 0 12px; border: 1px solid var(--rule); border-radius: 8px; background: var(--paper); }
+.checks-scope .scope-option { padding: 4px 10px; border-radius: 6px; color: var(--muted); text-decoration: none; font-size: 0.86rem; }
+.checks-scope .scope-option[aria-current] { background: var(--sheet); color: var(--ink); font-weight: 600; box-shadow: 0 1px 2px rgb(0 0 0 / 0.12); }
+.checks-scope .scope-option:focus-visible { outline: 2px solid var(--steel); outline-offset: 1px; }
+/* Quick find: the current space first, then everything else under a divider. */
+.quick-find-results li.qf-group { display: block; padding: 0; cursor: default; }
+.quick-find-results .qf-group ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; }
+.quick-find-results .qf-group.is-divided { margin-top: 4px; padding-top: 4px; border-top: 1px solid var(--rule); border-radius: 0; }
+.qf-group-name { display: block; padding: 4px 8px 2px; font: 500 0.68rem var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+/* Tooltips: a name and the keys, after a short hover or on keyboard focus. */
+.tooltip { position: fixed; z-index: 200; display: inline-flex; align-items: center; gap: 8px; max-width: 280px; padding: 4px 8px; border-radius: 6px; background: var(--ink); color: var(--paper); font: 500 0.78rem/1.3 var(--body); pointer-events: none; white-space: nowrap; box-shadow: 0 4px 12px rgb(0 0 0 / 0.2); }
+.tooltip-bottom { transform: translateX(-50%); }
+.tooltip-top { transform: translate(-50%, -100%); }
+.tooltip-right { transform: translateY(-50%); }
+.tooltip-left { transform: translate(-100%, -50%); }
+.tooltip .kbd { background: transparent; color: inherit; border-color: color-mix(in srgb, var(--paper) 45%, transparent); font-size: 0.72rem; padding: 0 5px; }
+@media (prefers-reduced-motion: no-preference) { .tooltip { animation: lathe-tip 90ms ease-out; } }
+@keyframes lathe-tip { from { opacity: 0; } to { opacity: 1; } }
+/* Shortcuts right-aligned in the palette (and any menu). */
+.kbd-hint { margin-left: auto; flex: none; }
+.palette-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* ---------- End of brief 30 ---------- */

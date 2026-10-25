@@ -13,6 +13,7 @@ import {
 import {
   GROUPS,
   OVERRIDES_KEY,
+  ariaKeyShortcuts,
   eventChord,
   formatBinding,
   isMac,
@@ -31,13 +32,17 @@ import {
 // on screen: the graph's commands exist while a graph is shown.
 
 type Handler = () => void;
+/** A registered handler, and the title it gives its command while mounted ("Switch to Lathe"). */
+type HandlerRef = { current: Handler; title?: string };
 
 interface CommandsApi {
   commands: Command[];
   mac: boolean;
-  register: (id: string, handler: { current: Handler }) => () => void;
+  register: (id: string, handler: HandlerRef) => () => void;
   run: (id: string) => boolean;
   available: (id: string) => boolean;
+  /** The command's title: the one its current handler gives, or the keymap's. */
+  titleOf: (c: Command) => string;
   /** Says something to screen readers (a view change, a panel opening). */
   announce: (text: string) => void;
 }
@@ -53,20 +58,36 @@ export function useKeymap() {
 
 /** The shortcut text for a command, such as "⌘B" or "Ctrl+B", or '' when it has none. */
 export function useShortcut(id: string): string {
-  const { commands, mac } = useKeymap();
-  const k = commands.find((c) => c.id === id)?.keys[0];
-  return k ? formatBinding(k, mac) : '';
+  return useShortcutHint(id).text;
 }
 
-/** Registers a handler for a command while the component is mounted (and `enabled`). */
-export function useCommand(id: string, handler: Handler, enabled = true) {
+export interface ShortcutHint {
+  /** The first binding as shown: "⌘B", "Ctrl+B", "g then c"; '' when the command has none. */
+  text: string;
+  /** The first binding as written in the keymap (after overrides), for <Keys>. */
+  binding: string;
+  /** The value for aria-keyshortcuts, or undefined when no binding can be said that way. */
+  aria: string | undefined;
+}
+
+/** How a command's shortcut is shown and announced, read from the keymap with its overrides. */
+export function useShortcutHint(id: string | undefined): ShortcutHint {
+  const { commands, mac } = useKeymap();
+  const keys = id ? commands.find((c) => c.id === id)?.keys ?? [] : [];
+  const binding = keys[0] ?? '';
+  return { text: binding ? formatBinding(binding, mac) : '', binding, aria: ariaKeyShortcuts(keys, mac) || undefined };
+}
+
+/** Registers a handler for a command while the component is mounted (and `enabled`), optionally with its own title. */
+export function useCommand(id: string, handler: Handler, enabled = true, title?: string) {
   const api = useContext(CommandsContext);
-  const ref = useRef(handler);
-  ref.current = handler;
+  const ref = useRef<HandlerRef>({ current: handler, title });
+  ref.current.current = handler;
+  ref.current.title = title;
   useEffect(() => {
     if (!api || !enabled) return;
-    return api.register(id, ref);
-  }, [api, id, enabled]);
+    return api.register(id, ref.current);
+  }, [api, id, enabled, title]);
 }
 
 export function useAnnounce() {
@@ -84,7 +105,7 @@ const SEQUENCE_WAIT = 1500;
 export function CommandsProvider({ children }: { children: ReactNode }) {
   const mac = useMemo(() => isMac(), []);
   const commands = useMemo(() => resolveCommands(readOverrides(), mac), [mac]);
-  const handlers = useRef(new Map<string, { current: Handler }[]>());
+  const handlers = useRef(new Map<string, HandlerRef[]>());
   const [, setVersion] = useState(0);
   const [message, setMessage] = useState('');
   const [pending, setPending] = useState<string[]>([]);
@@ -100,7 +121,7 @@ export function CommandsProvider({ children }: { children: ReactNode }) {
     if (keys.length) timer.current = setTimeout(() => setPendingKeys([]), SEQUENCE_WAIT);
   };
 
-  const register = useCallback((id: string, handler: { current: Handler }) => {
+  const register = useCallback((id: string, handler: HandlerRef) => {
     const list = handlers.current.get(id) ?? [];
     handlers.current.set(id, [...list, handler]);
     setVersion((v) => v + 1);
@@ -120,7 +141,8 @@ export function CommandsProvider({ children }: { children: ReactNode }) {
     setMessage('');
     setTimeout(() => setMessage(text), 30);
   }, []);
-  const api = useMemo(() => ({ commands, mac, register, run, available, announce }), [commands, mac, register, run, available, announce]);
+  const titleOf = useCallback((c: Command) => handlers.current.get(c.id)?.at(-1)?.title ?? c.title, []);
+  const api = useMemo(() => ({ commands, mac, register, run, available, titleOf, announce }), [commands, mac, register, run, available, titleOf, announce]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -155,8 +177,8 @@ export function CommandsProvider({ children }: { children: ReactNode }) {
       {children}
       <div className="sr-only" role="status" aria-live="polite" data-testid="announcer">{message}</div>
       {pending.length > 0 && <div className="key-pending" aria-hidden="true">{pending.join(' ')}…</div>}
-      {sheet && <ShortcutSheet commands={commands} mac={mac} onClose={() => setSheet(false)} />}
-      {palette && <CommandPalette commands={commands} mac={mac} available={available} onClose={() => setPalette(false)} onRun={(id) => { setPalette(false); setTimeout(() => run(id), 0); }} />}
+      {sheet && <ShortcutSheet commands={commands} mac={mac} available={available} titleOf={titleOf} onClose={() => setSheet(false)} />}
+      {palette && <CommandPalette commands={commands} mac={mac} available={available} titleOf={titleOf} onClose={() => setPalette(false)} onRun={(id) => { setPalette(false); setTimeout(() => run(id), 0); }} />}
     </CommandsContext.Provider>
   );
 }
@@ -197,15 +219,24 @@ function Dialog({ label, onClose, children, className }: { label: string; onClos
   );
 }
 
-export function Keys({ binding, mac }: { binding: string; mac: boolean }) {
-  return <kbd className="kbd">{formatBinding(binding, mac)}</kbd>;
+/** A binding in <kbd> styling: "⌘⇧P", "Ctrl+Shift+P", "g then c". */
+export function Keys({ binding, mac, className }: { binding: string; mac: boolean; className?: string }) {
+  return <kbd className={`kbd${className ? ` ${className}` : ''}`}>{formatBinding(binding, mac)}</kbd>;
 }
 
-function ShortcutSheet({ commands, mac, onClose }: { commands: Command[]; mac: boolean; onClose: () => void }) {
+interface ListProps {
+  commands: Command[];
+  mac: boolean;
+  available: (id: string) => boolean;
+  titleOf: (c: Command) => string;
+  onClose: () => void;
+}
+
+function ShortcutSheet({ commands, mac, available, titleOf, onClose }: ListProps) {
   const [query, setQuery] = useState('');
   const q = query.trim().toLowerCase();
   const id = useId();
-  const shown = commands.filter((c) => c.keys.length > 0 && (!q || c.title.toLowerCase().includes(q) || c.keys.some((k) => formatBinding(k, mac).toLowerCase().includes(q))));
+  const shown = commands.filter((c) => c.keys.length > 0 && (!c.dynamic || available(c.id)) && (!q || titleOf(c).toLowerCase().includes(q) || c.keys.some((k) => formatBinding(k, mac).toLowerCase().includes(q))));
   return (
     <Dialog label="Keyboard shortcuts" onClose={onClose} className="shortcut-sheet">
       <div className="dialog-head">
@@ -224,7 +255,7 @@ function ShortcutSheet({ commands, mac, onClose }: { commands: Command[]; mac: b
                 <tbody>
                   {rows.map((c) => (
                     <tr key={c.id}>
-                      <th scope="row">{c.title}</th>
+                      <th scope="row">{titleOf(c)}</th>
                       <td>{c.keys.map((k, i) => <span key={k}>{i > 0 && <span className="kbd-or"> or </span>}<Keys binding={k} mac={mac} /></span>)}</td>
                       <td className="cmd-id"><code>{c.id}</code></td>
                     </tr>
@@ -244,12 +275,12 @@ function ShortcutSheet({ commands, mac, onClose }: { commands: Command[]; mac: b
   );
 }
 
-function CommandPalette({ commands, mac, available, onClose, onRun }: { commands: Command[]; mac: boolean; available: (id: string) => boolean; onClose: () => void; onRun: (id: string) => void }) {
+function CommandPalette({ commands, mac, available, titleOf, onClose, onRun }: ListProps & { onRun: (id: string) => void }) {
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(0);
   const listId = useId();
   const q = query.trim().toLowerCase();
-  const items = commands.filter((c) => !c.local && !c.browser && c.id !== 'commandPalette' && c.id !== 'escape' && available(c.id) && (!q || c.title.toLowerCase().includes(q) || c.id.toLowerCase().includes(q)));
+  const items = commands.filter((c) => !c.local && !c.browser && c.id !== 'commandPalette' && c.id !== 'escape' && available(c.id) && (!q || titleOf(c).toLowerCase().includes(q) || c.id.toLowerCase().includes(q)));
   const at = Math.min(active, Math.max(0, items.length - 1));
   const onKeyDown = (e: ReactKeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'ArrowDown') { e.preventDefault(); setActive((at + 1) % Math.max(1, items.length)); }
@@ -278,12 +309,13 @@ function CommandPalette({ commands, mac, available, onClose, onRun }: { commands
             id={`${listId}-${c.id}`}
             role="option"
             aria-selected={i === at}
+            aria-keyshortcuts={ariaKeyShortcuts(c.keys, mac) || undefined}
             className={i === at ? 'active' : undefined}
             onMouseDown={(e) => { e.preventDefault(); onRun(c.id); }}
             onMouseEnter={() => setActive(i)}
           >
-            <span>{c.title}</span>
-            {c.keys[0] && <Keys binding={c.keys[0]} mac={mac} />}
+            <span className="palette-title">{titleOf(c)}</span>
+            {c.keys[0] && <Keys binding={c.keys[0]} mac={mac} className="kbd-hint" />}
           </li>
         ))}
         {items.length === 0 && <li className="hint" role="presentation">No command matches.</li>}

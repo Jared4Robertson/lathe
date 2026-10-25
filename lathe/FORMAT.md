@@ -46,6 +46,8 @@ A member borrows an available tool for a fixed loan period.
 
 The body (after the header) is Markdown prose. Requirements and domain rules state their rule in full in the body, using MUST / MUST NOT / SHOULD / MAY.
 
+A `product` record may also carry two optional fields for the app's space rail, where each product is its own space. `icon` is one emoji or up to two characters (`icon: 🧰`); without it, or when it is longer, the product shows its ID as a monogram (`TL`, `LA`). `color` is a hex colour or a CSS colour name for the icon (`color: "#2E6A88"`); without it, the colour is derived from the ID, so it stays the same on every visit.
+
 ## 3. ID convention
 
 Product prefix, domain code, then a kind code and number. The engine only checks the format and uniqueness; the convention keeps IDs readable.
