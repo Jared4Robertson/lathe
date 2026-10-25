@@ -3,7 +3,8 @@ import { Icon } from '../components/icons';
 import { ResizeHandle } from '../components/ResizeHandle';
 import { expandAllOnPage } from '../components/TreeList';
 import type { GraphSettings } from '../graph/GraphPage';
-import { groupLabel, groupMembers, groupName, isGroup, parseGroupId } from '../graph/model';
+import { groupLabel, groupMembers, groupName, groupOwner, isGroup } from '../graph/model';
+import { treeGroup, treeParent } from '../graph/tree';
 import type { GraphInfo } from '../graph/panel';
 import { entryState, lastAddressMove, Link, navigate, noteInEntry, onLeaveEntry } from '../router';
 import { useAnnounce, useCommand } from '../shell/commands';
@@ -15,7 +16,7 @@ import type { Problem, SpecIndex, SpecState } from '../specs/data';
 import { Markdown } from '../specs/Markdown';
 import { PageHeader, ProblemBadge, RecordTree, Section, listTitle } from '../specs/parts';
 import { RecordContent, RecordEyebrow } from '../specs/RecordContent';
-import { folderPath, testGroups } from '../specs/folders';
+import { testGroups } from '../specs/folders';
 import { GroupSections } from '../specs/FolderGroups';
 import { DomainWiki, NotFound, ProductWiki, SourceNote, problemsUnder } from '../specs/SpecPages';
 import { addressOf, HOME_PATH, focusOf, VIEW_LABELS, VIEW_NAMES, viewsFromSearch, viewsOffered, viewsShown, withView, type FocusRoute, type ViewName } from './address';
@@ -634,9 +635,10 @@ function PageTitle({ index, route, fixed = false }: { index: SpecIndex; route: F
     title = record.title;
     problems = index.problemsFor.get(focus) ?? [];
   } else {
-    const parent = index.byId.get(route.parent)!;
-    // The folder the group's kind sits in, named as in the side nav and the domain page: "Define › Use cases".
-    const folder = folderPath(index, route.kind.split('/')[0]);
+    const parent = index.byId.get(groupOwner(index, focus))!;
+    // The stage and folders above the group in the tree, named as in the side nav and the domain page: "Design › Interaction design".
+    const folder: string[] = [];
+    for (let at = treeParent(index, focus); at !== null && !index.byId.has(at); at = treeParent(index, at)) folder.unshift(treeGroup(index, at)?.label ?? at);
     eyebrow = <><Link to={addressOf(parent.id)}>{parent.title}</Link> · {folder.length > 0 && <span className="group-folder">{folder.join(' › ')} · </span>}Group</>;
     title = groupLabel(index, focus);
     id = undefined;
@@ -668,10 +670,12 @@ function WikiContent({ index, route }: { index: SpecIndex; route: FocusRoute }) 
 
 /** A group's wiki page: its parent, its kind, and its members, each with its coverage marks and its own children folded. */
 function GroupWiki({ index, gid }: { index: SpecIndex; gid: string }) {
-  const { parent, kind } = parseGroupId(gid)!;
+  const parent = groupOwner(index, gid);
+  const kind = treeGroup(index, gid)?.kind;
   const members = groupMembers(index, gid);
   const parentRecord = index.byId.get(parent)!;
-  const description = index.kinds.get(kind)?.description;
+  const description = kind ? index.kinds.get(kind)?.description : undefined;
+  const tests = members.length > 0 && members.every((m) => m.kind === 'test');
   // A list of one kind is titled by that kind ("Use cases", "Tests"); a mixed one stays "Members".
   const membersTitle = listTitle(index, members, 'Members');
   return (
@@ -682,7 +686,7 @@ function GroupWiki({ index, gid }: { index: SpecIndex; gid: string }) {
       {description && <Markdown source={description} />}
       <Section title={membersTitle} count={members.length}>
         {/* Tests are read in the test plan's groups, as on the domain page and in the nav. */}
-        {kind === 'test' && testGroups(index, gid, members).length > 0
+        {tests && testGroups(index, gid, members).length > 0
           ? <GroupSections index={index} groups={testGroups(index, gid, members)} level={3} />
           : <RecordTree index={index} records={members} label={`${membersTitle} of ${gid}`} />}
       </Section>

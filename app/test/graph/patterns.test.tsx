@@ -2,7 +2,6 @@ import './setup';
 import { describe, expect, it } from 'vitest';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { relationStyle } from '../../src/graph/GraphPage';
-import { layeredGraph } from '../../src/graph/layout';
 import { canTrace, neighborhood, traceChain } from '../../src/graph/model';
 import { indexWorkspace } from '../../src/specs/data';
 import { patternWorkspace } from '../fixtures/patterns';
@@ -35,15 +34,9 @@ describe('patterns in the graph', () => {
     expect(n.edges.map(edge)).toEqual(expect.arrayContaining(['DM-PAY-UC01 follows DM-PAT-CHECKOUT', 'DM-SHOP-UC01 follows DM-PAT-CHECKOUT']));
     expect(relationStyle('follows')).toBe('pattern');
     expect(relationStyle('uses')).toBe('design');
-    // Reached from the pattern by the cross-link, each use case sits one column after it, and the link is laid out pointing right.
+    // Reached from the pattern by the cross-link, each use case sits one column after it, as its own child does.
     const column = (id: string) => n.nodes.find((x) => x.id === id)!.column;
-    const elk = layeredGraph(n);
-    const pairs = (elk.edges ?? []).map((e) => `${e.sources[0]}>${e.targets[0]}`);
-    for (const uc of ['DM-SHOP-UC01', 'DM-PAY-UC01']) {
-      expect(column(uc)).toBe(column('DM-PAT-CHECKOUT') + 1);
-      expect(pairs).toContain(`DM-PAT-CHECKOUT>${uc}`);
-    }
-    expect(pairs).toContain('DM-PAT-CHECKOUT>DM-PAT-CHECKOUT-R01');
+    for (const uc of ['DM-SHOP-UC01', 'DM-PAY-UC01', 'DM-PAT-CHECKOUT-R01']) expect(column(uc)).toBe(column('DM-PAT-CHECKOUT') + 1);
     // From a use case, its pattern is one step away.
     expect(neighborhood(ix, 'DM-PAY-UC01', 1, undefined, undefined, { links: true }).nodes.map((x) => x.id)).toContain('DM-PAT-CHECKOUT');
   });

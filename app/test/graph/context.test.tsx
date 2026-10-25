@@ -4,7 +4,7 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import type { Workspace } from '../../../lathe/src/types';
 import { focusPositions, graphSummary, keyboardOrder, shortTitle, stepTarget } from '../../src/graph/GraphPage';
 import { panToward, pastEdges } from '../../src/graph/hints';
-import { layoutNeighborhood, NODE_HEIGHT, NODE_WIDTH } from '../../src/graph/layout';
+import { layoutNeighborhood, NODE_WIDTH } from '../../src/graph/layout';
 import { CONTEXT_BUDGET, CONTEXT_PER_PARENT, groupLabel, groupMembers, isGraphNode, MORE_KIND, moreId, neighborhood, type Neighborhood } from '../../src/graph/model';
 import { splitsByKind, treeChildren, treeParent } from '../../src/graph/tree';
 import { frameFocus } from '../../src/graph/camera';
@@ -78,14 +78,14 @@ describe('the graph tree and its context ring', () => {
     expect(contextOf(two)).toEqual(['P-D-E01', 'P-D-T01', 'P-D-V01']);
   });
 
-  it('LA-BRW-T542 A light ring: a parent shows at most six context children and a chip for the rest that leads to their folder, and the ring holds at most forty', () => {
+  it('LA-BRW-T542 A light ring: a parent shows at most six context children and a chip for the rest that leads to their group or parent, and the ring holds at most forty', () => {
     const index = indexWorkspace(manyOfOneKindWorkspace());
     const n = neighborhood(index, 'P-D/define/use-cases', 1);
     const shown = n.nodes.filter((x) => x.context && x.id.startsWith('P-D-UC02-'));
     expect(shown.map((x) => x.id)).toEqual(['P-D-UC02-R01', 'P-D-UC02-R02', 'P-D-UC02-R03', 'P-D-UC02-R04', 'P-D-UC02-R05', 'P-D-UC02-R06']);
     expect(CONTEXT_PER_PARENT).toBe(6);
     const chip = n.nodes.find((x) => x.id === moreId('P-D-UC02'))!;
-    expect(chip).toMatchObject({ kind: MORE_KIND, title: '+1 more UC requirement', context: true, more: { parent: 'P-D-UC02', count: 1, target: 'P-D-UC02/requirement' } });
+    expect(chip).toMatchObject({ kind: MORE_KIND, title: '+1 more UC requirement', context: true, more: { parent: 'P-D-UC02', count: 1, target: 'P-D-UC02' } });
     expect(isGraphNode(index, chip.more!.target)).toBe(true);
     // The chip sits after the shown children, joined to their parent.
     const rows = new Map(n.nodes.map((x) => [x.id, x.row]));
@@ -200,19 +200,20 @@ describe('the graph tree and its context ring', () => {
   it('LA-BRW-T547 The camera frames the focus nodes only, so the context ring may run past the canvas, and Fit does too', async () => {
     const index = indexWorkspace(crowdedWorkspace());
     const n = neighborhood(index, 'P-D/define/use-cases', 1);
-    const { positions } = await layoutNeighborhood(n);
+    const { positions, heights } = layoutNeighborhood(n);
     const inFocus = focusPositions(n, positions);
     expect([...inFocus.keys()].sort()).toEqual(focusOf(n));
     // Framing the focus picture never zooms out further than framing everything would.
-    const framed = frameFocus(inFocus, n.focus, 1000, 800);
-    const all = frameFocus(positions, n.focus, 1000, 800);
+    const framed = frameFocus(inFocus, n.focus, 1000, 800, 40, 0.1, heights);
+    const all = frameFocus(positions, n.focus, 1000, 800, 40, 0.1, heights);
     expect(framed.zoom).toBeGreaterThanOrEqual(all.zoom);
-    // Some of the ring lies past the canvas's edges in the framed view.
-    const centers = n.nodes.filter((x) => x.context).map((x) => ({ x: positions.get(x.id)!.x + NODE_WIDTH / 2, y: positions.get(x.id)!.y + NODE_HEIGHT / 2 }));
-    const past = pastEdges(centers, framed, 1000, 800);
+    // Some of the ring lies past the canvas's edges in the framed view of a tall, narrow canvas: the
+    // icicle's parents span the ring above and below, so it runs past to the right.
+    const centers = n.nodes.filter((x) => x.context).map((x) => ({ x: positions.get(x.id)!.x + NODE_WIDTH / 2, y: positions.get(x.id)!.y + heights.get(x.id)! / 2 }));
+    const past = pastEdges(centers, frameFocus(inFocus, n.focus, 600, 4000, 40, 0.1, heights), 600, 4000);
     expect(past.up + past.down + past.left + past.right).toBeGreaterThan(0);
     // Keyboard order is the focus picture.
-    expect(keyboardOrder(n, { positions, layout: 'layered' }).sort()).toEqual(focusOf(n));
+    expect(keyboardOrder(n, { positions }).sort()).toEqual(focusOf(n));
     expect(graphSummary(n)).toMatch(/^9 records · 2 groups · \d+ links · \d+ more faded$/);
   });
 
@@ -266,7 +267,7 @@ describe('the graph tree and its context ring', () => {
     await waitFor(() => expect(window.location.pathname).toBe('/P-D/define/domain-model'));
   });
 
-  it('LA-BRW-T550 A chip of the light ring leads to the folder of the children it counts, and the edge hints count the ring past each edge and pan that way', async () => {
+  it('LA-BRW-T550 A chip of the light ring leads to the group or parent of the children it counts, and the edge hints count the ring past each edge and pan that way', async () => {
     // The hints' arithmetic: a box's center past an edge counts for that edge, and a pan moves half the canvas.
     const view = { x: 0, y: 0, zoom: 1 };
     expect(pastEdges([{ x: -10, y: 50 }, { x: 1200, y: -5 }, { x: 500, y: 900 }, { x: 500, y: 400 }], view, 1000, 800)).toEqual({ up: 1, down: 1, left: 1, right: 1 });
@@ -280,7 +281,7 @@ describe('the graph tree and its context ring', () => {
     expect(chip.className).toContain('is-context');
     expect(chip.getAttribute('aria-hidden')).toBe('true');
     fireEvent.click(chip);
-    await waitFor(() => expect(window.location.pathname).toBe('/P-D-UC02/requirement'));
+    await waitFor(() => expect(window.location.pathname).toBe('/P-D-UC02'));
   });
 
   it('LA-BRW-T551 Hovering or focusing a focus node spotlights it, its lines and the nodes it joins, and leaving restores the picture', async () => {

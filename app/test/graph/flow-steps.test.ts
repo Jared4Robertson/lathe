@@ -81,7 +81,9 @@ describe('flow steps in the graph', () => {
     expect(column.get('P-D-F01-S01')).toBe(TRACE_COLUMNS.flow_step);
     expect(column.get('P-D-F01')!).toBeLessThan(column.get('P-D-F01-S01')!);
     expect(column.get('P-D-F01-S01')!).toBeLessThan(column.get('P-D-C01')!);
-    // It still lays out in columns.
-    expect((await layoutNeighborhood(n)).layout).toBe('layered');
+    // It lays out in columns, left to right.
+    const { positions } = layoutNeighborhood(n);
+    expect(positions.get('P-D-F01')!.x).toBeLessThan(positions.get('P-D-F01-S01')!.x);
+    expect(positions.get('P-D-F01-S01')!.x).toBeLessThan(positions.get('P-D-C01')!.x);
   });
 });

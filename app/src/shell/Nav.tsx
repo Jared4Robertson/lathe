@@ -4,10 +4,11 @@ import { APPEARANCE_PATH, PaletteIcon } from '../theme/ThemeCommands';
 import { Icon } from '../components/icons';
 import { LongList } from '../components/LongList';
 import { childKinds, pluralLabel } from '../graph/model';
+import { treeParent } from '../graph/tree';
 import { LatheLogo } from '../LatheLogo';
 import { Link } from '../router';
 import { checksPath, parseSpecRoute, type SpecIndex, type SpecRecord, type SpecState } from '../specs/data';
-import { branchOf, domainFolders, groupBranchOf, productFolderKinds, productFolders, ungrouped, type Folder, type FolderGroup } from '../specs/folders';
+import { branchOf, domainFolders, productFolderKinds, productFolders, ungrouped, type Folder, type FolderGroup } from '../specs/folders';
 import { recordText } from '../specs/parts';
 import type { DiagramSummary } from '../types';
 import { SPACE_KEYS, spaceCommandId } from './keymap';
@@ -316,7 +317,17 @@ function currentBranch(index: SpecIndex, path: string): string[] {
   if (!route) return [];
   if (route.page === 'domain') return [`domain:${route.domain}`];
   if (route.page === 'record') return branchOf(index, route.id);
-  if (route.page === 'group') return groupBranchOf(index, route.parent, route.kind.split('/')[0]);
+  if (route.page === 'group') {
+    // The group's place in the tree: its stage and folder rows (and itself, where it is one), up to its domain.
+    const chain: string[] = [];
+    for (let at: string | null = `${route.parent}/${route.kind}`; at !== null; at = treeParent(index, at)) {
+      const record = index.byId.get(at);
+      if (record?.kind === 'domain') { chain.unshift(`domain:${at}`); break; }
+      if (record) { chain.unshift(...branchOf(index, at)); break; }
+      chain.unshift(at);
+    }
+    return chain;
+  }
   return [];
 }
 

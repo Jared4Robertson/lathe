@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { canTrace, fileNodeId, neighborhood, nextTrail, TRACE_COLUMNS, traceChain, traceColumn, type Filters } from '../../src/graph/model';
 import { indexWorkspace } from '../../src/specs/data';
-import { layeredGraph, layoutNeighborhood, NODE_HEIGHT, NODE_WIDTH } from '../../src/graph/layout';
+import { layoutNeighborhood, NODE_HEIGHT, NODE_WIDTH } from '../../src/graph/layout';
 import { testIndex, testWorkspace } from './workspace';
 
 const ids = (n: { nodes: { id: string }[] }) => n.nodes.map((x) => x.id).sort();
@@ -107,24 +107,25 @@ describe('graph neighborhood', () => {
 
   it('LA-BRW-T55 The layout gives the same picture every time, with the focus at the center and no overlaps', async () => {
     const n = neighborhood(index, 'P-D-UC01-R01', 3, undefined, undefined, { links: true });
-    const { positions, layout } = await layoutNeighborhood(n);
-    expect(layout).toBe('layered');
-    expect(positions.get('P-D-UC01-R01')).toEqual({ x: -NODE_WIDTH / 2, y: -NODE_HEIGHT / 2 });
+    const { positions, heights } = layoutNeighborhood(n);
+    const focusHeight = heights.get('P-D-UC01-R01')!;
+    expect(positions.get('P-D-UC01-R01')).toEqual({ x: -NODE_WIDTH / 2, y: -focusHeight / 2 });
     expect(positions.size).toBe(n.nodes.length);
-    const boxes = [...positions.values()];
+    const boxes = [...positions].map(([id, p]) => ({ ...p, h: heights.get(id)! }));
     for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++) {
-      const overlap = Math.abs(boxes[i].x - boxes[j].x) < NODE_WIDTH && Math.abs(boxes[i].y - boxes[j].y) < NODE_HEIGHT;
+      const [a, b] = [boxes[i], boxes[j]];
+      const overlap = Math.abs(a.x - b.x) < NODE_WIDTH && a.y < b.y + b.h && b.y < a.y + a.h;
       expect(overlap).toBe(false);
     }
-    expect((await layoutNeighborhood(neighborhood(index, 'P-D-UC01-R01', 3, undefined, undefined, { links: true }))).positions).toEqual(positions);
+    expect((layoutNeighborhood(neighborhood(index, 'P-D-UC01-R01', 3, undefined, undefined, { links: true }))).positions).toEqual(positions);
     // Re-centering keeps the order within a column: the components of Technical specification, from the stage and from the folder.
     const yOrder = (ps: Map<string, { y: number }>, list: string[]) => [...list].sort((a, b) => ps.get(a)!.y - ps.get(b)!.y);
-    const fromStage = (await layoutNeighborhood(neighborhood(index, 'P-D/design', 2))).positions;
-    const fromFolder = (await layoutNeighborhood(neighborhood(index, 'P-D/design/technical-specification', 1))).positions;
+    const fromStage = (layoutNeighborhood(neighborhood(index, 'P-D/design', 2))).positions;
+    const fromFolder = (layoutNeighborhood(neighborhood(index, 'P-D/design/technical-specification', 1))).positions;
     expect(yOrder(fromStage, ['P-D-C02', 'P-D-C01'])).toEqual(['P-D-C01', 'P-D-C02']);
     expect(yOrder(fromFolder, ['P-D-C02', 'P-D-C01'])).toEqual(['P-D-C01', 'P-D-C02']);
     // A single record sits at the center on its own.
-    expect((await layoutNeighborhood(traceChain(index, 'P-D-DR02'))).positions.get('P-D-DR02')).toEqual({ x: -NODE_WIDTH / 2, y: -NODE_HEIGHT / 2 });
+    expect((layoutNeighborhood(traceChain(index, 'P-D-DR02'))).positions.get('P-D-DR02')).toEqual({ x: -NODE_WIDTH / 2, y: -NODE_HEIGHT / 2 });
   });
 
   it('LA-BRW-T56 The breadcrumb trail adds each record visited and cuts back when a visited record is revisited', () => {
@@ -159,7 +160,7 @@ describe('graph neighborhood', () => {
 
   it('LA-BRW-T64 The graph reads left to right by column, and so does a trace', async () => {
     const n = neighborhood(index, 'P-D-UC01-R01', 3, undefined, undefined, { links: true });
-    const { positions } = await layoutNeighborhood(n);
+    const { positions } = layoutNeighborhood(n);
     const col = (id: string) => positions.get(id)!.x;
     // One x per column, columns in order.
     const columns = new Map<number, Set<number>>();
@@ -174,7 +175,7 @@ describe('graph neighborhood', () => {
     // What satisfies, fulfills and proves the requirement (Links on) sits one column to its right.
     for (const id of ['P-D-C01', 'P-D-T01', 'P-D-V01']) expect(col(id)).toBeGreaterThan(col('P-D-UC01-R01'));
 
-    const traced = (await layoutNeighborhood(traceChain(index, 'P-D-UC01-R01'))).positions;
+    const traced = (layoutNeighborhood(traceChain(index, 'P-D-UC01-R01'))).positions;
     const x = (id: string) => traced.get(id)!.x;
     expect(x('P-D-UC01-R01')).toBeLessThan(x('P-D-V01'));
     expect(x('P-D-V01')).toBeLessThan(x('P-D-C01'));
@@ -192,12 +193,8 @@ describe('graph neighborhood', () => {
     const column = new Map(n.nodes.map((x) => [x.id, x.column]));
     expect(column.get('P-D-A2')).toBe(column.get('P-D-A1'));
     expect(n.edges.filter((e) => e.relation === 'relates_to')).toHaveLength(2);
-    // Neither link reaches the layout, which stays in columns.
-    const pairs = (layeredGraph(n).edges ?? []).map((e) => `${e.sources[0]}>${e.targets[0]}`);
-    expect(pairs.some((p) => p.includes('P-D-A1') && p.includes('P-D-A2'))).toBe(false);
-    const placed = await layoutNeighborhood(n);
-    expect(placed.layout).toBe('layered');
-    expect(placed.cycle).toBeNull();
+    // Neither link shapes the layout, which stays in columns.
+    const placed = layoutNeighborhood(n);
     expect(placed.positions.get('P-D-A2')!.x).toBe(placed.positions.get('P-D-A1')!.x);
   });
 });

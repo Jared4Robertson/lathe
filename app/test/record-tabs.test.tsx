@@ -48,29 +48,29 @@ describe('tabs for open pages', () => {
     await go('/P-D-V01', 'Thing page');
     expect(tabs()).toEqual(['The owner is shown', 'Thing page*<']);
     // A group tab shows its label.
-    await go('/P-D-A1/domain_rule', 'Domain rules (2)');
-    expect(tabs()).toEqual(['The owner is shown', 'Domain rules (2)*<']);
-    expect(tab('Domain rules (2)').querySelector('code')).toBeNull();
+    await go('/P-D/design/interaction-design/view', 'Views (1)');
+    expect(tabs()).toEqual(['The owner is shown', 'Views (1)*<']);
+    expect(tab('Views (1)').querySelector('code')).toBeNull();
 
     // A link to a page already open activates its tab.
     await go('/P-D-UC01-R01', 'The owner is shown');
-    expect(tabs()).toEqual(['The owner is shown<', 'Domain rules (2)*']);
+    expect(tabs()).toEqual(['The owner is shown<', 'Views (1)*']);
 
     // Clicking a tab activates it and the address follows.
-    fireEvent.click(tab('Domain rules (2)'));
-    await waitFor(() => expect(title()).toBe('Domain rules (2)'));
-    expect(window.location.pathname).toBe('/P-D-A1/domain_rule');
+    fireEvent.click(tab('Views (1)'));
+    await waitFor(() => expect(title()).toBe('Views (1)'));
+    expect(window.location.pathname).toBe('/P-D/design/interaction-design/view');
 
     // Close the group tab; Back to it reopens it, as the preview.
-    fireEvent.click(tab('Domain rules (2)').closest('.tab')!.querySelector('.tab-close[aria-label="Close Domain rules (2)"]')!);
+    fireEvent.click(tab('Views (1)').closest('.tab')!.querySelector('.tab-close[aria-label="Close Views (1)"]')!);
     await waitFor(() => expect(title()).toBe('The owner is shown'));
     expect(tabs()).toEqual(['The owner is shown<']);
     await act(async () => {
       window.history.back();
       await new Promise((resolve) => window.addEventListener('popstate', resolve, { once: true }));
     });
-    await waitFor(() => expect(title()).toBe('Domain rules (2)'));
-    expect(tabs()).toEqual(['The owner is shown', 'Domain rules (2)*<']);
+    await waitFor(() => expect(title()).toBe('Views (1)'));
+    expect(tabs()).toEqual(['The owner is shown', 'Views (1)*<']);
   });
 
   it('LA-BRW-T324 Closing by button, middle-click or Alt+Shift+W activates the right neighbor or else the left, and the last tab stays as the preview', async () => {
