@@ -1,21 +1,37 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type KeyboardEvent } from 'react';
 
-/** Below this width the nav and the inspector become drawers. */
+/**
+ * Below this width the app takes its phone layout (notes/mobile-design.md): one view at a time,
+ * a compact top bar, and sheets instead of panels. The width decides the layout; the pointer
+ * decides the size of targets, so a tablet in landscape keeps the workbench with touch targets.
+ */
 export const NARROW_QUERY = '(max-width: 900px)';
+/** A touch screen (or a pen) is the main pointer: targets are at least 44 × 44 px and taps select before they open. */
+export const COARSE_QUERY = '(pointer: coarse)';
 
-/** True on a narrow screen, following resizes. False where matchMedia is missing. */
-export function useNarrow(): boolean {
-  const media = () => (typeof window.matchMedia === 'function' ? window.matchMedia(NARROW_QUERY) : null);
-  const [narrow, setNarrow] = useState(() => media()?.matches ?? false);
+/** Whether a media query matches, following changes. False where matchMedia is missing. */
+function useMedia(query: string): boolean {
+  const media = () => (typeof window.matchMedia === 'function' ? window.matchMedia(query) : null);
+  const [matches, setMatches] = useState(() => media()?.matches ?? false);
   useEffect(() => {
     const m = media();
     if (!m) return;
-    const update = () => setNarrow(m.matches);
+    const update = () => setMatches(m.matches);
     update();
     m.addEventListener?.('change', update);
     return () => m.removeEventListener?.('change', update);
-  }, []);
-  return narrow;
+  }, [query]);
+  return matches;
+}
+
+/** True on a narrow screen (the phone layout), following resizes. */
+export function useNarrow(): boolean {
+  return useMedia(NARROW_QUERY);
+}
+
+/** True when the main pointer is coarse (a finger). */
+export function useCoarsePointer(): boolean {
+  return useMedia(COARSE_QUERY);
 }
 
 /** Moves focus into an element that just opened (a drawer), and back to where it was when it closes. */
@@ -26,4 +42,21 @@ export function useFocusReturn(open: boolean, container: { current: HTMLElement 
     container.current?.querySelector<HTMLElement>(first)?.focus();
     return () => { if (before?.isConnected) before.focus(); };
   }, [open, container, first]);
+}
+
+const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), summary, [tabindex]:not([tabindex="-1"])';
+
+/**
+ * Keeps Tab inside a sheet (the nav, the inspector, quick find): from the last control Tab goes
+ * to the first, and Shift+Tab from the first (or from the sheet itself) to the last.
+ */
+export function trapTab(e: KeyboardEvent<HTMLElement>, sheet: HTMLElement | null) {
+  if (e.key !== 'Tab' || !sheet) return;
+  const items = [...sheet.querySelectorAll<HTMLElement>(FOCUSABLE)].filter((el) => !el.closest('[inert]'));
+  if (items.length === 0) { e.preventDefault(); return; }
+  const first = items[0];
+  const last = items[items.length - 1];
+  const active = document.activeElement;
+  if (e.shiftKey && (active === first || active === sheet)) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && active === last) { e.preventDefault(); first.focus(); }
 }
