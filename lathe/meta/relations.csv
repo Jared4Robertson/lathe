@@ -43,3 +43,7 @@ raised_by,domain_event,entity,,Raised by,Raises,"The event is raised when that e
 reacts_to,aggregate,domain_event,,Reacts to,Reacted to by,"The aggregate changes in response to the event, which may come from another aggregate or domain."
 reacts_to,use_case,domain_event,,Reacts to,Reacted to by,"The use case starts when the event happens."
 reacts_to,component,domain_event,,Reacts to,Reacted to by,"The component handles the event."
+supports,test,requirement,,Supports,Supported by,"The test checks a mechanism that backs the use case requirement, such as a lock or a budget, without proving it; it is never counted as proof."
+supports,test,domain_rule,,Supports,Supported by,"The test checks a mechanism that backs the domain rule, such as a lock or a budget, without proving it; it is never counted as proof."
+supports,test,interaction_requirement,,Supports,Supported by,"The test checks a mechanism that backs the interaction requirement, such as a lock or a budget, without proving it; it is never counted as proof."
+supports,test,pattern_rule,,Supports,Supported by,"The test checks a mechanism that backs the pattern rule, such as a lock or a budget, without proving it; it is never counted as proof."

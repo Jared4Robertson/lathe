@@ -17,11 +17,11 @@ The design says how the product carries out its use cases: the paths people take
 | Kind | ID | Required fields | Links |
 | --- | --- | --- | --- |
 | `flow` | `<P>-<D>-F<nn>` | | `carries_out` the use cases it walks through; `uses` views and endpoints; `fulfills` requirements, domain rules and interaction requirements (left to its steps once it has them) |
-| `flow_step` | `<flow>-S<nn>`, such as `TL-LEND-F01-S01` | `order` (a whole number) | `uses` the view, endpoint or component the step goes through; `fulfills` the requirements, domain rules and interaction requirements the step carries out |
+| `flow_step` | `<flow>-S<nn>`, such as `TL-LEND-F01-S01` | `order` (a whole number); optional `path`, such as `main`, `api` or `refused` | `uses` the view, endpoint or component the step goes through; `fulfills` the requirements, domain rules and interaction requirements the step carries out |
 | `view` | `<P>-<D>-V<nn>` | | `uses` endpoints; `fulfills` requirements |
 | `endpoint` | `<P>-<D>-E<nn>` | `method`, `route` | `fulfills` requirements |
 | `interaction_requirement` | `<view, endpoint or flow>-R<nn>`, such as `TL-LEND-E04-R01` | | `fulfills` the use case requirements and domain rules it carries out at this view, endpoint or flow |
-| `layer` | `<P>-<D>-LAY<nn>` | `order` (a whole number, its place in the domain, unique within the domain) | none; it holds the domain's components |
+| `layer` | `<P>-<D>-LAY<nn>` | `order` (a whole number, its place among the layers beside it, unique there) | none; it holds the domain's components, and may hold sub-layers |
 | `component` | `<P>-<D>-C<nn>` | `component_type` (model, service, router, ...), `file` (path from the repo root) | `satisfies` requirements, domain rules and interaction requirements; `implements` endpoints and views; `depends_on` components |
 
 Every design record's parent is the domain, except an interaction requirement, whose parent is the view, endpoint or flow it constrains, a flow step, whose parent is its flow, a flow, whose parent is the capability of the use cases it carries out when the domain has capabilities (see `write-use-cases`), and a component, whose parent is its layer when the domain has layers (see below). Any link not in the meta-model's `relations.csv` is an error. Each relation reads by a label from either end, such as Satisfies and Designed by; `lathe format` lists every relation each kind may make and receive, with its labels.
@@ -31,7 +31,7 @@ Every design record's parent is the domain, except an interaction requirement, w
 A domain's components go in **layers**: ordered groups by what the code is, such as 01 Models, 02 Accessors, 03 Services, 04 Connectors, 05 Routers and API app, 06 Web app, 07 Infrastructure and configuration. Each product names its own layers to fit its code; that set is only a starting point. See section 16 of `FORMAT.md`.
 
 - Read the domain's layers before adding a component, and put it in the layer it belongs to. Add a layer only when no existing one fits.
-- Keep each layer to about 15 components at most. Split a bigger one, for example by aggregate or capability, into layers with clear titles.
+- Keep each layer to about 15 components at most. Split a bigger one, for example by aggregate or capability, into layers with clear titles, or into sub-layers: layers whose parent is the bigger layer, each with its own order among them.
 - Keep a layer's record at `02-design/components/<NN>-<slug>.md` and its components in the folder beside it, `02-design/components/<NN>-<slug>/`. Its body says in two or three sentences what the layer holds and where its code lives.
 - Moving a component into a layer changes only its `parent`. Never change its ID.
 - Once a domain has one layer, every component of the domain belongs in one; a component left under the domain is a `component-outside-layer` warning. A repeated or non-whole `order` is a `layer-order` error.
@@ -50,7 +50,8 @@ An interaction requirement is one rule a view, endpoint or flow must follow: a f
 
 Write a flow of more than a couple of steps as `flow_step` records, so traceability reads per step (FORMAT.md section 14):
 
-- One record per step, under the flow: `order` gives its place (1, 2, 3; each step of a flow its own), the title says what happens in a few words, the body may say more.
+- One record per step, under the flow: `order` gives its place (1, 2, 3, with no gaps; each step of a flow its own), the title says what happens in a few words, the body may say more.
+- A flow with more than one path, such as an API path or a refused path beside the main one, gives each step a `path`. A step with no `path` is on the main path. Each path is numbered 1, 2, 3 on its own.
 - `uses` names where the step happens (a view), what it calls (an endpoint), or the component that does it.
 - `fulfills` names what this step carries out. Move each `fulfills` link from the flow onto the step that does it; the flow then needs none of its own.
 - Put the files in a folder named after the flow: `02-design/flows/F01-borrow-and-return.md` and `02-design/flows/F01-borrow-and-return/S02-borrow-the-tool.md`.
@@ -71,7 +72,7 @@ The member picks an available tool and borrows it (`POST /loans`). If the tool i
 
 What the checks say:
 
-- `flow-step-order` (error): an order that is not a whole number, or two steps of one flow with the same order (`1` and `01` clash). Renumbering an order is fine; it is not an ID.
+- `flow-step-order` (error): an order that is not a whole number, two steps on one path of a flow with the same order (`1` and `01` clash), or a path whose numbering skips a number. Renumbering an order is fine; it is not an ID.
 - `flow-step-fulfills-outside-flow` (warning): the step fulfills something that is not a requirement of a use case its flow `carries_out`, a domain rule one of them `applies`, or an interaction requirement reached from either or under the flow. Link it from a step of the right flow, or add the use case to this flow's `carries_out`.
 - `flow-fulfills-differs-from-steps` (warning): the flow fulfills something none of its steps does. Move the link onto the step that carries it out.
 
