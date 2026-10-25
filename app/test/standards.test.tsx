@@ -437,7 +437,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     // fold chevrons, the nav's rows and rail, the sheet handle, the open-pages list and the title bar's command center.
     // In the source no raw <button> may take the Button's own classes; on the page they are allowed.
     const ALLOWED = ['tab-close', 'tree-toggle', 'nav-chevron', 'nav-row', 'nav-folder-head', 'nav-section-head', 'rail-item',
-      'view-segment', 'page-bar-pages', 'pages-open', 'sheet-handle', 'graph-group-chevron', 'command-center'];
+      'view-segment', 'page-bar-pages', 'pages-open', 'sheet-handle', 'command-center'];
     // On the page, the canvas library's own zoom controls are allowed too.
     const allowed = `.button, .icon-button, ${ALLOWED.map((c) => `.${c}`).join(', ')}, [role="group"] button[aria-pressed], .react-flow__controls-button`;
 
