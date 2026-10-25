@@ -8,4 +8,4 @@ run_by: app/test/graph/context.test.tsx
 links:
   proves: [LA-BRW-UC20-R11, LA-BRW-DR305]
 ---
-Expects six context requirements and a chip "+1 more UC requirements" leading to their group, after them in the column, and a crowded folder held to forty context nodes with chips counting the rest.
+Expects six context requirements and a chip "+1 more UC requirement" leading to their group, after them in the column, and a crowded folder held to forty context nodes, chips included.

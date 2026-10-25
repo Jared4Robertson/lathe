@@ -296,7 +296,9 @@ function chipTarget(index: SpecIndex, parent: string, kids: readonly string[]): 
 /** A chip's label: "+12 more use cases", "+3 more". */
 function chipTitle(index: SpecIndex, hidden: readonly string[]): string {
   const kinds = [...new Set(hidden.map((k) => index.byId.get(k)?.kind ?? ''))];
-  return kinds.length === 1 && kinds[0] ? `+${hidden.length} more ${lowerLabel(pluralLabel(index, kinds[0]))}` : `+${hidden.length} more`;
+  if (!(kinds.length === 1 && kinds[0])) return `+${hidden.length} more`;
+  const label = hidden.length === 1 ? kindLabel(index, kinds[0]) : pluralLabel(index, kinds[0]);
+  return `+${hidden.length} more ${lowerLabel(label)}`;
 }
 
 /**
@@ -399,7 +401,10 @@ export function neighborhood(
         if (expanded.has(id)) continue;
         const kids = nodeChildren(index, id).filter((c) => !distance.has(c) && shownKind(c));
         if (kids.length === 0) continue;
-        const keep = Math.max(0, Math.min(kids.length, CONTEXT_PER_PARENT, budget));
+        if (budget <= 0) break;
+        // When not all of them fit, one place is kept for the chip that counts the rest.
+        const fit = Math.min(CONTEXT_PER_PARENT, budget);
+        const keep = kids.length <= fit ? kids.length : Math.max(0, Math.min(CONTEXT_PER_PARENT, budget - 1));
         for (const c of kids.slice(0, keep)) {
           reach(c, id, levels + 1);
           addSpine(id, c);
@@ -407,7 +412,10 @@ export function neighborhood(
         }
         budget -= keep;
         const hidden = kids.slice(keep);
-        if (hidden.length > 0) {
+        // A chip is a context node too and counts against the budget; once it is spent, the edge
+        // hints and the folded groups say there is more.
+        if (hidden.length > 0 && budget > 0) {
+          budget -= 1;
           const chip = moreId(id);
           chips.set(chip, { parent: id, count: hidden.length, target: chipTarget(index, id, kids), title: chipTitle(index, hidden) });
           reach(chip, id, levels + 1);
