@@ -33,8 +33,7 @@ function bigWorkspace(): Workspace {
   ws.records.push(...records);
   ws.links.push(...links);
   ws.problems.push(...Array.from({ length: 12 }, (_, i) => ({ severity: 'warning' as const, check: 'unproved', record: `BG-D01-UC01-R${pad(i + 1)}`, message: `No test proves requirement BG-D01-UC01-R${pad(i + 1)}.` })));
-  const empty = { requirements: 0, requirements_satisfied: 0, requirements_built: 0, requirements_proved: 0, rules: 0, rules_satisfied: 0, rules_built: 0, rules_proved: 0, obligations: [], gaps: [] };
-  ws.coverage.push(...Array.from({ length: 12 }, (_, d) => ({ domain: `BG-D${pad(d + 1)}`, ...empty }) as unknown as Coverage));
+  ws.coverage.push(...Array.from({ length: 12 }, (_, d): Coverage => ({ domain: `BG-D${pad(d + 1)}`, obligations: [], tests: { automated: 0, manual: 0, planned: 0 }, gaps: [] })));
   ws.coverage.find((c) => c.domain === 'BG-D01')!.gaps = Array.from({ length: 12 }, (_, i) => ({ id: `BG-D01-UC01-R${pad(i + 1)}`, kind: 'requirement', missing: 'proves' as const }));
   return ws;
 }

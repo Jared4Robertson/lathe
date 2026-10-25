@@ -1,5 +1,5 @@
 import type { Kind, ObligationCoverage, RelationRule, SpecRecord, Workspace } from '../../../lathe/src/types';
-import { workspace as baseWorkspace } from './workspace';
+import { workspace as baseWorkspace, obligation } from './workspace';
 
 // The component-test workspace with the pass-5 model: a pattern, DM-PAT-CHECKOUT, with two rules,
 // followed by a use case in each of DM's domains, and records that cite other records in prose.
@@ -53,7 +53,7 @@ const bodies: Record<string, { body: string; mentions: string[] }> = {
 };
 
 const patternRuleLine = (total: number, designed: number, built: number, proved: number, planned: number): ObligationCoverage =>
-  ({ kind: 'pattern_rule', label: 'Pattern rule', total, designed, built, proved, planned }) as ObligationCoverage; // no planned_any: as an older engine reports it
+  obligation('pattern_rule', 'Pattern rule', total, designed, built, proved, planned);
 
 export function patternWorkspace(): Workspace {
   const ws = baseWorkspace();
@@ -75,14 +75,10 @@ export function patternWorkspace(): Workspace {
     { severity: 'warning', check: 'unproved', record: 'DM-PAT-CHECKOUT-R01', message: 'DM-PAT-CHECKOUT-R01 is not proved in DM-PAY.' },
     { severity: 'warning', check: 'unsatisfied', record: 'DM-PAT-CHECKOUT-R02', message: 'DM-PAT-CHECKOUT-R02 is not satisfied in DM-PAY.' },
   );
-  const legacy = (c: Workspace['coverage'][number]): ObligationCoverage[] => [
-    { kind: 'domain_rule', label: 'Domain rule', total: c.rules, designed: c.rules_satisfied, built: c.rules_built ?? 0, proved: c.rules_proved, planned: 0 } as ObligationCoverage,
-    { kind: 'requirement', label: 'UC requirement', total: c.requirements, designed: c.requirements_satisfied, built: c.requirements_built ?? 0, proved: c.requirements_proved, planned: 0 } as ObligationCoverage,
-  ];
   for (const c of ws.coverage) {
-    if (c.domain === 'DM-SHOP') c.obligations = [...legacy(c), patternRuleLine(1, 1, 1, 1, 0)];
+    if (c.domain === 'DM-SHOP') c.obligations = [...c.obligations, patternRuleLine(1, 1, 1, 1, 0)];
     if (c.domain === 'DM-PAY') {
-      c.obligations = [...legacy(c), patternRuleLine(2, 1, 0, 0, 1)];
+      c.obligations = [...c.obligations, patternRuleLine(2, 1, 0, 0, 1)];
       c.gaps.push(
         { id: 'DM-PAT-CHECKOUT-R01', kind: 'pattern_rule', missing: 'proves' },
         { id: 'DM-PAT-CHECKOUT-R02', kind: 'pattern_rule', missing: 'satisfies' },

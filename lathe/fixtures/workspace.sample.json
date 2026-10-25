@@ -814,21 +814,6 @@
   "coverage": [
     {
       "domain": "EX-NOTE",
-      "requirements": 1,
-      "requirements_satisfied": 1,
-      "requirements_proved": 1,
-      "rules": 1,
-      "rules_satisfied": 1,
-      "rules_proved": 0,
-      "gaps": [
-        {
-          "id": "EX-NOTE-DR01",
-          "kind": "domain_rule",
-          "missing": "proves"
-        }
-      ],
-      "requirements_built": 0,
-      "rules_built": 0,
       "obligations": [
         {
           "kind": "domain_rule",
@@ -837,7 +822,8 @@
           "designed": 1,
           "built": 0,
           "proved": 0,
-          "planned": 0
+          "planned": 0,
+          "planned_any": 0
         },
         {
           "kind": "requirement",
@@ -846,7 +832,20 @@
           "designed": 1,
           "built": 0,
           "proved": 1,
-          "planned": 0
+          "planned": 0,
+          "planned_any": 0
+        }
+      ],
+      "tests": {
+        "automated": 1,
+        "manual": 0,
+        "planned": 0
+      },
+      "gaps": [
+        {
+          "id": "EX-NOTE-DR01",
+          "kind": "domain_rule",
+          "missing": "proves"
         }
       ]
     }
