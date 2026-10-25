@@ -49,7 +49,8 @@ export const SideBar = forwardRef<HTMLElement, SideBarProps>(function SideBar(pr
   const { hover, selected } = usePeek(peek);
   const canvas = mode !== 'wiki';
   // Details: the hovered node (graph and model), else the selected one, else the page's own.
-  const hovered = canvas && known(index, hover) ? hover : null;
+  // The center under the pointer is the page's own record: shown as the page's, so a click that re-centers changes nothing here.
+  const hovered = canvas && hover !== focus && known(index, hover) ? hover : null;
   const chosen = known(index, selected) ? selected : null;
   const target = hovered ?? chosen ?? focus;
   const how = hovered ? 'hover' : chosen ? 'selected' : 'page';
@@ -76,7 +77,8 @@ export const SideBar = forwardRef<HTMLElement, SideBarProps>(function SideBar(pr
       </div>
       <section id="side-view" className={`side-view side-${view}`} aria-labelledby="side-view-title">
         <h2 id="side-view-title" className="inspector-title" tabIndex={-1}>{SIDE_VIEW_LABELS[view]}</h2>
-        {view === 'details' && <SideBarDetails index={index} focus={focus} target={target} mode={mode} how={how} graph={graph} onNavigate={onNavigate} hrefFor={hrefFor} />}
+        {/* Keyed by what it describes: a new node's details are new content drawn in place, never the last one's rows pushed along (UX-R08). */}
+        {view === 'details' && <SideBarDetails key={`${focus} ${target} ${how}`} index={index} focus={focus} target={target} mode={mode} how={how} graph={graph} onNavigate={onNavigate} hrefFor={hrefFor} />}
         {view === 'outline' && <SideBarOutline index={index} focus={focus} mode={mode} graph={graph} wikiPane={wikiPane} onNavigate={onNavigate} hrefFor={hrefFor} />}
         {view === 'history' && <SideBarHistory index={index} id={index.byId.has(historyOf) ? historyOf : null} />}
       </section>
