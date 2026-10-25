@@ -255,7 +255,7 @@ function Shell() {
     <FormatProvider value={format}>
     <SpacesProvider value={spaces}>
     <SpaceCommands spaces={spaces} />
-    <DesktopTitleBar />
+    <DesktopTitleBar index={spec.index} />
     <div
       className={`app${collapsed && !narrow ? ' nav-collapsed' : ''}${narrow ? ' is-narrow' : ''}`}
       style={{ '--nav-width': `${navWidth}px` } as CSSProperties}

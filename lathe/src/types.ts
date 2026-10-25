@@ -58,11 +58,11 @@ export interface SpecRecord {
   path: string;
   /** IDs of existing records this record's body cites in its prose, in order of first mention. */
   mentions: string[];
-  /** An entity's fields, from the Fields table in its body (FORMAT section 17); absent for other kinds. */
+  /** An entity or domain event's fields, from the Fields table in its body (FORMAT section 17); absent for other kinds. */
   entityFields?: EntityField[];
 }
 
-/** One row of an entity's Fields table. */
+/** One row of an entity or domain event's Fields table. */
 export interface EntityField {
   field: string;
   meaning: string;

@@ -1,13 +1,13 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { openApp } from './helpers';
-import type { Chrome, DesktopBridge } from '../src/shell/desktopChrome';
+import type { Chrome } from '../src/shell/desktopChrome';
 
 // The desktop app's own title bar (LA-DSK-UC04): drawn only in the desktop shell, with back and
 // forward, a command center that opens quick find, the layout toggles, and the theme's colors sent
 // to the window's chrome.
 
-const host = window as unknown as { latheDesktop?: DesktopBridge; navigation?: unknown };
+const host = window as unknown as { latheDesktop?: LatheDesktop; navigation?: unknown };
 
 function desktop(platform = 'darwin') {
   const setChrome = vi.fn<(chrome: Chrome) => void>();

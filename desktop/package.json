@@ -25,6 +25,7 @@
     },
     "files": [
       "out/**",
+      "static/**",
       "package.json"
     ],
     "extraResources": [
@@ -38,11 +39,30 @@
     "publish": null,
     "mac": {
       "category": "public.app-category.developer-tools",
-      "icon": "build/icon.png",
-      "identity": null
+      "icon": "build/icon.icns",
+      "identity": null,
+      "darkModeSupport": true,
+      "extendInfo": {
+        "CFBundleDocumentTypes": [
+          {
+            "CFBundleTypeName": "Folder",
+            "CFBundleTypeRole": "Viewer",
+            "LSHandlerRank": "Alternate",
+            "LSItemContentTypes": [
+              "public.folder"
+            ]
+          }
+        ]
+      }
     },
     "dmg": {
       "sign": false
+    },
+    "win": {
+      "icon": "build/icon.ico"
+    },
+    "linux": {
+      "icon": "build/icons"
     }
   },
   "devDependencies": {
