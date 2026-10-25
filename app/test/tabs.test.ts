@@ -9,7 +9,7 @@ const pages = (set: TabSet<S>) => set.tabs.map((t) => `${t.page}${t.preview ? '*
 const open = (set: TabSet<S>, page: string, keep = false) => openTab(set, page, from, { keep });
 
 describe('the tab model', () => {
-  it('LA-BRW-T320 A plain open replaces the one preview tab in place, a page open in a tab activates it, and keeping makes a tab lasting', () => {
+  it('LA-EXP-T112 A plain open replaces the one preview tab in place, a page open in a tab activates it, and keeping makes a tab lasting', () => {
     let set = open(emptyTabs<S>(), '/a');
     expect(pages(set)).toEqual(['/a*<']);
     // A plain open replaces the preview, keeping its key.
@@ -41,7 +41,7 @@ describe('the tab model', () => {
     expect(new Set(set.tabs.map((t) => t.key)).size).toBe(3);
   });
 
-  it('LA-BRW-T321 Closing the active tab activates its right neighbor, or else the left; closing the last leaves it as a preview; cycling wraps', () => {
+  it('LA-EXP-T113 Closing the active tab activates its right neighbor, or else the left; closing the last leaves it as a preview; cycling wraps', () => {
     let set = open(open(open(emptyTabs<S>(), '/a', true), '/b', true), '/c', true);
     expect(pages(set)).toEqual(['/a', '/b', '/c<']);
     set = cycleTab(set, 1);
@@ -70,7 +70,7 @@ describe('the tab model', () => {
     expect(keepTab(set, 'nope')).toBe(set);
   });
 
-  it('LA-BRW-T322 Each tab keeps its own state, and a stored set is read back with anything malformed dropped', () => {
+  it('LA-EXP-T114 Each tab keeps its own state, and a stored set is read back with anything malformed dropped', () => {
     let set = open(open(emptyTabs<S>(), '/a', true), '/b', true);
     set = updateTab(set, set.tabs[0].key, () => ({ n: 42 }));
     expect(set.tabs.map((t) => t.state.n)).toEqual([42, 2]);

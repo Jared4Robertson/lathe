@@ -15,7 +15,7 @@ beforeAll(async () => {
 });
 
 describe('proof still owed by planned tests', () => {
-  it('LA-CHK-T170 planned_any counts every obligation a planned test is meant to prove, proved or not', () => {
+  it('LA-TRC-T46 planned_any counts every obligation a planned test is meant to prove, proved or not', () => {
     expect(owed.problems.filter((p) => p.severity === 'error')).toEqual([]);
     // OW-A-UC01-R01 is proved by an automated test and R02 by a manual one, each with a planned test as well;
     // R03 has only planned tests; R04 has automated tests only.
@@ -26,13 +26,13 @@ describe('proof still owed by planned tests', () => {
     expect(kindOf(owed, 'OW-A', 'requirement').planned_any).toBe(3);
   });
 
-  it('LA-CHK-T171 A pattern rule has proof owed only in a domain whose own planned test is meant to prove it', () => {
+  it('LA-TRC-T47 A pattern rule has proof owed only in a domain whose own planned test is meant to prove it', () => {
     // OW-A-T04 (planned) and OW-A-T01 (automated) prove the rule in A; in B only OW-B-T01 (automated) proves it.
     expect(kindOf(owed, 'OW-A', 'pattern_rule')).toMatchObject({ total: 1, proved: 1, planned: 0, planned_any: 1 });
     expect(kindOf(owed, 'OW-B', 'pattern_rule')).toMatchObject({ total: 1, proved: 1, planned: 0, planned_any: 0 });
   });
 
-  it('LA-CHK-T172 Each domain counts its own tests by state; a test with no state is automated', () => {
+  it('LA-TRC-T48 Each domain counts its own tests by state; a test with no state is automated', () => {
     // OW-A: T01 has no state, T02 says "Automated", T03 is manual, T04 "planned" and T05 "Planned".
     expect(domainOf(owed, 'OW-A').tests).toEqual({ automated: 2, manual: 1, planned: 2 });
     expect(domainOf(owed, 'OW-B').tests).toEqual({ automated: 1, manual: 0, planned: 0 });
@@ -43,7 +43,7 @@ describe('proof still owed by planned tests', () => {
     expect(counted).toBe(tests.length);
   });
 
-  it('LA-CHK-T173 planned_any is never less than planned nor more than the total, in every fixture', async () => {
+  it('LA-TRC-T49 planned_any is never less than planned nor more than the total, in every fixture', async () => {
     const names = ['owed-proof', 'coverage-states', 'coverage-extension', 'pattern-good', 'good', 'unfinished'];
     const workspaces = await Promise.all(names.map((n) => loadWorkspace(fixture(n))));
     for (const ws of workspaces) {
@@ -57,7 +57,7 @@ describe('proof still owed by planned tests', () => {
     }
   });
 
-  it('LA-CHK-T174 lathe check shows proof owed where it differs from planned, and each domain\'s tests by state', () => {
+  it('LA-TRC-T50 lathe check shows proof owed where it differs from planned, and each domain\'s tests by state', () => {
     const run = spawnSync(process.execPath, [path.join(here, '..', 'bin', 'lathe.ts'), 'check', '--root', fixture('owed-proof')], { encoding: 'utf8' });
     expect(run.status).toBe(0);
     const coverage = run.stdout.slice(run.stdout.indexOf('\nCoverage:'));

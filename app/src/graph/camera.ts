@@ -1,11 +1,11 @@
 import type { GraphMap, MapNode } from './map';
 import { contentScale, heightOf, widthOf, type Point } from './layout';
 
-// The camera over the one map (LA-BRW-DR392). Focusing a node, by a click, the address, Back and
+// The camera over the one map (LA-EXP-DR59). Focusing a node, by a click, the address, Back and
 // Forward, the step keys or the trail, moves the camera only: it frames the focus and the levels
 // the depth shows below it, with the parent's level kept at the left edge for context, in one
 // smooth zoom and pan (a van Wijk and Nuij path, as d3's zoom uses). Nothing in the map moves or
-// changes size. What is drawn is chosen by the level of detail (LA-BRW-DR393): only what is in
+// changes size. What is drawn is chosen by the level of detail (LA-EXP-DR60): only what is in
 // view and big enough to see, labels only where they can be read, and never more than a budget.
 
 export interface Viewport { x: number; y: number; zoom: number }
@@ -21,7 +21,7 @@ export const MAX_ZOOM = 2;
 export const FRAME_MAX_ZOOM = 1;
 
 /**
- * The camera that frames a focus (LA-BRW-DR392): the focus and its descendants down to `depth`
+ * The camera that frames a focus (LA-EXP-DR59): the focus and its descendants down to `depth`
  * levels below it fill the pane, the parent's level showing in a strip at the left edge (the frame
  * starts at the parent's right edge, past the strip). A node with fewer levels below it frames what
  * it has. Zoomed in no further than FRAME_MAX_ZOOM, and centered in the space right of the strip.
@@ -139,7 +139,7 @@ export function viewRect(v: Viewport, width: number, height: number) {
 }
 
 /**
- * What a viewport draws of the map (LA-BRW-DR393), level by level from the roots: a node in view
+ * What a viewport draws of the map (LA-EXP-DR60), level by level from the roots: a node in view
  * and at least MIN_DRAWN pixels tall is drawn, labeled when its text reads (LABEL_SCALE,
  * LABEL_MIN_HEIGHT), plain otherwise. A run of drawn parent's children too small to see is one bar.
  * A level that would take the boxes past MAX_DRAWN is drawn as one bar per parent instead, and

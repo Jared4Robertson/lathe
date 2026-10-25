@@ -1,7 +1,7 @@
 ---
 id: LA-CHK-CAP01
 kind: capability
-title: Checking a workspace
+title: Running checks
 parent: LA-CHK
 order: 1
 ---

@@ -15,7 +15,7 @@ import { openApp } from './helpers';
 const nav = () => screen.getByRole('navigation', { name: 'Main' });
 
 describe('side navigation', () => {
-  it('LA-BRW-T127 The nav collapses to a rail of icons with tooltips, is remembered, and expands again', async () => {
+  it('LA-EXP-T44 The nav collapses to a rail of icons with tooltips, is remembered, and expands again', async () => {
     await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     fireEvent.click(within(nav()).getByRole('button', { name: 'Collapse the navigation' }));
@@ -43,7 +43,7 @@ describe('side navigation', () => {
     expect(within(nav().querySelector<HTMLElement>('.nav-space')!).getByRole('link', { name: 'Demo shop' })).toHaveAttribute('href', '/DM');
   });
 
-  it('LA-BRW-T128 On a narrow screen the nav is a full-screen sheet opened from a menu button, closed by Escape, a click outside or choosing a page', async () => {
+  it('LA-EXP-T45 On a narrow screen the nav is a full-screen sheet opened from a menu button, closed by Escape, a click outside or choosing a page', async () => {
     vi.stubGlobal('matchMedia', (query: string) => ({ matches: true, media: query, addEventListener: () => {}, removeEventListener: () => {} }));
     await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
@@ -66,7 +66,7 @@ describe('side navigation', () => {
     await waitFor(() => expect(screen.queryByRole('navigation', { name: 'Main' })).toBeNull());
   });
 
-  it('LA-BRW-T129 Sections fold on their own, the current place is marked and its section opens itself, counts are quiet badges, and the footer says where the specs come from', async () => {
+  it('LA-EXP-T46 Sections fold on their own, the current place is marked and its section opens itself, counts are quiet badges, and the footer says where the specs come from', async () => {
     await openApp('/DM-SHOP');
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     const head = (name: RegExp) => within(nav()).getByRole('button', { name });
@@ -94,12 +94,12 @@ describe('side navigation', () => {
     expect(checks.querySelector('.nav-badge.error')).toHaveTextContent(String(workspace().problems.filter((p) => p.severity === 'error').length));
     expect(checks.querySelector('.nav-badge.warning')).not.toBeNull();
     const foot = nav().querySelector('footer')!;
-    // The record format left the footer (LA-BRW-UC115): it is a command and a link in the shortcuts sheet.
+    // The record format left the footer (LA-AUT-UC14): it is a command and a link in the shortcuts sheet.
     expect(within(foot).queryByRole('link', { name: 'Record format' })).toBeNull();
     expect(foot).toHaveTextContent('Specs read by the engine');
   });
 
-  it('LA-BRW-T130 Quick find jumps to any record, domain or product by ID or title, with arrow keys and Enter', async () => {
+  it('LA-EXP-T47 Quick find jumps to any record, domain or product by ID or title, with arrow keys and Enter', async () => {
     const index = indexWorkspace(workspace());
     const items = findItems(index);
     expect(rankItems(items, 'dm-shop')[0].id).toBe('DM-SHOP');
@@ -122,7 +122,7 @@ describe('side navigation', () => {
     expect(find).toHaveValue('');
   });
 
-  it('LA-BRW-T179 The nav has no Graph item, open or as a rail; the graph stays one view, Ctrl+2 or a palette command away', async () => {
+  it('LA-EXP-T62 The nav has no Graph item, open or as a rail; the graph stays one view, Ctrl+2 or a palette command away', async () => {
     await openApp('/DM-SHOP');
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     expect(within(nav()).queryByRole('link', { name: /Graph/ })).toBeNull();
@@ -143,7 +143,7 @@ describe('side navigation', () => {
     expect(within(screen.getByRole('dialog')).getAllByRole('option')[0]).toHaveTextContent('Graph view');
   });
 
-  it('LA-BRW-T471 A selected row is the whole row: the current page\'s nav row carries the selection over the panel\'s width, chevron included, with no inset bar', async () => {
+  it('LA-EXP-T134 A selected row is the whole row: the current page\'s nav row carries the selection over the panel\'s width, chevron included, with no inset bar', async () => {
     const css = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
     // A domain's page: its row (fold chevron and link) is the one selected element.
     await openApp('/DM-SHOP');

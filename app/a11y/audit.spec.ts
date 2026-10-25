@@ -2,12 +2,12 @@ import { test, type Page } from '@playwright/test';
 import { AGGREGATE, DOMAIN, PRODUCT, RECORD } from '../stability/scenarios';
 import { audit, LOOKS, useLook } from './axe';
 
-// LA-BRW-T620: every page and state the stability suite visits passes axe-core at WCAG 2.2 AA, at
+// LA-PLT-T97: every page and state the stability suite visits passes axe-core at WCAG 2.2 AA, at
 // desktop and phone widths, in the Lathe theme's light and dark and in High contrast's
 // (LA-PAT-APP-UX-R10). Each page or state in each look is one test, so a failure names both.
 
 /** A group: a domain's Technical specification folder, at its parent, stage and folder. */
-const GROUP = '/LA-BRW/design/technical-specification';
+const GROUP = '/LA-EXP/design/technical-specification';
 
 async function open(page: Page, url: string, ready: string) {
   await page.goto(url);
@@ -85,7 +85,7 @@ for (const look of LOOKS) {
   test.describe(`desktop at 1440 px in ${look.name}`, () => {
     test.beforeEach(({ page }) => useLook(page, look));
     for (const s of DESKTOP) {
-      test(`LA-BRW-T620 ${s.name} passes axe`, async ({ page }) => {
+      test(`LA-PLT-T97 ${s.name} passes axe`, async ({ page }) => {
         await s.run(page);
         await audit(page, `${look.name}, desktop: ${s.name}`);
       });
@@ -96,7 +96,7 @@ for (const look of LOOKS) {
     test.use({ viewport: { width: 375, height: 812 }, hasTouch: true, isMobile: true });
     test.beforeEach(({ page }) => useLook(page, look));
     for (const s of PHONE) {
-      test(`LA-BRW-T620 ${s.name} passes axe`, async ({ page }) => {
+      test(`LA-PLT-T97 ${s.name} passes axe`, async ({ page }) => {
         await s.run(page);
         await audit(page, `${look.name}, phone: ${s.name}`);
       });

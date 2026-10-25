@@ -18,7 +18,7 @@ function folder(name: string, files: Record<string, string> = {}, dirs: string[]
   return root;
 }
 
-describe('LA-DSK-T01 A folder opens only when it holds lathe.config.json or a specs folder', () => {
+describe('LA-PLT-T106 A folder opens only when it holds lathe.config.json or a specs folder', () => {
   it('opens a folder with lathe.config.json, reading its specs folder', () => {
     const root = folder('configured', { 'lathe.config.json': '{ "specs": "records" }' });
     expect(checkFolder(root)).toEqual({ ok: true, specsDir: path.join(root, 'records') });
@@ -62,7 +62,7 @@ describe('LA-DSK-T01 A folder opens only when it holds lathe.config.json or a sp
   });
 });
 
-describe('LA-DSK-T02 The recent folders list puts the latest first, each folder once, at most 10', () => {
+describe('LA-PLT-T107 The recent folders list puts the latest first, each folder once, at most 10', () => {
   it('puts the folder opened last first', () => {
     expect(addRecent(['/a', '/b'], '/c')).toEqual(['/c', '/a', '/b']);
   });

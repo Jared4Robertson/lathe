@@ -4,7 +4,7 @@ kind: pattern
 title: App experience
 parent: LA
 ---
-How the web app behaves for the person using it, so that every page feels the same to the hand and the eye: what shows a hover, how the workbench's panels sit and resize, what the page bar and each pane's header hold, how things move, how a row leads to its record, how every open thing keeps an address, how it all works by touch, that nothing jumps, that actions look like actions, and that it stays within its performance budgets. The app lives in `app/src`; Browsing (`LA-BRW`) follows this pattern for all of it. How the code itself is written (layout in markup, classes, tokens, generic components, labels, names and spelling) is the App code pattern, `LA-PAT-APP-CODE`.
+How the web app behaves for the person using it, so that every page feels the same to the hand and the eye: what shows a hover, how the workbench's panels sit and resize, what the page bar and each pane's header hold, how things move, how a row leads to its record, how every open thing keeps an address, how it all works by touch, that nothing jumps, that actions look like actions, and that it stays within its performance budgets. The app lives in `app/src`; Platform (`LA-PLT`) follows this pattern for all of it, and holds the tests that prove it for the whole app. How the code itself is written (layout in markup, classes, tokens, generic components, labels, names and spelling) is the App code pattern, `LA-PAT-APP-CODE`.
 
 ## How a domain uses the pattern
 

@@ -12,7 +12,7 @@ import { SideBarOutline } from './SideBarOutline';
 import { SIDE_VIEW_ICONS, SIDE_VIEW_LABELS, SIDE_VIEWS, usePeek, type PeekStore, type SideMode, type SideView } from './sideBarState';
 import './SideBar.css';
 
-// The side bar (LA-BRW-UC119), the page's last column, as VS Code's secondary side bar: one panel
+// The side bar (LA-EXP-UC12), the page's last column, as VS Code's secondary side bar: one panel
 // with a small switcher of three views at its top, Details, Outline and History, each earning its
 // place by showing what the main view does not. It has its toggle, shortcut and width handle;
 // whether it is open, and which view it shows, is kept per view mode and per tab

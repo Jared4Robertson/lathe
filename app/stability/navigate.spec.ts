@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { expectStable, openPage, step } from './measure';
 import { DOMAIN, FOCUS, GRAPH_CANVAS, GRAPH_HEADER, RECORD, SHELL } from './scenarios';
 
-// LA-BRW-T481: moving between records through the nav, a link, a graph click, Back and quick
+// LA-PLT-T72: moving between records through the nav, a link, a graph click, Back and quick
 // find keeps the shell, the pane bar and the side bar where they were. The page's content
 // changes (it is a new page), so shifts inside the wiki pane's scroll box and the side bar's
 // body are the change itself; the frame around them must hold still.
@@ -13,7 +13,7 @@ const KEYS = [...SHELL, ...FOCUS];
 const TITLE = [FOCUS[1]];
 
 test.describe('navigate', () => {
-  test('LA-BRW-T481 through the nav', async ({ page }) => {
+  test('LA-PLT-T72 through the nav', async ({ page }) => {
     await openPage(page, DOMAIN);
     const link = page.locator('nav#nav .nav-space a[href^="/LA/"]:not([aria-current])').first();
     await expect(link).toBeVisible();
@@ -24,29 +24,29 @@ test.describe('navigate', () => {
     expectStable(r);
   });
 
-  test('LA-BRW-T481 through a link in the page', async ({ page }) => {
+  test('LA-PLT-T72 through a link in the page', async ({ page }) => {
     await openPage(page, RECORD);
     const link = page.locator('.pane-wiki .spec-body a.record-link[href^="/LA-"]').first();
     const r = await step(page, 'navigate', 'through a link', { keys: KEYS, allow: CONTENT, resizes: TITLE }, async () => {
       await link.click();
-      await page.waitForURL((u) => !u.pathname.endsWith('LA-BRW-UC91'));
+      await page.waitForURL((u) => !u.pathname.endsWith('LA-PLT-UC05'));
     });
     expectStable(r);
   });
 
-  test('LA-BRW-T481 by clicking a graph node, then Back', async ({ page }) => {
+  test('LA-PLT-T72 by clicking a graph node, then Back', async ({ page }) => {
     await openPage(page, `${RECORD}?view=graph`);
     await page.locator('.graph-flow .react-flow__node').nth(1).waitFor();
     const keys = [...KEYS, GRAPH_CANVAS, GRAPH_HEADER];
-    const node = page.locator('.graph-flow .react-flow__node[data-id^="LA-"]:not([data-id="LA-BRW-UC91"]):not(.is-plain)').first();
+    const node = page.locator('.graph-flow .react-flow__node[data-id^="LA-"]:not([data-id="LA-PLT-UC05"]):not(.is-plain)').first();
     const r = await step(page, 'navigate', 'graph click', { keys, allow: CONTENT, resizes: TITLE }, async () => {
       await node.click();
-      await page.waitForURL((u) => !u.pathname.endsWith('LA-BRW-UC91'));
+      await page.waitForURL((u) => !u.pathname.endsWith('LA-PLT-UC05'));
     });
     expectStable(r);
     const back = await step(page, 'navigate', 'Back', { keys, allow: CONTENT, resizes: TITLE }, async () => {
       await page.goBack();
-      await page.waitForURL(/LA-BRW-UC91/);
+      await page.waitForURL(/LA-PLT-UC05/);
     });
     expectStable(back);
   });
@@ -54,7 +54,7 @@ test.describe('navigate', () => {
   // A new page starts at the top of the wiki pane. It must be drawn there from its first frame,
   // never drawn once at the last page's scroll and then moved up (a scroll set after paint). Back
   // comes back to the old page where it was scrolled, also from its first frame.
-  test('LA-BRW-T481 from a page scrolled half-way, and Back', async ({ page }) => {
+  test('LA-PLT-T72 from a page scrolled half-way, and Back', async ({ page }) => {
     await openPage(page, DOMAIN);
     await page.evaluate(() => {
       const box = document.querySelector('.pane-wiki .pane-scroll')!;
@@ -89,7 +89,7 @@ test.describe('navigate', () => {
     });
     const before = await page.locator('.pane-wiki .pane-title h1').textContent();
     // A link already in view, so the click does not scroll the page to reach it first.
-    const links = '.pane-wiki .pane-scroll a.row-link[href^="/LA-BRW-"]';
+    const links = '.pane-wiki .pane-scroll a.row-link[href^="/LA-EXP-"]';
     const inView = await page.evaluate((sel) => {
       const box = document.querySelector('.pane-wiki .pane-scroll')!.getBoundingClientRect();
       return [...document.querySelectorAll(sel)].findIndex((a) => {
@@ -114,7 +114,7 @@ test.describe('navigate', () => {
     await frames();
     const b = await step(page, 'navigate', 'Back to the scrolled page', { keys: KEYS, allow: CONTENT, resizes: TITLE }, async () => {
       await page.goBack();
-      await page.waitForURL(/\/LA-BRW(\?|$)/);
+      await page.waitForURL(/\/LA-EXP(\?|$)/);
     });
     expectStable(b);
     const after = await page.locator('.pane-wiki .pane-title h1').textContent();
@@ -128,16 +128,16 @@ test.describe('navigate', () => {
     expect.soft(backFrames.find((f) => f.title === after)?.top ?? 0, 'Back does not start at the top').toBeGreaterThan(0);
   });
 
-  test('LA-BRW-T481 through quick find', async ({ page }) => {
+  test('LA-PLT-T72 through quick find', async ({ page }) => {
     await openPage(page, RECORD);
     await page.keyboard.press('Control+k');
     const find = page.locator('.quick-find input');
     await expect(find).toBeFocused();
-    await find.fill('LA-BRW-UC90');
+    await find.fill('LA-EXP-UC07');
     await page.locator('.quick-find-results li').first().waitFor();
     const r = await step(page, 'navigate', 'quick find', { keys: KEYS, allow: CONTENT, resizes: TITLE }, async () => {
       await page.keyboard.press('Enter');
-      await page.waitForURL(/LA-BRW-UC90/);
+      await page.waitForURL(/LA-EXP-UC07/);
     });
     expectStable(r);
   });

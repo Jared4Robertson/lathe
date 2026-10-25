@@ -2,7 +2,7 @@ import type { Neighborhood } from './model';
 
 // Box sizes and the trace's layout. The hierarchy is one map of the whole tree (map.ts); a trace is
 // a chain, not a tree, so it keeps a picture of its own: each of its columns a stack of leaf boxes
-// in the model's row order, centered on the focus's middle (LA-BRW-UC20-R08).
+// in the model's row order, centered on the focus's middle (LA-EXP-UC03-R08).
 
 /** A leaf's size: every box in a trace, and every leaf of the map. */
 export const NODE_WIDTH = 190;
@@ -25,7 +25,7 @@ export const heightOf = (heights: ReadonlyMap<string, number> | undefined, id: s
 /** A node's width in a layout, NODE_WIDTH when the layout does not say. */
 export const widthOf = (widths: ReadonlyMap<string, number> | undefined, id: string) => widths?.get(id) ?? NODE_WIDTH;
 
-/** A trace's columns (LA-BRW-UC20): each column a stack of leaf boxes in row order, centered on the focus's middle. */
+/** A trace's columns (LA-EXP-UC03): each column a stack of leaf boxes in row order, centered on the focus's middle. */
 export function traceGrid(n: Neighborhood): Placed {
   const columns = [...new Set(n.nodes.map((x) => x.column))].sort((a, b) => a - b);
   const rank = new Map(columns.map((c, i) => [c, i]));
@@ -58,7 +58,7 @@ export function boxExit(cx: number, cy: number, tx: number, ty: number, w = NODE
 }
 
 /**
- * How much a node's content grows (LA-BRW-DR391): by the smaller of its width over a leaf's and its
+ * How much a node's content grows (LA-EXP-DR58): by the smaller of its width over a leaf's and its
  * height over a leaf's, so its text, kind, ID, chevron, padding and marks keep their proportions and
  * fit the box whichever way it is short. A leaf's scale is 1, and no node's is below 1. Rounded
  * down to hundredths. From the map alone, never by measuring text.

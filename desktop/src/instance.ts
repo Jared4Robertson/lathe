@@ -1,4 +1,4 @@
-// One instance (LA-DSK-UC05-R09): the app holds a single-instance lock, so a second launch hands its
+// One instance (LA-PLT-UC15-R09): the app holds a single-instance lock, so a second launch hands its
 // command line to the running app, and a folder opened through Finder or the Dock arrives as an
 // open-file event. Both route here: open (or focus) that folder's window, or bring the app forward.
 import path from 'node:path';

@@ -6,11 +6,11 @@ import { hexChamfer, outlineInset, parentLine } from '../../src/graph/map';
 import { openApp, startAtDepth } from '../helpers';
 import { testWorkspace } from './workspace';
 
-// A domain is drawn as a hexagon (LA-BRW-DR394): flat top and bottom, pointed ends whose chamfer
+// A domain is drawn as a hexagon (LA-EXP-DR61): flat top and bottom, pointed ends whose chamfer
 // grows with the node's content scale, and tree lines that meet its outline.
 
 describe('a domain is a hexagon', () => {
-  it('LA-BRW-T745 A domain node has the hexagon class and its outline, and the tree lines meet that outline', async () => {
+  it('LA-EXP-T174 A domain node has the hexagon class and its outline, and the tree lines meet that outline', async () => {
     // The chamfer grows with the content scale, at most a quarter of the width.
     expect(hexChamfer({ w: NODE_WIDTH, h: NODE_HEIGHT })).toBe(12);
     expect(hexChamfer({ w: NODE_WIDTH * 3, h: NODE_HEIGHT * 10 })).toBe(36);

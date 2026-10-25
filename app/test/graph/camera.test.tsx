@@ -7,7 +7,7 @@ import { MOTION_SPEED_MS } from '../../src/graph/motion';
 import { openApp, startAtDepth } from '../helpers';
 import { testIndex, testWorkspace } from './workspace';
 
-// Focusing moves the camera, never the map (LA-BRW-DR392): the camera frames the focus and the
+// Focusing moves the camera, never the map (LA-EXP-DR59): the camera frames the focus and the
 // levels the depth shows below it, the parent kept at the left edge, in one smooth zoom and pan on
 // the shared motion; under reduced motion it moves at once.
 
@@ -42,7 +42,7 @@ const reducedMotion = () =>
 describe('graph camera', () => {
   const map = graphMap(testIndex());
 
-  it('LA-BRW-T382 The camera frames the focus and the levels the depth shows below it, the parent at the left edge', () => {
+  it('LA-EXP-T129 The camera frames the focus and the levels the depth shows below it, the parent at the left edge', () => {
     const w = 1000;
     const h = 800;
     const strip = Math.min(PARENT_STRIP_MAX, w * PARENT_STRIP);
@@ -72,7 +72,7 @@ describe('graph camera', () => {
     expect(map.height * all.zoom).toBeLessThanOrEqual(h);
   });
 
-  it('LA-BRW-T740 The glide is one smooth zoom and pan: from the view as it is to the framed one, zooming out only as far as the pan needs', () => {
+  it('LA-EXP-T169 The glide is one smooth zoom and pan: from the view as it is to the framed one, zooming out only as far as the pan needs', () => {
     const from = frameOnMap(map, 'P-D', 1, 1000, 800);
     const to = frameOnMap(map, 'P-D-UC01-R01', 1, 1000, 800);
     const path = zoomPath(from, to, 1000, 800);
@@ -107,7 +107,7 @@ describe('graph camera on the page', () => {
     await waitFor(() => expect(calls.length).toBeGreaterThan(0));
   }
 
-  it('LA-BRW-T383 Focusing a child glides the camera on the shared motion, and no box moves or changes size', async () => {
+  it('LA-EXP-T130 Focusing a child glides the camera on the shared motion, and no box moves or changes size', async () => {
     await open();
     // The first picture appears at once, framed.
     expect(calls.every((c) => c.options?.duration === 0)).toBe(true);
@@ -133,7 +133,7 @@ describe('graph camera on the page', () => {
     await waitFor(() => expect(calls.at(-1)!.viewport).toEqual(frameOnMap(graphMap(testIndex()), 'P-D-UC01', 1, 1000, 800)), { timeout: 3000 });
   });
 
-  it('LA-BRW-T384 Under reduced motion focusing frames the new focus at once', async () => {
+  it('LA-EXP-T131 Under reduced motion focusing frames the new focus at once', async () => {
     reducedMotion();
     await open();
     const first = calls.length;

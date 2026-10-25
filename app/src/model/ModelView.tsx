@@ -13,7 +13,7 @@ import { EdgeHints } from '../graph/hints';
 // with React Flow and laid out by ELK. An entity page draws its aggregate's ERD with the entity
 // highlighted. Clicking a box goes to it, as a graph node does. A key under the diagram explains
 // the colors and the line ends. Like the graph view it never reads the address, so it can sit in
-// any pane. Domain events (LA-BRW-UC113-R07, R08) are pills in the spark colors, their lines and
+// any pane. Domain events (LA-EXP-UC11-R07, R08) are pills in the spark colors, their lines and
 // the dashed "reacts to" lines in spark too, each "reacts to" line showing its label on hover.
 
 /** What a box is called, in its accessible name and the touch card. */
@@ -30,7 +30,7 @@ export interface ModelViewProps {
 interface BoxData extends Record<string, unknown> { box: ErdBox; focus: boolean }
 /**
  * `label`: the line's relation in words, read from its link's source, from the meta-model
- * (LA-BRW-DR243). `title`: the whole sentence, for its tooltip. `hover`: the words shown on the line
+ * (LA-EXP-V03-R07). `title`: the whole sentence, for its tooltip. `hover`: the words shown on the line
  * while it is hovered (a "reacts to" line's event, or its label), or null.
  */
 interface LineData extends Record<string, unknown> { line: ErdLine; source: Rect; target: Rect; offset: number; label: string; title: string; hover: string | null }
@@ -147,7 +147,7 @@ export function ErdKey({ erd, highlight, relations = [] }: { erd: Erd; highlight
   const raised = erd.lines.some((l) => l.relation === 'raised_by');
   const reacts = erd.lines.some((l) => l.relation === 'reacts_to');
   const highlightsEvent = highlight && erd.boxes.some((b) => b.highlight && b.kind === 'event');
-  // The relations' labels, from the meta-model (LA-BRW-DR243).
+  // The relations' labels, from the meta-model (LA-EXP-V03-R07).
   const reactsTo = relationLabelOf(relations, 'reacts_to');
   const raisedBy = relationLabelOf(relations, 'raised_by');
   return (
@@ -263,7 +263,7 @@ function ErdCanvas({ relations, erd, focus, onNavigate, onPeek }: { relations: r
   }, [placed, focus, relations]);
 
   // Fit the boxes in focus, moving there with the shared motion (LA-PAT-APP-UX-R04), or at once;
-  // the context ring may run past the canvas's edges (LA-BRW-UC113-R06).
+  // the context ring may run past the canvas's edges (LA-EXP-UC11-R06).
   const fit = useCallback((animate: boolean) => {
     const box = wrapper.current?.getBoundingClientRect();
     if (!placed || placed.rects.size === 0 || !box || box.width <= 0 || box.height <= 0) return;

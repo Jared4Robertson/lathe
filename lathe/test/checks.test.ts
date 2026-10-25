@@ -18,7 +18,7 @@ beforeAll(async () => {
 });
 
 describe('Lathe-cited checks', () => {
-  it('LA-CHK-T01 Duplicate IDs are reported as errors', () => {
+  it('LA-AUT-T14 Duplicate IDs are reported as errors', () => {
     const found = ofCheck(workspaces['broken-links'], 'duplicate-id');
     expect(found).toHaveLength(1);
     expect(found[0]).toMatchObject({ severity: 'error', record: 'BX-D-A1' });
@@ -26,14 +26,14 @@ describe('Lathe-cited checks', () => {
     expect(found[0].message).toContain('specs/p/d/a1-again.md');
   });
 
-  it('LA-CHK-T02 A link to a missing record is reported as an error', () => {
+  it('LA-AUT-T15 A link to a missing record is reported as an error', () => {
     const found = ofCheck(workspaces['broken-links'], 'dangling-link');
     expect(found).toEqual([
       { severity: 'error', check: 'dangling-link', record: 'BX-D-UC01', message: expect.stringContaining('BX-D-DR99') },
     ]);
   });
 
-  it('LA-CHK-T03 A disallowed relation is reported as an error', () => {
+  it('LA-AUT-T16 A disallowed relation is reported as an error', () => {
     const ws = workspaces['broken-links'];
     const found = ofCheck(ws, 'relation-not-allowed');
     expect(found).toHaveLength(1);
@@ -45,14 +45,14 @@ describe('Lathe-cited checks', () => {
     expect(ofCheck(ws, 'unknown-relation')).toMatchObject([{ severity: 'error', record: 'BX-D-V01' }]);
   });
 
-  it('LA-CHK-T04 A test whose run_by file lacks its ID is reported as an error', () => {
+  it('LA-AUT-T17 A test whose run_by file lacks its ID is reported as an error', () => {
     const ws = workspaces['broken-tests'];
     expect(ofCheck(ws, 'test-file-missing-id')).toMatchObject([{ severity: 'error', record: 'BX-D-T01' }]);
     expect(ofCheck(ws, 'test-file-missing')).toMatchObject([{ severity: 'error', record: 'BX-D-T02' }]);
     expect(ws.problems.some((p) => p.record === 'BX-D-T03')).toBe(false);
   });
 
-  it('LA-CHK-T05 Coverage counts satisfied and proved requirements and lists the gaps', () => {
+  it('LA-TRC-T01 Coverage counts satisfied and proved requirements and lists the gaps', () => {
     expect(workspaces.good.coverage).toMatchObject([
       {
         domain: 'EX-NOTE',
@@ -78,7 +78,7 @@ describe('Lathe-cited checks', () => {
     ]);
   });
 
-  it('LA-CHK-T06 A malformed record file becomes a parse error, not a crash', () => {
+  it('LA-CHK-T01 A malformed record file becomes a parse error, not a crash', () => {
     const ws = workspaces['broken-parse'];
     const found = ofCheck(ws, 'parse-error');
     expect(found.every((p) => p.severity === 'error' && p.record === null)).toBe(true);
@@ -91,7 +91,7 @@ describe('Lathe-cited checks', () => {
 });
 
 describe('product configuration', () => {
-  it("LA-CHK-T07 A product's lathe.config.json chooses the specs folder", () => {
+  it("LA-PLT-T01 A product's lathe.config.json chooses the specs folder", () => {
     const ws = workspaces.configured;
     expect(ws.records.map((r) => r.id).sort()).toEqual(['CX', 'CX-D', 'CX-D-A1', 'CX-D-RP1']);
     expect(ws.records.find((r) => r.id === 'CX')?.path).toBe('docs/specs/cx/product.md');
@@ -99,7 +99,7 @@ describe('product configuration', () => {
     expect(ofCheck(ws, 'parse-error')).toEqual([]);
   });
 
-  it("LA-CHK-T08 A product's meta-model extension adds kinds and relations", () => {
+  it("LA-PLT-T02 A product's meta-model extension adds kinds and relations", () => {
     const ws = workspaces.configured;
     expect(ws.kinds.map((k) => k.kind)).toEqual(expect.arrayContaining(['product', 'requirement', 'report']));
     expect(ws.relations).toContainEqual(expect.objectContaining({ relation: 'summarizes', source_kind: 'report', target_kind: 'aggregate' }));
@@ -108,7 +108,7 @@ describe('product configuration', () => {
 });
 
 describe('coverage, meta-model and fitness', () => {
-  it('LA-CHK-T12 Coverage counts designed, built and proved separately', () => {
+  it('LA-TRC-T02 Coverage counts designed, built and proved separately', () => {
     expect(workspaces.unfinished.coverage).toMatchObject([
       {
         domain: 'UX-D',
@@ -135,7 +135,7 @@ describe('coverage, meta-model and fitness', () => {
     }
   });
 
-  it('LA-CHK-T13 Coverage gaps are warnings, so an unfinished design has no errors', () => {
+  it('LA-TRC-T03 Coverage gaps are warnings, so an unfinished design has no errors', () => {
     const ws = workspaces.unfinished;
     expect(ws.problems.filter((p) => p.severity === 'error')).toEqual([]);
     expect(records(ofCheck(ws, 'unsatisfied'))).toEqual(['UX-D-UC01-R03']);
@@ -143,7 +143,7 @@ describe('coverage, meta-model and fitness', () => {
     expect(ofCheck(ws, 'component-file-missing')).toMatchObject([{ severity: 'warning', record: 'UX-D-C02' }]);
   });
 
-  it('LA-CHK-T22 A meta-model that names undefined kinds or repeats itself is reported as errors', () => {
+  it('LA-AUT-T19 A meta-model that names undefined kinds or repeats itself is reported as errors', () => {
     const ws = workspaces['broken-meta'];
     const meta = ws.problems.filter((p) => p.check.startsWith('meta-'));
     expect(meta.every((p) => p.severity === 'error' && p.record === null)).toBe(true);
@@ -164,7 +164,7 @@ describe('coverage, meta-model and fitness', () => {
     }
   });
 
-  it("LA-CHK-T23 A fitness record's date must be a real YYYY-MM-DD date and its score 1 to 5", () => {
+  it("LA-CHK-T09 A fitness record's date must be a real YYYY-MM-DD date and its score 1 to 5", () => {
     const ws = workspaces.fitness;
     expect(records(ofCheck(ws, 'bad-fitness-date'))).toEqual(['FX-FIT02', 'FX-FIT05']);
     expect(records(ofCheck(ws, 'bad-fitness-score'))).toEqual(['FX-FIT03', 'FX-FIT04']);
@@ -228,7 +228,7 @@ describe('structural checks', () => {
     expect(at('use-case-without-requirements')).toEqual(['BX-D-UC01']);
   });
 
-  it('LA-CHK-T24 Broken records are errors and work to do is a warning', () => {
+  it('LA-CHK-T10 Broken records are errors and work to do is a warning', () => {
     const seen = new Set<string>();
     for (const ws of Object.values(workspaces)) {
       for (const p of ws.problems) {
@@ -244,7 +244,7 @@ describe('structural checks', () => {
     }
   });
 
-  it('LA-CHK-T25 Every problem names its check and, when it has one, its record', () => {
+  it('LA-CHK-T11 Every problem names its check and, when it has one, its record', () => {
     for (const ws of Object.values(workspaces)) {
       for (const p of ws.problems) {
         expect(p.check).toMatch(/^[a-z][a-z-]*$/);

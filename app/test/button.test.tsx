@@ -7,7 +7,7 @@ import { Button, buttonClass } from '../src/components/Button';
 const CSS = readFileSync(join(__dirname, '..', 'src', 'styles.css'), 'utf8');
 
 describe('LA-PAT-APP-UX-R09 Actions look like actions', () => {
-  it('LA-BRW-T501 The Button component draws ghost, primary and icon buttons, and links as buttons', () => {
+  it('LA-PLT-T83 The Button component draws ghost, primary and icon buttons, and links as buttons', () => {
     const onClick = vi.fn();
     render(
       <>

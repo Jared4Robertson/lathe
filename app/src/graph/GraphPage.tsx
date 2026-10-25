@@ -76,7 +76,7 @@ interface NodeData extends Record<string, unknown> {
   stage: string;
   title: string;
   kindLabel: string;
-  /** The line above the title: "Use case · LA-BRW-UC20", "Group · LA-BRW", "File". */
+  /** The line above the title: "Use case · LA-EXP-UC03", "Group · LA-EXP", "File". */
   meta: string;
   group: boolean;
   errors: number;
@@ -87,7 +87,7 @@ interface NodeData extends Record<string, unknown> {
   label: boolean;
   /** A group's chevron: down while its members are drawn beside it, right when they are not. */
   open?: boolean;
-  /** How much its content grows with its size (LA-BRW-DR391): 1 for a leaf. */
+  /** How much its content grows with its size (LA-EXP-DR58): 1 for a leaf. */
   scale: number;
 }
 interface EdgeData extends Record<string, unknown> {
@@ -98,7 +98,7 @@ interface EdgeData extends Record<string, unknown> {
   label: string;
   /** A cross-link added by the Links switch: a dashed curve, in its own color. */
   link: boolean;
-  /** How much its stroke grows, as a box's border does (LA-BRW-DR391): its child's content scale for a parent line, 1 for a link. */
+  /** How much its stroke grows, as a box's border does (LA-EXP-DR58): its child's content scale for a parent line, 1 for a link. */
   scale: number;
 }
 type FlowNode = Node<NodeData | BarData>;
@@ -112,7 +112,7 @@ export function relationStyle(relation: string): string {
   if (['uses', 'implements', 'depends_on'].includes(relation)) return 'design';
   if (relation === 'names') return 'file';
   if (relation === 'follows') return 'pattern';
-  // A domain event's links (LA-BRW-UC40-R07): dashed, in the spark colors events are drawn in.
+  // A domain event's links (LA-EXP-UC04-R07): dashed, in the spark colors events are drawn in.
   if (['reacts_to', 'raised_by'].includes(relation)) return 'event';
   return 'other';
 }
@@ -129,7 +129,7 @@ function Marks({ data }: { data: NodeData }) {
   );
 }
 
-/** The node's content scale as a CSS variable: its text, padding, marks and chevron grow in step (LA-BRW-DR391). */
+/** The node's content scale as a CSS variable: its text, padding, marks and chevron grow in step (LA-EXP-DR58). */
 const scaleStyle = (scale: number): CSSProperties | undefined => (scale !== 1 ? ({ '--node-scale': scale } as CSSProperties) : undefined);
 
 function GraphNodeView({ data }: NodeProps<Node<NodeData>>) {
@@ -140,7 +140,7 @@ function GraphNodeView({ data }: NodeProps<Node<NodeData>>) {
     data.isFocus ? 'is-focus' : '',
     data.scale !== 1 ? 'is-scaled' : '',
     data.label ? '' : 'is-plain',
-    // A domain is a hexagon (LA-BRW-DR394).
+    // A domain is a hexagon (LA-EXP-DR61).
     data.kind === 'domain' && !data.group ? 'is-hexagon' : '',
   ].filter(Boolean).join(' ');
   return (
@@ -163,7 +163,7 @@ function GraphNodeView({ data }: NodeProps<Node<NodeData>>) {
   );
 }
 
-/** A bar standing for children too small to draw (LA-BRW-DR393). */
+/** A bar standing for children too small to draw (LA-EXP-DR60). */
 function BarView() {
   return <div className="graph-bar" />;
 }
@@ -276,7 +276,7 @@ export interface GraphViewProps {
 
 /**
  * How a node is named in the trail: a record's title with its ID in parentheses, "Browsing
- * (LA-BRW)"; a group, which has no ID of its own, by its name alone ("Use cases", no count), with
+ * (LA-EXP)"; a group, which has no ID of its own, by its name alone ("Use cases", no count), with
  * its parent's ID in the full text (tooltip and accessible name) so two groups of one name differ.
  */
 function trailItem(index: SpecIndex, id: string): { body: ReactNode; full: string } {
@@ -439,7 +439,7 @@ export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted,
   );
 }
 
-/** The trace preset's button, worded with the relations' labels (LA-BRW-DR243): "Only satisfies, proves and carries out links". */
+/** The trace preset's button, worded with the relations' labels (LA-EXP-V03-R07): "Only satisfies, proves and carries out links". */
 export function traceOnlyLabel(index: SpecIndex): string {
   const words = ['satisfies', 'proves', 'fulfills'].map((r) => lowerLabel(graphRelationLabel(r, index)));
   return `Only ${words.slice(0, -1).join(', ')} and ${words.at(-1)} links`;
@@ -522,7 +522,7 @@ export function keyboardOrder(boxes: readonly Box[]): string[] {
 }
 
 /**
- * The nodes hidden by the kind filters (LA-BRW-UC20-R05): a node of a hidden kind and everything
+ * The nodes hidden by the kind filters (LA-EXP-UC03-R05): a node of a hidden kind and everything
  * beneath it. The focus and its ancestors are never hidden. The map keeps their places.
  */
 export function hiddenNodes(index: SpecIndex, map: GraphMap, filters: Filters, focus: string): Set<string> {
@@ -591,7 +591,7 @@ function MapBackground() {
 }
 
 /**
- * The minimap (LA-BRW-UC20-R15): a true overview of the one map, its upper levels as boxes (as many
+ * The minimap (LA-EXP-UC03-R15): a true overview of the one map, its upper levels as boxes (as many
  * as stay readable, at most about 400), the focus solid, and the viewport outlined as the camera
  * moves.
  */
@@ -651,7 +651,7 @@ function GraphCanvas({ index, graph, depth, filters, onNavigate, minimap, onPeek
   const linked = useMemo(() => [...new Set(graph.edges.filter((e) => e.relation !== PARENT).flatMap((e) => [e.source, e.target]))].filter((id) => id !== focus), [graph, focus]);
   const always = useMemo(() => [focus, ...linked], [focus, linked]);
 
-  // ---- What is drawn: the level of detail for the camera (LA-BRW-DR393) ----
+  // ---- What is drawn: the level of detail for the camera (LA-EXP-DR60) ----
   const [drawn, setDrawn] = useState<Drawn | null>(null);
   const shownKey = useRef('');
   const show = useCallback((d: Drawn) => {

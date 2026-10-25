@@ -5,7 +5,7 @@ import { zoomPath } from '../../src/graph/camera';
 // The camera glides on the shared motion (LA-PAT-APP-UX-R04): the stylesheet's duration and easing.
 
 describe('graph motion', () => {
-  it("LA-BRW-T300 The glide follows the shared easing: CSS's ease, read from the motion tokens", () => {
+  it("LA-EXP-T108 The glide follows the shared easing: CSS's ease, read from the motion tokens", () => {
     const ease = cubicBezier(...MOTION_EASE);
     expect(ease(0)).toBe(0);
     expect(ease(1)).toBe(1);

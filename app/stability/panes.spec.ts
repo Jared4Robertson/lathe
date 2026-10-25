@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { expectStable, openPage, step } from './measure';
 import { AGGREGATE, RECORD } from './scenarios';
 
-// LA-BRW-T482: opening and closing the Wiki, Graph and Model panes, the maximize command
+// LA-PLT-T73: opening and closing the Wiki, Graph and Model panes, the maximize command
 // (Ctrl+3) and the side bar. The panes are what changes (each takes its share of the width),
 // so shifts inside `.focus-views` are the change itself; the nav, the pane bars' height and the
 // side bar must hold still, and a pane that stays open must not be thrown away and drawn anew.
@@ -15,7 +15,7 @@ const WIKI_BAR = '.pane-wiki > .pane-bar';
 const FIRST_NODE = (view: 'graph' | 'model') => `.pane-${view} .react-flow__node`;
 
 test.describe('panes', () => {
-  test('LA-BRW-T625 at 1024 px with three panes and the side bar open, no two panels overlap', async ({ page }) => {
+  test('LA-PLT-T102 at 1024 px with three panes and the side bar open, no two panels overlap', async ({ page }) => {
     await page.setViewportSize({ width: 1024, height: 700 });
     await openPage(page, `${AGGREGATE.split('?')[0]}?view=wiki,graph,model`);
     await page.locator('.side-bar-column').waitFor();
@@ -26,7 +26,7 @@ test.describe('panes', () => {
     expect(spans[spans.length - 1].right).toBeLessThanOrEqual(1024);
   });
 
-  test('LA-BRW-T482 open and close the Graph pane', async ({ page }) => {
+  test('LA-PLT-T73 open and close the Graph pane', async ({ page }) => {
     await openPage(page, RECORD);
     const open = await step(page, 'panes', 'open Graph (Ctrl+2)', { keys: [NAV, SIDE_BAR, '.pane-wiki .pane-title h1', FIRST_NODE('graph')], allow: PANES, resizes: ['.pane-wiki .pane-title h1'] }, async () => {
       await page.keyboard.press('Control+2');
@@ -40,7 +40,7 @@ test.describe('panes', () => {
     expectStable(close);
   });
 
-  test('LA-BRW-T482 open and close the Model pane', async ({ page }) => {
+  test('LA-PLT-T73 open and close the Model pane', async ({ page }) => {
     await openPage(page, AGGREGATE);
     const open = await step(page, 'panes', 'open Model (Ctrl+4)', { keys: [NAV, SIDE_BAR, FIRST_NODE('model')], allow: PANES }, async () => {
       await page.keyboard.press('Control+4');
@@ -59,7 +59,7 @@ test.describe('panes', () => {
     expectStable(wiki);
   });
 
-  test('LA-BRW-T482 maximize a pane and come back', async ({ page }) => {
+  test('LA-PLT-T73 maximize a pane and come back', async ({ page }) => {
     await openPage(page, `${RECORD}?view=wiki,graph`);
     await page.locator('.pane-graph .graph-flow .react-flow__node').first().waitFor();
     await page.locator('.pane-graph .graph-canvas').click({ position: { x: 5, y: 5 } });
@@ -75,7 +75,7 @@ test.describe('panes', () => {
     expectStable(back);
   });
 
-  test('LA-BRW-T482 hide and show the side bar', async ({ page }) => {
+  test('LA-PLT-T73 hide and show the side bar', async ({ page }) => {
     await openPage(page, RECORD);
     const bar = '.pane-wiki > .pane-bar';
     const hide = await step(page, 'panes', 'hide the side bar', { keys: [NAV, bar], allow: ['.focus-layout'], resizes: [bar] }, async () => {

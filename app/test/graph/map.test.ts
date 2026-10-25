@@ -5,9 +5,9 @@ import { drawnFor, frameOnMap, LABEL_MIN_HEIGHT, LABEL_SCALE, MAX_DRAWN, MIN_DRA
 import { indexWorkspace } from '../../src/specs/data';
 import { groupedWorkspace, manyOfOneKindWorkspace, testIndex } from './workspace';
 
-// The graph is one fixed map of the whole tree (LA-BRW-DR390): each parent exactly as tall as its
-// children stacked, each child right beside it, one width per level (LA-BRW-DR391); the camera
-// draws only what is in view and big enough to see (LA-BRW-DR393).
+// The graph is one fixed map of the whole tree (LA-EXP-DR57): each parent exactly as tall as its
+// children stacked, each child right beside it, one width per level (LA-EXP-DR58); the camera
+// draws only what is in view and big enough to see (LA-EXP-DR60).
 
 const maps = (): GraphMap[] => [graphMap(testIndex()), graphMap(indexWorkspace(groupedWorkspace())), graphMap(indexWorkspace(manyOfOneKindWorkspace()))];
 
@@ -21,7 +21,7 @@ function wide(n: number, k: number): GraphMap {
 }
 
 describe('the one map', () => {
-  it('LA-BRW-T640 A parent is as tall as its children stacked, starting at its top, each child beside it, nothing overlapping', () => {
+  it('LA-EXP-T165 A parent is as tall as its children stacked, starting at its top, each child beside it, nothing overlapping', () => {
     for (const map of maps()) {
       for (const node of map.nodes.values()) {
         if (node.children.length === 0) { expect(node.h).toBe(NODE_HEIGHT); continue; }
@@ -47,7 +47,7 @@ describe('the one map', () => {
 });
 
 describe('levels and content', () => {
-  it("LA-BRW-T641 grows by the smaller of its width and height over a leaf's, never below 1", () => {
+  it("LA-EXP-T166 grows by the smaller of its width and height over a leaf's, never below 1", () => {
     expect(contentScale(NODE_WIDTH, NODE_HEIGHT)).toBe(1);
     expect(contentScale(NODE_WIDTH, NODE_HEIGHT / 2)).toBe(1);
     // Limited by the shorter way.
@@ -57,7 +57,7 @@ describe('levels and content', () => {
     expect(contentScale(NODE_WIDTH, NODE_HEIGHT * 10)).toBe(1);
   });
 
-  it("LA-BRW-T641 Every node in a level has its width, shrinking toward the leaves with the level's typical height, within the caps", () => {
+  it("LA-EXP-T166 Every node in a level has its width, shrinking toward the leaves with the level's typical height, within the caps", () => {
     for (const map of [...maps(), wide(3, 8), wide(1, 30)]) {
       const deepest = map.levels.length - 1;
       for (let l = 0; l <= deepest; l++) {
@@ -78,7 +78,7 @@ describe('levels and content', () => {
     expect(typicalHeight([56, 56, 56])).toBe(56);
   });
 
-  it("LA-BRW-T642 A parent line runs level from the parent's right edge to the child's left edge, at the child's middle", () => {
+  it("LA-EXP-T167 A parent line runs level from the parent's right edge to the child's left edge, at the child's middle", () => {
     const map = graphMap(testIndex());
     for (const n of map.nodes.values()) {
       if (n.parent === null) continue;
@@ -97,7 +97,7 @@ describe('levels and content', () => {
 describe('the level of detail', () => {
   const map = graphMap(testIndex());
 
-  it('LA-BRW-T741 Only boxes in view and big enough are drawn, labeled when their text reads, with bars for children too small, within a budget', () => {
+  it('LA-EXP-T170 Only boxes in view and big enough are drawn, labeled when their text reads, with bars for children too small, within a budget', () => {
     // Framed on the domain: the domain and its stages are drawn; nothing outside the view.
     const view = frameOnMap(map, 'P-D', 1, 1000, 800);
     const d = drawnFor(map, view, 1000, 800);
@@ -129,7 +129,7 @@ describe('the level of detail', () => {
     expect(drawnFor(map, view, 1000, 800)).toEqual(d);
   });
 
-  it('LA-BRW-T741 A product of thousands of records stays within the drawing budget at every zoom', () => {
+  it('LA-EXP-T170 A product of thousands of records stays within the drawing budget at every zoom', () => {
     const big = wide(4, 30);
     expect(big.nodes.size).toBeGreaterThan(3000);
     for (const zoom of [0.001, 0.01, 0.05, 0.2, 1]) {

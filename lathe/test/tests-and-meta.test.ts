@@ -23,12 +23,12 @@ beforeAll(async () => {
 });
 
 describe('tests prove what their files name', () => {
-  it("LA-CHK-T50 A rule test keyed by the rule's ID needs no test ID in code", () => {
+  it("LA-TRC-T09 A rule test keyed by the rule's ID needs no test ID in code", () => {
     // PX-D-T01's file names PX-D-DR01, the rule it proves, and never PX-D-T01.
     expect(errorsAbout(proof, 'PX-D-T01')).toEqual([]);
   });
 
-  it('LA-CHK-T51 A test file that names neither the test nor a record it proves is an error', () => {
+  it('LA-TRC-T10 A test file that names neither the test nor a record it proves is an error', () => {
     expect(recordsOf(proof, 'proof-not-in-file')).toEqual(['PX-D-T02', 'PX-D-T09']);
     const [problem] = proof.problems.filter((p) => p.record === 'PX-D-T02');
     expect(problem).toMatchObject({ severity: 'error', check: 'proof-not-in-file' });
@@ -36,14 +36,14 @@ describe('tests prove what their files name', () => {
     expect(problem.message).toContain('names neither PX-D-T02 nor PX-D-DR02');
   });
 
-  it('LA-CHK-T52 A test file names an ID only as a whole ID', () => {
+  it('LA-TRC-T11 A test file names an ID only as a whole ID', () => {
     // PX-D-T09 proves PX-D-DR03; its file names PX-D-DR030 and PX-D-DR03-R01, which are other IDs.
     expect(errorsAbout(proof, 'PX-D-T09').map((p) => p.check)).toEqual(['proof-not-in-file']);
   });
 });
 
 describe('test states', () => {
-  it('LA-CHK-T53 A test state other than automated, manual or planned is an error', () => {
+  it('LA-TRC-T12 A test state other than automated, manual or planned is an error', () => {
     const found = proof.problems.filter((p) => p.check === 'bad-test-state');
     expect(found).toEqual([
       { severity: 'error', check: 'bad-test-state', record: 'PX-D-T08', message: expect.stringContaining('"someday"') },
@@ -52,14 +52,14 @@ describe('test states', () => {
     expect(errorsAbout(proof, 'PX-D-T08')).toHaveLength(1);
   });
 
-  it('LA-CHK-T54 An automated test needs a run_by; a manual or planned test does not', () => {
+  it('LA-TRC-T13 An automated test needs a run_by; a manual or planned test does not', () => {
     // PX-D-T07 is automated by its state, PX-D-T10 by default.
     expect(recordsOf(proof, 'test-run-by-missing')).toEqual(['PX-D-T07', 'PX-D-T10']);
     expect(errorsAbout(proof, 'PX-D-T03')).toEqual([]); // planned
     expect(errorsAbout(proof, 'PX-D-T04')).toEqual([]); // manual
   });
 
-  it("LA-CHK-T55 A manual or planned test's run_by is checked only for existing", () => {
+  it("LA-TRC-T14 A manual or planned test's run_by is checked only for existing", () => {
     // PX-D-T05 (manual) names a file that does not exist.
     expect(recordsOf(proof, 'test-file-missing')).toEqual(['PX-D-T05']);
     // PX-D-T06 (planned) names a file that exists but does not mention it, which is fine.
@@ -73,7 +73,7 @@ describe('test states', () => {
 describe('extensions widen default kinds', () => {
   const kind = (ws: Workspace, name: string) => ws.kinds.find((k) => k.kind === name);
 
-  it('LA-CHK-T56 An extension lets a domain rule sit under a domain', () => {
+  it('LA-AUT-T21 An extension lets a domain rule sit under a domain', () => {
     expect(kind(widened, 'domain_rule')).toMatchObject({
       parent_kinds: ['aggregate', 'domain', 'entity'],
       required_fields: ['source'],
@@ -89,7 +89,7 @@ describe('extensions widen default kinds', () => {
     expect(kind(plain, 'domain_rule')?.required_fields).toEqual([]);
   });
 
-  it("LA-CHK-T57 An extension's non-empty values replace the default's and empty ones keep it", () => {
+  it("LA-AUT-T22 An extension's non-empty values replace the default's and empty ones keep it", () => {
     const widenedRule = kind(widened, 'domain_rule')!;
     const defaultRule = kind(plain, 'domain_rule')!;
     expect(widenedRule.label).toBe('Business rule');
@@ -102,14 +102,14 @@ describe('extensions widen default kinds', () => {
     expect(widened.kinds.at(-1)?.kind).toBe('policy');
   });
 
-  it('LA-CHK-T58 A relation row identical to a default one changes nothing', () => {
+  it('LA-AUT-T23 A relation row identical to a default one changes nothing', () => {
     const proves = (ws: Workspace) => ws.relations.filter((r) => r.relation === 'proves' && r.target_kind === 'domain_rule');
     expect(proves(widened)).toEqual(proves(plain));
     expect(widened.relations).toHaveLength(plain.relations.length + 1);
     expect(recordsOf(widened, 'meta-duplicate-relation')).toEqual([]);
   });
 
-  it('LA-CHK-T59 A kind defined twice in one folder is an error naming that folder', () => {
+  it('LA-AUT-T24 A kind defined twice in one folder is an error naming that folder', () => {
     const found = duplicate.problems.filter((p) => p.check === 'meta-duplicate-kind');
     expect(found).toEqual([
       {
@@ -130,13 +130,13 @@ describe('test state edges found by the S2 re-trial', () => {
     edges = await loadWorkspace(fixture('proof-edges'));
   });
 
-  it('LA-CHK-T60 A test state is read in any letter case, the same way by the checks and by coverage', () => {
+  it('LA-TRC-T15 A test state is read in any letter case, the same way by the checks and by coverage', () => {
     expect(recordsOf(edges, 'bad-test-state')).toEqual([]);
     const rules = edges.coverage[0].obligations.find((o) => o.kind === 'domain_rule')!;
     expect(rules.proved).toBe(1);
   });
 
-  it('LA-CHK-T61 A planned test that names a file not written yet is a warning, not an error', () => {
+  it('LA-TRC-T16 A planned test that names a file not written yet is a warning, not an error', () => {
     const found = edges.problems.filter((p) => p.check === 'test-file-missing');
     expect(found).toEqual([
       { severity: 'warning', check: 'test-file-missing', record: 'QX-D-T02', message: expect.stringContaining('does not exist yet') },

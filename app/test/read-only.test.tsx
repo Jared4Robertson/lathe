@@ -7,7 +7,7 @@ import { main, openApp } from './helpers';
 const PAGES = ['/', '/DM', '/NF', '/DM-SHOP', '/checks', '/format', '/format/kinds/use_case', '/format/checks/unproved', ...records.map((r) => `/${r.id}`)];
 
 describe('spec pages only read', () => {
-  it('LA-BRW-T20 Spec pages offer no way to change a record and only ever read GET /api/spec (and the format reference)', async () => {
+  it('LA-EXP-T12 Spec pages offer no way to change a record and only ever read GET /api/spec (and the format reference)', async () => {
     const user = userEvent.setup();
     for (const page of PAGES) {
       const { requests } = await openApp(page);

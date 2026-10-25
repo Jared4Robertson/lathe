@@ -13,7 +13,7 @@
 export interface Tab<S> {
   /** Stable for the tab's life, even when a preview tab moves to another page. */
   key: string;
-  /** The page's address path, without the query string: `/LA-BRW-UC01`. */
+  /** The page's address path, without the query string: `/LA-TRC-UC09`. */
   page: string;
   /** True for the preview tab, which the next plain open replaces. */
   preview: boolean;

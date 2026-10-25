@@ -1,0 +1,17 @@
+---
+id: LA-PLT-EN05
+kind: entity
+title: Hint
+parent: LA-PLT-A3
+role: child
+links:
+  refers_to: [LA-PLT-EN04]
+---
+One place that shows a binding of the command, always read from the keymap.
+
+## Fields
+
+| Field | Meaning | Kind of value | Example |
+| --- | --- | --- | --- |
+| Where | Where the hint is shown. | Tooltip, palette row, sheet row, `aria-keyshortcuts` or placeholder. | Sheet row |
+| Shows | The binding as the platform shows it. | Derived from the binding. | ⇧⌘P |

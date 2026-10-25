@@ -3,7 +3,7 @@ import { Button } from '../components/Button';
 import type { SpecIndex } from '../specs/data';
 import { diffLines, fetchDiff, fetchHistory, shortDate, WORKING, type DiffAnswer, type HistoryAnswer, type HistoryCommit } from './history';
 
-// The side bar's History (LA-BRW-UC119-R05): the commits that touched the record's spec file,
+// The side bar's History (LA-EXP-UC12-R05): the commits that touched the record's spec file,
 // newest first, with "Load more", and the changes not committed yet first, labeled so. Choosing
 // one shows that commit's diff of the file inline. The list reloads with the specs, so an edit
 // shows up as "Not committed" without a reload.

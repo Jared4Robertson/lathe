@@ -5,7 +5,7 @@ import { type SpecIndex, type SpecRecord } from './data';
 import { RecordLink, RecordRowBody, Section, SpecLink, TestStateTag, idText } from './parts';
 import { isBuilt, traceEmpty, traceOf, type GapKind, type Judgment, type TraceGap, type TraceGroup } from './trace';
 
-// A record's Traceability section (LA-BRW-UC118): what designs, proves, supports and carries it
+// A record's Traceability section (LA-TRC-UC14): what designs, proves, supports and carries it
 // out, or what it designs, proves and uses, each list titled by its links' label. For an obligation,
 // a callout names each gap coverage finds, linked to the check that reports it; a pattern rule has
 // one line per domain owing it. A use case shows its requirements in a table. The logic is in

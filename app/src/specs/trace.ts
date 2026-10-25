@@ -3,7 +3,7 @@ import { linkLabel, roleOf } from './labels';
 import { patternsFollowedBy, ruleStatus } from './patterns';
 import { SUPPORT_RELATIONS } from './folders';
 
-// What a record's Traceability section shows (LA-BRW-UC118): its links grouped and titled by their
+// What a record's Traceability section shows (LA-TRC-UC14): its links grouped and titled by their
 // labels, in an order that depends only on the meta-model (the relations' `design` and `proof`
 // roles, and whether the kind is an obligation), and, for an obligation, the gaps coverage finds in
 // it. The gaps are coverage's own judgment (its gaps per domain, and a component's file found or

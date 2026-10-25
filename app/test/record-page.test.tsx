@@ -27,7 +27,7 @@ const rawLinks = (heading: 'Links out' | 'Links in') => {
 };
 
 describe('record page', () => {
-  it('LA-BRW-T10 The record page shows the ID, kind, title, fields, rendered body, parent and children', async () => {
+  it('LA-EXP-T06 The record page shows the ID, kind, title, fields, rendered body, parent and children', async () => {
     openSideBar();
     await openApp('/DM-SHOP-UC01');
     expect(await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' })).toBeInTheDocument();
@@ -52,7 +52,7 @@ describe('record page', () => {
     expect((await screen.findByText('component tests')).tagName).toBe('STRONG');
   });
 
-  it('LA-BRW-T11 The record page shows links out and links in, grouped and named by their labels, each clickable', async () => {
+  it('LA-EXP-T07 The record page shows links out and links in, grouped and named by their labels, each clickable', async () => {
     openSideBar();
     await openApp('/DM-SHOP-UC01-R01');
     await screen.findByRole('heading', { level: 1, name: 'The basket shows the new item' });
@@ -80,7 +80,7 @@ describe('record page', () => {
     expect(within(side()).getByText('Nothing links to this record.')).toBeInTheDocument();
   });
 
-  it('LA-BRW-T12 A record body is sanitized before it is shown', async () => {
+  it('LA-EXP-T08 A record body is sanitized before it is shown', async () => {
     await openApp('/DM-SHOP-C01');
     await screen.findByRole('heading', { level: 1, name: 'Basket service' });
     const body = main().querySelector('.markdown') as HTMLElement;
@@ -96,7 +96,7 @@ describe('record page', () => {
     expect(html).toContain('<p>hi</p>');
   });
 
-  it('LA-BRW-T13 The record page lists every problem about the record', async () => {
+  it('LA-EXP-T09 The record page lists every problem about the record', async () => {
     await openApp('/DM-SHOP-T01');
     await screen.findByRole('heading', { level: 1, name: 'Adding an item shows it' });
     const problems = within(section(/^Problems/)).getAllByRole('listitem');

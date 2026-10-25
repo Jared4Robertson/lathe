@@ -14,7 +14,7 @@ const cells = (row: HTMLElement) => [...row.querySelectorAll('th, td')] as HTMLE
 const linkIds = (el: HTMLElement) => [...el.querySelectorAll('a')].map((a) => a.textContent);
 
 describe('flow steps on a flow page', () => {
-  it('LA-BRW-T200 A flow page shows its steps in order as a table: step, what happens, uses, carries out', async () => {
+  it('LA-EXP-T63 A flow page shows its steps in order as a table: step, what happens, uses, carries out', async () => {
     await openApp('/DM-SHOP-F01', { workspace: stepsWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Fill a basket' });
     expect(section(/^Steps/).querySelector('h2')).toHaveTextContent('Steps3');
@@ -31,7 +31,7 @@ describe('flow steps on a flow page', () => {
     expect(cells(rows[0])[3]).toHaveTextContent('None');
   });
 
-  it("LA-BRW-T201 Each step's body and the titles of what it uses and fulfills are folded under its row", async () => {
+  it("LA-EXP-T64 Each step's body and the titles of what it uses and fulfills are folded under its row", async () => {
     await openApp('/DM-SHOP-F01', { workspace: stepsWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Fill a basket' });
     const user = userEvent.setup();
@@ -53,7 +53,7 @@ describe('flow steps on a flow page', () => {
     expect(within(table()).queryAllByRole('region')).toHaveLength(0);
   });
 
-  it("LA-BRW-T202 A step row carries its problems, and a flow without steps shows no steps table", async () => {
+  it("LA-EXP-T65 A step row carries its problems, and a flow without steps shows no steps table", async () => {
     await openApp('/DM-SHOP-F01', { workspace: stepsWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Fill a basket' });
     expect(cells(bodyRows()[1])[1]).toHaveTextContent('1 warning');
@@ -62,7 +62,7 @@ describe('flow steps on a flow page', () => {
     expect(within(main()).queryByRole('heading', { name: /^Steps/ })).toBeNull();
   });
 
-  it('LA-BRW-T203 Steps are ordered by their order as a number; a step without a whole-number order goes last', () => {
+  it('LA-EXP-T66 Steps are ordered by their order as a number; a step without a whole-number order goes last', () => {
     const w = stepsWorkspace();
     w.records.find((r) => r.id === 'DM-SHOP-F01-S02')!.fields.order = 'first';
     expect(stepsOf(indexWorkspace(w), 'DM-SHOP-F01').map((s) => s.id)).toEqual(['DM-SHOP-F01-S03', 'DM-SHOP-F01-S01', 'DM-SHOP-F01-S02']);

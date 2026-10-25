@@ -17,7 +17,7 @@ import { NavigateContext, PageHeader, ProblemBadge, ProblemList, RecordLink, Rec
 // Kept apart from the page chrome so another view (such as the graph, side by side) can host it.
 // It lays itself out by its own width, so it reads at half the screen as well as full.
 
-/** A record's links one way, grouped and named by their labels read from this record (LA-BRW-DR243). */
+/** A record's links one way, grouped and named by their labels read from this record (LA-EXP-V03-R07). */
 function LinkGroups({ index, links, direction }: { index: SpecIndex; links: Link[]; direction: 'out' | 'in' }) {
   if (links.length === 0) return <p className="hint">{direction === 'out' ? 'This record links to nothing.' : 'Nothing links to this record.'}</p>;
   return (

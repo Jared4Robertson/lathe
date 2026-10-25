@@ -2,15 +2,15 @@ import { expect, test, type Page } from '@playwright/test';
 import { expectStable, openPage, step } from './measure';
 import { DOMAIN, GRAPH_CANVAS, GRAPH_HEADER, MODEL_CANVAS, RECORD } from './scenarios';
 
-// LA-BRW-T485: re-centering the graph at depth 1, 2 and 3, and moving around the ERD. The camera
+// LA-PLT-T76: re-centering the graph at depth 1, 2 and 3, and moving around the ERD. The camera
 // glides (a transform, which is no layout shift); the pane's title, the graph's header and its
 // canvas must hold still, and the canvas must not be drawn anew.
-// LA-BRW-T744: focusing a domain, a stage, a folder and a record, then Back and Forward, moves the
+// LA-EXP-T173: focusing a domain, a stage, a folder and a record, then Back and Forward, moves the
 // camera only: no box of the one map changes its place or its size.
 
 const PANE_TITLE = '.pane-graph .pane-title';
 /**
- * The graph's boxes. A re-center moves the camera over the one map (LA-BRW-DR392), and the boxes
+ * The graph's boxes. A re-center moves the camera over the one map (LA-EXP-DR59), and the boxes
  * the camera brings into view are drawn as it starts: that is the picture changing, inside the
  * canvas. The canvas, its header and the pane around it are keys and must hold still, and anything
  * else that shifts is still unexpected.
@@ -38,7 +38,7 @@ async function visibleNode(page: Page, n: number): Promise<string> {
 
 test.describe('graph', () => {
   for (const depth of [1, 2, 3]) {
-    test(`LA-BRW-T485 re-center at depth ${depth}`, async ({ page }) => {
+    test(`LA-PLT-T76 re-center at depth ${depth}`, async ({ page }) => {
       await openPage(page, `${RECORD}?view=graph`);
       await nodes(page);
       if (depth > 1) {
@@ -59,7 +59,7 @@ test.describe('graph', () => {
     });
   }
 
-  test('LA-BRW-T485 change the depth', async ({ page }) => {
+  test('LA-PLT-T76 change the depth', async ({ page }) => {
     await openPage(page, `${RECORD}?view=graph`);
     await nodes(page);
     const keys = [PANE_BAR, PANE_TITLE, GRAPH_HEADER, GRAPH_CANVAS];
@@ -69,7 +69,7 @@ test.describe('graph', () => {
     }
   });
 
-  test('LA-BRW-T744 focusing anything moves the camera only: no box changes its place or size', async ({ page }) => {
+  test('LA-EXP-T173 focusing anything moves the camera only: no box changes its place or size', async ({ page }) => {
     await openPage(page, '/LA?view=graph');
     await nodes(page);
     /** Every drawn box's place and size in the map (its style, in world units), and the camera. */
@@ -89,7 +89,7 @@ test.describe('graph', () => {
     };
     await check('the product');
     const keys = [PANE_BAR, PANE_TITLE, GRAPH_HEADER, GRAPH_CANVAS, '.pane-graph .graph-flow .react-flow__renderer'];
-    for (const id of ['LA-BRW', 'LA-BRW/define', 'LA-BRW/define/use-cases', 'LA-BRW-CAP03', 'LA-BRW-UC20']) {
+    for (const id of ['LA-EXP', 'LA-EXP/define', 'LA-EXP/define/use-cases', 'LA-EXP-CAP03', 'LA-EXP-UC03']) {
       const before = new URL(page.url()).pathname;
       const r = await step(page, 'graph', `focus ${id}`, { keys, allow: ['.side-bar', GRAPH_BOXES] }, async () => {
         await page.locator(`.pane-graph .react-flow__node[data-id="${id}"]`).click({ force: true });
@@ -110,9 +110,9 @@ test.describe('graph', () => {
     expect(seen.size).toBeGreaterThan(50);
   });
 
-  test('LA-BRW-T746 a domain is drawn as a hexagon: its outline is the polygon, in every state', async ({ page }) => {
+  test('LA-EXP-T175 a domain is drawn as a hexagon: its outline is the polygon, in every state', async ({ page }) => {
     await openPage(page, '/LA?view=graph');
-    const domain = page.locator('.pane-graph .react-flow__node[data-id="LA-BRW"] .graph-node');
+    const domain = page.locator('.pane-graph .react-flow__node[data-id="LA-EXP"] .graph-node');
     await domain.waitFor();
     /** The drawn outline: the clip-path polygon's six points, and the inner fill clipped the same way. */
     const outline = () => domain.evaluate((el) => {
@@ -125,13 +125,13 @@ test.describe('graph', () => {
     expect(at.inner).toBe(at.clip);
     expect(at.shadow).toBe('none');
     // Hovered, the edge takes the hover color, still on the outline.
-    await page.locator('.pane-graph .react-flow__node[data-id="LA-BRW"]').hover();
+    await page.locator('.pane-graph .react-flow__node[data-id="LA-EXP"]').hover();
     const hovered = await outline();
     expect(hovered.clip).toBe(at.clip);
     expect(hovered.edge).not.toBe(at.edge);
     // Focused, the same outline, in ink.
-    await page.locator('.pane-graph .react-flow__node[data-id="LA-BRW"]').click();
-    await page.waitForURL(/\/LA-BRW(\?|$)/);
+    await page.locator('.pane-graph .react-flow__node[data-id="LA-EXP"]').click();
+    await page.waitForURL(/\/LA-EXP(\?|$)/);
     await expect(domain).toHaveClass(/is-focus/);
     expect((await outline()).clip).toMatch(/^polygon\(/);
     // Every other kind keeps its box.
@@ -139,7 +139,7 @@ test.describe('graph', () => {
     expect(product).toBe('none');
   });
 
-  test('LA-BRW-T485 move around the ERD', async ({ page }) => {
+  test('LA-PLT-T76 move around the ERD', async ({ page }) => {
     await openPage(page, `${DOMAIN}?view=model`);
     await page.locator('.model-flow .react-flow__node').first().waitFor();
     await page.waitForTimeout(500);
@@ -161,7 +161,7 @@ test.describe('graph', () => {
     const back = await step(page, 'graph', 'ERD: Back to the domain', { keys, allow: ['.side-bar'] }, async () => {
       await page.goBack();
       await page.goBack();
-      await expect(page).toHaveURL(/\/LA-BRW(\?|$)/);
+      await expect(page).toHaveURL(/\/LA-EXP(\?|$)/);
     });
     expectStable(back);
   });

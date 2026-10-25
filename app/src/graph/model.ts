@@ -260,7 +260,7 @@ export function filterKind(index: SpecIndex, id: string): string | null {
  * The picture the camera frames around a focus (a record or a group), by levels of the graph's tree
  * (see tree.ts), a level being any node: a record, a stage, a folder or a group. It is the focus's
  * parent, kept at the left edge for context, the focus, and its descendants down to `depth` levels
- * below it (LA-BRW-DR301); the rest of the map stays where it is around it. With `options.links`,
+ * below it (LA-EXP-DR46); the rest of the map stays where it is around it. With `options.links`,
  * the records the focused record links to and from (satisfies, proves, uses and the rest) join, one
  * hop, with the links between them and the focus.
  *
@@ -521,7 +521,7 @@ export function relationsOf(index: SpecIndex): string[] {
 }
 
 export const RELATION_LABELS: Record<string, string> = { [PARENT]: 'parent / child', [NAMES]: 'names file' };
-/** A relation's label by its code (legends, filters), from the meta-model's labels (LA-BRW-DR243). */
+/** A relation's label by its code (legends, filters), from the meta-model's labels (LA-EXP-V03-R07). */
 export const graphRelationLabel = (relation: string, index?: SpecIndex) => RELATION_LABELS[relation] ?? relationLabelOf(index?.workspace.relations ?? [], relation);
 /** One edge's label, read from its source, or from its target with `from`. */
 export const graphEdgeLabel = (index: SpecIndex, e: { source: string; relation: string; target: string }, from: 'source' | 'target' = 'source') =>

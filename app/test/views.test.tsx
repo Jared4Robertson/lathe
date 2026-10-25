@@ -33,7 +33,7 @@ export function narrowScreen() {
 }
 
 describe('one address, three views', () => {
-  it('LA-BRW-T120 A record is at its bare ID and a group at /<parent-id>/<kind>, in every view', async () => {
+  it('LA-EXP-T38 A record is at its bare ID and a group at /<parent-id>/<kind>, in every view', async () => {
     expect(parseSpecRoute('/P-D-UC01')).toEqual({ page: 'record', id: 'P-D-UC01' });
     expect(parseSpecRoute('/P-D/define/use-cases')).toEqual({ page: 'group', parent: 'P-D', kind: 'define/use-cases' });
     expect(addressOf('P-D-UC01')).toBe('/P-D-UC01');
@@ -52,7 +52,7 @@ describe('one address, three views', () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'Views (1)' })).toBeInTheDocument();
   });
 
-  it('LA-BRW-T121 The view toggles open and close panes, at least one stays open, and the open set is remembered and named in the link', async () => {
+  it('LA-EXP-T39 The view toggles open and close panes, at least one stays open, and the open set is remembered and named in the link', async () => {
     await openApp('/P-D-UC01', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     expect(viewToggle('Wiki')).toHaveAttribute('aria-pressed', 'true');
@@ -98,7 +98,7 @@ describe('one address, three views', () => {
     expect(within(document.querySelector<HTMLElement>('.page-bar')!).getByRole('group', { name: 'View' })).toBeInTheDocument();
   });
 
-  it('LA-BRW-T122 Every gap between open panes is a handle moved by keys, remembered and reset evenly, and any pane goes full screen until Escape', async () => {
+  it('LA-PLT-T14 Every gap between open panes is a handle moved by keys, remembered and reset evenly, and any pane goes full screen until Escape', async () => {
     await openApp('/P-D-UC01?view=wiki,graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     const divider = screen.getByRole('separator', { name: 'Resize the wiki and graph panes' });
@@ -128,7 +128,7 @@ describe('one address, three views', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'Full screen: Graph' })).toHaveFocus());
   });
 
-  it('LA-BRW-T123 Both panes show one focus: a node click moves the wiki, a wiki link moves the graph, Back moves both, and graph settings survive', async () => {
+  it('LA-EXP-T40 Both panes show one focus: a node click moves the wiki, a wiki link moves the graph, Back moves both, and graph settings survive', async () => {
     await openApp('/P-D-UC01?view=wiki,graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     await waitFor(() => expect(node('P-D-UC01')?.querySelector('.graph-node')?.className).toContain('is-focus'));
@@ -162,7 +162,7 @@ describe('one address, three views', () => {
     expect(screen.getByRole('button', { name: '2' })).toHaveAttribute('aria-pressed', 'true');
   });
 
-  it('LA-BRW-T124 A group page shows its parent, its kind, and its members with their coverage marks', async () => {
+  it('LA-EXP-T41 A group page shows its parent, its kind, and its members with their coverage marks', async () => {
     // The aggregate holds an event too, so its rules are a group of their own in the tree.
     const w = testWorkspace();
     const a1 = w.records.find((r) => r.id === 'P-D-A1')!;
@@ -179,7 +179,7 @@ describe('one address, three views', () => {
     expect(within(members[1]).getByText('2 warnings')).toBeInTheDocument();
   });
 
-  it('LA-BRW-T125 Product and domain pages have the same views, their graph centered on the product or domain', async () => {
+  it('LA-EXP-T42 Product and domain pages have the same views, their graph centered on the product or domain', async () => {
     for (const [path, id, name] of [['/P', 'P', 'Product'], ['/P-D', 'P-D', 'Domain']]) {
       await openApp(`${path}?view=wiki,graph`, served());
       await screen.findByRole('heading', { level: 1, name });
@@ -188,7 +188,7 @@ describe('one address, three views', () => {
     }
   });
 
-  it('LA-BRW-T126 Lists in the side bar, the graph part of the side bar and group pages stay at 10 rows and can be searched', async () => {
+  it('LA-EXP-T43 Lists in the side bar, the graph part of the side bar and group pages stay at 10 rows and can be searched', async () => {
     const w = testWorkspace();
     const base = w.records.find((r) => r.id === 'P-D-UC01-R01')!;
     for (let i = 2; i <= 13; i++) {
@@ -206,7 +206,7 @@ describe('one address, three views', () => {
     await waitFor(() => expect(within(sideBar()).getAllByRole('searchbox', { name: /^Filter level \d$/ }).length).toBeGreaterThan(0));
   });
 
-  it('LA-BRW-T135 Switching views by keyboard keeps focus, and the toggles show a focus ring', async () => {
+  it('LA-EXP-T52 Switching views by keyboard keeps focus, and the toggles show a focus ring', async () => {
     await openApp('/P-D-UC01?view=wiki,graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     // Focus inside the graph pane, then close the graph with the keyboard: focus moves to the Graph toggle, now on the wiki pane, not lost.
@@ -226,7 +226,7 @@ describe('one address, three views', () => {
     expect(css).toMatch(/\.icon-button\.is-on\s*\{/);
   });
 
-  it('LA-BRW-T310 The page bar holds the tabs at its left and the view toggles, a divider and the side bar toggle at its right; each pane header names its view and holds its close and Full screen buttons; the pressed views and a shown side bar share one on look', async () => {
+  it('LA-PLT-T47 The page bar holds the tabs at its left and the view toggles, a divider and the side bar toggle at its right; each pane header names its view and holds its close and Full screen buttons; the pressed views and a shown side bar share one on look', async () => {
     // The side bar starts closed in the Wiki view (brief 64); this test reads it open.
     openSideBar('details', ['wiki', 'graph', 'model']);
     await openApp('/P-D-UC01', served());
@@ -262,7 +262,7 @@ describe('one address, three views', () => {
 });
 
 describe('the side bar', () => {
-  it('LA-BRW-T131 The side bar shows the focused record in every view, hides and shows from its edge, is remembered, and gives its space to the main view', async () => {
+  it('LA-EXP-T48 The side bar shows the focused record in every view, hides and shows from its edge, is remembered, and gives its space to the main view', async () => {
     // Open in the Graph view (brief 64), with the record's facts and what the graph connects.
     await openApp('/P-D-UC01?view=graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
@@ -291,7 +291,7 @@ describe('the side bar', () => {
     expect(screen.queryByRole('complementary', { name: 'Side bar' })).toBeNull();
   });
 
-  it('LA-BRW-T132 On a narrow screen the side bar is a bottom sheet: focus moves in, and Escape closes it and gives focus back', async () => {
+  it('LA-EXP-T49 On a narrow screen the side bar is a bottom sheet: focus moves in, and Escape closes it and gives focus back', async () => {
     narrowScreen();
     await openApp('/P-D-UC01', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
