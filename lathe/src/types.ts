@@ -125,37 +125,6 @@ export interface Coverage {
   gaps: CoverageGap[];
 }
 
-// CSV diagrams (the app's Diagrams pages).
-
-export interface DiagramSummary {
-  slug: string;
-  title: string;
-  description: string | null;
-}
-
-export interface DiagramTerm {
-  name: string;
-  kind: string;
-  context: string;
-  status: 'decided' | 'draft' | 'open';
-  definition: string;
-}
-
-export interface DiagramLink {
-  source: string;
-  relation: string;
-  target: string;
-  cardinality: string | null;
-  status: 'decided' | 'draft' | 'open';
-  note: string | null;
-}
-
-export interface DiagramModel {
-  terms: DiagramTerm[];
-  links: DiagramLink[];
-  checks: { ok: boolean; message: string };
-}
-
 export interface Workspace {
   kinds: Kind[];
   /** The folders kinds sit in (meta/sections.csv), in stage then order. */

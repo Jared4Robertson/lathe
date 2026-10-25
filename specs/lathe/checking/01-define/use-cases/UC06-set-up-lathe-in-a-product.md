@@ -11,4 +11,4 @@ Lathe is installed into a product's own repo as a package, so the product's spec
 
 1. The person installs the Lathe package in the product repo and runs `lathe init` with the product's name and ID prefix.
 2. They write records in the product's specs folder and run `lathe check`.
-3. They run `lathe serve` to browse the specs and diagrams.
+3. They run `lathe serve` to browse the specs.

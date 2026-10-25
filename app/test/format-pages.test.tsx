@@ -145,7 +145,7 @@ describe('format reference pages', () => {
   });
 
   it('LA-BRW-T445 Quick find finds kinds and checks by name and leads to their pages', async () => {
-    const items = findItems(indexWorkspace(workspace()), [], ['use-case-without-flow']);
+    const items = findItems(indexWorkspace(workspace()), ['use-case-without-flow']);
     const kind = rankItems(items, 'Kind: Use case')[0];
     expect(kind).toMatchObject({ title: 'Kind: Use case', to: '/format/kinds/use_case' });
     expect(rankItems(items, 'use-case-without')[0]).toMatchObject({ title: 'Check: use-case-without-flow', to: '/format/checks/use-case-without-flow' });

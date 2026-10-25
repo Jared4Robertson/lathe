@@ -10,4 +10,4 @@ links:
   implements: [LA-BRW-V01]
   depends_on: [LA-BRW-C100, LA-BRW-C105]
 ---
-The rail at the far left of the nav (the spaces, a separator, Diagrams and Checks for all products), kept when the nav collapses and inside the narrow-screen nav sheet; beside it, the current space's product page, domains folding into their Define and Design folders, and groups.
+The rail at the far left of the nav (the spaces, a separator, Checks for all products), kept when the nav collapses and inside the narrow-screen nav sheet; beside it, the current space's product page, domains folding into their Define and Design folders, and groups.

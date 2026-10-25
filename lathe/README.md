@@ -21,7 +21,7 @@ npx lathe serve            # http://127.0.0.1:5330
 | `init --name <name> --prefix <P>` | Writes `lathe.config.json` (if there is none) and a first product record at `specs/<name>/product.md`. Both options are required; the prefix is capital letters and digits, starting with a letter. It stops if that product record already exists. |
 | `check [--json]` | Loads and checks the specs. Prints the errors, then the warnings, then the coverage: one line per domain and obligation kind (designed, built, proved and planned, with the gaps), and one line of test counts (automated, manual, planned). Exits 1 on any error; warnings alone do not fail it. `--json` prints the whole `Workspace` instead. |
 | `format [--out <file>]` | Prints the format reference as Markdown: the concepts of [FORMAT.md](FORMAT.md), then every kind, relation (with its labels), folder and check, generated from the meta-model with the product's extensions and from each check's header comment, the product's own checks included. `--out` writes it to a file, relative to the current folder. |
-| `serve [--port <n>]` | Serves the web app and its API for the product repo at `http://127.0.0.1:<port>` (default 5330). Open pages reload when the specs or diagrams change. |
+| `serve [--port <n>]` | Serves the web app and its API for the product repo at `http://127.0.0.1:<port>` (default 5330). Open pages reload when the specs change. |
 
 A usage mistake (a missing option, an unknown command, a bad port) exits 2.
 
@@ -32,7 +32,6 @@ A usage mistake (a missing option, an unknown command, a bad port) exits 2.
 ```json
 {
   "specs": "specs",
-  "diagrams": "diagrams",
   "metaExtensions": "lathe-meta",
   "checks": "lathe-checks",
   "idPrefixes": ["STD", "SYS"],
@@ -43,13 +42,12 @@ A usage mistake (a missing option, an unknown command, a bad port) exits 2.
 | Key | Default | Meaning |
 | --- | --- | --- |
 | `specs` | `specs` | The folder of spec records. Every `*.md` under it is a record, except `README.md`. |
-| `diagrams` | `diagrams` | The folder of CSV diagrams (`diagrams.csv`, plus a folder per diagram) that the app's Diagrams show. |
 | `metaExtensions` | none | A folder holding a `kinds.csv`, `relations.csv`, `sections.csv` and/or `ids.csv` with the same columns as [meta/](meta/). Their rows are added to Lathe's defaults for this product only, and a row for a kind Lathe already has widens it (FORMAT.md section 9). |
 | `checks` | none | A folder of the product's own checks, run after Lathe's (see [Add a product's own check](#add-a-products-own-check)). |
 | `idPrefixes` | `[]` | ID prefixes, besides every product's and domain's ID, that a record body may cite: a token such as `STD-04` is then read as a citation and reported if no record has it (FORMAT.md section 12). |
 | `structure.maxChildren` | 15 | The most children of one kind a record should have before the `too-many-children` warning (FORMAT.md section 5). A whole number of at least 1. |
 
-Every key is optional. A file that is not valid JSON, an `idPrefixes` that is not a list of ID prefixes, or a `structure.maxChildren` that is not a whole number of at least 1 is refused when the config is read.
+Every key is optional. A file that is not valid JSON, a key not in this table, an `idPrefixes` that is not a list of ID prefixes, or a `structure.maxChildren` that is not a whole number of at least 1 is refused when the config is read.
 
 ## Build the package
 
@@ -91,10 +89,7 @@ The types are in [src/types.ts](src/types.ts) (`Workspace` and its parts) and [s
 | --- | --- |
 | `GET /api/spec` | The whole `Workspace`. |
 | `GET /api/format` | The `FormatReference`: the concepts, kinds, relations, folders and checks. |
-| `GET /api/diagrams` | The diagrams. |
-| `POST /api/diagrams` | Creates a diagram from `{ "title", "description" }`. |
-| `GET /api/diagrams/<slug>` | One diagram with its check result. |
-| `GET /api/events` | Server-sent events: `spec:changed` or `model:changed` when the files change. |
+| `GET /api/events` | Server-sent events: `spec:changed` when the files change. |
 
 ## Work on Lathe itself
 

@@ -4,7 +4,7 @@ kind: test
 title: "Every rule and requirement in Lathe's own specs states its rule with MUST, SHOULD or MAY under a short title"
 parent: LA-MOD
 test_type: integration
-run_by: lathe/test/diagrams.test.ts
+run_by: lathe/test/records.test.ts
 links:
   proves: [LA-MOD-UC03-R02]
 ---

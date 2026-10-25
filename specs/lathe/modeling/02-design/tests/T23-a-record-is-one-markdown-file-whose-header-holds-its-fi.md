@@ -4,7 +4,7 @@ kind: test
 title: A record is one Markdown file whose header holds its fields and links
 parent: LA-MOD
 test_type: unit
-run_by: lathe/test/diagrams.test.ts
+run_by: lathe/test/records.test.ts
 links:
   proves: [LA-MOD-UC03-R01]
 ---

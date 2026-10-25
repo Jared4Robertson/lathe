@@ -4,7 +4,7 @@ kind: test
 title: Moving or renaming record files does not change what they mean, and README.md is ignored
 parent: LA-MOD
 test_type: unit
-run_by: lathe/test/diagrams.test.ts
+run_by: lathe/test/records.test.ts
 links:
   proves: [LA-MOD-UC03-R03]
 ---

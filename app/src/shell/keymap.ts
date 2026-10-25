@@ -34,7 +34,7 @@ export const spaceCommandId = (n: number) => `switchSpace${n}`;
 
 export const COMMANDS: readonly Command[] = [
   // Navigate
-  { id: 'quickOpen', title: 'Quick open: go to a record, domain, product or diagram', group: 'Navigate', keys: ['Mod+P', 'Mod+K'], when: 'global' },
+  { id: 'quickOpen', title: 'Quick open: go to a record, domain or product', group: 'Navigate', keys: ['Mod+P', 'Mod+K'], when: 'global' },
   { id: 'commandPalette', title: 'Command palette', group: 'Navigate', keys: ['Mod+Shift+P'], when: 'global' },
   { id: 'goBack', title: 'Go back', group: 'Navigate', keys: ['Ctrl+-'], when: 'global' },
   { id: 'goForward', title: 'Go forward', group: 'Navigate', keys: ['Ctrl+Shift+-'], when: 'global' },
@@ -49,7 +49,6 @@ export const COMMANDS: readonly Command[] = [
   { id: 'focusSideBar', title: 'Move focus to the side bar', group: 'Navigate', keys: ['Mod+Shift+I', 'Mod+Alt+I'], when: 'page' },
   { id: 'goChecks', title: 'Go to Checks', group: 'Navigate', keys: ['g c'], when: 'global' },
   { id: 'goFormat', title: 'Record format', group: 'Navigate', keys: ['g f'], when: 'global' },
-  { id: 'goDiagrams', title: 'Go to Diagrams', group: 'Navigate', keys: ['g d'], when: 'global' },
   { id: 'goHome', title: 'Go home (all products)', group: 'Navigate', keys: ['g h'], when: 'global' },
   // Tabs, as VS Code's editors: Ctrl+K Enter keeps the preview tab (Alt+K Enter off a Mac, where Ctrl+K is quick open);
   // Alt+Shift+W closes, since Ctrl+W toggles the wiki on a Mac and the browser keeps it elsewhere.

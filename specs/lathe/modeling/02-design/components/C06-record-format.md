@@ -2,7 +2,7 @@
 id: LA-MOD-C06
 kind: component
 title: Record format
-parent: LA-MOD-LAY01
+parent: LA-MOD
 component_type: specification
 file: lathe/FORMAT.md
 links:
