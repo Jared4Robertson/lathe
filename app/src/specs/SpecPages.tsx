@@ -62,7 +62,7 @@ export function SpecView({ spec, route }: { spec: SpecState; route: SpecRoute })
     page = <NotFound what="page" />;
   }
   return (
-    <main className="spec-page" id="main">
+    <main className="spec-page panel" id="main">
       <SourceNote spec={spec} />
       {spec.error && index && <p className="error">Couldn't reload the specs: {spec.error}</p>}
       {page}

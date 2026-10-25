@@ -64,7 +64,7 @@ describe('shortcut hints', () => {
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     keyFocus(within(nav()).getByRole('button', { name: 'Collapse the navigation' }));
     expect(tooltip()).toHaveTextContent('Collapse the navigation ⌘B');
-    keyFocus(screen.getByRole('button', { name: /Inspector/ }));
+    keyFocus(screen.getByRole('button', { name: 'Hide the inspector', expanded: true }));
     expect(tooltip()).toHaveTextContent('the inspector ⌥⌘B');
     keyFocus(within(within(nav()).getByRole('list', { name: 'Spaces' })).getAllByRole('link')[0]);
     expect(tooltip().querySelector('kbd')).toHaveTextContent('⌥1');
@@ -136,8 +136,9 @@ describe('shortcut hints', () => {
     for (const [name, keys] of [['Wiki', 'Control+1'], ['Graph', 'Control+2'], ['Split', 'Control+3']]) {
       expect(screen.getByRole('button', { name: new RegExp(`^${name}`) })).toHaveAttribute('aria-keyshortcuts', keys);
     }
-    expect(screen.getByRole('button', { name: /Inspector/ })).toHaveAttribute('aria-keyshortcuts', 'Control+Alt+B');
-    expect(screen.getByRole('button', { name: 'Hide the inspector' })).toHaveAttribute('aria-keyshortcuts', 'Control+Alt+B');
+    // The corner toggle and the inspector's own close button.
+    expect(screen.getByRole('button', { name: 'Hide the inspector', expanded: true })).toHaveAttribute('aria-keyshortcuts', 'Control+Alt+B');
+    expect(within(screen.getByRole('complementary', { name: 'Inspector' })).getByRole('button', { name: 'Hide the inspector' })).toHaveAttribute('aria-keyshortcuts', 'Control+Alt+B');
 
     // A control whose only shortcut is a sequence has none: Diagrams is "g then d".
     expect(within(nav()).getByRole('link', { name: 'Diagrams' })).not.toHaveAttribute('aria-keyshortcuts');
