@@ -15,7 +15,7 @@ A use case is something an actor does with the product to reach a goal. Its requ
 
 ## The records
 
-The app and `lathe check` call a `requirement` record a **use-case requirement**, to tell it apart from interaction requirements and pattern rules; in record files its kind is still written `requirement`.
+The app and `lathe check` call a `requirement` record a **UC requirement** (use case requirement), to tell it apart from interaction requirements and pattern rules; in record files its kind is still written `requirement`.
 
 
 | Kind | Parent | ID | Holds |

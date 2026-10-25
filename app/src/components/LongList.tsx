@@ -1,3 +1,4 @@
+import { lowerLabel } from '../plural';
 import { InActionsSlot } from './ActionsSlot';
 import { useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 
@@ -79,7 +80,7 @@ export function LongList<T>({ items, render, searchText, itemKey, label, classNa
           type="search"
           value={query}
           placeholder="Filter by ID or title"
-          aria-label={`Filter ${label.charAt(0).toLowerCase()}${label.slice(1)}`}
+          aria-label={`Filter ${lowerLabel(label)}`}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'Escape' && query) {

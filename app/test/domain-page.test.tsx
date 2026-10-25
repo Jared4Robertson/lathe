@@ -19,7 +19,7 @@ describe('domain page', () => {
     expect(define).toHaveTextContent(/^Define/);
     expect(design).toHaveTextContent(/^Design/);
     const headings = (el: HTMLElement, level: string) => [...el.querySelectorAll(level)].map((h) => h.firstChild?.textContent);
-    expect(headings(define, 'h3')).toEqual(['Domain model', 'Use cases']);
+    expect(headings(define, 'h3')).toEqual(['Domain model', 'Capabilities']);
     expect(headings(design, 'h3')).toEqual(['Interaction design', 'Technical specification', 'Test plan']);
 
     // Define: the domain model's aggregates with their rules folded under them, use cases with their requirements.
@@ -29,9 +29,9 @@ describe('domain page', () => {
     expect(basket.querySelector('ul.nested')).toBeNull();
     await user.click(within(basket).getByRole('button', { name: 'Expand DM-SHOP-A1' }));
     expect(ids(basket.querySelector('ul.nested') as HTMLElement)).toEqual(['DM-SHOP-DR01']);
-    const useCases = section(/^Use cases/);
+    const useCases = section(/^Capabilities/);
     const add = within(useCases).getByRole('link', { name: /^DM-SHOP-UC01\s*Add/ }).closest('li') as HTMLElement;
-    expect(add).toHaveTextContent('2 use-case requirements');
+    expect(add).toHaveTextContent('2 UC requirements');
     await user.click(within(add).getByRole('button', { name: 'Expand DM-SHOP-UC01' }));
     expect(ids(add.querySelector('ul.nested') as HTMLElement)).toEqual(['DM-SHOP-UC01-R01', 'DM-SHOP-UC01-R02']);
     expect(add).toHaveTextContent('Shopper');
@@ -57,7 +57,7 @@ describe('domain page', () => {
 
     await user.type(search, 'full basket');
     // A match inside a folded use case opens it, just for the match.
-    expect(ids(section(/^Use cases/))).toEqual(['DM-SHOP-UC01', 'DM-SHOP-UC01-R02']);
+    expect(ids(section(/^Capabilities/))).toEqual(['DM-SHOP-UC01', 'DM-SHOP-UC01-R02']);
     expect(within(section(/^Domain model/)).getByText('Nothing matches.')).toBeInTheDocument();
     expect(within(section(/^Technical specification/)).getByText('Nothing matches.')).toBeInTheDocument();
 
@@ -69,7 +69,7 @@ describe('domain page', () => {
     await user.clear(search);
     expect(ids(section(/^Test plan/))).toEqual(['DM-SHOP-T01']);
     expect(ids(section(/^Domain model/))).toEqual(['DM-SHOP-A1']);
-    expect(ids(section(/^Use cases/))).toEqual(['DM-SHOP-UC01']);
+    expect(ids(section(/^Capabilities/))).toEqual(['DM-SHOP-UC01']);
   });
 
   it('LA-BRW-T09 The domain page lists its coverage gaps, each with the missing link, and its problems', async () => {
@@ -77,12 +77,12 @@ describe('domain page', () => {
     const coverage = section(/^Coverage/);
     const gaps = within(coverage).getAllByRole('listitem');
     expect(gaps.map((li) => li.textContent)).toEqual([
-      expect.stringMatching(/DM-SHOP-UC01-R02.*Use-case requirement with nothing that proves it/),
+      expect.stringMatching(/DM-SHOP-UC01-R02.*UC requirement with nothing that proves it/),
       expect.stringMatching(/DM-SHOP-DR01.*Domain rule with nothing that proves it/),
     ]);
     // Gaps also show on the record's row.
-    await userEvent.setup().click(within(section(/^Use cases/)).getByRole('button', { name: 'Expand all' }));
-    const row = within(section(/^Use cases/)).getByRole('link', { name: /DM-SHOP-UC01-R02/ }).closest('.record-row') as HTMLElement;
+    await userEvent.setup().click(within(section(/^Capabilities/)).getByRole('button', { name: 'Expand all' }));
+    const row = within(section(/^Capabilities/)).getByRole('link', { name: /DM-SHOP-UC01-R02/ }).closest('.record-row') as HTMLElement;
     expect(within(row).getByText('not proved')).toBeInTheDocument();
 
     const problems = within(section(/^Problems in this domain/)).getAllByRole('listitem');
@@ -94,15 +94,15 @@ describe('domain page', () => {
     expect(main()).not.toHaveTextContent('DM-PAY-UC01-R01');
   });
 
-  it('lists only capabilities in Use cases when the domain keeps its use cases under capabilities', async () => {
+  it('lists only capabilities in Capabilities when the domain keeps its use cases under capabilities', async () => {
     const w = demoWorkspace();
     const shop = w.records.find((r) => r.id === 'DM-SHOP')!;
     w.records.push({ ...shop, id: 'DM-SHOP-CAP01', kind: 'capability', title: 'Buying', parent: 'DM-SHOP', fields: { order: '1' }, body: '', path: 'specs/dm/cap01.md', mentions: [] });
     for (const r of w.records) if (r.kind === 'use_case' && r.parent === 'DM-SHOP') r.parent = 'DM-SHOP-CAP01';
     await openApp('/specs/DM/DM-SHOP', { workspace: w });
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
-    expect(ids(section(/^Use cases/))).toEqual(['DM-SHOP-CAP01']);
-    expect(section(/^Use cases/).querySelector('h4')).toBeNull();
+    expect(ids(section(/^Capabilities/))).toEqual(['DM-SHOP-CAP01']);
+    expect(section(/^Capabilities/).querySelector('h4')).toBeNull();
     expect(screen.queryByRole('heading', { name: /outside any capability/ })).toBeNull();
   });
 });

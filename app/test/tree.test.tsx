@@ -12,12 +12,12 @@ describe('one level deep', () => {
   it('LA-BRW-T133 Folded rows keep their counts and marks, open and close by button, Expand all or arrow keys, and stay open while moving around', async () => {
     await openApp('/specs/DM/DM-SHOP');
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
-    const useCases = section(/^Use cases/);
+    const useCases = section(/^Capabilities/);
     const uc = row(useCases, 'DM-SHOP-UC01');
     // Folded by default, with the count of what it holds and a mark for a gap below it.
     const toggle = within(uc).getByRole('button', { name: 'Expand DM-SHOP-UC01' });
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
-    expect(uc).toHaveTextContent('2 use-case requirements');
+    expect(uc).toHaveTextContent('2 UC requirements');
     expect(uc.querySelector('ul.nested')).toBeNull();
     const aggregates = section(/^Domain model/);
     expect(row(aggregates, 'DM-SHOP-A1')).toHaveTextContent('1 domain rule');
@@ -51,7 +51,7 @@ describe('one level deep', () => {
     await openApp('/specs/DM/DM-SHOP');
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     expect(row(section(/^Domain model/), 'DM-SHOP-A1').querySelector('ul.nested')).not.toBeNull();
-    expect(row(section(/^Use cases/), 'DM-SHOP-UC01').querySelector('ul.nested')).not.toBeNull();
+    expect(row(section(/^Capabilities/), 'DM-SHOP-UC01').querySelector('ul.nested')).not.toBeNull();
   });
 
   it('LA-BRW-T134 A record page shows its direct children with theirs folded, in the wiki and the inspector, and a product page lists its domains but not their contents', async () => {
@@ -60,7 +60,7 @@ describe('one level deep', () => {
     const wiki = screen.getByRole('region', { name: 'Wiki pane' });
     const children = within(wiki).getByRole('heading', { name: /^Children/ }).closest('section') as HTMLElement;
     const uc = row(children, 'DM-SHOP-UC01');
-    expect(uc).toHaveTextContent('2 use-case requirements');
+    expect(uc).toHaveTextContent('2 UC requirements');
     expect(uc.querySelector('ul.nested')).toBeNull();
     expect(within(children).queryByRole('link', { name: /DM-SHOP-UC01-R01/ })).toBeNull();
     const inspector = screen.getByRole('complementary', { name: 'Inspector' });

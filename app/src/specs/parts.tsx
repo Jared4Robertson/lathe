@@ -1,4 +1,4 @@
-import { plural as pluralOf } from '../plural';
+import { lowerLabel, plural as pluralOf } from '../plural';
 import { createContext, useContext, useState, type AnchorHTMLAttributes, type ReactNode } from 'react';
 import { Link } from '../router';
 import { problemOrder, recordPath, type Problem, type SpecIndex, type SpecRecord } from './data';
@@ -183,7 +183,7 @@ export function RecordRowBody({ index, record, showKind = false }: { index: Spec
   );
 }
 
-const plural = (label: string, n: number) => (n === 1 ? label.toLowerCase() : pluralOf(label.toLowerCase()));
+const plural = (label: string, n: number) => (n === 1 ? lowerLabel(label) : pluralOf(lowerLabel(label)));
 
 /** "4 requirements", or "3 children" when the nested records are of several kinds. */
 export function nestedCount(index: SpecIndex, nested: readonly SpecRecord[]): string {

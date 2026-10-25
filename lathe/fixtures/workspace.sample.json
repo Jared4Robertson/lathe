@@ -67,7 +67,7 @@
     },
     {
       "kind": "requirement",
-      "label": "Use-case requirement",
+      "label": "UC requirement",
       "stage": "define",
       "section": "use-cases",
       "parent_kinds": [
@@ -207,8 +207,8 @@
       "section": "use-cases",
       "stage": "define",
       "order": 2,
-      "label": "Use cases",
-      "description": "Capabilities, the use cases in them, and their use-case requirements."
+      "label": "Capabilities",
+      "description": "Capabilities, the use cases in them, and their UC requirements."
     },
     {
       "section": "interaction-design",
@@ -576,7 +576,7 @@
         },
         {
           "kind": "requirement",
-          "label": "Use-case requirement",
+          "label": "UC requirement",
           "total": 1,
           "designed": 1,
           "built": 0,

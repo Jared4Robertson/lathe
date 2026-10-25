@@ -1,4 +1,4 @@
-import { plural } from '../plural';
+import { lowerLabel, plural } from '../plural';
 import { byIdOrder, kindLabel, type SpecIndex, type SpecRecord } from './data';
 import type { SectionRule } from '../../../lathe/src/types';
 
@@ -142,7 +142,7 @@ const groupOf = (key: string, label: string, records: SpecRecord[], groups: Fold
 
 /** "Components outside any layer": a kind's plural label, outside any of another kind. */
 export const outsideLabel = (index: SpecIndex, kind: string, outside: string) =>
-  `${plural(kindLabel(index, kind))} outside any ${kindLabel(index, outside).toLowerCase()}`;
+  `${plural(kindLabel(index, kind))} outside any ${lowerLabel(kindLabel(index, outside))}`;
 
 /**
  * A folder's records by layer: each layer in its order, holding its components, then the records
