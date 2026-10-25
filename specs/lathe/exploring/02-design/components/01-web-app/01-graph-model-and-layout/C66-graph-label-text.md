@@ -1,5 +1,5 @@
 ---
-id: LA-EXP-C65
+id: LA-EXP-C66
 kind: component
 title: Graph label text
 parent: LA-EXP-LAY02
