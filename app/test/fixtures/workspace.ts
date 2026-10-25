@@ -6,12 +6,17 @@ import sample from '../../../lathe/fixtures/workspace.sample.json';
 //   built counts; DM-PAY's has none, as the engine reported before it measured built coverage.
 // - NF (No fitness): one domain and no fitness record.
 
-const kinds: Kind[] = (sample as unknown as Workspace).kinds.some((k) => k.kind === 'fitness')
-  ? (sample as unknown as Workspace).kinds
-  : [
-      ...(sample as unknown as Workspace).kinds,
-      { kind: 'fitness', label: 'Fitness', stage: '', parent_kinds: ['product'], required_fields: ['date', 'score'], obligation: false, proof_only: false, description: 'How well the product serves its purpose.' },
-    ];
+// The sample's kinds, with the capability and fitness kinds when it lacks them (capability first, as in the meta-model).
+const sampleKinds = (sample as unknown as Workspace).kinds;
+const kinds: Kind[] = [
+  ...(sampleKinds.some((k) => k.kind === 'capability') ? [] : [
+    { kind: 'capability', label: 'Capability', stage: 'define', section: 'use-cases', parent_kinds: ['domain'], required_fields: ['order'], obligation: false, proof_only: false, description: 'An ordered slice of a domain.' },
+  ]),
+  ...sampleKinds,
+  ...(sampleKinds.some((k) => k.kind === 'fitness') ? [] : [
+    { kind: 'fitness', label: 'Fitness', stage: '', section: '', parent_kinds: ['product'], required_fields: ['date', 'score'], obligation: false, proof_only: false, description: 'How well the product serves its purpose.' },
+  ]),
+];
 const relations: RelationRule[] = (sample as unknown as Workspace).relations;
 
 function record(id: string, kind: string, title: string, parent: string | null, fields: Record<string, string> = {}, body = ''): SpecRecord {
@@ -99,6 +104,7 @@ const noteCoverage = {
 export function workspace(): Workspace {
   return {
     kinds,
+    sections: (sample as unknown as Workspace).sections,
     relations,
     records: structuredClone(records),
     links: structuredClone(links),

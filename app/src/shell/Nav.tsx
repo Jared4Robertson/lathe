@@ -4,7 +4,8 @@ import { LongList } from '../components/LongList';
 import { childKinds, pluralLabel } from '../graph/model';
 import { LatheLogo } from '../LatheLogo';
 import { Link } from '../router';
-import { byIdOrder, checksPath, domainPath, formatPath, groupPath, productPath, recordPath, type SpecIndex, type SpecRecord, type SpecState } from '../specs/data';
+import { checksPath, domainPath, formatPath, groupPath, parseSpecRoute, productPath, recordPath, type SpecIndex, type SpecState } from '../specs/data';
+import { branchOf, domainFolders, groupBranchOf, productFolderKinds, productFolders, type Folder } from '../specs/folders';
 import { recordText } from '../specs/parts';
 import type { DiagramSummary } from '../types';
 import { SPACE_KEYS, spaceCommandId } from './keymap';
@@ -16,7 +17,7 @@ import { Tooltip } from './Tooltip';
 // The side navigation. At its far left is the space rail: one square icon per product (each
 // product is its own space), a separator, then the items above every product (Diagrams, and
 // Checks for all products). Beside it, the panel: a quick find, the current space's overview,
-// domains (with their capabilities) and groups, then Diagrams and Tools, each a section that
+// its shared folder, its domains (folded into stages and folders, as Client lays out its specs) and groups, then Diagrams and Tools, each a section that
 // folds on its own, and a footer with the record format and where the specs come from. The nav
 // collapses to the rail alone (remembered), and on a narrow screen it is a drawer that keeps
 // the rail.
@@ -49,12 +50,6 @@ function sectionOf(path: string): SectionId | null {
   if (path.startsWith('/specs') || path.startsWith('/records')) return 'specs';
   if (path.startsWith('/checks')) return 'tools';
   return null;
-}
-
-/** A domain's capabilities in their order (as numbers), then by ID. */
-export function capabilitiesOf(index: SpecIndex, domain: string): SpecRecord[] {
-  const order = (r: SpecRecord) => { const n = Number(r.fields.order); return Number.isInteger(n) ? n : Infinity; };
-  return (index.children.get(domain) ?? []).filter((r) => r.kind === 'capability').sort((a, b) => order(a) - order(b) || byIdOrder(a, b));
 }
 
 export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
@@ -258,10 +253,60 @@ function SpaceRail({ path, spaces, current, lastPage, diagramsTo, checksLabel, c
   );
 }
 
-/** The current space in the panel: its overview, its domains with their capabilities, and its groups. */
+const FOLDERS_KEY = 'lathe:nav-folders';
+
+/** The nav rows open on the current page: the page's record's domain, stage and folder (or the product's folder). */
+function currentBranch(index: SpecIndex, path: string): string[] {
+  const route = parseSpecRoute(path.split('?')[0]);
+  if (!route) return [];
+  if (route.page === 'domain') return [`domain:${route.domain}`];
+  if (route.page === 'record') return branchOf(index, route.id);
+  if (route.page === 'group') return groupBranchOf(index, route.parent, route.kind);
+  return [];
+}
+
+/**
+ * The current space in the panel, read like Client's spec folders: its overview; its Shared folder
+ * (patterns) when it has some; its domains, each folding Define (Domain model, Use cases) and
+ * Design (Interaction design, Technical specification, Test plan), then its open questions; and
+ * its groups. One level shows by default; every stage and folder folds on its own (remembered for
+ * the session) and shows its count, and the current page's branch opens itself. A folder with no
+ * records is left out. Names and order come from the workspace's sections.
+ */
 function SpaceItems({ index, space, path }: { index: SpecIndex; space: Space; path: string }) {
   const domains = index.domainsOf.get(space.id) ?? [];
-  const groups = childKinds(index, space.id).filter((k) => k !== 'domain');
+  const folderKinds = productFolderKinds(index);
+  const groups = childKinds(index, space.id).filter((k) => k !== 'domain' && !folderKinds.has(k));
+  const shared = productFolders(index, space.id).filter((f) => f.records.length > 0);
+  const [opened, setOpened] = usePref<Record<string, boolean>>(FOLDERS_KEY, {}, isOpenMap, 'session');
+  const isOpen = (key: string) => opened[key] === true;
+  const toggle = (key: string) => setOpened((o) => ({ ...o, [key]: !(o[key] === true) }));
+
+  // The current page's branch opens itself.
+  const branch = currentBranch(index, path).join('\n');
+  useEffect(() => {
+    if (!branch) return;
+    const keys = branch.split('\n');
+    setOpened((o) => (keys.every((k) => o[k] === true) ? o : { ...o, ...Object.fromEntries(keys.map((k) => [k, true])) }));
+  }, [branch, setOpened]);
+
+  const folderRow = (folder: Folder, owner: string) => (
+    <NavFolder key={folder.key} id={folder.key} label={folder.label} count={folder.records.length} open={isOpen(folder.key)} onToggle={() => toggle(folder.key)}>
+      <LongList
+        label={`${folder.label} of ${owner}`}
+        className="nav-records"
+        items={folder.records}
+        itemKey={(r) => r.id}
+        searchText={recordText}
+        render={(r) => (
+          <Link to={recordPath(r.id)} aria-current={here(path, recordPath(r.id))} title={`${r.id} ${r.title}`}>
+            <span className="nav-label">{r.title}</span>
+          </Link>
+        )}
+      />
+    </NavFolder>
+  );
+
   return (
     <div className="space-items" data-space={space.id}>
       <ul>
@@ -271,6 +316,11 @@ function SpaceItems({ index, space, path }: { index: SpecIndex; space: Space; pa
           </Link>
         </li>
       </ul>
+      {shared.length > 0 && (
+        <ul className="nav-tree nav-shared" aria-label={`Shared by ${space.title}`}>
+          {shared.map((f) => folderRow(f, space.title))}
+        </ul>
+      )}
       {domains.length > 0 && (
         <LongList
           label={`Domains of ${space.title}`}
@@ -279,21 +329,30 @@ function SpaceItems({ index, space, path }: { index: SpecIndex; space: Space; pa
           itemKey={(d) => d.id}
           searchText={recordText}
           render={(domain) => {
-            const capabilities = capabilitiesOf(index, domain.id);
+            const key = `domain:${domain.id}`;
+            const open = isOpen(key);
+            const bodyId = `nav-domain-${domain.id.replace(/[^A-Za-z0-9_-]/g, '-')}`;
+            const { stages, loose } = open ? domainFolders(index, domain.id) : { stages: [], loose: [] };
             return (
               <>
-                <Link to={domainPath(space.id, domain.id)} aria-current={here(path, domainPath(space.id, domain.id))} title={domain.title}>
-                  <span className="nav-label">{domain.title}</span>
-                </Link>
-                {capabilities.length > 0 && (
-                  <ul className="nav-capabilities" aria-label={`Capabilities of ${domain.title}`}>
-                    {capabilities.map((c) => (
-                      <li key={c.id}>
-                        <Link to={recordPath(c.id)} aria-current={here(path, recordPath(c.id))} title={c.title}>
-                          <span className="nav-label">{c.title}</span>
-                        </Link>
-                      </li>
+                <div className="nav-row">
+                  <button type="button" className="nav-chevron" aria-expanded={open} aria-controls={bodyId} aria-label={`${open ? 'Fold' : 'Unfold'} ${domain.title}`} onClick={() => toggle(key)}>
+                    <Icon name={open ? 'chevron-down' : 'chevron-right'} size={14} />
+                  </button>
+                  <Link to={domainPath(space.id, domain.id)} aria-current={here(path, domainPath(space.id, domain.id))} title={domain.title}>
+                    <span className="nav-label">{domain.title}</span>
+                  </Link>
+                </div>
+                {open && (
+                  <ul className="nav-tree" id={bodyId} aria-label={`Folders of ${domain.title}`}>
+                    {stages.filter((stage) => stage.count > 0).map((stage) => (
+                      <NavFolder key={stage.key} id={stage.key} label={stage.label} count={stage.count} open={isOpen(stage.key)} onToggle={() => toggle(stage.key)} stage>
+                        <ul className="nav-tree" aria-label={`${stage.label} of ${domain.title}`}>
+                          {stage.folders.filter((f) => f.records.length > 0).map((f) => folderRow(f, domain.title))}
+                        </ul>
+                      </NavFolder>
                     ))}
+                    {loose.map((f) => folderRow(f, domain.title))}
                   </ul>
                 )}
               </>
@@ -317,6 +376,21 @@ function SpaceItems({ index, space, path }: { index: SpecIndex; space: Space; pa
         </ul>
       )}
     </div>
+  );
+}
+
+/** A foldable nav row (a stage or a folder) with its count, holding its rows below it when open. */
+function NavFolder({ id, label, count, open, onToggle, stage = false, children }: { id: string; label: string; count: number; open: boolean; onToggle: () => void; stage?: boolean; children: ReactNode }) {
+  const bodyId = `nav-folder-${id.replace(/[^A-Za-z0-9_-]/g, '-')}`;
+  return (
+    <li className={`nav-folder${stage ? ' is-stage' : ''}`}>
+      <button type="button" className="nav-folder-head" aria-expanded={open} aria-controls={bodyId} onClick={onToggle}>
+        <Icon name={open ? 'chevron-down' : 'chevron-right'} size={14} />
+        <span className="nav-label">{label}</span>
+        <span className="nav-badge quiet">{count}</span>
+      </button>
+      {open && <div id={bodyId} className="nav-folder-body">{children}</div>}
+    </li>
   );
 }
 

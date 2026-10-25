@@ -111,7 +111,7 @@ Coverage follows the meta-model. A kind's `obligation` value in `kinds.csv`, in 
 - `proof`: an obligation that needs **proof only**. Nothing is asked about its design, so it counts as designed and built, has no `satisfies` gaps, and is never `unsatisfied`; it is proved, planned and has `proves` gaps like any other. By default `pattern_rule`, as Client asks only for proof of the patterns it follows. A component may still `satisfy` it, to say which code carries it out.
 - anything else: not an obligation.
 
-A product can change a kind's value with an extension (section 9), for example `pattern_rule,,,,,yes,` to ask for the design of pattern rules again.
+A product can change a kind's value with an extension (section 9), for example `pattern_rule,,,,,,yes,` to ask for the design of pattern rules again.
 
 A relation's `role` in `relations.csv` says what a link does: `design` (such as a component `satisfies` it) or `proof` (such as a test `proves` it).
 
@@ -129,10 +129,11 @@ Records carry no status, approval or decision history: a record in the specs is 
 
 ## 9. Extending the meta-model
 
-A product adds to Lathe's meta-model with a `metaExtensions` folder (see the package README) holding a `kinds.csv` and/or `relations.csv` with the same columns.
+A product adds to Lathe's meta-model with a `metaExtensions` folder (see the package README) holding a `kinds.csv`, `relations.csv` and/or `sections.csv` with the same columns.
 
-- A **new kind** or **new relation** row is added as it is.
-- A row whose `kind` already exists **widens** that kind: its `parent_kinds` and `required_fields` are added to the default's, and a non-empty `label`, `stage`, `obligation` or `description` replaces the default's. A product can, for example, let a `domain_rule` sit directly under a `domain`.
+- A **new kind**, **new relation** or **new section** row is added as it is.
+- A row whose `kind` already exists **widens** that kind: its `parent_kinds` and `required_fields` are added to the default's, and a non-empty `label`, `stage`, `section`, `obligation` or `description` replaces the default's. A product can, for example, let a `domain_rule` sit directly under a `domain`.
+- A section row whose `section` already exists changes that folder: a non-empty `stage`, `order`, `label` or `description` replaces the default's. A product can add a folder, or move a kind into another folder by giving its `section` (section 15).
 - A relation row with the same `relation`, `source_kind` and `target_kind` as an existing one is the same rule: a non-empty `role` or `description` replaces the default's, and an empty one keeps it. So restating a default rule, identically or in other words, changes nothing else, and a product can, for example, give a default relation the `design` role.
 - Two rows for the same kind within one folder are an error (`meta-duplicate-kind`), and so are two rows for the same relation rule within one folder (`meta-duplicate-relation`). Each message names the folder's file.
 
@@ -321,3 +322,23 @@ The checks for flow steps:
 - A step's `order` that is not a whole number, or that another step of the same flow also has, is a `flow-step-order` error (`1` and `01` are the same). A missing order is `missing-required-field`.
 - `flow-step-fulfills-outside-flow` (warning): a step fulfills something its flow does not carry out. A target is inside the flow when it is a requirement of a use case the flow `carries_out`, a domain rule one of those use cases `applies`, or an interaction requirement that fulfills one of those or sits under the flow. A step whose flow carries out no use case is not compared, and a target that does not exist is reported only as a `dangling-link`.
 - `flow-fulfills-differs-from-steps` (warning): a flow that has steps fulfills something none of its steps fulfills. Move the link onto the step that carries it out. A flow without steps is not compared.
+
+## 15. Folders
+
+Client lays out each domain's specs in folders: `01-define/01-domain-model`, `01-define/02-use-cases`, `02-design/01-interaction-design`, `02-design/02-technical-specification` and `02-design/03-test-plan`, with what the domains share (patterns) in `00-shared`. Lathe names these folders in the meta-model, so the web app's navigation and domain pages read the same way, whatever folders the record files are in.
+
+`meta/sections.csv` lists the folders, with the columns `section, stage, order, label, description`. A folder belongs to a stage (`define` or `design`), in `order` within it, or to no stage for a folder at product level, such as `shared`. Each kind's `section` column in `kinds.csv` names the folder it sits in:
+
+| Stage | Folder | Kinds |
+|---|---|---|
+| Define | Domain model (`domain-model`) | aggregate, domain_rule |
+| Define | Use cases (`use-cases`) | capability, use_case, requirement |
+| Design | Interaction design (`interaction-design`) | flow, flow_step, view, endpoint, interaction_requirement |
+| Design | Technical specification (`technical-specification`) | component |
+| Design | Test plan (`test-plan`) | test |
+| (product) | Shared (`shared`) | pattern, pattern_rule |
+
+Structural kinds (product, domain, question, fitness) sit in no folder. The engine loads the folders into a `sections` table, in stage then order, which checks can query and the app reads as `Workspace.sections`. Its checks:
+
+- `unknown-section` (error): a kind names a section that `sections.csv` does not list.
+- `section-stage-mismatch` (error): a kind's section belongs to another stage than the kind's own. A product-level folder (no stage) may hold a kind of any stage.

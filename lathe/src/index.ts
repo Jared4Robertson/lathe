@@ -7,7 +7,7 @@ import { DuckDBInstance, type DuckDBConnection } from '@duckdb/node-api';
 import { COVERAGE_COUNTS_SQL, COVERAGE_GAPS_SQL, COVERAGE_TESTS_SQL } from './coverage.ts';
 import { loadConfig, PACKAGE_DIR } from './config.ts';
 import { parseRecordFile, proseTokens, type ProseToken } from './parse.ts';
-import type { Coverage, CoverageGap, Kind, ObligationCoverage, Problem, RelationRule, SpecLink, SpecRecord, TestCounts, Workspace } from './types.ts';
+import type { Coverage, CoverageGap, Kind, ObligationCoverage, Problem, RelationRule, SectionRule, SpecLink, SpecRecord, TestCounts, Workspace } from './types.ts';
 
 export type * from './types.ts';
 export { loadConfig, PACKAGE_DIR, CONFIG_FILE, type LatheConfig } from './config.ts';
@@ -17,7 +17,7 @@ export const CHECKS_DIR = path.join(PACKAGE_DIR, 'checks');
 export interface LoadOptions {
   /** Folder of check SQL files. Defaults to the package's checks/. */
   checksDir?: string;
-  /** One folder holding kinds.csv and relations.csv, replacing the configured meta-model (used by tests). */
+  /** One folder holding kinds.csv, relations.csv and sections.csv, replacing the configured meta-model (used by tests). */
   metaDir?: string;
 }
 
@@ -180,9 +180,18 @@ interface MetaKind {
   kind: string;
   label: string;
   stage: string;
+  section: string;
   parent_kinds: string[];
   required_fields: string[];
   obligation: string;
+  description: string;
+}
+
+interface MetaSection {
+  section: string;
+  stage: string;
+  order: string;
+  label: string;
   description: string;
 }
 
@@ -192,7 +201,9 @@ const union = (a: string[], b: string[]) => [...a, ...b.filter((x) => !a.include
 
 // Loads the meta-model from one or more folders: Lathe's defaults first, then a product's extensions.
 // A later row for a kind already defined widens it: parent_kinds and required_fields are unioned, and a
-// non-empty label, stage, obligation or description replaces the earlier one. Relations work the same
+// non-empty label, stage, section, obligation or description replaces the earlier one. Sections (sections.csv,
+// the folders kinds sit in) merge the same way: a later row for a section already listed replaces its stage,
+// order, label or description with any that is non-empty. Relations work the same
 // way: a later row with the same relation, source kind and target kind is the same rule, and its non-empty
 // role or description replaces the earlier one. Every kind and relation row is also kept, with the file it
 // came from, in meta_kind_rows and meta_relation_rows, so that a duplicate within one folder can be reported.
@@ -217,6 +228,8 @@ async function loadMeta(connection: DuckDBConnection, metaDirs: string[], root: 
   const relationRows: string[][] = [];
   const relations: string[][] = [];
   const byRule = new Map<string, string[]>();
+  const sections: MetaSection[] = [];
+  const bySection = new Map<string, MetaSection>();
   for (const dir of metaDirs) {
     for (const row of await read(dir, 'kinds.csv')) {
       const name = csvText(row.kind).trim();
@@ -225,6 +238,7 @@ async function loadMeta(connection: DuckDBConnection, metaDirs: string[], root: 
         kind: name,
         label: csvText(row.label),
         stage: csvText(row.stage).trim(),
+        section: csvText(row.section).trim(),
         parent_kinds: csvWords(row.parent_kinds),
         required_fields: csvWords(row.required_fields),
         obligation: csvText(row.obligation).trim(),
@@ -238,7 +252,26 @@ async function loadMeta(connection: DuckDBConnection, metaDirs: string[], root: 
       }
       known.parent_kinds = union(known.parent_kinds, incoming.parent_kinds);
       known.required_fields = union(known.required_fields, incoming.required_fields);
-      for (const key of ['label', 'stage', 'obligation', 'description'] as const) {
+      for (const key of ['label', 'stage', 'section', 'obligation', 'description'] as const) {
+        if (incoming[key].trim() !== '') known[key] = incoming[key];
+      }
+    }
+    for (const row of await read(dir, 'sections.csv')) {
+      const incoming: MetaSection = {
+        section: csvText(row.section).trim(),
+        stage: csvText(row.stage).trim(),
+        order: csvText(row.order).trim(),
+        label: csvText(row.label),
+        description: csvText(row.description),
+      };
+      if (incoming.section === '') continue;
+      const known = bySection.get(incoming.section);
+      if (!known) {
+        sections.push(incoming);
+        bySection.set(incoming.section, incoming);
+        continue;
+      }
+      for (const key of ['stage', 'order', 'label', 'description'] as const) {
         if (incoming[key].trim() !== '') known[key] = incoming[key];
       }
     }
@@ -262,26 +295,34 @@ async function loadMeta(connection: DuckDBConnection, metaDirs: string[], root: 
   await connection.run(`
     CREATE TABLE meta_kind_rows (folder VARCHAR, kind VARCHAR);
     CREATE TABLE meta_relation_rows (folder VARCHAR, relation VARCHAR, source_kind VARCHAR, target_kind VARCHAR);
-    CREATE TABLE meta_kinds_in (kind VARCHAR, label VARCHAR, stage VARCHAR, parent_kinds VARCHAR,
+    CREATE TABLE meta_kinds_in (kind VARCHAR, label VARCHAR, stage VARCHAR, section VARCHAR, parent_kinds VARCHAR,
                                 required_fields VARCHAR, obligation VARCHAR, description VARCHAR);
     CREATE TABLE relations (relation VARCHAR, source_kind VARCHAR, target_kind VARCHAR, role VARCHAR, description VARCHAR);
+    CREATE TABLE meta_sections_in (section VARCHAR, stage VARCHAR, "order" VARCHAR, label VARCHAR, description VARCHAR);
   `);
   await append(connection, 'meta_kind_rows', kindRows);
   await append(
     connection,
     'meta_kinds_in',
-    kinds.map((k) => [k.kind, k.label, k.stage, k.parent_kinds.join(' '), k.required_fields.join(' '), k.obligation, k.description]),
+    kinds.map((k) => [k.kind, k.label, k.stage, k.section, k.parent_kinds.join(' '), k.required_fields.join(' '), k.obligation, k.description]),
   );
   await append(connection, 'meta_relation_rows', relationRows);
   await append(connection, 'relations', relations);
+  await append(connection, 'meta_sections_in', sections.map((s) => [s.section, s.stage, s.order, s.label, s.description]));
   const list = (col: string) => `CASE WHEN ${col} = '' THEN []::VARCHAR[] ELSE string_split(${col}, ' ') END AS ${col}`;
   await connection.run(`
     CREATE TABLE kinds AS
-    SELECT kind, label, stage, ${list('parent_kinds')}, ${list('required_fields')},
+    SELECT kind, label, stage, section, ${list('parent_kinds')}, ${list('required_fields')},
            lower(trim(obligation)) IN ('yes', 'true', 'proof') AS obligation,
            lower(trim(obligation)) = 'proof' AS proof_only, description
     FROM meta_kinds_in;
     DROP TABLE meta_kinds_in;
+    -- The folders, in stage then order: product-level folders (no stage) first, then define, then design.
+    CREATE TABLE sections AS
+    SELECT section, stage, coalesce(TRY_CAST(trim("order") AS INTEGER), 0) AS "order", label, description
+    FROM meta_sections_in
+    ORDER BY stage, "order", section;
+    DROP TABLE meta_sections_in;
   `);
 }
 
@@ -448,10 +489,11 @@ export async function loadWorkspace(root: string, options: LoadOptions = {}): Pr
     const coverage = await computeCoverage(connection);
     const kinds = await readRows<Kind>(connection, 'SELECT * FROM kinds');
     const relations = await readRows<RelationRule>(connection, 'SELECT * FROM relations');
+    const sections = await readRows<SectionRule>(connection, 'SELECT * FROM sections ORDER BY stage, "order", section');
 
     const links: SpecLink[] = records.flatMap((r) => r.links.map((l) => ({ source: r.id, relation: l.relation, target: l.target })));
     const specRecords: SpecRecord[] = records.map(({ links: _links, ...r }) => r);
-    return { kinds, relations, records: specRecords, links, problems, coverage };
+    return { kinds, sections, relations, records: specRecords, links, problems, coverage };
   } finally {
     connection.closeSync();
     instance.closeSync();
