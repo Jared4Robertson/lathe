@@ -102,8 +102,7 @@ h3 { font-size: 0.95rem; margin-top: 8px; }
 
 /* Specs */
 .menu .new-diagram + .eyebrow, .menu .new-diagram-form + .eyebrow { margin-top: 14px; }
-.menu .submenu { margin: 0 0 4px 10px; padding-left: 6px; border-left: 1px solid var(--rule); }
-.menu .submenu a { font-size: 0.86rem; padding: 5px 8px; }
+.menu .nav-domains a { font-size: 0.86rem; padding: 5px 8px; }
 .menu .count { margin-left: 4px; font: 500 0.72rem var(--mono); color: var(--muted); }
 .menu .count.has-errors { color: var(--spark); }
 .spec-page { min-width: 0; min-height: 0; overflow-y: auto; }
@@ -405,7 +404,6 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .nav-chevron { display: inline-grid; place-items: center; width: 24px; height: 32px; padding: 0; border: 0; border-radius: 4px; background: none; color: var(--muted); cursor: pointer; flex: none; }
 .nav-chevron:hover { color: var(--ink); background: var(--paper); }
 .nav-chevron-space { width: 24px; flex: none; }
-.menu .submenu { margin: 0 0 4px 26px; }
 .menu li.in-current > .nav-row > a:not([aria-current]) { font-weight: 600; }
 .menu a[aria-current="page"] { box-shadow: inset 3px 0 0 var(--steel); }
 .nav-badges { display: inline-flex; gap: 4px; margin-left: auto; }
@@ -591,8 +589,9 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 .menu.has-spaces .nav-scroll { overflow-x: hidden; }
 /* A domain's stages and folders in the nav, as S2 lays out its specs. */
 .menu .nav-tree { margin: 0 0 2px 12px; padding-left: 6px; border-left: 1px solid var(--rule); }
-.menu .nav-shared { margin: 0 0 2px; padding-left: 0; border-left: 0; }
-.nav-folder-head { display: flex; align-items: center; gap: 6px; width: 100%; min-height: 28px; padding: 3px 8px; border: 0; border-radius: 6px; background: none; color: var(--muted); cursor: pointer; text-align: left; font: inherit; font-size: 0.84rem; }
+/* A space's own lists (its Shared folder and its domains) sit side by side at the top level; only what is inside them is indented. */
+.menu :is(.nav-shared, .nav-domains) { margin: 0 0 2px; padding-left: 0; border-left: 0; }
+.nav-folder-head { display: flex; align-items: center; gap: 6px; width: 100%; min-height: 28px; padding: 3px 8px 3px 5px; border: 0; border-radius: 6px; background: none; color: var(--muted); cursor: pointer; text-align: left; font: inherit; font-size: 0.84rem; }
 .nav-folder-head:hover { background: var(--paper); color: var(--ink); }
 .nav-folder.is-stage > .nav-folder-head .nav-label { font: 500 0.74rem var(--mono); letter-spacing: 0.06em; text-transform: uppercase; }
 .menu .nav-folder-body > .nav-tree { margin-left: 8px; }

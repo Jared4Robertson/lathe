@@ -324,7 +324,7 @@ function SpaceItems({ index, space, path }: { index: SpecIndex; space: Space; pa
       {domains.length > 0 && (
         <LongList
           label={`Domains of ${space.title}`}
-          className="submenu"
+          className="nav-tree nav-domains"
           items={domains}
           itemKey={(d) => d.id}
           searchText={recordText}
