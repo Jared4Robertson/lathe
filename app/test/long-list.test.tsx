@@ -97,7 +97,7 @@ describe('long lists', () => {
     const useCases = section(/^Capabilities/);
     const search = within(useCases).getByRole('searchbox', { name: 'Filter capabilities' });
     await user.click(within(useCases).getByRole('button', { name: 'Expand BG-D01-UC01' }));
-    expect(within(useCases).getByRole('searchbox', { name: 'Filter children of BG-D01-UC01' })).toBeInTheDocument();
+    expect(within(useCases).getByRole('searchbox', { name: 'Filter UC requirements of BG-D01-UC01' })).toBeInTheDocument();
     await user.type(search, 'close the month');
     const region = within(useCases).getByRole('region', { name: 'Capabilities (scrolls)' });
     expect(within(useCases).getByText('1 of 12')).toBeInTheDocument();
