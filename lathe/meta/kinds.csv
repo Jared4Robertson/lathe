@@ -3,6 +3,7 @@ product,Product,,,,,no,A product: the root of a set of specifications.
 domain,Domain,,,product,,no,"A part of the product with its own model, language and owner."
 capability,Capability,define,use-cases,domain,order,no,"An ordered slice of a domain that groups its use cases, flows and tests, such as Membership or Lending. Its order is a whole number giving its place in the domain."
 aggregate,Aggregate,define,domain-model,domain,,no,"A cluster of records changed together as one unit, with its own identity and rules."
+entity,Entity,define,domain-model,aggregate,role,no,"A record the domain keeps, as one box of an aggregate's ERD: the aggregate's root (role: root) or one of its children (role: child). Its body holds a Fields table: Field, Meaning, Kind of value, Example."
 domain_rule,Domain rule,define,domain-model,aggregate domain,,yes,"A fact that must always hold for an aggregate's records, whatever use case changes them."
 use_case,Use case,define,use-cases,domain capability,actor,no,Something an actor does with the product to reach a goal.
 requirement,UC requirement,define,use-cases,use_case,,yes,"One rule a use case must follow, stated with MUST, MUST NOT, SHOULD or MAY. Shown as a UC (use case) requirement, to tell it apart from interaction requirements and pattern rules."
