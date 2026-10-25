@@ -55,9 +55,31 @@ export interface ChromeWindowOptions {
   backgroundColor: string;
 }
 
+/**
+ * The chrome the pages last sent, by the system's appearance at the time, kept in the user data
+ * folder so a new window opens in the theme's shell color rather than the default (LA-DSK-UC05-R10).
+ */
+export type SavedChrome = Partial<Record<'light' | 'dark', Chrome>>;
+
+/** Reads saved chrome, keeping only valid colors. */
+export function parseSavedChrome(raw: unknown): SavedChrome {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
+  const saved: SavedChrome = {};
+  for (const mode of ['light', 'dark'] as const) {
+    const chrome = parseChrome((raw as Record<string, unknown>)[mode]);
+    if (chrome) saved[mode] = chrome;
+  }
+  return saved;
+}
+
+/** The chrome a new window takes in the system's appearance: the last the pages sent, else Lathe's own. */
+export function startChrome(saved: SavedChrome, dark: boolean): Chrome {
+  return saved[dark ? 'dark' : 'light'] ?? DEFAULT_CHROME[dark ? 'dark' : 'light'];
+}
+
 /** The title bar options of a new window on a platform, in the system's light or dark appearance. */
-export function chromeWindowOptions(platform: NodeJS.Platform, dark: boolean): ChromeWindowOptions {
-  const chrome = dark ? DEFAULT_CHROME.dark : DEFAULT_CHROME.light;
+export function chromeWindowOptions(platform: NodeJS.Platform, dark: boolean, saved: SavedChrome = {}): ChromeWindowOptions {
+  const chrome = startChrome(saved, dark);
   if (platform === 'darwin') return { titleBarStyle: 'hidden', trafficLightPosition: { ...TRAFFIC_LIGHTS }, backgroundColor: chrome.background };
   return { titleBarStyle: 'hidden', titleBarOverlay: titleBarOverlay(chrome), backgroundColor: chrome.background };
 }

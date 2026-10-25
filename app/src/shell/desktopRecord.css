@@ -1,0 +1,17 @@
+/* The desktop app's record actions (desktopRecord.tsx): small quiet buttons under a record's spec file,
+   with no fill or border until hovered. Tokens only. */
+.desktop-record-actions { display: flex; flex-wrap: wrap; gap: 2px 4px; margin: 4px 0 0 -6px; }
+.desktop-record-action {
+  padding: 2px 6px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background-color var(--hover-speed), border-color var(--hover-speed), color var(--hover-speed);
+}
+.desktop-record-action:hover { color: var(--ink); background: var(--hover-bg); border-color: var(--hover-ring); }
+.desktop-record-action:focus-visible { outline: 2px solid var(--steel); outline-offset: 1px; }
+@media (prefers-reduced-motion: reduce) { .desktop-record-action { transition: none; } }

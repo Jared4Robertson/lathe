@@ -733,7 +733,7 @@
       "product": "EX",
       "domain": "EX-NOTE",
       "fields": {
-        "owner": "Jared"
+        "owner": "Owner"
       },
       "body": "Undecided.",
       "path": "specs/example/notes/questions/Q01.md",

@@ -4,7 +4,7 @@ kind: domain_event
 title: Color mode chosen
 parent: LA-BRW-A9
 ---
-Jared chose Light, Dark or System, which decides which of every theme's two color sets shows.
+The reader chose Light, Dark or System, which decides which of every theme's two color sets shows.
 
 ## Fields
 

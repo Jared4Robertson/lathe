@@ -6,7 +6,7 @@ parent: LA-BRW-A1
 links:
   raised_by: [LA-BRW-EN01]
 ---
-Jared went to an address in the app, by a link, a command, the address bar or the back button, which opens its page with the views it names.
+The reader went to an address in the app, by a link, a command, the address bar or the back button, which opens its page with the views it names.
 
 ## Fields
 

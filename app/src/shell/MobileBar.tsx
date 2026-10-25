@@ -34,6 +34,9 @@ export function pageHeading(index: SpecIndex | null, path: string, search: strin
   if (route.page === 'specs') return { title: 'Products', up: null };
   if (route.page === 'checks') return { title: 'Checks', up: null };
   if (route.page === 'format') return { title: 'Record format', up: null };
+  const FORMAT = { to: '/format', label: 'Record format' };
+  if (route.page === 'format-kind') return { title: index?.kinds.get(route.kind)?.label ?? route.kind, up: FORMAT };
+  if (route.page === 'format-check') return { title: route.check, up: FORMAT };
   if (!isFocusRoute(route) || !index) return { title: 'Lathe', up: null };
   const id = focusOf(route);
   if (route.page === 'group') {

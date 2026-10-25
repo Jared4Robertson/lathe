@@ -116,6 +116,8 @@ export type SpecRoute =
   | { page: 'redirect'; to: string }
   | { page: 'checks' }
   | { page: 'format' }
+  | { page: 'format-kind'; kind: string }
+  | { page: 'format-check'; check: string }
   | { page: 'specs' }
   | { page: 'missing' };
 
@@ -123,7 +125,13 @@ export type SpecRoute =
 export function parseSpecRoute(pathname: string): SpecRoute | null {
   const parts = pathname.split('/').filter(Boolean).map(decodeURIComponent);
   if (parts[0] === 'checks') return parts.length === 1 ? { page: 'checks' } : { page: 'missing' };
-  if (parts[0] === 'format') return parts.length === 1 ? { page: 'format' } : { page: 'missing' };
+  if (parts[0] === 'format') {
+    if (parts.length === 1) return { page: 'format' };
+    // A kind's page and a check's page in the format reference.
+    if (parts.length === 3 && parts[1] === 'kinds') return { page: 'format-kind', kind: parts[2] };
+    if (parts.length === 3 && parts[1] === 'checks') return { page: 'format-check', check: parts[2] };
+    return { page: 'missing' };
+  }
   if (parts[0] === 'records') {
     if (parts.length === 2) return { page: 'record', id: parts[1] };
     // A test-plan group in a Tests folder has more parts after the kind.

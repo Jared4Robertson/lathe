@@ -3,7 +3,7 @@ id: LA-CHK-UC18
 kind: use_case
 title: Cite records by the IDs a product writes
 parent: LA-CHK-CAP01
-actor: Jared, AI agent
+actor: Owner, Agent
 links:
   applies: [LA-CHK-DR120, LA-CHK-DR121, LA-CHK-DR122, LA-CHK-DR123, LA-CHK-DR124]
 ---

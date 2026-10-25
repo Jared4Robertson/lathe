@@ -23,7 +23,7 @@ describe('side navigation', () => {
     expect(nav().className).toContain('is-rail');
     expect(document.querySelector('.app')!.className).toContain('nav-collapsed');
     // Each rail item names itself in a tooltip on keyboard focus, with its keys.
-    for (const [name, tip] of [['Lathe home', 'Lathe home g then h'], ['Diagrams', 'Diagrams g then d'], ['Record format', 'Record format g then f'], ['Expand the navigation', 'Expand the navigation Ctrl+B']]) {
+    for (const [name, tip] of [['Lathe home', 'Lathe home g then h'], ['Diagrams', 'Diagrams g then d'], ['Expand the navigation', 'Expand the navigation Ctrl+B']]) {
       fireEvent.keyDown(document.body, { key: 'Tab', code: 'Tab' });
       fireEvent.focus(within(nav()).getByLabelText(name));
       expect(screen.getByRole('tooltip'), name).toHaveTextContent(tip);
@@ -67,7 +67,7 @@ describe('side navigation', () => {
     await waitFor(() => expect(screen.queryByRole('navigation', { name: 'Main' })).toBeNull());
   });
 
-  it('LA-BRW-T129 Sections fold on their own, the current place is marked and its section opens itself, counts are quiet badges, and the footer links the format', async () => {
+  it('LA-BRW-T129 Sections fold on their own, the current place is marked and its section opens itself, counts are quiet badges, and the footer says where the specs come from', async () => {
     await openApp('/specs/DM/DM-SHOP', { diagrams });
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     const head = (name: RegExp) => within(nav()).getByRole('button', { name });
@@ -93,7 +93,8 @@ describe('side navigation', () => {
     expect(checks.querySelector('.nav-badge.error')).toHaveTextContent(String(workspace().problems.filter((p) => p.severity === 'error').length));
     expect(checks.querySelector('.nav-badge.warning')).not.toBeNull();
     const foot = nav().querySelector('footer')!;
-    expect(within(foot).getByRole('link', { name: 'Record format' })).toHaveAttribute('href', '/format');
+    // The record format left the footer (LA-BRW-UC115): it is a command and a link in the shortcuts sheet.
+    expect(within(foot).queryByRole('link', { name: 'Record format' })).toBeNull();
     expect(foot).toHaveTextContent('Specs read by the engine');
   });
 

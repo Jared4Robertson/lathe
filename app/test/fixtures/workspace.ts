@@ -30,7 +30,7 @@ export const records: SpecRecord[] = [
   record('DM', 'product', 'Demo shop', null, {}, 'A demo product for the **component tests**.'),
   record('DM-FIT01', 'fitness', 'Early days', 'DM', { date: '2026-09-01', score: '2' }, 'It was hard to find anything.'),
   record('DM-FIT02', 'fitness', 'Finding things is quick', 'DM', { date: '2026-10-20', score: '4' }, 'I traced a requirement to its tests in *two clicks*.'),
-  record('DM-Q01', 'question', 'Should the shop ship abroad?', 'DM', { owner: 'Jared' }, 'Undecided.'),
+  record('DM-Q01', 'question', 'Should the shop ship abroad?', 'DM', { owner: 'Owner' }, 'Undecided.'),
 
   record('DM-SHOP', 'domain', 'Shopping', 'DM', {}, 'People pick goods and pay.'),
   record('DM-SHOP-A1', 'aggregate', 'Basket', 'DM-SHOP', {}, 'The goods a person means to buy.'),

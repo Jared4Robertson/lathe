@@ -4,7 +4,7 @@ kind: domain_event
 title: Theme made
 parent: LA-BRW-A9
 ---
-Jared made a theme of his own, by duplicating a theme or importing a theme file, which he can then edit.
+The reader made a theme of their own, by duplicating a theme or importing a theme file, which they can then edit.
 
 ## Fields
 
