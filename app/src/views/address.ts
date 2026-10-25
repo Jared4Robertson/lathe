@@ -2,8 +2,9 @@ import type { SpecIndex, SpecRoute } from '../specs/data';
 
 // One address per thing, whichever views show it (LA-PAT-APP-CODE-R19). A record is at its bare
 // ID (`/LA-BRW-UC01`), a product and a domain included, whose one page is their overview (`/LA`,
-// `/LA-BRW`). A group is at its parent's ID and its kind (`/LA-BRW/use_case`), and a group within
-// one adds its parts (`/DM-SHOP/test/acceptance/…`, `/LA-BRW/design/technical-specification`).
+// `/LA-BRW`). A group is at its place in the graph's tree (a stage or folder, `/LA-BRW/define/use-cases`, or a record's
+// group of one kind of child, `/<parent-id>/<kind>`), and a group within one adds its parts
+// (`/DM-SHOP/design/test-plan/acceptance/…`).
 // App pages are lowercase words (`/`, `/checks`, `/format`, `/settings/appearance`,
 // `/diagrams/<slug>`), so they never clash with an ID, which starts with a capital. Every address
 // of a record or group is made here, by addressOf. The open views (wiki, graph, model, one pane
@@ -21,7 +22,7 @@ export const APP_PAGES: readonly string[] = ['checks', 'format', 'settings', 'di
 
 /**
  * The address of a record (its bare ID) or of a group (its parent's ID, its kind and the parts of a
- * group within it, as in `LA-BRW/use_case`). The index is not needed: an ID is its own address.
+ * group within it, as in `LA-BRW/define/use-cases`). The index is not needed: an ID is its own address.
  */
 export function addressOf(id: string): string {
   return `/${id.split('/').map(encodeURIComponent).join('/')}`;
@@ -83,7 +84,7 @@ export function viewsShown(asked: readonly ViewName[], offered: readonly ViewNam
 export type FocusRoute = Extract<SpecRoute, { page: 'product' | 'domain' | 'record' | 'group' }>;
 export const isFocusRoute = (r: SpecRoute | null): r is FocusRoute => !!r && ['product', 'domain', 'record', 'group'].includes(r.page);
 
-/** The graph's center for a page: the record's ID, or a group's `<parent-id>/<kind>`. */
+/** The graph's center for a page: the record's ID, or a group's ID. */
 export function focusOf(route: FocusRoute): string {
   switch (route.page) {
     case 'product': return route.product;

@@ -35,9 +35,9 @@ export function narrowScreen() {
 describe('one address, three views', () => {
   it('LA-BRW-T120 A record is at its bare ID and a group at /<parent-id>/<kind>, in every view', async () => {
     expect(parseSpecRoute('/P-D-UC01')).toEqual({ page: 'record', id: 'P-D-UC01' });
-    expect(parseSpecRoute('/P-D/use_case')).toEqual({ page: 'group', parent: 'P-D', kind: 'use_case' });
+    expect(parseSpecRoute('/P-D/define/use-cases')).toEqual({ page: 'group', parent: 'P-D', kind: 'define/use-cases' });
     expect(addressOf('P-D-UC01')).toBe('/P-D-UC01');
-    expect(addressOf('P-D/use_case')).toBe('/P-D/use_case');
+    expect(addressOf('P-D/define/use-cases')).toBe('/P-D/define/use-cases');
     expect(addressOf('P-D')).toBe('/P-D');
     expect(viewsFromSearch('?view=split')).toBeNull();
     expect(viewsFromSearch('?view=model,wiki')).toEqual(['wiki', 'model']);
@@ -48,8 +48,8 @@ describe('one address, three views', () => {
     await openApp('/P-D-UC01?view=graph', served());
     expect(await screen.findByRole('region', { name: 'Graph pane' })).toBeInTheDocument();
     expect(window.location.pathname + window.location.search).toBe('/P-D-UC01?view=graph');
-    await openApp('/P-D/use_case', served());
-    expect(await screen.findByRole('heading', { level: 1, name: 'Use cases (1)' })).toBeInTheDocument();
+    await openApp('/P-D/design/interaction-design/view', served());
+    expect(await screen.findByRole('heading', { level: 1, name: 'Views (1)' })).toBeInTheDocument();
   });
 
   it('LA-BRW-T121 The view toggles open and close panes, at least one stays open, and the open set is remembered and named in the link', async () => {
@@ -163,7 +163,11 @@ describe('one address, three views', () => {
   });
 
   it('LA-BRW-T124 A group page shows its parent, its kind, and its members with their coverage marks', async () => {
-    await openApp('/P-D-A1/domain_rule', served());
+    // The aggregate holds an event too, so its rules are a group of their own in the tree.
+    const w = testWorkspace();
+    const a1 = w.records.find((r) => r.id === 'P-D-A1')!;
+    w.records.push({ ...a1, id: 'P-D-EV01', kind: 'domain_event', title: 'Thing lent', parent: 'P-D-A1', fields: {}, path: 'specs/P-D-EV01.md' });
+    await openApp('/P-D-A1/domain_rule', { workspace: w });
     await screen.findByRole('heading', { level: 1, name: 'Domain rules (2)' });
     const wiki = within(screen.getByRole('region', { name: 'Wiki pane' }));
     expect(wiki.getByRole('link', { name: /P-D-A1\s*Thing/ })).toHaveAttribute('href', '/P-D-A1');
@@ -191,6 +195,8 @@ describe('one address, three views', () => {
       const id = `P-D-UC01-R${String(i).padStart(2, '0')}`;
       w.records.push({ ...base, id, title: `Rule ${i}`, path: `specs/${id}.md` });
     }
+    // A question too, so the requirements are a group of their own in the tree.
+    w.records.push({ ...base, id: 'P-D-UC01-Q01', kind: 'question', title: 'Who may lend?', fields: { owner: 'Ana' }, path: 'specs/P-D-UC01-Q01.md' });
     await openApp('/P-D-UC01/requirement?view=wiki,graph', { workspace: w });
     await screen.findByRole('heading', { level: 1, name: 'UC requirements (13)' });
     expect(within(screen.getByRole('region', { name: 'Wiki pane' })).getByRole('searchbox', { name: 'Filter UC requirements of P-D-UC01/requirement' })).toBeInTheDocument();

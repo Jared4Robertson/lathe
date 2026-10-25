@@ -71,8 +71,8 @@ describe('format reference pages', () => {
 
     const records = section(/^Records/);
     expect(records).toHaveTextContent('2 use cases in Demo shop, under:');
-    expect(within(records).getByRole('link', { name: /DM-SHOP\s*Shopping/ })).toHaveAttribute('href', '/DM-SHOP/use_case');
-    expect(within(records).getByRole('link', { name: /DM-PAY\s*Paying/ })).toHaveAttribute('href', '/DM-PAY/use_case');
+    expect(within(records).getByRole('link', { name: /DM-SHOP\s*Shopping/ })).toHaveAttribute('href', '/DM-SHOP');
+    expect(within(records).getByRole('link', { name: /DM-PAY\s*Paying/ })).toHaveAttribute('href', '/DM-PAY');
 
     // The side bar holds the kind's facts.
     expect(fact(sideBar(), 'Obligation')).toBe('None');
@@ -122,9 +122,9 @@ describe('format reference pages', () => {
     expect(within(main()).getByRole('link', { name: 'dangling-link' })).toHaveAttribute('href', '/format/checks/dangling-link');
 
     // A group's kind leads to the kind's page too.
-    await openApp('/DM-SHOP/use_case');
-    await screen.findByRole('heading', { level: 1, name: /^Use cases/ });
-    expect(within(sideBar()).getByRole('link', { name: 'Use case' })).toHaveAttribute('href', '/format/kinds/use_case');
+    await openApp('/DM-SHOP/design/interaction-design/view');
+    await screen.findByRole('heading', { level: 1, name: /^Views/ });
+    expect(within(sideBar()).getByRole('link', { name: 'View' })).toHaveAttribute('href', '/format/kinds/view');
   });
 
   it('LA-BRW-T444 The record format is a palette command and a link in the shortcuts sheet, not a nav footer link', async () => {

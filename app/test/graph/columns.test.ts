@@ -62,14 +62,14 @@ describe('graph columns by tree depth', () => {
 
   it('LA-BRW-T253 A group sits in its own column between its parent and its members', () => {
     const grouped = indexWorkspace(groupedWorkspace());
-    const n = neighborhood(grouped, 'P-D/use_case', 3);
+    const n = neighborhood(grouped, 'P-D/define/use-cases', 3);
     const column = columnOf(n);
-    expect(column.get('P-D/use_case')).toBe(column.get('P-D')! + 1);
-    expect(column.get('P-D-UC02')).toBe(column.get('P-D/use_case')! + 1);
+    expect(column.get('P-D/define/use-cases')).toBe(column.get('P-D/define')! + 1);
+    expect(column.get('P-D-UC02')).toBe(column.get('P-D/define/use-cases')! + 1);
     expect(column.get('P-D-UC02/requirement')).toBe(column.get('P-D-UC02')! + 1);
     expect(column.get('P-D-UC01-R01')).toBe(column.get('P-D-UC02/requirement'));
     // The requirements behind the folded group are not shown; opened, they sit one column after it.
-    const opened = columnOf(neighborhood(grouped, 'P-D/use_case', 3, undefined, new Map([['P-D-UC02/requirement', true]])));
+    const opened = columnOf(neighborhood(grouped, 'P-D/define/use-cases', 3, undefined, new Map([['P-D-UC02/requirement', true]])));
     expect(opened.get('P-D-UC02-R01')).toBe(opened.get('P-D-UC02/requirement')! + 1);
   });
 

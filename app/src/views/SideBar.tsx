@@ -20,7 +20,7 @@ import './SideBar.css';
 
 export interface SideBarProps {
   index: SpecIndex;
-  /** The page's record, or a group as `<parent-id>/<kind>`. */
+  /** The page's record, or a group's ID in the graph's tree. */
   focus: string;
   mode: SideMode;
   view: SideView;
