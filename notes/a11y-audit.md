@@ -3,7 +3,7 @@
 The accessibility suite (`app/a11y`, `npm --prefix app run test:a11y`, rule `LA-PAT-APP-UX-R10`) runs axe-core at WCAG 2.2 AA (`wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa`, `wcag22aa`) on every page and state the stability suite visits, and walks the keyboard paths axe can't check. Each page or state in each look is one test.
 
 - **Pages:** product, domain, record and group pages; the graph; the Model view; Checks; Format; Appearance.
-- **States:** quick find, the command palette, the shortcuts sheet and a tooltip on a wide screen; the nav drawer, the quick find sheet and the inspector sheet on a phone. The inspector is open on every wide record page.
+- **States:** quick find, the command palette, the shortcuts sheet and a tooltip on a wide screen; the nav drawer, the quick find sheet and the inspector sheet on a phone. The side bar (the inspector) is open beside the graph and the Model view.
 - **Widths and looks:** 1440 px and 375 px (touch), each in Lathe light, Lathe dark, High contrast light and High contrast dark, with reduced motion so colors are read at rest.
 - **Keyboard** (`keyboard.spec.ts`): Tab round the whole page and back with no trap; the main tasks by keyboard (open a record from the nav and from quick find, switch views, re-center the graph, fold a row, hide, show and focus the inspector, pick a theme); focus after a move and back on the opener when a dialog or a sheet closes; the announcer's words.
 
@@ -38,7 +38,7 @@ Before: 156 findings in 5 rules; 94 of the 100 audit tests failed (on a phone, t
 
 ## `target-size`: targets under 24 px with neighbors too close (WCAG 2.5.8)
 
-`LA-BRW-DR323`. **Record links listed in a Traceability cell** on a record page (`.trace-cell > .record-link`) were 16 px tall with 2 px between rows, so a 24 px circle on one touched the next. Fix: they are 24 px tall (`min-block-size: 24px` in `app/src/styles.css`). Links inside sentences are exempt in WCAG and were not flagged.
+`LA-BRW-DR323`. **Record links listed in a Traceability cell** on a record page (`.trace-cell > .record-link`) were 16 px tall with 2 px between rows, so a 24 px circle on one touched the next. Fix: they are 24 px tall (`min-block-size: 24px` in `app/src/styles.css`). The side bar (brief 64, merged while this ran) lists a record's links the same way in its Details view (`.side-trace-groups dd`), with 4 px between rows; the same fix is in `app/src/views/SideBar.css`. Links inside sentences are exempt in WCAG and were not flagged.
 
 ## `scrollable-region-focusable`: a scroll box the keyboard could not scroll (WCAG 2.1.1)
 

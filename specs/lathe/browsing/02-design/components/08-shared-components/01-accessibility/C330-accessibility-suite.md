@@ -1,8 +1,8 @@
 ---
-id: LA-BRW-C310
+id: LA-BRW-C330
 kind: component
 title: Accessibility suite
-parent: LA-BRW-LAY08
+parent: LA-BRW-LAY15
 component_type: test harness
 file: app/a11y/axe.ts
 links:

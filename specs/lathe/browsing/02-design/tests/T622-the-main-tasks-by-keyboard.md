@@ -1,5 +1,5 @@
 ---
-id: LA-BRW-T562
+id: LA-BRW-T622
 kind: test
 title: "Accessibility: the main tasks by keyboard alone, with their announcements"
 parent: LA-BRW

@@ -194,7 +194,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
       expect(bar.closest('.inspector, .inspector-column')).toBeNull();
       // Its left: the tabs (on a phone, the Open pages control that opens them as a sheet).
       if (narrow) {
-        expect(within(bar).getByRole('button', { name: /^Open pages \(\d+\)$/ })).toBeInTheDocument();
+        expect(within(bar).getByRole('button', { name: /^Open pages: \d+$/ })).toBeInTheDocument();
         expect(screen.queryAllByRole('tablist')).toEqual([]);
       } else {
         expect(screen.getAllByRole('tablist')).toHaveLength(1);

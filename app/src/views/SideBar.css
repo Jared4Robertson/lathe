@@ -26,6 +26,8 @@
 .side-trace-groups > div { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; }
 .side-trace-groups dt { font-size: 0.8rem; color: var(--muted); display: flex; gap: 6px; align-items: baseline; }
 .side-trace-groups dd { margin: 0; display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 0.82rem; }
+/* Record links listed in the side bar are 24 px targets (WCAG 2.5.8, LA-BRW-DR323). */
+.side-trace-groups dd > .record-link { min-block-size: 24px; align-items: center; }
 .side-trace > h3:focus { outline: none; }
 .side-trace > h3:focus-visible { outline: 2px solid var(--steel); outline-offset: 2px; }
 
