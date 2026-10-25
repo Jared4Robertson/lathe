@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { expectStable, openPage, step } from './measure';
 import { DOMAIN, FOCUS, GRAPH_CANVAS, GRAPH_HEADER, RECORD, SHELL } from './scenarios';
 
-// LA-PLT-T69: moving between records through the nav, a link, a graph click, Back and quick
+// LA-PLT-T70: moving between records through the nav, a link, a graph click, Back and quick
 // find keeps the shell, the pane bar and the side bar where they were. The page's content
 // changes (it is a new page), so shifts inside the wiki pane's scroll box and the side bar's
 // body are the change itself; the frame around them must hold still.
@@ -13,7 +13,7 @@ const KEYS = [...SHELL, ...FOCUS];
 const TITLE = [FOCUS[1]];
 
 test.describe('navigate', () => {
-  test('LA-PLT-T69 through the nav', async ({ page }) => {
+  test('LA-PLT-T70 through the nav', async ({ page }) => {
     await openPage(page, DOMAIN);
     const link = page.locator('nav#nav .nav-space a[href^="/LA/"]:not([aria-current])').first();
     await expect(link).toBeVisible();
@@ -24,7 +24,7 @@ test.describe('navigate', () => {
     expectStable(r);
   });
 
-  test('LA-PLT-T69 through a link in the page', async ({ page }) => {
+  test('LA-PLT-T70 through a link in the page', async ({ page }) => {
     await openPage(page, RECORD);
     const link = page.locator('.pane-wiki .spec-body a.record-link[href^="/LA-"]').first();
     const r = await step(page, 'navigate', 'through a link', { keys: KEYS, allow: CONTENT, resizes: TITLE }, async () => {
@@ -34,7 +34,7 @@ test.describe('navigate', () => {
     expectStable(r);
   });
 
-  test('LA-PLT-T69 by clicking a graph node, then Back', async ({ page }) => {
+  test('LA-PLT-T70 by clicking a graph node, then Back', async ({ page }) => {
     await openPage(page, `${RECORD}?view=graph`);
     await page.locator('.graph-flow .react-flow__node:not(.is-leaving)').nth(1).waitFor();
     const keys = [...KEYS, GRAPH_CANVAS, GRAPH_HEADER];
@@ -54,7 +54,7 @@ test.describe('navigate', () => {
   // A new page starts at the top of the wiki pane. It must be drawn there from its first frame,
   // never drawn once at the last page's scroll and then moved up (a scroll set after paint). Back
   // comes back to the old page where it was scrolled, also from its first frame.
-  test('LA-PLT-T69 from a page scrolled half-way, and Back', async ({ page }) => {
+  test('LA-PLT-T70 from a page scrolled half-way, and Back', async ({ page }) => {
     await openPage(page, DOMAIN);
     await page.evaluate(() => {
       const box = document.querySelector('.pane-wiki .pane-scroll')!;
@@ -128,7 +128,7 @@ test.describe('navigate', () => {
     expect.soft(backFrames.find((f) => f.title === after)?.top ?? 0, 'Back does not start at the top').toBeGreaterThan(0);
   });
 
-  test('LA-PLT-T69 through quick find', async ({ page }) => {
+  test('LA-PLT-T70 through quick find', async ({ page }) => {
     await openPage(page, RECORD);
     await page.keyboard.press('Control+k');
     const find = page.locator('.quick-find input');

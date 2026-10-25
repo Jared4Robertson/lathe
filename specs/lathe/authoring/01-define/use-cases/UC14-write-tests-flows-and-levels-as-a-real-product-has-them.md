@@ -2,7 +2,7 @@
 id: LA-AUT-UC14
 kind: use_case
 title: Write tests, flows and levels as a real product has them
-parent: LA-AUT-CAP03
+parent: LA-AUT-CAP02
 actor: Owner, Agent
 links:
   applies: [LA-TRC-DR28, LA-TRC-DR29, LA-TRC-DR30, LA-TRC-DR31, LA-AUT-DR68, LA-AUT-DR69, LA-AUT-DR70]

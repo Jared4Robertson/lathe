@@ -2,7 +2,7 @@
 id: LA-AUT-UC06
 kind: use_case
 title: Organize a domain's use cases into capabilities and patterns
-parent: LA-AUT-CAP03
+parent: LA-AUT-CAP02
 actor: Owner, Agent
 links:
   applies: [LA-AUT-DR15, LA-AUT-DR16, LA-TRC-DR05, LA-AUT-DR17, LA-TRC-DR06]

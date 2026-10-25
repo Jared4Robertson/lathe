@@ -2,7 +2,7 @@
 id: LA-AUT-UC03
 kind: use_case
 title: Load the workspace in code
-parent: LA-AUT-CAP01
+parent: LA-AUT-CAP03
 actor: Agent
 links:
   applies: [LA-PLT-DR01, LA-AUT-DR03, LA-PLT-DR02]

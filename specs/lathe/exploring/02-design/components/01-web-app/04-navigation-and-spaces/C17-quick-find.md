@@ -9,4 +9,4 @@ links:
   satisfies: [LA-EXP-UC05-R10]
   depends_on: [LA-EXP-C13]
 ---
-A combobox that ranks every record, domain, product and diagram against what is typed (exact ID, ID prefix, title start, title word, anywhere) and opens the chosen one; arrow keys move, Enter opens, Escape clears.
+A combobox that ranks every record, domain and product against what is typed (exact ID, ID prefix, title start, title word, anywhere) and opens the chosen one; arrow keys move, Enter opens, Escape clears.

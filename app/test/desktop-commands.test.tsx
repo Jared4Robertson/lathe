@@ -7,7 +7,7 @@ import { desktopBridgeStub, openApp, openSideBar } from './helpers';
 afterEach(() => { delete window.latheDesktop; });
 
 describe('desktop menu commands', () => {
-  it('LA-PLT-T111 A menu choice sent by ID runs the app command, and the app stops listening when it unmounts', async () => {
+  it('LA-PLT-T112 A menu choice sent by ID runs the app command, and the app stops listening when it unmounts', async () => {
     // The side bar starts closed in the Wiki view (brief 64); this test reads it open.
     openSideBar('details', ['wiki', 'graph', 'model']);
     let listener: ((id: string) => void) | null = null;

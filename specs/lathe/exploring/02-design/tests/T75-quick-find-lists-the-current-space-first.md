@@ -8,4 +8,4 @@ run_by: app/test/spaces.test.tsx
 links:
   proves: [LA-EXP-UC07-R06, LA-EXP-DR16]
 ---
-Expects the current space's matches in the first group and other products and diagrams under a divider, walked as one list.
+Expects the current space's matches in the first group and other products under a divider, walked as one list.

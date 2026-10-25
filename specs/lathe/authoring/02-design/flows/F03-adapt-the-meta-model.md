@@ -2,7 +2,7 @@
 id: LA-AUT-F03
 kind: flow
 title: Adapt the meta-model for a product
-parent: LA-AUT-CAP02
+parent: LA-AUT-CAP01
 links:
   carries_out: [LA-AUT-UC04, LA-AUT-UC05, LA-AUT-UC06, LA-CHK-UC04, LA-TRC-UC07, LA-AUT-UC09, LA-AUT-UC10, LA-CHK-UC06, LA-AUT-UC11, LA-AUT-UC12, LA-AUT-UC13, LA-AUT-UC14]
 ---

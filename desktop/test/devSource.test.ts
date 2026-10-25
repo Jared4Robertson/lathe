@@ -3,12 +3,12 @@ import { describe, expect, it } from 'vitest';
 import { chooseDevSource, freePort, ROOT_HEADER, SHARED_PORT, SHARED_URL, type Probe } from '../src/devSource.ts';
 
 const answers = (status: number, root?: string): Probe => async (url) => {
-  expect(url).toBe(`${SHARED_URL}/api/diagrams`);
+  expect(url).toBe(`${SHARED_URL}/api/format`);
   return { status, headers: root ? { [ROOT_HEADER]: encodeURIComponent(root) } : {} };
 };
 const silent: Probe = async () => null;
 
-describe('LA-PLT-T106 In development the window uses the 5199 server only when it answers for the opened folder', () => {
+describe('LA-PLT-T107 In development the window uses the 5199 server only when it answers for the opened folder', () => {
   it('uses http://localhost:5199 when it answers for the same folder', async () => {
     expect(await chooseDevSource('/repo/lathe', '/repo/lathe', answers(200, '/repo/lathe'))).toEqual({ kind: 'shared', url: 'http://localhost:5199' });
   });

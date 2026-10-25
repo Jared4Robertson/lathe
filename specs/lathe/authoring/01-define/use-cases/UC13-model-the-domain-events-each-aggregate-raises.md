@@ -2,7 +2,7 @@
 id: LA-AUT-UC13
 kind: use_case
 title: Model the domain events each aggregate raises
-parent: LA-AUT-CAP03
+parent: LA-AUT-CAP02
 actor: Owner, Agent
 links:
   applies: [LA-AUT-DR63, LA-AUT-DR64, LA-AUT-DR65, LA-AUT-DR66, LA-AUT-DR67]

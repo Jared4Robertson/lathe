@@ -2,12 +2,12 @@ import { expect, test } from '@playwright/test';
 import { expectStable, openPage, step } from './measure';
 import { FOCUS, RECORD, SHELL } from './scenarios';
 
-// LA-PLT-T75: tooltips, quick find, the command palette and the shortcuts sheet. Each is placed
+// LA-PLT-T76: tooltips, quick find, the command palette and the shortcuts sheet. Each is placed
 // before it shows and stays where it showed; typing in a search box filters the list under it
 // without moving the box; the page behind never moves.
 
 test.describe('overlays', () => {
-  test('LA-PLT-T75 a tooltip shows in place', async ({ page }) => {
+  test('LA-PLT-T76 a tooltip shows in place', async ({ page }) => {
     await openPage(page, `${RECORD}?view=wiki,graph`);
     const button = page.locator('.page-bar .pane-views button').first();
     const r = await step(page, 'overlays', 'tooltip on hover', { keys: [...SHELL, ...FOCUS, '.tooltip'] }, async () => {
@@ -23,7 +23,7 @@ test.describe('overlays', () => {
     expectStable(next);
   });
 
-  test('LA-PLT-T75 quick find', async ({ page }) => {
+  test('LA-PLT-T76 quick find', async ({ page }) => {
     await openPage(page, RECORD);
     const r = await step(page, 'overlays', 'quick find: open and type', { keys: [...SHELL, ...FOCUS, '.quick-find input'], allow: ['.quick-find-results'] }, async () => {
       await page.keyboard.press('Control+k');
@@ -38,7 +38,7 @@ test.describe('overlays', () => {
     expectStable(close);
   });
 
-  test('LA-PLT-T75 the command palette', async ({ page }) => {
+  test('LA-PLT-T76 the command palette', async ({ page }) => {
     await openPage(page, RECORD);
     const r = await step(page, 'overlays', 'palette: open and type', { keys: [...SHELL, ...FOCUS, '.dialog-search'], allow: ['.palette-list'] }, async () => {
       await page.keyboard.press('Control+Shift+p');
@@ -49,7 +49,7 @@ test.describe('overlays', () => {
     await page.keyboard.press('Escape');
   });
 
-  test('LA-PLT-T75 the shortcuts sheet', async ({ page }) => {
+  test('LA-PLT-T76 the shortcuts sheet', async ({ page }) => {
     await openPage(page, RECORD);
     await page.locator('#main').click({ position: { x: 400, y: 300 } });
     const r = await step(page, 'overlays', 'shortcuts sheet: open and search', { keys: [...SHELL, ...FOCUS, '.dialog-search'], allow: ['.shortcut-groups'] }, async () => {

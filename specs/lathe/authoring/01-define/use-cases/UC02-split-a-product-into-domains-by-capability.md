@@ -2,7 +2,7 @@
 id: LA-AUT-UC02
 kind: use_case
 title: Split a product into domains by capability
-parent: LA-AUT-CAP03
+parent: LA-AUT-CAP02
 actor: Owner, Agent
 links:
   applies: [LA-AUT-DR71]

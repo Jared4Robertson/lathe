@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { expectStable, openPage, step } from './measure';
 import { DOMAIN, GRAPH_CANVAS, GRAPH_HEADER, MODEL_CANVAS, RECORD } from './scenarios';
 
-// LA-PLT-T73: re-centering the graph at depth 1, 2 and 3, and moving around the ERD. The boxes
+// LA-PLT-T74: re-centering the graph at depth 1, 2 and 3, and moving around the ERD. The boxes
 // glide (a transform, which is no layout shift) and the camera moves; the pane's title, the
 // graph's header and its canvas must hold still, and the canvas must not be drawn anew.
 
@@ -36,7 +36,7 @@ async function visibleNode(page: Page, n: number): Promise<string> {
 
 test.describe('graph', () => {
   for (const depth of [1, 2, 3]) {
-    test(`LA-PLT-T73 re-center at depth ${depth}`, async ({ page }) => {
+    test(`LA-PLT-T74 re-center at depth ${depth}`, async ({ page }) => {
       await openPage(page, `${RECORD}?view=graph`);
       await nodes(page);
       if (depth > 1) {
@@ -57,7 +57,7 @@ test.describe('graph', () => {
     });
   }
 
-  test('LA-PLT-T73 change the depth', async ({ page }) => {
+  test('LA-PLT-T74 change the depth', async ({ page }) => {
     await openPage(page, `${RECORD}?view=graph`);
     await nodes(page);
     const keys = [PANE_BAR, PANE_TITLE, GRAPH_HEADER, GRAPH_CANVAS];
@@ -67,7 +67,7 @@ test.describe('graph', () => {
     }
   });
 
-  test('LA-PLT-T73 move around the ERD', async ({ page }) => {
+  test('LA-PLT-T74 move around the ERD', async ({ page }) => {
     await openPage(page, `${DOMAIN}?view=model`);
     await page.locator('.model-flow .react-flow__node').first().waitFor();
     await page.waitForTimeout(500);

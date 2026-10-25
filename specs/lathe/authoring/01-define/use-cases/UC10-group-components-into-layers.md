@@ -2,7 +2,7 @@
 id: LA-AUT-UC10
 kind: use_case
 title: Group components into layers
-parent: LA-AUT-CAP03
+parent: LA-AUT-CAP02
 actor: Owner, Agent
 links:
   applies: [LA-AUT-DR40, LA-AUT-DR41, LA-AUT-DR42, LA-AUT-DR43, LA-AUT-DR44, LA-AUT-DR45, LA-AUT-DR46, LA-AUT-DR47, LA-AUT-DR48, LA-AUT-DR49]

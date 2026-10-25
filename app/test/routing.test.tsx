@@ -21,7 +21,6 @@ describe('routing', () => {
     expect(parseSpecRoute('/')).toEqual({ page: 'specs' });
     expect(parseSpecRoute('/checks')).toEqual({ page: 'checks' });
     expect(parseSpecRoute('/format')).toEqual({ page: 'format' });
-    expect(parseSpecRoute('/diagrams/people')).toBeNull();
     expect(parseSpecRoute('/settings/appearance')).toBeNull();
     expect(parseSpecRoute('/nothing-here')).toEqual({ page: 'missing' });
 
@@ -48,12 +47,11 @@ describe('routing', () => {
     expect(heading()).toHaveTextContent('Shopping');
   });
 
-  it('LA-EXP-T02 The menu lists each product and its domains beside the Diagrams section', async () => {
-    await openApp('/DM', { diagrams: [{ slug: 'people', title: 'People and tools', description: null }] });
+  it('LA-EXP-T02 The menu lists each product and its domains beside the Tools section', async () => {
+    await openApp('/DM');
     const nav = menu();
-    expect(within(nav).getByText('Diagrams')).toBeInTheDocument();
-    expect(await within(nav).findByRole('link', { name: 'People and tools' })).toHaveAttribute('href', '/diagrams/people');
-    expect(within(nav).getByRole('button', { name: 'New diagram' })).toBeInTheDocument();
+    expect(await within(nav).findByText('Tools')).toBeInTheDocument();
+    expect(within(nav).queryByText('Diagrams')).toBeNull();
 
     // The current space's section: its product, then its domains; another product is only in the rail.
     const items = nav.querySelector<HTMLElement>('.space-items')!;

@@ -16,7 +16,7 @@ const announcer = () => screen.getByTestId('announcer');
 const node = (id: string) => document.querySelector<HTMLElement>(`.react-flow__node[data-id="${id}"]`);
 
 describe('keyboard shortcuts', () => {
-  it('LA-PLT-T16 Ctrl+P (or Ctrl+K) opens quick find, from anywhere, and the browser does not print', async () => {
+  it('LA-PLT-T17 Ctrl+P (or Ctrl+K) opens quick find, from anywhere, and the browser does not print', async () => {
     await openApp('/checks');
     await screen.findByRole('heading', { level: 1, name: 'Checks' });
     const event = new KeyboardEvent('keydown', { key: 'p', code: 'KeyP', ctrlKey: true, bubbles: true, cancelable: true });
@@ -34,7 +34,7 @@ describe('keyboard shortcuts', () => {
     expect(other.defaultPrevented).toBe(false);
   });
 
-  it('LA-PLT-T17 Ctrl+B hides and shows the nav, Ctrl+Alt+B the side bar, each announced', async () => {
+  it('LA-PLT-T18 Ctrl+B hides and shows the nav, Ctrl+Alt+B the side bar, each announced', async () => {
     await openApp('/P-D-UC01', { workspace: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     press(document.body, 'b', 'KeyB', { ctrlKey: true });
@@ -53,7 +53,7 @@ describe('keyboard shortcuts', () => {
     await waitFor(() => expect(announcer()).toHaveTextContent('Side bar hidden'));
   });
 
-  it('LA-PLT-T18 Alt+W, Alt+G and Alt+M (or Ctrl+1, 2 and 4) toggle the views off a Mac, Ctrl+3 shows only the focused pane, and Ctrl+3 or Escape restores', async () => {
+  it('LA-PLT-T19 Alt+W, Alt+G and Alt+M (or Ctrl+1, 2 and 4) toggle the views off a Mac, Ctrl+3 shows only the focused pane, and Ctrl+3 or Escape restores', async () => {
     await openApp('/P-D-UC01', { workspace: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     press(document.body, '2', 'Digit2', { ctrlKey: true });
@@ -91,7 +91,7 @@ describe('keyboard shortcuts', () => {
     expect(document.querySelector('.is-fullscreen')).toBeNull();
   });
 
-  it('LA-PLT-T19 F8 and Shift+F8 move through the problems on the page and say each one', async () => {
+  it('LA-PLT-T20 F8 and Shift+F8 move through the problems on the page and say each one', async () => {
     await openApp('/checks');
     await screen.findByRole('heading', { level: 1, name: 'Checks' });
     const problems = [...document.querySelectorAll<HTMLElement>('#main li.problem')];
@@ -107,7 +107,7 @@ describe('keyboard shortcuts', () => {
     expect(active()).toBe(problems[problems.length - 1]);
   });
 
-  it('LA-PLT-T20 ? opens the shortcuts sheet and Ctrl+Shift+P the command palette, both searchable; the palette runs a command', async () => {
+  it('LA-PLT-T21 ? opens the shortcuts sheet and Ctrl+Shift+P the command palette, both searchable; the palette runs a command', async () => {
     await openApp('/P-D-UC01', { workspace: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     press(document.body, '?', 'Slash', { shiftKey: true });
@@ -144,7 +144,7 @@ describe('keyboard shortcuts', () => {
     expect(within(screen.getByRole('dialog')).getAllByRole('option').map((o) => o.textContent)).toEqual(['Expand all rows on this page', 'Collapse all rows on this page']);
   });
 
-  it('LA-PLT-T21 g then c, f, d or h jumps to Checks, the format, Diagrams or home, with a hint while it waits', async () => {
+  it('LA-PLT-T22 g then c, f or h jumps to Checks, the format or home, with a hint while it waits', async () => {
     await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     press(document.body, 'g', 'KeyG');
@@ -166,7 +166,7 @@ describe('keyboard shortcuts', () => {
     expect(window.location.pathname).toBe('/');
   });
 
-  it('LA-PLT-T22 In the graph, + and - change the depth, t switches trace mode, . fits the view and o opens or closes the focused group', async () => {
+  it('LA-PLT-T23 In the graph, + and - change the depth, t switches trace mode, . fits the view and o opens or closes the focused group', async () => {
     await openApp('/P-D?view=graph', { workspace: testWorkspace() });
     await waitFor(() => expect(node('P-D/question')).not.toBeNull());
     press(document.body, '+', 'Equal', { shiftKey: true });
@@ -189,7 +189,7 @@ describe('keyboard shortcuts', () => {
     await waitFor(() => expect(node('file:src/thing.ts')).not.toBeNull());
   });
 
-  it('LA-PLT-T23 F12, Shift+F12, Ctrl+Shift+E, Ctrl+Shift+I, / and Ctrl+- reach links, incoming links, the nav, the side bar, search and Back', async () => {
+  it('LA-PLT-T24 F12, Shift+F12, Ctrl+Shift+E, Ctrl+Shift+I, / and Ctrl+- reach links, incoming links, the nav, the side bar, search and Back', async () => {
     // The side bar starts closed in the Wiki view (brief 64); this test reads it open.
     openSideBar('details', ['wiki', 'graph', 'model']);
     await openApp('/P-D-UC01', { workspace: testWorkspace() });

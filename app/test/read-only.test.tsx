@@ -20,7 +20,7 @@ describe('spec pages only read', () => {
       for (const input of area.querySelectorAll('input')) expect(input.type, page).toBe('search');
       // Use the page: type in the search box.
       for (const input of area.querySelectorAll('input')) await user.type(input, 'basket');
-      expect(requests.every((r) => r === 'GET /api/spec' || r === 'GET /api/diagrams' || r === 'GET /api/format'), `${page}: ${requests.join(', ')}`).toBe(true);
+      expect(requests.every((r) => r === 'GET /api/spec' || r === 'GET /api/format'), `${page}: ${requests.join(', ')}`).toBe(true);
     }
   });
 });

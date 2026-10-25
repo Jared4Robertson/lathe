@@ -2,7 +2,7 @@
 id: LA-AUT-UC11
 kind: use_case
 title: Model each aggregate's entities and how they relate
-parent: LA-AUT-CAP03
+parent: LA-AUT-CAP02
 actor: Owner, Agent
 links:
   applies: [LA-AUT-DR50, LA-AUT-DR51, LA-AUT-DR52, LA-AUT-DR53, LA-AUT-DR54, LA-AUT-DR55, LA-AUT-DR56, LA-AUT-DR57]

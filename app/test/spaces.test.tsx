@@ -61,9 +61,8 @@ describe('product spaces', () => {
     const index = indexWorkspace(spacesWorkspace());
     expect(spaceOf(index.byId.get('NF')!).color).toBe('#335577');
     expect(spaceOf(index.byId.get('DM')!).color).toBe(colorOf('DM'));
-    // After the spaces, a separator and the items above every product.
+    // After the spaces, a separator and the item above every product.
     expect(nav().querySelector('.space-rail hr')).not.toBeNull();
-    expect(within(nav().querySelector<HTMLElement>('.space-rail')!).getByRole('link', { name: 'Diagrams' })).toBeInTheDocument();
     expect(within(nav().querySelector<HTMLElement>('.space-rail')!).getByRole('link', { name: /^Checks for all products/ })).toHaveAttribute('href', '/checks');
   });
 
@@ -162,13 +161,13 @@ describe('product spaces', () => {
   });
 
   it('LA-EXP-T75 Quick find lists the current space first, then everything else under a divider', async () => {
-    const items = findItems(indexWorkspace(spacesWorkspace()), [{ slug: 'notes-diagram', title: 'Notes diagram', description: null }]);
+    const items = findItems(indexWorkspace(spacesWorkspace()));
     const scoped = rankScoped(items, 'not', 'NF');
     expect(scoped.here.map((i) => i.id)).toEqual(['NF', 'NF-NOTE']);
-    expect(scoped.elsewhere.map((i) => i.id)).toContain('notes-diagram');
+    expect(scoped.elsewhere.every((i) => i.product !== 'NF')).toBe(true);
     expect(rankScoped(items, 'not', null).here).toEqual([]);
 
-    await openApp('/DM', { workspace: spacesWorkspace(), diagrams: [{ slug: 'notes-diagram', title: 'Notes diagram', description: null }] });
+    await openApp('/DM', { workspace: spacesWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     const user = userEvent.setup();
     const find = within(nav()).getByRole('combobox', { name: 'Quick find' });
@@ -185,7 +184,7 @@ describe('product spaces', () => {
     expect(named).toEqual(['In Demo shop', 'Everything else']);
     const [here, elsewhere] = within(list).getAllByRole('group');
     expect(within(here).getAllByRole('option').every((o) => o.querySelector('code')!.textContent!.startsWith('DM'))).toBe(true);
-    expect(within(elsewhere).getAllByRole('option').map((o) => o.querySelector('code')!.textContent)).toEqual(expect.arrayContaining(['NF-NOTE', 'notes-diagram']));
+    expect(within(elsewhere).getAllByRole('option').map((o) => o.querySelector('code')!.textContent)).toEqual(expect.arrayContaining(['NF-NOTE']));
     expect(elsewhere.closest('li')).toHaveClass('is-divided');
     // The arrow keys run through both groups as one list.
     const options = within(list).getAllByRole('option');

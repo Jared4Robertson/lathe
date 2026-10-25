@@ -4,7 +4,7 @@ kind: test
 title: A record without a title, a known kind or its kind's required fields is an error
 parent: LA-AUT
 test_type: unit
-run_by: lathe/test/diagrams.test.ts
+run_by: lathe/test/records.test.ts
 links:
   proves: [LA-AUT-DR04]
 ---

@@ -4,7 +4,7 @@ kind: test
 title: Two records with the same ID are an error, even in different products
 parent: LA-AUT
 test_type: unit
-run_by: lathe/test/diagrams.test.ts
+run_by: lathe/test/records.test.ts
 links:
   proves: [LA-AUT-DR01]
 ---

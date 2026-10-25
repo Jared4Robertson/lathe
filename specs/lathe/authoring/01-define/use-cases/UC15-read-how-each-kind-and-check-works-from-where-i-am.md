@@ -2,7 +2,7 @@
 id: LA-AUT-UC15
 kind: use_case
 title: Read how each kind and check works, from where I am
-parent: LA-AUT-CAP02
+parent: LA-AUT-CAP01
 actor: Reader
 links:
   applies: [LA-AUT-DR72, LA-AUT-DR73, LA-CHK-DR27]

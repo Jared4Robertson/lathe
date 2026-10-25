@@ -2,7 +2,7 @@
 id: LA-AUT-UC09
 kind: use_case
 title: Read each kind's folder from the meta-model
-parent: LA-AUT-CAP02
+parent: LA-AUT-CAP01
 actor: Owner, Agent
 links:
   applies: [LA-AUT-DR36, LA-AUT-DR37, LA-AUT-DR38, LA-AUT-DR39]

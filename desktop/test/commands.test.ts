@@ -14,7 +14,7 @@ function template(mac: boolean, recent: string[] = []) {
   return { actions, menu: menuTemplate(actions, mac) };
 }
 
-describe('LA-PLT-T107 The native menus offer the app commands, by command ID, without taking any key', () => {
+describe('LA-PLT-T108 The native menus offer the app commands, by command ID, without taking any key', () => {
   it('has File, Edit, View, Window and Help, plus the app menu on a Mac', () => {
     const names = template(true).menu.map((m) => m.label ?? m.role);
     expect(names).toEqual(['appMenu', 'File', 'editMenu', 'View', 'windowMenu', 'help']);
@@ -76,7 +76,7 @@ describe('LA-PLT-T107 The native menus offer the app commands, by command ID, wi
   });
 });
 
-describe('LA-PLT-T123 The app menu has About and Settings, File chooses the editor, and View has the record tabs', () => {
+describe('LA-PLT-T124 The app menu has About and Settings, File chooses the editor, and View has the record tabs', () => {
   function full(mac: boolean) {
     const actions = {
       recent: [],

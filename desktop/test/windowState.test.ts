@@ -3,7 +3,7 @@ import { DEFAULT_SIZE, MIN_SIZE, parseWindowStates, saveWindow, windowFor } from
 
 const display = { x: 0, y: 0, width: 1728, height: 1080 };
 
-describe('LA-PLT-T105 Each folder window reopens where it was left, and always on a screen', () => {
+describe('LA-PLT-T106 Each folder window reopens where it was left, and always on a screen', () => {
   it('saves and restores a window by folder', () => {
     const states = saveWindow({}, '/p/lathe', { x: 100, y: 80, width: 1400, height: 900 });
     expect(windowFor(states, '/p/lathe', [display])).toEqual({ x: 100, y: 80, width: 1400, height: 900 });

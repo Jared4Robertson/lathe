@@ -2,7 +2,7 @@
 id: LA-AUT-F04
 kind: flow
 title: Write a flow as steps and check it
-parent: LA-AUT-CAP02
+parent: LA-AUT-CAP01
 links:
   carries_out: [LA-AUT-UC07]
 ---

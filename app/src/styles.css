@@ -62,27 +62,17 @@ html, body, #root { height: 100%; height: 100dvh; margin: 0; }
 html { font-size: calc(var(--text-size) * 16 / 15); }
 body { background: var(--paper); color: var(--ink); font: var(--text-size)/var(--line-height) var(--body); }
 .app { height: 100%; box-sizing: border-box; display: grid; grid-template-columns: var(--nav-width, 304px) var(--panel-gap) minmax(0, 1fr); padding: var(--panel-gap); background: var(--shell); }
-.diagram { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
 .placeholder { display: grid; place-items: center; color: var(--muted); }
 .menu { background: var(--sheet); padding: 12px 10px; display: flex; flex-direction: column; gap: 8px; min-height: 0; overflow: hidden; box-sizing: border-box; }
 .brand { margin: 0; font: 700 1.3rem var(--display); display: flex; align-items: center; gap: 8px; color: var(--ink); text-decoration: none; }
 .menu .eyebrow { margin: 0 6px; }
 .menu ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; }
 .menu a { display: flex; align-items: center; gap: 8px; min-height: var(--item-height); box-sizing: border-box; padding: calc(var(--item-pad-y) - 1px) 8px; border-radius: 6px; color: var(--ink); text-decoration: none; font-size: 0.92rem; min-width: 0; }
-.menu a:focus-visible, .menu button:focus-visible, .new-diagram-form input:focus-visible, .new-diagram-form textarea:focus-visible { outline: 2px solid var(--steel); outline-offset: 1px; }
-.new-diagram { margin-top: 4px; justify-content: flex-start; }
-.new-diagram-form { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; padding: 10px; border: 1px solid var(--rule); border-radius: 8px; }
-.new-diagram-form label { font-size: 0.78rem; font-weight: 600; }
-.new-diagram-form label span { font-weight: 400; color: var(--muted); }
-.new-diagram-form input, .new-diagram-form textarea { font: inherit; font-size: 0.9rem; padding: 6px 8px; border: 1px solid var(--rule); border-radius: 5px; background: var(--paper); color: var(--ink); resize: vertical; }
-.form-actions { display: flex; gap: 6px; margin-top: 4px; }
+.menu a:focus-visible, .menu button:focus-visible { outline: 2px solid var(--steel); outline-offset: 1px; }
 .menu .error { margin: 0; font-size: 0.78rem; }
 .description { margin: 4px 0 0; color: var(--muted); max-width: 70ch; }
-.empty { height: 100%; display: grid; grid-template-columns: minmax(0, 1fr); place-content: center; gap: 8px; max-width: 460px; margin: 0 auto; padding: 24px; color: var(--muted); }
-.empty h2 { color: var(--ink); }
-.empty code { font: 0.85em var(--mono); color: var(--ink); }
 /* Page headers (by class: a bare `header` rule would also style every section's header row). */
-.diagram-header, .spec-header, .graph-header { display: flex; justify-content: space-between; align-items: end; gap: 16px; padding: 20px 24px 12px; }
+.spec-header, .graph-header { display: flex; justify-content: space-between; align-items: end; gap: 16px; padding: 20px 24px 12px; }
 h1, h2, h3 { font-family: var(--display); margin: 0; line-height: 1.15; }
 h1 { font-size: 1.9rem; }
 h2 { font-size: 1.3rem; }
@@ -93,51 +83,19 @@ h3 { font-size: 0.95rem; margin-top: 8px; }
 .checks.failed { color: var(--error); border-color: var(--error); }
 .error { margin: 0 24px 8px; color: var(--error); font: 0.85rem var(--mono); }
 
-.workspace { flex: 1; display: grid; grid-template-columns: 1fr 320px; min-height: 0; border-top: 1px solid var(--rule); }
-.canvas { min-width: 0; min-height: 0; }
-.workspace > aside { border-left: 1px solid var(--rule); background: var(--sheet); padding: 20px; overflow-y: auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; align-content: start; }
-.workspace > aside p { margin: 0; }
-.workspace > aside ul { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
-.workspace > aside li { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; padding: 8px 10px; border: 1px solid var(--rule); border-radius: 6px; }
-.workspace > aside li.status-open { border-style: dashed; border-color: var(--warn); }
-.workspace > aside li em { font-style: normal; font-family: var(--mono); font-size: 0.8rem; color: var(--muted); }
-.workspace > aside li small, .hint { color: var(--muted); font-size: 0.8rem; }
+.hint { color: var(--muted); font-size: 0.8rem; }
 .record-side { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; align-content: start; }
 .record-side p { margin: 0; }
-.legend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-size: 0.8rem; color: var(--muted); }
-.swatch { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
-.swatch.agg { background: var(--steel-bg); border: 1px solid var(--steel); }
-.swatch.evt { background: var(--spark-bg); border: 1px solid var(--spark); border-radius: 6px; }
-.dash { width: 22px; border-top: 1.5px dashed var(--warn); display: inline-block; }
-@media (max-width: 800px) { .workspace { grid-template-columns: 1fr; grid-template-rows: 1fr auto; } .workspace > aside { border-left: 0; border-top: 1px solid var(--rule); } }
 
 /* Flow */
 .react-flow { --xy-background-color: var(--paper); --xy-background-pattern-color: var(--rule); }
 .react-flow__node { font-family: var(--body); transition: opacity var(--hover-speed); }
 @media (prefers-reduced-motion: reduce) { .react-flow__node { transition: none; } }
-.react-flow__node.dimmed, .react-flow__edge.dimmed, .react-flow__edge.dimmed + .edge-label { opacity: 0.25; }
-.handle { opacity: 0; pointer-events: none; }
-.context-node { width: 100%; height: 100%; box-sizing: border-box; border: 1px dashed var(--rule); border-radius: 14px; }
-.context-node span { position: absolute; top: 16px; left: 24px; font: 700 0.9375rem var(--display); }
-.aggregate-node { width: 100%; height: 100%; box-sizing: border-box; background: var(--steel-bg); border: 1px solid var(--steel); border-radius: 10px; padding: 12px 16px; display: flex; flex-direction: column; cursor: pointer; }
-.aggregate-node strong { font: 700 0.9375rem var(--display); }
-.leaf-node { width: 100%; height: 100%; box-sizing: border-box; background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; cursor: pointer; padding: 4px 8px; }
-.leaf-node.kind-domain_event { background: var(--spark-bg); border-color: var(--spark); border-radius: 999px; }
-.leaf-node.kind-term { border-style: dashed; }
-.leaf-node.kind-topic { border-color: var(--steel); }
-.leaf-node.kind-topic small { display: none; }
-.leaf-node strong { font-size: 0.875rem; font-weight: 600; }
-.aggregate-node small, .leaf-node small { font: 0.6875rem/1.3 var(--mono); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
-.status-open { border-color: var(--warn) !important; border-style: dashed !important; }
-.selected-term > div { box-shadow: 0 0 0 2px var(--steel); }
 .react-flow__edge-path { stroke: var(--ink); stroke-width: 1.3; }
-.react-flow__edge.uncertain .react-flow__edge-path, .react-flow__edge-path.uncertain { stroke: var(--warn); stroke-dasharray: 5 4; }
-.react-flow__edge.highlighted .react-flow__edge-path { stroke: var(--steel); stroke-width: 2; }
 .edge-label { position: absolute; pointer-events: none; font: 0.65625rem var(--mono); color: var(--muted); background: var(--paper); padding: 0 4px; border-radius: 3px; }
 .react-flow__controls button { background: var(--sheet); border-color: var(--rule); fill: var(--ink); }
 
 /* Specs */
-.menu .new-diagram + .eyebrow, .menu .new-diagram-form + .eyebrow { margin-top: 14px; }
 .menu .count { margin-left: 4px; font: 500 0.72rem var(--mono); color: var(--muted); }
 .menu .count.has-errors { color: var(--error); }
 .spec-page { min-width: 0; min-height: 0; overflow-y: auto; scrollbar-gutter: stable; }
@@ -524,7 +482,7 @@ a.button-primary.button-primary { color: var(--on-mark); }
 .nav-section-head:hover, .nav-folder-head:hover { color: var(--ink); }
 .nav-section-head .eyebrow { margin: 0; flex: 1; }
 .nav-section-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; }
-.menu .nav-section-body > :is(.new-diagram, .new-diagram-form, .error) { margin-inline: 10px; }
+.menu .nav-section-body > .error { margin-inline: 10px; }
 .nav-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1; }
 /* Nav rows, as in VS Code's explorer (LA-EXP-DR41). Each row is as wide as the nav panel, indented by padding for its
    depth (--depth, set by the row), with its indent guides drawn inside it, one under each ancestor's chevron. The
@@ -772,7 +730,7 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 /* Hover: everything clickable answers the pointer the same way (LA-PAT-APP-UX-R01).
    Cards and graph nodes take a ring; rows and plain buttons take a tint; small text controls turn steel.
    The center node and file nodes are not clickable, so they keep the default cursor and no hover. */
-.card, .graph-node, .aggregate-node, .leaf-node, .spec-node, .button, .graph-depth button,
+.card, .graph-node, .spec-node, .button, .graph-depth button,
 .quick-find-results li, .palette-list li, .graph-trace-toggle, .graph-filters > summary, .graph-legend summary {
   transition: background-color var(--hover-speed), border-color var(--hover-speed), box-shadow var(--hover-speed), color var(--hover-speed);
 }
@@ -795,12 +753,12 @@ a.row-link.row-link:focus-visible { outline: none; }
 .graph-node.is-focus, .graph-node.stage-file { cursor: default; }
 .graph-flow .react-flow__node:hover .graph-node:not(.is-focus):not(.stage-file) { box-shadow: 0 0 0 3px var(--hover-ring); }
 .graph-flow .react-flow__node:hover .graph-node.stage-group.is-folded:not(.is-focus) { box-shadow: 3px 3px 0 -1px var(--paper), 3px 3px 0 0 var(--muted), 0 0 0 3px var(--hover-ring); }
-.aggregate-node:hover, .leaf-node:hover, .spec-node:hover { box-shadow: 0 0 0 3px var(--hover-ring); }
+.spec-node:hover { box-shadow: 0 0 0 3px var(--hover-ring); }
 .graph-depth button:not([aria-pressed="true"]):not(:disabled):hover { background: var(--hover-bg); border-color: var(--steel); }
 .quick-find-results li:not(.active):hover, .palette-list li:not(.active):hover { background: var(--hover-bg); }
 .graph-trace-toggle:hover, .graph-filters > summary:hover, .graph-legend summary:hover { color: var(--steel); }
 @media (prefers-reduced-motion: reduce) {
-  .card, .graph-node, .aggregate-node, .leaf-node, .spec-node, .button, .graph-depth button,
+  .card, .graph-node, .spec-node, .button, .graph-depth button,
   .quick-find-results li, .palette-list li, .graph-trace-toggle, .graph-filters > summary, .graph-legend summary { transition: none; }
 }
 
@@ -906,8 +864,8 @@ a.row-link.row-link:focus-visible { outline: none; }
 .erd-key-context { display: inline-block; width: 14px; height: 10px; border: 1.5px dashed var(--muted); background: var(--paper); border-radius: 2px; opacity: var(--context-opacity); }
 .model-flow::after { content: ""; position: absolute; inset: 0; z-index: 4; pointer-events: none; box-shadow: inset 0 0 var(--vignette) calc(var(--vignette) / 3) var(--paper); }
 @media (pointer: coarse) { .model-flow .react-flow__node.is-context.is-armed .erd-box { opacity: 1; } }
-/* Domain events in the ERD (LA-EXP-UC11-R07, R08; LA-EXP-DR52): a rounded pill in the spark colors, as the Diagrams pages draw
-   one; the short line from the entity raising it and the dashed "reacts to" lines in spark too. A "reacts to" line shows its
+/* Domain events in the ERD (LA-EXP-UC11-R07, R08; LA-EXP-DR52): a rounded pill in the spark colors; the
+   short line from the entity raising it and the dashed "reacts to" lines in spark too. A "reacts to" line shows its
    label on hover, over a wider unseen stroke that is easy to point at, fading in on the shared hover speed. */
 .erd-box.erd-event { justify-content: center; border-color: var(--spark); background: var(--spark-bg); border-radius: 999px; padding-inline: 16px; }
 .erd-box.erd-event:not(.is-focus):hover { box-shadow: 0 0 0 3px color-mix(in srgb, var(--spark) 45%, transparent); }
@@ -1089,7 +1047,7 @@ a.row-link.row-link:focus-visible { outline: none; }
   .dialog { width: 100%; max-height: none; height: 100dvh; border: 0; border-radius: 0; padding: calc(12px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left)); }
   /* Readable on a phone: body text a step up, and boxes at 16 px so iOS never zooms in on focus. */
   body { font-size: max(var(--text-size), 16px); }
-  :is(.quick-find, .dialog, .long-list-tools, .new-diagram-form, .graph-filters, .appearance-page) :is(input, select, textarea), .dialog-search { font-size: 16px; }
+  :is(.quick-find, .dialog, .long-list-tools, .graph-filters, .appearance-page) :is(input, select, textarea), .dialog-search { font-size: 16px; }
 }
 
 /* A canvas by touch: the selected node is outlined, and a card at the bottom names it with an Open chip. */
@@ -1131,7 +1089,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 /* Scroll boxes keep room for their scrollbar (LA-PAT-APP-UX-R08), so a classic scrollbar (Windows, a Mac with a
    mouse) that comes and goes with the content never narrows what is inside. The space rail hides its scrollbar
    instead: it is too narrow to give one room, and it still scrolls by wheel, touch and keyboard. */
-.workspace > aside, .nav-scroll, .quick-find-results, .quick-find-results.is-inline, .pane-scroll, .side-bar.record-side, .shortcut-groups, .palette-list, .pages-list { scrollbar-gutter: stable; }
+.nav-scroll, .quick-find-results, .quick-find-results.is-inline, .pane-scroll, .side-bar.record-side, .shortcut-groups, .palette-list, .pages-list { scrollbar-gutter: stable; }
 .space-rail { scrollbar-width: none; }
 .space-rail::-webkit-scrollbar { display: none; }
 

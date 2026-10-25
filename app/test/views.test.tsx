@@ -98,7 +98,7 @@ describe('one address, three views', () => {
     expect(within(document.querySelector<HTMLElement>('.page-bar')!).getByRole('group', { name: 'View' })).toBeInTheDocument();
   });
 
-  it('LA-PLT-T11 Every gap between open panes is a handle moved by keys, remembered and reset evenly, and any pane goes full screen until Escape', async () => {
+  it('LA-PLT-T12 Every gap between open panes is a handle moved by keys, remembered and reset evenly, and any pane goes full screen until Escape', async () => {
     await openApp('/P-D-UC01?view=wiki,graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     const divider = screen.getByRole('separator', { name: 'Resize the wiki and graph panes' });
@@ -226,7 +226,7 @@ describe('one address, three views', () => {
     expect(css).toMatch(/\.icon-button\.is-on\s*\{/);
   });
 
-  it('LA-PLT-T44 The page bar holds the tabs at its left and the view toggles, a divider and the side bar toggle at its right; each pane header names its view and holds its close and Full screen buttons; the pressed views and a shown side bar share one on look', async () => {
+  it('LA-PLT-T45 The page bar holds the tabs at its left and the view toggles, a divider and the side bar toggle at its right; each pane header names its view and holds its close and Full screen buttons; the pressed views and a shown side bar share one on look', async () => {
     // The side bar starts closed in the Wiki view (brief 64); this test reads it open.
     openSideBar('details', ['wiki', 'graph', 'model']);
     await openApp('/P-D-UC01', served());

@@ -5,7 +5,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { BUDGETS } from './budgets';
 import { heapMb, installProbes, quiet, record, work } from './measure';
 
-// LA-PLT-T87 to T605: the app's performance budgets (LA-PAT-APP-UX-R11), on the production build.
+// LA-PLT-T88 to T605: the app's performance budgets (LA-PAT-APP-UX-R11), on the production build.
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const RECORD = '/LA-PLT-UC04';
@@ -34,7 +34,7 @@ async function visibleNode(page: Page, n: number): Promise<string> {
 }
 
 test.describe('performance', () => {
-  test('LA-PLT-T87 the first load ships 250 KB of JavaScript or less', async () => {
+  test('LA-PLT-T88 the first load ships 250 KB of JavaScript or less', async () => {
     const { chunks } = JSON.parse(readFileSync(path.join(here, 'results/bundle.json'), 'utf8')) as { chunks: { file: string; gzip: number; initial: boolean }[] };
     const initial = chunks.filter((c) => c.initial);
     const kb = initial.reduce((n, c) => n + c.gzip, 0) / 1024;
@@ -42,7 +42,7 @@ test.describe('performance', () => {
     await record({ name: 'first-load JavaScript (gzip)', value: kb, unit: 'KB', budget: BUDGETS.firstLoadKb, detail: `${initial.map((c) => c.file).join(', ')}; largest: ${largest}` });
   });
 
-  test('LA-PLT-T88 a record page is interactive within 1.5 s', async ({ page }) => {
+  test('LA-PLT-T89 a record page is interactive within 1.5 s', async ({ page }) => {
     await installProbes(page);
     // A warm server: the engine has loaded the specs once, as it has for any page after the first.
     await page.goto(RECORD);
@@ -65,7 +65,7 @@ test.describe('performance', () => {
     await record({ name: 'record page interactive', value: times[1], unit: 'ms', budget: BUDGETS.interactiveMs, detail: `median of 3: ${times.map(Math.round).join(', ')} ms` });
   });
 
-  test('LA-PLT-T89 a view switch takes under 100 ms of main-thread work', async ({ page }) => {
+  test('LA-PLT-T90 a view switch takes under 100 ms of main-thread work', async ({ page }) => {
     await open(page, RECORD);
     // Warm: the graph's code and ELK load on the first switch; time a later one.
     await page.keyboard.press('Control+2');
@@ -85,7 +85,7 @@ test.describe('performance', () => {
     await record({ name: 'view switch: close the Graph pane', value: closeGraph.workMs, unit: 'ms', budget: BUDGETS.viewSwitchMs, detail: `longest frame ${Math.round(closeGraph.worstFrameMs)} ms` });
   });
 
-  test('LA-PLT-T90 a graph re-center at depth 3 takes under 500 ms of main-thread work, and glides at 60 Hz', async ({ page }) => {
+  test('LA-PLT-T91 a graph re-center at depth 3 takes under 500 ms of main-thread work, and glides at 60 Hz', async ({ page }) => {
     await open(page, `${RECORD}?view=graph`);
     await page.locator('.graph-flow .react-flow__node').first().waitFor();
     await page.locator('.graph-depth button', { hasText: '3' }).click();
@@ -114,7 +114,7 @@ test.describe('performance', () => {
     await record({ name: 'graph re-center at depth 3: frames over 20 ms', value: Math.max(...slow), unit: 'frames', budget: BUDGETS.recenterSlowFrames + 1, detail: `worst of 3: ${slow.join(', ')}; at most ${BUDGETS.recenterSlowFrames}` });
   });
 
-  test('LA-PLT-T91 opening the Model pane takes under 100 ms of main-thread work', async ({ page }) => {
+  test('LA-PLT-T92 opening the Model pane takes under 100 ms of main-thread work', async ({ page }) => {
     await open(page, AGGREGATE);
     const first = await work(page, async () => {
       await page.keyboard.press('Control+4');
@@ -136,7 +136,7 @@ test.describe('performance', () => {
     await record({ name: 'Model view: domain ERD drawn after the page', value: laid, unit: 'ms', budget: null });
   });
 
-  test('LA-PLT-T92 memory after 50 navigations', async ({ page }) => {
+  test('LA-PLT-T93 memory after 50 navigations', async ({ page }) => {
     await open(page, `${RECORD}?view=wiki,graph`);
     await page.locator('.pane-graph .graph-flow .react-flow__node').first().waitFor();
     const start = await heapMb(page);
