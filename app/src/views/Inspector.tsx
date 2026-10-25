@@ -3,7 +3,7 @@ import { Icon } from '../components/icons';
 import { GraphConnections, type GraphInfo } from '../graph/panel';
 import { groupMarks, groupMembers, parseGroupId, pluralLabel } from '../graph/model';
 import { kindLabel, problemOrder, type SpecIndex } from '../specs/data';
-import { ProblemList, RecordLink, RecordTree, gapsOf } from '../specs/parts';
+import { ProblemList, RecordLink, RecordTree, gapsOf, listTitle } from '../specs/parts';
 import { RecordFacts } from '../specs/RecordContent';
 import { Tooltip } from '../shell/Tooltip';
 
@@ -86,6 +86,8 @@ function GroupFacts({ index, gid }: { index: SpecIndex; gid: string }) {
   const { parent, kind } = parseGroupId(gid)!;
   const members = groupMembers(index, gid);
   const marks = groupMarks(index, gid);
+  // A list of one kind is titled by that kind ("Use cases"); a mixed one stays "Members".
+  const membersTitle = listTitle(index, members, 'Members');
   return (
     <>
       <div className="inspector-identity">
@@ -107,8 +109,8 @@ function GroupFacts({ index, gid }: { index: SpecIndex; gid: string }) {
           </ul>
         )}
       </Part>
-      <Part title="Members" count={members.length} id="inspector-members">
-        <RecordTree index={index} records={members} label="Members" bulk={false} />
+      <Part title={membersTitle} count={members.length} id="inspector-members">
+        <RecordTree index={index} records={members} label={membersTitle} bulk={false} />
       </Part>
     </>
   );
