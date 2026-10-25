@@ -5,11 +5,12 @@ import { workspace as baseWorkspace } from './workspace';
 // DM-SHOP's Technical specification has three layers, whose order is not their ID order:
 //   Models (LAY02, order 1): DM-SHOP-C02, DM-SHOP-C03 · Services (LAY03, order 2): DM-SHOP-C04 ·
 //   Web app (LAY01, order 3): DM-SHOP-C05 · and DM-SHOP-C01 outside any layer.
-// Its Test plan, by what each test proves (capabilities Browsing, order 1, and Filling the basket, order 2):
-//   Acceptance tests: Browsing › Look at an item: T03 · Filling the basket › Empty the basket: T02, T04 ·
-//     Use cases outside any capability › Add an item to the basket: T01
-//   Domain rule tests: T05 · Pattern tests › Saving: T06 · Interaction tests: T07 ·
-//   Engineering checks: T08, and T09 (under the capability Filling the basket).
+// Its Test plan, by family and what each test proves (capabilities Browsing, order 1, and Filling the basket, order 2):
+//   Acceptance tests: Browsing › Look at an item: T03 · Filling the basket: T09 (under it, proving
+//     nothing) › Empty the basket: T02, T04 · Use cases outside any capability › Add an item to the basket: T01
+//   Domain rule tests: T05 · Pattern tests › Saving: T06 · Interaction tests: T13 (an endpoint's) ·
+//   UI tests: T07 (a view's interaction requirement), T10 (test_type ui) ·
+//   Design checks: T11 (test_type design), T12 (only supports links) · Engineering checks: T08.
 // DM-PAY has no layers and only an engineering check.
 
 const extraKinds: Kind[] = [
@@ -55,6 +56,11 @@ const extraRecords: SpecRecord[] = [
   test('DM-SHOP-T07', 'Newest items come first'),
   test('DM-SHOP-T08', 'The basket module type-checks'),
   test('DM-SHOP-T09', 'The filling screens load', 'DM-SHOP-CAP01'),
+  { ...test('DM-SHOP-T10', 'The basket page renders'), fields: { test_type: 'ui', run_by: 'test/DM-SHOP-T10.test.ts' } },
+  { ...test('DM-SHOP-T11', 'The basket page is reviewed'), fields: { test_type: 'design', state: 'manual' } },
+  test('DM-SHOP-T12', 'The basket limit is load-tested'),
+  record('DM-SHOP-E01-IR01', 'interaction_requirement', 'Adding to a full basket answers 409', 'DM-SHOP-E01'),
+  test('DM-SHOP-T13', 'A full basket answers 409'),
   test('DM-PAY-T01', 'The payment module builds', 'DM-PAY'),
 ];
 
@@ -72,6 +78,8 @@ const extraLinks: SpecLink[] = [
   { source: 'DM-SHOP-T07', relation: 'proves', target: 'DM-SHOP-V01-IR01' },
   { source: 'DM-SHOP-T08', relation: 'covers', target: 'DM-SHOP-C01' },
   { source: 'DM-SHOP-C04', relation: 'depends_on', target: 'DM-SHOP-C02' },
+  { source: 'DM-SHOP-T12', relation: 'supports', target: 'DM-SHOP-DR01' },
+  { source: 'DM-SHOP-T13', relation: 'proves', target: 'DM-SHOP-E01-IR01' },
 ];
 
 /** The demo workspace with DM-SHOP's components in layers and its tests proving every kind. */
@@ -85,5 +93,8 @@ export function layerWorkspace(): Workspace {
   }
   w.records.push(...structuredClone(extraRecords));
   w.links.push(...structuredClone(extraLinks));
+  if (!w.relations.some((r) => r.relation === 'supports')) {
+    w.relations = [...w.relations, { relation: 'supports', source_kind: 'test', target_kind: 'domain_rule', role: '', description: 'The test backs the domain rule without proving it.', forward_label: 'Supports', reverse_label: 'Supported by' }];
+  }
   return w;
 }

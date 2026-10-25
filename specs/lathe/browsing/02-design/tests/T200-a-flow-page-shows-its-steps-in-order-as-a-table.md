@@ -8,4 +8,4 @@ run_by: app/test/flow-steps.test.tsx
 links:
   proves: [LA-BRW-UC80-R01, LA-BRW-DR90]
 ---
-Opens a flow with three steps written out of order and expects the Steps table with its four columns, rows in step order, and each cell linking the IDs.
+Opens a flow with three steps written out of order and expects the Steps table with its four columns (Step, What happens, Uses, Carries out), rows in step order, and each cell linking the IDs.

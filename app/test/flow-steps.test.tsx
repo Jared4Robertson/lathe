@@ -14,11 +14,11 @@ const cells = (row: HTMLElement) => [...row.querySelectorAll('th, td')] as HTMLE
 const linkIds = (el: HTMLElement) => [...el.querySelectorAll('a')].map((a) => a.textContent);
 
 describe('flow steps on a flow page', () => {
-  it('LA-BRW-T200 A flow page shows its steps in order as a table: step, what happens, uses, fulfills', async () => {
+  it('LA-BRW-T200 A flow page shows its steps in order as a table: step, what happens, uses, carries out', async () => {
     await openApp('/records/DM-SHOP-F01', { workspace: stepsWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Fill a basket' });
     expect(section(/^Steps/).querySelector('h2')).toHaveTextContent('Steps3');
-    expect(within(table()).getAllByRole('columnheader').map((h) => h.textContent)).toEqual(['Step', 'What happens', 'Uses', 'Fulfills']);
+    expect(within(table()).getAllByRole('columnheader').map((h) => h.textContent)).toEqual(['Step', 'What happens', 'Uses', 'Carries out']);
     // In order by number: 1, 2, 10, whatever the IDs.
     const rows = bodyRows();
     expect(rows.map((r) => r.getAttribute('data-step'))).toEqual(['DM-SHOP-F01-S02', 'DM-SHOP-F01-S03', 'DM-SHOP-F01-S01']);
