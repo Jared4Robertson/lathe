@@ -41,7 +41,7 @@ const reducedMotion = () =>
   vi.stubGlobal('matchMedia', (query: string) => ({ matches: query.includes('prefers-reduced-motion: reduce'), media: query, addEventListener: () => {}, removeEventListener: () => {} }));
 
 describe('graph camera', () => {
-  const map = graphMap(testIndex());
+  const map = graphMap(testIndex(), 'P');
 
   it('LA-EXP-T129 The camera frames the focus and the levels the depth shows below it, the parent at the left edge', () => {
     const w = 1000;
@@ -114,14 +114,14 @@ describe('graph camera on the page', () => {
     await open();
     // The first picture appears at once, framed.
     expect(calls.every((c) => c.options?.duration === 0)).toBe(true);
-    expect(calls.at(-1)!.viewport).toEqual(frameOnMap(graphMap(testIndex()), 'P-D-UC01', 1, 1000, 800));
+    expect(calls.at(-1)!.viewport).toEqual(frameOnMap(graphMap(testIndex(), 'P'), 'P-D-UC01', 1, 1000, 800));
     const before = boxes();
     const first = calls.length;
 
     fireEvent.click(node('P-D-UC01-R01')!);
     await waitFor(() => expect(isCenter('P-D-UC01-R01')).toBe(true));
     // The camera glides there, frame by frame, and ends framing the new focus.
-    const target = frameOnMap(graphMap(testIndex()), 'P-D-UC01-R01', 1, 1000, 800);
+    const target = frameOnMap(graphMap(testIndex(), 'P'), 'P-D-UC01-R01', 1, 1000, 800);
     await waitFor(() => expect(calls.at(-1)!.viewport).toEqual(target), { timeout: 3000 });
     expect(calls.length - first).toBeGreaterThan(2);
     // Every box drawn before and after is where it was, at the size it was.
@@ -133,7 +133,7 @@ describe('graph camera on the page', () => {
     // Back glides back.
     window.history.back();
     await waitFor(() => expect(isCenter('P-D-UC01')).toBe(true));
-    await waitFor(() => expect(calls.at(-1)!.viewport).toEqual(frameOnMap(graphMap(testIndex()), 'P-D-UC01', 1, 1000, 800)), { timeout: 3000 });
+    await waitFor(() => expect(calls.at(-1)!.viewport).toEqual(frameOnMap(graphMap(testIndex(), 'P'), 'P-D-UC01', 1, 1000, 800)), { timeout: 3000 });
   });
 
   it('LA-EXP-T131 Under reduced motion focusing frames the new focus at once', async () => {
@@ -143,6 +143,6 @@ describe('graph camera on the page', () => {
     fireEvent.click(node('P-D-UC01-R01')!);
     await waitFor(() => expect(isCenter('P-D-UC01-R01')).toBe(true));
     await waitFor(() => expect(calls.length).toBe(first + 1));
-    expect(calls[first]).toEqual({ viewport: frameOnMap(graphMap(testIndex()), 'P-D-UC01-R01', 1, 1000, 800), options: { duration: 0 } });
+    expect(calls[first]).toEqual({ viewport: frameOnMap(graphMap(testIndex(), 'P'), 'P-D-UC01-R01', 1, 1000, 800), options: { duration: 0 } });
   });
 });

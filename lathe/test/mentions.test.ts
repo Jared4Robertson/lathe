@@ -23,6 +23,12 @@ describe('mentions', () => {
     expect(mentionsOf('MX-D')).toEqual([]);
   });
 
+  it('LA-AUT-T121 A record never mentions another product\'s records: products are separate spaces', () => {
+    expect(mentionsOf('MX-D-UC04')).toEqual(['MX-D-UC02']);
+    // The other product's ID is still a known record, so it is no unknown ID either.
+    expect(ws.problems.filter((p) => p.record === 'MX-D-UC04' && p.check === 'unknown-id-in-prose')).toEqual([]);
+  });
+
   it('LA-CHK-T12 IDs in fenced code blocks and in code spans with other text are not citations, but a code span holding one lone ID is', () => {
     const cited = ws.records.flatMap((r) => r.mentions);
     for (const id of ['MX-D-UC94', 'MX-D-UC95', 'MX-D-UC96', 'MX-D-UC97', 'MX-D-UC98']) expect(cited).not.toContain(id);

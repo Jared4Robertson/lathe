@@ -56,7 +56,7 @@ export interface SpecRecord {
   body: string;
   /** The file path relative to the repo root. */
   path: string;
-  /** IDs of existing records this record's body cites in its prose, in order of first mention. */
+  /** IDs of existing records of the same product (or of none) that this record's body cites in its prose, in order of first mention. */
   mentions: string[];
   /** An entity or domain event's fields, from the Fields table in its body (FORMAT section 17); absent for other kinds. */
   entityFields?: EntityField[];

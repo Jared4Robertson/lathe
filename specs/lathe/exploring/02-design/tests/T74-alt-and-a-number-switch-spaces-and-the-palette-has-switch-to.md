@@ -8,4 +8,4 @@ run_by: app/test/spaces.test.tsx
 links:
   proves: [LA-EXP-UC07-R05, LA-EXP-DR14]
 ---
-Presses Alt+3 and Alt+1, expects a number with no space left alone and Ctrl+Shift+M still working, and runs a Switch to command from the palette.
+From the products page, presses Alt+3 and Alt+1, expects a number with no space left alone and Ctrl+Shift+M still opening the space's Checks, and runs a Switch to command from the palette.

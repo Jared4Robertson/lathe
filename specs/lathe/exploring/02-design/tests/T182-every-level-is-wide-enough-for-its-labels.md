@@ -1,5 +1,5 @@
 ---
-id: LA-EXP-T178
+id: LA-EXP-T182
 kind: test
 title: "Every level is wide enough for each label in it on one line at its fixed text scale"
 parent: LA-EXP

@@ -18,7 +18,7 @@ const node = (id: string) => document.querySelector<HTMLElement>(`.react-flow__n
 
 describe('keyboard shortcuts', () => {
   it('LA-PLT-T19 Ctrl+P (or Ctrl+K) opens quick find, from anywhere, and the browser does not print', async () => {
-    await openApp('/checks');
+    await openApp('/DM/checks');
     await screen.findByRole('heading', { level: 1, name: 'Checks' });
     const event = new KeyboardEvent('keydown', { key: 'p', code: 'KeyP', ctrlKey: true, bubbles: true, cancelable: true });
     act(() => { document.body.dispatchEvent(event); });
@@ -93,7 +93,7 @@ describe('keyboard shortcuts', () => {
   });
 
   it('LA-PLT-T22 F8 and Shift+F8 move through the problems on the page and say each one', async () => {
-    await openApp('/checks');
+    await openApp('/DM/checks');
     await screen.findByRole('heading', { level: 1, name: 'Checks' });
     const problems = [...document.querySelectorAll<HTMLElement>('#main li.problem')];
     expect(problems.length).toBeGreaterThan(1);
@@ -151,7 +151,7 @@ describe('keyboard shortcuts', () => {
     press(document.body, 'g', 'KeyG');
     expect(document.querySelector('.key-pending')).toHaveTextContent('G…');
     press(document.body, 'c', 'KeyC');
-    expect(window.location.pathname).toBe('/checks');
+    expect(window.location.pathname).toBe('/DM/checks');
     expect(document.querySelector('.key-pending')).toBeNull();
     press(document.body, 'g', 'KeyG');
     press(document.body, 'f', 'KeyF');
@@ -220,7 +220,7 @@ describe('keyboard shortcuts', () => {
 
     // Ctrl+- goes back.
     fireEvent.click(within(nav()).getByRole('link', { name: /^Checks \d+ (errors?|warnings?|problems)/ }));
-    expect(window.location.pathname).toBe('/checks');
+    expect(window.location.pathname).toBe('/P/checks');
     await act(async () => {
       press(document.body, '-', 'Minus', { ctrlKey: true });
       await new Promise((resolve) => window.addEventListener('popstate', resolve, { once: true }));

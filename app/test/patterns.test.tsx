@@ -94,14 +94,16 @@ describe('Patterns we follow, on the domain page', () => {
 
   it('LA-TRC-T111 A pattern the domain itself follows is listed, followed by the whole domain, and every rule applies', async () => {
     const ws = patternWorkspace();
-    ws.links.push({ source: 'NF-NOTE', relation: 'follows', target: 'DM-PAT-CHECKOUT' } as (typeof ws.links)[number]);
+    // Paying follows the pattern itself, not through a use case (a pattern of its own product: a link stays in its product).
+    ws.links = ws.links.filter((l) => !(l.relation === 'follows' && ws.records.find((r) => r.id === l.source)?.domain === 'DM-PAY'));
+    ws.links.push({ source: 'DM-PAY', relation: 'follows', target: 'DM-PAT-CHECKOUT' } as (typeof ws.links)[number]);
     const ix = indexWorkspace(ws);
-    expect(patternsFollowedBy(ix, 'NF-NOTE').map((f) => [f.pattern.id, f.byDomain, f.useCases.length])).toEqual([['DM-PAT-CHECKOUT', true, 0]]);
+    expect(patternsFollowedBy(ix, 'DM-PAY').map((f) => [f.pattern.id, f.byDomain, f.useCases.length])).toEqual([['DM-PAT-CHECKOUT', true, 0]]);
     // A rule with a setting still applies: no use case of the domain can mark it not applicable.
     const ruleWithSetting = ix.workspace.records.find((r) => r.parent === 'DM-PAT-CHECKOUT' && r.fields.setting)!;
-    expect(ruleStatus(ix, ruleWithSetting, 'NF-NOTE', [])).toMatchObject({ applies: true });
-    await openApp('/NF-NOTE', { workspace: ws });
-    await screen.findByRole('heading', { level: 1, name: 'Notes' });
+    expect(ruleStatus(ix, ruleWithSetting, 'DM-PAY', [])).toMatchObject({ applies: true });
+    await openApp('/DM-PAY', { workspace: ws });
+    await screen.findByRole('heading', { level: 1, name: 'Paying' });
     expect(rowOf(section(/^Patterns we follow/), 'DM-PAT-CHECKOUT')).toHaveTextContent('followed by the whole domain');
   });
 

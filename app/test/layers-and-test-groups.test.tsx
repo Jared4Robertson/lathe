@@ -209,7 +209,7 @@ describe('layers and test groups', () => {
     expect(layer.nodes.map((n) => n.id).sort()).toEqual(['DM-SHOP-C02', 'DM-SHOP-C03', 'DM-SHOP-LAY02', 'DM-SHOP/design/technical-specification']);
     expect([lc.get('DM-SHOP/design/technical-specification'), lc.get('DM-SHOP-LAY02'), lc.get('DM-SHOP-C02')]).toEqual([0, 1, 2]);
     // In the one map, one level after another, left to right.
-    const map = graphMap(index);
+    const map = graphMap(index, 'DM');
     const x = (id: string) => map.nodes.get(id)!.x;
     expect(x('DM-SHOP/design/technical-specification')).toBeLessThan(x('DM-SHOP-LAY02'));
     expect(x('DM-SHOP-LAY02')).toBeLessThan(x('DM-SHOP-C02'));
@@ -313,7 +313,7 @@ describe('layers and test groups', () => {
     expect(folder.nodes.filter((x) => !x.group).map((x) => x.id)).toEqual([]);
 
     // A test's place in the map: the Test plan, then acceptance, its capability and its use case, one level each, left to right.
-    const placed = graphMap(index).nodes;
+    const placed = graphMap(index, 'DM').nodes;
     const path = [plan, acceptance, `${acceptance}/DM-SHOP-CAP01`, `${acceptance}/DM-SHOP-CAP01/DM-SHOP-UC02`, 'DM-SHOP-T04'];
     expect(path.map((id) => placed.get(id)!.level)).toEqual(path.map((_, i) => placed.get(plan)!.level + i));
     for (let i = 1; i < path.length; i++) expect(placed.get(path[i])!.parent).toBe(path[i - 1]);

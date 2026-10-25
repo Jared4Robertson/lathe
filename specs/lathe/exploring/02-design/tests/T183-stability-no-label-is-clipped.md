@@ -1,5 +1,5 @@
 ---
-id: LA-EXP-T179
+id: LA-EXP-T183
 kind: test
 title: "Stability: no label is clipped, in light and dark, focused or not, at several zooms"
 parent: LA-EXP

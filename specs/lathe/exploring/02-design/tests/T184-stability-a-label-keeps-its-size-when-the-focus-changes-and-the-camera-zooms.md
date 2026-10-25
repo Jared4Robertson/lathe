@@ -1,5 +1,5 @@
 ---
-id: LA-EXP-T180
+id: LA-EXP-T184
 kind: test
 title: "Stability: a label keeps its size in the map when the focus changes and the camera zooms"
 parent: LA-EXP
