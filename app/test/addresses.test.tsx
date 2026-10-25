@@ -9,7 +9,7 @@ import { main, openApp, openSideBar } from './helpers';
 const sideBar = () => screen.getByRole('complementary', { name: 'Side bar' });
 
 describe('bare-ID addresses', () => {
-  it('LA-PLT-T103 Tabs and space pages saved at anything but a page\'s address are dropped, not converted', async () => {
+  it('LA-PLT-T105 Tabs and space pages saved at anything but a page\'s address are dropped, not converted', async () => {
     const tab = (key: string, page: string) => ({ key, page, preview: false, state: { views: 'wiki' } });
     window.sessionStorage.setItem('lathe:tabs', JSON.stringify({
       DM: { active: 't1', tabs: [tab('t1', '/DM-SHOP-UC01'), tab('t2', '/specs/DM/DM-SHOP'), tab('t3', '/records/DM-SHOP/use_case'), tab('t4', '/DM-SHOP/use_case')] },

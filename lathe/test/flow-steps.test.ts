@@ -20,7 +20,7 @@ beforeAll(async () => {
 });
 
 describe('flow steps', () => {
-  it('LA-AUT-T41 A flow step sits under a flow, needs an order, fulfills obligations and uses views, endpoints and components', () => {
+  it('LA-AUT-T39 A flow step sits under a flow, needs an order, fulfills obligations and uses views, endpoints and components', () => {
     const kind = good.kinds.find((k) => k.kind === 'flow_step');
     expect(kind).toMatchObject({ parent_kinds: ['flow'], required_fields: ['order'], obligation: false, stage: 'design' });
     const rules = good.relations.filter((r) => r.source_kind === 'flow_step').map((r) => `${r.relation} ${r.target_kind}`).sort();
@@ -35,14 +35,14 @@ describe('flow steps', () => {
     ]);
   });
 
-  it('LA-AUT-T42 A step order that is not a whole number is an error', () => {
+  it('LA-AUT-T40 A step order that is not a whole number is an error', () => {
     expect(messagesOf(broken, 'flow-step-order', 'FB-D-F01-S02')).toEqual([
       'Flow step FB-D-F01-S02 has order "two", which is not a whole number such as 1 or 2.',
     ]);
     for (const p of broken.problems.filter((x) => x.check === 'flow-step-order')) expect(p.severity).toBe('error');
   });
 
-  it('LA-AUT-T43 Two steps of one flow with the same order are an error, 1 and 01 alike; steps of other flows may share it', () => {
+  it('LA-AUT-T41 Two steps of one flow with the same order are an error, 1 and 01 alike; steps of other flows may share it', () => {
     expect(recordsOf(broken, 'flow-step-order')).toEqual(['FB-D-F01-S01', 'FB-D-F01-S02', 'FB-D-F01-S03']);
     expect(messagesOf(broken, 'flow-step-order', 'FB-D-F01-S01')).toEqual([
       'Flow step FB-D-F01-S01 has order 1 in flow FB-D-F01, the same as FB-D-F01-S03; each step of a flow needs its own order.',
@@ -52,12 +52,12 @@ describe('flow steps', () => {
     expect(recordsOf(good, 'flow-step-order')).toEqual([]);
   });
 
-  it('LA-AUT-T44 A step with no order is reported once, as a missing required field', () => {
+  it('LA-AUT-T42 A step with no order is reported once, as a missing required field', () => {
     expect(recordsOf(broken, 'missing-required-field')).toEqual(['FB-D-F01-S05']);
     expect(broken.problems.filter((p) => p.record === 'FB-D-F01-S05').map((p) => p.check)).toEqual(['missing-required-field']);
   });
 
-  it('LA-AUT-T45 A step that fulfills something its flow does not carry out is a warning naming what it compared', () => {
+  it('LA-AUT-T43 A step that fulfills something its flow does not carry out is a warning naming what it compared', () => {
     const messages = messagesOf(broken, 'flow-step-fulfills-outside-flow', 'FB-D-F01-S04');
     expect(messages.map((m) => m.split(',')[0])).toEqual([
       'Flow step FB-D-F01-S04 fulfills FB-D-DR02',
@@ -72,7 +72,7 @@ describe('flow steps', () => {
     for (const p of broken.problems.filter((x) => x.check === 'flow-step-fulfills-outside-flow')) expect(p.severity).toBe('warning');
   });
 
-  it("LA-AUT-T46 A step may fulfill its flow's use case requirements, the rules they apply, and interaction requirements reached from them or under the flow", () => {
+  it("LA-AUT-T44 A step may fulfill its flow's use case requirements, the rules they apply, and interaction requirements reached from them or under the flow", () => {
     // FS-D-F01's steps fulfill a requirement, an applied rule, an endpoint's interaction requirement that
     // fulfills a requirement, and an interaction requirement under the flow; FB-D-F03-S01 likewise.
     expect(recordsOf(good, 'flow-step-fulfills-outside-flow')).toEqual([]);
@@ -85,7 +85,7 @@ describe('flow steps', () => {
     expect(messagesOf(broken, 'dangling-link', 'FB-D-F01-S04')).toEqual(['FB-D-F01-S04 fulfills FB-D-ZZ99, which does not exist.']);
   });
 
-  it('LA-AUT-T47 A flow with steps that fulfills something none of its steps does is a warning', () => {
+  it('LA-AUT-T45 A flow with steps that fulfills something none of its steps does is a warning', () => {
     expect(recordsOf(broken, 'flow-fulfills-differs-from-steps')).toEqual(['FB-D-F01']);
     expect(messagesOf(broken, 'flow-fulfills-differs-from-steps', 'FB-D-F01')).toEqual([
       'Flow FB-D-F01 fulfills FB-D-DR01, but none of its steps does; move the link onto the step that carries it out.',
@@ -93,13 +93,13 @@ describe('flow steps', () => {
     expect(broken.problems.find((p) => p.check === 'flow-fulfills-differs-from-steps')?.severity).toBe('warning');
   });
 
-  it("LA-AUT-T48 A flow may repeat or leave out its steps' fulfills, and a flow without steps is not compared", () => {
+  it("LA-AUT-T46 A flow may repeat or leave out its steps' fulfills, and a flow without steps is not compared", () => {
     // FS-D-F01 repeats one of its steps' links; FB-D-F03 names none; FS-D-F02 has no steps.
     expect(recordsOf(good, 'flow-fulfills-differs-from-steps')).toEqual([]);
     expect(recordsOf(broken, 'flow-fulfills-differs-from-steps')).not.toContain('FB-D-F03');
   });
 
-  it('LA-AUT-T49 A flow written as well-formed steps breaks nothing and raises no step problem', () => {
+  it('LA-AUT-T47 A flow written as well-formed steps breaks nothing and raises no step problem', () => {
     expect(good.problems.filter((p) => p.severity === 'error')).toEqual([]);
     expect(good.problems.filter((p) => STEP_CHECKS.includes(p.check))).toEqual([]);
     expect(new Set(broken.problems.filter((p) => STEP_CHECKS.includes(p.check)).map((p) => p.check))).toEqual(new Set(STEP_CHECKS));

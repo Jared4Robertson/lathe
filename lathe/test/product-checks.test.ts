@@ -39,7 +39,7 @@ describe("a product's own checks", () => {
     expect(ofCheck(ws, 'one-record-view-per-aggregate')).toHaveLength(2);
   });
 
-  it("LA-CHK-T25 Client's one Record view use case per aggregate is carried as a product check", () => {
+  it('LA-CHK-T25 A one Record view use case per aggregate house rule is carried as a product check', () => {
     const found = ofCheck(workspaces['product-checks-house'], 'one-record-view-per-aggregate');
     // PC-D-A1 has one; PC-D-A2 has none (PC-D-UC04 names it but follows no pattern); PC-D-A3 has two.
     expect(found.map((p) => p.record)).toEqual(['PC-D-A2', 'PC-D-A3']);

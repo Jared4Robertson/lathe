@@ -73,7 +73,7 @@ describe('test states', () => {
 describe('extensions widen default kinds', () => {
   const kind = (ws: Workspace, name: string) => ws.kinds.find((k) => k.kind === name);
 
-  it('LA-AUT-T23 An extension lets a domain rule sit under a domain', () => {
+  it('LA-AUT-T21 An extension lets a domain rule sit under a domain', () => {
     expect(kind(widened, 'domain_rule')).toMatchObject({
       parent_kinds: ['aggregate', 'domain', 'entity'],
       required_fields: ['source'],
@@ -89,7 +89,7 @@ describe('extensions widen default kinds', () => {
     expect(kind(plain, 'domain_rule')?.required_fields).toEqual([]);
   });
 
-  it("LA-AUT-T24 An extension's non-empty values replace the default's and empty ones keep it", () => {
+  it("LA-AUT-T22 An extension's non-empty values replace the default's and empty ones keep it", () => {
     const widenedRule = kind(widened, 'domain_rule')!;
     const defaultRule = kind(plain, 'domain_rule')!;
     expect(widenedRule.label).toBe('Business rule');
@@ -102,14 +102,14 @@ describe('extensions widen default kinds', () => {
     expect(widened.kinds.at(-1)?.kind).toBe('policy');
   });
 
-  it('LA-AUT-T25 A relation row identical to a default one changes nothing', () => {
+  it('LA-AUT-T23 A relation row identical to a default one changes nothing', () => {
     const proves = (ws: Workspace) => ws.relations.filter((r) => r.relation === 'proves' && r.target_kind === 'domain_rule');
     expect(proves(widened)).toEqual(proves(plain));
     expect(widened.relations).toHaveLength(plain.relations.length + 1);
     expect(recordsOf(widened, 'meta-duplicate-relation')).toEqual([]);
   });
 
-  it('LA-AUT-T26 A kind defined twice in one folder is an error naming that folder', () => {
+  it('LA-AUT-T24 A kind defined twice in one folder is an error naming that folder', () => {
     const found = duplicate.problems.filter((p) => p.check === 'meta-duplicate-kind');
     expect(found).toEqual([
       {

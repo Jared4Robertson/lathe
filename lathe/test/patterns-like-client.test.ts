@@ -23,7 +23,7 @@ beforeAll(async () => {
 });
 
 describe('obligation values in kinds.csv', () => {
-  it('LA-AUT-T58 An obligation value is yes or true, proof (proof only) or anything else (not an obligation)', () => {
+  it('LA-AUT-T56 An obligation value is yes or true, proof (proof only) or anything else (not an obligation)', () => {
     expect(kindOf(adopt, 'pattern_rule')).toMatchObject({ obligation: true, proof_only: true });
     expect(kindOf(adopt, 'requirement')).toMatchObject({ obligation: true, proof_only: false });
     expect(kindOf(adopt, 'pattern')).toMatchObject({ obligation: false, proof_only: false, required_fields: [] });

@@ -70,7 +70,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     themeStore().save(state, css);
   }, [active, state, shown]);
 
-  // In the desktop app, the window's chrome follows what shows (LA-PLT-UC13-R06).
+  // In the desktop app, the window's chrome follows what shows (LA-PLT-UC14-R06).
   useDesktopChrome(shown?.theme ?? active, shown?.mode ?? state.mode);
 
   const choose = useCallback((id: string) => { setShown(null); setState((s) => ({ ...s, chosen: id })); }, []);

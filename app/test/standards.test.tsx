@@ -83,7 +83,7 @@ function topLevel(selector: string): string[] {
 const BASE_ELEMENTS = new Set(['html', 'body', 'h1', 'h2', 'h3', 'h4', 'p', 'a', 'code', 'pre', 'kbd', 'small', 'strong', 'button', 'input', 'textarea', 'select', 'table', 'th', 'td', 'svg']);
 
 describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
-  it('LA-PLT-T31 Layout lives in the markup: no stylesheet rule moves or restyles an element from outside its component', async () => {
+  it('LA-PLT-T33 Layout lives in the markup: no stylesheet rule moves or restyles an element from outside its component', async () => {
     expect(where('app/src/styles.css', CSS, /display:\s*contents|:has\(/)).toEqual([]);
     // A section's own header row holds its list's Expand all: the button sits inside the header.
     await openApp('/DM-SHOP-UC01');
@@ -94,7 +94,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     if (bulk) expect(header.contains(bulk)).toBe(true);
   });
 
-  it('LA-PLT-T32 Styles are set by class: no selector names only elements, beyond the base styles', () => {
+  it('LA-PLT-T34 Styles are set by class: no selector names only elements, beyond the base styles', () => {
     const bare = styleRules(CSS)
       .flatMap((r) => topLevel(r.selector).map((s) => ({ s: s.trim(), line: r.line })))
       .filter(({ s }) => s !== ':root' && !/[.#[]/.test(s))
@@ -103,7 +103,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     expect(bare).toEqual([]);
   });
 
-  it('LA-PLT-T33 Colors and shadows are tokens: color values appear only where :root defines them', () => {
+  it('LA-PLT-T35 Colors and shadows are tokens: color values appear only where :root defines them', () => {
     const literal = /#[0-9a-fA-F]{3,8}\b|\b(?:rgb|rgba|hsl|hsla)\(/;
     const outside = styleRules(CSS)
       .filter((r) => r.selector !== ':root' && literal.test(r.body))
@@ -114,21 +114,21 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     expect(inline).toEqual([]);
   });
 
-  it('LA-PLT-T34 Generic components know nothing of specs, the graph or the shell: they import only React, each other and the text helpers', () => {
+  it('LA-PLT-T36 Generic components know nothing of specs, the graph or the shell: they import only React, each other and the text helpers', () => {
     const imports = filesUnder(join(SRC, 'components'), /\.tsx?$/).flatMap((f) =>
       where(f, readFileSync(f, 'utf8'), /^import .* from '(?!react\b|react-dom\b|\.\/|\.\.\/plural')/),
     );
     expect(imports).toEqual([]);
   });
 
-  it('LA-PLT-T35 Kind labels become plural only through plural() and lowercase only through lowerLabel()', () => {
+  it('LA-PLT-T37 Kind labels become plural only through plural() and lowercase only through lowerLabel()', () => {
     const naive = filesUnder(SRC, /\.tsx?$/)
       .filter((f) => !f.endsWith('plural.ts'))
       .flatMap((f) => where(f, readFileSync(f, 'utf8'), /\$\{[^}]*[lL]abel[^}]*\}s\b|[lL]abel\)?\s*\+\s*'s'|[lL]abel(?:\([^)]*\))?\.(?:charAt\(0\)\.)?toLowerCase\(\)/));
     expect(naive).toEqual([]);
   });
 
-  it('LA-PLT-T36 Every button and link on the main pages has an accessible name', async () => {
+  it('LA-PLT-T38 Every button and link on the main pages has an accessible name', async () => {
     for (const path of ['/', '/DM-SHOP', '/DM-SHOP-UC01', '/DM-SHOP-UC01?view=graph']) {
       await openApp(path);
       // The role queries compute each control's accessible name; keep the ones whose name is empty.
@@ -141,7 +141,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     }
   });
 
-  it('LA-PLT-T38 Everything clickable shows a hover state: each pointer-cursor rule has a :hover rule for the same class', () => {
+  it('LA-PLT-T40 Everything clickable shows a hover state: each pointer-cursor rule has a :hover rule for the same class', () => {
     const rules = styleRules(CSS);
     const hovers = rules.flatMap((r) => topLevel(r.selector)).filter((s) => s.includes(':hover'));
     const missing = rules
@@ -158,7 +158,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     for (const token of ['--hover-bg', '--hover-ring', '--hover-speed']) expect(CSS).toContain(`${token}:`);
   });
 
-  it('LA-PLT-T39 The workbench: panels sit on the shell a gap apart, and every gap between two panels is the one ResizeHandle', async () => {
+  it('LA-PLT-T41 The workbench: panels sit on the shell a gap apart, and every gap between two panels is the one ResizeHandle', async () => {
     for (const token of ['--shell:', '--panel-gap:', '--panel-radius:']) expect(CSS).toContain(token);
     // One implementation: no other component draws a separator of its own.
     const separators = filesUnder(SRC, /\.tsx$/).filter((f) => !f.endsWith('ResizeHandle.tsx')).flatMap((f) => where(f, readFileSync(f, 'utf8'), /role="separator"/));
@@ -172,14 +172,14 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     for (const panel of [document.querySelector('#nav'), ...document.querySelectorAll('.pane'), document.querySelector('.side-bar-column')]) expect(panel).toHaveClass('panel');
   });
 
-  it('LA-PLT-T40 Every grid says its columns, a single column being minmax(0, 1fr), so content shrinks with its panel', () => {
+  it('LA-PLT-T42 Every grid says its columns, a single column being minmax(0, 1fr), so content shrinks with its panel', () => {
     const unsized = styleRules(CSS)
       .filter((r) => /display:\s*(?:inline-)?grid/.test(r.body) && !/grid-template-columns/.test(r.body) && !/place-items/.test(r.body))
       .map((r) => `app/src/styles.css:${r.line}: ${r.selector}`);
     expect(unsized).toEqual([]);
   });
 
-  it('LA-PLT-T43 The page bar holds the page\'s tabs and layout controls; each pane\'s header holds only that pane\'s actions, on wide and narrow screens alike', async () => {
+  it('LA-PLT-T45 The page bar holds the page\'s tabs and layout controls; each pane\'s header holds only that pane\'s actions, on wide and narrow screens alike', async () => {
     // The side bar starts closed in the Wiki view (brief 64); this test reads it open.
     openSideBar('details', ['wiki', 'graph', 'model']);
     for (const [path, narrow] of [['/DM-SHOP-UC01?view=wiki', false], ['/DM-SHOP-UC01?view=wiki,graph', false], ['/DM-SHOP-UC01?view=wiki,graph', true]] as const) {
@@ -245,7 +245,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
   });
 
 
-  it('LA-PLT-T44 Motion is shared and optional: every transition and animation uses the motion or hover tokens and is turned off under reduced motion', () => {
+  it('LA-PLT-T46 Motion is shared and optional: every transition and animation uses the motion or hover tokens and is turned off under reduced motion', () => {
     const rules = styleRules(CSS);
     const reduce = (r: { within: string[] }) => r.within.some((w) => /prefers-reduced-motion:\s*reduce/.test(w));
     const onlyWithMotion = (r: { within: string[] }) => r.within.some((w) => /prefers-reduced-motion:\s*no-preference/.test(w));
@@ -279,7 +279,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     expect(ownTiming).toEqual([]);
   });
 
-  it('LA-PLT-T57 Themes only set tokens: a theme file holds token names only, its stylesheet sets them on :root, and every built-in passes AA for text in both modes', () => {
+  it('LA-PLT-T59 Themes only set tokens: a theme file holds token names only, its stylesheet sets them on :root, and every built-in passes AA for text in both modes', () => {
     const dir = join(SRC, 'theme', 'themes');
     const files = readdirSync(dir).filter((f) => f.endsWith('.json'));
     expect(files.length).toBe(BUILT_IN_THEMES.length);
@@ -307,7 +307,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     expect(failing).toEqual([]);
   });
 
-  it('LA-PLT-T50 A row that leads to one record is one link: every record row on the domain and record pages has exactly one row link, stretched over the row', async () => {
+  it('LA-PLT-T52 A row that leads to one record is one link: every record row on the domain and record pages has exactly one row link, stretched over the row', async () => {
     // The stylesheet: rows are positioned, the row link's ::after covers the row and shows its hover
     // and focus, and one rule lifts the row's other controls above it.
     const rules = styleRules(CSS);
@@ -337,7 +337,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     }
   });
 
-  it('LA-PLT-T37 Code, specs and docs use American spelling', () => {
+  it('LA-PLT-T39 Code, specs and docs use American spelling', () => {
     // Built from parts, so this file does not trip its own check.
     const british = ['col' + 'our', 'behavi' + 'our', 'neighb' + 'our', 'fav' + 'our', 'hon' + 'our', 'cent' + 're', 'model' + 'ling', 'model' + 'led',
       '(?<!aria-)label' + 'led', 'cancel' + 'led', 'travel' + 'led', 'organi' + 's', 'recogni' + 's', 'summari' + 's', 'saniti' + 's', 'prioriti' + 's',
@@ -353,7 +353,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     expect(hits).toEqual([]);
   });
 
-  it('LA-PLT-T66 Everything works by touch: on a coarse pointer every clickable control is at least 44 x 44 px, as itself or through a target stretched around it', () => {
+  it('LA-PLT-T68 Everything works by touch: on a coarse pointer every clickable control is at least 44 x 44 px, as itself or through a target stretched around it', () => {
     const rules = styleRules(CSS);
     const coarse = (r: { within: string[] }) => r.within.some((w) => /pointer:\s*coarse/.test(w));
     expect(CSS).toMatch(/--touch-target:\s*44px/);
@@ -382,7 +382,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     expect(CSS).toMatch(/:is\([^)]*\.tree-toggle[^)]*\)::before\s*\{[^}]*width:\s*var\(--touch-target\);\s*height:\s*var\(--touch-target\)/);
   });
 
-  it('LA-PLT-T67 Nothing is reachable only by hover: a control a hover reveals is always shown on a coarse pointer, and every tooltip also shows on keyboard focus', () => {
+  it('LA-PLT-T69 Nothing is reachable only by hover: a control a hover reveals is always shown on a coarse pointer, and every tooltip also shows on keyboard focus', () => {
     const rules = styleRules(CSS);
     const coarse = (r: { within: string[] }) => r.within.some((w) => /pointer:\s*coarse/.test(w));
     const keyOf = (s: string) => { const classes = s.replace(/:[\w-]+(\([^)]*\))?/g, '').match(/\.[\w-]+/g); return classes?.[classes.length - 1] ?? null; };
@@ -398,7 +398,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     expect(tooltip).toMatch(/onFocus/);
   });
 
-  it('LA-PLT-T68 No page scrolls sideways at 320 px: no fixed width wider than the phone\'s content, tables and code scroll in their own box, and IDs wrap', async () => {
+  it('LA-PLT-T70 No page scrolls sideways at 320 px: no fixed width wider than the phone\'s content, tables and code scroll in their own box, and IDs wrap', async () => {
     // What jsdom cannot do: lay pages out. So this reads the stylesheet for any fixed least width over 288 px (320 px less
     // the 16 px gutters) outside a wide-screen media query, and renders the main pages on a phone to check that every
     // table and code block sits in a box that scrolls sideways and no inline style fixes a width over 288 px.
@@ -432,7 +432,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     }
   });
 
-  it('LA-PLT-T80 Actions look like actions: standalone actions are the one Button, and links stay links for navigation in context', async () => {
+  it('LA-PLT-T82 Actions look like actions: standalone actions are the one Button, and links stay links for navigation in context', async () => {
     // The controls that are not standalone actions, and so keep their own form: tab close buttons, toggles in a group,
     // fold chevrons, the nav's rows and rail, the sheet handle, the open-pages list and the title bar's command center.
     // In the source no raw <button> may take the Button's own classes; on the page they are allowed.
@@ -484,7 +484,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     }
   });
 
-  it('LA-PLT-T82 One address per thing: only address.ts makes a record or group address, and every address is an ID or a lowercase app page', async () => {
+  it('LA-PLT-T84 One address per thing: only address.ts makes a record or group address, and every address is an ID or a lowercase app page', async () => {
     // The source: no path built by hand under the old prefixes, or from an ID, outside address.ts (the desktop menus included).
     const sources = [...filesUnder(SRC, /\.tsx?$/), ...filesUnder(join(ROOT, 'desktop', 'src'), /\.ts$/)]
       .filter((f) => !f.endsWith(join('views', 'address.ts')));
@@ -513,7 +513,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     }
   });
 
-  it('LA-PLT-T101 An old address is no page: /records, /specs and /graph addresses say so, and the address stays as typed', async () => {
+  it('LA-PLT-T103 An old address is no page: /records, /specs and /graph addresses say so, and the address stays as typed', async () => {
     for (const path of ['/records/DM-SHOP-UC01', '/records/DM-SHOP/use_case', '/specs', '/specs/DM/DM-SHOP', '/graph', '/graph/DM-SHOP-UC01']) {
       expect(parseSpecRoute(path, indexWorkspace(workspace())), path).toEqual({ page: 'missing' });
       await openApp(path);
@@ -526,7 +526,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     expect(screen.queryByRole('region', { name: 'Graph pane' })).toBeNull();
   });
 
-  it('LA-PLT-T102 Changes are hard cutovers: no redirect, alias, legacy path or second addressOf signature in the app or the engine', () => {
+  it('LA-PLT-T104 Changes are hard cutovers: no redirect, alias, legacy path or second addressOf signature in the app or the engine', () => {
     const sources = [...filesUnder(SRC, /\.(tsx?|css)$/), ...filesUnder(join(ROOT, 'lathe', 'src'), /\.ts$/)];
     const kept = sources.flatMap((f) => where(f, readFileSync(f, 'utf8'), /legacy|redirect|\balias/i));
     expect(kept).toEqual([]);

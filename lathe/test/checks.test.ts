@@ -143,7 +143,7 @@ describe('coverage, meta-model and fitness', () => {
     expect(ofCheck(ws, 'component-file-missing')).toMatchObject([{ severity: 'warning', record: 'UX-D-C02' }]);
   });
 
-  it('LA-AUT-T21 A meta-model that names undefined kinds or repeats itself is reported as errors', () => {
+  it('LA-AUT-T19 A meta-model that names undefined kinds or repeats itself is reported as errors', () => {
     const ws = workspaces['broken-meta'];
     const meta = ws.problems.filter((p) => p.check.startsWith('meta-'));
     expect(meta.every((p) => p.severity === 'error' && p.record === null)).toBe(true);

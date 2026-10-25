@@ -1,4 +1,4 @@
-/* The desktop app's own title bar (DesktopTitleBar.tsx, LA-PLT-UC13): 38 px on the shell, so the bar and
+/* The desktop app's own title bar (DesktopTitleBar.tsx, LA-PLT-UC14): 38 px on the shell, so the bar and
    the shell are one surface, with the page laid out under it. Three columns of which the outer two share
    what is left, so the command center stays centered on the window. Tokens only. */
 :root[data-title-bar] #root { display: flex; flex-direction: column; }

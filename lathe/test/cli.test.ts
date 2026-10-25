@@ -61,7 +61,7 @@ describe('lathe check', () => {
 });
 
 describe('lathe init', () => {
-  it('LA-PLT-T04 Init writes a config and a first product record, and refuses bad or repeated input', () => {
+  it('LA-PLT-T06 Init writes a config and a first product record, and refuses bad or repeated input', () => {
     const root = tempDir();
     const first = lathe('init', '--root', root, '--name', 'Tool Library', '--prefix', 'TL');
     expect(first.status).toBe(0);

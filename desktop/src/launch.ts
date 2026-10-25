@@ -1,4 +1,4 @@
-// The window's own pages (LA-PLT-UC14-R10, R11): a calm launch view over the window from the moment it
+// The window's own pages (LA-PLT-UC15-R10, R11): a calm launch view over the window from the moment it
 // opens until the page has the product's specs, and an error page when Lathe cannot load the folder.
 // Both are static/launch.html, drawn over the app's page in a view of their own and given a model as
 // JSON in the address; the About window is static/about.html the same way. Their buttons reach the

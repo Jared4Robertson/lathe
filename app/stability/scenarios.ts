@@ -3,7 +3,7 @@
 export const PRODUCT = '/LA';
 export const DOMAIN = '/LA-EXP';
 /** A use case with requirements, links and a long body. */
-export const RECORD = '/LA-PLT-UC04';
+export const RECORD = '/LA-PLT-UC05';
 /** An aggregate: its page offers the Model view. */
 export const AGGREGATE = '/LA-EXP-A4';
 

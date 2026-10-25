@@ -9,7 +9,7 @@ import { useDesktopErrorCount, useDesktopRecordMenu } from './desktopRecord';
 import { Tooltip } from './Tooltip';
 import './DesktopTitleBar.css';
 
-// The desktop app's own title bar (LA-PLT-UC13), as in VS Code: the window has no system title bar,
+// The desktop app's own title bar (LA-PLT-UC14), as in VS Code: the window has no system title bar,
 // so this 38 px bar on the shell color carries the window's controls (the traffic lights at the left
 // on macOS, the native buttons at the right elsewhere), back and forward, a command center naming
 // the page that opens quick find, and the layout toggles. It drags the window; a double-click on it

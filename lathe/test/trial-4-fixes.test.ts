@@ -88,12 +88,12 @@ describe('key_file', () => {
 });
 
 describe('flow paths', () => {
-  it('LA-AUT-T96 Steps are numbered within their path; a step with no path is on the main path, and path names match trimmed in any case', () => {
+  it('LA-AUT-T94 Steps are numbered within their path; a step with no path is on the main path, and path names match trimmed in any case', () => {
     expect(claims.records.find((r) => r.id === 'TC-D-F01-S04')?.fields.path).toBe(' Refused ');
     for (const s of ['S01', 'S02', 'S03', 'S04']) expect(ofRecord(claims, `TC-D-F01-${s}`)).toEqual([]);
   });
 
-  it('LA-AUT-T97 A repeated order on a path, and a path whose numbering skips, are flow-step-order errors', () => {
+  it('LA-AUT-T95 A repeated order on a path, and a path whose numbering skips, are flow-step-order errors', () => {
     const found = ofCheck(claims, 'flow-step-order').filter((p) => p.record?.startsWith('TC-D-F02') || p.record?.startsWith('TC-D-F04'));
     expect(found.map((p) => [p.record, p.message])).toEqual([
       ['TC-D-F02-S02', 'Flow step TC-D-F02-S02 has order 4 in flow TC-D-F02, but no step has order 2, 3; number the steps of a flow 1, 2, 3 and so on, with no gaps.'],
@@ -105,7 +105,7 @@ describe('flow paths', () => {
     expect(found.every((p) => p.severity === 'error')).toBe(true);
   });
 
-  it('LA-AUT-T98 No gap is reported on a path that has an order that is not a whole number, or a step with no order', () => {
+  it('LA-AUT-T96 No gap is reported on a path that has an order that is not a whole number, or a step with no order', () => {
     const f03 = claims.problems.filter((p) => p.record?.startsWith('TC-D-F03'));
     expect(f03.map((p) => [p.check, p.record])).toEqual([
       ['missing-required-field', 'TC-D-F03-S05'],
@@ -115,21 +115,21 @@ describe('flow paths', () => {
 });
 
 describe('grouping levels', () => {
-  it('LA-AUT-T99 A domain rule may sit under an entity, and a layer under a layer', () => {
+  it('LA-AUT-T97 A domain rule may sit under an entity, and a layer under a layer', () => {
     const kind = (name: string) => twins.kinds.find((k) => k.kind === name);
     expect(kind('domain_rule')?.parent_kinds).toEqual(['aggregate', 'domain', 'entity']);
     expect(kind('layer')?.parent_kinds).toEqual(['domain', 'layer']);
     expect(ofCheck(twins, 'parent-kind-not-allowed')).toEqual([]);
   });
 
-  it("LA-AUT-T100 A rule under an entity, and a component in a sub-layer, belong to their ancestors' domain and product", () => {
+  it("LA-AUT-T98 A rule under an entity, and a component in a sub-layer, belong to their ancestors' domain and product", () => {
     const record = (id: string) => twins.records.find((r) => r.id === id);
     for (const id of ['LV-A-DR01', 'LV-A-LAY02', 'LV-A-C01']) expect(record(id), id).toMatchObject({ product: 'LV', domain: 'LV-A' });
     expect(record('LV-A-DR01')?.parent).toBe('LV-A-EN01');
     expect(record('LV-A-C01')?.parent).toBe('LV-A-LAY02');
   });
 
-  it("LA-AUT-T101 A Fields table's Meaning column has one name, in any letter case", () => {
+  it("LA-AUT-T99 A Fields table's Meaning column has one name, in any letter case", () => {
     const fields = (id: string) => twins.records.find((r) => r.id === id)?.entityFields;
     expect(fields('LV-A-EN01')).toHaveLength(2);
     expect(fields('LV-A-EN01')).toEqual(fields('LV-B-EN01'));
@@ -138,7 +138,7 @@ describe('grouping levels', () => {
     expect(hasFieldsColumns(['Field', 'Business meaning', 'Kind of value', 'Example'])).toBe(false);
   });
 
-  it('LA-AUT-T102 Coverage counts a rule under an entity and a component in a sub-layer as one level up', () => {
+  it('LA-AUT-T100 Coverage counts a rule under an entity and a component in a sub-layer as one level up', () => {
     const of = (domain: string) => {
       const c = twins.coverage.find((x) => x.domain === domain);
       expect(c, domain).toBeDefined();
@@ -150,7 +150,7 @@ describe('grouping levels', () => {
     expect(a.obligations.find((o) => o.kind === 'pattern_rule')).toMatchObject({ total: 1, designed: 1, built: 1, proved: 1 });
   });
 
-  it('LA-AUT-T103 Every check reports the deeper domain exactly as the flatter one, apart from its extra layer', () => {
+  it('LA-AUT-T101 Every check reports the deeper domain exactly as the flatter one, apart from its extra layer', () => {
     const layers = new Set(twins.records.filter((r) => r.kind === 'layer').map((r) => r.id));
     const of = (domain: string) =>
       twins.problems
@@ -166,7 +166,7 @@ describe('grouping levels', () => {
     }
   });
 
-  it('LA-AUT-T104 Sub-layers of one layer need their own orders; they may reuse the orders of layers elsewhere', () => {
+  it('LA-AUT-T102 Sub-layers of one layer need their own orders; they may reuse the orders of layers elsewhere', () => {
     expect(ofCheck(twins, 'layer-order').map((p) => [p.record, p.message])).toEqual([
       ['LV-C-LAY02', 'Layer LV-C-LAY02 has order 1 in layer LV-C-LAY01, the same as LV-C-LAY03; each sub-layer of a layer needs its own order.'],
       ['LV-C-LAY03', 'Layer LV-C-LAY03 has order 1 in layer LV-C-LAY01, the same as LV-C-LAY02; each sub-layer of a layer needs its own order.'],

@@ -170,7 +170,7 @@ describe('tabs for open pages', () => {
     await waitFor(() => expect(address()).toBe('/P-D-UC01?view=wiki,graph'));
   });
 
-  it('LA-PLT-T46 Reloading brings back the same tabs, the preview, the active tab and each tab\'s views', async () => {
+  it('LA-PLT-T48 Reloading brings back the same tabs, the preview, the active tab and each tab\'s views', async () => {
     await openApp('/P-D-UC01?view=wiki,graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     fireEvent.doubleClick(tab('Lend a thing'));

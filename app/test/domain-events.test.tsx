@@ -83,7 +83,7 @@ describe('domain events in the ERD', () => {
     expect(CSS).toMatch(/\.rel-raised_by, \.rel-reacts_to\) :is\(\.erd-line-path, \.erd-end\) \{ stroke: var\(--spark\)/);
   });
 
-  it('LA-PLT-T83 A domain\'s ERD draws one dashed reacts-to line per aggregate pair and event, from the aggregate raising it to the one reacting, with the event\'s name as its label on hover', async () => {
+  it('LA-PLT-T85 A domain\'s ERD draws one dashed reacts-to line per aggregate pair and event, from the aggregate raising it to the one reacting, with the event\'s name as its label on hover', async () => {
     const erd = domainErd(index(), 'P-D');
     const reacts = erd.lines.filter((l) => l.relation === 'reacts_to');
     expect(reacts.map((l) => l.id).sort()).toEqual([
@@ -168,7 +168,7 @@ describe('domain events in the ERD', () => {
 });
 
 describe('domain events in the wiki', () => {
-  it('LA-PLT-T84 An aggregate\'s page lists its domain events titled "Domain events", each row a whole link saying what raises it and how many react; an event\'s page shows its Fields table, "Raised by" and "Reacted to by", and a reacting record shows "Reacts to"', async () => {
+  it('LA-PLT-T86 An aggregate\'s page lists its domain events titled "Domain events", each row a whole link saying what raises it and how many react; an event\'s page shows its Fields table, "Raised by" and "Reacted to by", and a reacting record shows "Reacts to"', async () => {
     await openApp(`${addressOf('P-D-A3')}?view=wiki`, served());
     await screen.findByRole('heading', { level: 1, name: 'Loan' });
     const events = section(/^Domain events/);

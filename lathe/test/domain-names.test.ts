@@ -20,7 +20,7 @@ beforeAll(async () => {
 const messageOf = (id: string) => ws.problems.find((p) => p.check === CHECK && p.record === id)?.message;
 
 describe('the domain-named-for-technology check', () => {
-  it('LA-AUT-T105 A domain whose title names a technology layer, in any letter case, is a warning that says to name the capability', () => {
+  it('LA-AUT-T103 A domain whose title names a technology layer, in any letter case, is a warning that says to name the capability', () => {
     expect(ws.problems.filter((p) => p.check === CHECK).map((p) => [p.severity, p.record])).toEqual([
       ['warning', 'DN-BACKEND'],
       ['warning', 'DN-DATA'],
@@ -37,7 +37,7 @@ describe('the domain-named-for-technology check', () => {
     expect(messageOf('DN-DATA')).toContain('its title "Reporting databases" says "databases"');
   });
 
-  it('LA-AUT-T106 A domain whose code names a technology is a warning, and one named so in both title and code says both', () => {
+  it('LA-AUT-T104 A domain whose code names a technology is a warning, and one named so in both title and code says both', () => {
     expect(messageOf('DN-BACKEND')).toBe(
       `Domain DN-BACKEND is named for a technology, not a business capability: its code BACKEND says "backend"${FIX}`,
     );
@@ -47,7 +47,7 @@ describe('the domain-named-for-technology check', () => {
     );
   });
 
-  it('LA-AUT-T107 A technology word inside a longer word, or only in the domain\'s body, is not reported', () => {
+  it('LA-AUT-T105 A technology word inside a longer word, or only in the domain\'s body, is not reported', () => {
     // Building holds "ui", Engineering holds "engine", and Lending's body names the web app, API, server and desktop.
     for (const id of ['DN-BUILD', 'DN-ENG', 'DN-LEND']) expect(messageOf(id), id).toBeUndefined();
     expect(ws.problems.filter((p) => p.severity === 'error')).toEqual([]);
