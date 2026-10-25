@@ -154,15 +154,15 @@ function RecordBody({ index, record, actions, header, side }: { index: SpecIndex
           {record.kind === 'flow' && <FlowSteps index={index} flow={record} />}
           {/* After the body and its kind's own sections, before the children. A pattern's followers have their own section. */}
           <Traceability index={index} record={record} skip={record.kind === 'pattern' ? PATTERN_SKIP : undefined} />
-          {side ? (
-            <Section title="Problems" count={problems.length}>
-              <ProblemList index={index} problems={problems} showRecord={false} />
-            </Section>
-          ) : children.length > 0 && record.kind !== 'pattern' && (
+          {/* Without the facts beside it, the body lists the direct children itself; the problems show either way (the side bar does not repeat them). */}
+          {!side && children.length > 0 && record.kind !== 'pattern' && (
             <Section title={childrenTitle} count={children.length}>
               <RecordTree index={index} records={children} label={`${childrenTitle} of ${id}`} showKind />
             </Section>
           )}
+          <Section title="Problems" count={problems.length}>
+            <ProblemList index={index} problems={problems} showRecord={false} />
+          </Section>
           {record.kind === 'product' && <p><SpecLink to={productPath(id)} className={buttonClass()}>Open the product overview</SpecLink></p>}
           {record.kind === 'domain' && record.product && <p><SpecLink to={domainPath(record.product, id)} className={buttonClass()}>Open the domain overview</SpecLink></p>}
         </div>

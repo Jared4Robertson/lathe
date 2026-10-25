@@ -7,6 +7,7 @@ import { productOfPath } from '../shell/spaces';
 import type { SpecIndex } from '../specs/data';
 import { focusOf, parseViews, pathOf, VIEW_NAMES, viewsFromSearch, withView, type FocusRoute, type ViewName } from './address';
 import { activateTab, activeTab, closeTab, cycleTab, emptyTabs, keepTab, openTab, parseTabSet, tabFor, updateTab, type Tab, type TabSet } from './tabs';
+import { sideStateFrom, type SideState } from './sideBarState';
 
 // The open tabs of the focus page, one tab set per space, kept for the browser session, and the
 // address kept in step with the active tab (LA-PAT-APP-UX-R06):
@@ -24,6 +25,8 @@ export interface TabView {
   /** Each pane's weight, which the gaps share out. */
   sizes: Record<ViewName, number>;
   graph: GraphSettings;
+  /** The side bar in each view mode: open or not, and its view (brief 64). Absent modes use the last used. */
+  side?: SideState;
 }
 export type PageTab = Tab<TabView>;
 export type PageTabs = TabSet<TabView>;
@@ -80,7 +83,7 @@ export function firstTabView(): TabView {
 
 // ---------- Stored tab sets ----------
 
-interface StoredTab { views: string; sizes: Record<string, number>; graph: StoredSettings; scroll: number }
+interface StoredTab { views: string; sizes: Record<string, number>; graph: StoredSettings; scroll: number; side?: SideState }
 
 function tabViewFrom(v: unknown): (TabView & { scroll: number }) | null {
   if (!v || typeof v !== 'object') return null;
@@ -88,7 +91,8 @@ function tabViewFrom(v: unknown): (TabView & { scroll: number }) | null {
   const views = parseViews(typeof s.views === 'string' ? s.views : '');
   const first = firstTabView();
   const sizes = Object.fromEntries(VIEW_NAMES.map((name) => [name, isWeight(s.sizes?.[name]) ? s.sizes![name] : first.sizes[name]])) as Record<ViewName, number>;
-  return { views: views.length > 0 ? views : ['wiki'], sizes, graph: settingsFrom(s.graph) ?? first.graph, scroll: isNumber(s.scroll) && s.scroll >= 0 ? s.scroll : 0 };
+  const side = sideStateFrom(s.side);
+  return { views: views.length > 0 ? views : ['wiki'], sizes, graph: settingsFrom(s.graph) ?? first.graph, scroll: isNumber(s.scroll) && s.scroll >= 0 ? s.scroll : 0, ...(Object.keys(side).length > 0 ? { side } : {}) };
 }
 
 const scrollKey = (t: { key: string; page: string }) => `${t.key} ${t.page}`;
@@ -121,7 +125,7 @@ function saveAll(all: Record<string, PageTabs>, scrolls: Map<string, number>) {
         key: t.key,
         page: t.page,
         preview: t.preview,
-        state: { views: t.state.views.join(','), sizes: t.state.sizes, graph: storedFrom(t.state.graph), scroll: scrolls.get(scrollKey(t)) ?? 0 },
+        state: { views: t.state.views.join(','), sizes: t.state.sizes, graph: storedFrom(t.state.graph), scroll: scrolls.get(scrollKey(t)) ?? 0, ...(t.state.side ? { side: t.state.side } : {}) },
       })),
     };
   }
