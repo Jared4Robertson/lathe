@@ -1,6 +1,8 @@
 import { lowerLabel } from '../plural';
 import type { ReactNode } from 'react';
-import { domainPath, kindLabel, productPath, relationLabel, type SpecIndex, type SpecLink as Link, type SpecRecord } from './data';
+import { domainPath, kindLabel, productPath, type SpecIndex, type SpecLink as Link, type SpecRecord } from './data';
+import { groupByLabel, relationLabelOf } from './labels';
+import { Traceability } from './Traceability';
 import { RecordMarkdown } from './mentions';
 import { kindFieldPath, kindPagePath } from '../format/reference';
 import { PatternRuleSections, PatternSections } from './PatternParts';
@@ -13,21 +15,14 @@ import { NavigateContext, PageHeader, ProblemBadge, ProblemList, RecordLink, Rec
 // Kept apart from the page chrome so another view (such as the graph, side by side) can host it.
 // It lays itself out by its own width, so it reads at half the screen as well as full.
 
-function groupByRelation(links: Link[]) {
-  const groups = new Map<string, Link[]>();
-  for (const l of links) groups.set(l.relation, [...(groups.get(l.relation) ?? []), l]);
-  return [...groups.entries()].sort(([a], [b]) => a.localeCompare(b));
-}
-
+/** A record's links one way, grouped and named by their labels read from this record (LA-BRW-DR243). */
 function LinkGroups({ index, links, direction }: { index: SpecIndex; links: Link[]; direction: 'out' | 'in' }) {
   if (links.length === 0) return <p className="hint">{direction === 'out' ? 'This record links to nothing.' : 'Nothing links to this record.'}</p>;
   return (
     <dl className="link-groups">
-      {groupByRelation(links).map(([relation, group]) => {
-        const name = direction === 'out' ? relationLabel(relation) : `${relationLabel(relation)} this`;
-        const ids = group.map((l) => (direction === 'out' ? l.target : l.source)).sort((a, b) => a.localeCompare(b, 'en', { numeric: true }));
+      {groupByLabel(index, links, direction === 'out' ? 'source' : 'target').map(({ label: name, ids }) => {
         return (
-          <div key={relation}>
+          <div key={name}>
             <dt>{name}</dt>
             <dd>
               <LongList
@@ -46,22 +41,25 @@ function LinkGroups({ index, links, direction }: { index: SpecIndex; links: Link
   );
 }
 
-/** For an interaction requirement: the view, endpoint or flow it sits at, and what it carries out. */
+const PATTERN_SKIP: ReadonlySet<string> = new Set(['in:follows']);
+
+/** For an interaction requirement:the view, endpoint or flow it sits at, and what it carries out. */
 function Fulfills({ index, record }: { index: SpecIndex; record: SpecRecord }) {
   const parent = record.parent ? index.byId.get(record.parent) : undefined;
   const targets = (index.outgoing.get(record.id) ?? []).filter((l) => l.relation === 'fulfills').map((l) => l.target);
+  const title = relationLabelOf(index.workspace.relations, 'fulfills');
   return (
-    <Section title="Fulfills" count={targets.length}>
+    <Section title={title} count={targets.length}>
       {parent && (
         <p className="fulfills-at">
           At the {lowerLabel(kindLabel(index, parent.kind))} <RecordLink index={index} id={parent.id} />
         </p>
       )}
       {targets.length === 0 ? (
-        <p className="hint">It fulfills nothing yet. Link it with <code>fulfills</code> to the requirement or domain rule it carries out.</p>
+        <p className="hint">It carries out nothing yet. Link it with <code>fulfills</code> to the requirement or domain rule it carries out.</p>
       ) : (
         <LongList
-          label="Fulfills"
+          label={title}
           className="record-list fulfills"
           items={targets}
           itemKey={(t) => t}
@@ -153,6 +151,8 @@ function RecordBody({ index, record, actions, header, side }: { index: SpecIndex
           {record.kind === 'pattern' && <PatternSections index={index} pattern={record} />}
           {record.kind === 'pattern_rule' && <PatternRuleSections index={index} rule={record} />}
           {record.kind === 'flow' && <FlowSteps index={index} flow={record} />}
+          {/* After the body and its kind's own sections, before the children. A pattern's followers have their own section. */}
+          <Traceability index={index} record={record} skip={record.kind === 'pattern' ? PATTERN_SKIP : undefined} />
           {side ? (
             <Section title="Problems" count={problems.length}>
               <ProblemList index={index} problems={problems} showRecord={false} />

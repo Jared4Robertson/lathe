@@ -594,6 +594,19 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 .rule-mark.missing { color: var(--warn); border-color: var(--warn); }
 .rule-mark.planned { border-style: dashed; font-style: italic; color: var(--muted); }
 .rule-mark.na { color: var(--muted); border-style: dashed; }
+
+/* A record's Traceability section (LA-BRW-UC118). */
+.trace-gaps { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; margin: 0 0 10px; }
+.trace-gaps > li { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+.trace-gap { display: inline-flex; flex-wrap: wrap; gap: 4px 6px; align-items: baseline; padding: 4px 10px; border: 1px solid var(--warn); border-radius: 6px; color: var(--ink); font-size: 0.88rem; }
+.trace-gap strong { color: var(--warn); }
+.trace-gap.only-planned { border-style: dashed; }
+.trace-row { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; }
+.trace-row > .record-row { flex: 1 1 auto; min-width: 0; }
+.trace-cell { display: inline-flex; flex-wrap: wrap; gap: 2px 8px; align-items: baseline; }
+.data-table.trace-requirements { width: 100%; }
+.trace-run-by { margin: 0; display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; font-size: 0.88rem; }
+.flow-path > h3 { margin: 10px 0 4px; font-size: 0.9rem; }
 .rule-na-reasons { font-size: 0.8rem; color: var(--muted); }
 .data-table { border-collapse: collapse; font-size: 0.86rem; margin: 0 0 12px; }
 .data-table th, .data-table td { text-align: left; vertical-align: top; padding: 4px 10px 4px 0; border-bottom: 1px solid var(--rule); }

@@ -38,7 +38,7 @@ describe('tabs for open pages', () => {
     expect(within(first).getByRole('button', { name: 'Close P-D-UC01 Lend a thing' })).toHaveAttribute('aria-keyshortcuts', 'Alt+Shift+W');
 
     // A wiki link opens in the preview tab, replacing it.
-    fireEvent.click(within(screen.getByRole('region', { name: 'Wiki pane' })).getByRole('link', { name: /P-D-UC01-R01/ }));
+    fireEvent.click(within(screen.getByRole('region', { name: 'Wiki pane' })).getAllByRole('link', { name: /P-D-UC01-R01/ })[0]);
     await waitFor(() => expect(title()).toBe('The owner is shown'));
     expect(tabs()).toEqual(['The owner is shown*<']);
 

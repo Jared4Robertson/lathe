@@ -111,7 +111,7 @@ describe('the format reference', () => {
 
   it("LA-CHK-T303 A product's reference shows its extensions and its own checks", async () => {
     const widened = await formatReference(fixture('widen-extension'));
-    expect(widened.kinds.find((k) => k.kind === 'domain_rule')).toMatchObject({ label: 'Business rule', parent_kinds: ['aggregate', 'domain'] });
+    expect(widened.kinds.find((k) => k.kind === 'domain_rule')).toMatchObject({ label: 'Business rule', parent_kinds: ['aggregate', 'domain', 'entity'] });
     expect(widened.kinds.find((k) => k.kind === 'policy')).toMatchObject({ obligation: 'yes', description: 'A policy the business sets.', id: null });
     expect(widened.kinds.find((k) => k.kind === 'domain')?.child_kinds).toContain('policy');
 
