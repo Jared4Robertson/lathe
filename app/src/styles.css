@@ -311,6 +311,14 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-handle { opacity: 0; pointer-events: none; top: 50% !important; bottom: auto !important; }
 /* Nodes glide to their new places when the graph re-centers; each edge tweens with them in JS, on the same tokens (app/src/graph/motion.ts). */
 .graph-flow .react-flow__node { transition: transform var(--motion-speed) var(--motion-ease); }
+/* Records new to the picture fade in at their place, and records leaving fade out where they were (app/src/graph/camera.ts). */
+.graph-flow .react-flow__node.is-leaving { opacity: 0; pointer-events: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .graph-flow .react-flow__node.is-entering { animation: graph-fade-in var(--motion-speed) var(--motion-ease) both; }
+  .graph-flow .react-flow__node.is-leaving { animation: graph-fade-out var(--motion-speed) var(--motion-ease) both; }
+}
+@keyframes graph-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes graph-fade-out { from { opacity: 1; } to { opacity: 0; } }
 .graph-flow .react-flow__node:focus { outline: none; }
 .graph-flow .react-flow__node:focus-visible .graph-node { outline: 3px solid var(--steel); outline-offset: 3px; }
 
