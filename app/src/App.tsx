@@ -21,7 +21,7 @@ import { HOME_PATH, isFocusRoute, redirectTarget } from './views/address';
 import { ThemeProvider } from './theme/ThemeProvider';
 import { APPEARANCE_PATH, ThemeCommands } from './theme/ThemeCommands';
 import { Button } from './components/Button';
-// The first load ships only the wiki (LA-PAT-APP-UX-R30): the theme editor and the diagrams, with
+// The first load ships only the wiki (LA-PAT-APP-UX-R11): the theme editor and the diagrams, with
 // React Flow and ELK, load when first opened, as the graph and the Model view do (views/FocusPage.tsx).
 const AppearancePage = lazy(() => import('./theme/AppearancePage').then((m) => ({ default: m.AppearancePage })));
 const DiagramView = lazy(() => import('./diagrams/DiagramView').then((m) => ({ default: m.DiagramView })));

@@ -1,4 +1,4 @@
-// LA-BRW-T606: the wiki's first load leaves out React Flow and ELK (LA-PAT-APP-UX-R30), checked at the
+// LA-BRW-T606: the wiki's first load leaves out React Flow and ELK (LA-PAT-APP-UX-R11), checked at the
 // source: no module that app/src/main.tsx reaches through static imports imports either. The graph,
 // the Model view, the theme editor and the diagrams are loaded with import() when first used.
 import { existsSync, readFileSync } from 'node:fs';

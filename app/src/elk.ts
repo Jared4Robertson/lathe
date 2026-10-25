@@ -1,6 +1,6 @@
 import type { ELK, ElkNode } from 'elkjs/lib/elk-api';
 
-// ELK, the layout engine the graph, the Model view and the diagrams share (LA-PAT-APP-UX-R30). In a
+// ELK, the layout engine the graph, the Model view and the diagrams share (LA-PAT-APP-UX-R11). In a
 // browser it runs in a web worker, so laying out a picture never blocks the main thread: the page
 // keeps painting, and a re-center's frames stay short. Where there are no workers (the tests, in
 // jsdom) it runs the bundled copy on the main thread instead. One ELK serves every caller, and it

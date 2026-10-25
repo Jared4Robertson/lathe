@@ -147,7 +147,7 @@ const clocks = new WeakMap<Element, { frame: number; progress: number | null }>(
  * the nodes' transition clock, read once per frame for the whole canvas. Every node of a re-center
  * glides with the same transition, started in the same frame, so one moving node's clock is every
  * node's clock. Reading it once per frame, rather than once per edge, keeps a re-center's frames
- * short (LA-PAT-APP-UX-R30): each read makes the browser bring its styles up to date, and a picture
+ * short (LA-PAT-APP-UX-R11): each read makes the browser bring its styles up to date, and a picture
  * of 200 edges read it 400 times a frame (480 ms in one frame). `frame` is the time
  * requestAnimationFrame passed in, the same for every callback of one frame.
  */

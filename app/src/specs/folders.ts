@@ -351,7 +351,7 @@ export function domainRecords(index: SpecIndex, domainId: string): SpecRecord[] 
 /**
  * What one index gives for each key, worked out once: an index never changes (a reload makes a new
  * one), and the nav, the branch of the current page and the graph's tree ask for a domain's folders
- * on every move, which took tens of milliseconds a time (LA-PAT-APP-UX-R30).
+ * on every move, which took tens of milliseconds a time (LA-PAT-APP-UX-R11).
  */
 function perIndex<T>(compute: (index: SpecIndex, key: string) => T): (index: SpecIndex, key: string) => T {
   const cache = new WeakMap<SpecIndex, Map<string, T>>();

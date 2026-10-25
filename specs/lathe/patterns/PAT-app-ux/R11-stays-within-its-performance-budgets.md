@@ -1,5 +1,5 @@
 ---
-id: LA-PAT-APP-UX-R30
+id: LA-PAT-APP-UX-R11
 kind: pattern_rule
 title: Lathe stays within its performance budgets
 parent: LA-PAT-APP-UX

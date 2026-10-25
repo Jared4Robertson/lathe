@@ -19,7 +19,7 @@ import { onLatheEvent } from '../events';
 
 // A CSV diagram (model/<slug>/*.csv, a brainstorm canvas): its terms and links drawn with React Flow
 // and laid out by ELK. It loads only when a diagram is opened, so the wiki's first load leaves out
-// React Flow and ELK (LA-PAT-APP-UX-R30).
+// React Flow and ELK (LA-PAT-APP-UX-R11).
 
 type ModelNode = Node<ModelNodeData>;
 type ModelEdge = Edge<ModelEdgeData>;

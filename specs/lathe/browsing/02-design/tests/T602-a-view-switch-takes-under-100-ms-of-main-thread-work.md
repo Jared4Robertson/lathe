@@ -6,6 +6,6 @@ parent: LA-BRW
 test_type: acceptance
 run_by: app/perf/app.perf.ts
 links:
-  proves: [LA-BRW-UC117-R11, LA-PAT-APP-UX-R30]
+  proves: [LA-BRW-UC117-R11, LA-PAT-APP-UX-R11]
 ---
 On a record page, opens and closes the Graph pane (after a first open has loaded its code) and expects each switch to take under 100 ms of main-thread work.

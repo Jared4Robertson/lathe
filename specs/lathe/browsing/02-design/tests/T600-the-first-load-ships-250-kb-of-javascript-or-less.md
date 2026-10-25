@@ -6,6 +6,6 @@ parent: LA-BRW
 test_type: acceptance
 run_by: app/perf/app.perf.ts
 links:
-  proves: [LA-PAT-APP-UX-R30]
+  proves: [LA-PAT-APP-UX-R11]
 ---
 Builds the app for production and expects the JavaScript that `index.html` loads at once (its scripts and module preloads) to be 250 KB or less gzipped; prints the largest chunks.

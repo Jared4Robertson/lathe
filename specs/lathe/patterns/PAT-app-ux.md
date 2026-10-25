@@ -8,7 +8,7 @@ How the web app behaves for the person using it, so that every page feels the sa
 
 ## How a domain uses the pattern
 
-The domain links the pattern with `follows`. The pattern has no settings: every rule applies to all of the domain's pages. Each rule is proved by a test in `app/test` that reads the source or renders the main pages, and that names the file and line to fix when it fails. `LA-PAT-APP-UX-R08` is proved in a real browser by the stability suite (`app/stability`, `npm --prefix app run test:stability`), and at the source by `app/test/nothing-jumps.test.tsx`. `LA-PAT-APP-UX-R30` is proved on the production build by the performance suite (`app/perf`, `npm --prefix app run test:perf`). `LA-PAT-APP-UX-R10` is proved in a real browser by the accessibility suite (`app/a11y`, `npm --prefix app run test:a11y`).
+The domain links the pattern with `follows`. The pattern has no settings: every rule applies to all of the domain's pages. Each rule is proved by a test in `app/test` that reads the source or renders the main pages, and that names the file and line to fix when it fails. `LA-PAT-APP-UX-R08` is proved in a real browser by the stability suite (`app/stability`, `npm --prefix app run test:stability`), and at the source by `app/test/nothing-jumps.test.tsx`. `LA-PAT-APP-UX-R11` is proved on the production build by the performance suite (`app/perf`, `npm --prefix app run test:perf`). `LA-PAT-APP-UX-R10` is proved in a real browser by the accessibility suite (`app/a11y`, `npm --prefix app run test:a11y`).
 
 ## Rules
 
@@ -22,5 +22,6 @@ The domain links the pattern with `follows`. The pattern has no settings: every 
 - `LA-PAT-APP-UX-R08`: nothing jumps.
 - `LA-PAT-APP-UX-R09`: actions look like actions.
 - `LA-PAT-APP-UX-R10`: every page passes the accessibility audit.
+- `LA-PAT-APP-UX-R11`: Lathe stays within its performance budgets.
 
-New rules continue from UX-R11.
+New rules continue from UX-R12.
