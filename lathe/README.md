@@ -18,11 +18,12 @@ npx lathe serve            # http://127.0.0.1:5330
   "specs": "specs",
   "diagrams": "diagrams",
   "metaExtensions": "lathe-meta",
-  "checks": "lathe-checks"
+  "checks": "lathe-checks",
+  "idPrefixes": ["STD", "SYS"]
 }
 ```
 
-All four keys are optional (`specs` and `diagrams` are the defaults). A `metaExtensions` folder holds a `kinds.csv` and/or `relations.csv` with the same columns as [meta/](meta/); their rows are added to Lathe's defaults for this product only, and a row for a kind Lathe already has widens that kind (see FORMAT.md section 9). A `checks` folder holds the product's own checks (see [Add a product's own check](#add-a-products-own-check)). The record format is in [FORMAT.md](FORMAT.md).
+All five keys are optional (`specs` and `diagrams` are the defaults). A `metaExtensions` folder holds a `kinds.csv` and/or `relations.csv` with the same columns as [meta/](meta/); their rows are added to Lathe's defaults for this product only, and a row for a kind Lathe already has widens that kind (see FORMAT.md section 9). A `checks` folder holds the product's own checks (see [Add a product's own check](#add-a-products-own-check)). `idPrefixes` lists ID prefixes, besides every product's and domain's ID, that a record body may cite: a token such as `STD-04` is then read as a citation and reported if no record has it (FORMAT.md section 12). The record format is in [FORMAT.md](FORMAT.md).
 
 ## Build the package
 
