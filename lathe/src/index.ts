@@ -6,8 +6,8 @@ import path from 'node:path';
 import { DuckDBInstance, type DuckDBConnection } from '@duckdb/node-api';
 import { COVERAGE_COUNTS_SQL, COVERAGE_GAPS_SQL, COVERAGE_TESTS_SQL } from './coverage.ts';
 import { loadConfig, PACKAGE_DIR } from './config.ts';
-import { parseRecordFile, proseTokens, type ProseToken } from './parse.ts';
-import type { Coverage, CoverageGap, Kind, ObligationCoverage, Problem, RelationRule, SectionRule, SpecLink, SpecRecord, TestCounts, Workspace } from './types.ts';
+import { hasFieldsColumns, parseRecordFile, proseTokens, readFieldsTable, type ProseToken } from './parse.ts';
+import type { Coverage, CoverageGap, EntityField, Kind, ObligationCoverage, Problem, RelationRule, SectionRule, SpecLink, SpecRecord, TestCounts, Workspace } from './types.ts';
 
 export type * from './types.ts';
 export { loadConfig, PACKAGE_DIR, CONFIG_FILE, DEFAULT_MAX_CHILDREN, type LatheConfig } from './config.ts';
@@ -100,6 +100,35 @@ function readProseCitations(records: LoadedRecord[], idPrefixes: string[]): Pros
   return citations;
 }
 
+/** What an entity's Fields table says (FORMAT.md section 17), for the entity-fields check. */
+interface EntityTableFact {
+  path: string;
+  record: string;
+  heading: boolean;
+  columns: string | null;
+  columns_ok: boolean;
+}
+
+// Reads each entity's Fields table into its entityFields, in table order, and returns the facts the checks
+// judge it by. A table without the right columns gives no fields: its column problem is the one reported.
+// A row with fewer cells than the columns is read with the missing cells empty.
+function readEntityFields(records: LoadedRecord[]): EntityTableFact[] {
+  const facts: EntityTableFact[] = [];
+  for (const r of records) {
+    if (r.kind !== 'entity') continue;
+    const table = readFieldsTable(r.body);
+    const ok = hasFieldsColumns(table.columns);
+    r.entityFields = ok
+      ? table.rows.map((cells): EntityField => {
+          const [field = '', meaning = '', kind = '', example = ''] = cells;
+          return { field, meaning, kind, example };
+        })
+      : [];
+    facts.push({ path: r.path, record: r.id, heading: table.heading, columns: table.columns?.join(', ') ?? null, columns_ok: ok });
+  }
+  return facts;
+}
+
 // Walks parent links to find each record's product and domain; reports records on a parent loop.
 function placeRecords(records: LoadedRecord[], problems: Problem[]) {
   const byId = new Map<string, LoadedRecord>();
@@ -162,13 +191,14 @@ async function gatherFileFacts(root: string, records: LoadedRecord[]): Promise<{
 async function append(
   connection: DuckDBConnection,
   table: string,
-  rows: (string | boolean | null)[][],
+  rows: (string | number | boolean | null)[][],
 ) {
   const appender = await connection.createAppender(table);
   for (const row of rows) {
     for (const value of row) {
       if (value === null) appender.appendNull();
       else if (typeof value === 'boolean') appender.appendBoolean(value);
+      else if (typeof value === 'number') appender.appendInteger(value);
       else appender.appendVarchar(value);
     }
     appender.endRow();
@@ -461,6 +491,7 @@ export async function loadWorkspace(root: string, options: LoadOptions = {}): Pr
   }
   placeRecords(records, problems);
   const citations = readProseCitations(records, config.idPrefixes);
+  const entityTables = readEntityFields(records);
   const { facts, mentions } = await gatherFileFacts(root, records);
 
   const instance = await DuckDBInstance.create(':memory:');
@@ -484,6 +515,19 @@ export async function loadWorkspace(root: string, options: LoadOptions = {}): Pr
     // Every distinct ID a record's body cites (a record's ID, or a token with a known prefix), existing or not.
     await connection.run('CREATE TABLE prose_mentions (path VARCHAR, record VARCHAR, cited VARCHAR)');
     await append(connection, 'prose_mentions', citations.map((c) => [c.path, c.record, c.cited]));
+    // Each entity's Fields table (FORMAT.md section 17): whether it has the heading, the table's columns, and,
+    // when they are right, its rows in table order (position from 1).
+    await connection.run(`
+      CREATE TABLE entity_tables (path VARCHAR, record VARCHAR, heading BOOLEAN, columns VARCHAR, columns_ok BOOLEAN);
+      CREATE TABLE entity_fields (path VARCHAR, record VARCHAR, position INTEGER, field VARCHAR, meaning VARCHAR,
+                                  kind VARCHAR, example VARCHAR);
+    `);
+    await append(connection, 'entity_tables', entityTables.map((t) => [t.path, t.record, t.heading, t.columns, t.columns_ok]));
+    await append(
+      connection,
+      'entity_fields',
+      records.flatMap((r) => (r.entityFields ?? []).map((f, i) => [r.path, r.id, i + 1, f.field, f.meaning, f.kind, f.example])),
+    );
     // The product's settings from lathe.config.json that checks read, one row each, such as structure.maxChildren.
     await connection.run('CREATE TABLE settings (name VARCHAR, value VARCHAR)');
     await append(connection, 'settings', [['structure.maxChildren', String(config.maxChildren)]]);

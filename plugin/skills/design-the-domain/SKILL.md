@@ -9,7 +9,7 @@ The design says how the product carries out its use cases: the paths people take
 
 ## Before you write
 
-1. Read the use cases and requirements being designed, and the domain rules they apply.
+1. Read the use cases and requirements being designed, and the domain rules they apply. Read the aggregates' entities too (the `model-a-domain` skill): their fields and links are what models, stores and endpoint bodies carry.
 2. Read the domain's existing design records and take the next free number for each kind.
 
 ## The records and their links

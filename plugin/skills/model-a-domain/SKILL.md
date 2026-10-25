@@ -1,11 +1,11 @@
 ---
 name: model-a-domain
-description: Write or change a Lathe domain model - the domain record, its aggregates and their domain rules. Use when adding a domain, an aggregate or a domain rule to a repo with lathe.config.json, or when deciding whether a rule belongs on an aggregate or in a use case.
+description: Write or change a Lathe domain model - the domain record, its aggregates, their entities (the records each aggregate keeps, with their fields and the links an ERD draws) and their domain rules. Use when adding a domain, an aggregate, an entity or a domain rule to a repo with lathe.config.json, or when deciding whether a rule belongs on an aggregate or in a use case.
 ---
 
 # Model a domain
 
-A domain model says what the product's records are and what must always be true of them, whoever changes them. It has no actors, screens or code.
+A domain model says what the product's records are, how they hold and refer to each other, and what must always be true of them, whoever changes them. It has no actors, screens or code. The app draws it as ERDs (entity-relationship diagrams): one of each domain at aggregate level, and one of each aggregate's entities.
 
 ## Before you write
 
@@ -18,10 +18,18 @@ A domain model says what the product's records are and what must always be true 
 | Kind | Parent | ID | Holds |
 | --- | --- | --- | --- |
 | `domain` | the product | `<P>-<D>` | What the domain covers, and its language: a table of terms and their meanings. |
-| `aggregate` | the domain | `<P>-<D>-A<n>` | One cluster of records changed together: its business identity, and a table of fields (business meaning, kind of value, example). `relates_to` the aggregates it refers to by ID. |
+| `aggregate` | the domain | `<P>-<D>-A<n>` | One cluster of records changed together, named for its root, and its business identity. `relates_to` the aggregates it refers to by ID. |
+| `entity` | an aggregate | `<P>-<D>-EN<nn>`, numbered across the domain | One record the aggregate keeps: one box of its ERD. `role: root` for the record the aggregate is named for (exactly one per aggregate), `role: child` for each of its parts. Body: what it is, then a `## Fields` table with the columns Field, Meaning, Kind of value, Example, one row per field. Links: `has_one` (one to one) and `has_many` (one to many) to its parts in the same aggregate; `refers_to` (many to one) any entity it holds a reference to, in this aggregate or another, in this domain or another. |
 | `domain_rule` | an aggregate | `<P>-<D>-DR<nn>` | One fact that must always hold for that aggregate. Title: the rule in a few words. Body: the rule in full with MUST / MUST NOT. |
 
-Put the files under the domain folder, for example `<domain>/01-define/aggregates/A3-loan.md` and `<domain>/01-define/domain-rules/DR06-one-active-loan-per-tool.md`. Folder names are for people; only the fields matter to Lathe.
+Put the files under the domain folder, for example `<domain>/01-define/aggregates/A3-loan.md`, its entities in `<domain>/01-define/aggregates/loan/EN01-loan.md`, and `<domain>/01-define/domain-rules/DR06-one-active-loan-per-tool.md`. Folder names are for people; only the fields matter to Lathe.
+
+## Entities
+
+- Start from the root: the record the aggregate is named for. Add a child only for a part that lives and dies with the root, such as a line of an order or a step of a process. Anything with a life of its own is the root of another aggregate.
+- Link each child from the root, or from the child it is part of, with `has_one` or `has_many`. A child nothing reaches is an `entity-unreferenced` warning.
+- A reference to a record elsewhere is `refers_to`, never `has_one` or `has_many`: parts stay in their aggregate (`has-crosses-aggregate`). When an aggregate's entities refer to another aggregate's, also give the aggregate a `relates_to` link to it.
+- One row per field, each name once, in the domain's terms. Kind of value says what values it takes (text, a whole number, a date and time, one of a list, the ID of another entity); Example gives one real-looking value.
 
 ## Rule or requirement?
 
@@ -43,11 +51,46 @@ links:
 One member holding one tool, from borrowing to return.
 
 **Business identity:** Loan ID.
+```
 
-| Field | Business meaning | Kind of value | Example |
+```markdown
+---
+id: TL-LEND-EN01
+kind: entity
+title: Loan
+parent: TL-LEND-A3
+role: root
+links:
+  has_many: [TL-LEND-EN02]
+  refers_to: [TL-LEND-EN05, TL-MEM-EN01]
+---
+One member holding one tool, from borrowing to return.
+
+## Fields
+
+| Field | Meaning | Kind of value | Example |
 | --- | --- | --- | --- |
-| Borrowed at | When the loan started. | Date and time. | 2026-03-02T10:00:00Z |
-| Due at | When the loan should end. | Date and time: Borrowed at plus 14 days. | 2026-03-16T10:00:00Z |
+| Loan ID | The loan's identity. | Text | L-0042 |
+| Borrowed at | When the loan started. | Date and time | 2026-03-02T10:00:00Z |
+| Due at | When the loan should end. | Date and time: Borrowed at plus 14 days | 2026-03-16T10:00:00Z |
+```
+
+```markdown
+---
+id: TL-LEND-EN02
+kind: entity
+title: Renewal
+parent: TL-LEND-A3
+role: child
+---
+One extension of a loan's due date.
+
+## Fields
+
+| Field | Meaning | Kind of value | Example |
+| --- | --- | --- | --- |
+| Renewed at | When the loan was renewed. | Date and time | 2026-03-12T09:00:00Z |
+| New due at | The due date after renewal. | Date and time | 2026-03-26T10:00:00Z |
 ```
 
 ```markdown
@@ -65,4 +108,5 @@ A tool MUST NOT have more than one active loan. It can be lent again once its lo
 - Records carry no status, approval or history. A record in the specs is in force.
 - One rule per `domain_rule` record. Use the domain's terms exactly as its language table defines them.
 - When a question is decided, delete the question record and every `about` link to it, and write the answer into the records it affects.
+- The entity checks are errors except `entity-unreferenced`: a `role` other than root or child, an aggregate without exactly one root, a missing or malformed Fields table, a repeated field name, and a `has_one` or `has_many` into another aggregate.
 - Finish with the `check-and-fix` skill. A new domain rule shows as a warning until a component satisfies it and a test proves it; that is expected.
