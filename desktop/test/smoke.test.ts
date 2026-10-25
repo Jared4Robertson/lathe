@@ -1,7 +1,7 @@
 // Runs the real shell, hidden, on a small product folder (src/smoke.ts). macOS only: on Linux,
 // Electron needs a display server (xvfb) that CI does not have, and Windows is not built yet.
 import { execFileSync, spawn, type ChildProcess } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -20,8 +20,28 @@ function write(file: string, text: string) {
   writeFileSync(file, text);
 }
 
+/** The newest change under a folder, in milliseconds, skipping dependencies and builds. */
+function newest(dir: string): number {
+  let latest = 0;
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (entry.name === 'node_modules' || entry.name === 'dist') continue;
+    const full = path.join(dir, entry.name);
+    latest = Math.max(latest, entry.isDirectory() ? newest(full) : statSync(full).mtimeMs);
+  }
+  return latest;
+}
+
+/** The engine and app build is missing, or older than a source file, so the test would run yesterday's app. */
+function buildIsStale(): boolean {
+  const built = [path.join(lathe, 'dist', 'app', 'index.html'), path.join(lathe, 'dist', 'src', 'server', 'serve.js')];
+  if (!built.every(existsSync)) return true;
+  const builtAt = Math.min(...built.map((f) => statSync(f).mtimeMs));
+  const app = path.join(lathe, '..', 'app');
+  return [path.join(lathe, 'src'), path.join(app, 'src'), path.join(app, 'index.html')].some((p) => existsSync(p) && (statSync(p).isDirectory() ? newest(p) : statSync(p).mtimeMs) > builtAt);
+}
+
 beforeAll(() => {
-  if (!existsSync(path.join(lathe, 'dist', 'app', 'index.html')) || !existsSync(path.join(lathe, 'dist', 'src', 'server', 'serve.js'))) {
+  if (buildIsStale()) {
     execFileSync('npm', ['--prefix', lathe, 'run', 'build'], { stdio: 'inherit' });
   }
   execFileSync(path.join(desktop, 'node_modules', '.bin', 'tsc'), ['-p', 'tsconfig.build.json'], { cwd: desktop, stdio: 'inherit' });
