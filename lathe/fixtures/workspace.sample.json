@@ -53,6 +53,19 @@
       "proof_only": false
     },
     {
+      "kind": "domain_event",
+      "label": "Domain event",
+      "stage": "define",
+      "section": "domain-model",
+      "parent_kinds": [
+        "aggregate"
+      ],
+      "required_fields": [],
+      "description": "An unchangeable record that something happened in the domain, raised by its aggregate and named in the past tense (Loan opened). Its body holds a Fields table of what it carries: Field, Meaning, Kind of value, Example.",
+      "obligation": false,
+      "proof_only": false
+    },
+    {
       "kind": "domain_rule",
       "label": "Domain rule",
       "stage": "define",
@@ -418,6 +431,42 @@
       "role": "",
       "forward_label": "Refers to",
       "reverse_label": "Referred to by"
+    },
+    {
+      "relation": "raised_by",
+      "source_kind": "domain_event",
+      "target_kind": "entity",
+      "description": "The event is raised when that entity of its aggregate changes.",
+      "role": "",
+      "forward_label": "Raised by",
+      "reverse_label": "Raises"
+    },
+    {
+      "relation": "reacts_to",
+      "source_kind": "aggregate",
+      "target_kind": "domain_event",
+      "description": "The aggregate changes in response to the event, which may come from another aggregate or domain.",
+      "role": "",
+      "forward_label": "Reacts to",
+      "reverse_label": "Reacted to by"
+    },
+    {
+      "relation": "reacts_to",
+      "source_kind": "use_case",
+      "target_kind": "domain_event",
+      "description": "The use case starts when the event happens.",
+      "role": "",
+      "forward_label": "Reacts to",
+      "reverse_label": "Reacted to by"
+    },
+    {
+      "relation": "reacts_to",
+      "source_kind": "component",
+      "target_kind": "domain_event",
+      "description": "The component handles the event.",
+      "role": "",
+      "forward_label": "Reacts to",
+      "reverse_label": "Reacted to by"
     }
   ],
   "records": [
@@ -522,6 +571,32 @@
           "meaning": "What the note said then.",
           "kind": "Text",
           "example": "Buy bread"
+        }
+      ]
+    },
+    {
+      "id": "EX-NOTE-EV01",
+      "kind": "domain_event",
+      "title": "Note written",
+      "parent": "EX-NOTE-A1",
+      "product": "EX",
+      "domain": "EX-NOTE",
+      "fields": {},
+      "body": "A note was written and saved.\n\n## Fields\n\n| Field | Meaning | Kind of value | Example |\n| --- | --- | --- | --- |\n| Note ID | Which note was written. | Note reference | N-1 |\n| Written at | When it was saved. | Date and time | 2026-03-02T10:00:00Z |",
+      "path": "specs/example/notes/01-define/aggregates/note/events/EV01-note-written.md",
+      "mentions": [],
+      "entityFields": [
+        {
+          "field": "Note ID",
+          "meaning": "Which note was written.",
+          "kind": "Note reference",
+          "example": "N-1"
+        },
+        {
+          "field": "Written at",
+          "meaning": "When it was saved.",
+          "kind": "Date and time",
+          "example": "2026-03-02T10:00:00Z"
         }
       ]
     },
@@ -710,6 +785,16 @@
       "source": "EX-NOTE-EN01",
       "relation": "refers_to",
       "target": "EX-NOTE-EN03"
+    },
+    {
+      "source": "EX-NOTE-EV01",
+      "relation": "raised_by",
+      "target": "EX-NOTE-EN01"
+    },
+    {
+      "source": "EX-NOTE-C01",
+      "relation": "reacts_to",
+      "target": "EX-NOTE-EV01"
     }
   ],
   "problems": [
