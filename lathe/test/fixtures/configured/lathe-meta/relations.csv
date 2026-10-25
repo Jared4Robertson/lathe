@@ -1,2 +1,2 @@
-relation,source_kind,target_kind,description
-summarizes,report,aggregate,"The report summarizes the aggregate."
+relation,source_kind,target_kind,description,forward_label,reverse_label
+summarizes,report,aggregate,The report summarizes the aggregate.,Summarizes,Summarized by
