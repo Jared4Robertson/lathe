@@ -98,6 +98,8 @@ interface EdgeData extends Record<string, unknown> {
   label: string;
   /** A cross-link added by the Links switch: a dashed curve, in its own color. */
   link: boolean;
+  /** How much its stroke grows, as a box's border does (LA-BRW-DR391): its child's content scale for a parent line, 1 for a link. */
+  scale: number;
 }
 type FlowNode = Node<NodeData | BarData>;
 type FlowEdge = Edge<EdgeData>;
@@ -138,6 +140,8 @@ function GraphNodeView({ data }: NodeProps<Node<NodeData>>) {
     data.isFocus ? 'is-focus' : '',
     data.scale !== 1 ? 'is-scaled' : '',
     data.label ? '' : 'is-plain',
+    // A domain is a hexagon (LA-BRW-DR394).
+    data.kind === 'domain' && !data.group ? 'is-hexagon' : '',
   ].filter(Boolean).join(' ');
   return (
     <div className={classes} title={data.group ? `${data.title} (${data.meta.replace(/^Group · /, 'in ')})` : `${data.title} (${data.id})`} style={scaleStyle(data.scale)}>
@@ -177,7 +181,7 @@ function GraphEdgeView({ id, data, markerEnd, source, target }: EdgeProps<FlowEd
   const [a, b] = data.points;
   // A cross-link (the Links switch) is a dashed curve in its own color, apart from the tree's level parent lines.
   return (
-    <g className="graph-edge-group" data-source={source} data-target={target}>
+    <g className="graph-edge-group" data-source={source} data-target={target} style={data.scale !== 1 ? ({ '--edge-scale': data.scale } as CSSProperties) : undefined}>
       <BaseEdge id={id} path={data.link ? curvePath(data.points) : linePath(data.points)} markerEnd={data.link ? markerEnd : undefined} interactionWidth={0} className={`graph-edge rel-${relationStyle(data.relation)}${data.link ? ' is-link' : ''}`} />
       {data.link && data.label && (
         <EdgeLabelRenderer>
@@ -796,7 +800,7 @@ function GraphCanvas({ index, graph, depth, filters, onNavigate, minimap, onPeek
         const tc = centerOf(t);
         edges.push({
           id: e.id, source: e.source, target: e.target, type: 'line', markerEnd: { type: MarkerType.ArrowClosed }, focusable: false, selectable: false,
-          data: { relation: e.relation, points: [boxExit(sc.x, sc.y, tc.x, tc.y, s.w, s.h), boxExit(tc.x, tc.y, sc.x, sc.y, t.w, t.h)], label: graphEdgeLabel(index, e), link: true },
+          data: { relation: e.relation, points: [boxExit(sc.x, sc.y, tc.x, tc.y, s.w, s.h), boxExit(tc.x, tc.y, sc.x, sc.y, t.w, t.h)], label: graphEdgeLabel(index, e), link: true, scale: 1 },
         });
       }
       return { nodes, edges };
@@ -807,7 +811,8 @@ function GraphCanvas({ index, graph, depth, filters, onNavigate, minimap, onPeek
         const up = map.nodes.get(b.id)?.parent;
         const p = up ? byId.get(up) : undefined;
         if (!p) continue;
-        edges.push({ id: `${p.id}|${PARENT}|${b.id}`, source: p.id, target: b.id, type: 'line', focusable: false, selectable: false, data: { relation: PARENT, points: parentLine(p, b), label: '', link: false } });
+        const shape = (id: string) => (index.byId.get(id)?.kind === 'domain' ? 'hexagon' as const : 'box' as const);
+        edges.push({ id: `${p.id}|${PARENT}|${b.id}`, source: p.id, target: b.id, type: 'line', focusable: false, selectable: false, data: { relation: PARENT, points: parentLine(p, b, shape(p.id), shape(b.id)), label: '', link: false, scale: contentScale(b.w, b.h) } });
       }
     }
     // The Links switch: the focus's own links, as curves between their boxes.
@@ -816,7 +821,7 @@ function GraphCanvas({ index, graph, depth, filters, onNavigate, minimap, onPeek
       const s = byId.get(e.source);
       const t = byId.get(e.target);
       if (!s || !t) continue;
-      edges.push({ id: e.id, source: e.source, target: e.target, type: 'line', markerEnd: { type: MarkerType.ArrowClosed }, focusable: false, selectable: false, data: { relation: e.relation, points: linkEnds(s, t), label: graphEdgeLabel(index, e), link: true } });
+      edges.push({ id: e.id, source: e.source, target: e.target, type: 'line', markerEnd: { type: MarkerType.ArrowClosed }, focusable: false, selectable: false, data: { relation: e.relation, points: linkEnds(s, t), label: graphEdgeLabel(index, e), link: true, scale: 1 } });
     }
     return { nodes, edges };
   }, [boxes, drawn, tracing, map, index, focus, graph, parentShown]);

@@ -36,9 +36,9 @@ test.describe('navigate', () => {
 
   test('LA-BRW-T481 by clicking a graph node, then Back', async ({ page }) => {
     await openPage(page, `${RECORD}?view=graph`);
-    await page.locator('.graph-flow .react-flow__node:not(.is-leaving)').nth(1).waitFor();
+    await page.locator('.graph-flow .react-flow__node').nth(1).waitFor();
     const keys = [...KEYS, GRAPH_CANVAS, GRAPH_HEADER];
-    const node = page.locator('.graph-flow .react-flow__node[data-id^="LA-"]:not([data-id="LA-BRW-UC91"])').first();
+    const node = page.locator('.graph-flow .react-flow__node[data-id^="LA-"]:not([data-id="LA-BRW-UC91"]):not(.is-plain)').first();
     const r = await step(page, 'navigate', 'graph click', { keys, allow: CONTENT, resizes: TITLE }, async () => {
       await node.click();
       await page.waitForURL((u) => !u.pathname.endsWith('LA-BRW-UC91'));

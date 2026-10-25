@@ -344,10 +344,10 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-bar { width: 100%; height: 100%; background: var(--rule); opacity: 0.6; border-radius: var(--node-radius); }
 .graph-flow .react-flow__node.is-bar { pointer-events: none; }
 
-/* Edges: parent/child is the solid spine of the tree; every other relation is a lighter, dashed cross-link. Lines keep their
-   width on screen whatever the zoom. */
-.graph-flow .react-flow__edge-path.graph-edge { stroke-width: 1.2; vector-effect: non-scaling-stroke; }
-.graph-flow .react-flow__edge-path.rel-structure { stroke: var(--ink); stroke-width: 2; opacity: 0.75; }
+/* Edges: parent/child is the solid spine of the tree; every other relation is a lighter, dashed cross-link. A parent line
+   grows with its child box (--edge-scale), as the box's border does, so it reads at the zoom that reads the box. */
+.graph-flow .react-flow__edge-path.graph-edge { stroke-width: calc(1.2px * var(--edge-scale, 1)); }
+.graph-flow .react-flow__edge-path.rel-structure { stroke: var(--ink); stroke-width: calc(2px * var(--edge-scale, 1)); opacity: 0.75; }
 .graph-flow .react-flow__edge-path.rel-trace { stroke: var(--steel); stroke-dasharray: 6 4; }
 .graph-flow .react-flow__edge-path.rel-design { stroke: var(--spark); stroke-dasharray: 2 4; opacity: 0.8; }
 .graph-flow .react-flow__edge-path.rel-file { stroke: var(--muted); stroke-dasharray: 1 3; }
@@ -380,6 +380,23 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-line.is-link { border-top: 1.5px dashed var(--link-edge); }
 /* Domain events in the graph (LA-BRW-UC40-R07, LA-BRW-DR307): a rounded pill in the spark colors, and their reacts_to and
    raised_by links dashed in spark, with Links on too. */
+/* A domain is a hexagon (LA-BRW-DR394): flat top and bottom, pointed left and right ends whose chamfer grows with the node's
+   content scale (at most a quarter of its width), so a tall domain still reads as a hexagon. The node is clipped to the
+   polygon and filled with its edge color; an inner layer, inset by the edge's width and clipped the same way, is its fill,
+   so the border follows the outline in every state. Hover, focus, the keyboard ring and a tap's selection color the edge,
+   since a box-shadow or outline would be clipped away. */
+.graph-node.is-hexagon {
+  --hex-c: min(25%, calc(12px * var(--node-scale))); --hex-edge: var(--g-structural); --hex-w: var(--node-border);
+  --hex: polygon(var(--hex-c) 0, calc(100% - var(--hex-c)) 0, 100% 50%, calc(100% - var(--hex-c)) 100%, var(--hex-c) 100%, 0 50%);
+  border: 0; border-radius: 0; background: var(--hex-edge); clip-path: var(--hex); isolation: isolate; box-shadow: none;
+  padding-inline: calc(var(--hex-c) + 8px * var(--node-scale));
+}
+.graph-node.is-hexagon::before { content: ""; position: absolute; inset: var(--hex-w); z-index: -1; background: var(--g-structural-bg); clip-path: var(--hex); }
+.graph-node.is-hexagon.is-focus { --hex-edge: var(--ink); --hex-w: calc(3px * var(--node-scale)); box-shadow: none; }
+.graph-flow .react-flow__node:hover .graph-node.is-hexagon:not(.is-focus) { --hex-edge: var(--steel); --hex-w: calc(2.5px * var(--node-scale)); box-shadow: none; }
+.graph-flow .react-flow__node:focus-visible .graph-node.is-hexagon { --hex-edge: var(--steel); --hex-w: calc(3px * var(--node-scale)); outline: none; }
+.react-flow__node.is-armed .graph-node.is-hexagon { --hex-edge: var(--steel); --hex-w: calc(3px * var(--node-scale)); box-shadow: none; }
+.graph-swatch.stage-hexagon { border: 0; border-radius: 0; background: var(--g-structural); clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%); }
 .graph-node.kind-domain_event:not(.stage-group) { border-color: var(--spark); background: var(--spark-bg); border-radius: 999px; padding-inline: calc(14px * var(--node-scale)); }
 .graph-flow .react-flow__edge-path.rel-event, .graph-flow .react-flow__edge-path.rel-event.is-link { stroke: var(--spark); stroke-dasharray: 4 4; }
 .graph-line.rel-event { border-top: 1.5px dashed var(--spark); }

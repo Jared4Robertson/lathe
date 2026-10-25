@@ -72,7 +72,7 @@ describe('graph camera', () => {
     expect(map.height * all.zoom).toBeLessThanOrEqual(h);
   });
 
-  it('LA-BRW-T741 The glide is one smooth zoom and pan: from the view as it is to the framed one, zooming out only as far as the pan needs', () => {
+  it('LA-BRW-T740 The glide is one smooth zoom and pan: from the view as it is to the framed one, zooming out only as far as the pan needs', () => {
     const from = frameOnMap(map, 'P-D', 1, 1000, 800);
     const to = frameOnMap(map, 'P-D-UC01-R01', 1, 1000, 800);
     const path = zoomPath(from, to, 1000, 800);

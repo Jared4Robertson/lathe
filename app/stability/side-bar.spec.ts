@@ -29,7 +29,7 @@ test.describe('side bar', () => {
 
   test('LA-BRW-T599 Details following the node under the pointer moves nothing outside it', async ({ page }) => {
     await openPage(page, `${RECORD}?view=wiki,graph`);
-    const nodes = page.locator('.graph-flow .react-flow__node[data-id^="LA-"]:not(.is-context)');
+    const nodes = page.locator('.graph-flow .react-flow__node[data-id^="LA-"]:not(.is-plain)');
     await nodes.first().waitFor();
     await page.waitForTimeout(600);
     const r = await step(page, 'side bar', 'hover nodes, then leave', { keys: KEYS, allow: ALLOW }, async () => {
