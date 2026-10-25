@@ -21,7 +21,7 @@ import { treeChildren, treeOf } from './tree';
 /** How wide a level is for its typical height: the width over the height. */
 export const LEVEL_ASPECT = 1;
 /** The most one level is wider than the level below it (LA-EXP-DR58). */
-export const MAX_LEVEL_STEP = 4;
+export const MAX_LEVEL_STEP = 3;
 /** The most the roots' level (the products) is wider than the level below it, so a product's picture leaves room for its domains. */
 export const MAX_ROOT_STEP = 1.5;
 /** The gap between two sibling leaves, and between a leaf level and the level before it. */

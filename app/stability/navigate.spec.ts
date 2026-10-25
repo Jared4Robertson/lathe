@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { expectStable, openPage, step } from './measure';
 import { DOMAIN, FOCUS, GRAPH_CANVAS, GRAPH_HEADER, RECORD, SHELL } from './scenarios';
 
@@ -11,6 +11,17 @@ const CONTENT = ['.pane-scroll', '.side-bar'];
 const KEYS = [...SHELL, ...FOCUS];
 /** A new page's title may be taller or shorter than the last one's, but must not jump back. */
 const TITLE = [FOCUS[1]];
+
+/** The IDs of the graph's boxes wholly inside its canvas, in DOM order (the map runs past the canvas's edges). */
+async function boxesInView(page: Page, except = ''): Promise<string[]> {
+  return page.evaluate((except) => {
+    const canvas = document.querySelector('.graph-flow')!.getBoundingClientRect();
+    return [...document.querySelectorAll<HTMLElement>('.graph-flow .react-flow__node[data-id^="LA-"]')]
+      .filter((el) => el.dataset.id !== except)
+      .filter((el) => { const r = el.getBoundingClientRect(); return r.left >= canvas.left && r.right <= canvas.right && r.top >= canvas.top && r.bottom <= canvas.bottom - 40; })
+      .map((el) => el.dataset.id!);
+  }, except);
+}
 
 test.describe('navigate', () => {
   test('LA-PLT-T72 through the nav', async ({ page }) => {
@@ -38,7 +49,9 @@ test.describe('navigate', () => {
     await openPage(page, `${RECORD}?view=graph`);
     await page.locator('.graph-flow .react-flow__node').nth(1).waitFor();
     const keys = [...KEYS, GRAPH_CANVAS, GRAPH_HEADER];
-    const node = page.locator('.graph-flow .react-flow__node[data-id^="LA-"]:not([data-id="LA-PLT-UC05"]):not(.is-plain)').first();
+    const [inView] = await boxesInView(page, 'LA-PLT-UC05');
+    expect(inView, 'a box in view').toBeTruthy();
+    const node = page.locator(`.graph-flow .react-flow__node[data-id="${inView}"]`);
     const r = await step(page, 'navigate', 'graph click', { keys, allow: CONTENT, resizes: TITLE }, async () => {
       await node.click();
       await page.waitForURL((u) => !u.pathname.endsWith('LA-PLT-UC05'));

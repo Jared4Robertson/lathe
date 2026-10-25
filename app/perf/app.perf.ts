@@ -24,7 +24,7 @@ async function open(page: Page, url: string, ready = TITLE) {
 async function visibleNode(page: Page, n: number): Promise<string> {
   const ids = await page.evaluate(() => {
     const canvas = document.querySelector('.pane-graph .graph-flow')!.getBoundingClientRect();
-    return [...document.querySelectorAll<HTMLElement>('.graph-flow .react-flow__node[data-id^="LA-"]:not(.is-plain)')]
+    return [...document.querySelectorAll<HTMLElement>('.graph-flow .react-flow__node[data-id^="LA-"]')]
       .filter((el) => !el.querySelector('.is-focus'))
       .filter((el) => { const r = el.getBoundingClientRect(); return r.left >= canvas.left && r.right <= canvas.right && r.top >= canvas.top && r.bottom <= canvas.bottom - 40; })
       .map((el) => el.dataset.id!);
