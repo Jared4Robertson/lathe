@@ -36,7 +36,7 @@ describe('shortcut hints', () => {
     expect(screen.queryByRole('tooltip')).toBeNull();
 
     // Keyboard focus: at once; Escape closes it.
-    const graphToggle = await screen.findByRole('button', { name: /Graph/, pressed: false });
+    const graphToggle = await screen.findByRole('tab', { name: /^Graph/, selected: false });
     keyFocus(graphToggle);
     expect(tooltip()).toHaveTextContent('Graph view Ctrl+2');
     fireEvent.keyDown(graphToggle, { key: 'Escape' });
@@ -104,7 +104,7 @@ describe('shortcut hints', () => {
     expect(collapse).toHaveAttribute('aria-keyshortcuts', 'Control+J');
     keyFocus(collapse);
     expect(tooltip()).toHaveTextContent('Collapse the navigation Ctrl+J');
-    const graph = screen.getByRole('button', { name: /^Graph/ });
+    const graph = screen.getByRole('tab', { name: /^Graph/ });
     expect(graph).toHaveAttribute('aria-keyshortcuts', 'Alt+G');
     keyFocus(graph);
     expect(tooltip()).toHaveTextContent('Graph view Alt+G');
@@ -133,9 +133,10 @@ describe('shortcut hints', () => {
     expect(within(nav()).getByRole('combobox', { name: 'Quick find' })).toHaveAttribute('aria-keyshortcuts', 'Control+P Control+K');
     expect(within(within(nav()).getByRole('list', { name: 'Spaces' })).getAllByRole('link')[0]).toHaveAttribute('aria-keyshortcuts', 'Alt+1');
     expect(within(nav()).getByRole('link', { name: /^Checks for all products/ })).toHaveAttribute('aria-keyshortcuts', 'Control+Shift+M');
-    for (const [name, keys] of [['Wiki', 'Control+1'], ['Graph', 'Control+2'], ['Split', 'Control+3']]) {
-      expect(screen.getByRole('button', { name: new RegExp(`^${name}`) })).toHaveAttribute('aria-keyshortcuts', keys);
+    for (const [name, keys] of [['Wiki', 'Control+1'], ['Graph', 'Control+2']]) {
+      expect(screen.getByRole('tab', { name: new RegExp(`^${name}`) })).toHaveAttribute('aria-keyshortcuts', keys);
     }
+    expect(screen.getByRole('button', { name: 'Open the graph beside' })).toHaveAttribute('aria-keyshortcuts', 'Control+3');
     // The corner toggle and the inspector's own close button.
     expect(screen.getByRole('button', { name: 'Hide the inspector', expanded: true })).toHaveAttribute('aria-keyshortcuts', 'Control+Alt+B');
     expect(within(screen.getByRole('complementary', { name: 'Inspector' })).getByRole('button', { name: 'Hide the inspector' })).toHaveAttribute('aria-keyshortcuts', 'Control+Alt+B');
