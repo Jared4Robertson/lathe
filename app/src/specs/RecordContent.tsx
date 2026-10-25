@@ -5,7 +5,7 @@ import { RecordMarkdown } from './mentions';
 import { PatternRuleSections, PatternSections } from './PatternParts';
 import { FlowSteps } from './FlowSteps';
 import { LongList } from '../components/LongList';
-import { NavigateContext, PageHeader, ProblemBadge, ProblemList, RecordLink, RecordTree, Section, SpecLink, TestStateTag, idText, testState } from './parts';
+import { NavigateContext, PageHeader, ProblemBadge, ProblemList, RecordLink, RecordTree, Section, SpecLink, TestStateTag, idText, listTitle, testState } from './parts';
 
 // One record's content: header, body, problems, fields, parent, children and links both ways.
 // Kept apart from the page chrome so another view (such as the graph, side by side) can host it.
@@ -129,6 +129,8 @@ function RecordBody({ index, record, actions, header, side }: { index: SpecIndex
   const children = index.children.get(id) ?? [];
   const problems = index.problemsFor.get(id) ?? [];
   const isTest = record.kind === 'test';
+  // A list of one kind is titled by that kind ("Domain rules"); a mixed one stays "Children".
+  const childrenTitle = listTitle(index, children, 'Children');
   return (
     <>
       {header && (
@@ -154,8 +156,8 @@ function RecordBody({ index, record, actions, header, side }: { index: SpecIndex
               <ProblemList index={index} problems={problems} showRecord={false} />
             </Section>
           ) : children.length > 0 && record.kind !== 'pattern' && (
-            <Section title="Children" count={children.length}>
-              <RecordTree index={index} records={children} label={`Children of ${id}`} showKind />
+            <Section title={childrenTitle} count={children.length}>
+              <RecordTree index={index} records={children} label={`${childrenTitle} of ${id}`} showKind />
             </Section>
           )}
           {record.kind === 'product' && <p><SpecLink to={productPath(id)}>Open the product overview</SpecLink></p>}
@@ -178,6 +180,7 @@ export function RecordFacts({ index, record }: { index: SpecIndex; record: SpecR
   const isTest = record.kind === 'test';
   // A test's state gets its own row, with its tag.
   const fields = Object.entries(record.fields).filter(([name]) => !(isTest && name === 'state'));
+  const childrenTitle = listTitle(index, children, 'Children');
   return (
     <>
       <dl className="fields">
@@ -190,8 +193,8 @@ export function RecordFacts({ index, record }: { index: SpecIndex; record: SpecR
       </dl>
       <h3>Parent</h3>
       {record.parent ? <RecordLink index={index} id={record.parent} /> : <p className="hint">None (top level).</p>}
-      <h3>Children <span className="section-count">{children.length}</span></h3>
-      {children.length === 0 ? <p className="hint">None.</p> : <RecordTree index={index} records={children} label="Children" showKind bulk={false} />}
+      <h3>{childrenTitle} <span className="section-count">{children.length}</span></h3>
+      {children.length === 0 ? <p className="hint">None.</p> : <RecordTree index={index} records={children} label={childrenTitle} showKind bulk={false} />}
       <h3>Links out</h3>
       <LinkGroups index={index} links={index.outgoing.get(id) ?? []} direction="out" />
       <h3 id={`links-in-${id}`} tabIndex={-1} className="links-in-heading">Links in</h3>

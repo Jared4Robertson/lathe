@@ -173,11 +173,11 @@ describe('one address, three views', () => {
     await openApp('/records/P-D-UC01/requirement?view=split', { workspace: w });
     await screen.findByRole('heading', { level: 1, name: 'UC requirements (13)' });
     expect(within(screen.getByRole('region', { name: 'Wiki pane' })).getByRole('searchbox', { name: 'Filter members of P-D-UC01/requirement' })).toBeInTheDocument();
-    expect(within(inspector()).getByRole('searchbox', { name: 'Filter members' })).toBeInTheDocument();
+    expect(within(inspector()).getByRole('searchbox', { name: 'Filter UC requirements' })).toBeInTheDocument();
     await waitFor(() => expect(within(inspector()).getByRole('searchbox', { name: 'Filter connected records' })).toBeInTheDocument());
     await openApp('/records/P-D-UC01', { workspace: w });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
-    expect(within(inspector()).getByRole('searchbox', { name: 'Filter children' })).toBeInTheDocument();
+    expect(within(inspector()).getByRole('searchbox', { name: 'Filter UC requirements' })).toBeInTheDocument();
   });
 
   it('LA-BRW-T135 Switching views by keyboard keeps focus, and the toggles show a focus ring', async () => {
