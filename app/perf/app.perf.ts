@@ -26,13 +26,15 @@ async function open(page: Page, url: string, ready = TITLE) {
  */
 const AT_LEFT = { x: 20, y: 12 };
 
-/** The ID of a record box (not the center) whose left part is inside the graph's canvas. */
+/** The ID of a record box (not the center) whose left part is inside the graph's canvas, where a click lands on it. */
 async function visibleNode(page: Page, n: number): Promise<string> {
   const ids = await page.evaluate(() => {
     const canvas = document.querySelector('.pane-graph .graph-flow')!.getBoundingClientRect();
     return [...document.querySelectorAll<HTMLElement>('.graph-flow .react-flow__node[data-id^="LA-"]')]
       .filter((el) => !el.querySelector('.is-focus'))
       .filter((el) => { const r = el.getBoundingClientRect(); return r.height >= 24 && r.left >= canvas.left && r.left + 40 <= canvas.right && r.top >= canvas.top && r.bottom <= canvas.bottom - 40; })
+      // The click point hits this box, not a box drawn over it (a child, in the Nested layout).
+      .filter((el) => { const r = el.getBoundingClientRect(); return document.elementFromPoint(r.left + 20, r.top + 12)?.closest('.react-flow__node') === el; })
       .map((el) => el.dataset.id!);
   });
   expect(ids.length, 'a record box in view').toBeGreaterThan(0);
@@ -91,9 +93,15 @@ test.describe('performance', () => {
     await record({ name: 'view switch: close the Graph pane', value: closeGraph.workMs, unit: 'ms', budget: BUDGETS.viewSwitchMs, detail: `longest frame ${Math.round(closeGraph.worstFrameMs)} ms` });
   });
 
-  test('LA-PLT-T93 a graph re-center at depth 3 takes under 500 ms of main-thread work, and glides at 60 Hz', async ({ page }) => {
+  // In the Tree layout and in the Nested layout (LA-EXP-UC03-R16): the same budgets.
+  for (const layout of ['Tree', 'Nested'] as const) test(`LA-PLT-T93 a graph re-center at depth 3 takes under 500 ms of main-thread work, and glides at 60 Hz, in the ${layout} layout`, async ({ page }) => {
+    const label = layout === 'Tree' ? 'graph re-center at depth 3' : 'Nested graph re-center at depth 3';
     await open(page, `${RECORD}?view=graph`);
     await page.locator('.graph-flow .react-flow__node').first().waitFor();
+    if (layout === 'Nested') {
+      await page.locator('.graph-layout button', { hasText: 'Nested' }).click();
+      await page.locator('.graph-flow.is-nested .react-flow__node').first().waitFor();
+    }
     await page.locator('.graph-depth button', { hasText: '3' }).click();
     await quiet(page, 900);
     const works: number[] = [];
@@ -114,10 +122,10 @@ test.describe('performance', () => {
       notes.push(`${id}: ${Math.round(r.workMs)} ms work, longest frame ${Math.round(r.worstFrameMs)} ms, ${r.slowFrames} of ${r.frames} frames over 20 ms${r.worst.scripts.length ? ` [${r.worst.scripts.join('; ')}]` : ''}`);
     }
     const nodes = await page.locator('.graph-flow .react-flow__node').count();
-    await record({ name: 'graph re-center at depth 3: main-thread work', value: Math.max(...works), unit: 'ms', budget: BUDGETS.recenterMs, detail: `worst of 3 (${nodes} boxes in the last picture); ${notes.join(' | ')}` });
-    await record({ name: 'graph re-center at depth 3: longest frame', value: Math.max(...frames), unit: 'ms', budget: BUDGETS.recenterFrameMs, detail: 'the longest time between two frames, worst of 3' });
+    await record({ name: `${label}: main-thread work`, value: Math.max(...works), unit: 'ms', budget: BUDGETS.recenterMs, detail: `worst of 3 (${nodes} boxes in the last picture); ${notes.join(' | ')}` });
+    await record({ name: `${label}: longest frame`, value: Math.max(...frames), unit: 'ms', budget: BUDGETS.recenterFrameMs, detail: 'the longest time between two frames, worst of 3' });
     // "Under" a count of 3 is 3 or fewer, so the budget is one more.
-    await record({ name: 'graph re-center at depth 3: frames over 20 ms', value: Math.max(...slow), unit: 'frames', budget: BUDGETS.recenterSlowFrames + 1, detail: `worst of 3: ${slow.join(', ')}; at most ${BUDGETS.recenterSlowFrames}` });
+    await record({ name: `${label}: frames over 20 ms`, value: Math.max(...slow), unit: 'frames', budget: BUDGETS.recenterSlowFrames + 1, detail: `worst of 3: ${slow.join(', ')}; at most ${BUDGETS.recenterSlowFrames}` });
   });
 
   test('LA-PLT-T94 opening the Model pane takes under 100 ms of main-thread work', async ({ page }) => {
