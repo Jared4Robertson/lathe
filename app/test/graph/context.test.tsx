@@ -130,7 +130,7 @@ describe('the graph tree and its context ring', () => {
     expect(groupLabel(index, 'DM-SHOP/define/use-cases')).toBe('Capabilities (3)');
     // A capability's children are its use cases; its test is listed in the Test plan.
     expect(treeChildren(index, 'DM-SHOP-CAP01')).toEqual(['DM-SHOP-UC02']);
-    expect(treeParent(index, 'DM-SHOP-T09')).toBe('DM-SHOP/design/test-plan/engineering');
+    expect(treeParent(index, 'DM-SHOP-T09')).toBe('DM-SHOP/design/test-plan/acceptance/DM-SHOP-CAP01');
     // Interaction design mixes kinds, so it splits into one group per kind; Technical specification lists layers, then components outside any.
     expect(treeChildren(index, 'DM-SHOP/design/interaction-design')).toEqual(['DM-SHOP/design/interaction-design/flow', 'DM-SHOP/design/interaction-design/view', 'DM-SHOP/design/interaction-design/endpoint']);
     expect(groupLabel(index, 'DM-SHOP/design/interaction-design/flow')).toBe('Flows (1)');

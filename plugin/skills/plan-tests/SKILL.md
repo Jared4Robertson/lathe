@@ -18,7 +18,9 @@ A `test` record says what one test proves and how it is run. An obligation (a re
 | `state` | `automated` (the default when absent), `manual` or `planned`. Any other value is an error. |
 | `run_by` | The test file, as a path from the repo root. Required for an automated test; optional for manual and planned ones. |
 | `key` | Optional. Text the `run_by` file must contain instead of an ID, such as a test function name. |
+| `key_file` | Optional. The file that holds the key (or the IDs) when the test runs from a shared class in another file, as a path from the repo root. That file is then read instead of `run_by`, which must still exist. |
 | `links.proves` | The obligations this test proves. |
+| `links.supports` | The obligations this test backs without proving them, such as a check of a lock, a transaction or a budget the design chose. Support is never proof, so the file need not name these IDs. |
 
 The body says what the test does: the set-up, the action and what it expects. For a manual test it is the procedure a person follows.
 
@@ -35,6 +37,10 @@ An automated test's `run_by` file must contain **one** of:
 1. **the test record's ID**, for example in the test's name: `it('TL-LEND-T01 A second member with the same email is rejected', ...)`. The test record then vouches for everything it `proves`.
 2. **every ID the test proves**: `it('TL-LEND-DR01 Email is unique, whatever its case', ...)`. Use this when the product keys its tests by the rule they prove; the code then needs no separate test ID. A test that proves two records must name both: each one the file leaves out is a `proof-not-in-file` error.
 3. **the test's `key`**, when the record has one: text the file must contain exactly, such as a test function name (`key: test_librarian_actions_are_checked`) or the heading of a dedicated proof file that names no ID. With a `key`, the ID rules do not apply.
+
+When the proof sits in a shared class that the `run_by` file inherits from another file, name that file in `key_file`: the key, or the IDs, are looked for there instead. A key file that is missing or outside the repo root is `test-file-missing`.
+
+An engineering check that tests a mechanism (a lock, a transaction, a budget) backs an obligation but does not prove it: link it with `supports`, not `proves`. A test that only supports owes no ID in its file, and its links never count in coverage.
 
 IDs are matched as whole IDs: `TL-LEND-DR05` is not found in `TL-LEND-DR050` or `TL-LEND-DR05-R01`. Pick one style per product and keep to it. Put the ID at the start of the test's name, so a failing test points straight at its record.
 

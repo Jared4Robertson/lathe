@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { Background, Controls, Handle, Position, ReactFlow, ReactFlowProvider, useReactFlow, type Edge, type EdgeProps, type Node, type NodeProps } from '@xyflow/react';
 import type { SpecIndex } from '../specs/data';
+import type { RelationRule } from '../../../lathe/src/types';
+import { relationLabelOf } from '../specs/labels';
 import { readMotion } from '../graph/motion';
-import { erdFor, lineGeometry, lineOffsets, RELATION_ENDS, RELATION_LABELS, type Erd, type ErdBox, type ErdLine, type Rect } from './erd';
+import { erdFor, lineGeometry, lineOffsets, RELATION_ENDS, type Erd, type ErdBox, type ErdLine, type Rect } from './erd';
 import { layoutErd } from './layout';
 import { TapCard, useTapToOpen } from '../graph/touch';
 import { EdgeHints } from '../graph/hints';
@@ -20,7 +22,8 @@ export interface ModelViewProps {
 }
 
 interface BoxData extends Record<string, unknown> { box: ErdBox; focus: boolean }
-interface LineData extends Record<string, unknown> { line: ErdLine; source: Rect; target: Rect; offset: number }
+/** `label`: the line's relation in words, read from its source, from the meta-model (LA-BRW-DR243). */
+interface LineData extends Record<string, unknown> { line: ErdLine; source: Rect; target: Rect; offset: number; label: string }
 type BoxNode = Node<BoxData>;
 type LineEdge = Edge<LineData>;
 
@@ -58,7 +61,7 @@ function LineView({ data }: EdgeProps<LineEdge>) {
   const g = lineGeometry(data.source, data.target, [line.sourceEnd, line.targetEnd], data.offset);
   return (
     <g className={`erd-line rel-${line.relation}${line.dashed ? ' is-dashed' : ''}${line.context ? ' is-context' : ''}`} data-line={line.id} data-ends={`${line.sourceEnd}-${line.targetEnd}`}>
-      <title>{`${line.source} ${RELATION_LABELS[line.relation]} ${line.target}`}</title>
+      <title>{`${line.source} ${data.label} ${line.target}`}</title>
       <path className="erd-line-path" d={g.line} />
       <path className="erd-end" d={g.sourceEnd} />
       <path className="erd-end" d={g.targetEnd} />
@@ -87,7 +90,7 @@ export function ModelView({ index, focus, onNavigate }: ModelViewProps) {
       ) : (
         <div className="model-canvas">
           <ReactFlowProvider>
-            <ErdCanvas erd={erd} focus={focus} onNavigate={onNavigate} />
+            <ErdCanvas relations={index.workspace.relations} erd={erd} focus={focus} onNavigate={onNavigate} />
           </ReactFlowProvider>
         </div>
       )}
@@ -155,7 +158,7 @@ function fitRects(rects: Map<string, Rect>, width: number, height: number, paddi
   return { x: width / 2 - ((minX + maxX) / 2) * zoom, y: height / 2 - ((minY + maxY) / 2) * zoom, zoom };
 }
 
-function ErdCanvas({ erd, focus, onNavigate }: { erd: Erd; focus: string; onNavigate: (id: string) => void }) {
+function ErdCanvas({ relations, erd, focus, onNavigate }: { relations: readonly RelationRule[]; erd: Erd; focus: string; onNavigate: (id: string) => void }) {
   const [placed, setPlaced] = useState<{ erd: Erd; rects: Map<string, Rect> } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const wrapper = useRef<HTMLDivElement>(null);
@@ -204,10 +207,10 @@ function ErdCanvas({ erd, focus, onNavigate }: { erd: Erd; focus: string; onNavi
       type: 'line',
       focusable: false,
       selectable: false,
-      data: { line, source: rects.get(line.source)!, target: rects.get(line.target)!, offset: offsets.get(line.id) ?? 0 },
+      data: { line, source: rects.get(line.source)!, target: rects.get(line.target)!, offset: offsets.get(line.id) ?? 0, label: relationLabelOf(relations, line.relation).toLowerCase() },
     }));
     return { nodes, edges };
-  }, [placed, focus]);
+  }, [placed, focus, relations]);
 
   // Fit the boxes in focus, moving there with the shared motion (LA-PAT-APP-UX-R04), or at once;
   // the context ring may run past the canvas's edges (LA-BRW-UC113-R06).
