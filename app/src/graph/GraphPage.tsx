@@ -97,6 +97,8 @@ export function relationStyle(relation: string): string {
   if (['uses', 'implements', 'depends_on'].includes(relation)) return 'design';
   if (relation === 'names') return 'file';
   if (relation === 'follows') return 'pattern';
+  // A domain event's links (LA-BRW-UC40-R07): dashed, in the spark colors events are drawn in.
+  if (['reacts_to', 'raised_by'].includes(relation)) return 'event';
   return 'other';
 }
 
