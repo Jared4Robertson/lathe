@@ -7,7 +7,7 @@ import { openApp } from './helpers';
 
 describe('group names and tab settings', () => {
   it('LA-BRW-T554 A stage or folder group page names the group by its own name, not by a kind ("Define", never "Defines")', async () => {
-    await openApp('/records/DM-SHOP/define?view=wiki');
+    await openApp('/DM-SHOP/define?view=wiki');
     await screen.findByRole('heading', { level: 1, name: /^Define/ });
     expect(document.querySelector('.group-intro')).toHaveTextContent(/^Define of DM-SHOP/);
     expect(document.body).not.toHaveTextContent('Defines');
@@ -15,13 +15,13 @@ describe('group names and tab settings', () => {
   });
 
   it('LA-BRW-T555 A tab keeps the graph\'s Links switch across a reload', async () => {
-    await openApp('/records/DM-SHOP-UC01?view=graph');
+    await openApp('/DM-SHOP-UC01?view=graph');
     const links = await screen.findByRole('button', { name: /^Links/ });
     expect(links).toHaveAttribute('aria-pressed', 'false');
     fireEvent.click(links);
     await waitFor(() => expect(screen.getByRole('button', { name: /^Links/ })).toHaveAttribute('aria-pressed', 'true'));
     // Reload: the same tab comes back with its switch still on.
-    await openApp('/records/DM-SHOP-UC01?view=graph');
+    await openApp('/DM-SHOP-UC01?view=graph');
     await waitFor(() => expect(screen.getByRole('button', { name: /^Links/ })).toHaveAttribute('aria-pressed', 'true'));
   });
 });

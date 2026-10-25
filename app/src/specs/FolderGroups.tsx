@@ -1,4 +1,5 @@
-import { recordPath, type SpecIndex, type SpecRecord } from './data';
+import type { SpecIndex, SpecRecord } from './data';
+import { addressOf } from '../views/address';
 import type { FolderGroup } from './folders';
 import { RecordTree, Section, levelBelow, recordText, type SectionLevel } from './parts';
 
@@ -27,7 +28,7 @@ export function GroupSections({ index, groups, level, query = '' }: { index: Spe
           key={g.key}
           level={level}
           title={g.label}
-          titleTo={g.record ? recordPath(g.record.id) : undefined}
+          titleTo={g.record ? addressOf(g.record.id) : undefined}
           count={g.count}
           className="folder-group"
         >

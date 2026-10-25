@@ -102,7 +102,7 @@ describe('traceability', () => {
     const cells = (r: HTMLElement) => [...r.querySelectorAll('td')].map((td) => td.textContent);
     expect(cells(rows[0])).toEqual(['DM-SHOP-C01', 'DM-SHOP-C01', 'DM-SHOP-T01']);
     expect(cells(rows[1])).toEqual(['DM-SHOP-C01', 'DM-SHOP-C01', 'not proved']);
-    expect(within(rows[0]).getAllByRole('link').map((a) => a.getAttribute('href'))).toContain('/records/DM-SHOP-T01');
+    expect(within(rows[0]).getAllByRole('link').map((a) => a.getAttribute('href'))).toContain('/DM-SHOP-T01');
     expect(groupTitles(trace)).toEqual(['Carried out by flow', 'Applies']);
     expect(groupIds(trace, 'Applies')).toEqual(['DM-SHOP-DR01']);
     // Each applied rule shows its own status, as every row does.
@@ -145,7 +145,7 @@ describe('traceability', () => {
     };
     const offenders: string[] = [];
     for (const r of w.records) {
-      await openApp(`/records/${r.id}`, { workspace: w });
+      await openApp(`/${r.id}`, { workspace: w });
       await screen.findByRole('heading', { level: 1, name: r.title });
       for (const el of document.querySelectorAll('h1, h2, h3, h4, h5, h6, dt, th, legend, label, caption')) {
         if (raw(el.textContent ?? '')) offenders.push(`${r.id}: <${el.tagName.toLowerCase()}> ${el.textContent}`);
@@ -199,7 +199,7 @@ describe('traceability', () => {
 
     // The rule under the entity: the aggregate's page lists the entity with the rule folded under it,
     // and the nav opens to the aggregate holding it.
-    await openApp('/records/DM-SHOP-A1', { workspace: w });
+    await openApp('/DM-SHOP-A1', { workspace: w });
     await screen.findByRole('heading', { level: 1, name: 'Basket' });
     const entity = screen.getAllByRole('link', { name: /DM-SHOP-EN01/ })[0].closest('li') as HTMLElement;
     expect(entity).toHaveTextContent(/1 domain rule/);

@@ -97,7 +97,7 @@ describe('graph camera on the page', () => {
   /** Opens Lend a thing's graph at depth 1; with `links`, turns Links on and waits for the rule it applies. */
   async function open(links = true) {
     startAtDepth(1);
-    await openApp('/records/P-D-UC01?view=graph', { workspace: testWorkspace() });
+    await openApp('/P-D-UC01?view=graph', { workspace: testWorkspace() });
     await waitFor(() => expect(isCenter('P-D-UC01')).toBe(true));
     await waitFor(() => expect(calls.length).toBeGreaterThan(0));
     if (!links) return;

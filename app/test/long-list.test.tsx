@@ -86,13 +86,13 @@ describe('long lists', () => {
     const user = userEvent.setup();
 
     // The menu's domain list.
-    await openApp('/specs/BG', served);
+    await openApp('/BG', served);
     await screen.findByRole('heading', { level: 1, name: 'Big product' });
     const menu = screen.getByRole('navigation', { name: 'Main' });
     expect(within(menu).getByRole('searchbox', { name: 'Filter domains of Big product' })).toBeInTheDocument();
 
     // The domain page: groups, a long nested list, gaps and problems.
-    await openApp('/specs/BG/BG-D01', served);
+    await openApp('/BG-D01', served);
     await screen.findByRole('heading', { level: 1, name: 'Domain 1' });
     const useCases = section(/^Capabilities/);
     const search = within(useCases).getByRole('searchbox', { name: 'Filter capabilities' });
@@ -106,10 +106,10 @@ describe('long lists', () => {
     expect(within(section(/^Problems in this domain/)).getByRole('searchbox', { name: 'Filter problems' })).toBeInTheDocument();
 
     // The record page: children and links in.
-    await openApp('/records/BG-D01', served);
+    await openApp('/BG-D01', served);
     await screen.findByRole('heading', { level: 1, name: 'Domain 1' });
     expect(within(main()).getByRole('searchbox', { name: 'Filter children' })).toBeInTheDocument();
-    await openApp('/records/BG-D01-DR01', served);
+    await openApp('/BG-D01-DR01', served);
     await screen.findByRole('heading', { level: 1, name: 'A ledger balances' });
     const linksIn = within(main()).getByRole('searchbox', { name: 'Filter links in: Applied by' });
     await user.type(linksIn, 'UC09');
