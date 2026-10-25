@@ -241,3 +241,125 @@ These run in `probe-root/`: the main records plus 13 probe records, and one more
 9. **Let a product add its own checks** (unchanged recommendation 8). Reason: S2's level matching and access-row citations still have no home.
 10. **Show owed proof, and count tests by state.** Let coverage report a planned proof even when other tests already prove the obligation, and add a count of tests by state. Reason: G, and S2's test-coverage table.
 11. **Plan for structured tables, later** (unchanged recommendation 10), starting with flow steps as child records.
+
+## 7. Pass 6 re-run
+
+The same slice, reworked for the pass-6 format (FORMAT.md sections 4 to 14) and checked with the pass-6 engine on `trial-3`. The re-run lives at `/private/tmp/claude-501/s2-accounting-trial-pass6/`, a copy of the pass-4 folder, which is kept as it was. Its generator is `tools/s2p6_gen.py`. It reads S2 read-only when it runs: the domain's "Patterns we follow" tables and the two flow step tables, so that the records follow S2's own rows. It writes `specs/`, `lathe-meta/`, `lathe-checks/` and `lathe.config.json`, for both the main trial and `probe-root/`.
+
+### 7.1 What changed in the trial
+
+- **Before any rework,** the unchanged pass-4 copy gave 1 error and 2 warnings. The error was `proof-not-in-file` on the automated pattern proof, which used to be `test-file-missing-id`. The warnings were `obligation-outside-domain` on the two shared rules under the product. The four restated default relations no longer give errors (A).
+- **Patterns.** The slice now holds 3 `pattern` records: Access, API conventions and Record view. Under them sit 40 `pattern_rule` records with S2's own rule IDs (`STD-…`, `SYS-API-R…`, `SYS-RV-R…`, `SYS-RVE-R…`, `SYS-RVP-R…`). These are 2, 7 and 31 rules, one per row of the domain's Patterns we follow tables for those patterns. Seven rules name the `setting` they depend on: six Record view rules and one Access rule. The `shared_rule` kind and its 4 relations are gone.
+- **Following.** `ACC-022` and `ACC-030` follow Access and API conventions. Two use cases were added, `ACC-007` and `ACC-002`, which follow Record view as well. Each gives its settings as header fields, and each has a flow with `carries_out` only. S2 lists no requirements of its own for either one, because the pattern's rules cover them. Workflow run (80 rows in the domain) stays out, because no use case in the slice follows it.
+- **Pattern proofs** are one `test` per row, with IDs like `ACC-PP-<rule>`: 25 automated, 3 manual and 12 planned (S2's "Not automated yet"). Of the 25 automated rows, 7 have files that name the rule's ID. The other 18 have files that name no ID, because the domain's test class inherits the marked tests from a shared conformance class. For each of these, `key` is the name of that conformance class (5 different keys).
+- **Flow steps.** S2's step tables for `ACC-F022` and `ACC-F030` became 28 `flow_step` records (16 and 12), with IDs that keep S2's step labels (`ACC-F022-W6`, `ACC-F030-P2`, `ACC-F030-WA4`). Each step has its own `uses` and `fulfills` links. The flows no longer carry any `fulfills` links. 7 step targets are outside the slice and were left out (6 in `ACC-F022`, 1 in `ACC-F030`).
+- **The extension shrank** from 3 kind rows and 10 relations to 1 kind and 4 relations: `design_flow` with `deepens` and `uses`, plus `fulfills` from an interaction requirement and from a flow step to a pattern rule. The `domain_rule` widening is gone (now a default), and so are `carries_out`, `fulfills` from a flow, and `runs`.
+- **House rules moved into `lathe-checks/`:** `one-record-view-per-aggregate` (from FORMAT.md section 13, matched on the Record view `records` setting); `proof-at-level` (an obligation's `verification` must have an automated or manual proving test with that `test_type`, compared without letter case); and `scenario-cites-unapplied-rule` (a `<use case>-AC<nn>` test proves only domain rules that its use case applies).
+- **Components** gained `satisfies` links to the 13 pattern rules that S2's component specs cite.
+
+That comes to 185 records and 280 links. The 62 tests are 45 automated, 5 manual and 12 planned.
+
+### 7.2 Check result and coverage compared
+
+`node lathe/bin/lathe.ts check --root /private/tmp/claude-501/s2-accounting-trial-pass6`:
+
+```
+Checked 185 records
+Warnings (41): 27 unsatisfied (pattern rules), 11 unproved (pattern rules, "only planned"),
+  2 use-case-without-requirements (ACC-002, ACC-007), 1 flow-step-fulfills-outside-flow (ACC-F022-WA5)
+Coverage:
+  ACC domain_rule: 7/7 designed, 7/7 built, 7/7 proved, 0/7 planned; 0 gaps
+  ACC requirement: 4/4 designed, 4/4 built, 4/4 proved, 0/4 planned; 0 gaps
+  ACC pattern_rule: 13/40 designed, 13/40 built, 29/40 proved, 11/40 planned; 38 gaps; 12/40 with a planned test
+  ACC interaction_requirement: 8/8 designed, 8/8 built, 8/8 proved, 0/8 planned; 0 gaps
+  ACC tests: 45 automated, 5 manual, 12 planned
+0 errors, 41 warnings.  (exit 0)
+```
+
+The three house checks found nothing in the main trial. Probes P4 and P15 show that they run.
+
+| Item (slice count) | S2 traceability | Lathe, pass 6 | Pass 4 |
+| --- | --- | --- | --- |
+| Use-case requirement (4) | All designed and proved | 4/4. These agree. | 4/4, agreed |
+| Domain rule (7) | All designed, each with its automated rule test | 7/7. These agree. | 7/7, agreed |
+| Interaction requirement (8) | Each fulfills something; 5 contract, 3 design review | 8/8. These agree. | 8/8, agreed |
+| Pattern rule (40) | 25 automated, 3 manual, 12 "not automated yet". Design is not reported. | 29 proved: the 28 rows, plus `STD-001497`, which acceptance scenarios also prove. 11 only planned. "12/40 with a planned test" equals S2's 12 pattern proofs still needed. 13 designed. | Not counted |
+| Flow steps per use-case requirement (4) | Step labels per requirement | The same steps for 3 of the 4. For `ACC-022-R001`, S2 also lists a `WA4` that belongs to another use case's flow, outside the slice. S2 gives no flow for a step label, so its `WA4` is ambiguous. Lathe's step IDs name their flow. | Not expressible |
+| Tests by state | The slice's rows: 45 automated, 3 manual, 12 not automated yet. S2 lists the 2 design-review checks with the view, not in this count. | 45, 5, 12. These agree once the 2 design checks, which are manual tests here, are added. | Not counted |
+| Pattern rule designed | Not reported | 13/40, which gives 27 `unsatisfied` warnings that S2 has no counterpart for (7.4, N4) | Not counted |
+
+Every proof count now agrees with S2. The disagreements left are about design for pattern rules, which S2 does not count, and the owed `STD-001497` proof, which Lathe shows only as a count (N10).
+
+### 7.3 Section 6.6's list and findings A to H
+
+| # | Item | Status | Evidence |
+| --- | --- | --- | --- |
+| 1 | Count every obligation; a home for shared rules | **Done** | Pattern rules are counted in the domain that follows them. An obligation outside every domain is a warning (unchanged run). P7 and P12 behave as documented. |
+| 2 | Every proof claim checkable, plus `key` | **Done** | P4 is `proof-not-in-file`. 18 keyed pattern proofs pass, and P16 (a key the file lacks) is an error. The key only checks the domain's file, though (N7). |
+| 3 | Resolve IDs cited in prose | **Done, but inert for S2** | P3: `S2-ACC-999` is reported, but `ACC-999-R001` is not read, because no S2 ID starts with the product ID (N1). |
+| 4 | Structural warnings | **Done** | P3 gives `interaction-requirement-fulfills-nothing`, and P4 gives `rule-not-applied`. `test-type-mismatch` does not know S2's level names, so `proof-at-level` covers that. |
+| 5 | S2 shapes as defaults | **Done** | The extension dropped 6 relations and the widening. |
+| 6 | Restate or widen relation rules | **Done** | P6 (a restated default rule in other words) gives no error. |
+| 7 | Consistent test state, planned-friendly | **Done** | P11 (`Manual`) gives no errors and counts as manual. P8 is now a warning. |
+| 8 | Suppress cascaded errors | **Done** | P5: 1 `duplicate-id` error and nothing else. |
+| 9 | A product's own checks | **Done** | 3 checks. P15 shows the house check firing and `product-check-name-clash`. |
+| 10 | Show owed proof, count tests by state | **Done, with a gap** | `planned_any` and the test counts match S2, but no list names which proved obligations still owe a planned proof (N10). |
+| 11 | Structured tables | **Flow steps done** | 28 steps. Alternative paths, value tables, access rows and record fields are still prose (N9). |
+| A | Restating a default relation | **Fixed** | Unchanged run and P6 |
+| B | Obligation outside a domain | **Fixed** | `obligation-outside-domain` |
+| C | One mention covers every proof | **Fixed** | P4 |
+| D | Pattern proofs keyed by file | **Fixed** | `key` |
+| E | Planned test's future file | **Fixed** | P8 is a warning |
+| F | `state` letter case | **Fixed** | P11 |
+| G | Planned hides behind other proof | **Mostly fixed** | Counted, but not listed (N10) |
+| H | Smaller points | **Partly** | "1 error" is now singular. P9 (a manual test whose file never mentions it) is still silent. The fixed `requirements` and `rules` fields remain, documented as kept for older readers. |
+
+### 7.4 What is new, broken or still awkward
+
+- **N1. Prose citations never fire for S2.** A citation must start with a product's ID. S2's IDs start with domain and family codes (`ACC-`, `STD-`, `SYS-`), never with `S2-`, so none of them is read: the slice has 0 real mentions. Worse, the bare product name counts as a citation. In the trial, 123 bodies that say "S2" all mention the product record. In S2's own documents the product name is in nearly every sentence.
+- **N2. A pattern must have settings.** API conventions has no use case settings in S2, and P13 shows a pattern without settings is `missing-required-field`. The trial gives it a placeholder setting, `endpoints`. An extension cannot remove a required field.
+- **N3. Adoption is per use case; S2's is per domain.** S2 declares adopted patterns per domain, in the test plan. Access, API conventions and other domain-wide patterns had to be followed by every use case in the slice, each with setting values.
+- **N4. Pattern rules must be designed; S2 counts only proof.** 27 of the 41 warnings are `unsatisfied` pattern rules. S2 builds these through shared helpers and conformance classes, which no domain component stands for.
+- **N5. A use case that follows a pattern still needs its own requirements.** `ACC-007` and `ACC-002` warn `use-case-without-requirements`. In S2, the pattern rules cover them.
+- **N6. Pattern rules are missing from two default relations and from one check.** An interaction requirement or a flow step that fulfills a pattern rule needs an extension relation. `flow-step-fulfills-outside-flow` ignores pattern-rule targets, so a step that fulfills a pattern rule its flow's use cases do not follow goes unchecked.
+- **N7. `key` checks only the domain's file.** For 18 rows, the key is the shared conformance class's name, so the check proves that the domain's test inherits the class, not that the class carries the rule's marker.
+- **N8. A proof that counts nowhere is silent.** In P18, a test proves a pattern rule that its domain does not owe. In P7, a test in another domain proves `ACC`'s rule. Neither is reported.
+- **N9. Flow steps have one order.** S2's tables have a web app path (`W`), an API path (`P`) and alternative paths (`WA`). Lathe has a single sequence, so the trial keeps the path only in the step ID and title. A step that fulfills another use case's requirement (`ACC-F022-WA5`) is a warning, but S2 allows it.
+- **N10. Owed proof is a count, not a list.** "12/40 with a planned test" is right, but `STD-001497`, which is proved and still owes its pattern proof, appears in no warning, gap or list.
+- **N11. Smaller points.** A pattern rule's `setting` holds one setting, and `SYS-RV-R003` depends on two. One S2 setting value fills two patterns: Record view's read permission is also the Access value. The trial repeats it under two names to avoid `pattern-setting-clash`. 7 flow-step targets outside the slice had to be dropped by hand.
+
+### 7.5 Probes on pass 6
+
+These run in `probe-root/`: the main records plus 23 probe records, one widening (`requirement` under `view`), one restated relation and one clashing product check. The result is 7 errors and 64 warnings.
+
+| Probe | Pass 4 | Pass 6 |
+| --- | --- | --- |
+| P2: a requirement under a view, by widening | Passes | Passes |
+| P3: an interaction requirement that fulfills nothing, citing made-up IDs | Only `unsatisfied` and `unproved` | Adds `interaction-requirement-fulfills-nothing`. `S2-ACC-999` gives `unknown-id-in-prose`; `ACC-999-R001` gives nothing (N1). |
+| P4: a rule no use case applies, proved at the wrong level, by a file that names only the other rule | Only `unsatisfied` | Adds `rule-not-applied`, `proof-not-in-file`, and the product check `proof-at-level` |
+| P5: a rule test keyed by its rule's ID | 1 + 15 errors | 1 error |
+| P6: a restated default relation in other words | `meta-duplicate-relation` | Nothing, as documented |
+| P7: another domain's test proves `ACC`'s planned pattern rule | (new) | Not counted for `ACC`, which is right, but nothing is reported (N8) |
+| P8: a planned test naming its future file | Error | Warning |
+| P9: a manual test whose file never mentions it | Nothing | Nothing |
+| P10: a rule only a planned test proves | Planned | Planned |
+| P11: `state: Manual` | Two errors, but counted | Counted as manual, no errors |
+| P12: a rule naming a setting the only follower marks Not applicable, and one with no setting | (new) | The first is not owed; the second is owed, as documented |
+| P13: a pattern with no settings | (new) | `missing-required-field` (N2) |
+| P14: repeated step order; a flow-level link that no step has | (new) | `flow-step-order` on both steps; `flow-fulfills-differs-from-steps` |
+| P15: a second Record view use case for one aggregate; a product check named like Lathe's | (new) | `one-record-view-per-aggregate`; `product-check-name-clash` |
+| P16: a `key` the file lacks | (new) | `test-file-missing-id` |
+| P18: a test proving a pattern rule its domain does not owe | (new) | Nothing (N8) |
+
+### 7.6 What to change next, by priority
+
+1. **Read the citations a product actually writes.** Treat a token as a citation when it matches an existing record ID or a configured ID prefix (for example `idPrefixes` in `lathe.config.json`, or every domain's ID), not only the product's ID. Never treat the bare product ID as a citation. Reason: N1 makes the prose check inert for S2, and its noise would hit every record.
+2. **Let a domain follow a pattern, and make settings optional.** Allow `follows` from a `domain`, which makes the domain owe every rule. Drop `settings` from the pattern's required fields, and let a rule with no setting apply wherever the pattern is followed. Reason: N2 and N3. Most of S2's patterns are adopted per domain, and several have no settings.
+3. **Let an obligation kind need proof only,** for example `obligation: proof` in `kinds.csv`, or let a pattern rule count as designed when the pattern's shared component is used. Reason: N4 gives 27 of the trial's 41 warnings, with no S2 counterpart.
+4. **Make pattern rules first-class targets.** Add the default relations `fulfills` from an interaction requirement and from a flow step to a pattern rule. In `flow-step-fulfills-outside-flow`, treat the rules of the patterns a flow's use cases follow as inside the flow. Reason: N6, and 2 of the 4 relations left in the extension.
+5. **List owed proofs by ID.** Add the obligations behind `planned_any` to the gaps, or report a `proof-still-owed` warning. Reason: N10. S2 lists its pattern proofs still needed.
+6. **Do not warn when a use case that follows a pattern has no requirements of its own.** Alternatively, accept an explicit `requirements: "Not applicable: …"`. Reason: N5.
+7. **Report proofs that count nowhere,** and a manual test whose `run_by` file never mentions it. Reason: N8, P18, P7 and P9.
+8. **Give flow steps a path.** Add an optional `path` field (main, alternative, or a named path) beside `order`, and decide whether a step may fulfill another use case's requirement. Reason: N9. S2's tables have up to three paths per flow.
+9. **Let a `key` follow a shared test.** Accept a key found in the `run_by` file or in a file it names (for example an optional `key_file`). Reason: N7.
+10. **Smaller points (N11):** a list in `setting`, a way for one setting to fill two patterns, and the remaining structured tables (value tables, access rows, record fields).
