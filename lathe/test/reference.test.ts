@@ -1,7 +1,7 @@
 // The format reference generated from the meta-model and the check headers: formatReference, the
 // undocumented check, `lathe format`, GET /api/format and the committed REFERENCE.md.
 import { spawnSync } from 'node:child_process';
-import { cpSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -174,6 +174,60 @@ describe('the undocumented check', () => {
     ]);
     const good = await loadWorkspace(fixture('good'));
     expect(good.problems.filter((p) => p.check === 'undocumented')).toEqual([]);
+  });
+});
+
+describe('relation labels', () => {
+  it('LA-CHK-T310 A relation rule without both labels is a relation-unlabeled error', async () => {
+    const root = tempDir();
+    cpSync(fixture('good'), root, { recursive: true });
+    writeFileSync(path.join(root, 'lathe.config.json'), JSON.stringify({ metaExtensions: 'lathe-meta' }));
+    const meta = path.join(root, 'lathe-meta');
+    mkdirSync(meta);
+    writeFileSync(
+      path.join(meta, 'relations.csv'),
+      [
+        'relation,source_kind,target_kind,role,forward_label,reverse_label,description',
+        // A restatement with empty labels keeps the default's.
+        'proves,test,requirement,,,,"The test checks the requirement."',
+        'annotates,question,requirement,,,,"The question annotates the requirement."',
+        'blocks,question,domain_rule,,Blocks,,"The question blocks the domain rule."',
+        'echoes,question,question,,,Echoed by,"The question echoes another."',
+      ].join('\n'),
+    );
+    const ws = await loadWorkspace(root);
+    const found = ws.problems.filter((p) => p.check === 'relation-unlabeled');
+    expect(found.every((p) => p.severity === 'error' && p.record === null)).toBe(true);
+    expect(found.map((p) => p.message)).toEqual([
+      expect.stringContaining('The relation annotates from question to requirement has no forward_label or reverse_label in relations.csv'),
+      expect.stringContaining('The relation blocks from question to domain_rule has no reverse_label'),
+      expect.stringContaining('The relation echoes from question to question has no forward_label'),
+    ]);
+    expect(ws.relations.find((r) => r.relation === 'proves' && r.target_kind === 'requirement')).toMatchObject({
+      forward_label: 'Proves',
+      reverse_label: 'Proved by',
+      description: 'The test checks the requirement.',
+    });
+    // Lathe's own meta-model is fully labeled.
+    const good = await loadWorkspace(fixture('good'));
+    expect(good.problems.filter((p) => p.check === 'relation-unlabeled')).toEqual([]);
+  });
+
+  it('LA-CHK-T311 The reference reads each relation by its labels', async () => {
+    const ref = await formatReference(fixture('good'));
+    for (const r of ref.relations) {
+      expect(r.forward_label.trim(), r.relation).not.toBe('');
+      expect(r.reverse_label.trim(), r.relation).not.toBe('');
+    }
+    expect(ref.relations.find((r) => r.relation === 'satisfies')).toMatchObject({ forward_label: 'Satisfies', reverse_label: 'Designed by' });
+    const markdown = renderReference(ref);
+    expect(markdown).toContain('| From | To | Role | Forward | Reverse | Meaning |');
+    expect(markdown).toContain('| Satisfies | Designed by |');
+    const start = markdown.indexOf('<a id="kind-requirement"></a>');
+    const requirement = markdown.slice(start, markdown.indexOf('<a id="kind-', start + 1));
+    expect(requirement).toMatch(/- \*\*Links in:\*\* .*Designed by \(\[`satisfies`\]\(#relation-satisfies\)\)/);
+    expect(requirement).toMatch(/- \*\*Links in:\*\* .*Proved by \(\[`proves`\]\(#relation-proves\)\)/);
+    expect(requirement).toMatch(/- \*\*Links in:\*\* .*Carried out in \(\[`fulfills`\]\(#relation-fulfills\)\)/);
   });
 });
 

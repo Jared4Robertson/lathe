@@ -1,5 +1,5 @@
-relation,source_kind,target_kind,role,description
-proves,test,domain_rule,,"The test checks the domain rule in code."
-fulfills,flow,requirement,design,
-owns,component,aggregate,,"The component owns the aggregate."
-owns,component,aggregate,,"The component stores the aggregate."
+relation,source_kind,target_kind,role,description,forward_label,reverse_label
+proves,test,domain_rule,,"The test checks the domain rule in code.",,
+fulfills,flow,requirement,design,,,Built by flow
+owns,component,aggregate,,"The component owns the aggregate.",Owns,Owned by
+owns,component,aggregate,,"The component stores the aggregate.",,
