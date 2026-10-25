@@ -98,7 +98,7 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   const askedKey = asked.join(',');
   // The views a link names become the ones remembered, for the first tab of a new session.
   const linked = viewsFromSearch(search) !== null;
-  useEffect(() => { if (linked) writePref(VIEW_KEY, askedKey); }, [linked, askedKey]);
+  useEffect(() => { if (linked && !narrow) writePref(VIEW_KEY, askedKey); }, [linked, askedKey, narrow]);
   const offered = viewsOffered(index, focus);
   const open = viewsShown(asked, offered);
   const openKey = open.join(',');

@@ -346,4 +346,83 @@ describe('LA-PAT-APP-CODE App code', () => {
     const hits = files.flatMap((f) => where(f, readFileSync(f, 'utf8'), word));
     expect(hits).toEqual([]);
   });
+
+  it('LA-BRW-T468 Everything works by touch: on a coarse pointer every clickable control is at least 44 x 44 px, as itself or through a target stretched around it', () => {
+    const rules = styleRules(CSS);
+    const coarse = (r: { within: string[] }) => r.within.some((w) => /pointer:\s*coarse/.test(w));
+    expect(CSS).toMatch(/--touch-target:\s*44px/);
+    // The class a selector targets: the last class in it, before any pseudo-element.
+    const keyOf = (s: string) => { const classes = s.replace(/::[\w-]+/g, '').match(/\.[\w-]+/g); return classes?.[classes.length - 1] ?? null; };
+    const sized = (body: string) => /min-height:\s*var\(--touch-target\)|height:\s*var\(--touch-target\)/.test(body);
+    // Covered: a coarse-pointer rule sizes the control or its stretched ::before, or its own rule is touch-sized everywhere.
+    const covered = new Set(rules
+      .filter((r) => (coarse(r) && (sized(r.body) || /--nav-row-height:\s*var\(--touch-target\)/.test(r.body))) || (!coarse(r) && sized(r.body)))
+      .flatMap((r) => topLevel(r.selector).flatMap((s) => {
+        const inner = s.match(/^\s*:is\(([\s\S]*)\)(::before)?\s*$/);
+        return (inner ? topLevel(inner[1]) : [s]).map((x) => keyOf(x.trim()));
+      }))
+      .filter(Boolean));
+    // The nav's rows take their height from --nav-row-height, which the coarse pointer sets to the touch target.
+    for (const k of ['.nav-row', '.nav-chevron', '.nav-folder-head', '.nav-section-head']) covered.add(k);
+    // Canvas nodes are sized by the layout and grow with pinch-zoom; cards are whole panels of text.
+    const exempt = new Set(['.graph-node', '.aggregate-node', '.leaf-node', '.spec-node', '.erd-box', '.card', '.domain-card']);
+    const missing = rules
+      .filter((r) => !coarse(r) && /cursor:\s*pointer/.test(r.body))
+      .flatMap((r) => topLevel(r.selector).map((s) => ({ key: keyOf(s.trim()), s: s.trim(), line: r.line })))
+      .filter(({ key }) => key && !covered.has(key) && !exempt.has(key))
+      .map(({ s, line }) => `app/src/styles.css:${line}: ${s}`);
+    expect(missing).toEqual([]);
+    // Small controls inside a row or a node keep their look and get a target stretched around them.
+    expect(CSS).toMatch(/:is\([^)]*\.tree-toggle[^)]*\)::before\s*\{[^}]*width:\s*var\(--touch-target\);\s*height:\s*var\(--touch-target\)/);
+  });
+
+  it('LA-BRW-T469 Nothing is reachable only by hover: a control a hover reveals is always shown on a coarse pointer, and every tooltip also shows on keyboard focus', () => {
+    const rules = styleRules(CSS);
+    const coarse = (r: { within: string[] }) => r.within.some((w) => /pointer:\s*coarse/.test(w));
+    const keyOf = (s: string) => { const classes = s.replace(/:[\w-]+(\([^)]*\))?/g, '').match(/\.[\w-]+/g); return classes?.[classes.length - 1] ?? null; };
+    // Rules a hover turns on: they show something (opacity 1, visible, or a display other than none).
+    const reveals = rules
+      .filter((r) => !coarse(r) && /:hover/.test(r.selector) && /opacity:\s*1\b|visibility:\s*visible|display:\s*(?!none)/.test(r.body))
+      .flatMap((r) => topLevel(r.selector).filter((s) => s.includes(':hover')).map((s) => ({ key: keyOf(s.trim().split(/\s+/).pop()!), s: s.trim(), line: r.line })));
+    const shownOnTouch = new Set(rules.filter((r) => coarse(r) && /opacity:\s*1\b|visibility:\s*visible/.test(r.body)).flatMap((r) => topLevel(r.selector).map((s) => keyOf(s.trim()))));
+    const hoverOnly = reveals.filter(({ key }) => key && !shownOnTouch.has(key)).map(({ s, line }) => `app/src/styles.css:${line}: ${s}`);
+    expect(hoverOnly).toEqual([]);
+    // Tooltips name a control that already has its accessible name; they open on focus as well as hover.
+    const tooltip = readFileSync(join(SRC, 'shell', 'Tooltip.tsx'), 'utf8');
+    expect(tooltip).toMatch(/onFocus/);
+  });
+
+  it('LA-BRW-T470 No page scrolls sideways at 320 px: no fixed width wider than the phone\'s content, tables and code scroll in their own box, and IDs wrap', async () => {
+    // What jsdom cannot do: lay pages out. So this reads the stylesheet for any fixed least width over 288 px (320 px less
+    // the 16 px gutters) outside a wide-screen media query, and renders the main pages on a phone to check that every
+    // table and code block sits in a box that scrolls sideways and no inline style fixes a width over 288 px.
+    // The real layout at 320 px and 375 px is checked in a browser (notes/mobile-design.md).
+    const rules = styleRules(CSS);
+    const wideOnly = (r: { within: string[] }) => r.within.some((w) => /min-width:\s*\d+px/.test(w));
+    const tooWide = rules
+      .filter((r) => !wideOnly(r))
+      .flatMap((r) => {
+        const fixed = [...r.body.matchAll(/(?:^|;)\s*(min-width|width|flex-basis)\s*:\s*(\d+)px/g)].map((m) => Number(m[2]));
+        const mins = [...r.body.matchAll(/minmax\(\s*(\d+)px/g)].map((m) => Number(m[1]));
+        const floors = /max-width:/.test(r.body) ? [] : [...r.body.matchAll(/(?:^|;)\s*width\s*:\s*max\([^;]*?(\d+)px/g)].map((m) => Number(m[1]));
+        return [...fixed, ...mins, ...floors].some((n) => n > 288) ? [`app/src/styles.css:${r.line}: ${r.selector}`] : [];
+      });
+    expect(tooWide).toEqual([]);
+    // Tables and code blocks scroll in their own box.
+    expect(CSS).toMatch(/\.markdown table \{[^}]*display:\s*block;[^}]*overflow-x:\s*auto/);
+    expect(CSS).toMatch(/\.table-scroll \{[^}]*overflow-x:\s*auto/);
+    expect(CSS).toMatch(/\.markdown pre, \.spec-body pre \{[^}]*overflow-x:\s*auto/);
+    expect(CSS).toMatch(/\.record-id[^{]*\{[^}]*overflow-wrap:\s*anywhere/);
+    vi.stubGlobal('matchMedia', (query: string) => ({ matches: true, media: query, addEventListener: () => {}, removeEventListener: () => {} }));
+    for (const path of ['/specs/DM', '/specs/DM/DM-SHOP', '/records/DM-SHOP-UC01', '/records/DM-SHOP-C01', '/checks', '/format']) {
+      await openApp(path);
+      await screen.findAllByRole('heading', { level: 1 });
+      const loose = [...document.querySelectorAll('table')].filter((t) => !t.closest('.table-scroll') && !t.closest('.markdown') && !t.matches('.erd-key-table, .shortcut-table'));
+      expect(loose.map((t) => `${path}: ${t.outerHTML.slice(0, 120)}`)).toEqual([]);
+      const code = [...document.querySelectorAll('pre')].filter((p) => !p.closest('.markdown, .spec-body'));
+      expect(code.map((p) => `${path}: ${p.outerHTML.slice(0, 120)}`)).toEqual([]);
+      const fixed = [...document.querySelectorAll<HTMLElement>('[style]')].filter((el) => /(?:^|;)\s*(?:min-)?width:\s*(\d{3,})px/.test(el.getAttribute('style') ?? '') && Number(/(\d{3,})px/.exec(el.getAttribute('style')!)![1]) > 288);
+      expect(fixed.map((el) => `${path}: ${el.outerHTML.slice(0, 120)}`)).toEqual([]);
+    }
+  });
 });

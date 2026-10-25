@@ -1,0 +1,204 @@
+import './graph/setup';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { useRef } from 'react';
+import { describe, expect, it, vi } from 'vitest';
+import { settle } from '../src/shell/BottomSheet';
+import { useThemeColor } from '../src/shell/themeColor';
+import { isTap } from '../src/graph/touch';
+import { openApp } from './helpers';
+import { testWorkspace } from './graph/workspace';
+
+// Lathe on a phone (notes/mobile-design.md): a compact top bar, the page bar compact under it, one
+// view at a time, sheets for the nav, the inspector, the open pages and quick find, and taps that
+// select before they open on the graph and the ERD.
+
+const served = () => ({ workspace: testWorkspace() });
+
+/** A phone: narrow, with a finger for a pointer (every media query matches, reduced motion included). */
+function phone() {
+  vi.stubGlobal('matchMedia', (query: string) => ({ matches: true, media: query, addEventListener: () => {}, removeEventListener: () => {} }));
+}
+
+const topbar = () => document.querySelector<HTMLElement>('.topbar')!;
+const pageBar = () => document.querySelector<HTMLElement>('.page-bar')!;
+const segment = (name: string) => within(within(pageBar()).getByRole('group', { name: 'View' })).getByRole('button', { name });
+
+describe('Lathe on a phone', () => {
+  it('LA-BRW-T460 A phone shows a compact top bar with the title and a step up, and one view at a time switched from the page bar, leaving the views remembered for a wide screen alone', async () => {
+    phone();
+    window.localStorage.setItem('lathe:view', '"wiki,graph"');
+    await openApp('/records/P-D-UC01?view=wiki,graph', served());
+    await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
+    // The top bar: the menu, the title on one line under a link one step up, and quick find.
+    expect(within(topbar()).getByRole('button', { name: 'Open the navigation' })).toBeInTheDocument();
+    expect(topbar().querySelector('.topbar-title')).toHaveTextContent('Lend a thing');
+    expect(within(topbar()).getByRole('link', { name: 'Up to Domain' })).toHaveAttribute('href', '/specs/P/P-D?view=wiki,graph');
+    expect(within(topbar()).getByRole('button', { name: 'Quick find' })).toBeInTheDocument();
+    // One view: the first the address names; no pane headers and no handles.
+    expect([...document.querySelectorAll('.pane')].map((p) => p.getAttribute('aria-label'))).toEqual(['Wiki pane']);
+    expect(document.querySelector('.pane-bar')).toBeNull();
+    expect(screen.queryAllByRole('separator').filter((s) => s.hasAttribute('aria-valuenow'))).toEqual([]);
+    expect(segment('Wiki')).toHaveAttribute('aria-pressed', 'true');
+    expect(segment('Graph')).toHaveAttribute('aria-pressed', 'false');
+    // Switching shows the graph alone and says so in the address; the wide screen's views stay remembered.
+    fireEvent.click(segment('Graph'));
+    expect(window.location.search).toBe('?view=graph');
+    await waitFor(() => expect([...document.querySelectorAll('.pane')].map((p) => p.getAttribute('aria-label'))).toEqual(['Graph pane']));
+    expect(segment('Graph')).toHaveAttribute('aria-pressed', 'true');
+    expect(window.localStorage.getItem('lathe:view')).toBe('"wiki,graph"');
+    // A page that names no product parent goes up to all products; a domain up to its product.
+    await openApp('/specs/P/P-D?view=wiki', served());
+    await waitFor(() => expect(topbar().querySelector('.topbar-title')).toHaveTextContent('Domain'));
+    expect(within(topbar()).getByRole('link', { name: 'Up to Product' })).toHaveAttribute('href', '/specs/P?view=wiki');
+  });
+
+  it('LA-BRW-T461 The inspector is a bottom sheet: it opens at half height with focus inside, its handle takes it to full height and back, Escape closes it and focus returns', async () => {
+    phone();
+    await openApp('/records/P-D-UC01', served());
+    await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
+    const toggle = within(pageBar()).getByRole('button', { name: 'Show the inspector' });
+    fireEvent.click(toggle);
+    const sheet = screen.getByRole('dialog', { name: 'Inspector' });
+    expect(sheet).toHaveClass('bottom-sheet', 'is-half');
+    expect(sheet).toHaveAttribute('aria-modal', 'true');
+    await waitFor(() => expect(screen.getByRole('complementary', { name: 'Inspector' })).toHaveFocus());
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Expand the inspector to full height' }));
+    expect(sheet).toHaveClass('is-full');
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Shrink the inspector to half height' }));
+    expect(sheet).toHaveClass('is-half');
+    // Tab stays inside the sheet.
+    const buttons = within(sheet).getAllByRole('button');
+    buttons[buttons.length - 1].focus();
+    fireEvent.keyDown(buttons[buttons.length - 1], { key: 'Tab' });
+    expect(document.activeElement && sheet.contains(document.activeElement)).toBe(true);
+    fireEvent.keyDown(sheet, { key: 'Escape' });
+    expect(screen.queryByRole('dialog', { name: 'Inspector' })).toBeNull();
+    await waitFor(() => expect(within(pageBar()).getByRole('button', { name: 'Show the inspector' })).toHaveFocus());
+  });
+
+  it('LA-BRW-T462 A drag on a sheet\'s handle settles by distance and speed: up to full height, down to half, down from half away', () => {
+    expect(settle('half', -50, 0.1)).toBe('full');
+    expect(settle('half', -10, 0.1)).toBe('half');
+    expect(settle('half', -10, -1)).toBe('full');
+    expect(settle('half', 40, 0.1)).toBe('half');
+    expect(settle('half', 120, 0.1)).toBeNull();
+    expect(settle('half', 30, 1)).toBeNull();
+    expect(settle('full', 30, 0.1)).toBe('full');
+    expect(settle('full', 100, 0.1)).toBe('half');
+    expect(settle('full', 300, 0.1)).toBeNull();
+  });
+
+  it('LA-BRW-T463 The open pages are a sheet from the page bar: each tab a row, the active one marked, the preview one kept from its row; choosing one goes there, and a row closes its tab', async () => {
+    phone();
+    await openApp('/records/P-D-UC01', served());
+    await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
+    const pagesButton = () => within(pageBar()).getByRole('button', { name: /^Open pages \(\d+\)$/ });
+    expect(pagesButton()).toHaveAccessibleName('Open pages (1)');
+    // The first page opens as the preview; keep it from its row.
+    fireEvent.click(pagesButton());
+    let sheet = screen.getByRole('dialog', { name: 'Open pages' });
+    await waitFor(() => expect(within(sheet).getByRole('button', { current: 'page' })).toHaveFocus());
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Keep P-D-UC01 Lend a thing open' }));
+    fireEvent.keyDown(sheet, { key: 'Escape' });
+    expect(screen.queryByRole('dialog', { name: 'Open pages' })).toBeNull();
+    await waitFor(() => expect(pagesButton()).toHaveFocus());
+    // Another page opens in a second tab.
+    await openApp('/records/P-D-V01', served());
+    await screen.findByRole('heading', { level: 1, name: 'Thing page' });
+    expect(pagesButton()).toHaveAccessibleName('Open pages (2)');
+    fireEvent.click(pagesButton());
+    sheet = screen.getByRole('dialog', { name: 'Open pages' });
+    const rows = within(within(sheet).getByRole('list', { name: 'Open pages' })).getAllByRole('listitem');
+    expect(rows.map((r) => r.querySelector('.tab-title')!.textContent)).toEqual(['Lend a thing', 'Thing page']);
+    expect(within(sheet).getByRole('button', { current: 'page' })).toHaveTextContent('Thing page');
+    // Choosing a page goes there and closes the sheet.
+    fireEvent.click(within(sheet).getByRole('button', { name: 'P-D-UC01 Lend a thing' }));
+    await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
+    expect(screen.queryByRole('dialog', { name: 'Open pages' })).toBeNull();
+    // A row's close button closes its tab.
+    fireEvent.click(pagesButton());
+    fireEvent.click(within(screen.getByRole('dialog', { name: 'Open pages' })).getByRole('button', { name: /^Close P-D-V01 Thing page/ }));
+    await waitFor(() => expect(pagesButton()).toHaveAccessibleName('Open pages (1)'));
+  });
+
+  it('LA-BRW-T464 Quick find on a phone is a full-screen sheet: the results list under the box, choosing one goes there, Escape closes it and focus returns', async () => {
+    phone();
+    await openApp('/records/P-D-UC01', served());
+    await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
+    const open = within(topbar()).getByRole('button', { name: 'Quick find' });
+    open.focus();
+    fireEvent.click(open);
+    const sheet = screen.getByRole('dialog', { name: 'Quick find' });
+    const box = within(sheet).getByRole('combobox', { name: 'Quick find' });
+    await waitFor(() => expect(box).toHaveFocus());
+    fireEvent.change(box, { target: { value: 'thing page' } });
+    const results = within(sheet).getByRole('listbox', { name: 'Quick find results' });
+    expect(results).toHaveClass('is-inline');
+    fireEvent.mouseDown(within(results).getByRole('option', { name: /Thing page/ }));
+    expect(window.location.pathname).toBe('/records/P-D-V01');
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Quick find' })).toBeNull());
+    // Escape closes it, and focus goes back to the button.
+    const again = within(topbar()).getByRole('button', { name: 'Quick find' });
+    again.focus();
+    fireEvent.click(again);
+    fireEvent.keyDown(screen.getByRole('dialog', { name: 'Quick find' }), { key: 'Escape' });
+    expect(screen.queryByRole('dialog', { name: 'Quick find' })).toBeNull();
+    await waitFor(() => expect(within(topbar()).getByRole('button', { name: 'Quick find' })).toHaveFocus());
+  });
+
+  it('LA-BRW-T465 The nav is a full-screen sheet that keeps Tab inside it', async () => {
+    phone();
+    await openApp('/records/P-D-UC01', served());
+    await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
+    fireEvent.click(within(topbar()).getByRole('button', { name: 'Open the navigation' }));
+    const nav = screen.getByRole('navigation', { name: 'Main' });
+    expect(nav).toHaveClass('is-drawer');
+    const focusable = [...nav.querySelectorAll<HTMLElement>('a[href], button, input')];
+    focusable[focusable.length - 1].focus();
+    fireEvent.keyDown(focusable[focusable.length - 1], { key: 'Tab' });
+    expect(focusable[0]).toHaveFocus();
+    fireEvent.keyDown(focusable[0], { key: 'Tab', shiftKey: true });
+    expect(focusable[focusable.length - 1]).toHaveFocus();
+  });
+
+  it('LA-BRW-T466 By touch, a first tap on a graph node selects it and shows its name with an Open chip; a second tap or the chip opens it, and a tap on the canvas lets go', async () => {
+    phone();
+    window.sessionStorage.setItem('lathe:graph-settings', JSON.stringify({ depth: 2, trace: false, hiddenKinds: [], hiddenRelations: [], openGroups: [] }));
+    await openApp('/records/P-D-UC01-R01?view=graph', served());
+    await waitFor(() => expect(document.querySelector('.react-flow__node[data-id="P-D-V01"]')).not.toBeNull());
+    const node = () => document.querySelector<HTMLElement>('.react-flow__node[data-id="P-D-V01"]')!;
+    fireEvent.click(node());
+    expect(window.location.pathname).toBe('/records/P-D-UC01-R01');
+    const card = await waitFor(() => { const c = document.querySelector<HTMLElement>('.tap-card'); expect(c).not.toBeNull(); return c!; });
+    expect(card).toHaveAttribute('role', 'status');
+    expect(card).toHaveTextContent('Thing page');
+    expect(node()).toHaveClass('is-armed');
+    // A tap on the canvas lets go.
+    fireEvent.click(document.querySelector('.react-flow__pane')!);
+    expect(document.querySelector('.tap-card')).toBeNull();
+    // The chip opens it.
+    fireEvent.click(node());
+    fireEvent.click(screen.getByRole('button', { name: 'Open Thing page' }));
+    expect(window.location.pathname).toBe('/records/P-D-V01');
+    // A click that says it came from a mouse opens at once; a finger's or a pen's selects first.
+    expect(isTap({ pointerType: 'mouse' } as unknown as Event, true)).toBe(false);
+    expect(isTap({ pointerType: 'touch' } as unknown as Event, false)).toBe(true);
+    expect(isTap({ pointerType: 'pen' } as unknown as Event, false)).toBe(true);
+    expect(isTap({ pointerType: '' } as unknown as Event, true)).toBe(true);
+    expect(isTap({ pointerType: '' } as unknown as Event, false)).toBe(false);
+  });
+
+  it('LA-BRW-T467 The theme-color meta follows the theme\'s --sheet token', async () => {
+    function Host() { useThemeColor(); const r = useRef(null); return <div ref={r} />; }
+    document.documentElement.style.setProperty('--sheet', '#123456');
+    render(<Host />);
+    const meta = () => document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')!;
+    expect(meta().content).toBe('#123456');
+    await act(async () => {
+      document.documentElement.style.setProperty('--sheet', '#abcdef');
+      await new Promise((r) => setTimeout(r, 0));
+    });
+    expect(meta().content).toBe('#abcdef');
+    document.documentElement.style.removeProperty('--sheet');
+  });
+});
