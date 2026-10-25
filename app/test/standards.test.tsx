@@ -433,7 +433,8 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     // `button` and `icon-button` are the Button's own classes.
     const ALLOWED = ['button', 'icon-button', 'tab-close', 'tree-toggle', 'nav-chevron', 'nav-row', 'nav-folder-head', 'nav-section-head', 'rail-item',
       'view-segment', 'page-bar-pages', 'pages-open', 'sheet-handle', 'graph-group-chevron', 'command-center'];
-    const allowed = `${ALLOWED.map((c) => `.${c}`).join(', ')}, [role="group"] button[aria-pressed]`;
+    // On the page, the canvas library's own zoom controls are allowed too.
+    const allowed = `${ALLOWED.map((c) => `.${c}`).join(', ')}, [role="group"] button[aria-pressed], .react-flow__controls-button`;
 
     // The source: no old button styles, and every raw <button> outside Button.tsx is one of the allowed controls
     // (an unclassed one only as a toggle, with aria-pressed).
