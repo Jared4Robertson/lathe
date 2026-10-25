@@ -7,7 +7,7 @@ Lathe is a toolkit for organising a product's lifecycle (domain model, use cases
 
 This product is Lathe's own specification, written in Lathe, so the tool is held to its own process. It has three domains:
 
-- **Modelling** (`LA-MOD`): the CSV diagrams under `model/` and the Markdown spec records under `specs/`.
+- **Modeling** (`LA-MOD`): the CSV diagrams under `model/` and the Markdown spec records under `specs/`.
 - **Checking** (`LA-CHK`): the engine that loads the workspace, applies the meta-model and checks, and computes coverage.
 - **Browsing** (`LA-BRW`): the web app's navigation of specs, alongside the existing Diagrams pages.
 

@@ -1,4 +1,4 @@
-// Tests for the Modelling domain (LA-MOD): CSV diagrams, their checks and API, and the record rules.
+// Tests for the Modeling domain (LA-MOD): CSV diagrams, their checks and API, and the record rules.
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { tmpdir } from 'node:os';

@@ -1,7 +1,7 @@
 ---
 id: LA-MOD
 kind: domain
-title: Modelling
+title: Modeling
 parent: LA
 ---
 How a product's knowledge is written down. Two forms exist side by side:
