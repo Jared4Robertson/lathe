@@ -4,7 +4,7 @@ kind: domain_event
 title: Product window closed
 parent: LA-DSK-A1
 ---
-A product window closed, by Jared or because the shell quit, with its size and place saved for the next time.
+A product window closed, by the reader or because the shell quit, with its size and place saved for the next time.
 
 ## Fields
 

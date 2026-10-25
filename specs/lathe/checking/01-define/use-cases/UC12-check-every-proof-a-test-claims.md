@@ -3,7 +3,7 @@ id: LA-CHK-UC12
 kind: use_case
 title: "Check every proof a test claims"
 parent: LA-CHK-CAP01
-actor: Jared, AI agent
+actor: Owner, Agent
 links:
   applies: [LA-CHK-DR60, LA-CHK-DR61, LA-CHK-DR62, LA-CHK-DR63, LA-CHK-DR30, LA-CHK-DR93]
 ---

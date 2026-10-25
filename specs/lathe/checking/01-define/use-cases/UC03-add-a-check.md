@@ -3,8 +3,8 @@ id: LA-CHK-UC03
 kind: use_case
 title: Add a check
 parent: LA-CHK-CAP01
-actor: AI agent, Jared
+actor: Agent, Owner
 links:
   applies: [LA-CHK-DR08, LA-CHK-DR09]
 ---
-Jared decides on a new rule, and an AI agent adds it as a check so that every later load enforces it.
+The owner decides on a new rule, and an agent adds it as a check so that every later load enforces it.

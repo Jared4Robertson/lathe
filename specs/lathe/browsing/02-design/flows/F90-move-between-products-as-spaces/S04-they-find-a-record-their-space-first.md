@@ -1,7 +1,7 @@
 ---
 id: LA-BRW-F90-S04
 kind: flow_step
-title: He finds a record, his space first
+title: They find a record, their space first
 parent: LA-BRW-F90
 order: 4
 links:

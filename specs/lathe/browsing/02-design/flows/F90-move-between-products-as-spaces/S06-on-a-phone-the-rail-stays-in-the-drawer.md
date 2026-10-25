@@ -1,7 +1,7 @@
 ---
 id: LA-BRW-F90-S06
 kind: flow_step
-title: On his phone the rail stays in the drawer
+title: On a phone the rail stays in the drawer
 parent: LA-BRW-F90
 order: 6
 links:

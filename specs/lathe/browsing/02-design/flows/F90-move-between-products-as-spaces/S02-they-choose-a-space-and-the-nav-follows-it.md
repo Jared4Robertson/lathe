@@ -1,7 +1,7 @@
 ---
 id: LA-BRW-F90-S02
 kind: flow_step
-title: He chooses a space and the nav follows it
+title: They choose a space and the nav follows it
 parent: LA-BRW-F90
 order: 2
 links:

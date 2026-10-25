@@ -1,7 +1,7 @@
 ---
 id: LA-BRW-F80-S04
 kind: flow_step
-title: Tracing a requirement, he sees the step that carries it out and its flow
+title: Tracing a requirement, the reader sees the step that carries it out and its flow
 parent: LA-BRW-F80
 order: 4
 links:

@@ -1,7 +1,7 @@
 ---
 id: LA-BRW-F90-S03
 kind: flow_step
-title: He presses Alt and a number to switch back, to the page he left
+title: They press Alt and a number to switch back, to the page they left
 parent: LA-BRW-F90
 order: 3
 links:

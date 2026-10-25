@@ -6,7 +6,7 @@ parent: LA-MOD-A1
 links:
   raised_by: [LA-MOD-EN01]
 ---
-Jared created a new, empty diagram from the app's form, registered by a new row in `model/diagrams.csv`.
+The owner created a new, empty diagram from the app's form, registered by a new row in `model/diagrams.csv`.
 
 ## Fields
 
