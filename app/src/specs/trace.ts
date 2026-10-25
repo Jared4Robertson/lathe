@@ -141,7 +141,7 @@ export interface Trace {
 /**
  * A record's traceability, by kind:
  * - an obligation: Designed by, Proved by, Supported by, Carried out in, Applied by, then its other
- *   incoming links; and its judgment in each domain owing it;
+ *   incoming links, then its links out (Involves); and its judgment in each domain owing it;
  * - a use case: its requirements (judged), then Carried out by flow, Follows, Applies, then the rest;
  * - a component: Satisfies (what it designs), Proved through (the tests proving those), then the rest;
  * - a test: Proves, Supports, and the file that runs it, then the rest;
@@ -155,7 +155,8 @@ export function traceOf(index: SpecIndex, record: SpecRecord, skip: ReadonlySet<
   const trace: Trace = { groups: [], judgments: [], requirements: [], runBy: null };
 
   if (kind?.obligation) {
-    trace.groups = grouped(index, into, 'target', (l) => incomingRank(index, l));
+    // Its incoming links first, then what it links to, such as the aggregates a domain rule involves.
+    trace.groups = [...grouped(index, into, 'target', (l) => incomingRank(index, l)), ...grouped(index, out, 'source', plain)];
     trace.judgments = owingDomains(index, record).map((d) => judge(index, record, d));
     return trace;
   }

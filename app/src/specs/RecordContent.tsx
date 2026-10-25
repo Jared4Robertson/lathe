@@ -44,6 +44,8 @@ function LinkGroups({ index, links, direction }: { index: SpecIndex; links: Link
 }
 
 const PATTERN_SKIP: ReadonlySet<string> = new Set(['in:follows']);
+/** An interaction requirement's Carries out has its own section. */
+const FULFILLS_SKIP: ReadonlySet<string> = new Set(['out:fulfills']);
 
 /** For an interaction requirement:the view, endpoint or flow it sits at, and what it carries out. */
 function Fulfills({ index, record }: { index: SpecIndex; record: SpecRecord }) {
@@ -156,7 +158,7 @@ function RecordBody({ index, record, actions, header, side }: { index: SpecIndex
           {record.kind === 'flow' && <FlowSteps index={index} flow={record} />}
           {record.kind === 'aggregate' && <DomainEvents index={index} aggregate={record} />}
           {/* After the body and its kind's own sections, before the children. A pattern's followers have their own section. */}
-          <Traceability index={index} record={record} skip={record.kind === 'pattern' ? PATTERN_SKIP : undefined} />
+          <Traceability index={index} record={record} skip={record.kind === 'pattern' ? PATTERN_SKIP : record.kind === 'interaction_requirement' ? FULFILLS_SKIP : undefined} />
           {/* Without the facts beside it, the body lists the direct children itself; the problems show either way (the side bar does not repeat them). */}
           {!side && children.length > 0 && record.kind !== 'pattern' && (
             <Section title={childrenTitle} count={children.length}>
