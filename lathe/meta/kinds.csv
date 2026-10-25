@@ -5,7 +5,7 @@ capability,Capability,define,domain,order,no,"An ordered slice of a domain that 
 aggregate,Aggregate,define,domain,,no,"A cluster of records changed together as one unit, with its own identity and rules."
 domain_rule,Domain rule,define,aggregate domain,,yes,"A fact that must always hold for an aggregate's records, whatever use case changes them."
 use_case,Use case,define,domain capability,actor,no,"Something an actor does with the product to reach a goal."
-requirement,Requirement,define,use_case,,yes,"One rule a use case must follow, stated with MUST, MUST NOT, SHOULD or MAY."
+requirement,Use-case requirement,define,use_case,,yes,"One rule a use case must follow, stated with MUST, MUST NOT, SHOULD or MAY. Shown as a use-case requirement, to tell it apart from interaction requirements and pattern rules."
 pattern,Pattern,define,product,settings,no,"Behaviour several use cases share, stated once with the settings each use case that follows it fills in. Its settings are a space-separated list of field names."
 pattern_rule,Pattern rule,define,pattern,,yes,"One rule of a pattern, stated with MUST, MUST NOT, SHOULD or MAY. Every domain that follows the pattern designs and proves it, unless the rule names a setting (in `setting`) that all of that domain's following use cases mark Not applicable."
 flow,Flow,design,domain capability,,no,"An end-to-end path through views and endpoints that carries out one or more use cases."

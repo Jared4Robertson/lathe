@@ -166,7 +166,7 @@ describe('one address, three views', () => {
       w.records.push({ ...base, id, title: `Rule ${i}`, path: `specs/${id}.md` });
     }
     await openApp('/records/P-D-UC01/requirement?view=split', { workspace: w });
-    await screen.findByRole('heading', { level: 1, name: 'Requirements (13)' });
+    await screen.findByRole('heading', { level: 1, name: 'Use-case requirements (13)' });
     expect(within(screen.getByRole('region', { name: 'Wiki pane' })).getByRole('searchbox', { name: 'Filter members of P-D-UC01/requirement' })).toBeInTheDocument();
     expect(within(inspector()).getByRole('searchbox', { name: 'Filter members' })).toBeInTheDocument();
     await waitFor(() => expect(within(inspector()).getByRole('searchbox', { name: 'Filter connected records' })).toBeInTheDocument());

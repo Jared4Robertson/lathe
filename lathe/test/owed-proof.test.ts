@@ -20,7 +20,7 @@ describe('proof still owed by planned tests', () => {
     // OW-A-UC01-R01 is proved by an automated test and R02 by a manual one, each with a planned test as well;
     // R03 has only planned tests; R04 has automated tests only.
     expect(kindOf(owed, 'OW-A', 'requirement')).toEqual({
-      kind: 'requirement', label: 'Requirement', total: 4, designed: 4, built: 4, proved: 3, planned: 1, planned_any: 3,
+      kind: 'requirement', label: 'Use-case requirement', total: 4, designed: 4, built: 4, proved: 3, planned: 1, planned_any: 3,
     });
     // Two planned tests for one obligation count it once.
     expect(kindOf(owed, 'OW-A', 'requirement').planned_any).toBe(3);
@@ -61,10 +61,10 @@ describe('proof still owed by planned tests', () => {
     const run = spawnSync(process.execPath, [path.join(here, '..', 'bin', 'lathe.ts'), 'check', '--root', fixture('owed-proof')], { encoding: 'utf8' });
     expect(run.status).toBe(0);
     const coverage = run.stdout.slice(run.stdout.indexOf('\nCoverage:'));
-    expect(coverage).toContain('  OW-A requirement: 4/4 designed, 4/4 built, 3/4 proved, 1/4 planned; 1 gap; 3/4 with a planned test\n');
-    expect(coverage).toContain('  OW-A pattern_rule: 1/1 designed, 1/1 built, 1/1 proved, 0/1 planned; 0 gaps; 1/1 with a planned test\n');
+    expect(coverage).toContain('  OW-A use-case requirement: 4/4 designed, 4/4 built, 3/4 proved, 1/4 planned; 1 gap; 3/4 with a planned test\n');
+    expect(coverage).toContain('  OW-A pattern rule: 1/1 designed, 1/1 built, 1/1 proved, 0/1 planned; 0 gaps; 1/1 with a planned test\n');
     // Where planned_any equals planned, nothing is added.
-    expect(coverage).toContain('  OW-B pattern_rule: 1/1 designed, 1/1 built, 1/1 proved, 0/1 planned; 0 gaps\n');
+    expect(coverage).toContain('  OW-B pattern rule: 1/1 designed, 1/1 built, 1/1 proved, 0/1 planned; 0 gaps\n');
     expect(coverage).toContain('  OW-A tests: 2 automated, 1 manual, 2 planned\n');
     expect(coverage).toContain('  OW-B tests: 1 automated, 0 manual, 0 planned\n');
     expect(coverage).toContain('  OW-E: no obligations\n  OW-E tests: 0 automated, 0 manual, 0 planned\n');
