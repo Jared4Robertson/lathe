@@ -15,8 +15,9 @@ beforeAll(async () => {
 
 describe('mentions', () => {
   it('LA-CHK-T120 A record mentions the existing IDs its body cites, in order of first mention', () => {
-    expect(mentionsOf('MX-D-UC01')).toEqual(['MX-D-UC02', 'MX-D-UC01-R01', 'NX', 'MX-D', 'MX-D-UC03']);
-    expect(mentionsOf('MX')).toEqual(['MX-D', 'NX']);
+    // A bare product or domain ID in plain prose (NX, MX-D) is not a citation (FORMAT.md section 12).
+    expect(mentionsOf('MX-D-UC01')).toEqual(['MX-D-UC02', 'MX-D-UC01-R01', 'MX-D-UC03']);
+    expect(mentionsOf('MX')).toEqual([]);
     expect(mentionsOf('MX-D-UC02')).toEqual(['MX-D-UC01-R01', 'MX-D-UC01']);
     // A body that cites nothing has no mentions.
     expect(mentionsOf('MX-D')).toEqual([]);
