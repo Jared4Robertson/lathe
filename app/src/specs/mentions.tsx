@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
-import { recordPath, type SpecIndex, type SpecRecord } from './data';
+import type { SpecIndex, SpecRecord } from './data';
+import { addressOf } from '../views/address';
 import { Markdown, type ProseLinks } from './Markdown';
 
 // A record's body with the IDs it cites as links (FORMAT.md section 12). The engine lists the
@@ -21,7 +22,7 @@ export function proseLinks(index: SpecIndex, record: SpecRecord): ProseLinks {
     if (p.check !== UNKNOWN_ID_CHECK) continue;
     for (const [id] of p.message.matchAll(ID_IN_MESSAGE)) if (id !== record.id && !index.byId.has(id)) broken.add(id);
   }
-  return { titles, broken, href: recordPath };
+  return { titles, broken, href: (id: string) => addressOf(id) };
 }
 
 export function RecordMarkdown({ index, record }: { index: SpecIndex; record: SpecRecord }) {

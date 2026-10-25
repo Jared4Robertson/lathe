@@ -16,7 +16,7 @@ describe('LA-PAT-APP-UX-R09 Actions look like actions', () => {
         <Button variant="icon" label="Close the pane">×</Button>
         <Button icon="plus">New diagram</Button>
         <Button danger>Delete</Button>
-        <Button href="/specs/DM">Open the product overview</Button>
+        <Button href="/DM">Open the product overview</Button>
       </>,
     );
     const ghost = screen.getByRole('button', { name: 'Expand all' });
@@ -37,7 +37,7 @@ describe('LA-PAT-APP-UX-R09 Actions look like actions', () => {
     expect(screen.getByRole('button', { name: 'Delete' }).className).toBe('button button-ghost button-danger');
 
     const link = screen.getByRole('link', { name: 'Open the product overview' });
-    expect(link.getAttribute('href')).toBe('/specs/DM');
+    expect(link.getAttribute('href')).toBe('/DM');
     expect(link.className).toBe('button button-ghost');
     expect(buttonClass('primary', { className: 'file-button' })).toBe('button button-primary file-button');
 

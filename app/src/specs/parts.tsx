@@ -2,7 +2,8 @@ import { lowerLabel, plural as pluralOf } from '../plural';
 import { createContext, useContext, useState, type AnchorHTMLAttributes, type ReactNode } from 'react';
 import { Link } from '../router';
 import { checkPagePath } from '../format/reference';
-import { kindLabel, problemOrder, recordPath, type Problem, type SpecIndex, type SpecRecord } from './data';
+import { kindLabel, problemOrder, type Problem, type SpecIndex, type SpecRecord } from './data';
+import { addressOf } from '../views/address';
 import { ActionsSlotContext } from '../components/ActionsSlot';
 import { LongList } from '../components/LongList';
 import { TreeList } from '../components/TreeList';
@@ -46,7 +47,7 @@ export function RecordLink({ index, id, showTitle = true, row = false }: { index
   const record = index.byId.get(id);
   if (!record) return <span className="record-link missing" title="No record has this ID"><code>{id}</code></span>;
   return (
-    <SpecLink to={recordPath(id)} className={row ? 'record-link row-link' : 'record-link'}>
+    <SpecLink to={addressOf(id)} className={row ? 'record-link row-link' : 'record-link'}>
       <code>{id}</code>
       {showTitle && <span>{record.title}</span>}
     </SpecLink>
@@ -109,7 +110,7 @@ export function PageHeader({ eyebrow, title, id, children }: { eyebrow: ReactNod
       <div>
         <p className="eyebrow">{eyebrow}</p>
         <h1>{title}</h1>
-        {id && <p className="record-id"><SpecLink to={recordPath(id)} className="record-link"><code>{id}</code></SpecLink></p>}
+        {id && <p className="record-id"><SpecLink to={addressOf(id)} className="record-link"><code>{id}</code></SpecLink></p>}
       </div>
       {children}
     </header>

@@ -28,12 +28,12 @@ describe('Lathe on a phone', () => {
   it('LA-BRW-T460 A phone shows a compact top bar with the title and a step up, and one view at a time switched from the page bar, leaving the views remembered for a wide screen alone', async () => {
     phone();
     window.localStorage.setItem('lathe:view', '"wiki,graph"');
-    await openApp('/records/P-D-UC01?view=wiki,graph', served());
+    await openApp('/P-D-UC01?view=wiki,graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     // The top bar: the menu, the title on one line under a link one step up, and quick find.
     expect(within(topbar()).getByRole('button', { name: 'Open the navigation' })).toBeInTheDocument();
     expect(topbar().querySelector('.topbar-title')).toHaveTextContent('Lend a thing');
-    expect(within(topbar()).getByRole('link', { name: 'Up to Domain' })).toHaveAttribute('href', '/specs/P/P-D?view=wiki,graph');
+    expect(within(topbar()).getByRole('link', { name: 'Up to Domain' })).toHaveAttribute('href', '/P-D?view=wiki,graph');
     expect(within(topbar()).getByRole('button', { name: 'Quick find' })).toBeInTheDocument();
     // One view: the first the address names; no pane headers and no handles.
     expect([...document.querySelectorAll('.pane')].map((p) => p.getAttribute('aria-label'))).toEqual(['Wiki pane']);
@@ -48,14 +48,14 @@ describe('Lathe on a phone', () => {
     expect(segment('Graph')).toHaveAttribute('aria-pressed', 'true');
     expect(window.localStorage.getItem('lathe:view')).toBe('"wiki,graph"');
     // A page that names no product parent goes up to all products; a domain up to its product.
-    await openApp('/specs/P/P-D?view=wiki', served());
+    await openApp('/P-D?view=wiki', served());
     await waitFor(() => expect(topbar().querySelector('.topbar-title')).toHaveTextContent('Domain'));
-    expect(within(topbar()).getByRole('link', { name: 'Up to Product' })).toHaveAttribute('href', '/specs/P?view=wiki');
+    expect(within(topbar()).getByRole('link', { name: 'Up to Product' })).toHaveAttribute('href', '/P?view=wiki');
   });
 
   it('LA-BRW-T461 The inspector is a bottom sheet: it opens at half height with focus inside, its handle takes it to full height and back, Escape closes it and focus returns', async () => {
     phone();
-    await openApp('/records/P-D-UC01', served());
+    await openApp('/P-D-UC01', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     const toggle = within(pageBar()).getByRole('button', { name: 'Show the inspector' });
     fireEvent.click(toggle);
@@ -91,7 +91,7 @@ describe('Lathe on a phone', () => {
 
   it('LA-BRW-T463 The open pages are a sheet from the page bar: each tab a row, the active one marked, the preview one kept from its row; choosing one goes there, and a row closes its tab', async () => {
     phone();
-    await openApp('/records/P-D-UC01', served());
+    await openApp('/P-D-UC01', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     const pagesButton = () => within(pageBar()).getByRole('button', { name: /^Open pages \(\d+\)$/ });
     expect(pagesButton()).toHaveAccessibleName('Open pages (1)');
@@ -104,7 +104,7 @@ describe('Lathe on a phone', () => {
     expect(screen.queryByRole('dialog', { name: 'Open pages' })).toBeNull();
     await waitFor(() => expect(pagesButton()).toHaveFocus());
     // Another page opens in a second tab.
-    await openApp('/records/P-D-V01', served());
+    await openApp('/P-D-V01', served());
     await screen.findByRole('heading', { level: 1, name: 'Thing page' });
     expect(pagesButton()).toHaveAccessibleName('Open pages (2)');
     fireEvent.click(pagesButton());
@@ -124,7 +124,7 @@ describe('Lathe on a phone', () => {
 
   it('LA-BRW-T464 Quick find on a phone is a full-screen sheet: the results list under the box, choosing one goes there, Escape closes it and focus returns', async () => {
     phone();
-    await openApp('/records/P-D-UC01', served());
+    await openApp('/P-D-UC01', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     const open = within(topbar()).getByRole('button', { name: 'Quick find' });
     open.focus();
@@ -136,7 +136,7 @@ describe('Lathe on a phone', () => {
     const results = within(sheet).getByRole('listbox', { name: 'Quick find results' });
     expect(results).toHaveClass('is-inline');
     fireEvent.mouseDown(within(results).getByRole('option', { name: /Thing page/ }));
-    expect(window.location.pathname).toBe('/records/P-D-V01');
+    expect(window.location.pathname).toBe('/P-D-V01');
     await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Quick find' })).toBeNull());
     // Escape closes it, and focus goes back to the button.
     const again = within(topbar()).getByRole('button', { name: 'Quick find' });
@@ -149,7 +149,7 @@ describe('Lathe on a phone', () => {
 
   it('LA-BRW-T465 The nav is a full-screen sheet that keeps Tab inside it', async () => {
     phone();
-    await openApp('/records/P-D-UC01', served());
+    await openApp('/P-D-UC01', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     fireEvent.click(within(topbar()).getByRole('button', { name: 'Open the navigation' }));
     const nav = screen.getByRole('navigation', { name: 'Main' });
@@ -165,11 +165,11 @@ describe('Lathe on a phone', () => {
   it('LA-BRW-T466 By touch, a first tap on a graph node selects it and shows its name with an Open chip; a second tap or the chip opens it, and a tap on the canvas lets go', async () => {
     phone();
     window.sessionStorage.setItem('lathe:graph-settings', JSON.stringify({ depth: 2, trace: false, hiddenKinds: [], hiddenRelations: [], openGroups: [] }));
-    await openApp('/records/P-D-UC01-R01?view=graph', served());
+    await openApp('/P-D-UC01-R01?view=graph', served());
     await waitFor(() => expect(document.querySelector('.react-flow__node[data-id="P-D-V01"]')).not.toBeNull());
     const node = () => document.querySelector<HTMLElement>('.react-flow__node[data-id="P-D-V01"]')!;
     fireEvent.click(node());
-    expect(window.location.pathname).toBe('/records/P-D-UC01-R01');
+    expect(window.location.pathname).toBe('/P-D-UC01-R01');
     const card = await waitFor(() => { const c = document.querySelector<HTMLElement>('.tap-card'); expect(c).not.toBeNull(); return c!; });
     expect(card).toHaveAttribute('role', 'status');
     expect(card).toHaveTextContent('Thing page');
@@ -180,7 +180,7 @@ describe('Lathe on a phone', () => {
     // The chip opens it.
     fireEvent.click(node());
     fireEvent.click(screen.getByRole('button', { name: 'Open Thing page' }));
-    expect(window.location.pathname).toBe('/records/P-D-V01');
+    expect(window.location.pathname).toBe('/P-D-V01');
     // A click that says it came from a mouse opens at once; a finger's or a pen's selects first.
     expect(isTap({ pointerType: 'mouse' } as unknown as Event, true)).toBe(false);
     expect(isTap({ pointerType: 'touch' } as unknown as Event, false)).toBe(true);

@@ -111,7 +111,7 @@ describe('nothing jumps (LA-PAT-APP-UX-R08)', () => {
 
   it('LA-BRW-T488 a count or caption that changes is one text, so a new number never moves the text after it', async () => {
     startAtDepth(1);
-    await openApp('/records/P-D-UC01-R01?view=graph', { workspace: testWorkspace() });
+    await openApp('/P-D-UC01-R01?view=graph', { workspace: testWorkspace() });
     await waitFor(() => expect(document.querySelector('.graph-count')).not.toBeNull());
     const count = document.querySelector('.graph-count')!;
     expect([...count.childNodes].map((n) => n.nodeType)).toEqual([Node.TEXT_NODE]);
@@ -121,12 +121,12 @@ describe('nothing jumps (LA-PAT-APP-UX-R08)', () => {
 
   it('LA-BRW-T488 the graph canvas stays mounted when the graph re-centers', async () => {
     startAtDepth(2);
-    await openApp('/records/P-D-UC01-R01?view=graph', { workspace: testWorkspace() });
+    await openApp('/P-D-UC01-R01?view=graph', { workspace: testWorkspace() });
     await waitFor(() => expect(document.querySelector('.react-flow__node[data-id="P-D-V01"]')).not.toBeNull());
     const canvas = document.querySelector('.graph-flow');
     const flow = document.querySelector('.graph-flow .react-flow');
     fireEvent.click(document.querySelector('.react-flow__node[data-id="P-D-V01"]')!);
-    await waitFor(() => expect(window.location.pathname).toBe('/records/P-D-V01'));
+    await waitFor(() => expect(window.location.pathname).toBe('/P-D-V01'));
     await waitFor(() => expect(document.querySelector('.react-flow__node[data-id="P-D-E01"]')).not.toBeNull());
     expect(document.querySelector('.graph-flow')).toBe(canvas);
     expect(document.querySelector('.graph-flow .react-flow')).toBe(flow);
@@ -143,13 +143,13 @@ describe('nothing jumps (LA-PAT-APP-UX-R08)', () => {
 
   it('LA-BRW-T488 a move made outside the nav leaves its rows where they are: the closed row holding the page is marked, and opens the branch down to it', async () => {
     window.sessionStorage.clear();
-    await openApp('/specs/DM');
+    await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     const panel = () => screen.getByRole('navigation', { name: 'Main' }).querySelector<HTMLElement>('.space-items')!;
     const unfold = () => within(panel()).getByRole('button', { name: 'Unfold Shopping' });
     expect(unfold()).toHaveAttribute('aria-expanded', 'false');
     // A link in the page (here, the address set from outside the nav) moves to a requirement inside Shopping.
-    act(() => navigate('/records/DM-SHOP-UC01-R01'));
+    act(() => navigate('/DM-SHOP-UC01-R01'));
     await screen.findByRole('heading', { level: 1, name: 'The basket shows the new item' });
     expect(unfold()).toHaveAttribute('aria-expanded', 'false');
     expect(within(panel()).queryByRole('list', { name: 'Folders of Shopping' })).toBeNull();

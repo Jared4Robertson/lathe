@@ -14,7 +14,7 @@ import { openApp } from './helpers';
 const links = (titles: Record<string, string>, broken: string[] = []) => ({
   titles: new Map(Object.entries(titles)),
   broken: new Set(broken),
-  href: (id: string) => `/records/${id}`,
+  href: (id: string) => `/${id}`,
 });
 const body = () => document.querySelector('.record-main .markdown, .spec-body .markdown') as HTMLElement;
 
@@ -25,9 +25,9 @@ describe('prose mentions', () => {
     div.innerHTML = html;
     const anchors = [...div.querySelectorAll('a.mention')];
     expect(anchors.map((a) => [a.textContent, a.getAttribute('href'), a.getAttribute('title')])).toEqual([
-      ['TL-LEND-DR01', '/records/TL-LEND-DR01', 'One loan at a time'],
-      ['TL-LEND-DR01', '/records/TL-LEND-DR01', 'One loan at a time'],
-      ['TL-LEND-UC01', '/records/TL-LEND-UC01', 'Lend a tool'],
+      ['TL-LEND-DR01', '/TL-LEND-DR01', 'One loan at a time'],
+      ['TL-LEND-DR01', '/TL-LEND-DR01', 'One loan at a time'],
+      ['TL-LEND-UC01', '/TL-LEND-UC01', 'Lend a tool'],
     ]);
     expect(div.textContent).toContain('See TL-LEND-DR01, and again TL-LEND-DR01.');
   });
@@ -45,7 +45,7 @@ describe('prose mentions', () => {
     const lone = document.createElement('div');
     lone.innerHTML = renderMarkdown('Rule `TL-LEND-DR01` applies.', links({ 'TL-LEND-DR01': 'One loan at a time' }));
     const a = lone.querySelector('a.mention')!;
-    expect(a.getAttribute('href')).toBe('/records/TL-LEND-DR01');
+    expect(a.getAttribute('href')).toBe('/TL-LEND-DR01');
     expect(a.querySelector('code')!.textContent).toBe('TL-LEND-DR01');
     // Nothing to link leaves the HTML as it was.
     expect(linkMentions('<p>TL-LEND-DR01</p>', links({}))).toBe('<p>TL-LEND-DR01</p>');
@@ -63,7 +63,7 @@ describe('prose mentions', () => {
   });
 
   it('LA-BRW-T173 On a record page the body links its mentions, marks unknown IDs, and a link moves within the app', async () => {
-    await openApp('/records/DM-SHOP-UC01', { workspace: patternWorkspace() });
+    await openApp('/DM-SHOP-UC01', { workspace: patternWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     const prose = within(body());
     // The body cites DM-SHOP-DR01 twice: in the text, and as code holding just that ID.
@@ -73,12 +73,12 @@ describe('prose mentions', () => {
     // The ID in code keeps its code style inside the link.
     expect(body().querySelector('a.mention code')!.textContent).toBe('DM-SHOP-DR01');
     fireEvent.click(prose.getAllByRole('link', { name: 'DM-SHOP-DR01' })[0]);
-    expect(window.location.pathname).toBe('/records/DM-SHOP-DR01');
+    expect(window.location.pathname).toBe('/DM-SHOP-DR01');
     await screen.findByRole('heading', { level: 1, name: 'A basket holds at most 50 items' });
   });
 
   it('LA-BRW-T174 A mention next to a longer ID links only the ID mentioned, is not a link between records, and domain pages link theirs too', async () => {
-    await openApp('/records/DM-PAY-UC01', { workspace: patternWorkspace() });
+    await openApp('/DM-PAY-UC01', { workspace: patternWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Pay by card' });
     expect(within(body()).getAllByRole('link').map((a) => [a.textContent, a.getAttribute('title')])).toEqual([['DM-SHOP-UC01', 'Add an item to the basket']]);
     expect(body()).toHaveTextContent('DM-SHOP-UC01-R01 is not cited here');
@@ -91,8 +91,8 @@ describe('prose mentions', () => {
     const domain = ws.records.find((r) => r.id === 'DM-SHOP')!;
     domain.body = 'Shopping starts at DM-SHOP-UC01.';
     domain.mentions = ['DM-SHOP-UC01'];
-    await openApp('/specs/DM/DM-SHOP', { workspace: ws });
+    await openApp('/DM-SHOP', { workspace: ws });
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
-    await waitFor(() => expect(document.querySelector('.spec-body > .markdown a.mention')).toHaveAttribute('href', '/records/DM-SHOP-UC01'));
+    await waitFor(() => expect(document.querySelector('.spec-body > .markdown a.mention')).toHaveAttribute('href', '/DM-SHOP-UC01'));
   });
 });

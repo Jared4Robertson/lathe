@@ -2,9 +2,9 @@ import { forwardRef, useEffect, useRef, type KeyboardEvent } from 'react';
 import { Icon } from '../components/icons';
 import { groupLabel } from '../graph/model';
 import { Link } from '../router';
-import { parseSpecRoute, productPath, type SpecIndex } from '../specs/data';
+import { parseSpecRoute, type SpecIndex } from '../specs/data';
 import type { DiagramSummary } from '../types';
-import { addressOf, focusOf, isFocusRoute, viewsFromSearch, withView } from '../views/address';
+import { addressOf, HOME_PATH, focusOf, isFocusRoute, viewsFromSearch, withView } from '../views/address';
 import { QuickFind } from './QuickFind';
 import type { Space } from './spaces';
 import { trapTab } from './useNarrow';
@@ -20,11 +20,11 @@ export interface Heading {
   up: { to: string; label: string } | null;
 }
 
-const PRODUCTS = { to: '/specs', label: 'Products' };
+const PRODUCTS = { to: HOME_PATH, label: 'Products' };
 
 /** The title of the page at an address, and the page one step up from it. */
 export function pageHeading(index: SpecIndex | null, path: string, search: string, diagrams: readonly DiagramSummary[]): Heading {
-  const route = parseSpecRoute(path);
+  const route = parseSpecRoute(path, index);
   // Going up keeps the view in front, as following any link does.
   const views = viewsFromSearch(search);
   const keep = (to: string) => (views ? withView(to, views) : to);
@@ -48,7 +48,7 @@ export function pageHeading(index: SpecIndex | null, path: string, search: strin
   if (!record) return { title: id, up: PRODUCTS };
   if (route.page === 'domain') {
     const product = index.byId.get(route.product);
-    return { title: record.title, up: product ? { to: keep(productPath(product.id)), label: product.title } : PRODUCTS };
+    return { title: record.title, up: product ? { to: keep(addressOf(product.id)), label: product.title } : PRODUCTS };
   }
   const parent = record.parent ? index.byId.get(record.parent) : undefined;
   return { title: record.title, up: parent ? { to: keep(addressOf(index, parent.id)), label: parent.title } : PRODUCTS };

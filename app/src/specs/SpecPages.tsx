@@ -13,16 +13,16 @@ import { GroupSections, groupMatches } from './FolderGroups';
 import {
   byIdOrder,
   checksPath,
-  domainPath,
   kindLabel,
   problemOrder,
-  productPath,
   type Problem,
   type SpecIndex,
   type SpecRecord,
   type SpecRoute,
   type SpecState,
 } from './data';
+import { addressOf, HOME_PATH } from '../views/address';
+import { Traceability } from './Traceability';
 
 export { RecordContent } from './RecordContent';
 
@@ -72,7 +72,7 @@ export function SpecView({ spec, route }: { spec: SpecState; route: SpecRoute })
 export function NotFound({ what, id }: { what: string; id?: string }) {
   return (
     <div className="placeholder">
-      <p>{id ? <>There's no {what} with the ID <code>{id}</code>.</> : `There's no such ${what}.`} <Link to="/specs">See all products</Link>.</p>
+      <p>{id ? <>There's no {what} with the ID <code>{id}</code>.</> : `There's no such ${what}.`} <Link to={HOME_PATH}>See all products</Link>.</p>
     </div>
   );
 }
@@ -84,7 +84,7 @@ function SpecsHome({ index }: { index: SpecIndex }) {
       {index.products.length === 0 && <p className="hint">No products yet. Add a <code>product.md</code> under <code>specs/</code>.</p>}
       <div className="cards">
         {index.products.map((p) => (
-          <Link key={p.id} to={productPath(p.id)} className="card">
+          <Link key={p.id} to={addressOf(p.id)} className="card">
             <code>{p.id}</code>
             <strong>{p.title}</strong>
             <small>{(index.domainsOf.get(p.id) ?? []).length} domains</small>
@@ -108,12 +108,13 @@ export function ProductWiki({ index, id }: { index: SpecIndex; id: string }) {
   return (
     <div className="spec-body">
       <RecordMarkdown index={index} record={product} />
+      <Traceability index={index} record={product} />
       <Section title="Domains" count={domains.length}>
         {domains.length === 0 && <p className="hint">No domains yet.</p>}
         <div className="cards">
           {domains.map((d) => (
             <article key={d.id} className="card domain-card">
-              <Link to={domainPath(id, d.id)} className="card-title">
+              <Link to={addressOf(d.id)} className="card-title">
                 <code>{d.id}</code>
                 <strong>{d.title}</strong>
               </Link>
@@ -240,6 +241,7 @@ export function DomainWiki({ index, id }: { index: SpecIndex; id: string }) {
   return (
     <div className="spec-body">
       <RecordMarkdown index={index} record={domain} />
+      <Traceability index={index} record={domain} />
       <div className="search">
         <label htmlFor="record-search">Filter records</label>
         <input id="record-search" type="search" value={query} placeholder="ID or title" onChange={(e) => setQuery(e.target.value)} />

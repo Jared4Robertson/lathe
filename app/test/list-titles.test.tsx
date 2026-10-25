@@ -13,7 +13,7 @@ const inspector = () => screen.getByRole('complementary', { name: 'Inspector' })
 describe('list titles', () => {
   it('LA-BRW-T340 A list of children or members of one kind is titled by that kind, in the wiki and the inspector', async () => {
     // An aggregate's domain rules: the record page and the inspector both say "Domain rules".
-    await openApp('/records/DM-SHOP-A1');
+    await openApp('/DM-SHOP-A1');
     await screen.findByRole('heading', { level: 1, name: 'Basket' });
     const rules = within(wiki()).getByRole('heading', { level: 2, name: /^Domain rules/ });
     expect(rules).toHaveTextContent('Domain rules1');
@@ -23,24 +23,23 @@ describe('list titles', () => {
     expect(within(inspector()).getByRole('list', { name: 'Domain rules' })).toBeInTheDocument();
 
     // A use case's requirements, and the nested list under a row, are named by their kind too.
-    await openApp('/records/DM-SHOP-UC01');
+    await openApp('/DM-SHOP-UC01');
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     expect(within(inspector()).getByRole('heading', { level: 3, name: /^UC requirements/ })).toHaveTextContent('UC requirements 2');
-    await openApp('/records/DM-SHOP');
+    await openApp('/DM-SHOP');
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     fireEvent.click(within(wiki()).getByRole('button', { name: 'Expand DM-SHOP-UC01' }));
     expect(within(wiki()).getByRole('list', { name: 'UC requirements of DM-SHOP-UC01' })).toBeInTheDocument();
 
-    // Children of several kinds stay "Children", each row tagged by its kind.
-    await openApp('/records/DM');
+    // Children of several kinds stay "Children", each row tagged by its kind: a product's, on its one page, in the inspector.
+    await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
-    const mixed = within(wiki()).getByRole('heading', { level: 2, name: /^Children/ }).closest('section') as HTMLElement;
+    expect(within(inspector()).getByRole('heading', { level: 3, name: /^Children/ })).toBeInTheDocument();
+    const mixed = within(inspector()).getByRole('list', { name: 'Children' });
     expect(within(mixed).getAllByText('Domain', { selector: 'small' }).length).toBeGreaterThan(0);
-    expect(within(wiki()).getByRole('list', { name: 'Children of DM' })).toBeInTheDocument();
-    expect(within(inspector()).getByRole('list', { name: 'Children' })).toBeInTheDocument();
 
     // A group's members, in the wiki and the inspector, are titled by their kind.
-    await openApp('/records/DM-SHOP/use_case');
+    await openApp('/DM-SHOP/use_case');
     await screen.findByRole('heading', { level: 1, name: /^Use cases/ });
     expect(within(wiki()).getByRole('heading', { level: 2, name: /^Use cases/ })).toHaveTextContent('Use cases1');
     expect(within(wiki()).queryByRole('heading', { name: /^Members/ })).toBeNull();
@@ -51,7 +50,7 @@ describe('list titles', () => {
     // The title reads the workspace's kind label, so a renamed kind shows its own name.
     const w = workspace();
     w.kinds = w.kinds.map((k) => (k.kind === 'domain_rule' ? { ...k, label: 'Invariant' } : k));
-    await openApp('/records/DM-SHOP-A1', { workspace: w });
+    await openApp('/DM-SHOP-A1', { workspace: w });
     await screen.findByRole('heading', { level: 1, name: 'Basket' });
     expect(within(wiki()).getByRole('heading', { level: 2, name: /^Invariants/ })).toBeInTheDocument();
   });

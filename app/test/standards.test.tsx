@@ -1,6 +1,6 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
-import { screen, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { openApp } from './helpers';
 import { REQUIRED_PAIRS, colorOf } from '../src/theme/audit';
@@ -8,6 +8,9 @@ import { contrast } from '../src/theme/contrast';
 import { themeCss } from '../src/theme/css';
 import { BUILT_IN_THEMES } from '../src/theme/theme';
 import { COLOR_NAMES, SETTING_NAMES } from '../src/theme/tokens';
+import { indexWorkspace, parseSpecRoute } from '../src/specs/data';
+import { APP_PAGES, OLD_PREFIXES, isRecordId, legacyAddress, redirectTarget } from '../src/views/address';
+import { workspace } from './fixtures/workspace';
 // The split view loads the graph, which needs a ResizeObserver in jsdom.
 import './graph/setup';
 
@@ -83,8 +86,8 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
   it('LA-BRW-T256 Layout lives in the markup: no stylesheet rule moves or restyles an element from outside its component', async () => {
     expect(where('app/src/styles.css', CSS, /display:\s*contents|:has\(/)).toEqual([]);
     // A section's own header row holds its list's Expand all: the button sits inside the header.
-    await openApp('/records/DM');
-    const children = screen.getByRole('heading', { level: 2, name: /^Children/ }).closest('section')!;
+    await openApp('/DM-SHOP-UC01');
+    const children = (await screen.findByRole('heading', { level: 2, name: /^UC requirements/ })).closest('section')!;
     const header = children.querySelector(':scope > header.spec-section-head')!;
     expect(header).not.toBeNull();
     const bulk = within(children).queryByRole('button', { name: /Expand all|Collapse all/ });
@@ -126,7 +129,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
   });
 
   it('LA-BRW-T261 Every button and link on the main pages has an accessible name', async () => {
-    for (const path of ['/', '/specs/DM/DM-SHOP', '/records/DM-SHOP-UC01', '/records/DM-SHOP-UC01?view=graph']) {
+    for (const path of ['/', '/DM-SHOP', '/DM-SHOP-UC01', '/DM-SHOP-UC01?view=graph']) {
       await openApp(path);
       // The role queries compute each control's accessible name; keep the ones whose name is empty.
       const controls = ['button', 'link', 'textbox', 'searchbox', 'combobox', 'checkbox', 'radio'].flatMap((role) => screen.queryAllByRole(role));
@@ -161,7 +164,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     const separators = filesUnder(SRC, /\.tsx$/).filter((f) => !f.endsWith('ResizeHandle.tsx')).flatMap((f) => where(f, readFileSync(f, 'utf8'), /role="separator"/));
     expect(separators).toEqual([]);
     // On a record with the wiki and graph open and the inspector shown: nav, wiki, graph and inspector, each gap a handle.
-    await openApp('/records/DM-SHOP-UC01?view=wiki,graph');
+    await openApp('/DM-SHOP-UC01?view=wiki,graph');
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     // A focusable separator (one with a value) is a splitter; a plain divider line such as the rail's is not.
     const handles = screen.getAllByRole('separator').filter((h) => h.hasAttribute('aria-valuenow')).map((h) => [h.getAttribute('aria-label'), h.classList.contains('resize-handle')]);
@@ -177,7 +180,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
   });
 
   it('LA-BRW-T298 The page bar holds the page\'s tabs and layout controls; each pane\'s header holds only that pane\'s actions, on wide and narrow screens alike', async () => {
-    for (const [path, narrow] of [['/records/DM-SHOP-UC01?view=wiki', false], ['/records/DM-SHOP-UC01?view=wiki,graph', false], ['/records/DM-SHOP-UC01?view=wiki,graph', true]] as const) {
+    for (const [path, narrow] of [['/DM-SHOP-UC01?view=wiki', false], ['/DM-SHOP-UC01?view=wiki,graph', false], ['/DM-SHOP-UC01?view=wiki,graph', true]] as const) {
       if (narrow) vi.stubGlobal('matchMedia', (query: string) => ({ matches: true, media: query, addEventListener: () => {}, removeEventListener: () => {} }));
       await openApp(path);
       await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
@@ -317,7 +320,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     expect(ruleFor((s) => s === '.row-link:focus-visible::after').map((r) => r.body).join(';')).toMatch(/outline:/);
 
     // The pages: each row that holds a record link has exactly one row link, a real link to a record.
-    for (const path of ['/specs/DM/DM-SHOP', '/records/DM-SHOP-UC01', '/records/DM-SHOP']) {
+    for (const path of ['/DM-SHOP', '/DM-SHOP-UC01', '/DM-SHOP-C01']) {
       await openApp(path);
       await screen.findByRole('heading', { level: 1 });
       const lists = [...document.querySelectorAll('.record-list')];
@@ -326,7 +329,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
       const withLinks = rowsOnPage.filter((row) => row.querySelector('a.record-link'));
       expect(withLinks.length).toBeGreaterThan(0);
       const wrong = withLinks
-        .filter((row) => row.querySelectorAll('.row-link').length !== 1 || !/^\/records\//.test(row.querySelector('.row-link')?.getAttribute('href') ?? ''))
+        .filter((row) => row.querySelectorAll('.row-link').length !== 1 || !/^\/[A-Z]/.test(row.querySelector('.row-link')?.getAttribute('href') ?? ''))
         .map((row) => `${path}: ${row.outerHTML.slice(0, 160)}`);
       expect(wrong).toEqual([]);
     }
@@ -415,7 +418,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     expect(CSS).toMatch(/\.markdown pre, \.spec-body pre \{[^}]*overflow-x:\s*auto/);
     expect(CSS).toMatch(/\.record-id[^{]*\{[^}]*overflow-wrap:\s*anywhere/);
     vi.stubGlobal('matchMedia', (query: string) => ({ matches: true, media: query, addEventListener: () => {}, removeEventListener: () => {} }));
-    for (const path of ['/specs/DM', '/specs/DM/DM-SHOP', '/records/DM-SHOP-UC01', '/records/DM-SHOP-C01', '/checks', '/format']) {
+    for (const path of ['/DM', '/DM-SHOP', '/DM-SHOP-UC01', '/DM-SHOP-C01', '/checks', '/format']) {
       await openApp(path);
       await screen.findAllByRole('heading', { level: 1 });
       const loose = [...document.querySelectorAll('table')].filter((t) => !t.closest('.table-scroll') && !t.closest('.markdown') && !t.matches('.erd-key-table, .shortcut-table'));
@@ -462,10 +465,10 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     expect(raw).toEqual([]);
 
     // The pages.
-    for (const path of ['/', '/specs', '/specs/DM', '/specs/DM/DM-SHOP', '/records/DM', '/records/DM-SHOP', '/records/DM-SHOP-UC01', '/records/DM-SHOP-UC01?view=graph', '/checks', '/format', '/settings/appearance']) {
+    for (const path of ['/diagrams', '/', '/DM', '/DM-SHOP', '/DM-SHOP-UC01', '/DM-SHOP-UC01?view=graph', '/checks', '/format', '/settings/appearance']) {
       await openApp(path);
       // The diagrams home has no heading of its own; every other page waits for its content.
-      if (path !== '/') await screen.findAllByRole('heading', { level: 1 });
+      if (path !== '/diagrams') await screen.findAllByRole('heading', { level: 1 });
       expect(document.querySelectorAll('button.secondary, .tree-bulk').length).toBe(0);
       const stray = [...document.querySelectorAll('button')].filter((b) => !b.matches(allowed)).map((b) => `${path}: ${b.outerHTML.slice(0, 140)}`);
       expect(stray).toEqual([]);
@@ -475,5 +478,69 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
         .map((a) => `${path}: ${a.parentElement!.outerHTML.slice(0, 140)}`);
       expect(lone).toEqual([]);
     }
+  });
+
+  it('LA-BRW-T520 One address per thing: only address.ts makes a record or group address, and every address is an ID or a lowercase app page', async () => {
+    // The source: no path built by hand under the old prefixes, or from an ID, outside address.ts (the desktop menus included).
+    const sources = [...filesUnder(SRC, /\.tsx?$/), ...filesUnder(join(ROOT, 'desktop', 'src'), /\.ts$/)]
+      .filter((f) => !f.endsWith(join('views', 'address.ts')));
+    const handBuilt = sources.flatMap((f) => where(f, readFileSync(f, 'utf8'), /[`'"]\/(records|specs|graph)\b|`\/\$\{/));
+    expect(handBuilt).toEqual([]);
+
+    // The router: every app page is a lowercase word that no ID can match, and the old prefixes are lowercase too.
+    for (const word of [...APP_PAGES, ...OLD_PREFIXES]) {
+      expect(word, word).toMatch(/^[a-z][a-z-]*$/);
+      expect(isRecordId(word), word).toBe(false);
+    }
+    const index = indexWorkspace(workspace());
+    expect(parseSpecRoute('/', index)).toEqual({ page: 'specs' });
+    for (const id of ['DM', 'DM-SHOP', 'DM-SHOP-UC01']) expect(parseSpecRoute(`/${id}`, index)?.page, id).toMatch(/^(product|domain|record)$/);
+    expect(parseSpecRoute('/DM-SHOP/use_case', index)).toEqual({ page: 'group', parent: 'DM-SHOP', kind: 'use_case' });
+
+    // The pages: every in-app link is the home page, an app page or an ID, and none is an old address.
+    for (const path of ['/', '/DM', '/DM-SHOP', '/DM-SHOP-UC01', '/DM-SHOP/use_case?view=wiki,graph', '/checks', '/format', '/settings/appearance']) {
+      await openApp(path);
+      await screen.findAllByRole('heading', { level: 1 });
+      const wrong = [...document.querySelectorAll('a[href^="/"]')].map((a) => a.getAttribute('href')!).filter((href) => {
+        const first = decodeURIComponent(href.split(/[?#]/)[0].split('/')[1] ?? '');
+        return !(first === '' || APP_PAGES.includes(first) || isRecordId(first));
+      });
+      expect(wrong.map((href) => `${path}: ${href}`)).toEqual([]);
+    }
+  });
+
+  it('LA-BRW-T521 Old addresses redirect to the same thing at its ID, replacing the history entry and keeping the query and hash', async () => {
+    const OLD: [string, string][] = [
+      ['/records/DM-SHOP-UC01', '/DM-SHOP-UC01'],
+      ['/records/DM-SHOP/use_case', '/DM-SHOP/use_case'],
+      ['/records/DM-SHOP/test/acceptance', '/DM-SHOP/test/acceptance'],
+      ['/records/DM', '/DM'],
+      ['/specs', '/'],
+      ['/specs/DM', '/DM'],
+      ['/specs/DM/DM-SHOP', '/DM-SHOP'],
+      ['/specs/DM/DM-SHOP/graph', '/DM-SHOP?view=graph'],
+      ['/graph/DM-SHOP-UC01', '/DM-SHOP-UC01?view=graph'],
+      ['/graph/DM-SHOP/use_case', '/DM-SHOP/use_case?view=graph'],
+      ['/graph', '/DM?view=graph'],
+    ];
+    for (const [old, now] of OLD) expect(redirectTarget(legacyAddress(old, 'DM')!, ''), old).toBe(now);
+    // An address that is not old is left alone.
+    for (const path of ['/', '/DM-SHOP-UC01', '/checks', '/format/kinds/use_case', '/settings/appearance']) expect(legacyAddress(path, 'DM'), path).toBeUndefined();
+    // The query and hash come along; a view the old address implies wins.
+    expect(redirectTarget('/DM-SHOP-UC01', '?view=wiki,graph', '#links-in-DM-SHOP-UC01')).toBe('/DM-SHOP-UC01?view=wiki,graph#links-in-DM-SHOP-UC01');
+    expect(redirectTarget('/DM-SHOP?view=graph', '?view=wiki&product=DM')).toBe('/DM-SHOP?view=graph&product=DM');
+
+    // In the app the redirect replaces the entry, so Back does not return to the old address.
+    const before = window.history.length;
+    await openApp('/records/DM-SHOP-UC01?view=wiki#links-in-DM-SHOP-UC01');
+    await waitFor(() => expect(window.location.pathname + window.location.search + window.location.hash).toBe('/DM-SHOP-UC01?view=wiki#links-in-DM-SHOP-UC01'));
+    expect(window.history.length).toBe(before);
+    expect(await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' })).toBeInTheDocument();
+    await openApp('/specs/DM/DM-SHOP');
+    await waitFor(() => expect(window.location.pathname).toBe('/DM-SHOP'));
+    expect(await screen.findByRole('heading', { level: 1, name: 'Shopping' })).toBeInTheDocument();
+    await openApp('/specs');
+    await waitFor(() => expect(window.location.pathname).toBe('/'));
+    expect(await screen.findByRole('heading', { level: 1, name: 'Products' })).toBeInTheDocument();
   });
 });

@@ -32,13 +32,13 @@ describe('the Model view', () => {
     expect(viewsShown(['model'], ['wiki', 'graph'])).toEqual(['wiki']);
 
     // Elsewhere there is no Model toggle, and a link naming it shows the rest.
-    await openApp('/records/P-D-UC01?view=graph,model', served());
+    await openApp('/P-D-UC01?view=graph,model', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     expect(viewToggle('Model')).toBeNull();
     expect([...document.querySelectorAll('.pane')].map((p) => p.getAttribute('aria-label'))).toEqual(['Graph pane']);
 
     // On an aggregate: Model opens with its toggle or Ctrl+4, in the order Wiki, Graph, Model.
-    await openApp('/records/P-D-A3?view=wiki,graph', served());
+    await openApp('/P-D-A3?view=wiki,graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Loan' });
     expect(viewToggle('Model')).toHaveAttribute('aria-pressed', 'false');
     fireEvent.keyDown(document.body, { key: '4', code: 'Digit4', ctrlKey: true });
@@ -66,7 +66,7 @@ describe('the Model view', () => {
     ]));
     expect(lines).toHaveLength(4);
 
-    await openApp('/specs/P/P-D?view=model', served());
+    await openApp('/P-D?view=model', served());
     await screen.findByRole('heading', { level: 1, name: 'Domain' });
     await boxesShown();
     expect(box('P-D-A3')!.querySelector('.erd-box')).toHaveTextContent('LoanRoot: Loan · 3 entities');
@@ -92,7 +92,7 @@ describe('the Model view', () => {
     expect(g.from).toEqual({ x: 100, y: 25 });
     expect(g.to).toEqual({ x: 300, y: 25 });
 
-    await openApp('/records/P-D-A3?view=model', served());
+    await openApp('/P-D-A3?view=model', served());
     await screen.findByRole('heading', { level: 1, name: 'Loan' });
     await boxesShown();
     const loan = box('P-D-EN03')!;
@@ -106,7 +106,7 @@ describe('the Model view', () => {
   it('LA-BRW-T363 An entity page draws its aggregate\'s ERD with the entity highlighted', async () => {
     expect(erdFor(index(), 'P-D-EN04')).toMatchObject({ level: 'aggregate', scope: 'P-D-A3' });
     expect(erdFor(index(), 'P-D-EN04')!.boxes.filter((b) => b.highlight).map((b) => b.id)).toEqual(['P-D-EN04']);
-    await openApp('/records/P-D-EN04?view=model', served());
+    await openApp('/P-D-EN04?view=model', served());
     await screen.findByRole('heading', { level: 1, name: 'Return' });
     await boxesShown();
     expect(box('P-D-EN04')!.querySelector('.erd-box')).toHaveClass('is-highlight', 'is-focus');
@@ -115,7 +115,7 @@ describe('the Model view', () => {
   });
 
   it('LA-BRW-T364 Clicking a box goes to it, boxes show a hover state, and a key under the diagram explains the colors with emoji squares and the line ends', async () => {
-    await openApp('/specs/P/P-D?view=wiki,model', served());
+    await openApp('/P-D?view=wiki,model', served());
     await screen.findByRole('heading', { level: 1, name: 'Domain' });
     await boxesShown();
     const key = within(modelPane()).getByRole('group', { name: 'Key' });
@@ -126,12 +126,12 @@ describe('the Model view', () => {
     // Under the diagram.
     expect(modelPane().querySelector('.model-canvas')!.compareDocumentPosition(key.closest('.erd-key')!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     fireEvent.click(box('P-D-A3')!);
-    expect(window.location.pathname + window.location.search).toBe('/records/P-D-A3?view=wiki,model');
+    expect(window.location.pathname + window.location.search).toBe('/P-D-A3?view=wiki,model');
     await screen.findByRole('heading', { level: 1, name: 'Loan' });
     await waitFor(() => expect(box('P-D-EN03')).not.toBeNull());
     // Enter on a focused box goes to it too.
     fireEvent.keyDown(box('P-D-EN05')!, { key: 'Enter' });
-    expect(window.location.pathname).toBe('/records/P-D-EN05');
+    expect(window.location.pathname).toBe('/P-D-EN05');
     // Hover (LA-PAT-APP-UX-R01) on the shared ring and speed, off under reduced motion.
     expect(CSS).toMatch(/\.erd-box:not\(\.is-focus\):hover\s*\{[^}]*var\(--hover-ring\)/);
     expect(CSS).toMatch(/\.erd-box\s*\{[^}]*transition:\s*box-shadow var\(--hover-speed\)/);
@@ -159,7 +159,7 @@ describe('the Model view', () => {
   });
 
   it('LA-BRW-T366 Above a graph or a model pane the page title keeps one fixed height, so the canvas never moves when the focus changes; in the wiki pane it wraps', async () => {
-    await openApp('/records/P-D-A3?view=graph', served());
+    await openApp('/P-D-A3?view=graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Loan' });
     const title = () => screen.getByRole('heading', { level: 1 }).closest<HTMLElement>('.pane-title')!;
     expect(title()).toHaveClass('is-fixed');
@@ -167,16 +167,16 @@ describe('the Model view', () => {
     expect(CSS).toMatch(/\.pane-title\.is-fixed\s*\{[^}]*height:\s*var\(--pane-title-height\)/);
     expect(CSS).toMatch(/--pane-title-height:\s*\d+px/);
     expect(CSS).toMatch(/\.pane-title\.is-fixed :is\(\.eyebrow, h1, \.record-id\)\s*\{[^}]*white-space:\s*nowrap[^}]*text-overflow:\s*ellipsis/);
-    await openApp('/records/P-D-EN03?view=model', served());
+    await openApp('/P-D-EN03?view=model', served());
     await screen.findByRole('heading', { level: 1, name: 'Loan' });
     expect(title()).toHaveClass('is-fixed');
-    await openApp('/records/P-D-A3?view=wiki,graph', served());
+    await openApp('/P-D-A3?view=wiki,graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Loan' });
     expect(title()).not.toHaveClass('is-fixed');
   });
 
   it('LA-BRW-T367 With three panes open each gap is its own handle, resizing only the two panes beside it', async () => {
-    await openApp('/records/P-D-A3?view=wiki,graph,model', served());
+    await openApp('/P-D-A3?view=wiki,graph,model', served());
     await screen.findByRole('heading', { level: 1, name: 'Loan' });
     const first = screen.getByRole('separator', { name: 'Resize the wiki and graph panes' });
     const second = screen.getByRole('separator', { name: 'Resize the graph and model panes' });

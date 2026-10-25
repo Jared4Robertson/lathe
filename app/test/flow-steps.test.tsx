@@ -15,7 +15,7 @@ const linkIds = (el: HTMLElement) => [...el.querySelectorAll('a')].map((a) => a.
 
 describe('flow steps on a flow page', () => {
   it('LA-BRW-T200 A flow page shows its steps in order as a table: step, what happens, uses, carries out', async () => {
-    await openApp('/records/DM-SHOP-F01', { workspace: stepsWorkspace() });
+    await openApp('/DM-SHOP-F01', { workspace: stepsWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Fill a basket' });
     expect(section(/^Steps/).querySelector('h2')).toHaveTextContent('Steps3');
     expect(within(table()).getAllByRole('columnheader').map((h) => h.textContent)).toEqual(['Step', 'What happens', 'Uses', 'Carries out']);
@@ -27,12 +27,12 @@ describe('flow steps on a flow page', () => {
     expect(what).toHaveTextContent('The page adds it to the basket');
     expect(linkIds(uses)).toEqual(['DM-SHOP-V01', 'DM-SHOP-E01']);
     expect(linkIds(fulfills)).toEqual(['DM-SHOP-UC01-R02', 'DM-SHOP-DR01']);
-    expect(within(fulfills).getByRole('link', { name: 'DM-SHOP-DR01' })).toHaveAttribute('href', '/records/DM-SHOP-DR01');
+    expect(within(fulfills).getByRole('link', { name: 'DM-SHOP-DR01' })).toHaveAttribute('href', '/DM-SHOP-DR01');
     expect(cells(rows[0])[3]).toHaveTextContent('None');
   });
 
   it("LA-BRW-T201 Each step's body and the titles of what it uses and fulfills are folded under its row", async () => {
-    await openApp('/records/DM-SHOP-F01', { workspace: stepsWorkspace() });
+    await openApp('/DM-SHOP-F01', { workspace: stepsWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Fill a basket' });
     const user = userEvent.setup();
     expect(within(table()).queryByText('new item')).toBeNull();
@@ -54,10 +54,10 @@ describe('flow steps on a flow page', () => {
   });
 
   it("LA-BRW-T202 A step row carries its problems, and a flow without steps shows no steps table", async () => {
-    await openApp('/records/DM-SHOP-F01', { workspace: stepsWorkspace() });
+    await openApp('/DM-SHOP-F01', { workspace: stepsWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Fill a basket' });
     expect(cells(bodyRows()[1])[1]).toHaveTextContent('1 warning');
-    await openApp('/records/DM-SHOP-F01');
+    await openApp('/DM-SHOP-F01');
     await screen.findByRole('heading', { level: 1, name: 'Fill a basket' });
     expect(within(main()).queryByRole('heading', { name: /^Steps/ })).toBeNull();
   });

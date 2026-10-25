@@ -5,7 +5,7 @@ import { navigate } from '../router';
 import { isNumber, readPref, writePref } from '../shell/prefs';
 import { productOfPath } from '../shell/spaces';
 import type { SpecIndex } from '../specs/data';
-import { focusOf, parseViews, pathOf, VIEW_NAMES, viewsFromSearch, withView, type FocusRoute, type ViewName } from './address';
+import { currentAddress, focusOf, parseViews, pathOf, VIEW_NAMES, viewsFromSearch, withView, type FocusRoute, type ViewName } from './address';
 import { activateTab, activeTab, closeTab, cycleTab, emptyTabs, keepTab, openTab, parseTabSet, tabFor, updateTab, type Tab, type TabSet } from './tabs';
 
 // The open tabs of the focus page, one tab set per space, kept for the browser session, and the
@@ -94,7 +94,8 @@ function loadAll(scrolls: Map<string, number>): Record<string, PageTabs> {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
   const out: Record<string, PageTabs> = {};
   for (const [space, value] of Object.entries(raw as Record<string, unknown>)) {
-    const set = parseTabSet(value, tabViewFrom);
+    // A tab saved under an old address (/records/<id>, /specs/<product>) opens at today's.
+    const set = parseTabSet(value, tabViewFrom, currentAddress);
     if (!set) continue;
     out[space] = {
       active: set.active,

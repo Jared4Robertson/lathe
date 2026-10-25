@@ -15,7 +15,7 @@ import {
   type Neighborhood,
 } from '../../src/graph/model';
 import { layoutNeighborhood } from '../../src/graph/layout';
-import { addressOf, graphRedirect } from '../../src/views/address';
+import { addressOf, legacyAddress } from '../../src/views/address';
 import { indexWorkspace } from '../../src/specs/data';
 import { groupedWorkspace, testIndex } from './workspace';
 
@@ -115,10 +115,10 @@ describe('graph groups', () => {
     // A group that does not exist shows nothing.
     expect(neighborhood(index, 'P-D/flow', 2).nodes).toEqual([]);
     // Its address.
-    // Its address: /records/<parent-id>/<kind>, and the old /graph address leads there in the Graph view.
-    expect(addressOf(grouped, 'P-D/use_case')).toBe('/records/P-D/use_case');
-    expect(graphRedirect(grouped, '/graph/P-D/use_case')).toBe('/records/P-D/use_case?view=graph');
-    expect(addressOf(grouped, 'P-D-UC01')).toBe('/records/P-D-UC01');
+    // Its address: /<parent-id>/<kind>, and the old /graph address leads there in the Graph view.
+    expect(addressOf(grouped, 'P-D/use_case')).toBe('/P-D/use_case');
+    expect(legacyAddress('/graph/P-D/use_case')).toBe('/P-D/use_case?view=graph');
+    expect(addressOf(grouped, 'P-D-UC01')).toBe('/P-D-UC01');
   });
 
   it('LA-BRW-T103 Groups take their own column between the parent and its children, left to right', async () => {
