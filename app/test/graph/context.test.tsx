@@ -85,19 +85,19 @@ describe('the graph tree and its context ring', () => {
     expect(shown.map((x) => x.id)).toEqual(['P-D-UC02-R01', 'P-D-UC02-R02', 'P-D-UC02-R03', 'P-D-UC02-R04', 'P-D-UC02-R05', 'P-D-UC02-R06']);
     expect(CONTEXT_PER_PARENT).toBe(6);
     const chip = n.nodes.find((x) => x.id === moreId('P-D-UC02'))!;
-    expect(chip).toMatchObject({ kind: MORE_KIND, title: '+1 more UC requirements', context: true, more: { parent: 'P-D-UC02', count: 1, target: 'P-D-UC02/requirement' } });
+    expect(chip).toMatchObject({ kind: MORE_KIND, title: '+1 more UC requirement', context: true, more: { parent: 'P-D-UC02', count: 1, target: 'P-D-UC02/requirement' } });
     expect(isGraphNode(index, chip.more!.target)).toBe(true);
     // The chip sits after the shown children, joined to their parent.
     const rows = new Map(n.nodes.map((x) => [x.id, x.row]));
     expect(rows.get(chip.id)!).toBeGreaterThan(rows.get('P-D-UC02-R06')!);
     expect(n.edges.map((e) => e.id)).toContain(`P-D-UC02|parent|${chip.id}`);
-    // A crowded folder: at most forty context nodes in all, chips for the rest.
+    // A crowded folder: at most forty context nodes in all, chips included; each parent that does not fit keeps one place for its chip.
     const crowded = neighborhood(indexWorkspace(crowdedWorkspace()), 'P-D/define/use-cases', 1);
-    const ring = crowded.nodes.filter((x) => x.context && !x.more);
-    expect(ring).toHaveLength(CONTEXT_BUDGET);
+    expect(crowded.nodes.filter((x) => x.context)).toHaveLength(CONTEXT_BUDGET);
     const chips = crowded.nodes.filter((x) => x.more);
-    expect(chips.reduce((sum, c) => sum + c.more!.count, 0) + ring.length).toBe(1 + 1 + 8 * 7);
-    expect(chips.at(-1)).toMatchObject({ id: moreId('P-D-UC09'), title: '+7 more UC requirements' });
+    expect(chips.at(-1)).toMatchObject({ id: moreId('P-D-UC07'), title: '+5 more UC requirements' });
+    // Past the budget nothing more is drawn: the use cases' folded state and the edge hints say there is more.
+    expect(crowded.nodes.some((x) => x.id.startsWith('P-D-UC08-') || x.id === moreId('P-D-UC09'))).toBe(false);
   });
 
   it('LA-BRW-T543 Depth counts levels from a domain and from a use case, as a file explorer does', () => {
@@ -276,7 +276,7 @@ describe('the graph tree and its context ring', () => {
     await showGraph('/records/P-D/define/use-cases', manyOfOneKindWorkspace());
     await waitFor(() => expect(node(moreId('P-D-UC02'))).not.toBeNull());
     const chip = node(moreId('P-D-UC02'))!;
-    expect(chip.textContent).toBe('+1 more UC requirements');
+    expect(chip.textContent).toBe('+1 more UC requirement');
     expect(chip.className).toContain('is-context');
     expect(chip.getAttribute('aria-hidden')).toBe('true');
     fireEvent.click(chip);
