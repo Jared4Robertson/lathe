@@ -13,7 +13,7 @@ const ID_IN_MESSAGE = /[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)+/g;
 /** The links a record's prose gets: its mentions, with titles, and the unknown IDs its warnings name. */
 export function proseLinks(index: SpecIndex, record: SpecRecord): ProseLinks {
   const titles = new Map<string, string>();
-  for (const id of record.mentions ?? []) {
+  for (const id of record.mentions) {
     const target = index.byId.get(id);
     if (target && id !== record.id) titles.set(id, target.title);
   }

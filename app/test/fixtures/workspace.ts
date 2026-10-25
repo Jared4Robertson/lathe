@@ -1,9 +1,8 @@
-import type { Coverage, Kind, RelationRule, SpecLink, SpecRecord, Workspace } from '../../../lathe/src/types';
+import type { Coverage, Kind, ObligationCoverage, RelationRule, SpecLink, SpecRecord, Workspace } from '../../../lathe/src/types';
 import sample from '../../../lathe/fixtures/workspace.sample.json';
 
 // A small workspace for the component tests. Two products:
-// - DM (Demo): two domains, two fitness records, questions and problems. DM-SHOP's coverage has
-//   built counts; DM-PAY's has none, as the engine reported before it measured built coverage.
+// - DM (Demo): two domains, two fitness records, questions and problems.
 // - NF (No fitness): one domain and no fitness record.
 
 // The sample's kinds, with the capability and fitness kinds when it lacks them (capability first, as in the meta-model).
@@ -69,37 +68,45 @@ export const links: SpecLink[] = [
   { source: 'DM-SHOP-Q01', relation: 'about', target: 'DM-SHOP-A1' },
 ];
 
-// No tests counts in these: as an older engine reports coverage (shown as not yet measured).
-const shopCoverage = {
+/** One obligation kind's coverage line; planned_any is planned unless given. */
+export const obligation = (kind: string, label: string, total: number, designed: number, built: number, proved: number, planned = 0, plannedAny = planned): ObligationCoverage =>
+  ({ kind, label, total, designed, built, proved, planned, planned_any: plannedAny });
+
+const shopCoverage: Coverage = {
   domain: 'DM-SHOP',
-  requirements: 2, requirements_satisfied: 2, requirements_built: 1, requirements_proved: 1,
-  rules: 1, rules_satisfied: 1, rules_built: 1, rules_proved: 0,
+  obligations: [
+    obligation('domain_rule', 'Domain rule', 1, 1, 1, 0),
+    obligation('requirement', 'UC requirement', 2, 2, 1, 1),
+  ],
+  tests: { automated: 1, manual: 0, planned: 0 },
   gaps: [
     { id: 'DM-SHOP-UC01-R02', kind: 'requirement', missing: 'proves' },
     { id: 'DM-SHOP-DR01', kind: 'domain_rule', missing: 'proves' },
   ],
-  // Empty on purpose: the pages fall back to the requirement and rule fields above.
-  obligations: [],
-} as unknown as Coverage;
+};
 
-// Built counts left out on purpose: they must show as "not yet measured", never as zero.
-const payCoverage = {
+const payCoverage: Coverage = {
   domain: 'DM-PAY',
-  requirements: 1, requirements_satisfied: 0, requirements_proved: 0,
-  rules: 0, rules_satisfied: 0, rules_proved: 0,
+  obligations: [
+    obligation('domain_rule', 'Domain rule', 0, 0, 0, 0),
+    obligation('requirement', 'UC requirement', 1, 0, 0, 0),
+  ],
+  tests: { automated: 0, manual: 0, planned: 0 },
   gaps: [
     { id: 'DM-PAY-UC01-R01', kind: 'requirement', missing: 'satisfies' },
     { id: 'DM-PAY-UC01-R01', kind: 'requirement', missing: 'proves' },
   ],
-} as unknown as Coverage;
+};
 
-const noteCoverage = {
+const noteCoverage: Coverage = {
   domain: 'NF-NOTE',
-  requirements: 0, requirements_satisfied: 0, requirements_built: 0, requirements_proved: 0,
-  rules: 0, rules_satisfied: 0, rules_built: 0, rules_proved: 0,
+  obligations: [
+    obligation('domain_rule', 'Domain rule', 0, 0, 0, 0),
+    obligation('requirement', 'UC requirement', 0, 0, 0, 0),
+  ],
+  tests: { automated: 0, manual: 0, planned: 0 },
   gaps: [],
-  obligations: [],
-} as unknown as Coverage;
+};
 
 export function workspace(): Workspace {
   return {

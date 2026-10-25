@@ -9,4 +9,4 @@ links:
   satisfies: [LA-BRW-UC70-R01, LA-BRW-DR81]
   depends_on: [LA-BRW-C30]
 ---
-`obligationGroups` reads `planned_any` into each group's `plannedAny` (null when not reported); `morePlanned` is the difference from `planned`, and `MorePlanned` draws `N more planned` inside the planned bar's row, after its value.
+`obligationGroups` reads `planned_any` into each group's `plannedAny`; `morePlanned` is the difference from `planned`, and `MorePlanned` draws `N more planned` inside the planned bar's row, after its value.

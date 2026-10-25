@@ -69,7 +69,7 @@ export const stageLabel = (stage: string) => stage.charAt(0).toUpperCase() + sta
 
 /** The workspace's sections, stage by stage in the order the stages first appear, each stage's folders in their order. */
 function sectionsOf(index: SpecIndex): readonly SectionRule[] {
-  const sections = index.workspace.sections ?? [];
+  const { sections } = index.workspace;
   const stages = [...new Set(sections.map((s) => s.stage))];
   return [...sections].sort((a, b) => stages.indexOf(a.stage) - stages.indexOf(b.stage) || a.order - b.order);
 }

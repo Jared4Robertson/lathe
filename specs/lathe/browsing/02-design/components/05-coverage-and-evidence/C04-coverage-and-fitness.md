@@ -10,4 +10,4 @@ links:
   satisfies: [LA-BRW-UC01-R02, LA-BRW-UC01-R04, LA-BRW-UC01-R05]
   depends_on: [LA-BRW-C07]
 ---
-The coverage bars (designed, built and proved, with "not yet measured" for a count the engine does not report), the product's fitness panel (latest score, date and body, and the history), and the Evidence panel of counted signals, kept apart from the score.
+The coverage bars (designed, built and proved), the product's fitness panel (latest score, date and body, and the history), and the Evidence panel of counted signals, kept apart from the score.

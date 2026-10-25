@@ -47,20 +47,6 @@ describe('obligation kinds and test states', () => {
     );
   });
 
-  it('LA-BRW-T81 Until the engine counts obligation kinds, coverage falls back to requirements and domain rules, without planned', async () => {
-    await openApp('/DM');
-    await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
-    expect(groups(card('Shopping'))).toEqual([
-      'UC requirements 2: designed 2/2, built 1/2, proved 1/2',
-      'Domain rules 1: designed 1/1, built 1/1, proved 0/1',
-    ]);
-    expect(groups(card('Paying'))).toEqual([
-      'UC requirements 1: designed 0/1, built not yet measured, proved 0/1',
-      'Domain rules 0: designed 0/0, built not yet measured, proved 0/0',
-    ]);
-    expect(main().querySelector('.bar.planned')).toBeNull();
-  });
-
   it('LA-BRW-T82 The evidence counts every obligation kind, and planned apart from proved', async () => {
     await openApp('/DM', served());
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
@@ -70,11 +56,6 @@ describe('obligation kinds and test states', () => {
     expect(value('Built')).toBe('3 of 8 obligations');
     expect(value('Proved')).toBe('2 of 8 obligations');
     expect(value('Planned')).toBe('1 of 8 obligations, by tests not written yet');
-
-    // Before the engine counts obligation kinds there is no planned count.
-    await openApp('/DM');
-    await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
-    expect(within(section('Evidence')).queryByText('Planned')).toBeNull();
   });
 
   it('LA-BRW-T83 The domain page lists interaction requirements under their view, endpoint or flow', async () => {

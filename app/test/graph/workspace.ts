@@ -45,16 +45,19 @@ export const PROBLEMS: Problem[] = [
   { severity: 'warning', check: 'rule-not-proved', record: 'P-D-DR02', message: 'No test proves P-D-DR02' },
 ];
 
-const COVERAGE = [{
+const COVERAGE: Coverage[] = [{
   domain: 'P-D',
-  requirements: 1, requirements_satisfied: 1, requirements_built: 1, requirements_proved: 1,
-  rules: 2, rules_satisfied: 1, rules_built: 1, rules_proved: 0, obligations: [],
+  obligations: [
+    { kind: 'domain_rule', label: 'Domain rule', total: 2, designed: 1, built: 1, proved: 0, planned: 0, planned_any: 0 },
+    { kind: 'requirement', label: 'UC requirement', total: 1, designed: 1, built: 1, proved: 1, planned: 0, planned_any: 0 },
+  ],
+  tests: { automated: 1, manual: 0, planned: 0 },
   gaps: [
     { id: 'P-D-DR01', kind: 'domain_rule', missing: 'proves' },
     { id: 'P-D-DR02', kind: 'domain_rule', missing: 'satisfies' },
     { id: 'P-D-DR02', kind: 'domain_rule', missing: 'proves' },
   ],
-}] as unknown as Coverage[];
+}];
 
 export function testWorkspace(): Workspace {
   const records: SpecRecord[] = SPECS.map(([id, kind, title, parent, fields = {}, body = '']) => ({

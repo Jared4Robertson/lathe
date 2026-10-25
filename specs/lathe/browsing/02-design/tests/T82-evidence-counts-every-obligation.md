@@ -8,4 +8,4 @@ run_by: app/test/obligations.test.tsx
 links:
   proves: [LA-BRW-UC30-R02]
 ---
-Expects the Evidence panel's designed, built and proved totals over all four obligation kinds and a separate Planned line, and no Planned line before the engine counts obligation kinds.
+Expects the Evidence panel's designed, built and proved totals over all four obligation kinds and a separate Planned line.

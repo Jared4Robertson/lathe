@@ -1,5 +1,5 @@
 import type { Coverage, Kind, ObligationCoverage, SpecRecord, Workspace } from '../../../lathe/src/types';
-import { workspace as baseWorkspace } from './workspace';
+import { workspace as baseWorkspace, obligation } from './workspace';
 
 // The component-test workspace as the pass-4 engine reports it: every kind says whether it is an
 // obligation, coverage has one row per obligation kind, and DM-SHOP adds:
@@ -26,9 +26,6 @@ const records: SpecRecord[] = [
   record('DM-SHOP-T02', 'test', 'A person fills a basket to 50', 'DM-SHOP', { test_type: 'acceptance', state: 'manual' }, 'Add 50 items, then try one more.'),
   record('DM-SHOP-T03', 'test', 'A full basket answers 409', 'DM-SHOP', { test_type: 'api', state: 'planned' }),
 ];
-
-const obligation = (kind: string, label: string, total: number, designed: number, built: number, proved: number, planned: number): ObligationCoverage =>
-  ({ kind, label, total, designed, built, proved, planned }) as ObligationCoverage; // no planned_any: as an older engine reports it
 
 const coverage: Record<string, ObligationCoverage[]> = {
   'DM-SHOP': [
@@ -58,7 +55,6 @@ export function obligationWorkspace(): Workspace {
   );
   ws.coverage = ws.coverage.map((c): Coverage => ({ ...c, obligations: coverage[c.domain] ?? [] }));
   const shop = ws.coverage.find((c) => c.domain === 'DM-SHOP')!;
-  shop.rules_proved = 1;
   shop.gaps = [
     { id: 'DM-SHOP-UC01-R02', kind: 'requirement', missing: 'proves' },
     { id: 'DM-SHOP-V01-R01', kind: 'interaction_requirement', missing: 'satisfies' },
