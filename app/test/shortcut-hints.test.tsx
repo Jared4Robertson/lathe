@@ -36,7 +36,7 @@ describe('shortcut hints', () => {
     expect(screen.queryByRole('tooltip')).toBeNull();
 
     // Keyboard focus: at once; Escape closes it.
-    const graphToggle = await screen.findByRole('tab', { name: /^Graph/, selected: false });
+    const graphToggle = within(await screen.findByRole('group', { name: 'View' })).getByRole('button', { name: 'Graph', pressed: false });
     keyFocus(graphToggle);
     expect(tooltip()).toHaveTextContent('Graph view Ctrl+2');
     fireEvent.keyDown(graphToggle, { key: 'Escape' });
@@ -104,7 +104,7 @@ describe('shortcut hints', () => {
     expect(collapse).toHaveAttribute('aria-keyshortcuts', 'Control+J');
     keyFocus(collapse);
     expect(tooltip()).toHaveTextContent('Collapse the navigation Ctrl+J');
-    const graph = screen.getByRole('tab', { name: /^Graph/ });
+    const graph = within(screen.getByRole('group', { name: 'View' })).getByRole('button', { name: 'Graph' });
     expect(graph).toHaveAttribute('aria-keyshortcuts', 'Alt+G');
     keyFocus(graph);
     expect(tooltip()).toHaveTextContent('Graph view Alt+G');
@@ -134,7 +134,7 @@ describe('shortcut hints', () => {
     expect(within(within(nav()).getByRole('list', { name: 'Spaces' })).getAllByRole('link')[0]).toHaveAttribute('aria-keyshortcuts', 'Alt+1');
     expect(within(nav()).getByRole('link', { name: /^Checks for all products/ })).toHaveAttribute('aria-keyshortcuts', 'Control+Shift+M');
     for (const [name, keys] of [['Wiki', 'Control+1'], ['Graph', 'Control+2']]) {
-      expect(screen.getByRole('tab', { name: new RegExp(`^${name}`) })).toHaveAttribute('aria-keyshortcuts', keys);
+      expect(within(screen.getByRole('group', { name: 'View' })).getByRole('button', { name })).toHaveAttribute('aria-keyshortcuts', keys);
     }
     expect(screen.getByRole('button', { name: 'Open the graph beside' })).toHaveAttribute('aria-keyshortcuts', 'Control+3');
     // The corner toggle and the inspector's own close button.

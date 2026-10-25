@@ -130,7 +130,7 @@ describe('graph page', () => {
     for (const path of ['/records/P-D-UC01-R01', '/specs/P/P-D', '/specs/P']) {
       await openApp(path, { workspace: testWorkspace() });
       await screen.findByRole('heading', { level: 1 });
-      const graph = screen.getByRole('tab', { name: /^Graph/ });
+      const graph = within(screen.getByRole('group', { name: 'View' })).getByRole('button', { name: 'Graph' });
       expect(within(screen.getByRole('navigation', { name: 'Main' })).queryByRole('link', { name: 'Graph' })).toBeNull();
       fireEvent.click(graph);
       expect(window.location.pathname + window.location.search).toBe(`${path}?view=graph`);
