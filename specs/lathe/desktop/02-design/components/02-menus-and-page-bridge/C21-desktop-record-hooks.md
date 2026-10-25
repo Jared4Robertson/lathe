@@ -7,6 +7,6 @@ component_type: react component
 file: app/src/shell/desktopRecord.tsx
 links:
   satisfies: [LA-DSK-UC05-R03, LA-DSK-UC05-R07]
-  depends_on: [LA-DSK-C08]
+  depends_on: [LA-DSK-C08, LA-BRW-C250]
 ---
-The app's desktop-only hooks, mounted with the title bar: `DesktopRecordActions` in a record's facts, the right-click listener that finds the record under a graph node, a record link or the page title (`recordIdAt`) and asks for the native menu, and the error count sent for the Dock badge. Each shows or listens only when `window.latheDesktop` has the member it needs.
+The app's desktop-only hooks, mounted with the title bar: `DesktopRecordActions` in a record's facts (three ghost buttons), the right-click listener that finds the record under a graph node, a record link or the page title (`recordIdAt`) and asks for the native menu, and the error count sent for the Dock badge. Each shows or listens only when `window.latheDesktop` has the member it needs.
