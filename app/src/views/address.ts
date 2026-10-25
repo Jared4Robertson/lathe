@@ -38,7 +38,7 @@ export function addressOf(index: SpecIndex, id: string): string {
   const record = index.byId.get(id);
   if (!record) {
     const g = parseGroupId(id);
-    return g ? groupPath(g.parent, g.kind) : recordPath(id);
+    return g ? groupPath(g.parent, [g.kind, ...g.path].join('/')) : recordPath(id);
   }
   if (record.kind === 'product') return productPath(id);
   if (record.kind === 'domain' && record.product) return domainPath(record.product, id);
@@ -56,5 +56,5 @@ export function graphRedirect(index: SpecIndex, pathname: string): string | null
   const id = parts.slice(1).map(decodeURIComponent).join('/');
   if (isGraphNode(index, id)) return withView(addressOf(index, id), 'graph');
   const g = parseGroupId(id);
-  return withView(g ? groupPath(g.parent, g.kind) : recordPath(id), 'graph');
+  return withView(g ? groupPath(g.parent, [g.kind, ...g.path].join('/')) : recordPath(id), 'graph');
 }

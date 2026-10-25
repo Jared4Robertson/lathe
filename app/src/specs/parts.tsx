@@ -72,18 +72,24 @@ export function ProblemList({ index, problems, showRecord = true, showCheck = tr
   );
 }
 
+export type SectionLevel = 2 | 3 | 4 | 5 | 6;
+
+/** The heading level one below, kept at h6 at most. */
+export const levelBelow = (level: SectionLevel): SectionLevel => Math.min(6, level + 1) as SectionLevel;
+
 /**
  * A titled part of a page. Its header row holds the heading (h2, or h3 and h4 for a part within
- * a part, such as a folder of a domain page and a kind within it) and, at the right, any actions
- * its contents offer (such as a list's "Expand all").
+ * a part, such as a folder of a domain page and a kind within it, down to h6 for groups within a
+ * folder) and, at the right, any actions its contents offer (such as a list's "Expand all"). A
+ * part that is a record (a layer) links its title to the record's page.
  */
-export function Section({ title, count, level = 2, className, children }: { title: string; count?: number; level?: 2 | 3 | 4; className?: string; children: ReactNode }) {
+export function Section({ title, titleTo, count, level = 2, className, children }: { title: string; titleTo?: string; count?: number; level?: SectionLevel; className?: string; children: ReactNode }) {
   const [actions, setActions] = useState<HTMLDivElement | null>(null);
-  const Heading = `h${level}` as 'h2' | 'h3' | 'h4';
+  const Heading = `h${level}` as 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
   return (
     <section className={className ? `spec-section ${className}` : 'spec-section'}>
       <header className="spec-section-head">
-        <Heading>{title}{count !== undefined && <span className="section-count">{count}</span>}</Heading>
+        <Heading>{titleTo ? <SpecLink to={titleTo}>{title}</SpecLink> : title}{count !== undefined && <span className="section-count">{count}</span>}</Heading>
         <div className="spec-section-actions" ref={setActions} />
       </header>
       <ActionsSlotContext.Provider value={actions}>{children}</ActionsSlotContext.Provider>
@@ -188,7 +194,8 @@ export function nestedCount(index: SpecIndex, nested: readonly SpecRecord[]): st
 
 /**
  * Records one level below the page's record, each with its own children folded under it: the
- * shape of every list of children on a wiki page and in the inspector.
+ * shape of every list of children on a wiki page and in the inspector. With `showKind`, each row
+ * names its kind, but only when the list holds more than one kind.
  */
 export function RecordTree({ index, records, label, query, showKind = false, bulk = true }: {
   index: SpecIndex;
@@ -198,13 +205,15 @@ export function RecordTree({ index, records, label, query, showKind = false, bul
   showKind?: boolean;
   bulk?: boolean;
 }) {
+  // Rows are told apart by kind only when there is more than one kind to tell apart.
+  const tagKinds = showKind && new Set(records.map((r) => r.kind)).size > 1;
   return (
     <TreeList
       label={label}
       items={records}
       itemKey={(r) => r.id}
       nestedOf={(r) => index.children.get(r.id) ?? []}
-      renderRow={(r) => <RecordRowBody index={index} record={r} showKind={showKind} />}
+      renderRow={(r) => <RecordRowBody index={index} record={r} showKind={tagKinds} />}
       searchText={recordText}
       countLabel={(_, nested) => nestedCount(index, nested)}
       nestedLabel={(r) => `Children of ${r.id}`}
