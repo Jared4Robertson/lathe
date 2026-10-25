@@ -1,6 +1,6 @@
 import type { MenuItemConstructorOptions } from 'electron';
 import { describe, expect, it, vi } from 'vitest';
-import { COMMANDS, eventChord, normalizeBinding } from '../../app/src/shell/keymap.ts';
+import { COMMANDS, eventChord, normalizeBinding, platformKeys } from '../../app/src/shell/keymap.ts';
 import { keyPresses, MENU_COMMANDS } from '../src/commands.ts';
 import { menuTemplate } from '../src/menu.ts';
 
@@ -52,11 +52,13 @@ describe('LA-DSK-T05 The native menus offer the app commands, by command ID, wit
     expect(actions.runCommand.mock.calls.map(([id]) => id)).toEqual(MENU_COMMANDS.map((c) => c.id));
   });
 
-  it("names only commands in the app's keymap, each with one of its default bindings", () => {
+  it("names only commands in the app's keymap, each with one of its default bindings on a Mac and elsewhere", () => {
     for (const command of MENU_COMMANDS) {
       const entry = COMMANDS.find((c) => c.id === command.id);
       expect(entry, command.id).toBeDefined();
-      expect(entry!.keys.map((k) => normalizeBinding(k, true)), command.id).toContain(normalizeBinding(command.keys, true));
+      for (const mac of [true, false]) {
+        expect(platformKeys(entry!, mac).map((k) => normalizeBinding(k, mac)), `${command.id} on ${mac ? 'Mac' : 'other'}`).toContain(normalizeBinding(command.keys, mac));
+      }
     }
   });
 

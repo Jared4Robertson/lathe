@@ -1,6 +1,6 @@
 // The app commands the native menus offer. A menu choice is sent to the page as the command's ID
 // (app/src/shell/keymap.ts), and the app's command system runs it. `keys` is one of the command's
-// default bindings in the keymap (test/commands.test.ts checks it), which the preload presses for
+// default bindings in the keymap on every platform (test/commands.test.ts checks it), which the preload presses for
 // the page when the app has not subscribed to window.latheDesktop.onCommand yet.
 
 export interface MenuCommand {
@@ -14,7 +14,7 @@ export const VIEW_COMMANDS: readonly MenuCommand[] = [
   { id: 'quickOpen', label: 'Quick Open…', keys: 'Mod+P' },
   { id: 'viewWiki', label: 'Wiki View', keys: 'Ctrl+1' },
   { id: 'viewGraph', label: 'Graph View', keys: 'Ctrl+2' },
-  { id: 'viewSplit', label: 'Split View', keys: 'Ctrl+3' },
+  { id: 'viewModel', label: 'Model View', keys: 'Ctrl+4' },
   { id: 'toggleNav', label: 'Show or Hide Navigation', keys: 'Mod+B' },
   { id: 'toggleInspector', label: 'Show or Hide Inspector', keys: 'Mod+Alt+B' },
 ];
