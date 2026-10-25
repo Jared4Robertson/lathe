@@ -7,6 +7,13 @@ import { DOMAIN, GRAPH_CANVAS, GRAPH_HEADER, MODEL_CANVAS, RECORD } from './scen
 // graph's header and its canvas must hold still, and the canvas must not be drawn anew.
 
 const PANE_TITLE = '.pane-graph .pane-title';
+/**
+ * The graph's boxes. In the icicle a re-center glides each box's height as well as its place
+ * (LA-BRW-UC40-R08), and a box's content, centered in it, moves with its height: that motion is the
+ * picture changing, inside the canvas. The canvas, its header and the pane around it are keys and
+ * must hold still, and anything else that shifts is still unexpected.
+ */
+const GRAPH_BOXES = '.pane-graph .graph-flow .react-flow__nodes';
 const PANE_BAR = '.pane-graph > .pane-bar';
 
 async function nodes(page: Page) {
@@ -41,7 +48,7 @@ test.describe('graph', () => {
       for (const hop of [1, 2]) {
         const before = new URL(page.url()).pathname;
         const id = await visibleNode(page, hop);
-        const r = await step(page, 'graph', `depth ${depth}: re-center ${hop}`, { keys, allow: ['.inspector'] }, async () => {
+        const r = await step(page, 'graph', `depth ${depth}: re-center ${hop}`, { keys, allow: ['.inspector', GRAPH_BOXES] }, async () => {
           await page.locator(`.graph-flow .react-flow__node[data-id="${id}"]`).click();
           await page.waitForURL((u) => u.pathname !== before);
         });
@@ -55,7 +62,7 @@ test.describe('graph', () => {
     await nodes(page);
     const keys = [PANE_BAR, PANE_TITLE, GRAPH_HEADER, GRAPH_CANVAS];
     for (const d of ['2', '3', '1']) {
-      const r = await step(page, 'graph', `depth to ${d}`, { keys, allow: ['.inspector'] }, () => page.locator('.graph-depth button', { hasText: d }).click());
+      const r = await step(page, 'graph', `depth to ${d}`, { keys, allow: ['.inspector', GRAPH_BOXES] }, () => page.locator('.graph-depth button', { hasText: d }).click());
       expectStable(r);
     }
   });
