@@ -48,7 +48,11 @@ export function LongList<T>({ items, render, searchText, itemKey, label, classNa
     const last = list?.children[limit - 1] as HTMLElement | undefined;
     if (!last) return;
     const bottom = last.getBoundingClientRect().bottom - scroller.current.getBoundingClientRect().top + scroller.current.scrollTop;
-    if (bottom > 0) setHeight(Math.ceil(bottom));
+    if (bottom <= 0) return;
+    // Set on the element at once too, so the page around it has its final height in this same
+    // layout pass: a page restoring its scroll before paint (Back) measures the page as drawn (UX-R08).
+    scroller.current.style.maxHeight = `${Math.ceil(bottom)}px`;
+    setHeight(Math.ceil(bottom));
   }, [long, q, limit, items]);
 
   const Tag = ordered ? 'ol' : 'ul';

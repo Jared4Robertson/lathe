@@ -15,11 +15,11 @@ import { expect, test, type Page } from '@playwright/test';
 export const BUDGET = 0.01;
 
 /**
- * Parts of the app whose fixes wait on other work (brief 53, phase 2: the nav is being changed by
- * briefs 41 and 52). A shift that only moves nodes inside these is reported as `deferred` and
- * listed in notes/jitter-audit.md, but is not held to the budget yet. Phase 2 empties this list.
+ * Parts of the app whose fixes wait on other work. A shift that only moves nodes inside these is
+ * reported as `deferred` and listed in notes/jitter-audit.md, but is not held to the budget yet.
+ * Brief 53's phase 2 emptied it (the nav and the tab strip are held to the budget): keep it empty.
  */
-export const DEFERRED = ['nav#nav', '.tab-strip'];
+export const DEFERRED: string[] = [];
 
 export interface Rect { x: number; y: number; width: number; height: number }
 export interface ShiftSource { node: string; from: Rect | null; to: Rect | null; allowed: boolean; deferred: boolean }
@@ -115,8 +115,11 @@ function probes({ firstKeys, deferred }: { firstKeys: string[]; deferred: string
     new PerformanceObserver((list) => {
       for (const e of list.getEntries() as (PerformanceEntry & { value: number; hadRecentInput: boolean; sources?: { node?: Node | null; previousRect: DOMRectReadOnly; currentRect: DOMRectReadOnly }[] })[]) {
         const sources = (e.sources ?? []).map((s) => ({ node: describe(s.node), from: rect(s.previousRect), to: rect(s.currentRect), allowed: inside(s.node, S.allow), deferred: inside(s.node, deferred) }));
-        const allowed = sources.length > 0 && sources.every((s) => s.allowed);
-        S.shifts.push({ t: e.startTime, value: e.value, recentInput: e.hadRecentInput, sources, allowed, deferred: !allowed && sources.length > 0 && sources.every((s) => s.allowed || s.deferred) });
+        // A source whose node was removed before the shift was reported (old content being replaced)
+        // cannot be placed; it neither explains nor condemns the shift: the other sources decide.
+        const placed = sources.filter((s) => s.node !== '(gone)');
+        const allowed = placed.length > 0 && placed.every((s) => s.allowed);
+        S.shifts.push({ t: e.startTime, value: e.value, recentInput: e.hadRecentInput, sources, allowed, deferred: !allowed && placed.length > 0 && placed.every((s) => s.allowed || s.deferred) });
       }
     }).observe({ type: 'layout-shift', buffered: true });
   } catch { /* not supported */ }
