@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { indexWorkspace } from '../src/specs/data';
+import { addressOf } from '../src/views/address';
 import { aggregateErd, domainErd, endPath, erdFor, lineOffsets } from '../src/model/erd';
 import { erdGraph } from '../src/model/layout';
 import { ErdKey, lineWords } from '../src/model/ModelView';
@@ -54,7 +55,7 @@ describe('domain events in the ERD', () => {
     expect(erdFor(index(), 'P-D-EV02')).toMatchObject({ level: 'aggregate', scope: 'P-D-A3' });
     expect(erdFor(index(), 'P-D-EV02')!.boxes.filter((b) => b.highlight).map((b) => b.id)).toEqual(['P-D-EV02']);
 
-    await openApp('/records/P-D-A3?view=model', served());
+    await openApp(`${addressOf('P-D-A3')}?view=model`, served());
     await screen.findByRole('heading', { level: 1, name: 'Loan' });
     await boxesShown();
     const pill = box('P-D-EV01')!;
@@ -70,7 +71,7 @@ describe('domain events in the ERD', () => {
     expect(line.querySelector('title')).toHaveTextContent('Member reacts to Thing lent');
     // Clicking a pill goes to the event.
     fireEvent.click(pill);
-    expect(window.location.pathname).toBe('/records/P-D-EV01');
+    expect(window.location.pathname).toBe(addressOf('P-D-EV01'));
     // Spark tokens for the pill and its lines (LA-BRW-DR307).
     expect(CSS).toMatch(/\.erd-box\.erd-event\s*\{[^}]*var\(--spark\)[^}]*var\(--spark-bg\)[^}]*border-radius:\s*999px/);
     expect(CSS).toMatch(/\.rel-raised_by, \.rel-reacts_to\) :is\(\.erd-line-path, \.erd-end\) \{ stroke: var\(--spark\)/);
@@ -108,7 +109,7 @@ describe('domain events in the ERD', () => {
     const titles = new Map(erd.boxes.map((b) => [b.id, b.title]));
     expect(lineWords(line, 'reacts to', titles)).toEqual({ label: 'reacts to', title: 'Member reacts to Loan became overdue, raised by Loan', hover: 'Loan became overdue' });
 
-    await openApp('/specs/P/P-D?view=model', served());
+    await openApp(`${addressOf('P-D')}?view=model`, served());
     await screen.findByRole('heading', { level: 1, name: 'Domain' });
     await boxesShown();
     await waitFor(() => expect(modelPane().querySelectorAll('.erd-line.rel-reacts_to')).toHaveLength(6));
@@ -129,7 +130,7 @@ describe('domain events in the ERD', () => {
   });
 
   it('LA-BRW-T558 The ERD\'s key explains the event pill, the raised-by line and the dashed reacts-to line in the relations\' own words, and keeps its one height', async () => {
-    await openApp('/records/P-D-A3?view=model', served());
+    await openApp(`${addressOf('P-D-A3')}?view=model`, served());
     await screen.findByRole('heading', { level: 1, name: 'Loan' });
     await boxesShown();
     const key = within(modelPane()).getByRole('group', { name: 'Key' });
@@ -141,7 +142,7 @@ describe('domain events in the ERD', () => {
     expect(events.querySelector('.erd-key-line.rel-reacts_to.is-dashed')).not.toBeNull();
     expect(key).toHaveTextContent('and the aggregates reacting to its events');
 
-    await openApp('/specs/P/P-D?view=model', served());
+    await openApp(`${addressOf('P-D')}?view=model`, served());
     await screen.findByRole('heading', { level: 1, name: 'Domain' });
     await boxesShown();
     const domainKey = within(within(modelPane()).getByRole('group', { name: 'Key' })).getByRole('list', { name: 'Domain events' });
@@ -162,7 +163,7 @@ describe('domain events in the ERD', () => {
 
 describe('domain events in the wiki', () => {
   it('LA-BRW-T559 An aggregate\'s page lists its domain events titled "Domain events", each row a whole link saying what raises it and how many react; an event\'s page shows its Fields table, "Raised by" and "Reacted to by", and a reacting record shows "Reacts to"', async () => {
-    await openApp('/records/P-D-A3?view=wiki', served());
+    await openApp(`${addressOf('P-D-A3')}?view=wiki`, served());
     await screen.findByRole('heading', { level: 1, name: 'Loan' });
     const events = section(/^Domain events/);
     const list = within(events).getByRole('list', { name: 'Domain events of P-D-A3' });
@@ -175,7 +176,7 @@ describe('domain events in the wiki', () => {
     // Each row is one link to its event (LA-PAT-APP-UX-R05).
     expect(within(rows[0]).getAllByRole('link')).toHaveLength(1);
     expect(within(rows[0]).getByRole('link')).toHaveClass('row-link');
-    expect(within(rows[0]).getByRole('link')).toHaveAttribute('href', '/records/P-D-EV01');
+    expect(within(rows[0]).getByRole('link')).toHaveAttribute('href', addressOf('P-D-EV01'));
     // The events are not listed again among the children.
     const body = document.querySelector<HTMLElement>('.record-main')!;
     const childrenList = within(body).getByRole('heading', { name: /^Entities/ }).closest('section');
@@ -197,7 +198,7 @@ describe('domain events in the wiki', () => {
     for (const id of ['P-D-A1', 'P-D-A2', 'P-E-A1', 'P-D-UC01']) expect(reacted).toHaveTextContent(id);
     expect(trace).not.toHaveTextContent(/reacts_to|raised_by/);
 
-    await openApp('/records/P-D-A2?view=wiki', served());
+    await openApp(`${addressOf('P-D-A2')}?view=wiki`, served());
     await screen.findByRole('heading', { level: 1, name: 'Member' });
     const reacts = within(section(/^Traceability/)).getByRole('heading', { name: /Reacts to/ }).closest('section')!;
     for (const id of ['P-D-EV01', 'P-D-EV03', 'P-E-EV01']) expect(reacts).toHaveTextContent(id);
@@ -221,7 +222,7 @@ describe('domain events in the graph', () => {
     expect(relationStyle('raised_by')).toBe('event');
 
     startAtDepth(1);
-    await openApp('/records/P-D-EV01?view=graph', served());
+    await openApp(`${addressOf('P-D-EV01')}?view=graph`, served());
     await waitFor(() => expect(document.querySelectorAll('.react-flow__node').length).toBeGreaterThan(0));
     expect(document.querySelector('.react-flow__node[data-id="P-D-EV01"] .graph-node')).toHaveClass('kind-domain_event');
     expect(document.querySelector('.react-flow__node[data-id="P-D-A3/domain_event"]')).toHaveTextContent('Domain events');
