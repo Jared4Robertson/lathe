@@ -8,4 +8,4 @@ run_by: app/test/graph/patterns.test.tsx
 links:
   proves: [LA-BRW-UC60-R08]
 ---
-Expects follows lines shown, styled as pattern links, and left out of the layout's layers.
+Expects follows lines shown and styled as pattern links, and each use case reached from the pattern by one sitting a column after it, the link laid out pointing right.

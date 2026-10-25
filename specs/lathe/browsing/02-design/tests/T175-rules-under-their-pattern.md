@@ -8,4 +8,4 @@ run_by: app/test/graph/patterns.test.tsx
 links:
   proves: [LA-BRW-UC60-R08]
 ---
-Expects a pattern in the use cases' tier, its rules a tier to its right, and parent lines from the pattern to its rules.
+Expects parent lines from the pattern to its rules and each rule one column to the pattern's right.

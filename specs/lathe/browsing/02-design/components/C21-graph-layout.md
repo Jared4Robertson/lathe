@@ -6,6 +6,6 @@ parent: LA-BRW
 component_type: module
 file: app/src/graph/layout.ts
 links:
-  satisfies: [LA-BRW-DR20, LA-BRW-UC20-R08]
+  satisfies: [LA-BRW-DR20, LA-BRW-DR120, LA-BRW-UC20-R08]
 ---
-Lays out a neighbourhood with ELK's layered algorithm, one ELK partition per tier, left to right (for tiers and for a trace alike), keeping the model's order within a tier. Links within a tier do not shape the layout; when they form a cycle it falls back to ELK's radial algorithm around the focus and reports the cycle. The tier of each kind comes from the graph model.
+Lays out a neighbourhood with ELK's layered algorithm, one ELK partition per column, left to right (for the hierarchy and for a trace alike), forcing the model's row order within a column. Every link between two columns is laid out pointing right and links within one column are left out, so the layout graph has no cycle and every graph is drawn in columns; there is no other layout. The column and row of each node come from the graph model.
