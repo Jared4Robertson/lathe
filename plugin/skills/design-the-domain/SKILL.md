@@ -24,7 +24,7 @@ The design says how the product carries out its use cases: the paths people take
 | `layer` | `<P>-<D>-LAY<nn>` | `order` (a whole number, its place among the layers beside it, unique there) | none; it holds the domain's components, and may hold sub-layers |
 | `component` | `<P>-<D>-C<nn>` | `component_type` (model, service, router, ...), `file` (path from the repo root) | `satisfies` requirements, domain rules and interaction requirements; `implements` endpoints and views; `depends_on` components |
 
-Every design record's parent is the domain, except an interaction requirement, whose parent is the view, endpoint or flow it constrains, a flow step, whose parent is its flow, a flow, whose parent is the capability of the use cases it carries out when the domain has capabilities (see `write-use-cases`), and a component, whose parent is its layer when the domain has layers (see below). Any link not in the meta-model's `relations.csv` is an error.
+Every design record's parent is the domain, except an interaction requirement, whose parent is the view, endpoint or flow it constrains, a flow step, whose parent is its flow, a flow, whose parent is the capability of the use cases it carries out when the domain has capabilities (see `write-use-cases`), and a component, whose parent is its layer when the domain has layers (see below). Any link not in the meta-model's `relations.csv` is an error. Each relation reads by a label from either end, such as Satisfies and Designed by; `lathe format` lists every relation each kind may make and receive, with its labels.
 
 ## Layers
 

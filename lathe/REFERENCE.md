@@ -23,7 +23,7 @@ links:
 A member borrows an available tool for a fixed loan period.
 ```
 
-Every record has an `id` (unique, matching `^[A-Z][A-Z0-9]*(-[A-Z0-9]+)*$`, never reused or renumbered), a `kind`, a `title`, and a `parent` (except a product) of a kind its kind allows. Its kind may require more plain fields, such as `actor`; any other plain field is kept. `links` maps a relation name to target IDs, each allowed by the meta-model for the two kinds. The body is Markdown; rules and requirements state their rule with MUST, MUST NOT, SHOULD or MAY. A product may carry an `icon` and a `color` for the app's space rail.
+Every record has an `id` (unique, matching `^[A-Z][A-Z0-9]*(-[A-Z0-9]+)*$`, never reused or renumbered), a `kind`, a `title`, and a `parent` (except a product) of a kind its kind allows. Its kind may require more plain fields, such as `actor`; any other plain field is kept. `links` maps a relation name to target IDs, each allowed by the meta-model for the two kinds; each relation has a label read from either end, such as Satisfies and Designed by, which the reference shows. The body is Markdown; rules and requirements state their rule with MUST, MUST NOT, SHOULD or MAY. A product may carry an `icon` and a `color` for the app's space rail. Specs name roles, never people: a use case's `actor` and a question's `owner` are roles such as Owner, Reader or Agent.
 
 ## 3. ID convention
 
@@ -35,7 +35,7 @@ A `test` has a `state`: `automated` (the default), `manual` or `planned`. An aut
 
 ## 5. Checks
 
-Each check is one SQL file in `lathe/checks/`: a `SELECT` over the loaded tables that returns rows of `(severity, check, record, message)`. Its name is its file name without the number and `.sql`. An **error** means the workspace is broken, and `lathe check` exits non-zero; a **warning** is work still to do, such as an obligation not yet proved, two stages that do not join up yet, or a level of the spec that is the wrong size (`structure.maxChildren` in `lathe.config.json`, default 15). One mistake gives one error.
+Each check is one SQL file in `lathe/checks/`: a `SELECT` over the loaded tables that returns rows of `(severity, check, record, message)`. Its name is its file name without the number and `.sql`. An **error** means the workspace is broken, and `lathe check` exits non-zero; a **warning** is work still to do, such as an obligation not yet proved, two stages that do not join up yet, or a level of the spec that is the wrong size: a record with more children of one kind than `structure.maxChildren` in `lathe.config.json` (default 15), or a capability or layer with only one child. One mistake gives one error.
 
 A check documents itself in its header comment: one summary sentence, a blank comment line, the explanation ending with how to fix what it reports, a blank comment line, then `-- severity: error` (or `warning`, or `error, warning`) and an optional `-- kinds:` line naming the kinds it concerns. The reference is built from these headers, and `undocumented` reports a check, kind or relation that lacks its text.
 
@@ -45,7 +45,7 @@ A kind's `obligation` says what it asks: `yes`, an obligation that must be desig
 
 ## 7. Fitness
 
-A `fitness` record is the judgment of the person a product serves: on a `date`, a `score` from 1 (does not serve its purpose) to 5 (serves it fully), and in the body the experiences behind it. Lathe never writes these itself. What it can count (coverage, open questions, checks) is evidence for that judgment, never the score.
+A `fitness` record is the owner's judgment, the person who decides what the product is for: on a `date`, a `score` from 1 (does not serve its purpose) to 5 (serves it fully), and in the body the experiences behind it. Lathe never writes these itself. What it can count (coverage, open questions, checks) is evidence for that judgment, never the score.
 
 ## 8. What records do not carry
 
@@ -53,7 +53,7 @@ Records carry no status, approval or decision history: a record in the specs is 
 
 ## 9. Extending the meta-model
 
-A product adds to the meta-model with a `metaExtensions` folder holding a `kinds.csv`, `relations.csv`, `sections.csv` and/or `ids.csv` with the same columns. A new row is added as it is. A row for a kind, folder or relation rule that already exists changes it: a kind's `parent_kinds` and `required_fields` are widened, and any other non-empty value replaces the default's. The product's reference shows the result.
+A product adds to the meta-model with a `metaExtensions` folder holding a `kinds.csv`, `relations.csv`, `sections.csv` and/or `ids.csv` with the same columns. A new row is added as it is. A row for a kind, folder or relation rule that already exists changes it: a kind's `parent_kinds` and `required_fields` are widened, and any other non-empty value replaces the default's. Once the extensions are merged, every kind and relation needs a `description`, and every relation a `forward_label` and a `reverse_label` (`undocumented` and `relation-unlabeled` otherwise). The product's reference shows the result.
 
 ## 10. Capabilities and patterns
 
@@ -77,7 +77,7 @@ A flow can be written as `flow_step` records under it, in `order`: each says wha
 
 ## 15. Folders
 
-Client lays out each domain's specs in folders by stage: in Define, the domain model and use cases; in Design, interaction design, technical specification and the test plan; and at product level what domains share. `meta/sections.csv` names these folders and each kind's `section` says which one it sits in, so the app reads the same way whatever folders the files are in. The app groups the test plan by what each test proves: acceptance, domain rule, pattern, interaction and engineering tests.
+A domain's specs are laid out in folders by stage: in Define, the domain model and use cases; in Design, interaction design, technical specification and the test plan; and at product level what domains share. `meta/sections.csv` names these folders and each kind's `section` says which one it sits in, so the app reads the same way whatever folders the files are in. The app groups the test plan by what each test proves: acceptance, domain rule, pattern, interaction and engineering tests.
 
 ## 16. Layers
 

@@ -16,48 +16,36 @@ From the repo root (the folder with `lathe.config.json`):
 
 Add `--json` for the whole workspace as JSON (records, links, problems, coverage) when you need to look something up.
 
-The plugin's hook already runs the check after each edit to a spec record and shows you any errors. Run it yourself before you report or commit, because the hook does not show warnings or coverage.
+The plugin's hook already runs the check after each edit to a spec record, `lathe.config.json` or a meta-model CSV, and shows you any errors. Run it yourself before you report or commit, because the hook does not show warnings or coverage.
+
+## What each check means
+
+Every problem names its check in brackets, such as `[dangling-link]`. Each check explains what it reports and how to fix it in the format reference, under its name:
+
+- in a product repo, `npx lathe format` (the product's own checks included);
+- in the Lathe repo, `npm --prefix lathe run lathe -- format --root ..`, or `lathe/REFERENCE.md` for Lathe's defaults; the app shows the same text at `/format/checks/<name>`.
+
+Read the check's entry before you fix what it reports. A check name the reference does not list is the product's own: read its SQL file in the folder `lathe.config.json` names in `checks`.
 
 ## Errors: fix them now
 
-An error means the specs are broken. Do not leave one behind. Every check explains what it reports and how to fix it in the reference: `npx lathe format` (in the Lathe repo, `lathe/REFERENCE.md`), under the check's name.
+An error means the specs are broken. Do not leave one behind.
 
-| Check | Usual fix |
-| --- | --- |
-| `duplicate-id`, `bad-id` | Give the record a new, unused ID in the right pattern. Never renumber an existing record. |
-| `unknown-kind` | Use a kind from the meta-model's `kinds.csv`. |
-| `missing-title`, `missing-parent`, `missing-required-field` | Add the field. Required fields per kind are in `kinds.csv`. |
-| `unknown-parent`, `parent-kind-not-allowed`, `product-has-parent`, `parent-cycle` | Point `parent` at an existing record of an allowed kind, so the chain ends at the product. |
-| `unknown-relation`, `relation-not-allowed` | Use a relation `relations.csv` allows from this kind to the target's kind. |
-| `dangling-link` | Fix the target ID, or remove the link if the target is gone. |
-| `bad-test-state` | Set `state` to `automated`, `manual` or `planned` (or remove it for automated). |
-| `test-run-by-missing` | An automated test needs `run_by`. Add the file, or set `state: planned` if the test is not written yet. |
-| `test-file-missing` | Fix `run_by`, or the `key_file` the message names (it must be a file under the repo root). For a manual or planned test whose file does not exist yet, remove `run_by`. |
-| `test-file-missing-id` | If the test has a `key`, put that exact text in the file, or in its `key_file` (or fix the key). Otherwise the test proves nothing: put its ID in the test's name, and add the `proves` links it should have, or the `supports` links of a check that backs an obligation without proving it. |
-| `proof-not-in-file` | The file names neither the test's ID nor the proved ID in the message. Put the test's ID in the test's name, or name every ID it proves. If the test does not really prove that record, remove the link. |
-| `meta-duplicate-kind` | One meta-model folder defines a kind twice. Merge the two rows. (A row in `metaExtensions` for a default kind is allowed: it widens that kind.) |
-| `meta-duplicate-relation` | Remove the repeated relation row. |
-| `meta-unknown-parent-kind`, `meta-unknown-relation-kind` | Define the kind it names, or fix the name, in the meta-model CSV. |
-| `undocumented` | Give the kind or relation a `description`, or start the check file with its header: a summary sentence, a blank comment line, the explanation and how to fix it, a blank comment line, then `-- severity: error` or `-- severity: warning`. |
-| `meta-bad-required-field` | Use a field name of lower-case letters, digits and underscores, and not `id`, `kind`, `title`, `parent` or `links`. |
-| `bad-fitness-date`, `bad-fitness-score` | A fitness record needs `date: YYYY-MM-DD` and a `score` from 1 to 5. |
-| `capability-order` | Give each capability in the domain its own whole-number `order` (`1` and `01` are the same). Renumbering an order is fine; it is not an ID. |
-| `layer-order` | Give each layer in the domain, or each sub-layer of one layer, its own whole-number `order` (`1` and `01` are the same), as for capabilities. |
-| `pattern-setting-missing` | Add the setting to the use case as a header field named exactly as the pattern lists it, with a value or `"Not applicable: <reason>"`. If the use case does not really share the pattern, remove the `follows` link instead. |
-| `bad-pattern-settings` | Rename the pattern's setting to lower-case letters, digits and underscores, not `id`, `kind`, `title`, `parent` or `links`, and rename the field in every use case that follows it. |
-| `parse-error` | Fix the YAML header: `---` lines, indentation, quotes around titles with colons. |
-
-Fix the record that is wrong, not the one that reports it: a dangling link is usually a typo in the link, not a missing record. Never change the meta-model to make an error go away unless the user asked for a new kind or relation (see `extend-the-meta-model`).
+- Fix the record that is wrong, not the one that reports it: a dangling link is usually a typo in the link, not a missing record.
+- One mistake gives one error. A duplicated ID is reported once, as `duplicate-id`, without an error for each link to it, so fix the duplicate first and run the check again.
+- Never renumber an existing record to fix an ID problem; give the wrong record a new, unused ID in its kind's pattern.
+- A `parse-error` is a broken YAML header: the `---` lines, indentation, or a title with a colon that needs quotes.
+- Never change the meta-model to make an error go away unless the user asked for a new kind or relation (see `extend-the-meta-model`).
 
 ## Warnings: work still to do
 
-Warnings do not fail the check. They are gaps: an obligation (a requirement, domain rule, interaction requirement, or a product's own obligation kind) that nothing designs (`unsatisfied`) or no automated or manual test proves (`unproved`), a use case without requirements, a component whose file does not exist yet, a use case left directly under a domain that has capabilities (`use-case-outside-capability`: move it under its capability by changing its `parent`), a component left directly under a domain that has layers (`component-outside-layer`: move it into its layer by changing its `parent`), or a use case following two patterns that share a setting name (`pattern-setting-clash`: rename the setting in one pattern).
+Warnings do not fail the check. They are gaps, and most say one of three things:
 
-Two warnings say a level of the spec is the wrong size:
-- `too-many-children`: a record has more children of one kind than `structure.maxChildren` in `lathe.config.json` (default 15). Add a level between them: a capability for use cases or flows, a layer for components, another aggregate for domain rules. Tests are never counted. Moving a record changes only its `parent`, never its ID.
-- `lone-child`: a capability or a layer holds only one record. Merge it into a neighboring capability or layer, or give it more.
+- **Something is not covered yet.** An obligation nothing designs (`unsatisfied`) or no automated or manual test proves (`unproved`), a component whose file does not exist yet, a proof still owed by a planned test. A planned test does not clear `unproved`.
+- **Two stages do not join up yet.** A rule no use case applies, a use case without a flow, an interaction requirement that fulfills nothing, a test whose type does not match what it proves. Fix the link, not the check.
+- **A level of the spec is the wrong size.** `too-many-children`: a record has more children of one kind than `structure.maxChildren` in `lathe.config.json` (default 15; tests are never counted). Add a level between them: a capability for use cases or flows, a layer for components, another aggregate for domain rules. `lone-child`: a capability or layer holds only one record; merge it into a neighbor, or give it more. Moving a record changes only its `parent`, never its ID. Do not raise `structure.maxChildren` to silence the warning unless the user asks.
 
-Do not raise `structure.maxChildren` to silence the warning unless the user asks. A planned test does not clear `unproved`. Fix the ones your task is about; leave the rest and mention them.
+Fix the warnings your task is about; leave the rest and mention them.
 
 ## Coverage
 
@@ -68,7 +56,7 @@ Coverage has one line per domain and obligation kind, with four counts out of th
 - **proved**: an automated or manual test `proves` it (any `proof` relation);
 - **planned**: not proved, but a planned test is meant to prove it.
 
-A planned obligation has a test still to write; one neither proved nor planned has no test at all.
+A proof-only kind, such as a pattern rule, shows `proof only` instead of designed and built. Each domain also has a line of test counts: automated, manual and planned. A planned obligation has a test still to write; one neither proved nor planned has no test at all.
 
 ## Report
 
@@ -76,49 +64,5 @@ Say, in a few lines:
 
 1. Whether the check passes (the last line: `N errors, M warnings.`).
 2. Each error you fixed and how.
-3. The coverage lines for each domain you touched (designed, built, proved and planned for each obligation kind, as `lathe check` prints them), and the warnings your change added or cleared.
+3. The coverage lines for each domain you touched, as `lathe check` prints them, and the warnings your change added or cleared.
 4. Any planned tests your change added, and why they are planned.
-
-## Structural warnings
-
-These warnings say where two stages do not join up yet. Fix the link, not the check:
-
-| Warning | Fix |
-| --- | --- |
-| `rule-not-applied` | Add the rule to `applies` on each use case that relies on it. If no use case does, ask whether the rule is still needed. |
-| `use-case-without-flow` | Add the use case to `carries_out` on the flow that walks through it, or write that flow (see `design-the-domain`). Only reported once the domain has a flow. |
-| `interaction-requirement-fulfills-nothing` | Add `fulfills` with the use case requirement or domain rule it carries out at its view, endpoint or flow. |
-| `test-type-mismatch` | A `domain_rule` test proves domain rules and an `acceptance` test proves requirements. Correct the `test_type`, or the `proves` links if they name the wrong record. |
-
-One mistake gives one error: a duplicated ID is reported as `duplicate-id`, without an error for each link to it, so fix the duplicate first and re-run the check. A relation rule restated in a product's `metaExtensions` `relations.csv` is the same rule, so only a rule listed twice in one file is `meta-duplicate-relation`.
-
-## Pattern rules and citations
-
-| Problem | Fix |
-| --- | --- |
-| `pattern-rule-setting-unknown` (error) | The rule's `setting` must be one of its pattern's `settings`. Fix the name, or add the setting to the pattern. |
-| `unsatisfied` / `unproved` naming a pattern rule "in <domain>" | That domain follows the pattern, so a component in it must `satisfies` the rule and a test in it must `proves` it. Proof from another domain does not count. |
-| `pattern-not-followed` | No use case follows the pattern, so its rules are owed nowhere. Link the use cases that behave this way with `follows`, or remove the pattern. |
-| `obligation-outside-domain` | The obligation sits above every domain, so no domain owes it. Move it under a domain (or under a pattern, for a shared rule). |
-| `unknown-id-in-prose` | The body cites an ID that is not a record: correct it to the current ID, or remove the citation. |
-
-## Flow steps and product checks
-
-| Problem | Fix |
-| --- | --- |
-| `flow-step-order` (error) | Give each step on a path of a flow a different whole number in `order`, numbered 1, 2, 3 with no gaps. A step with no `path` is on the main path. |
-| `flow-step-fulfills-outside-flow` | The step fulfills something the flow does not carry out. Link the use case to the flow with `carries_out`, or move the step's `fulfills` to the flow that really does it. |
-| `flow-fulfills-differs-from-steps` | Once a flow has steps, put each `fulfills` on the step that does it; drop it from the flow, or add the step. |
-| `product-check-name-clash` (error) | Rename the product's check file so its name differs from Lathe's checks. |
-| `product-checks-missing` (error) | `lathe.config.json` names a `checks` folder that does not exist: create it or fix the path. |
-| Any other check name you do not recognize | It is the product's own check (in the folder `lathe.config.json` names in `checks`); read that SQL file to see what it wants. |
-
-## Owed and silent proofs
-
-These warnings say where proof is still owed, or where a test's proof is counted nowhere:
-
-| Warning | Fix |
-| --- | --- |
-| `proof-still-owed` | The obligation is proved, but a planned test is still meant to prove it too. Write that test (and drop its `state: planned`), or remove its `proves` link if the existing proof is enough. Leave it if the planned test is real work still to do, and mention it. |
-| `proof-counts-nowhere` | No domain counts anything the test proves; the message says why for each target. Link the test to what its own domain owes, move the test into the domain that owes the target, make that domain follow the pattern, or move an obligation outside every domain under one. |
-| `manual-test-file-silent` | The manual test's `run_by` file never mentions it. Name the test's ID (or an ID it proves, or its `key`) in the steps that file gives, or point `run_by` at the file that really carries the test out. |

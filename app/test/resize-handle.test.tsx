@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { openApp } from './helpers';
 
 // Resizing the workbench's panels from the keyboard and by double-click, and collapsing by drag
-// (LA-PAT-APP-CODE-R09). Pointer drags need real layout, so they are checked in the browser.
+// (LA-PAT-APP-UX-R02). Pointer drags need real layout, so they are checked in the browser.
 
 const handle = (name: string) => screen.getByRole('separator', { name });
 
