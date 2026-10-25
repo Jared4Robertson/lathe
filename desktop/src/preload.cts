@@ -2,7 +2,9 @@
 // nothing but Electron, and it exposes only window.latheDesktop:
 //   isDesktop  true, so the app can tell it runs in the desktop shell;
 //   platform   the operating system ("darwin", "win32", "linux");
-//   onCommand  subscribes to native menu choices, each sent as a command ID such as "viewWiki".
+//   onCommand  subscribes to native menu choices, each sent as a command ID such as "viewWiki";
+//   setChrome  sends the theme's { background, foreground } for the window's chrome (the main
+//              process checks them, desktop/src/chrome.ts).
 // Until the app subscribes, a menu choice presses the command's default keys in the page, so the
 // app's keymap runs it as if typed.
 const { contextBridge, ipcRenderer } = require('electron') as typeof import('electron');
@@ -31,5 +33,9 @@ contextBridge.exposeInMainWorld('latheDesktop', {
     return () => {
       listeners.delete(listener);
     };
+  },
+  setChrome(chrome: { background: unknown; foreground: unknown }) {
+    if (typeof chrome !== 'object' || chrome === null) return;
+    ipcRenderer.send('lathe:set-chrome', { background: chrome.background, foreground: chrome.foreground });
   },
 });
