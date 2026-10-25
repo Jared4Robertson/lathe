@@ -27,7 +27,7 @@ describe('routing', () => {
     await user.click(within(menu()).getByRole('link', { name: 'Shopping' }));
     expect(window.location.pathname).toBe('/specs/DM/DM-SHOP');
     expect(heading()).toHaveTextContent('Shopping');
-    await user.click(within(menu()).getByRole('link', { name: /Checks/ }));
+    await user.click(within(menu()).getByRole('link', { name: /^Checks:/ }));
     expect(window.location.pathname).toBe('/checks');
     expect(heading()).toHaveTextContent('Checks');
 
@@ -48,16 +48,17 @@ describe('routing', () => {
     expect(await within(nav).findByRole('link', { name: 'People and tools' })).toHaveAttribute('href', '/diagrams/people');
     expect(within(nav).getByRole('button', { name: '+ New diagram' })).toBeInTheDocument();
 
-    expect(within(nav).getByText('Specs')).toBeInTheDocument();
-    const demo = within(nav).getByRole('link', { name: 'Demo shop' });
+    // The current space's section: its product, then its domains; another product is only in the rail.
+    const items = nav.querySelector<HTMLElement>('.space-items')!;
+    const demo = within(items).getByRole('link', { name: 'Demo shop' });
     expect(demo).toHaveAttribute('href', '/specs/DM');
     expect(demo).toHaveAttribute('aria-current', 'page');
-    const domains = within(demo.closest('li')!).getAllByRole('link').slice(1);
+    const domains = within(within(items).getByRole('list', { name: 'Domains of Demo shop' })).getAllByRole('link');
     expect(domains.map((a) => [a.textContent, a.getAttribute('href')])).toEqual([
       ['Paying', '/specs/DM/DM-PAY'],
       ['Shopping', '/specs/DM/DM-SHOP'],
     ]);
-    const notebook = within(nav).getByRole('link', { name: 'Notebook' });
-    expect(within(notebook.closest('li')!).getByRole('link', { name: 'Notes' })).toHaveAttribute('href', '/specs/NF/NF-NOTE');
+    expect(within(nav).queryByRole('link', { name: 'Notes' })).toBeNull();
+    expect(within(within(nav).getByRole('list', { name: 'Spaces' })).getByRole('link', { name: 'Notebook' })).toHaveAttribute('href', '/specs/NF');
   });
 });

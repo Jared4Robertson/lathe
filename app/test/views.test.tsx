@@ -185,7 +185,10 @@ describe('one address, three views', () => {
     expect(screen.queryByRole('region', { name: 'Graph pane' })).toBeNull();
     await waitFor(() => expect(viewButton('Wiki')).toHaveFocus());
     // Each toggle names its shortcut.
-    expect(viewButton('Graph')).toHaveAttribute('title', 'Graph view (Ctrl+2)');
+    fireEvent.keyDown(document.body, { key: 'Tab', code: 'Tab' });
+    fireEvent.focus(viewButton('Graph'));
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Graph view Ctrl+2');
+    expect(viewButton('Graph')).toHaveAttribute('aria-keyshortcuts', 'Control+2');
     const css = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
     expect(css).toMatch(/\.view-toggle button[^{]*:focus-visible|:is\([^)]*\.view-toggle button[^)]*\):focus-visible/);
   });
