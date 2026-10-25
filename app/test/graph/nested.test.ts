@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { graphMap } from '../../src/graph/map';
-import { HEADER, HEADER_SHARE, HEADER_WIDTH_SHARE, LEAF_AREA, layoutNested, NESTED_ASPECT, nestedMap, nestedTextScale, squarify, type NestedMap } from '../../src/graph/nested';
+import { HEADER, HEADER_SHARE_MAX, HEADER_SHARE_MIN, HEADER_WIDTH_SHARE, headerShare, LEAF_AREA, layoutNested, NESTED_ASPECT, nestedMap, nestedTextScale, squarify, type NestedMap } from '../../src/graph/nested';
 import { indexWorkspace } from '../../src/specs/data';
 import { groupedWorkspace, manyOfOneKindWorkspace, testIndex } from './workspace';
 
@@ -95,17 +95,21 @@ describe('the Nested map', () => {
     expect(squarify([], r)).toEqual([]);
   });
 
-  it("LA-EXP-T183 A box's text is in proportion to it, fixed by the map: its label fits its width, a parent's header band at most an eighth of its height", () => {
+  it("LA-EXP-T183 A box's text is in proportion to it, fixed by the map: its label fits its width, a parent's header band within its share of its height", () => {
     // A leaf as wide as its label at a leaf's height: scale 1.
-    expect(nestedTextScale({ w: 190, h: 56 }, 190, false)).toBe(1);
+    expect(nestedTextScale({ w: 190, h: 56 }, 190)).toBe(1);
     // Limited by the width: a long label in a narrow box is smaller, never wrapped or cut.
-    expect(nestedTextScale({ w: 95, h: 560 }, 190, false)).toBe(0.5);
-    // A parent's header band takes at most an eighth of its height, its label at most 0.6 of its width.
-    expect(nestedTextScale({ w: 10000, h: HEADER / HEADER_SHARE }, 190, true)).toBe(1);
-    expect(nestedTextScale({ w: 190 / HEADER_WIDTH_SHARE, h: 10000 }, 190, true)).toBeCloseTo(1, 9);
+    expect(nestedTextScale({ w: 95, h: 560 }, 190)).toBe(0.5);
+    // A parent's header band takes at most its share of its height, 0.4 over one leaf and falling with the root of the leaves to an eighth; its label at most 0.6 of its width.
+    expect(headerShare(1)).toBe(HEADER_SHARE_MAX);
+    expect(headerShare(4)).toBe(0.2);
+    expect(headerShare(400)).toBe(HEADER_SHARE_MIN);
+    expect(nestedTextScale({ w: 10000, h: HEADER / HEADER_SHARE_MAX }, 190, 1)).toBeCloseTo(1, 9);
+    expect(nestedTextScale({ w: 10000, h: HEADER / HEADER_SHARE_MIN }, 190, 400)).toBeCloseTo(1, 9);
+    expect(nestedTextScale({ w: 190 / HEADER_WIDTH_SHARE, h: 10000 }, 190, 1)).toBeCloseTo(1, 9);
     for (const map of maps()) {
       for (const n of map.nodes.values()) {
-        if (n.children.length > 0) expect(n.header).toBeLessThanOrEqual(n.h * HEADER_SHARE + eps);
+        if (n.children.length > 0) expect(n.header).toBeLessThanOrEqual(n.h * headerShare(leafCount(map, n.id)) + eps);
       }
     }
     // Built once per index: the same map object, whatever the focus.
