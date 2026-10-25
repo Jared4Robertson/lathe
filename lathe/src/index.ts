@@ -38,6 +38,12 @@ interface FileFact {
   file: string;
   file_exists: boolean;
   contains_id: boolean | null;
+  /** A test's `key_file`, the file that holds its key when it runs from a shared class in another file, or null. */
+  key_file: string | null;
+  /** Whether the key_file sits under the product root; null when the test has none. */
+  key_file_inside: boolean | null;
+  /** Whether the key_file exists as a file under the product root; null when the test has none. */
+  key_file_exists: boolean | null;
 }
 
 /** For a test's run_by file: each of the test's own ID and its link targets that the file mentions. */
@@ -171,7 +177,9 @@ function mentionsId(content: string, id: string): boolean {
 // Facts about the files records name: a test's run_by and a component's file. For a test, contains_id says
 // whether the file names the test's own ID or, when the test has a `key`, whether the file contains that key
 // text instead. Also which IDs the file mentions (its own and its link targets), so a check can accept a test
-// whose file names every ID it proves.
+// whose file names every ID it proves. A test that runs from a shared class in another file names that file in
+// `key_file`: its key, own ID and proved IDs are then looked for in the key file instead of run_by, which must
+// still exist. A key file outside the root, or missing, contains nothing.
 async function gatherFileFacts(root: string, records: LoadedRecord[]): Promise<{ facts: FileFact[]; mentions: FileMention[] }> {
   const facts: FileFact[] = [];
   const mentions: FileMention[] = [];
@@ -182,14 +190,21 @@ async function gatherFileFacts(root: string, records: LoadedRecord[]): Promise<{
     const resolved = resolveInside(root, file);
     const found = await exists(resolved, r.kind === 'component');
     let containsId: boolean | null = null;
+    const keyFile = r.kind === 'test' ? r.fields.key_file?.trim() || null : null;
+    const keyResolved = keyFile ? resolveInside(root, keyFile) : null;
+    const keyFound = keyFile ? await exists(keyResolved, false) : null;
     if (r.kind === 'test') {
-      const content = found ? await readFile(resolved!, 'utf8') : '';
+      const source = keyFile ? (keyFound ? keyResolved : null) : found ? resolved : null;
+      const content = source ? await readFile(source, 'utf8') : '';
       const key = r.fields.key?.trim();
       containsId = key ? content.includes(key) : r.id !== '' && mentionsId(content, r.id);
       const candidates = new Set([r.id, ...r.links.map((l) => l.target)].filter((id) => id !== ''));
       for (const id of candidates) if (mentionsId(content, id)) mentions.push({ path: r.path, record: r.id, mentioned: id });
     }
-    facts.push({ path: r.path, record: r.id, kind: r.kind, file, file_exists: found, contains_id: containsId });
+    facts.push({
+      path: r.path, record: r.id, kind: r.kind, file, file_exists: found, contains_id: containsId,
+      key_file: keyFile, key_file_inside: keyFile ? keyResolved !== null : null, key_file_exists: keyFound,
+    });
   }
   return { facts, mentions };
 }
@@ -559,13 +574,14 @@ export async function loadWorkspace(root: string, options: LoadOptions = {}): Pr
       CREATE TABLE fields (path VARCHAR, record VARCHAR, name VARCHAR, value VARCHAR);
       CREATE TABLE links (path VARCHAR, source VARCHAR, relation VARCHAR, target VARCHAR);
       CREATE TABLE file_facts (path VARCHAR, record VARCHAR, kind VARCHAR, file VARCHAR,
-                               file_exists BOOLEAN, contains_id BOOLEAN);
+                               file_exists BOOLEAN, contains_id BOOLEAN,
+                               key_file VARCHAR, key_file_inside BOOLEAN, key_file_exists BOOLEAN);
       CREATE TABLE file_mentions (path VARCHAR, record VARCHAR, mentioned VARCHAR);
     `);
     await append(connection, 'records', records.map((r) => [r.path, r.id, r.kind, r.title, r.parent, r.product, r.domain, r.body]));
     await append(connection, 'fields', records.flatMap((r) => Object.entries(r.fields).map(([name, value]) => [r.path, r.id, name, value])));
     await append(connection, 'links', records.flatMap((r) => r.links.map((l) => [r.path, r.id, l.relation, l.target])));
-    await append(connection, 'file_facts', facts.map((f) => [f.path, f.record, f.kind, f.file, f.file_exists, f.contains_id]));
+    await append(connection, 'file_facts', facts.map((f) => [f.path, f.record, f.kind, f.file, f.file_exists, f.contains_id, f.key_file, f.key_file_inside, f.key_file_exists]));
     await append(connection, 'file_mentions', mentions.map((m) => [m.path, m.record, m.mentioned]));
     // Every distinct ID a record's body cites (a record's ID, or a token with a known prefix), existing or not.
     await connection.run('CREATE TABLE prose_mentions (path VARCHAR, record VARCHAR, cited VARCHAR)');
