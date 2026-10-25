@@ -6,6 +6,6 @@ parent: LA-BRW
 test_type: acceptance
 run_by: app/stability/resize.spec.ts
 links:
-  proves: [LA-BRW-UC117-R05, LA-PAT-APP-CODE-R17]
+  proves: [LA-BRW-UC117-R05, LA-PAT-APP-UX-R08]
 ---
 Drags the nav, pane and inspector gaps and folds the nav and the inspector by drag, and expects the boxes beside each gap never to jump back and the far side not to move.

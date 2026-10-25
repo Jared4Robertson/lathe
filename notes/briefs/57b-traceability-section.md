@@ -26,7 +26,7 @@ Today the wiki body shows problems and children. The links sit only in the side 
    - **For a test:** Proves, and the file that runs it, with its state.
    - **For any other kind:** its outgoing links under their `forward_label` and its incoming links under their `reverse_label`. An empty group isn't shown.
 2. **Labels everywhere:** the inspector's Links out and Links in, the record facts beside the body, graph edge labels and tooltips, and the ERD's line labels all use `forward_label` and `reverse_label`. The inspector stays compact.
-3. **Rows:** every listed record is a clickable row (R13) showing its kind tag only when the list mixes kinds (DR144). A list is titled by its label (DR160). Long lists stay short with search (the 10-row rule). Use ghost or text actions per brief 54, if it has landed.
+3. **Rows:** every listed record is a clickable row (UX-R05) showing its kind tag only when the list mixes kinds (DR144). A list is titled by its label (DR160). Long lists stay short with search (the 10-row rule). Use ghost or text actions per brief 54, if it has landed.
 4. **Proactive standard:** add a Browsing domain rule, "Links are shown by their labels, never by relation codes". Prove it with a test that no rendered page shows a raw relation code ("satisfies", "proves") as a heading or label.
 
 ## Also: the test plan groups (from S2 trial 4, gap 7)

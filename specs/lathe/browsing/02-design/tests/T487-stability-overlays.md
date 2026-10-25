@@ -6,6 +6,6 @@ parent: LA-BRW
 test_type: acceptance
 run_by: app/stability/overlays.spec.ts
 links:
-  proves: [LA-BRW-UC117-R08, LA-PAT-APP-CODE-R17]
+  proves: [LA-BRW-UC117-R08, LA-PAT-APP-UX-R08]
 ---
 Hovers a toolbar button, types in quick find, the command palette and the shortcuts sheet, and expects each to stay where it showed and the page behind not to move.

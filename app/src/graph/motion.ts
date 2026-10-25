@@ -1,6 +1,6 @@
 import { boxExit, type Point } from './layout';
 
-// Shared motion (LA-PAT-APP-CODE-R12): the speed and easing every animation uses, read from the
+// Shared motion (LA-PAT-APP-UX-R04): the speed and easing every animation uses, read from the
 // stylesheet's `--motion-speed` and `--motion-ease` tokens, and turned off when the person asks for
 // reduced motion. The graph's edges use it to move exactly as their nodes do when the graph
 // re-centers: the nodes glide by a CSS transition of their transform, and each edge tweens the two
