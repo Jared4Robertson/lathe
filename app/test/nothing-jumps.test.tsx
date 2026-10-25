@@ -119,13 +119,17 @@ describe('nothing jumps (LA-PAT-APP-UX-R08)', () => {
     await waitFor(() => expect(document.querySelector('.graph-count')).not.toBeNull());
     const count = document.querySelector('.graph-count')!;
     expect([...count.childNodes].map((n) => n.nodeType)).toEqual([Node.TEXT_NODE]);
-    // It sits right after the depth, whose width never changes.
-    expect(count.previousElementSibling?.classList.contains('graph-depth')).toBe(true);
+    // It sits right after the depth, the Links switch and the steps, whose widths never change.
+    expect(count.previousElementSibling?.classList.contains('graph-steps')).toBe(true);
+    expect(count.previousElementSibling?.previousElementSibling?.classList.contains('graph-links-toggle')).toBe(true);
+    expect(count.previousElementSibling?.previousElementSibling?.previousElementSibling?.classList.contains('graph-depth')).toBe(true);
   });
 
   it('LA-BRW-T488 the graph canvas stays mounted when the graph re-centers', async () => {
-    startAtDepth(2);
+    startAtDepth(1);
     await openApp('/records/P-D-UC01-R01?view=graph', { workspace: testWorkspace() });
+    await waitFor(() => expect(document.querySelector('.graph-links-toggle')).not.toBeNull());
+    fireEvent.click(document.querySelector<HTMLElement>('.graph-links-toggle')!);
     await waitFor(() => expect(document.querySelector('.react-flow__node[data-id="P-D-V01"]')).not.toBeNull());
     const canvas = document.querySelector('.graph-flow');
     const flow = document.querySelector('.graph-flow .react-flow');

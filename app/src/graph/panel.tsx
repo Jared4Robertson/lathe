@@ -1,7 +1,7 @@
 import type { MouseEvent, ReactNode } from 'react';
 import { LongList } from '../components/LongList';
 import type { SpecIndex } from '../specs/data';
-import { FILE_KIND, PARENT, graphRelationLabel, parseGroupId, type Neighborhood } from './model';
+import { FILE_KIND, PARENT, graphRelationLabel, nodeParent, parseGroupId, type Neighborhood } from './model';
 
 // The graph's part of the inspector: what the drawn graph connects to the center, the files a
 // trace reaches, and the legend. Kept apart from GraphPage (React Flow and ELK) so the inspector
@@ -19,14 +19,13 @@ export function NodeLink({ id, onNavigate, hrefFor, children, title, ariaLabel, 
 
 /** How a node near the center is related to it: parent, child, a group, or the relations between them. */
 export function relationTo(index: SpecIndex, graph: Neighborhood, center: string, id: string): string {
-  const group = parseGroupId(id);
-  if (group && !index.byId.has(id)) return group.parent === center ? 'child group' : 'its group';
+  // The tree first (stages, folders and groups are levels of it), then the links drawn.
+  const isGroupId = !index.byId.has(id) && parseGroupId(id) !== null;
+  if (nodeParent(index, id) === center) return isGroupId ? 'child group' : index.byId.has(center) ? 'child' : 'member';
+  if (nodeParent(index, center) === id) return isGroupId ? 'its group' : 'parent';
+  if (isGroupId) return parseGroupId(id)!.parent === center ? 'child group' : 'its group';
   const record = index.byId.get(center);
-  if (!record) {
-    const g = parseGroupId(center);
-    if (g?.parent === id) return 'parent';
-    return 'member';
-  }
+  if (!record) return parseGroupId(center)?.parent === id ? 'parent' : 'member';
   if (record.parent === id) return 'parent';
   if (index.byId.get(id)?.parent === center) return 'child';
   return graph.edges
@@ -43,7 +42,8 @@ export interface GraphInfo {
 /** The inspector's graph section: the records drawn next to the center and the files a trace reaches. */
 export function GraphConnections({ index, info, onNavigate, hrefFor }: { index: SpecIndex; info: GraphInfo; onNavigate: (id: string) => void; hrefFor: (id: string) => string }) {
   const { graph, tracing } = info;
-  const near = graph.nodes.filter((n) => n.distance === 1 && n.kind !== FILE_KIND);
+  // Focus records only: the context ring is out of focus.
+  const near = graph.nodes.filter((n) => n.distance === 1 && n.kind !== FILE_KIND && !n.context && !n.more);
   const files = graph.nodes.filter((n) => n.kind === FILE_KIND);
   return (
     <>
@@ -85,17 +85,20 @@ export function Legend() {
           <li><span className="graph-swatch stage-define" /> Define (aggregate, rule, use case, requirement)</li>
           <li><span className="graph-swatch stage-design" /> Design (flow, flow step, view, endpoint, component, test)</li>
           <li><span className="graph-swatch stage-structural" /> Structural (product, domain, question)</li>
-          <li><span className="graph-swatch stage-group" /> Group of one kind of child, with its count; its chevron points right when folded, down when open</li>
+          <li><span className="graph-swatch stage-group" /> Stage, folder or group, as the nav names it, with its count; its chevron points right when folded, down when open</li>
+          <li><span className="graph-swatch stage-context" /> Context: the next level out, faded; click it to center there, hover it for its name</li>
+          <li><span className="graph-swatch stage-more" /> More of a level than the picture shows: click it to center on their folder</li>
           <li><span className="graph-swatch stage-file" /> File named by a component or test</li>
-          <li><span className="graph-line rel-structure" /> parent / child (the tree, through groups)</li>
+          <li><span className="graph-line rel-structure" /> parent / child (the tree, through stages, folders and groups)</li>
+          <li><span className="graph-line is-link" /> the center's own links, with Links on (satisfies, proves, uses and the rest)</li>
           <li><span className="graph-line rel-trace" /> satisfies, proves, fulfills</li>
           <li><span className="graph-line rel-design" /> uses, implements, depends on</li>
           <li><span className="graph-line rel-pattern" /> follows (a use case's pattern, a cross-link)</li>
           <li><span className="graph-line rel-other" /> other links</li>
           <li><span className="graph-mark error">!</span> has errors <span className="graph-mark gap">gap</span> not satisfied or not proved (on a group: among its members)</li>
         </ul>
-        <p className="hint">Tiers run left to right: product, domain, aggregates and use cases, rules and requirements, design records, tests. A record with several kinds of child, or many of one kind, reaches them through a group in its own column. A trace also runs left to right, from the rule to the files that build and test it.</p>
-        <p className="hint">Click a record or a group, or press Enter on it, to center the graph there. A group's chevron, or o, opens or closes it in place. Arrow keys or Tab move between boxes; + and - change the depth, t switches trace mode, and . fits the graph to the view.</p>
+        <p className="hint">The graph's tree is the nav's: a domain holds Define and Design, each stage its folders, each folder its records. Levels run left to right, and depth counts them each way, folders included. A trace also runs left to right, from the rule to the files that build and test it.</p>
+        <p className="hint">Click a record or a group, or press Enter on it, to center the graph there. A group's chevron, or o, opens or closes it in place. Arrow keys or Tab move between boxes; + and - change the depth, l switches Links, t switches trace mode, and . fits the graph to the view. Alt+Up steps out to the parent, Alt+Down in to the first child, and Alt+Shift+Left or Right to a sibling.</p>
       </section>
     </details>
   );

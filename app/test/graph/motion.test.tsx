@@ -1,6 +1,6 @@
 import './setup';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { NODE_HEIGHT, NODE_WIDTH } from '../../src/graph/layout';
 import { cubicBezier, edgeMove, edgePoints, MOTION_EASE, parseDuration, parseEase, readMotion, tweenEdge, type EdgeEnds } from '../../src/graph/motion';
 import { openApp, startAtDepth } from '../helpers';
@@ -105,10 +105,14 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /** Opens Lend a thing's graph, then re-centers on its requirement; returns the edge between them as first drawn and just after the click. */
 async function recenter() {
-  startAtDepth(2); // at depth 1 the two records keep their places (the new focus is anchored), so nothing would move
+  startAtDepth(1);
   await openApp('/records/P-D-UC01?view=graph', { workspace: testWorkspace() });
   await waitFor(() => expect(path()).not.toBeNull());
   await waitFor(() => expect(isCenter('P-D-UC01')).toBe(true));
+  // With Links on the pictures differ enough that the two records move (the new focus is anchored).
+  fireEvent.click(screen.getByRole('button', { name: 'Links' }));
+  await waitFor(() => expect(node('P-D-DR01')).not.toBeNull());
+  await sleep(500);
   const element = path()!;
   const before = element.getAttribute('d');
   fireEvent.click(node('P-D-UC01-R01')!);
