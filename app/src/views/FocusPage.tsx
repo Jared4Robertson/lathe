@@ -17,7 +17,7 @@ import { RecordContent, RecordEyebrow } from '../specs/RecordContent';
 import { folderPath, testGroups } from '../specs/folders';
 import { GroupSections } from '../specs/FolderGroups';
 import { DomainWiki, NotFound, ProductWiki, SourceNote, problemsUnder } from '../specs/SpecPages';
-import { addressOf, focusOf, isViewMode, VIEW_LABELS, VIEW_MODES, viewFromSearch, withView, type FocusRoute, type ViewMode } from './address';
+import { addressOf, focusOf, isViewMode, VIEW_LABELS, viewFromSearch, withView, type FocusRoute, type ViewMode } from './address';
 import { Inspector } from './Inspector';
 
 // One page for one thing (a record, a group, a product or a domain), at one address, in three
@@ -115,7 +115,8 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   // Keep focus when the element that had it went away with a pane.
   useEffect(() => {
     const active = document.activeElement;
-    if (!active || active === document.body || !active.isConnected) toggles.current[mode]?.focus();
+    // In a split the graph pane's tab is the nearest control; otherwise the shown view's tab.
+    if (!active || active === document.body || !active.isConnected) toggles.current[mode === 'split' ? 'graph' : mode]?.focus();
   }, [mode]);
 
   // Full screen for one pane.
@@ -194,35 +195,109 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   useCommand('collapseAll', () => { expandAllOnPage(false); announce('Collapsed every row'); });
 
   const wiki = <WikiContent index={index} route={route} />;
+  const inspectorToggle = (
+    <Tooltip label={`${showing ? 'Hide' : 'Show'} the inspector`} command="toggleInspector" placement="left">
+      <button
+        type="button"
+        ref={inspectorButton}
+        className={`icon-button inspector-toggle${showing ? ' is-on' : ''}`}
+        aria-label={`${showing ? 'Hide' : 'Show'} the inspector`}
+        aria-expanded={showing}
+        aria-controls="inspector"
+        onClick={() => setShowing(!showing)}
+      >
+        <Icon name="sidebar-right" size={16} />
+      </button>
+    </Tooltip>
+  );
   const graph = (
     <Suspense fallback={<p className="hint graph-loading">Loading the graph…</p>}>
       <GraphView index={index} focus={focus} onNavigate={onNavigate} hrefFor={hrefFor} settings={settings} onSettingsChange={setSettings} onGraph={onGraph} />
     </Suspense>
   );
 
-  const pane = (kind: 'wiki' | 'graph', content: ReactNode) => {
+  const split = mode === 'split';
+  /** The title of the page: at the top of the wiki pane, or of the graph pane when it is alone. */
+  const title = <PageTitle index={index} route={route} />;
+
+  /**
+   * One pane: a panel with one title bar (LA-PAT-APP-CODE-R11), as an editor group in VS Code. Its tabs pick
+   * the view (in a split each pane keeps its own view, with a button to close it); its actions on the
+   * right open the other view beside it, maximize it and, on the rightmost pane, show or hide the inspector.
+   */
+  const pane = (kind: 'wiki' | 'graph', content: ReactNode, rightmost: boolean) => {
     const isFull = full === kind;
     const name = kind === 'wiki' ? 'Wiki' : 'Graph';
+    const other: 'wiki' | 'graph' = kind === 'wiki' ? 'graph' : 'wiki';
+    const tabs: ('wiki' | 'graph')[] = split ? [kind] : ['wiki', 'graph'];
+    const panelId = `pane-${kind}-content`;
     return (
       <section
-        className={`pane pane-${kind}${isFull ? ' is-fullscreen' : ''}`}
+        className={`pane panel pane-${kind}${isFull ? ' is-fullscreen' : ''}`}
         aria-label={`${name} pane`}
         inert={full !== null && !isFull ? true : undefined}
         onKeyDown={isFull ? (e: KeyboardEvent) => { if (e.key === 'Escape' && !e.defaultPrevented) { e.preventDefault(); leaveFull(); } } : undefined}
       >
-        <Tooltip label={isFull ? 'Leave full screen' : 'Full screen'} command={isFull ? 'escape' : 'toggleFullScreen'} placement="left">
-          <button
-            type="button"
-            ref={(el) => { fullButtons.current[kind] = el; }}
-            className="icon-button pane-full"
-            aria-pressed={isFull}
-            aria-label={isFull ? `Leave full screen (${name})` : `Full screen: ${name}`}
-            onClick={() => (isFull ? leaveFull() : toggleFull(kind))}
-          >
-            <Icon name={isFull ? 'minimize' : 'maximize'} />
-          </button>
-        </Tooltip>
-        {kind === 'wiki' ? <div className="pane-scroll" ref={wikiPane}>{content}</div> : content}
+        <div className="pane-bar">
+          <div className="pane-tabs" role="tablist" aria-label={`${name} pane views`}>
+            {tabs.map((t) => (
+              <Tooltip key={t} label={`${VIEW_LABELS[t]} view`} command={VIEW_COMMANDS[t]}>
+                <button
+                  type="button"
+                  role="tab"
+                  ref={(el) => { if (!split || t === kind) toggles.current[t] = el; }}
+                  className="pane-tab"
+                  aria-selected={t === kind}
+                  aria-controls={t === kind ? panelId : undefined}
+                  data-command={VIEW_COMMANDS[t]}
+                  onClick={() => { if (!split) setMode(t); }}
+                >
+                  <Icon name={VIEW_ICONS[t]} size={15} /> {VIEW_LABELS[t]}
+                </button>
+              </Tooltip>
+            ))}
+            {split && (
+              <Tooltip label={`Close the ${name.toLowerCase()} pane`}>
+                <button type="button" className="icon-button pane-close" aria-label={`Close the ${name.toLowerCase()} pane`} onClick={() => setMode(other)}>
+                  <Icon name="x" size={14} />
+                </button>
+              </Tooltip>
+            )}
+          </div>
+          <div className="pane-actions">
+            {!split && (
+              <Tooltip label={`Open the ${VIEW_LABELS[other].toLowerCase()} beside`} command="viewSplit">
+                <button
+                  type="button"
+                  ref={(el) => { toggles.current.split = el; }}
+                  className="icon-button"
+                  aria-label={`Open the ${VIEW_LABELS[other].toLowerCase()} beside`}
+                  data-command="viewSplit"
+                  onClick={() => setMode('split')}
+                >
+                  <Icon name="split" size={16} />
+                </button>
+              </Tooltip>
+            )}
+            <Tooltip label={isFull ? 'Leave full screen' : 'Full screen'} command={isFull ? 'escape' : 'toggleFullScreen'} placement="left">
+              <button
+                type="button"
+                ref={(el) => { fullButtons.current[kind] = el; }}
+                className="icon-button"
+                aria-pressed={isFull}
+                aria-label={isFull ? `Leave full screen (${name})` : `Full screen: ${name}`}
+                onClick={() => (isFull ? leaveFull() : toggleFull(kind))}
+              >
+                <Icon name={isFull ? 'minimize' : 'maximize'} size={16} />
+              </button>
+            </Tooltip>
+            {rightmost && !narrow && inspectorToggle}
+          </div>
+        </div>
+        <div id={panelId} role="tabpanel" aria-label={`${name} view`} className={kind === 'wiki' ? 'pane-scroll' : 'pane-body'} ref={kind === 'wiki' ? wikiPane : undefined}>
+          {(kind === 'wiki' || !split) && title}
+          {content}
+        </div>
       </section>
     );
   };
@@ -233,56 +308,20 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
     return box && box.width > 0 ? ((clientX - box.left) / box.width) * 100 : ratio;
   };
 
-  const split = mode === 'split';
   return (
     <div
       ref={layout}
       className={`focus-layout${showing && !narrow ? ' with-inspector' : ''}`}
       style={{ '--inspector-width': `${inspectorWidth}px` } as CSSProperties}
     >
-      <div className="focus-main panel">
-        <FocusHeader
-          index={index}
-          route={route}
-          corner={
-            // The inspector's toggle sits in the page panel's top-right corner, as VS Code's layout toggles do.
-            <Tooltip label={`${showing ? 'Hide' : 'Show'} the inspector`} command="toggleInspector" placement="left">
-              <button
-                type="button"
-                ref={inspectorButton}
-                className={`icon-button inspector-toggle${showing ? ' is-on' : ''}`}
-                aria-label={`${showing ? 'Hide' : 'Show'} the inspector`}
-                aria-expanded={showing}
-                aria-controls="inspector"
-                onClick={() => setShowing(!showing)}
-              >
-                <Icon name="sidebar-right" size={16} />
-              </button>
-            </Tooltip>
-          }
-        >
-          <div className="view-toggle" role="group" aria-label="View">
-            {VIEW_MODES.map((m) => (
-              <Tooltip key={m} label={`${VIEW_LABELS[m]} view`} command={VIEW_COMMANDS[m]}>
-                <button
-                  type="button"
-                  ref={(el) => { toggles.current[m] = el; }}
-                  aria-pressed={mode === m}
-                  onClick={() => setMode(m)}
-                  data-command={VIEW_COMMANDS[m]}
-                >
-                  <Icon name={VIEW_ICONS[m]} size={16} /> {VIEW_LABELS[m]}
-                </button>
-              </Tooltip>
-            ))}
-          </div>
-        </FocusHeader>
+      <div className="focus-main">
+        {narrow && <div className="pane-narrow-actions">{inspectorToggle}</div>}
         <div
           ref={views}
           className={`focus-views mode-${mode}`}
           style={split && !narrow ? { gridTemplateColumns: `minmax(0, ${ratio}fr) var(--panel-gap) minmax(0, ${100 - ratio}fr)` } : undefined}
         >
-          {mode !== 'graph' && pane('wiki', wiki)}
+          {mode !== 'graph' && pane('wiki', wiki, mode === 'wiki')}
           {split && (
             <ResizeHandle
               className="split-divider"
@@ -297,7 +336,7 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
               onReset={resetRatio}
             />
           )}
-          {mode !== 'wiki' && pane('graph', graph)}
+          {mode !== 'wiki' && pane('graph', graph, true)}
         </div>
       </div>
       {showing ? (
@@ -355,9 +394,10 @@ function InspectorHost({ narrow, onEscape, children }: { narrow: boolean; onEsca
   );
 }
 
-// ---------- Header ----------
+// ---------- Title ----------
 
-function FocusHeader({ index, route, corner, children }: { index: SpecIndex; route: FocusRoute; corner?: ReactNode; children: ReactNode }) {
+/** The page's title: its eyebrow, title, ID and problems, at the top of the pane that shows it. */
+function PageTitle({ index, route }: { index: SpecIndex; route: FocusRoute }) {
   const focus = focusOf(route);
   let eyebrow: ReactNode;
   let title: string;
@@ -389,13 +429,9 @@ function FocusHeader({ index, route, corner, children }: { index: SpecIndex; rou
     problems = groupMembers(index, focus).flatMap((m) => index.problemsFor.get(m.id) ?? []);
   }
   return (
-    <div className="focus-header">
-      {corner && <div className="focus-corner">{corner}</div>}
+    <div className="pane-title">
       <PageHeader eyebrow={eyebrow} title={title} id={id}>
-        <div className="focus-actions">
-          <ProblemBadge problems={problems} />
-          {children}
-        </div>
+        <ProblemBadge problems={problems} />
       </PageHeader>
     </div>
   );

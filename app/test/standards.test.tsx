@@ -3,6 +3,8 @@ import { join, relative } from 'node:path';
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { openApp } from './helpers';
+// The split view loads the graph, which needs a ResizeObserver in jsdom.
+import './graph/setup';
 
 // The app's coding standards (LA-PAT-APP-CODE): each test proves one of the pattern's rules,
 // by reading the source or by rendering pages. A failure names the file and line to fix.
@@ -159,7 +161,7 @@ describe('LA-PAT-APP-CODE App code', () => {
     // A focusable separator (one with a value) is a splitter; a plain divider line such as the rail's is not.
     const handles = screen.getAllByRole('separator').filter((h) => h.hasAttribute('aria-valuenow')).map((h) => [h.getAttribute('aria-label'), h.classList.contains('resize-handle')]);
     expect(handles).toEqual([['Resize the navigation', true], ['Resize the panes', true], ['Resize the inspector', true]]);
-    for (const panel of [document.querySelector('#nav'), document.querySelector('.focus-main'), document.querySelector('.inspector-column')]) expect(panel).toHaveClass('panel');
+    for (const panel of [document.querySelector('#nav'), ...document.querySelectorAll('.pane'), document.querySelector('.inspector-column')]) expect(panel).toHaveClass('panel');
   });
 
   it('LA-BRW-T295 Every grid says its columns, a single column being minmax(0, 1fr), so content shrinks with its panel', () => {
@@ -167,6 +169,29 @@ describe('LA-PAT-APP-CODE App code', () => {
       .filter((r) => /display:\s*(?:inline-)?grid/.test(r.body) && !/grid-template-columns/.test(r.body) && !/place-items/.test(r.body))
       .map((r) => `app/src/styles.css:${r.line}: ${r.selector}`);
     expect(unsized).toEqual([]);
+  });
+
+  it('LA-BRW-T298 Each pane has one title bar holding its tabs and layout actions, and nothing else switches views', async () => {
+    for (const path of ['/records/DM-SHOP-UC01?view=wiki', '/records/DM-SHOP-UC01?view=split']) {
+      await openApp(path);
+      await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
+      const panes = [...document.querySelectorAll<HTMLElement>('.pane')];
+      expect(panes.length).toBeGreaterThan(0);
+      for (const pane of panes) {
+        expect(pane).toHaveClass('panel');
+        expect(pane.firstElementChild).toHaveClass('pane-bar');
+        expect(pane.querySelectorAll(':scope > .pane-bar')).toHaveLength(1);
+      }
+      // Every view and layout control lives in a title bar.
+      const controls = [
+        ...screen.getAllByRole('tab'),
+        ...screen.queryAllByRole('button', { name: /beside$|^Close the (wiki|graph) pane$|^Full screen|^Leave full screen/ }),
+        screen.getByRole('button', { name: /the inspector$/, expanded: true }),
+      ];
+      for (const c of controls) expect(c.closest('.pane-bar')).not.toBeNull();
+      // The title belongs to the content of a pane.
+      expect(screen.getByRole('heading', { level: 1 }).closest('.pane')).not.toBeNull();
+    }
   });
 
   it('LA-BRW-T262 Code, specs and docs use American spelling', () => {
