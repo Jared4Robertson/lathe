@@ -14,12 +14,17 @@ const KEYS = [NAV, '.pane-wiki > .pane-bar', '.pane-wiki .pane-title', '.pane-gr
 const ALLOW = ['.side-bar'];
 
 /** The IDs of the graph's boxes wholly inside its canvas, in DOM order (the map runs past the canvas's edges). */
+/**
+ * A level is as wide as its widest label (LA-EXP-DR58), so a box may run past the canvas's right
+ * edge: a box is in view when its left part is and it is 24 px tall or more, and is clicked or hovered there.
+ */
+const AT_LEFT = { x: 20, y: 12 };
 async function boxesInView(page: Page, except = ''): Promise<string[]> {
   return page.evaluate((except) => {
     const canvas = document.querySelector('.graph-flow')!.getBoundingClientRect();
     return [...document.querySelectorAll<HTMLElement>('.graph-flow .react-flow__node[data-id^="LA-"]')]
       .filter((el) => el.dataset.id !== except)
-      .filter((el) => { const r = el.getBoundingClientRect(); return r.left >= canvas.left && r.right <= canvas.right && r.top >= canvas.top && r.bottom <= canvas.bottom - 40; })
+      .filter((el) => { const r = el.getBoundingClientRect(); return r.height >= 24 && r.left >= canvas.left && r.left + 40 <= canvas.right && r.top >= canvas.top && r.bottom <= canvas.bottom - 40; })
       .map((el) => el.dataset.id!);
   }, except);
 }
@@ -47,7 +52,7 @@ test.describe('side bar', () => {
       const ids = (await boxesInView(page)).slice(0, 3);
       expect(ids.length, 'boxes in view').toBeGreaterThan(0);
       for (const id of ids) {
-        await page.locator(`.graph-flow .react-flow__node[data-id="${id}"]`).hover();
+        await page.locator(`.graph-flow .react-flow__node[data-id="${id}"]`).hover({ position: AT_LEFT });
         await page.waitForTimeout(150);
       }
       await page.mouse.move(5, 5);
