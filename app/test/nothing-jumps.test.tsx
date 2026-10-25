@@ -73,25 +73,20 @@ function scrollsVertically(r: Rule): boolean {
 }
 
 /**
- * Scroll boxes in parts of the app other work is changing now (brief 53, phase 2: views/, shell/,
- * App.tsx and the nav). Each one MUST be fixed and removed from this list; the test fails when an
- * entry is no longer a scroll box, so the list only shrinks.
+ * A box keeps its gutter when a rule for it, or for the end of its selector (`.erd-key` for `.app.is-narrow .erd-key`),
+ * sets `scrollbar-gutter: stable`, or hides its scrollbar (`scrollbar-width: none`), so there is none to come and go.
  */
-const PHASE_2_SCROLL_BOXES = ['.workspace > aside', '.nav-scroll', '.quick-find-results', '.quick-find-results.is-inline', '.pane-scroll', '.inspector.record-side', '.shortcut-groups', '.palette-list', '.space-rail', '.pages-list'];
-
-/** A box keeps its gutter when a rule for it, or for the end of its selector (`.erd-key` for `.app.is-narrow .erd-key`), sets `scrollbar-gutter: stable`. */
 function keepsGutter(selector: string): boolean {
-  return ALL.some((r) => r.decls.get('scrollbar-gutter') === 'stable' && selectors(r).some((s) => s === selector || selector.endsWith(` ${s}`)));
+  const steady = (r: Rule) => r.decls.get('scrollbar-gutter') === 'stable' || r.decls.get('scrollbar-width') === 'none';
+  return ALL.some((r) => steady(r) && selectors(r).some((s) => s === selector || selector.endsWith(` ${s}`)));
 }
 
 describe('nothing jumps (LA-PAT-APP-UX-R08)', () => {
   it('LA-BRW-T488 every scroll box keeps room for its scrollbar, so it never comes and goes with the content', () => {
     const boxes = ALL.filter(scrollsVertically).flatMap((r) => selectors(r).map((s) => ({ s, line: r.line })));
     expect(boxes.length).toBeGreaterThan(5);
-    const missing = boxes.filter(({ s }) => !PHASE_2_SCROLL_BOXES.includes(s) && !keepsGutter(s)).map(({ s, line }) => `app/src/styles.css:${line}: ${s} needs scrollbar-gutter: stable`);
+    const missing = boxes.filter(({ s }) => !keepsGutter(s)).map(({ s, line }) => `app/src/styles.css:${line}: ${s} needs scrollbar-gutter: stable`);
     expect(missing).toEqual([]);
-    const stale = PHASE_2_SCROLL_BOXES.filter((s) => !boxes.some((b) => b.s === s) || keepsGutter(s));
-    expect(stale, 'fixed or gone: remove from PHASE_2_SCROLL_BOXES').toEqual([]);
   });
 
   it('LA-BRW-T488 the bars above a canvas have one height whatever their text', () => {
