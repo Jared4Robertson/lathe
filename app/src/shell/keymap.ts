@@ -71,6 +71,10 @@ export const COMMANDS: readonly Command[] = [
   { id: 'escape', title: 'Leave full screen, or clear or close the innermost thing', group: 'View', keys: ['Escape'], when: 'global' },
   { id: 'expandAll', title: 'Expand all rows on this page', group: 'View', keys: [], when: 'page' },
   { id: 'collapseAll', title: 'Collapse all rows on this page', group: 'View', keys: [], when: 'page' },
+  // Themes (app/src/theme). VS Code's Cmd+K Cmd+T cannot be used: Mod+K is a whole binding (quick open), and a sequence may not start with one.
+  { id: 'chooseTheme', title: 'Color theme', group: 'View', keys: ['g t'], when: 'global' },
+  { id: 'chooseColorMode', title: 'Light, dark or system', group: 'View', keys: [], when: 'global' },
+  { id: 'openAppearance', title: 'Open Appearance settings', group: 'View', keys: [], when: 'global' },
   // Graph
   { id: 'graphMove', title: 'Move between boxes', group: 'Graph', keys: ['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp'], when: 'graph', local: true },
   { id: 'graphActivate', title: 'Center on the focused box, or open or close a group', group: 'Graph', keys: ['Enter'], when: 'graph', local: true },
