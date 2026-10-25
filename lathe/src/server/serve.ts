@@ -17,6 +17,10 @@ const TYPES: Record<string, string> = {
   '.json': 'application/json',
   '.png': 'image/png',
   '.ico': 'image/x-icon',
+  // The app's self-hosted fonts and their license files.
+  '.woff2': 'font/woff2',
+  '.woff': 'font/woff',
+  '.txt': 'text/plain; charset=utf-8',
 };
 
 async function sendFile(res: ServerResponse, file: string) {

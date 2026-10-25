@@ -3,7 +3,7 @@ import { Icon } from '../components/icons';
 import { ModelIcon } from '../model/ModelIcon';
 import { Tooltip } from '../shell/Tooltip';
 import type { SpecIndex } from '../specs/data';
-import { VIEW_LABELS, type ViewName } from './address';
+import { VIEW_LABELS, VIEW_NAMES, type ViewName } from './address';
 import { TabStrip } from './TabStrip';
 import type { PageTabsApi } from './useTabs';
 
@@ -11,13 +11,23 @@ import type { PageTabsApi } from './useTabs';
 // VS Code's editor area. A tab is a page and the panes are views of it, so the bar holds what is
 // the page's: at its left the page's tabs, at its right the View group (Wiki, Graph, Model), a
 // divider, and the inspector toggle at the far right, beside the inspector. It is one line high
-// whatever it holds (the tabs scroll sideways), so nothing below it moves (UX-R08).
+// whatever it holds (the tabs scroll sideways), so nothing below it moves (UX-R08). Its View group
+// keeps a slot for every view on every page, so the toggles never move under the pointer: a view
+// the page does not offer (Model, outside a domain, an aggregate or an entity) shows dimmed, and
+// its tooltip says where it works.
 //
 // On a phone it is the same bar, compact (notes/mobile-design.md): the tabs fold into an "Open
 // pages" button that opens them as a sheet, the View group shows one view at a time, and the
 // inspector toggle opens the inspector as a bottom sheet. The shell's top bar above it names the page.
 
 export const VIEW_COMMANDS: Record<ViewName, string> = { wiki: 'viewWiki', graph: 'viewGraph', model: 'viewModel' };
+
+/** Where a view works, for the dimmed slot of a view a page does not offer. */
+const NOT_OFFERED: Record<ViewName, string> = {
+  wiki: 'on every page',
+  graph: 'on every page',
+  model: 'on a domain, an aggregate or an entity',
+};
 
 export function ViewIcon({ view, size = 16 }: { view: ViewName; size?: number }) {
   return view === 'model' ? <ModelIcon size={size} /> : <Icon name={view} size={size} />;
@@ -53,6 +63,9 @@ export function PageBar(props: PageBarProps) {
   const toggleLabel = (v: ViewName) =>
     !compact && open.length === 1 && open[0] === v ? `${VIEW_LABELS[v]} view (stays open: it is the only one)` : `${VIEW_LABELS[v]} view`;
 
+  /** On a wide screen every view keeps its slot; on a phone the switch shows only the views offered. */
+  const slots: readonly ViewName[] = compact ? offered : VIEW_NAMES;
+
   let start: ReactNode;
   if (compact) {
     start = (
@@ -79,7 +92,7 @@ export function PageBar(props: PageBarProps) {
       <div className="page-bar-actions">
         {offered.length > (compact ? 1 : 0) && (
           <div className={compact ? 'view-switch' : 'pane-views'} role="group" aria-label="View">
-            {offered.map((v) => (
+            {slots.map((v) => offered.includes(v) ? (
               <Tooltip key={v} label={toggleLabel(v)} command={VIEW_COMMANDS[v]}>
                 <button
                   type="button"
@@ -92,6 +105,17 @@ export function PageBar(props: PageBarProps) {
                 >
                   <ViewIcon view={v} size={compact ? 18 : 16} />
                   {compact && <span className="view-segment-label" aria-hidden="true">{VIEW_LABELS[v]}</span>}
+                </button>
+              </Tooltip>
+            ) : (
+              <Tooltip key={v} label={`${VIEW_LABELS[v]} view: ${NOT_OFFERED[v]}`}>
+                <button
+                  type="button"
+                  className="icon-button is-unavailable"
+                  aria-label={`${VIEW_LABELS[v]} (${NOT_OFFERED[v]})`}
+                  aria-disabled="true"
+                >
+                  <ViewIcon view={v} size={16} />
                 </button>
               </Tooltip>
             ))}
