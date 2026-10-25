@@ -16,7 +16,7 @@ beforeAll(async () => {
 });
 
 describe('the link-crosses-product check', () => {
-  it('LA-CHK-T49 A link from a record of one product to a record of another is an error, whatever the relation; a citation in prose is not', () => {
+  it('LA-CHK-T52 A link from a record of one product to a record of another is an error, whatever the relation; a citation in prose is not', () => {
     expect(ws.problems.filter((p) => p.check === CHECK)).toEqual([
       {
         severity: 'error', check: CHECK, record: 'AA-ONE-DR01',
