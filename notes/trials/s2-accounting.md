@@ -42,7 +42,7 @@ How this compares with S2's own generated traceability for the same IDs:
 | 8 interaction requirements (view and API) | Each is listed with what it fulfills and the checks that cover it | **Not counted at all.** Coverage counts only `requirement` and `domain_rule`. |
 | Flow steps per requirement | Listed (for example W6, W7, WA4) | Not expressible. A flow links to whole requirements only. |
 | Test run state | Counted as automated, manual, or not automated yet | Not expressible. Every test needs an existing `run_by` file. |
-| Design | "Designed" means that any technical-spec detail file cites the ID | "Satisfied" means a component links to it. I moved each step's citations onto that step's component, which is a judgement call. |
+| Design | "Designed" means that any technical-spec detail file cites the ID | "Satisfied" means a component links to it. I moved each step's citations onto that step's component, which is a judgment call. |
 
 The numbers agree where both tools count. The real gaps are what Lathe leaves out: interaction requirements, flow steps, and test state. There is also a false error on every rule test.
 

@@ -17,7 +17,7 @@ export interface Space {
   mark: string;
   /** True when `mark` is the monogram drawn from the ID. */
   monogram: boolean;
-  /** The icon's background colour: the product's `color` field, or one derived from its ID. */
+  /** The icon's background color: the product's `color` field, or one derived from its ID. */
   color: string;
 }
 
@@ -36,14 +36,14 @@ export function iconField(value: string | undefined): string | null {
   return graphemes(v) <= 2 ? v : null;
 }
 
-/** A product's `color` field when it is a hex colour or a CSS colour name, else null. */
+/** A product's `color` field when it is a hex color or a CSS color name, else null. */
 export function colorField(value: string | undefined): string | null {
   const v = value?.trim();
   if (!v) return null;
   return /^#(?:[0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(v) || /^[a-z]{3,20}$/i.test(v) ? v : null;
 }
 
-/** A stable colour for an ID: the same ID always gets the same hue, dark enough for white text. */
+/** A stable color for an ID: the same ID always gets the same hue, dark enough for white text. */
 export function colorOf(id: string): string {
   let h = 0;
   for (const ch of id) h = (h * 31 + ch.codePointAt(0)!) >>> 0;
@@ -129,7 +129,7 @@ export function SpacesProvider({ value, children }: { value: SpacesApi; children
   return <SpacesContext.Provider value={value}>{children}</SpacesContext.Provider>;
 }
 
-/** A space's square icon: its emoji or characters, or its monogram on its colour. */
+/** A space's square icon: its emoji or characters, or its monogram on its color. */
 export function SpaceMark({ space, size = 32 }: { space: Space; size?: number }) {
   return (
     <span

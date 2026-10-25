@@ -6,28 +6,28 @@ import {
   groupMembers,
   isGraphNode,
   isGrouped,
-  neighbourhood,
+  neighborhood,
   parseGroupId,
   pluralLabel,
   traceChain,
   type Filters,
-  type Neighbourhood,
+  type Neighborhood,
 } from '../../src/graph/model';
-import { layoutNeighbourhood } from '../../src/graph/layout';
+import { layoutNeighborhood } from '../../src/graph/layout';
 import { addressOf, graphRedirect } from '../../src/views/address';
 import { indexWorkspace } from '../../src/specs/data';
 import { groupedWorkspace, testIndex } from './workspace';
 
-const records = (n: Neighbourhood) => n.nodes.filter((x) => !x.group).map((x) => x.id).sort();
-const groups = (n: Neighbourhood) => n.nodes.filter((x) => x.group).map((x) => x.id).sort();
-const spine = (n: Neighbourhood) => n.edges.filter((e) => e.relation === 'parent').map((e) => `${e.source} > ${e.target}`).sort();
+const records = (n: Neighborhood) => n.nodes.filter((x) => !x.group).map((x) => x.id).sort();
+const groups = (n: Neighborhood) => n.nodes.filter((x) => x.group).map((x) => x.id).sort();
+const spine = (n: Neighborhood) => n.edges.filter((e) => e.relation === 'parent').map((e) => `${e.source} > ${e.target}`).sort();
 const filters = (kinds: string[] = [], relations: string[] = []): Filters => ({ hiddenKinds: new Set(kinds), hiddenRelations: new Set(relations) });
 
 describe('graph groups', () => {
   const index = testIndex();
   const grouped = indexWorkspace(groupedWorkspace());
 
-  it('LA-BRW-T100 A record with several kinds of child, or more than a handful of one kind, has a group per child kind, labelled with the plural and a count', () => {
+  it('LA-BRW-T100 A record with several kinds of child, or more than a handful of one kind, has a group per child kind, labeled with the plural and a count', () => {
     expect(isGrouped(index, 'P-D')).toBe(true);
     expect(childKinds(index, 'P-D')).toEqual(['aggregate', 'use_case', 'view', 'endpoint', 'component', 'test', 'question']);
     // One kind, a handful or fewer: no groups.
@@ -52,47 +52,47 @@ describe('graph groups', () => {
   });
 
   it('LA-BRW-T101 Groups are folded by default, open when the focus is a member or the person opens them, and the spine runs record, group, record', () => {
-    const domain = neighbourhood(index, 'P-D', 1);
+    const domain = neighborhood(index, 'P-D', 1);
     expect(groups(domain)).toEqual(childKinds(index, 'P-D').map((k) => `P-D/${k}`).sort());
     expect(domain.nodes.filter((x) => x.group).every((x) => !x.group!.open)).toBe(true);
     // Folded: the domain's children are not shown, only its parent.
     expect(records(domain)).toEqual(['P', 'P-D']);
     expect(domain.nodes.find((x) => x.id === 'P-D/use_case')).toMatchObject({ title: 'Use cases (1)', distance: 1, group: { parent: 'P-D', count: 1, open: false } });
     // Opened by the person: its members appear, one step from the domain, behind the group.
-    const opened = neighbourhood(index, 'P-D', 1, undefined, new Map([['P-D/use_case', true]]));
+    const opened = neighborhood(index, 'P-D', 1, undefined, new Map([['P-D/use_case', true]]));
     expect(records(opened)).toEqual(['P', 'P-D', 'P-D-UC01']);
     expect(opened.nodes.find((x) => x.id === 'P-D-UC01')!.distance).toBe(1);
     expect(spine(opened)).toContain('P-D > P-D/use_case');
     expect(spine(opened)).toContain('P-D/use_case > P-D-UC01');
     expect(spine(opened)).not.toContain('P-D > P-D-UC01');
     // The focus's own group is open, so its siblings show; the person can close it.
-    const uc = neighbourhood(grouped, 'P-D-UC01', 1);
+    const uc = neighborhood(grouped, 'P-D-UC01', 1);
     expect(records(uc)).toContain('P-D-UC02');
     expect(uc.nodes.find((x) => x.id === 'P-D/use_case')!.group!.open).toBe(true);
-    expect(records(neighbourhood(grouped, 'P-D-UC01', 1, undefined, new Map([['P-D/use_case', false]])))).not.toContain('P-D-UC02');
+    expect(records(neighborhood(grouped, 'P-D-UC01', 1, undefined, new Map([['P-D/use_case', false]])))).not.toContain('P-D-UC02');
     // A grouped record below the focus: its requirements stay folded.
-    const uc2 = neighbourhood(grouped, 'P-D-UC02', 1);
+    const uc2 = neighborhood(grouped, 'P-D-UC02', 1);
     expect(groups(uc2)).toEqual(['P-D-UC02/requirement', 'P-D/use_case']);
     expect(records(uc2).filter((id) => id.startsWith('P-D-UC02-'))).toEqual([]);
     // Cross-links still go record to record.
-    const req = neighbourhood(index, 'P-D-UC01-R01', 2);
+    const req = neighborhood(index, 'P-D-UC01-R01', 2);
     expect(req.edges.filter((e) => e.relation !== 'parent').every((e) => !parseGroupId(e.source) && !parseGroupId(e.target))).toBe(true);
     expect(req.edges.map((e) => e.id)).toContain('P-D-C01|satisfies|P-D-UC01-R01');
     // Groups do not count as a hop, so the same records are reached at the same distances as before.
-    expect(neighbourhood(index, 'P-D-C01', 1).nodes.find((x) => x.id === 'P-D')!.distance).toBe(1);
+    expect(neighborhood(index, 'P-D-C01', 1).nodes.find((x) => x.id === 'P-D')!.distance).toBe(1);
   });
 
   it('LA-BRW-T102 A group can be the focus: its parent and all its members are shown', () => {
-    const g = neighbourhood(grouped, 'P-D/use_case', 1);
+    const g = neighborhood(grouped, 'P-D/use_case', 1);
     expect(g.nodes[0]).toMatchObject({ id: 'P-D/use_case', distance: 0 });
     expect(records(g)).toEqual(['P-D', 'P-D-UC01', 'P-D-UC02']);
     for (const e of ['P-D > P-D/use_case', 'P-D/use_case > P-D-UC01', 'P-D/use_case > P-D-UC02']) expect(spine(g)).toContain(e);
     // The parent's other groups and the members' own groups are shown folded, as context.
     expect(g.nodes.filter((x) => x.group && x.id !== 'P-D/use_case').every((x) => !x.group!.open)).toBe(true);
     // The focus group cannot be folded.
-    expect(records(neighbourhood(grouped, 'P-D/use_case', 1, undefined, new Map([['P-D/use_case', false]])))).toContain('P-D-UC01');
+    expect(records(neighborhood(grouped, 'P-D/use_case', 1, undefined, new Map([['P-D/use_case', false]])))).toContain('P-D-UC01');
     // A group that does not exist shows nothing.
-    expect(neighbourhood(index, 'P-D/flow', 1).nodes).toEqual([]);
+    expect(neighborhood(index, 'P-D/flow', 1).nodes).toEqual([]);
     // Its address.
     // Its address: /records/<parent-id>/<kind>, and the old /graph address leads there in the Graph view.
     expect(addressOf(grouped, 'P-D/use_case')).toBe('/records/P-D/use_case');
@@ -102,12 +102,12 @@ describe('graph groups', () => {
 
   it('LA-BRW-T103 Groups take their own column between the parent and its children, left to right', async () => {
     // A group is one column after its parent, and its members one column after the group.
-    const column = (n: Neighbourhood, id: string) => n.nodes.find((x) => x.id === id)!.column;
-    const fromDomain = neighbourhood(index, 'P-D', 1, undefined, new Map([['P-D/use_case', true]]));
+    const column = (n: Neighborhood, id: string) => n.nodes.find((x) => x.id === id)!.column;
+    const fromDomain = neighborhood(index, 'P-D', 1, undefined, new Map([['P-D/use_case', true]]));
     expect(column(fromDomain, 'P-D/use_case')).toBe(column(fromDomain, 'P-D') + 1);
     expect(column(fromDomain, 'P-D-UC01')).toBe(column(fromDomain, 'P-D/use_case') + 1);
-    const n = neighbourhood(grouped, 'P-D/use_case', 2);
-    const { positions, layout } = await layoutNeighbourhood(n);
+    const n = neighborhood(grouped, 'P-D/use_case', 2);
+    const { positions, layout } = await layoutNeighborhood(n);
     expect(layout).toBe('layered');
     const x = (id: string) => positions.get(id)!.x;
     expect(x('P-D')).toBeLessThan(x('P-D/use_case'));
@@ -133,10 +133,10 @@ describe('graph groups', () => {
 
   it('LA-BRW-T105 Trace mode has no groups, and filters hide groups with their kind or with the parent relation', () => {
     expect(traceChain(index, 'P-D-UC01-R01').nodes.some((x) => x.group)).toBe(false);
-    expect(groups(neighbourhood(index, 'P-D', 1, filters(['use_case'])))).not.toContain('P-D/use_case');
-    expect(groups(neighbourhood(index, 'P-D', 1, filters([], ['parent'])))).toEqual([]);
-    expect(groups(neighbourhood(index, 'P-D-UC01-R01', 2, filters([], ['parent'])))).toEqual([]);
+    expect(groups(neighborhood(index, 'P-D', 1, filters(['use_case'])))).not.toContain('P-D/use_case');
+    expect(groups(neighborhood(index, 'P-D', 1, filters([], ['parent'])))).toEqual([]);
+    expect(groups(neighborhood(index, 'P-D-UC01-R01', 2, filters([], ['parent'])))).toEqual([]);
     // The same graph every time.
-    expect(neighbourhood(grouped, 'P-D-UC01', 2)).toEqual(neighbourhood(grouped, 'P-D-UC01', 2));
+    expect(neighborhood(grouped, 'P-D-UC01', 2)).toEqual(neighborhood(grouped, 'P-D-UC01', 2));
   });
 });

@@ -63,7 +63,7 @@ describe('record page', () => {
     expect(within(side()).getByText('Nothing links to this record.')).toBeInTheDocument();
   });
 
-  it('LA-BRW-T12 A record body is sanitised before it is shown', async () => {
+  it('LA-BRW-T12 A record body is sanitized before it is shown', async () => {
     await openApp('/records/DM-SHOP-C01');
     await screen.findByRole('heading', { level: 1, name: 'Basket service' });
     const body = main().querySelector('.markdown') as HTMLElement;

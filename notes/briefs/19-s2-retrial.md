@@ -11,7 +11,7 @@ S2_sandbox is a client product. Work outside the repo, in the first trial's fold
 ## What to do
 1. Rework the trial's records for the new format: S2's view and API requirements as `interaction_requirement` records; rule tests with no separate test ID (their code names the rule's ID); tests S2 has not automated as `manual` or `planned`; and replace extension workarounds with widening where the defaults now allow it (for example a domain rule directly under a domain). Remove extension kinds or relations the defaults now cover.
 2. Run the check (`node <repo>/lathe/bin/lathe.ts check --root <trial folder>`) and compare its coverage, per obligation kind, with S2's own traceability for the same slice, as the first report did.
-3. Add a section "Pass 4 re-run" to `notes/trials/s2-accounting.md`: which of the first report's 11 recommendations are now done, partly done or still open; the new check result and coverage table; anything new that broke or is still awkward; and an updated, prioritised list of what to change next.
+3. Add a section "Pass 4 re-run" to `notes/trials/s2-accounting.md`: which of the first report's 11 recommendations are now done, partly done or still open; the new check result and coverage table; anything new that broke or is still awkward; and an updated, prioritized list of what to change next.
 
 ## Scope
 You own `notes/trials/**` in the repo and your new scratch folder.

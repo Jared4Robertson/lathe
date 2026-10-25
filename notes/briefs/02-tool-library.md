@@ -3,10 +3,10 @@
 Read [00-common-rules.md](00-common-rules.md) first.
 
 ## Goal
-Give Lathe a concrete example to organise, so the abstract model stays grounded. Specify a small product end to end as Lathe records (Define, then Design), then build it, with every requirement and domain rule designed by a component and proved by a test whose code carries the test's ID.
+Give Lathe a concrete example to organize, so the abstract model stays grounded. Specify a small product end to end as Lathe records (Define, then Design), then build it, with every requirement and domain rule designed by a component and proved by a test whose code carries the test's ID.
 
 ## The product
-A neighbourhood **tool library**. Librarians register members and add tools to the catalog. Members borrow available tools for a loan period and return them; on return the librarian records the tool's condition. A damaged tool is taken out of lending until it is repaired. (It deliberately echoes Lathe's own foundation: people, tools, and a tool's condition.)
+A neighborhood **tool library**. Librarians register members and add tools to the catalog. Members borrow available tools for a loan period and return them; on return the librarian records the tool's condition. A damaged tool is taken out of lending until it is repaired. (It deliberately echoes Lathe's own foundation: people, tools, and a tool's condition.)
 
 Example values, decided for this example: a loan lasts 14 days; a member may hold at most 3 active loans; a tool whose condition is "needs repair" cannot be lent; a member with an overdue loan cannot borrow.
 
@@ -16,7 +16,7 @@ Example values, decided for this example: a loan lasts 14 days; a member may hol
 - Out of scope: the engine (`lathe/`), the web app (`app/`), other products.
 
 ## What to write
-1. Specs under `specs/tool-library/` with product `TL` and one domain `TL-LEND` (Lending), following FORMAT.md exactly, organised in folders `01-define/` and `02-design/`:
+1. Specs under `specs/tool-library/` with product `TL` and one domain `TL-LEND` (Lending), following FORMAT.md exactly, organized in folders `01-define/` and `02-design/`:
    - 3 aggregates (Member, Tool, Loan) with `relates_to` links, and 8 to 12 domain rules under them.
    - 4 to 5 use cases (register a member, add a tool, borrow a tool, return a tool, report damage), each with an `actor`, `applies` links to the rules it relies on, and 2 to 5 requirements each.
    - Design: 1 to 2 flows, 2 views (design only; no UI is built), one endpoint per API operation, components for the model, services and router with `satisfies`/`implements`/`depends_on` links, and one test record per test.

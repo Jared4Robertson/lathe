@@ -9,4 +9,4 @@ links:
   satisfies: [LA-BRW-UC50-R07, LA-BRW-UC50-R11]
   depends_on: [LA-BRW-C20, LA-BRW-C34]
 ---
-What the drawn graph connects to the centre (and how), the files a trace reaches, and the legend, as long lists, kept apart from React Flow so the inspector loads without the graph.
+What the drawn graph connects to the center (and how), the files a trace reaches, and the legend, as long lists, kept apart from React Flow so the inspector loads without the graph.

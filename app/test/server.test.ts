@@ -61,7 +61,7 @@ describe('dev API plugin', () => {
   beforeEach(() => { delete process.env.LATHE_SPEC_FIXTURE; });
   afterEach(() => { delete process.env.LATHE_SPEC_FIXTURE; });
 
-  it('LA-BRW-T17 GET /api/spec serves the sample fixture, labelled, when LATHE_SPEC_FIXTURE=1 is set or the engine cannot load', async () => {
+  it('LA-BRW-T17 GET /api/spec serves the sample fixture, labeled, when LATHE_SPEC_FIXTURE=1 is set or the engine cannot load', async () => {
     // The engine works: its answer is served.
     const working = await start(engine());
     const fromEngine = await request(working.middlewares[0], '/api/spec');

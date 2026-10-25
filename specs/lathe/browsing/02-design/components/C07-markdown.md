@@ -8,4 +8,4 @@ file: app/src/specs/Markdown.tsx
 links:
   satisfies: [LA-BRW-UC03-R03]
 ---
-Renders a record body (or the format document) from Markdown with `marked`, gives each heading an anchor, and sanitises the HTML with `dompurify` before it reaches the page.
+Renders a record body (or the format document) from Markdown with `marked`, gives each heading an anchor, and sanitizes the HTML with `dompurify` before it reaches the page.

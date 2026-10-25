@@ -1,7 +1,7 @@
 ---
 id: LA-BRW-T12
 kind: test
-title: "A record body is sanitised before it is shown"
+title: "A record body is sanitized before it is shown"
 parent: LA-BRW
 test_type: component
 run_by: app/test/record-page.test.tsx

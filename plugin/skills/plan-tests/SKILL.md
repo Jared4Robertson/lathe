@@ -92,7 +92,7 @@ Planned: the HTTP test harness is not set up yet. Will borrow a tool, borrow it 
 ## Rules
 
 - Write an automated test record and its test together.
-- One test proves one behaviour. It may prove several records when they are one behaviour (an interaction requirement, the use case requirement it fulfills, and the domain rule behind them).
+- One test proves one behavior. It may prove several records when they are one behavior (an interaction requirement, the use case requirement it fulfills, and the domain rule behind them).
 - Quote a title that contains a colon or starts with a special character.
 - Aim for every obligation to be proved; each one that is not is a warning and a gap in coverage, and a planned test does not clear it.
 - Finish with the `check-and-fix` skill.

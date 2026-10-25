@@ -1,6 +1,6 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { neighbourhood } from '../src/graph/model';
+import { neighborhood } from '../src/graph/model';
 import { indexWorkspace } from '../src/specs/data';
 import { linkMentions, renderMarkdown } from '../src/specs/Markdown';
 import { proseLinks } from '../src/specs/mentions';
@@ -85,7 +85,7 @@ describe('prose mentions', () => {
     // A mention is not a link between records: not in the links out, not in the graph.
     expect(within(screen.getByRole('complementary', { name: 'Inspector' })).queryByRole('link', { name: /^DM-SHOP-UC01/ })).toBeNull();
     const ix = indexWorkspace(patternWorkspace());
-    expect(neighbourhood(ix, 'DM-PAY-UC01', 1).nodes.map((n) => n.id)).not.toContain('DM-SHOP-UC01');
+    expect(neighborhood(ix, 'DM-PAY-UC01', 1).nodes.map((n) => n.id)).not.toContain('DM-SHOP-UC01');
 
     const ws = patternWorkspace();
     const domain = ws.records.find((r) => r.id === 'DM-SHOP')!;

@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <!-- Lathe's favicon: the simple three-jaw chuck (brand/chuck.svg), recoloured for dark mode. -->
+  <!-- Lathe's favicon: the simple three-jaw chuck (brand/chuck.svg), recolored for dark mode. -->
   <style>svg{--b:#2E6A88;--a:#B5512A}@media (prefers-color-scheme:dark){svg{--b:#7DB4D0;--a:#E88A5E}}</style>
   <defs>
     <mask id="chuck-cut">

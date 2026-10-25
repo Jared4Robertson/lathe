@@ -1,7 +1,7 @@
 import { useId } from 'react';
 
 // Lathe's logo: a chuck gripping the same chuck, smaller (brand/recursive.svg). It takes the page's
-// --steel and --spark colours, so it follows light and dark mode.
+// --steel and --spark colors, so it follows light and dark mode.
 export function LatheLogo({ size = 28 }: { size?: number }) {
   const id = useId().replace(/:/g, '');
   const cut = `${id}-cut`;

@@ -8,4 +8,4 @@ run_by: app/test/graph/groups.test.ts
 links:
   proves: [LA-BRW-UC40-R05]
 ---
-Lays out a group's neighbourhood and expects the parent, the group, its members, a member's own group and its members from left to right, a member's group beside another member's ungrouped child, and every group one column after its parent and one before its members.
+Lays out a group's neighborhood and expects the parent, the group, its members, a member's own group and its members from left to right, a member's group beside another member's ungrouped child, and every group one column after its parent and one before its members.

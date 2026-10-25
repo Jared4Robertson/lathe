@@ -1,6 +1,6 @@
 # Lathe
 
-Lathe organises a product's lifecycle (domain model, use cases, interaction design, technical specification, test plan) as records in the product's own repo, checks them, traces them to the code and tests, and serves a web app to browse them.
+Lathe organizes a product's lifecycle (domain model, use cases, interaction design, technical specification, test plan) as records in the product's own repo, checks them, traces them to the code and tests, and serves a web app to browse them.
 
 ## Use it in a product repo
 

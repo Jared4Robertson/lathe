@@ -8,4 +8,4 @@ run_by: app/test/graph/flow-steps.test.ts
 links:
   proves: [LA-BRW-UC80-R04, LA-BRW-DR91]
 ---
-Expects a flow's three steps in its neighbourhood, joined to it directly, all in the column after it.
+Expects a flow's three steps in its neighborhood, joined to it directly, all in the column after it.

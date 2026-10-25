@@ -16,7 +16,7 @@ Let Jared navigate a product's specifications in the existing app: see products 
 3. Pages (client-side routes, like the existing `/diagrams/<slug>`):
    - `/specs/<product-id>`: the product, its domains as cards with coverage (requirements and rules: satisfied and proved, as small bars), its open questions, and its problems.
    - `/specs/<product-id>/<domain-id>`: the domain's records grouped by stage (Define: aggregates with their rules nested, use cases with their requirements nested; Design: flows, views, endpoints, components, tests), plus its coverage gaps and problems. A search box filters by ID or title.
-   - `/records/<id>`: one record: ID, kind, title, its fields, its body rendered from Markdown (use `marked` and sanitise with `dompurify`), its parent and children, outgoing links grouped by relation and incoming links grouped by relation (each clickable), and the problems about it.
+   - `/records/<id>`: one record: ID, kind, title, its fields, its body rendered from Markdown (use `marked` and sanitize with `dompurify`), its parent and children, outgoing links grouped by relation and incoming links grouped by relation (each clickable), and the problems about it.
    - `/checks`: every problem, errors first, grouped by check, each linking to its record.
    - A short source note when the data is the fixture, so nobody mistakes it for real data.
 4. Stretch, if time allows: a Graph tab on the domain page that draws the domain's records and links with the existing React Flow + ELK code.

@@ -92,7 +92,7 @@ The definitions and relationships now live as data in [model/terms.csv](model/te
 ## Session 2 (2026-10-24): Lathe as a structured spec store
 
 ### What Lathe is for
-- Organise a product's lifecycle the way S2_sandbox's `docs/` does (domain model, use cases, interaction design, technical spec, test plan), but as **structured records** that a database checks and a web app navigates. S2 already behaves like a database written in Markdown (IDs, fixed table columns, regex layout checks, a trace generator); Lathe makes that explicit.
+- Organize a product's lifecycle the way S2_sandbox's `docs/` does (domain model, use cases, interaction design, technical spec, test plan), but as **structured records** that a database checks and a web app navigates. S2 already behaves like a database written in Markdown (IDs, fixed table columns, regex layout checks, a trace generator); Lathe makes that explicit.
 - **Dogfood it:** Lathe's own spec lives in Lathe.
 - **Keep an example product** alongside, so the model stays concrete: the Tool Library (members borrow tools; a tool's condition decides whether it can be lent). It deliberately echoes the people-and-tools foundation.
 
@@ -131,7 +131,7 @@ Jared asked for every recommendation to be applied, so these were decided on his
 | Interaction requirements | A default kind under views, endpoints and flows, for API and screen rules (about a third of a mature product's rules). |
 | Tests | A state (automated, manual, planned); an automated test's file names its own ID or the IDs it proves; planned tests show intent but are never proof. |
 | Extensions | A product's meta-model rows add kinds and relations, or widen default kinds; duplicates within one folder are errors. |
-| Capabilities and patterns | From S2: ordered capabilities group a domain's use cases, flows and tests; patterns state shared behaviour once with settings that following use cases fill in. |
+| Capabilities and patterns | From S2: ordered capabilities group a domain's use cases, flows and tests; patterns state shared behavior once with settings that following use cases fill in. |
 | LA-CHK-Q10 Proving pattern rules | Pattern rules are records (`pattern_rule`) and obligations of every domain that follows the pattern (through any of its use cases); proof counts where the test sits. A rule tied to a setting does not apply in a domain whose following use cases all mark that setting Not applicable. |
 | App shell | One address per record or group, with Wiki, Graph and Split views; a collapsible nav with quick find; a collapsible inspector (the "third column"); one level deeper by default with folded lists; VS Code-style shortcuts. The Graph item left the nav: the graph is a view of every page. |
 | Logo | The chuck in a chuck; the simple chuck is the favicon. |

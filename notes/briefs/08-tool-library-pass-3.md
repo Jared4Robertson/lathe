@@ -6,7 +6,7 @@ Read [00-common-rules.md](00-common-rules.md) first. Base branch: `pass-3`.
 Settle the Tool Library's two open questions as decided, in both the spec and the code, keeping full coverage.
 
 ## Decisions already made (by Jared)
-- **TL-LEND-Q01 Damage reported during a loan:** keep the reported damage. A return recorded as `good` does not clear damage reported while the tool was on loan; a librarian must mark it repaired. (This is today's behaviour; make it an explicit domain rule.)
+- **TL-LEND-Q01 Damage reported during a loan:** keep the reported damage. A return recorded as `good` does not clear damage reported while the tool was on loan; a librarian must mark it repaired. (This is today's behavior; make it an explicit domain rule.)
 - **TL-LEND-Q02 Grace period:** count overdue by calendar day in the library's time zone. A loan is due at the end of its due date (the 14th day), so it becomes overdue at the start of the next day in the library's time zone, not one millisecond after a due instant. No librarian override. The library's time zone is a setting, defaulting to `America/New_York`. Due dates are shown and stored as dates (YYYY-MM-DD).
 
 ## Scope

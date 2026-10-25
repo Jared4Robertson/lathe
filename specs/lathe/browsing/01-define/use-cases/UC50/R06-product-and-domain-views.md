@@ -4,4 +4,4 @@ kind: requirement
 title: Product and domain pages have the same views
 parent: LA-BRW-UC50
 ---
-A product's and a domain's overview pages MUST offer the same three views; their graph MUST be centred on the product or the domain.
+A product's and a domain's overview pages MUST offer the same three views; their graph MUST be centered on the product or the domain.
