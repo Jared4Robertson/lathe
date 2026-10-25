@@ -1,3 +1,4 @@
+import { plural } from '../plural';
 import type { ReactNode } from 'react';
 import { Link } from '../router';
 import { byIdOrder, recordPath, type Coverage, type SpecIndex, type SpecRecord } from './data';
@@ -59,7 +60,7 @@ export interface ObligationGroup {
 }
 
 /** "Use-case requirement" -> "Use-case requirements", "Domain rule" -> "Domain rules". */
-export const pluralLabel = (label: string) => (/s$/i.test(label) ? label : `${label}s`);
+export const pluralLabel = (label: string) => plural(label);
 
 /**
  * A domain's coverage as one group per obligation kind, in meta-model order. Until the engine fills
