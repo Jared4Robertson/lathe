@@ -105,7 +105,8 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   const lastSingle = useRef<ViewMode>(mode === 'split' ? 'wiki' : mode);
   if (mode !== 'split') lastSingle.current = mode;
 
-  const toggles = useRef<Partial<Record<ViewMode, HTMLButtonElement | null>>>({});
+  const toggles = useRef<Partial<Record<'wiki' | 'graph', HTMLButtonElement | null>>>({});
+  const closeButtons = useRef<Partial<Record<'wiki' | 'graph', HTMLButtonElement | null>>>({});
   const setMode = useCallback((next: ViewMode) => {
     setStored(next);
     navigate(withView(window.location.pathname, next), true);
@@ -115,8 +116,8 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   // Keep focus when the element that had it went away with a pane.
   useEffect(() => {
     const active = document.activeElement;
-    // In a split the graph pane's tab is the nearest control; otherwise the shown view's tab.
-    if (!active || active === document.body || !active.isConnected) toggles.current[mode === 'split' ? 'graph' : mode]?.focus();
+    // The pressed view toggle; in a split, which has no view toggles, the graph pane's close button.
+    if (!active || active === document.body || !active.isConnected) (mode === 'split' ? closeButtons.current.graph : toggles.current[mode])?.focus();
   }, [mode]);
 
   // Full screen for one pane.
@@ -221,16 +222,16 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   const title = <PageTitle index={index} route={route} />;
 
   /**
-   * One pane: a panel with one title bar (LA-PAT-APP-CODE-R11), as an editor group in VS Code. Its tabs pick
-   * the view (in a split each pane keeps its own view, with a button to close it); its actions on the
-   * right open the other view beside it, maximize it and, on the rightmost pane, show or hide the inspector.
+   * One pane: a panel with one title bar (LA-PAT-APP-CODE-R11), as an editor group in VS Code. At its left
+   * a quiet label names what the pane shows (in a split, with a button to close the pane). At its right,
+   * all as icon buttons in one style: the view toggles (not in a split, where each pane keeps its own
+   * view), a divider, then the actions that open the other view beside it, maximize it and, on the
+   * rightmost pane, show or hide the inspector.
    */
   const pane = (kind: 'wiki' | 'graph', content: ReactNode, rightmost: boolean) => {
     const isFull = full === kind;
     const name = kind === 'wiki' ? 'Wiki' : 'Graph';
     const other: 'wiki' | 'graph' = kind === 'wiki' ? 'graph' : 'wiki';
-    const tabs: ('wiki' | 'graph')[] = split ? [kind] : ['wiki', 'graph'];
-    const panelId = `pane-${kind}-content`;
     return (
       <section
         className={`pane panel pane-${kind}${isFull ? ' is-fullscreen' : ''}`}
@@ -239,26 +240,17 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
         onKeyDown={isFull ? (e: KeyboardEvent) => { if (e.key === 'Escape' && !e.defaultPrevented) { e.preventDefault(); leaveFull(); } } : undefined}
       >
         <div className="pane-bar">
-          <div className="pane-tabs" role="tablist" aria-label={`${name} pane views`}>
-            {tabs.map((t) => (
-              <Tooltip key={t} label={`${VIEW_LABELS[t]} view`} command={VIEW_COMMANDS[t]}>
-                <button
-                  type="button"
-                  role="tab"
-                  ref={(el) => { if (!split || t === kind) toggles.current[t] = el; }}
-                  className="pane-tab"
-                  aria-selected={t === kind}
-                  aria-controls={t === kind ? panelId : undefined}
-                  data-command={VIEW_COMMANDS[t]}
-                  onClick={() => { if (!split) setMode(t); }}
-                >
-                  <Icon name={VIEW_ICONS[t]} size={15} /> {VIEW_LABELS[t]}
-                </button>
-              </Tooltip>
-            ))}
+          <div className="pane-head">
+            <span className="pane-name"><Icon name={VIEW_ICONS[kind]} size={15} /> {name}</span>
             {split && (
               <Tooltip label={`Close the ${name.toLowerCase()} pane`}>
-                <button type="button" className="icon-button pane-close" aria-label={`Close the ${name.toLowerCase()} pane`} onClick={() => setMode(other)}>
+                <button
+                  type="button"
+                  ref={(el) => { closeButtons.current[kind] = el; }}
+                  className="icon-button pane-close"
+                  aria-label={`Close the ${name.toLowerCase()} pane`}
+                  onClick={() => setMode(other)}
+                >
                   <Icon name="x" size={14} />
                 </button>
               </Tooltip>
@@ -266,18 +258,37 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
           </div>
           <div className="pane-actions">
             {!split && (
-              <Tooltip label={`Open the ${VIEW_LABELS[other].toLowerCase()} beside`} command="viewSplit">
-                <button
-                  type="button"
-                  ref={(el) => { toggles.current.split = el; }}
-                  className="icon-button"
-                  aria-label={`Open the ${VIEW_LABELS[other].toLowerCase()} beside`}
-                  data-command="viewSplit"
-                  onClick={() => setMode('split')}
-                >
-                  <Icon name="split" size={16} />
-                </button>
-              </Tooltip>
+              <>
+                <div className="pane-views" role="group" aria-label="View">
+                  {(['wiki', 'graph'] as const).map((t) => (
+                    <Tooltip key={t} label={`${VIEW_LABELS[t]} view`} command={VIEW_COMMANDS[t]}>
+                      <button
+                        type="button"
+                        ref={(el) => { toggles.current[t] = el; }}
+                        className={`icon-button${t === kind ? ' is-on' : ''}`}
+                        aria-label={VIEW_LABELS[t]}
+                        aria-pressed={t === kind}
+                        data-command={VIEW_COMMANDS[t]}
+                        onClick={() => setMode(t)}
+                      >
+                        <Icon name={VIEW_ICONS[t]} size={16} />
+                      </button>
+                    </Tooltip>
+                  ))}
+                </div>
+                <span className="pane-divider" aria-hidden="true" />
+                <Tooltip label={`Open the ${VIEW_LABELS[other].toLowerCase()} beside`} command="viewSplit">
+                  <button
+                    type="button"
+                    className="icon-button"
+                    aria-label={`Open the ${VIEW_LABELS[other].toLowerCase()} beside`}
+                    data-command="viewSplit"
+                    onClick={() => setMode('split')}
+                  >
+                    <Icon name="split" size={16} />
+                  </button>
+                </Tooltip>
+              </>
             )}
             <Tooltip label={isFull ? 'Leave full screen' : 'Full screen'} command={isFull ? 'escape' : 'toggleFullScreen'} placement="left">
               <button
@@ -294,7 +305,7 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
             {rightmost && !narrow && inspectorToggle}
           </div>
         </div>
-        <div id={panelId} role="tabpanel" aria-label={`${name} view`} className={kind === 'wiki' ? 'pane-scroll' : 'pane-body'} ref={kind === 'wiki' ? wikiPane : undefined}>
+        <div className={kind === 'wiki' ? 'pane-scroll' : 'pane-body'} ref={kind === 'wiki' ? wikiPane : undefined}>
           {(kind === 'wiki' || !split) && title}
           {content}
         </div>

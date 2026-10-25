@@ -129,7 +129,7 @@ describe('side navigation', () => {
     fireEvent.click(within(nav()).getByRole('button', { name: 'Expand the navigation' }));
 
     // The page's Graph view and Ctrl+2.
-    expect(screen.getByRole('tab', { name: /^Graph/ })).toBeInTheDocument();
+    expect(within(screen.getByRole('group', { name: 'View' })).getByRole('button', { name: 'Graph' })).toBeInTheDocument();
     fireEvent.keyDown(document.body, { key: '2', code: 'Digit2', ctrlKey: true });
     expect(window.location.search).toBe('?view=graph');
 

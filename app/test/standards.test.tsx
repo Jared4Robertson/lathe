@@ -171,7 +171,7 @@ describe('LA-PAT-APP-CODE App code', () => {
     expect(unsized).toEqual([]);
   });
 
-  it('LA-BRW-T298 Each pane has one title bar holding its tabs and layout actions, and nothing else switches views', async () => {
+  it('LA-BRW-T298 Each pane has one title bar naming its view and holding the view toggles and layout actions as icon buttons, and nothing else switches views', async () => {
     for (const path of ['/records/DM-SHOP-UC01?view=wiki', '/records/DM-SHOP-UC01?view=split']) {
       await openApp(path);
       await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
@@ -181,10 +181,27 @@ describe('LA-PAT-APP-CODE App code', () => {
         expect(pane).toHaveClass('panel');
         expect(pane.firstElementChild).toHaveClass('pane-bar');
         expect(pane.querySelectorAll(':scope > .pane-bar')).toHaveLength(1);
+        // At the left, a quiet label names the pane's view; it is not a control.
+        const label = pane.querySelector('.pane-bar > .pane-head > .pane-name');
+        expect(label?.textContent?.trim()).toMatch(/^(Wiki|Graph)$/);
+        expect(label?.querySelector('button, a, [tabindex]')).toBeNull();
+        // At the right, every control is an icon button in one style.
+        for (const b of pane.querySelectorAll('.pane-actions button')) expect(b).toHaveClass('icon-button');
       }
+      expect(screen.queryAllByRole('tab')).toEqual([]);
+      // The view toggles: pressed icon buttons inside the bar's actions, one pressed; none in a split.
+      const groups = screen.queryAllByRole('group', { name: 'View' });
+      expect(groups).toHaveLength(path.endsWith('split') ? 0 : 1);
+      const toggles = groups.flatMap((g) => within(g).getAllByRole('button'));
+      for (const t of toggles) {
+        expect(t.closest('.pane-actions')).not.toBeNull();
+        expect(t).toHaveClass('icon-button');
+        expect(t).toHaveAttribute('aria-pressed');
+      }
+      if (toggles.length > 0) expect(toggles.filter((t) => t.getAttribute('aria-pressed') === 'true')).toHaveLength(1);
       // Every view and layout control lives in a title bar.
       const controls = [
-        ...screen.getAllByRole('tab'),
+        ...toggles,
         ...screen.queryAllByRole('button', { name: /beside$|^Close the (wiki|graph) pane$|^Full screen|^Leave full screen/ }),
         screen.getByRole('button', { name: /the inspector$/, expanded: true }),
       ];
