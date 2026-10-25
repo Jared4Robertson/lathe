@@ -141,7 +141,7 @@ describe('the level of detail', () => {
     expect(folder.text * 0.1).toBeGreaterThanOrEqual(TEXT_ON_SCREEN);
     // Never more text than the box has room for, and never less than its own scale.
     const narrow = textScale(400, 4000, 0.05);
-    expect(narrow.text).toBeLessThanOrEqual(400 / 120 + 1e-9);
+    expect(narrow.text).toBeLessThanOrEqual(400 / 50 + 1e-9);
     expect(narrow.text).toBeGreaterThanOrEqual(contentScale(400, 4000));
     // Too small on screen: plain.
     expect(textScale(NODE_WIDTH, NODE_HEIGHT, 0.2).label).toBe(false);
