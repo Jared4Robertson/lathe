@@ -6,6 +6,7 @@
     "dev": "vite",
     "build": "vite build",
     "typecheck": "tsc --noEmit",
+    "knip": "knip",
     "test": "vitest run --maxWorkers=2",
     "test:stability": "playwright test -c stability/playwright.config.ts",
     "test:a11y": "playwright test -c a11y/playwright.config.ts",

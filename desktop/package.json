@@ -14,6 +14,7 @@
     "pack:dmg": "npm --prefix ../lathe run build && npm run build && node scripts/stage-lathe.ts && electron-builder --mac dmg",
     "icon": "node scripts/icon.ts",
     "typecheck": "tsc --noEmit",
+    "knip": "knip",
     "test": "vitest run --maxWorkers=2"
   },
   "build": {

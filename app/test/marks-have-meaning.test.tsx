@@ -1,4 +1,4 @@
-// LA-PAT-APP-CODE-R21: nothing outlives its purpose, and a mark that can't be explained can't ship.
+// LA-PLT-T133 and LA-PLT-T134 (LA-PAT-APP-CODE-R21): nothing outlives its purpose, and a mark that can't be explained can't ship.
 // Every mark the Graph or the Model view can draw (a box's shape or fill, a badge, a line style) is
 // listed in that view's key, with words that say what it means.
 import './graph/setup';
@@ -30,7 +30,7 @@ describe('the Graph view key', () => {
   // A node class shown in the key by a swatch of another name.
   const SWATCH: Record<string, string> = { 'is-hexagon': 'stage-hexagon', 'is-plain': 'stage-plain' };
 
-  it('LA-PAT-APP-T?? Every box look, badge and line style the Graph view can draw is in its key, with what it means', () => {
+  it('LA-PLT-T133 Every box look, badge and line style the Graph view can draw is in its key, with what it means', () => {
     const { container } = render(<Legend />);
     const entry = (selector: string) => container.querySelector(selector);
     const missing: string[] = [];
@@ -56,12 +56,12 @@ describe('the Model view key', () => {
   // Every class the stylesheet gives a box or a line, and what in the ERD draws it, checked below.
   const EXPLAINED = new Set(['tone-other', 'is-highlight', 'erd-event', 'is-dashed', 'rel-raised_by', 'rel-reacts_to', 'is-context']);
 
-  it('LA-PAT-APP-T?? Every mark a styled ERD box or line can carry is one the key test explains', () => {
+  it('LA-PLT-T134 Every mark a styled ERD box or line can carry is one the key test explains', () => {
     const styled = [...modifiers('erd-box'), ...modifiers('erd-line')].filter((c) => !INTERACTION.has(c));
     expect(styled.filter((c) => !EXPLAINED.has(c))).toEqual([]);
   });
 
-  it('LA-PAT-APP-T?? Every box, badge and line an ERD draws is in its key, with what it means', () => {
+  it('LA-PLT-T134 Every box, badge and line an ERD draws is in its key, with what it means', () => {
     const index = indexWorkspace(eventWorkspace());
     const scopes = index.workspace.records.filter((r) => ['domain', 'aggregate', 'entity'].includes(r.kind)).map((r) => r.id);
     const missing: string[] = [];
