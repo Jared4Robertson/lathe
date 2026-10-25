@@ -3,6 +3,8 @@ id: TL-LEND-A2
 kind: aggregate
 title: Tool
 parent: TL-LEND
+links:
+  reacts_to: [TL-LEND-EV05, TL-LEND-EV06]
 ---
 One physical item in the catalog. Its condition decides whether it can be lent.
 

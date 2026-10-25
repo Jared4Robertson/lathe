@@ -3,6 +3,8 @@ id: TL-LEND-A1
 kind: aggregate
 title: Member
 parent: TL-LEND
+links:
+  reacts_to: [TL-LEND-EV05, TL-LEND-EV06, TL-LEND-EV07]
 ---
 A person registered to borrow tools. A member's loans are held by the [Loan](A3-loan.md) aggregate; the member rules below count them.
 

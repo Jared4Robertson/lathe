@@ -6,6 +6,7 @@ parent: LA-DSK-LAY01
 component_type: electron main
 file: desktop/src/main.ts
 links:
+  reacts_to: [LA-DSK-EV02]
   satisfies: [LA-DSK-UC01-R01, LA-DSK-UC01-R04, LA-DSK-DR02, LA-DSK-DR04, LA-DSK-DR05, LA-DSK-DR07, LA-DSK-DR10]
   depends_on: [LA-DSK-C02, LA-DSK-C03, LA-DSK-C04, LA-DSK-C06, LA-DSK-C07, LA-DSK-C08]
 ---
