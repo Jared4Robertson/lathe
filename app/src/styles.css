@@ -264,9 +264,9 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-node small, .graph-node strong { display: block; white-space: nowrap; line-height: 1.4; }
 /* A marked box's kind and ID line keeps room beside it for the problem badge (both sides once centered); app/src/graph/text.ts sizes the level with the same numbers. */
 .graph-node small { font: calc(10.5px * var(--node-scale))/1.4 var(--mono); color: var(--muted); }
-.graph-node.has-marks small { padding-right: calc(30px * var(--node-scale)); }
+.graph-node .graph-badge-room { padding-right: calc(30px * var(--node-scale)); }
 .graph-node.is-scaled { align-items: center; text-align: center; }
-.graph-node.is-scaled.has-marks small { padding-inline: calc(30px * var(--node-scale)); }
+.graph-node.is-scaled .graph-badge-room { padding-inline: calc(30px * var(--node-scale)); }
 .graph-node strong { font-size: calc(12.5px * var(--node-scale)); font-weight: 600; color: var(--ink); }
 .graph-node.stage-define { border-color: var(--g-define); background: var(--g-define-bg); }
 .graph-node.stage-design { border-color: var(--g-design); background: var(--g-design-bg); }
@@ -289,7 +289,7 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
    with its label at the top left; a leaf's label is centered in it. A domain is a box there, its hexagon a small mark before
    its kind and ID line, sized with its text. Children are drawn after their parent, so they lie over it. */
 .graph-flow.is-nested .graph-node.is-container { justify-content: flex-start; align-items: flex-start; text-align: left; }
-.graph-flow.is-nested .graph-node.is-container.has-marks small { padding-inline: 0 calc(30px * var(--node-scale)); }
+.graph-flow.is-nested .graph-node.is-container .graph-badge-room { padding-inline: 0 calc(30px * var(--node-scale)); }
 /* A Nested leaf is a block, not a line: its kind and ID line and its title wrap at their spaces, never inside a word, as app/src/graph/nested.ts sized it. */
 .graph-flow.is-nested .graph-node:not(.is-container) :is(small, strong) { white-space: normal; overflow-wrap: normal; word-break: normal; }
 .graph-flow.is-nested .graph-node.is-container:not(.is-plain) { padding-top: calc((var(--header) - 44px * var(--node-scale)) / 2 + 6px * var(--node-scale)); }
