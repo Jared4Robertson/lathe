@@ -1,6 +1,11 @@
--- Work to do: once a flow has steps, what the flow fulfills is the union of what its steps fulfill, so each
--- "fulfills" link belongs on the step that does it. A flow that fulfills something none of its steps
--- fulfills is reported. A flow with steps may leave its own "fulfills" out: its steps' links are enough.
+-- A flow with steps fulfills something none of its steps fulfills.
+--
+-- Once a flow has steps, what the flow fulfills is the union of what its steps fulfill, so each `fulfills`
+-- link belongs on the step that does it. A flow with steps may leave its own `fulfills` out: its steps' links
+-- are enough. Move the link onto the step that carries it out.
+--
+-- severity: warning
+-- kinds: flow flow_step
 SELECT DISTINCT 'warning' AS severity, 'flow-fulfills-differs-from-steps' AS "check", f.id AS record,
        'Flow ' || f.id || ' fulfills ' || l.target || ', but none of its steps does; move the link onto the step that carries it out.' AS message
 FROM records f

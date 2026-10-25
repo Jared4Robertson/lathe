@@ -1,5 +1,11 @@
--- Work to do: once a domain has layers, each of its components sits in one of them, as use cases sit in
--- capabilities (29-use-case-outside-capability.sql). A domain with no layers may hold its components itself.
+-- Once a domain has layers, each of its components sits in one of them.
+--
+-- This works as use cases sit in capabilities (29-use-case-outside-capability.sql). A domain with no layers
+-- may hold its components itself. Make one of the domain's layers the component's `parent`; its ID does not
+-- change.
+--
+-- severity: warning
+-- kinds: component layer
 SELECT 'warning' AS severity, 'component-outside-layer' AS "check", c.id AS record,
        'Component ' || c.id || ' sits directly under domain ' || c.parent
        || ', which has layers; move it into the layer it belongs to.' AS message

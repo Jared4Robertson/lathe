@@ -1,5 +1,11 @@
--- Work to do: a use case with no requirements under it. A use case that follows a pattern is left out:
--- its rules come from the pattern's rules, so it may have no requirements of its own.
+-- A use case with no requirements under it yet.
+--
+-- A use case's requirements are the rules it must follow, so one with none says nothing checkable. A use
+-- case that follows a pattern is left out: its rules come from the pattern's rules, so it may have no
+-- requirements of its own. Add `requirement` records under it, or have it follow the pattern it applies.
+--
+-- severity: warning
+-- kinds: use_case
 SELECT DISTINCT 'warning' AS severity, 'use-case-without-requirements' AS "check", u.id AS record,
        'Use case ' || u.id || ' has no requirements.' AS message
 FROM records u

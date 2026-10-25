@@ -1,5 +1,10 @@
--- A use case that follows two patterns sharing a setting name has one field for both, so the
--- two settings cannot be given different values.
+-- A use case follows two patterns that share a setting name.
+--
+-- The use case has one field for both settings, so the two cannot be given different values. Rename the
+-- setting in one of the patterns, and its field in the use cases that follow it.
+--
+-- severity: warning
+-- kinds: use_case pattern
 SELECT 'warning' AS severity, 'pattern-setting-clash' AS "check", x.use_case AS record,
        'Use case ' || x.use_case || ' follows patterns ' || string_agg(x.pattern, ' and ' ORDER BY x.pattern)
        || ', which share the setting "' || x.name || '"; its one "' || x.name || '" field answers both.' AS message

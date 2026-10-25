@@ -1,4 +1,10 @@
--- A test's state, when given, is automated, manual or planned (in any letter case, as coverage reads it).
+-- A test's state, when given, is automated, manual or planned.
+--
+-- The state is read in any letter case, as coverage reads it. Without a state a test is automated. Fix the
+-- value, or remove the field for an automated test.
+--
+-- severity: error
+-- kinds: test
 SELECT 'error' AS severity, 'bad-test-state' AS "check", nullif(r.id, '') AS record,
        'Test ' || coalesce(nullif(r.id, ''), r.path) || ' has state "' || f.value
        || '"; a test''s state must be automated, manual or planned.' AS message
