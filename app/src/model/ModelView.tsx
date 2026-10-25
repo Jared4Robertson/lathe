@@ -155,23 +155,23 @@ export function ErdKey({ erd, highlight, relations = [] }: { erd: Erd; highlight
       <table className="erd-key-table">
         <thead><tr><th scope="col">Color</th><th scope="col">Owner</th></tr></thead>
         <tbody>
-          <tr><td>🟦</td><td>The current domain{erd.level === 'aggregate' ? ' (from another aggregate: its name in parentheses)' : ''}</td></tr>
-          <tr><td>⬜</td><td>Another domain, named in parentheses</td></tr>
+          <tr className="tone-current"><td>🟦</td><td>The current domain{erd.level === 'aggregate' ? ' (from another aggregate: its name in parentheses)' : ''}</td></tr>
+          <tr className="tone-other"><td>⬜</td><td>Another domain, named in parentheses</td></tr>
         </tbody>
       </table>
       <ul className="erd-key-ends">
         {erd.level === 'aggregate' ? (
           <>
-            <li>{end(RELATION_ENDS.has_one)} Has one: one to one</li>
-            <li>{end(RELATION_ENDS.has_many)} Has many: one to many</li>
-            <li>{end(RELATION_ENDS.refers_to)} Refers to: many to one</li>
+            <li>{end(RELATION_ENDS.has_one, false, 'has_one')} Has one: one to one</li>
+            <li>{end(RELATION_ENDS.has_many, false, 'has_many')} Has many: one to many</li>
+            <li>{end(RELATION_ENDS.refers_to, false, 'refers_to')} Refers to: many to one</li>
             <li><span className="erd-root">root</span> The aggregate's root entity</li>
             {highlight && !highlightsEvent && <li><span className="erd-key-highlight" aria-hidden="true" /> This entity</li>}
           </>
         ) : (
           <>
-            <li>{end(RELATION_ENDS.refers_to)} Its entities refer to the other aggregate: many to one</li>
-            <li>{end(RELATION_ENDS.relates_to, true)} Related aggregate, for one whose entities refer to no other</li>
+            <li>{end(RELATION_ENDS.refers_to, false, 'refers_to')} Its entities refer to the other aggregate: many to one</li>
+            <li>{end(RELATION_ENDS.relates_to, true, 'relates_to')} Related aggregate, for one whose entities refer to no other</li>
           </>
         )}
         {erd.boxes.some((b) => b.context) && <li><span className="erd-key-context" aria-hidden="true" /> Faded: one ring out, {erd.level === 'aggregate' ? `what the entities it refers to refer to${reacts ? ', and the aggregates reacting to its events' : ''}` : 'the aggregates of other domains'}</li>}
