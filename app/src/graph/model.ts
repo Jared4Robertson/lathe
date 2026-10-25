@@ -550,13 +550,6 @@ export function gapsFor(index: SpecIndex, id: string): ('satisfies' | 'proves')[
   return (index.coverage.get(domain)?.gaps ?? []).filter((g) => g.id === id).map((g) => g.missing);
 }
 
-/** The opening of a record's body as plain text, for the side panel. */
-export function summary(body: string, max = 280): string {
-  const first = body.split(/\n\s*\n/).map((p) => p.trim()).find((p) => p && !p.startsWith('#') && !p.startsWith('|')) ?? '';
-  const text = first.replace(/\s+/g, ' ').replace(/[*_`]/g, '').replace(/\[([^\]]*)\]\([^)]*\)/g, '$1');
-  return text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text;
-}
-
 /** Keeps the breadcrumb trail: going back to a record in the trail cuts the trail there. */
 export function nextTrail(trail: string[], focus: string, max = 8): string[] {
   const at = trail.indexOf(focus);
