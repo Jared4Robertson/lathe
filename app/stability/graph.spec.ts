@@ -178,7 +178,9 @@ test.describe('graph', () => {
         });
     }, domain);
     const readable = boxes.filter((b) => b.inView && b.onScreen >= 7);
-    expect(readable.length, 'framed boxes whose title reads').toBeGreaterThanOrEqual(3);
+    // Each level's text is at most a third of the level before's (LA-EXP-DR58): in this pane, the domain's title reads at least.
+    expect(readable.length, 'framed boxes whose title reads').toBeGreaterThanOrEqual(1);
+    expect(readable.map((b) => b.id), 'the domain reads').toContain(domain);
     for (const b of readable) {
       expect(b.title, `${b.id} is labeled`).not.toBeNull();
       // The tooltip is "title (ID)" or, for a group, "title (in owner)": the label shows the whole title.
