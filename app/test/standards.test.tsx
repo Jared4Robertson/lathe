@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { screen, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { openApp } from './helpers';
 // The split view loads the graph, which needs a ResizeObserver in jsdom.
 import './graph/setup';
@@ -171,24 +171,34 @@ describe('LA-PAT-APP-CODE App code', () => {
     expect(unsized).toEqual([]);
   });
 
-  it('LA-BRW-T298 Each pane has one title bar naming its view and holding the view toggles and layout actions as icon buttons, and nothing else switches views', async () => {
-    for (const path of ['/records/DM-SHOP-UC01?view=wiki', '/records/DM-SHOP-UC01?view=wiki,graph']) {
+  it('LA-BRW-T298 Each pane has one title bar, the leftmost holding the tabs and the others naming their view, with the view toggles and layout actions as icon buttons, on wide and narrow screens alike', async () => {
+    for (const [path, narrow] of [['/records/DM-SHOP-UC01?view=wiki', false], ['/records/DM-SHOP-UC01?view=wiki,graph', false], ['/records/DM-SHOP-UC01?view=wiki,graph', true]] as const) {
+      // A narrow screen (under 900 px) stacks the panes; their bars hold the same controls.
+      if (narrow) vi.stubGlobal('matchMedia', (query: string) => ({ matches: true, media: query, addEventListener: () => {}, removeEventListener: () => {} }));
       await openApp(path);
       await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
       const panes = [...document.querySelectorAll<HTMLElement>('.pane')];
       expect(panes.length).toBeGreaterThan(0);
-      for (const pane of panes) {
+      panes.forEach((pane, i) => {
         expect(pane).toHaveClass('panel');
         expect(pane.firstElementChild).toHaveClass('pane-bar');
         expect(pane.querySelectorAll(':scope > .pane-bar')).toHaveLength(1);
-        // At the left, a quiet label names the pane's view; it is not a control.
-        const label = pane.querySelector('.pane-bar > .pane-head > .pane-name');
-        expect(label?.textContent?.trim()).toMatch(/^(Wiki|Graph|Model)$/);
-        expect(label?.querySelector('button, a, [tabindex]')).toBeNull();
+        if (i === 0) {
+          // At the left of the leftmost pane, the tab strip, in place of the view's name.
+          expect(pane.querySelector('.pane-bar > .pane-head > [role="tablist"]')).not.toBeNull();
+          expect(pane.querySelector('.pane-name')).toBeNull();
+        } else {
+          // At the left of the others, a quiet label names the pane's view; it is not a control.
+          const label = pane.querySelector('.pane-bar > .pane-head > .pane-name');
+          expect(label?.textContent?.trim()).toMatch(/^(Wiki|Graph|Model)$/);
+          expect(label?.querySelector('button, a, [tabindex]')).toBeNull();
+        }
         // At the right, every control is an icon button in one style.
         for (const b of pane.querySelectorAll('.pane-actions button')) expect(b).toHaveClass('icon-button');
-      }
-      expect(screen.queryAllByRole('tab')).toEqual([]);
+      });
+      // One tab strip on the page, its tabs inside a title bar.
+      expect(screen.getAllByRole('tablist')).toHaveLength(1);
+      for (const t of screen.getAllByRole('tab')) expect(t.closest('.pane-bar')).not.toBeNull();
       // The view toggles: icon buttons with a pressed state, once, in the rightmost pane's bar, one pressed per open pane.
       const groups = screen.queryAllByRole('group', { name: 'View' });
       expect(groups).toHaveLength(1);
@@ -204,9 +214,11 @@ describe('LA-PAT-APP-CODE App code', () => {
       const controls = [
         ...toggles,
         ...screen.queryAllByRole('button', { name: /^Close the (wiki|graph|model) pane$|^Full screen|^Leave full screen/ }),
-        screen.getByRole('button', { name: /the inspector$/, expanded: true }),
+        screen.getByRole('button', { name: /the inspector$/, expanded: !narrow }),
       ];
       for (const c of controls) expect(c.closest('.pane-bar')).not.toBeNull();
+      // No row of its own for any layout control, on a narrow screen either.
+      expect(document.querySelector('.pane-narrow-actions')).toBeNull();
       // The title belongs to the content of a pane.
       expect(screen.getByRole('heading', { level: 1 }).closest('.pane')).not.toBeNull();
     }

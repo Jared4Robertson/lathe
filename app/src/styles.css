@@ -709,6 +709,26 @@ a.row-link.row-link:focus-visible { outline: none; }
 .pane-name { display: inline-flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 6px; color: var(--muted); font-size: 0.84rem; font-weight: 600; white-space: nowrap; }
 .pane-divider { flex: none; width: 1px; height: 18px; margin: 0 4px; background: var(--rule); }
 .pane-close { width: 24px; height: 24px; }
+/* The tab strip (app/src/views/TabStrip.tsx), at the left of the leftmost pane's bar: one tab per open page, as VS Code's
+   editor tabs. The active tab is the sheet's ink with a steel underline, the preview tab's title italic; tabs that do
+   not fit scroll sideways. A tab's close button shows on hover, on focus and on the active tab. */
+.pane-head.has-tabs { flex: 1 1 auto; }
+.pane-actions { flex: none; }
+.tab-strip { display: flex; align-items: stretch; gap: 2px; min-width: 0; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
+.tab-strip::-webkit-scrollbar { display: none; }
+.tab { flex: none; display: inline-flex; align-items: center; gap: 6px; max-width: 240px; min-height: 28px; padding: 0 2px 0 8px; box-sizing: border-box; border-radius: 6px; color: var(--muted); font-size: 0.84rem; cursor: pointer; white-space: nowrap; user-select: none;
+  transition: background-color var(--hover-speed), color var(--hover-speed); }
+.tab:hover { background: var(--hover-bg); color: var(--ink); }
+.tab.is-active { color: var(--ink); background: var(--paper); box-shadow: inset 0 -2px 0 var(--steel); }
+.tab:focus-visible { outline: 2px solid var(--steel); outline-offset: -2px; }
+.tab-id { flex: none; font: 500 0.72rem var(--mono); color: var(--muted); }
+.tab-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
+.tab.is-preview .tab-title { font-style: italic; font-weight: 500; }
+.tab-close { flex: none; display: inline-grid; place-items: center; width: 20px; height: 20px; padding: 0; border: 0; border-radius: 4px; background: none; color: var(--muted); cursor: pointer; opacity: 0;
+  transition: opacity var(--hover-speed), background-color var(--hover-speed); }
+.tab:hover .tab-close, .tab.is-active .tab-close, .tab:focus-visible .tab-close { opacity: 1; }
+.tab-close:hover { background: var(--hover-bg); color: var(--ink); }
+@media (prefers-reduced-motion: reduce) { .tab, .tab-close { transition: none; } }
 .pane-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .pane-body > .graph-page { flex: 1; }
 .pane-title .spec-header { padding: 16px 24px 0; flex-wrap: wrap; }
@@ -718,7 +738,6 @@ a.row-link.row-link:focus-visible { outline: none; }
 .pane-title.is-fixed .spec-header > div { min-width: 0; }
 .pane-title.is-fixed :is(.eyebrow, h1, .record-id) { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pane-title.is-fixed h1 { font-size: 1.45rem; overflow-wrap: normal; }
-.pane-narrow-actions { display: flex; justify-content: flex-end; padding: 4px 8px; }
 .pane-model > .pane-body > .model-page { flex: 1; }
 
 /* ---------- The Model view: ERDs of a domain and of an aggregate (app/src/model) ---------- */
