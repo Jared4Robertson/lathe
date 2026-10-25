@@ -9,7 +9,6 @@ import {
   neighbourhood,
   parseGroupId,
   pluralLabel,
-  tierOf,
   traceChain,
   type Filters,
   type Neighbourhood,
@@ -102,7 +101,11 @@ describe('graph groups', () => {
   });
 
   it('LA-BRW-T103 Groups take their own column between the parent and its children, left to right', async () => {
-    expect(neighbourhood(index, 'P-D', 1).nodes.find((x) => x.id === 'P-D/use_case')!.tier).toBe(tierOf(index, 'use_case', 'hierarchy') - 0.5);
+    // A group is one column after its parent, and its members one column after the group.
+    const column = (n: Neighbourhood, id: string) => n.nodes.find((x) => x.id === id)!.column;
+    const fromDomain = neighbourhood(index, 'P-D', 1, undefined, new Map([['P-D/use_case', true]]));
+    expect(column(fromDomain, 'P-D/use_case')).toBe(column(fromDomain, 'P-D') + 1);
+    expect(column(fromDomain, 'P-D-UC01')).toBe(column(fromDomain, 'P-D/use_case') + 1);
     const n = neighbourhood(grouped, 'P-D/use_case', 2);
     const { positions, layout } = await layoutNeighbourhood(n);
     expect(layout).toBe('layered');
@@ -111,11 +114,13 @@ describe('graph groups', () => {
     expect(x('P-D/use_case')).toBeLessThan(x('P-D-UC01'));
     expect(x('P-D-UC01')).toBe(x('P-D-UC02'));
     expect(x('P-D-UC02')).toBeLessThan(x('P-D-UC02/requirement'));
-    expect(x('P-D-UC02/requirement')).toBeLessThan(x('P-D-UC01-R01'));
-    // Every group sits in a column of groups only.
-    const columnOf = new Map<number, Set<boolean>>();
-    for (const node of n.nodes) columnOf.set(x(node.id), (columnOf.get(x(node.id)) ?? new Set()).add(!!node.group));
-    for (const kinds of columnOf.values()) expect(kinds.size).toBe(1);
+    // UC02's group and UC01's ungrouped requirement are both one level below a use case, so they share a column.
+    expect(x('P-D-UC02/requirement')).toBe(x('P-D-UC01-R01'));
+    // Every group's column is one after its parent's and one before its members'.
+    for (const g of n.nodes.filter((node) => node.group)) {
+      expect(column(n, g.id)).toBe(column(n, g.group!.parent) + 1);
+      for (const e of n.edges.filter((e) => e.source === g.id)) expect(column(n, e.target)).toBe(column(n, g.id) + 1);
+    }
   });
 
   it('LA-BRW-T104 A group carries a summary mark when its members or anything beneath them has problems or coverage gaps', () => {

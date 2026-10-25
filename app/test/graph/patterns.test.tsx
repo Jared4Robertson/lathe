@@ -3,22 +3,20 @@ import { describe, expect, it } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import { relationStyle } from '../../src/graph/GraphPage';
 import { layeredGraph } from '../../src/graph/layout';
-import { canTrace, HIERARCHY_TIERS, neighbourhood, tierOf, traceChain } from '../../src/graph/model';
+import { canTrace, neighbourhood, traceChain } from '../../src/graph/model';
 import { indexWorkspace } from '../../src/specs/data';
 import { patternWorkspace } from '../fixtures/patterns';
 import { openApp } from '../helpers';
 
-// Patterns in the graph: a pattern's rules sit under it, and a use case's `follows` link is a
-// cross-link within the use cases' tier.
+// Patterns in the graph: a pattern's rules sit under it, one column to its right, and a use
+// case's `follows` link is a cross-link.
 
 const index = () => indexWorkspace(patternWorkspace());
 const edge = (e: { source: string; relation: string; target: string }) => `${e.source} ${e.relation} ${e.target}`;
 
 describe('patterns in the graph', () => {
-  it('LA-BRW-T175 A pattern\'s rules appear under it, a tier to its right, and a pattern sits with the use cases', () => {
+  it('LA-BRW-T175 A pattern\'s rules appear under it, one column to its right', () => {
     const ix = index();
-    expect(tierOf(ix, 'pattern', 'hierarchy')).toBe(HIERARCHY_TIERS.use_case);
-    expect(tierOf(ix, 'pattern_rule', 'hierarchy')).toBe(HIERARCHY_TIERS.requirement);
     const n = neighbourhood(ix, 'DM-PAT-CHECKOUT', 1);
     const edges = n.edges.map(edge);
     expect(edges).toEqual(expect.arrayContaining([
@@ -26,22 +24,23 @@ describe('patterns in the graph', () => {
       'DM-PAT-CHECKOUT parent DM-PAT-CHECKOUT-R01',
       'DM-PAT-CHECKOUT parent DM-PAT-CHECKOUT-R02',
     ]));
-    const rule = n.nodes.find((x) => x.id === 'DM-PAT-CHECKOUT-R01')!;
-    expect(rule.tier).toBeGreaterThan(n.nodes.find((x) => x.id === 'DM-PAT-CHECKOUT')!.tier);
+    const column = (id: string) => n.nodes.find((x) => x.id === id)!.column;
+    for (const rule of ['DM-PAT-CHECKOUT-R01', 'DM-PAT-CHECKOUT-R02']) expect(column(rule)).toBe(column('DM-PAT-CHECKOUT') + 1);
   });
 
-  it('LA-BRW-T176 A use case\'s follows link is drawn as a cross-link: shown, styled as a pattern link, and not shaping the tiers', () => {
+  it('LA-BRW-T176 A use case\'s follows link is drawn as a cross-link: shown, styled as a pattern link, the use case one column after the pattern', () => {
     const ix = index();
     const n = neighbourhood(ix, 'DM-PAT-CHECKOUT', 1);
     expect(n.edges.map(edge)).toEqual(expect.arrayContaining(['DM-PAY-UC01 follows DM-PAT-CHECKOUT', 'DM-SHOP-UC01 follows DM-PAT-CHECKOUT']));
     expect(relationStyle('follows')).toBe('pattern');
     expect(relationStyle('uses')).toBe('design');
-    // Same tier at both ends, so ELK lays out the tiers without it.
+    // Reached from the pattern by the cross-link, each use case sits one column after it, and the link is laid out pointing right.
+    const column = (id: string) => n.nodes.find((x) => x.id === id)!.column;
     const elk = layeredGraph(n);
     const pairs = (elk.edges ?? []).map((e) => `${e.sources[0]}>${e.targets[0]}`);
     for (const uc of ['DM-SHOP-UC01', 'DM-PAY-UC01']) {
-      expect(pairs).not.toContain(`${uc}>DM-PAT-CHECKOUT`);
-      expect(pairs).not.toContain(`DM-PAT-CHECKOUT>${uc}`);
+      expect(column(uc)).toBe(column('DM-PAT-CHECKOUT') + 1);
+      expect(pairs).toContain(`DM-PAT-CHECKOUT>${uc}`);
     }
     expect(pairs).toContain('DM-PAT-CHECKOUT>DM-PAT-CHECKOUT-R01');
     // From a use case, its pattern is one step away.
