@@ -3,7 +3,7 @@ id: LA-CHK-UC06
 kind: use_case
 title: Set up Lathe in a product repo
 parent: LA-CHK-CAP04
-actor: Jared, AI agent
+actor: Owner, Agent
 links:
   applies: [LA-CHK-DR01]
 ---

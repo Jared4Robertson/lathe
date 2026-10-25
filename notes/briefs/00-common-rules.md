@@ -21,6 +21,7 @@ Lathe is a toolkit for organizing a product's lifecycle (domain model, use cases
 - Node 26 and npm are installed; so is the `duckdb` CLI. Install npm packages only inside the folder you own. A fresh worktree has no `node_modules`: run `npm install` in each package folder you need (`lathe/`, `app/`, `desktop/`, `examples/tool-library/`).
 - Run `npm --prefix lathe run check` before you finish if you touched anything under `specs/`, and report its last lines. Leave no errors.
 - A decided open question is removed (delete its record and every `about` link to it) and its answer written into the records it affects, as FORMAT.md section 8 says. Records carry no status or decision history.
+- Specs name roles (Owner, Reader, Agent), never people.
 - Decide small questions yourself using the recommended option, and list each decision in your report. Write plain, direct English, with American spelling (modeling, color, center, organize), in code, specs and docs.
 
 ## Report (your final message)

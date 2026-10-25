@@ -4,7 +4,7 @@ kind: domain_event
 title: Product window opened
 parent: LA-DSK-A1
 ---
-Jared opened a product folder, from the Open dialog, Open Recent, the Dock or at launch, and it opened in a window of its own.
+The reader opened a product folder, from the Open dialog, Open Recent, the Dock or at launch, and it opened in a window of its own.
 
 ## Fields
 

@@ -51,7 +51,7 @@ describe('product page', () => {
     const questions = section(/^Open questions/);
     const items = within(questions).getAllByRole('listitem');
     expect(items.map((li) => li.textContent)).toEqual([
-      expect.stringMatching(/DM-Q01.*Should the shop ship abroad\?.*owner Jared.*about DM/),
+      expect.stringMatching(/DM-Q01.*Should the shop ship abroad\?.*owner Owner.*about DM/),
       expect.stringMatching(/DM-SHOP-Q01.*What happens to a basket overnight\?.*owner Ana.*about DM-SHOP-A1/),
     ]);
 

@@ -1,7 +1,7 @@
 ---
 id: LA-BRW-F91-S04
 kind: flow_step
-title: He rebinds a key and every hint follows
+title: They rebind a key and every hint follows
 parent: LA-BRW-F91
 order: 4
 links:

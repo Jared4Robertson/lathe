@@ -1,7 +1,7 @@
 ---
 id: LA-BRW-F80-S01
 kind: flow_step
-title: "Jared opens a flow's page and reads its steps in order"
+title: "The reader opens a flow's page and reads its steps in order"
 parent: LA-BRW-F80
 order: 1
 links:

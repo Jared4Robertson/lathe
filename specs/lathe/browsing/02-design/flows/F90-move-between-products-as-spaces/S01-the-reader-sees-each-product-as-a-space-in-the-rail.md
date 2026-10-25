@@ -1,7 +1,7 @@
 ---
 id: LA-BRW-F90-S01
 kind: flow_step
-title: Jared sees each product as a space in the rail
+title: The reader sees each product as a space in the rail
 parent: LA-BRW-F90
 order: 1
 links:

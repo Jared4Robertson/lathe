@@ -3,7 +3,7 @@ id: LA-CHK-UC08
 kind: use_case
 title: Record how a test proves its obligations
 parent: LA-CHK-CAP01
-actor: Jared, AI agent
+actor: Owner, Agent
 links:
   applies: [LA-CHK-DR30]
 ---
