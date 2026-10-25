@@ -8,4 +8,4 @@ run_by: app/test/routing.test.tsx
 links:
   proves: [LA-BRW-UC01-R01]
 ---
-Renders the app with one diagram and two products, and checks the Diagrams section (with its New diagram button) and the Specs section with each product and its domains as links.
+Renders the app with one diagram and two products, and checks the Diagrams section (with its New diagram button), each product in the rail, and the current space's domains as links in the panel.

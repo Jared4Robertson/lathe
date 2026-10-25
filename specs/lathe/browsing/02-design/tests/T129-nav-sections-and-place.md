@@ -8,4 +8,4 @@ run_by: app/test/nav.test.tsx
 links:
   proves: [LA-BRW-UC50-R09]
 ---
-Folds sections and a product's domains, opens a page in a folded section and expects it open and marked current, and checks the tooltip on a long name, the Checks badges and the footer.
+Folds sections and the current space's domains, opens a page in a folded section and expects it open and marked current, and checks the tooltip on a long name, the Checks badges and the footer.
