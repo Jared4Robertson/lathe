@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { records } from './fixtures/workspace';
 import { main, openApp } from './helpers';
 
-const PAGES = ['/specs', '/specs/DM', '/specs/NF', '/specs/DM/DM-SHOP', '/checks', '/format', '/format/kinds/use_case', '/format/checks/unproved', ...records.map((r) => `/records/${r.id}`)];
+const PAGES = ['/', '/DM', '/NF', '/DM-SHOP', '/checks', '/format', '/format/kinds/use_case', '/format/checks/unproved', ...records.map((r) => `/${r.id}`)];
 
 describe('spec pages only read', () => {
   it('LA-BRW-T20 Spec pages offer no way to change a record and only ever read GET /api/spec (and the format reference)', async () => {

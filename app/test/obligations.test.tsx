@@ -23,7 +23,7 @@ const field = (name: string) => within(side()).getByText(name, { selector: 'dt' 
 
 describe('obligation kinds and test states', () => {
   it('LA-BRW-T80 Coverage shows one group per obligation kind, labeled, with designed, built, proved and planned', async () => {
-    await openApp('/specs/DM', served());
+    await openApp('/DM', served());
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     expect(groups(card('Shopping'))).toEqual([
       'Domain rules 1: designed 1/1, built 1/1, proved 1/1, planned 0/1',
@@ -37,7 +37,7 @@ describe('obligation kinds and test states', () => {
     expect(card('Shopping').querySelectorAll('.bar.planned .bar-fill.full')).toHaveLength(0);
 
     // The domain page shows the same groups.
-    await openApp('/specs/DM/DM-SHOP', served());
+    await openApp('/DM-SHOP', served());
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     expect(groups(section(/^Coverage/))).toHaveLength(4);
     expect(within(section(/^Coverage/)).getAllByRole('listitem').map((li) => li.textContent)).toContainEqual(
@@ -46,7 +46,7 @@ describe('obligation kinds and test states', () => {
   });
 
   it('LA-BRW-T81 Until the engine counts obligation kinds, coverage falls back to requirements and domain rules, without planned', async () => {
-    await openApp('/specs/DM');
+    await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     expect(groups(card('Shopping'))).toEqual([
       'UC requirements 2: designed 2/2, built 1/2, proved 1/2',
@@ -60,7 +60,7 @@ describe('obligation kinds and test states', () => {
   });
 
   it('LA-BRW-T82 The evidence counts every obligation kind, and planned apart from proved', async () => {
-    await openApp('/specs/DM', served());
+    await openApp('/DM', served());
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     const evidence = section('Evidence');
     const value = (name: string) => within(evidence).getByText(name).nextElementSibling?.textContent;
@@ -70,13 +70,13 @@ describe('obligation kinds and test states', () => {
     expect(value('Planned')).toBe('1 of 8 obligations, by tests not written yet');
 
     // Before the engine counts obligation kinds there is no planned count.
-    await openApp('/specs/DM');
+    await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     expect(within(section('Evidence')).queryByText('Planned')).toBeNull();
   });
 
   it('LA-BRW-T83 The domain page lists interaction requirements under their view, endpoint or flow', async () => {
-    await openApp('/specs/DM/DM-SHOP', served());
+    await openApp('/DM-SHOP', served());
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     const user = userEvent.setup();
     const view = within(section(/^Views/)).getByRole('link', { name: /^DM-SHOP-V01\s*Basket page/ }).closest('li') as HTMLElement;
@@ -102,7 +102,7 @@ describe('obligation kinds and test states', () => {
   });
 
   it('LA-BRW-T84 The domain page tags each test with its state, and a planned test looks unfinished', async () => {
-    await openApp('/specs/DM/DM-SHOP', served());
+    await openApp('/DM-SHOP', served());
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     const rows = [...section(/^Test plan/).querySelectorAll('.record-row')] as HTMLElement[];
     const states = rows.map((r) => [r.querySelector('code')?.textContent, r.querySelector('.test-state')?.textContent]);
@@ -117,39 +117,39 @@ describe('obligation kinds and test states', () => {
   });
 
   it('LA-BRW-T85 The record page shows a test state, and says a planned test is not proof', async () => {
-    await openApp('/records/DM-SHOP-T03', served());
+    await openApp('/DM-SHOP-T03', served());
     await screen.findByRole('heading', { level: 1, name: 'A full basket answers 409' });
     expect(field('State')).toHaveTextContent('planned');
     expect(within(side()).queryByText('state', { selector: 'dt' })).toBeNull();
     expect(screen.getByRole('note')).toHaveTextContent('Planned test. It is not written yet, so it does not count as proof');
 
-    await openApp('/records/DM-SHOP-T02', served());
+    await openApp('/DM-SHOP-T02', served());
     await screen.findByRole('heading', { level: 1, name: 'A person fills a basket to 50' });
     expect(field('State')).toHaveTextContent('manual');
     expect(screen.queryByRole('note')).toBeNull();
 
-    await openApp('/records/DM-SHOP-T01', served());
+    await openApp('/DM-SHOP-T01', served());
     await screen.findByRole('heading', { level: 1, name: 'Adding an item shows it' });
     expect(field('State')).toHaveTextContent('automated');
   });
 
   it('LA-BRW-T86 The record page shows where an interaction requirement sits and what it fulfills', async () => {
-    await openApp('/records/DM-SHOP-E01-R01', served());
+    await openApp('/DM-SHOP-E01-R01', served());
     await screen.findByRole('heading', { level: 1, name: 'Adding to a full basket answers 409' });
     const fulfills = section(/^Carries out/);
     expect(fulfills).toHaveTextContent(/At the endpoint\s*DM-SHOP-E01\s*Add to basket/);
-    expect(within(fulfills).getByRole('link', { name: /^DM-SHOP-E01\s*Add to basket$/ })).toHaveAttribute('href', '/records/DM-SHOP-E01');
+    expect(within(fulfills).getByRole('link', { name: /^DM-SHOP-E01\s*Add to basket$/ })).toHaveAttribute('href', '/DM-SHOP-E01');
     const items = within(fulfills).getAllByRole('listitem');
     expect(items.map((li) => li.textContent)).toEqual([expect.stringMatching(/DM-SHOP-UC01-R02.*A full basket refuses the item.*UC requirement/)]);
-    expect(within(items[0]).getByRole('link')).toHaveAttribute('href', '/records/DM-SHOP-UC01-R02');
+    expect(within(items[0]).getByRole('link')).toHaveAttribute('href', '/DM-SHOP-UC01-R02');
 
     // One that fulfills nothing yet says how to link it.
-    await openApp('/records/DM-SHOP-E01-R02', served());
+    await openApp('/DM-SHOP-E01-R02', served());
     await screen.findByRole('heading', { level: 1, name: 'An unknown item answers 404' });
     expect(section(/^Carries out/)).toHaveTextContent('It carries out nothing yet.');
 
     // Other kinds have no such section.
-    await openApp('/records/DM-SHOP-UC01-R02', served());
+    await openApp('/DM-SHOP-UC01-R02', served());
     await screen.findByRole('heading', { level: 1, name: 'A full basket refuses the item' });
     expect(within(main()).queryByRole('heading', { name: /^Carries out/ })).toBeNull();
   });
@@ -167,16 +167,16 @@ describe('obligation kinds and test states', () => {
     const user = userEvent.setup();
     const fulfills = screen.getByRole('heading', { name: /^Carries out/ }).closest('section') as HTMLElement;
     const link = within(fulfills).getByRole('link', { name: /DM-SHOP-UC01-R02/ });
-    expect(link).toHaveAttribute('href', '/records/DM-SHOP-UC01-R02');
+    expect(link).toHaveAttribute('href', '/DM-SHOP-UC01-R02');
     await user.click(link);
-    expect(onNavigate).toHaveBeenCalledWith('/records/DM-SHOP-UC01-R02');
+    expect(onNavigate).toHaveBeenCalledWith('/DM-SHOP-UC01-R02');
     expect(window.location.pathname).toBe('/graph/DM-SHOP-E01-R01');
 
     // Links in the header and side panel go through the host too.
     await user.click(within(container.querySelector('aside') as HTMLElement).getByRole('link', { name: /DM-SHOP-C01/ }));
-    expect(onNavigate).toHaveBeenLastCalledWith('/records/DM-SHOP-C01');
+    expect(onNavigate).toHaveBeenLastCalledWith('/DM-SHOP-C01');
     await user.click(within(container.querySelector('.eyebrow') as HTMLElement).getByRole('link', { name: 'Shopping' }));
-    expect(onNavigate).toHaveBeenLastCalledWith('/specs/DM/DM-SHOP');
+    expect(onNavigate).toHaveBeenLastCalledWith('/DM-SHOP');
     expect(window.location.pathname).toBe('/graph/DM-SHOP-E01-R01');
 
     // An unknown ID says so.

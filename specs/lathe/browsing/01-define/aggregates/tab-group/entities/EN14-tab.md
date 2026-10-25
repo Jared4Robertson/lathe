@@ -13,7 +13,7 @@ One open page, with what it shows and where the reader was in it.
 
 | Field | Meaning | Kind of value | Example |
 | --- | --- | --- | --- |
-| Page | The page it holds, by its address path. | Page reference, without the views. | /records/LA-BRW-UC112 |
+| Page | The page it holds, by its address path. | Page reference, without the views. | /LA-BRW-UC112 |
 | Preview | Whether the next plain open replaces it. | Yes or no; at most one tab of a group says yes. | Yes |
 | Views | The views it has open, those its page does not offer included. | `wiki`, `graph` and `model`, in pane order. | wiki,graph |
 | Pane sizes | Each pane's weight, which the gaps share out. | Whole number per view, 1 to 10000. | wiki 160, graph 40 |

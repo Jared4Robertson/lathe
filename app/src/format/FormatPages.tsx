@@ -11,7 +11,8 @@ import { isBool, usePanelSize, usePref } from '../shell/prefs';
 import { useSpaces } from '../shell/spaces';
 import { Tooltip } from '../shell/Tooltip';
 import { useNarrow } from '../shell/useNarrow';
-import { byIdOrder, groupPath as groupAddress, type Problem, type SpecIndex, type SpecRecord, type SpecState } from '../specs/data';
+import { addressOf } from '../views/address';
+import { byIdOrder, type Problem, type SpecIndex, type SpecRecord, type SpecState } from '../specs/data';
 import { Markdown } from '../specs/Markdown';
 import { PageHeader, ProblemList, RecordLink, Section } from '../specs/parts';
 import { SourceNote } from '../specs/SpecPages';
@@ -562,7 +563,7 @@ function KindBody({ index, reference, kind }: { index: SpecIndex; reference: For
             searchText={(p) => `${p} ${index.byId.get(p)?.title ?? ''}`}
             render={(p) => (
               <>
-                <Link to={groupAddress(p, kind.kind)} className="record-link row-link">
+                <Link to={addressOf(`${p}/${kind.kind}`)} className="record-link row-link">
                   <code>{p}</code>
                   <span>{index.byId.get(p)?.title ?? p}</span>
                 </Link>

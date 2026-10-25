@@ -13,7 +13,7 @@
 export interface Tab<S> {
   /** Stable for the tab's life, even when a preview tab moves to another page. */
   key: string;
-  /** The page's address path, without the query string: `/records/LA-BRW-UC01`. */
+  /** The page's address path, without the query string: `/LA-BRW-UC01`. */
   page: string;
   /** True for the preview tab, which the next plain open replaces. */
   preview: boolean;
@@ -113,16 +113,20 @@ export function updateTab<S>(set: TabSet<S>, key: string, change: (state: S) => 
   return changed ? { ...set, tabs } : set;
 }
 
-/** Reads a stored tab set, dropping anything malformed; null when nothing usable is left. */
-export function parseTabSet<S>(value: unknown, readState: (v: unknown) => S | null): TabSet<S> | null {
+/**
+ * Reads a stored tab set, dropping anything malformed; null when nothing usable is left. `readPage`
+ * puts a stored page in today's form (a tab saved under an old address), before duplicates are dropped.
+ */
+export function parseTabSet<S>(value: unknown, readState: (v: unknown) => S | null, readPage: (page: string) => string = (p) => p): TabSet<S> | null {
   if (!value || typeof value !== 'object') return null;
   const raw = value as { tabs?: unknown; active?: unknown };
   if (!Array.isArray(raw.tabs)) return null;
   const tabs: Tab<S>[] = [];
   for (const t of raw.tabs as unknown[]) {
     if (!t || typeof t !== 'object') continue;
-    const { key, page, preview, state } = t as Record<string, unknown>;
-    if (typeof key !== 'string' || typeof page !== 'string' || !page.startsWith('/')) continue;
+    const { key, page: storedPage, preview, state } = t as Record<string, unknown>;
+    if (typeof key !== 'string' || typeof storedPage !== 'string' || !storedPage.startsWith('/')) continue;
+    const page = readPage(storedPage);
     if (tabs.some((x) => x.key === key || x.page === page)) continue;
     const s = readState(state);
     if (s === null) continue;

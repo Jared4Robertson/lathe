@@ -6,6 +6,6 @@ parent: LA-BRW-LAY06
 component_type: module
 file: app/src/views/address.ts
 links:
-  satisfies: [LA-BRW-UC50-R01, LA-BRW-DR50, LA-BRW-DR52]
+  satisfies: [LA-BRW-UC50-R01, LA-BRW-DR50, LA-BRW-DR52, LA-BRW-DR281, LA-PAT-APP-CODE-R19]
 ---
-Builds and reads the one address of a record (`/records/<id>`), a group (`/records/<parent-id>/<kind>`), a product and a domain, the `view` query parameter, and where an old `/graph` address leads.
+Builds every address of a record or group, by `addressOf`: a record's bare ID (`/<id>`, a product's and a domain's too) and a group's parent ID and kind (`/<parent-id>/<kind>`); reads the `view` query parameter; and says where an old `/records`, `/specs` or `/graph` address leads, keeping its query and hash.

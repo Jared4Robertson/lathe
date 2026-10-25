@@ -12,7 +12,7 @@ The reader went to an address in the app, by a link, a command, the address bar 
 
 | Field | Meaning | Kind of value | Example |
 | --- | --- | --- | --- |
-| Address | The page's path and query. | App address. | /records/LA-MOD-A2?view=wiki,graph |
+| Address | The page's path and query. | App address. | /LA-MOD-A2?view=wiki,graph |
 | Product | The product the page belongs to, which makes it the current space. | Product reference, or none. | LA |
 | Focus | The record or group the page shows. | Record ID, group, or none. | LA-MOD-A2 |
 | Views | The panes open on the page. | Wiki, Graph and Model, in order. | Wiki, Graph |

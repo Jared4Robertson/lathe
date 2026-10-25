@@ -8,13 +8,13 @@ const bars = (element: HTMLElement) =>
 
 describe('product page', () => {
   it('LA-BRW-T03 The product page shows each domain as a card with its coverage bars and counts', async () => {
-    await openApp('/specs/DM');
+    await openApp('/DM');
     expect(await screen.findByRole('heading', { level: 1, name: 'Demo shop' })).toBeInTheDocument();
     const cards = within(section(/^Domains/)).getAllByRole('article');
     expect(cards).toHaveLength(2);
 
     const shop = card('Shopping');
-    expect(within(shop).getByRole('link', { name: /DM-SHOP\s*Shopping/ })).toHaveAttribute('href', '/specs/DM/DM-SHOP');
+    expect(within(shop).getByRole('link', { name: /DM-SHOP\s*Shopping/ })).toHaveAttribute('href', '/DM-SHOP');
     expect(within(shop).getByText('UC requirements')).toBeInTheDocument();
     expect(within(shop).getByText('Domain rules')).toBeInTheDocument();
     expect(within(shop).getByRole('img', { name: 'designed: 2 of 2' })).toBeInTheDocument();
@@ -26,7 +26,7 @@ describe('product page', () => {
   });
 
   it('LA-BRW-T04 Coverage shows designed, built and proved, and a count the engine has not measured as unknown', async () => {
-    await openApp('/specs/DM');
+    await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     expect(bars(card('Shopping'))).toEqual([
       'designed 2/2', 'built 1/2', 'proved 1/2',
@@ -41,12 +41,12 @@ describe('product page', () => {
     expect(within(pay).queryByRole('img', { name: /^built/ })).toBeNull();
 
     // The same three counts on the domain page.
-    await openApp('/specs/DM/DM-PAY');
+    await openApp('/DM-PAY');
     expect(bars(section('Coverage'))).toContain('built not yet measured');
   });
 
   it('LA-BRW-T05 The product page lists its open questions with owners, and the problems in its records', async () => {
-    await openApp('/specs/DM');
+    await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     const questions = section(/^Open questions/);
     const items = within(questions).getAllByRole('listitem');
@@ -63,14 +63,14 @@ describe('product page', () => {
   });
 
   it('LA-BRW-T06 The product page shows the latest fitness and its history apart from the evidence, or says how to add one', async () => {
-    await openApp('/specs/DM');
+    await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     const fitness = section('Fitness');
     const latest = fitness.querySelector('.fitness-latest') as HTMLElement;
     expect(within(latest).getByLabelText('Score 4 of 5')).toBeInTheDocument();
     expect(within(latest).getByText('2026-10-20')).toBeInTheDocument();
     expect(within(latest).getByText('two clicks').tagName).toBe('EM');
-    expect(within(latest).getByRole('link', { name: 'DM-FIT02' })).toHaveAttribute('href', '/records/DM-FIT02');
+    expect(within(latest).getByRole('link', { name: 'DM-FIT02' })).toHaveAttribute('href', '/DM-FIT02');
 
     const history = within(fitness).getByRole('list');
     expect(within(history).getAllByRole('listitem').map((li) => li.textContent)).toEqual([
@@ -92,7 +92,7 @@ describe('product page', () => {
     expect(within(evidence).queryByLabelText(/^Score/)).toBeNull();
 
     // A product with no fitness record says so, and links to the format section.
-    await openApp('/specs/NF');
+    await openApp('/NF');
     await screen.findByRole('heading', { level: 1, name: 'Notebook' });
     const none = section('Fitness');
     expect(none).toHaveTextContent('No fitness recorded yet.');

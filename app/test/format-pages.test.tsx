@@ -64,13 +64,13 @@ describe('format reference pages', () => {
 
     const example = section('Example');
     // The first use case by ID in the current space.
-    expect(within(example).getByRole('link', { name: /DM-PAY-UC01/ })).toHaveAttribute('href', '/records/DM-PAY-UC01');
+    expect(within(example).getByRole('link', { name: /DM-PAY-UC01/ })).toHaveAttribute('href', '/DM-PAY-UC01');
     expect(example.querySelector('pre')).toHaveTextContent(/id: DM-PAY-UC01\s+kind: use_case\s+title: Pay by card\s+parent: DM-PAY\s+actor: Shopper\s+---/);
 
     const records = section(/^Records/);
     expect(records).toHaveTextContent('2 use cases in Demo shop, under:');
-    expect(within(records).getByRole('link', { name: /DM-SHOP\s*Shopping/ })).toHaveAttribute('href', '/records/DM-SHOP/use_case');
-    expect(within(records).getByRole('link', { name: /DM-PAY\s*Paying/ })).toHaveAttribute('href', '/records/DM-PAY/use_case');
+    expect(within(records).getByRole('link', { name: /DM-SHOP\s*Shopping/ })).toHaveAttribute('href', '/DM-SHOP/use_case');
+    expect(within(records).getByRole('link', { name: /DM-PAY\s*Paying/ })).toHaveAttribute('href', '/DM-PAY/use_case');
 
     // The inspector holds the kind's facts.
     expect(fact(inspector(), 'Obligation')).toBe('None');
@@ -88,7 +88,7 @@ describe('format reference pages', () => {
     expect(problems).toHaveTextContent('Problems now2');
     const row = within(problems).getByRole('link', { name: 'DM-SHOP-DR01' });
     expect(row).toHaveClass('row-link');
-    expect(row).toHaveAttribute('href', '/records/DM-SHOP-DR01');
+    expect(row).toHaveAttribute('href', '/DM-SHOP-DR01');
     expect(fact(inspector(), 'Problems')).toBe('2');
     expect(fact(inspector(), 'Source')).toBe('checks/30-unproved.sql');
 
@@ -102,16 +102,16 @@ describe('format reference pages', () => {
   });
 
   it('LA-BRW-T443 The inspector\'s kind, each problem code and each required field label link to their format pages', async () => {
-    await openApp('/records/DM-SHOP-UC01');
+    await openApp('/DM-SHOP-UC01');
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     expect(within(inspector()).getByRole('link', { name: 'Use case' })).toHaveAttribute('href', '/format/kinds/use_case');
     expect(within(inspector()).getByRole('link', { name: 'actor' })).toHaveAttribute('href', '/format/kinds/use_case#field-actor');
 
     // A problem's code on a record page, a domain page and the Checks page.
-    await openApp('/records/DM-SHOP-DR01');
+    await openApp('/DM-SHOP-DR01');
     await screen.findByRole('heading', { level: 1, name: 'A basket holds at most 50 items' });
     expect(within(inspector()).getByRole('link', { name: 'unproved' })).toHaveAttribute('href', '/format/checks/unproved');
-    await openApp('/specs/DM/DM-SHOP');
+    await openApp('/DM-SHOP');
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     expect(within(section(/^Problems in this domain/)).getByRole('link', { name: 'test-file-missing' })).toHaveAttribute('href', '/format/checks/test-file-missing');
     await openApp('/checks');
@@ -119,13 +119,13 @@ describe('format reference pages', () => {
     expect(within(main()).getByRole('link', { name: 'dangling-link' })).toHaveAttribute('href', '/format/checks/dangling-link');
 
     // A group's kind leads to the kind's page too.
-    await openApp('/records/DM-SHOP/use_case');
+    await openApp('/DM-SHOP/use_case');
     await screen.findByRole('heading', { level: 1, name: /^Use cases/ });
     expect(within(inspector()).getByRole('link', { name: 'Use case' })).toHaveAttribute('href', '/format/kinds/use_case');
   });
 
   it('LA-BRW-T444 The record format is a palette command and a link in the shortcuts sheet, not a nav footer link', async () => {
-    await openApp('/specs/DM');
+    await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     expect(within(screen.getByRole('navigation', { name: 'Main' })).queryByRole('link', { name: 'Record format' })).toBeNull();
 
@@ -149,7 +149,7 @@ describe('format reference pages', () => {
     // A check that reports a problem now is found even before the reference loads.
     expect(rankItems(findItems(indexWorkspace(workspace()), []), 'unproved')[0]).toMatchObject({ title: 'Check: unproved' });
 
-    await openApp('/specs/DM');
+    await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     const find = screen.getAllByRole('combobox', { name: 'Quick find' })[0];
     await userEvent.type(find, 'Check: unpro');

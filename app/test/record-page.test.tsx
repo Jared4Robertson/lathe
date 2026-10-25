@@ -21,7 +21,7 @@ function linkGroups(heading: 'Links out' | 'Links in') {
 
 describe('record page', () => {
   it('LA-BRW-T10 The record page shows the ID, kind, title, fields, rendered body, parent and children', async () => {
-    await openApp('/records/DM-SHOP-UC01');
+    await openApp('/DM-SHOP-UC01');
     expect(await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' })).toBeInTheDocument();
     expect(main().querySelector('.record-id')).toHaveTextContent('DM-SHOP-UC01');
     expect(field('Kind')).toBe('Use case');
@@ -30,42 +30,42 @@ describe('record page', () => {
     expect(within(main()).getByText('A shopper adds an item.').closest('.markdown')).not.toBeNull();
 
     const parent = within(side()).getByRole('heading', { name: 'Parent' }).nextElementSibling as HTMLElement;
-    expect(parent).toHaveAttribute('href', '/records/DM-SHOP');
+    expect(parent).toHaveAttribute('href', '/DM-SHOP');
     const children = within(side()).getByRole('heading', { name: /^UC requirements/ });
     expect(children).toHaveTextContent('UC requirements 2');
     const items = within(children.nextElementSibling as HTMLElement).getAllByRole('link');
-    expect(items.map((a) => a.getAttribute('href'))).toEqual(['/records/DM-SHOP-UC01-R01', '/records/DM-SHOP-UC01-R02']);
+    expect(items.map((a) => a.getAttribute('href'))).toEqual(['/DM-SHOP-UC01-R01', '/DM-SHOP-UC01-R02']);
 
     // Markdown in a body is rendered.
-    await openApp('/records/DM');
+    await openApp('/DM');
     expect((await screen.findByText('component tests')).tagName).toBe('STRONG');
   });
 
   it('LA-BRW-T11 The record page shows links out and links in, grouped and named by their labels, each clickable', async () => {
-    await openApp('/records/DM-SHOP-UC01-R01');
+    await openApp('/DM-SHOP-UC01-R01');
     await screen.findByRole('heading', { level: 1, name: 'The basket shows the new item' });
     expect(linkGroups('Links out')).toEqual({});
     expect(within(side()).getByText('This record links to nothing.')).toBeInTheDocument();
     expect(linkGroups('Links in')).toEqual({
-      'Carried out in': ['/records/DM-SHOP-E01', '/records/DM-SHOP-F01', '/records/DM-SHOP-V01'],
-      'Designed by': ['/records/DM-SHOP-C01'],
-      'Proved by': ['/records/DM-SHOP-T01'],
+      'Carried out in': ['/DM-SHOP-E01', '/DM-SHOP-F01', '/DM-SHOP-V01'],
+      'Designed by': ['/DM-SHOP-C01'],
+      'Proved by': ['/DM-SHOP-T01'],
     });
 
     // Follow an incoming link to the component, then see its outgoing links.
     const user = userEvent.setup();
     await user.click(within(side()).getByRole('link', { name: /DM-SHOP-C01/ }));
-    expect(window.location.pathname).toBe('/records/DM-SHOP-C01');
+    expect(window.location.pathname).toBe('/DM-SHOP-C01');
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Basket service');
     expect(linkGroups('Links out')).toEqual({
-      Implements: ['/records/DM-SHOP-E01'],
-      Satisfies: ['/records/DM-SHOP-DR01', '/records/DM-SHOP-UC01-R01', '/records/DM-SHOP-UC01-R02'],
+      Implements: ['/DM-SHOP-E01'],
+      Satisfies: ['/DM-SHOP-DR01', '/DM-SHOP-UC01-R01', '/DM-SHOP-UC01-R02'],
     });
     expect(within(side()).getByText('Nothing links to this record.')).toBeInTheDocument();
   });
 
   it('LA-BRW-T12 A record body is sanitized before it is shown', async () => {
-    await openApp('/records/DM-SHOP-C01');
+    await openApp('/DM-SHOP-C01');
     await screen.findByRole('heading', { level: 1, name: 'Basket service' });
     const body = main().querySelector('.markdown') as HTMLElement;
     expect(body).toHaveTextContent('Holds baskets.');
@@ -81,14 +81,14 @@ describe('record page', () => {
   });
 
   it('LA-BRW-T13 The record page lists every problem about the record', async () => {
-    await openApp('/records/DM-SHOP-T01');
+    await openApp('/DM-SHOP-T01');
     await screen.findByRole('heading', { level: 1, name: 'Adding an item shows it' });
     const problems = within(section(/^Problems/)).getAllByRole('listitem');
     expect(problems).toHaveLength(1);
     expect(problems[0]).toHaveTextContent(/error.*Test DM-SHOP-T01 is run by test\/basket.test.ts, which does not exist\..*test-file-missing/);
     expect(within(main()).getByText('1 error')).toBeInTheDocument();
 
-    await openApp('/records/DM-SHOP-UC01');
+    await openApp('/DM-SHOP-UC01');
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     expect(within(section(/^Problems/)).getByText('No problems.')).toBeInTheDocument();
   });
