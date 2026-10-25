@@ -4,10 +4,13 @@
 //   GET  /api/diagrams            the diagrams
 //   POST /api/diagrams            create a diagram {title, description}
 //   GET  /api/diagrams/<slug>     one diagram with its check result
+//   GET  /api/history?id=<ID>     the git history of a record's spec file (&skip=<n> for older commits)
+//   GET  /api/history?id=<ID>&commit=<hash>   that commit's diff of the file ("working": the uncommitted changes)
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { loadConfig } from '../config.ts';
 import { formatReference, loadWorkspace } from '../index.ts';
 import { createDiagram, listDiagrams, loadDiagram } from './diagrams.ts';
+import { COMMIT_PATTERN, recordDiff, recordHistory } from './history.ts';
 
 function send(res: ServerResponse, status: number, body: unknown, headers: Record<string, string> = {}) {
   res.statusCode = status;
@@ -38,6 +41,19 @@ export async function handleApi(root: string, req: IncomingMessage, res: ServerR
       if (req.method !== 'GET') return (send(res, 405, { error: 'Method not allowed' }), true);
       send(res, 200, await formatReference(config.root), { 'x-lathe-source': 'engine' });
       return true;
+    }
+    if (pathname === '/api/history') {
+      if (req.method !== 'GET') return (send(res, 405, { error: 'Method not allowed' }), true);
+      const query = new URL(req.url ?? '/', 'http://localhost').searchParams;
+      const id = (query.get('id') ?? '').trim();
+      const commit = query.get('commit');
+      const skip = Number(query.get('skip') ?? '0');
+      if (!id) return (send(res, 400, { error: 'Give a record ID: /api/history?id=<ID>.' }), true);
+      if (commit !== null && !COMMIT_PATTERN.test(commit)) return (send(res, 400, { error: 'A commit is a hex hash, or "working".' }), true);
+      if (!Number.isInteger(skip) || skip < 0) return (send(res, 400, { error: 'skip is a whole number.' }), true);
+      const answer = commit === null ? await recordHistory(config.root, id, skip) : await recordDiff(config.root, id, commit);
+      const status = answer.state === 'no-record' || answer.state === 'no-commit' ? 404 : 200;
+      return (send(res, status, answer, { 'cache-control': 'no-store' }), true);
     }
     const match = pathname.match(/^\/api\/diagrams(?:\/([^/]*))?\/?$/);
     if (!match) return false;

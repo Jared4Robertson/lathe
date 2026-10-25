@@ -1,0 +1,66 @@
+/* The side bar (brief 64, LA-BRW-UC119): the switcher of Details, Outline and History at its top,
+   then the view shown. The panel itself keeps the inspector's rules in styles.css. */
+
+:root {
+  /* A diff's added and removed lines: tints of the accent tokens, so every theme sets them. */
+  --diff-add-bg: color-mix(in srgb, var(--steel) 16%, transparent);
+  --diff-remove-bg: color-mix(in srgb, var(--spark) 16%, transparent);
+  --diff-add-ink: var(--steel);
+  --diff-remove-ink: var(--error);
+}
+
+.side-switch { display: flex; gap: 2px; align-items: center; }
+.side-view { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.side-view > .inspector-title:focus { outline: none; }
+.side-view > .inspector-title:focus-visible { outline: 2px solid var(--steel); outline-offset: 2px; }
+
+/* Details */
+.side-identity-row { display: flex; gap: 8px; align-items: center; justify-content: space-between; min-height: 28px; }
+.side-identity-row .record-id { margin: 0; color: var(--steel); font-family: var(--mono); font-size: 0.82rem; }
+.side-open { margin-left: auto; }
+.side-file { margin: 0; overflow-wrap: anywhere; font-size: 0.82rem; }
+.side-raw dt code, .side-raw dd code { font-size: 0.8rem; overflow-wrap: anywhere; }
+.side-raw-links li { font-size: 0.85rem; display: flex; gap: 6px; align-items: baseline; flex-wrap: wrap; }
+.side-relation { color: var(--muted); }
+.side-trace-groups { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; margin: 0; }
+.side-trace-groups > div { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; }
+.side-trace-groups dt { font-size: 0.8rem; color: var(--muted); display: flex; gap: 6px; align-items: baseline; }
+.side-trace-groups dd { margin: 0; display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 0.82rem; }
+.side-trace > h3:focus { outline: none; }
+.side-trace > h3:focus-visible { outline: 2px solid var(--steel); outline-offset: 2px; }
+
+/* Outline: rows that are clickable anywhere (LA-PAT-APP-UX-R05). */
+.outline-list { margin: 0; padding: 0; list-style: none; }
+.outline-list > li { position: relative; padding: var(--item-pad-y) 6px; border-radius: 5px; font-size: 0.85rem; }
+.outline-list > li.is-center { font-weight: 600; }
+.outline-list > li.outline-depth-1 { padding-left: 18px; }
+.outline-list > li.outline-depth-2 { padding-left: 30px; }
+.outline-list > li.outline-depth-3, .outline-list > li.outline-depth-4 { padding-left: 42px; }
+.outline-heading.button { display: block; width: 100%; height: auto; min-height: 0; padding: 0; border: 0; background: none; color: var(--ink); font: inherit; text-align: left; white-space: normal; justify-content: flex-start; }
+.outline-heading.button:hover { background: none; }
+.outline-heading[aria-current] { color: var(--steel); font-weight: 600; }
+.outline-heading[aria-current]::before { content: ''; position: absolute; left: 0; top: 4px; bottom: 4px; width: 2px; border-radius: 1px; background: var(--steel); }
+a.outline-record { display: flex; gap: 6px; align-items: baseline; flex-wrap: wrap; color: var(--ink); text-decoration: none; }
+a.outline-record code { color: var(--steel); }
+a.outline-record:hover span { color: var(--steel); }
+
+/* History */
+.history-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; }
+.history-row { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; }
+.history-commit.button { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; width: 100%; justify-items: start; text-align: left; white-space: normal; height: auto; padding: 6px 8px; }
+.history-row.is-open > .history-commit { background: var(--hover-bg); }
+.history-subject { font-size: 0.86rem; overflow-wrap: anywhere; }
+.history-meta { color: var(--muted); font-family: var(--mono); font-size: 0.72rem; }
+.history-row.is-working .history-subject { color: var(--warn); font-weight: 600; }
+.history-more { margin: 4px 0 0; }
+.history-diff {
+  margin: 0; padding: 6px 0; overflow: auto; max-height: 24rem; scrollbar-gutter: stable;
+  border: 1px solid var(--rule); border-radius: 6px; background: var(--paper);
+  font: 0.74rem/1.45 var(--mono); white-space: pre;
+}
+.history-diff:focus-visible { outline: 2px solid var(--steel); outline-offset: 1px; }
+.diff-line { display: block; padding: 0 8px; min-width: max-content; }
+.diff-add { background: var(--diff-add-bg); color: var(--diff-add-ink); }
+.diff-remove { background: var(--diff-remove-bg); color: var(--diff-remove-ink); }
+.diff-hunk { color: var(--muted); background: var(--hover-bg); }
+.diff-meta { color: var(--muted); }

@@ -1,7 +1,7 @@
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { recordIdAt } from '../src/shell/desktopRecord';
-import { openApp } from './helpers';
+import { openApp, openSideBar } from './helpers';
 import { workspace } from './fixtures/workspace';
 
 // The desktop app's page hooks (LA-DSK-UC05): the record actions in a record's facts and on a
@@ -41,6 +41,8 @@ const heading = () => screen.findByRole('heading', { level: 1, name: 'Add an ite
 
 describe('desktop record actions', () => {
   it('LA-DSK-T24 A record\'s facts offer Reveal, Open in editor and Copy ID in the desktop app, and nothing in a browser', async () => {
+    // The side bar starts closed in the Wiki view (brief 64); this test reads it open.
+    openSideBar('details', ['wiki', 'graph', 'model']);
     await openApp('/DM-SHOP-UC01');
     await heading();
     expect(screen.queryByRole('group', { name: 'Spec file of DM-SHOP-UC01' })).toBeNull();

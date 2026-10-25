@@ -7,7 +7,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { parseSpecRoute } from '../src/specs/data';
 import { indexWorkspace } from '../src/specs/data';
 import { addressOf, legacyAddress, parseViews, viewsFromSearch, withView } from '../src/views/address';
-import { main, openApp } from './helpers';
+import { main, openApp, openSideBar } from './helpers';
 import { testWorkspace } from './graph/workspace';
 
 // The focus page: one address per record or group, its Wiki, Graph and Model views panes you open
@@ -197,11 +197,10 @@ describe('one address, three views', () => {
     await openApp('/P-D-UC01/requirement?view=wiki,graph', { workspace: w });
     await screen.findByRole('heading', { level: 1, name: 'UC requirements (13)' });
     expect(within(screen.getByRole('region', { name: 'Wiki pane' })).getByRole('searchbox', { name: 'Filter UC requirements of P-D-UC01/requirement' })).toBeInTheDocument();
-    expect(within(inspector()).getByRole('searchbox', { name: 'Filter UC requirements' })).toBeInTheDocument();
     await waitFor(() => expect(within(inspector()).getByRole('searchbox', { name: 'Filter connected records' })).toBeInTheDocument());
-    await openApp('/P-D-UC01', { workspace: w });
-    await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
-    expect(within(inspector()).getByRole('searchbox', { name: 'Filter UC requirements' })).toBeInTheDocument();
+    // The side bar's Outline: the graph's records by level, each list searchable past 10 rows (brief 64).
+    fireEvent.click(within(inspector()).getByRole('button', { name: 'Outline' }));
+    await waitFor(() => expect(within(inspector()).getAllByRole('searchbox', { name: /^Filter level \d$/ }).length).toBeGreaterThan(0));
   });
 
   it('LA-BRW-T135 Switching views by keyboard keeps focus, and the toggles show a focus ring', async () => {
@@ -225,6 +224,8 @@ describe('one address, three views', () => {
   });
 
   it('LA-BRW-T310 The page bar holds the tabs at its left and the view toggles, a divider and the inspector toggle at its right; each pane header names its view and holds its close and Full screen buttons; the pressed views and a shown inspector share one on look', async () => {
+    // The side bar starts closed in the Wiki view (brief 64); this test reads it open.
+    openSideBar('details', ['wiki', 'graph', 'model']);
     await openApp('/P-D-UC01', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     const page = document.querySelector<HTMLElement>('.page-bar')!;
@@ -259,26 +260,32 @@ describe('one address, three views', () => {
 
 describe('the inspector', () => {
   it('LA-BRW-T131 The inspector shows the focused record in every view, hides and shows from its edge, is remembered, and gives its space to the main view', async () => {
-    await openApp('/P-D-UC01', served());
+    // Open in the Graph view (brief 64), with the record's facts and what the graph connects.
+    await openApp('/P-D-UC01?view=graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     const facts = within(inspector());
     expect(facts.getByText('Lend a thing', { selector: '.inspector-name' })).toBeInTheDocument();
-    expect(facts.getByRole('heading', { name: 'Links out' })).toBeInTheDocument();
+    await waitFor(() => expect(facts.getByRole('heading', { name: /Connected in the graph/ })).toBeInTheDocument());
     expect(document.querySelector('.focus-layout')!.className).toContain('with-inspector');
 
     // Hide it: the main view takes the space, and the toggle in the page's top-right corner brings it back.
     fireEvent.click(facts.getByRole('button', { name: 'Hide the inspector' }));
     expect(screen.queryByRole('complementary', { name: 'Inspector' })).toBeNull();
     expect(document.querySelector('.focus-layout')!.className).not.toContain('with-inspector');
-    expect(window.localStorage.getItem('lathe:inspector-open')).toBe('false');
+    expect(JSON.parse(window.localStorage.getItem('lathe:side-bar')!)).toMatchObject({ graph: { open: false } });
+    // Remembered in the Graph view of another record, in a new session's first tab too.
+    window.sessionStorage.clear();
     await openApp('/P-D-V01?view=graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Thing page' });
     expect(screen.queryByRole('complementary', { name: 'Inspector' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Show the inspector' }));
-    // In the Graph view the one inspector shows the same record, and what the graph connects.
     expect(within(inspector()).getByText('Thing page', { selector: '.inspector-name' })).toBeInTheDocument();
-    await waitFor(() => expect(within(inspector()).getByRole('heading', { name: /Connected in the graph/ })).toBeInTheDocument());
     expect(screen.getAllByRole('complementary', { name: 'Inspector' })).toHaveLength(1);
+
+    // The Wiki view keeps its own choice: closed until opened there.
+    await openApp('/P-D-V01?view=wiki', served());
+    await screen.findByRole('heading', { level: 1, name: 'Thing page' });
+    expect(screen.queryByRole('complementary', { name: 'Inspector' })).toBeNull();
   });
 
   it('LA-BRW-T132 On a narrow screen the inspector is a bottom sheet: focus moves in, and Escape closes it and gives focus back', async () => {

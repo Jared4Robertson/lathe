@@ -5,7 +5,7 @@ import { indexWorkspace } from '../src/specs/data';
 import { linkMentions, renderMarkdown } from '../src/specs/Markdown';
 import { proseLinks } from '../src/specs/mentions';
 import { patternWorkspace } from './fixtures/patterns';
-import { openApp } from './helpers';
+import { openApp, openSideBar } from './helpers';
 
 // Record IDs cited in prose become links (FORMAT.md section 12): every ID in the record's
 // `mentions`, wherever it appears in the text but never inside code; unknown IDs that the engine
@@ -78,6 +78,7 @@ describe('prose mentions', () => {
   });
 
   it('LA-BRW-T174 A mention next to a longer ID links only the ID mentioned, is not a link between records, and domain pages link theirs too', async () => {
+    openSideBar();
     await openApp('/DM-PAY-UC01', { workspace: patternWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Pay by card' });
     expect(within(body()).getAllByRole('link').map((a) => [a.textContent, a.getAttribute('title')])).toEqual([['DM-SHOP-UC01', 'Add an item to the basket']]);
