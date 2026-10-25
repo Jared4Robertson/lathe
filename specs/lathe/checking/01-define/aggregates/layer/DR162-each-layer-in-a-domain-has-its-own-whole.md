@@ -1,7 +1,7 @@
 ---
 id: LA-CHK-DR162
 kind: domain_rule
-title: Each layer in a domain has its own whole-number order
+title: Each layer beside others has its own whole-number order
 parent: LA-CHK-A9
 ---
-A layer's `order` MUST be a whole number, and no two layers in the same domain MAY have the same order read as a number (`1` and `01` are the same). The order sets the layer's place in the domain.
+A layer's `order` MUST be a whole number, and no two layers with the same parent, the domain or the layer that holds them as sub-layers, MAY have the same order read as a number (`1` and `01` are the same). The order sets the layer's place among the layers beside it.
