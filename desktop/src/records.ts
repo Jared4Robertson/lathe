@@ -1,6 +1,6 @@
-// The desktop-only record actions (LA-DSK-UC05-R07): reveal a record's spec file in Finder, open it in
+// The desktop-only record actions (LA-AUT-UC15-R01): reveal a record's spec file in Finder, open it in
 // the editor, copy its ID, or a native menu of the three. The page names only a record ID; the main
-// process checks the request (LA-DSK-DR13) and finds the file itself, among the folder's spec files,
+// process checks the request (LA-PLT-DR38) and finds the file itself, among the folder's spec files,
 // so a page can never name a file of its own.
 import type { MenuItemConstructorOptions } from 'electron';
 import { readdirSync, readFileSync, existsSync } from 'node:fs';

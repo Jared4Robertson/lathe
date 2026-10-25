@@ -29,7 +29,7 @@ async function showGraph(path: string, workspace: Workspace = testWorkspace(), d
 }
 
 describe('the graph tree, its depth and its camera', () => {
-  it('LA-BRW-T543 Depth counts levels below a domain and a use case, as a file explorer does', () => {
+  it('LA-EXP-T142 Depth counts levels below a domain and a use case, as a file explorer does', () => {
     const index = indexWorkspace(layerWorkspace());
     // From the domain: depth 1 its stages, depth 2 their folders, depth 3 what is in them.
     expect(ids(neighborhood(index, 'DM-SHOP', 1))).toEqual(expect.arrayContaining(['DM-SHOP/define', 'DM-SHOP/design']));
@@ -46,7 +46,7 @@ describe('the graph tree, its depth and its camera', () => {
     }
   });
 
-  it('LA-BRW-T544 The graph\'s tree is the nav\'s: a domain\'s stages, their folders and records, the one-kind rule, and a product\'s Shared folder and domains', () => {
+  it('LA-EXP-T143 The graph\'s tree is the nav\'s: a domain\'s stages, their folders and records, the one-kind rule, and a product\'s Shared folder and domains', () => {
     const index = indexWorkspace(layerWorkspace());
     const { stages } = domainFolders(index, 'DM-SHOP');
     expect(treeChildren(index, 'DM-SHOP').slice(0, 2)).toEqual(['DM-SHOP/define', 'DM-SHOP/design']);
@@ -78,7 +78,7 @@ describe('the graph tree, its depth and its camera', () => {
     }
   });
 
-  it('LA-BRW-T545 The Links switch beside Depth is off by default, has a tooltip and the shortcut l, draws the center\'s links dashed, and is kept while walking', async () => {
+  it('LA-EXP-T144 The Links switch beside Depth is off by default, has a tooltip and the shortcut l, draws the center\'s links dashed, and is kept while walking', async () => {
     await showGraph('/P-D-UC01-R01');
     const links = screen.getByRole('button', { name: 'Links' });
     expect(links).toHaveAttribute('aria-pressed', 'false');
@@ -96,7 +96,7 @@ describe('the graph tree, its depth and its camera', () => {
     expect(screen.getByRole('button', { name: 'Links' })).toHaveAttribute('aria-pressed', 'true');
   });
 
-  it('LA-BRW-T742 A box too small on screen for its text is drawn plain and out of focus, and the summary counts the framed picture', async () => {
+  it('LA-EXP-T171 A box too small on screen for its text is drawn plain and out of focus, and the summary counts the framed picture', async () => {
     await showGraph('/P-D', testWorkspace(), 3);
     await waitFor(() => expect(document.querySelector('.react-flow__node.is-plain')).not.toBeNull());
     const plain = document.querySelector<HTMLElement>('.react-flow__node.is-plain')!;
@@ -120,13 +120,13 @@ describe('the graph tree, its depth and its camera', () => {
     expect(graphSummary(n)).toBe('7 records · 11 groups · 17 links');
   });
 
-  it('LA-BRW-T548 Filters have a Minimap switch, off by default and kept while walking, and the minimap is an overview of the whole map', async () => {
+  it('LA-EXP-T147 Filters have a Minimap switch, off by default and kept while walking, and the minimap is an overview of the whole map', async () => {
     await showGraph('/P-D-UC01-R01');
     fireEvent.click(screen.getByText('Filters'));
     const minimap = screen.getByRole('switch', { name: 'Minimap' }) as HTMLInputElement;
     expect(minimap.checked).toBe(false);
     expect(screen.queryByRole('switch', { name: /context ring/i })).toBeNull();
-    // The trace preset is worded with the relations' labels, never their codes (LA-BRW-DR243).
+    // The trace preset is worded with the relations' labels, never their codes (LA-EXP-V03-R07).
     expect(screen.getByRole('button', { name: 'Only satisfies, proves and carries out links' })).toBeInTheDocument();
     expect(document.querySelector('.graph-minimap')).toBeNull();
     fireEvent.click(minimap);
@@ -142,7 +142,7 @@ describe('the graph tree, its depth and its camera', () => {
     expect(screen.getByRole('img', { name: 'Minimap' })).toBeInTheDocument();
   });
 
-  it('LA-BRW-T549 Alt+Up steps out to the parent, Alt+Down in to the first child, Alt+Shift+Left and Right to a sibling, from the keyboard and from buttons with their keys', async () => {
+  it('LA-EXP-T148 Alt+Up steps out to the parent, Alt+Down in to the first child, Alt+Shift+Left and Right to a sibling, from the keyboard and from buttons with their keys', async () => {
     const index = testIndex();
     expect(stepTarget(index, 'P-D-UC01', 'out')).toBe('P-D/define/use-cases');
     expect(stepTarget(index, 'P-D-UC01', 'in')).toBe('P-D-UC01-R01');
@@ -169,7 +169,7 @@ describe('the graph tree, its depth and its camera', () => {
     await waitFor(() => expect(window.location.pathname).toBe('/P-D/define/domain-model'));
   });
 
-  it('LA-BRW-T743 With Links on, links draw as curves between their boxes, and the edge hints count the linked records past each edge', async () => {
+  it('LA-EXP-T172 With Links on, links draw as curves between their boxes, and the edge hints count the linked records past each edge', async () => {
     // The hints' arithmetic: a box's center past an edge counts for that edge; the plain pan moves half the canvas.
     const view = { x: 0, y: 0, zoom: 1 };
     expect(pastEdges([{ x: -10, y: 50 }, { x: 1200, y: -5 }, { x: 500, y: 900 }, { x: 500, y: 400 }], view, 1000, 800)).toEqual({ up: 1, down: 1, left: 1, right: 1 });
@@ -189,7 +189,7 @@ describe('the graph tree, its depth and its camera', () => {
     }
   });
 
-  it('LA-BRW-T551 Hovering or focusing a box spotlights it, its lines and the boxes it joins, and leaving restores the picture', async () => {
+  it('LA-EXP-T150 Hovering or focusing a box spotlights it, its lines and the boxes it joins, and leaving restores the picture', async () => {
     await showGraph('/P-D-UC01-R01');
     fireEvent.click(screen.getByRole('button', { name: 'Links' }));
     await waitFor(() => expect(node('P-D-V01')).not.toBeNull());
@@ -209,7 +209,7 @@ describe('the graph tree, its depth and its camera', () => {
 describe('the context ring in the Model view', () => {
   const index = () => indexWorkspace(entityWorkspace());
 
-  it('LA-BRW-T552 An aggregate\'s ERD shows what its referenced entities refer to one ring out, faded; a domain\'s ERD fades the aggregates of other domains', () => {
+  it('LA-EXP-T151 An aggregate\'s ERD shows what its referenced entities refer to one ring out, faded; a domain\'s ERD fades the aggregates of other domains', () => {
     const loan = aggregateErd(index(), 'P-D-A3');
     const box = (id: string) => loan.boxes.find((b) => b.id === id);
     // Its own entities and those they refer to are in focus; Member's Account, in another domain, is the ring.
@@ -224,7 +224,7 @@ describe('the context ring in the Model view', () => {
     expect(domain.lines.filter((l) => l.context).map((l) => l.target)).toEqual(['P-E-A1']);
   });
 
-  it('LA-BRW-T553 The ERD frames its boxes in focus only, its context boxes are out of focus, and its edge hints count them', async () => {
+  it('LA-EXP-T152 The ERD frames its boxes in focus only, its context boxes are out of focus, and its edge hints count them', async () => {
     const erd = aggregateErd(index(), 'P-D-A3');
     const rects = new Map(erd.boxes.map((b, i) => [b.id, { x: i * 300, y: 0, width: 240, height: 80 }]));
     expect([...focusRects(erd, rects).keys()]).not.toContain('P-E-EN01');

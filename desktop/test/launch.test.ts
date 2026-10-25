@@ -3,7 +3,7 @@ import { aboutModel, errorModel, launchModel, launchStep, modelQuery, parseLocal
 
 const colors = { background: '#0A0F12', foreground: '#E2E8EA' };
 
-describe('LA-DSK-T22 The launch view names the product, and the error page says what failed and offers Retry, another folder and the folder itself', () => {
+describe('LA-PLT-T125 The launch view names the product, and the error page says what failed and offers Retry, another folder and the folder itself', () => {
   it('shows "Opening <product>…" in the window\'s colors, with no buttons', () => {
     expect(launchModel('Tool Library', colors)).toEqual({ view: 'launch', heading: 'Opening Tool Library…', actions: [], colors });
   });

@@ -12,7 +12,7 @@ async function openShop() {
 }
 
 describe('domain page', () => {
-  it('LA-BRW-T07 The domain page groups records by stage and folder, with rules and requirements nested', async () => {
+  it('LA-EXP-T03 The domain page groups records by stage and folder, with rules and requirements nested', async () => {
     await openShop();
     const user = userEvent.setup();
     const [define, design] = within(main()).getAllByRole('heading', { level: 2, name: /^(Define|Design)$/ }).map((h) => h.parentElement as HTMLElement);
@@ -50,7 +50,7 @@ describe('domain page', () => {
     expect(section(/^Test plan/)).toHaveTextContent('unit · test/basket.test.ts');
   });
 
-  it('LA-BRW-T08 The search box filters records by ID or title as you type', async () => {
+  it('LA-EXP-T04 The search box filters records by ID or title as you type', async () => {
     await openShop();
     const user = userEvent.setup();
     const search = screen.getByLabelText('Filter records');
@@ -72,7 +72,7 @@ describe('domain page', () => {
     expect(ids(section(/^Capabilities/))).toEqual(['DM-SHOP-UC01']);
   });
 
-  it('LA-BRW-T09 The domain page lists its coverage gaps, each with the missing link, and its problems', async () => {
+  it('LA-EXP-T05 The domain page lists its coverage gaps, each with the missing link, and its problems', async () => {
     await openShop();
     const coverage = section(/^Coverage/);
     const gaps = within(coverage).getAllByRole('listitem');

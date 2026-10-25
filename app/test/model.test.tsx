@@ -21,7 +21,7 @@ const viewToggle = (name: string) => within(screen.getByRole('group', { name: 'V
 const CSS = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
 
 describe('the Model view', () => {
-  it('LA-BRW-T360 Model is offered only on domain, aggregate and entity pages, opens as a third pane after Wiki and Graph, and an address naming it elsewhere drops it', async () => {
+  it('LA-EXP-T121 Model is offered only on domain, aggregate and entity pages, opens as a third pane after Wiki and Graph, and an address naming it elsewhere drops it', async () => {
     const i = index();
     expect(viewsOffered(i, 'P-D')).toEqual(['wiki', 'graph', 'model']);
     expect(viewsOffered(i, 'P-D-A3')).toEqual(['wiki', 'graph', 'model']);
@@ -51,7 +51,7 @@ describe('the Model view', () => {
     expect(window.location.search).toBe('?view=wiki,graph');
   });
 
-  it('LA-BRW-T361 A domain\'s ERD draws each aggregate with its root and entity count, one many-to-one line per aggregate pair and direction, relates_to dashed as a fallback, and another domain\'s aggregates gray with their owner', async () => {
+  it('LA-EXP-T122 A domain\'s ERD draws each aggregate with its root and entity count, one many-to-one line per aggregate pair and direction, relates_to dashed as a fallback, and another domain\'s aggregates gray with their owner', async () => {
     const erd = domainErd(index(), 'P-D');
     const byId = new Map(erd.boxes.map((b) => [b.id, b]));
     expect([...byId.keys()].sort()).toEqual(['P-D-A1', 'P-D-A2', 'P-D-A3', 'P-D-A4', 'P-E-A1']);
@@ -76,7 +76,7 @@ describe('the Model view', () => {
     expect(modelPane().querySelector('.erd-line[data-line="P-D-A4|relates_to|P-D-A1"]')).toHaveClass('is-dashed');
   });
 
-  it('LA-BRW-T362 An aggregate\'s ERD shows each entity\'s title, root mark and fields with their kind of value, crow\'s-foot ends by cardinality, and entities from elsewhere labeled with their owner', async () => {
+  it('LA-EXP-T123 An aggregate\'s ERD shows each entity\'s title, root mark and fields with their kind of value, crow\'s-foot ends by cardinality, and entities from elsewhere labeled with their owner', async () => {
     const erd = aggregateErd(index(), 'P-D-A3');
     const byId = new Map(erd.boxes.map((b) => [b.id, b]));
     expect(byId.get('P-D-EN03')).toMatchObject({ root: true, fields: [{ field: 'Loan ID', kind: 'Whole number' }, { field: 'Borrowed at', kind: 'Date and time' }, { field: 'Due date', kind: 'Date' }] });
@@ -103,7 +103,7 @@ describe('the Model view', () => {
     await waitFor(() => expect(modelPane().querySelector('[data-line="P-D-EN03|has_many|P-D-EN05"]')).toHaveAttribute('data-ends', 'one-many'));
   });
 
-  it('LA-BRW-T363 An entity page draws its aggregate\'s ERD with the entity highlighted', async () => {
+  it('LA-EXP-T124 An entity page draws its aggregate\'s ERD with the entity highlighted', async () => {
     expect(erdFor(index(), 'P-D-EN04')).toMatchObject({ level: 'aggregate', scope: 'P-D-A3' });
     expect(erdFor(index(), 'P-D-EN04')!.boxes.filter((b) => b.highlight).map((b) => b.id)).toEqual(['P-D-EN04']);
     await openApp('/P-D-EN04?view=model', served());
@@ -114,7 +114,7 @@ describe('the Model view', () => {
     expect(within(modelPane()).getByRole('group', { name: 'Key' })).toHaveTextContent('This entity');
   });
 
-  it('LA-BRW-T364 Clicking a box goes to it, boxes show a hover state, and a key under the diagram explains the colors with emoji squares and the line ends', async () => {
+  it('LA-PLT-T49 Clicking a box goes to it, boxes show a hover state, and a key under the diagram explains the colors with emoji squares and the line ends', async () => {
     await openApp('/P-D?view=wiki,model', served());
     await screen.findByRole('heading', { level: 1, name: 'Domain' });
     await boxesShown();
@@ -140,7 +140,7 @@ describe('the Model view', () => {
     expect(CSS).toMatch(/\.erd-box\.tone-other\s*\{[^}]*var\(--muted\)[^}]*var\(--paper\)/);
   });
 
-  it('LA-BRW-T365 An ERD draws exactly one line per relationship link: each aggregate\'s for the links its entities hold, the domain\'s for each aggregate pair and direction they join', () => {
+  it('LA-EXP-T125 An ERD draws exactly one line per relationship link: each aggregate\'s for the links its entities hold, the domain\'s for each aggregate pair and direction they join', () => {
     const i = index();
     const entityLinks = entityWorkspace().links.filter((l) => (ENTITY_RELATIONS as readonly string[]).includes(l.relation));
     const aggregates = ['P-D-A1', 'P-D-A2', 'P-D-A3', 'P-D-A4'];
@@ -158,7 +158,7 @@ describe('the Model view', () => {
     expect(erd.lines.filter((l) => !l.dashed).flatMap((l) => l.links)).toHaveLength(crossing.length);
   });
 
-  it('LA-BRW-T366 Above a graph or a model pane the page title keeps one fixed height, so the canvas never moves when the focus changes; in the wiki pane it wraps', async () => {
+  it('LA-EXP-T126 Above a graph or a model pane the page title keeps one fixed height, so the canvas never moves when the focus changes; in the wiki pane it wraps', async () => {
     await openApp('/P-D-A3?view=graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Loan' });
     const title = () => screen.getByRole('heading', { level: 1 }).closest<HTMLElement>('.pane-title')!;
@@ -175,7 +175,7 @@ describe('the Model view', () => {
     expect(title()).not.toHaveClass('is-fixed');
   });
 
-  it('LA-BRW-T367 With three panes open each gap is its own handle, resizing only the two panes beside it', async () => {
+  it('LA-PLT-T50 With three panes open each gap is its own handle, resizing only the two panes beside it', async () => {
     await openApp('/P-D-A3?view=wiki,graph,model', served());
     await screen.findByRole('heading', { level: 1, name: 'Loan' });
     const first = screen.getByRole('separator', { name: 'Resize the wiki and graph panes' });

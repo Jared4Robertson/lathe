@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { folderArgument, routeOpenFile, routeSecondInstance, windowForFolder } from '../src/instance.ts';
 
-describe('LA-DSK-T19 A second launch or a folder from Finder goes to the running app, which opens or focuses its window', () => {
+describe('LA-PLT-T124 A second launch or a folder from Finder goes to the running app, which opens or focuses its window', () => {
   it('reads the folder from a command line, unpacked (electron . <folder>) or packed (Lathe <folder>), ignoring flags', () => {
     expect(folderArgument(['/electron', '.', '/work/shop'], false)).toBe('/work/shop');
     expect(folderArgument(['/Applications/Lathe.app/Contents/MacOS/Lathe', '/work/shop'], true)).toBe('/work/shop');

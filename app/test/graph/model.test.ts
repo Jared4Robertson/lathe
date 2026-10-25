@@ -11,7 +11,7 @@ const filters = (kinds: string[] = [], relations: string[] = []): Filters => ({ 
 describe('graph neighborhood', () => {
   const index = testIndex();
 
-  it('LA-BRW-T50 Depth counts levels of the tree below the focus, stages and folders included, with the parent kept; siblings and links are not added', () => {
+  it('LA-EXP-T13 Depth counts levels of the tree below the focus, stages and folders included, with the parent kept; siblings and links are not added', () => {
     // Depth 1: the requirement and its use case, the parent at the left edge.
     const one = neighborhood(index, 'P-D-UC01-R01', 1);
     expect(one.nodes[0]).toMatchObject({ id: 'P-D-UC01-R01', distance: 0 });
@@ -35,7 +35,7 @@ describe('graph neighborhood', () => {
     expect(ids(aggregate)).not.toContain('P-D-Q01');
   });
 
-  it('LA-BRW-T51 The Links switch adds the records the focused record links to and from, one hop, in focus, with their links', () => {
+  it('LA-EXP-T14 The Links switch adds the records the focused record links to and from, one hop, in focus, with their links', () => {
     const n = neighborhood(index, 'P-D-UC01-R01', 1, undefined, { links: true });
     expect(ids(n)).toEqual(['P-D-C01', 'P-D-T01', 'P-D-UC01', 'P-D-UC01-R01', 'P-D-V01']);
     expect(n.edges.filter((e) => e.relation !== 'parent').map((e) => `${e.source} ${e.relation} ${e.target}`).sort()).toEqual([
@@ -57,7 +57,7 @@ describe('graph neighborhood', () => {
     expect(n).toEqual(neighborhood(index, 'P-D-UC01-R01', 1, undefined, { links: true }));
   });
 
-  it('LA-BRW-T52 Filters hide kinds and relations, nothing is reached through them, and the focus is never hidden', () => {
+  it('LA-EXP-T15 Filters hide kinds and relations, nothing is reached through them, and the focus is never hidden', () => {
     const links = { links: true };
     expect(ids(neighborhood(index, 'P-D-UC01-R01', 1, filters(['test']), links))).not.toContain('P-D-T01');
     // Hiding satisfies keeps the component out and drops its edge.
@@ -76,7 +76,7 @@ describe('graph neighborhood', () => {
     expect(ids(neighborhood(index, 'P-D-UC01-R01', 3, filters([], ['parent', 'fulfills']), links))).toEqual(['P-D-C01', 'P-D-T01', 'P-D-UC01-R01']);
   });
 
-  it('LA-BRW-T53 Trace mode shows what fulfills, satisfies and proves a requirement, and the files they name', () => {
+  it('LA-TRC-T86 Trace mode shows what fulfills, satisfies and proves a requirement, and the files they name', () => {
     const t = traceChain(index, 'P-D-UC01-R01');
     expect(ids(t)).toEqual([fileNodeId('src/thing.ts'), fileNodeId('test/thing.test.ts'), 'P-D-C01', 'P-D-T01', 'P-D-UC01-R01', 'P-D-V01'].sort());
     expect(t.edges.map((e) => `${e.source} ${e.relation} ${e.target}`).sort()).toEqual([
@@ -96,14 +96,14 @@ describe('graph neighborhood', () => {
     expect(ids(traceChain(index, 'P-D-UC01-R01', filters(['test', 'file'])))).toEqual(['P-D-C01', 'P-D-UC01-R01', 'P-D-V01']);
   });
 
-  it('LA-BRW-T54 Trace mode is offered only for requirements and domain rules', () => {
+  it('LA-TRC-T87 Trace mode is offered only for requirements and domain rules', () => {
     expect(canTrace(index, 'P-D-UC01-R01')).toBe(true);
     expect(canTrace(index, 'P-D-DR01')).toBe(true);
     for (const id of ['P', 'P-D', 'P-D-UC01', 'P-D-C01', 'P-D-T01', 'P-D-V01', 'missing']) expect(canTrace(index, id)).toBe(false);
     expect(traceChain(index, 'P-D-UC01').nodes).toEqual([]);
   });
 
-  it('LA-BRW-T55 The layout gives the same map every time, whatever the focus, with no overlaps', async () => {
+  it('LA-EXP-T16 The layout gives the same map every time, whatever the focus, with no overlaps', async () => {
     const map = graphMap(index);
     // Built once per index, and the same for an index built again from the same workspace.
     expect(graphMap(index)).toBe(map);
@@ -122,7 +122,7 @@ describe('graph neighborhood', () => {
     expect(traceGrid(traceChain(index, 'P-D-DR02')).positions.get('P-D-DR02')).toEqual({ x: -NODE_WIDTH / 2, y: -NODE_HEIGHT / 2 });
   });
 
-  it('LA-BRW-T56 The breadcrumb trail adds each record visited and cuts back when a visited record is revisited', () => {
+  it('LA-EXP-T17 The breadcrumb trail adds each record visited and cuts back when a visited record is revisited', () => {
     expect(nextTrail([], 'A')).toEqual(['A']);
     expect(nextTrail(['A'], 'B')).toEqual(['A', 'B']);
     expect(nextTrail(['A', 'B', 'C'], 'B')).toEqual(['A', 'B']);
@@ -130,7 +130,7 @@ describe('graph neighborhood', () => {
     expect(nextTrail(['1', '2', '3'], '4', 3)).toEqual(['2', '3', '4']);
   });
 
-  it('LA-BRW-T63 Columns follow the parent/child tree around the focus, and trace mode has its own columns', () => {
+  it('LA-EXP-T23 Columns follow the parent/child tree around the focus, and trace mode has its own columns', () => {
     const n = neighborhood(index, 'P-D/define', 3);
     const column = new Map(n.nodes.map((x) => [x.id, x.column]));
     // The parent one column to the left, each level below one more to the right; the leftmost column is 0.
@@ -152,7 +152,7 @@ describe('graph neighborhood', () => {
     for (const node of t.nodes) expect(node.column).toBe(traceColumn(node.kind));
   });
 
-  it('LA-BRW-T64 The graph reads left to right by column, and so does a trace', async () => {
+  it('LA-EXP-T24 The graph reads left to right by column, and so does a trace', async () => {
     const map = graphMap(index);
     // One x and one width per level, levels in order.
     for (const level of map.byLevel) {
@@ -175,7 +175,7 @@ describe('graph neighborhood', () => {
     expect(x('file:src/thing.ts')).toBe(x('file:test/thing.test.ts'));
   });
 
-  it('LA-BRW-T65 Links between records in one column are drawn but never change the map', async () => {
+  it('LA-EXP-T25 Links between records in one column are drawn but never change the map', async () => {
     const w = testWorkspace();
     w.records.push({ ...w.records.find((r) => r.id === 'P-D-A1')!, id: 'P-D-A2', title: 'Owner', path: 'specs/P-D-A2.md' });
     const before = graphMap(indexWorkspace(w));

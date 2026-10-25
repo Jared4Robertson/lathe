@@ -29,7 +29,7 @@ describe('graph groups', () => {
   const index = testIndex();
   const grouped = indexWorkspace(groupedWorkspace());
 
-  it('LA-BRW-T100 A record with several kinds of child has a group per child kind, labeled with the plural and a count', () => {
+  it('LA-EXP-T27 A record with several kinds of child has a group per child kind, labeled with the plural and a count', () => {
     expect(isGrouped(index, 'P-D')).toBe(true);
     expect(childKinds(index, 'P-D')).toEqual(['aggregate', 'use_case', 'view', 'endpoint', 'component', 'test', 'question']);
     // One kind of child: no groups.
@@ -54,7 +54,7 @@ describe('graph groups', () => {
     expect(isGraphNode(index, 'missing/use_case')).toBe(false);
   });
 
-  it('LA-BRW-T101 Every group is in the map with all its members beside it, and the spine runs record, group, record', () => {
+  it('LA-EXP-T28 Every group is in the map with all its members beside it, and the spine runs record, group, record', () => {
     // At depth 1 the domain frames its stages and the open questions' group; depth 2 frames their folders.
     const domain = neighborhood(index, 'P-D', 1);
     expect(groups(domain)).toEqual(['P-D/define', 'P-D/design', 'P-D/question']);
@@ -85,7 +85,7 @@ describe('graph groups', () => {
     expect(req.edges.map((e) => e.id)).toContain('P-D-C01|satisfies|P-D-UC01-R01');
   });
 
-  it('LA-BRW-T277 At depth 1 the graph frames the tree around the focus: its parent or folder at the left edge, its children or their folders, and no other links', () => {
+  it('LA-EXP-T92 At depth 1 the graph frames the tree around the focus: its parent or folder at the left edge, its children or their folders, and no other links', () => {
     const at = (focus: string) => neighborhood(grouped, focus, 1);
     // A use case in a folder: the folder at the left edge, its requirement beside it; no siblings.
     expect(ids(at('P-D-UC01'))).toEqual(['P-D-UC01', 'P-D-UC01-R01', 'P-D/define/use-cases']);
@@ -98,7 +98,7 @@ describe('graph groups', () => {
     for (const id of ['P-D-UC01', 'P-D', 'P-D-UC01-R01']) expect(new Set(at(id).edges.map((e) => e.relation))).toEqual(new Set([PARENT]));
   });
 
-  it('LA-BRW-T102 A group can be the focus: its parent and all its members are shown, and depth counts levels from it', () => {
+  it('LA-EXP-T29 A group can be the focus: its parent and all its members are shown, and depth counts levels from it', () => {
     const g = neighborhood(grouped, 'P-D/define/use-cases', 1);
     expect(g.nodes[0]).toMatchObject({ id: 'P-D/define/use-cases', distance: 0 });
     expect(ids(g)).toEqual(['P-D-UC01', 'P-D-UC02', 'P-D/define', 'P-D/define/use-cases']);
@@ -117,7 +117,7 @@ describe('graph groups', () => {
     expect(addressOf('P-D-UC01')).toBe('/P-D-UC01');
   });
 
-  it('LA-BRW-T103 Groups take their own column between the parent and its children, left to right', async () => {
+  it('LA-EXP-T30 Groups take their own column between the parent and its children, left to right', async () => {
     // A group is one column after its parent, and its members one column after the group.
     const column = (n: Neighborhood, id: string) => n.nodes.find((x) => x.id === id)!.column;
     const fromDomain = neighborhood(index, 'P-D', 3);
@@ -140,7 +140,7 @@ describe('graph groups', () => {
     }
   });
 
-  it('LA-BRW-T104 A group carries a summary mark when its members or anything beneath them has problems or coverage gaps', () => {
+  it('LA-EXP-T31 A group carries a summary mark when its members or anything beneath them has problems or coverage gaps', () => {
     // The rules beneath the aggregate are not proved, and one is not satisfied.
     expect(groupMarks(index, 'P-D/define/domain-model')).toEqual({ errors: 0, warnings: 3, gaps: ['proves', 'satisfies'] });
     // The test has an error.
@@ -148,7 +148,7 @@ describe('graph groups', () => {
     expect(groupMarks(grouped, 'P-D-UC02/question')).toEqual({ errors: 0, warnings: 0, gaps: [] });
   });
 
-  it('LA-BRW-T105 Trace mode has no groups, and filters hide groups with their kind or with the parent relation', () => {
+  it('LA-EXP-T32 Trace mode has no groups, and filters hide groups with their kind or with the parent relation', () => {
     expect(traceChain(index, 'P-D-UC01-R01').nodes.some((x) => x.group)).toBe(false);
     // A kind group goes with its kind; a stage or a named folder has no kind of its own and stays.
     expect(ids(neighborhood(grouped, 'P-D-UC02', 1, filters(['requirement'])))).not.toContain('P-D-UC02/requirement');

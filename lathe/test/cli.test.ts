@@ -25,7 +25,7 @@ afterAll(() => {
 });
 
 describe('lathe check', () => {
-  it('LA-CHK-T09 The check prints errors, then warnings, then coverage with designed, built and proved', () => {
+  it('LA-CHK-T02 The check prints errors, then warnings, then coverage with designed, built and proved', () => {
     const { stdout } = lathe('check', '--root', fixture('broken-links'));
     const errors = stdout.indexOf('\nErrors (');
     const warnings = stdout.indexOf('\nWarnings (');
@@ -42,7 +42,7 @@ describe('lathe check', () => {
     expect(unfinished).toContain('UX-D UC requirement: 2/3 designed, 1/3 built, 1/3 proved, 0/3 planned; 3 gaps');
   });
 
-  it('LA-CHK-T10 The check exits 1 on any error and 0 otherwise, whatever the warnings', () => {
+  it('LA-CHK-T03 The check exits 1 on any error and 0 otherwise, whatever the warnings', () => {
     expect(lathe('check', '--root', fixture('broken-links')).status).toBe(1);
     expect(lathe('check', '--root', fixture('fitness')).status).toBe(1);
     const good = lathe('check', '--root', fixture('good'));
@@ -53,7 +53,7 @@ describe('lathe check', () => {
     expect(warningsOnly.status).toBe(0);
   });
 
-  it('LA-CHK-T11 With --json the check prints the whole workspace', async () => {
+  it('LA-CHK-T04 With --json the check prints the whole workspace', async () => {
     const { stdout, status } = lathe('check', '--json', '--root', fixture('broken-links'));
     expect(status).toBe(1);
     expect(JSON.parse(stdout)).toEqual(await loadWorkspace(fixture('broken-links')));
@@ -61,7 +61,7 @@ describe('lathe check', () => {
 });
 
 describe('lathe init', () => {
-  it('LA-CHK-T26 Init writes a config and a first product record, and refuses bad or repeated input', () => {
+  it('LA-PLT-T06 Init writes a config and a first product record, and refuses bad or repeated input', () => {
     const root = tempDir();
     const first = lathe('init', '--root', root, '--name', 'Tool Library', '--prefix', 'TL');
     expect(first.status).toBe(0);

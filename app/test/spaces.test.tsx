@@ -36,7 +36,7 @@ function spacesWorkspace(): Workspace {
 }
 
 describe('product spaces', () => {
-  it('LA-BRW-T220 The rail lists the products in order, each with its icon or its monogram on a stable color', async () => {
+  it('LA-EXP-T70 The rail lists the products in order, each with its icon or its monogram on a stable color', async () => {
     // The icon field: one emoji or up to two characters; otherwise the ID's monogram.
     expect(iconField('📓')).toBe('📓');
     expect(iconField('TL')).toBe('TL');
@@ -66,7 +66,7 @@ describe('product spaces', () => {
     expect(within(nav().querySelector<HTMLElement>('.space-rail')!).getByRole('link', { name: /^Checks for all products/ })).toHaveAttribute('href', '/checks');
   });
 
-  it('LA-BRW-T221 The current space is the product of the page, marked with aria-current and an accent bar, and stays on pages above every product', async () => {
+  it('LA-EXP-T71 The current space is the product of the page, marked with aria-current and an accent bar, and stays on pages above every product', async () => {
     const index = indexWorkspace(spacesWorkspace());
     expect(productOfPath(index, '/NF-NOTE')).toBe('NF');
     expect(productOfPath(index, '/DM-SHOP-UC01-R01')).toBe('DM');
@@ -87,7 +87,7 @@ describe('product spaces', () => {
     expect(within(panel()).getByRole('link', { name: 'Notes' })).toBeInTheDocument();
   });
 
-  it('LA-BRW-T222 Choosing a space scopes the nav to its domains, capabilities and groups', async () => {
+  it('LA-EXP-T72 Choosing a space scopes the nav to its domains, capabilities and groups', async () => {
     await openApp('/DM', { workspace: spacesWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     expect(within(nav().querySelector<HTMLElement>('.nav-space')!).getByRole('link', { name: 'Demo shop' })).toHaveAttribute('href', '/DM');
@@ -111,7 +111,7 @@ describe('product spaces', () => {
     expect(within(nav()).queryByRole('list', { name: 'Groups of Demo shop' })).toBeNull();
   });
 
-  it('LA-BRW-T223 Choosing a space opens the last page visited in it this session, or its product page', async () => {
+  it('LA-EXP-T73 Choosing a space opens the last page visited in it this session, or its product page', async () => {
     await openApp('/DM-SHOP-UC01', { workspace: spacesWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     const user = userEvent.setup();
@@ -130,7 +130,7 @@ describe('product spaces', () => {
     expect(window.localStorage.getItem('lathe:space-pages')).toBeNull();
   });
 
-  it('LA-BRW-T224 Alt+1 to Alt+9 switch spaces in rail order, and the palette has a Switch to command for each', async () => {
+  it('LA-EXP-T74 Alt+1 to Alt+9 switch spaces in rail order, and the palette has a Switch to command for each', async () => {
     await openApp('/checks', { workspace: spacesWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Checks' });
     const press = (n: number) => fireEvent.keyDown(document.body, { key: String(n), code: `Digit${n}`, altKey: true });
@@ -160,7 +160,7 @@ describe('product spaces', () => {
     await waitFor(() => expect(window.location.pathname).toBe('/DM'));
   });
 
-  it('LA-BRW-T225 Quick find lists the current space first, then everything else under a divider', async () => {
+  it('LA-EXP-T75 Quick find lists the current space first, then everything else under a divider', async () => {
     const items = findItems(indexWorkspace(spacesWorkspace()));
     const scoped = rankScoped(items, 'not', 'NF');
     expect(scoped.here.map((i) => i.id)).toEqual(['NF', 'NF-NOTE']);
@@ -193,7 +193,7 @@ describe('product spaces', () => {
     expect(within(list).getAllByRole('option').at(-1)).toHaveAttribute('aria-selected', 'true');
   });
 
-  it('LA-BRW-T226 Checks can be filtered to the current space', async () => {
+  it('LA-EXP-T76 Checks can be filtered to the current space', async () => {
     await openApp('/NF', { workspace: spacesWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Notebook' });
     await userEvent.setup().click(within(nav()).getByRole('link', { name: /^Checks \d+ (errors?|warnings?|problems)/ }));
@@ -208,7 +208,7 @@ describe('product spaces', () => {
     expect(within(main()).getByRole('link', { name: 'Notebook' })).toHaveAttribute('aria-current', 'true');
   });
 
-  it('LA-BRW-T227 On a narrow screen the rail stays visible inside the nav drawer', async () => {
+  it('LA-EXP-T77 On a narrow screen the rail stays visible inside the nav drawer', async () => {
     vi.stubGlobal('matchMedia', (query: string) => ({ matches: true, media: query, addEventListener: () => {}, removeEventListener: () => {} }));
     await openApp('/DM', { workspace: spacesWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });

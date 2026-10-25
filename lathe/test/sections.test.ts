@@ -33,7 +33,7 @@ const sectionOf = (ws: Workspace, kind: string) => ws.kinds.find((k) => k.kind =
 const problemsOf = (ws: Workspace, check: string) => ws.problems.filter((p) => p.check === check);
 
 describe('folders', () => {
-  it('LA-CHK-T260 The engine loads each kind\'s section and the folders of sections.csv, in stage then order', async () => {
+  it('LA-AUT-T57 The engine loads each kind\'s section and the folders of sections.csv, in stage then order', async () => {
     const ws = await loadWorkspace(fixture('good'));
     expect(ws.sections.map((s) => [s.stage, s.order, s.section, s.label])).toEqual([
       ['', 1, 'shared', 'Shared'],
@@ -56,7 +56,7 @@ describe('folders', () => {
     expect(ws.problems.filter((p) => p.check === 'unknown-section' || p.check === 'section-stage-mismatch')).toEqual([]);
   });
 
-  it('LA-CHK-T261 An extension adds a folder, changes one, and moves or places a kind, merging as kinds do', async () => {
+  it('LA-AUT-T58 An extension adds a folder, changes one, and moves or places a kind, merging as kinds do', async () => {
     const ws = await withExtension({
       'sections.csv': 'section,stage,order,label,description\nrisks,define,3,Risks,"What could go wrong."\ntest-plan,,,Tests and checks,\n',
       'kinds.csv': 'kind,label,stage,section,parent_kinds,required_fields,obligation,description\nrisk,Risk,define,risks,domain,,no,A risk.\naggregate,,,,,,,\n',
@@ -73,7 +73,7 @@ describe('folders', () => {
     expect(moved.problems.filter((p) => p.severity === 'error')).toEqual([]);
   });
 
-  it('LA-CHK-T262 A kind naming a section sections.csv does not list is an unknown-section error', async () => {
+  it('LA-AUT-T59 A kind naming a section sections.csv does not list is an unknown-section error', async () => {
     const ws = await withExtension({ 'kinds.csv': 'kind,label,stage,section,parent_kinds,required_fields,obligation,description\nrisk,Risk,define,risk-log,domain,,no,A risk.\n' });
     expect(problemsOf(ws, 'unknown-section')).toEqual([
       { severity: 'error', check: 'unknown-section', record: null, message: 'Kind "risk" sits in section "risk-log", which sections.csv does not list.' },
@@ -83,7 +83,7 @@ describe('folders', () => {
     expect(problemsOf(none, 'unknown-section')).toEqual([]);
   });
 
-  it('LA-CHK-T263 A kind whose section belongs to another stage is a section-stage-mismatch error; a product-level folder takes any stage', async () => {
+  it('LA-AUT-T60 A kind whose section belongs to another stage is a section-stage-mismatch error; a product-level folder takes any stage', async () => {
     const ws = await withExtension({ 'kinds.csv': 'kind,label,stage,section,parent_kinds,required_fields,obligation,description\ncomponent,,,use-cases,,,,\nquestion,,,test-plan,,,,\n' });
     expect(problemsOf(ws, 'section-stage-mismatch').map((p) => p.message)).toEqual([
       'Kind "component" is in stage "design", but its section "use-cases" belongs to stage "define".',
@@ -95,7 +95,7 @@ describe('folders', () => {
     expect(problemsOf(shared, 'section-stage-mismatch')).toEqual([]);
   });
 
-  it('LA-CHK-T264 A meta-model folder without sections.csv gives no folders, and kinds without a section column sit in none', async () => {
+  it('LA-AUT-T61 A meta-model folder without sections.csv gives no folders, and kinds without a section column sit in none', async () => {
     const meta = tempDir();
     cpSync(path.join(PACKAGE_DIR, 'meta', 'relations.csv'), path.join(meta, 'relations.csv'));
     writeFileSync(path.join(meta, 'kinds.csv'), 'kind,label,stage,parent_kinds,required_fields,obligation,description\nproduct,Product,,,,no,Root.\ndomain,Domain,,product,,no,A domain.\n');

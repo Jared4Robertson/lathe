@@ -2,7 +2,7 @@ import { useSyncExternalStore } from 'react';
 import { readPref, writePref } from '../shell/prefs';
 import type { ViewName } from './address';
 
-// The side bar's state (LA-BRW-UC119), apart from React: which views it has, how it opens in each
+// The side bar's state (LA-EXP-UC12), apart from React: which views it has, how it opens in each
 // view mode, and what the canvases tell it about the node under the pointer or selected.
 //
 // - The mode is what the main area shows: the wiki alone, or the graph or the Model view (the first

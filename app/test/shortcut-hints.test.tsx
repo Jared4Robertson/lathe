@@ -20,7 +20,7 @@ const keyFocus = (el: HTMLElement) => act(() => { fireEvent.keyDown(document.bod
 const openPalette = () => fireEvent.keyDown(document.body, { key: 'P', code: 'KeyP', ctrlKey: true, shiftKey: true });
 
 describe('shortcut hints', () => {
-  it('LA-BRW-T230 A tooltip names the control and its keys after a short hover or at once on keyboard focus, not on a click, and Escape or leaving closes it', async () => {
+  it('LA-PLT-T27 A tooltip names the control and its keys after a short hover or at once on keyboard focus, not on a click, and Escape or leaving closes it', async () => {
     await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     const collapse = within(nav()).getByRole('button', { name: 'Collapse the navigation' });
@@ -50,7 +50,7 @@ describe('shortcut hints', () => {
     expect(screen.queryByRole('tooltip')).toBeNull();
   });
 
-  it('LA-BRW-T231 Tooltips and palette rows show the keys for the platform: ⌃ ⌥ ⇧ ⌘ on a Mac, Ctrl+ elsewhere', async () => {
+  it('LA-PLT-T28 Tooltips and palette rows show the keys for the platform: ⌃ ⌥ ⇧ ⌘ on a Mac, Ctrl+ elsewhere', async () => {
     // The side bar starts closed in the Wiki view (brief 64); this test reads it open.
     openSideBar('details', ['wiki', 'graph', 'model']);
     // In Apple's order: ⌃ ⌥ ⇧ ⌘.
@@ -86,7 +86,7 @@ describe('shortcut hints', () => {
     }
   });
 
-  it('LA-BRW-T232 The command palette lists each command with its shortcut right-aligned in kbd styling', async () => {
+  it('LA-PLT-T29 The command palette lists each command with its shortcut right-aligned in kbd styling', async () => {
     await openApp('/P-D-UC01', { workspace: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     openPalette();
@@ -106,7 +106,7 @@ describe('shortcut hints', () => {
     expect(css).toMatch(/\.palette-list li\s*\{[^}]*justify-content:\s*space-between/);
   });
 
-  it('LA-BRW-T233 A rebinding in local storage changes the tooltip, the palette, the sheet and aria-keyshortcuts', async () => {
+  it('LA-PLT-T30 A rebinding in local storage changes the tooltip, the palette, the sheet and aria-keyshortcuts', async () => {
     window.localStorage.setItem(OVERRIDES_KEY, JSON.stringify({ toggleNav: 'Mod+J', viewGraph: ['Alt+G'] }));
     await openApp('/P-D-UC01', { workspace: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
@@ -130,7 +130,7 @@ describe('shortcut hints', () => {
     expect(within(sheet).getByRole('rowheader', { name: 'Graph view on or off' }).nextElementSibling).toHaveTextContent('Alt+G');
   });
 
-  it('LA-BRW-T234 Every control with a shortcut carries aria-keyshortcuts from the keymap', async () => {
+  it('LA-PLT-T31 Every control with a shortcut carries aria-keyshortcuts from the keymap', async () => {
     // The side bar starts closed in the Wiki view (brief 64); this test reads it open.
     openSideBar('details', ['wiki', 'graph', 'model']);
     expect(ariaKeyShortcuts(['Mod+P', 'Mod+K'], false)).toBe('Control+P Control+K');
@@ -166,7 +166,7 @@ describe('shortcut hints', () => {
     expect(screen.getByRole('button', { name: 'Full screen: Graph' })).toHaveAttribute('aria-keyshortcuts', 'Control+3');
   });
 
-  it('LA-BRW-T235 The shortcuts sheet matches the hints: one Switch to row per product, with the same keys', async () => {
+  it('LA-PLT-T32 The shortcuts sheet matches the hints: one Switch to row per product, with the same keys', async () => {
     const resolved = resolveCommands({}, false);
     expect(resolved.filter((c) => c.id.startsWith('switchSpace')).map((c) => c.keys[0])).toEqual(['Alt+1', 'Alt+2', 'Alt+3', 'Alt+4', 'Alt+5', 'Alt+6', 'Alt+7', 'Alt+8', 'Alt+9']);
     expect(COMMANDS.filter((c) => c.dynamic).length).toBe(9);

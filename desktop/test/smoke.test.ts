@@ -81,7 +81,7 @@ afterAll(async () => {
   rmSync(temp, { recursive: true, force: true });
 }, 60_000);
 
-describe('LA-DSK-T06 The app icon is built for every platform', () => {
+describe('LA-PLT-T111 The app icon is built for every platform', () => {
   it('has the macOS .icns, the Windows .ico, the Linux sizes and the DEV variant', () => {
     const build = path.join(desktop, 'build');
     // An .icns starts "icns", an .ico 0 0 1 0, a PNG \x89PNG.
@@ -97,7 +97,7 @@ describe('LA-DSK-T06 The app icon is built for every platform', () => {
   });
 });
 
-describe.skipIf(process.platform !== 'darwin')('LA-DSK-T06 The desktop app opens a product folder in a window, bridges only window.latheDesktop and runs a menu command', () => {
+describe.skipIf(process.platform !== 'darwin')('LA-PLT-T111 The desktop app opens a product folder in a window, bridges only window.latheDesktop and runs a menu command', () => {
   it('shows the launch view, then the product, answers GET /api/spec, names the window, draws its own title bar and runs Help › Keyboard Shortcuts', async () => {
     const resultFile = path.join(temp, 'result.json');
     const env: NodeJS.ProcessEnv = { ...process.env, LATHE_DESKTOP_SMOKE: resultFile, LATHE_DESKTOP_USER_DATA: path.join(temp, 'user-data') };

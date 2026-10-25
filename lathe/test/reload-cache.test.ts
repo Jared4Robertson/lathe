@@ -1,5 +1,5 @@
-// LA-CHK-T601: a reload parses only the files whose text changed, and gives the same workspace as a
-// fresh load; the format reference is kept until a file it reads changes (LA-CHK-DR310, LA-CHK-DR04).
+// LA-PLT-T09: a reload parses only the files whose text changed, and gives the same workspace as a
+// fresh load; the format reference is kept until a file it reads changes (LA-PLT-DR02, LA-PLT-DR01).
 import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -18,7 +18,7 @@ const copyOf = (name: string) => {
 afterAll(() => { for (const dir of made) rmSync(dir, { recursive: true, force: true }); });
 
 describe('reloading', () => {
-  it('LA-CHK-T601 A reload parses only the changed file and gives the same workspace as a fresh load', async () => {
+  it('LA-PLT-T09 A reload parses only the changed file and gives the same workspace as a fresh load', async () => {
     const root = copyOf('good');
     clearParseCache();
     const cold: Partial<LoadTimings> = {};
@@ -42,7 +42,7 @@ describe('reloading', () => {
     expect(await loadWorkspace(root)).toEqual(reloaded);
   });
 
-  it('LA-CHK-T601 The format reference is kept until a file it reads changes', async () => {
+  it('LA-PLT-T09 The format reference is kept until a file it reads changes', async () => {
     const root = copyOf('good');
     const first = await formatReference(root);
     expect(await formatReference(root)).toBe(first);

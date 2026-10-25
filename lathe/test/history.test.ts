@@ -1,4 +1,4 @@
-// GET /api/history (LA-BRW-E02): a record's git history, against a temporary git repo made here.
+// GET /api/history (LA-EXP-E01): a record's git history, against a temporary git repo made here.
 // The repo gets its author from the environment and ignores the machine's own git config, so the
 // test reads and writes no git config.
 import { spawnSync } from 'node:child_process';
@@ -72,7 +72,7 @@ async function get(root: string, url: string) {
 }
 
 describe.skipIf(!hasGit)('the history API', () => {
-  it('LA-BRW-T590 GET /api/history lists the commits that touched a record\'s spec file, newest first and through renames, with the uncommitted change first, and one commit\'s diff', async () => {
+  it('LA-EXP-T158 GET /api/history lists the commits that touched a record\'s spec file, newest first and through renames, with the uncommitted change first, and one commit\'s diff', async () => {
     // The file comes from the specs, by the record's ID.
     expect(await recordFile(repo, 'EX-NOTE-UC01')).toBe('specs/example/notes/01-define/use-cases/moved/UC01.md');
 
@@ -108,7 +108,7 @@ describe.skipIf(!hasGit)('the history API', () => {
     expect(await recordDiff(repo, 'EX-NOTE-C01', list.json.commits[0].hash)).toMatchObject({ state: 'no-commit' });
   });
 
-  it('LA-BRW-T591 GET /api/history refuses a raw path or a bad commit, answers 404 for an unknown record, and says calmly when the folder is not a git repo', async () => {
+  it('LA-EXP-T159 GET /api/history refuses a raw path or a bad commit, answers 404 for an unknown record, and says calmly when the folder is not a git repo', async () => {
     expect((await get(repo, '/api/history')).status).toBe(400);
     expect((await get(repo, '/api/history?id=EX-NOTE-UC01&commit=--output=/tmp/x')).status).toBe(400);
     expect((await get(repo, '/api/history?id=EX-NOTE-UC01&commit=HEAD;rm')).status).toBe(400);
@@ -126,7 +126,7 @@ describe.skipIf(!hasGit)('the history API', () => {
     expect((await get(plain, '/api/history?id=EX-NOTE-UC01&commit=working')).json.state).toBe('no-repo');
   });
 
-  it('LA-BRW-T592 git runs with an argument array, inside the product root, cut at the output cap and stopped at the time limit; the list pages by skip', async () => {
+  it('LA-EXP-T160 git runs with an argument array, inside the product root, cut at the output cap and stopped at the time limit; the list pages by skip', async () => {
     // Arguments are passed as they are, never read by a shell.
     const echoed = await runGit(repo, ['log', '--format=%s', '-1', '--grep=$(touch pwned)']);
     expect(echoed.code).toBe(0);

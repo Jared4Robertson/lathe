@@ -2,14 +2,14 @@ import type { SpecIndex } from '../specs/data';
 import { contentScale, NODE_HEIGHT, NODE_WIDTH } from './layout';
 import { treeChildren, treeOf } from './tree';
 
-// The graph's one map (LA-BRW-DR390): the whole tree, the nav's (tree.ts), laid out once per spec
+// The graph's one map (LA-EXP-DR57): the whole tree, the nav's (tree.ts), laid out once per spec
 // load as one icicle. Every node has one place and one size in it, whatever is in focus: focusing
 // anything moves the camera (camera.ts), never the map.
 //
 // - A leaf is NODE_WIDTH by NODE_HEIGHT. A parent is exactly as tall as its children stacked, the
 //   gaps between them included, and their stack starts at its top edge.
 // - Every node in one level (its depth in the tree, a product at 0) has the same width
-//   (LA-BRW-DR391). Widths shrink toward the leaves in proportion to the level's typical height (its
+//   (LA-EXP-DR58). Widths shrink toward the leaves in proportion to the level's typical height (its
 //   median by height: the height of the node a point of the level most likely lies in), but a level
 //   is never narrower than the one below it nor more than MAX_LEVEL_STEP times as wide, and the
 //   product's level no more than MAX_ROOT_STEP times, so it stays usable. The gap between two siblings, and between two
@@ -20,7 +20,7 @@ import { treeChildren, treeOf } from './tree';
 
 /** How wide a level is for its typical height: the width over the height. */
 export const LEVEL_ASPECT = 1;
-/** The most one level is wider than the level below it (LA-BRW-DR391). */
+/** The most one level is wider than the level below it (LA-EXP-DR58). */
 export const MAX_LEVEL_STEP = 4;
 /** The most the roots' level (the products) is wider than the level below it, so a product's picture leaves room for its domains. */
 export const MAX_ROOT_STEP = 1.5;
@@ -172,7 +172,7 @@ type Point = { x: number; y: number };
 /** A node's center in the map. */
 export const centerOf = (n: Rect) => ({ x: n.x + n.w / 2, y: n.y + n.h / 2 });
 
-/** A hexagon's chamfer (LA-BRW-DR394): 12 px at the node's content scale, at most a quarter of its width (as the stylesheet draws it). */
+/** A hexagon's chamfer (LA-EXP-DR61): 12 px at the node's content scale, at most a quarter of its width (as the stylesheet draws it). */
 export const hexChamfer = (r: Pick<Rect, 'w' | 'h'>) => Math.min(r.w / 4, 12 * contentScale(r.w, r.h));
 
 /**
@@ -187,9 +187,9 @@ export function outlineInset(r: Rect, shape: 'box' | 'hexagon', y: number): numb
 }
 
 /**
- * A parent line (LA-BRW-DR390): level, at the child's middle, from the parent's outline on its
+ * A parent line (LA-EXP-DR57): level, at the child's middle, from the parent's outline on its
  * right side to the child's outline on its left. A box's outline is its edge; a domain's hexagon
- * (LA-BRW-DR394) is met on its slanted side, and a line into a domain meets the tip of its point.
+ * (LA-EXP-DR61) is met on its slanted side, and a line into a domain meets the tip of its point.
  */
 export function parentLine(parent: Rect, child: Rect, parentShape: 'box' | 'hexagon' = 'box', childShape: 'box' | 'hexagon' = 'box'): [Point, Point] {
   const y = child.y + child.h / 2;

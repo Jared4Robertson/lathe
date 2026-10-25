@@ -18,7 +18,7 @@ export function erdGraph(erd: Erd): ElkNode {
       'elk.spacing.nodeNode': '40',
       'elk.spacing.componentComponent': '60',
       // With domain events, each box goes in the first layer its lines allow, so an event sits in
-      // the layer right after the entity raising it and its line stays short (LA-BRW-UC113-R07);
+      // the layer right after the entity raising it and its line stays short (LA-EXP-UC11-R07);
       // the aggregates reacting to it come after.
       ...(erd.boxes.some((b) => b.kind === 'event') ? { 'elk.layered.layering.strategy': 'LONGEST_PATH_SOURCE' } : {}),
     },

@@ -26,7 +26,7 @@ afterAll(() => {
 });
 
 describe('checks', () => {
-  it('LA-CHK-T14 A new check needs only a new SQL file', async () => {
+  it('LA-CHK-T05 A new check needs only a new SQL file', async () => {
     const checks = tempDir();
     cpSync(CHECKS_DIR, checks, { recursive: true });
     writeFileSync(
@@ -45,7 +45,7 @@ FROM records WHERE domain = 'EX-NOTE' AND kind = 'use_case'`,
     ]);
   });
 
-  it('LA-CHK-T15 Checks can read every loaded table, with file facts already computed', async () => {
+  it('LA-CHK-T06 Checks can read every loaded table, with file facts already computed', async () => {
     const checks = tempDir();
     writeFileSync(
       path.join(checks, '01-tables.sql'),
@@ -62,7 +62,7 @@ FROM records WHERE domain = 'EX-NOTE' AND kind = 'use_case'`,
     );
   });
 
-  it('LA-CHK-T16 Every check runs, in file-name order, even after one fails', async () => {
+  it('LA-CHK-T07 Every check runs, in file-name order, even after one fails', async () => {
     const checks = tempDir();
     const one = (name: string) => `SELECT 'warning' AS severity, 'x' AS "check", NULL AS record, '${name} ran.' AS message`;
     writeFileSync(path.join(checks, '20-third.sql'), one('third'));
@@ -74,7 +74,7 @@ FROM records WHERE domain = 'EX-NOTE' AND kind = 'use_case'`,
     expect(ws.problems[1]).toMatchObject({ severity: 'error', record: null, message: expect.stringContaining('10-broken.sql could not run') });
   });
 
-  it('LA-CHK-T17 Each check is one SELECT query in its own file, named by its file', () => {
+  it('LA-CHK-T08 Each check is one SELECT query in its own file, named by its file', () => {
     const files = readdirSync(CHECKS_DIR).sort();
     expect(files.length).toBeGreaterThan(0);
     for (const file of files) {
@@ -96,7 +96,7 @@ FROM records WHERE domain = 'EX-NOTE' AND kind = 'use_case'`,
 });
 
 describe('loading', () => {
-  it('LA-CHK-T18 loadWorkspace returns the Workspace contract', async () => {
+  it('LA-PLT-T03 loadWorkspace returns the Workspace contract', async () => {
     const ws = await loadWorkspace(fixture('unfinished'));
     expect(Object.keys(ws).sort()).toEqual(['coverage', 'kinds', 'links', 'problems', 'records', 'relations', 'sections']);
     expect(Object.keys(ws.kinds[0]).sort()).toEqual(['description', 'kind', 'label', 'obligation', 'parent_kinds', 'proof_only', 'required_fields', 'section', 'stage']);
@@ -112,7 +112,7 @@ describe('loading', () => {
     expect(JSON.parse(JSON.stringify(ws))).toEqual(ws);
   });
 
-  it("LA-CHK-T19 Each record's product and domain come from its parents, and a parent loop is an error", async () => {
+  it("LA-PLT-T04 Each record's product and domain come from its parents, and a parent loop is an error", async () => {
     const good = await loadWorkspace(fixture('good'));
     const at = (id: string) => good.records.find((r) => r.id === id);
     expect(at('EX')).toMatchObject({ product: 'EX', domain: null });
@@ -128,7 +128,7 @@ describe('loading', () => {
     expect(broken.records.find((r) => r.id === 'BX-D-A8')).toMatchObject({ product: null, domain: null });
   });
 
-  it('LA-CHK-T20 A meta-model change takes effect on the next load and rechecks every record', async () => {
+  it('LA-AUT-T18 A meta-model change takes effect on the next load and rechecks every record', async () => {
     const root = copyOf('good');
     const meta = tempDir();
     cpSync(path.join(PACKAGE_DIR, 'meta'), meta, { recursive: true });
@@ -154,7 +154,7 @@ describe('loading', () => {
     expect(unknown(removed)).toEqual(['EX-NOTE-E01']);
   });
 
-  it('LA-CHK-T21 Each load reads the files afresh and writes nothing', async () => {
+  it('LA-PLT-T05 Each load reads the files afresh and writes nothing', async () => {
     const root = copyOf('good');
     const before = listing(root);
     const first = await loadWorkspace(root);

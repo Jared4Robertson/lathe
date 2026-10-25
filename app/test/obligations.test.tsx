@@ -24,7 +24,7 @@ const side = () => main().querySelector('aside.record-side') as HTMLElement;
 const field = (name: string) => within(side()).getByText(name, { selector: 'dt' }).nextElementSibling as HTMLElement;
 
 describe('obligation kinds and test states', () => {
-  it('LA-BRW-T80 Coverage shows one group per obligation kind, labeled, with designed, built, proved and planned', async () => {
+  it('LA-TRC-T89 Coverage shows one group per obligation kind, labeled, with designed, built, proved and planned', async () => {
     await openApp('/DM', served());
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     expect(groups(card('Shopping'))).toEqual([
@@ -47,7 +47,7 @@ describe('obligation kinds and test states', () => {
     );
   });
 
-  it('LA-BRW-T82 The evidence counts every obligation kind, and planned apart from proved', async () => {
+  it('LA-TRC-T90 The evidence counts every obligation kind, and planned apart from proved', async () => {
     await openApp('/DM', served());
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     const evidence = section('Evidence');
@@ -58,7 +58,7 @@ describe('obligation kinds and test states', () => {
     expect(value('Planned')).toBe('1 of 8 obligations, by tests not written yet');
   });
 
-  it('LA-BRW-T83 The domain page lists interaction requirements under their view, endpoint or flow', async () => {
+  it('LA-TRC-T91 The domain page lists interaction requirements under their view, endpoint or flow', async () => {
     await openApp('/DM-SHOP', served());
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     const user = userEvent.setup();
@@ -84,7 +84,7 @@ describe('obligation kinds and test states', () => {
     expect(within(section(/^Views/)).getByText('Nothing matches.')).toBeInTheDocument();
   });
 
-  it('LA-BRW-T84 The domain page tags each test with its state, and a planned test looks unfinished', async () => {
+  it('LA-TRC-T92 The domain page tags each test with its state, and a planned test looks unfinished', async () => {
     await openApp('/DM-SHOP', served());
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     const rows = [...section(/^Test plan/).querySelectorAll('.record-row')] as HTMLElement[];
@@ -99,7 +99,7 @@ describe('obligation kinds and test states', () => {
     expect(rows[1]).not.toHaveClass('planned');
   });
 
-  it('LA-BRW-T85 The record page shows a test state, and says a planned test is not proof', async () => {
+  it('LA-TRC-T93 The record page shows a test state, and says a planned test is not proof', async () => {
     // The state is a fact in the side bar's Details, open in the Graph view (brief 64).
     await openApp('/DM-SHOP-T03?view=wiki,graph', served());
     await screen.findByRole('heading', { level: 1, name: 'A full basket answers 409' });
@@ -117,7 +117,7 @@ describe('obligation kinds and test states', () => {
     expect(field('State')).toHaveTextContent('automated');
   });
 
-  it('LA-BRW-T86 The record page shows where an interaction requirement sits and what it fulfills', async () => {
+  it('LA-TRC-T94 The record page shows where an interaction requirement sits and what it fulfills', async () => {
     await openApp('/DM-SHOP-E01-R01', served());
     await screen.findByRole('heading', { level: 1, name: 'Adding to a full basket answers 409' });
     const fulfills = section(/^Carries out/);
@@ -138,7 +138,7 @@ describe('obligation kinds and test states', () => {
     expect(within(main()).queryByRole('heading', { name: /^Carries out/ })).toBeNull();
   });
 
-  it('LA-BRW-T87 The record content takes a record ID and sends the links it follows to its host', async () => {
+  it('LA-TRC-T95 The record content takes a record ID and sends the links it follows to its host', async () => {
     cleanup();
     window.history.replaceState(null, '', '/graph/DM-SHOP-E01-R01');
     const index = indexWorkspace(obligationWorkspace());

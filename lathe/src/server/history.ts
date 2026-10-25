@@ -1,4 +1,4 @@
-// A record's history, from git (LA-BRW-UC119): the commits that touched its spec file, newest
+// A record's history, from git (LA-EXP-UC12): the commits that touched its spec file, newest
 // first, and one commit's diff of that file. It backs GET /api/history in api.ts.
 //
 // - The file is found from the specs (the record with that ID), never from a path in the request.

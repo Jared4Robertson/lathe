@@ -18,7 +18,7 @@ beforeAll(async () => {
 });
 
 describe('the meta-model', () => {
-  it('LA-CHK-T312 A domain event sits under an aggregate in the domain model, is raised_by an entity, and is reacted to by aggregates, use cases and components', () => {
+  it('LA-AUT-T88 A domain event sits under an aggregate in the domain model, is raised_by an entity, and is reacted to by aggregates, use cases and components', () => {
     expect(ws.kinds.find((k) => k.kind === 'domain_event')).toMatchObject({
       stage: 'define', section: 'domain-model', parent_kinds: ['aggregate'], required_fields: [], obligation: false,
     });
@@ -40,7 +40,7 @@ describe('the meta-model', () => {
 });
 
 describe('the Fields table', () => {
-  it('LA-CHK-T313 A domain event\'s Fields table is read into entityFields in table order, as an entity\'s is', () => {
+  it('LA-AUT-T89 A domain event\'s Fields table is read into entityFields in table order, as an entity\'s is', () => {
     const fields = (id: string) => ws.records.find((r) => r.id === id)?.entityFields;
     expect(fields('EVT-D-EV01')).toEqual([
       { field: 'Loan ID', meaning: 'The loan.', kind: 'Loan reference', example: 'Loan 31' },
@@ -52,7 +52,7 @@ describe('the Fields table', () => {
     expect(ws.records.filter((r) => !['entity', 'domain_event'].includes(r.kind)).every((r) => r.entityFields === undefined)).toBe(true);
   });
 
-  it('LA-CHK-T314 A domain event with no Fields table, the wrong columns, a repeated field or a row with no name is an entity-fields error naming it as an event', () => {
+  it('LA-AUT-T90 A domain event with no Fields table, the wrong columns, a repeated field or a row with no name is an entity-fields error naming it as an event', () => {
     expect(ofCheck(ws, 'entity-fields')).toEqual([
       {
         severity: 'error', check: 'entity-fields', record: 'EVT-D-EV04',
@@ -75,7 +75,7 @@ describe('the Fields table', () => {
 });
 
 describe('event checks', () => {
-  it('LA-CHK-T315 A raised_by that names an entity of another aggregate is a raised-by-outside-aggregate error; a missing raised_by is not', () => {
+  it('LA-AUT-T91 A raised_by that names an entity of another aggregate is a raised-by-outside-aggregate error; a missing raised_by is not', () => {
     expect(ofCheck(ws, 'raised-by-outside-aggregate')).toEqual([{
       severity: 'error',
       check: 'raised-by-outside-aggregate',
@@ -87,7 +87,7 @@ describe('event checks', () => {
     expect(recordsOf(ws, 'dangling-link')).toEqual(['EVT-D-EV08']);
   });
 
-  it('LA-CHK-T316 An event that nothing reacts to is an event-unheard warning that says this can be fine; a reacts_to from any record hears it', () => {
+  it('LA-AUT-T92 An event that nothing reacts to is an event-unheard warning that says this can be fine; a reacts_to from any record hears it', () => {
     expect(recordsOf(ws, 'event-unheard')).toEqual(['EVT-D-EV03', 'EVT-D-EV06', 'EVT-D-EV07', 'EVT-D-EV08', 'EVT-D-EV09', 'EVT-D-EV10']);
     expect(ofCheck(ws, 'event-unheard').every((p) => p.severity === 'warning')).toBe(true);
     expect(ofCheck(ws, 'event-unheard')[0].message).toBe(
@@ -95,7 +95,7 @@ describe('event checks', () => {
     );
   });
 
-  it('LA-CHK-T317 A title with no past form as its last word or after its first is an event-tense warning', () => {
+  it('LA-AUT-T93 A title with no past form as its last word or after its first is an event-tense warning', () => {
     // Passing: Loan opened, Tool returned (-ed); Loan became overdue (a past form after the subject); Fine paid,
     // Note written (irregular); Registered (one word); META-MODEL CHANGED (any case, split at the hyphen).
     // Failing: Open loan; Repair need, whose -ed ending is not a past form.

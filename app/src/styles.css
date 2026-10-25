@@ -11,7 +11,7 @@
   /* Motion: the speed and easing every move and fade shares, in CSS and in JS (app/src/graph/motion.ts); reduced motion turns each off (LA-PAT-APP-UX-R04). */
   --motion-speed: 320ms; --motion-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
   --node-radius: 4px; /* every graph node is the same rectangle; color tells the stage */
-  /* The Model view's context ring (LA-BRW-UC113-R06): faded and a little smaller; the graph's hover spotlight dims the rest a step; the vignette's width at a canvas's edges. */
+  /* The Model view's context ring (LA-EXP-UC11-R06): faded and a little smaller; the graph's hover spotlight dims the rest a step; the vignette's width at a canvas's edges. */
   --context-opacity: 0.35; --context-scale: 0.9; --spotlight-dim: 0.5; --vignette: 56px;
   /* The graph's cross-links (the Links switch), dashed apart from the tree's solid lines, and the minimap's mask. */
   --link-edge: var(--spark); --minimap-mask: color-mix(in srgb, var(--ink) 8%, transparent);
@@ -275,10 +275,10 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-legend { margin-top: 10px; font-size: 0.8rem; }
 .graph-legend li { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 
-/* Nodes: color and shape by stage, a ring on the center. In the one map (LA-BRW-DR390) a parent is as tall as its children and
+/* Nodes: color and shape by stage, a ring on the center. In the one map (LA-EXP-DR57) a parent is as tall as its children and
    its level as wide as the level's typical height allows; it sets --node-scale, and its text, padding, borders, marks and
-   chevron grow in step, centered both ways (LA-BRW-DR391); a leaf's scale is 1. Nothing in the map changes size: the camera
-   zooms. A box too small on screen for its text is plain: filled, with no text (LA-BRW-DR393). */
+   chevron grow in step, centered both ways (LA-EXP-DR58); a leaf's scale is 1. Nothing in the map changes size: the camera
+   zooms. A box too small on screen for its text is plain: filled, with no text (LA-EXP-DR60). */
 .graph-node { --node-scale: 1; --node-border: calc(1.5px * var(--node-scale)); width: 100%; height: 100%; box-sizing: border-box; padding: calc(6px * var(--node-scale)) calc(10px * var(--node-scale)); border: var(--node-border) solid var(--g-structural); background: var(--g-structural-bg); display: flex; flex-direction: column; justify-content: center; cursor: pointer; overflow: hidden; position: relative; border-radius: var(--node-radius); }
 .graph-node small { font: calc(0.65625rem * var(--node-scale)) var(--mono); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: calc(30px * var(--node-scale)); }
 .graph-node.is-scaled, .graph-node.stage-group.is-scaled { align-items: center; text-align: center; padding-inline: calc(30px * var(--node-scale)); }
@@ -297,7 +297,7 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-handle { opacity: 0; pointer-events: none; top: 50% !important; bottom: auto !important; }
 .graph-flow .react-flow__node:focus { outline: none; }
 .graph-flow .react-flow__node:focus-visible .graph-node { outline: calc(3px * var(--node-scale)) solid var(--steel); outline-offset: calc(3px * var(--node-scale)); }
-/* A plain box and a bar (LA-BRW-DR393): too small on screen for text, so a filled shape in its stage's color. */
+/* A plain box and a bar (LA-EXP-DR60): too small on screen for text, so a filled shape in its stage's color. */
 .graph-node.is-plain { padding: 0; }
 .graph-bar { width: 100%; height: 100%; background: var(--rule); opacity: 0.6; border-radius: var(--node-radius); }
 .graph-flow .react-flow__node.is-bar { pointer-events: none; }
@@ -336,9 +336,9 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 /* The center's own links, with Links on: dashed in their own color. */
 .graph-flow .react-flow__edge-path.is-link { stroke: var(--link-edge); stroke-dasharray: 6 4; }
 .graph-line.is-link { border-top: 1.5px dashed var(--link-edge); }
-/* Domain events in the graph (LA-BRW-UC40-R07, LA-BRW-DR307): a rounded pill in the spark colors, and their reacts_to and
+/* Domain events in the graph (LA-EXP-UC04-R07, LA-EXP-DR52): a rounded pill in the spark colors, and their reacts_to and
    raised_by links dashed in spark, with Links on too. */
-/* A domain is a hexagon (LA-BRW-DR394): flat top and bottom, pointed left and right ends whose chamfer grows with the node's
+/* A domain is a hexagon (LA-EXP-DR61): flat top and bottom, pointed left and right ends whose chamfer grows with the node's
    content scale (at most a quarter of its width), so a tall domain still reads as a hexagon. The node is clipped to the
    polygon and filled with its edge color; an inner layer, inset by the edge's width and clipped the same way, is its fill,
    so the border follows the outline in every state. Hover, focus, the keyboard ring and a tap's selection color the edge,
@@ -380,7 +380,7 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-edge-hint.is-down { bottom: 8px; left: 50%; translate: -50% 0; }
 .graph-edge-hint.is-left { left: 8px; top: 50%; translate: 0 -50%; }
 .graph-edge-hint.is-right { right: 8px; top: 50%; translate: 0 -50%; }
-/* The minimap (LA-BRW-UC20-R15): the whole map's upper levels, the focus solid, the viewport outlined, all from tokens. */
+/* The minimap (LA-EXP-UC03-R15): the whole map's upper levels, the focus solid, the viewport outlined, all from tokens. */
 .graph-minimap { position: absolute; right: 12px; bottom: 12px; z-index: 5; padding: 4px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; line-height: 0; pointer-events: none; }
 .graph-minimap-node { fill: var(--muted); opacity: 0.35; }
 .graph-minimap-node.is-focus { fill: var(--steel); opacity: 1; }
@@ -488,7 +488,7 @@ a.button-primary.button-primary { color: var(--on-mark); }
 .nav-section-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; }
 .menu .nav-section-body > .error { margin-inline: 10px; }
 .nav-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1; }
-/* Nav rows, as in VS Code's explorer (LA-BRW-DR220). Each row is as wide as the nav panel, indented by padding for its
+/* Nav rows, as in VS Code's explorer (LA-EXP-DR41). Each row is as wide as the nav panel, indented by padding for its
    depth (--depth, set by the row), with its indent guides drawn inside it, one under each ancestor's chevron. The
    current page's row carries the selection tint over all of it, the indent and the chevron included; a hovered row
    takes the hover tint (UX-R01); while the nav is used from the keyboard, the selected and the focused row show a 1px
@@ -631,7 +631,7 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 .rule-mark.planned { border-style: dashed; font-style: italic; color: var(--muted); }
 .rule-mark.na { color: var(--muted); border-style: dashed; }
 
-/* A record's Traceability section (LA-BRW-UC118). */
+/* A record's Traceability section (LA-TRC-UC14). */
 .trace-gaps { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; margin: 0 0 10px; }
 .trace-gaps > li { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
 .trace-gap { display: inline-flex; flex-wrap: wrap; gap: 4px 6px; align-items: baseline; padding: 4px 10px; border: 1px solid var(--warn); border-radius: 6px; color: var(--ink); font-size: 0.88rem; }
@@ -640,7 +640,7 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 .trace-row { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; }
 .trace-row > .record-row { flex: 1 1 auto; min-width: 0; }
 .trace-cell { display: inline-flex; flex-wrap: wrap; gap: 2px 8px; align-items: baseline; }
-/* Record links listed in a cell are 24 px targets (WCAG 2.5.8, LA-BRW-DR323). */
+/* Record links listed in a cell are 24 px targets (WCAG 2.5.8, LA-PLT-DR24). */
 .trace-cell > .record-link { min-block-size: 24px; align-items: center; }
 .data-table.trace-requirements { width: 100%; }
 .trace-run-by { margin: 0; display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; font-size: 0.88rem; }
@@ -769,7 +769,7 @@ a.row-link.row-link:focus-visible { outline: none; }
    panels is a ResizeHandle with a three-dot grip, which turns steel when hovered, focused or dragged. */
 .panel { box-sizing: border-box; min-width: 0; min-height: 0; overflow: hidden; border: 1px solid var(--rule); border-radius: var(--panel-radius); }
 .app.is-narrow .panel { border: 0; border-radius: 0; }
-/* A page that is one panel (Checks, Appearance) is drawn on the page's own surface, never on the shell behind the panels, where muted text loses its contrast (LA-BRW-DR324). */
+/* A page that is one panel (Checks, Appearance) is drawn on the page's own surface, never on the shell behind the panels, where muted text loses its contrast (LA-PLT-DR25). */
 .spec-page.panel { background: var(--paper); }
 .resize-handle { position: relative; min-width: 0; cursor: col-resize; touch-action: none; }
 .resize-handle::before { content: ""; position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; translate: -50% 0; border-radius: 1px; background: transparent; transition: background-color var(--hover-speed); }
@@ -860,14 +860,14 @@ a.row-link.row-link:focus-visible { outline: none; }
 .erd-key-ends li { display: flex; align-items: center; gap: 8px; }
 .erd-key-line { flex: none; overflow: visible; }
 .erd-key-highlight { display: inline-block; width: 14px; height: 10px; border: 1.5px solid var(--steel); background: var(--steel-bg); box-shadow: 0 0 0 2px var(--ink); border-radius: 2px; }
-/* The ERD's context ring (LA-BRW-UC113-R06): faded and a little smaller, readable on hover, its lines faded with it. */
+/* The ERD's context ring (LA-EXP-UC11-R06): faded and a little smaller, readable on hover, its lines faded with it. */
 .model-flow .react-flow__node.is-context .erd-box { opacity: var(--context-opacity); scale: var(--context-scale); }
 .model-flow .react-flow__node.is-context:hover .erd-box { opacity: 1; }
 .model-flow .erd-line.is-context { opacity: var(--context-opacity); }
 .erd-key-context { display: inline-block; width: 14px; height: 10px; border: 1.5px dashed var(--muted); background: var(--paper); border-radius: 2px; opacity: var(--context-opacity); }
 .model-flow::after { content: ""; position: absolute; inset: 0; z-index: 4; pointer-events: none; box-shadow: inset 0 0 var(--vignette) calc(var(--vignette) / 3) var(--paper); }
 @media (pointer: coarse) { .model-flow .react-flow__node.is-context.is-armed .erd-box { opacity: 1; } }
-/* Domain events in the ERD (LA-BRW-UC113-R07, R08; LA-BRW-DR307): a rounded pill in the spark colors; the
+/* Domain events in the ERD (LA-EXP-UC11-R07, R08; LA-EXP-DR52): a rounded pill in the spark colors; the
    short line from the entity raising it and the dashed "reacts to" lines in spark too. A "reacts to" line shows its
    label on hover, over a wider unseen stroke that is easy to point at, fading in on the shared hover speed. */
 .erd-box.erd-event { justify-content: center; border-color: var(--spark); background: var(--spark-bg); border-radius: 999px; padding-inline: 16px; }

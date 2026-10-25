@@ -7,7 +7,7 @@ import { entityWorkspace } from './fixtures/entities';
 import { main, openApp, openSideBar, sideBar } from './helpers';
 import { testWorkspace } from './graph/workspace';
 
-// The side bar (brief 64, LA-BRW-UC119): a secondary side bar with three views,
+// The side bar (brief 64, LA-EXP-UC12): a secondary side bar with three views,
 // Details, Outline and History, closed in the Wiki view and open in the Graph and Model views,
 // remembered per view mode and per tab.
 
@@ -31,7 +31,7 @@ function serveHistory(answer: (query: URLSearchParams) => unknown) {
 }
 
 describe('the side bar', () => {
-  it('LA-BRW-T593 One side bar with a labeled switcher of Details, Outline and History, each with its heading; closed in the Wiki view and open in the Graph view, its view kept per view mode and per tab across a reload', async () => {
+  it('LA-PLT-T87 One side bar with a labeled switcher of Details, Outline and History, each with its heading; closed in the Wiki view and open in the Graph view, its view kept per view mode and per tab across a reload', async () => {
     expect(sideModeOf(['wiki'], false)).toBe('wiki');
     expect(sideModeOf(['wiki', 'graph'], false)).toBe('graph');
     expect(sideModeOf(['wiki', 'model'], false)).toBe('model');
@@ -67,7 +67,7 @@ describe('the side bar', () => {
     expect(screen.queryByRole('complementary', { name: 'Side bar' })).toBeNull();
   });
 
-  it('LA-BRW-T594 In the Graph view Details shows the node under the pointer or keyboard focus, else the selected one, else the page\'s record, with Open and a compact Traceability; the graph adds what it connects', async () => {
+  it('LA-EXP-T161 In the Graph view Details shows the node under the pointer or keyboard focus, else the selected one, else the page\'s record, with Open and a compact Traceability; the graph adds what it connects', async () => {
     window.sessionStorage.setItem('lathe:graph-settings', JSON.stringify({ depth: 1, trace: false, hiddenKinds: [], hiddenRelations: [], links: true, minimap: false }));
     await openApp('/P-D-UC01-R01?view=graph', { workspace: testWorkspace() });
     await waitFor(() => expect(node('P-D-V01')).not.toBeNull());
@@ -97,7 +97,7 @@ describe('the side bar', () => {
     await waitFor(() => expect(name()).toBe('The owner is shown'));
   });
 
-  it('LA-BRW-T595 In the Wiki view Details shows only what the page does not: the spec file, the raw header fields and the raw links; a focused or right-clicked record row shows that record', async () => {
+  it('LA-EXP-T162 In the Wiki view Details shows only what the page does not: the spec file, the raw header fields and the raw links; a focused or right-clicked record row shows that record', async () => {
     openSideBar();
     await openApp('/P-D-UC01', { workspace: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
@@ -125,7 +125,7 @@ describe('the side bar', () => {
     await waitFor(() => expect(name()).toBeUndefined());
   });
 
-  it('LA-BRW-T596 Outline lists the wiki\'s sections, scrolls there on a click and marks the one in view; in the Model view it lists the boxes', async () => {
+  it('LA-PLT-T88 Outline lists the wiki\'s sections, scrolls there on a click and marks the one in view; in the Model view it lists the boxes', async () => {
     openSideBar('outline');
     await openApp('/P-D-UC01', { workspace: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
@@ -150,7 +150,7 @@ describe('the side bar', () => {
     expect(within(boxes).getAllByRole('link')[0].className).toContain('row-link');
   });
 
-  it('LA-BRW-T597 History lists the commits that touched the record\'s file, the uncommitted change first, shows a commit\'s diff inline, loads more, and says calmly when there is no git', async () => {
+  it('LA-EXP-T163 History lists the commits that touched the record\'s file, the uncommitted change first, shows a commit\'s diff inline, loads more, and says calmly when there is no git', async () => {
     const commit = (n: number) => ({ hash: `${String(n).padStart(4, '0')}${'a'.repeat(36)}`, short: `${String(n).padStart(4, '0')}aaa`, date: '2026-10-24T10:00:00Z', author: 'Owner', subject: `Change ${n}` });
     openSideBar('history');
     await openApp('/P-D-UC01', { workspace: testWorkspace() });
@@ -196,7 +196,7 @@ describe('the side bar', () => {
     expect(diffLines('diff --git a/x b/x\nindex 1..2\n--- a/x\n+++ b/x\n@@ -1 +1 @@\n-a\n+b\n c\n').map((l) => l.kind)).toEqual(['meta', 'meta', 'meta', 'meta', 'hunk', 'remove', 'add', 'context']);
   });
 
-  it('LA-BRW-T598 On a phone the side bar is a bottom sheet with the same three views', async () => {
+  it('LA-EXP-T164 On a phone the side bar is a bottom sheet with the same three views', async () => {
     vi.stubGlobal('matchMedia', (query: string) => ({ matches: true, media: query, addEventListener: () => {}, removeEventListener: () => {} }));
     await openApp('/P-D-UC01', { workspace: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });

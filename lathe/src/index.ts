@@ -22,7 +22,7 @@ export interface LoadOptions {
   checksDir?: string;
   /** One folder holding kinds.csv, relations.csv, sections.csv and ids.csv, replacing the configured meta-model (used by tests). */
   metaDir?: string;
-  /** Filled with how long each phase of the load took, in milliseconds (the performance budgets, LA-CHK-DR310). */
+  /** Filled with how long each phase of the load took, in milliseconds (the performance budgets, LA-PLT-DR02). */
   timings?: Partial<LoadTimings>;
 }
 
@@ -46,7 +46,7 @@ export interface LoadTimings {
 
 /**
  * A record file's parse, kept with the exact text it was parsed from, so a reload parses only the
- * files whose text changed (LA-CHK-DR310). Every load still reads every file afresh (LA-CHK-DR04):
+ * files whose text changed (LA-PLT-DR02). Every load still reads every file afresh (LA-PLT-DR01):
  * the cache only skips parsing a text it has parsed before, which gives the same parse, so it holds
  * no state the files do not.
  */

@@ -147,7 +147,7 @@ export function CommandsProvider({ children }: { children: ReactNode }) {
   const titleOf = useCallback((c: Command) => handlers.current.get(c.id)?.at(-1)?.title ?? c.title, []);
   const api = useMemo(() => ({ commands, mac, register, run, available, titleOf, announce }), [commands, mac, register, run, available, titleOf, announce]);
 
-  // In the desktop app, a native menu choice arrives as a command ID and runs like its keys would (LA-DSK-UC03-R02).
+  // In the desktop app, a native menu choice arrives as a command ID and runs like its keys would (LA-PLT-UC13-R02).
   useEffect(() => window.latheDesktop?.onCommand((id: string) => { run(id); }), [run]);
 
   useEffect(() => {
@@ -350,9 +350,9 @@ declare global {
     setChrome: (chrome: { background: string; foreground: string }) => void;
     /** Subscribes to the window entering and leaving full screen; called at once with the current state. */
     onFullScreen: (listener: (fullScreen: boolean) => void) => () => void;
-    /** Sets the Dock badge to the product's number of check errors (LA-DSK-UC05-R03). */
+    /** Sets the Dock badge to the product's number of check errors (LA-CHK-UC07-R02). */
     setErrorCount: (count: number) => void;
-    /** The record actions (LA-DSK-UC05-R07): reveal its spec file, open it in the editor, copy its ID, or a native menu of the three. */
+    /** The record actions (LA-AUT-UC15-R01): reveal its spec file, open it in the editor, copy its ID, or a native menu of the three. */
     revealRecord: (id: string) => void;
     openRecordInEditor: (id: string) => void;
     copyRecordId: (id: string) => void;

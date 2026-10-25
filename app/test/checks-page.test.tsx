@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { main, openApp } from './helpers';
 
 describe('checks page', () => {
-  it('LA-BRW-T14 The checks page lists every problem, errors first, grouped by check, each linking to its record', async () => {
+  it('LA-CHK-T48 The checks page lists every problem, errors first, grouped by check, each linking to its record', async () => {
     await openApp('/checks');
     await screen.findByRole('heading', { level: 1, name: 'Checks' });
     expect(within(main()).getByText('3 errors · 3 warnings')).toBeInTheDocument();

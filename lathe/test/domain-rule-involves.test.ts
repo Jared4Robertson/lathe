@@ -19,7 +19,7 @@ beforeAll(async () => {
 const messagesOf = (id: string) => ws.problems.filter((p) => p.check === CHECK && p.record === id).map((p) => p.message);
 
 describe('the involves relation', () => {
-  it('LA-CHK-T723 A domain rule involves aggregates, labeled "Involves" and "Involved in" with no role, and the record format says when', () => {
+  it('LA-AUT-T109 A domain rule involves aggregates, labeled "Involves" and "Involved in" with no role, and the record format says when', () => {
     expect(ws.relations.filter((r) => r.relation === 'involves')).toEqual([{
       relation: 'involves', source_kind: 'domain_rule', target_kind: 'aggregate', role: '',
       forward_label: 'Involves', reverse_label: 'Involved in',
@@ -39,7 +39,7 @@ describe('the involves relation', () => {
 });
 
 describe('the domain-rule-involves check', () => {
-  it('LA-CHK-T720 A rule under a domain that involves fewer than two aggregates is a warning that says to move a one-aggregate rule onto it; a link that dangles is not counted', () => {
+  it('LA-AUT-T106 A rule under a domain that involves fewer than two aggregates is a warning that says to move a one-aggregate rule onto it; a link that dangles is not counted', () => {
     expect(messagesOf('RI-D-DR02')).toEqual([
       'Domain rule RI-D-DR02 sits under the domain RI-D but involves no aggregate; name with involves the two or more '
         + 'aggregates it ties together, or move it under the aggregate it is about.',
@@ -53,14 +53,14 @@ describe('the domain-rule-involves check', () => {
     for (const id of ['RI-D-DR01', 'RI-D-DR09']) expect(messagesOf(id), id).toEqual([]);
   });
 
-  it('LA-CHK-T721 A rule under a domain that involves an aggregate of another domain is a warning that says a rule across domains is a domain event\'s job', () => {
+  it('LA-AUT-T107 A rule under a domain that involves an aggregate of another domain is a warning that says a rule across domains is a domain event\'s job', () => {
     expect(messagesOf('RI-D-DR04')).toEqual([
       'Domain rule RI-D-DR04 involves RI-E-A1, an aggregate of RI-E, not of its own domain RI-D; a rule across domains is '
         + "a domain event's job, so have one domain raise an event and the other react to it.",
     ]);
   });
 
-  it('LA-CHK-T722 A rule under an aggregate or an entity that uses involves is a warning; one without involves is not', () => {
+  it('LA-AUT-T108 A rule under an aggregate or an entity that uses involves is a warning; one without involves is not', () => {
     expect(messagesOf('RI-D-DR06')).toEqual([
       'Domain rule RI-D-DR06 sits under the aggregate RI-D-A1 and involves RI-D-A2; its place already says what it is '
         + 'about, so drop involves, or move it under its domain if it holds across aggregates.',
