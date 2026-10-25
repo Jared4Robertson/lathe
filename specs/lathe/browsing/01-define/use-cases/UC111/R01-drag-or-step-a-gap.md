@@ -1,0 +1,7 @@
+---
+id: LA-BRW-UC111-R01
+kind: requirement
+title: A gap between panels resizes them by drag or keyboard
+parent: LA-BRW-UC111
+---
+Each gap between two panels MUST resize them when dragged, and when focused MUST step with the arrow keys (bigger steps with Shift) and jump to the limits with Home and End, the arrow toward a panel growing it. Each size MUST stay within its limits: the navigation 256 to 560 px, the inspector 260 to 640 px, the wiki pane 20 to 80 percent of the Split view.

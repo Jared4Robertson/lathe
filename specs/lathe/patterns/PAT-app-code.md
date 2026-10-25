@@ -22,3 +22,5 @@ The domain links the pattern with `follows`. The pattern has no settings: every 
 - `LA-PAT-APP-CODE-R06`: every control has an accessible name.
 - `LA-PAT-APP-CODE-R07`: American spelling.
 - `LA-PAT-APP-CODE-R08`: everything clickable shows a hover state.
+- `LA-PAT-APP-CODE-R09`: the workbench, panels a gap apart and every gap resizes.
+- `LA-PAT-APP-CODE-R10`: every grid says its columns.

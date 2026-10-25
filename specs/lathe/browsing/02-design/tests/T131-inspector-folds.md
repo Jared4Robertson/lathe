@@ -8,4 +8,4 @@ run_by: app/test/views.test.tsx
 links:
   proves: [LA-BRW-UC50-R11, LA-BRW-DR53]
 ---
-Expects the inspector on a record page, hides it from its edge, expects the main view to take the space and the choice remembered in the Graph view of another record, shows it again and expects the same record and the graph part.
+Expects the inspector on a record page, hides it with its own button, expects the main view to take the space and the choice remembered in the Graph view of another record, shows it again and expects the same record and the graph part.

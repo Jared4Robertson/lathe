@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ResizeHandle } from './components/ResizeHandle';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import {
   Background,
   BaseEdge,
@@ -26,7 +27,7 @@ import { SPACE_KEYS, spaceCommandId } from './shell/keymap';
 import { Nav } from './shell/Nav';
 import { SpacesProvider, useSpaceState, type SpacesApi } from './shell/spaces';
 import { Tooltip } from './shell/Tooltip';
-import { isBool, usePref } from './shell/prefs';
+import { isBool, usePanelSize, usePref } from './shell/prefs';
 import { useNarrow } from './shell/useNarrow';
 import { FocusPage } from './views/FocusPage';
 import { graphRedirect, isFocusRoute } from './views/address';
@@ -110,6 +111,8 @@ export default function App() {
 }
 
 const NAV_KEY = 'lathe:nav-collapsed';
+/** The nav's width (the space rail and the panel), its limits, and below what a drag collapses it to the rail. */
+const NAV_WIDTH = { key: 'lathe:nav-width', fallback: 304, min: 256, max: 560, collapseBelow: 180 };
 
 /** The app shell: the nav, the page for the address, and the commands that work everywhere. */
 function Shell() {
@@ -151,6 +154,7 @@ function Shell() {
   // The nav: collapsed to a rail (remembered), or a drawer on a narrow screen.
   const narrow = useNarrow();
   const [collapsed, setCollapsed] = usePref<boolean>(NAV_KEY, false, isBool);
+  const [navWidth, setNavWidth, resetNavWidth] = usePanelSize(NAV_WIDTH.key, NAV_WIDTH.fallback, NAV_WIDTH.min, NAV_WIDTH.max);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const navRef = useRef<HTMLElement>(null);
   const findRef = useRef<HTMLInputElement>(null);
@@ -208,9 +212,9 @@ function Shell() {
 
   let page;
   if (redirectTo || (isGraphPath && !spec.index)) {
-    page = <main className="placeholder" id="main"><p>{spec.error ? `Couldn't load the specs: ${spec.error}` : 'Opening…'}</p></main>;
+    page = <main className="placeholder panel" id="main"><p>{spec.error ? `Couldn't load the specs: ${spec.error}` : 'Opening…'}</p></main>;
   } else if (isGraphPath) {
-    page = <main className="placeholder" id="main"><p>No products yet. Add a <code>product.md</code> under <code>specs/</code>.</p></main>;
+    page = <main className="placeholder panel" id="main"><p>No products yet. Add a <code>product.md</code> under <code>specs/</code>.</p></main>;
   } else if (focusRoute) {
     page = <FocusPage spec={spec} route={focusRoute} search={search} />;
   } else if (specRoute) {
@@ -219,7 +223,7 @@ function Shell() {
     page = <DiagramView key={current.slug} diagram={current} />;
   } else {
     page = (
-      <main className="placeholder" id="main">
+      <main className="placeholder panel" id="main">
         <p>{diagrams.length > 0 && slug ? `There's no diagram called "${slug}".` : 'Loading diagrams…'}</p>
       </main>
     );
@@ -228,7 +232,11 @@ function Shell() {
   return (
     <SpacesProvider value={spaces}>
     <SpaceCommands spaces={spaces} />
-    <div className={`app${collapsed && !narrow ? ' nav-collapsed' : ''}${narrow ? ' is-narrow' : ''}`} data-specs={spec.index ? 'ready' : spec.error ? 'error' : 'loading'}>
+    <div
+      className={`app${collapsed && !narrow ? ' nav-collapsed' : ''}${narrow ? ' is-narrow' : ''}`}
+      style={{ '--nav-width': `${navWidth}px` } as CSSProperties}
+      data-specs={spec.index ? 'ready' : spec.error ? 'error' : 'loading'}
+    >
       <a href="#main" className="skip-link">Skip to the page</a>
       {narrow && (
         <div className="topbar">
@@ -263,6 +271,22 @@ function Shell() {
           drawerOpen={drawerOpen}
           onCloseDrawer={closeDrawer}
           findRef={findRef}
+        />
+      )}
+      {!narrow && (
+        <ResizeHandle
+          className="app-nav-handle"
+          label="Resize the navigation"
+          value={collapsed ? NAV_WIDTH.min : navWidth}
+          min={NAV_WIDTH.min}
+          max={NAV_WIDTH.max}
+          step={16}
+          bigStep={64}
+          valueAt={(x) => x - (navRef.current?.getBoundingClientRect().left ?? 0)}
+          onChange={(w) => { setNavWidth(w); if (collapsed) setCollapsed(false); }}
+          onReset={() => { resetNavWidth(); setCollapsed(false); }}
+          collapseBelow={NAV_WIDTH.collapseBelow}
+          onCollapse={() => { if (!collapsed) setCollapsed(true); }}
         />
       )}
       {page}
@@ -389,7 +413,7 @@ function DiagramView({ diagram }: { diagram: DiagramSummary }) {
   const empty = model !== null && model.terms.length === 0;
 
   return (
-    <main className="diagram" id="main">
+    <main className="diagram panel" id="main">
       <header className="diagram-header">
         <div>
           <p className="eyebrow">Diagram · model/{diagram.slug}/*.csv via DuckDB</p>

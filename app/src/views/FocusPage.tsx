@@ -1,5 +1,6 @@
-import { lazy, Suspense, useCallback, useEffect, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
 import { Icon } from '../components/icons';
+import { ResizeHandle } from '../components/ResizeHandle';
 import { expandAllOnPage } from '../components/TreeList';
 import type { GraphSettings } from '../graph/GraphPage';
 import { NO_FILTERS, groupLabel, groupMembers, isGroup, parseGroupId, pluralLabel } from '../graph/model';
@@ -7,7 +8,7 @@ import type { GraphInfo } from '../graph/panel';
 import { Link, navigate } from '../router';
 import { useAnnounce, useCommand } from '../shell/commands';
 import { Tooltip } from '../shell/Tooltip';
-import { isBool, isNumber, readPref, usePref, writePref } from '../shell/prefs';
+import { isBool, isNumber, readPref, usePanelSize, usePref, writePref } from '../shell/prefs';
 import { useNarrow } from '../shell/useNarrow';
 import { recordPath, type Problem, type SpecIndex, type SpecState } from '../specs/data';
 import { Markdown } from '../specs/Markdown';
@@ -29,6 +30,7 @@ const GraphView = lazy(() => import('../graph/GraphPage').then((m) => ({ default
 
 const VIEW_KEY = 'lathe:view';
 const INSPECTOR_KEY = 'lathe:inspector-open';
+const INSPECTOR_WIDTH_KEY = 'lathe:inspector-width';
 const SPLIT_KEY = 'lathe:split-ratio';
 const GRAPH_KEY = 'lathe:graph-settings';
 const VIEW_COMMANDS: Record<ViewMode, string> = { wiki: 'viewWiki', graph: 'viewGraph', split: 'viewSplit' };
@@ -137,11 +139,13 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   }, [full, announce]);
 
   // The split.
-  const [ratio, setRatio] = usePref<number>(SPLIT_KEY, 50, isNumber);
+  const [ratio, setRatio, resetRatio] = usePanelSize(SPLIT_KEY, 50, 20, 80);
   const views = useRef<HTMLDivElement>(null);
 
   // The inspector.
   const [inspectorOpen, setInspectorOpen] = usePref<boolean>(INSPECTOR_KEY, true, isBool);
+  const [inspectorWidth, setInspectorWidth, resetInspectorWidth] = usePanelSize(INSPECTOR_WIDTH_KEY, 340, 260, 640);
+  const layout = useRef<HTMLDivElement>(null);
   const [drawer, setDrawer] = useState(false);
   const inspector = useRef<HTMLElement>(null);
   const inspectorButton = useRef<HTMLButtonElement>(null);
@@ -223,29 +227,40 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
     );
   };
 
-  const onDividerPointer = (e: PointerEvent<HTMLDivElement>) => {
+  /** The split divider's value for a pointer position: the wiki pane's share of the width, in percent. */
+  const ratioAt = (clientX: number) => {
     const box = views.current?.getBoundingClientRect();
-    if (!box || box.width === 0) return;
-    const el = e.currentTarget;
-    el.setPointerCapture?.(e.pointerId);
-    const move = (ev: globalThis.PointerEvent) => setRatio(Math.round(Math.min(80, Math.max(20, ((ev.clientX - box.left) / box.width) * 100))));
-    const up = () => { el.removeEventListener('pointermove', move); el.removeEventListener('pointerup', up); };
-    el.addEventListener('pointermove', move);
-    el.addEventListener('pointerup', up);
-  };
-  const onDividerKey = (e: KeyboardEvent<HTMLDivElement>) => {
-    const step = e.shiftKey ? 10 : 5;
-    if (e.key === 'ArrowLeft') { e.preventDefault(); setRatio((r) => Math.max(20, r - step)); }
-    else if (e.key === 'ArrowRight') { e.preventDefault(); setRatio((r) => Math.min(80, r + step)); }
-    else if (e.key === 'Home') { e.preventDefault(); setRatio(20); }
-    else if (e.key === 'End') { e.preventDefault(); setRatio(80); }
+    return box && box.width > 0 ? ((clientX - box.left) / box.width) * 100 : ratio;
   };
 
   const split = mode === 'split';
   return (
-    <div className={`focus-layout${showing && !narrow ? ' with-inspector' : ''}`}>
-      <div className="focus-main">
-        <FocusHeader index={index} route={route}>
+    <div
+      ref={layout}
+      className={`focus-layout${showing && !narrow ? ' with-inspector' : ''}`}
+      style={{ '--inspector-width': `${inspectorWidth}px` } as CSSProperties}
+    >
+      <div className="focus-main panel">
+        <FocusHeader
+          index={index}
+          route={route}
+          corner={
+            // The inspector's toggle sits in the page panel's top-right corner, as VS Code's layout toggles do.
+            <Tooltip label={`${showing ? 'Hide' : 'Show'} the inspector`} command="toggleInspector" placement="left">
+              <button
+                type="button"
+                ref={inspectorButton}
+                className={`icon-button inspector-toggle${showing ? ' is-on' : ''}`}
+                aria-label={`${showing ? 'Hide' : 'Show'} the inspector`}
+                aria-expanded={showing}
+                aria-controls="inspector"
+                onClick={() => setShowing(!showing)}
+              >
+                <Icon name="sidebar-right" size={16} />
+              </button>
+            </Tooltip>
+          }
+        >
           <div className="view-toggle" role="group" aria-label="View">
             {VIEW_MODES.map((m) => (
               <Tooltip key={m} label={`${VIEW_LABELS[m]} view`} command={VIEW_COMMANDS[m]}>
@@ -261,38 +276,25 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
               </Tooltip>
             ))}
           </div>
-          <Tooltip label={`${showing ? 'Hide' : 'Show'} the inspector`} command="toggleInspector">
-            <button
-              type="button"
-              ref={inspectorButton}
-              className="inspector-toggle"
-              aria-expanded={showing}
-              aria-controls="inspector"
-              onClick={() => setShowing(!showing)}
-            >
-              <Icon name="sidebar-right" size={16} /> Inspector
-            </button>
-          </Tooltip>
         </FocusHeader>
         <div
           ref={views}
           className={`focus-views mode-${mode}`}
-          style={split && !narrow ? { gridTemplateColumns: `minmax(0, ${ratio}fr) 9px minmax(0, ${100 - ratio}fr)` } : undefined}
+          style={split && !narrow ? { gridTemplateColumns: `minmax(0, ${ratio}fr) var(--panel-gap) minmax(0, ${100 - ratio}fr)` } : undefined}
         >
           {mode !== 'graph' && pane('wiki', wiki)}
           {split && (
-            <div
+            <ResizeHandle
               className="split-divider"
-              role="separator"
-              aria-orientation="vertical"
-              aria-label="Resize the panes"
-              aria-valuemin={20}
-              aria-valuemax={80}
-              aria-valuenow={ratio}
-              tabIndex={0}
-              onPointerDown={onDividerPointer}
-              onKeyDown={onDividerKey}
-              onDoubleClick={() => setRatio(50)}
+              label="Resize the panes"
+              value={ratio}
+              min={20}
+              max={80}
+              step={5}
+              bigStep={10}
+              valueAt={ratioAt}
+              onChange={setRatio}
+              onReset={resetRatio}
             />
           )}
           {mode !== 'wiki' && pane('graph', graph)}
@@ -301,6 +303,22 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
       {showing ? (
         <>
           {narrow && <div className="drawer-backdrop" onMouseDown={() => setShowing(false)} />}
+          {!narrow && (
+            <ResizeHandle
+              label="Resize the inspector"
+              side="after"
+              value={inspectorWidth}
+              min={260}
+              max={640}
+              step={16}
+              bigStep={64}
+              valueAt={(x) => (layout.current?.getBoundingClientRect().right ?? x) - x}
+              onChange={setInspectorWidth}
+              onReset={resetInspectorWidth}
+              collapseBelow={160}
+              onCollapse={() => setShowing(false)}
+            />
+          )}
           <InspectorHost narrow={narrow} onEscape={() => setShowing(false)}>
             <Inspector
               ref={inspector}
@@ -314,15 +332,7 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
             />
           </InspectorHost>
         </>
-      ) : !narrow && (
-        <div className="inspector-rail">
-          <Tooltip label="Show the inspector" command="toggleInspector" placement="left">
-            <button type="button" className="icon-button" aria-label="Show the inspector" aria-expanded={false} aria-controls="inspector" onClick={() => setShowing(true)}>
-              <Icon name="sidebar-right" />
-            </button>
-          </Tooltip>
-        </div>
-      )}
+      ) : null}
     </div>
   );
 }
@@ -337,7 +347,7 @@ function InspectorHost({ narrow, onEscape, children }: { narrow: boolean; onEsca
   return (
     <div
       ref={box}
-      className={narrow ? 'inspector-drawer' : 'inspector-column'}
+      className={narrow ? 'inspector-drawer' : 'inspector-column panel'}
       onKeyDown={narrow ? (e) => { if (e.key === 'Escape' && !e.defaultPrevented) { e.preventDefault(); onEscape(); } } : undefined}
     >
       {children}
@@ -347,7 +357,7 @@ function InspectorHost({ narrow, onEscape, children }: { narrow: boolean; onEsca
 
 // ---------- Header ----------
 
-function FocusHeader({ index, route, children }: { index: SpecIndex; route: FocusRoute; children: ReactNode }) {
+function FocusHeader({ index, route, corner, children }: { index: SpecIndex; route: FocusRoute; corner?: ReactNode; children: ReactNode }) {
   const focus = focusOf(route);
   let eyebrow: ReactNode;
   let title: string;
@@ -380,6 +390,7 @@ function FocusHeader({ index, route, children }: { index: SpecIndex; route: Focu
   }
   return (
     <div className="focus-header">
+      {corner && <div className="focus-corner">{corner}</div>}
       <PageHeader eyebrow={eyebrow} title={title} id={id}>
         <div className="focus-actions">
           <ProblemBadge problems={problems} />

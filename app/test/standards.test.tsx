@@ -148,6 +148,27 @@ describe('LA-PAT-APP-CODE App code', () => {
     for (const token of ['--hover-bg', '--hover-ring', '--hover-speed']) expect(CSS).toContain(`${token}:`);
   });
 
+  it('LA-BRW-T294 The workbench: panels sit on the shell a gap apart, and every gap between two panels is the one ResizeHandle', async () => {
+    for (const token of ['--shell:', '--panel-gap:', '--panel-radius:']) expect(CSS).toContain(token);
+    // One implementation: no other component draws a separator of its own.
+    const separators = filesUnder(SRC, /\.tsx$/).filter((f) => !f.endsWith('ResizeHandle.tsx')).flatMap((f) => where(f, readFileSync(f, 'utf8'), /role="separator"/));
+    expect(separators).toEqual([]);
+    // On a record in the Split view with the inspector open: nav, wiki, graph and inspector, each gap a handle.
+    await openApp('/records/DM-SHOP-UC01?view=split');
+    await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
+    // A focusable separator (one with a value) is a splitter; a plain divider line such as the rail's is not.
+    const handles = screen.getAllByRole('separator').filter((h) => h.hasAttribute('aria-valuenow')).map((h) => [h.getAttribute('aria-label'), h.classList.contains('resize-handle')]);
+    expect(handles).toEqual([['Resize the navigation', true], ['Resize the panes', true], ['Resize the inspector', true]]);
+    for (const panel of [document.querySelector('#nav'), document.querySelector('.focus-main'), document.querySelector('.inspector-column')]) expect(panel).toHaveClass('panel');
+  });
+
+  it('LA-BRW-T295 Every grid says its columns, a single column being minmax(0, 1fr), so content shrinks with its panel', () => {
+    const unsized = styleRules(CSS)
+      .filter((r) => /display:\s*(?:inline-)?grid/.test(r.body) && !/grid-template-columns/.test(r.body) && !/place-items/.test(r.body))
+      .map((r) => `app/src/styles.css:${r.line}: ${r.selector}`);
+    expect(unsized).toEqual([]);
+  });
+
   it('LA-BRW-T262 Code, specs and docs use American spelling', () => {
     // Built from parts, so this file does not trip its own check.
     const british = ['col' + 'our', 'behavi' + 'our', 'neighb' + 'our', 'fav' + 'our', 'hon' + 'our', 'cent' + 're', 'model' + 'ling', 'model' + 'led',
