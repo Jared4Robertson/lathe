@@ -111,7 +111,7 @@ Coverage follows the meta-model. A kind's `obligation` value in `kinds.csv`, in 
 - `proof`: an obligation that needs **proof only**. Nothing is asked about its design, so it counts as designed and built, has no `satisfies` gaps, and is never `unsatisfied`; it is proved, planned and has `proves` gaps like any other. By default `pattern_rule`, as S2 asks only for proof of the patterns it follows. A component may still `satisfy` it, to say which code carries it out.
 - anything else: not an obligation.
 
-A product can change a kind's value with an extension (section 9), for example `pattern_rule,,,,,yes,` to ask for the design of pattern rules again.
+A product can change a kind's value with an extension (section 9), for example `pattern_rule,,,,,,yes,` to ask for the design of pattern rules again.
 
 A relation's `role` in `relations.csv` says what a link does: `design` (such as a component `satisfies` it) or `proof` (such as a test `proves` it).
 
