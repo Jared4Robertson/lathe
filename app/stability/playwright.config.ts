@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { defineConfig, devices } from '@playwright/test';
 
 // The stability suite (LA-PAT-APP-CODE-R17, "Nothing jumps"): Playwright with Chromium only. It
-// starts the app's Vite dev server on a free port (never 5199, Jared's own server) over a copy of
+// starts the app's Vite dev server on a free port (never 5199, the Owner's own dev server) over a copy of
 // this repo's specs, so a scenario can edit a spec file while the page is open, and records the
 // layout shifts, long animation frames and the boxes of key elements in each scenario
 // (app/stability/measure.ts). Run it with `npm --prefix app run test:stability`; it runs one

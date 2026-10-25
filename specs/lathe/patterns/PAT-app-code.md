@@ -10,7 +10,7 @@ The rules come from problems the app has had: a button laid over a heading with 
 
 ## How a domain uses the pattern
 
-The domain links the pattern with `follows`. The pattern has no settings: every rule applies to all of the domain's code. Each rule is proved by a test in `app/test/standards.test.tsx` that reads the source or renders the main pages, and that names the file and line to fix when it fails.
+The domain links the pattern with `follows`. The pattern has no settings: every rule applies to all of the domain's code. Each rule is proved by a test in `app/test/standards.test.tsx` that reads the source or renders the main pages, and that names the file and line to fix when it fails. `LA-PAT-APP-CODE-R17` is proved in a real browser by the stability suite (`app/stability`, `npm --prefix app run test:stability`), and at the source by `app/test/nothing-jumps.test.tsx`.
 
 ## Rules
 
@@ -27,3 +27,4 @@ The domain links the pattern with `follows`. The pattern has no settings: every 
 - `LA-PAT-APP-CODE-R11`: each pane has one title bar that holds its views and layout actions.
 - `LA-PAT-APP-CODE-R12`: motion is shared and optional.
 - `LA-PAT-APP-CODE-R13`: a row or card that leads to one record is one link.
+- `LA-PAT-APP-CODE-R17`: nothing jumps.

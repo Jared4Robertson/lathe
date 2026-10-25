@@ -6,6 +6,6 @@ parent: LA-BRW-LAY08
 component_type: react component
 file: app/src/components/ResizeHandle.tsx
 links:
-  satisfies: [LA-BRW-UC111-R01, LA-BRW-UC111-R02, LA-BRW-UC111-R03, LA-PAT-APP-CODE-R09]
+  satisfies: [LA-BRW-UC111-R01, LA-BRW-UC111-R02, LA-BRW-UC111-R03, LA-PAT-APP-CODE-R09, LA-BRW-UC117-R05]
 ---
 The one splitter: a focusable vertical separator that turns a pointer position into a value through its host, clamps it, steps it with the arrow keys, Home and End (toward the panel it sizes), resets it on double-click, and reports a drag below a threshold so the host can fold the panel.
