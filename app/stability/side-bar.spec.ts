@@ -15,8 +15,7 @@ const ALLOW = ['.side-bar'];
 
 /** The IDs of the graph's boxes wholly inside its canvas, in DOM order (the map runs past the canvas's edges). */
 /**
- * A level is as wide as its widest label (LA-EXP-DR58), so a box may run past the canvas's right
- * edge: a box is in view when its left part is and it is 24 px tall or more, and is clicked or hovered there.
+ * A framed level may run past the canvas's right edge (in a narrow pane, LA-EXP-DR59): a box is in view when its left part is and it is 24 px tall or more, and is clicked or hovered there.
  */
 const AT_LEFT = { x: 20, y: 12 };
 async function boxesInView(page: Page, except = ''): Promise<string[]> {

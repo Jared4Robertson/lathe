@@ -1,22 +1,29 @@
 import { kindLabel, type SpecIndex } from '../specs/data';
-import { NODE_HEIGHT } from './layout';
+import { NODE_WIDTH } from './layout';
 import { gapsFor, groupLabel, groupMarks, groupOwner } from './model';
 
 // A box's label as part of the map (LA-EXP-DR58): its two lines, the kind and ID line and the
-// title, are sized once, in map units, in proportion to the box's height, and never change size
-// relative to the box; only the camera changes how big they look. A level is wide enough for the
-// widest label in it on one line, so no title is ever cut off or wrapped. Widths are estimated
-// from a table of character widths, never measured in the page, so the map is laid out once.
+// title, are sized once, in map units, by its level's text scale (the level's width over a leaf's),
+// and never change size relative to the box; only the camera changes how big they look. A long
+// title wraps on whole words, never cut off or ended with an ellipsis, and a leaf grows taller to
+// fit it. Lines are broken here, from a table of character widths, never measured in the page, so
+// the map is laid out once and the page draws exactly these lines.
 
-/** A label's font sizes and padding at text scale 1 (a leaf), in map units; the stylesheet draws them with these. */
+/** A label's font sizes and padding at text scale 1 (a leaf-wide level), in map units; the stylesheet draws them with these. */
 export const TITLE_FONT = 12.5;
 export const META_FONT = 10.5;
+/** A file's title is in the mono face, a little smaller. */
+export const FILE_FONT = 11;
+/** Every line's height over its font size, and the padding above and below a label and the border around it. */
+export const LINE_HEIGHT = 1.4;
+export const LABEL_PAD_BLOCK = 6;
+export const BORDER = 1.5;
 /** The padding on each side of a label, and the room kept beside the kind and ID line for the problem badge. */
 export const LABEL_PAD = 14;
 export const BADGE_ROOM = 30;
 /** A hexagon (a domain, LA-EXP-DR61) keeps its chamfer clear of its label too, at most this at text scale 1. */
 export const HEX_ROOM = 12;
-/** The estimate errs wide by this much, so a label never clips whatever face draws it. */
+/** The estimate errs wide by this much, so a line never overflows whatever face draws it. */
 export const WIDTH_MARGIN = 1.05;
 /** Below this many pixels of title text on screen, a box draws no label, only its shape (LA-EXP-DR60). */
 export const MIN_LABEL_PX = 7;
@@ -32,8 +39,34 @@ const MONO_EM = 0.61;
 
 /** A title's estimated width at a font size, in the same units. */
 export const titleWidth = (text: string, font = TITLE_FONT) => [...text].reduce((sum, c) => sum + (SANS.get(c) ?? 1), 0) * font;
-/** A kind and ID line's estimated width at a font size. */
+/** A kind and ID line's (or a file's title's) estimated width at a font size. */
 export const metaWidth = (text: string, font = META_FONT) => [...text].length * MONO_EM * font;
+
+/**
+ * Breaks a text into lines no wider than `width` by `measure`, greedily, only after a space, so no
+ * word is cut. A word wider than a line on its own is the one exception: it breaks after one of
+ * `breaks` (a hyphen in a title or an ID, a slash in a file's path) and, if a part is still too
+ * wide, between characters. The lines joined give the text back; a space ending a line is not measured.
+ */
+export function wrapText(text: string, width: number, measure: (s: string) => number, breaks = ''): string[] {
+  const fits = (s: string) => measure(s.trimEnd()) <= width;
+  /** Greedy lines of some tokens; a line that is one token too wide is broken by `split`. */
+  const greedy = (tokens: readonly string[], split: (token: string) => string[]): string[] => {
+    const lines: string[] = [];
+    let line = '';
+    for (const token of tokens) {
+      if (line === '' || fits(line + token)) line += token;
+      else { lines.push(line); line = token; }
+      if (!fits(line)) { const parts = split(line); line = parts.pop()!; lines.push(...parts); }
+    }
+    if (line !== '' || lines.length === 0) lines.push(line);
+    return lines;
+  };
+  const byChars = (word: string) => greedy([...word], (c) => [c]);
+  const at = breaks.replace(/[\]\\^-]/g, '\\$&');
+  const byBreaks = (word: string) => greedy(word.match(new RegExp(`[^${at}]*[${at}]+|[^${at}]+`, 'g')) ?? [word], byChars);
+  return greedy(text.match(/\S+\s*|\s+/g) ?? [], at ? byBreaks : byChars);
+}
 
 /** What a box's label says: its title and its kind and ID line ("Use case · LA-EXP-UC03", "Group · LA-EXP"). */
 export function labelLines(index: SpecIndex, id: string): { title: string; meta: string } {
@@ -68,22 +101,48 @@ export function marksOf(index: SpecIndex, id: string) {
   return marks;
 }
 
+
+/** A label's lines, as the page draws them: each a block of its own, so the page wraps nothing itself. */
+export interface WrappedLabel { title: string[]; meta: string[]; file: boolean }
+
+/** Whether a box's label is centered (LA-EXP-DR58): a parent's always, and a leaf's in a level wider than a leaf. */
+export const isCentered = (text: number, parent: boolean) => parent || text !== 1;
+
 /**
- * How wide a box must be for its label on one line at text scale 1, its padding included: the
- * wider of its title and its kind and ID line (with room on both sides for the problem badge when it
- * has one), erring wide. A domain's hexagon keeps its chamfer clear as well.
+ * A label broken into lines for its box (LA-EXP-DR58). Wrapping is the same at every text scale (a
+ * level's width and its text grow together), so lines are broken once, at text scale 1 in a leaf's
+ * width (or `width`, a Nested box's width over its text scale), less the padding, a domain's chamfer,
+ * and the badge's room beside the kind and ID line (on both sides once centered), all erring wide.
  */
-export function labelWidth(lines: { title: string; meta: string }, { hexagon = false, marked = false } = {}): number {
-  const text = Math.max(titleWidth(lines.title), metaWidth(lines.meta) + (marked ? 2 * BADGE_ROOM : 0));
-  return Math.ceil(text * WIDTH_MARGIN + 2 * LABEL_PAD + (hexagon ? 2 * HEX_ROOM : 0));
+export function wrapLabel(lines: { title: string; meta: string }, { hexagon = false, marked = false, centered = false, file = false, width = NODE_WIDTH } = {}): WrappedLabel {
+  const inner = width - 2 * LABEL_PAD - (hexagon ? 2 * HEX_ROOM : 0);
+  const titleOf = file ? (s: string) => metaWidth(s, FILE_FONT) * WIDTH_MARGIN : (s: string) => titleWidth(s) * WIDTH_MARGIN;
+  return {
+    title: wrapText(lines.title, inner, titleOf, file ? '/-' : '-'),
+    meta: wrapText(lines.meta, inner - (marked ? (centered ? 2 : 1) * BADGE_ROOM : 0), (s) => metaWidth(s) * WIDTH_MARGIN, '-'),
+    file,
+  };
 }
 
-/** How wide a node's label is on one line at text scale 1, in either view: a domain keeps room for its hexagon (its outline in the Tree view, its mark in the Nested view). */
-export const nodeLabelWidth = (index: SpecIndex, id: string) =>
-  labelWidth(labelLines(index, id), { hexagon: index.byId.get(id)?.kind === 'domain', marked: hasMarks(index, id) });
+/** How tall a box must be for its wrapped label at text scale 1: its lines, the padding above and below, and the border. */
+export const labelHeight = (label: WrappedLabel) =>
+  2 * (LABEL_PAD_BLOCK + BORDER) + LINE_HEIGHT * (label.meta.length * META_FONT + label.title.length * (label.file ? FILE_FONT : TITLE_FONT));
 
-/** A box's text scale in the Tree view (LA-EXP-DR58): its height over a leaf's, so its label keeps a leaf's proportions. Fixed by the map, never by the camera. */
-export const textScaleOf = (h: number) => Math.max(1, h / NODE_HEIGHT);
+const wrapCache = new WeakMap<SpecIndex, Map<string, WrappedLabel>>();
+/** A node's label broken into lines, centered or not, cached per index: what the map sizes a box for and the page draws. */
+export function labelFor(index: SpecIndex, id: string, centered: boolean): WrappedLabel {
+  let cache = wrapCache.get(index);
+  if (!cache) { cache = new Map(); wrapCache.set(index, cache); }
+  const key = `${centered ? 'c' : 'l'}${id}`;
+  const known = cache.get(key);
+  if (known) return known;
+  const label = wrapLabel(labelLines(index, id), { hexagon: index.byId.get(id)?.kind === 'domain', marked: hasMarks(index, id), centered, file: id.startsWith('file:') });
+  cache.set(key, label);
+  return label;
+}
 
-/** Whether a box's label is drawn at a zoom (LA-EXP-DR60): its title, at the box's text scale, at least MIN_LABEL_PX on screen. It only shows or hides the label, never resizes it. Both views' boxes read it. */
+/** A level's text scale (LA-EXP-DR58): its width over a leaf level's. Every box in the level has it; fixed by the map, never by the camera. */
+export const textScaleOf = (w: number) => Math.max(1, w / NODE_WIDTH);
+
+/** Whether a box's label is drawn at a zoom (LA-EXP-DR60): its title, at its text scale, at least MIN_LABEL_PX on screen. It only shows or hides the label, never resizes it. */
 export const labelShown = (text: number, zoom: number) => TITLE_FONT * text * zoom >= MIN_LABEL_PX;

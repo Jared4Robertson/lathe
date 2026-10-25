@@ -254,19 +254,20 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-legend { margin-top: 10px; font-size: 0.8rem; }
 .graph-legend li { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 
-/* Nodes: color and shape by stage, a ring on the center. In the one map (LA-EXP-DR57) a parent is as tall as its children and
-   its level wide enough for every label in it on one line. Its label is part of the map (LA-EXP-DR58): --node-scale, its
-   height over a leaf's, sets its text, padding and marks once, in map units (px here, whatever the person's text size), and
-   a grown node's label is centered both ways; --box-scale sets its border and outline. Nothing in the map changes size: the
-   camera zooms, and no title ever wraps or is cut off. A box whose title would be under 7 px on screen is plain: filled,
-   with no text (LA-EXP-DR60). Each line's height is in proportion to its text, so no glyph is clipped. */
+/* Nodes: color and shape by stage, a ring on the center. In the one map (LA-EXP-DR57) a parent is as tall as its children.
+   Its label is part of the map (LA-EXP-DR58): --node-scale, its level's width over a leaf's, sets its text, padding and marks
+   once, in map units (px here, whatever the person's text size), and a parent's or a grown leaf's label is centered both
+   ways; --box-scale sets its border and outline. Each line is a block of its own, broken on whole words by the map
+   (app/src/graph/text.ts), so the page wraps nothing and nothing is cut off; a leaf is tall enough for its lines. Nothing in
+   the map changes size: the camera zooms. A box whose title would be under 7 px on screen is plain: filled, with no text
+   (LA-EXP-DR60). Each line's height is in proportion to its text, so no glyph is clipped. */
 .graph-node { --node-scale: 1; --box-scale: 1; --node-border: calc(1.5px * var(--box-scale)); width: 100%; height: 100%; box-sizing: border-box; padding: calc(6px * var(--node-scale)) calc(14px * var(--node-scale)); border: var(--node-border) solid var(--g-structural); background: var(--g-structural-bg); display: flex; flex-direction: column; justify-content: center; cursor: pointer; overflow: hidden; position: relative; border-radius: var(--node-radius); }
-.graph-node small, .graph-node strong { display: block; white-space: nowrap; line-height: 1.4; }
-/* A marked box's kind and ID line keeps room beside it for the problem badge (both sides once centered); app/src/graph/text.ts sizes the level with the same numbers. */
+.graph-node small, .graph-node strong, .graph-node small > span, .graph-node strong > span { display: block; white-space: nowrap; line-height: 1.4; }
+/* A marked box's kind and ID line keeps room beside it for the problem badge (both sides once centered); app/src/graph/text.ts breaks its lines with the same numbers. */
 .graph-node small { font: calc(10.5px * var(--node-scale))/1.4 var(--mono); color: var(--muted); }
 .graph-node .graph-badge-room { padding-right: calc(30px * var(--node-scale)); }
-.graph-node.is-scaled { align-items: center; text-align: center; }
-.graph-node.is-scaled .graph-badge-room { padding-inline: calc(30px * var(--node-scale)); }
+.graph-node.is-centered { align-items: center; text-align: center; }
+.graph-node.is-centered .graph-badge-room { padding-inline: calc(30px * var(--node-scale)); }
 .graph-node strong { font-size: calc(12.5px * var(--node-scale)); font-weight: 600; color: var(--ink); }
 .graph-node.stage-define { border-color: var(--g-define); background: var(--g-define-bg); }
 .graph-node.stage-design { border-color: var(--g-design); background: var(--g-design-bg); }
@@ -290,8 +291,6 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
    its kind and ID line, sized with its text. Children are drawn after their parent, so they lie over it. */
 .graph-flow.is-nested .graph-node.is-container { justify-content: flex-start; align-items: flex-start; text-align: left; }
 .graph-flow.is-nested .graph-node.is-container .graph-badge-room { padding-inline: 0 calc(30px * var(--node-scale)); }
-/* In the Nested view a label's kind and ID line and its title wrap on whole words, never inside one, as app/src/graph/nested.ts sized them. */
-.graph-flow.is-nested .graph-node :is(small, strong) { white-space: normal; overflow-wrap: normal; word-break: normal; }
 .graph-hexagon-mark { display: inline-block; width: calc(11px * var(--node-scale)); height: calc(9.5px * var(--node-scale)); margin-right: calc(5px * var(--node-scale)); vertical-align: baseline; background: var(--g-structural); clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%); }
 .graph-swatch.stage-hexagon-mark { border-radius: 2px; background: var(--g-structural-bg); position: relative; }
 .graph-swatch.stage-hexagon-mark::before { content: ""; position: absolute; left: 2px; top: 2px; width: 7px; height: 6px; background: var(--g-structural); clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%); }
@@ -330,7 +329,7 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 /* The center's own links, with Links on: dashed in their own color. */
 .graph-flow .react-flow__edge-path.is-link { stroke: var(--link-edge); stroke-dasharray: 6 4; }
 .graph-line.is-link { border-top: 1.5px dashed var(--link-edge); }
-/* Domain events in the graph (LA-EXP-UC04-R07, LA-EXP-DR52): a rounded pill in the spark colors, and their reacts_to and
+/* Domain events in the graph (LA-EXP-UC04-R07, LA-EXP-DR52): a pill in the spark colors (its ends round to a one-line leaf's half height, so a taller event's wrapped lines stay clear of them), and their reacts_to and
    raised_by links dashed in spark, with Links on too. */
 /* A domain is a hexagon (LA-EXP-DR61): flat top and bottom, pointed left and right ends whose chamfer grows with the node's
    content scale (at most a quarter of its width), so a tall domain still reads as a hexagon. The node is clipped to the
@@ -352,7 +351,7 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-swatch.kind-domain_event { border-color: var(--spark); background: var(--spark-bg); border-radius: 999px; }
 .graph-swatch.kind-question { border-style: dashed; border-color: var(--warn); }
 .graph-swatch.is-focus { box-shadow: 0 0 0 2px var(--ink); }
-.graph-node.kind-domain_event:not(.stage-group) { border-color: var(--spark); background: var(--spark-bg); border-radius: 999px; padding-inline: calc(14px * var(--node-scale)); }
+.graph-node.kind-domain_event:not(.stage-group) { border-color: var(--spark); background: var(--spark-bg); border-radius: calc(28px * var(--node-scale)); padding-inline: calc(14px * var(--node-scale)); }
 .graph-flow .react-flow__edge-path.rel-event, .graph-flow .react-flow__edge-path.rel-event.is-link { stroke: var(--spark); stroke-dasharray: 4 4; }
 .graph-line.rel-event { border-top: 1.5px dashed var(--spark); }
 /* The hover spotlight: the hovered or focused node, its edges and its neighbors stay bright, the rest dims a step. */

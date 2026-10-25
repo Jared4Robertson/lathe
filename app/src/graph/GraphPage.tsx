@@ -50,9 +50,9 @@ import {
 } from './model';
 import { boxExit, contentScale, traceGrid, type Point } from './layout';
 import { centerOf, graphMap, linkEnds, mapRootOf, parentLine, type GraphMap, type PlacedMap } from './map';
-import { nestedMap, type NestedMap } from './nested';
+import { nestedMap, type NestedMap, type NestedNode } from './nested';
 import { treeGroup } from './tree';
-import { labelLines, marksOf } from './text';
+import { isCentered, labelFor, labelHeight, labelLines, marksOf, type WrappedLabel } from './text';
 import { drawnFor, drawnKey, drawnNested, fitBoxes, frameNested, frameOnMap, glideDuration, MAX_ZOOM, mergeDrawn, zoomPath, type Drawn, type Viewport } from './camera';
 import { EdgeHints, type Side } from './hints';
 import { readMotion } from './motion';
@@ -86,8 +86,11 @@ interface NodeData extends Record<string, unknown> {
   label: boolean;
   /** How much its box's border and shape grow with its size (LA-EXP-DR58): 1 for a leaf. */
   scale: number;
-  /** How much its text, padding and marks grow: fixed by the map, never by the camera (LA-EXP-DR58). */
+  /** How much its text, padding and marks grow: its level's, fixed by the map, never by the camera (LA-EXP-DR58). */
   text: number;
+  /** Its label's lines as the map broke them (text.ts, or nested.ts in the Nested view), and whether it is centered. */
+  lines: WrappedLabel;
+  centered: boolean;
   /** In the Nested view (LA-EXP-DR62): a box drawn with its children inside it has a header band of this height (map units) holding its label at the top; 0 for a leaf, whose label is centered. */
   header?: number;
 }
@@ -140,7 +143,7 @@ function GraphNodeView({ data }: NodeProps<Node<NodeData>>) {
     data.group ? 'stage-group' : `stage-${data.stage || 'structural'}`,
     `kind-${data.kind}`,
     data.isFocus ? 'is-focus' : '',
-    data.text !== 1 ? 'is-scaled' : '',
+    data.centered ? 'is-centered' : '',
     data.label ? '' : 'is-plain',
     // A domain is a hexagon in the Tree view (LA-EXP-DR61), a box with a hexagon mark in the Nested view (LA-EXP-DR62).
     data.kind === 'domain' && !data.group ? (data.header === undefined ? 'is-hexagon' : 'has-hexagon-mark') : '',
@@ -152,9 +155,9 @@ function GraphNodeView({ data }: NodeProps<Node<NodeData>>) {
       <Handle type="source" position={Position.Right} className="graph-handle" isConnectable={false} />
       {data.label && (
         <>
-          {/* A marked box keeps room beside its kind and ID line for the badge, as text.ts sizes its level. */}
-          <small className={data.errors + data.warnings + data.gaps.length > 0 ? 'graph-badge-room' : undefined}>{data.kind === 'domain' && data.header !== undefined && !data.group && <span className="graph-hexagon-mark" aria-hidden="true" />}{data.meta}</small>
-          <strong>{data.title}</strong>
+          {/* The lines as the map broke them; a marked box keeps room beside its kind and ID line for the badge. */}
+          <small className={data.errors + data.warnings + data.gaps.length > 0 ? 'graph-badge-room' : undefined}>{data.lines.meta.map((l, i) => <span key={i}>{i === 0 && data.kind === 'domain' && data.header !== undefined && !data.group && <span className="graph-hexagon-mark" aria-hidden="true" />}{l}</span>)}</small>
+          <strong>{data.lines.title.map((l, i) => <span key={i}>{l}</span>)}</strong>
           <Marks data={data} />
         </>
       )}
@@ -535,7 +538,7 @@ function FilterControls({ index, filters, setFilters, minimap, setMinimap }: Fil
 }
 
 /** A box on the canvas with its place and size, in world coordinates. */
-export interface Box { id: string; x: number; y: number; w: number; h: number; label: boolean; text: number }
+export interface Box { id: string; x: number; y: number; w: number; h: number; label: boolean; text: number; parent: boolean }
 
 /**
  * The labeled boxes in reading order for the keyboard: in the Tree view column by column, left to
@@ -567,18 +570,20 @@ export function hiddenNodes(index: SpecIndex, map: PlacedMap, filters: Filters, 
 }
 
 /** A box's data: what it shows and how it is named. */
-function boxData(index: SpecIndex, id: string, focus: string, label: boolean, scale: number, text: number, graph: Neighborhood): NodeData {
-  // The same lines the map sized its level for (text.ts), so the label always fits on one line.
+function boxData(index: SpecIndex, id: string, focus: string, label: boolean, scale: number, text: number, parent: boolean, graph: Neighborhood, nested?: NestedNode): NodeData {
+  // The same lines the map sized the box for (text.ts, or the Nested map's), so the label always fits it.
   const { title, meta } = labelLines(index, id);
+  const centered = nested ? nested.centered : isCentered(text, parent);
+  const lines = nested ? nested.lines : labelFor(index, id, centered);
   const record = index.byId.get(id);
   if (record) {
-    return { id, kind: record.kind, stage: stageOf(index, record.kind), title, kindLabel: kindLabel(index, record.kind), meta, group: false, ...marksOf(index, id), isFocus: id === focus, label, scale, text };
+    return { id, kind: record.kind, stage: stageOf(index, record.kind), title, kindLabel: kindLabel(index, record.kind), meta, group: false, ...marksOf(index, id), isFocus: id === focus, label, scale, text, lines, centered };
   }
   if (id.startsWith('file:')) {
     const node = graph.nodes.find((n) => n.id === id);
-    return { id, kind: FILE_KIND, stage: 'file', title: node?.title ?? title, kindLabel: 'File', meta, group: false, errors: 0, warnings: 0, gaps: [], isFocus: false, label, scale, text };
+    return { id, kind: FILE_KIND, stage: 'file', title: node?.title ?? title, kindLabel: 'File', meta, group: false, errors: 0, warnings: 0, gaps: [], isFocus: false, label, scale, text, lines, centered };
   }
-  return { id, kind: treeGroup(index, id)?.kind ?? 'folder', stage: 'group', title, kindLabel: 'Group', meta, group: true, ...marksOf(index, id), isFocus: id === focus, label, scale, text };
+  return { id, kind: treeGroup(index, id)?.kind ?? 'folder', stage: 'group', title, kindLabel: 'Group', meta, group: true, ...marksOf(index, id), isFocus: id === focus, label, scale, text, lines, centered };
 }
 
 /** The accessible name of a labeled box. */
@@ -710,7 +715,8 @@ function GraphCanvas({ index, graph, layout, depth, filters, onNavigate, minimap
     glide.current = requestAnimationFrame(step);
   }, [getViewport, setViewport, size, tracing, show, drawnAt]);
 
-  const tracePlaced = useMemo(() => (tracing ? traceGrid(graph) : null), [tracing, graph]);
+  // A trace's boxes are leaves at text scale 1, each as tall as its wrapped label needs (text.ts).
+  const tracePlaced = useMemo(() => (tracing ? traceGrid(graph, (id) => 2 * Math.ceil(labelHeight(labelFor(index, id, false)) / 2)) : null), [tracing, graph, index]);
   /** The camera that frames the focus: on the map, the focus and the levels the depth shows; in a trace, the whole chain. */
   const framing = useCallback((): Viewport | null => {
     if (!size) return null;
@@ -766,10 +772,10 @@ function GraphCanvas({ index, graph, layout, depth, filters, onNavigate, minimap
   // ---- The boxes and lines ----
   const boxes = useMemo((): Box[] => {
     if (tracePlaced) {
-      return graph.nodes.map((n) => ({ id: n.id, ...tracePlaced.positions.get(n.id)!, w: tracePlaced.widths.get(n.id)!, h: tracePlaced.heights.get(n.id)!, label: true, text: 1 }));
+      return graph.nodes.map((n) => ({ id: n.id, ...tracePlaced.positions.get(n.id)!, w: tracePlaced.widths.get(n.id)!, h: tracePlaced.heights.get(n.id)!, label: true, text: 1, parent: false }));
     }
     if (!drawn) return [];
-    const placed = drawn.boxes.map((b) => { const n = map.nodes.get(b.id)!; return { id: b.id, x: n.x, y: n.y, w: n.w, h: n.h, label: b.label, text: n.text }; });
+    const placed = drawn.boxes.map((b) => { const n = map.nodes.get(b.id)!; return { id: b.id, x: n.x, y: n.y, w: n.w, h: n.h, label: b.label, text: n.text, parent: n.children.length > 0 }; });
     // Nested, a parent is drawn before its children, so each child lies over its parent (LA-EXP-DR63).
     if (map.view === 'nested') placed.sort((a, b) => map.nodes.get(a.id)!.order - map.nodes.get(b.id)!.order);
     return placed;
@@ -783,8 +789,8 @@ function GraphCanvas({ index, graph, layout, depth, filters, onNavigate, minimap
     const byId = new Map(boxes.map((b) => [b.id, b]));
     const nodes: FlowNode[] = boxes.map((b) => {
       const inNested = !tracing && map.view === 'nested' ? map.nodes.get(b.id) : undefined;
-      // Nested, a box's border grows with its text, so a large box's edge stays in proportion to its label (LA-EXP-DR62).
-      const data = boxData(index, b.id, focus, b.label, inNested ? Math.max(0.5, b.text) : contentScale(b.w, b.h), b.text, graph);
+      // Nested, a box's border grows with its text, so a large box's edge stays in proportion to its label, and its lines are the Nested map's (LA-EXP-DR62).
+      const data = boxData(index, b.id, focus, b.label, inNested ? Math.max(0.5, b.text) : contentScale(b.w, b.h), b.text, b.parent, graph, inNested);
       if (inNested) data.header = inNested.header;
       return {
         id: b.id,
