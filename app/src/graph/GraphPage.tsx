@@ -181,7 +181,7 @@ function paintEdge(parts: EdgeParts, frame: EdgeFrame) {
 
 /**
  * Where an edge is drawn, frame by frame. When its boxes move (the graph re-centers) it tweens from
- * where it was drawn to where it goes, with the shared motion (LA-PAT-APP-CODE-R12): the same
+ * where it was drawn to where it goes, with the shared motion (LA-PAT-APP-UX-R04): the same
  * duration and easing as the nodes' transform transition, and on the nodes' own transition clock,
  * so its ends stay on the boxes. A new edge fades in and a leaving one fades out over the same
  * time. Under reduced motion it jumps.
@@ -336,7 +336,7 @@ export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted,
   const setFilters = (f: Filters) => update({ filters: f });
   const setTrace = (t: boolean) => update({ trace: t });
   const [trail, setTrail] = useState<string[]>(readTrail);
-  // The trail is one line (LA-PAT-APP-CODE-R17): its items shrink, cut with an ellipsis, and when
+  // The trail is one line (LA-PAT-APP-UX-R08): its items shrink, cut with an ellipsis, and when
   // they still overflow it scrolls to the end, so the center is always in view and the canvas
   // below never moves as the trail grows.
   const trailList = useRef<HTMLOListElement>(null);
@@ -360,7 +360,7 @@ export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted,
     [index, focus, depth, filters, tracing, openGroups],
   );
   // Before paint, so the inspector shows what the graph connects in the same frame as the graph
-  // (in an effect it showed one frame without it, then pushed its legend down; LA-PAT-APP-CODE-R17).
+  // (in an effect it showed one frame without it, then pushed its legend down; LA-PAT-APP-UX-R08).
   useLayoutEffect(() => { onGraph?.({ graph, tracing }); }, [graph, tracing, onGraph]);
 
   const toggleGroup = useCallback((id: string, nowOpen: boolean) => {
@@ -413,7 +413,7 @@ export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted,
             ))}
           </div>
           {/* Right after the depth, whose width never changes, and as one piece of text, so a new
-              count never moves anything (LA-PAT-APP-CODE-R17); trace and filters sit at the end. */}
+              count never moves anything (LA-PAT-APP-UX-R08); trace and filters sit at the end. */}
           <span className="graph-count" title={counts}>{counts}</span>
           {canTrace(index, focus) && (
             <label className="graph-trace-toggle">

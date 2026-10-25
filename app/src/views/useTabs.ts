@@ -9,7 +9,7 @@ import { focusOf, parseViews, pathOf, VIEW_NAMES, viewsFromSearch, withView, typ
 import { activateTab, activeTab, closeTab, cycleTab, emptyTabs, keepTab, openTab, parseTabSet, tabFor, updateTab, type Tab, type TabSet } from './tabs';
 
 // The open tabs of the focus page, one tab set per space, kept for the browser session, and the
-// address kept in step with the active tab (LA-PAT-APP-CODE-R14):
+// address kept in step with the active tab (LA-PAT-APP-UX-R06):
 // - a new address opens its page as tabs.ts says: the tab it is open in, or the preview tab;
 // - the address names the active tab's views, so a link, a reload, Back and Forward work as before;
 // - activating, cycling or closing a tab moves the address to the tab now active.
