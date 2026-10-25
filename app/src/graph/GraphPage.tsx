@@ -6,6 +6,7 @@ import {
   EdgeLabelRenderer,
   Handle,
   MarkerType,
+  MiniMap,
   Position,
   ReactFlow,
   ReactFlowProvider,
@@ -16,6 +17,7 @@ import {
   type NodeProps,
 } from '@xyflow/react';
 import { kindLabel, type SpecIndex } from '../specs/data';
+import { lowerLabel } from '../plural';
 import { useCommand } from '../shell/commands';
 import { Tooltip } from '../shell/Tooltip';
 import { Icon } from '../components/icons';
@@ -37,6 +39,8 @@ import {
   kindGroups,
   neighborhood,
   nextTrail,
+  nodeChildren,
+  nodeParent,
   parseGroupId,
   relationsOf,
   traceChain,
@@ -46,6 +50,7 @@ import {
 } from './model';
 import { layoutNeighborhood, NODE_HEIGHT, NODE_WIDTH, type Placed } from './layout';
 import { anchorLayout, fadeSets, frameFocus } from './camera';
+import { EdgeHints } from './hints';
 import { edgeMove, readMotion, transitionProgress, tweenEdge, type EdgeEnds, type EdgeFrame, type EdgePhase } from './motion';
 import { Button } from '../components/Button';
 
@@ -77,6 +82,10 @@ interface EdgeData extends Record<string, unknown> {
   showLabel: boolean;
   /** The words drawn on the edge: its relation's label, read from its source. */
   label: string;
+  /** To or between context nodes: faded and thinner. */
+  context: boolean;
+  /** A cross-link added by the Links switch: dashed, in its own color. */
+  link: boolean;
 }
 type FlowNode = Node<NodeData>;
 type FlowEdge = Edge<EdgeData>;
@@ -103,8 +112,18 @@ function Marks({ data }: { data: NodeData }) {
   );
 }
 
+/** A context node's quiet title: short, cut at a word; the whole title and the ID are in its tooltip (LA-BRW-DR302). */
+export function shortTitle(title: string, max = 28): string {
+  if (title.length <= max) return title;
+  const cut = title.slice(0, max - 1);
+  const space = cut.lastIndexOf(' ');
+  return `${(space > max / 2 ? cut.slice(0, space) : cut).trimEnd()}…`;
+}
+
 function GraphNodeView({ data }: NodeProps<FlowNode>) {
   const { node } = data;
+  // A context node is quiet: its kind and a short title; its ID and full title show on hover.
+  const quiet = node.context === true;
   return (
     <div
       className={`graph-node stage-${node.stage || 'structural'} kind-${node.kind}${data.isFocus ? ' is-focus' : ''}`}
@@ -112,26 +131,38 @@ function GraphNodeView({ data }: NodeProps<FlowNode>) {
     >
       <Handle type="target" position={Position.Left} className="graph-handle" isConnectable={false} />
       <Handle type="source" position={Position.Right} className="graph-handle" isConnectable={false} />
-      <small>{data.kindLabel}{node.kind !== FILE_KIND && <> · {node.id}</>}</small>
-      <strong>{node.title}</strong>
+      <small>{data.kindLabel}{node.kind !== FILE_KIND && !quiet && <> · {node.id}</>}</small>
+      <strong>{quiet ? shortTitle(node.title) : node.title}</strong>
       <Marks data={data} />
     </div>
   );
 }
 
-/** A group: a folder of one kind of child, showing its count, open or folded. */
+/** A chip of the light ring: "+12 more use cases", a context node that re-centers on their folder. */
+function MoreNodeView({ data }: NodeProps<FlowNode>) {
+  const { node } = data;
+  return (
+    <div className="graph-node stage-more" title={`${node.title}: center on ${node.more!.target}`}>
+      <Handle type="target" position={Position.Left} className="graph-handle" isConnectable={false} />
+      <Handle type="source" position={Position.Right} className="graph-handle" isConnectable={false} />
+      <strong>{node.title}</strong>
+    </div>
+  );
+}
+
+/** A group: a stage, a folder, or a group of one kind of child, showing its count, open or folded. */
 function GroupNodeView({ data }: NodeProps<FlowNode>) {
   const { node } = data;
   const open = node.group!.open;
   return (
     <div
       className={`graph-node stage-group kind-${node.kind}${open ? ' is-open' : ' is-folded'}${data.isFocus ? ' is-focus' : ''}`}
-      title={`${node.title} in ${node.group!.parent} (${open ? 'open' : 'folded'})`}
+      title={`${node.title} in ${node.group!.owner} (${open ? 'open' : 'folded'})`}
       data-open={open}
     >
       <Handle type="target" position={Position.Left} className="graph-handle" isConnectable={false} />
       <Handle type="source" position={Position.Right} className="graph-handle" isConnectable={false} />
-      <small>Group · {node.group!.parent}</small>
+      <small>Group · {node.group!.owner}</small>
       <strong>{node.title}</strong>
       <Marks data={data} />
       {/* Clicking the group goes to it; its chevron opens or folds it in place. The center group is always open. */}
@@ -241,9 +272,11 @@ function GraphEdgeView({ id, data, markerEnd, source, target }: EdgeProps<FlowEd
   };
   const frame = useEdgeFrame(data?.ends ?? NO_ENDS, data?.phase ?? 'persist', parts);
   if (!data) return null;
+  // A cross-link (the Links switch) is dashed in its own color, apart from the tree's solid parent lines.
+  const kind = data.link ? ' is-link' : '';
   return (
-    <g ref={group} className="graph-edge-motion" style={{ opacity: frame.opacity }} data-phase={data.phase}>
-      <BaseEdge id={id} path={linePath(frame.points)} markerEnd={markerEnd} interactionWidth={0} className={`graph-edge rel-${relationStyle(data.relation)}${data.showLabel || data.relation === PARENT ? '' : ' distant'}`} />
+    <g ref={group} className={`graph-edge-motion${data.context ? ' is-context' : ''}`} style={{ opacity: frame.opacity }} data-phase={data.phase} data-source={source} data-target={target}>
+      <BaseEdge id={id} path={linePath(frame.points)} markerEnd={markerEnd} interactionWidth={0} className={`graph-edge rel-${relationStyle(data.relation)}${kind}${data.showLabel || data.relation === PARENT ? '' : ' distant'}`} />
       {data.showLabel && data.relation !== PARENT && (
         <EdgeLabelRenderer>
           <div ref={label} className="edge-label graph-edge-label" style={{ opacity: frame.opacity, transform: labelTransform(frame.points) }}>
@@ -261,7 +294,7 @@ const NODE_HANDLES = [
   { type: 'source' as const, position: Position.Right, x: NODE_WIDTH, y: NODE_HEIGHT / 2, width: 1, height: 1 },
 ];
 
-const nodeTypes = { record: GraphNodeView, folder: GroupNodeView };
+const nodeTypes = { record: GraphNodeView, folder: GroupNodeView, more: MoreNodeView };
 const edgeTypes = { link: GraphEdgeView };
 
 const TRAIL_KEY = 'lathe:graph-trail';
@@ -277,21 +310,53 @@ function writeTrail(trail: string[]) {
   try { window.sessionStorage.setItem(TRAIL_KEY, JSON.stringify(trail)); } catch { /* storage unavailable */ }
 }
 
-/** What the person set on the graph: depth, filters, trace mode, and the groups they opened or closed. */
+/**
+ * What the person set on the graph: depth, filters, trace mode, the groups they opened or closed,
+ * the Links switch, the context ring and the minimap. The last three are optional so a host that
+ * stores older settings still fits; each has its default when left out.
+ */
 export interface GraphSettings {
   depth: number;
   filters: Filters;
   trace: boolean;
   openGroups: ReadonlyMap<string, boolean>;
+  /** The Links switch: the focused record's own links, one step. Off by default. */
+  links?: boolean;
+  /** The context ring, faded around the picture. On by default. */
+  context?: boolean;
+  /** The minimap in a corner of the canvas. Off by default. */
+  minimap?: boolean;
 }
-/** Depth 1 is the tree around the focus (parent and children); each depth after it walks one more hop of links. */
 /** "1 record", "2 records". */
 const count = (n: number, noun: string) => `${n} ${n === 1 ? noun : `${noun}s`}`;
 
 export const MAX_DEPTH = 3;
 const DEPTHS = [1, 2, 3];
-const DEPTH_LABELS = ['Parent and children only', 'Plus links one step away', 'Plus links two steps away'];
-export const DEFAULT_GRAPH_SETTINGS: GraphSettings = { depth: 1, filters: NO_FILTERS, trace: false, openGroups: new Map() };
+/** Depth counts levels of the tree each way, folders and stages included; the Links switch adds the center's own links. */
+const DEPTH_LABELS = ['One level each way: parent and children', 'Two levels each way', 'Three levels each way'];
+export const DEFAULT_GRAPH_SETTINGS: GraphSettings = { depth: 1, filters: NO_FILTERS, trace: false, openGroups: new Map(), links: false, context: true, minimap: false };
+
+/** Where a step command goes from a node: its parent, its first child, or its previous or next sibling in the tree. */
+export function stepTarget(index: SpecIndex, focus: string, step: 'out' | 'in' | 'previous' | 'next'): string | null {
+  const ok = (id: string | null | undefined) => (id && isGraphNode(index, id) ? id : null);
+  if (step === 'out') return ok(nodeParent(index, focus));
+  if (step === 'in') return ok(nodeChildren(index, focus).find((c) => isGraphNode(index, c)));
+  const up = nodeParent(index, focus);
+  if (up === null) return null;
+  const siblings = nodeChildren(index, up).filter((c) => isGraphNode(index, c));
+  const at = siblings.indexOf(focus);
+  if (at < 0) return null;
+  return ok(siblings[at + (step === 'next' ? 1 : -1)]);
+}
+
+/** The summary above the canvas, of the focus picture only: "9 records · 2 groups · 8 links · 6 more faded". */
+export function graphSummary(graph: Neighborhood): string {
+  const inFocus = graph.nodes.filter((n) => !n.context);
+  const groups = inFocus.filter((n) => n.group).length;
+  const links = graph.edges.filter((e) => !e.context).length;
+  const faded = graph.nodes.length - inFocus.length;
+  return `${count(inFocus.length - groups, 'record')}${groups > 0 ? ` · ${count(groups, 'group')}` : ''} · ${count(links, 'link')}${faded > 0 ? ` · ${faded} more faded` : ''}`;
+}
 
 export interface GraphViewProps {
   index: SpecIndex;
@@ -329,6 +394,9 @@ export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted,
   const [own, setOwn] = useState<GraphSettings>(DEFAULT_GRAPH_SETTINGS);
   const settings = hosted ?? own;
   const { depth, filters, trace, openGroups } = settings;
+  const links = settings.links ?? false;
+  const ring = settings.context ?? true;
+  const minimap = settings.minimap ?? false;
   const latest = useRef(settings);
   latest.current = settings;
   const update = useCallback((patch: Partial<GraphSettings>) => {
@@ -360,8 +428,8 @@ export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted,
 
   const tracing = trace && canTrace(index, focus);
   const graph = useMemo(
-    () => (tracing ? traceChain(index, focus, filters) : neighborhood(index, focus, depth, filters, openGroups)),
-    [index, focus, depth, filters, tracing, openGroups],
+    () => (tracing ? traceChain(index, focus, filters) : neighborhood(index, focus, depth, filters, openGroups, { links, context: ring })),
+    [index, focus, depth, filters, tracing, openGroups, links, ring],
   );
   // Before paint, so the inspector shows what the graph connects in the same frame as the graph
   // (in an effect it showed one frame without it, then pushed its legend down; LA-PAT-APP-UX-R08).
@@ -379,6 +447,16 @@ export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted,
   useCommand('graphDepthUp', () => update({ depth: Math.min(MAX_DEPTH, latest.current.depth + 1) }), valid && !tracing);
   useCommand('graphDepthDown', () => update({ depth: Math.max(1, latest.current.depth - 1) }), valid && !tracing);
   useCommand('graphTrace', () => update({ trace: !latest.current.trace }), valid && canTrace(index, focus));
+  useCommand('graphLinks', () => update({ links: !(latest.current.links ?? false) }), valid && !tracing);
+  // Stepping through the tree moves the center, as a click does.
+  const stepTo = (step: 'out' | 'in' | 'previous' | 'next') => () => {
+    const to = stepTarget(index, focus, step);
+    if (to) onNavigate(to);
+  };
+  useCommand('graphStepOut', stepTo('out'), valid);
+  useCommand('graphStepIn', stepTo('in'), valid);
+  useCommand('graphStepPrevious', stepTo('previous'), valid);
+  useCommand('graphStepNext', stepTo('next'), valid);
 
   if (!valid) {
     return (
@@ -387,8 +465,13 @@ export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted,
       </div>
     );
   }
-  const groups = graph.nodes.filter((n) => n.group).length;
-  const counts = `${count(graph.nodes.length - groups, 'record')}${groups > 0 ? ` · ${count(groups, 'group')}` : ''} · ${count(graph.edges.length, 'link')}`;
+  const counts = graphSummary(graph);
+  const steps = [
+    { step: 'out' as const, command: 'graphStepOut', label: 'Step out to the parent', mark: '↑' },
+    { step: 'in' as const, command: 'graphStepIn', label: 'Step in to the first child', mark: '↓' },
+    { step: 'previous' as const, command: 'graphStepPrevious', label: 'Step to the previous sibling', mark: '←' },
+    { step: 'next' as const, command: 'graphStepNext', label: 'Step to the next sibling', mark: '→' },
+  ];
 
   return (
     <section className="graph-page" aria-label="Graph" onKeyDown={onPageKey}>
@@ -416,8 +499,20 @@ export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted,
               </Tooltip>
             ))}
           </div>
-          {/* Right after the depth, whose width never changes, and as one piece of text, so a new
-              count never moves anything (LA-PAT-APP-UX-R08); trace and filters sit at the end. */}
+          <div className="graph-links" role="group" aria-label="Cross-links">
+            <Tooltip label="Links: the center's own links, one step" command="graphLinks">
+              <button type="button" aria-pressed={links} disabled={tracing} onClick={() => update({ links: !links })}>Links</button>
+            </Tooltip>
+          </div>
+          <div className="graph-steps" role="group" aria-label="Step through the tree">
+            {steps.map((s) => (
+              <Tooltip key={s.step} label={s.label} command={s.command}>
+                <Button className="graph-step" aria-label={s.label} disabled={!stepTarget(index, focus, s.step)} onClick={stepTo(s.step)}>{s.mark}</Button>
+              </Tooltip>
+            ))}
+          </div>
+          {/* Right after the depth, Links and the steps, whose widths never change, and as one piece of
+              text, so a new count never moves anything (LA-PAT-APP-UX-R08); trace and filters sit at the end. */}
           <span className="graph-count" title={counts}>{counts}</span>
           {canTrace(index, focus) && (
             <label className="graph-trace-toggle">
@@ -427,13 +522,21 @@ export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted,
               Trace mode
             </label>
           )}
-          <FilterControls index={index} filters={filters} setFilters={setFilters} />
+          <FilterControls
+            index={index}
+            filters={filters}
+            setFilters={setFilters}
+            ring={ring}
+            setRing={(on) => update({ context: on })}
+            minimap={minimap}
+            setMinimap={(on) => update({ minimap: on })}
+          />
         </div>
       </header>
       <div className="graph-workspace">
         <div className="graph-canvas">
           <ReactFlowProvider>
-            <GraphCanvas index={index} graph={graph} onNavigate={onNavigate} onToggle={toggleGroup} />
+            <GraphCanvas index={index} graph={graph} onNavigate={onNavigate} onToggle={toggleGroup} minimap={minimap} />
           </ReactFlowProvider>
         </div>
       </div>
@@ -441,7 +544,23 @@ export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted,
   );
 }
 
-function FilterControls({ index, filters, setFilters }: { index: SpecIndex; filters: Filters; setFilters: (f: Filters) => void }) {
+/** The trace preset's button, worded with the relations' labels (LA-BRW-DR243): "Only satisfies, proves and carries out links". */
+export function traceOnlyLabel(index: SpecIndex): string {
+  const words = ['satisfies', 'proves', 'fulfills'].map((r) => lowerLabel(graphRelationLabel(r, index)));
+  return `Only ${words.slice(0, -1).join(', ')} and ${words.at(-1)} links`;
+}
+
+interface FilterProps {
+  index: SpecIndex;
+  filters: Filters;
+  setFilters: (f: Filters) => void;
+  ring: boolean;
+  setRing: (on: boolean) => void;
+  minimap: boolean;
+  setMinimap: (on: boolean) => void;
+}
+
+function FilterControls({ index, filters, setFilters, ring, setRing, minimap, setMinimap }: FilterProps) {
   const hidden = filters.hiddenKinds.size + filters.hiddenRelations.size;
   const toggle = (set: ReadonlySet<string>, value: string) => {
     const next = new Set(set);
@@ -453,6 +572,17 @@ function FilterControls({ index, filters, setFilters }: { index: SpecIndex; filt
     <details className="graph-filters">
       <summary>Filters{hidden > 0 && <span className="section-count">{hidden} hidden</span>}</summary>
       <div className="graph-filter-body">
+        <fieldset>
+          <legend>Picture</legend>
+          <label>
+            <input type="checkbox" role="switch" checked={ring} onChange={(e) => setRing(e.target.checked)} />
+            Show context ring
+          </label>
+          <label>
+            <input type="checkbox" role="switch" checked={minimap} onChange={(e) => setMinimap(e.target.checked)} />
+            Minimap
+          </label>
+        </fieldset>
         {kindGroups(index).map((g) => g.kinds.length > 0 && (
           <fieldset key={g.stage || 'structural'}>
             <legend>{g.title}</legend>
@@ -484,7 +614,7 @@ function FilterControls({ index, filters, setFilters }: { index: SpecIndex; filt
         </fieldset>
         <div className="graph-filter-actions">
           <Button onClick={() => setFilters({ ...filters, hiddenRelations: new Set(relations.filter((r) => !TRACE_RELATIONS.has(r))) })}>
-            Only satisfies, proves and fulfills
+            {traceOnlyLabel(index)}
           </Button>
           <Button onClick={() => setFilters(NO_FILTERS)} disabled={hidden === 0}>Clear filters</Button>
         </div>
@@ -494,8 +624,11 @@ function FilterControls({ index, filters, setFilters }: { index: SpecIndex; filt
   );
 }
 
-/** Nodes in reading order for the keyboard: column by column (tiers and traces both read left to right), ring by ring for the radial fallback. */
-function keyboardOrder(graph: Neighborhood, placed: Placed) {
+/**
+ * Nodes in reading order for the keyboard: column by column (tiers and traces both read left to
+ * right), ring by ring for the radial fallback. Context nodes are out of focus, so they are left out.
+ */
+export function keyboardOrder(graph: Neighborhood, placed: Pick<Placed, 'positions' | 'layout'>) {
   const at = (id: string) => placed.positions.get(id) ?? { x: 0, y: 0 };
   const angle = (id: string) => {
     const p = at(id);
@@ -506,7 +639,25 @@ function keyboardOrder(graph: Neighborhood, placed: Placed) {
     placed.layout === 'radial'
       ? (a: GraphNode, b: GraphNode) => a.distance - b.distance || angle(a.id) - angle(b.id)
       : (a: GraphNode, b: GraphNode) => at(a.id).x - at(b.id).x || at(a.id).y - at(b.id).y;
-  return [...graph.nodes].sort(compare).map((n) => n.id);
+  return graph.nodes.filter((n) => !n.context).sort(compare).map((n) => n.id);
+}
+
+/** Only the focus nodes' positions: the camera frames them, and the context ring may run past the canvas's edges. */
+export function focusPositions(graph: Neighborhood, positions: ReadonlyMap<string, { x: number; y: number }>): Map<string, { x: number; y: number }> {
+  const out = new Map<string, { x: number; y: number }>();
+  for (const n of graph.nodes) {
+    const p = positions.get(n.id);
+    if (p && !n.context) out.set(n.id, p);
+  }
+  return out;
+}
+
+/** The centers of the context nodes, in world coordinates: what the edge hints count. */
+export function contextCenters(graph: Neighborhood, positions: ReadonlyMap<string, { x: number; y: number }>): { x: number; y: number }[] {
+  return graph.nodes.flatMap((n) => {
+    const p = positions.get(n.id);
+    return n.context && p ? [{ x: p.x + NODE_WIDTH / 2, y: p.y + NODE_HEIGHT / 2 }] : [];
+  });
 }
 
 /** The viewport that fits every box in the canvas, centered, never zoomed in past 1. */
@@ -520,12 +671,16 @@ export function fitPositions(positions: Map<string, { x: number; y: number }>, w
   return { x: width / 2 - ((minX + maxX) / 2) * zoom, y: height / 2 - ((minY + maxY) / 2) * zoom, zoom };
 }
 
-function GraphCanvas({ index, graph, onNavigate, onToggle }: {
+function GraphCanvas({ index, graph, onNavigate: navigate, onToggle, minimap }: {
   index: SpecIndex;
   graph: Neighborhood;
   onNavigate: (id: string) => void;
   onToggle: (id: string, nowOpen: boolean) => void;
+  minimap: boolean;
 }) {
+  // A chip of the light ring re-centers on the folder it stands for.
+  const chipTargets = useMemo(() => new Map(graph.nodes.filter((n) => n.more).map((n) => [n.id, n.more!.target])), [graph]);
+  const onNavigate = useCallback((id: string) => navigate(chipTargets.get(id) ?? id), [navigate, chipTargets]);
   const [placed, setPlaced] = useState<(Placed & { graph: Neighborhood }) | null>(null);
   const [error, setError] = useState<string | null>(null);
   const wrapper = useRef<HTMLDivElement>(null);
@@ -553,6 +708,7 @@ function GraphCanvas({ index, graph, onNavigate, onToggle }: {
   }, [graph]);
 
   const order = useMemo(() => (placed ? keyboardOrder(placed.graph, placed) : []), [placed]);
+  const centers = useMemo(() => (placed ? contextCenters(placed.graph, placed.positions) : []), [placed]);
 
   /** The edges last drawn, so the next picture knows which edges persist, which are new and which leave. */
   const shown = useRef<FlowEdge[]>([]);
@@ -567,9 +723,13 @@ function GraphCanvas({ index, graph, onNavigate, onToggle }: {
     // Records new to the picture fade in at their place; records that left fade out where they were.
     const drawnBefore = shownNodes.current?.filter((n) => !n.id.startsWith(LEAVING)) ?? null;
     const fades = fadeSets(drawnBefore?.map((n) => n.id) ?? null, g.nodes.map((n) => n.id));
-    const nodes: FlowNode[] = order.map((id) => {
+    // Focus nodes in keyboard order, then the context ring, which is out of focus: no keyboard stop,
+    // hidden from assistive technology, faded and a little smaller (the CSS fades it as it changes).
+    const contextIds = g.nodes.filter((n) => n.context).map((n) => n.id);
+    const nodes: FlowNode[] = [...order, ...contextIds].map((id) => {
       const node = byId.get(id)!;
       const isFocus = id === g.focus;
+      const classes = [fades.entering.has(id) && !reduced ? 'is-entering' : '', node.context ? 'is-context' : ''].filter(Boolean).join(' ');
       const base = {
         id,
         position: positions.get(id) ?? { x: 0, y: 0 },
@@ -582,15 +742,20 @@ function GraphCanvas({ index, graph, onNavigate, onToggle }: {
         // picture changes; while it measured, every edge was dropped for a frame and drawn anew, so
         // nothing could carry it from its old place to its new one.
         handles: NODE_HANDLES,
-        ...(fades.entering.has(id) && !reduced ? { className: 'is-entering' } : {}),
+        ...(classes ? { className: classes } : {}),
+        ...(node.context ? { focusable: false, domAttributes: { 'aria-hidden': true } } : {}),
       };
+      if (node.more) {
+        return { ...base, type: 'more', data: { node, kindLabel: '', errors: 0, warnings: 0, gaps: [], isFocus: false } };
+      }
       if (node.group) {
         const marks = groupMarks(index, id);
         return {
           ...base,
           type: 'folder',
-          ariaLabel: `Group ${node.title} in ${node.group.parent}, ${node.group.open ? 'open' : 'folded'}${isFocus ? ' (center)' : ''}`,
-          data: { node, kindLabel: 'Group', ...marks, isFocus, onToggle: isFocus ? undefined : () => onToggle(id, node.group!.open) },
+          ...(node.context ? {} : { ariaLabel: `Group ${node.title} in ${node.group.owner}, ${node.group.open ? 'open' : 'folded'}${isFocus ? ' (center)' : ''}` }),
+          // The center group is always open, and a context group is out of focus: neither has a chevron.
+          data: { node, kindLabel: 'Group', ...marks, isFocus, onToggle: isFocus || node.context ? undefined : () => onToggle(id, node.group!.open) },
         };
       }
       const problems = node.kind === FILE_KIND ? [] : index.problemsFor.get(id) ?? [];
@@ -598,7 +763,7 @@ function GraphCanvas({ index, graph, onNavigate, onToggle }: {
       return {
         ...base,
         type: 'record',
-        ariaLabel: `${node.kind === FILE_KIND ? 'File' : kindLabel(index, node.kind)} ${isFocus ? '(center) ' : ''}${node.title}`,
+        ...(node.context ? {} : { ariaLabel: `${node.kind === FILE_KIND ? 'File' : kindLabel(index, node.kind)} ${isFocus ? '(center) ' : ''}${node.title}` }),
         data: {
           node,
           kindLabel: node.kind === FILE_KIND ? 'File' : kindLabel(index, node.kind),
@@ -633,6 +798,8 @@ function GraphCanvas({ index, graph, onNavigate, onToggle }: {
         phase: hadPicture && !before.has(e.id) ? 'enter' : 'persist',
         showLabel: e.source === g.focus || e.target === g.focus,
         label: graphEdgeLabel(index, e),
+        context: e.context === true,
+        link: g.mode === 'hierarchy' && e.relation !== PARENT,
       },
     }));
     const now = new Set(edges.map((e) => e.id));
@@ -653,7 +820,8 @@ function GraphCanvas({ index, graph, onNavigate, onToggle }: {
       ...(drawnBefore ?? []).filter((n) => fades.leaving.has(n.id)).map((n) => ({
         ...n,
         id: LEAVING + n.id,
-        className: 'is-leaving',
+        // A context node leaves as it was, faded, so nothing pops.
+        className: n.className?.split(' ').includes('is-context') ? 'is-context is-leaving' : 'is-leaving',
         focusable: false,
         ariaLabel: undefined,
         domAttributes: { 'aria-hidden': true },
@@ -687,13 +855,15 @@ function GraphCanvas({ index, graph, onNavigate, onToggle }: {
   /**
    * Moves the camera: to frame the focus (a new picture, or a resize), or to fit the whole picture
    * (the Fit command); with the shared motion, or at once. It always starts from the view as it is,
-   * so a view zoomed or panned by hand glides from there (LA-BRW-DR181).
+   * so a view zoomed or panned by hand glides from there (LA-BRW-DR181). Both frame the focus nodes
+   * only: the context ring may run past the canvas's edges, cut off by the vignette.
    */
   const fit = useCallback((animate: boolean, whole = false) => {
     const box = wrapper.current?.getBoundingClientRect();
     if (!placed || !box || box.width <= 0 || box.height <= 0) return;
     const motion = readMotion();
-    const view = whole ? fitPositions(placed.positions, box.width, box.height) : frameFocus(placed.positions, placed.graph.focus, box.width, box.height);
+    const inFocus = focusPositions(placed.graph, placed.positions);
+    const view = whole ? fitPositions(inFocus, box.width, box.height) : frameFocus(inFocus, placed.graph.focus, box.width, box.height);
     setViewport(view, animate && motion.duration > 0 ? { duration: motion.duration, ease: motion.ease, interpolate: 'linear' } : { duration: 0 });
   }, [placed, setViewport]);
 
@@ -742,6 +912,33 @@ function GraphCanvas({ index, graph, onNavigate, onToggle }: {
   };
   useCommand('graphToggleGroup', () => { if (active.current) toggle(active.current); }, !!placed);
 
+  /**
+   * The hover spotlight: hovering or keyboard-focusing a focus node brightens it, its edges and the
+   * nodes it joins (focus or context), and dims the rest a step; leaving restores the picture. It
+   * writes classes straight to the drawn elements, so the picture is not drawn anew, and the CSS
+   * fades them with the motion tokens (at once under reduced motion).
+   */
+  const spot = useCallback((id: string | null) => {
+    const root = wrapper.current;
+    if (!root) return;
+    for (const el of root.querySelectorAll('.is-lit')) el.classList.remove('is-lit');
+    const node = id && placed?.graph.nodes.find((n) => n.id === id);
+    if (!node || node.context) { root.classList.remove('has-spotlight'); return; }
+    const lit = new Set([id]);
+    const edgeIds = new Set<string>();
+    for (const e of placed!.graph.edges) {
+      if (e.source !== id && e.target !== id) continue;
+      lit.add(e.source);
+      lit.add(e.target);
+      edgeIds.add(`${e.source} ${e.target}`);
+    }
+    root.classList.add('has-spotlight');
+    for (const el of root.querySelectorAll<HTMLElement>('.react-flow__node')) if (lit.has(el.dataset.id ?? '')) el.classList.add('is-lit');
+    for (const el of root.querySelectorAll<SVGGElement>('g.graph-edge-motion')) if (edgeIds.has(`${el.dataset.source} ${el.dataset.target}`)) el.classList.add('is-lit');
+  }, [placed]);
+  // A new picture starts without a spotlight.
+  useEffect(() => () => spot(null), [spot]);
+
   /** A click or Enter on a node, record or group: it becomes the center, at its own address. */
   const activate = (id: string, fromKeyboard: boolean) => {
     if (!placed || id.startsWith('file:') || id.startsWith(LEAVING) || id === placed.graph.focus) return;
@@ -779,7 +976,9 @@ function GraphCanvas({ index, graph, onNavigate, onToggle }: {
       onFocus={(e) => {
         const id = (e.target as HTMLElement).closest?.('.react-flow__node')?.getAttribute('data-id');
         if (id) active.current = id;
+        spot(id ?? null);
       }}
+      onBlur={() => spot(null)}
     >
       {!placed && <p className="hint graph-loading">Laying out the graph…</p>}
       {placed?.layout === 'radial' && placed.cycle && (
@@ -797,16 +996,29 @@ function GraphCanvas({ index, graph, onNavigate, onToggle }: {
         elementsSelectable={false}
         edgesFocusable={false}
         onNodeClick={(e, n) => tap.onNodeClick(e, n.id)}
+        onNodeMouseEnter={(_, n) => spot(n.id)}
+        onNodeMouseLeave={() => spot(null)}
         onPaneClick={tap.clear}
         minZoom={0.1}
         proOptions={{ hideAttribution: true }}
       >
         <Background gap={24} size={1} />
         <Controls showInteractive={false} />
+        {minimap && (
+          <MiniMap
+            className="graph-minimap"
+            ariaLabel="Minimap"
+            nodeClassName={(n) => (n.className?.split(' ').includes('is-context') ? 'is-context' : n.id === graph.focus ? 'is-focus' : '')}
+            nodeBorderRadius={2}
+            pannable={false}
+            zoomable={false}
+          />
+        )}
       </ReactFlow>
+      {placed && <EdgeHints centers={centers} wrapper={wrapper} />}
       {armedNode && (
         <TapCard
-          kind={armedNode.group ? 'Group' : kindLabel(index, armedNode.kind)}
+          kind={armedNode.more ? 'More' : armedNode.group ? 'Group' : kindLabel(index, armedNode.kind)}
           name={armedNode.title}
           onOpen={tap.openArmed}
           onDismiss={tap.clear}

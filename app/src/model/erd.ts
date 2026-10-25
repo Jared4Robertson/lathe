@@ -15,6 +15,9 @@ import { byIdOrder } from '../specs/data';
 // - Boxes owned by the current domain are blue; boxes from another domain are gray, labeled with
 //   their owner in parentheses. A box from another aggregate of the same domain stays blue and is
 //   labeled with its aggregate, as S2 does.
+// - Context (LA-BRW-UC113-R06): on an aggregate's ERD, the entities that its referenced entities
+//   refer to sit one ring out, faded and out of focus; on a domain's ERD, the aggregates of other
+//   domains are context too. The camera frames the boxes in focus only.
 
 export type ErdLevel = 'domain' | 'aggregate';
 /** A line end: exactly one (two bars) or many (a crow's foot). */
@@ -61,6 +64,8 @@ export interface ErdBox {
   entities?: number;
   /** The record the page is about, highlighted (an entity on its own page). */
   highlight: boolean;
+  /** One ring out: drawn faded, out of focus and out of the keyboard order. */
+  context: boolean;
 }
 
 export interface ErdLine {
@@ -74,6 +79,8 @@ export interface ErdLine {
   dashed: boolean;
   /** The links the line stands for: one on an aggregate's ERD; every entity reference between the pair on a domain's. */
   links: SpecLink[];
+  /** To or between context boxes: drawn faded. */
+  context: boolean;
 }
 
 export interface Erd {
@@ -145,6 +152,8 @@ export function domainErd(index: SpecIndex, domainId: string): Erd {
       rootTitle: root?.title ?? null,
       entities: entities.length,
       highlight: false,
+      // Another domain's aggregate is context: gray, and faded too.
+      context: foreign,
     };
   };
   for (const a of aggregates) boxes.set(a.id, aggregateBox(a));
@@ -163,7 +172,7 @@ export function domainErd(index: SpecIndex, domainId: string): Erd {
         const id = `${a.id}|refers_to|${other.id}`;
         const line = lines.get(id);
         if (line) line.links.push(l);
-        else lines.set(id, { id, source: a.id, target: other.id, relation: 'refers_to', sourceEnd: 'many', targetEnd: 'one', dashed: false, links: [l] });
+        else lines.set(id, { id, source: a.id, target: other.id, relation: 'refers_to', sourceEnd: 'many', targetEnd: 'one', dashed: false, links: [l], context: other.domain !== domainId });
       }
     }
   }
@@ -176,7 +185,7 @@ export function domainErd(index: SpecIndex, domainId: string): Erd {
       if (other?.kind !== 'aggregate' || other.id === a.id) continue;
       if (!boxes.has(other.id)) boxes.set(other.id, aggregateBox(other));
       const id = `${a.id}|relates_to|${other.id}`;
-      if (!lines.has(id)) lines.set(id, { id, source: a.id, target: other.id, relation: 'relates_to', sourceEnd: 'many', targetEnd: 'one', dashed: true, links: [l] });
+      if (!lines.has(id)) lines.set(id, { id, source: a.id, target: other.id, relation: 'relates_to', sourceEnd: 'many', targetEnd: 'one', dashed: true, links: [l], context: other.domain !== domainId });
     }
   }
   return { level: 'domain', scope: domainId, domain: domainId, boxes: [...boxes.values()], lines: [...lines.values()] };
@@ -199,34 +208,46 @@ export function aggregateErd(index: SpecIndex, aggregateId: string, highlight: s
       root: isRootEntity(e),
       fields: (e.entityFields ?? []).map((f) => ({ field: f.field, kind: f.kind })),
       highlight: e.id === highlight,
+      context: false,
     });
   }
   const lines: ErdLine[] = [];
-  for (const e of own) {
+  const foreignBox = (target: SpecRecord, context: boolean): ErdBox => {
+    const other = aggregateOf(index, target);
+    const sameDomain = target.domain === domainId;
+    const aggTitle = other?.title ?? '';
+    return {
+      id: target.id,
+      kind: 'entity',
+      title: target.title,
+      owner: sameDomain ? `(${aggTitle})` : `(${titleOf(index, target.domain)} · ${aggTitle})`,
+      tone: sameDomain ? 'current' : 'other',
+      foreign: true,
+      root: isRootEntity(target),
+      fields: [],
+      highlight: false,
+      context,
+    };
+  };
+  /** The entity relationships an entity holds, to entities, one line each. */
+  const linesFrom = (e: SpecRecord, context: boolean, reached: SpecRecord[]) => {
     for (const l of index.outgoing.get(e.id) ?? []) {
       if (!isEntityRelation(l.relation)) continue;
       const target = index.byId.get(l.target);
       if (target?.kind !== 'entity') continue;
       if (!boxes.has(target.id)) {
-        const other = aggregateOf(index, target);
-        const sameDomain = target.domain === domainId;
-        const aggTitle = other?.title ?? '';
-        boxes.set(target.id, {
-          id: target.id,
-          kind: 'entity',
-          title: target.title,
-          owner: sameDomain ? `(${aggTitle})` : `(${titleOf(index, target.domain)} · ${aggTitle})`,
-          tone: sameDomain ? 'current' : 'other',
-          foreign: true,
-          root: isRootEntity(target),
-          fields: [],
-          highlight: false,
-        });
+        boxes.set(target.id, foreignBox(target, context));
+        reached.push(target);
       }
       const [sourceEnd, targetEnd] = RELATION_ENDS[l.relation];
-      lines.push({ id: `${e.id}|${l.relation}|${target.id}`, source: e.id, target: target.id, relation: l.relation, sourceEnd, targetEnd, dashed: false, links: [l] });
+      // A referenced entity's own relationships belong to its aggregate's ERD: here they are context, faded.
+      lines.push({ id: `${e.id}|${l.relation}|${target.id}`, source: e.id, target: target.id, relation: l.relation, sourceEnd, targetEnd, dashed: false, links: [l], context });
     }
-  }
+  };
+  const referenced: SpecRecord[] = [];
+  for (const e of own) linesFrom(e, false, referenced);
+  // One ring out: what the referenced entities refer to, faded; the ring stops there.
+  for (const e of [...referenced].sort(byIdOrder)) linesFrom(e, true, []);
   return { level: 'aggregate', scope: aggregateId, domain: domainId, boxes: [...boxes.values()], lines };
 }
 

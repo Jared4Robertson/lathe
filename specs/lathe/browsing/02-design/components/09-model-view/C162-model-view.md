@@ -6,7 +6,7 @@ parent: LA-BRW-LAY09
 component_type: react component
 file: app/src/model/ModelView.tsx
 links:
-  satisfies: [LA-BRW-UC113-R01, LA-BRW-UC113-R02, LA-BRW-UC113-R03, LA-BRW-UC113-R04, LA-BRW-UC113-R05, LA-BRW-DR171]
+  satisfies: [LA-BRW-UC113-R01, LA-BRW-UC113-R02, LA-BRW-UC113-R03, LA-BRW-UC113-R04, LA-BRW-UC113-R05, LA-BRW-DR171, LA-BRW-UC113-R06]
   implements: [LA-BRW-V21]
   depends_on: [LA-BRW-C160, LA-BRW-C161, LA-BRW-C148]
 ---

@@ -5,6 +5,6 @@ title: Walk the model as a graph
 parent: LA-BRW-CAP03
 actor: Reader
 links:
-  applies: [LA-BRW-DR01, LA-BRW-DR20, LA-BRW-DR21, LA-BRW-DR120, LA-BRW-DR147, LA-BRW-DR148, LA-BRW-DR180, LA-BRW-DR181]
+  applies: [LA-BRW-DR01, LA-BRW-DR20, LA-BRW-DR21, LA-BRW-DR120, LA-BRW-DR147, LA-BRW-DR148, LA-BRW-DR180, LA-BRW-DR181, LA-BRW-DR300, LA-BRW-DR301, LA-BRW-DR302, LA-BRW-DR303, LA-BRW-DR304, LA-BRW-DR305]
 ---
 The reader starts from any record, sees what it connects to, and walks the model by clicking from node to node, the way the record pages let them click from link to link. The graph shows the shape of a domain and its traceability at a glance.

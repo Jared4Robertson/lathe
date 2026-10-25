@@ -136,6 +136,7 @@ describe('one address, three views', () => {
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     await waitFor(() => expect(node('P-D-UC01')?.querySelector('.graph-node')?.className).toContain('is-focus'));
     fireEvent.click(screen.getByRole('button', { name: '2' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Links' }));
 
     // A link in the wiki moves the graph.
     const wiki = within(screen.getByRole('region', { name: 'Wiki pane' }));

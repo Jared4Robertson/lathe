@@ -2,7 +2,7 @@
 id: LA-BRW-C91
 kind: component
 title: Flow steps in the graph
-parent: LA-BRW-LAY07
+parent: LA-BRW-LAY12
 component_type: module
 file: app/src/graph/model.ts
 links:

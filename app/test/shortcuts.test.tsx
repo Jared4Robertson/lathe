@@ -165,18 +165,19 @@ describe('keyboard shortcuts', () => {
 
   it('LA-BRW-T150 In the graph, + and - change the depth, t switches trace mode, . fits the view and o opens or closes the focused group', async () => {
     await openApp('/specs/P/P-D?view=graph', { workspace: testWorkspace() });
-    await waitFor(() => expect(node('P-D/use_case')).not.toBeNull());
+    await waitFor(() => expect(node('P-D/question')).not.toBeNull());
     press(document.body, '+', 'Equal', { shiftKey: true });
     expect(screen.getByRole('button', { name: '2' })).toHaveAttribute('aria-pressed', 'true');
     press(document.body, '-', 'Minus');
     expect(screen.getByRole('button', { name: '1' })).toHaveAttribute('aria-pressed', 'true');
     press(document.body, '.', 'Period');
-    const group = node('P-D/use_case')!;
+    // o opens the open questions in place (their question leaves the faded ring), and closes them again.
+    const group = node('P-D/question')!;
     group.focus();
     press(group, 'o', 'KeyO');
-    await waitFor(() => expect(node('P-D-UC01')).not.toBeNull());
+    await waitFor(() => expect(node('P-D-Q01')?.className).not.toContain('is-context'));
     press(document.activeElement ?? document.body, 'o', 'KeyO');
-    await waitFor(() => expect(node('P-D-UC01')).toBeNull());
+    await waitFor(() => expect(node('P-D-Q01')?.className).toContain('is-context'));
 
     await openApp('/records/P-D-UC01-R01?view=graph', { workspace: testWorkspace() });
     await waitFor(() => expect(node('P-D-UC01')).not.toBeNull());

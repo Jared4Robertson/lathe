@@ -2,7 +2,7 @@
 id: LA-BRW-C144
 kind: component
 title: Named graph trail
-parent: LA-BRW-LAY07
+parent: LA-BRW-LAY14
 component_type: react component
 file: app/src/graph/GraphPage.tsx
 links:

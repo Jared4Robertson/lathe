@@ -2,7 +2,7 @@
 id: LA-BRW-C41
 kind: component
 title: Graph group nodes and the hostable graph view
-parent: LA-BRW-LAY07
+parent: LA-BRW-LAY13
 component_type: react component
 file: app/src/graph/GraphPage.tsx
 links:

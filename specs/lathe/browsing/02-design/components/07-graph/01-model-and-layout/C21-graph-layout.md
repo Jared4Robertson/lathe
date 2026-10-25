@@ -2,7 +2,7 @@
 id: LA-BRW-C21
 kind: component
 title: Graph layout
-parent: LA-BRW-LAY07
+parent: LA-BRW-LAY12
 component_type: module
 file: app/src/graph/layout.ts
 links:
