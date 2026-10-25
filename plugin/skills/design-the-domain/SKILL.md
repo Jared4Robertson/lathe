@@ -142,6 +142,7 @@ The component that enforces it adds it to its `satisfies` list (`satisfies: [...
 ## Rules
 
 - Link a component to the requirements, rules and interaction requirements it actually enforces, not to everything it touches. An obligation no component satisfies is a warning (not designed).
+- Every component satisfies at least one obligation. One that satisfies none is a `component-satisfies-nothing` warning: link what it designs or implements, or remove it. There are no waivers; shared infrastructure (a server entry point, a store) links the requirements and rules it makes possible.
 - A component's `file` may not exist yet; that is a warning, and it clears when the code is written. Coverage counts it as **built** once the file exists.
 - An endpoint's body lists every response, including each refusal and its code; each refusal that must be built and tested is also an interaction requirement.
 - Once a domain has a flow, every use case in it needs a flow that `carries_out` it (otherwise `use-case-without-flow`). One flow may carry out several use cases. A flow that only `fulfills` a use case's requirements does not carry out the use case.

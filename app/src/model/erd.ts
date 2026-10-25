@@ -46,15 +46,6 @@ export const RELATION_ENDS: Record<ErdRelation, [ErdEnd, ErdEnd]> = {
   reacts_to: ['none', 'arrow'],
 };
 
-export const RELATION_LABELS: Record<ErdRelation, string> = {
-  has_one: 'has one',
-  has_many: 'has many',
-  refers_to: 'refers to',
-  relates_to: 'relates to',
-  raised_by: 'raised by',
-  reacts_to: 'reacts to',
-};
-
 export interface ErdField { field: string; kind: string }
 
 export interface ErdBox {

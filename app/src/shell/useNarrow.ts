@@ -34,16 +34,6 @@ export function useCoarsePointer(): boolean {
   return useMedia(COARSE_QUERY);
 }
 
-/** Moves focus into an element that just opened (a drawer), and back to where it was when it closes. */
-export function useFocusReturn(open: boolean, container: { current: HTMLElement | null }, first = 'input, a, button') {
-  useEffect(() => {
-    if (!open) return;
-    const before = document.activeElement as HTMLElement | null;
-    container.current?.querySelector<HTMLElement>(first)?.focus();
-    return () => { if (before?.isConnected) before.focus(); };
-  }, [open, container, first]);
-}
-
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), summary, [tabindex]:not([tabindex="-1"])';
 
 /**
