@@ -37,6 +37,8 @@ A `test` has a `state`: `automated` (the default), `manual` or `planned`. An aut
 
 Each check is one SQL file in `lathe/checks/`: a `SELECT` over the loaded tables that returns rows of `(severity, check, record, message)`. Its name is its file name without the number and `.sql`. An **error** means the workspace is broken, and `lathe check` exits non-zero; a **warning** is work still to do, such as an obligation not yet proved, two stages that do not join up yet, or a level of the spec that is the wrong size: a record with more children of one kind than `structure.maxChildren` in `lathe.config.json` (default 15), or a capability or layer with only one child. One mistake gives one error.
 
+Nothing outlives its purpose: a component that satisfies no obligation is a `component-satisfies-nothing` warning, and a test that proves and supports nothing is a `test-proves-nothing` warning. There are no waivers; shared infrastructure links the obligations it makes possible.
+
 A check documents itself in its header comment: one summary sentence, a blank comment line, the explanation ending with how to fix what it reports, a blank comment line, then `-- severity: error` (or `warning`, or `error, warning`) and an optional `-- kinds:` line naming the kinds it concerns. The reference is built from these headers, and `undocumented` reports a check, kind or relation that lacks its text.
 
 ## 6. Coverage
@@ -410,7 +412,7 @@ A unit of code in the target design, such as a model, service or router. It sits
 - **ID:** `<P>-<D>-C<nn>`, such as `TL-LEND-C01`
 - **Links out:** Satisfies ([`satisfies`](#relation-satisfies)), Implements ([`implements`](#relation-implements)), Depends on ([`depends_on`](#relation-depends_on)), Reacts to ([`reacts_to`](#relation-reacts_to))
 - **Links in:** Depended on by ([`depends_on`](#relation-depends_on)), Questions about this ([`about`](#relation-about)), Covered by ([`covers`](#relation-covers)), Used by ([`uses`](#relation-uses))
-- **Checks:** [`component-file-missing`](#check-component-file-missing), [`component-outside-layer`](#check-component-outside-layer), [`event-unheard`](#check-event-unheard)
+- **Checks:** [`component-file-missing`](#check-component-file-missing), [`component-outside-layer`](#check-component-outside-layer), [`event-unheard`](#check-event-unheard), [`component-satisfies-nothing`](#check-component-satisfies-nothing)
 
 <a id="kind-test"></a>
 
@@ -427,7 +429,7 @@ A test that proves obligations, or supports them without proving them. Its state
 - **ID:** `<P>-<D>-T<nn>`, such as `TL-LEND-T01`
 - **Links out:** Proves ([`proves`](#relation-proves)), Runs ([`runs`](#relation-runs)), Covers ([`covers`](#relation-covers)), Supports ([`supports`](#relation-supports))
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`bad-test-state`](#check-bad-test-state), [`test-run-by-missing`](#check-test-run-by-missing), [`proof-not-in-file`](#check-proof-not-in-file), [`test-type-mismatch`](#check-test-type-mismatch), [`proof-still-owed`](#check-proof-still-owed), [`proof-counts-nowhere`](#check-proof-counts-nowhere), [`manual-test-file-silent`](#check-manual-test-file-silent)
+- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`bad-test-state`](#check-bad-test-state), [`test-run-by-missing`](#check-test-run-by-missing), [`proof-not-in-file`](#check-proof-not-in-file), [`test-type-mismatch`](#check-test-type-mismatch), [`proof-still-owed`](#check-proof-still-owed), [`proof-counts-nowhere`](#check-proof-counts-nowhere), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-proves-nothing`](#check-test-proves-nothing)
 
 <a id="kind-question"></a>
 
@@ -1587,6 +1589,34 @@ aggregate or an entity that uses `involves` is reported too, since its place alr
 about. Only links to aggregates are counted; a link to a record that does not exist, or that is not an
 aggregate, is reported by dangling-link or relation-not-allowed instead. A rule whose parent is missing or
 unknown is not judged. Name the aggregates, move a one-aggregate rule under its aggregate, or drop the link.
+
+<a id="check-component-satisfies-nothing"></a>
+
+### `component-satisfies-nothing`
+
+**Warning** · Lathe's `checks/78-component-satisfies-nothing.sql` · Kinds: [`component`](#kind-component)
+
+A component that satisfies no obligation.
+
+A component exists to design or implement something the product owes, so it links each obligation it
+serves with a `design` link such as `satisfies`. One with no such link has no purpose the spec can see: it
+is a leftover, or its purpose is unwritten. Shared infrastructure is no exception: link the requirements,
+domain rules or pattern rules it makes possible. A link to a record that does not exist does not count (it
+is only a dangling-link). Link what the component designs or implements with "satisfies", or remove it.
+
+<a id="check-test-proves-nothing"></a>
+
+### `test-proves-nothing`
+
+**Warning** · Lathe's `checks/79-test-proves-nothing.sql` · Kinds: [`test`](#kind-test)
+
+A test that proves, and supports, nothing.
+
+A test exists to prove obligations (a `proof` link such as `proves`) or to check a mechanism that backs one
+(`supports`). One with neither has no purpose the spec can see: running a flow (`runs`) or exercising a
+component (`covers`) says what it touches, not what it shows. A link to a record that does not exist does
+not count (it is only a dangling-link). Link the obligation it proves with "proves", or the one it backs
+with "supports", or remove the test.
 
 <a id="check-parse-error"></a>
 
