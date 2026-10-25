@@ -5,64 +5,77 @@ import { layeredGraph, layoutNeighborhood, NODE_HEIGHT, NODE_WIDTH } from '../..
 import { testIndex, testWorkspace } from './workspace';
 
 const ids = (n: { nodes: { id: string }[] }) => n.nodes.map((x) => x.id).sort();
-const recordIds = (n: { nodes: { id: string; group?: unknown }[] }) => n.nodes.filter((x) => !x.group).map((x) => x.id).sort();
-const groupIds = (n: { nodes: { id: string; group?: unknown }[] }) => n.nodes.filter((x) => x.group).map((x) => x.id).sort();
+const focusIds = (n: { nodes: { id: string; context?: boolean }[] }) => n.nodes.filter((x) => !x.context).map((x) => x.id).sort();
+const contextIds = (n: { nodes: { id: string; context?: boolean }[] }) => n.nodes.filter((x) => x.context).map((x) => x.id).sort();
 const filters = (kinds: string[] = [], relations: string[] = []): Filters => ({ hiddenKinds: new Set(kinds), hiddenRelations: new Set(relations) });
 
 describe('graph neighborhood', () => {
   const index = testIndex();
 
-  it('LA-BRW-T50 At depth 2 the graph shows the record and every record one link or parent step away, both ways', () => {
-    const n = neighborhood(index, 'P-D-UC01-R01', 2);
-    expect(n.nodes[0]).toMatchObject({ id: 'P-D-UC01-R01', distance: 0 });
-    expect(ids(n)).toEqual(['P-D-C01', 'P-D-T01', 'P-D-UC01', 'P-D-UC01-R01', 'P-D-V01']);
-    // Every edge between shown records, including the one between two neighbors.
-    expect(n.edges.map((e) => `${e.source} ${e.relation} ${e.target}`).sort()).toEqual([
-      'P-D-C01 implements P-D-V01',
-      'P-D-C01 satisfies P-D-UC01-R01',
-      'P-D-T01 proves P-D-UC01-R01',
-      'P-D-UC01 parent P-D-UC01-R01',
-      'P-D-V01 fulfills P-D-UC01-R01',
-    ]);
-    // Outgoing links and children are followed too.
-    // The domain is reached through the components' group; the view's group joins the spine too.
-    expect(groupIds(neighborhood(index, 'P-D-C01', 2))).toEqual(['P-D/component', 'P-D/view']);
-    expect(recordIds(neighborhood(index, 'P-D-C01', 2))).toEqual(['P-D', 'P-D-C01', 'P-D-C02', 'P-D-DR01', 'P-D-UC01-R01', 'P-D-V01']);
-    expect(recordIds(neighborhood(index, 'P-D-A1', 2))).toEqual(['P-D', 'P-D-A1', 'P-D-DR01', 'P-D-DR02', 'P-D-Q01']);
+  it('LA-BRW-T50 Depth counts levels of the tree each way, stages and folders included; siblings and links are not added', () => {
+    // Depth 1: the requirement, its use case above; the use case's folder is the next ring out, faded.
+    const one = neighborhood(index, 'P-D-UC01-R01', 1);
+    expect(one.nodes[0]).toMatchObject({ id: 'P-D-UC01-R01', distance: 0 });
+    expect(focusIds(one)).toEqual(['P-D-UC01', 'P-D-UC01-R01']);
+    expect(contextIds(one)).toEqual(['P-D/define/use-cases']);
+    // Depth 2 and 3 climb a level more each: the Capabilities folder, then Define; the ring is one more out.
+    const two = neighborhood(index, 'P-D-UC01-R01', 2);
+    expect(focusIds(two)).toEqual(['P-D-UC01', 'P-D-UC01-R01', 'P-D/define/use-cases']);
+    expect(contextIds(two)).toEqual(['P-D/define']);
+    const three = neighborhood(index, 'P-D-UC01-R01', 3);
+    expect(focusIds(three)).toEqual(['P-D-UC01', 'P-D-UC01-R01', 'P-D/define', 'P-D/define/use-cases']);
+    expect(contextIds(three)).toEqual(['P-D']);
+    // Each node at its level, reached from the one below it.
+    const distance = new Map(three.nodes.map((x) => [x.id, x.distance]));
+    expect(['P-D-UC01', 'P-D/define/use-cases', 'P-D/define', 'P-D'].map((id) => distance.get(id))).toEqual([1, 2, 3, 4]);
+    expect(three.via.get('P-D/define')).toBe('P-D/define/use-cases');
+    // Down as well as up: from the aggregate, its folder above and its rules below; no sibling and no link.
+    const aggregate = neighborhood(index, 'P-D-A1', 1);
+    expect(focusIds(aggregate)).toEqual(['P-D-A1', 'P-D-DR01', 'P-D-DR02', 'P-D/define/domain-model']);
+    expect(contextIds(aggregate)).toEqual(['P-D/define']);
+    for (const n of [one, two, three, aggregate]) expect(n.edges.every((e) => e.relation === 'parent')).toBe(true);
+    expect(ids(aggregate)).not.toContain('P-D-Q01');
   });
 
-  it('LA-BRW-T51 At depth 3 the graph adds the records two steps away, each at its distance', () => {
-    const n = neighborhood(index, 'P-D-UC01-R01', 3);
-    expect(groupIds(n)).toEqual(['P-D/component', 'P-D/endpoint', 'P-D/test', 'P-D/use_case', 'P-D/view']);
-    expect(recordIds(n)).toEqual(['P-D', 'P-D-C01', 'P-D-C02', 'P-D-DR01', 'P-D-E01', 'P-D-T01', 'P-D-UC01', 'P-D-UC01-R01', 'P-D-V01']);
-    const distance = new Map(n.nodes.map((x) => [x.id, x.distance]));
-    expect(distance.get('P-D-E01')).toBe(2);
-    expect(distance.get('P-D-V01')).toBe(1);
-    // Every node but the focus records the node it was reached from.
-    expect(n.via.size).toBe(n.nodes.length - 1);
-    expect(n.via.get('P-D-E01')).toBe('P-D-V01');
-    // The order is stable: focus first, then by distance.
-    expect(n.nodes.map((x) => x.distance)).toEqual([...n.nodes.map((x) => x.distance)].sort());
-    expect(neighborhood(index, 'P-D-UC01-R01', 3)).toEqual(n);
+  it('LA-BRW-T51 The Links switch adds the records the focused record links to and from, one hop, in focus, with their links', () => {
+    const n = neighborhood(index, 'P-D-UC01-R01', 1, undefined, undefined, { links: true });
+    expect(focusIds(n)).toEqual(['P-D-C01', 'P-D-T01', 'P-D-UC01', 'P-D-UC01-R01', 'P-D-V01']);
+    expect(n.edges.filter((e) => e.relation !== 'parent').map((e) => `${e.source} ${e.relation} ${e.target}`).sort()).toEqual([
+      'P-D-C01 satisfies P-D-UC01-R01',
+      'P-D-T01 proves P-D-UC01-R01',
+      'P-D-V01 fulfills P-D-UC01-R01',
+    ]);
+    // Each one step from the focus, reached from it; they bring no ring of their own.
+    for (const id of ['P-D-C01', 'P-D-T01', 'P-D-V01']) {
+      expect(n.nodes.find((x) => x.id === id)).toMatchObject({ distance: 1 });
+      expect(n.via.get(id)).toBe('P-D-UC01-R01');
+    }
+    expect(contextIds(n)).toEqual(['P-D/define/use-cases']);
+    // Off by default; at any depth the links are the focus's own, not its neighbors'.
+    expect(neighborhood(index, 'P-D-UC01-R01', 1).edges.some((e) => e.relation !== 'parent')).toBe(false);
+    expect(ids(neighborhood(index, 'P-D-UC01-R01', 3, undefined, undefined, { links: true }))).not.toContain('P-D-E01');
+    // A linked record joins the focus.
+    const fromUseCase = neighborhood(index, 'P-D-UC01', 1, undefined, undefined, { links: true });
+    expect(focusIds(fromUseCase)).toContain('P-D-DR01');
+    expect(n).toEqual(neighborhood(index, 'P-D-UC01-R01', 1, undefined, undefined, { links: true }));
   });
 
   it('LA-BRW-T52 Filters hide kinds and relations, nothing is reached through them, and the focus is never hidden', () => {
-    expect(ids(neighborhood(index, 'P-D-UC01-R01', 2, filters(['test'])))).not.toContain('P-D-T01');
-    // Hiding satisfies keeps the component out at depth 1 and drops its satisfies edge.
-    const noSatisfies = neighborhood(index, 'P-D-UC01-R01', 2, filters([], ['satisfies']));
+    const links = { links: true };
+    expect(ids(neighborhood(index, 'P-D-UC01-R01', 1, filters(['test']), undefined, links))).not.toContain('P-D-T01');
+    // Hiding satisfies keeps the component out and drops its edge.
+    const noSatisfies = neighborhood(index, 'P-D-UC01-R01', 1, filters([], ['satisfies']), undefined, links);
     expect(ids(noSatisfies)).not.toContain('P-D-C01');
     expect(noSatisfies.edges.some((e) => e.relation === 'satisfies')).toBe(false);
-    // At depth 2 the component comes back through the view it implements, still without the hidden edge.
-    const deep = neighborhood(index, 'P-D-UC01-R01', 3, filters([], ['satisfies']));
-    expect(ids(deep)).toContain('P-D-C01');
-    expect(deep.edges.some((e) => e.relation === 'satisfies')).toBe(false);
-    // Hiding views means the endpoint is not reached through one.
-    expect(ids(neighborhood(index, 'P-D-UC01-R01', 3, filters(['view', 'domain', 'component'])))).not.toContain('P-D-E01');
+    // Hiding use cases cuts the tree there: nothing above the requirement is reached.
+    expect(ids(neighborhood(index, 'P-D-UC01-R01', 3, filters(['use_case'])))).toEqual(['P-D-UC01-R01']);
+    // Hiding domain rules leaves the aggregate without its rules; a named folder is never hidden by a kind.
+    expect(ids(neighborhood(index, 'P-D-A1', 1, filters(['domain_rule', 'aggregate'])))).toEqual(['P-D-A1', 'P-D/define', 'P-D/define/domain-model']);
     // The focus stays even when its own kind is hidden.
-    expect(ids(neighborhood(index, 'P-D-UC01-R01', 2, filters(['requirement'])))).toContain('P-D-UC01-R01');
-    // Only satisfies and proves.
-    const trace = neighborhood(index, 'P-D-UC01-R01', 3, filters([], ['parent', 'fulfills', 'implements', 'uses', 'applies', 'depends_on', 'relates_to', 'about']));
-    expect(ids(trace)).toEqual(['P-D-C01', 'P-D-DR01', 'P-D-T01', 'P-D-UC01-R01']);
+    expect(ids(neighborhood(index, 'P-D-UC01-R01', 1, filters(['requirement'])))).toContain('P-D-UC01-R01');
+    // Without parent lines there is no tree: the focus and, with Links on, its links.
+    expect(ids(neighborhood(index, 'P-D-UC01-R01', 3, filters([], ['parent'])))).toEqual(['P-D-UC01-R01']);
+    expect(ids(neighborhood(index, 'P-D-UC01-R01', 3, filters([], ['parent', 'fulfills']), undefined, links))).toEqual(['P-D-C01', 'P-D-T01', 'P-D-UC01-R01']);
   });
 
   it('LA-BRW-T53 Trace mode shows what fulfills, satisfies and proves a requirement, and the files they name', () => {
@@ -93,7 +106,7 @@ describe('graph neighborhood', () => {
   });
 
   it('LA-BRW-T55 The layout gives the same picture every time, with the focus at the center and no overlaps', async () => {
-    const n = neighborhood(index, 'P-D-UC01-R01', 3);
+    const n = neighborhood(index, 'P-D-UC01-R01', 3, undefined, undefined, { links: true });
     const { positions, layout } = await layoutNeighborhood(n);
     expect(layout).toBe('layered');
     expect(positions.get('P-D-UC01-R01')).toEqual({ x: -NODE_WIDTH / 2, y: -NODE_HEIGHT / 2 });
@@ -103,13 +116,13 @@ describe('graph neighborhood', () => {
       const overlap = Math.abs(boxes[i].x - boxes[j].x) < NODE_WIDTH && Math.abs(boxes[i].y - boxes[j].y) < NODE_HEIGHT;
       expect(overlap).toBe(false);
     }
-    expect((await layoutNeighborhood(neighborhood(index, 'P-D-UC01-R01', 3))).positions).toEqual(positions);
-    // Re-centring on a neighbor keeps the order within a column.
-    const fromView = (await layoutNeighborhood(neighborhood(index, 'P-D-V01', 3))).positions;
+    expect((await layoutNeighborhood(neighborhood(index, 'P-D-UC01-R01', 3, undefined, undefined, { links: true }))).positions).toEqual(positions);
+    // Re-centering keeps the order within a column: the components of Technical specification, from the stage and from the folder.
     const yOrder = (ps: Map<string, { y: number }>, list: string[]) => [...list].sort((a, b) => ps.get(a)!.y - ps.get(b)!.y);
-    const siblings = ['P-D-UC01', 'P-D-V01', 'P-D-E01', 'P-D-C01', 'P-D-T01'];
-    expect(new Set(siblings.map((id) => positions.get(id)!.x)).size).toBe(1);
-    expect(yOrder(fromView, siblings)).toEqual(yOrder(positions, siblings));
+    const fromStage = (await layoutNeighborhood(neighborhood(index, 'P-D/design', 2))).positions;
+    const fromFolder = (await layoutNeighborhood(neighborhood(index, 'P-D/design/technical-specification', 1))).positions;
+    expect(yOrder(fromStage, ['P-D-C02', 'P-D-C01'])).toEqual(['P-D-C01', 'P-D-C02']);
+    expect(yOrder(fromFolder, ['P-D-C02', 'P-D-C01'])).toEqual(['P-D-C01', 'P-D-C02']);
     // A single record sits at the center on its own.
     expect((await layoutNeighborhood(traceChain(index, 'P-D-DR02'))).positions.get('P-D-DR02')).toEqual({ x: -NODE_WIDTH / 2, y: -NODE_HEIGHT / 2 });
   });
@@ -125,13 +138,16 @@ describe('graph neighborhood', () => {
   it('LA-BRW-T63 Columns follow the parent/child tree around the focus, and trace mode has its own columns', () => {
     const n = neighborhood(index, 'P-D-UC01-R01', 3);
     const column = new Map(n.nodes.map((x) => [x.id, x.column]));
-    // Ancestors one column each to the left, the leftmost column is 0.
-    expect(['P-D', 'P-D/use_case', 'P-D-UC01', 'P-D-UC01-R01'].map((id) => column.get(id))).toEqual([0, 1, 2, 3]);
-    // The domain's other children sit with the use case, whatever their kind (their tree position wins over the cross-link).
-    for (const id of ['P-D-C01', 'P-D-T01', 'P-D-V01', 'P-D-E01']) expect(column.get(id)).toBe(column.get('P-D-UC01'));
-    for (const id of ['P-D/component', 'P-D/test', 'P-D/view', 'P-D/endpoint']) expect(column.get(id)).toBe(column.get('P-D/use_case'));
+    // Ancestors one column each to the left, the context ring included; the leftmost column is 0.
+    expect(['P-D', 'P-D/define', 'P-D/define/use-cases', 'P-D-UC01', 'P-D-UC01-R01'].map((id) => column.get(id))).toEqual([0, 1, 2, 3, 4]);
     // Every node's parent line runs from one column to the next.
     for (const e of n.edges.filter((e) => e.relation === 'parent')) expect(column.get(e.target)).toBe(column.get(e.source)! + 1);
+    // From the domain at depth 2: stages in one column, every folder in the next, whatever it holds.
+    const domain = neighborhood(index, 'P-D', 2);
+    const dc = new Map(domain.nodes.map((x) => [x.id, x.column]));
+    expect(dc.get('P-D/define')).toBe(dc.get('P-D/design'));
+    const folders = ['P-D/define/domain-model', 'P-D/define/use-cases', 'P-D/design/interaction-design', 'P-D/design/technical-specification', 'P-D/design/test-plan'];
+    expect(new Set(folders.map((id) => dc.get(id)))).toEqual(new Set([dc.get('P-D/define')! + 1]));
     // Trace columns, left to right; a kind a product adds goes with the components.
     expect(['requirement', 'view', 'component', 'test', 'file'].map(traceColumn)).toEqual([0, 1, 2, 3, 4]);
     expect(traceColumn('domain_rule')).toBe(0);
@@ -142,7 +158,7 @@ describe('graph neighborhood', () => {
   });
 
   it('LA-BRW-T64 The graph reads left to right by column, and so does a trace', async () => {
-    const n = neighborhood(index, 'P-D-UC01-R01', 3);
+    const n = neighborhood(index, 'P-D-UC01-R01', 3, undefined, undefined, { links: true });
     const { positions } = await layoutNeighborhood(n);
     const col = (id: string) => positions.get(id)!.x;
     // One x per column, columns in order.
@@ -152,12 +168,11 @@ describe('graph neighborhood', () => {
     const order = [...columns.keys()].sort((a, b) => a - b);
     for (let i = 1; i < order.length; i++) expect([...columns.get(order[i])!][0]).toBeGreaterThan([...columns.get(order[i - 1])!][0]);
     // Ancestors to the left of the focus.
-    expect(col('P-D')).toBeLessThan(col('P-D/use_case'));
-    expect(col('P-D/use_case')).toBeLessThan(col('P-D-UC01'));
+    expect(col('P-D/define')).toBeLessThan(col('P-D/define/use-cases'));
+    expect(col('P-D/define/use-cases')).toBeLessThan(col('P-D-UC01'));
     expect(col('P-D-UC01')).toBeLessThan(col('P-D-UC01-R01'));
-    // At depth 1 the domain is not shown, so what satisfies, fulfills and proves the requirement sits one column to its right.
-    const near = (await layoutNeighborhood(neighborhood(index, 'P-D-UC01-R01', 2))).positions;
-    for (const id of ['P-D-C01', 'P-D-T01', 'P-D-V01']) expect(near.get(id)!.x).toBeGreaterThan(near.get('P-D-UC01-R01')!.x);
+    // What satisfies, fulfills and proves the requirement (Links on) sits one column to its right.
+    for (const id of ['P-D-C01', 'P-D-T01', 'P-D-V01']) expect(col(id)).toBeGreaterThan(col('P-D-UC01-R01'));
 
     const traced = (await layoutNeighborhood(traceChain(index, 'P-D-UC01-R01'))).positions;
     const x = (id: string) => traced.get(id)!.x;
@@ -172,9 +187,9 @@ describe('graph neighborhood', () => {
     const w = testWorkspace();
     w.records.push({ ...w.records.find((r) => r.id === 'P-D-A1')!, id: 'P-D-A2', title: 'Owner', path: 'specs/P-D-A2.md' });
     w.links.push({ source: 'P-D-A1', relation: 'relates_to', target: 'P-D-A2' }, { source: 'P-D-A2', relation: 'relates_to', target: 'P-D-A1' });
-    const n = neighborhood(indexWorkspace(w), 'P-D-A1', 3);
+    // The aggregates' folder opened, and Links on: the two aggregates are siblings, so they share a column, and both links are drawn.
+    const n = neighborhood(indexWorkspace(w), 'P-D-A1', 1, undefined, new Map([['P-D/define/domain-model', true]]), { links: true });
     const column = new Map(n.nodes.map((x) => [x.id, x.column]));
-    // The two aggregates are siblings, so they share a column, and both links are drawn.
     expect(column.get('P-D-A2')).toBe(column.get('P-D-A1'));
     expect(n.edges.filter((e) => e.relation === 'relates_to')).toHaveLength(2);
     // Neither link reaches the layout, which stays in columns.
