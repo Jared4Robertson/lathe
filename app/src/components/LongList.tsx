@@ -1,3 +1,4 @@
+import { InActionsSlot } from './ActionsSlot';
 import { useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 
 // A list that stays short. Up to `limit` items it is a plain list. With more, it shows the first
@@ -24,7 +25,7 @@ export interface LongListProps<T> {
   ordered?: boolean;
   /** How many rows show before the list scrolls. */
   limit?: number;
-  /** Extra controls beside the search box, or above a short list (such as "Expand all"). */
+  /** Extra controls beside the search box, or for a short list in its heading's actions slot (such as "Expand all"). */
   tools?: ReactNode;
   /** Keys pressed on an item's row (such as the arrow keys of a tree). */
   onItemKeyDown?: (item: T, e: KeyboardEvent<HTMLLIElement>) => void;
@@ -59,7 +60,16 @@ export function LongList<T>({ items, render, searchText, itemKey, label, classNa
       ))}
     </Tag>
   );
-  if (!long) return tools ? <div className="long-list"><div className="long-list-tools short">{tools}</div>{list}</div> : list;
+  // A short list's tools sit in the heading's row when the heading offers a slot, else above the list.
+  if (!long) {
+    if (!tools) return list;
+    return (
+      <>
+        <InActionsSlot fallback={(t) => <div className="long-list-tools short">{t}</div>}>{tools}</InActionsSlot>
+        {list}
+      </>
+    );
+  }
 
   return (
     <div className="long-list">
