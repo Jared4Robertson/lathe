@@ -1,7 +1,6 @@
 import { lowerLabel, plural } from '../plural';
 import type { SpecIndex, SpecRecord } from '../specs/data';
 import { byIdOrder, kindLabel } from '../specs/data';
-import { testGroupOf, testGroups, type FolderGroup } from '../specs/folders';
 import { treeChildren, treeGroup, treeOf, treeParent } from './tree';
 import { linkLabel, relationLabelOf } from '../specs/labels';
 
@@ -262,27 +261,17 @@ export const CONTEXT_PER_PARENT = 6;
 /** At most this many context nodes in all; chips count the rest. */
 export const CONTEXT_BUDGET = 40;
 
-/** The parent of a node in the graph's tree: the tree's own, or for a group outside it (an older address) the record it groups. */
-export function nodeParent(index: SpecIndex, id: string): string | null {
-  const up = treeParent(index, id);
-  if (up !== null) return up;
-  if (index.byId.has(id)) return null;
-  return parseGroupId(id) && isGroup(index, id) ? findTestGroup(index, id)?.above ?? parseGroupId(id)!.parent : null;
-}
+/** The parent of a node in the graph's tree (see tree.ts), or null at the top. */
+export const nodeParent = (index: SpecIndex, id: string): string | null => treeParent(index, id);
 
 /** The children of a node in the graph's tree, in the nav's order. */
-export function nodeChildren(index: SpecIndex, id: string): readonly string[] {
-  if (index.byId.has(id) || treeGroup(index, id)) return treeChildren(index, id);
-  return groupChildren(index, id);
-}
+export const nodeChildren = (index: SpecIndex, id: string): readonly string[] => treeChildren(index, id);
 
 /** The kind a node is filtered by: a record's kind, a kind group's kind, or null for a stage or a mixed folder (never hidden). */
 function filterKind(index: SpecIndex, id: string): string | null {
   const record = index.byId.get(id);
   if (record) return record.kind;
-  const t = treeGroup(index, id);
-  if (t) return t.kind;
-  return parseGroupId(id)?.kind ?? null;
+  return treeGroup(index, id)?.kind ?? null;
 }
 
 /** The address a chip of the light ring re-centers on: the parent's folder for those children (the parent itself when it is a group). */
@@ -490,75 +479,6 @@ export function parseGroupId(id: string): { parent: string; kind: string; path: 
   return { parent: parts[0], kind: parts[1], path: parts.slice(2) };
 }
 
-// A parent's tests in its Tests folder are drawn in the test plan's groups, from the same folder
-// model as the Test plan folder, so the two never disagree. Computed once per index and parent.
-const testGroupCache = new WeakMap<SpecIndex, Map<string, FolderGroup[]>>();
-function testFolderGroups(index: SpecIndex, parent: string): FolderGroup[] {
-  let cache = testGroupCache.get(index);
-  if (!cache) testGroupCache.set(index, (cache = new Map()));
-  let groups = cache.get(parent);
-  if (!groups) {
-    const tests = (index.children.get(parent) ?? []).filter((c) => c.kind === 'test');
-    // When only one test-plan group has tests, they hang directly under the Tests folder: the graph
-    // splits a folder only when there is more than one group to tell apart.
-    const one = new Set(tests.map((t) => testGroupOf(index, t))).size <= 1;
-    groups = one ? [] : testGroups(index, groupId(parent, 'test'), tests);
-    cache.set(parent, groups);
-  }
-  return groups;
-}
-
-/** A test-plan group within a parent's Tests folder, and the node above it (the folder or another group). */
-function findTestGroup(index: SpecIndex, gid: string): { group: FolderGroup; above: string } | null {
-  const g = parseGroupId(gid);
-  if (!g || g.kind !== 'test' || g.path.length === 0) return null;
-  const search = (groups: FolderGroup[], above: string): { group: FolderGroup; above: string } | null => {
-    for (const x of groups) {
-      if (x.key === gid) return { group: x, above };
-      const inner = search(x.groups, x.key);
-      if (inner) return inner;
-    }
-    return null;
-  };
-  return search(testFolderGroups(index, g.parent), groupId(g.parent, 'test'));
-}
-
-const deepRecords = (g: FolderGroup): SpecRecord[] => [...g.records, ...g.groups.flatMap(deepRecords)];
-
-/** The node a group hangs from in the tree: a stage's domain, a folder's stage, a kind group's record; for an older address, its parent record or the Tests folder or group around it. */
-export function groupParentNode(index: SpecIndex, gid: string): string {
-  return treeParent(index, gid) ?? findTestGroup(index, gid)?.above ?? parseGroupId(gid)!.parent;
-}
-
-/** The nodes one level inside a group: its folders, groups and records (IDs), in the nav's order. */
-export function groupChildren(index: SpecIndex, gid: string): string[] {
-  if (treeGroup(index, gid)) return [...treeChildren(index, gid)];
-  const g = parseGroupId(gid);
-  if (!g) return [];
-  if (g.path.length > 0) {
-    const found = findTestGroup(index, gid);
-    return found ? [...found.group.groups.map((x) => x.key), ...found.group.records.map((r) => r.id)] : [];
-  }
-  const groups = g.kind === 'test' ? testFolderGroups(index, g.parent) : [];
-  if (groups.length > 0) return groups.map((x) => x.key);
-  return groupMembers(index, gid).map((r) => r.id);
-}
-
-/** The group node holding a record whose parent groups its children: the Tests folder's innermost test-plan group for a test. */
-export function containerOf(index: SpecIndex, record: SpecRecord): string {
-  const folder = groupId(record.parent!, record.kind);
-  if (record.kind !== 'test') return folder;
-  const search = (groups: FolderGroup[]): string | null => {
-    for (const x of groups) {
-      if (x.records.some((r) => r.id === record.id)) return x.key;
-      const inner = search(x.groups);
-      if (inner) return inner;
-    }
-    return null;
-  };
-  return search(testFolderGroups(index, record.parent!)) ?? folder;
-}
-
 /** The kinds of a record's children, in the meta-model's order. */
 export function childKinds(index: SpecIndex, id: string): string[] {
   const rank = kindOrder(index);
@@ -573,23 +493,11 @@ export function isGrouped(index: SpecIndex, id: string): boolean {
   return childKinds(index, id).length > 1;
 }
 
-/**
- * The records in a group at the first record level, however deep its groups: a stage's or folder's
- * records as the nav lists them, a kind group's records, or a test-plan group's tests in ID order.
- * A group outside the tree (an older address such as a domain's "DM-SHOP/use_case") is its parent's
- * children of its kind.
- */
-export function groupMembers(index: SpecIndex, gid: string): SpecRecord[] {
-  const t = treeGroup(index, gid);
-  if (t) return t.members;
-  const g = parseGroupId(gid);
-  if (!g) return [];
-  if (g.path.length > 0) return [...(findTestGroup(index, gid) ? deepRecords(findTestGroup(index, gid)!.group) : [])].sort(byIdOrder);
-  return (index.children.get(g.parent) ?? []).filter((c) => c.kind === g.kind);
-}
+/** The records in a group at the first record level, however deep its groups, as the nav lists them (none for an ID that is no group). */
+export const groupMembers = (index: SpecIndex, gid: string): SpecRecord[] => treeGroup(index, gid)?.members ?? [];
 
-/** Whether an ID names a group that exists: a record with at least one child of that kind, or a test-plan group in a Tests folder. */
-export const isGroup = (index: SpecIndex, id: string) => treeOf(index).groups.has(id) || groupMembers(index, id).length > 0;
+/** Whether an ID names a group of the graph's tree: a stage, a folder, a kind group or a test-plan group. */
+export const isGroup = (index: SpecIndex, id: string) => treeOf(index).groups.has(id);
 
 /** Whether the graph can center on an ID: a record or a group. */
 export const isGraphNode = (index: SpecIndex, id: string) => index.byId.has(id) || isGroup(index, id);
@@ -600,14 +508,13 @@ export function pluralLabel(index: SpecIndex, kind: string): string {
 }
 
 /** A group's label with its count, such as "Use cases (5)". */
-export const groupLabel = (index: SpecIndex, gid: string) => `${groupName(index, gid)} (${treeGroup(index, gid)?.count ?? groupMembers(index, gid).length})`;
+export const groupLabel = (index: SpecIndex, gid: string) => `${groupName(index, gid)} (${treeGroup(index, gid)?.count ?? 0})`;
 
 /** A group's name without its count, as the nav names it: "Define", "Technical specification", "Use cases", "Acceptance tests". */
-export const groupName = (index: SpecIndex, gid: string) =>
-  treeGroup(index, gid)?.label ?? findTestGroup(index, gid)?.group.label ?? pluralLabel(index, parseGroupId(gid)!.kind);
+export const groupName = (index: SpecIndex, gid: string) => treeGroup(index, gid)?.label ?? gid;
 
 /** The nearest record above a group: the domain of a stage or folder, the record of a kind group. */
-export const groupOwner = (index: SpecIndex, gid: string) => treeGroup(index, gid)?.owner ?? parseGroupId(gid)!.parent;
+export const groupOwner = (index: SpecIndex, gid: string) => treeGroup(index, gid)?.owner ?? parseGroupId(gid)?.parent ?? gid;
 
 /** The problems and coverage gaps of a group's members and everything beneath them, summed for the group's mark. */
 export function groupMarks(index: SpecIndex, gid: string): { errors: number; warnings: number; gaps: ('satisfies' | 'proves')[] } {
@@ -624,10 +531,7 @@ export function groupMarks(index: SpecIndex, gid: string): { errors: number; war
 }
 
 /** The kind a group shows as: its records' kind when they are of one kind, or 'folder' for a stage or a mixed folder. */
-const groupKind = (index: SpecIndex, gid: string) => {
-  const t = treeGroup(index, gid);
-  return t ? t.kind ?? 'folder' : parseGroupId(gid)!.kind;
-};
+const groupKind = (index: SpecIndex, gid: string) => treeGroup(index, gid)?.kind ?? 'folder';
 
 function groupNode(index: SpecIndex, id: string, distance: number, open: boolean): GraphNode {
   return {
@@ -638,7 +542,7 @@ function groupNode(index: SpecIndex, id: string, distance: number, open: boolean
     stage: GROUP_STAGE,
     column: 0,
     row: 0,
-    group: { parent: nodeParent(index, id) ?? groupOwner(index, id), owner: groupOwner(index, id), count: treeGroup(index, id)?.count ?? groupMembers(index, id).length, open },
+    group: { parent: nodeParent(index, id) ?? groupOwner(index, id), owner: groupOwner(index, id), count: treeGroup(index, id)?.count ?? 0, open },
   };
 }
 

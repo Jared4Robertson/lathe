@@ -43,12 +43,12 @@ describe('list titles', () => {
     expect(within(mixed).getAllByText('Domain', { selector: 'small' }).length).toBeGreaterThan(0);
 
     // A group's members are titled by their kind, in the wiki only.
-    await openApp('/DM-SHOP/use_case');
-    await screen.findByRole('heading', { level: 1, name: /^Use cases/ });
-    expect(within(wiki()).getByRole('heading', { level: 2, name: /^Use cases/ })).toHaveTextContent('Use cases1');
+    await openApp('/DM-SHOP/design/interaction-design/view');
+    await screen.findByRole('heading', { level: 1, name: /^Views/ });
+    expect(within(wiki()).getByRole('heading', { level: 2, name: /^Views/ })).toHaveTextContent('Views1');
     expect(within(wiki()).queryByRole('heading', { name: /^Members/ })).toBeNull();
-    expect(within(wiki()).getByRole('list', { name: 'Use cases of DM-SHOP/use_case' })).toBeInTheDocument();
-    noListInSideBar(/^Use cases/);
+    expect(within(wiki()).getByRole('list', { name: 'Views of DM-SHOP/design/interaction-design/view' })).toBeInTheDocument();
+    noListInSideBar(/^Views/);
 
     // The title reads the workspace's kind label, so a renamed kind shows its own name.
     const w = workspace();

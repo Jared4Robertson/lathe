@@ -2,7 +2,8 @@ import type { MouseEvent, ReactNode } from 'react';
 import { Button } from '../components/Button';
 import { LongList } from '../components/LongList';
 import { kindFieldPath, kindPagePath } from '../format/reference';
-import { groupLabel, groupMarks, groupMembers, parseGroupId } from '../graph/model';
+import { groupLabel, groupMarks, groupMembers, groupOwner, isGroup, parseGroupId } from '../graph/model';
+import { treeGroup } from '../graph/tree';
 import { GraphConnections, type GraphInfo } from '../graph/panel';
 import { lowerLabel } from '../plural';
 import { Link } from '../router';
@@ -158,17 +159,17 @@ function TraceSummary({ index, record }: { index: SpecIndex; record: SpecRecord 
 
 /** A group in the canvas: its kind, how many members, its parent, and the problems and gaps among its members. */
 function GroupDetails({ index, gid, focus, how, onNavigate, hrefFor }: { index: SpecIndex; gid: string; focus: string; how: SideBarDetailsProps['how']; onNavigate: (id: string) => void; hrefFor: (id: string) => string }) {
-  const parsed = parseGroupId(gid);
-  if (!parsed) return <p className="hint">There's no record or group <code>{gid}</code>.</p>;
+  const group = treeGroup(index, gid);
+  if (!group) return <p className="hint">There's no record or group <code>{gid}</code>.</p>;
   const members = groupMembers(index, gid);
   const marks = groupMarks(index, gid);
   return (
     <>
       <Identity index={index} eyebrow="Group" title={groupLabel(index, gid)} target={gid} focus={focus} how={how} onNavigate={onNavigate} hrefFor={hrefFor} />
       <dl className="fields">
-        <div><dt>Kind</dt><dd title={index.kinds.get(parsed.kind)?.description}><Link to={kindPagePath(parsed.kind)}>{kindLabel(index, parsed.kind)}</Link></dd></div>
+        {group.kind && <div><dt>Kind</dt><dd title={index.kinds.get(group.kind)?.description}><Link to={kindPagePath(group.kind)}>{kindLabel(index, group.kind)}</Link></dd></div>}
         <div><dt>Members</dt><dd>{members.length}</dd></div>
-        <div><dt>Parent</dt><dd><RecordLink index={index} id={parsed.parent} /></dd></div>
+        <div><dt>Parent</dt><dd><RecordLink index={index} id={group.owner} /></dd></div>
       </dl>
       <Part title="Problems and gaps among its members" id="side-group-marks">
         {marks.errors + marks.warnings === 0 && marks.gaps.length === 0 ? <p className="hint">None.</p> : (
@@ -263,15 +264,15 @@ function RawLinks({ index, links, label, empty }: { index: SpecIndex; links: { r
 /** A group page has no file of its own: its kind and parent, as its address names them. */
 function RawGroupFacts({ index, gid }: { index: SpecIndex; gid: string }) {
   const parsed = parseGroupId(gid);
-  if (!parsed) return <p className="hint">There's no record or group <code>{gid}</code>.</p>;
+  if (!parsed || !isGroup(index, gid)) return <p className="hint">There's no record or group <code>{gid}</code>.</p>;
   return (
     <section className="side-bar-section" aria-labelledby="side-group">
       <h3 id="side-group">Group</h3>
       <p className="hint">A group has no spec file of its own: its address names it by its parent and its place in the tree. Select a row to see that record's details.</p>
       <dl className="fields side-raw">
         <div><dt>Name</dt><dd>{groupLabel(index, gid)}</dd></div>
-        <div><dt><code>parent</code></dt><dd><RecordLink index={index} id={parsed.parent} showTitle={false} /></dd></div>
-        <div><dt><code>path</code></dt><dd><code>{parsed.kind}</code></dd></div>
+        <div><dt><code>parent</code></dt><dd><RecordLink index={index} id={groupOwner(index, gid)} showTitle={false} /></dd></div>
+        <div><dt><code>path</code></dt><dd><code>{[parsed.kind, ...parsed.path].join('/')}</code></dd></div>
       </dl>
     </section>
   );

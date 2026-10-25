@@ -440,21 +440,3 @@ export function branchOf(index: SpecIndex, id: string): string[] {
   return [];
 }
 
-/** The branch of a group page: the folder holding its kind in its parent's domain, or its parent's own branch. */
-export function groupBranchOf(index: SpecIndex, parent: string, kind: string): string[] {
-  const record = index.byId.get(parent);
-  if (record?.kind === 'domain') {
-    const { stages, loose } = domainFolders(index, parent);
-    for (const stage of stages) {
-      const folder = stage.folders.find((f) => f.kinds.includes(kind));
-      if (folder) return [`domain:${parent}`, stage.key, folder.key];
-    }
-    const folder = loose.find((f) => f.kinds.includes(kind));
-    return folder ? [`domain:${parent}`, folder.key] : [`domain:${parent}`];
-  }
-  if (record?.kind === 'product') {
-    const folder = productFolders(index, parent).find((f) => f.kinds.includes(kind));
-    return folder ? [folder.key] : [];
-  }
-  return branchOf(index, parent);
-}

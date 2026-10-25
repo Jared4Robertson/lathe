@@ -164,7 +164,7 @@ function GraphNodeView({ data }: NodeProps<FlowNode>) {
   );
 }
 
-/** A chip of the light ring: "+12 more use cases", a context node that re-centers on their folder. */
+/** A chip of the light ring: "+12 more use cases", a context node that re-centers on the group or parent of the children it counts. */
 function MoreNodeView({ data }: NodeProps<FlowNode>) {
   const { node } = data;
   return (
@@ -335,22 +335,18 @@ function writeTrail(trail: string[]) {
   try { window.sessionStorage.setItem(TRAIL_KEY, JSON.stringify(trail)); } catch { /* storage unavailable */ }
 }
 
-/**
- * What the person set on the graph: depth, filters, trace mode, the groups they opened or closed,
- * the Links switch, the context ring and the minimap. The last three are optional so a host that
- * stores older settings still fits; each has its default when left out.
- */
+/** What the person set on the graph: depth, filters, trace mode, the groups they opened or closed, the Links switch, the context ring and the minimap. */
 export interface GraphSettings {
   depth: number;
   filters: Filters;
   trace: boolean;
   openGroups: ReadonlyMap<string, boolean>;
   /** The Links switch: the focused record's own links, one step. Off by default. */
-  links?: boolean;
+  links: boolean;
   /** The context ring, faded around the picture. On by default. */
-  context?: boolean;
+  context: boolean;
   /** The minimap in a corner of the canvas. Off by default. */
-  minimap?: boolean;
+  minimap: boolean;
 }
 /** "1 record", "2 records". */
 const count = (n: number, noun: string) => `${n} ${n === 1 ? noun : `${noun}s`}`;
@@ -385,7 +381,7 @@ export function graphSummary(graph: Neighborhood): string {
 
 export interface GraphViewProps {
   index: SpecIndex;
-  /** A record ID, or a group as `<parent-id>/<kind>`. */
+  /** A record ID, or a group's ID in the graph's tree. */
   focus: string;
   /** Called with a record or group ID when the person moves the center there. */
   onNavigate: (id: string) => void;
@@ -424,9 +420,7 @@ export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted,
   const [own, setOwn] = useState<GraphSettings>(DEFAULT_GRAPH_SETTINGS);
   const settings = hosted ?? own;
   const { depth, filters, trace, openGroups } = settings;
-  const links = settings.links ?? false;
-  const ring = settings.context ?? true;
-  const minimap = settings.minimap ?? false;
+  const { links, context: ring, minimap } = settings;
   const latest = useRef(settings);
   latest.current = settings;
   const update = useCallback((patch: Partial<GraphSettings>) => {
@@ -486,7 +480,7 @@ export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted,
   useCommand('graphDepthUp', () => update({ depth: Math.min(MAX_DEPTH, latest.current.depth + 1) }), valid && !tracing);
   useCommand('graphDepthDown', () => update({ depth: Math.max(1, latest.current.depth - 1) }), valid && !tracing);
   useCommand('graphTrace', () => update({ trace: !latest.current.trace }), valid && canTrace(index, focus));
-  useCommand('graphLinks', () => update({ links: !(latest.current.links ?? false) }), valid && !tracing);
+  useCommand('graphLinks', () => update({ links: !latest.current.links }), valid && !tracing);
   // Stepping through the tree moves the center, as a click does.
   const stepTo = (step: 'out' | 'in' | 'previous' | 'next') => () => {
     const to = stepTarget(index, focus, step);
@@ -706,7 +700,7 @@ function GraphCanvas({ index, graph, onNavigate: navigate, onToggle, minimap, on
   minimap: boolean;
   onPeek?: GraphViewProps['onPeek'];
 }) {
-  // A chip of the light ring re-centers on the folder it stands for.
+  // A chip of the light ring re-centers on the group or parent of the children it counts.
   const chipTargets = useMemo(() => new Map(graph.nodes.filter((n) => n.more).map((n) => [n.id, n.more!.target])), [graph]);
   const onNavigate = useCallback((id: string) => navigate(chipTargets.get(id) ?? id), [navigate, chipTargets]);
   const [placed, setPlaced] = useState<(Placed & { graph: Neighborhood }) | null>(null);
