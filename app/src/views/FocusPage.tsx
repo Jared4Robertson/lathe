@@ -3,7 +3,7 @@ import { Icon } from '../components/icons';
 import { ResizeHandle } from '../components/ResizeHandle';
 import { expandAllOnPage } from '../components/TreeList';
 import type { GraphSettings } from '../graph/GraphPage';
-import { groupLabel, groupMembers, isGroup, parseGroupId, pluralLabel } from '../graph/model';
+import { groupLabel, groupMembers, groupName, isGroup, parseGroupId } from '../graph/model';
 import type { GraphInfo } from '../graph/panel';
 import { entryState, lastAddressMove, Link, navigate, noteInEntry, onLeaveEntry } from '../router';
 import { useAnnounce, useCommand } from '../shell/commands';
@@ -654,7 +654,7 @@ function GroupWiki({ index, gid }: { index: SpecIndex; gid: string }) {
   return (
     <div className="spec-body">
       <p className="group-intro">
-        {pluralLabel(index, kind)} of <Link to={addressOf(index, parent)} className="record-link"><code>{parent}</code> <span>{parentRecord.title}</span></Link>
+        {groupName(index, gid)} of <Link to={addressOf(index, parent)} className="record-link"><code>{parent}</code> <span>{parentRecord.title}</span></Link>
       </p>
       {description && <Markdown source={description} />}
       <Section title={membersTitle} count={members.length}>
