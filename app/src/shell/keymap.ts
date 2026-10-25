@@ -269,9 +269,3 @@ export function ariaKeyShortcuts(keys: readonly string[], mac: boolean): string 
     })
     .join(' ');
 }
-
-/** The display of a command's first binding, or '' when it has none. */
-export const shortcutOf = (commands: readonly Command[], id: string, mac: boolean) => {
-  const k = commands.find((c) => c.id === id)?.keys[0];
-  return k ? formatBinding(k, mac) : '';
-};

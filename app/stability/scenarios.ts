@@ -11,7 +11,6 @@ export const AGGREGATE = '/LA-EXP-A4';
 export const SHELL = ['nav#nav', '#main'];
 /** A focus page's frame: the first pane's bar, its title and the side bar. */
 export const FOCUS = ['.focus-views > .pane:first-of-type > .pane-bar', '.focus-views > .pane:first-of-type .pane-title', '.side-bar-column'];
-export const WIKI_TITLE = '.pane-wiki .pane-title h1';
 export const GRAPH_CANVAS = '.pane-graph .graph-canvas';
 export const GRAPH_HEADER = '.pane-graph .graph-header';
 export const MODEL_CANVAS = '.pane-model .model-canvas';

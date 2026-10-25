@@ -1,10 +1,10 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import concepts from '../../../lathe/FORMAT.md?raw';
-import type { CheckReference, FormatReference, KindReference, RelationReference, SectionReference } from '../../../lathe/src/reference';
+import type { CheckReference, FormatReference, KindReference, RelationReference } from '../../../lathe/src/reference';
 import { onLatheEvent } from '../events';
 import { formatPath, type SpecIndex, type Workspace } from '../specs/data';
 
-export type { CheckReference, FormatReference, KindReference, RelationReference, SectionReference };
+export type { CheckReference, FormatReference, KindReference, RelationReference };
 
 // The format reference in the app: what the engine serves at GET /api/format (every kind, relation,
 // folder and check of this product, with its extensions and its own checks), and the addresses of
