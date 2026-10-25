@@ -13,7 +13,8 @@ flow_step,Flow step,design,interaction-design,flow,order,no,"One step of a flow,
 view,View,design,interaction-design,domain,,no,A screen or page a person uses.
 endpoint,Endpoint,design,interaction-design,domain,method route,no,"An HTTP endpoint: its method, route, request and responses."
 interaction_requirement,Interaction requirement,design,interaction-design,view endpoint flow,,yes,"One rule a view, endpoint or flow must follow, such as a field's limits or an error's response, stated with MUST, MUST NOT, SHOULD or MAY."
-component,Component,design,technical-specification,domain,component_type file,no,"A unit of code in the target design, such as a model, service or router."
+layer,Layer,design,technical-specification,domain,order,no,"An ordered part of a domain's technical specification that groups its components by what they are, such as Models, Services or Web app. Its order is a whole number giving its place in the domain."
+component,Component,design,technical-specification,domain layer,component_type file,no,"A unit of code in the target design, such as a model, service or router. It sits in its domain's layer, or in the domain when the domain has no layers."
 test,Test,design,test-plan,domain capability,test_type,no,"A test that proves obligations. Its state is automated (the default; it names the file that runs it in run_by), manual, or planned."
 question,Open question,,,product domain aggregate use_case component,owner,no,"Something undecided, with the person who decides it."
 fitness,Fitness,,,product,date score,no,"How well the product serves its purpose, as judged by the person it serves on a date: a score from 1 to 5 and the experiences behind it."
