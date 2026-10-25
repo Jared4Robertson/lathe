@@ -68,7 +68,7 @@ test.describe('graph', () => {
     const box = page.locator('.model-flow .react-flow__node').first();
     const r = await step(page, 'graph', 'ERD: domain to aggregate', { keys, allow: ['.inspector'] }, async () => {
       await box.click();
-      await page.waitForURL(/\/records\//);
+      await page.waitForURL(/\/LA-[A-Z0-9]+-[A-Z0-9]+/);
       await page.locator('.model-flow .react-flow__node').first().waitFor();
     });
     expectStable(r);
@@ -82,7 +82,7 @@ test.describe('graph', () => {
     const back = await step(page, 'graph', 'ERD: Back to the domain', { keys, allow: ['.inspector'] }, async () => {
       await page.goBack();
       await page.goBack();
-      await expect(page).toHaveURL(/\/specs\/LA\/LA-BRW/);
+      await expect(page).toHaveURL(/\/LA-BRW(\?|$)/);
     });
     expectStable(back);
   });

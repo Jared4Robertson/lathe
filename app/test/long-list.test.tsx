@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import type { Coverage, SpecLink, SpecRecord, Workspace } from '../../lathe/src/types';
 import { LongList } from '../src/components/LongList';
 import { workspace as baseWorkspace } from './fixtures/workspace';
-import { main, openApp, section } from './helpers';
+import { main, openApp, openSideBar, section } from './helpers';
 
 interface Item { id: string; title: string }
 const make = (n: number): Item[] => Array.from({ length: n }, (_, i) => ({ id: `X-${String(i + 1).padStart(2, '0')}`, title: i === 6 ? 'The seventh thing' : `Thing ${i + 1}` }));
@@ -86,13 +86,13 @@ describe('long lists', () => {
     const user = userEvent.setup();
 
     // The menu's domain list.
-    await openApp('/specs/BG', served);
+    await openApp('/BG', served);
     await screen.findByRole('heading', { level: 1, name: 'Big product' });
     const menu = screen.getByRole('navigation', { name: 'Main' });
     expect(within(menu).getByRole('searchbox', { name: 'Filter domains of Big product' })).toBeInTheDocument();
 
     // The domain page: groups, a long nested list, gaps and problems.
-    await openApp('/specs/BG/BG-D01', served);
+    await openApp('/BG-D01', served);
     await screen.findByRole('heading', { level: 1, name: 'Domain 1' });
     const useCases = section(/^Capabilities/);
     const search = within(useCases).getByRole('searchbox', { name: 'Filter capabilities' });
@@ -105,11 +105,12 @@ describe('long lists', () => {
     expect(within(section(/^Coverage/)).getByRole('searchbox', { name: 'Filter coverage gaps' })).toBeInTheDocument();
     expect(within(section(/^Problems in this domain/)).getByRole('searchbox', { name: 'Filter problems' })).toBeInTheDocument();
 
-    // The record page: its children and its Traceability, in the wiki.
-    await openApp('/records/BG-D01', served);
+    // A domain's children, in the side bar's Details (its page is its overview); a record's Traceability, in the wiki.
+    openSideBar();
+    await openApp('/BG-D01', served);
     await screen.findByRole('heading', { level: 1, name: 'Domain 1' });
-    expect(within(main()).getByRole('searchbox', { name: /^Filter children of BG-D01$/i })).toBeInTheDocument();
-    await openApp('/records/BG-D01-DR01', served);
+    expect(within(main()).getByRole('searchbox', { name: 'Filter children' })).toBeInTheDocument();
+    await openApp('/BG-D01-DR01', served);
     await screen.findByRole('heading', { level: 1, name: 'A ledger balances' });
     const linksIn = within(main()).getByRole('searchbox', { name: /^Filter applied by$/i });
     await user.type(linksIn, 'UC09');

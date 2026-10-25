@@ -15,7 +15,7 @@ vi.mock('../src/events', () => ({
 
 describe('reload on change', () => {
   it('LA-BRW-T19 An open spec page reloads the workspace when the server reports spec:changed', async () => {
-    const { requests } = await openApp('/records/DM-SHOP-C01');
+    const { requests } = await openApp('/DM-SHOP-C01');
     await screen.findByRole('heading', { level: 1, name: 'Basket service' });
     expect(requests.filter((r) => r === 'GET /api/spec')).toHaveLength(1);
 
@@ -28,6 +28,6 @@ describe('reload on change', () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'Basket store' })).toBeInTheDocument();
     expect(after).toEqual(['GET /api/spec']);
     // The address and page stay the same; no manual refresh.
-    expect(window.location.pathname).toBe('/records/DM-SHOP-C01');
+    expect(window.location.pathname).toBe('/DM-SHOP-C01');
   });
 });

@@ -41,12 +41,12 @@ const heading = () => screen.findByRole('heading', { level: 1, name: 'Add an ite
 
 describe('desktop record actions', () => {
   it('LA-DSK-T24 A record\'s facts offer Reveal, Open in editor and Copy ID in the desktop app, and nothing in a browser', async () => {
-    await openApp('/records/DM-SHOP-UC01');
+    await openApp('/DM-SHOP-UC01');
     await heading();
     expect(screen.queryByRole('group', { name: 'Spec file of DM-SHOP-UC01' })).toBeNull();
 
     const { bridge } = desktop();
-    await openApp('/records/DM-SHOP-UC01');
+    await openApp('/DM-SHOP-UC01');
     await heading();
     const inspector = await screen.findByRole('complementary', { name: 'Inspector' });
     const actions = within(inspector).getByRole('group', { name: 'Spec file of DM-SHOP-UC01' });
@@ -60,13 +60,13 @@ describe('desktop record actions', () => {
 
   it('LA-DSK-T24 A right-click on a record link or the page title opens the native record menu; elsewhere the page keeps its own', async () => {
     const { bridge } = desktop();
-    await openApp('/records/DM-SHOP-UC01');
+    await openApp('/DM-SHOP-UC01');
     const title = await heading();
     expect(fireEvent.contextMenu(title)).toBe(false);
     expect(bridge.showRecordMenu).toHaveBeenLastCalledWith('DM-SHOP-UC01');
 
-    const link = document.querySelector<HTMLElement>('#main a[href^="/records/"]:not([href="/records/DM-SHOP-UC01"])')!;
-    const target = decodeURIComponent(link.getAttribute('href')!.split('/')[2].split('?')[0]);
+    const link = document.querySelector<HTMLElement>('#main a.record-link[href^="/DM-SHOP-"]:not([href="/DM-SHOP-UC01"])')!;
+    const target = decodeURIComponent(link.getAttribute('href')!.split('/')[1].split('?')[0]);
     expect(fireEvent.contextMenu(link.querySelector('code') ?? link)).toBe(false);
     expect(bridge.showRecordMenu).toHaveBeenLastCalledWith(target);
 
@@ -77,7 +77,7 @@ describe('desktop record actions', () => {
 
   it('LA-DSK-T24 The page sends its error count for the Dock badge, and the title bar drops the traffic lights\' room in full screen', async () => {
     const { bridge, setFullScreen } = desktop();
-    await openApp('/records/DM-SHOP-UC01');
+    await openApp('/DM-SHOP-UC01');
     await heading();
     const errors = workspace().problems.filter((p) => p.severity === 'error').length;
     await waitFor(() => expect(bridge.setErrorCount).toHaveBeenLastCalledWith(errors));
@@ -96,18 +96,18 @@ describe('desktop record actions', () => {
     document.body.innerHTML = `
       <div class="react-flow__node" data-id="DM-SHOP-UC01"><span id="in-node">x</span></div>
       <div class="react-flow__node" data-id="DM-SHOP/use_case"><span id="in-group">x</span></div>
-      <a href="/specs/DM/DM-SHOP?view=graph"><span id="in-domain">x</span></a>
-      <a href="/records/NOPE"><span id="unknown">x</span></a>
+      <a href="/DM-SHOP?view=graph"><span id="in-domain">x</span></a>
+      <a href="/NOPE"><span id="unknown">x</span></a>
       <a href="https://example.com"><span id="outside">x</span></a>
       <main id="main"><h1><span id="in-title">x</span></h1><p id="body">x</p></main>`;
-    const at = (id: string, path = '/records/DM-SHOP-UC01') => recordIdAt(document.getElementById(id), path, known);
+    const at = (id: string, path = '/DM-SHOP-UC01') => recordIdAt(document.getElementById(id), path, known);
     expect(at('in-node')).toBe('DM-SHOP-UC01');
     expect(at('in-group')).toBeNull();
     expect(at('in-domain')).toBe('DM-SHOP');
     expect(at('unknown')).toBeNull();
     expect(at('outside')).toBeNull();
     expect(at('in-title')).toBe('DM-SHOP-UC01');
-    expect(at('in-title', '/specs/DM')).toBe('DM');
+    expect(at('in-title', '/DM')).toBe('DM');
     expect(at('in-title', '/checks')).toBeNull();
     expect(at('body')).toBeNull();
     document.body.innerHTML = '';

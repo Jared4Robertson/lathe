@@ -8,7 +8,7 @@ import { lowerLabel } from '../plural';
 import { Link } from '../router';
 import { DesktopRecordActions } from '../shell/desktopRecord';
 import { kindLabel, problemOrder, type SpecIndex, type SpecRecord } from '../specs/data';
-import { ProblemList, RecordLink, TestStateTag, idText } from '../specs/parts';
+import { ProblemList, RecordLink, RecordTree, TestStateTag, idText, listTitle } from '../specs/parts';
 import { GAP_TEXT } from '../specs/Traceability';
 import { traceOf } from '../specs/trace';
 import type { SideMode } from './sideBarState';
@@ -211,6 +211,30 @@ function RawFacts({ index, record }: { index: SpecIndex; record: SpecRecord }) {
         <h3 id="side-links-in" tabIndex={-1} className="links-in-heading">Links in <span className="section-count">{into.length}</span></h3>
         <RawLinks index={index} links={into.map((l) => ({ relation: l.relation, id: l.source }))} label="Links in" empty="Nothing links to this record." />
       </section>
+      {(record.kind === 'product' || record.kind === 'domain') && <OverviewFacts index={index} record={record} />}
+    </>
+  );
+}
+
+/**
+ * A product's or a domain's page is its overview, which lists its domains or its folders but not
+ * the record's own parent, children and problems: those stay in Details.
+ */
+function OverviewFacts({ index, record }: { index: SpecIndex; record: SpecRecord }) {
+  const children = index.children.get(record.id) ?? [];
+  const problems = [...(index.problemsFor.get(record.id) ?? [])].sort(problemOrder);
+  const childrenTitle = listTitle(index, children, 'Children');
+  return (
+    <>
+      <Part title="Parent" id="side-parent">
+        {record.parent ? <RecordLink index={index} id={record.parent} /> : <p className="hint">None (top level).</p>}
+      </Part>
+      <Part title={childrenTitle} count={children.length} id="side-children">
+        {children.length === 0 ? <p className="hint">None.</p> : <RecordTree index={index} records={children} label={childrenTitle} showKind bulk={false} />}
+      </Part>
+      <Part title="Problems" count={problems.length} id="side-own-problems">
+        <ProblemList index={index} problems={problems} showRecord={false} />
+      </Part>
     </>
   );
 }

@@ -10,7 +10,7 @@ const row = (scope: HTMLElement, id: string) => within(scope).getByRole('link', 
 
 describe('one level deep', () => {
   it('LA-BRW-T133 Folded rows keep their counts and marks, open and close by button, Expand all or arrow keys, and stay open while moving around', async () => {
-    await openApp('/specs/DM/DM-SHOP');
+    await openApp('/DM-SHOP');
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     const useCases = section(/^Capabilities/);
     const uc = row(useCases, 'DM-SHOP-UC01');
@@ -47,8 +47,8 @@ describe('one level deep', () => {
     expect(within(aggregates).getByRole('button', { name: 'Collapse all' })).toBeInTheDocument();
 
     // What is open stays open while moving around (for the session).
-    await openApp('/specs/DM');
-    await openApp('/specs/DM/DM-SHOP');
+    await openApp('/DM');
+    await openApp('/DM-SHOP');
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     expect(row(section(/^Domain model/), 'DM-SHOP-A1').querySelector('ul.nested')).not.toBeNull();
     expect(row(section(/^Capabilities/), 'DM-SHOP-UC01').querySelector('ul.nested')).not.toBeNull();
@@ -56,19 +56,23 @@ describe('one level deep', () => {
 
   it('LA-BRW-T134 A record page shows its direct children with theirs folded, in the wiki and the inspector, and a product page lists its domains but not their contents', async () => {
     openSideBar();
-    await openApp('/records/DM-SHOP');
+    await openApp('/DM-SHOP');
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     const wiki = screen.getByRole('region', { name: 'Wiki pane' });
-    const children = within(wiki).getByRole('heading', { name: /^Children/ }).closest('section') as HTMLElement;
+    // A domain's one page lists its records in their folders, each with its own children folded.
+    const children = within(wiki).getByRole('heading', { name: /^Capabilities/ }).closest('section') as HTMLElement;
     const uc = row(children, 'DM-SHOP-UC01');
     expect(uc).toHaveTextContent('2 UC requirements');
     expect(uc.querySelector('ul.nested')).toBeNull();
     expect(within(children).queryByRole('link', { name: /DM-SHOP-UC01-R01/ })).toBeNull();
-    // The side bar does not repeat the children the wiki lists (brief 64).
-    expect(within(sideBar()).queryByRole('list', { name: /^Children/ })).toBeNull();
-    expect(within(sideBar()).queryByRole('button', { name: 'Expand DM-SHOP-UC01' })).toBeNull();
 
-    await openApp('/specs/DM');
+    // On a record's page the side bar does not repeat the children the wiki lists (brief 64).
+    await openApp('/DM-SHOP-UC01');
+    await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
+    expect(within(main()).getByRole('list', { name: 'UC requirements of DM-SHOP-UC01' })).toBeInTheDocument();
+    expect(within(sideBar()).queryByRole('list', { name: /^UC requirements/ })).toBeNull();
+
+    await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     const domains = section(/^Domains/);
     expect(within(domains).getByRole('link', { name: /DM-SHOP\s*Shopping/ })).toBeInTheDocument();

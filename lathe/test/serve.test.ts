@@ -85,8 +85,10 @@ describe.skipIf(!prebuilt && !canBuild)('lathe serve', () => {
     expect(page.headers.get('content-type')).toContain('text/html');
     const html = await page.text();
     expect(html).toContain('<div id="root"></div>');
-    // Client-side routes load the app too.
-    expect(await (await fetch(`${BASE}/records/EX-NOTE-UC01`)).text()).toBe(html);
+    // Client-side routes load the app too: a record at its bare ID, a group, an app page and an old address.
+    for (const route of ['/EX-NOTE-UC01', '/EX-NOTE/use_case', '/format/kinds/use_case', '/records/EX-NOTE-UC01']) {
+      expect(await (await fetch(`${BASE}${route}`)).text(), route).toBe(html);
+    }
     // The page's script is served from the built app, not from source.
     const script = html.match(/src="([^"]+\.js)"/)?.[1];
     expect(script).toBeDefined();

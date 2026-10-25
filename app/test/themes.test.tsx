@@ -20,7 +20,7 @@ const stored = (key: string) => window.localStorage.getItem(key);
 
 describe('themes', () => {
   it('LA-BRW-T420 Color theme (g then t) shows each theme as it is arrowed to; Enter keeps it and Escape puts back the one before', async () => {
-    await openApp('/specs/DM');
+    await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     // Lathe and System at first, already written as the stylesheet the early script reads.
     expect(root().getAttribute('data-theme')).toBe('lathe');
@@ -62,7 +62,7 @@ describe('themes', () => {
 
   it('LA-BRW-T421 Light, dark or system is a command and a choice on the Appearance page; it applies at once and is remembered', async () => {
     const user = userEvent.setup();
-    await openApp('/specs/DM');
+    await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     press('P', 'KeyP', { ctrlKey: true, shiftKey: true });
     const palette = screen.getByRole('dialog', { name: 'Command palette' });

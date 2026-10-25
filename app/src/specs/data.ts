@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Coverage, Kind, Problem, SpecLink, SpecRecord, Workspace } from '../../../lathe/src/types';
 import { onLatheEvent } from '../events';
+import { isRecordId, legacyAddress } from '../views/address';
 
 export type { Coverage, Kind, Problem, SpecLink, SpecRecord, Workspace };
 
@@ -100,11 +101,8 @@ export function useSpec(): SpecState {
   return { index, source, sourceReason, error };
 }
 
-export const productPath = (id: string) => `/specs/${encodeURIComponent(id)}`;
-export const domainPath = (product: string, domain: string) => `/specs/${encodeURIComponent(product)}/${encodeURIComponent(domain)}`;
-export const recordPath = (id: string) => `/records/${encodeURIComponent(id)}`;
-/** A group's address: its parent record and the kind of its members, then the parts of a test-plan group within it ("test/acceptance"). */
-export const groupPath = (parent: string, kind: string) => `/records/${encodeURIComponent(parent)}/${kind.split('/').map(encodeURIComponent).join('/')}`;
+// Records and groups are at their IDs, made by addressOf (app/src/views/address.ts); the app's own
+// pages are lowercase words.
 export const checksPath = '/checks';
 export const formatPath = '/format';
 
@@ -113,7 +111,8 @@ export type SpecRoute =
   | { page: 'domain'; product: string; domain: string }
   | { page: 'record'; id: string }
   | { page: 'group'; parent: string; kind: string }
-  | { page: 'redirect'; to: string }
+  /** An old address, and where it goes now (null while that waits on the specs). */
+  | { page: 'redirect'; to: string | null }
   | { page: 'checks' }
   | { page: 'format' }
   | { page: 'format-kind'; kind: string }
@@ -121,9 +120,28 @@ export type SpecRoute =
   | { page: 'specs' }
   | { page: 'missing' };
 
-/** Parses a spec path, or returns null for any other path (Diagrams). */
-export function parseSpecRoute(pathname: string): SpecRoute | null {
+/** The app pages the spec routes leave to the shell: Diagrams and Settings. */
+const SHELL_PAGES = new Set(['diagrams', 'settings']);
+
+/**
+ * Parses a path: `/` (the products), an app page, a record's bare ID or a group's parent ID and
+ * kind, or an old address to redirect. With the index, a product's and a domain's ID is their
+ * overview; without it (while the specs load) any ID reads as a record. Null for the shell's own
+ * pages (Diagrams, Settings).
+ */
+export function parseSpecRoute(pathname: string, index?: SpecIndex | null): SpecRoute | null {
   const parts = pathname.split('/').filter(Boolean).map(decodeURIComponent);
+  if (parts.length === 0) return { page: 'specs' };
+  if (SHELL_PAGES.has(parts[0])) return null;
+  const old = legacyAddress(pathname, index ? index.products[0]?.id ?? '' : undefined);
+  if (old !== undefined) return { page: 'redirect', to: old };
+  if (isRecordId(parts[0])) {
+    if (parts.length >= 2) return { page: 'group', parent: parts[0], kind: parts.slice(1).join('/') };
+    const record = index?.byId.get(parts[0]);
+    if (record?.kind === 'product') return { page: 'product', product: record.id };
+    if (record?.kind === 'domain' && record.product) return { page: 'domain', product: record.product, domain: record.id };
+    return { page: 'record', id: parts[0] };
+  }
   if (parts[0] === 'checks') return parts.length === 1 ? { page: 'checks' } : { page: 'missing' };
   if (parts[0] === 'format') {
     if (parts.length === 1) return { page: 'format' };
@@ -132,18 +150,6 @@ export function parseSpecRoute(pathname: string): SpecRoute | null {
     if (parts.length === 3 && parts[1] === 'checks') return { page: 'format-check', check: parts[2] };
     return { page: 'missing' };
   }
-  if (parts[0] === 'records') {
-    if (parts.length === 2) return { page: 'record', id: parts[1] };
-    // A test-plan group in a Tests folder has more parts after the kind.
-    if (parts.length >= 3) return { page: 'group', parent: parts[1], kind: parts.slice(2).join('/') };
-    return { page: 'missing' };
-  }
-  if (parts[0] !== 'specs') return null;
-  if (parts.length === 1) return { page: 'specs' };
-  if (parts.length === 2) return { page: 'product', product: parts[1] };
-  if (parts.length === 3) return { page: 'domain', product: parts[1], domain: parts[2] };
-  // The old graph tab of a domain is now the domain page in the Graph view.
-  if (parts.length === 4 && parts[3] === 'graph') return { page: 'redirect', to: `${domainPath(parts[1], parts[2])}?view=graph` };
   return { page: 'missing' };
 }
 

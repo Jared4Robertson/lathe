@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { navigate } from '../router';
-import { parseSpecRoute, productPath, type SpecIndex, type SpecRecord } from '../specs/data';
+import { parseSpecRoute, type SpecIndex, type SpecRecord } from '../specs/data';
+import { addressOf, currentAddress } from '../views/address';
 import { usePref } from './prefs';
 
 // Spaces: each product is its own space, as a workspace is in Slack, Discord, Linear or Notion.
@@ -63,7 +64,7 @@ export function spaceOf(product: SpecRecord): Space {
 
 /** The product a page belongs to, or null for a page above every product (Checks, the format, Diagrams, Specs). */
 export function productOfPath(index: SpecIndex | null, path: string): string | null {
-  const route = parseSpecRoute(path);
+  const route = parseSpecRoute(path, index);
   if (!route || !index) return null;
   const productOfRecord = (id: string) => index.byId.get(id)?.product ?? null;
   const known = (id: string) => (index.byId.get(id)?.kind === 'product' ? id : null);
@@ -103,7 +104,9 @@ export const useSpaces = () => useContext(SpacesContext);
 export function useSpaceState(index: SpecIndex | null, path: string, search: string): SpacesApi {
   const spaces = useMemo(() => (index?.products ?? []).map(spaceOf), [index]);
   const [chosen, setChosen] = usePref<string>(SPACE_KEY, '', isString, 'session');
-  const [pages, setPages] = usePref<Record<string, string>>(PAGES_KEY, {}, isPages, 'session');
+  const [stored, setPages] = usePref<Record<string, string>>(PAGES_KEY, {}, isPages, 'session');
+  // A page saved under an old address (/records, /specs) is read in today's form.
+  const pages = useMemo(() => Object.fromEntries(Object.entries(stored).map(([space, page]) => [space, currentAddress(page)])), [stored]);
   const pagesRef = useRef(pages);
   pagesRef.current = pages;
   const pageProduct = productOfPath(index, path);
@@ -119,7 +122,7 @@ export function useSpaceState(index: SpecIndex | null, path: string, search: str
   const current = spaces.find((s) => s.id === currentId) ?? null;
   const go = useCallback((id: string) => {
     setChosen(id);
-    navigate(pagesRef.current[id] ?? productPath(id));
+    navigate(pagesRef.current[id] ?? addressOf(id));
   }, [setChosen]);
   const lastPage = useCallback((id: string) => pages[id], [pages]);
   return useMemo(() => ({ spaces, current, onPage: !!pageProduct && pageProduct === current?.id, go, lastPage }), [spaces, current, pageProduct, go, lastPage]);
