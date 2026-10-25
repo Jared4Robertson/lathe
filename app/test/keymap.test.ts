@@ -12,6 +12,7 @@ import {
   isTyping,
   match,
   normalizeBinding,
+  platformKeys,
   readOverrides,
   resolveCommands,
 } from '../src/shell/keymap';
@@ -31,7 +32,7 @@ describe('the keymap', () => {
     for (const mac of [true, false]) {
       expect(duplicateBindings(COMMANDS, mac)).toEqual([]);
       const reserved = new Set(RESERVED.map((r) => normalizeBinding(r, mac)));
-      for (const c of COMMANDS) for (const k of c.keys) expect(reserved.has(normalizeBinding(k, mac)), `${c.id} ${k}`).toBe(false);
+      for (const c of COMMANDS) for (const k of platformKeys(c, mac)) expect(reserved.has(normalizeBinding(k, mac)), `${c.id} ${k}`).toBe(false);
     }
     // The check itself finds a clash, including a sequence that starts with a whole binding.
     const clash = [...COMMANDS, { id: 'x', title: 'X', group: 'View' as const, keys: ['Mod+B'], when: 'page' as const }];
@@ -44,7 +45,9 @@ describe('the keymap', () => {
     expect(keysOf('commandPalette')).toEqual(['Mod+Shift+P']);
     expect(keysOf('toggleNav')).toEqual(['Mod+B']);
     expect(keysOf('toggleInspector')).toEqual(['Mod+Alt+B']);
-    expect(keysOf('viewGraph')).toEqual(['Ctrl+2']);
+    expect(keysOf('viewGraph')).toEqual(['Ctrl+G', 'Ctrl+2']);
+    expect(keysOf('maximizePane')).toEqual(['Ctrl+3']);
+    expect(COMMANDS.some((c) => ['viewSplit', 'toggleSplit', 'toggleFullScreen'].includes(c.id))).toBe(false);
     expect(keysOf('nextProblem')).toEqual(['F8']);
   });
 
@@ -109,5 +112,26 @@ describe('the keymap', () => {
     expect(match(['Ctrl+J'], commands, false, all).command?.id).toBe('toggleNav');
     window.localStorage.setItem(OVERRIDES_KEY, 'not json');
     expect(readOverrides()).toEqual({});
+  });
+
+  it('LA-BRW-T368 The view toggles have Ctrl+W, Ctrl+G and Ctrl+M on a Mac and Alt+W, Alt+G and Alt+M elsewhere, then Ctrl+1, 2 and 4, and no platform is offered a browser key', () => {
+    const keysOn = (id: string, mac: boolean) => resolveCommands({}, mac).find((c) => c.id === id)!.keys;
+    expect(keysOn('viewWiki', true)).toEqual(['Ctrl+W', 'Ctrl+1']);
+    expect(keysOn('viewGraph', true)).toEqual(['Ctrl+G', 'Ctrl+2']);
+    expect(keysOn('viewModel', true)).toEqual(['Ctrl+M', 'Ctrl+4']);
+    expect(keysOn('viewWiki', false)).toEqual(['Alt+W', 'Ctrl+1']);
+    expect(keysOn('viewGraph', false)).toEqual(['Alt+G', 'Ctrl+2']);
+    expect(keysOn('viewModel', false)).toEqual(['Alt+M', 'Ctrl+4']);
+    // On a Mac, Ctrl is the Control key, so Ctrl+W is not Cmd+W.
+    expect(match(['Ctrl+W'], resolveCommands({}, true), true, all).command?.id).toBe('viewWiki');
+    expect(match(['Meta+W'], resolveCommands({}, true), true, all).command).toBeUndefined();
+    expect(match(['Alt+G'], resolveCommands({}, false), false, all).command?.id).toBe('viewGraph');
+    expect(match(['Ctrl+G'], resolveCommands({}, false), false, all).command).toBeUndefined();
+    // Off a Mac, Ctrl+W (close the tab) and Ctrl+G (find next) are reserved: never offered, even by an override.
+    expect(resolveCommands({ viewWiki: ['Ctrl+W'], viewGraph: ['Ctrl+G'] }, false).filter((c) => c.id === 'viewWiki' || c.id === 'viewGraph').map((c) => c.keys)).toEqual([[], []]);
+    for (const mac of [true, false]) {
+      const reserved = new Set(RESERVED.map((r) => normalizeBinding(r, mac)));
+      for (const c of resolveCommands({}, mac)) for (const k of c.keys) expect(reserved.has(normalizeBinding(k, mac)), `${c.id} ${k}`).toBe(false);
+    }
   });
 });
