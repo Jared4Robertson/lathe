@@ -21,8 +21,11 @@ import { SpecView } from './specs/SpecPages';
 import { onLatheEvent } from './events';
 import { LatheLogo } from './LatheLogo';
 import { Icon } from './components/icons';
-import { CommandsProvider, useAnnounce, useCommand, useShortcut } from './shell/commands';
+import { CommandsProvider, useAnnounce, useCommand } from './shell/commands';
+import { SPACE_KEYS, spaceCommandId } from './shell/keymap';
 import { Nav } from './shell/Nav';
+import { SpacesProvider, useSpaceState, type SpacesApi } from './shell/spaces';
+import { Tooltip } from './shell/Tooltip';
 import { isBool, usePref } from './shell/prefs';
 import { useNarrow } from './shell/useNarrow';
 import { FocusPage } from './views/FocusPage';
@@ -160,7 +163,7 @@ function Shell() {
     if (narrow) setDrawerOpen(true);
     else if (collapsed) setCollapsed(false);
   }, [narrow, collapsed, setCollapsed]);
-  const navShortcut = useShortcut('toggleNav');
+  const spaces = useSpaceState(spec.index, path, search);
 
   useCommand('toggleNav', () => {
     if (narrow) { if (drawerOpen) closeDrawer(); else setDrawerOpen(true); announce(drawerOpen ? 'Navigation closed' : 'Navigation opened'); return; }
@@ -223,22 +226,25 @@ function Shell() {
   }
 
   return (
+    <SpacesProvider value={spaces}>
+    <SpaceCommands spaces={spaces} />
     <div className={`app${collapsed && !narrow ? ' nav-collapsed' : ''}${narrow ? ' is-narrow' : ''}`} data-specs={spec.index ? 'ready' : spec.error ? 'error' : 'loading'}>
       <a href="#main" className="skip-link">Skip to the page</a>
       {narrow && (
         <div className="topbar">
-          <button
-            ref={menuButton}
-            type="button"
-            className="icon-button"
-            aria-label="Open the navigation"
-            aria-expanded={drawerOpen}
-            aria-controls="nav"
-            title={`Open the navigation${navShortcut ? ` (${navShortcut})` : ''}`}
-            onClick={() => setDrawerOpen(true)}
-          >
-            <Icon name="menu" />
-          </button>
+          <Tooltip label="Open the navigation" command="toggleNav">
+            <button
+              ref={menuButton}
+              type="button"
+              className="icon-button"
+              aria-label="Open the navigation"
+              aria-expanded={drawerOpen}
+              aria-controls="nav"
+              onClick={() => setDrawerOpen(true)}
+            >
+              <Icon name="menu" />
+            </button>
+          </Tooltip>
           <span className="brand"><LatheLogo size={22} /> Lathe</span>
         </div>
       )}
@@ -261,7 +267,24 @@ function Shell() {
       )}
       {page}
     </div>
+    </SpacesProvider>
   );
+}
+
+/** Alt+1 to Alt+9 (⌥1 to ⌥9 on a Mac) switch to the spaces in rail order, each a "Switch to <product>" command. */
+function SpaceCommands({ spaces }: { spaces: SpacesApi }) {
+  return <>{Array.from({ length: SPACE_KEYS }, (_, i) => <SpaceCommand key={i} n={i + 1} spaces={spaces} />)}</>;
+}
+
+function SpaceCommand({ n, spaces }: { n: number; spaces: SpacesApi }) {
+  const announce = useAnnounce();
+  const space = spaces.spaces[n - 1];
+  useCommand(spaceCommandId(n), () => {
+    if (!space) return;
+    spaces.go(space.id);
+    announce(`Switched to ${space.title}`);
+  }, !!space, space ? `Switch to ${space.title}` : undefined);
+  return null;
 }
 
 /** F8 and Shift+F8: move focus to the next or previous problem on the page, and say what it is. */

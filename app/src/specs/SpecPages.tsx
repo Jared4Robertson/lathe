@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react';
-import { Link } from '../router';
+import { Link, useLocation } from '../router';
+import { useSpaces } from '../shell/spaces';
 import { FormatPage } from './FormatPage';
 import { RecordMarkdown } from './mentions';
 import { DomainPatterns } from './PatternParts';
@@ -9,6 +10,7 @@ import { LongList } from '../components/LongList';
 import { PageHeader, ProblemBadge, ProblemList, RecordLink, RecordTree, Section, idText, recordText } from './parts';
 import {
   byIdOrder,
+  checksPath,
   domainPath,
   kindLabel,
   problemOrder,
@@ -264,19 +266,36 @@ export function DomainWiki({ index, id }: { index: SpecIndex; id: string }) {
   );
 }
 
+/** The address of Checks filtered to one product, or of every check. */
+export const checksFor = (product: string | null) => (product ? `${checksPath}?product=${encodeURIComponent(product)}` : checksPath);
+
 function ChecksPage({ index }: { index: SpecIndex }) {
-  const problems = [...index.workspace.problems].sort(problemOrder);
+  const { search } = useLocation();
+  const spaces = useSpaces();
+  const asked = new URLSearchParams(search).get('product');
+  const only = asked && index.byId.get(asked)?.kind === 'product' ? index.byId.get(asked)! : null;
+  // The filter offers the current space, or the product already filtered to.
+  const offer = only ?? (spaces?.current ? index.byId.get(spaces.current.id) ?? null : null);
+  const problems = [...index.workspace.problems]
+    .filter((p) => !only || (p.record !== null && index.byId.get(p.record)?.product === only.id))
+    .sort(problemOrder);
   const groups = new Map<string, Problem[]>();
   for (const p of problems) groups.set(p.check, [...(groups.get(p.check) ?? []), p]);
   const errors = problems.filter((p) => p.severity === 'error').length;
   return (
     <div className="spec-body">
-      <PageHeader eyebrow="Specs · every check" title="Checks">
+      <PageHeader eyebrow={only ? `Specs · checks in ${only.title}` : 'Specs · every check'} title="Checks">
         <p className={`checks ${errors ? 'failed' : 'ok'}`}>
           {errors} error{errors === 1 ? '' : 's'} · {problems.length - errors} warning{problems.length - errors === 1 ? '' : 's'}
         </p>
       </PageHeader>
-      {problems.length === 0 && <p className="hint">Every check passed.</p>}
+      {offer && (
+        <div className="checks-scope" role="group" aria-label="Show checks for">
+          <Link to={checksFor(null)} className="scope-option" aria-current={!only ? 'true' : undefined}>All products</Link>
+          <Link to={checksFor(offer.id)} className="scope-option" aria-current={only ? 'true' : undefined}>{offer.title}</Link>
+        </div>
+      )}
+      {problems.length === 0 && <p className="hint">{only ? `Every check passed in ${only.title}.` : 'Every check passed.'}</p>}
       {[...groups.entries()].map(([check, group]) => (
         <Section key={check} title={check} count={group.length}>
           <ProblemList index={index} problems={group} showCheck={false} />
