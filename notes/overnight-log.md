@@ -105,6 +105,13 @@ Lathe now matches S2 on UC requirements (206/206) and domain rules (98/98) acros
 - 01:45 (coordinator) `e91e91b` Event pages offer the Model view, with the pill picked out (UC113-R07 is now a MUST, T556). Checked in the browser.
 - 01:46 Started performance (70). It also has the first ERD layout: 10–18 s on a fresh dev server while load was high.
 - Load reached 50 at 01:40, from macOS `mediaanalysisd` plus test runs. It dropped when they finished.
+- 02:28 `001cdde` Secondary side bar (64): the inspector is now a side bar with Details, Outline and History.
+  - It's closed in the Wiki view and open in Graph and Model.
+  - Details follows the hover and the selection.
+  - Outline lists headings, levels or boxes.
+  - History shows commits and diffs from `GET /api/history`: git runs from an argument array, with no shell, `--no-ext-diff`, a 5-second limit and a 512 KB cap.
+  
+  App 298, engine 270, check 0 errors. Checked in the browser (Details and History).
 
 ## Incident
 - During 57b, the agent stopped "the process on its dev port" and killed pid 77501, the **Claude desktop app's network service**, which had a connection open to that port. Electron restarted the service; the app and the in-app browser were checked and work. New agent rule: stop only processes you started, by recorded PID, never by port or name. If anything in the Claude app seemed off around 01:00, this is why; a restart of the app clears it.
