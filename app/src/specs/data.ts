@@ -103,8 +103,8 @@ export function useSpec(): SpecState {
 export const productPath = (id: string) => `/specs/${encodeURIComponent(id)}`;
 export const domainPath = (product: string, domain: string) => `/specs/${encodeURIComponent(product)}/${encodeURIComponent(domain)}`;
 export const recordPath = (id: string) => `/records/${encodeURIComponent(id)}`;
-/** A group's address: its parent record and the kind of its members. */
-export const groupPath = (parent: string, kind: string) => `/records/${encodeURIComponent(parent)}/${encodeURIComponent(kind)}`;
+/** A group's address: its parent record and the kind of its members, then the parts of a test-plan group within it ("test/acceptance"). */
+export const groupPath = (parent: string, kind: string) => `/records/${encodeURIComponent(parent)}/${kind.split('/').map(encodeURIComponent).join('/')}`;
 export const checksPath = '/checks';
 export const formatPath = '/format';
 
@@ -126,7 +126,8 @@ export function parseSpecRoute(pathname: string): SpecRoute | null {
   if (parts[0] === 'format') return parts.length === 1 ? { page: 'format' } : { page: 'missing' };
   if (parts[0] === 'records') {
     if (parts.length === 2) return { page: 'record', id: parts[1] };
-    if (parts.length === 3) return { page: 'group', parent: parts[1], kind: parts[2] };
+    // A test-plan group in a Tests folder has more parts after the kind.
+    if (parts.length >= 3) return { page: 'group', parent: parts[1], kind: parts.slice(2).join('/') };
     return { page: 'missing' };
   }
   if (parts[0] !== 'specs') return null;

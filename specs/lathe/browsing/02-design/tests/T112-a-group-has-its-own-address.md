@@ -8,4 +8,4 @@ run_by: app/test/graph/GraphPage.test.tsx
 links:
   proves: [LA-BRW-UC40-R03]
 ---
-Follows the domain panel's link to a group, expects the group's address, panel, columns and trail, follows a member and goes Back to the group; then expects a message for a group that does not exist.
+Follows the domain panel's link to a group, expects the group's address, panel, columns and trail (the domain as "Domain (P-D)", the group as "Use cases" with its parent in the tooltip), follows a member and goes Back to the group; then expects a message for a group that does not exist.

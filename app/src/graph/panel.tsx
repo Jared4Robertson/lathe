@@ -8,13 +8,13 @@ import { FILE_KIND, PARENT, graphRelationLabel, parseGroupId, type Neighborhood 
 // can show it without loading the graph.
 
 /** A link to another center: a real address for new tabs, onNavigate on a plain click. */
-export function NodeLink({ id, onNavigate, hrefFor, children, title }: { id: string; onNavigate: (id: string) => void; hrefFor: (id: string) => string; children: ReactNode; title?: string }) {
+export function NodeLink({ id, onNavigate, hrefFor, children, title, ariaLabel, className }: { id: string; onNavigate: (id: string) => void; hrefFor: (id: string) => string; children: ReactNode; title?: string; ariaLabel?: string; className?: string }) {
   const onClick = (e: MouseEvent<HTMLAnchorElement>) => {
     if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     e.preventDefault();
     onNavigate(id);
   };
-  return <a href={hrefFor(id)} onClick={onClick} title={title}>{children}</a>;
+  return <a href={hrefFor(id)} onClick={onClick} title={title} aria-label={ariaLabel} className={className}>{children}</a>;
 }
 
 /** How a node near the center is related to it: parent, child, a group, or the relations between them. */

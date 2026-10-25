@@ -28,14 +28,14 @@ describe('graph groups', () => {
   const index = testIndex();
   const grouped = indexWorkspace(groupedWorkspace());
 
-  it('LA-BRW-T100 A record with several kinds of child, or more than a handful of one kind, has a group per child kind, labeled with the plural and a count', () => {
+  it('LA-BRW-T100 A record with several kinds of child has a group per child kind, labeled with the plural and a count', () => {
     expect(isGrouped(index, 'P-D')).toBe(true);
     expect(childKinds(index, 'P-D')).toEqual(['aggregate', 'use_case', 'view', 'endpoint', 'component', 'test', 'question']);
-    // One kind, a handful or fewer: no groups.
+    // One kind of child: no groups.
     expect(isGrouped(index, 'P-D-UC01')).toBe(false);
     expect(isGrouped(index, 'P-D-A1')).toBe(false);
     expect(isGrouped(index, 'P')).toBe(false);
-    // Six of one kind is more than a handful.
+    // Requirements and a question are two kinds.
     expect(isGrouped(grouped, 'P-D-UC02')).toBe(true);
     expect(groupLabel(grouped, 'P-D-UC02/requirement')).toBe('Use-case requirements (6)');
     expect(groupLabel(grouped, 'P-D/use_case')).toBe('Use cases (2)');
@@ -43,7 +43,7 @@ describe('graph groups', () => {
     expect(['question', 'domain_rule', 'domain'].map((k) => pluralLabel(index, k))).toEqual(['Open questions', 'Domain rules', 'Domains']);
     expect(groupMembers(index, 'P-D/component').map((r) => r.id)).toEqual(['P-D-C01', 'P-D-C02']);
     // A group is addressed by its parent and kind, and is not a record.
-    expect(parseGroupId('P-D/use_case')).toEqual({ parent: 'P-D', kind: 'use_case' });
+    expect(parseGroupId('P-D/use_case')).toEqual({ parent: 'P-D', kind: 'use_case', path: [] });
     expect(parseGroupId('P-D-UC01')).toBeNull();
     expect(parseGroupId('file:src/thing.ts')).toBeNull();
     expect(index.byId.has('P-D/use_case')).toBe(false);
@@ -73,7 +73,7 @@ describe('graph groups', () => {
     expect(records(neighborhood(grouped, 'P-D-UC01', 2, undefined, new Map([['P-D/use_case', false]])))).not.toContain('P-D-UC02');
     // A grouped record below the focus: its requirements stay folded.
     const uc2 = neighborhood(grouped, 'P-D-UC02', 2);
-    expect(groups(uc2)).toEqual(['P-D-UC02/requirement', 'P-D/use_case']);
+    expect(groups(uc2)).toEqual(['P-D-UC02/question', 'P-D-UC02/requirement', 'P-D/use_case']);
     expect(records(uc2).filter((id) => id.startsWith('P-D-UC02-'))).toEqual([]);
     // Cross-links still go record to record.
     const req = neighborhood(index, 'P-D-UC01-R01', 3);
@@ -91,8 +91,8 @@ describe('graph groups', () => {
     expect(neighborhood(grouped, 'P-D-UC01', 1).nodes.find((x) => x.id === 'P-D/use_case')!.group!.open).toBe(false);
     // A domain: its product above, one folder per kind of child below.
     expect(ids('P-D')).toEqual(['P', 'P-D', 'P-D/aggregate', 'P-D/component', 'P-D/endpoint', 'P-D/question', 'P-D/test', 'P-D/use_case', 'P-D/view']);
-    // A record with many children reaches them through their folder; a leaf shows only its parent.
-    expect(ids('P-D-UC02')).toEqual(['P-D-UC02', 'P-D-UC02/requirement', 'P-D/use_case']);
+    // A record with several kinds of children reaches them through their folders; a leaf shows only its parent.
+    expect(ids('P-D-UC02')).toEqual(['P-D-UC02', 'P-D-UC02/question', 'P-D-UC02/requirement', 'P-D/use_case']);
     expect(ids('P-D-UC01-R01')).toEqual(['P-D-UC01', 'P-D-UC01-R01']);
     for (const id of ['P-D-UC01', 'P-D', 'P-D-UC01-R01']) expect([...rels(id)]).toEqual([PARENT]);
     // A folder opened here shows its members, siblings included.

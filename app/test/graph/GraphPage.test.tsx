@@ -42,12 +42,12 @@ describe('graph page', () => {
     // The view's own neighbor, the endpoint, is now drawn.
     await waitFor(() => expect(node('P-D-E01')).not.toBeNull());
     const trail = within(screen.getByRole('navigation', { name: 'Records visited' }));
-    expect(trail.getAllByRole('listitem').map((li) => li.textContent)).toEqual(['P-D-UC01-R01', 'P-D-V01']);
+    expect(trail.getAllByRole('listitem').map((li) => li.textContent)).toEqual(['The owner is shown (P-D-UC01-R01)', 'Thing page (P-D-V01)']);
 
     await back();
     expect(window.location.pathname).toBe('/records/P-D-UC01-R01');
     await waitFor(() => expect(title()).toBe('The owner is shown'));
-    expect(trail.getAllByRole('listitem').map((li) => li.textContent)).toEqual(['P-D-UC01-R01']);
+    expect(trail.getAllByRole('listitem').map((li) => li.textContent)).toEqual(['The owner is shown (P-D-UC01-R01)']);
 
     // /graph on its own opens the first product in the Graph view.
     await openApp('/graph', { workspace: testWorkspace() });
@@ -246,7 +246,9 @@ describe('graph groups on the page', () => {
     expect(left('P-D/use_case')).toBeLessThan(left('P-D-UC01'));
     expect(groupNode('P-D/use_case')!.className).toContain('is-focus');
     const trail = within(screen.getByRole('navigation', { name: 'Records visited' }));
-    expect(trail.getAllByRole('listitem').map((li) => li.textContent)).toEqual(['P-D', 'P-D / Use cases']);
+    // A record by its title and ID; a group by its name alone, its parent named in its tooltip.
+    expect(trail.getAllByRole('listitem').map((li) => li.textContent)).toEqual(['Domain (P-D)', 'Use cases']);
+    expect(trail.getByText('Use cases').closest('[aria-current]')).toHaveAttribute('title', 'Use cases of P-D');
 
     const members = within(inspector().getByRole('list', { name: 'Members' }));
     fireEvent.click(members.getByRole('link', { name: /P-D-UC01/ }));
@@ -284,7 +286,7 @@ describe('graph groups on the page', () => {
 
     // Its links carry the host's addresses; a plain click goes through onNavigate.
     rerender(<GraphView {...props} settings={{ ...DEFAULT_GRAPH_SETTINGS, depth: 2 }} focus="P-D-V01" />);
-    const link = within(screen.getByRole('navigation', { name: 'Records visited' })).getByRole('link', { name: 'P-D-UC01-R01' });
+    const link = within(screen.getByRole('navigation', { name: 'Records visited' })).getByRole('link', { name: 'The owner is shown (P-D-UC01-R01)' });
     expect(link.getAttribute('href')).toBe('/records/P-D-UC01-R01');
     fireEvent.click(link);
     expect(moves).toEqual(['P-D-V01', 'P-D-UC01-R01']);
