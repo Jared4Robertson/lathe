@@ -4,9 +4,10 @@
 //
 // Modes: `npm run start` and the packed app run serve() from the built Lathe package; `npm run dev`
 // (LATHE_DESKTOP_DEV=1) loads the app's Vite dev server instead, so app changes hot-reload.
-import { app, BrowserWindow, dialog, Menu, nativeTheme, screen, session, shell } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, Menu, nativeTheme, screen, session, shell } from 'electron';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { applyChrome, chromeWindowOptions, type Chrome } from './chrome.ts';
 import { keyPresses, MENU_COMMANDS } from './commands.ts';
 import { addRecent, checkFolder, parseRecent, productNames, windowTitle } from './folders.ts';
 import { menuTemplate } from './menu.ts';
@@ -19,14 +20,12 @@ const DESKTOP_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '
 const REPO_ROOT = path.resolve(DESKTOP_DIR, '..');
 const DEV = process.env.LATHE_DESKTOP_DEV === '1';
 const SMOKE = smokeFile();
-/** The shell background of app/src/styles.css (--shell), so a window never flashes white. */
-const SHELL_BACKGROUND = { light: '#DDE3E6', dark: '#0A0F12' };
 
 if (process.env.LATHE_DESKTOP_USER_DATA) app.setPath('userData', process.env.LATHE_DESKTOP_USER_DATA);
 const RECENT_FILE = () => path.join(app.getPath('userData'), 'recent-folders.json');
 const WINDOWS_FILE = () => path.join(app.getPath('userData'), 'window-state.json');
 
-const open = new Map<string, { win: BrowserWindow; server?: AppServer }>();
+const open = new Map<string, { win: BrowserWindow; server?: AppServer; chrome?: Chrome }>();
 let recent: string[] = [];
 let windowStates: WindowStates = {};
 /** A folder dropped on the Dock icon before the app was ready. */
@@ -116,13 +115,15 @@ async function openFolder(input: string) {
 
   const names = productNames(check.specsDir);
   const placed = windowFor(windowStates, folder, screen.getAllDisplays().map((d) => d.workArea));
+  // No system title bar: the app draws its own, in the shell's color, so the window never flashes white.
+  const chromeOptions = chromeWindowOptions(process.platform, nativeTheme.shouldUseDarkColors);
   const win = new BrowserWindow({
     ...placed,
     minWidth: MIN_SIZE.width,
     minHeight: MIN_SIZE.height,
     show: false,
     title: windowTitle(folder, names),
-    backgroundColor: nativeTheme.shouldUseDarkColors ? SHELL_BACKGROUND.dark : SHELL_BACKGROUND.light,
+    ...chromeOptions,
     webPreferences: {
       preload: path.join(DESKTOP_DIR, 'out', 'preload.cjs'),
       contextIsolation: true,
@@ -131,7 +132,7 @@ async function openFolder(input: string) {
     },
   });
   if (process.platform === 'darwin') win.setRepresentedFilename(folder);
-  const entry: { win: BrowserWindow; server?: AppServer } = { win };
+  const entry: { win: BrowserWindow; server?: AppServer; chrome?: Chrome } = { win };
   open.set(folder, entry);
 
   // The window keeps the product's name and folder, whatever the page calls itself.
@@ -169,7 +170,7 @@ async function openFolder(input: string) {
   keepLinksOutside(win, entry.server.url);
 
   if (SMOKE) {
-    const smoke = runSmoke(win, names[0] ?? path.basename(folder), (id) => sendCommand(win, id));
+    const smoke = runSmoke(win, names[0] ?? path.basename(folder), (id) => sendCommand(win, id), { titleBarStyle: chromeOptions.titleBarStyle, chrome: () => entry.chrome });
     void win.loadURL(entry.server.url);
     const result = await smoke.catch((error: unknown) => ({ error: error instanceof Error ? error.message : String(error) }));
     writeSmoke(SMOKE, result);
@@ -221,6 +222,14 @@ if (!SMOKE && !app.requestSingleInstanceLock()) {
   });
   // Stopped from a terminal (or restarted by the dev watcher): quit properly, so dev servers stop too.
   for (const signal of ['SIGINT', 'SIGTERM'] as const) process.on(signal, () => app.quit());
+
+  // The page's theme colors for its window's chrome (the preload's setChrome), checked before use.
+  ipcMain.on('lathe:set-chrome', (event, input: unknown) => {
+    const entry = [...open.values()].find((e) => !e.win.isDestroyed() && e.win.webContents === event.sender);
+    if (!entry || event.senderFrame !== entry.win.webContents.mainFrame) return;
+    const chrome = applyChrome(entry.win, process.platform, input);
+    if (chrome) entry.chrome = chrome;
+  });
 
   void app.whenReady().then(async () => {
     // The app needs no camera, location or notifications; it may copy text.
