@@ -10,7 +10,7 @@ The rules come from problems the app has had: a button laid over a heading with 
 
 ## How a domain uses the pattern
 
-The domain links the pattern with `follows`. The pattern has no settings: every rule applies to all of the domain's code. Each rule is proved by a test in `app/test/standards.test.tsx` that reads the source or renders the main pages, and that names the file and line to fix when it fails.
+The domain links the pattern with `follows`. The pattern has no settings: every rule applies to all of the domain's code. Each rule is proved by a test in `app/test` (most in `standards.test.tsx`) that reads the source or renders the main pages, and that names the file and line to fix when it fails. R21's tests also run knip on the app, the engine and the desktop app.
 
 ## Rules
 
@@ -25,5 +25,6 @@ The domain links the pattern with `follows`. The pattern has no settings: every 
 - `LA-PAT-APP-CODE-R15`: themes only set tokens.
 - `LA-PAT-APP-CODE-R19`: one address per thing, made by `addressOf`.
 - `LA-PAT-APP-CODE-R20`: changes are hard cutovers, with no compatibility layer.
+- `LA-PAT-APP-CODE-R21`: nothing outlives its purpose: no unused code, style, command or icon, and every mark the Graph and Model views draw is in their key.
 
-The numbers of the rules that moved to App experience (R08, R09, R11 to R14, R16 and R17) are not reused; new rules here continue from R21.
+The numbers of the rules that moved to App experience (R08, R09, R11 to R14, R16 and R17) are not reused; new rules here continue from R22.

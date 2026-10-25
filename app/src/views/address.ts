@@ -46,7 +46,6 @@ export type ViewName = 'wiki' | 'graph' | 'model';
 /** Every view, in the order its panes sit, left to right. */
 export const VIEW_NAMES: readonly ViewName[] = ['wiki', 'graph', 'model'];
 export const VIEW_LABELS: Record<ViewName, string> = { wiki: 'Wiki', graph: 'Graph', model: 'Model' };
-export const isViewName = (v: unknown): v is ViewName => typeof v === 'string' && (VIEW_NAMES as readonly string[]).includes(v);
 
 /** The views a list names ("wiki,graph"), each once and in pane order; empty when it names none. */
 export function parseViews(value: string | null | undefined): ViewName[] {

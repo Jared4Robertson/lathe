@@ -226,9 +226,3 @@ export const treeChildren = (index: SpecIndex, id: string): readonly string[] =>
 
 /** The stage, folder or kind group the tree has at an ID, or undefined. */
 export const treeGroup = (index: SpecIndex, id: string): TreeGroup | undefined => treeOf(index).groups.get(id);
-
-/** A node's siblings in the tree, itself included, in order. */
-export function treeSiblings(index: SpecIndex, id: string): readonly string[] {
-  const parent = treeParent(index, id);
-  return parent === null ? [id] : treeChildren(index, parent);
-}

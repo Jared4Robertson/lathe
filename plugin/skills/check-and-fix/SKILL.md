@@ -42,7 +42,7 @@ An error means the specs are broken. Do not leave one behind.
 Warnings do not fail the check. They are gaps, and most say one of three things:
 
 - **Something is not covered yet.** An obligation nothing designs (`unsatisfied`) or no automated or manual test proves (`unproved`), a component whose file does not exist yet, a proof still owed by a planned test. A planned test does not clear `unproved`.
-- **Two stages do not join up yet.** A rule no use case applies, a use case without a flow, an interaction requirement that fulfills nothing, a test whose type does not match what it proves. Fix the link, not the check.
+- **Two stages do not join up yet.** A rule no use case applies, a use case without a flow, an interaction requirement that fulfills nothing, a test whose type does not match what it proves, a component that satisfies nothing (`component-satisfies-nothing`), a test that proves and supports nothing (`test-proves-nothing`). Fix the link, or remove what has no purpose; never the check.
 - **A level of the spec is the wrong size.** `too-many-children`: a record has more children of one kind than `structure.maxChildren` in `lathe.config.json` (default 15; tests are never counted). Add a level between them: a capability for use cases or flows, a layer for components, another aggregate for domain rules. `lone-child`: a capability or layer holds only one record; merge it into a neighbor, or give it more. Moving a record changes only its `parent`, never its ID. Do not raise `structure.maxChildren` to silence the warning unless the user asks.
 
 Fix the warnings your task is about; leave the rest and mention them.

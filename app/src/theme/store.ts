@@ -1,8 +1,7 @@
 import { parseTheme, type ModeChoice, type Theme } from './theme';
 
 // Where a person's themes are kept: the custom themes, the chosen theme and the Light, Dark or
-// System choice. The web app keeps them in local storage; the desktop app (brief 47) can keep them
-// in its user data by calling setThemeStore() with its own store before the app renders.
+// System choice, kept in local storage (the desktop app's window keeps its local storage too).
 //
 // The early script in app/index.html reads two of these keys itself, before first paint: the
 // chosen theme's stylesheet and the mode. Keep the keys and their JSON in step with it.
@@ -52,7 +51,7 @@ function readCustom(value: unknown): Theme[] {
   });
 }
 
-export const localThemeStore: ThemeStore = {
+export const themeStore: ThemeStore = {
   load() {
     const chosen = readJson(STORAGE_KEYS.chosen);
     const mode = readJson(STORAGE_KEYS.mode);
@@ -73,9 +72,3 @@ export const localThemeStore: ThemeStore = {
     } catch { /* storage full or blocked: the choice lasts until reload */ }
   },
 };
-
-let store: ThemeStore = localThemeStore;
-
-/** The seam for another home for themes (the desktop app's user data). */
-export function setThemeStore(next: ThemeStore) { store = next; }
-export const themeStore = () => store;
