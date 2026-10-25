@@ -96,9 +96,6 @@ describe('domain page', () => {
 
   it('lists only capabilities in Use cases when the domain keeps its use cases under capabilities', async () => {
     const w = demoWorkspace();
-    if (!w.kinds.some((k) => k.kind === 'capability')) {
-      w.kinds.unshift({ kind: 'capability', label: 'Capability', stage: 'define', section: 'use-cases', parent_kinds: ['domain'], required_fields: ['order'], obligation: false, proof_only: false, description: 'An ordered slice of a domain.' });
-    }
     const shop = w.records.find((r) => r.id === 'DM-SHOP')!;
     w.records.push({ ...shop, id: 'DM-SHOP-CAP01', kind: 'capability', title: 'Buying', parent: 'DM-SHOP', fields: { order: '1' }, body: '', path: 'specs/dm/cap01.md', mentions: [] });
     for (const r of w.records) if (r.kind === 'use_case' && r.parent === 'DM-SHOP') r.parent = 'DM-SHOP-CAP01';

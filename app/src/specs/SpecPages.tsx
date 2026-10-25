@@ -197,11 +197,12 @@ export function DomainWiki({ index, id }: { index: SpecIndex; id: string }) {
   };
   const folderSection = (folder: Folder, level: 2 | 3) => {
     const kinds = folder.kinds.filter((k) => folder.records.some((r) => r.kind === k));
-    // In a folder that holds capabilities, the records of a kind that may sit under one are those outside any.
+    // In a folder that holds capabilities, its other records are those outside any capability
+    // (the ones under a capability are folded under it).
     const holdsCapabilities = kinds.includes('capability');
     const kindTitle = (kind: string) => {
       const title = pluralLabel(kindLabel(index, kind));
-      return holdsCapabilities && kind !== 'capability' && index.kinds.get(kind)?.parent_kinds.includes('capability') ? `${title} outside any capability` : title;
+      return holdsCapabilities && kind !== 'capability' ? `${title} outside any capability` : title;
     };
     return (
       <Section key={folder.key} level={level} title={folder.label} count={folder.records.length} className="folder">
