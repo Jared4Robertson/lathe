@@ -223,6 +223,8 @@ describe('the graph tree and its context ring', () => {
     const minimap = screen.getByRole('switch', { name: 'Minimap' }) as HTMLInputElement;
     expect(ring.checked).toBe(true);
     expect(minimap.checked).toBe(false);
+    // The trace preset is worded with the relations' labels, never their codes (LA-BRW-DR243).
+    expect(screen.getByRole('button', { name: 'Only satisfies, proves and carries out links' })).toBeInTheDocument();
     expect(document.querySelector('.react-flow__minimap')).toBeNull();
     await waitFor(() => expect(document.querySelector('.react-flow__node.is-context')).not.toBeNull());
     fireEvent.click(ring);

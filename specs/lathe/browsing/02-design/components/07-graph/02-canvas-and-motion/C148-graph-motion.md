@@ -2,7 +2,7 @@
 id: LA-BRW-C148
 kind: component
 title: Graph motion
-parent: LA-BRW-LAY07
+parent: LA-BRW-LAY13
 component_type: module
 file: app/src/graph/motion.ts
 links:

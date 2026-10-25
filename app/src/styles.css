@@ -11,7 +11,7 @@
   /* Motion: the speed and easing every move and fade shares, in CSS and in JS (app/src/graph/motion.ts); reduced motion turns each off (LA-PAT-APP-UX-R04). */
   --motion-speed: 320ms; --motion-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
   --node-radius: 4px; /* every graph node is the same rectangle; color tells the stage */
-  /* The graph's context ring (LA-BRW-UC20-R10): faded and a little smaller; the hover spotlight dims the rest a step; the vignette's width at the canvas's edges. */
+  /* The graph's context ring (LA-BRW-DR302): faded and a little smaller; the hover spotlight dims the rest a step; the vignette's width at the canvas's edges. */
   --context-opacity: 0.35; --context-scale: 0.9; --spotlight-dim: 0.5; --vignette: 56px;
   /* The graph's cross-links (the Links switch), dashed apart from the tree's solid lines, and the minimap's mask. */
   --link-edge: var(--spark); --minimap-mask: color-mix(in srgb, var(--ink) 8%, transparent);

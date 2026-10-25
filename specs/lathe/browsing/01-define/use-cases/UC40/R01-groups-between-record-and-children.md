@@ -1,7 +1,7 @@
 ---
 id: LA-BRW-UC40-R01
 kind: requirement
-title: A record with several kinds of children reaches them through one group per kind
+title: Folders and records with several kinds of children are reached through one group each
 parent: LA-BRW-UC40
 ---
-When a record's children include more than one kind, the graph MUST put a group node per child kind between the record and those children, labeled with the kind's plural label and the number of members, such as "Use cases (5)". A group MUST be drawn like a folder, differently from records. The parent/child spine MUST run record, group, record, while every other link (satisfies, proves and so on) MUST still run record to record. Groups MUST NOT count as a hop for the depth, except the group at the center: its parent and its members are one hop from it. Hiding a kind hides its groups, hiding the parent/child relation hides every group, and trace mode MUST show no groups.
+The graph MUST draw the nav's stages and folders as group nodes, and when a record's children, or a folder's records, include more than one kind the nav lists side by side, MUST put a group node per kind between them, labeled with the kind's plural label and the number of members, such as "Use cases (5)". A group MUST be drawn like a folder, differently from records. The parent/child spine MUST run record, group, record, while every cross-link (satisfies, proves and so on) MUST still run record to record. Every group is a level for the depth. Hiding a kind hides its kind groups (a stage or named folder has no kind of its own), hiding the parent/child relation hides every group, and trace mode MUST show no groups.

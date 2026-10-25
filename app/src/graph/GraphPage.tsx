@@ -17,6 +17,7 @@ import {
   type NodeProps,
 } from '@xyflow/react';
 import { kindLabel, type SpecIndex } from '../specs/data';
+import { lowerLabel } from '../plural';
 import { useCommand } from '../shell/commands';
 import { Tooltip } from '../shell/Tooltip';
 import { Icon } from '../components/icons';
@@ -110,7 +111,7 @@ function Marks({ data }: { data: NodeData }) {
   );
 }
 
-/** A context node's quiet title: short, cut at a word; the whole title and the ID are in its tooltip (LA-BRW-UC20-R16). */
+/** A context node's quiet title: short, cut at a word; the whole title and the ID are in its tooltip (LA-BRW-DR302). */
 export function shortTitle(title: string, max = 28): string {
   if (title.length <= max) return title;
   const cut = title.slice(0, max - 1);
@@ -540,6 +541,12 @@ export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted,
   );
 }
 
+/** The trace preset's button, worded with the relations' labels (LA-BRW-DR243): "Only satisfies, proves and carries out links". */
+export function traceOnlyLabel(index: SpecIndex): string {
+  const words = ['satisfies', 'proves', 'fulfills'].map((r) => lowerLabel(graphRelationLabel(r, index)));
+  return `Only ${words.slice(0, -1).join(', ')} and ${words.at(-1)} links`;
+}
+
 interface FilterProps {
   index: SpecIndex;
   filters: Filters;
@@ -604,7 +611,7 @@ function FilterControls({ index, filters, setFilters, ring, setRing, minimap, se
         </fieldset>
         <div className="graph-filter-actions">
           <button type="button" onClick={() => setFilters({ ...filters, hiddenRelations: new Set(relations.filter((r) => !TRACE_RELATIONS.has(r))) })}>
-            Only satisfies, proves and fulfills
+            {traceOnlyLabel(index)}
           </button>
           <button type="button" className="secondary" onClick={() => setFilters(NO_FILTERS)} disabled={hidden === 0}>Clear filters</button>
         </div>

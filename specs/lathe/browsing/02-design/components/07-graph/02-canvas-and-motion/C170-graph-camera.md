@@ -2,7 +2,7 @@
 id: LA-BRW-C170
 kind: component
 title: Graph camera
-parent: LA-BRW-LAY07
+parent: LA-BRW-LAY13
 component_type: module
 file: app/src/graph/camera.ts
 links:

@@ -2,7 +2,7 @@
 id: LA-BRW-C213
 kind: component
 title: Tap to open on a canvas
-parent: LA-BRW-LAY07
+parent: LA-BRW-LAY13
 component_type: module
 file: app/src/graph/touch.tsx
 links:

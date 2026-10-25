@@ -1,7 +1,7 @@
 ---
 id: LA-BRW-T101
 kind: test
-title: Groups are folded by default, open for the focus or when opened, and the spine runs through them
+title: Groups within the depth are open and those at its edge folded, the person can open or fold any, and the spine runs record, group, record
 parent: LA-BRW
 test_type: unit
 run_by: app/test/graph/groups.test.ts

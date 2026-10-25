@@ -2,7 +2,7 @@
 id: LA-BRW-C231
 kind: component
 title: The graph header holds still
-parent: LA-BRW-LAY07
+parent: LA-BRW-LAY14
 component_type: react component
 file: app/src/graph/GraphPage.tsx
 links:
