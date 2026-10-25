@@ -87,8 +87,12 @@ describe('graph groups', () => {
     expect(g.nodes[0]).toMatchObject({ id: 'P-D/use_case', distance: 0 });
     expect(records(g)).toEqual(['P-D', 'P-D-UC01', 'P-D-UC02']);
     for (const e of ['P-D > P-D/use_case', 'P-D/use_case > P-D-UC01', 'P-D/use_case > P-D-UC02']) expect(spine(g)).toContain(e);
-    // The parent's other groups and the members' own groups are shown folded, as context.
-    expect(g.nodes.filter((x) => x.group && x.id !== 'P-D/use_case').every((x) => !x.group!.open)).toBe(true);
+    // One level each way: at depth 1 no other group shows, neither the parent's nor the members' own.
+    expect(g.nodes.filter((x) => x.group).map((x) => x.id)).toEqual(['P-D/use_case']);
+    // Depth 2 adds them, folded.
+    const two = neighborhood(grouped, 'P-D/use_case', 2);
+    expect(two.nodes.filter((x) => x.group && x.id !== 'P-D/use_case').length).toBeGreaterThan(0);
+    expect(two.nodes.filter((x) => x.group && x.id !== 'P-D/use_case').every((x) => !x.group!.open)).toBe(true);
     // The focus group cannot be folded.
     expect(records(neighborhood(grouped, 'P-D/use_case', 1, undefined, new Map([['P-D/use_case', false]])))).toContain('P-D-UC01');
     // A group that does not exist shows nothing.
