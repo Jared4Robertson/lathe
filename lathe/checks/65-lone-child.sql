@@ -1,5 +1,10 @@
--- Work to do: a capability or a layer with exactly one child, of any kind. A level that holds one record
--- groups nothing: merge it into a neighbor, or give it more.
+-- A capability or a layer with exactly one child, of any kind.
+--
+-- A level that holds one record groups nothing. Only its own children are counted, not theirs, and one with
+-- no children is not reported. Merge it into a neighbor, or give it more.
+--
+-- severity: warning
+-- kinds: capability layer
 SELECT 'warning' AS severity, 'lone-child' AS "check", g.id AS record,
        upper(left(g.kind, 1)) || substr(g.kind, 2) || ' ' || g.id || ' has only one child, '
        || coalesce(nullif(g.child, ''), g.child_path)

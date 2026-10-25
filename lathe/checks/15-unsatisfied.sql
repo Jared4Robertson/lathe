@@ -1,9 +1,14 @@
--- Work to do: an obligation (any kind the meta-model marks as one) that no 'design' link targets.
--- A proof-only obligation kind (kinds.csv obligation `proof`) asks for no design, so it is never reported.
--- A pattern rule is owed by each domain that follows its pattern, itself or through a use case (unless,
--- followed only through use cases, its setting is Not applicable in every one of them there, as in
--- lathe/src/coverage.ts), and only a component in that domain designs it there, so it is reported once
--- for each domain that owes it and lacks one.
+-- An obligation that no design link targets yet.
+--
+-- An obligation is any kind the meta-model marks as one. A proof-only obligation kind (kinds.csv obligation
+-- `proof`) asks for no design, so it is never reported. A pattern rule is owed by each domain that follows
+-- its pattern, itself or through a use case (unless, followed only through use cases, its setting is Not
+-- applicable in every one of them there, as in lathe/src/coverage.ts), and only a component in that domain
+-- designs it there, so it is reported once for each domain that owes it and lacks one. Link a component to
+-- it with `satisfies`, or another design relation.
+--
+-- severity: warning
+-- kinds: requirement domain_rule interaction_requirement
 SELECT severity, "check", record, message FROM (
 WITH design_links AS (
   SELECT DISTINCT l.target, t.kind AS target_kind, s.domain AS source_domain

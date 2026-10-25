@@ -1,4 +1,10 @@
--- A fitness record's date is a real calendar date written YYYY-MM-DD. A missing date is missing-required-field.
+-- A fitness record's date is a real calendar date written YYYY-MM-DD.
+--
+-- A missing date is missing-required-field. Write the date of the judgment in that form, such as
+-- `2026-03-02`.
+--
+-- severity: error
+-- kinds: fitness
 SELECT 'error' AS severity, 'bad-fitness-date' AS "check", nullif(r.id, '') AS record,
        coalesce(nullif(r.id, ''), r.path) || ' has date "' || f.value || '", which is not a real date written YYYY-MM-DD.' AS message
 FROM records r

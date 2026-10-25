@@ -1,12 +1,18 @@
--- Work to do: an obligation that is already proved, but that a planned test is also meant to prove. Coverage
--- counts these in planned_any but not in planned; this check names each one, with the planned test that
--- still owes its proof, so the list behind planned_any is never only a count. An obligation not yet proved
--- whose test is only planned is reported by unproved instead.
--- Proof is judged as in lathe/src/coverage.ts: an obligation in a domain is owed by that domain and any
--- test may prove it; a pattern rule is owed by each domain that follows its pattern, itself or through one of
--- its use cases (unless the domain follows only through use cases that all mark the rule's setting Not
--- applicable), and only tests in that domain prove it there or owe it there. An automated test's proof
--- counts only when its file backs it.
+-- An obligation that is already proved, but that a planned test is also meant to prove.
+--
+-- Coverage counts these in `planned_any` but not in `planned`; this check names each one, with the planned
+-- test that still owes its proof, so the list behind `planned_any` is never only a count. An obligation not
+-- yet proved whose test is only planned is reported by unproved instead.
+--
+-- Proof is judged as in lathe/src/coverage.ts: an obligation in a domain is owed by that domain and any test
+-- may prove it; a pattern rule is owed by each domain that follows its pattern, itself or through one of its
+-- use cases (unless the domain follows only through use cases that all mark the rule's setting Not
+-- applicable), and only tests in that domain prove it there or owe it there. An automated test's proof counts
+-- only when its file backs it. Write the planned test, or drop its claim if the proof it owes is already
+-- made.
+--
+-- severity: warning
+-- kinds: test
 SELECT severity, "check", record, message FROM (
 WITH states AS (
   SELECT path, record, lower(trim(any_value(value))) AS state FROM fields WHERE name = 'state' GROUP BY path, record
