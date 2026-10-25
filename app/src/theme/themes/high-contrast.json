@@ -1,0 +1,41 @@
+{
+  "format": "lathe-theme",
+  "version": 1,
+  "name": "High contrast",
+  "light": {
+    "--shell": "#C4CACD",
+    "--paper": "#FFFFFF",
+    "--sheet": "#FFFFFF",
+    "--ink": "#000000",
+    "--muted": "#33393D",
+    "--rule": "#5E676C",
+    "--steel": "#00406E",
+    "--steel-bg": "#DDEBF6",
+    "--spark": "#7E2200",
+    "--spark-bg": "#FBE4DA",
+    "--warn": "#5C4000",
+    "--error": "#8F0000",
+    "--error-bg": "#FCE1E1",
+    "--g-structural": "#000000"
+  },
+  "dark": {
+    "--shell": "#2A2F33",
+    "--paper": "#000000",
+    "--sheet": "#0B0D0E",
+    "--ink": "#FFFFFF",
+    "--muted": "#D3D9DC",
+    "--rule": "#98A2A8",
+    "--steel": "#9AD8FF",
+    "--steel-bg": "#0B2638",
+    "--spark": "#FFB08C",
+    "--spark-bg": "#33160A",
+    "--warn": "#FFD966",
+    "--error": "#FF9C9C",
+    "--error-bg": "#3A0B0B",
+    "--g-structural": "#FFFFFF",
+    "--on-mark": "#000000"
+  },
+  "tokens": {
+    "--text-size": "16px"
+  }
+}
