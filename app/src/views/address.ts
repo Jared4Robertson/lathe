@@ -5,8 +5,8 @@ import type { SpecIndex, SpecRoute } from '../specs/data';
 // `/LA-EXP`). A group is at its place in the graph's tree (a stage or folder, `/LA-EXP/define/use-cases`, or a record's
 // group of one kind of child, `/<parent-id>/<kind>`), and a group within one adds its parts
 // (`/DM-SHOP/design/test-plan/acceptance/…`).
-// App pages are lowercase words (`/`, `/checks`, `/format`, `/settings/appearance`),
-// so they never clash with an ID, which starts with a capital. Every address
+// App pages are lowercase words (`/`, `/format`, `/settings/appearance`), so they never clash with
+// an ID, which starts with a capital; a space's Checks page is its product's ID and a word (`/LA/checks`). Every address
 // of a record or group is made here, by addressOf. The open views (wiki, graph, model, one pane
 // each) are a query parameter, `?view=wiki,graph`, so a shared link opens as it was seen.
 
@@ -18,7 +18,12 @@ export const isRecordId = (part: string) => RECORD_ID.test(part);
 export const HOME_PATH = '/';
 
 /** The first word of every other app page: lowercase, so no ID can take its address. */
-export const APP_PAGES: readonly string[] = ['checks', 'format', 'settings'];
+export const APP_PAGES: readonly string[] = ['format', 'settings'];
+
+/** The word after a product's ID that addresses its space's Checks page. */
+export const SPACE_CHECKS = 'checks';
+/** The address of a space's Checks page: `/LA/checks`. */
+export const checksPathOf = (product: string) => `/${encodeURIComponent(product)}/${SPACE_CHECKS}`;
 
 /**
  * The address of a record (its bare ID) or of a group (its parent's ID, its kind and the parts of a
@@ -30,13 +35,13 @@ export function addressOf(id: string): string {
 
 /**
  * True for the address path of a focus page (a record's bare ID, or a group's parent ID and kind):
- * what a tab and a space's last page hold. A stored page that is not one is dropped.
+ * what a tab holds. A stored tab that is not one is dropped.
  */
 export function isFocusPath(path: string): boolean {
   if (!path.startsWith('/')) return false;
   try {
     const parts = path.split('/').filter(Boolean).map(decodeURIComponent);
-    return parts.length > 0 && isRecordId(parts[0]) && addressOf(parts.join('/')) === path;
+    return parts.length > 0 && isRecordId(parts[0]) && addressOf(parts.join('/')) === path && path !== checksPathOf(parts[0]);
   } catch {
     return false;
   }
@@ -47,6 +52,13 @@ export type ViewName = 'wiki' | 'graph' | 'model';
 export const VIEW_NAMES: readonly ViewName[] = ['wiki', 'graph', 'model'];
 export const VIEW_LABELS: Record<ViewName, string> = { wiki: 'Wiki', graph: 'Graph', model: 'Model' };
 export const isViewName = (v: unknown): v is ViewName => typeof v === 'string' && (VIEW_NAMES as readonly string[]).includes(v);
+
+/** True for a page a space remembers as its last: a focus page or the space's Checks page. */
+export function isSpacePath(path: string): boolean {
+  if (isFocusPath(path)) return true;
+  const id = path.split('/')[1] ?? '';
+  return isRecordId(id) && path === checksPathOf(id);
+}
 
 /** The views a list names ("wiki,graph"), each once and in pane order; empty when it names none. */
 export function parseViews(value: string | null | undefined): ViewName[] {

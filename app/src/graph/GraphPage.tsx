@@ -52,14 +52,14 @@ import {
   type Neighborhood,
 } from './model';
 import { boxExit, contentScale, traceGrid, type Point } from './layout';
-import { centerOf, graphMap, linkEnds, parentLine, type GraphMap } from './map';
+import { centerOf, graphMap, linkEnds, mapRootOf, parentLine, type GraphMap } from './map';
 import { treeGroup } from './tree';
 import { drawnFor, drawnKey, fitBoxes, frameOnMap, glideDuration, MAX_ZOOM, mergeDrawn, zoomPath, type Drawn, type Viewport } from './camera';
 import { EdgeHints, type Side } from './hints';
 import { readMotion } from './motion';
 import { Button } from '../components/Button';
 
-// The graph view: the whole tree as one fixed map (map.ts), explored by a camera (camera.ts).
+// The graph view: the product's tree as one fixed map (map.ts), explored by a camera (camera.ts).
 // Clicking a record or a group focuses it (through onNavigate, so the host changes the address and
 // Back walks back along the path), and the camera glides to frame it; nothing in the map moves or
 // changes size. Trace mode is a chain, not the tree, and keeps a small picture of its own.
@@ -640,7 +640,9 @@ function GraphCanvas({ index, graph, depth, filters, onNavigate, minimap, onPeek
 }) {
   const tracing = graph.mode === 'trace';
   const focus = graph.focus;
-  const map = useMemo(() => graphMap(index), [index]);
+  // The focus's own product's map: no other product's nodes are in it.
+  const root = useMemo(() => mapRootOf(index, focus), [index, focus]);
+  const map = useMemo(() => graphMap(index, root), [index, root]);
   const wrapper = useRef<HTMLDivElement>(null);
   const active = useRef<string | null>(null);
   /** After a keyboard action, the node to put keyboard focus on once the camera has framed it. */

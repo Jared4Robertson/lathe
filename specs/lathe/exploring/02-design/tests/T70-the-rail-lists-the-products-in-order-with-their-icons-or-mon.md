@@ -8,4 +8,4 @@ run_by: app/test/spaces.test.tsx
 links:
   proves: [LA-EXP-UC07-R01, LA-EXP-DR13, LA-EXP-DR14]
 ---
-Checks the icon and color fields and the monogram, then expects three products in ID order with a monogram, a monogram for an icon too long, an emoji icon, a separator and Checks for all products.
+Checks the icon and color fields and the monogram, then expects three products in ID order with a monogram, a monogram for an icon too long, an emoji icon, and nothing after them.

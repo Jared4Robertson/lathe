@@ -5,12 +5,12 @@ import { kindLabel, type SpecIndex } from '../specs/data';
 import { addressOf } from '../views/address';
 import { checkPagePath, kindPagePath, useFormat } from '../format/reference';
 import { useShortcutHint } from './commands';
-import type { Space } from './spaces';
 
-// Quick find (quick open): a search at the top of the nav that jumps to any record, domain
-// or product by ID or title. The current space's matches come first, then everything
-// else under a divider. The format's kinds and checks are found too, as "Kind: Use case" and
-// "Check: too-many-children", leading to their pages in the format reference. Arrow keys move through the results, Enter opens one, Escape clears the
+// Quick find (quick open): a search at the top of the nav that jumps to a record, domain or
+// product of the current space by ID or title. It reads the space's own index, so nothing of
+// another product is found: switching product is the rail's job. The format's kinds and checks are
+// found too, as "Kind: Use case" and "Check: too-many-children", leading to their pages in the
+// format reference. Arrow keys move through the results, Enter opens one, Escape clears the
 // search.
 
 export interface FindItem {
@@ -19,40 +19,22 @@ export interface FindItem {
   title: string;
   kind: string;
   to: string;
-  /** The product the item belongs to, or null (a kind or check of the format). */
-  product: string | null;
 }
 
 export function findItems(index: SpecIndex | null, checks: readonly string[] = []): FindItem[] {
   const items: FindItem[] = [];
   if (index) {
     for (const r of index.workspace.records) {
-      items.push({ key: r.id, id: r.id, title: r.title, kind: kindLabel(index, r.kind), to: addressOf(r.id), product: r.product });
+      items.push({ key: r.id, id: r.id, title: r.title, kind: kindLabel(index, r.kind), to: addressOf(r.id) });
     }
     for (const k of index.workspace.kinds) {
-      items.push({ key: `kind:${k.kind}`, id: k.kind, title: `Kind: ${k.label}`, kind: 'Record format', to: kindPagePath(k.kind), product: null });
+      items.push({ key: `kind:${k.kind}`, id: k.kind, title: `Kind: ${k.label}`, kind: 'Record format', to: kindPagePath(k.kind) });
     }
     for (const c of new Set([...checks, ...index.workspace.problems.map((p) => p.check)])) {
-      items.push({ key: `check:${c}`, id: c, title: `Check: ${c}`, kind: 'Record format', to: checkPagePath(c), product: null });
+      items.push({ key: `check:${c}`, id: c, title: `Check: ${c}`, kind: 'Record format', to: checkPagePath(c) });
     }
   }
   return items;
-}
-
-export interface ScopedResults {
-  /** The best matches in the current space. */
-  here: FindItem[];
-  /** The best matches everywhere else (other products and the format). */
-  elsewhere: FindItem[];
-}
-
-/** The matches for a query split by space: the current space's first, then the rest. */
-export function rankScoped(items: readonly FindItem[], query: string, space: string | null, limit = 8): ScopedResults {
-  if (!space) return { here: [], elsewhere: rankItems(items, query, limit) };
-  return {
-    here: rankItems(items.filter((i) => i.product === space), query, limit),
-    elsewhere: rankItems(items.filter((i) => i.product !== space), query, limit),
-  };
 }
 
 /** The best matches for a query: exact ID, then ID prefix, then title words, then anywhere. */
@@ -78,8 +60,8 @@ export function rankItems(items: readonly FindItem[], query: string, limit = 8):
 }
 
 export interface QuickFindProps {
+  /** The current space's index. */
   index: SpecIndex | null;
-  space?: Space | null;
   onGo?: () => void;
   /** In a sheet (the phone): the results are a list under the box rather than a dropdown, and more of them show. */
   inline?: boolean;
@@ -88,7 +70,7 @@ export interface QuickFindProps {
 }
 
 export const QuickFind = forwardRef<HTMLInputElement, QuickFindProps>(
-  function QuickFind({ index, space = null, onGo, inline = false, trailing }, ref) {
+  function QuickFind({ index, onGo, inline = false, trailing }, ref) {
     const [query, setQuery] = useState('');
     const [active, setActive] = useState(0);
     const [open, setOpen] = useState(false);
@@ -98,8 +80,7 @@ export const QuickFind = forwardRef<HTMLInputElement, QuickFindProps>(
     const { reference } = useFormat(index, query.trim() !== '');
     const checks = useMemo(() => reference?.checks.map((c) => c.check) ?? [], [reference]);
     const all = useMemo(() => findItems(index, checks), [index, checks]);
-    const scoped = useMemo(() => rankScoped(all, query, space?.id ?? null, inline ? 20 : 8), [all, query, space]);
-    const results = useMemo(() => [...scoped.here, ...scoped.elsewhere], [scoped]);
+    const results = useMemo(() => rankItems(all, query, inline ? 20 : 8), [all, query, inline]);
     const at = Math.min(active, Math.max(0, results.length - 1));
     const go = (item: FindItem) => {
       setQuery('');
@@ -119,35 +100,20 @@ export const QuickFind = forwardRef<HTMLInputElement, QuickFindProps>(
     const expanded = (open || inline) && query.trim() !== '';
     const list = expanded && (
           <ul className={`quick-find-results${inline ? ' is-inline' : ''}`} id={listId} role="listbox" aria-label="Quick find results">
-            {[
-              { name: space ? `In ${space.title}` : '', items: scoped.here, offset: 0 },
-              { name: space ? 'Everything else' : '', items: scoped.elsewhere, offset: scoped.here.length },
-            ].filter((g) => g.items.length > 0).map((g) => {
-              const options = g.items.map((r, j) => {
-                const i = g.offset + j;
-                return (
-                  <li
-                    key={r.key}
-                    id={`${listId}-${i}`}
-                    role="option"
-                    aria-selected={i === at}
-                    className={i === at ? 'active' : undefined}
-                    onMouseDown={(e) => { e.preventDefault(); go(r); }}
-                    onMouseEnter={() => setActive(i)}
-                  >
-                    <span className="qf-title">{r.title}</span>
-                    <span className="qf-meta"><code>{r.id}</code> · {r.kind}</span>
-                  </li>
-                );
-              });
-              if (!g.name) return options;
-              return (
-                <li key={g.name} role="presentation" className={`qf-group${g.offset > 0 ? ' is-divided' : ''}`}>
-                  <span className="qf-group-name" aria-hidden="true">{g.name}</span>
-                  <ul role="group" aria-label={g.name}>{options}</ul>
-                </li>
-              );
-            })}
+            {results.map((r, i) => (
+              <li
+                key={r.key}
+                id={`${listId}-${i}`}
+                role="option"
+                aria-selected={i === at}
+                className={i === at ? 'active' : undefined}
+                onMouseDown={(e) => { e.preventDefault(); go(r); }}
+                onMouseEnter={() => setActive(i)}
+              >
+                <span className="qf-title">{r.title}</span>
+                <span className="qf-meta"><code>{r.id}</code> · {r.kind}</span>
+              </li>
+            ))}
             {results.length === 0 && <li className="hint" role="presentation">Nothing matches.</li>}
           </ul>
     );

@@ -1,7 +1,7 @@
 import { ResizeHandle } from './components/ResizeHandle';
-import { lazy, Suspense, useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { navigate, useLocation } from './router';
-import { checksPath, formatPath, parseSpecRoute, useSpec } from './specs/data';
+import { formatPath, parseSpecRoute, useSpec, type SpecState } from './specs/data';
 import { SpecView } from './specs/SpecPages';
 import { FormatPages, isFormatRoute } from './format/FormatPages';
 import { FormatProvider, useFormatStore } from './format/reference';
@@ -15,7 +15,7 @@ import { useThemeColor } from './shell/themeColor';
 import { isBool, usePanelSize, usePref } from './shell/prefs';
 import { useNarrow } from './shell/useNarrow';
 import { FocusPage } from './views/FocusPage';
-import { HOME_PATH, isFocusRoute } from './views/address';
+import { checksPathOf, HOME_PATH, isFocusRoute } from './views/address';
 import { ThemeProvider } from './theme/ThemeProvider';
 import { APPEARANCE_PATH, ThemeCommands } from './theme/ThemeCommands';
 // The first load ships only the wiki (LA-PAT-APP-UX-R11): the theme editor loads when first opened,
@@ -63,6 +63,8 @@ function Shell() {
     else if (collapsed) setCollapsed(false);
   }, [narrow, collapsed, setCollapsed]);
   const spaces = useSpaceState(spec.index, path, search);
+  // Every page inside a space, and the nav, read the current space's index, never the whole workspace.
+  const spaceSpec = useMemo((): SpecState => ({ ...spec, index: spaces.index }), [spec, spaces.index]);
 
   useCommand('toggleNav', () => {
     if (narrow) { if (drawerOpen) closeDrawer(); else setDrawerOpen(true); announce(drawerOpen ? 'Navigation closed' : 'Navigation opened'); return; }
@@ -83,8 +85,9 @@ function Shell() {
   });
   useCommand('goBack', () => window.history.back());
   useCommand('goForward', () => window.history.forward());
-  useCommand('openChecks', () => navigate(checksPath));
-  useCommand('goChecks', () => navigate(checksPath));
+  const space = spaces.current?.id ?? null;
+  useCommand('openChecks', () => { if (space) navigate(checksPathOf(space)); }, !!space);
+  useCommand('goChecks', () => { if (space) navigate(checksPathOf(space)); }, !!space);
   useCommand('goFormat', () => navigate(formatPath));
   useCommand('goHome', () => navigate(HOME_PATH));
   useCommand('goToDefinition', () => {
@@ -114,21 +117,21 @@ function Shell() {
   if (isAppearance) {
     page = <Suspense fallback={<LoadingPage />}><AppearancePage /></Suspense>;
   } else if (isFormatRoute(specRoute)) {
-    page = <FormatPages spec={spec} route={specRoute} />;
+    page = <FormatPages spec={spaceSpec} route={specRoute} />;
   } else if (focusRoute) {
-    page = <FocusPage spec={spec} route={focusRoute} search={search} />;
+    page = <FocusPage spec={spaceSpec} route={focusRoute} search={search} />;
   } else if (specRoute) {
-    page = <SpecView spec={spec} route={specRoute} />;
+    page = <SpecView spec={spec} space={spaces.index} route={specRoute} />;
   } else {
     // A lowercase address that is no page (`/settings/…` other than Appearance).
-    page = <SpecView spec={spec} route={{ page: 'missing' }} />;
+    page = <SpecView spec={spec} space={spaces.index} route={{ page: 'missing' }} />;
   }
 
   return (
     <FormatProvider value={format}>
     <SpacesProvider value={spaces}>
     <SpaceCommands spaces={spaces} />
-    <DesktopTitleBar index={spec.index} />
+    <DesktopTitleBar index={spaces.index} />
     <div
       className={`app${collapsed && !narrow ? ' nav-collapsed' : ''}${narrow ? ' is-narrow' : ''}`}
       style={{ '--nav-width': `${navWidth}px` } as CSSProperties}
@@ -138,18 +141,18 @@ function Shell() {
       {narrow && (
         <TopBar
           ref={menuButton}
-          heading={pageHeading(spec.index, path, search)}
+          heading={pageHeading(spaces.index, path, search)}
           navOpen={drawerOpen}
           onMenu={() => setDrawerOpen(true)}
           onFind={() => setFindOpen(true)}
         />
       )}
-      {narrow && findOpen && <QuickFindSheet index={spec.index} space={spaces.current} onClose={() => setFindOpen(false)} />}
+      {narrow && findOpen && <QuickFindSheet index={spaces.index} onClose={() => setFindOpen(false)} />}
       {narrow && drawerOpen && <div className="drawer-backdrop" onMouseDown={closeDrawer} />}
       {(!narrow || drawerOpen) && (
         <Nav
           ref={navRef}
-          spec={spec}
+          spec={spaceSpec}
           path={path}
           collapsed={collapsed}
           onToggleCollapsed={() => setCollapsed(!collapsed)}

@@ -117,9 +117,9 @@ describe('format reference pages', () => {
     await openApp('/DM-SHOP');
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     expect(within(section(/^Problems in this domain/)).getByRole('link', { name: 'test-file-missing' })).toHaveAttribute('href', '/format/checks/test-file-missing');
-    await openApp('/checks');
+    await openApp('/DM/checks');
     await screen.findByRole('heading', { level: 1, name: 'Checks' });
-    expect(within(main()).getByRole('link', { name: 'dangling-link' })).toHaveAttribute('href', '/format/checks/dangling-link');
+    expect(within(main()).getByRole('link', { name: 'test-file-missing' })).toHaveAttribute('href', '/format/checks/test-file-missing');
 
     // A group's kind leads to the kind's page too.
     await openApp('/DM-SHOP/design/interaction-design/view');
