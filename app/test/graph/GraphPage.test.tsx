@@ -159,7 +159,8 @@ describe('graph page', () => {
     fireEvent.click(screen.getByRole('checkbox', { name: 'Trace mode' }));
     await waitFor(() => expect(node('file:src/thing.ts')).not.toBeNull());
     expect(node('file:test/thing.test.ts')).not.toBeNull();
-    expect(node('P-D-UC01')).toBeNull();
+    // The use case leaves the picture: it fades out where it was, and is then dropped.
+    await waitFor(() => expect(node('P-D-UC01')).toBeNull());
     expect(inspector().getByText('src/thing.ts')).toBeTruthy();
     // Escape leaves trace mode.
     fireEvent.keyDown(screen.getByRole('checkbox', { name: 'Trace mode' }), { key: 'Escape' });

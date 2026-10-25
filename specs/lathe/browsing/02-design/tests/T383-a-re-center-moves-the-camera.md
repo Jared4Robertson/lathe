@@ -8,4 +8,4 @@ run_by: app/test/graph/camera.test.tsx
 links:
   proves: [LA-BRW-UC20-R09, LA-BRW-UC20-R13, LA-BRW-DR180, LA-BRW-DR181]
 ---
-Opens a use case's graph, which appears at once, then clicks its requirement and expects the requirement to stay where it was, one viewport move with the shared duration and easing, the newly linked records fading in, and the record that left fading out under its own ID and then dropped.
+Opens a use case's graph, which appears at once, then clicks its requirement and expects the requirement to stay where it was, one viewport move with the shared duration and easing, the newly linked records fading in, and the record that left fading out where it was, the same box marked as leaving, and then dropped.

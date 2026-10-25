@@ -44,24 +44,29 @@ export interface LoadTimings {
   parsed: number;
 }
 
-/** A record file's parse, kept while its size and modification time stay the same, so a reload re-parses only changed files. */
-interface ParseCacheEntry { mtimeMs: number; size: number; result: ReturnType<typeof parseRecordFile> }
+/**
+ * A record file's parse, kept with the exact text it was parsed from, so a reload parses only the
+ * files whose text changed (LA-CHK-DR310). Every load still reads every file afresh (LA-CHK-DR04):
+ * the cache only skips parsing a text it has parsed before, which gives the same parse, so it holds
+ * no state the files do not.
+ */
+interface ParseCacheEntry { text: string; result: ReturnType<typeof parseRecordFile> }
 const parseCache = new Map<string, ParseCacheEntry>();
 /** The most files the parse cache keeps; past it, it starts again (a guard for a server reading many products). */
 const PARSE_CACHE_LIMIT = 50_000;
 
-/** Empties the parse cache, so the next load reads every file anew (used by the performance measurements). */
+/** Empties the parse cache, so the next load parses every file anew (used by the performance measurements). */
 export function clearParseCache() { parseCache.clear(); }
 
-// Reads and parses one record file, or takes its parse from the cache when the file's size and
-// modification time are unchanged. A cached parse is never changed: each load copies the record.
+// Reads one record file and parses it, or takes its parse from the cache when its text is the one
+// parsed before. A cached parse is never changed: each load copies the record.
 async function parseFile(file: string): Promise<{ result: ReturnType<typeof parseRecordFile>; fresh: boolean }> {
-  const info = await stat(file);
+  const text = await readFile(file, 'utf8');
   const known = parseCache.get(file);
-  if (known && known.mtimeMs === info.mtimeMs && known.size === info.size) return { result: known.result, fresh: false };
-  const result = parseRecordFile(await readFile(file, 'utf8'));
+  if (known && known.text === text) return { result: known.result, fresh: false };
+  const result = parseRecordFile(text);
   if (parseCache.size >= PARSE_CACHE_LIMIT) parseCache.clear();
-  parseCache.set(file, { mtimeMs: info.mtimeMs, size: info.size, result });
+  parseCache.set(file, { text, result });
   return { result, fresh: true };
 }
 

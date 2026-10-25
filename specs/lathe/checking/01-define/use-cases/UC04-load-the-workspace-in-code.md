@@ -5,6 +5,6 @@ title: Load the workspace in code
 parent: LA-CHK-CAP04
 actor: Agent
 links:
-  applies: [LA-CHK-DR04, LA-MOD-DR08]
+  applies: [LA-CHK-DR04, LA-MOD-DR08, LA-CHK-DR310]
 ---
 Code such as the web app's spec API, or an agent's script, calls `loadWorkspace(root)` to get every record, link, problem and coverage figure for the repo at `root`.
