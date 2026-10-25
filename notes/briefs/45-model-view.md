@@ -18,10 +18,17 @@ He chose a third view, **Model**, beside Wiki and Graph.
 - The FORMAT section on entities arrives with brief 43.
 
 ## Decisions already made (Jared, and the coordinator's recommendations)
-- **The view itself:**
-  - `ViewMode` gains `model`: `?view=model`, the command `viewModel` on Ctrl+4, and a Model toggle in each pane's View group, with an icon you add (`model` or `erd`).
-  - The toggle shows only on domain, aggregate and entity pages. A page that can't show it falls back to Wiki.
-  - In a split, Open beside pairs the Wiki with the last non-wiki view (Graph or Model).
+- **Views are panes you open and close** (Jared decided; this replaces Split as a mode):
+  - **Toggles:** Wiki, Graph and Model are on/off toggles, each an `aria-pressed` icon button in the View group of the page's pane bars. Each open view is one pane, side by side, always in the order Wiki, Graph, Model.
+  - **At least one open:** turning off the last open view does nothing. The toggle says so in its tooltip.
+  - **What goes away:** the Split toggle and mode, Open beside, and the Ctrl+3 split command. Each pane keeps a close button that turns its view off.
+  - **Addresses:** a link names the open views, as in `?view=wiki`, `?view=wiki,graph` or `?view=graph,model`. Old links keep working: `?view=split` opens wiki and graph. The open set is remembered as the view is today.
+  - **Model:** shows only on domain, aggregate and entity pages. Elsewhere it is not offered, and an address naming it drops it.
+  - **Gaps and sizes:** every gap between two open panes is a `ResizeHandle` (R09). The sizes are remembered through `usePanelSize` as fractions, a minimum width per pane, and a reset that shares the space evenly on double-click.
+  - **Keys:** Ctrl+1, Ctrl+2 and Ctrl+4 toggle Wiki, Graph and Model. Ctrl+3 becomes `maximizePane`: it shows only the focused pane, like VS Code's maximize editor group, and pressing it again or Escape restores. It replaces the current full-screen command, and each pane's full-screen button stays as its pointer version.
+  - **The pane bar:** each pane's bar names its view at the left, with its close button when more than one pane is open. The View toggles and layout actions go on the rightmost pane's bar only, so they appear once. The inspector toggle stays there too.
+  - **The title:** it sits at the top of the leftmost open pane.
+  - **Records:** update R11 (pane title bar) and the records and tests that describe Split, Open beside, or Ctrl+3 as split: `LA-BRW-UC50-R02`, `T121`, `T298`, `T310`, `C51`, `C108` and the keymap tests. The existing split-ratio behavior (`UC111-R01` and `R02`) becomes per-gap sizes.
 - **Domain page:** one ERD at aggregate level.
   - Each aggregate is a box with its title, its root entity's name and a count of entities.
   - Lines come from `refers_to` links between entities in different aggregates. There is one line per aggregate pair and direction, with crow's-foot ends (many to one).
