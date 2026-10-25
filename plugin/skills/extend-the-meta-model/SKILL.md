@@ -32,9 +32,11 @@ A widening can only add: it cannot remove a default parent kind, required field 
 
 ## Obligations and roles
 
-- `obligation: yes` on a kind makes its records things that must be designed, built and proved. Lathe then counts them in coverage and warns while nothing designs or proves one, exactly as for requirements and domain rules.
+- `obligation: yes` (or `true`) on a kind makes its records things that must be designed, built and proved. Lathe then counts them in coverage and warns while nothing designs or proves one, exactly as for requirements and domain rules.
+- `obligation: proof` makes them things that need **proof only**: coverage counts them as designed and built, gives no `satisfies` gaps and never warns `unsatisfied`, but counts and warns about proof as for any obligation. Lathe's own `pattern_rule` is proof-only. To ask for the design of pattern rules too, widen it with `pattern_rule,,,,,yes,`.
+- Any other value, or an empty one on a new kind, means the kind is not an obligation. The value is read in any letter case.
 - A relation's `role` says what its links count as: `design` (the source designs the target, like a component that `satisfies` it) or `proof` (the source proves the target, like a test that `proves` it). Leave it empty for a link that only connects records.
-- A new obligation kind needs at least one `design` relation and one `proof` relation targeting it, or it can never be covered. A `proof` link counts only from an automated or manual test.
+- A new obligation kind needs at least one `proof` relation targeting it, and a `yes` kind also at least one `design` relation, or it can never be covered. A `proof` link counts only from an automated or manual test.
 
 ## Example
 
