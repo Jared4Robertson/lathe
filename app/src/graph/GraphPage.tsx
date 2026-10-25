@@ -52,6 +52,7 @@ import { layoutNeighborhood, NODE_HEIGHT, NODE_WIDTH, type Placed } from './layo
 import { anchorLayout, fadeSets, frameFocus } from './camera';
 import { EdgeHints } from './hints';
 import { edgeMove, readMotion, transitionProgress, tweenEdge, type EdgeEnds, type EdgeFrame, type EdgePhase } from './motion';
+import { Button } from '../components/Button';
 
 // The graph view: an ego graph centered on one record or group. Clicking a record or a group
 // re-centers on it (through onNavigate, so the host changes the address and Back walks back along
@@ -498,13 +499,15 @@ export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted,
               </Tooltip>
             ))}
           </div>
-          <Tooltip label="Links: the center's own links, one step" command="graphLinks">
-            <button type="button" className="graph-links-toggle" aria-pressed={links} disabled={tracing} onClick={() => update({ links: !links })}>Links</button>
-          </Tooltip>
+          <div className="graph-links" role="group" aria-label="Cross-links">
+            <Tooltip label="Links: the center's own links, one step" command="graphLinks">
+              <button type="button" aria-pressed={links} disabled={tracing} onClick={() => update({ links: !links })}>Links</button>
+            </Tooltip>
+          </div>
           <div className="graph-steps" role="group" aria-label="Step through the tree">
             {steps.map((s) => (
               <Tooltip key={s.step} label={s.label} command={s.command}>
-                <button type="button" aria-label={s.label} disabled={!stepTarget(index, focus, s.step)} onClick={stepTo(s.step)}>{s.mark}</button>
+                <Button className="graph-step" aria-label={s.label} disabled={!stepTarget(index, focus, s.step)} onClick={stepTo(s.step)}>{s.mark}</Button>
               </Tooltip>
             ))}
           </div>
@@ -610,10 +613,10 @@ function FilterControls({ index, filters, setFilters, ring, setRing, minimap, se
           ))}
         </fieldset>
         <div className="graph-filter-actions">
-          <button type="button" onClick={() => setFilters({ ...filters, hiddenRelations: new Set(relations.filter((r) => !TRACE_RELATIONS.has(r))) })}>
+          <Button onClick={() => setFilters({ ...filters, hiddenRelations: new Set(relations.filter((r) => !TRACE_RELATIONS.has(r))) })}>
             {traceOnlyLabel(index)}
-          </button>
-          <button type="button" className="secondary" onClick={() => setFilters(NO_FILTERS)} disabled={hidden === 0}>Clear filters</button>
+          </Button>
+          <Button onClick={() => setFilters(NO_FILTERS)} disabled={hidden === 0}>Clear filters</Button>
         </div>
         <p className="hint">Escape clears every filter.</p>
       </div>

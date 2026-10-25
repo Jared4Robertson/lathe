@@ -1,4 +1,5 @@
 import { useReactFlow, useViewport } from '@xyflow/react';
+import { Button } from '../components/Button';
 import { readMotion } from './motion';
 
 // Edge hints (LA-BRW-UC20-R12): the context ring may run past the canvas's edges, so at each edge a
@@ -51,16 +52,15 @@ export function EdgeHints({ centers, wrapper }: { centers: readonly Point[]; wra
   return (
     <div className="graph-edge-hints">
       {HINTS.map((h) => past[h.side] > 0 && (
-        <button
+        <Button
           key={h.side}
-          type="button"
           className={`graph-edge-hint is-${h.side}`}
           aria-label={`${past[h.side]} faded ${past[h.side] === 1 ? 'box' : 'boxes'} ${h.label}: pan that way`}
           title={`${past[h.side]} faded ${h.label}`}
           onClick={() => pan(h.side)}
         >
           {past[h.side]} {h.mark}
-        </button>
+        </Button>
       ))}
     </div>
   );

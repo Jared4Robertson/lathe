@@ -1,7 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { fireEvent, waitFor } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import { navigate } from '../src/router';
 import { openApp, startAtDepth } from './helpers';
 import './graph/setup';
 import { testWorkspace } from './graph/workspace';
@@ -73,25 +74,20 @@ function scrollsVertically(r: Rule): boolean {
 }
 
 /**
- * Scroll boxes in parts of the app other work is changing now (brief 53, phase 2: views/, shell/,
- * App.tsx and the nav). Each one MUST be fixed and removed from this list; the test fails when an
- * entry is no longer a scroll box, so the list only shrinks.
+ * A box keeps its gutter when a rule for it, or for the end of its selector (`.erd-key` for `.app.is-narrow .erd-key`),
+ * sets `scrollbar-gutter: stable`, or hides its scrollbar (`scrollbar-width: none`), so there is none to come and go.
  */
-const PHASE_2_SCROLL_BOXES = ['.workspace > aside', '.nav-scroll', '.quick-find-results', '.quick-find-results.is-inline', '.pane-scroll', '.inspector.record-side', '.shortcut-groups', '.palette-list', '.space-rail', '.pages-list'];
-
-/** A box keeps its gutter when a rule for it, or for the end of its selector (`.erd-key` for `.app.is-narrow .erd-key`), sets `scrollbar-gutter: stable`. */
 function keepsGutter(selector: string): boolean {
-  return ALL.some((r) => r.decls.get('scrollbar-gutter') === 'stable' && selectors(r).some((s) => s === selector || selector.endsWith(` ${s}`)));
+  const steady = (r: Rule) => r.decls.get('scrollbar-gutter') === 'stable' || r.decls.get('scrollbar-width') === 'none';
+  return ALL.some((r) => steady(r) && selectors(r).some((s) => s === selector || selector.endsWith(` ${s}`)));
 }
 
 describe('nothing jumps (LA-PAT-APP-UX-R08)', () => {
   it('LA-BRW-T488 every scroll box keeps room for its scrollbar, so it never comes and goes with the content', () => {
     const boxes = ALL.filter(scrollsVertically).flatMap((r) => selectors(r).map((s) => ({ s, line: r.line })));
     expect(boxes.length).toBeGreaterThan(5);
-    const missing = boxes.filter(({ s }) => !PHASE_2_SCROLL_BOXES.includes(s) && !keepsGutter(s)).map(({ s, line }) => `app/src/styles.css:${line}: ${s} needs scrollbar-gutter: stable`);
+    const missing = boxes.filter(({ s }) => !keepsGutter(s)).map(({ s, line }) => `app/src/styles.css:${line}: ${s} needs scrollbar-gutter: stable`);
     expect(missing).toEqual([]);
-    const stale = PHASE_2_SCROLL_BOXES.filter((s) => !boxes.some((b) => b.s === s) || keepsGutter(s));
-    expect(stale, 'fixed or gone: remove from PHASE_2_SCROLL_BOXES').toEqual([]);
   });
 
   it('LA-BRW-T488 the bars above a canvas have one height whatever their text', () => {
@@ -121,15 +117,15 @@ describe('nothing jumps (LA-PAT-APP-UX-R08)', () => {
     expect([...count.childNodes].map((n) => n.nodeType)).toEqual([Node.TEXT_NODE]);
     // It sits right after the depth, the Links switch and the steps, whose widths never change.
     expect(count.previousElementSibling?.classList.contains('graph-steps')).toBe(true);
-    expect(count.previousElementSibling?.previousElementSibling?.classList.contains('graph-links-toggle')).toBe(true);
+    expect(count.previousElementSibling?.previousElementSibling?.classList.contains('graph-links')).toBe(true);
     expect(count.previousElementSibling?.previousElementSibling?.previousElementSibling?.classList.contains('graph-depth')).toBe(true);
   });
 
   it('LA-BRW-T488 the graph canvas stays mounted when the graph re-centers', async () => {
     startAtDepth(1);
     await openApp('/records/P-D-UC01-R01?view=graph', { workspace: testWorkspace() });
-    await waitFor(() => expect(document.querySelector('.graph-links-toggle')).not.toBeNull());
-    fireEvent.click(document.querySelector<HTMLElement>('.graph-links-toggle')!);
+    await waitFor(() => expect(document.querySelector('.graph-links button')).not.toBeNull());
+    fireEvent.click(document.querySelector<HTMLElement>('.graph-links button')!);
     await waitFor(() => expect(document.querySelector('.react-flow__node[data-id="P-D-V01"]')).not.toBeNull());
     const canvas = document.querySelector('.graph-flow');
     const flow = document.querySelector('.graph-flow .react-flow');
@@ -147,5 +143,34 @@ describe('nothing jumps (LA-PAT-APP-UX-R08)', () => {
     // The ERD is fitted before its first paint, and observes its size once (each new observer reported the size again and cut the glide short).
     expect(model).toMatch(/useLayoutEffect\(\(\) => \{\n\s*if \(!placed\) return;\n\s*fit\(fitted\.current\);/);
     expect(model).toMatch(/observer\.observe\(el\);\n\s*return \(\) => observer\.disconnect\(\);\n\s*\}, \[\]\);/);
+  });
+
+  it('LA-BRW-T488 a move made outside the nav leaves its rows where they are: the closed row holding the page is marked, and opens the branch down to it', async () => {
+    window.sessionStorage.clear();
+    await openApp('/specs/DM');
+    await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
+    const panel = () => screen.getByRole('navigation', { name: 'Main' }).querySelector<HTMLElement>('.space-items')!;
+    const unfold = () => within(panel()).getByRole('button', { name: 'Unfold Shopping' });
+    expect(unfold()).toHaveAttribute('aria-expanded', 'false');
+    // A link in the page (here, the address set from outside the nav) moves to a requirement inside Shopping.
+    act(() => navigate('/records/DM-SHOP-UC01-R01'));
+    await screen.findByRole('heading', { level: 1, name: 'The basket shows the new item' });
+    expect(unfold()).toHaveAttribute('aria-expanded', 'false');
+    expect(within(panel()).queryByRole('list', { name: 'Folders of Shopping' })).toBeNull();
+    expect(unfold().closest('.nav-row')).toHaveClass('holds-current');
+    // Opening the marked row opens the branch down to the page.
+    fireEvent.click(unfold());
+    expect(within(await within(panel()).findByRole('list', { name: 'Capabilities of Shopping' })).getByRole('link', { name: 'Add an item to the basket' })).toBeInTheDocument();
+  });
+
+  it('LA-BRW-T488 the fonts are the app\'s own, preloaded, and never swap in', () => {
+    const html = readFileSync(join(__dirname, '..', 'index.html'), 'utf8');
+    expect(html).not.toMatch(/fonts\.googleapis|fonts\.gstatic/);
+    expect(html.match(/<link rel="preload" href="\/fonts\/[^"]+\.woff2" as="font" type="font\/woff2" crossorigin \/>/g)?.length).toBe(6);
+    const fonts = readFileSync(join(__dirname, '..', 'src', 'fonts.css'), 'utf8');
+    const faces = fonts.match(/@font-face \{[^}]*\}/g) ?? [];
+    expect(faces.length).toBe(12);
+    for (const face of faces) expect(face).toMatch(/font-display: optional;/);
+    for (const family of ['archivo', 'public-sans', 'jetbrains-mono']) expect(readFileSync(join(__dirname, '..', 'public', 'fonts', family, 'OFL.txt'), 'utf8')).toMatch(/SIL Open Font License/);
   });
 });

@@ -7,8 +7,14 @@
     <meta name="theme-color" content="#FFFFFF" />
     <title>Lathe</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700&family=Public+Sans:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap" />
+    <!-- The fonts are the app's own (app/src/fonts.css, app/public/fonts), so it works offline. Preloaded, so the
+         text draws in them from the first frame; with font-display: optional it never swaps (LA-PAT-APP-UX-R08). -->
+    <link rel="preload" href="/fonts/archivo/archivo-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/archivo/archivo-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/public-sans/public-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/public-sans/public-sans-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/jetbrains-mono/jetbrains-mono-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/jetbrains-mono/jetbrains-mono-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin />
     <script>
       // The chosen theme and mode, before first paint, so the page never flashes another theme
       // (app/src/theme/store.ts writes these keys; app/src/theme/apply.ts does the same once the app runs).

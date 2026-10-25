@@ -36,6 +36,7 @@ import { graphRedirect, isFocusRoute } from './views/address';
 import { ThemeProvider } from './theme/ThemeProvider';
 import { APPEARANCE_PATH, ThemeCommands } from './theme/ThemeCommands';
 import { AppearancePage } from './theme/AppearancePage';
+import { Button } from './components/Button';
 type ModelNode = Node<ModelNodeData>;
 type ModelEdge = Edge<ModelEdgeData>;
 
@@ -134,6 +135,8 @@ function Shell() {
   const announce = useAnnounce();
   const [diagrams, setDiagrams] = useState<DiagramSummary[]>([]);
   const [listError, setListError] = useState<string | null>(null);
+  // Whether the diagrams list has come back once (or failed): the nav draws its lists only then, with the specs (UX-R08).
+  const [diagramsLoaded, setDiagramsLoaded] = useState(false);
 
   const loadDiagrams = useCallback(async () => {
     try {
@@ -144,6 +147,8 @@ function Shell() {
       setListError(null);
     } catch (e) {
       setListError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setDiagramsLoaded(true);
     }
   }, []);
 
@@ -281,6 +286,7 @@ function Shell() {
           diagrams={diagrams}
           diagramError={listError}
           newDiagram={newDiagram}
+          diagramsLoaded={diagramsLoaded}
           collapsed={collapsed}
           onToggleCollapsed={() => setCollapsed(!collapsed)}
           drawer={narrow}
@@ -351,7 +357,7 @@ function NewDiagram({ onCreated }: { onCreated: (d: DiagramSummary) => void }) {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  if (!open) return <button className="new-diagram" onClick={() => setOpen(true)}>+ New diagram</button>;
+  if (!open) return <Button className="new-diagram" icon="plus" onClick={() => setOpen(true)}>New diagram</Button>;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -382,8 +388,8 @@ function NewDiagram({ onCreated }: { onCreated: (d: DiagramSummary) => void }) {
       <textarea id="new-description" rows={2} value={description} onChange={(e) => setDescription(e.target.value)} />
       {error && <p className="error">{error}</p>}
       <div className="form-actions">
-        <button type="submit" disabled={saving}>{saving ? 'Creating…' : 'Create diagram'}</button>
-        <button type="button" className="secondary" onClick={() => { setOpen(false); setError(null); }}>Cancel</button>
+        <Button variant="primary" type="submit" disabled={saving}>{saving ? 'Creating…' : 'Create diagram'}</Button>
+        <Button onClick={() => { setOpen(false); setError(null); }}>Cancel</Button>
       </div>
     </form>
   );
