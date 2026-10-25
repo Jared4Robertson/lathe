@@ -8,4 +8,4 @@ run_by: app/test/graph/model.test.ts
 links:
   proves: [LA-BRW-UC20-R08]
 ---
-Adds two aggregates that relate to each other in a ring and expects them in one column, both links drawn, neither link given to the layout, and the graph laid out in columns with no fallback.
+Adds two aggregates that relate to each other in a ring and expects them in one column, both links drawn, and the graph still laid out in columns.

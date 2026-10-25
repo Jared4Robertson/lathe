@@ -33,7 +33,7 @@ describe('graph motion', () => {
     expect(start.points[1]).toEqual({ x: 300 - NODE_WIDTH / 2, y: 0 });
 
     const half = tweenEdge({ ends: from, opacity: 1 }, { ends: to, opacity: 1 }, 0.5, linear);
-    expect(half.ends).toEqual({ source: { x: -150, y: 50 }, target: { x: 150, y: 0 } });
+    expect(half.ends).toMatchObject({ source: { x: -150, y: 50 }, target: { x: 150, y: 0 } });
     expect(onBox(half.points[0], half.ends.source)).toBe(true);
     expect(onBox(half.points[1], half.ends.target)).toBe(true);
 
@@ -45,7 +45,7 @@ describe('graph motion', () => {
       expect(onBox(f.points[1], f.ends.target)).toBe(true);
     }
     // Out of range times are held at the ends.
-    expect(tweenEdge({ ends: from, opacity: 1 }, { ends: to, opacity: 1 }, 2, linear).ends).toEqual(to);
+    expect(tweenEdge({ ends: from, opacity: 1 }, { ends: to, opacity: 1 }, 2, linear).ends).toMatchObject(to);
   });
 
   it("LA-BRW-T300 The tween follows the nodes' easing: CSS's ease, read from the motion tokens", () => {
@@ -97,26 +97,29 @@ describe('graph motion', () => {
   });
 });
 
-const EDGE = 'P-D-UC01|parent|P-D-UC01-R01';
+// The use case's line from its folder. When the center moves out to the Define stage, the stage
+// spans all its folders and the use cases' folder all its use cases, so the use case moves and the
+// line, level at its middle, moves with it.
+const EDGE = 'P-D/define/use-cases|parent|P-D-UC01';
 const path = () => document.getElementById(EDGE);
 const node = (id: string) => document.querySelector<HTMLElement>(`.react-flow__node[data-id="${id}"]`);
 const isCenter = (id: string) => !!node(id)?.querySelector('.graph-node.is-focus');
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-/** Opens Lend a thing's graph, then re-centers on its requirement; returns the edge between them as first drawn and just after the click. */
+/** Opens Lend a thing's graph, then re-centers on its Define stage; returns the line from the use cases' folder to the use case as first drawn and just after the click. */
 async function recenter() {
   startAtDepth(1);
   await openApp('/P-D-UC01?view=graph', { workspace: testWorkspace() });
   await waitFor(() => expect(path()).not.toBeNull());
   await waitFor(() => expect(isCenter('P-D-UC01')).toBe(true));
-  // With Links on the pictures differ enough that the two records move (the new focus is anchored).
+  // With Links on, a cross-link is drawn that leaves the picture.
   fireEvent.click(screen.getByRole('button', { name: 'Links' }));
   await waitFor(() => expect(node('P-D-DR01')).not.toBeNull());
   await sleep(500);
   const element = path()!;
   const before = element.getAttribute('d');
-  fireEvent.click(node('P-D-UC01-R01')!);
-  await waitFor(() => expect(isCenter('P-D-UC01-R01')).toBe(true));
+  fireEvent.click(node('P-D/define')!);
+  await waitFor(() => expect(isCenter('P-D/define')).toBe(true));
   return { element, before, first: path()?.getAttribute('d') };
 }
 

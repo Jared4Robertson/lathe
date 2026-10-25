@@ -142,8 +142,7 @@ describe('graph groups', () => {
     expect(column(fromDomain, 'P-D/define/use-cases')).toBe(column(fromDomain, 'P-D/define') + 1);
     expect(column(fromDomain, 'P-D-UC01')).toBe(column(fromDomain, 'P-D/define/use-cases') + 1);
     const n = neighborhood(grouped, 'P-D/define/use-cases', 2);
-    const { positions, layout } = await layoutNeighborhood(n);
-    expect(layout).toBe('layered');
+    const { positions } = layoutNeighborhood(n);
     const x = (id: string) => positions.get(id)!.x;
     expect(x('P-D/define')).toBeLessThan(x('P-D/define/use-cases'));
     expect(x('P-D/define/use-cases')).toBeLessThan(x('P-D-UC01'));

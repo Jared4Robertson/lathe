@@ -1,4 +1,4 @@
-import { boxExit, type Point } from './layout';
+import { boxExit, NODE_HEIGHT, NODE_WIDTH, type Point } from './layout';
 
 // Shared motion (LA-PAT-APP-UX-R04): the speed and easing every animation uses, read from the
 // stylesheet's `--motion-speed` and `--motion-ease` tokens, and turned off when the person asks for
@@ -82,13 +82,31 @@ export function readMotion(): Motion {
   return { duration: reduced ? 0 : parseDuration(speed), ease: parseEase(ease), reduced };
 }
 
-/** The two box centers an edge joins. */
-export interface EdgeEnds { source: Point; target: Point }
+/**
+ * The two box centers an edge joins, with the boxes' heights when they are not a leaf's, and
+ * whether it is a tree connector of the icicle (LA-BRW-DR330).
+ */
+export interface EdgeEnds {
+  source: Point;
+  target: Point;
+  sourceHeight?: number;
+  targetHeight?: number;
+  /** A parent line in the icicle: a short horizontal line from the parent's right edge to the child's left edge, at the child's middle. */
+  tree?: boolean;
+}
 
-/** Where an edge between two box centers is drawn: from where it leaves the source box to where it enters the target box. */
+/**
+ * Where an edge between two box centers is drawn. A tree connector runs straight across, at the
+ * child's middle, from the parent's right edge to the child's left edge; the parent spans its child,
+ * so the line is short and level. Any other edge runs from where the line between the centers leaves
+ * the source box to where it enters the target box.
+ */
 export function edgePoints(ends: EdgeEnds): [Point, Point] {
   const { source: s, target: t } = ends;
-  return [boxExit(s.x, s.y, t.x, t.y), boxExit(t.x, t.y, s.x, s.y)];
+  if (ends.tree) return [{ x: s.x + NODE_WIDTH / 2, y: t.y }, { x: t.x - NODE_WIDTH / 2, y: t.y }];
+  const sh = ends.sourceHeight ?? NODE_HEIGHT;
+  const th = ends.targetHeight ?? NODE_HEIGHT;
+  return [boxExit(s.x, s.y, t.x, t.y, NODE_WIDTH, sh), boxExit(t.x, t.y, s.x, s.y, NODE_WIDTH, th)];
 }
 
 const mix = (a: number, b: number, p: number) => a + (b - a) * p;
@@ -99,8 +117,9 @@ export interface EdgeFrame { ends: EdgeEnds; points: [Point, Point]; opacity: nu
 
 /**
  * An edge part of the way through a move, at elapsed time `t` (0 to 1).
- * It moves the two box centers (as the nodes move: from where they were to where they go, along
- * the same easing) and draws the line between their box edges, so each end stays on its box.
+ * It moves the two box centers and heights (as the nodes move and grow: from where they were to
+ * where they go, along the same easing) and draws the line between their box edges, so each end
+ * stays on its box; a tree connector stays level at its child's middle.
  * The opacity goes from `from.opacity` to `to.opacity` along the same easing: an edge that persists
  * stays at 1, a new one fades in from 0, and a removed one fades out to 0.
  */
@@ -111,7 +130,13 @@ export function tweenEdge(
   ease: (t: number) => number = cubicBezier(...MOTION_EASE),
 ): EdgeFrame {
   const p = ease(Math.max(0, Math.min(1, t)));
-  const ends = { source: mixPoint(from.ends.source, to.ends.source, p), target: mixPoint(from.ends.target, to.ends.target, p) };
+  const ends: EdgeEnds = {
+    source: mixPoint(from.ends.source, to.ends.source, p),
+    target: mixPoint(from.ends.target, to.ends.target, p),
+    sourceHeight: mix(from.ends.sourceHeight ?? NODE_HEIGHT, to.ends.sourceHeight ?? NODE_HEIGHT, p),
+    targetHeight: mix(from.ends.targetHeight ?? NODE_HEIGHT, to.ends.targetHeight ?? NODE_HEIGHT, p),
+    ...(to.ends.tree ? { tree: true } : {}),
+  };
   return { ends, points: edgePoints(ends), opacity: mix(from.opacity, to.opacity, p) };
 }
 
