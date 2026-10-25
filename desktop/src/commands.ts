@@ -7,6 +7,13 @@ export interface MenuCommand {
   id: string;
   label: string;
   keys: string;
+  /** The binding off a Mac, when the keymap gives another there (its otherKeys). */
+  otherKeys?: string;
+  /**
+   * The menu item's own accelerator, only for keys a web page never receives (Ctrl+Tab and
+   * Ctrl+Shift+Tab, which the browser keeps): the menu owns them and runs the command by ID.
+   */
+  accelerator?: string;
 }
 
 export const VIEW_COMMANDS: readonly MenuCommand[] = [
@@ -19,12 +26,25 @@ export const VIEW_COMMANDS: readonly MenuCommand[] = [
   { id: 'toggleInspector', label: 'Show or Hide Inspector', keys: 'Mod+Alt+B' },
 ];
 
+/** The record tabs (app/src/views/useTabs.ts), in View › Tabs. */
+export const TAB_COMMANDS: readonly MenuCommand[] = [
+  { id: 'nextTab', label: 'Show Next Tab', keys: 'Ctrl+Tab', accelerator: 'Ctrl+Tab' },
+  { id: 'previousTab', label: 'Show Previous Tab', keys: 'Ctrl+Shift+Tab', accelerator: 'Ctrl+Shift+Tab' },
+  { id: 'keepTab', label: 'Keep Tab Open', keys: 'Ctrl+K Enter', otherKeys: 'Alt+K Enter' },
+  { id: 'closeTab', label: 'Close Tab', keys: 'Alt+Shift+W' },
+];
+
 export const HELP_COMMANDS: readonly MenuCommand[] = [
   { id: 'goFormat', label: 'Record Format', keys: 'g f' },
   { id: 'showShortcuts', label: 'Keyboard Shortcuts', keys: 'Mod+/' },
 ];
 
-export const MENU_COMMANDS: readonly MenuCommand[] = [...VIEW_COMMANDS, ...HELP_COMMANDS];
+export const MENU_COMMANDS: readonly MenuCommand[] = [...VIEW_COMMANDS, ...TAB_COMMANDS, ...HELP_COMMANDS];
+
+/** The binding a command's keys stand for on a platform. */
+export function commandKeys(command: MenuCommand, mac: boolean): string {
+  return mac ? command.keys : (command.otherKeys ?? command.keys);
+}
 
 /** One key press of a binding, as the page's keydown listener reads it. */
 export interface KeyPress {
@@ -36,7 +56,7 @@ export interface KeyPress {
   metaKey: boolean;
 }
 
-const CODES: Record<string, string> = { '/': 'Slash', '\\': 'Backslash', '-': 'Minus', '=': 'Equal', '.': 'Period', ',': 'Comma' };
+const CODES: Record<string, string> = { Tab: 'Tab', Enter: 'Enter', '/': 'Slash', '\\': 'Backslash', '-': 'Minus', '=': 'Equal', '.': 'Period', ',': 'Comma' };
 
 /** The key presses of a binding such as "Mod+Shift+P" or "g f" ("Mod" is Cmd on a Mac, Ctrl elsewhere). */
 export function keyPresses(binding: string, mac: boolean): KeyPress[] {

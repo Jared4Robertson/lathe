@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { Link, useLocation } from '../router';
 import { useSpaces } from '../shell/spaces';
-import { FormatPage } from './FormatPage';
+import { checkPagePath } from '../format/reference';
 import { RecordMarkdown } from './mentions';
 import { DomainPatterns } from './PatternParts';
 import { patternsFollowedBy } from './patterns';
@@ -26,7 +26,8 @@ import {
 
 export { RecordContent } from './RecordContent';
 
-// The spec pages that are not about one record: the products, the checks and the record format;
+// The spec pages that are not about one record: the products and the checks (the record format's
+// pages are in app/src/format);
 // and the wiki content of a product and a domain, which the focus page (app/src/views) shows in
 // its Wiki pane beside or instead of the graph.
 
@@ -46,7 +47,7 @@ const recordsIn = (index: SpecIndex, predicate: (r: SpecRecord) => boolean) => i
 
 // ---------- Pages ----------
 
-/** The pages without a focus record: Products, Checks, the record format, and unknown addresses. */
+/** The pages without a focus record: Products, Checks, and unknown addresses. */
 export function SpecView({ spec, route }: { spec: SpecState; route: SpecRoute }) {
   const { index } = spec;
   let page: ReactNode;
@@ -54,8 +55,6 @@ export function SpecView({ spec, route }: { spec: SpecState; route: SpecRoute })
     page = <div className="placeholder"><p>{spec.error ? `Couldn't load the specs: ${spec.error}` : 'Loading specs…'}</p></div>;
   } else if (route.page === 'checks') {
     page = <ChecksPage index={index} />;
-  } else if (route.page === 'format') {
-    page = <FormatPage hash={window.location.hash} />;
   } else if (route.page === 'specs') {
     page = <SpecsHome index={index} />;
   } else {
@@ -319,7 +318,7 @@ function ChecksPage({ index }: { index: SpecIndex }) {
       )}
       {problems.length === 0 && <p className="hint">{only ? `Every check passed in ${only.title}.` : 'Every check passed.'}</p>}
       {[...groups.entries()].map(([check, group]) => (
-        <Section key={check} title={check} count={group.length}>
+        <Section key={check} title={check} titleTo={checkPagePath(check)} count={group.length}>
           <ProblemList index={index} problems={group} showCheck={false} />
         </Section>
       ))}

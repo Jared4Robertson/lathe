@@ -24,6 +24,8 @@ import {
   resolveCommands,
   type Command,
 } from './keymap';
+import { Link } from '../router';
+import { formatPath } from '../specs/data';
 
 // The command dispatcher: components register handlers for command ids (useCommand), one key
 // listener matches key presses against the keymap, and the command palette and the shortcuts
@@ -274,6 +276,9 @@ function ShortcutSheet({ commands, mac, available, titleOf, onClose }: ListProps
         To change a shortcut, put a JSON map of command to keys in local storage under <code>{OVERRIDES_KEY}</code>, for
         example <code>{'{"toggleNav": "Mod+J"}'}</code> (Mod is {mac ? '⌘' : 'Ctrl'}), and reload. Each command's name is in the last column.
       </p>
+      <p className="hint shortcut-note">
+        How records are written, and every kind and check: <Link to={formatPath} onClick={onClose}>Record format</Link>.
+      </p>
     </Dialog>
   );
 }
@@ -330,6 +335,29 @@ function CommandPalette({ commands, mac, available, titleOf, onClose, onRun }: L
 declare global {
   interface Window {
     /** Set by the desktop app's preload (desktop/src/preload.cts); absent in a browser. */
-    latheDesktop?: { isDesktop: boolean; onCommand?: (listener: (id: string) => void) => () => void };
+    latheDesktop?: LatheDesktop;
+  }
+
+  /**
+   * The desktop app's bridge (desktop/src/preload.cts). Every member but isDesktop is optional, so
+   * the app works with an older shell and checks for each before use.
+   */
+  interface LatheDesktop {
+    isDesktop: boolean;
+    /** The operating system: "darwin", "win32" or "linux". */
+    platform?: string;
+    /** Subscribes to native menu choices, each a command ID; returns the unsubscribe. */
+    onCommand?: (listener: (id: string) => void) => () => void;
+    /** Sends the theme's shell and ink for the window's chrome. */
+    setChrome?: (chrome: { background: string; foreground: string }) => void;
+    /** Subscribes to the window entering and leaving full screen; called at once with the current state. */
+    onFullScreen?: (listener: (fullScreen: boolean) => void) => () => void;
+    /** Sets the Dock badge to the product's number of check errors (LA-DSK-UC05-R03). */
+    setErrorCount?: (count: number) => void;
+    /** The record actions (LA-DSK-UC05-R07): reveal its spec file, open it in the editor, copy its ID, or a native menu of the three. */
+    revealRecord?: (id: string) => void;
+    openRecordInEditor?: (id: string) => void;
+    copyRecordId?: (id: string) => void;
+    showRecordMenu?: (id: string) => void;
   }
 }

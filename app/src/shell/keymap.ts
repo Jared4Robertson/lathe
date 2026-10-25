@@ -48,7 +48,7 @@ export const COMMANDS: readonly Command[] = [
   { id: 'focusNav', title: 'Move focus to the navigation', group: 'Navigate', keys: ['Mod+Shift+E'], when: 'global' },
   { id: 'focusInspector', title: 'Move focus to the inspector', group: 'Navigate', keys: ['Mod+Shift+I', 'Mod+Alt+I'], when: 'page' },
   { id: 'goChecks', title: 'Go to Checks', group: 'Navigate', keys: ['g c'], when: 'global' },
-  { id: 'goFormat', title: 'Go to the record format', group: 'Navigate', keys: ['g f'], when: 'global' },
+  { id: 'goFormat', title: 'Record format', group: 'Navigate', keys: ['g f'], when: 'global' },
   { id: 'goDiagrams', title: 'Go to Diagrams', group: 'Navigate', keys: ['g d'], when: 'global' },
   { id: 'goHome', title: 'Go home (all products)', group: 'Navigate', keys: ['g h'], when: 'global' },
   // Tabs, as VS Code's editors: Ctrl+K Enter keeps the preview tab (Alt+K Enter off a Mac, where Ctrl+K is quick open);

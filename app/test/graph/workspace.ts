@@ -22,7 +22,7 @@ const SPECS: Spec[] = [
   ['P-D-C01', 'component', 'Thing service', 'P-D', { component_type: 'service', file: 'src/thing.ts' }],
   ['P-D-C02', 'component', 'Thing router', 'P-D', { component_type: 'router', file: 'src/router.ts' }],
   ['P-D-T01', 'test', 'The owner is shown', 'P-D', { test_type: 'unit', run_by: 'test/thing.test.ts' }],
-  ['P-D-Q01', 'question', 'Can a thing have two owners?', 'P-D', { owner: 'the Owner' }],
+  ['P-D-Q01', 'question', 'Can a thing have two owners?', 'P-D', { owner: 'Owner' }],
 ];
 
 export const LINKS: [string, string, string][] = [
