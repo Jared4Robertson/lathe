@@ -1,6 +1,6 @@
 import { act, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { openApp, openSideBar } from './helpers';
+import { desktopBridgeStub, openApp, openSideBar } from './helpers';
 
 // The desktop app's menus run app commands by ID through the preload's onCommand (LA-DSK-UC03-R02).
 
@@ -12,14 +12,14 @@ describe('desktop menu commands', () => {
     openSideBar('details', ['wiki', 'graph', 'model']);
     let listener: ((id: string) => void) | null = null;
     let unsubscribed = false;
-    window.latheDesktop = { isDesktop: true, onCommand: (l) => { listener = l; return () => { unsubscribed = true; }; } };
+    window.latheDesktop = desktopBridgeStub({ onCommand: (l) => { listener = l; return () => { unsubscribed = true; }; } });
     await openApp('/DM-SHOP-UC01');
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
-    expect(screen.getByRole('complementary', { name: 'Inspector' })).toBeInTheDocument();
-    act(() => listener!('toggleInspector'));
-    expect(screen.queryByRole('complementary', { name: 'Inspector' })).toBeNull();
-    act(() => listener!('toggleInspector'));
-    expect(screen.getByRole('complementary', { name: 'Inspector' })).toBeInTheDocument();
+    expect(screen.getByRole('complementary', { name: 'Side bar' })).toBeInTheDocument();
+    act(() => listener!('toggleSideBar'));
+    expect(screen.queryByRole('complementary', { name: 'Side bar' })).toBeNull();
+    act(() => listener!('toggleSideBar'));
+    expect(screen.getByRole('complementary', { name: 'Side bar' })).toBeInTheDocument();
     act(() => listener!('noSuchCommand'));
     await openApp('/DM-SHOP-UC01');
     expect(unsubscribed).toBe(true);

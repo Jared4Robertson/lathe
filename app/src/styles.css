@@ -209,9 +209,9 @@ code { font: 0.86em var(--mono); }
 .record-row { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; align-items: baseline; }
 .row-tags { display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline; }
 .meta { color: var(--muted); font-size: 0.8rem; }
-.spec-body a.record-link, .inspector a.record-link { display: inline-flex; gap: 8px; align-items: baseline; color: var(--ink); text-decoration: none; }
-.spec-body a.record-link code, .inspector a.record-link code { color: var(--steel); white-space: nowrap; }
-.spec-body a.record-link:hover span, .inspector a.record-link:hover span { text-decoration: underline; }
+.spec-body a.record-link, .side-bar a.record-link { display: inline-flex; gap: 8px; align-items: baseline; color: var(--ink); text-decoration: none; }
+.spec-body a.record-link code, .side-bar a.record-link code { color: var(--steel); white-space: nowrap; }
+.spec-body a.record-link:hover span, .side-bar a.record-link:hover span { text-decoration: underline; }
 .record-link.missing code { color: var(--error); text-decoration: line-through; }
 
 .problems { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; }
@@ -485,14 +485,14 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-group-chevron:hover { background: var(--steel-bg); color: var(--steel); }
 .graph-swatch.stage-group { border-color: var(--muted); border-top-width: 4px; background: var(--paper); }
 
-/* ---------- App shell, nav, focus page, inspector, trees and shortcuts (brief 18) ---------- */
+/* ---------- App shell, nav, focus page, sideBar, trees and shortcuts (brief 18) ---------- */
 .icon { flex: none; display: block; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 .skip-link { position: absolute; left: 8px; top: -40px; z-index: 100; padding: 6px 10px; background: var(--sheet); color: var(--steel); border: 1px solid var(--steel); border-radius: 6px; }
 .skip-link:focus { top: 8px; }
 .icon-button { display: inline-grid; place-items: center; min-width: 32px; min-height: 32px; padding: 0; border: 1px solid transparent; border-radius: 6px; background: none; color: var(--muted); cursor: pointer; font: inherit; }
 .icon-button:hover { color: var(--ink); background: var(--paper); border-color: var(--rule); }
-/* A toggle that is on (the pressed view, a shown inspector): one look for every such icon button. */
+/* A toggle that is on (the pressed view, a shown sideBar): one look for every such icon button. */
 .icon-button.is-on { color: var(--steel); background: var(--steel-bg); }
 /* A view the page does not offer keeps its slot in the View group, dimmed, so the toggles never move (UX-R08). */
 .icon-button.is-unavailable, .icon-button.is-unavailable:hover { opacity: 0.4; cursor: default; color: var(--muted); background: none; border-color: transparent; }
@@ -577,14 +577,14 @@ a.button-primary.button-primary { color: var(--on-mark); }
 .drawer-backdrop { position: fixed; inset: 0; z-index: 70; background: var(--backdrop); }
 .menu.is-drawer { position: fixed; z-index: 80; inset: 0 auto 0 0; width: min(300px, 86vw); box-shadow: 4px 0 24px var(--shadow-strong); }
 
-/* The focus page: header, views, inspector. */
+/* The focus page: header, views, sideBar. */
 .focus-page { display: flex; flex-direction: column; gap: var(--panel-gap); min-width: 0; min-height: 0; height: 100%; overflow: hidden; }
 .focus-page > .placeholder { flex: 1; }
 .focus-layout { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr); }
 /* Panels never overlap (LA-PAT-APP-UX-R02): the side bar gives way, down to its least width, so the open panes keep
    theirs (--panes-min, set by FocusPage); with less room still, the panes share what is left (FocusPage's columns). */
-.focus-layout.with-inspector { grid-template-columns: minmax(min(var(--panes-min, 0px), calc(100% - var(--panel-gap) - var(--inspector-min))), 1fr) var(--panel-gap) minmax(var(--inspector-min), var(--inspector-width, 340px)); column-gap: 0; }
-.focus-layout { --inspector-min: 200px; }
+.focus-layout.with-side-bar { grid-template-columns: minmax(min(var(--panes-min, 0px), calc(100% - var(--panel-gap) - var(--side-bar-min))), 1fr) var(--panel-gap) minmax(var(--side-bar-min), var(--side-bar-width, 340px)); column-gap: 0; }
+.focus-layout { --side-bar-min: 200px; }
 .focus-main { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
 .focus-views { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr); }
 /* Open panes sit side by side, a gap apart; FocusPage sets each pane's column (minmax(<least>, <weight>fr)). */
@@ -598,20 +598,20 @@ a.button-primary.button-primary { color: var(--on-mark); }
 .pane-gap { background: var(--shell); }
 .group-intro { margin: 16px 0 0; }
 .record-layout.single { grid-template-columns: minmax(0, 1fr); }
-.inspector-column { min-height: 0; overflow: hidden; background: var(--sheet); container-type: inline-size; }
+.side-bar-column { min-height: 0; overflow: hidden; background: var(--sheet); container-type: inline-size; }
 /* A narrow side bar puts each field's name above its value, so a value never breaks one letter to a line. */
-@container (max-width: 260px) { .inspector-column .fields > div { grid-template-columns: minmax(0, 1fr); gap: 0; } }
-.inspector.record-side { height: 100%; box-sizing: border-box; overflow-y: auto; padding: 10px 16px 24px; border: 0; border-radius: 0; background: var(--sheet); display: flex; flex-direction: column; gap: 8px; }
-.inspector:focus { outline: none; }
-.inspector:focus-visible { outline: 2px solid var(--steel); outline-offset: -2px; }
-.inspector-head { display: flex; justify-content: space-between; align-items: center; position: sticky; top: -10px; background: var(--sheet); z-index: 2; padding: 4px 0; }
-.inspector-title { font: 500 0.72rem var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
-.inspector-identity p { margin: 0; }
-.inspector-name { font: 700 1.05rem/1.25 var(--display); overflow-wrap: anywhere; }
-.inspector a { color: var(--steel); }
-.inspector h3 { display: flex; gap: 6px; align-items: baseline; margin-top: 10px; font-size: 0.88rem; }
-.inspector-section { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
-.inspector-gaps li { color: var(--warn); font-size: 0.85rem; }
+@container (max-width: 260px) { .side-bar-column .fields > div { grid-template-columns: minmax(0, 1fr); gap: 0; } }
+.side-bar.record-side { height: 100%; box-sizing: border-box; overflow-y: auto; padding: 10px 16px 24px; border: 0; border-radius: 0; background: var(--sheet); display: flex; flex-direction: column; gap: 8px; }
+.side-bar:focus { outline: none; }
+.side-bar:focus-visible { outline: 2px solid var(--steel); outline-offset: -2px; }
+.side-bar-head { display: flex; justify-content: space-between; align-items: center; position: sticky; top: -10px; background: var(--sheet); z-index: 2; padding: 4px 0; }
+.side-bar-title { font: 500 0.72rem var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.side-bar-identity p { margin: 0; }
+.side-bar-name { font: 700 1.05rem/1.25 var(--display); overflow-wrap: anywhere; }
+.side-bar a { color: var(--steel); }
+.side-bar h3 { display: flex; gap: 6px; align-items: baseline; margin-top: 10px; font-size: 0.88rem; }
+.side-bar-section { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
+.side-bar-gaps li { color: var(--warn); font-size: 0.85rem; }
 .links-in-heading:focus-visible { outline: 2px solid var(--steel); outline-offset: 2px; }
 .graph-legend summary { cursor: pointer; font-weight: 600; font-size: 0.85rem; margin-top: 10px; }
 .graph-legend ul { margin-top: 6px; }
@@ -653,7 +653,7 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 .palette-list li.active { background: var(--steel-bg); color: var(--steel); }
 .key-pending { position: fixed; right: 16px; bottom: 16px; z-index: 130; padding: 4px 10px; font: 500 0.85rem var(--mono); background: var(--ink); color: var(--paper); border-radius: 6px; }
 @media (max-width: 900px) {
-    .focus-layout, .focus-layout.with-inspector { grid-template-columns: minmax(0, 1fr); }
+    .focus-layout, .focus-layout.with-side-bar { grid-template-columns: minmax(0, 1fr); }
   .focus-views.panes-2, .focus-views.panes-3 { grid-template-columns: minmax(0, 1fr); grid-auto-rows: minmax(0, 1fr); }
   .focus-views .pane-gap { display: none; }
 }
@@ -782,7 +782,7 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 :is(.record-list > li:not(.tree-item), .problems > li, .tree-row) :is(a, button, input, select, textarea, summary, [title], [tabindex]):not(.row-link) { position: relative; z-index: 1; }
 .row-link::after { content: ''; position: absolute; inset: 0; border-radius: 5px; transition: background-color var(--hover-speed); }
 .row-link:hover::after { background: var(--hover-bg); }
-:is(.spec-body, .inspector) a.row-link:hover span { color: var(--steel); text-decoration: none; }
+:is(.spec-body, .side-bar) a.row-link:hover span { color: var(--steel); text-decoration: none; }
 a.row-link.row-link:focus-visible { outline: none; }
 .row-link:focus-visible::after { outline: 2px solid var(--steel); outline-offset: -1px; }
 @media (prefers-reduced-motion: reduce) { .row-link::after { transition: none; } }
@@ -819,7 +819,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 
 /* A pane's title bar (LA-PAT-APP-UX-R03), as an editor group's in VS Code: a quiet label naming the pane's
    view at the left; at the right, icon buttons in one style: the view toggles, a divider, then the layout
-   actions (open beside, full screen, the inspector); then the pane's content. */
+   actions (open beside, full screen, the side bar); then the pane's content. */
 .pane { background: var(--paper); }
 .pane-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; height: var(--pane-bar-height); box-sizing: border-box; padding: 0 4px 0 6px; border-bottom: 1px solid var(--rule); background: var(--sheet); }
 .pane-head, .pane-actions, .pane-views { display: flex; align-items: center; gap: 2px; min-width: 0; }
@@ -995,7 +995,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 /* ---------- End of themes ---------- */
 
 /* ---------- The page bar (LA-PAT-APP-UX-R03) ----------
-   One strip across the top of the open panes: the page's tabs at its left; the View group, a divider and the inspector
+   One strip across the top of the open panes: the page's tabs at its left; the View group, a divider and the side bar
    toggle at its right. One line high whatever it holds; the tabs scroll sideways (UX-R08). */
 .focus-main { gap: var(--panel-gap); }
 .page-bar { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 8px; height: var(--page-bar-height); box-sizing: border-box; padding: 0 4px 0 4px; background: var(--sheet); }
@@ -1014,7 +1014,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 .topbar-up-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .topbar-title { margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 1.02rem/1.3 var(--display); color: var(--ink); }
 
-/* The page bar, compact: the open pages, the View switch and the inspector, under the top bar. */
+/* The page bar, compact: the open pages, the View switch and the side bar, under the top bar. */
 .focus-layout.is-phone { display: flex; flex-direction: column; }
 .focus-layout.is-phone > .pane { flex: 1; min-height: 0; }
 .page-bar.is-compact { height: 54px; padding: 0 4px; border-bottom: 1px solid var(--rule); }
@@ -1026,7 +1026,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 .view-segment:hover { color: var(--ink); }
 .view-segment.is-on { background: var(--sheet); color: var(--steel); box-shadow: 0 1px 2px var(--shadow-soft); }
 @media (max-width: 380px) { .view-segment-label { display: none; } }
-.page-bar.is-compact .inspector-toggle { min-width: var(--touch-target); min-height: var(--touch-target); }
+.page-bar.is-compact .side-bar-toggle { min-width: var(--touch-target); min-height: var(--touch-target); }
 :is(.page-bar-pages, .view-segment, .topbar-up, .sheet-handle, .pages-open):focus-visible { outline: 2px solid var(--steel); outline-offset: 1px; }
 
 /* On a phone the page's own header keeps its padding small, and graph and model headers wrap their tools. */
@@ -1040,7 +1040,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 /* The nav sheet: the whole screen, the rail kept at its left, sliding in from the left edge. */
 .menu.is-drawer, .menu.is-drawer.has-spaces { inset: 0; width: auto; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); border: 0; border-radius: 0; box-shadow: none; }
 
-/* Bottom sheets (the inspector, the open pages): half the screen, or all of it below the top safe area. */
+/* Bottom sheets (the side bar, the open pages): half the screen, or all of it below the top safe area. */
 .sheet-backdrop { position: fixed; inset: 0; z-index: 70; background: var(--backdrop); }
 .bottom-sheet { position: fixed; z-index: 80; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; height: 55dvh; max-height: calc(100dvh - env(safe-area-inset-top) - 8px); box-sizing: border-box; padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); background: var(--sheet); color: var(--ink); border-radius: var(--sheet-radius) var(--sheet-radius) 0 0; box-shadow: 0 -8px 32px var(--shadow-strong); }
 .bottom-sheet.is-full { height: calc(100dvh - env(safe-area-inset-top) - 8px); }
@@ -1049,7 +1049,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 .sheet-handle:hover .sheet-handle-bar { background: var(--steel); }
 .sheet-handle-bar { width: 40px; height: 5px; border-radius: 3px; background: var(--rule); }
 .sheet-body { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
-.sheet-body > .inspector.record-side { flex: 1; height: auto; min-height: 0; }
+.sheet-body > .side-bar.record-side { flex: 1; height: auto; min-height: 0; }
 .sheet-head { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 8px 4px 16px; }
 .sheet-title { margin: 0; display: flex; gap: 6px; align-items: baseline; font: 700 1rem var(--display); }
 @media (prefers-reduced-motion: no-preference) {
@@ -1130,7 +1130,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 /* Scroll boxes keep room for their scrollbar (LA-PAT-APP-UX-R08), so a classic scrollbar (Windows, a Mac with a
    mouse) that comes and goes with the content never narrows what is inside. The space rail hides its scrollbar
    instead: it is too narrow to give one room, and it still scrolls by wheel, touch and keyboard. */
-.workspace > aside, .nav-scroll, .quick-find-results, .quick-find-results.is-inline, .pane-scroll, .inspector.record-side, .shortcut-groups, .palette-list, .pages-list { scrollbar-gutter: stable; }
+.workspace > aside, .nav-scroll, .quick-find-results, .quick-find-results.is-inline, .pane-scroll, .side-bar.record-side, .shortcut-groups, .palette-list, .pages-list { scrollbar-gutter: stable; }
 .space-rail { scrollbar-width: none; }
 .space-rail::-webkit-scrollbar { display: none; }
 

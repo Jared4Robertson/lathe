@@ -52,7 +52,7 @@ export function SideBarDetails({ index, focus, target, mode, how, graph, onNavig
 
 function Part({ title, count, id, children }: { title: string; count?: number; id: string; children: ReactNode }) {
   return (
-    <section className="inspector-section" aria-labelledby={id}>
+    <section className="side-bar-section" aria-labelledby={id}>
       <h3 id={id}>{title}{count !== undefined && <span className="section-count">{count}</span>}</h3>
       {children}
     </section>
@@ -71,9 +71,9 @@ function Identity({ index, eyebrow, title, id, target, focus, how, onNavigate, h
     onNavigate(target);
   };
   return (
-    <div className="inspector-identity">
+    <div className="side-bar-identity">
       <p className="eyebrow">{how === 'page' ? eyebrow : `${HOW[how]} · ${eyebrow}`}</p>
-      <p className="inspector-name">{title}</p>
+      <p className="side-bar-name">{title}</p>
       <div className="side-identity-row">
         {id && <span className="record-id"><RecordLink index={index} id={id} showTitle={false} /></span>}
         {target !== focus && <Button href={hrefFor(target)} onClick={open} className="side-open">Open</Button>}
@@ -127,12 +127,12 @@ function TraceSummary({ index, record }: { index: SpecIndex; record: SpecRecord 
   ];
   const nothing = groups.length === 0 && gaps.length === 0 && !trace.runBy;
   return (
-    <section className="inspector-section side-trace" aria-labelledby="side-trace">
+    <section className="side-bar-section side-trace" aria-labelledby="side-trace">
       <h3 id="side-trace" tabIndex={-1} className="links-in-heading">Traceability</h3>
       {nothing ? <p className="hint">Nothing links to or from it.</p> : (
         <>
           {gaps.length > 0 && (
-            <ul className="plain inspector-gaps">
+            <ul className="plain side-bar-gaps">
               {gaps.map(({ domain, gap }) => (
                 <li key={`${domain} ${gap.kind}`} data-gap={gap.kind}>{!record.domain && <><code>{domain}</code> </>}<strong>{GAP_TEXT[gap.kind].title}</strong></li>
               ))}
@@ -172,7 +172,7 @@ function GroupDetails({ index, gid, focus, how, onNavigate, hrefFor }: { index: 
       </dl>
       <Part title="Problems and gaps among its members" id="side-group-marks">
         {marks.errors + marks.warnings === 0 && marks.gaps.length === 0 ? <p className="hint">None.</p> : (
-          <ul className="plain inspector-gaps">
+          <ul className="plain side-bar-gaps">
             {marks.errors > 0 && <li className="problem error">{marks.errors} error{marks.errors > 1 ? 's' : ''}</li>}
             {marks.warnings > 0 && <li className="problem warning">{marks.warnings} warning{marks.warnings > 1 ? 's' : ''}</li>}
             {marks.gaps.map((g) => <li key={g}>{g === 'satisfies' ? 'Some are not satisfied.' : 'Some are not proved.'}</li>)}
@@ -198,22 +198,22 @@ function RawFacts({ index, record }: { index: SpecIndex; record: SpecRecord }) {
   const into = index.incoming.get(record.id) ?? [];
   return (
     <>
-      <section className="inspector-section" aria-labelledby="side-file">
+      <section className="side-bar-section" aria-labelledby="side-file">
         <h3 id="side-file">Spec file</h3>
         <p className="side-file"><code>{record.path}</code></p>
         <DesktopRecordActions id={record.id} />
       </section>
-      <section className="inspector-section" aria-labelledby="side-header">
+      <section className="side-bar-section" aria-labelledby="side-header">
         <h3 id="side-header">Header fields</h3>
         <dl className="fields side-raw">
           {header.map(([name, value]) => <div key={name}><dt><code>{name}</code></dt><dd>{name === 'parent' ? <RecordLink index={index} id={value} showTitle={false} /> : <code>{value}</code>}</dd></div>)}
         </dl>
       </section>
-      <section className="inspector-section" aria-labelledby="side-links-out">
+      <section className="side-bar-section" aria-labelledby="side-links-out">
         <h3 id="side-links-out">Links out <span className="section-count">{out.length}</span></h3>
         <RawLinks index={index} links={out.map((l) => ({ relation: l.relation, id: l.target }))} label="Links out" empty="This record links to nothing." />
       </section>
-      <section className="inspector-section" aria-labelledby="side-links-in">
+      <section className="side-bar-section" aria-labelledby="side-links-in">
         <h3 id="side-links-in" tabIndex={-1} className="links-in-heading">Links in <span className="section-count">{into.length}</span></h3>
         <RawLinks index={index} links={into.map((l) => ({ relation: l.relation, id: l.source }))} label="Links in" empty="Nothing links to this record." />
       </section>
@@ -265,7 +265,7 @@ function RawGroupFacts({ index, gid }: { index: SpecIndex; gid: string }) {
   const parsed = parseGroupId(gid);
   if (!parsed) return <p className="hint">There's no record or group <code>{gid}</code>.</p>;
   return (
-    <section className="inspector-section" aria-labelledby="side-group">
+    <section className="side-bar-section" aria-labelledby="side-group">
       <h3 id="side-group">Group</h3>
       <p className="hint">A group has no spec file of its own: its address names it by its parent and its place in the tree. Select a row to see that record's details.</p>
       <dl className="fields side-raw">

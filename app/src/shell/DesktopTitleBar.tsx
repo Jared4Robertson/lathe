@@ -21,29 +21,29 @@ import './DesktopTitleBar.css';
 interface PageState {
   title: string;
   navShown: boolean;
-  inspectorShown: boolean;
-  /** Whether the page has an inspector to show or hide at all. */
-  inspectorOffered: boolean;
+  sideBarShown: boolean;
+  /** Whether the page has a side bar to show or hide at all. */
+  sideBarOffered: boolean;
 }
 
 function readPage(): PageState {
   const app = document.querySelector('.app');
   const narrow = app?.classList.contains('is-narrow') ?? false;
-  const inspectorShown = !!document.getElementById('inspector');
+  const sideBarShown = !!document.getElementById('side-bar');
   return {
     title: document.querySelector('#main h1')?.textContent?.trim() ?? '',
     navShown: narrow ? !!document.getElementById('nav') : !(app?.classList.contains('nav-collapsed') ?? false),
-    inspectorShown,
-    inspectorOffered: inspectorShown || !!document.querySelector('.inspector-toggle'),
+    sideBarShown,
+    sideBarOffered: sideBarShown || !!document.querySelector('.side-bar-toggle'),
   };
 }
 
 const samePage = (a: PageState, b: PageState) =>
-  a.title === b.title && a.navShown === b.navShown && a.inspectorShown === b.inspectorShown && a.inspectorOffered === b.inspectorOffered;
+  a.title === b.title && a.navShown === b.navShown && a.sideBarShown === b.sideBarShown && a.sideBarOffered === b.sideBarOffered;
 
 /** The page's state, kept current as the page changes (the observer batches each turn's changes into one read). */
 function usePageState(): PageState {
-  const [page, setPage] = useState<PageState>({ title: '', navShown: true, inspectorShown: false, inspectorOffered: false });
+  const [page, setPage] = useState<PageState>({ title: '', navShown: true, sideBarShown: false, sideBarOffered: false });
   useLayoutEffect(() => {
     const read = () => {
       const next = readPage();
@@ -75,12 +75,12 @@ function useHistoryEnds() {
 }
 
 /** The platform's class: room for the traffic lights at the left on macOS (none in full screen, where they hide), for the window's buttons at the right elsewhere. */
-const platformClass = (platform: string | undefined, fullScreen: boolean) => (platform === 'darwin' ? (fullScreen ? 'is-mac is-full-screen' : 'is-mac') : 'is-overlay');
+const platformClass = (platform: string, fullScreen: boolean) => (platform === 'darwin' ? (fullScreen ? 'is-mac is-full-screen' : 'is-mac') : 'is-overlay');
 
 /** Whether the window is in full screen, as the shell says. */
 function useFullScreen(bridge: LatheDesktop) {
   const [fullScreen, setFullScreen] = useState(false);
-  useEffect(() => bridge.onFullScreen?.(setFullScreen), [bridge]);
+  useEffect(() => bridge.onFullScreen(setFullScreen), [bridge]);
   return fullScreen;
 }
 
@@ -147,14 +147,14 @@ function TitleBar({ bridge, index }: { bridge: LatheDesktop; index: SpecIndex | 
             <Icon name="sidebar-left" size={16} />
           </Button>
         </Tooltip>
-        <Tooltip label="Show or hide the inspector" command="toggleInspector">
+        <Tooltip label="Show or hide the side bar" command="toggleSideBar">
           <Button
             variant="icon"
-            className={`title-bar-button${page.inspectorShown ? ' is-on' : ''}`}
-            label="Show or hide the inspector"
-            aria-pressed={page.inspectorShown}
-            disabled={!page.inspectorOffered}
-            onClick={() => run('toggleInspector')}
+            className={`title-bar-button${page.sideBarShown ? ' is-on' : ''}`}
+            label="Show or hide the side bar"
+            aria-pressed={page.sideBarShown}
+            disabled={!page.sideBarOffered}
+            onClick={() => run('toggleSideBar')}
           >
             <Icon name="sidebar-right" size={16} />
           </Button>

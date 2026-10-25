@@ -148,7 +148,7 @@ export function CommandsProvider({ children }: { children: ReactNode }) {
   const api = useMemo(() => ({ commands, mac, register, run, available, titleOf, announce }), [commands, mac, register, run, available, titleOf, announce]);
 
   // In the desktop app, a native menu choice arrives as a command ID and runs like its keys would (LA-DSK-UC03-R02).
-  useEffect(() => window.latheDesktop?.onCommand?.((id: string) => { run(id); }), [run]);
+  useEffect(() => window.latheDesktop?.onCommand((id: string) => { run(id); }), [run]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -339,26 +339,23 @@ declare global {
     latheDesktop?: LatheDesktop;
   }
 
-  /**
-   * The desktop app's bridge (desktop/src/preload.cts). Every member but isDesktop is optional, so
-   * the app works with an older shell and checks for each before use.
-   */
+  /** The desktop app's bridge (desktop/src/preload.cts), built with the app: every member is there. */
   interface LatheDesktop {
     isDesktop: boolean;
     /** The operating system: "darwin", "win32" or "linux". */
-    platform?: string;
+    platform: string;
     /** Subscribes to native menu choices, each a command ID; returns the unsubscribe. */
-    onCommand?: (listener: (id: string) => void) => () => void;
+    onCommand: (listener: (id: string) => void) => () => void;
     /** Sends the theme's shell and ink for the window's chrome. */
-    setChrome?: (chrome: { background: string; foreground: string }) => void;
+    setChrome: (chrome: { background: string; foreground: string }) => void;
     /** Subscribes to the window entering and leaving full screen; called at once with the current state. */
-    onFullScreen?: (listener: (fullScreen: boolean) => void) => () => void;
+    onFullScreen: (listener: (fullScreen: boolean) => void) => () => void;
     /** Sets the Dock badge to the product's number of check errors (LA-DSK-UC05-R03). */
-    setErrorCount?: (count: number) => void;
+    setErrorCount: (count: number) => void;
     /** The record actions (LA-DSK-UC05-R07): reveal its spec file, open it in the editor, copy its ID, or a native menu of the three. */
-    revealRecord?: (id: string) => void;
-    openRecordInEditor?: (id: string) => void;
-    copyRecordId?: (id: string) => void;
-    showRecordMenu?: (id: string) => void;
+    revealRecord: (id: string) => void;
+    openRecordInEditor: (id: string) => void;
+    copyRecordId: (id: string) => void;
+    showRecordMenu: (id: string) => void;
   }
 }

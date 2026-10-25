@@ -95,7 +95,7 @@ export interface RecordContentProps {
   header?: boolean;
   /**
    * Draw the record's facts (fields, parent, children, links, problems) beside the body. Off when
-   * the host shows them in its inspector; the body then lists the direct children itself.
+   * the host shows them in its side bar; the body then lists the direct children itself.
    */
   side?: boolean;
 }
@@ -175,7 +175,7 @@ function RecordBody({ index, record, actions, header, side }: { index: SpecIndex
 
 /**
  * A record's facts: kind, fields, spec file, parent, children (their own children folded) and its
- * links both ways. Shown beside the body, or in the inspector.
+ * links both ways. Shown beside the body, or in the side bar.
  */
 export function RecordFacts({ index, record }: { index: SpecIndex; record: SpecRecord }) {
   const { id } = record;

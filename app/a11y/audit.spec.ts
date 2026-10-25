@@ -74,10 +74,10 @@ const PHONE: State[] = [
     await page.locator('.find-sheet input').fill('graph');
     await page.waitForTimeout(300);
   } },
-  { name: 'the inspector sheet', run: async (page) => {
+  { name: 'the side bar sheet', run: async (page) => {
     await open(page, RECORD, '.pane-title');
-    await page.getByRole('button', { name: 'Show the inspector' }).first().click();
-    await page.locator('.inspector-sheet').waitFor();
+    await page.getByRole('button', { name: 'Show the side bar' }).first().click();
+    await page.locator('.side-bar-sheet').waitFor();
   } },
 ];
 

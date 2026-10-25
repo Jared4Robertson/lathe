@@ -10,14 +10,14 @@ import { main, openApp, openSideBar } from './helpers';
 import { testWorkspace } from './graph/workspace';
 
 // The focus page: one address per record or group, its Wiki, Graph and Model views panes you open
-// and close side by side, with the inspector as the page's last column.
+// and close side by side, with the side bar as the page's last column.
 
 const served = () => ({ workspace: testWorkspace() });
 const node = (id: string) => document.querySelector<HTMLElement>(`.react-flow__node[data-id="${id}"]`);
 const title = () => screen.getByRole('heading', { level: 1 }).textContent;
 /** A view toggle, in the rightmost pane's title bar. */
 const viewToggle = (name: 'Wiki' | 'Graph' | 'Model') => within(screen.getByRole('group', { name: 'View' })).getByRole('button', { name });
-const inspector = () => screen.getByRole('complementary', { name: 'Inspector' });
+const sideBar = () => screen.getByRole('complementary', { name: 'Side bar' });
 const graphShown = () => waitFor(() => expect(document.querySelectorAll('.react-flow__node').length).toBeGreaterThan(0));
 
 async function back() {
@@ -184,7 +184,7 @@ describe('one address, three views', () => {
     }
   });
 
-  it('LA-BRW-T126 Lists in the inspector, the graph part of the inspector and group pages stay at 10 rows and can be searched', async () => {
+  it('LA-BRW-T126 Lists in the side bar, the graph part of the side bar and group pages stay at 10 rows and can be searched', async () => {
     const w = testWorkspace();
     const base = w.records.find((r) => r.id === 'P-D-UC01-R01')!;
     for (let i = 2; i <= 13; i++) {
@@ -194,10 +194,10 @@ describe('one address, three views', () => {
     await openApp('/P-D-UC01/requirement?view=wiki,graph', { workspace: w });
     await screen.findByRole('heading', { level: 1, name: 'UC requirements (13)' });
     expect(within(screen.getByRole('region', { name: 'Wiki pane' })).getByRole('searchbox', { name: 'Filter UC requirements of P-D-UC01/requirement' })).toBeInTheDocument();
-    await waitFor(() => expect(within(inspector()).getByRole('searchbox', { name: 'Filter connected records' })).toBeInTheDocument());
+    await waitFor(() => expect(within(sideBar()).getByRole('searchbox', { name: 'Filter connected records' })).toBeInTheDocument());
     // The side bar's Outline: the graph's records by level, each list searchable past 10 rows (brief 64).
-    fireEvent.click(within(inspector()).getByRole('button', { name: 'Outline' }));
-    await waitFor(() => expect(within(inspector()).getAllByRole('searchbox', { name: /^Filter level \d$/ }).length).toBeGreaterThan(0));
+    fireEvent.click(within(sideBar()).getByRole('button', { name: 'Outline' }));
+    await waitFor(() => expect(within(sideBar()).getAllByRole('searchbox', { name: /^Filter level \d$/ }).length).toBeGreaterThan(0));
   });
 
   it('LA-BRW-T135 Switching views by keyboard keeps focus, and the toggles show a focus ring', async () => {
@@ -220,7 +220,7 @@ describe('one address, three views', () => {
     expect(css).toMatch(/\.icon-button\.is-on\s*\{/);
   });
 
-  it('LA-BRW-T310 The page bar holds the tabs at its left and the view toggles, a divider and the inspector toggle at its right; each pane header names its view and holds its close and Full screen buttons; the pressed views and a shown inspector share one on look', async () => {
+  it('LA-BRW-T310 The page bar holds the tabs at its left and the view toggles, a divider and the side bar toggle at its right; each pane header names its view and holds its close and Full screen buttons; the pressed views and a shown side bar share one on look', async () => {
     // The side bar starts closed in the Wiki view (brief 64); this test reads it open.
     openSideBar('details', ['wiki', 'graph', 'model']);
     await openApp('/P-D-UC01', served());
@@ -229,11 +229,11 @@ describe('one address, three views', () => {
     expect(within(page.querySelector<HTMLElement>('.page-bar-start')!).getByRole('tab', { selected: true })).toHaveTextContent('P-D-UC01 Lend a thing');
     const order = (el: HTMLElement) => [...el.querySelectorAll<HTMLElement>('button, .pane-divider')].map((b) => b.classList.contains('pane-divider') ? '|' : b.getAttribute('aria-label'));
     // A use case offers no Model view: its toggle keeps its slot, dimmed, and says where it works (UX-R08).
-    expect(order(page.querySelector<HTMLElement>('.page-bar-actions')!)).toEqual(['Wiki', 'Graph', 'Model (on a domain, an aggregate or an entity)', '|', 'Hide the inspector']);
+    expect(order(page.querySelector<HTMLElement>('.page-bar-actions')!)).toEqual(['Wiki', 'Graph', 'Model (on a domain, an aggregate or an entity)', '|', 'Hide the side bar']);
     expect(within(page).getByRole('button', { name: /^Model \(/ })).toHaveAttribute('aria-disabled', 'true');
     expect(viewToggle('Wiki')).toHaveClass('icon-button', 'is-on');
     expect(viewToggle('Graph')).not.toHaveClass('is-on');
-    expect(within(page).getByRole('button', { name: 'Hide the inspector' })).toHaveClass('icon-button', 'is-on');
+    expect(within(page).getByRole('button', { name: 'Hide the side bar' })).toHaveClass('icon-button', 'is-on');
     // One pane: its header names its view and holds only Full screen.
     const wiki = () => screen.getByRole('region', { name: 'Wiki pane' });
     expect(wiki().querySelector('.pane-bar .pane-name')).toHaveTextContent(/^\s*Wiki$/);
@@ -246,7 +246,7 @@ describe('one address, three views', () => {
     expect(graph.querySelector('.pane-name')).toHaveTextContent(/^\s*Graph$/);
     expect(order(wiki().querySelector<HTMLElement>('.pane-actions')!)).toEqual(['Close the wiki pane', 'Full screen: Wiki']);
     expect(order(graph.querySelector<HTMLElement>('.pane-actions')!)).toEqual(['Close the graph pane', 'Full screen: Graph']);
-    expect(order(page.querySelector<HTMLElement>('.page-bar-actions')!)).toEqual(['Wiki', 'Graph', 'Model (on a domain, an aggregate or an entity)', '|', 'Hide the inspector']);
+    expect(order(page.querySelector<HTMLElement>('.page-bar-actions')!)).toEqual(['Wiki', 'Graph', 'Model (on a domain, an aggregate or an entity)', '|', 'Hide the side bar']);
     expect(wiki().querySelector('[role="tablist"]')).toBeNull();
     // The toggle that was clicked keeps focus: it does not move.
     await waitFor(() => expect(viewToggle('Graph')).toHaveFocus());
@@ -255,48 +255,48 @@ describe('one address, three views', () => {
   });
 });
 
-describe('the inspector', () => {
-  it('LA-BRW-T131 The inspector shows the focused record in every view, hides and shows from its edge, is remembered, and gives its space to the main view', async () => {
+describe('the side bar', () => {
+  it('LA-BRW-T131 The side bar shows the focused record in every view, hides and shows from its edge, is remembered, and gives its space to the main view', async () => {
     // Open in the Graph view (brief 64), with the record's facts and what the graph connects.
     await openApp('/P-D-UC01?view=graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
-    const facts = within(inspector());
-    expect(facts.getByText('Lend a thing', { selector: '.inspector-name' })).toBeInTheDocument();
+    const facts = within(sideBar());
+    expect(facts.getByText('Lend a thing', { selector: '.side-bar-name' })).toBeInTheDocument();
     await waitFor(() => expect(facts.getByRole('heading', { name: /Connected in the graph/ })).toBeInTheDocument());
-    expect(document.querySelector('.focus-layout')!.className).toContain('with-inspector');
+    expect(document.querySelector('.focus-layout')!.className).toContain('with-side-bar');
 
     // Hide it: the main view takes the space, and the toggle in the page's top-right corner brings it back.
-    fireEvent.click(facts.getByRole('button', { name: 'Hide the inspector' }));
-    expect(screen.queryByRole('complementary', { name: 'Inspector' })).toBeNull();
-    expect(document.querySelector('.focus-layout')!.className).not.toContain('with-inspector');
+    fireEvent.click(facts.getByRole('button', { name: 'Hide the side bar' }));
+    expect(screen.queryByRole('complementary', { name: 'Side bar' })).toBeNull();
+    expect(document.querySelector('.focus-layout')!.className).not.toContain('with-side-bar');
     expect(JSON.parse(window.localStorage.getItem('lathe:side-bar')!)).toMatchObject({ graph: { open: false } });
     // Remembered in the Graph view of another record, in a new session's first tab too.
     window.sessionStorage.clear();
     await openApp('/P-D-V01?view=graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Thing page' });
-    expect(screen.queryByRole('complementary', { name: 'Inspector' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Show the inspector' }));
-    expect(within(inspector()).getByText('Thing page', { selector: '.inspector-name' })).toBeInTheDocument();
-    expect(screen.getAllByRole('complementary', { name: 'Inspector' })).toHaveLength(1);
+    expect(screen.queryByRole('complementary', { name: 'Side bar' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Show the side bar' }));
+    expect(within(sideBar()).getByText('Thing page', { selector: '.side-bar-name' })).toBeInTheDocument();
+    expect(screen.getAllByRole('complementary', { name: 'Side bar' })).toHaveLength(1);
 
     // The Wiki view keeps its own choice: closed until opened there.
     await openApp('/P-D-V01?view=wiki', served());
     await screen.findByRole('heading', { level: 1, name: 'Thing page' });
-    expect(screen.queryByRole('complementary', { name: 'Inspector' })).toBeNull();
+    expect(screen.queryByRole('complementary', { name: 'Side bar' })).toBeNull();
   });
 
-  it('LA-BRW-T132 On a narrow screen the inspector is a bottom sheet: focus moves in, and Escape closes it and gives focus back', async () => {
+  it('LA-BRW-T132 On a narrow screen the side bar is a bottom sheet: focus moves in, and Escape closes it and gives focus back', async () => {
     narrowScreen();
     await openApp('/P-D-UC01', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
-    expect(screen.queryByRole('complementary', { name: 'Inspector' })).toBeNull();
-    const toggle = screen.getByRole('button', { name: 'Show the inspector' });
+    expect(screen.queryByRole('complementary', { name: 'Side bar' })).toBeNull();
+    const toggle = screen.getByRole('button', { name: 'Show the side bar' });
     fireEvent.click(toggle);
-    const drawer = inspector();
+    const drawer = sideBar();
     expect(drawer.className).toContain('is-drawer');
     await waitFor(() => expect(drawer).toHaveFocus());
     fireEvent.keyDown(drawer, { key: 'Escape' });
-    expect(screen.queryByRole('complementary', { name: 'Inspector' })).toBeNull();
+    expect(screen.queryByRole('complementary', { name: 'Side bar' })).toBeNull();
     await waitFor(() => expect(toggle).toHaveFocus());
     expect(main()).toBeInTheDocument();
   });

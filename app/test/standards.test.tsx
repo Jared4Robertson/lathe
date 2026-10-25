@@ -163,13 +163,13 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     // One implementation: no other component draws a separator of its own.
     const separators = filesUnder(SRC, /\.tsx$/).filter((f) => !f.endsWith('ResizeHandle.tsx')).flatMap((f) => where(f, readFileSync(f, 'utf8'), /role="separator"/));
     expect(separators).toEqual([]);
-    // On a record with the wiki and graph open and the inspector shown: nav, wiki, graph and inspector, each gap a handle.
+    // On a record with the wiki and graph open and the side bar shown: nav, wiki, graph and sideBar, each gap a handle.
     await openApp('/DM-SHOP-UC01?view=wiki,graph');
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     // A focusable separator (one with a value) is a splitter; a plain divider line such as the rail's is not.
     const handles = screen.getAllByRole('separator').filter((h) => h.hasAttribute('aria-valuenow')).map((h) => [h.getAttribute('aria-label'), h.classList.contains('resize-handle')]);
-    expect(handles).toEqual([['Resize the navigation', true], ['Resize the wiki and graph panes', true], ['Resize the inspector', true]]);
-    for (const panel of [document.querySelector('#nav'), ...document.querySelectorAll('.pane'), document.querySelector('.inspector-column')]) expect(panel).toHaveClass('panel');
+    expect(handles).toEqual([['Resize the navigation', true], ['Resize the wiki and graph panes', true], ['Resize the side bar', true]]);
+    for (const panel of [document.querySelector('#nav'), ...document.querySelectorAll('.pane'), document.querySelector('.side-bar-column')]) expect(panel).toHaveClass('panel');
   });
 
   it('LA-BRW-T295 Every grid says its columns, a single column being minmax(0, 1fr), so content shrinks with its panel', () => {
@@ -186,12 +186,12 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
       if (narrow) vi.stubGlobal('matchMedia', (query: string) => ({ matches: true, media: query, addEventListener: () => {}, removeEventListener: () => {} }));
       await openApp(path);
       await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
-      // One page bar, at the top of the editor area, outside every pane and outside the inspector.
+      // One page bar, at the top of the editor area, outside every pane and outside the side bar.
       const bars = [...document.querySelectorAll<HTMLElement>('.page-bar')];
       expect(bars).toHaveLength(1);
       const bar = bars[0];
       expect(bar.closest('.pane')).toBeNull();
-      expect(bar.closest('.inspector, .inspector-column')).toBeNull();
+      expect(bar.closest('.side-bar, .side-bar-column')).toBeNull();
       // Its left: the tabs (on a phone, the Open pages control that opens them as a sheet).
       if (narrow) {
         expect(within(bar).getByRole('button', { name: /^Open pages: \d+$/ })).toBeInTheDocument();
@@ -200,7 +200,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
         expect(screen.getAllByRole('tablist')).toHaveLength(1);
         expect(bar.querySelector('.page-bar-start [role="tablist"]')).not.toBeNull();
       }
-      // Its right: the View group, then the inspector toggle last.
+      // Its right: the View group, then the side bar toggle last.
       const groups = screen.queryAllByRole('group', { name: 'View' });
       expect(groups).toHaveLength(1);
       expect(bar.contains(groups[0])).toBe(true);
@@ -209,10 +209,10 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
       for (const t of toggles) expect(t).toHaveAttribute('aria-pressed');
       const panes = [...document.querySelectorAll<HTMLElement>('.pane')];
       expect(toggles.filter((t) => t.getAttribute('aria-pressed') === 'true')).toHaveLength(panes.length);
-      const inspector = screen.getByRole('button', { name: /the inspector$/, expanded: !narrow });
-      expect(bar.contains(inspector)).toBe(true);
+      const sideBar = screen.getByRole('button', { name: /the side bar$/, expanded: !narrow });
+      expect(bar.contains(sideBar)).toBe(true);
       const actions = [...bar.querySelectorAll('.page-bar-actions button')];
-      expect(actions[actions.length - 1]).toBe(inspector);
+      expect(actions[actions.length - 1]).toBe(sideBar);
       if (narrow) {
         // A phone shows one view at a time, with no pane headers.
         expect(panes).toHaveLength(1);

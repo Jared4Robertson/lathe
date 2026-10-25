@@ -132,7 +132,7 @@ describe.skipIf(process.platform !== 'darwin')('LA-DSK-T06 The desktop app opens
     expect(result.titleBarStyle).toBe('hidden');
     expect(result.titleBar?.height).toBe(38);
     expect(result.titleBar?.center).toMatch(/^Lathe/);
-    expect(result.titleBar?.buttons).toEqual(['Go back', 'Go forward', expect.stringMatching(/^Lathe.*Quick find$/), 'Show or hide the navigation', 'Show or hide the inspector']);
+    expect(result.titleBar?.buttons).toEqual(['Go back', 'Go forward', expect.stringMatching(/^Lathe.*Quick find$/), 'Show or hide the navigation', 'Show or hide the side bar']);
     expect(result.chrome?.background).toMatch(/^#[0-9A-F]{6}$/);
     expect(result.chrome?.foreground).toMatch(/^#[0-9A-F]{6}$/);
     expect(result.shortcutsOpened).toBe(true);

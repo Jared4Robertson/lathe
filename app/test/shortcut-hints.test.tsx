@@ -66,8 +66,8 @@ describe('shortcut hints', () => {
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     keyFocus(within(nav()).getByRole('button', { name: 'Collapse the navigation' }));
     expect(tooltip()).toHaveTextContent('Collapse the navigation ⌘B');
-    keyFocus(screen.getByRole('button', { name: 'Hide the inspector', expanded: true }));
-    expect(tooltip()).toHaveTextContent('the inspector ⌥⌘B');
+    keyFocus(screen.getByRole('button', { name: 'Hide the side bar', expanded: true }));
+    expect(tooltip()).toHaveTextContent('the side bar ⌥⌘B');
     keyFocus(within(within(nav()).getByRole('list', { name: 'Spaces' })).getAllByRole('link')[0]);
     expect(tooltip().querySelector('kbd')).toHaveTextContent('⌥1');
     expect(within(nav()).getByRole('combobox', { name: 'Quick find' })).toHaveAttribute('placeholder', 'Go to… ⌘P');
@@ -150,9 +150,9 @@ describe('shortcut hints', () => {
       expect(within(screen.getByRole('group', { name: 'View' })).getByRole('button', { name })).toHaveAttribute('aria-keyshortcuts', keys);
     }
     expect(screen.getByRole('button', { name: 'Full screen: Wiki' })).toHaveAttribute('aria-keyshortcuts', 'Control+3');
-    // The corner toggle and the inspector's own close button.
-    expect(screen.getByRole('button', { name: 'Hide the inspector', expanded: true })).toHaveAttribute('aria-keyshortcuts', 'Control+Alt+B');
-    expect(within(screen.getByRole('complementary', { name: 'Inspector' })).getByRole('button', { name: 'Hide the inspector' })).toHaveAttribute('aria-keyshortcuts', 'Control+Alt+B');
+    // The corner toggle and the side bar's own close button.
+    expect(screen.getByRole('button', { name: 'Hide the side bar', expanded: true })).toHaveAttribute('aria-keyshortcuts', 'Control+Alt+B');
+    expect(within(screen.getByRole('complementary', { name: 'Side bar' })).getByRole('button', { name: 'Hide the side bar' })).toHaveAttribute('aria-keyshortcuts', 'Control+Alt+B');
 
     // A control whose only shortcut is a sequence has none: Diagrams is "g then d".
     expect(within(nav()).getByRole('link', { name: 'Diagrams' })).not.toHaveAttribute('aria-keyshortcuts');

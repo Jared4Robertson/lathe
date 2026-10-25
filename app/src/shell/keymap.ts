@@ -41,12 +41,12 @@ export const COMMANDS: readonly Command[] = [
   { id: 'browserBack', title: 'Go back (browser)', group: 'Navigate', keys: ['Alt+ArrowLeft'], when: 'global', browser: true },
   { id: 'browserForward', title: 'Go forward (browser)', group: 'Navigate', keys: ['Alt+ArrowRight'], when: 'global', browser: true },
   { id: 'goToDefinition', title: "Go to the focused link's record", group: 'Navigate', keys: ['F12'], when: 'global' },
-  { id: 'showReferences', title: 'Show incoming links in the inspector', group: 'Navigate', keys: ['Shift+F12'], when: 'page' },
+  { id: 'showReferences', title: 'Show incoming links in the side bar', group: 'Navigate', keys: ['Shift+F12'], when: 'page' },
   { id: 'openChecks', title: 'Open Checks', group: 'Navigate', keys: ['Mod+Shift+M'], when: 'global' },
   { id: 'nextProblem', title: 'Next problem on this page', group: 'Navigate', keys: ['F8'], when: 'global' },
   { id: 'previousProblem', title: 'Previous problem on this page', group: 'Navigate', keys: ['Shift+F8'], when: 'global' },
   { id: 'focusNav', title: 'Move focus to the navigation', group: 'Navigate', keys: ['Mod+Shift+E'], when: 'global' },
-  { id: 'focusInspector', title: 'Move focus to the inspector', group: 'Navigate', keys: ['Mod+Shift+I', 'Mod+Alt+I'], when: 'page' },
+  { id: 'focusSideBar', title: 'Move focus to the side bar', group: 'Navigate', keys: ['Mod+Shift+I', 'Mod+Alt+I'], when: 'page' },
   { id: 'goChecks', title: 'Go to Checks', group: 'Navigate', keys: ['g c'], when: 'global' },
   { id: 'goFormat', title: 'Record format', group: 'Navigate', keys: ['g f'], when: 'global' },
   { id: 'goDiagrams', title: 'Go to Diagrams', group: 'Navigate', keys: ['g d'], when: 'global' },
@@ -62,7 +62,7 @@ export const COMMANDS: readonly Command[] = [
   ...Array.from({ length: SPACE_KEYS }, (_, i): Command => ({ id: spaceCommandId(i + 1), title: `Switch to space ${i + 1}`, group: 'Navigate', keys: [`Alt+${i + 1}`], when: 'global', dynamic: true })),
   // View
   { id: 'toggleNav', title: 'Show or hide the navigation', group: 'View', keys: ['Mod+B'], when: 'global' },
-  { id: 'toggleInspector', title: 'Show or hide the inspector', group: 'View', keys: ['Mod+Alt+B'], when: 'page' },
+  { id: 'toggleSideBar', title: 'Show or hide the side bar', group: 'View', keys: ['Mod+Alt+B'], when: 'page' },
   // Ctrl is the Control key on a Mac too, where Cmd+W stays the browser's; elsewhere Ctrl+W closes the tab and Ctrl+G finds the next match, so Alt.
   { id: 'viewWiki', title: 'Wiki view on or off', group: 'View', keys: ['Ctrl+W', 'Ctrl+1'], otherKeys: ['Alt+W', 'Ctrl+1'], when: 'page' },
   { id: 'viewGraph', title: 'Graph view on or off', group: 'View', keys: ['Ctrl+G', 'Ctrl+2'], otherKeys: ['Alt+G', 'Ctrl+2'], when: 'page' },

@@ -61,7 +61,7 @@ import { Button } from '../components/Button';
 // GraphView is the graph on its own: it takes the focus and an onNavigate callback and never reads
 // the address, so it can sit in any pane. The focus page (app/src/views/FocusPage.tsx) hosts it in
 // the Graph and Split views, keeps its settings across pages, and shows what it connects in the
-// inspector.
+// sideBar.
 
 interface NodeData extends Record<string, unknown> {
   node: GraphNode;
@@ -369,7 +369,7 @@ export interface GraphViewProps {
   /** The settings, when the host keeps them (so they survive moving between pages and views). */
   settings?: GraphSettings;
   onSettingsChange?: (settings: GraphSettings) => void;
-  /** Called with the drawn graph, so the host's inspector can list what it connects. */
+  /** Called with the drawn graph, so the host's side bar can list what it connects. */
   onGraph?: (info: GraphInfo) => void;
   /**
    * Called with the node under the pointer or keyboard focus (the spotlight's, `hover`) and the one
@@ -445,7 +445,7 @@ export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted,
     () => (tracing ? traceChain(index, focus, filters) : neighborhood(index, focus, depth, filters, openGroups, { links, context: ring })),
     [index, focus, depth, filters, tracing, openGroups, links, ring],
   );
-  // Before paint, so the inspector shows what the graph connects in the same frame as the graph
+  // Before paint, so the side bar shows what the graph connects in the same frame as the graph
   // (in an effect it showed one frame without it, then pushed its legend down; LA-PAT-APP-UX-R08).
   useLayoutEffect(() => { onGraph?.({ graph, tracing }); }, [graph, tracing, onGraph]);
 

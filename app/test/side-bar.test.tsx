@@ -7,14 +7,14 @@ import { entityWorkspace } from './fixtures/entities';
 import { main, openApp, openSideBar, sideBar } from './helpers';
 import { testWorkspace } from './graph/workspace';
 
-// The side bar (brief 64, LA-BRW-UC119): the inspector as a secondary side bar with three views,
+// The side bar (brief 64, LA-BRW-UC119): a secondary side bar with three views,
 // Details, Outline and History, closed in the Wiki view and open in the Graph and Model views,
 // remembered per view mode and per tab.
 
 const node = (id: string) => document.querySelector<HTMLElement>(`.react-flow__node[data-id="${id}"]`);
 const side = () => within(sideBar());
 const switcher = () => within(side().getByRole('group', { name: 'Side bar views' }));
-const name = () => sideBar().querySelector('.inspector-name')?.textContent;
+const name = () => sideBar().querySelector('.side-bar-name')?.textContent;
 
 /** Answers GET /api/history with `answer` (by the query asked), on top of the specs the page loads. */
 function serveHistory(answer: (query: URLSearchParams) => unknown) {
@@ -40,7 +40,7 @@ describe('the side bar', () => {
 
     await openApp('/P-D-UC01', { workspace: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
-    expect(screen.queryByRole('complementary', { name: 'Inspector' })).toBeNull();
+    expect(screen.queryByRole('complementary', { name: 'Side bar' })).toBeNull();
 
     await openApp('/P-D-UC01?view=graph', { workspace: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
@@ -64,7 +64,7 @@ describe('the side bar', () => {
     fireEvent.click(screen.getByRole('button', { name: /^Wiki/, pressed: false }));
     fireEvent.click(screen.getByRole('button', { name: /^Graph/, pressed: true }));
     await waitFor(() => expect(window.location.search).toBe('?view=wiki'));
-    expect(screen.queryByRole('complementary', { name: 'Inspector' })).toBeNull();
+    expect(screen.queryByRole('complementary', { name: 'Side bar' })).toBeNull();
   });
 
   it('LA-BRW-T594 In the Graph view Details shows the node under the pointer or keyboard focus, else the selected one, else the page\'s record, with Open and a compact Traceability; the graph adds what it connects', async () => {
@@ -82,7 +82,7 @@ describe('the side bar', () => {
     // Hover: the node lit by the spotlight.
     fireEvent.mouseEnter(node('P-D-V01')!);
     await waitFor(() => expect(name()).toBe('Thing page'));
-    expect(sideBar().querySelector('.inspector-identity .eyebrow')).toHaveTextContent(/^Under the pointer/);
+    expect(sideBar().querySelector('.side-bar-identity .eyebrow')).toHaveTextContent(/^Under the pointer/);
     expect(side().getByRole('link', { name: 'Open' })).toHaveAttribute('href', '/P-D-V01?view=graph');
     // Leaving gives the page's record back, in the same box.
     const box = sideBar();
@@ -92,7 +92,7 @@ describe('the side bar', () => {
     // Keyboard focus does the same.
     node('P-D-C01')!.focus();
     await waitFor(() => expect(name()).toBe('Thing service'));
-    expect(sideBar().querySelector('.inspector-identity .eyebrow')).toHaveTextContent(/^Under the pointer/);
+    expect(sideBar().querySelector('.side-bar-identity .eyebrow')).toHaveTextContent(/^Under the pointer/);
     fireEvent.blur(node('P-D-C01')!);
     await waitFor(() => expect(name()).toBe('The owner is shown'));
   });
@@ -115,7 +115,7 @@ describe('the side bar', () => {
     const row = within(wiki).getAllByRole('link', { name: /^P-D-UC01-R01/ }).find((a) => a.classList.contains('row-link'))!;
     fireEvent.focusIn(row);
     await waitFor(() => expect(name()).toBe('The owner is shown'));
-    expect(sideBar().querySelector('.inspector-identity .eyebrow')).toHaveTextContent(/^Selected/);
+    expect(sideBar().querySelector('.side-bar-identity .eyebrow')).toHaveTextContent(/^Selected/);
     fireEvent.focusOut(row, { relatedTarget: document.body });
     await waitFor(() => expect(name()).toBeUndefined());
     // Right-clicked: it stays until a click elsewhere.
@@ -200,8 +200,8 @@ describe('the side bar', () => {
     vi.stubGlobal('matchMedia', (query: string) => ({ matches: true, media: query, addEventListener: () => {}, removeEventListener: () => {} }));
     await openApp('/P-D-UC01', { workspace: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
-    fireEvent.click(screen.getByRole('button', { name: 'Show the inspector' }));
-    const sheet = screen.getByRole('dialog', { name: 'Inspector' });
+    fireEvent.click(screen.getByRole('button', { name: 'Show the side bar' }));
+    const sheet = screen.getByRole('dialog', { name: 'Side bar' });
     expect(within(sheet).getByRole('group', { name: 'Side bar views' })).toBeInTheDocument();
     fireEvent.click(within(sheet).getByRole('button', { name: 'Outline' }));
     expect(within(sheet).getByRole('heading', { level: 2, name: 'Outline' })).toBeInTheDocument();

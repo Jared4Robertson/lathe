@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { main, openApp, openSideBar, section, sideBar } from './helpers';
 
-// Wiki pages and the inspector show one level below their record; deeper levels are folded under
+// Wiki pages and the side bar show one level below their record; deeper levels are folded under
 // a disclosure triangle, with their counts and marks still on the folded row.
 
 const row = (scope: HTMLElement, id: string) => within(scope).getByRole('link', { name: new RegExp(`^${id}(?![-\\d])`) }).closest('li') as HTMLElement;
@@ -54,7 +54,7 @@ describe('one level deep', () => {
     expect(row(section(/^Capabilities/), 'DM-SHOP-UC01').querySelector('ul.nested')).not.toBeNull();
   });
 
-  it('LA-BRW-T134 A record page shows its direct children with theirs folded, in the wiki and the inspector, and a product page lists its domains but not their contents', async () => {
+  it('LA-BRW-T134 A record page shows its direct children with theirs folded, in the wiki and the side bar, and a product page lists its domains but not their contents', async () => {
     openSideBar();
     await openApp('/DM-SHOP');
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
