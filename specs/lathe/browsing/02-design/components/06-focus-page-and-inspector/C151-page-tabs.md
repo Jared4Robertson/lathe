@@ -6,6 +6,7 @@ parent: LA-BRW-LAY06
 component_type: react hook
 file: app/src/views/useTabs.ts
 links:
+  reacts_to: [LA-BRW-EV01]
   satisfies: [LA-BRW-DR152, LA-BRW-DR153, LA-BRW-UC112-R05, LA-BRW-UC112-R06, LA-PAT-APP-CODE-R14]
   depends_on: [LA-BRW-C150, LA-BRW-C50]
 ---

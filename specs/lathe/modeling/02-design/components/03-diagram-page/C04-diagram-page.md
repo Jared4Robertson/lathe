@@ -6,6 +6,7 @@ parent: LA-MOD-LAY03
 component_type: react component
 file: app/src/App.tsx
 links:
+  reacts_to: [LA-MOD-EV02]
   implements: [LA-MOD-V01, LA-MOD-V02]
   satisfies: [LA-MOD-UC01-R01, LA-MOD-UC02-R03]
   depends_on: [LA-MOD-C05, LA-MOD-C01]

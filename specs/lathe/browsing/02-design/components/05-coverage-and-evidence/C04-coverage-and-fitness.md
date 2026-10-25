@@ -6,6 +6,7 @@ parent: LA-BRW-LAY05
 component_type: react component
 file: app/src/specs/ProductHealth.tsx
 links:
+  reacts_to: [LA-MOD-EV04]
   satisfies: [LA-BRW-UC01-R02, LA-BRW-UC01-R04, LA-BRW-UC01-R05]
   depends_on: [LA-BRW-C07]
 ---
