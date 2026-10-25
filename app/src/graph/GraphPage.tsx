@@ -43,6 +43,7 @@ import {
   type Neighborhood,
 } from './model';
 import { layoutNeighborhood, NODE_HEIGHT, NODE_WIDTH, type Placed } from './layout';
+import { anchorLayout, fadeSets, frameFocus } from './camera';
 import { edgeMove, readMotion, transitionProgress, tweenEdge, type EdgeEnds, type EdgeFrame, type EdgePhase } from './motion';
 
 // The graph view: an ego graph centered on one record or group. Clicking a record or a group
@@ -144,6 +145,9 @@ function GroupNodeView({ data }: NodeProps<FlowNode>) {
     </div>
   );
 }
+
+/** The ID prefix of a record fading out of the picture. */
+const LEAVING = 'leaving:';
 
 const NO_ENDS: EdgeEnds = { source: { x: 0, y: 0 }, target: { x: 0, y: 0 } };
 const sameEnds = (a: EdgeEnds, b: EdgeEnds) =>
@@ -513,11 +517,20 @@ function GraphCanvas({ index, graph, onNavigate, onToggle }: {
   /** After a keyboard action, the node to put keyboard focus on once the new picture is drawn. */
   const refocus = useRef<string | null>(null);
   const { setViewport } = useReactFlow();
+  /** The positions last laid out, in world coordinates, so the next picture can anchor on its focus. */
+  const laidOut = useRef<Map<string, { x: number; y: number }> | null>(null);
 
   useEffect(() => {
     let live = true;
     layoutNeighborhood(graph).then(
-      (result) => { if (live) { setPlaced({ ...result, graph }); setError(null); } },
+      (result) => {
+        if (!live) return;
+        // The new focus keeps its place in the world when it was in the last picture (LA-BRW-DR180).
+        const positions = anchorLayout(result.positions, graph.focus, laidOut.current);
+        laidOut.current = positions;
+        setPlaced({ ...result, positions, graph });
+        setError(null);
+      },
       (e) => { if (live) setError(e instanceof Error ? e.message : String(e)); },
     );
     return () => { live = false; };
@@ -527,11 +540,17 @@ function GraphCanvas({ index, graph, onNavigate, onToggle }: {
 
   /** The edges last drawn, so the next picture knows which edges persist, which are new and which leave. */
   const shown = useRef<FlowEdge[]>([]);
+  /** The nodes last drawn (leaving ones included), so the next picture knows which records enter and which leave. */
+  const shownNodes = useRef<FlowNode[] | null>(null);
   const drewPicture = useRef(false);
-  const { nodes, edges, leaving } = useMemo(() => {
-    if (!placed) return { nodes: [] as FlowNode[], edges: [] as FlowEdge[], leaving: [] as FlowEdge[] };
+  const { nodes, edges, leaving, leavingNodes } = useMemo(() => {
+    if (!placed) return { nodes: [] as FlowNode[], edges: [] as FlowEdge[], leaving: [] as FlowEdge[], leavingNodes: [] as FlowNode[] };
     const { graph: g, positions } = placed;
     const byId = new Map(g.nodes.map((n) => [n.id, n]));
+    const reduced = readMotion().reduced;
+    // Records new to the picture fade in at their place; records that left fade out where they were.
+    const drawnBefore = shownNodes.current?.filter((n) => !n.id.startsWith(LEAVING)) ?? null;
+    const fades = fadeSets(drawnBefore?.map((n) => n.id) ?? null, g.nodes.map((n) => n.id));
     const nodes: FlowNode[] = order.map((id) => {
       const node = byId.get(id)!;
       const isFocus = id === g.focus;
@@ -547,6 +566,7 @@ function GraphCanvas({ index, graph, onNavigate, onToggle }: {
         // picture changes; while it measured, every edge was dropped for a frame and drawn anew, so
         // nothing could carry it from its old place to its new one.
         handles: NODE_HANDLES,
+        ...(fades.entering.has(id) && !reduced ? { className: 'is-entering' } : {}),
       };
       if (node.group) {
         const marks = groupMarks(index, id);
@@ -599,7 +619,7 @@ function GraphCanvas({ index, graph, onNavigate, onToggle }: {
       },
     }));
     const now = new Set(edges.map((e) => e.id));
-    const leaving: FlowEdge[] = readMotion().reduced ? [] : [...before.values()].filter((e) => !now.has(e.id) && e.data).map((e) => {
+    const leaving: FlowEdge[] = reduced ? [] : [...before.values()].filter((e) => !now.has(e.id) && e.data).map((e) => {
       if (e.data!.phase === 'leave') return e; // already fading out from the picture before
       const keep = (id: string, old: { x: number; y: number }) => (positions.has(id) ? center(id) : old);
       return {
@@ -609,38 +629,64 @@ function GraphCanvas({ index, graph, onNavigate, onToggle }: {
         data: { ...e.data!, phase: 'leave', ends: { source: keep(e.source, e.data!.ends.source), target: keep(e.target, e.data!.ends.target) } },
       };
     });
-    return { nodes, edges, leaving };
-    // `shown` is read, not watched: it is the picture drawn before this one.
+    // A leaving record is drawn under its own ID, so it is never taken for the record (which may come back), and can't be clicked or focused.
+    const stillLeaving = (shownNodes.current ?? []).filter((n) => n.id.startsWith(LEAVING) && !byId.has(n.id.slice(LEAVING.length)));
+    const leavingNodes: FlowNode[] = reduced ? [] : [
+      ...stillLeaving,
+      ...(drawnBefore ?? []).filter((n) => fades.leaving.has(n.id)).map((n) => ({
+        ...n,
+        id: LEAVING + n.id,
+        className: 'is-leaving',
+        focusable: false,
+        ariaLabel: undefined,
+        domAttributes: { 'aria-hidden': true },
+      })),
+    ];
+    return { nodes, edges, leaving, leavingNodes };
+    // `shown` and `shownNodes` are read, not watched: they are the picture drawn before this one.
   }, [placed, order, index]);
 
   // Leaving edges are dropped once they have faded out.
   const [settled, setSettled] = useState<object | null>(null);
   useEffect(() => {
-    if (leaving.length === 0) return;
+    if (leaving.length === 0 && leavingNodes.length === 0) return;
     const timer = setTimeout(() => setSettled(leaving), readMotion().duration);
     return () => clearTimeout(timer);
-  }, [leaving]);
-  const drawnEdges = useMemo(() => (settled === leaving || leaving.length === 0 ? edges : [...edges, ...leaving]), [edges, leaving, settled]);
+  }, [leaving, leavingNodes]);
+  const faded = settled === leaving;
+  const drawnEdges = useMemo(() => (faded || leaving.length === 0 ? edges : [...edges, ...leaving]), [edges, leaving, faded]);
+  const drawnNodes = useMemo(() => (faded || leavingNodes.length === 0 ? nodes : [...nodes, ...leavingNodes]), [nodes, leavingNodes, faded]);
   useEffect(() => {
     shown.current = drawnEdges;
-    if (placed) drewPicture.current = true;
-  }, [drawnEdges, placed]);
+    if (placed) {
+      shownNodes.current = drawnNodes;
+      drewPicture.current = true;
+    }
+  }, [drawnEdges, drawnNodes, placed]);
 
   const domNode = (id: string) =>
     [...(wrapper.current?.querySelectorAll<HTMLElement>('.react-flow__node') ?? [])].find((el) => el.dataset.id === id) ?? null;
 
-  /** Fits the picture: moving there with the shared motion, or at once. */
-  const fit = useCallback((animate: boolean) => {
+  /**
+   * Moves the camera: to frame the focus (a new picture, or a resize), or to fit the whole picture
+   * (the Fit command); with the shared motion, or at once. It always starts from the view as it is,
+   * so a view zoomed or panned by hand glides from there (LA-BRW-DR181).
+   */
+  const fit = useCallback((animate: boolean, whole = false) => {
     const box = wrapper.current?.getBoundingClientRect();
     if (!placed || !box || box.width <= 0 || box.height <= 0) return;
     const motion = readMotion();
-    setViewport(fitPositions(placed.positions, box.width, box.height), animate ? { duration: motion.duration, ease: motion.ease } : { duration: 0 });
+    const view = whole ? fitPositions(placed.positions, box.width, box.height) : frameFocus(placed.positions, placed.graph.focus, box.width, box.height);
+    setViewport(view, animate && motion.duration > 0 ? { duration: motion.duration, ease: motion.ease, interpolate: 'linear' } : { duration: 0 });
   }, [placed, setViewport]);
 
-  // Fit the new picture, and after a keyboard action put focus back on the right node.
-  useEffect(() => {
+  // Frame the new picture's focus, starting with the nodes' move and lasting as long (the first
+  // picture appears at once), and after a keyboard action put focus back on the right node.
+  const framed = useRef(false);
+  useLayoutEffect(() => {
     if (!placed) return;
-    fit(true);
+    fit(framed.current);
+    framed.current = true;
     if (refocus.current) {
       const id = placed.graph.nodes.some((n) => n.id === refocus.current) ? refocus.current : placed.graph.focus;
       refocus.current = null;
@@ -649,7 +695,11 @@ function GraphCanvas({ index, graph, onNavigate, onToggle }: {
     }
   }, [placed, fit]);
 
-  // Fit again whenever the container changes size (a split pane, full screen, a window resize).
+  // Frame again whenever the container changes size (a split pane, full screen, a window resize).
+  // It observes once, for the canvas's life: observing anew with each picture would report the
+  // size again and cut the camera's glide short.
+  const latestFit = useRef(fit);
+  latestFit.current = fit;
   useEffect(() => {
     const el = wrapper.current;
     if (!el || typeof ResizeObserver === 'undefined') return;
@@ -659,13 +709,13 @@ function GraphCanvas({ index, graph, onNavigate, onToggle }: {
       const size = `${Math.round(box.width)}x${Math.round(box.height)}`;
       if (size === last) return;
       last = size;
-      fit(false);
+      latestFit.current(false);
     });
     observer.observe(el);
     return () => observer.disconnect();
-  }, [fit]);
+  }, []);
 
-  useCommand('graphFit', () => fit(true), !!placed);
+  useCommand('graphFit', () => fit(true, true), !!placed);
   /** Opens or folds a group in place, keeping keyboard focus on it (its chevron, or o). The center group stays open. */
   const toggle = (id: string) => {
     const node = placed?.graph.nodes.find((n) => n.id === id);
@@ -677,7 +727,7 @@ function GraphCanvas({ index, graph, onNavigate, onToggle }: {
 
   /** A click or Enter on a node, record or group: it becomes the center, at its own address. */
   const activate = (id: string, fromKeyboard: boolean) => {
-    if (!placed || id.startsWith('file:') || id === placed.graph.focus) return;
+    if (!placed || id.startsWith('file:') || id.startsWith(LEAVING) || id === placed.graph.focus) return;
     if (fromKeyboard) refocus.current = id;
     onNavigate(id);
   };
@@ -717,7 +767,7 @@ function GraphCanvas({ index, graph, onNavigate, onToggle }: {
         </p>
       )}
       <ReactFlow
-        nodes={nodes}
+        nodes={drawnNodes}
         edges={drawnEdges}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
