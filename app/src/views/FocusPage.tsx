@@ -42,7 +42,7 @@ function loadSettings(): GraphSettings | null {
   const s = readPref<StoredSettings | null>(GRAPH_KEY, null, (v): v is StoredSettings | null => v === null || isStored(v), 'session');
   if (!s) return null;
   return {
-    depth: s.depth === 2 ? 2 : 1,
+    depth: [1, 2, 3].includes(s.depth) ? s.depth : 1,
     trace: s.trace === true,
     filters: { hiddenKinds: new Set(s.hiddenKinds), hiddenRelations: new Set(s.hiddenRelations ?? []) },
     openGroups: new Map((s.openGroups ?? []).filter((e) => Array.isArray(e) && typeof e[0] === 'string')),
