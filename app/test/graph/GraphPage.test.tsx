@@ -56,6 +56,19 @@ describe('graph page', () => {
     expect(window.location.search).toBe('?view=graph');
   });
 
+  it('LA-BRW-T624 The trail is a Tab stop only while it overflows', async () => {
+    await showGraph('/P-D-UC01-R01');
+    const list = () => screen.getByRole('navigation', { name: 'Records visited' }).querySelector('ol')!;
+    // It fits: its links are the stops, and the list itself is not one.
+    expect(list()).not.toHaveAttribute('tabindex');
+    // It overflows: the list takes focus, so the keyboard can scroll it.
+    const widths = { scrollWidth: 900, clientWidth: 300 };
+    for (const [key, value] of Object.entries(widths)) Object.defineProperty(list(), key, { configurable: true, value });
+    await waitFor(() => expect(node('P-D-V01')).not.toBeNull());
+    fireEvent.click(node('P-D-V01')!);
+    await waitFor(() => expect(list()).toHaveAttribute('tabindex', '0'));
+  });
+
   it('LA-BRW-T58 The inspector shows the kind, title, problems, coverage gaps and a link to the record page', async () => {
     await showGraph('/P-D-DR02');
     const side = inspector();
