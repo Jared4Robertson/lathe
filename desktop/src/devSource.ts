@@ -1,4 +1,4 @@
-// Where a window loads the app from in development (`npm --prefix desktop run dev`): Jared's own
+// Where a window loads the app from in development (`npm --prefix desktop run dev`): the owner's own
 // Vite dev server on port 5199 when it answers for the same product folder, so app changes
 // hot-reload exactly as in the browser and his server is shared; otherwise a Vite dev server of the
 // shell's own, on a free port, reading the opened folder.
@@ -7,7 +7,7 @@ import { realpathSync } from 'node:fs';
 import { createServer } from 'node:net';
 import path from 'node:path';
 
-/** Jared's dev server. The shell only ever connects to it; it never starts anything on it. */
+/** The owner's dev server. The shell only ever connects to it; it never starts anything on it. */
 export const SHARED_PORT = 5199;
 export const SHARED_URL = `http://localhost:${SHARED_PORT}`;
 /** The header the app's dev server (app/server/lathe.ts) names its product folder in. */
