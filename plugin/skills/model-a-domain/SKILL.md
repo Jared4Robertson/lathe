@@ -1,6 +1,6 @@
 ---
 name: model-a-domain
-description: Write or change a Lathe domain model - the domain record, its aggregates, their entities (the records each aggregate keeps, with their fields and the links an ERD draws) and their domain rules. Use when adding a domain, an aggregate, an entity or a domain rule to a repo with lathe.config.json, or when deciding whether a rule belongs on an aggregate or in a use case.
+description: Write or change a Lathe domain model - the domain record, its aggregates, their entities (the records each aggregate keeps, with their fields and the links an ERD draws), the domain events they raise and their domain rules. Use when adding a domain, an aggregate, an entity, a domain event or a domain rule to a repo with lathe.config.json, or when deciding whether a rule belongs on an aggregate or in a use case.
 ---
 
 # Model a domain
@@ -20,9 +20,10 @@ A domain model says what the product's records are, how they hold and refer to e
 | `domain` | the product | `<P>-<D>` | What the domain covers, and its language: a table of terms and their meanings. |
 | `aggregate` | the domain | `<P>-<D>-A<n>` | One cluster of records changed together, named for its root, and its business identity. `relates_to` the aggregates it refers to by ID. |
 | `entity` | an aggregate | `<P>-<D>-EN<nn>`, numbered across the domain | One record the aggregate keeps: one box of its ERD. `role: root` for the record the aggregate is named for (exactly one per aggregate), `role: child` for each of its parts. Body: what it is, then a `## Fields` table with the columns Field, Meaning, Kind of value, Example, one row per field. Links: `has_one` (one to one) and `has_many` (one to many) to its parts in the same aggregate; `refers_to` (many to one) any entity it holds a reference to, in this aggregate or another, in this domain or another. |
+| `domain_event` | an aggregate | `<P>-<D>-EV<nn>`, numbered across the domain | Something that happened in the domain, which the aggregate raises. Title: in the past tense (Loan opened). Body: one sentence saying what happened and what raises it, then a `## Fields` table of what it carries, with the same columns as an entity's. Links: `raised_by` the entity of this aggregate whose change raises it, if one does. |
 | `domain_rule` | an aggregate | `<P>-<D>-DR<nn>` | One fact that must always hold for that aggregate. Title: the rule in a few words. Body: the rule in full with MUST / MUST NOT. |
 
-Put the files under the domain folder, for example `<domain>/01-define/aggregates/A3-loan.md`, its entities in `<domain>/01-define/aggregates/loan/EN01-loan.md`, and `<domain>/01-define/domain-rules/DR06-one-active-loan-per-tool.md`. Folder names are for people; only the fields matter to Lathe.
+Put the files under the domain folder, for example `<domain>/01-define/aggregates/A3-loan.md`, its entities in `<domain>/01-define/aggregates/loan/EN01-loan.md`, its events in `<domain>/01-define/aggregates/loan/events/EV05-loan-opened.md`, and `<domain>/01-define/domain-rules/DR06-one-active-loan-per-tool.md`. Folder names are for people; only the fields matter to Lathe.
 
 ## Entities
 
@@ -30,6 +31,14 @@ Put the files under the domain folder, for example `<domain>/01-define/aggregate
 - Link each child from the root, or from the child it is part of, with `has_one` or `has_many`. A child nothing reaches is an `entity-unreferenced` warning.
 - A reference to a record elsewhere is `refers_to`, never `has_one` or `has_many`: parts stay in their aggregate (`has-crosses-aggregate`). When an aggregate's entities refer to another aggregate's, also give the aggregate a `relates_to` link to it.
 - One row per field, each name once, in the domain's terms. Kind of value says what values it takes (text, a whole number, a date and time, one of a list, the ID of another entity); Example gives one real-looking value.
+
+## Domain events
+
+- Add an event for something that happened that other parts of the product care about: another aggregate changes, a use case starts, or a component does its work. Leave out what nothing would ever react to, such as a screen being scrolled.
+- Name it in the past tense, subject first: Loan opened, Tool returned, Loan became overdue. A title that does not read as past tense is an `event-tense` warning.
+- `raised_by` names an entity of the event's own aggregate (`raised-by-outside-aggregate` otherwise). Leave it out when no entity's change raises it, such as an event raised by time passing, and say so in the body.
+- Say what reacts on the reacting record, with `reacts_to: [<event>]`: an aggregate that changes (from any aggregate or domain), a use case that starts, or a component that handles it. An event nothing reacts to is an `event-unheard` warning; that can be fine for an event kept for the record.
+- The Fields table lists what the event carries, not the whole entity: the IDs it concerns, when it happened, and the values that changed.
 
 ## Rule or requirement?
 
@@ -95,6 +104,28 @@ One extension of a loan's due date.
 
 ```markdown
 ---
+id: TL-LEND-EV05
+kind: domain_event
+title: Loan opened
+parent: TL-LEND-A3
+links:
+  raised_by: [TL-LEND-EN01]
+---
+A librarian lent a tool to a member, which opens a loan.
+
+## Fields
+
+| Field | Meaning | Kind of value | Example |
+| --- | --- | --- | --- |
+| Loan ID | The loan that opened. | Loan reference | L-0042 |
+| Tool | Which tool was lent. | Tool reference | Tool 7 |
+| Due at | When the loan should end. | Date and time | 2026-03-16T10:00:00Z |
+```
+
+The Tool aggregate reacts to it, since the tool is no longer available: `TL-LEND-A2` has `links: reacts_to: [TL-LEND-EV05]`.
+
+```markdown
+---
 id: TL-LEND-DR06
 kind: domain_rule
 title: A tool is lent to one member at a time
@@ -108,5 +139,6 @@ A tool MUST NOT have more than one active loan. It can be lent again once its lo
 - Records carry no status, approval or history. A record in the specs is in force.
 - One rule per `domain_rule` record. Use the domain's terms exactly as its language table defines them.
 - When a question is decided, delete the question record and every `about` link to it, and write the answer into the records it affects.
-- The entity checks are errors except `entity-unreferenced`: a `role` other than root or child, an aggregate without exactly one root, a missing or malformed Fields table, a repeated field name, and a `has_one` or `has_many` into another aggregate.
+- The entity checks are errors except `entity-unreferenced`: a `role` other than root or child, an aggregate without exactly one root, a missing or malformed Fields table (an entity's or an event's), a repeated field name, and a `has_one` or `has_many` into another aggregate.
+- The event checks: `raised-by-outside-aggregate` is an error; `event-unheard` and `event-tense` are warnings.
 - Finish with the `check-and-fix` skill. A new domain rule shows as a warning until a component satisfies it and a test proves it; that is expected.

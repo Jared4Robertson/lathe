@@ -87,6 +87,10 @@ A domain's components are grouped into **layers**, ordered parts of its technica
 
 An aggregate is drawn as an ERD of the records it keeps. Each is an `entity` under the aggregate: one `root`, the record the aggregate is named for, and any number of `child` parts. Its body lists its fields in a table under a `## Fields` heading, with the columns Field, Meaning, Kind of value and Example. `has_one` and `has_many` link an entity to its parts inside the aggregate; `refers_to` may cross aggregates and domains. The app draws a domain's ERD at aggregate level and each aggregate's ERD with its entities.
 
+## 18. Domain events
+
+A `domain_event` is an unchangeable record that something happened in the domain, named in the past tense (Loan opened, Tool returned). It sits under the aggregate that raises it, and `raised_by` may name the entity of that aggregate whose change raises it; an event raised by time passing, or in an aggregate with no entities, has none. Its body says in a sentence what happened, then lists what the event carries in a `## Fields` table with the same columns as an entity's. What happens next is said by the records that react: an aggregate that changes, a use case that starts or a component that handles the event links to it with `reacts_to`, from any aggregate or domain. An event that nothing reacts to is reported as a warning, since that can be fine but is often a missing link.
+
 <!-- Everything below is generated from the meta-model and the check files by `lathe format`. Do not edit it here. -->
 
 ## Kinds
@@ -158,7 +162,7 @@ A cluster of records changed together as one unit, with its own identity and rul
 - **ID:** `<P>-<D>-A<n>`, such as `TL-LEND-A1`
 - **Links out:** Relates to ([`relates_to`](#relation-relates_to)), Reacts to ([`reacts_to`](#relation-reacts_to))
 - **Links in:** Related to by ([`relates_to`](#relation-relates_to)), Questions about this ([`about`](#relation-about))
-- **Checks:** [`aggregate-root`](#check-aggregate-root)
+- **Checks:** [`aggregate-root`](#check-aggregate-root), [`event-unheard`](#check-event-unheard)
 
 <a id="kind-entity"></a>
 
@@ -175,7 +179,7 @@ A record the domain keeps, as one box of an aggregate's ERD: the aggregate's roo
 - **ID:** `<P>-<D>-EN<nn>`, such as `TL-LEND-EN01`
 - **Links out:** Has one ([`has_one`](#relation-has_one)), Has many ([`has_many`](#relation-has_many)), Refers to ([`refers_to`](#relation-refers_to))
 - **Links in:** Questions about this ([`about`](#relation-about)), Part of ([`has_one`](#relation-has_one)), Part of ([`has_many`](#relation-has_many)), Referred to by ([`refers_to`](#relation-refers_to)), Raises ([`raised_by`](#relation-raised_by))
-- **Checks:** [`entity-role`](#check-entity-role), [`aggregate-root`](#check-aggregate-root), [`entity-fields`](#check-entity-fields), [`has-crosses-aggregate`](#check-has-crosses-aggregate), [`entity-unreferenced`](#check-entity-unreferenced)
+- **Checks:** [`entity-role`](#check-entity-role), [`aggregate-root`](#check-aggregate-root), [`entity-fields`](#check-entity-fields), [`has-crosses-aggregate`](#check-has-crosses-aggregate), [`entity-unreferenced`](#check-entity-unreferenced), [`raised-by-outside-aggregate`](#check-raised-by-outside-aggregate)
 
 <a id="kind-domain_event"></a>
 
@@ -192,6 +196,7 @@ An unchangeable record that something happened in the domain, raised by its aggr
 - **ID:** `<P>-<D>-EV<nn>`, such as `TL-LEND-EV01`
 - **Links out:** Raised by ([`raised_by`](#relation-raised_by))
 - **Links in:** Questions about this ([`about`](#relation-about)), Reacted to by ([`reacts_to`](#relation-reacts_to))
+- **Checks:** [`entity-fields`](#check-entity-fields), [`event-unheard`](#check-event-unheard), [`event-tense`](#check-event-tense), [`raised-by-outside-aggregate`](#check-raised-by-outside-aggregate)
 
 <a id="kind-domain_rule"></a>
 
@@ -225,7 +230,7 @@ Something an actor does with the product to reach a goal.
 - **ID:** `<P>-<D>-UC<nn>`, such as `TL-LEND-UC01`
 - **Links out:** Applies ([`applies`](#relation-applies)), Follows ([`follows`](#relation-follows)), Reacts to ([`reacts_to`](#relation-reacts_to))
 - **Links in:** Questions about this ([`about`](#relation-about)), Carried out by flow ([`carries_out`](#relation-carries_out))
-- **Checks:** [`use-case-without-requirements`](#check-use-case-without-requirements), [`use-case-outside-capability`](#check-use-case-outside-capability), [`pattern-setting-missing`](#check-pattern-setting-missing), [`pattern-setting-clash`](#check-pattern-setting-clash), [`use-case-without-flow`](#check-use-case-without-flow)
+- **Checks:** [`use-case-without-requirements`](#check-use-case-without-requirements), [`use-case-outside-capability`](#check-use-case-outside-capability), [`pattern-setting-missing`](#check-pattern-setting-missing), [`pattern-setting-clash`](#check-pattern-setting-clash), [`use-case-without-flow`](#check-use-case-without-flow), [`event-unheard`](#check-event-unheard)
 
 <a id="kind-requirement"></a>
 
@@ -393,7 +398,7 @@ A unit of code in the target design, such as a model, service or router. It sits
 - **ID:** `<P>-<D>-C<nn>`, such as `TL-LEND-C01`
 - **Links out:** Satisfies ([`satisfies`](#relation-satisfies)), Implements ([`implements`](#relation-implements)), Depends on ([`depends_on`](#relation-depends_on)), Reacts to ([`reacts_to`](#relation-reacts_to))
 - **Links in:** Depended on by ([`depends_on`](#relation-depends_on)), Questions about this ([`about`](#relation-about)), Covered by ([`covers`](#relation-covers)), Used by ([`uses`](#relation-uses))
-- **Checks:** [`component-file-missing`](#check-component-file-missing), [`component-outside-layer`](#check-component-outside-layer)
+- **Checks:** [`component-file-missing`](#check-component-file-missing), [`component-outside-layer`](#check-component-outside-layer), [`event-unheard`](#check-event-unheard)
 
 <a id="kind-test"></a>
 
@@ -1367,15 +1372,16 @@ section 17). An aggregate with no entities is not reported. Give exactly one of 
 
 ### `entity-fields`
 
-**Error** · Lathe's `checks/68-entity-fields.sql` · Kinds: [`entity`](#kind-entity)
+**Error** · Lathe's `checks/68-entity-fields.sql` · Kinds: [`entity`](#kind-entity), [`domain_event`](#kind-domain_event)
 
-Each entity lists its fields in a Fields table.
+Each entity or event lists its fields in a Fields table.
 
-The table sits under a `## Fields` heading (FORMAT.md section 17), with the columns Field, Meaning, Kind of
-value and Example, one row per field and each field name once. The engine reads the table into
-entity_tables and, when its columns are right, its rows into entity_fields. Field names are compared
-trimmed, without code span backticks, and in any letter case. A table with the wrong columns is reported
-for that alone. Add the heading and table, fix its columns, or merge the repeated field.
+An entity's table lists the fields it keeps and a domain event's the fields it carries. The table sits under
+a `## Fields` heading (FORMAT.md sections 17 and 18), with the columns Field, Meaning, Kind of value and
+Example, one row per field and each field name once. The engine reads the table into entity_tables and,
+when its columns are right, its rows into entity_fields. Field names are compared trimmed, without code span
+backticks, and in any letter case. A table with the wrong columns is reported for that alone. Add the
+heading and table, fix its columns, or merge the repeated field.
 
 <a id="check-has-crosses-aggregate"></a>
 
@@ -1434,6 +1440,68 @@ source ("Satisfies"), and a `reverse_label`, the link read from the target ("Des
 inspector, the graph and the format reference show links by these words. An extension that restates a
 rule may leave them empty to keep the earlier labels, so the rule is reported only when, after every
 extension is merged, a label is still empty. Write the missing label, in sentence case.
+
+<a id="check-event-unheard"></a>
+
+### `event-unheard`
+
+**Warning** · Lathe's `checks/73-event-unheard.sql` · Kinds: [`domain_event`](#kind-domain_event), [`aggregate`](#kind-aggregate), [`use_case`](#kind-use_case), [`component`](#kind-component)
+
+A domain event that nothing reacts to.
+
+An event is worth naming when something changes because it happened (FORMAT.md section 18): an aggregate,
+which may sit in another aggregate or domain, a use case that starts, or a component that handles it, each
+linking to the event with `reacts_to`. An event kept only for the record can be fine, so this is a
+warning. A `reacts_to` link from any record counts here; one from a kind the meta-model does not allow is
+relation-not-allowed. Add `reacts_to` to what changes, starts or runs when the event happens, or leave the
+event unheard on purpose.
+
+<a id="check-event-tense"></a>
+
+### `event-tense`
+
+**Warning** · Lathe's `checks/74-event-tense.sql` · Kinds: [`domain_event`](#kind-domain_event)
+
+A domain event's title reads as something that happened, in the past tense.
+
+An event is named for what happened, such as Loan opened or Payment sent (FORMAT.md section 18). The
+check is a heuristic over the title's words, in any letter case and split at anything but a letter: the
+title passes when its last word, or any word after its first (the word after a one-word subject, as in Loan
+became overdue), is a past form. A past form is a word of four or more letters ending in "-ed", other than
+the few such words that are not verbs in the past (need, seed, feed, speed, breed, bleed, embed, proceed,
+exceed, succeed, hundred, naked, sacred, wicked), or one of the irregular past forms listed below. An empty
+title is missing-title only. The heuristic can miss a past form it does not know, so this is a warning.
+Name the event in the past tense, as what happened (Tool returned, not Return tool), or add the word to
+the list here if it is a past form the check does not know.
+
+Irregular past forms: arose, arisen, ate, eaten, awoke, awoken, became, begun, began, bent, bound, bit,
+bitten, blew, blown, broke, broken, bred, brought, built, burnt, bought, caught, chose, chosen, came, cost,
+crept, cut, dealt, dug, did, done, drew, drawn, dreamt, drank, drunk, drove, driven, fell, fallen, fed,
+felt, fought, found, fled, flew, flown, forbade, forbidden, forgot, forgotten, forgave, forgiven, froze,
+frozen, got, gotten, gave, given, went, gone, grew, grown, hung, had, heard, hid, hidden, hit, held, hurt,
+kept, knew, known, laid, led, leant, learnt, left, lent, let, lit, lost, made, meant, met, mistook,
+mistaken, overdone, overran, overridden, overrode, overtaken, overtook, paid, put, quit, read, rebuilt,
+redone, remade, reran, rerun, reset, resent, resold, retook, retaken, rewound, rewrote, rewritten, rode,
+ridden, rang, rung, rose, risen, ran, run, said, saw, seen, sought, sold, sent, set, shook, shaken, shone,
+shot, showed, shown, shut, sang, sung, sank, sunk, sat, slept, slid, spoke, spoken, sped, spent, spun,
+split, spread, sprang, sprung, stood, stole, stolen, stuck, struck, swore, sworn, swept, swam, swum,
+swung, took, taken, taught, tore, torn, told, thought, threw, thrown, understood, undid, undone, upheld,
+upset, withdrew, withdrawn, withheld, woke, woken, wore, worn, won, wound, wrote, written.
+
+<a id="check-raised-by-outside-aggregate"></a>
+
+### `raised-by-outside-aggregate`
+
+**Error** · Lathe's `checks/75-raised-by-outside-aggregate.sql` · Kinds: [`domain_event`](#kind-domain_event), [`entity`](#kind-entity)
+
+A domain event's `raised_by` names an entity of the event's own aggregate.
+
+An event is raised by its aggregate (FORMAT.md section 18), so the entity whose change raises it is one of
+that aggregate's entities. What another aggregate does about the event is said by its `reacts_to`. An
+event with no `raised_by` is not reported. A link to a record that does not exist, or that is not an
+entity, is reported by dangling-link or relation-not-allowed instead. When the target ID is duplicated, the
+link is reported only if no entity with that ID shares the event's aggregate. Point `raised_by` at an
+entity of the event's aggregate, or move the event under the aggregate that raises it.
 
 <a id="check-parse-error"></a>
 

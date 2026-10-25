@@ -1,36 +1,45 @@
--- Each entity lists its fields in a Fields table.
+-- Each entity or event lists its fields in a Fields table.
 --
--- The table sits under a `## Fields` heading (FORMAT.md section 17), with the columns Field, Meaning, Kind of
--- value and Example, one row per field and each field name once. The engine reads the table into
--- entity_tables and, when its columns are right, its rows into entity_fields. Field names are compared
--- trimmed, without code span backticks, and in any letter case. A table with the wrong columns is reported
--- for that alone. Add the heading and table, fix its columns, or merge the repeated field.
+-- An entity's table lists the fields it keeps and a domain event's the fields it carries. The table sits under
+-- a `## Fields` heading (FORMAT.md sections 17 and 18), with the columns Field, Meaning, Kind of value and
+-- Example, one row per field and each field name once. The engine reads the table into entity_tables and,
+-- when its columns are right, its rows into entity_fields. Field names are compared trimmed, without code span
+-- backticks, and in any letter case. A table with the wrong columns is reported for that alone. Add the
+-- heading and table, fix its columns, or merge the repeated field.
 --
 -- severity: error
--- kinds: entity
+-- kinds: entity domain_event
+WITH field_tables AS (
+  SELECT t.*, CASE WHEN r.kind = 'domain_event' THEN 'Event' ELSE 'Entity' END AS noun
+  FROM entity_tables t LEFT JOIN records r ON r.path = t.path
+),
+field_rows AS (
+  SELECT f.*, CASE WHEN r.kind = 'domain_event' THEN 'Event' ELSE 'Entity' END AS noun
+  FROM entity_fields f LEFT JOIN records r ON r.path = f.path
+)
 SELECT 'error' AS severity, 'entity-fields' AS "check", nullif(t.record, '') AS record,
-       'Entity ' || coalesce(nullif(t.record, ''), t.path) || CASE
+       t.noun || ' ' || coalesce(nullif(t.record, ''), t.path) || CASE
          WHEN NOT t.heading THEN ' has no ## Fields table; add a "## Fields" heading with a table of the columns '
                                  || w.wanted || ', one row per field.'
          WHEN t.columns IS NULL THEN ' has a ## Fields heading but no table under it; add a table of the columns '
                                      || w.wanted || ', one row per field.'
          ELSE '''s Fields table has the columns ' || t.columns || '; use the columns ' || w.wanted || ', in that order.'
        END AS message
-FROM entity_tables t CROSS JOIN (SELECT 'Field, Meaning, Kind of value and Example' AS wanted) w
+FROM field_tables t CROSS JOIN (SELECT 'Field, Meaning, Kind of value and Example' AS wanted) w
 WHERE NOT t.heading OR NOT t.columns_ok
 UNION ALL
 SELECT 'error', 'entity-fields', nullif(any_value(f.record), ''),
-       'Entity ' || coalesce(nullif(any_value(f.record), ''), f.path) || '''s Fields table lists the field "'
+       any_value(f.noun) || ' ' || coalesce(nullif(any_value(f.record), ''), f.path) || '''s Fields table lists the field "'
        || arg_min(trim(f.field, ' `'), f.position) || '" ' || count(*) || ' times, in rows '
        || string_agg(f.position::VARCHAR, ', ' ORDER BY f.position) || '; name each field once.'
-FROM entity_fields f
+FROM field_rows f
 WHERE trim(f.field, ' `') <> ''
 GROUP BY f.path, lower(trim(f.field, ' `'))
 HAVING count(*) > 1
 UNION ALL
 SELECT 'error', 'entity-fields', nullif(f.record, ''),
-       'Entity ' || coalesce(nullif(f.record, ''), f.path) || '''s Fields table has no field name in row '
+       f.noun || ' ' || coalesce(nullif(f.record, ''), f.path) || '''s Fields table has no field name in row '
        || f.position || '; name the field, or remove the row.'
-FROM entity_fields f
+FROM field_rows f
 WHERE trim(f.field, ' `') = ''
 ORDER BY record, message
