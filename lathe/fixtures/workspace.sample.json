@@ -38,6 +38,21 @@
       "proof_only": false
     },
     {
+      "kind": "entity",
+      "label": "Entity",
+      "stage": "define",
+      "section": "domain-model",
+      "parent_kinds": [
+        "aggregate"
+      ],
+      "required_fields": [
+        "role"
+      ],
+      "description": "A record the domain keeps, as one box of an aggregate's ERD: the aggregate's root (role: root) or one of its children (role: child). Its body holds a Fields table: Field, Meaning, Kind of value, Example.",
+      "obligation": false,
+      "proof_only": false
+    },
+    {
       "kind": "domain_rule",
       "label": "Domain rule",
       "stage": "define",
@@ -344,6 +359,27 @@
       "target_kind": "*",
       "description": "The open question concerns that record.",
       "role": ""
+    },
+    {
+      "relation": "has_one",
+      "source_kind": "entity",
+      "target_kind": "entity",
+      "description": "The entity holds exactly one of the other entity, as a part of it (one to one).",
+      "role": ""
+    },
+    {
+      "relation": "has_many",
+      "source_kind": "entity",
+      "target_kind": "entity",
+      "description": "The entity holds any number of the other entity, as parts of it (one to many).",
+      "role": ""
+    },
+    {
+      "relation": "refers_to",
+      "source_kind": "entity",
+      "target_kind": "entity",
+      "description": "The entity holds a reference to one of the other entity, which may sit in another aggregate or domain (many to one).",
+      "role": ""
     }
   ],
   "records": [
@@ -394,6 +430,102 @@
       "body": "A Note MUST have between 1 and 500 characters of text.",
       "path": "specs/example/notes/01-define/aggregates/note-rules.md",
       "mentions": []
+    },
+    {
+      "id": "EX-NOTE-EN01",
+      "kind": "entity",
+      "title": "Note",
+      "parent": "EX-NOTE-A1",
+      "product": "EX",
+      "domain": "EX-NOTE",
+      "fields": {
+        "role": "root"
+      },
+      "body": "The note itself.\n\n## Fields\n\n| Field | Meaning | Kind of value | Example |\n| --- | --- | --- | --- |\n| Note ID | The note's identity. | Text | N-1 |\n| Text | What the note says. | Text, 1 to 500 characters | Buy milk |",
+      "path": "specs/example/notes/01-define/aggregates/note/EN01-note.md",
+      "mentions": [],
+      "entityFields": [
+        {
+          "field": "Note ID",
+          "meaning": "The note's identity.",
+          "kind": "Text",
+          "example": "N-1"
+        },
+        {
+          "field": "Text",
+          "meaning": "What the note says.",
+          "kind": "Text, 1 to 500 characters",
+          "example": "Buy milk"
+        }
+      ]
+    },
+    {
+      "id": "EX-NOTE-EN02",
+      "kind": "entity",
+      "title": "Revision",
+      "parent": "EX-NOTE-A1",
+      "product": "EX",
+      "domain": "EX-NOTE",
+      "fields": {
+        "role": "child"
+      },
+      "body": "One earlier version of a note's text.\n\n## Fields\n\n| Field | Meaning | Kind of value | Example |\n| --- | --- | --- | --- |\n| Saved at | When this version was saved. | Date and time | 2026-03-02T10:00:00Z |\n| Text | What the note said then. | Text | Buy bread |",
+      "path": "specs/example/notes/01-define/aggregates/note/EN02-revision.md",
+      "mentions": [],
+      "entityFields": [
+        {
+          "field": "Saved at",
+          "meaning": "When this version was saved.",
+          "kind": "Date and time",
+          "example": "2026-03-02T10:00:00Z"
+        },
+        {
+          "field": "Text",
+          "meaning": "What the note said then.",
+          "kind": "Text",
+          "example": "Buy bread"
+        }
+      ]
+    },
+    {
+      "id": "EX-NOTE-A2",
+      "kind": "aggregate",
+      "title": "Author",
+      "parent": "EX-NOTE",
+      "product": "EX",
+      "domain": "EX-NOTE",
+      "fields": {},
+      "body": "A person who writes notes.",
+      "path": "specs/example/notes/01-define/aggregates/author.md",
+      "mentions": []
+    },
+    {
+      "id": "EX-NOTE-EN03",
+      "kind": "entity",
+      "title": "Author",
+      "parent": "EX-NOTE-A2",
+      "product": "EX",
+      "domain": "EX-NOTE",
+      "fields": {
+        "role": "root"
+      },
+      "body": "The person.\n\n## Fields\n\n| Field | Meaning | Kind of value | Example |\n| --- | --- | --- | --- |\n| Author ID | The author's identity. | Text | U-7 |\n| Name | What the author is called. | Text | Sam |",
+      "path": "specs/example/notes/01-define/aggregates/author/EN03-author.md",
+      "mentions": [],
+      "entityFields": [
+        {
+          "field": "Author ID",
+          "meaning": "The author's identity.",
+          "kind": "Text",
+          "example": "U-7"
+        },
+        {
+          "field": "Name",
+          "meaning": "What the author is called.",
+          "kind": "Text",
+          "example": "Sam"
+        }
+      ]
     },
     {
       "id": "EX-NOTE-UC01",
@@ -530,6 +662,16 @@
       "source": "EX-NOTE-Q01",
       "relation": "about",
       "target": "EX-NOTE-A1"
+    },
+    {
+      "source": "EX-NOTE-EN01",
+      "relation": "has_many",
+      "target": "EX-NOTE-EN02"
+    },
+    {
+      "source": "EX-NOTE-EN01",
+      "relation": "refers_to",
+      "target": "EX-NOTE-EN03"
     }
   ],
   "problems": [
