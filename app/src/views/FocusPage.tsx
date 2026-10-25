@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode, type RefObject } from 'react';
 import { Icon } from '../components/icons';
 import { ResizeHandle } from '../components/ResizeHandle';
 import { expandAllOnPage } from '../components/TreeList';
@@ -8,6 +8,7 @@ import type { GraphInfo } from '../graph/panel';
 import { ModelIcon } from '../model/ModelIcon';
 import { Link, navigate } from '../router';
 import { useAnnounce, useCommand } from '../shell/commands';
+import { BottomSheet } from '../shell/BottomSheet';
 import { Tooltip } from '../shell/Tooltip';
 import { isBool, usePanelSize, usePref, writePref } from '../shell/prefs';
 import { useNarrow } from '../shell/useNarrow';
@@ -20,8 +21,8 @@ import { GroupSections } from '../specs/FolderGroups';
 import { DomainWiki, NotFound, ProductWiki, SourceNote, problemsUnder } from '../specs/SpecPages';
 import { addressOf, focusOf, VIEW_LABELS, VIEW_NAMES, viewsFromSearch, viewsOffered, viewsShown, withView, type FocusRoute, type ViewName } from './address';
 import { Inspector } from './Inspector';
-import { TAB_PANEL_ID, TabStrip, tabId } from './TabStrip';
-import { PANE_SIZE_KEY, PANE_WEIGHT, PANE_WEIGHT_MAX, PANE_WEIGHT_MIN, VIEW_KEY, saveLastSettings, usePageTabs, type TabView } from './useTabs';
+import { TAB_PANEL_ID, TabStrip, tabId, tabLabel } from './TabStrip';
+import { PANE_SIZE_KEY, PANE_WEIGHT, PANE_WEIGHT_MAX, PANE_WEIGHT_MIN, VIEW_KEY, saveLastSettings, usePageTabs, type PageTabsApi, type TabView } from './useTabs';
 
 // One page for one thing (a record, a group, a product or a domain), at one address, in up to
 // three views, each a pane you open and close: Wiki (the page to read), Graph (the graph centered
@@ -126,8 +127,22 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
     announce(message);
   }, [asked, offered, update, announce]);
 
-  /** Turns a view on or off; the last open view stays open. */
+  /**
+   * On a phone one view shows at a time: this one, named in the address and kept by the tab. The
+   * views remembered for a wider screen are left alone, and the views not offered here are kept.
+   */
+  const showOnly = useCallback((view: ViewName) => {
+    if (!offered.includes(view) || (open.length === 1 && open[0] === view)) return;
+    const keep = asked.filter((v) => !offered.includes(v));
+    const views = VIEW_NAMES.filter((v) => v === view || keep.includes(v));
+    update((s) => ({ ...s, views }));
+    navigate(withView(window.location.pathname, views), true);
+    announce(`${VIEW_LABELS[view]} view`);
+  }, [asked, offered, open, update, announce]);
+
+  /** Turns a view on or off; the last open view stays open. On a phone, shows that view alone. */
   const toggleView = useCallback((view: ViewName) => {
+    if (narrow) { showOnly(view); return; }
     if (!offered.includes(view)) return;
     lastToggled.current = view;
     if (open.includes(view)) {
@@ -136,7 +151,7 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
     } else {
       setViews([...open, view], `${VIEW_LABELS[view]} view opened`);
     }
-  }, [offered, open, setViews, announce]);
+  }, [narrow, showOnly, offered, open, setViews, announce]);
 
   // Keep focus when the element that had it went away with a pane: on the toggle just used.
   useEffect(() => {
@@ -392,11 +407,44 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
     );
   };
 
+  if (narrow) {
+    return (
+      <PhoneLayout
+        index={index}
+        route={route}
+        front={open[0]}
+        offered={offered}
+        tabs={tabs}
+        onView={showOnly}
+        wikiPane={wikiPane}
+        onWikiScroll={onWikiScroll}
+        content={content[open[0]]}
+        inspectorShown={showing}
+        onInspector={setShowing}
+        inspectorButton={inspectorButton}
+        inspector={(
+          <Inspector
+            ref={inspector}
+            index={index}
+            focus={focus}
+            graph={open.includes('graph') ? graphInfo : null}
+            onNavigate={onNavigate}
+            hrefFor={hrefFor}
+            onClose={() => setShowing(false)}
+            drawer
+          />
+        )}
+        inspectorRef={inspector}
+      />
+    );
+  }
+
+
   const columns = open.map((v) => `minmax(${PANE_MIN_PX}px, ${sizes[v][0]}fr)`).join(' var(--panel-gap) ');
   return (
     <div
       ref={layout}
-      className={`focus-layout${showing && !narrow ? ' with-inspector' : ''}`}
+      className={`focus-layout${showing ? ' with-inspector' : ''}`}
       style={{ '--inspector-width': `${inspectorWidth}px` } as CSSProperties}
     >
       <div className="focus-main">
@@ -407,31 +455,28 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
           aria-labelledby={tab.key ? tabId(tab.key) : undefined}
           className={`focus-views panes-${open.length}`}
           data-views={openKey}
-          style={open.length > 1 && !narrow ? { gridTemplateColumns: columns } : undefined}
+          style={open.length > 1 ? { gridTemplateColumns: columns } : undefined}
         >
           {open.flatMap((v, i) => (i === 0 ? [pane(v)] : [gap(open[i - 1], v), pane(v)]))}
         </div>
       </div>
       {showing ? (
         <>
-          {narrow && <div className="drawer-backdrop" onMouseDown={() => setShowing(false)} />}
-          {!narrow && (
-            <ResizeHandle
-              label="Resize the inspector"
-              side="after"
-              value={inspectorWidth}
-              min={260}
-              max={640}
-              step={16}
-              bigStep={64}
-              valueAt={(x) => (layout.current?.getBoundingClientRect().right ?? x) - x}
-              onChange={setInspectorWidth}
-              onReset={resetInspectorWidth}
-              collapseBelow={160}
-              onCollapse={() => setShowing(false)}
-            />
-          )}
-          <InspectorHost narrow={narrow} onEscape={() => setShowing(false)}>
+          <ResizeHandle
+            label="Resize the inspector"
+            side="after"
+            value={inspectorWidth}
+            min={260}
+            max={640}
+            step={16}
+            bigStep={64}
+            valueAt={(x) => (layout.current?.getBoundingClientRect().right ?? x) - x}
+            onChange={setInspectorWidth}
+            onReset={resetInspectorWidth}
+            collapseBelow={160}
+            onCollapse={() => setShowing(false)}
+          />
+          <div className="inspector-column panel">
             <Inspector
               ref={inspector}
               index={index}
@@ -440,29 +485,138 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
               onNavigate={onNavigate}
               hrefFor={hrefFor}
               onClose={() => setShowing(false)}
-              drawer={narrow}
             />
-          </InspectorHost>
+          </div>
         </>
       ) : null}
     </div>
   );
 }
 
-/** On a narrow screen the inspector is a drawer: focus moves into it, Escape closes it. */
-function InspectorHost({ narrow, onEscape, children }: { narrow: boolean; onEscape: () => void; children: ReactNode }) {
-  const box = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!narrow) return;
-    box.current?.querySelector<HTMLElement>('aside')?.focus();
-  }, [narrow]);
+// ---------- The phone layout ----------
+
+interface PhoneLayoutProps {
+  index: SpecIndex;
+  route: FocusRoute;
+  /** The one view shown: the first of those the address names. */
+  front: ViewName;
+  offered: ViewName[];
+  tabs: PageTabsApi;
+  onView: (view: ViewName) => void;
+  wikiPane: RefObject<HTMLDivElement | null>;
+  onWikiScroll: () => void;
+  content: ReactNode;
+  inspectorShown: boolean;
+  onInspector: (show: boolean) => void;
+  inspectorButton: RefObject<HTMLButtonElement | null>;
+  inspector: ReactNode;
+  inspectorRef: RefObject<HTMLElement | null>;
+}
+
+/**
+ * On a phone (notes/mobile-design.md) the page shows one view at a time, full width, with no
+ * pane bar and no handles. A bar at the bottom, in thumb reach, switches between the views the
+ * page offers, opens the open pages (the tabs) and the inspector, each as a bottom sheet. The top
+ * bar (the shell's) names the page.
+ */
+function PhoneLayout(props: PhoneLayoutProps) {
+  const { index, route, front, offered, tabs, onView, wikiPane, onWikiScroll, content, inspectorShown, onInspector, inspectorButton, inspector, inspectorRef } = props;
+  const [pagesOpen, setPagesOpen] = useState(false);
+  const pagesButton = useRef<HTMLButtonElement>(null);
+  const pagesSheet = useRef<HTMLUListElement>(null);
+  const count = tabs.set.tabs.length;
+  const closePages = useCallback(() => { setPagesOpen(false); setTimeout(() => pagesButton.current?.focus(), 0); }, []);
+  useEffect(() => { if (pagesOpen) pagesSheet.current?.querySelector<HTMLElement>('[aria-current], button')?.focus(); }, [pagesOpen]);
+  // The inspector sheet takes focus as it opens; closing it gives focus back to its button.
+  useEffect(() => { if (inspectorShown) inspectorRef.current?.focus(); }, [inspectorShown, inspectorRef]);
+  const page = focusOf(route);
+  useEffect(() => { setPagesOpen(false); }, [page]);
+
   return (
-    <div
-      ref={box}
-      className={narrow ? 'inspector-drawer' : 'inspector-column panel'}
-      onKeyDown={narrow ? (e) => { if (e.key === 'Escape' && !e.defaultPrevented) { e.preventDefault(); onEscape(); } } : undefined}
-    >
-      {children}
+    <div className="focus-layout is-phone">
+      <section data-view={front} className={`pane panel pane-${front}`} aria-label={`${VIEW_LABELS[front]} pane`}>
+        <div className={front === 'wiki' ? 'pane-scroll' : 'pane-body'} ref={front === 'wiki' ? wikiPane : undefined} onScroll={front === 'wiki' ? onWikiScroll : undefined}>
+          {front === 'wiki' && <PageTitle index={index} route={route} />}
+          {content}
+        </div>
+      </section>
+      <nav className="view-bar" aria-label="Page">
+        {offered.length > 1 && (
+          <div className="view-switch" role="group" aria-label="View">
+            {offered.map((v) => (
+              <button key={v} type="button" className={`view-segment${v === front ? ' is-on' : ''}`} aria-pressed={v === front} onClick={() => onView(v)}>
+                <ViewIcon view={v} size={20} />
+                <span>{VIEW_LABELS[v]}</span>
+              </button>
+            ))}
+          </div>
+        )}
+        <button
+          ref={pagesButton}
+          type="button"
+          className={`view-bar-button${pagesOpen ? ' is-on' : ''}`}
+          aria-label={`Open pages (${count})`}
+          aria-expanded={pagesOpen}
+          aria-haspopup="dialog"
+          onClick={() => setPagesOpen(true)}
+        >
+          <span className="view-bar-icon"><Icon name="pages" size={20} /><span className="view-bar-count" aria-hidden="true">{count}</span></span>
+          <span>Pages</span>
+        </button>
+        <button
+          ref={inspectorButton}
+          type="button"
+          className={`view-bar-button inspector-toggle${inspectorShown ? ' is-on' : ''}`}
+          aria-label={`${inspectorShown ? 'Hide' : 'Show'} the inspector`}
+          aria-expanded={inspectorShown}
+          aria-controls="inspector"
+          onClick={() => onInspector(!inspectorShown)}
+        >
+          <Icon name="info" size={20} />
+          <span>Inspector</span>
+        </button>
+      </nav>
+      {inspectorShown && (
+        <BottomSheet label="Inspector" className="inspector-sheet" onClose={() => onInspector(false)}>
+          {inspector}
+        </BottomSheet>
+      )}
+      {pagesOpen && (
+        <BottomSheet label="Open pages" className="pages-sheet" onClose={closePages}>
+          <div className="sheet-head">
+            <h2 className="sheet-title">Open pages <span className="section-count">{count}</span></h2>
+            <button type="button" className="icon-button" aria-label="Close the open pages" onClick={closePages}><Icon name="x" /></button>
+          </div>
+          <ul ref={pagesSheet} className="pages-list" aria-label="Open pages">
+            {tabs.set.tabs.map((t) => {
+              const { id, title } = tabLabel(index, t.page);
+              const active = t.key === tabs.set.active;
+              const name = id ? `${id} ${title}` : title;
+              return (
+                <li key={t.key} className={`pages-row${active ? ' is-active' : ''}${t.preview ? ' is-preview' : ''}`}>
+                  <button
+                    type="button"
+                    className="pages-open"
+                    aria-current={active ? 'page' : undefined}
+                    aria-label={t.preview ? `${name}, preview` : name}
+                    onClick={() => { tabs.activate(t.key); closePages(); }}
+                  >
+                    {id && <span className="tab-id">{id}</span>}
+                    <span className="tab-title">{title}</span>
+                  </button>
+                  {t.preview && (
+                    <button type="button" className="pages-keep" aria-label={`Keep ${name} open`} onClick={() => tabs.keep(t.key)}>Keep</button>
+                  )}
+                  <button type="button" className="icon-button" aria-label={`Close ${name}`} onClick={() => tabs.close(t.key)}>
+                    <Icon name="x" size={16} />
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+          <p className="hint pages-hint">A page you open replaces the preview (in italics); keep one to hold it open.</p>
+        </BottomSheet>
+      )}
     </div>
   );
 }

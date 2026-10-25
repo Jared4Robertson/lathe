@@ -20,13 +20,12 @@ import { navigate, useLocation } from './router';
 import { checksPath, formatPath, parseSpecRoute, useSpec } from './specs/data';
 import { SpecView } from './specs/SpecPages';
 import { onLatheEvent } from './events';
-import { LatheLogo } from './LatheLogo';
-import { Icon } from './components/icons';
 import { CommandsProvider, useAnnounce, useCommand } from './shell/commands';
 import { SPACE_KEYS, spaceCommandId } from './shell/keymap';
 import { Nav } from './shell/Nav';
 import { SpacesProvider, useSpaceState, type SpacesApi } from './shell/spaces';
-import { Tooltip } from './shell/Tooltip';
+import { pageHeading, QuickFindSheet, TopBar } from './shell/MobileBar';
+import { useThemeColor } from './shell/themeColor';
 import { isBool, usePanelSize, usePref } from './shell/prefs';
 import { useNarrow } from './shell/useNarrow';
 import { FocusPage } from './views/FocusPage';
@@ -174,7 +173,14 @@ function Shell() {
     setCollapsed(!collapsed);
     announce(collapsed ? 'Navigation expanded' : 'Navigation collapsed');
   });
-  useCommand('quickOpen', () => { showNav(); setTimeout(() => findRef.current?.focus(), 0); });
+  // On a phone quick find is a full-screen sheet of its own, opened from the top bar.
+  const [findOpen, setFindOpen] = useState(false);
+  useEffect(() => { setFindOpen(false); }, [path, narrow]);
+  useCommand('quickOpen', () => {
+    if (narrow) { setDrawerOpen(false); setFindOpen(true); return; }
+    showNav(); setTimeout(() => findRef.current?.focus(), 0);
+  });
+  useThemeColor();
   useCommand('focusNav', () => {
     showNav();
     setTimeout(() => (navRef.current?.querySelector<HTMLElement>('[aria-current="page"]') ?? findRef.current)?.focus(), 0);
@@ -203,6 +209,7 @@ function Shell() {
     }
     const inPage = document.querySelector<HTMLInputElement>('#main input[type="search"]');
     if (inPage) inPage.focus();
+    else if (narrow) setFindOpen(true);
     else { showNav(); setTimeout(() => findRef.current?.focus(), 0); }
   });
 
@@ -239,23 +246,15 @@ function Shell() {
     >
       <a href="#main" className="skip-link">Skip to the page</a>
       {narrow && (
-        <div className="topbar">
-          <Tooltip label="Open the navigation" command="toggleNav">
-            <button
-              ref={menuButton}
-              type="button"
-              className="icon-button"
-              aria-label="Open the navigation"
-              aria-expanded={drawerOpen}
-              aria-controls="nav"
-              onClick={() => setDrawerOpen(true)}
-            >
-              <Icon name="menu" />
-            </button>
-          </Tooltip>
-          <span className="brand"><LatheLogo size={22} /> Lathe</span>
-        </div>
+        <TopBar
+          ref={menuButton}
+          heading={pageHeading(spec.index, path, search, diagrams)}
+          navOpen={drawerOpen}
+          onMenu={() => setDrawerOpen(true)}
+          onFind={() => setFindOpen(true)}
+        />
       )}
+      {narrow && findOpen && <QuickFindSheet index={spec.index} diagrams={diagrams} space={spaces.current} onClose={() => setFindOpen(false)} />}
       {narrow && drawerOpen && <div className="drawer-backdrop" onMouseDown={closeDrawer} />}
       {(!narrow || drawerOpen) && (
         <Nav
