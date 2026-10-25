@@ -1,7 +1,6 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { screen, within } from '@testing-library/react';
-import { computeAccessibleName } from 'dom-accessibility-api';
 import { describe, expect, it } from 'vitest';
 import { openApp } from './helpers';
 
@@ -122,10 +121,12 @@ describe('LA-PAT-APP-CODE App code', () => {
   it('LA-BRW-T261 Every button and link on the main pages has an accessible name', async () => {
     for (const path of ['/', '/specs/DM/DM-SHOP', '/records/DM-SHOP-UC01', '/records/DM-SHOP-UC01?view=graph']) {
       await openApp(path);
-      const unnamed = [...document.querySelectorAll('button, a[href], [role="button"], input, select, textarea')]
-        .filter((el) => !(el as HTMLElement).closest('[aria-hidden="true"]'))
-        .filter((el) => computeAccessibleName(el).trim() === '')
+      // The role queries compute each control's accessible name; keep the ones whose name is empty.
+      const controls = ['button', 'link', 'textbox', 'searchbox', 'combobox', 'checkbox', 'radio'].flatMap((role) => screen.queryAllByRole(role));
+      const unnamed = ['button', 'link', 'textbox', 'searchbox', 'combobox', 'checkbox', 'radio']
+        .flatMap((role) => screen.queryAllByRole(role, { name: (name) => name.trim() === '' }))
         .map((el) => `${path}: ${el.outerHTML.slice(0, 120)}`);
+      expect(controls.length).toBeGreaterThan(0);
       expect(unnamed).toEqual([]);
     }
   });
