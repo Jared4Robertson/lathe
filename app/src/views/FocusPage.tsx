@@ -13,6 +13,7 @@ import { recordPath, type Problem, type SpecIndex, type SpecState } from '../spe
 import { Markdown } from '../specs/Markdown';
 import { PageHeader, ProblemBadge, RecordTree, Section } from '../specs/parts';
 import { RecordContent, RecordEyebrow } from '../specs/RecordContent';
+import { folderPath } from '../specs/folders';
 import { DomainWiki, NotFound, ProductWiki, SourceNote, problemsUnder } from '../specs/SpecPages';
 import { addressOf, focusOf, isViewMode, VIEW_LABELS, VIEW_MODES, viewFromSearch, withView, type FocusRoute, type ViewMode } from './address';
 import { Inspector } from './Inspector';
@@ -369,7 +370,9 @@ function FocusHeader({ index, route, children }: { index: SpecIndex; route: Focu
     problems = index.problemsFor.get(focus) ?? [];
   } else {
     const parent = index.byId.get(route.parent)!;
-    eyebrow = <><Link to={addressOf(index, parent.id)}>{parent.title}</Link> · Group</>;
+    // The folder the group's kind sits in, named as in the side nav and the domain page: "Define › Use cases".
+    const folder = folderPath(index, route.kind);
+    eyebrow = <><Link to={addressOf(index, parent.id)}>{parent.title}</Link> · {folder.length > 0 && <span className="group-folder">{folder.join(' › ')} · </span>}Group</>;
     title = groupLabel(index, focus);
     id = undefined;
     problems = groupMembers(index, focus).flatMap((m) => index.problemsFor.get(m.id) ?? []);

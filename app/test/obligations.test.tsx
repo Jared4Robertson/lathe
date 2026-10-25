@@ -104,7 +104,7 @@ describe('obligation kinds and test states', () => {
   it('LA-BRW-T84 The domain page tags each test with its state, and a planned test looks unfinished', async () => {
     await openApp('/specs/DM/DM-SHOP', served());
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
-    const rows = [...section(/^Tests/).querySelectorAll('.record-row')] as HTMLElement[];
+    const rows = [...section(/^Test plan/).querySelectorAll('.record-row')] as HTMLElement[];
     const states = rows.map((r) => [r.querySelector('code')?.textContent, r.querySelector('.test-state')?.textContent]);
     // A test with no state is automated.
     expect(states).toEqual([['DM-SHOP-T01', 'automated'], ['DM-SHOP-T02', 'manual'], ['DM-SHOP-T03', 'planned']]);

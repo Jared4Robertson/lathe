@@ -10,7 +10,7 @@ import { testWorkspace } from './workspace';
 function flowWorkspace(stepCount: number): Workspace {
   const w = testWorkspace();
   if (!w.kinds.some((k) => k.kind === 'flow_step')) {
-    w.kinds.push({ kind: 'flow_step', label: 'Flow step', stage: 'design', parent_kinds: ['flow'], required_fields: ['order'], obligation: false, proof_only: false, description: 'One step of a flow.' });
+    w.kinds.push({ kind: 'flow_step', label: 'Flow step', stage: 'design', section: 'interaction-design', parent_kinds: ['flow'], required_fields: ['order'], obligation: false, proof_only: false, description: 'One step of a flow.' });
   }
   const record = (id: string, kind: string, title: string, parent: string, fields: Record<string, string> = {}): SpecRecord => ({
     id, kind, title, parent, fields, body: '', product: 'P', domain: 'P-D', path: `specs/${id}.md`, mentions: [],

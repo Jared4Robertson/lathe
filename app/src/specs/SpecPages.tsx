@@ -8,6 +8,7 @@ import { patternsFollowedBy } from './patterns';
 import { CoverageBars, EvidencePanel, FitnessPanel, pluralLabel } from './ProductHealth';
 import { LongList } from '../components/LongList';
 import { PageHeader, ProblemBadge, ProblemList, RecordLink, RecordTree, Section, idText, recordText } from './parts';
+import { domainFolders, type Folder } from './folders';
 import {
   byIdOrder,
   checksPath,
@@ -162,23 +163,13 @@ function QuestionList({ index, questions }: { index: SpecIndex; questions: SpecR
   );
 }
 
-/** Kinds that get a section only when the domain has some (a product's own extensions). */
-const OPTIONAL_KINDS = new Set(['capability']);
-/** Kinds that may sit under a capability rather than directly under the domain. */
-const UNDER_CAPABILITY_KINDS = new Set(['use_case', 'flow', 'test']);
-/** Capabilities read in their `order`, then by ID. */
-const byOrder = (a: SpecRecord, b: SpecRecord) => (Number(a.fields.order) || Infinity) - (Number(b.fields.order) || Infinity) || byIdOrder(a, b);
-
-/** The sections of a domain page: its direct children by kind, under the stage they belong to. */
-const DOMAIN_STAGES: { title: string; kinds: string[] }[] = [
-  { title: 'Define', kinds: ['capability', 'aggregate', 'use_case'] },
-  { title: 'Design', kinds: ['flow', 'view', 'endpoint', 'component', 'test'] },
-];
-
 /**
- * A domain's wiki: its direct children grouped by kind (Aggregates, Use cases, Flows, Views,
- * Endpoints, Components, Tests, Open questions), each a row with its count of children, which are
- * folded under it; then coverage and problems.
+ * A domain's wiki, read in the same folders as the side nav and as S2 lays out its specs: under
+ * Define, Domain model and Use cases; under Design, Interaction design, Technical specification
+ * and Test plan (names and order from the workspace's sections). A folder lists its records
+ * directly, or under one heading per kind when it holds several kinds. Each record is a row with
+ * its count of children, which are folded under it. Then the patterns the domain follows, its
+ * open questions, coverage and problems.
  */
 export function DomainWiki({ index, id }: { index: SpecIndex; id: string }) {
   const [query, setQuery] = useState('');
@@ -187,38 +178,43 @@ export function DomainWiki({ index, id }: { index: SpecIndex; id: string }) {
   const matches = (r: SpecRecord) => !q || recordText(r).toLowerCase().includes(q);
   const problems = problemsUnder(index, 'domain', id);
 
-  const direct = index.children.get(id) ?? [];
-  const ofKind = (kind: string) => {
-    const records = direct.filter((r) => r.kind === kind);
-    return kind === 'capability' ? [...records].sort(byOrder) : records;
-  };
-  const staged = new Set([...DOMAIN_STAGES.flatMap((s) => s.kinds), 'question']);
-  const otherKinds = [...new Set(direct.map((r) => r.kind))].filter((k) => !staged.has(k));
-  // Records of the domain that are neither its children nor theirs (deeper, or misplaced).
-  // Every descendant of a direct child is reachable by unfolding it (capability, use case, requirement…).
+  const { stages, loose } = domainFolders(index, id);
+  // Records of the domain that no folder lists and that no listed record holds (deeper, or misplaced).
+  // Every descendant of a listed record is reachable by unfolding it (capability, use case, requirement…).
   const shown = new Set<string>();
   const walk = (r: SpecRecord) => {
     if (shown.has(r.id)) return;
     shown.add(r.id);
     for (const c of index.children.get(r.id) ?? []) walk(c);
   };
-  direct.forEach(walk);
+  [...stages.flatMap((s) => s.folders), ...loose].forEach((f) => f.records.forEach(walk));
   const others = recordsIn(index, (r) => r.domain === id && r.id !== id && !shown.has(r.id) && matches(r));
-  const questions = ofKind('question');
+  const questions = loose.find((f) => f.section === 'kind:question')?.records ?? [];
 
-  // Use cases, flows and tests can sit under capabilities instead of the domain: once the domain has
-  // capabilities, an empty section for one of those kinds is noise, not "none yet".
-  const hasCapabilities = ofKind('capability').length > 0;
-  const kindSection = (kind: string) => {
-    const records = ofKind(kind);
-    if (records.length === 0 && (OPTIONAL_KINDS.has(kind) || (hasCapabilities && UNDER_CAPABILITY_KINDS.has(kind)))) return null;
-    const title = pluralLabel(kindLabel(index, kind));
+  const tree = (records: SpecRecord[], label: string) => {
     const visible = records.filter((r) => matches(r) || (index.children.get(r.id) ?? []).some(matches)).length;
+    return visible === 0 ? <p className="hint">Nothing matches.</p> : <RecordTree index={index} records={records} label={label} query={query} />;
+  };
+  const folderSection = (folder: Folder, level: 2 | 3) => {
+    const kinds = folder.kinds.filter((k) => folder.records.some((r) => r.kind === k));
+    // In a folder that holds capabilities, the records of a kind that may sit under one are those outside any.
+    const holdsCapabilities = kinds.includes('capability');
+    const kindTitle = (kind: string) => {
+      const title = pluralLabel(kindLabel(index, kind));
+      return holdsCapabilities && kind !== 'capability' && index.kinds.get(kind)?.parent_kinds.includes('capability') ? `${title} outside any capability` : title;
+    };
     return (
-      <Section key={kind} title={title} count={records.length}>
-        {records.length === 0 ? <p className="hint">None yet.</p>
-          : visible === 0 ? <p className="hint">Nothing matches.</p>
-          : <RecordTree index={index} records={records} label={title} query={query} />}
+      <Section key={folder.key} level={level} title={folder.label} count={folder.records.length} className="folder">
+        {folder.records.length === 0 ? <p className="hint">None yet.</p>
+          : kinds.length === 1 ? tree(folder.records, folder.label)
+          : kinds.map((kind) => {
+            const records = folder.records.filter((r) => r.kind === kind);
+            return (
+              <Section key={kind} level={(level + 1) as 3 | 4} title={kindTitle(kind)} count={records.length}>
+                {tree(records, kindTitle(kind))}
+              </Section>
+            );
+          })}
       </Section>
     );
   };
@@ -230,16 +226,16 @@ export function DomainWiki({ index, id }: { index: SpecIndex; id: string }) {
         <label htmlFor="record-search">Filter records</label>
         <input id="record-search" type="search" value={query} placeholder="ID or title" onChange={(e) => setQuery(e.target.value)} />
       </div>
-      {DOMAIN_STAGES.map((stage) => (
-        <div key={stage.title} className="stage">
-          <h2 className="stage-title">{stage.title}</h2>
-          {stage.kinds.map(kindSection)}
+      {stages.map((stage) => (
+        <div key={stage.key} className="stage">
+          <h2 className="stage-title">{stage.label}</h2>
+          {stage.folders.map((f) => folderSection(f, 3))}
         </div>
       ))}
       <Section title="Patterns we follow" count={patternsFollowedBy(index, id).length}>
         <DomainPatterns index={index} domainId={id} query={query} />
       </Section>
-      {otherKinds.map(kindSection)}
+      {loose.filter((f) => f.section !== 'kind:question').map((f) => folderSection(f, 2))}
       {others.length > 0 && (
         <Section title="Other records" count={others.length}>
           <RecordTree index={index} records={others} label="Other records" showKind />
