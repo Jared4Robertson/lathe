@@ -41,4 +41,8 @@ export const REQUIRED_PAIRS: readonly [string, string][] = [
   ['--ink', '--paper'], ['--ink', '--sheet'],
   ['--muted', '--paper'], ['--muted', '--sheet'],
   ['--steel', '--paper'], ['--steel', '--sheet'],
+  // Warnings and errors in text, and the text on colored marks (error and warning badges, accents).
+  ['--warn', '--paper'], ['--warn', '--sheet'],
+  ['--error', '--error-bg'], ['--error', '--paper'],
+  ['--on-mark', '--spark'], ['--on-mark', '--steel'], ['--on-mark', '--error'], ['--on-mark', '--warn'],
 ];
