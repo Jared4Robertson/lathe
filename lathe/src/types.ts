@@ -6,12 +6,24 @@ export interface Kind {
   label: string;
   /** 'define', 'design', or '' for structural kinds (product, domain, question). */
   stage: string;
+  /** The folder the kind sits in within its stage, from meta/sections.csv ('' for none), as Client lays out its specs. */
+  section: string;
   parent_kinds: string[];
   required_fields: string[];
   /** An obligation must be designed (satisfied), built and proved; coverage counts every obligation kind. */
   obligation: boolean;
   /** An obligation that needs proof only (kinds.csv obligation value `proof`): designed and built are not asked of it. */
   proof_only: boolean;
+  description: string;
+}
+
+/** A folder within a stage (or 'shared' at product level), from meta/sections.csv, in display order. */
+export interface SectionRule {
+  section: string;
+  /** 'define', 'design', or '' for product-level folders such as Shared. */
+  stage: string;
+  order: number;
+  label: string;
   description: string;
 }
 
@@ -142,6 +154,8 @@ export interface DiagramModel {
 
 export interface Workspace {
   kinds: Kind[];
+  /** The folders kinds sit in (meta/sections.csv), in stage then order. */
+  sections: SectionRule[];
   relations: RelationRule[];
   records: SpecRecord[];
   links: SpecLink[];
