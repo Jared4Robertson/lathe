@@ -162,6 +162,8 @@ function QuestionList({ index, questions }: { index: SpecIndex; questions: SpecR
 
 /** Kinds that get a section only when the domain has some (a product's own extensions). */
 const OPTIONAL_KINDS = new Set(['capability']);
+/** Kinds that may sit under a capability rather than directly under the domain. */
+const UNDER_CAPABILITY_KINDS = new Set(['use_case', 'flow', 'test']);
 /** Capabilities read in their `order`, then by ID. */
 const byOrder = (a: SpecRecord, b: SpecRecord) => (Number(a.fields.order) || Infinity) - (Number(b.fields.order) || Infinity) || byIdOrder(a, b);
 
@@ -195,9 +197,12 @@ export function DomainWiki({ index, id }: { index: SpecIndex; id: string }) {
   const others = recordsIn(index, (r) => r.domain === id && r.id !== id && !shown.has(r.id) && matches(r));
   const questions = ofKind('question');
 
+  // Use cases, flows and tests can sit under capabilities instead of the domain: once the domain has
+  // capabilities, an empty section for one of those kinds is noise, not "none yet".
+  const hasCapabilities = ofKind('capability').length > 0;
   const kindSection = (kind: string) => {
     const records = ofKind(kind);
-    if (records.length === 0 && OPTIONAL_KINDS.has(kind)) return null;
+    if (records.length === 0 && (OPTIONAL_KINDS.has(kind) || (hasCapabilities && UNDER_CAPABILITY_KINDS.has(kind)))) return null;
     const title = pluralLabel(kindLabel(index, kind));
     const visible = records.filter((r) => matches(r) || (index.children.get(r.id) ?? []).some(matches)).length;
     return (
