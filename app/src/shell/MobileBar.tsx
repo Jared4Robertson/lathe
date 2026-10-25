@@ -103,10 +103,15 @@ export function QuickFindSheet({ index, diagrams, space, onClose }: { index: Spe
   };
   return (
     <div ref={sheet} className="sheet find-sheet" role="dialog" aria-modal="true" aria-label="Quick find" onKeyDown={onKeyDown}>
-      <div className="sheet-head">
-        <QuickFind ref={input} index={index} diagrams={diagrams} space={space} onGo={onClose} inline />
-        <button type="button" className="sheet-close" onClick={onClose}>Close</button>
-      </div>
+      <QuickFind
+        ref={input}
+        index={index}
+        diagrams={diagrams}
+        space={space}
+        onGo={onClose}
+        inline
+        trailing={<button type="button" className="sheet-close" onClick={onClose}>Close</button>}
+      />
     </div>
   );
 }

@@ -13,6 +13,7 @@ import { isBool, usePref } from './prefs';
 import { QuickFind } from './QuickFind';
 import { SpaceMark, useSpaces, type Space } from './spaces';
 import { Tooltip } from './Tooltip';
+import { trapTab } from './useNarrow';
 
 // The side navigation. At its far left is the space rail: one square icon per product (each
 // product is its own space), a separator, then the items above every product (Diagrams, and
@@ -142,7 +143,8 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
       id="nav"
       onKeyDown={(e) => {
         if (!keyboard) setKeyboard(true);
-        if (drawer && e.key === 'Escape' && !e.defaultPrevented) { e.preventDefault(); onCloseDrawer(); }
+        if (drawer && e.key === 'Escape' && !e.defaultPrevented) { e.preventDefault(); onCloseDrawer(); return; }
+        if (drawer) trapTab(e, e.currentTarget);
       }}
       onPointerDown={() => { if (keyboard) setKeyboard(false); }}
     >

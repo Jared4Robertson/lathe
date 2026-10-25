@@ -11,6 +11,7 @@ const PATHS: Record<string, string[]> = {
   'chevron-right': ['M9 6l6 6l-6 6'],
   'chevron-down': ['M6 9l6 6l6-6'],
   'chevron-left': ['M15 6l-6 6l6 6'],
+  pages: ['M12 4l-8 4l8 4l8-4l-8-4', 'M4 12l8 4l8-4', 'M4 16l8 4l8-4'],
   info: ['M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0-18 0', 'M12 8h.01', 'M11 12h1v4h1'],
   'sidebar-left': ['M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z', 'M9 4v16'],
   'sidebar-right': ['M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z', 'M15 4v16'],
