@@ -4,6 +4,7 @@
       "kind": "product",
       "label": "Product",
       "stage": "",
+      "section": "",
       "parent_kinds": [],
       "required_fields": [],
       "description": "A product: the root of a set of specifications.",
@@ -14,6 +15,7 @@
       "kind": "domain",
       "label": "Domain",
       "stage": "",
+      "section": "",
       "parent_kinds": [
         "product"
       ],
@@ -26,6 +28,7 @@
       "kind": "aggregate",
       "label": "Aggregate",
       "stage": "define",
+      "section": "domain-model",
       "parent_kinds": [
         "domain"
       ],
@@ -38,6 +41,7 @@
       "kind": "domain_rule",
       "label": "Domain rule",
       "stage": "define",
+      "section": "domain-model",
       "parent_kinds": [
         "aggregate"
       ],
@@ -50,6 +54,7 @@
       "kind": "use_case",
       "label": "Use case",
       "stage": "define",
+      "section": "use-cases",
       "parent_kinds": [
         "domain"
       ],
@@ -64,6 +69,7 @@
       "kind": "requirement",
       "label": "Use-case requirement",
       "stage": "define",
+      "section": "use-cases",
       "parent_kinds": [
         "use_case"
       ],
@@ -76,6 +82,7 @@
       "kind": "flow",
       "label": "Flow",
       "stage": "design",
+      "section": "interaction-design",
       "parent_kinds": [
         "domain"
       ],
@@ -88,6 +95,7 @@
       "kind": "view",
       "label": "View",
       "stage": "design",
+      "section": "interaction-design",
       "parent_kinds": [
         "domain"
       ],
@@ -100,6 +108,7 @@
       "kind": "endpoint",
       "label": "Endpoint",
       "stage": "design",
+      "section": "interaction-design",
       "parent_kinds": [
         "domain"
       ],
@@ -115,6 +124,7 @@
       "kind": "component",
       "label": "Component",
       "stage": "design",
+      "section": "technical-specification",
       "parent_kinds": [
         "domain"
       ],
@@ -130,6 +140,7 @@
       "kind": "test",
       "label": "Test",
       "stage": "design",
+      "section": "test-plan",
       "parent_kinds": [
         "domain"
       ],
@@ -145,6 +156,7 @@
       "kind": "question",
       "label": "Open question",
       "stage": "",
+      "section": "",
       "parent_kinds": [
         "product",
         "domain",
@@ -158,6 +170,50 @@
       "description": "Something undecided, with the person who decides it.",
       "obligation": false,
       "proof_only": false
+    }
+  ],
+  "sections": [
+    {
+      "section": "shared",
+      "stage": "",
+      "order": 1,
+      "label": "Shared",
+      "description": "What a product's domains share: patterns and their rules."
+    },
+    {
+      "section": "domain-model",
+      "stage": "define",
+      "order": 1,
+      "label": "Domain model",
+      "description": "The aggregates and their domain rules."
+    },
+    {
+      "section": "use-cases",
+      "stage": "define",
+      "order": 2,
+      "label": "Use cases",
+      "description": "Capabilities, the use cases in them, and their use-case requirements."
+    },
+    {
+      "section": "interaction-design",
+      "stage": "design",
+      "order": 1,
+      "label": "Interaction design",
+      "description": "Flows and their steps, views, endpoints and interaction requirements."
+    },
+    {
+      "section": "technical-specification",
+      "stage": "design",
+      "order": 2,
+      "label": "Technical specification",
+      "description": "The components of the target design."
+    },
+    {
+      "section": "test-plan",
+      "stage": "design",
+      "order": 3,
+      "label": "Test plan",
+      "description": "The tests that prove the obligations."
     }
   ],
   "relations": [

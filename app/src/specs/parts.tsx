@@ -71,10 +71,11 @@ export function ProblemList({ index, problems, showRecord = true, showCheck = tr
   );
 }
 
-export function Section({ title, count, children }: { title: string; count?: number; children: ReactNode }) {
+export function Section({ title, count, level = 2, className, children }: { title: string; count?: number; level?: 2 | 3 | 4; className?: string; children: ReactNode }) {
+  const Heading = `h${level}` as 'h2' | 'h3' | 'h4';
   return (
-    <section className="spec-section">
-      <h2>{title}{count !== undefined && <span className="section-count">{count}</span>}</h2>
+    <section className={className ? `spec-section ${className}` : 'spec-section'}>
+      <Heading>{title}{count !== undefined && <span className="section-count">{count}</span>}</Heading>
       {children}
     </section>
   );
