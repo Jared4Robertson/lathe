@@ -174,8 +174,8 @@ describe('layers and test groups', () => {
     await openApp('/records/DM-SHOP-LAY02', { workspace: layerWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Models' });
     expect(main().querySelector('.eyebrow')).toHaveTextContent('Demo shop · Shopping · Layer');
-    const children = within(main()).getByRole('heading', { level: 2, name: /^Children/ });
-    expect(children).toHaveTextContent('Children2');
+    const children = within(main()).getByRole('heading', { level: 2, name: /^Components/ });
+    expect(children).toHaveTextContent('Components2');
     const listed = children.closest('section') as HTMLElement;
     expect([...listed.querySelectorAll('a.record-link code')].map((c) => c.textContent)).toEqual(['DM-SHOP-C02', 'DM-SHOP-C03']);
   });
@@ -275,7 +275,7 @@ describe('layers and test groups', () => {
     // Children of one kind carry no kind tag; children of several kinds do.
     await openApp('/records/DM-SHOP-UC01');
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
-    const ucChildren = within(main()).getByRole('heading', { level: 2, name: /^Children/ }).closest('section') as HTMLElement;
+    const ucChildren = within(main()).getByRole('heading', { level: 2, name: /^UC requirements/ }).closest('section') as HTMLElement;
     expect(within(ucChildren).queryByText('UC requirement', { selector: 'small' })).toBeNull();
     await openApp('/records/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
