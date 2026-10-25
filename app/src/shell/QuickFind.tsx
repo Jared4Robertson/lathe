@@ -1,4 +1,4 @@
-import { forwardRef, useId, useMemo, useState, type KeyboardEvent } from 'react';
+import { forwardRef, useId, useMemo, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { Icon } from '../components/icons';
 import { navigate } from '../router';
 import { kindLabel, type SpecIndex } from '../specs/data';
@@ -70,15 +70,26 @@ export function rankItems(items: readonly FindItem[], query: string, limit = 8):
     .map((x) => x.item);
 }
 
-export const QuickFind = forwardRef<HTMLInputElement, { index: SpecIndex | null; diagrams: readonly DiagramSummary[]; space?: Space | null; onGo?: () => void }>(
-  function QuickFind({ index, diagrams, space = null, onGo }, ref) {
+export interface QuickFindProps {
+  index: SpecIndex | null;
+  diagrams: readonly DiagramSummary[];
+  space?: Space | null;
+  onGo?: () => void;
+  /** In a sheet (the phone): the results are a list under the box rather than a dropdown, and more of them show. */
+  inline?: boolean;
+  /** What sits beside the box in a sheet, such as its Close button. */
+  trailing?: ReactNode;
+}
+
+export const QuickFind = forwardRef<HTMLInputElement, QuickFindProps>(
+  function QuickFind({ index, diagrams, space = null, onGo, inline = false, trailing }, ref) {
     const [query, setQuery] = useState('');
     const [active, setActive] = useState(0);
     const [open, setOpen] = useState(false);
     const listId = useId();
     const shortcut = useShortcutHint('quickOpen');
     const all = useMemo(() => findItems(index, diagrams), [index, diagrams]);
-    const scoped = useMemo(() => rankScoped(all, query, space?.id ?? null), [all, query, space]);
+    const scoped = useMemo(() => rankScoped(all, query, space?.id ?? null, inline ? 20 : 8), [all, query, space]);
     const results = useMemo(() => [...scoped.here, ...scoped.elsewhere], [scoped]);
     const at = Math.min(active, Math.max(0, results.length - 1));
     const go = (item: FindItem) => {
@@ -96,29 +107,9 @@ export const QuickFind = forwardRef<HTMLInputElement, { index: SpecIndex | null;
         else (e.target as HTMLInputElement).blur();
       }
     };
-    const expanded = open && query.trim() !== '';
-    return (
-      <div className="quick-find">
-        <Icon name="search" size={16} />
-        <input
-          ref={ref}
-          type="text"
-          role="combobox"
-          aria-label="Quick find"
-          aria-keyshortcuts={shortcut.aria}
-          aria-autocomplete="list"
-          aria-expanded={expanded}
-          aria-controls={listId}
-          aria-activedescendant={expanded && results[at] ? `${listId}-${at}` : undefined}
-          placeholder={`Go to…${shortcut.text ? ` ${shortcut.text}` : ''}`}
-          value={query}
-          onChange={(e) => { setQuery(e.target.value); setActive(0); setOpen(true); }}
-          onFocus={() => setOpen(true)}
-          onBlur={() => setTimeout(() => setOpen(false), 120)}
-          onKeyDown={onKeyDown}
-        />
-        {expanded && (
-          <ul className="quick-find-results" id={listId} role="listbox" aria-label="Quick find results">
+    const expanded = (open || inline) && query.trim() !== '';
+    const list = expanded && (
+          <ul className={`quick-find-results${inline ? ' is-inline' : ''}`} id={listId} role="listbox" aria-label="Quick find results">
             {[
               { name: space ? `In ${space.title}` : '', items: scoped.here, offset: 0 },
               { name: space ? 'Everything else' : '', items: scoped.elsewhere, offset: scoped.here.length },
@@ -150,7 +141,39 @@ export const QuickFind = forwardRef<HTMLInputElement, { index: SpecIndex | null;
             })}
             {results.length === 0 && <li className="hint" role="presentation">Nothing matches.</li>}
           </ul>
-        )}
+    );
+    const box = (
+      <div className="quick-find">
+        <Icon name="search" size={16} />
+        <input
+          ref={ref}
+          type="text"
+          role="combobox"
+          aria-label="Quick find"
+          aria-keyshortcuts={shortcut.aria}
+          aria-autocomplete="list"
+          aria-expanded={expanded}
+          aria-controls={listId}
+          aria-activedescendant={expanded && results[at] ? `${listId}-${at}` : undefined}
+          placeholder={`Go to…${shortcut.text ? ` ${shortcut.text}` : ''}`}
+          value={query}
+          onChange={(e) => { setQuery(e.target.value); setActive(0); setOpen(true); }}
+          onFocus={() => setOpen(true)}
+          onBlur={() => setTimeout(() => setOpen(false), 120)}
+          onKeyDown={onKeyDown}
+          enterKeyHint="go"
+          autoCapitalize="off"
+          autoCorrect="off"
+          spellCheck={false}
+        />
+        {!inline && list}
+      </div>
+    );
+    if (!inline) return box;
+    return (
+      <div className="quick-find-inline">
+        <div className="quick-find-row">{box}{trailing}</div>
+        {list}
       </div>
     );
   },

@@ -44,7 +44,7 @@ describe('the Model view', () => {
     fireEvent.keyDown(document.body, { key: '4', code: 'Digit4', ctrlKey: true });
     expect(window.location.search).toBe('?view=wiki,graph,model');
     expect([...document.querySelectorAll('.pane')].map((p) => p.getAttribute('aria-label'))).toEqual(['Wiki pane', 'Graph pane', 'Model pane']);
-    expect(within(modelPane()).getByRole('group', { name: 'View' })).toBeInTheDocument();
+    expect(within(document.querySelector<HTMLElement>('.page-bar')!).getByRole('group', { name: 'View' })).toBeInTheDocument();
     await boxesShown();
     // Alt+M turns it off again (off a Mac).
     fireEvent.keyDown(document.body, { key: 'm', code: 'KeyM', altKey: true });
