@@ -22,7 +22,6 @@ import {
   type SpecState,
 } from './data';
 import { addressOf, HOME_PATH } from '../views/address';
-import { Traceability } from './Traceability';
 
 export { RecordContent } from './RecordContent';
 
@@ -108,7 +107,6 @@ export function ProductWiki({ index, id }: { index: SpecIndex; id: string }) {
   return (
     <div className="spec-body">
       <RecordMarkdown index={index} record={product} />
-      <Traceability index={index} record={product} />
       <Section title="Domains" count={domains.length}>
         {domains.length === 0 && <p className="hint">No domains yet.</p>}
         <div className="cards">
@@ -241,7 +239,6 @@ export function DomainWiki({ index, id }: { index: SpecIndex; id: string }) {
   return (
     <div className="spec-body">
       <RecordMarkdown index={index} record={domain} />
-      <Traceability index={index} record={domain} />
       <div className="search">
         <label htmlFor="record-search">Filter records</label>
         <input id="record-search" type="search" value={query} placeholder="ID or title" onChange={(e) => setQuery(e.target.value)} />

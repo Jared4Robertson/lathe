@@ -15,11 +15,11 @@ const TITLE = [FOCUS[1]];
 test.describe('navigate', () => {
   test('LA-BRW-T481 through the nav', async ({ page }) => {
     await openPage(page, DOMAIN);
-    const link = page.locator('nav#nav .nav-space a[href^="/LA-BRW-"]:not([aria-current])').first();
+    const link = page.locator('nav#nav .nav-space a[href^="/LA/"]:not([aria-current])').first();
     await expect(link).toBeVisible();
     const r = await step(page, 'navigate', 'through the nav', { keys: KEYS, allow: CONTENT, resizes: TITLE }, async () => {
       await link.click();
-      await page.waitForURL(/\/LA-[A-Z0-9]+-[A-Z0-9]+/);
+      await page.waitForURL(/\/LA\//);
     });
     expectStable(r);
   });
