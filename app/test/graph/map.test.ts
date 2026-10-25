@@ -97,7 +97,7 @@ describe('levels and content', () => {
 describe('the level of detail', () => {
   const map = graphMap(testIndex());
 
-  it('LA-BRW-T742 Only boxes in view and big enough are drawn, labeled when their text reads, with bars for children too small, within a budget', () => {
+  it('LA-BRW-T741 Only boxes in view and big enough are drawn, labeled when their text reads, with bars for children too small, within a budget', () => {
     // Framed on the domain: the domain and its stages are drawn; nothing outside the view.
     const view = frameOnMap(map, 'P-D', 1, 1000, 800);
     const d = drawnFor(map, view, 1000, 800);
@@ -129,7 +129,7 @@ describe('the level of detail', () => {
     expect(drawnFor(map, view, 1000, 800)).toEqual(d);
   });
 
-  it('LA-BRW-T742 A product of thousands of records stays within the drawing budget at every zoom', () => {
+  it('LA-BRW-T741 A product of thousands of records stays within the drawing budget at every zoom', () => {
     const big = wide(4, 30);
     expect(big.nodes.size).toBeGreaterThan(3000);
     for (const zoom of [0.001, 0.01, 0.05, 0.2, 1]) {

@@ -1,5 +1,5 @@
 import type { SpecIndex } from '../specs/data';
-import { NODE_HEIGHT, NODE_WIDTH } from './layout';
+import { contentScale, NODE_HEIGHT, NODE_WIDTH } from './layout';
 import { treeChildren, treeOf } from './tree';
 
 // The graph's one map (LA-BRW-DR390): the whole tree, the nav's (tree.ts), laid out once per spec
@@ -172,8 +172,29 @@ type Point = { x: number; y: number };
 /** A node's center in the map. */
 export const centerOf = (n: Rect) => ({ x: n.x + n.w / 2, y: n.y + n.h / 2 });
 
-/** A parent line (LA-BRW-DR390): level, from the parent's right edge to the child's left edge, at the child's middle. */
-export const parentLine = (parent: Rect, child: Rect): [Point, Point] => [{ x: parent.x + parent.w, y: child.y + child.h / 2 }, { x: child.x, y: child.y + child.h / 2 }];
+/** A hexagon's chamfer (LA-BRW-DR394): 12 px at the node's content scale, at most a quarter of its width (as the stylesheet draws it). */
+export const hexChamfer = (r: Pick<Rect, 'w' | 'h'>) => Math.min(r.w / 4, 12 * contentScale(r.w, r.h));
+
+/**
+ * How far in from its box a node's outline is on its left or right side, at a height in it: 0 for
+ * a box; for a hexagon, the chamfer at its middle (the point's tip is the box's edge), down to the
+ * full chamfer at its top and bottom.
+ */
+export function outlineInset(r: Rect, shape: 'box' | 'hexagon', y: number): number {
+  if (shape === 'box') return 0;
+  const half = r.h / 2;
+  return hexChamfer(r) * Math.min(1, Math.abs(y - (r.y + half)) / half);
+}
+
+/**
+ * A parent line (LA-BRW-DR390): level, at the child's middle, from the parent's outline on its
+ * right side to the child's outline on its left. A box's outline is its edge; a domain's hexagon
+ * (LA-BRW-DR394) is met on its slanted side, and a line into a domain meets the tip of its point.
+ */
+export function parentLine(parent: Rect, child: Rect, parentShape: 'box' | 'hexagon' = 'box', childShape: 'box' | 'hexagon' = 'box'): [Point, Point] {
+  const y = child.y + child.h / 2;
+  return [{ x: parent.x + parent.w - outlineInset(parent, parentShape, y), y }, { x: child.x + outlineInset(child, childShape, y), y }];
+}
 
 /** A cross-link's ends: each box's middle, on the side that faces the other box (the right side when they overlap). */
 export function linkEnds(s: Rect, t: Rect): [Point, Point] {

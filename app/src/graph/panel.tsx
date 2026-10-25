@@ -84,6 +84,7 @@ export function Legend() {
           <li><span className="graph-swatch stage-define" /> Define (aggregate, rule, use case, requirement)</li>
           <li><span className="graph-swatch stage-design" /> Design (flow, flow step, view, endpoint, component, test)</li>
           <li><span className="graph-swatch stage-structural" /> Structural (product, domain, question)</li>
+          <li><span className="graph-swatch stage-hexagon" /> Domain, drawn as a hexagon</li>
           <li><span className="graph-swatch stage-group" /> Stage, folder or group, as the nav names it, with its count; its chevron points down while its members are drawn beside it</li>
           <li><span className="graph-swatch stage-plain" /> A box too small on screen for its text: zoom in, or hover it, for its name</li>
           <li><span className="graph-swatch stage-bar" /> A bar: children too small to draw at this zoom</li>

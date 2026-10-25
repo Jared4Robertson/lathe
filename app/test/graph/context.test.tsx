@@ -96,7 +96,7 @@ describe('the graph tree, its depth and its camera', () => {
     expect(screen.getByRole('button', { name: 'Links' })).toHaveAttribute('aria-pressed', 'true');
   });
 
-  it('LA-BRW-T743 A box too small on screen for its text is drawn plain and out of focus, and the summary counts the framed picture', async () => {
+  it('LA-BRW-T742 A box too small on screen for its text is drawn plain and out of focus, and the summary counts the framed picture', async () => {
     await showGraph('/P-D', testWorkspace(), 3);
     await waitFor(() => expect(document.querySelector('.react-flow__node.is-plain')).not.toBeNull());
     const plain = document.querySelector<HTMLElement>('.react-flow__node.is-plain')!;
@@ -169,7 +169,7 @@ describe('the graph tree, its depth and its camera', () => {
     await waitFor(() => expect(window.location.pathname).toBe('/P-D/define/domain-model'));
   });
 
-  it('LA-BRW-T745 With Links on, links draw as curves between their boxes, and the edge hints count the linked records past each edge', async () => {
+  it('LA-BRW-T743 With Links on, links draw as curves between their boxes, and the edge hints count the linked records past each edge', async () => {
     // The hints' arithmetic: a box's center past an edge counts for that edge; the plain pan moves half the canvas.
     const view = { x: 0, y: 0, zoom: 1 };
     expect(pastEdges([{ x: -10, y: 50 }, { x: 1200, y: -5 }, { x: 500, y: 900 }, { x: 500, y: 400 }], view, 1000, 800)).toEqual({ up: 1, down: 1, left: 1, right: 1 });
