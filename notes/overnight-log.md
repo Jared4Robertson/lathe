@@ -86,6 +86,25 @@ Lathe now matches S2 on UC requirements (206/206) and domain rules (98/98) acros
   The Graph layer is split into 3 sub-layers. App 281 passed. Not met: the frame budget at depth 3 (worst frame 450 ms); that goes to performance (70). One flaky stability step: ERD Back.
 - 01:44 (coordinator) `82c46aa` Stage and folder pages say "Define", not "Defines"; tabs keep the Links, context-ring and minimap switches (T554, T555).
 - 01:45 Started event display (60) and the side bar (64). Performance (70) waits for 60 (both touch graph and model).
+- 01:36 `84c8af7` Bare-ID addresses (55):
+  - records, products and domains live at `/<ID>`, and groups at `/<parent>/<stage>/<folder>`;
+  - every old `/records`, `/specs` and `/graph` address redirects;
+  - saved tabs are converted;
+  - a product or domain has one page;
+  - CODE-R19.
+  
+  App 287, engine 266, check 0 errors and 7 warnings. Checked in the browser on a fresh server.
+- 01:40 **Your dev server on 5199** has been up for 6 hours. Its hot reload broke on files that were moved (it still asks for `src/specs/FormatPage.tsx`), and the graph stays on "Loading". Restart it (`npm --prefix app run dev`). I left it running because it's yours.
+- 01:42 `04e4bb3` Domain events (60):
+  - an aggregate's ERD shows its events as spark pills, with a raised-by line and dashed reacts-to lines to the faded reacting aggregates;
+  - a domain's ERD shows cause and effect between aggregates;
+  - the wiki has a Domain events list;
+  - the graph styles events.
+  
+  App 292 passed; check 0 errors.
+- 01:45 (coordinator) `e91e91b` Event pages offer the Model view, with the pill picked out (UC113-R07 is now a MUST, T556). Checked in the browser.
+- 01:46 Started performance (70). It also has the first ERD layout: 10–18 s on a fresh dev server while load was high.
+- Load reached 50 at 01:40, from macOS `mediaanalysisd` plus test runs. It dropped when they finished.
 
 ## Incident
 - During 57b, the agent stopped "the process on its dev port" and killed pid 77501, the **Claude desktop app's network service**, which had a connection open to that port. Electron restarted the service; the app and the in-app browser were checked and work. New agent rule: stop only processes you started, by recorded PID, never by port or name. If anything in the Claude app seemed off around 01:00, this is why; a restart of the app clears it.
