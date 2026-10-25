@@ -1,5 +1,5 @@
 /* The side bar (brief 64, LA-BRW-UC119): the switcher of Details, Outline and History at its top,
-   then the view shown. The panel itself keeps the inspector's rules in styles.css. */
+   then the view shown. The panel itself has its rules in styles.css. */
 
 :root {
   /* A diff's added and removed lines: tints of the accent tokens, so every theme sets them. */
@@ -11,8 +11,8 @@
 
 .side-switch { display: flex; gap: 2px; align-items: center; }
 .side-view { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
-.side-view > .inspector-title:focus { outline: none; }
-.side-view > .inspector-title:focus-visible { outline: 2px solid var(--steel); outline-offset: 2px; }
+.side-view > .side-bar-title:focus { outline: none; }
+.side-view > .side-bar-title:focus-visible { outline: 2px solid var(--steel); outline-offset: 2px; }
 
 /* Details */
 .side-identity-row { display: flex; gap: 8px; align-items: center; justify-content: space-between; min-height: 28px; }

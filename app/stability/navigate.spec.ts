@@ -3,11 +3,11 @@ import { expectStable, openPage, step } from './measure';
 import { DOMAIN, FOCUS, GRAPH_CANVAS, GRAPH_HEADER, RECORD, SHELL } from './scenarios';
 
 // LA-BRW-T481: moving between records through the nav, a link, a graph click, Back and quick
-// find keeps the shell, the pane bar and the inspector where they were. The page's content
-// changes (it is a new page), so shifts inside the wiki pane's scroll box and the inspector's
+// find keeps the shell, the pane bar and the side bar where they were. The page's content
+// changes (it is a new page), so shifts inside the wiki pane's scroll box and the side bar's
 // body are the change itself; the frame around them must hold still.
 
-const CONTENT = ['.pane-scroll', '.inspector'];
+const CONTENT = ['.pane-scroll', '.side-bar'];
 const KEYS = [...SHELL, ...FOCUS];
 /** A new page's title may be taller or shorter than the last one's, but must not jump back. */
 const TITLE = [FOCUS[1]];

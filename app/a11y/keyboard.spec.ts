@@ -4,7 +4,7 @@ import { DOMAIN, PRODUCT, RECORD } from '../stability/scenarios';
 // What axe can't check, walked with the keyboard alone (LA-PAT-APP-UX-R10):
 // LA-BRW-T621 every control on the main pages is reached by Tab and Shift+Tab, with no trap;
 // LA-BRW-T622 the main tasks by keyboard: open a record, switch views, re-center the graph, fold
-// rows, open and close the inspector, pick a theme, and the announcer saying what changed;
+// rows, open and close the side bar, pick a theme, and the announcer saying what changed;
 // LA-BRW-T623 focus after navigation, and back on the opener when a dialog or a sheet closes.
 
 /** What has keyboard focus now: a short description, its accessible name and whether it is in view. */
@@ -142,26 +142,26 @@ test.describe('keyboard', () => {
     await expect(page.locator(':focus')).toHaveAttribute('aria-expanded', before ?? 'false');
   });
 
-  test('LA-BRW-T622 open and close the inspector, and focus it', async ({ page }) => {
+  test('LA-BRW-T622 open and close the side bar, and focus it', async ({ page }) => {
     // With the wiki alone the side bar starts hidden.
     await open(page, RECORD);
-    const toggle = page.locator('.page-bar .inspector-toggle');
+    const toggle = page.locator('.page-bar .side-bar-toggle');
     await expect(toggle).toHaveAttribute('aria-expanded', 'false');
-    await tabUntil(page, (el) => el.classList.contains('inspector-toggle'), 'the inspector toggle');
+    await tabUntil(page, (el) => el.classList.contains('side-bar-toggle'), 'the side bar toggle');
     await page.keyboard.press('Enter');
-    await expect(announcer(page)).toHaveText('Inspector shown');
-    await expect(page.locator('.inspector-column')).toBeVisible();
+    await expect(announcer(page)).toHaveText('Side bar shown');
+    await expect(page.locator('.side-bar-column')).toBeVisible();
     await expect(toggle).toHaveAttribute('aria-expanded', 'true');
     await toggle.focus();
     await page.keyboard.press('Enter');
-    await expect(announcer(page)).toHaveText('Inspector hidden');
+    await expect(announcer(page)).toHaveText('Side bar hidden');
     await expect(toggle).toHaveAttribute('aria-expanded', 'false');
     // LA-BRW-T623: the toggle keeps focus when it hides the side bar, so the next Enter brings it back.
-    expect((await focused(page)).classes).toContain('inspector-toggle');
+    expect((await focused(page)).classes).toContain('side-bar-toggle');
     await page.keyboard.press('Enter');
-    await expect(announcer(page)).toHaveText('Inspector shown');
+    await expect(announcer(page)).toHaveText('Side bar shown');
     await page.keyboard.press('Control+Shift+i');
-    await expect.poll(async () => page.evaluate(() => !!document.activeElement?.closest('#inspector'))).toBe(true);
+    await expect.poll(async () => page.evaluate(() => !!document.activeElement?.closest('#side-bar'))).toBe(true);
   });
 
   test('LA-BRW-T622 pick a theme, and focus comes back', async ({ page }) => {
@@ -181,7 +181,7 @@ test.describe('keyboard', () => {
 
   test('LA-BRW-T623 the palette and the shortcuts sheet give focus back when they close', async ({ page }) => {
     await open(page, RECORD);
-    await tabUntil(page, (el) => el.classList.contains('inspector-toggle'), 'the inspector toggle');
+    await tabUntil(page, (el) => el.classList.contains('side-bar-toggle'), 'the side bar toggle');
     for (const keys of ['Control+Shift+p', 'Control+/']) {
       await page.keyboard.press(keys);
       await page.locator('.dialog-search').waitFor();
@@ -193,7 +193,7 @@ test.describe('keyboard', () => {
       }
       await page.keyboard.press('Escape');
       await expect(page.locator('.dialog-search')).toHaveCount(0);
-      expect((await focused(page)).classes, `${keys}: focus back on the opener`).toContain('inspector-toggle');
+      expect((await focused(page)).classes, `${keys}: focus back on the opener`).toContain('side-bar-toggle');
     }
   });
 });
@@ -210,14 +210,14 @@ test.describe('keyboard on a phone', () => {
     expect(await page.evaluate(() => !!document.activeElement?.closest('nav#nav, .sheet, [role="dialog"]')), 'focus moves into the drawer').toBe(true);
     await page.keyboard.press('Escape');
     await expect(opener).toBeFocused();
-    const inspector = page.getByRole('button', { name: 'Show the inspector' });
-    if (await inspector.count()) {
-      await inspector.first().focus();
+    const sideBar = page.getByRole('button', { name: 'Show the side bar' });
+    if (await sideBar.count()) {
+      await sideBar.first().focus();
       await page.keyboard.press('Enter');
-      await page.locator('.inspector-sheet').waitFor();
+      await page.locator('.side-bar-sheet').waitFor();
       await page.keyboard.press('Escape');
-      await expect(page.locator('.inspector-sheet')).toHaveCount(0);
-      await expect(page.getByRole('button', { name: 'Show the inspector' }).first()).toBeFocused();
+      await expect(page.locator('.side-bar-sheet')).toHaveCount(0);
+      await expect(page.getByRole('button', { name: 'Show the side bar' }).first()).toBeFocused();
     }
   });
 });

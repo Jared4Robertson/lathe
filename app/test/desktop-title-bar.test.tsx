@@ -1,6 +1,6 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { openApp, openSideBar } from './helpers';
+import { desktopBridgeStub, openApp, openSideBar } from './helpers';
 import type { Chrome } from '../src/shell/desktopChrome';
 
 // The desktop app's own title bar (LA-DSK-UC04): drawn only in the desktop shell, with back and
@@ -11,7 +11,7 @@ const host = window as unknown as { latheDesktop?: LatheDesktop; navigation?: un
 
 function desktop(platform = 'darwin') {
   const setChrome = vi.fn<(chrome: Chrome) => void>();
-  host.latheDesktop = { isDesktop: true, platform, onCommand: () => () => {}, setChrome };
+  host.latheDesktop = desktopBridgeStub({ platform, setChrome });
   return setChrome;
 }
 
@@ -83,15 +83,15 @@ describe('desktop title bar', () => {
     await waitFor(() => expect(screen.getByRole('combobox', { name: 'Quick find' })).toHaveFocus());
   });
 
-  it('LA-DSK-T15 The layout toggles run the navigation and inspector commands and show whether each panel shows', async () => {
+  it('LA-DSK-T15 The layout toggles run the navigation and side bar commands and show whether each panel shows', async () => {
     // The side bar starts closed in the Wiki view (brief 64); this test reads it open.
     openSideBar('details', ['wiki', 'graph', 'model']);
     desktop();
     await openApp('/DM-SHOP-UC01');
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     const nav = bar().getByRole('button', { name: 'Show or hide the navigation' });
-    const inspector = bar().getByRole('button', { name: 'Show or hide the inspector' });
-    await waitFor(() => expect(inspector).toHaveAttribute('aria-pressed', 'true'));
+    const sideBar = bar().getByRole('button', { name: 'Show or hide the side bar' });
+    await waitFor(() => expect(sideBar).toHaveAttribute('aria-pressed', 'true'));
     expect(nav).toHaveAttribute('aria-pressed', 'true');
 
     fireEvent.click(nav);
@@ -100,11 +100,11 @@ describe('desktop title bar', () => {
     fireEvent.click(nav);
     await waitFor(() => expect(nav).toHaveAttribute('aria-pressed', 'true'));
 
-    fireEvent.click(inspector);
-    await waitFor(() => expect(inspector).toHaveAttribute('aria-pressed', 'false'));
-    expect(screen.queryByRole('complementary', { name: 'Inspector' })).toBeNull();
-    fireEvent.click(inspector);
-    await waitFor(() => expect(screen.getByRole('complementary', { name: 'Inspector' })).toBeInTheDocument());
+    fireEvent.click(sideBar);
+    await waitFor(() => expect(sideBar).toHaveAttribute('aria-pressed', 'false'));
+    expect(screen.queryByRole('complementary', { name: 'Side bar' })).toBeNull();
+    fireEvent.click(sideBar);
+    await waitFor(() => expect(screen.getByRole('complementary', { name: 'Side bar' })).toBeInTheDocument());
   });
 
   it('LA-DSK-T16 The window\'s chrome follows the theme: setChrome gets its shell and ink as hex colors', async () => {

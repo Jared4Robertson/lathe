@@ -129,7 +129,7 @@ function GraphOutline({ index, graph, onNavigate, hrefFor }: SideBarOutlineProps
   return (
     <>
       {levels.map(({ level, nodes }) => (
-        <section key={level} className="inspector-section" aria-labelledby={`outline-level-${level}`}>
+        <section key={level} className="side-bar-section" aria-labelledby={`outline-level-${level}`}>
           <h3 id={`outline-level-${level}`}>Level {level}{nodes.some((n) => n.id === center) && <small className="meta"> the center</small>}<span className="section-count">{nodes.length}</span></h3>
           <LongList
             label={`Level ${level}`}
@@ -164,7 +164,7 @@ function ModelOutline({ index, focus, onNavigate, hrefFor }: SideBarOutlineProps
   return (
     <>
       {parts.map((p) => (
-        <section key={p.key} className="inspector-section" aria-labelledby={`outline-${p.key}`}>
+        <section key={p.key} className="side-bar-section" aria-labelledby={`outline-${p.key}`}>
           <h3 id={`outline-${p.key}`}>{p.title}<span className="section-count">{p.boxes.length}</span></h3>
           <LongList
             label={p.title}

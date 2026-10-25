@@ -9,4 +9,4 @@ links:
   proves: [LA-BRW-DR280, LA-BRW-UC50-R06]
   covers: [LA-BRW-C270]
 ---
-Opens a product and a domain at their IDs and expects the body in the wiki, the parent, spec file, links out, links in and problems in the inspector, and no link to a second overview page.
+Opens a product and a domain at their IDs and expects the body in the wiki, the parent, spec file, links out, links in and problems in the side bar, and no link to a second overview page.

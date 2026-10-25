@@ -8,4 +8,4 @@ run_by: app/test/mentions.test.tsx
 links:
   proves: [LA-BRW-UC60-R06, LA-BRW-DR72]
 ---
-Expects only the mentioned ID linked beside a longer ID, no such link in the inspector or the graph, and a domain overview that links its mentions.
+Expects only the mentioned ID linked beside a longer ID, no such link in the side bar or the graph, and a domain overview that links its mentions.

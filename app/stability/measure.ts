@@ -132,7 +132,7 @@ function probes({ firstKeys, deferred }: { firstKeys: string[]; deferred: string
           // it by. Where its old box lies inside an allowed part as it is now, it is placed there:
           // otherwise whether the browser reported the shift before or after the node was removed
           // (a page drawn twice in quick succession, as two Backs do, on a busy machine) decided
-          // whether a shift inside the inspector counted, which made "ERD: Back to the domain"
+          // whether a shift inside the side bar counted, which made "ERD: Back to the domain"
           // flaky. Any other removed node cannot be placed: it neither explains nor condemns the
           // shift, and the other sources decide.
           if (!s.node || !s.node.isConnected) {
@@ -188,7 +188,7 @@ function probes({ firstKeys, deferred }: { firstKeys: string[]; deferred: string
 /** Starts the probes on a page; `firstKeys` are tracked from the very first frame (for a first load). */
 export async function installProbes(page: Page, firstKeys: string[] = []) {
   await page.addInitScript(probes, { firstKeys, deferred: DEFERRED });
-  // The scenarios read every page with the side bar (the inspector) open, as a Reader who opened it
+  // The scenarios read every page with the side bar open, as a Reader who opened it
   // in the Wiki view too (it starts closed there, brief 64); a choice made in a scenario is kept.
   await page.addInitScript(() => {
     try {

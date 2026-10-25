@@ -11,7 +11,7 @@ import type { PageTabsApi } from './useTabs';
 // The page bar (LA-PAT-APP-UX-R03): one strip across the top of the open panes, as the top of
 // VS Code's editor area. A tab is a page and the panes are views of it, so the bar holds what is
 // the page's: at its left the page's tabs, at its right the View group (Wiki, Graph, Model), a
-// divider, and the inspector toggle at the far right, beside the inspector. It is one line high
+// divider, and the side bar toggle at the far right, beside the side bar itself. It is one line high
 // whatever it holds (the tabs scroll sideways), so nothing below it moves (UX-R08). Its View group
 // keeps a slot for every view on every page, so the toggles never move under the pointer: a view
 // the page does not offer (Model, outside a domain, an aggregate or an entity) shows dimmed, and
@@ -19,7 +19,7 @@ import type { PageTabsApi } from './useTabs';
 //
 // On a phone it is the same bar, compact (notes/mobile-design.md): the tabs fold into an "Open
 // pages" button that opens them as a sheet, the View group shows one view at a time, and the
-// inspector toggle opens the inspector as a bottom sheet. The shell's top bar above it names the page.
+// side bar toggle opens the side bar as a bottom sheet. The shell's top bar above it names the page.
 
 export const VIEW_COMMANDS: Record<ViewName, string> = { wiki: 'viewWiki', graph: 'viewGraph', model: 'viewModel' };
 
@@ -44,9 +44,9 @@ export interface PageBarProps {
   onView: (view: ViewName) => void;
   /** The phone's compact bar. */
   compact: boolean;
-  inspectorShown: boolean;
-  onInspector: (show: boolean) => void;
-  inspectorButton: RefObject<HTMLButtonElement | null>;
+  sideBarShown: boolean;
+  onSideBar: (show: boolean) => void;
+  sideBarButton: RefObject<HTMLButtonElement | null>;
   /** The View toggles' elements, so focus can come back to the one just used. */
   toggles?: RefObject<Partial<Record<ViewName, HTMLButtonElement | null>>>;
   /** On a phone: whether the open pages sheet is shown, and its button. */
@@ -56,9 +56,9 @@ export interface PageBarProps {
 }
 
 export function PageBar(props: PageBarProps) {
-  const { index, tabs, offered, open, onView, compact, inspectorShown, onInspector, inspectorButton, toggles, pagesOpen = false, onPages, pagesButton } = props;
+  const { index, tabs, offered, open, onView, compact, sideBarShown, onSideBar, sideBarButton, toggles, pagesOpen = false, onPages, pagesButton } = props;
   const count = tabs.set.tabs.length;
-  const inspectorLabel = `${inspectorShown ? 'Hide' : 'Show'} the inspector`;
+  const sideBarLabel = `${sideBarShown ? 'Hide' : 'Show'} the side bar`;
 
   /** A view toggle's tooltip: what a click does, and that the last open view stays open. */
   const toggleLabel = (v: ViewName) =>
@@ -123,15 +123,15 @@ export function PageBar(props: PageBarProps) {
           </div>
         )}
         <span className="pane-divider" aria-hidden="true" />
-        <Tooltip label={inspectorLabel} command="toggleInspector" placement="left">
+        <Tooltip label={sideBarLabel} command="toggleSideBar" placement="left">
           <Button
             variant="icon"
-            ref={inspectorButton}
-            className={`inspector-toggle${inspectorShown ? ' is-on' : ''}`}
-            label={inspectorLabel}
-            aria-expanded={inspectorShown}
-            aria-controls="inspector"
-            onClick={() => onInspector(!inspectorShown)}
+            ref={sideBarButton}
+            className={`side-bar-toggle${sideBarShown ? ' is-on' : ''}`}
+            label={sideBarLabel}
+            aria-expanded={sideBarShown}
+            aria-controls="side-bar"
+            onClick={() => onSideBar(!sideBarShown)}
           >
             <Icon name={compact ? 'info' : 'sidebar-right'} size={compact ? 20 : 16} />
           </Button>

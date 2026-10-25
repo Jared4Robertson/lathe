@@ -6,7 +6,7 @@ import { main, openApp, openSideBar } from './helpers';
 // dropped (LA-PAT-APP-CODE-R20), and a product's and a domain's one page loses nothing the
 // generic record page showed.
 
-const inspector = () => screen.getByRole('complementary', { name: 'Inspector' });
+const sideBar = () => screen.getByRole('complementary', { name: 'Side bar' });
 
 describe('bare-ID addresses', () => {
   it('LA-BRW-T662 Tabs and space pages saved at anything but a page\'s address are dropped, not converted', async () => {
@@ -31,8 +31,8 @@ describe('bare-ID addresses', () => {
       await openApp(path);
       await screen.findByRole('heading', { level: 1, name: title });
       expect(within(main()).getAllByText(body).length).toBeGreaterThan(0);
-      for (const name of [/^Parent/, /^Links out/, /^Links in/, /^Problems/]) expect(within(inspector()).getByRole('heading', { name })).toBeInTheDocument();
-      expect(within(inspector()).getByText('Spec file')).toBeInTheDocument();
+      for (const name of [/^Parent/, /^Links out/, /^Links in/, /^Problems/]) expect(within(sideBar()).getByRole('heading', { name })).toBeInTheDocument();
+      expect(within(sideBar()).getByText('Spec file')).toBeInTheDocument();
       // No second page to send the Reader to.
       expect(screen.queryByRole('link', { name: /Open the (product|domain) overview/ })).toBeNull();
     }

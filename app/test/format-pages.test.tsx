@@ -9,7 +9,7 @@ import { main, openApp, section } from './helpers';
 // The Graph view, where the side bar's Details shows a record's facts, needs a ResizeObserver in jsdom.
 import './graph/setup';
 
-const inspector = () => document.getElementById('inspector') as HTMLElement;
+const sideBar = () => document.getElementById('side-bar') as HTMLElement;
 const pane = () => main().querySelector('.pane') as HTMLElement;
 const fact = (box: HTMLElement, name: string) => within(box).getByText(name, { selector: 'dt' }).nextElementSibling?.textContent;
 
@@ -17,9 +17,9 @@ describe('format reference pages', () => {
   it('LA-BRW-T440 The format page shows the concepts, then the kinds by stage and folder, the relations and the checks by severity, as clickable rows', async () => {
     await openApp('/format');
     expect(await screen.findByRole('heading', { level: 1, name: 'Record format' })).toBeInTheDocument();
-    // It opens in the workbench: one pane with the title in it, and the inspector beside it.
+    // It opens in the workbench: one pane with the title in it, and the side bar beside it.
     expect(pane()).toContainElement(screen.getByRole('heading', { level: 1 }));
-    expect(fact(inspector(), 'Kinds')).toBe(String(workspace().kinds.length));
+    expect(fact(sideBar(), 'Kinds')).toBe(String(workspace().kinds.length));
     expect(screen.getByRole('heading', { name: '7. Fitness' })).toHaveAttribute('id', '7-fitness');
 
     const kinds = section(/^Kinds\d/);
@@ -74,10 +74,10 @@ describe('format reference pages', () => {
     expect(within(records).getByRole('link', { name: /DM-SHOP\s*Shopping/ })).toHaveAttribute('href', '/DM-SHOP/use_case');
     expect(within(records).getByRole('link', { name: /DM-PAY\s*Paying/ })).toHaveAttribute('href', '/DM-PAY/use_case');
 
-    // The inspector holds the kind's facts.
-    expect(fact(inspector(), 'Obligation')).toBe('None');
-    expect(fact(inspector(), 'Records')).toBe('2');
-    expect(within(inspector()).getByRole('link', { name: 'actor' })).toHaveAttribute('href', '#field-actor');
+    // The side bar holds the kind's facts.
+    expect(fact(sideBar(), 'Obligation')).toBe('None');
+    expect(fact(sideBar(), 'Records')).toBe('2');
+    expect(within(sideBar()).getByRole('link', { name: 'actor' })).toHaveAttribute('href', '#field-actor');
   });
 
   it('LA-BRW-T442 A check page shows its severity, explanation and source file, and its problems now as clickable rows', async () => {
@@ -91,8 +91,8 @@ describe('format reference pages', () => {
     const row = within(problems).getByRole('link', { name: 'DM-SHOP-DR01' });
     expect(row).toHaveClass('row-link');
     expect(row).toHaveAttribute('href', '/DM-SHOP-DR01');
-    expect(fact(inspector(), 'Problems')).toBe('2');
-    expect(fact(inspector(), 'Source')).toBe('checks/30-unproved.sql');
+    expect(fact(sideBar(), 'Problems')).toBe('2');
+    expect(fact(sideBar(), 'Source')).toBe('checks/30-unproved.sql');
 
     // A check that reports nothing says so; an unknown one says it is not in the format.
     await openApp('/format/checks/use-case-without-flow');
@@ -103,17 +103,17 @@ describe('format reference pages', () => {
     expect(await screen.findByText(/The format has no kind called/)).toBeInTheDocument();
   });
 
-  it('LA-BRW-T443 The inspector\'s kind, each problem code and each required field label link to their format pages', async () => {
+  it('LA-BRW-T443 The side bar\'s kind, each problem code and each required field label link to their format pages', async () => {
     // The side bar's Details, open in the Graph view (brief 64).
     await openApp('/DM-SHOP-UC01?view=wiki,graph');
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
-    expect(within(inspector()).getByRole('link', { name: 'Use case' })).toHaveAttribute('href', '/format/kinds/use_case');
-    expect(within(inspector()).getByRole('link', { name: 'actor' })).toHaveAttribute('href', '/format/kinds/use_case#field-actor');
+    expect(within(sideBar()).getByRole('link', { name: 'Use case' })).toHaveAttribute('href', '/format/kinds/use_case');
+    expect(within(sideBar()).getByRole('link', { name: 'actor' })).toHaveAttribute('href', '/format/kinds/use_case#field-actor');
 
     // A problem's code on a record page, a domain page and the Checks page.
     await openApp('/DM-SHOP-DR01');
     await screen.findByRole('heading', { level: 1, name: 'A basket holds at most 50 items' });
-    expect(within(inspector()).getByRole('link', { name: 'unproved' })).toHaveAttribute('href', '/format/checks/unproved');
+    expect(within(sideBar()).getByRole('link', { name: 'unproved' })).toHaveAttribute('href', '/format/checks/unproved');
     await openApp('/DM-SHOP');
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     expect(within(section(/^Problems in this domain/)).getByRole('link', { name: 'test-file-missing' })).toHaveAttribute('href', '/format/checks/test-file-missing');
@@ -124,7 +124,7 @@ describe('format reference pages', () => {
     // A group's kind leads to the kind's page too.
     await openApp('/DM-SHOP/use_case');
     await screen.findByRole('heading', { level: 1, name: /^Use cases/ });
-    expect(within(inspector()).getByRole('link', { name: 'Use case' })).toHaveAttribute('href', '/format/kinds/use_case');
+    expect(within(sideBar()).getByRole('link', { name: 'Use case' })).toHaveAttribute('href', '/format/kinds/use_case');
   });
 
   it('LA-BRW-T444 The record format is a palette command and a link in the shortcuts sheet, not a nav footer link', async () => {

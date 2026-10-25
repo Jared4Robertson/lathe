@@ -286,8 +286,8 @@ describe('layers and test groups', () => {
     expect(within(ucChildren).queryByText('UC requirement', { selector: 'small' })).toBeNull();
     await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
-    // A product's children are listed in the inspector of its one page.
-    const productChildren = within(screen.getByRole('complementary', { name: 'Inspector' })).getByRole('list', { name: 'Children' });
+    // A product's children are listed in the side bar of its one page.
+    const productChildren = within(screen.getByRole('complementary', { name: 'Side bar' })).getByRole('list', { name: 'Children' });
     expect(within(productChildren).getAllByText('Domain', { selector: 'small' }).length).toBeGreaterThan(0);
   });
 

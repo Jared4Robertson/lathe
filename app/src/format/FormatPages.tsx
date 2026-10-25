@@ -43,15 +43,15 @@ import './format.css';
 // The format reference's pages (LA-BRW-UC115): /format (the concepts, then an index of the kinds by
 // stage and folder, the relations, and the checks by severity), /format/kinds/<kind> and
 // /format/checks/<check>. Each opens in the workbench as a record does: one pane with the page's
-// title in it, and the inspector beside it showing the kind's or the check's facts (a bottom sheet
+// title in it, and the side bar beside it showing the kind's or the check's facts (a bottom sheet
 // on a phone). The pages read GET /api/format, so a product's extensions and its own checks show.
 
 export type FormatRoute = { page: 'format' } | { page: 'format-kind'; kind: string } | { page: 'format-check'; check: string };
 export const isFormatRoute = (r: { page: string } | null): r is FormatRoute => !!r && ['format', 'format-kind', 'format-check'].includes(r.page);
 
-// The inspector's open state and width are the workbench's, shared with record pages.
-const INSPECTOR_KEY = 'lathe:inspector-open';
-const INSPECTOR_WIDTH_KEY = 'lathe:inspector-width';
+// The side bar's open state and width are the workbench's, shared with record pages.
+const SIDE_BAR_KEY = 'lathe:side-bar-open';
+const SIDE_BAR_WIDTH_KEY = 'lathe:side-bar-width';
 
 export function FormatPages({ spec, route }: { spec: SpecState; route: FormatRoute }) {
   const { index } = spec;
@@ -77,30 +77,30 @@ interface PageProps {
   fromEngine: boolean;
 }
 
-/** One pane holding the page, and the inspector: the workbench as a record page lays it out. */
+/** One pane holding the page, and the side bar: the workbench as a record page lays it out. */
 function Workbench({ index, reference, route, fromEngine }: PageProps & { route: FormatRoute }) {
   const narrow = useNarrow();
   const announce = useAnnounce();
-  const [open, setOpen] = usePref<boolean>(INSPECTOR_KEY, true, isBool);
-  const [width, setWidth, resetWidth] = usePanelSize(INSPECTOR_WIDTH_KEY, 340, 260, 640);
+  const [open, setOpen] = usePref<boolean>(SIDE_BAR_KEY, true, isBool);
+  const [width, setWidth, resetWidth] = usePanelSize(SIDE_BAR_WIDTH_KEY, 340, 260, 640);
   const [sheet, setSheet] = useState(false);
   const layout = useRef<HTMLDivElement>(null);
-  const inspector = useRef<HTMLElement>(null);
+  const sideBarEl = useRef<HTMLElement>(null);
   const toggle = useRef<HTMLButtonElement>(null);
   const scroller = useRef<HTMLDivElement>(null);
   const { path } = useLocation();
   const showing = narrow ? sheet : open;
   const setShowing = useCallback((show: boolean) => {
     if (narrow) setSheet(show); else setOpen(show);
-    announce(show ? 'Inspector shown' : 'Inspector hidden');
+    announce(show ? 'Side bar shown' : 'Side bar hidden');
     if (!show) setTimeout(() => toggle.current?.focus(), 0);
   }, [narrow, setOpen, announce]);
   useEffect(() => { setSheet(false); }, [path, narrow]);
-  useEffect(() => { if (narrow && sheet) inspector.current?.focus(); }, [narrow, sheet]);
-  useCommand('toggleInspector', () => setShowing(!showing));
-  useCommand('focusInspector', () => {
+  useEffect(() => { if (narrow && sheet) sideBarEl.current?.focus(); }, [narrow, sheet]);
+  useCommand('toggleSideBar', () => setShowing(!showing));
+  useCommand('focusSideBar', () => {
     if (!showing) setShowing(true);
-    setTimeout(() => inspector.current?.focus(), 0);
+    setTimeout(() => sideBarEl.current?.focus(), 0);
   });
 
   // A new page starts at the top, or at the part its address names (#fields, #7-fitness).
@@ -117,13 +117,13 @@ function Workbench({ index, reference, route, fromEngine }: PageProps & { route:
   }, [path]);
 
   const page = pageFor({ index, reference, fromEngine }, route);
-  const inspectorLabel = `${showing ? 'Hide' : 'Show'} the inspector`;
+  const sideBarLabel = `${showing ? 'Hide' : 'Show'} the side bar`;
   const facts = (
-    <aside ref={inspector} id="inspector" className="inspector record-side" aria-label="Inspector" tabIndex={-1}>
-      <div className="inspector-head">
-        <h2 className="inspector-title">Inspector</h2>
-        <Tooltip label="Hide the inspector" command="toggleInspector" placement="left">
-          <Button variant="icon" label="Hide the inspector" onClick={() => setShowing(false)}>
+    <aside ref={sideBarEl} id="side-bar" className="side bar record-side" aria-label="Side bar" tabIndex={-1}>
+      <div className="side-bar-head">
+        <h2 className="side-bar-title">Side bar</h2>
+        <Tooltip label="Hide the side bar" command="toggleSideBar" placement="left">
+          <Button variant="icon" label="Hide the side bar" onClick={() => setShowing(false)}>
             <Icon name={narrow ? 'x' : 'sidebar-right'} />
           </Button>
         </Tooltip>
@@ -139,14 +139,14 @@ function Workbench({ index, reference, route, fromEngine }: PageProps & { route:
           <span className="pane-name"><Icon name="format" size={15} /> Reference</span>
         </div>
         <div className="pane-actions">
-          <Tooltip label={inspectorLabel} command="toggleInspector" placement="left">
+          <Tooltip label={sideBarLabel} command="toggleSideBar" placement="left">
             <Button
               variant="icon"
               ref={toggle}
-              className={`inspector-toggle${showing ? ' is-on' : ''}`}
-              label={inspectorLabel}
+              className={`side-bar-toggle${showing ? ' is-on' : ''}`}
+              label={sideBarLabel}
               aria-expanded={showing}
-              aria-controls="inspector"
+              aria-controls="side-bar"
               onClick={() => setShowing(!showing)}
             >
               <Icon name={narrow ? 'info' : 'sidebar-right'} size={16} />
@@ -165,17 +165,17 @@ function Workbench({ index, reference, route, fromEngine }: PageProps & { route:
     return (
       <div className="focus-layout is-phone">
         {pane}
-        {sheet && <BottomSheet label="Inspector" className="inspector-sheet" onClose={() => setShowing(false)}>{facts}</BottomSheet>}
+        {sheet && <BottomSheet label="Side bar" className="side-bar-sheet" onClose={() => setShowing(false)}>{facts}</BottomSheet>}
       </div>
     );
   }
   return (
-    <div ref={layout} className={`focus-layout${showing ? ' with-inspector' : ''}`} style={{ '--inspector-width': `${width}px` } as CSSProperties}>
+    <div ref={layout} className={`focus-layout${showing ? ' with-side-bar' : ''}`} style={{ '--side-bar-width': `${width}px` } as CSSProperties}>
       <div className="focus-main">{pane}</div>
       {showing && (
         <>
           <ResizeHandle
-            label="Resize the inspector"
+            label="Resize the side bar"
             side="after"
             value={width}
             min={260}
@@ -188,7 +188,7 @@ function Workbench({ index, reference, route, fromEngine }: PageProps & { route:
             collapseBelow={160}
             onCollapse={() => setShowing(false)}
           />
-          <div className="inspector-column panel">{facts}</div>
+          <div className="side-bar-column panel">{facts}</div>
         </>
       )}
     </div>
@@ -353,9 +353,9 @@ function homePage({ index, reference, fromEngine }: PageProps): Page {
     ),
     facts: (
       <>
-        <div className="inspector-identity">
+        <div className="side-bar-identity">
           <p className="eyebrow">Reference</p>
-          <p className="inspector-name">Record format</p>
+          <p className="side-bar-name">Record format</p>
         </div>
         <dl className="fields">
           <div><dt>Kinds</dt><dd>{reference.kinds.length}</dd></div>
@@ -466,9 +466,9 @@ function kindPage({ index, reference }: PageProps, kind: KindReference): Page {
     body: <KindBody index={index} reference={reference} kind={kind} />,
     facts: (
       <>
-        <div className="inspector-identity">
+        <div className="side-bar-identity">
           <p className="eyebrow">Kind</p>
-          <p className="inspector-name">{kind.label}</p>
+          <p className="side-bar-name">{kind.label}</p>
           <p className="record-id"><code>{kind.kind}</code></p>
         </div>
         <dl className="fields">
@@ -607,9 +607,9 @@ function checkPage({ index, reference }: PageProps, check: CheckReference, probl
     ),
     facts: (
       <>
-        <div className="inspector-identity">
+        <div className="side-bar-identity">
           <p className="eyebrow">Check</p>
-          <p className="inspector-name">{check.check}</p>
+          <p className="side-bar-name">{check.check}</p>
         </div>
         <dl className="fields">
           <div><dt>Severity</dt><dd><SeverityTags check={check} /></dd></div>

@@ -84,7 +84,7 @@ describe('prose mentions', () => {
     expect(within(body()).getAllByRole('link').map((a) => [a.textContent, a.getAttribute('title')])).toEqual([['DM-SHOP-UC01', 'Add an item to the basket']]);
     expect(body()).toHaveTextContent('DM-SHOP-UC01-R01 is not cited here');
     // A mention is not a link between records: not in the links out, not in the graph.
-    expect(within(screen.getByRole('complementary', { name: 'Inspector' })).queryByRole('link', { name: /^DM-SHOP-UC01/ })).toBeNull();
+    expect(within(screen.getByRole('complementary', { name: 'Side bar' })).queryByRole('link', { name: /^DM-SHOP-UC01/ })).toBeNull();
     const ix = indexWorkspace(patternWorkspace());
     expect(neighborhood(ix, 'DM-PAY-UC01', 2).nodes.map((n) => n.id)).not.toContain('DM-SHOP-UC01');
 

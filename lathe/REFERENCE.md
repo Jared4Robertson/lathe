@@ -1465,7 +1465,7 @@ Every relation rule says in plain words what its link means, read from either en
 Each row of `relations.csv`, Lathe's or an extension's, carries a `forward_label`, the link read from the
 source ("Satisfies"), and a `reverse_label`, the link read from the target ("Designed by"). Every place
 that names a link shows these words, never the relation's code: a record's Traceability section and its
-facts in the wiki, the inspector's Links out and Links in, the graph's edge labels, legend and connections,
+facts in the wiki, the side bar's Links out and Links in, the graph's edge labels, legend and connections,
 the Model view's line titles, and the format reference. An extension that restates a
 rule may leave them empty to keep the earlier labels, so the rule is reported only when, after every
 extension is merged, a label is still empty. Write the missing label, in sentence case.

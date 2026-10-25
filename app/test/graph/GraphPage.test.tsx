@@ -7,10 +7,10 @@ import { openApp, startAtDepth } from '../helpers';
 import { testIndex, testWorkspace } from './workspace';
 
 // The graph as the focus page hosts it: in the Graph view of a record's, group's, product's or
-// domain's own address, with the inspector beside it.
+// domain's own address, with the side bar beside it.
 
 const node = (id: string) => document.querySelector<HTMLElement>(`.react-flow__node[data-id="${id}"]`);
-const inspector = () => within(screen.getByRole('complementary', { name: 'Inspector' }));
+const sideBar = () => within(screen.getByRole('complementary', { name: 'Side bar' }));
 const title = () => screen.getByRole('heading', { level: 1 }).textContent;
 /** The address of a record in the test workspace (the product and domain have overview pages). */
 const addressOf = (id: string) => (id === 'P' ? '/P' : id === 'P-D' ? '/P-D' : `/${id}`);
@@ -69,11 +69,11 @@ describe('graph page', () => {
     await waitFor(() => expect(list()).toHaveAttribute('tabindex', '0'));
   });
 
-  it('LA-BRW-T58 The inspector shows the kind, title, problems, coverage gaps and a link to the record page', async () => {
+  it('LA-BRW-T58 The side bar shows the kind, title, problems, coverage gaps and a link to the record page', async () => {
     await showGraph('/P-D-DR02');
-    const side = inspector();
+    const side = sideBar();
     expect(side.getAllByText('Domain rule').length).toBeGreaterThan(0);
-    expect(side.getByText('A thing is never deleted', { selector: '.inspector-name' })).toBeTruthy();
+    expect(side.getByText('A thing is never deleted', { selector: '.side-bar-name' })).toBeTruthy();
     expect(side.getByText('No component satisfies P-D-DR02')).toBeTruthy();
     // The gaps in the words of the wiki's Traceability callouts, in the side bar's compact Traceability (brief 64).
     const gaps = side.getByRole('region', { name: /^Traceability/ });
@@ -174,7 +174,7 @@ describe('graph page', () => {
     expect(node('file:test/thing.test.ts')).not.toBeNull();
     // The use case leaves the picture: it fades out where it was, and is then dropped.
     await waitFor(() => expect(node('P-D-UC01')).toBeNull());
-    expect(inspector().getByText('src/thing.ts')).toBeTruthy();
+    expect(sideBar().getByText('src/thing.ts')).toBeTruthy();
     // Escape leaves trace mode.
     fireEvent.keyDown(screen.getByRole('checkbox', { name: 'Trace mode' }), { key: 'Escape' });
     await waitFor(() => expect(node('P-D-UC01')).not.toBeNull());
@@ -268,8 +268,8 @@ describe('graph groups on the page', () => {
 
   it('LA-BRW-T112 A group has its own address showing its parent to the left and its members to the right, and Back works', async () => {
     await showGraph('/P-D', testWorkspace(), 1, false);
-    // The domain's inspector lists its stages, linking to their addresses.
-    const link = inspector().getByRole('link', { name: 'Define (2)' });
+    // The domain's side bar lists its stages, linking to their addresses.
+    const link = sideBar().getByRole('link', { name: 'Define (2)' });
     expect(link.getAttribute('href')).toBe('/P-D/define?view=graph');
     fireEvent.click(link);
     expect(window.location.pathname).toBe('/P-D/define');
@@ -284,7 +284,7 @@ describe('graph groups on the page', () => {
     expect(trail.getAllByRole('listitem').map((li) => li.textContent)).toEqual(['Domain (P-D)', 'Define']);
     expect(trail.getByText('Define').closest('[aria-current]')).toHaveAttribute('title', 'Define of P-D');
 
-    fireEvent.click(inspector().getByRole('link', { name: /Capabilities/ }));
+    fireEvent.click(sideBar().getByRole('link', { name: /Capabilities/ }));
     expect(window.location.pathname).toBe('/P-D/define/use-cases');
     await back();
     expect(window.location.pathname).toBe('/P-D/define');

@@ -7,4 +7,4 @@ route: "/format/checks/<check>"
 links:
   fulfills: [LA-BRW-UC115-R03, LA-BRW-UC115-R04]
 ---
-One check's severity, explanation, source and the problems it reports now, in the workbench, with the check's facts in the inspector.
+One check's severity, explanation, source and the problems it reports now, in the workbench, with the check's facts in the side bar.

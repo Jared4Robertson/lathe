@@ -67,7 +67,7 @@ export function startAtDepth(depth: number) {
 }
 
 /**
- * Opens the side bar (the inspector) in these view modes for the rest of the test, as if the person
+ * Opens the side bar in these view modes for the rest of the test, as if the person
  * had opened it there last (brief 64: it starts closed in the Wiki view, open in the Graph and Model views).
  */
 export function openSideBar(view: 'details' | 'outline' | 'history' = 'details', modes: ('wiki' | 'graph' | 'model')[] = ['wiki']) {
@@ -75,4 +75,19 @@ export function openSideBar(view: 'details' | 'outline' | 'history' = 'details',
 }
 
 /** The side bar, by its name. */
-export const sideBar = () => screen.getByRole('complementary', { name: 'Inspector' });
+export const sideBar = () => screen.getByRole('complementary', { name: 'Side bar' });
+
+/** The desktop shell's bridge with every member a no-op, for a test to override what it watches. */
+export const desktopBridgeStub = (over: Partial<LatheDesktop> = {}): LatheDesktop => ({
+  isDesktop: true,
+  platform: 'darwin',
+  onCommand: () => () => {},
+  setChrome: () => {},
+  onFullScreen: () => () => {},
+  setErrorCount: () => {},
+  revealRecord: () => {},
+  openRecordInEditor: () => {},
+  copyRecordId: () => {},
+  showRecordMenu: () => {},
+  ...over,
+});
