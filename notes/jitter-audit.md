@@ -175,3 +175,7 @@ Size is the largest CLS value seen in one step, and the largest move of a key el
 8. `DEFERRED` in `app/stability/measure.ts` is empty: the nav and the tab strip are held to the budget.
 9. Long frames measured on the built app: no action needed (cause 9).
 10. Everything re-measured: every step is at 0.0000 unexpected, and no key element moves.
+
+## Measurement fix (brief 70)
+
+11. "ERD: Back to the domain" failed once (0.076): the shift came from the side panel, which the step allows, but one moved element had already left the page before the shift was reported, and whether it counted depended on machine load. A removed element is now judged by where its old box was: inside an allowed part it is allowed; otherwise it neither explains nor condemns the shift. The 0.01 limit is unchanged. The step passed 9 of 9 runs, including at 6× CPU slowdown.
