@@ -430,14 +430,15 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
   it('LA-BRW-T500 Actions look like actions: standalone actions are the one Button, and links stay links for navigation in context', async () => {
     // The controls that are not standalone actions, and so keep their own form: tab close buttons, toggles in a group,
     // fold chevrons, the nav's rows and rail, the sheet handle, the open-pages list and the title bar's command center.
-    // `button` and `icon-button` are the Button's own classes.
-    const ALLOWED = ['button', 'icon-button', 'tab-close', 'tree-toggle', 'nav-chevron', 'nav-row', 'nav-folder-head', 'nav-section-head', 'rail-item',
+    // In the source no raw <button> may take the Button's own classes; on the page they are allowed.
+    const ALLOWED = ['tab-close', 'tree-toggle', 'nav-chevron', 'nav-row', 'nav-folder-head', 'nav-section-head', 'rail-item',
       'view-segment', 'page-bar-pages', 'pages-open', 'sheet-handle', 'graph-group-chevron', 'command-center'];
     // On the page, the canvas library's own zoom controls are allowed too.
-    const allowed = `${ALLOWED.map((c) => `.${c}`).join(', ')}, [role="group"] button[aria-pressed], .react-flow__controls-button`;
+    const allowed = `.button, .icon-button, ${ALLOWED.map((c) => `.${c}`).join(', ')}, [role="group"] button[aria-pressed], .react-flow__controls-button`;
 
     // The source: no old button styles, and every raw <button> outside Button.tsx is one of the allowed controls
-    // (an unclassed one only as a toggle, with aria-pressed).
+    // (an unclassed one only as a toggle, with aria-pressed). Only a toggle in a group, which takes the icon look on a wide
+    // screen and a segment's on a phone, may borrow the icon-button class.
     const files = filesUnder(SRC, /\.(tsx?|css)$/);
     expect(files.flatMap((f) => where(f, readFileSync(f, 'utf8'), /tree-bulk|className="secondary"|button\.secondary/))).toEqual([]);
     const raw = files.filter((f) => f.endsWith('.tsx') && !f.endsWith(join('components', 'Button.tsx'))).flatMap((f) => {
@@ -455,7 +456,8 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
         const tag = text.slice(m.index, end);
         const cls = /className=(?:"([^"]*)"|\{([\s\S]*?)\}(?=\s+[\w-]+=|\s*\/?$))/.exec(tag);
         const words = cls ? (cls[1] ?? cls[2]).match(/[\w-]+/g) ?? [] : [];
-        const ok = cls ? words.some((w) => ALLOWED.includes(w)) : /aria-pressed/.test(tag);
+        const borrows = words.some((w) => w === 'button' || w === 'icon-button' || w.startsWith('button-'));
+        const ok = (cls ? words.some((w) => ALLOWED.includes(w)) : /aria-pressed/.test(tag)) && (!borrows || /aria-pressed/.test(tag));
         return ok ? [] : [`${relative(ROOT, f)}:${text.slice(0, m.index).split('\n').length}: ${tag.replace(/\s+/g, ' ').slice(0, 100)}`];
       });
     });

@@ -326,22 +326,21 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
           <div className="pane-actions">
             {open.length > 1 && (
               <Tooltip label={`Close the ${lower(view)} pane`}>
-                <button type="button" className="icon-button pane-close" aria-label={`Close the ${lower(view)} pane`} onClick={() => toggleView(view)}>
+                <Button variant="icon" className="pane-close" label={`Close the ${lower(view)} pane`} onClick={() => toggleView(view)}>
                   <Icon name="x" size={14} />
-                </button>
+                </Button>
               </Tooltip>
             )}
             <Tooltip label={isFull ? 'Leave full screen' : 'Full screen'} command={isFull ? 'escape' : 'maximizePane'} placement="left">
-              <button
-                type="button"
+              <Button
+                variant="icon"
                 ref={(el) => { fullButtons.current[view] = el; }}
-                className="icon-button"
                 aria-pressed={isFull}
-                aria-label={isFull ? `Leave full screen (${name})` : `Full screen: ${name}`}
+                label={isFull ? `Leave full screen (${name})` : `Full screen: ${name}`}
                 onClick={() => (isFull ? leaveFull() : toggleFull(view))}
               >
                 <Icon name={isFull ? 'minimize' : 'maximize'} size={16} />
-              </button>
+              </Button>
             </Tooltip>
           </div>
         </div>
@@ -550,7 +549,7 @@ function PhoneLayout(props: PhoneLayoutProps) {
         <BottomSheet label="Open pages" className="pages-sheet" onClose={closePages}>
           <div className="sheet-head">
             <h2 className="sheet-title">Open pages <span className="section-count">{count}</span></h2>
-            <button type="button" className="icon-button" aria-label="Close the open pages" onClick={closePages}><Icon name="x" /></button>
+            <Button variant="icon" label="Close the open pages" onClick={closePages}><Icon name="x" /></Button>
           </div>
           <ul ref={pagesSheet} className="pages-list" aria-label="Open pages">
             {tabs.set.tabs.map((t) => {
@@ -572,9 +571,9 @@ function PhoneLayout(props: PhoneLayoutProps) {
                   {t.preview && (
                     <Button className="pages-keep" label={`Keep ${name} open`} onClick={() => tabs.keep(t.key)}>Keep</Button>
                   )}
-                  <button type="button" className="icon-button" aria-label={`Close ${name}`} onClick={() => tabs.close(t.key)}>
+                  <Button variant="icon" label={`Close ${name}`} onClick={() => tabs.close(t.key)}>
                     <Icon name="x" size={16} />
-                  </button>
+                  </Button>
                 </li>
               );
             })}

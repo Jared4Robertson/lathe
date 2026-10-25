@@ -65,17 +65,16 @@ export interface TopBarProps {
 export const TopBar = forwardRef<HTMLButtonElement, TopBarProps>(function TopBar({ heading, navOpen, onMenu, onFind }, menuRef) {
   return (
     <header className="topbar">
-      <button
+      <Button
+        variant="icon"
         ref={menuRef}
-        type="button"
-        className="icon-button"
-        aria-label="Open the navigation"
+        label="Open the navigation"
         aria-expanded={navOpen}
         aria-controls="nav"
         onClick={onMenu}
       >
         <Icon name="menu" />
-      </button>
+      </Button>
       <div className="topbar-heading">
         {heading.up && (
           <Link to={heading.up.to} className="topbar-up" aria-label={`Up to ${heading.up.label}`}>
@@ -85,9 +84,9 @@ export const TopBar = forwardRef<HTMLButtonElement, TopBarProps>(function TopBar
         )}
         <p className="topbar-title" title={heading.title}>{heading.title}</p>
       </div>
-      <button type="button" className="icon-button" aria-label="Quick find" aria-haspopup="dialog" onClick={onFind}>
+      <Button variant="icon" label="Quick find" aria-haspopup="dialog" onClick={onFind}>
         <Icon name="search" />
-      </button>
+      </Button>
     </header>
   );
 });
