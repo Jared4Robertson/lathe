@@ -82,7 +82,7 @@ describe('obligation kinds and test states', () => {
     const view = within(section(/^Views/)).getByRole('link', { name: /^DM-SHOP-V01\s*Basket page/ }).closest('li') as HTMLElement;
     expect(view).toHaveTextContent('1 interaction requirement');
     await user.click(within(view).getByRole('button', { name: 'Expand DM-SHOP-V01' }));
-    expect(ids(within(view).getByRole('list', { name: 'Children of DM-SHOP-V01' }))).toEqual(['DM-SHOP-V01-R01']);
+    expect(ids(within(view).getByRole('list', { name: 'Interaction requirements of DM-SHOP-V01' }))).toEqual(['DM-SHOP-V01-R01']);
     // An endpoint lists its interaction requirements and a product's own obligation kind under it.
     const endpoint = within(section(/^Endpoints/)).getByRole('link', { name: /^DM-SHOP-E01\s*Add to basket/ }).closest('li') as HTMLElement;
     await user.click(within(endpoint).getByRole('button', { name: 'Expand DM-SHOP-E01' }));

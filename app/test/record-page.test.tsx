@@ -30,8 +30,8 @@ describe('record page', () => {
 
     const parent = within(side()).getByRole('heading', { name: 'Parent' }).nextElementSibling as HTMLElement;
     expect(parent).toHaveAttribute('href', '/records/DM-SHOP');
-    const children = within(side()).getByRole('heading', { name: /^Children/ });
-    expect(children).toHaveTextContent('Children 2');
+    const children = within(side()).getByRole('heading', { name: /^UC requirements/ });
+    expect(children).toHaveTextContent('UC requirements 2');
     const items = within(children.nextElementSibling as HTMLElement).getAllByRole('link');
     expect(items.map((a) => a.getAttribute('href'))).toEqual(['/records/DM-SHOP-UC01-R01', '/records/DM-SHOP-UC01-R02']);
 

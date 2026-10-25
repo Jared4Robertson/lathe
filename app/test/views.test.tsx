@@ -147,7 +147,7 @@ describe('one address, three views', () => {
     const wiki = within(screen.getByRole('region', { name: 'Wiki pane' }));
     expect(wiki.getByRole('link', { name: /P-D-A1\s*Thing/ })).toHaveAttribute('href', '/records/P-D-A1');
     expect(wiki.getByText(/A fact that must always hold/)).toBeInTheDocument();
-    const members = within(wiki.getByRole('list', { name: 'Members of P-D-A1/domain_rule' })).getAllByRole('listitem');
+    const members = within(wiki.getByRole('list', { name: 'Domain rules of P-D-A1/domain_rule' })).getAllByRole('listitem');
     expect(members.map((li) => li.querySelector('code')?.textContent)).toEqual(['P-D-DR01', 'P-D-DR02']);
     expect(within(members[0]).getByText('not proved')).toBeInTheDocument();
     expect(within(members[1]).getByText('not satisfied')).toBeInTheDocument();
@@ -172,12 +172,12 @@ describe('one address, three views', () => {
     }
     await openApp('/records/P-D-UC01/requirement?view=split', { workspace: w });
     await screen.findByRole('heading', { level: 1, name: 'UC requirements (13)' });
-    expect(within(screen.getByRole('region', { name: 'Wiki pane' })).getByRole('searchbox', { name: 'Filter members of P-D-UC01/requirement' })).toBeInTheDocument();
-    expect(within(inspector()).getByRole('searchbox', { name: 'Filter members' })).toBeInTheDocument();
+    expect(within(screen.getByRole('region', { name: 'Wiki pane' })).getByRole('searchbox', { name: 'Filter UC requirements of P-D-UC01/requirement' })).toBeInTheDocument();
+    expect(within(inspector()).getByRole('searchbox', { name: 'Filter UC requirements' })).toBeInTheDocument();
     await waitFor(() => expect(within(inspector()).getByRole('searchbox', { name: 'Filter connected records' })).toBeInTheDocument());
     await openApp('/records/P-D-UC01', { workspace: w });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
-    expect(within(inspector()).getByRole('searchbox', { name: 'Filter children' })).toBeInTheDocument();
+    expect(within(inspector()).getByRole('searchbox', { name: 'Filter UC requirements' })).toBeInTheDocument();
   });
 
   it('LA-BRW-T135 Switching views by keyboard keeps focus, and the toggles show a focus ring', async () => {
