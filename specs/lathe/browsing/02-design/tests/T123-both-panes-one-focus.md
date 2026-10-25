@@ -8,4 +8,4 @@ run_by: app/test/views.test.tsx
 links:
   proves: [LA-BRW-UC50-R04, LA-BRW-DR51]
 ---
-In Split, follows a child link in the wiki and expects the graph re-centered, clicks a node and expects the wiki and title to follow, goes Back and expects both to return, and expects depth 2 kept across pages and a trip to the Wiki view.
+With the wiki and graph open, follows a child link in the wiki and expects the graph re-centered, clicks a node and expects the wiki and title to follow, goes Back and expects both to return, and expects depth 2 kept across pages and a trip to the Wiki view.

@@ -131,7 +131,7 @@ describe('side navigation', () => {
     // The page's Graph view and Ctrl+2.
     expect(within(screen.getByRole('group', { name: 'View' })).getByRole('button', { name: 'Graph' })).toBeInTheDocument();
     fireEvent.keyDown(document.body, { key: '2', code: 'Digit2', ctrlKey: true });
-    expect(window.location.search).toBe('?view=graph');
+    expect(window.location.search).toBe('?view=wiki,graph');
 
     // The command palette.
     fireEvent.keyDown(document.body, { key: 'P', code: 'KeyP', ctrlKey: true, shiftKey: true });

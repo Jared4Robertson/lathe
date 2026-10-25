@@ -22,7 +22,7 @@ This is stage 1: tabs in one pane. Stage 2 is editor groups: each pane with its 
   - Overflowing tabs scroll sideways (wheel or trackpad), and the active tab scrolls into view.
 - **Tab content:** each tab shows the record's kind icon or ID in mono and its title, truncated, with the full ID and title in the tooltip. A group tab shows its label ("Use cases (7)").
 - **Accessibility:** `role="tablist"` and `role="tab"` with `aria-selected`; the arrow keys move between tabs when the strip has focus, and Delete closes the focused tab.
-- **Proactive standard:** add `LA-PAT-APP-CODE-R13` "Every open thing has an address": anything a person can open (a tab, a view, a panel state worth sharing) is reachable from the address bar or restorable from storage, and reload brings it back. Prove it with a test that reloads with tabs open and expects the same tabs, active tab and views. If you judge a different rule fits better, propose it in your report instead.
+- **Proactive standard:** add `LA-PAT-APP-CODE-R14` "Every open thing has an address": anything a person can open (a tab, a view, a panel state worth sharing) is reachable from the address bar or restorable from storage, and reload brings it back. Prove it with a test that reloads with tabs open and expects the same tabs, active tab and views. If you judge a different rule fits better, propose it in your report instead.
 
 ## What to build
 1. A tab model (`app/src/shell/tabs.ts` or `app/src/views/tabs.ts`): pure functions for open, preview, keep, close, activate and cycle, with unit tests. Plus a hook for the persistence and the address syncing.
@@ -31,7 +31,7 @@ This is stage 1: tabs in one pane. Stage 2 is editor groups: each pane with its 
 4. **Lathe's own spec (LA-BRW):**
    - Use case `LA-BRW-UC112` "Keep several records open in tabs" under `LA-BRW-CAP02`, with requirements.
    - Domain rules from `LA-BRW-DR150`, components from `LA-BRW-C150` (in layers `LAY02` or `LAY06`, as fits), and tests from `LA-BRW-T320`.
-   - Add the rule R13 to `PAT-app-code` if you add it.
+   - Add the rule R14 to `PAT-app-code` if you add it.
    - Everything satisfied and proved, with no `too-many-children` or `lone-child` warnings. Add a fresh capability or aggregate if one would pass 15.
    - Add the use case to a flow's `carries_out` (`F04` fits).
 
