@@ -39,7 +39,7 @@ describe('side navigation', () => {
     expect(within(within(nav()).getByRole('list', { name: 'Spaces' })).getAllByRole('link').map((a) => a.getAttribute('aria-label'))).toEqual(['Demo shop', 'Notebook']);
     fireEvent.click(within(nav()).getByRole('button', { name: 'Expand the navigation' }));
     expect(nav().className).not.toContain('is-rail');
-    expect(within(nav()).getByRole('button', { name: /^Demo shop/ })).toHaveAttribute('aria-expanded', 'true');
+    expect(within(nav().querySelector<HTMLElement>('.nav-space')!).getByRole('link', { name: 'Demo shop' })).toHaveAttribute('href', '/specs/DM');
   });
 
   it('LA-BRW-T128 On a narrow screen the nav is a drawer opened from a menu button, closed by Escape, a click outside or choosing a page', async () => {
@@ -69,18 +69,19 @@ describe('side navigation', () => {
     await openApp('/specs/DM/DM-SHOP', { diagrams });
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     const head = (name: RegExp) => within(nav()).getByRole('button', { name });
-    for (const name of [/^Diagrams/, /^Demo shop/, /^Tools/]) expect(head(name)).toHaveAttribute('aria-expanded', 'true');
+    for (const name of [/^Diagrams/, /^Tools/]) expect(head(name)).toHaveAttribute('aria-expanded', 'true');
+    // The current space has no heading of its own: its overview is its first row.
+    expect(within(nav()).queryByRole('button', { name: /^Demo shop/ })).toBeNull();
+    expect(nav().querySelector('.nav-space a')).toHaveAttribute('href', '/specs/DM');
     fireEvent.click(head(/^Diagrams/));
     expect(head(/^Diagrams/)).toHaveAttribute('aria-expanded', 'false');
     expect(within(nav()).queryByRole('link', { name: /People and tools/ })).toBeNull();
-    // The current space's section folds too.
-    fireEvent.click(head(/^Demo shop/));
-    expect(within(nav()).queryByRole('link', { name: 'Shopping' })).toBeNull();
 
     // Opening a page in a folded section opens it, and marks the page.
+    await openApp('/diagrams/people', { diagrams });
+    expect(head(/^Diagrams/)).toHaveAttribute('aria-expanded', 'true');
     await openApp('/specs/DM/DM-PAY');
     await screen.findByRole('heading', { level: 1, name: 'Paying' });
-    expect(head(/^Demo shop/)).toHaveAttribute('aria-expanded', 'true');
     expect(within(nav()).getByRole('link', { name: 'Paying' })).toHaveAttribute('aria-current', 'page');
 
     // Long names are cut with a tooltip; checks show errors and warnings apart; the footer.

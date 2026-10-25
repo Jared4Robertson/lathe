@@ -245,13 +245,16 @@ export function neighborhood(
   const isOpen = (gid: string) => gid === focus || (open.get(gid) ?? gid === home);
 
   // Steps from a node, counted in half hops: record to record is 2, record to group or group to record is 1.
+  // A group at the center is a level of its own: its parent and members are a full hop away, so depth 1
+  // shows them and not the members' own groups.
   type Step = { to: string; cost: number; relation: string };
   const steps = (id: string): Step[] => {
     const group = parseGroupId(id);
     if (group) {
+      const cost = id === focus ? 2 : 1;
       return [
-        { to: group.parent, cost: 1, relation: PARENT },
-        ...(isOpen(id) ? groupMembers(index, id).map((m) => ({ to: m.id, cost: 1, relation: PARENT })) : []),
+        { to: group.parent, cost, relation: PARENT },
+        ...(isOpen(id) ? groupMembers(index, id).map((m) => ({ to: m.id, cost, relation: PARENT })) : []),
       ];
     }
     const out: Step[] = [];

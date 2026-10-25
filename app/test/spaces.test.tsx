@@ -91,7 +91,7 @@ describe('product spaces', () => {
   it('LA-BRW-T222 Choosing a space scopes the nav to its domains, capabilities and groups', async () => {
     await openApp('/specs/DM', { workspace: spacesWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
-    expect(within(nav()).getByRole('button', { name: /^Demo shop/ })).toBeInTheDocument();
+    expect(within(nav().querySelector<HTMLElement>('.nav-space')!).getByRole('link', { name: 'Demo shop' })).toHaveAttribute('href', '/specs/DM');
     expect(within(within(panel()).getByRole('list', { name: 'Domains of Demo shop' })).getAllByRole('link', { name: /^(Paying|Shopping)$/ }).map((a) => a.textContent)).toEqual(['Paying', 'Shopping']);
     // Capabilities in their order, in their domain's Define › Use cases folder, before the use cases outside any capability.
     const user = userEvent.setup();
@@ -106,7 +106,7 @@ describe('product spaces', () => {
 
     await userEvent.setup().click(spaceLink('Notebook'));
     expect(window.location.pathname).toBe('/specs/NF');
-    expect(within(nav()).getByRole('button', { name: /^Notebook/ })).toBeInTheDocument();
+    expect(within(nav().querySelector<HTMLElement>('.nav-space')!).getByRole('link', { name: 'Notebook' })).toHaveAttribute('href', '/specs/NF');
     expect(within(panel()).getByRole('link', { name: 'Notes' })).toBeInTheDocument();
     expect(within(nav()).queryByRole('link', { name: 'Shopping' })).toBeNull();
     expect(within(nav()).queryByRole('list', { name: 'Groups of Demo shop' })).toBeNull();
