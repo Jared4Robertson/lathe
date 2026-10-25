@@ -81,8 +81,7 @@ export const COMMANDS: readonly Command[] = [
   { id: 'graphDepthUp', title: 'More depth', group: 'Graph', keys: ['+', '='], when: 'graph' },
   { id: 'graphDepthDown', title: 'Less depth', group: 'Graph', keys: ['-'], when: 'graph' },
   { id: 'graphTrace', title: 'Trace mode on or off', group: 'Graph', keys: ['t'], when: 'graph' },
-  { id: 'graphFit', title: 'Fit the graph to the view', group: 'Graph', keys: ['.'], when: 'graph' },
-  { id: 'graphToggleGroup', title: 'Open or close the focused group', group: 'Graph', keys: ['o'], when: 'graph' },
+  { id: 'graphFit', title: 'Frame the focus again', group: 'Graph', keys: ['.'], when: 'graph' },
   { id: 'graphLinks', title: 'Links on or off: the center\'s own links, one step', group: 'Graph', keys: ['l'], when: 'graph' },
   // Stepping through the tree, as a file explorer does. Alt+Left and Alt+Right stay the browser's Back and Forward, so siblings take Shift too.
   { id: 'graphStepOut', title: 'Step out to the parent', group: 'Graph', keys: ['Alt+ArrowUp'], when: 'graph' },

@@ -1,12 +1,12 @@
-import { lowerLabel, plural } from '../plural';
+import { plural } from '../plural';
 import type { SpecIndex, SpecRecord } from '../specs/data';
 import { byIdOrder, kindLabel } from '../specs/data';
 import { treeChildren, treeGroup, treeOf, treeParent } from './tree';
 import { linkLabel, relationLabelOf } from '../specs/labels';
 
-// Pure graph logic for the graph view: the picture around a record or group by levels of the
-// nav's tree (tree.ts), its context ring, the Links switch, filters and trace mode.
-// Nothing here touches React or the DOM, so it is tested directly.
+// Pure graph logic for the graph view: the picture the camera frames around a record or group, by
+// levels of the nav's tree (tree.ts), the Links switch, filters and trace mode. The map it sits in
+// is map.ts. Nothing here touches React or the DOM, so it is tested directly.
 
 /** The pseudo-relation between a record and its parent (drawn from parent to child). */
 export const PARENT = 'parent';
@@ -16,10 +16,6 @@ export const NAMES = 'names';
 export const FILE_KIND = 'file';
 /** The stage of a group node: a folder of one kind of child between a record and its children. */
 export const GROUP_STAGE = 'group';
-/** The kind and stage of a chip of the light ring: "+12 more use cases". */
-export const MORE_KIND = 'more';
-/** A chip's ID: the node whose context children it counts. */
-export const moreId = (parent: string) => `more:${parent}`;
 
 export interface GraphNode {
   id: string;
@@ -27,7 +23,7 @@ export interface GraphNode {
   distance: number;
   kind: string;
   title: string;
-  /** 'define', 'design', '' for structural kinds, 'file', 'group', or 'more' for a chip. */
+  /** 'define', 'design', '' for structural kinds, 'file' or 'group'. */
   stage: string;
   /**
    * The column the layout puts this node in, counted from 0 at the left. In the hierarchy it is the
@@ -38,13 +34,9 @@ export interface GraphNode {
   row: number;
   /**
    * Set on a group node (a stage, a folder or a group of one kind): the node above it in the tree,
-   * the nearest record above it (its owner), how many records it shows, and whether it is open.
+   * the nearest record above it (its owner), and how many records it shows.
    */
-  group?: { parent: string; owner: string; count: number; open: boolean };
-  /** In the context ring: drawn faded, out of focus and out of the keyboard order. */
-  context?: boolean;
-  /** Set on a chip: the node whose context children it counts, how many, and the address it re-centers on. */
-  more?: { parent: string; count: number; target: string };
+  group?: { parent: string; owner: string; count: number };
 }
 
 /** The hierarchy reads left to right by depth in the parent/child tree; trace mode reads left to right along the chain. */
@@ -55,8 +47,6 @@ export interface GraphEdge {
   source: string;
   target: string;
   relation: string;
-  /** To or between context nodes: drawn faded and thinner. */
-  context?: boolean;
 }
 
 export interface Neighborhood {
@@ -92,7 +82,7 @@ export function edgesOf(index: SpecIndex, id: string): GraphEdge[] {
   return edges.filter((e) => index.byId.has(e.source) && index.byId.has(e.target)).map((e) => ({ ...e, id: edgeId(e) }));
 }
 
-const STAGE_ORDER: Record<string, number> = { group: 0, '': 0, define: 1, design: 2, file: 3, more: 4 };
+const STAGE_ORDER: Record<string, number> = { group: 0, '': 0, define: 1, design: 2, file: 3 };
 
 export const stageOf = (index: SpecIndex, kind: string) => (kind === FILE_KIND ? 'file' : index.kinds.get(kind)?.stage ?? '');
 
@@ -192,7 +182,7 @@ export function treeColumns(
 /**
  * The place of each hierarchy node within its column, top to bottom: by the place of the node that
  * put it there (its tree parent, or the record it was reached from when that sits to its left), then
- * its place among its parent's children in the nav's order (a chip last), then kind order, groups
+ * its place among its parent's children in the nav's order, then kind order, groups
  * before records, then ID. So a parent's children stay together, in the same order as their parents
  * and as the nav lists them, and re-centering is predictable.
  */
@@ -203,8 +193,7 @@ function rowsByPlacer(index: SpecIndex, nodes: GraphNode[], edges: readonly Grap
   const sibling = new Map<string, number>();
   for (const n of nodes) {
     const parent = parentOf.get(n.id);
-    if (n.more) sibling.set(n.id, Number.MAX_SAFE_INTEGER);
-    else if (parent !== undefined) {
+    if (parent !== undefined) {
       const at = nodeChildren(index, parent).indexOf(n.id);
       sibling.set(n.id, at < 0 ? Number.MAX_SAFE_INTEGER - 1 : at);
     }
@@ -248,18 +237,11 @@ function rowsInOrder(nodes: GraphNode[]): Map<string, number> {
   return row;
 }
 
-/** What the graph adds to the tree: the focused record's cross-links, and the context ring. */
+/** What the graph adds to the tree: the focused record's cross-links. */
 export interface NeighborhoodOptions {
-  /** The Links switch: the records the focused record links to and from, one hop, in focus. Off by default. */
+  /** The Links switch: the records the focused record links to and from, one hop. Off by default. */
   links?: boolean;
-  /** The context ring: the tree's next level out each way, faded. On by default. */
-  context?: boolean;
 }
-
-/** A parent shows at most this many context children; a chip counts the rest (the light ring). */
-export const CONTEXT_PER_PARENT = 6;
-/** At most this many context nodes in all; chips count the rest. */
-export const CONTEXT_BUDGET = 40;
 
 /** The parent of a node in the graph's tree (see tree.ts), or null at the top. */
 export const nodeParent = (index: SpecIndex, id: string): string | null => treeParent(index, id);
@@ -268,57 +250,33 @@ export const nodeParent = (index: SpecIndex, id: string): string | null => treeP
 export const nodeChildren = (index: SpecIndex, id: string): readonly string[] => treeChildren(index, id);
 
 /** The kind a node is filtered by: a record's kind, a kind group's kind, or null for a stage or a mixed folder (never hidden). */
-function filterKind(index: SpecIndex, id: string): string | null {
+export function filterKind(index: SpecIndex, id: string): string | null {
   const record = index.byId.get(id);
   if (record) return record.kind;
   return treeGroup(index, id)?.kind ?? null;
 }
 
-/** The address a chip of the light ring re-centers on: the parent's folder for those children (the parent itself when it is a group). */
-function chipTarget(index: SpecIndex, parent: string, kids: readonly string[]): string {
-  if (!index.byId.has(parent)) return parent;
-  const kinds = [...new Set(kids.map((k) => index.byId.get(k)?.kind ?? ''))];
-  if (kinds.length === 1 && kinds[0] && isGroup(index, groupId(parent, kinds[0]))) return groupId(parent, kinds[0]);
-  return parent;
-}
-
-/** A chip's label: "+12 more use cases", "+3 more". */
-function chipTitle(index: SpecIndex, hidden: readonly string[]): string {
-  const kinds = [...new Set(hidden.map((k) => index.byId.get(k)?.kind ?? ''))];
-  if (!(kinds.length === 1 && kinds[0])) return `+${hidden.length} more`;
-  const label = hidden.length === 1 ? kindLabel(index, kinds[0]) : pluralLabel(index, kinds[0]);
-  return `+${hidden.length} more ${lowerLabel(label)}`;
-}
-
 /**
- * The picture around a focus (a record or a group), by levels of the graph's tree (see tree.ts), a
- * level being any node: a record, a stage, a folder or a group. Depth N shows N levels each way, in
- * focus: the ancestors up to N levels and the descendants down to N levels; siblings come only from
- * a parent's folder when the person opens it. A group the person folds hides what is beneath it, and
- * one they open at the edge shows its children, in focus.
- *
- * The context ring (on unless `options.context` is false) is the tree's next level out each way: the
- * ancestor at level N + 1 and the children of the descendants at level N, faded and out of focus
- * (`context: true`). A parent shows at most CONTEXT_PER_PARENT of them, then a chip that counts the
- * rest, and there are at most CONTEXT_BUDGET in all. With `options.links`, the records the focused
- * record links to and from (satisfies, proves, uses and the rest) join, one hop, in focus, with the
- * links between them and the focus; they bring no ring of their own.
+ * The picture the camera frames around a focus (a record or a group), by levels of the graph's tree
+ * (see tree.ts), a level being any node: a record, a stage, a folder or a group. It is the focus's
+ * parent, kept at the left edge for context, the focus, and its descendants down to `depth` levels
+ * below it (LA-BRW-DR301); the rest of the map stays where it is around it. With `options.links`,
+ * the records the focused record links to and from (satisfies, proves, uses and the rest) join, one
+ * hop, with the links between them and the focus.
  *
  * Filters hide kinds and relations, and nothing is reached through a hidden record; hiding the
  * parent/child relation leaves no tree. The focus is never hidden. The result is the same for the
- * same input, so re-centering never jitters (LA-PAT-APP-UX-R08).
+ * same input.
  */
 export function neighborhood(
   index: SpecIndex,
   focus: string,
   depth: number,
   filters: Filters = NO_FILTERS,
-  open: ReadonlyMap<string, boolean> = NO_OPEN,
   options: NeighborhoodOptions = {},
 ): Neighborhood {
   if (!isGraphNode(index, focus)) return { focus, mode: 'hierarchy', nodes: [], edges: [], via: new Map() };
   const levels = Math.max(1, Math.floor(depth));
-  const ring = options.context !== false;
   const shownRelation = (relation: string) => !filters.hiddenRelations.has(relation);
   const shownKind = (id: string) => {
     if (id === focus) return true;
@@ -329,10 +287,6 @@ export function neighborhood(
 
   const distance = new Map<string, number>([[focus, 0]]);
   const via = new Map<string, string>();
-  const context = new Set<string>();
-  /** Nodes whose children are all drawn. */
-  const expanded = new Set<string>([focus]);
-  const chips = new Map<string, { parent: string; count: number; target: string; title: string }>();
   const spine = new Map<string, GraphEdge>();
   const addSpine = (source: string, target: string) => {
     const e = { source, relation: PARENT, target };
@@ -340,25 +294,15 @@ export function neighborhood(
   };
   const reach = (id: string, from: string, d: number) => { distance.set(id, d); via.set(id, from); };
 
-  // The last level of descendants, whose children are the context ring below.
-  let frontier = [focus];
   if (shownRelation(PARENT)) {
-    // Up: the ancestors, one per level, and the next one out as context.
-    let at = focus;
-    for (let level = 1; level <= levels + (ring ? 1 : 0); level++) {
-      const up = nodeParent(index, at);
-      if (up === null || distance.has(up) || !shownKind(up)) break;
-      reach(up, at, level);
-      addSpine(up, at);
-      if (level > levels) context.add(up);
-      at = up;
-    }
-    // Down: the descendants, level by level; a group the person folded stops here.
+    // The parent, one level up.
+    const up = nodeParent(index, focus);
+    if (up !== null && shownKind(up)) { reach(up, focus, 1); addSpine(up, focus); }
+    // The descendants, level by level.
+    let frontier = [focus];
     for (let level = 1; level <= levels && frontier.length > 0; level++) {
       const next: string[] = [];
       for (const id of frontier) {
-        if (id !== focus && open.get(id) === false) continue;
-        expanded.add(id);
         for (const c of nodeChildren(index, id)) {
           if (distance.has(c) || !shownKind(c)) continue;
           reach(c, id, level);
@@ -368,86 +312,34 @@ export function neighborhood(
       }
       frontier = next;
     }
-    // A group the person opened shows its children, in focus: a parent's folder brings the siblings.
-    for (let grew = true; grew;) {
-      grew = false;
-      for (const id of [...distance.keys()]) {
-        if (expanded.has(id) || context.has(id) || !isGroupNode(id) || open.get(id) !== true) continue;
-        expanded.add(id);
-        grew = true;
-        for (const c of nodeChildren(index, id)) {
-          if (!shownKind(c) || context.has(c)) continue;
-          if (!distance.has(c)) reach(c, id, distance.get(id)! + 1);
-          addSpine(id, c);
-        }
-      }
-    }
-    // The context ring below: the children of the last level, a few per parent, within the budget.
-    // A group at the edge that the person folded again looks as it did before they opened it.
-    if (ring) {
-      let budget = CONTEXT_BUDGET - context.size;
-      for (const id of frontier) {
-        if (expanded.has(id)) continue;
-        const kids = nodeChildren(index, id).filter((c) => !distance.has(c) && shownKind(c));
-        if (kids.length === 0) continue;
-        if (budget <= 0) break;
-        // When not all of them fit, one place is kept for the chip that counts the rest.
-        const fit = Math.min(CONTEXT_PER_PARENT, budget);
-        const keep = kids.length <= fit ? kids.length : Math.max(0, Math.min(CONTEXT_PER_PARENT, budget - 1));
-        for (const c of kids.slice(0, keep)) {
-          reach(c, id, levels + 1);
-          addSpine(id, c);
-          context.add(c);
-        }
-        budget -= keep;
-        const hidden = kids.slice(keep);
-        // A chip is a context node too and counts against the budget; once it is spent, the edge
-        // hints and the folded groups say there is more.
-        if (hidden.length > 0 && budget > 0) {
-          budget -= 1;
-          const chip = moreId(id);
-          chips.set(chip, { parent: id, count: hidden.length, target: chipTarget(index, id, kids), title: chipTitle(index, hidden) });
-          reach(chip, id, levels + 1);
-          addSpine(id, chip);
-          context.add(chip);
-        }
-      }
-    }
   }
 
-  // The Links switch: the focused record's own links, one hop, in focus.
+  // The Links switch: the focused record's own links, one hop.
   const links = new Map<string, GraphEdge>();
   if (options.links && index.byId.has(focus)) {
     for (const e of edgesOf(index, focus)) {
       if (e.relation === PARENT || !shownRelation(e.relation)) continue;
       const other = e.source === focus ? e.target : e.source;
       if (!shownKind(other)) continue;
-      context.delete(other);
       if (!distance.has(other) || distance.get(other)! > 1) reach(other, focus, 1);
       links.set(e.id, e);
     }
   }
 
-  // Parent lines between drawn nodes the walk did not join (a linked record whose parent is drawn).
+  // Parent lines between nodes in the picture the walk did not join (a linked record whose parent is in it).
   if (shownRelation(PARENT)) {
     for (const id of distance.keys()) {
-      if (chips.has(id)) continue;
       const up = nodeParent(index, id);
       if (up !== null && distance.has(up)) addSpine(up, id);
     }
   }
 
-  const edgeList = [...spine.values(), ...links.values()]
-    .map((e) => (context.has(e.source) || context.has(e.target) ? { ...e, context: true } : e))
-    .sort((a, b) => a.id.localeCompare(b.id));
+  const edgeList = [...spine.values(), ...links.values()].sort((a, b) => a.id.localeCompare(b.id));
   const walkOrder = [...distance].sort(([a, ha], [b, hb]) => ha - hb || a.localeCompare(b, 'en', { numeric: true })).map(([id]) => id);
   const columns = treeColumns(focus, walkOrder, edgeList, via);
   const nodes = [...distance].map(([id, d]) => {
-    const chip = chips.get(id);
-    const node: GraphNode = chip
-      ? { id, distance: d, kind: MORE_KIND, title: chip.title, stage: MORE_KIND, column: 0, row: 0, more: { parent: chip.parent, count: chip.count, target: chip.target } }
-      : isGroupNode(id) ? groupNode(index, id, d, expanded.has(id) && !context.has(id)) : recordNode(index, id, d, 'hierarchy');
-    return { ...node, column: columns.get(id)!, ...(context.has(id) ? { context: true } : {}) };
+    const node: GraphNode = isGroupNode(id) ? groupNode(index, id, d) : recordNode(index, id, d, 'hierarchy');
+    return { ...node, column: columns.get(id)! };
   });
   const rows = rowsByPlacer(index, nodes, edgeList, via);
   return {
@@ -461,8 +353,6 @@ export function neighborhood(
 
 // ---- Group nodes: a folder per kind of child between a record and its children ----
 
-export const NO_OPEN: ReadonlyMap<string, boolean> = new Map();
-
 /**
  * A group's ID: its parent's ID and the kind of its members. Record IDs never contain a slash. A
  * group within a parent's Tests folder (a test-plan group, as the Test plan folder has them) adds
@@ -473,7 +363,7 @@ export const groupId = (parent: string, kind: string) => `${parent}/${kind}`;
 
 /** The parent, member kind and any further parts of a group ID, or null for an ID that cannot be a group. */
 export function parseGroupId(id: string): { parent: string; kind: string; path: string[] } | null {
-  if (id.startsWith('file:') || id.startsWith('more:')) return null;
+  if (id.startsWith('file:') || id.startsWith('bar:')) return null;
   const parts = id.split('/');
   if (parts.length < 2 || parts.some((p) => p === '')) return null;
   return { parent: parts[0], kind: parts[1], path: parts.slice(2) };
@@ -533,7 +423,7 @@ export function groupMarks(index: SpecIndex, gid: string): { errors: number; war
 /** The kind a group shows as: its records' kind when they are of one kind, or 'folder' for a stage or a mixed folder. */
 const groupKind = (index: SpecIndex, gid: string) => treeGroup(index, gid)?.kind ?? 'folder';
 
-function groupNode(index: SpecIndex, id: string, distance: number, open: boolean): GraphNode {
+function groupNode(index: SpecIndex, id: string, distance: number): GraphNode {
   return {
     id,
     distance,
@@ -542,7 +432,7 @@ function groupNode(index: SpecIndex, id: string, distance: number, open: boolean
     stage: GROUP_STAGE,
     column: 0,
     row: 0,
-    group: { parent: nodeParent(index, id) ?? groupOwner(index, id), owner: groupOwner(index, id), count: treeGroup(index, id)?.count ?? 0, open },
+    group: { parent: nodeParent(index, id) ?? groupOwner(index, id), owner: groupOwner(index, id), count: treeGroup(index, id)?.count ?? 0 },
   };
 }
 

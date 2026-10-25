@@ -3,9 +3,9 @@ import { LongList } from '../components/LongList';
 import type { SpecIndex } from '../specs/data';
 import { FILE_KIND, PARENT, graphEdgeLabel, nodeParent, parseGroupId, type Neighborhood } from './model';
 
-// The graph's part of the side bar: what the drawn graph connects to the center, the files a
-// trace reaches, and the legend. Kept apart from GraphPage (React Flow and ELK) so the side bar
-// can show it without loading the graph.
+// The graph's part of the side bar: what the framed picture connects to the center, the files a
+// trace reaches, and the legend. Kept apart from GraphPage (React Flow) so the side bar can show
+// it without loading the graph.
 
 /** A link to another center: a real address for new tabs, onNavigate on a plain click. */
 export function NodeLink({ id, onNavigate, hrefFor, children, title, ariaLabel, className }: { id: string; onNavigate: (id: string) => void; hrefFor: (id: string) => string; children: ReactNode; title?: string; ariaLabel?: string; className?: string }) {
@@ -42,8 +42,7 @@ export interface GraphInfo {
 /** The side bar's graph section: the records drawn next to the center and the files a trace reaches. */
 export function GraphConnections({ index, info, onNavigate, hrefFor }: { index: SpecIndex; info: GraphInfo; onNavigate: (id: string) => void; hrefFor: (id: string) => string }) {
   const { graph, tracing } = info;
-  // Focus records only: the context ring is out of focus.
-  const near = graph.nodes.filter((n) => n.distance === 1 && n.kind !== FILE_KIND && !n.context && !n.more);
+  const near = graph.nodes.filter((n) => n.distance === 1 && n.kind !== FILE_KIND);
   const files = graph.nodes.filter((n) => n.kind === FILE_KIND);
   return (
     <>
@@ -85,9 +84,9 @@ export function Legend() {
           <li><span className="graph-swatch stage-define" /> Define (aggregate, rule, use case, requirement)</li>
           <li><span className="graph-swatch stage-design" /> Design (flow, flow step, view, endpoint, component, test)</li>
           <li><span className="graph-swatch stage-structural" /> Structural (product, domain, question)</li>
-          <li><span className="graph-swatch stage-group" /> Stage, folder or group, as the nav names it, with its count; its chevron points right when folded, down when open</li>
-          <li><span className="graph-swatch stage-context" /> Context: the next level out, faded; click it to center there, hover it for its name</li>
-          <li><span className="graph-swatch stage-more" /> More of a level than the picture shows: click it to center on their group, or their parent</li>
+          <li><span className="graph-swatch stage-group" /> Stage, folder or group, as the nav names it, with its count; its chevron points down while its members are drawn beside it</li>
+          <li><span className="graph-swatch stage-plain" /> A box too small on screen for its text: zoom in, or hover it, for its name</li>
+          <li><span className="graph-swatch stage-bar" /> A bar: children too small to draw at this zoom</li>
           <li><span className="graph-swatch stage-file" /> File named by a component or test</li>
           <li><span className="graph-line rel-structure" /> parent / child (the tree, through stages, folders and groups)</li>
           <li><span className="graph-line is-link" /> the center's own links, with Links on (satisfies, proves, uses and the rest)</li>
@@ -97,8 +96,8 @@ export function Legend() {
           <li><span className="graph-line rel-other" /> other links</li>
           <li><span className="graph-mark error">!</span> has errors <span className="graph-mark gap">gap</span> not satisfied or not proved (on a group: among its members)</li>
         </ul>
-        <p className="hint">The graph's tree is the nav's: a domain holds Define and Design, each stage its folders, each folder its records. Levels run left to right, and depth counts them each way, folders included. A trace also runs left to right, from the rule to the files that build and test it.</p>
-        <p className="hint">Click a record or a group, or press Enter on it, to center the graph there. A group's chevron, or o, opens or closes it in place. Arrow keys or Tab move between boxes; + and - change the depth, l switches Links, t switches trace mode, and . fits the graph to the view. Alt+Up steps out to the parent, Alt+Down in to the first child, and Alt+Shift+Left or Right to a sibling.</p>
+        <p className="hint">The graph is one map of the nav's tree: a domain holds Define and Design, each stage its folders, each folder its records. Levels run left to right, each parent as tall as its children, and nothing changes size: focusing moves the camera. Depth is how many levels below the focus the camera frames, folders included. A trace runs left to right, from the rule to the files that build and test it.</p>
+        <p className="hint">Click a record or a group, or press Enter on it, to focus it. Scroll, pinch or drag to look around. Arrow keys or Tab move between labeled boxes; + and - change the depth, l switches Links, t switches trace mode, and . frames the focus again. Alt+Up steps out to the parent, Alt+Down in to the first child, and Alt+Shift+Left or Right to a sibling.</p>
       </section>
     </details>
   );

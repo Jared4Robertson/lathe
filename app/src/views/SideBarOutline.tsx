@@ -11,7 +11,7 @@ import type { SideMode } from './sideBarState';
 // The side bar's Outline (LA-BRW-UC119-R04): what the main view holds, as rows to jump to.
 // - Wiki: the page's sections and headings (Traceability and its groups, children, problems, the
 //   body's Markdown headings), each a row that scrolls the wiki there, the section in view marked.
-// - Graph: the records in focus (not the context ring), grouped by level from left to right.
+// - Graph: the records the camera frames, grouped by level from left to right.
 // - Model: the boxes, those in focus first.
 // Each list is rows that are clickable anywhere (LA-PAT-APP-UX-R05), searchable past 10 rows.
 
@@ -119,7 +119,7 @@ function WikiOutline({ index, focus, wikiPane }: SideBarOutlineProps) {
 function GraphOutline({ index, graph, onNavigate, hrefFor }: SideBarOutlineProps) {
   const levels = useMemo(() => {
     if (!graph) return [];
-    const nodes = graph.graph.nodes.filter((n) => !n.context && !n.more && n.kind !== FILE_KIND);
+    const nodes = graph.graph.nodes.filter((n) => n.kind !== FILE_KIND);
     const columns = [...new Set(nodes.map((n) => n.column))].sort((a, b) => a - b);
     return columns.map((c, i) => ({ level: i + 1, nodes: nodes.filter((n) => n.column === c).sort((a, b) => a.row - b.row) }));
   }, [graph]);

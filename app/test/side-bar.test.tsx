@@ -68,7 +68,7 @@ describe('the side bar', () => {
   });
 
   it('LA-BRW-T594 In the Graph view Details shows the node under the pointer or keyboard focus, else the selected one, else the page\'s record, with Open and a compact Traceability; the graph adds what it connects', async () => {
-    window.sessionStorage.setItem('lathe:graph-settings', JSON.stringify({ depth: 1, trace: false, hiddenKinds: [], hiddenRelations: [], openGroups: [], links: true, context: true, minimap: false }));
+    window.sessionStorage.setItem('lathe:graph-settings', JSON.stringify({ depth: 1, trace: false, hiddenKinds: [], hiddenRelations: [], links: true, minimap: false }));
     await openApp('/P-D-UC01-R01?view=graph', { workspace: testWorkspace() });
     await waitFor(() => expect(node('P-D-V01')).not.toBeNull());
     expect(name()).toBe('The owner is shown');

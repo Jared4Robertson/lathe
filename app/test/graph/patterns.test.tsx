@@ -30,7 +30,7 @@ describe('patterns in the graph', () => {
 
   it('LA-BRW-T176 A use case\'s follows link is drawn as a cross-link: shown, styled as a pattern link, the use case one column after the pattern', () => {
     const ix = index();
-    const n = neighborhood(ix, 'DM-PAT-CHECKOUT', 1, undefined, undefined, { links: true });
+    const n = neighborhood(ix, 'DM-PAT-CHECKOUT', 1, undefined, { links: true });
     expect(n.edges.map(edge)).toEqual(expect.arrayContaining(['DM-PAY-UC01 follows DM-PAT-CHECKOUT', 'DM-SHOP-UC01 follows DM-PAT-CHECKOUT']));
     expect(relationStyle('follows')).toBe('pattern');
     expect(relationStyle('uses')).toBe('design');
@@ -38,7 +38,7 @@ describe('patterns in the graph', () => {
     const column = (id: string) => n.nodes.find((x) => x.id === id)!.column;
     for (const uc of ['DM-SHOP-UC01', 'DM-PAY-UC01', 'DM-PAT-CHECKOUT-R01']) expect(column(uc)).toBe(column('DM-PAT-CHECKOUT') + 1);
     // From a use case, its pattern is one step away.
-    expect(neighborhood(ix, 'DM-PAY-UC01', 1, undefined, undefined, { links: true }).nodes.map((x) => x.id)).toContain('DM-PAT-CHECKOUT');
+    expect(neighborhood(ix, 'DM-PAY-UC01', 1, undefined, { links: true }).nodes.map((x) => x.id)).toContain('DM-PAT-CHECKOUT');
   });
 
   it('LA-BRW-T177 Trace mode is offered for a pattern rule and shows what satisfies and proves it in every domain', () => {

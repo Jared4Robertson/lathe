@@ -63,7 +63,7 @@ export function section(name: string | RegExp) {
 
 /** Starts the graph at a depth for the session, as if the person had chosen it (the default is 1). */
 export function startAtDepth(depth: number) {
-  window.sessionStorage.setItem('lathe:graph-settings', JSON.stringify({ depth, trace: false, hiddenKinds: [], hiddenRelations: [], openGroups: [], links: false, context: true, minimap: false }));
+  window.sessionStorage.setItem('lathe:graph-settings', JSON.stringify({ depth, trace: false, hiddenKinds: [], hiddenRelations: [], links: false, minimap: false }));
 }
 
 /**
