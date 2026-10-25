@@ -9,11 +9,10 @@ Lathe is a toolkit for organizing a product's lifecycle (domain model, use cases
 - **First, before anything else:** your worktree may have been created from an older commit. Run `git merge --ff-only <base>` with the base branch your launch message names, and confirm `notes/briefs/` and your brief exist. If the fast-forward fails, stop and report.
 - Work only in your own worktree and branch. Commit only the paths you own (`git add <your paths>`), with clear messages ending in `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`. Commit when your work is done; several commits are fine.
 - Never push or deploy. Never check out another branch in the main checkout (`/Users/jaredrobertson/Development/Lathe` stays on `main`; Jared's dev server runs from it).
-- **Merge into `main` yourself once your full checks pass**, and only then:
-  - The full checks are `npm --prefix lathe run typecheck`, `npm --prefix lathe test` (at most 2 workers), `cd app && npx tsc --noEmit`, `npm --prefix app test` (at most 2 workers) and `npm --prefix lathe run check` with 0 errors.
-  - First merge `main` into your branch and resolve any conflicts. If that brought anything in, rerun the checks.
-  - Then run `git -C /Users/jaredrobertson/Development/Lathe merge --no-ff <your branch> -m "Merge: <what it does>"`.
-  - If `main` moved meanwhile, repeat. Report the merge commit.
+- **Finish with your branch ready to merge.** The worktree sandbox blocks writing to the main checkout, so the coordinator merges. Before you report:
+  1. Merge current `main` into your branch and resolve any conflicts, keeping both sides.
+  2. Run the full checks on your branch: `npm --prefix lathe run typecheck`, `npm --prefix lathe test`, `cd app && npx tsc --noEmit`, `npm --prefix app test` (the test scripts already cap workers at 2) and `npm --prefix lathe run check` with 0 errors.
+  3. Report the branch and its last commit. The coordinator merges it into `main` straight away.
 - The contract files are fixed: do not edit `lathe/FORMAT.md`, `lathe/meta/*`, `lathe/src/types.ts` or `lathe/fixtures/workspace.sample.json`. If you need a change, work around it and put the request in your report.
 - Do not edit files you do not own, even to fix something small; report it instead.
 - Never use port 5199 (Jared's running dev server). If you must run a server, use the port your brief gives and stop it before you finish.
