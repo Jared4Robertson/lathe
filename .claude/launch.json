@@ -2,6 +2,10 @@
   "version": "0.0.1",
   "configurations": [
     {
+      "name": "lathe-dev",
+      "url": "http://localhost:5199"
+    },
+    {
       "name": "model-app",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["--prefix", "app", "run", "dev"],
