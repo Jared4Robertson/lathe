@@ -1,4 +1,5 @@
 import type { ReactNode, RefObject } from 'react';
+import { Button } from '../components/Button';
 import { Icon } from '../components/icons';
 import { ModelIcon } from '../model/ModelIcon';
 import { Tooltip } from '../shell/Tooltip';
@@ -109,31 +110,31 @@ export function PageBar(props: PageBarProps) {
               </Tooltip>
             ) : (
               <Tooltip key={v} label={`${VIEW_LABELS[v]} view: ${NOT_OFFERED[v]}`}>
-                <button
-                  type="button"
-                  className="icon-button is-unavailable"
-                  aria-label={`${VIEW_LABELS[v]} (${NOT_OFFERED[v]})`}
+                <Button
+                  variant="icon"
+                  className="is-unavailable"
+                  label={`${VIEW_LABELS[v]} (${NOT_OFFERED[v]})`}
                   aria-disabled="true"
                 >
                   <ViewIcon view={v} size={16} />
-                </button>
+                </Button>
               </Tooltip>
             ))}
           </div>
         )}
         <span className="pane-divider" aria-hidden="true" />
         <Tooltip label={inspectorLabel} command="toggleInspector" placement="left">
-          <button
-            type="button"
+          <Button
+            variant="icon"
             ref={inspectorButton}
-            className={`icon-button inspector-toggle${inspectorShown ? ' is-on' : ''}`}
-            aria-label={inspectorLabel}
+            className={`inspector-toggle${inspectorShown ? ' is-on' : ''}`}
+            label={inspectorLabel}
             aria-expanded={inspectorShown}
             aria-controls="inspector"
             onClick={() => onInspector(!inspectorShown)}
           >
             <Icon name={compact ? 'info' : 'sidebar-right'} size={compact ? 20 : 16} />
-          </button>
+          </Button>
         </Tooltip>
       </div>
     </div>

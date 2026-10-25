@@ -1,4 +1,5 @@
 import { forwardRef, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from 'react';
+import { Button } from '../components/Button';
 import { APPEARANCE_PATH, PaletteIcon } from '../theme/ThemeCommands';
 import { Icon } from '../components/icons';
 import { LongList } from '../components/LongList';
@@ -185,16 +186,15 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
         <div className="nav-head">
           <Link to="/specs" className="brand"><LatheLogo /> <span>Lathe</span></Link>
           <Tooltip label={drawer ? 'Close the navigation' : 'Collapse the navigation'} command="toggleNav">
-            <button
-              type="button"
-              className="icon-button"
-              aria-label={drawer ? 'Close the navigation' : 'Collapse the navigation'}
+            <Button
+              variant="icon"
+              label={drawer ? 'Close the navigation' : 'Collapse the navigation'}
               aria-expanded={true}
               aria-controls="nav"
               onClick={drawer ? onCloseDrawer : onToggleCollapsed}
             >
               <Icon name={drawer ? 'x' : 'sidebar-left'} />
-            </button>
+            </Button>
           </Tooltip>
         </div>
         <QuickFind ref={findRef} index={index} diagrams={diagrams} space={space} />

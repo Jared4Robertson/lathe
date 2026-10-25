@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useState } from 'react';
+import { Button } from '../components/Button';
 import { Icon } from '../components/icons';
 import { useLocation } from '../router';
 import { useRunCommand } from './commands';
@@ -122,14 +123,14 @@ function TitleBar({ bridge, index }: { bridge: LatheDesktop; index: SpecIndex | 
     <header className={`desktop-title-bar ${platformClass(platform, fullScreen)}`} aria-label="Title bar">
       <div className="title-bar-side title-bar-start">
         <Tooltip label="Go back" command="goBack">
-          <button type="button" className="icon-button title-bar-button" aria-label="Go back" disabled={!canGoBack} onClick={back}>
+          <Button variant="icon" className="title-bar-button" label="Go back" disabled={!canGoBack} onClick={back}>
             <ArrowIcon direction="left" />
-          </button>
+          </Button>
         </Tooltip>
         <Tooltip label="Go forward" command="goForward">
-          <button type="button" className="icon-button title-bar-button" aria-label="Go forward" disabled={!canGoForward} onClick={forward}>
+          <Button variant="icon" className="title-bar-button" label="Go forward" disabled={!canGoForward} onClick={forward}>
             <ArrowIcon direction="right" />
-          </button>
+          </Button>
         </Tooltip>
       </div>
       <div className="title-bar-center">
@@ -142,21 +143,21 @@ function TitleBar({ bridge, index }: { bridge: LatheDesktop; index: SpecIndex | 
       </div>
       <div className="title-bar-side title-bar-end">
         <Tooltip label="Show or hide the navigation" command="toggleNav">
-          <button type="button" className={`icon-button title-bar-button${page.navShown ? ' is-on' : ''}`} aria-label="Show or hide the navigation" aria-pressed={page.navShown} onClick={() => run('toggleNav')}>
+          <Button variant="icon" className={`title-bar-button${page.navShown ? ' is-on' : ''}`} label="Show or hide the navigation" aria-pressed={page.navShown} onClick={() => run('toggleNav')}>
             <Icon name="sidebar-left" size={16} />
-          </button>
+          </Button>
         </Tooltip>
         <Tooltip label="Show or hide the inspector" command="toggleInspector">
-          <button
-            type="button"
-            className={`icon-button title-bar-button${page.inspectorShown ? ' is-on' : ''}`}
-            aria-label="Show or hide the inspector"
+          <Button
+            variant="icon"
+            className={`title-bar-button${page.inspectorShown ? ' is-on' : ''}`}
+            label="Show or hide the inspector"
             aria-pressed={page.inspectorShown}
             disabled={!page.inspectorOffered}
             onClick={() => run('toggleInspector')}
           >
             <Icon name="sidebar-right" size={16} />
-          </button>
+          </Button>
         </Tooltip>
       </div>
     </header>
