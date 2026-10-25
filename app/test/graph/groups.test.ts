@@ -42,16 +42,17 @@ describe('graph groups', () => {
     // Requirements and a question are two kinds.
     expect(isGrouped(grouped, 'P-D-UC02')).toBe(true);
     expect(groupLabel(grouped, 'P-D-UC02/requirement')).toBe('UC requirements (6)');
-    expect(groupLabel(grouped, 'P-D/use_case')).toBe('Use cases (2)');
-    expect(groupLabel(index, 'P-D/component')).toBe('Components (2)');
+    expect(groupLabel(index, 'P-D/design/technical-specification')).toBe('Technical specification (2)');
     expect(['question', 'domain_rule', 'domain'].map((k) => pluralLabel(index, k))).toEqual(['Open questions', 'Domain rules', 'Domains']);
-    expect(groupMembers(index, 'P-D/component').map((r) => r.id)).toEqual(['P-D-C01', 'P-D-C02']);
-    // A group is addressed by its parent and kind, and is not a record.
-    expect(parseGroupId('P-D/use_case')).toEqual({ parent: 'P-D', kind: 'use_case', path: [] });
+    expect(groupMembers(index, 'P-D/design/technical-specification').map((r) => r.id)).toEqual(['P-D-C01', 'P-D-C02']);
+    // A group is addressed by its place in the tree, and is not a record.
+    expect(parseGroupId('P-D-UC02/requirement')).toEqual({ parent: 'P-D-UC02', kind: 'requirement', path: [] });
     expect(parseGroupId('P-D-UC01')).toBeNull();
     expect(parseGroupId('file:src/thing.ts')).toBeNull();
-    expect(index.byId.has('P-D/use_case')).toBe(false);
-    expect(isGraphNode(index, 'P-D/use_case')).toBe(true);
+    expect(index.byId.has('P-D/define')).toBe(false);
+    expect(isGraphNode(index, 'P-D/define')).toBe(true);
+    // Only the tree's groups are groups: a parent and a kind outside it name nothing.
+    expect(isGraphNode(index, 'P-D/use_case')).toBe(false);
     expect(isGraphNode(index, 'P-D/flow')).toBe(false);
     expect(isGraphNode(index, 'missing/use_case')).toBe(false);
   });
@@ -123,13 +124,12 @@ describe('graph groups', () => {
     expect(contextOf(two)).toEqual(expect.arrayContaining(['P', 'P-D-UC02-R01', 'P-D-UC02-Q01']));
     // The focus group cannot be folded.
     expect(focusOf(neighborhood(grouped, 'P-D/define/use-cases', 1, undefined, new Map([['P-D/define/use-cases', false]])))).toContain('P-D-UC01');
-    // A group that does not exist shows nothing; a kind group's address works too.
+    // A group the tree does not have shows nothing.
     expect(neighborhood(index, 'P-D/flow', 2).nodes).toEqual([]);
-    expect(focusOf(neighborhood(grouped, 'P-D/use_case', 1))).toEqual(['P-D', 'P-D-UC01', 'P-D-UC02', 'P-D/use_case']);
+    expect(neighborhood(grouped, 'P-D/use_case', 1).nodes).toEqual([]);
     // Its address: /<domain-id>/<stage>/<folder>.
     expect(addressOf('P-D/define/use-cases')).toBe('/P-D/define/use-cases');
     expect(addressOf('P-D/define')).toBe('/P-D/define');
-    expect(addressOf('P-D/use_case')).toBe('/P-D/use_case');
     expect(addressOf('P-D-UC01')).toBe('/P-D-UC01');
   });
 
@@ -141,8 +141,7 @@ describe('graph groups', () => {
     expect(column(fromDomain, 'P-D/define/use-cases')).toBe(column(fromDomain, 'P-D/define') + 1);
     expect(column(fromDomain, 'P-D-UC01')).toBe(column(fromDomain, 'P-D/define/use-cases') + 1);
     const n = neighborhood(grouped, 'P-D/define/use-cases', 2);
-    const { positions, layout } = await layoutNeighborhood(n);
-    expect(layout).toBe('layered');
+    const { positions } = layoutNeighborhood(n);
     const x = (id: string) => positions.get(id)!.x;
     expect(x('P-D/define')).toBeLessThan(x('P-D/define/use-cases'));
     expect(x('P-D/define/use-cases')).toBeLessThan(x('P-D-UC01'));
@@ -159,10 +158,10 @@ describe('graph groups', () => {
 
   it('LA-BRW-T104 A group carries a summary mark when its members or anything beneath them has problems or coverage gaps', () => {
     // The rules beneath the aggregate are not proved, and one is not satisfied.
-    expect(groupMarks(index, 'P-D/aggregate')).toEqual({ errors: 0, warnings: 3, gaps: ['proves', 'satisfies'] });
+    expect(groupMarks(index, 'P-D/define/domain-model')).toEqual({ errors: 0, warnings: 3, gaps: ['proves', 'satisfies'] });
     // The test has an error.
-    expect(groupMarks(index, 'P-D/test')).toEqual({ errors: 1, warnings: 0, gaps: [] });
-    expect(groupMarks(index, 'P-D/use_case')).toEqual({ errors: 0, warnings: 0, gaps: [] });
+    expect(groupMarks(index, 'P-D/design/test-plan')).toEqual({ errors: 1, warnings: 0, gaps: [] });
+    expect(groupMarks(grouped, 'P-D-UC02/question')).toEqual({ errors: 0, warnings: 0, gaps: [] });
   });
 
   it('LA-BRW-T105 Trace mode has no groups, and filters hide groups with their kind or with the parent relation', () => {

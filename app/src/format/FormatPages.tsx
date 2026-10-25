@@ -12,6 +12,7 @@ import { useSpaces } from '../shell/spaces';
 import { Tooltip } from '../shell/Tooltip';
 import { useNarrow } from '../shell/useNarrow';
 import { addressOf } from '../views/address';
+import { treeGroup } from '../graph/tree';
 import { byIdOrder, type Problem, type SpecIndex, type SpecRecord, type SpecState } from '../specs/data';
 import { Markdown } from '../specs/Markdown';
 import { PageHeader, ProblemList, RecordLink, Section } from '../specs/parts';
@@ -563,7 +564,8 @@ function KindBody({ index, reference, kind }: { index: SpecIndex; reference: For
             searchText={(p) => `${p} ${index.byId.get(p)?.title ?? ''}`}
             render={(p) => (
               <>
-                <Link to={addressOf(`${p}/${kind.kind}`)} className="record-link row-link">
+                {/* The parent's group of this kind when the tree has one, else the parent, whose page lists them. */}
+                <Link to={addressOf(treeGroup(index, `${p}/${kind.kind}`) ? `${p}/${kind.kind}` : p)} className="record-link row-link">
                   <code>{p}</code>
                   <span>{index.byId.get(p)?.title ?? p}</span>
                 </Link>

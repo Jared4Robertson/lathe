@@ -45,26 +45,31 @@ const isWeight = (v: unknown): v is number => isNumber(v) && v >= PANE_WEIGHT_MI
 
 // ---------- Graph settings, stored ----------
 
-interface StoredSettings { depth: number; trace: boolean; hiddenKinds: string[]; hiddenRelations: string[]; openGroups: [string, boolean][]; links?: boolean; context?: boolean; minimap?: boolean }
-const isStored = (v: unknown): v is StoredSettings => !!v && typeof v === 'object' && isNumber((v as StoredSettings).depth) && Array.isArray((v as StoredSettings).hiddenKinds);
+interface StoredSettings { depth: number; trace: boolean; hiddenKinds: string[]; hiddenRelations: string[]; openGroups: [string, boolean][]; links: boolean; context: boolean; minimap: boolean }
+/** Stored settings in today's form; anything else (an older form included) is dropped for the defaults. */
+const isStored = (v: unknown): v is StoredSettings => {
+  if (!v || typeof v !== 'object') return false;
+  const s = v as StoredSettings;
+  return isNumber(s.depth) && typeof s.trace === 'boolean' && Array.isArray(s.hiddenKinds) && Array.isArray(s.hiddenRelations) && Array.isArray(s.openGroups)
+    && typeof s.links === 'boolean' && typeof s.context === 'boolean' && typeof s.minimap === 'boolean';
+};
 
-export const DEFAULT_SETTINGS: GraphSettings = { depth: 1, trace: false, filters: NO_FILTERS, openGroups: new Map() };
+export const DEFAULT_SETTINGS: GraphSettings = { depth: 1, trace: false, filters: NO_FILTERS, openGroups: new Map(), links: false, context: true, minimap: false };
 
 function settingsFrom(s: unknown): GraphSettings | null {
   if (!isStored(s)) return null;
   return {
     depth: [1, 2, 3].includes(s.depth) ? s.depth : 1,
     trace: s.trace === true,
-    filters: { hiddenKinds: new Set(s.hiddenKinds), hiddenRelations: new Set(s.hiddenRelations ?? []) },
-    openGroups: new Map((s.openGroups ?? []).filter((e) => Array.isArray(e) && typeof e[0] === 'string')),
-    // The graph's switches (brief 56): Links off, the context ring on and the minimap off unless stored.
-    links: s.links === true,
-    context: s.context !== false,
-    minimap: s.minimap === true,
+    filters: { hiddenKinds: new Set(s.hiddenKinds), hiddenRelations: new Set(s.hiddenRelations) },
+    openGroups: new Map(s.openGroups.filter((e) => Array.isArray(e) && typeof e[0] === 'string')),
+    links: s.links,
+    context: s.context,
+    minimap: s.minimap,
   };
 }
 function storedFrom(s: GraphSettings): StoredSettings {
-  return { depth: s.depth, trace: s.trace, hiddenKinds: [...s.filters.hiddenKinds], hiddenRelations: [...s.filters.hiddenRelations], openGroups: [...s.openGroups] as [string, boolean][], links: s.links === true, context: s.context !== false, minimap: s.minimap === true };
+  return { depth: s.depth, trace: s.trace, hiddenKinds: [...s.filters.hiddenKinds], hiddenRelations: [...s.filters.hiddenRelations], openGroups: [...s.openGroups] as [string, boolean][], links: s.links, context: s.context, minimap: s.minimap };
 }
 
 /** The graph settings last used, for a space's first tab. */

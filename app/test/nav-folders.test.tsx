@@ -75,7 +75,7 @@ describe('folders like S2', () => {
     expect(within(await findList('Technical specification of Shopping')).getByRole('link', { name: 'Basket service' })).toHaveAttribute('aria-current', 'page');
 
     // A group page opens the folder of its kind, and names it as the nav does.
-    await openApp('/DM-SHOP/view');
+    await openApp('/DM-SHOP/design/interaction-design/view');
     await screen.findByRole('heading', { level: 1, name: /^Views/ });
     expect(within(await findList('Interaction design of Shopping')).getByRole('link', { name: 'Basket page' })).toBeInTheDocument();
     expect(main().querySelector('.group-folder')).toHaveTextContent('Design › Interaction design');

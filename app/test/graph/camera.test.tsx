@@ -43,8 +43,8 @@ const reducedMotion = () =>
 describe('graph camera', () => {
   it('LA-BRW-T380 The new layout is shifted so the clicked node keeps its world position, and is otherwise the layout as laid out', async () => {
     const index = testIndex();
-    const before = (await layoutNeighborhood(neighborhood(index, 'P-D-UC01', 1, undefined, undefined, { links: true }))).positions;
-    const laid = (await layoutNeighborhood(neighborhood(index, 'P-D-UC01-R01', 1, undefined, undefined, { links: true }))).positions;
+    const before = (layoutNeighborhood(neighborhood(index, 'P-D-UC01', 1, undefined, undefined, { links: true }))).positions;
+    const laid = (layoutNeighborhood(neighborhood(index, 'P-D-UC01-R01', 1, undefined, undefined, { links: true }))).positions;
     // The layout puts its focus at the origin; the clicked node was elsewhere.
     expect(laid.get('P-D-UC01-R01')).toEqual({ x: -NODE_WIDTH / 2, y: -NODE_HEIGHT / 2 });
     expect(before.get('P-D-UC01-R01')).not.toEqual(laid.get('P-D-UC01-R01'));
@@ -56,7 +56,7 @@ describe('graph camera', () => {
     expect(anchored).toEqual(translate(laid, dx, dy));
     expect([...anchored.keys()]).toEqual([...laid.keys()]);
     // The same graph and anchor always give the same positions, and anchoring a picture on itself changes nothing.
-    expect(anchorLayout((await layoutNeighborhood(neighborhood(index, 'P-D-UC01-R01', 1, undefined, undefined, { links: true }))).positions, 'P-D-UC01-R01', before)).toEqual(anchored);
+    expect(anchorLayout((layoutNeighborhood(neighborhood(index, 'P-D-UC01-R01', 1, undefined, undefined, { links: true }))).positions, 'P-D-UC01-R01', before)).toEqual(anchored);
     expect(anchorLayout(anchored, 'P-D-UC01-R01', anchored)).toEqual(anchored);
     // With no last picture, or a focus that wasn't in it, the layout is kept as it is.
     expect(anchorLayout(laid, 'P-D-UC01-R01', null)).toEqual(laid);

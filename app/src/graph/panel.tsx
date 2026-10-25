@@ -87,7 +87,7 @@ export function Legend() {
           <li><span className="graph-swatch stage-structural" /> Structural (product, domain, question)</li>
           <li><span className="graph-swatch stage-group" /> Stage, folder or group, as the nav names it, with its count; its chevron points right when folded, down when open</li>
           <li><span className="graph-swatch stage-context" /> Context: the next level out, faded; click it to center there, hover it for its name</li>
-          <li><span className="graph-swatch stage-more" /> More of a level than the picture shows: click it to center on their folder</li>
+          <li><span className="graph-swatch stage-more" /> More of a level than the picture shows: click it to center on their group, or their parent</li>
           <li><span className="graph-swatch stage-file" /> File named by a component or test</li>
           <li><span className="graph-line rel-structure" /> parent / child (the tree, through stages, folders and groups)</li>
           <li><span className="graph-line is-link" /> the center's own links, with Links on (satisfies, proves, uses and the rest)</li>

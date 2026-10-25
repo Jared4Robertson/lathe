@@ -207,7 +207,7 @@ describe('layers and test groups', () => {
     expect(layer.nodes.filter((n) => !n.context).map((n) => n.id).sort()).toEqual(['DM-SHOP-C02', 'DM-SHOP-C03', 'DM-SHOP-LAY02', 'DM-SHOP/design/technical-specification']);
     expect(layer.nodes.filter((n) => n.context).map((n) => n.id)).toEqual(['DM-SHOP/design']);
     expect([lc.get('DM-SHOP/design/technical-specification'), lc.get('DM-SHOP-LAY02'), lc.get('DM-SHOP-C02')]).toEqual([1, 2, 3]);
-    const { positions } = await layoutNeighborhood(layer);
+    const { positions } = layoutNeighborhood(layer);
     const x = (id: string) => positions.get(id)!.x;
     expect(x('DM-SHOP/design/technical-specification')).toBeLessThan(x('DM-SHOP-LAY02'));
     expect(x('DM-SHOP-LAY02')).toBeLessThan(x('DM-SHOP-C02'));
@@ -215,8 +215,8 @@ describe('layers and test groups', () => {
   });
 
   it("LA-BRW-T287 A group page of tests reads them in the test plan's groups", async () => {
-    await openApp('/DM-SHOP/test', { workspace: layerWorkspace() });
-    await screen.findByRole('heading', { level: 1, name: /^Tests/ });
+    await openApp('/DM-SHOP/design/test-plan', { workspace: layerWorkspace() });
+    await screen.findByRole('heading', { level: 1, name: /^Test plan/ });
     const members = within(main()).getByRole('heading', { level: 2, name: /^Tests/ }).closest('section') as HTMLElement;
     // The domain's own tests (not the capability's) in their groups.
     expect([...members.querySelectorAll('h3')].map((h) => h.firstChild?.textContent)).toEqual(['Acceptance tests', 'Domain rule tests', 'Pattern tests', 'Interaction tests', 'UI tests', 'Design checks', 'Engineering checks']);
@@ -317,7 +317,7 @@ describe('layers and test groups', () => {
     expect(path.map((id) => column.get(id))).toEqual(path.map((_, i) => column.get(plan)! + i));
     const spine = fromTest.edges.filter((e) => e.relation === 'parent').map((e) => `${e.source} > ${e.target}`);
     for (let i = 1; i < path.length; i++) expect(spine).toContain(`${path[i - 1]} > ${path[i]}`);
-    const { positions } = await layoutNeighborhood(fromTest);
+    const { positions } = layoutNeighborhood(fromTest);
     for (let i = 1; i < path.length; i++) expect(positions.get(path[i - 1])!.x).toBeLessThan(positions.get(path[i])!.x);
 
     // Every graph group is the Test plan folder's group, by its key and label.
@@ -349,8 +349,8 @@ describe('layers and test groups', () => {
     expect(item.querySelector('code.trail-id')).toHaveTextContent('(DM-SHOP-LAY02)');
 
     // A test-plan group's page: its name, with no count and no ID of its own; its parent in the tooltip.
-    await openApp('/DM-SHOP/test/acceptance?view=graph', { workspace: layerWorkspace() });
-    await screen.findByRole('heading', { level: 1, name: 'Acceptance tests (4)' });
+    await openApp('/DM-SHOP/design/test-plan/acceptance?view=graph', { workspace: layerWorkspace() });
+    await screen.findByRole('heading', { level: 1, name: 'Acceptance tests (5)' });
     const group = await waitFor(() => trail().getByText('Acceptance tests').closest('.trail-item') as HTMLElement);
     expect(group.textContent).toBe('Acceptance tests');
     expect(group).toHaveAttribute('title', 'Acceptance tests of DM-SHOP');
