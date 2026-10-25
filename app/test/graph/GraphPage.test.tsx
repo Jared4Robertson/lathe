@@ -250,7 +250,7 @@ describe('graph groups on the page', () => {
     expect(trail.getAllByRole('listitem').map((li) => li.textContent)).toEqual(['Domain (P-D)', 'Use cases']);
     expect(trail.getByText('Use cases').closest('[aria-current]')).toHaveAttribute('title', 'Use cases of P-D');
 
-    const members = within(inspector().getByRole('list', { name: 'Members' }));
+    const members = within(inspector().getByRole('list', { name: 'Use cases' }));
     fireEvent.click(members.getByRole('link', { name: /P-D-UC01/ }));
     expect(window.location.pathname).toBe('/records/P-D-UC01');
     await back();

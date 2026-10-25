@@ -1,7 +1,7 @@
 import { lowerLabel, plural as pluralOf } from '../plural';
 import { createContext, useContext, useState, type AnchorHTMLAttributes, type ReactNode } from 'react';
 import { Link } from '../router';
-import { problemOrder, recordPath, type Problem, type SpecIndex, type SpecRecord } from './data';
+import { kindLabel, problemOrder, recordPath, type Problem, type SpecIndex, type SpecRecord } from './data';
 import { ActionsSlotContext } from '../components/ActionsSlot';
 import { LongList } from '../components/LongList';
 import { TreeList } from '../components/TreeList';
@@ -193,6 +193,15 @@ export function nestedCount(index: SpecIndex, nested: readonly SpecRecord[]): st
 }
 
 /**
+ * What a list of records is titled: its one kind in the plural ("Domain rules", "UC requirements"),
+ * or `mixed` ("Children", "Members") when it holds more than one kind to tell apart.
+ */
+export function listTitle(index: SpecIndex, records: readonly SpecRecord[], mixed: string): string {
+  const kinds = new Set(records.map((r) => r.kind));
+  return kinds.size === 1 ? pluralOf(kindLabel(index, records[0].kind)) : mixed;
+}
+
+/**
  * Records one level below the page's record, each with its own children folded under it: the
  * shape of every list of children on a wiki page and in the inspector. With `showKind`, each row
  * names its kind, but only when the list holds more than one kind.
@@ -216,7 +225,7 @@ export function RecordTree({ index, records, label, query, showKind = false, bul
       renderRow={(r) => <RecordRowBody index={index} record={r} showKind={tagKinds} />}
       searchText={recordText}
       countLabel={(_, nested) => nestedCount(index, nested)}
-      nestedLabel={(r) => `Children of ${r.id}`}
+      nestedLabel={(r) => `${listTitle(index, index.children.get(r.id) ?? [], 'Children')} of ${r.id}`}
       query={query}
       bulk={bulk}
     />
