@@ -26,3 +26,4 @@ The domain links the pattern with `follows`. The pattern has no settings: every 
 - `LA-PAT-APP-CODE-R10`: every grid says its columns.
 - `LA-PAT-APP-CODE-R11`: each pane has one title bar that holds its views and layout actions.
 - `LA-PAT-APP-CODE-R12`: motion is shared and optional.
+- `LA-PAT-APP-CODE-R13`: a row or card that leads to one record is one link.

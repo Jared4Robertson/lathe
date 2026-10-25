@@ -246,6 +246,36 @@ describe('LA-PAT-APP-CODE App code', () => {
     expect(ownTiming).toEqual([]);
   });
 
+  it('LA-BRW-T400 A row that leads to one record is one link: every record row on the domain and record pages has exactly one row link, stretched over the row', async () => {
+    // The stylesheet: rows are positioned, the row link's ::after covers the row and shows its hover
+    // and focus, and one rule lifts the row's other controls above it.
+    const rules = styleRules(CSS);
+    const ruleFor = (test: (selector: string) => boolean) => rules.filter((r) => topLevel(r.selector).some((s) => test(s.trim())));
+    const stretch = ruleFor((s) => s === '.row-link::after');
+    expect(stretch.map((r) => r.body).join(';')).toMatch(/position:\s*absolute[\s\S]*inset:\s*0/);
+    const rows = ruleFor((s) => /\.record-list > li/.test(s) && /\.tree-row/.test(s) && !/:not\(\.row-link\)/.test(s));
+    expect(rows.map((r) => r.body).join(';')).toMatch(/position:\s*relative/);
+    const lifted = ruleFor((s) => /:not\(\.row-link\)$/.test(s) && /\bbutton\b/.test(s) && /\ba\b/.test(s) && /\[title\]/.test(s));
+    expect(lifted.map((r) => r.body).join(';')).toMatch(/position:\s*relative[\s\S]*z-index:\s*1/);
+    expect(ruleFor((s) => s === '.row-link:hover::after').map((r) => r.body).join(';')).toContain('var(--hover-bg)');
+    expect(ruleFor((s) => s === '.row-link:focus-visible::after').map((r) => r.body).join(';')).toMatch(/outline:/);
+
+    // The pages: each row that holds a record link has exactly one row link, a real link to a record.
+    for (const path of ['/specs/DM/DM-SHOP', '/records/DM-SHOP-UC01', '/records/DM-SHOP']) {
+      await openApp(path);
+      await screen.findByRole('heading', { level: 1 });
+      const lists = [...document.querySelectorAll('.record-list')];
+      expect(lists.length).toBeGreaterThan(0);
+      const rowsOnPage = lists.flatMap((list) => [...list.querySelectorAll(':scope > li')].map((li) => (li.classList.contains('tree-item') ? li.querySelector(':scope > .tree-row')! : li)));
+      const withLinks = rowsOnPage.filter((row) => row.querySelector('a.record-link'));
+      expect(withLinks.length).toBeGreaterThan(0);
+      const wrong = withLinks
+        .filter((row) => row.querySelectorAll('.row-link').length !== 1 || !/^\/records\//.test(row.querySelector('.row-link')?.getAttribute('href') ?? ''))
+        .map((row) => `${path}: ${row.outerHTML.slice(0, 160)}`);
+      expect(wrong).toEqual([]);
+    }
+  });
+
   it('LA-BRW-T262 Code, specs and docs use American spelling', () => {
     // Built from parts, so this file does not trip its own check.
     const british = ['col' + 'our', 'behavi' + 'our', 'neighb' + 'our', 'fav' + 'our', 'hon' + 'our', 'cent' + 're', 'model' + 'ling', 'model' + 'led',
