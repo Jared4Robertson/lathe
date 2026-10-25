@@ -146,7 +146,11 @@ describe('shortcut hints', () => {
     fireEvent.keyDown(document.body, { key: '2', code: 'Digit2', ctrlKey: true });
     await waitFor(() => expect(screen.getByRole('group', { name: 'Depth' })).toBeInTheDocument());
     expect(within(screen.getByRole('group', { name: 'Depth' })).getByRole('button', { name: '2' })).toHaveAttribute('aria-keyshortcuts', 'Plus =');
-    expect(within(screen.getByRole('group', { name: 'Depth' })).getByRole('button', { name: '1' })).toHaveAttribute('aria-keyshortcuts', '-');
+    // At depth 1 nothing is below it; one step up, - leads back to 1.
+    expect(within(screen.getByRole('group', { name: 'Depth' })).getByRole('button', { name: '1' })).not.toHaveAttribute('aria-keyshortcuts');
+    fireEvent.click(within(screen.getByRole('group', { name: 'Depth' })).getByRole('button', { name: '2' }));
+    await waitFor(() => expect(within(screen.getByRole('group', { name: 'Depth' })).getByRole('button', { name: '1' })).toHaveAttribute('aria-keyshortcuts', '-'));
+    expect(within(screen.getByRole('group', { name: 'Depth' })).getByRole('button', { name: '3' })).toHaveAttribute('aria-keyshortcuts', 'Plus =');
     expect(screen.getByRole('button', { name: 'Full screen: Graph' })).toHaveAttribute('aria-keyshortcuts', 'Control+Shift+Enter');
   });
 

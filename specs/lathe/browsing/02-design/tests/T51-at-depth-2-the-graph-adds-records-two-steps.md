@@ -1,7 +1,7 @@
 ---
 id: LA-BRW-T51
 kind: test
-title: At depth 2 the graph adds records two steps away, each at its distance
+title: At depth 3 the graph adds records two steps away, each at its distance
 parent: LA-BRW
 test_type: unit
 run_by: app/test/graph/model.test.ts
