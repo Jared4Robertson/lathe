@@ -135,6 +135,8 @@ function Shell() {
   const announce = useAnnounce();
   const [diagrams, setDiagrams] = useState<DiagramSummary[]>([]);
   const [listError, setListError] = useState<string | null>(null);
+  // Whether the diagrams list has come back once (or failed): the nav draws its lists only then, with the specs (UX-R08).
+  const [diagramsLoaded, setDiagramsLoaded] = useState(false);
 
   const loadDiagrams = useCallback(async () => {
     try {
@@ -145,6 +147,8 @@ function Shell() {
       setListError(null);
     } catch (e) {
       setListError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setDiagramsLoaded(true);
     }
   }, []);
 
@@ -282,6 +286,7 @@ function Shell() {
           diagrams={diagrams}
           diagramError={listError}
           newDiagram={newDiagram}
+          diagramsLoaded={diagramsLoaded}
           collapsed={collapsed}
           onToggleCollapsed={() => setCollapsed(!collapsed)}
           drawer={narrow}

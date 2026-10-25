@@ -8,4 +8,4 @@ run_by: app/stability/first-load.spec.ts
 links:
   proves: [LA-BRW-UC117-R01, LA-BRW-DR240, LA-PAT-APP-UX-R08]
 ---
-Loads each page with the probes installed before its scripts, and once with the font files held back 2.5 seconds, and expects no unexpected shift and the nav, the page, the first pane's bar and title and the inspector never to move.
+Loads each page with the probes installed before its scripts, and once with the app's font files held back 2.5 seconds, and expects no unexpected shift and the nav, the page, the first pane's bar and title and the inspector never to move.
