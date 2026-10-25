@@ -279,7 +279,7 @@ describe('the inspector', () => {
     expect(screen.getAllByRole('complementary', { name: 'Inspector' })).toHaveLength(1);
   });
 
-  it('LA-BRW-T132 On a narrow screen the inspector is a drawer: focus moves in, and Escape closes it and gives focus back', async () => {
+  it('LA-BRW-T132 On a narrow screen the inspector is a bottom sheet: focus moves in, and Escape closes it and gives focus back', async () => {
     narrowScreen();
     await openApp('/records/P-D-UC01', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
