@@ -38,7 +38,7 @@ describe('shortcut hints', () => {
     // Keyboard focus: at once; Escape closes it.
     const graphToggle = within(await screen.findByRole('group', { name: 'View' })).getByRole('button', { name: 'Graph', pressed: false });
     keyFocus(graphToggle);
-    expect(tooltip()).toHaveTextContent('Graph view Ctrl+2');
+    expect(tooltip()).toHaveTextContent('Graph view Alt+G');
     fireEvent.keyDown(graphToggle, { key: 'Escape' });
     expect(screen.queryByRole('tooltip')).toBeNull();
     act(() => graphToggle.blur());
@@ -72,8 +72,16 @@ describe('shortcut hints', () => {
 
     fireEvent.keyDown(document.body, { key: 'p', code: 'KeyP', metaKey: true, shiftKey: true });
     const palette = screen.getByRole('dialog', { name: 'Command palette' });
-    await userEvent.setup().type(within(palette).getByRole('combobox'), 'split');
-    expect(within(palette).getAllByRole('option')[0].querySelector('kbd')).toHaveTextContent('⌘\\');
+    await userEvent.setup().type(within(palette).getByRole('combobox'), 'graph view');
+    expect(within(palette).getAllByRole('option')[0].querySelector('kbd')).toHaveTextContent('⌃G');
+    fireEvent.keyDown(within(palette).getByRole('combobox'), { key: 'Escape' });
+    // On a Mac the view toggles show Ctrl+W, Ctrl+G and Ctrl+M (Cmd+W stays the browser's).
+    for (const [name, keys, shown] of [['Wiki', 'Control+W Control+1', '⌃W'], ['Graph', 'Control+G Control+2', '⌃G']]) {
+      const toggle = within(screen.getByRole('group', { name: 'View' })).getByRole('button', { name });
+      expect(toggle).toHaveAttribute('aria-keyshortcuts', keys);
+      keyFocus(toggle);
+      expect(tooltip().querySelector('kbd')).toHaveTextContent(shown);
+    }
   });
 
   it('LA-BRW-T232 The command palette lists each command with its shortcut right-aligned in kbd styling', async () => {
@@ -117,7 +125,7 @@ describe('shortcut hints', () => {
     fireEvent.keyDown(document.body, { key: '?', code: 'Slash', shiftKey: true });
     const sheet = screen.getByRole('dialog', { name: 'Keyboard shortcuts' });
     expect(within(sheet).getByRole('rowheader', { name: 'Show or hide the navigation' }).nextElementSibling).toHaveTextContent('Ctrl+J');
-    expect(within(sheet).getByRole('rowheader', { name: 'Graph view' }).nextElementSibling).toHaveTextContent('Alt+G');
+    expect(within(sheet).getByRole('rowheader', { name: 'Graph view on or off' }).nextElementSibling).toHaveTextContent('Alt+G');
   });
 
   it('LA-BRW-T234 Every control with a shortcut carries aria-keyshortcuts from the keymap', async () => {
@@ -133,10 +141,11 @@ describe('shortcut hints', () => {
     expect(within(nav()).getByRole('combobox', { name: 'Quick find' })).toHaveAttribute('aria-keyshortcuts', 'Control+P Control+K');
     expect(within(within(nav()).getByRole('list', { name: 'Spaces' })).getAllByRole('link')[0]).toHaveAttribute('aria-keyshortcuts', 'Alt+1');
     expect(within(nav()).getByRole('link', { name: /^Checks for all products/ })).toHaveAttribute('aria-keyshortcuts', 'Control+Shift+M');
-    for (const [name, keys] of [['Wiki', 'Control+1'], ['Graph', 'Control+2']]) {
+    // Off a Mac: Alt+W and Alt+G first, as Ctrl+W closes the tab and Ctrl+G finds the next match.
+    for (const [name, keys] of [['Wiki', 'Alt+W Control+1'], ['Graph', 'Alt+G Control+2']]) {
       expect(within(screen.getByRole('group', { name: 'View' })).getByRole('button', { name })).toHaveAttribute('aria-keyshortcuts', keys);
     }
-    expect(screen.getByRole('button', { name: 'Open the graph beside' })).toHaveAttribute('aria-keyshortcuts', 'Control+3');
+    expect(screen.getByRole('button', { name: 'Full screen: Wiki' })).toHaveAttribute('aria-keyshortcuts', 'Control+3');
     // The corner toggle and the inspector's own close button.
     expect(screen.getByRole('button', { name: 'Hide the inspector', expanded: true })).toHaveAttribute('aria-keyshortcuts', 'Control+Alt+B');
     expect(within(screen.getByRole('complementary', { name: 'Inspector' })).getByRole('button', { name: 'Hide the inspector' })).toHaveAttribute('aria-keyshortcuts', 'Control+Alt+B');
@@ -153,7 +162,7 @@ describe('shortcut hints', () => {
     fireEvent.click(within(screen.getByRole('group', { name: 'Depth' })).getByRole('button', { name: '2' }));
     await waitFor(() => expect(within(screen.getByRole('group', { name: 'Depth' })).getByRole('button', { name: '1' })).toHaveAttribute('aria-keyshortcuts', '-'));
     expect(within(screen.getByRole('group', { name: 'Depth' })).getByRole('button', { name: '3' })).toHaveAttribute('aria-keyshortcuts', 'Plus =');
-    expect(screen.getByRole('button', { name: 'Full screen: Graph' })).toHaveAttribute('aria-keyshortcuts', 'Control+Shift+Enter');
+    expect(screen.getByRole('button', { name: 'Full screen: Graph' })).toHaveAttribute('aria-keyshortcuts', 'Control+3');
   });
 
   it('LA-BRW-T235 The shortcuts sheet matches the hints: one Switch to row per product, with the same keys', async () => {

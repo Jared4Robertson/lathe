@@ -151,7 +151,7 @@ function QuestionList({ index, questions }: { index: SpecIndex; questions: SpecR
       searchText={recordText}
       render={(q) => (
         <>
-          <RecordLink index={index} id={q.id} />
+          <RecordLink index={index} id={q.id} row />
           <small className="meta">
             {q.fields.owner && <>owner {q.fields.owner}</>}
             {(index.outgoing.get(q.id) ?? []).filter((l) => l.relation === 'about').map((l) => (
@@ -274,7 +274,7 @@ export function DomainWiki({ index, id }: { index: SpecIndex; id: string }) {
             searchText={(g) => idText(index, g.id)}
             render={(g) => (
               <>
-                <RecordLink index={index} id={g.id} />
+                <RecordLink index={index} id={g.id} row />
                 <small className="meta">{kindLabel(index, g.kind)} with nothing that {g.missing === 'satisfies' ? 'satisfies' : 'proves'} it</small>
               </>
             )}
