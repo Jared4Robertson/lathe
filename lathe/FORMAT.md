@@ -94,6 +94,11 @@ The engine runs every SQL file in `lathe/checks/`. Each returns rows of `(severi
   - `interaction-requirement-fulfills-nothing`: an interaction requirement with no `fulfills` link.
   - `test-type-mismatch`: a test with `test_type: domain_rule` that proves requirements but no domain rule, or with `test_type: acceptance` that proves domain rules but no requirement. Other types, such as `unit`, are not compared.
 
+  The proof warnings say where proof is still owed or is counted nowhere:
+  - `proof-still-owed`: an obligation that is already proved, but that a planned test is also meant to prove, such as "TL-LEND-E06-R03 is proved, but planned test TL-LEND-T30 still owes a proof of it". There is one warning for each obligation and planned test, so the obligations that coverage counts in `planned_any` beyond `planned` are named. A pattern rule is judged in each domain that owes it, with only that domain's tests. An obligation not yet proved, whose test is only planned, is `unproved` instead.
+  - `proof-counts-nowhere`: a test none of whose proofs counts in any domain's coverage: for example it proves only a rule of a pattern no domain follows, a pattern rule that only other domains owe, an obligation outside every domain, or a record that is not an obligation. The message gives the reason for each target. A test with at least one proof that counts is not reported, whatever its state.
+  - `manual-test-file-silent`: a manual test whose `run_by` file exists but names neither the test's ID, nor any ID it proves, nor its `key`. Name the test in the file, or point `run_by` at the file that carries it out.
+
 One mistake gives one error. When an ID is duplicated, a link or parent that points at it is judged against every record with that ID, and is reported only if none of them allows it. A record whose parent does not exist is reported as `unknown-parent` only.
 
 ## 6. Coverage
