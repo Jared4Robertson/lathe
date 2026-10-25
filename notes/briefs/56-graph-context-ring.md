@@ -29,6 +29,23 @@ Depth 1 shows only the focus, its parent (or folder) and its children (or their 
 5. **Filters:** add a "Show context ring" switch under Filters, on by default and remembered with the other graph settings, per tab (brief 41). Off gives today's picture.
 6. **Reduced motion:** context nodes simply appear, dimmed, with no fade.
 
+## More, to serve the intent (Jared: "please add anything else needed to really accomplish that intent")
+The intent: a sense of place without noise. Also build:
+7. **Hover spotlight.** Hovering or keyboard-focusing a focus node brightens it, its edges and its directly connected nodes, focus or context, and dims the rest a step. Leaving restores the picture. It uses the motion tokens, and under reduced motion it changes at once.
+8. **A light ring.** A parent with more than 6 context children shows the first 6 (in the usual order) and a chip node such as "+12 more use cases". Clicking the chip re-centers on that parent's folder for those children (its group address). Chips are context too: faded, out of focus order, and clickable.
+9. **Edge hints.** At each canvas edge, a small chip counts the context nodes, of any kind, that lie past that edge ("3 ↑", "8 →"). Clicking a chip pans the camera that way by about half a viewport, using the shared motion, without changing the focus. They update as the camera moves. They are hidden when nothing is past that edge.
+10. **Smooth hand-offs.** On a re-center, nodes that go from focus to context fade down and shrink as the camera moves. Nodes that go from context to focus fade up and grow. Nothing pops. It all runs on the brief 39 and 46 motion clock.
+11. **Step out and in by keyboard:** Alt+Up (parent), Alt+Down (first child), Alt+Left and Alt+Right (previous and next sibling in order). They are commands in the keymap with tooltips and `aria-keyshortcuts`, and they appear in the shortcuts sheet.
+12. **A minimap.** Add a "Minimap" switch under Filters, off by default and remembered per tab. It shows React Flow's `MiniMap` in a corner with focus nodes solid, context faint and the viewport outlined. It is theme-aware through tokens.
+13. **The same idea in the Model view (ERD):**
+    - On an aggregate's ERD, the entities that its referenced entities refer to appear one ring out, faded and out of focus.
+    - On a domain's ERD, the aggregates of other domains that this domain's aggregates refer to are faded context. They are already gray, so fade them too.
+    - Apply the same framing (focus only) and edge hints.
+14. **Quiet labels.** Context nodes show only their kind and a short title. Their ID and full title appear on hover.
+15. **Budget.** At most about 40 context nodes, with chips for the rest. Re-centers stay within the R17 stability budget, and a frame takes under 16 ms at depth 3 on Lathe's own spec. Measure it with the stability suite, and report it.
+
+Records: requirements for 7 to 14 under `UC20` (the graph), and under `UC113` (the ERD) for 13, from the next free R numbers. Tests from the T range below.
+
 ## Records
 - Update `LA-BRW-UC20-R01` (what each depth shows: the context ring) and `UC40-R03` (a group at the center, also with its ring).
 - Add domain rules from `LA-BRW-DR300`, components from `LA-BRW-C290`, and tests from `LA-BRW-T540`. The tests cover:
@@ -39,7 +56,7 @@ Depth 1 shows only the focus, its parent (or folder) and its children (or their 
 - Update the tests that assert exact node sets at depth 1 (T277, T102 and others), so they assert focus nodes and context nodes separately.
 
 ## Scope
-- **You own:** `app/src/graph/**`, the graph styles in `styles.css`, the graph tests, and the records above.
+- **You own:** `app/src/graph/**`, `app/src/model/**` (for 13), the graph and model styles in `styles.css`, the step commands in `keymap.ts`, the graph and model tests, and the records above.
 - Check which agents are running when you start, and stay out of their files.
 - Never use port 5199. Use `npx vite --port 5417` in `app/` and stop it. Run brief 53's stability suite before reporting: re-centers must stay within the R17 budget.
 
