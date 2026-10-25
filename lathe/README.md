@@ -23,7 +23,7 @@ npx lathe serve            # http://127.0.0.1:5330
 }
 ```
 
-All five keys are optional (`specs` and `diagrams` are the defaults). A `metaExtensions` folder holds a `kinds.csv` and/or `relations.csv` with the same columns as [meta/](meta/); their rows are added to Lathe's defaults for this product only, and a row for a kind Lathe already has widens that kind (see FORMAT.md section 9). A `checks` folder holds the product's own checks (see [Add a product's own check](#add-a-products-own-check)). `idPrefixes` lists ID prefixes, besides every product's and domain's ID, that a record body may cite: a token such as `STD-04` is then read as a citation and reported if no record has it (FORMAT.md section 12). The record format is in [FORMAT.md](FORMAT.md).
+All five keys are optional (`specs` and `diagrams` are the defaults). A `metaExtensions` folder holds a `kinds.csv`, `relations.csv` and/or `sections.csv` with the same columns as [meta/](meta/); their rows are added to Lathe's defaults for this product only, and a row for a kind Lathe already has widens that kind (see FORMAT.md section 9). A `checks` folder holds the product's own checks (see [Add a product's own check](#add-a-products-own-check)). `idPrefixes` lists ID prefixes, besides every product's and domain's ID, that a record body may cite: a token such as `STD-04` is then read as a citation and reported if no record has it (FORMAT.md section 12). The record format is in [FORMAT.md](FORMAT.md).
 
 ## Build the package
 
@@ -38,7 +38,7 @@ cd lathe && npm pack           # writes jaredrob-lathe-<version>.tgz
 
 The engine turns the product's spec records into a checked database. It:
 
-1. Reads the meta-model: Lathe's `meta/kinds.csv` and `meta/relations.csv`, plus the product's extensions.
+1. Reads the meta-model: Lathe's `meta/kinds.csv`, `meta/relations.csv` and `meta/sections.csv` (the folders kinds are read in), plus the product's extensions.
 2. Reads every `*.md` file in the configured specs folder except `README.md`, and parses its YAML header and body (see [FORMAT.md](FORMAT.md)). A file it cannot parse becomes a `parse-error` problem, and loading carries on.
 3. Works out each record's product and domain by walking its `parent` chain. A loop in that chain is a `parent-cycle` error.
 4. Checks each test's `run_by` file and each component's `file`: does it exist, and does a test's file mention the test's ID.

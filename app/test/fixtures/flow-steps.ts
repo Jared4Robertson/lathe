@@ -7,7 +7,7 @@ import { workspace as fixtureWorkspace } from './workspace';
 export function stepsWorkspace(): Workspace {
   const w = fixtureWorkspace();
   if (!w.kinds.some((k) => k.kind === 'flow_step')) {
-    w.kinds.push({ kind: 'flow_step', label: 'Flow step', stage: 'design', parent_kinds: ['flow'], required_fields: ['order'], obligation: false, proof_only: false, description: 'One step of a flow, in order.' });
+    w.kinds.push({ kind: 'flow_step', label: 'Flow step', stage: 'design', section: 'interaction-design', parent_kinds: ['flow'], required_fields: ['order'], obligation: false, proof_only: false, description: 'One step of a flow, in order.' });
   }
   const step = (id: string, order: string, title: string, body = ''): SpecRecord => ({
     id, kind: 'flow_step', title, parent: 'DM-SHOP-F01', product: 'DM', domain: 'DM-SHOP', fields: { order }, body, path: `specs/dm/${id}.md`, mentions: [],

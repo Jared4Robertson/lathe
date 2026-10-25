@@ -5,7 +5,7 @@ description: Add a product's own kinds and relations to Lathe's meta-model, wide
 
 # Extend the meta-model
 
-Lathe's meta-model (`meta/kinds.csv` and `meta/relations.csv` in the Lathe package) says which kinds of record exist, where each may sit, which fields it needs, and which links are allowed. A product adds to it, for itself only, with the CSV files in the folder its `lathe.config.json` names as `metaExtensions`:
+Lathe's meta-model (`meta/kinds.csv`, `meta/relations.csv` and `meta/sections.csv` in the Lathe package) says which kinds of record exist, where each may sit, which fields it needs, which links are allowed, and which folder each kind is read in. A product adds to it, for itself only, with the CSV files in the folder its `lathe.config.json` names as `metaExtensions`:
 
 ```json
 { "specs": "specs", "metaExtensions": "lathe-meta" }
@@ -15,7 +15,7 @@ Extend only when the user asks for it, or a real need keeps recurring. Never ext
 
 ## Before you write
 
-1. Read section 9 of `FORMAT.md` in the Lathe package (`node_modules/@jaredrob/lathe/FORMAT.md` in a product repo, `lathe/FORMAT.md` in the Lathe repo) and the default `meta/kinds.csv` and `meta/relations.csv`.
+1. Read section 9 of `FORMAT.md` in the Lathe package (`node_modules/@jaredrob/lathe/FORMAT.md` in a product repo, `lathe/FORMAT.md` in the Lathe repo) and the default `meta/kinds.csv`, `meta/relations.csv` and `meta/sections.csv`.
 2. Read the product's existing `metaExtensions` files, if any. Use the same columns as the defaults, header row included.
 
 ## What a row does
@@ -23,17 +23,23 @@ Extend only when the user asks for it, or a real need keeps recurring. Never ext
 | You write | Effect |
 | --- | --- |
 | A `kinds.csv` row for a new kind | Adds the kind. |
-| A `kinds.csv` row for a kind that already exists | **Widens** it: its `parent_kinds` and `required_fields` are added to the default's; a non-empty `label`, `stage`, `obligation` or `description` replaces the default's. Leave a column empty to keep the default. |
+| A `kinds.csv` row for a kind that already exists | **Widens** it: its `parent_kinds` and `required_fields` are added to the default's; a non-empty `label`, `stage`, `section`, `obligation` or `description` replaces the default's. Leave a column empty to keep the default. |
+| A `sections.csv` row for a new folder, or for one that already exists | Adds the folder, or replaces its `stage`, `order`, `label` or `description` with any that is non-empty. |
 | A `relations.csv` row for a new relation, or a new source and target for an existing one | Adds that link rule. |
 | A `relations.csv` row identical to an existing one | Changes nothing. |
 | Two rows for the same kind in one folder | Error `meta-duplicate-kind`. Merge them. |
+| A kind whose `section` is not a listed folder, or a folder of another stage | Error `unknown-section` or `section-stage-mismatch`. |
 
 A widening can only add: it cannot remove a default parent kind, required field or relation.
+
+## Folders
+
+Each kind's `section` column names the folder it is read in, as S2 lays out a domain's specs: `domain-model` and `use-cases` in the Define stage, `interaction-design`, `technical-specification` and `test-plan` in the Design stage, and `shared` (patterns) at product level. The folders, their order and labels are the rows of `sections.csv` (`section, stage, order, label, description`). A new kind should name a folder of its own stage; one with no `section` gets a folder of its own in the app. To move a default kind, widen it with just its `section`, such as `domain_rule,,,use-cases,,,,`; to add a folder, add a `sections.csv` row. See section 15 of `FORMAT.md`.
 
 ## Obligations and roles
 
 - `obligation: yes` (or `true`) on a kind makes its records things that must be designed, built and proved. Lathe then counts them in coverage and warns while nothing designs or proves one, exactly as for requirements and domain rules.
-- `obligation: proof` makes them things that need **proof only**: coverage counts them as designed and built, gives no `satisfies` gaps and never warns `unsatisfied`, but counts and warns about proof as for any obligation. Lathe's own `pattern_rule` is proof-only. To ask for the design of pattern rules too, widen it with `pattern_rule,,,,,yes,`.
+- `obligation: proof` makes them things that need **proof only**: coverage counts them as designed and built, gives no `satisfies` gaps and never warns `unsatisfied`, but counts and warns about proof as for any obligation. Lathe's own `pattern_rule` is proof-only. To ask for the design of pattern rules too, widen it with `pattern_rule,,,,,,yes,`.
 - Any other value, or an empty one on a new kind, means the kind is not an obligation. The value is read in any letter case.
 - A relation's `role` says what its links count as: `design` (the source designs the target, like a component that `satisfies` it) or `proof` (the source proves the target, like a test that `proves` it). Leave it empty for a link that only connects records.
 - A new obligation kind needs at least one `proof` relation targeting it, and a `yes` kind also at least one `design` relation, or it can never be covered. A `proof` link counts only from an automated or manual test.
@@ -45,12 +51,12 @@ A product wants security controls as their own obligation kind under a domain, a
 `lathe-meta/kinds.csv`:
 
 ```csv
-kind,label,stage,parent_kinds,required_fields,obligation,description
-security_control,Security control,design,domain,threat,yes,"A control that must hold to defend against a named threat."
-domain_rule,,,domain,,,
+kind,label,stage,section,parent_kinds,required_fields,obligation,description
+security_control,Security control,design,interaction-design,domain,threat,yes,"A control that must hold to defend against a named threat."
+domain_rule,,,,domain,,,
 ```
 
-The first row adds a kind with a required `threat` field and marks it an obligation. The second widens `domain_rule`: it may now sit under a `domain` as well as an `aggregate`; everything else stays as Lathe defines it.
+The first row adds a kind with a required `threat` field, marks it an obligation, and puts it in the Design stage's Interaction design folder, where the side nav and the domain page list it. The second widens `domain_rule`: it may now sit under a `domain` as well as an `aggregate`; everything else stays as Lathe defines it.
 
 `lathe-meta/relations.csv`:
 

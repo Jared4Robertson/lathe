@@ -19,7 +19,7 @@ describe('one level deep', () => {
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
     expect(uc).toHaveTextContent('2 use-case requirements');
     expect(uc.querySelector('ul.nested')).toBeNull();
-    const aggregates = section(/^Aggregates/);
+    const aggregates = section(/^Domain model/);
     expect(row(aggregates, 'DM-SHOP-A1')).toHaveTextContent('1 domain rule');
 
     // The button opens and closes it.
@@ -50,7 +50,7 @@ describe('one level deep', () => {
     await openApp('/specs/DM');
     await openApp('/specs/DM/DM-SHOP');
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
-    expect(row(section(/^Aggregates/), 'DM-SHOP-A1').querySelector('ul.nested')).not.toBeNull();
+    expect(row(section(/^Domain model/), 'DM-SHOP-A1').querySelector('ul.nested')).not.toBeNull();
     expect(row(section(/^Use cases/), 'DM-SHOP-UC01').querySelector('ul.nested')).not.toBeNull();
   });
 
