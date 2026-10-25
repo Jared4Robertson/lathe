@@ -1,6 +1,6 @@
 import './setup';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { NODE_HEIGHT, NODE_WIDTH, layoutNeighborhood } from '../../src/graph/layout';
 import { anchorLayout, fadeSets, frameFocus, translate } from '../../src/graph/camera';
 import { neighborhood } from '../../src/graph/model';
@@ -43,8 +43,8 @@ const reducedMotion = () =>
 describe('graph camera', () => {
   it('LA-BRW-T380 The new layout is shifted so the clicked node keeps its world position, and is otherwise the layout as laid out', async () => {
     const index = testIndex();
-    const before = (await layoutNeighborhood(neighborhood(index, 'P-D-UC01', 2))).positions;
-    const laid = (await layoutNeighborhood(neighborhood(index, 'P-D-UC01-R01', 2))).positions;
+    const before = (await layoutNeighborhood(neighborhood(index, 'P-D-UC01', 1, undefined, undefined, { links: true }))).positions;
+    const laid = (await layoutNeighborhood(neighborhood(index, 'P-D-UC01-R01', 1, undefined, undefined, { links: true }))).positions;
     // The layout puts its focus at the origin; the clicked node was elsewhere.
     expect(laid.get('P-D-UC01-R01')).toEqual({ x: -NODE_WIDTH / 2, y: -NODE_HEIGHT / 2 });
     expect(before.get('P-D-UC01-R01')).not.toEqual(laid.get('P-D-UC01-R01'));
@@ -56,7 +56,7 @@ describe('graph camera', () => {
     expect(anchored).toEqual(translate(laid, dx, dy));
     expect([...anchored.keys()]).toEqual([...laid.keys()]);
     // The same graph and anchor always give the same positions, and anchoring a picture on itself changes nothing.
-    expect(anchorLayout((await layoutNeighborhood(neighborhood(index, 'P-D-UC01-R01', 2))).positions, 'P-D-UC01-R01', before)).toEqual(anchored);
+    expect(anchorLayout((await layoutNeighborhood(neighborhood(index, 'P-D-UC01-R01', 1, undefined, undefined, { links: true }))).positions, 'P-D-UC01-R01', before)).toEqual(anchored);
     expect(anchorLayout(anchored, 'P-D-UC01-R01', anchored)).toEqual(anchored);
     // With no last picture, or a focus that wasn't in it, the layout is kept as it is.
     expect(anchorLayout(laid, 'P-D-UC01-R01', null)).toEqual(laid);
@@ -94,18 +94,28 @@ describe('graph camera on the page', () => {
   });
   afterEach(() => vi.unstubAllGlobals());
 
-  async function open() {
-    startAtDepth(2);
+  /** Opens Lend a thing's graph at depth 1; with `links`, turns Links on and waits for the rule it applies. */
+  async function open(links = true) {
+    startAtDepth(1);
     await openApp('/P-D-UC01?view=graph', { workspace: testWorkspace() });
     await waitFor(() => expect(isCenter('P-D-UC01')).toBe(true));
     await waitFor(() => expect(calls.length).toBeGreaterThan(0));
+    if (!links) return;
+    fireEvent.click(screen.getByRole('button', { name: 'Links' }));
+    await waitFor(() => expect(node('P-D-DR01')).not.toBeNull());
+    await waitFor(() => expect(document.querySelector('.react-flow__node.is-leaving')).toBeNull());
   }
 
   it('LA-BRW-T383 A re-center keeps the clicked node in place, glides the camera with the shared duration, and fades records in and out', async () => {
-    await open();
+    await open(false);
     // The first picture appears at once.
     expect(calls.every((c) => c.options?.duration === 0)).toBe(true);
     expect(document.querySelectorAll('.react-flow__node.is-entering')).toHaveLength(0);
+    fireEvent.click(screen.getByRole('button', { name: 'Links' }));
+    await waitFor(() => expect(node('P-D-DR01')).not.toBeNull());
+    // The use case's folder is in focus, its stage faded beyond it.
+    expect(node('P-D/define/use-cases')!.className).not.toContain('is-context');
+    expect(node('P-D/define')!.className).toContain('is-context');
     const clickedAt = at('P-D-UC01-R01');
     const first = calls.length;
 
@@ -122,6 +132,11 @@ describe('graph camera on the page', () => {
     expect(node('P-D-V01')!.className).toContain('is-entering');
     expect(node('P-D-T01')!.className).toContain('is-entering');
     expect(node('P-D-UC01')!.className).not.toContain('is-entering');
+    // A hand-off: the use case's folder goes from focus to the faded ring, the same box, fading down as the camera moves.
+    expect(node('P-D/define/use-cases')!.className).toContain('is-context');
+    expect(node('P-D/define/use-cases')!.className).not.toContain('is-entering');
+    // The stage that was the ring leaves, faded as it was.
+    expect(document.querySelector<HTMLElement>('.react-flow__node[data-id="leaving:P-D/define"]')?.className).toContain('is-context');
     // The domain rule the use case applies leaves: it fades out where it was, under its own ID, and is then dropped.
     expect(node('P-D-DR01')).toBeNull();
     const leaving = document.querySelector<HTMLElement>('.react-flow__node[data-id="leaving:P-D-DR01"]');
