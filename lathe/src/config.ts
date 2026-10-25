@@ -10,8 +10,6 @@ export interface LatheConfig {
   root: string;
   /** Folder of spec records. */
   specsDir: string;
-  /** Folder of CSV diagrams (diagrams.csv plus one folder per diagram). */
-  diagramsDir: string;
   /** Meta-model folders, in order: Lathe's defaults first, then the product's extensions. */
   metaDirs: string[];
   /** The product's own checks folder (SQL files run after Lathe's checks), or null when it has none. */
@@ -27,7 +25,6 @@ export const DEFAULT_MAX_CHILDREN = 15;
 
 interface ConfigFile {
   specs?: string;
-  diagrams?: string;
   /** A folder with kinds.csv and/or relations.csv whose rows are added to Lathe's defaults. */
   metaExtensions?: string;
   /** A folder of the product's own check SQL files, run after Lathe's checks (FORMAT.md section 13). */
@@ -37,6 +34,9 @@ interface ConfigFile {
   /** Structure settings: maxChildren, the most children of one kind a record should have. */
   structure?: unknown;
 }
+
+/** The keys lathe.config.json may hold; any other key is an error, never silently ignored. */
+const CONFIG_KEYS = ['specs', 'metaExtensions', 'checks', 'idPrefixes', 'structure'] as const;
 
 const ID_PREFIX = /^[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*$/;
 
@@ -63,7 +63,7 @@ function readMaxChildren(structure: unknown): number {
   return value;
 }
 
-/** The installed Lathe package's own folder (holding meta/, checks/ and diagrams/), from source or from dist. */
+/** The installed Lathe package's own folder (holding meta/ and checks/), from source or from dist. */
 export const PACKAGE_DIR = (() => {
   let dir = path.dirname(fileURLToPath(import.meta.url));
   while (!existsSync(path.join(dir, 'meta', 'kinds.csv'))) {
@@ -85,13 +85,19 @@ export function loadConfig(root: string): LatheConfig {
       throw new Error(`${CONFIG_FILE} is not valid JSON: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
+  if (typeof config !== 'object' || config === null || Array.isArray(config)) {
+    throw new Error(`${CONFIG_FILE} must hold one JSON object, such as { "specs": "specs" }.`);
+  }
+  const unknown = Object.keys(config).filter((key) => !(CONFIG_KEYS as readonly string[]).includes(key));
+  if (unknown.length) {
+    throw new Error(`${CONFIG_FILE}: unknown setting${unknown.length === 1 ? '' : 's'} ${unknown.map((k) => `"${k}"`).join(', ')}. The settings are ${CONFIG_KEYS.join(', ')}.`);
+  }
   const inside = (value: string | undefined, fallback: string) => path.resolve(root, value ?? fallback);
   const metaDirs = [path.join(PACKAGE_DIR, 'meta')];
   if (config.metaExtensions) metaDirs.push(inside(config.metaExtensions, ''));
   return {
     root,
     specsDir: inside(config.specs, 'specs'),
-    diagramsDir: inside(config.diagrams, 'diagrams'),
     metaDirs,
     checksDir: config.checks ? inside(config.checks, '') : null,
     idPrefixes: readIdPrefixes(config.idPrefixes),

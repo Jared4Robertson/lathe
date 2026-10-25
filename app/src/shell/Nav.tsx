@@ -10,7 +10,6 @@ import { Link } from '../router';
 import { checksPath, parseSpecRoute, type SpecIndex, type SpecRecord, type SpecState } from '../specs/data';
 import { branchOf, domainFolders, productFolderKinds, productFolders, ungrouped, type Folder, type FolderGroup } from '../specs/folders';
 import { recordText } from '../specs/parts';
-import type { DiagramSummary } from '../types';
 import { SPACE_KEYS, spaceCommandId } from './keymap';
 import { isBool, usePref } from './prefs';
 import { QuickFind } from './QuickFind';
@@ -20,16 +19,16 @@ import { trapTab } from './useNarrow';
 import { addressOf, HOME_PATH } from '../views/address';
 
 // The side navigation. At its far left is the space rail: one square icon per product (each
-// product is its own space), a separator, then the items above every product (Diagrams, and
-// Checks for all products). Beside it, the panel: a quick find, the current space's overview,
-// its shared folder, its domains (folded into stages and folders, as Client lays out its specs) and groups, then Diagrams and Tools, each a section that
+// product is its own space), a separator, then the item above every product (Checks for all
+// products). Beside it, the panel: a quick find, the current space's overview,
+// its shared folder, its domains (folded into stages and folders, as Client lays out its specs) and groups, then Tools, a section that
 // folds on its own, and a footer with Appearance and where the specs come from (the record format is a command and a
 // link in the shortcuts sheet). The nav
 // collapses to the rail alone (remembered), and on a narrow screen it is a drawer that keeps
 // the rail.
 //
-// Nothing in it jumps (LA-PAT-APP-UX-R08): its lists are drawn once the specs and the diagrams
-// have both loaded, never one pushing the other down; and only a move made in the nav reshapes it.
+// Nothing in it jumps (LA-PAT-APP-UX-R08): its lists are drawn once the specs have loaded, never
+// drawn and then pushed down; and only a move made in the nav reshapes it.
 // A page opened from a link in the nav, or on the nav's first draw, opens its branch and scrolls
 // its row into view. A page opened anywhere else (a link in the page, the graph, Back, quick find)
 // leaves the nav's rows where they are: the closed row that holds the page is marked instead, and
@@ -38,12 +37,6 @@ import { addressOf, HOME_PATH } from '../views/address';
 export interface NavProps {
   spec: SpecState;
   path: string;
-  diagrams: readonly DiagramSummary[];
-  diagramError: string | null;
-  /** The form or button for a new diagram. */
-  newDiagram: ReactNode;
-  /** Whether the diagrams list has arrived (or failed): until it and the specs have, the nav's lists are not drawn. */
-  diagramsLoaded: boolean;
   collapsed: boolean;
   onToggleCollapsed: () => void;
   /** On a narrow screen: shown as a drawer. */
@@ -53,7 +46,7 @@ export interface NavProps {
   findRef: { current: HTMLInputElement | null };
 }
 
-type SectionId = 'diagrams' | 'tools';
+type SectionId = 'tools';
 const SECTIONS_KEY = 'lathe:nav-sections';
 const isOpenMap = (v: unknown): v is Record<string, boolean> => !!v && typeof v === 'object' && !Array.isArray(v) && Object.values(v).every(isBool);
 
@@ -61,13 +54,12 @@ const here = (path: string, to: string) => (path === to ? 'page' : undefined);
 
 /** Which section holds the current page. */
 function sectionOf(path: string): SectionId | null {
-  if (path.startsWith('/diagrams')) return 'diagrams';
   if (path.startsWith('/checks')) return 'tools';
   return null;
 }
 
 export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
-  const { spec, path, diagrams, diagramError, newDiagram, diagramsLoaded, collapsed, onToggleCollapsed, drawer, drawerOpen, onCloseDrawer, findRef } = props;
+  const { spec, path, collapsed, onToggleCollapsed, drawer, drawerOpen, onCloseDrawer, findRef } = props;
   const { index } = spec;
   const spaces = useSpaces();
   const space = spaces?.current ?? null;
@@ -84,8 +76,8 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
     if (current) setSections((s) => (s[current] === false ? { ...s, [current]: true } : s));
   }, [current, setSections]);
 
-  // The nav's lists wait for both the specs and the diagrams, so neither is drawn and then pushed down by the other.
-  const loaded = (index !== null || !!spec.error) && diagramsLoaded;
+  // The nav's lists wait for the specs, so nothing is drawn and then pushed down.
+  const loaded = index !== null || !!spec.error;
 
   // The address last followed from a link in the nav (its rows or its rail). Only that move may
   // reshape the nav; once the address moves on another way, it is forgotten.
@@ -132,7 +124,6 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
     : spec.source === 'engine' ? <span>Specs read by the engine</span> : <span>Loading specs…</span>;
 
   const className = ['menu', 'panel', 'has-spaces', collapsed && !drawer ? 'is-rail' : '', drawer ? 'is-drawer' : '', drawer && drawerOpen ? 'is-open' : '', keyboard ? 'is-keyboard' : ''].filter(Boolean).join(' ');
-  const diagramsTo = diagrams[0] ? `/diagrams/${diagrams[0].slug}` : '/';
 
   const rail = (
     <SpaceRail
@@ -140,7 +131,6 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
       spaces={spaces?.spaces ?? []}
       current={space}
       lastPage={spaces?.lastPage}
-      diagramsTo={diagramsTo}
       checksLabel={`Checks for all products: ${checksLabel.slice('Checks: '.length)}`}
       checkDot={errors > 0 ? 'error' : warnings > 0 ? 'warning' : null}
       loaded={loaded}
@@ -200,7 +190,7 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
             </Button>
           </Tooltip>
         </div>
-        <QuickFind ref={findRef} index={index} diagrams={diagrams} space={space} />
+        <QuickFind ref={findRef} index={index} space={space} />
         <div className="nav-scroll" ref={scroller} aria-busy={!loaded || undefined}>
           {loaded && <>
           {/* The current space needs no heading of its own: the rail names it, and its first row is its overview. */}
@@ -209,21 +199,6 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
             {index && space && <SpaceItems index={index} space={space} path={path} reveal={fromNav} />}
             {index && !space && <p className="hint">No products yet.</p>}
           </div>
-          <NavSection id="diagrams" icon="diagrams" title="Diagrams" count={diagrams.length} open={isOpen('diagrams')} onToggle={() => toggle('diagrams')}>
-            <ul>
-              {diagrams.map((d) => (
-                <li key={d.slug}>
-                  <NavRow depth={0} selected={path === `/diagrams/${d.slug}`}>
-                    <Link to={`/diagrams/${d.slug}`} aria-current={here(path, `/diagrams/${d.slug}`)} title={d.title}>
-                      <span className="nav-label">{d.title}</span>
-                    </Link>
-                  </NavRow>
-                </li>
-              ))}
-            </ul>
-            {diagramError && <p className="error">{diagramError}</p>}
-            {newDiagram}
-          </NavSection>
           <NavSection id="tools" icon="checks" title="Tools" open={isOpen('tools')} onToggle={() => toggle('tools')}>
             <ul>
               <li>
@@ -253,7 +228,6 @@ interface SpaceRailProps {
   spaces: readonly Space[];
   current: Space | null;
   lastPage?: (id: string) => string | undefined;
-  diagramsTo: string;
   checksLabel: string;
   checkDot: 'error' | 'warning' | null;
   /** Until the specs have loaded the spaces are unknown, so the items below them wait too, rather than be pushed down. */
@@ -262,8 +236,8 @@ interface SpaceRailProps {
   bottom: ReactNode;
 }
 
-/** The rail at the far left: the spaces in order, a separator, then Diagrams and Checks for all products. */
-function SpaceRail({ path, spaces, current, lastPage, diagramsTo, checksLabel, checkDot, loaded, top, bottom }: SpaceRailProps) {
+/** The rail at the far left: the spaces in order, a separator, then Checks for all products. */
+function SpaceRail({ path, spaces, current, lastPage, checksLabel, checkDot, loaded, top, bottom }: SpaceRailProps) {
   return (
     <div className="rail space-rail">
       {top}
@@ -292,11 +266,6 @@ function SpaceRail({ path, spaces, current, lastPage, diagramsTo, checksLabel, c
         </ul>
       )}
       <hr className="rail-sep" />
-      <Tooltip label="Diagrams" command="goDiagrams" placement="right">
-        <Link to={diagramsTo} className="rail-item" aria-label="Diagrams" aria-current={path.startsWith('/diagrams') ? 'page' : undefined}>
-          <Icon name="diagrams" />
-        </Link>
-      </Tooltip>
       <Tooltip label="Checks for all products" command="openChecks" placement="right">
         <Link to={checksPath} className="rail-item" aria-label={checksLabel} aria-current={here(path, checksPath)}>
           <Icon name="checks" />

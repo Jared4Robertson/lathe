@@ -4,15 +4,14 @@ import path from 'node:path';
 import type { Plugin, ViteDevServer } from 'vite';
 
 type ApiModule = typeof import('../../lathe/src/server/api.ts');
-type Watched = { dir: string; event: 'spec:changed' | 'model:changed' };
+type Watched = { dir: string; event: 'spec:changed' };
 
 // Serves Lathe's API (lathe/src/server/api.ts) inside the Vite dev server. The module is loaded
 // through Vite, so edits to the engine are picked up without a restart, and its packages resolve
 // from lathe/node_modules. GET /api/spec serves the sample workspace, with `x-lathe-source: fixture`,
 // when LATHE_SPEC_FIXTURE=1 is set or the engine cannot be loaded.
 // `root` is the product folder: vite.config.ts passes LATHE_ROOT, or this repo when it is not set.
-// Sends spec:changed or model:changed when the product's specs or diagrams, or the engine's checks
-// and meta-model, change.
+// Sends spec:changed when the product's specs, or the engine's checks and meta-model, change.
 export function latheApi(root: string, engineDir = path.resolve(import.meta.dirname, '../../lathe')): Plugin {
   const sendFixture = async (res: ServerResponse, reason: string) => {
     res.statusCode = 200;
@@ -59,10 +58,7 @@ export function latheApi(root: string, engineDir = path.resolve(import.meta.dirn
       try {
         watched = (await api()).watchTargets(root);
       } catch {
-        watched = [
-          { dir: path.resolve(root, 'specs'), event: 'spec:changed' },
-          { dir: path.resolve(root, 'model'), event: 'model:changed' },
-        ];
+        watched = [{ dir: path.resolve(root, 'specs'), event: 'spec:changed' }];
       }
       // The engine's checks and meta-model decide the problems and coverage a spec page shows.
       watched.push({ dir: path.join(engineDir, 'checks'), event: 'spec:changed' }, { dir: path.join(engineDir, 'meta'), event: 'spec:changed' });

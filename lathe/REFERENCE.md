@@ -85,7 +85,7 @@ A domain's components are grouped into **layers**, ordered parts of its technica
 
 ## 17. Entities and the ERD
 
-An aggregate is drawn as an ERD of the records it keeps. Each is an `entity` under the aggregate: one `root`, the record the aggregate is named for, and any number of `child` parts. Its body lists its fields in a table under a `## Fields` heading, with the columns Field, Meaning, Kind of value and Example. A domain rule about one entity may sit under that entity rather than the aggregate, and still belongs to the aggregate and its domain. `has_one` and `has_many` link an entity to its parts inside the aggregate; `refers_to` may cross aggregates and domains. The app draws a domain's ERD at aggregate level and each aggregate's ERD with its entities.
+An aggregate is drawn as an ERD of the records it keeps. Each is an `entity` under the aggregate: one `root`, the record the aggregate is named for, and any number of `child` parts. Its body lists its fields in a table under a `## Fields` heading, with the columns Field, Meaning, Kind of value and Example. A domain rule about one entity may sit under that entity rather than the aggregate, and still belongs to the aggregate and its domain. A domain rule that holds across aggregates, such as two records saved together or a lifecycle rule for every record in the domain, sits under the domain and names with `involves` the two or more aggregates of that domain it ties together; a rule across domains is a domain event's job instead (section 18). `domain-rule-involves` warns of a rule under a domain that involves fewer than two aggregates or one of another domain, and of a rule under an aggregate or entity that uses `involves`. `has_one` and `has_many` link an entity to its parts inside the aggregate; `refers_to` may cross aggregates and domains. The app draws a domain's ERD at aggregate level and each aggregate's ERD with its entities.
 
 ## 18. Domain events
 
@@ -173,8 +173,8 @@ A cluster of records changed together as one unit, with its own identity and rul
 - **Obligation:** no
 - **ID:** `<P>-<D>-A<n>`, such as `TL-LEND-A1`
 - **Links out:** Relates to ([`relates_to`](#relation-relates_to)), Reacts to ([`reacts_to`](#relation-reacts_to))
-- **Links in:** Related to by ([`relates_to`](#relation-relates_to)), Questions about this ([`about`](#relation-about))
-- **Checks:** [`aggregate-root`](#check-aggregate-root), [`event-unheard`](#check-event-unheard)
+- **Links in:** Related to by ([`relates_to`](#relation-relates_to)), Questions about this ([`about`](#relation-about)), Involved in ([`involves`](#relation-involves))
+- **Checks:** [`aggregate-root`](#check-aggregate-root), [`event-unheard`](#check-event-unheard), [`domain-rule-involves`](#check-domain-rule-involves)
 
 <a id="kind-entity"></a>
 
@@ -214,7 +214,7 @@ An unchangeable record that something happened in the domain, raised by its aggr
 
 ### Domain rule (`domain_rule`)
 
-A fact that must always hold for an aggregate's records, whatever use case changes them. It sits under the aggregate, under the entity of that aggregate it is about, or under the domain when it holds across aggregates.
+A fact that must always hold for an aggregate's records, whatever use case changes them. It sits under the aggregate, under the entity of that aggregate it is about, or under the domain when it holds across aggregates of that domain, naming with `involves` the two or more aggregates it ties together.
 
 - **Stage:** Define
 - **Folder:** [Domain model](#folder-domain-model)
@@ -223,9 +223,9 @@ A fact that must always hold for an aggregate's records, whatever use case chang
 - **Required fields:** none
 - **Obligation:** yes: designed, built and proved
 - **ID:** `<P>-<D>-DR<nn>`, such as `TL-LEND-DR01`
-- **Links out:** none
+- **Links out:** Involves ([`involves`](#relation-involves))
 - **Links in:** Applied by ([`applies`](#relation-applies)), Carried out in ([`fulfills`](#relation-fulfills)), Designed by ([`satisfies`](#relation-satisfies)), Proved by ([`proves`](#relation-proves)), Questions about this ([`about`](#relation-about)), Supported by ([`supports`](#relation-supports))
-- **Checks:** [`unsatisfied`](#check-unsatisfied), [`unproved`](#check-unproved), [`obligation-outside-domain`](#check-obligation-outside-domain), [`rule-not-applied`](#check-rule-not-applied)
+- **Checks:** [`unsatisfied`](#check-unsatisfied), [`unproved`](#check-unproved), [`obligation-outside-domain`](#check-obligation-outside-domain), [`rule-not-applied`](#check-rule-not-applied), [`domain-rule-involves`](#check-domain-rule-involves)
 
 <a id="kind-use_case"></a>
 
@@ -635,6 +635,14 @@ Every relation, from `meta/relations.csv`: which kind may link to which, what th
 | [`aggregate`](#kind-aggregate) | [`domain_event`](#kind-domain_event) | - | Reacts to | Reacted to by | The aggregate changes in response to the event, which may come from another aggregate or domain. |
 | [`use_case`](#kind-use_case) | [`domain_event`](#kind-domain_event) | - | Reacts to | Reacted to by | The use case starts when the event happens. |
 | [`component`](#kind-component) | [`domain_event`](#kind-domain_event) | - | Reacts to | Reacted to by | The component handles the event. |
+
+<a id="relation-involves"></a>
+
+### `involves`
+
+| From | To | Role | Forward | Reverse | Meaning |
+| --- | --- | --- | --- | --- | --- |
+| [`domain_rule`](#kind-domain_rule) | [`aggregate`](#kind-aggregate) | - | Involves | Involved in | The domain rule, under its domain, holds across this aggregate and the others it names; a rule under an aggregate or entity needs none. |
 
 <a id="relation-supports"></a>
 
@@ -1560,6 +1568,25 @@ server, database, DB, desktop, mobile, engine, infrastructure, infra and Electro
 in any letter case, with or without a space or hyphen inside the two-word ones, and in the plural. Only the
 title and code are read, never the body, which may well say which technologies the domain uses. Name the
 domain for the capability it serves, and make the technology a layer in each domain's Design stage.
+
+<a id="check-domain-rule-involves"></a>
+
+### `domain-rule-involves`
+
+**Warning** · Lathe's `checks/77-domain-rule-involves.sql` · Kinds: [`domain_rule`](#kind-domain_rule), [`aggregate`](#kind-aggregate)
+
+A domain rule under its domain names the aggregates it ties together with `involves`; a rule under an aggregate or entity names none.
+
+A domain rule sits on the aggregate, or the entity, it is about. One that holds across aggregates, such as
+two records saved together or a lifecycle rule for every record in the domain, sits under the domain
+(FORMAT.md section 17) and says with `involves` which aggregates it ties together. Such a rule is reported
+when it involves fewer than two aggregates: a rule about one aggregate belongs under that aggregate. It is
+also reported, once per link, for each aggregate it involves from another domain, since a rule across
+domains is a domain event's job: one domain raises the event and the other reacts to it. A rule under an
+aggregate or an entity that uses `involves` is reported too, since its place already says what it is
+about. Only links to aggregates are counted; a link to a record that does not exist, or that is not an
+aggregate, is reported by dangling-link or relation-not-allowed instead. A rule whose parent is missing or
+unknown is not judged. Name the aggregates, move a one-aggregate rule under its aggregate, or drop the link.
 
 <a id="check-parse-error"></a>
 
