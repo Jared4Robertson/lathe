@@ -30,6 +30,9 @@ import { isBool, usePanelSize, usePref } from './shell/prefs';
 import { useNarrow } from './shell/useNarrow';
 import { FocusPage } from './views/FocusPage';
 import { graphRedirect, isFocusRoute } from './views/address';
+import { ThemeProvider } from './theme/ThemeProvider';
+import { APPEARANCE_PATH, ThemeCommands } from './theme/ThemeCommands';
+import { AppearancePage } from './theme/AppearancePage';
 type ModelNode = Node<ModelNodeData>;
 type ModelEdge = Edge<ModelEdgeData>;
 
@@ -104,7 +107,10 @@ const slugFromPath = (path: string) => path.match(/^\/diagrams\/([a-z0-9-]+)/)?.
 export default function App() {
   return (
     <CommandsProvider>
-      <Shell />
+      <ThemeProvider>
+        <ThemeCommands />
+        <Shell />
+      </ThemeProvider>
     </CommandsProvider>
   );
 }
@@ -119,6 +125,7 @@ function Shell() {
   const specRoute = parseSpecRoute(path);
   const isGraphPath = path === '/graph' || path.startsWith('/graph/');
   const slug = specRoute ? null : slugFromPath(path);
+  const isAppearance = path === APPEARANCE_PATH;
   const spec = useSpec();
   const announce = useAnnounce();
   const [diagrams, setDiagrams] = useState<DiagramSummary[]>([]);
@@ -147,8 +154,8 @@ function Shell() {
 
   // With neither a diagram nor a spec page in the address, open the first diagram.
   useEffect(() => {
-    if (!specRoute && !slug && !isGraphPath && diagrams.length > 0) navigate(diagramPath(diagrams[0].slug), true);
-  }, [specRoute, slug, isGraphPath, diagrams]);
+    if (!specRoute && !slug && !isGraphPath && !isAppearance && diagrams.length > 0) navigate(diagramPath(diagrams[0].slug), true);
+  }, [specRoute, slug, isGraphPath, isAppearance, diagrams]);
 
   // The nav: collapsed to a rail (remembered), or a drawer on a narrow screen.
   const narrow = useNarrow();
@@ -220,6 +227,8 @@ function Shell() {
   let page;
   if (redirectTo || (isGraphPath && !spec.index)) {
     page = <main className="placeholder panel" id="main"><p>{spec.error ? `Couldn't load the specs: ${spec.error}` : 'Opening…'}</p></main>;
+  } else if (isAppearance) {
+    page = <AppearancePage />;
   } else if (isGraphPath) {
     page = <main className="placeholder panel" id="main"><p>No products yet. Add a <code>product.md</code> under <code>specs/</code>.</p></main>;
   } else if (focusRoute) {
