@@ -25,6 +25,7 @@ import { Icon } from './components/icons';
 import { CommandsProvider, useAnnounce, useCommand } from './shell/commands';
 import { SPACE_KEYS, spaceCommandId } from './shell/keymap';
 import { Nav } from './shell/Nav';
+import { DesktopTitleBar } from './shell/DesktopTitleBar';
 import { SpacesProvider, useSpaceState, type SpacesApi } from './shell/spaces';
 import { Tooltip } from './shell/Tooltip';
 import { isBool, usePanelSize, usePref } from './shell/prefs';
@@ -241,6 +242,7 @@ function Shell() {
   return (
     <SpacesProvider value={spaces}>
     <SpaceCommands spaces={spaces} />
+    <DesktopTitleBar />
     <div
       className={`app${collapsed && !narrow ? ' nav-collapsed' : ''}${narrow ? ' is-narrow' : ''}`}
       style={{ '--nav-width': `${navWidth}px` } as CSSProperties}
