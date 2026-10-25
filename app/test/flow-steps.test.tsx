@@ -42,7 +42,7 @@ describe('flow steps on a flow page', () => {
     const details = within(table()).getByRole('region', { name: 'Details of DM-SHOP-F01-S01' });
     expect(within(details).getByText('new item').tagName).toBe('STRONG');
     expect(within(details).getByRole('link', { name: /DM-SHOP-UC01-R01.*The basket shows the new item/ })).toBeInTheDocument();
-    expect(details).toHaveTextContent('Requirement');
+    expect(details).toHaveTextContent('Use-case requirement');
     await user.click(within(table()).getByRole('button', { name: 'Collapse DM-SHOP-F01-S01' }));
     expect(within(table()).queryByRole('region')).toBeNull();
 

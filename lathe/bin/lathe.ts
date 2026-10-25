@@ -63,7 +63,7 @@ async function check() {
           // planned_any is shown only where it differs: some proved obligations still have planned tests.
           const owed = o.planned_any !== undefined && o.planned_any !== o.planned ? `; ${of(o.planned_any)} with a planned test` : '';
           console.log(
-            `  ${c.domain} ${o.kind}: ${of(o.designed)} designed, ${of(o.built)} built, ${of(o.proved)} proved, ${of(o.planned)} planned; ${gaps} ${gaps === 1 ? 'gap' : 'gaps'}${owed}`,
+            `  ${c.domain} ${o.label.toLowerCase()}: ${of(o.designed)} designed, ${of(o.built)} built, ${of(o.proved)} proved, ${of(o.planned)} planned; ${gaps} ${gaps === 1 ? 'gap' : 'gaps'}${owed}`,
           );
         }
         if (c.tests) console.log(`  ${c.domain} tests: ${c.tests.automated} automated, ${c.tests.manual} manual, ${c.tests.planned} planned`);

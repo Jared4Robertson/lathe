@@ -15,6 +15,9 @@ A use case is something an actor does with the product to reach a goal. Its requ
 
 ## The records
 
+The app and `lathe check` call a `requirement` record a **use-case requirement**, to tell it apart from interaction requirements and pattern rules; in record files its kind is still written `requirement`.
+
+
 | Kind | Parent | ID | Holds |
 | --- | --- | --- | --- |
 | `capability` | the domain | `<P>-<D>-CAP<nn>` | Required field `order`: a whole number, its place in the domain, unique within the domain. Body: what the capability covers, in a sentence or two. |

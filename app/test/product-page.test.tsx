@@ -15,7 +15,7 @@ describe('product page', () => {
 
     const shop = card('Shopping');
     expect(within(shop).getByRole('link', { name: /DM-SHOP\s*Shopping/ })).toHaveAttribute('href', '/specs/DM/DM-SHOP');
-    expect(within(shop).getByText('Requirements')).toBeInTheDocument();
+    expect(within(shop).getByText('Use-case requirements')).toBeInTheDocument();
     expect(within(shop).getByText('Domain rules')).toBeInTheDocument();
     expect(within(shop).getByRole('img', { name: 'designed: 2 of 2' })).toBeInTheDocument();
     expect(within(shop).getByRole('img', { name: 'proved: 1 of 2' })).toBeInTheDocument();
@@ -83,9 +83,9 @@ describe('product page', () => {
     expect(fitness.contains(evidence)).toBe(false);
     expect(evidence).toHaveTextContent('they are not the score');
     const value = (name: string) => within(evidence).getByText(name).nextElementSibling?.textContent;
-    expect(value('Designed')).toBe('3 of 4 requirements and rules');
+    expect(value('Designed')).toBe('3 of 4 use-case requirements and rules');
     expect(value('Built')).toBe('not yet measured'); // DM-PAY has no built counts yet
-    expect(value('Proved')).toBe('1 of 4 requirements and rules');
+    expect(value('Proved')).toBe('1 of 4 use-case requirements and rules');
     expect(value('Open questions')).toBe('2');
     expect(value('Errors')).toBe('1');
     expect(value('Warnings')).toBe('3');
@@ -97,7 +97,7 @@ describe('product page', () => {
     const none = section('Fitness');
     expect(none).toHaveTextContent('No fitness recorded yet.');
     expect(within(none).getByRole('link', { name: /section 7: Fitness/ })).toHaveAttribute('href', '/format#7-fitness');
-    expect(within(section('Evidence')).getByText('Built').nextElementSibling).toHaveTextContent('0 of 0 requirements and rules');
+    expect(within(section('Evidence')).getByText('Built').nextElementSibling).toHaveTextContent('0 of 0 use-case requirements and rules');
   });
 
   it('LA-BRW-T06 The format page shows the fitness section the product page links to', async () => {
