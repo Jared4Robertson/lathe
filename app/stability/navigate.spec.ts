@@ -52,7 +52,8 @@ test.describe('navigate', () => {
   });
 
   // A new page starts at the top of the wiki pane. It must be drawn there from its first frame,
-  // never drawn once at the last page's scroll and then moved up (a scroll set after paint).
+  // never drawn once at the last page's scroll and then moved up (a scroll set after paint). Back
+  // comes back to the old page where it was scrolled, also from its first frame.
   test('LA-BRW-T481 from a page scrolled half-way, and Back', async ({ page }) => {
     await openPage(page, DOMAIN);
     await page.evaluate(() => {
@@ -60,15 +61,25 @@ test.describe('navigate', () => {
       box.scrollTop = (box.scrollHeight - box.clientHeight) / 2;
     });
     await page.waitForTimeout(300);
+    // The row at the top of the view, and where it sits: Back must show it there again.
+    const topRow = () => page.evaluate(() => {
+      const box = document.querySelector('.pane-wiki .pane-scroll')!.getBoundingClientRect();
+      const el = document.elementFromPoint(box.left + box.width / 2, box.top + 120)?.closest('li, p, h2, h3, section');
+      return el ? { text: (el.textContent ?? '').slice(0, 80), top: Math.round(el.getBoundingClientRect().top) } : null;
+    });
     const frames = () => page.evaluate(() => {
       const w = window as unknown as { __frames: { top: number; title: string }[]; __framesStop: boolean };
       w.__frames = [];
       w.__framesStop = false;
-      const loop = () => {
+      // Each frame is read just after it is painted (a message posted from requestAnimationFrame runs
+      // after the frame's layout and paint), so it records what the Reader saw.
+      const channel = new MessageChannel();
+      channel.port1.onmessage = () => {
         const box = document.querySelector('.pane-wiki .pane-scroll');
         w.__frames.push({ top: Math.round(box?.scrollTop ?? -1), title: document.querySelector('.pane-wiki .pane-title h1')?.textContent ?? '' });
         if (!w.__framesStop) requestAnimationFrame(loop);
       };
+      const loop = () => channel.port2.postMessage(null);
       requestAnimationFrame(loop);
     });
     const stop = () => page.evaluate(() => {
@@ -77,9 +88,21 @@ test.describe('navigate', () => {
       return w.__frames;
     });
     const before = await page.locator('.pane-wiki .pane-title h1').textContent();
-    const link = page.locator('.pane-wiki .pane-scroll a.row-link[href^="/records/"]').filter({ visible: true }).first();
+    // A link already in view, so the click does not scroll the page to reach it first.
+    const links = '.pane-wiki .pane-scroll a.row-link[href^="/records/"]';
+    const inView = await page.evaluate((sel) => {
+      const box = document.querySelector('.pane-wiki .pane-scroll')!.getBoundingClientRect();
+      return [...document.querySelectorAll(sel)].findIndex((a) => {
+        const r = a.getBoundingClientRect();
+        return r.width > 0 && r.top >= box.top + 40 && r.bottom <= box.bottom - 40;
+      });
+    }, links);
+    expect(inView, 'a link in view half-way down').toBeGreaterThanOrEqual(0);
+    const link = page.locator(links).nth(inView);
     await frames();
+    let scrolledTo: Awaited<ReturnType<typeof topRow>> = null;
     const r = await step(page, 'navigate', 'link from a scrolled page', { keys: KEYS, allow: CONTENT, resizes: TITLE }, async () => {
+      scrolledTo = await topRow();
       await link.click();
       await page.waitForURL(/\/records\//);
     });
@@ -98,6 +121,11 @@ test.describe('navigate', () => {
     const backFrames = await stop();
     const jumped = backFrames.filter((f, i) => i > 0 && f.title === after && backFrames[i - 1].title === after && f.top !== backFrames[i - 1].top);
     expect.soft(jumped, 'Back draws the page once, at its place').toEqual([]);
+    // Back comes back to where the page was scrolled: the same row at the top of the view, where it was
+    // (and, with the check above, drawn there from its first frame).
+    expect(scrolledTo).not.toBeNull();
+    expect.soft(await topRow(), 'Back restores the scroll').toEqual(scrolledTo);
+    expect.soft(backFrames.find((f) => f.title === after)?.top ?? 0, 'Back does not start at the top').toBeGreaterThan(0);
   });
 
   test('LA-BRW-T481 through quick find', async ({ page }) => {
