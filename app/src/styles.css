@@ -39,8 +39,6 @@ body { background: var(--paper); color: var(--ink); font: 15px/1.5 var(--body); 
 .menu .eyebrow { margin: 0 6px; }
 .menu ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; }
 .menu a { display: flex; align-items: center; gap: 8px; min-height: 32px; box-sizing: border-box; padding: 5px 8px; border-radius: 6px; color: var(--ink); text-decoration: none; font-size: 0.92rem; min-width: 0; }
-.menu a:hover { background: var(--paper); }
-.menu a[aria-current="page"] { background: var(--steel-bg); color: var(--steel); font-weight: 600; }
 .menu a:focus-visible, .menu button:focus-visible, .new-diagram-form input:focus-visible, .new-diagram-form textarea:focus-visible { outline: 2px solid var(--steel); outline-offset: 1px; }
 .new-diagram { margin-top: 4px; text-align: left; background: none; border: 1px dashed var(--rule); color: var(--muted); border-radius: 6px; padding: 7px 8px; font: inherit; font-size: 0.9rem; cursor: pointer; }
 .new-diagram:hover { color: var(--steel); border-color: var(--steel); }
@@ -114,7 +112,6 @@ h3 { font-size: 0.95rem; margin-top: 8px; }
 
 /* Specs */
 .menu .new-diagram + .eyebrow, .menu .new-diagram-form + .eyebrow { margin-top: 14px; }
-.menu .nav-domains a { font-size: 0.86rem; padding: 5px 8px; }
 .menu .count { margin-left: 4px; font: 500 0.72rem var(--mono); color: var(--muted); }
 .menu .count.has-errors { color: var(--spark); }
 .spec-page { min-width: 0; min-height: 0; overflow-y: auto; }
@@ -424,27 +421,43 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .app.is-narrow { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); padding: 0; }
 .app.is-narrow > main { grid-row: 2; }
 .nav-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 2px 2px 4px 6px; }
-.nav-scroll { flex: 1; min-height: 0; overflow-y: auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; align-content: start; padding-right: 2px; }
+.nav-scroll { flex: 1; min-height: 0; overflow-y: auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; align-content: start; margin: 0 -10px; }
 .nav-section { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; }
-.nav-section-head { display: flex; align-items: center; gap: 6px; width: 100%; min-height: 32px; padding: 4px 6px; border: 0; border-radius: 6px; background: none; color: var(--muted); cursor: pointer; text-align: left; font: inherit; }
-.nav-section-head:hover { background: var(--paper); color: var(--ink); }
+.nav-section-head { gap: 6px; color: var(--muted); cursor: pointer; }
+.nav-section-head:hover, .nav-folder-head:hover { color: var(--ink); }
 .nav-section-head .eyebrow { margin: 0; flex: 1; }
-.nav-section-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; padding-left: 4px; }
+.nav-section-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; }
+.menu .nav-section-body > :is(.new-diagram, .new-diagram-form, .error) { margin-inline: 10px; }
 .nav-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1; }
-.nav-row { display: flex; align-items: center; gap: 2px; min-width: 0; }
-.nav-row > a { flex: 1; }
-.nav-chevron { display: inline-grid; place-items: center; width: 24px; height: 32px; padding: 0; border: 0; border-radius: 4px; background: none; color: var(--muted); cursor: pointer; flex: none; }
-.nav-chevron:hover { color: var(--ink); background: var(--paper); }
-.nav-chevron-space { width: 24px; flex: none; }
+/* Nav rows, as in VS Code's explorer (LA-BRW-DR220). Each row is as wide as the nav panel, indented by padding for its
+   depth (--depth, set by the row), with its indent guides drawn inside it, one under each ancestor's chevron. The
+   current page's row carries the selection tint over all of it, the indent and the chevron included; a hovered row
+   takes the hover tint (R08); while the nav is used from the keyboard, the selected and the focused row show a 1px
+   outline. The lists stay nested for screen readers, with no margins of their own. */
+.menu { --nav-indent: 12px; --nav-twistie: 20px; --nav-pad: 8px; --nav-row-height: 28px; }
+.menu .nav-panel ul { gap: 0; }
+.nav-row { --depth: 0; position: relative; display: flex; align-items: center; gap: 2px; width: 100%; min-width: 0; min-height: var(--nav-row-height); box-sizing: border-box; margin: 0; padding: 0 10px 0 calc(var(--nav-pad) + var(--depth) * var(--nav-indent)); border: 0; border-radius: 0; background-color: transparent; background-image: repeating-linear-gradient(to right, transparent 0 calc(var(--nav-twistie) / 2 - 0.5px), var(--rule) calc(var(--nav-twistie) / 2 - 0.5px) calc(var(--nav-twistie) / 2 + 0.5px), transparent calc(var(--nav-twistie) / 2 + 0.5px) var(--nav-indent)); background-size: calc(var(--depth) * var(--nav-indent)) 100%; background-position: var(--nav-pad) 0; background-repeat: no-repeat; color: var(--ink); text-align: left; font: inherit; font-size: 0.88rem; transition: background-color var(--hover-speed); }
+.nav-row:hover { background-color: var(--hover-bg); }
+.nav-row.is-selected, .nav-row.is-selected:hover { background-color: var(--steel-bg); color: var(--steel); }
+.menu .nav-row.is-selected > :is(a, .nav-chevron) { color: var(--steel); }
+.menu .nav-row > a { flex: 1; min-height: var(--nav-row-height); padding: 2px 4px; border-radius: 0; color: inherit; font-size: inherit; }
+.menu .nav-row > a::after { content: ""; position: absolute; inset: 0; }
+.menu .nav-row > .nav-chevron { position: relative; z-index: 1; }
+.nav-chevron { display: inline-grid; place-items: center; width: var(--nav-twistie); height: var(--nav-row-height); padding: 0; border: 0; border-radius: 3px; background: none; color: var(--muted); cursor: pointer; flex: none; }
+.nav-chevron:hover { color: var(--ink); }
+.nav-chevron-space { width: var(--nav-twistie); flex: none; }
+.menu .nav-row:is(.nav-folder-head, .nav-section-head):focus-visible, .menu .nav-row > a:focus-visible::after, .menu.is-keyboard:focus-within .nav-row.is-selected { outline: 1px solid var(--steel); outline-offset: -1px; border-radius: 3px; }
+.menu .nav-row > a:focus-visible { outline: none; }
+.menu .nav-row > .nav-chevron:focus-visible { outline: 1px solid var(--steel); outline-offset: -1px; }
+@media (prefers-reduced-motion: reduce) { .nav-row { transition: none; } }
 .menu li.in-current > .nav-row > a:not([aria-current]) { font-weight: 600; }
-.menu a[aria-current="page"] { box-shadow: inset 3px 0 0 var(--steel); }
 .nav-badges { display: inline-flex; gap: 4px; margin-left: auto; }
 .nav-badge { font: 500 0.7rem var(--mono); min-width: 18px; padding: 0 5px; border-radius: 999px; text-align: center; color: var(--muted); background: var(--paper); border: 1px solid var(--rule); }
 .nav-badge.error { color: var(--spark); border-color: var(--spark); background: var(--spark-bg); }
 .nav-badge.warning { color: var(--warn); border-color: var(--warn); }
 .nav-badge.quiet { margin-left: auto; }
-.nav-foot { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; padding-top: 8px; border-top: 1px solid var(--rule); }
-.nav-source { margin: 0; padding: 0 8px; font-size: 0.75rem; color: var(--muted); }
+.nav-foot { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; margin: 0 -10px; padding-top: 8px; border-top: 1px solid var(--rule); }
+.nav-source { margin: 0; padding: 0 18px; font-size: 0.75rem; color: var(--muted); }
 .nav-source.is-fixture { color: var(--warn); }
 .quick-find { position: relative; display: flex; align-items: center; gap: 6px; padding: 0 8px; border: 1px solid var(--rule); border-radius: 6px; background: var(--paper); color: var(--muted); }
 .quick-find:focus-within { border-color: var(--steel); box-shadow: 0 0 0 1px var(--steel); }
@@ -609,23 +622,16 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 .space-items { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; min-width: 0; }
 .menu.has-spaces .nav-scroll { overflow-x: hidden; }
 /* A domain's stages and folders in the nav, as Client lays out its specs. */
-.menu .nav-tree { margin: 0 0 2px 12px; padding-left: 6px; border-left: 1px solid var(--rule); }
 /* A space's own lists (its Shared folder and its domains) sit side by side at the top level; only what is inside them is indented. */
-.menu :is(.nav-shared, .nav-domains) { margin: 0 0 2px; padding-left: 0; border-left: 0; }
-.nav-folder-head { display: flex; align-items: center; gap: 6px; width: 100%; min-height: 28px; padding: 3px 8px 3px 5px; border: 0; border-radius: 6px; background: none; color: var(--muted); cursor: pointer; text-align: left; font: inherit; font-size: 0.84rem; }
-.nav-folder-head:hover { background: var(--paper); color: var(--ink); }
+.menu .nav-tree { margin: 0; padding: 0; }
+.menu .long-list-tools { padding: 0 10px; }
+.nav-folder-head { gap: 6px; color: var(--muted); cursor: pointer; font-size: 0.84rem; }
+:is(.nav-folder-head, .nav-section-head) > .icon:first-child { width: var(--nav-twistie); }
 .nav-folder.is-stage > .nav-folder-head .nav-label { font: 500 0.74rem var(--mono); letter-spacing: 0.06em; text-transform: uppercase; }
-.menu .nav-folder-body > .nav-tree { margin-left: 8px; }
-.menu .nav-records { margin: 0 0 2px 14px; }
-.menu .nav-records a { font-size: 0.82rem; min-height: 28px; padding: 3px 8px; color: var(--muted); }
-.menu .nav-records a[aria-current="page"] { color: var(--steel); }
+.menu :is(.nav-records .nav-row, .nav-folder.is-record > .nav-row) { color: var(--muted); font-size: 0.84rem; }
 /* A layer's row: its fold beside a link to its page, sized like a folder's row. */
-.menu .nav-folder.is-record > .nav-row > .nav-chevron { height: 28px; }
-.menu .nav-folder.is-record > .nav-row > a { min-height: 28px; padding: 3px 8px 3px 2px; font-size: 0.84rem; color: var(--muted); }
-.menu .nav-folder.is-record > .nav-row > a:hover { color: var(--ink); }
-.menu .nav-folder.is-record > .nav-row > a[aria-current="page"] { color: var(--steel); }
+.menu :is(.nav-records .nav-row, .nav-folder.is-record > .nav-row):hover { color: var(--ink); }
 .menu .nav-groups { margin-top: 2px; }
-.menu .nav-groups a { font-size: 0.86rem; }
 .menu.is-drawer.has-spaces { width: min(356px, 92vw); }
 /* The checks page's space filter. */
 .checks-scope { display: inline-flex; gap: 2px; padding: 2px; margin: 0 0 12px; border: 1px solid var(--rule); border-radius: 8px; background: var(--paper); }
