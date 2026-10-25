@@ -1,6 +1,6 @@
 # Lathe
 
-A lathe is a tool that makes tools, including better lathes. Lathe organises a product's lifecycle (domain model, use cases, interaction design, technical specification, test plan) as records that a database checks, traces to the product's code and tests, and a web app lets you browse. Lathe describes itself in its own format.
+A lathe is a tool that makes tools, including better lathes. Lathe organizes a product's lifecycle (domain model, use cases, interaction design, technical specification, test plan) as records that a database checks, traces to the product's code and tests, and a web app lets you browse. Lathe describes itself in its own format.
 
 ## What's here
 

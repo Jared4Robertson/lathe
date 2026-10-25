@@ -1,5 +1,5 @@
 import ELK, { type ElkNode } from 'elkjs/lib/elk.bundled.js';
-import type { Neighbourhood } from './model';
+import type { Neighborhood } from './model';
 
 // Lays out an ego graph in columns with ELK's layered algorithm, left to right: by depth in the
 // parent/child tree around the focus, or along a trace. The model gives each node its column and
@@ -8,7 +8,7 @@ import type { Neighbourhood } from './model';
 // columns is laid out pointing to the right, whichever way it really points, and links between
 // records in one column (siblings that refer to each other) are drawn but do not shape the layout.
 // So the layout graph never has a cycle and every graph can be drawn in columns.
-// Positions are shifted so the focus's centre is at (0, 0).
+// Positions are shifted so the focus's center is at (0, 0).
 
 export const NODE_WIDTH = 190;
 export const NODE_HEIGHT = 56;
@@ -29,7 +29,7 @@ export interface Placed {
 }
 
 /** The ELK graph for a layout in columns: one partition per column, nodes in column and row order, edges only between columns, pointing right. */
-export function layeredGraph(n: Neighbourhood): ElkNode {
+export function layeredGraph(n: Neighborhood): ElkNode {
   const columns = [...new Set(n.nodes.map((x) => x.column))].sort((a, b) => a - b);
   const rank = new Map(columns.map((c, i) => [c, i]));
   const columnOf = new Map(n.nodes.map((x) => [x.id, x.column]));
@@ -64,7 +64,7 @@ export function layeredGraph(n: Neighbourhood): ElkNode {
   };
 }
 
-export async function layoutNeighbourhood(n: Neighbourhood): Promise<Placed> {
+export async function layoutNeighborhood(n: Neighborhood): Promise<Placed> {
   const positions = new Map<string, Point>();
   const placed: Placed = { positions, layout: 'layered', cycle: null };
   if (n.nodes.length === 0) return placed;
@@ -80,7 +80,7 @@ export async function layoutNeighbourhood(n: Neighbourhood): Promise<Placed> {
   return placed;
 }
 
-/** The point where the line from a box's centre towards (tx, ty) leaves the box. */
+/** The point where the line from a box's center towards (tx, ty) leaves the box. */
 export function boxExit(cx: number, cy: number, tx: number, ty: number, w = NODE_WIDTH, h = NODE_HEIGHT) {
   const dx = tx - cx;
   const dy = ty - cy;

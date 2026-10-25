@@ -96,7 +96,7 @@ export function linkMentions(html: string, links: ProseLinks): string {
   return template.innerHTML;
 }
 
-/** Renders Markdown to HTML and sanitises it, since records are written by agents as well as people. */
+/** Renders Markdown to HTML and sanitizes it, since records are written by agents as well as people. */
 export function renderMarkdown(source: string, links?: ProseLinks): string {
   const html = DOMPurify.sanitize(marked.parse(source, { async: false }));
   return links ? linkMentions(html, links) : html;

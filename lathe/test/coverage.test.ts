@@ -97,7 +97,7 @@ describe('coverage by the meta-model', () => {
     const configured = await loadWorkspace(fixture('configured'));
     expect(configured.problems.filter((p) => p.severity === 'error')).toEqual([]);
     expect(configured.kinds.find((k) => k.kind === 'report')?.obligation).toBe(false);
-    expect(configured.relations.find((r) => r.relation === 'summarises')?.role).toBe('');
+    expect(configured.relations.find((r) => r.relation === 'summarizes')?.role).toBe('');
   });
 
   it('LA-CHK-T45 The check prints one coverage line per domain and obligation kind, with planned counts', () => {

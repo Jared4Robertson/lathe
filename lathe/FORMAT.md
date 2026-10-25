@@ -12,7 +12,7 @@ specs/
     product.md                 the product record (kind: product)
     <domain-folder>/           one folder per domain
       domain.md                the domain record (kind: domain)
-      ...                      any nesting below; organise by SDLC stage, e.g.
+      ...                      any nesting below; organize by SDLC stage, e.g.
       01-define/aggregates/loan.md
       01-define/use-cases/UC01-borrow-a-tool.md
       02-design/...
@@ -46,7 +46,7 @@ A member borrows an available tool for a fixed loan period.
 
 The body (after the header) is Markdown prose. Requirements and domain rules state their rule in full in the body, using MUST / MUST NOT / SHOULD / MAY.
 
-A `product` record may also carry two optional fields for the app's space rail, where each product is its own space. `icon` is one emoji or up to two characters (`icon: 🧰`); without it, or when it is longer, the product shows its ID as a monogram (`TL`, `LA`). `color` is a hex colour or a CSS colour name for the icon (`color: "#2E6A88"`); without it, the colour is derived from the ID, so it stays the same on every visit.
+A `product` record may also carry two optional fields for the app's space rail, where each product is its own space. `icon` is one emoji or up to two characters (`icon: 🧰`); without it, or when it is longer, the product shows its ID as a monogram (`TL`, `LA`). `color` is a hex color or a CSS color name for the icon (`color: "#2E6A88"`); without it, the color is derived from the ID, so it stays the same on every visit.
 
 ## 3. ID convention
 
@@ -138,7 +138,7 @@ A product adds to Lathe's meta-model with a `metaExtensions` folder (see the pac
 
 ## 10. Capabilities and patterns
 
-A domain with more than a handful of use cases groups them into **capabilities**, and behaviour that several use cases share is written once as a **pattern**.
+A domain with more than a handful of use cases groups them into **capabilities**, and behavior that several use cases share is written once as a **pattern**.
 
 ### Capabilities
 

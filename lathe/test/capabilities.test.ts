@@ -1,4 +1,4 @@
-// Capabilities (ordered slices of a domain) and patterns (shared behaviour with settings).
+// Capabilities (ordered slices of a domain) and patterns (shared behavior with settings).
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { beforeAll, describe, expect, it } from 'vitest';

@@ -28,7 +28,7 @@ async function showGraph(path: string, workspace: Workspace = testWorkspace()) {
 }
 
 describe('graph page', () => {
-  it('LA-BRW-T57 Clicking a node re-centres the graph and changes the address, Back walks back, and the trail shows the path', async () => {
+  it('LA-BRW-T57 Clicking a node re-centers the graph and changes the address, Back walks back, and the trail shows the path', async () => {
     await showGraph('/records/P-D-UC01-R01');
     expect(title()).toBe('The owner is shown');
     await waitFor(() => expect(node('P-D-V01')).not.toBeNull());
@@ -37,7 +37,7 @@ describe('graph page', () => {
     expect(window.location.pathname).toBe('/records/P-D-V01');
     expect(window.location.search).toBe('?view=graph');
     await waitFor(() => expect(title()).toBe('Thing page'));
-    // The view's own neighbour, the endpoint, is now drawn.
+    // The view's own neighbor, the endpoint, is now drawn.
     await waitFor(() => expect(node('P-D-E01')).not.toBeNull());
     const trail = within(screen.getByRole('navigation', { name: 'Records visited' }));
     expect(trail.getAllByRole('listitem').map((li) => li.textContent)).toEqual(['P-D-UC01-R01', 'P-D-V01']);
@@ -84,19 +84,19 @@ describe('graph page', () => {
     expect(edges.some((c) => c?.includes('rel-structure'))).toBe(true);
   });
 
-  it('LA-BRW-T60 Arrow keys move between nodes, Enter re-centres on the focused node, and Escape clears the filters', async () => {
+  it('LA-BRW-T60 Arrow keys move between nodes, Enter re-centers on the focused node, and Escape clears the filters', async () => {
     await showGraph('/records/P-D-UC01-R01');
     await waitFor(() => expect(node('P-D-V01')).not.toBeNull());
-    const centre = node('P-D-UC01-R01')!;
-    centre.focus();
-    expect(document.activeElement).toBe(centre);
-    fireEvent.keyDown(centre, { key: 'ArrowRight' });
+    const center = node('P-D-UC01-R01')!;
+    center.focus();
+    expect(document.activeElement).toBe(center);
+    fireEvent.keyDown(center, { key: 'ArrowRight' });
     const moved = document.activeElement as HTMLElement;
-    expect(moved).not.toBe(centre);
+    expect(moved).not.toBe(center);
     expect(moved.classList.contains('react-flow__node')).toBe(true);
     fireEvent.keyDown(moved, { key: 'ArrowLeft' });
-    expect(document.activeElement).toBe(centre);
-    fireEvent.keyDown(centre, { key: 'ArrowRight' });
+    expect(document.activeElement).toBe(center);
+    fireEvent.keyDown(center, { key: 'ArrowRight' });
     const target = (document.activeElement as HTMLElement).dataset.id!;
     fireEvent.keyDown(document.activeElement!, { key: 'Enter' });
     expect(window.location.pathname).toBe(addressOf(target));
