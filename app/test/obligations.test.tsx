@@ -5,6 +5,8 @@ import { indexWorkspace } from '../src/specs/data';
 import { RecordContent } from '../src/specs/RecordContent';
 import { obligationWorkspace } from './fixtures/obligations';
 import { main, openApp, section } from './helpers';
+// The Graph view, where the side bar is open, needs a ResizeObserver in jsdom.
+import './graph/setup';
 
 // Coverage per obligation kind, interaction requirements under their view or endpoint, and test states.
 
@@ -117,18 +119,19 @@ describe('obligation kinds and test states', () => {
   });
 
   it('LA-BRW-T85 The record page shows a test state, and says a planned test is not proof', async () => {
-    await openApp('/DM-SHOP-T03', served());
+    // The state is a fact in the side bar's Details, open in the Graph view (brief 64).
+    await openApp('/DM-SHOP-T03?view=wiki,graph', served());
     await screen.findByRole('heading', { level: 1, name: 'A full basket answers 409' });
     expect(field('State')).toHaveTextContent('planned');
     expect(within(side()).queryByText('state', { selector: 'dt' })).toBeNull();
     expect(screen.getByRole('note')).toHaveTextContent('Planned test. It is not written yet, so it does not count as proof');
 
-    await openApp('/DM-SHOP-T02', served());
+    await openApp('/DM-SHOP-T02?view=wiki,graph', served());
     await screen.findByRole('heading', { level: 1, name: 'A person fills a basket to 50' });
     expect(field('State')).toHaveTextContent('manual');
     expect(screen.queryByRole('note')).toBeNull();
 
-    await openApp('/DM-SHOP-T01', served());
+    await openApp('/DM-SHOP-T01?view=wiki,graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Adding an item shows it' });
     expect(field('State')).toHaveTextContent('automated');
   });

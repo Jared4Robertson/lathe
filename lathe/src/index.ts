@@ -22,6 +22,52 @@ export interface LoadOptions {
   checksDir?: string;
   /** One folder holding kinds.csv, relations.csv, sections.csv and ids.csv, replacing the configured meta-model (used by tests). */
   metaDir?: string;
+  /** Filled with how long each phase of the load took, in milliseconds (the performance budgets, LA-CHK-DR310). */
+  timings?: Partial<LoadTimings>;
+}
+
+/** How long each phase of loadWorkspace took, in milliseconds. */
+export interface LoadTimings {
+  /** Finding the record files, reading and parsing them (changed files only, when a parse cache holds the rest), placing and citing. */
+  parse: number;
+  /** The facts about the files records name (a test's run_by, a component's file). */
+  files: number;
+  /** Creating the DuckDB database and loading the meta-model and the records into it. */
+  load: number;
+  /** Running Lathe's checks and the product's. */
+  checks: number;
+  /** Coverage per domain, and reading the meta-model back. */
+  coverage: number;
+  /** The whole load. */
+  total: number;
+  /** How many record files were read and parsed anew (the rest came from the parse cache). */
+  parsed: number;
+}
+
+/**
+ * A record file's parse, kept with the exact text it was parsed from, so a reload parses only the
+ * files whose text changed (LA-CHK-DR310). Every load still reads every file afresh (LA-CHK-DR04):
+ * the cache only skips parsing a text it has parsed before, which gives the same parse, so it holds
+ * no state the files do not.
+ */
+interface ParseCacheEntry { text: string; result: ReturnType<typeof parseRecordFile> }
+const parseCache = new Map<string, ParseCacheEntry>();
+/** The most files the parse cache keeps; past it, it starts again (a guard for a server reading many products). */
+const PARSE_CACHE_LIMIT = 50_000;
+
+/** Empties the parse cache, so the next load parses every file anew (used by the performance measurements). */
+export function clearParseCache() { parseCache.clear(); }
+
+// Reads one record file and parses it, or takes its parse from the cache when its text is the one
+// parsed before. A cached parse is never changed: each load copies the record.
+async function parseFile(file: string): Promise<{ result: ReturnType<typeof parseRecordFile>; fresh: boolean }> {
+  const text = await readFile(file, 'utf8');
+  const known = parseCache.get(file);
+  if (known && known.text === text) return { result: known.result, fresh: false };
+  const result = parseRecordFile(text);
+  if (parseCache.size >= PARSE_CACHE_LIMIT) parseCache.clear();
+  parseCache.set(file, { text, result });
+  return { result, fresh: true };
 }
 
 const sqlString = (value: string) => `'${value.replaceAll("'", "''")}'`;
@@ -181,12 +227,13 @@ function mentionsId(content: string, id: string): boolean {
 // `key_file`: its key, own ID and proved IDs are then looked for in the key file instead of run_by, which must
 // still exist. A key file outside the root, or missing, contains nothing.
 async function gatherFileFacts(root: string, records: LoadedRecord[]): Promise<{ facts: FileFact[]; mentions: FileMention[] }> {
-  const facts: FileFact[] = [];
-  const mentions: FileMention[] = [];
-  for (const r of records) {
+  // Each record's files are read side by side; the facts keep record order.
+  const each = await Promise.all(records.map(async (r) => {
+    const facts: FileFact[] = [];
+    const mentions: FileMention[] = [];
     const field = r.kind === 'test' ? 'run_by' : r.kind === 'component' ? 'file' : null;
     const file = field ? r.fields[field]?.trim() : undefined;
-    if (!file) continue;
+    if (!file) return { facts, mentions };
     const resolved = resolveInside(root, file);
     const found = await exists(resolved, r.kind === 'component');
     let containsId: boolean | null = null;
@@ -205,8 +252,9 @@ async function gatherFileFacts(root: string, records: LoadedRecord[]): Promise<{
       path: r.path, record: r.id, kind: r.kind, file, file_exists: found, contains_id: containsId,
       key_file: keyFile, key_file_inside: keyFile ? keyResolved !== null : null, key_file_exists: keyFound,
     });
-  }
-  return { facts, mentions };
+    return { facts, mentions };
+  }));
+  return { facts: each.flatMap((e) => e.facts), mentions: each.flatMap((e) => e.mentions) };
 }
 
 async function append(
@@ -466,10 +514,10 @@ async function findCheckFiles(checksDir: string, productChecksDir: string | null
 
 // Runs Lathe's checks, then the product's, against the same tables and with the same row contract. The
 // folder problems (a name clash, a missing product folder) come between the two.
-async function runChecks(connection: DuckDBConnection, found: CheckFiles): Promise<Problem[]> {
+async function runChecks(instance: DuckDBInstance, connection: DuckDBConnection, found: CheckFiles): Promise<Problem[]> {
   const lathe = found.files.filter((f) => f.origin === 'lathe');
   const product = found.files.filter((f) => f.origin === 'product');
-  return [...(await runCheckFiles(connection, lathe)), ...found.problems, ...(await runCheckFiles(connection, product))];
+  return [...(await runCheckFiles(instance, connection, lathe)), ...found.problems, ...(await runCheckFiles(instance, connection, product))];
 }
 
 // Loads what each check file's header says into check_docs, for the undocumented check: one row per file
@@ -485,41 +533,65 @@ async function loadCheckDocs(connection: DuckDBConnection, files: CheckFile[]) {
   );
 }
 
-// Runs the given check files in order. A check that fails to run becomes an error problem naming its file.
-async function runCheckFiles(connection: DuckDBConnection, files: CheckFile[]): Promise<Problem[]> {
-  const problems: Problem[] = [];
-  for (const { file, dir, check, source } of files) {
+/** How many checks run at once, each on its own connection to the same database. */
+const CHECK_CONNECTIONS = 4;
+
+// Runs the given check files and returns their problems in file order. A check that fails to run becomes an
+// error problem naming its file. Checks only read the tables, so they run side by side on a few connections
+// to the same database; their problems are put back in file order, so the report is the same as one by one.
+async function runCheckFiles(instance: DuckDBInstance, connection: DuckDBConnection, files: CheckFile[]): Promise<Problem[]> {
+  const runOne = async (on: DuckDBConnection, { file, dir, check, source }: CheckFile): Promise<Problem[]> => {
     const sql = await readFile(path.join(dir, file), 'utf8');
     try {
       // The check's own "check" column is ignored: the file name is the check's name.
-      const rows = await readRows<{ severity: string; record: string | null; message: string }>(connection, sql);
-      for (const row of rows) {
-        problems.push({
-          severity: row.severity === 'warning' ? 'warning' : 'error',
-          check,
-          record: row.record === null || row.record === '' ? null : String(row.record),
-          message: String(row.message),
-        });
-      }
+      const rows = await readRows<{ severity: string; record: string | null; message: string }>(on, sql);
+      return rows.map((row) => ({
+        severity: row.severity === 'warning' ? 'warning' : 'error',
+        check,
+        record: row.record === null || row.record === '' ? null : String(row.record),
+        message: String(row.message),
+      }));
     } catch (error) {
-      problems.push({
+      return [{
         severity: 'error',
         check,
         record: null,
         message: `The check ${source} could not run:${error instanceof Error ? error.message.split('\n')[0] : String(error)}`,
-      });
+      }];
     }
+  };
+  if (files.length === 0) return [];
+  const results: Problem[][] = new Array(files.length);
+  const extra = await Promise.all(Array.from({ length: Math.min(CHECK_CONNECTIONS, files.length) - 1 }, () => instance.connect()));
+  const connections = [connection, ...extra];
+  let next = 0;
+  try {
+    await Promise.all(connections.map(async (on) => {
+      while (next < files.length) {
+        const at = next++;
+        results[at] = await runOne(on, files[at]);
+      }
+    }));
+  } finally {
+    for (const c of extra) c.closeSync();
   }
-  return problems;
+  return results.flat();
 }
 
 // Coverage per domain: one entry per obligation kind in meta-model order, with the older
 // requirements_* and rules_* fields filled from the requirement and domain_rule entries.
-async function computeCoverage(connection: DuckDBConnection): Promise<Coverage[]> {
-  const rows = await readRows<ObligationCoverage & { domain: string }>(connection, COVERAGE_COUNTS_SQL);
-  const gaps = await readRows<CoverageGap & { domain: string }>(connection, COVERAGE_GAPS_SQL);
-  const tests = await readRows<TestCounts & { domain: string }>(connection, COVERAGE_TESTS_SQL);
-  const domains = await readRows<{ id: string }>(connection, "SELECT DISTINCT id FROM records WHERE kind = 'domain' AND id <> '' ORDER BY id");
+// The four queries only read, so they run side by side, each on its own connection.
+async function computeCoverage(instance: DuckDBInstance): Promise<Coverage[]> {
+  const on = async <T,>(sql: string) => {
+    const c = await instance.connect();
+    try { return await readRows<T>(c, sql); } finally { c.closeSync(); }
+  };
+  const [rows, gaps, tests, domains] = await Promise.all([
+    on<ObligationCoverage & { domain: string }>(COVERAGE_COUNTS_SQL),
+    on<CoverageGap & { domain: string }>(COVERAGE_GAPS_SQL),
+    on<TestCounts & { domain: string }>(COVERAGE_TESTS_SQL),
+    on<{ id: string }>("SELECT DISTINCT id FROM records WHERE kind = 'domain' AND id <> '' ORDER BY id"),
+  ]);
   return domains.map(({ id: domain }) => {
     const obligations = rows.filter((r) => r.domain === domain).map(({ domain: _domain, ...o }) => o);
     const of = (kind: string) => obligations.find((o) => o.kind === kind);
@@ -550,19 +622,33 @@ export async function loadWorkspace(root: string, options: LoadOptions = {}): Pr
   const checksDir = options.checksDir ?? CHECKS_DIR;
   const problems: Problem[] = [];
 
+  const timings = options.timings;
+  const started = performance.now();
+  let mark = started;
+  const lap = (phase: Exclude<keyof LoadTimings, 'total' | 'parsed'>) => {
+    const now = performance.now();
+    if (timings) timings[phase] = Math.round((now - mark) * 10) / 10;
+    mark = now;
+  };
+
   const records: LoadedRecord[] = [];
-  for (const file of await findRecordFiles(root, config.specsDir)) {
-    const result = parseRecordFile(await readFile(path.join(root, file), 'utf8'));
+  const files = await findRecordFiles(root, config.specsDir);
+  const parsed = await Promise.all(files.map((file) => parseFile(path.join(root, file))));
+  files.forEach((file, i) => {
+    const { result } = parsed[i];
     if (!result.ok) {
       problems.push({ severity: 'error', check: 'parse-error', record: null, message: `${file} cannot be read: ${result.reason}.` });
-      continue;
+      return;
     }
     records.push({ ...result.record, product: null, domain: null, path: file, mentions: [] });
-  }
+  });
+  if (timings) timings.parsed = parsed.filter((p) => p.fresh).length;
   placeRecords(records, problems);
   const citations = readProseCitations(records, config.idPrefixes);
   const entityTables = readEntityFields(records);
+  lap('parse');
   const { facts, mentions } = await gatherFileFacts(root, records);
+  lap('files');
 
   const instance = await DuckDBInstance.create(':memory:');
   const connection = await instance.connect();
@@ -605,11 +691,15 @@ export async function loadWorkspace(root: string, options: LoadOptions = {}): Pr
 
     const checkFiles = await findCheckFiles(checksDir, config.checksDir, root);
     await loadCheckDocs(connection, checkFiles.files);
-    problems.push(...(await runChecks(connection, checkFiles)));
-    const coverage = await computeCoverage(connection);
+    lap('load');
+    problems.push(...(await runChecks(instance, connection, checkFiles)));
+    lap('checks');
+    const coverage = await computeCoverage(instance);
     const kinds = await readRows<Kind>(connection, 'SELECT * FROM kinds');
     const relations = await readRows<RelationRule>(connection, 'SELECT * FROM relations');
     const sections = await readRows<SectionRule>(connection, 'SELECT * FROM sections ORDER BY stage, "order", section');
+    lap('coverage');
+    if (timings) timings.total = Math.round((performance.now() - started) * 10) / 10;
 
     const links: SpecLink[] = records.flatMap((r) => r.links.map((l) => ({ source: r.id, relation: l.relation, target: l.target })));
     const specRecords: SpecRecord[] = records.map(({ links: _links, ...r }) => r);
@@ -630,11 +720,44 @@ export const FORMAT_FILE = path.join(PACKAGE_DIR, 'FORMAT.md');
 export async function formatReference(root: string, options: LoadOptions = {}): Promise<FormatReference> {
   const config = loadConfig(root);
   const metaDirs = options.metaDir ? [options.metaDir] : config.metaDirs;
-  const found = await findCheckFiles(options.checksDir ?? CHECKS_DIR, config.checksDir, config.root);
+  const checksDir = options.checksDir ?? CHECKS_DIR;
+  // The reference reads only the meta-model, the check files, FORMAT.md and the config: while none of them
+  // changes (by size and modification time, or a file coming or going), the last answer stands.
+  const key = await referenceKey(config.root, [...metaDirs, checksDir, ...(config.checksDir ? [config.checksDir] : [])]);
+  const known = referenceCache.get(key);
+  if (known) return known;
+  const reference = await buildReference(config.root, metaDirs, checksDir, config.checksDir);
+  if (referenceCache.size > 16) referenceCache.clear();
+  referenceCache.set(key, reference);
+  return reference;
+}
+
+const referenceCache = new Map<string, FormatReference>();
+
+/** What the reference depends on, as one string: each file in those folders, FORMAT.md and the config, with its size and modification time. */
+async function referenceKey(root: string, dirs: string[]): Promise<string> {
+  const files = [FORMAT_FILE, path.join(root, 'lathe.config.json')];
+  for (const dir of dirs) {
+    if (!existsSync(dir)) { files.push(`${dir} (missing)`); continue; }
+    for (const name of (await readdir(dir)).sort()) files.push(path.join(dir, name));
+  }
+  const parts = await Promise.all(files.map(async (file) => {
+    try {
+      const info = await stat(file);
+      return `${file}:${info.size}:${info.mtimeMs}`;
+    } catch {
+      return `${file}:none`;
+    }
+  }));
+  return [root, ...parts].join('\n');
+}
+
+async function buildReference(root: string, metaDirs: string[], checksDir: string, productChecksDir: string | null): Promise<FormatReference> {
+  const found = await findCheckFiles(checksDir, productChecksDir, root);
   const instance = await DuckDBInstance.create(':memory:');
   const connection = await instance.connect();
   try {
-    await loadMeta(connection, metaDirs, config.root);
+    await loadMeta(connection, metaDirs, root);
     const kinds = await readRows<Kind>(connection, 'SELECT * FROM kinds');
     const ids = await readRows<{ kind: string; pattern: string; example: string }>(connection, 'SELECT * FROM kind_ids');
     const relations = await readRows<RelationRule>(connection, 'SELECT * FROM relations');

@@ -8,6 +8,7 @@ import { RecordMarkdown } from './mentions';
 import { kindFieldPath, kindPagePath } from '../format/reference';
 import { PatternRuleSections, PatternSections } from './PatternParts';
 import { FlowSteps } from './FlowSteps';
+import { DomainEvents } from './DomainEvents';
 import { LongList } from '../components/LongList';
 import { DesktopRecordActions } from '../shell/desktopRecord';
 import { NavigateContext, PageHeader, ProblemBadge, ProblemList, RecordLink, RecordTree, Section, SpecLink, TestStateTag, idText, listTitle, testState } from './parts';
@@ -127,7 +128,8 @@ export function RecordEyebrow({ index, record }: { index: SpecIndex; record: Spe
 
 function RecordBody({ index, record, actions, header, side }: { index: SpecIndex; record: SpecRecord; actions?: ReactNode; header: boolean; side: boolean }) {
   const { id } = record;
-  const children = index.children.get(id) ?? [];
+  // An aggregate's domain events have their own section, so its children list leaves them out.
+  const children = (index.children.get(id) ?? []).filter((c) => !(record.kind === 'aggregate' && c.kind === 'domain_event'));
   const problems = index.problemsFor.get(id) ?? [];
   const isTest = record.kind === 'test';
   // A list of one kind is titled by that kind ("Domain rules"); a mixed one stays "Children".
@@ -152,17 +154,18 @@ function RecordBody({ index, record, actions, header, side }: { index: SpecIndex
           {record.kind === 'pattern' && <PatternSections index={index} pattern={record} />}
           {record.kind === 'pattern_rule' && <PatternRuleSections index={index} rule={record} />}
           {record.kind === 'flow' && <FlowSteps index={index} flow={record} />}
+          {record.kind === 'aggregate' && <DomainEvents index={index} aggregate={record} />}
           {/* After the body and its kind's own sections, before the children. A pattern's followers have their own section. */}
           <Traceability index={index} record={record} skip={record.kind === 'pattern' ? PATTERN_SKIP : undefined} />
-          {side ? (
-            <Section title="Problems" count={problems.length}>
-              <ProblemList index={index} problems={problems} showRecord={false} />
-            </Section>
-          ) : children.length > 0 && record.kind !== 'pattern' && (
+          {/* Without the facts beside it, the body lists the direct children itself; the problems show either way (the side bar does not repeat them). */}
+          {!side && children.length > 0 && record.kind !== 'pattern' && (
             <Section title={childrenTitle} count={children.length}>
               <RecordTree index={index} records={children} label={`${childrenTitle} of ${id}`} showKind />
             </Section>
           )}
+          <Section title="Problems" count={problems.length}>
+            <ProblemList index={index} problems={problems} showRecord={false} />
+          </Section>
         </div>
         {side && <aside className="record-side"><RecordFacts index={index} record={record} /></aside>}
       </div>

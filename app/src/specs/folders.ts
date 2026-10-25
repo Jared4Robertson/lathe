@@ -348,8 +348,26 @@ export function domainRecords(index: SpecIndex, domainId: string): SpecRecord[] 
   return [...direct, ...lifted];
 }
 
-/** A domain's stages and folders, with every folder of each stage (empty ones too), then its records outside every stage. */
+/**
+ * What one index gives for each key, worked out once: an index never changes (a reload makes a new
+ * one), and the nav, the branch of the current page and the graph's tree ask for a domain's folders
+ * on every move, which took tens of milliseconds a time (LA-PAT-APP-UX-R30).
+ */
+function perIndex<T>(compute: (index: SpecIndex, key: string) => T): (index: SpecIndex, key: string) => T {
+  const cache = new WeakMap<SpecIndex, Map<string, T>>();
+  return (index, key) => {
+    let known = cache.get(index);
+    if (!known) cache.set(index, (known = new Map()));
+    if (!known.has(key)) known.set(key, compute(index, key));
+    return known.get(key)!;
+  };
+}
+
+/** A domain's stages and folders, with every folder of each stage (empty ones too), then its records outside every stage. Worked out once per index. */
 export function domainFolders(index: SpecIndex, domainId: string): DomainFolders {
+  return domainFoldersOnce(index, domainId);
+}
+const domainFoldersOnce = perIndex((index: SpecIndex, domainId: string): DomainFolders => {
   const records = domainRecords(index, domainId);
   const staged = sectionsOf(index).filter((s) => s.stage !== '');
   const stageNames = [...new Set([...staged.map((s) => s.stage), ...records.map((r) => index.kinds.get(r.kind)?.stage ?? '').filter(Boolean)])];
@@ -368,14 +386,17 @@ export function domainFolders(index: SpecIndex, domainId: string): DomainFolders
   });
   const shared = sectionsOf(index).filter((s) => s.stage === '');
   return { stages, loose: fold(index, domainId, shared, loose, true).filter((f) => f.records.length > 0) };
-}
+});
 
-/** A product's own folders (those of no stage, such as Shared), each with the product's children of its kinds. */
+/** A product's own folders (those of no stage, such as Shared), each with the product's children of its kinds. Worked out once per index. */
 export function productFolders(index: SpecIndex, productId: string): Folder[] {
+  return productFoldersOnce(index, productId);
+}
+const productFoldersOnce = perIndex((index: SpecIndex, productId: string): Folder[] => {
   const children = index.children.get(productId) ?? [];
   const shared = sectionsOf(index).filter((s) => s.stage === '');
   return fold(index, productId, shared, children.filter((r) => sectionOfKind(index, r.kind)?.stage === ''), false);
-}
+});
 
 /** The kinds a product's own folders hold (patterns), which are not also listed as the product's groups. */
 export function productFolderKinds(index: SpecIndex): Set<string> {

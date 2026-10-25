@@ -382,6 +382,11 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 /* The center's own links, with Links on: dashed in their own color. */
 .graph-flow .react-flow__edge-path.is-link { stroke: var(--link-edge); stroke-dasharray: 6 4; }
 .graph-line.is-link { border-top: 1.5px dashed var(--link-edge); }
+/* Domain events in the graph (LA-BRW-UC40-R07, LA-BRW-DR307): a rounded pill in the spark colors, and their reacts_to and
+   raised_by links dashed in spark, with Links on too. */
+.graph-node.kind-domain_event:not(.stage-group) { border-color: var(--spark); background: var(--spark-bg); border-radius: 999px; padding-inline: 14px; }
+.graph-flow .react-flow__edge-path.rel-event, .graph-flow .react-flow__edge-path.rel-event.is-link { stroke: var(--spark); stroke-dasharray: 4 4; }
+.graph-line.rel-event { border-top: 1.5px dashed var(--spark); }
 .graph-swatch.stage-context { opacity: var(--context-opacity); scale: var(--context-scale); }
 .graph-swatch.stage-more, .graph-node.stage-more { border: 1.5px dashed var(--muted); background: var(--paper); }
 .graph-node.stage-more { align-items: center; }
@@ -894,6 +899,23 @@ a.row-link.row-link:focus-visible { outline: none; }
 .erd-key-context { display: inline-block; width: 14px; height: 10px; border: 1.5px dashed var(--muted); background: var(--paper); border-radius: 2px; opacity: var(--context-opacity); }
 .model-flow::after { content: ""; position: absolute; inset: 0; z-index: 4; pointer-events: none; box-shadow: inset 0 0 var(--vignette) calc(var(--vignette) / 3) var(--paper); }
 @media (pointer: coarse) { .model-flow .react-flow__node.is-context.is-armed .erd-box { opacity: 1; } }
+/* Domain events in the ERD (LA-BRW-UC113-R07, R08; LA-BRW-DR307): a rounded pill in the spark colors, as the Diagrams pages draw
+   one; the short line from the entity raising it and the dashed "reacts to" lines in spark too. A "reacts to" line shows its
+   label on hover, over a wider unseen stroke that is easy to point at, fading in on the shared hover speed. */
+.erd-box.erd-event { justify-content: center; border-color: var(--spark); background: var(--spark-bg); border-radius: 999px; padding-inline: 16px; }
+.erd-box.erd-event:not(.is-focus):hover { box-shadow: 0 0 0 3px color-mix(in srgb, var(--spark) 45%, transparent); }
+.erd-box.erd-event.is-highlight, .erd-box.erd-event.is-highlight:hover { box-shadow: 0 0 0 3px var(--ink); }
+:is(.erd-line, .erd-key-line):is(.rel-raised_by, .rel-reacts_to) :is(.erd-line-path, .erd-end) { stroke: var(--spark); }
+.erd-line.rel-reacts_to .erd-line-path, .erd-key-line.rel-reacts_to .erd-line-path { stroke-dasharray: 4 4; }
+.erd-line-hit { fill: none; stroke: transparent; stroke-width: 14; pointer-events: stroke; }
+.erd-line-label { font: 600 0.6875rem var(--mono); fill: var(--ink); stroke: var(--paper); stroke-width: 4px; paint-order: stroke; pointer-events: none; opacity: 0; transition: opacity var(--hover-speed); }
+.erd-line.has-hover-label:hover .erd-line-label { opacity: 1; }
+.erd-line.has-hover-label:hover :is(.erd-line-path, .erd-end) { stroke-width: 2.2; }
+/* By touch there is no hover: a domain's "reacts to" lines always show their event's name (LA-PAT-APP-UX-R07). */
+@media (pointer: coarse) { .erd-line.has-event .erd-line-label { opacity: 1; } }
+.erd-key-event { display: inline-block; width: 22px; height: 10px; border: 1.5px solid var(--spark); background: var(--spark-bg); border-radius: 999px; }
+.erd-key-event.is-highlight { box-shadow: 0 0 0 2px var(--ink); }
+@media (prefers-reduced-motion: reduce) { .erd-line-label { transition: none; } }
 
 /* ---------- Themes and the Appearance page (app/src/theme, LA-PAT-APP-CODE-R15) ---------- */
 /* A theme's chip in the picker and its preview on the page take the theme's tokens inline, so they draw with its colors. */

@@ -104,10 +104,10 @@ export function viewsFromSearch(search: string): ViewName[] | null {
 export const withView = (path: string, views: ViewName | readonly ViewName[]) =>
   `${path}?view=${(typeof views === 'string' ? [views] : VIEW_NAMES.filter((v) => views.includes(v))).join(',')}`;
 
-/** The kinds whose pages offer the Model view: an ERD of a domain, or of an aggregate and its entities. */
-export const MODEL_KINDS: ReadonlySet<string> = new Set(['domain', 'aggregate', 'entity']);
+/** The kinds whose pages offer the Model view: an ERD of a domain, or of an aggregate with its entities and events. */
+export const MODEL_KINDS: ReadonlySet<string> = new Set(['domain', 'aggregate', 'entity', 'domain_event']);
 
-/** The views a page offers: Model only on a domain, aggregate or entity. */
+/** The views a page offers: Model only on a domain, aggregate, entity or domain event. */
 export function viewsOffered(index: SpecIndex, focus: string): ViewName[] {
   const kind = index.byId.get(focus)?.kind;
   return VIEW_NAMES.filter((v) => v !== 'model' || (kind !== undefined && MODEL_KINDS.has(kind)));

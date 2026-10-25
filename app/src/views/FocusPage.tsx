@@ -9,7 +9,7 @@ import { entryState, lastAddressMove, Link, navigate, noteInEntry, onLeaveEntry 
 import { useAnnounce, useCommand } from '../shell/commands';
 import { BottomSheet } from '../shell/BottomSheet';
 import { Tooltip } from '../shell/Tooltip';
-import { isBool, usePanelSize, usePref, writePref } from '../shell/prefs';
+import { usePanelSize, writePref } from '../shell/prefs';
 import { useNarrow } from '../shell/useNarrow';
 import type { Problem, SpecIndex, SpecState } from '../specs/data';
 import { Markdown } from '../specs/Markdown';
@@ -19,7 +19,8 @@ import { folderPath, testGroups } from '../specs/folders';
 import { GroupSections } from '../specs/FolderGroups';
 import { DomainWiki, NotFound, ProductWiki, SourceNote, problemsUnder } from '../specs/SpecPages';
 import { addressOf, HOME_PATH, focusOf, VIEW_LABELS, VIEW_NAMES, viewsFromSearch, viewsOffered, viewsShown, withView, type FocusRoute, type ViewName } from './address';
-import { Inspector } from './Inspector';
+import { SideBar } from './SideBar';
+import { createPeekStore, saveLastSide, SIDE_VIEW_LABELS, sideFor, sideModeOf, type SideModeState, type SideView } from './sideBarState';
 import { PageBar, ViewIcon } from './PageBar';
 import { TAB_PANEL_ID, tabId, tabLabel } from './TabStrip';
 import { PANE_SIZE_KEY, PANE_WEIGHT, PANE_WEIGHT_MAX, PANE_WEIGHT_MIN, VIEW_KEY, saveLastSettings, usePageTabs, type PageTabsApi, type TabView } from './useTabs';
@@ -30,8 +31,9 @@ import { Button } from '../components/Button';
 // on it) and Model (the ERD of a domain, an aggregate or an entity's aggregate; offered only there).
 // The open panes sit side by side in the order Wiki, Graph, Model, with a handle to drag in every
 // gap. Every pane shows the same focus: clicking a node or a box changes the address and the others
-// follow. Any pane can be maximized. The inspector, the page's last column, shows the focused
-// record whichever views are open.
+// follow. Any pane can be maximized. The side bar (the inspector), the page's last column, shows
+// Details, Outline or History for what the open views show (SideBar.tsx); it is open or closed,
+// and on one view, per view mode and per tab.
 //
 // Several pages can be open at once, as tabs in the leftmost pane's title bar (useTabs.ts and
 // tabs.ts); each tab keeps its own views, pane sizes, wiki scroll and graph settings.
@@ -39,7 +41,6 @@ import { Button } from '../components/Button';
 const GraphView = lazy(() => import('../graph/GraphPage').then((m) => ({ default: m.GraphView })));
 const ModelView = lazy(() => import('../model/ModelView').then((m) => ({ default: m.ModelView })));
 
-const INSPECTOR_KEY = 'lathe:inspector-open';
 const INSPECTOR_WIDTH_KEY = 'lathe:inspector-width';
 /** The narrowest a pane gets, and the limits of one pane's share of the two panes beside a gap, in percent. */
 const PANE_MIN_PX = 220;
@@ -191,28 +192,44 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   const views = useRef<HTMLDivElement>(null);
   const paneEl = (v: ViewName) => views.current?.querySelector<HTMLElement>(`:scope > .pane-${v}`) ?? null;
 
-  // The inspector.
-  const [inspectorOpen, setInspectorOpen] = usePref<boolean>(INSPECTOR_KEY, true, isBool);
+  // The side bar (the inspector): open or not, and its view, per view mode and per tab; the last
+  // choices made start a space's first tab. On a phone it is a sheet, opened on demand.
+  const sideMode = sideModeOf(open, narrow);
+  const side = sideFor(tab.state.side, sideMode);
+  const setSide = useCallback((patch: Partial<SideModeState>) => {
+    const next = { ...side, ...patch };
+    update((s) => ({ ...s, side: { ...s.side, [sideMode]: next } }));
+    saveLastSide(sideMode, next);
+  }, [side, sideMode, update]);
   const [inspectorWidth, setInspectorWidth, resetInspectorWidth] = usePanelSize(INSPECTOR_WIDTH_KEY, 340, 260, 640);
   const layout = useRef<HTMLDivElement>(null);
   const [drawer, setDrawer] = useState(false);
   const inspector = useRef<HTMLElement>(null);
   const inspectorButton = useRef<HTMLButtonElement>(null);
-  const showing = narrow ? drawer : inspectorOpen;
+  const showing = narrow ? drawer : side.open;
   const setShowing = useCallback((show: boolean) => {
-    if (narrow) setDrawer(show); else setInspectorOpen(show);
+    if (narrow) setDrawer(show); else setSide({ open: show });
     announce(show ? 'Inspector shown' : 'Inspector hidden');
     if (!show) setTimeout(() => inspectorButton.current?.focus(), 0);
-  }, [narrow, setInspectorOpen, announce]);
+  }, [narrow, setSide, announce]);
+  const setSideView = useCallback((view: SideView) => {
+    if (view === side.view) return;
+    setSide({ view });
+    announce(`${SIDE_VIEW_LABELS[view]} in the side bar`);
+  }, [side.view, setSide, announce]);
   useEffect(() => { setDrawer(false); }, [focus, narrow]);
+  // What the canvases and the wiki tell the side bar: the node under the pointer, the one selected.
+  const [peek] = useState(createPeekStore);
+  useLayoutEffect(() => { peek.clear(); }, [peek, focus]);
   const openInspectorAt = useCallback((selector?: string) => {
     if (!showing) setShowing(true);
+    if (selector && side.view !== 'details') setSide({ view: 'details' });
     setTimeout(() => {
       const target = (selector && inspector.current?.querySelector<HTMLElement>(selector)) || inspector.current;
       target?.focus();
       target?.scrollIntoView?.({ block: 'nearest' });
     }, 0);
-  }, [showing, setShowing]);
+  }, [showing, setShowing, side.view, setSide]);
 
   // Graph settings are the tab's, and survive moving between pages and views; the last ones set start a new session's first tab.
   const settings = tab.state.graph;
@@ -292,12 +309,12 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
     wiki: <WikiContent index={index} route={route} />,
     graph: (
       <Suspense fallback={<p className="hint graph-loading">Loading the graph…</p>}>
-        <GraphView index={index} focus={focus} onNavigate={onNavigate} hrefFor={hrefFor} settings={settings} onSettingsChange={setSettings} onGraph={onGraph} />
+        <GraphView index={index} focus={focus} onNavigate={onNavigate} hrefFor={hrefFor} settings={settings} onSettingsChange={setSettings} onGraph={onGraph} onPeek={peek.set} />
       </Suspense>
     ),
     model: (
       <Suspense fallback={<p className="hint graph-loading">Loading the model…</p>}>
-        <ModelView index={index} focus={focus} onNavigate={onNavigate} />
+        <ModelView index={index} focus={focus} onNavigate={onNavigate} onPeek={peek.set} />
       </Suspense>
     ),
   };
@@ -385,6 +402,25 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
     );
   };
 
+  const sideBar = (drawer: boolean) => (
+    <SideBar
+      ref={inspector}
+      index={index}
+      focus={focus}
+      mode={sideMode}
+      view={side.view}
+      onView={setSideView}
+      graph={open.includes('graph') ? graphInfo : null}
+      peek={peek}
+      wikiPane={wikiPane}
+      wikiOpen={wikiOpen}
+      onNavigate={onNavigate}
+      hrefFor={hrefFor}
+      onClose={() => setShowing(false)}
+      drawer={drawer}
+    />
+  );
+
   if (narrow) {
     return (
       <PhoneLayout
@@ -400,18 +436,7 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
         inspectorShown={showing}
         onInspector={setShowing}
         inspectorButton={inspectorButton}
-        inspector={(
-          <Inspector
-            ref={inspector}
-            index={index}
-            focus={focus}
-            graph={open.includes('graph') ? graphInfo : null}
-            onNavigate={onNavigate}
-            hrefFor={hrefFor}
-            onClose={() => setShowing(false)}
-            drawer
-          />
-        )}
+        inspector={sideBar(true)}
         inspectorRef={inspector}
       />
     );
@@ -466,17 +491,7 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
             collapseBelow={160}
             onCollapse={() => setShowing(false)}
           />
-          <div className="inspector-column panel">
-            <Inspector
-              ref={inspector}
-              index={index}
-              focus={focus}
-              graph={open.includes('graph') ? graphInfo : null}
-              onNavigate={onNavigate}
-              hrefFor={hrefFor}
-              onClose={() => setShowing(false)}
-            />
-          </div>
+          <div className="inspector-column panel">{sideBar(false)}</div>
         </>
       ) : null}
     </div>

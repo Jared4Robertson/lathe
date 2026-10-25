@@ -1,6 +1,6 @@
 import { fireEvent, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { openApp } from './helpers';
+import { openApp, openSideBar } from './helpers';
 
 // Resizing the workbench's panels from the keyboard and by double-click, and collapsing by drag
 // (LA-PAT-APP-UX-R02). Pointer drags need real layout, so they are checked in the browser.
@@ -9,6 +9,8 @@ const handle = (name: string) => screen.getByRole('separator', { name });
 
 describe('resizable panels', () => {
   it('LA-BRW-T296 A handle resizes its panel with the arrow keys, Shift, Home and End, remembers it, and double-click resets it', async () => {
+    // The side bar starts closed in the Wiki view (brief 64); this test reads it open.
+    openSideBar('details', ['wiki', 'graph', 'model']);
     await openApp('/DM-SHOP-UC01');
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     const nav = handle('Resize the navigation');
@@ -34,6 +36,8 @@ describe('resizable panels', () => {
   });
 
   it('LA-BRW-T297 Remembered sizes come back, out-of-range ones fall back to the default, and the narrow layout has no handles', async () => {
+    // The side bar starts closed in the Wiki view (brief 64); this test reads it open.
+    openSideBar('details', ['wiki', 'graph', 'model']);
     window.localStorage.setItem('lathe:nav-width', '400');
     window.localStorage.setItem('lathe:inspector-width', '9999');
     await openApp('/DM-SHOP-UC01');

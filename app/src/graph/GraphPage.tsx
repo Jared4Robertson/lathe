@@ -51,7 +51,7 @@ import {
 import { layoutNeighborhood, NODE_HEIGHT, NODE_WIDTH, type Placed } from './layout';
 import { anchorLayout, fadeSets, frameFocus } from './camera';
 import { EdgeHints } from './hints';
-import { edgeMove, readMotion, transitionProgress, tweenEdge, type EdgeEnds, type EdgeFrame, type EdgePhase } from './motion';
+import { canvasProgress, edgeMove, readMotion, tweenEdge, type EdgeEnds, type EdgeFrame, type EdgePhase } from './motion';
 import { Button } from '../components/Button';
 
 // The graph view: an ego graph centered on one record or group. Clicking a record or a group
@@ -72,6 +72,8 @@ interface NodeData extends Record<string, unknown> {
   isFocus: boolean;
   /** A group's open-or-fold action, from its chevron (records have none). */
   onToggle?: () => void;
+  /** A box that left the picture and fades out where it was: it can't be clicked or focused. */
+  leaving?: boolean;
 }
 interface EdgeData extends Record<string, unknown> {
   relation: string;
@@ -97,6 +99,8 @@ export function relationStyle(relation: string): string {
   if (['uses', 'implements', 'depends_on'].includes(relation)) return 'design';
   if (relation === 'names') return 'file';
   if (relation === 'follows') return 'pattern';
+  // A domain event's links (LA-BRW-UC40-R07): dashed, in the spark colors events are drawn in.
+  if (['reacts_to', 'raised_by'].includes(relation)) return 'event';
   return 'other';
 }
 
@@ -182,8 +186,8 @@ function GroupNodeView({ data }: NodeProps<FlowNode>) {
   );
 }
 
-/** The ID prefix of a record fading out of the picture. */
-const LEAVING = 'leaving:';
+/** Whether a drawn node is a box fading out of the picture. */
+const isLeaving = (n: FlowNode) => n.data.leaving === true;
 
 const NO_ENDS: EdgeEnds = { source: { x: 0, y: 0 }, target: { x: 0, y: 0 } };
 const sameEnds = (a: EdgeEnds, b: EdgeEnds) =>
@@ -198,8 +202,8 @@ interface EdgeParts {
   /** The edge's group, the line and the label, as drawn now. */
   group: SVGGElement | null;
   label: HTMLDivElement | null;
-  /** The node boxes it joins, whose transition it follows. */
-  nodes: () => (Element | null)[];
+  /** The canvas, whose nodes' transition it follows. */
+  canvas: () => Element | null;
 }
 
 /** Writes one frame straight to the edge's elements, so it shows in the same frame as the nodes' move (a React render would come a frame late). */
@@ -240,9 +244,9 @@ function useEdgeFrame(ends: EdgeEnds, phase: EdgePhase, parts: EdgeParts): EdgeF
     const start = performance.now();
     let raf = 0;
     let synced = false;
-    const step = () => {
-      // Follow the nodes' own transition when one of them is moving; once it has ended, so has the move.
-      const clock = transitionProgress(parts.nodes(), motion.duration);
+    const step = (frameTime: number) => {
+      // Follow the nodes' own transition while they move (read once a frame for the whole canvas); once it has ended, so has the move.
+      const clock = canvasProgress(parts.canvas(), motion.duration, frameTime);
       if (clock !== null) synced = true;
       const t = clock ?? (synced ? 1 : Math.min(1, Math.max(0, (performance.now() - start) / motion.duration)));
       const f = tweenEdge(from, to, t, motion.ease);
@@ -264,11 +268,7 @@ function GraphEdgeView({ id, data, markerEnd, source, target }: EdgeProps<FlowEd
   const parts: EdgeParts = {
     get group() { return group.current; },
     get label() { return label.current; },
-    nodes: () => {
-      const flow = group.current?.closest('.react-flow');
-      const node = (nodeId: string) => [...(flow?.querySelectorAll<HTMLElement>('.react-flow__node') ?? [])].find((el) => el.dataset.id === nodeId) ?? null;
-      return [node(source), node(target)];
-    },
+    canvas: () => group.current?.closest('.react-flow') ?? null,
   };
   const frame = useEdgeFrame(data?.ends ?? NO_ENDS, data?.phase ?? 'persist', parts);
   if (!data) return null;
@@ -371,6 +371,11 @@ export interface GraphViewProps {
   onSettingsChange?: (settings: GraphSettings) => void;
   /** Called with the drawn graph, so the host's inspector can list what it connects. */
   onGraph?: (info: GraphInfo) => void;
+  /**
+   * Called with the node under the pointer or keyboard focus (the spotlight's, `hover`) and the one
+   * selected by a first tap (`selected`), or null, so the host's side bar can describe it.
+   */
+  onPeek?: (kind: 'hover' | 'selected', id: string | null) => void;
 }
 
 /**
@@ -390,7 +395,7 @@ function trailItem(index: SpecIndex, id: string): { body: ReactNode; full: strin
   return { body: <span className="trail-name">{name}</span>, full: `${name} of ${parseGroupId(id)!.parent}` };
 }
 
-export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted, onSettingsChange, onGraph }: GraphViewProps) {
+export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted, onSettingsChange, onGraph, onPeek }: GraphViewProps) {
   const [own, setOwn] = useState<GraphSettings>(DEFAULT_GRAPH_SETTINGS);
   const settings = hosted ?? own;
   const { depth, filters, trace, openGroups } = settings;
@@ -536,7 +541,7 @@ export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted,
       <div className="graph-workspace">
         <div className="graph-canvas">
           <ReactFlowProvider>
-            <GraphCanvas index={index} graph={graph} onNavigate={onNavigate} onToggle={toggleGroup} minimap={minimap} />
+            <GraphCanvas index={index} graph={graph} onNavigate={onNavigate} onToggle={toggleGroup} minimap={minimap} onPeek={onPeek} />
           </ReactFlowProvider>
         </div>
       </div>
@@ -671,12 +676,13 @@ export function fitPositions(positions: Map<string, { x: number; y: number }>, w
   return { x: width / 2 - ((minX + maxX) / 2) * zoom, y: height / 2 - ((minY + maxY) / 2) * zoom, zoom };
 }
 
-function GraphCanvas({ index, graph, onNavigate: navigate, onToggle, minimap }: {
+function GraphCanvas({ index, graph, onNavigate: navigate, onToggle, minimap, onPeek }: {
   index: SpecIndex;
   graph: Neighborhood;
   onNavigate: (id: string) => void;
   onToggle: (id: string, nowOpen: boolean) => void;
   minimap: boolean;
+  onPeek?: GraphViewProps['onPeek'];
 }) {
   // A chip of the light ring re-centers on the folder it stands for.
   const chipTargets = useMemo(() => new Map(graph.nodes.filter((n) => n.more).map((n) => [n.id, n.more!.target])), [graph]);
@@ -721,7 +727,7 @@ function GraphCanvas({ index, graph, onNavigate: navigate, onToggle, minimap }: 
     const byId = new Map(g.nodes.map((n) => [n.id, n]));
     const reduced = readMotion().reduced;
     // Records new to the picture fade in at their place; records that left fade out where they were.
-    const drawnBefore = shownNodes.current?.filter((n) => !n.id.startsWith(LEAVING)) ?? null;
+    const drawnBefore = shownNodes.current?.filter((n) => !isLeaving(n)) ?? null;
     const fades = fadeSets(drawnBefore?.map((n) => n.id) ?? null, g.nodes.map((n) => n.id));
     // Focus nodes in keyboard order, then the context ring, which is out of focus: no keyboard stop,
     // hidden from assistive technology, faded and a little smaller (the CSS fades it as it changes).
@@ -813,13 +819,16 @@ function GraphCanvas({ index, graph, onNavigate: navigate, onToggle, minimap }: 
         data: { ...e.data!, phase: 'leave', ends: { source: keep(e.source, e.data!.ends.source), target: keep(e.target, e.data!.ends.target) } },
       };
     });
-    // A leaving record is drawn under its own ID, so it is never taken for the record (which may come back), and can't be clicked or focused.
-    const stillLeaving = (shownNodes.current ?? []).filter((n) => n.id.startsWith(LEAVING) && !byId.has(n.id.slice(LEAVING.length)));
+    // A leaving record keeps its ID and its element, marked as leaving, so React Flow keeps the box it
+    // drew rather than drawing it anew under another ID (which made a re-center of 200 boxes
+    // remount every box that left; LA-PAT-APP-UX-R30). It can't be clicked or focused. A record that
+    // comes back into the picture is drawn as itself again, and its leaving box is dropped.
+    const stillLeaving = (shownNodes.current ?? []).filter((n) => isLeaving(n) && !byId.has(n.id));
     const leavingNodes: FlowNode[] = reduced ? [] : [
       ...stillLeaving,
       ...(drawnBefore ?? []).filter((n) => fades.leaving.has(n.id)).map((n) => ({
         ...n,
-        id: LEAVING + n.id,
+        data: { ...n.data, leaving: true, onToggle: undefined },
         // A context node leaves as it was, faded, so nothing pops.
         className: n.className?.split(' ').includes('is-context') ? 'is-context is-leaving' : 'is-leaving',
         focusable: false,
@@ -923,6 +932,8 @@ function GraphCanvas({ index, graph, onNavigate: navigate, onToggle, minimap }: 
     if (!root) return;
     for (const el of root.querySelectorAll('.is-lit')) el.classList.remove('is-lit');
     const node = id && placed?.graph.nodes.find((n) => n.id === id);
+    // The side bar's Details shows the node lit, a context node too (it has no spotlight of its own).
+    onPeek?.('hover', node && node.kind !== FILE_KIND && !node.more ? node.id : null);
     if (!node || node.context) { root.classList.remove('has-spotlight'); return; }
     const lit = new Set([id]);
     const edgeIds = new Set<string>();
@@ -935,20 +946,21 @@ function GraphCanvas({ index, graph, onNavigate: navigate, onToggle, minimap }: 
     root.classList.add('has-spotlight');
     for (const el of root.querySelectorAll<HTMLElement>('.react-flow__node')) if (lit.has(el.dataset.id ?? '')) el.classList.add('is-lit');
     for (const el of root.querySelectorAll<SVGGElement>('g.graph-edge-motion')) if (edgeIds.has(`${el.dataset.source} ${el.dataset.target}`)) el.classList.add('is-lit');
-  }, [placed]);
+  }, [placed, onPeek]);
   // A new picture starts without a spotlight.
   useEffect(() => () => spot(null), [spot]);
 
   /** A click or Enter on a node, record or group: it becomes the center, at its own address. */
   const activate = (id: string, fromKeyboard: boolean) => {
-    if (!placed || id.startsWith('file:') || id.startsWith(LEAVING) || id === placed.graph.focus) return;
+    if (!placed || id.startsWith('file:') || !placed.graph.nodes.some((n) => n.id === id) || id === placed.graph.focus) return;
     if (fromKeyboard) refocus.current = id;
     onNavigate(id);
   };
   // By touch, a first tap selects a node and a second tap (or the card's Open chip) opens it.
-  const canOpen = useCallback((id: string) => !!placed && !id.startsWith('file:') && !id.startsWith(LEAVING) && id !== placed.graph.focus, [placed]);
+  const canOpen = useCallback((id: string) => !!placed && !id.startsWith('file:') && placed.graph.nodes.some((n) => n.id === id) && id !== placed.graph.focus, [placed]);
   const tap = useTapToOpen(onNavigate, canOpen, wrapper, graph.focus);
   const armedNode = tap.armed ? placed?.graph.nodes.find((n) => n.id === tap.armed) : undefined;
+  useEffect(() => { onPeek?.('selected', tap.armed); }, [tap.armed, onPeek]);
 
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     if (order.length === 0) return;
