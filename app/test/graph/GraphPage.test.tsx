@@ -165,7 +165,9 @@ describe('graph page', () => {
 describe('graph groups on the page', () => {
   const groupNode = (id: string) => node(id)?.querySelector<HTMLElement>('.graph-node') ?? null;
 
-  it('LA-BRW-T110 Clicking a folded group opens it in place, clicking again closes it, and open groups are remembered while walking', async () => {
+  const chevron = (id: string) => node(id)!.querySelector<HTMLElement>('button.graph-group-chevron')!;
+
+  it('LA-BRW-T110 A group\'s chevron opens it in place and closes it again, open groups are remembered while walking, and clicking the group goes to it', async () => {
     await showGraph('/specs/P/P-D');
     await waitFor(() => expect(node('P-D/use_case')).not.toBeNull());
     expect(groupNode('P-D/use_case')!.className).toContain('stage-group');
@@ -173,10 +175,12 @@ describe('graph groups on the page', () => {
     expect(groupNode('P-D/use_case')!.textContent).toContain('Use cases (1)');
     expect(node('P-D-UC01')).toBeNull();
 
-    fireEvent.click(node('P-D/use_case')!);
+    expect(chevron('P-D/use_case').getAttribute('aria-expanded')).toBe('false');
+    fireEvent.click(chevron('P-D/use_case'));
     await waitFor(() => expect(node('P-D-UC01')).not.toBeNull());
     expect(window.location.pathname).toBe('/specs/P/P-D');
     expect(groupNode('P-D/use_case')!.className).toContain('is-open');
+    expect(chevron('P-D/use_case').getAttribute('aria-label')).toBe('Fold Use cases (1) in place');
 
     // Walk to the use case and back: the group is still open.
     fireEvent.click(node('P-D-UC01')!);
@@ -185,22 +189,31 @@ describe('graph groups on the page', () => {
     await waitFor(() => expect(title()).toBe('Domain'));
     await waitFor(() => expect(node('P-D-UC01')).not.toBeNull());
 
-    fireEvent.click(node('P-D/use_case')!);
+    fireEvent.click(chevron('P-D/use_case'));
     await waitFor(() => expect(node('P-D-UC01')).toBeNull());
     expect(groupNode('P-D/use_case')!.className).toContain('is-folded');
+
+    // Clicking the group itself goes to its address, where it is the center and has no chevron.
+    fireEvent.click(node('P-D/use_case')!);
+    await waitFor(() => expect(window.location.pathname).toBe('/records/P-D/use_case'));
+    await waitFor(() => expect(groupNode('P-D/use_case')!.className).toContain('is-focus'));
+    expect(node('P-D/use_case')!.querySelector('button.graph-group-chevron')).toBeNull();
   });
 
-  it('LA-BRW-T111 Enter on a group opens or closes it and keeps keyboard focus on it', async () => {
+  it('LA-BRW-T111 o on a group opens or closes it and keeps keyboard focus on it; Enter goes to it', async () => {
     await showGraph('/specs/P/P-D');
     await waitFor(() => expect(node('P-D/component')).not.toBeNull());
     const group = node('P-D/component')!;
     group.focus();
-    fireEvent.keyDown(group, { key: 'Enter' });
+    fireEvent.keyDown(group, { key: 'o' });
     await waitFor(() => expect(node('P-D-C01')).not.toBeNull());
     expect(window.location.pathname).toBe('/specs/P/P-D');
     await waitFor(() => expect(document.activeElement).toBe(node('P-D/component')));
-    fireEvent.keyDown(document.activeElement!, { key: 'Enter' });
+    fireEvent.keyDown(document.activeElement!, { key: 'o' });
     await waitFor(() => expect(node('P-D-C01')).toBeNull());
+    await waitFor(() => expect(document.activeElement).toBe(node('P-D/component')));
+    fireEvent.keyDown(document.activeElement!, { key: 'Enter' });
+    await waitFor(() => expect(window.location.pathname).toBe('/records/P-D/component'));
   });
 
   it('LA-BRW-T112 A group has its own address showing its parent to the left and its members to the right, and Back works', async () => {
