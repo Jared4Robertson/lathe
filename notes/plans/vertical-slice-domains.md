@@ -17,14 +17,15 @@ S2, the product Lathe is measured against, is organized by business area. Its sh
 ## Decisions (Owner)
 1. **Domains are vertical slices of business capability.** Technology is a layer inside a domain's Design stage, never a domain.
 2. **Lathe's slices:**
-   - **Authoring** (`LA-AUT`): the record format, meta-model, diagrams and patterns.
+   - **Authoring** (`LA-AUT`): the record format, meta-model and patterns.
    - **Checking** (`LA-CHK`): the checks, problems and severity.
    - **Traceability** (`LA-TRC`): links in both directions, and designed, built and proved coverage with its gaps and evidence.
    - **Exploring** (`LA-EXP`): reading a product through the wiki, graph and model views, search, tabs and the side bar's content.
    - **Platform** (`LA-PLT`): what every slice shares. That is the app shell and workbench, themes, the server and live reload, and the Electron shell.
 3. **Traceability is its own slice.** The checks that report coverage gaps move with it; Checking keeps the format and structure checks.
 4. **This is a hard cutover:** new domain IDs, folders and record IDs, with every link, citation, test name and code reference updated together. Nothing keeps the old IDs.
-5. **Vertical slices become Lathe's standard,** in FORMAT.md, the generated reference, the plugin's modeling skill, and a check that warns on domains named for a technology.
+5. **CSV diagrams are removed from Lathe** (brief 77): the feature, its specs and the brainstorm diagrams in `model/`. Lathe is spec records only.
+6. **Vertical slices become Lathe's standard,** in FORMAT.md, the generated reference, the plugin's modeling skill, and a check that warns on domains named for a technology.
 
 ## Decisions settled by recommendation (for the Owner to review)
 - **IDs:** each new domain numbers its records afresh, keeping their old relative order.
