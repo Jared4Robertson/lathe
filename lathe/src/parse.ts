@@ -123,3 +123,90 @@ export function proseTokens(body: string): ProseToken[] {
 export function idTokensInProse(body: string): string[] {
   return proseTokens(body).map((t) => t.token);
 }
+
+/** What an entity's body says under its `## Fields` heading (FORMAT.md section 17), before any judgment. */
+export interface FieldsTable {
+  /** Whether the body has a `## Fields` heading outside fenced code. */
+  heading: boolean;
+  /** The table's header cells, in order, or null when no table follows the heading. */
+  columns: string[] | null;
+  /** The table's data rows, each a list of cells, in table order. */
+  rows: string[][];
+}
+
+/** The Fields table's columns, in order. */
+export const FIELDS_COLUMNS = ['Field', 'Meaning', 'Kind of value', 'Example'];
+
+const FIELDS_HEADING = /^ {0,3}##[ \t]+Fields[ \t]*#*[ \t]*$/i;
+const ANY_HEADING = /^ {0,3}#{1,6}(?:[ \t]|$)/;
+const TABLE_DELIMITER = /^\|?[ \t]*:?-+:?[ \t]*(?:\|[ \t]*:?-+:?[ \t]*)*\|?$/;
+
+// Splits one Markdown table row into trimmed cells. A pipe escaped as \| or inside a code span stays in its cell.
+function tableCells(line: string): string[] {
+  let row = line.trim();
+  if (row.startsWith('|')) row = row.slice(1);
+  if (row.endsWith('|') && !row.endsWith('\\|')) row = row.slice(0, -1);
+  const cells: string[] = [];
+  let cell = '';
+  let ticks = 0;
+  for (let i = 0; i < row.length; i++) {
+    const c = row[i];
+    if (c === '\\' && row[i + 1] === '|') {
+      cell += '|';
+      i++;
+    } else if (c === '`') {
+      let run = 1;
+      while (row[i + run] === '`') run++;
+      if (ticks === 0) ticks = run;
+      else if (ticks === run) ticks = 0;
+      cell += '`'.repeat(run);
+      i += run - 1;
+    } else if (c === '|' && ticks === 0) {
+      cells.push(cell.trim());
+      cell = '';
+    } else cell += c;
+  }
+  cells.push(cell.trim());
+  return cells;
+}
+
+const closesFence = (line: string, fence: string) => {
+  const open = FENCE.exec(line);
+  return open !== null && open[1][0] === fence[0] && open[1].length >= fence.length && line.trim() === open[1];
+};
+
+/**
+ * Reads the first `## Fields` heading of a body outside fenced code, and the Markdown table that follows it
+ * before any other heading: its header cells and data rows. Blank lines and prose may come between the
+ * heading and the table.
+ */
+export function readFieldsTable(body: string): FieldsTable {
+  const lines = body.split(/\r?\n/);
+  let fence: string | null = null;
+  let start = -1;
+  for (let i = 0; i < lines.length && start < 0; i++) {
+    if (fence !== null) {
+      if (closesFence(lines[i], fence)) fence = null;
+      continue;
+    }
+    const open = FENCE.exec(lines[i]);
+    if (open) fence = open[1];
+    else if (FIELDS_HEADING.test(lines[i])) start = i + 1;
+  }
+  if (start < 0) return { heading: false, columns: null, rows: [] };
+  for (let i = start; i < lines.length; i++) {
+    const line = lines[i];
+    if (ANY_HEADING.test(line) || FENCE.test(line)) break;
+    if (!line.trim().startsWith('|') || !TABLE_DELIMITER.test((lines[i + 1] ?? '').trim())) continue;
+    const rows: string[][] = [];
+    for (let j = i + 2; j < lines.length && lines[j].trim().startsWith('|'); j++) rows.push(tableCells(lines[j]));
+    return { heading: true, columns: tableCells(line), rows };
+  }
+  return { heading: true, columns: null, rows: [] };
+}
+
+/** Whether a Fields table's header is Field, Meaning, Kind of value and Example, in that order, in any letter case. */
+export const hasFieldsColumns = (columns: string[] | null): boolean =>
+  columns !== null &&
+  columns.length === FIELDS_COLUMNS.length &&
+  columns.every((c, i) => c.toLowerCase() === FIELDS_COLUMNS[i].toLowerCase());
