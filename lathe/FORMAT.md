@@ -61,6 +61,7 @@ Product prefix, domain code, then a kind code and number. The engine only checks
 | pattern_rule | `<pattern>-R<nn>` | `TL-PAT-LIBRARIAN-ACTION-R01` |
 | flow_step | `<flow>-S<nn>` | `TL-LEND-F01-S01` |
 | aggregate | `<P>-<D>-A<n>` | `TL-LEND-A1` |
+| entity | `<P>-<D>-EN<nn>` | `TL-LEND-EN01` |
 | domain_rule | `<P>-<D>-DR<nn>` | `TL-LEND-DR01` |
 | use_case | `<P>-<D>-UC<nn>` | `TL-LEND-UC01` |
 | requirement (shown as *UC requirement*, short for use case requirement) | `<use case>-R<nn>` | `TL-LEND-UC01-R01` |
@@ -90,8 +91,8 @@ A `test` record has a `state`: `automated` (the default when the field is absent
 
 The engine runs every SQL file in `lathe/checks/`. Each returns rows of `(severity, check, record, message)`:
 
-- **error**: the workspace is broken (duplicate ID, unknown kind, bad parent, missing required field, disallowed or dangling link, an automated test with no `run_by`, or whose `run_by` file is missing or mentions neither its ID nor an ID it proves, a bad or repeated capability or layer order, a pattern setting a use case does not give, a pattern setting that is not a valid field name, a pattern rule naming a setting its pattern does not have, a proof claim the test's file does not back (`proof-not-in-file`), a bad or repeated flow step order, a product check named like one of Lathe's or a product checks folder that does not exist). `lathe check` exits non-zero.
-- **warning**: work still to do, not breakage (a requirement or domain rule that no component satisfies or no test proves, a use case with no requirements, a component file that does not exist yet, a use case left outside its domain's capabilities, a component left outside its domain's layers, two followed patterns sharing a setting, a pattern nobody follows, an obligation outside every domain, a record ID cited in prose that does not exist, a flow step fulfilling something outside its flow, a flow fulfilling something none of its steps do). The structural warnings say where two stages do not join up yet:
+- **error**: the workspace is broken (duplicate ID, unknown kind, bad parent, missing required field, disallowed or dangling link, an automated test with no `run_by`, or whose `run_by` file is missing or mentions neither its ID nor an ID it proves, a bad or repeated capability or layer order, a pattern setting a use case does not give, a pattern setting that is not a valid field name, a pattern rule naming a setting its pattern does not have, a proof claim the test's file does not back (`proof-not-in-file`), a bad or repeated flow step order, a product check named like one of Lathe's or a product checks folder that does not exist, and the entity errors of section 17: a bad `role`, an aggregate without exactly one root, a bad Fields table, a `has_one` or `has_many` that leaves its aggregate). `lathe check` exits non-zero.
+- **warning**: work still to do, not breakage (a requirement or domain rule that no component satisfies or no test proves, a use case with no requirements, a component file that does not exist yet, a use case left outside its domain's capabilities, a component left outside its domain's layers, two followed patterns sharing a setting, a pattern nobody follows, an obligation outside every domain, a record ID cited in prose that does not exist, a flow step fulfilling something outside its flow, a flow fulfilling something none of its steps do, a child entity its aggregate's root does not reach (section 17)). The structural warnings say where two stages do not join up yet:
   - `rule-not-applied`: a domain rule that no use case `applies`.
   - `use-case-without-flow`: a use case that no flow `carries_out`, in a domain that has flows. A domain with no flows yet is not reported.
   - `interaction-requirement-fulfills-nothing`: an interaction requirement with no `fulfills` link.
@@ -337,7 +338,7 @@ Client lays out each domain's specs in folders: `01-define/01-domain-model`, `01
 
 | Stage | Folder | Kinds |
 |---|---|---|
-| Define | Domain model (`domain-model`) | aggregate, domain_rule |
+| Define | Domain model (`domain-model`) | aggregate, entity, domain_rule |
 | Define | Use cases (`use-cases`) | capability, use_case, requirement |
 | Design | Interaction design (`interaction-design`) | flow, flow_step, view, endpoint, interaction_requirement |
 | Design | Technical specification (`technical-specification`) | layer, component |
@@ -384,3 +385,61 @@ The checks for layers:
 - `component-outside-layer` (warning): once a domain has layers, a component left directly under the domain. Move it into the layer it belongs to. A domain with no layers is not reported.
 - `lone-child` (warning): a layer that holds only one component. Merge it into a neighboring layer or give it more.
 - `too-many-children` (warning): a layer, or a domain without layers, holding more components than `structure.maxChildren` (default 15). Split the layer, or add layers (section 5).
+
+## 17. Entities and the ERD
+
+An aggregate is drawn as an ERD (entity-relationship diagram) of the records it keeps. Each of those records is an `entity`: one box of the ERD, with its fields. (Lathe's word "record" already means any spec record, hence "entity".) An `entity` sits under an aggregate, in the define stage's domain model folder. Its ID is the domain's ID with `-EN<nn>`, such as `TL-LEND-EN01` (`-E` is taken by endpoints), numbered across the domain.
+
+An entity's `role` is required:
+
+- `root`: the record the aggregate is named for, through which the others are reached and changed. An aggregate that has entities has exactly one root.
+- `child`: one of the root's parts, such as a line of an order. A child belongs to its aggregate and has no life outside it.
+
+Its body holds a Markdown table under a `## Fields` heading, with the columns Field, Meaning, Kind of value and Example, in that order, and one row per field. Each field name is used once, compared in any letter case and without code span backticks. Prose may come before the heading, and between the heading and the table; a table under any later heading is not read. The engine reads the rows, in table order, into the record's `entityFields` (`{ field, meaning, kind, example }`, see [src/types.ts](src/types.ts)); other kinds have no `entityFields`, and a table with the wrong columns gives none.
+
+```markdown
+---
+id: TL-LEND-EN01
+kind: entity
+title: Loan
+parent: TL-LEND-A3
+role: root
+links:
+  has_many: [TL-LEND-EN02]
+  refers_to: [TL-CAT-EN01, TL-MEM-EN01]
+---
+One member holding one tool, from borrowing to return.
+
+## Fields
+
+| Field | Meaning | Kind of value | Example |
+| --- | --- | --- | --- |
+| Loan ID | The loan's identity. | Text | L-0042 |
+| Due at | When the loan should end. | Date and time: borrowed at plus 14 days | 2026-03-16T10:00:00Z |
+```
+
+Three relations link entities, each one ERD edge:
+
+| Relation | Cardinality | Meaning |
+| --- | --- | --- |
+| `has_one` | one to one | The entity holds exactly one of the other entity, as a part of it. |
+| `has_many` | one to many | The entity holds any number of the other entity, as parts of it. |
+| `refers_to` | many to one | The entity holds a reference to one of the other entity, which may sit in another aggregate or domain. |
+
+Parts belong to their aggregate, so `has_one` and `has_many` stay inside it; only `refers_to` crosses aggregates and domains. An aggregate's `relates_to` links still say which aggregates it refers to, before or without its entities.
+
+The checks:
+
+- `entity-role` (error): a `role` other than `root` or `child` (in any letter case). A missing role is `missing-required-field`.
+- `aggregate-root` (error): an aggregate that has entities but no root, or more than one. An aggregate with no entities is not reported.
+- `entity-fields` (error): an entity with no `## Fields` table, a table whose columns are not Field, Meaning, Kind of value and Example, a field name used twice, or a row with no field name. A table with the wrong columns is reported for that alone.
+- `has-crosses-aggregate` (error): a `has_one` or `has_many` to an entity in another aggregate. Use `refers_to`, or move the part into the aggregate.
+- `entity-unreferenced` (warning): a child entity that no `has_one` or `has_many` reaches from its aggregate's root, directly or through other children of the same aggregate. `refers_to` links do not count. An aggregate without exactly one root is `aggregate-root` only.
+- `too-many-children` (section 5) covers an aggregate with too many entities.
+
+The checks see the Fields tables in two tables: `entity_tables` (one row per entity: `path`, `record`, `heading`, `columns`, `columns_ok`) and `entity_fields` (one row per field of a table with the right columns: `path`, `record`, `position` from 1, `field`, `meaning`, `kind`, `example`).
+
+The app draws two ERDs from these records:
+
+- **A domain's ERD, at aggregate level.** One box per aggregate. A line joins two aggregates when an entity of one `refers_to` an entity of the other. Where no entity links two aggregates, a `relates_to` link between them draws the line instead, so a domain whose entities are not written yet still has its ERD.
+- **An aggregate's ERD.** One box per entity of the aggregate, with its fields, and a line for each `has_one`, `has_many` and `refers_to` between them, marked with its cardinality. The entities they refer to in other aggregates or domains are drawn too, set apart from the aggregate's own.
