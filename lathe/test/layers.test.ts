@@ -18,13 +18,13 @@ beforeAll(async () => {
 });
 
 describe('the meta-model', () => {
-  it('LA-CHK-T270 A layer sits in a domain with an order, and holds only components', () => {
+  it('LA-CHK-T270 A layer sits in a domain or a layer with an order, and holds components and sub-layers', () => {
     const kind = (name: string) => twins.kinds.find((k) => k.kind === name);
     expect(kind('layer')).toMatchObject({
-      stage: 'design', section: 'technical-specification', parent_kinds: ['domain'], required_fields: ['order'], obligation: false,
+      stage: 'design', section: 'technical-specification', parent_kinds: ['domain', 'layer'], required_fields: ['order'], obligation: false,
     });
     expect(kind('component')?.parent_kinds).toEqual(['domain', 'layer']);
-    expect(twins.kinds.filter((k) => k.parent_kinds.includes('layer')).map((k) => k.kind)).toEqual(['component']);
+    expect(twins.kinds.filter((k) => k.parent_kinds.includes('layer')).map((k) => k.kind)).toEqual(['layer', 'component']);
     // Each product names its own layers, as records.
     expect(twins.records.filter((r) => r.kind === 'layer').map((r) => [r.id, r.title])).toEqual([
       ['LY-A-LAY01', 'Services'],

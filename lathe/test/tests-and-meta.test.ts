@@ -75,7 +75,7 @@ describe('extensions widen default kinds', () => {
 
   it('LA-CHK-T56 An extension lets a domain rule sit under a domain', () => {
     expect(kind(widened, 'domain_rule')).toMatchObject({
-      parent_kinds: ['aggregate', 'domain'],
+      parent_kinds: ['aggregate', 'domain', 'entity'],
       required_fields: ['source'],
     });
     expect(errorsAbout(widened, 'WX-D-DR01')).toEqual([]);
@@ -85,7 +85,7 @@ describe('extensions widen default kinds', () => {
     expect(recordsOf(widened, 'meta-duplicate-kind')).toEqual([]);
     // Without the extension the same kind has only its default parents (a domain is one of them since pass 5),
     // and no required field: the extension's widening is what adds 'source'.
-    expect(kind(plain, 'domain_rule')?.parent_kinds).toEqual(['aggregate', 'domain']);
+    expect(kind(plain, 'domain_rule')?.parent_kinds).toEqual(['aggregate', 'domain', 'entity']);
     expect(kind(plain, 'domain_rule')?.required_fields).toEqual([]);
   });
 
@@ -120,7 +120,7 @@ describe('extensions widen default kinds', () => {
       },
     ]);
     // Both rows still widen the kind.
-    expect(kind(duplicate, 'domain_rule')?.parent_kinds).toEqual(['aggregate', 'domain', 'product']);
+    expect(kind(duplicate, 'domain_rule')?.parent_kinds).toEqual(['aggregate', 'domain', 'entity', 'product']);
   });
 });
 

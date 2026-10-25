@@ -8,4 +8,4 @@ file: lathe/src/parse.ts
 links:
   satisfies: [LA-CHK-UC24-R02, LA-CHK-DR182]
 ---
-`readFieldsTable` in the record parser: finds the first `## Fields` heading outside fenced code and the table under it before the next heading, and splits its header and rows into cells, keeping escaped pipes. `hasFieldsColumns` says whether the header is the four columns.
+`readFieldsTable` in the record parser: finds the first `## Fields` heading outside fenced code and the table under it before the next heading, and splits its header and rows into cells, keeping escaped pipes. `hasFieldsColumns` says whether the header is the four columns, the second called Meaning or Business meaning.

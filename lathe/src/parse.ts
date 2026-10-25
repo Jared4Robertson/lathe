@@ -205,8 +205,15 @@ export function readFieldsTable(body: string): FieldsTable {
   return { heading: true, columns: null, rows: [] };
 }
 
-/** Whether a Fields table's header is Field, Meaning, Kind of value and Example, in that order, in any letter case. */
+/** Other names a Fields table column may have, by its position: S2 calls the Meaning column Business meaning. */
+export const FIELDS_COLUMN_ALIASES: Record<number, string[]> = { 1: ['Business meaning'] };
+
+/**
+ * Whether a Fields table's header is Field, Meaning, Kind of value and Example, in that order, in any letter
+ * case. The Meaning column may also be called Business meaning.
+ */
 export const hasFieldsColumns = (columns: string[] | null): boolean =>
   columns !== null &&
   columns.length === FIELDS_COLUMNS.length &&
-  columns.every((c, i) => c.toLowerCase() === FIELDS_COLUMNS[i].toLowerCase());
+  columns.every((c, i) =>
+    [FIELDS_COLUMNS[i], ...(FIELDS_COLUMN_ALIASES[i] ?? [])].some((name) => c.trim().toLowerCase() === name.toLowerCase()));

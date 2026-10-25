@@ -31,7 +31,7 @@ An ID is the product prefix, the domain code, then a kind code and number, such 
 
 ## 4. Code traceability
 
-A `test` has a `state`: `automated` (the default), `manual` or `planned`. An automated test names the file that runs it in `run_by`, and that file names the test's own ID, or else every ID it proves, as whole IDs; a `key` field gives other text the file must contain instead. A manual test describes its procedure in its body. A planned test shows what is meant to prove an obligation, but is not proof. A `component` names its code in `file`, which may not exist yet.
+A `test` has a `state`: `automated` (the default), `manual` or `planned`. An automated test names the file that runs it in `run_by`, and that file names the test's own ID, or else every ID it proves, as whole IDs; a `key` field gives other text the file must contain instead. When the test runs from a shared class in another file, `key_file` names the file that holds the key (or the IDs), under the product root, and that file is read instead of `run_by`, which must still exist. A test `proves` what it is proof of; it `supports` an obligation when it checks a mechanism that backs it, such as a lock or a budget, without proving it, and support never counts as proof. A manual test describes its procedure in its body. A planned test shows what is meant to prove an obligation, but is not proof. A `component` names its code in `file`, which may not exist yet.
 
 ## 5. Checks
 
@@ -73,7 +73,7 @@ A product keeps its house rules as checks of its own: `lathe.config.json` names 
 
 ## 14. Flow steps
 
-A flow can be written as `flow_step` records under it, in `order`: each says what happens, `uses` the view, endpoint or component it goes through, and `fulfills` what it carries out. Once a flow has steps, what it fulfills is what its steps fulfill.
+A flow can be written as `flow_step` records under it, in `order`: each says what happens, `uses` the view, endpoint or component it goes through, and `fulfills` what it carries out. A flow with more than one path, such as an API path or a refused path beside the main one, names each step's `path`; a step with no path is on the main path. The steps of each path are numbered 1, 2, 3 and so on. Once a flow has steps, what it fulfills is what its steps fulfill.
 
 ## 15. Folders
 
@@ -81,11 +81,11 @@ S2 lays out each domain's specs in folders by stage: in Define, the domain model
 
 ## 16. Layers
 
-A domain's components are grouped into **layers**, ordered parts of its technical specification such as Models, Services or Web app, as its use cases are grouped into capabilities. A component in a layer still belongs to the layer's domain everywhere a domain matters. Layers are records, so each product names its own.
+A domain's components are grouped into **layers**, ordered parts of its technical specification such as Models, Services or Web app, as its use cases are grouped into capabilities. A layer may hold sub-layers, each a layer under it with its own order among them. A component in a layer, at any depth, still belongs to the layer's domain everywhere a domain matters. Layers are records, so each product names its own.
 
 ## 17. Entities and the ERD
 
-An aggregate is drawn as an ERD of the records it keeps. Each is an `entity` under the aggregate: one `root`, the record the aggregate is named for, and any number of `child` parts. Its body lists its fields in a table under a `## Fields` heading, with the columns Field, Meaning, Kind of value and Example. `has_one` and `has_many` link an entity to its parts inside the aggregate; `refers_to` may cross aggregates and domains. The app draws a domain's ERD at aggregate level and each aggregate's ERD with its entities.
+An aggregate is drawn as an ERD of the records it keeps. Each is an `entity` under the aggregate: one `root`, the record the aggregate is named for, and any number of `child` parts. Its body lists its fields in a table under a `## Fields` heading, with the columns Field, Meaning, Kind of value and Example; the Meaning column may also be called Business meaning. A domain rule about one entity may sit under that entity rather than the aggregate, and still belongs to the aggregate and its domain. `has_one` and `has_many` link an entity to its parts inside the aggregate; `refers_to` may cross aggregates and domains. The app draws a domain's ERD at aggregate level and each aggregate's ERD with its entities.
 
 ## 18. Domain events
 
