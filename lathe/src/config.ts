@@ -16,6 +16,8 @@ export interface LatheConfig {
   metaDirs: string[];
   /** The product's own checks folder (SQL files run after Lathe's checks), or null when it has none. */
   checksDir: string | null;
+  /** Extra ID prefixes a record body may cite besides every product's and domain's ID (FORMAT.md section 12). */
+  idPrefixes: string[];
 }
 
 interface ConfigFile {
@@ -25,6 +27,19 @@ interface ConfigFile {
   metaExtensions?: string;
   /** A folder of the product's own check SQL files, run after Lathe's checks (FORMAT.md section 13). */
   checks?: string;
+  /** Extra ID prefixes, such as ["STD", "SYS"]: a body token starting with one followed by "-" is a citation. */
+  idPrefixes?: unknown;
+}
+
+const ID_PREFIX = /^[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*$/;
+
+// Reads the optional idPrefixes list: each entry must be ID-shaped (FORMAT.md section 2).
+function readIdPrefixes(value: unknown): string[] {
+  if (value === undefined || value === null) return [];
+  if (!Array.isArray(value) || !value.every((p) => typeof p === 'string' && ID_PREFIX.test(p.trim()))) {
+    throw new Error(`${CONFIG_FILE}: idPrefixes must be a list of ID prefixes such as ["STD", "SYS"].`);
+  }
+  return [...new Set(value.map((p: string) => p.trim()))];
 }
 
 /** The installed Lathe package's own folder (holding meta/, checks/ and diagrams/), from source or from dist. */
@@ -58,5 +73,6 @@ export function loadConfig(root: string): LatheConfig {
     diagramsDir: inside(config.diagrams, 'diagrams'),
     metaDirs,
     checksDir: config.checks ? inside(config.checks, '') : null,
+    idPrefixes: readIdPrefixes(config.idPrefixes),
   };
 }
