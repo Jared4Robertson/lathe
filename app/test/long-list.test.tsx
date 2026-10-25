@@ -94,12 +94,12 @@ describe('long lists', () => {
     // The domain page: groups, a long nested list, gaps and problems.
     await openApp('/specs/BG/BG-D01', served);
     await screen.findByRole('heading', { level: 1, name: 'Domain 1' });
-    const useCases = section(/^Use cases/);
-    const search = within(useCases).getByRole('searchbox', { name: 'Filter use cases' });
+    const useCases = section(/^Capabilities/);
+    const search = within(useCases).getByRole('searchbox', { name: 'Filter capabilities' });
     await user.click(within(useCases).getByRole('button', { name: 'Expand BG-D01-UC01' }));
     expect(within(useCases).getByRole('searchbox', { name: 'Filter children of BG-D01-UC01' })).toBeInTheDocument();
     await user.type(search, 'close the month');
-    const region = within(useCases).getByRole('region', { name: 'Use cases (scrolls)' });
+    const region = within(useCases).getByRole('region', { name: 'Capabilities (scrolls)' });
     expect(within(useCases).getByText('1 of 12')).toBeInTheDocument();
     expect(within(region).getAllByRole('listitem').map((li) => li.textContent)).toEqual([expect.stringMatching(/^BG-D01-UC09\s*Close the month/)]);
     expect(within(section(/^Coverage/)).getByRole('searchbox', { name: 'Filter coverage gaps' })).toBeInTheDocument();

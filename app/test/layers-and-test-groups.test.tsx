@@ -158,8 +158,8 @@ describe('layers and test groups', () => {
     // Test groups are not records: their headings are not links.
     expect(within(plan).queryByRole('link', { name: 'Acceptance tests' })).toBeNull();
 
-    // A capability on the Use cases folder still folds its use cases one level deep.
-    const filling = within(folder(/^Use cases/)).getByRole('link', { name: /^DM-SHOP-CAP01/ }).closest('li') as HTMLElement;
+    // A capability in the Capabilities folder still folds its use cases one level deep.
+    const filling = within(folder(/^Capabilities/)).getByRole('link', { name: /^DM-SHOP-CAP01/ }).closest('li') as HTMLElement;
     expect(filling.querySelector('ul.nested')).toBeNull();
     await user.click(within(filling).getByRole('button', { name: 'Expand DM-SHOP-CAP01' }));
     expect(filling.querySelector('ul.nested')).not.toBeNull();
@@ -276,7 +276,7 @@ describe('layers and test groups', () => {
     await openApp('/records/DM-SHOP-UC01');
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     const ucChildren = within(main()).getByRole('heading', { level: 2, name: /^Children/ }).closest('section') as HTMLElement;
-    expect(within(ucChildren).queryByText('Use-case requirement', { selector: 'small' })).toBeNull();
+    expect(within(ucChildren).queryByText('UC requirement', { selector: 'small' })).toBeNull();
     await openApp('/records/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     const productChildren = within(main()).getByRole('heading', { level: 2, name: /^Children/ }).closest('section') as HTMLElement;

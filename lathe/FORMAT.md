@@ -63,7 +63,7 @@ Product prefix, domain code, then a kind code and number. The engine only checks
 | aggregate | `<P>-<D>-A<n>` | `TL-LEND-A1` |
 | domain_rule | `<P>-<D>-DR<nn>` | `TL-LEND-DR01` |
 | use_case | `<P>-<D>-UC<nn>` | `TL-LEND-UC01` |
-| requirement (shown as *use-case requirement*) | `<use case>-R<nn>` | `TL-LEND-UC01-R01` |
+| requirement (shown as *UC requirement*, short for use case requirement) | `<use case>-R<nn>` | `TL-LEND-UC01-R01` |
 | flow | `<P>-<D>-F<nn>` | `TL-LEND-F01` |
 | view | `<P>-<D>-V<nn>` | `TL-LEND-V01` |
 | endpoint | `<P>-<D>-E<nn>` | `TL-LEND-E01` |
@@ -305,7 +305,7 @@ WHERE a.kind = 'aggregate'
 
 A flow can be written as **steps**, so that each step says what happens, where, and what it carries out, as S2's flow tables do. A `flow_step` sits under its flow and gives its place in the flow in `order`, a whole number. Its ID is the flow's ID with `-S<nn>`, such as `TL-LEND-F01-S01`. Its title says what happens in a few words, and its body may say more.
 
-A step links to what it goes through with `uses` (a view, an endpoint or a component) and to what it carries out with `fulfills` (a use-case requirement, an interaction requirement, a domain rule, or a rule of a pattern the flow's use cases or domain follow).
+A step links to what it goes through with `uses` (a view, an endpoint or a component) and to what it carries out with `fulfills` (a UC requirement, an interaction requirement, a domain rule, or a rule of a pattern the flow's use cases or domain follow).
 
 ```markdown
 ---
@@ -351,7 +351,7 @@ Structural kinds (product, domain, question, fitness) sit in no folder. The engi
 
 The app groups the Test plan folder by what each test proves, not by records of its own. Each test goes in the first group that applies to it:
 
-1. **Acceptance tests**: it proves a use-case requirement. Grouped by capability in order, with use cases outside any capability last, then by use case: the first use case it proves a requirement of, in ID order.
+1. **Acceptance tests**: it proves a UC requirement. Grouped by capability in order, with use cases outside any capability last, then by use case: the first use case it proves a requirement of, in ID order.
 2. **Domain rule tests**: it proves a domain rule.
 3. **Pattern tests**: it proves a pattern rule. Grouped by pattern.
 4. **Interaction tests**: it proves an interaction requirement.
