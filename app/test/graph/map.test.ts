@@ -141,7 +141,7 @@ describe('the level of detail', () => {
       expect(n.x + n.w >= rect.x0 && n.x <= rect.x1 && n.y + n.h >= rect.y0 && n.y <= rect.y1, b.id).toBe(true);
       expect(n.h * view.zoom).toBeGreaterThanOrEqual(MIN_DRAWN);
       // Labeled exactly when its title is MIN_LABEL_PX or more on screen; a drawn box carries no text size of its own.
-      expect(b).toEqual({ id: b.id, label: labelShown(n.h, view.zoom) });
+      expect(b).toEqual({ id: b.id, label: labelShown(n.text, view.zoom) });
       if (n.h * view.zoom >= 40) expect(b.label, b.id).toBe(true);
     }
     // Zoomed far out, the leaves are too small: they are not drawn, and each run of them is one bar in its parent's next level.
@@ -167,11 +167,11 @@ describe('the level of detail', () => {
     expect(textScaleOf(NODE_HEIGHT * 10)).toBe(10);
     // Shown exactly when the title is MIN_LABEL_PX or more on screen: a leaf at its own size, not at a fifth of it.
     expect(MIN_LABEL_PX).toBe(7);
-    expect(labelShown(NODE_HEIGHT, 1)).toBe(true);
-    expect(labelShown(NODE_HEIGHT, MIN_LABEL_PX / TITLE_FONT)).toBe(true);
-    expect(labelShown(NODE_HEIGHT, MIN_LABEL_PX / TITLE_FONT - 0.01)).toBe(false);
-    expect(labelShown(NODE_HEIGHT * 10, 0.06)).toBe(true);
-    expect(labelShown(NODE_HEIGHT * 10, 0.05)).toBe(false);
+    expect(labelShown(textScaleOf(NODE_HEIGHT), 1)).toBe(true);
+    expect(labelShown(textScaleOf(NODE_HEIGHT), MIN_LABEL_PX / TITLE_FONT)).toBe(true);
+    expect(labelShown(textScaleOf(NODE_HEIGHT), MIN_LABEL_PX / TITLE_FONT - 0.01)).toBe(false);
+    expect(labelShown(textScaleOf(NODE_HEIGHT * 10), 0.06)).toBe(true);
+    expect(labelShown(textScaleOf(NODE_HEIGHT * 10), 0.05)).toBe(false);
     // Every zoom draws each box with the same text scale, the map's: zooming changes what is labeled, never a label's size.
     const view = frameOnMap(map, 'P-D', 2, 1000, 800);
     for (const zoom of [view.zoom / 4, view.zoom, view.zoom * 4]) {

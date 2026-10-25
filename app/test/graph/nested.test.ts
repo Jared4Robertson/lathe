@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { graphMap } from '../../src/graph/map';
-import { HEADER, HEADER_SHARE, LEAF_AREA, layoutNested, NESTED_ASPECT, nestedMap, nestedTextScale, squarify, type NestedMap } from '../../src/graph/nested';
+import { HEADER, HEADER_SHARE, HEADER_WIDTH_SHARE, LEAF_AREA, layoutNested, NESTED_ASPECT, nestedMap, nestedTextScale, squarify, type NestedMap } from '../../src/graph/nested';
 import { indexWorkspace } from '../../src/specs/data';
 import { groupedWorkspace, manyOfOneKindWorkspace, testIndex } from './workspace';
 
@@ -22,7 +22,7 @@ const leafCount = (map: NestedMap, id: string): number => {
 const eps = 1e-6;
 
 describe('the Nested map', () => {
-  it('LA-EXP-T178 Each box holds its children below its header band, inside its padding, none overlapping, over the same tree as the Tree map', () => {
+  it('LA-EXP-T181 Each box holds its children below its header band, inside its padding, none overlapping, over the same tree as the Tree map', () => {
     for (const map of [...maps(), wide(1, 6), wide(3, 4)]) {
       for (const n of map.nodes.values()) {
         expect(n.w).toBeGreaterThanOrEqual(0);
@@ -58,7 +58,7 @@ describe('the Nested map', () => {
     for (const n of tree.nodes.values()) expect(nested.nodes.get(n.id)!.children).toEqual(n.children);
   });
 
-  it('LA-EXP-T178 A box is sized by the leaf records under it, the world by them all', () => {
+  it('LA-EXP-T181 A box is sized by the leaf records under it, the world by them all', () => {
     const map = wide(1, 5);
     const root = map.nodes.get('r0')!;
     expect(root.w / root.h).toBeCloseTo(NESTED_ASPECT, 6);
@@ -75,7 +75,7 @@ describe('the Nested map', () => {
     expect(leafCount(lop, 'r')).toBe(4);
   });
 
-  it('LA-EXP-T179 Squarified in order: equal weights read row by row, the boxes near square, the area shared exactly', () => {
+  it('LA-EXP-T182 Squarified in order: equal weights read row by row, the boxes near square, the area shared exactly', () => {
     const r = { x: 0, y: 0, w: 400, h: 400 };
     const cells = squarify([1, 1, 1, 1], r);
     // Four equal weights in a square: a 2 by 2 grid, in reading order (a column, then the next).
@@ -95,13 +95,14 @@ describe('the Nested map', () => {
     expect(squarify([], r)).toEqual([]);
   });
 
-  it("LA-EXP-T180 A box's text is in proportion to it, fixed by the map: its label fits its width, a header band at most a quarter of its height", () => {
+  it("LA-EXP-T183 A box's text is in proportion to it, fixed by the map: its label fits its width, a parent's header band at most an eighth of its height", () => {
     // A leaf as wide as its label at a leaf's height: scale 1.
     expect(nestedTextScale({ w: 190, h: 56 }, 190, false)).toBe(1);
     // Limited by the width: a long label in a narrow box is smaller, never wrapped or cut.
     expect(nestedTextScale({ w: 95, h: 560 }, 190, false)).toBe(0.5);
-    // A container's header band takes at most a quarter of its height.
-    expect(nestedTextScale({ w: 10000, h: 4 * HEADER }, 190, true)).toBe(1);
+    // A parent's header band takes at most an eighth of its height, its label at most 0.6 of its width.
+    expect(nestedTextScale({ w: 10000, h: HEADER / HEADER_SHARE }, 190, true)).toBe(1);
+    expect(nestedTextScale({ w: 190 / HEADER_WIDTH_SHARE, h: 10000 }, 190, true)).toBeCloseTo(1, 9);
     for (const map of maps()) {
       for (const n of map.nodes.values()) {
         if (n.children.length > 0) expect(n.header).toBeLessThanOrEqual(n.h * HEADER_SHARE + eps);

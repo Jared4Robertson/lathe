@@ -306,6 +306,15 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-node.is-plain { padding: 0; }
 .graph-bar { width: 100%; height: 100%; background: var(--rule); opacity: 0.6; border-radius: var(--node-radius); }
 .graph-flow .react-flow__node.is-bar { pointer-events: none; }
+/* The Nested view (LA-EXP-DR62): each box holds its children below a header band (--header, set by the map, in map units)
+   with its label at the top left; a leaf's label is centered in it. A domain is a box there, its hexagon a small mark before
+   its kind and ID line, sized with its text. Children are drawn after their parent, so they lie over it. */
+.graph-flow.is-nested .graph-node.is-container { justify-content: flex-start; align-items: flex-start; text-align: left; }
+.graph-flow.is-nested .graph-node.is-container:not(.is-plain) { padding-top: calc((var(--header) - 44px * var(--node-scale)) / 2 + 6px * var(--node-scale)); }
+.graph-hexagon-mark { display: inline-block; width: calc(11px * var(--node-scale)); height: calc(9.5px * var(--node-scale)); margin-right: calc(5px * var(--node-scale)); vertical-align: baseline; background: var(--g-structural); clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%); }
+.graph-swatch.stage-hexagon-mark { border-radius: 2px; background: var(--g-structural-bg); position: relative; }
+.graph-swatch.stage-hexagon-mark::before { content: ""; position: absolute; left: 2px; top: 2px; width: 7px; height: 6px; background: var(--g-structural); clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%); }
+.graph-swatch.stage-nested { border-color: var(--muted); background: linear-gradient(var(--g-define-bg), var(--g-define-bg)) 3px 5px / 10px 3px no-repeat, var(--sheet); }
 
 /* Edges: parent/child is the solid spine of the tree; every other relation is a lighter, dashed cross-link. A parent line
    grows with its child box (--edge-scale), as the box's border does, so it reads at the zoom that reads the box. */

@@ -164,7 +164,7 @@ describe('Lathe on a phone', () => {
 
   it('LA-EXP-T133 By touch, a first tap on a graph node selects it and shows its name with an Open chip; a second tap or the chip opens it, and a tap on the canvas lets go', async () => {
     phone();
-    window.sessionStorage.setItem('lathe:graph-settings', JSON.stringify({ depth: 1, trace: false, hiddenKinds: [], hiddenRelations: [], links: false, minimap: false }));
+    window.sessionStorage.setItem('lathe:graph-settings', JSON.stringify({ layout: 'tree', depth: 1, trace: false, hiddenKinds: [], hiddenRelations: [], links: false, minimap: false }));
     await openApp('/P-D-UC01-R01?view=graph', served());
     // Links on, so the view that fulfills the requirement is drawn.
     fireEvent.click(await screen.findByRole('button', { name: 'Links' }));
