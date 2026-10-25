@@ -3,20 +3,23 @@
 -- Nothing ties the file to the test: it names neither the test's ID, nor any ID the test proves (each target
 -- of a relation whose role is `proof`), nor the test's `key` when it has one. Manual tests are not held to
 -- the automated rules (test-file-missing-id, proof-not-in-file), so a silent file is a warning: the steps a
--- person follows should say which test they carry out. A missing file is test-file-missing instead. Name the
--- test in the file, or point `run_by` at the file that carries it out.
+-- person follows should say which test they carry out. A test with a `key_file` is judged by that file
+-- instead. A missing file is test-file-missing instead. Name the test in the file, or point `run_by` at the
+-- file that carries it out.
 --
 -- severity: warning
 -- kinds: test
 SELECT 'warning' AS severity, 'manual-test-file-silent' AS "check", nullif(f.record, '') AS record,
-       'Manual test ' || coalesce(nullif(f.record, ''), f.path) || ' is run by ' || f.file || ', but that file names neither '
+       'Manual test ' || coalesce(nullif(f.record, ''), f.path)
+       || CASE WHEN f.key_file IS NOT NULL THEN ' names the key file ' || f.key_file ELSE ' is run by ' || f.file END
+       || ', but that file names neither '
        || coalesce(nullif(f.record, ''), 'the test''s ID') || ' nor any ID it proves'
        || coalesce(' nor its key "' || k.key || '"', '')
        || '; name the test in the file, or point run_by at the file that carries it out.' AS message
 FROM file_facts f
 LEFT JOIN (SELECT path, max(trim(value)) AS key FROM fields WHERE name = 'key' AND trim(value) <> '' GROUP BY path) k
        ON k.path = f.path
-WHERE f.kind = 'test' AND f.file_exists AND NOT coalesce(f.contains_id, false)
+WHERE f.kind = 'test' AND f.file_exists AND NOT coalesce(f.contains_id, false) AND f.key_file_exists IS NOT false
   AND coalesce((SELECT max(lower(trim(s.value))) FROM fields s WHERE s.path = f.path AND s.name = 'state'), '') = 'manual'
   AND NOT EXISTS (SELECT 1 FROM file_mentions m WHERE m.path = f.path AND f.record <> '' AND m.mentioned = f.record)
   AND NOT EXISTS (
