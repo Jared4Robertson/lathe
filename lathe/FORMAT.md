@@ -67,6 +67,7 @@ Product prefix, domain code, then a kind code and number. The engine only checks
 | flow | `<P>-<D>-F<nn>` | `TL-LEND-F01` |
 | view | `<P>-<D>-V<nn>` | `TL-LEND-V01` |
 | endpoint | `<P>-<D>-E<nn>` | `TL-LEND-E01` |
+| layer | `<P>-<D>-LAY<nn>` | `TL-LEND-LAY01` |
 | component | `<P>-<D>-C<nn>` | `TL-LEND-C01` |
 | interaction_requirement | `<view, endpoint or flow>-R<nn>` | `TL-LEND-E03-R01` |
 | test | `<P>-<D>-T<nn>` | `TL-LEND-T01` |
@@ -89,8 +90,8 @@ A `test` record has a `state`: `automated` (the default when the field is absent
 
 The engine runs every SQL file in `lathe/checks/`. Each returns rows of `(severity, check, record, message)`:
 
-- **error**: the workspace is broken (duplicate ID, unknown kind, bad parent, missing required field, disallowed or dangling link, an automated test with no `run_by`, or whose `run_by` file is missing or mentions neither its ID nor an ID it proves, a bad or repeated capability order, a pattern setting a use case does not give, a pattern setting that is not a valid field name, a pattern rule naming a setting its pattern does not have, a proof claim the test's file does not back (`proof-not-in-file`), a bad or repeated flow step order, a product check named like one of Lathe's or a product checks folder that does not exist). `lathe check` exits non-zero.
-- **warning**: work still to do, not breakage (a requirement or domain rule that no component satisfies or no test proves, a use case with no requirements, a component file that does not exist yet, a use case left outside its domain's capabilities, two followed patterns sharing a setting, a pattern nobody follows, an obligation outside every domain, a record ID cited in prose that does not exist, a flow step fulfilling something outside its flow, a flow fulfilling something none of its steps do). The structural warnings say where two stages do not join up yet:
+- **error**: the workspace is broken (duplicate ID, unknown kind, bad parent, missing required field, disallowed or dangling link, an automated test with no `run_by`, or whose `run_by` file is missing or mentions neither its ID nor an ID it proves, a bad or repeated capability or layer order, a pattern setting a use case does not give, a pattern setting that is not a valid field name, a pattern rule naming a setting its pattern does not have, a proof claim the test's file does not back (`proof-not-in-file`), a bad or repeated flow step order, a product check named like one of Lathe's or a product checks folder that does not exist). `lathe check` exits non-zero.
+- **warning**: work still to do, not breakage (a requirement or domain rule that no component satisfies or no test proves, a use case with no requirements, a component file that does not exist yet, a use case left outside its domain's capabilities, a component left outside its domain's layers, two followed patterns sharing a setting, a pattern nobody follows, an obligation outside every domain, a record ID cited in prose that does not exist, a flow step fulfilling something outside its flow, a flow fulfilling something none of its steps do). The structural warnings say where two stages do not join up yet:
   - `rule-not-applied`: a domain rule that no use case `applies`.
   - `use-case-without-flow`: a use case that no flow `carries_out`, in a domain that has flows. A domain with no flows yet is not reported.
   - `interaction-requirement-fulfills-nothing`: an interaction requirement with no `fulfills` link.
@@ -334,7 +335,7 @@ Client lays out each domain's specs in folders: `01-define/01-domain-model`, `01
 | Define | Domain model (`domain-model`) | aggregate, domain_rule |
 | Define | Use cases (`use-cases`) | capability, use_case, requirement |
 | Design | Interaction design (`interaction-design`) | flow, flow_step, view, endpoint, interaction_requirement |
-| Design | Technical specification (`technical-specification`) | component |
+| Design | Technical specification (`technical-specification`) | layer, component |
 | Design | Test plan (`test-plan`) | test |
 | (product) | Shared (`shared`) | pattern, pattern_rule |
 
@@ -342,3 +343,37 @@ Structural kinds (product, domain, question, fitness) sit in no folder. The engi
 
 - `unknown-section` (error): a kind names a section that `sections.csv` does not list.
 - `section-stage-mismatch` (error): a kind's section belongs to another stage than the kind's own. A product-level folder (no stage) may hold a kind of any stage.
+
+The app groups the Test plan folder by what each test proves, not by records of its own. Each test goes in the first group that applies to it:
+
+1. **Acceptance tests**: it proves a use-case requirement. Grouped by capability in order, with use cases outside any capability last, then by use case: the first use case it proves a requirement of, in ID order.
+2. **Domain rule tests**: it proves a domain rule.
+3. **Pattern tests**: it proves a pattern rule. Grouped by pattern.
+4. **Interaction tests**: it proves an interaction requirement.
+5. **Engineering checks**: everything else.
+
+A group with no tests is not shown.
+
+## 16. Layers
+
+A domain's technical specification groups its components into **layers**, as its use cases are grouped into capabilities (section 10). A `layer` sits under a domain and gives its place in the domain in `order`, a whole number. Its ID is the domain's ID with `-LAY<nn>`, such as `TL-LEND-LAY01`. Its title names what it holds, and its body may say where that code lives.
+
+```markdown
+---
+id: TL-LEND-LAY03
+kind: layer
+title: Services
+parent: TL-LEND
+order: 3
+---
+The lending rules, one service per aggregate, in `src/services/`.
+```
+
+A component then names the layer as its parent (`parent: TL-LEND-LAY03`). Its ID does not change, so moving a component into a layer changes only its `parent`. A component in a layer still belongs to the layer's domain everywhere a domain matters: its design and build count in that domain's coverage, it designs the pattern rules that domain owes, and the proof and flow step checks judge it there, exactly as if it sat directly in the domain. A domain with no layers keeps its components directly under it.
+
+Layers are records, not a fixed list, so each product names its own. A good starting point, from Client, is: Models, Accessors, Services, Connectors, Routers and API app, Web app, and Infrastructure and configuration. A layer much larger than the others, say more than about 15 components, is split, for example by aggregate or capability, each part its own layer with a clear title.
+
+The checks for layers:
+
+- A layer's `order` that is not a whole number, or that another layer of the same domain also has, is a `layer-order` error (`1` and `01` are the same). Layers in different domains may share an order. A missing order is `missing-required-field`.
+- `component-outside-layer` (warning): once a domain has layers, a component left directly under the domain. Move it into the layer it belongs to. A domain with no layers is not reported.
