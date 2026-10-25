@@ -1,6 +1,7 @@
 import { plural } from '../plural';
-import type { SpecIndex } from '../specs/data';
+import type { SpecIndex, SpecRecord } from '../specs/data';
 import { byIdOrder, kindLabel } from '../specs/data';
+import { testGroupOf, testGroups, type FolderGroup } from '../specs/folders';
 
 // Pure graph logic for the graph view: the ego graph around a record, filters and trace mode.
 // Nothing here touches React or the DOM, so it is tested directly.
@@ -243,7 +244,7 @@ export function neighborhood(
   const kindOfNode = (id: string) => index.byId.get(id)?.kind ?? parseGroupId(id)!.kind;
   const shownKind = (id: string) => id === focus || !filters.hiddenKinds.has(kindOfNode(id));
   const focusRecord = index.byId.get(focus);
-  const home = focusRecord?.parent ? groupId(focusRecord.parent, focusRecord.kind) : null;
+  const home = focusRecord?.parent ? containerOf(index, focusRecord) : null;
   // At depth 1 the focus's own folder stays folded unless opened, so its siblings do not crowd the picture.
   const isOpen = (gid: string) => gid === focus || (open.get(gid) ?? (depth > 1 && gid === home));
 
@@ -254,10 +255,13 @@ export function neighborhood(
   const steps = (id: string): Step[] => {
     const group = parseGroupId(id);
     if (group) {
-      const cost = id === focus ? 2 : 1;
+      // A group within a group (a test-plan group in a Tests folder) costs nothing to cross, so
+      // nested groups add no hops either.
+      const cost = (to: string) => (id === focus ? 2 : parseGroupId(to) && !index.byId.has(to) ? 0 : 1);
+      const up = groupParentNode(index, id);
       return [
-        { to: group.parent, cost, relation: PARENT },
-        ...(isOpen(id) ? groupMembers(index, id).map((m) => ({ to: m.id, cost, relation: PARENT })) : []),
+        { to: up, cost: cost(up), relation: PARENT },
+        ...(isOpen(id) ? groupChildren(index, id).map((to) => ({ to, cost: cost(to), relation: PARENT })) : []),
       ];
     }
     const out: Step[] = [];
@@ -267,7 +271,7 @@ export function neighborhood(
     const record = index.byId.get(id)!;
     if (record.parent && index.byId.has(record.parent)) {
       out.push(isGrouped(index, record.parent)
-        ? { to: groupId(record.parent, record.kind), cost: 1, relation: PARENT }
+        ? { to: containerOf(index, record), cost: 1, relation: PARENT }
         : { to: record.parent, cost: 2, relation: PARENT });
     }
     if (isGrouped(index, id)) {
@@ -293,37 +297,49 @@ export function neighborhood(
       }
       for (const [id, h] of [...half]) {
         if (id === focus || !parseGroupId(id) || !isOpen(id)) continue;
-        for (const m of groupMembers(index, id)) {
-          if (half.has(m.id) || !shownKind(m.id)) continue;
-          half.set(m.id, h + 1);
-          via.set(m.id, id);
+        for (const m of groupChildren(index, id)) {
+          if (half.has(m) || !shownKind(m)) continue;
+          half.set(m, h + 1);
+          via.set(m, id);
         }
       }
     }
   }
   for (let level = 0; depth > 1 && level < limit; level++) {
-    const frontier = [...half].filter(([, h]) => h === level).map(([id]) => id).sort((a, b) => a.localeCompare(b, 'en', { numeric: true }));
-    for (const id of frontier) {
-      for (const s of steps(id)) {
-        const reached = level + s.cost;
-        if (reached > limit || !shownRelation(s.relation) || !shownKind(s.to)) continue;
-        const known = half.get(s.to);
-        if (known !== undefined && known <= reached) continue;
-        half.set(s.to, reached);
-        via.set(s.to, id);
+    // A step of no cost reaches a node at this same level, so the level is walked until nothing new joins it.
+    const walked = new Set<string>();
+    for (;;) {
+      const frontier = [...half].filter(([id, h]) => h === level && !walked.has(id)).map(([id]) => id).sort((a, b) => a.localeCompare(b, 'en', { numeric: true }));
+      if (frontier.length === 0) break;
+      for (const id of frontier) {
+        walked.add(id);
+        for (const s of steps(id)) {
+          const reached = level + s.cost;
+          if (reached > limit || !shownRelation(s.relation) || !shownKind(s.to)) continue;
+          const known = half.get(s.to);
+          if (known !== undefined && known <= reached) continue;
+          half.set(s.to, reached);
+          via.set(s.to, id);
+        }
       }
     }
   }
 
-  // The spine always runs through the group between a shown parent and a shown child.
+  // The spine always runs through the groups between a shown parent and a shown child (for a test,
+  // its parent's Tests folder and the test-plan groups within it).
   if (shownRelation(PARENT)) {
     for (const id of [...half.keys()]) {
       const record = index.byId.get(id);
       if (!record?.parent || !half.has(record.parent) || !isGrouped(index, record.parent)) continue;
-      const gid = groupId(record.parent, record.kind);
-      if (half.has(gid)) continue;
-      half.set(gid, Math.max(half.get(id)!, half.get(record.parent)!) + 1);
-      via.set(gid, id);
+      let below = id;
+      for (let gid = containerOf(index, record), seen = 0; gid !== record.parent && seen < 16; seen++) {
+        if (!half.has(gid)) {
+          half.set(gid, Math.max(half.get(below)!, half.get(record.parent)!) + 1);
+          via.set(gid, below);
+        }
+        below = gid;
+        gid = groupParentNode(index, gid);
+      }
     }
   }
 
@@ -335,7 +351,8 @@ export function neighborhood(
   for (const id of half.keys()) {
     const group = parseGroupId(id);
     if (group) {
-      if (half.has(group.parent) && shownRelation(PARENT)) addParentEdge(group.parent, id);
+      const above = groupParentNode(index, id);
+      if (half.has(above) && shownRelation(PARENT)) addParentEdge(above, id);
       continue;
     }
     for (const e of edgesOf(index, id)) {
@@ -343,7 +360,7 @@ export function neighborhood(
     }
     const record = index.byId.get(id)!;
     if (!record.parent || !shownRelation(PARENT)) continue;
-    const gid = groupId(record.parent, record.kind);
+    const gid = containerOf(index, record);
     if (half.has(gid)) addParentEdge(gid, id);
     else if (half.has(record.parent) && !isGrouped(index, record.parent)) addParentEdge(record.parent, id);
   }
@@ -367,19 +384,90 @@ export function neighborhood(
 
 // ---- Group nodes: a folder per kind of child between a record and its children ----
 
-/** A record with more children than this, all of one kind, has them grouped. */
-export const GROUP_HANDFUL = 5;
 export const NO_OPEN: ReadonlyMap<string, boolean> = new Map();
 
-/** A group's ID: its parent's ID and the kind of its members. Record IDs never contain a slash. */
+/**
+ * A group's ID: its parent's ID and the kind of its members. Record IDs never contain a slash. A
+ * group within a parent's Tests folder (a test-plan group, as the Test plan folder has them) adds
+ * its own parts: "DM-SHOP/test/acceptance/DM-SHOP-CAP01/DM-SHOP-UC02", the same keys the folder
+ * model gives its groups when keyed by the Tests folder's ID.
+ */
 export const groupId = (parent: string, kind: string) => `${parent}/${kind}`;
 
-/** The parent and member kind of a group ID, or null for any other ID. */
-export function parseGroupId(id: string): { parent: string; kind: string } | null {
+/** The parent, member kind and any further parts of a group ID, or null for an ID that cannot be a group. */
+export function parseGroupId(id: string): { parent: string; kind: string; path: string[] } | null {
   if (id.startsWith('file:')) return null;
-  const at = id.indexOf('/');
-  if (at <= 0 || at === id.length - 1 || id.indexOf('/', at + 1) >= 0) return null;
-  return { parent: id.slice(0, at), kind: id.slice(at + 1) };
+  const parts = id.split('/');
+  if (parts.length < 2 || parts.some((p) => p === '')) return null;
+  return { parent: parts[0], kind: parts[1], path: parts.slice(2) };
+}
+
+// A parent's tests in its Tests folder are drawn in the test plan's groups, from the same folder
+// model as the Test plan folder, so the two never disagree. Computed once per index and parent.
+const testGroupCache = new WeakMap<SpecIndex, Map<string, FolderGroup[]>>();
+function testFolderGroups(index: SpecIndex, parent: string): FolderGroup[] {
+  let cache = testGroupCache.get(index);
+  if (!cache) testGroupCache.set(index, (cache = new Map()));
+  let groups = cache.get(parent);
+  if (!groups) {
+    const tests = (index.children.get(parent) ?? []).filter((c) => c.kind === 'test');
+    // When only one test-plan group has tests, they hang directly under the Tests folder: the graph
+    // splits a folder only when there is more than one group to tell apart.
+    const one = new Set(tests.map((t) => testGroupOf(index, t))).size <= 1;
+    groups = one ? [] : testGroups(index, groupId(parent, 'test'), tests);
+    cache.set(parent, groups);
+  }
+  return groups;
+}
+
+/** A test-plan group within a parent's Tests folder, and the node above it (the folder or another group). */
+function findTestGroup(index: SpecIndex, gid: string): { group: FolderGroup; above: string } | null {
+  const g = parseGroupId(gid);
+  if (!g || g.kind !== 'test' || g.path.length === 0) return null;
+  const search = (groups: FolderGroup[], above: string): { group: FolderGroup; above: string } | null => {
+    for (const x of groups) {
+      if (x.key === gid) return { group: x, above };
+      const inner = search(x.groups, x.key);
+      if (inner) return inner;
+    }
+    return null;
+  };
+  return search(testFolderGroups(index, g.parent), groupId(g.parent, 'test'));
+}
+
+const deepRecords = (g: FolderGroup): SpecRecord[] => [...g.records, ...g.groups.flatMap(deepRecords)];
+
+/** The node a group hangs from: its parent record, or for a test-plan group the Tests folder or group around it. */
+export function groupParentNode(index: SpecIndex, gid: string): string {
+  return findTestGroup(index, gid)?.above ?? parseGroupId(gid)!.parent;
+}
+
+/** The nodes one level inside a group: its test-plan groups and its own records (IDs). */
+export function groupChildren(index: SpecIndex, gid: string): string[] {
+  const g = parseGroupId(gid);
+  if (!g) return [];
+  if (g.path.length > 0) {
+    const found = findTestGroup(index, gid);
+    return found ? [...found.group.groups.map((x) => x.key), ...found.group.records.map((r) => r.id)] : [];
+  }
+  const groups = g.kind === 'test' ? testFolderGroups(index, g.parent) : [];
+  if (groups.length > 0) return groups.map((x) => x.key);
+  return groupMembers(index, gid).map((r) => r.id);
+}
+
+/** The group node holding a record whose parent groups its children: the Tests folder's innermost test-plan group for a test. */
+export function containerOf(index: SpecIndex, record: SpecRecord): string {
+  const folder = groupId(record.parent!, record.kind);
+  if (record.kind !== 'test') return folder;
+  const search = (groups: FolderGroup[]): string | null => {
+    for (const x of groups) {
+      if (x.records.some((r) => r.id === record.id)) return x.key;
+      const inner = search(x.groups);
+      if (inner) return inner;
+    }
+    return null;
+  };
+  return search(testFolderGroups(index, record.parent!)) ?? folder;
 }
 
 /** The kinds of a record's children, in the meta-model's order. */
@@ -388,18 +476,23 @@ export function childKinds(index: SpecIndex, id: string): string[] {
   return [...new Set((index.children.get(id) ?? []).map((c) => c.kind))].sort((a, b) => rank(a) - rank(b));
 }
 
-/** Whether a record's children are drawn through groups: more than one kind of child, or more than a handful of one kind. */
+/**
+ * Whether a record's children are drawn through groups: only when it has more than one kind of
+ * child to tell apart, however many there are. A capability points straight at its use cases.
+ */
 export function isGrouped(index: SpecIndex, id: string): boolean {
-  return childKinds(index, id).length > 1 || (index.children.get(id) ?? []).length > GROUP_HANDFUL;
+  return childKinds(index, id).length > 1;
 }
 
-/** The records in a group: the parent's children of the group's kind, in ID order. */
-export function groupMembers(index: SpecIndex, gid: string) {
+/** The records in a group, however deep: the parent's children of the group's kind (or a test-plan group's tests), in ID order. */
+export function groupMembers(index: SpecIndex, gid: string): SpecRecord[] {
   const g = parseGroupId(gid);
-  return g ? (index.children.get(g.parent) ?? []).filter((c) => c.kind === g.kind) : [];
+  if (!g) return [];
+  if (g.path.length > 0) return [...(findTestGroup(index, gid) ? deepRecords(findTestGroup(index, gid)!.group) : [])].sort(byIdOrder);
+  return (index.children.get(g.parent) ?? []).filter((c) => c.kind === g.kind);
 }
 
-/** Whether an ID names a group that exists: a record with at least one child of that kind. */
+/** Whether an ID names a group that exists: a record with at least one child of that kind, or a test-plan group in a Tests folder. */
 export const isGroup = (index: SpecIndex, id: string) => groupMembers(index, id).length > 0;
 
 /** Whether the graph can center on an ID: a record or a group. */
@@ -411,7 +504,10 @@ export function pluralLabel(index: SpecIndex, kind: string): string {
 }
 
 /** A group's label with its count, such as "Use cases (5)". */
-export const groupLabel = (index: SpecIndex, gid: string) => `${pluralLabel(index, parseGroupId(gid)!.kind)} (${groupMembers(index, gid).length})`;
+export const groupLabel = (index: SpecIndex, gid: string) => `${groupName(index, gid)} (${groupMembers(index, gid).length})`;
+
+/** A group's name without its count: "Use cases", or a test-plan group's label such as "Acceptance tests". */
+export const groupName = (index: SpecIndex, gid: string) => findTestGroup(index, gid)?.group.label ?? pluralLabel(index, parseGroupId(gid)!.kind);
 
 /** The problems and coverage gaps of a group's members and everything beneath them, summed for the group's mark. */
 export function groupMarks(index: SpecIndex, gid: string): { errors: number; warnings: number; gaps: ('satisfies' | 'proves')[] } {
