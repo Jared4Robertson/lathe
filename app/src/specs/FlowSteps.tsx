@@ -5,7 +5,8 @@ import { RecordMarkdown } from './mentions';
 import { ProblemBadge, RecordLink, Section } from './parts';
 
 // A flow's steps as a table, in order (FORMAT.md section 14): the step, what happens, what it uses
-// and what it fulfills. Each row shows one level: the step's title and the IDs it links to. What
+// and what it carries out. A flow with several paths shows a table per path, main first, then the
+// others by name, each in its own order. Each row shows one level: the step's title and the IDs it links to. What
 // sits a level deeper (the step's body, and the titles and kinds of what it uses and fulfills) is
 // folded under the row's disclosure triangle, as in every other list.
 
@@ -27,6 +28,21 @@ export function stepsOf(index: SpecIndex, flowId: string): SpecRecord[] {
     return a.id.localeCompare(b.id, 'en', { numeric: true });
   });
 }
+
+/** A step's path, trimmed and in lower case: a step with no path is on the main path. */
+export const stepPath = (step: SpecRecord) => step.fields.path?.trim().toLowerCase() || 'main';
+
+/** A flow's steps path by path: the main path first, then the others by name, each in order. */
+export function pathsOf(index: SpecIndex, flowId: string): { path: string; steps: SpecRecord[] }[] {
+  const byPath = new Map<string, SpecRecord[]>();
+  for (const step of stepsOf(index, flowId)) byPath.set(stepPath(step), [...(byPath.get(stepPath(step)) ?? []), step]);
+  return [...byPath.entries()]
+    .sort(([a], [b]) => (a === 'main' ? -1 : b === 'main' ? 1 : a.localeCompare(b)))
+    .map(([path, steps]) => ({ path, steps }));
+}
+
+/** A path's heading: "Main path", "Refused path". */
+export const pathLabel = (path: string) => `${path.charAt(0).toUpperCase()}${path.slice(1)} path`;
 
 const targetsOf = (index: SpecIndex, id: string, relation: string) =>
   (index.outgoing.get(id) ?? []).filter((l) => l.relation === relation).map((l) => l.target);
@@ -73,26 +89,22 @@ export function FlowSteps({ index, flow }: { index: SpecIndex; flow: SpecRecord 
     return next;
   });
 
-  return (
-    <Section title="Steps" count={steps.length}>
-      <div className="long-list-tools short">
-        <button type="button" className="tree-bulk" onClick={() => setOpen(allOpen ? new Set() : new Set(steps.map((s) => s.id)))}>
-          {allOpen ? 'Collapse all' : 'Expand all'}
-        </button>
-      </div>
+  const paths = pathsOf(index, flow.id);
+
+  const table = (pathSteps: SpecRecord[], caption: string) => (
       <div className="table-scroll">
         <table className="data-table flow-steps">
-          <caption className="sr-only">Steps of {flow.id}, in order</caption>
+          <caption className="sr-only">{caption}</caption>
           <thead>
             <tr>
               <th scope="col">Step</th>
               <th scope="col">What happens</th>
               <th scope="col">Uses</th>
-              <th scope="col">Fulfills</th>
+              <th scope="col">Carries out</th>
             </tr>
           </thead>
           <tbody>
-            {steps.map((step) => {
+            {pathSteps.map((step) => {
               const uses = targetsOf(index, step.id, 'uses');
               const fulfills = targetsOf(index, step.id, 'fulfills');
               const isOpen = open.has(step.id);
@@ -119,7 +131,7 @@ export function FlowSteps({ index, flow }: { index: SpecIndex; flow: SpecRecord 
                       {step.title} <ProblemBadge problems={index.problemsFor.get(step.id) ?? []} />
                     </td>
                     <td><IdLinks index={index} ids={uses} label={`${step.id} uses`} /></td>
-                    <td><IdLinks index={index} ids={fulfills} label={`${step.id} fulfills`} /></td>
+                    <td><IdLinks index={index} ids={fulfills} label={`${step.id} carries out`} /></td>
                   </tr>
                   {isOpen && (
                     <tr className="flow-step-detail">
@@ -127,7 +139,7 @@ export function FlowSteps({ index, flow }: { index: SpecIndex; flow: SpecRecord 
                         <div className="flow-step-more" role="region" aria-label={`Details of ${step.id}`}>
                           {step.body.trim() ? <RecordMarkdown index={index} record={step} /> : <p className="hint">The step says nothing more.</p>}
                           <TitledLinks index={index} ids={uses} heading="Uses" />
-                          <TitledLinks index={index} ids={fulfills} heading="Fulfills" />
+                          <TitledLinks index={index} ids={fulfills} heading="Carries out" />
                         </div>
                       </td>
                     </tr>
@@ -138,6 +150,22 @@ export function FlowSteps({ index, flow }: { index: SpecIndex; flow: SpecRecord 
           </tbody>
         </table>
       </div>
+  );
+
+  return (
+    <Section title="Steps" count={steps.length}>
+      <div className="long-list-tools short">
+        <button type="button" className="tree-bulk" onClick={() => setOpen(allOpen ? new Set() : new Set(steps.map((s) => s.id)))}>
+          {allOpen ? 'Collapse all' : 'Expand all'}
+        </button>
+      </div>
+      {/* One path is one table; several are a table each, the main path first. */}
+      {paths.length === 1 ? table(paths[0].steps, `Steps of ${flow.id}, in order`) : paths.map(({ path, steps: pathSteps }) => (
+        <section key={path} className="flow-path" aria-label={pathLabel(path)}>
+          <h3>{pathLabel(path)}<span className="section-count">{pathSteps.length}</span></h3>
+          {table(pathSteps, `Steps of the ${path} path of ${flow.id}, in order`)}
+        </section>
+      ))}
     </Section>
   );
 }
