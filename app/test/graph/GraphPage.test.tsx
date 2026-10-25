@@ -139,14 +139,15 @@ describe('graph page', () => {
     expect(screen.queryByRole('checkbox', { name: 'Trace mode' })).toBeNull();
   });
 
-  it('LA-BRW-T66 The page draws tiers with a solid parent/child spine, and says when a cycle forces the radial fallback', async () => {
+  it('LA-BRW-T66 The page draws columns with a solid parent/child spine, and draws even a ring of links in columns, without a notice', async () => {
     await showGraph('/records/P-D-UC01-R01');
     await waitFor(() => expect(node('P-D-T01')).not.toBeNull());
     expect(document.querySelector('.graph-notice')).toBeNull();
     const left = (id: string) => Number(/translate\(([-\d.]+)px, ?([-\d.]+)px\)/.exec(node(id)!.style.transform)![1]);
     expect(left('P-D-UC01')).toBeLessThan(left('P-D-UC01-R01'));
     expect(left('P-D-UC01-R01')).toBeLessThan(left('P-D-C01'));
-    expect(left('P-D-C01')).toBeLessThan(left('P-D-T01'));
+    // What satisfies and proves the requirement sits in one column after it.
+    expect(left('P-D-C01')).toBe(left('P-D-T01'));
     const spine = document.querySelector('.react-flow__edge-path.rel-structure');
     expect(spine).not.toBeNull();
     expect(spine!.getAttribute('class')).not.toContain('distant');
@@ -155,7 +156,9 @@ describe('graph page', () => {
     w.records.push({ ...w.records.find((r) => r.id === 'P-D-A1')!, id: 'P-D-A2', title: 'Owner', path: 'specs/P-D-A2.md' });
     w.links.push({ source: 'P-D-A1', relation: 'relates_to', target: 'P-D-A2' }, { source: 'P-D-A2', relation: 'relates_to', target: 'P-D-A1' });
     await showGraph('/records/P-D-A1', w);
-    await waitFor(() => expect(document.querySelector('.graph-notice')?.textContent).toContain('P-D-A1 → P-D-A2 → P-D-A1'));
+    await waitFor(() => expect(node('P-D-A2')).not.toBeNull());
+    await waitFor(() => expect(left('P-D-A2')).toBe(left('P-D-A1')));
+    expect(document.querySelector('.graph-notice')).toBeNull();
   });
 });
 

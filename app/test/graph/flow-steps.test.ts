@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { SpecRecord, Workspace } from '../../../lathe/src/types';
-import { groupId, HIERARCHY_TIERS, isGrouped, neighbourhood, tierOf, TRACE_TIERS, traceChain } from '../../src/graph/model';
+import { groupId, isGrouped, neighbourhood, TRACE_COLUMNS, traceChain } from '../../src/graph/model';
 import { layoutNeighbourhood } from '../../src/graph/layout';
 import { indexWorkspace } from '../../src/specs/data';
 import { testWorkspace } from './workspace';
@@ -33,15 +33,14 @@ const spine = (n: { edges: { source: string; target: string; relation: string }[
   n.edges.filter((e) => e.relation === 'parent').map((e) => `${e.source} > ${e.target}`).sort();
 
 describe('flow steps in the graph', () => {
-  it('LA-BRW-T204 A flow step sits one tier to the right of its flow, joined to it by the parent line', () => {
+  it('LA-BRW-T204 A flow step sits one column to the right of its flow, joined to it by the parent line', () => {
     const index = indexWorkspace(flowWorkspace(3));
-    expect(tierOf(index, 'flow_step', 'hierarchy')).toBe(HIERARCHY_TIERS.flow + 1);
     const n = neighbourhood(index, 'P-D-F01', 1);
     expect(isGrouped(index, 'P-D-F01')).toBe(false);
     expect(recordIds(n)).toEqual(expect.arrayContaining(['P-D-F01', 'P-D-F01-S01', 'P-D-F01-S02', 'P-D-F01-S03']));
     expect(spine(n)).toEqual(expect.arrayContaining(['P-D-F01 > P-D-F01-S01', 'P-D-F01 > P-D-F01-S02', 'P-D-F01 > P-D-F01-S03']));
-    const tier = new Map(n.nodes.map((x) => [x.id, x.tier]));
-    expect(tier.get('P-D-F01-S01')).toBeGreaterThan(tier.get('P-D-F01')!);
+    const column = new Map(n.nodes.map((x) => [x.id, x.column]));
+    for (const step of ['P-D-F01-S01', 'P-D-F01-S02', 'P-D-F01-S03']) expect(column.get(step)).toBe(column.get('P-D-F01')! + 1);
   });
 
   it('LA-BRW-T205 A flow with more than a handful of steps reaches them through a "Flow steps" group, folded until opened', () => {
@@ -51,7 +50,7 @@ describe('flow steps in the graph', () => {
     const folded = neighbourhood(index, 'P-D-F01', 1);
     const group = folded.nodes.find((x) => x.id === gid);
     expect(group).toMatchObject({ title: 'Flow steps (6)', group: { parent: 'P-D-F01', count: 6, open: false } });
-    expect(group!.tier).toBe(HIERARCHY_TIERS.flow_step - 0.5);
+    expect(group!.column).toBe(folded.nodes.find((x) => x.id === 'P-D-F01')!.column + 1);
     expect(recordIds(folded)).not.toContain('P-D-F01-S01');
     // Focusing a step opens its own group, which sits between the flow and the steps.
     const fromStep = neighbourhood(index, 'P-D-F01-S02', 1);
@@ -66,11 +65,11 @@ describe('flow steps in the graph', () => {
     expect(edges).toEqual(expect.arrayContaining(['P-D-F01-S01 fulfills P-D-UC01-R01', 'P-D-F01 parent P-D-F01-S01', 'P-D-F01-S01 uses P-D-C01']));
     // Steps that fulfill nothing are not in the trace.
     expect(recordIds(n)).not.toContain('P-D-F01-S02');
-    const tier = new Map(n.nodes.map((x) => [x.id, x.tier]));
-    expect(tier.get('P-D-F01-S01')).toBe(TRACE_TIERS.flow_step);
-    expect(tier.get('P-D-F01')!).toBeLessThan(tier.get('P-D-F01-S01')!);
-    expect(tier.get('P-D-F01-S01')!).toBeLessThan(tier.get('P-D-C01')!);
-    // It still lays out in tiers.
+    const column = new Map(n.nodes.map((x) => [x.id, x.column]));
+    expect(column.get('P-D-F01-S01')).toBe(TRACE_COLUMNS.flow_step);
+    expect(column.get('P-D-F01')!).toBeLessThan(column.get('P-D-F01-S01')!);
+    expect(column.get('P-D-F01-S01')!).toBeLessThan(column.get('P-D-C01')!);
+    // It still lays out in columns.
     expect((await layoutNeighbourhood(n)).layout).toBe('layered');
   });
 });
