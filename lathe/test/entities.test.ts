@@ -22,7 +22,7 @@ beforeAll(async () => {
 });
 
 describe('the meta-model', () => {
-  it('LA-AUT-T71 An entity sits under an aggregate in the domain model, needs a role, and links to entities by has_one, has_many and refers_to', () => {
+  it('LA-AUT-T69 An entity sits under an aggregate in the domain model, needs a role, and links to entities by has_one, has_many and refers_to', () => {
     expect(good.kinds.find((k) => k.kind === 'entity')).toMatchObject({
       stage: 'define', section: 'domain-model', parent_kinds: ['aggregate'], required_fields: ['role'], obligation: false,
     });
@@ -36,7 +36,7 @@ describe('the meta-model', () => {
 });
 
 describe('the Fields table', () => {
-  it('LA-AUT-T72 An entity\'s Fields table is read into entityFields in table order; other kinds have none', () => {
+  it('LA-AUT-T70 An entity\'s Fields table is read into entityFields in table order; other kinds have none', () => {
     const fields = (id: string) => good.records.find((r) => r.id === id)?.entityFields;
     // The heading and table inside a fenced code block, and the table under the later Notes heading, are not read.
     expect(fields('EN-D-EN01')).toEqual([
@@ -51,7 +51,7 @@ describe('the Fields table', () => {
     expect(good.records.filter((r) => r.kind !== 'entity').every((r) => r.entityFields === undefined)).toBe(true);
   });
 
-  it('LA-AUT-T73 A Fields table with the wrong columns gives no fields; prose may sit between the heading and the table', () => {
+  it('LA-AUT-T71 A Fields table with the wrong columns gives no fields; prose may sit between the heading and the table', () => {
     expect(broken.records.find((r) => r.id === 'EB-D-EN05')?.entityFields).toEqual([]);
     expect(readFieldsTable('## Fields\n\nSome prose.\n\n| field | MEANING | Kind of value | Example |\n|---|---|---|---|\n| a | b | c | d |')).toEqual({
       heading: true, columns: ['field', 'MEANING', 'Kind of value', 'Example'], rows: [['a', 'b', 'c', 'd']],
@@ -62,7 +62,7 @@ describe('the Fields table', () => {
 });
 
 describe('entity checks', () => {
-  it('LA-AUT-T74 A role other than root or child is an entity-role error; letter case does not matter, and a missing role is only missing-required-field', () => {
+  it('LA-AUT-T72 A role other than root or child is an entity-role error; letter case does not matter, and a missing role is only missing-required-field', () => {
     expect(ofCheck(broken, 'entity-role')).toEqual([{
       severity: 'error',
       check: 'entity-role',
@@ -74,7 +74,7 @@ describe('entity checks', () => {
     expect(recordsOf(broken, 'missing-required-field')).toEqual(['EB-D-EN22']);
   });
 
-  it('LA-AUT-T75 An aggregate with entities and no root, or more than one, is an aggregate-root error naming the fix', () => {
+  it('LA-AUT-T73 An aggregate with entities and no root, or more than one, is an aggregate-root error naming the fix', () => {
     expect(ofCheck(broken, 'aggregate-root')).toEqual([
       {
         severity: 'error', check: 'aggregate-root', record: 'EB-D-A2',
@@ -89,7 +89,7 @@ describe('entity checks', () => {
     expect(recordsOf(good, 'aggregate-root')).toEqual([]);
   });
 
-  it('LA-AUT-T76 A missing Fields table, wrong columns, a repeated field or a row with no field name is an entity-fields error', () => {
+  it('LA-AUT-T74 A missing Fields table, wrong columns, a repeated field or a row with no field name is an entity-fields error', () => {
     const found = ofCheck(broken, 'entity-fields');
     expect(found.every((p) => p.severity === 'error')).toBe(true);
     expect(found.map((p) => [p.record, p.message])).toEqual([
@@ -105,7 +105,7 @@ describe('entity checks', () => {
     ]);
   });
 
-  it('LA-AUT-T77 has_one or has_many to an entity in another aggregate is a has-crosses-aggregate error; refers_to may cross aggregates and domains', () => {
+  it('LA-AUT-T75 has_one or has_many to an entity in another aggregate is a has-crosses-aggregate error; refers_to may cross aggregates and domains', () => {
     expect(ofCheck(broken, 'has-crosses-aggregate')).toEqual([{
       severity: 'error',
       check: 'has-crosses-aggregate',
@@ -116,7 +116,7 @@ describe('entity checks', () => {
     expect(ofCheck(good, 'has-crosses-aggregate')).toEqual([]);
   });
 
-  it('LA-AUT-T78 A child entity its root does not reach by has_one or has_many is an entity-unreferenced warning', () => {
+  it('LA-AUT-T76 A child entity its root does not reach by has_one or has_many is an entity-unreferenced warning', () => {
     const found = ofCheck(broken, 'entity-unreferenced');
     // EN03 nothing reaches; EN06 is reached only from EN03; EN04 only refers to the root. EN05 is reached.
     // EB-D-A2 has two roots and EB-D-A3 none, so their children are not judged.
@@ -129,7 +129,7 @@ describe('entity checks', () => {
     expect(ofCheck(good, 'entity-unreferenced')).toEqual([]);
   });
 
-  it('LA-AUT-T79 A well-formed domain model with entities gives no problems, and each entity check fails on its own fixture', () => {
+  it('LA-AUT-T77 A well-formed domain model with entities gives no problems, and each entity check fails on its own fixture', () => {
     expect(good.problems).toEqual([]);
     expect(new Set(broken.problems.filter((p) => ENTITY_CHECKS.includes(p.check)).map((p) => p.check))).toEqual(new Set(ENTITY_CHECKS));
   });

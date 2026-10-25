@@ -10,7 +10,7 @@ import { testWorkspace } from './graph/workspace';
 
 // Lathe on a phone (notes/mobile-design.md): a compact top bar, the page bar compact under it, one
 // view at a time, sheets for the nav, the side bar, the open pages and quick find, and taps that
-// select before they open on the graph and the ERD. Proves LA-PLT-UC07-R01 to R07 and R09, LA-PLT-DR16,
+// select before they open on the graph and the ERD. Proves LA-PLT-UC08-R01 to R07 and R09, LA-PLT-DR16,
 // LA-EXP-DR42 and LA-PLT-DR17, and the side bar sheet of LA-EXP-UC05-R11.
 
 const served = () => ({ workspace: testWorkspace() });
@@ -25,7 +25,7 @@ const pageBar = () => document.querySelector<HTMLElement>('.page-bar')!;
 const segment = (name: string) => within(within(pageBar()).getByRole('group', { name: 'View' })).getByRole('button', { name });
 
 describe('Lathe on a phone', () => {
-  it('LA-PLT-T59 A phone shows a compact top bar with the title and a step up, and one view at a time switched from the page bar, leaving the views remembered for a wide screen alone', async () => {
+  it('LA-PLT-T61 A phone shows a compact top bar with the title and a step up, and one view at a time switched from the page bar, leaving the views remembered for a wide screen alone', async () => {
     phone();
     window.localStorage.setItem('lathe:view', '"wiki,graph"');
     await openApp('/P-D-UC01?view=wiki,graph', served());
@@ -53,7 +53,7 @@ describe('Lathe on a phone', () => {
     expect(within(topbar()).getByRole('link', { name: 'Up to Product' })).toHaveAttribute('href', '/P?view=wiki');
   });
 
-  it('LA-PLT-T60 The side bar is a bottom sheet: it opens at half height with focus inside, its handle takes it to full height and back, Escape closes it and focus returns', async () => {
+  it('LA-PLT-T62 The side bar is a bottom sheet: it opens at half height with focus inside, its handle takes it to full height and back, Escape closes it and focus returns', async () => {
     phone();
     await openApp('/P-D-UC01', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
@@ -77,7 +77,7 @@ describe('Lathe on a phone', () => {
     await waitFor(() => expect(within(pageBar()).getByRole('button', { name: 'Show the side bar' })).toHaveFocus());
   });
 
-  it('LA-PLT-T61 A drag on a sheet\'s handle settles by distance and speed: up to full height, down to half, down from half away', () => {
+  it('LA-PLT-T63 A drag on a sheet\'s handle settles by distance and speed: up to full height, down to half, down from half away', () => {
     expect(settle('half', -50, 0.1)).toBe('full');
     expect(settle('half', -10, 0.1)).toBe('half');
     expect(settle('half', -10, -1)).toBe('full');
@@ -89,7 +89,7 @@ describe('Lathe on a phone', () => {
     expect(settle('full', 300, 0.1)).toBeNull();
   });
 
-  it('LA-PLT-T62 The open pages are a sheet from the page bar: each tab a row, the active one marked, the preview one kept from its row; choosing one goes there, and a row closes its tab', async () => {
+  it('LA-PLT-T64 The open pages are a sheet from the page bar: each tab a row, the active one marked, the preview one kept from its row; choosing one goes there, and a row closes its tab', async () => {
     phone();
     await openApp('/P-D-UC01', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
@@ -122,7 +122,7 @@ describe('Lathe on a phone', () => {
     await waitFor(() => expect(pagesButton()).toHaveAccessibleName('Open pages: 1'));
   });
 
-  it('LA-PLT-T63 Quick find on a phone is a full-screen sheet: the results list under the box, choosing one goes there, Escape closes it and focus returns', async () => {
+  it('LA-PLT-T65 Quick find on a phone is a full-screen sheet: the results list under the box, choosing one goes there, Escape closes it and focus returns', async () => {
     phone();
     await openApp('/P-D-UC01', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
@@ -147,7 +147,7 @@ describe('Lathe on a phone', () => {
     await waitFor(() => expect(within(topbar()).getByRole('button', { name: 'Quick find' })).toHaveFocus());
   });
 
-  it('LA-PLT-T64 The nav is a full-screen sheet that keeps Tab inside it', async () => {
+  it('LA-PLT-T66 The nav is a full-screen sheet that keeps Tab inside it', async () => {
     phone();
     await openApp('/P-D-UC01', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
@@ -191,7 +191,7 @@ describe('Lathe on a phone', () => {
     expect(isTap({ pointerType: '' } as unknown as Event, false)).toBe(false);
   });
 
-  it('LA-PLT-T65 The theme-color meta follows the theme\'s --sheet token', async () => {
+  it('LA-PLT-T67 The theme-color meta follows the theme\'s --sheet token', async () => {
     function Host() { useThemeColor(); const r = useRef(null); return <div ref={r} />; }
     document.documentElement.style.setProperty('--sheet', '#123456');
     render(<Host />);

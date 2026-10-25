@@ -79,7 +79,7 @@ async function readEvents(response: Response, wanted: string, timeoutMs: number)
 }
 
 describe.skipIf(!prebuilt && !canBuild)('lathe serve', () => {
-  it('LA-PLT-T05 Serve serves the app, the spec API and change events for the product repo', async () => {
+  it('LA-PLT-T07 Serve serves the app, the spec API and change events for the product repo', async () => {
     const page = await fetch(`${BASE}/`);
     expect(page.status).toBe(200);
     expect(page.headers.get('content-type')).toContain('text/html');
@@ -120,7 +120,7 @@ describe.skipIf(!prebuilt && !canBuild)('lathe serve', () => {
     expect(reloaded.records.find((r) => r.id === 'EX-NOTE-UC01')?.title).toBe('Write a long note');
   }, 30_000);
 
-  it('LA-AUT-T22 The server has no way to change the meta-model', async () => {
+  it('LA-AUT-T20 The server has no way to change the meta-model', async () => {
     const metaFiles = ['kinds.csv', 'relations.csv'].map((name) => path.join(PACKAGE_DIR, 'meta', name));
     const before = metaFiles.map((file) => readFileSync(file, 'utf8'));
     const write = async (method: string, url: string) =>

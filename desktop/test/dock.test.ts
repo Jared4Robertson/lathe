@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { badgeFor, badgeText, dockMenuTemplate, parseErrorCount } from '../src/dock.ts';
 
-describe('LA-PLT-T121 The Dock badge counts the focused product\'s check errors, and the Dock menu opens a new window', () => {
+describe('LA-PLT-T123 The Dock badge counts the focused product\'s check errors, and the Dock menu opens a new window', () => {
   it('shows the count, nothing at 0, and caps a large count', () => {
     expect(badgeText(0)).toBe('');
     expect(badgeText(1)).toBe('1');

@@ -328,7 +328,7 @@ function SpaceItems({ index, space, path, reveal }: { index: SpecIndex; space: S
   });
 
   // The current page's branch opens itself on the nav's first draw and after a move made in the nav,
-  // before paint; a move made elsewhere leaves the rows where they are (LA-PLT-UC08-R02).
+  // before paint; a move made elsewhere leaves the rows where they are (LA-PLT-UC09-R02).
   const firstDraw = useRef(true);
   useLayoutEffect(() => {
     const first = firstDraw.current;

@@ -68,7 +68,7 @@ describe('extensions restate default relation rules', () => {
   const rule = (ws: Workspace, relation: string, source: string, target: string) =>
     ws.relations.filter((r) => r.relation === relation && r.source_kind === source && r.target_kind === target);
 
-  it("LA-AUT-T40 An extension row for an existing relation rule is the same rule, and its non-empty role, description or label replaces the default's", () => {
+  it("LA-AUT-T38 An extension row for an existing relation rule is the same rule, and its non-empty role, description or label replaces the default's", () => {
     // Reworded: the description is replaced and the empty role keeps the default's.
     expect(rule(relations, 'proves', 'test', 'domain_rule')).toEqual([
       {

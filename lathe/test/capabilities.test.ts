@@ -24,7 +24,7 @@ beforeAll(async () => {
 });
 
 describe('the meta-model', () => {
-  it('LA-AUT-T27 Capabilities, patterns and the follows relation are in the meta-model', () => {
+  it('LA-AUT-T25 Capabilities, patterns and the follows relation are in the meta-model', () => {
     const kind = (name: string) => good.kinds.find((k) => k.kind === name);
     expect(kind('capability')).toMatchObject({ stage: 'define', parent_kinds: ['domain'], required_fields: ['order'], obligation: false });
     expect(kind('pattern')).toMatchObject({ stage: 'define', parent_kinds: ['product'], required_fields: [], obligation: false });
@@ -35,13 +35,13 @@ describe('the meta-model', () => {
     ]);
   });
 
-  it('LA-AUT-T28 Use cases, flows and tests may sit under a capability, and use cases follow patterns', () => {
+  it('LA-AUT-T26 Use cases, flows and tests may sit under a capability, and use cases follow patterns', () => {
     expect(good.problems.filter((p) => p.severity === 'error')).toEqual([]);
     expect(good.problems.filter((p) => NEW_CHECKS.includes(p.check))).toEqual([]);
     expect(good.links).toContainEqual({ source: 'CX-D-UC01', relation: 'follows', target: 'CX-PAT-ACTION' });
   });
 
-  it("LA-AUT-T29 A record under a capability belongs to the capability's domain and counts in its coverage", () => {
+  it("LA-AUT-T27 A record under a capability belongs to the capability's domain and counts in its coverage", () => {
     const record = (id: string) => good.records.find((r) => r.id === id);
     for (const id of ['CX-D-CAP01', 'CX-D-UC01', 'CX-D-UC02-R01', 'CX-D-F01', 'CX-D-T01']) {
       expect(record(id), id).toMatchObject({ product: 'CX', domain: 'CX-D' });
@@ -54,7 +54,7 @@ describe('the meta-model', () => {
 });
 
 describe('capability checks', () => {
-  it('LA-AUT-T30 An order that is not a whole number is an error', () => {
+  it('LA-AUT-T28 An order that is not a whole number is an error', () => {
     const found = ofCheck(broken, 'capability-order').filter((p) => p.message.includes('not a whole number'));
     expect(found.map((p) => p.record)).toEqual(['YX-D-CAP03', 'YX-D-CAP05']);
     expect(found.every((p) => p.severity === 'error')).toBe(true);
@@ -62,7 +62,7 @@ describe('capability checks', () => {
     expect(found[1].message).toContain('"2.5"');
   });
 
-  it('LA-AUT-T31 Two capabilities in one domain with the same order are errors; other domains may reuse it', () => {
+  it('LA-AUT-T29 Two capabilities in one domain with the same order are errors; other domains may reuse it', () => {
     const found = ofCheck(broken, 'capability-order').filter((p) => p.message.includes('the same as'));
     // 1 and 01 are the same number.
     expect(found.map((p) => p.record)).toEqual(['YX-D-CAP01', 'YX-D-CAP02']);
@@ -71,7 +71,7 @@ describe('capability checks', () => {
     expect(broken.problems.some((p) => p.record === 'YX-E-CAP01')).toBe(false);
   });
 
-  it('LA-AUT-T32 A use case directly under a domain that has capabilities is a warning', () => {
+  it('LA-AUT-T30 A use case directly under a domain that has capabilities is a warning', () => {
     const found = ofCheck(broken, 'use-case-outside-capability');
     expect(found).toEqual([
       { severity: 'warning', check: 'use-case-outside-capability', record: 'YX-D-UC01', message: expect.stringContaining('YX-D') },
@@ -109,7 +109,7 @@ describe('pattern checks', () => {
     expect(recordsOf(broken, 'pattern-setting-missing')).not.toContain('YX-D-UC04');
   });
 
-  it("LA-AUT-T33 A pattern's settings that are not valid field names are errors", () => {
+  it("LA-AUT-T31 A pattern's settings that are not valid field names are errors", () => {
     const found = ofCheck(broken, 'bad-pattern-settings');
     expect(found.map((p) => [p.severity, p.record])).toEqual([
       ['error', 'YX-PAT-BAD'],

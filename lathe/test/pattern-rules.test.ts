@@ -115,7 +115,7 @@ describe('unsatisfied and unproved pattern rules', () => {
 });
 
 describe('pattern rule checks', () => {
-  it("LA-AUT-T34 A rule whose setting is not one of its pattern's settings is an error", () => {
+  it("LA-AUT-T32 A rule whose setting is not one of its pattern's settings is an error", () => {
     expect(ofCheck(broken, 'pattern-rule-setting-unknown')).toEqual([
       {
         severity: 'error',

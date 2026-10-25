@@ -4,7 +4,7 @@ kind: flow
 title: Work on a product in the desktop app
 parent: LA-PLT
 links:
-  carries_out: [LA-PLT-UC10, LA-PLT-UC12, LA-PLT-UC13, LA-PLT-UC14]
+  carries_out: [LA-PLT-UC11, LA-PLT-UC13, LA-PLT-UC14, LA-PLT-UC15]
   uses: [LA-TRC-V01]
 ---
 1. The reader opens a product folder from File › Open Product Folder, Open Recent, the Dock or Finder, and it opens in a window of its own, on the shell color with a launch view until the specs answer.

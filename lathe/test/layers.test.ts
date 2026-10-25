@@ -18,7 +18,7 @@ beforeAll(async () => {
 });
 
 describe('the meta-model', () => {
-  it('LA-AUT-T64 A layer sits in a domain or a layer with an order, and holds components and sub-layers', () => {
+  it('LA-AUT-T62 A layer sits in a domain or a layer with an order, and holds components and sub-layers', () => {
     const kind = (name: string) => twins.kinds.find((k) => k.kind === name);
     expect(kind('layer')).toMatchObject({
       stage: 'design', section: 'technical-specification', parent_kinds: ['domain', 'layer'], required_fields: ['order'], obligation: false,
@@ -34,7 +34,7 @@ describe('the meta-model', () => {
 });
 
 describe('layer checks', () => {
-  it('LA-AUT-T65 A layer order that is not a whole number is a layer-order error', () => {
+  it('LA-AUT-T63 A layer order that is not a whole number is a layer-order error', () => {
     const found = ofCheck(broken, 'layer-order').filter((p) => p.message.includes('not a whole number'));
     expect(found.map((p) => p.record)).toEqual(['LZ-D-LAY03', 'LZ-D-LAY04']);
     expect(found.every((p) => p.severity === 'error')).toBe(true);
@@ -42,7 +42,7 @@ describe('layer checks', () => {
     expect(found[1].message).toContain('"2.5"');
   });
 
-  it('LA-AUT-T66 Two layers in one domain with the same order are errors; another domain may reuse it', () => {
+  it('LA-AUT-T64 Two layers in one domain with the same order are errors; another domain may reuse it', () => {
     const found = ofCheck(broken, 'layer-order').filter((p) => p.message.includes('the same as'));
     // 1 and 01 are the same number.
     expect(found.map((p) => p.record)).toEqual(['LZ-D-LAY01', 'LZ-D-LAY02']);
@@ -52,7 +52,7 @@ describe('layer checks', () => {
     expect(ofCheck(broken, 'layer-order').some((p) => p.record === 'LZ-E-LAY01' || p.record === 'LZ-D-LAY05')).toBe(false);
   });
 
-  it('LA-AUT-T67 A component directly in a domain that has layers is a warning; a domain without layers is fine', () => {
+  it('LA-AUT-T65 A component directly in a domain that has layers is a warning; a domain without layers is fine', () => {
     expect(ofCheck(broken, 'component-outside-layer')).toEqual([
       { severity: 'warning', check: 'component-outside-layer', record: 'LZ-D-C01', message: expect.stringContaining('LZ-D') },
     ]);
@@ -62,14 +62,14 @@ describe('layer checks', () => {
 });
 
 describe('a component in a layer belongs to its domain', () => {
-  it("LA-AUT-T68 A component in a layer belongs to the layer's domain and product", () => {
+  it("LA-AUT-T66 A component in a layer belongs to the layer's domain and product", () => {
     const record = (id: string) => twins.records.find((r) => r.id === id);
     for (const id of ['LY-A-LAY01', 'LY-A-C01', 'LY-A-C02']) expect(record(id), id).toMatchObject({ product: 'LY', domain: 'LY-A' });
     expect(record('LY-A-C01')?.parent).toBe('LY-A-LAY01');
     expect(record('LY-B-C01')).toMatchObject({ parent: 'LY-B', domain: 'LY-B' });
   });
 
-  it('LA-AUT-T69 Coverage counts a component in a layer exactly as one directly in the domain', () => {
+  it('LA-AUT-T67 Coverage counts a component in a layer exactly as one directly in the domain', () => {
     const of = (domain: string) => {
       const c = twins.coverage.find((x) => x.domain === domain);
       expect(c, domain).toBeDefined();
@@ -84,7 +84,7 @@ describe('a component in a layer belongs to its domain', () => {
     expect(a.obligations.find((o) => o.kind === 'pattern_rule')).toMatchObject({ total: 1, designed: 1, built: 1, proved: 1 });
   });
 
-  it('LA-AUT-T70 Every check reports a domain with layers exactly as the same domain without them', () => {
+  it('LA-AUT-T68 Every check reports a domain with layers exactly as the same domain without them', () => {
     const of = (domain: string) =>
       twins.problems
         .filter((p) => p.record?.startsWith(`${domain}-`))

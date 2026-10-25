@@ -4,7 +4,7 @@ kind: flow
 title: Change Lathe and see the desktop app reload
 parent: LA-PLT
 links:
-  carries_out: [LA-PLT-UC11]
+  carries_out: [LA-PLT-UC12]
 ---
 1. The owner runs `npm --prefix desktop run dev`, and each window loads the 5199 dev server when it serves the opened folder, or a dev server the shell starts for it.
 2. A change to the app hot-reloads the page; a change to the main process or a preload restarts Electron.

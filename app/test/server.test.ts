@@ -61,7 +61,7 @@ describe('dev API plugin', () => {
   beforeEach(() => { delete process.env.LATHE_SPEC_FIXTURE; });
   afterEach(() => { delete process.env.LATHE_SPEC_FIXTURE; });
 
-  it('LA-PLT-T09 GET /api/spec serves the sample fixture, labeled, when LATHE_SPEC_FIXTURE=1 is set or the engine cannot load', async () => {
+  it('LA-PLT-T11 GET /api/spec serves the sample fixture, labeled, when LATHE_SPEC_FIXTURE=1 is set or the engine cannot load', async () => {
     // The engine works: its answer is served.
     const working = await start(engine());
     const fromEngine = await request(working.middlewares[0], '/api/spec');
@@ -92,7 +92,7 @@ describe('dev API plugin', () => {
     expect((await request(broken.middlewares[0], '/LA')).nextCalled).toBe(true);
   });
 
-  it('LA-PLT-T10 The server sends spec:changed when a spec record or the engine\'s checks or meta-model change', async () => {
+  it('LA-PLT-T12 The server sends spec:changed when a spec record or the engine\'s checks or meta-model change', async () => {
     const root = await mkdtemp(path.join(tmpdir(), 'lathe-app-'));
     try {
       const specs = path.join(root, 'specs');

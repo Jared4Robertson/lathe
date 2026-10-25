@@ -17,18 +17,18 @@ beforeAll(async () => {
 });
 
 describe('citations by record ID and known prefix', () => {
-  it('LA-AUT-T50 A token that is the ID of a record is a citation, whatever its prefix', () => {
+  it('LA-AUT-T48 A token that is the ID of a record is a citation, whatever its prefix', () => {
     // STD-04 has no product or domain prefix and no idPrefixes entry names STD, but it is a record.
     expect(loadConfig(fixture('citations-records')).idPrefixes).toEqual([]);
     expect(mentionsOf(records, 'ACC-UC01')).toEqual(['STD-04']);
   });
 
-  it("LA-AUT-T51 A token starting with a product's or domain's ID and '-' is a citation", () => {
+  it("LA-AUT-T49 A token starting with a product's or domain's ID and '-' is a citation", () => {
     expect(mentionsOf(configured, 'ACC-UC01')?.slice(0, 1)).toEqual(['ACC-DR01']);
     expect(unknownIds(records)).toEqual(['ACC-UC01 mentions ACC-UC02, which does not exist.']);
   });
 
-  it('LA-AUT-T52 A token starting with an idPrefixes entry and "-" is a citation', () => {
+  it('LA-AUT-T50 A token starting with an idPrefixes entry and "-" is a citation', () => {
     expect(loadConfig(fixture('citations-configured')).idPrefixes).toEqual(['STD', 'SYS']);
     expect(unknownIds(configured)).toEqual([
       'ACC-UC01 mentions STD-99, which does not exist.',
@@ -38,17 +38,17 @@ describe('citations by record ID and known prefix', () => {
     expect(unknownIds(records).join(' ')).not.toMatch(/STD-99|SYS-C01/);
   });
 
-  it('LA-AUT-T53 A bare product or domain ID in plain prose is not a citation', () => {
+  it('LA-AUT-T51 A bare product or domain ID in plain prose is not a citation', () => {
     // The product body names S2 and ACC in prose and cites only its two code spans.
     expect(mentionsOf(configured, 'S2')).toEqual(['ACC', 'S2-OPS']);
     expect(mentionsOf(records, 'ACC-UC01')).not.toContain('ACC');
   });
 
-  it('LA-AUT-T54 A bare product or domain ID in a code span holding only that ID is a citation', () => {
+  it('LA-AUT-T52 A bare product or domain ID in a code span holding only that ID is a citation', () => {
     expect(mentionsOf(configured, 'ACC-UC01')).toEqual(['ACC-DR01', 'STD-04', 'ACC', 'S2', 'S2-OPS']);
   });
 
-  it('LA-AUT-T55 Only a token with a known prefix that is not a record is an unknown-ID warning', () => {
+  it('LA-AUT-T53 Only a token with a known prefix that is not a record is an unknown-ID warning', () => {
     for (const ws of [configured, records]) {
       expect(unknownIds(ws).join(' ')).not.toMatch(/QQ-01|SYS-C99/);
     }
@@ -56,12 +56,12 @@ describe('citations by record ID and known prefix', () => {
     expect(configured.problems.filter((p) => p.severity === 'error')).toEqual([]);
   });
 
-  it('LA-AUT-T56 idPrefixes must be a list of ID prefixes', async () => {
+  it('LA-AUT-T54 idPrefixes must be a list of ID prefixes', async () => {
     expect(() => loadConfig(fixture('citations-bad-config'))).toThrow(/idPrefixes must be a list of ID prefixes/);
     await expect(loadWorkspace(fixture('citations-bad-config'))).rejects.toThrow(/idPrefixes/);
   });
 
-  it('LA-AUT-T57 The token reader tells an ID in a lone code span from one in prose', () => {
+  it('LA-AUT-T55 The token reader tells an ID in a lone code span from one in prose', () => {
     expect(proseTokens('S2 and `S2`, `TL-LEND`, TL-LEND, `S2 x`.')).toEqual([
       { token: 'S2', inCode: false },
       { token: 'S2', inCode: true },

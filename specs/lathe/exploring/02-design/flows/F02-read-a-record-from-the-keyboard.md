@@ -5,7 +5,7 @@ title: Read a record as wiki, graph or model, from the keyboard
 parent: LA-EXP
 links:
   uses: [LA-EXP-V01, LA-EXP-V03, LA-EXP-V04, LA-PLT-E01, LA-EXP-V05]
-  carries_out: [LA-EXP-UC05, LA-PLT-UC03, LA-PLT-UC05, LA-EXP-UC11, LA-EXP-UC10, LA-PLT-UC08, LA-PLT-UC09]
+  carries_out: [LA-EXP-UC05, LA-PLT-UC04, LA-PLT-UC06, LA-EXP-UC11, LA-EXP-UC10, LA-PLT-UC09, LA-PLT-UC10]
 ---
 1. The reader opens quick find from the keyboard, types part of an ID or title, and opens the record at its one address.
 2. They open and close the Wiki, Graph and Model panes with their shortcuts; following a link in any pane moves them all, and the side bar shows the record's facts.

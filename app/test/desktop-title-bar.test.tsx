@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { desktopBridgeStub, openApp, openSideBar } from './helpers';
 import type { Chrome } from '../src/shell/desktopChrome';
 
-// The desktop app's own title bar (LA-PLT-UC13): drawn only in the desktop shell, with back and
+// The desktop app's own title bar (LA-PLT-UC14): drawn only in the desktop shell, with back and
 // forward, a command center that opens quick find, the layout toggles, and the theme's colors sent
 // to the window's chrome.
 
@@ -25,7 +25,7 @@ afterEach(() => {
 });
 
 describe('desktop title bar', () => {
-  it('LA-PLT-T115 The title bar is drawn only in the desktop app, with room for the window\'s controls on each platform', async () => {
+  it('LA-PLT-T117 The title bar is drawn only in the desktop app, with room for the window\'s controls on each platform', async () => {
     await openApp('/DM-SHOP-UC01');
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     expect(screen.queryByRole('banner', { name: 'Title bar' })).toBeNull();
@@ -44,7 +44,7 @@ describe('desktop title bar', () => {
     expect(titleBar()).toHaveClass('is-overlay');
   });
 
-  it('LA-PLT-T116 Back and forward follow the app\'s history and are disabled at its ends', async () => {
+  it('LA-PLT-T118 Back and forward follow the app\'s history and are disabled at its ends', async () => {
     desktop();
     const ends = { canGoBack: false, canGoForward: false };
     host.navigation = { get canGoBack() { return ends.canGoBack; }, get canGoForward() { return ends.canGoForward; }, addEventListener() {}, removeEventListener() {} };
@@ -73,7 +73,7 @@ describe('desktop title bar', () => {
     expect(forward).toHaveBeenCalledTimes(1);
   });
 
-  it('LA-PLT-T117 The command center names the page and opens quick find', async () => {
+  it('LA-PLT-T119 The command center names the page and opens quick find', async () => {
     desktop();
     await openApp('/DM-SHOP-UC01');
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
@@ -83,7 +83,7 @@ describe('desktop title bar', () => {
     await waitFor(() => expect(screen.getByRole('combobox', { name: 'Quick find' })).toHaveFocus());
   });
 
-  it('LA-PLT-T118 The layout toggles run the navigation and side bar commands and show whether each panel shows', async () => {
+  it('LA-PLT-T120 The layout toggles run the navigation and side bar commands and show whether each panel shows', async () => {
     // The side bar starts closed in the Wiki view (brief 64); this test reads it open.
     openSideBar('details', ['wiki', 'graph', 'model']);
     desktop();
@@ -107,7 +107,7 @@ describe('desktop title bar', () => {
     await waitFor(() => expect(screen.getByRole('complementary', { name: 'Side bar' })).toBeInTheDocument());
   });
 
-  it('LA-PLT-T119 The window\'s chrome follows the theme: setChrome gets its shell and ink as hex colors', async () => {
+  it('LA-PLT-T121 The window\'s chrome follows the theme: setChrome gets its shell and ink as hex colors', async () => {
     const setChrome = desktop();
     await openApp('/DM-SHOP-UC01');
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });

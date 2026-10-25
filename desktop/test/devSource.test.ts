@@ -8,7 +8,7 @@ const answers = (status: number, root?: string): Probe => async (url) => {
 };
 const silent: Probe = async () => null;
 
-describe('LA-PLT-T107 In development the window uses the 5199 server only when it answers for the opened folder', () => {
+describe('LA-PLT-T109 In development the window uses the 5199 server only when it answers for the opened folder', () => {
   it('uses http://localhost:5199 when it answers for the same folder', async () => {
     expect(await chooseDevSource('/repo/lathe', '/repo/lathe', answers(200, '/repo/lathe'))).toEqual({ kind: 'shared', url: 'http://localhost:5199' });
   });

@@ -31,7 +31,7 @@ function serveHistory(answer: (query: URLSearchParams) => unknown) {
 }
 
 describe('the side bar', () => {
-  it('LA-PLT-T85 One side bar with a labeled switcher of Details, Outline and History, each with its heading; closed in the Wiki view and open in the Graph view, its view kept per view mode and per tab across a reload', async () => {
+  it('LA-PLT-T87 One side bar with a labeled switcher of Details, Outline and History, each with its heading; closed in the Wiki view and open in the Graph view, its view kept per view mode and per tab across a reload', async () => {
     expect(sideModeOf(['wiki'], false)).toBe('wiki');
     expect(sideModeOf(['wiki', 'graph'], false)).toBe('graph');
     expect(sideModeOf(['wiki', 'model'], false)).toBe('model');
@@ -125,7 +125,7 @@ describe('the side bar', () => {
     await waitFor(() => expect(name()).toBeUndefined());
   });
 
-  it('LA-PLT-T86 Outline lists the wiki\'s sections, scrolls there on a click and marks the one in view; in the Model view it lists the boxes', async () => {
+  it('LA-PLT-T88 Outline lists the wiki\'s sections, scrolls there on a click and marks the one in view; in the Model view it lists the boxes', async () => {
     openSideBar('outline');
     await openApp('/P-D-UC01', { workspace: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });

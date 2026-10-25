@@ -22,7 +22,7 @@ const key = (k: string, code: string, mods: Partial<Record<'ctrlKey' | 'altKey' 
 const all = () => true;
 
 describe('the keymap', () => {
-  it('LA-PLT-T13 Every command has a title and a group, no binding is used twice where both can apply, and no browser essential is taken', () => {
+  it('LA-PLT-T15 Every command has a title and a group, no binding is used twice where both can apply, and no browser essential is taken', () => {
     const ids = COMMANDS.map((c) => c.id);
     expect(new Set(ids).size).toBe(ids.length);
     for (const c of COMMANDS) {
@@ -51,7 +51,7 @@ describe('the keymap', () => {
     expect(keysOf('nextProblem')).toEqual(['F8']);
   });
 
-  it('LA-PLT-T14 Mod is Cmd on macOS and Ctrl elsewhere, in matching and in what is shown', () => {
+  it('LA-PLT-T16 Mod is Cmd on macOS and Ctrl elsewhere, in matching and in what is shown', () => {
     expect(isMac('MacIntel')).toBe(true);
     expect(isMac('Win32')).toBe(false);
     expect(normalizeBinding('Mod+Shift+P', true)).toBe('Shift+Meta+P');
@@ -81,7 +81,7 @@ describe('the keymap', () => {
     expect(match(['Alt+ArrowLeft'], pc, false, all).command).toBeUndefined();
   });
 
-  it('LA-PLT-T15 Single-key shortcuts never fire while typing; chords with Ctrl, Cmd or Alt, function keys and Escape still do', () => {
+  it('LA-PLT-T17 Single-key shortcuts never fire while typing; chords with Ctrl, Cmd or Alt, function keys and Escape still do', () => {
     const input = document.createElement('input');
     const checkbox = Object.assign(document.createElement('input'), { type: 'checkbox' });
     const area = document.createElement('textarea');
@@ -102,7 +102,7 @@ describe('the keymap', () => {
     expect(isSingleKey('Escape')).toBe(false);
   });
 
-  it('LA-PLT-T16 A person can override bindings in local storage; a binding that takes a browser essential is dropped', () => {
+  it('LA-PLT-T18 A person can override bindings in local storage; a binding that takes a browser essential is dropped', () => {
     window.localStorage.setItem(OVERRIDES_KEY, JSON.stringify({ toggleNav: 'Mod+J', quickOpen: ['Mod+W', 'Mod+O'], nope: 'Mod+Y', graphMove: 'X' }));
     const overrides = readOverrides();
     expect(overrides).toEqual({ toggleNav: ['Mod+J'], quickOpen: ['Mod+W', 'Mod+O'] });
@@ -114,7 +114,7 @@ describe('the keymap', () => {
     expect(readOverrides()).toEqual({});
   });
 
-  it('LA-PLT-T49 The view toggles have Ctrl+W, Ctrl+G and Ctrl+M on a Mac and Alt+W, Alt+G and Alt+M elsewhere, then Ctrl+1, 2 and 4, and no platform is offered a browser key', () => {
+  it('LA-PLT-T51 The view toggles have Ctrl+W, Ctrl+G and Ctrl+M on a Mac and Alt+W, Alt+G and Alt+M elsewhere, then Ctrl+1, 2 and 4, and no platform is offered a browser key', () => {
     const keysOn = (id: string, mac: boolean) => resolveCommands({}, mac).find((c) => c.id === id)!.keys;
     expect(keysOn('viewWiki', true)).toEqual(['Ctrl+W', 'Ctrl+1']);
     expect(keysOn('viewGraph', true)).toEqual(['Ctrl+G', 'Ctrl+2']);

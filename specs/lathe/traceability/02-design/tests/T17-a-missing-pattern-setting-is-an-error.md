@@ -6,6 +6,6 @@ parent: LA-TRC
 test_type: unit
 run_by: lathe/test/capabilities.test.ts
 links:
-  proves: [LA-AUT-UC06-R06, LA-TRC-DR05]
+  proves: [LA-AUT-UC05-R06, LA-TRC-DR05]
 ---
 Expects one `pattern-setting-missing` error, naming the `audit` setting, for a use case that gives `permission` but not `audit`.

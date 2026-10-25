@@ -2,11 +2,11 @@ import { expect, test } from '@playwright/test';
 import { expectStable, openPage, step } from './measure';
 import { FOCUS, GRAPH_CANVAS, RECORD, SHELL } from './scenarios';
 
-// LA-PLT-T78: switching theme changes colors only. LA-PLT-T79: at phone width (375 px) the
+// LA-PLT-T80: switching theme changes colors only. LA-PLT-T81: at phone width (375 px) the
 // nav drawer, quick find and the side bar sheet open and close over the page without moving it.
 
 test.describe('theme', () => {
-  test('LA-PLT-T78 switching theme moves nothing', async ({ page }) => {
+  test('LA-PLT-T80 switching theme moves nothing', async ({ page }) => {
     await openPage(page, `${RECORD}?view=wiki,graph`);
     await page.locator('.pane-graph .graph-flow .react-flow__node').first().waitFor();
     await page.locator('#main').click({ position: { x: 300, y: 400 } });
@@ -28,7 +28,7 @@ test.describe('theme', () => {
 test.describe('mobile at 375 px', () => {
   test.use({ viewport: { width: 375, height: 812 }, hasTouch: true, isMobile: true });
 
-  test('LA-PLT-T79 the sheets and the drawer move nothing behind them', async ({ page }) => {
+  test('LA-PLT-T81 the sheets and the drawer move nothing behind them', async ({ page }) => {
     await openPage(page, RECORD, '.pane-title');
     const behind = ['.topbar', '#main', '.pane-wiki .pane-title h1'];
     const sheets = ['.bottom-sheet', '.sheet', '.sheet-backdrop', '.drawer-backdrop', 'nav#nav'];

@@ -4,7 +4,7 @@ import { resolvedValue, type Mode, type ModeChoice, type ThemeFile } from '../th
 
 // The desktop app's bridge (desktop/src/preload.cts; its type is Window['latheDesktop'] in
 // commands.tsx), and the window chrome the theme sends it: the shell color behind the app's title bar
-// and the ink its symbols take, so the native window controls match the theme (LA-PLT-UC13-R06).
+// and the ink its symbols take, so the native window controls match the theme (LA-PLT-UC14-R06).
 
 export interface Chrome {
   background: string;

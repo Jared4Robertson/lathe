@@ -5,8 +5,8 @@ title: Review problems while an agent edits
 parent: LA-CHK
 links:
   uses: [LA-CHK-V01, LA-EXP-V03, LA-PLT-E01, LA-AUT-V03, LA-AUT-V02]
-  fulfills: [LA-CHK-UC07-R01, LA-PLT-UC02-R01, LA-AUT-UC15-R03, LA-AUT-UC15-R05]
-  carries_out: [LA-CHK-UC07, LA-PLT-UC02, LA-AUT-UC15]
+  fulfills: [LA-CHK-UC07-R01, LA-PLT-UC03-R01, LA-AUT-UC14-R03, LA-AUT-UC14-R05]
+  carries_out: [LA-CHK-UC07, LA-PLT-UC03, LA-AUT-UC14]
 ---
 1. While an agent edits records, the owner keeps the Checks page (`/checks`) open: every problem, errors first, grouped by check.
 2. Each time a record file or the engine's rules change, the page reloads `GET /api/spec` and shows the problems as they are on disk now.

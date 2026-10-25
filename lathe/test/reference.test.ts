@@ -72,7 +72,7 @@ describe('check headers', () => {
 describe('the format reference', () => {
   let defaults: FormatReference;
 
-  it("LA-AUT-T80 The reference holds every kind, relation, folder and check of Lathe's meta-model", async () => {
+  it("LA-AUT-T78 The reference holds every kind, relation, folder and check of Lathe's meta-model", async () => {
     defaults = await formatReference(PACKAGE_DIR);
     const useCase = defaults.kinds.find((k) => k.kind === 'use_case')!;
     expect(useCase).toMatchObject({
@@ -109,7 +109,7 @@ describe('the format reference', () => {
     expect(defaults.concepts).toContain('# Lathe spec format');
   });
 
-  it("LA-AUT-T81 A product's reference shows its extensions and its own checks", async () => {
+  it("LA-AUT-T79 A product's reference shows its extensions and its own checks", async () => {
     const widened = await formatReference(fixture('widen-extension'));
     expect(widened.kinds.find((k) => k.kind === 'domain_rule')).toMatchObject({ label: 'Business rule', parent_kinds: ['aggregate', 'domain', 'entity'] });
     expect(widened.kinds.find((k) => k.kind === 'policy')).toMatchObject({ obligation: 'yes', description: 'A policy the business sets.', id: null });
@@ -123,13 +123,13 @@ describe('the format reference', () => {
     expect(house.checks.at(-1)?.origin).toBe('product');
   });
 
-  it('LA-AUT-T82 The committed REFERENCE.md is the reference as lathe format writes it', async () => {
+  it('LA-AUT-T80 The committed REFERENCE.md is the reference as lathe format writes it', async () => {
     const committed = readFileSync(path.join(PACKAGE_DIR, 'REFERENCE.md'), 'utf8');
     // When this fails, run `npm --prefix lathe run reference` and commit REFERENCE.md.
     expect(committed).toBe(renderReference(defaults ?? (await formatReference(PACKAGE_DIR))));
   });
 
-  it('LA-AUT-T83 The Markdown gives the concepts, then kinds, relations, folders and checks, each with an anchor', async () => {
+  it('LA-AUT-T81 The Markdown gives the concepts, then kinds, relations, folders and checks, each with an anchor', async () => {
     const markdown = renderReference(defaults ?? (await formatReference(PACKAGE_DIR)));
     const at = (text: string) => markdown.indexOf(text);
     expect(at('# Lathe spec format')).toBe(0);
@@ -149,7 +149,7 @@ describe('the format reference', () => {
 });
 
 describe('the undocumented check', () => {
-  it('LA-AUT-T84 A kind or relation without a description, or a check without its header, is an undocumented error', async () => {
+  it('LA-AUT-T82 A kind or relation without a description, or a check without its header, is an undocumented error', async () => {
     const meta = tempDir();
     for (const file of ['kinds.csv', 'relations.csv', 'sections.csv', 'ids.csv']) cpSync(path.join(PACKAGE_DIR, 'meta', file), path.join(meta, file));
     writeFileSync(path.join(meta, 'kinds.csv'), `${readFileSync(path.join(meta, 'kinds.csv'), 'utf8')}note,Note,,,domain,,no,\n`);
@@ -167,7 +167,7 @@ describe('the undocumented check', () => {
     ]);
   });
 
-  it("LA-AUT-T85 A product's own checks are held to the same rule, and Lathe's defaults are all documented", async () => {
+  it("LA-AUT-T83 A product's own checks are held to the same rule, and Lathe's defaults are all documented", async () => {
     const house = await loadWorkspace(fixture('product-checks-house'));
     expect(house.problems.filter((p) => p.check === 'undocumented').map((p) => p.message)).toEqual([
       expect.stringContaining('The check house-checks/03-broken.sql has no summary sentence or explanation or severity line'),
@@ -178,7 +178,7 @@ describe('the undocumented check', () => {
 });
 
 describe('relation labels', () => {
-  it('LA-AUT-T88 A relation rule without both labels is a relation-unlabeled error', async () => {
+  it('LA-AUT-T86 A relation rule without both labels is a relation-unlabeled error', async () => {
     const root = tempDir();
     cpSync(fixture('good'), root, { recursive: true });
     writeFileSync(path.join(root, 'lathe.config.json'), JSON.stringify({ metaExtensions: 'lathe-meta' }));
@@ -213,7 +213,7 @@ describe('relation labels', () => {
     expect(good.problems.filter((p) => p.check === 'relation-unlabeled')).toEqual([]);
   });
 
-  it('LA-AUT-T89 The reference reads each relation by its labels', async () => {
+  it('LA-AUT-T87 The reference reads each relation by its labels', async () => {
     const ref = await formatReference(fixture('good'));
     for (const r of ref.relations) {
       expect(r.forward_label.trim(), r.relation).not.toBe('');
@@ -232,7 +232,7 @@ describe('relation labels', () => {
 });
 
 describe('lathe format and GET /api/format', () => {
-  it('LA-AUT-T86 lathe format prints the reference, or writes it with --out', async () => {
+  it('LA-AUT-T84 lathe format prints the reference, or writes it with --out', async () => {
     const expected = renderReference(await formatReference(fixture('widen-extension')));
     const printed = lathe('format', '--root', fixture('widen-extension'));
     expect(printed.status).toBe(0);
@@ -244,7 +244,7 @@ describe('lathe format and GET /api/format', () => {
     expect(lathe('help').stdout).toContain('format');
   });
 
-  it('LA-AUT-T87 GET /api/format serves the product reference as JSON', async () => {
+  it('LA-AUT-T85 GET /api/format serves the product reference as JSON', async () => {
     let status = 0;
     let body = '';
     const headers: Record<string, string> = {};
