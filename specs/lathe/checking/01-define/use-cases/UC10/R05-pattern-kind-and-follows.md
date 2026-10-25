@@ -1,7 +1,7 @@
 ---
 id: LA-CHK-UC10-R05
 kind: requirement
-title: A pattern sits under the product and use cases follow it
+title: A pattern sits under the product and use cases or domains follow it
 parent: LA-CHK-UC10
 ---
-A `pattern` record MUST sit under a `product` and MUST list its settings in a required `settings` field, as setting names separated by spaces. A use case MAY follow one or more patterns with the `follows` relation.
+A `pattern` record MUST sit under a `product` and MAY list its settings in a `settings` field, as setting names separated by spaces. A use case, or a domain, MAY follow one or more patterns with the `follows` relation.

@@ -103,11 +103,19 @@ One mistake gives one error. When an ID is duplicated, a link or parent that poi
 
 ## 6. Coverage
 
-Coverage follows the meta-model. A kind marked `obligation: yes` in `kinds.csv` (by default `domain_rule`, `requirement`, `interaction_requirement` and `pattern_rule`) is something that must be designed, built and proved. A relation's `role` in `relations.csv` says what a link does: `design` (such as a component `satisfies` it) or `proof` (such as a test `proves` it).
+Coverage follows the meta-model. A kind's `obligation` value in `kinds.csv`, in any letter case, says what it asks:
+
+- `yes` (or `true`): an obligation that must be designed, built and proved. By default `domain_rule`, `requirement` and `interaction_requirement`.
+- `proof`: an obligation that needs **proof only**. Nothing is asked about its design, so it counts as designed and built, has no `satisfies` gaps, and is never `unsatisfied`; it is proved, planned and has `proves` gaps like any other. By default `pattern_rule`, as S2 asks only for proof of the patterns it follows. A component may still `satisfy` it, to say which code carries it out.
+- anything else: not an obligation.
+
+A product can change a kind's value with an extension (section 9), for example `pattern_rule,,,,,yes,` to ask for the design of pattern rules again.
+
+A relation's `role` in `relations.csv` says what a link does: `design` (such as a component `satisfies` it) or `proof` (such as a test `proves` it).
 
 Each obligation is counted in the domain that owes it. A record that sits in a domain is owed by that domain. A pattern rule sits under a pattern, outside every domain, and is owed instead by each domain that follows the pattern, where only that domain's own components and tests design and prove it (section 11). Any other obligation that sits in no domain is counted nowhere and reported as an `obligation-outside-domain` warning.
 
-For each domain and each obligation kind: how many obligations it owes; how many are **designed** (a `design` link targets them), **built** (a `design` link from a component whose file exists), **proved** (a `proof` link from an automated or manual test), and **planned** (not proved, but a planned test is meant to prove them); plus the list of gaps. A pattern rule owed by several domains is counted, and has its gaps, in each of them. A product's own obligation kinds and relations, added by extension, are counted the same way.
+For each domain and each obligation kind: how many obligations it owes; how many are **designed** (a `design` link targets them), **built** (a `design` link from a component whose file exists), **proved** (a `proof` link from an automated or manual test), and **planned** (not proved, but a planned test is meant to prove them); plus the list of gaps. For a proof-only kind, designed and built always equal the total. A pattern rule owed by several domains is counted, and has its gaps, in each of them. A product's own obligation kinds and relations, added by extension, are counted the same way.
 
 ## 7. Fitness
 
@@ -154,7 +162,7 @@ The domain's **use case index** comes from the records: its capabilities in orde
 
 ### Patterns
 
-A `pattern` sits under the product, since domains share it, and lists its **settings** in `settings`: setting names separated by spaces, each a valid field name (lower-case letters, digits and underscores, starting with a letter, and not `id`, `kind`, `title`, `parent` or `links`). Its body says what it is for and what each setting decides; its rules are `pattern_rule` records under it (section 11).
+A `pattern` sits under the product, since domains share it. It may list **settings** in `settings`: setting names separated by spaces, each a valid field name (lower-case letters, digits and underscores, starting with a letter, and not `id`, `kind`, `title`, `parent` or `links`). Its body says what it is for and what each setting decides; its rules are `pattern_rule` records under it (section 11). A pattern that every following use case applies the same way, such as S2's API conventions, has no settings: leave `settings` out.
 
 ```markdown
 ---
@@ -167,7 +175,7 @@ settings: record required_input result
 A librarian at the desk enters a few details, and the library saves one record and shows what it saved.
 ```
 
-A use case **follows** the pattern with a `follows` link and gives each setting as a plain header field named exactly as the pattern lists it: a value, or `Not applicable:` (in any letter case) followed by a reason. The pattern's rules apply to the use case with those values; the use case's own requirements add only what is specific to it.
+A use case **follows** the pattern with a `follows` link and gives each setting as a plain header field named exactly as the pattern lists it: a value, or `Not applicable:` (in any letter case) followed by a reason. The pattern's rules apply to the use case with those values; the use case's own requirements add only what is specific to it, so a use case that follows a pattern may have none (no `use-case-without-requirements` warning).
 
 ```markdown
 ---
@@ -187,13 +195,27 @@ links:
 
 In YAML, a value containing `: ` must be quoted, so write `audit: "Not applicable: nothing changes"`.
 
+A **domain** may follow a pattern too, as S2 adopts most of its patterns per domain: the domain record links it with `follows`, and the whole domain owes each of the pattern's rules (section 11). The domain gives no settings; when the pattern has settings, the use cases that apply it follow it as well and give them.
+
+```markdown
+---
+id: S2-ACC
+kind: domain
+title: Accounting
+parent: S2
+links:
+  follows: [S2-PAT-API]
+---
+```
+
 - A setting that a following use case does not give, or gives as `Not applicable:` with no reason, is a `pattern-setting-missing` error.
 - A setting name that is not a valid field name is a `bad-pattern-settings` error on the pattern.
+- A pattern with no settings asks nothing of the use cases that follow it.
 - A use case that follows two patterns sharing a setting name has one field for both: a `pattern-setting-clash` warning. Rename the setting in one of the patterns.
 
 ## 11. Pattern rules
 
-A pattern's rules are records, so that each domain that follows the pattern must design and prove them, as S2's "Patterns we follow" tables do. A `pattern_rule` sits under its pattern and states one rule with MUST / MUST NOT / SHOULD / MAY. Its ID is the pattern's ID with `-R<nn>`, such as `TL-PAT-LIBRARIAN-ACTION-R01`. When the rule depends on one of the pattern's settings, it names it in `setting`.
+A pattern's rules are records, so that each domain that follows the pattern must prove them, as S2's "Patterns we follow" tables do. A `pattern_rule` sits under its pattern and states one rule with MUST / MUST NOT / SHOULD / MAY. Its ID is the pattern's ID with `-R<nn>`, such as `TL-PAT-LIBRARIAN-ACTION-R01`. When the rule depends on one of the pattern's settings, it names it in `setting`.
 
 ```markdown
 ---
@@ -206,12 +228,12 @@ setting: required_input
 When the librarian leaves out any of the `required_input`, the library MUST refuse the action, say what is missing, and save nothing.
 ```
 
-A domain **follows** a pattern when any of its use cases `follows` it. Each rule of the pattern is then an obligation **of that domain**, counted on the domain's Pattern rule coverage line:
+A domain **follows** a pattern when the domain itself `follows` it or any of its use cases does. Each rule of the pattern is then an obligation **of that domain**, counted once on the domain's Pattern rule coverage line:
 
-- **designed** when a component in that domain `satisfies` it, and **built** when that component's file exists;
-- **proved** when an automated or manual test in that domain `proves` it, and **planned** when only a planned test there does.
+- **proved** when an automated or manual test in that domain `proves` it, and **planned** when only a planned test there does;
+- pattern rules are proof-only by default (`obligation: proof`, section 6), so they count as **designed** and **built** and are never `unsatisfied`. A product that sets `pattern_rule` to `yes` asks for design too: then a rule is designed when a component in that domain `satisfies` it, and built when that component's file exists.
 
-A component or test in another domain does not count: each domain applies the rule with its own setting values, so it proves the rule for itself. The rule's gaps, and its `unsatisfied` and `unproved` warnings, name the domain, such as "Pattern rule TL-PAT-LIBRARIAN-ACTION-R01 is not proved in TL-LEND".
+A component or test in another domain does not count: each domain applies the rule with its own setting values, so it proves the rule for itself. The rule's gaps, and its `unproved` (and, when design is asked, `unsatisfied`) warnings, name the domain, such as "Pattern rule TL-PAT-LIBRARIAN-ACTION-R01 is not proved in TL-LEND".
 
 ```markdown
 ---
@@ -226,7 +248,9 @@ links:
 ---
 ```
 
-**Not applicable.** When a rule names a `setting` and every use case in a domain that follows the pattern gives that setting as `Not applicable:` with a reason, the rule does not apply in that domain and is not counted there. If even one following use case there gives the setting a value, the domain owes the rule. A rule with no `setting` applies in every domain that follows the pattern.
+**Not applicable.** When a rule names a `setting`, the domain follows the pattern only through its use cases, and every one of those use cases gives that setting as `Not applicable:` with a reason, the rule does not apply in that domain and is not counted there. If even one following use case there gives the setting a value, or the domain itself follows the pattern, the domain owes the rule. A rule with no `setting` applies wherever its pattern is followed.
+
+**Carrying out a rule.** An interaction requirement or a flow step may `fulfill` a pattern rule, to say where the rule is carried out. A step's flow carries out the rules of the patterns that its use cases, or its domain, follow, so `flow-step-fulfills-outside-flow` reports a step that fulfills any other pattern rule, or an interaction requirement that fulfills one (section 14).
 
 The checks for pattern rules:
 

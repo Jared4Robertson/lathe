@@ -1,7 +1,8 @@
 -- Work to do: an obligation (any kind the meta-model marks as one) that no automated or manual
 -- test proves through a 'proof' link. A test with no state is automated; a planned test is not proof.
--- A pattern rule is owed by each domain that follows its pattern (unless its setting is Not applicable
--- in every following use case there, as in lathe/src/coverage.ts), and only a test in that domain
+-- A pattern rule is owed by each domain that follows its pattern, itself or through a use case (unless,
+-- followed only through use cases, its setting is Not applicable in every one of them there, as in
+-- lathe/src/coverage.ts), and only a test in that domain
 -- proves it there, so it is reported once for each domain that owes it and lacks one.
 -- An automated test's proof counts only when its file backs it, as in coverage: the file names the test's
 -- own ID (or its key), or names that target. An unbacked claim is also a proof-not-in-file error.
@@ -28,7 +29,17 @@ follows AS (
   FROM records u JOIN links l ON l.path = u.path AND l.relation = 'follows'
   WHERE u.kind = 'use_case' AND u.id <> '' AND u.domain IS NOT NULL
 ),
+domain_follows AS (
+  SELECT DISTINCT d.id AS domain, l.target AS pattern
+  FROM records d JOIN links l ON l.path = d.path AND l.relation = 'follows'
+  WHERE d.kind = 'domain' AND d.id <> ''
+),
 owed_pattern_rules AS (
+  SELECT DISTINCT f.domain, r.id, r.kind
+  FROM records r JOIN domain_follows f ON f.pattern = r.parent
+  WHERE r.kind = 'pattern_rule' AND r.domain IS NULL AND r.id <> ''
+    AND r.kind IN (SELECT kind FROM kinds WHERE obligation)
+  UNION
   SELECT domain, id, kind FROM (
     SELECT f.domain, r.id, r.kind,
       bool_and(coalesce(trim(st.value), '') <> ''

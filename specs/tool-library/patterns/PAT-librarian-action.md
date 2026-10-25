@@ -21,7 +21,7 @@ The use case links the pattern with `follows` and gives each setting as a header
 
 ## Rules
 
-The pattern's rules are records under it, and every domain that follows the pattern designs and proves each one in its own components and tests:
+The pattern's rules are records under it, and every domain that follows the pattern proves each one in its own tests. Pattern rules need proof only, but TL-LEND's components still say, with `satisfies`, which code carries each rule out:
 
 - `TL-PAT-LIBRARIAN-ACTION-R01`: an action missing its required input is refused and saves nothing (setting `required_input`).
 - `TL-PAT-LIBRARIAN-ACTION-R02`: a successful action saves the record and shows it as stored.
