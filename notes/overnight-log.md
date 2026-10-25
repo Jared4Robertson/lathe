@@ -2,6 +2,14 @@
 
 Jared asked the coordinator to go with its recommendation on any blocker and check back in the morning. This log records each merge, each agent started, and every decision taken without him, for his review.
 
+## Where things stand (03:05)
+All queued briefs are merged into local `main`. Nothing is pushed. No agents are running.
+- **Your dev server on port 5199 needs a restart** (`npm --prefix app run dev`). It has been up since before the moves, and its hot reload is broken.
+- **Please confirm:** the depth-3 re-center budgets were changed (see 02:27).
+- **Please decide:** the six trial-4 additions below.
+- **Please check by hand:** the desktop title bar and icon in a real window, and the Dock badge in a packed app.
+- **Left open on purpose:** a page tab could announce its Delete shortcut, but that clashes with the keep-tab hint in the tooltip.
+
 ## Plan
 1. Merge each agent as it reports: check its report, run the combined tests on `main`, and look at UI changes in the browser. Never push.
 2. Start queued briefs as they unblock, at most about five agents at once:
@@ -122,6 +130,13 @@ Lathe now matches S2 on UC requirements (206/206) and domain rules (98/98) acros
   
   App 299, engine 272, check 0 errors. Graph, Model and diagrams checked in the browser.
 - 02:30 (coordinator) The common rules add `test:perf` to the full checks for loading and graph changes; the jitter audit records the measurement fix.
+- 02:58 `a7350d2` Accessibility audit (69):
+  - axe-core at WCAG 2.2 AA over 100 page states, plus 9 keyboard scenarios (`npm --prefix app run test:a11y`);
+  - findings went from failures in 94 of 100 states to 0;
+  - fixed: control names, the tab's close button no longer inside the tab, 24 px targets, keyboard-reachable scroll boxes, the contrast in Checks and Appearance (no token changed), first-load focus;
+  - UX-R10 and UC120.
+- 03:00 (coordinator) `5084a6c` The performance rule is now UX-R11, after R10; it was R30.
+- 03:05 (coordinator) `162c09a` The graph's trail is a Tab stop only while it overflows (T624), left open by 69. App 300, engine 272, check 0 errors.
 
 ## Incident
 - During 57b, the agent stopped "the process on its dev port" and killed pid 77501, the **Claude desktop app's network service**, which had a connection open to that port. Electron restarted the service; the app and the in-app browser were checked and work. New agent rule: stop only processes you started, by recorded PID, never by port or name. If anything in the Claude app seemed off around 01:00, this is why; a restart of the app clears it.
