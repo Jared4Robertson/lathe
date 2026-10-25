@@ -23,11 +23,11 @@ Standalone actions are styled as links today, for example "Open the product over
    - the Appearance page's actions, once brief 49 has landed.
 3. **What stays a link:** links inside prose (Markdown, sentences), links inside lists and rows (record references, R13 row links), breadcrumbs and trails, and nav items. These are navigation in context, not controls.
 4. **Clean up:** delete `.secondary`, `.tree-bulk` and the scattered text-button rules in favor of the component's classes.
-5. **Proactive standard:** add `LA-PAT-APP-CODE-R18`, "Actions look like actions": standalone actions use `Button` (ghost by default, primary for the main action), and links are kept for navigation in context.
+5. **Proactive standard:** add `LA-PAT-APP-UX-R09`, "Actions look like actions" (in the App experience pattern, brief 63): standalone actions use `Button` (ghost by default, primary for the main action), and links are kept for navigation in context.
    - Prove it in `app/test/standards.test.tsx`: render the main pages and expect no `p > a:only-child` used as a standalone action, no `button.secondary` or `.tree-bulk`, and every `<button>` outside the component to be one of an allowed list (tabs, toggles in groups, tree chevrons). If that list would be long, move those into the component too.
 
 ## Records
-- Rule R18 in the App code pattern.
+- Rule UX-R09 in the App experience pattern (`LA-PAT-APP-UX`, brief 63).
 - A Browsing domain rule from `LA-BRW-DR260`, a component from `LA-BRW-C250` (layer `LAY08`, Shared components) and tests from `LA-BRW-T500`.
 - Update the records that describe the changed controls.
 
