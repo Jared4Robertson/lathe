@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { GraphSettings } from '../graph/GraphPage';
+import type { GraphLayout, GraphSettings } from '../graph/GraphPage';
 import { NO_FILTERS } from '../graph/model';
 import { navigate } from '../router';
 import { isNumber, readPref, writePref } from '../shell/prefs';
@@ -45,20 +45,21 @@ const isWeight = (v: unknown): v is number => isNumber(v) && v >= PANE_WEIGHT_MI
 
 // ---------- Graph settings, stored ----------
 
-interface StoredSettings { depth: number; trace: boolean; hiddenKinds: string[]; hiddenRelations: string[]; links: boolean; minimap: boolean }
+interface StoredSettings { layout: GraphLayout; depth: number; trace: boolean; hiddenKinds: string[]; hiddenRelations: string[]; links: boolean; minimap: boolean }
 /** Stored settings in today's form; anything else (an older form included) is dropped for the defaults. */
 const isStored = (v: unknown): v is StoredSettings => {
   if (!v || typeof v !== 'object') return false;
   const s = v as StoredSettings;
-  return isNumber(s.depth) && typeof s.trace === 'boolean' && Array.isArray(s.hiddenKinds) && Array.isArray(s.hiddenRelations)
+  return (s.layout === 'tree' || s.layout === 'nested') && isNumber(s.depth) && typeof s.trace === 'boolean' && Array.isArray(s.hiddenKinds) && Array.isArray(s.hiddenRelations)
     && typeof s.links === 'boolean' && typeof s.minimap === 'boolean';
 };
 
-export const DEFAULT_SETTINGS: GraphSettings = { depth: 1, trace: false, filters: NO_FILTERS, links: false, minimap: false };
+export const DEFAULT_SETTINGS: GraphSettings = { layout: 'tree', depth: 1, trace: false, filters: NO_FILTERS, links: false, minimap: false };
 
 function settingsFrom(s: unknown): GraphSettings | null {
   if (!isStored(s)) return null;
   return {
+    layout: s.layout,
     depth: [1, 2, 3].includes(s.depth) ? s.depth : 1,
     trace: s.trace === true,
     filters: { hiddenKinds: new Set(s.hiddenKinds), hiddenRelations: new Set(s.hiddenRelations) },
@@ -67,7 +68,7 @@ function settingsFrom(s: unknown): GraphSettings | null {
   };
 }
 function storedFrom(s: GraphSettings): StoredSettings {
-  return { depth: s.depth, trace: s.trace, hiddenKinds: [...s.filters.hiddenKinds], hiddenRelations: [...s.filters.hiddenRelations], links: s.links, minimap: s.minimap };
+  return { layout: s.layout, depth: s.depth, trace: s.trace, hiddenKinds: [...s.filters.hiddenKinds], hiddenRelations: [...s.filters.hiddenRelations], links: s.links, minimap: s.minimap };
 }
 
 /** The graph settings last used, for a space's first tab. */

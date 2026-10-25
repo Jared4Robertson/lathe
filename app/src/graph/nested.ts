@@ -1,6 +1,7 @@
 import type { SpecIndex } from '../specs/data';
 import { NODE_HEIGHT, NODE_WIDTH } from './layout';
 import { rootsOf, type MapNode, type PlacedMap } from './map';
+import { nodeLabelWidth } from './text';
 import { treeChildren } from './tree';
 
 // The graph's Nested map (LA-EXP-DR62): the same tree as the Tree map (map.ts), drawn as a
@@ -14,26 +15,26 @@ import { treeChildren } from './tree';
 //   inside a padding, squarified (Bruls, Huizing and van Wijk) without sorting, so they keep the
 //   tree's order row by row where the shapes allow.
 // - A box's text scale is fixed here, in proportion to the box (LA-EXP-DR58): its label on one
-//   line fits its width, and a header band takes at most a quarter of its box's height. The camera
+//   line fits its width (a parent's within 0.6 of it), and a header band takes at most an eighth of
+//   its box's height. The camera
 //   never changes it, and hides a label too small to read (LA-EXP-DR60).
 //
 // Pure and deterministic: the same tree always gives the same map.
 
 /** A header band's height at text scale 1: the kind and ID line and the title, with their padding. */
-export const HEADER = 44;
+export const HEADER = 46;
 /** The padding inside a box around its children, and the gap between two siblings, at its text scale 1. */
 export const NEST_PAD = 8;
 export const NEST_GAP = 6;
-/** The most of its box's height a header band takes. */
-export const HEADER_SHARE = 0.25;
+/** The most of its box's height a header band takes, and of its width a header's label takes, so a parent's label stays in proportion to it without crowding its children. */
+export const HEADER_SHARE = 0.125;
+export const HEADER_WIDTH_SHARE = 0.6;
 /** The map area one leaf record stands for: a little more than a Tree leaf, for the headers and padding above it. */
 export const LEAF_AREA = NODE_WIDTH * NODE_HEIGHT * 2.5;
 /** The whole map's width over its height. */
 export const NESTED_ASPECT = 1.6;
 
 export interface NestedNode extends MapNode {
-  /** Its label's scale (LA-EXP-DR58), fixed by the map. */
-  text: number;
   /** The header band's height, in map units: 0 for a box with no children (its label is centered in it). */
   header: number;
   /** Its place in the tree's order, a parent before its children: the keyboard's order. */
@@ -94,9 +95,13 @@ export function squarify(weights: readonly number[], r: Rect): Rect[] {
   return out;
 }
 
-/** A box's text scale (LA-EXP-DR58): as large as fits its label on one line across its width and, with children, its header band in a quarter of its height; a leaf's label in its height. */
+/**
+ * A box's text scale (LA-EXP-DR58): a leaf's as large as fits its label on one line across its
+ * width and in its height; a parent's as large as keeps its label within HEADER_WIDTH_SHARE of its
+ * width and its header band within HEADER_SHARE of its height.
+ */
 export function nestedTextScale(r: Pick<Rect, 'w' | 'h'>, labelWidth: number, container: boolean): number {
-  const across = r.w / Math.max(1, labelWidth);
+  const across = ((container ? HEADER_WIDTH_SHARE : 1) * r.w) / Math.max(1, labelWidth);
   const down = container ? (r.h * HEADER_SHARE) / HEADER : r.h / NODE_HEIGHT;
   return Math.max(0, Math.min(across, down));
 }
@@ -171,10 +176,10 @@ export function layoutNested(roots: readonly string[], childrenOf: (id: string) 
 const cache = new WeakMap<SpecIndex, NestedMap>();
 
 /** The Nested map of an index: built on first use, then read. */
-export function nestedMap(index: SpecIndex, labelWidthOf?: (id: string) => number): NestedMap {
+export function nestedMap(index: SpecIndex): NestedMap {
   const known = cache.get(index);
   if (known) return known;
-  const map = layoutNested(rootsOf(index), (id) => treeChildren(index, id), labelWidthOf);
+  const map = layoutNested(rootsOf(index), (id) => treeChildren(index, id), (id) => nodeLabelWidth(index, id));
   cache.set(index, map);
   return map;
 }

@@ -85,6 +85,8 @@ export function Legend() {
           <li><span className="graph-swatch stage-design" /> Design (flow, flow step, view, endpoint, component, test)</li>
           <li><span className="graph-swatch stage-structural" /> Structural (product, domain, question)</li>
           <li><span className="graph-swatch stage-hexagon" /> Domain, drawn as a hexagon</li>
+          <li><span className="graph-swatch stage-nested" /> Nested view: a box holding its children below its name</li>
+          <li><span className="graph-swatch stage-hexagon-mark" /> Nested view: a domain, a box with a hexagon mark</li>
           <li><span className="graph-swatch stage-group" /> Stage, folder or group, as the nav names it, with its count</li>
           <li><span className="graph-swatch stage-plain" /> A box too small on screen for its text: zoom in, or hover it, for its name</li>
           <li><span className="graph-swatch stage-bar" /> A bar: children too small to draw at this zoom</li>
@@ -98,6 +100,7 @@ export function Legend() {
           <li><span className="graph-mark error">!</span> has errors <span className="graph-mark gap">gap</span> not satisfied or not proved (on a group: among its members)</li>
         </ul>
         <p className="hint">The graph is one map of the nav's tree: a domain holds Define and Design, each stage its folders, each folder its records. Levels run left to right, each parent as tall as its children, and nothing changes size: focusing moves the camera. Depth is how many levels below the focus the camera frames, folders included. A trace runs left to right, from the rule to the files that build and test it.</p>
+        <p className="hint">The Nested view (v) draws the same tree as boxes inside boxes: the product made of its domains, each domain of Define and Design, each stage of its folders, each box as big as the records under it. Focusing frames the box; depth is how many levels inside it are labeled, and zooming in labels the rest.</p>
         <p className="hint">Click a record or a group, or press Enter on it, to focus it. Scroll, pinch or drag to look around. Arrow keys or Tab move between labeled boxes; + and - change the depth, l switches Links, t switches trace mode, and . frames the focus again. Alt+Up steps out to the parent, Alt+Down in to the first child, and Alt+Shift+Left or Right to a sibling.</p>
       </section>
     </details>

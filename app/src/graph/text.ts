@@ -78,8 +78,12 @@ export function labelWidth(lines: { title: string; meta: string }, { hexagon = f
   return Math.ceil(text * WIDTH_MARGIN + 2 * LABEL_PAD + (hexagon ? 2 * HEX_ROOM : 0));
 }
 
-/** A box's text scale (LA-EXP-DR58): its height over a leaf's, so its label keeps a leaf's proportions. Fixed by the map, never by the camera. */
+/** How wide a node's label is on one line at text scale 1, in either view: a domain keeps room for its hexagon (its outline in the Tree view, its mark in the Nested view). */
+export const nodeLabelWidth = (index: SpecIndex, id: string) =>
+  labelWidth(labelLines(index, id), { hexagon: index.byId.get(id)?.kind === 'domain', marked: hasMarks(index, id) });
+
+/** A box's text scale in the Tree view (LA-EXP-DR58): its height over a leaf's, so its label keeps a leaf's proportions. Fixed by the map, never by the camera. */
 export const textScaleOf = (h: number) => Math.max(1, h / NODE_HEIGHT);
 
-/** Whether a box's label is drawn at a zoom (LA-EXP-DR60): its title at least MIN_LABEL_PX on screen. It only shows or hides the label, never resizes it. */
-export const labelShown = (h: number, zoom: number) => TITLE_FONT * textScaleOf(h) * zoom >= MIN_LABEL_PX;
+/** Whether a box's label is drawn at a zoom (LA-EXP-DR60): its title, at the box's text scale, at least MIN_LABEL_PX on screen. It only shows or hides the label, never resizes it. Both views' boxes read it. */
+export const labelShown = (text: number, zoom: number) => TITLE_FONT * text * zoom >= MIN_LABEL_PX;

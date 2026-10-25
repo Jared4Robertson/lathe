@@ -1,6 +1,6 @@
 import type { SpecIndex } from '../specs/data';
 import { contentScale, NODE_HEIGHT, NODE_WIDTH } from './layout';
-import { hasMarks, labelLines, labelWidth, textScaleOf } from './text';
+import { nodeLabelWidth, textScaleOf } from './text';
 import { treeChildren, treeOf } from './tree';
 
 // The graph's one map (LA-EXP-DR57): the whole tree, the nav's (tree.ts), laid out once per spec
@@ -187,7 +187,7 @@ const cache = new WeakMap<SpecIndex, GraphMap>();
 export function graphMap(index: SpecIndex): GraphMap {
   const known = cache.get(index);
   if (known) return known;
-  const map = layoutTree(rootsOf(index), (id) => treeChildren(index, id), (id) => labelWidth(labelLines(index, id), { hexagon: index.byId.get(id)?.kind === 'domain', marked: hasMarks(index, id) }));
+  const map = layoutTree(rootsOf(index), (id) => treeChildren(index, id), (id) => nodeLabelWidth(index, id));
   cache.set(index, map);
   return map;
 }
