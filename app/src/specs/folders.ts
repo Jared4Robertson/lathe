@@ -149,12 +149,23 @@ export const outsideLabel = (index: SpecIndex, kind: string, outside: string) =>
  * sitting directly in the domain ("Components outside any layer"). A folder with no layers has no groups.
  */
 export function layerGroups(index: SpecIndex, keyPrefix: string, records: SpecRecord[]): FolderGroup[] {
-  const layers = records.filter((r) => r.kind === 'layer').sort((a, b) => order(a) - order(b) || byIdOrder(a, b));
+  const layers = layersIn(records);
   if (layers.length === 0) return [];
-  const groups = layers.map((layer) => groupOf(`${keyPrefix}/${layer.id}`, layer.title, index.children.get(layer.id) ?? [], [], layer));
+  const groups = layers.map((layer) => layerGroup(index, keyPrefix, layer, new Set()));
   const outside = records.filter((r) => r.kind !== 'layer');
   if (outside.length > 0) groups.push(groupOf(`${keyPrefix}/outside`, outsideLabel(index, outside[0].kind, 'layer'), outside));
   return groups;
+}
+
+const layersIn = (records: readonly SpecRecord[]) => records.filter((r) => r.kind === 'layer').sort((a, b) => order(a) - order(b) || byIdOrder(a, b));
+
+/** A layer's group: its sub-layers as groups within it, in their order, then its own components. */
+function layerGroup(index: SpecIndex, keyPrefix: string, layer: SpecRecord, seen: Set<string>): FolderGroup {
+  seen.add(layer.id);
+  const key = `${keyPrefix}/${layer.id}`;
+  const children = index.children.get(layer.id) ?? [];
+  const subLayers = layersIn(children).filter((l) => !seen.has(l.id)).map((l) => layerGroup(index, key, l, seen));
+  return groupOf(key, layer.title, children.filter((r) => r.kind !== 'layer'), subLayers, layer);
 }
 
 /**
@@ -313,7 +324,8 @@ export function ungrouped(folder: Pick<Folder, 'groups' | 'records'>): SpecRecor
 /** The keys of the groups holding a record or one of the records above it, from the outside in. */
 export function groupBranch(groups: readonly FolderGroup[], ids: ReadonlySet<string>): string[] {
   for (const g of groups) {
-    if (g.record && ids.has(g.record.id)) return [g.key];
+    // A layer holding the record (or above it): open it, and the sub-layer within that holds it.
+    if (g.record && ids.has(g.record.id)) return [g.key, ...groupBranch(g.groups, ids)];
     const inner = groupBranch(g.groups, ids);
     if (inner.length > 0) return [g.key, ...inner];
     if (g.records.some((r) => ids.has(r.id))) return [g.key];
