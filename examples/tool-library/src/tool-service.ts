@@ -1,5 +1,5 @@
 // The catalog: adds tools, lists them with their status, and records damage and repair.
-// Spec: TL-LEND-C04 (specs/tool-library/lending/02-design/components/C04-tool-service.md)
+// Spec: TL-LEND-C04 (specs/tool-library/lending/02-design/components/02-services/C04-tool-service.md)
 import { LendingError, toolStatus, type CatalogEntry, type Clock, type Tool } from './model.ts';
 import type { Store } from './store.ts';
 
