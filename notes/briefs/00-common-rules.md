@@ -15,6 +15,7 @@ Lathe is a toolkit for organizing a product's lifecycle (domain model, use cases
   3. Report the branch and its last commit. The coordinator merges it into `main` straight away.
 - The contract files are fixed: do not edit `lathe/FORMAT.md`, `lathe/meta/*`, `lathe/src/types.ts` or `lathe/fixtures/workspace.sample.json`. If you need a change, work around it and put the request in your report.
 - Do not edit files you do not own, even to fix something small; report it instead.
+- **Stop only processes you started**, by the PID you recorded when you started them. Never kill a process found by its port or name (`lsof -i`, `pkill`, `killall`): other apps, the Claude app's own services included, may hold that port. Prefer SIGTERM, and wait before SIGKILL.
 - Never use port 5199 (Jared's running dev server). If you must run a server, use the port your brief gives and stop it before you finish.
 - Quit every process you start (Electron, Vite, Playwright browsers, servers) before you report. Quit Electron gracefully; kill it only when it will not quit.
 - While you work, run only static checks and the narrow tests for what you wrote, with at most 2 test workers; run the full checks once, before you merge.
