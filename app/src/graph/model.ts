@@ -1,3 +1,4 @@
+import { plural } from '../plural';
 import type { SpecIndex } from '../specs/data';
 import { byIdOrder, kindLabel } from '../specs/data';
 
@@ -342,10 +343,7 @@ export const isGraphNode = (index: SpecIndex, id: string) => index.byId.has(id) 
 
 /** A kind's label in the plural: "Use cases", "Open questions", "Fitness". */
 export function pluralLabel(index: SpecIndex, kind: string): string {
-  const label = kindLabel(index, kind);
-  if (/s$/i.test(label)) return label;
-  if (/[^aeiou]y$/i.test(label)) return `${label.slice(0, -1)}ies`;
-  return `${label}s`;
+  return plural(kindLabel(index, kind));
 }
 
 /** A group's label with its count, such as "Use cases (5)". */
