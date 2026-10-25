@@ -19,11 +19,12 @@ npx lathe serve            # http://127.0.0.1:5330
   "diagrams": "diagrams",
   "metaExtensions": "lathe-meta",
   "checks": "lathe-checks",
-  "idPrefixes": ["STD", "SYS"]
+  "idPrefixes": ["STD", "SYS"],
+  "structure": { "maxChildren": 15 }
 }
 ```
 
-All five keys are optional (`specs` and `diagrams` are the defaults). A `metaExtensions` folder holds a `kinds.csv`, `relations.csv` and/or `sections.csv` with the same columns as [meta/](meta/); their rows are added to Lathe's defaults for this product only, and a row for a kind Lathe already has widens that kind (see FORMAT.md section 9). A `checks` folder holds the product's own checks (see [Add a product's own check](#add-a-products-own-check)). `idPrefixes` lists ID prefixes, besides every product's and domain's ID, that a record body may cite: a token such as `STD-04` is then read as a citation and reported if no record has it (FORMAT.md section 12). The record format is in [FORMAT.md](FORMAT.md).
+All six keys are optional (`specs` and `diagrams` are the defaults). A `metaExtensions` folder holds a `kinds.csv`, `relations.csv` and/or `sections.csv` with the same columns as [meta/](meta/); their rows are added to Lathe's defaults for this product only, and a row for a kind Lathe already has widens that kind (see FORMAT.md section 9). A `checks` folder holds the product's own checks (see [Add a product's own check](#add-a-products-own-check)). `idPrefixes` lists ID prefixes, besides every product's and domain's ID, that a record body may cite: a token such as `STD-04` is then read as a citation and reported if no record has it (FORMAT.md section 12). `structure.maxChildren` (a whole number of at least 1, default 15) is the most children of one kind a record should have before the `too-many-children` warning (FORMAT.md section 5); any other value is refused when the config is read. The record format is in [FORMAT.md](FORMAT.md).
 
 ## Build the package
 
@@ -81,6 +82,7 @@ The fixture workspaces in `test/fixtures/` are small: `good` passes every check,
 | `fields` | `path`, `record`, `name`, `value`: every plain header field that is not `id`, `kind`, `title`, `parent` or `links` |
 | `links` | `path`, `source`, `relation`, `target` |
 | `file_facts` | `path`, `record`, `kind` (`test` or `component`), `file`, `file_exists`, `contains_id` (tests only) |
+| `settings` | `name`, `value`: the product's settings from `lathe.config.json` that checks read, such as `structure.maxChildren` (always present, with its default when the config does not give it) |
 
 `path` is the record file's path relative to the root. It is unique, so use it to join a record to its own fields and links. IDs can be duplicated in a broken workspace. A missing `id`, `kind` or `title` is stored as an empty string, and a missing `parent` as NULL.
 

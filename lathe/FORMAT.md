@@ -97,6 +97,10 @@ The engine runs every SQL file in `lathe/checks/`. Each returns rows of `(severi
   - `interaction-requirement-fulfills-nothing`: an interaction requirement with no `fulfills` link.
   - `test-type-mismatch`: a test with `test_type: domain_rule` that proves requirements but no domain rule, or with `test_type: acceptance` that proves domain rules but no requirement. Other types, such as `unit`, are not compared.
 
+  The structure warnings say where a level of the spec is the wrong size: a parent with one child, or with hundreds, usually means the structure is off.
+  - `too-many-children`: a record with more children of one kind than the product's `structure.maxChildren` setting in `lathe.config.json` (default 15; see the package README). The message names the parent, the kind and the count; add a level between them, such as a capability, a layer or another aggregate. Children are counted per kind, so a domain with 10 use cases and 10 components is not reported at 15. Tests are never counted: the app groups them by what they prove (section 15), so they are never shown as one list.
+  - `lone-child`: a capability or a layer with exactly one child, of any kind (only its own children, not theirs). Merge it into a neighboring capability or layer, or give it more. One with no children is not reported.
+
   The proof warnings say where proof is still owed or is counted nowhere:
   - `proof-still-owed`: an obligation that is already proved, but that a planned test is also meant to prove, such as "TL-LEND-E06-R03 is proved, but planned test TL-LEND-T30 still owes a proof of it". There is one warning for each obligation and planned test, so the obligations that coverage counts in `planned_any` beyond `planned` are named. A pattern rule is judged in each domain that owes it, with only that domain's tests. An obligation not yet proved, whose test is only planned, is `unproved` instead.
   - `proof-counts-nowhere`: a test none of whose proofs counts in any domain's coverage: for example it proves only a rule of a pattern no domain follows, a pattern rule that only other domains owe, an obligation outside every domain, or a record that is not an obligation. The message gives the reason for each target. A test with at least one proof that counts is not reported, whatever its state.
@@ -161,6 +165,7 @@ A use case then names the capability as its parent (`parent: TL-LEND-CAP03`). It
 
 - Each capability in a domain needs its own order (`capability-order` error); `1` and `01` are the same.
 - Once a domain has capabilities, a use case left directly under the domain is a `use-case-outside-capability` warning. A domain with no capabilities is fine.
+- A capability that holds only one record is a `lone-child` warning: merge it into a neighbor or give it more. A domain with more use cases, or flows, than `structure.maxChildren` directly under it is a `too-many-children` warning, the sign that it needs capabilities (section 5).
 
 The domain's **use case index** comes from the records: its capabilities in order, each with its use cases, and the patterns each use case follows (or none).
 
@@ -377,3 +382,5 @@ The checks for layers:
 
 - A layer's `order` that is not a whole number, or that another layer of the same domain also has, is a `layer-order` error (`1` and `01` are the same). Layers in different domains may share an order. A missing order is `missing-required-field`.
 - `component-outside-layer` (warning): once a domain has layers, a component left directly under the domain. Move it into the layer it belongs to. A domain with no layers is not reported.
+- `lone-child` (warning): a layer that holds only one component. Merge it into a neighboring layer or give it more.
+- `too-many-children` (warning): a layer, or a domain without layers, holding more components than `structure.maxChildren` (default 15). Split the layer, or add layers (section 5).
