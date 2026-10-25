@@ -47,6 +47,8 @@ export function services(timeZone?: string) {
 
 export interface Api {
   clock: TestClock;
+  /** The local port the API listens on, for tests that send raw requests. */
+  port: number;
   call(method: string, path: string, body?: unknown): Promise<{ status: number; body: any }>;
   close(): Promise<void>;
 }
@@ -60,6 +62,7 @@ export async function startApi(): Promise<Api> {
   const { port } = server.address() as AddressInfo;
   return {
     clock,
+    port,
     async call(method, path, body) {
       const res = await fetch(`http://127.0.0.1:${port}${path}`, {
         method,
