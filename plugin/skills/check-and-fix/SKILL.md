@@ -105,3 +105,12 @@ One mistake gives one error: a duplicated ID is reported as `duplicate-id`, with
 | `product-checks-missing` (error) | `lathe.config.json` names a `checks` folder that does not exist: create it or fix the path. |
 | Any other check name you do not recognise | It is the product's own check (in the folder `lathe.config.json` names in `checks`); read that SQL file to see what it wants. |
 
+## Owed and silent proofs
+
+These warnings say where proof is still owed, or where a test's proof is counted nowhere:
+
+| Warning | Fix |
+| --- | --- |
+| `proof-still-owed` | The obligation is proved, but a planned test is still meant to prove it too. Write that test (and drop its `state: planned`), or remove its `proves` link if the existing proof is enough. Leave it if the planned test is real work still to do, and mention it. |
+| `proof-counts-nowhere` | No domain counts anything the test proves; the message says why for each target. Link the test to what its own domain owes, move the test into the domain that owes the target, make that domain follow the pattern, or move an obligation outside every domain under one. |
+| `manual-test-file-silent` | The manual test's `run_by` file never mentions it. Name the test's ID (or an ID it proves, or its `key`) in the steps that file gives, or point `run_by` at the file that really carries the test out. |
