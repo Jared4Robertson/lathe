@@ -29,6 +29,10 @@ export interface RelationReference {
   target_kind: string;
   role: 'design' | 'proof' | '';
   description: string;
+  /** The link read from the source: "Satisfies". */
+  forward_label: string;
+  /** The link read from the target: "Designed by". */
+  reverse_label: string;
 }
 
 export interface SectionReference {
@@ -216,22 +220,35 @@ export function renderReference(ref: FormatReference): string {
     out.push(`- **Required fields:** ${list(k.required_fields.map(code))}`);
     out.push(`- **Obligation:** ${k.obligation === 'yes' ? 'yes: designed, built and proved' : k.obligation === 'proof' ? 'proof only' : 'no'}`);
     if (k.id) out.push(`- **ID:** ${code(k.id.pattern)}, such as ${code(k.id.example)}`);
-    const outgoing = [...new Set(ref.relations.filter((r) => r.source_kind === k.kind).map((r) => r.relation))];
-    const incoming = [...new Set(ref.relations.filter((r) => r.target_kind === k.kind || r.target_kind === '*').map((r) => r.relation))];
-    out.push(`- **Links out:** ${list(outgoing.map((r) => `[${code(r)}](#${relationAnchor(r)})`))}`);
-    out.push(`- **Links in:** ${list(incoming.map((r) => `[${code(r)}](#${relationAnchor(r)})`))}`);
+    // Each link by its label, read from this kind: forward labels for the links it makes, reverse labels for
+    // the links made to it, each naming its relation once per label.
+    const byLabel = (rules: RelationReference[], label: (r: RelationReference) => string) => [
+      ...new Set(rules.map((r) => `${cell(label(r) || r.relation)} ([${code(r.relation)}](#${relationAnchor(r.relation)}))`)),
+    ];
+    const outgoing = byLabel(ref.relations.filter((r) => r.source_kind === k.kind), (r) => r.forward_label);
+    const incoming = byLabel(ref.relations.filter((r) => r.target_kind === k.kind || r.target_kind === '*'), (r) => r.reverse_label);
+    out.push(`- **Links out:** ${list(outgoing)}`);
+    out.push(`- **Links in:** ${list(incoming)}`);
     const checks = ref.checks.filter((c) => c.kinds.includes(k.kind));
     if (checks.length) out.push(`- **Checks:** ${checks.map((c) => `[${code(c.check)}](#${checkAnchor(c.check)})`).join(', ')}`);
     out.push('');
   }
 
-  out.push('## Relations', '', 'Every relation, from `meta/relations.csv`: which kind may link to which, and what the link does.', '');
+  out.push(
+    '## Relations',
+    '',
+    'Every relation, from `meta/relations.csv`: which kind may link to which, what the link does, and the plain words it reads as from the source (forward) and from the target (reverse).',
+    '',
+  );
   const names = [...new Set(ref.relations.map((r) => r.relation))];
   for (const name of names) {
     const rows = ref.relations.filter((r) => r.relation === name);
     out.push(`<a id="${relationAnchor(name)}"></a>`, '', `### ${code(name)}`, '');
-    out.push('| From | To | Role | Meaning |', '| --- | --- | --- | --- |');
-    for (const r of rows) out.push(`| ${kindLink(r.source_kind)} | ${kindLink(r.target_kind)} | ${r.role || '-'} | ${cell(r.description.trim() || '-')} |`);
+    out.push('| From | To | Role | Forward | Reverse | Meaning |', '| --- | --- | --- | --- | --- | --- |');
+    for (const r of rows) {
+      const words = [r.forward_label, r.reverse_label].map((l) => cell(l.trim() || '-'));
+      out.push(`| ${kindLink(r.source_kind)} | ${kindLink(r.target_kind)} | ${r.role || '-'} | ${words[0]} | ${words[1]} | ${cell(r.description.trim() || '-')} |`);
+    }
     out.push('');
   }
 

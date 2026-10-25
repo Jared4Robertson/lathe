@@ -17,9 +17,9 @@ const patternKinds: Kind[] = [
 ];
 
 const patternRelations: RelationRule[] = [
-  { relation: 'follows', source_kind: 'use_case', target_kind: 'pattern', role: '', description: 'The use case follows the pattern.' },
-  { relation: 'satisfies', source_kind: 'component', target_kind: 'pattern_rule', role: 'design', description: 'The component designs the pattern rule.' },
-  { relation: 'proves', source_kind: 'test', target_kind: 'pattern_rule', role: 'proof', description: 'The test proves the pattern rule.' },
+  { relation: 'follows', source_kind: 'use_case', target_kind: 'pattern', role: '', description: 'The use case follows the pattern.', forward_label: 'Follows', reverse_label: 'Followed by' },
+  { relation: 'satisfies', source_kind: 'component', target_kind: 'pattern_rule', role: 'design', description: 'The component designs the pattern rule.', forward_label: 'Satisfies', reverse_label: 'Designed by' },
+  { relation: 'proves', source_kind: 'test', target_kind: 'pattern_rule', role: 'proof', description: 'The test proves the pattern rule.', forward_label: 'Proves', reverse_label: 'Proved by' },
 ];
 
 function record(id: string, kind: string, title: string, parent: string, fields: Record<string, string> = {}, body = '', mentions: string[] = []): SpecRecord {

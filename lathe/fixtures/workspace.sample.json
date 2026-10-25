@@ -253,133 +253,171 @@
       "source_kind": "aggregate",
       "target_kind": "aggregate",
       "description": "One aggregate refers to another by ID.",
-      "role": ""
+      "role": "",
+      "forward_label": "Relates to",
+      "reverse_label": "Related to by"
     },
     {
       "relation": "applies",
       "source_kind": "use_case",
       "target_kind": "domain_rule",
       "description": "The use case relies on the domain rule.",
-      "role": ""
+      "role": "",
+      "forward_label": "Applies",
+      "reverse_label": "Applied by"
     },
     {
       "relation": "fulfills",
       "source_kind": "flow",
       "target_kind": "requirement",
       "description": "The flow carries out the requirement.",
-      "role": ""
+      "role": "",
+      "forward_label": "Carries out",
+      "reverse_label": "Carried out in"
     },
     {
       "relation": "fulfills",
       "source_kind": "view",
       "target_kind": "requirement",
       "description": "The view carries out the requirement.",
-      "role": ""
+      "role": "",
+      "forward_label": "Carries out",
+      "reverse_label": "Carried out in"
     },
     {
       "relation": "fulfills",
       "source_kind": "endpoint",
       "target_kind": "requirement",
       "description": "The endpoint carries out the requirement.",
-      "role": ""
+      "role": "",
+      "forward_label": "Carries out",
+      "reverse_label": "Carried out in"
     },
     {
       "relation": "uses",
       "source_kind": "flow",
       "target_kind": "view",
       "description": "The flow passes through the view.",
-      "role": ""
+      "role": "",
+      "forward_label": "Uses",
+      "reverse_label": "Used by"
     },
     {
       "relation": "uses",
       "source_kind": "flow",
       "target_kind": "endpoint",
       "description": "The flow calls the endpoint.",
-      "role": ""
+      "role": "",
+      "forward_label": "Uses",
+      "reverse_label": "Used by"
     },
     {
       "relation": "uses",
       "source_kind": "view",
       "target_kind": "endpoint",
       "description": "The view calls the endpoint.",
-      "role": ""
+      "role": "",
+      "forward_label": "Uses",
+      "reverse_label": "Used by"
     },
     {
       "relation": "satisfies",
       "source_kind": "component",
       "target_kind": "requirement",
       "description": "The component designs or implements the requirement.",
-      "role": "design"
+      "role": "design",
+      "forward_label": "Satisfies",
+      "reverse_label": "Designed by"
     },
     {
       "relation": "satisfies",
       "source_kind": "component",
       "target_kind": "domain_rule",
       "description": "The component enforces the domain rule.",
-      "role": "design"
+      "role": "design",
+      "forward_label": "Satisfies",
+      "reverse_label": "Designed by"
     },
     {
       "relation": "implements",
       "source_kind": "component",
       "target_kind": "endpoint",
       "description": "The component serves the endpoint.",
-      "role": ""
+      "role": "",
+      "forward_label": "Implements",
+      "reverse_label": "Implemented by"
     },
     {
       "relation": "implements",
       "source_kind": "component",
       "target_kind": "view",
       "description": "The component renders the view.",
-      "role": ""
+      "role": "",
+      "forward_label": "Implements",
+      "reverse_label": "Implemented by"
     },
     {
       "relation": "depends_on",
       "source_kind": "component",
       "target_kind": "component",
       "description": "The component calls or imports the other.",
-      "role": ""
+      "role": "",
+      "forward_label": "Depends on",
+      "reverse_label": "Depended on by"
     },
     {
       "relation": "proves",
       "source_kind": "test",
       "target_kind": "requirement",
       "description": "The test proves the requirement.",
-      "role": "proof"
+      "role": "proof",
+      "forward_label": "Proves",
+      "reverse_label": "Proved by"
     },
     {
       "relation": "proves",
       "source_kind": "test",
       "target_kind": "domain_rule",
       "description": "The test proves the domain rule.",
-      "role": "proof"
+      "role": "proof",
+      "forward_label": "Proves",
+      "reverse_label": "Proved by"
     },
     {
       "relation": "about",
       "source_kind": "question",
       "target_kind": "*",
       "description": "The open question concerns that record.",
-      "role": ""
+      "role": "",
+      "forward_label": "About",
+      "reverse_label": "Questions about this"
     },
     {
       "relation": "has_one",
       "source_kind": "entity",
       "target_kind": "entity",
       "description": "The entity holds exactly one of the other entity, as a part of it (one to one).",
-      "role": ""
+      "role": "",
+      "forward_label": "Has one",
+      "reverse_label": "Part of"
     },
     {
       "relation": "has_many",
       "source_kind": "entity",
       "target_kind": "entity",
       "description": "The entity holds any number of the other entity, as parts of it (one to many).",
-      "role": ""
+      "role": "",
+      "forward_label": "Has many",
+      "reverse_label": "Part of"
     },
     {
       "relation": "refers_to",
       "source_kind": "entity",
       "target_kind": "entity",
       "description": "The entity holds a reference to one of the other entity, which may sit in another aggregate or domain (many to one).",
-      "role": ""
+      "role": "",
+      "forward_label": "Refers to",
+      "reverse_label": "Referred to by"
     }
   ],
   "records": [
