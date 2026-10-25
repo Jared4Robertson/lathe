@@ -139,6 +139,35 @@ test.describe('graph', () => {
     expect(product).toBe('none');
   });
 
+  test('LA-EXP-T177 at depth 2 on a domain, every framed box at least 40 px tall on screen shows its title', async ({ page }) => {
+    await openPage(page, `${DOMAIN}?view=graph`);
+    await nodes(page);
+    await page.locator('.graph-depth button', { hasText: '2' }).click();
+    await page.waitForTimeout(1300);
+    const domain = DOMAIN.slice(1);
+    const boxes = await page.evaluate((domain) => {
+      const canvas = document.querySelector('.pane-graph .graph-flow')!.getBoundingClientRect();
+      // The framed picture: the domain, its product at the left edge, and two levels below it (its stages, their folders).
+      const framed = new RegExp(`^(LA|${domain}(/[^/]+){0,2})$`);
+      return [...document.querySelectorAll<HTMLElement>('.pane-graph .react-flow__node[data-id]')]
+        .filter((el) => framed.test(el.dataset.id!))
+        .map((el) => {
+          const r = el.getBoundingClientRect();
+          const title = el.querySelector<HTMLElement>('strong');
+          const t = title?.getBoundingClientRect();
+          return {
+            id: el.dataset.id!,
+            tall: Math.min(r.bottom, canvas.bottom) - Math.max(r.top, canvas.top) >= 40 && r.left >= canvas.left && r.right <= canvas.right,
+            title: title?.textContent?.trim() ?? '',
+            shown: !!t && t.width > 0 && t.height > 0 && getComputedStyle(title!).visibility !== 'hidden',
+          };
+        });
+    }, domain);
+    const tall = boxes.filter((b) => b.tall);
+    expect(tall.length, 'framed boxes 40 px tall or more').toBeGreaterThan(4);
+    for (const b of tall) expect(b.title && b.shown, `${b.id} shows its title`).toBeTruthy();
+  });
+
   test('LA-PLT-T76 move around the ERD', async ({ page }) => {
     await openPage(page, `${DOMAIN}?view=model`);
     await page.locator('.model-flow .react-flow__node').first().waitFor();

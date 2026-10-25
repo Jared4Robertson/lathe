@@ -87,8 +87,10 @@ interface NodeData extends Record<string, unknown> {
   label: boolean;
   /** A group's chevron: down while its members are drawn beside it, right when they are not. */
   open?: boolean;
-  /** How much its content grows with its size (LA-EXP-DR58): 1 for a leaf. */
+  /** How much its box's border and shape grow with its size (LA-EXP-DR58): 1 for a leaf. */
   scale: number;
+  /** How much its text, padding, marks and chevron grow: its scale, or more while zoomed out, so a label reads on screen (LA-EXP-DR60). */
+  text: number;
 }
 interface EdgeData extends Record<string, unknown> {
   relation: string;
@@ -129,8 +131,9 @@ function Marks({ data }: { data: NodeData }) {
   );
 }
 
-/** The node's content scale as a CSS variable: its text, padding, marks and chevron grow in step (LA-EXP-DR58). */
-const scaleStyle = (scale: number): CSSProperties | undefined => (scale !== 1 ? ({ '--node-scale': scale } as CSSProperties) : undefined);
+/** The node's scales as CSS variables: its border and shape (`--box-scale`, LA-EXP-DR58), its text, padding, marks and chevron (`--node-scale`, LA-EXP-DR60). */
+const scaleStyle = (scale: number, text: number): CSSProperties | undefined =>
+  scale !== 1 || text !== 1 ? ({ '--box-scale': scale, '--node-scale': text } as CSSProperties) : undefined;
 
 function GraphNodeView({ data }: NodeProps<Node<NodeData>>) {
   const classes = [
@@ -138,13 +141,13 @@ function GraphNodeView({ data }: NodeProps<Node<NodeData>>) {
     data.group ? 'stage-group' : `stage-${data.stage || 'structural'}`,
     `kind-${data.kind}`,
     data.isFocus ? 'is-focus' : '',
-    data.scale !== 1 ? 'is-scaled' : '',
+    data.text !== 1 ? 'is-scaled' : '',
     data.label ? '' : 'is-plain',
     // A domain is a hexagon (LA-EXP-DR61).
     data.kind === 'domain' && !data.group ? 'is-hexagon' : '',
   ].filter(Boolean).join(' ');
   return (
-    <div className={classes} title={data.group ? `${data.title} (${data.meta.replace(/^Group · /, 'in ')})` : `${data.title} (${data.id})`} style={scaleStyle(data.scale)}>
+    <div className={classes} title={data.group ? `${data.title} (${data.meta.replace(/^Group · /, 'in ')})` : `${data.title} (${data.id})`} style={scaleStyle(data.scale, data.text)}>
       <Handle type="target" position={Position.Left} className="graph-handle" isConnectable={false} />
       <Handle type="source" position={Position.Right} className="graph-handle" isConnectable={false} />
       {data.label && (
@@ -514,10 +517,10 @@ function FilterControls({ index, filters, setFilters, minimap, setMinimap }: Fil
 }
 
 /** A box on the canvas with its place and size, in world coordinates. */
-export interface Box { id: string; x: number; y: number; w: number; h: number; label: boolean }
+export interface Box { id: string; x: number; y: number; w: number; h: number; label: boolean; text: number }
 
 /** The labeled boxes in reading order for the keyboard: column by column, left to right, then top to bottom. Plain boxes are out of the keyboard order. */
-export function keyboardOrder(boxes: readonly Box[]): string[] {
+export function keyboardOrder(boxes: readonly Pick<Box, 'id' | 'x' | 'y' | 'label'>[]): string[] {
   return boxes.filter((b) => b.label).sort((a, b) => a.x - b.x || a.y - b.y).map((b) => b.id);
 }
 
@@ -559,20 +562,20 @@ function marksOf(index: SpecIndex, id: string) {
 }
 
 /** A box's data: what it shows and how it is named. */
-function boxData(index: SpecIndex, id: string, focus: string, label: boolean, scale: number, open: boolean, graph: Neighborhood): NodeData {
+function boxData(index: SpecIndex, id: string, focus: string, label: boolean, scale: number, text: number, open: boolean, graph: Neighborhood): NodeData {
   const record = index.byId.get(id);
   if (record) {
     const kl = kindLabel(index, record.kind);
-    return { id, kind: record.kind, stage: stageOf(index, record.kind), title: record.title, kindLabel: kl, meta: `${kl} · ${id}`, group: false, ...marksOf(index, id), isFocus: id === focus, label, scale };
+    return { id, kind: record.kind, stage: stageOf(index, record.kind), title: record.title, kindLabel: kl, meta: `${kl} · ${id}`, group: false, ...marksOf(index, id), isFocus: id === focus, label, scale, text };
   }
   if (id.startsWith('file:')) {
     const node = graph.nodes.find((n) => n.id === id);
-    return { id, kind: FILE_KIND, stage: 'file', title: node?.title ?? id.slice(5), kindLabel: 'File', meta: 'File', group: false, errors: 0, warnings: 0, gaps: [], isFocus: false, label, scale };
+    return { id, kind: FILE_KIND, stage: 'file', title: node?.title ?? id.slice(5), kindLabel: 'File', meta: 'File', group: false, errors: 0, warnings: 0, gaps: [], isFocus: false, label, scale, text };
   }
   const owner = parseGroupId(id)?.parent ?? id;
   const node = graph.nodes.find((n) => n.id === id);
   const gOwner = node?.group?.owner ?? owner;
-  return { id, kind: treeGroup(index, id)?.kind ?? 'folder', stage: 'group', title: groupLabel(index, id), kindLabel: 'Group', meta: `Group · ${gOwner}`, group: true, ...marksOf(index, id), isFocus: id === focus, label, scale, open };
+  return { id, kind: treeGroup(index, id)?.kind ?? 'folder', stage: 'group', title: groupLabel(index, id), kindLabel: 'Group', meta: `Group · ${gOwner}`, group: true, ...marksOf(index, id), isFocus: id === focus, label, scale, text, open };
 }
 
 /** The accessible name of a labeled box. */
@@ -754,10 +757,10 @@ function GraphCanvas({ index, graph, depth, filters, onNavigate, minimap, onPeek
   // ---- The boxes and lines ----
   const boxes = useMemo((): Box[] => {
     if (tracePlaced) {
-      return graph.nodes.map((n) => ({ id: n.id, ...tracePlaced.positions.get(n.id)!, w: tracePlaced.widths.get(n.id)!, h: tracePlaced.heights.get(n.id)!, label: true }));
+      return graph.nodes.map((n) => ({ id: n.id, ...tracePlaced.positions.get(n.id)!, w: tracePlaced.widths.get(n.id)!, h: tracePlaced.heights.get(n.id)!, label: true, text: 1 }));
     }
     if (!drawn) return [];
-    return drawn.boxes.map((b) => { const n = map.nodes.get(b.id)!; return { id: b.id, x: n.x, y: n.y, w: n.w, h: n.h, label: b.label }; });
+    return drawn.boxes.map((b) => { const n = map.nodes.get(b.id)!; return { id: b.id, x: n.x, y: n.y, w: n.w, h: n.h, label: b.label, text: b.text }; });
   }, [tracePlaced, graph, drawn, map]);
   const order = useMemo(() => keyboardOrder(boxes), [boxes]);
 
@@ -766,7 +769,7 @@ function GraphCanvas({ index, graph, depth, filters, onNavigate, minimap, onPeek
     const nodes: FlowNode[] = boxes.map((b) => {
       const n = map.nodes.get(b.id);
       const open = !tracing && !!n && n.children.some((c) => byId.has(c));
-      const data = boxData(index, b.id, focus, b.label, contentScale(b.w, b.h), open, graph);
+      const data = boxData(index, b.id, focus, b.label, contentScale(b.w, b.h), b.text, open, graph);
       return {
         id: b.id,
         type: 'box',

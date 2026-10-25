@@ -318,9 +318,9 @@ describe('the map on the page', () => {
     // The domain spans its stages, and its content grows with it.
     expect(height('P-D')).toBeGreaterThan(height('P-D/define') + height('P-D/design'));
     expect(Number(scale('P-D'))).toBeGreaterThan(1);
-    // A leaf sets no scale.
+    // A leaf's box keeps a leaf's scale (its text may grow to read while zoomed out).
     const leaf = [...document.querySelectorAll<HTMLElement>('.react-flow__node')].find((el) => parseFloat(el.style.height) === 56)!;
-    expect(leaf.querySelector<HTMLElement>('.graph-node')!.style.getPropertyValue('--node-scale')).toBe('');
+    expect(['', '1']).toContain(leaf.querySelector<HTMLElement>('.graph-node')!.style.getPropertyValue('--box-scale'));
     // Every parent line is level.
     const lines = [...document.querySelectorAll<SVGPathElement>('.react-flow__edge-path.rel-structure')];
     expect(lines.length).toBeGreaterThan(3);
