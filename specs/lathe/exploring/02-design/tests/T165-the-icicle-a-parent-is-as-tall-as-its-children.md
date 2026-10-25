@@ -8,4 +8,4 @@ run_by: app/test/graph/map.test.ts
 links:
   proves: [LA-EXP-DR57, LA-EXP-UC04-R08]
 ---
-Builds the maps of three workspaces and expects every leaf one node high, every parent's children stacked from its top to its bottom a row gap apart, each child in the next level right of it, no two boxes in a level overlapping, and the tree the nav's.
+Builds the maps of three workspaces and expects every leaf at least one node high (one node high in a synthetic tree whose labels need no room), every parent's children stacked from its top to its bottom a row gap apart, each child in the next level right of it, no two boxes in a level overlapping, and the tree the nav's.

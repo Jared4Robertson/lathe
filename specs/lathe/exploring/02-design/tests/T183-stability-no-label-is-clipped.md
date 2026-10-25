@@ -8,4 +8,4 @@ run_by: app/stability/graph.spec.ts
 links:
   proves: [LA-EXP-DR58]
 ---
-In light and dark, on the Exploring domain and its Define stage at depths 1 to 3 and zoomed in twice, expects every labeled box in the canvas to fit each of its lines: its scroll width at most its client width, its scroll height at most its client height, and the line inside its box.
+In light and dark, on the Exploring domain and its Define stage at depths 1 to 3 and zoomed in twice, expects every labeled box in the canvas to fit each of its lines (each line the map broke its kind and ID line and its title into): its scroll width at most its client width, its scroll height at most its client height, and the line inside its box.

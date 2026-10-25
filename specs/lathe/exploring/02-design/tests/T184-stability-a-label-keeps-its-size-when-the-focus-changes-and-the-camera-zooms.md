@@ -8,4 +8,4 @@ run_by: app/stability/graph.spec.ts
 links:
   proves: [LA-EXP-DR58, LA-EXP-DR60]
 ---
-Opens the Exploring domain's graph, reads its Design stage's title font size, focuses the stage and then zooms in, and expects the font size in map units unchanged each time and the title's size on screen to change only with the camera's zoom.
+Opens the Exploring domain's graph, reads its Design stage's title font size and its lines, focuses the stage and then zooms in, and expects the font size in map units and the lines unchanged each time, and the title's size on screen to change only with the camera's zoom.
