@@ -821,7 +821,7 @@ function GraphCanvas({ index, graph, onNavigate: navigate, onToggle, minimap, on
     });
     // A leaving record keeps its ID and its element, marked as leaving, so React Flow keeps the box it
     // drew rather than drawing it anew under another ID (which made a re-center of 200 boxes
-    // remount every box that left; LA-PAT-APP-UX-R30). It can't be clicked or focused. A record that
+    // remount every box that left; LA-PAT-APP-UX-R11). It can't be clicked or focused. A record that
     // comes back into the picture is drawn as itself again, and its leaving box is dropped.
     const stillLeaving = (shownNodes.current ?? []).filter((n) => isLeaving(n) && !byId.has(n.id));
     const leavingNodes: FlowNode[] = reduced ? [] : [

@@ -1,4 +1,4 @@
-// The app's performance budgets (LA-PAT-APP-UX-R30), judged on the production build in Chromium on
+// The app's performance budgets (LA-PAT-APP-UX-R11), judged on the production build in Chromium on
 // the dev machine. The engine's budgets are in lathe/perf/engine.ts (LA-CHK-DR310).
 
 export const BUDGETS = {
@@ -12,7 +12,7 @@ export const BUDGETS = {
    * Main-thread work for a graph re-center at depth 3, from the click until the glide has ended. The
    * 100 ms first asked for is not met at depth 3: a re-center there adds or removes up to 200 boxes, and the
    * 320 ms glide redraws every moving box and edge in each of its 20 frames (about 10 ms a frame), so
-   * most of the work is the motion itself (LA-PAT-APP-UX-R30).
+   * most of the work is the motion itself (LA-PAT-APP-UX-R11).
    */
   recenterMs: 500,
   /**

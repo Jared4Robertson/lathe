@@ -43,7 +43,7 @@ export function EdgeHints({ centers, wrapper }: { centers: readonly Point[]; wra
   const width = wrapper.current?.clientWidth ?? 0;
   const height = wrapper.current?.clientHeight ?? 0;
   // The counts, as one key: the camera moves every frame of a glide, but the chips are drawn again
-  // only when a count changes (LA-PAT-APP-UX-R30). The canvas's size in the store redraws them on a resize.
+  // only when a count changes (LA-PAT-APP-UX-R11). The canvas's size in the store redraws them on a resize.
   const key = useStore((s) => {
     const [x, y, zoom] = s.transform;
     const p = pastEdges(centers, { x, y, zoom }, wrapper.current?.clientWidth ?? s.width, wrapper.current?.clientHeight ?? s.height);

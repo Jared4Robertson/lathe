@@ -1,4 +1,4 @@
-// The performance suite's server (LA-PAT-APP-UX-R30): builds the app for production into a temporary
+// The performance suite's server (LA-PAT-APP-UX-R11): builds the app for production into a temporary
 // folder, writes the build's chunk sizes to perf/results/bundle.json, and serves the build with
 // `lathe serve`'s server over the copy of the specs that perf/playwright.config.ts made, on the
 // port it chose (never 5199). The budgets are judged on the production build, which is what a

@@ -2,7 +2,7 @@ import { loadavg } from 'node:os';
 import { expect, test, type CDPSession, type Page } from '@playwright/test';
 import { MAX_LOAD } from './budgets';
 
-// How the performance suite measures (LA-PAT-APP-UX-R30):
+// How the performance suite measures (LA-PAT-APP-UX-R11):
 // - main-thread work: Chromium's own TaskDuration (every task on the page's main thread: script,
 //   style, layout, paint, garbage collection), read through the DevTools protocol before and after
 //   a step, so the work is counted whether or not it came in long frames;

@@ -5,7 +5,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { BUDGETS } from './budgets';
 import { heapMb, installProbes, quiet, record, work } from './measure';
 
-// LA-BRW-T600 to T605: the app's performance budgets (LA-PAT-APP-UX-R30), on the production build.
+// LA-BRW-T600 to T605: the app's performance budgets (LA-PAT-APP-UX-R11), on the production build.
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const RECORD = '/LA-BRW-UC91';

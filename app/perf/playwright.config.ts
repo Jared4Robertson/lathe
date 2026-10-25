@@ -5,7 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { defineConfig, devices } from '@playwright/test';
 
-// The performance suite (LA-PAT-APP-UX-R30): Playwright with Chromium, one worker. It builds the app
+// The performance suite (LA-PAT-APP-UX-R11): Playwright with Chromium, one worker. It builds the app
 // for production and serves it with `lathe serve`'s server (perf/serve.ts) on a free port, never
 // 5199, over a copy of this repo's specs, then measures the first load, view switches, graph
 // re-centers, the Model view and memory against the budgets in perf/budgets.ts. Run it with
