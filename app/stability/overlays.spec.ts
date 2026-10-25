@@ -9,7 +9,7 @@ import { FOCUS, RECORD, SHELL } from './scenarios';
 test.describe('overlays', () => {
   test('LA-BRW-T487 a tooltip shows in place', async ({ page }) => {
     await openPage(page, `${RECORD}?view=wiki,graph`);
-    const button = page.locator('.pane-graph > .pane-bar .pane-views button').first();
+    const button = page.locator('.page-bar .pane-views button').first();
     const r = await step(page, 'overlays', 'tooltip on hover', { keys: [...SHELL, ...FOCUS, '.tooltip'] }, async () => {
       await button.hover();
       await page.locator('.tooltip').waitFor();
@@ -17,7 +17,7 @@ test.describe('overlays', () => {
     });
     expectStable(r);
     const next = await step(page, 'overlays', 'tooltip moving to the next button', { keys: [...SHELL, ...FOCUS] }, async () => {
-      await page.locator('.pane-graph > .pane-bar .pane-views button').nth(1).hover();
+      await page.locator('.page-bar .pane-views button').nth(1).hover();
       await page.waitForTimeout(400);
     });
     expectStable(next);

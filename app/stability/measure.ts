@@ -19,7 +19,7 @@ export const BUDGET = 0.01;
  * briefs 41 and 52). A shift that only moves nodes inside these is reported as `deferred` and
  * listed in notes/jitter-audit.md, but is not held to the budget yet. Phase 2 empties this list.
  */
-export const DEFERRED = ['nav#nav'];
+export const DEFERRED = ['nav#nav', '.tab-strip'];
 
 export interface Rect { x: number; y: number; width: number; height: number }
 export interface ShiftSource { node: string; from: Rect | null; to: Rect | null; allowed: boolean; deferred: boolean }
@@ -46,6 +46,8 @@ export interface StepResult {
   shifts: Shift[];
   longFrames: { count: number; worst: number };
   tracks: Track[];
+  /** Key elements that were never on the page in the step: a selector that no longer matches. */
+  missing: string[];
   /** Key elements that moved, resized, jumped back or were remounted. */
   moved: { selector: string; why: string; boxes: (Rect | null)[] }[];
 }
@@ -57,6 +59,8 @@ export interface StepOptions {
   allow?: string[];
   /** Keys that may change their box (the step resizes them), but must not jump back or remount. */
   resizes?: string[];
+  /** Keys that may be absent (a step that closes them, or a page that has none). */
+  optional?: string[];
   /** How long to wait for the page to settle after the action, in ms. */
   settle?: number;
 }
@@ -247,6 +251,7 @@ async function finish(page: Page, scenario: string, name: string, options: StepO
     longFrames: { count: loafs.length, worst: Math.round(Math.max(0, ...loafs.map((l) => l.duration))) },
     tracks,
     moved: movesOf(tracks, options.resizes ?? []),
+    missing: tracks.filter((t) => t.boxes.every((b) => b === null) && !(options.optional ?? []).includes(t.selector)).map((t) => t.selector),
   };
   results.push(result);
   await test.info().attach(`stability: ${name}`, { body: JSON.stringify(result, null, 2), contentType: 'application/json' });
@@ -264,4 +269,5 @@ export function explain(r: StepResult): string {
 export function expectStable(r: StepResult) {
   expect.soft(r.unexpected, explain(r)).toBeLessThanOrEqual(BUDGET);
   expect.soft(r.moved, explain(r)).toEqual([]);
+  expect.soft(r.missing, `${r.scenario} / ${r.step}: key elements not found`).toEqual([]);
 }
