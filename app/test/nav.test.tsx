@@ -20,20 +20,26 @@ describe('side navigation', () => {
     fireEvent.click(within(nav()).getByRole('button', { name: 'Collapse the navigation' }));
     expect(nav().className).toContain('is-rail');
     expect(document.querySelector('.app')!.className).toContain('nav-collapsed');
-    for (const name of ['Lathe home', 'Diagrams', 'Specs', 'Record format']) {
-      const item = within(nav()).getByLabelText(name);
-      expect(item.getAttribute('title'), name).toBeTruthy();
+    // Each rail item names itself in a tooltip on keyboard focus, with its keys.
+    for (const [name, tip] of [['Lathe home', 'Lathe home g then h'], ['Diagrams', 'Diagrams g then d'], ['Record format', 'Record format g then f'], ['Expand the navigation', 'Expand the navigation Ctrl+B']]) {
+      fireEvent.keyDown(document.body, { key: 'Tab', code: 'Tab' });
+      fireEvent.focus(within(nav()).getByLabelText(name));
+      expect(screen.getByRole('tooltip'), name).toHaveTextContent(tip);
+      fireEvent.blur(within(nav()).getByLabelText(name));
     }
-    expect(within(nav()).getByRole('link', { name: /^Checks: \d+ errors?, \d+ warning/ })).toHaveAttribute('title');
+    fireEvent.keyDown(document.body, { key: 'Tab', code: 'Tab' });
+    fireEvent.focus(within(nav()).getByRole('link', { name: /^Checks for all products: \d+ errors?, \d+ warning/ }));
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Checks for all products Ctrl+Shift+M');
     expect(window.localStorage.getItem('lathe:nav-collapsed')).toBe('true');
 
-    // Remembered on the next visit; the rail's Specs icon opens the nav on that section.
+    // Remembered on the next visit; the rail still lists the spaces, and expands again.
     await openApp('/checks');
     await screen.findByRole('heading', { level: 1, name: 'Checks' });
     expect(nav().className).toContain('is-rail');
-    fireEvent.click(within(nav()).getByRole('button', { name: 'Specs' }));
+    expect(within(within(nav()).getByRole('list', { name: 'Spaces' })).getAllByRole('link').map((a) => a.getAttribute('aria-label'))).toEqual(['Demo shop', 'Notebook']);
+    fireEvent.click(within(nav()).getByRole('button', { name: 'Expand the navigation' }));
     expect(nav().className).not.toContain('is-rail');
-    expect(within(nav()).getByRole('button', { name: /Specs/ })).toHaveAttribute('aria-expanded', 'true');
+    expect(within(nav()).getByRole('button', { name: /^Demo shop/ })).toHaveAttribute('aria-expanded', 'true');
   });
 
   it('LA-BRW-T128 On a narrow screen the nav is a drawer opened from a menu button, closed by Escape, a click outside or choosing a page', async () => {
@@ -63,30 +69,24 @@ describe('side navigation', () => {
     await openApp('/specs/DM/DM-SHOP', { diagrams });
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     const head = (name: RegExp) => within(nav()).getByRole('button', { name });
-    for (const name of [/^Diagrams/, /^Specs/, /^Tools/]) expect(head(name)).toHaveAttribute('aria-expanded', 'true');
+    for (const name of [/^Diagrams/, /^Demo shop/, /^Tools/]) expect(head(name)).toHaveAttribute('aria-expanded', 'true');
     fireEvent.click(head(/^Diagrams/));
     expect(head(/^Diagrams/)).toHaveAttribute('aria-expanded', 'false');
     expect(within(nav()).queryByRole('link', { name: /People and tools/ })).toBeNull();
-    fireEvent.click(head(/^Specs/));
-    expect(within(nav()).queryByRole('link', { name: 'Shopping' })).toBeNull();
-
-    // A product's domains fold too.
-    fireEvent.click(head(/^Specs/));
-    const hide = within(nav()).getByRole('button', { name: 'Hide the domains of Demo shop' });
-    expect(hide).toHaveAttribute('aria-expanded', 'true');
-    fireEvent.click(hide);
+    // The current space's section folds too.
+    fireEvent.click(head(/^Demo shop/));
     expect(within(nav()).queryByRole('link', { name: 'Shopping' })).toBeNull();
 
     // Opening a page in a folded section opens it, and marks the page.
     await openApp('/specs/DM/DM-PAY');
     await screen.findByRole('heading', { level: 1, name: 'Paying' });
-    expect(head(/^Specs/)).toHaveAttribute('aria-expanded', 'true');
+    expect(head(/^Demo shop/)).toHaveAttribute('aria-expanded', 'true');
     expect(within(nav()).getByRole('link', { name: 'Paying' })).toHaveAttribute('aria-current', 'page');
 
     // Long names are cut with a tooltip; checks show errors and warnings apart; the footer.
     await openApp('/diagrams/people', { diagrams });
     expect(within(nav()).getByRole('link', { name: /People and tools/ })).toHaveAttribute('title', diagrams[0].title);
-    const checks = within(nav()).getByRole('link', { name: /^Checks/ });
+    const checks = within(nav()).getByRole('link', { name: /^Checks:/ });
     expect(checks.querySelector('.nav-badge.error')).toHaveTextContent(String(workspace().problems.filter((p) => p.severity === 'error').length));
     expect(checks.querySelector('.nav-badge.warning')).not.toBeNull();
     const foot = nav().querySelector('footer')!;
