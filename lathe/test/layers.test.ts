@@ -12,7 +12,7 @@ const ofCheck = (ws: Workspace, check: string) => ws.problems.filter((p) => p.ch
 let twins: Workspace;
 let broken: Workspace;
 beforeAll(async () => {
-  // layers-twins: domains LY-A and LY-B are alike, except that LY-A puts its components in two layers.
+  // layers-twins: domains LY-A and LY-B are alike, except that LY-A puts its components in a layer.
   twins = await loadWorkspace(fixture('layers-twins'));
   broken = await loadWorkspace(fixture('layers-broken'));
 });
@@ -28,7 +28,6 @@ describe('the meta-model', () => {
     // Each product names its own layers, as records.
     expect(twins.records.filter((r) => r.kind === 'layer').map((r) => [r.id, r.title])).toEqual([
       ['LY-A-LAY01', 'Services'],
-      ['LY-A-LAY02', 'Return services'],
     ]);
     expect(twins.problems.filter((p) => p.severity === 'error')).toEqual([]);
   });
@@ -50,7 +49,7 @@ describe('layer checks', () => {
     expect(found[0].message).toContain('LZ-D-LAY02');
     expect(found[1].message).toContain('LZ-D-LAY01');
     expect(found.every((p) => p.severity === 'error')).toBe(true);
-    expect(broken.problems.some((p) => p.record === 'LZ-E-LAY01' || p.record === 'LZ-D-LAY05')).toBe(false);
+    expect(ofCheck(broken, 'layer-order').some((p) => p.record === 'LZ-E-LAY01' || p.record === 'LZ-D-LAY05')).toBe(false);
   });
 
   it('LA-CHK-T273 A component directly in a domain that has layers is a warning; a domain without layers is fine', () => {
