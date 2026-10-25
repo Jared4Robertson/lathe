@@ -1,7 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { fireEvent, waitFor } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import { navigate } from '../src/router';
 import { openApp, startAtDepth } from './helpers';
 import './graph/setup';
 import { testWorkspace } from './graph/workspace';
@@ -138,5 +139,34 @@ describe('nothing jumps (LA-PAT-APP-UX-R08)', () => {
     // The ERD is fitted before its first paint, and observes its size once (each new observer reported the size again and cut the glide short).
     expect(model).toMatch(/useLayoutEffect\(\(\) => \{\n\s*if \(!placed\) return;\n\s*fit\(fitted\.current\);/);
     expect(model).toMatch(/observer\.observe\(el\);\n\s*return \(\) => observer\.disconnect\(\);\n\s*\}, \[\]\);/);
+  });
+
+  it('LA-BRW-T488 a move made outside the nav leaves its rows where they are: the closed row holding the page is marked, and opens the branch down to it', async () => {
+    window.sessionStorage.clear();
+    await openApp('/specs/DM');
+    await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
+    const panel = () => screen.getByRole('navigation', { name: 'Main' }).querySelector<HTMLElement>('.space-items')!;
+    const unfold = () => within(panel()).getByRole('button', { name: 'Unfold Shopping' });
+    expect(unfold()).toHaveAttribute('aria-expanded', 'false');
+    // A link in the page (here, the address set from outside the nav) moves to a requirement inside Shopping.
+    act(() => navigate('/records/DM-SHOP-UC01-R01'));
+    await screen.findByRole('heading', { level: 1, name: 'The basket shows the new item' });
+    expect(unfold()).toHaveAttribute('aria-expanded', 'false');
+    expect(within(panel()).queryByRole('list', { name: 'Folders of Shopping' })).toBeNull();
+    expect(unfold().closest('.nav-row')).toHaveClass('holds-current');
+    // Opening the marked row opens the branch down to the page.
+    fireEvent.click(unfold());
+    expect(within(await within(panel()).findByRole('list', { name: 'Capabilities of Shopping' })).getByRole('link', { name: 'Add an item to the basket' })).toBeInTheDocument();
+  });
+
+  it('LA-BRW-T488 the fonts are the app\'s own, preloaded, and never swap in', () => {
+    const html = readFileSync(join(__dirname, '..', 'index.html'), 'utf8');
+    expect(html).not.toMatch(/fonts\.googleapis|fonts\.gstatic/);
+    expect(html.match(/<link rel="preload" href="\/fonts\/[^"]+\.woff2" as="font" type="font\/woff2" crossorigin \/>/g)?.length).toBe(6);
+    const fonts = readFileSync(join(__dirname, '..', 'src', 'fonts.css'), 'utf8');
+    const faces = fonts.match(/@font-face \{[^}]*\}/g) ?? [];
+    expect(faces.length).toBe(12);
+    for (const face of faces) expect(face).toMatch(/font-display: optional;/);
+    for (const family of ['archivo', 'public-sans', 'jetbrains-mono']) expect(readFileSync(join(__dirname, '..', 'public', 'fonts', family, 'OFL.txt'), 'utf8')).toMatch(/SIL Open Font License/);
   });
 });
