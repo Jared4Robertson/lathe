@@ -233,7 +233,7 @@ export function FitnessPanel({ index, productId }: { index: SpecIndex; productId
           <>
             <time dateTime={f.fields.date}>{f.fields.date}</time>
             <Score value={f.fields.score} />
-            <Link to={recordPath(f.id)} className="record-link"><code>{f.id}</code><span>{f.title}</span></Link>
+            <Link to={recordPath(f.id)} className="record-link row-link"><code>{f.id}</code><span>{f.title}</span></Link>
           </>
         )}
       />
