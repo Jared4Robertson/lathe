@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
 import {
   Background,
   BaseEdge,
@@ -48,7 +48,7 @@ import {
   type GraphNode,
   type Neighborhood,
 } from './model';
-import { layoutNeighborhood, NODE_HEIGHT, NODE_WIDTH, type Placed } from './layout';
+import { contentScale, drawnTree, heightOf, isTreeEdge, layoutNeighborhood, NODE_HEIGHT, NODE_WIDTH, type Placed } from './layout';
 import { anchorLayout, fadeSets, frameFocus } from './camera';
 import { EdgeHints } from './hints';
 import { canvasProgress, edgeMove, readMotion, tweenEdge, type EdgeEnds, type EdgeFrame, type EdgePhase } from './motion';
@@ -74,6 +74,8 @@ interface NodeData extends Record<string, unknown> {
   onToggle?: () => void;
   /** A box that left the picture and fades out where it was: it can't be clicked or focused. */
   leaving?: boolean;
+  /** How much its content grows with its height (LA-BRW-DR331): 1 for a leaf. */
+  scale?: number;
 }
 interface EdgeData extends Record<string, unknown> {
   relation: string;
@@ -124,18 +126,38 @@ export function shortTitle(title: string, max = 28): string {
   return `${(space > max / 2 ? cut.slice(0, space) : cut).trimEnd()}…`;
 }
 
+/** The node's content scale as a CSS variable: its text, padding, marks and chevron grow in step (LA-BRW-DR331). */
+const scaleStyle = (data: NodeData): CSSProperties | undefined =>
+  data.scale && data.scale !== 1 ? ({ '--node-scale': data.scale } as CSSProperties) : undefined;
+/** A scaled node's class: its kind-and-ID line may break in two. */
+const scaled = (data: NodeData) => (data.scale && data.scale !== 1 ? ' is-scaled' : '');
+
+/** What a node's box shows: its kind-and-ID line, in its parts (the kind, then "· ID"), and its title; the text its scale is fitted to. */
+export function nodeText(node: GraphNode, kind: string): { meta: string[]; title: string } {
+  if (node.more) return { meta: [], title: node.title };
+  if (node.group) return { meta: ['Group', `· ${node.group.owner}`], title: node.title };
+  const quiet = node.context === true;
+  return { meta: node.kind !== FILE_KIND && !quiet ? [kind, `· ${node.id}`] : [kind], title: quiet ? shortTitle(node.title) : node.title };
+}
+
+/** The kind-and-ID line: one line with an ellipsis, which a scaled node may break in two between its parts (LA-BRW-DR331). */
+const Meta = ({ parts }: { parts: string[] }) => (
+  <small>{parts.map((p, i) => <Fragment key={i}>{i > 0 && ' '}<span>{p}</span></Fragment>)}</small>
+);
+
 function GraphNodeView({ data }: NodeProps<FlowNode>) {
   const { node } = data;
   // A context node is quiet: its kind and a short title; its ID and full title show on hover.
   const quiet = node.context === true;
   return (
     <div
-      className={`graph-node stage-${node.stage || 'structural'} kind-${node.kind}${data.isFocus ? ' is-focus' : ''}`}
+      className={`graph-node stage-${node.stage || 'structural'} kind-${node.kind}${data.isFocus ? ' is-focus' : ''}${scaled(data)}`}
       title={`${node.title} (${node.id})`}
+      style={scaleStyle(data)}
     >
       <Handle type="target" position={Position.Left} className="graph-handle" isConnectable={false} />
       <Handle type="source" position={Position.Right} className="graph-handle" isConnectable={false} />
-      <small>{data.kindLabel}{node.kind !== FILE_KIND && !quiet && <> · {node.id}</>}</small>
+      <Meta parts={nodeText(node, data.kindLabel).meta} />
       <strong>{quiet ? shortTitle(node.title) : node.title}</strong>
       <Marks data={data} />
     </div>
@@ -146,7 +168,7 @@ function GraphNodeView({ data }: NodeProps<FlowNode>) {
 function MoreNodeView({ data }: NodeProps<FlowNode>) {
   const { node } = data;
   return (
-    <div className="graph-node stage-more" title={`${node.title}: center on ${node.more!.target}`}>
+    <div className={`graph-node stage-more${scaled(data)}`} title={`${node.title}: center on ${node.more!.target}`} style={scaleStyle(data)}>
       <Handle type="target" position={Position.Left} className="graph-handle" isConnectable={false} />
       <Handle type="source" position={Position.Right} className="graph-handle" isConnectable={false} />
       <strong>{node.title}</strong>
@@ -160,13 +182,14 @@ function GroupNodeView({ data }: NodeProps<FlowNode>) {
   const open = node.group!.open;
   return (
     <div
-      className={`graph-node stage-group kind-${node.kind}${open ? ' is-open' : ' is-folded'}${data.isFocus ? ' is-focus' : ''}`}
+      className={`graph-node stage-group kind-${node.kind}${open ? ' is-open' : ' is-folded'}${data.isFocus ? ' is-focus' : ''}${scaled(data)}`}
       title={`${node.title} in ${node.group!.owner} (${open ? 'open' : 'folded'})`}
       data-open={open}
+      style={scaleStyle(data)}
     >
       <Handle type="target" position={Position.Left} className="graph-handle" isConnectable={false} />
       <Handle type="source" position={Position.Right} className="graph-handle" isConnectable={false} />
-      <small>Group · {node.group!.owner}</small>
+      <Meta parts={nodeText(node, 'Group').meta} />
       <strong>{node.title}</strong>
       <Marks data={data} />
       {/* Clicking the group goes to it; its chevron opens or folds it in place. The center group is always open. */}
@@ -190,8 +213,10 @@ function GroupNodeView({ data }: NodeProps<FlowNode>) {
 const isLeaving = (n: FlowNode) => n.data.leaving === true;
 
 const NO_ENDS: EdgeEnds = { source: { x: 0, y: 0 }, target: { x: 0, y: 0 } };
-const sameEnds = (a: EdgeEnds, b: EdgeEnds) =>
-  a.source.x === b.source.x && a.source.y === b.source.y && a.target.x === b.target.x && a.target.y === b.target.y;
+/** An edge's ends as one key: where its boxes are, how tall, and whether it is a tree connector. */
+const endsKey = (e: EdgeEnds) =>
+  `${e.source.x} ${e.source.y} ${e.target.x} ${e.target.y} ${e.sourceHeight ?? NODE_HEIGHT} ${e.targetHeight ?? NODE_HEIGHT} ${e.tree ? 'tree' : ''}`;
+const sameEnds = (a: EdgeEnds, b: EdgeEnds) => endsKey(a) === endsKey(b);
 
 const linePath = ([a, b]: [{ x: number; y: number }, { x: number; y: number }]) => `M ${a.x} ${a.y} L ${b.x} ${b.y}`;
 const labelTransform = ([a, b]: [{ x: number; y: number }, { x: number; y: number }]) =>
@@ -231,7 +256,7 @@ function useEdgeFrame(ends: EdgeEnds, phase: EdgePhase, parts: EdgeParts): EdgeF
     return tweenEdge(from, from, 1);
   });
   const drawn = useRef<EdgeFrame | null>(null);
-  const key = `${ends.source.x} ${ends.source.y} ${ends.target.x} ${ends.target.y} ${phase}`;
+  const key = `${endsKey(ends)} ${phase}`;
   useLayoutEffect(() => {
     const { from, to } = edgeMove(phase, ends, drawn.current);
     const motion = readMotion();
@@ -288,10 +313,10 @@ function GraphEdgeView({ id, data, markerEnd, source, target }: EdgeProps<FlowEd
   );
 }
 
-/** Where each node's two handles are: the middle of its left and right sides. */
-const NODE_HANDLES = [
-  { type: 'target' as const, position: Position.Left, x: 0, y: NODE_HEIGHT / 2, width: 1, height: 1 },
-  { type: 'source' as const, position: Position.Right, x: NODE_WIDTH, y: NODE_HEIGHT / 2, width: 1, height: 1 },
+/** Where a node's two handles are: the middle of its left and right sides. */
+const nodeHandles = (height: number) => [
+  { type: 'target' as const, position: Position.Left, x: 0, y: height / 2, width: 1, height: 1 },
+  { type: 'source' as const, position: Position.Right, x: NODE_WIDTH, y: height / 2, width: 1, height: 1 },
 ];
 
 const nodeTypes = { record: GraphNodeView, folder: GroupNodeView, more: MoreNodeView };
@@ -638,22 +663,10 @@ function FilterControls({ index, filters, setFilters, ring, setRing, minimap, se
   );
 }
 
-/**
- * Nodes in reading order for the keyboard: column by column (tiers and traces both read left to
- * right), ring by ring for the radial fallback. Context nodes are out of focus, so they are left out.
- */
-export function keyboardOrder(graph: Neighborhood, placed: Pick<Placed, 'positions' | 'layout'>) {
+/** Focus nodes in reading order for the keyboard: column by column, left to right, then top to bottom. Context nodes are out of focus, so they are left out. */
+export function keyboardOrder(graph: Neighborhood, placed: Pick<Placed, 'positions'>) {
   const at = (id: string) => placed.positions.get(id) ?? { x: 0, y: 0 };
-  const angle = (id: string) => {
-    const p = at(id);
-    const a = Math.atan2(p.x + NODE_WIDTH / 2, -(p.y + NODE_HEIGHT / 2));
-    return a < 0 ? a + 2 * Math.PI : a;
-  };
-  const compare =
-    placed.layout === 'radial'
-      ? (a: GraphNode, b: GraphNode) => a.distance - b.distance || angle(a.id) - angle(b.id)
-      : (a: GraphNode, b: GraphNode) => at(a.id).x - at(b.id).x || at(a.id).y - at(b.id).y;
-  return graph.nodes.filter((n) => !n.context).sort(compare).map((n) => n.id);
+  return graph.nodes.filter((n) => !n.context).sort((a, b) => at(a.id).x - at(b.id).x || at(a.id).y - at(b.id).y).map((n) => n.id);
 }
 
 /** Only the focus nodes' positions: the camera frames them, and the context ring may run past the canvas's edges. */
@@ -667,20 +680,20 @@ export function focusPositions(graph: Neighborhood, positions: ReadonlyMap<strin
 }
 
 /** The centers of the context nodes, in world coordinates: what the edge hints count. */
-export function contextCenters(graph: Neighborhood, positions: ReadonlyMap<string, { x: number; y: number }>): { x: number; y: number }[] {
+export function contextCenters(graph: Neighborhood, positions: ReadonlyMap<string, { x: number; y: number }>, heights?: ReadonlyMap<string, number>): { x: number; y: number }[] {
   return graph.nodes.flatMap((n) => {
     const p = positions.get(n.id);
-    return n.context && p ? [{ x: p.x + NODE_WIDTH / 2, y: p.y + NODE_HEIGHT / 2 }] : [];
+    return n.context && p ? [{ x: p.x + NODE_WIDTH / 2, y: p.y + heightOf(heights, n.id) / 2 }] : [];
   });
 }
 
 /** The viewport that fits every box in the canvas, centered, never zoomed in past 1. */
-export function fitPositions(positions: Map<string, { x: number; y: number }>, width: number, height: number, padding = 40) {
-  const all = [...positions.values()];
-  const minX = Math.min(...all.map((p) => p.x));
-  const minY = Math.min(...all.map((p) => p.y));
-  const maxX = Math.max(...all.map((p) => p.x + NODE_WIDTH));
-  const maxY = Math.max(...all.map((p) => p.y + NODE_HEIGHT));
+export function fitPositions(positions: Map<string, { x: number; y: number }>, width: number, height: number, padding = 40, heights?: ReadonlyMap<string, number>) {
+  const all = [...positions];
+  const minX = Math.min(...all.map(([, p]) => p.x));
+  const minY = Math.min(...all.map(([, p]) => p.y));
+  const maxX = Math.max(...all.map(([, p]) => p.x + NODE_WIDTH));
+  const maxY = Math.max(...all.map(([id, p]) => p.y + heightOf(heights, id)));
   const zoom = Math.max(0.1, Math.min(1, (width - 2 * padding) / (maxX - minX), (height - 2 * padding) / (maxY - minY)));
   return { x: width / 2 - ((minX + maxX) / 2) * zoom, y: height / 2 - ((minY + maxY) / 2) * zoom, zoom };
 }
@@ -697,7 +710,6 @@ function GraphCanvas({ index, graph, onNavigate: navigate, onToggle, minimap, on
   const chipTargets = useMemo(() => new Map(graph.nodes.filter((n) => n.more).map((n) => [n.id, n.more!.target])), [graph]);
   const onNavigate = useCallback((id: string) => navigate(chipTargets.get(id) ?? id), [navigate, chipTargets]);
   const [placed, setPlaced] = useState<(Placed & { graph: Neighborhood }) | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const wrapper = useRef<HTMLDivElement>(null);
   const active = useRef<string | null>(null);
   /** After a keyboard action, the node to put keyboard focus on once the new picture is drawn. */
@@ -706,24 +718,17 @@ function GraphCanvas({ index, graph, onNavigate: navigate, onToggle, minimap, on
   /** The positions last laid out, in world coordinates, so the next picture can anchor on its focus. */
   const laidOut = useRef<Map<string, { x: number; y: number }> | null>(null);
 
-  useEffect(() => {
-    let live = true;
-    layoutNeighborhood(graph).then(
-      (result) => {
-        if (!live) return;
-        // The new focus keeps its place in the world when it was in the last picture (LA-BRW-DR180).
-        const positions = anchorLayout(result.positions, graph.focus, laidOut.current);
-        laidOut.current = positions;
-        setPlaced({ ...result, positions, graph });
-        setError(null);
-      },
-      (e) => { if (live) setError(e instanceof Error ? e.message : String(e)); },
-    );
-    return () => { live = false; };
+  // Laid out before paint: the layout is quick and synchronous, so no frame shows the old picture.
+  useLayoutEffect(() => {
+    const result = layoutNeighborhood(graph);
+    // The new focus keeps its place in the world when it was in the last picture (LA-BRW-DR180).
+    const positions = anchorLayout(result.positions, graph.focus, laidOut.current);
+    laidOut.current = positions;
+    setPlaced({ ...result, positions, graph });
   }, [graph]);
 
   const order = useMemo(() => (placed ? keyboardOrder(placed.graph, placed) : []), [placed]);
-  const centers = useMemo(() => (placed ? contextCenters(placed.graph, placed.positions) : []), [placed]);
+  const centers = useMemo(() => (placed ? contextCenters(placed.graph, placed.positions, placed.heights) : []), [placed]);
 
   /** The edges last drawn, so the next picture knows which edges persist, which are new and which leave. */
   const shown = useRef<FlowEdge[]>([]);
@@ -732,8 +737,9 @@ function GraphCanvas({ index, graph, onNavigate: navigate, onToggle, minimap, on
   const drewPicture = useRef(false);
   const { nodes, edges, leaving, leavingNodes } = useMemo(() => {
     if (!placed) return { nodes: [] as FlowNode[], edges: [] as FlowEdge[], leaving: [] as FlowEdge[], leavingNodes: [] as FlowNode[] };
-    const { graph: g, positions } = placed;
+    const { graph: g, positions, heights } = placed;
     const byId = new Map(g.nodes.map((n) => [n.id, n]));
+    const tree = g.mode === 'hierarchy' ? drawnTree(g).parentOf : new Map<string, string>();
     const reduced = readMotion().reduced;
     // Records new to the picture fade in at their place; records that left fade out where they were.
     const drawnBefore = shownNodes.current?.filter((n) => !isLeaving(n)) ?? null;
@@ -744,24 +750,28 @@ function GraphCanvas({ index, graph, onNavigate: navigate, onToggle, minimap, on
     const nodes: FlowNode[] = [...order, ...contextIds].map((id) => {
       const node = byId.get(id)!;
       const isFocus = id === g.focus;
+      const height = heightOf(heights, id);
+      const kind = node.more ? '' : node.group ? 'Group' : node.kind === FILE_KIND ? 'File' : kindLabel(index, node.kind);
+      const text = nodeText(node, kind);
+      const scale = contentScale(height, text.title, text.meta);
       const classes = [fades.entering.has(id) && !reduced ? 'is-entering' : '', node.context ? 'is-context' : ''].filter(Boolean).join(' ');
       const base = {
         id,
         position: positions.get(id) ?? { x: 0, y: 0 },
         width: NODE_WIDTH,
-        height: NODE_HEIGHT,
+        height,
         draggable: false,
         connectable: false,
         selectable: false,
         // Saying where the handles are means React Flow never has to measure a node again when the
         // picture changes; while it measured, every edge was dropped for a frame and drawn anew, so
         // nothing could carry it from its old place to its new one.
-        handles: NODE_HANDLES,
+        handles: nodeHandles(height),
         ...(classes ? { className: classes } : {}),
         ...(node.context ? { focusable: false, domAttributes: { 'aria-hidden': true } } : {}),
       };
       if (node.more) {
-        return { ...base, type: 'more', data: { node, kindLabel: '', errors: 0, warnings: 0, gaps: [], isFocus: false } };
+        return { ...base, type: 'more', data: { node, kindLabel: '', errors: 0, warnings: 0, gaps: [], isFocus: false, scale } };
       }
       if (node.group) {
         const marks = groupMarks(index, id);
@@ -770,7 +780,7 @@ function GraphCanvas({ index, graph, onNavigate: navigate, onToggle, minimap, on
           type: 'folder',
           ...(node.context ? {} : { ariaLabel: `Group ${node.title} in ${node.group.owner}, ${node.group.open ? 'open' : 'folded'}${isFocus ? ' (center)' : ''}` }),
           // The center group is always open, and a context group is out of focus: neither has a chevron.
-          data: { node, kindLabel: 'Group', ...marks, isFocus, onToggle: isFocus || node.context ? undefined : () => onToggle(id, node.group!.open) },
+          data: { node, kindLabel: 'Group', ...marks, isFocus, scale, onToggle: isFocus || node.context ? undefined : () => onToggle(id, node.group!.open) },
         };
       }
       const problems = node.kind === FILE_KIND ? [] : index.problemsFor.get(id) ?? [];
@@ -786,13 +796,22 @@ function GraphCanvas({ index, graph, onNavigate: navigate, onToggle, minimap, on
           warnings: problems.length - errors,
           gaps: node.kind === FILE_KIND ? [] : gapsFor(index, id),
           isFocus,
+          scale,
         },
       };
     });
     const center = (id: string) => {
       const p = positions.get(id) ?? { x: 0, y: 0 };
-      return { x: p.x + NODE_WIDTH / 2, y: p.y + NODE_HEIGHT / 2 };
+      return { x: p.x + NODE_WIDTH / 2, y: p.y + heightOf(heights, id) / 2 };
     };
+    // A tree connector of the icicle runs level from the parent to the child; other edges join the boxes' centers.
+    const endsOf = (e: { source: string; target: string; relation: string }): EdgeEnds => ({
+      source: center(e.source),
+      target: center(e.target),
+      sourceHeight: heightOf(heights, e.source),
+      targetHeight: heightOf(heights, e.target),
+      ...(isTreeEdge(tree, e) ? { tree: true } : {}),
+    });
     // Edges in the last picture keep moving with their boxes; new ones fade in (not on the first
     // picture, which appears at once); edges that are gone fade out where their boxes go, or stay,
     // until the move is over. A leaving edge is drawn from its own ends, so it is hung on boxes that
@@ -809,7 +828,7 @@ function GraphCanvas({ index, graph, onNavigate: navigate, onToggle, minimap, on
       selectable: false,
       data: {
         relation: e.relation,
-        ends: { source: center(e.source), target: center(e.target) },
+        ends: endsOf(e),
         phase: hadPicture && !before.has(e.id) ? 'enter' : 'persist',
         showLabel: e.source === g.focus || e.target === g.focus,
         label: graphEdgeLabel(index, e),
@@ -821,11 +840,23 @@ function GraphCanvas({ index, graph, onNavigate: navigate, onToggle, minimap, on
     const leaving: FlowEdge[] = reduced ? [] : [...before.values()].filter((e) => !now.has(e.id) && e.data).map((e) => {
       if (e.data!.phase === 'leave') return e; // already fading out from the picture before
       const keep = (id: string, old: { x: number; y: number }) => (positions.has(id) ? center(id) : old);
+      const keepHeight = (id: string, old: number | undefined) => (positions.has(id) ? heightOf(heights, id) : old);
+      const was = e.data!.ends;
       return {
         ...e,
         source: positions.has(e.source) ? e.source : g.focus,
         target: positions.has(e.target) ? e.target : g.focus,
-        data: { ...e.data!, phase: 'leave', ends: { source: keep(e.source, e.data!.ends.source), target: keep(e.target, e.data!.ends.target) } },
+        data: {
+          ...e.data!,
+          phase: 'leave',
+          ends: {
+            ...was,
+            source: keep(e.source, was.source),
+            target: keep(e.target, was.target),
+            sourceHeight: keepHeight(e.source, was.sourceHeight),
+            targetHeight: keepHeight(e.target, was.targetHeight),
+          },
+        },
       };
     });
     // A leaving record keeps its ID and its element, marked as leaving, so React Flow keeps the box it
@@ -881,7 +912,7 @@ function GraphCanvas({ index, graph, onNavigate: navigate, onToggle, minimap, on
     if (!placed || !box || box.width <= 0 || box.height <= 0) return;
     const motion = readMotion();
     const inFocus = focusPositions(placed.graph, placed.positions);
-    const view = whole ? fitPositions(inFocus, box.width, box.height) : frameFocus(inFocus, placed.graph.focus, box.width, box.height);
+    const view = whole ? fitPositions(inFocus, box.width, box.height, 40, placed.heights) : frameFocus(inFocus, placed.graph.focus, box.width, box.height, 40, 0.1, placed.heights);
     setViewport(view, animate && motion.duration > 0 ? { duration: motion.duration, ease: motion.ease, interpolate: 'linear' } : { duration: 0 });
   }, [placed, setViewport]);
 
@@ -988,7 +1019,6 @@ function GraphCanvas({ index, graph, onNavigate: navigate, onToggle, minimap, on
     }
   };
 
-  if (error) return <p className="error">Couldn't draw the graph: {error}</p>;
   return (
     <div
       ref={wrapper}
@@ -1001,12 +1031,6 @@ function GraphCanvas({ index, graph, onNavigate: navigate, onToggle, minimap, on
       }}
       onBlur={() => spot(null)}
     >
-      {!placed && <p className="hint graph-loading">Laying out the graph…</p>}
-      {placed?.layout === 'radial' && placed.cycle && (
-        <p className="graph-notice" role="status">
-          Drawn around the center instead of in tiers: {placed.cycle.join(' → ')} → {placed.cycle[0]} link in a circle within one tier.
-        </p>
-      )}
       <ReactFlow
         nodes={drawnNodes}
         edges={drawnEdges}

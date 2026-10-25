@@ -4,7 +4,7 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import type { Workspace } from '../../../lathe/src/types';
 import { focusPositions, graphSummary, keyboardOrder, shortTitle, stepTarget } from '../../src/graph/GraphPage';
 import { panToward, pastEdges } from '../../src/graph/hints';
-import { layoutNeighborhood, NODE_HEIGHT, NODE_WIDTH } from '../../src/graph/layout';
+import { layoutNeighborhood, NODE_WIDTH } from '../../src/graph/layout';
 import { CONTEXT_BUDGET, CONTEXT_PER_PARENT, groupLabel, groupMembers, isGraphNode, MORE_KIND, moreId, neighborhood, type Neighborhood } from '../../src/graph/model';
 import { splitsByKind, treeChildren, treeParent } from '../../src/graph/tree';
 import { frameFocus } from '../../src/graph/camera';
@@ -200,19 +200,20 @@ describe('the graph tree and its context ring', () => {
   it('LA-BRW-T547 The camera frames the focus nodes only, so the context ring may run past the canvas, and Fit does too', async () => {
     const index = indexWorkspace(crowdedWorkspace());
     const n = neighborhood(index, 'P-D/define/use-cases', 1);
-    const { positions } = await layoutNeighborhood(n);
+    const { positions, heights } = layoutNeighborhood(n);
     const inFocus = focusPositions(n, positions);
     expect([...inFocus.keys()].sort()).toEqual(focusOf(n));
     // Framing the focus picture never zooms out further than framing everything would.
-    const framed = frameFocus(inFocus, n.focus, 1000, 800);
-    const all = frameFocus(positions, n.focus, 1000, 800);
+    const framed = frameFocus(inFocus, n.focus, 1000, 800, 40, 0.1, heights);
+    const all = frameFocus(positions, n.focus, 1000, 800, 40, 0.1, heights);
     expect(framed.zoom).toBeGreaterThanOrEqual(all.zoom);
-    // Some of the ring lies past the canvas's edges in the framed view.
-    const centers = n.nodes.filter((x) => x.context).map((x) => ({ x: positions.get(x.id)!.x + NODE_WIDTH / 2, y: positions.get(x.id)!.y + NODE_HEIGHT / 2 }));
-    const past = pastEdges(centers, framed, 1000, 800);
+    // Some of the ring lies past the canvas's edges in the framed view of a tall, narrow canvas: the
+    // icicle's parents span the ring above and below, so it runs past to the right.
+    const centers = n.nodes.filter((x) => x.context).map((x) => ({ x: positions.get(x.id)!.x + NODE_WIDTH / 2, y: positions.get(x.id)!.y + heights.get(x.id)! / 2 }));
+    const past = pastEdges(centers, frameFocus(inFocus, n.focus, 600, 4000, 40, 0.1, heights), 600, 4000);
     expect(past.up + past.down + past.left + past.right).toBeGreaterThan(0);
     // Keyboard order is the focus picture.
-    expect(keyboardOrder(n, { positions, layout: 'layered' }).sort()).toEqual(focusOf(n));
+    expect(keyboardOrder(n, { positions }).sort()).toEqual(focusOf(n));
     expect(graphSummary(n)).toMatch(/^9 records · 2 groups · \d+ links · \d+ more faded$/);
   });
 

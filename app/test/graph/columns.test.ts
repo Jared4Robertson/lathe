@@ -28,7 +28,7 @@ describe('graph columns by tree depth', () => {
     const dc = columnOf(domain);
     const members = ['P-D-A1', 'P-D-UC01', 'P-D-C01', 'P-D-C02'];
     expect(new Set(members.map((id) => dc.get(id))).size).toBe(1);
-    const { positions } = await layoutNeighborhood(domain);
+    const { positions } = layoutNeighborhood(domain);
     expect(new Set(members.map((id) => positions.get(id)!.x)).size).toBe(1);
   });
 
@@ -36,7 +36,7 @@ describe('graph columns by tree depth', () => {
     const n = neighborhood(index, 'P-D-UC01', 3);
     const column = columnOf(n);
     expect(['P', 'P-D', 'P-D/define', 'P-D/define/use-cases', 'P-D-UC01', 'P-D-UC01-R01'].map((id) => column.get(id))).toEqual([0, 1, 2, 3, 4, 5]);
-    const { positions } = await layoutNeighborhood(n);
+    const { positions } = layoutNeighborhood(n);
     const x = (id: string) => positions.get(id)!.x;
     expect(x('P')).toBeLessThan(x('P-D'));
     expect(x('P-D')).toBeLessThan(x('P-D/define'));
@@ -88,7 +88,7 @@ describe('graph columns by tree depth', () => {
     const folders = ['P-D/define/domain-model', 'P-D/define/use-cases', 'P-D/design/interaction-design', 'P-D/design/technical-specification', 'P-D/design/test-plan'];
     expect(folders.map((id) => domain.get(id))).toEqual([0, 1, 2, 3, 4]);
     // Rows within each column are 0, 1, 2 ... and the canvas draws them top to bottom.
-    const { positions } = await layoutNeighborhood(n);
+    const { positions } = layoutNeighborhood(n);
     for (const c of new Set(n.nodes.map((x) => x.column))) {
       const inColumn = n.nodes.filter((x) => x.column === c).sort((a, b) => a.row - b.row);
       expect(inColumn.map((x) => x.row)).toEqual(inColumn.map((_, i) => i));

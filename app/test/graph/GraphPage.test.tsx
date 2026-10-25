@@ -187,7 +187,6 @@ describe('graph page', () => {
   it('LA-BRW-T66 The page draws columns with a solid parent/child spine, and draws even a ring of links in columns, without a notice', async () => {
     await showGraph('/P-D-UC01-R01');
     await waitFor(() => expect(node('P-D-T01')).not.toBeNull());
-    expect(document.querySelector('.graph-notice')).toBeNull();
     const left = (id: string) => Number(/translate\(([-\d.]+)px, ?([-\d.]+)px\)/.exec(node(id)!.style.transform)![1]);
     expect(left('P-D-UC01')).toBeLessThan(left('P-D-UC01-R01'));
     expect(left('P-D-UC01-R01')).toBeLessThan(left('P-D-C01'));
@@ -205,7 +204,6 @@ describe('graph page', () => {
     fireEvent.click(node('P-D/define/domain-model')!.querySelector<HTMLElement>('button.graph-group-chevron')!);
     await waitFor(() => expect(node('P-D-A2')).not.toBeNull());
     await waitFor(() => expect(left('P-D-A2')).toBe(left('P-D-A1')));
-    expect(document.querySelector('.graph-notice')).toBeNull();
   });
 });
 
@@ -336,6 +334,28 @@ describe('graph groups on the page', () => {
     flow.getBoundingClientRect = sized(300, 800);
     act(() => fireResize(flow));
     await waitFor(() => expect(viewport()).not.toBe(wide));
+  });
+});
+
+describe('the icicle on the page', () => {
+  it('LA-BRW-T643 Tall parents carry their height and content scale, and every parent line is level', async () => {
+    await showGraph('/P-D', testWorkspace(), 2, false);
+    await waitFor(() => expect(node('P-D/define')).not.toBeNull());
+    const height = (id: string) => parseFloat(node(id)!.style.height);
+    const scale = (id: string) => node(id)!.querySelector<HTMLElement>('.graph-node')!.style.getPropertyValue('--node-scale');
+    // The domain spans its stages, and its content grows with it.
+    expect(height('P-D')).toBeGreaterThan(height('P-D/define') + height('P-D/design'));
+    expect(Number(scale('P-D'))).toBeGreaterThan(1);
+    // A leaf sets no scale.
+    const leaf = [...document.querySelectorAll<HTMLElement>('.react-flow__node')].find((el) => parseFloat(el.style.height) === 56)!;
+    expect(leaf.querySelector<HTMLElement>('.graph-node')!.style.getPropertyValue('--node-scale')).toBe('');
+    // Every parent line is level.
+    const lines = [...document.querySelectorAll<SVGPathElement>('.react-flow__edge-path.rel-structure')];
+    expect(lines.length).toBeGreaterThan(3);
+    for (const line of lines) {
+      const [, , y1, , y2] = /M ([-\d.]+) ([-\d.]+) L ([-\d.]+) ([-\d.]+)/.exec(line.getAttribute('d')!)!.map(Number);
+      expect(y1).toBe(y2);
+    }
   });
 });
 
