@@ -35,7 +35,7 @@ A candidate that fails these is a layer or a platform concern, not a domain. A d
 | `aggregate` | the domain | `<P>-<D>-A<n>` | One cluster of records changed together, named for its root, and its business identity. `relates_to` the aggregates it refers to by ID. |
 | `entity` | an aggregate | `<P>-<D>-EN<nn>`, numbered across the domain | One record the aggregate keeps: one box of its ERD. `role: root` for the record the aggregate is named for (exactly one per aggregate), `role: child` for each of its parts. Body: what it is, then a `## Fields` table with the columns Field, Meaning, Kind of value, Example, one row per field. Links: `has_one` (one to one) and `has_many` (one to many) to its parts in the same aggregate; `refers_to` (many to one) any entity it holds a reference to, in this aggregate or another, in this domain or another. |
 | `domain_event` | an aggregate | `<P>-<D>-EV<nn>`, numbered across the domain | Something that happened in the domain, which the aggregate raises. Title: in the past tense (Loan opened). Body: one sentence saying what happened and what raises it, then a `## Fields` table of what it carries, with the same columns as an entity's. Links: `raised_by` the entity of this aggregate whose change raises it, if one does. |
-| `domain_rule` | an aggregate, or the entity of it the rule is about | `<P>-<D>-DR<nn>` | One fact that must always hold for that aggregate. Put it under an entity when the aggregate has many rules and the rule is about that one entity; it still belongs to the aggregate. Title: the rule in a few words. Body: the rule in full with MUST / MUST NOT. |
+| `domain_rule` | an aggregate, the entity of it the rule is about, or the domain for a rule across its aggregates | `<P>-<D>-DR<nn>` | One fact that must always hold for that aggregate. Put it under an entity when the aggregate has many rules and the rule is about that one entity; it still belongs to the aggregate. Title: the rule in a few words. Body: the rule in full with MUST / MUST NOT. |
 
 Put the files under the domain folder, for example `<domain>/01-define/aggregates/A3-loan.md`, its entities in `<domain>/01-define/aggregates/loan/EN01-loan.md`, its events in `<domain>/01-define/aggregates/loan/events/EV05-loan-opened.md`, and `<domain>/01-define/domain-rules/DR06-one-active-loan-per-tool.md`. Folder names are for people; only the fields matter to Lathe.
 
@@ -57,6 +57,7 @@ Put the files under the domain folder, for example `<domain>/01-define/aggregate
 ## Rule or requirement?
 
 - A statement about records, fields and their states only is a **domain rule** on the aggregate it constrains.
+- A rule that holds across two or more aggregates of one domain, such as records saved together or a lifecycle rule for every record, goes under the domain, with `involves` naming each aggregate it ties together; a rule across domains is a domain event that one raises and the other reacts to.
 - A statement that needs an actor or an action is a **requirement** on a use case (see the `write-use-cases` skill).
 - Something undecided is an open `question` with an `owner`, linked `about` the records it concerns. The owner is a role, such as Owner, never a person's name. Never write "TBD" into a rule.
 
