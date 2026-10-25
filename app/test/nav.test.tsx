@@ -1,4 +1,6 @@
 import './graph/setup';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
@@ -141,5 +143,37 @@ describe('side navigation', () => {
 
     await openApp('/graph');
     await waitFor(() => expect(window.location.pathname + window.location.search).toBe('/specs/DM?view=graph'));
+  });
+
+  it('LA-BRW-T471 A selected row is the whole row: the current page\'s nav row carries the selection over the panel\'s width, chevron included, with no inset bar', async () => {
+    const css = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
+    // A domain's page: its row (fold chevron and link) is the one selected element.
+    await openApp('/specs/DM/DM-SHOP');
+    await screen.findByRole('heading', { level: 1, name: 'Shopping' });
+    const selected = [...nav().querySelectorAll<HTMLElement>('.is-selected')];
+    expect(selected).toHaveLength(1);
+    const row = selected[0];
+    expect(row).toHaveClass('nav-row');
+    const link = within(row).getByRole('link', { name: 'Shopping' });
+    expect(link).toHaveAttribute('aria-current', 'page');
+    expect(within(row).getByRole('button', { name: /^(Fold|Unfold) Shopping$/ })).toBeInTheDocument();
+    // Rows are indented by padding for their depth, the lists nested for screen readers with no margins of their own.
+    expect(row.style.getPropertyValue('--depth')).toBe('0');
+    expect(row.closest('ul')).not.toBeNull();
+    // A record's row, deeper in: also one selected row, holding the link, indented deeper.
+    await openApp('/records/DM-SHOP-UC01');
+    await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
+    const deep = nav().querySelector<HTMLElement>('.nav-row.is-selected')!;
+    expect(within(deep).getByRole('link')).toHaveAttribute('aria-current', 'page');
+    expect(Number(deep.style.getPropertyValue('--depth'))).toBeGreaterThan(0);
+    // The stylesheet: the row spans the panel and takes the selection tint and steel text; no inset bar; lists add no indent.
+    expect(css).toMatch(/\.nav-row \{[^}]*width: 100%;[^}]*padding: 0 10px 0 calc\(var\(--nav-pad\) \+ var\(--depth\) \* var\(--nav-indent\)\)/);
+    expect(css).toMatch(/\.nav-row\.is-selected, \.nav-row\.is-selected:hover \{[^}]*background-color: var\(--steel-bg\);[^}]*color: var\(--steel\)/);
+    expect(css).toMatch(/\.nav-scroll \{[^}]*margin: 0 -10px/);
+    expect(css).toMatch(/\.menu \.nav-tree \{ margin: 0; padding: 0; \}/);
+    expect(css).not.toMatch(/aria-current="page"\][^{]*\{[^}]*inset 3px/);
+    // Hover tints the whole row; keyboard focus outlines it with 1 px of steel.
+    expect(css).toMatch(/\.nav-row:hover \{[^}]*background-color: var\(--hover-bg\)/);
+    expect(css).toMatch(/\.menu\.is-keyboard:focus-within \.nav-row\.is-selected \{[^}]*outline: 1px solid var\(--steel\)/);
   });
 });
