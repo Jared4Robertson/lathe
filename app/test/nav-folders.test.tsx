@@ -38,7 +38,7 @@ describe('folders like S2', () => {
     expect(rows(folders)).toEqual(['Define2', 'Design5', 'Open questions1']);
     // Each stage folds on its own and opens one level: its folders, still folded.
     await user.click(head(folders, /^Define/));
-    expect(rows(list('Define of Shopping'))).toEqual(['Domain model1', 'Use cases1']);
+    expect(rows(list('Define of Shopping'))).toEqual(['Domain model1', 'Capabilities1']);
     expect(within(panel()).queryByRole('list', { name: 'Domain model of Shopping' })).toBeNull();
     await user.click(head(folders, /^Design/));
     expect(rows(list('Design of Shopping'))).toEqual(['Interaction design3', 'Technical specification1', 'Test plan1']);
@@ -60,14 +60,14 @@ describe('folders like S2', () => {
     // Paying has one use case and nothing designed yet: Define with only Use cases, no Design.
     expect(rows(list('Folders of Paying'))).toEqual(['Define1']);
     await user.click(head(list('Folders of Paying'), /^Define/));
-    expect(rows(list('Define of Paying'))).toEqual(['Use cases1']);
+    expect(rows(list('Define of Paying'))).toEqual(['Capabilities1']);
   });
 
   it("LA-BRW-T270 The current page's branch opens itself: a record's domain, stage and folder, or a group's folder", async () => {
     // A requirement is not listed; the use case it sits under is, so that use case's branch opens.
     await openApp('/records/DM-SHOP-UC01-R01');
     await screen.findByRole('heading', { level: 1, name: 'The basket shows the new item' });
-    expect(within(await findList('Use cases of Shopping')).getByRole('link', { name: 'Add an item to the basket' })).toHaveAttribute('href', '/records/DM-SHOP-UC01');
+    expect(within(await findList('Capabilities of Shopping')).getByRole('link', { name: 'Add an item to the basket' })).toHaveAttribute('href', '/records/DM-SHOP-UC01');
     expect(within(panel()).queryByRole('list', { name: 'Design of Shopping' })).toBeNull();
 
     await openApp('/records/DM-SHOP-C01');
@@ -138,17 +138,18 @@ describe('folders like S2', () => {
     });
     expect(loose.map((f) => [f.label, f.records.map((r) => r.id)])).toEqual([['Open questions', ['DM-SHOP-Q01']]]);
     expect(branchOf(index, 'DM-SHOP-UC02')).toEqual(['domain:DM-SHOP', 'DM-SHOP/define', 'DM-SHOP/define/use-cases']);
-    expect(branchOf(index, 'DM-SHOP-T02')).toEqual(['domain:DM-SHOP', 'DM-SHOP/design', 'DM-SHOP/design/test-plan']);
+    // A test proving nothing sits in Test plan's Engineering checks, which opens with it.
+    expect(branchOf(index, 'DM-SHOP-T02')).toEqual(['domain:DM-SHOP', 'DM-SHOP/design', 'DM-SHOP/design/test-plan', 'DM-SHOP/design/test-plan/engineering']);
 
     // The domain page: Use cases holds the capabilities and then the use cases outside any capability.
     await openApp('/specs/DM/DM-SHOP', { workspace: w });
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
-    const useCases = within(main()).getByRole('heading', { level: 3, name: /^Use cases/ }).closest('section') as HTMLElement;
+    const useCases = within(main()).getByRole('heading', { level: 3, name: /^Capabilities/ }).closest('section') as HTMLElement;
     expect([...useCases.querySelectorAll('h4')].map((h) => h.firstChild?.textContent)).toEqual(['Capabilities', 'Use cases outside any capability']);
     // In the nav, the same: a capability's use case opens the branch of its capability, in Use cases.
     await openApp('/records/DM-SHOP-UC02', { workspace: w });
     await screen.findByRole('heading', { level: 1, name: 'Empty the basket' });
-    await waitFor(() => expect(list('Use cases of Shopping').textContent).toBe('Filling the basketAdd an item to the basket'));
+    await waitFor(() => expect(list('Capabilities of Shopping').textContent).toBe('Filling the basketAdd an item to the basket'));
   });
 
   it('LA-BRW-T274 A kind in no known folder gets its own folder at the end of its stage, or after the stages when it has no stage; the path names its folder', () => {
@@ -160,9 +161,9 @@ describe('folders like S2', () => {
     w.records.push(rec('DM-SHOP-RK01', 'risk', 'Baskets get lost', 'DM-SHOP'), rec('DM-SHOP-M01', 'memo', 'A note', 'DM-SHOP'));
     const index = indexWorkspace(w);
     const { stages, loose } = domainFolders(index, 'DM-SHOP');
-    expect(stages[0].folders.map((f) => f.label)).toEqual(['Domain model', 'Use cases', 'Risks']);
+    expect(stages[0].folders.map((f) => f.label)).toEqual(['Domain model', 'Capabilities', 'Risks']);
     expect(loose.map((f) => f.label)).toEqual(['Open questions', 'Memos']);
-    expect(folderPath(index, 'use_case')).toEqual(['Define', 'Use cases']);
+    expect(folderPath(index, 'use_case')).toEqual(['Define', 'Capabilities']);
     expect(folderPath(index, 'risk')).toEqual(['Define']);
     expect(folderPath(index, 'question')).toEqual([]);
   });

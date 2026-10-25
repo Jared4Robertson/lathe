@@ -70,13 +70,29 @@ export function testWorkspace(): Workspace {
 
 export const testIndex = () => indexWorkspace(testWorkspace());
 
-/** The test workspace with a second use case that has six requirements: more than a handful of one kind. */
+/**
+ * The test workspace with a second use case that has six requirements and an open question: more
+ * than one kind of child, so it reaches them through groups.
+ */
 export function groupedWorkspace(): Workspace {
   const w = testWorkspace();
   const base = w.records.find((r) => r.id === 'P-D-UC01')!;
   w.records.push({ ...base, id: 'P-D-UC02', title: 'Return a thing', path: 'specs/P-D-UC02.md' });
   const req = w.records.find((r) => r.id === 'P-D-UC01-R01')!;
   for (let i = 1; i <= 6; i++) {
+    w.records.push({ ...req, id: `P-D-UC02-R0${i}`, title: `Return rule ${i}`, parent: 'P-D-UC02', path: `specs/P-D-UC02-R0${i}.md` });
+  }
+  w.records.push({ ...req, id: 'P-D-UC02-Q01', kind: 'question', title: 'Can a thing come back broken?', parent: 'P-D-UC02', fields: { owner: 'Ana' }, path: 'specs/P-D-UC02-Q01.md' });
+  return w;
+}
+
+/** The test workspace with a second use case that has seven requirements and nothing else: one kind, so no groups. */
+export function manyOfOneKindWorkspace(): Workspace {
+  const w = testWorkspace();
+  const base = w.records.find((r) => r.id === 'P-D-UC01')!;
+  w.records.push({ ...base, id: 'P-D-UC02', title: 'Return a thing', path: 'specs/P-D-UC02.md' });
+  const req = w.records.find((r) => r.id === 'P-D-UC01-R01')!;
+  for (let i = 1; i <= 7; i++) {
     w.records.push({ ...req, id: `P-D-UC02-R0${i}`, title: `Return rule ${i}`, parent: 'P-D-UC02', path: `specs/P-D-UC02-R0${i}.md` });
   }
   return w;

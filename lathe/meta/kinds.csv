@@ -5,7 +5,7 @@ capability,Capability,define,use-cases,domain,order,no,"An ordered slice of a do
 aggregate,Aggregate,define,domain-model,domain,,no,"A cluster of records changed together as one unit, with its own identity and rules."
 domain_rule,Domain rule,define,domain-model,aggregate domain,,yes,"A fact that must always hold for an aggregate's records, whatever use case changes them."
 use_case,Use case,define,use-cases,domain capability,actor,no,Something an actor does with the product to reach a goal.
-requirement,Use-case requirement,define,use-cases,use_case,,yes,"One rule a use case must follow, stated with MUST, MUST NOT, SHOULD or MAY. Shown as a use-case requirement, to tell it apart from interaction requirements and pattern rules."
+requirement,UC requirement,define,use-cases,use_case,,yes,"One rule a use case must follow, stated with MUST, MUST NOT, SHOULD or MAY. Shown as a UC (use case) requirement, to tell it apart from interaction requirements and pattern rules."
 pattern,Pattern,define,shared,product,,no,"Behavior several use cases share, stated once with the settings each use case that follows it fills in. Its settings are a space-separated list of field names."
 pattern_rule,Pattern rule,define,shared,pattern,,proof,"One rule of a pattern, stated with MUST, MUST NOT, SHOULD or MAY. Every domain that follows the pattern designs and proves it, unless the rule names a setting (in `setting`) that all of that domain's following use cases mark Not applicable."
 flow,Flow,design,interaction-design,domain capability,,no,An end-to-end path through views and endpoints that carries out one or more use cases.
@@ -13,7 +13,8 @@ flow_step,Flow step,design,interaction-design,flow,order,no,"One step of a flow,
 view,View,design,interaction-design,domain,,no,A screen or page a person uses.
 endpoint,Endpoint,design,interaction-design,domain,method route,no,"An HTTP endpoint: its method, route, request and responses."
 interaction_requirement,Interaction requirement,design,interaction-design,view endpoint flow,,yes,"One rule a view, endpoint or flow must follow, such as a field's limits or an error's response, stated with MUST, MUST NOT, SHOULD or MAY."
-component,Component,design,technical-specification,domain,component_type file,no,"A unit of code in the target design, such as a model, service or router."
+layer,Layer,design,technical-specification,domain,order,no,"An ordered part of a domain's technical specification that groups its components by what they are, such as Models, Services or Web app. Its order is a whole number giving its place in the domain."
+component,Component,design,technical-specification,domain layer,component_type file,no,"A unit of code in the target design, such as a model, service or router. It sits in its domain's layer, or in the domain when the domain has no layers."
 test,Test,design,test-plan,domain capability,test_type,no,"A test that proves obligations. Its state is automated (the default; it names the file that runs it in run_by), manual, or planned."
 question,Open question,,,product domain aggregate use_case component,owner,no,"Something undecided, with the person who decides it."
 fitness,Fitness,,,product,date score,no,"How well the product serves its purpose, as judged by the person it serves on a date: a score from 1 to 5 and the experiences behind it."

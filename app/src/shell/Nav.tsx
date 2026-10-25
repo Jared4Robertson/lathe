@@ -4,8 +4,8 @@ import { LongList } from '../components/LongList';
 import { childKinds, pluralLabel } from '../graph/model';
 import { LatheLogo } from '../LatheLogo';
 import { Link } from '../router';
-import { checksPath, domainPath, formatPath, groupPath, parseSpecRoute, productPath, recordPath, type SpecIndex, type SpecState } from '../specs/data';
-import { branchOf, domainFolders, groupBranchOf, productFolderKinds, productFolders, type Folder } from '../specs/folders';
+import { checksPath, domainPath, formatPath, groupPath, parseSpecRoute, productPath, recordPath, type SpecIndex, type SpecRecord, type SpecState } from '../specs/data';
+import { branchOf, domainFolders, groupBranchOf, productFolderKinds, productFolders, ungrouped, type Folder, type FolderGroup } from '../specs/folders';
 import { recordText } from '../specs/parts';
 import type { DiagramSummary } from '../types';
 import { SPACE_KEYS, spaceCommandId } from './keymap';
@@ -261,7 +261,7 @@ function currentBranch(index: SpecIndex, path: string): string[] {
   if (!route) return [];
   if (route.page === 'domain') return [`domain:${route.domain}`];
   if (route.page === 'record') return branchOf(index, route.id);
-  if (route.page === 'group') return groupBranchOf(index, route.parent, route.kind);
+  if (route.page === 'group') return groupBranchOf(index, route.parent, route.kind.split('/')[0]);
   return [];
 }
 
@@ -269,7 +269,9 @@ function currentBranch(index: SpecIndex, path: string): string[] {
  * The current space in the panel, read like S2's spec folders: its overview; its Shared folder
  * (patterns) when it has some; its domains, each folding Define (Domain model, Use cases) and
  * Design (Interaction design, Technical specification, Test plan), then its open questions; and
- * its groups. One level shows by default; every stage and folder folds on its own (remembered for
+ * its groups. Technical specification holds the domain's layers (each a row that links to the
+ * layer and folds its components) and Test plan its test groups (rows that only fold).
+ * One level shows by default; every stage, folder and group folds on its own (remembered for
  * the session) and shows its count, and the current page's branch opens itself. A folder with no
  * records is left out. Names and order come from the workspace's sections.
  */
@@ -290,20 +292,64 @@ function SpaceItems({ index, space, path }: { index: SpecIndex; space: Space; pa
     setOpened((o) => (keys.every((k) => o[k] === true) ? o : { ...o, ...Object.fromEntries(keys.map((k) => [k, true])) }));
   }, [branch, setOpened]);
 
-  const folderRow = (folder: Folder, owner: string) => (
-    <NavFolder key={folder.key} id={folder.key} label={folder.label} count={folder.records.length} open={isOpen(folder.key)} onToggle={() => toggle(folder.key)}>
-      <LongList
-        label={`${folder.label} of ${owner}`}
-        className="nav-records"
-        items={folder.records}
-        itemKey={(r) => r.id}
-        searchText={recordText}
-        render={(r) => (
-          <Link to={recordPath(r.id)} aria-current={here(path, recordPath(r.id))} title={`${r.id} ${r.title}`}>
-            <span className="nav-label">{r.title}</span>
+  const recordRows = (records: SpecRecord[], label: string) => (
+    <LongList
+      label={label}
+      className="nav-records"
+      items={records}
+      itemKey={(r) => r.id}
+      searchText={recordText}
+      render={(r) => (
+        <Link to={recordPath(r.id)} aria-current={here(path, recordPath(r.id))} title={`${r.id} ${r.title}`}>
+          <span className="nav-label">{r.title}</span>
+        </Link>
+      )}
+    />
+  );
+  // A group's body: the groups within it, then its own records.
+  const groupBody = (groups: FolderGroup[], records: SpecRecord[], label: string, owner: string) => (
+    <>
+      {groups.length > 0 && (
+        <ul className="nav-tree" aria-label={`${label} of ${owner}`}>
+          {groups.map((g) => groupRow(g, owner))}
+        </ul>
+      )}
+      {records.length > 0 && recordRows(records, groups.length > 0 ? `Others in ${label} of ${owner}` : `${label} of ${owner}`)}
+    </>
+  );
+  // A layer is a record, so its row links to its page beside its fold; a test group only folds.
+  const groupRow = (group: FolderGroup, owner: string): ReactNode => {
+    const body = groupBody(group.groups, group.records, group.label, owner);
+    if (!group.record) {
+      return (
+        <NavFolder key={group.key} id={group.key} label={group.label} count={group.count} open={isOpen(group.key)} onToggle={() => toggle(group.key)}>
+          {body}
+        </NavFolder>
+      );
+    }
+    const open = isOpen(group.key);
+    const to = recordPath(group.record.id);
+    const bodyId = `nav-folder-${group.key.replace(/[^A-Za-z0-9_-]/g, '-')}`;
+    return (
+      <li key={group.key} className="nav-folder is-record">
+        <div className="nav-row">
+          <button type="button" className="nav-chevron" aria-expanded={open} aria-controls={bodyId} aria-label={`${open ? 'Fold' : 'Unfold'} ${group.label}`} onClick={() => toggle(group.key)}>
+            <Icon name={open ? 'chevron-down' : 'chevron-right'} size={14} />
+          </button>
+          <Link to={to} aria-current={here(path, to)} title={`${group.record.id} ${group.record.title}`}>
+            <span className="nav-label">{group.label}</span>
+            <span className="nav-badge quiet">{group.count}</span>
           </Link>
-        )}
-      />
+        </div>
+        {open && <div id={bodyId} className="nav-folder-body">{body}</div>}
+      </li>
+    );
+  };
+  const folderRow = (folder: Folder, owner: string) => (
+    <NavFolder key={folder.key} id={folder.key} label={folder.label} count={folder.count} open={isOpen(folder.key)} onToggle={() => toggle(folder.key)}>
+      {folder.groups.length > 0
+        ? groupBody(folder.groups, ungrouped(folder), folder.label, owner)
+        : recordRows(folder.records, `${folder.label} of ${owner}`)}
     </NavFolder>
   );
 

@@ -13,7 +13,8 @@ import { recordPath, type Problem, type SpecIndex, type SpecState } from '../spe
 import { Markdown } from '../specs/Markdown';
 import { PageHeader, ProblemBadge, RecordTree, Section } from '../specs/parts';
 import { RecordContent, RecordEyebrow } from '../specs/RecordContent';
-import { folderPath } from '../specs/folders';
+import { folderPath, testGroups } from '../specs/folders';
+import { GroupSections } from '../specs/FolderGroups';
 import { DomainWiki, NotFound, ProductWiki, SourceNote, problemsUnder } from '../specs/SpecPages';
 import { addressOf, focusOf, isViewMode, VIEW_LABELS, VIEW_MODES, viewFromSearch, withView, type FocusRoute, type ViewMode } from './address';
 import { Inspector } from './Inspector';
@@ -371,7 +372,7 @@ function FocusHeader({ index, route, children }: { index: SpecIndex; route: Focu
   } else {
     const parent = index.byId.get(route.parent)!;
     // The folder the group's kind sits in, named as in the side nav and the domain page: "Define › Use cases".
-    const folder = folderPath(index, route.kind);
+    const folder = folderPath(index, route.kind.split('/')[0]);
     eyebrow = <><Link to={addressOf(index, parent.id)}>{parent.title}</Link> · {folder.length > 0 && <span className="group-folder">{folder.join(' › ')} · </span>}Group</>;
     title = groupLabel(index, focus);
     id = undefined;
@@ -413,7 +414,10 @@ function GroupWiki({ index, gid }: { index: SpecIndex; gid: string }) {
       </p>
       {description && <Markdown source={description} />}
       <Section title="Members" count={members.length}>
-        <RecordTree index={index} records={members} label={`Members of ${gid}`} />
+        {/* Tests are read in the test plan's groups, as on the domain page and in the nav. */}
+        {kind === 'test' && testGroups(index, gid, members).length > 0
+          ? <GroupSections index={index} groups={testGroups(index, gid, members)} level={3} />
+          : <RecordTree index={index} records={members} label={`Members of ${gid}`} />}
       </Section>
     </div>
   );

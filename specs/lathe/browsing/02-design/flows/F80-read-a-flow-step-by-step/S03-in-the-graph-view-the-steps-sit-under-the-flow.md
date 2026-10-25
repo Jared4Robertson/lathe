@@ -8,4 +8,4 @@ links:
   uses: [LA-BRW-V20, LA-BRW-C91]
   fulfills: [LA-BRW-UC80-R04, LA-BRW-DR91]
 ---
-The flow's steps are drawn one column to its right, through a group when there are more than a handful.
+The flow's steps are drawn one column to its right, directly, since they are its only kind of child.

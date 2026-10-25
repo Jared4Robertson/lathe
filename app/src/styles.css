@@ -129,10 +129,13 @@ code { font: 0.86em var(--mono); }
 .spec-section-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; }
 .spec-section-head h2 { margin: 0; min-width: 0; }
 /* A domain page's folders (h3) and the kinds within a folder (h4), as in the side nav. */
-.spec-section-head h3, .spec-section-head h4 { margin: 0; min-width: 0; display: flex; align-items: baseline; gap: 8px; }
+.spec-section-head h3, .spec-section-head h4, .spec-section-head h5, .spec-section-head h6 { margin: 0; min-width: 0; display: flex; align-items: baseline; gap: 8px; }
 .spec-section-head h3 { font-size: 1.05rem; }
 .spec-section-head h4 { font-size: 0.95rem; color: var(--muted); }
-.spec-section.folder > .spec-section { padding-left: 12px; border-left: 1px solid var(--rule); }
+/* Groups within a folder (a layer, a test group and the capabilities and use cases within it). */
+.spec-section-head h5 { font-size: 0.9rem; color: var(--muted); }
+.spec-section-head h6 { font-size: 0.86rem; font-weight: 500; color: var(--muted); }
+.spec-section.folder > .spec-section, .spec-section.folder-group > .spec-section { padding-left: 12px; border-left: 1px solid var(--rule); }
 .spec-section-actions { display: flex; gap: 8px; align-items: center; flex: none; }
 .spec-section-actions:empty { display: none; }
 .section-count { font: 500 0.75rem var(--mono); color: var(--muted); }
@@ -237,7 +240,12 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-trail li + li::before { content: "›"; color: var(--muted); margin-right: 4px; }
 .graph-trail a { color: var(--steel); text-decoration: none; }
 .graph-trail a:hover { text-decoration: underline; }
-.graph-trail [aria-current="page"] code { font-weight: 700; }
+/* A trail item: the name, cut short with an ellipsis (the full text is its tooltip), then the ID in code style. */
+.graph-trail li { min-width: 0; max-width: 22rem; display: flex; }
+.graph-trail .trail-item { display: inline-flex; align-items: baseline; gap: 4px; min-width: 0; max-width: 100%; }
+.graph-trail .trail-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.graph-trail .trail-id { flex: none; color: var(--muted); font-size: 0.78rem; }
+.graph-trail [aria-current="page"] .trail-name { font-weight: 700; }
 .graph-toolbar { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; font-size: 0.88rem; }
 .graph-depth { display: inline-flex; align-items: center; gap: 4px; }
 .graph-depth span { margin-right: 4px; color: var(--muted); }
@@ -603,6 +611,11 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 .menu .nav-records { margin: 0 0 2px 14px; }
 .menu .nav-records a { font-size: 0.82rem; min-height: 28px; padding: 3px 8px; color: var(--muted); }
 .menu .nav-records a[aria-current="page"] { color: var(--steel); }
+/* A layer's row: its fold beside a link to its page, sized like a folder's row. */
+.menu .nav-folder.is-record > .nav-row > .nav-chevron { height: 28px; }
+.menu .nav-folder.is-record > .nav-row > a { min-height: 28px; padding: 3px 8px 3px 2px; font-size: 0.84rem; color: var(--muted); }
+.menu .nav-folder.is-record > .nav-row > a:hover { color: var(--ink); }
+.menu .nav-folder.is-record > .nav-row > a[aria-current="page"] { color: var(--steel); }
 .menu .nav-groups { margin-top: 2px; }
 .menu .nav-groups a { font-size: 0.86rem; }
 .menu.is-drawer.has-spaces { width: min(356px, 92vw); }
