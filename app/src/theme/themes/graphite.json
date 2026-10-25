@@ -1,0 +1,41 @@
+{
+  "format": "lathe-theme",
+  "version": 1,
+  "name": "Graphite",
+  "light": {
+    "--shell": "#DEDEDE",
+    "--paper": "#F3F3F3",
+    "--sheet": "#FFFFFF",
+    "--ink": "#1E1E1E",
+    "--muted": "#5A5A5A",
+    "--rule": "#CDCDCD",
+    "--steel": "#4048B0",
+    "--steel-bg": "#E7E8F6",
+    "--spark": "#5B5650",
+    "--spark-bg": "#ECEAE7",
+    "--warn": "#8A5F00",
+    "--error": "#B3261E",
+    "--error-bg": "#F9E3E1"
+  },
+  "dark": {
+    "--shell": "#0D0D0D",
+    "--paper": "#161616",
+    "--sheet": "#1F1F1F",
+    "--ink": "#E6E6E6",
+    "--muted": "#A3A3A3",
+    "--rule": "#343434",
+    "--steel": "#A3ABFF",
+    "--steel-bg": "#24274A",
+    "--spark": "#BDB6AD",
+    "--spark-bg": "#2B2926",
+    "--warn": "#E0B44C",
+    "--error": "#F2958C",
+    "--error-bg": "#3B1F1C",
+    "--on-mark": "#111111"
+  },
+  "tokens": {
+    "--display": "system-ui, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+    "--body": "system-ui, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+    "--panel-radius": "4px"
+  }
+}

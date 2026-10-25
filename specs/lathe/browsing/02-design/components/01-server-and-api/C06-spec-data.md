@@ -6,6 +6,7 @@ parent: LA-BRW-LAY01
 component_type: module
 file: app/src/specs/data.ts
 links:
+  reacts_to: [LA-MOD-EV03, LA-CHK-EV01, LA-CHK-EV02]
   satisfies: [LA-BRW-DR01, LA-BRW-DR03, LA-BRW-UC05-R01, LA-BRW-UC117-R07]
   depends_on: [LA-BRW-C01]
 ---

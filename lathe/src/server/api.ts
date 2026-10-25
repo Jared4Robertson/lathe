@@ -1,11 +1,12 @@
 // Lathe's HTTP API, shared by `lathe serve` and the app's Vite dev server:
 //   GET  /api/spec                the whole spec Workspace
+//   GET  /api/format              the format reference (FormatReference): concepts, kinds, relations, folders, checks
 //   GET  /api/diagrams            the diagrams
 //   POST /api/diagrams            create a diagram {title, description}
 //   GET  /api/diagrams/<slug>     one diagram with its check result
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { loadConfig } from '../config.ts';
-import { loadWorkspace } from '../index.ts';
+import { formatReference, loadWorkspace } from '../index.ts';
 import { createDiagram, listDiagrams, loadDiagram } from './diagrams.ts';
 
 function send(res: ServerResponse, status: number, body: unknown, headers: Record<string, string> = {}) {
@@ -31,6 +32,11 @@ export async function handleApi(root: string, req: IncomingMessage, res: ServerR
     if (pathname === '/api/spec') {
       if (req.method !== 'GET') return (send(res, 405, { error: 'Method not allowed' }), true);
       send(res, 200, await loadWorkspace(config.root), { 'x-lathe-source': 'engine' });
+      return true;
+    }
+    if (pathname === '/api/format') {
+      if (req.method !== 'GET') return (send(res, 405, { error: 'Method not allowed' }), true);
+      send(res, 200, await formatReference(config.root), { 'x-lathe-source': 'engine' });
       return true;
     }
     const match = pathname.match(/^\/api\/diagrams(?:\/([^/]*))?\/?$/);

@@ -24,7 +24,10 @@ The domain links the pattern with `follows`. The pattern has no settings: every 
 - `LA-PAT-APP-CODE-R08`: everything clickable shows a hover state.
 - `LA-PAT-APP-CODE-R09`: the workbench, panels a gap apart and every gap resizes.
 - `LA-PAT-APP-CODE-R10`: every grid says its columns.
-- `LA-PAT-APP-CODE-R11`: each pane has one title bar that holds its views and layout actions.
+- `LA-PAT-APP-CODE-R11`: the page bar holds the page's tabs and layout controls; each pane's header holds only that pane's actions.
 - `LA-PAT-APP-CODE-R12`: motion is shared and optional.
 - `LA-PAT-APP-CODE-R13`: a row or card that leads to one record is one link.
+- `LA-PAT-APP-CODE-R14`: every open thing has an address.
+- `LA-PAT-APP-CODE-R15`: themes only set tokens.
+- `LA-PAT-APP-CODE-R16`: everything works by touch.
 - `LA-PAT-APP-CODE-R17`: nothing jumps.

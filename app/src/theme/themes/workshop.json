@@ -1,0 +1,40 @@
+{
+  "format": "lathe-theme",
+  "version": 1,
+  "name": "Workshop",
+  "light": {
+    "--shell": "#E2D6C3",
+    "--paper": "#F6F0E6",
+    "--sheet": "#FCF9F4",
+    "--ink": "#2B2118",
+    "--muted": "#67574A",
+    "--rule": "#D5C6B1",
+    "--steel": "#9C3F17",
+    "--steel-bg": "#F4E0D3",
+    "--spark": "#3E6A47",
+    "--spark-bg": "#E1ECDF",
+    "--warn": "#7F5A00",
+    "--error": "#A3241B",
+    "--error-bg": "#F8E0DC"
+  },
+  "dark": {
+    "--shell": "#120E0A",
+    "--paper": "#1D1712",
+    "--sheet": "#251E17",
+    "--ink": "#EEE4D7",
+    "--muted": "#B4A492",
+    "--rule": "#3F352B",
+    "--steel": "#E8916A",
+    "--steel-bg": "#3B2419",
+    "--spark": "#93C49D",
+    "--spark-bg": "#1D3022",
+    "--warn": "#E3B556",
+    "--error": "#F49283",
+    "--error-bg": "#3D1B16",
+    "--on-mark": "#1D1712"
+  },
+  "tokens": {
+    "--display": "Charter, \"Bitstream Charter\", \"Sitka Text\", Cambria, Georgia, serif",
+    "--panel-radius": "6px"
+  }
+}

@@ -1,4 +1,5 @@
-import { forwardRef, useEffect, useRef, type ReactNode } from 'react';
+import { forwardRef, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { APPEARANCE_PATH, PaletteIcon } from '../theme/ThemeCommands';
 import { Icon } from '../components/icons';
 import { LongList } from '../components/LongList';
 import { childKinds, pluralLabel } from '../graph/model';
@@ -13,6 +14,7 @@ import { isBool, usePref } from './prefs';
 import { QuickFind } from './QuickFind';
 import { SpaceMark, useSpaces, type Space } from './spaces';
 import { Tooltip } from './Tooltip';
+import { trapTab } from './useNarrow';
 
 // The side navigation. At its far left is the space rail: one square icon per product (each
 // product is its own space), a separator, then the items above every product (Diagrams, and
@@ -60,6 +62,8 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
   const isOpen = (id: SectionId) => sections[id] !== false;
   const toggle = (id: SectionId) => setSections((s) => ({ ...s, [id]: !(s[id] !== false) }));
   const scroller = useRef<HTMLDivElement>(null);
+  // Whether the nav is used from the keyboard: then the selected row also shows a focus outline, as in VS Code.
+  const [keyboard, setKeyboard] = useState(false);
 
   // The section holding the current page opens itself.
   const current = sectionOf(path);
@@ -88,7 +92,7 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
     ? <span title={spec.sourceReason ?? undefined}>Sample data, not your specs</span>
     : spec.source === 'engine' ? <span>Specs read by the engine</span> : <span>Loading specs…</span>;
 
-  const className = ['menu', 'panel', 'has-spaces', collapsed && !drawer ? 'is-rail' : '', drawer ? 'is-drawer' : '', drawer && drawerOpen ? 'is-open' : ''].filter(Boolean).join(' ');
+  const className = ['menu', 'panel', 'has-spaces', collapsed && !drawer ? 'is-rail' : '', drawer ? 'is-drawer' : '', drawer && drawerOpen ? 'is-open' : '', keyboard ? 'is-keyboard' : ''].filter(Boolean).join(' ');
   const diagramsTo = diagrams[0] ? `/diagrams/${diagrams[0].slug}` : '/';
 
   const rail = (
@@ -138,7 +142,12 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
       className={className}
       aria-label="Main"
       id="nav"
-      onKeyDown={drawer ? (e) => { if (e.key === 'Escape' && !e.defaultPrevented) { e.preventDefault(); onCloseDrawer(); } } : undefined}
+      onKeyDown={(e) => {
+        if (!keyboard) setKeyboard(true);
+        if (drawer && e.key === 'Escape' && !e.defaultPrevented) { e.preventDefault(); onCloseDrawer(); return; }
+        if (drawer) trapTab(e, e.currentTarget);
+      }}
+      onPointerDown={() => { if (keyboard) setKeyboard(false); }}
     >
       {rail}
       <div className="nav-panel">
@@ -169,9 +178,11 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
             <ul>
               {diagrams.map((d) => (
                 <li key={d.slug}>
-                  <Link to={`/diagrams/${d.slug}`} aria-current={here(path, `/diagrams/${d.slug}`)} title={d.title}>
-                    <span className="nav-label">{d.title}</span>
-                  </Link>
+                  <NavRow depth={0} selected={path === `/diagrams/${d.slug}`}>
+                    <Link to={`/diagrams/${d.slug}`} aria-current={here(path, `/diagrams/${d.slug}`)} title={d.title}>
+                      <span className="nav-label">{d.title}</span>
+                    </Link>
+                  </NavRow>
                 </li>
               ))}
             </ul>
@@ -181,15 +192,22 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
           <NavSection id="tools" icon="checks" title="Tools" open={isOpen('tools')} onToggle={() => toggle('tools')}>
             <ul>
               <li>
-                <Link to={checksPath} aria-current={here(path, checksPath)} aria-label={checksLabel}>
-                  <Icon name="checks" size={16} /> <span className="nav-label">Checks</span> {checkBadges}
-                </Link>
+                <NavRow depth={0} selected={path === checksPath}>
+                  <Link to={checksPath} aria-current={here(path, checksPath)} aria-label={checksLabel}>
+                    <Icon name="checks" size={16} /> <span className="nav-label">Checks</span> {checkBadges}
+                  </Link>
+                </NavRow>
               </li>
             </ul>
           </NavSection>
         </div>
         <footer className="nav-foot">
-          <Link to={formatPath} aria-current={here(path, formatPath)}><Icon name="format" size={16} /> <span className="nav-label">Record format</span></Link>
+          <NavRow depth={0} selected={path === formatPath}>
+            <Link to={formatPath} aria-current={here(path, formatPath)}><Icon name="format" size={16} /> <span className="nav-label">Record format</span></Link>
+          </NavRow>
+          <NavRow depth={0} selected={path === APPEARANCE_PATH}>
+            <Link to={APPEARANCE_PATH} aria-current={here(path, APPEARANCE_PATH)}><PaletteIcon size={16} /> <span className="nav-label">Appearance</span></Link>
+          </NavRow>
           <p className={`nav-source ${spec.source === 'fixture' ? 'is-fixture' : ''}`}>{sourceNote}</p>
         </footer>
       </div>
@@ -292,7 +310,7 @@ function SpaceItems({ index, space, path }: { index: SpecIndex; space: Space; pa
     setOpened((o) => (keys.every((k) => o[k] === true) ? o : { ...o, ...Object.fromEntries(keys.map((k) => [k, true])) }));
   }, [branch, setOpened]);
 
-  const recordRows = (records: SpecRecord[], label: string) => (
+  const recordRows = (records: SpecRecord[], label: string, depth: number) => (
     <LongList
       label={label}
       className="nav-records"
@@ -300,29 +318,31 @@ function SpaceItems({ index, space, path }: { index: SpecIndex; space: Space; pa
       itemKey={(r) => r.id}
       searchText={recordText}
       render={(r) => (
-        <Link to={recordPath(r.id)} aria-current={here(path, recordPath(r.id))} title={`${r.id} ${r.title}`}>
-          <span className="nav-label">{r.title}</span>
-        </Link>
+        <NavRow depth={depth} selected={path === recordPath(r.id)}>
+          <Link to={recordPath(r.id)} aria-current={here(path, recordPath(r.id))} title={`${r.id} ${r.title}`}>
+            <span className="nav-label">{r.title}</span>
+          </Link>
+        </NavRow>
       )}
     />
   );
   // A group's body: the groups within it, then its own records.
-  const groupBody = (groups: FolderGroup[], records: SpecRecord[], label: string, owner: string) => (
+  const groupBody = (groups: FolderGroup[], records: SpecRecord[], label: string, owner: string, depth: number) => (
     <>
       {groups.length > 0 && (
         <ul className="nav-tree" aria-label={`${label} of ${owner}`}>
-          {groups.map((g) => groupRow(g, owner))}
+          {groups.map((g) => groupRow(g, owner, depth))}
         </ul>
       )}
-      {records.length > 0 && recordRows(records, groups.length > 0 ? `Others in ${label} of ${owner}` : `${label} of ${owner}`)}
+      {records.length > 0 && recordRows(records, groups.length > 0 ? `Others in ${label} of ${owner}` : `${label} of ${owner}`, depth)}
     </>
   );
   // A layer is a record, so its row links to its page beside its fold; a test group only folds.
-  const groupRow = (group: FolderGroup, owner: string): ReactNode => {
-    const body = groupBody(group.groups, group.records, group.label, owner);
+  const groupRow = (group: FolderGroup, owner: string, depth: number): ReactNode => {
+    const body = groupBody(group.groups, group.records, group.label, owner, depth + 1);
     if (!group.record) {
       return (
-        <NavFolder key={group.key} id={group.key} label={group.label} count={group.count} open={isOpen(group.key)} onToggle={() => toggle(group.key)}>
+        <NavFolder key={group.key} id={group.key} depth={depth} label={group.label} count={group.count} open={isOpen(group.key)} onToggle={() => toggle(group.key)}>
           {body}
         </NavFolder>
       );
@@ -332,24 +352,29 @@ function SpaceItems({ index, space, path }: { index: SpecIndex; space: Space; pa
     const bodyId = `nav-folder-${group.key.replace(/[^A-Za-z0-9_-]/g, '-')}`;
     return (
       <li key={group.key} className="nav-folder is-record">
-        <div className="nav-row">
-          <button type="button" className="nav-chevron" aria-expanded={open} aria-controls={bodyId} aria-label={`${open ? 'Fold' : 'Unfold'} ${group.label}`} onClick={() => toggle(group.key)}>
-            <Icon name={open ? 'chevron-down' : 'chevron-right'} size={14} />
-          </button>
+        <NavRow
+          depth={depth}
+          selected={path === to}
+          chevron={(
+            <button type="button" className="nav-chevron" aria-expanded={open} aria-controls={bodyId} aria-label={`${open ? 'Fold' : 'Unfold'} ${group.label}`} onClick={() => toggle(group.key)}>
+              <Icon name={open ? 'chevron-down' : 'chevron-right'} size={14} />
+            </button>
+          )}
+        >
           <Link to={to} aria-current={here(path, to)} title={`${group.record.id} ${group.record.title}`}>
             <span className="nav-label">{group.label}</span>
             <span className="nav-badge quiet">{group.count}</span>
           </Link>
-        </div>
+        </NavRow>
         {open && <div id={bodyId} className="nav-folder-body">{body}</div>}
       </li>
     );
   };
-  const folderRow = (folder: Folder, owner: string) => (
-    <NavFolder key={folder.key} id={folder.key} label={folder.label} count={folder.count} open={isOpen(folder.key)} onToggle={() => toggle(folder.key)}>
+  const folderRow = (folder: Folder, owner: string, depth: number) => (
+    <NavFolder key={folder.key} id={folder.key} depth={depth} label={folder.label} count={folder.count} open={isOpen(folder.key)} onToggle={() => toggle(folder.key)}>
       {folder.groups.length > 0
-        ? groupBody(folder.groups, ungrouped(folder), folder.label, owner)
-        : recordRows(folder.records, `${folder.label} of ${owner}`)}
+        ? groupBody(folder.groups, ungrouped(folder), folder.label, owner, depth + 1)
+        : recordRows(folder.records, `${folder.label} of ${owner}`, depth + 1)}
     </NavFolder>
   );
 
@@ -357,14 +382,16 @@ function SpaceItems({ index, space, path }: { index: SpecIndex; space: Space; pa
     <div className="space-items" data-space={space.id}>
       <ul>
         <li>
-          <Link to={productPath(space.id)} aria-current={here(path, productPath(space.id))} title={space.title}>
-            <SpaceMark space={space} size={18} /> <span className="nav-label">{space.title}</span>
-          </Link>
+          <NavRow depth={0} selected={path === productPath(space.id)}>
+            <Link to={productPath(space.id)} aria-current={here(path, productPath(space.id))} title={space.title}>
+              <SpaceMark space={space} size={18} /> <span className="nav-label">{space.title}</span>
+            </Link>
+          </NavRow>
         </li>
       </ul>
       {shared.length > 0 && (
         <ul className="nav-tree nav-shared" aria-label={`Shared by ${space.title}`}>
-          {shared.map((f) => folderRow(f, space.title))}
+          {shared.map((f) => folderRow(f, space.title, 0))}
         </ul>
       )}
       {domains.length > 0 && (
@@ -381,24 +408,29 @@ function SpaceItems({ index, space, path }: { index: SpecIndex; space: Space; pa
             const { stages, loose } = open ? domainFolders(index, domain.id) : { stages: [], loose: [] };
             return (
               <>
-                <div className="nav-row">
-                  <button type="button" className="nav-chevron" aria-expanded={open} aria-controls={bodyId} aria-label={`${open ? 'Fold' : 'Unfold'} ${domain.title}`} onClick={() => toggle(key)}>
-                    <Icon name={open ? 'chevron-down' : 'chevron-right'} size={14} />
-                  </button>
+                <NavRow
+                  depth={0}
+                  selected={path === domainPath(space.id, domain.id)}
+                  chevron={(
+                    <button type="button" className="nav-chevron" aria-expanded={open} aria-controls={bodyId} aria-label={`${open ? 'Fold' : 'Unfold'} ${domain.title}`} onClick={() => toggle(key)}>
+                      <Icon name={open ? 'chevron-down' : 'chevron-right'} size={14} />
+                    </button>
+                  )}
+                >
                   <Link to={domainPath(space.id, domain.id)} aria-current={here(path, domainPath(space.id, domain.id))} title={domain.title}>
                     <span className="nav-label">{domain.title}</span>
                   </Link>
-                </div>
+                </NavRow>
                 {open && (
                   <ul className="nav-tree" id={bodyId} aria-label={`Folders of ${domain.title}`}>
                     {stages.filter((stage) => stage.count > 0).map((stage) => (
-                      <NavFolder key={stage.key} id={stage.key} label={stage.label} count={stage.count} open={isOpen(stage.key)} onToggle={() => toggle(stage.key)} stage>
+                      <NavFolder key={stage.key} id={stage.key} depth={1} label={stage.label} count={stage.count} open={isOpen(stage.key)} onToggle={() => toggle(stage.key)} stage>
                         <ul className="nav-tree" aria-label={`${stage.label} of ${domain.title}`}>
-                          {stage.folders.filter((f) => f.records.length > 0).map((f) => folderRow(f, domain.title))}
+                          {stage.folders.filter((f) => f.records.length > 0).map((f) => folderRow(f, domain.title, 2))}
                         </ul>
                       </NavFolder>
                     ))}
-                    {loose.map((f) => folderRow(f, domain.title))}
+                    {loose.map((f) => folderRow(f, domain.title, 1))}
                   </ul>
                 )}
               </>
@@ -413,9 +445,11 @@ function SpaceItems({ index, space, path }: { index: SpecIndex; space: Space; pa
             const count = (index.children.get(space.id) ?? []).filter((c) => c.kind === kind).length;
             return (
               <li key={kind}>
-                <Link to={to} aria-current={here(path, to)}>
-                  <span className="nav-label">{pluralLabel(index, kind)}</span> <span className="nav-badge quiet">{count}</span>
-                </Link>
+                <NavRow depth={0} selected={path === to}>
+                  <Link to={to} aria-current={here(path, to)}>
+                    <span className="nav-label">{pluralLabel(index, kind)}</span> <span className="nav-badge quiet">{count}</span>
+                  </Link>
+                </NavRow>
               </li>
             );
           })}
@@ -425,12 +459,27 @@ function SpaceItems({ index, space, path }: { index: SpecIndex; space: Space; pa
   );
 }
 
-/** A foldable nav row (a stage or a folder) with its count, holding its rows below it when open. */
-function NavFolder({ id, label, count, open, onToggle, stage = false, children }: { id: string; label: string; count: number; open: boolean; onToggle: () => void; stage?: boolean; children: ReactNode }) {
+/**
+ * One row of the nav, as in VS Code's explorer: as wide as the nav panel, indented by padding for
+ * its depth, with the indent guides drawn inside it and its fold chevron (or the chevron's space)
+ * at its start. The current page's row carries the selection over the whole row (LA-BRW-DR220).
+ * Its link stretches over the row, so a click anywhere on it follows the link.
+ */
+function NavRow({ depth, selected = false, chevron, children }: { depth: number; selected?: boolean; chevron?: ReactNode; children: ReactNode }) {
+  return (
+    <div className={`nav-row${selected ? ' is-selected' : ''}`} style={{ '--depth': depth } as CSSProperties}>
+      {chevron ?? <span className="nav-chevron-space" aria-hidden="true" />}
+      {children}
+    </div>
+  );
+}
+
+/** A foldable nav row (a stage or a folder) with its count, holding its rows below it when open. The button is the row. */
+function NavFolder({ id, depth, label, count, open, onToggle, stage = false, children }: { id: string; depth: number; label: string; count: number; open: boolean; onToggle: () => void; stage?: boolean; children: ReactNode }) {
   const bodyId = `nav-folder-${id.replace(/[^A-Za-z0-9_-]/g, '-')}`;
   return (
     <li className={`nav-folder${stage ? ' is-stage' : ''}`}>
-      <button type="button" className="nav-folder-head" aria-expanded={open} aria-controls={bodyId} onClick={onToggle}>
+      <button type="button" className="nav-folder-head nav-row" style={{ '--depth': depth } as CSSProperties} aria-expanded={open} aria-controls={bodyId} onClick={onToggle}>
         <Icon name={open ? 'chevron-down' : 'chevron-right'} size={14} />
         <span className="nav-label">{label}</span>
         <span className="nav-badge quiet">{count}</span>
@@ -444,7 +493,7 @@ function NavSection({ id, icon, title, count, open, onToggle, children }: { id: 
   const bodyId = `nav-section-${id}`;
   return (
     <section className="nav-section" aria-labelledby={`${bodyId}-head`}>
-      <button type="button" id={`${bodyId}-head`} className="nav-section-head" aria-expanded={open} aria-controls={bodyId} onClick={onToggle}>
+      <button type="button" id={`${bodyId}-head`} className="nav-section-head nav-row" aria-expanded={open} aria-controls={bodyId} onClick={onToggle}>
         <Icon name={open ? 'chevron-down' : 'chevron-right'} size={14} />
         <Icon name={icon} size={16} />
         <span className="eyebrow">{title}</span>

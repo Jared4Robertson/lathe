@@ -4,6 +4,7 @@ import type { SpecIndex } from '../specs/data';
 import { readMotion } from '../graph/motion';
 import { erdFor, lineGeometry, lineOffsets, RELATION_ENDS, RELATION_LABELS, type Erd, type ErdBox, type ErdLine, type Rect } from './erd';
 import { layoutErd } from './layout';
+import { TapCard, useTapToOpen } from '../graph/touch';
 
 // The Model view: the ERD of a domain (at aggregate level) or of an aggregate (its entities), drawn
 // with React Flow and laid out by ELK. An entity page draws its aggregate's ERD with the entity
@@ -233,6 +234,10 @@ function ErdCanvas({ erd, focus, onNavigate }: { erd: Erd; focus: string; onNavi
   }, []);
 
   const go = (id: string) => { if (id !== focus) onNavigate(id); };
+  // By touch, a first tap selects a box and a second tap (or the card's Open chip) opens it.
+  const canOpen = useCallback((id: string) => id !== focus, [focus]);
+  const tap = useTapToOpen(onNavigate, canOpen, wrapper, focus);
+  const armedBox = tap.armed ? erd.boxes.find((b) => b.id === tap.armed) : undefined;
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     if (e.key !== 'Enter' && e.key !== ' ') return;
     const id = (e.target as HTMLElement).closest?.('.react-flow__node')?.getAttribute('data-id');
@@ -254,13 +259,22 @@ function ErdCanvas({ erd, focus, onNavigate }: { erd: Erd; focus: string; onNavi
         nodesConnectable={false}
         elementsSelectable={false}
         edgesFocusable={false}
-        onNodeClick={(_, n) => go(n.id)}
+        onNodeClick={(e, n) => tap.onNodeClick(e, n.id)}
+        onPaneClick={tap.clear}
         minZoom={0.1}
         proOptions={{ hideAttribution: true }}
       >
         <Background gap={24} size={1} />
         <Controls showInteractive={false} />
       </ReactFlow>
+      {armedBox && (
+        <TapCard
+          kind={armedBox.kind === 'aggregate' ? 'Aggregate' : 'Entity'}
+          name={`${armedBox.title}${armedBox.owner ? ` ${armedBox.owner}` : ''}`}
+          onOpen={tap.openArmed}
+          onDismiss={tap.clear}
+        />
+      )}
     </div>
   );
 }

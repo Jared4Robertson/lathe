@@ -1,15 +1,15 @@
-import { lazy, Suspense, useCallback, useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode, type RefObject } from 'react';
 import { Icon } from '../components/icons';
 import { ResizeHandle } from '../components/ResizeHandle';
 import { expandAllOnPage } from '../components/TreeList';
 import type { GraphSettings } from '../graph/GraphPage';
-import { NO_FILTERS, groupLabel, groupMembers, isGroup, parseGroupId, pluralLabel } from '../graph/model';
+import { groupLabel, groupMembers, isGroup, parseGroupId, pluralLabel } from '../graph/model';
 import type { GraphInfo } from '../graph/panel';
-import { ModelIcon } from '../model/ModelIcon';
 import { Link, navigate } from '../router';
 import { useAnnounce, useCommand } from '../shell/commands';
+import { BottomSheet } from '../shell/BottomSheet';
 import { Tooltip } from '../shell/Tooltip';
-import { isBool, isNumber, readPref, usePanelSize, usePref, writePref } from '../shell/prefs';
+import { isBool, usePanelSize, usePref, writePref } from '../shell/prefs';
 import { useNarrow } from '../shell/useNarrow';
 import { recordPath, type Problem, type SpecIndex, type SpecState } from '../specs/data';
 import { Markdown } from '../specs/Markdown';
@@ -18,8 +18,11 @@ import { RecordContent, RecordEyebrow } from '../specs/RecordContent';
 import { folderPath, testGroups } from '../specs/folders';
 import { GroupSections } from '../specs/FolderGroups';
 import { DomainWiki, NotFound, ProductWiki, SourceNote, problemsUnder } from '../specs/SpecPages';
-import { addressOf, focusOf, parseViews, VIEW_LABELS, VIEW_NAMES, viewsFromSearch, viewsOffered, viewsShown, withView, type FocusRoute, type ViewName } from './address';
+import { addressOf, focusOf, VIEW_LABELS, VIEW_NAMES, viewsFromSearch, viewsOffered, viewsShown, withView, type FocusRoute, type ViewName } from './address';
 import { Inspector } from './Inspector';
+import { PageBar, ViewIcon } from './PageBar';
+import { TAB_PANEL_ID, tabId, tabLabel } from './TabStrip';
+import { PANE_SIZE_KEY, PANE_WEIGHT, PANE_WEIGHT_MAX, PANE_WEIGHT_MIN, VIEW_KEY, saveLastSettings, usePageTabs, type PageTabsApi, type TabView } from './useTabs';
 
 // One page for one thing (a record, a group, a product or a domain), at one address, in up to
 // three views, each a pane you open and close: Wiki (the page to read), Graph (the graph centered
@@ -28,48 +31,20 @@ import { Inspector } from './Inspector';
 // gap. Every pane shows the same focus: clicking a node or a box changes the address and the others
 // follow. Any pane can be maximized. The inspector, the page's last column, shows the focused
 // record whichever views are open.
+//
+// Several pages can be open at once, as tabs in the leftmost pane's title bar (useTabs.ts and
+// tabs.ts); each tab keeps its own views, pane sizes, wiki scroll and graph settings.
 
 const GraphView = lazy(() => import('../graph/GraphPage').then((m) => ({ default: m.GraphView })));
 const ModelView = lazy(() => import('../model/ModelView').then((m) => ({ default: m.ModelView })));
 
-const VIEW_KEY = 'lathe:view';
 const INSPECTOR_KEY = 'lathe:inspector-open';
 const INSPECTOR_WIDTH_KEY = 'lathe:inspector-width';
-const PANE_SIZE_KEY = (v: ViewName) => `lathe:pane-size:${v}`;
-const GRAPH_KEY = 'lathe:graph-settings';
-const VIEW_COMMANDS: Record<ViewName, string> = { wiki: 'viewWiki', graph: 'viewGraph', model: 'viewModel' };
-/** Each pane's share of the width is a weight (remembered); equal weights share the space evenly. */
-const PANE_WEIGHT = 100;
 /** The narrowest a pane gets, and the limits of one pane's share of the two panes beside a gap, in percent. */
 const PANE_MIN_PX = 220;
 const GAP_MIN = 20;
 const GAP_MAX = 80;
-const isString = (v: unknown): v is string => typeof v === 'string';
 const lower = (v: ViewName) => VIEW_LABELS[v].toLowerCase();
-
-function ViewIcon({ view, size = 16 }: { view: ViewName; size?: number }) {
-  return view === 'model' ? <ModelIcon size={size} /> : <Icon name={view} size={size} />;
-}
-
-// ---------- Graph settings kept for the session ----------
-
-interface StoredSettings { depth: number; trace: boolean; hiddenKinds: string[]; hiddenRelations: string[]; openGroups: [string, boolean][] }
-const isStored = (v: unknown): v is StoredSettings => !!v && typeof v === 'object' && isNumber((v as StoredSettings).depth) && Array.isArray((v as StoredSettings).hiddenKinds);
-
-function loadSettings(): GraphSettings | null {
-  const s = readPref<StoredSettings | null>(GRAPH_KEY, null, (v): v is StoredSettings | null => v === null || isStored(v), 'session');
-  if (!s) return null;
-  return {
-    depth: [1, 2, 3].includes(s.depth) ? s.depth : 1,
-    trace: s.trace === true,
-    filters: { hiddenKinds: new Set(s.hiddenKinds), hiddenRelations: new Set(s.hiddenRelations ?? []) },
-    openGroups: new Map((s.openGroups ?? []).filter((e) => Array.isArray(e) && typeof e[0] === 'string')),
-  };
-}
-function saveSettings(s: GraphSettings) {
-  writePref(GRAPH_KEY, { depth: s.depth, trace: s.trace, hiddenKinds: [...s.filters.hiddenKinds], hiddenRelations: [...s.filters.hiddenRelations], openGroups: [...s.openGroups] }, 'session');
-}
-const DEFAULT_SETTINGS: GraphSettings = { depth: 1, trace: false, filters: NO_FILTERS, openGroups: new Map() };
 
 // ---------- The page ----------
 
@@ -112,14 +87,18 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   const announce = useAnnounce();
   const narrow = useNarrow();
 
-  // The open views: those the link names, otherwise those last open ("wiki,graph"; the old
-  // single names and "split" read the same way). Model shows only where it is offered; the views
-  // asked for but not offered here are kept, so they come back on a page that offers them.
-  const [stored, setStored] = usePref<string>(VIEW_KEY, 'wiki', isString);
-  const linked = viewsFromSearch(search);
-  const asked = linked ?? (parseViews(stored).length > 0 ? parseViews(stored) : (['wiki'] as ViewName[]));
+  // The open tabs, and the active one's state. The open views are the tab's: those the link named
+  // when it opened, otherwise those of the tab it was opened from ("wiki,graph"; the old single
+  // names and "split" read the same way). Model shows only where it is offered; the views asked for
+  // but not offered here are kept, so they come back on a page that offers them.
+  const tabs = usePageTabs(index, route, search);
+  const tab = tabs.active;
+  const { update } = tabs;
+  const asked = tab.state.views;
   const askedKey = asked.join(',');
-  useEffect(() => { if (linked && askedKey !== stored) setStored(askedKey); }, [linked, askedKey, stored, setStored]);
+  // The views a link names become the ones remembered, for the first tab of a new session.
+  const linked = viewsFromSearch(search) !== null;
+  useEffect(() => { if (linked && !narrow) writePref(VIEW_KEY, askedKey); }, [linked, askedKey, narrow]);
   const offered = viewsOffered(index, focus);
   const open = viewsShown(asked, offered);
   const openKey = open.join(',');
@@ -135,14 +114,30 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   const setViews = useCallback((next: ViewName[], message: string) => {
     const keep = asked.filter((v) => !offered.includes(v));
     const views = VIEW_NAMES.filter((v) => next.includes(v) || keep.includes(v));
-    setStored(views.join(','));
+    // Switching a tab's views keeps it open, as in VS Code.
+    update((s) => ({ ...s, views }), true);
+    writePref(VIEW_KEY, views.join(','));
     navigate(withView(window.location.pathname, views), true);
     setFull(null);
     announce(message);
-  }, [asked, offered, setStored, announce]);
+  }, [asked, offered, update, announce]);
 
-  /** Turns a view on or off; the last open view stays open. */
+  /**
+   * On a phone one view shows at a time: this one, named in the address and kept by the tab. The
+   * views remembered for a wider screen are left alone, and the views not offered here are kept.
+   */
+  const showOnly = useCallback((view: ViewName) => {
+    if (!offered.includes(view) || (open.length === 1 && open[0] === view)) return;
+    const keep = asked.filter((v) => !offered.includes(v));
+    const views = VIEW_NAMES.filter((v) => v === view || keep.includes(v));
+    update((s) => ({ ...s, views }));
+    navigate(withView(window.location.pathname, views), true);
+    announce(`${VIEW_LABELS[view]} view`);
+  }, [asked, offered, open, update, announce]);
+
+  /** Turns a view on or off; the last open view stays open. On a phone, shows that view alone. */
   const toggleView = useCallback((view: ViewName) => {
+    if (narrow) { showOnly(view); return; }
     if (!offered.includes(view)) return;
     lastToggled.current = view;
     if (open.includes(view)) {
@@ -151,7 +146,7 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
     } else {
       setViews([...open, view], `${VIEW_LABELS[view]} view opened`);
     }
-  }, [offered, open, setViews, announce]);
+  }, [narrow, showOnly, offered, open, setViews, announce]);
 
   // Keep focus when the element that had it went away with a pane: on the toggle just used.
   useEffect(() => {
@@ -178,12 +173,14 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
     setTimeout(() => { if (pane) fullButtons.current[pane]?.focus(); }, 0);
   }, [full, announce]);
 
-  // Pane sizes: one remembered weight per view, so each gap between two open panes resizes them.
-  const sizes = {
-    wiki: usePanelSize(PANE_SIZE_KEY('wiki'), PANE_WEIGHT, 1, 10000),
-    graph: usePanelSize(PANE_SIZE_KEY('graph'), PANE_WEIGHT, 1, 10000),
-    model: usePanelSize(PANE_SIZE_KEY('model'), PANE_WEIGHT, 1, 10000),
-  } satisfies Record<ViewName, readonly [number, (v: number) => void, () => void]>;
+  // Pane sizes: the tab's weight per view, so each gap between two open panes resizes them. The
+  // last sizes set are also remembered, for the first tab of a new session.
+  const setSize = useCallback((v: ViewName, weight: number) => {
+    const w = Math.round(Math.min(PANE_WEIGHT_MAX, Math.max(PANE_WEIGHT_MIN, weight)));
+    update((s) => (s.sizes[v] === w ? s : { ...s, sizes: { ...s.sizes, [v]: w } }));
+    writePref(PANE_SIZE_KEY(v), w);
+  }, [update]);
+  const sizes = Object.fromEntries(VIEW_NAMES.map((v) => [v, [tab.state.sizes[v] ?? PANE_WEIGHT, (w: number) => setSize(v, w)] as const])) as Record<ViewName, readonly [number, (w: number) => void]>;
   const views = useRef<HTMLDivElement>(null);
   const paneEl = (v: ViewName) => views.current?.querySelector<HTMLElement>(`:scope > .pane-${v}`) ?? null;
 
@@ -210,9 +207,9 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
     }, 0);
   }, [showing, setShowing]);
 
-  // Graph settings survive moving between pages and views (for the session).
-  const [settings, setSettingsState] = useState<GraphSettings>(() => loadSettings() ?? DEFAULT_SETTINGS);
-  const setSettings = useCallback((s: GraphSettings) => { setSettingsState(s); saveSettings(s); }, []);
+  // Graph settings are the tab's, and survive moving between pages and views; the last ones set start a new session's first tab.
+  const settings = tab.state.graph;
+  const setSettings = useCallback((s: GraphSettings) => { update((t: TabView) => ({ ...t, graph: s })); saveLastSettings(s); }, [update]);
   const [graphInfo, setGraphInfo] = useState<GraphInfo | null>(null);
   const onGraph = useCallback((info: GraphInfo) => setGraphInfo(info), []);
 
@@ -220,8 +217,15 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   const hrefFor = useCallback((id: string) => withView(addressOf(index, id), asked), [index, askedKey]);
   const onNavigate = useCallback((id: string) => navigate(hrefFor(id)), [hrefFor]);
 
+  // The wiki's scroll is the tab's: it comes back when the tab is active again, and a new page starts at the top.
   const wikiPane = useRef<HTMLDivElement>(null);
-  useEffect(() => { wikiPane.current?.scrollTo?.(0, 0); }, [focus]);
+  const wikiOpen = open.includes('wiki');
+  const tabRef = useRef(tab);
+  tabRef.current = tab;
+  useLayoutEffect(() => {
+    if (wikiPane.current) wikiPane.current.scrollTop = tabs.scrollOf(tabRef.current);
+  }, [tab.key, tab.page, wikiOpen, tabs.scrollOf]);
+  const onWikiScroll = useCallback(() => { if (wikiPane.current) tabs.setScroll(tabRef.current, wikiPane.current.scrollTop); }, [tabs.setScroll]);
 
   // Commands.
   useCommand('viewWiki', () => toggleView('wiki'));
@@ -238,22 +242,12 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   useCommand('showReferences', () => openInspectorAt('.links-in-heading'), index.byId.has(focus));
   useCommand('expandAll', () => { expandAllOnPage(true); announce('Expanded every row'); });
   useCommand('collapseAll', () => { expandAllOnPage(false); announce('Collapsed every row'); });
+  // Tabs.
+  useCommand('keepTab', () => { tabs.keep(tab.key); announce('Tab kept open'); });
+  useCommand('closeTab', () => { tabs.close(tab.key); announce(tabs.set.tabs.length > 1 ? 'Tab closed' : 'The last tab stays open, as a preview'); });
+  useCommand('nextTab', () => tabs.cycle(1), tabs.set.tabs.length > 1);
+  useCommand('previousTab', () => tabs.cycle(-1), tabs.set.tabs.length > 1);
 
-  const inspectorToggle = (
-    <Tooltip label={`${showing ? 'Hide' : 'Show'} the inspector`} command="toggleInspector" placement="left">
-      <button
-        type="button"
-        ref={inspectorButton}
-        className={`icon-button inspector-toggle${showing ? ' is-on' : ''}`}
-        aria-label={`${showing ? 'Hide' : 'Show'} the inspector`}
-        aria-expanded={showing}
-        aria-controls="inspector"
-        onClick={() => setShowing(!showing)}
-      >
-        <Icon name="sidebar-right" size={16} />
-      </button>
-    </Tooltip>
-  );
   const content: Record<ViewName, ReactNode> = {
     wiki: <WikiContent index={index} route={route} />,
     graph: (
@@ -268,26 +262,18 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
     ),
   };
 
-  /** The pane shown furthest right (the maximized one, when one is), whose bar holds the View toggles. */
-  const rightmost: ViewName = full ?? open[open.length - 1];
-  /** The pane shown furthest left, which carries the page's title. */
+  /** The pane shown furthest left (the maximized one, when one is), which carries the page's title. */
   const leftmost: ViewName = full ?? open[0];
 
-  /** A view toggle's tooltip: what a click does, and that the last open view stays open. */
-  const toggleLabel = (v: ViewName) => {
-    return open.length === 1 && open[0] === v ? `${VIEW_LABELS[v]} view (stays open: it is the only one)` : `${VIEW_LABELS[v]} view`;
-  };
-
   /**
-   * One pane: a panel with one title bar (LA-PAT-APP-CODE-R11), as an editor group in VS Code. At its
-   * left a quiet label names its view, with a button that closes the pane when more than one is
-   * open. At its right, all icon buttons in one style: on the rightmost pane only, the View toggles
-   * and a divider; on every pane its maximize button; on the rightmost pane the inspector toggle.
+   * One pane: a panel with one slim header (LA-PAT-APP-CODE-R11), naming its view at the left and
+   * holding only the pane's own actions at the right, all icon buttons in one style: its close
+   * button when more than one pane is open, and its full screen button. The page's tabs, the View
+   * toggles and the inspector toggle are the page bar's.
    */
   const pane = (view: ViewName) => {
     const isFull = full === view;
     const name = VIEW_LABELS[view];
-    const last = view === rightmost;
     return (
       <section
         key={view}
@@ -300,36 +286,14 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
         <div className="pane-bar">
           <div className="pane-head">
             <span className="pane-name"><ViewIcon view={view} size={15} /> {name}</span>
+          </div>
+          <div className="pane-actions">
             {open.length > 1 && (
               <Tooltip label={`Close the ${lower(view)} pane`}>
                 <button type="button" className="icon-button pane-close" aria-label={`Close the ${lower(view)} pane`} onClick={() => toggleView(view)}>
                   <Icon name="x" size={14} />
                 </button>
               </Tooltip>
-            )}
-          </div>
-          <div className="pane-actions">
-            {last && (
-              <>
-                <div className="pane-views" role="group" aria-label="View">
-                  {offered.map((t) => (
-                    <Tooltip key={t} label={toggleLabel(t)} command={VIEW_COMMANDS[t]}>
-                      <button
-                        type="button"
-                        ref={(el) => { toggles.current[t] = el; }}
-                        className={`icon-button${open.includes(t) ? ' is-on' : ''}`}
-                        aria-label={VIEW_LABELS[t]}
-                        aria-pressed={open.includes(t)}
-                        data-command={VIEW_COMMANDS[t]}
-                        onClick={() => toggleView(t)}
-                      >
-                        <ViewIcon view={t} />
-                      </button>
-                    </Tooltip>
-                  ))}
-                </div>
-                <span className="pane-divider" aria-hidden="true" />
-              </>
             )}
             <Tooltip label={isFull ? 'Leave full screen' : 'Full screen'} command={isFull ? 'escape' : 'maximizePane'} placement="left">
               <button
@@ -343,16 +307,16 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
                 <Icon name={isFull ? 'minimize' : 'maximize'} size={16} />
               </button>
             </Tooltip>
-            {last && !narrow && inspectorToggle}
           </div>
         </div>
-        <div className={view === 'wiki' ? 'pane-scroll' : 'pane-body'} ref={view === 'wiki' ? wikiPane : undefined}>
+        <div className={view === 'wiki' ? 'pane-scroll' : 'pane-body'} ref={view === 'wiki' ? wikiPane : undefined} onScroll={view === 'wiki' ? onWikiScroll : undefined}>
           {view === leftmost && <PageTitle index={index} route={route} fixed={view !== 'wiki'} />}
           {content[view]}
         </div>
       </section>
     );
   };
+
 
   /** The handle in the gap between two open panes: the left one's share of the two, in percent. */
   const gap = (a: ViewName, b: ViewName) => {
@@ -382,44 +346,88 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
     );
   };
 
+  if (narrow) {
+    return (
+      <PhoneLayout
+        index={index}
+        route={route}
+        front={open[0]}
+        offered={offered}
+        tabs={tabs}
+        onView={showOnly}
+        wikiPane={wikiPane}
+        onWikiScroll={onWikiScroll}
+        content={content[open[0]]}
+        inspectorShown={showing}
+        onInspector={setShowing}
+        inspectorButton={inspectorButton}
+        inspector={(
+          <Inspector
+            ref={inspector}
+            index={index}
+            focus={focus}
+            graph={open.includes('graph') ? graphInfo : null}
+            onNavigate={onNavigate}
+            hrefFor={hrefFor}
+            onClose={() => setShowing(false)}
+            drawer
+          />
+        )}
+        inspectorRef={inspector}
+      />
+    );
+  }
+
+
   const columns = open.map((v) => `minmax(${PANE_MIN_PX}px, ${sizes[v][0]}fr)`).join(' var(--panel-gap) ');
   return (
     <div
       ref={layout}
-      className={`focus-layout${showing && !narrow ? ' with-inspector' : ''}`}
+      className={`focus-layout${showing ? ' with-inspector' : ''}`}
       style={{ '--inspector-width': `${inspectorWidth}px` } as CSSProperties}
     >
       <div className="focus-main">
-        {narrow && <div className="pane-narrow-actions">{inspectorToggle}</div>}
+        <PageBar
+          index={index}
+          tabs={tabs}
+          offered={offered}
+          open={open}
+          onView={toggleView}
+          compact={false}
+          inspectorShown={showing}
+          onInspector={setShowing}
+          inspectorButton={inspectorButton}
+          toggles={toggles}
+        />
         <div
           ref={views}
+          id={TAB_PANEL_ID}
+          role="tabpanel"
+          aria-labelledby={tab.key ? tabId(tab.key) : undefined}
           className={`focus-views panes-${open.length}`}
           data-views={openKey}
-          style={open.length > 1 && !narrow ? { gridTemplateColumns: columns } : undefined}
+          style={open.length > 1 ? { gridTemplateColumns: columns } : undefined}
         >
           {open.flatMap((v, i) => (i === 0 ? [pane(v)] : [gap(open[i - 1], v), pane(v)]))}
         </div>
       </div>
       {showing ? (
         <>
-          {narrow && <div className="drawer-backdrop" onMouseDown={() => setShowing(false)} />}
-          {!narrow && (
-            <ResizeHandle
-              label="Resize the inspector"
-              side="after"
-              value={inspectorWidth}
-              min={260}
-              max={640}
-              step={16}
-              bigStep={64}
-              valueAt={(x) => (layout.current?.getBoundingClientRect().right ?? x) - x}
-              onChange={setInspectorWidth}
-              onReset={resetInspectorWidth}
-              collapseBelow={160}
-              onCollapse={() => setShowing(false)}
-            />
-          )}
-          <InspectorHost narrow={narrow} onEscape={() => setShowing(false)}>
+          <ResizeHandle
+            label="Resize the inspector"
+            side="after"
+            value={inspectorWidth}
+            min={260}
+            max={640}
+            step={16}
+            bigStep={64}
+            valueAt={(x) => (layout.current?.getBoundingClientRect().right ?? x) - x}
+            onChange={setInspectorWidth}
+            onReset={resetInspectorWidth}
+            collapseBelow={160}
+            onCollapse={() => setShowing(false)}
+          />
+          <div className="inspector-column panel">
             <Inspector
               ref={inspector}
               index={index}
@@ -428,29 +436,116 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
               onNavigate={onNavigate}
               hrefFor={hrefFor}
               onClose={() => setShowing(false)}
-              drawer={narrow}
             />
-          </InspectorHost>
+          </div>
         </>
       ) : null}
     </div>
   );
 }
 
-/** On a narrow screen the inspector is a drawer: focus moves into it, Escape closes it. */
-function InspectorHost({ narrow, onEscape, children }: { narrow: boolean; onEscape: () => void; children: ReactNode }) {
-  const box = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!narrow) return;
-    box.current?.querySelector<HTMLElement>('aside')?.focus();
-  }, [narrow]);
+// ---------- The phone layout ----------
+
+interface PhoneLayoutProps {
+  index: SpecIndex;
+  route: FocusRoute;
+  /** The one view shown: the first of those the address names. */
+  front: ViewName;
+  offered: ViewName[];
+  tabs: PageTabsApi;
+  onView: (view: ViewName) => void;
+  wikiPane: RefObject<HTMLDivElement | null>;
+  onWikiScroll: () => void;
+  content: ReactNode;
+  inspectorShown: boolean;
+  onInspector: (show: boolean) => void;
+  inspectorButton: RefObject<HTMLButtonElement | null>;
+  inspector: ReactNode;
+  inspectorRef: RefObject<HTMLElement | null>;
+}
+
+/**
+ * On a phone (notes/mobile-design.md) the page shows one view at a time, full width, with no pane
+ * headers and no handles. The page bar is the same bar as on a wide screen, compact, under the
+ * shell's top bar (which names the page): the open pages as a sheet, the View switch, and the
+ * inspector as a bottom sheet.
+ */
+function PhoneLayout(props: PhoneLayoutProps) {
+  const { index, route, front, offered, tabs, onView, wikiPane, onWikiScroll, content, inspectorShown, onInspector, inspectorButton, inspector, inspectorRef } = props;
+  const [pagesOpen, setPagesOpen] = useState(false);
+  const pagesButton = useRef<HTMLButtonElement>(null);
+  const pagesSheet = useRef<HTMLUListElement>(null);
+  const count = tabs.set.tabs.length;
+  const closePages = useCallback(() => { setPagesOpen(false); setTimeout(() => pagesButton.current?.focus(), 0); }, []);
+  useEffect(() => { if (pagesOpen) pagesSheet.current?.querySelector<HTMLElement>('[aria-current], button')?.focus(); }, [pagesOpen]);
+  // The inspector sheet takes focus as it opens; closing it gives focus back to its button.
+  useEffect(() => { if (inspectorShown) inspectorRef.current?.focus(); }, [inspectorShown, inspectorRef]);
+  const page = focusOf(route);
+  useEffect(() => { setPagesOpen(false); }, [page]);
+
   return (
-    <div
-      ref={box}
-      className={narrow ? 'inspector-drawer' : 'inspector-column panel'}
-      onKeyDown={narrow ? (e) => { if (e.key === 'Escape' && !e.defaultPrevented) { e.preventDefault(); onEscape(); } } : undefined}
-    >
-      {children}
+    <div className="focus-layout is-phone">
+      <PageBar
+        index={index}
+        tabs={tabs}
+        offered={offered}
+        open={[front]}
+        onView={onView}
+        compact
+        inspectorShown={inspectorShown}
+        onInspector={onInspector}
+        inspectorButton={inspectorButton}
+        pagesOpen={pagesOpen}
+        onPages={() => setPagesOpen(true)}
+        pagesButton={pagesButton}
+      />
+      <section data-view={front} className={`pane panel pane-${front}`} aria-label={`${VIEW_LABELS[front]} pane`}>
+        <div className={front === 'wiki' ? 'pane-scroll' : 'pane-body'} ref={front === 'wiki' ? wikiPane : undefined} onScroll={front === 'wiki' ? onWikiScroll : undefined}>
+          {front === 'wiki' && <PageTitle index={index} route={route} />}
+          {content}
+        </div>
+      </section>
+      {inspectorShown && (
+        <BottomSheet label="Inspector" className="inspector-sheet" onClose={() => onInspector(false)}>
+          {inspector}
+        </BottomSheet>
+      )}
+      {pagesOpen && (
+        <BottomSheet label="Open pages" className="pages-sheet" onClose={closePages}>
+          <div className="sheet-head">
+            <h2 className="sheet-title">Open pages <span className="section-count">{count}</span></h2>
+            <button type="button" className="icon-button" aria-label="Close the open pages" onClick={closePages}><Icon name="x" /></button>
+          </div>
+          <ul ref={pagesSheet} className="pages-list" aria-label="Open pages">
+            {tabs.set.tabs.map((t) => {
+              const { id, title } = tabLabel(index, t.page);
+              const active = t.key === tabs.set.active;
+              const name = id ? `${id} ${title}` : title;
+              return (
+                <li key={t.key} className={`pages-row${active ? ' is-active' : ''}${t.preview ? ' is-preview' : ''}`}>
+                  <button
+                    type="button"
+                    className="pages-open"
+                    aria-current={active ? 'page' : undefined}
+                    aria-label={t.preview ? `${name}, preview` : name}
+                    onClick={() => { tabs.activate(t.key); closePages(); }}
+                  >
+                    {id && <span className="tab-id">{id}</span>}
+                    <span className="tab-title">{title}</span>
+                  </button>
+                  {t.preview && (
+                    <button type="button" className="pages-keep" aria-label={`Keep ${name} open`} onClick={() => tabs.keep(t.key)}>Keep</button>
+                  )}
+                  <button type="button" className="icon-button" aria-label={`Close ${name}`} onClick={() => tabs.close(t.key)}>
+                    <Icon name="x" size={16} />
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+          <p className="hint pages-hint">A page you open replaces the preview (in italics); keep one to hold it open.</p>
+        </BottomSheet>
+      )}
     </div>
   );
 }
@@ -534,6 +629,3 @@ function GroupWiki({ index, gid }: { index: SpecIndex; gid: string }) {
     </div>
   );
 }
-
-/** Reads the views last open. */
-export const rememberedViews = (): ViewName[] => parseViews(readPref<string>(VIEW_KEY, 'wiki', isString));

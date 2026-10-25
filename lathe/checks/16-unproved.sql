@@ -1,11 +1,16 @@
--- Work to do: an obligation (any kind the meta-model marks as one) that no automated or manual
--- test proves through a 'proof' link. A test with no state is automated; a planned test is not proof.
--- A pattern rule is owed by each domain that follows its pattern, itself or through a use case (unless,
--- followed only through use cases, its setting is Not applicable in every one of them there, as in
--- lathe/src/coverage.ts), and only a test in that domain
--- proves it there, so it is reported once for each domain that owes it and lacks one.
--- An automated test's proof counts only when its file backs it, as in coverage: the file names the test's
--- own ID (or its key), or names that target. An unbacked claim is also a proof-not-in-file error.
+-- An obligation that no automated or manual test proves yet.
+--
+-- A test proves an obligation through a `proof` link such as `proves`. A test with no state is automated; a
+-- planned test is not proof. A pattern rule is owed by each domain that follows its pattern, itself or
+-- through a use case (unless, followed only through use cases, its setting is Not applicable in every one of
+-- them there, as in lathe/src/coverage.ts), and only a test in that domain proves it there, so it is
+-- reported once for each domain that owes it and lacks one. An automated test's proof counts only when its
+-- file backs it, as in coverage: the file names the test's own ID (or its key), or names that target. An
+-- unbacked claim is also a proof-not-in-file error. Write a test that `proves` it, and name the test in its
+-- file.
+--
+-- severity: warning
+-- kinds: requirement domain_rule interaction_requirement pattern_rule
 SELECT severity, "check", record, message FROM (
 WITH stated AS (
   SELECT DISTINCT l.target, t.kind AS target_kind, s.domain AS source_domain, s.kind AS source_kind, s.path,
