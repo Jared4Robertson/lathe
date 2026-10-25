@@ -1,6 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { Link, useLocation } from '../router';
-import { useSpaces } from '../shell/spaces';
+import { Link } from '../router';
 import { checkPagePath } from '../format/reference';
 import { RecordMarkdown } from './mentions';
 import { DomainPatterns } from './PatternParts';
@@ -13,7 +12,7 @@ import { domainFolders, ungrouped, type Folder } from './folders';
 import { GroupSections, groupMatches } from './FolderGroups';
 import {
   byIdOrder,
-  checksPath,
+  isWorkspaceProblem,
   kindLabel,
   problemOrder,
   type Problem,
@@ -47,14 +46,18 @@ const recordsIn = (index: SpecIndex, predicate: (r: SpecRecord) => boolean) => i
 
 // ---------- Pages ----------
 
-/** The pages without a focus record: Products, Checks, and unknown addresses. */
-export function SpecView({ spec, route }: { spec: SpecState; route: SpecRoute }) {
+/**
+ * The pages without a focus record: the products (the space chooser, outside every space), a
+ * space's Checks, and unknown addresses. `space` is the current space's index.
+ */
+export function SpecView({ spec, space, route }: { spec: SpecState; space: SpecIndex | null; route: SpecRoute }) {
   const { index } = spec;
   let page: ReactNode;
-  if (!index) {
+  if (!index || !space) {
     page = <div className="placeholder"><p>{spec.error ? `Couldn't load the specs: ${spec.error}` : 'Loading specs…'}</p></div>;
   } else if (route.page === 'checks') {
-    page = <ChecksPage index={index} />;
+    const product = space.byId.get(route.product);
+    page = product?.kind === 'product' ? <ChecksPage index={space} product={product} /> : <NotFound what="product" id={route.product} />;
   } else if (route.page === 'specs') {
     page = <SpecsHome index={index} />;
   } else {
@@ -287,41 +290,46 @@ export function DomainWiki({ index, id }: { index: SpecIndex; id: string }) {
   );
 }
 
-/** The address of Checks filtered to one product, or of every check. */
-export const checksFor = (product: string | null) => (product ? `${checksPath}?product=${encodeURIComponent(product)}` : checksPath);
-
-function ChecksPage({ index }: { index: SpecIndex }) {
-  const { search } = useLocation();
-  const spaces = useSpaces();
-  const asked = new URLSearchParams(search).get('product');
-  const only = asked && index.byId.get(asked)?.kind === 'product' ? index.byId.get(asked)! : null;
-  // The filter offers the current space, or the product already filtered to.
-  const offer = only ?? (spaces?.current ? index.byId.get(spaces.current.id) ?? null : null);
-  const problems = [...index.workspace.problems]
-    .filter((p) => !only || (p.record !== null && index.byId.get(p.record)?.product === only.id))
-    .sort(problemOrder);
+/** Problems by check, in the order of their first problem (errors first). */
+function byCheck(problems: Problem[]): [string, Problem[]][] {
   const groups = new Map<string, Problem[]>();
-  for (const p of problems) groups.set(p.check, [...(groups.get(p.check) ?? []), p]);
-  const errors = problems.filter((p) => p.severity === 'error').length;
+  for (const p of [...problems].sort(problemOrder)) groups.set(p.check, [...(groups.get(p.check) ?? []), p]);
+  return [...groups.entries()];
+}
+
+/**
+ * A space's Checks page: its product's problems by check, then the problems that belong to no
+ * product (a broken meta-model or config), which every space's Checks page shows under Workspace.
+ * It reads the space's own index, so no other product's problems are in it.
+ */
+function ChecksPage({ index, product }: { index: SpecIndex; product: SpecRecord }) {
+  const all = index.workspace.problems;
+  const workspace = all.filter((p) => isWorkspaceProblem(index, p));
+  const own = all.filter((p) => !isWorkspaceProblem(index, p));
+  const errors = all.filter((p) => p.severity === 'error').length;
   return (
     <div className="spec-body">
-      <PageHeader eyebrow={only ? `Specs · checks in ${only.title}` : 'Specs · every check'} title="Checks">
+      <PageHeader eyebrow={`${product.title} · checks`} title="Checks">
         <p className={`checks ${errors ? 'failed' : 'ok'}`}>
-          {errors} error{errors === 1 ? '' : 's'} · {problems.length - errors} warning{problems.length - errors === 1 ? '' : 's'}
+          {errors} error{errors === 1 ? '' : 's'} · {all.length - errors} warning{all.length - errors === 1 ? '' : 's'}
         </p>
       </PageHeader>
-      {offer && (
-        <div className="checks-scope" role="group" aria-label="Show checks for">
-          <Link to={checksFor(null)} className="scope-option" aria-current={!only ? 'true' : undefined}>All products</Link>
-          <Link to={checksFor(offer.id)} className="scope-option" aria-current={only ? 'true' : undefined}>{offer.title}</Link>
-        </div>
-      )}
-      {problems.length === 0 && <p className="hint">{only ? `Every check passed in ${only.title}.` : 'Every check passed.'}</p>}
-      {[...groups.entries()].map(([check, group]) => (
+      {all.length === 0 && <p className="hint">Every check passed in {product.title}.</p>}
+      {byCheck(own).map(([check, group]) => (
         <Section key={check} title={check} titleTo={checkPagePath(check)} count={group.length}>
           <ProblemList index={index} problems={group} showCheck={false} />
         </Section>
       ))}
+      {workspace.length > 0 && (
+        <Section title="Workspace" count={workspace.length}>
+          <p className="hint">Problems that belong to no product, such as in the meta-model or the config. Every space shows them.</p>
+          {byCheck(workspace).map(([check, group]) => (
+            <Section key={check} level={3} title={check} titleTo={checkPagePath(check)} count={group.length}>
+              <ProblemList index={index} problems={group} showCheck={false} />
+            </Section>
+          ))}
+        </Section>
+      )}
     </div>
   );
 }

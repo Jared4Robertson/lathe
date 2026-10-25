@@ -66,7 +66,7 @@ describe('graph groups', () => {
     expect(spine(two)).toContain('P-D/question > P-D-Q01');
     expect(spine(two)).not.toContain('P-D > P-D-Q01');
     // In the map every group holds all its members, right beside it, and spans them exactly.
-    const map = graphMap(grouped);
+    const map = graphMap(grouped, 'P');
     for (const id of ['P-D/define/use-cases', 'P-D-UC02/requirement', 'P-D-UC02/question']) {
       const g = map.nodes.get(id)!;
       const members = g.children.map((c) => map.nodes.get(c)!);
@@ -125,7 +125,7 @@ describe('graph groups', () => {
     expect(column(fromDomain, 'P-D/define/use-cases')).toBe(column(fromDomain, 'P-D/define') + 1);
     expect(column(fromDomain, 'P-D-UC01')).toBe(column(fromDomain, 'P-D/define/use-cases') + 1);
     const n = neighborhood(grouped, 'P-D/define/use-cases', 2);
-    const map = graphMap(grouped);
+    const map = graphMap(grouped, 'P');
     const x = (id: string) => map.nodes.get(id)!.x;
     expect(x('P-D/define')).toBeLessThan(x('P-D/define/use-cases'));
     expect(x('P-D/define/use-cases')).toBeLessThan(x('P-D-UC01'));

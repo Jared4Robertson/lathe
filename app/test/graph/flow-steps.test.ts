@@ -67,7 +67,7 @@ describe('flow steps in the graph', () => {
     expect(recordIds(neighborhood(index, 'P-D-F01', 2))).toContain('P-D-F01-S01');
     // From a step, its group is the parent at the left edge, and in the map the group sits between the flow and the steps.
     expect(spine(neighborhood(index, 'P-D-F01-S02', 1))).toEqual([`${gid} > P-D-F01-S02`]);
-    const map = graphMap(index);
+    const map = graphMap(index, 'P');
     expect(map.nodes.get('P-D-F01-S02')!.parent).toBe(gid);
     expect(map.nodes.get(gid)!.parent).toBe('P-D-F01');
   });

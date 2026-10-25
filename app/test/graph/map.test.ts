@@ -5,11 +5,11 @@ import { drawnFor, frameOnMap, LABEL_MIN_HEIGHT, LABEL_SCALE, MAX_DRAWN, MIN_DRA
 import { indexWorkspace } from '../../src/specs/data';
 import { groupedWorkspace, manyOfOneKindWorkspace, testIndex } from './workspace';
 
-// The graph is one fixed map of the whole tree (LA-EXP-DR57): each parent exactly as tall as its
+// The graph is one fixed map of its product's tree (LA-EXP-DR57): each parent exactly as tall as its
 // children stacked, each child right beside it, one width per level (LA-EXP-DR58); the camera
 // draws only what is in view and big enough to see (LA-EXP-DR60).
 
-const maps = (): GraphMap[] => [graphMap(testIndex()), graphMap(indexWorkspace(groupedWorkspace())), graphMap(indexWorkspace(manyOfOneKindWorkspace()))];
+const maps = (): GraphMap[] => [graphMap(testIndex(), 'P'), graphMap(indexWorkspace(groupedWorkspace()), 'P'), graphMap(indexWorkspace(manyOfOneKindWorkspace()), 'P')];
 
 /** A synthetic tree: `n` roots, each with `k` children, each with `k` leaves. */
 function wide(n: number, k: number): GraphMap {
@@ -40,7 +40,7 @@ describe('the one map', () => {
       for (const level of map.byLevel) for (let i = 1; i < level.length; i++) expect(level[i].y).toBeGreaterThanOrEqual(level[i - 1].y + level[i - 1].h);
     }
     // The tree is the nav's: a domain spans its stages, the product its domain.
-    const map = graphMap(testIndex());
+    const map = graphMap(testIndex(), 'P');
     expect(map.nodes.get('P-D')!.children).toEqual(['P-D/define', 'P-D/design', 'P-D/question']);
     expect(map.roots).toEqual(['P']);
   });
@@ -79,7 +79,7 @@ describe('levels and content', () => {
   });
 
   it("LA-EXP-T167 A parent line runs level from the parent's right edge to the child's left edge, at the child's middle", () => {
-    const map = graphMap(testIndex());
+    const map = graphMap(testIndex(), 'P');
     for (const n of map.nodes.values()) {
       if (n.parent === null) continue;
       const p = map.nodes.get(n.parent)!;
@@ -95,7 +95,7 @@ describe('levels and content', () => {
 });
 
 describe('the level of detail', () => {
-  const map = graphMap(testIndex());
+  const map = graphMap(testIndex(), 'P');
 
   it('LA-EXP-T170 Only boxes in view and big enough are drawn, labeled when their text reads, with bars for children too small, within a budget', () => {
     // Framed on the domain: the domain and its stages are drawn; nothing outside the view.

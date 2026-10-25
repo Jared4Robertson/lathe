@@ -3,14 +3,14 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import type { SpecRecord, Workspace } from '../../lathe/src/types';
-import { findItems, rankScoped } from '../src/shell/QuickFind';
+import { findItems, rankItems } from '../src/shell/QuickFind';
 import { colorField, colorOf, iconField, monogramOf, productOfPath, spaceOf } from '../src/shell/spaces';
-import { indexWorkspace } from '../src/specs/data';
+import { indexWorkspace, spaceIndex } from '../src/specs/data';
 import { workspace } from './fixtures/workspace';
 import { main, openApp } from './helpers';
 
 // Product spaces: the rail at the far left of the nav, one icon per product; the nav, quick find
-// and Checks follow the current space; Alt+1 to Alt+9 switch spaces.
+// and Checks are the current space's alone; Alt+1 to Alt+9 switch spaces.
 
 const nav = () => screen.getByRole('navigation', { name: 'Main' });
 const rail = () => within(nav()).getByRole('list', { name: 'Spaces' });
@@ -61,17 +61,19 @@ describe('product spaces', () => {
     const index = indexWorkspace(spacesWorkspace());
     expect(spaceOf(index.byId.get('NF')!).color).toBe('#335577');
     expect(spaceOf(index.byId.get('DM')!).color).toBe(colorOf('DM'));
-    // After the spaces, a separator and the item above every product.
-    expect(nav().querySelector('.space-rail hr')).not.toBeNull();
-    expect(within(nav().querySelector<HTMLElement>('.space-rail')!).getByRole('link', { name: /^Checks for all products/ })).toHaveAttribute('href', '/checks');
+    // Nothing after the spaces: no item above every product.
+    expect(nav().querySelector('.space-rail hr')).toBeNull();
+    expect(within(nav().querySelector<HTMLElement>('.space-rail')!).getAllByRole('link')).toHaveLength(3);
   });
 
-  it('LA-EXP-T71 The current space is the product of the page, marked with aria-current and an accent bar, and stays on pages above every product', async () => {
+  it('LA-EXP-T71 The current space is the product of the page, marked with aria-current and an accent bar; its Checks page is inside it', async () => {
     const index = indexWorkspace(spacesWorkspace());
     expect(productOfPath(index, '/NF-NOTE')).toBe('NF');
     expect(productOfPath(index, '/DM-SHOP-UC01-R01')).toBe('DM');
     expect(productOfPath(index, '/DM-SHOP/use_case')).toBe('DM');
-    expect(productOfPath(index, '/checks')).toBeNull();
+    expect(productOfPath(index, '/NF/checks')).toBe('NF');
+    expect(productOfPath(index, '/format')).toBeNull();
+    expect(productOfPath(index, '/')).toBeNull();
 
     await openApp('/NF-NOTE', { workspace: spacesWorkspace() });
     await waitFor(() => expect(spaceLink('Notebook')).toHaveAttribute('aria-current', 'true'));
@@ -80,9 +82,9 @@ describe('product spaces', () => {
     const css = (await import('node:fs')).readFileSync((await import('node:path')).resolve(process.cwd(), 'src/styles.css'), 'utf8');
     expect(css).toMatch(/\.space-item\[aria-current\]::before/);
 
-    // Checks belongs to no product: the space stays Notebook.
+    // Checks is the space's own page: the space stays Notebook.
     await userEvent.setup().click(within(nav()).getByRole('link', { name: /^Checks \d+ (errors?|warnings?|problems)/ }));
-    expect(window.location.pathname).toBe('/checks');
+    expect(window.location.pathname).toBe('/NF/checks');
     expect(spaceLink('Notebook')).toHaveAttribute('aria-current', 'true');
     expect(within(panel()).getByRole('link', { name: 'Notes' })).toBeInTheDocument();
   });
@@ -131,8 +133,8 @@ describe('product spaces', () => {
   });
 
   it('LA-EXP-T74 Alt+1 to Alt+9 switch spaces in rail order, and the palette has a Switch to command for each', async () => {
-    await openApp('/checks', { workspace: spacesWorkspace() });
-    await screen.findByRole('heading', { level: 1, name: 'Checks' });
+    await openApp('/', { workspace: spacesWorkspace() });
+    await screen.findByRole('heading', { level: 1, name: 'Products' });
     const press = (n: number) => fireEvent.keyDown(document.body, { key: String(n), code: `Digit${n}`, altKey: true });
     press(3);
     expect(window.location.pathname).toBe('/NF');
@@ -144,9 +146,9 @@ describe('product spaces', () => {
     document.body.dispatchEvent(event);
     expect(event.defaultPrevented).toBe(false);
     expect(window.location.pathname).toBe('/AB');
-    // Every other shortcut still works: Ctrl+Shift+M opens Checks.
+    // Every other shortcut still works: Ctrl+Shift+M opens the space's Checks.
     fireEvent.keyDown(document.body, { key: 'M', code: 'KeyM', ctrlKey: true, shiftKey: true });
-    expect(window.location.pathname).toBe('/checks');
+    expect(window.location.pathname).toBe('/AB/checks');
 
     fireEvent.keyDown(document.body, { key: 'P', code: 'KeyP', ctrlKey: true, shiftKey: true });
     const palette = screen.getByRole('dialog', { name: 'Command palette' });
@@ -160,52 +162,54 @@ describe('product spaces', () => {
     await waitFor(() => expect(window.location.pathname).toBe('/DM'));
   });
 
-  it('LA-EXP-T75 Quick find lists the current space first, then everything else under a divider', async () => {
-    const items = findItems(indexWorkspace(spacesWorkspace()));
-    const scoped = rankScoped(items, 'not', 'NF');
-    expect(scoped.here.map((i) => i.id)).toEqual(['NF', 'NF-NOTE']);
-    expect(scoped.elsewhere.every((i) => i.product !== 'NF')).toBe(true);
-    expect(rankScoped(items, 'not', null).here).toEqual([]);
+  it('LA-EXP-T75 Quick find searches the current space only', async () => {
+    const index = indexWorkspace(spacesWorkspace());
+    const ranked = rankItems(findItems(spaceIndex(index, 'NF')), 'n', 50);
+    expect(ranked.some((i) => i.id === 'NF-NOTE')).toBe(true);
+    expect(ranked.filter((i) => /^[A-Z]/.test(i.id)).every((i) => i.id.startsWith('NF'))).toBe(true);
 
     await openApp('/DM', { workspace: spacesWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     const user = userEvent.setup();
     const find = within(nav()).getByRole('combobox', { name: 'Quick find' });
     await user.click(find);
-    await user.type(find, 'basket');
+    await user.type(find, 'note');
     let list = within(nav()).getByRole('listbox', { name: 'Quick find results' });
-    const groups = within(list).getAllByRole('group');
-    expect(groups.map((g) => g.getAttribute('aria-label'))).toEqual(['In Demo shop']);
+    // Notebook's records are another space's: nothing of them is found from Demo shop.
+    expect(within(list).queryAllByRole('option').map((o) => o.querySelector('code')!.textContent)).not.toEqual(expect.arrayContaining(['NF-NOTE']));
+    expect(within(list).queryAllByRole('group')).toHaveLength(0);
 
     await user.clear(find);
     await user.type(find, 'n');
     list = within(nav()).getByRole('listbox', { name: 'Quick find results' });
-    const named = within(list).getAllByRole('group').map((g) => g.getAttribute('aria-label'));
-    expect(named).toEqual(['In Demo shop', 'Everything else']);
-    const [here, elsewhere] = within(list).getAllByRole('group');
-    expect(within(here).getAllByRole('option').every((o) => o.querySelector('code')!.textContent!.startsWith('DM'))).toBe(true);
-    expect(within(elsewhere).getAllByRole('option').map((o) => o.querySelector('code')!.textContent)).toEqual(expect.arrayContaining(['NF-NOTE']));
-    expect(elsewhere.closest('li')).toHaveClass('is-divided');
-    // The arrow keys run through both groups as one list.
-    const options = within(list).getAllByRole('option');
-    expect(options[0]).toHaveAttribute('aria-selected', 'true');
+    const ids = within(list).getAllByRole('option').map((o) => o.querySelector('code')!.textContent!);
+    expect(ids.filter((id) => /^[A-Z]/.test(id)).every((id) => id.startsWith('DM'))).toBe(true);
+    // The arrow keys run through the results.
+    expect(within(list).getAllByRole('option')[0]).toHaveAttribute('aria-selected', 'true');
     await user.keyboard('{ArrowUp}');
     expect(within(list).getAllByRole('option').at(-1)).toHaveAttribute('aria-selected', 'true');
   });
 
-  it('LA-EXP-T76 Checks can be filtered to the current space', async () => {
+  it("LA-EXP-T76 Each space has its own Checks page: its product's problems, then the workspace's under Workspace", async () => {
     await openApp('/NF', { workspace: spacesWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Notebook' });
     await userEvent.setup().click(within(nav()).getByRole('link', { name: /^Checks \d+ (errors?|warnings?|problems)/ }));
-    const scope = within(main()).getByRole('group', { name: 'Show checks for' });
-    expect(within(scope).getByRole('link', { name: 'All products' })).toHaveAttribute('aria-current', 'true');
-    expect(within(main()).getByText('3 errors · 3 warnings')).toBeInTheDocument();
-    await userEvent.setup().click(within(scope).getByRole('link', { name: 'Notebook' }));
-    expect(window.location.pathname + window.location.search).toBe('/checks?product=NF');
-    expect(within(main()).getByText('1 error · 0 warnings')).toBeInTheDocument();
-    expect(within(main()).getByText('Specs · checks in Notebook')).toBeInTheDocument();
+    expect(window.location.pathname).toBe('/NF/checks');
+    expect(within(main()).getByText('Notebook · checks')).toBeInTheDocument();
+    // Notebook's one error and the workspace's one; none of Demo shop's.
+    expect(within(main()).getByText('2 errors · 0 warnings')).toBeInTheDocument();
+    expect(within(main()).queryByRole('group', { name: 'Show checks for' })).toBeNull();
     expect([...main().querySelectorAll('section li a')].map((a) => a.getAttribute('href'))).toEqual(['/NF-NOTE']);
-    expect(within(main()).getByRole('link', { name: 'Notebook' })).toHaveAttribute('aria-current', 'true');
+    expect(within(main()).getByRole('heading', { level: 2, name: /^Workspace/ })).toBeInTheDocument();
+    expect(within(main()).getByText('The meta-model names an unknown kind.')).toBeInTheDocument();
+    expect(main().textContent).not.toMatch(/DM-/);
+
+    await userEvent.setup().click(spaceLink('Demo shop'));
+    await userEvent.setup().click(within(nav()).getByRole('link', { name: /^Checks \d+ (errors?|warnings?|problems)/ }));
+    expect(window.location.pathname).toBe('/DM/checks');
+    expect(within(main()).getByText('2 errors · 3 warnings')).toBeInTheDocument();
+    expect(main().textContent).not.toMatch(/NF-/);
+    expect(within(main()).getByText('The meta-model names an unknown kind.')).toBeInTheDocument();
   });
 
   it('LA-EXP-T77 On a narrow screen the rail stays visible inside the nav drawer', async () => {

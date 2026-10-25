@@ -1588,6 +1588,21 @@ about. Only links to aggregates are counted; a link to a record that does not ex
 aggregate, is reported by dangling-link or relation-not-allowed instead. A rule whose parent is missing or
 unknown is not judged. Name the aggregates, move a one-aggregate rule under its aggregate, or drop the link.
 
+<a id="check-link-crosses-product"></a>
+
+### `link-crosses-product`
+
+**Error** · Lathe's `checks/78-link-crosses-product.sql`
+
+A link stays inside its product.
+
+Each product is a space of its own: its records link only to records of the same product, whatever the
+relation (`satisfies`, `involves`, `applies` and every other). A link from a record of one product to a
+record of another is reported once for each source, relation and target. A record that sits under no
+product, and a link to a record that does not exist, are reported by other checks instead. When the target
+ID is duplicated, the link is reported only if no record with that ID is in the source's product. Remove
+the link; to point a reader at the other product, name the ID in prose, where it is a plain citation.
+
 <a id="check-parse-error"></a>
 
 ### `parse-error`

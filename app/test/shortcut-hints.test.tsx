@@ -144,7 +144,7 @@ describe('shortcut hints', () => {
     expect(within(nav()).getByRole('button', { name: 'Collapse the navigation' })).toHaveAttribute('aria-keyshortcuts', 'Control+B');
     expect(within(nav()).getByRole('combobox', { name: 'Quick find' })).toHaveAttribute('aria-keyshortcuts', 'Control+P Control+K');
     expect(within(within(nav()).getByRole('list', { name: 'Spaces' })).getAllByRole('link')[0]).toHaveAttribute('aria-keyshortcuts', 'Alt+1');
-    expect(within(nav()).getByRole('link', { name: /^Checks for all products/ })).toHaveAttribute('aria-keyshortcuts', 'Control+Shift+M');
+    expect(within(nav()).getByRole('link', { name: /^Checks \d+/ })).toHaveAttribute('aria-keyshortcuts', 'Control+Shift+M');
     // Off a Mac: Alt+W and Alt+G first, as Ctrl+W closes the tab and Ctrl+G finds the next match.
     for (const [name, keys] of [['Wiki', 'Alt+W Control+1'], ['Graph', 'Alt+G Control+2']]) {
       expect(within(screen.getByRole('group', { name: 'View' })).getByRole('button', { name })).toHaveAttribute('aria-keyshortcuts', keys);

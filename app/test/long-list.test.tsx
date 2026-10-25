@@ -116,7 +116,7 @@ describe('long lists', () => {
     expect(within(main()).getByText('1 of 12')).toBeInTheDocument();
 
     // The checks page.
-    await openApp('/checks', served);
+    await openApp('/BG/checks', served);
     await screen.findByRole('heading', { level: 1, name: 'Checks' });
     expect(within(section(/^unproved/)).getByRole('searchbox', { name: 'Filter problems' })).toBeInTheDocument();
   });
