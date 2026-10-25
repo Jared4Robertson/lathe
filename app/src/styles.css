@@ -66,16 +66,12 @@ body { background: var(--paper); color: var(--ink); font: var(--text-size)/var(-
 .menu ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; }
 .menu a { display: flex; align-items: center; gap: 8px; min-height: var(--item-height); box-sizing: border-box; padding: calc(var(--item-pad-y) - 1px) 8px; border-radius: 6px; color: var(--ink); text-decoration: none; font-size: 0.92rem; min-width: 0; }
 .menu a:focus-visible, .menu button:focus-visible, .new-diagram-form input:focus-visible, .new-diagram-form textarea:focus-visible { outline: 2px solid var(--steel); outline-offset: 1px; }
-.new-diagram { margin-top: 4px; text-align: left; background: none; border: 1px dashed var(--rule); color: var(--muted); border-radius: 6px; padding: 7px 8px; font: inherit; font-size: 0.9rem; cursor: pointer; }
-.new-diagram:hover { color: var(--steel); border-color: var(--steel); }
+.new-diagram { margin-top: 4px; justify-content: flex-start; }
 .new-diagram-form { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; padding: 10px; border: 1px solid var(--rule); border-radius: 8px; }
 .new-diagram-form label { font-size: 0.78rem; font-weight: 600; }
 .new-diagram-form label span { font-weight: 400; color: var(--muted); }
 .new-diagram-form input, .new-diagram-form textarea { font: inherit; font-size: 0.9rem; padding: 6px 8px; border: 1px solid var(--rule); border-radius: 5px; background: var(--paper); color: var(--ink); resize: vertical; }
 .form-actions { display: flex; gap: 6px; margin-top: 4px; }
-.form-actions button { font: inherit; font-size: 0.82rem; padding: 6px 10px; border-radius: 5px; border: 1px solid var(--steel); background: var(--steel); color: var(--sheet); cursor: pointer; }
-.form-actions button.secondary { background: none; color: var(--ink); border-color: var(--rule); }
-.form-actions button:disabled { opacity: 0.6; cursor: default; }
 .menu .error { margin: 0; font-size: 0.78rem; }
 .description { margin: 4px 0 0; color: var(--muted); max-width: 70ch; }
 .empty { height: 100%; display: grid; grid-template-columns: minmax(0, 1fr); place-content: center; gap: 8px; max-width: 460px; margin: 0 auto; padding: 24px; color: var(--muted); }
@@ -279,7 +275,7 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-toolbar { display: flex; flex-wrap: nowrap; gap: 10px 18px; align-items: center; font-size: 0.88rem; white-space: nowrap; }
 .graph-depth { display: inline-flex; align-items: center; gap: 4px; flex: none; }
 .graph-depth span { margin-right: 4px; color: var(--muted); }
-.graph-depth button, .graph-filter-actions button { font: inherit; font-size: 0.82rem; padding: 3px 10px; border: 1px solid var(--rule); border-radius: 5px; background: var(--sheet); color: var(--ink); cursor: pointer; }
+.graph-depth button { font: inherit; font-size: 0.82rem; padding: 3px 10px; border: 1px solid var(--rule); border-radius: 5px; background: var(--sheet); color: var(--ink); cursor: pointer; }
 .graph-depth button[aria-pressed="true"] { background: var(--steel); border-color: var(--steel); color: var(--sheet); font-weight: 600; }
 .graph-depth button:disabled { opacity: 0.5; cursor: default; }
 .graph-trace-toggle { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; flex: none; }
@@ -290,7 +286,6 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-filter-body legend { font-weight: 600; font-size: 0.78rem; margin-bottom: 2px; }
 .graph-filter-body label { display: flex; gap: 6px; align-items: center; font-size: 0.82rem; }
 .graph-filter-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; }
-.graph-filter-actions button.secondary { color: var(--muted); }
 .graph-filter-body .hint { grid-column: 1 / -1; margin: 0; font-size: 0.78rem; }
 .graph-count { color: var(--muted); font-size: 0.8rem; flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
 .graph-page :is(button, input, summary, a):focus-visible { outline: 2px solid var(--steel); outline-offset: 2px; }
@@ -441,7 +436,20 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .icon-button.is-on { color: var(--steel); background: var(--steel-bg); }
 /* A view the page does not offer keeps its slot in the View group, dimmed, so the toggles never move (UX-R08). */
 .icon-button.is-unavailable, .icon-button.is-unavailable:hover { opacity: 0.4; cursor: default; color: var(--muted); background: none; border-color: transparent; }
-:is(.icon-button, .nav-section-head, .nav-chevron, .rail-item, .tree-toggle, .tree-bulk, .pane-gap, .menu a, .menu button):focus-visible { outline: 2px solid var(--steel); outline-offset: 1px; }
+/* Actions look like actions (LA-PAT-APP-UX-R09): the one Button (components/Button.tsx). Ghost is the default for a
+   standalone action: no border or fill, the hover tint. Primary is filled with the accent, for the one main action of
+   a form or dialog. A link drawn as a button keeps the button's look inside prose styles (hence the doubled class). */
+.button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 28px; box-sizing: border-box; padding: 3px 10px; border: 1px solid transparent; border-radius: 6px; background: none; color: var(--steel); font: inherit; font-size: 0.85rem; font-weight: 500; line-height: 1.25; text-align: left; text-decoration: none; white-space: nowrap; cursor: pointer; }
+.button:not(:disabled):hover { background: var(--hover-bg); }
+.button:disabled { opacity: 0.5; cursor: default; }
+.button[aria-pressed="true"] { background: var(--steel-bg); font-weight: 600; }
+.button-danger { color: var(--error); }
+.button-primary { background: var(--steel); border-color: var(--steel); color: var(--on-mark); }
+.button-primary:not(:disabled):hover { background: color-mix(in srgb, var(--steel) 85%, var(--ink)); }
+a.button.button { text-decoration: none; }
+a.button-ghost.button-ghost { color: var(--steel); }
+a.button-primary.button-primary { color: var(--on-mark); }
+:is(.icon-button, .button, .nav-section-head, .nav-chevron, .rail-item, .tree-toggle, .pane-gap, .menu a, .menu button):focus-visible { outline: 2px solid var(--steel); outline-offset: 1px; }
 
 /* The nav */
 .app.nav-collapsed { grid-template-columns: 56px var(--panel-gap) minmax(0, 1fr); }
@@ -554,7 +562,6 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 /* A tree item's padding sits on its row, so the row's stretched link (UX-R05) covers all of it. */
 .record-list.tree > li { padding: 0; }
 .record-list.tree .tree-row { padding: 5px 10px 5px 4px; }
-.tree-bulk { font: inherit; font-size: 0.78rem; padding: 2px 8px; min-height: 26px; border: 1px solid var(--rule); border-radius: 5px; background: var(--sheet); color: var(--ink); cursor: pointer; white-space: nowrap; }
 .long-list-tools.short { justify-content: flex-end; }
 .pattern-tag { font: 500 0.68rem var(--mono); padding: 0 6px; border-radius: 4px; border: 1px dashed var(--steel); color: var(--steel); white-space: nowrap; }
 li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
@@ -697,7 +704,7 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 /* Hover: everything clickable answers the pointer the same way (LA-PAT-APP-UX-R01).
    Cards and graph nodes take a ring; rows and plain buttons take a tint; small text controls turn steel.
    The center node and file nodes are not clickable, so they keep the default cursor and no hover. */
-.card, .graph-node, .aggregate-node, .leaf-node, .spec-node, .tree-bulk, .form-actions button, .graph-depth button, .graph-filter-actions button,
+.card, .graph-node, .aggregate-node, .leaf-node, .spec-node, .button, .graph-depth button,
 .quick-find-results li, .palette-list li, .graph-trace-toggle, .graph-filters > summary, .graph-legend summary {
   transition: background-color var(--hover-speed), border-color var(--hover-speed), box-shadow var(--hover-speed), color var(--hover-speed);
 }
@@ -721,13 +728,11 @@ a.row-link.row-link:focus-visible { outline: none; }
 .graph-flow .react-flow__node:hover .graph-node:not(.is-focus):not(.stage-file) { box-shadow: 0 0 0 3px var(--hover-ring); }
 .graph-flow .react-flow__node:hover .graph-node.stage-group.is-folded:not(.is-focus) { box-shadow: 3px 3px 0 -1px var(--paper), 3px 3px 0 0 var(--muted), 0 0 0 3px var(--hover-ring); }
 .aggregate-node:hover, .leaf-node:hover, .spec-node:hover { box-shadow: 0 0 0 3px var(--hover-ring); }
-.tree-bulk:hover, .graph-depth button:not([aria-pressed="true"]):not(:disabled):hover, .graph-filter-actions button:not(:disabled):hover,
-.form-actions button.secondary:not(:disabled):hover { background: var(--hover-bg); border-color: var(--steel); }
-.form-actions button:not(.secondary):not(:disabled):hover { background: color-mix(in srgb, var(--steel) 85%, var(--ink)); }
+.graph-depth button:not([aria-pressed="true"]):not(:disabled):hover { background: var(--hover-bg); border-color: var(--steel); }
 .quick-find-results li:not(.active):hover, .palette-list li:not(.active):hover { background: var(--hover-bg); }
 .graph-trace-toggle:hover, .graph-filters > summary:hover, .graph-legend summary:hover { color: var(--steel); }
 @media (prefers-reduced-motion: reduce) {
-  .card, .graph-node, .aggregate-node, .leaf-node, .spec-node, .tree-bulk, .form-actions button, .graph-depth button, .graph-filter-actions button,
+  .card, .graph-node, .aggregate-node, .leaf-node, .spec-node, .button, .graph-depth button,
   .quick-find-results li, .palette-list li, .graph-trace-toggle, .graph-filters > summary, .graph-legend summary { transition: none; }
 }
 
@@ -844,12 +849,9 @@ a.row-link.row-link:focus-visible { outline: none; }
 .theme-card-name { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 .theme-card-name small { color: var(--muted); font-size: 0.78rem; }
 .theme-card-actions { display: flex; flex-wrap: wrap; gap: 6px; }
-.spec-body a.tree-bulk { display: inline-flex; align-items: center; color: var(--ink); text-decoration: none; }
-.tree-bulk[aria-pressed="true"] { border-color: var(--steel); background: var(--steel-bg); color: var(--steel); font-weight: 600; }
-.tree-bulk.danger { border-color: var(--error); color: var(--error); }
 .confirm { display: inline-flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 0.85rem; }
-.file-button { position: relative; display: inline-flex; align-items: center; font-size: 0.78rem; padding: 2px 8px; min-height: 26px; box-sizing: border-box; border: 1px solid var(--rule); border-radius: 5px; background: var(--sheet); color: var(--ink); cursor: pointer; }
-.file-button:hover { background: var(--hover-bg); border-color: var(--steel); }
+/* A file input drawn as a ghost Button: the input covers its label. */
+.file-button { position: relative; }
 .file-button:focus-within { outline: 2px solid var(--steel); outline-offset: 1px; }
 .file-button input { position: absolute; inset: 0; opacity: 0; }
 .spec-page .error.inline-error { margin: 0; }
@@ -931,7 +933,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 .view-segment.is-on { background: var(--sheet); color: var(--steel); box-shadow: 0 1px 2px var(--shadow-soft); }
 @media (max-width: 380px) { .view-segment-label { display: none; } }
 .page-bar.is-compact .inspector-toggle { min-width: var(--touch-target); min-height: var(--touch-target); }
-:is(.page-bar-pages, .view-segment, .topbar-up, .sheet-handle, .sheet-close, .pages-open, .pages-keep, .tap-open):focus-visible { outline: 2px solid var(--steel); outline-offset: 1px; }
+:is(.page-bar-pages, .view-segment, .topbar-up, .sheet-handle, .pages-open):focus-visible { outline: 2px solid var(--steel); outline-offset: 1px; }
 
 /* On a phone the page's own header keeps its padding small, and graph and model headers wrap their tools. */
 .app.is-narrow .pane-title .spec-header { padding: 14px 16px 0; }
@@ -975,8 +977,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 .pages-open .tab-title { white-space: nowrap; }
 .pages-row.is-active .tab-title { color: var(--steel); }
 .pages-row.is-preview .tab-title { font-style: italic; font-weight: 500; }
-.pages-keep { flex: none; min-height: var(--touch-target); padding: 0 10px; border: 1px solid var(--rule); border-radius: 8px; background: var(--sheet); color: var(--ink); font: inherit; font-size: 0.85rem; cursor: pointer; }
-.pages-keep:hover { border-color: var(--steel); color: var(--steel); }
+.pages-keep { flex: none; min-height: var(--touch-target); }
 .pages-hint { margin: 0; padding: 0 16px 12px; font-size: 0.8rem; }
 
 /* Quick find, full screen: the box at the top, the results under it, Close beside it. */
@@ -985,8 +986,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 .quick-find-row { flex: none; display: flex; align-items: center; gap: 4px; }
 .quick-find-row > .quick-find { flex: 1; min-width: 0; }
 .quick-find-results.is-inline { position: static; flex: 1; min-height: 0; width: auto; max-height: none; border: 0; border-radius: 0; box-shadow: none; padding: 0; overflow-y: auto; }
-.sheet-close { flex: none; min-height: var(--touch-target); padding: 0 10px; border: 0; border-radius: 8px; background: none; color: var(--steel); font: inherit; font-weight: 600; cursor: pointer; }
-.sheet-close:hover { background: var(--hover-bg); }
+.sheet-close { flex: none; min-height: var(--touch-target); font-weight: 600; }
 
 /* The command palette and the shortcuts sheet fill the screen on a phone. */
 @media (max-width: 900px) {
@@ -1004,8 +1004,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 .tap-card-text { flex: 1; min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr); }
 .tap-card-text small { color: var(--muted); font-size: 0.72rem; }
 .tap-card-text strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.92rem; }
-.tap-open { flex: none; min-height: var(--touch-target); padding: 0 16px; border: 0; border-radius: 999px; background: var(--steel); color: var(--on-mark); font: inherit; font-weight: 600; cursor: pointer; }
-.tap-open:hover { background: color-mix(in srgb, var(--steel) 85%, var(--ink)); }
+.tap-open { flex: none; min-height: var(--touch-target); padding: 0 16px; border-radius: 999px; font-weight: 600; }
 
 /* Long IDs and code never widen the page: IDs wrap at any character, code blocks and tables scroll in their own box. */
 .record-id, .tab-id, .qf-meta code { overflow-wrap: anywhere; }
@@ -1019,8 +1018,8 @@ a.row-link.row-link:focus-visible { outline: none; }
   .menu { --nav-row-height: var(--touch-target); --nav-indent: 24px; --nav-twistie: var(--touch-target); }
   /* A gap between panels keeps its look, and its target reaches over the panels' edges. */
   .resize-handle { z-index: 5; margin-inline: calc((var(--panel-gap) - var(--touch-target)) / 2); }
-  :is(.icon-button, .rail-item, .menu a, .nav-row, .nav-chevron, .nav-folder-head, .nav-section-head, .tree-bulk, .new-diagram, .form-actions button,
-    .graph-depth button, .graph-filter-actions button, .graph-filters > summary, .graph-legend summary, .graph-trace-toggle, .quick-find-results li,
+  :is(.icon-button, .button, .rail-item, .menu a, .nav-row, .nav-chevron, .nav-folder-head, .nav-section-head,
+    .graph-depth button, .graph-filters > summary, .graph-legend summary, .graph-trace-toggle, .quick-find-results li,
     .palette-list li, .tab, .checks-scope .scope-option, .long-list-tools input, .quick-find input, .dialog-search, .segment, .file-button) { min-width: var(--touch-target); min-height: var(--touch-target); }
   .menu .rail-item { width: var(--touch-target); height: var(--touch-target); }
   .record-list.tree .tree-row, .record-list > li, .problems > li { min-height: var(--touch-target); box-sizing: border-box; }

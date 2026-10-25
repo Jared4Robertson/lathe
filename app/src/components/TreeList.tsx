@@ -1,6 +1,7 @@
 import { useEffect, useId, useSyncExternalStore, type KeyboardEvent, type ReactNode } from 'react';
 import { LongList } from './LongList';
 import { Icon } from './icons';
+import { Button } from './Button';
 
 // A list of rows, each of which can hold one level of nested rows, folded by default.
 //
@@ -111,9 +112,9 @@ export function TreeList<T>({ items, nestedOf, renderRow, itemKey, searchText, c
   };
 
   const tools = bulk && foldable.length > 0 ? (
-    <button type="button" className="tree-bulk" onClick={() => setExpanded(foldable, !allOpen)}>
+    <Button onClick={() => setExpanded(foldable, !allOpen)}>
       {allOpen ? 'Collapse all' : 'Expand all'}
-    </button>
+    </Button>
   ) : undefined;
 
   return (

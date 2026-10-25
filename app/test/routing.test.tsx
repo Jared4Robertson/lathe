@@ -46,7 +46,7 @@ describe('routing', () => {
     const nav = menu();
     expect(within(nav).getByText('Diagrams')).toBeInTheDocument();
     expect(await within(nav).findByRole('link', { name: 'People and tools' })).toHaveAttribute('href', '/diagrams/people');
-    expect(within(nav).getByRole('button', { name: '+ New diagram' })).toBeInTheDocument();
+    expect(within(nav).getByRole('button', { name: 'New diagram' })).toBeInTheDocument();
 
     // The current space's section: its product, then its domains; another product is only in the rail.
     const items = nav.querySelector<HTMLElement>('.space-items')!;
