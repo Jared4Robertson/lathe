@@ -96,7 +96,7 @@ describe('entity checks', () => {
       // A "## Fieldz" heading is not a Fields heading.
       ['EB-D-EN04', expect.stringContaining('has no ## Fields table; add a "## Fields" heading with a table of the columns Field, Meaning, Kind of value and Example')],
       // Wrong columns are reported alone: the table's repeated field is not.
-      ['EB-D-EN05', "Entity EB-D-EN05's Fields table has the columns Field, Business meaning, Kind of value, Example; use the columns Field, Meaning, Kind of value and Example, in that order."],
+      ['EB-D-EN05', "Entity EB-D-EN05's Fields table has the columns Field, Description, Kind of value, Example; use the columns Field, Meaning, Kind of value and Example, in that order."],
       ['EB-D-EN11', "Entity EB-D-EN11's Fields table has no field name in row 4; name the field, or remove the row."],
       // Name, `name` and NAME are one field name.
       ['EB-D-EN11', 'Entity EB-D-EN11\'s Fields table lists the field "Name" 3 times, in rows 1, 2, 3; name each field once.'],

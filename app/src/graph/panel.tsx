@@ -1,7 +1,7 @@
 import type { MouseEvent, ReactNode } from 'react';
 import { LongList } from '../components/LongList';
 import type { SpecIndex } from '../specs/data';
-import { FILE_KIND, PARENT, graphRelationLabel, nodeParent, parseGroupId, type Neighborhood } from './model';
+import { FILE_KIND, PARENT, graphEdgeLabel, nodeParent, parseGroupId, type Neighborhood } from './model';
 
 // The graph's part of the inspector: what the drawn graph connects to the center, the files a
 // trace reaches, and the legend. Kept apart from GraphPage (React Flow and ELK) so the inspector
@@ -30,7 +30,7 @@ export function relationTo(index: SpecIndex, graph: Neighborhood, center: string
   if (index.byId.get(id)?.parent === center) return 'child';
   return graph.edges
     .filter((e) => e.relation !== PARENT && ((e.source === center && e.target === id) || (e.target === center && e.source === id)))
-    .map((e) => (e.source === center ? graphRelationLabel(e.relation) : `${graphRelationLabel(e.relation)} this`))
+    .map((e) => graphEdgeLabel(index, e, e.source === center ? 'source' : 'target'))
     .join(', ');
 }
 

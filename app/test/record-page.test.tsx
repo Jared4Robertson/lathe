@@ -41,15 +41,15 @@ describe('record page', () => {
     expect((await screen.findByText('component tests')).tagName).toBe('STRONG');
   });
 
-  it('LA-BRW-T11 The record page shows links out and links in, grouped by relation, each clickable', async () => {
+  it('LA-BRW-T11 The record page shows links out and links in, grouped and named by their labels, each clickable', async () => {
     await openApp('/records/DM-SHOP-UC01-R01');
     await screen.findByRole('heading', { level: 1, name: 'The basket shows the new item' });
     expect(linkGroups('Links out')).toEqual({});
     expect(within(side()).getByText('This record links to nothing.')).toBeInTheDocument();
     expect(linkGroups('Links in')).toEqual({
-      'fulfills this': ['/records/DM-SHOP-E01', '/records/DM-SHOP-F01', '/records/DM-SHOP-V01'],
-      'proves this': ['/records/DM-SHOP-T01'],
-      'satisfies this': ['/records/DM-SHOP-C01'],
+      'Carried out in': ['/records/DM-SHOP-E01', '/records/DM-SHOP-F01', '/records/DM-SHOP-V01'],
+      'Designed by': ['/records/DM-SHOP-C01'],
+      'Proved by': ['/records/DM-SHOP-T01'],
     });
 
     // Follow an incoming link to the component, then see its outgoing links.
@@ -58,8 +58,8 @@ describe('record page', () => {
     expect(window.location.pathname).toBe('/records/DM-SHOP-C01');
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Basket service');
     expect(linkGroups('Links out')).toEqual({
-      implements: ['/records/DM-SHOP-E01'],
-      satisfies: ['/records/DM-SHOP-DR01', '/records/DM-SHOP-UC01-R01', '/records/DM-SHOP-UC01-R02'],
+      Implements: ['/records/DM-SHOP-E01'],
+      Satisfies: ['/records/DM-SHOP-DR01', '/records/DM-SHOP-UC01-R01', '/records/DM-SHOP-UC01-R02'],
     });
     expect(within(side()).getByText('Nothing links to this record.')).toBeInTheDocument();
   });

@@ -1,7 +1,7 @@
 ---
 id: LA-CHK-DR161
 kind: domain_rule
-title: A layer sits directly under a domain
+title: A layer sits under a domain or another layer
 parent: LA-CHK-A9
 ---
-A layer's parent MUST be a domain. Layers do not nest, and a layer is not an obligation.
+A layer's parent MUST be a domain, or another layer when it is a sub-layer of that layer. A layer is not an obligation.

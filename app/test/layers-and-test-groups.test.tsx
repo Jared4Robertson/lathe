@@ -56,21 +56,25 @@ describe('layers and test groups', () => {
     expect(plain.count).toBe(1);
   });
 
-  it('LA-BRW-T281 Test plan groups each test by the first of acceptance, domain rule, pattern, interaction and engineering that applies; empty groups are left out', () => {
+  it('LA-BRW-T281 Test plan groups each test by family, then by what it proves: acceptance, domain rule, pattern, interaction, UI, design and engineering; empty groups are left out', () => {
     const index = indexWorkspace(layerWorkspace());
     expect(tree(designFolder(index, 'DM-SHOP', 'test-plan'))).toEqual([
       {
-        label: 'Acceptance tests', count: 4, groups: [
+        label: 'Acceptance tests', count: 5, groups: [
           { label: 'Browsing', count: 1, groups: [{ label: 'Look at an item', count: 1, records: ['DM-SHOP-T03'] }] },
-          { label: 'Filling the basket', count: 2, groups: [{ label: 'Empty the basket', count: 2, records: ['DM-SHOP-T02', 'DM-SHOP-T04'] }] },
+          // A capability's test is an acceptance test, listed in its capability when it proves no UC requirement.
+          { label: 'Filling the basket', count: 3, records: ['DM-SHOP-T09'], groups: [{ label: 'Empty the basket', count: 2, records: ['DM-SHOP-T02', 'DM-SHOP-T04'] }] },
           { label: 'Use cases outside any capability', count: 1, groups: [{ label: 'Add an item to the basket', count: 1, records: ['DM-SHOP-T01'] }] },
         ],
       },
       { label: 'Domain rule tests', count: 1, records: ['DM-SHOP-T05'] },
       { label: 'Pattern tests', count: 1, groups: [{ label: 'Saving', count: 1, records: ['DM-SHOP-T06'] }] },
-      { label: 'Interaction tests', count: 1, records: ['DM-SHOP-T07'] },
-      // A capability's test is lifted into Test plan with the domain's own.
-      { label: 'Engineering checks', count: 2, records: ['DM-SHOP-T08', 'DM-SHOP-T09'] },
+      { label: 'Interaction tests', count: 1, records: ['DM-SHOP-T13'] },
+      // A view's interaction requirement is proved by a UI test, as is a test of type ui.
+      { label: 'UI tests', count: 2, records: ['DM-SHOP-T07', 'DM-SHOP-T10'] },
+      // A test of type design, and one whose links only support, are design checks.
+      { label: 'Design checks', count: 2, records: ['DM-SHOP-T11', 'DM-SHOP-T12'] },
+      { label: 'Engineering checks', count: 1, records: ['DM-SHOP-T08'] },
     ]);
     // Only one group has tests: no group level, so the tests are listed directly.
     const pay = designFolder(index, 'DM-PAY', 'test-plan');
@@ -89,7 +93,7 @@ describe('layers and test groups', () => {
     const user = userEvent.setup();
     await user.click(within(panel()).getByRole('button', { name: 'Unfold Shopping' }));
     await user.click(head(list('Folders of Shopping'), /^Design/));
-    expect(rows(list('Design of Shopping'))).toEqual(['Interaction design3', 'Technical specification5', 'Test plan9']);
+    expect(rows(list('Design of Shopping'))).toEqual(['Interaction design3', 'Technical specification5', 'Test plan13']);
 
     // One level: the layers, folded, then the components outside any layer.
     await user.click(head(list('Design of Shopping'), /^Technical specification/));
@@ -103,10 +107,10 @@ describe('layers and test groups', () => {
     // Test groups are buttons that fold, not links.
     await user.click(head(list('Design of Shopping'), /^Test plan/));
     const plan = list('Test plan of Shopping');
-    expect(rows(plan)).toEqual(['Acceptance tests4', 'Domain rule tests1', 'Pattern tests1', 'Interaction tests1', 'Engineering checks2']);
+    expect(rows(plan)).toEqual(['Acceptance tests5', 'Domain rule tests1', 'Pattern tests1', 'Interaction tests1', 'UI tests2', 'Design checks2', 'Engineering checks1']);
     expect(within(plan).queryAllByRole('link')).toEqual([]);
     await user.click(head(plan, /^Acceptance tests/));
-    expect(rows(list('Acceptance tests of Shopping'))).toEqual(['Browsing1', 'Filling the basket2', 'Use cases outside any capability1']);
+    expect(rows(list('Acceptance tests of Shopping'))).toEqual(['Browsing1', 'Filling the basket3', 'Use cases outside any capability1']);
     await user.click(head(list('Acceptance tests of Shopping'), /^Filling the basket/));
     await user.click(head(list('Filling the basket of Shopping'), /^Empty the basket/));
     expect(within(list('Empty the basket of Shopping')).getAllByRole('link').map((a) => a.textContent)).toEqual(['Emptying a basket clears it', 'A priced item can be emptied out']);
@@ -152,7 +156,7 @@ describe('layers and test groups', () => {
     expect([...models.querySelectorAll('a.record-link code')].map((c) => c.textContent)).toEqual(['DM-SHOP-C02', 'DM-SHOP-C03']);
 
     const plan = folder(/^Test plan/);
-    expect(texts(plan, 'h4')).toEqual(['Acceptance tests', 'Domain rule tests', 'Pattern tests', 'Interaction tests', 'Engineering checks']);
+    expect(texts(plan, 'h4')).toEqual(['Acceptance tests', 'Domain rule tests', 'Pattern tests', 'Interaction tests', 'UI tests', 'Design checks', 'Engineering checks']);
     expect(texts(plan, 'h5')).toEqual(['Browsing', 'Filling the basket', 'Use cases outside any capability', 'Saving']);
     expect(texts(plan, 'h6')).toEqual(['Look at an item', 'Empty the basket', 'Add an item to the basket']);
     // Test groups are not records: their headings are not links.
@@ -215,7 +219,7 @@ describe('layers and test groups', () => {
     await screen.findByRole('heading', { level: 1, name: /^Tests/ });
     const members = within(main()).getByRole('heading', { level: 2, name: /^Tests/ }).closest('section') as HTMLElement;
     // The domain's own tests (not the capability's) in their groups.
-    expect([...members.querySelectorAll('h3')].map((h) => h.firstChild?.textContent)).toEqual(['Acceptance tests', 'Domain rule tests', 'Pattern tests', 'Interaction tests', 'Engineering checks']);
+    expect([...members.querySelectorAll('h3')].map((h) => h.firstChild?.textContent)).toEqual(['Acceptance tests', 'Domain rule tests', 'Pattern tests', 'Interaction tests', 'UI tests', 'Design checks', 'Engineering checks']);
     const engineering = within(members).getByRole('heading', { level: 3, name: /^Engineering checks/ }).closest('section') as HTMLElement;
     expect([...engineering.querySelectorAll('a.record-link code')].map((c) => c.textContent)).toEqual(['DM-SHOP-T08']);
   });
@@ -292,12 +296,14 @@ describe('layers and test groups', () => {
     const folder = neighborhood(index, plan, 1);
     const titles = Object.fromEntries(folder.nodes.filter((x) => x.group && !x.context && x.id !== plan && x.id !== 'DM-SHOP/design').map((x) => [x.id, x.title]));
     expect(titles).toEqual({
-      [acceptance]: 'Acceptance tests (4)',
+      // The capability's own test is listed here too, under its capability, as the nav lists it.
+      [acceptance]: 'Acceptance tests (5)',
       [`${plan}/domain-rules`]: 'Domain rule tests (1)',
       [`${plan}/patterns`]: 'Pattern tests (1)',
       [`${plan}/interaction`]: 'Interaction tests (1)',
-      // The capability's own check is listed here too, as the nav lists it.
-      [`${plan}/engineering`]: 'Engineering checks (2)',
+      [`${plan}/ui`]: 'UI tests (2)',
+      [`${plan}/design`]: 'Design checks (2)',
+      [`${plan}/engineering`]: 'Engineering checks (1)',
     });
     expect(folder.nodes.filter((x) => !x.group && !x.context).map((x) => x.id)).toEqual([]);
 
@@ -322,7 +328,7 @@ describe('layers and test groups', () => {
 
     // A test-plan group has its own page.
     await openApp(`/records/${acceptance}`, { workspace: layerWorkspace() });
-    expect(await screen.findByRole('heading', { level: 1, name: 'Acceptance tests (4)' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Acceptance tests (5)' })).toBeInTheDocument();
   });
 
   it('LA-BRW-T292 The graph trail names each record by its title with its ID in parentheses, and a group by its name alone', async () => {
