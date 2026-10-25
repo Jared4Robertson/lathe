@@ -144,8 +144,8 @@ describe('the Model view', () => {
     const i = index();
     const entityLinks = entityWorkspace().links.filter((l) => (ENTITY_RELATIONS as readonly string[]).includes(l.relation));
     const aggregates = ['P-D-A1', 'P-D-A2', 'P-D-A3', 'P-D-A4'];
-    const drawn = aggregates.flatMap((a) => aggregateErd(i, a).lines);
-    // Every link of the domain's entities appears in exactly one aggregate's ERD, once.
+    const drawn = aggregates.flatMap((a) => aggregateErd(i, a).lines.filter((l) => !l.context));
+    // Every link of the domain's entities appears in focus in exactly one aggregate's ERD, once (elsewhere it may be the faded ring).
     const domainLinks = entityLinks.filter((l) => i.byId.get(l.source)?.domain === 'P-D');
     expect(drawn.map((l) => `${l.source}|${l.relation}|${l.target}`).sort()).toEqual(domainLinks.map((l) => `${l.source}|${l.relation}|${l.target}`).sort());
     for (const l of drawn) expect(l.links).toHaveLength(1);

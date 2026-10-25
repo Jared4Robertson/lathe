@@ -184,31 +184,32 @@ describe('layers and test groups', () => {
     expect([...listed.querySelectorAll('a.record-link code')].map((c) => c.textContent)).toEqual(['DM-SHOP-C02', 'DM-SHOP-C03']);
   });
 
-  it('LA-BRW-T286 In the graph a domain reaches its components through Layers, then a layer; depth 1 is still parent and children only, read left to right', async () => {
+  it('LA-BRW-T286 In the graph a domain reaches its components through Design, Technical specification, then a layer, one level each, read left to right', async () => {
     const index = indexWorkspace(layerWorkspace());
-    // Depth 1 from the domain: its parent and its children's groups, Layers among them.
+    // Depth 1 from the domain: its product and its stages; their folders are the faded ring.
     const domain = neighborhood(index, 'DM-SHOP', 1);
-    const ids = domain.nodes.map((n) => n.id);
-    expect(ids).toContain('DM-SHOP/layer');
-    expect(domain.nodes.find((n) => n.id === 'DM-SHOP/layer')?.title).toBe('Layers (3)');
-    expect(ids.filter((id) => id.startsWith('DM-SHOP-LAY') || id.startsWith('DM-SHOP-C0'))).toEqual([]);
+    const inFocus = domain.nodes.filter((n) => !n.context).map((n) => n.id);
+    expect(inFocus).toContain('DM-SHOP/design');
+    expect(domain.nodes.find((n) => n.id === 'DM-SHOP/design/technical-specification')).toMatchObject({ context: true, title: expect.stringMatching(/^Technical specification \(\d+\)$/) });
+    expect(domain.nodes.map((n) => n.id).filter((id) => id.startsWith('DM-SHOP-LAY') || id.startsWith('DM-SHOP-C0'))).toEqual([]);
     expect(domain.edges.every((e) => e.relation === 'parent')).toBe(true);
 
-    // Opening Layers shows the layers; a layer's components sit one column to its right.
-    const open = new Map([['DM-SHOP/layer', true]]);
-    const walk = neighborhood(index, 'DM-SHOP', 2, undefined, open);
+    // Depth 3 reaches the layers, Technical specification's records, in order; a layer's components would be the next level.
+    const walk = neighborhood(index, 'DM-SHOP', 3);
     const column = new Map(walk.nodes.map((n) => [n.id, n.column]));
-    expect(['DM', 'DM/domain', 'DM-SHOP', 'DM-SHOP/layer', 'DM-SHOP-LAY02'].map((id) => column.get(id))).toEqual([0, 1, 2, 3, 4]);
+    expect(['DM', 'DM-SHOP', 'DM-SHOP/design', 'DM-SHOP/design/technical-specification', 'DM-SHOP-LAY02'].map((id) => column.get(id))).toEqual([0, 1, 2, 3, 4]);
     for (const id of ['DM-SHOP-LAY01', 'DM-SHOP-LAY03']) expect(column.get(id)).toBe(column.get('DM-SHOP-LAY02'));
+    expect(walk.nodes.find((n) => n.id === 'DM-SHOP-C02')).toMatchObject({ context: true });
 
-    // From a layer at depth 1: the domain's Layers group to its left, its components to its right.
+    // From a layer at depth 1: Technical specification to its left, its components to its right, the stage faded.
     const layer = neighborhood(index, 'DM-SHOP-LAY02', 1);
     const lc = new Map(layer.nodes.map((n) => [n.id, n.column]));
-    expect(layer.nodes.map((n) => n.id).sort()).toEqual(['DM-SHOP-C02', 'DM-SHOP-C03', 'DM-SHOP-LAY02', 'DM-SHOP/layer']);
-    expect([lc.get('DM-SHOP/layer'), lc.get('DM-SHOP-LAY02'), lc.get('DM-SHOP-C02')]).toEqual([0, 1, 2]);
+    expect(layer.nodes.filter((n) => !n.context).map((n) => n.id).sort()).toEqual(['DM-SHOP-C02', 'DM-SHOP-C03', 'DM-SHOP-LAY02', 'DM-SHOP/design/technical-specification']);
+    expect(layer.nodes.filter((n) => n.context).map((n) => n.id)).toEqual(['DM-SHOP/design']);
+    expect([lc.get('DM-SHOP/design/technical-specification'), lc.get('DM-SHOP-LAY02'), lc.get('DM-SHOP-C02')]).toEqual([1, 2, 3]);
     const { positions } = await layoutNeighborhood(layer);
     const x = (id: string) => positions.get(id)!.x;
-    expect(x('DM-SHOP/layer')).toBeLessThan(x('DM-SHOP-LAY02'));
+    expect(x('DM-SHOP/design/technical-specification')).toBeLessThan(x('DM-SHOP-LAY02'));
     expect(x('DM-SHOP-LAY02')).toBeLessThan(x('DM-SHOP-C02'));
     expect(x('DM-SHOP-C03')).toBe(x('DM-SHOP-C02'));
   });
@@ -287,47 +288,47 @@ describe('layers and test groups', () => {
     expect(within(productChildren).getAllByText('Domain', { selector: 'small' }).length).toBeGreaterThan(0);
   });
 
-  it("LA-BRW-T291 In the graph a parent's Tests folder holds the test plan's groups, from the same folder model, each a group node that opens", async () => {
+  it("LA-BRW-T291 In the graph a domain's Test plan folder holds the test plan's groups, from the same folder model, each a group node that opens", async () => {
     const index = indexWorkspace(layerWorkspace());
-    const tests = 'DM-SHOP/test';
-    const acceptance = `${tests}/acceptance`;
-    // Depth 1 from the Tests folder: the domain and the groups, labeled with their counts.
-    const folder = neighborhood(index, tests, 1);
-    const titles = Object.fromEntries(folder.nodes.filter((x) => x.group && x.id !== tests).map((x) => [x.id, x.title]));
+    const plan = 'DM-SHOP/design/test-plan';
+    const acceptance = `${plan}/acceptance`;
+    // Depth 1 from the Test plan: the Design stage and the groups, labeled with their counts.
+    const folder = neighborhood(index, plan, 1);
+    const titles = Object.fromEntries(folder.nodes.filter((x) => x.group && !x.context && x.id !== plan && x.id !== 'DM-SHOP/design').map((x) => [x.id, x.title]));
     expect(titles).toEqual({
-      [acceptance]: 'Acceptance tests (4)',
-      [`${tests}/domain-rules`]: 'Domain rule tests (1)',
-      [`${tests}/patterns`]: 'Pattern tests (1)',
-      [`${tests}/interaction`]: 'Interaction tests (1)',
-      [`${tests}/ui`]: 'UI tests (2)',
-      [`${tests}/design`]: 'Design checks (2)',
-      [`${tests}/engineering`]: 'Engineering checks (1)',
+      // The capability's own test is listed here too, under its capability, as the nav lists it.
+      [acceptance]: 'Acceptance tests (5)',
+      [`${plan}/domain-rules`]: 'Domain rule tests (1)',
+      [`${plan}/patterns`]: 'Pattern tests (1)',
+      [`${plan}/interaction`]: 'Interaction tests (1)',
+      [`${plan}/ui`]: 'UI tests (2)',
+      [`${plan}/design`]: 'Design checks (2)',
+      [`${plan}/engineering`]: 'Engineering checks (1)',
     });
-    expect(folder.nodes.filter((x) => !x.group).map((x) => x.id)).toEqual(['DM-SHOP']);
+    expect(folder.nodes.filter((x) => !x.group && !x.context).map((x) => x.id)).toEqual([]);
 
-    // A test's place: the Tests folder, then acceptance, its capability and its use case, one column each, left to right.
-    const fromTest = neighborhood(index, 'DM-SHOP-T04', 2);
+    // A test's place: the Test plan, then acceptance, its capability and its use case, one column each, left to right.
+    const fromTest = neighborhood(index, 'DM-SHOP-T04', 3);
     const column = new Map(fromTest.nodes.map((x) => [x.id, x.column]));
-    const path = ['DM-SHOP', tests, acceptance, `${acceptance}/DM-SHOP-CAP01`, `${acceptance}/DM-SHOP-CAP01/DM-SHOP-UC02`, 'DM-SHOP-T04'];
-    expect(path.map((id) => column.get(id))).toEqual(path.map((_, i) => column.get('DM-SHOP')! + i));
+    const path = [plan, acceptance, `${acceptance}/DM-SHOP-CAP01`, `${acceptance}/DM-SHOP-CAP01/DM-SHOP-UC02`, 'DM-SHOP-T04'];
+    expect(path.map((id) => column.get(id))).toEqual(path.map((_, i) => column.get(plan)! + i));
     const spine = fromTest.edges.filter((e) => e.relation === 'parent').map((e) => `${e.source} > ${e.target}`);
     for (let i = 1; i < path.length; i++) expect(spine).toContain(`${path[i - 1]} > ${path[i]}`);
     const { positions } = await layoutNeighborhood(fromTest);
     for (let i = 1; i < path.length; i++) expect(positions.get(path[i - 1])!.x).toBeLessThan(positions.get(path[i])!.x);
 
-    // Every graph group agrees with the Test plan folder's groups (keyed by the Tests folder).
-    const plan = designFolder(index, 'DM-SHOP', 'test-plan');
-    expect(plan.groups.map((g) => g.label).sort()).toEqual(Object.values(titles).map((t) => t.replace(/ \(\d+\)$/, '')).sort());
-    // The graph's group IDs are the folder model's keys, made from the Tests folder's ID.
-    expect(Object.keys(titles).sort()).toEqual(plan.groups.map((g) => g.key.replace('DM-SHOP/design/test-plan', tests)).sort());
+    // Every graph group is the Test plan folder's group, by its key and label.
+    const folderModel = designFolder(index, 'DM-SHOP', 'test-plan');
+    expect(folderModel.groups.map((g) => g.label).sort()).toEqual(Object.values(titles).map((t) => t.replace(/ \(\d+\)$/, '')).sort());
+    expect(Object.keys(titles).sort()).toEqual(folderModel.groups.map((g) => g.key).sort());
 
-    // With one test group only, the tests hang straight under the Tests folder.
+    // With one test group only, the tests hang straight under the Test plan.
     const pay = neighborhood(index, 'DM-PAY-T01', 1);
-    expect(pay.edges.map((e) => `${e.source} > ${e.target}`)).toEqual(['DM-PAY/test > DM-PAY-T01']);
+    expect(pay.edges.filter((e) => !e.context).map((e) => `${e.source} > ${e.target}`)).toEqual(['DM-PAY/design/test-plan > DM-PAY-T01']);
 
     // A test-plan group has its own page.
     await openApp(`/records/${acceptance}`, { workspace: layerWorkspace() });
-    expect(await screen.findByRole('heading', { level: 1, name: 'Acceptance tests (4)' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Acceptance tests (5)' })).toBeInTheDocument();
   });
 
   it('LA-BRW-T292 The graph trail names each record by its title with its ID in parentheses, and a group by its name alone', async () => {

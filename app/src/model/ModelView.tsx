@@ -7,6 +7,7 @@ import { readMotion } from '../graph/motion';
 import { erdFor, lineGeometry, lineOffsets, RELATION_ENDS, type Erd, type ErdBox, type ErdLine, type Rect } from './erd';
 import { layoutErd } from './layout';
 import { TapCard, useTapToOpen } from '../graph/touch';
+import { EdgeHints } from '../graph/hints';
 
 // The Model view: the ERD of a domain (at aggregate level) or of an aggregate (its entities), drawn
 // with React Flow and laid out by ELK. An entity page draws its aggregate's ERD with the entity
@@ -28,7 +29,7 @@ type LineEdge = Edge<LineData>;
 
 function BoxView({ data }: NodeProps<BoxNode>) {
   const { box } = data;
-  const classes = ['erd-box', `erd-${box.kind}`, `tone-${box.tone}`, box.foreign && 'is-foreign', box.highlight && 'is-highlight', data.focus && 'is-focus'].filter(Boolean).join(' ');
+  const classes = ['erd-box', `erd-${box.kind}`, `tone-${box.tone}`, box.foreign && 'is-foreign', box.highlight && 'is-highlight', data.focus && 'is-focus', box.context && 'is-context'].filter(Boolean).join(' ');
   return (
     <div className={classes} title={`${box.title} (${box.id})`}>
       <Handle type="target" position={Position.Left} className="erd-handle" isConnectable={false} />
@@ -59,7 +60,7 @@ function LineView({ data }: EdgeProps<LineEdge>) {
   const { line } = data;
   const g = lineGeometry(data.source, data.target, [line.sourceEnd, line.targetEnd], data.offset);
   return (
-    <g className={`erd-line rel-${line.relation}${line.dashed ? ' is-dashed' : ''}`} data-line={line.id} data-ends={`${line.sourceEnd}-${line.targetEnd}`}>
+    <g className={`erd-line rel-${line.relation}${line.dashed ? ' is-dashed' : ''}${line.context ? ' is-context' : ''}`} data-line={line.id} data-ends={`${line.sourceEnd}-${line.targetEnd}`}>
       <title>{`${line.source} ${data.label} ${line.target}`}</title>
       <path className="erd-line-path" d={g.line} />
       <path className="erd-end" d={g.sourceEnd} />
@@ -134,9 +135,16 @@ export function ErdKey({ erd, highlight }: { erd: Erd; highlight: boolean }) {
             <li>{end(RELATION_ENDS.relates_to, true)} Related aggregate, for one whose entities refer to no other</li>
           </>
         )}
+        {erd.boxes.some((b) => b.context) && <li><span className="erd-key-context" aria-hidden="true" /> Faded: one ring out, {erd.level === 'aggregate' ? 'what the entities it refers to refer to' : 'the aggregates of other domains'}</li>}
       </ul>
     </div>
   );
+}
+
+/** The boxes in focus: every box but the context ring, or every box when all are context (a domain with no aggregates of its own). */
+export function focusRects(erd: Erd, rects: Map<string, Rect>): Map<string, Rect> {
+  const inFocus = new Map([...rects].filter(([id]) => !erd.boxes.find((b) => b.id === id)?.context));
+  return inFocus.size > 0 ? inFocus : rects;
 }
 
 /** The viewport that fits every box, centered, never zoomed in past 1. */
@@ -185,7 +193,10 @@ function ErdCanvas({ relations, erd, focus, onNavigate }: { relations: readonly 
           { type: 'target' as const, position: Position.Left, x: 0, y: r.height / 2, width: 1, height: 1 },
           { type: 'source' as const, position: Position.Right, x: r.width, y: r.height / 2, width: 1, height: 1 },
         ],
-        ariaLabel: `${box.kind === 'aggregate' ? 'Aggregate' : 'Entity'} ${box.title}${box.owner ? ` ${box.owner}` : ''}${box.root ? ', root' : ''}${box.highlight ? ' (this entity)' : ''}`,
+        // A context box is out of focus: no keyboard stop, hidden from assistive technology, faded.
+        ...(box.context
+          ? { className: 'is-context', focusable: false, domAttributes: { 'aria-hidden': true } }
+          : { ariaLabel: `${box.kind === 'aggregate' ? 'Aggregate' : 'Entity'} ${box.title}${box.owner ? ` ${box.owner}` : ''}${box.root ? ', root' : ''}${box.highlight ? ' (this entity)' : ''}` }),
         data: { box, focus: isFocus },
       };
     });
@@ -201,13 +212,18 @@ function ErdCanvas({ relations, erd, focus, onNavigate }: { relations: readonly 
     return { nodes, edges };
   }, [placed, focus, relations]);
 
-  // Fit the picture, moving there with the shared motion (LA-PAT-APP-UX-R04), or at once.
+  // Fit the boxes in focus, moving there with the shared motion (LA-PAT-APP-UX-R04), or at once;
+  // the context ring may run past the canvas's edges (LA-BRW-UC113-R06).
   const fit = useCallback((animate: boolean) => {
     const box = wrapper.current?.getBoundingClientRect();
     if (!placed || placed.rects.size === 0 || !box || box.width <= 0 || box.height <= 0) return;
     const motion = readMotion();
-    setViewport(fitRects(placed.rects, box.width, box.height), animate && motion.duration > 0 ? { duration: motion.duration, ease: motion.ease } : { duration: 0 });
+    setViewport(fitRects(focusRects(placed.erd, placed.rects), box.width, box.height), animate && motion.duration > 0 ? { duration: motion.duration, ease: motion.ease } : { duration: 0 });
   }, [placed, setViewport]);
+  const centers = useMemo(() => (placed ? placed.erd.boxes.filter((b) => b.context).flatMap((b) => {
+    const r = placed.rects.get(b.id);
+    return r ? [{ x: r.x + r.width / 2, y: r.y + r.height / 2 }] : [];
+  }) : []), [placed]);
   // Before paint (LA-PAT-APP-UX-R08): the first picture appears already fitted, never drawn at
   // the default viewport and then moved; each picture after it glides from the view before.
   const fitted = useRef(false);
@@ -270,6 +286,7 @@ function ErdCanvas({ relations, erd, focus, onNavigate }: { relations: readonly 
         <Background gap={24} size={1} />
         <Controls showInteractive={false} />
       </ReactFlow>
+      <EdgeHints centers={centers} wrapper={wrapper} />
       {armedBox && (
         <TapCard
           kind={armedBox.kind === 'aggregate' ? 'Aggregate' : 'Entity'}

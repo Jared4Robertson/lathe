@@ -83,6 +83,12 @@ export const COMMANDS: readonly Command[] = [
   { id: 'graphTrace', title: 'Trace mode on or off', group: 'Graph', keys: ['t'], when: 'graph' },
   { id: 'graphFit', title: 'Fit the graph to the view', group: 'Graph', keys: ['.'], when: 'graph' },
   { id: 'graphToggleGroup', title: 'Open or close the focused group', group: 'Graph', keys: ['o'], when: 'graph' },
+  { id: 'graphLinks', title: 'Links on or off: the center\'s own links, one step', group: 'Graph', keys: ['l'], when: 'graph' },
+  // Stepping through the tree, as a file explorer does. Alt+Left and Alt+Right stay the browser's Back and Forward, so siblings take Shift too.
+  { id: 'graphStepOut', title: 'Step out to the parent', group: 'Graph', keys: ['Alt+ArrowUp'], when: 'graph' },
+  { id: 'graphStepIn', title: 'Step in to the first child', group: 'Graph', keys: ['Alt+ArrowDown'], when: 'graph' },
+  { id: 'graphStepPrevious', title: 'Step to the previous sibling', group: 'Graph', keys: ['Alt+Shift+ArrowLeft'], when: 'graph' },
+  { id: 'graphStepNext', title: 'Step to the next sibling', group: 'Graph', keys: ['Alt+Shift+ArrowRight'], when: 'graph' },
   // Lists
   { id: 'focusSearch', title: 'Focus the nearest search box', group: 'Lists', keys: ['/'], when: 'global' },
   { id: 'treeExpand', title: 'Expand the row (or move into it)', group: 'Lists', keys: ['ArrowRight'], when: 'list', local: true },
