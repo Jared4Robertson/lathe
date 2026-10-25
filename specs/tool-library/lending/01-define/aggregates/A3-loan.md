@@ -10,7 +10,7 @@ One member holding one tool, from borrowing to return. A loan refers to its [Mem
 
 **Business identity:** Loan ID.
 
-| Field | Business meaning | Kind of value | Example |
+| Field | Meaning | Kind of value | Example |
 | --- | --- | --- | --- |
 | Loan ID | The library's number for the loan. | Whole number, assigned. | 31 |
 | Member | Who borrowed the tool. | Member reference. | Member 12 |

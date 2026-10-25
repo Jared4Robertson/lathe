@@ -1,6 +1,6 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
-import { screen, waitFor, within } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { openApp, openSideBar } from './helpers';
 import { REQUIRED_PAIRS, colorOf } from '../src/theme/audit';
@@ -9,7 +9,7 @@ import { themeCss } from '../src/theme/css';
 import { BUILT_IN_THEMES } from '../src/theme/theme';
 import { COLOR_NAMES, SETTING_NAMES } from '../src/theme/tokens';
 import { indexWorkspace, parseSpecRoute } from '../src/specs/data';
-import { APP_PAGES, OLD_PREFIXES, isRecordId, legacyAddress, redirectTarget } from '../src/views/address';
+import { APP_PAGES, isRecordId } from '../src/views/address';
 import { workspace } from './fixtures/workspace';
 // The split view loads the graph, which needs a ResizeObserver in jsdom.
 import './graph/setup';
@@ -491,8 +491,8 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     const handBuilt = sources.flatMap((f) => where(f, readFileSync(f, 'utf8'), /[`'"]\/(records|specs|graph)\b|`\/\$\{/));
     expect(handBuilt).toEqual([]);
 
-    // The router: every app page is a lowercase word that no ID can match, and the old prefixes are lowercase too.
-    for (const word of [...APP_PAGES, ...OLD_PREFIXES]) {
+    // The router: every app page is a lowercase word that no ID can match.
+    for (const word of APP_PAGES) {
       expect(word, word).toMatch(/^[a-z][a-z-]*$/);
       expect(isRecordId(word), word).toBe(false);
     }
@@ -513,38 +513,25 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     }
   });
 
-  it('LA-BRW-T521 Old addresses redirect to the same thing at its ID, replacing the history entry and keeping the query and hash', async () => {
-    const OLD: [string, string][] = [
-      ['/records/DM-SHOP-UC01', '/DM-SHOP-UC01'],
-      ['/records/DM-SHOP/use_case', '/DM-SHOP/use_case'],
-      ['/records/DM-SHOP/test/acceptance', '/DM-SHOP/test/acceptance'],
-      ['/records/DM', '/DM'],
-      ['/specs', '/'],
-      ['/specs/DM', '/DM'],
-      ['/specs/DM/DM-SHOP', '/DM-SHOP'],
-      ['/specs/DM/DM-SHOP/graph', '/DM-SHOP?view=graph'],
-      ['/graph/DM-SHOP-UC01', '/DM-SHOP-UC01?view=graph'],
-      ['/graph/DM-SHOP/use_case', '/DM-SHOP/use_case?view=graph'],
-      ['/graph', '/DM?view=graph'],
-    ];
-    for (const [old, now] of OLD) expect(redirectTarget(legacyAddress(old, 'DM')!, ''), old).toBe(now);
-    // An address that is not old is left alone.
-    for (const path of ['/', '/DM-SHOP-UC01', '/checks', '/format/kinds/use_case', '/settings/appearance']) expect(legacyAddress(path, 'DM'), path).toBeUndefined();
-    // The query and hash come along; a view the old address implies wins.
-    expect(redirectTarget('/DM-SHOP-UC01', '?view=wiki,graph', '#links-in-DM-SHOP-UC01')).toBe('/DM-SHOP-UC01?view=wiki,graph#links-in-DM-SHOP-UC01');
-    expect(redirectTarget('/DM-SHOP?view=graph', '?view=wiki&product=DM')).toBe('/DM-SHOP?view=graph&product=DM');
+  it('LA-BRW-T660 An old address is no page: /records, /specs and /graph addresses say so, and the address stays as typed', async () => {
+    for (const path of ['/records/DM-SHOP-UC01', '/records/DM-SHOP/use_case', '/specs', '/specs/DM/DM-SHOP', '/graph', '/graph/DM-SHOP-UC01']) {
+      expect(parseSpecRoute(path, indexWorkspace(workspace())), path).toEqual({ page: 'missing' });
+      await openApp(path);
+      expect(await screen.findByText(/There's no such page\./), path).toBeInTheDocument();
+      expect(window.location.pathname, path).toBe(path);
+    }
+    // `?view=split` is no view name: the page opens with the views last used, the wiki at first.
+    await openApp('/DM-SHOP-UC01?view=split');
+    await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
+    expect(screen.queryByRole('region', { name: 'Graph pane' })).toBeNull();
+  });
 
-    // In the app the redirect replaces the entry, so Back does not return to the old address.
-    const before = window.history.length;
-    await openApp('/records/DM-SHOP-UC01?view=wiki#links-in-DM-SHOP-UC01');
-    await waitFor(() => expect(window.location.pathname + window.location.search + window.location.hash).toBe('/DM-SHOP-UC01?view=wiki#links-in-DM-SHOP-UC01'));
-    expect(window.history.length).toBe(before);
-    expect(await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' })).toBeInTheDocument();
-    await openApp('/specs/DM/DM-SHOP');
-    await waitFor(() => expect(window.location.pathname).toBe('/DM-SHOP'));
-    expect(await screen.findByRole('heading', { level: 1, name: 'Shopping' })).toBeInTheDocument();
-    await openApp('/specs');
-    await waitFor(() => expect(window.location.pathname).toBe('/'));
-    expect(await screen.findByRole('heading', { level: 1, name: 'Products' })).toBeInTheDocument();
+  it('LA-BRW-T661 Changes are hard cutovers: no redirect, alias, legacy path or second addressOf signature in the app or the engine', () => {
+    const sources = [...filesUnder(SRC, /\.(tsx?|css)$/), ...filesUnder(join(ROOT, 'lathe', 'src'), /\.ts$/)];
+    const kept = sources.flatMap((f) => where(f, readFileSync(f, 'utf8'), /legacy|redirect|\balias/i));
+    expect(kept).toEqual([]);
+    // One addressOf, taking the ID alone: a second signature (an overload or another declaration) is a compatibility layer.
+    const signatures = sources.flatMap((f) => where(f, readFileSync(f, 'utf8'), /function addressOf\b|\baddressOf\s*[:=]/));
+    expect(signatures.map((s) => s.replace(/^.*?:\d+: /, ''))).toEqual(['export function addressOf(id: string): string {']);
   });
 });

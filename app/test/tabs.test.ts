@@ -77,14 +77,17 @@ describe('the tab model', () => {
     expect(updateTab(set, set.tabs[0].key, (s) => s)).toBe(set);
 
     const read = (v: unknown) => (v && typeof v === 'object' && typeof (v as S).n === 'number' ? (v as S) : null);
+    const isPage = (page: string) => page.startsWith('/');
     const stored = JSON.parse(JSON.stringify({ ...set, tabs: [...set.tabs, { key: 'x', page: 'not a path', preview: false, state: { n: 1 } }, { key: 'y', page: '/c', preview: true, state: 'bad' }] }));
-    expect(parseTabSet(stored, read)).toEqual(set);
+    expect(parseTabSet(stored, read, isPage)).toEqual(set);
     // Two previews: the last one stored wins. An unknown active tab falls back to the first.
     const two = { active: 'gone', tabs: [{ key: 't1', page: '/a', preview: true, state: { n: 1 } }, { key: 't2', page: '/b', preview: true, state: { n: 1 } }] };
-    const back = parseTabSet(two, read)!;
+    const back = parseTabSet(two, read, isPage)!;
     expect(back.tabs.map((t) => t.preview)).toEqual([false, true]);
     expect(back.active).toBe('t1');
-    expect(parseTabSet({ tabs: [] }, read)).toBeNull();
-    expect(parseTabSet('nonsense', read)).toBeNull();
+    expect(parseTabSet({ tabs: [] }, read, isPage)).toBeNull();
+    expect(parseTabSet('nonsense', read, isPage)).toBeNull();
+    // A page the reader does not accept as an address is dropped, never converted.
+    expect(parseTabSet(two, read, (page) => page === '/b')!.tabs.map((t) => t.page)).toEqual(['/b']);
   });
 });

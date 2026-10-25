@@ -28,7 +28,7 @@ export function findItems(index: SpecIndex | null, diagrams: readonly DiagramSum
   const items: FindItem[] = diagrams.map((d) => ({ key: `diagram:${d.slug}`, id: d.slug, title: d.title, kind: 'Diagram', to: `/diagrams/${d.slug}`, product: null }));
   if (index) {
     for (const r of index.workspace.records) {
-      items.push({ key: r.id, id: r.id, title: r.title, kind: kindLabel(index, r.kind), to: addressOf(index, r.id), product: r.product });
+      items.push({ key: r.id, id: r.id, title: r.title, kind: kindLabel(index, r.kind), to: addressOf(r.id), product: r.product });
     }
     for (const k of index.workspace.kinds) {
       items.push({ key: `kind:${k.kind}`, id: k.kind, title: `Kind: ${k.label}`, kind: 'Record format', to: kindPagePath(k.kind), product: null });

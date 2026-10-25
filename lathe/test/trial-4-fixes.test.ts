@@ -1,9 +1,10 @@
 // The narrow extensions S2 trial 4 asked for: the supports relation, a test's key_file, flow step paths,
-// the Business meaning column, domain rules under an entity and layers under a layer.
+// one name for the Meaning column, domain rules under an entity and layers under a layer.
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { loadWorkspace, type Workspace } from '../src/index.ts';
+import { hasFieldsColumns } from '../src/parse.ts';
 
 const fixture = (name: string) => path.join(path.dirname(fileURLToPath(import.meta.url)), 'fixtures', name);
 const ofCheck = (ws: Workspace, check: string) => ws.problems.filter((p) => p.check === check);
@@ -128,11 +129,13 @@ describe('grouping levels', () => {
     expect(record('LV-A-C01')?.parent).toBe('LV-A-LAY02');
   });
 
-  it('LA-CHK-T329 A Fields table may call its Meaning column Business meaning, in any letter case', () => {
+  it("LA-CHK-T329 A Fields table's Meaning column has one name, in any letter case", () => {
     const fields = (id: string) => twins.records.find((r) => r.id === id)?.entityFields;
     expect(fields('LV-A-EN01')).toHaveLength(2);
     expect(fields('LV-A-EN01')).toEqual(fields('LV-B-EN01'));
     expect(ofCheck(twins, 'entity-fields')).toEqual([]);
+    expect(hasFieldsColumns(['Field', 'meaning', 'Kind of value', 'Example'])).toBe(true);
+    expect(hasFieldsColumns(['Field', 'Business meaning', 'Kind of value', 'Example'])).toBe(false);
   });
 
   it('LA-CHK-T330 Coverage counts a rule under an entity and a component in a sub-layer as one level up', () => {

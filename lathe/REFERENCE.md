@@ -85,7 +85,7 @@ A domain's components are grouped into **layers**, ordered parts of its technica
 
 ## 17. Entities and the ERD
 
-An aggregate is drawn as an ERD of the records it keeps. Each is an `entity` under the aggregate: one `root`, the record the aggregate is named for, and any number of `child` parts. Its body lists its fields in a table under a `## Fields` heading, with the columns Field, Meaning, Kind of value and Example; the Meaning column may also be called Business meaning. A domain rule about one entity may sit under that entity rather than the aggregate, and still belongs to the aggregate and its domain. `has_one` and `has_many` link an entity to its parts inside the aggregate; `refers_to` may cross aggregates and domains. The app draws a domain's ERD at aggregate level and each aggregate's ERD with its entities.
+An aggregate is drawn as an ERD of the records it keeps. Each is an `entity` under the aggregate: one `root`, the record the aggregate is named for, and any number of `child` parts. Its body lists its fields in a table under a `## Fields` heading, with the columns Field, Meaning, Kind of value and Example. A domain rule about one entity may sit under that entity rather than the aggregate, and still belongs to the aggregate and its domain. `has_one` and `has_many` link an entity to its parts inside the aggregate; `refers_to` may cross aggregates and domains. The app draws a domain's ERD at aggregate level and each aggregate's ERD with its entities.
 
 ## 18. Domain events
 
@@ -168,7 +168,7 @@ A cluster of records changed together as one unit, with its own identity and rul
 
 ### Entity (`entity`)
 
-A record the domain keeps, as one box of an aggregate's ERD: the aggregate's root (role: root) or one of its children (role: child). Its body holds a Fields table: Field, Meaning (or Business meaning), Kind of value, Example. The domain rules about it may sit under it.
+A record the domain keeps, as one box of an aggregate's ERD: the aggregate's root (role: root) or one of its children (role: child). Its body holds a Fields table: Field, Meaning, Kind of value, Example. The domain rules about it may sit under it.
 
 - **Stage:** Define
 - **Folder:** [Domain model](#folder-domain-model)
@@ -185,7 +185,7 @@ A record the domain keeps, as one box of an aggregate's ERD: the aggregate's roo
 
 ### Domain event (`domain_event`)
 
-An unchangeable record that something happened in the domain, raised by its aggregate and named in the past tense (Loan opened). Its body holds a Fields table of what it carries: Field, Meaning (or Business meaning), Kind of value, Example.
+An unchangeable record that something happened in the domain, raised by its aggregate and named in the past tense (Loan opened). Its body holds a Fields table of what it carries: Field, Meaning, Kind of value, Example.
 
 - **Stage:** Define
 - **Folder:** [Domain model](#folder-domain-model)
@@ -1405,8 +1405,7 @@ Each entity or event lists its fields in a Fields table.
 
 An entity's table lists the fields it keeps and a domain event's the fields it carries. The table sits under
 a `## Fields` heading (FORMAT.md sections 17 and 18), with the columns Field, Meaning, Kind of value and
-Example, in any letter case, one row per field and each field name once. The Meaning column may also be
-called Business meaning, as S2 calls it. The engine reads the table into entity_tables and,
+Example, in any letter case, one row per field and each field name once. The engine reads the table into entity_tables and,
 when its columns are right, its rows into entity_fields. Field names are compared trimmed, without code span
 backticks, and in any letter case. A table with the wrong columns is reported for that alone. Add the
 heading and table, fix its columns, or merge the repeated field.

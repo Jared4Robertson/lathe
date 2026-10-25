@@ -15,7 +15,7 @@ import {
   type Neighborhood,
 } from '../../src/graph/model';
 import { layoutNeighborhood } from '../../src/graph/layout';
-import { addressOf, legacyAddress } from '../../src/views/address';
+import { addressOf } from '../../src/views/address';
 import { indexWorkspace } from '../../src/specs/data';
 import { groupedWorkspace, testIndex } from './workspace';
 
@@ -123,15 +123,14 @@ describe('graph groups', () => {
     expect(contextOf(two)).toEqual(expect.arrayContaining(['P', 'P-D-UC02-R01', 'P-D-UC02-Q01']));
     // The focus group cannot be folded.
     expect(focusOf(neighborhood(grouped, 'P-D/define/use-cases', 1, undefined, new Map([['P-D/define/use-cases', false]])))).toContain('P-D-UC01');
-    // A group that does not exist shows nothing; an older kind group's address still works.
+    // A group that does not exist shows nothing; a kind group's address works too.
     expect(neighborhood(index, 'P-D/flow', 2).nodes).toEqual([]);
     expect(focusOf(neighborhood(grouped, 'P-D/use_case', 1))).toEqual(['P-D', 'P-D-UC01', 'P-D-UC02', 'P-D/use_case']);
-    // Its address: /<domain-id>/<stage>/<folder>, and the old /graph address leads there in the Graph view.
-    expect(addressOf(grouped, 'P-D/define/use-cases')).toBe('/P-D/define/use-cases');
-    expect(addressOf(grouped, 'P-D/define')).toBe('/P-D/define');
-    expect(legacyAddress('/graph/P-D/define/use-cases')).toBe('/P-D/define/use-cases?view=graph');
-    expect(addressOf(grouped, 'P-D/use_case')).toBe('/P-D/use_case');
-    expect(addressOf(grouped, 'P-D-UC01')).toBe('/P-D-UC01');
+    // Its address: /<domain-id>/<stage>/<folder>.
+    expect(addressOf('P-D/define/use-cases')).toBe('/P-D/define/use-cases');
+    expect(addressOf('P-D/define')).toBe('/P-D/define');
+    expect(addressOf('P-D/use_case')).toBe('/P-D/use_case');
+    expect(addressOf('P-D-UC01')).toBe('/P-D-UC01');
   });
 
   it('LA-BRW-T103 Groups take their own column between the parent and its children, left to right', async () => {

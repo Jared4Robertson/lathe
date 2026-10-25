@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Coverage, Kind, Problem, SpecLink, SpecRecord, Workspace } from '../../../lathe/src/types';
 import { onLatheEvent } from '../events';
-import { isRecordId, legacyAddress } from '../views/address';
+import { isRecordId } from '../views/address';
 
 export type { Coverage, Kind, Problem, SpecLink, SpecRecord, Workspace };
 
@@ -111,8 +111,6 @@ export type SpecRoute =
   | { page: 'domain'; product: string; domain: string }
   | { page: 'record'; id: string }
   | { page: 'group'; parent: string; kind: string }
-  /** An old address, and where it goes now (null while that waits on the specs). */
-  | { page: 'redirect'; to: string | null }
   | { page: 'checks' }
   | { page: 'format' }
   | { page: 'format-kind'; kind: string }
@@ -125,7 +123,7 @@ const SHELL_PAGES = new Set(['diagrams', 'settings']);
 
 /**
  * Parses a path: `/` (the products), an app page, a record's bare ID or a group's parent ID and
- * kind, or an old address to redirect. With the index, a product's and a domain's ID is their
+ * kind. Any other address is missing. With the index, a product's and a domain's ID is their
  * overview; without it (while the specs load) any ID reads as a record. Null for the shell's own
  * pages (Diagrams, Settings).
  */
@@ -133,8 +131,6 @@ export function parseSpecRoute(pathname: string, index?: SpecIndex | null): Spec
   const parts = pathname.split('/').filter(Boolean).map(decodeURIComponent);
   if (parts.length === 0) return { page: 'specs' };
   if (SHELL_PAGES.has(parts[0])) return null;
-  const old = legacyAddress(pathname, index ? index.products[0]?.id ?? '' : undefined);
-  if (old !== undefined) return { page: 'redirect', to: old };
   if (isRecordId(parts[0])) {
     if (parts.length >= 2) return { page: 'group', parent: parts[0], kind: parts.slice(1).join('/') };
     const record = index?.byId.get(parts[0]);

@@ -10,7 +10,7 @@ One physical item in the catalog. Its condition decides whether it can be lent.
 
 **Business identity:** Tool ID (two drills of the same model are two tools).
 
-| Field | Business meaning | Kind of value | Example |
+| Field | Meaning | Kind of value | Example |
 | --- | --- | --- | --- |
 | Tool ID | The library's number for the tool, written on its tag. | Whole number, assigned. | 7 |
 | Name | What the tool is. | Text, not blank. | Cordless drill |

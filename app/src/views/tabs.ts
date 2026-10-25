@@ -114,19 +114,18 @@ export function updateTab<S>(set: TabSet<S>, key: string, change: (state: S) => 
 }
 
 /**
- * Reads a stored tab set, dropping anything malformed; null when nothing usable is left. `readPage`
- * puts a stored page in today's form (a tab saved under an old address), before duplicates are dropped.
+ * Reads a stored tab set, dropping anything malformed, and any tab whose page `isPage` does not
+ * accept as an address; null when nothing usable is left.
  */
-export function parseTabSet<S>(value: unknown, readState: (v: unknown) => S | null, readPage: (page: string) => string = (p) => p): TabSet<S> | null {
+export function parseTabSet<S>(value: unknown, readState: (v: unknown) => S | null, isPage: (page: string) => boolean): TabSet<S> | null {
   if (!value || typeof value !== 'object') return null;
   const raw = value as { tabs?: unknown; active?: unknown };
   if (!Array.isArray(raw.tabs)) return null;
   const tabs: Tab<S>[] = [];
   for (const t of raw.tabs as unknown[]) {
     if (!t || typeof t !== 'object') continue;
-    const { key, page: storedPage, preview, state } = t as Record<string, unknown>;
-    if (typeof key !== 'string' || typeof storedPage !== 'string' || !storedPage.startsWith('/')) continue;
-    const page = readPage(storedPage);
+    const { key, page, preview, state } = t as Record<string, unknown>;
+    if (typeof key !== 'string' || typeof page !== 'string' || !isPage(page)) continue;
     if (tabs.some((x) => x.key === key || x.page === page)) continue;
     const s = readState(state);
     if (s === null) continue;

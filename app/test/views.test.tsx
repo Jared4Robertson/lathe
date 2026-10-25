@@ -5,8 +5,7 @@ import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { parseSpecRoute } from '../src/specs/data';
-import { indexWorkspace } from '../src/specs/data';
-import { addressOf, legacyAddress, parseViews, viewsFromSearch, withView } from '../src/views/address';
+import { addressOf, parseViews, viewsFromSearch, withView } from '../src/views/address';
 import { main, openApp, openSideBar } from './helpers';
 import { testWorkspace } from './graph/workspace';
 
@@ -34,25 +33,21 @@ export function narrowScreen() {
 }
 
 describe('one address, three views', () => {
-  it('LA-BRW-T120 A record is at its bare ID and a group at /<parent-id>/<kind>; old graph and domain-graph addresses lead there', async () => {
-    const index = indexWorkspace(testWorkspace());
+  it('LA-BRW-T120 A record is at its bare ID and a group at /<parent-id>/<kind>, in every view', async () => {
     expect(parseSpecRoute('/P-D-UC01')).toEqual({ page: 'record', id: 'P-D-UC01' });
     expect(parseSpecRoute('/P-D/use_case')).toEqual({ page: 'group', parent: 'P-D', kind: 'use_case' });
-    expect(addressOf(index, 'P-D-UC01')).toBe('/P-D-UC01');
-    expect(addressOf(index, 'P-D/use_case')).toBe('/P-D/use_case');
-    expect(addressOf(index, 'P-D')).toBe('/P-D');
-    expect(legacyAddress('/graph/P-D-UC01')).toBe('/P-D-UC01?view=graph');
-    expect(legacyAddress('/graph', index.products[0].id)).toBe('/P?view=graph');
-    expect(viewsFromSearch('?view=split')).toEqual(['wiki', 'graph']);
+    expect(addressOf('P-D-UC01')).toBe('/P-D-UC01');
+    expect(addressOf('P-D/use_case')).toBe('/P-D/use_case');
+    expect(addressOf('P-D')).toBe('/P-D');
+    expect(viewsFromSearch('?view=split')).toBeNull();
     expect(viewsFromSearch('?view=model,wiki')).toEqual(['wiki', 'model']);
     expect(viewsFromSearch('?view=nonsense')).toBeNull();
     expect(parseViews('graph')).toEqual(['graph']);
     expect(withView('/X', ['model', 'wiki'])).toBe('/X?view=wiki,model');
 
-    await openApp('/graph/P-D-UC01', served());
-    await waitFor(() => expect(window.location.pathname + window.location.search).toBe('/P-D-UC01?view=graph'));
-    await openApp('/specs/P/P-D/graph', served());
-    await waitFor(() => expect(window.location.pathname + window.location.search).toBe('/P-D?view=graph'));
+    await openApp('/P-D-UC01?view=graph', served());
+    expect(await screen.findByRole('region', { name: 'Graph pane' })).toBeInTheDocument();
+    expect(window.location.pathname + window.location.search).toBe('/P-D-UC01?view=graph');
     await openApp('/P-D/use_case', served());
     expect(await screen.findByRole('heading', { level: 1, name: 'Use cases (1)' })).toBeInTheDocument();
   });
@@ -92,8 +87,8 @@ describe('one address, three views', () => {
     expect(viewToggle('Graph')).toHaveAttribute('aria-pressed', 'true');
     expect(viewToggle('Wiki')).toHaveAttribute('aria-pressed', 'false');
 
-    // A link's views win, and become the remembered ones; an old ?view=split opens wiki and graph.
-    await openApp('/P-D-V01?view=split', served());
+    // A link's views win, and become the remembered ones.
+    await openApp('/P-D-V01?view=wiki,graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Thing page' });
     expect(screen.getByRole('button', { name: 'Close the wiki pane' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Close the graph pane' })).toBeInTheDocument();
