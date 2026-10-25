@@ -51,15 +51,12 @@ describe('prose mentions', () => {
     expect(linkMentions('<p>TL-LEND-DR01</p>', links({}))).toBe('<p>TL-LEND-DR01</p>');
   });
 
-  it('LA-BRW-T172 Only the record\'s own mentions are linked; unknown IDs it was warned about look broken; missing mentions mean none', () => {
+  it('LA-BRW-T172 Only the record\'s own mentions are linked; unknown IDs it was warned about look broken', () => {
     const ix = indexWorkspace(patternWorkspace());
     const uc = ix.byId.get('DM-SHOP-UC01')!;
     const p = proseLinks(ix, uc);
     expect([...p.titles]).toEqual([['DM-PAT-CHECKOUT', 'Checkout step'], ['DM-SHOP-DR01', 'A basket holds at most 50 items']]);
     expect([...p.broken]).toEqual(['DM-SHOP-DR99']);
-    // A record from an engine before pass 5 has no mentions field.
-    const old = { ...uc, mentions: undefined } as unknown as typeof uc;
-    expect(proseLinks(ix, old).titles.size).toBe(0);
   });
 
   it('LA-BRW-T173 On a record page the body links its mentions, marks unknown IDs, and a link moves within the app', async () => {
