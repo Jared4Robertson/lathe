@@ -8,4 +8,4 @@ run_by: app/test/mentions.test.tsx
 links:
   proves: [LA-BRW-UC60-R06, LA-BRW-UC60-R07]
 ---
-Expects a record's prose links to be its mentions, its broken IDs those its warnings name, and no links when `mentions` is missing.
+Expects a record's prose links to be its mentions, its broken IDs those its warnings name.
