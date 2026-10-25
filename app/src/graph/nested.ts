@@ -15,8 +15,8 @@ import { treeChildren } from './tree';
 //   inside a padding, squarified (Bruls, Huizing and van Wijk) without sorting, so they keep the
 //   tree's order row by row where the shapes allow.
 // - A box's text scale is fixed here, in proportion to the box (LA-EXP-DR58): its label on one
-//   line fits its width (a parent's within 0.6 of it), and a header band takes at most an eighth of
-//   its box's height. The camera
+//   line fits its width (a parent's within 0.6 of it), and a header band takes at most 0.4 of its
+//   box's height over the square root of the leaves under it (between an eighth and 0.4). The camera
 //   never changes it, and hides a label too small to read (LA-EXP-DR60).
 //
 // Pure and deterministic: the same tree always gives the same map.
@@ -26,11 +26,18 @@ export const HEADER = 46;
 /** The padding inside a box around its children, and the gap between two siblings, at its text scale 1. */
 export const NEST_PAD = 8;
 export const NEST_GAP = 6;
-/** The most of its box's height a header band takes, and of its width a header's label takes, so a parent's label stays in proportion to it without crowding its children. */
-export const HEADER_SHARE = 0.125;
+/**
+ * The most of its box's height a header band takes: HEADER_SHARE_MAX over the square root of the
+ * leaves under it, never more than HEADER_SHARE_MAX nor less than HEADER_SHARE_MIN, so a parent of
+ * one record has room for its name and a parent of hundreds does not crowd them. A header's label
+ * takes at most HEADER_WIDTH_SHARE of its box's width.
+ */
+export const HEADER_SHARE_MAX = 0.4;
+export const HEADER_SHARE_MIN = 0.2;
 export const HEADER_WIDTH_SHARE = 0.6;
+export const headerShare = (leaves: number) => Math.min(HEADER_SHARE_MAX, Math.max(HEADER_SHARE_MIN, HEADER_SHARE_MAX / Math.sqrt(Math.max(1, leaves))));
 /** The map area one leaf record stands for: a little more than a Tree leaf, for the headers and padding above it. */
-export const LEAF_AREA = NODE_WIDTH * NODE_HEIGHT * 2.5;
+export const LEAF_AREA = NODE_WIDTH * NODE_HEIGHT * 4;
 /** The whole map's width over its height. */
 export const NESTED_ASPECT = 1.6;
 
@@ -98,11 +105,12 @@ export function squarify(weights: readonly number[], r: Rect): Rect[] {
 /**
  * A box's text scale (LA-EXP-DR58): a leaf's as large as fits its label on one line across its
  * width and in its height; a parent's as large as keeps its label within HEADER_WIDTH_SHARE of its
- * width and its header band within HEADER_SHARE of its height.
+ * width and its header band within its share of its height (`headerShare`, by the leaves under it).
  */
-export function nestedTextScale(r: Pick<Rect, 'w' | 'h'>, labelWidth: number, container: boolean): number {
+export function nestedTextScale(r: Pick<Rect, 'w' | 'h'>, labelWidth: number, leaves = 0): number {
+  const container = leaves > 0;
   const across = ((container ? HEADER_WIDTH_SHARE : 1) * r.w) / Math.max(1, labelWidth);
-  const down = container ? (r.h * HEADER_SHARE) / HEADER : r.h / NODE_HEIGHT;
+  const down = container ? (r.h * headerShare(leaves)) / HEADER : r.h / NODE_HEIGHT;
   return Math.max(0, Math.min(across, down));
 }
 
@@ -142,7 +150,7 @@ export function layoutNested(roots: readonly string[], childrenOf: (id: string) 
   /** Places a box, then its children inside it below its header band. */
   const place = (id: string, r: Rect) => {
     const own = kids.get(id)!;
-    const text = nestedTextScale(r, labelWidthOf(id), own.length > 0);
+    const text = nestedTextScale(r, labelWidthOf(id), own.length > 0 ? leaves.get(id)! : 0);
     const header = own.length > 0 ? HEADER * text : 0;
     nodes.set(id, { id, parent: parent.get(id)!, children: own, level: level.get(id)!, x: r.x, y: r.y, w: r.w, h: r.h, text, header, order: order++ });
     if (own.length === 0) return;
@@ -182,10 +190,4 @@ export function nestedMap(index: SpecIndex): NestedMap {
   const map = layoutNested(rootsOf(index), (id) => treeChildren(index, id), (id) => nodeLabelWidth(index, id));
   cache.set(index, map);
   return map;
-}
-
-/** Whether a node lies inside another in the map (itself included). */
-export function isWithin(map: PlacedMap, id: string, ancestor: string): boolean {
-  for (let at: string | null = id; at !== null; at = map.nodes.get(at)?.parent ?? null) if (at === ancestor) return true;
-  return false;
 }
