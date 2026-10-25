@@ -1,13 +1,17 @@
+import { readdirSync, readFileSync } from 'node:fs';
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { parseRecordFile } from '../../../lathe/src/parse';
 import { contentScale, NODE_HEIGHT, NODE_WIDTH } from '../../src/graph/layout';
 import { graphMap, layoutTree, LEVEL_ASPECT, linkEnds, MAX_LEVEL_STEP, MAX_ROOT_STEP, parentLine, typicalHeight, type GraphMap } from '../../src/graph/map';
 import { drawnFor, frameOnMap, MAX_DRAWN, MIN_DRAWN, viewRect } from '../../src/graph/camera';
-import { hasMarks, labelLines, labelShown, labelWidth, metaWidth, MIN_LABEL_PX, textScaleOf, TITLE_FONT, titleWidth } from '../../src/graph/text';
+import { BADGE_ROOM, HEX_ROOM, isCentered, LABEL_PAD, labelFor, labelLines, labelHeight, labelShown, metaWidth, MIN_LABEL_PX, textScaleOf, TITLE_FONT, titleWidth, WIDTH_MARGIN, wrapLabel, wrapText } from '../../src/graph/text';
 import { indexWorkspace, type SpecIndex } from '../../src/specs/data';
 import { groupedWorkspace, manyOfOneKindWorkspace, testIndex } from './workspace';
 
 // The graph is one fixed map of its product's tree (LA-EXP-DR57): each parent exactly as tall as its
-// children stacked, each child right beside it, one width per level (LA-EXP-DR58); the camera
+// children stacked, each child right beside it, one width and one text scale per level, each leaf
+// tall enough for its wrapped label (LA-EXP-DR58); the camera
 // draws only what is in view and big enough to see (LA-EXP-DR60).
 
 const indexes = (): SpecIndex[] => [testIndex(), indexWorkspace(groupedWorkspace()), indexWorkspace(manyOfOneKindWorkspace())];
@@ -26,7 +30,8 @@ describe('the one map', () => {
   it('LA-EXP-T165 A parent is as tall as its children stacked, starting at its top, each child beside it, nothing overlapping', () => {
     for (const map of maps()) {
       for (const node of map.nodes.values()) {
-        if (node.children.length === 0) { expect(node.h).toBe(NODE_HEIGHT); continue; }
+        // A leaf is a leaf high, or taller for its label (LA-EXP-T182).
+        if (node.children.length === 0) { expect(node.h).toBeGreaterThanOrEqual(NODE_HEIGHT); continue; }
         const kids = node.children.map((c) => map.nodes.get(c)!);
         // The stack starts at the parent's top and ends at its bottom, the gaps between included.
         expect(kids[0].y).toBe(node.y);
@@ -41,6 +46,8 @@ describe('the one map', () => {
       // Nothing overlaps.
       for (const level of map.byLevel) for (let i = 1; i < level.length; i++) expect(level[i].y).toBeGreaterThanOrEqual(level[i - 1].y + level[i - 1].h);
     }
+    // A synthetic tree's labels need no room: every leaf is a leaf high.
+    for (const n of wide(3, 8).nodes.values()) if (n.children.length === 0) expect(n.h).toBe(NODE_HEIGHT);
     // The tree is the nav's: a domain spans its stages, the product its domain.
     const map = graphMap(testIndex(), 'P');
     expect(map.nodes.get('P-D')!.children).toEqual(['P-D/define', 'P-D/design', 'P-D/question']);
@@ -59,54 +66,68 @@ describe('levels and content', () => {
     expect(contentScale(NODE_WIDTH, NODE_HEIGHT * 10)).toBe(1);
   });
 
-  it("LA-EXP-T166 Every node in a level has its width: in proportion to the level's typical height within the caps, or wider for its widest label", () => {
+  it("LA-EXP-T166 Every node in a level has its width, in proportion to the level's typical height within the caps", () => {
     for (const map of [...maps(), wide(3, 8), wide(1, 30)]) {
       const deepest = map.levels.length - 1;
       for (let l = 0; l <= deepest; l++) {
         const level = map.levels[l];
         for (const n of map.byLevel[l]) expect(n.w).toBe(level.width);
-        const below = l < deepest ? map.levels[l + 1].proportional : NODE_WIDTH;
-        // The proportional width: never narrower than the level below's, nor more than the step allows.
-        expect(level.proportional).toBeGreaterThanOrEqual(below);
-        expect(level.proportional).toBeLessThanOrEqual((l === 0 ? MAX_ROOT_STEP : MAX_LEVEL_STEP) * below + 2);
+        const below = l < deepest ? map.levels[l + 1].width : NODE_WIDTH;
+        const cap = (l === 0 ? MAX_ROOT_STEP : MAX_LEVEL_STEP) * below;
+        // Never narrower than the level below, nor more than the step allows.
+        expect(level.width).toBeGreaterThanOrEqual(below);
+        expect(level.width).toBeLessThanOrEqual(cap + 2);
         // In proportion to the level's typical height where no cap applies.
         const wanted = LEVEL_ASPECT * typicalHeight(map.byLevel[l].map((n) => n.h));
-        if (wanted > below && wanted < (l === 0 ? MAX_ROOT_STEP : MAX_LEVEL_STEP) * below) expect(Math.abs(level.proportional - wanted)).toBeLessThanOrEqual(2);
-        // The width is the proportional width or, when wider, the widest label at its box's text scale.
-        expect(level.width).toBeGreaterThanOrEqual(level.proportional);
+        if (wanted > below && wanted < cap) expect(Math.abs(level.width - wanted)).toBeLessThanOrEqual(2);
       }
     }
-    // A synthetic tree's labels are a leaf wide: a level of leaves keeps a leaf's width, and a level is as wide as its tallest box's label.
-    for (const map of [wide(3, 8), wide(1, 30)]) {
-      map.levels.forEach((level, l) => {
-        const widest = Math.max(...map.byLevel[l].map((n) => n.text * NODE_WIDTH));
-        expect(level.width).toBe(Math.max(level.proportional, 2 * Math.ceil(widest / 2)));
-      });
-      expect(map.levels.at(-1)!.width).toBe(NODE_WIDTH);
-    }
+    // A level of leaves keeps a leaf's width.
+    for (const map of [wide(3, 8), wide(1, 30)]) expect(map.levels.at(-1)!.width).toBe(NODE_WIDTH);
     // The typical height is the median by height: a few tall nodes outweigh many short ones.
     expect(typicalHeight([56, 56, 56, 56, 1000, 1000])).toBe(1000);
     expect(typicalHeight([56, 56, 56])).toBe(56);
   });
 
-  it('LA-EXP-T182 Every level is wide enough for each label in it on one line at its fixed text scale, so no title is cut off', () => {
+  it("LA-EXP-T182 Every box in a level has its level's text scale, and every box is tall enough for its label wrapped on whole words", () => {
     for (const index of indexes()) {
       const map = graphMap(index, 'P');
       for (const n of map.nodes.values()) {
-        // The text scale is the box's height over a leaf's, fixed by the map.
-        expect(n.text).toBe(Math.max(1, n.h / NODE_HEIGHT));
-        const lines = labelLines(index, n.id);
-        expect(n.w, n.id).toBeGreaterThanOrEqual(n.text * labelWidth(lines, { hexagon: index.byId.get(n.id)?.kind === 'domain', marked: hasMarks(index, n.id) }) - 1);
+        // The text scale is the level's width over a leaf's, fixed by the map.
+        expect(n.text).toBe(map.levels[n.level].width / NODE_WIDTH);
+        expect(n.text).toBe(map.levels[n.level].text);
+        // Every box is tall enough for its wrapped label at that scale: a leaf grows for it, a parent's stack holds it.
+        const label = labelFor(index, n.id, isCentered(n.text, n.children.length > 0));
+        expect(n.h, n.id).toBeGreaterThanOrEqual(n.text * labelHeight(label) - 1);
+        // The lines give the text back, and each fits a leaf's width at text scale 1, so at every scale.
+        expect(label.title.join('')).toBe(labelLines(index, n.id).title);
+        const hexagon = index.byId.get(n.id)?.kind === 'domain';
+        for (const line of label.title) expect(titleWidth(line.trimEnd()) * WIDTH_MARGIN).toBeLessThanOrEqual(NODE_WIDTH - 2 * LABEL_PAD - (hexagon ? 2 * HEX_ROOM : 0));
       }
     }
+    // A parent whose own label needs more than its stack passes the difference to its last leaf: the stack still fills it.
+    const tall = layoutTree(['r'], (id) => (id === 'r' ? ['a', 'b'] : []), (id) => (id === 'r' ? 400 : 40));
+    const r = tall.nodes.get('r')!;
+    expect(r.h).toBeGreaterThanOrEqual(r.text * 400);
+    expect(tall.nodes.get('b')!.y + tall.nodes.get('b')!.h).toBe(r.y + r.h);
+    expect(tall.nodes.get('a')!.h).toBe(NODE_HEIGHT);
     // The estimate errs wide: a title is at least its characters at 0.45 em, and a kind and ID line 0.6 em a character.
-    expect(titleWidth("Capabilities")).toBeGreaterThan(12 * 0.45 * TITLE_FONT);
+    expect(titleWidth('Capabilities')).toBeGreaterThan(12 * 0.45 * TITLE_FONT);
     expect(metaWidth('Use case · LA-EXP-UC03')).toBeGreaterThanOrEqual(22 * 0.6 * 10.5);
-    // A wider title needs a wider box; the badge's room and a hexagon's chamfer add to it.
+    // Wrapping breaks only after a space; a word too wide for a line breaks after a hyphen, then between characters.
+    const chars = (s: string) => s.length;
+    expect(wrapText('walk the model as a graph', 10, chars)).toEqual(['walk the ', 'model as a ', 'graph']);
+    expect(wrapText('a well-formed step', 10, chars, '-')).toEqual(['a ', 'well-', 'formed ', 'step']);
+    expect(wrapText('a well-formed', 13, chars, '-')).toEqual(['a well-formed']);
+    expect(wrapText('abcdefghijkl', 5, chars)).toEqual(['abcde', 'fghij', 'kl']);
+    expect(wrapText('app/src/graph/text.ts', 10, chars, '/')).toEqual(['app/src/', 'graph/', 'text.ts']);
+    // A longer title takes more lines; the badge's room and a hexagon's chamfer leave less room on a line.
     const lines = { title: 'Walk the model as a graph', meta: 'Use case · LA-EXP-UC03' };
-    expect(labelWidth({ ...lines, title: lines.title + ' and more' })).toBeGreaterThan(labelWidth(lines));
-    expect(labelWidth(lines, { marked: true })).toBeGreaterThanOrEqual(labelWidth(lines));
-    expect(labelWidth(lines, { hexagon: true })).toBeGreaterThan(labelWidth(lines));
+    expect(wrapLabel({ ...lines, title: `${lines.title} and on through every group in it` }).title.length).toBeGreaterThan(wrapLabel(lines).title.length);
+    expect(wrapLabel(lines, { marked: true, centered: true }).meta).toEqual(['Use case · ', 'LA-EXP-UC03']);
+    expect(wrapLabel(lines).meta).toEqual(['Use case · LA-EXP-UC03']);
+    expect(BADGE_ROOM).toBe(30);
+    expect(labelHeight(wrapLabel(lines, { hexagon: true, marked: true, centered: true }))).toBeGreaterThan(labelHeight(wrapLabel(lines)));
   });
 
   it("LA-EXP-T167 A parent line runs level from the parent's right edge to the child's left edge, at the child's middle", () => {
@@ -141,7 +162,7 @@ describe('the level of detail', () => {
       expect(n.x + n.w >= rect.x0 && n.x <= rect.x1 && n.y + n.h >= rect.y0 && n.y <= rect.y1, b.id).toBe(true);
       expect(n.h * view.zoom).toBeGreaterThanOrEqual(MIN_DRAWN);
       // Labeled exactly when its title is MIN_LABEL_PX or more on screen; a drawn box carries no text size of its own.
-      expect(b).toEqual({ id: b.id, label: labelShown(n.h, view.zoom) });
+      expect(b).toEqual({ id: b.id, label: labelShown(n.text, view.zoom) });
       if (n.h * view.zoom >= 40) expect(b.label, b.id).toBe(true);
     }
     // Zoomed far out, the leaves are too small: they are not drawn, and each run of them is one bar in its parent's next level.
@@ -162,16 +183,16 @@ describe('the level of detail', () => {
   });
 
   it('LA-EXP-T176 A label keeps its size in the map: the camera only shows or hides it, by its size on screen', () => {
-    // The text scale is the box's height over a leaf's: a leaf's is 1, a box ten leaves tall has ten.
-    expect(textScaleOf(NODE_HEIGHT)).toBe(1);
-    expect(textScaleOf(NODE_HEIGHT * 10)).toBe(10);
+    // The text scale is the level's width over a leaf's: a leaf level's is 1, a level ten leaves wide has ten.
+    expect(textScaleOf(NODE_WIDTH)).toBe(1);
+    expect(textScaleOf(NODE_WIDTH * 10)).toBe(10);
     // Shown exactly when the title is MIN_LABEL_PX or more on screen: a leaf at its own size, not at a fifth of it.
     expect(MIN_LABEL_PX).toBe(7);
-    expect(labelShown(NODE_HEIGHT, 1)).toBe(true);
-    expect(labelShown(NODE_HEIGHT, MIN_LABEL_PX / TITLE_FONT)).toBe(true);
-    expect(labelShown(NODE_HEIGHT, MIN_LABEL_PX / TITLE_FONT - 0.01)).toBe(false);
-    expect(labelShown(NODE_HEIGHT * 10, 0.06)).toBe(true);
-    expect(labelShown(NODE_HEIGHT * 10, 0.05)).toBe(false);
+    expect(labelShown(1, 1)).toBe(true);
+    expect(labelShown(1, MIN_LABEL_PX / TITLE_FONT)).toBe(true);
+    expect(labelShown(1, MIN_LABEL_PX / TITLE_FONT - 0.01)).toBe(false);
+    expect(labelShown(10, 0.06)).toBe(true);
+    expect(labelShown(10, 0.05)).toBe(false);
     // Every zoom draws each box with the same text scale, the map's: zooming changes what is labeled, never a label's size.
     const view = frameOnMap(map, 'P-D', 2, 1000, 800);
     for (const zoom of [view.zoom / 4, view.zoom, view.zoom * 4]) {
@@ -191,6 +212,35 @@ describe('the level of detail', () => {
         const d = drawnFor(big, { x: 0, y: -y * zoom, zoom }, 1440, 900);
         expect(d.boxes.length).toBeLessThanOrEqual(MAX_DRAWN);
         expect(d.bars.length).toBeLessThanOrEqual(MAX_DRAWN);
+      }
+    }
+  });
+});
+
+describe('real titles', () => {
+  /** Every record of Lathe's own spec and the Tool Library's, read from the spec folders. */
+  const records = (dir: string): { title: string; kind: string; file?: string }[] =>
+    readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+      const at = path.join(dir, e.name);
+      if (e.isDirectory()) return records(at);
+      if (!e.name.endsWith('.md')) return [];
+      const parsed = parseRecordFile(readFileSync(at, 'utf8'));
+      return parsed.ok ? [{ title: parsed.record.title, kind: parsed.record.kind, file: parsed.record.fields.file }] : [];
+    });
+
+  it("LA-EXP-T190 Every title in Lathe's spec and the Tool Library wraps on whole words, none broken inside a word", () => {
+    const specs = path.resolve(import.meta.dirname, '../../../specs');
+    for (const product of ['lathe', 'tool-library']) {
+      const all = records(path.join(specs, product));
+      expect(all.length, product).toBeGreaterThan(product === 'lathe' ? 1000 : 50);
+      for (const r of all) {
+        // As its box breaks it: a domain's hexagon leaves less room (the badge's room is beside the kind and ID line, not the title).
+        const title = wrapLabel({ title: r.title, meta: '' }, { hexagon: r.kind === 'domain' }).title;
+        expect(title.join(''), r.title).toBe(r.title);
+        // Every line but the last ends after a space, or after a hyphen inside one word too wide for a line.
+        for (const line of title.slice(0, -1)) expect(/\s$/.test(line) || (line.endsWith('-') && !/\s/.test(line)), `${r.title}: "${line}"`).toBe(true);
+        // A file's path breaks only after a slash or a hyphen.
+        if (r.file) for (const line of wrapLabel({ title: r.file, meta: '' }, { file: true }).title.slice(0, -1)) expect(/[\s/-]$/.test(line), `${r.file}: "${line}"`).toBe(true);
       }
     }
   });

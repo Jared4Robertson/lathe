@@ -25,8 +25,11 @@ export const heightOf = (heights: ReadonlyMap<string, number> | undefined, id: s
 /** A node's width in a layout, NODE_WIDTH when the layout does not say. */
 export const widthOf = (widths: ReadonlyMap<string, number> | undefined, id: string) => widths?.get(id) ?? NODE_WIDTH;
 
-/** A trace's columns (LA-EXP-UC03): each column a stack of leaf boxes in row order, centered on the focus's middle. */
-export function traceGrid(n: Neighborhood): Placed {
+/**
+ * A trace's columns (LA-EXP-UC03): each column a stack of leaf boxes in row order, centered on the
+ * focus's middle. A box is a leaf's size, or taller when `heightOf` says its label needs it.
+ */
+export function traceGrid(n: Neighborhood, heightOf: (id: string) => number = () => NODE_HEIGHT): Placed {
   const columns = [...new Set(n.nodes.map((x) => x.column))].sort((a, b) => a - b);
   const rank = new Map(columns.map((c, i) => [c, i]));
   const positions = new Map<string, Point>();
@@ -34,16 +37,18 @@ export function traceGrid(n: Neighborhood): Placed {
   const widths = new Map<string, number>();
   for (const c of columns) {
     const inColumn = n.nodes.filter((x) => x.column === c).sort((a, b) => a.row - b.row);
-    const top = -(inColumn.length * NODE_HEIGHT + (inColumn.length - 1) * TRACE_ROW_GAP) / 2;
+    const own = inColumn.map((x) => Math.max(NODE_HEIGHT, heightOf(x.id)));
+    let y = -(own.reduce((sum, h) => sum + h, 0) + (inColumn.length - 1) * TRACE_ROW_GAP) / 2;
     inColumn.forEach((x, i) => {
-      positions.set(x.id, { x: rank.get(c)! * (NODE_WIDTH + TRACE_COLUMN_GAP), y: top + i * (NODE_HEIGHT + TRACE_ROW_GAP) });
-      heights.set(x.id, NODE_HEIGHT);
+      positions.set(x.id, { x: rank.get(c)! * (NODE_WIDTH + TRACE_COLUMN_GAP), y });
+      heights.set(x.id, own[i]);
       widths.set(x.id, NODE_WIDTH);
+      y += own[i] + TRACE_ROW_GAP;
     });
   }
   const f = positions.get(n.focus) ?? { x: 0, y: 0 };
   const dx = f.x + NODE_WIDTH / 2;
-  const dy = f.y + NODE_HEIGHT / 2;
+  const dy = f.y + (heights.get(n.focus) ?? NODE_HEIGHT) / 2;
   for (const [id, p] of positions) positions.set(id, { x: Math.round(p.x - dx), y: Math.round(p.y - dy) });
   return { positions, heights, widths };
 }

@@ -26,7 +26,7 @@ afterEach(cleanup);
 
 describe('the Graph view key', () => {
   // Classes that change how a box is laid out, not what it looks like it means.
-  const LAYOUT = new Set(['is-scaled']);
+  const LAYOUT = new Set(['is-centered']);
   // A node class shown in the key by a swatch of another name.
   const SWATCH: Record<string, string> = { 'is-hexagon': 'stage-hexagon', 'is-plain': 'stage-plain' };
 
