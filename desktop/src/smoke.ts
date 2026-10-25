@@ -1,7 +1,7 @@
 // The smoke run (test/smoke.test.ts): with LATHE_DESKTOP_SMOKE set to a file, the shell opens the
-// folder in a hidden window, waits for the page and its GET /api/spec, checks the app's own title
-// bar and the chrome colors it sent, chooses Help › Keyboard Shortcuts, writes what it saw to that
-// file as JSON, and quits.
+// folder in a hidden window, notes the launch view over it, waits for the page and its GET /api/spec
+// and for the launch view to lift, checks the app's own title bar and the chrome colors it sent, notes
+// the Dock icon, chooses Help › Keyboard Shortcuts, writes what it saw to that file as JSON, and quits.
 import type { BrowserWindow } from 'electron';
 import { writeFileSync } from 'node:fs';
 import type { Chrome } from './chrome.ts';
@@ -19,6 +19,10 @@ export interface SmokeResult {
   /** The chrome the page sent through setChrome, as the main process applied it. */
   chrome?: Chrome;
   shortcutsOpened?: boolean;
+  /** The launch view: the text it showed before the page loaded, and whether it lifted once the specs came. */
+  launch?: { seen?: string; lifted: boolean };
+  /** The Dock icon the unpacked app set, with its size in pixels. */
+  dockIcon?: { file: string; width: number; height: number } | null;
   error?: string;
 }
 
@@ -50,9 +54,14 @@ export async function runSmoke(
   win: BrowserWindow,
   expect: string,
   runCommand: (id: string) => void,
-  frame: { titleBarStyle: string; chrome: () => Chrome | undefined },
+  frame: {
+    titleBarStyle: string;
+    chrome: () => Chrome | undefined;
+    launch: () => { seen?: string; showing: boolean };
+    dockIcon: () => { file: string; width: number; height: number } | null;
+  },
 ): Promise<SmokeResult> {
-  const result: SmokeResult = { titleBarStyle: frame.titleBarStyle };
+  const result: SmokeResult = { titleBarStyle: frame.titleBarStyle, dockIcon: frame.dockIcon() };
   const spec = new Promise<number>((resolve) => {
     win.webContents.session.webRequest.onCompleted({ urls: ['*://*/api/spec*'] }, (details) => resolve(details.statusCode));
   });
@@ -63,6 +72,8 @@ export async function runSmoke(
   result.apiSpecStatus = await Promise.race([spec, sleep(30_000).then(() => 0)]);
   result.text = await until(() => js<string>('document.body.innerText'), (text) => text.includes(expect));
   result.title = win.getTitle();
+  const launch = await until(async () => frame.launch(), (l) => !l.showing, 10_000);
+  result.launch = { seen: launch.seen, lifted: !launch.showing };
   result.bridge = await js(`({
     keys: Object.keys(window.latheDesktop ?? {}).sort(),
     isDesktop: window.latheDesktop?.isDesktop,

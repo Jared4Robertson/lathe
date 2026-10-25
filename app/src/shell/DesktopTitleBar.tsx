@@ -2,7 +2,9 @@ import { useEffect, useLayoutEffect, useState } from 'react';
 import { Icon } from '../components/icons';
 import { useLocation } from '../router';
 import { useRunCommand } from './commands';
+import type { SpecIndex } from '../specs/data';
 import { desktopBridge } from './desktopChrome';
+import { useDesktopErrorCount, useDesktopRecordMenu } from './desktopRecord';
 import { Tooltip } from './Tooltip';
 import './DesktopTitleBar.css';
 
@@ -10,7 +12,9 @@ import './DesktopTitleBar.css';
 // so this 38 px bar on the shell color carries the window's controls (the traffic lights at the left
 // on macOS, the native buttons at the right elsewhere), back and forward, a command center naming
 // the page that opens quick find, and the layout toggles. It drags the window; a double-click on it
-// zooms or maximizes the window, natively, as the system setting says. In a browser it is not drawn.
+// zooms or maximizes the window, natively, as the system setting says. In full screen on macOS the
+// traffic lights hide, and so does the room kept for them. In a browser it is not drawn.
+// It also carries the desktop's page hooks: the Dock badge and the record menu (desktopRecord.tsx).
 
 /** What the bar shows of the page, read from the page itself: its heading and which panels show. */
 interface PageState {
@@ -69,8 +73,15 @@ function useHistoryEnds() {
   return { canGoBack: navigation?.canGoBack ?? true, canGoForward: navigation?.canGoForward ?? true };
 }
 
-/** The platform's class: room for the traffic lights at the left on macOS, for the window's buttons at the right elsewhere. */
-const platformClass = (platform: string | undefined) => (platform === 'darwin' ? 'is-mac' : 'is-overlay');
+/** The platform's class: room for the traffic lights at the left on macOS (none in full screen, where they hide), for the window's buttons at the right elsewhere. */
+const platformClass = (platform: string | undefined, fullScreen: boolean) => (platform === 'darwin' ? (fullScreen ? 'is-mac is-full-screen' : 'is-mac') : 'is-overlay');
+
+/** Whether the window is in full screen, as the shell says. */
+function useFullScreen(bridge: LatheDesktop) {
+  const [fullScreen, setFullScreen] = useState(false);
+  useEffect(() => bridge.onFullScreen?.(setFullScreen), [bridge]);
+  return fullScreen;
+}
 
 function ArrowIcon({ direction }: { direction: 'left' | 'right' }) {
   return (
@@ -80,14 +91,18 @@ function ArrowIcon({ direction }: { direction: 'left' | 'right' }) {
   );
 }
 
-/** The bar, drawn only in the desktop app. */
-export function DesktopTitleBar() {
+/** The bar, drawn only in the desktop app. `index` is the product's specs, for the Dock badge and the record menu. */
+export function DesktopTitleBar({ index = null }: { index?: SpecIndex | null }) {
   const bridge = desktopBridge();
   if (!bridge) return null;
-  return <TitleBar platform={bridge.platform} />;
+  return <TitleBar bridge={bridge} index={index} />;
 }
 
-function TitleBar({ platform }: { platform: string | undefined }) {
+function TitleBar({ bridge, index }: { bridge: LatheDesktop; index: SpecIndex | null }) {
+  const platform = bridge.platform;
+  const fullScreen = useFullScreen(bridge);
+  useDesktopErrorCount(index);
+  useDesktopRecordMenu(index);
   const run = useRunCommand();
   const page = usePageState();
   const { canGoBack, canGoForward } = useHistoryEnds();
@@ -104,7 +119,7 @@ function TitleBar({ platform }: { platform: string | undefined }) {
   const forward = () => { if (!run('goForward')) window.history.forward(); };
 
   return (
-    <header className={`desktop-title-bar ${platformClass(platform)}`} aria-label="Title bar">
+    <header className={`desktop-title-bar ${platformClass(platform, fullScreen)}`} aria-label="Title bar">
       <div className="title-bar-side title-bar-start">
         <Tooltip label="Go back" command="goBack">
           <button type="button" className="icon-button title-bar-button" aria-label="Go back" disabled={!canGoBack} onClick={back}>
