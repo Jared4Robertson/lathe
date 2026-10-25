@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
 import {
   Background,
   BaseEdge,
@@ -48,7 +48,7 @@ import {
   type GraphNode,
   type Neighborhood,
 } from './model';
-import { contentScale, drawnTree, heightOf, isTreeEdge, layoutNeighborhood, NODE_HEIGHT, NODE_WIDTH, type Placed } from './layout';
+import { contentScale, drawnTree, heightOf, isTreeEdge, layoutNeighborhood, NODE_HEIGHT, NODE_WIDTH, widthOf, type Placed } from './layout';
 import { anchorLayout, fadeSets, frameFocus } from './camera';
 import { EdgeHints } from './hints';
 import { canvasProgress, edgeMove, readMotion, tweenEdge, type EdgeEnds, type EdgeFrame, type EdgePhase } from './motion';
@@ -129,21 +129,8 @@ export function shortTitle(title: string, max = 28): string {
 /** The node's content scale as a CSS variable: its text, padding, marks and chevron grow in step (LA-BRW-DR331). */
 const scaleStyle = (data: NodeData): CSSProperties | undefined =>
   data.scale && data.scale !== 1 ? ({ '--node-scale': data.scale } as CSSProperties) : undefined;
-/** A scaled node's class: its kind-and-ID line may break in two. */
+/** A scaled node's class: its content is centered both ways. */
 const scaled = (data: NodeData) => (data.scale && data.scale !== 1 ? ' is-scaled' : '');
-
-/** What a node's box shows: its kind-and-ID line, in its parts (the kind, then "· ID"), and its title; the text its scale is fitted to. */
-export function nodeText(node: GraphNode, kind: string): { meta: string[]; title: string } {
-  if (node.more) return { meta: [], title: node.title };
-  if (node.group) return { meta: ['Group', `· ${node.group.owner}`], title: node.title };
-  const quiet = node.context === true;
-  return { meta: node.kind !== FILE_KIND && !quiet ? [kind, `· ${node.id}`] : [kind], title: quiet ? shortTitle(node.title) : node.title };
-}
-
-/** The kind-and-ID line: one line with an ellipsis, which a scaled node may break in two between its parts (LA-BRW-DR331). */
-const Meta = ({ parts }: { parts: string[] }) => (
-  <small>{parts.map((p, i) => <Fragment key={i}>{i > 0 && ' '}<span>{p}</span></Fragment>)}</small>
-);
 
 function GraphNodeView({ data }: NodeProps<FlowNode>) {
   const { node } = data;
@@ -157,7 +144,7 @@ function GraphNodeView({ data }: NodeProps<FlowNode>) {
     >
       <Handle type="target" position={Position.Left} className="graph-handle" isConnectable={false} />
       <Handle type="source" position={Position.Right} className="graph-handle" isConnectable={false} />
-      <Meta parts={nodeText(node, data.kindLabel).meta} />
+      <small>{data.kindLabel}{node.kind !== FILE_KIND && !quiet && <> · {node.id}</>}</small>
       <strong>{quiet ? shortTitle(node.title) : node.title}</strong>
       <Marks data={data} />
     </div>
@@ -189,7 +176,7 @@ function GroupNodeView({ data }: NodeProps<FlowNode>) {
     >
       <Handle type="target" position={Position.Left} className="graph-handle" isConnectable={false} />
       <Handle type="source" position={Position.Right} className="graph-handle" isConnectable={false} />
-      <Meta parts={nodeText(node, 'Group').meta} />
+      <small>Group · {node.group!.owner}</small>
       <strong>{node.title}</strong>
       <Marks data={data} />
       {/* Clicking the group goes to it; its chevron opens or folds it in place. The center group is always open. */}
@@ -213,9 +200,9 @@ function GroupNodeView({ data }: NodeProps<FlowNode>) {
 const isLeaving = (n: FlowNode) => n.data.leaving === true;
 
 const NO_ENDS: EdgeEnds = { source: { x: 0, y: 0 }, target: { x: 0, y: 0 } };
-/** An edge's ends as one key: where its boxes are, how tall, and whether it is a tree connector. */
+/** An edge's ends as one key: where its boxes are, how big, and whether it is a tree connector. */
 const endsKey = (e: EdgeEnds) =>
-  `${e.source.x} ${e.source.y} ${e.target.x} ${e.target.y} ${e.sourceHeight ?? NODE_HEIGHT} ${e.targetHeight ?? NODE_HEIGHT} ${e.tree ? 'tree' : ''}`;
+  `${e.source.x} ${e.source.y} ${e.target.x} ${e.target.y} ${e.sourceWidth ?? NODE_WIDTH}x${e.sourceHeight ?? NODE_HEIGHT} ${e.targetWidth ?? NODE_WIDTH}x${e.targetHeight ?? NODE_HEIGHT} ${e.tree ? 'tree' : ''}`;
 const sameEnds = (a: EdgeEnds, b: EdgeEnds) => endsKey(a) === endsKey(b);
 
 const linePath = ([a, b]: [{ x: number; y: number }, { x: number; y: number }]) => `M ${a.x} ${a.y} L ${b.x} ${b.y}`;
@@ -314,9 +301,9 @@ function GraphEdgeView({ id, data, markerEnd, source, target }: EdgeProps<FlowEd
 }
 
 /** Where a node's two handles are: the middle of its left and right sides. */
-const nodeHandles = (height: number) => [
+const nodeHandles = (width: number, height: number) => [
   { type: 'target' as const, position: Position.Left, x: 0, y: height / 2, width: 1, height: 1 },
-  { type: 'source' as const, position: Position.Right, x: NODE_WIDTH, y: height / 2, width: 1, height: 1 },
+  { type: 'source' as const, position: Position.Right, x: width, y: height / 2, width: 1, height: 1 },
 ];
 
 const nodeTypes = { record: GraphNodeView, folder: GroupNodeView, more: MoreNodeView };
@@ -674,19 +661,19 @@ export function focusPositions(graph: Neighborhood, positions: ReadonlyMap<strin
 }
 
 /** The centers of the context nodes, in world coordinates: what the edge hints count. */
-export function contextCenters(graph: Neighborhood, positions: ReadonlyMap<string, { x: number; y: number }>, heights?: ReadonlyMap<string, number>): { x: number; y: number }[] {
+export function contextCenters(graph: Neighborhood, positions: ReadonlyMap<string, { x: number; y: number }>, heights?: ReadonlyMap<string, number>, widths?: ReadonlyMap<string, number>): { x: number; y: number }[] {
   return graph.nodes.flatMap((n) => {
     const p = positions.get(n.id);
-    return n.context && p ? [{ x: p.x + NODE_WIDTH / 2, y: p.y + heightOf(heights, n.id) / 2 }] : [];
+    return n.context && p ? [{ x: p.x + widthOf(widths, n.id) / 2, y: p.y + heightOf(heights, n.id) / 2 }] : [];
   });
 }
 
 /** The viewport that fits every box in the canvas, centered, never zoomed in past 1. */
-export function fitPositions(positions: Map<string, { x: number; y: number }>, width: number, height: number, padding = 40, heights?: ReadonlyMap<string, number>) {
+export function fitPositions(positions: Map<string, { x: number; y: number }>, width: number, height: number, padding = 40, heights?: ReadonlyMap<string, number>, widths?: ReadonlyMap<string, number>) {
   const all = [...positions];
   const minX = Math.min(...all.map(([, p]) => p.x));
   const minY = Math.min(...all.map(([, p]) => p.y));
-  const maxX = Math.max(...all.map(([, p]) => p.x + NODE_WIDTH));
+  const maxX = Math.max(...all.map(([id, p]) => p.x + widthOf(widths, id)));
   const maxY = Math.max(...all.map(([id, p]) => p.y + heightOf(heights, id)));
   const zoom = Math.max(0.1, Math.min(1, (width - 2 * padding) / (maxX - minX), (height - 2 * padding) / (maxY - minY)));
   return { x: width / 2 - ((minX + maxX) / 2) * zoom, y: height / 2 - ((minY + maxY) / 2) * zoom, zoom };
@@ -722,7 +709,7 @@ function GraphCanvas({ index, graph, onNavigate: navigate, onToggle, minimap, on
   }, [graph]);
 
   const order = useMemo(() => (placed ? keyboardOrder(placed.graph, placed) : []), [placed]);
-  const centers = useMemo(() => (placed ? contextCenters(placed.graph, placed.positions, placed.heights) : []), [placed]);
+  const centers = useMemo(() => (placed ? contextCenters(placed.graph, placed.positions, placed.heights, placed.widths) : []), [placed]);
 
   /** The edges last drawn, so the next picture knows which edges persist, which are new and which leave. */
   const shown = useRef<FlowEdge[]>([]);
@@ -731,7 +718,7 @@ function GraphCanvas({ index, graph, onNavigate: navigate, onToggle, minimap, on
   const drewPicture = useRef(false);
   const { nodes, edges, leaving, leavingNodes } = useMemo(() => {
     if (!placed) return { nodes: [] as FlowNode[], edges: [] as FlowEdge[], leaving: [] as FlowEdge[], leavingNodes: [] as FlowNode[] };
-    const { graph: g, positions, heights } = placed;
+    const { graph: g, positions, heights, widths } = placed;
     const byId = new Map(g.nodes.map((n) => [n.id, n]));
     const tree = g.mode === 'hierarchy' ? drawnTree(g).parentOf : new Map<string, string>();
     const reduced = readMotion().reduced;
@@ -745,14 +732,13 @@ function GraphCanvas({ index, graph, onNavigate: navigate, onToggle, minimap, on
       const node = byId.get(id)!;
       const isFocus = id === g.focus;
       const height = heightOf(heights, id);
-      const kind = node.more ? '' : node.group ? 'Group' : node.kind === FILE_KIND ? 'File' : kindLabel(index, node.kind);
-      const text = nodeText(node, kind);
-      const scale = contentScale(height, text.title, text.meta);
+      const width = widthOf(widths, id);
+      const scale = contentScale(width, height);
       const classes = [fades.entering.has(id) && !reduced ? 'is-entering' : '', node.context ? 'is-context' : ''].filter(Boolean).join(' ');
       const base = {
         id,
         position: positions.get(id) ?? { x: 0, y: 0 },
-        width: NODE_WIDTH,
+        width,
         height,
         draggable: false,
         connectable: false,
@@ -760,7 +746,7 @@ function GraphCanvas({ index, graph, onNavigate: navigate, onToggle, minimap, on
         // Saying where the handles are means React Flow never has to measure a node again when the
         // picture changes; while it measured, every edge was dropped for a frame and drawn anew, so
         // nothing could carry it from its old place to its new one.
-        handles: nodeHandles(height),
+        handles: nodeHandles(width, height),
         ...(classes ? { className: classes } : {}),
         ...(node.context ? { focusable: false, domAttributes: { 'aria-hidden': true } } : {}),
       };
@@ -796,13 +782,15 @@ function GraphCanvas({ index, graph, onNavigate: navigate, onToggle, minimap, on
     });
     const center = (id: string) => {
       const p = positions.get(id) ?? { x: 0, y: 0 };
-      return { x: p.x + NODE_WIDTH / 2, y: p.y + heightOf(heights, id) / 2 };
+      return { x: p.x + widthOf(widths, id) / 2, y: p.y + heightOf(heights, id) / 2 };
     };
     // A tree connector of the icicle runs level from the parent to the child; other edges join the boxes' centers.
     const endsOf = (e: { source: string; target: string; relation: string }): EdgeEnds => ({
       source: center(e.source),
       target: center(e.target),
+      sourceWidth: widthOf(widths, e.source),
       sourceHeight: heightOf(heights, e.source),
+      targetWidth: widthOf(widths, e.target),
       targetHeight: heightOf(heights, e.target),
       ...(isTreeEdge(tree, e) ? { tree: true } : {}),
     });
@@ -835,6 +823,7 @@ function GraphCanvas({ index, graph, onNavigate: navigate, onToggle, minimap, on
       if (e.data!.phase === 'leave') return e; // already fading out from the picture before
       const keep = (id: string, old: { x: number; y: number }) => (positions.has(id) ? center(id) : old);
       const keepHeight = (id: string, old: number | undefined) => (positions.has(id) ? heightOf(heights, id) : old);
+      const keepWidth = (id: string, old: number | undefined) => (positions.has(id) ? widthOf(widths, id) : old);
       const was = e.data!.ends;
       return {
         ...e,
@@ -847,7 +836,9 @@ function GraphCanvas({ index, graph, onNavigate: navigate, onToggle, minimap, on
             ...was,
             source: keep(e.source, was.source),
             target: keep(e.target, was.target),
+            sourceWidth: keepWidth(e.source, was.sourceWidth),
             sourceHeight: keepHeight(e.source, was.sourceHeight),
+            targetWidth: keepWidth(e.target, was.targetWidth),
             targetHeight: keepHeight(e.target, was.targetHeight),
           },
         },
@@ -906,7 +897,7 @@ function GraphCanvas({ index, graph, onNavigate: navigate, onToggle, minimap, on
     if (!placed || !box || box.width <= 0 || box.height <= 0) return;
     const motion = readMotion();
     const inFocus = focusPositions(placed.graph, placed.positions);
-    const view = whole ? fitPositions(inFocus, box.width, box.height, 40, placed.heights) : frameFocus(inFocus, placed.graph.focus, box.width, box.height, 40, 0.1, placed.heights);
+    const view = whole ? fitPositions(inFocus, box.width, box.height, 40, placed.heights, placed.widths) : frameFocus(inFocus, placed.graph.focus, box.width, box.height, 40, 0.1, placed.heights, placed.widths);
     setViewport(view, animate && motion.duration > 0 ? { duration: motion.duration, ease: motion.ease, interpolate: 'linear' } : { duration: 0 });
   }, [placed, setViewport]);
 

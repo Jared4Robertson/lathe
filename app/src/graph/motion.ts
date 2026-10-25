@@ -83,13 +83,15 @@ export function readMotion(): Motion {
 }
 
 /**
- * The two box centers an edge joins, with the boxes' heights when they are not a leaf's, and
+ * The two box centers an edge joins, with the boxes' sizes when they are not a leaf's, and
  * whether it is a tree connector of the icicle (LA-BRW-DR330).
  */
 export interface EdgeEnds {
   source: Point;
   target: Point;
+  sourceWidth?: number;
   sourceHeight?: number;
+  targetWidth?: number;
   targetHeight?: number;
   /** A parent line in the icicle: a short horizontal line from the parent's right edge to the child's left edge, at the child's middle. */
   tree?: boolean;
@@ -103,10 +105,10 @@ export interface EdgeEnds {
  */
 export function edgePoints(ends: EdgeEnds): [Point, Point] {
   const { source: s, target: t } = ends;
-  if (ends.tree) return [{ x: s.x + NODE_WIDTH / 2, y: t.y }, { x: t.x - NODE_WIDTH / 2, y: t.y }];
-  const sh = ends.sourceHeight ?? NODE_HEIGHT;
-  const th = ends.targetHeight ?? NODE_HEIGHT;
-  return [boxExit(s.x, s.y, t.x, t.y, NODE_WIDTH, sh), boxExit(t.x, t.y, s.x, s.y, NODE_WIDTH, th)];
+  const sw = ends.sourceWidth ?? NODE_WIDTH;
+  const tw = ends.targetWidth ?? NODE_WIDTH;
+  if (ends.tree) return [{ x: s.x + sw / 2, y: t.y }, { x: t.x - tw / 2, y: t.y }];
+  return [boxExit(s.x, s.y, t.x, t.y, sw, ends.sourceHeight ?? NODE_HEIGHT), boxExit(t.x, t.y, s.x, s.y, tw, ends.targetHeight ?? NODE_HEIGHT)];
 }
 
 const mix = (a: number, b: number, p: number) => a + (b - a) * p;
@@ -117,7 +119,7 @@ export interface EdgeFrame { ends: EdgeEnds; points: [Point, Point]; opacity: nu
 
 /**
  * An edge part of the way through a move, at elapsed time `t` (0 to 1).
- * It moves the two box centers and heights (as the nodes move and grow: from where they were to
+ * It moves the two box centers and sizes (as the nodes move and grow: from where they were to
  * where they go, along the same easing) and draws the line between their box edges, so each end
  * stays on its box; a tree connector stays level at its child's middle.
  * The opacity goes from `from.opacity` to `to.opacity` along the same easing: an edge that persists
@@ -133,7 +135,9 @@ export function tweenEdge(
   const ends: EdgeEnds = {
     source: mixPoint(from.ends.source, to.ends.source, p),
     target: mixPoint(from.ends.target, to.ends.target, p),
+    sourceWidth: mix(from.ends.sourceWidth ?? NODE_WIDTH, to.ends.sourceWidth ?? NODE_WIDTH, p),
     sourceHeight: mix(from.ends.sourceHeight ?? NODE_HEIGHT, to.ends.sourceHeight ?? NODE_HEIGHT, p),
+    targetWidth: mix(from.ends.targetWidth ?? NODE_WIDTH, to.ends.targetWidth ?? NODE_WIDTH, p),
     targetHeight: mix(from.ends.targetHeight ?? NODE_HEIGHT, to.ends.targetHeight ?? NODE_HEIGHT, p),
     ...(to.ends.tree ? { tree: true } : {}),
   };

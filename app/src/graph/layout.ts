@@ -11,7 +11,9 @@ import { PARENT, type Neighborhood } from './model';
 // it: the parent line is short and straight, and nothing fans out. A leaf, and a node whose children
 // are not drawn, keeps the one node height; a "+N more" chip is one child slot. A tree that is not
 // the focus's (a record the Links switch brings, with any drawn tree of its own) goes in the nearest
-// free place in its columns to the node it was reached from, so it never overlaps.
+// free place in its columns to the node it was reached from, so it never overlaps. Each column is as
+// wide as its tallest node's scale makes it (LA-BRW-DR331), at most MAX_COLUMN_SCALE leaf widths, so
+// every node in a level shares one width; columns sit a gap apart at their own widths.
 //
 // A trace is a chain, not a tree: each of its columns is a stack of leaf boxes in the model's row
 // order, centered on the focus's middle.
@@ -24,15 +26,53 @@ export const ROW_GAP = 28;
 
 export type Point = { x: number; y: number };
 
+/**
+ * The most a column widens (LA-BRW-DR331): four leaf widths, 760 px. A domain at depth 2 or 3 is
+ * dozens of leaf heights tall, so the framed picture is zoomed to a fifth or less and is far taller
+ * than wide. At four widths a parent's text reads at about a leaf's size when that picture is framed,
+ * and the depth-3 picture stays about as wide as it is tall, so the zoom is still set by its height,
+ * not its width; a column in full proportion would be thousands of pixels wide and shrink it all.
+ */
+export const MAX_COLUMN_SCALE = 4;
+
 export interface Placed {
   /** Top-left corner of each node, keyed by node ID. */
   positions: Map<string, Point>;
   /** Each node's height: NODE_HEIGHT for a leaf, its children's stack for a parent in the icicle. */
   heights: Map<string, number>;
+  /** Each node's width: its column's, NODE_WIDTH for a column of leaves, wider for a column of tall parents. */
+  widths: Map<string, number>;
 }
 
 /** A node's height in a layout, NODE_HEIGHT when the layout does not say. */
 export const heightOf = (heights: ReadonlyMap<string, number> | undefined, id: string) => heights?.get(id) ?? NODE_HEIGHT;
+/** A node's width in a layout, NODE_WIDTH when the layout does not say. */
+export const widthOf = (widths: ReadonlyMap<string, number> | undefined, id: string) => widths?.get(id) ?? NODE_WIDTH;
+
+/**
+ * Each column's width (LA-BRW-DR331): a leaf's width times the largest scale in the column (its
+ * tallest node's height over a leaf's), at most MAX_COLUMN_SCALE; a column of leaves keeps a leaf's.
+ */
+export function columnWidths(columns: ReadonlyMap<string, number>, heights: ReadonlyMap<string, number>): Map<number, number> {
+  const widths = new Map<number, number>();
+  for (const [id, c] of columns) {
+    const scale = Math.min(MAX_COLUMN_SCALE, Math.max(1, heightOf(heights, id) / NODE_HEIGHT));
+    // Even, so a box's middle is a whole pixel.
+    widths.set(c, Math.max(widths.get(c) ?? NODE_WIDTH, 2 * Math.round((NODE_WIDTH * scale) / 2)));
+  }
+  return widths;
+}
+
+/** Each column's left edge: the columns before it, each at its own width, a gap apart. */
+function columnLefts(widths: ReadonlyMap<number, number>): Map<number, number> {
+  const lefts = new Map<number, number>();
+  let x = 0;
+  for (const c of [...widths.keys()].sort((a, b) => a - b)) {
+    lefts.set(c, x);
+    x += widths.get(c)! + COLUMN_GAP;
+  }
+  return lefts;
+}
 
 /**
  * The tree of a hierarchy picture as drawn: each node's parent, when the parent is drawn in the
@@ -64,7 +104,7 @@ export function isTreeEdge(parentOf: ReadonlyMap<string, string>, e: { source: s
  * The icicle (LA-BRW-DR330): every node's top-left corner and height, the focus's center at the
  * origin. Pure and deterministic: the same picture always gives the same layout.
  */
-export function icicle(n: Neighborhood): { positions: Map<string, Point>; heights: Map<string, number> } {
+export function icicle(n: Neighborhood): Placed {
   const { parentOf, childrenOf } = drawnTree(n);
   const columnOf = new Map(n.nodes.map((x) => [x.id, x.column]));
   const heights = new Map<string, number>();
@@ -76,7 +116,11 @@ export function icicle(n: Neighborhood): { positions: Map<string, Point>; height
     heights.set(id, h);
     return h;
   };
-  const xOf = (id: string) => (columnOf.get(id) ?? 0) * (NODE_WIDTH + COLUMN_GAP);
+  for (const x of n.nodes) height(x.id);
+  const columnWidth = columnWidths(columnOf, heights);
+  const lefts = columnLefts(columnWidth);
+  const xOf = (id: string) => lefts.get(columnOf.get(id) ?? 0) ?? 0;
+  const widths = new Map(n.nodes.map((x) => [x.id, columnWidth.get(x.column) ?? NODE_WIDTH]));
   /** A tree's boxes relative to its root's top: column, top offset and height. */
   const shape = (root: string) => {
     const boxes: { id: string; column: number; top: number; height: number }[] = [];
@@ -119,36 +163,38 @@ export function icicle(n: Neighborhood): { positions: Map<string, Point>; height
   }
 
   const f = positions.get(n.focus) ?? { x: 0, y: 0 };
-  const dx = f.x + NODE_WIDTH / 2;
+  const dx = f.x + widthOf(widths, n.focus) / 2;
   const dy = f.y + height(n.focus) / 2;
   for (const [id, p] of positions) positions.set(id, { x: Math.round(p.x - dx), y: Math.round(p.y - dy) });
-  return { positions, heights };
+  return { positions, heights, widths };
 }
 
 /** A trace's columns (LA-BRW-UC20): each column a stack of leaf boxes in row order, centered on the focus's middle. */
-export function traceGrid(n: Neighborhood): { positions: Map<string, Point>; heights: Map<string, number> } {
+export function traceGrid(n: Neighborhood): Placed {
   const columns = [...new Set(n.nodes.map((x) => x.column))].sort((a, b) => a - b);
   const rank = new Map(columns.map((c, i) => [c, i]));
   const positions = new Map<string, Point>();
   const heights = new Map<string, number>();
+  const widths = new Map<string, number>();
   for (const c of columns) {
     const inColumn = n.nodes.filter((x) => x.column === c).sort((a, b) => a.row - b.row);
     const top = -(inColumn.length * NODE_HEIGHT + (inColumn.length - 1) * ROW_GAP) / 2;
     inColumn.forEach((x, i) => {
       positions.set(x.id, { x: rank.get(c)! * (NODE_WIDTH + COLUMN_GAP), y: top + i * (NODE_HEIGHT + ROW_GAP) });
       heights.set(x.id, NODE_HEIGHT);
+      widths.set(x.id, NODE_WIDTH);
     });
   }
   const f = positions.get(n.focus) ?? { x: 0, y: 0 };
   const dx = f.x + NODE_WIDTH / 2;
   const dy = f.y + NODE_HEIGHT / 2;
   for (const [id, p] of positions) positions.set(id, { x: Math.round(p.x - dx), y: Math.round(p.y - dy) });
-  return { positions, heights };
+  return { positions, heights, widths };
 }
 
 /** Lays out a picture: the icicle for the hierarchy, the columns of a trace. */
 export function layoutNeighborhood(n: Neighborhood): Placed {
-  if (n.nodes.length === 0) return { positions: new Map(), heights: new Map() };
+  if (n.nodes.length === 0) return { positions: new Map(), heights: new Map(), widths: new Map() };
   return n.mode === 'hierarchy' ? icicle(n) : traceGrid(n);
 }
 
@@ -161,33 +207,13 @@ export function boxExit(cx: number, cy: number, tx: number, ty: number, w = NODE
   return { x: cx + dx * scale, y: cy + dy * scale };
 }
 
-// Character widths, in pixels at a scale of 1, a little over the fonts' averages: the title's body
-// font at 12.5 px, and the mono kind-and-ID line at 10.5 px. Estimated, not measured, so a node's
-// scale comes from its text alone, once per picture, and never from the DOM (LA-PAT-APP-UX-R11).
-const TITLE_CHAR = 7;
-const META_CHAR = 6.4;
-
-/** The height a node's content takes at a scale of 1 when its kind-and-ID line breaks in two. */
-const META_LINE = 14;
-
 /**
- * How much a node's content grows with its height (LA-BRW-DR331): in proportion to its height over
- * a leaf's, so a tall parent's text, kind, ID, chevron, padding and marks are larger in step, but
- * only as far as the content still fits the column's one width: the title in at most two lines, its
- * longest word on one, and the kind-and-ID line (`meta`, its parts: the kind, then "· ID") on one
- * line, or, where the node is tall enough for the extra line, broken in two between its parts. A
- * leaf's scale is 1, and no node's is below 1. Rounded down to hundredths.
+ * How much a node's content grows (LA-BRW-DR331): by the smaller of its width over a leaf's and its
+ * height over a leaf's, so its text, kind, ID, chevron, padding and marks keep their proportions and
+ * fit the box whichever way it is short. A leaf's scale is 1, and no node's is below 1. Rounded
+ * down to hundredths. From the layout alone, once per picture, never by measuring text.
  */
-export function contentScale(height: number, title: string, meta: readonly string[] = []): number {
-  const byHeight = height / NODE_HEIGHT;
-  if (byHeight <= 1) return 1;
-  const longest = Math.max(0, ...title.split(/\s+/).map((w) => w.length));
-  const byTitle = (1.7 * NODE_WIDTH) / (title.length * TITLE_CHAR + 34);
-  const byWord = NODE_WIDTH / (longest * TITLE_CHAR + 20);
-  // Padding 10 px each side; the kind line keeps 30 px at its end for the marks.
-  const fits = (chars: number) => (chars > 0 ? NODE_WIDTH / (chars * META_CHAR + 50) : Infinity);
-  const oneLine = Math.min(byHeight, byTitle, byWord, fits(meta.join(' ').length));
-  const twoLines = Math.min(height / (NODE_HEIGHT + META_LINE), byTitle, byWord, fits(Math.max(0, ...meta.map((m) => m.length))));
-  const scale = Math.max(1, oneLine, meta.length > 1 ? twoLines : 1);
+export function contentScale(width: number, height: number): number {
+  const scale = Math.max(1, Math.min(width / NODE_WIDTH, height / NODE_HEIGHT));
   return Math.floor(scale * 100) / 100;
 }
