@@ -1,6 +1,7 @@
 import { Fragment } from 'react';
 import { TreeList } from '../components/TreeList';
-import { domainPath, recordPath, type SpecIndex, type SpecRecord } from './data';
+import type { SpecIndex, SpecRecord } from './data';
+import { addressOf } from '../views/address';
 import { RecordLink, Section, SpecLink, recordText } from './parts';
 import { followingDomains, notApplicableReason, patternsFollowedBy, ruleStatus, rulesOf, settingsOf, type RuleStatus } from './patterns';
 
@@ -137,7 +138,7 @@ export function PatternSections({ index, pattern }: { index: SpecIndex; pattern:
           return (
             <section key={domain} className="pattern-domain" aria-label={`Followed in ${domain}`}>
               <h3>
-                {d?.product ? <SpecLink to={domainPath(d.product, domain)} className="record-link"><code>{domain}</code> <span>{d.title}</span></SpecLink> : <SpecLink to={recordPath(domain)}><code>{domain}</code></SpecLink>}
+                {d?.product ? <SpecLink to={addressOf(domain)} className="record-link"><code>{domain}</code> <span>{d.title}</span></SpecLink> : <SpecLink to={addressOf(domain)}><code>{domain}</code></SpecLink>}
               </h3>
               <div className="table-scroll">
                 <table className="data-table pattern-use-cases">

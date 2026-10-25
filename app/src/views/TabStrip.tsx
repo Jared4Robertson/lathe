@@ -18,7 +18,7 @@ export const tabId = (key: string) => `tab-${key}`;
 
 /** What a tab shows for its page: the ID (none for a group) and the title. */
 export function tabLabel(index: SpecIndex, page: string): { id?: string; title: string } {
-  const route = parseSpecRoute(page);
+  const route = parseSpecRoute(page, index);
   if (!isFocusRoute(route)) return { title: page };
   const focus = focusOf(route);
   if (route.page === 'group') return { title: isGroup(index, focus) ? groupLabel(index, focus) : focus };

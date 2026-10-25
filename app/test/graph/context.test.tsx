@@ -152,7 +152,7 @@ describe('the graph tree and its context ring', () => {
   });
 
   it('LA-BRW-T545 The Links switch beside Depth is off by default, has a tooltip and the shortcut l, draws the center\'s links dashed, and is kept while walking', async () => {
-    await showGraph('/records/P-D-UC01-R01');
+    await showGraph('/P-D-UC01-R01');
     const links = screen.getByRole('button', { name: 'Links' });
     expect(links).toHaveAttribute('aria-pressed', 'false');
     expect(links).toHaveAttribute('aria-keyshortcuts', 'L');
@@ -171,7 +171,7 @@ describe('the graph tree and its context ring', () => {
   });
 
   it('LA-BRW-T546 Context nodes are out of focus: faded, hidden from assistive technology, skipped by the keyboard, left out of the summary and the inspector', async () => {
-    await showGraph('/records/P-D-UC01-R01');
+    await showGraph('/P-D-UC01-R01');
     await waitFor(() => expect(node('P-D/define/use-cases')).not.toBeNull());
     const ring = node('P-D/define/use-cases')!;
     expect(ring.className).toContain('is-context');
@@ -217,7 +217,7 @@ describe('the graph tree and its context ring', () => {
   });
 
   it('LA-BRW-T548 Filters have a Show context ring switch, on by default, and a Minimap switch, off by default; both are kept while walking', async () => {
-    await showGraph('/records/P-D-UC01-R01');
+    await showGraph('/P-D-UC01-R01');
     fireEvent.click(screen.getByText('Filters'));
     const ring = screen.getByRole('switch', { name: 'Show context ring' }) as HTMLInputElement;
     const minimap = screen.getByRole('switch', { name: 'Minimap' }) as HTMLInputElement;
@@ -248,22 +248,22 @@ describe('the graph tree and its context ring', () => {
     expect(stepTarget(index, 'P', 'out')).toBeNull();
     expect(stepTarget(index, 'P-D-UC01-R01', 'in')).toBeNull();
 
-    await showGraph('/records/P-D-UC01');
+    await showGraph('/P-D-UC01');
     const steps = within(screen.getByRole('group', { name: 'Step through the tree' }));
     expect(steps.getByRole('button', { name: 'Step out to the parent' })).toHaveAttribute('aria-keyshortcuts', 'Alt+ArrowUp');
     expect(steps.getByRole('button', { name: 'Step to the next sibling' })).toHaveAttribute('aria-keyshortcuts', 'Alt+Shift+ArrowRight');
     expect(steps.getByRole('button', { name: 'Step to the previous sibling' })).toBeDisabled();
     fireEvent.keyDown(document.body, { key: 'ArrowDown', code: 'ArrowDown', altKey: true });
-    await waitFor(() => expect(window.location.pathname).toBe('/records/P-D-UC01-R01'));
+    await waitFor(() => expect(window.location.pathname).toBe('/P-D-UC01-R01'));
     await waitFor(() => expect(isCenter('P-D-UC01-R01')).toBe(true));
     fireEvent.keyDown(document.body, { key: 'ArrowUp', code: 'ArrowUp', altKey: true });
-    await waitFor(() => expect(window.location.pathname).toBe('/records/P-D-UC01'));
+    await waitFor(() => expect(window.location.pathname).toBe('/P-D-UC01'));
     await waitFor(() => expect(isCenter('P-D-UC01')).toBe(true));
     fireEvent.click(within(screen.getByRole('group', { name: 'Step through the tree' })).getByRole('button', { name: 'Step out to the parent' }));
-    await waitFor(() => expect(window.location.pathname).toBe('/records/P-D/define/use-cases'));
+    await waitFor(() => expect(window.location.pathname).toBe('/P-D/define/use-cases'));
     await waitFor(() => expect(node('P-D/define/use-cases')?.querySelector('.is-focus')).toBeTruthy());
     fireEvent.keyDown(document.body, { key: 'ArrowLeft', code: 'ArrowLeft', altKey: true, shiftKey: true });
-    await waitFor(() => expect(window.location.pathname).toBe('/records/P-D/define/domain-model'));
+    await waitFor(() => expect(window.location.pathname).toBe('/P-D/define/domain-model'));
   });
 
   it('LA-BRW-T550 A chip of the light ring leads to the folder of the children it counts, and the edge hints count the ring past each edge and pan that way', async () => {
@@ -273,18 +273,18 @@ describe('the graph tree and its context ring', () => {
     expect(panToward(view, 'right', 1000, 800)).toEqual({ x: -500, y: 0, zoom: 1 });
     expect(panToward(view, 'up', 1000, 800)).toEqual({ x: 0, y: 400, zoom: 1 });
 
-    await showGraph('/records/P-D/define/use-cases', manyOfOneKindWorkspace());
+    await showGraph('/P-D/define/use-cases', manyOfOneKindWorkspace());
     await waitFor(() => expect(node(moreId('P-D-UC02'))).not.toBeNull());
     const chip = node(moreId('P-D-UC02'))!;
     expect(chip.textContent).toBe('+1 more UC requirement');
     expect(chip.className).toContain('is-context');
     expect(chip.getAttribute('aria-hidden')).toBe('true');
     fireEvent.click(chip);
-    await waitFor(() => expect(window.location.pathname).toBe('/records/P-D-UC02/requirement'));
+    await waitFor(() => expect(window.location.pathname).toBe('/P-D-UC02/requirement'));
   });
 
   it('LA-BRW-T551 Hovering or focusing a focus node spotlights it, its lines and the nodes it joins, and leaving restores the picture', async () => {
-    await showGraph('/records/P-D-UC01-R01');
+    await showGraph('/P-D-UC01-R01');
     fireEvent.click(screen.getByRole('button', { name: 'Links' }));
     await waitFor(() => expect(node('P-D-V01')).not.toBeNull());
     const flow = document.querySelector<HTMLElement>('.graph-flow')!;
@@ -326,7 +326,7 @@ describe('the context ring in the Model view', () => {
     const rects = new Map(erd.boxes.map((b, i) => [b.id, { x: i * 300, y: 0, width: 240, height: 80 }]));
     expect([...focusRects(erd, rects).keys()]).not.toContain('P-E-EN01');
     expect(focusRects(erd, rects).size).toBe(5);
-    await openApp('/records/P-D-A3?view=model', { workspace: entityWorkspace() });
+    await openApp('/P-D-A3?view=model', { workspace: entityWorkspace() });
     await waitFor(() => expect(document.querySelector('.model-flow .react-flow__node[data-id="P-E-EN01"]')).not.toBeNull());
     const ring = document.querySelector<HTMLElement>('.model-flow .react-flow__node[data-id="P-E-EN01"]')!;
     expect(ring.className).toContain('is-context');

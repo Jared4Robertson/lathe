@@ -14,11 +14,11 @@ describe('checks page', () => {
       records: [...s.querySelectorAll('li')].map((li) => li.querySelector('a')?.getAttribute('href') ?? li.querySelector('code')?.textContent),
     }));
     expect(groups).toEqual([
-      { check: 'dangling-link', severities: ['error'], records: ['/records/NF-NOTE'] },
+      { check: 'dangling-link', severities: ['error'], records: ['/NF-NOTE'] },
       { check: 'meta-model', severities: ['error'], records: ['workspace'] },
-      { check: 'test-file-missing', severities: ['error'], records: ['/records/DM-SHOP-T01'] },
-      { check: 'unproved', severities: ['warning', 'warning'], records: ['/records/DM-SHOP-DR01', '/records/DM-SHOP-UC01-R02'] },
-      { check: 'unsatisfied', severities: ['warning'], records: ['/records/DM-PAY-UC01-R01'] },
+      { check: 'test-file-missing', severities: ['error'], records: ['/DM-SHOP-T01'] },
+      { check: 'unproved', severities: ['warning', 'warning'], records: ['/DM-SHOP-DR01', '/DM-SHOP-UC01-R02'] },
+      { check: 'unsatisfied', severities: ['warning'], records: ['/DM-PAY-UC01-R01'] },
     ]);
   });
 });
