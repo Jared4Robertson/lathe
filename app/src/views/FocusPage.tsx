@@ -238,7 +238,7 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   const onGraph = useCallback((info: GraphInfo) => setGraphInfo(info), []);
 
   // A link keeps the views asked for; the page it leads to shows those it offers.
-  const hrefFor = useCallback((id: string) => withView(addressOf(index, id), asked), [index, askedKey]);
+  const hrefFor = useCallback((id: string) => withView(addressOf(id), asked), [index, askedKey]);
   const onNavigate = useCallback((id: string) => navigate(hrefFor(id)), [hrefFor]);
 
   // The wiki's scroll is the tab's: it comes back when the tab is active again. Within a tab, a new
@@ -625,7 +625,7 @@ function PageTitle({ index, route, fixed = false }: { index: SpecIndex; route: F
   } else if (route.page === 'domain') {
     const domain = index.byId.get(focus)!;
     const product = index.byId.get(route.product)!;
-    eyebrow = <><Link to={addressOf(index, product.id)}>{product.title}</Link> · Domain · {domain.path}</>;
+    eyebrow = <><Link to={addressOf(product.id)}>{product.title}</Link> · Domain · {domain.path}</>;
     title = domain.title;
     problems = problemsUnder(index, 'domain', focus);
   } else if (route.page === 'record') {
@@ -637,7 +637,7 @@ function PageTitle({ index, route, fixed = false }: { index: SpecIndex; route: F
     const parent = index.byId.get(route.parent)!;
     // The folder the group's kind sits in, named as in the side nav and the domain page: "Define › Use cases".
     const folder = folderPath(index, route.kind.split('/')[0]);
-    eyebrow = <><Link to={addressOf(index, parent.id)}>{parent.title}</Link> · {folder.length > 0 && <span className="group-folder">{folder.join(' › ')} · </span>}Group</>;
+    eyebrow = <><Link to={addressOf(parent.id)}>{parent.title}</Link> · {folder.length > 0 && <span className="group-folder">{folder.join(' › ')} · </span>}Group</>;
     title = groupLabel(index, focus);
     id = undefined;
     problems = groupMembers(index, focus).flatMap((m) => index.problemsFor.get(m.id) ?? []);
@@ -677,7 +677,7 @@ function GroupWiki({ index, gid }: { index: SpecIndex; gid: string }) {
   return (
     <div className="spec-body">
       <p className="group-intro">
-        {groupName(index, gid)} of <Link to={addressOf(index, parent)} className="record-link"><code>{parent}</code> <span>{parentRecord.title}</span></Link>
+        {groupName(index, gid)} of <Link to={addressOf(parent)} className="record-link"><code>{parent}</code> <span>{parentRecord.title}</span></Link>
       </p>
       {description && <Markdown source={description} />}
       <Section title={membersTitle} count={members.length}>

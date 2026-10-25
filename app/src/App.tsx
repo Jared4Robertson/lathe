@@ -17,7 +17,7 @@ import { useThemeColor } from './shell/themeColor';
 import { isBool, usePanelSize, usePref } from './shell/prefs';
 import { useNarrow } from './shell/useNarrow';
 import { FocusPage } from './views/FocusPage';
-import { HOME_PATH, isFocusRoute, redirectTarget } from './views/address';
+import { HOME_PATH, isFocusRoute } from './views/address';
 import { ThemeProvider } from './theme/ThemeProvider';
 import { APPEARANCE_PATH, ThemeCommands } from './theme/ThemeCommands';
 import { Button } from './components/Button';
@@ -77,11 +77,6 @@ function Shell() {
     loadDiagrams();
     return onLatheEvent('model:changed', loadDiagrams);
   }, [loadDiagrams]);
-
-  // Old addresses (/records, /specs, /graph) go to the same thing at its ID, keeping the query and hash.
-  const redirecting = specRoute?.page === 'redirect';
-  const redirectTo = specRoute?.page === 'redirect' && specRoute.to !== null ? redirectTarget(specRoute.to, search, window.location.hash) : null;
-  useEffect(() => { if (redirectTo) navigate(redirectTo, true); }, [redirectTo]);
 
   // Diagrams alone opens the first diagram.
   useEffect(() => {
@@ -156,9 +151,7 @@ function Shell() {
   const newDiagram = <NewDiagram onCreated={async (created) => { await loadDiagrams(); navigate(diagramPath(created.slug)); }} />;
 
   let page;
-  if (redirecting) {
-    page = <main className="placeholder panel" id="main"><p>{spec.error ? `Couldn't load the specs: ${spec.error}` : 'Opening…'}</p></main>;
-  } else if (isAppearance) {
+  if (isAppearance) {
     page = <Suspense fallback={<LoadingPage />}><AppearancePage /></Suspense>;
   } else if (isFormatRoute(specRoute)) {
     page = <FormatPages spec={spec} route={specRoute} />;

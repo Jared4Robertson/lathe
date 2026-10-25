@@ -42,7 +42,7 @@ export function pageHeading(index: SpecIndex | null, path: string, search: strin
   const id = focusOf(route);
   if (route.page === 'group') {
     const parent = index.byId.get(route.parent);
-    return { title: groupLabel(index, id), up: parent ? { to: keep(addressOf(index, parent.id)), label: parent.title } : PRODUCTS };
+    return { title: groupLabel(index, id), up: parent ? { to: keep(addressOf(parent.id)), label: parent.title } : PRODUCTS };
   }
   const record = index.byId.get(id);
   if (!record) return { title: id, up: PRODUCTS };
@@ -51,7 +51,7 @@ export function pageHeading(index: SpecIndex | null, path: string, search: strin
     return { title: record.title, up: product ? { to: keep(addressOf(product.id)), label: product.title } : PRODUCTS };
   }
   const parent = record.parent ? index.byId.get(record.parent) : undefined;
-  return { title: record.title, up: parent ? { to: keep(addressOf(index, parent.id)), label: parent.title } : PRODUCTS };
+  return { title: record.title, up: parent ? { to: keep(addressOf(parent.id)), label: parent.title } : PRODUCTS };
 }
 
 export interface TopBarProps {
