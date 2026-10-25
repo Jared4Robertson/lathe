@@ -7,6 +7,7 @@
     "check": "node bin/lathe.ts check --root ..",
     "lathe": "node bin/lathe.ts",
     "test": "vitest run --maxWorkers=2",
+    "test:perf": "node perf/engine.ts",
     "typecheck": "tsc --noEmit",
     "reference": "node bin/lathe.ts format --root . --out REFERENCE.md",
     "build": "rm -rf dist && tsc -p tsconfig.build.json && npm run reference && npm --prefix ../app run build",

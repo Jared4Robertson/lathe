@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it } from 'vitest';
 import { COMMANDS, OVERRIDES_KEY, ariaKeyShortcuts, formatBinding, resolveCommands } from '../src/shell/keymap';
 import { TOOLTIP_DELAY } from '../src/shell/Tooltip';
-import { openApp } from './helpers';
+import { openApp, openSideBar } from './helpers';
 import { testWorkspace } from './graph/workspace';
 
 // Shortcut hints the standard way: tooltips that name a control and its keys, the palette's
@@ -51,6 +51,8 @@ describe('shortcut hints', () => {
   });
 
   it('LA-BRW-T231 Tooltips and palette rows show the keys for the platform: ⌃ ⌥ ⇧ ⌘ on a Mac, Ctrl+ elsewhere', async () => {
+    // The side bar starts closed in the Wiki view (brief 64); this test reads it open.
+    openSideBar('details', ['wiki', 'graph', 'model']);
     // In Apple's order: ⌃ ⌥ ⇧ ⌘.
     expect(formatBinding('Mod+Shift+P', true)).toBe('⇧⌘P');
     expect(formatBinding('Mod+Alt+B', true)).toBe('⌥⌘B');
@@ -129,6 +131,8 @@ describe('shortcut hints', () => {
   });
 
   it('LA-BRW-T234 Every control with a shortcut carries aria-keyshortcuts from the keymap', async () => {
+    // The side bar starts closed in the Wiki view (brief 64); this test reads it open.
+    openSideBar('details', ['wiki', 'graph', 'model']);
     expect(ariaKeyShortcuts(['Mod+P', 'Mod+K'], false)).toBe('Control+P Control+K');
     expect(ariaKeyShortcuts(['Mod+P'], true)).toBe('Meta+P');
     expect(ariaKeyShortcuts(['g c'], false)).toBe('');

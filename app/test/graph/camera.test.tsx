@@ -136,14 +136,15 @@ describe('graph camera on the page', () => {
     expect(node('P-D/define/use-cases')!.className).toContain('is-context');
     expect(node('P-D/define/use-cases')!.className).not.toContain('is-entering');
     // The stage that was the ring leaves, faded as it was.
-    expect(document.querySelector<HTMLElement>('.react-flow__node[data-id="leaving:P-D/define"]')?.className).toContain('is-context');
-    // The domain rule the use case applies leaves: it fades out where it was, under its own ID, and is then dropped.
-    expect(node('P-D-DR01')).toBeNull();
-    const leaving = document.querySelector<HTMLElement>('.react-flow__node[data-id="leaving:P-D-DR01"]');
+    expect(node('P-D/define')?.className).toContain('is-context');
+    expect(node('P-D/define')?.className).toContain('is-leaving');
+    // The domain rule the use case applies leaves: it fades out where it was, the same box marked as leaving, and is then dropped.
+    const leaving = node('P-D-DR01');
     expect(leaving).not.toBeNull();
     expect(leaving!.className).toContain('is-leaving');
     expect(leaving!.getAttribute('aria-hidden')).toBe('true');
     await waitFor(() => expect(document.querySelector('.react-flow__node.is-leaving')).toBeNull());
+    expect(node('P-D-DR01')).toBeNull();
     expect(calls.length).toBe(first + 1);
   });
 
