@@ -103,7 +103,7 @@ function readProseCitations(records: LoadedRecord[], idPrefixes: string[]): Pros
   return citations;
 }
 
-/** What an entity's Fields table says (FORMAT.md section 17), for the entity-fields check. */
+/** What an entity's or domain event's Fields table says (FORMAT.md sections 17 and 18), for the entity-fields check. */
 interface EntityTableFact {
   path: string;
   record: string;
@@ -112,13 +112,16 @@ interface EntityTableFact {
   columns_ok: boolean;
 }
 
-// Reads each entity's Fields table into its entityFields, in table order, and returns the facts the checks
-// judge it by. A table without the right columns gives no fields: its column problem is the one reported.
+/** The kinds whose body holds a Fields table: an entity's fields, and what a domain event carries. */
+const FIELDS_KINDS = new Set(['entity', 'domain_event']);
+
+// Reads each entity's and domain event's Fields table into its entityFields, in table order, and returns the
+// facts the checks judge it by. A table without the right columns gives no fields: its column problem is the one reported.
 // A row with fewer cells than the columns is read with the missing cells empty.
 function readEntityFields(records: LoadedRecord[]): EntityTableFact[] {
   const facts: EntityTableFact[] = [];
   for (const r of records) {
-    if (r.kind !== 'entity') continue;
+    if (!FIELDS_KINDS.has(r.kind)) continue;
     const table = readFieldsTable(r.body);
     const ok = hasFieldsColumns(table.columns);
     r.entityFields = ok
@@ -567,8 +570,8 @@ export async function loadWorkspace(root: string, options: LoadOptions = {}): Pr
     // Every distinct ID a record's body cites (a record's ID, or a token with a known prefix), existing or not.
     await connection.run('CREATE TABLE prose_mentions (path VARCHAR, record VARCHAR, cited VARCHAR)');
     await append(connection, 'prose_mentions', citations.map((c) => [c.path, c.record, c.cited]));
-    // Each entity's Fields table (FORMAT.md section 17): whether it has the heading, the table's columns, and,
-    // when they are right, its rows in table order (position from 1).
+    // Each entity's and domain event's Fields table (FORMAT.md sections 17 and 18): whether it has the heading,
+    // the table's columns, and, when they are right, its rows in table order (position from 1).
     await connection.run(`
       CREATE TABLE entity_tables (path VARCHAR, record VARCHAR, heading BOOLEAN, columns VARCHAR, columns_ok BOOLEAN);
       CREATE TABLE entity_fields (path VARCHAR, record VARCHAR, position INTEGER, field VARCHAR, meaning VARCHAR,
