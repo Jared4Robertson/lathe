@@ -1,11 +1,11 @@
 import type { SpecIndex } from '../specs/data';
 import { NODE_HEIGHT, NODE_WIDTH } from './layout';
-import { rootsOf, type MapNode, type PlacedMap } from './map';
+import type { MapNode, PlacedMap } from './map';
 import { nodeLabelWidth } from './text';
 import { treeChildren } from './tree';
 
-// The graph's Nested map (LA-EXP-DR62): the same tree as the Tree map (map.ts), drawn as a
-// zoomable treemap. A product is made of its domains, a domain of Define and Design, a stage of
+// The graph's Nested map (LA-EXP-DR62): the same tree as the Tree map (map.ts), one product's, the
+// product its single root, drawn as a zoomable treemap. A product is made of its domains, a domain of Define and Design, a stage of
 // its folders, a folder of its records, a record of its children: each box holds its children
 // rather than linking to them. Laid out once per spec load, like the Tree map, and never changed
 // by the focus: focusing moves the camera (camera.ts).
@@ -181,13 +181,15 @@ export function layoutNested(roots: readonly string[], childrenOf: (id: string) 
   };
 }
 
-const cache = new WeakMap<SpecIndex, NestedMap>();
+const cache = new WeakMap<SpecIndex, Map<string, NestedMap>>();
 
-/** The Nested map of an index: built on first use, then read. */
-export function nestedMap(index: SpecIndex): NestedMap {
-  const known = cache.get(index);
+/** The Nested map of one product (or of a tree no product reaches), from its root, as the Tree map has it (`mapRootOf`): built on first use, then read. */
+export function nestedMap(index: SpecIndex, root: string): NestedMap {
+  let maps = cache.get(index);
+  if (!maps) { maps = new Map(); cache.set(index, maps); }
+  const known = maps.get(root);
   if (known) return known;
-  const map = layoutNested(rootsOf(index), (id) => treeChildren(index, id), (id) => nodeLabelWidth(index, id));
-  cache.set(index, map);
+  const map = layoutNested([root], (id) => treeChildren(index, id), (id) => nodeLabelWidth(index, id));
+  maps.set(root, map);
   return map;
 }

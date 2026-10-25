@@ -49,7 +49,7 @@ import {
   type Neighborhood,
 } from './model';
 import { boxExit, contentScale, traceGrid, type Point } from './layout';
-import { centerOf, graphMap, linkEnds, parentLine, type GraphMap, type PlacedMap } from './map';
+import { centerOf, graphMap, linkEnds, mapRootOf, parentLine, type GraphMap, type PlacedMap } from './map';
 import { nestedMap, type NestedMap } from './nested';
 import { treeGroup } from './tree';
 import { labelLines, marksOf } from './text';
@@ -58,7 +58,7 @@ import { EdgeHints, type Side } from './hints';
 import { readMotion } from './motion';
 import { Button } from '../components/Button';
 
-// The graph view: the whole tree as one fixed map (map.ts), explored by a camera (camera.ts).
+// The graph view: the product's tree as one fixed map (map.ts), explored by a camera (camera.ts).
 // Clicking a record or a group focuses it (through onNavigate, so the host changes the address and
 // Back walks back along the path), and the camera glides to frame it; nothing in the map moves or
 // changes size. Trace mode is a chain, not the tree, and keeps a small picture of its own.
@@ -645,9 +645,10 @@ function GraphCanvas({ index, graph, layout, depth, filters, onNavigate, minimap
 }) {
   const tracing = graph.mode === 'trace';
   const focus = graph.focus;
-  // One camera over either map (LA-EXP-UC03-R16): the Tree map (map.ts) or the Nested map (nested.ts).
+  // The focus's own product's map (no other product's nodes are in it), in either layout (LA-EXP-UC03-R16): the Tree map (map.ts) or the Nested map (nested.ts), under one camera.
+  const root = useMemo(() => mapRootOf(index, focus), [index, focus]);
   const nested = layout === 'nested';
-  const map: GraphMap | NestedMap = useMemo(() => (nested ? nestedMap(index) : graphMap(index)), [index, nested]);
+  const map: GraphMap | NestedMap = useMemo(() => (nested ? nestedMap(index, root) : graphMap(index, root)), [index, root, nested]);
   const wrapper = useRef<HTMLDivElement>(null);
   const active = useRef<string | null>(null);
   /** After a keyboard action, the node to put keyboard focus on once the camera has framed it. */

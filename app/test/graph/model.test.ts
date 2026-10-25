@@ -104,10 +104,10 @@ describe('graph neighborhood', () => {
   });
 
   it('LA-EXP-T16 The layout gives the same map every time, whatever the focus, with no overlaps', async () => {
-    const map = graphMap(index);
+    const map = graphMap(index, 'P');
     // Built once per index, and the same for an index built again from the same workspace.
-    expect(graphMap(index)).toBe(map);
-    const again = graphMap(testIndex());
+    expect(graphMap(index, 'P')).toBe(map);
+    const again = graphMap(testIndex(), 'P');
     expect([...again.nodes.values()].map((n) => [n.id, n.x, n.y, n.w, n.h])).toEqual([...map.nodes.values()].map((n) => [n.id, n.x, n.y, n.w, n.h]));
     // No two boxes overlap.
     const boxes = [...map.nodes.values()];
@@ -153,7 +153,7 @@ describe('graph neighborhood', () => {
   });
 
   it('LA-EXP-T24 The graph reads left to right by column, and so does a trace', async () => {
-    const map = graphMap(index);
+    const map = graphMap(index, 'P');
     // One x and one width per level, levels in order.
     for (const level of map.byLevel) {
       expect(new Set(level.map((n) => n.x)).size).toBe(1);
@@ -178,7 +178,7 @@ describe('graph neighborhood', () => {
   it('LA-EXP-T25 Links between records in one column are drawn but never change the map', async () => {
     const w = testWorkspace();
     w.records.push({ ...w.records.find((r) => r.id === 'P-D-A1')!, id: 'P-D-A2', title: 'Owner', path: 'specs/P-D-A2.md' });
-    const before = graphMap(indexWorkspace(w));
+    const before = graphMap(indexWorkspace(w), 'P');
     w.links.push({ source: 'P-D-A1', relation: 'relates_to', target: 'P-D-A2' }, { source: 'P-D-A2', relation: 'relates_to', target: 'P-D-A1' });
     const linked = indexWorkspace(w);
     // Links on: the two aggregates are siblings, so they share a column, and both links are drawn.
@@ -187,7 +187,7 @@ describe('graph neighborhood', () => {
     expect(column.get('P-D-A2')).toBe(column.get('P-D-A1'));
     expect(n.edges.filter((e) => e.relation === 'relates_to')).toHaveLength(2);
     // Neither link shapes the map: every box is where it was without them.
-    const after = graphMap(linked);
+    const after = graphMap(linked, 'P');
     expect([...after.nodes.values()].map((x) => [x.id, x.x, x.y])).toEqual([...before.nodes.values()].map((x) => [x.id, x.x, x.y]));
   });
 });

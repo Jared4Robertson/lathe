@@ -1,11 +1,12 @@
 import type { SpecIndex } from '../specs/data';
 import { contentScale, NODE_HEIGHT, NODE_WIDTH } from './layout';
 import { nodeLabelWidth, textScaleOf } from './text';
-import { treeChildren, treeOf } from './tree';
+import { treeChildren, treeParent } from './tree';
 
-// The graph's one map (LA-EXP-DR57): the whole tree, the nav's (tree.ts), laid out once per spec
-// load as one icicle. Every node has one place and one size in it, whatever is in focus: focusing
-// anything moves the camera (camera.ts), never the map.
+// The graph's one map per product (LA-EXP-DR57): the product's tree, the nav's (tree.ts), with the
+// product as its single root, laid out once per spec load as one icicle. Nothing of another product
+// is in it: each product is a space of its own. Every node has one place and one size in it,
+// whatever is in focus: focusing anything moves the camera (camera.ts), never the map.
 //
 // - A leaf is NODE_WIDTH by NODE_HEIGHT. A parent is exactly as tall as its children stacked, the
 //   gaps between them included, and their stack starts at its top edge.
@@ -27,7 +28,7 @@ import { treeChildren, treeOf } from './tree';
 export const LEVEL_ASPECT = 1;
 /** The most one level is wider than the level below it (LA-EXP-DR58). */
 export const MAX_LEVEL_STEP = 3;
-/** The most the roots' level (the products) is wider than the level below it, so a product's picture leaves room for its domains. */
+/** The most the root's level (the product) is wider than the level below it, so a product's picture leaves room for its domains. */
 export const MAX_ROOT_STEP = 1.5;
 /** The gap between two sibling leaves, and between a leaf level and the level before it. */
 export const ROW_GAP = 16;
@@ -63,7 +64,7 @@ export interface PlacedMap {
   /** Which view it lays out (LA-EXP-UC03-R16). */
   view: 'tree' | 'nested';
   nodes: ReadonlyMap<string, MapNode>;
-  /** The roots: the products, then any record no product reaches. */
+  /** The roots, top to bottom: the product (or the top of a tree no product reaches). */
   roots: readonly string[];
   /** The nodes of each level, in the tree's order (top to bottom in the Tree map). */
   byLevel: readonly (readonly MapNode[])[];
@@ -89,17 +90,12 @@ export function typicalHeight(heights: readonly number[]): number {
 /** Even, so a box's middle is a whole pixel. */
 const even = (n: number) => 2 * Math.round(n / 2);
 
-/** The roots of the tree: the products, then each record or group no product reaches, in the workspace's order. Both views' maps start from them. */
-export function rootsOf(index: SpecIndex): string[] {
-  const tree = treeOf(index);
-  const roots = index.products.map((p) => p.id);
-  const seen = new Set(roots);
-  for (const r of index.workspace.records) {
-    if (seen.has(r.id) || tree.parent.has(r.id)) continue;
-    seen.add(r.id);
-    roots.push(r.id);
-  }
-  return roots;
+/** The root of the map that holds a node: its product, or the top of its tree when no product reaches it. */
+export function mapRootOf(index: SpecIndex, id: string): string {
+  let at = id;
+  const seen = new Set([at]);
+  for (let up = treeParent(index, at); up !== null && !seen.has(up); up = treeParent(index, up)) { seen.add(up); at = up; }
+  return at;
 }
 
 /**
@@ -181,14 +177,16 @@ export function layoutTree(roots: readonly string[], childrenOf: (id: string) =>
   };
 }
 
-const cache = new WeakMap<SpecIndex, GraphMap>();
+const cache = new WeakMap<SpecIndex, Map<string, GraphMap>>();
 
-/** The one map of an index: built on first use, then read. */
-export function graphMap(index: SpecIndex): GraphMap {
-  const known = cache.get(index);
+/** The map of one product (or of a tree no product reaches), from its root: built on first use, then read. */
+export function graphMap(index: SpecIndex, root: string): GraphMap {
+  let maps = cache.get(index);
+  if (!maps) { maps = new Map(); cache.set(index, maps); }
+  const known = maps.get(root);
   if (known) return known;
-  const map = layoutTree(rootsOf(index), (id) => treeChildren(index, id), (id) => nodeLabelWidth(index, id));
-  cache.set(index, map);
+  const map = layoutTree([root], (id) => treeChildren(index, id), (id) => nodeLabelWidth(index, id));
+  maps.set(root, map);
   return map;
 }
 

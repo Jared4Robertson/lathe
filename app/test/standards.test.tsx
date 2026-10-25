@@ -420,7 +420,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     expect(CSS).toMatch(/\.markdown pre, \.spec-body pre \{[^}]*overflow-x:\s*auto/);
     expect(CSS).toMatch(/\.record-id[^{]*\{[^}]*overflow-wrap:\s*anywhere/);
     vi.stubGlobal('matchMedia', (query: string) => ({ matches: true, media: query, addEventListener: () => {}, removeEventListener: () => {} }));
-    for (const path of ['/DM', '/DM-SHOP', '/DM-SHOP-UC01', '/DM-SHOP-C01', '/checks', '/format']) {
+    for (const path of ['/DM', '/DM-SHOP', '/DM-SHOP-UC01', '/DM-SHOP-C01', '/DM/checks', '/format']) {
       await openApp(path);
       await screen.findAllByRole('heading', { level: 1 });
       const loose = [...document.querySelectorAll('table')].filter((t) => !t.closest('.table-scroll') && !t.closest('.markdown') && !t.matches('.erd-key-table, .shortcut-table'));
@@ -469,7 +469,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     expect(raw).toEqual([]);
 
     // The pages.
-    for (const path of ['/', '/DM', '/DM-SHOP', '/DM-SHOP-UC01', '/DM-SHOP-UC01?view=graph', '/checks', '/format', '/settings/appearance']) {
+    for (const path of ['/', '/DM', '/DM-SHOP', '/DM-SHOP-UC01', '/DM-SHOP-UC01?view=graph', '/DM/checks', '/format', '/settings/appearance']) {
       await openApp(path);
       // Every page waits for its content.
       await screen.findAllByRole('heading', { level: 1 });
@@ -502,7 +502,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     expect(parseSpecRoute('/DM-SHOP/design/interaction-design/view', index)).toEqual({ page: 'group', parent: 'DM-SHOP', kind: 'design/interaction-design/view' });
 
     // The pages: every in-app link is the home page, an app page or an ID, and none is an old address.
-    for (const path of ['/', '/DM', '/DM-SHOP', '/DM-SHOP-UC01', '/DM-SHOP/design/interaction-design/view?view=wiki,graph', '/checks', '/format', '/settings/appearance']) {
+    for (const path of ['/', '/DM', '/DM-SHOP', '/DM-SHOP-UC01', '/DM-SHOP/design/interaction-design/view?view=wiki,graph', '/DM/checks', '/format', '/settings/appearance']) {
       await openApp(path);
       await screen.findAllByRole('heading', { level: 1 });
       const wrong = [...document.querySelectorAll('a[href^="/"]')].map((a) => a.getAttribute('href')!).filter((href) => {

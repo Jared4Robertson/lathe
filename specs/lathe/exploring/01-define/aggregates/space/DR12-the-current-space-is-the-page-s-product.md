@@ -4,4 +4,4 @@ kind: domain_rule
 title: The current space is the page's product
 parent: LA-EXP-A2
 ---
-The current space MUST be the product of the page on screen when it belongs to one (its product, domain, record or group page); on a page above every product (Checks, the format) it MUST stay the space last chosen, or the first product.
+The current space MUST be the product of the page on screen when it belongs to one (its product, domain, record or group page, or its Checks page); on a page outside every space (the products, the format, Settings) it MUST stay the space last chosen, or the first product.
