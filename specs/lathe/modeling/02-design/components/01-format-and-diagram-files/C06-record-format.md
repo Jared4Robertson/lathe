@@ -8,4 +8,4 @@ file: lathe/FORMAT.md
 links:
   satisfies: [LA-MOD-UC03-R01, LA-MOD-UC03-R02, LA-MOD-UC03-R03, LA-MOD-UC03-R04]
 ---
-The written contract for record files: where they live, the header fields, the ID convention, code traceability, checks and coverage. Not code, but the design that the loader (`LA-CHK-C01`) implements.
+The written contract for record files, as concepts: where they live, the header fields, how IDs are formed, code traceability, checks and coverage. Not code, but the design that the loader (`LA-CHK-C01`) implements. The facts it no longer lists (each kind, relation, folder, check and ID pattern) are generated from the meta-model into the format reference (`LA-CHK-C180`), which starts with this page.

@@ -10,7 +10,7 @@ A domain model says what the product's records are, how they hold and refer to e
 ## Before you write
 
 1. Find the repo root (the folder with `lathe.config.json`) and its specs folder (`specs` unless the config says otherwise).
-2. Read the record format: `FORMAT.md` in the Lathe package (`node_modules/@jaredrob/lathe/FORMAT.md` in a product repo, `lathe/FORMAT.md` in the Lathe repo), and the kinds and relations in its `meta/` folder.
+2. Read the record format: run `npx lathe format` (in the Lathe repo, `npm --prefix lathe run lathe -- format --root .`), which prints the concepts and then every kind, relation, folder and check of this product, its extensions and own checks included. Lathe's defaults alone are in `REFERENCE.md` in the Lathe package (`lathe/REFERENCE.md` in the Lathe repo).
 3. Read the product record and the domain's existing records. Find the highest number in use for each kind before adding one. IDs are never reused or renumbered.
 
 ## The records

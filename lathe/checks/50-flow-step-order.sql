@@ -1,5 +1,10 @@
--- A flow step's order is a whole number, and no two steps of one flow share it (FORMAT.md section 14).
--- A missing order is missing-required-field. Orders are compared as numbers, so 1 and 01 clash.
+-- A flow step's order is a whole number that no other step of its flow has.
+--
+-- Steps are read in `order` (FORMAT.md section 14). Orders are compared as numbers, so 1 and 01 clash. A
+-- missing order is missing-required-field. Give each step of the flow its own whole-number `order`.
+--
+-- severity: error
+-- kinds: flow_step
 SELECT severity, "check", record, message FROM (
   SELECT 'error' AS severity, 'flow-step-order' AS "check", nullif(s.id, '') AS record,
          'Flow step ' || coalesce(nullif(s.id, ''), s.path) || ' has order "' || s.raw

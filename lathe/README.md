@@ -8,8 +8,11 @@ Lathe organizes a product's lifecycle (domain model, use cases, interaction desi
 npm install --save-dev /path/to/jaredrob-lathe-0.1.0.tgz   # until it is published
 npx lathe init --name "Tool Library" --prefix TL
 npx lathe check
+npx lathe format           # the record format reference, as Markdown
 npx lathe serve            # http://127.0.0.1:5330
 ```
+
+`lathe format` prints the record format: the concepts of [FORMAT.md](FORMAT.md), then every kind, relation, folder and check, generated from the meta-model (with the product's extensions) and from each check's header comment, including the product's own checks. `--out REFERENCE.md` writes it to a file. Lathe's defaults are committed as [REFERENCE.md](REFERENCE.md).
 
 `lathe init` writes `lathe.config.json` and a first product record. The config names the product's folders and, optionally, its own additions to the meta-model:
 
@@ -59,6 +62,7 @@ npm --prefix lathe install
 npm --prefix lathe run check                          # check this repo (Lathe dogfooding itself)
 npm --prefix lathe run lathe -- check --root path     # any command, against another root
 npm --prefix lathe run check -- --json                # print the whole Workspace as JSON
+npm --prefix lathe run reference                      # regenerate REFERENCE.md after changing meta/ or checks/
 ```
 
 `check` prints errors, then warnings, then one coverage line per domain. It exits 1 if there is any error. Warnings alone do not fail it. In this repo the CLI runs from source on Node 26's built-in TypeScript support; the package ships compiled JavaScript, because Node does not run TypeScript from `node_modules`.
@@ -85,6 +89,8 @@ The fixture workspaces in `test/fixtures/` are small: `good` passes every check,
 | `entity_tables` | `path`, `record`, `heading` (the body has a `## Fields` heading), `columns` (the table's header cells, joined by `, `; NULL without a table), `columns_ok`: one row per entity (FORMAT.md section 17) |
 | `entity_fields` | `path`, `record`, `position` (from 1), `field`, `meaning`, `kind`, `example`: one row per row of an entity's Fields table whose columns are right |
 | `settings` | `name`, `value`: the product's settings from `lathe.config.json` that checks read, such as `structure.maxChildren` (always present, with its default when the config does not give it) |
+| `kind_ids` | `kind`, `pattern`, `example`: each kind's ID convention, from `meta/ids.csv` |
+| `check_docs` | `source`, `"check"`, `origin` (`lathe` or `product`), `summary`, `explanation`, `severity`, `missing`: what each check file's header says, and what it lacks |
 
 `path` is the record file's path relative to the root. It is unique, so use it to join a record to its own fields and links. IDs can be duplicated in a broken workspace. A missing `id`, `kind` or `title` is stored as an empty string, and a missing `parent` as NULL.
 
@@ -93,7 +99,8 @@ The fixture workspaces in `test/fixtures/` are small: `good` passes every check,
 1. Add a file to `lathe/checks/` named `<number>-<check-name>.sql`, such as `19-view-without-endpoint.sql`. The checks run in file name order. The name without the number and `.sql` is the check's name.
 2. Write one `SELECT` that returns the columns `severity` (`'error'` or `'warning'`), `"check"`, `record` (the ID, or NULL) and `message`, with one row per problem. Quote `"check"`, because `CHECK` is an SQL keyword. Write the message as a plain sentence that names the IDs involved.
 3. Use `error` when the workspace is broken, and `warning` for work still to do.
-4. Add a fixture and a test in `test/checks.test.ts`.
+4. Start the file with its header comment, which is its documentation in the reference: one summary sentence, a blank comment line, the explanation ending with how to fix what it reports, a blank comment line, then `-- severity: error` (or `warning`, or `error, warning`) and, optionally, `-- kinds: use_case requirement` for the kinds it concerns. A header that lacks any of these is an `undocumented` error.
+5. Add a fixture and a test in `test/checks.test.ts`, and run `npm --prefix lathe run reference` to regenerate REFERENCE.md.
 
 If a check's SQL fails to run, the engine reports that as an error problem for that check rather than crashing.
 
@@ -102,7 +109,7 @@ If a check's SQL fails to run, the engine reports that as an error problem for t
 A rule that belongs to one product, not to Lathe, goes in the product's own `checks` folder (FORMAT.md section 13). This repo's `lathe.config.json` names `lathe-checks/`, which holds `01-endpoint-without-interaction-requirement.sql`.
 
 1. Name the folder in `lathe.config.json`: `"checks": "lathe-checks"`.
-2. Add `<number>-<check-name>.sql` files to it, written as Lathe's checks are (steps 1 to 3 above), against the same tables.
+2. Add `<number>-<check-name>.sql` files to it, written as Lathe's checks are (steps 1 to 4 above, header included), against the same tables.
 3. They run after all of Lathe's checks, in file name order, and their problems are reported with the others.
 
 A product check named like one of Lathe's checks is not run and is a `product-check-name-clash` error; a product check that fails to run is an error naming its file; and a `checks` folder that does not exist is a `product-checks-missing` error.

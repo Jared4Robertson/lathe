@@ -1,5 +1,10 @@
--- S2's house rule: each aggregate has exactly one use case that follows the Record view pattern for it,
--- naming the aggregate in its `record` setting.
+-- Each aggregate has exactly one Record view use case.
+--
+-- S2's house rule: one use case follows the Record view pattern for each aggregate, naming the aggregate in
+-- its `record` setting. Write the missing use case, or merge the extra ones.
+--
+-- severity: warning
+-- kinds: aggregate use_case
 WITH views AS (
   SELECT f.value AS aggregate, u.id AS use_case
   FROM records u
