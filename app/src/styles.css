@@ -602,3 +602,8 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 .kbd-hint { margin-left: auto; flex: none; }
 .palette-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* ---------- End of brief 30 ---------- */
+
+/* Section headings: a short list's Expand all / Collapse all sits on the heading's row, at the right. */
+.spec-section { position: relative; }
+.spec-section > h2 + .long-list > .long-list-tools.short { position: absolute; top: 0; right: 0; }
+.spec-section > h2 + .long-list > .long-list-tools.short + * { margin-top: 0; }
