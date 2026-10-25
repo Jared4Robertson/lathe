@@ -19,6 +19,8 @@ import type { DiagramSummary, Model } from './types';
 import { navigate, useLocation } from './router';
 import { checksPath, formatPath, parseSpecRoute, useSpec } from './specs/data';
 import { SpecView } from './specs/SpecPages';
+import { FormatPages, isFormatRoute } from './format/FormatPages';
+import { FormatProvider, useFormatStore } from './format/reference';
 import { onLatheEvent } from './events';
 import { CommandsProvider, useAnnounce, useCommand } from './shell/commands';
 import { SPACE_KEYS, spaceCommandId } from './shell/keymap';
@@ -128,6 +130,7 @@ function Shell() {
   const slug = specRoute ? null : slugFromPath(path);
   const isAppearance = path === APPEARANCE_PATH;
   const spec = useSpec();
+  const format = useFormatStore();
   const announce = useAnnounce();
   const [diagrams, setDiagrams] = useState<DiagramSummary[]>([]);
   const [listError, setListError] = useState<string | null>(null);
@@ -232,6 +235,8 @@ function Shell() {
     page = <AppearancePage />;
   } else if (isGraphPath) {
     page = <main className="placeholder panel" id="main"><p>No products yet. Add a <code>product.md</code> under <code>specs/</code>.</p></main>;
+  } else if (isFormatRoute(specRoute)) {
+    page = <FormatPages spec={spec} route={specRoute} />;
   } else if (focusRoute) {
     page = <FocusPage spec={spec} route={focusRoute} search={search} />;
   } else if (specRoute) {
@@ -247,6 +252,7 @@ function Shell() {
   }
 
   return (
+    <FormatProvider value={format}>
     <SpacesProvider value={spaces}>
     <SpaceCommands spaces={spaces} />
     <DesktopTitleBar />
@@ -302,6 +308,7 @@ function Shell() {
       {page}
     </div>
     </SpacesProvider>
+    </FormatProvider>
   );
 }
 

@@ -4,12 +4,14 @@ import { navigate } from '../router';
 import { kindLabel, type SpecIndex } from '../specs/data';
 import type { DiagramSummary } from '../types';
 import { addressOf } from '../views/address';
+import { checkPagePath, kindPagePath, useFormat } from '../format/reference';
 import { useShortcutHint } from './commands';
 import type { Space } from './spaces';
 
 // Quick find (quick open): a search at the top of the nav that jumps to any record, domain,
 // product or diagram by ID or title. The current space's matches come first, then everything
-// else under a divider. Arrow keys move through the results, Enter opens one, Escape clears the
+// else under a divider. The format's kinds and checks are found too, as "Kind: Use case" and
+// "Check: too-many-children", leading to their pages in the format reference. Arrow keys move through the results, Enter opens one, Escape clears the
 // search.
 
 export interface FindItem {
@@ -22,11 +24,17 @@ export interface FindItem {
   product: string | null;
 }
 
-export function findItems(index: SpecIndex | null, diagrams: readonly DiagramSummary[]): FindItem[] {
+export function findItems(index: SpecIndex | null, diagrams: readonly DiagramSummary[], checks: readonly string[] = []): FindItem[] {
   const items: FindItem[] = diagrams.map((d) => ({ key: `diagram:${d.slug}`, id: d.slug, title: d.title, kind: 'Diagram', to: `/diagrams/${d.slug}`, product: null }));
   if (index) {
     for (const r of index.workspace.records) {
       items.push({ key: r.id, id: r.id, title: r.title, kind: kindLabel(index, r.kind), to: addressOf(index, r.id), product: r.product });
+    }
+    for (const k of index.workspace.kinds) {
+      items.push({ key: `kind:${k.kind}`, id: k.kind, title: `Kind: ${k.label}`, kind: 'Record format', to: kindPagePath(k.kind), product: null });
+    }
+    for (const c of new Set([...checks, ...index.workspace.problems.map((p) => p.check)])) {
+      items.push({ key: `check:${c}`, id: c, title: `Check: ${c}`, kind: 'Record format', to: checkPagePath(c), product: null });
     }
   }
   return items;
@@ -88,7 +96,10 @@ export const QuickFind = forwardRef<HTMLInputElement, QuickFindProps>(
     const [open, setOpen] = useState(false);
     const listId = useId();
     const shortcut = useShortcutHint('quickOpen');
-    const all = useMemo(() => findItems(index, diagrams), [index, diagrams]);
+    // The format's checks are fetched once something is typed.
+    const { reference } = useFormat(index, query.trim() !== '');
+    const checks = useMemo(() => reference?.checks.map((c) => c.check) ?? [], [reference]);
+    const all = useMemo(() => findItems(index, diagrams, checks), [index, diagrams, checks]);
     const scoped = useMemo(() => rankScoped(all, query, space?.id ?? null, inline ? 20 : 8), [all, query, space]);
     const results = useMemo(() => [...scoped.here, ...scoped.elsewhere], [scoped]);
     const at = Math.min(active, Math.max(0, results.length - 1));

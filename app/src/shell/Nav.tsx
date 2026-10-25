@@ -5,7 +5,7 @@ import { LongList } from '../components/LongList';
 import { childKinds, pluralLabel } from '../graph/model';
 import { LatheLogo } from '../LatheLogo';
 import { Link } from '../router';
-import { checksPath, domainPath, formatPath, groupPath, parseSpecRoute, productPath, recordPath, type SpecIndex, type SpecRecord, type SpecState } from '../specs/data';
+import { checksPath, domainPath, groupPath, parseSpecRoute, productPath, recordPath, type SpecIndex, type SpecRecord, type SpecState } from '../specs/data';
 import { branchOf, domainFolders, groupBranchOf, productFolderKinds, productFolders, ungrouped, type Folder, type FolderGroup } from '../specs/folders';
 import { recordText } from '../specs/parts';
 import type { DiagramSummary } from '../types';
@@ -20,7 +20,8 @@ import { trapTab } from './useNarrow';
 // product is its own space), a separator, then the items above every product (Diagrams, and
 // Checks for all products). Beside it, the panel: a quick find, the current space's overview,
 // its shared folder, its domains (folded into stages and folders, as Client lays out its specs) and groups, then Diagrams and Tools, each a section that
-// folds on its own, and a footer with the record format and where the specs come from. The nav
+// folds on its own, and a footer with Appearance and where the specs come from (the record format is a command and a
+// link in the shortcuts sheet). The nav
 // collapses to the rail alone (remembered), and on a narrow screen it is a drawer that keeps
 // the rail.
 
@@ -122,13 +123,7 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
           <hr className="rail-sep" />
         </>
       ) : null}
-      bottom={collapsed && !drawer ? (
-        <Tooltip label="Record format" command="goFormat" placement="right">
-          <Link to={formatPath} className="rail-item" aria-label="Record format" aria-current={here(path, formatPath)}>
-            <Icon name="format" />
-          </Link>
-        </Tooltip>
-      ) : null}
+      bottom={null}
     />
   );
 
@@ -202,9 +197,6 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
           </NavSection>
         </div>
         <footer className="nav-foot">
-          <NavRow depth={0} selected={path === formatPath}>
-            <Link to={formatPath} aria-current={here(path, formatPath)}><Icon name="format" size={16} /> <span className="nav-label">Record format</span></Link>
-          </NavRow>
           <NavRow depth={0} selected={path === APPEARANCE_PATH}>
             <Link to={APPEARANCE_PATH} aria-current={here(path, APPEARANCE_PATH)}><PaletteIcon size={16} /> <span className="nav-label">Appearance</span></Link>
           </NavRow>
