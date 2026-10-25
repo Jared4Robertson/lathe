@@ -32,8 +32,8 @@ An error means the specs are broken. Do not leave one behind. Every check explai
 | `dangling-link` | Fix the target ID, or remove the link if the target is gone. |
 | `bad-test-state` | Set `state` to `automated`, `manual` or `planned` (or remove it for automated). |
 | `test-run-by-missing` | An automated test needs `run_by`. Add the file, or set `state: planned` if the test is not written yet. |
-| `test-file-missing` | Fix `run_by`. For a manual or planned test whose file does not exist yet, remove `run_by`. |
-| `test-file-missing-id` | If the test has a `key`, put that exact text in the file (or fix the key). Otherwise the test proves nothing: put its ID in the test's name, and add the `proves` links it should have. |
+| `test-file-missing` | Fix `run_by`, or the `key_file` the message names (it must be a file under the repo root). For a manual or planned test whose file does not exist yet, remove `run_by`. |
+| `test-file-missing-id` | If the test has a `key`, put that exact text in the file, or in its `key_file` (or fix the key). Otherwise the test proves nothing: put its ID in the test's name, and add the `proves` links it should have, or the `supports` links of a check that backs an obligation without proving it. |
 | `proof-not-in-file` | The file names neither the test's ID nor the proved ID in the message. Put the test's ID in the test's name, or name every ID it proves. If the test does not really prove that record, remove the link. |
 | `meta-duplicate-kind` | One meta-model folder defines a kind twice. Merge the two rows. (A row in `metaExtensions` for a default kind is allowed: it widens that kind.) |
 | `meta-duplicate-relation` | Remove the repeated relation row. |
@@ -42,7 +42,7 @@ An error means the specs are broken. Do not leave one behind. Every check explai
 | `meta-bad-required-field` | Use a field name of lower-case letters, digits and underscores, and not `id`, `kind`, `title`, `parent` or `links`. |
 | `bad-fitness-date`, `bad-fitness-score` | A fitness record needs `date: YYYY-MM-DD` and a `score` from 1 to 5. |
 | `capability-order` | Give each capability in the domain its own whole-number `order` (`1` and `01` are the same). Renumbering an order is fine; it is not an ID. |
-| `layer-order` | Give each layer in the domain its own whole-number `order` (`1` and `01` are the same), as for capabilities. |
+| `layer-order` | Give each layer in the domain, or each sub-layer of one layer, its own whole-number `order` (`1` and `01` are the same), as for capabilities. |
 | `pattern-setting-missing` | Add the setting to the use case as a header field named exactly as the pattern lists it, with a value or `"Not applicable: <reason>"`. If the use case does not really share the pattern, remove the `follows` link instead. |
 | `bad-pattern-settings` | Rename the pattern's setting to lower-case letters, digits and underscores, not `id`, `kind`, `title`, `parent` or `links`, and rename the field in every use case that follows it. |
 | `parse-error` | Fix the YAML header: `---` lines, indentation, quotes around titles with colons. |
@@ -106,7 +106,7 @@ One mistake gives one error: a duplicated ID is reported as `duplicate-id`, with
 
 | Problem | Fix |
 | --- | --- |
-| `flow-step-order` (error) | Give each step of a flow a different whole number in `order`. |
+| `flow-step-order` (error) | Give each step on a path of a flow a different whole number in `order`, numbered 1, 2, 3 with no gaps. A step with no `path` is on the main path. |
 | `flow-step-fulfills-outside-flow` | The step fulfills something the flow does not carry out. Link the use case to the flow with `carries_out`, or move the step's `fulfills` to the flow that really does it. |
 | `flow-fulfills-differs-from-steps` | Once a flow has steps, put each `fulfills` on the step that does it; drop it from the flow, or add the step. |
 | `product-check-name-clash` (error) | Rename the product's check file so its name differs from Lathe's checks. |

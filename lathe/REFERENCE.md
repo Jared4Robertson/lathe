@@ -31,7 +31,7 @@ An ID is the product prefix, the domain code, then a kind code and number, such 
 
 ## 4. Code traceability
 
-A `test` has a `state`: `automated` (the default), `manual` or `planned`. An automated test names the file that runs it in `run_by`, and that file names the test's own ID, or else every ID it proves, as whole IDs; a `key` field gives other text the file must contain instead. A manual test describes its procedure in its body. A planned test shows what is meant to prove an obligation, but is not proof. A `component` names its code in `file`, which may not exist yet.
+A `test` has a `state`: `automated` (the default), `manual` or `planned`. An automated test names the file that runs it in `run_by`, and that file names the test's own ID, or else every ID it proves, as whole IDs; a `key` field gives other text the file must contain instead. When the test runs from a shared class in another file, `key_file` names the file that holds the key (or the IDs), under the product root, and that file is read instead of `run_by`, which must still exist. A test `proves` what it is proof of; it `supports` an obligation when it checks a mechanism that backs it, such as a lock or a budget, without proving it, and support never counts as proof. A manual test describes its procedure in its body. A planned test shows what is meant to prove an obligation, but is not proof. A `component` names its code in `file`, which may not exist yet.
 
 ## 5. Checks
 
@@ -73,7 +73,7 @@ A product keeps its house rules as checks of its own: `lathe.config.json` names 
 
 ## 14. Flow steps
 
-A flow can be written as `flow_step` records under it, in `order`: each says what happens, `uses` the view, endpoint or component it goes through, and `fulfills` what it carries out. Once a flow has steps, what it fulfills is what its steps fulfill.
+A flow can be written as `flow_step` records under it, in `order`: each says what happens, `uses` the view, endpoint or component it goes through, and `fulfills` what it carries out. A flow with more than one path, such as an API path or a refused path beside the main one, names each step's `path`; a step with no path is on the main path. The steps of each path are numbered 1, 2, 3 and so on. Once a flow has steps, what it fulfills is what its steps fulfill.
 
 ## 15. Folders
 
@@ -81,11 +81,11 @@ Client lays out each domain's specs in folders by stage: in Define, the domain m
 
 ## 16. Layers
 
-A domain's components are grouped into **layers**, ordered parts of its technical specification such as Models, Services or Web app, as its use cases are grouped into capabilities. A component in a layer still belongs to the layer's domain everywhere a domain matters. Layers are records, so each product names its own.
+A domain's components are grouped into **layers**, ordered parts of its technical specification such as Models, Services or Web app, as its use cases are grouped into capabilities. A layer may hold sub-layers, each a layer under it with its own order among them. A component in a layer, at any depth, still belongs to the layer's domain everywhere a domain matters. Layers are records, so each product names its own.
 
 ## 17. Entities and the ERD
 
-An aggregate is drawn as an ERD of the records it keeps. Each is an `entity` under the aggregate: one `root`, the record the aggregate is named for, and any number of `child` parts. Its body lists its fields in a table under a `## Fields` heading, with the columns Field, Meaning, Kind of value and Example. `has_one` and `has_many` link an entity to its parts inside the aggregate; `refers_to` may cross aggregates and domains. The app draws a domain's ERD at aggregate level and each aggregate's ERD with its entities.
+An aggregate is drawn as an ERD of the records it keeps. Each is an `entity` under the aggregate: one `root`, the record the aggregate is named for, and any number of `child` parts. Its body lists its fields in a table under a `## Fields` heading, with the columns Field, Meaning, Kind of value and Example; the Meaning column may also be called Business meaning. A domain rule about one entity may sit under that entity rather than the aggregate, and still belongs to the aggregate and its domain. `has_one` and `has_many` link an entity to its parts inside the aggregate; `refers_to` may cross aggregates and domains. The app draws a domain's ERD at aggregate level and each aggregate's ERD with its entities.
 
 ## 18. Domain events
 
@@ -168,12 +168,12 @@ A cluster of records changed together as one unit, with its own identity and rul
 
 ### Entity (`entity`)
 
-A record the domain keeps, as one box of an aggregate's ERD: the aggregate's root (role: root) or one of its children (role: child). Its body holds a Fields table: Field, Meaning, Kind of value, Example.
+A record the domain keeps, as one box of an aggregate's ERD: the aggregate's root (role: root) or one of its children (role: child). Its body holds a Fields table: Field, Meaning (or Business meaning), Kind of value, Example. The domain rules about it may sit under it.
 
 - **Stage:** Define
 - **Folder:** [Domain model](#folder-domain-model)
 - **Parents:** [`aggregate`](#kind-aggregate)
-- **Children:** none
+- **Children:** [`domain_rule`](#kind-domain_rule)
 - **Required fields:** `role`
 - **Obligation:** no
 - **ID:** `<P>-<D>-EN<nn>`, such as `TL-LEND-EN01`
@@ -185,7 +185,7 @@ A record the domain keeps, as one box of an aggregate's ERD: the aggregate's roo
 
 ### Domain event (`domain_event`)
 
-An unchangeable record that something happened in the domain, raised by its aggregate and named in the past tense (Loan opened). Its body holds a Fields table of what it carries: Field, Meaning, Kind of value, Example.
+An unchangeable record that something happened in the domain, raised by its aggregate and named in the past tense (Loan opened). Its body holds a Fields table of what it carries: Field, Meaning (or Business meaning), Kind of value, Example.
 
 - **Stage:** Define
 - **Folder:** [Domain model](#folder-domain-model)
@@ -202,17 +202,17 @@ An unchangeable record that something happened in the domain, raised by its aggr
 
 ### Domain rule (`domain_rule`)
 
-A fact that must always hold for an aggregate's records, whatever use case changes them.
+A fact that must always hold for an aggregate's records, whatever use case changes them. It sits under the aggregate, under the entity of that aggregate it is about, or under the domain when it holds across aggregates.
 
 - **Stage:** Define
 - **Folder:** [Domain model](#folder-domain-model)
-- **Parents:** [`aggregate`](#kind-aggregate), [`domain`](#kind-domain)
+- **Parents:** [`aggregate`](#kind-aggregate), [`domain`](#kind-domain), [`entity`](#kind-entity)
 - **Children:** none
 - **Required fields:** none
 - **Obligation:** yes: designed, built and proved
 - **ID:** `<P>-<D>-DR<nn>`, such as `TL-LEND-DR01`
 - **Links out:** none
-- **Links in:** Applied by ([`applies`](#relation-applies)), Carried out in ([`fulfills`](#relation-fulfills)), Designed by ([`satisfies`](#relation-satisfies)), Proved by ([`proves`](#relation-proves)), Questions about this ([`about`](#relation-about))
+- **Links in:** Applied by ([`applies`](#relation-applies)), Carried out in ([`fulfills`](#relation-fulfills)), Designed by ([`satisfies`](#relation-satisfies)), Proved by ([`proves`](#relation-proves)), Questions about this ([`about`](#relation-about)), Supported by ([`supports`](#relation-supports))
 - **Checks:** [`unsatisfied`](#check-unsatisfied), [`unproved`](#check-unproved), [`obligation-outside-domain`](#check-obligation-outside-domain), [`rule-not-applied`](#check-rule-not-applied)
 
 <a id="kind-use_case"></a>
@@ -246,7 +246,7 @@ One rule a use case must follow, stated with MUST, MUST NOT, SHOULD or MAY. Show
 - **Obligation:** yes: designed, built and proved
 - **ID:** `<use case>-R<nn>`, such as `TL-LEND-UC01-R01`
 - **Links out:** none
-- **Links in:** Carried out in ([`fulfills`](#relation-fulfills)), Designed by ([`satisfies`](#relation-satisfies)), Proved by ([`proves`](#relation-proves)), Questions about this ([`about`](#relation-about))
+- **Links in:** Carried out in ([`fulfills`](#relation-fulfills)), Designed by ([`satisfies`](#relation-satisfies)), Proved by ([`proves`](#relation-proves)), Questions about this ([`about`](#relation-about)), Supported by ([`supports`](#relation-supports))
 - **Checks:** [`unsatisfied`](#check-unsatisfied), [`unproved`](#check-unproved), [`obligation-outside-domain`](#check-obligation-outside-domain)
 
 <a id="kind-pattern"></a>
@@ -280,7 +280,7 @@ One rule of a pattern, stated with MUST, MUST NOT, SHOULD or MAY. Every domain t
 - **Obligation:** proof only
 - **ID:** `<pattern>-R<nn>`, such as `TL-PAT-LIBRARIAN-ACTION-R01`
 - **Links out:** none
-- **Links in:** Questions about this ([`about`](#relation-about)), Designed by ([`satisfies`](#relation-satisfies)), Proved by ([`proves`](#relation-proves)), Carried out in ([`fulfills`](#relation-fulfills))
+- **Links in:** Questions about this ([`about`](#relation-about)), Designed by ([`satisfies`](#relation-satisfies)), Proved by ([`proves`](#relation-proves)), Carried out in ([`fulfills`](#relation-fulfills)), Supported by ([`supports`](#relation-supports))
 - **Checks:** [`unproved`](#check-unproved), [`pattern-rule-setting-unknown`](#check-pattern-rule-setting-unknown)
 
 <a id="kind-flow"></a>
@@ -304,7 +304,7 @@ An end-to-end path through views and endpoints that carries out one or more use 
 
 ### Flow step (`flow_step`)
 
-One step of a flow, in order: what happens, through which view, endpoint or component, and what the step carries out.
+One step of a flow, in order: what happens, through which view, endpoint or component, and what the step carries out. An optional `path` names the path through the flow the step is on, such as main or refused; a step with no path is on the main path. Each path's steps are numbered 1, 2, 3 and so on.
 
 - **Stage:** Design
 - **Folder:** [Interaction design](#folder-interaction-design)
@@ -363,19 +363,19 @@ One rule a view, endpoint or flow must follow, such as a field's limits or an er
 - **Obligation:** yes: designed, built and proved
 - **ID:** `<view, endpoint or flow>-R<nn>`, such as `TL-LEND-E03-R01`
 - **Links out:** Carries out ([`fulfills`](#relation-fulfills))
-- **Links in:** Designed by ([`satisfies`](#relation-satisfies)), Proved by ([`proves`](#relation-proves)), Questions about this ([`about`](#relation-about)), Carried out in ([`fulfills`](#relation-fulfills))
+- **Links in:** Designed by ([`satisfies`](#relation-satisfies)), Proved by ([`proves`](#relation-proves)), Questions about this ([`about`](#relation-about)), Carried out in ([`fulfills`](#relation-fulfills)), Supported by ([`supports`](#relation-supports))
 - **Checks:** [`unsatisfied`](#check-unsatisfied), [`unproved`](#check-unproved), [`obligation-outside-domain`](#check-obligation-outside-domain), [`interaction-requirement-fulfills-nothing`](#check-interaction-requirement-fulfills-nothing)
 
 <a id="kind-layer"></a>
 
 ### Layer (`layer`)
 
-An ordered part of a domain's technical specification that groups its components by what they are, such as Models, Services or Web app. Its order is a whole number giving its place in the domain.
+An ordered part of a domain's technical specification that groups its components by what they are, such as Models, Services or Web app. It sits in the domain, or in another layer as a sub-layer. Its order is a whole number giving its place among the layers beside it.
 
 - **Stage:** Design
 - **Folder:** [Technical specification](#folder-technical-specification)
-- **Parents:** [`domain`](#kind-domain)
-- **Children:** [`component`](#kind-component)
+- **Parents:** [`domain`](#kind-domain), [`layer`](#kind-layer)
+- **Children:** [`layer`](#kind-layer), [`component`](#kind-component)
 - **Required fields:** `order`
 - **Obligation:** no
 - **ID:** `<P>-<D>-LAY<nn>`, such as `TL-LEND-LAY01`
@@ -404,7 +404,7 @@ A unit of code in the target design, such as a model, service or router. It sits
 
 ### Test (`test`)
 
-A test that proves obligations. Its state is automated (the default; it names the file that runs it in run_by), manual, or planned.
+A test that proves obligations, or supports them without proving them. Its state is automated (the default; it names the file that runs it in run_by), manual, or planned. An optional `key` is text its file contains in place of IDs, and an optional `key_file` names the file that holds the key, when the test runs from a shared class in another file.
 
 - **Stage:** Design
 - **Folder:** [Test plan](#folder-test-plan)
@@ -413,7 +413,7 @@ A test that proves obligations. Its state is automated (the default; it names th
 - **Required fields:** `test_type`
 - **Obligation:** no
 - **ID:** `<P>-<D>-T<nn>`, such as `TL-LEND-T01`
-- **Links out:** Proves ([`proves`](#relation-proves)), Runs ([`runs`](#relation-runs)), Covers ([`covers`](#relation-covers))
+- **Links out:** Proves ([`proves`](#relation-proves)), Runs ([`runs`](#relation-runs)), Covers ([`covers`](#relation-covers)), Supports ([`supports`](#relation-supports))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`bad-test-state`](#check-bad-test-state), [`test-run-by-missing`](#check-test-run-by-missing), [`proof-not-in-file`](#check-proof-not-in-file), [`test-type-mismatch`](#check-test-type-mismatch), [`proof-still-owed`](#check-proof-still-owed), [`proof-counts-nowhere`](#check-proof-counts-nowhere), [`manual-test-file-silent`](#check-manual-test-file-silent)
 
@@ -623,6 +623,17 @@ Every relation, from `meta/relations.csv`: which kind may link to which, what th
 | [`aggregate`](#kind-aggregate) | [`domain_event`](#kind-domain_event) | - | Reacts to | Reacted to by | The aggregate changes in response to the event, which may come from another aggregate or domain. |
 | [`use_case`](#kind-use_case) | [`domain_event`](#kind-domain_event) | - | Reacts to | Reacted to by | The use case starts when the event happens. |
 | [`component`](#kind-component) | [`domain_event`](#kind-domain_event) | - | Reacts to | Reacted to by | The component handles the event. |
+
+<a id="relation-supports"></a>
+
+### `supports`
+
+| From | To | Role | Forward | Reverse | Meaning |
+| --- | --- | --- | --- | --- | --- |
+| [`test`](#kind-test) | [`requirement`](#kind-requirement) | - | Supports | Supported by | The test checks a mechanism that backs the use case requirement, such as a lock or a budget, without proving it; it is never counted as proof. |
+| [`test`](#kind-test) | [`domain_rule`](#kind-domain_rule) | - | Supports | Supported by | The test checks a mechanism that backs the domain rule, such as a lock or a budget, without proving it; it is never counted as proof. |
+| [`test`](#kind-test) | [`interaction_requirement`](#kind-interaction_requirement) | - | Supports | Supported by | The test checks a mechanism that backs the interaction requirement, such as a lock or a budget, without proving it; it is never counted as proof. |
+| [`test`](#kind-test) | [`pattern_rule`](#kind-pattern_rule) | - | Supports | Supported by | The test checks a mechanism that backs the pattern rule, such as a lock or a budget, without proving it; it is never counted as proof. |
 
 ## Folders
 
@@ -835,12 +846,14 @@ remove the link if its target was removed on purpose.
 
 **Error or Warning** · Lathe's `checks/13-test-file-missing.sql` · Kinds: [`test`](#kind-test)
 
-A test's `run_by` file, when it names one, exists.
+A test's `run_by` file, and its `key_file` when it names one, exists.
 
 For an automated or manual test a missing file is an error. A planned test may name the file it will live
 in, so for it a missing file is a warning, as for a component whose file does not exist yet. An automated
-test with no `run_by` at all is test-run-by-missing. Fix the path (relative to the repo root), or write the
-file.
+test with no `run_by` at all is test-run-by-missing. A `key_file` (the file that holds the test's key, when
+the test runs from a shared class in another file) must be a file under the product root; one outside it
+is always an error. A key file is read only for a test that names its `run_by`. Fix the path (relative to
+the repo root), or write the file.
 
 <a id="check-test-file-missing-id"></a>
 
@@ -857,8 +870,12 @@ proved ID to name:
   * a test with a `key` whose file does not contain that key text (the ID rules then do not apply);
   * a test that proves no record and whose file does not name its own ID.
 
-A test with no state is automated; manual and planned tests are not checked here. Put the test's ID in the
-test's name in the file, or fix its `key`.
+A test that proves no record but `supports` one (a check of a mechanism that backs an obligation without
+proving it) is not reported: support is never proof, so its file owes no ID. A test with a `key_file` (the
+file that holds its key, when it runs from a shared class in another file) is judged by that file instead
+of `run_by`; a key file that is missing or outside the root is test-file-missing only. A test with no state
+is automated; manual and planned tests are not checked here. Put the test's ID in the test's name in the
+file, or fix its `key` or `key_file`.
 
 <a id="check-unsatisfied"></a>
 
@@ -1119,9 +1136,11 @@ An automated test's file names every ID the test proves, unless it names the tes
 
 Each target of a relation whose role is `proof` must appear in the file, as a whole ID, when the file does
 not name the test's own ID. Each proved ID the file leaves out is one error. A test whose file names its
-own ID vouches for all its claims; a test with a `key` is checked by test-file-missing-id instead. Manual
-and planned tests are not checked here. Name the ID in the test's name in the file, name the test's own
-ID there, or remove the claim.
+own ID vouches for all its claims; a test with a `key` is checked by test-file-missing-id instead. A test
+with a `key_file` is judged by that file instead of `run_by`; a key file that is missing or outside the
+root is test-file-missing only. A `supports` link is not a proof claim, so its target need not appear.
+Manual and planned tests are not checked here. Name the ID in the test's name in the file, name the test's
+own ID there, or remove the claim.
 
 <a id="check-unknown-id-in-prose"></a>
 
@@ -1187,10 +1206,15 @@ test proves.
 
 **Error** · Lathe's `checks/50-flow-step-order.sql` · Kinds: [`flow_step`](#kind-flow_step)
 
-A flow step's order is a whole number that no other step of its flow has.
+A flow step's order is a whole number that no other step on its path of the flow has, and each path's steps are numbered without gaps.
 
-Steps are read in `order` (FORMAT.md section 14). Orders are compared as numbers, so 1 and 01 clash. A
-missing order is missing-required-field. Give each step of the flow its own whole-number `order`.
+Steps are read in `order` (FORMAT.md section 14), within their `path`: a short name such as main or
+refused, compared trimmed and in any letter case. A step with no path is on the main path. Orders are
+compared as numbers, so 1 and 01 clash, and the steps of each path of a flow are numbered 1, 2, 3 and so
+on. A path whose orders skip a number is reported once, on the first step after the gap, and only when
+each of its orders is a whole number that no other step of the path has, so one mistake gives one error.
+A missing order is missing-required-field. Give each step of the path its own whole-number `order`, and
+close the gap.
 
 <a id="check-flow-step-fulfills-outside-flow"></a>
 
@@ -1271,8 +1295,9 @@ A manual test whose `run_by` file exists but never mentions it.
 Nothing ties the file to the test: it names neither the test's ID, nor any ID the test proves (each target
 of a relation whose role is `proof`), nor the test's `key` when it has one. Manual tests are not held to
 the automated rules (test-file-missing-id, proof-not-in-file), so a silent file is a warning: the steps a
-person follows should say which test they carry out. A missing file is test-file-missing instead. Name the
-test in the file, or point `run_by` at the file that carries it out.
+person follows should say which test they carry out. A test with a `key_file` is judged by that file
+instead. A missing file is test-file-missing instead. Name the test in the file, or point `run_by` at the
+file that carries it out.
 
 <a id="check-unknown-section"></a>
 
@@ -1303,11 +1328,12 @@ kind's `section` or `stage`, or the folder's stage.
 
 **Error** · Lathe's `checks/62-layer-order.sql` · Kinds: [`layer`](#kind-layer)
 
-A layer's order is a whole number that no other layer in its domain has.
+A layer's order is a whole number that no other layer beside it has.
 
-This works as for capabilities (28-capability-order.sql). Layers in different domains may share an order.
-A missing order is missing-required-field. Orders are compared as numbers, so 1 and 01 clash. Give each
-layer in the domain its own whole-number `order`.
+This works as for capabilities (28-capability-order.sql). Layers beside each other share a parent: the
+domain, or the layer that holds them as sub-layers. Layers in different domains, and sub-layers of
+different layers, may share an order. A missing order is missing-required-field. Orders are compared as
+numbers, so 1 and 01 clash. Give each layer beside the others its own whole-number `order`.
 
 <a id="check-component-outside-layer"></a>
 
@@ -1378,7 +1404,8 @@ Each entity or event lists its fields in a Fields table.
 
 An entity's table lists the fields it keeps and a domain event's the fields it carries. The table sits under
 a `## Fields` heading (FORMAT.md sections 17 and 18), with the columns Field, Meaning, Kind of value and
-Example, one row per field and each field name once. The engine reads the table into entity_tables and,
+Example, in any letter case, one row per field and each field name once. The Meaning column may also be
+called Business meaning, as Client calls it. The engine reads the table into entity_tables and,
 when its columns are right, its rows into entity_fields. Field names are compared trimmed, without code span
 backticks, and in any letter case. A table with the wrong columns is reported for that alone. Add the
 heading and table, fix its columns, or merge the repeated field.
