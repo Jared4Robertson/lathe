@@ -199,7 +199,8 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
       const groups = screen.queryAllByRole('group', { name: 'View' });
       expect(groups).toHaveLength(1);
       expect(bar.contains(groups[0])).toBe(true);
-      const toggles = within(groups[0]).getAllByRole('button');
+      // A view the page does not offer keeps its slot, dimmed (aria-disabled), so the toggles never move (UX-R08).
+      const toggles = within(groups[0]).getAllByRole('button').filter((t) => t.getAttribute('aria-disabled') !== 'true');
       for (const t of toggles) expect(t).toHaveAttribute('aria-pressed');
       const panes = [...document.querySelectorAll<HTMLElement>('.pane')];
       expect(toggles.filter((t) => t.getAttribute('aria-pressed') === 'true')).toHaveLength(panes.length);
@@ -423,6 +424,56 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
       expect(code.map((p) => `${path}: ${p.outerHTML.slice(0, 120)}`)).toEqual([]);
       const fixed = [...document.querySelectorAll<HTMLElement>('[style]')].filter((el) => /(?:^|;)\s*(?:min-)?width:\s*(\d{3,})px/.test(el.getAttribute('style') ?? '') && Number(/(\d{3,})px/.exec(el.getAttribute('style')!)![1]) > 288);
       expect(fixed.map((el) => `${path}: ${el.outerHTML.slice(0, 120)}`)).toEqual([]);
+    }
+  });
+
+  it('LA-BRW-T500 Actions look like actions: standalone actions are the one Button, and links stay links for navigation in context', async () => {
+    // The controls that are not standalone actions, and so keep their own form: tab close buttons, toggles in a group,
+    // fold chevrons, the nav's rows and rail, the sheet handle, the open-pages list and the title bar's command center.
+    // `button` and `icon-button` are the Button's own classes.
+    const ALLOWED = ['button', 'icon-button', 'tab-close', 'tree-toggle', 'nav-chevron', 'nav-row', 'nav-folder-head', 'nav-section-head', 'rail-item',
+      'view-segment', 'page-bar-pages', 'pages-open', 'sheet-handle', 'graph-group-chevron', 'command-center'];
+    // On the page, the canvas library's own zoom controls are allowed too.
+    const allowed = `${ALLOWED.map((c) => `.${c}`).join(', ')}, [role="group"] button[aria-pressed], .react-flow__controls-button`;
+
+    // The source: no old button styles, and every raw <button> outside Button.tsx is one of the allowed controls
+    // (an unclassed one only as a toggle, with aria-pressed).
+    const files = filesUnder(SRC, /\.(tsx?|css)$/);
+    expect(files.flatMap((f) => where(f, readFileSync(f, 'utf8'), /tree-bulk|className="secondary"|button\.secondary/))).toEqual([]);
+    const raw = files.filter((f) => f.endsWith('.tsx') && !f.endsWith(join('components', 'Button.tsx'))).flatMap((f) => {
+      const text = readFileSync(f, 'utf8');
+      return [...text.matchAll(/<button\b/g)].flatMap((m) => {
+        // The opening tag: up to the first '>' outside braces.
+        let depth = 0;
+        let end = m.index;
+        for (; end < text.length; end++) {
+          const c = text[end];
+          if (c === '{') depth++;
+          else if (c === '}') depth--;
+          else if (c === '>' && depth === 0) break;
+        }
+        const tag = text.slice(m.index, end);
+        const cls = /className=(?:"([^"]*)"|\{([\s\S]*?)\}(?=\s+[\w-]+=|\s*\/?$))/.exec(tag);
+        const words = cls ? (cls[1] ?? cls[2]).match(/[\w-]+/g) ?? [] : [];
+        const ok = cls ? words.some((w) => ALLOWED.includes(w)) : /aria-pressed/.test(tag);
+        return ok ? [] : [`${relative(ROOT, f)}:${text.slice(0, m.index).split('\n').length}: ${tag.replace(/\s+/g, ' ').slice(0, 100)}`];
+      });
+    });
+    expect(raw).toEqual([]);
+
+    // The pages.
+    for (const path of ['/', '/specs', '/specs/DM', '/specs/DM/DM-SHOP', '/records/DM', '/records/DM-SHOP', '/records/DM-SHOP-UC01', '/records/DM-SHOP-UC01?view=graph', '/checks', '/format', '/settings/appearance']) {
+      await openApp(path);
+      // The diagrams home has no heading of its own; every other page waits for its content.
+      if (path !== '/') await screen.findAllByRole('heading', { level: 1 });
+      expect(document.querySelectorAll('button.secondary, .tree-bulk').length).toBe(0);
+      const stray = [...document.querySelectorAll('button')].filter((b) => !b.matches(allowed)).map((b) => `${path}: ${b.outerHTML.slice(0, 140)}`);
+      expect(stray).toEqual([]);
+      // A link alone in its paragraph is a standalone action, so it is drawn as a button; a record's own ID line is a reference.
+      const lone = [...document.querySelectorAll('p:not(.record-id) > a:only-child')]
+        .filter((a) => a.parentElement!.textContent!.trim() === a.textContent!.trim() && !a.classList.contains('button'))
+        .map((a) => `${path}: ${a.parentElement!.outerHTML.slice(0, 140)}`);
+      expect(lone).toEqual([]);
     }
   });
 });

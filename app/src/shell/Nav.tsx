@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { forwardRef, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from 'react';
 import { APPEARANCE_PATH, PaletteIcon } from '../theme/ThemeCommands';
 import { Icon } from '../components/icons';
 import { LongList } from '../components/LongList';
@@ -24,6 +24,13 @@ import { trapTab } from './useNarrow';
 // link in the shortcuts sheet). The nav
 // collapses to the rail alone (remembered), and on a narrow screen it is a drawer that keeps
 // the rail.
+//
+// Nothing in it jumps (LA-PAT-APP-UX-R08): its lists are drawn once the specs and the diagrams
+// have both loaded, never one pushing the other down; and only a move made in the nav reshapes it.
+// A page opened from a link in the nav, or on the nav's first draw, opens its branch and scrolls
+// its row into view. A page opened anywhere else (a link in the page, the graph, Back, quick find)
+// leaves the nav's rows where they are: the closed row that holds the page is marked instead, and
+// opening it opens the branch down to the page.
 
 export interface NavProps {
   spec: SpecState;
@@ -32,6 +39,8 @@ export interface NavProps {
   diagramError: string | null;
   /** The form or button for a new diagram. */
   newDiagram: ReactNode;
+  /** Whether the diagrams list has arrived (or failed): until it and the specs have, the nav's lists are not drawn. */
+  diagramsLoaded: boolean;
   collapsed: boolean;
   onToggleCollapsed: () => void;
   /** On a narrow screen: shown as a drawer. */
@@ -55,7 +64,7 @@ function sectionOf(path: string): SectionId | null {
 }
 
 export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
-  const { spec, path, diagrams, diagramError, newDiagram, collapsed, onToggleCollapsed, drawer, drawerOpen, onCloseDrawer, findRef } = props;
+  const { spec, path, diagrams, diagramError, newDiagram, diagramsLoaded, collapsed, onToggleCollapsed, drawer, drawerOpen, onCloseDrawer, findRef } = props;
   const { index } = spec;
   const spaces = useSpaces();
   const space = spaces?.current ?? null;
@@ -72,11 +81,36 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
     if (current) setSections((s) => (s[current] === false ? { ...s, [current]: true } : s));
   }, [current, setSections]);
 
-  // The current item is scrolled into view.
+  // The nav's lists wait for both the specs and the diagrams, so neither is drawn and then pushed down by the other.
+  const loaded = (index !== null || !!spec.error) && diagramsLoaded;
+
+  // The address last followed from a link in the nav (its rows or its rail). Only that move may
+  // reshape the nav; once the address moves on another way, it is forgotten.
+  const followed = useRef<string | null>(null);
+  const fromNav = followed.current === path;
+  useEffect(() => { if (followed.current !== path) followed.current = null; }, [path]);
+  const onClickCapture = (e: MouseEvent) => {
+    const a = (e.target as Element).closest?.('a[href]') as HTMLAnchorElement | null;
+    if (a && !a.closest('.quick-find')) followed.current = new URL(a.href, window.location.href).pathname;
+  };
+
+  // The current row is scrolled into view on the nav's first draw (and when it is expanded again)
+  // and after a move made in the nav; a move made elsewhere leaves the nav's scroll alone. It waits
+  // for the row: on a first draw the branch that holds it opens in the same frame.
+  const reveal = useRef<string | null>(path);
+  if (fromNav) reveal.current = path;
+  const wasCollapsed = useRef(collapsed);
   useEffect(() => {
+    if (wasCollapsed.current && !collapsed) reveal.current = path;
+    wasCollapsed.current = collapsed;
+  }, [collapsed, path]);
+  useEffect(() => {
+    if (!index || reveal.current !== path) return;
     const el = scroller.current?.querySelector<HTMLElement>('[aria-current="page"]');
-    el?.scrollIntoView?.({ block: 'nearest' });
-  }, [path, index]);
+    if (!el) return;
+    el.scrollIntoView?.({ block: 'nearest' });
+    reveal.current = null;
+  });
 
   const problems = index?.workspace.problems ?? [];
   const errors = problems.filter((p) => p.severity === 'error').length;
@@ -105,6 +139,7 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
       diagramsTo={diagramsTo}
       checksLabel={`Checks for all products: ${checksLabel.slice('Checks: '.length)}`}
       checkDot={errors > 0 ? 'error' : warnings > 0 ? 'warning' : null}
+      loaded={loaded}
       top={collapsed && !drawer ? (
         <>
           <Tooltip label="Lathe home" command="goHome" placement="right">
@@ -128,7 +163,7 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
   );
 
   if (collapsed && !drawer) {
-    return <nav ref={ref} className={className} aria-label="Main" id="nav">{rail}</nav>;
+    return <nav ref={ref} className={className} aria-label="Main" id="nav" onClickCapture={onClickCapture}>{rail}</nav>;
   }
 
   return (
@@ -143,6 +178,7 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
         if (drawer) trapTab(e, e.currentTarget);
       }}
       onPointerDown={() => { if (keyboard) setKeyboard(false); }}
+      onClickCapture={onClickCapture}
     >
       {rail}
       <div className="nav-panel">
@@ -162,11 +198,12 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
           </Tooltip>
         </div>
         <QuickFind ref={findRef} index={index} diagrams={diagrams} space={space} />
-        <div className="nav-scroll" ref={scroller}>
+        <div className="nav-scroll" ref={scroller} aria-busy={!loaded || undefined}>
+          {loaded && <>
           {/* The current space needs no heading of its own: the rail names it, and its first row is its overview. */}
           <div className="nav-space">
             {spec.error && !index && <p className="error">{spec.error}</p>}
-            {index && space && <SpaceItems index={index} space={space} path={path} />}
+            {index && space && <SpaceItems index={index} space={space} path={path} reveal={fromNav} />}
             {index && !space && <p className="hint">No products yet.</p>}
           </div>
           <NavSection id="diagrams" icon="diagrams" title="Diagrams" count={diagrams.length} open={isOpen('diagrams')} onToggle={() => toggle('diagrams')}>
@@ -195,6 +232,7 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
               </li>
             </ul>
           </NavSection>
+          </>}
         </div>
         <footer className="nav-foot">
           <NavRow depth={0} selected={path === APPEARANCE_PATH}>
@@ -215,15 +253,18 @@ interface SpaceRailProps {
   diagramsTo: string;
   checksLabel: string;
   checkDot: 'error' | 'warning' | null;
+  /** Until the specs have loaded the spaces are unknown, so the items below them wait too, rather than be pushed down. */
+  loaded: boolean;
   top: ReactNode;
   bottom: ReactNode;
 }
 
 /** The rail at the far left: the spaces in order, a separator, then Diagrams and Checks for all products. */
-function SpaceRail({ path, spaces, current, lastPage, diagramsTo, checksLabel, checkDot, top, bottom }: SpaceRailProps) {
+function SpaceRail({ path, spaces, current, lastPage, diagramsTo, checksLabel, checkDot, loaded, top, bottom }: SpaceRailProps) {
   return (
     <div className="rail space-rail">
       {top}
+      {loaded && <>
       {spaces.length > 0 && (
         <ul className="rail-spaces" aria-label="Spaces">
           {spaces.map((s, i) => {
@@ -258,6 +299,7 @@ function SpaceRail({ path, spaces, current, lastPage, diagramsTo, checksLabel, c
           {checkDot && <span className={`rail-dot ${checkDot}`} />}
         </Link>
       </Tooltip>
+      </>}
       {bottom}
     </div>
   );
@@ -285,22 +327,33 @@ function currentBranch(index: SpecIndex, path: string): string[] {
  * the session) and shows its count, and the current page's branch opens itself. A folder with no
  * records is left out. Names and order come from the workspace's sections.
  */
-function SpaceItems({ index, space, path }: { index: SpecIndex; space: Space; path: string }) {
+function SpaceItems({ index, space, path, reveal }: { index: SpecIndex; space: Space; path: string; reveal: boolean }) {
   const domains = index.domainsOf.get(space.id) ?? [];
   const folderKinds = productFolderKinds(index);
   const groups = childKinds(index, space.id).filter((k) => k !== 'domain' && !folderKinds.has(k));
   const shared = productFolders(index, space.id).filter((f) => f.records.length > 0);
   const [opened, setOpened] = usePref<Record<string, boolean>>(FOLDERS_KEY, {}, isOpenMap, 'session');
   const isOpen = (key: string) => opened[key] === true;
-  const toggle = (key: string) => setOpened((o) => ({ ...o, [key]: !(o[key] === true) }));
-
-  // The current page's branch opens itself.
   const branch = currentBranch(index, path).join('\n');
-  useEffect(() => {
-    if (!branch) return;
+  const branchKeys = branch ? branch.split('\n') : [];
+  /** A closed row that holds the current page is marked, and opening it opens the branch down to the page. */
+  const holds = (key: string) => !isOpen(key) && branchKeys.includes(key);
+  const toggle = (key: string) => setOpened((o) => {
+    if (o[key] === true) return { ...o, [key]: false };
+    const at = branchKeys.indexOf(key);
+    return { ...o, ...Object.fromEntries((at >= 0 ? branchKeys.slice(at) : [key]).map((k) => [k, true])) };
+  });
+
+  // The current page's branch opens itself on the nav's first draw and after a move made in the nav,
+  // before paint; a move made elsewhere leaves the rows where they are (LA-BRW-UC117-R02).
+  const firstDraw = useRef(true);
+  useLayoutEffect(() => {
+    const first = firstDraw.current;
+    firstDraw.current = false;
+    if (!branch || (!first && !reveal)) return;
     const keys = branch.split('\n');
     setOpened((o) => (keys.every((k) => o[k] === true) ? o : { ...o, ...Object.fromEntries(keys.map((k) => [k, true])) }));
-  }, [branch, setOpened]);
+  }, [branch, reveal, setOpened]);
 
   const recordRows = (records: SpecRecord[], label: string, depth: number) => (
     <LongList
@@ -334,7 +387,7 @@ function SpaceItems({ index, space, path }: { index: SpecIndex; space: Space; pa
     const body = groupBody(group.groups, group.records, group.label, owner, depth + 1);
     if (!group.record) {
       return (
-        <NavFolder key={group.key} id={group.key} depth={depth} label={group.label} count={group.count} open={isOpen(group.key)} onToggle={() => toggle(group.key)}>
+        <NavFolder key={group.key} id={group.key} depth={depth} label={group.label} count={group.count} open={isOpen(group.key)} holds={holds(group.key)} onToggle={() => toggle(group.key)}>
           {body}
         </NavFolder>
       );
@@ -347,6 +400,7 @@ function SpaceItems({ index, space, path }: { index: SpecIndex; space: Space; pa
         <NavRow
           depth={depth}
           selected={path === to}
+          holds={holds(group.key)}
           chevron={(
             <button type="button" className="nav-chevron" aria-expanded={open} aria-controls={bodyId} aria-label={`${open ? 'Fold' : 'Unfold'} ${group.label}`} onClick={() => toggle(group.key)}>
               <Icon name={open ? 'chevron-down' : 'chevron-right'} size={14} />
@@ -363,7 +417,7 @@ function SpaceItems({ index, space, path }: { index: SpecIndex; space: Space; pa
     );
   };
   const folderRow = (folder: Folder, owner: string, depth: number) => (
-    <NavFolder key={folder.key} id={folder.key} depth={depth} label={folder.label} count={folder.count} open={isOpen(folder.key)} onToggle={() => toggle(folder.key)}>
+    <NavFolder key={folder.key} id={folder.key} depth={depth} label={folder.label} count={folder.count} open={isOpen(folder.key)} holds={holds(folder.key)} onToggle={() => toggle(folder.key)}>
       {folder.groups.length > 0
         ? groupBody(folder.groups, ungrouped(folder), folder.label, owner, depth + 1)
         : recordRows(folder.records, `${folder.label} of ${owner}`, depth + 1)}
@@ -403,6 +457,7 @@ function SpaceItems({ index, space, path }: { index: SpecIndex; space: Space; pa
                 <NavRow
                   depth={0}
                   selected={path === domainPath(space.id, domain.id)}
+                  holds={holds(key)}
                   chevron={(
                     <button type="button" className="nav-chevron" aria-expanded={open} aria-controls={bodyId} aria-label={`${open ? 'Fold' : 'Unfold'} ${domain.title}`} onClick={() => toggle(key)}>
                       <Icon name={open ? 'chevron-down' : 'chevron-right'} size={14} />
@@ -416,7 +471,7 @@ function SpaceItems({ index, space, path }: { index: SpecIndex; space: Space; pa
                 {open && (
                   <ul className="nav-tree" id={bodyId} aria-label={`Folders of ${domain.title}`}>
                     {stages.filter((stage) => stage.count > 0).map((stage) => (
-                      <NavFolder key={stage.key} id={stage.key} depth={1} label={stage.label} count={stage.count} open={isOpen(stage.key)} onToggle={() => toggle(stage.key)} stage>
+                      <NavFolder key={stage.key} id={stage.key} depth={1} label={stage.label} count={stage.count} open={isOpen(stage.key)} holds={holds(stage.key)} onToggle={() => toggle(stage.key)} stage>
                         <ul className="nav-tree" aria-label={`${stage.label} of ${domain.title}`}>
                           {stage.folders.filter((f) => f.records.length > 0).map((f) => folderRow(f, domain.title, 2))}
                         </ul>
@@ -457,9 +512,9 @@ function SpaceItems({ index, space, path }: { index: SpecIndex; space: Space; pa
  * at its start. The current page's row carries the selection over the whole row (LA-BRW-DR220).
  * Its link stretches over the row, so a click anywhere on it follows the link.
  */
-function NavRow({ depth, selected = false, chevron, children }: { depth: number; selected?: boolean; chevron?: ReactNode; children: ReactNode }) {
+function NavRow({ depth, selected = false, holds = false, chevron, children }: { depth: number; selected?: boolean; holds?: boolean; chevron?: ReactNode; children: ReactNode }) {
   return (
-    <div className={`nav-row${selected ? ' is-selected' : ''}`} style={{ '--depth': depth } as CSSProperties}>
+    <div className={`nav-row${selected ? ' is-selected' : ''}${holds ? ' holds-current' : ''}`} style={{ '--depth': depth } as CSSProperties}>
       {chevron ?? <span className="nav-chevron-space" aria-hidden="true" />}
       {children}
     </div>
@@ -467,11 +522,11 @@ function NavRow({ depth, selected = false, chevron, children }: { depth: number;
 }
 
 /** A foldable nav row (a stage or a folder) with its count, holding its rows below it when open. The button is the row. */
-function NavFolder({ id, depth, label, count, open, onToggle, stage = false, children }: { id: string; depth: number; label: string; count: number; open: boolean; onToggle: () => void; stage?: boolean; children: ReactNode }) {
+function NavFolder({ id, depth, label, count, open, holds = false, onToggle, stage = false, children }: { id: string; depth: number; label: string; count: number; open: boolean; holds?: boolean; onToggle: () => void; stage?: boolean; children: ReactNode }) {
   const bodyId = `nav-folder-${id.replace(/[^A-Za-z0-9_-]/g, '-')}`;
   return (
     <li className={`nav-folder${stage ? ' is-stage' : ''}`}>
-      <button type="button" className="nav-folder-head nav-row" style={{ '--depth': depth } as CSSProperties} aria-expanded={open} aria-controls={bodyId} onClick={onToggle}>
+      <button type="button" className={`nav-folder-head nav-row${holds ? ' holds-current' : ''}`} style={{ '--depth': depth } as CSSProperties} aria-expanded={open} aria-controls={bodyId} aria-description={holds ? 'Holds the current page' : undefined} onClick={onToggle}>
         <Icon name={open ? 'chevron-down' : 'chevron-right'} size={14} />
         <span className="nav-label">{label}</span>
         <span className="nav-badge quiet">{count}</span>

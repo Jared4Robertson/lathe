@@ -90,8 +90,11 @@ export function TabStrip({ index, set, onActivate, onClose, onKeep }: TabStripPr
               onAuxClick={(e: MouseEvent) => { if (e.button === 1) { e.preventDefault(); onClose(tab.key); } }}
               onKeyDown={(e) => onKeyDown(e, tab, i)}
             >
-              {id && <span className="tab-id">{id}</span>}
-              <span className="tab-title">{title}</span>
+              {/* Keyed by its page: a new page in the tab is new text, drawn in place, never the old text moved (UX-R08). */}
+              <span key={tab.page} className="tab-label">
+                {id && <span className="tab-id">{id}</span>}
+                <span className="tab-title">{title}</span>
+              </span>
               <Tooltip label="Close" command={active ? 'closeTab' : undefined}>
                 <button
                   type="button"

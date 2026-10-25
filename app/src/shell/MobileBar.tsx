@@ -8,6 +8,7 @@ import { addressOf, focusOf, isFocusRoute, viewsFromSearch, withView } from '../
 import { QuickFind } from './QuickFind';
 import type { Space } from './spaces';
 import { trapTab } from './useNarrow';
+import { Button } from '../components/Button';
 
 // The phone layout's shell (notes/mobile-design.md): a compact top bar with the menu, the page's
 // title on one line under a one-step breadcrumb up to its parent, and quick find; and quick find
@@ -113,7 +114,7 @@ export function QuickFindSheet({ index, diagrams, space, onClose }: { index: Spe
         space={space}
         onGo={onClose}
         inline
-        trailing={<button type="button" className="sheet-close" onClick={onClose}>Close</button>}
+        trailing={<Button className="sheet-close" onClick={onClose}>Close</Button>}
       />
     </div>
   );

@@ -11,7 +11,8 @@ import { isBuilt, traceEmpty, traceOf, type GapKind, type Judgment, type TraceGa
 // one line per domain owing it. A use case shows its requirements in a table. The logic is in
 // trace.ts.
 
-const GAP_TEXT: Record<GapKind, { title: string; detail: string }> = {
+/** What each gap is called, in the wiki's callouts and the inspector's Coverage gaps alike. */
+export const GAP_TEXT: Record<GapKind, { title: string; detail: string }> = {
   'not-designed': { title: 'Not designed yet', detail: 'nothing designs it.' },
   'not-built': { title: 'Not built yet', detail: "no designing component's file exists." },
   'not-proved': { title: 'Not proved yet', detail: 'no automated or manual test proves it.' },

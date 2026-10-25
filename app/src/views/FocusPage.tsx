@@ -5,7 +5,7 @@ import { expandAllOnPage } from '../components/TreeList';
 import type { GraphSettings } from '../graph/GraphPage';
 import { groupLabel, groupMembers, isGroup, parseGroupId, pluralLabel } from '../graph/model';
 import type { GraphInfo } from '../graph/panel';
-import { Link, navigate } from '../router';
+import { entryState, lastAddressMove, Link, navigate, noteInEntry, onLeaveEntry } from '../router';
 import { useAnnounce, useCommand } from '../shell/commands';
 import { BottomSheet } from '../shell/BottomSheet';
 import { Tooltip } from '../shell/Tooltip';
@@ -23,6 +23,7 @@ import { Inspector } from './Inspector';
 import { PageBar, ViewIcon } from './PageBar';
 import { TAB_PANEL_ID, tabId, tabLabel } from './TabStrip';
 import { PANE_SIZE_KEY, PANE_WEIGHT, PANE_WEIGHT_MAX, PANE_WEIGHT_MIN, VIEW_KEY, saveLastSettings, usePageTabs, type PageTabsApi, type TabView } from './useTabs';
+import { Button } from '../components/Button';
 
 // One page for one thing (a record, a group, a product or a domain), at one address, in up to
 // three views, each a pane you open and close: Wiki (the page to read), Graph (the graph centered
@@ -45,6 +46,8 @@ const PANE_MIN_PX = 220;
 const GAP_MIN = 20;
 const GAP_MAX = 80;
 const lower = (v: ViewName) => VIEW_LABELS[v].toLowerCase();
+/** The key a history entry notes the wiki's scroll under. */
+const WIKI_SCROLL = 'wikiScroll';
 
 // ---------- The page ----------
 
@@ -217,15 +220,48 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   const hrefFor = useCallback((id: string) => withView(addressOf(index, id), asked), [index, askedKey]);
   const onNavigate = useCallback((id: string) => navigate(hrefFor(id)), [hrefFor]);
 
-  // The wiki's scroll is the tab's: it comes back when the tab is active again, and a new page starts at the top.
+  // The wiki's scroll is the tab's: it comes back when the tab is active again. Within a tab, a new
+  // page starts at the top, and Back and Forward come back to where that history entry was scrolled
+  // (noted in the entry), set before paint so the page is never drawn at the wrong place (UX-R08).
   const wikiPane = useRef<HTMLDivElement>(null);
   const wikiOpen = open.includes('wiki');
   const tabRef = useRef(tab);
   tabRef.current = tab;
+  const shown = useRef<{ key: string; page: string } | null>(null);
   useLayoutEffect(() => {
-    if (wikiPane.current) wikiPane.current.scrollTop = tabs.scrollOf(tabRef.current);
-  }, [tab.key, tab.page, wikiOpen, tabs.scrollOf]);
-  const onWikiScroll = useCallback(() => { if (wikiPane.current) tabs.setScroll(tabRef.current, wikiPane.current.scrollTop); }, [tabs.setScroll]);
+    const before = shown.current;
+    shown.current = { key: tab.key, page: tab.page };
+    const el = wikiPane.current;
+    if (!el) return;
+    let top = tabs.scrollOf(tabRef.current);
+    if (before && before.key === tab.key && before.page !== tab.page) {
+      const noted = entryState<number>(WIKI_SCROLL);
+      top = lastAddressMove() === 'pop' && typeof noted === 'number' ? noted : 0;
+      tabs.setScroll(tabRef.current, top);
+    }
+    el.scrollTop = top;
+    // Parts of the page may still settle their size before the first paint (a section's actions
+    // slot, a list measuring its rows), so the scroll is set again once layout is done, still
+    // before that paint: a ResizeObserver reports after layout and before paint, once on observe.
+    if (top <= 0 || typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(() => { el.scrollTop = top; observer.disconnect(); });
+    for (const child of el.children) observer.observe(child);
+    return () => observer.disconnect();
+  }, [tab.key, tab.page, wikiOpen, tabs.scrollOf, tabs.setScroll]);
+  // The entry notes the wiki's scroll as it changes (after a pause) and as a new page is opened from it.
+  const noteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const noteScroll = useCallback(() => {
+    if (noteTimer.current) { clearTimeout(noteTimer.current); noteTimer.current = null; }
+    if (wikiPane.current) noteInEntry(WIKI_SCROLL, Math.round(wikiPane.current.scrollTop));
+  }, []);
+  useEffect(() => onLeaveEntry(noteScroll), [noteScroll]);
+  useEffect(() => () => { if (noteTimer.current) clearTimeout(noteTimer.current); }, []);
+  const onWikiScroll = useCallback(() => {
+    if (!wikiPane.current) return;
+    tabs.setScroll(tabRef.current, wikiPane.current.scrollTop);
+    if (noteTimer.current) clearTimeout(noteTimer.current);
+    noteTimer.current = setTimeout(noteScroll, 200);
+  }, [tabs.setScroll, noteScroll]);
 
   // Commands.
   useCommand('viewWiki', () => toggleView('wiki'));
@@ -534,7 +570,7 @@ function PhoneLayout(props: PhoneLayoutProps) {
                     <span className="tab-title">{title}</span>
                   </button>
                   {t.preview && (
-                    <button type="button" className="pages-keep" aria-label={`Keep ${name} open`} onClick={() => tabs.keep(t.key)}>Keep</button>
+                    <Button className="pages-keep" label={`Keep ${name} open`} onClick={() => tabs.keep(t.key)}>Keep</Button>
                   )}
                   <button type="button" className="icon-button" aria-label={`Close ${name}`} onClick={() => tabs.close(t.key)}>
                     <Icon name="x" size={16} />
@@ -586,9 +622,11 @@ function PageTitle({ index, route, fixed = false }: { index: SpecIndex; route: F
   }
   return (
     // Above a graph or a model the title keeps one fixed height (one line, cut with an ellipsis, the
-    // whole title in its tooltip), so the canvas below never moves when the focus changes.
+    // whole title in its tooltip), so the canvas below never moves when the focus changes. The header
+    // is keyed by the focus: a new page's header is new content drawn in place, never the last one's
+    // badge slid along by a title of another length (UX-R08). The title's box itself stays.
     <div className={`pane-title${fixed ? ' is-fixed' : ''}`} title={fixed ? title : undefined}>
-      <PageHeader eyebrow={eyebrow} title={title} id={id}>
+      <PageHeader key={focus} eyebrow={eyebrow} title={title} id={id}>
         <ProblemBadge problems={problems} />
       </PageHeader>
     </div>

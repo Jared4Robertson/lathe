@@ -230,8 +230,9 @@ describe('one address, three views', () => {
     const page = document.querySelector<HTMLElement>('.page-bar')!;
     expect(within(page.querySelector<HTMLElement>('.page-bar-start')!).getByRole('tab', { selected: true })).toHaveTextContent('P-D-UC01Lend a thing');
     const order = (el: HTMLElement) => [...el.querySelectorAll<HTMLElement>('button, .pane-divider')].map((b) => b.classList.contains('pane-divider') ? '|' : b.getAttribute('aria-label'));
-    // A use case offers no Model view.
-    expect(order(page.querySelector<HTMLElement>('.page-bar-actions')!)).toEqual(['Wiki', 'Graph', '|', 'Hide the inspector']);
+    // A use case offers no Model view: its toggle keeps its slot, dimmed, and says where it works (UX-R08).
+    expect(order(page.querySelector<HTMLElement>('.page-bar-actions')!)).toEqual(['Wiki', 'Graph', 'Model (on a domain, an aggregate or an entity)', '|', 'Hide the inspector']);
+    expect(within(page).getByRole('button', { name: /^Model \(/ })).toHaveAttribute('aria-disabled', 'true');
     expect(viewToggle('Wiki')).toHaveClass('icon-button', 'is-on');
     expect(viewToggle('Graph')).not.toHaveClass('is-on');
     expect(within(page).getByRole('button', { name: 'Hide the inspector' })).toHaveClass('icon-button', 'is-on');
@@ -247,7 +248,7 @@ describe('one address, three views', () => {
     expect(graph.querySelector('.pane-name')).toHaveTextContent(/^\s*Graph$/);
     expect(order(wiki().querySelector<HTMLElement>('.pane-actions')!)).toEqual(['Close the wiki pane', 'Full screen: Wiki']);
     expect(order(graph.querySelector<HTMLElement>('.pane-actions')!)).toEqual(['Close the graph pane', 'Full screen: Graph']);
-    expect(order(page.querySelector<HTMLElement>('.page-bar-actions')!)).toEqual(['Wiki', 'Graph', '|', 'Hide the inspector']);
+    expect(order(page.querySelector<HTMLElement>('.page-bar-actions')!)).toEqual(['Wiki', 'Graph', 'Model (on a domain, an aggregate or an entity)', '|', 'Hide the inspector']);
     expect(wiki().querySelector('[role="tablist"]')).toBeNull();
     // The toggle that was clicked keeps focus: it does not move.
     await waitFor(() => expect(viewToggle('Graph')).toHaveFocus());

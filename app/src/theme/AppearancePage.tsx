@@ -1,4 +1,5 @@
 import { useEffect, useId, useState, type CSSProperties, type ChangeEvent } from 'react';
+import { Button, buttonClass } from '../components/Button';
 import { Link, navigate, useLocation } from '../router';
 import { shownMode } from './apply';
 import { auditContrast } from './audit';
@@ -107,7 +108,7 @@ function ThemeList() {
       <div className="spec-section-head">
         <h2 id={heading}>Themes</h2>
         <div className="spec-section-actions">
-          <label className="file-button">
+          <label className={buttonClass('ghost', { className: 'file-button' })}>
             Import a theme file
             <input type="file" accept=".json,application/json" onChange={onImport} />
           </label>
@@ -123,11 +124,11 @@ function ThemeList() {
               <small>{t.id === active.id ? 'In use' : t.builtIn ? 'Built in' : 'Yours'}</small>
             </div>
             <div className="theme-card-actions">
-              <button type="button" className="tree-bulk" aria-pressed={t.id === active.id} aria-label={`Use ${t.name}`} onClick={() => choose(t.id)}>Use</button>
+              <Button aria-pressed={t.id === active.id} label={`Use ${t.name}`} onClick={() => choose(t.id)}>Use</Button>
               {t.builtIn
-                ? <button type="button" className="tree-bulk" aria-label={`Duplicate and edit ${t.name}`} onClick={() => navigate(editPath(duplicate(t.id)))}>Duplicate and edit</button>
-                : <Link to={editPath(t.id)} className="tree-bulk" aria-label={`Edit ${t.name}`} onClick={() => choose(t.id)}>Edit</Link>}
-              <button type="button" className="tree-bulk" aria-label={`Export ${t.name}`} onClick={() => download(t.name, exportFile(t.id))}>Export</button>
+                ? <Button label={`Duplicate and edit ${t.name}`} onClick={() => navigate(editPath(duplicate(t.id)))}>Duplicate and edit</Button>
+                : <Link to={editPath(t.id)} className={buttonClass()} aria-label={`Edit ${t.name}`} onClick={() => choose(t.id)}>Edit</Link>}
+              <Button label={`Export ${t.name}`} onClick={() => download(t.name, exportFile(t.id))}>Export</Button>
             </div>
           </li>
         ))}
@@ -173,18 +174,18 @@ function ThemeEditor({ theme }: { theme: Theme }) {
       <div className="spec-section-head">
         <h2 id={heading}>Edit “{theme.name}”</h2>
         <div className="spec-section-actions">
-          <button type="button" className="tree-bulk" onClick={() => download(theme.name, exportFile(theme.id))}>Export</button>
-          <button type="button" className="tree-bulk" onClick={() => reset(theme.id)}>Reset to {base.name}</button>
+          <Button onClick={() => download(theme.name, exportFile(theme.id))}>Export</Button>
+          <Button onClick={() => reset(theme.id)}>Reset to {base.name}</Button>
           {confirmDelete ? (
             <span className="confirm" role="group" aria-label="Confirm delete">
               <span>Delete “{theme.name}”?</span>
-              <button type="button" className="tree-bulk danger" onClick={() => { remove(theme.id); navigate(APPEARANCE_PATH); }}>Delete</button>
-              <button type="button" className="tree-bulk" onClick={() => setConfirmDelete(false)}>Keep</button>
+              <Button danger onClick={() => { remove(theme.id); navigate(APPEARANCE_PATH); }}>Delete</Button>
+              <Button onClick={() => setConfirmDelete(false)}>Keep</Button>
             </span>
           ) : (
-            <button type="button" className="tree-bulk" onClick={() => setConfirmDelete(true)}>Delete…</button>
+            <Button danger onClick={() => setConfirmDelete(true)}>Delete…</Button>
           )}
-          <Link to={APPEARANCE_PATH} className="tree-bulk">Done</Link>
+          <Link to={APPEARANCE_PATH} className={buttonClass('primary')}>Done</Link>
         </div>
       </div>
 
@@ -297,7 +298,7 @@ function ColorField({ theme, token, mode, onChange }: { theme: Theme; token: Col
           onKeyDown={(e) => { if (e.key === 'Enter') commit(); }}
         />
         {!token.core && own !== undefined && (
-          <button type="button" className="icon-button color-clear" aria-label={`Clear ${label}`} title="Clear: follow the default" onClick={() => onChange(null)}>×</button>
+          <Button variant="icon" className="color-clear" label={`Clear ${label}`} title="Clear: follow the default" onClick={() => onChange(null)}>×</Button>
         )}
       </span>
       {warnings.map((w) => (
