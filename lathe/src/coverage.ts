@@ -9,15 +9,18 @@
 // no state being automated.
 //
 // An obligation that sits in a domain is owed by that domain. A pattern rule sits under a pattern,
-// outside every domain, and is owed instead by each domain that follows the pattern (one of the
-// domain's use cases follows it), unless the rule names a setting that every following use case in
-// that domain marks "Not applicable:" with a reason. In each domain that owes it, only components and
-// tests in that domain design and prove it. The unsatisfied and unproved checks
-// (lathe/checks/15-unsatisfied.sql, 16-unproved.sql) apply the same rules.
+// outside every domain, and is owed instead by each domain that follows the pattern. A domain follows a
+// pattern when the domain itself `follows` it, which owes every rule, or when one of its use cases does,
+// which owes every rule except one that names a setting that every following use case in that domain
+// marks "Not applicable:" with a reason. A rule with no setting applies wherever its pattern is followed.
+// In each domain that owes it, only components and tests in that domain design and prove it.
+// A proof-only obligation kind (kinds.csv obligation `proof`) asks for proof alone: it counts as designed
+// and built, so its designed and built equal its total and it has no 'satisfies' gaps.
+// The unsatisfied and unproved checks (lathe/checks/15-unsatisfied.sql, 16-unproved.sql) apply the same rules.
 
 const ITEMS = `
   WITH obligation_kinds AS (
-    SELECT kind, arg_min(label, rowid) AS label, min(rowid) AS ord
+    SELECT kind, arg_min(label, rowid) AS label, min(rowid) AS ord, bool_or(proof_only) AS proof_only
     FROM kinds WHERE obligation AND kind <> '' GROUP BY kind
   ),
   roles AS (
@@ -47,10 +50,21 @@ const ITEMS = `
     FROM records u JOIN links l ON l.path = u.path AND l.relation = 'follows'
     WHERE u.kind = 'use_case' AND u.id <> '' AND u.domain IS NOT NULL
   ),
+  domain_follows AS (
+    SELECT DISTINCT d.id AS domain, l.target AS pattern
+    FROM records d JOIN links l ON l.path = d.path AND l.relation = 'follows'
+    WHERE d.kind = 'domain' AND d.id <> ''
+  ),
   owed AS (
     SELECT DISTINCT r.domain, r.id, r.kind, false AS per_domain
     FROM records r JOIN obligation_kinds k ON k.kind = r.kind
     WHERE r.domain IS NOT NULL AND r.id <> ''
+    UNION
+    SELECT DISTINCT f.domain, r.id, r.kind, true AS per_domain
+    FROM records r
+    JOIN obligation_kinds k ON k.kind = r.kind
+    JOIN domain_follows f ON f.pattern = r.parent
+    WHERE r.kind = 'pattern_rule' AND r.domain IS NULL AND r.id <> ''
     UNION
     SELECT domain, id, kind, true AS per_domain FROM (
       SELECT f.domain, r.id, r.kind,
@@ -67,9 +81,9 @@ const ITEMS = `
   ),
   items AS (
     SELECT o.domain, o.id, o.kind,
-      EXISTS (SELECT 1 FROM role_links x WHERE x.target = o.id AND x.target_kind = o.kind AND x.role = 'design'
+      k.proof_only OR EXISTS (SELECT 1 FROM role_links x WHERE x.target = o.id AND x.target_kind = o.kind AND x.role = 'design'
                                           AND (NOT o.per_domain OR x.source_domain = o.domain)) AS designed,
-      EXISTS (SELECT 1 FROM role_links x WHERE x.target = o.id AND x.target_kind = o.kind AND x.role = 'design'
+      k.proof_only OR EXISTS (SELECT 1 FROM role_links x WHERE x.target = o.id AND x.target_kind = o.kind AND x.role = 'design'
                                           AND (NOT o.per_domain OR x.source_domain = o.domain)
                                           AND x.source_kind = 'component' AND x.source_file_exists) AS built,
       EXISTS (SELECT 1 FROM role_links x WHERE x.target = o.id AND x.target_kind = o.kind AND x.role = 'proof'
@@ -78,7 +92,7 @@ const ITEMS = `
       EXISTS (SELECT 1 FROM role_links x WHERE x.target = o.id AND x.target_kind = o.kind AND x.role = 'proof'
                                           AND (NOT o.per_domain OR x.source_domain = o.domain)
                                           AND x.state = 'planned') AS planned_proof
-    FROM owed o
+    FROM owed o JOIN obligation_kinds k ON k.kind = o.kind
   )`;
 
 /** One row per domain record and obligation kind, in domain order then meta-model order, including empty ones. */

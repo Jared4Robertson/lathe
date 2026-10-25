@@ -1,7 +1,9 @@
 -- Work to do: an obligation (any kind the meta-model marks as one) that no 'design' link targets.
--- A pattern rule is owed by each domain that follows its pattern (unless its setting is Not applicable
--- in every following use case there, as in lathe/src/coverage.ts), and only a component in that domain
--- designs it there, so it is reported once for each domain that owes it and lacks one.
+-- A proof-only obligation kind (kinds.csv obligation `proof`) asks for no design, so it is never reported.
+-- A pattern rule is owed by each domain that follows its pattern, itself or through a use case (unless,
+-- followed only through use cases, its setting is Not applicable in every one of them there, as in
+-- lathe/src/coverage.ts), and only a component in that domain designs it there, so it is reported once
+-- for each domain that owes it and lacks one.
 SELECT severity, "check", record, message FROM (
 WITH design_links AS (
   SELECT DISTINCT l.target, t.kind AS target_kind, s.domain AS source_domain
@@ -16,7 +18,17 @@ follows AS (
   FROM records u JOIN links l ON l.path = u.path AND l.relation = 'follows'
   WHERE u.kind = 'use_case' AND u.id <> '' AND u.domain IS NOT NULL
 ),
+domain_follows AS (
+  SELECT DISTINCT d.id AS domain, l.target AS pattern
+  FROM records d JOIN links l ON l.path = d.path AND l.relation = 'follows'
+  WHERE d.kind = 'domain' AND d.id <> ''
+),
 owed_pattern_rules AS (
+  SELECT DISTINCT f.domain, r.id, r.kind
+  FROM records r JOIN domain_follows f ON f.pattern = r.parent
+  WHERE r.kind = 'pattern_rule' AND r.domain IS NULL AND r.id <> ''
+    AND r.kind IN (SELECT kind FROM kinds WHERE obligation AND NOT proof_only)
+  UNION
   SELECT domain, id, kind FROM (
     SELECT f.domain, r.id, r.kind,
       bool_and(coalesce(trim(st.value), '') <> ''
@@ -26,7 +38,7 @@ owed_pattern_rules AS (
     LEFT JOIN fields st ON st.path = r.path AND st.name = 'setting'
     LEFT JOIN fields uv ON uv.path = f.path AND uv.name = trim(st.value)
     WHERE r.kind = 'pattern_rule' AND r.domain IS NULL AND r.id <> ''
-      AND r.kind IN (SELECT kind FROM kinds WHERE obligation)
+      AND r.kind IN (SELECT kind FROM kinds WHERE obligation AND NOT proof_only)
     GROUP BY f.domain, r.id, r.kind
   ) WHERE NOT not_applicable
 )
@@ -34,7 +46,7 @@ SELECT DISTINCT 'warning' AS severity, 'unsatisfied' AS "check", r.id AS record,
        'Nothing designs ' || replace(r.kind, '_', ' ') || ' ' || r.id || ': no component satisfies it.' AS message
 FROM records r
 WHERE r.id <> ''
-  AND r.kind IN (SELECT kind FROM kinds WHERE obligation)
+  AND r.kind IN (SELECT kind FROM kinds WHERE obligation AND NOT proof_only)
   AND NOT (r.kind = 'pattern_rule' AND r.domain IS NULL)
   AND NOT EXISTS (SELECT 1 FROM design_links x WHERE x.target = r.id AND x.target_kind = r.kind)
 UNION ALL
