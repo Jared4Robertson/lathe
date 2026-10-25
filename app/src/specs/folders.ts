@@ -157,16 +157,29 @@ export function layerGroups(index: SpecIndex, keyPrefix: string, records: SpecRe
   return groups;
 }
 
-/** The test plan's groups, in order: a test goes in the first whose kind it proves; one that proves none of them is an engineering check. */
+/**
+ * The test plan's groups, in the order they are shown. Which one a test goes in is testGroupOf's
+ * call, family first: a test under a capability or proving a UC requirement is an acceptance test,
+ * a `test_type` of `ui` or `design` names its family, and then what it proves decides.
+ */
 export const TEST_GROUPS = [
-  { group: 'acceptance', label: 'Acceptance tests', proves: 'requirement' },
-  { group: 'domain-rules', label: 'Domain rule tests', proves: 'domain_rule' },
-  { group: 'patterns', label: 'Pattern tests', proves: 'pattern_rule' },
-  { group: 'interaction', label: 'Interaction tests', proves: 'interaction_requirement' },
-  { group: 'engineering', label: 'Engineering checks', proves: null },
+  { group: 'acceptance', label: 'Acceptance tests' },
+  { group: 'domain-rules', label: 'Domain rule tests' },
+  { group: 'patterns', label: 'Pattern tests' },
+  { group: 'interaction', label: 'Interaction tests' },
+  { group: 'ui', label: 'UI tests' },
+  { group: 'design', label: 'Design checks' },
+  { group: 'engineering', label: 'Engineering checks' },
 ] as const;
 
 export type TestGroup = (typeof TEST_GROUPS)[number]['group'];
+
+/**
+ * The relations by which a test backs an obligation without proving it: a test whose links are all
+ * of these is a design check. `supports` (S2 trial 4) is matched by name, so the group fills as
+ * soon as the meta-model has the relation and stays empty until then.
+ */
+export const SUPPORT_RELATIONS: ReadonlySet<string> = new Set(['supports']);
 
 /** The records of one kind a test proves, in ID order. */
 const provedOf = (index: SpecIndex, test: SpecRecord, kind: string) =>
@@ -183,24 +196,44 @@ const ownersOf = (index: SpecIndex, test: SpecRecord, kind: string) =>
     .filter((r): r is SpecRecord => !!r)
     .sort(byIdOrder);
 
-/** The test-plan group a test goes in: the first of TEST_GROUPS that applies. */
-export function testGroupOf(index: SpecIndex, test: SpecRecord): TestGroup {
-  for (const g of TEST_GROUPS) {
-    if (g.proves === null) return g.group;
-    // Acceptance and pattern tests are grouped by the use case or pattern they prove, so they need one.
-    const owned = g.proves === 'requirement' || g.proves === 'pattern_rule';
-    if (owned ? ownersOf(index, test, g.proves).length > 0 : provedOf(index, test, g.proves).length > 0) return g.group;
+/** The capability a record sits under, directly or through its parents, or null. */
+function capabilityAbove(index: SpecIndex, record: SpecRecord): SpecRecord | null {
+  const seen = new Set<string>();
+  for (let r = record.parent ? index.byId.get(record.parent) : undefined; r && !seen.has(r.id); r = r.parent ? index.byId.get(r.parent) : undefined) {
+    if (r.kind === 'capability') return r;
+    seen.add(r.id);
   }
+  return null;
+}
+
+/** The test-plan group a test goes in. */
+export function testGroupOf(index: SpecIndex, test: SpecRecord): TestGroup {
+  // Acceptance: it sits under a capability, or proves a UC requirement, whatever else it proves.
+  if (capabilityAbove(index, test) || ownersOf(index, test, 'requirement').length > 0) return 'acceptance';
+  // Its type names its family.
+  const type = test.fields.test_type?.trim().toLowerCase();
+  if (type === 'ui') return 'ui';
+  if (type === 'design') return 'design';
+  if (provedOf(index, test, 'domain_rule').length > 0) return 'domain-rules';
+  if (ownersOf(index, test, 'pattern_rule').length > 0) return 'patterns';
+  const interaction = provedOf(index, test, 'interaction_requirement');
+  // Proving an interaction requirement through a view is a UI test.
+  if (interaction.some((r) => index.byId.get(r.parent ?? '')?.kind === 'view')) return 'ui';
+  if (interaction.length > 0) return 'interaction';
+  // A test whose links all back obligations without proving them is a design check.
+  const out = index.outgoing.get(test.id) ?? [];
+  if (out.length > 0 && out.every((l) => SUPPORT_RELATIONS.has(l.relation))) return 'design';
   return 'engineering';
 }
 
 /**
- * Tests grouped by what they prove, computed and not stored: acceptance tests (by capability in
- * order, use cases outside any capability last, then by the first use case each proves, in ID
- * order), domain rule tests, pattern tests (by the first pattern each proves), interaction tests,
- * then engineering checks. An empty group is left out, and when only one group has tests, there is
- * no group level (what is within it stays). When none of the acceptance tests' use cases is in a
- * capability, the acceptance tests go straight into their use cases.
+ * Tests grouped by family and what they prove, computed and not stored: acceptance tests (by
+ * capability in order, use cases outside any capability last, then by the first use case each
+ * proves, in ID order; a capability's test that proves no UC requirement sits in the capability
+ * itself), domain rule tests, pattern tests (by the first pattern each proves), interaction tests,
+ * UI tests, design checks, then engineering checks. An empty group is left out, and when only one
+ * group has tests, there is no group level (what is within it stays). When none of the acceptance
+ * tests is in a capability, the acceptance tests go straight into their use cases.
  */
 export function testGroups(index: SpecIndex, keyPrefix: string, tests: SpecRecord[]): FolderGroup[] {
   const groups: FolderGroup[] = [];
@@ -231,19 +264,24 @@ function byOwner(index: SpecIndex, keyPrefix: string, tests: SpecRecord[], kind:
     .map(({ owner, tests: members }) => groupOf(`${keyPrefix}/${owner.id}`, owner.title, members));
 }
 
-/** Acceptance tests by capability in order, then use cases outside any capability, each by use case. */
+/**
+ * Acceptance tests by capability in order, then use cases outside any capability, each by use
+ * case. A test's capability is the one it sits under, or else that of the first use case it proves;
+ * within its capability, a test that proves no UC requirement is listed directly.
+ */
 function acceptanceGroups(index: SpecIndex, keyPrefix: string, tests: SpecRecord[]): FolderGroup[] {
   const capabilityOf = (t: SpecRecord) => {
     const useCase = ownersOf(index, t, 'requirement')[0];
-    const parent = useCase.parent ? index.byId.get(useCase.parent) : undefined;
-    return parent?.kind === 'capability' ? parent : null;
+    return capabilityAbove(index, t) ?? (useCase ? capabilityAbove(index, useCase) : null);
   };
+  const provesRequirement = (t: SpecRecord) => ownersOf(index, t, 'requirement').length > 0;
   const capabilities = [...new Map(tests.map(capabilityOf).filter((c): c is SpecRecord => !!c).map((c) => [c.id, c])).values()]
     .sort((a, b) => order(a) - order(b) || byIdOrder(a, b));
   if (capabilities.length === 0) return byOwner(index, keyPrefix, tests, 'requirement');
   const groups = capabilities.map((c) => {
     const key = `${keyPrefix}/${c.id}`;
-    return groupOf(key, c.title, [], byOwner(index, key, tests.filter((t) => capabilityOf(t)?.id === c.id), 'requirement'));
+    const inside = tests.filter((t) => capabilityOf(t)?.id === c.id);
+    return groupOf(key, c.title, inside.filter((t) => !provesRequirement(t)), byOwner(index, key, inside.filter(provesRequirement), 'requirement'));
   });
   const outside = tests.filter((t) => !capabilityOf(t));
   if (outside.length > 0) {
