@@ -146,7 +146,9 @@ test.describe('performance', () => {
     await open(page, `${RECORD}?view=wiki,graph`);
     await page.locator('.pane-graph .graph-flow .react-flow__node').first().waitFor();
     const start = await heapMb(page);
-    const links = await page.evaluate(() => [...new Set([...document.querySelectorAll<HTMLAnchorElement>('#nav a[href^="/LA"]')].map((a) => a.getAttribute('href')!))].slice(0, 25));
+    const links = await page.evaluate(() => [...new Set([...document.querySelectorAll<HTMLAnchorElement>('#nav a[href^="/LA"]')].map((a) => a.getAttribute('href')!))]
+      // Record and group pages only: a space's Checks page has no views to open.
+      .filter((href) => !href.endsWith('/checks')).slice(0, 25));
     for (let i = 0; i < 50; i++) {
       const href = links[i % links.length];
       await page.evaluate((href) => { history.pushState(null, '', `${href}?view=wiki,graph`); dispatchEvent(new PopStateEvent('popstate')); }, href);
