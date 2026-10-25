@@ -25,6 +25,8 @@
   --pane-title-height: 104px;
   /* The page bar above the panes and each pane's slim header: one fixed height each, so nothing below them moves (UX-R03, UX-R08). */
   --page-bar-height: 40px; --pane-bar-height: 32px;
+  /* One width for every page tab, so a new page in the preview tab moves nothing (UX-R08). */
+  --tab-width: 14rem;
   /* Touch (LA-PAT-APP-UX-R07): the least size of a target under a finger, and the radius of a sheet's top corners. */
   --touch-target: 44px; --sheet-radius: 14px;
   /* The ERD's key under the Model view: one height for every ERD, so the canvas never resizes (LA-PAT-APP-UX-R08). */
@@ -437,6 +439,8 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .icon-button:hover { color: var(--ink); background: var(--paper); border-color: var(--rule); }
 /* A toggle that is on (the pressed view, a shown inspector): one look for every such icon button. */
 .icon-button.is-on { color: var(--steel); background: var(--steel-bg); }
+/* A view the page does not offer keeps its slot in the View group, dimmed, so the toggles never move (UX-R08). */
+.icon-button.is-unavailable, .icon-button.is-unavailable:hover { opacity: 0.4; cursor: default; color: var(--muted); background: none; border-color: transparent; }
 :is(.icon-button, .nav-section-head, .nav-chevron, .rail-item, .tree-toggle, .tree-bulk, .pane-gap, .menu a, .menu button):focus-visible { outline: 2px solid var(--steel); outline-offset: 1px; }
 
 /* The nav */
@@ -474,6 +478,8 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .menu .nav-row > .nav-chevron:focus-visible { outline: 1px solid var(--steel); outline-offset: -1px; }
 @media (prefers-reduced-motion: reduce) { .nav-row { transition: none; } }
 .menu li.in-current > .nav-row > a:not([aria-current]) { font-weight: 600; }
+/* A closed row that holds the current page (opened from outside the nav, which keeps its rows where they are, UX-R08). */
+.menu .nav-row.holds-current :is(.nav-label, .icon) { color: var(--steel); }
 .nav-badges { display: inline-flex; gap: 4px; margin-left: auto; }
 .nav-badge { font: 500 0.7rem var(--mono); min-width: 18px; padding: 0 5px; border-radius: 999px; text-align: center; color: var(--muted); background: var(--paper); border: 1px solid var(--rule); }
 .nav-badge.error { color: var(--error); border-color: var(--error); background: var(--error-bg); }
@@ -748,17 +754,20 @@ a.row-link.row-link:focus-visible { outline: none; }
 .pane-close { width: 24px; height: 24px; }
 /* The tab strip (app/src/views/TabStrip.tsx), at the left of the leftmost pane's bar: one tab per open page, as VS Code's
    editor tabs. The active tab is the sheet's ink with a steel underline, the preview tab's title italic; tabs that do
-   not fit scroll sideways. A tab's close button shows on hover, on focus and on the active tab. */
+   not fit scroll sideways. A tab's close button shows on hover, on focus and on the active tab. Every tab has one width
+   (--tab-width), its title cut with an ellipsis, so a new page in the preview tab never moves its close button or the
+   tabs after it (LA-PAT-APP-UX-R08). */
 .pane-actions { flex: none; }
 .tab-strip { display: flex; align-items: stretch; gap: 2px; min-width: 0; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
 .tab-strip::-webkit-scrollbar { display: none; }
-.tab { flex: none; display: inline-flex; align-items: center; gap: 6px; max-width: 240px; min-height: 28px; padding: 0 2px 0 8px; box-sizing: border-box; border-radius: 6px; color: var(--muted); font-size: 0.84rem; cursor: pointer; white-space: nowrap; user-select: none;
+.tab { flex: none; display: inline-flex; align-items: center; gap: 6px; width: var(--tab-width); min-height: 28px; padding: 0 2px 0 8px; box-sizing: border-box; border-radius: 6px; color: var(--muted); font-size: 0.84rem; cursor: pointer; white-space: nowrap; user-select: none;
   transition: background-color var(--hover-speed), color var(--hover-speed); }
 .tab:hover { background: var(--hover-bg); color: var(--ink); }
 .tab.is-active { color: var(--ink); background: var(--paper); box-shadow: inset 0 -2px 0 var(--steel); }
 .tab:focus-visible { outline: 2px solid var(--steel); outline-offset: -2px; }
+.tab-label { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; }
 .tab-id { flex: none; font: 500 0.72rem var(--mono); color: var(--muted); }
-.tab-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
+.tab-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
 .tab.is-preview .tab-title { font-style: italic; font-weight: 500; }
 .tab-close { flex: none; display: inline-grid; place-items: center; width: 20px; height: 20px; padding: 0; border: 0; border-radius: 4px; background: none; color: var(--muted); cursor: pointer; opacity: 0;
   transition: opacity var(--hover-speed), background-color var(--hover-speed); }
@@ -1024,3 +1033,18 @@ a.row-link.row-link:focus-visible { outline: none; }
   .tab { padding-right: 4px; }
   .sheet-handle { min-height: var(--touch-target); }
 }
+
+/* Scroll boxes keep room for their scrollbar (LA-PAT-APP-UX-R08), so a classic scrollbar (Windows, a Mac with a
+   mouse) that comes and goes with the content never narrows what is inside. The space rail hides its scrollbar
+   instead: it is too narrow to give one room, and it still scrolls by wheel, touch and keyboard. */
+.workspace > aside, .nav-scroll, .quick-find-results, .quick-find-results.is-inline, .pane-scroll, .inspector.record-side, .shortcut-groups, .palette-list, .pages-list { scrollbar-gutter: stable; }
+.space-rail { scrollbar-width: none; }
+.space-rail::-webkit-scrollbar { display: none; }
+
+/* On a phone a record row stacks: its ID on a line of its own, its title under it at the row's full width, and its
+   meta (counts, tags, marks) wrapping below, so a title is never squeezed beside an ID column. */
+.app.is-narrow .record-row { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; }
+.app.is-narrow .record-row > .record-link { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; }
+.app.is-narrow .record-row > .row-tags { justify-content: flex-start; }
+.app.is-narrow .tree-row { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: 4px; }
+.app.is-narrow .tree-row > .tree-count { grid-column: 2; }

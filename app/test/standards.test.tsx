@@ -199,7 +199,8 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
       const groups = screen.queryAllByRole('group', { name: 'View' });
       expect(groups).toHaveLength(1);
       expect(bar.contains(groups[0])).toBe(true);
-      const toggles = within(groups[0]).getAllByRole('button');
+      // A view the page does not offer keeps its slot, dimmed (aria-disabled), so the toggles never move (UX-R08).
+      const toggles = within(groups[0]).getAllByRole('button').filter((t) => t.getAttribute('aria-disabled') !== 'true');
       for (const t of toggles) expect(t).toHaveAttribute('aria-pressed');
       const panes = [...document.querySelectorAll<HTMLElement>('.pane')];
       expect(toggles.filter((t) => t.getAttribute('aria-pressed') === 'true')).toHaveLength(panes.length);

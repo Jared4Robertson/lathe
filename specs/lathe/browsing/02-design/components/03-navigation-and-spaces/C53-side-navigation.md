@@ -6,7 +6,7 @@ parent: LA-BRW-LAY03
 component_type: react component
 file: app/src/shell/Nav.tsx
 links:
-  satisfies: [LA-BRW-UC50-R08, LA-BRW-UC50-R09, LA-BRW-DR53, LA-BRW-DR220, LA-BRW-UC116-R03]
+  satisfies: [LA-BRW-UC50-R08, LA-BRW-UC50-R09, LA-BRW-DR53, LA-BRW-DR220, LA-BRW-UC116-R03, LA-BRW-UC117-R01, LA-BRW-UC117-R02]
   implements: [LA-BRW-V01]
   depends_on: [LA-BRW-C54, LA-BRW-C58]
 ---
