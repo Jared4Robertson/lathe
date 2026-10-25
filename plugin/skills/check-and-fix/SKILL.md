@@ -20,7 +20,7 @@ The plugin's hook already runs the check after each edit to a spec record and sh
 
 ## Errors: fix them now
 
-An error means the specs are broken. Do not leave one behind.
+An error means the specs are broken. Do not leave one behind. Every check explains what it reports and how to fix it in the reference: `npx lathe format` (in the Lathe repo, `lathe/REFERENCE.md`), under the check's name.
 
 | Check | Usual fix |
 | --- | --- |
@@ -38,6 +38,7 @@ An error means the specs are broken. Do not leave one behind.
 | `meta-duplicate-kind` | One meta-model folder defines a kind twice. Merge the two rows. (A row in `metaExtensions` for a default kind is allowed: it widens that kind.) |
 | `meta-duplicate-relation` | Remove the repeated relation row. |
 | `meta-unknown-parent-kind`, `meta-unknown-relation-kind` | Define the kind it names, or fix the name, in the meta-model CSV. |
+| `undocumented` | Give the kind or relation a `description`, or start the check file with its header: a summary sentence, a blank comment line, the explanation and how to fix it, a blank comment line, then `-- severity: error` or `-- severity: warning`. |
 | `meta-bad-required-field` | Use a field name of lower-case letters, digits and underscores, and not `id`, `kind`, `title`, `parent` or `links`. |
 | `bad-fitness-date`, `bad-fitness-score` | A fitness record needs `date: YYYY-MM-DD` and a `score` from 1 to 5. |
 | `capability-order` | Give each capability in the domain its own whole-number `order` (`1` and `01` are the same). Renumbering an order is fine; it is not an ID. |

@@ -1,5 +1,10 @@
--- Work to do: a domain rule that no use case applies. A rule that nothing applies is either missing
--- from a use case's "applies" links or no longer needed.
+-- A domain rule that no use case applies.
+--
+-- A rule that nothing applies is either missing from a use case's `applies` links or no longer needed. Link
+-- the use cases that rely on it with `applies`, or remove the rule.
+--
+-- severity: warning
+-- kinds: domain_rule
 SELECT 'warning' AS severity, 'rule-not-applied' AS "check", r.id AS record,
        'Domain rule ' || r.id || ' is not applied by any use case; link it with "applies" from each use case that relies on it, or remove it.' AS message
 FROM records r

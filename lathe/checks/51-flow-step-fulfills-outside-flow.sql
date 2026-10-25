@@ -1,11 +1,19 @@
--- Work to do: a flow step carries out part of its flow, so what it fulfills belongs to a use case the flow
--- carries out. For a step under flow F, a "fulfills" target is inside F when it is one of:
+-- A flow step fulfills something its flow does not carry out.
+--
+-- A step carries out part of its flow, so what it fulfills belongs to a use case the flow carries out. For a
+-- step under flow F, a `fulfills` target is inside F when it is one of:
+--
 --   1. a requirement whose parent is a use case F carries_out;
 --   2. a domain rule that a use case F carries_out applies;
 --   3. a pattern rule of a pattern that a use case F carries_out follows, or that F's domain follows;
 --   4. an interaction requirement that fulfills a record of 1, 2 or 3, or that sits under F itself.
--- Anything else is reported. Kept conservative: a step whose flow carries out no use case, and a target
--- that does not exist or is of another kind, are left to other checks.
+--
+-- Anything else is reported. Kept conservative: a step whose flow carries out no use case, and a target that
+-- does not exist or is of another kind, are left to other checks. Add the use case to the flow's
+-- `carries_out`, or move the link to a step of the flow that carries it out.
+--
+-- severity: warning
+-- kinds: flow_step flow
 SELECT severity, "check", record, message FROM (
 WITH carried AS (
   -- Each flow and the use cases it carries out.

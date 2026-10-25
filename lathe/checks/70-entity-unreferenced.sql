@@ -1,7 +1,13 @@
--- Work to do: each child entity is a part of its aggregate's root (FORMAT.md section 17), so a has_one or
--- has_many reaches it from the root, directly or through other children of the same aggregate. Links that
--- cross aggregates (has-crosses-aggregate) and refers_to links do not count. An aggregate with no root, or
--- more than one, is aggregate-root only, so its children are not reported.
+-- A child entity that its aggregate's root does not reach.
+--
+-- Each child entity is a part of its aggregate's root (FORMAT.md section 17), so a `has_one` or `has_many`
+-- reaches it from the root, directly or through other children of the same aggregate. Links that cross
+-- aggregates (has-crosses-aggregate) and `refers_to` links do not count. An aggregate with no root, or more
+-- than one, is aggregate-root only, so its children are not reported. Link the child from the root or from
+-- another child with `has_one` or `has_many`.
+--
+-- severity: warning
+-- kinds: entity
 SELECT 'warning' AS severity, 'entity-unreferenced' AS "check", e.id AS record,
        'Child entity ' || e.id || ' is not reached from ' || e.aggregate || '''s root ' || e.root
        || ' by has_one or has_many; link it from ' || e.root || ' or from the child it is a part of.' AS message

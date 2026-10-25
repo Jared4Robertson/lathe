@@ -1,5 +1,10 @@
--- An entity's role (FORMAT.md section 17) is root, the aggregate's root record, or child, one of its parts,
--- in any letter case. A missing or empty role is missing-required-field only.
+-- An entity's role is root or child.
+--
+-- `root` is the aggregate's root record and `child` one of its parts (FORMAT.md section 17), in any letter
+-- case. A missing or empty role is missing-required-field only. Fix the `role` value.
+--
+-- severity: error
+-- kinds: entity
 SELECT 'error' AS severity, 'entity-role' AS "check", nullif(r.id, '') AS record,
        'Entity ' || coalesce(nullif(r.id, ''), r.path) || ' has role "' || trim(f.value)
        || '"; set role to root, for the aggregate''s root record, or child, for one of its parts.' AS message
