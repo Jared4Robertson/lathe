@@ -1,7 +1,7 @@
 ---
 id: LA-BRW-T286
 kind: test
-title: In the graph a domain reaches its components through Layers, then a layer
+title: In the graph a domain reaches its components through Design, Technical specification, then a layer, one level each
 parent: LA-BRW
 test_type: unit
 run_by: app/test/layers-and-test-groups.test.tsx

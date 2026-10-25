@@ -2,7 +2,7 @@
 id: LA-BRW-C23
 kind: component
 title: Graph routes and entry points
-parent: LA-BRW-LAY07
+parent: LA-BRW-LAY14
 component_type: module
 file: app/src/views/address.ts
 links:

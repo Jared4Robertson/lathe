@@ -1,0 +1,115 @@
+# Overnight log (2026-10-24 into 10-25)
+
+Jared asked the coordinator to go with its recommendation on any blocker and check back in the morning. This log records each merge, each agent started, and every decision taken without him, for his review.
+
+## Plan
+1. Merge each agent as it reports: check its report, run the combined tests on `main`, and look at UI changes in the browser. Never push.
+2. Start queued briefs as they unblock, at most about five agents at once:
+   1. When jitter phase 1 (53) merges: the pattern split (63), then jitter phase 2 (53), ghost buttons (54), Traceability (57b) and graph depth with the context ring (56).
+   2. Then bare-ID addresses (55), event display (60) and the side bar (64).
+3. Folded-in follow-ups:
+   - phone record rows stack the ID above the title (jitter phase 2);
+   - tab commands in the desktop menus (brief 62).
+
+## Work added on the coordinator's own initiative (Jared: "if there's any more work... please do it")
+- 66: prove the Tool Library's body limit (TL-LEND-E06-R03), the last standing warning. Started.
+- 67: S2 trial 4, to measure how close Lathe now is to S2's organization; findings only, in notes/trials/. Started.
+- 68: docs and plugin refresh, so they describe today's Lathe. Queued after 65.
+- 69: an automated accessibility audit (axe in the Playwright suite), with fixes and a new rule. Queued after 53 phase 1.
+- 70: performance budgets (engine load, bundle, interactions), with fixes and a new rule. Queued after 56.
+
+## Desktop app management (Jared asked: manage it, quit heavy instances, fix issues)
+- 23:57 — "Electron unexpectedly quit while reopening windows" prompts: caused by agents' smoke tests launching and killing the dev Electron. Fix sent to brief 62: opt out of macOS window restoration in the app, and have tests quit Electron gracefully with a teardown. Until it lands, the other agents skip the smoke test. One idle test Electron (from agent 65's worktree) was running at 0% CPU, so it was left alone.
+
+## Decisions taken without Jared
+- 00:00 — Held the docs refresh (68) while load was near 10, rather than start a sixth agent.
+- 00:00 — Resolved the F02 merge conflict between the roles change (65) and the format pages (51) by keeping both: roles wording, plus the new format-reference step.
+- 00:00 — Fixed the leftover names myself (the sample workspace's question owner, and two desktop comments): small and text-only.
+
+## For Jared in the morning: decisions from S2 trial 4 (notes/trials/s2-trial-4.md)
+Lathe now matches S2 on UC requirements (206/206) and domain rules (98/98) across three whole S2 domains. The scorecard rose in every area but two: test plan and standards stayed at 3. The clear, small fixes are under way as brief 71: `supports`, flow `path`, `key_file`, the "Business meaning" alias, domain rules under entities, and nested layers. The test plan grouping fix is folded into 57b. These larger additions change Lathe's shape and need your call:
+1. **Technical flows** (`design_flow` with ordered steps that use and satisfy). Size L. They remove 12 false `unsatisfied` warnings, and give S2's "how it runs" flows a home. Recommended: yes.
+2. **API and integration kinds** as defaults (an API file grouping endpoints, and an outside system). Size S. Recommended: yes.
+3. **Waivers:** a pattern rule that doesn't apply because of a setting's value, not only N/A. Size S to M. Recommended: yes, as `applies_when` on the rule.
+4. **Engineering standards** (`standard` and `standard_rule` at product level, like S2's STD rules). Size M. They'd also be a home for Lathe's own App code and App experience patterns. Recommended: yes, and consider moving those patterns to standards.
+5. **Relationship detail** (a verb, an optional end, several links per pair, from a Relationships table). Size M. Recommended: later.
+6. **Requirement and pattern-rule groups** (a `group` field shown as sub-headings). Size S. Recommended: yes.
+
+## More merges
+- 00:12 `a4b2783` S2 trial 4 findings (67): notes/trials/s2-trial-4.md.
+- 00:15 `392e3c0` Jitter phase 1 (53): a 31-scenario stability suite (`npm --prefix app run test:stability`); the graph and ERD jumps fixed (ERD aggregate to entity: CLS 0.11 to 0). It passes on main, run by the coordinator.
+- 00:17 `6262c88` Docs and plugin refresh (68): root, lathe and desktop READMEs; plugin 0.4.0; every documented command run; two doc bugs fixed.
+
+- 00:24 `cd11fd9` Pattern split (63): App code keeps 9 coding rules, and the new App experience pattern (`LA-PAT-APP-UX`) takes 8 behavior rules. 17/17 proved, and the size warning is gone.
+- 00:25 Started jitter phase 2 (with self-hosted fonts and phone rows), Traceability (57b, with test-plan groups) and the graph depth and context ring (56). Ghost buttons (54) and the accessibility audit (69) wait, since they touch every call site.
+
+- 00:44 `c8c5598` Trial-4 fixes (71): `supports`, flow paths, `key_file`, the Business meaning alias, rules under entities and nested layers. On the three S2 roots, false errors went 82 → 0 and warnings 394 → 317. Engine 265 passed.
+- 00:48 `218dcef` (coordinator) `too-many-children` counts a flow's steps per path, as brief 71 left open. LA-CHK-UC23-R05 and T333; engine 266 passed.
+- The app-side follow-ups from 71 (path tables, Supported by, nesting in the folder model) went to the Traceability agent (57b).
+
+- 01:15 `3b254b5` Traceability section (57b):
+  - Designed by, Proved by, Supported by and Carried out in, with gap callouts linking to checks;
+  - a use case's requirement table;
+  - relation labels everywhere (DR243);
+  - test plan groups (UI tests and Design checks);
+  - flow path tables and nested layers.
+  
+  App 263 passed.
+- 01:17 (coordinator) Split the Page aggregate: the new Record content aggregate (LA-BRW-A11) takes 8 rules, and A1 keeps 11. The size warning is gone. The graph agent was asked to split the Graph layer (LAY07, 16 components) into sub-layers.
+- 01:18 Started ghost buttons (54).
+
+- 01:00 `33de994` Jitter phase 2: every stability scenario is at 0 unexpected shift with the nav and tabs counted.
+  - Nav rows stay still unless you navigate in the nav.
+  - Every tab is the same width.
+  - Back restores the scroll position.
+  - Scroll boxes keep a scrollbar gutter.
+  - Fonts are self-hosted (OFL, offline-ready).
+  - Phone rows put the ID above the title.
+  - The inspector's gaps use the wiki's words.
+  
+  App 265 passed.
+- 01:00 (coordinator) The server sends the fonts as `font/woff2`, and F04 carries out UC117. Warnings are down to 8: seven `event-unheard`, by design, and the Graph layer split, which is in progress.
+- 01:01 Started the accessibility audit (69). Load was 12, but from macOS `mediaanalysisd` (about 2.6 cores, system), not Lathe; it was left alone.
+
+- 01:20 `b9f901c` Ghost buttons (54): one Button component (ghost, primary, icon); every standalone action uses it; UX-R09. App 267 passed. Follow-up running: the icon buttons in views and shell.
+- 01:21 Started bare-ID addresses (55).
+
+- 01:45 Icon buttons in views and shell now use the shared Button (15 call sites), and the R09 test fails on any new raw icon button.
+
+- 01:40 `c5719fe` Graph (56):
+  - the graph's tree is the nav's tree (Define and Design, then folders), with folders as levels;
+  - depth means levels;
+  - the Links switch;
+  - the context ring, spotlight, "+N more" chips, edge hints, minimap and step keys (Alt+arrows);
+  - the ERD ring.
+  
+  The Graph layer is split into 3 sub-layers. App 281 passed. Not met: the frame budget at depth 3 (worst frame 450 ms); that goes to performance (70). One flaky stability step: ERD Back.
+- 01:44 (coordinator) `82c46aa` Stage and folder pages say "Define", not "Defines"; tabs keep the Links, context-ring and minimap switches (T554, T555).
+- 01:45 Started event display (60) and the side bar (64). Performance (70) waits for 60 (both touch graph and model).
+
+## Incident
+- During 57b, the agent stopped "the process on its dev port" and killed pid 77501, the **Claude desktop app's network service**, which had a connection open to that port. Electron restarted the service; the app and the in-app browser were checked and work. New agent rule: stop only processes you started, by recorded PID, never by port or name. If anything in the Claude app seemed off around 01:00, this is why; a restart of the app clears it.
+
+## Decisions taken without Jared (continued)
+- 00:12 — Started brief 71 (the small, clear trial-4 fixes). The larger trial-4 additions are listed above for Jared.
+- 00:17 — Jitter phase 2 will self-host the fonts (Archivo, Public Sans and JetBrains Mono, all under the OFL), with `font-display: optional`. The agent asked first because it adds font files to the repo. Recommended: yes. It removes the dependency on Google Fonts, works offline in the desktop app, and stops the font swap from shifting the page.
+- 00:17 — Running the pattern split (63) first and alone, since it renames rule IDs everywhere; the other UI briefs follow when it lands.
+
+## Lessons
+- Never pipe a merge into `tail`: its exit status hid a merge conflict, and the worktree was removed before the conflict was resolved. The branch was intact, and the conflict was fixed. Merges now run unpiped, inside an `if`.
+
+## Merges
+- 23:59 `5c0e1f5` Format reference pages (51): a page per kind and check, with contextual links. App 246 passed; checked in the browser.
+- 00:00 `a496655` Roles, not names (65): no names in specs, plus the actor-not-a-role house check.
+- 00:00 `5a60433` Tool Library body limit proved (66). The old limit sent a reset instead of the 413; fixed. The unproved warning is gone.
+- 00:01 `a2792d1` Leftover names in the sample workspace and desktop comments.
+- 00:04 `1800718` Desktop polish (62), covering:
+  - a new icon, with a DEV variant;
+  - a Dock badge for errors, and a Dock menu;
+  - About, Settings (Cmd+,) and editor choice;
+  - Reveal, Open in editor and Copy ID on records;
+  - one running app at a time;
+  - launch and error pages;
+  - tab commands in the menus, with Ctrl+Tab working.
+  
+  The restore prompt is fixed: `ApplePersistenceIgnoreState` is set, and tests quit Electron gracefully. App 250 and desktop 61 unit tests passed.

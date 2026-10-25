@@ -25,6 +25,7 @@ import {
   type Command,
 } from './keymap';
 import { Link } from '../router';
+import { Button } from '../components/Button';
 import { formatPath } from '../specs/data';
 
 // The command dispatcher: components register handlers for command ids (useCommand), one key
@@ -246,7 +247,7 @@ function ShortcutSheet({ commands, mac, available, titleOf, onClose }: ListProps
     <Dialog label="Keyboard shortcuts" onClose={onClose} className="shortcut-sheet">
       <div className="dialog-head">
         <h2 id={id}>Keyboard shortcuts</h2>
-        <button type="button" className="icon-button" aria-label="Close" onClick={onClose}>×</button>
+        <Button variant="icon" label="Close" onClick={onClose}>×</Button>
       </div>
       <input type="search" className="dialog-search" aria-label="Search shortcuts" placeholder="Search shortcuts" value={query} onChange={(e) => setQuery(e.target.value)} />
       <div className="shortcut-groups">

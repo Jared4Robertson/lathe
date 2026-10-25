@@ -2,7 +2,7 @@
 id: LA-BRW-C143
 kind: component
 title: Graph groups by kind and by test group
-parent: LA-BRW-LAY07
+parent: LA-BRW-LAY12
 component_type: module
 file: app/src/graph/model.ts
 links:

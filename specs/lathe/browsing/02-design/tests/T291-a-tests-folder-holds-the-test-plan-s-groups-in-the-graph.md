@@ -1,7 +1,7 @@
 ---
 id: LA-BRW-T291
 kind: test
-title: In the graph a Tests folder holds the test plan's groups from the folder model
+title: In the graph a domain's Test plan folder holds the test plan's groups, from the same folder model
 parent: LA-BRW
 test_type: unit
 run_by: app/test/layers-and-test-groups.test.tsx

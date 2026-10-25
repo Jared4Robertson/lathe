@@ -2,7 +2,7 @@
 id: LA-BRW-C57
 kind: component
 title: The graph's part of the inspector
-parent: LA-BRW-LAY07
+parent: LA-BRW-LAY14
 component_type: react component
 file: app/src/graph/panel.tsx
 links:

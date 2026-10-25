@@ -2,7 +2,7 @@
 id: LA-BRW-C40
 kind: component
 title: Graph groups
-parent: LA-BRW-LAY07
+parent: LA-BRW-LAY12
 component_type: module
 file: app/src/graph/model.ts
 links:
