@@ -26,6 +26,8 @@
   app-region: drag;
 }
 .desktop-title-bar.is-mac { --title-bar-start: 78px; }
+/* In full screen macOS hides the traffic lights, so their room goes too. */
+.desktop-title-bar.is-mac.is-full-screen { --title-bar-start: 8px; }
 .desktop-title-bar.is-overlay {
   --title-bar-end: max(8px, calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, calc(100vw - 138px))));
 }

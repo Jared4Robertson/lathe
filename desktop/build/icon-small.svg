@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <!-- The app icon at 16 and 32 px (scripts/icon.ts): icon.svg's plate and chuck, drawn bolder so they read
+       at a few pixels: a larger chuck, wider slots and bore, stouter jaws, a darker plate edge and no fine
+       highlights. -->
+  <defs>
+    <linearGradient id="plate" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FBFCFD"/>
+      <stop offset="1" stop-color="#D3DBDF"/>
+    </linearGradient>
+    <linearGradient id="steel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3A7EA0"/>
+      <stop offset="1" stop-color="#235A76"/>
+    </linearGradient>
+    <filter id="plate-shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#000" flood-opacity="0.3"/>
+    </filter>
+    <mask id="chuck-cut">
+      <rect width="64" height="64" fill="#fff"/>
+      <circle cx="32" cy="32" r="10.5" fill="#000"/>
+      <rect id="chuck-slot" x="26.5" y="0" width="11" height="23" fill="#000"/>
+      <use href="#chuck-slot" transform="rotate(120 32 32)"/>
+      <use href="#chuck-slot" transform="rotate(240 32 32)"/>
+    </mask>
+  </defs>
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#plate)" filter="url(#plate-shadow)"/>
+  <rect x="106" y="106" width="812" height="812" rx="179" fill="none" stroke="#2E6A88" stroke-opacity="0.35" stroke-width="12"/>
+  <g transform="translate(144 144) scale(11.5)">
+    <circle cx="32" cy="32" r="29" fill="url(#steel)" mask="url(#chuck-cut)"/>
+    <g fill="#B5512A">
+      <path id="chuck-jaw" d="M28.6 23.5V17H27.6V8.5H36.4V17H35.4V23.5Z"/>
+      <use href="#chuck-jaw" transform="rotate(120 32 32)"/>
+      <use href="#chuck-jaw" transform="rotate(240 32 32)"/>
+    </g>
+  </g>
+</svg>
