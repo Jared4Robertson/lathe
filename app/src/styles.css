@@ -289,6 +289,9 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
    with its label at the top left; a leaf's label is centered in it. A domain is a box there, its hexagon a small mark before
    its kind and ID line, sized with its text. Children are drawn after their parent, so they lie over it. */
 .graph-flow.is-nested .graph-node.is-container { justify-content: flex-start; align-items: flex-start; text-align: left; }
+.graph-flow.is-nested .graph-node.is-container.has-marks small { padding-inline: 0 calc(30px * var(--node-scale)); }
+/* A Nested leaf is a block, not a line: its kind and ID line and its title wrap at their spaces, never inside a word, as app/src/graph/nested.ts sized it. */
+.graph-flow.is-nested .graph-node:not(.is-container) :is(small, strong) { white-space: normal; overflow-wrap: normal; word-break: normal; }
 .graph-flow.is-nested .graph-node.is-container:not(.is-plain) { padding-top: calc((var(--header) - 44px * var(--node-scale)) / 2 + 6px * var(--node-scale)); }
 .graph-hexagon-mark { display: inline-block; width: calc(11px * var(--node-scale)); height: calc(9.5px * var(--node-scale)); margin-right: calc(5px * var(--node-scale)); vertical-align: baseline; background: var(--g-structural); clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%); }
 .graph-swatch.stage-hexagon-mark { border-radius: 2px; background: var(--g-structural-bg); position: relative; }

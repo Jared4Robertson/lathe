@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { graphMap } from '../../src/graph/map';
-import { HEADER, HEADER_SHARE_MAX, HEADER_SHARE_MIN, HEADER_WIDTH_SHARE, headerShare, LEAF_AREA, layoutNested, NESTED_ASPECT, nestedMap, nestedTextScale, squarify, type NestedMap } from '../../src/graph/nested';
+import { labelWidth, metaWidth, titleWidth } from '../../src/graph/text';
+import { HEADER, HEADER_SHARE_MAX, HEADER_SHARE_MIN, HEADER_WIDTH_SHARE, headerShare, leafTextScale, LEAF_AREA, layoutNested, NESTED_ASPECT, nestedMap, nestedTextScale, squarify, type NestedMap } from '../../src/graph/nested';
 import { indexWorkspace } from '../../src/specs/data';
 import { groupedWorkspace, manyOfOneKindWorkspace, testIndex } from './workspace';
 
@@ -95,21 +96,39 @@ describe('the Nested map', () => {
     expect(squarify([], r)).toEqual([]);
   });
 
-  it("LA-EXP-T187 A box's text is in proportion to it, fixed by the map: its label fits its width, a parent's header band within its share of its height", () => {
-    // A leaf as wide as its label at a leaf's height: scale 1.
-    expect(nestedTextScale({ w: 190, h: 56 }, 190)).toBe(1);
-    // Limited by the width: a long label in a narrow box is smaller, never wrapped or cut.
-    expect(nestedTextScale({ w: 95, h: 560 }, 190)).toBe(0.5);
-    // A parent's header band takes at most its share of its height, 0.4 over one leaf and falling with the root of the leaves to an eighth; its label at most 0.6 of its width.
+  it("LA-EXP-T187 A box's text is in proportion to it, fixed by the map: a leaf's title wraps at its spaces to fit, a parent's header band within its share of its height", () => {
+    const label = { title: 'Walk the model as a graph', meta: 'Use case · LA-EXP-UC03' };
+    const oneLine = labelWidth(label);
+    // A leaf as wide as its label on one line, two lines tall: about scale 1, never more than fits.
+    const leaf = leafTextScale({ w: oneLine + 6, h: 44 }, label);
+    expect(leaf).toBeGreaterThan(0.95);
+    expect(leaf).toBeLessThanOrEqual(1);
+    // A square leaf half as wide: the title wraps at its spaces, so its text is larger than one line would allow.
+    const square = { w: oneLine / 2, h: oneLine / 2 };
+    const wrapped = leafTextScale(square, label);
+    expect(wrapped).toBeGreaterThan(square.w / oneLine);
+    // No word is ever wider than the box, nor any word of the kind and ID line: a word is never broken.
+    expect(titleWidth('model') * wrapped).toBeLessThan(square.w);
+    expect(metaWidth('LA-EXP-UC03') * wrapped).toBeLessThan(square.w);
+    // Twice the box, twice the text: in proportion to it.
+    expect(leafTextScale({ w: square.w * 2, h: square.h * 2 }, label)).toBeCloseTo(2 * wrapped, 6);
+    // A parent's header band takes at most its share of its height, 0.4 over one leaf and falling with the root of the leaves to a fifth, of its size; its label at most 0.9 of its width.
     expect(headerShare(1)).toBe(HEADER_SHARE_MAX);
     expect(headerShare(4)).toBe(0.2);
     expect(headerShare(400)).toBe(HEADER_SHARE_MIN);
-    expect(nestedTextScale({ w: 10000, h: HEADER / HEADER_SHARE_MAX }, 190, 1)).toBeCloseTo(1, 9);
-    expect(nestedTextScale({ w: 10000, h: HEADER / HEADER_SHARE_MIN }, 190, 400)).toBeCloseTo(1, 9);
-    expect(nestedTextScale({ w: 190 / HEADER_WIDTH_SHARE, h: 10000 }, 190, 1)).toBeCloseTo(1, 9);
+    // Square boxes: the header is its share of the box's side.
+    expect(nestedTextScale({ w: HEADER / HEADER_SHARE_MAX, h: HEADER / HEADER_SHARE_MAX }, 1, 1)).toBeCloseTo(1, 9);
+    expect(nestedTextScale({ w: HEADER / HEADER_SHARE_MIN, h: HEADER / HEADER_SHARE_MIN }, 1, 400)).toBeCloseTo(1, 9);
+    // A squat box: never more than HEADER_SHARE_MAX of its height.
+    expect(nestedTextScale({ w: 1e6, h: HEADER / HEADER_SHARE_MAX }, 1, 1)).toBeCloseTo(1, 9);
+    // A narrow one: its label within HEADER_WIDTH_SHARE of its width.
+    expect(nestedTextScale({ w: 190 / HEADER_WIDTH_SHARE, h: 1e6 }, 190, 1)).toBeCloseTo(1, 9);
     for (const map of maps()) {
       for (const n of map.nodes.values()) {
-        if (n.children.length > 0) expect(n.header).toBeLessThanOrEqual(n.h * headerShare(leafCount(map, n.id)) + eps);
+        if (n.children.length > 0) {
+          expect(n.header).toBeLessThanOrEqual(Math.sqrt(n.w * n.h) * headerShare(leafCount(map, n.id)) + eps);
+          expect(n.header).toBeLessThanOrEqual(n.h * HEADER_SHARE_MAX + eps);
+        }
       }
     }
     // Built once per index: the same map object, whatever the focus.
