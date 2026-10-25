@@ -4,6 +4,7 @@ domain,<P>-<D>,TL-LEND
 capability,<P>-<D>-CAP<nn>,TL-LEND-CAP01
 aggregate,<P>-<D>-A<n>,TL-LEND-A1
 entity,<P>-<D>-EN<nn>,TL-LEND-EN01
+domain_event,<P>-<D>-EV<nn>,TL-LEND-EV01
 domain_rule,<P>-<D>-DR<nn>,TL-LEND-DR01
 use_case,<P>-<D>-UC<nn>,TL-LEND-UC01
 requirement,<use case>-R<nn>,TL-LEND-UC01-R01
