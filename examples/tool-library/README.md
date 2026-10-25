@@ -26,8 +26,9 @@ npm run typecheck   # tsc --noEmit
 
 - `test/domain-rules.test.ts`: one test per domain rule (TL-LEND-T01 to T10, and T27), against the services and an in-memory database. The DR05 test is named by its rule ID.
 - `test/api.test.ts`: one test per use case requirement and its endpoint rules (TL-LEND-T11 to T26), plus endpoint rules of their own (T28, T31, T32), over HTTP on a free local port.
+- `test/body-limit.test.ts`: the 64 KB body limit (TL-LEND-T30), over HTTP and over a raw socket that sends a body that never ends.
 
-Two tests are not automated: TL-LEND-T29 is a manual smoke test of the curl steps below, and TL-LEND-T30 (a body over 64 KB is refused with 413) is planned; their records say why.
+One test is not automated: TL-LEND-T29 is a manual smoke test of the curl steps below; its record says why.
 
 ## Run
 
@@ -53,7 +54,7 @@ Stop it with Ctrl-C.
 | POST | `/tools/{toolId}/damage` | Mark a tool as needing repair: `{ "note" }`. |
 | POST | `/tools/{toolId}/repair` | Mark a damaged tool repaired. |
 
-Errors are JSON: `{ "error": "<code>", "message": "<sentence>" }`, for example `409 { "error": "member_overdue", … }`. The interaction requirements under the endpoint records in `specs/tool-library/lending/02-design/endpoints/` give every status and code. A body over 64 KB gets 413 `body_too_large`.
+Errors are JSON: `{ "error": "<code>", "message": "<sentence>" }`, for example `409 { "error": "member_overdue", … }`. The interaction requirements under the endpoint records in `specs/tool-library/lending/02-design/endpoints/` give every status and code. A body over 64 KB, on any endpoint, gets 413 `body_too_large` and the connection is closed.
 
 ```sh
 curl -s -X POST localhost:5310/members -H 'content-type: application/json' -d '{"name":"Ada","email":"ada@example.org"}'
