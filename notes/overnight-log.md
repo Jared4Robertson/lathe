@@ -5,7 +5,7 @@ Jared asked the coordinator to go with its recommendation on any blocker and che
 ## Where things stand (03:05)
 All queued briefs are merged into local `main`. Nothing is pushed. No agents are running.
 - **Your dev server on port 5199 needs a restart** (`npm --prefix app run dev`). It has been up since before the moves, and its hot reload is broken.
-- **Please confirm:** the depth-3 re-center budgets were changed (see 02:27).
+- **Decided by Jared:** keep the depth-3 re-center budgets as set: a longest frame under 100 ms, under 500 ms of work, and at most 3 frames over 20 ms.
 - **Please decide:** the six trial-4 additions below.
 - **Please check by hand:** the desktop title bar and icon in a real window, and the Dock badge in a packed app.
 - **Left open on purpose:** a page tab could announce its Delete shortcut, but that clashes with the keep-tab hint in the tooltip.
