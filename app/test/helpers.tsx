@@ -3,6 +3,8 @@ import { expect, vi } from 'vitest';
 import App from '../src/App';
 import type { DiagramSummary } from '../src/types';
 import type { Workspace } from '../../lathe/src/types';
+import type { FormatReference } from '../src/format/reference';
+import { formatReference } from './fixtures/format';
 import { workspace as fixtureWorkspace } from './fixtures/workspace';
 
 export interface Served {
@@ -10,6 +12,8 @@ export interface Served {
   source?: 'engine' | 'fixture';
   reason?: string;
   diagrams?: DiagramSummary[];
+  /** What GET /api/format answers: the fixture's reference by default, or null for no answer (as when the engine is not there). */
+  format?: FormatReference | null;
 }
 
 /** Every request the page made, as "METHOD /path". */
@@ -30,6 +34,7 @@ export function serve(served: Served = {}): Requests {
       return json(ws, headers);
     }
     if (url === '/api/diagrams') return json(served.diagrams ?? []);
+    if (url === '/api/format' && served.format !== null) return json(served.format ?? formatReference());
     return new Response(JSON.stringify({ error: 'not found' }), { status: 404 });
   }));
   return requests;
