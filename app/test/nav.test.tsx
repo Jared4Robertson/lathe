@@ -44,7 +44,7 @@ describe('side navigation', () => {
     expect(within(nav().querySelector<HTMLElement>('.nav-space')!).getByRole('link', { name: 'Demo shop' })).toHaveAttribute('href', '/specs/DM');
   });
 
-  it('LA-BRW-T128 On a narrow screen the nav is a drawer opened from a menu button, closed by Escape, a click outside or choosing a page', async () => {
+  it('LA-BRW-T128 On a narrow screen the nav is a full-screen sheet opened from a menu button, closed by Escape, a click outside or choosing a page', async () => {
     vi.stubGlobal('matchMedia', (query: string) => ({ matches: true, media: query, addEventListener: () => {}, removeEventListener: () => {} }));
     await openApp('/specs/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });

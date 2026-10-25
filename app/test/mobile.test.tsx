@@ -10,7 +10,8 @@ import { testWorkspace } from './graph/workspace';
 
 // Lathe on a phone (notes/mobile-design.md): a compact top bar, the page bar compact under it, one
 // view at a time, sheets for the nav, the inspector, the open pages and quick find, and taps that
-// select before they open on the graph and the ERD.
+// select before they open on the graph and the ERD. Proves LA-BRW-UC116-R01 to R07 and R09, LA-BRW-DR221,
+// LA-BRW-DR222 and LA-BRW-DR223, and the inspector sheet of LA-BRW-UC50-R11.
 
 const served = () => ({ workspace: testWorkspace() });
 
