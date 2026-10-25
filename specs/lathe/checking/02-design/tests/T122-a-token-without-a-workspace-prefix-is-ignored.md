@@ -8,4 +8,4 @@ run_by: lathe/test/mentions.test.ts
 links:
   proves: [LA-CHK-UC13-R03, LA-CHK-DR70]
 ---
-Expects IDs with an unknown prefix or a prefix that only starts like a product to be ignored, a token followed by a letter, an underscore or lower-case text to be no token, and IDs in brackets, links and sentences to be read whole.
+Expects IDs that are no record and have an unknown prefix, or a prefix that only starts like a product, to be ignored, a token followed by a letter, an underscore or lower-case text to be no token, and IDs in brackets, links and sentences to be read whole.

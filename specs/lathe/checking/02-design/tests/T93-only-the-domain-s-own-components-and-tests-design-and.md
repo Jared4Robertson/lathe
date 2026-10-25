@@ -8,4 +8,4 @@ run_by: lathe/test/pattern-rules.test.ts
 links:
   proves: [LA-CHK-UC11-R03, LA-CHK-DR51]
 ---
-A component and a test in one domain cover both rules; expects another following domain to count only what its own component designs, and a third to count nothing.
+A component and a test in one domain cover both rules; expects other following domains to count no proof from them. Design per domain, asked only when a product makes pattern rules full obligations, is tested by LA-CHK-T228.

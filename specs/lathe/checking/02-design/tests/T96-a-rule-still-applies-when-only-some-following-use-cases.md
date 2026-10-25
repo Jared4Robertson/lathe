@@ -8,4 +8,4 @@ run_by: lathe/test/pattern-rules.test.ts
 links:
   proves: [LA-CHK-UC11-R04, LA-CHK-DR52]
 ---
-One following use case marks the setting Not applicable and another gives it a value; expects both rules' gaps in that domain.
+One following use case marks the setting Not applicable and another gives it a value; expects both rules' `proves` gaps in that domain.

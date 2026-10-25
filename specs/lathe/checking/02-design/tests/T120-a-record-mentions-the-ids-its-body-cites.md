@@ -8,4 +8,4 @@ run_by: lathe/test/mentions.test.ts
 links:
   proves: [LA-CHK-UC13-R01, LA-CHK-DR71]
 ---
-Expects a use case citing several records, one of them twice and a product among them, to mention each existing one once in order of first mention, and a body that cites nothing to mention nothing.
+Expects a use case citing several records, one of them twice, to mention each existing one once in order of first mention, and a body that cites nothing, or names a product and domain only in plain prose, to mention nothing.

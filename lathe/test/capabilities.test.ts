@@ -27,10 +27,11 @@ describe('the meta-model', () => {
   it('LA-CHK-T70 Capabilities, patterns and the follows relation are in the meta-model', () => {
     const kind = (name: string) => good.kinds.find((k) => k.kind === name);
     expect(kind('capability')).toMatchObject({ stage: 'define', parent_kinds: ['domain'], required_fields: ['order'], obligation: false });
-    expect(kind('pattern')).toMatchObject({ stage: 'define', parent_kinds: ['product'], required_fields: ['settings'], obligation: false });
+    expect(kind('pattern')).toMatchObject({ stage: 'define', parent_kinds: ['product'], required_fields: [], obligation: false });
     for (const name of ['use_case', 'flow', 'test']) expect(kind(name)?.parent_kinds).toEqual(['domain', 'capability']);
     expect(good.relations.filter((r) => r.relation === 'follows')).toEqual([
       expect.objectContaining({ source_kind: 'use_case', target_kind: 'pattern', role: '' }),
+      expect.objectContaining({ source_kind: 'domain', target_kind: 'pattern', role: '' }),
     ]);
   });
 

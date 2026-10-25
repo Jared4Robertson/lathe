@@ -7,7 +7,8 @@
       "parent_kinds": [],
       "required_fields": [],
       "description": "A product: the root of a set of specifications.",
-      "obligation": false
+      "obligation": false,
+      "proof_only": false
     },
     {
       "kind": "domain",
@@ -18,7 +19,8 @@
       ],
       "required_fields": [],
       "description": "A part of the product with its own model, language and owner.",
-      "obligation": false
+      "obligation": false,
+      "proof_only": false
     },
     {
       "kind": "aggregate",
@@ -29,7 +31,8 @@
       ],
       "required_fields": [],
       "description": "A cluster of records changed together as one unit, with its own identity and rules.",
-      "obligation": false
+      "obligation": false,
+      "proof_only": false
     },
     {
       "kind": "domain_rule",
@@ -40,7 +43,8 @@
       ],
       "required_fields": [],
       "description": "A fact that must always hold for an aggregate's records, whatever use case changes them.",
-      "obligation": true
+      "obligation": true,
+      "proof_only": false
     },
     {
       "kind": "use_case",
@@ -53,7 +57,8 @@
         "actor"
       ],
       "description": "Something an actor does with the product to reach a goal.",
-      "obligation": false
+      "obligation": false,
+      "proof_only": false
     },
     {
       "kind": "requirement",
@@ -64,7 +69,8 @@
       ],
       "required_fields": [],
       "description": "One rule a use case must follow, stated with MUST, MUST NOT, SHOULD or MAY.",
-      "obligation": true
+      "obligation": true,
+      "proof_only": false
     },
     {
       "kind": "flow",
@@ -75,7 +81,8 @@
       ],
       "required_fields": [],
       "description": "An end-to-end path through views and endpoints that carries out one or more use cases.",
-      "obligation": false
+      "obligation": false,
+      "proof_only": false
     },
     {
       "kind": "view",
@@ -86,7 +93,8 @@
       ],
       "required_fields": [],
       "description": "A screen or page a person uses.",
-      "obligation": false
+      "obligation": false,
+      "proof_only": false
     },
     {
       "kind": "endpoint",
@@ -100,7 +108,8 @@
         "route"
       ],
       "description": "An HTTP endpoint: its method, route, request and responses.",
-      "obligation": false
+      "obligation": false,
+      "proof_only": false
     },
     {
       "kind": "component",
@@ -114,7 +123,8 @@
         "file"
       ],
       "description": "A unit of code in the target design, such as a model, service or router.",
-      "obligation": false
+      "obligation": false,
+      "proof_only": false
     },
     {
       "kind": "test",
@@ -128,7 +138,8 @@
         "run_by"
       ],
       "description": "A test that proves requirements or domain rules, and the file that runs it.",
-      "obligation": false
+      "obligation": false,
+      "proof_only": false
     },
     {
       "kind": "question",
@@ -145,7 +156,8 @@
         "owner"
       ],
       "description": "Something undecided, with the person who decides it.",
-      "obligation": false
+      "obligation": false,
+      "proof_only": false
     }
   ],
   "relations": [

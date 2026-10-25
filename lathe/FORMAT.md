@@ -94,15 +94,28 @@ The engine runs every SQL file in `lathe/checks/`. Each returns rows of `(severi
   - `interaction-requirement-fulfills-nothing`: an interaction requirement with no `fulfills` link.
   - `test-type-mismatch`: a test with `test_type: domain_rule` that proves requirements but no domain rule, or with `test_type: acceptance` that proves domain rules but no requirement. Other types, such as `unit`, are not compared.
 
+  The proof warnings say where proof is still owed or is counted nowhere:
+  - `proof-still-owed`: an obligation that is already proved, but that a planned test is also meant to prove, such as "TL-LEND-E06-R03 is proved, but planned test TL-LEND-T30 still owes a proof of it". There is one warning for each obligation and planned test, so the obligations that coverage counts in `planned_any` beyond `planned` are named. A pattern rule is judged in each domain that owes it, with only that domain's tests. An obligation not yet proved, whose test is only planned, is `unproved` instead.
+  - `proof-counts-nowhere`: a test none of whose proofs counts in any domain's coverage: for example it proves only a rule of a pattern no domain follows, a pattern rule that only other domains owe, an obligation outside every domain, or a record that is not an obligation. The message gives the reason for each target. A test with at least one proof that counts is not reported, whatever its state.
+  - `manual-test-file-silent`: a manual test whose `run_by` file exists but names neither the test's ID, nor any ID it proves, nor its `key`. Name the test in the file, or point `run_by` at the file that carries it out.
+
 One mistake gives one error. When an ID is duplicated, a link or parent that points at it is judged against every record with that ID, and is reported only if none of them allows it. A record whose parent does not exist is reported as `unknown-parent` only.
 
 ## 6. Coverage
 
-Coverage follows the meta-model. A kind marked `obligation: yes` in `kinds.csv` (by default `domain_rule`, `requirement`, `interaction_requirement` and `pattern_rule`) is something that must be designed, built and proved. A relation's `role` in `relations.csv` says what a link does: `design` (such as a component `satisfies` it) or `proof` (such as a test `proves` it).
+Coverage follows the meta-model. A kind's `obligation` value in `kinds.csv`, in any letter case, says what it asks:
+
+- `yes` (or `true`): an obligation that must be designed, built and proved. By default `domain_rule`, `requirement` and `interaction_requirement`.
+- `proof`: an obligation that needs **proof only**. Nothing is asked about its design, so it counts as designed and built, has no `satisfies` gaps, and is never `unsatisfied`; it is proved, planned and has `proves` gaps like any other. By default `pattern_rule`, as S2 asks only for proof of the patterns it follows. A component may still `satisfy` it, to say which code carries it out.
+- anything else: not an obligation.
+
+A product can change a kind's value with an extension (section 9), for example `pattern_rule,,,,,yes,` to ask for the design of pattern rules again.
+
+A relation's `role` in `relations.csv` says what a link does: `design` (such as a component `satisfies` it) or `proof` (such as a test `proves` it).
 
 Each obligation is counted in the domain that owes it. A record that sits in a domain is owed by that domain. A pattern rule sits under a pattern, outside every domain, and is owed instead by each domain that follows the pattern, where only that domain's own components and tests design and prove it (section 11). Any other obligation that sits in no domain is counted nowhere and reported as an `obligation-outside-domain` warning.
 
-For each domain and each obligation kind: how many obligations it owes; how many are **designed** (a `design` link targets them), **built** (a `design` link from a component whose file exists), **proved** (a `proof` link from an automated or manual test), and **planned** (not proved, but a planned test is meant to prove them); plus the list of gaps. A pattern rule owed by several domains is counted, and has its gaps, in each of them. A product's own obligation kinds and relations, added by extension, are counted the same way.
+For each domain and each obligation kind: how many obligations it owes; how many are **designed** (a `design` link targets them), **built** (a `design` link from a component whose file exists), **proved** (a `proof` link from an automated or manual test), and **planned** (not proved, but a planned test is meant to prove them); plus the list of gaps. For a proof-only kind, designed and built always equal the total. A pattern rule owed by several domains is counted, and has its gaps, in each of them. A product's own obligation kinds and relations, added by extension, are counted the same way.
 
 ## 7. Fitness
 
@@ -149,7 +162,7 @@ The domain's **use case index** comes from the records: its capabilities in orde
 
 ### Patterns
 
-A `pattern` sits under the product, since domains share it, and lists its **settings** in `settings`: setting names separated by spaces, each a valid field name (lower-case letters, digits and underscores, starting with a letter, and not `id`, `kind`, `title`, `parent` or `links`). Its body says what it is for and what each setting decides; its rules are `pattern_rule` records under it (section 11).
+A `pattern` sits under the product, since domains share it. It may list **settings** in `settings`: setting names separated by spaces, each a valid field name (lower-case letters, digits and underscores, starting with a letter, and not `id`, `kind`, `title`, `parent` or `links`). Its body says what it is for and what each setting decides; its rules are `pattern_rule` records under it (section 11). A pattern that every following use case applies the same way, such as S2's API conventions, has no settings: leave `settings` out.
 
 ```markdown
 ---
@@ -162,7 +175,7 @@ settings: record required_input result
 A librarian at the desk enters a few details, and the library saves one record and shows what it saved.
 ```
 
-A use case **follows** the pattern with a `follows` link and gives each setting as a plain header field named exactly as the pattern lists it: a value, or `Not applicable:` (in any letter case) followed by a reason. The pattern's rules apply to the use case with those values; the use case's own requirements add only what is specific to it.
+A use case **follows** the pattern with a `follows` link and gives each setting as a plain header field named exactly as the pattern lists it: a value, or `Not applicable:` (in any letter case) followed by a reason. The pattern's rules apply to the use case with those values; the use case's own requirements add only what is specific to it, so a use case that follows a pattern may have none (no `use-case-without-requirements` warning).
 
 ```markdown
 ---
@@ -182,13 +195,27 @@ links:
 
 In YAML, a value containing `: ` must be quoted, so write `audit: "Not applicable: nothing changes"`.
 
+A **domain** may follow a pattern too, as S2 adopts most of its patterns per domain: the domain record links it with `follows`, and the whole domain owes each of the pattern's rules (section 11). The domain gives no settings; when the pattern has settings, the use cases that apply it follow it as well and give them.
+
+```markdown
+---
+id: S2-ACC
+kind: domain
+title: Accounting
+parent: S2
+links:
+  follows: [S2-PAT-API]
+---
+```
+
 - A setting that a following use case does not give, or gives as `Not applicable:` with no reason, is a `pattern-setting-missing` error.
 - A setting name that is not a valid field name is a `bad-pattern-settings` error on the pattern.
+- A pattern with no settings asks nothing of the use cases that follow it.
 - A use case that follows two patterns sharing a setting name has one field for both: a `pattern-setting-clash` warning. Rename the setting in one of the patterns.
 
 ## 11. Pattern rules
 
-A pattern's rules are records, so that each domain that follows the pattern must design and prove them, as S2's "Patterns we follow" tables do. A `pattern_rule` sits under its pattern and states one rule with MUST / MUST NOT / SHOULD / MAY. Its ID is the pattern's ID with `-R<nn>`, such as `TL-PAT-LIBRARIAN-ACTION-R01`. When the rule depends on one of the pattern's settings, it names it in `setting`.
+A pattern's rules are records, so that each domain that follows the pattern must prove them, as S2's "Patterns we follow" tables do. A `pattern_rule` sits under its pattern and states one rule with MUST / MUST NOT / SHOULD / MAY. Its ID is the pattern's ID with `-R<nn>`, such as `TL-PAT-LIBRARIAN-ACTION-R01`. When the rule depends on one of the pattern's settings, it names it in `setting`.
 
 ```markdown
 ---
@@ -201,12 +228,12 @@ setting: required_input
 When the librarian leaves out any of the `required_input`, the library MUST refuse the action, say what is missing, and save nothing.
 ```
 
-A domain **follows** a pattern when any of its use cases `follows` it. Each rule of the pattern is then an obligation **of that domain**, counted on the domain's Pattern rule coverage line:
+A domain **follows** a pattern when the domain itself `follows` it or any of its use cases does. Each rule of the pattern is then an obligation **of that domain**, counted once on the domain's Pattern rule coverage line:
 
-- **designed** when a component in that domain `satisfies` it, and **built** when that component's file exists;
-- **proved** when an automated or manual test in that domain `proves` it, and **planned** when only a planned test there does.
+- **proved** when an automated or manual test in that domain `proves` it, and **planned** when only a planned test there does;
+- pattern rules are proof-only by default (`obligation: proof`, section 6), so they count as **designed** and **built** and are never `unsatisfied`. A product that sets `pattern_rule` to `yes` asks for design too: then a rule is designed when a component in that domain `satisfies` it, and built when that component's file exists.
 
-A component or test in another domain does not count: each domain applies the rule with its own setting values, so it proves the rule for itself. The rule's gaps, and its `unsatisfied` and `unproved` warnings, name the domain, such as "Pattern rule TL-PAT-LIBRARIAN-ACTION-R01 is not proved in TL-LEND".
+A component or test in another domain does not count: each domain applies the rule with its own setting values, so it proves the rule for itself. The rule's gaps, and its `unproved` (and, when design is asked, `unsatisfied`) warnings, name the domain, such as "Pattern rule TL-PAT-LIBRARIAN-ACTION-R01 is not proved in TL-LEND".
 
 ```markdown
 ---
@@ -221,7 +248,9 @@ links:
 ---
 ```
 
-**Not applicable.** When a rule names a `setting` and every use case in a domain that follows the pattern gives that setting as `Not applicable:` with a reason, the rule does not apply in that domain and is not counted there. If even one following use case there gives the setting a value, the domain owes the rule. A rule with no `setting` applies in every domain that follows the pattern.
+**Not applicable.** When a rule names a `setting`, the domain follows the pattern only through its use cases, and every one of those use cases gives that setting as `Not applicable:` with a reason, the rule does not apply in that domain and is not counted there. If even one following use case there gives the setting a value, or the domain itself follows the pattern, the domain owes the rule. A rule with no `setting` applies wherever its pattern is followed.
+
+**Carrying out a rule.** An interaction requirement or a flow step may `fulfill` a pattern rule, to say where the rule is carried out. A step's flow carries out the rules of the patterns that its use cases, or its domain, follow, so `flow-step-fulfills-outside-flow` reports a step that fulfills any other pattern rule, or an interaction requirement that fulfills one (section 14).
 
 The checks for pattern rules:
 
@@ -233,10 +262,11 @@ The checks for pattern rules:
 
 A record's body may cite other records by ID in plain text, such as "the loan follows TL-LEND-DR05". The engine reads these citations so that a renamed or removed record does not leave a stale reference behind.
 
-- A **citation** is a whole ID-shaped token in the body (the `id` format in section 2) that equals the ID of a `product` record or starts with one followed by `-`. `TL-LEND-DR05` is cited in "(TL-LEND-DR05)." and in a Markdown link `[TL-LEND-DR05](…)`, but nothing is cited in `TL-LEND-DR05a`, and a token with a prefix no product has, such as `ZZ-D-UC01`, is not read.
-- Text in fenced code blocks (`` ``` `` or `~~~`), and in inline code spans holding anything more than one ID, is not read, so an example ID can be written in code (`see TL-LEND-DR99`). A code span holding exactly one ID and nothing else (`` `TL-LEND-DR05` ``) is a citation, because writers often format IDs that way.
+- A **citation** is a whole ID-shaped token in the body (the `id` format in section 2) that is the ID of a record, or that starts with a **known prefix** followed by `-`. The known prefixes are every `product` and `domain` ID, and the entries of the optional `idPrefixes` list in `lathe.config.json` (for example `["STD", "SYS"]`). `TL-LEND-DR05` is cited in "(TL-LEND-DR05)." and in a Markdown link `[TL-LEND-DR05](…)`, but nothing is cited in `TL-LEND-DR05a`. A token that is no record and has no known prefix, such as `ZZ-D-UC01`, is not read.
+- A product's or domain's own ID (`TL`, `TL-LEND`) is a citation only when written as a code span holding just that ID (`` `TL-LEND` ``). In plain prose it is not read, because such short IDs are often ordinary words.
+- Text in fenced code blocks (`` ``` `` or `~~~`), and in inline code spans holding anything more than one ID, is not read, so an example ID can be written in code (`see TL-LEND-DR99`). A code span holding exactly one ID and nothing else (`` `TL-LEND-DR05` ``) is read like plain prose, because writers often format IDs that way.
 - A record's **mentions** (`SpecRecord.mentions`) are the IDs it cites that exist, in order of first mention, without repeats and without its own ID.
-- A cited ID that is not a record is an `unknown-id-in-prose` warning on the citing record: fix the wording, or put the ID in code if it is an example.
+- A cited ID that is not a record (so one with a known prefix) is an `unknown-id-in-prose` warning on the citing record: fix the wording, or put the ID in code if it is an example.
 - Mentions are not links. They do not count for coverage and are not checked against `relations.csv`; write a link in the header when a record satisfies, proves or applies another.
 
 ## 13. A product's own checks
@@ -266,7 +296,7 @@ WHERE a.kind = 'aggregate'
 
 A flow can be written as **steps**, so that each step says what happens, where, and what it carries out, as S2's flow tables do. A `flow_step` sits under its flow and gives its place in the flow in `order`, a whole number. Its ID is the flow's ID with `-S<nn>`, such as `TL-LEND-F01-S01`. Its title says what happens in a few words, and its body may say more.
 
-A step links to what it goes through with `uses` (a view, an endpoint or a component) and to what it carries out with `fulfills` (a requirement, an interaction requirement or a domain rule).
+A step links to what it goes through with `uses` (a view, an endpoint or a component) and to what it carries out with `fulfills` (a use-case requirement, an interaction requirement, a domain rule, or a rule of a pattern the flow's use cases or domain follow).
 
 ```markdown
 ---
