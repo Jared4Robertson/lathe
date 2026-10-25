@@ -39,3 +39,15 @@ export function usePref<T>(key: string, fallback: T, valid: (v: unknown) => v is
   }, [key, store]);
   return [value, set] as const;
 }
+
+/**
+ * A panel's size in the workbench (px or %), remembered, kept within its limits, with a reset to
+ * its default. Every resizable panel uses it with a ResizeHandle.
+ */
+export function usePanelSize(key: string, fallback: number, min: number, max: number) {
+  const inRange = (v: unknown): v is number => isNumber(v) && v >= min && v <= max;
+  const [size, setSize] = usePref<number>(key, fallback, inRange);
+  const set = useCallback((v: number) => setSize(Math.round(Math.min(max, Math.max(min, v)))), [setSize, min, max]);
+  const reset = useCallback(() => setSize(fallback), [setSize, fallback]);
+  return [size, set, reset] as const;
+}

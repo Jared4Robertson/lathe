@@ -88,7 +88,7 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
     ? <span title={spec.sourceReason ?? undefined}>Sample data, not your specs</span>
     : spec.source === 'engine' ? <span>Specs read by the engine</span> : <span>Loading specs…</span>;
 
-  const className = ['menu', 'has-spaces', collapsed && !drawer ? 'is-rail' : '', drawer ? 'is-drawer' : '', drawer && drawerOpen ? 'is-open' : ''].filter(Boolean).join(' ');
+  const className = ['menu', 'panel', 'has-spaces', collapsed && !drawer ? 'is-rail' : '', drawer ? 'is-drawer' : '', drawer && drawerOpen ? 'is-open' : ''].filter(Boolean).join(' ');
   const diagramsTo = diagrams[0] ? `/diagrams/${diagrams[0].slug}` : '/';
 
   const rail = (
