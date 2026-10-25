@@ -24,3 +24,4 @@ The domain links the pattern with `follows`. The pattern has no settings: every 
 - `LA-PAT-APP-CODE-R08`: everything clickable shows a hover state.
 - `LA-PAT-APP-CODE-R09`: the workbench, panels a gap apart and every gap resizes.
 - `LA-PAT-APP-CODE-R10`: every grid says its columns.
+- `LA-PAT-APP-CODE-R11`: each pane has one title bar that holds its views and layout actions.
