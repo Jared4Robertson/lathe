@@ -4,9 +4,8 @@ kind: test
 title: "Stability: the mobile sheets at 375 px move nothing behind them"
 parent: LA-BRW
 test_type: acceptance
-state: planned
-run_by: app/stability/pending.spec.ts
+run_by: app/stability/theme-and-mobile.spec.ts
 links:
-  proves: [LA-BRW-UC117-R10]
+  proves: [LA-BRW-UC117-R10, LA-PAT-APP-CODE-R17]
 ---
-Waits on brief 52 (mobile). Opens and closes the nav and inspector sheets at 375 px wide, and expects the page behind them not to move.
+At 375 px wide with touch, opens and closes the nav drawer, the quick find sheet and the inspector sheet, and expects the top bar, the page and its title behind them not to move.

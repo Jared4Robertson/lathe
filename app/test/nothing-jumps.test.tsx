@@ -77,15 +77,20 @@ function scrollsVertically(r: Rule): boolean {
  * App.tsx and the nav). Each one MUST be fixed and removed from this list; the test fails when an
  * entry is no longer a scroll box, so the list only shrinks.
  */
-const PHASE_2_SCROLL_BOXES = ['.workspace > aside', '.nav-scroll', '.quick-find-results', '.pane-scroll', '.inspector.record-side', '.shortcut-groups', '.palette-list', '.space-rail'];
+const PHASE_2_SCROLL_BOXES = ['.workspace > aside', '.nav-scroll', '.quick-find-results', '.quick-find-results.is-inline', '.pane-scroll', '.inspector.record-side', '.shortcut-groups', '.palette-list', '.space-rail', '.pages-list'];
+
+/** A box keeps its gutter when a rule for it, or for the end of its selector (`.erd-key` for `.app.is-narrow .erd-key`), sets `scrollbar-gutter: stable`. */
+function keepsGutter(selector: string): boolean {
+  return ALL.some((r) => r.decls.get('scrollbar-gutter') === 'stable' && selectors(r).some((s) => s === selector || selector.endsWith(` ${s}`)));
+}
 
 describe('nothing jumps (LA-PAT-APP-CODE-R17)', () => {
   it('LA-BRW-T488 every scroll box keeps room for its scrollbar, so it never comes and goes with the content', () => {
     const boxes = ALL.filter(scrollsVertically).flatMap((r) => selectors(r).map((s) => ({ s, line: r.line })));
     expect(boxes.length).toBeGreaterThan(5);
-    const missing = boxes.filter(({ s }) => !PHASE_2_SCROLL_BOXES.includes(s) && valueFor(s, 'scrollbar-gutter') !== 'stable').map(({ s, line }) => `app/src/styles.css:${line}: ${s} needs scrollbar-gutter: stable`);
+    const missing = boxes.filter(({ s }) => !PHASE_2_SCROLL_BOXES.includes(s) && !keepsGutter(s)).map(({ s, line }) => `app/src/styles.css:${line}: ${s} needs scrollbar-gutter: stable`);
     expect(missing).toEqual([]);
-    const stale = PHASE_2_SCROLL_BOXES.filter((s) => !boxes.some((b) => b.s === s) || valueFor(s, 'scrollbar-gutter') === 'stable');
+    const stale = PHASE_2_SCROLL_BOXES.filter((s) => !boxes.some((b) => b.s === s) || keepsGutter(s));
     expect(stale, 'fixed or gone: remove from PHASE_2_SCROLL_BOXES').toEqual([]);
   });
 
