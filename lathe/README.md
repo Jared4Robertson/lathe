@@ -45,7 +45,7 @@ The engine turns the product's spec records into a checked database. It:
 4. Checks each test's `run_by` file and each component's `file`: does it exist, and does a test's file mention the test's ID.
 5. Loads all of this into an in-memory DuckDB database, runs every check in `lathe/checks/` (including checks that the meta-model itself is consistent) and then the product's own checks, and computes coverage per domain: how many requirements and domain rules are designed (a component satisfies them), built (that component's file exists) and proved (a test proves them).
 
-It returns a `Workspace` (see [src/types.ts](src/types.ts)): kinds, relations, records, links, problems and coverage. Nothing is written to disk. The files are the source of truth, and the database is rebuilt on every load.
+It returns a `Workspace` (see [src/types.ts](src/types.ts)): kinds, relations, records, links, problems and coverage. Each entity record also carries its fields, read from the Fields table in its body (`entityFields`, FORMAT.md section 17), for the app's ERDs. Nothing is written to disk. The files are the source of truth, and the database is rebuilt on every load.
 
 ```ts
 import { loadWorkspace } from '@jaredrob/lathe';
@@ -82,6 +82,8 @@ The fixture workspaces in `test/fixtures/` are small: `good` passes every check,
 | `fields` | `path`, `record`, `name`, `value`: every plain header field that is not `id`, `kind`, `title`, `parent` or `links` |
 | `links` | `path`, `source`, `relation`, `target` |
 | `file_facts` | `path`, `record`, `kind` (`test` or `component`), `file`, `file_exists`, `contains_id` (tests only) |
+| `entity_tables` | `path`, `record`, `heading` (the body has a `## Fields` heading), `columns` (the table's header cells, joined by `, `; NULL without a table), `columns_ok`: one row per entity (FORMAT.md section 17) |
+| `entity_fields` | `path`, `record`, `position` (from 1), `field`, `meaning`, `kind`, `example`: one row per row of an entity's Fields table whose columns are right |
 | `settings` | `name`, `value`: the product's settings from `lathe.config.json` that checks read, such as `structure.maxChildren` (always present, with its default when the config does not give it) |
 
 `path` is the record file's path relative to the root. It is unique, so use it to join a record to its own fields and links. IDs can be duplicated in a broken workspace. A missing `id`, `kind` or `title` is stored as an empty string, and a missing `parent` as NULL.
