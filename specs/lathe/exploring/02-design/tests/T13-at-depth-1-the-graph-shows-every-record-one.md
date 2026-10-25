@@ -1,11 +1,11 @@
 ---
 id: LA-EXP-T13
 kind: test
-title: Depth counts levels of the tree each way, stages and folders included; siblings and links are not added
+title: Depth counts levels of the tree below the focus, stages and folders included, with the parent kept
 parent: LA-EXP
 test_type: unit
 run_by: app/test/graph/model.test.ts
 links:
-  proves: [LA-EXP-UC03-R01]
+  proves: [LA-EXP-UC03-R01, LA-EXP-DR46]
 ---
-Centers on a requirement at depth 1, 2 and 3 and expects its use case, then the Capabilities folder, then Define above it, with the next level out as context, each node at its level; and an aggregate's folder above and rules below, with no sibling and no cross-link.
+Frames a requirement at depths 1 to 3 (the same picture: it has nothing below it), the Define stage at each depth (its folders, their records, their children), and an aggregate, and expects the parent kept, each node's distance and the node it was reached from, only parent lines, and no sibling or link.

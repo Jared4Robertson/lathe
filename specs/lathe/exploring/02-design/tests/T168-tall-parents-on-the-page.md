@@ -1,11 +1,11 @@
 ---
 id: LA-EXP-T168
 kind: test
-title: Tall parents on the page carry their height and content scale
+title: Tall parents carry their height and content scale, and every parent line is level
 parent: LA-EXP
 test_type: acceptance
 run_by: app/test/graph/GraphPage.test.tsx
 links:
-  proves: [LA-EXP-UC04-R08, LA-EXP-DR54]
+  proves: [LA-EXP-UC04-R08, LA-EXP-DR58]
 ---
-Opens a domain's graph at depth 2 and expects each parent's box to be as tall as its children's stack, a parent to set `--node-scale` above 1 while a leaf sets none, and every parent line between two drawn nodes to be level.
+Opens a domain's graph at depth 2 and expects the domain taller than its stages stacked with a content scale above 1, a leaf with no scale set, and every parent line drawn level.

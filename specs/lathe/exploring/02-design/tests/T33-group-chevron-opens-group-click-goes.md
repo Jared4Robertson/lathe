@@ -1,11 +1,11 @@
 ---
 id: LA-EXP-T33
 kind: test
-title: A group's chevron opens it in place and closes it again, open groups are remembered, and clicking the group goes to it
+title: A group's chevron points down while its members are drawn beside it and right when they are not; clicking a group, or Enter on it, goes to it
 parent: LA-EXP
 test_type: acceptance
 run_by: app/test/graph/GraphPage.test.tsx
 links:
   proves: [LA-EXP-UC04-R01, LA-EXP-UC04-R02]
 ---
-Renders a domain, expects folder-shaped folded groups with counts, clicks one's chevron and expects its members without an address change, walks to a member and back and expects it still open, clicks the chevron again to close it, then clicks the group and expects its address with the group at the center and no chevron.
+Opens a domain's graph and expects the open questions' group drawn as a folder with its count and a chevron that is a mark, not a button, pointing by whether its member is drawn; clicks the group and expects its address, the group the center and its chevron down; goes back and presses Enter on a stage and expects its address.

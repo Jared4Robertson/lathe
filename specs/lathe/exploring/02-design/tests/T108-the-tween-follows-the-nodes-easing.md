@@ -1,11 +1,11 @@
 ---
 id: LA-EXP-T108
 kind: test
-title: "The tween follows the nodes' easing: CSS's ease, read from the motion tokens"
+title: "The glide follows the shared easing: CSS's ease, read from the motion tokens"
 parent: LA-EXP
 test_type: unit
 run_by: app/test/graph/motion.test.tsx
 links:
-  proves: [LA-EXP-DR30]
+  proves: [LA-EXP-DR59, LA-PAT-APP-UX-R04]
 ---
-Expects the JS easing to match CSS's `ease` curve walked point by point, the tween's progress to follow it, and the `--motion-speed` and `--motion-ease` tokens to parse as the stylesheet writes them.
+Checks the easing curve against CSS's ease walked finely, a pan halfway through the time most of the way there, and the motion tokens parsed as the stylesheet writes them.

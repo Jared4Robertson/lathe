@@ -4,4 +4,4 @@ kind: domain_rule
 title: The same graph is always drawn the same way
 parent: LA-EXP-A4
 ---
-The same focus, depth, filters and mode MUST always give the same picture, and records in one column MUST keep their order when the graph re-centers, so walking the graph is predictable.
+The same specs MUST always give the same map, and the same focus, depth, filters and mode the same framed picture, so walking the graph is predictable: records in one column keep their order, and their places, whatever is in focus.

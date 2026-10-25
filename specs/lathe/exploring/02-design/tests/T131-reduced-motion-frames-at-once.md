@@ -1,11 +1,11 @@
 ---
 id: LA-EXP-T131
 kind: test
-title: Under reduced motion a re-center frames the new focus at once, and nothing fades
+title: Under reduced motion focusing frames the new focus at once
 parent: LA-EXP
 test_type: component
 run_by: app/test/graph/camera.test.tsx
 links:
-  proves: [LA-EXP-UC03-R09, LA-EXP-DR31, LA-EXP-DR40]
+  proves: [LA-EXP-UC03-R09, LA-EXP-DR31, LA-EXP-DR59]
 ---
-With the system asking for reduced motion, re-centers the graph and expects one viewport move with no duration and no record fading in or out.
+Asks for reduced motion, clicks a requirement in its use case's graph and expects one camera move, straight to the framed view.

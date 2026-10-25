@@ -1,11 +1,11 @@
 ---
 id: LA-EXP-T165
 kind: test
-title: "The icicle: a parent is as tall as its children stacked, each child beside it"
+title: A parent is as tall as its children stacked, starting at its top, each child beside it, nothing overlapping
 parent: LA-EXP
 test_type: unit
-run_by: app/test/graph/icicle.test.ts
+run_by: app/test/graph/map.test.ts
 links:
-  proves: [LA-EXP-DR53, LA-EXP-UC04-R08]
+  proves: [LA-EXP-DR57, LA-EXP-UC04-R08]
 ---
-Lays out a domain, a stage, a record and a crowded folder at depths 1 to 3, with Links off and on, and expects each parent with drawn children to be exactly as tall as their stack, gaps included, starting at its top edge, in tree order; leaves and chips one node high; at depth 1 the parent as tall as the center; the center's middle at the origin; no two boxes overlapping, records the Links switch brings included; one x and one width per column, columns a gap apart at their widths; a trace's columns all leaf-high; and the same layout every time.
+Builds the maps of three workspaces and expects every leaf one node high, every parent's children stacked from its top to its bottom a row gap apart, each child in the next level right of it, no two boxes in a level overlapping, and the tree the nav's.

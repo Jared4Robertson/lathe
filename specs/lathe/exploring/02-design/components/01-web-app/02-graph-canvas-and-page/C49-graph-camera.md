@@ -6,6 +6,6 @@ parent: LA-EXP-LAY03
 component_type: module
 file: app/src/graph/camera.ts
 links:
-  satisfies: [LA-EXP-UC03-R09, LA-EXP-DR39, LA-EXP-DR40]
+  satisfies: [LA-EXP-UC03-R09, LA-EXP-DR31, LA-EXP-DR59, LA-EXP-DR60, LA-PAT-APP-UX-R11]
 ---
-Re-centering moves the camera, not the picture. `anchorLayout` shifts a new layout so its focus keeps its place from the last picture; `fadeSets` says which records enter the picture and which leave; `frameFocus` gives the viewport that fits the whole picture, each box at its width and height in the icicle, with the focus as near the center as it allows. The graph page anchors each new layout, fades entering and leaving records, and glides the viewport there on the shared motion.
+The camera over the one map. `frameOnMap` frames a focus and the levels the depth shows below it, the parent kept in a strip at the left edge (`LA-EXP-DR59`); `frameMap` frames the whole map; `fitBoxes` frames a trace. `zoomPath` is the smooth zoom and pan between two views (van Wijk and Nuij's, as d3-zoom takes), and `glideDuration` its length on the shared motion. `drawnFor` is the level of detail (`LA-EXP-DR60`): the boxes in view and big enough, labeled or plain, the bars for children too small, within the drawing budget; `mergeDrawn` joins what a glide passes over, so it is drawn once as the glide starts.

@@ -8,4 +8,4 @@ run_by: app/stability/graph.spec.ts
 links:
   proves: [LA-PLT-UC09-R06, LA-PLT-DR19, LA-EXP-DR43, LA-PAT-APP-UX-R08]
 ---
-Re-centers twice at each depth, changes the depth, and goes from a domain's ERD to an aggregate's and an entity's and back, and expects the pane title, the graph header, the Model header and key and the canvas never to move or remount.
+Re-centers twice at each depth, changes the depth, and goes from a domain's ERD to an aggregate's and an entity's and back, and expects the pane title, the graph header, the Model header and key and the canvas never to move or remount; the boxes the camera brings into view are drawn inside the canvas.
