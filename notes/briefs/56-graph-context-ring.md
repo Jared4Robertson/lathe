@@ -5,10 +5,26 @@ Read [00-common-rules.md](00-common-rules.md) first. Base branch: `main`, after 
 ## Goal
 Depth 1 shows only the focus, its parent (or folder) and its children (or their folders). The rule is `LA-BRW-UC20-R01`, and `neighborhood` in `app/src/graph/model.ts` implements it. Jared: "maybe we show them but fade them and cut them off in terms of focus instead?" He wants a sense of where the record sits without the noise.
 
-## First: depth means tree levels (Jared, after trying depth 2 and 3)
+## First: the graph's tree is the nav's tree (Jared)
+A domain's children in the graph are its stages, not kind groups: **Domain → Define and Design → their folders → records**. Use the one folder model the nav, domain page and group pages read (`app/src/specs/folders.ts`, from `Workspace.sections`):
+- Define holds Domain model (aggregates, with their entities, events and rules beneath) and Capabilities (capabilities, then use cases outside any).
+- Design holds Interaction design, Technical specification (layers, then components) and Test plan (the proof groups: acceptance by capability and use case, domain rule, pattern, interaction and engineering).
+- Open questions and other kinds with no folder sit as the nav places them.
+- The one-kind rule holds: a folder mixing kinds (Interaction design: flows, views, endpoints) splits by kind; a folder of one kind doesn't. Empty stages and folders aren't drawn.
+- Stage and folder nodes are group nodes with addresses (`/<domain>/define`, `/<domain>/design/technical-specification`, in brief 55's bare-ID form if it has landed, otherwise the current `/records/...` form). They are labeled as in the nav, open and fold like groups, and are drawn with the folder style.
+- Products keep their children as the nav shows them: Shared, then domains, then open questions and fitness.
+
+**Folders are levels (Jared):** depth counts every level of this tree, stages and folders included, like a file explorer:
+- from a domain, depth 1 shows Define and Design, depth 2 their folders, and depth 3 the records in them;
+- from a use case, depth 1 is its capability, depth 2 the Capabilities folder, and depth 3 Define;
+- the context ring is the next level out.
+
+This replaces "folders come along free" below. Where the text below says folders are free, folders now count.
+
+## Then: depth means tree levels (Jared, after trying depth 2 and 3)
 Today depth 1 is the tree (parent and children), but depths 2 and 3 are the old link-hop depths (`neighborhood`, `limit = 2 * (depth - 1)`), so depth 2 does not show grandparents and grandchildren. Jared expects tree levels. Redefine it:
 - **Depth N shows N levels of the tree each way, in focus:** ancestors up to N levels and descendants down to N levels. Depth 1 is parent and children; depth 2 adds grandparents and grandchildren; depth 3 one more each way.
-  - **Folders (groups) come along free** and never use up a level: a domain's grandchildren at depth 2 are its use cases through the Capabilities folder (or directly, by the one-kind rule), not the folder.
+  - **Folders and stages are levels** (see above). A capability's use cases are its children directly, by the one-kind rule.
   - **Siblings are not added** by depth. They come from a parent's folder when it is opened, as today.
   - Depth stays 1 to 3, with `+` and `-` as now.
 - **Cross-links get their own switch:** a "Links" toggle beside Depth (an `aria-pressed` button with a tooltip and a shortcut `l`), off by default and remembered per tab.
