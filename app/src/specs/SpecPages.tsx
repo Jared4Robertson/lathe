@@ -195,7 +195,14 @@ export function DomainWiki({ index, id }: { index: SpecIndex; id: string }) {
   const staged = new Set([...DOMAIN_STAGES.flatMap((s) => s.kinds), 'question']);
   const otherKinds = [...new Set(direct.map((r) => r.kind))].filter((k) => !staged.has(k));
   // Records of the domain that are neither its children nor theirs (deeper, or misplaced).
-  const shown = new Set([...direct.map((r) => r.id), ...direct.flatMap((r) => (index.children.get(r.id) ?? []).map((c) => c.id))]);
+  // Every descendant of a direct child is reachable by unfolding it (capability, use case, requirement…).
+  const shown = new Set<string>();
+  const walk = (r: SpecRecord) => {
+    if (shown.has(r.id)) return;
+    shown.add(r.id);
+    for (const c of index.children.get(r.id) ?? []) walk(c);
+  };
+  direct.forEach(walk);
   const others = recordsIn(index, (r) => r.domain === id && r.id !== id && !shown.has(r.id) && matches(r));
   const questions = ofKind('question');
 
