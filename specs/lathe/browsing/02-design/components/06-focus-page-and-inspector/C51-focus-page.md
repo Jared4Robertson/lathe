@@ -10,4 +10,4 @@ links:
   implements: [LA-BRW-V04, LA-BRW-V20]
   depends_on: [LA-BRW-C50, LA-BRW-C52, LA-BRW-C41, LA-BRW-C33, LA-BRW-C61]
 ---
-The page for one record, group, product or domain: its header with the view toggle and the inspector toggle, the wiki pane (record content, a product or domain overview, or a group page), the graph pane (the hostable graph view, its settings kept for the session), the split divider, full screen for either pane, and the view commands.
+The page for one record, group, product or domain: its panes, each a panel with one title bar (view tabs, Open beside or Close, full screen, and on the rightmost pane the inspector toggle), the page title at the top of the wiki pane (or a lone graph pane), the wiki pane (record content, a product or domain overview, or a group page), the graph pane (the hostable graph view, its settings kept for the session), the split divider, full screen for either pane, and the view commands.

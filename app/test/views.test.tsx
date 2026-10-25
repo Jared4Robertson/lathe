@@ -16,7 +16,8 @@ import { testWorkspace } from './graph/workspace';
 const served = () => ({ workspace: testWorkspace() });
 const node = (id: string) => document.querySelector<HTMLElement>(`.react-flow__node[data-id="${id}"]`);
 const title = () => screen.getByRole('heading', { level: 1 }).textContent;
-const viewButton = (name: string) => within(screen.getByRole('group', { name: 'View' })).getByRole('button', { name: new RegExp(name) });
+/** A view's tab in a pane's title bar (in a split, the tab of the pane that shows it). */
+const viewTab = (name: string) => screen.getByRole('tab', { name: new RegExp(`^${name}`) });
 const inspector = () => screen.getByRole('complementary', { name: 'Inspector' });
 const graphShown = () => waitFor(() => expect(document.querySelectorAll('.react-flow__node').length).toBeGreaterThan(0));
 
@@ -53,28 +54,30 @@ describe('one address, three views', () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'Use cases (1)' })).toBeInTheDocument();
   });
 
-  it('LA-BRW-T121 The header toggles Wiki, Graph and Split; the choice is remembered and a link with ?view opens as it was seen', async () => {
+  it('LA-BRW-T121 A pane\'s tabs pick Wiki or Graph and Open beside splits; the choice is remembered and a link with ?view opens as it was seen', async () => {
     await openApp('/records/P-D-UC01', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
-    expect(viewButton('Wiki')).toHaveAttribute('aria-pressed', 'true');
+    expect(viewTab('Wiki')).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByRole('region', { name: 'Wiki pane' })).toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Graph pane' })).toBeNull();
 
-    fireEvent.click(viewButton('Graph'));
+    fireEvent.click(viewTab('Graph'));
     expect(window.location.search).toBe('?view=graph');
-    expect(viewButton('Graph')).toHaveAttribute('aria-pressed', 'true');
+    expect(viewTab('Graph')).toHaveAttribute('aria-selected', 'true');
     expect(screen.queryByRole('region', { name: 'Wiki pane' })).toBeNull();
     await graphShown();
 
     // Remembered: another record opens in the Graph view.
     await openApp('/records/P-D-V01', served());
     await screen.findByRole('heading', { level: 1, name: 'Thing page' });
-    expect(viewButton('Graph')).toHaveAttribute('aria-pressed', 'true');
+    expect(viewTab('Graph')).toHaveAttribute('aria-selected', 'true');
 
     // A link's view wins, and becomes the remembered one.
     await openApp('/records/P-D-V01?view=split', served());
     await screen.findByRole('heading', { level: 1, name: 'Thing page' });
-    expect(viewButton('Split')).toHaveAttribute('aria-pressed', 'true');
+    // Split: each pane keeps its own tab, with a button to close it.
+    expect(screen.getByRole('button', { name: 'Close the wiki pane' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Close the graph pane' })).toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Wiki pane' })).toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Graph pane' })).toBeInTheDocument();
     expect(window.localStorage.getItem('lathe:view')).toBe('"split"');
@@ -130,8 +133,8 @@ describe('one address, three views', () => {
     await waitFor(() => expect(node('P-D-UC01-R01')!.querySelector('.graph-node')!.className).toContain('is-focus'));
     // The depth set earlier is kept, through page moves and a trip to the Wiki view.
     expect(screen.getByRole('button', { name: '2' })).toHaveAttribute('aria-pressed', 'true');
-    fireEvent.click(viewButton('Wiki'));
-    fireEvent.click(viewButton('Graph'));
+    fireEvent.click(screen.getByRole('button', { name: 'Close the graph pane' }));
+    fireEvent.click(viewTab('Graph'));
     await graphShown();
     expect(screen.getByRole('button', { name: '2' })).toHaveAttribute('aria-pressed', 'true');
   });
@@ -178,19 +181,19 @@ describe('one address, three views', () => {
   it('LA-BRW-T135 Switching views by keyboard keeps focus, and the toggles show a focus ring', async () => {
     await openApp('/records/P-D-UC01?view=split', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
-    // Focus inside the graph pane, then switch to Wiki with the keyboard: focus moves to the toggle, not lost.
+    // Focus inside the graph pane, then switch to Wiki with the keyboard: focus moves to the Wiki tab, not lost.
     const fullGraph = screen.getByRole('button', { name: 'Full screen: Graph' });
     fullGraph.focus();
     fireEvent.keyDown(fullGraph, { key: '1', code: 'Digit1', ctrlKey: true });
     expect(screen.queryByRole('region', { name: 'Graph pane' })).toBeNull();
-    await waitFor(() => expect(viewButton('Wiki')).toHaveFocus());
+    await waitFor(() => expect(viewTab('Wiki')).toHaveFocus());
     // Each toggle names its shortcut.
     fireEvent.keyDown(document.body, { key: 'Tab', code: 'Tab' });
-    fireEvent.focus(viewButton('Graph'));
+    fireEvent.focus(viewTab('Graph'));
     expect(screen.getByRole('tooltip')).toHaveTextContent('Graph view Ctrl+2');
-    expect(viewButton('Graph')).toHaveAttribute('aria-keyshortcuts', 'Control+2');
+    expect(viewTab('Graph')).toHaveAttribute('aria-keyshortcuts', 'Control+2');
     const css = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
-    expect(css).toMatch(/\.view-toggle button[^{]*:focus-visible|:is\([^)]*\.view-toggle button[^)]*\):focus-visible/);
+    expect(css).toMatch(/\.pane-tab[^{]*:focus-visible|:is\([^)]*\.pane-tab[^)]*\):focus-visible/);
   });
 });
 
