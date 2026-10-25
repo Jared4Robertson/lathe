@@ -12,9 +12,9 @@ describe('LA-PAT-APP-UX-R09 Actions look like actions', () => {
     render(
       <>
         <Button onClick={onClick}>Expand all</Button>
-        <Button variant="primary" type="submit">Create diagram</Button>
+        <Button variant="primary" type="submit">Open</Button>
         <Button variant="icon" label="Close the pane">×</Button>
-        <Button icon="plus">New diagram</Button>
+        <Button icon="plus">Add a filter</Button>
         <Button danger>Delete</Button>
         <Button href="/DM">Open the product overview</Button>
       </>,
@@ -26,14 +26,14 @@ describe('LA-PAT-APP-UX-R09 Actions look like actions', () => {
     ghost.click();
     expect(onClick).toHaveBeenCalledTimes(1);
 
-    const primary = screen.getByRole('button', { name: 'Create diagram' });
+    const primary = screen.getByRole('button', { name: 'Open' });
     expect(primary.getAttribute('type')).toBe('submit');
     expect(primary.className).toBe('button button-primary');
 
     const icon = screen.getByRole('button', { name: 'Close the pane' });
     expect(icon.className).toBe('icon-button');
 
-    expect(screen.getByRole('button', { name: 'New diagram' }).querySelector('svg.icon')).not.toBeNull();
+    expect(screen.getByRole('button', { name: 'Add a filter' }).querySelector('svg.icon')).not.toBeNull();
     expect(screen.getByRole('button', { name: 'Delete' }).className).toBe('button button-ghost button-danger');
 
     const link = screen.getByRole('link', { name: 'Open the product overview' });

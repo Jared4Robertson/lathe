@@ -5,8 +5,8 @@ import type { SpecIndex, SpecRoute } from '../specs/data';
 // `/LA-BRW`). A group is at its place in the graph's tree (a stage or folder, `/LA-BRW/define/use-cases`, or a record's
 // group of one kind of child, `/<parent-id>/<kind>`), and a group within one adds its parts
 // (`/DM-SHOP/design/test-plan/acceptance/…`).
-// App pages are lowercase words (`/`, `/checks`, `/format`, `/settings/appearance`,
-// `/diagrams/<slug>`), so they never clash with an ID, which starts with a capital. Every address
+// App pages are lowercase words (`/`, `/checks`, `/format`, `/settings/appearance`),
+// so they never clash with an ID, which starts with a capital. Every address
 // of a record or group is made here, by addressOf. The open views (wiki, graph, model, one pane
 // each) are a query parameter, `?view=wiki,graph`, so a shared link opens as it was seen.
 
@@ -18,7 +18,7 @@ export const isRecordId = (part: string) => RECORD_ID.test(part);
 export const HOME_PATH = '/';
 
 /** The first word of every other app page: lowercase, so no ID can take its address. */
-export const APP_PAGES: readonly string[] = ['checks', 'format', 'settings', 'diagrams'];
+export const APP_PAGES: readonly string[] = ['checks', 'format', 'settings'];
 
 /**
  * The address of a record (its bare ID) or of a group (its parent's ID, its kind and the parts of a

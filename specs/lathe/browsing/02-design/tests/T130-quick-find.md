@@ -8,4 +8,4 @@ run_by: app/test/nav.test.tsx
 links:
   proves: [LA-BRW-UC50-R10]
 ---
-Ranks records, domains and diagrams by ID and title, then types in quick find, moves down with the arrow key and opens the second result with Enter.
+Ranks records and domains by ID and title, then types in quick find, moves down with the arrow key and opens the second result with Enter.

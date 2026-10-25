@@ -118,14 +118,14 @@ export type SpecRoute =
   | { page: 'specs' }
   | { page: 'missing' };
 
-/** The app pages the spec routes leave to the shell: Diagrams and Settings. */
-const SHELL_PAGES = new Set(['diagrams', 'settings']);
+/** The app pages the spec routes leave to the shell: Settings. */
+const SHELL_PAGES = new Set(['settings']);
 
 /**
  * Parses a path: `/` (the products), an app page, a record's bare ID or a group's parent ID and
  * kind. Any other address is missing. With the index, a product's and a domain's ID is their
  * overview; without it (while the specs load) any ID reads as a record. Null for the shell's own
- * pages (Diagrams, Settings).
+ * pages (Settings).
  */
 export function parseSpecRoute(pathname: string, index?: SpecIndex | null): SpecRoute | null {
   const parts = pathname.split('/').filter(Boolean).map(decodeURIComponent);

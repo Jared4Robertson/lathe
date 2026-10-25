@@ -1,5 +1,0 @@
-name,kind,context,status,definition
-Person,aggregate,people_and_tools,decided,Linked.
-Purpose,value_object,people_and_tools,decided,Linked.
-Loner,term,people_and_tools,decided,Linked to nothing.
-Aside,term,making_software,decided,Other contexts may stand alone.

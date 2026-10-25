@@ -8,4 +8,4 @@ run_by: app/test/server.test.ts
 links:
   proves: [LA-BRW-UC05-R01]
 ---
-Runs the dev API plugin against a stand-in Vite server and checks which event each changed file sends: spec records, checks and meta-model send `spec:changed`, diagrams send `model:changed`, other files nothing.
+Runs the dev API plugin against a stand-in Vite server and checks which event each changed file sends: spec records, checks and meta-model send `spec:changed`, other files nothing.

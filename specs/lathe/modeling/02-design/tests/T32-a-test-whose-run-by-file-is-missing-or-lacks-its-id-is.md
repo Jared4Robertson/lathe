@@ -4,7 +4,7 @@ kind: test
 title: A test whose run_by file is missing or lacks its ID is an error; a missing component file is only a warning
 parent: LA-MOD
 test_type: unit
-run_by: lathe/test/diagrams.test.ts
+run_by: lathe/test/records.test.ts
 links:
   proves: [LA-MOD-DR12]
 ---

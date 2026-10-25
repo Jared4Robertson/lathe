@@ -4,7 +4,7 @@ kind: test
 title: A missing, unknown, disallowed or looping parent is an error, as is a product with a parent
 parent: LA-MOD
 test_type: unit
-run_by: lathe/test/diagrams.test.ts
+run_by: lathe/test/records.test.ts
 links:
   proves: [LA-MOD-DR08]
 ---

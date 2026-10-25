@@ -2,7 +2,7 @@
 id: LA-MOD-F120
 kind: flow
 title: Split a product into domains and check their names
-parent: LA-MOD-CAP01
+parent: LA-MOD
 links:
   fulfills: [LA-MOD-UC130-R01, LA-MOD-UC130-R02, LA-CHK-DR350]
   carries_out: [LA-MOD-UC130]

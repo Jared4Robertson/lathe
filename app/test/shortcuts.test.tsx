@@ -144,7 +144,7 @@ describe('keyboard shortcuts', () => {
     expect(within(screen.getByRole('dialog')).getAllByRole('option').map((o) => o.textContent)).toEqual(['Expand all rows on this page', 'Collapse all rows on this page']);
   });
 
-  it('LA-BRW-T149 g then c, f, d or h jumps to Checks, the format, Diagrams or home, with a hint while it waits', async () => {
+  it('LA-BRW-T149 g then c, f or h jumps to Checks, the format or home, with a hint while it waits', async () => {
     await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     press(document.body, 'g', 'KeyG');

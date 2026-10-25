@@ -2,7 +2,7 @@
 id: LA-MOD-UC03
 kind: use_case
 title: Write a spec record
-parent: LA-MOD-CAP01
+parent: LA-MOD
 actor: Agent, Owner
 links:
   applies: [LA-MOD-DR06, LA-MOD-DR07, LA-MOD-DR08, LA-MOD-DR09, LA-MOD-DR10, LA-MOD-DR11, LA-MOD-DR12]
