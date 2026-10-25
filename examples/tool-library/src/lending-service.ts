@@ -1,5 +1,5 @@
 // Lends tools to members and takes them back.
-// Spec: TL-LEND-C05 (specs/tool-library/lending/02-design/components/C05-lending-service.md)
+// Spec: TL-LEND-C05 (specs/tool-library/lending/02-design/components/02-services/C05-lending-service.md)
 import {
   LendingError,
   DEFAULT_TIME_ZONE,

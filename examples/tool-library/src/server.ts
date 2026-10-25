@@ -1,5 +1,5 @@
 // Starts the Tool Library API.
-// Spec: TL-LEND-C07 (specs/tool-library/lending/02-design/components/C07-server.md)
+// Spec: TL-LEND-C07 (specs/tool-library/lending/02-design/components/03-router-and-server/C07-server.md)
 // Usage: node src/server.ts
 //   PORT defaults to 5310, DB to an in-memory database, TIME_ZONE to America/New_York.
 import { createServer } from 'node:http';

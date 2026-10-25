@@ -1,5 +1,5 @@
 // The HTTP API: maps routes to services and service errors to HTTP responses.
-// Spec: TL-LEND-C06 (specs/tool-library/lending/02-design/components/C06-router.md)
+// Spec: TL-LEND-C06 (specs/tool-library/lending/02-design/components/03-router-and-server/C06-router.md)
 // Every error response is JSON: { "error": "<code>", "message": "<sentence>" }.
 // Each route's statuses and bodies are its endpoint's interaction requirements (TL-LEND-E0n-R0n).
 // TL-PAT-LIBRARIAN-ACTION-R02: each librarian action answers with the record as the store saved it
