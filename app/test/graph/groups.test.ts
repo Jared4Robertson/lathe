@@ -37,7 +37,7 @@ describe('graph groups', () => {
     expect(isGrouped(index, 'P')).toBe(false);
     // Six of one kind is more than a handful.
     expect(isGrouped(grouped, 'P-D-UC02')).toBe(true);
-    expect(groupLabel(grouped, 'P-D-UC02/requirement')).toBe('Requirements (6)');
+    expect(groupLabel(grouped, 'P-D-UC02/requirement')).toBe('Use-case requirements (6)');
     expect(groupLabel(grouped, 'P-D/use_case')).toBe('Use cases (2)');
     expect(groupLabel(index, 'P-D/component')).toBe('Components (2)');
     expect(['question', 'domain_rule', 'domain'].map((k) => pluralLabel(index, k))).toEqual(['Open questions', 'Domain rules', 'Domains']);

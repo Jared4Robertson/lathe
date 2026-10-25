@@ -33,13 +33,13 @@ const obligation = (kind: string, label: string, total: number, designed: number
 const coverage: Record<string, ObligationCoverage[]> = {
   'DM-SHOP': [
     obligation('domain_rule', 'Domain rule', 1, 1, 1, 1, 0),
-    obligation('requirement', 'Requirement', 2, 2, 1, 1, 0),
+    obligation('requirement', 'Use-case requirement', 2, 2, 1, 1, 0),
     obligation('interaction_requirement', 'Interaction requirement', 3, 1, 1, 0, 1),
     obligation('security_control', 'Security control', 1, 0, 0, 0, 0),
   ],
   'DM-PAY': [
     obligation('domain_rule', 'Domain rule', 0, 0, 0, 0, 0),
-    obligation('requirement', 'Requirement', 1, 0, 0, 0, 0),
+    obligation('requirement', 'Use-case requirement', 1, 0, 0, 0, 0),
     obligation('interaction_requirement', 'Interaction requirement', 0, 0, 0, 0, 0),
     obligation('security_control', 'Security control', 0, 0, 0, 0, 0),
   ],

@@ -58,7 +58,7 @@ export interface ObligationGroup {
   plannedAny: number | null;
 }
 
-/** "Requirement" -> "Requirements", "Domain rule" -> "Domain rules". */
+/** "Use-case requirement" -> "Use-case requirements", "Domain rule" -> "Domain rules". */
 export const pluralLabel = (label: string) => (/s$/i.test(label) ? label : `${label}s`);
 
 /**
@@ -80,7 +80,7 @@ export function obligationGroups(coverage: Coverage): ObligationGroup[] {
     }));
   }
   return [
-    { kind: 'requirement', label: 'Requirement', total: coverage.requirements, designed: coverage.requirements_satisfied, built: measured(coverage.requirements_built), proved: coverage.requirements_proved, planned: null, plannedAny: null },
+    { kind: 'requirement', label: 'Use-case requirement', total: coverage.requirements, designed: coverage.requirements_satisfied, built: measured(coverage.requirements_built), proved: coverage.requirements_proved, planned: null, plannedAny: null },
     { kind: 'domain_rule', label: 'Domain rule', total: coverage.rules, designed: coverage.rules_satisfied, built: measured(coverage.rules_built), proved: coverage.rules_proved, planned: null, plannedAny: null },
   ];
 }
@@ -260,7 +260,7 @@ export function EvidencePanel({ index, productId }: { index: SpecIndex; productI
   const testsText = tests === null || TEST_STATES.every((s) => tests[s] === null)
     ? 'not yet measured'
     : TEST_STATES.map((s) => (tests[s] === null ? `${s} not yet measured` : `${tests[s]} ${s}`)).join(', ');
-  const noun = byKind ? 'obligations' : 'requirements and rules';
+  const noun = byKind ? 'obligations' : 'use-case requirements and rules';
   const questions = index.workspace.records.filter((r) => r.kind === 'question' && r.product === productId).length;
   const problems = index.workspace.problems.filter((p) => p.record && index.byId.get(p.record)?.product === productId);
   const errors = problems.filter((p) => p.severity === 'error').length;
