@@ -21,11 +21,15 @@ The app and `lathe check` call a `requirement` record a **UC requirement** (use 
 | Kind | Parent | ID | Holds |
 | --- | --- | --- | --- |
 | `capability` | the domain | `<P>-<D>-CAP<nn>` | Required field `order`: a whole number, its place in the domain, unique within the domain. Body: what the capability covers, in a sentence or two. |
-| `use_case` | the domain, or one of its capabilities | `<P>-<D>-UC<nn>` | Required field `actor`. Body: the goal in one sentence, the main steps as a numbered list, then what happens when a step fails. `applies` the domain rules it relies on; `follows` the patterns it shares, with one header field per setting. |
+| `use_case` | the domain, or one of its capabilities | `<P>-<D>-UC<nn>` | Required field `actor`: the role that does it (see Roles). Body: the goal in one sentence, the main steps as a numbered list, then what happens when a step fails. `applies` the domain rules it relies on; `follows` the patterns it shares, with one header field per setting. |
 | `requirement` | the use case | `<use case>-R<nn>` | Title: the rule in a few words. Body: the rule in full with MUST / MUST NOT / SHOULD / MAY. |
 | `pattern` | the product | `<P>-PAT-<NAME>` | Optional field `settings`: setting names separated by spaces, lower case with underscores; leave it out when every use case applies the pattern the same way. Body: purpose, how a use case or domain uses it, a Settings table if it has settings (setting, what the use case decides), and a list of its rules. |
 
 Keep each use case's requirements in a folder next to it: `use-cases/UC03-borrow-a-tool.md` and `use-cases/UC03-borrow-a-tool/R01-due-date-shown.md`. Keep capabilities in `01-define/capabilities/` and patterns in a `patterns/` folder beside the product's domains.
+
+## Roles
+
+A use case's `actor` names a role, never a person: Member or Librarian in the Tool Library; Owner, Reader or Agent in Lathe's own specs. Several roles are separated by commas (`actor: Owner, Agent`). A product may list its roles in its header as `actors`, separated by spaces (`actors: Librarian Member`); use one of those, and if a new role is needed, add it there and say in the product's body what the role does. Write the same roles in prose: "the librarian", "the owner".
 
 ## Capabilities
 
@@ -136,5 +140,5 @@ links:
 - A requirement says what, not how. Screens, routes and code belong to the design (see `design-the-domain`).
 - A rule that only makes sense at one screen, endpoint or flow is an **interaction requirement** under that view, endpoint or flow, not a use case requirement. Examples: a field's type and limits, the status and error code of a refusal, what a success response returns, which button is disabled. Keep the use case requirement for what the actor must be able to do or must be refused ("an unavailable tool is refused with the reason"), and let the interaction requirement say how that shows at the endpoint ("POST /loans answers 409 `tool_on_loan`") and `fulfill` it. Test: if the rule names a route, a status code, a field limit or a screen element, it belongs in the design.
 - Every use case needs at least one requirement; one with none is a warning.
-- Something undecided is an open `question` with an `owner`, linked `about` the use case, never "TBD" in a requirement.
+- Something undecided is an open `question` with an `owner` (a role, such as Owner), linked `about` the use case, never "TBD" in a requirement.
 - Finish with the `check-and-fix` skill.
