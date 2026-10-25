@@ -168,7 +168,7 @@ describe('folders like Client', () => {
     expect(folderPath(index, 'question')).toEqual([]);
   });
 
-  it('LA-BRW-T275 What is folded is remembered for the session, and an older engine with no sections still lists every record', async () => {
+  it('LA-BRW-T275 What is folded is remembered for the session, and every record is listed without sections', async () => {
     await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     const user = userEvent.setup();
@@ -180,8 +180,8 @@ describe('folders like Client', () => {
     expect(window.localStorage.getItem('lathe:nav-folders')).toBeNull();
 
     // Without sections, each kind is a folder of its own under its stage.
-    const w = workspace() as Partial<Workspace> & Workspace;
-    delete (w as Partial<Workspace>).sections;
+    const w = workspace();
+    w.sections = [];
     const index = indexWorkspace(w);
     const { stages } = domainFolders(index, 'DM-SHOP');
     expect(stages.map((s) => [s.label, s.folders.map((f) => f.label)])).toEqual([

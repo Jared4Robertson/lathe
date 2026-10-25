@@ -6,6 +6,8 @@ import { loadWorkspace, type Problem, type Workspace } from '../src/index.ts';
 const fixture = (name: string) => path.join(path.dirname(fileURLToPath(import.meta.url)), 'fixtures', name);
 const ofCheck = (ws: Workspace, check: string) => ws.problems.filter((p) => p.check === check);
 const records = (problems: Problem[]) => problems.map((p) => p.record).sort();
+/** One obligation kind's line in a domain's coverage: total, designed, built and proved. */
+const line = (kind: string, total: number, designed: number, built: number, proved: number) => expect.objectContaining({ kind, total, designed, built, proved });
 
 const FIXTURES = ['good', 'broken-links', 'broken-tests', 'broken-parse', 'broken-structure', 'configured', 'unfinished', 'fitness'];
 const WARNINGS = ['unsatisfied', 'unproved', 'use-case-without-requirements', 'component-file-missing', 'rule-not-applied', 'use-case-without-flow', 'interaction-requirement-fulfills-nothing', 'test-type-mismatch'];
@@ -54,28 +56,20 @@ describe('Lathe-cited checks', () => {
     expect(workspaces.good.coverage).toMatchObject([
       {
         domain: 'EX-NOTE',
-        requirements: 1,
-        requirements_satisfied: 1,
-        requirements_built: 1,
-        requirements_proved: 1,
-        rules: 1,
-        rules_satisfied: 1,
-        rules_built: 1,
-        rules_proved: 1,
+        obligations: expect.arrayContaining([
+          line('requirement', 1, 1, 1, 1),
+          line('domain_rule', 1, 1, 1, 1),
+        ]),
         gaps: [],
       },
     ]);
     expect(workspaces['broken-links'].coverage).toMatchObject([
       {
         domain: 'BX-D',
-        requirements: 1,
-        requirements_satisfied: 0,
-        requirements_built: 0,
-        requirements_proved: 0,
-        rules: 0,
-        rules_satisfied: 0,
-        rules_built: 0,
-        rules_proved: 0,
+        obligations: expect.arrayContaining([
+          line('requirement', 1, 0, 0, 0),
+          line('domain_rule', 0, 0, 0, 0),
+        ]),
         gaps: [
           { id: 'BX-D-UC01-R01', kind: 'requirement', missing: 'satisfies' },
           { id: 'BX-D-UC01-R01', kind: 'requirement', missing: 'proves' },
@@ -118,14 +112,10 @@ describe('coverage, meta-model and fitness', () => {
     expect(workspaces.unfinished.coverage).toMatchObject([
       {
         domain: 'UX-D',
-        requirements: 3,
-        requirements_satisfied: 2,
-        requirements_built: 1,
-        requirements_proved: 1,
-        rules: 1,
-        rules_satisfied: 1,
-        rules_built: 1,
-        rules_proved: 0,
+        obligations: expect.arrayContaining([
+          line('requirement', 3, 2, 1, 1),
+          line('domain_rule', 1, 1, 1, 0),
+        ]),
         gaps: [
           { id: 'UX-D-DR01', kind: 'domain_rule', missing: 'proves' },
           { id: 'UX-D-UC01-R02', kind: 'requirement', missing: 'proves' },
@@ -137,8 +127,10 @@ describe('coverage, meta-model and fitness', () => {
     // Built never exceeds designed.
     for (const ws of Object.values(workspaces)) {
       for (const c of ws.coverage) {
-        expect(c.requirements_built).toBeLessThanOrEqual(c.requirements_satisfied);
-        expect(c.rules_built).toBeLessThanOrEqual(c.rules_satisfied);
+        for (const o of c.obligations) {
+          expect(o.built).toBeLessThanOrEqual(o.designed);
+          expect(o.proved + o.planned).toBeLessThanOrEqual(o.total);
+        }
       }
     }
   });

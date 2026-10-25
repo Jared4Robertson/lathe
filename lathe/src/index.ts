@@ -578,8 +578,7 @@ async function runCheckFiles(instance: DuckDBInstance, connection: DuckDBConnect
   return results.flat();
 }
 
-// Coverage per domain: one entry per obligation kind in meta-model order, with the older
-// requirements_* and rules_* fields filled from the requirement and domain_rule entries.
+// Coverage per domain: one entry per obligation kind in meta-model order, and the domain's tests by state.
 // The four queries only read, so they run side by side, each on its own connection.
 async function computeCoverage(instance: DuckDBInstance): Promise<Coverage[]> {
   const on = async <T,>(sql: string) => {
@@ -594,19 +593,8 @@ async function computeCoverage(instance: DuckDBInstance): Promise<Coverage[]> {
   ]);
   return domains.map(({ id: domain }) => {
     const obligations = rows.filter((r) => r.domain === domain).map(({ domain: _domain, ...o }) => o);
-    const of = (kind: string) => obligations.find((o) => o.kind === kind);
-    const req = of('requirement');
-    const rule = of('domain_rule');
     return {
       domain,
-      requirements: req?.total ?? 0,
-      requirements_satisfied: req?.designed ?? 0,
-      requirements_built: req?.built ?? 0,
-      requirements_proved: req?.proved ?? 0,
-      rules: rule?.total ?? 0,
-      rules_satisfied: rule?.designed ?? 0,
-      rules_built: rule?.built ?? 0,
-      rules_proved: rule?.proved ?? 0,
       obligations,
       tests: (({ automated, manual, planned }) => ({ automated, manual, planned }))(tests.find((t) => t.domain === domain) ?? { automated: 0, manual: 0, planned: 0 }),
       gaps: gaps.filter((g) => g.domain === domain).map(({ id, kind, missing }) => ({ id, kind, missing })),

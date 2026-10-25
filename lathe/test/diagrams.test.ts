@@ -370,7 +370,14 @@ describe('spec records', () => {
     const ws = workspaces['records-good'];
     expect(ws.records.find((r) => r.id === 'MX-D-C01')!.fields.file).toBe('code/mark_service.txt');
     expect(ws.records.find((r) => r.id === 'MX-D-T01')!.fields.run_by).toBe('code/mark_test.txt');
-    expect(ws.coverage).toEqual([expect.objectContaining({ domain: 'MX-D', requirements_proved: 1, rules_proved: 1, gaps: [] })]);
+    expect(ws.coverage).toEqual([expect.objectContaining({
+      domain: 'MX-D',
+      obligations: expect.arrayContaining([
+        expect.objectContaining({ kind: 'requirement', proved: 1 }),
+        expect.objectContaining({ kind: 'domain_rule', proved: 1 }),
+      ]),
+      gaps: [],
+    })]);
   });
 
   it('LA-MOD-T25 Moving or renaming record files does not change what they mean, and README.md is ignored', async () => {

@@ -22,27 +22,31 @@ describe('product page', () => {
     expect(within(shop).getByRole('img', { name: 'proved: 0 of 1' })).toBeInTheDocument();
     // A full bar is drawn full; a partial one is drawn to its share.
     const fills = [...shop.querySelectorAll<HTMLElement>('.bar-fill')].map((f) => [f.style.width, f.classList.contains('full')]);
-    expect(fills).toEqual([['100%', true], ['50%', false], ['50%', false], ['100%', true], ['100%', true], ['0%', false]]);
+    expect(fills).toEqual([
+      ['100%', true], ['100%', true], ['0%', false], ['0%', false],
+      ['100%', true], ['50%', false], ['50%', false], ['0%', false],
+    ]);
   });
 
-  it('LA-BRW-T04 Coverage shows designed, built and proved, and a count the engine has not measured as unknown', async () => {
+  it('LA-BRW-T04 Coverage shows designed, built and proved on the product and domain pages', async () => {
     await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     expect(bars(card('Shopping'))).toEqual([
-      'designed 2/2', 'built 1/2', 'proved 1/2',
-      'designed 1/1', 'built 1/1', 'proved 0/1',
+      'designed 1/1', 'built 1/1', 'proved 0/1', 'planned 0/1',
+      'designed 2/2', 'built 1/2', 'proved 1/2', 'planned 0/2',
     ]);
-    // DM-PAY's coverage has no built counts: they read "not yet measured", never zero.
+    // A count of zero is drawn as a bar like any other.
     const pay = card('Paying');
     expect(bars(pay)).toEqual([
-      'designed 0/1', 'built not yet measured', 'proved 0/1',
-      'designed 0/0', 'built not yet measured', 'proved 0/0',
+      'designed 0/0', 'built 0/0', 'proved 0/0', 'planned 0/0',
+      'designed 0/1', 'built 0/1', 'proved 0/1', 'planned 0/1',
     ]);
-    expect(within(pay).queryByRole('img', { name: /^built/ })).toBeNull();
+    expect(within(pay).getAllByRole('img', { name: /^built: 0 of/ })).toHaveLength(2);
 
-    // The same three counts on the domain page.
+    // The same counts on the domain page.
     await openApp('/DM-PAY');
-    expect(bars(section('Coverage'))).toContain('built not yet measured');
+    await screen.findByRole('heading', { level: 1, name: 'Paying' });
+    expect(bars(section('Coverage'))).toEqual(bars(pay));
   });
 
   it('LA-BRW-T05 The product page lists its open questions with owners, and the problems in its records', async () => {
@@ -83,9 +87,9 @@ describe('product page', () => {
     expect(fitness.contains(evidence)).toBe(false);
     expect(evidence).toHaveTextContent('they are not the score');
     const value = (name: string) => within(evidence).getByText(name).nextElementSibling?.textContent;
-    expect(value('Designed')).toBe('3 of 4 UC requirements and rules');
-    expect(value('Built')).toBe('not yet measured'); // DM-PAY has no built counts yet
-    expect(value('Proved')).toBe('1 of 4 UC requirements and rules');
+    expect(value('Designed')).toBe('3 of 4 obligations');
+    expect(value('Built')).toBe('2 of 4 obligations');
+    expect(value('Proved')).toBe('1 of 4 obligations');
     expect(value('Open questions')).toBe('2');
     expect(value('Errors')).toBe('1');
     expect(value('Warnings')).toBe('3');
@@ -97,7 +101,7 @@ describe('product page', () => {
     const none = section('Fitness');
     expect(none).toHaveTextContent('No fitness recorded yet.');
     expect(within(none).getByRole('link', { name: /section 7: Fitness/ })).toHaveAttribute('href', '/format#7-fitness');
-    expect(within(section('Evidence')).getByText('Built').nextElementSibling).toHaveTextContent('0 of 0 UC requirements and rules');
+    expect(within(section('Evidence')).getByText('Built').nextElementSibling).toHaveTextContent('0 of 0 obligations');
   });
 
   it('LA-BRW-T06 The format page shows the fitness section the product page links to', async () => {
