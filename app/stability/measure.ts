@@ -111,12 +111,37 @@ function probes({ firstKeys, deferred }: { firstKeys: string[]; deferred: string
     const el = node ? (node.nodeType === 1 ? (node as Element) : node.parentElement) : null;
     return !!el && list.some((sel) => !!el.closest(sel));
   };
+  // Whether a box was inside one of the boxes the selectors match now (its center inside one).
+  const within = (r: DOMRectReadOnly | null | undefined, list: string[]) => {
+    if (!r || r.width === 0 || r.height === 0) return false;
+    const cx = r.x + r.width / 2;
+    const cy = r.y + r.height / 2;
+    return list.some((sel) => [...document.querySelectorAll(sel)].some((el) => {
+      const b = el.getBoundingClientRect();
+      return b.width > 0 && cx >= b.left && cx <= b.right && cy >= b.top && cy <= b.bottom;
+    }));
+  };
   try {
     new PerformanceObserver((list) => {
       for (const e of list.getEntries() as (PerformanceEntry & { value: number; hadRecentInput: boolean; sources?: { node?: Node | null; previousRect: DOMRectReadOnly; currentRect: DOMRectReadOnly }[] })[]) {
-        const sources = (e.sources ?? []).map((s) => ({ node: describe(s.node), from: rect(s.previousRect), to: rect(s.currentRect), allowed: inside(s.node, S.allow), deferred: inside(s.node, deferred) }));
-        // A source whose node was removed before the shift was reported (old content being replaced)
-        // cannot be placed; it neither explains nor condemns the shift: the other sources decide.
+        const sources = (e.sources ?? []).map((s) => {
+          const from = rect(s.previousRect);
+          const to = rect(s.currentRect);
+          // A node still on the page is placed by its ancestors. A node taken off the page after it
+          // moved but before the shift was reported (null, or detached) has no ancestors to place
+          // it by. Where its old box lies inside an allowed part as it is now, it is placed there:
+          // otherwise whether the browser reported the shift before or after the node was removed
+          // (a page drawn twice in quick succession, as two Backs do, on a busy machine) decided
+          // whether a shift inside the inspector counted, which made "ERD: Back to the domain"
+          // flaky. Any other removed node cannot be placed: it neither explains nor condemns the
+          // shift, and the other sources decide.
+          if (!s.node || !s.node.isConnected) {
+            const allowed = within(s.previousRect, S.allow);
+            const node = allowed ? `${describe(s.node)} (removed; it was inside an allowed part)` : '(gone)';
+            return { node, from, to, allowed, deferred: !allowed && within(s.previousRect, deferred) };
+          }
+          return { node: describe(s.node), from, to, allowed: inside(s.node, S.allow), deferred: inside(s.node, deferred) };
+        });
         const placed = sources.filter((s) => s.node !== '(gone)');
         const allowed = placed.length > 0 && placed.every((s) => s.allowed);
         S.shifts.push({ t: e.startTime, value: e.value, recentInput: e.hadRecentInput, sources, allowed, deferred: !allowed && placed.length > 0 && placed.every((s) => s.allowed || s.deferred) });

@@ -1,4 +1,5 @@
-import ELK, { type ElkExtendedEdge, type ElkNode } from 'elkjs/lib/elk.bundled.js';
+import type { ElkExtendedEdge, ElkNode } from 'elkjs/lib/elk-api';
+import { elkLayout } from './elk';
 import type { Edge, Node } from '@xyflow/react';
 import type { Kind, Link, Model, Status, Term } from './types';
 
@@ -15,8 +16,6 @@ export interface ModelEdgeData extends Record<string, unknown> {
   points: { x: number; y: number }[];
   uncertain: boolean;
 }
-
-const elk = new ELK();
 
 const SIZES: Record<string, { width: number; height: number }> = {
   entity: { width: 170, height: 50 },
@@ -97,7 +96,7 @@ export async function layoutModel(model: Model): Promise<{ nodes: Node<ModelNode
     }),
   };
 
-  const laid = await elk.layout(graph);
+  const laid = await elkLayout(graph);
 
   const nodes: Node<ModelNodeData>[] = [];
   const visit = (n: ElkNode, parentId?: string) => {

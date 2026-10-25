@@ -51,7 +51,7 @@ import {
 import { layoutNeighborhood, NODE_HEIGHT, NODE_WIDTH, type Placed } from './layout';
 import { anchorLayout, fadeSets, frameFocus } from './camera';
 import { EdgeHints } from './hints';
-import { edgeMove, readMotion, transitionProgress, tweenEdge, type EdgeEnds, type EdgeFrame, type EdgePhase } from './motion';
+import { canvasProgress, edgeMove, readMotion, tweenEdge, type EdgeEnds, type EdgeFrame, type EdgePhase } from './motion';
 import { Button } from '../components/Button';
 
 // The graph view: an ego graph centered on one record or group. Clicking a record or a group
@@ -200,8 +200,8 @@ interface EdgeParts {
   /** The edge's group, the line and the label, as drawn now. */
   group: SVGGElement | null;
   label: HTMLDivElement | null;
-  /** The node boxes it joins, whose transition it follows. */
-  nodes: () => (Element | null)[];
+  /** The canvas, whose nodes' transition it follows. */
+  canvas: () => Element | null;
 }
 
 /** Writes one frame straight to the edge's elements, so it shows in the same frame as the nodes' move (a React render would come a frame late). */
@@ -242,9 +242,9 @@ function useEdgeFrame(ends: EdgeEnds, phase: EdgePhase, parts: EdgeParts): EdgeF
     const start = performance.now();
     let raf = 0;
     let synced = false;
-    const step = () => {
-      // Follow the nodes' own transition when one of them is moving; once it has ended, so has the move.
-      const clock = transitionProgress(parts.nodes(), motion.duration);
+    const step = (frameTime: number) => {
+      // Follow the nodes' own transition while they move (read once a frame for the whole canvas); once it has ended, so has the move.
+      const clock = canvasProgress(parts.canvas(), motion.duration, frameTime);
       if (clock !== null) synced = true;
       const t = clock ?? (synced ? 1 : Math.min(1, Math.max(0, (performance.now() - start) / motion.duration)));
       const f = tweenEdge(from, to, t, motion.ease);
@@ -266,11 +266,7 @@ function GraphEdgeView({ id, data, markerEnd, source, target }: EdgeProps<FlowEd
   const parts: EdgeParts = {
     get group() { return group.current; },
     get label() { return label.current; },
-    nodes: () => {
-      const flow = group.current?.closest('.react-flow');
-      const node = (nodeId: string) => [...(flow?.querySelectorAll<HTMLElement>('.react-flow__node') ?? [])].find((el) => el.dataset.id === nodeId) ?? null;
-      return [node(source), node(target)];
-    },
+    canvas: () => group.current?.closest('.react-flow') ?? null,
   };
   const frame = useEdgeFrame(data?.ends ?? NO_ENDS, data?.phase ?? 'persist', parts);
   if (!data) return null;
