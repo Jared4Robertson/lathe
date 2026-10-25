@@ -71,7 +71,7 @@ export function DomainPatterns({ index, domainId, query }: { index: SpecIndex; d
           const ucs = useCasesOf.get(r.id) ?? [];
           return (
             <div className="record-row">
-              <RecordLink index={index} id={r.id} />
+              <RecordLink index={index} id={r.id} row />
               <span className="row-tags">
                 <small className="meta">followed by {byDomain.has(r.id) && 'the whole domain'}{byDomain.has(r.id) && ucs.length > 0 && ', '}{ucs.map((u, i) => <Fragment key={u.id}>{i > 0 && ', '}<RecordLink index={index} id={u.id} showTitle={false} /></Fragment>)}</small>
               </span>
@@ -81,7 +81,7 @@ export function DomainPatterns({ index, domainId, query }: { index: SpecIndex; d
         const status = ruleStatus(index, r, domainId, byDomain.has(patternOfRule(r)) ? [] : useCasesOf.get(patternOfRule(r)) ?? []);
         return (
           <div className="record-row pattern-rule-row">
-            <RecordLink index={index} id={r.id} />
+            <RecordLink index={index} id={r.id} row />
             <span className="row-tags">
               {r.fields.setting && <small className="meta">setting {r.fields.setting}</small>}
               <RuleMarks index={index} status={status} />
@@ -123,7 +123,7 @@ export function PatternSections({ index, pattern }: { index: SpecIndex; pattern:
           <ul className="record-list plain pattern-rules">
             {rules.map((r) => (
               <li key={r.id}>
-                <RecordLink index={index} id={r.id} />
+                <RecordLink index={index} id={r.id} row />
                 {r.fields.setting && <small className="meta"> setting {r.fields.setting}</small>}
               </li>
             ))}

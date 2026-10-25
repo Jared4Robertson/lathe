@@ -10,6 +10,7 @@ type Watched = { dir: string; event: 'spec:changed' | 'model:changed' };
 // through Vite, so edits to the engine are picked up without a restart, and its packages resolve
 // from lathe/node_modules. GET /api/spec serves the sample workspace, with `x-lathe-source: fixture`,
 // when LATHE_SPEC_FIXTURE=1 is set or the engine cannot be loaded.
+// `root` is the product folder: vite.config.ts passes LATHE_ROOT, or this repo when it is not set.
 // Sends spec:changed or model:changed when the product's specs or diagrams, or the engine's checks
 // and meta-model, change.
 export function latheApi(root: string, engineDir = path.resolve(import.meta.dirname, '../../lathe')): Plugin {
@@ -30,6 +31,8 @@ export function latheApi(root: string, engineDir = path.resolve(import.meta.dirn
       server.middlewares.use(async (req, res, next) => {
         const pathname = decodeURIComponent((req.url ?? '/').split('?')[0]);
         if (!pathname.startsWith('/api/')) return next();
+        // The product folder this server reads, so the desktop shell shares it only for that folder.
+        res.setHeader('x-lathe-root', encodeURIComponent(root));
         if (pathname === '/api/spec' && process.env.LATHE_SPEC_FIXTURE === '1') {
           return sendFixture(res, 'LATHE_SPEC_FIXTURE=1 is set');
         }
