@@ -4,7 +4,7 @@ import { existsSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
-import { CONFIG_FILE, loadConfig, loadWorkspace, type Problem } from '../src/index.ts';
+import { CONFIG_FILE, formatReference, loadConfig, loadWorkspace, renderReference, type Problem } from '../src/index.ts';
 import { slugify } from '../src/server/diagrams.ts';
 import { serve } from '../src/server/serve.ts';
 
@@ -19,6 +19,9 @@ Commands:
   check    Load and check the specs. Prints errors, warnings and coverage (one line per domain and
            obligation kind); exits 1 on any error.
            --json prints the whole workspace instead.
+  format   Print the format reference as Markdown: the concepts, then every kind, relation, folder
+           and check, with the product's extensions and its own checks.
+           --out <file> writes it to the file instead.
   serve    Serve the web app for the product repo.  --port 5330 (default)
 
 Options for every command:
@@ -33,6 +36,7 @@ const { positionals, values } = parseArgs({
     name: { type: 'string' },
     prefix: { type: 'string' },
     port: { type: 'string' },
+    out: { type: 'string' },
     help: { type: 'boolean' },
   },
 });
@@ -99,7 +103,19 @@ async function init() {
   await mkdir(productDir, { recursive: true });
   await writeFile(productFile, `---\nid: ${prefix}\nkind: product\ntitle: ${name}\n---\nWhat ${name} is, who it is for, and what it must do.\n`);
   console.log(`Wrote ${path.relative(root, productFile)}`);
-  console.log(`\nNext: add a domain under ${path.relative(root, productDir)}/, then run \`lathe check\`. The record format is in the Lathe package's FORMAT.md.`);
+  console.log(`\nNext: add a domain under ${path.relative(root, productDir)}/, then run \`lathe check\`. Run \`lathe format\` for the record format.`);
+}
+
+async function format() {
+  const markdown = renderReference(await formatReference(root));
+  if (values.out === undefined) {
+    process.stdout.write(markdown);
+    return;
+  }
+  if (values.out.trim() === '') fail('--out needs a file name, such as --out REFERENCE.md.');
+  const file = path.resolve(values.out);
+  await writeFile(file, markdown);
+  console.log(`Wrote ${path.relative(process.cwd(), file) || file}`);
 }
 
 function startServer() {
@@ -121,6 +137,8 @@ if (values.help || command === 'help') {
   await check();
 } else if (command === 'init') {
   await init();
+} else if (command === 'format') {
+  await format();
 } else if (command === 'serve') {
   startServer();
 } else {

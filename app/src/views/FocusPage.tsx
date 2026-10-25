@@ -1,15 +1,15 @@
-import { lazy, Suspense, useCallback, useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
 import { Icon } from '../components/icons';
 import { ResizeHandle } from '../components/ResizeHandle';
 import { expandAllOnPage } from '../components/TreeList';
 import type { GraphSettings } from '../graph/GraphPage';
-import { NO_FILTERS, groupLabel, groupMembers, isGroup, parseGroupId, pluralLabel } from '../graph/model';
+import { groupLabel, groupMembers, isGroup, parseGroupId, pluralLabel } from '../graph/model';
 import type { GraphInfo } from '../graph/panel';
 import { ModelIcon } from '../model/ModelIcon';
 import { Link, navigate } from '../router';
 import { useAnnounce, useCommand } from '../shell/commands';
 import { Tooltip } from '../shell/Tooltip';
-import { isBool, isNumber, readPref, usePanelSize, usePref, writePref } from '../shell/prefs';
+import { isBool, usePanelSize, usePref, writePref } from '../shell/prefs';
 import { useNarrow } from '../shell/useNarrow';
 import { recordPath, type Problem, type SpecIndex, type SpecState } from '../specs/data';
 import { Markdown } from '../specs/Markdown';
@@ -18,8 +18,10 @@ import { RecordContent, RecordEyebrow } from '../specs/RecordContent';
 import { folderPath, testGroups } from '../specs/folders';
 import { GroupSections } from '../specs/FolderGroups';
 import { DomainWiki, NotFound, ProductWiki, SourceNote, problemsUnder } from '../specs/SpecPages';
-import { addressOf, focusOf, parseViews, VIEW_LABELS, VIEW_NAMES, viewsFromSearch, viewsOffered, viewsShown, withView, type FocusRoute, type ViewName } from './address';
+import { addressOf, focusOf, VIEW_LABELS, VIEW_NAMES, viewsFromSearch, viewsOffered, viewsShown, withView, type FocusRoute, type ViewName } from './address';
 import { Inspector } from './Inspector';
+import { TAB_PANEL_ID, TabStrip, tabId } from './TabStrip';
+import { PANE_SIZE_KEY, PANE_WEIGHT, PANE_WEIGHT_MAX, PANE_WEIGHT_MIN, VIEW_KEY, saveLastSettings, usePageTabs, type TabView } from './useTabs';
 
 // One page for one thing (a record, a group, a product or a domain), at one address, in up to
 // three views, each a pane you open and close: Wiki (the page to read), Graph (the graph centered
@@ -28,48 +30,25 @@ import { Inspector } from './Inspector';
 // gap. Every pane shows the same focus: clicking a node or a box changes the address and the others
 // follow. Any pane can be maximized. The inspector, the page's last column, shows the focused
 // record whichever views are open.
+//
+// Several pages can be open at once, as tabs in the leftmost pane's title bar (useTabs.ts and
+// tabs.ts); each tab keeps its own views, pane sizes, wiki scroll and graph settings.
 
 const GraphView = lazy(() => import('../graph/GraphPage').then((m) => ({ default: m.GraphView })));
 const ModelView = lazy(() => import('../model/ModelView').then((m) => ({ default: m.ModelView })));
 
-const VIEW_KEY = 'lathe:view';
 const INSPECTOR_KEY = 'lathe:inspector-open';
 const INSPECTOR_WIDTH_KEY = 'lathe:inspector-width';
-const PANE_SIZE_KEY = (v: ViewName) => `lathe:pane-size:${v}`;
-const GRAPH_KEY = 'lathe:graph-settings';
 const VIEW_COMMANDS: Record<ViewName, string> = { wiki: 'viewWiki', graph: 'viewGraph', model: 'viewModel' };
-/** Each pane's share of the width is a weight (remembered); equal weights share the space evenly. */
-const PANE_WEIGHT = 100;
 /** The narrowest a pane gets, and the limits of one pane's share of the two panes beside a gap, in percent. */
 const PANE_MIN_PX = 220;
 const GAP_MIN = 20;
 const GAP_MAX = 80;
-const isString = (v: unknown): v is string => typeof v === 'string';
 const lower = (v: ViewName) => VIEW_LABELS[v].toLowerCase();
 
 function ViewIcon({ view, size = 16 }: { view: ViewName; size?: number }) {
   return view === 'model' ? <ModelIcon size={size} /> : <Icon name={view} size={size} />;
 }
-
-// ---------- Graph settings kept for the session ----------
-
-interface StoredSettings { depth: number; trace: boolean; hiddenKinds: string[]; hiddenRelations: string[]; openGroups: [string, boolean][] }
-const isStored = (v: unknown): v is StoredSettings => !!v && typeof v === 'object' && isNumber((v as StoredSettings).depth) && Array.isArray((v as StoredSettings).hiddenKinds);
-
-function loadSettings(): GraphSettings | null {
-  const s = readPref<StoredSettings | null>(GRAPH_KEY, null, (v): v is StoredSettings | null => v === null || isStored(v), 'session');
-  if (!s) return null;
-  return {
-    depth: [1, 2, 3].includes(s.depth) ? s.depth : 1,
-    trace: s.trace === true,
-    filters: { hiddenKinds: new Set(s.hiddenKinds), hiddenRelations: new Set(s.hiddenRelations ?? []) },
-    openGroups: new Map((s.openGroups ?? []).filter((e) => Array.isArray(e) && typeof e[0] === 'string')),
-  };
-}
-function saveSettings(s: GraphSettings) {
-  writePref(GRAPH_KEY, { depth: s.depth, trace: s.trace, hiddenKinds: [...s.filters.hiddenKinds], hiddenRelations: [...s.filters.hiddenRelations], openGroups: [...s.openGroups] }, 'session');
-}
-const DEFAULT_SETTINGS: GraphSettings = { depth: 1, trace: false, filters: NO_FILTERS, openGroups: new Map() };
 
 // ---------- The page ----------
 
@@ -112,14 +91,18 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   const announce = useAnnounce();
   const narrow = useNarrow();
 
-  // The open views: those the link names, otherwise those last open ("wiki,graph"; the old
-  // single names and "split" read the same way). Model shows only where it is offered; the views
-  // asked for but not offered here are kept, so they come back on a page that offers them.
-  const [stored, setStored] = usePref<string>(VIEW_KEY, 'wiki', isString);
-  const linked = viewsFromSearch(search);
-  const asked = linked ?? (parseViews(stored).length > 0 ? parseViews(stored) : (['wiki'] as ViewName[]));
+  // The open tabs, and the active one's state. The open views are the tab's: those the link named
+  // when it opened, otherwise those of the tab it was opened from ("wiki,graph"; the old single
+  // names and "split" read the same way). Model shows only where it is offered; the views asked for
+  // but not offered here are kept, so they come back on a page that offers them.
+  const tabs = usePageTabs(index, route, search);
+  const tab = tabs.active;
+  const { update } = tabs;
+  const asked = tab.state.views;
   const askedKey = asked.join(',');
-  useEffect(() => { if (linked && askedKey !== stored) setStored(askedKey); }, [linked, askedKey, stored, setStored]);
+  // The views a link names become the ones remembered, for the first tab of a new session.
+  const linked = viewsFromSearch(search) !== null;
+  useEffect(() => { if (linked) writePref(VIEW_KEY, askedKey); }, [linked, askedKey]);
   const offered = viewsOffered(index, focus);
   const open = viewsShown(asked, offered);
   const openKey = open.join(',');
@@ -135,11 +118,13 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   const setViews = useCallback((next: ViewName[], message: string) => {
     const keep = asked.filter((v) => !offered.includes(v));
     const views = VIEW_NAMES.filter((v) => next.includes(v) || keep.includes(v));
-    setStored(views.join(','));
+    // Switching a tab's views keeps it open, as in VS Code.
+    update((s) => ({ ...s, views }), true);
+    writePref(VIEW_KEY, views.join(','));
     navigate(withView(window.location.pathname, views), true);
     setFull(null);
     announce(message);
-  }, [asked, offered, setStored, announce]);
+  }, [asked, offered, update, announce]);
 
   /** Turns a view on or off; the last open view stays open. */
   const toggleView = useCallback((view: ViewName) => {
@@ -178,12 +163,14 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
     setTimeout(() => { if (pane) fullButtons.current[pane]?.focus(); }, 0);
   }, [full, announce]);
 
-  // Pane sizes: one remembered weight per view, so each gap between two open panes resizes them.
-  const sizes = {
-    wiki: usePanelSize(PANE_SIZE_KEY('wiki'), PANE_WEIGHT, 1, 10000),
-    graph: usePanelSize(PANE_SIZE_KEY('graph'), PANE_WEIGHT, 1, 10000),
-    model: usePanelSize(PANE_SIZE_KEY('model'), PANE_WEIGHT, 1, 10000),
-  } satisfies Record<ViewName, readonly [number, (v: number) => void, () => void]>;
+  // Pane sizes: the tab's weight per view, so each gap between two open panes resizes them. The
+  // last sizes set are also remembered, for the first tab of a new session.
+  const setSize = useCallback((v: ViewName, weight: number) => {
+    const w = Math.round(Math.min(PANE_WEIGHT_MAX, Math.max(PANE_WEIGHT_MIN, weight)));
+    update((s) => (s.sizes[v] === w ? s : { ...s, sizes: { ...s.sizes, [v]: w } }));
+    writePref(PANE_SIZE_KEY(v), w);
+  }, [update]);
+  const sizes = Object.fromEntries(VIEW_NAMES.map((v) => [v, [tab.state.sizes[v] ?? PANE_WEIGHT, (w: number) => setSize(v, w)] as const])) as Record<ViewName, readonly [number, (w: number) => void]>;
   const views = useRef<HTMLDivElement>(null);
   const paneEl = (v: ViewName) => views.current?.querySelector<HTMLElement>(`:scope > .pane-${v}`) ?? null;
 
@@ -210,9 +197,9 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
     }, 0);
   }, [showing, setShowing]);
 
-  // Graph settings survive moving between pages and views (for the session).
-  const [settings, setSettingsState] = useState<GraphSettings>(() => loadSettings() ?? DEFAULT_SETTINGS);
-  const setSettings = useCallback((s: GraphSettings) => { setSettingsState(s); saveSettings(s); }, []);
+  // Graph settings are the tab's, and survive moving between pages and views; the last ones set start a new session's first tab.
+  const settings = tab.state.graph;
+  const setSettings = useCallback((s: GraphSettings) => { update((t: TabView) => ({ ...t, graph: s })); saveLastSettings(s); }, [update]);
   const [graphInfo, setGraphInfo] = useState<GraphInfo | null>(null);
   const onGraph = useCallback((info: GraphInfo) => setGraphInfo(info), []);
 
@@ -220,8 +207,15 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   const hrefFor = useCallback((id: string) => withView(addressOf(index, id), asked), [index, askedKey]);
   const onNavigate = useCallback((id: string) => navigate(hrefFor(id)), [hrefFor]);
 
+  // The wiki's scroll is the tab's: it comes back when the tab is active again, and a new page starts at the top.
   const wikiPane = useRef<HTMLDivElement>(null);
-  useEffect(() => { wikiPane.current?.scrollTo?.(0, 0); }, [focus]);
+  const wikiOpen = open.includes('wiki');
+  const tabRef = useRef(tab);
+  tabRef.current = tab;
+  useLayoutEffect(() => {
+    if (wikiPane.current) wikiPane.current.scrollTop = tabs.scrollOf(tabRef.current);
+  }, [tab.key, tab.page, wikiOpen, tabs.scrollOf]);
+  const onWikiScroll = useCallback(() => { if (wikiPane.current) tabs.setScroll(tabRef.current, wikiPane.current.scrollTop); }, [tabs.setScroll]);
 
   // Commands.
   useCommand('viewWiki', () => toggleView('wiki'));
@@ -238,6 +232,11 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   useCommand('showReferences', () => openInspectorAt('.links-in-heading'), index.byId.has(focus));
   useCommand('expandAll', () => { expandAllOnPage(true); announce('Expanded every row'); });
   useCommand('collapseAll', () => { expandAllOnPage(false); announce('Collapsed every row'); });
+  // Tabs.
+  useCommand('keepTab', () => { tabs.keep(tab.key); announce('Tab kept open'); });
+  useCommand('closeTab', () => { tabs.close(tab.key); announce(tabs.set.tabs.length > 1 ? 'Tab closed' : 'The last tab stays open, as a preview'); });
+  useCommand('nextTab', () => tabs.cycle(1), tabs.set.tabs.length > 1);
+  useCommand('previousTab', () => tabs.cycle(-1), tabs.set.tabs.length > 1);
 
   const inspectorToggle = (
     <Tooltip label={`${showing ? 'Hide' : 'Show'} the inspector`} command="toggleInspector" placement="left">
@@ -279,15 +278,25 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   };
 
   /**
-   * One pane: a panel with one title bar (LA-PAT-APP-CODE-R11), as an editor group in VS Code. At its
-   * left a quiet label names its view, with a button that closes the pane when more than one is
-   * open. At its right, all icon buttons in one style: on the rightmost pane only, the View toggles
-   * and a divider; on every pane its maximize button; on the rightmost pane the inspector toggle.
+   * One pane: a panel with one title bar (LA-PAT-APP-CODE-R11), as an editor group in VS Code. At the
+   * left of the leftmost pane, the tab strip; at the left of the others, a quiet label names the
+   * view, with a button that closes the pane. At the right, all icon buttons in one style: on the
+   * rightmost pane only, the View toggles and a divider; on the leftmost, when more than one pane is
+   * open, its close button; on every pane its maximize button; on the rightmost pane the inspector
+   * toggle (which opens the drawer on a narrow screen).
    */
   const pane = (view: ViewName) => {
     const isFull = full === view;
     const name = VIEW_LABELS[view];
     const last = view === rightmost;
+    const first = view === leftmost;
+    const closeButton = open.length > 1 && (
+      <Tooltip label={`Close the ${lower(view)} pane`}>
+        <button type="button" className="icon-button pane-close" aria-label={`Close the ${lower(view)} pane`} onClick={() => toggleView(view)}>
+          <Icon name="x" size={14} />
+        </button>
+      </Tooltip>
+    );
     return (
       <section
         key={view}
@@ -298,14 +307,14 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
         onKeyDown={isFull ? (e: KeyboardEvent) => { if (e.key === 'Escape' && !e.defaultPrevented) { e.preventDefault(); leaveFull(); } } : undefined}
       >
         <div className="pane-bar">
-          <div className="pane-head">
-            <span className="pane-name"><ViewIcon view={view} size={15} /> {name}</span>
-            {open.length > 1 && (
-              <Tooltip label={`Close the ${lower(view)} pane`}>
-                <button type="button" className="icon-button pane-close" aria-label={`Close the ${lower(view)} pane`} onClick={() => toggleView(view)}>
-                  <Icon name="x" size={14} />
-                </button>
-              </Tooltip>
+          <div className={`pane-head${first ? ' has-tabs' : ''}`}>
+            {first ? (
+              <TabStrip index={index} set={tabs.set} onActivate={tabs.activate} onClose={tabs.close} onKeep={tabs.keep} />
+            ) : (
+              <>
+                <span className="pane-name"><ViewIcon view={view} size={15} /> {name}</span>
+                {closeButton}
+              </>
             )}
           </div>
           <div className="pane-actions">
@@ -331,6 +340,7 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
                 <span className="pane-divider" aria-hidden="true" />
               </>
             )}
+            {first && closeButton}
             <Tooltip label={isFull ? 'Leave full screen' : 'Full screen'} command={isFull ? 'escape' : 'maximizePane'} placement="left">
               <button
                 type="button"
@@ -343,10 +353,10 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
                 <Icon name={isFull ? 'minimize' : 'maximize'} size={16} />
               </button>
             </Tooltip>
-            {last && !narrow && inspectorToggle}
+            {last && inspectorToggle}
           </div>
         </div>
-        <div className={view === 'wiki' ? 'pane-scroll' : 'pane-body'} ref={view === 'wiki' ? wikiPane : undefined}>
+        <div className={view === 'wiki' ? 'pane-scroll' : 'pane-body'} ref={view === 'wiki' ? wikiPane : undefined} onScroll={view === 'wiki' ? onWikiScroll : undefined}>
           {view === leftmost && <PageTitle index={index} route={route} fixed={view !== 'wiki'} />}
           {content[view]}
         </div>
@@ -390,9 +400,11 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
       style={{ '--inspector-width': `${inspectorWidth}px` } as CSSProperties}
     >
       <div className="focus-main">
-        {narrow && <div className="pane-narrow-actions">{inspectorToggle}</div>}
         <div
           ref={views}
+          id={TAB_PANEL_ID}
+          role="tabpanel"
+          aria-labelledby={tab.key ? tabId(tab.key) : undefined}
           className={`focus-views panes-${open.length}`}
           data-views={openKey}
           style={open.length > 1 && !narrow ? { gridTemplateColumns: columns } : undefined}
@@ -534,6 +546,3 @@ function GroupWiki({ index, gid }: { index: SpecIndex; gid: string }) {
     </div>
   );
 }
-
-/** Reads the views last open. */
-export const rememberedViews = (): ViewName[] => parseViews(readPref<string>(VIEW_KEY, 'wiki', isString));

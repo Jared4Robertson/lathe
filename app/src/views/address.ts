@@ -58,6 +58,16 @@ export function focusOf(route: FocusRoute): string {
   }
 }
 
+/** A focus page's address path, without the views: the page a tab holds. */
+export function pathOf(route: FocusRoute): string {
+  switch (route.page) {
+    case 'product': return productPath(route.product);
+    case 'domain': return domainPath(route.product, route.domain);
+    case 'record': return recordPath(route.id);
+    case 'group': return groupPath(route.parent, route.kind);
+  }
+}
+
 /** The address of a record or group: a product's or domain's overview, a group's page, or the record page. */
 export function addressOf(index: SpecIndex, id: string): string {
   const record = index.byId.get(id);

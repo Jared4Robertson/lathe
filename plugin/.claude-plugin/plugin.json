@@ -1,7 +1,7 @@
 {
   "name": "lathe",
   "displayName": "Lathe",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Write Lathe spec records the Lathe way, and run lathe check after every spec edit so errors are fixed at once.",
   "author": { "name": "Jared A Robertson" },
   "keywords": ["specs", "requirements", "traceability", "lathe"]

@@ -51,6 +51,12 @@ export const COMMANDS: readonly Command[] = [
   { id: 'goFormat', title: 'Go to the record format', group: 'Navigate', keys: ['g f'], when: 'global' },
   { id: 'goDiagrams', title: 'Go to Diagrams', group: 'Navigate', keys: ['g d'], when: 'global' },
   { id: 'goHome', title: 'Go home (all products)', group: 'Navigate', keys: ['g h'], when: 'global' },
+  // Tabs, as VS Code's editors: Ctrl+K Enter keeps the preview tab (Alt+K Enter off a Mac, where Ctrl+K is quick open);
+  // Alt+Shift+W closes, since Ctrl+W toggles the wiki on a Mac and the browser keeps it elsewhere.
+  { id: 'keepTab', title: 'Keep the tab open (no longer a preview)', group: 'Navigate', keys: ['Ctrl+K Enter'], otherKeys: ['Alt+K Enter'], when: 'page' },
+  { id: 'closeTab', title: 'Close the tab', group: 'Navigate', keys: ['Alt+Shift+W'], when: 'page' },
+  { id: 'nextTab', title: 'Next tab', group: 'Navigate', keys: ['Ctrl+Tab'], when: 'page' },
+  { id: 'previousTab', title: 'Previous tab', group: 'Navigate', keys: ['Ctrl+Shift+Tab'], when: 'page' },
   { id: 'showShortcuts', title: 'Keyboard shortcuts', group: 'Navigate', keys: ['?', 'Mod+/'], when: 'global' },
   // Spaces: one per product, in rail order. Each is titled "Switch to <product>" by whoever handles it.
   ...Array.from({ length: SPACE_KEYS }, (_, i): Command => ({ id: spaceCommandId(i + 1), title: `Switch to space ${i + 1}`, group: 'Navigate', keys: [`Alt+${i + 1}`], when: 'global', dynamic: true })),

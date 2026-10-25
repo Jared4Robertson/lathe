@@ -1,24 +1,12 @@
 # Lathe spec format
 
-Lathe stores a product's specifications as **records**: one Markdown file per record, with a YAML header for its structured fields. The files are the source of truth (readable, diffable, reviewable in git). The Lathe engine loads them into DuckDB, checks them against the **meta-model**, computes traceability, and serves them to the web app.
+Lathe stores a product's specifications as **records**: one Markdown file per record, with a YAML header for its structured fields. The files are the source of truth, readable and reviewable in git. The engine loads them into DuckDB, checks them against the **meta-model** (the kinds, relations and folders in [meta/](meta/)), computes traceability and serves them to the web app.
+
+This page gives the ideas. The facts (every kind, relation, folder and check) are generated from the meta-model and the check files into the reference: run `lathe format`, or read [REFERENCE.md](REFERENCE.md), which carries this page followed by them.
 
 ## 1. Where records live
 
-Records live in the product's own repo, in the specs folder its `lathe.config.json` names (default `specs/`). See the [package README](README.md) for the config.
-
-```
-specs/
-  <product-folder>/            one folder per product, e.g. tool-library, lathe
-    product.md                 the product record (kind: product)
-    <domain-folder>/           one folder per domain
-      domain.md                the domain record (kind: domain)
-      ...                      any nesting below; organize by SDLC stage, e.g.
-      01-define/aggregates/loan.md
-      01-define/use-cases/UC01-borrow-a-tool.md
-      02-design/...
-```
-
-Every `*.md` file under `specs/` is a record, except files named `README.md`, which are ignored. Folder names are for people; the engine relies only on each record's fields.
+Records live in the product's repo, in the specs folder its `lathe.config.json` names (default `specs/`; see the [package README](README.md)). Every `*.md` file there is a record, except files named `README.md`. Folder names are for people, such as `tool-library/lending/01-define/use-cases/UC01-borrow-a-tool.md`: the engine relies only on each record's fields.
 
 ## 2. Record file
 
@@ -35,99 +23,29 @@ links:
 A member borrows an available tool for a fixed loan period.
 ```
 
-| Field | Required | Meaning |
-| --- | --- | --- |
-| `id` | Yes | Unique across the whole workspace. Matches `^[A-Z][A-Z0-9]*(-[A-Z0-9]+)*$`. Never reused or renumbered. |
-| `kind` | Yes | One of the kinds in [meta/kinds.csv](meta/kinds.csv). |
-| `title` | Yes | A short name. For a rule or requirement, the title is the rule in a few words ("A tool is lent to one member at a time"). |
-| `parent` | Yes, except for `product` | The ID of the record this one belongs to. Its kind must be one of the kind's `parent_kinds`. |
-| kind fields | As the kind requires | Plain string values, such as `actor` or `run_by`. A kind's `required_fields` must be present and non-empty. Any other plain string field is allowed and kept. |
-| `links` | No | A map from relation name to a list of target IDs. Each relation must be allowed for this source kind and the target's kind by [meta/relations.csv](meta/relations.csv). |
-
-The body (after the header) is Markdown prose. Requirements and domain rules state their rule in full in the body, using MUST / MUST NOT / SHOULD / MAY.
-
-A `product` record may also carry two optional fields for the app's space rail, where each product is its own space. `icon` is one emoji or up to two characters (`icon: 🧰`); without it, or when it is longer, the product shows its ID as a monogram (`TL`, `LA`). `color` is a hex color or a CSS color name for the icon (`color: "#2E6A88"`); without it, the color is derived from the ID, so it stays the same on every visit.
+Every record has an `id` (unique, matching `^[A-Z][A-Z0-9]*(-[A-Z0-9]+)*$`, never reused or renumbered), a `kind`, a `title`, and a `parent` (except a product) of a kind its kind allows. Its kind may require more plain fields, such as `actor`; any other plain field is kept. `links` maps a relation name to target IDs, each allowed by the meta-model for the two kinds. The body is Markdown; rules and requirements state their rule with MUST, MUST NOT, SHOULD or MAY. A product may carry an `icon` and a `color` for the app's space rail.
 
 ## 3. ID convention
 
-Product prefix, domain code, then a kind code and number. The engine only checks the format and uniqueness; the convention keeps IDs readable.
-
-| Kind | Pattern | Example |
-| --- | --- | --- |
-| product | `<P>` | `TL` |
-| domain | `<P>-<D>` | `TL-LEND` |
-| capability | `<P>-<D>-CAP<nn>` | `TL-LEND-CAP01` |
-| pattern | `<P>-PAT-<name>` | `TL-PAT-LIBRARIAN-ACTION` |
-| pattern_rule | `<pattern>-R<nn>` | `TL-PAT-LIBRARIAN-ACTION-R01` |
-| flow_step | `<flow>-S<nn>` | `TL-LEND-F01-S01` |
-| aggregate | `<P>-<D>-A<n>` | `TL-LEND-A1` |
-| entity | `<P>-<D>-EN<nn>` | `TL-LEND-EN01` |
-| domain_rule | `<P>-<D>-DR<nn>` | `TL-LEND-DR01` |
-| use_case | `<P>-<D>-UC<nn>` | `TL-LEND-UC01` |
-| requirement (shown as *UC requirement*, short for use case requirement) | `<use case>-R<nn>` | `TL-LEND-UC01-R01` |
-| flow | `<P>-<D>-F<nn>` | `TL-LEND-F01` |
-| view | `<P>-<D>-V<nn>` | `TL-LEND-V01` |
-| endpoint | `<P>-<D>-E<nn>` | `TL-LEND-E01` |
-| layer | `<P>-<D>-LAY<nn>` | `TL-LEND-LAY01` |
-| component | `<P>-<D>-C<nn>` | `TL-LEND-C01` |
-| interaction_requirement | `<view, endpoint or flow>-R<nn>` | `TL-LEND-E03-R01` |
-| test | `<P>-<D>-T<nn>` | `TL-LEND-T01` |
-| question | `<P>-<D>-Q<nn>` (or `<P>-Q<nn>`) | `TL-LEND-Q01` |
-| fitness | `<P>-FIT<nn>` | `LA-FIT01` |
+An ID is the product prefix, the domain code, then a kind code and number, such as `TL-LEND-UC01`; a record that belongs to another takes its ID and adds a part, such as the requirement `TL-LEND-UC01-R01`. The engine checks only the format and uniqueness; the convention keeps IDs readable. Each kind's pattern is in `meta/ids.csv` and in the reference.
 
 ## 4. Code traceability
 
-A `test` record has a `state`: `automated` (the default when the field is absent), `manual`, or `planned`.
-
-- An **automated** test names the file that runs it in `run_by` (a path relative to the repo root). That file MUST name the test record's own ID **or else every** ID the test proves (each target of a `proof`-role link such as `proves`), for example in the test's name: `it('TL-LEND-T01 A loan cannot start on an unavailable tool', …)` or `it('TL-LEND-DR05 …', …)`. IDs are matched as whole IDs.
-  - When the file names the test's own ID, the test record vouches for all its claims.
-  - Otherwise each proved ID the file leaves out is its own `proof-not-in-file` error. Products that key their tests by the rule they prove, as S2 does, need no separate test IDs in code, but a test that proves two rules must name both.
-  - A test that proves nothing and whose file does not name its own ID is a `test-file-missing-id` error.
-- An optional `key` field on a test gives other text the file must contain instead, for example a test function name or a pattern proof's heading: `key: test_librarian_actions_are_checked`. When `key` is present, the file MUST contain that text exactly, and the ID rules above do not apply; a file without it is a `test-file-missing-id` error.
-- A **manual** test describes its procedure in its body; `run_by` is optional.
-- A **planned** test is not written yet. It shows what is meant to prove an obligation, but it does not count as proof. A `component` record names its file in `file` (relative to the repo root); the design may name a file that does not exist yet, which is reported as a warning.
+A `test` has a `state`: `automated` (the default), `manual` or `planned`. An automated test names the file that runs it in `run_by`, and that file names the test's own ID, or else every ID it proves, as whole IDs; a `key` field gives other text the file must contain instead. A manual test describes its procedure in its body. A planned test shows what is meant to prove an obligation, but is not proof. A `component` names its code in `file`, which may not exist yet.
 
 ## 5. Checks
 
-The engine runs every SQL file in `lathe/checks/`. Each returns rows of `(severity, check, record, message)`:
+Each check is one SQL file in `lathe/checks/`: a `SELECT` over the loaded tables that returns rows of `(severity, check, record, message)`. Its name is its file name without the number and `.sql`. An **error** means the workspace is broken, and `lathe check` exits non-zero; a **warning** is work still to do, such as an obligation not yet proved, two stages that do not join up yet, or a level of the spec that is the wrong size (`structure.maxChildren` in `lathe.config.json`, default 15). One mistake gives one error.
 
-- **error**: the workspace is broken (duplicate ID, unknown kind, bad parent, missing required field, disallowed or dangling link, an automated test with no `run_by`, or whose `run_by` file is missing or mentions neither its ID nor an ID it proves, a bad or repeated capability or layer order, a pattern setting a use case does not give, a pattern setting that is not a valid field name, a pattern rule naming a setting its pattern does not have, a proof claim the test's file does not back (`proof-not-in-file`), a bad or repeated flow step order, a product check named like one of Lathe's or a product checks folder that does not exist, and the entity errors of section 17: a bad `role`, an aggregate without exactly one root, a bad Fields table, a `has_one` or `has_many` that leaves its aggregate). `lathe check` exits non-zero.
-- **warning**: work still to do, not breakage (a requirement or domain rule that no component satisfies or no test proves, a use case with no requirements, a component file that does not exist yet, a use case left outside its domain's capabilities, a component left outside its domain's layers, two followed patterns sharing a setting, a pattern nobody follows, an obligation outside every domain, a record ID cited in prose that does not exist, a flow step fulfilling something outside its flow, a flow fulfilling something none of its steps do, a child entity its aggregate's root does not reach (section 17)). The structural warnings say where two stages do not join up yet:
-  - `rule-not-applied`: a domain rule that no use case `applies`.
-  - `use-case-without-flow`: a use case that no flow `carries_out`, in a domain that has flows. A domain with no flows yet is not reported.
-  - `interaction-requirement-fulfills-nothing`: an interaction requirement with no `fulfills` link.
-  - `test-type-mismatch`: a test with `test_type: domain_rule` that proves requirements but no domain rule, or with `test_type: acceptance` that proves domain rules but no requirement. Other types, such as `unit`, are not compared.
-
-  The structure warnings say where a level of the spec is the wrong size: a parent with one child, or with hundreds, usually means the structure is off.
-  - `too-many-children`: a record with more children of one kind than the product's `structure.maxChildren` setting in `lathe.config.json` (default 15; see the package README). The message names the parent, the kind and the count; add a level between them, such as a capability, a layer or another aggregate. Children are counted per kind, so a domain with 10 use cases and 10 components is not reported at 15. Tests are never counted: the app groups them by what they prove (section 15), so they are never shown as one list.
-  - `lone-child`: a capability or a layer with exactly one child, of any kind (only its own children, not theirs). Merge it into a neighboring capability or layer, or give it more. One with no children is not reported.
-
-  The proof warnings say where proof is still owed or is counted nowhere:
-  - `proof-still-owed`: an obligation that is already proved, but that a planned test is also meant to prove, such as "TL-LEND-E06-R03 is proved, but planned test TL-LEND-T30 still owes a proof of it". There is one warning for each obligation and planned test, so the obligations that coverage counts in `planned_any` beyond `planned` are named. A pattern rule is judged in each domain that owes it, with only that domain's tests. An obligation not yet proved, whose test is only planned, is `unproved` instead.
-  - `proof-counts-nowhere`: a test none of whose proofs counts in any domain's coverage: for example it proves only a rule of a pattern no domain follows, a pattern rule that only other domains owe, an obligation outside every domain, or a record that is not an obligation. The message gives the reason for each target. A test with at least one proof that counts is not reported, whatever its state.
-  - `manual-test-file-silent`: a manual test whose `run_by` file exists but names neither the test's ID, nor any ID it proves, nor its `key`. Name the test in the file, or point `run_by` at the file that carries it out.
-
-One mistake gives one error. When an ID is duplicated, a link or parent that points at it is judged against every record with that ID, and is reported only if none of them allows it. A record whose parent does not exist is reported as `unknown-parent` only.
+A check documents itself in its header comment: one summary sentence, a blank comment line, the explanation ending with how to fix what it reports, a blank comment line, then `-- severity: error` (or `warning`, or `error, warning`) and an optional `-- kinds:` line naming the kinds it concerns. The reference is built from these headers, and `undocumented` reports a check, kind or relation that lacks its text.
 
 ## 6. Coverage
 
-Coverage follows the meta-model. A kind's `obligation` value in `kinds.csv`, in any letter case, says what it asks:
-
-- `yes` (or `true`): an obligation that must be designed, built and proved. By default `domain_rule`, `requirement` and `interaction_requirement`.
-- `proof`: an obligation that needs **proof only**. Nothing is asked about its design, so it counts as designed and built, has no `satisfies` gaps, and is never `unsatisfied`; it is proved, planned and has `proves` gaps like any other. By default `pattern_rule`, as S2 asks only for proof of the patterns it follows. A component may still `satisfy` it, to say which code carries it out.
-- anything else: not an obligation.
-
-A product can change a kind's value with an extension (section 9), for example `pattern_rule,,,,,,yes,` to ask for the design of pattern rules again.
-
-A relation's `role` in `relations.csv` says what a link does: `design` (such as a component `satisfies` it) or `proof` (such as a test `proves` it).
-
-Each obligation is counted in the domain that owes it. A record that sits in a domain is owed by that domain. A pattern rule sits under a pattern, outside every domain, and is owed instead by each domain that follows the pattern, where only that domain's own components and tests design and prove it (section 11). Any other obligation that sits in no domain is counted nowhere and reported as an `obligation-outside-domain` warning.
-
-For each domain and each obligation kind: how many obligations it owes; how many are **designed** (a `design` link targets them), **built** (a `design` link from a component whose file exists), **proved** (a `proof` link from an automated or manual test), and **planned** (not proved, but a planned test is meant to prove them); plus the list of gaps. For a proof-only kind, designed and built always equal the total. A pattern rule owed by several domains is counted, and has its gaps, in each of them. A product's own obligation kinds and relations, added by extension, are counted the same way.
+A kind's `obligation` says what it asks: `yes`, an obligation that must be designed, built and proved; `proof`, one that needs proof only; anything else, none. A relation's `role` says what a link does: `design` (a component `satisfies` it) or `proof` (a test `proves` it). Each obligation is counted in the domain that owes it, as **designed**, **built** (designed by a component whose file exists), **proved** (by an automated or manual test) and **planned**, with its gaps.
 
 ## 7. Fitness
 
-A `fitness` record is the judgment of the person a product serves: on a `date` (YYYY-MM-DD), a `score` (written `score: 4` or `score: "4"`) from 1 (does not serve its purpose) to 5 (serves it fully), and in the body the experiences behind it. Lathe never writes these itself. Signals it can count (coverage, open questions, checks) are evidence for that judgment, never the score.
+A `fitness` record is the judgment of the person a product serves: on a `date`, a `score` from 1 (does not serve its purpose) to 5 (serves it fully), and in the body the experiences behind it. Lathe never writes these itself. What it can count (coverage, open questions, checks) is evidence for that judgment, never the score.
 
 ## 8. What records do not carry
 
@@ -135,311 +53,36 @@ Records carry no status, approval or decision history: a record in the specs is 
 
 ## 9. Extending the meta-model
 
-A product adds to Lathe's meta-model with a `metaExtensions` folder (see the package README) holding a `kinds.csv`, `relations.csv` and/or `sections.csv` with the same columns.
-
-- A **new kind**, **new relation** or **new section** row is added as it is.
-- A row whose `kind` already exists **widens** that kind: its `parent_kinds` and `required_fields` are added to the default's, and a non-empty `label`, `stage`, `section`, `obligation` or `description` replaces the default's. A product can, for example, let a `domain_rule` sit directly under a `domain`.
-- A section row whose `section` already exists changes that folder: a non-empty `stage`, `order`, `label` or `description` replaces the default's. A product can add a folder, or move a kind into another folder by giving its `section` (section 15).
-- A relation row with the same `relation`, `source_kind` and `target_kind` as an existing one is the same rule: a non-empty `role` or `description` replaces the default's, and an empty one keeps it. So restating a default rule, identically or in other words, changes nothing else, and a product can, for example, give a default relation the `design` role.
-- Two rows for the same kind within one folder are an error (`meta-duplicate-kind`), and so are two rows for the same relation rule within one folder (`meta-duplicate-relation`). Each message names the folder's file.
+A product adds to the meta-model with a `metaExtensions` folder holding a `kinds.csv`, `relations.csv`, `sections.csv` and/or `ids.csv` with the same columns. A new row is added as it is. A row for a kind, folder or relation rule that already exists changes it: a kind's `parent_kinds` and `required_fields` are widened, and any other non-empty value replaces the default's. The product's reference shows the result.
 
 ## 10. Capabilities and patterns
 
-A domain with more than a handful of use cases groups them into **capabilities**, and behavior that several use cases share is written once as a **pattern**.
-
-### Capabilities
-
-A `capability` sits under a domain and gives its place in the domain in `order`, a whole number. Use cases, flows and tests may sit under a capability instead of directly under the domain, so that a capability is a slice through Define and Design: its use cases, the flows that carry them out, and the acceptance tests that prove them. Records under a capability still belong to its domain and count in that domain's coverage. Domain rules stay under their aggregates, and tests that prove only domain rules may stay under the domain.
-
-```markdown
----
-id: TL-LEND-CAP03
-kind: capability
-title: Lending
-parent: TL-LEND
-order: 3
----
-Loans themselves: a member borrows a tool, and a librarian takes it back.
-```
-
-A use case then names the capability as its parent (`parent: TL-LEND-CAP03`). Its ID does not change: IDs are never renumbered, so moving a use case into a capability changes only its `parent`. Folder names are for people; a domain may keep its files where they are, or use folders such as `01-define/use-cases/03-lending/`.
-
-- Each capability in a domain needs its own order (`capability-order` error); `1` and `01` are the same.
-- Once a domain has capabilities, a use case left directly under the domain is a `use-case-outside-capability` warning. A domain with no capabilities is fine.
-- A capability that holds only one record is a `lone-child` warning: merge it into a neighbor or give it more. A domain with more use cases, or flows, than `structure.maxChildren` directly under it is a `too-many-children` warning, the sign that it needs capabilities (section 5).
-
-The domain's **use case index** comes from the records: its capabilities in order, each with its use cases, and the patterns each use case follows (or none).
-
-### Patterns
-
-A `pattern` sits under the product, since domains share it. It may list **settings** in `settings`: setting names separated by spaces, each a valid field name (lower-case letters, digits and underscores, starting with a letter, and not `id`, `kind`, `title`, `parent` or `links`). Its body says what it is for and what each setting decides; its rules are `pattern_rule` records under it (section 11). A pattern that every following use case applies the same way, such as S2's API conventions, has no settings: leave `settings` out.
-
-```markdown
----
-id: TL-PAT-LIBRARIAN-ACTION
-kind: pattern
-title: Librarian action
-parent: TL
-settings: record required_input result
----
-A librarian at the desk enters a few details, and the library saves one record and shows what it saved.
-```
-
-A use case **follows** the pattern with a `follows` link and gives each setting as a plain header field named exactly as the pattern lists it: a value, or `Not applicable:` (in any letter case) followed by a reason. The pattern's rules apply to the use case with those values; the use case's own requirements add only what is specific to it, so a use case that follows a pattern may have none (no `use-case-without-requirements` warning).
-
-```markdown
----
-id: TL-LEND-UC01
-kind: use_case
-title: Register a member
-parent: TL-LEND-CAP01
-actor: Librarian
-record: Member
-required_input: The member's name and a valid email address.
-result: The new member with their ID, which goes on their card.
-links:
-  applies: [TL-LEND-DR01]
-  follows: [TL-PAT-LIBRARIAN-ACTION]
----
-```
-
-In YAML, a value containing `: ` must be quoted, so write `audit: "Not applicable: nothing changes"`.
-
-A **domain** may follow a pattern too, as S2 adopts most of its patterns per domain: the domain record links it with `follows`, and the whole domain owes each of the pattern's rules (section 11). The domain gives no settings; when the pattern has settings, the use cases that apply it follow it as well and give them.
-
-```markdown
----
-id: S2-ACC
-kind: domain
-title: Accounting
-parent: S2
-links:
-  follows: [S2-PAT-API]
----
-```
-
-- A setting that a following use case does not give, or gives as `Not applicable:` with no reason, is a `pattern-setting-missing` error.
-- A setting name that is not a valid field name is a `bad-pattern-settings` error on the pattern.
-- A pattern with no settings asks nothing of the use cases that follow it.
-- A use case that follows two patterns sharing a setting name has one field for both: a `pattern-setting-clash` warning. Rename the setting in one of the patterns.
+A domain with more than a handful of use cases groups them into **capabilities**, ordered slices through Define and Design: a use case, flow or test may sit under a capability instead of the domain, and still counts in the domain. Behavior that several use cases share is written once as a **pattern** under the product, with **settings** each following use case fills in. A use case `follows` a pattern and gives each setting as a header field, a value or `Not applicable:` with a reason; a domain may follow a pattern too.
 
 ## 11. Pattern rules
 
-A pattern's rules are records, so that each domain that follows the pattern must prove them, as S2's "Patterns we follow" tables do. A `pattern_rule` sits under its pattern and states one rule with MUST / MUST NOT / SHOULD / MAY. Its ID is the pattern's ID with `-R<nn>`, such as `TL-PAT-LIBRARIAN-ACTION-R01`. When the rule depends on one of the pattern's settings, it names it in `setting`.
-
-```markdown
----
-id: TL-PAT-LIBRARIAN-ACTION-R01
-kind: pattern_rule
-title: An action missing its required input is refused and saves nothing
-parent: TL-PAT-LIBRARIAN-ACTION
-setting: required_input
----
-When the librarian leaves out any of the `required_input`, the library MUST refuse the action, say what is missing, and save nothing.
-```
-
-A domain **follows** a pattern when the domain itself `follows` it or any of its use cases does. Each rule of the pattern is then an obligation **of that domain**, counted once on the domain's Pattern rule coverage line:
-
-- **proved** when an automated or manual test in that domain `proves` it, and **planned** when only a planned test there does;
-- pattern rules are proof-only by default (`obligation: proof`, section 6), so they count as **designed** and **built** and are never `unsatisfied`. A product that sets `pattern_rule` to `yes` asks for design too: then a rule is designed when a component in that domain `satisfies` it, and built when that component's file exists.
-
-A component or test in another domain does not count: each domain applies the rule with its own setting values, so it proves the rule for itself. The rule's gaps, and its `unproved` (and, when design is asked, `unsatisfied`) warnings, name the domain, such as "Pattern rule TL-PAT-LIBRARIAN-ACTION-R01 is not proved in TL-LEND".
-
-```markdown
----
-id: TL-LEND-T33
-kind: test
-title: Each librarian action missing its required input is refused, says what is missing, and saves nothing
-parent: TL-LEND
-test_type: acceptance
-run_by: examples/tool-library/test/api.test.ts
-links:
-  proves: [TL-PAT-LIBRARIAN-ACTION-R01]
----
-```
-
-**Not applicable.** When a rule names a `setting`, the domain follows the pattern only through its use cases, and every one of those use cases gives that setting as `Not applicable:` with a reason, the rule does not apply in that domain and is not counted there. If even one following use case there gives the setting a value, or the domain itself follows the pattern, the domain owes the rule. A rule with no `setting` applies wherever its pattern is followed.
-
-**Carrying out a rule.** An interaction requirement or a flow step may `fulfill` a pattern rule, to say where the rule is carried out. A step's flow carries out the rules of the patterns that its use cases, or its domain, follow, so `flow-step-fulfills-outside-flow` reports a step that fulfills any other pattern rule, or an interaction requirement that fulfills one (section 14).
-
-The checks for pattern rules:
-
-- A rule's `setting` that is not one of its pattern's settings is a `pattern-rule-setting-unknown` error.
-- A pattern that no use case follows is a `pattern-not-followed` warning: its rules are counted in no domain.
-- Any other obligation that sits in no domain (possible only through an extension or a broken parent) is an `obligation-outside-domain` warning, never silently dropped.
+A pattern's rules are `pattern_rule` records under it. Each domain that follows the pattern, itself or through a use case, owes each rule and proves it with its own tests; by default a rule needs proof only. A rule that names a `setting` does not apply in a domain whose following use cases all give that setting as Not applicable.
 
 ## 12. Citing records in prose
 
-A record's body may cite other records by ID in plain text, such as "the loan follows TL-LEND-DR05". The engine reads these citations so that a renamed or removed record does not leave a stale reference behind.
-
-- A **citation** is a whole ID-shaped token in the body (the `id` format in section 2) that is the ID of a record, or that starts with a **known prefix** followed by `-`. The known prefixes are every `product` and `domain` ID, and the entries of the optional `idPrefixes` list in `lathe.config.json` (for example `["STD", "SYS"]`). `TL-LEND-DR05` is cited in "(TL-LEND-DR05)." and in a Markdown link `[TL-LEND-DR05](…)`, but nothing is cited in `TL-LEND-DR05a`. A token that is no record and has no known prefix, such as `ZZ-D-UC01`, is not read.
-- A product's or domain's own ID (`TL`, `TL-LEND`) is a citation only when written as a code span holding just that ID (`` `TL-LEND` ``). In plain prose it is not read, because such short IDs are often ordinary words.
-- Text in fenced code blocks (`` ``` `` or `~~~`), and in inline code spans holding anything more than one ID, is not read, so an example ID can be written in code (`see TL-LEND-DR99`). A code span holding exactly one ID and nothing else (`` `TL-LEND-DR05` ``) is read like plain prose, because writers often format IDs that way.
-- A record's **mentions** (`SpecRecord.mentions`) are the IDs it cites that exist, in order of first mention, without repeats and without its own ID.
-- A cited ID that is not a record (so one with a known prefix) is an `unknown-id-in-prose` warning on the citing record: fix the wording, or put the ID in code if it is an example.
-- Mentions are not links. They do not count for coverage and are not checked against `relations.csv`; write a link in the header when a record satisfies, proves or applies another.
+A record's body may cite other records by ID, such as "the loan follows TL-LEND-DR05", so that a renamed or removed record does not leave a stale reference. A citation is a whole ID-shaped token that is a record's ID or starts with a known prefix (every product and domain ID, and `idPrefixes` in `lathe.config.json`). A bare product or domain ID counts only as a code span holding just that ID, and other code is not read. The cited IDs that exist are the record's **mentions**. Mentions are not links: they count for nothing.
 
 ## 13. A product's own checks
 
-A product can add checks of its own, so that its house rules live with the product instead of in Lathe. For example, S2 requires each aggregate to have exactly one use case that follows its Record view pattern. Lathe does not ship that rule, but S2 can keep it as its own check.
-
-- `lathe.config.json` names a folder of the product's checks in `checks`, relative to the root (see the package README). Every `*.sql` file in it is a check, written exactly as Lathe's checks are (section 5): one `SELECT` over the same tables, returning rows of `(severity, check, record, message)`.
-- The product's checks run after all of Lathe's checks, in file name order. Their problems are ordinary problems: `lathe check`, `--json` and the app show them with the others.
-- A check's name is its file name without the leading number and `.sql`, as for Lathe's checks: `lathe-checks/01-endpoint-without-interaction-requirement.sql` is the check `endpoint-without-interaction-requirement`. The `check` column the SQL returns is ignored.
-- A product check whose name equals one of Lathe's checks is not run. It is a `product-check-name-clash` error naming the file, so the two never mix in a report. Rename the file.
-- A product check that fails to run is an error naming its file, as for Lathe's checks.
-- A `checks` folder that the config names but that does not exist is a `product-checks-missing` error.
-
-```sql
--- lathe-checks/01-one-record-view-per-aggregate.sql: S2's house rule
-SELECT 'warning' AS severity, 'one-record-view-per-aggregate' AS "check", a.id AS record,
-       'Aggregate ' || a.id || ' needs exactly one Record view use case.' AS message
-FROM records a
-WHERE a.kind = 'aggregate'
-  AND (SELECT count(*) FROM records u
-       JOIN links l ON l.path = u.path AND l.relation = 'follows' AND l.target = 'S2-PAT-RECORD-VIEW'
-       JOIN fields f ON f.path = u.path AND f.name = 'record' AND f.value = a.id
-       WHERE u.kind = 'use_case') <> 1
-```
+A product keeps its house rules as checks of its own: `lathe.config.json` names a folder in `checks`, and every `*.sql` file in it runs after Lathe's, over the same tables, with the same row contract and the same header. A product check named like one of Lathe's is not run. Its checks appear in the product's reference with Lathe's.
 
 ## 14. Flow steps
 
-A flow can be written as **steps**, so that each step says what happens, where, and what it carries out, as S2's flow tables do. A `flow_step` sits under its flow and gives its place in the flow in `order`, a whole number. Its ID is the flow's ID with `-S<nn>`, such as `TL-LEND-F01-S01`. Its title says what happens in a few words, and its body may say more.
-
-A step links to what it goes through with `uses` (a view, an endpoint or a component) and to what it carries out with `fulfills` (a UC requirement, an interaction requirement, a domain rule, or a rule of a pattern the flow's use cases or domain follow).
-
-```markdown
----
-id: TL-LEND-F01-S02
-kind: flow_step
-title: The member borrows the tool and sees the due date
-parent: TL-LEND-F01
-order: 2
-links:
-  uses: [TL-LEND-V01, TL-LEND-E04]
-  fulfills: [TL-LEND-UC03-R01, TL-LEND-UC03-R02, TL-LEND-UC03-R03]
----
-The member picks an available tool in the catalog and borrows it (`POST /loans`). The catalog shows the due date, or the reason the borrow was refused.
-```
-
-Once a flow has steps, what the flow fulfills is what its steps fulfill, so each `fulfills` link goes on the step that does it, and the flow itself need not repeat them. Steps are read in `order`; the IDs need not follow it, since IDs are never renumbered.
-
-The checks for flow steps:
-
-- A step's `order` that is not a whole number, or that another step of the same flow also has, is a `flow-step-order` error (`1` and `01` are the same). A missing order is `missing-required-field`.
-- `flow-step-fulfills-outside-flow` (warning): a step fulfills something its flow does not carry out. A target is inside the flow when it is a requirement of a use case the flow `carries_out`, a domain rule one of those use cases `applies`, or an interaction requirement that fulfills one of those or sits under the flow. A step whose flow carries out no use case is not compared, and a target that does not exist is reported only as a `dangling-link`.
-- `flow-fulfills-differs-from-steps` (warning): a flow that has steps fulfills something none of its steps fulfills. Move the link onto the step that carries it out. A flow without steps is not compared.
+A flow can be written as `flow_step` records under it, in `order`: each says what happens, `uses` the view, endpoint or component it goes through, and `fulfills` what it carries out. Once a flow has steps, what it fulfills is what its steps fulfill.
 
 ## 15. Folders
 
-S2 lays out each domain's specs in folders: `01-define/01-domain-model`, `01-define/02-use-cases`, `02-design/01-interaction-design`, `02-design/02-technical-specification` and `02-design/03-test-plan`, with what the domains share (patterns) in `00-shared`. Lathe names these folders in the meta-model, so the web app's navigation and domain pages read the same way, whatever folders the record files are in.
-
-`meta/sections.csv` lists the folders, with the columns `section, stage, order, label, description`. A folder belongs to a stage (`define` or `design`), in `order` within it, or to no stage for a folder at product level, such as `shared`. Each kind's `section` column in `kinds.csv` names the folder it sits in:
-
-| Stage | Folder | Kinds |
-|---|---|---|
-| Define | Domain model (`domain-model`) | aggregate, entity, domain_rule |
-| Define | Use cases (`use-cases`) | capability, use_case, requirement |
-| Design | Interaction design (`interaction-design`) | flow, flow_step, view, endpoint, interaction_requirement |
-| Design | Technical specification (`technical-specification`) | layer, component |
-| Design | Test plan (`test-plan`) | test |
-| (product) | Shared (`shared`) | pattern, pattern_rule |
-
-Structural kinds (product, domain, question, fitness) sit in no folder. The engine loads the folders into a `sections` table, in stage then order, which checks can query and the app reads as `Workspace.sections`. Its checks:
-
-- `unknown-section` (error): a kind names a section that `sections.csv` does not list.
-- `section-stage-mismatch` (error): a kind's section belongs to another stage than the kind's own. A product-level folder (no stage) may hold a kind of any stage.
-
-The app groups the Test plan folder by what each test proves, not by records of its own. Each test goes in the first group that applies to it:
-
-1. **Acceptance tests**: it proves a UC requirement. Grouped by capability in order, with use cases outside any capability last, then by use case: the first use case it proves a requirement of, in ID order.
-2. **Domain rule tests**: it proves a domain rule.
-3. **Pattern tests**: it proves a pattern rule. Grouped by pattern.
-4. **Interaction tests**: it proves an interaction requirement.
-5. **Engineering checks**: everything else.
-
-A group with no tests is not shown.
+S2 lays out each domain's specs in folders by stage: in Define, the domain model and use cases; in Design, interaction design, technical specification and the test plan; and at product level what domains share. `meta/sections.csv` names these folders and each kind's `section` says which one it sits in, so the app reads the same way whatever folders the files are in. The app groups the test plan by what each test proves: acceptance, domain rule, pattern, interaction and engineering tests.
 
 ## 16. Layers
 
-A domain's technical specification groups its components into **layers**, as its use cases are grouped into capabilities (section 10). A `layer` sits under a domain and gives its place in the domain in `order`, a whole number. Its ID is the domain's ID with `-LAY<nn>`, such as `TL-LEND-LAY01`. Its title names what it holds, and its body may say where that code lives.
-
-```markdown
----
-id: TL-LEND-LAY03
-kind: layer
-title: Services
-parent: TL-LEND
-order: 3
----
-The lending rules, one service per aggregate, in `src/services/`.
-```
-
-A component then names the layer as its parent (`parent: TL-LEND-LAY03`). Its ID does not change, so moving a component into a layer changes only its `parent`. A component in a layer still belongs to the layer's domain everywhere a domain matters: its design and build count in that domain's coverage, it designs the pattern rules that domain owes, and the proof and flow step checks judge it there, exactly as if it sat directly in the domain. A domain with no layers keeps its components directly under it.
-
-Layers are records, not a fixed list, so each product names its own. A good starting point, from S2, is: Models, Accessors, Services, Connectors, Routers and API app, Web app, and Infrastructure and configuration. A layer much larger than the others, say more than about 15 components, is split, for example by aggregate or capability, each part its own layer with a clear title.
-
-The checks for layers:
-
-- A layer's `order` that is not a whole number, or that another layer of the same domain also has, is a `layer-order` error (`1` and `01` are the same). Layers in different domains may share an order. A missing order is `missing-required-field`.
-- `component-outside-layer` (warning): once a domain has layers, a component left directly under the domain. Move it into the layer it belongs to. A domain with no layers is not reported.
-- `lone-child` (warning): a layer that holds only one component. Merge it into a neighboring layer or give it more.
-- `too-many-children` (warning): a layer, or a domain without layers, holding more components than `structure.maxChildren` (default 15). Split the layer, or add layers (section 5).
+A domain's components are grouped into **layers**, ordered parts of its technical specification such as Models, Services or Web app, as its use cases are grouped into capabilities. A component in a layer still belongs to the layer's domain everywhere a domain matters. Layers are records, so each product names its own.
 
 ## 17. Entities and the ERD
 
-An aggregate is drawn as an ERD (entity-relationship diagram) of the records it keeps. Each of those records is an `entity`: one box of the ERD, with its fields. (Lathe's word "record" already means any spec record, hence "entity".) An `entity` sits under an aggregate, in the define stage's domain model folder. Its ID is the domain's ID with `-EN<nn>`, such as `TL-LEND-EN01` (`-E` is taken by endpoints), numbered across the domain.
-
-An entity's `role` is required:
-
-- `root`: the record the aggregate is named for, through which the others are reached and changed. An aggregate that has entities has exactly one root.
-- `child`: one of the root's parts, such as a line of an order. A child belongs to its aggregate and has no life outside it.
-
-Its body holds a Markdown table under a `## Fields` heading, with the columns Field, Meaning, Kind of value and Example, in that order, and one row per field. Each field name is used once, compared in any letter case and without code span backticks. Prose may come before the heading, and between the heading and the table; a table under any later heading is not read. The engine reads the rows, in table order, into the record's `entityFields` (`{ field, meaning, kind, example }`, see [src/types.ts](src/types.ts)); other kinds have no `entityFields`, and a table with the wrong columns gives none.
-
-```markdown
----
-id: TL-LEND-EN01
-kind: entity
-title: Loan
-parent: TL-LEND-A3
-role: root
-links:
-  has_many: [TL-LEND-EN02]
-  refers_to: [TL-CAT-EN01, TL-MEM-EN01]
----
-One member holding one tool, from borrowing to return.
-
-## Fields
-
-| Field | Meaning | Kind of value | Example |
-| --- | --- | --- | --- |
-| Loan ID | The loan's identity. | Text | L-0042 |
-| Due at | When the loan should end. | Date and time: borrowed at plus 14 days | 2026-03-16T10:00:00Z |
-```
-
-Three relations link entities, each one ERD edge:
-
-| Relation | Cardinality | Meaning |
-| --- | --- | --- |
-| `has_one` | one to one | The entity holds exactly one of the other entity, as a part of it. |
-| `has_many` | one to many | The entity holds any number of the other entity, as parts of it. |
-| `refers_to` | many to one | The entity holds a reference to one of the other entity, which may sit in another aggregate or domain. |
-
-Parts belong to their aggregate, so `has_one` and `has_many` stay inside it; only `refers_to` crosses aggregates and domains. An aggregate's `relates_to` links still say which aggregates it refers to, before or without its entities.
-
-The checks:
-
-- `entity-role` (error): a `role` other than `root` or `child` (in any letter case). A missing role is `missing-required-field`.
-- `aggregate-root` (error): an aggregate that has entities but no root, or more than one. An aggregate with no entities is not reported.
-- `entity-fields` (error): an entity with no `## Fields` table, a table whose columns are not Field, Meaning, Kind of value and Example, a field name used twice, or a row with no field name. A table with the wrong columns is reported for that alone.
-- `has-crosses-aggregate` (error): a `has_one` or `has_many` to an entity in another aggregate. Use `refers_to`, or move the part into the aggregate.
-- `entity-unreferenced` (warning): a child entity that no `has_one` or `has_many` reaches from its aggregate's root, directly or through other children of the same aggregate. `refers_to` links do not count. An aggregate without exactly one root is `aggregate-root` only.
-- `too-many-children` (section 5) covers an aggregate with too many entities.
-
-The checks see the Fields tables in two tables: `entity_tables` (one row per entity: `path`, `record`, `heading`, `columns`, `columns_ok`) and `entity_fields` (one row per field of a table with the right columns: `path`, `record`, `position` from 1, `field`, `meaning`, `kind`, `example`).
-
-The app draws two ERDs from these records:
-
-- **A domain's ERD, at aggregate level.** One box per aggregate. A line joins two aggregates when an entity of one `refers_to` an entity of the other. Where no entity links two aggregates, a `relates_to` link between them draws the line instead, so a domain whose entities are not written yet still has its ERD.
-- **An aggregate's ERD.** One box per entity of the aggregate, with its fields, and a line for each `has_one`, `has_many` and `refers_to` between them, marked with its cardinality. The entities they refer to in other aggregates or domains are drawn too, set apart from the aggregate's own.
+An aggregate is drawn as an ERD of the records it keeps. Each is an `entity` under the aggregate: one `root`, the record the aggregate is named for, and any number of `child` parts. Its body lists its fields in a table under a `## Fields` heading, with the columns Field, Meaning, Kind of value and Example. `has_one` and `has_many` link an entity to its parts inside the aggregate; `refers_to` may cross aggregates and domains. The app draws a domain's ERD at aggregate level and each aggregate's ERD with its entities.

@@ -1,6 +1,11 @@
--- A layer's order is a whole number, and no two layers in one domain share it, as for capabilities
--- (28-capability-order.sql). A missing order is missing-required-field. Orders are compared as numbers,
--- so 1 and 01 clash.
+-- A layer's order is a whole number that no other layer in its domain has.
+--
+-- This works as for capabilities (28-capability-order.sql). Layers in different domains may share an order.
+-- A missing order is missing-required-field. Orders are compared as numbers, so 1 and 01 clash. Give each
+-- layer in the domain its own whole-number `order`.
+--
+-- severity: error
+-- kinds: layer
 SELECT severity, "check", record, message FROM (
   SELECT 'error' AS severity, 'layer-order' AS "check", nullif(c.id, '') AS record,
          'Layer ' || coalesce(nullif(c.id, ''), c.path) || ' has order "' || c.raw
