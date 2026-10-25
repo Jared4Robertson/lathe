@@ -1,11 +1,16 @@
--- Work to do: a test whose proof counts in no domain's coverage, so it proves nothing anyone counts. A test's
--- proof of a target counts, as in lathe/src/coverage.ts, when the target is an obligation in a domain, or a
--- pattern rule owed by the domain the test sits in (a domain owes a pattern rule when it follows the pattern
--- itself, or when one of its use cases does, unless every following use case there marks the rule's setting
--- Not applicable).
--- A test is reported when it has at least one 'proof' link to a record that exists and none of its proofs
--- counts; the message says why for each target. A target that does not exist is only a dangling-link.
--- The test's state does not matter: a planned test that will prove nothing counted is reported too.
+-- A test whose proofs count in no domain's coverage.
+--
+-- A test's proof of a target counts, as in lathe/src/coverage.ts, when the target is an obligation in a
+-- domain, or a pattern rule owed by the domain the test sits in (a domain owes a pattern rule when it follows
+-- the pattern itself, or when one of its use cases does, unless every following use case there marks the
+-- rule's setting Not applicable). A test is reported when it has at least one `proof` link to a record that
+-- exists and none of its proofs counts; the message says why for each target. A target that does not exist
+-- is only a dangling-link. The test's state does not matter: a planned test that will prove nothing counted
+-- is reported too. Point the test at an obligation that counts, or move it into the domain that owes the
+-- rule.
+--
+-- severity: warning
+-- kinds: test
 SELECT severity, "check", record, message FROM (
 WITH follows AS (
   SELECT DISTINCT u.domain, l.target AS pattern, u.path

@@ -1,6 +1,12 @@
--- A record's parent must be of one of its kind's parent_kinds. Products are covered by product-has-parent.
--- An unknown parent is unknown-parent only. When the parent ID is duplicated (duplicate-id), the record
--- is reported only if no record with that ID could be its parent.
+-- A record's parent is of one of the kinds its kind allows as a parent.
+--
+-- Each kind lists its allowed parent kinds in `parent_kinds` (see the kind's reference). Products are covered
+-- by product-has-parent instead, and an unknown parent is unknown-parent only. When the parent ID is
+-- duplicated (duplicate-id), the record is reported only if no record with that ID could be its parent. Move
+-- the record under a parent of an allowed kind, or widen the kind's `parent_kinds` in the product's
+-- extension.
+--
+-- severity: error
 SELECT 'error' AS severity, 'parent-kind-not-allowed' AS "check", nullif(x.id, '') AS record,
        coalesce(nullif(x.id, ''), x.path) || ' (' || x.kind || ') sits under ' || x.parent || ' ('
        || string_agg(DISTINCT x.parent_kind, ' or ' ORDER BY x.parent_kind)

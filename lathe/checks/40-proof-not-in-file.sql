@@ -1,7 +1,13 @@
--- An automated test whose run_by file does not name the test's own ID must name every ID it proves
--- (each target of a relation whose role is 'proof'). Each proved ID the file leaves out is one error.
--- A test whose file names its own ID vouches for all its claims; a test with a `key` is checked by
--- test-file-missing-id instead. Manual and planned tests are not checked here.
+-- An automated test's file names every ID the test proves, unless it names the test's own ID.
+--
+-- Each target of a relation whose role is `proof` must appear in the file, as a whole ID, when the file does
+-- not name the test's own ID. Each proved ID the file leaves out is one error. A test whose file names its
+-- own ID vouches for all its claims; a test with a `key` is checked by test-file-missing-id instead. Manual
+-- and planned tests are not checked here. Name the ID in the test's name in the file, name the test's own
+-- ID there, or remove the claim.
+--
+-- severity: error
+-- kinds: test
 SELECT 'error' AS severity, 'proof-not-in-file' AS "check", nullif(record, '') AS record,
        'Test ' || coalesce(nullif(record, ''), path) || ' proves ' || target || ', but its file ' || file
        || ' names neither ' || coalesce(nullif(record, ''), 'the test''s ID') || ' nor ' || target

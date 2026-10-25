@@ -1,9 +1,17 @@
--- An automated test's run_by file must name the test's own ID, or else every ID the test proves
--- (each target of a relation whose role is 'proof'); a missing proved ID is proof-not-in-file.
--- This check reports the two cases that leave no proved ID to name:
+-- An automated test's `run_by` file names the test, so the code can be traced back to it.
+--
+-- The file must name the test's own ID, or else every ID the test proves (each target of a relation whose
+-- role is `proof`); a missing proved ID is proof-not-in-file. This check reports the two cases that leave no
+-- proved ID to name:
+--
 --   * a test with a `key` whose file does not contain that key text (the ID rules then do not apply);
 --   * a test that proves no record and whose file does not name its own ID.
--- A test with no state is automated; manual and planned tests are not checked here.
+--
+-- A test with no state is automated; manual and planned tests are not checked here. Put the test's ID in the
+-- test's name in the file, or fix its `key`.
+--
+-- severity: error
+-- kinds: test
 SELECT 'error' AS severity, 'test-file-missing-id' AS "check", nullif(f.record, '') AS record,
        'Test ' || coalesce(nullif(f.record, ''), f.path) || ' is run by ' || f.file || ', but that file '
        || CASE WHEN k.key IS NOT NULL THEN 'does not contain its key "' || k.key || '".'

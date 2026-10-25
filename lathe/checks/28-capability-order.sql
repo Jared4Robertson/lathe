@@ -1,5 +1,10 @@
--- A capability's order is a whole number, and no two capabilities in one domain share it.
--- A missing order is missing-required-field. Orders are compared as numbers, so 1 and 01 clash.
+-- A capability's order is a whole number that no other capability in its domain has.
+--
+-- Orders are compared as numbers, so 1 and 01 clash. A missing order is missing-required-field. Give each
+-- capability in the domain its own whole-number `order`.
+--
+-- severity: error
+-- kinds: capability
 SELECT severity, "check", record, message FROM (
   SELECT 'error' AS severity, 'capability-order' AS "check", nullif(c.id, '') AS record,
          'Capability ' || coalesce(nullif(c.id, ''), c.path) || ' has order "' || c.raw

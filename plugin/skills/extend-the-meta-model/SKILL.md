@@ -15,7 +15,7 @@ Extend only when the user asks for it, or a real need keeps recurring. Never ext
 
 ## Before you write
 
-1. Read section 9 of `FORMAT.md` in the Lathe package (`node_modules/@jaredrob/lathe/FORMAT.md` in a product repo, `lathe/FORMAT.md` in the Lathe repo) and the default `meta/kinds.csv`, `meta/relations.csv` and `meta/sections.csv`.
+1. Read section 9 of `FORMAT.md` in the Lathe package (`node_modules/@jaredrob/lathe/FORMAT.md` in a product repo, `lathe/FORMAT.md` in the Lathe repo), and run `npx lathe format` to see every kind, relation and folder the product has now. The default rows are in the package's `meta/kinds.csv`, `meta/relations.csv`, `meta/sections.csv` and `meta/ids.csv`.
 2. Read the product's existing `metaExtensions` files, if any. Use the same columns as the defaults, header row included.
 
 ## What a row does
@@ -82,11 +82,11 @@ links:
 Returning a loan MUST be refused unless the caller is the member who borrowed it.
 ```
 
-Pick an ID pattern for the new kind (here `<P>-<D>-SC<nn>`) and use it consistently; Lathe checks only the format and uniqueness.
+Pick an ID pattern for the new kind (here `<P>-<D>-SC<nn>`), add it as an `ids.csv` row (`kind,pattern,example`) so the reference shows it, and use it consistently; Lathe checks only the format and uniqueness. Give every new kind and relation a `description`: an empty one is an `undocumented` error.
 
 ## A product's own checks
 
-A house rule that the meta-model cannot express, such as Client's "each aggregate has exactly one Record view use case", is a product check, not an extension. Name a folder in `lathe.config.json` (`"checks": "lathe-checks"`) and add one `<number>-<check-name>.sql` file per rule, written as Lathe's own checks are: one `SELECT` over the same tables (`records`, `fields`, `links`, ...) returning `severity`, `"check"`, `record` and `message`. See section 13 of `FORMAT.md`.
+A house rule that the meta-model cannot express, such as Client's "each aggregate has exactly one Record view use case", is a product check, not an extension. Name a folder in `lathe.config.json` (`"checks": "lathe-checks"`) and add one `<number>-<check-name>.sql` file per rule, written as Lathe's own checks are: one `SELECT` over the same tables (`records`, `fields`, `links`, ...) returning `severity`, `"check"`, `record` and `message`, under a header comment that documents it (a summary sentence, a blank comment line, the explanation and how to fix it, a blank comment line, then `-- severity: warning` and an optional `-- kinds: aggregate`). See section 5 and section 13 of `FORMAT.md`; a check without that header is an `undocumented` error, and `lathe format` shows the product's checks with Lathe's.
 
 - The check's name is the file name without its number and `.sql`. Do not reuse one of Lathe's check names: that file is not run, and is a `product-check-name-clash` error.
 - Use `warning` for work still to do and `error` only for a broken workspace, as Lathe does.

@@ -1,8 +1,13 @@
--- Each entity lists its fields in a Markdown table under a "## Fields" heading (FORMAT.md section 17), with the
--- columns Field, Meaning, Kind of value and Example, one row per field and each field name once. The engine
--- reads the table into entity_tables and, when its columns are right, its rows into entity_fields. Field names
--- are compared trimmed, without code span backticks, and in any letter case. A table with the wrong columns
--- is reported for that alone.
+-- Each entity lists its fields in a Fields table.
+--
+-- The table sits under a `## Fields` heading (FORMAT.md section 17), with the columns Field, Meaning, Kind of
+-- value and Example, one row per field and each field name once. The engine reads the table into
+-- entity_tables and, when its columns are right, its rows into entity_fields. Field names are compared
+-- trimmed, without code span backticks, and in any letter case. A table with the wrong columns is reported
+-- for that alone. Add the heading and table, fix its columns, or merge the repeated field.
+--
+-- severity: error
+-- kinds: entity
 SELECT 'error' AS severity, 'entity-fields' AS "check", nullif(t.record, '') AS record,
        'Entity ' || coalesce(nullif(t.record, ''), t.path) || CASE
          WHEN NOT t.heading THEN ' has no ## Fields table; add a "## Fields" heading with a table of the columns '

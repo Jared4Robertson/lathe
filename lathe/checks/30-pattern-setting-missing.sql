@@ -1,8 +1,13 @@
--- A use case that follows a pattern gives each of the pattern's settings as a header field named
--- exactly as the pattern lists it: a value, or "Not applicable:" (any letter case) and a reason.
--- Setting names that are not valid field names are reported by bad-pattern-settings instead.
--- Only a pattern with settings asks for them: a pattern with no `settings` field, or an empty one, asks
--- nothing of the use cases that follow it. A domain that follows a pattern gives no settings.
+-- A use case that follows a pattern gives each of the pattern's settings.
+--
+-- Each setting is a header field named exactly as the pattern lists it: a value, or "Not applicable:" (any
+-- letter case) and a reason. Setting names that are not valid field names are reported by
+-- bad-pattern-settings instead. Only a pattern with settings asks for them: a pattern with no `settings`
+-- field, or an empty one, asks nothing of the use cases that follow it. A domain that follows a pattern
+-- gives no settings. Add the missing field to the use case, or its reason for Not applicable.
+--
+-- severity: error
+-- kinds: use_case pattern
 SELECT 'error' AS severity, 'pattern-setting-missing' AS "check", x.use_case AS record,
        CASE WHEN coalesce(x.value, '') = ''
             THEN 'Use case ' || x.use_case || ' follows pattern ' || x.pattern || ' but has no "' || x.name
