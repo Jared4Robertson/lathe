@@ -1,4 +1,4 @@
-// `npm --prefix desktop run icon`: renders the app icon (LA-DSK-UC05-R01) from build/icon.svg, and
+// `npm --prefix desktop run icon`: renders the app icon (LA-PLT-UC14-R01) from build/icon.svg, and
 // build/icon-small.svg for 16 and 32 px, to every file the builds and the shell use:
 //   build/icon.icns       macOS, every size from 16 to 1024 (iconutil)
 //   build/icon.ico        Windows, 16 to 256 (ImageMagick)

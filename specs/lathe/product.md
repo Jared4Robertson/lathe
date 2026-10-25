@@ -6,12 +6,13 @@ actors: Owner Reader Agent
 ---
 Lathe is a toolkit for organizing a product's lifecycle (domain model, use cases, interaction design, technical design and tests) as structured records that a database checks and a web app navigates.
 
-This product is Lathe's own specification, written in Lathe, so the tool is held to its own process. It has four domains:
+This product is Lathe's own specification, written in Lathe, so the tool is held to its own process. It has five domains, each a vertical slice of capability that holds its own model, use cases, design, code references and tests:
 
-- **Modeling** (`LA-MOD`): the CSV diagrams under `model/` and the Markdown spec records under `specs/`.
-- **Checking** (`LA-CHK`): the engine that loads the workspace, applies the meta-model and checks, and computes coverage.
-- **Browsing** (`LA-BRW`): the web app's navigation of specs, alongside the existing Diagrams pages.
-- **Desktop** (`LA-DSK`): Lathe as a desktop app, a window per product folder around the same web app.
+- **Authoring** (`LA-AUT`): the record format and Lathe's concepts, from products and domains to tests, with what a product adds.
+- **Checking** (`LA-CHK`): the checks, problems and severity.
+- **Traceability** (`LA-TRC`): links in both directions, and designed, built and proved coverage with its gaps and evidence.
+- **Exploring** (`LA-EXP`): reading a product through the wiki, graph and model views, search, tabs and the side bar.
+- **Platform** (`LA-PLT`): what every slice shares: the app shell and workbench, themes, the workspace and live reload, the server, and the desktop app.
 
 Lathe's use cases name three roles. The **Owner** is the person who decides what a product is for, reviews agents' work and records the product's fitness. A **Reader** is anyone using the app to read and navigate a spec, such as a teammate or the owner. An **Agent** is an AI agent that writes records and code on someone's behalf. Following the people-and-tools foundation, an agent is a Tool acting for a Person, so every agent action traces back to the owner.
 

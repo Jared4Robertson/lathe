@@ -8,7 +8,7 @@ const PAGES = ['/', '/DM', '/NF', '/DM-SHOP', '/DM-PAY', '/checks',
   ...records.map((r) => addressOf(r.id))];
 
 describe('record IDs are links', () => {
-  it('LA-BRW-T15 Every record ID a page shows is a real link to that record', async () => {
+  it('LA-EXP-T10 Every record ID a page shows is a real link to that record', async () => {
     const byId = new Map(records.map((r) => [r.id, r]));
     let checked = 0;
     for (const page of PAGES) {

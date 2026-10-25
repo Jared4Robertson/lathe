@@ -84,7 +84,7 @@ export function readMotion(): Motion {
 
 /**
  * The two box centers an edge joins, with the boxes' sizes when they are not a leaf's, and
- * whether it is a tree connector of the icicle (LA-BRW-DR330).
+ * whether it is a tree connector of the icicle (LA-EXP-DR53).
  */
 export interface EdgeEnds {
   source: Point;

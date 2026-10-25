@@ -19,7 +19,7 @@ const links = (titles: Record<string, string>, broken: string[] = []) => ({
 const body = () => document.querySelector('.record-main .markdown, .spec-body .markdown') as HTMLElement;
 
 describe('prose mentions', () => {
-  it('LA-BRW-T170 Every mentioned ID in the text becomes a link to its record, with its title on hover', () => {
+  it('LA-EXP-T53 Every mentioned ID in the text becomes a link to its record, with its title on hover', () => {
     const html = renderMarkdown('See TL-LEND-DR01, and again TL-LEND-DR01.\n\n- In a list: TL-LEND-UC01', links({ 'TL-LEND-DR01': 'One loan at a time', 'TL-LEND-UC01': 'Lend a tool' }));
     const div = document.createElement('div');
     div.innerHTML = html;
@@ -32,7 +32,7 @@ describe('prose mentions', () => {
     expect(div.textContent).toContain('See TL-LEND-DR01, and again TL-LEND-DR01.');
   });
 
-  it('LA-BRW-T171 IDs inside code blocks, code with other text, links and longer IDs are never linked; a code span of one lone ID is', () => {
+  it('LA-EXP-T54 IDs inside code blocks, code with other text, links and longer IDs are never linked; a code span of one lone ID is', () => {
     const html = renderMarkdown(
       'Code `see TL-LEND-DR01` and\n\n```\nTL-LEND-DR01\n```\n\n[a link to TL-LEND-DR01](https://example.com) and TL-LEND-DR01-R01 and XTL-LEND-DR01.',
       links({ 'TL-LEND-DR01': 'One loan at a time' }),
@@ -51,7 +51,7 @@ describe('prose mentions', () => {
     expect(linkMentions('<p>TL-LEND-DR01</p>', links({}))).toBe('<p>TL-LEND-DR01</p>');
   });
 
-  it('LA-BRW-T172 Only the record\'s own mentions are linked; unknown IDs it was warned about look broken', () => {
+  it('LA-EXP-T55 Only the record\'s own mentions are linked; unknown IDs it was warned about look broken', () => {
     const ix = indexWorkspace(patternWorkspace());
     const uc = ix.byId.get('DM-SHOP-UC01')!;
     const p = proseLinks(ix, uc);
@@ -59,7 +59,7 @@ describe('prose mentions', () => {
     expect([...p.broken]).toEqual(['DM-SHOP-DR99']);
   });
 
-  it('LA-BRW-T173 On a record page the body links its mentions, marks unknown IDs, and a link moves within the app', async () => {
+  it('LA-EXP-T56 On a record page the body links its mentions, marks unknown IDs, and a link moves within the app', async () => {
     await openApp('/DM-SHOP-UC01', { workspace: patternWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     const prose = within(body());
@@ -74,7 +74,7 @@ describe('prose mentions', () => {
     await screen.findByRole('heading', { level: 1, name: 'A basket holds at most 50 items' });
   });
 
-  it('LA-BRW-T174 A mention next to a longer ID links only the ID mentioned, is not a link between records, and domain pages link theirs too', async () => {
+  it('LA-EXP-T57 A mention next to a longer ID links only the ID mentioned, is not a link between records, and domain pages link theirs too', async () => {
     openSideBar();
     await openApp('/DM-PAY-UC01', { workspace: patternWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Pay by card' });

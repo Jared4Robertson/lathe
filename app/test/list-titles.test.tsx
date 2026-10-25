@@ -14,7 +14,7 @@ const sideBar = () => screen.getByRole('complementary', { name: 'Side bar' });
 const noListInSideBar = (name: RegExp) => { expect(within(sideBar()).queryByRole('list', { name })).toBeNull(); expect(within(sideBar()).queryByRole('heading', { name })).toBeNull(); };
 
 describe('list titles', () => {
-  it('LA-BRW-T340 A list of children or members of one kind is titled by that kind, in the wiki and the side bar', async () => {
+  it('LA-EXP-T120 A list of children or members of one kind is titled by that kind, in the wiki and the side bar', async () => {
     // An aggregate's domain rules: the record page says "Domain rules"; the side bar does not repeat them.
     openSideBar();
     await openApp('/DM-SHOP-A1');

@@ -14,7 +14,7 @@ beforeAll(async () => {
 });
 
 describe('mentions', () => {
-  it('LA-CHK-T120 A record mentions the existing IDs its body cites, in order of first mention', () => {
+  it('LA-AUT-T35 A record mentions the existing IDs its body cites, in order of first mention', () => {
     // A bare product or domain ID in plain prose (NX, MX-D) is not a citation (FORMAT.md section 12).
     expect(mentionsOf('MX-D-UC01')).toEqual(['MX-D-UC02', 'MX-D-UC01-R01', 'MX-D-UC03']);
     expect(mentionsOf('MX')).toEqual([]);
@@ -23,7 +23,7 @@ describe('mentions', () => {
     expect(mentionsOf('MX-D')).toEqual([]);
   });
 
-  it('LA-CHK-T121 IDs in fenced code blocks and in code spans with other text are not citations, but a code span holding one lone ID is', () => {
+  it('LA-CHK-T12 IDs in fenced code blocks and in code spans with other text are not citations, but a code span holding one lone ID is', () => {
     const cited = ws.records.flatMap((r) => r.mentions);
     for (const id of ['MX-D-UC94', 'MX-D-UC95', 'MX-D-UC96', 'MX-D-UC97', 'MX-D-UC98']) expect(cited).not.toContain(id);
     expect(ws.problems.filter((p) => p.message.includes('UC9'))).toEqual([]);
@@ -34,7 +34,7 @@ describe('mentions', () => {
     expect(idTokensInProse('A-1\n````\nB-2\n```\nC-3')).toEqual(['A-1']);
   });
 
-  it('LA-CHK-T122 A token without a workspace product prefix, or not a whole ID, is ignored', () => {
+  it('LA-AUT-T36 A token without a workspace product prefix, or not a whole ID, is ignored', () => {
     const cited = ws.records.flatMap((r) => r.mentions);
     expect(cited).not.toContain('ZZ-D-UC01');
     expect(cited).not.toContain('MXY-D-UC01');
@@ -49,7 +49,7 @@ describe('mentions', () => {
     ]);
   });
 
-  it('LA-CHK-T123 Mentions hold no repeats and never the record itself', () => {
+  it('LA-AUT-T37 Mentions hold no repeats and never the record itself', () => {
     for (const r of ws.records) {
       expect(new Set(r.mentions).size, r.id).toBe(r.mentions.length);
       expect(r.mentions, r.id).not.toContain(r.id);
@@ -57,7 +57,7 @@ describe('mentions', () => {
     expect(mentionsOf('MX-D-UC01-R01')).toEqual(['MX-D-UC02', 'MX-D-T01']);
   });
 
-  it('LA-CHK-T124 A cited ID with a known prefix that is not a record is one warning', () => {
+  it('LA-AUT-T38 A cited ID with a known prefix that is not a record is one warning', () => {
     expect(ws.problems.filter((p) => p.check === 'unknown-id-in-prose')).toEqual([
       {
         severity: 'warning',
@@ -68,7 +68,7 @@ describe('mentions', () => {
     ]);
   });
 
-  it('LA-CHK-T125 Mentions are not links', () => {
+  it('LA-AUT-T39 Mentions are not links', () => {
     expect(ws.links).toEqual([]);
     expect(ws.problems.filter((p) => p.severity === 'error')).toEqual([]);
     const gaps = ws.problems.filter((p) => p.record === 'MX-D-UC01-R01').map((p) => p.check).sort();

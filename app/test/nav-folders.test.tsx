@@ -25,7 +25,7 @@ const rec = (id: string, kind: string, title: string, parent: string, fields: Re
   ({ id, kind, title, parent, product: 'DM', domain: 'DM-SHOP', fields, body: '', path: `specs/dm/${id}.md`, mentions: [] });
 
 describe('folders like S2', () => {
-  it('LA-BRW-T268 Under the space, one level shows: domains are folded rows, and a domain unfolds into Define, Design and Open questions with counts', async () => {
+  it('LA-EXP-T84 Under the space, one level shows: domains are folded rows, and a domain unfolds into Define, Design and Open questions with counts', async () => {
     await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     const user = userEvent.setup();
@@ -52,7 +52,7 @@ describe('folders like S2', () => {
     expect(within(panel()).queryByRole('list', { name: 'Design of Shopping' })).toBeNull();
   });
 
-  it('LA-BRW-T269 A stage or folder with no records is left out of the nav', async () => {
+  it('LA-EXP-T85 A stage or folder with no records is left out of the nav', async () => {
     await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     const user = userEvent.setup();
@@ -63,7 +63,7 @@ describe('folders like S2', () => {
     expect(rows(list('Define of Paying'))).toEqual(['Capabilities1']);
   });
 
-  it("LA-BRW-T270 The current page's branch opens itself: a record's domain, stage and folder, or a group's folder", async () => {
+  it("LA-EXP-T86 The current page's branch opens itself: a record's domain, stage and folder, or a group's folder", async () => {
     // A requirement is not listed; the use case it sits under is, so that use case's branch opens.
     await openApp('/DM-SHOP-UC01-R01');
     await screen.findByRole('heading', { level: 1, name: 'The basket shows the new item' });
@@ -87,7 +87,7 @@ describe('folders like S2', () => {
     expect(window.sessionStorage.getItem('lathe:nav-folders')).toContain('domain:DM-PAY');
   });
 
-  it('LA-BRW-T271 Folder names and order come from Workspace.sections, in the nav and on the domain page alike', async () => {
+  it('LA-EXP-T87 Folder names and order come from Workspace.sections, in the nav and on the domain page alike', async () => {
     const w: Workspace = workspace();
     w.sections = w.sections.map((s) => (s.section === 'test-plan' ? { ...s, label: 'Tests and checks', order: 0 } : s));
     await openApp('/DM-SHOP', { workspace: w });
@@ -99,7 +99,7 @@ describe('folders like S2', () => {
     expect([...design.querySelectorAll('h3')].map((h) => h.firstChild?.textContent)).toEqual(['Tests and checks', 'Interaction design', 'Technical specification']);
   });
 
-  it('LA-BRW-T272 The product shows a Shared folder only when it has patterns, and patterns leave its groups', async () => {
+  it('LA-EXP-T88 The product shows a Shared folder only when it has patterns, and patterns leave its groups', async () => {
     await openApp('/DM', { workspace: patternWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     const shared = list('Shared by Demo shop');
@@ -118,7 +118,7 @@ describe('folders like S2', () => {
     expect(within(panel()).queryByRole('list', { name: 'Shared by Demo shop' })).toBeNull();
   });
 
-  it("LA-BRW-T273 A capability's flows and tests sit in Interaction design and Test plan, its use cases under it; Use cases lists capabilities, then use cases outside any", async () => {
+  it("LA-EXP-T89 A capability's flows and tests sit in Interaction design and Test plan, its use cases under it; Use cases lists capabilities, then use cases outside any", async () => {
     const w = workspace();
     w.records.push(
       rec('DM-SHOP-CAP01', 'capability', 'Filling the basket', 'DM-SHOP', { order: '1' }),
@@ -152,7 +152,7 @@ describe('folders like S2', () => {
     await waitFor(() => expect(list('Capabilities of Shopping').textContent).toBe('Filling the basketAdd an item to the basket'));
   });
 
-  it('LA-BRW-T274 A kind in no known folder gets its own folder at the end of its stage, or after the stages when it has no stage; the path names its folder', () => {
+  it('LA-EXP-T90 A kind in no known folder gets its own folder at the end of its stage, or after the stages when it has no stage; the path names its folder', () => {
     const w = workspace();
     w.kinds.push(
       { kind: 'risk', label: 'Risk', stage: 'define', section: '', parent_kinds: ['domain'], required_fields: [], obligation: false, proof_only: false, description: 'A risk.' },
@@ -168,7 +168,7 @@ describe('folders like S2', () => {
     expect(folderPath(index, 'question')).toEqual([]);
   });
 
-  it('LA-BRW-T275 What is folded is remembered for the session, and every record is listed without sections', async () => {
+  it('LA-EXP-T91 What is folded is remembered for the session, and every record is listed without sections', async () => {
     await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     const user = userEvent.setup();

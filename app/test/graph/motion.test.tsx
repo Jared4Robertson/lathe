@@ -6,7 +6,7 @@ import { cubicBezier, edgeMove, edgePoints, MOTION_EASE, parseDuration, parseEas
 import { openApp, startAtDepth } from '../helpers';
 import { testWorkspace } from './workspace';
 
-// The graph moves as one picture when it re-centers (LA-BRW-UC20-R09): each edge tweens with its
+// The graph moves as one picture when it re-centers (LA-EXP-UC03-R09): each edge tweens with its
 // nodes on the shared motion (LA-PAT-APP-UX-R04), new edges fade in, leaving ones fade out, and
 // under reduced motion everything jumps.
 
@@ -26,7 +26,7 @@ const from: EdgeEnds = { source: { x: 0, y: 0 }, target: { x: 300, y: 0 } };
 const to: EdgeEnds = { source: { x: -300, y: 100 }, target: { x: 0, y: 0 } };
 
 describe('graph motion', () => {
-  it('LA-BRW-T299 An edge tweens its two boxes from where they were to where they go, its ends on the boxes at t = 0, 0.5 and 1', () => {
+  it('LA-EXP-T107 An edge tweens its two boxes from where they were to where they go, its ends on the boxes at t = 0, 0.5 and 1', () => {
     const start = tweenEdge({ ends: from, opacity: 1 }, { ends: to, opacity: 1 }, 0, linear);
     expect(start.points).toEqual(edgePoints(from));
     expect(start.points[0]).toEqual({ x: NODE_WIDTH / 2, y: 0 });
@@ -48,7 +48,7 @@ describe('graph motion', () => {
     expect(tweenEdge({ ends: from, opacity: 1 }, { ends: to, opacity: 1 }, 2, linear).ends).toMatchObject(to);
   });
 
-  it("LA-BRW-T300 The tween follows the nodes' easing: CSS's ease, read from the motion tokens", () => {
+  it("LA-EXP-T108 The tween follows the nodes' easing: CSS's ease, read from the motion tokens", () => {
     const ease = cubicBezier(...MOTION_EASE);
     expect(ease(0)).toBe(0);
     expect(ease(1)).toBe(1);
@@ -73,7 +73,7 @@ describe('graph motion', () => {
     expect(parseEase('linear')(0.3)).toBeCloseTo(0.3, 6);
   });
 
-  it('LA-BRW-T301 An edge that persists moves at full strength, a new one fades in and a leaving one fades out', () => {
+  it('LA-EXP-T109 An edge that persists moves at full strength, a new one fades in and a leaving one fades out', () => {
     const drawn = { ends: from, opacity: 1 };
     // Persists: from where it was drawn to its new place, opacity 1 throughout.
     const persist = edgeMove('persist', to, drawn);
@@ -126,7 +126,7 @@ async function recenter() {
 describe('graph motion on the page', () => {
   afterEach(() => vi.unstubAllGlobals());
 
-  it('LA-BRW-T302 A persisting edge keeps its element and moves to its new place; edges that leave fade out and are then dropped', async () => {
+  it('LA-EXP-T110 A persisting edge keeps its element and moves to its new place; edges that leave fade out and are then dropped', async () => {
     const { element, before, first } = await recenter();
     // The new picture is drawn, but the edge starts where it was and is the same element.
     expect(path()).toBe(element);
@@ -150,7 +150,7 @@ describe('graph motion on the page', () => {
     expect(element.closest('g')!.style.opacity).toBe('1');
   });
 
-  it('LA-BRW-T303 Under reduced motion the edges jump with the nodes: no tween and nothing fading out', async () => {
+  it('LA-EXP-T111 Under reduced motion the edges jump with the nodes: no tween and nothing fading out', async () => {
     vi.stubGlobal('matchMedia', (query: string) => ({ matches: query.includes('prefers-reduced-motion: reduce'), media: query, addEventListener: () => {}, removeEventListener: () => {} }));
     expect(readMotion()).toMatchObject({ duration: 0, reduced: true });
     const { element, before, first } = await recenter();

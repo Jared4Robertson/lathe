@@ -39,7 +39,7 @@ function bigWorkspace(): Workspace {
 }
 
 describe('long lists', () => {
-  it('LA-BRW-T88 A list of up to 10 items is plain; a longer one scrolls inside, with a search box, a count and a message when nothing matches', async () => {
+  it('LA-TRC-T96 A list of up to 10 items is plain; a longer one scrolls inside, with a search box, a count and a message when nothing matches', async () => {
     const { unmount } = render(list(make(10)));
     expect(screen.getAllByRole('listitem')).toHaveLength(10);
     expect(screen.queryByRole('searchbox')).toBeNull();
@@ -80,7 +80,7 @@ describe('long lists', () => {
     expect(region).toHaveFocus();
   });
 
-  it('LA-BRW-T89 Every list in the spec pages stays at 10 rows and can be searched', async () => {
+  it('LA-TRC-T97 Every list in the spec pages stays at 10 rows and can be searched', async () => {
     const served = { workspace: bigWorkspace() };
     const user = userEvent.setup();
 

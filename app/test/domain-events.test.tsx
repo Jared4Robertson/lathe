@@ -27,7 +27,7 @@ const boxesShown = () => waitFor(() => expect(modelPane().querySelectorAll('.rea
 const CSS = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
 
 describe('domain events in the ERD', () => {
-  it('LA-BRW-T556 An aggregate\'s ERD draws each of its domain events as a spark pill with a short line from the entity raising it, and the aggregates reacting to it as faded context at the end of a dashed reacts-to line', async () => {
+  it('LA-EXP-T155 An aggregate\'s ERD draws each of its domain events as a spark pill with a short line from the entity raising it, and the aggregates reacting to it as faded context at the end of a dashed reacts-to line', async () => {
     const erd = aggregateErd(index(), 'P-D-A3');
     const byId = new Map(erd.boxes.map((b) => [b.id, b]));
     expect(erd.boxes.filter((b) => b.kind === 'event').map((b) => b.id)).toEqual(['P-D-EV01', 'P-D-EV02', 'P-D-EV03']);
@@ -78,12 +78,12 @@ describe('domain events in the ERD', () => {
     await boxesShown();
     expect(box('P-D-EV02')!.querySelector('.erd-box')).toHaveClass('is-highlight');
     expect(box('P-D-EV01')!.querySelector('.erd-box')).not.toHaveClass('is-highlight');
-    // Spark tokens for the pill and its lines (LA-BRW-DR307).
+    // Spark tokens for the pill and its lines (LA-EXP-DR52).
     expect(CSS).toMatch(/\.erd-box\.erd-event\s*\{[^}]*var\(--spark\)[^}]*var\(--spark-bg\)[^}]*border-radius:\s*999px/);
     expect(CSS).toMatch(/\.rel-raised_by, \.rel-reacts_to\) :is\(\.erd-line-path, \.erd-end\) \{ stroke: var\(--spark\)/);
   });
 
-  it('LA-BRW-T557 A domain\'s ERD draws one dashed reacts-to line per aggregate pair and event, from the aggregate raising it to the one reacting, with the event\'s name as its label on hover', async () => {
+  it('LA-PLT-T82 A domain\'s ERD draws one dashed reacts-to line per aggregate pair and event, from the aggregate raising it to the one reacting, with the event\'s name as its label on hover', async () => {
     const erd = domainErd(index(), 'P-D');
     const reacts = erd.lines.filter((l) => l.relation === 'reacts_to');
     expect(reacts.map((l) => l.id).sort()).toEqual([
@@ -135,7 +135,7 @@ describe('domain events in the ERD', () => {
     expect(CSS).toMatch(/pointer: coarse\) \{ \.erd-line\.has-event \.erd-line-label \{ opacity: 1/);
   });
 
-  it('LA-BRW-T558 The ERD\'s key explains the event pill, the raised-by line and the dashed reacts-to line in the relations\' own words, and keeps its one height', async () => {
+  it('LA-EXP-T156 The ERD\'s key explains the event pill, the raised-by line and the dashed reacts-to line in the relations\' own words, and keeps its one height', async () => {
     await openApp(`${addressOf('P-D-A3')}?view=model`, served());
     await screen.findByRole('heading', { level: 1, name: 'Loan' });
     await boxesShown();
@@ -168,7 +168,7 @@ describe('domain events in the ERD', () => {
 });
 
 describe('domain events in the wiki', () => {
-  it('LA-BRW-T559 An aggregate\'s page lists its domain events titled "Domain events", each row a whole link saying what raises it and how many react; an event\'s page shows its Fields table, "Raised by" and "Reacted to by", and a reacting record shows "Reacts to"', async () => {
+  it('LA-PLT-T83 An aggregate\'s page lists its domain events titled "Domain events", each row a whole link saying what raises it and how many react; an event\'s page shows its Fields table, "Raised by" and "Reacted to by", and a reacting record shows "Reacts to"', async () => {
     await openApp(`${addressOf('P-D-A3')}?view=wiki`, served());
     await screen.findByRole('heading', { level: 1, name: 'Loan' });
     const events = section(/^Domain events/);
@@ -212,7 +212,7 @@ describe('domain events in the wiki', () => {
 });
 
 describe('domain events in the graph', () => {
-  it('LA-BRW-T560 Events sit under their aggregate through a "Domain events" group, are drawn as spark pills, and their reacts_to links are dashed, labeled from the meta-model and drawn with the Links switch', async () => {
+  it('LA-EXP-T157 Events sit under their aggregate through a "Domain events" group, are drawn as spark pills, and their reacts_to links are dashed, labeled from the meta-model and drawn with the Links switch', async () => {
     const i = index();
     expect(treeChildren(i, 'P-D-A3')).toEqual(['P-D-A3/entity', 'P-D-A3/domain_event']);
     expect(treeGroup(i, 'P-D-A3/domain_event')).toMatchObject({ label: 'Domain events', kind: 'domain_event', count: 3, role: 'kind' });

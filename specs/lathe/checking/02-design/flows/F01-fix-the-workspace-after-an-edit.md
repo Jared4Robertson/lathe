@@ -4,7 +4,7 @@ kind: flow
 title: Fix the workspace after an edit
 parent: LA-CHK-CAP01
 links:
-  carries_out: [LA-CHK-UC01, LA-CHK-UC03, LA-CHK-UC08, LA-CHK-UC12, LA-CHK-UC13, LA-CHK-UC18]
+  carries_out: [LA-CHK-UC01, LA-CHK-UC02, LA-TRC-UC03, LA-TRC-UC05, LA-CHK-UC03, LA-AUT-UC08]
 ---
 1. An agent edits records, then runs `lathe check` (the Claude Code plugin's hook runs it after every spec edit).
 2. The check prints errors first: broken records, tests whose files do not back what they claim to prove, and IDs cited in prose that no longer exist. The agent fixes each and runs the check again until there are no errors.

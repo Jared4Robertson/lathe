@@ -12,7 +12,7 @@ const rowOf = (n: Neighborhood) => new Map(n.nodes.map((x) => [x.id, x.row]));
 describe('graph columns by tree depth', () => {
   const index = testIndex();
 
-  it('LA-BRW-T250 Siblings of mixed kinds share a column, in the model and on the canvas', async () => {
+  it('LA-EXP-T78 Siblings of mixed kinds share a column, in the model and on the canvas', async () => {
     // From the Design stage at depth 2: the views' and endpoints' groups, the components and the test plan's group are all one level below a folder.
     const n = neighborhood(index, 'P-D/design', 2);
     const column = columnOf(n);
@@ -32,7 +32,7 @@ describe('graph columns by tree depth', () => {
     expect(new Set(members.map((id) => positions.get(id)!.x)).size).toBe(1);
   });
 
-  it('LA-BRW-T251 The focus\'s ancestors sit one column each to its left and its descendants to its right', async () => {
+  it('LA-EXP-T79 The focus\'s ancestors sit one column each to its left and its descendants to its right', async () => {
     const n = neighborhood(index, 'P-D-UC01', 3);
     const column = columnOf(n);
     expect(['P', 'P-D', 'P-D/define', 'P-D/define/use-cases', 'P-D-UC01', 'P-D-UC01-R01'].map((id) => column.get(id))).toEqual([0, 1, 2, 3, 4, 5]);
@@ -45,7 +45,7 @@ describe('graph columns by tree depth', () => {
     expect(x('P-D-UC01')).toBeLessThan(x('P-D-UC01-R01'));
   });
 
-  it('LA-BRW-T252 A cross-linked record sits one column after the record it is reached from, unless its tree position places it', () => {
+  it('LA-EXP-T80 A cross-linked record sits one column after the record it is reached from, unless its tree position places it', () => {
     // Without parent lines, what the requirement links to is reached from it, one column after it.
     const chain = neighborhood(index, 'P-D-UC01-R01', 1, { hiddenKinds: new Set(), hiddenRelations: new Set(['parent']) }, undefined, { links: true });
     const column = columnOf(chain);
@@ -60,7 +60,7 @@ describe('graph columns by tree depth', () => {
     expect(service.edges.map((e) => e.id)).toContain('P-D/design/technical-specification|parent|P-D-C02');
   });
 
-  it('LA-BRW-T253 A group sits in its own column between its parent and its members', () => {
+  it('LA-EXP-T81 A group sits in its own column between its parent and its members', () => {
     const grouped = indexWorkspace(groupedWorkspace());
     const n = neighborhood(grouped, 'P-D/define/use-cases', 3);
     const column = columnOf(n);
@@ -73,7 +73,7 @@ describe('graph columns by tree depth', () => {
     expect(opened.get('P-D-UC02-R01')).toBe(opened.get('P-D-UC02/requirement')! + 1);
   });
 
-  it('LA-BRW-T254 Within a column nodes follow their parent\'s place, then the nav\'s order, and keep it when the graph re-centers', async () => {
+  it('LA-EXP-T82 Within a column nodes follow their parent\'s place, then the nav\'s order, and keep it when the graph re-centers', async () => {
     const grouped = indexWorkspace(groupedWorkspace());
     const n = neighborhood(grouped, 'P-D/define/use-cases', 2);
     const row = rowOf(n);
@@ -100,7 +100,7 @@ describe('graph columns by tree depth', () => {
     expect(fromMember.get('P-D-UC01')!).toBeLessThan(fromMember.get('P-D-UC02')!);
   });
 
-  it('LA-BRW-T255 Trace mode keeps its own columns, from the rule to the files', () => {
+  it('LA-EXP-T83 Trace mode keeps its own columns, from the rule to the files', () => {
     const t = traceChain(index, 'P-D-UC01-R01');
     for (const node of t.nodes) expect(node.column).toBe(traceColumn(node.kind));
     expect(columnOf(t).get('P-D-UC01-R01')).toBe(0);

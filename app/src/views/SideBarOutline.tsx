@@ -8,7 +8,7 @@ import { erdFor } from '../model/erd';
 import { kindLabel, type SpecIndex } from '../specs/data';
 import type { SideMode } from './sideBarState';
 
-// The side bar's Outline (LA-BRW-UC119-R04): what the main view holds, as rows to jump to.
+// The side bar's Outline (LA-EXP-UC12-R04): what the main view holds, as rows to jump to.
 // - Wiki: the page's sections and headings (Traceability and its groups, children, problems, the
 //   body's Markdown headings), each a row that scrolls the wiki there, the section in view marked.
 // - Graph: the records in focus (not the context ring), grouped by level from left to right.

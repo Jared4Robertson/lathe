@@ -1,4 +1,4 @@
-// Tests for the Modeling domain (LA-MOD): CSV diagrams, their checks and API, and the record rules.
+// Tests for the Modeling domain (LA-AUT): CSV diagrams, their checks and API, and the record rules.
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { tmpdir } from 'node:os';
@@ -348,7 +348,7 @@ const broken = (check: string) =>
     .sort();
 
 describe('spec records', () => {
-  it('LA-MOD-T23 A record is one Markdown file whose header holds its fields and links', () => {
+  it('LA-AUT-T01 A record is one Markdown file whose header holds its fields and links', () => {
     const ws = workspaces['records-good'];
     expect(ws.problems).toEqual([]);
     const uc = ws.records.find((r) => r.id === 'MX-D-UC01')!;
@@ -366,7 +366,7 @@ describe('spec records', () => {
     expect(ws.records).toHaveLength(8);
   });
 
-  it('LA-MOD-T24 A record points at the code that builds it (file) and the code that proves it (run_by)', () => {
+  it('LA-AUT-T02 A record points at the code that builds it (file) and the code that proves it (run_by)', () => {
     const ws = workspaces['records-good'];
     expect(ws.records.find((r) => r.id === 'MX-D-C01')!.fields.file).toBe('code/mark_service.txt');
     expect(ws.records.find((r) => r.id === 'MX-D-T01')!.fields.run_by).toBe('code/mark_test.txt');
@@ -380,7 +380,7 @@ describe('spec records', () => {
     })]);
   });
 
-  it('LA-MOD-T25 Moving or renaming record files does not change what they mean, and README.md is ignored', async () => {
+  it('LA-AUT-T03 Moving or renaming record files does not change what they mean, and README.md is ignored', async () => {
     const { root } = tempRepo(false);
     // Put every record of the good workspace flat in one oddly named folder, with a README.md that is not a record.
     const from = path.join(FIXTURES, 'records-good');
@@ -402,15 +402,15 @@ describe('spec records', () => {
     expect(moved.coverage).toEqual(original.coverage);
   });
 
-  it('LA-MOD-T26 Two records with the same ID are an error, even in different products', () => {
+  it('LA-AUT-T04 Two records with the same ID are an error, even in different products', () => {
     expect(broken('duplicate-id')).toEqual(['BA-D-A1']);
   });
 
-  it('LA-MOD-T27 An ID that does not match the pattern is an error', () => {
+  it('LA-AUT-T05 An ID that does not match the pattern is an error', () => {
     expect(broken('bad-id')).toEqual(['ba-d-a2']);
   });
 
-  it('LA-MOD-T28 A missing, unknown, disallowed or looping parent is an error, as is a product with a parent', () => {
+  it('LA-AUT-T06 A missing, unknown, disallowed or looping parent is an error, as is a product with a parent', () => {
     expect(broken('missing-parent')).toEqual(['BA-D-A3']);
     expect(broken('unknown-parent')).toEqual(['BA-D-A4']);
     expect(broken('parent-kind-not-allowed')).toEqual(['BA-D-A5', 'BA-D-A6', 'BA-D-DR01']);
@@ -418,7 +418,7 @@ describe('spec records', () => {
     expect(broken('product-has-parent')).toEqual(['BB']);
   });
 
-  it('LA-MOD-T29 A record without a title, a known kind or its kind\'s required fields is an error', () => {
+  it('LA-AUT-T07 A record without a title, a known kind or its kind\'s required fields is an error', () => {
     expect(broken('missing-title')).toEqual(['BA-D-A7']);
     expect(broken('unknown-kind')).toEqual(['BA-D-W01']);
     expect(broken('missing-required-field')).toEqual(['BA-D-UC01']);
@@ -426,23 +426,23 @@ describe('spec records', () => {
     expect(missing.message).toContain('actor');
   });
 
-  it('LA-MOD-T30 A link to a record that does not exist is an error', () => {
+  it('LA-AUT-T08 A link to a record that does not exist is an error', () => {
     expect(broken('dangling-link')).toEqual(['BA-D-UC02']);
   });
 
-  it('LA-MOD-T31 A link whose relation is unknown or not allowed for its kinds is an error', () => {
+  it('LA-AUT-T09 A link whose relation is unknown or not allowed for its kinds is an error', () => {
     expect(broken('relation-not-allowed')).toEqual(['BA-D-V01']);
     expect(broken('unknown-relation')).toEqual(['BA-D-V01']);
   });
 
-  it('LA-MOD-T32 A test whose run_by file is missing or lacks its ID is an error; a missing component file is only a warning', () => {
+  it('LA-AUT-T10 A test whose run_by file is missing or lacks its ID is an error; a missing component file is only a warning', () => {
     expect(broken('test-file-missing')).toEqual(['BA-D-T01']);
     expect(broken('proof-not-in-file')).toEqual(['BA-D-T02']);
     const later = workspaces['records-broken'].problems.filter((p) => p.record === 'BA-D-C01');
     expect(later).toEqual([expect.objectContaining({ severity: 'warning', check: 'component-file-missing' })]);
   });
 
-  it("LA-MOD-T33 Every rule and requirement in Lathe's own specs states its rule with MUST, SHOULD or MAY under a short title", async () => {
+  it("LA-AUT-T11 Every rule and requirement in Lathe's own specs states its rule with MUST, SHOULD or MAY under a short title", async () => {
     // Lathe's own records only: other products in this repo are examples with their own owners.
     const ws = await loadWorkspace(REPO);
     const rules = ws.records.filter((r) => r.product === 'LA' && (r.kind === 'requirement' || r.kind === 'domain_rule'));

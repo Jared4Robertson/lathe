@@ -1,4 +1,4 @@
-// LA-CHK-T600: the engine's performance budgets (LA-CHK-DR310), measured: `npm --prefix lathe run test:perf`.
+// LA-PLT-T06: the engine's performance budgets (LA-PLT-DR02), measured: `npm --prefix lathe run test:perf`.
 //
 // - Loading Lathe's own spec (a cold load: every file parsed) takes under 2 s.
 // - A live reload after one record file changes takes under 500 ms.

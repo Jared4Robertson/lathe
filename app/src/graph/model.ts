@@ -631,7 +631,7 @@ export function relationsOf(index: SpecIndex): string[] {
 }
 
 export const RELATION_LABELS: Record<string, string> = { [PARENT]: 'parent / child', [NAMES]: 'names file' };
-/** A relation's label by its code (legends, filters), from the meta-model's labels (LA-BRW-DR243). */
+/** A relation's label by its code (legends, filters), from the meta-model's labels (LA-EXP-V03-R07). */
 export const graphRelationLabel = (relation: string, index?: SpecIndex) => RELATION_LABELS[relation] ?? relationLabelOf(index?.workspace.relations ?? [], relation);
 /** One edge's label, read from its source, or from its target with `from`. */
 export const graphEdgeLabel = (index: SpecIndex, e: { source: string; relation: string; target: string }, from: 'source' | 'target' = 'source') =>

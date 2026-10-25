@@ -75,7 +75,7 @@ export function TabStrip({ index, set, onActivate, onClose, onKeep }: TabStripPr
         const name = id ? `${id} ${title}` : title;
         return (
           // The tab and its close button sit side by side in the .tab wrapper, never one inside the
-          // other (LA-BRW-DR321); the tab is named by what it shows (LA-BRW-DR320). The close button is
+          // other (LA-PLT-DR22); the tab is named by what it shows (LA-PLT-DR21). The close button is
           // for the pointer: a tablist holds only tabs, so it is hidden from the accessibility tree, and
           // the keyboard closes a tab with Delete or Alt+Shift+W.
           <div

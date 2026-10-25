@@ -41,7 +41,7 @@ import {
 } from './reference';
 import './format.css';
 
-// The format reference's pages (LA-BRW-UC115): /format (the concepts, then an index of the kinds by
+// The format reference's pages (LA-AUT-UC15): /format (the concepts, then an index of the kinds by
 // stage and folder, the relations, and the checks by severity), /format/kinds/<kind> and
 // /format/checks/<check>. Each opens in the workbench as a record does: one pane with the page's
 // title in it, and the side bar beside it showing the kind's or the check's facts (a bottom sheet

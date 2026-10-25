@@ -1,0 +1,13 @@
+---
+id: LA-EXP-A1
+kind: aggregate
+title: Page
+parent: LA-EXP
+links:
+  relates_to: [LA-PLT-A1]
+---
+One place in the app, identified by its address: a diagram (`/diagrams/<slug>`), the products (`/`), a record at its bare ID (`/<id>`, a product's and a domain's being their overview), a group of the graph's tree (a stage or folder, `/<domain-id>/<stage>/<folder>`, or a record's children of one kind, `/<parent-id>/<kind>`), the checks (`/checks`), the record format (`/format`), a kind's or a check's page in it (`/format/kinds/<kind>`, `/format/checks/<check>`), or Appearance (`/settings/appearance`). App pages are lowercase words, so no ID, which starts with a capital, can take their address. Every page shows a view of one loaded workspace.
+
+A product, domain, record or group page shows its one focus in the views that are open, each a pane: Wiki, Graph and, on a domain, aggregate or entity page, Model. The address names them, as in `?view=wiki,graph`; the views never change the path. Such a page has three columns: the navigation, the main view, and the side bar, which shows the focused record's facts. A format page has the same columns, with one pane and the kind's or check's facts in the side bar.
+
+Spec pages only read that workspace. Records are changed in their files, by a person in an editor or by an agent, and reviewed in git. The Diagrams pages keep their form for creating a diagram (`LA-MOD-UC01`).

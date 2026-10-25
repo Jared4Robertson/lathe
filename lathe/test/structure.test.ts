@@ -23,13 +23,13 @@ beforeAll(async () => {
 });
 
 describe('structural warnings', () => {
-  it('LA-CHK-T130 A domain rule that no use case applies is a warning', () => {
+  it('LA-CHK-T13 A domain rule that no use case applies is a warning', () => {
     expect(recordsOf(warnings, 'rule-not-applied')).toEqual(['SW-D-DR02']);
     const [problem] = warnings.problems.filter((p) => p.check === 'rule-not-applied');
     expect(problem.message).toContain('SW-D-DR02 is not applied by any use case');
   });
 
-  it('LA-CHK-T131 A use case that no flow carries out is a warning, once its domain has flows', () => {
+  it('LA-CHK-T14 A use case that no flow carries out is a warning, once its domain has flows', () => {
     // SW-D-F02 fulfills SW-D-UC02's requirement but does not carry out the use case; SW-E has no flows yet.
     expect(recordsOf(warnings, 'use-case-without-flow')).toEqual(['SW-D-UC02']);
     const [problem] = warnings.problems.filter((p) => p.check === 'use-case-without-flow');
@@ -37,24 +37,24 @@ describe('structural warnings', () => {
     expect(problem.message).toContain('"carries_out"');
   });
 
-  it('LA-CHK-T132 An interaction requirement that fulfills nothing is a warning', () => {
+  it('LA-CHK-T15 An interaction requirement that fulfills nothing is a warning', () => {
     expect(recordsOf(warnings, 'interaction-requirement-fulfills-nothing')).toEqual(['SW-D-V01-R02']);
   });
 
-  it('LA-CHK-T133 A domain_rule test proving only requirements, or an acceptance test proving only domain rules, is a warning', () => {
+  it('LA-CHK-T16 A domain_rule test proving only requirements, or an acceptance test proving only domain rules, is a warning', () => {
     expect(recordsOf(warnings, 'test-type-mismatch')).toEqual(['SW-D-T01', 'SW-D-T02', 'SW-D-T03']);
     const message = (id: string) => warnings.problems.find((p) => p.check === 'test-type-mismatch' && p.record === id)?.message;
     expect(message('SW-D-T01')).toContain('has test_type domain_rule but proves only use case requirements (SW-D-UC01-R01)');
     expect(message('SW-D-T02')).toContain('has test_type acceptance but proves only domain rules (SW-D-DR01)');
   });
 
-  it('LA-CHK-T134 A unit test, another test type, or a test proving both kinds is not compared', () => {
+  it('LA-CHK-T17 A unit test, another test type, or a test proving both kinds is not compared', () => {
     for (const id of ['SW-D-T04', 'SW-D-T05', 'SW-D-T06', 'SW-D-T07', 'SW-D-T08']) {
       expect(recordsOf(warnings, 'test-type-mismatch')).not.toContain(id);
     }
   });
 
-  it('LA-CHK-T135 Structural gaps are warnings and break nothing', () => {
+  it('LA-CHK-T18 Structural gaps are warnings and break nothing', () => {
     const structural = warnings.problems.filter((p) => STRUCTURAL.includes(p.check));
     expect(new Set(structural.map((p) => p.check))).toEqual(new Set(STRUCTURAL));
     for (const p of structural) expect(p.severity).toBe('warning');
@@ -68,7 +68,7 @@ describe('extensions restate default relation rules', () => {
   const rule = (ws: Workspace, relation: string, source: string, target: string) =>
     ws.relations.filter((r) => r.relation === relation && r.source_kind === source && r.target_kind === target);
 
-  it("LA-CHK-T136 An extension row for an existing relation rule is the same rule, and its non-empty role, description or label replaces the default's", () => {
+  it("LA-AUT-T40 An extension row for an existing relation rule is the same rule, and its non-empty role, description or label replaces the default's", () => {
     // Reworded: the description is replaced and the empty role keeps the default's.
     expect(rule(relations, 'proves', 'test', 'domain_rule')).toEqual([
       {
@@ -96,7 +96,7 @@ describe('extensions restate default relation rules', () => {
     expect(recordsOf(relations, 'relation-not-allowed')).toEqual([]);
   });
 
-  it('LA-CHK-T137 A relation rule listed twice in one folder is an error naming that folder', () => {
+  it('LA-CHK-T19 A relation rule listed twice in one folder is an error naming that folder', () => {
     expect(relations.problems.filter((p) => p.check === 'meta-duplicate-relation')).toEqual([
       {
         severity: 'error',
@@ -115,7 +115,7 @@ describe('extensions restate default relation rules', () => {
 });
 
 describe('one mistake, one error', () => {
-  it("LA-CHK-T138 A rule test keyed by its rule's ID gives one duplicate-id error and no cascaded errors", () => {
+  it("LA-CHK-T20 A rule test keyed by its rule's ID gives one duplicate-id error and no cascaded errors", () => {
     expect(recordsOf(cascade, 'duplicate-id')).toEqual(['SC-D-DR01']);
     // The use case applies, the component satisfies and the tests prove SC-D-DR01: each link fits one of
     // the records with that ID, so none is reported.
@@ -126,7 +126,7 @@ describe('one mistake, one error', () => {
     expect(recordsOf(cascade, 'unsatisfied')).not.toContain('SC-D-DR01');
   });
 
-  it('LA-CHK-T139 A link or parent that no record with a duplicated ID allows is still reported, once', () => {
+  it('LA-CHK-T21 A link or parent that no record with a duplicated ID allows is still reported, once', () => {
     const one = (check: string) => cascade.problems.filter((p) => p.check === check);
     expect(one('relation-not-allowed')).toEqual([
       expect.objectContaining({
@@ -139,7 +139,7 @@ describe('one mistake, one error', () => {
     ]);
   });
 
-  it('LA-CHK-T140 An unknown parent is reported once, as unknown-parent only', () => {
+  it('LA-CHK-T22 An unknown parent is reported once, as unknown-parent only', () => {
     expect(errors(cascade).filter((p) => p.record === 'SC-D-UC02')).toEqual([
       expect.objectContaining({ check: 'unknown-parent', message: 'SC-D-UC02 names parent SC-D-CAP09, which does not exist.' }),
     ]);

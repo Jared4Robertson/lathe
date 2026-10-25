@@ -8,9 +8,9 @@ import { MOTION_SPEED_MS } from '../../src/graph/motion';
 import { openApp, startAtDepth } from '../helpers';
 import { testIndex, testWorkspace } from './workspace';
 
-// Re-centering moves the camera, not the picture (LA-BRW-UC20-R09): the new layout is anchored on
-// the clicked node (LA-BRW-DR180), the viewport glides to frame it on the shared motion
-// (LA-BRW-DR181), records new to the picture fade in and leaving ones fade out, and under reduced
+// Re-centering moves the camera, not the picture (LA-EXP-UC03-R09): the new layout is anchored on
+// the clicked node (LA-EXP-DR39), the viewport glides to frame it on the shared motion
+// (LA-EXP-DR40), records new to the picture fade in and leaving ones fade out, and under reduced
 // motion nothing animates.
 
 const calls = vi.hoisted(() => [] as { viewport: { x: number; y: number; zoom: number }; options?: { duration?: number; ease?: unknown; interpolate?: string } }[]);
@@ -41,7 +41,7 @@ const reducedMotion = () =>
   vi.stubGlobal('matchMedia', (query: string) => ({ matches: query.includes('prefers-reduced-motion: reduce'), media: query, addEventListener: () => {}, removeEventListener: () => {} }));
 
 describe('graph camera', () => {
-  it('LA-BRW-T380 The new layout is shifted so the clicked node keeps its world position, and is otherwise the layout as laid out', async () => {
+  it('LA-EXP-T127 The new layout is shifted so the clicked node keeps its world position, and is otherwise the layout as laid out', async () => {
     const index = testIndex();
     const before = (layoutNeighborhood(neighborhood(index, 'P-D-UC01', 1, undefined, undefined, { links: true }))).positions;
     const laid = (layoutNeighborhood(neighborhood(index, 'P-D-UC01-R01', 1, undefined, undefined, { links: true }))).positions;
@@ -63,13 +63,13 @@ describe('graph camera', () => {
     expect(anchorLayout(laid, 'P-D-UC01-R01', new Map([['P-D-V01', { x: 500, y: 500 }]]))).toEqual(laid);
   });
 
-  it('LA-BRW-T381 Records new to the picture fade in and records leaving fade out; the first picture has neither', () => {
+  it('LA-EXP-T128 Records new to the picture fade in and records leaving fade out; the first picture has neither', () => {
     expect(fadeSets(['A', 'B', 'C'], ['B', 'C', 'D', 'E'])).toEqual({ entering: new Set(['D', 'E']), leaving: new Set(['A']) });
     expect(fadeSets(['A', 'B'], ['B', 'A'])).toEqual({ entering: new Set(), leaving: new Set() });
     expect(fadeSets(null, ['A', 'B'])).toEqual({ entering: new Set(), leaving: new Set() });
   });
 
-  it('LA-BRW-T382 The camera frames the focus: the whole picture fits, the focus is centered as far as the picture allows', () => {
+  it('LA-EXP-T129 The camera frames the focus: the whole picture fits, the focus is centered as far as the picture allows', () => {
     const box = (x: number, y: number) => ({ x: x - NODE_WIDTH / 2, y: y - NODE_HEIGHT / 2 });
     // A picture balanced around its focus: the focus lands in the middle of the canvas, at zoom 1.
     const balanced = new Map([['L', box(-300, 0)], ['F', box(0, 0)], ['R', box(300, 0)]]);
@@ -106,7 +106,7 @@ describe('graph camera on the page', () => {
     await waitFor(() => expect(document.querySelector('.react-flow__node.is-leaving')).toBeNull());
   }
 
-  it('LA-BRW-T383 A re-center keeps the clicked node in place, glides the camera with the shared duration, and fades records in and out', async () => {
+  it('LA-EXP-T130 A re-center keeps the clicked node in place, glides the camera with the shared duration, and fades records in and out', async () => {
     await open(false);
     // The first picture appears at once.
     expect(calls.every((c) => c.options?.duration === 0)).toBe(true);
@@ -148,7 +148,7 @@ describe('graph camera on the page', () => {
     expect(calls.length).toBe(first + 1);
   });
 
-  it('LA-BRW-T384 Under reduced motion a re-center frames the new focus at once, and nothing fades', async () => {
+  it('LA-EXP-T131 Under reduced motion a re-center frames the new focus at once, and nothing fades', async () => {
     reducedMotion();
     await open();
     const first = calls.length;

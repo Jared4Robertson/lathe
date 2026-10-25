@@ -1,6 +1,6 @@
 import { heightOf, widthOf, type Point } from './layout';
 
-// Re-centering moves the camera, not the picture (LA-BRW-UC20-R09). The layout puts each new
+// Re-centering moves the camera, not the picture (LA-EXP-UC03-R09). The layout puts each new
 // focus at the origin; anchoring shifts the whole new layout so the new focus keeps the place it
 // had in the last picture, so the world stays put and records in both pictures move little. Then
 // the camera (the viewport) pans, and zooms when the new picture needs another scale, to frame the
@@ -12,7 +12,7 @@ export function translate(positions: ReadonlyMap<string, Point>, dx: number, dy:
 }
 
 /**
- * The new layout anchored on its focus (LA-BRW-DR180): when the focus was in the last picture, the
+ * The new layout anchored on its focus (LA-EXP-DR39): when the focus was in the last picture, the
  * whole layout is shifted by its old position minus its new one, so it stays where it was in world
  * coordinates. Otherwise (the first picture, or a focus that was not drawn) the layout is kept as
  * it is, with the focus at the origin. The same layout and anchor always give the same positions.
@@ -38,10 +38,10 @@ export function fadeSets(before: Iterable<string> | null, after: Iterable<string
 export interface Viewport { x: number; y: number; zoom: number }
 
 /**
- * The camera that frames the focus (LA-BRW-DR181): zoomed so the whole picture fits the canvas
+ * The camera that frames the focus (LA-EXP-DR40): zoomed so the whole picture fits the canvas
  * (never past 1), and panned so the focus is at the center, moved only as far as keeps the whole
  * picture in view. Where the picture is too large to fit even at the smallest zoom, the focus is
- * centered. `heights` and `widths` give each box's size in the icicle (LA-BRW-DR330, LA-BRW-DR331); a box they leave out is a leaf's.
+ * centered. `heights` and `widths` give each box's size in the icicle (LA-EXP-DR53, LA-EXP-DR54); a box they leave out is a leaf's.
  */
 export function frameFocus(
   positions: ReadonlyMap<string, Point>,

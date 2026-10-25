@@ -7,7 +7,7 @@ import { workspace } from './fixtures/workspace';
 import { openApp } from './helpers';
 import { testWorkspace } from './graph/workspace';
 
-// Tabs for open pages, as editors are in VS Code (LA-BRW-UC112): the preview tab, lasting tabs,
+// Tabs for open pages, as editors are in VS Code (LA-EXP-UC10): the preview tab, lasting tabs,
 // closing and cycling, each tab's own views, scroll and graph settings, and the address following
 // the active tab, so a reload brings every tab back (LA-PAT-APP-UX-R06).
 
@@ -26,7 +26,7 @@ const viewToggle = (name: 'Wiki' | 'Graph') => within(screen.getByRole('group', 
 const key = (init: KeyboardEventInit & { key: string; code?: string }) => fireEvent.keyDown(document.body, init);
 
 describe('tabs for open pages', () => {
-  it('LA-BRW-T323 A plain open replaces the italic preview tab, a double-click keeps it, a page already open activates its tab, and Back reopens a closed page as the preview', async () => {
+  it('LA-EXP-T115 A plain open replaces the italic preview tab, a double-click keeps it, a page already open activates its tab, and Back reopens a closed page as the preview', async () => {
     await openApp('/P-D-UC01', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     expect(tabs()).toEqual(['Lend a thing*<']);
@@ -73,7 +73,7 @@ describe('tabs for open pages', () => {
     expect(tabs()).toEqual(['The owner is shown', 'Views (1)*<']);
   });
 
-  it('LA-BRW-T324 Closing by button, middle-click or Alt+Shift+W activates the right neighbor or else the left, and the last tab stays as the preview', async () => {
+  it('LA-EXP-T116 Closing by button, middle-click or Alt+Shift+W activates the right neighbor or else the left, and the last tab stays as the preview', async () => {
     await openApp('/P-D-UC01', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     fireEvent.doubleClick(tab('Lend a thing'));
@@ -98,7 +98,7 @@ describe('tabs for open pages', () => {
     expect(title()).toBe('Lend a thing');
   });
 
-  it('LA-BRW-T325 Ctrl+Tab and Ctrl+Shift+Tab cycle, the keep command keeps the preview, and on the focused strip the arrow keys move and Delete closes', async () => {
+  it('LA-EXP-T117 Ctrl+Tab and Ctrl+Shift+Tab cycle, the keep command keeps the preview, and on the focused strip the arrow keys move and Delete closes', async () => {
     for (const id of ['keepTab', 'closeTab', 'nextTab', 'previousTab']) expect(COMMANDS.find((c) => c.id === id)?.group).toBe('Navigate');
     await openApp('/P-D-UC01', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
@@ -130,7 +130,7 @@ describe('tabs for open pages', () => {
     await waitFor(() => expect(tab('Lend a thing')).toHaveFocus());
   });
 
-  it('LA-BRW-T326 Each tab keeps its own views, wiki scroll and graph settings, and switching its views keeps it open', async () => {
+  it('LA-EXP-T118 Each tab keeps its own views, wiki scroll and graph settings, and switching its views keeps it open', async () => {
     await openApp('/P-D-UC01', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     // Opening the graph keeps the preview tab, and sets its depth.
@@ -170,7 +170,7 @@ describe('tabs for open pages', () => {
     await waitFor(() => expect(address()).toBe('/P-D-UC01?view=wiki,graph'));
   });
 
-  it('LA-BRW-T327 Reloading brings back the same tabs, the preview, the active tab and each tab\'s views', async () => {
+  it('LA-PLT-T45 Reloading brings back the same tabs, the preview, the active tab and each tab\'s views', async () => {
     await openApp('/P-D-UC01?view=wiki,graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     fireEvent.doubleClick(tab('Lend a thing'));
@@ -193,7 +193,7 @@ describe('tabs for open pages', () => {
     expect(screen.queryByRole('region', { name: 'Graph pane' })).toBeNull();
   });
 
-  it('LA-BRW-T328 Each space keeps its own tabs: switching spaces swaps the tab set', async () => {
+  it('LA-EXP-T119 Each space keeps its own tabs: switching spaces swaps the tab set', async () => {
     await openApp('/DM-SHOP-UC01', { workspace: workspace() });
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     fireEvent.doubleClick(tab('Add an item to the basket'));
