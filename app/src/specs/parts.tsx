@@ -72,13 +72,18 @@ export function ProblemList({ index, problems, showRecord = true, showCheck = tr
   );
 }
 
-/** A titled part of a page. Its header row holds the heading and, at the right, any actions its contents offer (such as a list's "Expand all"). */
-export function Section({ title, count, children }: { title: string; count?: number; children: ReactNode }) {
+/**
+ * A titled part of a page. Its header row holds the heading (h2, or h3 and h4 for a part within
+ * a part, such as a folder of a domain page and a kind within it) and, at the right, any actions
+ * its contents offer (such as a list's "Expand all").
+ */
+export function Section({ title, count, level = 2, className, children }: { title: string; count?: number; level?: 2 | 3 | 4; className?: string; children: ReactNode }) {
   const [actions, setActions] = useState<HTMLDivElement | null>(null);
+  const Heading = `h${level}` as 'h2' | 'h3' | 'h4';
   return (
-    <section className="spec-section">
+    <section className={className ? `spec-section ${className}` : 'spec-section'}>
       <header className="spec-section-head">
-        <h2>{title}{count !== undefined && <span className="section-count">{count}</span>}</h2>
+        <Heading>{title}{count !== undefined && <span className="section-count">{count}</span>}</Heading>
         <div className="spec-section-actions" ref={setActions} />
       </header>
       <ActionsSlotContext.Provider value={actions}>{children}</ActionsSlotContext.Provider>

@@ -12,16 +12,19 @@ async function openShop() {
 }
 
 describe('domain page', () => {
-  it('LA-BRW-T07 The domain page groups records by stage, with rules and requirements nested', async () => {
+  it('LA-BRW-T07 The domain page groups records by stage and folder, with rules and requirements nested', async () => {
     await openShop();
     const user = userEvent.setup();
     const [define, design] = within(main()).getAllByRole('heading', { level: 2, name: /^(Define|Design)$/ }).map((h) => h.parentElement as HTMLElement);
     expect(define).toHaveTextContent(/^Define/);
     expect(design).toHaveTextContent(/^Design/);
+    const headings = (el: HTMLElement, level: string) => [...el.querySelectorAll(level)].map((h) => h.firstChild?.textContent);
+    expect(headings(define, 'h3')).toEqual(['Domain model', 'Use cases']);
+    expect(headings(design, 'h3')).toEqual(['Interaction design', 'Technical specification', 'Test plan']);
 
-    // Define: aggregates with their rules folded under them, use cases with their requirements.
-    const aggregates = section(/^Aggregates/);
-    const basket = within(aggregates).getByRole('link', { name: /^DM-SHOP-A1\s*Basket/ }).closest('li') as HTMLElement;
+    // Define: the domain model's aggregates with their rules folded under them, use cases with their requirements.
+    const model = section(/^Domain model/);
+    const basket = within(model).getByRole('link', { name: /^DM-SHOP-A1\s*Basket/ }).closest('li') as HTMLElement;
     expect(basket).toHaveTextContent('1 domain rule');
     expect(basket.querySelector('ul.nested')).toBeNull();
     await user.click(within(basket).getByRole('button', { name: 'Expand DM-SHOP-A1' }));
@@ -32,15 +35,19 @@ describe('domain page', () => {
     await user.click(within(add).getByRole('button', { name: 'Expand DM-SHOP-UC01' }));
     expect(ids(add.querySelector('ul.nested') as HTMLElement)).toEqual(['DM-SHOP-UC01-R01', 'DM-SHOP-UC01-R02']);
     expect(add).toHaveTextContent('Shopper');
-    expect(define.contains(aggregates) && define.contains(useCases)).toBe(true);
+    expect(define.contains(model) && define.contains(useCases)).toBe(true);
 
-    // Design: flows, views, endpoints, components and tests, in that order.
-    const designSections = [...design.querySelectorAll('section')];
-    expect(designSections.map((s) => s.querySelector('h2')?.firstChild?.textContent)).toEqual(['Flows', 'Views', 'Endpoints', 'Components', 'Tests']);
-    expect(designSections.map((s) => ids(s))).toEqual([['DM-SHOP-F01'], ['DM-SHOP-V01'], ['DM-SHOP-E01'], ['DM-SHOP-C01'], ['DM-SHOP-T01']]);
-    expect(designSections[2]).toHaveTextContent('POST · /basket/items');
-    expect(designSections[3]).toHaveTextContent('service · src/basket.ts');
-    expect(designSections[4]).toHaveTextContent('unit · test/basket.test.ts');
+    // Design: interaction design holds flows, views and endpoints, each under its own heading, in that order.
+    const interaction = section(/^Interaction design/);
+    expect(headings(interaction, 'h4')).toEqual(['Flows', 'Views', 'Endpoints']);
+    expect(['Flows', 'Views', 'Endpoints'].map((name) => ids(section(new RegExp(`^${name}`))))).toEqual([['DM-SHOP-F01'], ['DM-SHOP-V01'], ['DM-SHOP-E01']]);
+    expect(section(/^Endpoints/)).toHaveTextContent('POST · /basket/items');
+    // A folder of one kind lists its records directly.
+    expect(ids(section(/^Technical specification/))).toEqual(['DM-SHOP-C01']);
+    expect(section(/^Technical specification/)).toHaveTextContent('service · src/basket.ts');
+    expect(section(/^Technical specification/).querySelector('h4')).toBeNull();
+    expect(ids(section(/^Test plan/))).toEqual(['DM-SHOP-T01']);
+    expect(section(/^Test plan/)).toHaveTextContent('unit · test/basket.test.ts');
   });
 
   it('LA-BRW-T08 The search box filters records by ID or title as you type', async () => {
@@ -51,17 +58,17 @@ describe('domain page', () => {
     await user.type(search, 'full basket');
     // A match inside a folded use case opens it, just for the match.
     expect(ids(section(/^Use cases/))).toEqual(['DM-SHOP-UC01', 'DM-SHOP-UC01-R02']);
-    expect(within(section(/^Aggregates/)).getByText('Nothing matches.')).toBeInTheDocument();
-    expect(within(section(/^Components/)).getByText('Nothing matches.')).toBeInTheDocument();
+    expect(within(section(/^Domain model/)).getByText('Nothing matches.')).toBeInTheDocument();
+    expect(within(section(/^Technical specification/)).getByText('Nothing matches.')).toBeInTheDocument();
 
     await user.clear(search);
     await user.type(search, 'shop-c01');
-    expect(ids(section(/^Components/))).toEqual(['DM-SHOP-C01']);
-    expect(within(section(/^Tests/)).getByText('Nothing matches.')).toBeInTheDocument();
+    expect(ids(section(/^Technical specification/))).toEqual(['DM-SHOP-C01']);
+    expect(within(section(/^Test plan/)).getByText('Nothing matches.')).toBeInTheDocument();
 
     await user.clear(search);
-    expect(ids(section(/^Tests/))).toEqual(['DM-SHOP-T01']);
-    expect(ids(section(/^Aggregates/))).toEqual(['DM-SHOP-A1']);
+    expect(ids(section(/^Test plan/))).toEqual(['DM-SHOP-T01']);
+    expect(ids(section(/^Domain model/))).toEqual(['DM-SHOP-A1']);
     expect(ids(section(/^Use cases/))).toEqual(['DM-SHOP-UC01']);
   });
 
@@ -87,13 +94,15 @@ describe('domain page', () => {
     expect(main()).not.toHaveTextContent('DM-PAY-UC01-R01');
   });
 
-  it('hides an empty Use cases section when the domain keeps its use cases under capabilities', async () => {
+  it('lists only capabilities in Use cases when the domain keeps its use cases under capabilities', async () => {
     const w = demoWorkspace();
     const shop = w.records.find((r) => r.id === 'DM-SHOP')!;
     w.records.push({ ...shop, id: 'DM-SHOP-CAP01', kind: 'capability', title: 'Buying', parent: 'DM-SHOP', fields: { order: '1' }, body: '', path: 'specs/dm/cap01.md', mentions: [] });
     for (const r of w.records) if (r.kind === 'use_case' && r.parent === 'DM-SHOP') r.parent = 'DM-SHOP-CAP01';
     await openApp('/specs/DM/DM-SHOP', { workspace: w });
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
-    expect(screen.queryByRole('heading', { level: 2, name: /^Use cases/ })).toBeNull();
+    expect(ids(section(/^Use cases/))).toEqual(['DM-SHOP-CAP01']);
+    expect(section(/^Use cases/).querySelector('h4')).toBeNull();
+    expect(screen.queryByRole('heading', { name: /outside any capability/ })).toBeNull();
   });
 });
