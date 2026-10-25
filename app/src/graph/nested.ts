@@ -1,7 +1,7 @@
 import type { SpecIndex } from '../specs/data';
 import { NODE_HEIGHT, NODE_WIDTH } from './layout';
 import type { MapNode, PlacedMap } from './map';
-import { BADGE_ROOM, hasMarks, HEX_ROOM, LABEL_PAD, labelLines, META_FONT, metaWidth, TITLE_FONT, titleWidth, WIDTH_MARGIN } from './text';
+import { BADGE_ROOM, hasMarks, HEX_ROOM, LABEL_PAD, labelHeight, labelLines, metaWidth, titleWidth, WIDTH_MARGIN, wrapLabel, type WrappedLabel } from './text';
 import { treeChildren } from './tree';
 
 // The graph's Nested map (LA-EXP-DR62): the same tree as the Tree map (map.ts), one product's, the
@@ -45,6 +45,9 @@ export const NESTED_ASPECT = 1.6;
 export interface NestedNode extends MapNode {
   /** Whether its label fits it at its level's text scale (LA-EXP-DR58); when not, it is a plain shape, its name in its tooltip. */
   fits: boolean;
+  /** Its label's lines, wrapped on whole words for its width at its level's text scale, and whether they are centered (a leaf's) or at the top left (a parent's). */
+  lines: WrappedLabel;
+  centered: boolean;
   /** The header band's height, in map units: 0 for a box with no children (its label is centered in it) or whose label does not fit. */
   header: number;
   /** Its place in the tree's order, a parent before its children: the keyboard's order. */
@@ -108,51 +111,31 @@ export function squarify(weights: readonly number[], r: Rect): Rect[] {
 /** What a box's label says, and what it keeps room for: a domain's hexagon mark, the problem badge. */
 export interface NestedLabel { title: string; meta: string; hexagon?: boolean; marked?: boolean }
 
-/** A label's line height, as a share of its font size, and its padding top and bottom, at text scale 1 (the stylesheet's). */
-const LINE = 1.4;
-const LABEL_PAD_Y = 6;
+/** A label's lines in a box `width` wide at text scale 1 (text.ts's `wrapLabel`): a leaf's centered, a parent's at the top left of its header band. */
+const linesIn = (label: NestedLabel, width: number, centered: boolean): WrappedLabel =>
+  wrapLabel(label, { hexagon: label.hexagon, marked: label.marked, centered, width });
 
-/** How many lines some words take, wrapped at their spaces in a width (all at one scale), or Infinity when a word is wider. */
-function wrap(words: readonly number[], space: number, width: number): number {
-  if (width <= 0 || words.some((w) => w > width)) return Infinity;
-  let lines = words.length > 0 ? 1 : 0;
-  let line = 0;
-  for (const w of words) {
-    if (line === 0) line = w;
-    else if (line + space + w <= width) line += space + w;
-    else { lines++; line = w; }
-  }
-  return lines;
+/** Whether every word of a label fits on a line of a box `width` wide at text scale 1, so wrapping never breaks a word. */
+function wordsFit(label: NestedLabel, width: number, centered: boolean): boolean {
+  const inner = width - 2 * LABEL_PAD - (label.hexagon ? 2 * HEX_ROOM : 0);
+  const words = (text: string) => text.split(/\s+/).filter(Boolean);
+  return words(label.title).every((w) => titleWidth(w) * WIDTH_MARGIN <= inner)
+    && words(label.meta).every((w) => metaWidth(w) * WIDTH_MARGIN <= inner - (label.marked ? (centered ? 2 : 1) * BADGE_ROOM : 0));
 }
-
-/**
- * The height a leaf's label takes at text scale 1 in a width: its kind and ID line and its title,
- * each wrapped at its spaces (never inside a word), the kind and ID line keeping room for the
- * problem badge on both sides; Infinity when a word does not fit.
- */
-function wrappedHeight(label: NestedLabel, width: number): number {
-  const split = (text: string) => text.split(/\s+/).filter(Boolean);
-  const meta = wrap(split(label.meta).map((w) => metaWidth(w) * WIDTH_MARGIN), metaWidth(' '), width - (label.marked ? 2 * BADGE_ROOM : 0));
-  const title = wrap(split(label.title).map((w) => titleWidth(w) * WIDTH_MARGIN), titleWidth(' ') * WIDTH_MARGIN, width);
-  return 2 * LABEL_PAD_Y + meta * META_FONT * LINE + title * TITLE_FONT * LINE;
-}
-
-/** The width a label wraps in, at text scale 1, in a box this wide at scale `s`: inside its padding, a domain keeping room for its hexagon mark. */
-const wrapWidth = (w: number, s: number, label: NestedLabel) => w / s - 2 * LABEL_PAD - (label.hexagon ? 2 * HEX_ROOM : 0) - 4;
 
 /**
  * The largest text scale at which a box's label fits it (LA-EXP-DR58): its kind and ID line and
- * its title, each wrapped at its spaces (never inside a word), across the box's width and within
- * `room` of its height (a leaf's whole height; a parent's header band, at most its share). 0 when
- * a word can never fit.
+ * its title, each wrapped on whole words (text.ts's `wrapLabel`, never breaking a word), across the
+ * box's width and within `room` of its height (a leaf's whole height; a parent's header band, at
+ * most its share). 0 when a word can never fit.
  */
-export function fitScale(r: Pick<Rect, 'w' | 'h'>, label: NestedLabel, room = r.h): number {
-  const fits = (s: number) => wrappedHeight(label, wrapWidth(r.w, s, label)) <= room / s;
+export function fitScale(r: Pick<Rect, 'w' | 'h'>, label: NestedLabel, room = r.h, centered = true): number {
+  const fits = (s: number) => wordsFit(label, r.w / s, centered) && labelHeight(linesIn(label, r.w / s, centered)) <= room / s;
   let lo = 0;
-  let hi = room / (2 * LABEL_PAD_Y + (META_FONT + TITLE_FONT) * LINE);
+  let hi = room / labelHeight({ title: [''], meta: [''], file: false });
   if (hi <= 0) return 0;
   if (fits(hi)) return hi;
-  for (let i = 0; i < 40; i++) {
+  for (let i = 0; i < 28; i++) {
     const mid = (lo + hi) / 2;
     if (fits(mid)) lo = mid; else hi = mid;
   }
@@ -222,7 +205,7 @@ export function layoutNested(roots: readonly string[], childrenOf: (id: string) 
     const fit = new Map(ids.map((id) => {
       const r = rects.get(id)!;
       const own = kids.get(id)!;
-      return [id, fitScale(r, labelOf(id), own.length > 0 ? headerRoom(r, leaves.get(id)!) : r.h)];
+      return [id, fitScale(r, labelOf(id), own.length > 0 ? headerRoom(r, leaves.get(id)!) : r.h, own.length === 0)];
     }));
     const text = levelScale(ids.map((id) => ({ fit: fit.get(id)!, size: Math.sqrt(rects.get(id)!.w * rects.get(id)!.h) })));
     for (const id of ids) {
@@ -230,8 +213,11 @@ export function layoutNested(roots: readonly string[], childrenOf: (id: string) 
       const own = kids.get(id)!;
       const label = labelOf(id);
       const fits = text > 0 && fit.get(id)! >= text;
-      const header = own.length > 0 && fits ? text * wrappedHeight(label, wrapWidth(r.w, text, label)) : 0;
-      nodes.set(id, { id, parent: parent.get(id)!, children: own, level: level.get(id)!, x: r.x, y: r.y, w: r.w, h: r.h, text, fits, header, order: 0 });
+      // A leaf's label is centered in it; a parent's sits at the top left of its header band.
+      const centered = own.length === 0;
+      const lines = linesIn(label, text > 0 ? r.w / text : 0, centered);
+      const header = own.length > 0 && fits ? text * labelHeight(lines) : 0;
+      nodes.set(id, { id, parent: parent.get(id)!, children: own, level: level.get(id)!, x: r.x, y: r.y, w: r.w, h: r.h, text, fits, lines, centered, header, order: 0 });
       if (own.length === 0) continue;
       const pad = NEST_PAD * text;
       const gap = NEST_GAP * text;

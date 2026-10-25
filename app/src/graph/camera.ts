@@ -26,9 +26,9 @@ export const FRAME_MAX_ZOOM = 1;
  * levels below it fill the pane, the parent's level showing in a strip at the left edge (the frame
  * starts at the parent's right edge, past the strip). A node with fewer levels below it frames what
  * it has. Zoomed in no further than FRAME_MAX_ZOOM, and centered in the space right of the strip.
- * Never zoomed out so far that the focus's own title is under MIN_LABEL_PX on screen: a level
- * widened by its labels (LA-EXP-DR58) may then run past the pane's right edge, the frame starting
- * at the strip, and is reached by panning.
+ * Never zoomed out so far that the focus's own title is under MIN_LABEL_PX on screen: in a narrow
+ * pane, deep levels may then run past its right edge, the frame starting at the strip, and are
+ * reached by panning.
  */
 export function frameOnMap(map: GraphMap, focus: string, depth: number, width: number, height: number): Viewport {
   const node = map.nodes.get(focus);

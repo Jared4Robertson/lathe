@@ -111,7 +111,7 @@ describe('the graph tree, its depth and its camera', () => {
     expect(plain.getAttribute('tabindex')).not.toBe('0');
     expect(plain.querySelector('.graph-node')!.getAttribute('title')).toBeTruthy();
     // The keyboard visits labeled boxes only, column by column.
-    const boxes: Omit<Box, 'text'>[] = [
+    const boxes: Omit<Box, 'text' | 'parent'>[] = [
       { id: 'a', x: 0, y: 0, w: 10, h: 10, label: true },
       { id: 'b', x: 20, y: 30, w: 10, h: 10, label: true },
       { id: 'c', x: 20, y: 0, w: 10, h: 10, label: true },

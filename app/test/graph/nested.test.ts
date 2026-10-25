@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { graphMap } from '../../src/graph/map';
-import { labelWidth, metaWidth, titleWidth } from '../../src/graph/text';
+import { LABEL_PAD, labelHeight, metaWidth, titleWidth, WIDTH_MARGIN } from '../../src/graph/text';
 import { fitScale, headerRoom, HEADER_SHARE_MAX, HEADER_SHARE_MIN, headerShare, LEAF_AREA, layoutNested, LEVEL_FIT_SHARE, levelScale, NESTED_ASPECT, nestedMap, squarify, type NestedMap } from '../../src/graph/nested';
 import { indexWorkspace } from '../../src/specs/data';
 import { groupedWorkspace, manyOfOneKindWorkspace, testIndex } from './workspace';
@@ -97,9 +97,10 @@ describe('the Nested map', () => {
 
   it("LA-EXP-T187 One text scale per nesting level, fixed by the map: labels wrap on whole words, and a box whose label does not fit is plain", () => {
     const label = { title: 'Walk the model as a graph', meta: 'Use case · LA-EXP-UC03' };
-    const oneLine = labelWidth(label);
+    const oneLine = Math.max(titleWidth(label.title), metaWidth(label.meta)) * WIDTH_MARGIN + 2 * LABEL_PAD;
+    const twoLines = labelHeight({ title: [label.title], meta: [label.meta], file: false });
     // A box as wide as its label on one line, two lines tall: about scale 1, never more than fits.
-    const leaf = fitScale({ w: oneLine + 6, h: 44 }, label);
+    const leaf = fitScale({ w: oneLine + 1, h: twoLines }, label);
     expect(leaf).toBeGreaterThan(0.95);
     expect(leaf).toBeLessThanOrEqual(1);
     // A square box half as wide: the title wraps on whole words, so it holds larger text than one line would.
@@ -116,7 +117,7 @@ describe('the Nested map', () => {
     expect(headerRoom({ w: 100, h: 100 }, 1)).toBeCloseTo(40, 9);
     expect(headerRoom({ w: 100, h: 100 }, 400)).toBeCloseTo(20, 9);
     expect(headerRoom({ w: 1e6, h: 100 }, 1)).toBeCloseTo(40, 9);
-    expect(fitScale({ w: 1e6, h: 1e6 }, label, 44)).toBeLessThanOrEqual(1);
+    expect(fitScale({ w: 1e6, h: 1e6 }, label, twoLines)).toBeLessThanOrEqual(1 + 1e-9);
     // A level's scale is the largest that LEVEL_FIT_SHARE of its boxes, counted by size, can hold: small boxes do not drag it down.
     expect(LEVEL_FIT_SHARE).toBe(0.75);
     expect(levelScale([1, 2, 3, 4].map((fit) => ({ fit, size: 1 })))).toBe(2);
