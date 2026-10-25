@@ -1,7 +1,12 @@
--- Work to do: a test's test_type should suit what it proves. Kept conservative: only a test of type
--- domain_rule that proves requirements and no domain rule, or a test of type acceptance that proves
--- domain rules and no requirement, is reported. A unit test may prove either, so it is not reported,
--- nor is any other type, nor a test that proves both.
+-- A test's `test_type` does not suit what it proves.
+--
+-- Kept conservative: only a test of type domain_rule that proves requirements and no domain rule, or a test
+-- of type acceptance that proves domain rules and no requirement, is reported. A unit test may prove either,
+-- so it is not reported, nor is any other type, nor a test that proves both. Change the type, or what the
+-- test proves.
+--
+-- severity: warning
+-- kinds: test
 SELECT 'warning' AS severity, 'test-type-mismatch' AS "check", t.id AS record,
        'Test ' || t.id || ' has test_type ' || t.test_type || ' but proves only '
        || CASE WHEN t.test_type = 'acceptance' THEN 'domain rules' ELSE 'use case requirements' END

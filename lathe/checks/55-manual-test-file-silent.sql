@@ -1,8 +1,13 @@
--- Work to do: a manual test whose run_by file exists but never mentions it. Nothing ties the file to the
--- test: it names neither the test's ID, nor any ID the test proves (each target of a relation whose role is
--- 'proof'), nor the test's `key` when it has one. Manual tests are not held to the automated rules
--- (test-file-missing-id, proof-not-in-file), so a silent file is a warning: the steps a person follows
--- should say which test they carry out. A missing file is test-file-missing instead.
+-- A manual test whose `run_by` file exists but never mentions it.
+--
+-- Nothing ties the file to the test: it names neither the test's ID, nor any ID the test proves (each target
+-- of a relation whose role is `proof`), nor the test's `key` when it has one. Manual tests are not held to
+-- the automated rules (test-file-missing-id, proof-not-in-file), so a silent file is a warning: the steps a
+-- person follows should say which test they carry out. A missing file is test-file-missing instead. Name the
+-- test in the file, or point `run_by` at the file that carries it out.
+--
+-- severity: warning
+-- kinds: test
 SELECT 'warning' AS severity, 'manual-test-file-silent' AS "check", nullif(f.record, '') AS record,
        'Manual test ' || coalesce(nullif(f.record, ''), f.path) || ' is run by ' || f.file || ', but that file names neither '
        || coalesce(nullif(f.record, ''), 'the test''s ID') || ' nor any ID it proves'

@@ -1,4 +1,10 @@
--- A pattern that no use case and no domain follows: no domain owes its rules, so they count in no domain's coverage.
+-- A pattern that no use case and no domain follows.
+--
+-- No domain owes its rules, so they count in no domain's coverage. Link the use cases or domains that apply
+-- it with `follows`, or remove the pattern if nothing needs it.
+--
+-- severity: warning
+-- kinds: pattern
 SELECT 'warning' AS severity, 'pattern-not-followed' AS "check", p.id AS record,
        'No use case or domain follows pattern ' || p.id || ', so '
        || CASE (SELECT count(DISTINCT r.id) FROM records r WHERE r.kind = 'pattern_rule' AND r.parent = p.id AND r.id <> '')
