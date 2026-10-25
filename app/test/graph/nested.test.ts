@@ -7,7 +7,7 @@ import { groupedWorkspace, manyOfOneKindWorkspace, testIndex } from './workspace
 // The Nested map (LA-EXP-DR62): the Tree map's tree as a treemap, each box holding its children
 // below its header band, sized by the leaf records under it, laid out once.
 
-const maps = (): NestedMap[] => [nestedMap(testIndex()), nestedMap(indexWorkspace(groupedWorkspace())), nestedMap(indexWorkspace(manyOfOneKindWorkspace()))];
+const maps = (): NestedMap[] => [nestedMap(testIndex(), 'P'), nestedMap(indexWorkspace(groupedWorkspace()), 'P'), nestedMap(indexWorkspace(manyOfOneKindWorkspace()), 'P')];
 
 /** A synthetic tree: `n` roots, each with `k` children, each with `k` leaves. */
 function wide(n: number, k: number): NestedMap {
@@ -22,7 +22,7 @@ const leafCount = (map: NestedMap, id: string): number => {
 const eps = 1e-6;
 
 describe('the Nested map', () => {
-  it('LA-EXP-T181 Each box holds its children below its header band, inside its padding, none overlapping, over the same tree as the Tree map', () => {
+  it('LA-EXP-T185 Each box holds its children below its header band, inside its padding, none overlapping, over the same tree as the Tree map', () => {
     for (const map of [...maps(), wide(1, 6), wide(3, 4)]) {
       for (const n of map.nodes.values()) {
         expect(n.w).toBeGreaterThanOrEqual(0);
@@ -52,13 +52,13 @@ describe('the Nested map', () => {
     }
     // The tree is the Tree map's, children in the same order.
     const index = testIndex();
-    const tree = graphMap(index);
-    const nested = nestedMap(index);
+    const tree = graphMap(index, 'P');
+    const nested = nestedMap(index, 'P');
     expect(nested.roots).toEqual(tree.roots);
     for (const n of tree.nodes.values()) expect(nested.nodes.get(n.id)!.children).toEqual(n.children);
   });
 
-  it('LA-EXP-T181 A box is sized by the leaf records under it, the world by them all', () => {
+  it('LA-EXP-T185 A box is sized by the leaf records under it, the world by them all', () => {
     const map = wide(1, 5);
     const root = map.nodes.get('r0')!;
     expect(root.w / root.h).toBeCloseTo(NESTED_ASPECT, 6);
@@ -75,7 +75,7 @@ describe('the Nested map', () => {
     expect(leafCount(lop, 'r')).toBe(4);
   });
 
-  it('LA-EXP-T182 Squarified in order: equal weights read row by row, the boxes near square, the area shared exactly', () => {
+  it('LA-EXP-T186 Squarified in order: equal weights read row by row, the boxes near square, the area shared exactly', () => {
     const r = { x: 0, y: 0, w: 400, h: 400 };
     const cells = squarify([1, 1, 1, 1], r);
     // Four equal weights in a square: a 2 by 2 grid, in reading order (a column, then the next).
@@ -95,7 +95,7 @@ describe('the Nested map', () => {
     expect(squarify([], r)).toEqual([]);
   });
 
-  it("LA-EXP-T183 A box's text is in proportion to it, fixed by the map: its label fits its width, a parent's header band within its share of its height", () => {
+  it("LA-EXP-T187 A box's text is in proportion to it, fixed by the map: its label fits its width, a parent's header band within its share of its height", () => {
     // A leaf as wide as its label at a leaf's height: scale 1.
     expect(nestedTextScale({ w: 190, h: 56 }, 190)).toBe(1);
     // Limited by the width: a long label in a narrow box is smaller, never wrapped or cut.
@@ -114,6 +114,6 @@ describe('the Nested map', () => {
     }
     // Built once per index: the same map object, whatever the focus.
     const index = testIndex();
-    expect(nestedMap(index)).toBe(nestedMap(index));
+    expect(nestedMap(index, 'P')).toBe(nestedMap(index, 'P'));
   });
 });

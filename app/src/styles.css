@@ -524,9 +524,6 @@ a.button-primary.button-primary { color: var(--on-mark); }
 .menu .rail-item { position: relative; display: grid; place-items: center; width: 40px; height: 40px; padding: 0; border: 0; border-radius: 8px; background: none; color: var(--muted); cursor: pointer; }
 .menu .rail-item:hover { background: var(--paper); color: var(--ink); }
 .menu .rail-item[aria-current] { background: var(--steel-bg); color: var(--steel); box-shadow: none; }
-.rail-dot { position: absolute; top: 8px; right: 8px; width: 7px; height: 7px; border-radius: 50%; }
-.rail-dot.error { background: var(--error); }
-.rail-dot.warning { background: var(--warn); }
 /* Narrow screens: a top bar and drawers. */
 .drawer-backdrop { position: fixed; inset: 0; z-index: 70; background: var(--backdrop); }
 .menu.is-drawer { position: fixed; z-index: 80; inset: 0 auto 0 0; width: min(300px, 86vw); box-shadow: 4px 0 24px var(--shadow-strong); }
@@ -698,15 +695,7 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 .menu .nav-groups { margin-top: 2px; }
 .menu.is-drawer.has-spaces { width: min(356px, 92vw); }
 /* The checks page's space filter. */
-.checks-scope { display: inline-flex; gap: 2px; padding: 2px; margin: 0 0 12px; border: 1px solid var(--rule); border-radius: 8px; background: var(--paper); }
-.checks-scope .scope-option { padding: 4px 10px; border-radius: 6px; color: var(--muted); text-decoration: none; font-size: 0.86rem; }
-.checks-scope .scope-option[aria-current] { background: var(--sheet); color: var(--ink); font-weight: 600; box-shadow: 0 1px 2px var(--shadow-soft); }
-.checks-scope .scope-option:focus-visible { outline: 2px solid var(--steel); outline-offset: 1px; }
 /* Quick find: the current space first, then everything else under a divider. */
-.quick-find-results li.qf-group { display: block; padding: 0; cursor: default; }
-.quick-find-results .qf-group ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 1px; }
-.quick-find-results .qf-group.is-divided { margin-top: 4px; padding-top: 4px; border-top: 1px solid var(--rule); border-radius: 0; }
-.qf-group-name { display: block; padding: 4px 8px 2px; font: 500 0.68rem var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
 /* Tooltips: a name and the keys, after a short hover or on keyboard focus. */
 .tooltip { position: fixed; z-index: 200; display: inline-flex; align-items: center; gap: 8px; max-width: 280px; padding: 4px 8px; border-radius: 6px; background: var(--ink); color: var(--paper); font: 500 0.78rem/1.3 var(--body); pointer-events: none; white-space: nowrap; box-shadow: 0 4px 12px var(--shadow-strong); }
 .tooltip-bottom { transform: translateX(-50%); }
@@ -1065,7 +1054,7 @@ a.row-link.row-link:focus-visible { outline: none; }
   .resize-handle { z-index: 5; margin-inline: calc((var(--panel-gap) - var(--touch-target)) / 2); }
   :is(.icon-button, .button, .rail-item, .menu a, .nav-row, .nav-chevron, .nav-folder-head, .nav-section-head,
     .graph-depth button, .graph-filters > summary, .graph-legend summary, .graph-trace-toggle, .quick-find-results li,
-    .palette-list li, .tab, .checks-scope .scope-option, .long-list-tools input, .quick-find input, .dialog-search, .segment, .file-button) { min-width: var(--touch-target); min-height: var(--touch-target); }
+    .palette-list li, .tab, .long-list-tools input, .quick-find input, .dialog-search, .segment, .file-button) { min-width: var(--touch-target); min-height: var(--touch-target); }
   .menu .rail-item { width: var(--touch-target); height: var(--touch-target); }
   .record-list.tree .tree-row, .record-list > li, .problems > li { min-height: var(--touch-target); box-sizing: border-box; }
   :is(.tree-toggle, .tab-close, .pane-close, .color-swatch) { position: relative; }

@@ -67,7 +67,7 @@ A pattern's rules are `pattern_rule` records under it. Each domain that follows 
 
 ## 12. Citing records in prose
 
-A record's body may cite other records by ID, such as "the loan follows TL-LEND-DR05", so that a renamed or removed record does not leave a stale reference. A citation is a whole ID-shaped token that is a record's ID or starts with a known prefix (every product and domain ID, and `idPrefixes` in `lathe.config.json`). A bare product or domain ID counts only as a code span holding just that ID, and other code is not read. The cited IDs that exist are the record's **mentions**. Mentions are not links: they count for nothing.
+A record's body may cite other records by ID, such as "the loan follows TL-LEND-DR05", so that a renamed or removed record does not leave a stale reference. A citation is a whole ID-shaped token that is a record's ID or starts with a known prefix (every product and domain ID, and `idPrefixes` in `lathe.config.json`). A bare product or domain ID counts only as a code span holding just that ID, and other code is not read. The cited IDs that exist in the record's own product, or in no product, are the record's **mentions**; another product's ID in prose is plain text, because products are separate spaces. Mentions are not links: they count for nothing. Links stay inside their product too: a link from one product's record to another product's is an error (`link-crosses-product`).
 
 ## 13. A product's own checks
 

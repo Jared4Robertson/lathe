@@ -174,7 +174,7 @@ describe('folders like Client', () => {
     const user = userEvent.setup();
     await user.click(within(panel()).getByRole('button', { name: 'Unfold Shopping' }));
     await user.click(head(list('Folders of Shopping'), /^Design/));
-    await openApp('/checks');
+    await openApp('/DM/checks');
     await screen.findByRole('heading', { level: 1, name: 'Checks' });
     expect(rows(list('Design of Shopping'))).toEqual(['Interaction design3', 'Technical specification1', 'Test plan1']);
     expect(window.localStorage.getItem('lathe:nav-folders')).toBeNull();

@@ -67,7 +67,7 @@ A pattern's rules are `pattern_rule` records under it. Each domain that follows 
 
 ## 12. Citing records in prose
 
-A record's body may cite other records by ID, such as "the loan follows TL-LEND-DR05", so that a renamed or removed record does not leave a stale reference. A citation is a whole ID-shaped token that is a record's ID or starts with a known prefix (every product and domain ID, and `idPrefixes` in `lathe.config.json`). A bare product or domain ID counts only as a code span holding just that ID, and other code is not read. The cited IDs that exist are the record's **mentions**. Mentions are not links: they count for nothing.
+A record's body may cite other records by ID, such as "the loan follows TL-LEND-DR05", so that a renamed or removed record does not leave a stale reference. A citation is a whole ID-shaped token that is a record's ID or starts with a known prefix (every product and domain ID, and `idPrefixes` in `lathe.config.json`). A bare product or domain ID counts only as a code span holding just that ID, and other code is not read. The cited IDs that exist in the record's own product, or in no product, are the record's **mentions**; another product's ID in prose is plain text, because products are separate spaces. Mentions are not links: they count for nothing. Links stay inside their product too: a link from one product's record to another product's is an error (`link-crosses-product`).
 
 ## 13. A product's own checks
 
@@ -1617,6 +1617,21 @@ A test exists to prove obligations (a `proof` link such as `proves`) or to check
 component (`covers`) says what it touches, not what it shows. A link to a record that does not exist does
 not count (it is only a dangling-link). Link the obligation it proves with "proves", or the one it backs
 with "supports", or remove the test.
+
+<a id="check-link-crosses-product"></a>
+
+### `link-crosses-product`
+
+**Error** · Lathe's `checks/80-link-crosses-product.sql`
+
+A link stays inside its product.
+
+Each product is a space of its own: its records link only to records of the same product, whatever the
+relation (`satisfies`, `involves`, `applies` and every other). A link from a record of one product to a
+record of another is reported once for each source, relation and target. A record that sits under no
+product, and a link to a record that does not exist, are reported by other checks instead. When the target
+ID is duplicated, the link is reported only if no record with that ID is in the source's product. Remove
+the link; to point a reader at the other product, name the ID in prose, where it is a plain citation.
 
 <a id="check-parse-error"></a>
 

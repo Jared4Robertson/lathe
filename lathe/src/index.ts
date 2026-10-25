@@ -138,10 +138,13 @@ interface ProseCitation {
 // record, or starts with a known prefix followed by "-": every product's and domain's ID, and the config's
 // idPrefixes. A product's or domain's own ID is too common a word to count in plain prose, so it is a citation
 // only when written as a code span holding just that ID. Each record's mentions are the cited IDs that exist, in
-// order of first mention, without repeats or its own ID; every distinct cited token is also returned so a check
-// can report unknown ones.
+// order of first mention, without repeats or its own ID, and never a record of another product: products are
+// separate spaces, so another product's ID in prose is plain text. Every distinct cited token is also returned so a
+// check can report unknown ones.
 function readProseCitations(records: LoadedRecord[], idPrefixes: string[]): ProseCitation[] {
   const ids = new Set(records.map((r) => r.id).filter((id) => id !== ''));
+  const productOf = new Map(records.map((r) => [r.id, r.product]));
+  const sameSpace = (a: string | null, b: string | null | undefined) => a === null || b === null || b === undefined || a === b;
   const bare = new Set(records.filter((r) => (r.kind === 'product' || r.kind === 'domain') && r.id !== '').map((r) => r.id));
   const prefixes = [...bare, ...idPrefixes];
   const isCitation = ({ token, inCode }: ProseToken) =>
@@ -149,7 +152,7 @@ function readProseCitations(records: LoadedRecord[], idPrefixes: string[]): Pros
   const citations: ProseCitation[] = [];
   for (const r of records) {
     const cited = [...new Set(proseTokens(r.body).filter(isCitation).map((t) => t.token))].filter((token) => token !== r.id);
-    r.mentions = cited.filter((id) => ids.has(id));
+    r.mentions = cited.filter((id) => ids.has(id) && sameSpace(r.product, productOf.get(id)));
     citations.push(...cited.map((id) => ({ path: r.path, record: r.id, cited: id })));
   }
   return citations;

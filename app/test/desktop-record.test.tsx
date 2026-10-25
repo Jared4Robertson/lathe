@@ -1,6 +1,7 @@
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { recordIdAt } from '../src/shell/desktopRecord';
+import { indexWorkspace } from '../src/specs/data';
 import { openApp, openSideBar } from './helpers';
 import { workspace } from './fixtures/workspace';
 
@@ -81,7 +82,10 @@ describe('desktop record actions', () => {
     const { bridge, setFullScreen } = desktop();
     await openApp('/DM-SHOP-UC01');
     await heading();
-    const errors = workspace().problems.filter((p) => p.severity === 'error').length;
+    // The window's own product's errors (Demo shop's and the workspace's), not Notebook's.
+    const index = indexWorkspace(workspace());
+    const errors = workspace().problems.filter((p) => p.severity === 'error' && index.byId.get(p.record ?? '')?.product !== 'NF').length;
+    expect(errors).toBe(2);
     await waitFor(() => expect(bridge.setErrorCount).toHaveBeenLastCalledWith(errors));
 
     const bar = screen.getByRole('banner', { name: 'Title bar' });
@@ -110,7 +114,7 @@ describe('desktop record actions', () => {
     expect(at('outside')).toBeNull();
     expect(at('in-title')).toBe('DM-SHOP-UC01');
     expect(at('in-title', '/DM')).toBe('DM');
-    expect(at('in-title', '/checks')).toBeNull();
+    expect(at('in-title', '/DM/checks')).toBeNull();
     expect(at('body')).toBeNull();
     document.body.innerHTML = '';
   });

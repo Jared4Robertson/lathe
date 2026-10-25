@@ -12,7 +12,7 @@ const rowOf = (n: Neighborhood) => new Map(n.nodes.map((x) => [x.id, x.row]));
 
 describe('graph columns by tree depth', () => {
   const index = testIndex();
-  const map = graphMap(index);
+  const map = graphMap(index, 'P');
   const x = (id: string) => map.nodes.get(id)!.x;
 
   it('LA-EXP-T78 Siblings of mixed kinds share a column, in the model and on the canvas', async () => {
@@ -62,7 +62,7 @@ describe('graph columns by tree depth', () => {
   });
 
   it('LA-EXP-T81 A group sits in its own column between its parent and its members', () => {
-    const grouped = graphMap(indexWorkspace(groupedWorkspace()));
+    const grouped = graphMap(indexWorkspace(groupedWorkspace()), 'P');
     const level = (id: string) => grouped.nodes.get(id)!.level;
     expect(level('P-D/define/use-cases')).toBe(level('P-D/define') + 1);
     expect(level('P-D-UC02')).toBe(level('P-D/define/use-cases') + 1);
@@ -87,7 +87,7 @@ describe('graph columns by tree depth', () => {
     const folders = ['P-D/define/domain-model', 'P-D/define/use-cases', 'P-D/design/interaction-design', 'P-D/design/technical-specification', 'P-D/design/test-plan'];
     expect(folders.map((id) => domain.get(id))).toEqual([0, 1, 2, 3, 4]);
     // Rows within each column are 0, 1, 2 ... and the map holds them top to bottom, whatever is in focus.
-    const placed = graphMap(grouped).nodes;
+    const placed = graphMap(grouped, 'P').nodes;
     for (const c of new Set(n.nodes.map((x) => x.column))) {
       const inColumn = n.nodes.filter((x) => x.column === c).sort((a, b) => a.row - b.row);
       expect(inColumn.map((x) => x.row)).toEqual(inColumn.map((_, i) => i));

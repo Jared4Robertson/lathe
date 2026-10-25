@@ -1,6 +1,6 @@
 import type { Neighborhood } from './model';
 
-// Box sizes and the trace's layout. The hierarchy is one map of the whole tree (map.ts); a trace is
+// Box sizes and the trace's layout. The hierarchy is one map of a product's tree (map.ts); a trace is
 // a chain, not a tree, so it keeps a picture of its own: each of its columns a stack of leaf boxes
 // in the model's row order, centered on the focus's middle (LA-EXP-UC03-R08).
 
