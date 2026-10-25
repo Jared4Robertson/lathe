@@ -39,3 +39,7 @@ fulfills,flow_step,pattern_rule,,Carries out,Carried out in,"The step carries ou
 has_one,entity,entity,,Has one,Part of,"The entity holds exactly one of the other entity, as a part of it (one to one)."
 has_many,entity,entity,,Has many,Part of,"The entity holds any number of the other entity, as parts of it (one to many)."
 refers_to,entity,entity,,Refers to,Referred to by,"The entity holds a reference to one of the other entity, which may sit in another aggregate or domain (many to one)."
+raised_by,domain_event,entity,,Raised by,Raises,"The event is raised when that entity of its aggregate changes."
+reacts_to,aggregate,domain_event,,Reacts to,Reacted to by,"The aggregate changes in response to the event, which may come from another aggregate or domain."
+reacts_to,use_case,domain_event,,Reacts to,Reacted to by,"The use case starts when the event happens."
+reacts_to,component,domain_event,,Reacts to,Reacted to by,"The component handles the event."
