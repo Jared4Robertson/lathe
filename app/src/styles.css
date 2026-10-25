@@ -279,24 +279,26 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
    its level as wide as the level's typical height allows; it sets --node-scale, and its text, padding, borders, marks and
    chevron grow in step, centered both ways (LA-EXP-DR58); a leaf's scale is 1. Nothing in the map changes size: the camera
    zooms. A box too small on screen for its text is plain: filled, with no text (LA-EXP-DR60). */
-.graph-node { --node-scale: 1; --node-border: calc(1.5px * var(--node-scale)); width: 100%; height: 100%; box-sizing: border-box; padding: calc(6px * var(--node-scale)) calc(10px * var(--node-scale)); border: var(--node-border) solid var(--g-structural); background: var(--g-structural-bg); display: flex; flex-direction: column; justify-content: center; cursor: pointer; overflow: hidden; position: relative; border-radius: var(--node-radius); }
+.graph-node { --node-scale: 1; --box-scale: 1; --node-border: calc(1.5px * var(--box-scale)); width: 100%; height: 100%; box-sizing: border-box; padding: calc(6px * var(--node-scale)) calc(10px * var(--node-scale)); border: var(--node-border) solid var(--g-structural); background: var(--g-structural-bg); display: flex; flex-direction: column; justify-content: center; cursor: pointer; overflow: hidden; position: relative; border-radius: var(--node-radius); }
 .graph-node small { font: calc(0.65625rem * var(--node-scale)) var(--mono); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: calc(30px * var(--node-scale)); }
-.graph-node.is-scaled, .graph-node.stage-group.is-scaled { align-items: center; text-align: center; padding-inline: calc(30px * var(--node-scale)); }
+/* A scaled node's padding stays a small share of a narrow box, so a narrow box still has room for its title, wrapped. */
+.graph-node.is-scaled, .graph-node.stage-group.is-scaled { align-items: center; text-align: center; padding-inline: min(calc(30px * var(--node-scale)), 8%); }
 .graph-node.is-scaled small { padding-right: 0; max-width: 100%; }
+.graph-node.is-scaled strong { max-width: 100%; overflow-wrap: anywhere; }
 .graph-node strong { font-size: calc(0.78125rem * var(--node-scale)); font-weight: 600; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; color: var(--ink); }
 .graph-node.stage-define { border-color: var(--g-define); background: var(--g-define-bg); padding-inline: calc(10px * var(--node-scale)); }
 .graph-node.stage-design { border-color: var(--g-design); background: var(--g-design-bg); padding-inline: calc(10px * var(--node-scale)); }
 .graph-node.stage-file { border: var(--node-border) dashed var(--g-file); background: var(--paper); cursor: default; padding-inline: calc(10px * var(--node-scale)); }
 .graph-node.stage-file strong { font: calc(0.6875rem * var(--node-scale)) var(--mono); overflow-wrap: anywhere; }
 .graph-node.kind-question { border-style: dashed; border-color: var(--warn); }
-.graph-node.is-focus { box-shadow: 0 0 0 calc(2px * var(--node-scale)) var(--ink); }
+.graph-node.is-focus { box-shadow: 0 0 0 calc(2px * var(--box-scale)) var(--ink); }
 .graph-marks { position: absolute; top: calc(3px * var(--node-scale)); right: calc(8px * var(--node-scale)); display: flex; gap: calc(3px * var(--node-scale)); }
 .graph-mark { display: inline-grid; place-items: center; min-width: calc(15px * var(--node-scale)); height: calc(15px * var(--node-scale)); padding: 0 calc(3px * var(--node-scale)); box-sizing: border-box; border-radius: calc(8px * var(--node-scale)); font: 700 calc(0.59375rem * var(--node-scale)) var(--mono); color: var(--on-mark); background: var(--muted); }
 .graph-mark.error { background: var(--error); }
 .graph-mark.warning, .graph-mark.gap { background: var(--warn); }
 .graph-handle { opacity: 0; pointer-events: none; top: 50% !important; bottom: auto !important; }
 .graph-flow .react-flow__node:focus { outline: none; }
-.graph-flow .react-flow__node:focus-visible .graph-node { outline: calc(3px * var(--node-scale)) solid var(--steel); outline-offset: calc(3px * var(--node-scale)); }
+.graph-flow .react-flow__node:focus-visible .graph-node { outline: calc(3px * var(--box-scale)) solid var(--steel); outline-offset: calc(3px * var(--box-scale)); }
 /* A plain box and a bar (LA-EXP-DR60): too small on screen for text, so a filled shape in its stage's color. */
 .graph-node.is-plain { padding: 0; }
 .graph-bar { width: 100%; height: 100%; background: var(--rule); opacity: 0.6; border-radius: var(--node-radius); }
@@ -344,16 +346,16 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
    so the border follows the outline in every state. Hover, focus, the keyboard ring and a tap's selection color the edge,
    since a box-shadow or outline would be clipped away. */
 .graph-node.is-hexagon {
-  --hex-c: min(25%, calc(12px * var(--node-scale))); --hex-edge: var(--g-structural); --hex-w: var(--node-border);
+  --hex-c: min(25%, calc(12px * var(--box-scale))); --hex-edge: var(--g-structural); --hex-w: var(--node-border);
   --hex: polygon(var(--hex-c) 0, calc(100% - var(--hex-c)) 0, 100% 50%, calc(100% - var(--hex-c)) 100%, var(--hex-c) 100%, 0 50%);
   border: 0; border-radius: 0; background: var(--hex-edge); clip-path: var(--hex); isolation: isolate; box-shadow: none;
   padding-inline: calc(var(--hex-c) + 8px * var(--node-scale));
 }
 .graph-node.is-hexagon::before { content: ""; position: absolute; inset: var(--hex-w); z-index: -1; background: var(--g-structural-bg); clip-path: var(--hex); }
-.graph-node.is-hexagon.is-focus { --hex-edge: var(--ink); --hex-w: calc(3px * var(--node-scale)); box-shadow: none; }
-.graph-flow .react-flow__node:hover .graph-node.is-hexagon:not(.is-focus) { --hex-edge: var(--steel); --hex-w: calc(2.5px * var(--node-scale)); box-shadow: none; }
-.graph-flow .react-flow__node:focus-visible .graph-node.is-hexagon { --hex-edge: var(--steel); --hex-w: calc(3px * var(--node-scale)); outline: none; }
-.react-flow__node.is-armed .graph-node.is-hexagon { --hex-edge: var(--steel); --hex-w: calc(3px * var(--node-scale)); box-shadow: none; }
+.graph-node.is-hexagon.is-focus { --hex-edge: var(--ink); --hex-w: calc(3px * var(--box-scale)); box-shadow: none; }
+.graph-flow .react-flow__node:hover .graph-node.is-hexagon:not(.is-focus) { --hex-edge: var(--steel); --hex-w: calc(2.5px * var(--box-scale)); box-shadow: none; }
+.graph-flow .react-flow__node:focus-visible .graph-node.is-hexagon { --hex-edge: var(--steel); --hex-w: calc(3px * var(--box-scale)); outline: none; }
+.react-flow__node.is-armed .graph-node.is-hexagon { --hex-edge: var(--steel); --hex-w: calc(3px * var(--box-scale)); box-shadow: none; }
 .graph-swatch.stage-hexagon { border: 0; border-radius: 0; background: var(--g-structural); clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%); }
 .graph-node.kind-domain_event:not(.stage-group) { border-color: var(--spark); background: var(--spark-bg); border-radius: 999px; padding-inline: calc(14px * var(--node-scale)); }
 .graph-flow .react-flow__edge-path.rel-event, .graph-flow .react-flow__edge-path.rel-event.is-link { stroke: var(--spark); stroke-dasharray: 4 4; }
@@ -440,9 +442,9 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .menu .long-list-tools input { font-size: 0.8rem; }
 /* ---------- End of obligation kinds, test states and record content ---------- */
 /* ---- Graph groups (brief 15): a folder of one kind of child, with a tab and a count. ---- */
-.graph-node.stage-group { border: var(--node-border) solid var(--muted); background: var(--sheet); padding: calc(6px * var(--node-scale)) calc(30px * var(--node-scale)) calc(6px * var(--node-scale)) calc(10px * var(--node-scale)); border-top-width: calc(5px * var(--node-scale)); }
+.graph-node.stage-group { border: var(--node-border) solid var(--muted); background: var(--sheet); padding: calc(6px * var(--node-scale)) calc(30px * var(--node-scale)) calc(6px * var(--node-scale)) calc(10px * var(--node-scale)); border-top-width: calc(5px * var(--box-scale)); }
 .graph-node.stage-group.is-plain { padding: 0; }
-.graph-node.stage-group.is-focus { box-shadow: 0 0 0 calc(2px * var(--node-scale)) var(--ink); }
+.graph-node.stage-group.is-focus { box-shadow: 0 0 0 calc(2px * var(--box-scale)) var(--ink); }
 /* A group's chevron sits beside its title: down while its members are drawn beside it, right when they are not. */
 .graph-group-chevron { position: absolute; right: calc(4px * var(--node-scale)); top: 50%; translate: 0 -50%; display: grid; place-items: center; width: calc(24px * var(--node-scale)); height: calc(24px * var(--node-scale)); color: var(--ink); }
 .graph-node.is-scaled .graph-group-chevron { position: static; translate: none; }
@@ -755,7 +757,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 .spec-body a.card:hover, .spec-body .domain-card:hover { border-color: var(--steel); box-shadow: 0 0 0 3px var(--hover-ring); }
 .spec-body .domain-card:hover .card-title strong { color: var(--steel); }
 .graph-node.is-focus, .graph-node.stage-file { cursor: default; }
-.graph-flow .react-flow__node:hover .graph-node:not(.is-focus):not(.stage-file) { box-shadow: 0 0 0 calc(3px * var(--node-scale)) var(--hover-ring); }
+.graph-flow .react-flow__node:hover .graph-node:not(.is-focus):not(.stage-file) { box-shadow: 0 0 0 calc(3px * var(--box-scale)) var(--hover-ring); }
 .spec-node:hover { box-shadow: 0 0 0 3px var(--hover-ring); }
 .graph-depth button:not([aria-pressed="true"]):not(:disabled):hover { background: var(--hover-bg); border-color: var(--steel); }
 .quick-find-results li:not(.active):hover, .palette-list li:not(.active):hover { background: var(--hover-bg); }

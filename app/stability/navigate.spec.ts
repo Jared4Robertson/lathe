@@ -101,13 +101,15 @@ test.describe('navigate', () => {
       return w.__frames;
     });
     const before = await page.locator('.pane-wiki .pane-title h1').textContent();
-    // A link already in view, so the click does not scroll the page to reach it first.
+    // A link already in view, so the click does not scroll the page to reach it first: inside the
+    // pane, and not clipped away by a long list's own scroller (its middle is the link itself).
     const links = '.pane-wiki .pane-scroll a.row-link[href^="/LA-EXP-"]';
     const inView = await page.evaluate((sel) => {
       const box = document.querySelector('.pane-wiki .pane-scroll')!.getBoundingClientRect();
       return [...document.querySelectorAll(sel)].findIndex((a) => {
         const r = a.getBoundingClientRect();
-        return r.width > 0 && r.top >= box.top + 40 && r.bottom <= box.bottom - 40;
+        const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+        return r.width > 0 && r.top >= box.top + 40 && r.bottom <= box.bottom - 40 && !!hit && a.contains(hit);
       });
     }, links);
     expect(inView, 'a link in view half-way down').toBeGreaterThanOrEqual(0);

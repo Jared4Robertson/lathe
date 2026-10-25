@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { contentScale, NODE_HEIGHT, NODE_WIDTH } from '../../src/graph/layout';
 import { graphMap, layoutTree, LEVEL_ASPECT, linkEnds, MAX_LEVEL_STEP, MAX_ROOT_STEP, parentLine, typicalHeight, type GraphMap } from '../../src/graph/map';
-import { drawnFor, frameOnMap, LABEL_MIN_HEIGHT, LABEL_SCALE, MAX_DRAWN, MIN_DRAWN, viewRect } from '../../src/graph/camera';
+import { drawnFor, frameOnMap, LABEL_MIN_HEIGHT, LABEL_SCALE, MAX_DRAWN, MIN_DRAWN, textScale, TEXT_ON_SCREEN, viewRect } from '../../src/graph/camera';
 import { indexWorkspace } from '../../src/specs/data';
 import { groupedWorkspace, manyOfOneKindWorkspace, testIndex } from './workspace';
 
@@ -110,7 +110,9 @@ describe('the level of detail', () => {
       expect(n.x + n.w >= rect.x0 && n.x <= rect.x1 && n.y + n.h >= rect.y0 && n.y <= rect.y1, b.id).toBe(true);
       expect(n.h * view.zoom).toBeGreaterThanOrEqual(MIN_DRAWN);
       // Labeled exactly when the text reads at this zoom.
-      expect(b.label).toBe(contentScale(n.w, n.h) * view.zoom >= LABEL_SCALE && n.h * view.zoom >= LABEL_MIN_HEIGHT);
+      expect(b).toEqual({ id: b.id, ...textScale(n.w, n.h, view.zoom) });
+      // A box tall and wide enough on screen for a line of text is labeled, whatever its size in the map.
+      if (n.h * view.zoom >= 40 && n.w * view.zoom >= 100) expect(b.label, b.id).toBe(true);
     }
     // Zoomed far out, the leaves are too small: they are not drawn, and each run of them is one bar in its parent's next level.
     const far = { x: 0, y: 0, zoom: 0.02 };
@@ -127,6 +129,26 @@ describe('the level of detail', () => {
     expect(drawnFor(map, far, 1000, 800, ['P-D-UC01-R01']).boxes.map((b) => b.id)).toContain('P-D-UC01-R01');
     // The same view always draws the same.
     expect(drawnFor(map, view, 1000, 800)).toEqual(d);
+  });
+
+  it('LA-EXP-T176 A label reads on screen whenever its box has room for it: its text keeps its on-screen size as the camera zooms out', () => {
+    // A leaf at its own size: its own scale, labeled.
+    expect(textScale(NODE_WIDTH, NODE_HEIGHT, 1)).toEqual({ label: true, text: 1 });
+    // A folder 110 by 100 pixels on screen, in a map zoomed to a tenth: its content scale alone would read at 0.58, so its text grows to read.
+    const folder = textScale(1100, 1000, 0.1);
+    expect(contentScale(1100, 1000) * 0.1).toBeLessThan(LABEL_SCALE);
+    expect(folder.label).toBe(true);
+    expect(folder.text * 0.1).toBeGreaterThanOrEqual(TEXT_ON_SCREEN);
+    // Never more text than the box has room for, and never less than its own scale.
+    const narrow = textScale(400, 4000, 0.05);
+    expect(narrow.text).toBeLessThanOrEqual(400 / 120 + 1e-9);
+    expect(narrow.text).toBeGreaterThanOrEqual(contentScale(400, 4000));
+    // Too small on screen: plain.
+    expect(textScale(NODE_WIDTH, NODE_HEIGHT, 0.2).label).toBe(false);
+    expect(textScale(NODE_WIDTH, NODE_HEIGHT * 3, 0.1).label).toBe(false);
+    // Rounded on screen to tenths, so a small zoom keeps the same text on screen.
+    expect(textScale(1100, 1000, 0.1004).text * 0.1004).toBeCloseTo(folder.text * 0.1, 6);
+    expect(LABEL_MIN_HEIGHT).toBe(18);
   });
 
   it('LA-EXP-T170 A product of thousands of records stays within the drawing budget at every zoom', () => {

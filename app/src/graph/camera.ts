@@ -119,14 +119,31 @@ export const glideDuration = (speed: number, S: number) => speed * Math.min(2, M
 
 /** A node too small to see on screen (in pixels) is not drawn: its parent draws a bar for it and its siblings that are as small. */
 export const MIN_DRAWN = 3;
-/** A node is labeled when its content reads at this share of a leaf's size or more, and it is at least LABEL_MIN_HEIGHT pixels tall. */
+/** A node is labeled when its text reads on screen at this share of a leaf's size or more, and it is at least LABEL_MIN_HEIGHT pixels tall. */
 export const LABEL_SCALE = 0.6;
 export const LABEL_MIN_HEIGHT = 18;
+/** The size a label's text keeps on screen, as a share of a leaf's, while its box has room for it: never smaller as the camera zooms out. */
+export const TEXT_ON_SCREEN = 0.9;
+
+/**
+ * A box's text scale at a zoom (LA-EXP-DR60), in map units: its content scale, or as much more as
+ * keeps the text at TEXT_ON_SCREEN of a leaf's size on screen, while the box has room for a
+ * wrapped word or two (50 by 40 map units per unit of scale: a narrow box wraps its title). Rounded down on
+ * screen to tenths, so a small zoom does not draw the boxes anew. Labeled when it reads (LABEL_SCALE)
+ * and the box is LABEL_MIN_HEIGHT pixels tall on screen.
+ */
+export function textScale(w: number, h: number, zoom: number): { label: boolean; text: number } {
+  const base = contentScale(w, h);
+  const room = Math.max(base, Math.min(w / 50, h / 40));
+  const want = Math.max(base, TEXT_ON_SCREEN / zoom);
+  const onScreen = Math.floor(Math.min(want, room) * zoom * 10 + 1e-9) / 10;
+  return { label: onScreen >= LABEL_SCALE && h * zoom >= LABEL_MIN_HEIGHT, text: Math.max(base, onScreen / zoom) };
+}
 /** The most boxes a picture draws (LA-PAT-APP-UX-R11): a level that would pass it is drawn as bars. */
 export const MAX_DRAWN = 260;
 
-/** A drawn box: labeled, or a plain filled box too small for text. */
-export interface DrawnBox { id: string; label: boolean }
+/** A drawn box: labeled, with its text scale (map units), or a plain filled box too small for text. */
+export interface DrawnBox { id: string; label: boolean; text: number }
 /** A bar standing for some children too small to draw (or past the budget): in their level, from the first's top to the last's bottom. */
 export interface DrawnBar { id: string; parent: string; level: number; y: number; h: number }
 export interface Drawn { boxes: DrawnBox[]; bars: DrawnBar[] }
@@ -140,8 +157,8 @@ export function viewRect(v: Viewport, width: number, height: number) {
 
 /**
  * What a viewport draws of the map (LA-EXP-DR60), level by level from the roots: a node in view
- * and at least MIN_DRAWN pixels tall is drawn, labeled when its text reads (LABEL_SCALE,
- * LABEL_MIN_HEIGHT), plain otherwise. A run of drawn parent's children too small to see is one bar.
+ * and at least MIN_DRAWN pixels tall is drawn, labeled when its text reads on screen at this zoom
+ * (`textScale`), plain otherwise. A run of drawn parent's children too small to see is one bar.
  * A level that would take the boxes past MAX_DRAWN is drawn as one bar per parent instead, and
  * nothing below it. `always` adds nodes drawn whatever their size or place (the focus, linked
  * records). The same viewport always draws the same.
@@ -154,7 +171,7 @@ export function drawnFor(map: GraphMap, v: Viewport, width: number, height: numb
   const drawn = new Set<string>();
   const inY = (n: MapNode) => n.y + n.h >= rect.y0 && n.y <= rect.y1;
   const inX = (n: MapNode) => n.x + n.w >= rect.x0 && n.x <= rect.x1;
-  const labeled = (n: MapNode) => contentScale(n.w, n.h) * z >= LABEL_SCALE && n.h * z >= LABEL_MIN_HEIGHT;
+  const box = (n: MapNode): DrawnBox => ({ id: n.id, ...textScale(n.w, n.h, z) });
   /** The bars for a parent's children too small to draw, one per run of them. */
   const barsOf = (p: MapNode, small: (c: MapNode) => boolean) => {
     let run: MapNode[] = [];
@@ -183,7 +200,7 @@ export function drawnFor(map: GraphMap, v: Viewport, width: number, height: numb
       for (const p of parents) barsOf(map.nodes.get(p)!, () => true);
       break;
     }
-    for (const n of shown) { boxes.push({ id: n.id, label: labeled(n) }); drawn.add(n.id); }
+    for (const n of shown) { boxes.push(box(n)); drawn.add(n.id); }
     const next: MapNode[] = [];
     for (const n of big) {
       if (n.children.length === 0) continue;
@@ -195,19 +212,19 @@ export function drawnFor(map: GraphMap, v: Viewport, width: number, height: numb
   }
   for (const id of always) {
     const n = map.nodes.get(id);
-    if (n && !drawn.has(id)) { boxes.push({ id, label: labeled(n) }); drawn.add(id); }
+    if (n && !drawn.has(id)) { boxes.push(box(n)); drawn.add(id); }
   }
   return { boxes, bars };
 }
 
-/** Several pictures as one: every box in any (labeled if labeled in any), and every bar for a parent none of them draws the children of. */
+/** Several pictures as one: every box in any, labeled as the last picture that has it labels it (the view the glide ends on), and every bar. */
 export function mergeDrawn(pictures: readonly Drawn[]): Drawn {
   const boxes = new Map<string, DrawnBox>();
-  for (const p of pictures) for (const b of p.boxes) boxes.set(b.id, { id: b.id, label: (boxes.get(b.id)?.label ?? false) || b.label });
+  for (const p of pictures) for (const b of p.boxes) boxes.set(b.id, b);
   const bars = new Map<string, DrawnBar>();
   for (const p of pictures) for (const b of p.bars) bars.set(b.id, b);
   return { boxes: [...boxes.values()], bars: [...bars.values()] };
 }
 
 /** A key that changes only when what is drawn changes. */
-export const drawnKey = (d: Drawn) => `${d.boxes.map((b) => `${b.id}${b.label ? '+' : ''}`).join(' ')}|${d.bars.map((b) => b.id).join(' ')}`;
+export const drawnKey = (d: Drawn) => `${d.boxes.map((b) => `${b.id}${b.label ? `+${b.text}` : ''}`).join(' ')}|${d.bars.map((b) => b.id).join(' ')}`;
