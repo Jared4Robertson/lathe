@@ -4,7 +4,7 @@ kind: test
 title: An ID that does not match the pattern is an error
 parent: LA-MOD
 test_type: unit
-run_by: lathe/test/diagrams.test.ts
+run_by: lathe/test/records.test.ts
 links:
   proves: [LA-MOD-DR07]
 ---

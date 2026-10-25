@@ -1,7 +1,6 @@
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import { expect, vi } from 'vitest';
 import App from '../src/App';
-import type { DiagramSummary } from '../src/types';
 import type { Workspace } from '../../lathe/src/types';
 import type { FormatReference } from '../src/format/reference';
 import { formatReference } from './fixtures/format';
@@ -11,7 +10,6 @@ export interface Served {
   workspace?: Workspace;
   source?: 'engine' | 'fixture';
   reason?: string;
-  diagrams?: DiagramSummary[];
   /** What GET /api/format answers: the fixture's reference by default, or null for no answer (as when the engine is not there). */
   format?: FormatReference | null;
 }
@@ -19,7 +17,7 @@ export interface Served {
 /** Every request the page made, as "METHOD /path". */
 export type Requests = string[];
 
-/** Stubs fetch with the given workspace and diagrams, and records every request. */
+/** Stubs fetch with the given workspace, and records every request. */
 export function serve(served: Served = {}): Requests {
   const requests: Requests = [];
   const ws = served.workspace ?? fixtureWorkspace();
@@ -33,7 +31,6 @@ export function serve(served: Served = {}): Requests {
       if (served.reason) headers['x-lathe-source-reason'] = encodeURIComponent(served.reason);
       return json(ws, headers);
     }
-    if (url === '/api/diagrams') return json(served.diagrams ?? []);
     if (url === '/api/format' && served.format !== null) return json(served.format ?? formatReference());
     return new Response(JSON.stringify({ error: 'not found' }), { status: 404 });
   }));

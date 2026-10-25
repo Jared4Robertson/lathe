@@ -3,7 +3,6 @@ import { Icon } from '../components/icons';
 import { groupLabel } from '../graph/model';
 import { Link } from '../router';
 import { parseSpecRoute, type SpecIndex } from '../specs/data';
-import type { DiagramSummary } from '../types';
 import { addressOf, HOME_PATH, focusOf, isFocusRoute, viewsFromSearch, withView } from '../views/address';
 import { QuickFind } from './QuickFind';
 import type { Space } from './spaces';
@@ -23,15 +22,12 @@ export interface Heading {
 const PRODUCTS = { to: HOME_PATH, label: 'Products' };
 
 /** The title of the page at an address, and the page one step up from it. */
-export function pageHeading(index: SpecIndex | null, path: string, search: string, diagrams: readonly DiagramSummary[]): Heading {
+export function pageHeading(index: SpecIndex | null, path: string, search: string): Heading {
   const route = parseSpecRoute(path, index);
   // Going up keeps the view in front, as following any link does.
   const views = viewsFromSearch(search);
   const keep = (to: string) => (views ? withView(to, views) : to);
-  if (!route) {
-    const slug = path.match(/^\/diagrams\/([a-z0-9-]+)/)?.[1];
-    return { title: diagrams.find((d) => d.slug === slug)?.title ?? 'Lathe', up: null };
-  }
+  if (!route) return { title: 'Lathe', up: null };
   if (route.page === 'specs') return { title: 'Products', up: null };
   if (route.page === 'checks') return { title: 'Checks', up: null };
   if (route.page === 'format') return { title: 'Record format', up: null };
@@ -92,7 +88,7 @@ export const TopBar = forwardRef<HTMLButtonElement, TopBarProps>(function TopBar
 });
 
 /** Quick find as a full-screen sheet: the search box at the top, the results below it, Escape or Close to leave. */
-export function QuickFindSheet({ index, diagrams, space, onClose }: { index: SpecIndex | null; diagrams: readonly DiagramSummary[]; space: Space | null; onClose: () => void }) {
+export function QuickFindSheet({ index, space, onClose }: { index: SpecIndex | null; space: Space | null; onClose: () => void }) {
   const sheet = useRef<HTMLDivElement>(null);
   const input = useRef<HTMLInputElement>(null);
   useEffect(() => {
@@ -109,7 +105,6 @@ export function QuickFindSheet({ index, diagrams, space, onClose }: { index: Spe
       <QuickFind
         ref={input}
         index={index}
-        diagrams={diagrams}
         space={space}
         onGo={onClose}
         inline

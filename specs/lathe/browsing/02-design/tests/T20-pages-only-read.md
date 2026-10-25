@@ -8,4 +8,4 @@ run_by: app/test/read-only.test.tsx
 links:
   proves: [LA-BRW-DR04]
 ---
-Opens every spec page and checks that it has no form, button or editable field other than the search box, and that using it makes no request other than reading the workspace and the diagram list.
+Opens every spec page and checks that it has no form, button or editable field other than the search box, and that using it makes no request other than reading the workspace and the record format.

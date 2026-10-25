@@ -1,7 +1,7 @@
 ---
 id: LA-BRW-UC90-R01
 kind: requirement
-title: The rail lists each product as a space, then Diagrams and Checks
+title: The rail lists each product as a space, then Checks
 parent: LA-BRW-UC90
 ---
-The nav MUST have a rail about 56 px wide at its far left with one square icon per product in the products' ID order, then a separator, then Diagrams and Checks for all products. Each item MUST name itself in a tooltip.
+The nav MUST have a rail about 56 px wide at its far left with one square icon per product in the products' ID order, then a separator, then Checks for all products. Each item MUST name itself in a tooltip.

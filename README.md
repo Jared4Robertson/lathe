@@ -16,7 +16,6 @@ Lathe describes itself in its own format: its specification is under [specs/lath
 | [specs/tool-library/](specs/tool-library/) | The example product's specification (product `TL`). |
 | [examples/tool-library/](examples/tool-library/) | The example product's code, whose tests carry their spec IDs. |
 | [lathe-checks/](lathe-checks/) | This repo's own checks, run after Lathe's. |
-| [model/](model/) | CSV diagrams (People and tools, SDLC Brainstorm), shown in the app's Diagrams. |
 | [NOTES.md](NOTES.md) | The thinking and decisions so far. |
 | [notes/briefs/](notes/briefs/) | Reusable briefs for agents working on Lathe. |
 
@@ -46,8 +45,8 @@ The npm scripts run in `lathe/`, so `--root ..` names this repo. In a product re
 - **Views.** A record, group, domain or product page opens in one or more views side by side: **Wiki** (the record as a page: its body, fields, children, links in and out, and problems; a domain page adds its stages, coverage and open questions), **Graph** (the records around it as boxes and arrows, by level), and **Model** (the ERD of a domain's aggregates or an aggregate's entities). Toggle them from the page bar or with Ctrl+W, Ctrl+G and Ctrl+M (Alt off a Mac); Ctrl+3 makes the focused view full screen. The address names the open views (`?view=wiki,graph`), so a link opens as it was seen.
 - **Tabs.** Each space keeps its own tabs, as VS Code's editors: a new page opens in the preview tab (italic) until you keep it (double-click, or Ctrl+K Enter). Ctrl+Tab cycles; Alt+Shift+W closes.
 - **The side bar.** On the right, it shows the focused record's kind, fields, parent, children, links both ways, problems and coverage gaps, and what the graph connects to it. Mod+Alt+B shows or hides it, and its edge drags to resize.
-- **Quick find and the palette.** Mod+P (or Mod+K) jumps to any record, domain, product or diagram by ID or title, the current space first. Mod+Shift+P opens the command palette, which runs any command by name.
-- **Shortcuts.** Press `?` for the shortcuts sheet. Others: Mod+B hides the nav, `g c` opens Checks, `g f` the record format, `g d` Diagrams, `g h` home, F8 the next problem on the page, F12 the focused link's record. Mod is Cmd on a Mac and Ctrl elsewhere.
+- **Quick find and the palette.** Mod+P (or Mod+K) jumps to any record, domain or product by ID or title, the current space first. Mod+Shift+P opens the command palette, which runs any command by name.
+- **Shortcuts.** Press `?` for the shortcuts sheet. Others: Mod+B hides the nav, `g c` opens Checks, `g f` the record format, `g h` home, F8 the next problem on the page, F12 the focused link's record. Mod is Cmd on a Mac and Ctrl elsewhere.
 - **Themes.** Five built-in themes (Lathe, Graphite, Midnight, Workshop, High contrast), each light, dark or following the system, and themes of your own, made and edited in Settings › Appearance (`g t` picks one).
 - **Checks and the format.** Checks lists every problem, filtered by space. The record format pages (`g f`) show the concepts and a page per kind and per check, generated from the meta-model.
 - **Mobile.** Below 900 px wide the app shows one view at a time, with a compact top bar, the nav as a drawer and the side bar as a bottom sheet. On a touch screen, targets are at least 44 px and a tap on a graph box selects it before a second tap opens it.

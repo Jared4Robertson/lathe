@@ -1,5 +1,0 @@
-name,kind,context,status,definition
-Shelf,aggregate,making_software,decided,Good.
-Gadget,widget,making_software,decided,Unknown kind.
-Elsewhere,term,somewhere_else,decided,Unknown context.
-Maybe,term,making_software,pending,Unknown status.

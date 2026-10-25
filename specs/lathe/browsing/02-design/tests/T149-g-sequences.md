@@ -1,7 +1,7 @@
 ---
 id: LA-BRW-T149
 kind: test
-title: g then c, f, d or h jumps, with a hint, and not while typing
+title: g then c, f or h jumps, with a hint, and not while typing
 parent: LA-BRW
 test_type: acceptance
 run_by: app/test/shortcuts.test.tsx

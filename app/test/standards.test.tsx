@@ -469,10 +469,10 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     expect(raw).toEqual([]);
 
     // The pages.
-    for (const path of ['/diagrams', '/', '/DM', '/DM-SHOP', '/DM-SHOP-UC01', '/DM-SHOP-UC01?view=graph', '/checks', '/format', '/settings/appearance']) {
+    for (const path of ['/', '/DM', '/DM-SHOP', '/DM-SHOP-UC01', '/DM-SHOP-UC01?view=graph', '/checks', '/format', '/settings/appearance']) {
       await openApp(path);
-      // The diagrams home has no heading of its own; every other page waits for its content.
-      if (path !== '/diagrams') await screen.findAllByRole('heading', { level: 1 });
+      // Every page waits for its content.
+      await screen.findAllByRole('heading', { level: 1 });
       expect(document.querySelectorAll('button.secondary, .tree-bulk').length).toBe(0);
       const stray = [...document.querySelectorAll('button')].filter((b) => !b.matches(allowed)).map((b) => `${path}: ${b.outerHTML.slice(0, 140)}`);
       expect(stray).toEqual([]);

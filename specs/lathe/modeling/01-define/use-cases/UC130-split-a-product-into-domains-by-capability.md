@@ -2,7 +2,7 @@
 id: LA-MOD-UC130
 kind: use_case
 title: Split a product into domains by capability
-parent: LA-MOD-CAP01
+parent: LA-MOD
 actor: Owner, Agent
 links:
   applies: [LA-CHK-DR350]
