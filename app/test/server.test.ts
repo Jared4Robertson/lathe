@@ -61,7 +61,7 @@ describe('dev API plugin', () => {
   beforeEach(() => { delete process.env.LATHE_SPEC_FIXTURE; });
   afterEach(() => { delete process.env.LATHE_SPEC_FIXTURE; });
 
-  it('LA-PLT-T08 GET /api/spec serves the sample fixture, labeled, when LATHE_SPEC_FIXTURE=1 is set or the engine cannot load', async () => {
+  it('LA-PLT-T09 GET /api/spec serves the sample fixture, labeled, when LATHE_SPEC_FIXTURE=1 is set or the engine cannot load', async () => {
     // The engine works: its answer is served.
     const working = await start(engine());
     const fromEngine = await request(working.middlewares[0], '/api/spec');
@@ -86,20 +86,19 @@ describe('dev API plugin', () => {
     expect(fallback.body).toBe(await sample());
 
     // Other API paths report the failure; non-API paths pass through.
-    const diagrams = await request(broken.middlewares[0], '/api/diagrams');
-    expect(diagrams.status).toBe(500);
-    expect(JSON.parse(diagrams.body).error).toMatch(/engine could not be loaded/);
+    const format = await request(broken.middlewares[0], '/api/format');
+    expect(format.status).toBe(500);
+    expect(JSON.parse(format.body).error).toMatch(/engine could not be loaded/);
     expect((await request(broken.middlewares[0], '/LA')).nextCalled).toBe(true);
   });
 
-  it('LA-PLT-T09 The server sends spec:changed when a spec record or the engine\'s checks or meta-model change', async () => {
+  it('LA-PLT-T10 The server sends spec:changed when a spec record or the engine\'s checks or meta-model change', async () => {
     const root = await mkdtemp(path.join(tmpdir(), 'lathe-app-'));
     try {
       const specs = path.join(root, 'specs');
-      const model = path.join(root, 'model');
       await mkdir(specs);
-      const fake = await start(engine(() => [{ dir: specs, event: 'spec:changed' }, { dir: model, event: 'model:changed' }]), root);
-      expect(fake.watched).toEqual([specs, model, path.join(engineDir, 'checks'), path.join(engineDir, 'meta')]);
+      const fake = await start(engine(() => [{ dir: specs, event: 'spec:changed' }]), root);
+      expect(fake.watched).toEqual([specs, path.join(engineDir, 'checks'), path.join(engineDir, 'meta')]);
       const change = (file: string) => {
         fake.sent.length = 0;
         for (const listener of fake.listeners) listener('change', file);
@@ -111,7 +110,6 @@ describe('dev API plugin', () => {
       expect(change(record)).toEqual([{ type: 'custom', event: 'spec:changed' }]);
       expect(change(path.join(engineDir, 'checks', '01-duplicate-id.sql'))).toEqual([{ type: 'custom', event: 'spec:changed' }]);
       expect(change(path.join(engineDir, 'meta', 'kinds.csv'))).toEqual([{ type: 'custom', event: 'spec:changed' }]);
-      expect(change(path.join(model, 'people', 'terms.csv'))).toEqual([{ type: 'custom', event: 'model:changed' }]);
       expect(change(path.join(root, 'specs-old', 'x.md'))).toEqual([]);
       expect(change(path.join(root, 'README.md'))).toEqual([]);
     } finally {

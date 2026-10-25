@@ -1,6 +1,6 @@
-// LA-PLT-T93: the wiki's first load leaves out React Flow and ELK (LA-PAT-APP-UX-R11), checked at the
+// LA-PLT-T94: the wiki's first load leaves out React Flow and ELK (LA-PAT-APP-UX-R11), checked at the
 // source: no module that app/src/main.tsx reaches through static imports imports either. The graph,
-// the Model view, the theme editor and the diagrams are loaded with import() when first used.
+// the Model view and the theme editor are loaded with import() when first used.
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -31,7 +31,7 @@ function resolve(from: string, spec: string): string | null {
 }
 
 describe('the first load', () => {
-  it('LA-PLT-T93 reaches no React Flow and no ELK through static imports', () => {
+  it('LA-PLT-T94 reaches no React Flow and no ELK through static imports', () => {
     const seen = new Set<string>();
     const found: string[] = [];
     const walk = (file: string, via: string[]) => {

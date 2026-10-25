@@ -4,7 +4,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { expectStable, openPage, step } from './measure';
 import { DOMAIN, RECORD } from './scenarios';
 
-// LA-PLT-T74: a live reload while the page is scrolled half-way. The suite edits a spec file in
+// LA-PLT-T75: a live reload while the page is scrolled half-way. The suite edits a spec file in
 // its copy of the specs (STABILITY_ROOT) while the page is open: the domain's body, above what
 // is in view, gets one more paragraph; with the graph open, the record's body gets one at its
 // end. What was at the top of the view must stay there, the scroll box must keep its place, and
@@ -45,7 +45,7 @@ async function yOf(page: Page, text: string) {
 }
 
 test.describe('live reload', () => {
-  test('LA-PLT-T74 while scrolled half-way in the wiki', async ({ page }) => {
+  test('LA-PLT-T75 while scrolled half-way in the wiki', async ({ page }) => {
     await openPage(page, DOMAIN);
     await page.evaluate(() => {
       const box = document.querySelector('.pane-wiki .pane-scroll')!;
@@ -67,7 +67,7 @@ test.describe('live reload', () => {
     }
   });
 
-  test('LA-PLT-T74 with the graph open', async ({ page }) => {
+  test('LA-PLT-T75 with the graph open', async ({ page }) => {
     await openPage(page, `${RECORD}?view=wiki,graph`);
     await page.locator('.pane-graph .graph-flow .react-flow__node').first().waitFor();
     await page.waitForTimeout(500);

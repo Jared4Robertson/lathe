@@ -14,7 +14,7 @@ vi.mock('../src/events', () => ({
 }));
 
 describe('reload on change', () => {
-  it('LA-PLT-T10 An open spec page reloads the workspace when the server reports spec:changed', async () => {
+  it('LA-PLT-T11 An open spec page reloads the workspace when the server reports spec:changed', async () => {
     const { requests } = await openApp('/DM-SHOP-C01');
     await screen.findByRole('heading', { level: 1, name: 'Basket service' });
     expect(requests.filter((r) => r === 'GET /api/spec')).toHaveLength(1);

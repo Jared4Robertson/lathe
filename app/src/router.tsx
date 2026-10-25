@@ -1,6 +1,6 @@
 import { useEffect, useState, type AnchorHTMLAttributes } from 'react';
 
-// Hand-rolled History API routing, shared by Diagrams and Specs.
+// Hand-rolled History API routing for every page.
 
 const NAVIGATE = 'lathe:navigate';
 

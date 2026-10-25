@@ -114,7 +114,7 @@ describe('the Model view', () => {
     expect(within(modelPane()).getByRole('group', { name: 'Key' })).toHaveTextContent('This entity');
   });
 
-  it('LA-PLT-T46 Clicking a box goes to it, boxes show a hover state, and a key under the diagram explains the colors with emoji squares and the line ends', async () => {
+  it('LA-PLT-T47 Clicking a box goes to it, boxes show a hover state, and a key under the diagram explains the colors with emoji squares and the line ends', async () => {
     await openApp('/P-D?view=wiki,model', served());
     await screen.findByRole('heading', { level: 1, name: 'Domain' });
     await boxesShown();
@@ -175,7 +175,7 @@ describe('the Model view', () => {
     expect(title()).not.toHaveClass('is-fixed');
   });
 
-  it('LA-PLT-T47 With three panes open each gap is its own handle, resizing only the two panes beside it', async () => {
+  it('LA-PLT-T48 With three panes open each gap is its own handle, resizing only the two panes beside it', async () => {
     await openApp('/P-D-A3?view=wiki,graph,model', served());
     await screen.findByRole('heading', { level: 1, name: 'Loan' });
     const first = screen.getByRole('separator', { name: 'Resize the wiki and graph panes' });

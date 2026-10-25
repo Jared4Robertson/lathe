@@ -5,7 +5,6 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
 import { CONFIG_FILE, formatReference, loadConfig, loadWorkspace, renderReference, type Problem } from '../src/index.ts';
-import { slugify } from '../src/server/diagrams.ts';
 import { serve } from '../src/server/serve.ts';
 
 /** A label inside a sentence: "Use case" -> "use case", but an acronym keeps its case ("UC requirement"). */
@@ -85,6 +84,11 @@ async function check() {
   process.exitCode = errors.length ? 1 : 0;
 }
 
+// A product's folder name from its name: lowercase letters, digits and hyphens.
+function slugify(name: string) {
+  return name.toLowerCase().normalize('NFKD').replace(/\p{M}+/gu, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60);
+}
+
 async function init() {
   const name = values.name?.trim();
   const prefix = values.prefix?.trim();
@@ -93,7 +97,7 @@ async function init() {
 
   const configFile = path.join(root, CONFIG_FILE);
   if (!existsSync(configFile)) {
-    await writeFile(configFile, `${JSON.stringify({ specs: 'specs', diagrams: 'diagrams' }, null, 2)}\n`);
+    await writeFile(configFile, `${JSON.stringify({ specs: 'specs' }, null, 2)}\n`);
     console.log(`Wrote ${CONFIG_FILE}`);
   }
   const config = loadConfig(root);

@@ -65,7 +65,7 @@ describe('lathe init', () => {
     const root = tempDir();
     const first = lathe('init', '--root', root, '--name', 'Tool Library', '--prefix', 'TL');
     expect(first.status).toBe(0);
-    expect(JSON.parse(readFileSync(path.join(root, 'lathe.config.json'), 'utf8'))).toEqual({ specs: 'specs', diagrams: 'diagrams' });
+    expect(JSON.parse(readFileSync(path.join(root, 'lathe.config.json'), 'utf8'))).toEqual({ specs: 'specs' });
     const product = path.join(root, 'specs', 'tool-library', 'product.md');
     expect(readFileSync(product, 'utf8')).toMatch(/^---\nid: TL\nkind: product\ntitle: Tool Library\n---\n/);
     expect(lathe('check', '--root', root).status).toBe(0);

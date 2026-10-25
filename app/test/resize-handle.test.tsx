@@ -8,7 +8,7 @@ import { openApp, openSideBar } from './helpers';
 const handle = (name: string) => screen.getByRole('separator', { name });
 
 describe('resizable panels', () => {
-  it('LA-PLT-T40 A handle resizes its panel with the arrow keys, Shift, Home and End, remembers it, and double-click resets it', async () => {
+  it('LA-PLT-T41 A handle resizes its panel with the arrow keys, Shift, Home and End, remembers it, and double-click resets it', async () => {
     // The side bar starts closed in the Wiki view (brief 64); this test reads it open.
     openSideBar('details', ['wiki', 'graph', 'model']);
     await openApp('/DM-SHOP-UC01');
@@ -35,7 +35,7 @@ describe('resizable panels', () => {
     expect(sideBar).toHaveAttribute('aria-valuenow', '260');
   });
 
-  it('LA-PLT-T41 Remembered sizes come back, out-of-range ones fall back to the default, and the narrow layout has no handles', async () => {
+  it('LA-PLT-T42 Remembered sizes come back, out-of-range ones fall back to the default, and the narrow layout has no handles', async () => {
     // The side bar starts closed in the Wiki view (brief 64); this test reads it open.
     openSideBar('details', ['wiki', 'graph', 'model']);
     window.localStorage.setItem('lathe:nav-width', '400');

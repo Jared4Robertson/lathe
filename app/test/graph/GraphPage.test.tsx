@@ -52,7 +52,7 @@ describe('graph page', () => {
 
   });
 
-  it('LA-PLT-T98 The trail is a Tab stop only while it overflows', async () => {
+  it('LA-PLT-T99 The trail is a Tab stop only while it overflows', async () => {
     await showGraph('/P-D-UC01-R01');
     const list = () => screen.getByRole('navigation', { name: 'Records visited' }).querySelector('ol')!;
     // It fits: its links are the stops, and the list itself is not one.
