@@ -5,6 +5,7 @@ import { RecordMarkdown } from './mentions';
 import { PatternRuleSections, PatternSections } from './PatternParts';
 import { FlowSteps } from './FlowSteps';
 import { LongList } from '../components/LongList';
+import { DesktopRecordActions } from '../shell/desktopRecord';
 import { NavigateContext, PageHeader, ProblemBadge, ProblemList, RecordLink, RecordTree, Section, SpecLink, TestStateTag, idText, listTitle, testState } from './parts';
 
 // One record's content: header, body, problems, fields, parent, children and links both ways.
@@ -189,7 +190,7 @@ export function RecordFacts({ index, record }: { index: SpecIndex; record: SpecR
         {fields.map(([name, value]) => (
           <div key={name}><dt>{name.replaceAll('_', ' ')}</dt><dd>{value}</dd></div>
         ))}
-        <div><dt>Spec file</dt><dd><code>{record.path}</code></dd></div>
+        <div><dt>Spec file</dt><dd><code>{record.path}</code><DesktopRecordActions id={id} /></dd></div>
       </dl>
       <h3>Parent</h3>
       {record.parent ? <RecordLink index={index} id={record.parent} /> : <p className="hint">None (top level).</p>}

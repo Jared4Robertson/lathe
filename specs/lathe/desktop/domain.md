@@ -12,4 +12,4 @@ Jared runs it three ways:
 - `npm --prefix desktop start`: builds Lathe and runs the shell as it ships, on `serve()`.
 - `npm --prefix desktop run pack`: an unsigned macOS app for this Mac in `desktop/release/` (`run pack:dmg` for a disk image).
 
-Signed builds, notarizing, auto-update and Windows and Linux builds come later and need Jared's approval to publish. The shell draws no UI of its own beyond native menus and dialogs, so the App code pattern (`LA-PAT-APP-CODE`), which is about the web app's pages, is not followed here; the shell's code keeps its American spelling all the same.
+Signed builds, notarizing, auto-update and Windows and Linux builds come later and need Jared's approval to publish. The shell draws little UI of its own: native menus and dialogs, and two small static pages (the launch view and error page, and the About window), so the App code pattern (`LA-PAT-APP-CODE`), which is about the web app's pages, is not followed here; the shell's code keeps its American spelling all the same.

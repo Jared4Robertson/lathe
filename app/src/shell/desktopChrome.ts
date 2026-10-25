@@ -2,17 +2,9 @@ import { useEffect, useState } from 'react';
 import { parseColor, toHex } from '../theme/contrast';
 import { resolvedValue, type Mode, type ModeChoice, type ThemeFile } from '../theme/theme';
 
-// The desktop app's bridge (desktop/src/preload.cts), as the title bar and the theme use it, and the
-// window chrome the theme sends it: the shell color behind the app's title bar and the ink its
-// symbols take, so the native window controls match the theme (LA-DSK-UC04-R06).
-
-export interface DesktopBridge {
-  isDesktop: boolean;
-  /** The operating system: "darwin", "win32" or "linux". */
-  platform?: string;
-  onCommand?: (listener: (id: string) => void) => () => void;
-  setChrome?: (chrome: Chrome) => void;
-}
+// The desktop app's bridge (desktop/src/preload.cts; its type is Window['latheDesktop'] in
+// commands.tsx), and the window chrome the theme sends it: the shell color behind the app's title bar
+// and the ink its symbols take, so the native window controls match the theme (LA-DSK-UC04-R06).
 
 export interface Chrome {
   background: string;
@@ -20,9 +12,9 @@ export interface Chrome {
 }
 
 /** The desktop shell's bridge, when the app runs in it. */
-export function desktopBridge(): DesktopBridge | null {
+export function desktopBridge(): LatheDesktop | null {
   if (typeof window === 'undefined') return null;
-  const bridge = (window as { latheDesktop?: DesktopBridge }).latheDesktop;
+  const bridge = window.latheDesktop;
   return bridge?.isDesktop ? bridge : null;
 }
 

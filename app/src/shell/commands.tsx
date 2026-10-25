@@ -330,6 +330,29 @@ function CommandPalette({ commands, mac, available, titleOf, onClose, onRun }: L
 declare global {
   interface Window {
     /** Set by the desktop app's preload (desktop/src/preload.cts); absent in a browser. */
-    latheDesktop?: { isDesktop: boolean; onCommand?: (listener: (id: string) => void) => () => void };
+    latheDesktop?: LatheDesktop;
+  }
+
+  /**
+   * The desktop app's bridge (desktop/src/preload.cts). Every member but isDesktop is optional, so
+   * the app works with an older shell and checks for each before use.
+   */
+  interface LatheDesktop {
+    isDesktop: boolean;
+    /** The operating system: "darwin", "win32" or "linux". */
+    platform?: string;
+    /** Subscribes to native menu choices, each a command ID; returns the unsubscribe. */
+    onCommand?: (listener: (id: string) => void) => () => void;
+    /** Sends the theme's shell and ink for the window's chrome. */
+    setChrome?: (chrome: { background: string; foreground: string }) => void;
+    /** Subscribes to the window entering and leaving full screen; called at once with the current state. */
+    onFullScreen?: (listener: (fullScreen: boolean) => void) => () => void;
+    /** Sets the Dock badge to the product's number of check errors (LA-DSK-UC05-R03). */
+    setErrorCount?: (count: number) => void;
+    /** The record actions (LA-DSK-UC05-R07): reveal its spec file, open it in the editor, copy its ID, or a native menu of the three. */
+    revealRecord?: (id: string) => void;
+    openRecordInEditor?: (id: string) => void;
+    copyRecordId?: (id: string) => void;
+    showRecordMenu?: (id: string) => void;
   }
 }
