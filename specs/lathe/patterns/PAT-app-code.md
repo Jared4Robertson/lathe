@@ -21,3 +21,4 @@ The domain links the pattern with `follows`. The pattern has no settings: every 
 - `LA-PAT-APP-CODE-R05`: kind labels become plural only through `plural()`.
 - `LA-PAT-APP-CODE-R06`: every control has an accessible name.
 - `LA-PAT-APP-CODE-R07`: American spelling.
+- `LA-PAT-APP-CODE-R08`: everything clickable shows a hover state.

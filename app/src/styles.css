@@ -2,6 +2,10 @@
   /* Shadows, the dimmed backdrop behind drawers and dialogs, and text on a colored mark. */
   --shadow-soft: rgb(0 0 0 / 0.12); --shadow: rgb(0 0 0 / 0.16); --shadow-strong: rgb(0 0 0 / 0.2); --shadow-deep: rgb(0 0 0 / 0.25);
   --backdrop: rgb(0 0 0 / 0.35); --on-mark: #fff;
+  /* Hover: the tint, the ring and the speed every clickable thing shares (LA-PAT-APP-CODE-R08). */
+  --hover-bg: color-mix(in srgb, var(--steel) 10%, transparent);
+  --hover-ring: color-mix(in srgb, var(--steel) 45%, transparent);
+  --hover-speed: 120ms;
   --node-radius: 4px; /* every graph node is the same rectangle; color tells the stage */
   --paper: #F4F6F5; --sheet: #FFFFFF; --ink: #1D2830; --muted: #5A6870; --rule: #CBD3D6;
   --steel: #2E6A88; --steel-bg: #E4EEF3; --spark: #B5512A; --spark-bg: #F8E8DF; --warn: #9A6A00;
@@ -26,7 +30,7 @@ body { background: var(--paper); color: var(--ink); font: 15px/1.5 var(--body); 
 .menu { border-right: 1px solid var(--rule); background: var(--sheet); padding: 12px 10px; display: flex; flex-direction: column; gap: 8px; min-height: 0; overflow: hidden; box-sizing: border-box; }
 .brand { margin: 0; font: 700 1.3rem var(--display); display: flex; align-items: center; gap: 8px; color: var(--ink); text-decoration: none; }
 .menu .eyebrow { margin: 0 6px; }
-.menu ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.menu ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; }
 .menu a { display: flex; align-items: center; gap: 8px; min-height: 32px; box-sizing: border-box; padding: 5px 8px; border-radius: 6px; color: var(--ink); text-decoration: none; font-size: 0.92rem; min-width: 0; }
 .menu a:hover { background: var(--paper); }
 .menu a[aria-current="page"] { background: var(--steel-bg); color: var(--steel); font-weight: 600; }
@@ -360,7 +364,7 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
   .record-content .spec-header { flex-wrap: wrap; }
 }
 /* Long lists: past 10 items, a search box and a box 10 rows high that scrolls (the height is measured; this is the fallback). */
-.long-list { display: grid; gap: 6px; min-width: 0; }
+.long-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; min-width: 0; }
 .long-list-tools { display: flex; gap: 8px; align-items: center; }
 .long-list-tools input { flex: 1; min-width: 0; font: inherit; font-size: 0.85rem; padding: 4px 8px; border: 1px solid var(--rule); border-radius: 5px; background: var(--paper); color: var(--ink); }
 .long-list-count { font: 0.75rem var(--mono); color: var(--muted); white-space: nowrap; }
@@ -397,7 +401,7 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .nav-section-head { display: flex; align-items: center; gap: 6px; width: 100%; min-height: 32px; padding: 4px 6px; border: 0; border-radius: 6px; background: none; color: var(--muted); cursor: pointer; text-align: left; font: inherit; }
 .nav-section-head:hover { background: var(--paper); color: var(--ink); }
 .nav-section-head .eyebrow { margin: 0; flex: 1; }
-.nav-section-body { display: grid; gap: 4px; padding-left: 4px; }
+.nav-section-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; padding-left: 4px; }
 .nav-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1; }
 .nav-row { display: flex; align-items: center; gap: 2px; min-width: 0; }
 .nav-row > a { flex: 1; }
@@ -585,7 +589,8 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 .menu a .space-mark { border-radius: 5px; font-size: 0.6rem; }
 .menu a .space-mark.is-icon { font-size: 0.8rem; }
 .nav-panel { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 8px; padding: 12px 10px; box-sizing: border-box; }
-.space-items { display: grid; gap: 4px; min-width: 0; }
+/* Every nav grid is one column as wide as the panel (minmax(0, 1fr)), so a long title truncates instead of widening the column. */
+.space-items { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; min-width: 0; }
 .menu.has-spaces .nav-scroll { overflow-x: hidden; }
 /* A domain's stages and folders in the nav, as S2 lays out its specs. */
 .menu .nav-tree { margin: 0 0 2px 12px; padding-left: 6px; border-left: 1px solid var(--rule); }
@@ -625,3 +630,28 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 .palette-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* ---------- End of brief 30 ---------- */
 
+/* Hover: everything clickable answers the pointer the same way (LA-PAT-APP-CODE-R08).
+   Cards and graph nodes take a ring; rows and plain buttons take a tint; small text controls turn steel.
+   The center node and file nodes are not clickable, so they keep the default cursor and no hover. */
+.card, .graph-node, .aggregate-node, .leaf-node, .spec-node, .tree-bulk, .form-actions button, .graph-depth button, .graph-filter-actions button,
+.quick-find-results li, .palette-list li, .graph-trace-toggle, .graph-filters > summary, .graph-legend summary {
+  transition: background-color var(--hover-speed), border-color var(--hover-speed), box-shadow var(--hover-speed), color var(--hover-speed);
+}
+/* A domain card is one link: its title's link stretches over the whole card, so anywhere on it goes to the domain. */
+.domain-card { position: relative; }
+.domain-card .card-title::after { content: ''; position: absolute; inset: 0; border-radius: inherit; }
+.spec-body a.card:hover, .spec-body .domain-card:hover { border-color: var(--steel); box-shadow: 0 0 0 3px var(--hover-ring); }
+.spec-body .domain-card:hover .card-title strong { color: var(--steel); }
+.graph-node.is-focus, .graph-node.stage-file { cursor: default; }
+.graph-flow .react-flow__node:hover .graph-node:not(.is-focus):not(.stage-file) { box-shadow: 0 0 0 3px var(--hover-ring); }
+.graph-flow .react-flow__node:hover .graph-node.stage-group.is-folded:not(.is-focus) { box-shadow: 3px 3px 0 -1px var(--paper), 3px 3px 0 0 var(--muted), 0 0 0 3px var(--hover-ring); }
+.aggregate-node:hover, .leaf-node:hover, .spec-node:hover { box-shadow: 0 0 0 3px var(--hover-ring); }
+.tree-bulk:hover, .graph-depth button:not([aria-pressed="true"]):not(:disabled):hover, .graph-filter-actions button:not(:disabled):hover,
+.form-actions button.secondary:not(:disabled):hover { background: var(--hover-bg); border-color: var(--steel); }
+.form-actions button:not(.secondary):not(:disabled):hover { background: color-mix(in srgb, var(--steel) 85%, var(--ink)); }
+.quick-find-results li:not(.active):hover, .palette-list li:not(.active):hover { background: var(--hover-bg); }
+.graph-trace-toggle:hover, .graph-filters > summary:hover, .graph-legend summary:hover { color: var(--steel); }
+@media (prefers-reduced-motion: reduce) {
+  .card, .graph-node, .aggregate-node, .leaf-node, .spec-node, .tree-bulk, .form-actions button, .graph-depth button, .graph-filter-actions button,
+  .quick-find-results li, .palette-list li, .graph-trace-toggle, .graph-filters > summary, .graph-legend summary { transition: none; }
+}
