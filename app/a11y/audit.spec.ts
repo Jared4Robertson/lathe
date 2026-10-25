@@ -6,8 +6,8 @@ import { audit, LOOKS, useLook } from './axe';
 // desktop and phone widths, in the Lathe theme's light and dark and in High contrast's
 // (LA-PAT-APP-UX-R10). Each page or state in each look is one test, so a failure names both.
 
-/** A group: a capability's use cases. */
-const GROUP = '/records/LA-BRW-CAP02/use_case';
+/** A group: a domain's Technical specification folder, at its parent, stage and folder. */
+const GROUP = '/LA-BRW/design/technical-specification';
 
 async function open(page: Page, url: string, ready: string) {
   await page.goto(url);
@@ -20,10 +20,10 @@ interface State { name: string; run: (page: Page) => Promise<void> }
 
 /** The pages, each audited once it has drawn. */
 const PAGES: State[] = [
-  { name: 'product page', url: PRODUCT, ready: '.focus-views .pane-title' },
-  { name: 'domain page', url: DOMAIN, ready: '.focus-views .pane-title' },
-  { name: 'record page', url: RECORD, ready: '.focus-views .pane-title' },
-  { name: 'group page', url: GROUP, ready: '.focus-views .pane-title' },
+  { name: 'product page', url: PRODUCT, ready: '.pane-title' },
+  { name: 'domain page', url: DOMAIN, ready: '.pane-title' },
+  { name: 'record page', url: RECORD, ready: '.pane-title' },
+  { name: 'group page', url: GROUP, ready: '.pane-title' },
   { name: 'graph', url: `${RECORD}?view=graph`, ready: '.pane-graph .graph-flow .react-flow__node' },
   { name: 'Model view', url: `${AGGREGATE}?view=model`, ready: '.pane-model .model-canvas' },
   { name: 'Checks', url: '/checks', ready: '#main h1' },
@@ -53,6 +53,8 @@ const DESKTOP: State[] = [
   } },
   { name: 'a tooltip on keyboard focus', run: async (page) => {
     await open(page, RECORD, '.focus-views .pane-title');
+    // A tooltip opens on keyboard focus: the last input is a key, as when the Reader tabs to it.
+    await page.keyboard.press('Shift');
     await page.locator('.page-bar .pane-views button').first().focus();
     await page.locator('.tooltip').waitFor();
   } },

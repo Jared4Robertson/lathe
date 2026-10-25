@@ -34,7 +34,7 @@ describe('routing', () => {
     await user.click(within(menu()).getByRole('link', { name: 'Shopping' }));
     expect(window.location.pathname).toBe('/DM-SHOP');
     expect(heading()).toHaveTextContent('Shopping');
-    await user.click(within(menu()).getByRole('link', { name: /^Checks:/ }));
+    await user.click(within(menu()).getByRole('link', { name: /^Checks \d+ (errors?|warnings?|problems)/ }));
     expect(window.location.pathname).toBe('/checks');
     expect(heading()).toHaveTextContent('Checks');
 

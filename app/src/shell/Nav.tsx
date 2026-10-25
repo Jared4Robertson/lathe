@@ -120,9 +120,10 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
   const checksLabel = `Checks: ${errors} error${errors === 1 ? '' : 's'}, ${warnings} warning${warnings === 1 ? '' : 's'}`;
   const checkBadges = (
     <span className="nav-badges">
-      {errors > 0 && <span className="nav-badge error" title={`${errors} error${errors === 1 ? '' : 's'}`}>{errors}</span>}
-      {warnings > 0 && <span className="nav-badge warning" title={`${warnings} warning${warnings === 1 ? '' : 's'}`}>{warnings}</span>}
-      {problems.length === 0 && index && <span className="nav-badge">0</span>}
+      {/* The words beside each count are for a screen reader, so the row's name holds what it shows (LA-BRW-DR320). */}
+      {errors > 0 && <span className="nav-badge error" title={`${errors} error${errors === 1 ? '' : 's'}`}>{errors}{' '}<span className="sr-only">error{errors === 1 ? '' : 's'}</span></span>}{' '}
+      {warnings > 0 && <span className="nav-badge warning" title={`${warnings} warning${warnings === 1 ? '' : 's'}`}>{warnings}{' '}<span className="sr-only">warning{warnings === 1 ? '' : 's'}</span></span>}
+      {problems.length === 0 && index && <span className="nav-badge">0{' '}<span className="sr-only">problems</span></span>}
     </span>
   );
   const sourceNote = spec.source === 'fixture'
@@ -226,7 +227,7 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
             <ul>
               <li>
                 <NavRow depth={0} selected={path === checksPath}>
-                  <Link to={checksPath} aria-current={here(path, checksPath)} aria-label={checksLabel}>
+                  <Link to={checksPath} aria-current={here(path, checksPath)}>
                     <Icon name="checks" size={16} /> <span className="nav-label">Checks</span> {checkBadges}
                   </Link>
                 </NavRow>
@@ -276,11 +277,12 @@ function SpaceRail({ path, spaces, current, lastPage, diagramsTo, checksLabel, c
                   <Link
                     to={lastPage?.(s.id) ?? addressOf(s.id)}
                     className={`rail-item space-item${isCurrent ? ' is-current' : ''}`}
-                    aria-label={s.title}
                     aria-current={isCurrent ? 'true' : undefined}
                     data-space={s.id}
                   >
+                    {/* Named by its title in hidden text, not an aria-label the drawn mark is no part of (LA-BRW-DR320). */}
                     <SpaceMark space={s} />
+                    <span className="sr-only">{s.title}</span>
                   </Link>
                 </Tooltip>
               </li>

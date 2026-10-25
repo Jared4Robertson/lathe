@@ -477,7 +477,7 @@ export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted,
     <section className="graph-page" aria-label="Graph" onKeyDown={onPageKey}>
       <header className="graph-header">
         <nav className="graph-trail" aria-label="Records visited">
-          <ol ref={trailList}>
+          <ol ref={trailList} tabIndex={0}>
             {trail.filter((id) => isGraphNode(index, id)).map((id) => {
               const item = trailItem(index, id);
               return (

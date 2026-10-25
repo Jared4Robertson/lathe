@@ -38,7 +38,7 @@ describe('side navigation', () => {
     await openApp('/checks');
     await screen.findByRole('heading', { level: 1, name: 'Checks' });
     expect(nav().className).toContain('is-rail');
-    expect(within(within(nav()).getByRole('list', { name: 'Spaces' })).getAllByRole('link').map((a) => a.getAttribute('aria-label'))).toEqual(['Demo shop', 'Notebook']);
+    expect(within(within(nav()).getByRole('list', { name: 'Spaces' })).getAllByRole('link').map((a) => a.querySelector('.sr-only')!.textContent)).toEqual(['Demo shop', 'Notebook']);
     fireEvent.click(within(nav()).getByRole('button', { name: 'Expand the navigation' }));
     expect(nav().className).not.toContain('is-rail');
     expect(within(nav().querySelector<HTMLElement>('.nav-space')!).getByRole('link', { name: 'Demo shop' })).toHaveAttribute('href', '/DM');
@@ -89,7 +89,7 @@ describe('side navigation', () => {
     // Long names are cut with a tooltip; checks show errors and warnings apart; the footer.
     await openApp('/diagrams/people', { diagrams });
     expect(within(nav()).getByRole('link', { name: /People and tools/ })).toHaveAttribute('title', diagrams[0].title);
-    const checks = within(nav()).getByRole('link', { name: /^Checks:/ });
+    const checks = within(nav()).getByRole('link', { name: /^Checks \d+ (errors?|warnings?|problems)/ });
     expect(checks.querySelector('.nav-badge.error')).toHaveTextContent(String(workspace().problems.filter((p) => p.severity === 'error').length));
     expect(checks.querySelector('.nav-badge.warning')).not.toBeNull();
     const foot = nav().querySelector('footer')!;

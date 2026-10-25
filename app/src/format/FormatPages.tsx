@@ -548,7 +548,7 @@ function KindBody({ index, reference, kind }: { index: SpecIndex; reference: For
         {example ? (
           <>
             <p>The first {lowerLabel(kind.label)}{own.length > 0 && space ? ` in ${space.title}` : ''}: <RecordLink index={index} id={example.id} /></p>
-            <div className="markdown"><pre className="record-header"><code>{headerOf(index, example)}</code></pre></div>
+            <div className="markdown"><pre className="record-header" tabIndex={0}><code>{headerOf(index, example)}</code></pre></div>
           </>
         ) : <p className="hint">No record of this kind yet.</p>}
       </Section>

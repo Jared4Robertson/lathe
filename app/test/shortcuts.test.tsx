@@ -217,7 +217,7 @@ describe('keyboard shortcuts', () => {
     expect(screen.getByRole('searchbox', { name: 'Filter records' })).toHaveFocus();
 
     // Ctrl+- goes back.
-    fireEvent.click(within(nav()).getByRole('link', { name: /^Checks:/ }));
+    fireEvent.click(within(nav()).getByRole('link', { name: /^Checks \d+ (errors?|warnings?|problems)/ }));
     expect(window.location.pathname).toBe('/checks');
     await act(async () => {
       press(document.body, '-', 'Minus', { ctrlKey: true });

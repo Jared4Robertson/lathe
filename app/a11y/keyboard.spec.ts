@@ -1,12 +1,11 @@
 import { expect, test, type Page } from '@playwright/test';
-import { PRODUCT, RECORD } from '../stability/scenarios';
+import { DOMAIN, PRODUCT, RECORD } from '../stability/scenarios';
 
 // What axe can't check, walked with the keyboard alone (LA-PAT-APP-UX-R10):
 // LA-BRW-T561 every control on the main pages is reached by Tab and Shift+Tab, with no trap;
 // LA-BRW-T562 the main tasks by keyboard: open a record, switch views, re-center the graph, fold
-// rows, open and close the inspector, pick a theme;
-// LA-BRW-T563 focus after navigation, and back on the opener when a dialog or a sheet closes;
-// LA-BRW-T564 the announcer says what changed.
+// rows, open and close the inspector, pick a theme, and the announcer saying what changed;
+// LA-BRW-T563 focus after navigation, and back on the opener when a dialog or a sheet closes.
 
 /** What has keyboard focus now: a short description, its accessible name and whether it is in view. */
 const focused = (page: Page) => page.evaluate(() => {
@@ -86,7 +85,7 @@ test.describe('keyboard', () => {
     expect((await focused(page)).name).toBe('Skip to the page');
     // From the nav, by keyboard: the first record link the nav offers.
     await page.keyboard.press('Control+Shift+e');
-    await tabUntil(page, (el) => !!el.closest('nav#nav') && el.tagName === 'A' && (el.getAttribute('href') ?? '').startsWith('/records/'), 'a record link in the nav');
+    await tabUntil(page, (el) => !!el.closest('nav#nav') && el.tagName === 'A' && /^\/[A-Z][A-Z0-9]*-[A-Z0-9-]+$/.test(el.getAttribute('href') ?? ''), 'a record link in the nav');
     const href = await page.evaluate(() => document.activeElement!.getAttribute('href'));
     await page.keyboard.press('Enter');
     await expect(page).toHaveURL(new RegExp(`${href!.split('?')[0]}`));
@@ -131,7 +130,7 @@ test.describe('keyboard', () => {
   });
 
   test('LA-BRW-T562 fold and unfold a row with the keyboard', async ({ page }) => {
-    await open(page, RECORD);
+    await open(page, DOMAIN);
     await tabUntil(page, (el) => el.classList.contains('tree-toggle') && !!el.closest('#main'), 'a row\'s fold button', 300);
     const toggle = page.locator(':focus');
     const before = await toggle.getAttribute('aria-expanded');
