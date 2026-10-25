@@ -85,7 +85,7 @@ export function Legend() {
           <li><span className="graph-swatch stage-define" /> Define (aggregate, rule, use case, requirement)</li>
           <li><span className="graph-swatch stage-design" /> Design (flow, flow step, view, endpoint, component, test)</li>
           <li><span className="graph-swatch stage-structural" /> Structural (product, domain, question)</li>
-          <li><span className="graph-swatch stage-group" /> Group of one kind of child, with its count (▸ folded, ▾ open)</li>
+          <li><span className="graph-swatch stage-group" /> Group of one kind of child, with its count; its chevron points right when folded, down when open</li>
           <li><span className="graph-swatch stage-file" /> File named by a component or test</li>
           <li><span className="graph-line rel-structure" /> parent / child (the tree, through groups)</li>
           <li><span className="graph-line rel-trace" /> satisfies, proves, fulfills</li>

@@ -1,7 +1,8 @@
 import { plural as pluralOf } from '../plural';
-import { createContext, useContext, type AnchorHTMLAttributes, type ReactNode } from 'react';
+import { createContext, useContext, useState, type AnchorHTMLAttributes, type ReactNode } from 'react';
 import { Link } from '../router';
 import { problemOrder, recordPath, type Problem, type SpecIndex, type SpecRecord } from './data';
+import { ActionsSlotContext } from '../components/ActionsSlot';
 import { LongList } from '../components/LongList';
 import { TreeList } from '../components/TreeList';
 
@@ -71,12 +72,21 @@ export function ProblemList({ index, problems, showRecord = true, showCheck = tr
   );
 }
 
+/**
+ * A titled part of a page. Its header row holds the heading (h2, or h3 and h4 for a part within
+ * a part, such as a folder of a domain page and a kind within it) and, at the right, any actions
+ * its contents offer (such as a list's "Expand all").
+ */
 export function Section({ title, count, level = 2, className, children }: { title: string; count?: number; level?: 2 | 3 | 4; className?: string; children: ReactNode }) {
+  const [actions, setActions] = useState<HTMLDivElement | null>(null);
   const Heading = `h${level}` as 'h2' | 'h3' | 'h4';
   return (
     <section className={className ? `spec-section ${className}` : 'spec-section'}>
-      <Heading>{title}{count !== undefined && <span className="section-count">{count}</span>}</Heading>
-      {children}
+      <header className="spec-section-head">
+        <Heading>{title}{count !== undefined && <span className="section-count">{count}</span>}</Heading>
+        <div className="spec-section-actions" ref={setActions} />
+      </header>
+      <ActionsSlotContext.Provider value={actions}>{children}</ActionsSlotContext.Provider>
     </section>
   );
 }

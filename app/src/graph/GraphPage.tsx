@@ -18,6 +18,7 @@ import {
 import { kindLabel, type SpecIndex } from '../specs/data';
 import { useCommand } from '../shell/commands';
 import { Tooltip } from '../shell/Tooltip';
+import { Icon } from '../components/icons';
 import { NodeLink, type GraphInfo } from './panel';
 import {
   FILE_KIND,
@@ -119,9 +120,10 @@ function GroupNodeView({ data }: NodeProps<FlowNode>) {
     >
       <Handle type="target" position={Position.Left} className="graph-handle" isConnectable={false} />
       <Handle type="source" position={Position.Right} className="graph-handle" isConnectable={false} />
-      <small><span className="graph-group-caret" aria-hidden="true">{open ? '▾' : '▸'}</span> Group · {node.group!.parent}</small>
+      <small>Group · {node.group!.parent}</small>
       <strong>{node.title}</strong>
       <Marks data={data} />
+      <span className="graph-group-chevron" aria-hidden="true"><Icon name={open ? 'chevron-down' : 'chevron-right'} size={14} /></span>
     </div>
   );
 }
