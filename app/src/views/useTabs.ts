@@ -50,7 +50,7 @@ interface StoredSettings { layout: GraphLayout; depth: number; trace: boolean; h
 const isStored = (v: unknown): v is StoredSettings => {
   if (!v || typeof v !== 'object') return false;
   const s = v as StoredSettings;
-  return (s.layout === 'tree' || s.layout === 'nested') && isNumber(s.depth) && typeof s.trace === 'boolean' && Array.isArray(s.hiddenKinds) && Array.isArray(s.hiddenRelations)
+  return (s.layout === 'tree' || s.layout === 'nested' || s.layout === 'voronoi') && isNumber(s.depth) && typeof s.trace === 'boolean' && Array.isArray(s.hiddenKinds) && Array.isArray(s.hiddenRelations)
     && typeof s.links === 'boolean' && typeof s.minimap === 'boolean';
 };
 

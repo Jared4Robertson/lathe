@@ -51,6 +51,7 @@ import {
 import { boxExit, contentScale, traceGrid, type Point } from './layout';
 import { centerOf, graphMap, linkEnds, mapRootOf, parentLine, type GraphMap, type PlacedMap } from './map';
 import { nestedMap, type NestedMap, type NestedNode } from './nested';
+import { readyVoronoiMap, voronoiMap, type VoronoiMap, type VoronoiNode } from './voronoi';
 import { treeGroup } from './tree';
 import { isCentered, labelFor, labelHeight, labelLines, marksOf, type WrappedLabel } from './text';
 import { drawnFor, drawnKey, drawnNested, fitBoxes, frameNested, frameOnMap, glideDuration, MAX_ZOOM, mergeDrawn, zoomPath, type Drawn, type Viewport } from './camera';
@@ -93,6 +94,8 @@ interface NodeData extends Record<string, unknown> {
   centered: boolean;
   /** In the Nested view (LA-EXP-DR62): a box drawn with its children inside it has a header band of this height (map units) holding its label at the top; 0 for a leaf, whose label is centered. */
   header?: number;
+  /** In the Voronoi view (LA-EXP-DR64): the cell's outline and its label's box, in the node's own units (its bounding box from 0, 0). */
+  cell?: { points: string; label: { x: number; y: number; w: number; h: number } };
 }
 interface EdgeData extends Record<string, unknown> {
   relation: string;
@@ -138,6 +141,8 @@ const scaleStyle = (scale: number, text: number): CSSProperties | undefined =>
   scale !== 1 || text !== 1 ? ({ '--box-scale': scale, '--node-scale': text } as CSSProperties) : undefined;
 
 function GraphNodeView({ data }: NodeProps<Node<NodeData>>) {
+  /** Whether a domain draws a hexagon mark before its kind and ID line (Nested and Voronoi), rather than being a hexagon (Tree). */
+  const marked = data.header !== undefined || data.cell !== undefined;
   const classes = [
     'graph-node',
     data.group ? 'stage-group' : `stage-${data.stage || 'structural'}`,
@@ -145,22 +150,43 @@ function GraphNodeView({ data }: NodeProps<Node<NodeData>>) {
     data.isFocus ? 'is-focus' : '',
     data.centered ? 'is-centered' : '',
     data.label ? '' : 'is-plain',
-    // A domain is a hexagon in the Tree view (LA-EXP-DR61), a box with a hexagon mark in the Nested view (LA-EXP-DR62).
-    data.kind === 'domain' && !data.group ? (data.header === undefined ? 'is-hexagon' : 'has-hexagon-mark') : '',
+    // A domain is a hexagon in the Tree view (LA-EXP-DR61), and in the Nested and Voronoi views a box or a cell with a hexagon mark (LA-EXP-DR62, LA-EXP-DR64).
+    data.kind === 'domain' && !data.group ? (marked ? 'has-hexagon-mark' : 'is-hexagon') : '',
     data.header ? 'is-container' : '',
+    data.cell ? 'is-cell' : '',
   ].filter(Boolean).join(' ');
-  return (
-    <div className={classes} title={data.group ? `${data.title} (${data.meta.replace(/^Group · /, 'in ')})` : `${data.title} (${data.id})`} style={scaleStyle(data.scale, data.text)}>
+  const style = scaleStyle(data.scale, data.text);
+  const label = data.label && (
+    <>
+      {/* The lines as the map broke them; a marked box keeps room beside its kind and ID line for the badge. */}
+      <small className={data.errors + data.warnings + data.gaps.length > 0 ? 'graph-badge-room' : undefined}>{data.lines.meta.map((l, i) => <span key={i}>{i === 0 && data.kind === 'domain' && marked && !data.group && <span className="graph-hexagon-mark" aria-hidden="true" />}{l}</span>)}</small>
+      <strong>{data.lines.title.map((l, i) => <span key={i}>{l}</span>)}</strong>
+      <Marks data={data} />
+    </>
+  );
+  const handles = (
+    <>
       <Handle type="target" position={Position.Left} className="graph-handle" isConnectable={false} />
       <Handle type="source" position={Position.Right} className="graph-handle" isConnectable={false} />
-      {data.label && (
-        <>
-          {/* The lines as the map broke them; a marked box keeps room beside its kind and ID line for the badge. */}
-          <small className={data.errors + data.warnings + data.gaps.length > 0 ? 'graph-badge-room' : undefined}>{data.lines.meta.map((l, i) => <span key={i}>{i === 0 && data.kind === 'domain' && data.header !== undefined && !data.group && <span className="graph-hexagon-mark" aria-hidden="true" />}{l}</span>)}</small>
-          <strong>{data.lines.title.map((l, i) => <span key={i}>{l}</span>)}</strong>
-          <Marks data={data} />
-        </>
-      )}
+    </>
+  );
+  const title = data.group ? `${data.title} (${data.meta.replace(/^Group · /, 'in ')})` : `${data.title} (${data.id})`;
+  if (data.cell) {
+    // A Voronoi cell (LA-EXP-DR64): the node is clipped to its outline, so only the cell takes the
+    // pointer; the outline is drawn as a polygon, and the label sits in the box the map gave it.
+    const { points, label: at } = data.cell;
+    return (
+      <div className={classes} title={title} style={{ ...style, clipPath: `polygon(${points.split(' ').map((p) => p.split(',').map((v) => `${v}px`).join(' ')).join(', ')})` }}>
+        <svg className="graph-cell-shape" aria-hidden="true" width="100%" height="100%"><polygon points={points} /></svg>
+        {handles}
+        {label && <div className="graph-cell-label" style={{ left: at.x, top: at.y, width: at.w, height: at.h }}>{label}</div>}
+      </div>
+    );
+  }
+  return (
+    <div className={classes} title={title} style={style}>
+      {handles}
+      {label}
     </div>
   );
 }
@@ -218,16 +244,17 @@ function writeTrail(trail: string[]) {
   try { window.sessionStorage.setItem(TRAIL_KEY, JSON.stringify(trail)); } catch { /* storage unavailable */ }
 }
 
-/** How the graph draws the tree (LA-EXP-UC03-R16): Tree, parents beside their children; Nested, parents made of them. */
-export type GraphLayout = 'tree' | 'nested';
+/** How the graph draws the tree (LA-EXP-UC03-R16): Tree, parents beside their children; Nested, parents made of them as boxes; Voronoi, as polygon cells. */
+export type GraphLayout = 'tree' | 'nested' | 'voronoi';
 export const GRAPH_LAYOUTS: readonly { layout: GraphLayout; label: string; tip: string }[] = [
   { layout: 'tree', label: 'Tree', tip: 'Tree: each parent beside its children' },
-  { layout: 'nested', label: 'Nested', tip: 'Nested: each parent made of its children' },
+  { layout: 'nested', label: 'Nested', tip: 'Nested: each parent a box made of its children' },
+  { layout: 'voronoi', label: 'Voronoi', tip: 'Voronoi: each parent a cell made of its children' },
 ];
 
 /** What the person set on the graph: the view, depth, filters, trace mode, the Links switch and the minimap. */
 export interface GraphSettings {
-  /** Tree or Nested (LA-EXP-UC03-R16). Tree by default. */
+  /** Tree, Nested or Voronoi (LA-EXP-UC03-R16). Tree by default. */
   layout: GraphLayout;
   depth: number;
   filters: Filters;
@@ -242,10 +269,11 @@ const count = (n: number, noun: string) => `${n} ${n === 1 ? noun : `${noun}s`}`
 
 export const MAX_DEPTH = 3;
 const DEPTHS = [1, 2, 3];
-/** Depth is how many levels below the focus the camera frames (Tree), or how many levels inside it are labeled (Nested), folders and stages included. */
+/** Depth is how many levels below the focus the camera frames (Tree), or how many levels inside it are labeled (Nested and Voronoi), folders and stages included. */
 const DEPTH_LABELS: Record<GraphLayout, string[]> = {
   tree: ['Frame the focus and its children', 'Frame two levels below the focus', 'Frame three levels below the focus'],
   nested: ['Label the focus and its children', 'Label two levels inside the focus', 'Label three levels inside the focus'],
+  voronoi: ['Label the focus and its children', 'Label two levels inside the focus', 'Label three levels inside the focus'],
 };
 export const DEFAULT_GRAPH_SETTINGS: GraphSettings = { layout: 'tree', depth: 1, filters: NO_FILTERS, trace: false, links: false, minimap: false };
 /** The view after this one, for the switch's command. */
@@ -570,8 +598,8 @@ export function hiddenNodes(index: SpecIndex, map: PlacedMap, filters: Filters, 
 }
 
 /** A box's data: what it shows and how it is named. */
-function boxData(index: SpecIndex, id: string, focus: string, label: boolean, scale: number, text: number, parent: boolean, graph: Neighborhood, nested?: NestedNode): NodeData {
-  // The same lines the map sized the box for (text.ts, or the Nested map's), so the label always fits it.
+function boxData(index: SpecIndex, id: string, focus: string, label: boolean, scale: number, text: number, parent: boolean, graph: Neighborhood, nested?: NestedNode | VoronoiNode): NodeData {
+  // The same lines the map sized the box for (text.ts, or the Nested or Voronoi map's), so the label always fits it.
   const { title, meta } = labelLines(index, id);
   const centered = nested ? nested.centered : isCentered(text, parent);
   const lines = nested ? nested.lines : labelFor(index, id, centered);
@@ -607,6 +635,10 @@ function MapBackground() {
  * moves.
  */
 function MapOverview({ map, focus, hidden }: { map: PlacedMap; focus: string; hidden: ReadonlySet<string> }) {
+  // A Voronoi cell is drawn as its outline (LA-EXP-DR64), every other node as its box.
+  const shapeOf = (n: PlacedMap['byLevel'][number][number], className: string) => ('polygon' in n
+    ? <polygon key={n.id} className={className} points={(n as VoronoiNode).polygon.map((p) => p.join(',')).join(' ')} />
+    : <rect key={n.id} className={className} x={n.x} y={n.y} width={n.w} height={n.h} />);
   const boxes = useMemo(() => {
     const out = [];
     for (const level of map.byLevel) {
@@ -627,13 +659,16 @@ function MapOverview({ map, focus, hidden }: { map: PlacedMap; focus: string; hi
   return (
     <div className="graph-minimap">
       <svg role="img" aria-label="Minimap" width={W} height={H} viewBox={`${-pad} ${-pad} ${map.width + 2 * pad} ${map.height + 2 * pad}`} preserveAspectRatio="xMidYMid meet">
-        {boxes.map((n) => <rect key={n.id} className="graph-minimap-node" x={n.x} y={n.y} width={n.w} height={n.h} />)}
-        {f && <rect className="graph-minimap-node is-focus" x={f.x} y={f.y} width={f.w} height={f.h} />}
+        {boxes.map((n) => shapeOf(n, 'graph-minimap-node'))}
+        {f && shapeOf(f, 'graph-minimap-node is-focus')}
         <rect className="graph-minimap-view" x={vx} y={vy} width={vw} height={vh} vectorEffect="non-scaling-stroke" />
       </svg>
     </div>
   );
 }
+
+/** The Voronoi map while it is being laid out: nothing to draw. */
+const EMPTY_VORONOI: VoronoiMap = { view: 'voronoi', nodes: new Map(), roots: [], byLevel: [], width: 0, height: 0 };
 
 const sameView = (a: Viewport, b: Viewport) => Math.abs(a.x - b.x) < 0.5 && Math.abs(a.y - b.y) < 0.5 && Math.abs(a.zoom - b.zoom) < 1e-6;
 
@@ -649,10 +684,22 @@ function GraphCanvas({ index, graph, layout, depth, filters, onNavigate, minimap
 }) {
   const tracing = graph.mode === 'trace';
   const focus = graph.focus;
-  // The focus's own product's map (no other product's nodes are in it), in either layout (LA-EXP-UC03-R16): the Tree map (map.ts) or the Nested map (nested.ts), under one camera.
+  // The focus's own product's map (no other product's nodes are in it), in any layout (LA-EXP-UC03-R16): the Tree map (map.ts), the Nested map (nested.ts) or the Voronoi map (voronoi.ts), under one camera.
+  // The Voronoi map is laid out in a worker the first time; until it is ready the canvas is empty.
   const root = useMemo(() => mapRootOf(index, focus), [index, focus]);
-  const nested = layout === 'nested';
-  const map: GraphMap | NestedMap = useMemo(() => (nested ? nestedMap(index, root) : graphMap(index, root)), [index, root, nested]);
+  const nested = layout !== 'tree';
+  const [laidOut, setLaidOut] = useState<{ index: SpecIndex; root: string; map: VoronoiMap } | null>(null);
+  const voronoi = layout === 'voronoi' ? (laidOut && laidOut.index === index && laidOut.root === root ? laidOut.map : readyVoronoiMap(index, root)) : undefined;
+  useEffect(() => {
+    if (layout !== 'voronoi' || voronoi) return;
+    let live = true;
+    void voronoiMap(index, root).then((m) => { if (live) setLaidOut({ index, root, map: m }); }, () => {});
+    return () => { live = false; };
+  }, [layout, voronoi, index, root]);
+  const map: GraphMap | NestedMap | VoronoiMap = useMemo(
+    () => (layout === 'voronoi' ? voronoi ?? EMPTY_VORONOI : layout === 'nested' ? nestedMap(index, root) : graphMap(index, root)),
+    [index, root, layout, voronoi],
+  );
   const wrapper = useRef<HTMLDivElement>(null);
   const active = useRef<string | null>(null);
   /** After a keyboard action, the node to put keyboard focus on once the camera has framed it. */
@@ -677,7 +724,7 @@ function GraphCanvas({ index, graph, layout, depth, filters, onNavigate, minimap
   }, []);
   const drawnAt = useCallback((v: Viewport): Drawn => {
     if (!size) return { boxes: [], bars: [] };
-    const d = map.view === 'nested'
+    const d = map.view !== 'tree'
       ? drawnNested(map, v, size.w, size.h, always, { focus, depth, framed: frameNested(map, focus, size.w, size.h).zoom })
       : drawnFor(map, v, size.w, size.h, always);
     return { boxes: d.boxes.filter((b) => !hidden.has(b.id)), bars: d.bars.filter((b) => !hidden.has(b.parent)) };
@@ -721,18 +768,20 @@ function GraphCanvas({ index, graph, layout, depth, filters, onNavigate, minimap
   const framing = useCallback((): Viewport | null => {
     if (!size) return null;
     if (tracePlaced) return fitBoxes(tracePlaced.positions, size.w, size.h, 40, tracePlaced.heights, tracePlaced.widths);
-    return map.view === 'nested' ? frameNested(map, focus, size.w, size.h) : frameOnMap(map, focus, depth, size.w, size.h);
+    return map.view !== 'tree' ? frameNested(map, focus, size.w, size.h) : frameOnMap(map, focus, depth, size.w, size.h);
   }, [size, tracePlaced, map, focus, depth]);
 
   // Frame the focus whenever it, the depth or the pane's size changes: a glide, except the first
-  // picture and a resize, which frame at once.
+  // picture, a resize and a map that has just been laid out, which frame at once.
   const framedFor = useRef<{ w: number; h: number } | null>(null);
+  const framedEmpty = useRef(false);
   useLayoutEffect(() => {
     const target = framing();
     if (!target || !size) return;
     const resized = framedFor.current !== null && (framedFor.current.w !== size.w || framedFor.current.h !== size.h);
-    moveTo(target, framedFor.current !== null && !resized);
+    moveTo(target, framedFor.current !== null && !resized && !framedEmpty.current);
     framedFor.current = size;
+    framedEmpty.current = map.nodes.size === 0;
   }, [framing]);
   // What is drawn follows the filters and the Links switch at once.
   useEffect(() => { if (glide.current === null && !tracing && size) show(drawnAt(getViewport())); }, [drawnAt]);
@@ -775,23 +824,28 @@ function GraphCanvas({ index, graph, layout, depth, filters, onNavigate, minimap
       return graph.nodes.map((n) => ({ id: n.id, ...tracePlaced.positions.get(n.id)!, w: tracePlaced.widths.get(n.id)!, h: tracePlaced.heights.get(n.id)!, label: true, text: 1, parent: false }));
     }
     if (!drawn) return [];
-    const placed = drawn.boxes.map((b) => { const n = map.nodes.get(b.id)!; return { id: b.id, x: n.x, y: n.y, w: n.w, h: n.h, label: b.label, text: n.text, parent: n.children.length > 0 }; });
-    // Nested, a parent is drawn before its children, so each child lies over its parent (LA-EXP-DR63).
-    if (map.view === 'nested') placed.sort((a, b) => map.nodes.get(a.id)!.order - map.nodes.get(b.id)!.order);
+    // What was drawn for the map before this one (the Voronoi map's empty stand-in, say) may name nodes this one lacks.
+    const placed = drawn.boxes.filter((b) => map.nodes.has(b.id)).map((b) => { const n = map.nodes.get(b.id)!; return { id: b.id, x: n.x, y: n.y, w: n.w, h: n.h, label: b.label, text: n.text, parent: n.children.length > 0 }; });
+    // Nested and Voronoi, a parent is drawn before its children, so each child lies over its parent (LA-EXP-DR63).
+    if (map.view !== 'tree') placed.sort((a, b) => map.nodes.get(a.id)!.order - map.nodes.get(b.id)!.order);
     return placed;
   }, [tracePlaced, graph, drawn, map]);
   const order = useMemo(() => {
-    if (tracing || map.view !== 'nested') return keyboardOrder(boxes);
+    if (tracing || map.view === 'tree') return keyboardOrder(boxes);
     return keyboardOrder(boxes, (id) => map.nodes.get(id)?.order ?? Infinity);
   }, [boxes, map, tracing]);
 
   const { nodes, edges } = useMemo(() => {
     const byId = new Map(boxes.map((b) => [b.id, b]));
     const nodes: FlowNode[] = boxes.map((b) => {
-      const inNested = !tracing && map.view === 'nested' ? map.nodes.get(b.id) : undefined;
-      // Nested, a box's border grows with its text, so a large box's edge stays in proportion to its label, and its lines are the Nested map's (LA-EXP-DR62).
+      const inNested = !tracing && map.view !== 'tree' ? map.nodes.get(b.id) as NestedNode | VoronoiNode : undefined;
+      // Nested and Voronoi, a box's border grows with its text, so a large box's edge stays in proportion to its label, and its lines are the map's (LA-EXP-DR62, LA-EXP-DR64).
       const data = boxData(index, b.id, focus, b.label, inNested ? Math.max(0.5, b.text) : contentScale(b.w, b.h), b.text, b.parent, graph, inNested);
-      if (inNested) data.header = inNested.header;
+      if (inNested && 'header' in inNested) data.header = inNested.header;
+      if (inNested && 'polygon' in inNested) {
+        const r = (v: number) => Math.round(v * 100) / 100;
+        data.cell = { points: inNested.polygon.map(([x, y]) => `${r(x - b.x)},${r(y - b.y)}`).join(' '), label: { x: inNested.label.x - b.x, y: inNested.label.y - b.y, w: inNested.label.w, h: inNested.label.h } };
+      }
       return {
         id: b.id,
         type: 'box',
@@ -841,13 +895,14 @@ function GraphCanvas({ index, graph, layout, depth, filters, onNavigate, minimap
         edges.push({ id: `${p.id}|${PARENT}|${b.id}`, source: p.id, target: b.id, type: 'line', focusable: false, selectable: false, data: { relation: PARENT, points: parentLine(p, b, shape(p.id), shape(b.id)), label: '', link: false, scale: contentScale(b.w, b.h) } });
       }
     }
-    // The Links switch: the focus's own links, as curves between their boxes.
+    // The Links switch: the focus's own links, as curves between their boxes; in the Voronoi view, between their cells' labels, inside the cells.
+    const anchor = (b: Box) => { const n = map.nodes.get(b.id); return n && 'polygon' in n ? (n as VoronoiNode).label : b; };
     for (const e of graph.edges) {
       if (e.relation === PARENT) continue;
       const s = byId.get(e.source);
       const t = byId.get(e.target);
       if (!s || !t) continue;
-      edges.push({ id: e.id, source: e.source, target: e.target, type: 'line', markerEnd: { type: MarkerType.ArrowClosed }, focusable: false, selectable: false, data: { relation: e.relation, points: linkEnds(s, t), label: graphEdgeLabel(index, e), link: true, scale: 1 } });
+      edges.push({ id: e.id, source: e.source, target: e.target, type: 'line', markerEnd: { type: MarkerType.ArrowClosed }, focusable: false, selectable: false, data: { relation: e.relation, points: linkEnds(anchor(s), anchor(t)), label: graphEdgeLabel(index, e), link: true, scale: 1 } });
     }
     return { nodes, edges };
   }, [boxes, drawn, tracing, map, index, focus, graph, parentShown]);
@@ -887,8 +942,8 @@ function GraphCanvas({ index, graph, layout, depth, filters, onNavigate, minimap
       lit.add(e.target);
       edgeIds.add(`${e.source} ${e.target}`);
     }
-    // Nested, holding is the parent link: the box lights its parent and everything inside it, as the Tree view's parent lines light theirs.
-    const held = map.view === 'nested' ? map.nodes.get(id!) : undefined;
+    // Nested and Voronoi, holding is the parent link: the box lights its parent and everything inside it, as the Tree view's parent lines light theirs.
+    const held = map.view !== 'tree' ? map.nodes.get(id!) : undefined;
     if (held) {
       if (held.parent) lit.add(held.parent);
       const within = (n: string) => { for (const c of map.nodes.get(n)?.children ?? []) { lit.add(c); within(c); } };
@@ -949,7 +1004,7 @@ function GraphCanvas({ index, graph, layout, depth, filters, onNavigate, minimap
   return (
     <div
       ref={wrapper}
-      className={`graph-flow${nested && !tracing ? ' is-nested' : ''}`}
+      className={`graph-flow${nested && !tracing ? ' is-nested' : ''}${layout === 'voronoi' && !tracing ? ' is-voronoi' : ''}`}
       data-layout={tracing ? 'trace' : layout}
       onKeyDown={onKeyDown}
       onFocus={(e) => {
