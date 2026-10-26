@@ -3,7 +3,7 @@ import { graphMap, MAX_LEVEL_STEP, settleLevelScale, typicalSize } from '../../s
 import { LABEL_ASPECT, LABEL_PAD, labelBox, labelHeight, linesIn, metaWidth, titleWidth, WIDTH_MARGIN, wordsFit } from '../../src/graph/text';
 import { LEAF_AREA, layoutNested, NEST_PAD, NESTED_ASPECT, nestedMap, shareRoom, squarify, type NestedMap } from '../../src/graph/nested';
 import { indexWorkspace } from '../../src/specs/data';
-import { groupedWorkspace, manyOfOneKindWorkspace, testIndex } from './workspace';
+import { groupedWorkspace, heightLevels, manyOfOneKindWorkspace, testIndex } from './workspace';
 
 // The Nested map (LA-EXP-DR62): the Tree map's tree as a treemap, each box holding its children
 // below its header band, sized by the leaf records under it, laid out once.
@@ -127,10 +127,10 @@ describe('the Nested map', () => {
     expect(a.text).toBe(b.text);
     expect(a.w * a.h).toBeGreaterThan(b.w * b.h);
     for (const map of [...maps(), wide(1, 6), wide(3, 4), lop]) {
-      // Every box at one level has the same text scale, whatever its size: 1 or more at the deepest, at most MAX_LEVEL_STEP times the level below's.
-      map.byLevel.forEach((boxes, l) => {
+      // Every box at one height level has the same text scale, whatever its size: 1 or more at the leaves, at most MAX_LEVEL_STEP times the level below's.
+      heightLevels(map.nodes).forEach((boxes, h, levels) => {
         for (const n of boxes) expect(n.text, n.id).toBe(boxes[0].text);
-        const below = map.byLevel[l + 1]?.[0].text ?? 1;
+        const below = h > 0 ? levels[h - 1][0].text : 1;
         expect(boxes[0].text).toBeGreaterThanOrEqual(below);
         expect(boxes[0].text).toBeLessThanOrEqual(MAX_LEVEL_STEP * below * (1 + 1e-9));
       });

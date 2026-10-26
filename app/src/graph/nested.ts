@@ -10,9 +10,11 @@ import { treeChildren } from './tree';
 // rather than linking to them. Laid out once per spec load, like the Tree map, and never changed
 // by the focus: focusing moves the camera (camera.ts).
 //
-// One text scale per nesting level (map.ts's `settleLevelScale`): the level's typical box size (by
-// records, or by what its labels need) over a leaf's, at most MAX_LEVEL_STEP times the level below's, so every box at one level
-// has the same text, set once when the map is built and never by the focus or the zoom. Every box is
+// One text scale per height level: a box's level is its height from the leaves (0 for a leaf, one
+// more than its tallest child for a parent), so every leaf record reads at leaf size wherever it
+// sits. A level's scale is its typical box size (by records, or by what its labels need) over a
+// leaf's, at most MAX_LEVEL_STEP times the level below's (map.ts's `settleLevelScale`), so every
+// box at one level has the same text, set once when the map is built and never by the focus or the zoom. Every box is
 // then sized to hold its label at its level's scale, from the leaves up, so every label fits by
 // construction:
 // - Leaves first: a leaf's least size is its label (its kind and ID line and its title, wrapped on
@@ -135,6 +137,8 @@ export function layoutNested(roots: readonly string[], childrenOf: (id: string) 
   const leaves = new Map<string, number>();
   const labels = new Map<string, MapLabel>();
   const byLevelIds: string[][] = [];
+  const height = new Map<string, number>();
+  const byHeightIds: string[][] = [];
   const visit = (id: string, up: string | null, l: number) => {
     parent.set(id, up);
     level.set(id, l);
@@ -148,6 +152,10 @@ export function layoutNested(roots: readonly string[], childrenOf: (id: string) 
       visit(c, id, l + 1);
     }
     leaves.set(id, own.length === 0 ? 1 : own.reduce((s, c) => s + leaves.get(c)!, 0));
+    // Its height: 0 for a leaf, one more than its tallest child for a parent; its text's level.
+    const tall = own.length === 0 ? 0 : 1 + Math.max(...own.map((c) => height.get(c)!));
+    height.set(id, tall);
+    (byHeightIds[tall] ??= []).push(id);
   };
   const top: string[] = [];
   for (const r of roots) { if (!level.has(r)) { top.push(r); visit(r, null, 0); } }
@@ -174,21 +182,20 @@ export function layoutNested(roots: readonly string[], childrenOf: (id: string) 
     return w * (Math.max(header, pad) + pad - gap + room / (w - 2 * pad + gap));
   };
 
-  // One text scale per level, from the deepest up: its typical box size over a leaf's, each box
+  // One text scale per height level, from the leaves up: its typical box size over a leaf's, each box
   // planned at the larger of its share by records and its least area at that scale, at most
   // MAX_LEVEL_STEP times the level below's (map.ts's `settleLevelScale`).
-  const scales: number[] = new Array(byLevelIds.length).fill(1);
-  for (let l = byLevelIds.length - 1; l >= 0; l--) {
-    const ids = byLevelIds[l];
-    scales[l] = settleLevelScale((s) => ids.map((id) => Math.max(leaves.get(id)! * LEAF_AREA, leastAt(id, s))), l + 1 < scales.length ? scales[l + 1] : 1, LEAF_AREA);
-    for (const id of ids) least.set(id, leastAt(id, scales[l]));
-  }
-  const scaleOf = (id: string) => scales[level.get(id)!];
+  const scales: number[] = new Array(byHeightIds.length).fill(1);
+  byHeightIds.forEach((ids, h) => {
+    scales[h] = settleLevelScale((s) => ids.map((id) => Math.max(leaves.get(id)! * LEAF_AREA, leastAt(id, s))), h > 0 ? scales[h - 1] : 1, LEAF_AREA);
+    for (const id of ids) least.set(id, leastAt(id, scales[h]));
+  });
+  const scaleOf = (id: string) => scales[height.get(id)!];
 
   // From the leaves up, each box's least area at its level's scale, and at least what an earlier pass found it needs (`grown`).
   const grown = new Map<string, number>();
   const sizeUp = () => {
-    for (let l = byLevelIds.length - 1; l >= 0; l--) for (const id of byLevelIds[l]) least.set(id, Math.max(leastAt(id, scales[l]), grown.get(id) ?? 0));
+    byHeightIds.forEach((ids, h) => { for (const id of ids) least.set(id, Math.max(leastAt(id, scales[h]), grown.get(id) ?? 0)); });
   };
 
   const total = top.reduce((s, r) => s + leaves.get(r)!, 0);

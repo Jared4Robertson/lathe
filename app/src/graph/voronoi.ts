@@ -2,7 +2,7 @@ import { voronoiMapSimulation, type VoronoiMapPolygon } from 'd3-voronoi-map';
 import polylabel from 'polylabel';
 import type { SpecIndex } from '../specs/data';
 import { settleLevelScale, type MapNode, type PlacedMap } from './map';
-import { hasMarks, LABEL_PAD, labelBox, labelHeight, labelLines, linesIn, wordsFit, type MapLabel, type WrappedLabel } from './text';
+import { hasMarks, LABEL_PAD, labelBox, labelHeight, labelLines, linesIn, narrowestWidth, wordsFit, type MapLabel, type WrappedLabel } from './text';
 import { treeChildren } from './tree';
 
 // The graph's Voronoi map (LA-EXP-DR64): the same tree as the Tree and Nested maps, one product's,
@@ -23,9 +23,11 @@ import { treeChildren } from './tree';
 //   weight is rounded to within 2%, so adding a record changes only the parents whose rounded
 //   weight it changes; everything outside them keeps its place exactly. (Seeding from the last
 //   layout was tried, and moved cells more than starting afresh.)
-// - Text (LA-EXP-DR58): one text scale per nesting level (map.ts's `settleLevelScale`), the
-//   level's typical cell size (by records, or by what its names need) over a leaf's, at most MAX_LEVEL_STEP times the level
-//   below's, so every cell at one level has the same text, set here once and never by the focus or the zoom.
+// - Text (LA-EXP-DR58): one text scale per height level, a cell's height from the
+//   leaves (0 for a leaf, one more than its tallest child for a parent), so every leaf record reads
+//   at leaf size wherever it sits: the level's typical cell size (by records, or by what its names
+//   need) over a leaf's, at most MAX_LEVEL_STEP times the level below's (map.ts's
+//   `settleLevelScale`), so every cell at one level has the same text, set here once and never by the focus or the zoom.
 //   A leaf's label is centered on its largest inscribed point; a parent's sits in a header at the
 //   top of its cell, its children below the header's cut. A label wraps on whole words and is
 //   never clipped, nor shrunk below its level's scale.
@@ -43,8 +45,10 @@ import { treeChildren } from './tree';
 type XY = [number, number];
 type Polygon = readonly XY[];
 
-/** The map area one leaf record stands for: a leaf cell about 270 across, with a little more for the headers and padding above it. */
-export const LEAF_AREA = 270 * 270 * 1.3;
+/** The map area one leaf record stands for: a leaf cell about 400 across, with a little more for the headers and padding above it. */
+export const LEAF_AREA = 400 * 400 * 1.3;
+/** A cell this size across (the square root of its area) holds text at scale 1: a level's text scale is its typical cell size over it. */
+export const TEXT_CELL = 340;
 /** The padding inside a cell around its children, and the gap between two siblings, at text scale 1. */
 export const CELL_PAD = 10;
 export const CELL_GAP = 8;
@@ -54,13 +58,17 @@ export const MIN_CHILD_SHARE = 0.55;
 export const CONVERGENCE = 0.002;
 export const MAX_ROUNDS = 400;
 /**
- * The share of a cell of typical shape a leaf's label box can take, and how much more room a
- * parent's children need than their own needs summed, for its padding, their gaps and their shapes:
- * a cell's least area for its name is its label box over LABEL_FILL, a parent's with its children's
- * times CHILD_SLACK.
+ * What a cell needs for its name. A leaf's label box takes at most LABEL_FILL of a cell of typical
+ * shape. A parent's header takes a band across the top of its cell, its label's height (wrapped
+ * toward LABEL_ASPECT) plus the padding, about HEADER_WIDTH times the square root of the cell's
+ * area wide; below it its children need their own needs summed, times CHILD_SLACK for their gaps
+ * and shapes.
  */
-export const LABEL_FILL = 0.4;
-export const CHILD_SLACK = 1.4;
+export const LABEL_FILL = 0.35;
+/** A parent's cell is at least this many times its header's widest word across (the square root of its area), for the narrower top of a convex cell. */
+export const HEADER_ACROSS = 1.6;
+export const HEADER_WIDTH = 1.5;
+export const CHILD_SLACK = 1.3;
 /** How many times the map is laid out again for cells whose label does not fit, and how much such a cell's least area grows each time. */
 export const FIT_PASSES = 12;
 export const FIT_GROWTH = 1.3;
@@ -232,6 +240,21 @@ function headerLabel(p: Polygon, label: MapLabel, s: number, pad: number): Place
       if (holds(p, rect) && polygonArea(below(p, cut)) >= MIN_CHILD_SHARE * whole) return { text: s, lines, label: rect, cut };
     }
   }
+  // No room at the top (a cell narrowing to a corner there): centered on the largest inscribed point of the cell's upper half.
+  const upper = clipHalf(p, 0, -1, box.y + box.h / 2);
+  if (upper.length < 3) return null;
+  const pole = polylabel([upper], Math.max(1e-3, Math.sqrt(polygonArea(upper)) / 200)) as unknown as XY;
+  for (const share of WIDTHS) {
+    const across = chord(p, pole[1]);
+    if (!across) return null;
+    const width = (2 * Math.min(pole[0] - across[0], across[1] - pole[0]) * share) / s;
+    if (width <= 2 * LABEL_PAD || !wordsFit(label, width, true)) continue;
+    const lines = linesIn(label, width, true);
+    const lh = labelHeight(lines) * s;
+    const rect = { x: pole[0] - (width * s) / 2, y: pole[1] - lh / 2, w: width * s, h: lh };
+    const cut = rect.y + lh + pad;
+    if (holds(p, rect) && polygonArea(below(p, cut)) >= MIN_CHILD_SHARE * whole) return { text: s, lines, label: rect, cut };
+  }
   return null;
 }
 
@@ -349,6 +372,8 @@ export function layoutVoronoi(
   const leaves = new Map<string, number>();
   const labels = new Map<string, MapLabel>();
   const byLevelIds: string[][] = [];
+  const height = new Map<string, number>();
+  const byHeightIds: string[][] = [];
   const treeOrder = new Map<string, number>();
   const visit = (id: string, up: string | null, l: number) => {
     parent.set(id, up);
@@ -364,31 +389,51 @@ export function layoutVoronoi(
       visit(c, id, l + 1);
     }
     leaves.set(id, own.length === 0 ? 1 : own.reduce((s, c) => s + leaves.get(c)!, 0));
+    // Its height: 0 for a leaf, one more than its tallest child for a parent; its text's level.
+    const tall = own.length === 0 ? 0 : 1 + Math.max(...own.map((c) => height.get(c)!));
+    height.set(id, tall);
+    (byHeightIds[tall] ??= []).push(id);
   };
   const top: string[] = [];
   for (const r of roots) { if (!level.has(r)) { top.push(r); visit(r, null, 0); } }
 
-  const boxArea = new Map([...labels].map(([id, label]) => { const b = labelBox(label, true); return [id, b.w * b.h] as const; }));
+  const boxes = new Map([...labels].map(([id, label]) => [id, labelBox(label, true)] as const));
+  const narrowest = new Map([...labels].map(([id, label]) => [id, narrowestWidth(label, true)] as const));
+  // A header's height at text scale 1, wrapped across a cell of typical size.
+  const headers = new Map([...labels].map(([id, label]) => [id, labelHeight(linesIn(label, TEXT_CELL, true))] as const));
 
-  // The area a cell needs for its name at a text scale: its label box over LABEL_FILL, and a parent's children's needs too.
+  // The area a cell needs for its name at a text scale: a leaf's, its label box over LABEL_FILL; a
+  // parent's, the area A that holds CHILD_SLACK times its children's needs below its header's band
+  // (its label's height and padding tall, HEADER_WIDTH times the square root of A wide), and its
+  // label box over LABEL_FILL at least.
   const need = new Map<string, number>();
-  const needAt = (id: string, s: number) => (boxArea.get(id)! * s * s) / LABEL_FILL + CHILD_SLACK * kids.get(id)!.reduce((sum, c) => sum + need.get(c)!, 0);
+  const needAt = (id: string, s: number) => {
+    const box = boxes.get(id)!;
+    const own = (box.w * box.h * s * s) / LABEL_FILL;
+    const kidsOf = kids.get(id)!;
+    if (kidsOf.length === 0) return own;
+    const below = CHILD_SLACK * kidsOf.reduce((sum, c) => sum + need.get(c)!, 0);
+    const band = HEADER_WIDTH * (headers.get(id)! + CELL_PAD) * s;
+    const side = (band + Math.sqrt(band * band + 4 * below)) / 2;
+    // Wide enough across for its widest word, where a convex cell's top narrows.
+    const across = HEADER_ACROSS * narrowest.get(id)! * s;
+    return Math.max(own, side * side, across * across);
+  };
 
-  // One text scale per level, from the deepest up: its typical cell size over a leaf's, each cell
+  // One text scale per height level, from the leaves up: its typical cell size over a leaf's, each cell
   // planned at the larger of its share by records and its need at that scale, at most
   // MAX_LEVEL_STEP times the level below's (map.ts's `settleLevelScale`).
-  const scales: number[] = new Array(byLevelIds.length).fill(1);
-  for (let l = byLevelIds.length - 1; l >= 0; l--) {
-    const ids = byLevelIds[l];
-    scales[l] = settleLevelScale((s) => ids.map((id) => Math.max(leaves.get(id)! * LEAF_AREA, needAt(id, s))), l + 1 < scales.length ? scales[l + 1] : 1, LEAF_AREA);
-    for (const id of ids) need.set(id, needAt(id, scales[l]));
-  }
-  const scaleOf = (id: string) => scales[level.get(id)!];
+  const scales: number[] = new Array(byHeightIds.length).fill(1);
+  byHeightIds.forEach((ids, h) => {
+    scales[h] = settleLevelScale((s) => ids.map((id) => Math.max(leaves.get(id)! * LEAF_AREA, needAt(id, s))), h > 0 ? scales[h - 1] : 1, TEXT_CELL * TEXT_CELL);
+    for (const id of ids) need.set(id, needAt(id, scales[h]));
+  });
+  const scaleOf = (id: string) => scales[height.get(id)!];
 
   // From the leaves up, each cell's need at its level's scale, and at least what an earlier pass found (`grown`).
   const grown = new Map<string, number>();
   const sizeUp = () => {
-    for (let l = byLevelIds.length - 1; l >= 0; l--) for (const id of byLevelIds[l]) need.set(id, Math.max(needAt(id, scales[l]), grown.get(id) ?? 0));
+    byHeightIds.forEach((ids, h) => { for (const id of ids) need.set(id, Math.max(needAt(id, scales[h]), grown.get(id) ?? 0)); });
   };
 
   const total = top.reduce((s, r) => s + leaves.get(r)!, 0);
