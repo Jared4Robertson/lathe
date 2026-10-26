@@ -442,7 +442,10 @@ const PARITY: { feature: string; run: (page: Page, layout: Layout) => Promise<vo
     feature: 'depth 1 to 3 frames more in the Tree layout; the Nested and Voronoi cameras frame the focus box or cell, so they have no depth',
     run: async (page, layout) => {
       if (layout !== 'tree') {
-        for (const d of ['1', '2', '3']) await expect(page.locator('.pane-graph .graph-depth button', { hasText: d })).toBeDisabled();
+        // The Depth group keeps its slot but is neither shown nor reachable (LA-EXP-T194).
+        const depthGroup = page.locator('.pane-graph [aria-label="Depth"]');
+        await expect(depthGroup).toBeHidden();
+        await expect(depthGroup).toHaveAttribute('inert', '');
         return;
       }
       const counts: number[] = [];
