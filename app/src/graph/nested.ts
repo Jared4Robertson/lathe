@@ -1,48 +1,37 @@
 import type { SpecIndex } from '../specs/data';
-import { NODE_HEIGHT, NODE_WIDTH } from './layout';
-import { settleLevelScale, type MapNode, type PlacedMap } from './map';
-import { labelBox, labelHeight, linesIn, mapLabel, narrowestWidth, wordsFit, type MapLabel, type WrappedLabel } from './text';
+import { settleLevelScale, typicalSize, type MapNode, type PlacedMap } from './map';
+import { labelHeight, linesIn, mapLabel, metaWidth, narrowestWidth, titleWidth, WIDTH_MARGIN, type MapLabel, type WrappedLabel } from './text';
 import { treeChildren } from './tree';
 
 // The graph's Nested map (LA-EXP-DR62): the same tree as the Tree map (map.ts), one product's, the
-// product its single root, drawn as a zoomable treemap. A product is made of its domains, a domain of Define and Design, a stage of
-// its folders, a folder of its records, a record of its children: each box holds its children
-// rather than linking to them. Laid out once per spec load, like the Tree map, and never changed
-// by the focus: focusing moves the camera (camera.ts).
+// product its single root, drawn as nested squares. A product is made of its domains, a domain of
+// Define and Design, a stage of its folders, a folder of its records, a record of its children:
+// each box holds its children rather than linking to them. Laid out once per spec load, like the
+// Tree map, and never changed by the focus: focusing moves the camera (camera.ts).
 //
 // One text scale per height level: a box's level is its height from the leaves (0 for a leaf, one
 // more than its tallest child for a parent), so every leaf record reads at leaf size wherever it
-// sits. A level's scale is its typical box size (by records, or by what its labels need) over a
-// leaf's, at most MAX_LEVEL_STEP times the level below's (map.ts's `settleLevelScale`), so every
-// box at one level has the same text, set once when the map is built and never by the focus or the zoom. Every box is
-// then sized to hold its label at its level's scale, from the leaves up, so every label fits by
-// construction:
-// - Leaves first: a leaf's least size is its label (its kind and ID line and its title, wrapped on
-//   whole words toward LABEL_ASPECT) at its level's scale, its padding included.
-// - Up the tree: a parent's least size is its header (its own label, at its level's scale) over the
-//   least room its children need packed, a gap apart, inside its padding.
-// - Then top-down: each box's children share its inner room, each the larger of its share by the
-//   leaf records under it and its least size, scaled so they exactly fill it; they are squarified
-//   (Bruls, Huizing and van Wijk) without sorting, so they keep the tree's order row by row where
-//   the shapes allow. Area stays in proportion to the records wherever the least sizes allow.
-// - A squarified cell's shape is not its least size's: a box whose label still does not fit the
-//   cell it got (too narrow for a word, or too short) has its least area grown, and the map is
-//   laid out again, up to FIT_PASSES times. A label never shrinks below its level's scale.
+// sits. A level's scale is its typical box size over a typical leaf's, at most MAX_LEVEL_STEP times
+// the level below's (map.ts's `settleLevelScale`), so every box at one level has the same text, set
+// once when the map is built and never by the focus or the zoom. Every box is a square sized to its
+// content at its level's scale, from the leaves up, so every label fits by construction:
+// - A leaf is the smallest square that holds its label (its kind and ID line and its title,
+//   wrapped on whole words), its padding included.
+// - A parent's children are packed in the tree's order in rows (shelf packing), a gap apart, within
+//   a row width chosen from a few tries to make the parent's square smallest.
+// - A parent is the smallest square holding its header band (its own label at its level's scale)
+//   and that block below it, inside its padding. Space the block leaves is blank.
+// Size follows content, not record counts.
 //
 // Pure and deterministic: the same tree always gives the same map.
 
 /** The padding inside a box around its children, and the gap between two siblings, at text scale 1. */
 export const NEST_PAD = 8;
 export const NEST_GAP = 6;
-/** The map area one leaf record stands for: a little more than a Tree leaf, for the headers and padding above it. */
-export const LEAF_AREA = NODE_WIDTH * NODE_HEIGHT * 4;
-/** The whole map's width over its height. */
-export const NESTED_ASPECT = 1.6;
-/** How much more room children need than their least areas summed, for the squarified shapes. */
-export const PACK_SLACK = 1.15;
-/** How many times the map is laid out again for boxes whose label does not fit their cell, and how much such a box's least area grows each time. */
-export const FIT_PASSES = 40;
-export const FIT_GROWTH = 1.5;
+/** How many row widths a parent tries for its children, between the widest child and one row of them all. */
+const ROW_TRIES = 24;
+/** How many halvings find a width at which a label's wrapping changes: to well under a thousandth of a unit. */
+const SIDE_ROUNDS = 24;
 
 export interface NestedNode extends MapNode {
   /** Its label's lines, wrapped on whole words for its width at its level's text scale, and whether they are centered (a leaf's) or at the top left (a parent's). */
@@ -59,82 +48,82 @@ export interface NestedMap extends PlacedMap {
   nodes: ReadonlyMap<string, NestedNode>;
 }
 
-interface Rect { x: number; y: number; w: number; h: number }
-
-/** The worst aspect ratio of a row of areas laid along a side of length `side`. */
-function worst(row: readonly number[], side: number): number {
-  const sum = row.reduce((s, a) => s + a, 0);
-  if (sum <= 0 || side <= 0) return Infinity;
-  const max = Math.max(...row);
-  const min = Math.min(...row);
-  return Math.max((side * side * max) / (sum * sum), (sum * sum) / (side * side * min));
-}
+interface Packed { w: number; h: number; at: { x: number; y: number }[] }
 
 /**
- * Squarified rectangles for some weights in a rectangle, in their given order (exported for
- * tests): row after row along the rectangle's shorter side, each row taking as many of the next
- * weights as keep its boxes nearest to square. A weight of 0 gets an empty box.
+ * Squares of some sides packed in their order in rows no wider than `width`, `gap` apart (exported
+ * for tests): each row as many as fit, its height its tallest; the block's size and each square's
+ * place in it.
  */
-export function squarify(weights: readonly number[], r: Rect): Rect[] {
-  const out: Rect[] = weights.map(() => ({ x: r.x, y: r.y, w: 0, h: 0 }));
-  const total = weights.reduce((s, w) => s + w, 0);
-  if (total <= 0 || r.w <= 0 || r.h <= 0) return out;
-  const scale = (r.w * r.h) / total;
-  const items = weights.map((w, i) => ({ i, a: w * scale })).filter((x) => x.a > 0);
-  let rest = { ...r };
-  let at = 0;
-  while (at < items.length) {
-    const side = Math.min(rest.w, rest.h);
-    const row = [items[at]];
-    let next = at + 1;
-    while (next < items.length && worst([...row, items[next]].map((x) => x.a), side) <= worst(row.map((x) => x.a), side)) row.push(items[next++]);
-    const sum = row.reduce((s, x) => s + x.a, 0);
-    const last = next >= items.length;
-    if (rest.w >= rest.h) {
-      // A column at the left, top to bottom.
-      const w = last ? rest.w : sum / rest.h;
-      let y = rest.y;
-      for (const x of row) { const h = (x.a / sum) * rest.h; out[x.i] = { x: rest.x, y, w, h }; y += h; }
-      rest = { x: rest.x + w, y: rest.y, w: rest.w - w, h: rest.h };
-    } else {
-      // A row at the top, left to right.
-      const h = last ? rest.h : sum / rest.w;
-      let x0 = rest.x;
-      for (const x of row) { const w = (x.a / sum) * rest.w; out[x.i] = { x: x0, y: rest.y, w, h }; x0 += w; }
-      rest = { x: rest.x, y: rest.y + h, w: rest.w, h: rest.h - h };
-    }
-    at = next;
+export function shelfPack(sides: readonly number[], width: number, gap: number): Packed {
+  const at: { x: number; y: number }[] = [];
+  let x = 0;
+  let y = 0;
+  let row = 0;
+  let w = 0;
+  for (const s of sides) {
+    if (x > 0 && x + s > width + 1e-9) { y += row + gap; x = 0; row = 0; }
+    at.push({ x, y });
+    x += s;
+    w = Math.max(w, x);
+    row = Math.max(row, s);
+    x += gap;
   }
-  return out;
+  return { w, h: sides.length === 0 ? 0 : y + row, at };
+}
+
+/** One step of a label's wrapping: the least width, at text scale 1, at which it is this tall. */
+interface Step { w: number; h: number }
+
+/**
+ * A label's wrapping as steps: from the narrowest width its words allow up to
+ * one line, each width at which it gets shorter (found by halving, SIDE_ROUNDS times) and how tall
+ * it is from there, at text scale 1. Wider is never taller, so the steps are the whole story.
+ */
+function wrapSteps(label: MapLabel, centered: boolean): Step[] {
+  const tall = (w: number) => labelHeight(linesIn(label, w, centered));
+  const narrowest = narrowestWidth(label, centered);
+  const oneLine = narrowest + (titleWidth(label.title) + metaWidth(label.meta)) * WIDTH_MARGIN + 1;
+  const shortest = tall(oneLine);
+  const steps: Step[] = [{ w: narrowest, h: tall(narrowest) }];
+  while (steps.at(-1)!.h > shortest) {
+    const at = steps.at(-1)!;
+    let lo = at.w;
+    let hi = oneLine;
+    for (let round = 0; round < SIDE_ROUNDS; round++) {
+      const mid = (lo + hi) / 2;
+      if (tall(mid) < at.h) hi = mid; else lo = mid;
+    }
+    steps.push({ w: hi, h: tall(hi) });
+  }
+  return steps;
 }
 
 /**
- * Each child's area of `room`: the larger of its share by `weights` and its least area, the excess
- * taken from those above their least in proportion to how far above, so the areas sum to `room`
- * (exported for tests). When `room` is under the least areas summed, each gets its least area scaled down.
+ * The smallest square side, at text scale 1, that holds a label centered in it, wrapped on whole
+ * words (exported for tests): the least width, found by halving, at which it is no taller than wide.
  */
-export function shareRoom(room: number, weights: readonly number[], least: readonly number[]): number[] {
-  const total = weights.reduce((s, w) => s + w, 0);
-  const sumLeast = least.reduce((s, a) => s + a, 0);
-  if (sumLeast >= room) return least.map((a) => (sumLeast > 0 ? (a * room) / sumLeast : 0));
-  const share = weights.map((w) => (total > 0 ? (room * w) / total : 0));
-  const out = share.map((s, i) => Math.max(s, least[i]));
-  const excess = out.reduce((s, a) => s + a, 0) - room;
-  if (excess <= 0) return out;
-  const slack = out.reduce((s, a, i) => s + (a - least[i]), 0);
-  return out.map((a, i) => a - ((a - least[i]) * excess) / slack);
+export function leafSide(label: MapLabel): number {
+  const tall = (w: number) => labelHeight(linesIn(label, w, true));
+  let lo = narrowestWidth(label, true);
+  let hi = Math.max(lo, tall(lo));
+  if (hi <= lo) return lo;
+  for (let round = 0; round < SIDE_ROUNDS; round++) {
+    const mid = (lo + hi) / 2;
+    if (tall(mid) <= mid) hi = mid; else lo = mid;
+  }
+  return hi;
 }
 
 /**
  * Lays out a tree given by its roots, a children function and, for each node, its label (its ID
- * when not given) as nested boxes (exported for tests).
+ * when not given) as nested squares (exported for tests).
  */
 export function layoutNested(roots: readonly string[], childrenOf: (id: string) => readonly string[], labelOf: (id: string) => MapLabel = (id) => ({ title: id, meta: '' })): NestedMap {
   // The tree, by a walk from the roots; a node reached twice keeps its first place.
   const parent = new Map<string, string | null>();
   const level = new Map<string, number>();
   const kids = new Map<string, string[]>();
-  const leaves = new Map<string, number>();
   const labels = new Map<string, MapLabel>();
   const byLevelIds: string[][] = [];
   const height = new Map<string, number>();
@@ -151,7 +140,6 @@ export function layoutNested(roots: readonly string[], childrenOf: (id: string) 
       own.push(c);
       visit(c, id, l + 1);
     }
-    leaves.set(id, own.length === 0 ? 1 : own.reduce((s, c) => s + leaves.get(c)!, 0));
     // Its height: 0 for a leaf, one more than its tallest child for a parent; its text's level.
     const tall = own.length === 0 ? 0 : 1 + Math.max(...own.map((c) => height.get(c)!));
     height.set(id, tall);
@@ -160,103 +148,83 @@ export function layoutNested(roots: readonly string[], childrenOf: (id: string) 
   const top: string[] = [];
   for (const r of roots) { if (!level.has(r)) { top.push(r); visit(r, null, 0); } }
 
-  const leafBoxes = new Map<string, { w: number; h: number }>();
-  const narrowest = new Map<string, number>();
-  for (const [id, own] of kids) {
-    if (own.length === 0) leafBoxes.set(id, labelBox(labels.get(id)!, true));
-    else narrowest.set(id, narrowestWidth(labels.get(id)!, false));
-  }
-
-  // A box's least area at a text scale: a leaf's, its label's box at that scale; a parent's, its
-  // header at that scale over its children packed inside its padding.
-  const least = new Map<string, number>();
-  const leastAt = (id: string, s: number): number => {
-    const own = kids.get(id)!;
-    if (own.length === 0) { const box = leafBoxes.get(id)!; return box.w * box.h * s * s; }
-    const pad = NEST_PAD * s;
-    const gap = NEST_GAP * s;
-    // The children's room: a square, each child's least area with its gap around it, and some slack for the squarified shapes.
-    const room = PACK_SLACK * own.reduce((sum, c) => sum + (Math.sqrt(least.get(c)!) + gap) ** 2, 0);
-    const w = Math.max(Math.sqrt(room) - gap + 2 * pad, narrowest.get(id)! * s);
-    const header = s * labelHeight(linesIn(labels.get(id)!, w / s, false));
-    return w * (Math.max(header, pad) + pad - gap + room / (w - 2 * pad + gap));
+  /** The packing of some squares, from a few row widths, whose enclosing square (`squareFor`) is smallest. */
+  const bestPack = (sides: readonly number[], gap: number, squareFor: (block: Packed) => number): { pack: Packed; side: number } => {
+    const widest = Math.max(...sides);
+    const all = sides.reduce((s, x) => s + x, 0) + gap * (sides.length - 1);
+    let best: { pack: Packed; side: number } | null = null;
+    for (let i = 0; i <= ROW_TRIES; i++) {
+      const pack = shelfPack(sides, widest + ((all - widest) * i) / ROW_TRIES, gap);
+      const side = squareFor(pack);
+      if (!best || side < best.side - 1e-9) best = { pack, side };
+    }
+    return best!;
   };
 
-  // One text scale per height level, from the leaves up: its typical box size over a leaf's, each box
-  // planned at the larger of its share by records and its least area at that scale, at most
-  // MAX_LEVEL_STEP times the level below's (map.ts's `settleLevelScale`).
+  // A box's least square at a text scale, its children's sides known: a leaf's, its label's; a
+  // parent's, the least that holds its header band over its children's block, inside its padding:
+  // for each step of its header's wrapping, at least that step's width, and its block's width, and
+  // tall enough for that step's header over the block.
+  const unitLeaf = new Map<string, number>();
+  const headerSteps = new Map<string, Step[]>();
+  for (const [id, own] of kids) {
+    if (own.length === 0) unitLeaf.set(id, leafSide(labels.get(id)!));
+    else headerSteps.set(id, wrapSteps(labels.get(id)!, false));
+  }
+  const side = new Map<string, number>();
+  const sideAt = (id: string, s: number): { side: number; pack?: Packed } => {
+    const own = kids.get(id)!;
+    if (own.length === 0) return { side: s * unitLeaf.get(id)! };
+    const steps = headerSteps.get(id)!;
+    const pad = NEST_PAD * s;
+    const squareFor = (block: Packed) => Math.min(...steps.map((step) => Math.max(block.w + 2 * pad, s * step.w, Math.max(s * step.h, pad) + block.h + pad)));
+    return bestPack(own.map((c) => side.get(c)!), NEST_GAP * s, squareFor);
+  };
+
+  // One text scale per height level, from the leaves up: its typical box size over a typical leaf's,
+  // at most MAX_LEVEL_STEP times the level below's (map.ts's `settleLevelScale`); then each box's
+  // side at that scale and, for a parent, where its children sit in it.
+  const leafArea = typicalSize([...unitLeaf.values()].map((x) => x * x)) ** 2;
   const scales: number[] = new Array(byHeightIds.length).fill(1);
+  const packs = new Map<string, Packed>();
   byHeightIds.forEach((ids, h) => {
-    scales[h] = settleLevelScale((s) => ids.map((id) => Math.max(leaves.get(id)! * LEAF_AREA, leastAt(id, s))), h > 0 ? scales[h - 1] : 1, LEAF_AREA);
-    for (const id of ids) least.set(id, leastAt(id, scales[h]));
+    scales[h] = settleLevelScale((s) => ids.map((id) => sideAt(id, s).side ** 2), h > 0 ? scales[h - 1] : 1, leafArea);
+    for (const id of ids) {
+      const { side: own, pack } = sideAt(id, scales[h]);
+      side.set(id, own);
+      if (pack) packs.set(id, pack);
+    }
   });
   const scaleOf = (id: string) => scales[height.get(id)!];
 
-  // From the leaves up, each box's least area at its level's scale, and at least what an earlier pass found it needs (`grown`).
-  const grown = new Map<string, number>();
-  const sizeUp = () => {
-    byHeightIds.forEach((ids, h) => { for (const id of ids) least.set(id, Math.max(leastAt(id, scales[h]), grown.get(id) ?? 0)); });
-  };
-
-  const total = top.reduce((s, r) => s + leaves.get(r)!, 0);
-  const rootGap = NEST_GAP * 4;
-  let nodes = new Map<string, NestedNode>();
-  let world = { x: 0, y: 0, w: 0, h: 0 };
-  for (let pass = 0; pass <= FIT_PASSES; pass++) {
-    sizeUp();
-    const area = Math.max(total * LEAF_AREA, PACK_SLACK * top.reduce((s, r) => s + (Math.sqrt(least.get(r)!) + rootGap) ** 2, 0));
-    const height = Math.sqrt(area / NESTED_ASPECT);
-    world = { x: 0, y: 0, w: total === 0 ? 0 : height * NESTED_ASPECT, h: total === 0 ? 0 : height };
-
-    // Top-down: each box's label at its level's scale and its header, then its children's rooms inside it.
-    nodes = new Map();
-    const misfits: string[] = [];
-    const place = (id: string, r: Rect) => {
-      const own = kids.get(id)!;
-      const label = labels.get(id)!;
-      const centered = own.length === 0;
-      const text = scaleOf(id);
-      const lines = linesIn(label, r.w / text, centered);
-      const height = text * labelHeight(lines);
-      const header = centered ? 0 : height;
-      const pad = NEST_PAD * text;
-      const gap = NEST_GAP * text;
-      // Its label fits its box at its level's scale: every word across, and every line within its height (a parent's above its padding).
-      if (!wordsFit(label, r.w / text, centered) || (centered ? height : Math.max(header, pad) + pad) > r.h + 1e-6) misfits.push(id);
-      nodes.set(id, { id, parent: parent.get(id)!, children: own, level: level.get(id)!, x: r.x, y: r.y, w: r.w, h: r.h, text, lines, centered, header, order: 0 });
-      if (own.length === 0) return;
-      const inner = { x: r.x + pad - gap / 2, y: r.y + Math.max(header, pad) - gap / 2, w: Math.max(0, r.w - 2 * pad + gap), h: Math.max(0, r.h - Math.max(header, pad) - pad + gap) };
-      const rooms = shareRoom(inner.w * inner.h, own.map((c) => leaves.get(c)!), own.map((c) => (Math.sqrt(least.get(c)!) + gap) ** 2));
-      const cells = squarify(rooms, inner);
-      own.forEach((c, i) => {
-        const cell = cells[i];
-        // Never more than half a small cell for the gap, so no child is squeezed to nothing.
-        const g = Math.min(gap, cell.w / 2, cell.h / 2);
-        place(c, { x: cell.x + g / 2, y: cell.y + g / 2, w: Math.max(0, cell.w - g), h: Math.max(0, cell.h - g) });
-      });
-    };
-    if (top.length === 1) place(top[0], world);
-    else {
-      const rooms = shareRoom((world.w + rootGap) * (world.h + rootGap), top.map((r) => leaves.get(r)!), top.map((r) => (Math.sqrt(least.get(r)!) + rootGap) ** 2));
-      const cells = squarify(rooms, { x: -rootGap / 2, y: -rootGap / 2, w: world.w + rootGap, h: world.h + rootGap });
-      top.forEach((r, i) => { const c = cells[i]; place(r, { x: c.x + rootGap / 2, y: c.y + rootGap / 2, w: Math.max(0, c.w - rootGap), h: Math.max(0, c.h - rootGap) }); });
-    }
-    if (misfits.length === 0) break;
-    // A box whose label does not fit the cell it got needs more room than it had: grow its least area, and lay the map out again.
-    for (const id of misfits) { const n = nodes.get(id)!; grown.set(id, FIT_GROWTH * Math.max(least.get(id)!, n.w * n.h)); }
-  }
-  // The keyboard's order: the tree's, a parent before its children.
+  // From the roots down: each box at its place, its children at theirs below its header.
+  const nodes = new Map<string, NestedNode>();
   let order = 0;
-  const number = (id: string) => { nodes.get(id)!.order = order++; for (const c of kids.get(id)!) number(c); };
-  for (const r of top) number(r);
+  const place = (id: string, x: number, y: number) => {
+    const own = kids.get(id)!;
+    const text = scaleOf(id);
+    const w = side.get(id)!;
+    const centered = own.length === 0;
+    const lines = linesIn(labels.get(id)!, w / text, centered);
+    const header = centered ? 0 : text * labelHeight(lines);
+    nodes.set(id, { id, parent: parent.get(id)!, children: own, level: level.get(id)!, x, y, w, h: w, text, lines, centered, header, order: order++ });
+    if (centered) return;
+    const pad = NEST_PAD * text;
+    const pack = packs.get(id)!;
+    own.forEach((c, i) => place(c, x + pad + pack.at[i].x, y + Math.max(header, pad) + pack.at[i].y));
+  };
+  // The roots packed in rows the same way, a wide gap apart.
+  const rootGap = NEST_GAP * 4 * (top.length > 0 ? scaleOf(top[0]) : 1);
+  const world = top.length === 0 ? { pack: { w: 0, h: 0, at: [] }, side: 0 } : bestPack(top.map((r) => side.get(r)!), rootGap, (block) => Math.max(block.w, block.h));
+  top.forEach((r, i) => place(r, world.pack.at[i].x, world.pack.at[i].y));
 
   return {
     view: 'nested',
     nodes,
     roots: top,
     byLevel: byLevelIds.map((ids) => ids.map((id) => nodes.get(id)!)),
-    width: world.w,
-    height: world.h,
+    width: world.pack.w,
+    height: world.pack.h,
   };
 }
 

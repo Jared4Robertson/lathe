@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { graphMap, MAX_LEVEL_STEP, settleLevelScale, typicalSize } from '../../src/graph/map';
-import { LABEL_ASPECT, LABEL_PAD, labelBox, labelHeight, linesIn, metaWidth, titleWidth, WIDTH_MARGIN, wordsFit } from '../../src/graph/text';
-import { LEAF_AREA, layoutNested, NEST_PAD, NESTED_ASPECT, nestedMap, shareRoom, squarify, type NestedMap } from '../../src/graph/nested';
+import { LABEL_PAD, labelHeight, LINE_HEIGHT, linesIn, mapLabel, narrowestWidth, TITLE_FONT, titleWidth, WIDTH_MARGIN, wordsFit } from '../../src/graph/text';
+import { layoutNested, leafSide, NEST_PAD, nestedMap, shelfPack, type NestedMap } from '../../src/graph/nested';
 import { indexWorkspace } from '../../src/specs/data';
 import { groupedWorkspace, heightLevels, manyOfOneKindWorkspace, testIndex } from './workspace';
 
-// The Nested map (LA-EXP-DR62): the Tree map's tree as a treemap, each box holding its children
-// below its header band, sized by the leaf records under it, laid out once.
+// The Nested map (LA-EXP-DR62): the Tree map's tree as nested squares, each box holding its children
+// below its header band, packed in rows in the tree's order, sized to its content, laid out once.
 
 const maps = (): NestedMap[] => [nestedMap(testIndex(), 'P'), nestedMap(indexWorkspace(groupedWorkspace()), 'P'), nestedMap(indexWorkspace(manyOfOneKindWorkspace()), 'P')];
 
@@ -58,69 +58,68 @@ describe('the Nested map', () => {
     for (const n of tree.nodes.values()) expect(nested.nodes.get(n.id)!.children).toEqual(n.children);
   });
 
-  it('LA-EXP-T185 A box is sized by the leaf records under it, the world by them all', () => {
-    const map = wide(1, 5);
-    const root = map.nodes.get('r0')!;
-    expect(root.w / root.h).toBeCloseTo(NESTED_ASPECT, 6);
-    expect(root.w * root.h).toBeCloseTo(25 * LEAF_AREA, 3);
-    // Siblings of equal weight take equal cells: their boxes' areas differ only by the gap around them (a few percent).
-    const areas = root.children.map((c) => { const n = map.nodes.get(c)!; return n.w * n.h; });
-    for (const a of areas) expect(Math.abs(a / areas[0] - 1)).toBeLessThan(0.03);
-    // An unbalanced tree: a child with three times the leaves has about three times the area (the gaps aside).
+  it('LA-EXP-T185 Every box is a square, sized to its content: a leaf the least that holds its label, a parent the least that holds its header and its children', () => {
+    for (const map of [...maps(), wide(1, 6), wide(3, 4)]) {
+      for (const n of map.nodes.values()) {
+        expect(n.w, n.id).toBe(n.h);
+        expect(n.w, n.id).toBeGreaterThan(0);
+      }
+    }
+    // A leaf of a synthetic tree (its ID its title) is the least square for its label at its scale.
+    for (const n of wide(3, 4).nodes.values()) if (n.children.length === 0) expect(n.w, n.id).toBeCloseTo(n.text * leafSide({ title: n.id, meta: '' }), 6);
+    // A parent is no bigger than it must be: its children's block, inside its padding, reaches its bottom or its right side
+    // (or, for a short block, it is as wide as its label's widest word), give or take the one header line its least width saves.
+    for (const index of [testIndex(), indexWorkspace(groupedWorkspace()), indexWorkspace(manyOfOneKindWorkspace())]) {
+      const map = nestedMap(index, 'P');
+      for (const n of map.nodes.values()) {
+        if (n.children.length === 0) continue;
+        const kids = n.children.map((c) => map.nodes.get(c)!);
+        const right = Math.max(...kids.map((k) => k.x + k.w)) + NEST_PAD * n.text;
+        const bottom = Math.max(...kids.map((k) => k.y + k.h)) + NEST_PAD * n.text;
+        const word = narrowestWidth(mapLabel(index, n.id), false) * n.text;
+        expect(Math.min(n.x + n.w - right, n.y + n.h - bottom, n.w - word), n.id).toBeLessThan(1e-3 * n.w + LINE_HEIGHT * TITLE_FONT * n.text);
+      }
+    }
+    // Size follows content, not records: a parent of more children is bigger.
     const lop = layoutNested(['r'], (id) => (id === 'r' ? ['a', 'b'] : id === 'a' ? ['a1', 'a2', 'a3'] : id === 'b' ? ['b1'] : []));
-    const a = lop.nodes.get('a')!;
-    const b = lop.nodes.get('b')!;
-    expect((a.w * a.h) / (b.w * b.h)).toBeGreaterThan(2.4);
-    expect((a.w * a.h) / (b.w * b.h)).toBeLessThan(3.6);
+    expect(lop.nodes.get('a')!.w).toBeGreaterThan(lop.nodes.get('b')!.w);
     expect(leafCount(lop, 'r')).toBe(4);
   });
 
-  it('LA-EXP-T186 Squarified in order: equal weights read row by row, the boxes near square, the area shared exactly', () => {
-    const r = { x: 0, y: 0, w: 400, h: 400 };
-    const cells = squarify([1, 1, 1, 1], r);
-    // Four equal weights in a square: a 2 by 2 grid, in reading order (a column, then the next).
-    expect(cells.map((c) => [c.x, c.y, c.w, c.h])).toEqual([[0, 0, 200, 200], [0, 200, 200, 200], [200, 0, 200, 200], [200, 200, 200, 200]]);
-    // Weights keep their order and share the area exactly.
-    const many = squarify([5, 3, 2, 2, 1, 1], { x: 10, y: 20, w: 600, h: 300 });
-    const area = many.reduce((s, c) => s + c.w * c.h, 0);
-    expect(area).toBeCloseTo(600 * 300, 3);
-    expect(many[0].w * many[0].h).toBeCloseTo((5 / 14) * 600 * 300, 3);
-    for (const c of many) {
-      expect(c.x).toBeGreaterThanOrEqual(10 - eps);
-      expect(c.y).toBeGreaterThanOrEqual(20 - eps);
-      expect(Math.max(c.w / c.h, c.h / c.w)).toBeLessThan(4);
-    }
-    // A weight of 0 gets an empty box; no weights, nothing.
-    expect(squarify([0, 1], r)[0]).toMatchObject({ w: 0, h: 0 });
-    expect(squarify([], r)).toEqual([]);
+  it('LA-EXP-T186 Children are packed in rows in the tree order, a gap apart, within the row width', () => {
+    // Four equal squares in a row width of two: a 2 by 2 grid, in reading order.
+    const grid = shelfPack([10, 10, 10, 10], 25, 2);
+    expect(grid.at).toEqual([{ x: 0, y: 0 }, { x: 12, y: 0 }, { x: 0, y: 12 }, { x: 12, y: 12 }]);
+    expect([grid.w, grid.h]).toEqual([22, 22]);
+    // A row is as tall as its tallest square; the next starts below it, and order is kept.
+    const rows = shelfPack([10, 20, 5, 30], 40, 1);
+    expect(rows.at).toEqual([{ x: 0, y: 0 }, { x: 11, y: 0 }, { x: 32, y: 0 }, { x: 0, y: 21 }]);
+    expect([rows.w, rows.h]).toEqual([37, 51]);
+    // A square wider than the row stands alone; nothing, nothing.
+    expect(shelfPack([50], 10, 1)).toEqual({ w: 50, h: 50, at: [{ x: 0, y: 0 }] });
+    expect(shelfPack([], 10, 1)).toEqual({ w: 0, h: 0, at: [] });
   });
 
-  it('LA-EXP-T187 One text scale per level, from its typical box size, at most 3 times the level below, and every box sized to hold its label at it', () => {
-    // A label's least box wraps toward LABEL_ASPECT, nearer it than one long line, and holds the label at scale 1.
+  it('LA-EXP-T187 One text scale per level, from its typical box size, at most 3 times the level below, and every square sized to hold its label at it', () => {
+    // A leaf's least square holds its label at scale 1, every word across and its lines within it, and no smaller one does.
     const label = { title: 'Walk the model as a graph', meta: 'Use case · LA-EXP-UC03' };
-    const oneLine = Math.max(titleWidth(label.title), metaWidth(label.meta)) * WIDTH_MARGIN + 2 * LABEL_PAD;
-    const twoLines = labelHeight({ title: [label.title], meta: [label.meta], file: false });
-    const least = labelBox(label, true);
-    expect(Math.abs(Math.log(least.w / least.h / LABEL_ASPECT))).toBeLessThan(Math.abs(Math.log(oneLine / twoLines / LABEL_ASPECT)));
-    expect(wordsFit(label, least.w, true)).toBe(true);
-    expect(labelHeight(linesIn(label, least.w, true))).toBeLessThanOrEqual(least.h + eps);
+    const least = leafSide(label);
+    expect(wordsFit(label, least, true)).toBe(true);
+    expect(labelHeight(linesIn(label, least, true))).toBeLessThanOrEqual(least + eps);
+    const less = least * 0.99;
+    expect(!wordsFit(label, less, true) || labelHeight(linesIn(label, less, true)) > less).toBe(true);
     // A level's typical box size is its median by area; its scale, that size over a leaf's, settled with the
     // boxes' areas at it, never below the level below's nor more than MAX_LEVEL_STEP times it.
     expect(typicalSize([1, 1, 1, 100])).toBe(10);
     expect(typicalSize([4, 4, 4])).toBe(2);
-    expect(settleLevelScale(() => [LEAF_AREA], 1, LEAF_AREA)).toBe(1);
-    expect(settleLevelScale(() => [4 * LEAF_AREA, 4 * LEAF_AREA], 1, LEAF_AREA)).toBeCloseTo(2, 9);
-    expect(settleLevelScale(() => [400 * LEAF_AREA], 2, LEAF_AREA)).toBe(MAX_LEVEL_STEP * 2);
-    expect(settleLevelScale(() => [LEAF_AREA], 2, LEAF_AREA)).toBe(2);
+    const leaf = 100 * 100;
+    expect(settleLevelScale(() => [leaf], 1, leaf)).toBe(1);
+    expect(settleLevelScale(() => [4 * leaf, 4 * leaf], 1, leaf)).toBeCloseTo(2, 9);
+    expect(settleLevelScale(() => [400 * leaf], 2, leaf)).toBe(MAX_LEVEL_STEP * 2);
+    expect(settleLevelScale(() => [leaf], 2, leaf)).toBe(2);
     // Boxes whose least area grows with the scale settle with it, only ever growing.
-    expect(settleLevelScale((s) => [LEAF_AREA * 2 * s], 1, LEAF_AREA)).toBeGreaterThan(Math.sqrt(2));
-    // Children share a room: each at least its least area, the rest by weight, summing to the room.
-    expect(shareRoom(100, [1, 1], [10, 10])).toEqual([50, 50]);
-    const shared = shareRoom(100, [9, 1], [10, 40]);
-    expect(shared[1]).toBeCloseTo(40, 9);
-    expect(shared[0] + shared[1]).toBeCloseTo(100, 9);
-    expect(shareRoom(10, [1, 1], [10, 10])).toEqual([5, 5]);
-    // A leaf whose label needs more than its share of records gets it: a long title takes a bigger box than a short one beside it, at the same text.
+    expect(settleLevelScale((s) => [leaf * 2 * s], 1, leaf)).toBeGreaterThan(Math.sqrt(2));
+    // A leaf whose label needs more room gets it: a long title takes a bigger box than a short one beside it, at the same text.
     const long = 'A title long enough to need much more room than one record would be given in this map, '.repeat(4).trim();
     const lop = layoutNested(['r'], (id) => (id === 'r' ? ['a', 'b'] : []), (id) => ({ title: id === 'a' ? long : 'B', meta: 'Use case · LA-EXP-UC99' }));
     const [a, b] = [lop.nodes.get('a')!, lop.nodes.get('b')!];
