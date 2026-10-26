@@ -6,6 +6,7 @@ import { referenceFromWorkspace } from '../src/format/reference';
 import { relationStyle } from '../src/graph/GraphPage';
 import { neighborhood } from '../src/graph/model';
 import { Legend } from '../src/graph/panel';
+import { shapeOf } from '../src/graph/shapes';
 import { indexWorkspace } from '../src/specs/data';
 import { standardWorkspace } from './fixtures/standards';
 import { main, openApp, section } from './helpers';
@@ -76,7 +77,7 @@ describe('standards in the nav and the wiki', () => {
 });
 
 describe('standards in the graph', () => {
-  it('LA-AUT-T129 The graph draws a standard as a plain box in Shared and meets as a design line in its key', () => {
+  it('LA-AUT-T129 The graph draws a standard as a pattern with a ruler in Shared and meets as a design line in its key', () => {
     const ix = indexWorkspace(standardWorkspace());
     const n = neighborhood(ix, 'DM-STD-CODE', 1);
     expect(n.edges.map((e) => `${e.source} ${e.relation} ${e.target}`)).toEqual(expect.arrayContaining([
@@ -89,7 +90,11 @@ describe('standards in the graph', () => {
     expect(relationStyle('meets')).toBe('design');
     cleanup();
     const { container } = render(<Legend />);
-    expect(container.querySelector('.graph-swatch.stage-design')?.closest('li')).toHaveTextContent(/a standard and its rules, as plain boxes/);
+    expect(container.querySelector('.graph-swatch.stage-design')?.closest('li')).toHaveTextContent(/a standard and its rules/);
+    expect(shapeOf('standard')).toEqual({ shape: 'stack', mark: 'ruler' });
+    expect(shapeOf('standard_rule')).toEqual({ shape: 'octagon', mark: 'ruler' });
+    expect(container.querySelector('.graph-swatch.shape-stack')?.closest('li')).toHaveTextContent(/a standard with a ruler/);
+    expect(container.querySelector('.graph-swatch.mark-ruler')?.closest('li')).toHaveTextContent(/a standard or a standard rule/);
     expect(container.querySelector('.graph-line.rel-design')?.closest('li')).toHaveTextContent(/meets/);
   });
 });
