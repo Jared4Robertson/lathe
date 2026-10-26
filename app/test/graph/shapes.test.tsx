@@ -100,7 +100,6 @@ describe('a shape for each kind', () => {
           const y = top + ((bottom - top) * i) / 20;
           expect(inside(left, y) && inside(right, y), `${shape} ${w}x${h}: its label at ${y.toFixed(1)}`).toBe(true);
         }
-        if (shape === 'circle') continue;
         const bx = w - (BADGE.right + room.r) * text;
         for (const y of [BADGE.top + room.t, BADGE.top + room.t + BADGE.h].map((v) => v * text)) {
           expect(inside(bx, y) && inside(bx - BADGE.w * text, y), `${shape} ${w}x${h}: its badge at ${y}`).toBe(true);
