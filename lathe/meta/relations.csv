@@ -48,3 +48,5 @@ supports,test,requirement,,Supports,Supported by,"The test checks a mechanism th
 supports,test,domain_rule,,Supports,Supported by,"The test checks a mechanism that backs the domain rule, such as a lock or a budget, without proving it; it is never counted as proof."
 supports,test,interaction_requirement,,Supports,Supported by,"The test checks a mechanism that backs the interaction requirement, such as a lock or a budget, without proving it; it is never counted as proof."
 supports,test,pattern_rule,,Supports,Supported by,"The test checks a mechanism that backs the pattern rule, such as a lock or a budget, without proving it; it is never counted as proof."
+meets,component,standard_rule,,Meets,Met by,"The component follows the standard rule."
+meets,test,standard_rule,,Meets,Met by,"The test follows the standard rule."

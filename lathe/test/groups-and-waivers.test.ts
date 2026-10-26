@@ -1,4 +1,4 @@
-// Groups (FORMAT.md section 20) and waivers by setting value (section 11). Fixture: groups-waivers, with
+// Groups (FORMAT.md section 21) and waivers by setting value (section 11). Fixture: groups-waivers, with
 // structure.maxChildren 3. Pattern GW-PAT-ACT (settings scope audit) has R01 (no condition), R02 (applies when
 // scope is not single), R03 (applies when scope is many), R04 (an unknown setting) and R05 (malformed). Its
 // followers: GW-A (one use case, scope single), GW-B (single and Many), GW-C (the domain itself, scope single),
@@ -31,16 +31,17 @@ describe('groups', () => {
     expect(ofCheck(ws, 'too-many-children').map((p) => p.record)).not.toContain('GW-PAT-ACT');
   });
 
-  it('LA-CHK-T54 A group with one member is a lone-child warning on its parent', () => {
+  it('LA-CHK-T54 A group with one member is a lone-child warning on its parent, standard rules included', () => {
     expect(ofCheck(ws, 'lone-child').map((p) => [p.record, p.message])).toEqual([
       ['GW-B-V01', 'View GW-B-V01\'s group "Errors" has only one interaction requirement, GW-B-V01-IR01; merge it into a neighboring group, or give it more.'],
       ['GW-PAT-ACT', 'Pattern GW-PAT-ACT\'s group "Paging" has only one pattern rule, GW-PAT-ACT-R03; merge it into a neighboring group, or give it more.'],
+      ['GW-STD-CODE', 'Standard GW-STD-CODE\'s group "Logging" has only one standard rule, GW-STD-CODE-R01; merge it into a neighboring group, or give it more.'],
     ]);
   });
 });
 
 describe('waivers by setting value', () => {
-  it('LA-AUT-T122 An applies_when that is malformed or names a setting the pattern lacks is an error', () => {
+  it('LA-AUT-T130 An applies_when that is malformed or names a setting the pattern lacks is an error', () => {
     expect(ofCheck(ws, 'applies-when-unknown').map((p) => [p.severity, p.record, p.message])).toEqual([
       ['error', 'GW-PAT-ACT-R04', 'Pattern rule GW-PAT-ACT-R04 says it applies when "tone is red", but pattern GW-PAT-ACT has no setting "tone"; its settings are: scope audit.'],
       ['error', 'GW-PAT-ACT-R05', 'Pattern rule GW-PAT-ACT-R05 says it applies when "scope single", which is not written as "<setting> is <value>" or "<setting> is not <value>".'],

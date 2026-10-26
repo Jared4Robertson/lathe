@@ -37,7 +37,7 @@ A `test` has a `state`: `automated` (the default), `manual` or `planned`. An aut
 
 Each check is one SQL file in `lathe/checks/`: a `SELECT` over the loaded tables that returns rows of `(severity, check, record, message)`. Its name is its file name without the number and `.sql`. An **error** means the workspace is broken, and `lathe check` exits non-zero; a **warning** is work still to do, such as an obligation not yet proved, two stages that do not join up yet, or a level of the spec that is the wrong size: a record with more children of one kind than `structure.maxChildren` in `lathe.config.json` (default 15), counted per flow path and per group, or a capability, layer or group with only one child. One mistake gives one error.
 
-Nothing outlives its purpose: a component that satisfies no obligation is a `component-satisfies-nothing` warning, and a test that proves and supports nothing is a `test-proves-nothing` warning. A component or test is never waived; shared infrastructure links the obligations it makes possible.
+Nothing outlives its purpose: a component that satisfies no obligation is a `component-satisfies-nothing` warning, and a test that proves and supports nothing is a `test-proves-nothing` warning. A component or test is never waived; shared infrastructure links the obligations it makes possible. A standard rule that nothing meets or cites is a `standard-rule-unmet` warning (section 20).
 
 A check documents itself in its header comment: one summary sentence, a blank comment line, the explanation ending with how to fix what it reports, a blank comment line, then `-- severity: error` (or `warning`, or `error, warning`) and an optional `-- kinds:` line naming the kinds it concerns. The reference is built from these headers, and `undocumented` reports a check, kind or relation that lacks its text.
 
@@ -79,7 +79,7 @@ A flow can be written as `flow_step` records under it, in `order`: each says wha
 
 ## 15. Folders
 
-A domain's specs are laid out in folders by stage: in Define, the domain model and use cases; in Design, interaction design, technical specification and the test plan; and at product level what domains share. `meta/sections.csv` names these folders and each kind's `section` says which one it sits in, so the app reads the same way whatever folders the files are in. The app groups the test plan by what each test proves: acceptance, domain rule, pattern, interaction and engineering tests.
+A domain's specs are laid out in folders by stage: in Define, the domain model and use cases; in Design, interaction design, technical specification and the test plan; and at product level what domains share: patterns and standards. `meta/sections.csv` names these folders and each kind's `section` says which one it sits in, so the app reads the same way whatever folders the files are in. The app groups the test plan by what each test proves: acceptance, domain rule, pattern, interaction and engineering tests.
 
 ## 16. Layers
 
@@ -104,6 +104,12 @@ A capability is something a person using the product would name, with its own te
 
 A domain whose title or code names a technology layer or delivery channel is a `domain-named-for-technology` warning.
 
-## 20. Groups
+## 20. Standards
 
-A use case with many requirements, a view, endpoint or flow with many interaction requirements, and a pattern with many rules sort them into **groups**: each `requirement`, `interaction_requirement` and `pattern_rule` may name a short heading in `group`, such as Validation or Paging. Groups are compared trimmed and in any letter case. The app shows the ungrouped ones first, without a heading, then each group under its heading in the order the groups first appear, and the side bar's Outline lists the groups. `too-many-children` counts children per group, as it counts flow steps per path, and a group with only one member is a `lone-child` warning, like a layer with one child. A group is a field, not a record: renaming one changes no ID.
+A **standard** is a library of engineering rules that holds for the product's code, such as logging, error handling or naming. It sits under the product, beside the patterns, and its rules are `standard_rule` records under it, each with its own ID (`<standard>-R<nn>`). A component or test that follows a rule links to it with `meets` (read from the rule as Met by); a body may also cite the rule's ID, which is a mention like any other. A standard rule is not an obligation: no domain owes it, and nothing counts it as designed or proved. A rule that nothing meets or cites, other than the rule and its own standard, is a `standard-rule-unmet` warning, because nothing outlives its purpose.
+
+The rule of thumb between the two: a rule you prove with tests is a pattern rule; a rule you follow and cite is a standard rule. A pattern's rules are owed by each domain that follows it and proved there, which is what a pattern gives that a standard does not.
+
+## 21. Groups
+
+A use case with many requirements, a view, endpoint or flow with many interaction requirements, a pattern with many rules and a standard with many rules sort them into **groups**: each `requirement`, `interaction_requirement`, `pattern_rule` and `standard_rule` may name a short heading in `group`, such as Validation or Paging. Groups are compared trimmed and in any letter case. The app shows the ungrouped ones first, without a heading, then each group under its heading in the order the groups first appear, and the side bar's Outline lists the groups. `too-many-children` counts children per group, as it counts flow steps per path, and a group with only one member is a `lone-child` warning, like a layer with one child. A group is a field, not a record: renaming one changes no ID.

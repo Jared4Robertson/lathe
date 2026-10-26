@@ -4,8 +4,8 @@
 -- many children of one kind is missing a level between them, such as a capability, a layer or another
 -- aggregate. Children are counted per kind. Tests are exempt: the app groups them by what they prove
 -- (FORMAT.md section 15), so they are never shown as one list. A flow's steps are counted per path
--- (FORMAT.md section 14), since each path reads as its own list, and requirements, interaction requirements
--- and pattern rules per `group` (FORMAT.md section 20), since each group reads under its own heading; the
+-- (FORMAT.md section 14), since each path reads as its own list, and requirements, interaction requirements,
+-- pattern rules and standard rules per `group` (FORMAT.md section 21), since each group reads under its own heading; the
 -- ungrouped ones are one list. Groups are compared trimmed and in any letter case. A child whose parent does
 -- not exist is only unknown-parent. Add a level, or a group, and move the children into it.
 --
@@ -22,7 +22,7 @@ FROM (
          -- A flow step's path (main when it has none); a grouped kind's group (none when it has none); every
          -- other kind is one list.
          CASE WHEN r.kind = 'flow_step' THEN coalesce(nullif(lower(trim(fp.value)), ''), 'main')
-              WHEN r.kind IN ('requirement', 'interaction_requirement', 'pattern_rule') THEN lower(trim(coalesce(fg.value, '')))
+              WHEN r.kind IN ('requirement', 'interaction_requirement', 'pattern_rule', 'standard_rule') THEN lower(trim(coalesce(fg.value, '')))
               ELSE '' END AS bucket,
          -- The path or group as first written.
          min(CASE WHEN r.kind = 'flow_step' THEN trim(coalesce(fp.value, '')) ELSE trim(coalesce(fg.value, '')) END) AS label,
