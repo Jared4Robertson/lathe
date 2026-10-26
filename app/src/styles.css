@@ -289,15 +289,14 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
    its kind and ID line, sized with its text. Children are drawn after their parent, so they lie over it. */
 .graph-flow.is-nested .graph-node.is-container { justify-content: flex-start; align-items: flex-start; text-align: left; }
 .graph-flow.is-nested .graph-node.is-container .graph-badge-room { padding-inline: 0 calc(30px * var(--node-scale)); }
-/* The Voronoi view (LA-EXP-DR64): each cell is a polygon. The node is its bounding box, clipped to the outline so only
-   the cell takes the pointer; the outline is an SVG polygon in its stage's colors, its stroke twice the border's width
-   since the clip keeps only its inner half. Hover, focus, the keyboard ring and a tap's selection color the stroke, as a
-   hexagon's edge does, since a box-shadow or outline would be clipped away. The label sits in the box the map gave it,
-   centered, its text scale the cell's own. */
+/* The Voronoi view (LA-EXP-DR64): each cell is a polygon. The node is its bounding box, which takes no pointer: only the
+   outline, an SVG polygon in its stage's colors, and the label do, so the pointer finds the cell under it. Hover, focus,
+   the keyboard ring and a tap's selection color the stroke, as a hexagon's edge does, since a box's shadow or outline
+   would not follow the cell. The label sits in the box the map gave it, centered, its text scale the cell's own. */
 .graph-flow .graph-node.is-cell { --cell-fill: var(--g-structural-bg); --cell-edge: var(--g-structural); --cell-w: var(--node-border); padding: 0; border: 0; background: transparent; border-radius: 0; box-shadow: none; display: block; }
-.graph-cell-shape { position: absolute; inset: 0; overflow: visible; }
-.graph-cell-shape polygon { fill: var(--cell-fill); stroke: var(--cell-edge); stroke-width: calc(2 * var(--cell-w)); stroke-linejoin: round; }
-.graph-cell-label { position: absolute; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: calc(7.5px * var(--node-scale)) calc(14px * var(--node-scale)); }
+.graph-cell-shape { position: absolute; inset: 0; overflow: visible; pointer-events: none; }
+.graph-cell-shape polygon { fill: var(--cell-fill); stroke: var(--cell-edge); stroke-width: var(--cell-w); stroke-linejoin: round; pointer-events: visiblePainted; }
+.graph-cell-label { pointer-events: auto; position: absolute; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: calc(7.5px * var(--node-scale)) calc(14px * var(--node-scale)); }
 .graph-node.is-cell.stage-define { --cell-fill: var(--g-define-bg); --cell-edge: var(--g-define); }
 .graph-node.is-cell.stage-design { --cell-fill: var(--g-design-bg); --cell-edge: var(--g-design); }
 .graph-node.is-cell.stage-group { --cell-fill: var(--sheet); --cell-edge: var(--muted); }

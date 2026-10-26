@@ -193,7 +193,7 @@ describe('graph camera in the Nested layout', () => {
     await waitFor(() => expect(calls.at(-1)!.viewport).toEqual(frameNested(nestedMap(testIndex(), 'P'), 'P-D-UC01', 1000, 800)), { timeout: 3000 });
   });
 
-  it('LA-EXP-T193 On the page, the Voronoi layout draws each cell as its outline, clipped to it, and focusing a child glides to its cell', async () => {
+  it('LA-EXP-T193 On the page, the Voronoi layout draws each cell as its outline, the pointer taking the outline and not its box, and focusing a child glides to its cell', async () => {
     calls.length = 0;
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({ x: 0, y: 0, top: 0, left: 0, width: 1000, height: 800, right: 1000, bottom: 800, toJSON: () => ({}) } as DOMRect);
     startAtDepth(1, 'voronoi');
@@ -202,7 +202,7 @@ describe('graph camera in the Nested layout', () => {
     const map = () => readyVoronoiMap(testIndex(), 'P')!;
     await waitFor(() => expect(calls.at(-1)?.viewport).toEqual(frameNested(map(), 'P-D-UC01', 1000, 800)));
     expect(document.querySelector('.graph-flow.is-voronoi')).not.toBeNull();
-    expect(node('P-D-UC01')!.style.clipPath).toMatch(/^polygon\(/);
+    expect(node('P-D-UC01')!.style.pointerEvents).toBe('none');
     const cell = node('P-D-UC01')!.querySelector<HTMLElement>('.graph-node.is-cell')!;
     expect(cell.querySelector('.graph-cell-shape polygon')).not.toBeNull();
     expect(cell.querySelector('.graph-cell-label strong')?.textContent).toBe('Lend a thing');
