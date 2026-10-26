@@ -101,7 +101,7 @@ export function manyOfOneKindWorkspace(): Workspace {
   return w;
 }
 
-/** A map's boxes by height from the leaves (0 for a leaf, one more than its tallest child for a parent): the Nested and Voronoi maps' text levels. */
+/** A map's boxes by height from the leaves (0 for a leaf, one more than its tallest child for a parent): the Nested map's text levels. */
 export function heightLevels<N extends { id: string; children: readonly string[] }>(nodes: ReadonlyMap<string, N>): N[][] {
   const height = new Map<string, number>();
   const of = (id: string): number => {

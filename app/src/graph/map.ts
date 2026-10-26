@@ -99,7 +99,7 @@ export function typicalSize(areas: readonly number[]): number {
 }
 
 /**
- * A height level's text scale in the Nested and Voronoi maps (LA-EXP-DR62, LA-EXP-DR64), a box's
+ * A height level's text scale in the Nested map (LA-EXP-DR62), a box's
  * level being its height from the leaves: its typical box size over a leaf's, never below the
  * level below's (`below`, 1 for the leaves) nor
  * more than MAX_LEVEL_STEP times it. A box's planned area (`areasAt`: the larger of its share by

@@ -1,16 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { drawnNested, frameNested, MAX_DRAWN, MIN_DRAWN, viewRect } from '../../src/graph/camera';
-import { graphMap, MAX_LEVEL_STEP } from '../../src/graph/map';
+import { graphMap } from '../../src/graph/map';
 import { LABEL_PAD, metaWidth, titleWidth, WIDTH_MARGIN } from '../../src/graph/text';
 import {
-  below, bounds, chord, contains, hexagon, holds, inset, layoutTreeOf, layoutVoronoi, LEAF_AREA, polygonArea, quantize, readyVoronoiMap, voronoiCells, voronoiTree, WEIGHT_STEP, type VoronoiMap,
+  below, bounds, cellTextScale, chord, contains, hexagon, holds, inset, layoutTreeOf, layoutVoronoi, LEAF_AREA, polygonArea, quantize, readyVoronoiMap, voronoiCells, voronoiTree, WEIGHT_STEP, type VoronoiMap,
 } from '../../src/graph/voronoi';
 import { indexWorkspace, type SpecIndex } from '../../src/specs/data';
-import { groupedWorkspace, heightLevels, manyOfOneKindWorkspace, testIndex } from './workspace';
+import { groupedWorkspace, manyOfOneKindWorkspace, testIndex } from './workspace';
 
 // The Voronoi map (LA-EXP-DR64): the Tree map's tree as a Voronoi treemap, the product a hexagon,
 // each cell split into its children's cells by a power diagram, sized by the leaf records under
-// it, laid out once; each cell's label at its level's text scale (LA-EXP-DR58).
+// it, laid out once; each cell's label at its own text scale (LA-EXP-DR58).
 
 type XY = [number, number];
 const indexes = (): SpecIndex[] => [testIndex(), indexWorkspace(groupedWorkspace()), indexWorkspace(manyOfOneKindWorkspace())];
@@ -131,17 +131,19 @@ describe('the Voronoi map', () => {
   });
 
   it('LA-EXP-T191 The same tree always gives the same map, and adding a record moves nothing outside the parent whose rounded weight it changes', () => {
-    expect(uneven([50, 40, 20])).toEqual(uneven([50, 40, 20]));
-    const before = uneven([50, 40, 20]);
-    const after = uneven([50, 40, 20], 'c0');
-    // 50 and 51 leaves round to the same weight, and so do the product's 110 and 111, so the product and its split are the
-    // same: every cell outside c0 keeps its place exactly.
+    expect(uneven([50, 30, 20])).toEqual(uneven([50, 30, 20]));
+    const before = uneven([50, 30, 20]);
+    const after = uneven([50, 30, 20], 'c0');
+    // 50 and 51 leaves round to the same weight, so the product's split is the same: every cell outside c0 keeps its place
+    // (the whole map may grow a little with its leaves, and every cell with it).
     expect(quantize(50)).toBe(quantize(51));
-    expect(quantize(110)).toBe(quantize(111));
-    expect(after.width).toBe(before.width);
+    const grow = after.width / before.width;
     for (const n of before.nodes.values()) {
       if (n.id === 'c0' || n.id.startsWith('c0.')) continue;
-      expect(after.nodes.get(n.id)!.polygon, n.id).toEqual(n.polygon);
+      after.nodes.get(n.id)!.polygon.forEach(([x, y], i) => {
+        expect(Math.abs(x - n.polygon[i][0] * grow), n.id).toBeLessThan(1e-6 * after.width);
+        expect(Math.abs(y - n.polygon[i][1] * grow), n.id).toBeLessThan(1e-6 * after.width);
+      });
     }
     // The same shape anywhere, at any size, splits the same way.
     const sites = [{ id: 'a', weight: 3 }, { id: 'b', weight: 1 }, { id: 'c', weight: 2 }];
@@ -150,23 +152,12 @@ describe('the Voronoi map', () => {
     for (const [id, cell] of small) big.get(id)!.forEach(([x, y], i) => { expect((x - 500) / 10).toBeCloseTo(cell[i][0], 6); expect((y + 20) / 10).toBeCloseTo(cell[i][1], 6); });
   });
 
-  it('LA-EXP-T192 One text scale per level; every cell sized to hold its label at it, wrapped on whole words inside its outline', () => {
-    // A leaf whose label needs more than its share of records gets it: a long title takes a bigger cell than a short one beside it, at the same text.
-    const long = 'A title long enough to need much more room than one record would be given in this map, '.repeat(4).trim();
-    const lop = layoutVoronoi(['r'], (id) => (id === 'r' ? ['a', 'b', 'c'] : []), (id) => ({ title: id === 'a' ? long : id, meta: 'Use case · LA-EXP-UC99' }));
-    const [a, b] = [lop.nodes.get('a')!, lop.nodes.get('b')!];
-    expect(a.text).toBe(b.text);
-    expect(polygonArea(a.polygon)).toBeGreaterThan(1.5 * polygonArea(b.polygon));
-    for (const map of [...maps(), wide(2, 5), uneven([40, 3, 12, 1, 25]), lop]) {
-      // Every cell at one height level has the same text scale, whatever its size, never smaller for a long title: at most MAX_LEVEL_STEP times the level below's.
-      heightLevels(map.nodes).forEach((cells, h, levels) => {
-        for (const n of cells) expect(n.text, n.id).toBe(cells[0].text);
-        const below = h > 0 ? levels[h - 1][0].text : 1;
-        expect(cells[0].text).toBeGreaterThanOrEqual(below);
-        expect(cells[0].text).toBeLessThanOrEqual(MAX_LEVEL_STEP * below * (1 + 1e-9));
-      });
+  it('LA-EXP-T192 Each cell has its own text scale, in proportion to its size; its label wraps on whole words inside its outline', () => {
+    for (const map of [...maps(), wide(2, 5), uneven([40, 3, 12, 1, 25])]) {
       for (const n of map.nodes.values()) {
-        expect(n.label.w, `${n.id} is labeled`).toBeGreaterThan(0);
+        const own = cellTextScale(polygonArea(n.polygon), n.children.length > 0);
+        // Its own size's scale, or (a title too long for it) a smaller one, never larger.
+        expect(n.text).toBeLessThanOrEqual(own * (1 + 1e-9));
         expect(holds(n.polygon, n.label), `${n.id}'s label inside it`).toBe(true);
         // No word is broken: every line but the last ends after a space.
         for (const line of n.lines.title.slice(0, -1)) expect(/\s$/.test(line), `${n.id}: "${line}"`).toBe(true);
@@ -176,6 +167,9 @@ describe('the Voronoi map', () => {
         // A parent's label is in its header, above where its children start.
         if (n.children.length > 0) expect(n.label.y + n.label.h).toBeLessThanOrEqual(n.cut + 1e-6);
       }
+      // A larger cell of the same kind has larger text: scale goes with the square root of the area.
+      const leaves = [...map.nodes.values()].filter((n) => n.children.length === 0 && n.text === cellTextScale(polygonArea(n.polygon), false));
+      for (const n of leaves) expect(n.text / Math.sqrt(polygonArea(n.polygon))).toBeCloseTo(leaves[0].text / Math.sqrt(polygonArea(leaves[0].polygon)), 9);
     }
   });
 

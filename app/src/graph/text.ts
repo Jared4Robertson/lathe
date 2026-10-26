@@ -142,9 +142,9 @@ export function labelFor(index: SpecIndex, id: string, centered: boolean): Wrapp
 /** A level's text scale (LA-EXP-DR58): its width over a leaf level's. Every box in the level has it; fixed by the map, never by the camera. */
 export const textScaleOf = (w: number) => Math.max(1, w / NODE_WIDTH);
 
-// ---------- The Nested and Voronoi maps' labels ----------
+// ---------- The Nested map's labels ----------
 
-/** What a Nested box's or a Voronoi cell's label says, and what it keeps room for: a domain's hexagon mark, the problem badge. */
+/** What a Nested box's label says, and what it keeps room for: a domain's hexagon mark, the problem badge. */
 export interface MapLabel { title: string; meta: string; hexagon?: boolean; marked?: boolean }
 
 /** A label's lines in a box `width` wide at text scale 1 (`wrapLabel`), centered or at the top left. */
