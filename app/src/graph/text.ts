@@ -141,3 +141,58 @@ export function labelFor(index: SpecIndex, id: string, centered: boolean): Wrapp
 
 /** A level's text scale (LA-EXP-DR58): its width over a leaf level's. Every box in the level has it; fixed by the map, never by the camera. */
 export const textScaleOf = (w: number) => Math.max(1, w / NODE_WIDTH);
+
+// ---------- The Nested and Voronoi maps' labels ----------
+
+/** In the Nested and Voronoi maps, each nesting level's text is this many times the level's below (LA-EXP-DR62, LA-EXP-DR64). */
+export const NESTED_LEVEL_STEP = 1.5;
+/**
+ * A nesting level's text scale in the Nested and Voronoi maps: 1 at the deepest level under the
+ * product, NESTED_LEVEL_STEP times the level below's each level up. Every box at one level has it,
+ * set when the map is built, never by the focus or the zoom.
+ */
+export const levelTextScale = (level: number, deepest: number) => NESTED_LEVEL_STEP ** Math.max(0, deepest - level);
+
+/** What a Nested box's or a Voronoi cell's label says, and what it keeps room for: a domain's hexagon mark, the problem badge. */
+export interface MapLabel { title: string; meta: string; hexagon?: boolean; marked?: boolean }
+
+/** A label's lines in a box `width` wide at text scale 1 (`wrapLabel`), centered or at the top left. */
+export const linesIn = (label: MapLabel, width: number, centered: boolean): WrappedLabel =>
+  wrapLabel(label, { hexagon: label.hexagon, marked: label.marked, centered, width });
+
+/** Whether every word of a label fits on a line of a box `width` wide at text scale 1, so wrapping never breaks a word. */
+export function wordsFit(label: MapLabel, width: number, centered: boolean): boolean {
+  const inner = width - 2 * LABEL_PAD - (label.hexagon ? 2 * HEX_ROOM : 0);
+  const words = (text: string) => text.split(/\s+/).filter(Boolean);
+  return words(label.title).every((w) => titleWidth(w) * WIDTH_MARGIN <= inner)
+    && words(label.meta).every((w) => metaWidth(w) * WIDTH_MARGIN <= inner - (label.marked ? (centered ? 2 : 1) * BADGE_ROOM : 0));
+}
+
+/** The shape a label wraps toward for its least box: about 3 wide to 2 tall. */
+export const LABEL_ASPECT = 1.5;
+
+/** The narrowest box a label fits at text scale 1: its widest word, its padding and the badge's room. */
+export function narrowestWidth(label: MapLabel, centered: boolean): number {
+  const words = (text: string, measure: (s: string) => number) => text.split(/\s+/).filter(Boolean).map((w) => measure(w) * WIDTH_MARGIN);
+  const badge = label.marked ? (centered ? 2 : 1) * BADGE_ROOM : 0;
+  return 2 * LABEL_PAD + (label.hexagon ? 2 * HEX_ROOM : 0) + Math.max(1, ...words(label.title, titleWidth), ...words(label.meta, metaWidth).map((w) => w + badge));
+}
+
+/**
+ * The least box a label needs at text scale 1: wrapped on whole words in the width, from the
+ * narrowest its words allow to one line, whose shape is nearest LABEL_ASPECT. At a level's text
+ * scale it is this box times the scale.
+ */
+export function labelBox(label: MapLabel, centered: boolean): { w: number; h: number } {
+  const pad = 2 * LABEL_PAD + (label.hexagon ? 2 * HEX_ROOM : 0);
+  const narrowest = narrowestWidth(label, centered);
+  const badge = label.marked ? (centered ? 2 : 1) * BADGE_ROOM : 0;
+  const widest = Math.max(narrowest, pad + Math.max(titleWidth(label.title), metaWidth(label.meta) + badge) * WIDTH_MARGIN + 1);
+  let best = { w: widest, h: labelHeight(linesIn(label, widest, centered)) };
+  for (let i = 0; i <= 8; i++) {
+    const w = narrowest + ((widest - narrowest) * i) / 8;
+    const h = labelHeight(linesIn(label, w, centered));
+    if (Math.abs(Math.log(w / h / LABEL_ASPECT)) < Math.abs(Math.log(best.w / best.h / LABEL_ASPECT))) best = { w, h };
+  }
+  return best;
+}
