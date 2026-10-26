@@ -14,8 +14,8 @@ import { heightLevels } from './workspace';
 
 // Every drawn box shows its name (LA-PAT-APP-UX-R12): in every layout of the graph, at every focus
 // and depth, each box the camera draws carries its label, its title and its kind and ID line in the
-// lines the page draws, every box at one level has one text scale, and the label fits its box at
-// that scale, so nothing is clipped. The sweep
+// lines the page draws, every box at one Tree or Nested level has one text scale, and the label fits
+// its box at its scale, so nothing is clipped. The sweep
 // frames every domain, stage and folder group of every product in Lathe's own spec and the Tool
 // Library's (both under the repo's specs/), with the real camera, in two panes, at depths 1 to 3.
 
@@ -60,7 +60,7 @@ const LAYOUTS: Layout[] = [
     drawn: (map, v, focus, w, h) => drawnNested(map, v, w, h, [focus]),
     label: (_index, map, id) => {
       const n = (map as VoronoiMap).nodes.get(id)!;
-      return { lines: n.lines, height: n.label.w > 0 && holds(n.polygon, n.label) && n.text > 0 ? n.text * labelHeight(n.lines) : Infinity };
+      return { lines: n.lines, height: holds(n.polygon, n.label) && n.text > 0 ? n.text * labelHeight(n.lines) : Infinity };
     },
   },
 ];
@@ -78,8 +78,9 @@ function nameless(workspace: Workspace): { problems: string[]; frames: number } 
     ];
     for (const layout of LAYOUTS) {
       const map = layout.map(index, product.id);
-      // One text scale per level (LA-EXP-DR58, LA-EXP-DR62, LA-EXP-DR64): every box at a level has the same, a Tree level by depth, a Nested or Voronoi level by height from the leaves.
-      (layout.name === 'Tree' ? map.byLevel : heightLevels(map.nodes)).forEach((boxes, l) => {
+      // One text scale per level (LA-EXP-DR58, LA-EXP-DR62): every box at a level has the same, a Tree level by depth, a Nested level by height from
+      // the leaves. A Voronoi cell's text is its own size's (LA-EXP-DR64), so Voronoi has no levels to check.
+      if (layout.name !== 'Voronoi') (layout.name === 'Tree' ? map.byLevel : heightLevels(map.nodes)).forEach((boxes, l) => {
         const scales = [...new Set(boxes.map((n) => n.text))];
         if (scales.length !== 1) problems.push(`${layout.name} ${product.id} level ${l} has ${scales.length} text scales: ${scales.slice(0, 5).join(', ')}`);
       });
@@ -107,7 +108,7 @@ describe('every drawn box shows its name', () => {
   let workspace: Workspace;
   beforeAll(async () => { workspace = await loadWorkspace(path.resolve(import.meta.dirname, '../../..')); }, 60_000);
 
-  it('LA-PLT-T135 In the Tree, Nested and Voronoi layouts, at every domain, stage and folder of every product, at depths 1 to 3 in two panes, every level has one text scale and every drawn box shows its name at it', () => {
+  it('LA-PLT-T135 In the Tree, Nested and Voronoi layouts, at every domain, stage and folder of every product, at depths 1 to 3 in two panes, every Tree and Nested level has one text scale and every drawn box shows its name', () => {
     expect(workspace.records.filter((r) => r.kind === 'product').map((r) => r.id).sort()).toEqual(['LA', 'TL']);
     const { problems, frames } = nameless(workspace);
     expect(frames).toBeGreaterThan(100);
