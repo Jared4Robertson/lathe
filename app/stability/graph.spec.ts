@@ -410,7 +410,7 @@ const PARITY: { feature: string; run: (page: Page, layout: Layout) => Promise<vo
       const ring = await page.evaluate(() => {
         const el = document.activeElement as HTMLElement | null;
         const box = el?.querySelector<HTMLElement>('.graph-node');
-        // A Voronoi cell is clipped to its outline, so its ring is its outline's stroke, in the ring's color.
+        // A Voronoi cell's ring is its outline's stroke, in the ring's color.
         const ringed = (b: HTMLElement) => (b.classList.contains('is-cell')
           ? getComputedStyle(b).getPropertyValue('--cell-edge').trim() === getComputedStyle(document.documentElement).getPropertyValue('--steel').trim() ? 'stroke' : 'none'
           : getComputedStyle(b).outlineStyle);
@@ -534,10 +534,17 @@ for (const layout of ['tree', 'nested', 'voronoi'] as const) {
     }
     for (const row of PARITY) await test.step(row.feature, () => row.run(page, layout));
     if (layout === 'voronoi') {
-      await test.step('every drawn cell is clipped to its outline', async () => {
-        const unclipped = await page.evaluate(() => [...document.querySelectorAll<HTMLElement>('.pane-graph .react-flow__node[data-id]')]
-          .filter((el) => !el.querySelector('.graph-node.is-cell') || !getComputedStyle(el).clipPath.startsWith('polygon(')).map((el) => el.dataset.id));
-        expect(unclipped).toEqual([]);
+      await test.step('every drawn cell is a polygon, and the pointer finds the cell under it, not a larger cell\'s box', async () => {
+        const wrong = await page.evaluate(() => [...document.querySelectorAll<HTMLElement>('.pane-graph .react-flow__node[data-id]')]
+          .filter((el) => {
+            const label = el.querySelector('.graph-cell-label')?.getBoundingClientRect();
+            if (!el.querySelector('.graph-node.is-cell polygon') || !label) return true;
+            const hit = document.elementFromPoint(label.left + label.width / 2, label.top + label.height / 2);
+            const c = document.querySelector('.pane-graph .graph-flow')!.getBoundingClientRect();
+            const inView = label.left + label.width / 2 > c.left && label.left + label.width / 2 < c.right && label.top + label.height / 2 > c.top && label.top + label.height / 2 < c.bottom;
+            return inView && hit !== null && hit.closest('.react-flow__node') !== el && !hit.closest('.react-flow__controls, .graph-minimap, .react-flow__edgelabel-renderer');
+          }).map((el) => el.dataset.id));
+        expect(wrong).toEqual([]);
       });
     }
     if (layout !== 'tree') {
