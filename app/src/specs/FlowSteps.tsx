@@ -6,12 +6,39 @@ import { ProblemBadge, RecordLink, Section } from './parts';
 import { Button } from '../components/Button';
 
 // A flow's steps as a table, in order (FORMAT.md section 14): the step, what happens, what it uses
-// and what it carries out. A flow with several paths shows a table per path, main first, then the
+// and what it carries out. A technical flow's steps (section 21) read the same way, with the
+// component each step uses and what it satisfies, and their transaction, locks and statements
+// folded under the row. A flow with several paths shows a table per path, main first, then the
 // others by name, each in its own order. Each row shows one level: the step's title and the IDs it links to. What
 // sits a level deeper (the step's body, and the titles and kinds of what it uses and fulfills) is
 // folded under the row's disclosure triangle, as in every other list.
 
 export const FLOW_STEP = 'flow_step';
+export const DESIGN_STEP = 'design_step';
+
+/** How a kind of flow shows its steps: the step kind, and the two link columns after "What happens". */
+interface StepTableKind {
+  step: string;
+  columns: { relation: string; heading: string }[];
+  /** Fields of a step shown in its folded details, when it has them. */
+  details: string[];
+}
+
+const STEP_TABLES: Record<string, StepTableKind> = {
+  flow: {
+    step: FLOW_STEP,
+    columns: [{ relation: 'uses', heading: 'Uses' }, { relation: 'fulfills', heading: 'Carries out' }],
+    details: [],
+  },
+  design_flow: {
+    step: DESIGN_STEP,
+    columns: [{ relation: 'uses', heading: 'Component' }, { relation: 'satisfies', heading: 'Satisfies' }],
+    details: ['transaction', 'locks', 'statements'],
+  },
+};
+
+/** Whether a kind's page shows its children as a step table: a flow and a technical flow. */
+export const hasSteps = (kind: string) => kind in STEP_TABLES;
 
 /** A step's order as a number, or null when it is not a whole number. */
 export function stepOrder(step: SpecRecord): number | null {
@@ -19,9 +46,10 @@ export function stepOrder(step: SpecRecord): number | null {
   return /^\d+$/.test(raw) ? Number(raw) : null;
 }
 
-/** A flow's steps, by order (as numbers), then by ID; a step with no valid order goes last. */
+/** A flow's (or a technical flow's) steps, by order (as numbers), then by ID; a step with no valid order goes last. */
 export function stepsOf(index: SpecIndex, flowId: string): SpecRecord[] {
-  const steps = (index.children.get(flowId) ?? []).filter((c) => c.kind === FLOW_STEP);
+  const stepKind = STEP_TABLES[index.byId.get(flowId)?.kind ?? '']?.step ?? FLOW_STEP;
+  const steps = (index.children.get(flowId) ?? []).filter((c) => c.kind === stepKind);
   return [...steps].sort((a, b) => {
     const oa = stepOrder(a);
     const ob = stepOrder(b);
@@ -79,7 +107,21 @@ function TitledLinks({ index, ids, heading }: { index: SpecIndex; ids: string[];
   );
 }
 
+/** The fields a step's details show, by name. */
+function StepFields({ step, names }: { step: SpecRecord; names: string[] }) {
+  const given = names.filter((name) => step.fields[name]?.trim());
+  if (given.length === 0) return null;
+  return (
+    <dl className="fields step-fields">
+      {given.map((name) => (
+        <div key={name}><dt>{name.replaceAll('_', ' ')}</dt><dd>{step.fields[name]}</dd></div>
+      ))}
+    </dl>
+  );
+}
+
 export function FlowSteps({ index, flow }: { index: SpecIndex; flow: SpecRecord }) {
+  const shape = STEP_TABLES[flow.kind] ?? STEP_TABLES.flow;
   const steps = stepsOf(index, flow.id);
   const [open, setOpen] = useState<ReadonlySet<string>>(new Set());
   if (steps.length === 0) return null;
@@ -100,14 +142,12 @@ export function FlowSteps({ index, flow }: { index: SpecIndex; flow: SpecRecord 
             <tr>
               <th scope="col">Step</th>
               <th scope="col">What happens</th>
-              <th scope="col">Uses</th>
-              <th scope="col">Carries out</th>
+              {shape.columns.map((c) => <th key={c.relation} scope="col">{c.heading}</th>)}
             </tr>
           </thead>
           <tbody>
             {pathSteps.map((step) => {
-              const uses = targetsOf(index, step.id, 'uses');
-              const fulfills = targetsOf(index, step.id, 'fulfills');
+              const linked = shape.columns.map((c) => ({ ...c, ids: targetsOf(index, step.id, c.relation) }));
               const isOpen = open.has(step.id);
               const order = stepOrder(step);
               return (
@@ -131,16 +171,17 @@ export function FlowSteps({ index, flow }: { index: SpecIndex; flow: SpecRecord 
                     <td>
                       {step.title} <ProblemBadge problems={index.problemsFor.get(step.id) ?? []} />
                     </td>
-                    <td><IdLinks index={index} ids={uses} label={`${step.id} uses`} /></td>
-                    <td><IdLinks index={index} ids={fulfills} label={`${step.id} carries out`} /></td>
+                    {linked.map((c) => (
+                      <td key={c.relation}><IdLinks index={index} ids={c.ids} label={`${step.id} ${c.heading.toLowerCase()}`} /></td>
+                    ))}
                   </tr>
                   {isOpen && (
                     <tr className="flow-step-detail">
-                      <td colSpan={4}>
+                      <td colSpan={2 + linked.length}>
                         <div className="flow-step-more" role="region" aria-label={`Details of ${step.id}`}>
                           {step.body.trim() ? <RecordMarkdown index={index} record={step} /> : <p className="hint">The step says nothing more.</p>}
-                          <TitledLinks index={index} ids={uses} heading="Uses" />
-                          <TitledLinks index={index} ids={fulfills} heading="Carries out" />
+                          <StepFields step={step} names={shape.details} />
+                          {linked.map((c) => <TitledLinks key={c.relation} index={index} ids={c.ids} heading={c.heading} />)}
                         </div>
                       </td>
                     </tr>
