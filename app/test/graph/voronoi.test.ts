@@ -6,7 +6,7 @@ import {
   below, bounds, chord, contains, hexagon, holds, inset, layoutTreeOf, layoutVoronoi, LEAF_AREA, polygonArea, quantize, readyVoronoiMap, voronoiCells, voronoiTree, WEIGHT_STEP, type VoronoiMap,
 } from '../../src/graph/voronoi';
 import { indexWorkspace, type SpecIndex } from '../../src/specs/data';
-import { groupedWorkspace, manyOfOneKindWorkspace, testIndex } from './workspace';
+import { groupedWorkspace, heightLevels, manyOfOneKindWorkspace, testIndex } from './workspace';
 
 // The Voronoi map (LA-EXP-DR64): the Tree map's tree as a Voronoi treemap, the product a hexagon,
 // each cell split into its children's cells by a power diagram, sized by the leaf records under
@@ -158,10 +158,10 @@ describe('the Voronoi map', () => {
     expect(a.text).toBe(b.text);
     expect(polygonArea(a.polygon)).toBeGreaterThan(1.5 * polygonArea(b.polygon));
     for (const map of [...maps(), wide(2, 5), uneven([40, 3, 12, 1, 25]), lop]) {
-      // Every cell at one level has the same text scale, whatever its size, never smaller for a long title: at most MAX_LEVEL_STEP times the level below's.
-      map.byLevel.forEach((cells, l) => {
+      // Every cell at one height level has the same text scale, whatever its size, never smaller for a long title: at most MAX_LEVEL_STEP times the level below's.
+      heightLevels(map.nodes).forEach((cells, h, levels) => {
         for (const n of cells) expect(n.text, n.id).toBe(cells[0].text);
-        const below = map.byLevel[l + 1]?.[0].text ?? 1;
+        const below = h > 0 ? levels[h - 1][0].text : 1;
         expect(cells[0].text).toBeGreaterThanOrEqual(below);
         expect(cells[0].text).toBeLessThanOrEqual(MAX_LEVEL_STEP * below * (1 + 1e-9));
       });

@@ -10,6 +10,7 @@ import { holds, readyVoronoiMap, type VoronoiMap } from '../../src/graph/voronoi
 import { isCentered, labelFor, labelHeight, labelLines, type WrappedLabel } from '../../src/graph/text';
 import { treeOf } from '../../src/graph/tree';
 import { indexWorkspace, spaceIndex, type SpecIndex } from '../../src/specs/data';
+import { heightLevels } from './workspace';
 
 // Every drawn box shows its name (LA-PAT-APP-UX-R12): in every layout of the graph, at every focus
 // and depth, each box the camera draws carries its label, its title and its kind and ID line in the
@@ -77,8 +78,8 @@ function nameless(workspace: Workspace): { problems: string[]; frames: number } 
     ];
     for (const layout of LAYOUTS) {
       const map = layout.map(index, product.id);
-      // One text scale per level (LA-EXP-DR58, LA-EXP-DR62, LA-EXP-DR64): every box at a level has the same.
-      map.byLevel.forEach((boxes, l) => {
+      // One text scale per level (LA-EXP-DR58, LA-EXP-DR62, LA-EXP-DR64): every box at a level has the same, a Tree level by depth, a Nested or Voronoi level by height from the leaves.
+      (layout.name === 'Tree' ? map.byLevel : heightLevels(map.nodes)).forEach((boxes, l) => {
         const scales = [...new Set(boxes.map((n) => n.text))];
         if (scales.length !== 1) problems.push(`${layout.name} ${product.id} level ${l} has ${scales.length} text scales: ${scales.slice(0, 5).join(', ')}`);
       });

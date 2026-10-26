@@ -99,12 +99,13 @@ export function typicalSize(areas: readonly number[]): number {
 }
 
 /**
- * A nesting level's text scale in the Nested and Voronoi maps (LA-EXP-DR62, LA-EXP-DR64): its
- * typical box size over a leaf's, never below the level below's (`below`, 1 for the deepest) nor
+ * A height level's text scale in the Nested and Voronoi maps (LA-EXP-DR62, LA-EXP-DR64), a box's
+ * level being its height from the leaves: its typical box size over a leaf's, never below the
+ * level below's (`below`, 1 for the leaves) nor
  * more than MAX_LEVEL_STEP times it. A box's planned area (`areasAt`: the larger of its share by
  * records and the least its label and children need at a scale) grows with the scale, so the two
  * settle together, only ever growing, as a Tree level's width and its leaves' heights do. Set once
- * when the map is built, from the deepest level up.
+ * when the map is built, from the leaves up.
  */
 export function settleLevelScale(areasAt: (scale: number) => readonly number[], below: number, leafArea: number): number {
   const scaleFor = (areas: readonly number[]) => Math.min(MAX_LEVEL_STEP * below, Math.max(below, typicalSize(areas) / Math.sqrt(leafArea)));
