@@ -1,12 +1,12 @@
 -- A capability, a layer or a group with exactly one child, of any kind.
 --
 -- A level that holds one record groups nothing. Only its own children are counted, not theirs, and one with
--- no children is not reported. A group (the `group` of requirements, interaction requirements and pattern
--- rules, FORMAT.md section 20) is counted among its parent's children of one kind, compared trimmed and in any
+-- no children is not reported. A group (the `group` of requirements, interaction requirements, pattern rules
+-- and standard rules, FORMAT.md section 21) is counted among its parent's children of one kind, compared trimmed and in any
 -- letter case, and reported on that parent. Merge it into a neighbor, or give it more.
 --
 -- severity: warning
--- kinds: capability layer requirement interaction_requirement pattern_rule
+-- kinds: capability layer requirement interaction_requirement pattern_rule standard_rule
 SELECT 'warning' AS severity, 'lone-child' AS "check", g.id AS record,
        upper(left(g.kind, 1)) || substr(g.kind, 2) || ' ' || g.id || ' has only one child, '
        || coalesce(nullif(g.child, ''), g.child_path)
@@ -30,7 +30,7 @@ FROM (
          any_value(r.id) AS child, any_value(r.path) AS child_path
   FROM records r
   JOIN fields g ON g.path = r.path AND g.name = 'group' AND trim(g.value) <> ''
-  WHERE r.kind IN ('requirement', 'interaction_requirement', 'pattern_rule') AND coalesce(r.parent, '') <> ''
+  WHERE r.kind IN ('requirement', 'interaction_requirement', 'pattern_rule', 'standard_rule') AND coalesce(r.parent, '') <> ''
   GROUP BY r.parent, r.kind, bucket
 ) m
 JOIN (SELECT id, any_value(kind) AS kind FROM records WHERE id <> '' GROUP BY id) p ON p.id = m.parent

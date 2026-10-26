@@ -82,7 +82,7 @@ export function Legend() {
       <section aria-label="Legend">
         <ul className="plain">
           <li><span className="graph-swatch stage-define" /> Define (aggregate, rule, use case, requirement)</li>
-          <li><span className="graph-swatch stage-design" /> Design (flow, flow step, view, endpoint, component, test)</li>
+          <li><span className="graph-swatch stage-design" /> Design (flow, flow step, view, endpoint, component, test, and in Shared a standard and its rules, as plain boxes)</li>
           <li><span className="graph-swatch stage-structural" /> Structural (product, domain, question)</li>
           <li><span className="graph-swatch stage-hexagon" /> Domain, drawn as a hexagon</li>
           <li><span className="graph-swatch kind-domain_event" /> Domain event, drawn as a pill</li>
@@ -97,7 +97,7 @@ export function Legend() {
           <li><span className="graph-line rel-structure" /> parent / child (the tree, through stages, folders and groups)</li>
           <li><span className="graph-line is-link" /> the center's own links, with Links on (satisfies, proves, uses and the rest)</li>
           <li><span className="graph-line rel-trace" /> satisfies, proves, fulfills</li>
-          <li><span className="graph-line rel-design" /> uses, implements, depends on</li>
+          <li><span className="graph-line rel-design" /> uses, implements, depends on, meets (a standard rule)</li>
           <li><span className="graph-line rel-pattern" /> follows (a use case's pattern, a cross-link)</li>
           <li><span className="graph-line rel-event" /> raised by, reacts to (a domain event's links)</li>
           <li><span className="graph-line rel-file" /> names file (a component's or test's file)</li>

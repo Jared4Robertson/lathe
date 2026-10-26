@@ -106,7 +106,7 @@ export function Section({ title, titleTo, count, level = 2, className, children 
 }
 
 /**
- * Records under their group headings (FORMAT.md section 20): the ungrouped ones first, without a
+ * Records under their group headings (FORMAT.md section 21): the ungrouped ones first, without a
  * heading, then each group as a part of the page at `level`, in the order the groups first appear.
  * Records that name no group are drawn once, as they would be without groups.
  */

@@ -1,5 +1,5 @@
 ---
-id: LA-AUT-T122
+id: LA-AUT-T130
 kind: test
 title: An applies_when that is malformed or names a setting the pattern lacks is an error
 parent: LA-AUT

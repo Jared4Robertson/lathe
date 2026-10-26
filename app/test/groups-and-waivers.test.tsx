@@ -6,9 +6,10 @@ import { groupRecords } from '../src/specs/groups';
 import { appliesWhenOf, followingDomains, patternsFollowedBy, ruleStatus } from '../src/specs/patterns';
 import { owingDomains } from '../src/specs/trace';
 import { patternWorkspace } from './fixtures/patterns';
+import { standardWorkspace } from './fixtures/standards';
 import { main, openApp, openSideBar, section, sideBar } from './helpers';
 
-// Groups (FORMAT.md section 20) and waivers by setting value (section 11) in the app, on the pattern
+// Groups (FORMAT.md section 21) and waivers by setting value (section 11) in the app, on the pattern
 // workspace: DM-SHOP-UC01 gives record Basket, DM-PAY-UC01 gives record Payment.
 
 const rule = (id: string, title: string, fields: Record<string, string>): SpecRecord =>
@@ -81,7 +82,7 @@ describe('waivers by setting value', () => {
 });
 
 describe('groups', () => {
-  it('LA-EXP-T195 Requirements and pattern rules read under their group headings, the ungrouped first, and the Outline lists the groups', async () => {
+  it('LA-EXP-T195 Requirements, pattern rules and standard rules read under their group headings, the ungrouped first, and the Outline lists the groups', async () => {
     const ix = indexWorkspace(groupedWorkspace());
     const reqs = ix.children.get('DM-SHOP-UC01') ?? [];
     expect(groupRecords(reqs).map((g) => [g.heading, g.records.map((r) => r.id)])).toEqual([
@@ -114,5 +115,13 @@ describe('groups', () => {
     expect(within(section(/^Keeping/)).getAllByRole('link').map((a) => a.textContent)).toEqual([
       expect.stringMatching(/^DM-PAT-CHECKOUT-R03/), expect.stringMatching(/^DM-PAT-CHECKOUT-R04/),
     ]);
+
+    // A standard's rule table heads each group's rows with its name.
+    const std = standardWorkspace();
+    for (const r of std.records) if (r.id.startsWith('DM-STD-CODE-R')) r.fields = { ...r.fields, group: 'Data' };
+    await openApp('/DM-STD-CODE', { workspace: std });
+    await screen.findByRole('heading', { level: 1, name: 'Shop code' });
+    const stdTable = within(section(/^Rules/)).getByRole('table');
+    expect(within(stdTable).getAllByRole('rowheader').filter((h) => h.getAttribute('scope') === 'rowgroup').map((h) => h.textContent)).toEqual(['Data']);
   });
 });

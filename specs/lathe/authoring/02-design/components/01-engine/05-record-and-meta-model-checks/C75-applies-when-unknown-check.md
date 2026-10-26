@@ -1,5 +1,5 @@
 ---
-id: LA-AUT-C70
+id: LA-AUT-C75
 kind: component
 title: Applies when unknown check
 parent: LA-AUT-LAY06
