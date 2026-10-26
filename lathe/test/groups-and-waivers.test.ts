@@ -42,7 +42,7 @@ describe('groups', () => {
 describe('waivers by setting value', () => {
   it('LA-AUT-T122 An applies_when that is malformed or names a setting the pattern lacks is an error', () => {
     expect(ofCheck(ws, 'applies-when-unknown').map((p) => [p.severity, p.record, p.message])).toEqual([
-      ['error', 'GW-PAT-ACT-R04', 'Pattern rule GW-PAT-ACT-R04 says it applies when "colour is red", but pattern GW-PAT-ACT has no setting "colour"; its settings are: scope audit.'],
+      ['error', 'GW-PAT-ACT-R04', 'Pattern rule GW-PAT-ACT-R04 says it applies when "tone is red", but pattern GW-PAT-ACT has no setting "tone"; its settings are: scope audit.'],
       ['error', 'GW-PAT-ACT-R05', 'Pattern rule GW-PAT-ACT-R05 says it applies when "scope single", which is not written as "<setting> is <value>" or "<setting> is not <value>".'],
     ]);
     // Neither waives anything: both are owed wherever the pattern is followed.
