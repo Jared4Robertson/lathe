@@ -164,6 +164,7 @@ export function gapsOf(index: SpecIndex, id: string): string[] {
 const ROW_FIELDS: Record<string, string[]> = {
   use_case: ['actor'],
   endpoint: ['method', 'route'],
+  integration: ['system'],
   component: ['component_type', 'file'],
   test: ['test_type', 'run_by'],
 };

@@ -3,8 +3,8 @@
 -- The setting is read from `lathe.config.json` (default 15) through the settings table. A parent with that
 -- many children of one kind is missing a level between them, such as a capability, a layer or another
 -- aggregate. Children are counted per kind. Tests are exempt: the app groups them by what they prove
--- (FORMAT.md section 15), so they are never shown as one list. A flow's steps are counted per path
--- (FORMAT.md section 14), since each path reads as its own list. A child whose parent does not exist is only
+-- (FORMAT.md section 15), so they are never shown as one list. The steps of a flow or a technical flow are
+-- counted per path (FORMAT.md sections 14 and 21), since each path reads as its own list. A child whose parent does not exist is only
 -- unknown-parent. Add a level and move the children into it.
 --
 -- severity: warning
@@ -15,8 +15,8 @@ SELECT 'warning' AS severity, 'too-many-children' AS "check", c.parent AS record
        || ' that structure.maxChildren allows; add a level between them, such as a capability, a layer or another aggregate.' AS message
 FROM (
   SELECT r.parent, r.kind,
-         -- A flow step's path (main when it has none); every other kind is one list.
-         CASE WHEN r.kind = 'flow_step' THEN coalesce(nullif(lower(trim(fp.value)), ''), 'main') ELSE '' END AS bucket,
+         -- A step's path (main when it has none); every other kind is one list.
+         CASE WHEN r.kind IN ('flow_step', 'design_step') THEN coalesce(nullif(lower(trim(fp.value)), ''), 'main') ELSE '' END AS bucket,
          count(DISTINCT r.path) AS n
   FROM records r
   LEFT JOIN (SELECT path, any_value(value) AS value FROM fields WHERE name = 'path' GROUP BY path) fp ON fp.path = r.path

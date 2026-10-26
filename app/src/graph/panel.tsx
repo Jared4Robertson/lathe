@@ -82,7 +82,7 @@ export function Legend() {
       <section aria-label="Legend">
         <ul className="plain">
           <li><span className="graph-swatch stage-define" /> Define (aggregate, rule, use case, requirement)</li>
-          <li><span className="graph-swatch stage-design" /> Design (flow, flow step, view, endpoint, component, test)</li>
+          <li><span className="graph-swatch stage-design" /> Design (flow, flow step, view, API, endpoint, integration, component, technical flow, technical step, test), each a plain box</li>
           <li><span className="graph-swatch stage-structural" /> Structural (product, domain, question)</li>
           <li><span className="graph-swatch stage-hexagon" /> Domain, drawn as a hexagon</li>
           <li><span className="graph-swatch kind-domain_event" /> Domain event, drawn as a pill</li>

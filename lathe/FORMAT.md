@@ -79,7 +79,7 @@ A flow can be written as `flow_step` records under it, in `order`: each says wha
 
 ## 15. Folders
 
-A domain's specs are laid out in folders by stage: in Define, the domain model and use cases; in Design, interaction design, technical specification and the test plan; and at product level what domains share. `meta/sections.csv` names these folders and each kind's `section` says which one it sits in, so the app reads the same way whatever folders the files are in. The app groups the test plan by what each test proves: acceptance, domain rule, pattern, interaction and engineering tests.
+A domain's specs are laid out in folders by stage: in Define, the domain model and use cases; in Design, interaction design (flows, views, APIs with their endpoints, and integrations), technical specification (components in their layers, and technical flows) and the test plan; and at product level what domains share. `meta/sections.csv` names these folders and each kind's `section` says which one it sits in, so the app reads the same way whatever folders the files are in. The app groups the test plan by what each test proves: acceptance, domain rule, pattern, interaction and engineering tests.
 
 ## 16. Layers
 
@@ -103,3 +103,11 @@ A capability is something a person using the product would name, with its own te
 - **Bad:** the same library split into Frontend, Backend and Database. Borrowing a tool is then designed in three domains, its rules sit apart from the screens that enforce them, and no domain can say whether borrowing is done.
 
 A domain whose title or code names a technology layer or delivery channel is a `domain-named-for-technology` warning.
+
+## 20. APIs and integrations
+
+A domain's endpoints are grouped by resource into **APIs**: an `api` under the domain holds the `endpoint` records for one resource, such as Loans, and the `interaction_requirement`s that hold for every endpoint in it, such as how it pages or what an unknown ID answers. Its body may hold a `## Shapes` table of the request and response shapes its endpoints share. An endpoint may still sit directly in the domain. An **integration** is an outside system the domain exchanges with, such as a payment provider: an `integration` under the domain, with an optional `system` field naming the system, holds one interaction requirement per exchange. An interaction requirement may also sit directly under the domain, for a rule shared across the domain's interaction design.
+
+## 21. Technical flows
+
+A flow says what a person sees; a **technical flow** says how the system carries it out. A `design_flow`, in the domain or one of its layers, `deepens` the flow it carries out, and its steps are `design_step` records under it, ordered, with an optional `path`, as a flow's steps are (section 14). Each step `uses` the component that does it and `satisfies` the obligations it designs; a step's `satisfies` counts as design, as a component's does, but only a component whose file exists counts as built. A step may say which `transaction` it runs in, what it `locks` and how many `statements` it runs. Failure, limits and signals stay as tables in the technical flow's body. A technical flow that deepens no flow is a `design-flow-deepens-nothing` warning.
