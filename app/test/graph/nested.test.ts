@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { graphMap } from '../../src/graph/map';
 import { LABEL_PAD, labelHeight, metaWidth, titleWidth, WIDTH_MARGIN } from '../../src/graph/text';
-import { fitScale, headerRoom, HEADER_SHARE_MAX, HEADER_SHARE_MIN, headerShare, LEAF_AREA, layoutNested, LEVEL_FIT_SHARE, levelScale, NESTED_ASPECT, nestedMap, squarify, type NestedMap } from '../../src/graph/nested';
+import { fitScale, headerRoom, HEADER_SHARE, HEADER_SHARE_MAX, LABEL_ASPECT, labelBox, LEAF_AREA, layoutNested, NESTED_ASPECT, nestedMap, shareRoom, squarify, type NestedMap } from '../../src/graph/nested';
 import { indexWorkspace } from '../../src/specs/data';
 import { groupedWorkspace, manyOfOneKindWorkspace, testIndex } from './workspace';
 
@@ -95,7 +95,7 @@ describe('the Nested map', () => {
     expect(squarify([], r)).toEqual([]);
   });
 
-  it("LA-EXP-T187 One text scale per nesting level, fixed by the map: labels wrap on whole words, and a box whose label does not fit is plain", () => {
+  it("LA-EXP-T187 Built from the leaves up: each box at least its label's least size, its text scale its own and in proportion to it, every label fitting", () => {
     const label = { title: 'Walk the model as a graph', meta: 'Use case · LA-EXP-UC03' };
     const oneLine = Math.max(titleWidth(label.title), metaWidth(label.meta)) * WIDTH_MARGIN + 2 * LABEL_PAD;
     const twoLines = labelHeight({ title: [label.title], meta: [label.meta], file: false });
@@ -110,36 +110,33 @@ describe('the Nested map', () => {
     // No word is ever wider than the box, nor any word of the kind and ID line: a word is never broken.
     expect(titleWidth('model') * wrapped).toBeLessThan(square.w);
     expect(metaWidth('LA-EXP-UC03') * wrapped).toBeLessThan(square.w);
-    // A parent's label fits its header band's room: its share of the box's size, 0.4 over one leaf, falling with the root of the leaves to a fifth, and at most 0.4 of its height.
-    expect(headerShare(1)).toBe(HEADER_SHARE_MAX);
-    expect(headerShare(4)).toBe(0.2);
-    expect(headerShare(400)).toBe(HEADER_SHARE_MIN);
-    expect(headerRoom({ w: 100, h: 100 }, 1)).toBeCloseTo(40, 9);
-    expect(headerRoom({ w: 100, h: 100 }, 400)).toBeCloseTo(20, 9);
-    expect(headerRoom({ w: 1e6, h: 100 }, 1)).toBeCloseTo(40, 9);
-    expect(fitScale({ w: 1e6, h: 1e6 }, label, twoLines)).toBeLessThanOrEqual(1 + 1e-9);
-    // A level's scale is the largest that LEVEL_FIT_SHARE of its boxes, counted by size, can hold: small boxes do not drag it down.
-    expect(LEVEL_FIT_SHARE).toBe(0.75);
-    expect(levelScale([1, 2, 3, 4].map((fit) => ({ fit, size: 1 })))).toBe(2);
-    expect(levelScale([{ fit: 0.1, size: 1 }, { fit: 2, size: 10 }])).toBe(2);
-    expect(levelScale([{ fit: 0, size: 1 }])).toBe(0);
+    // A bigger box holds a bigger label: the scale grows with the box.
+    expect(fitScale({ w: square.w * 4, h: square.h * 4 }, label)).toBeGreaterThan(3 * wrapped);
+    // A label's least box wraps toward LABEL_ASPECT, nearer it than one long line, and holds the label at scale 1.
+    const least = labelBox(label, true);
+    expect(Math.abs(Math.log(least.w / least.h / LABEL_ASPECT))).toBeLessThan(Math.abs(Math.log(oneLine / twoLines / LABEL_ASPECT)));
+    expect(fitScale(least, label)).toBeGreaterThan(0.99);
+    // A parent's header takes HEADER_SHARE of its size, at most HEADER_SHARE_MAX of its height.
+    expect(headerRoom({ w: 100, h: 100 })).toBeCloseTo(HEADER_SHARE * 100, 9);
+    expect(headerRoom({ w: 1e6, h: 100 })).toBeCloseTo(HEADER_SHARE_MAX * 100, 9);
+    // Children share a room: each at least its least area, the rest by weight, summing to the room.
+    expect(shareRoom(100, [1, 1], [10, 10])).toEqual([50, 50]);
+    const shared = shareRoom(100, [9, 1], [10, 40]);
+    expect(shared[1]).toBeCloseTo(40, 9);
+    expect(shared[0] + shared[1]).toBeCloseTo(100, 9);
+    expect(shareRoom(10, [1, 1], [10, 10])).toEqual([5, 5]);
     for (const map of [...maps(), wide(1, 6), wide(3, 4)]) {
-      for (const level of map.byLevel) {
-        // One text scale for every box at a level.
-        for (const n of level) expect(n.text, n.id).toBe(level[0].text);
-      }
       for (const n of map.nodes.values()) {
-        if (n.children.length === 0 || !n.fits) { if (n.children.length > 0) expect(n.header, n.id).toBe(0); continue; }
+        // Every box has a label that fits it, at a scale of its own: a leaf's in its height, a parent's in its header room.
+        expect(n.text, n.id).toBeGreaterThan(0);
+        if (n.children.length === 0) { expect(n.header, n.id).toBe(0); expect(n.text * labelHeight(n.lines)).toBeLessThanOrEqual(n.h + eps); continue; }
         expect(n.header).toBeGreaterThan(0);
-        expect(n.header).toBeLessThanOrEqual(headerRoom(n, leafCount(map, n.id)) + eps);
+        expect(n.header).toBeLessThanOrEqual(headerRoom(n) + eps);
       }
     }
-    // At least LEVEL_FIT_SHARE of each level, counted by size, fits its scale.
-    for (const map of [...maps(), wide(1, 6), wide(3, 4)]) {
-      for (const level of map.byLevel) {
-        const size = (ns: readonly { w: number; h: number }[]) => ns.reduce((sum, n) => sum + Math.sqrt(n.w * n.h), 0);
-        if (level[0].text > 0) expect(size(level.filter((n) => map.nodes.get(n.id)!.fits))).toBeGreaterThanOrEqual(LEVEL_FIT_SHARE * size(level) - eps);
-      }
+    for (const map of [wide(1, 6), wide(3, 4)]) {
+      // Each box's scale is the largest its label fits at.
+      for (const n of map.nodes.values()) expect(n.text, n.id).toBe(fitScale(n, { title: n.id, meta: '' }, n.children.length === 0 ? n.h : headerRoom(n), n.children.length === 0));
     }
     // Built once per index: the same map object, whatever the focus.
     const index = testIndex();

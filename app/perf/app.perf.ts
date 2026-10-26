@@ -21,7 +21,7 @@ async function open(page: Page, url: string, ready = TITLE) {
 }
 
 /**
- * A framed level may run past the canvas's right edge (in a narrow pane, LA-EXP-DR59): a box is in view when its left part is and it is 24 px tall or more, and is clicked there.
+ * A box may lie partly outside the canvas, past its edge: a box is in view when its left part is and it is 24 px tall or more, and is clicked there.
  */
 const AT_LEFT = { x: 20, y: 12 };
 

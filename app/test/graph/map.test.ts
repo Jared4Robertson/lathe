@@ -5,7 +5,7 @@ import { parseRecordFile } from '../../../lathe/src/parse';
 import { contentScale, NODE_HEIGHT, NODE_WIDTH } from '../../src/graph/layout';
 import { graphMap, layoutTree, LEVEL_ASPECT, linkEnds, MAX_LEVEL_STEP, MAX_ROOT_STEP, parentLine, typicalHeight, type GraphMap } from '../../src/graph/map';
 import { drawnFor, frameOnMap, MAX_DRAWN, MIN_DRAWN, viewRect } from '../../src/graph/camera';
-import { BADGE_ROOM, HEX_ROOM, isCentered, LABEL_PAD, labelFor, labelLines, labelHeight, labelShown, metaWidth, MIN_LABEL_PX, textScaleOf, TITLE_FONT, titleWidth, WIDTH_MARGIN, wrapLabel, wrapText } from '../../src/graph/text';
+import { BADGE_ROOM, HEX_ROOM, isCentered, LABEL_PAD, labelFor, labelLines, labelHeight, metaWidth, textScaleOf, TITLE_FONT, titleWidth, WIDTH_MARGIN, wrapLabel, wrapText } from '../../src/graph/text';
 import { indexWorkspace, type SpecIndex } from '../../src/specs/data';
 import { groupedWorkspace, manyOfOneKindWorkspace, testIndex } from './workspace';
 
@@ -149,7 +149,7 @@ describe('levels and content', () => {
 describe('the level of detail', () => {
   const map = graphMap(testIndex(), 'P');
 
-  it('LA-EXP-T170 Only boxes in view and big enough are drawn, labeled when their text reads, with bars for children too small, within a budget', () => {
+  it('LA-EXP-T170 Only boxes in view and big enough are drawn, each with its label, with bars for children too small, within a budget', () => {
     // Framed on the domain: the domain and its stages are drawn; nothing outside the view.
     const view = frameOnMap(map, 'P-D', 1, 1000, 800);
     const d = drawnFor(map, view, 1000, 800);
@@ -161,9 +161,8 @@ describe('the level of detail', () => {
       const n = map.nodes.get(b.id)!;
       expect(n.x + n.w >= rect.x0 && n.x <= rect.x1 && n.y + n.h >= rect.y0 && n.y <= rect.y1, b.id).toBe(true);
       expect(n.h * view.zoom).toBeGreaterThanOrEqual(MIN_DRAWN);
-      // Labeled exactly when its title is MIN_LABEL_PX or more on screen; a drawn box carries no text size of its own.
-      expect(b).toEqual({ id: b.id, label: labelShown(n.text, view.zoom) });
-      if (n.h * view.zoom >= 40) expect(b.label, b.id).toBe(true);
+      // Always with its label; a drawn box carries no text size of its own.
+      expect(b).toEqual({ id: b.id });
     }
     // Zoomed far out, the leaves are too small: they are not drawn, and each run of them is one bar in its parent's next level.
     const far = { x: 0, y: 0, zoom: 0.02 };
@@ -182,24 +181,15 @@ describe('the level of detail', () => {
     expect(drawnFor(map, view, 1000, 800)).toEqual(d);
   });
 
-  it('LA-EXP-T176 A label keeps its size in the map: the camera only shows or hides it, by its size on screen', () => {
+  it('LA-EXP-T176 A label keeps its size in the map: the camera never changes it', () => {
     // The text scale is the level's width over a leaf's: a leaf level's is 1, a level ten leaves wide has ten.
     expect(textScaleOf(NODE_WIDTH)).toBe(1);
     expect(textScaleOf(NODE_WIDTH * 10)).toBe(10);
-    // Shown exactly when the title is MIN_LABEL_PX or more on screen: a leaf at its own size, not at a fifth of it.
-    expect(MIN_LABEL_PX).toBe(7);
-    expect(labelShown(1, 1)).toBe(true);
-    expect(labelShown(1, MIN_LABEL_PX / TITLE_FONT)).toBe(true);
-    expect(labelShown(1, MIN_LABEL_PX / TITLE_FONT - 0.01)).toBe(false);
-    expect(labelShown(10, 0.06)).toBe(true);
-    expect(labelShown(10, 0.05)).toBe(false);
-    // Every zoom draws each box with the same text scale, the map's: zooming changes what is labeled, never a label's size.
+    // Every zoom draws each box with the same text scale, the map's, and its label: zooming never changes a label's size.
     const view = frameOnMap(map, 'P-D', 2, 1000, 800);
     for (const zoom of [view.zoom / 4, view.zoom, view.zoom * 4]) {
       for (const b of drawnFor(map, { ...view, zoom }, 1000, 800).boxes) {
-        expect(Object.keys(b).sort()).toEqual(['id', 'label']);
-        const n = map.nodes.get(b.id)!;
-        expect(b.label).toBe(TITLE_FONT * n.text * zoom >= MIN_LABEL_PX);
+        expect(Object.keys(b)).toEqual(['id']);
       }
     }
   });

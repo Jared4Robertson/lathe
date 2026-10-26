@@ -24,8 +24,8 @@ async function nodes(page: Page) {
 }
 
 /**
- * In a narrow pane a framed level may run past the canvas's right edge (LA-EXP-DR59): a box is in
- * view when its left part is and it is 24 px tall or more, and is clicked or hovered there.
+ * A box may lie partly outside the canvas, past its edge: a box is in view when its left part is
+ * and it is 24 px tall or more, and is clicked or hovered there.
  */
 const AT_LEFT = { x: 20, y: 12 };
 /** The ID of the n-th record box (not the center) that is wholly inside the canvas. */
@@ -144,7 +144,7 @@ test.describe('graph', () => {
     expect(product).toBe('none');
   });
 
-  test('LA-EXP-T177 at depth 2 on a domain, every framed box whose title is 7 px or more on screen shows it in full, wrapped on whole words', async ({ page }) => {
+  test('LA-EXP-T177 at depth 2 on a domain, the domain, its stages and their folders are framed in the canvas, each showing its full title wrapped on whole words', async ({ page }) => {
     await openPage(page, `${DOMAIN}?view=graph`);
     await nodes(page);
     await page.locator('.graph-depth button', { hasText: '2' }).click();
@@ -152,7 +152,6 @@ test.describe('graph', () => {
     const domain = DOMAIN.slice(1);
     const boxes = await page.evaluate((domain) => {
       const canvas = document.querySelector('.pane-graph .graph-flow')!.getBoundingClientRect();
-      const zoom = Number(/scale\(([\d.e-]+)\)/.exec(document.querySelector<HTMLElement>('.pane-graph .react-flow__viewport')!.style.transform)![1]);
       // The framed picture: the domain, its product at the left edge, and two levels below it (its stages, their folders).
       const framed = new RegExp(`^(LA|${domain}(/[^/]+){0,2})$`);
       return [...document.querySelectorAll<HTMLElement>('.pane-graph .react-flow__node[data-id]')]
@@ -160,15 +159,12 @@ test.describe('graph', () => {
         .map((el) => {
           const r = el.getBoundingClientRect();
           const box = el.querySelector<HTMLElement>('.graph-node')!;
-          const scale = Number(getComputedStyle(box).getPropertyValue('--node-scale')) || 1;
           const title = el.querySelector<HTMLElement>('strong');
           const lines = title ? [...title.querySelectorAll<HTMLElement>(':scope > span')] : [];
           const lineHeight = title ? parseFloat(getComputedStyle(title).lineHeight) : 0;
           return {
             id: el.dataset.id!,
             inView: r.left >= canvas.left && r.right <= canvas.right && r.top >= canvas.top && r.bottom <= canvas.bottom,
-            // Its title's size on screen: 12.5 map units at its text scale, times the camera's zoom.
-            onScreen: 12.5 * scale * zoom,
             full: box.getAttribute('title') ?? '',
             title: title?.textContent ?? null,
             // Each line the map broke it into fits, and every line but the last ends after a space or a hyphen.
@@ -177,18 +173,44 @@ test.describe('graph', () => {
           };
         });
     }, domain);
-    const readable = boxes.filter((b) => b.inView && b.onScreen >= 7);
-    // Each level's text is at most a third of the level before's (LA-EXP-DR58): in this pane, the domain's title reads at least.
-    expect(readable.length, 'framed boxes whose title reads').toBeGreaterThanOrEqual(1);
-    expect(readable.map((b) => b.id), 'the domain reads').toContain(domain);
-    for (const b of readable) {
+    // The camera frames the domain and two levels below it in the canvas (LA-EXP-DR59): the domain, every stage and at least half the folders.
+    const shown = boxes.filter((b) => b.inView).map((b) => b.id);
+    const level = (n: number) => boxes.filter((b) => b.id.split('/').length === n + 1 && b.id.startsWith(domain)).map((b) => b.id);
+    expect(shown, 'the domain is framed').toContain(domain);
+    for (const stage of level(1)) expect(shown, `${stage} is framed`).toContain(stage);
+    expect(level(1).length).toBeGreaterThanOrEqual(2);
+    expect(level(2).filter((id) => shown.includes(id)).length * 2, 'half the folders are framed').toBeGreaterThanOrEqual(level(2).length);
+    // Every drawn box shows its label (LA-EXP-DR60).
+    for (const b of boxes) {
       expect(b.title, `${b.id} is labeled`).not.toBeNull();
       // The tooltip is "title (ID)" or, for a group, "title (in owner)": the label shows the whole title.
       expect(b.full.startsWith(`${b.title} (`), `${b.id} shows its full title`).toBe(true);
       expect(b.wrapped, `${b.id} fits its title, wrapped on whole words`).toBe(true);
     }
-    // Below 7 px a box draws no label.
-    for (const b of boxes.filter((x) => x.onScreen < 6.9)) expect(b.title, `${b.id} is plain`).toBeNull();
+  });
+
+  test('LA-PLT-T136 in each layout, focusing each of Lathe\'s domains at depth 2, every drawn box shows its title text', async ({ page }) => {
+    for (const layout of ['Tree', 'Nested'] as const) {
+      for (const domain of ['LA-AUT', 'LA-CHK', 'LA-EXP', 'LA-PLT', 'LA-TRC']) {
+        await openPage(page, `/${domain}?view=graph`);
+        await nodes(page);
+        if (layout === 'Tree') await page.locator('.graph-depth button', { hasText: '2' }).click();
+        else if (!(await page.locator('.pane-graph .graph-layout button', { hasText: 'Nested' }).getAttribute('aria-pressed'))?.includes('true')) await page.locator('.pane-graph .graph-layout button', { hasText: 'Nested' }).click();
+        await page.waitForTimeout(1300);
+        const nameless = await page.evaluate(() => {
+          const canvas = document.querySelector('.pane-graph .graph-flow')!.getBoundingClientRect();
+          return [...document.querySelectorAll<HTMLElement>('.pane-graph .react-flow__node[data-id]:not(.is-bar)')]
+            .filter((el) => { const r = el.getBoundingClientRect(); return r.right > canvas.left && r.left < canvas.right && r.bottom > canvas.top && r.top < canvas.bottom; })
+            .filter((el) => {
+              const title = el.querySelector<HTMLElement>('.graph-node strong');
+              // Visible title text: in the box, with text, not hidden.
+              return !title || (title.textContent ?? '').trim() === '' || getComputedStyle(title).visibility === 'hidden' || getComputedStyle(title).display === 'none';
+            })
+            .map((el) => el.dataset.id!);
+        });
+        expect(nameless, `${layout} at ${domain}: boxes with no title`).toEqual([]);
+      }
+    }
   });
 
   test('LA-EXP-T183 no label is clipped: each line fits its width and height, and the label fits its box, in light and dark, focused or not, at several zooms', async ({ page }) => {
@@ -293,7 +315,7 @@ type Layout = keyof typeof LAYOUT_NAMES;
 
 const path = (page: Page) => new URL(page.url()).pathname;
 const camera = (page: Page) => page.evaluate(() => document.querySelector<HTMLElement>('.pane-graph .react-flow__viewport')!.style.transform);
-const labeledCount = (page: Page) => page.locator('.pane-graph .react-flow__node:not(.is-plain):not(.is-bar)').count();
+const drawnCount = (page: Page) => page.locator('.pane-graph .react-flow__node:not(.is-bar)').count();
 /** Every drawn box's place and size in the map. */
 const places = (page: Page) => page.evaluate(() => Object.fromEntries([...document.querySelectorAll<HTMLElement>('.pane-graph .react-flow__node')].map((el) => [el.dataset.id!, `${el.style.transform} ${el.style.width} ${el.style.height}`])));
 
@@ -303,7 +325,7 @@ async function labeledInView(page: Page): Promise<{ id: string; x: number; y: nu
     const c = document.querySelector('.pane-graph .graph-flow')!.getBoundingClientRect();
     // Clear of the zoom buttons at the bottom left and the edge hints.
     const area = { left: c.left + 60, right: c.right - 30, top: c.top + 20, bottom: c.bottom - 30 };
-    for (const el of document.querySelectorAll<HTMLElement>('.pane-graph .react-flow__node[data-id^="LA-"]:not(.is-plain)')) {
+    for (const el of document.querySelectorAll<HTMLElement>('.pane-graph .react-flow__node[data-id^="LA-"]')) {
       if (el.querySelector('.is-focus')) continue;
       const r = el.getBoundingClientRect();
       const l = Math.max(r.left, area.left); const rt = Math.min(r.right, area.right);
@@ -378,10 +400,10 @@ const PARITY: { feature: string; run: (page: Page, layout: Layout) => Promise<vo
     },
   },
   {
-    feature: 'Tab and the arrow keys reach the labeled boxes with a visible focus ring, and Enter focuses one',
+    feature: 'Tab and the arrow keys reach the drawn boxes with a visible focus ring, and Enter focuses one',
     run: async (page) => {
       const here = path(page);
-      await page.locator('.pane-graph .react-flow__node[data-id]:not(.is-plain)').first().focus();
+      await page.locator('.pane-graph .react-flow__node[data-id]:not(.is-bar)').first().focus();
       await page.keyboard.press('ArrowRight');
       const ring = await page.evaluate(() => {
         const el = document.activeElement as HTMLElement | null;
@@ -411,16 +433,20 @@ const PARITY: { feature: string; run: (page: Page, layout: Layout) => Promise<vo
     },
   },
   {
-    feature: 'depth 1 to 3 labels or frames more',
-    run: async (page) => {
+    feature: 'depth 1 to 3 frames more in the Tree layout; the Nested camera frames the focus box, so it has no depth',
+    run: async (page, layout) => {
+      if (layout === 'nested') {
+        for (const d of ['1', '2', '3']) await expect(page.locator('.pane-graph .graph-depth button', { hasText: d })).toBeDisabled();
+        return;
+      }
       const counts: number[] = [];
       for (const d of ['1', '2', '3']) {
         await page.locator('.pane-graph .graph-depth button', { hasText: d }).click();
         await expect(page.locator('.pane-graph .graph-depth button', { hasText: d })).toHaveAttribute('aria-pressed', 'true');
         await page.waitForTimeout(1300);
-        counts.push(await labeledCount(page));
+        counts.push(await drawnCount(page));
       }
-      expect(counts.every((c) => c > 0), `labeled boxes at depths 1-3: ${counts}`).toBe(true);
+      expect(counts.every((c) => c > 0), `drawn boxes at depths 1-3: ${counts}`).toBe(true);
       await page.locator('.pane-graph .graph-depth button', { hasText: '1' }).click();
       await page.waitForTimeout(1300);
     },
@@ -489,7 +515,7 @@ for (const layout of ['tree', 'nested'] as const) {
   test(`LA-EXP-T189 every graph feature works in the ${LAYOUT_NAMES[layout]} layout`, async ({ page }) => {
     await openPage(page, `${RECORD}?view=graph`);
     await nodes(page);
-    await page.locator('.pane-graph .react-flow__node[data-id^="LA-"]:not(.is-plain)').nth(1).waitFor();
+    await page.locator('.pane-graph .react-flow__node[data-id^="LA-"]').nth(1).waitFor();
     await page.waitForTimeout(900);
     if (layout === 'nested') {
       await page.locator('.pane-graph .graph-count').click();
