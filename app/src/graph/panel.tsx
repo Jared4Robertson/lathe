@@ -90,7 +90,7 @@ export function Legend() {
           <li><span className="graph-swatch is-focus" /> The focus, ringed</li>
           <li><span className="graph-swatch stage-nested" /> Nested view: a box holding its children below its name</li>
           <li><span className="graph-swatch stage-hexagon-mark" /> Nested and Voronoi views: a domain, with a hexagon mark</li>
-          <li><span className="graph-swatch stage-voronoi" /> Voronoi view: a cell made of its children's cells, its name at its top</li>
+          <li><span className="graph-swatch is-cell" /> Voronoi view: a cell made of its children's cells, its name at its top</li>
           <li><span className="graph-swatch stage-group" /> Stage, folder or group, as the nav names it, with its count</li>
           <li><span className="graph-swatch stage-plain" /> A box too small on screen for its text: zoom in, or hover it, for its name</li>
           <li><span className="graph-swatch stage-bar" /> A bar: children too small to draw at this zoom</li>
