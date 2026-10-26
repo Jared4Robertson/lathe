@@ -443,11 +443,12 @@ export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted,
               </Tooltip>
             ))}
           </div>
-          <div className="graph-depth" role="group" aria-label="Depth">
+          {/* Depth is the Tree camera's alone: elsewhere the group keeps its slot, so nothing beside it moves, but is not shown or reachable (LA-PAT-APP-CODE-R21). */}
+          <div className={`graph-depth${layout === 'tree' ? '' : ' is-idle'}`} role="group" aria-label="Depth" aria-hidden={layout !== 'tree' || undefined} inert={layout !== 'tree' || undefined}>
             <span>Depth</span>
             {DEPTHS.map((d) => (
               <Tooltip key={d} label={DEPTH_LABELS[d - 1]} command={d === depth + 1 ? 'graphDepthUp' : d === depth - 1 ? 'graphDepthDown' : undefined}>
-                <button type="button" aria-pressed={depth === d} disabled={tracing || layout !== 'tree'} onClick={() => setDepth(d)}>{d}</button>
+                <button type="button" aria-pressed={depth === d} disabled={tracing} onClick={() => setDepth(d)}>{d}</button>
               </Tooltip>
             ))}
           </div>

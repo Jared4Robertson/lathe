@@ -78,6 +78,23 @@ describe('graph page', () => {
     expect(side.getByRole('link', { name: 'P-D-DR02' }).getAttribute('href')).toBe('/P-D-DR02');
   });
 
+  it('LA-EXP-T194 Depth shows only in the Tree layout: in Nested and Voronoi its slot stays but is neither shown nor reachable', async () => {
+    await showGraph('/P-D/define', testWorkspace(), 1, false);
+    const group = () => document.querySelector<HTMLElement>('[aria-label="Depth"]')!;
+    expect(screen.getByRole('group', { name: 'Depth' })).toBeVisible();
+    for (const layout of ['Nested', 'Voronoi']) {
+      fireEvent.click(within(screen.getByRole('group', { name: 'Layout' })).getByRole('button', { name: layout }));
+      await waitFor(() => expect(group()).toHaveClass('is-idle'));
+      // The slot keeps its place, so nothing beside it moves (LA-PAT-APP-UX-R08), but it has no purpose here (LA-PAT-APP-CODE-R21).
+      expect(group()).toHaveAttribute('aria-hidden', 'true');
+      expect(group()).toHaveAttribute('inert');
+      expect(screen.queryByRole('group', { name: 'Depth' })).toBeNull();
+    }
+    fireEvent.click(within(screen.getByRole('group', { name: 'Layout' })).getByRole('button', { name: 'Tree' }));
+    await waitFor(() => expect(group()).not.toHaveClass('is-idle'));
+    expect(screen.getByRole('group', { name: 'Depth' })).toBeInTheDocument();
+  });
+
   it('LA-EXP-T93 The graph opens at depth 1, framing the parent and the children; depth 2 and 3 frame more levels below, and Links brings in the links', async () => {
     await showGraph('/P-D/define', testWorkspace(), 1, false);
     const depth = within(screen.getByRole('group', { name: 'Depth' }));
