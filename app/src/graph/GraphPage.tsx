@@ -172,11 +172,11 @@ function GraphNodeView({ data }: NodeProps<Node<NodeData>>) {
   );
   const title = data.group ? `${data.title} (${data.meta.replace(/^Group · /, 'in ')})` : `${data.title} (${data.id})`;
   if (data.cell) {
-    // A Voronoi cell (LA-EXP-DR64): the node is clipped to its outline, so only the cell takes the
-    // pointer; the outline is drawn as a polygon, and the label sits in the box the map gave it.
+    // A Voronoi cell (LA-EXP-DR64): its node is clipped to its outline (`cellClip`), so only the
+    // cell takes the pointer; the outline is drawn as a polygon, and the label sits in the box the map gave it.
     const { points, label: at } = data.cell;
     return (
-      <div className={classes} title={title} style={{ ...style, clipPath: `polygon(${points.split(' ').map((p) => p.split(',').map((v) => `${v}px`).join(' ')).join(', ')})` }}>
+      <div className={classes} title={title} style={style}>
         <svg className="graph-cell-shape" aria-hidden="true" width="100%" height="100%"><polygon points={points} /></svg>
         {handles}
         {label && <div className="graph-cell-label" style={{ left: at.x, top: at.y, width: at.w, height: at.h }}>{label}</div>}
@@ -190,6 +190,9 @@ function GraphNodeView({ data }: NodeProps<Node<NodeData>>) {
     </div>
   );
 }
+
+/** A Voronoi cell's clip, in its node's own pixels: the whole node is clipped, so the pointer finds the cell under it, never a larger cell's box. */
+const cellClip = (points: string) => `polygon(${points.split(' ').map((p) => p.split(',').map((v) => `${v}px`).join(' ')).join(', ')})`;
 
 /** A bar standing for children too small to draw (LA-EXP-DR60). */
 function BarView() {
@@ -858,6 +861,7 @@ function GraphCanvas({ index, graph, layout, depth, filters, onNavigate, minimap
         // Saying where the handles are means React Flow never has to measure a node.
         handles: nodeHandles(b.w, b.h),
         data,
+        ...(data.cell ? { style: { clipPath: cellClip(data.cell.points) } } : {}),
         ...(b.label
           ? { ariaLabel: ariaName(data) }
           : { focusable: false, className: 'is-plain', domAttributes: { 'aria-hidden': true } }),

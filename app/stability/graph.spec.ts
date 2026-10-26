@@ -508,8 +508,8 @@ for (const layout of ['tree', 'nested', 'voronoi'] as const) {
     for (const row of PARITY) await test.step(row.feature, () => row.run(page, layout));
     if (layout === 'voronoi') {
       await test.step('every drawn cell is clipped to its outline', async () => {
-        const unclipped = await page.evaluate(() => [...document.querySelectorAll<HTMLElement>('.pane-graph .react-flow__node[data-id] .graph-node')]
-          .filter((el) => !el.classList.contains('is-cell') || !getComputedStyle(el).clipPath.startsWith('polygon(')).map((el) => el.closest<HTMLElement>('.react-flow__node')!.dataset.id));
+        const unclipped = await page.evaluate(() => [...document.querySelectorAll<HTMLElement>('.pane-graph .react-flow__node[data-id]')]
+          .filter((el) => !el.querySelector('.graph-node.is-cell') || !getComputedStyle(el).clipPath.startsWith('polygon(')).map((el) => el.dataset.id));
         expect(unclipped).toEqual([]);
       });
     }
