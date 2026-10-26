@@ -22,7 +22,7 @@ The design says how the product carries out its use cases: the paths people take
 | `endpoint` | `<P>-<D>-E<nn>` | `method`, `route` | `fulfills` requirements |
 | `interaction_requirement` | `<view, endpoint or flow>-R<nn>`, such as `TL-LEND-E04-R01` | | `fulfills` the use case requirements and domain rules it carries out at this view, endpoint or flow |
 | `layer` | `<P>-<D>-LAY<nn>` | `order` (a whole number, its place among the layers beside it, unique there) | none; it holds the domain's components, and may hold sub-layers |
-| `component` | `<P>-<D>-C<nn>` | `component_type` (model, service, router, ...), `file` (path from the repo root) | `satisfies` requirements, domain rules and interaction requirements; `implements` endpoints and views; `depends_on` components |
+| `component` | `<P>-<D>-C<nn>` | `component_type` (model, service, router, ...), `file` (path from the repo root) | `satisfies` requirements, domain rules and interaction requirements; `implements` endpoints and views; `depends_on` components; `meets` the standard rules it follows (see Standards) |
 
 Every design record's parent is the domain, except an interaction requirement, whose parent is the view, endpoint or flow it constrains, a flow step, whose parent is its flow, a flow, whose parent is the capability of the use cases it carries out when the domain has capabilities (see `write-use-cases`), and a component, whose parent is its layer when the domain has layers (see below). Any link not in the meta-model's `relations.csv` is an error. Each relation reads by a label from either end, such as Satisfies and Designed by; `lathe format` lists every relation each kind may make and receive, with its labels.
 
@@ -36,6 +36,14 @@ A domain's components go in **layers**: ordered groups by what the code is, such
 - Moving a component into a layer changes only its `parent`. Never change its ID.
 - Once a domain has one layer, every component of the domain belongs in one; a component left under the domain is a `component-outside-layer` warning. A repeated or non-whole `order` is a `layer-order` error.
 - A component in a layer still counts in its domain: coverage, owed pattern rules and flow steps treat it exactly as one directly under the domain.
+
+## Standards
+
+A product's engineering rules for its code, such as logging, error handling or naming, live in **standards** at product level, beside the patterns (FORMAT.md section 20): a `standard` record under the product (ID `<P>-STD-<NAME>`, such as `TL-STD-CODE`) and its `standard_rule` records under it (`<standard>-R<nn>`, such as `TL-STD-CODE-R01`), one rule each with MUST / MUST NOT / SHOULD / MAY. Keep them in a `standards/` folder beside `patterns/`.
+
+- A component or a test that follows a rule says so with `meets: [<rule ID>]` (read from the rule as Met by), or cites the rule's ID in its body. Neither counts as design or proof: a standard rule is not an obligation and no domain owes it.
+- Write only rules the code really follows. A rule that nothing meets or cites, other than the rule and its own standard, is a `standard-rule-unmet` warning: link what follows it, or remove it.
+- A rule you prove with tests is a pattern rule (see `write-use-cases`); a rule you follow and cite is a standard rule.
 
 ## Interaction requirements
 

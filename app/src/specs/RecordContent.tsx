@@ -8,6 +8,7 @@ import { RecordMarkdown } from './mentions';
 import { kindFieldPath, kindPagePath } from '../format/reference';
 import { PatternRuleSections, PatternSections } from './PatternParts';
 import { FlowSteps } from './FlowSteps';
+import { StandardSections } from './StandardParts';
 import { DomainEvents } from './DomainEvents';
 import { LongList } from '../components/LongList';
 import { DesktopRecordActions } from '../shell/desktopRecord';
@@ -155,12 +156,13 @@ function RecordBody({ index, record, actions, header, side }: { index: SpecIndex
           {record.kind === 'interaction_requirement' && <Fulfills index={index} record={record} />}
           {record.kind === 'pattern' && <PatternSections index={index} pattern={record} />}
           {record.kind === 'pattern_rule' && <PatternRuleSections index={index} rule={record} />}
+          {record.kind === 'standard' && <StandardSections index={index} standard={record} />}
           {record.kind === 'flow' && <FlowSteps index={index} flow={record} />}
           {record.kind === 'aggregate' && <DomainEvents index={index} aggregate={record} />}
           {/* After the body and its kind's own sections, before the children. A pattern's followers have their own section. */}
           <Traceability index={index} record={record} skip={record.kind === 'pattern' ? PATTERN_SKIP : record.kind === 'interaction_requirement' ? FULFILLS_SKIP : undefined} />
-          {/* Without the facts beside it, the body lists the direct children itself; the problems show either way (the side bar does not repeat them). */}
-          {!side && children.length > 0 && record.kind !== 'pattern' && (
+          {/* Without the facts beside it, the body lists the direct children itself (a pattern's and a standard's rules have their own section); the problems show either way (the side bar does not repeat them). */}
+          {!side && children.length > 0 && record.kind !== 'pattern' && record.kind !== 'standard' && (
             <Section title={childrenTitle} count={children.length}>
               <RecordTree index={index} records={children} label={`${childrenTitle} of ${id}`} showKind />
             </Section>
