@@ -159,9 +159,9 @@ describe('pattern rule checks', () => {
 });
 
 describe("the Tool Library's patterns", () => {
-  it('LA-TRC-T35 TL-LEND designs and proves both Librarian action rules', async () => {
+  it('LA-TRC-T35 TL-LEND designs and proves every Librarian action rule', async () => {
     const repo = await loadWorkspace(path.resolve(HERE, '..', '..'));
-    expect(patternRules(repo, 'TL-LEND')).toMatchObject({ total: 2, designed: 2, built: 2, proved: 2, planned: 0 });
+    expect(patternRules(repo, 'TL-LEND')).toMatchObject({ total: 3, designed: 3, built: 3, proved: 3, planned: 0 });
     expect(ofCheck(repo, 'pattern-not-followed').filter((p) => p.record?.startsWith('TL-'))).toEqual([]);
   });
 });

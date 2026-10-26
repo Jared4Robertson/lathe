@@ -149,7 +149,7 @@ describe('pattern rules as targets of interaction requirements and flow steps', 
 describe("the Tool Library's pattern", () => {
   it('LA-TRC-T64 The Tool Library still reads sensibly: its proof-only pattern rules are proved, with nothing asked for design', async () => {
     const repo = await loadWorkspace(path.resolve(HERE, '..', '..'));
-    expect(line(repo, 'TL-LEND')).toMatchObject({ total: 2, designed: 2, built: 2, proved: 2, planned: 0 });
+    expect(line(repo, 'TL-LEND')).toMatchObject({ total: 3, designed: 3, built: 3, proved: 3, planned: 0 });
     expect(repo.problems.filter((p) => p.record?.startsWith('TL-PAT'))).toEqual([]);
   });
 });
