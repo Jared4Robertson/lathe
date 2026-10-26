@@ -226,6 +226,7 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-trail [aria-current="page"] .trail-name { font-weight: 700; }
 /* One line whatever the center (LA-PAT-APP-UX-R08): the count takes what is left and is cut with an ellipsis, so the canvas below never moves; trace and filters sit at the right end. */
 .graph-toolbar { display: flex; flex-wrap: nowrap; gap: 10px 12px; align-items: center; font-size: 0.88rem; white-space: nowrap; }
+.graph-depth.is-idle { visibility: hidden; }
 .graph-depth { display: inline-flex; align-items: center; gap: 4px; flex: none; }
 .graph-depth span { margin-right: 4px; color: var(--muted); }
 .graph-depth button { font: inherit; font-size: 0.82rem; padding: 3px 8px; border: 1px solid var(--rule); border-radius: 5px; background: var(--sheet); color: var(--ink); cursor: pointer; }
