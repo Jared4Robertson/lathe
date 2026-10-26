@@ -2,6 +2,26 @@
 
 Jared asked the coordinator to go with its recommendation on any blocker and check back in the morning. This log records each merge, each agent started, and every decision taken without him, for his review.
 
+## Night two (2026-10-25 into 10-26)
+Jared, going to bed: "Please make any decisions needed in order to complete the pending work." The coordinator took the recommended option on every pending decision.
+
+**Decisions taken without Jared:**
+- **The S2 trial-4 additions,** each as previously recommended:
+  - `group` on requirements and pattern rules (brief 89);
+  - waivers as `applies_when` on a pattern rule, compared against setting values (89);
+  - default `api` and `integration` kinds (90);
+  - technical flows as `design_flow` with `design_step` (90);
+  - engineering standards as `standard`, `standard_rule` and `meets`, owing no coverage (91);
+  - relationship detail stays later, as recommended.
+- **App code and App experience stay patterns, not standards:** their rules are proved by tests. The rule of thumb is that a rule proved with tests is a pattern rule, and a rule followed and cited is a standard rule.
+- **Graph shapes:** the proposed set for every kind (brief 88), queued after brief 87.
+  - In Tree, the outline is the shape.
+  - In Nested and Voronoi, the shape is a small mark in the header.
+  - The Model view's events become flags to match.
+- **Text per level in Nested and Voronoi** (brief 87): a 1.5× step per level, with boxes sized from the leaves up to fit.
+
+**Running at 00:05:** 87 (text per level), 89 (groups and waivers), 90 (API, integration and technical flows), 91 (standards). Brief 88 (shapes) starts when 87 merges.
+
 ## Where things stand (03:05)
 All queued briefs are merged into local `main`. Nothing is pushed. No agents are running.
 - **Your dev server on port 5199 needs a restart** (`npm --prefix app run dev`). It has been up since before the moves, and its hot reload is broken.
