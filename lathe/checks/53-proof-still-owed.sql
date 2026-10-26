@@ -5,9 +5,8 @@
 -- yet proved whose test is only planned is reported by unproved instead.
 --
 -- Proof is judged as in lathe/src/coverage.ts: an obligation in a domain is owed by that domain and any test
--- may prove it; a pattern rule is owed by each domain that follows its pattern, itself or through one of its
--- use cases (unless the domain follows only through use cases that all mark the rule's setting Not
--- applicable), and only tests in that domain prove it there or owe it there. An automated test's proof counts
+-- may prove it; a pattern rule is owed by the domains the owed_pattern_rules table names (unless Not
+-- applicable or waived there), and only tests in that domain prove it there or owe it there. An automated test's proof counts
 -- only when its file backs it. Write the planned test, or drop its claim if the proof it owes is already
 -- made.
 --
@@ -31,38 +30,12 @@ proof_links AS (
                    AND ro.target_kind IN (t.kind, '*')
   LEFT JOIN states st ON st.path = s.path AND st.record = s.id
 ),
-follows AS (
-  SELECT DISTINCT u.domain, l.target AS pattern, u.path
-  FROM records u JOIN links l ON l.path = u.path AND l.relation = 'follows'
-  WHERE u.kind = 'use_case' AND u.id <> '' AND u.domain IS NOT NULL
-),
-domain_follows AS (
-  SELECT DISTINCT d.id AS domain, l.target AS pattern
-  FROM records d JOIN links l ON l.path = d.path AND l.relation = 'follows'
-  WHERE d.kind = 'domain' AND d.id <> ''
-),
 owed AS (
   SELECT DISTINCT r.domain, r.id, r.kind, false AS per_domain
   FROM records r
   WHERE r.domain IS NOT NULL AND r.id <> '' AND r.kind IN (SELECT kind FROM kinds WHERE obligation)
   UNION
-  SELECT domain, id, kind, true AS per_domain FROM (
-    SELECT f.domain, r.id, r.kind,
-      bool_and(coalesce(trim(st.value), '') <> ''
-               AND regexp_full_match(coalesce(trim(uv.value), ''), '(?is)not\s+applicable\s*:\s*\S.*')) AS not_applicable
-    FROM records r
-    JOIN follows f ON f.pattern = r.parent
-    LEFT JOIN fields st ON st.path = r.path AND st.name = 'setting'
-    LEFT JOIN fields uv ON uv.path = f.path AND uv.name = trim(st.value)
-    WHERE r.kind = 'pattern_rule' AND r.domain IS NULL AND r.id <> ''
-      AND r.kind IN (SELECT kind FROM kinds WHERE obligation)
-    GROUP BY f.domain, r.id, r.kind
-  ) WHERE NOT not_applicable
-  UNION
-  SELECT df.domain, r.id, r.kind, true AS per_domain
-  FROM records r JOIN domain_follows df ON df.pattern = r.parent
-  WHERE r.kind = 'pattern_rule' AND r.domain IS NULL AND r.id <> ''
-    AND r.kind IN (SELECT kind FROM kinds WHERE obligation)
+  SELECT domain, id, kind, true AS per_domain FROM owed_pattern_rules
 )
 SELECT DISTINCT 'warning' AS severity, 'proof-still-owed' AS "check", o.id AS record,
        upper(left(o.kind, 1)) || replace(substr(o.kind, 2), '_', ' ') || ' ' || o.id || ' is proved'

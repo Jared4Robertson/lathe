@@ -2,6 +2,7 @@ import { Fragment } from 'react';
 import { LongList } from '../components/LongList';
 import { checkPagePath } from '../format/reference';
 import { type SpecIndex, type SpecRecord } from './data';
+import { groupRecords } from './groups';
 import { RecordLink, RecordRowBody, Section, SpecLink, TestStateTag, idText } from './parts';
 import { isBuilt, traceEmpty, traceOf, type GapKind, type Judgment, type TraceGap, type TraceGroup } from './trace';
 
@@ -100,10 +101,11 @@ function Cell({ index, ids, flag, planned = [] }: { index: SpecIndex; ids: strin
   );
 }
 
-/** A use case's requirements, one row each: Designed, Built and Proved, each cell linking what does it. */
+/** A use case's requirements, one row each under their groups: Designed, Built and Proved, each cell linking what does it. */
 function RequirementTable({ index, useCase, rows }: { index: SpecIndex; useCase: SpecRecord; rows: { record: SpecRecord; judgment: Judgment | null }[] }) {
   if (rows.length === 0) return null;
   const has = (j: Judgment | null, kind: GapKind) => !!j?.gaps.some((g) => g.kind === kind);
+  const judgmentOf = new Map(rows.map((r) => [r.record.id, r.judgment]));
   return (
     <div className="table-scroll">
       <table className="data-table trace-requirements">
@@ -111,16 +113,23 @@ function RequirementTable({ index, useCase, rows }: { index: SpecIndex; useCase:
         <thead>
           <tr><th scope="col">Requirement</th><th scope="col">Designed</th><th scope="col">Built</th><th scope="col">Proved</th></tr>
         </thead>
-        <tbody>
-          {rows.map(({ record, judgment: j }) => (
-            <tr key={record.id} data-requirement={record.id}>
-              <th scope="row"><RecordLink index={index} id={record.id} /></th>
-              <td>{j && (j.needsDesign ? <Cell index={index} ids={j.designedBy} flag={has(j, 'not-designed') ? 'not designed' : null} /> : <span className="hint">Not asked</span>)}</td>
-              <td>{j && (j.needsDesign ? <Cell index={index} ids={j.builtBy} flag={has(j, 'not-built') || has(j, 'not-designed') ? 'not built' : null} /> : <span className="hint">Not asked</span>)}</td>
-              <td>{j && <Cell index={index} ids={j.provedBy} planned={j.provedBy.length === 0 ? j.plannedBy : []} flag={has(j, 'not-proved') || has(j, 'only-planned') ? 'not proved' : null} />}</td>
-            </tr>
-          ))}
-        </tbody>
+        {/* One body per group (FORMAT.md section 23), the ungrouped first, each group headed by its name. */}
+        {groupRecords(rows.map((r) => r.record)).map((g) => (
+          <tbody key={g.key} data-group={g.heading ?? undefined}>
+            {g.heading !== null && <tr className="group-row"><th scope="rowgroup" colSpan={4}>{g.heading}</th></tr>}
+            {g.records.map((record) => {
+              const j = judgmentOf.get(record.id) ?? null;
+              return (
+                <tr key={record.id} data-requirement={record.id}>
+                  <th scope="row"><RecordLink index={index} id={record.id} /></th>
+                  <td>{j && (j.needsDesign ? <Cell index={index} ids={j.designedBy} flag={has(j, 'not-designed') ? 'not designed' : null} /> : <span className="hint">Not asked</span>)}</td>
+                  <td>{j && (j.needsDesign ? <Cell index={index} ids={j.builtBy} flag={has(j, 'not-built') || has(j, 'not-designed') ? 'not built' : null} /> : <span className="hint">Not asked</span>)}</td>
+                  <td>{j && <Cell index={index} ids={j.provedBy} planned={j.provedBy.length === 0 ? j.plannedBy : []} flag={has(j, 'not-proved') || has(j, 'only-planned') ? 'not proved' : null} />}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        ))}
       </table>
     </div>
   );
