@@ -1,7 +1,7 @@
 import type { SpecIndex } from '../specs/data';
 import { NODE_HEIGHT, NODE_WIDTH } from './layout';
-import type { MapNode, PlacedMap } from './map';
-import { hasMarks, labelBox, labelHeight, labelLines, levelTextScale, linesIn, narrowestWidth, wordsFit, type MapLabel, type WrappedLabel } from './text';
+import { settleLevelScale, type MapNode, type PlacedMap } from './map';
+import { hasMarks, labelBox, labelHeight, labelLines, linesIn, narrowestWidth, wordsFit, type MapLabel, type WrappedLabel } from './text';
 import { treeChildren } from './tree';
 
 // The graph's Nested map (LA-EXP-DR62): the same tree as the Tree map (map.ts), one product's, the
@@ -10,9 +10,9 @@ import { treeChildren } from './tree';
 // rather than linking to them. Laid out once per spec load, like the Tree map, and never changed
 // by the focus: focusing moves the camera (camera.ts).
 //
-// One text scale per nesting level (text.ts's `levelTextScale`): 1 at the deepest level under the
-// product, NESTED_LEVEL_STEP times the level below's each level up, so every box at one level has
-// the same text, set once when the map is built and never by the focus or the zoom. Every box is
+// One text scale per nesting level (map.ts's `settleLevelScale`): the level's typical box size (by
+// records, or by what its labels need) over a leaf's, at most MAX_LEVEL_STEP times the level below's, so every box at one level
+// has the same text, set once when the map is built and never by the focus or the zoom. Every box is
 // then sized to hold its label at its level's scale, from the leaves up, so every label fits by
 // construction:
 // - Leaves first: a leaf's least size is its label (its kind and ID line and its title, wrapped on
@@ -152,9 +152,6 @@ export function layoutNested(roots: readonly string[], childrenOf: (id: string) 
   const top: string[] = [];
   for (const r of roots) { if (!level.has(r)) { top.push(r); visit(r, null, 0); } }
 
-  // One text scale per level: 1 at the deepest, NESTED_LEVEL_STEP times more each level up.
-  const deepest = Math.max(0, byLevelIds.length - 1);
-  const scaleOf = (id: string) => levelTextScale(level.get(id)!, deepest);
   const leafBoxes = new Map<string, { w: number; h: number }>();
   const narrowest = new Map<string, number>();
   for (const [id, own] of kids) {
@@ -162,32 +159,36 @@ export function layoutNested(roots: readonly string[], childrenOf: (id: string) 
     else narrowest.set(id, narrowestWidth(labels.get(id)!, false));
   }
 
-  // From the leaves up: a leaf's least area is its label's box at its level's scale; a parent's, its
-  // header at its level's scale over its children packed inside its padding; and at least what an
-  // earlier pass found it needs (`grown`).
+  // A box's least area at a text scale: a leaf's, its label's box at that scale; a parent's, its
+  // header at that scale over its children packed inside its padding.
   const least = new Map<string, number>();
+  const leastAt = (id: string, s: number): number => {
+    const own = kids.get(id)!;
+    if (own.length === 0) { const box = leafBoxes.get(id)!; return box.w * box.h * s * s; }
+    const pad = NEST_PAD * s;
+    const gap = NEST_GAP * s;
+    // The children's room: a square, each child's least area with its gap around it, and some slack for the squarified shapes.
+    const room = PACK_SLACK * own.reduce((sum, c) => sum + (Math.sqrt(least.get(c)!) + gap) ** 2, 0);
+    const w = Math.max(Math.sqrt(room) - gap + 2 * pad, narrowest.get(id)! * s);
+    const header = s * labelHeight(linesIn(labels.get(id)!, w / s, false));
+    return w * (Math.max(header, pad) + pad - gap + room / (w - 2 * pad + gap));
+  };
+
+  // One text scale per level, from the deepest up: its typical box size over a leaf's, each box
+  // planned at the larger of its share by records and its least area at that scale, at most
+  // MAX_LEVEL_STEP times the level below's (map.ts's `settleLevelScale`).
+  const scales: number[] = new Array(byLevelIds.length).fill(1);
+  for (let l = byLevelIds.length - 1; l >= 0; l--) {
+    const ids = byLevelIds[l];
+    scales[l] = settleLevelScale((s) => ids.map((id) => Math.max(leaves.get(id)! * LEAF_AREA, leastAt(id, s))), l + 1 < scales.length ? scales[l + 1] : 1, LEAF_AREA);
+    for (const id of ids) least.set(id, leastAt(id, scales[l]));
+  }
+  const scaleOf = (id: string) => scales[level.get(id)!];
+
+  // From the leaves up, each box's least area at its level's scale, and at least what an earlier pass found it needs (`grown`).
   const grown = new Map<string, number>();
   const sizeUp = () => {
-    for (let l = byLevelIds.length - 1; l >= 0; l--) {
-      for (const id of byLevelIds[l]) {
-        const own = kids.get(id)!;
-        const s = scaleOf(id);
-        let area: number;
-        if (own.length === 0) {
-          const box = leafBoxes.get(id)!;
-          area = box.w * box.h * s * s;
-        } else {
-          const pad = NEST_PAD * s;
-          const gap = NEST_GAP * s;
-          // The children's room: a square, each child's least area with its gap around it, and some slack for the squarified shapes.
-          const room = PACK_SLACK * own.reduce((sum, c) => sum + (Math.sqrt(least.get(c)!) + gap) ** 2, 0);
-          const w = Math.max(Math.sqrt(room) - gap + 2 * pad, narrowest.get(id)! * s);
-          const header = s * labelHeight(linesIn(labels.get(id)!, w / s, false));
-          area = w * (Math.max(header, pad) + pad - gap + room / (w - 2 * pad + gap));
-        }
-        least.set(id, Math.max(area, grown.get(id) ?? 0));
-      }
-    }
+    for (let l = byLevelIds.length - 1; l >= 0; l--) for (const id of byLevelIds[l]) least.set(id, Math.max(leastAt(id, scales[l]), grown.get(id) ?? 0));
   };
 
   const total = top.reduce((s, r) => s + leaves.get(r)!, 0);

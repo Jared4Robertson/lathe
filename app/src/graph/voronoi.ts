@@ -1,8 +1,8 @@
 import { voronoiMapSimulation, type VoronoiMapPolygon } from 'd3-voronoi-map';
 import polylabel from 'polylabel';
 import type { SpecIndex } from '../specs/data';
-import type { MapNode, PlacedMap } from './map';
-import { hasMarks, LABEL_PAD, labelBox, labelHeight, labelLines, levelTextScale, linesIn, wordsFit, type MapLabel, type WrappedLabel } from './text';
+import { settleLevelScale, type MapNode, type PlacedMap } from './map';
+import { hasMarks, LABEL_PAD, labelBox, labelHeight, labelLines, linesIn, wordsFit, type MapLabel, type WrappedLabel } from './text';
 import { treeChildren } from './tree';
 
 // The graph's Voronoi map (LA-EXP-DR64): the same tree as the Tree and Nested maps, one product's,
@@ -23,9 +23,9 @@ import { treeChildren } from './tree';
 //   weight is rounded to within 2%, so adding a record changes only the parents whose rounded
 //   weight it changes; everything outside them keeps its place exactly. (Seeding from the last
 //   layout was tried, and moved cells more than starting afresh.)
-// - Text (LA-EXP-DR58): one text scale per nesting level (text.ts's `levelTextScale`), 1 at the
-//   deepest level under the product and NESTED_LEVEL_STEP times the level below's each level up,
-//   so every cell at one level has the same text, set here once and never by the focus or the zoom.
+// - Text (LA-EXP-DR58): one text scale per nesting level (map.ts's `settleLevelScale`), the
+//   level's typical cell size (by records, or by what its names need) over a leaf's, at most MAX_LEVEL_STEP times the level
+//   below's, so every cell at one level has the same text, set here once and never by the focus or the zoom.
 //   A leaf's label is centered on its largest inscribed point; a parent's sits in a header at the
 //   top of its cell, its children below the header's cut. A label wraps on whole words and is
 //   never clipped, nor shrunk below its level's scale.
@@ -368,24 +368,27 @@ export function layoutVoronoi(
   const top: string[] = [];
   for (const r of roots) { if (!level.has(r)) { top.push(r); visit(r, null, 0); } }
 
-  // One text scale per level: 1 at the deepest, NESTED_LEVEL_STEP times more each level up.
-  const deepest = Math.max(0, byLevelIds.length - 1);
-  const scaleOf = (id: string) => levelTextScale(level.get(id)!, deepest);
   const boxArea = new Map([...labels].map(([id, label]) => { const b = labelBox(label, true); return [id, b.w * b.h] as const; }));
 
-  // From the leaves up, the area each cell needs for its name at its level's scale: its label box
-  // over LABEL_FILL, and a parent's children's needs too; at least what an earlier pass found (`grown`).
+  // The area a cell needs for its name at a text scale: its label box over LABEL_FILL, and a parent's children's needs too.
   const need = new Map<string, number>();
+  const needAt = (id: string, s: number) => (boxArea.get(id)! * s * s) / LABEL_FILL + CHILD_SLACK * kids.get(id)!.reduce((sum, c) => sum + need.get(c)!, 0);
+
+  // One text scale per level, from the deepest up: its typical cell size over a leaf's, each cell
+  // planned at the larger of its share by records and its need at that scale, at most
+  // MAX_LEVEL_STEP times the level below's (map.ts's `settleLevelScale`).
+  const scales: number[] = new Array(byLevelIds.length).fill(1);
+  for (let l = byLevelIds.length - 1; l >= 0; l--) {
+    const ids = byLevelIds[l];
+    scales[l] = settleLevelScale((s) => ids.map((id) => Math.max(leaves.get(id)! * LEAF_AREA, needAt(id, s))), l + 1 < scales.length ? scales[l + 1] : 1, LEAF_AREA);
+    for (const id of ids) need.set(id, needAt(id, scales[l]));
+  }
+  const scaleOf = (id: string) => scales[level.get(id)!];
+
+  // From the leaves up, each cell's need at its level's scale, and at least what an earlier pass found (`grown`).
   const grown = new Map<string, number>();
   const sizeUp = () => {
-    for (let l = byLevelIds.length - 1; l >= 0; l--) {
-      for (const id of byLevelIds[l]) {
-        const s = scaleOf(id);
-        const own = (boxArea.get(id)! * s * s) / LABEL_FILL;
-        const children = kids.get(id)!.reduce((sum, c) => sum + need.get(c)!, 0);
-        need.set(id, Math.max(own + CHILD_SLACK * children, grown.get(id) ?? 0));
-      }
-    }
+    for (let l = byLevelIds.length - 1; l >= 0; l--) for (const id of byLevelIds[l]) need.set(id, Math.max(needAt(id, scales[l]), grown.get(id) ?? 0));
   };
 
   const total = top.reduce((s, r) => s + leaves.get(r)!, 0);

@@ -144,15 +144,6 @@ export const textScaleOf = (w: number) => Math.max(1, w / NODE_WIDTH);
 
 // ---------- The Nested and Voronoi maps' labels ----------
 
-/** In the Nested and Voronoi maps, each nesting level's text is this many times the level's below (LA-EXP-DR62, LA-EXP-DR64). */
-export const NESTED_LEVEL_STEP = 1.5;
-/**
- * A nesting level's text scale in the Nested and Voronoi maps: 1 at the deepest level under the
- * product, NESTED_LEVEL_STEP times the level below's each level up. Every box at one level has it,
- * set when the map is built, never by the focus or the zoom.
- */
-export const levelTextScale = (level: number, deepest: number) => NESTED_LEVEL_STEP ** Math.max(0, deepest - level);
-
 /** What a Nested box's or a Voronoi cell's label says, and what it keeps room for: a domain's hexagon mark, the problem badge. */
 export interface MapLabel { title: string; meta: string; hexagon?: boolean; marked?: boolean }
 
