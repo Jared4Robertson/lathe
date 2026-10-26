@@ -2,8 +2,8 @@ import { Fragment } from 'react';
 import { TreeList } from '../components/TreeList';
 import type { SpecIndex, SpecRecord } from './data';
 import { addressOf } from '../views/address';
-import { RecordLink, Section, SpecLink, recordText } from './parts';
-import { followingDomains, notApplicableReason, patternsFollowedBy, ruleStatus, rulesOf, settingsOf, type RuleStatus } from './patterns';
+import { Grouped, RecordLink, Section, SpecLink, recordText } from './parts';
+import { appliesWhenOf, appliesWhenText, followingDomains, notApplicableReason, patternsFollowedBy, ruleStatus, rulesOf, settingsOf, type RuleStatus } from './patterns';
 
 // The patterns a domain follows ("Patterns we follow" on the domain page) and a pattern's own page:
 // its settings, its rules, and the domains and use cases that follow it with each domain's proof
@@ -11,8 +11,29 @@ import { followingDomains, notApplicableReason, patternsFollowedBy, ruleStatus, 
 
 const list = (ids: string[]) => ids.join(', ');
 
-/** Designed, built and proved marks for a rule in one domain, or Not applicable with its reasons. */
+/** What a rule's row says of its setting and its condition: "setting audit", "applies when scope is not single". */
+function RuleTags({ index, rule }: { index: SpecIndex; rule: SpecRecord }) {
+  const condition = appliesWhenOf(index, rule);
+  return (
+    <>
+      {rule.fields.setting && <small className="meta"> setting {rule.fields.setting}</small>}
+      {condition && <small className="meta"> applies when {appliesWhenText(condition)}</small>}
+    </>
+  );
+}
+
+/** Designed, built and proved marks for a rule in one domain, or Not applicable with its reasons, or Waived here. */
 export function RuleMarks({ index, status }: { index: SpecIndex; status: RuleStatus }) {
+  if (!status.applies && status.why === 'waived') {
+    const { setting } = status.condition;
+    return (
+      <span className="rule-marks">
+        <span className="rule-mark na" data-mark="waived" title={`Waived: it applies only when ${appliesWhenText(status.condition)}, and no follower here meets that`}>
+          Waived here: {setting} is {status.given.length > 0 ? status.given.join(' or ') : 'not given'}
+        </span>
+      </span>
+    );
+  }
   if (!status.applies) {
     return (
       <span className="rule-marks">
@@ -53,10 +74,9 @@ export function RuleMarks({ index, status }: { index: SpecIndex; status: RuleSta
 export function DomainPatterns({ index, domainId, query }: { index: SpecIndex; domainId: string; query?: string }) {
   const followed = patternsFollowedBy(index, domainId);
   if (followed.length === 0) return <p className="hint">This domain follows no pattern.</p>;
-  const useCasesOf = new Map(followed.map((f) => [f.pattern.id, f.useCases]));
-  // A pattern the domain itself follows applies in full: no use case can mark its rules not applicable.
+  const followedOf = new Map(followed.map((f) => [f.pattern.id, f]));
+  // A pattern the domain itself follows: no use case can mark its rules not applicable.
   const byDomain = new Set(followed.filter((f) => f.byDomain).map((f) => f.pattern.id));
-  const patternOfRule = (rule: SpecRecord) => rule.parent ?? '';
   return (
     <TreeList<SpecRecord>
       label="Patterns we follow"
@@ -69,7 +89,7 @@ export function DomainPatterns({ index, domainId, query }: { index: SpecIndex; d
       query={query}
       renderRow={(r) => {
         if (r.kind === 'pattern') {
-          const ucs = useCasesOf.get(r.id) ?? [];
+          const ucs = followedOf.get(r.id)?.useCases ?? [];
           return (
             <div className="record-row">
               <RecordLink index={index} id={r.id} row />
@@ -79,12 +99,12 @@ export function DomainPatterns({ index, domainId, query }: { index: SpecIndex; d
             </div>
           );
         }
-        const status = ruleStatus(index, r, domainId, byDomain.has(patternOfRule(r)) ? [] : useCasesOf.get(patternOfRule(r)) ?? []);
+        const status = ruleStatus(index, r, domainId, followedOf.get(r.parent ?? '') ?? { useCases: [], byDomain: false });
         return (
           <div className="record-row pattern-rule-row">
             <RecordLink index={index} id={r.id} row />
             <span className="row-tags">
-              {r.fields.setting && <small className="meta">setting {r.fields.setting}</small>}
+              <RuleTags index={index} rule={r} />
               <RuleMarks index={index} status={status} />
             </span>
           </div>
@@ -107,7 +127,7 @@ export function PatternSections({ index, pattern }: { index: SpecIndex; pattern:
             <thead><tr><th scope="col">Setting</th><th scope="col">Rules that depend on it</th></tr></thead>
             <tbody>
               {settings.map((s) => {
-                const dependent = rules.filter((r) => r.fields.setting?.trim() === s);
+                const dependent = rules.filter((r) => r.fields.setting?.trim() === s || appliesWhenOf(index, r)?.setting === s);
                 return (
                   <tr key={s}>
                     <th scope="row"><code>{s}</code></th>
@@ -121,20 +141,25 @@ export function PatternSections({ index, pattern }: { index: SpecIndex; pattern:
       </Section>
       <Section title="Rules" count={rules.length}>
         {rules.length === 0 ? <p className="hint">No rules yet. Add <code>pattern_rule</code> records under this pattern.</p> : (
-          <ul className="record-list plain pattern-rules">
-            {rules.map((r) => (
-              <li key={r.id}>
-                <RecordLink index={index} id={r.id} row />
-                {r.fields.setting && <small className="meta"> setting {r.fields.setting}</small>}
-              </li>
-            ))}
-          </ul>
+          <Grouped records={rules} level={3} render={(grouped) => (
+            <ul className="record-list plain pattern-rules">
+              {grouped.map((r) => (
+                <li key={r.id}>
+                  <RecordLink index={index} id={r.id} row />
+                  <RuleTags index={index} rule={r} />
+                </li>
+              ))}
+            </ul>
+          )} />
         )}
       </Section>
       <Section title="Followed by" count={domains.length}>
         {domains.length === 0 && <p className="hint">No use case follows this pattern, so no domain owes its rules.</p>}
-        {domains.map(({ domain, useCases }) => {
+        {domains.map((followed) => {
+          const { domain, useCases } = followed;
           const d = index.byId.get(domain);
+          // A domain that follows the pattern itself gives its settings on its own record, in the first row.
+          const givers = [...(followed.byDomain && d ? [d] : []), ...useCases];
           return (
             <section key={domain} className="pattern-domain" aria-label={`Followed in ${domain}`}>
               <h3>
@@ -147,9 +172,9 @@ export function PatternSections({ index, pattern }: { index: SpecIndex; pattern:
                     <tr><th scope="col">Use case</th>{settings.map((s) => <th key={s} scope="col"><code>{s}</code></th>)}</tr>
                   </thead>
                   <tbody>
-                    {useCases.map((uc) => (
+                    {givers.map((uc) => (
                       <tr key={uc.id}>
-                        <th scope="row"><RecordLink index={index} id={uc.id} /></th>
+                        <th scope="row">{uc.kind === 'domain' ? <>The whole domain</> : <RecordLink index={index} id={uc.id} />}</th>
                         {settings.map((s) => {
                           const value = uc.fields[s];
                           const reason = notApplicableReason(value);
@@ -168,7 +193,7 @@ export function PatternSections({ index, pattern }: { index: SpecIndex; pattern:
                     {rules.map((r) => (
                       <tr key={r.id}>
                         <th scope="row"><RecordLink index={index} id={r.id} /></th>
-                        <td><RuleMarks index={index} status={ruleStatus(index, r, domain, useCases)} /></td>
+                        <td><RuleMarks index={index} status={ruleStatus(index, r, domain, followed)} /></td>
                       </tr>
                     ))}
                   </tbody>
@@ -191,10 +216,10 @@ export function PatternRuleSections({ index, rule }: { index: SpecIndex; rule: S
         <table className="data-table pattern-rule-status">
           <thead><tr><th scope="col">Domain</th><th scope="col">Status</th></tr></thead>
           <tbody>
-            {domains.map(({ domain, useCases }) => (
-              <tr key={domain}>
-                <th scope="row"><RecordLink index={index} id={domain} /></th>
-                <td><RuleMarks index={index} status={ruleStatus(index, rule, domain, useCases)} /></td>
+            {domains.map((followed) => (
+              <tr key={followed.domain}>
+                <th scope="row"><RecordLink index={index} id={followed.domain} /></th>
+                <td><RuleMarks index={index} status={ruleStatus(index, rule, followed.domain, followed)} /></td>
               </tr>
             ))}
           </tbody>

@@ -25,3 +25,4 @@ The pattern's rules are records under it, and every domain that follows the patt
 
 - `TL-PAT-LIBRARIAN-ACTION-R01`: an action missing its required input is refused and saves nothing (setting `required_input`).
 - `TL-PAT-LIBRARIAN-ACTION-R02`: a successful action saves the record and shows it as stored.
+- `TL-PAT-LIBRARIAN-ACTION-R03`: a saved tool reads the same in the catalog (applies when `record` is Tool).

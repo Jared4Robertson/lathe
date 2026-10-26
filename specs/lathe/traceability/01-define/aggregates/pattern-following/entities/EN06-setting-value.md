@@ -5,7 +5,7 @@ title: Setting value
 parent: LA-TRC-A3
 role: child
 ---
-The value a following use case gives one of the pattern's settings, as a header field named like the setting.
+The value a following use case, or a domain that follows the pattern itself, gives one of the pattern's settings, as a header field named like the setting.
 
 ## Fields
 

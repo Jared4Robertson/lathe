@@ -3,6 +3,7 @@ id: LA-PAT-APP-UX-R11
 kind: pattern_rule
 title: Lathe stays within its performance budgets
 parent: LA-PAT-APP-UX
+group: Quality bars
 ---
 The app MUST stay within its performance budgets, measured on the production build in Chromium on the dev machine by the performance suite (`app/perf`, run by `npm --prefix app run test:perf` after the stability suite for a UI change), whose budgets are in `app/perf/budgets.ts`:
 

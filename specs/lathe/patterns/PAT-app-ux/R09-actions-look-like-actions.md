@@ -3,6 +3,7 @@ id: LA-PAT-APP-UX-R09
 kind: pattern_rule
 title: Actions look like actions
 parent: LA-PAT-APP-UX
+group: Look and feel
 ---
 A standalone action MUST be the app's one `Button` component (`app/src/components/Button.tsx`), never a link dressed as text and never a button with a style of its own:
 

@@ -3,6 +3,7 @@ id: LA-PAT-APP-UX-R07
 kind: pattern_rule
 title: Everything works by touch
 parent: LA-PAT-APP-UX
+group: Moving around
 ---
 The app MUST work with a finger as well as a mouse:
 

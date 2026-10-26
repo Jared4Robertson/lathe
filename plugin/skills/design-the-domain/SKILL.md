@@ -22,7 +22,7 @@ The design says how the product carries out its use cases: the paths people take
 | `api` | `<P>-<D>-API<nn>` | | none; it holds the endpoints of one resource and the interaction requirements they all share |
 | `endpoint` | `<P>-<D>-E<nn>` | `method`, `route` | `fulfills` requirements |
 | `integration` | `<P>-<D>-INT<nn>` | optional `system`, the outside system's name | none; it holds one interaction requirement per exchange |
-| `interaction_requirement` | `<view, endpoint, flow, API or integration>-R<nn>`, such as `TL-LEND-E04-R01`, or `<P>-<D>-IR<nn>` under the domain | | `fulfills` the use case requirements and domain rules it carries out at this view, endpoint, flow, API or integration |
+| `interaction_requirement` | `<view, endpoint, flow, API or integration>-R<nn>`, such as `TL-LEND-E04-R01`, or `<P>-<D>-IR<nn>` under the domain | optional `group`, a short heading such as Errors or Paging, once there are more than about 8 | `fulfills` the use case requirements and domain rules it carries out at this view, endpoint, flow, API or integration |
 | `layer` | `<P>-<D>-LAY<nn>` | `order` (a whole number, its place among the layers beside it, unique there) | none; it holds the domain's components, and may hold sub-layers |
 | `component` | `<P>-<D>-C<nn>` | `component_type` (model, service, router, ...), `file` (path from the repo root) | `satisfies` requirements, domain rules and interaction requirements; `implements` endpoints and views; `depends_on` components; `meets` the standard rules it follows (see Standards) |
 | `design_flow` (technical flow) | `<P>-<D>-DF<nn>` | | `deepens` the flow it carries out |
@@ -43,7 +43,7 @@ A domain's components go in **layers**: ordered groups by what the code is, such
 
 ## Standards
 
-A product's engineering rules for its code, such as logging, error handling or naming, live in **standards** at product level, beside the patterns (FORMAT.md section 20): a `standard` record under the product (ID `<P>-STD-<NAME>`, such as `TL-STD-CODE`) and its `standard_rule` records under it (`<standard>-R<nn>`, such as `TL-STD-CODE-R01`), one rule each with MUST / MUST NOT / SHOULD / MAY. Keep them in a `standards/` folder beside `patterns/`.
+A product's engineering rules for its code, such as logging, error handling or naming, live in **standards** at product level, beside the patterns (FORMAT.md section 20): a `standard` record under the product (ID `<P>-STD-<NAME>`, such as `TL-STD-CODE`) and its `standard_rule` records under it (`<standard>-R<nn>`, such as `TL-STD-CODE-R01`), one rule each with MUST / MUST NOT / SHOULD / MAY, and an optional `group` heading once a standard has more than about 8 (FORMAT.md section 23). Keep them in a `standards/` folder beside `patterns/`.
 
 - A component or a test that follows a rule says so with `meets: [<rule ID>]` (read from the rule as Met by), or cites the rule's ID in its body. Neither counts as design or proof: a standard rule is not an obligation and no domain owes it.
 - Write only rules the code really follows. A rule that nothing meets or cites, other than the rule and its own standard, is a `standard-rule-unmet` warning: link what follows it, or remove it.
@@ -174,7 +174,7 @@ The component that enforces it adds it to its `satisfies` list (`satisfies: [...
 ## Rules
 
 - Link a component to the requirements, rules and interaction requirements it actually enforces, not to everything it touches. An obligation no component satisfies is a warning (not designed).
-- Every component satisfies at least one obligation. One that satisfies none is a `component-satisfies-nothing` warning: link what it designs or implements, or remove it. There are no waivers; shared infrastructure (a server entry point, a store) links the requirements and rules it makes possible.
+- Every component satisfies at least one obligation. One that satisfies none is a `component-satisfies-nothing` warning: link what it designs or implements, or remove it. No component is waived; shared infrastructure (a server entry point, a store) links the requirements and rules it makes possible.
 - A component's `file` may not exist yet; that is a warning, and it clears when the code is written. Coverage counts it as **built** once the file exists.
 - An endpoint's body lists every response, including each refusal and its code; each refusal that must be built and tested is also an interaction requirement.
 - Once a domain has a flow, every use case in it needs a flow that `carries_out` it (otherwise `use-case-without-flow`). One flow may carry out several use cases. A flow that only `fulfills` a use case's requirements does not carry out the use case.

@@ -9,14 +9,74 @@
 // no state being automated.
 //
 // An obligation that sits in a domain is owed by that domain. A pattern rule sits under a pattern,
-// outside every domain, and is owed instead by each domain that follows the pattern. A domain follows a
-// pattern when the domain itself `follows` it, which owes every rule, or when one of its use cases does,
-// which owes every rule except one that names a setting that every following use case in that domain
-// marks "Not applicable:" with a reason. A rule with no setting applies wherever its pattern is followed.
-// In each domain that owes it, only components, technical steps and tests in that domain design and prove it.
+// outside every domain, and is owed instead by the domains in the owed_pattern_rules table
+// (OWED_PATTERN_RULES_SQL, built once before the checks run, which read it too). In each domain that owes
+// it, only components, technical steps and tests in that domain design and prove it.
 // A proof-only obligation kind (kinds.csv obligation `proof`) asks for proof alone: it counts as designed
 // and built, so its designed and built equal its total and it has no 'satisfies' gaps.
 // The unsatisfied and unproved checks (lathe/checks/15-unsatisfied.sql, 16-unproved.sql) apply the same rules.
+
+/**
+ * Builds owed_pattern_rules (domain, id, kind): each pattern rule, of an obligation kind, that a domain owes.
+ * A domain follows a pattern when the domain itself `follows` it or one of its use cases does; these are the
+ * pattern's followers in that domain. A following domain owes each rule of the pattern, except:
+ * - a rule that names a `setting` which every following use case there gives as "Not applicable:" with a
+ *   reason, when the domain does not follow the pattern itself;
+ * - a rule whose `applies_when` (`<setting> is <value>` or `<setting> is not <value>`, a setting the pattern
+ *   lists) no follower there meets: a follower meets it when it gives that setting a value, not Not
+ *   applicable, equal to the value (or, for "is not", different from it), compared trimmed and in any letter
+ *   case. Such a rule is waived there: neither owed nor proved. A malformed or unknown `applies_when` is an
+ *   applies-when-unknown error and waives nothing.
+ * A rule owed both ways is listed once.
+ */
+export const OWED_PATTERN_RULES_SQL = `
+  CREATE TABLE owed_pattern_rules AS
+  WITH followers AS (
+    SELECT DISTINCT u.domain, l.target AS pattern, u.path, false AS by_domain
+    FROM records u JOIN links l ON l.path = u.path AND l.relation = 'follows'
+    WHERE u.kind = 'use_case' AND u.id <> '' AND u.domain IS NOT NULL
+    UNION
+    SELECT DISTINCT d.id AS domain, l.target AS pattern, d.path, true AS by_domain
+    FROM records d JOIN links l ON l.path = d.path AND l.relation = 'follows'
+    WHERE d.kind = 'domain' AND d.id <> ''
+  ),
+  rules AS (
+    SELECT r.id, r.kind, r.parent AS pattern,
+      nullif(trim(coalesce((SELECT any_value(f.value) FROM fields f WHERE f.path = r.path AND f.name = 'setting'), '')), '') AS setting,
+      trim(coalesce((SELECT any_value(f.value) FROM fields f WHERE f.path = r.path AND f.name = 'applies_when'), '')) AS applies_when,
+      string_split_regex(trim(coalesce((SELECT any_value(f.value) FROM fields f JOIN records p ON p.path = f.path
+                                        WHERE p.id = r.parent AND p.kind = 'pattern' AND f.name = 'settings'), '')), '\\s+') AS settings
+    FROM records r
+    WHERE r.kind = 'pattern_rule' AND r.domain IS NULL AND r.id <> ''
+      AND r.kind IN (SELECT kind FROM kinds WHERE obligation)
+  ),
+  conditions AS (
+    SELECT id, kind, pattern, setting,
+      CASE WHEN regexp_full_match(applies_when, '(?is)\\S+\\s+is\\s+\\S.*')
+                AND list_contains(settings, regexp_extract(applies_when, '(?is)^(\\S+)\\s+is\\s', 1))
+           THEN regexp_extract(applies_when, '(?is)^(\\S+)\\s+is\\s', 1) END AS when_setting,
+      regexp_full_match(applies_when, '(?is)\\S+\\s+is\\s+not\\s+\\S.*') AS when_not,
+      lower(trim(regexp_extract(applies_when, '(?is)^\\S+\\s+is\\s+(?:not\\s+)?(\\S.*)$', 1))) AS when_value
+    FROM rules
+  ),
+  judged AS (
+    SELECT f.domain, c.id, c.kind,
+      -- A domain that follows the pattern itself gives no Not applicable: one such row makes this false.
+      bool_and(NOT f.by_domain AND c.setting IS NOT NULL
+               AND regexp_full_match(coalesce(trim(sv.value), ''), '(?is)not\\s+applicable\\s*:\\s*\\S.*')) AS not_applicable,
+      bool_or(c.when_setting IS NULL
+              OR (coalesce(trim(wv.value), '') <> ''
+                  AND NOT regexp_full_match(trim(wv.value), '(?is)not\\s+applicable\\s*:.*')
+                  AND ((lower(trim(wv.value)) = c.when_value) <> c.when_not))) AS meets
+    FROM conditions c
+    JOIN followers f ON f.pattern = c.pattern
+    LEFT JOIN fields sv ON sv.path = f.path AND sv.name = c.setting
+    LEFT JOIN fields wv ON wv.path = f.path AND wv.name = c.when_setting
+    GROUP BY f.domain, c.id, c.kind
+  )
+  SELECT domain, id, kind FROM judged
+  WHERE NOT not_applicable AND meets
+  ORDER BY domain, id`;
 
 const ITEMS = `
   WITH obligation_kinds AS (
@@ -45,39 +105,12 @@ const ITEMS = `
     JOIN roles ro ON ro.relation = l.relation AND ro.source_kind = s.kind AND ro.target_kind IN (t.kind, '*')
     LEFT JOIN states st ON st.path = s.path AND st.record = s.id
   ),
-  follows AS (
-    SELECT DISTINCT u.domain, l.target AS pattern, u.path
-    FROM records u JOIN links l ON l.path = u.path AND l.relation = 'follows'
-    WHERE u.kind = 'use_case' AND u.id <> '' AND u.domain IS NOT NULL
-  ),
-  domain_follows AS (
-    SELECT DISTINCT d.id AS domain, l.target AS pattern
-    FROM records d JOIN links l ON l.path = d.path AND l.relation = 'follows'
-    WHERE d.kind = 'domain' AND d.id <> ''
-  ),
   owed AS (
     SELECT DISTINCT r.domain, r.id, r.kind, false AS per_domain
     FROM records r JOIN obligation_kinds k ON k.kind = r.kind
     WHERE r.domain IS NOT NULL AND r.id <> ''
     UNION
-    SELECT DISTINCT f.domain, r.id, r.kind, true AS per_domain
-    FROM records r
-    JOIN obligation_kinds k ON k.kind = r.kind
-    JOIN domain_follows f ON f.pattern = r.parent
-    WHERE r.kind = 'pattern_rule' AND r.domain IS NULL AND r.id <> ''
-    UNION
-    SELECT domain, id, kind, true AS per_domain FROM (
-      SELECT f.domain, r.id, r.kind,
-        bool_and(coalesce(trim(st.value), '') <> ''
-                 AND regexp_full_match(coalesce(trim(uv.value), ''), '(?is)not\\s+applicable\\s*:\\s*\\S.*')) AS not_applicable
-      FROM records r
-      JOIN obligation_kinds k ON k.kind = r.kind
-      JOIN follows f ON f.pattern = r.parent
-      LEFT JOIN fields st ON st.path = r.path AND st.name = 'setting'
-      LEFT JOIN fields uv ON uv.path = f.path AND uv.name = trim(st.value)
-      WHERE r.kind = 'pattern_rule' AND r.domain IS NULL AND r.id <> ''
-      GROUP BY f.domain, r.id, r.kind
-    ) WHERE NOT not_applicable
+    SELECT domain, id, kind, true AS per_domain FROM owed_pattern_rules
   ),
   items AS (
     SELECT o.domain, o.id, o.kind,

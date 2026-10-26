@@ -1,8 +1,9 @@
 import { byIdOrder, type SpecIndex, type SpecRecord } from './data';
 import { relationLabelOf } from './labels';
+import { groupRecords } from './groups';
 import { RecordLink, Section } from './parts';
 
-// A standard's page (FORMAT.md section 20): its rules, one row each, with what meets each one. A
+// A standard's page (FORMAT.md section 20): its rules, one row each under their groups (section 23), with what meets each one. A
 // standard rule owes no coverage, so there is nothing to judge: the page only shows who follows it.
 
 /** The records that meet a standard rule, in ID order. */
@@ -24,21 +25,24 @@ export function StandardSections({ index, standard }: { index: SpecIndex; standa
           <table className="data-table standard-rules">
             <caption className="sr-only">The rules of {standard.id}, with what meets each one</caption>
             <thead><tr><th scope="col">Rule</th><th scope="col">{metLabel}</th></tr></thead>
-            <tbody>
-              {rules.map((r) => {
-                const by = metBy(index, r.id);
-                return (
-                  <tr key={r.id}>
-                    <th scope="row"><RecordLink index={index} id={r.id} /></th>
-                    <td>
-                      {by.length === 0 ? <span className="hint">Nothing yet</span> : (
-                        <span className="trace-cell">{by.map((id) => <RecordLink key={id} index={index} id={id} showTitle={false} />)}</span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
+            {groupRecords(rules).map((g) => (
+              <tbody key={g.key} data-group={g.heading ?? undefined}>
+                {g.heading !== null && <tr className="group-row"><th scope="rowgroup" colSpan={2}>{g.heading}</th></tr>}
+                {g.records.map((r) => {
+                  const by = metBy(index, r.id);
+                  return (
+                    <tr key={r.id}>
+                      <th scope="row"><RecordLink index={index} id={r.id} /></th>
+                      <td>
+                        {by.length === 0 ? <span className="hint">Nothing yet</span> : (
+                          <span className="trace-cell">{by.map((id) => <RecordLink key={id} index={index} id={id} showTitle={false} />)}</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            ))}
           </table>
         </div>
       )}

@@ -1,9 +1,9 @@
 -- A test whose proofs count in no domain's coverage.
 --
 -- A test's proof of a target counts, as in lathe/src/coverage.ts, when the target is an obligation in a
--- domain, or a pattern rule owed by the domain the test sits in (a domain owes a pattern rule when it follows
--- the pattern itself, or when one of its use cases does, unless every following use case there marks the
--- rule's setting Not applicable). A test is reported when it has at least one `proof` link to a record that
+-- domain, or a pattern rule owed by the domain the test sits in (the owed_pattern_rules table: a domain owes
+-- a pattern rule when it follows the pattern itself, or when one of its use cases does, unless the rule is Not
+-- applicable or waived there). A test is reported when it has at least one `proof` link to a record that
 -- exists and none of its proofs counts; the message says why for each target. A target that does not exist
 -- is only a dangling-link. The test's state does not matter: a planned test that will prove nothing counted
 -- is reported too. Point the test at an obligation that counts, or move it into the domain that owes the
@@ -13,31 +13,9 @@
 -- kinds: test
 SELECT severity, "check", record, message FROM (
 WITH follows AS (
-  SELECT DISTINCT u.domain, l.target AS pattern, u.path
+  SELECT DISTINCT l.target AS pattern
   FROM records u JOIN links l ON l.path = u.path AND l.relation = 'follows'
-  WHERE u.kind = 'use_case' AND u.id <> '' AND u.domain IS NOT NULL
-),
-domain_follows AS (
-  SELECT DISTINCT d.id AS domain, l.target AS pattern
-  FROM records d JOIN links l ON l.path = d.path AND l.relation = 'follows'
-  WHERE d.kind = 'domain' AND d.id <> ''
-),
-owed_pattern_rules AS (
-  SELECT domain, id FROM (
-    SELECT f.domain, r.id,
-      bool_and(coalesce(trim(st.value), '') <> ''
-               AND regexp_full_match(coalesce(trim(uv.value), ''), '(?is)not\s+applicable\s*:\s*\S.*')) AS not_applicable
-    FROM records r
-    JOIN follows f ON f.pattern = r.parent
-    LEFT JOIN fields st ON st.path = r.path AND st.name = 'setting'
-    LEFT JOIN fields uv ON uv.path = f.path AND uv.name = trim(st.value)
-    WHERE r.kind = 'pattern_rule' AND r.domain IS NULL AND r.id <> ''
-    GROUP BY f.domain, r.id
-  ) WHERE NOT not_applicable
-  UNION
-  SELECT df.domain, r.id
-  FROM records r JOIN domain_follows df ON df.pattern = r.parent
-  WHERE r.kind = 'pattern_rule' AND r.domain IS NULL AND r.id <> ''
+  WHERE u.kind IN ('use_case', 'domain') AND u.id <> ''
 ),
 claims AS (
   SELECT DISTINCT s.path, s.id AS test, s.domain AS test_domain, t.id AS target, t.kind AS target_kind,
@@ -66,7 +44,8 @@ explained AS (
       WHEN owers IS NOT NULL THEN ' is owed only by ' || owers || ', not by '
            || coalesce(test_domain || ', where the test sits', 'the test, which sits in no domain')
       WHEN EXISTS (SELECT 1 FROM follows f WHERE f.pattern = target_parent)
-           THEN ' is owed by no domain: every use case that follows ' || target_parent || ' marks its setting Not applicable'
+           THEN ' is owed by no domain: wherever ' || target_parent
+                || ' is followed, its setting is Not applicable or no follower meets its applies_when'
       ELSE ' is owed by no domain: no use case follows its pattern ' || coalesce(target_parent, '')
     END AS reason
   FROM judged
