@@ -1,0 +1,11 @@
+---
+id: LA-AUT-C78
+kind: component
+title: APIs, integrations and technical flows in the record format
+parent: LA-AUT-LAY03
+component_type: documentation
+file: lathe/FORMAT.md
+links:
+  satisfies: [LA-AUT-UC18-R01, LA-AUT-UC18-R02, LA-AUT-UC18-R03, LA-AUT-UC17-R01, LA-AUT-UC17-R04]
+---
+Sections 21 and 22 of the record format: APIs grouping endpoints by resource with their shared rules and Shapes table, integrations and their exchanges, interaction requirements under the domain, and technical flows, their steps and how their `satisfies` counts.

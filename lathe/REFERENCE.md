@@ -37,7 +37,7 @@ A `test` has a `state`: `automated` (the default), `manual` or `planned`. An aut
 
 Each check is one SQL file in `lathe/checks/`: a `SELECT` over the loaded tables that returns rows of `(severity, check, record, message)`. Its name is its file name without the number and `.sql`. An **error** means the workspace is broken, and `lathe check` exits non-zero; a **warning** is work still to do, such as an obligation not yet proved, two stages that do not join up yet, or a level of the spec that is the wrong size: a record with more children of one kind than `structure.maxChildren` in `lathe.config.json` (default 15), or a capability or layer with only one child. One mistake gives one error.
 
-Nothing outlives its purpose: a component that satisfies no obligation is a `component-satisfies-nothing` warning, and a test that proves and supports nothing is a `test-proves-nothing` warning. There are no waivers; shared infrastructure links the obligations it makes possible.
+Nothing outlives its purpose: a component that satisfies no obligation is a `component-satisfies-nothing` warning, and a test that proves and supports nothing is a `test-proves-nothing` warning. There are no waivers; shared infrastructure links the obligations it makes possible. A standard rule that nothing meets or cites is a `standard-rule-unmet` warning (section 20).
 
 A check documents itself in its header comment: one summary sentence, a blank comment line, the explanation ending with how to fix what it reports, a blank comment line, then `-- severity: error` (or `warning`, or `error, warning`) and an optional `-- kinds:` line naming the kinds it concerns. The reference is built from these headers, and `undocumented` reports a check, kind or relation that lacks its text.
 
@@ -79,7 +79,7 @@ A flow can be written as `flow_step` records under it, in `order`: each says wha
 
 ## 15. Folders
 
-A domain's specs are laid out in folders by stage: in Define, the domain model and use cases; in Design, interaction design, technical specification and the test plan; and at product level what domains share. `meta/sections.csv` names these folders and each kind's `section` says which one it sits in, so the app reads the same way whatever folders the files are in. The app groups the test plan by what each test proves: acceptance, domain rule, pattern, interaction and engineering tests.
+A domain's specs are laid out in folders by stage: in Define, the domain model and use cases; in Design, interaction design (flows, views, APIs with their endpoints, and integrations), technical specification (components in their layers, and technical flows) and the test plan; and at product level what domains share: patterns and standards. `meta/sections.csv` names these folders and each kind's `section` says which one it sits in, so the app reads the same way whatever folders the files are in. The app groups the test plan by what each test proves: acceptance, domain rule, pattern, interaction and engineering tests.
 
 ## 16. Layers
 
@@ -104,6 +104,20 @@ A capability is something a person using the product would name, with its own te
 
 A domain whose title or code names a technology layer or delivery channel is a `domain-named-for-technology` warning.
 
+## 20. Standards
+
+A **standard** is a library of engineering rules that holds for the product's code, such as logging, error handling or naming. It sits under the product, beside the patterns, and its rules are `standard_rule` records under it, each with its own ID (`<standard>-R<nn>`). A component or test that follows a rule links to it with `meets` (read from the rule as Met by); a body may also cite the rule's ID, which is a mention like any other. A standard rule is not an obligation: no domain owes it, and nothing counts it as designed or proved. A rule that nothing meets or cites, other than the rule and its own standard, is a `standard-rule-unmet` warning, because nothing outlives its purpose.
+
+The rule of thumb between the two: a rule you prove with tests is a pattern rule; a rule you follow and cite is a standard rule. A pattern's rules are owed by each domain that follows it and proved there, which is what a pattern gives that a standard does not.
+
+## 21. APIs and integrations
+
+A domain's endpoints are grouped by resource into **APIs**: an `api` under the domain holds the `endpoint` records for one resource, such as Loans, and the `interaction_requirement`s that hold for every endpoint in it, such as how it pages or what an unknown ID answers. Its body may hold a `## Shapes` table of the request and response shapes its endpoints share. An endpoint may still sit directly in the domain. An **integration** is an outside system the domain exchanges with, such as a payment provider: an `integration` under the domain, with an optional `system` field naming the system, holds one interaction requirement per exchange. An interaction requirement may also sit directly under the domain, for a rule shared across the domain's interaction design.
+
+## 22. Technical flows
+
+A flow says what a person sees; a **technical flow** says how the system carries it out. A `design_flow`, in the domain or one of its layers, `deepens` the flow it carries out, and its steps are `design_step` records under it, ordered, with an optional `path`, as a flow's steps are (section 14). Each step `uses` the component that does it and `satisfies` the obligations it designs; a step's `satisfies` counts as design, as a component's does, but only a component whose file exists counts as built. A step may say which `transaction` it runs in, what it `locks` and how many `statements` it runs. Failure, limits and signals stay as tables in the technical flow's body. A technical flow that deepens no flow is a `design-flow-deepens-nothing` warning.
+
 <!-- Everything below is generated from the meta-model and the check files by `lathe format`. Do not edit it here. -->
 
 ## Kinds
@@ -119,7 +133,7 @@ A product: the root of a set of specifications.
 - **Stage:** none (structural)
 - **Folder:** none
 - **Parents:** none (a root record)
-- **Children:** [`domain`](#kind-domain), [`pattern`](#kind-pattern), [`question`](#kind-question), [`fitness`](#kind-fitness)
+- **Children:** [`domain`](#kind-domain), [`pattern`](#kind-pattern), [`standard`](#kind-standard), [`question`](#kind-question), [`fitness`](#kind-fitness)
 - **Required fields:** none
 - **Obligation:** no
 - **ID:** `<P>`, such as `TL`
@@ -136,7 +150,7 @@ A part of the product with its own model, language and owner.
 - **Stage:** none (structural)
 - **Folder:** none
 - **Parents:** [`product`](#kind-product)
-- **Children:** [`capability`](#kind-capability), [`aggregate`](#kind-aggregate), [`domain_rule`](#kind-domain_rule), [`use_case`](#kind-use_case), [`flow`](#kind-flow), [`view`](#kind-view), [`endpoint`](#kind-endpoint), [`layer`](#kind-layer), [`component`](#kind-component), [`test`](#kind-test), [`question`](#kind-question)
+- **Children:** [`capability`](#kind-capability), [`aggregate`](#kind-aggregate), [`domain_rule`](#kind-domain_rule), [`use_case`](#kind-use_case), [`flow`](#kind-flow), [`view`](#kind-view), [`api`](#kind-api), [`endpoint`](#kind-endpoint), [`integration`](#kind-integration), [`interaction_requirement`](#kind-interaction_requirement), [`layer`](#kind-layer), [`component`](#kind-component), [`design_flow`](#kind-design_flow), [`test`](#kind-test), [`question`](#kind-question)
 - **Required fields:** none
 - **Obligation:** no
 - **ID:** `<P>-<D>`, such as `TL-LEND`
@@ -297,6 +311,40 @@ One rule of a pattern, stated with MUST, MUST NOT, SHOULD or MAY. Every domain t
 - **Links in:** Questions about this ([`about`](#relation-about)), Designed by ([`satisfies`](#relation-satisfies)), Proved by ([`proves`](#relation-proves)), Carried out in ([`fulfills`](#relation-fulfills)), Supported by ([`supports`](#relation-supports))
 - **Checks:** [`unproved`](#check-unproved), [`pattern-rule-setting-unknown`](#check-pattern-rule-setting-unknown)
 
+<a id="kind-standard"></a>
+
+### Standard (`standard`)
+
+A library of engineering rules that holds for the product's code, such as logging, error handling or naming. A component, design step or test that follows one of its rules `meets` it; a standard asks nothing of a domain.
+
+- **Stage:** Design
+- **Folder:** [Shared](#folder-shared)
+- **Parents:** [`product`](#kind-product)
+- **Children:** [`standard_rule`](#kind-standard_rule)
+- **Required fields:** none
+- **Obligation:** no
+- **ID:** `<P>-STD-<name>`, such as `TL-STD-CODE`
+- **Links out:** none
+- **Links in:** Questions about this ([`about`](#relation-about))
+- **Checks:** [`standard-rule-unmet`](#check-standard-rule-unmet)
+
+<a id="kind-standard_rule"></a>
+
+### Standard rule (`standard_rule`)
+
+One rule of a standard, stated with MUST, MUST NOT, SHOULD or MAY. It is not an obligation: what follows it links to it with `meets` or cites its ID, and a rule that nothing meets or cites is a warning. A rule proved by tests is a pattern rule instead.
+
+- **Stage:** Design
+- **Folder:** [Shared](#folder-shared)
+- **Parents:** [`standard`](#kind-standard)
+- **Children:** none
+- **Required fields:** none
+- **Obligation:** no
+- **ID:** `<standard>-R<nn>`, such as `TL-STD-CODE-R01`
+- **Links out:** none
+- **Links in:** Questions about this ([`about`](#relation-about)), Met by ([`meets`](#relation-meets))
+- **Checks:** [`standard-rule-unmet`](#check-standard-rule-unmet)
+
 <a id="kind-flow"></a>
 
 ### Flow (`flow`)
@@ -311,7 +359,7 @@ An end-to-end path through views and endpoints that carries out one or more use 
 - **Obligation:** no
 - **ID:** `<P>-<D>-F<nn>`, such as `TL-LEND-F01`
 - **Links out:** Carries out ([`fulfills`](#relation-fulfills)), Uses ([`uses`](#relation-uses)), Carries out ([`carries_out`](#relation-carries_out))
-- **Links in:** Questions about this ([`about`](#relation-about)), Run by ([`runs`](#relation-runs))
+- **Links in:** Questions about this ([`about`](#relation-about)), Run by ([`runs`](#relation-runs)), Deepened by ([`deepens`](#relation-deepens))
 - **Checks:** [`use-case-without-flow`](#check-use-case-without-flow), [`flow-step-fulfills-outside-flow`](#check-flow-step-fulfills-outside-flow), [`flow-fulfills-differs-from-steps`](#check-flow-fulfills-differs-from-steps)
 
 <a id="kind-flow_step"></a>
@@ -329,7 +377,7 @@ One step of a flow, in order: what happens, through which view, endpoint or comp
 - **ID:** `<flow>-S<nn>`, such as `TL-LEND-F01-S01`
 - **Links out:** Carries out ([`fulfills`](#relation-fulfills)), Uses ([`uses`](#relation-uses))
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`flow-step-order`](#check-flow-step-order), [`flow-step-fulfills-outside-flow`](#check-flow-step-fulfills-outside-flow), [`flow-fulfills-differs-from-steps`](#check-flow-fulfills-differs-from-steps)
+- **Checks:** [`step-order`](#check-step-order), [`flow-step-fulfills-outside-flow`](#check-flow-step-fulfills-outside-flow), [`flow-fulfills-differs-from-steps`](#check-flow-fulfills-differs-from-steps)
 
 <a id="kind-view"></a>
 
@@ -347,15 +395,31 @@ A screen or page a person uses.
 - **Links out:** Carries out ([`fulfills`](#relation-fulfills)), Uses ([`uses`](#relation-uses))
 - **Links in:** Used by ([`uses`](#relation-uses)), Implemented by ([`implements`](#relation-implements)), Questions about this ([`about`](#relation-about))
 
-<a id="kind-endpoint"></a>
+<a id="kind-api"></a>
 
-### Endpoint (`endpoint`)
+### API (`api`)
 
-An HTTP endpoint: its method, route, request and responses.
+A group of endpoints for one resource, such as Loans: it holds the resource's `endpoint` records, and the `interaction_requirement`s that hold for every endpoint in it. Its body may hold a Shapes table of the request and response shapes its endpoints share.
 
 - **Stage:** Design
 - **Folder:** [Interaction design](#folder-interaction-design)
 - **Parents:** [`domain`](#kind-domain)
+- **Children:** [`endpoint`](#kind-endpoint), [`interaction_requirement`](#kind-interaction_requirement)
+- **Required fields:** none
+- **Obligation:** no
+- **ID:** `<P>-<D>-API<nn>`, such as `TL-LEND-API01`
+- **Links out:** none
+- **Links in:** Questions about this ([`about`](#relation-about))
+
+<a id="kind-endpoint"></a>
+
+### Endpoint (`endpoint`)
+
+An HTTP endpoint: its method, route, request and responses. It sits in the API for its resource, or in the domain.
+
+- **Stage:** Design
+- **Folder:** [Interaction design](#folder-interaction-design)
+- **Parents:** [`domain`](#kind-domain), [`api`](#kind-api)
 - **Children:** [`interaction_requirement`](#kind-interaction_requirement)
 - **Required fields:** `method`, `route`
 - **Obligation:** no
@@ -363,19 +427,35 @@ An HTTP endpoint: its method, route, request and responses.
 - **Links out:** Carries out ([`fulfills`](#relation-fulfills))
 - **Links in:** Used by ([`uses`](#relation-uses)), Implemented by ([`implements`](#relation-implements)), Questions about this ([`about`](#relation-about))
 
+<a id="kind-integration"></a>
+
+### Integration (`integration`)
+
+An outside system the domain exchanges with, such as a payment provider or a mail service. It holds one `interaction_requirement` per exchange, and may name the outside system in `system`.
+
+- **Stage:** Design
+- **Folder:** [Interaction design](#folder-interaction-design)
+- **Parents:** [`domain`](#kind-domain)
+- **Children:** [`interaction_requirement`](#kind-interaction_requirement)
+- **Required fields:** none
+- **Obligation:** no
+- **ID:** `<P>-<D>-INT<nn>`, such as `TL-LEND-INT01`
+- **Links out:** none
+- **Links in:** Questions about this ([`about`](#relation-about))
+
 <a id="kind-interaction_requirement"></a>
 
 ### Interaction requirement (`interaction_requirement`)
 
-One rule a view, endpoint or flow must follow, such as a field's limits or an error's response, stated with MUST, MUST NOT, SHOULD or MAY.
+One rule a view, endpoint, flow, API or integration must follow, such as a field's limits, an error's response or one exchange with an outside system, stated with MUST, MUST NOT, SHOULD or MAY. One under an API holds for every endpoint in it, and one directly under the domain holds across the domain's interaction design.
 
 - **Stage:** Design
 - **Folder:** [Interaction design](#folder-interaction-design)
-- **Parents:** [`view`](#kind-view), [`endpoint`](#kind-endpoint), [`flow`](#kind-flow)
+- **Parents:** [`view`](#kind-view), [`endpoint`](#kind-endpoint), [`flow`](#kind-flow), [`api`](#kind-api), [`integration`](#kind-integration), [`domain`](#kind-domain)
 - **Children:** none
 - **Required fields:** none
 - **Obligation:** yes: designed, built and proved
-- **ID:** `<view, endpoint or flow>-R<nn>`, such as `TL-LEND-E03-R01`
+- **ID:** `<view, endpoint, flow, API or integration>-R<nn>, or <P>-<D>-IR<nn> under the domain`, such as `TL-LEND-E03-R01`
 - **Links out:** Carries out ([`fulfills`](#relation-fulfills))
 - **Links in:** Designed by ([`satisfies`](#relation-satisfies)), Proved by ([`proves`](#relation-proves)), Questions about this ([`about`](#relation-about)), Carried out in ([`fulfills`](#relation-fulfills)), Supported by ([`supports`](#relation-supports))
 - **Checks:** [`unsatisfied`](#check-unsatisfied), [`unproved`](#check-unproved), [`obligation-outside-domain`](#check-obligation-outside-domain), [`interaction-requirement-fulfills-nothing`](#check-interaction-requirement-fulfills-nothing)
@@ -389,7 +469,7 @@ An ordered part of a domain's technical specification that groups its components
 - **Stage:** Design
 - **Folder:** [Technical specification](#folder-technical-specification)
 - **Parents:** [`domain`](#kind-domain), [`layer`](#kind-layer)
-- **Children:** [`layer`](#kind-layer), [`component`](#kind-component)
+- **Children:** [`layer`](#kind-layer), [`component`](#kind-component), [`design_flow`](#kind-design_flow)
 - **Required fields:** `order`
 - **Obligation:** no
 - **ID:** `<P>-<D>-LAY<nn>`, such as `TL-LEND-LAY01`
@@ -410,9 +490,43 @@ A unit of code in the target design, such as a model, service or router. It sits
 - **Required fields:** `component_type`, `file`
 - **Obligation:** no
 - **ID:** `<P>-<D>-C<nn>`, such as `TL-LEND-C01`
-- **Links out:** Satisfies ([`satisfies`](#relation-satisfies)), Implements ([`implements`](#relation-implements)), Depends on ([`depends_on`](#relation-depends_on)), Reacts to ([`reacts_to`](#relation-reacts_to))
+- **Links out:** Satisfies ([`satisfies`](#relation-satisfies)), Implements ([`implements`](#relation-implements)), Depends on ([`depends_on`](#relation-depends_on)), Reacts to ([`reacts_to`](#relation-reacts_to)), Meets ([`meets`](#relation-meets))
 - **Links in:** Depended on by ([`depends_on`](#relation-depends_on)), Questions about this ([`about`](#relation-about)), Covered by ([`covers`](#relation-covers)), Used by ([`uses`](#relation-uses))
-- **Checks:** [`component-file-missing`](#check-component-file-missing), [`component-outside-layer`](#check-component-outside-layer), [`event-unheard`](#check-event-unheard), [`component-satisfies-nothing`](#check-component-satisfies-nothing)
+- **Checks:** [`component-file-missing`](#check-component-file-missing), [`component-outside-layer`](#check-component-outside-layer), [`event-unheard`](#check-event-unheard), [`component-satisfies-nothing`](#check-component-satisfies-nothing), [`standard-rule-unmet`](#check-standard-rule-unmet)
+
+<a id="kind-design_flow"></a>
+
+### Technical flow (`design_flow`)
+
+How the system carries out a flow: it `deepens` the flow, and its `design_step` records say, in order, which component does each part and what it designs. It sits in its domain's layer, or in the domain. Failure, limits and signals stay as tables in its body.
+
+- **Stage:** Design
+- **Folder:** [Technical specification](#folder-technical-specification)
+- **Parents:** [`domain`](#kind-domain), [`layer`](#kind-layer)
+- **Children:** [`design_step`](#kind-design_step)
+- **Required fields:** none
+- **Obligation:** no
+- **ID:** `<P>-<D>-DF<nn>`, such as `TL-LEND-DF01`
+- **Links out:** Deepens ([`deepens`](#relation-deepens))
+- **Links in:** Questions about this ([`about`](#relation-about))
+- **Checks:** [`design-flow-deepens-nothing`](#check-design-flow-deepens-nothing)
+
+<a id="kind-design_step"></a>
+
+### Technical step (`design_step`)
+
+One step of a technical flow, in order: what the system does, the component that does it (`uses`) and the obligations it designs (`satisfies`, which counts as design). An optional `path` names the path through the flow the step is on, as a flow step's does, and the optional `transaction`, `locks` and `statements` say which transaction it runs in, what it locks and how many statements it runs.
+
+- **Stage:** Design
+- **Folder:** [Technical specification](#folder-technical-specification)
+- **Parents:** [`design_flow`](#kind-design_flow)
+- **Children:** none
+- **Required fields:** `order`
+- **Obligation:** no
+- **ID:** `<technical flow>-S<nn>`, such as `TL-LEND-DF01-S01`
+- **Links out:** Uses ([`uses`](#relation-uses)), Satisfies ([`satisfies`](#relation-satisfies)), Meets ([`meets`](#relation-meets))
+- **Links in:** Questions about this ([`about`](#relation-about))
+- **Checks:** [`step-order`](#check-step-order)
 
 <a id="kind-test"></a>
 
@@ -427,9 +541,9 @@ A test that proves obligations, or supports them without proving them. Its state
 - **Required fields:** `test_type`
 - **Obligation:** no
 - **ID:** `<P>-<D>-T<nn>`, such as `TL-LEND-T01`
-- **Links out:** Proves ([`proves`](#relation-proves)), Runs ([`runs`](#relation-runs)), Covers ([`covers`](#relation-covers)), Supports ([`supports`](#relation-supports))
+- **Links out:** Proves ([`proves`](#relation-proves)), Runs ([`runs`](#relation-runs)), Covers ([`covers`](#relation-covers)), Supports ([`supports`](#relation-supports)), Meets ([`meets`](#relation-meets))
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`bad-test-state`](#check-bad-test-state), [`test-run-by-missing`](#check-test-run-by-missing), [`proof-not-in-file`](#check-proof-not-in-file), [`test-type-mismatch`](#check-test-type-mismatch), [`proof-still-owed`](#check-proof-still-owed), [`proof-counts-nowhere`](#check-proof-counts-nowhere), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-proves-nothing`](#check-test-proves-nothing)
+- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`bad-test-state`](#check-bad-test-state), [`test-run-by-missing`](#check-test-run-by-missing), [`proof-not-in-file`](#check-proof-not-in-file), [`test-type-mismatch`](#check-test-type-mismatch), [`proof-still-owed`](#check-proof-still-owed), [`proof-counts-nowhere`](#check-proof-counts-nowhere), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-proves-nothing`](#check-test-proves-nothing), [`standard-rule-unmet`](#check-standard-rule-unmet)
 
 <a id="kind-question"></a>
 
@@ -524,6 +638,7 @@ Every relation, from `meta/relations.csv`: which kind may link to which, what th
 | [`flow_step`](#kind-flow_step) | [`view`](#kind-view) | - | Uses | Used by | The step happens in the view. |
 | [`flow_step`](#kind-flow_step) | [`endpoint`](#kind-endpoint) | - | Uses | Used by | The step calls the endpoint. |
 | [`flow_step`](#kind-flow_step) | [`component`](#kind-component) | - | Uses | Used by | The step is carried out by the component. |
+| [`design_step`](#kind-design_step) | [`component`](#kind-component) | - | Uses | Used by | The step is carried out by the component. |
 
 <a id="relation-satisfies"></a>
 
@@ -535,6 +650,10 @@ Every relation, from `meta/relations.csv`: which kind may link to which, what th
 | [`component`](#kind-component) | [`domain_rule`](#kind-domain_rule) | design | Satisfies | Designed by | The component enforces the domain rule. |
 | [`component`](#kind-component) | [`interaction_requirement`](#kind-interaction_requirement) | design | Satisfies | Designed by | The component designs or implements the interaction requirement. |
 | [`component`](#kind-component) | [`pattern_rule`](#kind-pattern_rule) | design | Satisfies | Designed by | The component designs or implements the pattern rule, for the domain it sits in. |
+| [`design_step`](#kind-design_step) | [`requirement`](#kind-requirement) | design | Satisfies | Designed by | The step designs the requirement, through the component it uses. |
+| [`design_step`](#kind-design_step) | [`domain_rule`](#kind-domain_rule) | design | Satisfies | Designed by | The step enforces the domain rule, through the component it uses. |
+| [`design_step`](#kind-design_step) | [`interaction_requirement`](#kind-interaction_requirement) | design | Satisfies | Designed by | The step designs the interaction requirement, through the component it uses. |
+| [`design_step`](#kind-design_step) | [`pattern_rule`](#kind-pattern_rule) | design | Satisfies | Designed by | The step designs the pattern rule, for the domain it sits in, through the component it uses. |
 
 <a id="relation-implements"></a>
 
@@ -657,6 +776,24 @@ Every relation, from `meta/relations.csv`: which kind may link to which, what th
 | [`test`](#kind-test) | [`interaction_requirement`](#kind-interaction_requirement) | - | Supports | Supported by | The test checks a mechanism that backs the interaction requirement, such as a lock or a budget, without proving it; it is never counted as proof. |
 | [`test`](#kind-test) | [`pattern_rule`](#kind-pattern_rule) | - | Supports | Supported by | The test checks a mechanism that backs the pattern rule, such as a lock or a budget, without proving it; it is never counted as proof. |
 
+<a id="relation-deepens"></a>
+
+### `deepens`
+
+| From | To | Role | Forward | Reverse | Meaning |
+| --- | --- | --- | --- | --- | --- |
+| [`design_flow`](#kind-design_flow) | [`flow`](#kind-flow) | - | Deepens | Deepened by | The technical flow says how the system carries out the flow. |
+
+<a id="relation-meets"></a>
+
+### `meets`
+
+| From | To | Role | Forward | Reverse | Meaning |
+| --- | --- | --- | --- | --- | --- |
+| [`component`](#kind-component) | [`standard_rule`](#kind-standard_rule) | - | Meets | Met by | The component follows the standard rule. |
+| [`test`](#kind-test) | [`standard_rule`](#kind-standard_rule) | - | Meets | Met by | The test follows the standard rule. |
+| [`design_step`](#kind-design_step) | [`standard_rule`](#kind-standard_rule) | - | Meets | Met by | The design step follows the standard rule. |
+
 ## Folders
 
 The folders kinds sit in, from `meta/sections.csv`, in stage then order.
@@ -665,10 +802,10 @@ The folders kinds sit in, from `meta/sections.csv`, in stage then order.
 
 ### Shared (`shared`)
 
-What a product's domains share: patterns and their rules.
+What a product's domains share: patterns, standards and their rules.
 
 - **Stage:** Product level, order 1
-- **Kinds:** [`pattern`](#kind-pattern), [`pattern_rule`](#kind-pattern_rule)
+- **Kinds:** [`pattern`](#kind-pattern), [`pattern_rule`](#kind-pattern_rule), [`standard`](#kind-standard), [`standard_rule`](#kind-standard_rule)
 
 <a id="folder-domain-model"></a>
 
@@ -692,19 +829,19 @@ Capabilities, the use cases in them, and their UC requirements.
 
 ### Interaction design (`interaction-design`)
 
-Flows and their steps, views, endpoints and interaction requirements.
+Flows and their steps, views, APIs and their endpoints, integrations, and interaction requirements.
 
 - **Stage:** Design, order 1
-- **Kinds:** [`flow`](#kind-flow), [`flow_step`](#kind-flow_step), [`view`](#kind-view), [`endpoint`](#kind-endpoint), [`interaction_requirement`](#kind-interaction_requirement)
+- **Kinds:** [`flow`](#kind-flow), [`flow_step`](#kind-flow_step), [`view`](#kind-view), [`api`](#kind-api), [`endpoint`](#kind-endpoint), [`integration`](#kind-integration), [`interaction_requirement`](#kind-interaction_requirement)
 
 <a id="folder-technical-specification"></a>
 
 ### Technical specification (`technical-specification`)
 
-The components of the target design, in their layers.
+The components of the target design, in their layers, and the technical flows that use them.
 
 - **Stage:** Design, order 2
-- **Kinds:** [`layer`](#kind-layer), [`component`](#kind-component)
+- **Kinds:** [`layer`](#kind-layer), [`component`](#kind-component), [`design_flow`](#kind-design_flow), [`design_step`](#kind-design_step)
 
 <a id="folder-test-plan"></a>
 
@@ -1222,15 +1359,16 @@ of type acceptance that proves domain rules and no requirement, is reported. A u
 so it is not reported, nor is any other type, nor a test that proves both. Change the type, or what the
 test proves.
 
-<a id="check-flow-step-order"></a>
+<a id="check-step-order"></a>
 
-### `flow-step-order`
+### `step-order`
 
-**Error** · Lathe's `checks/50-flow-step-order.sql` · Kinds: [`flow_step`](#kind-flow_step)
+**Error** · Lathe's `checks/50-step-order.sql` · Kinds: [`flow_step`](#kind-flow_step), [`design_step`](#kind-design_step)
 
-A flow step's order is a whole number that no other step on its path of the flow has, and each path's steps are numbered without gaps.
+A step's order is a whole number that no other step on its path of the flow has, and each path's steps are numbered without gaps.
 
-Steps are read in `order` (FORMAT.md section 14), within their `path`: a short name such as main or
+The steps of a flow (`flow_step`) and of a technical flow (`design_step`) are read in `order` (FORMAT.md
+sections 14 and 22), within their `path`: a short name such as main or
 refused, compared trimmed and in any letter case. A step with no path is on the main path. Orders are
 compared as numbers, so 1 and 01 clash, and the steps of each path of a flow are numbered 1, 2, 3 and so
 on. A path whose orders skip a number is reported once, on the first step after the gap, and only when
@@ -1380,8 +1518,8 @@ A record with more children of one kind than the product's `structure.maxChildre
 The setting is read from `lathe.config.json` (default 15) through the settings table. A parent with that
 many children of one kind is missing a level between them, such as a capability, a layer or another
 aggregate. Children are counted per kind. Tests are exempt: the app groups them by what they prove
-(FORMAT.md section 15), so they are never shown as one list. A flow's steps are counted per path
-(FORMAT.md section 14), since each path reads as its own list. A child whose parent does not exist is only
+(FORMAT.md section 15), so they are never shown as one list. The steps of a flow or a technical flow are
+counted per path (FORMAT.md sections 14 and 22), since each path reads as its own list. A child whose parent does not exist is only
 unknown-parent. Add a level and move the children into it.
 
 <a id="check-lone-child"></a>
@@ -1632,6 +1770,34 @@ record of another is reported once for each source, relation and target. A recor
 product, and a link to a record that does not exist, are reported by other checks instead. When the target
 ID is duplicated, the link is reported only if no record with that ID is in the source's product. Remove
 the link; to point a reader at the other product, name the ID in prose, where it is a plain citation.
+
+<a id="check-standard-rule-unmet"></a>
+
+### `standard-rule-unmet`
+
+**Warning** · Lathe's `checks/81-standard-rule-unmet.sql` · Kinds: [`standard_rule`](#kind-standard_rule), [`standard`](#kind-standard), [`component`](#kind-component), [`test`](#kind-test)
+
+A standard rule that nothing meets or cites.
+
+A standard rule asks nothing of a domain, so it owes no coverage (FORMAT.md section 20), but a rule that no
+component, design step or test `meets`, and that no other record of its product cites in its prose, has no
+use, and nothing outlives its purpose. A citation from the rule itself or from its own standard does not
+count, so a standard that lists its rules by ID does not keep them all alive. A `meets` link from any
+record counts here; one from a kind the meta-model does not allow is relation-not-allowed. Link what
+follows the rule with `meets`, cite the rule where it is followed, or remove the rule.
+
+<a id="check-design-flow-deepens-nothing"></a>
+
+### `design-flow-deepens-nothing`
+
+**Warning** · Lathe's `checks/82-design-flow-deepens-nothing.sql` · Kinds: [`design_flow`](#kind-design_flow)
+
+A technical flow that deepens no flow.
+
+A technical flow says how the system carries out a flow (FORMAT.md section 22), so it names that flow with
+`deepens`. One that deepens nothing is design with no flow to carry out: the flow is missing, or the link
+is. A link to a flow that does not exist is only dangling-link. Link the flow it carries out with
+`deepens`, or write the flow first.
 
 <a id="check-parse-error"></a>
 

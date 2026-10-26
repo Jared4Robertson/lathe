@@ -8,4 +8,4 @@ links:
   uses: [LA-AUT-C19]
   fulfills: [LA-AUT-UC06-R02, LA-AUT-UC06-R03, LA-AUT-DR24]
 ---
-`lathe check` reports `flow-step-order` errors, and a missing order as a missing required field.
+`lathe check` reports `step-order` errors, and a missing order as a missing required field.

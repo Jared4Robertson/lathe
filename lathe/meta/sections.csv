@@ -1,7 +1,7 @@
 section,stage,order,label,description
 domain-model,define,1,Domain model,"The aggregates and their domain rules."
 use-cases,define,2,Capabilities,"Capabilities, the use cases in them, and their UC requirements."
-interaction-design,design,1,Interaction design,"Flows and their steps, views, endpoints and interaction requirements."
-technical-specification,design,2,Technical specification,"The components of the target design, in their layers."
+interaction-design,design,1,Interaction design,"Flows and their steps, views, APIs and their endpoints, integrations, and interaction requirements."
+technical-specification,design,2,Technical specification,"The components of the target design, in their layers, and the technical flows that use them."
 test-plan,design,3,Test plan,"The tests that prove the obligations."
-shared,,1,Shared,"What a product's domains share: patterns and their rules."
+shared,,1,Shared,"What a product's domains share: patterns, standards and their rules."

@@ -8,4 +8,4 @@ run_by: lathe/test/flow-steps.test.ts
 links:
   proves: [LA-AUT-UC06-R02]
 ---
-Expects `flow-step-order` on a step whose order is "two", quoting it, as an error.
+Expects `step-order` on a step whose order is "two", quoting it, as an error.

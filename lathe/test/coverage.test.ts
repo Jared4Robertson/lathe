@@ -62,8 +62,9 @@ describe('coverage by the meta-model', () => {
   it("LA-TRC-T07 The meta-model's obligation and role columns are loaded into the workspace", async () => {
     const obligations = states.kinds.filter((k) => k.obligation).map((k) => k.kind);
     expect(obligations).toEqual(['domain_rule', 'requirement', 'pattern_rule', 'interaction_requirement']);
-    expect(states.relations.filter((r) => r.role === 'design').map((r) => `${r.relation} ${r.target_kind}`)).toEqual([
-      'satisfies requirement', 'satisfies domain_rule', 'satisfies interaction_requirement', 'satisfies pattern_rule',
+    expect(states.relations.filter((r) => r.role === 'design').map((r) => `${r.source_kind} ${r.relation} ${r.target_kind}`)).toEqual([
+      'component satisfies requirement', 'component satisfies domain_rule', 'component satisfies interaction_requirement', 'component satisfies pattern_rule',
+      'design_step satisfies requirement', 'design_step satisfies domain_rule', 'design_step satisfies interaction_requirement', 'design_step satisfies pattern_rule',
     ]);
     expect(states.relations.filter((r) => r.role === 'proof').map((r) => `${r.relation} ${r.target_kind}`)).toEqual([
       'proves requirement', 'proves domain_rule', 'proves interaction_requirement', 'proves pattern_rule',

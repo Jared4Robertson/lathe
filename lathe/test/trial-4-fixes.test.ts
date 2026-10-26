@@ -93,8 +93,8 @@ describe('flow paths', () => {
     for (const s of ['S01', 'S02', 'S03', 'S04']) expect(ofRecord(claims, `TC-D-F01-${s}`)).toEqual([]);
   });
 
-  it('LA-AUT-T95 A repeated order on a path, and a path whose numbering skips, are flow-step-order errors', () => {
-    const found = ofCheck(claims, 'flow-step-order').filter((p) => p.record?.startsWith('TC-D-F02') || p.record?.startsWith('TC-D-F04'));
+  it('LA-AUT-T95 A repeated order on a path, and a path whose numbering skips, are step-order errors', () => {
+    const found = ofCheck(claims, 'step-order').filter((p) => p.record?.startsWith('TC-D-F02') || p.record?.startsWith('TC-D-F04'));
     expect(found.map((p) => [p.record, p.message])).toEqual([
       ['TC-D-F02-S02', 'Flow step TC-D-F02-S02 has order 4 in flow TC-D-F02, but no step has order 2, 3; number the steps of a flow 1, 2, 3 and so on, with no gaps.'],
       ['TC-D-F02-S03', 'Flow step TC-D-F02-S03 has order 1 on path api in flow TC-D-F02, the same as TC-D-F02-S04; each step of a path needs its own order.'],
@@ -109,7 +109,7 @@ describe('flow paths', () => {
     const f03 = claims.problems.filter((p) => p.record?.startsWith('TC-D-F03'));
     expect(f03.map((p) => [p.check, p.record])).toEqual([
       ['missing-required-field', 'TC-D-F03-S05'],
-      ['flow-step-order', 'TC-D-F03-S02'],
+      ['step-order', 'TC-D-F03-S02'],
     ]);
   });
 });

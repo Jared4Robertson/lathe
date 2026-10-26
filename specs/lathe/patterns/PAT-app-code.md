@@ -10,7 +10,7 @@ The rules come from problems the app has had: a button laid over a heading with 
 
 ## How a domain uses the pattern
 
-The domain links the pattern with `follows`. The pattern has no settings: every rule applies to all of the domain's code. Each rule is proved by a test in `app/test` (most in `standards.test.tsx`) that reads the source or renders the main pages, and that names the file and line to fix when it fails. R21's tests also run knip on the app, the engine and the desktop app.
+The domain links the pattern with `follows`. The pattern has no settings: every rule applies to all of the domain's code. Each rule is proved by a test in `app/test` (most in `standards.test.tsx`) that reads the source or renders the main pages, and that names the file and line to fix when it fails. R21's tests also run knip on the app, the engine and the desktop app. Its rules are pattern rules, not standard rules, because tests prove them (FORMAT.md section 20); the rules the engine's code follows and cites are the standard `LA-STD-CODE`.
 
 ## Rules
 
