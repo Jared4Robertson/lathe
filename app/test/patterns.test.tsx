@@ -27,22 +27,23 @@ describe('pattern logic', () => {
   it('LA-TRC-T99 A rule is designed, built and proved per domain, by records in that domain only', () => {
     const ix = index();
     const r01 = ix.byId.get('DM-PAT-CHECKOUT-R01')!;
-    const shop = ruleStatus(ix, r01, 'DM-SHOP', patternsFollowedBy(ix, 'DM-SHOP')[0].useCases);
+    const shop = ruleStatus(ix, r01, 'DM-SHOP', patternsFollowedBy(ix, 'DM-SHOP')[0]);
     expect(shop).toEqual({ applies: true, designedBy: ['DM-SHOP-C01'], builtBy: ['DM-SHOP-C01'], provedBy: ['DM-SHOP-T01'], plannedBy: [] });
     // In DM-PAY the component's file is missing (not built) and only a planned test proves it.
-    const pay = ruleStatus(ix, r01, 'DM-PAY', patternsFollowedBy(ix, 'DM-PAY')[0].useCases);
+    const pay = ruleStatus(ix, r01, 'DM-PAY', patternsFollowedBy(ix, 'DM-PAY')[0]);
     expect(pay).toEqual({ applies: true, designedBy: ['DM-PAY-C01'], builtBy: [], provedBy: [], plannedBy: ['DM-PAY-T01'] });
   });
 
   it('LA-TRC-T100 A rule that names a setting every following use case marks Not applicable does not apply in that domain', () => {
     const ix = index();
     const r02 = ix.byId.get('DM-PAT-CHECKOUT-R02')!;
-    expect(ruleStatus(ix, r02, 'DM-SHOP', patternsFollowedBy(ix, 'DM-SHOP')[0].useCases)).toEqual({
+    expect(ruleStatus(ix, r02, 'DM-SHOP', patternsFollowedBy(ix, 'DM-SHOP')[0])).toEqual({
       applies: false,
+      why: 'not-applicable',
       setting: 'audit',
       reasons: [{ useCase: 'DM-SHOP-UC01', reason: 'adding to a basket changes nothing worth auditing' }],
     });
-    expect(ruleStatus(ix, r02, 'DM-PAY', patternsFollowedBy(ix, 'DM-PAY')[0].useCases)).toMatchObject({ applies: true, designedBy: [] });
+    expect(ruleStatus(ix, r02, 'DM-PAY', patternsFollowedBy(ix, 'DM-PAY')[0])).toMatchObject({ applies: true, designedBy: [] });
   });
 });
 
@@ -101,7 +102,7 @@ describe('Patterns we follow, on the domain page', () => {
     expect(patternsFollowedBy(ix, 'DM-PAY').map((f) => [f.pattern.id, f.byDomain, f.useCases.length])).toEqual([['DM-PAT-CHECKOUT', true, 0]]);
     // A rule with a setting still applies: no use case of the domain can mark it not applicable.
     const ruleWithSetting = ix.workspace.records.find((r) => r.parent === 'DM-PAT-CHECKOUT' && r.fields.setting)!;
-    expect(ruleStatus(ix, ruleWithSetting, 'DM-PAY', [])).toMatchObject({ applies: true });
+    expect(ruleStatus(ix, ruleWithSetting, 'DM-PAY', patternsFollowedBy(ix, 'DM-PAY')[0])).toMatchObject({ applies: true });
     await openApp('/DM-PAY', { workspace: ws });
     await screen.findByRole('heading', { level: 1, name: 'Paying' });
     expect(rowOf(section(/^Patterns we follow/), 'DM-PAT-CHECKOUT')).toHaveTextContent('followed by the whole domain');

@@ -1,8 +1,9 @@
 import { lowerLabel, plural as pluralOf } from '../plural';
-import { createContext, useContext, useState, type AnchorHTMLAttributes, type ReactNode } from 'react';
+import { createContext, Fragment, useContext, useState, type AnchorHTMLAttributes, type ReactNode } from 'react';
 import { Link } from '../router';
 import { checkPagePath } from '../format/reference';
 import { kindLabel, problemOrder, type Problem, type SpecIndex, type SpecRecord } from './data';
+import { groupRecords } from './groups';
 import { addressOf } from '../views/address';
 import { ActionsSlotContext } from '../components/ActionsSlot';
 import { LongList } from '../components/LongList';
@@ -101,6 +102,21 @@ export function Section({ title, titleTo, count, level = 2, className, children 
       </header>
       <ActionsSlotContext.Provider value={actions}>{children}</ActionsSlotContext.Provider>
     </section>
+  );
+}
+
+/**
+ * Records under their group headings (FORMAT.md section 23): the ungrouped ones first, without a
+ * heading, then each group as a part of the page at `level`, in the order the groups first appear.
+ * Records that name no group are drawn once, as they would be without groups.
+ */
+export function Grouped<T extends SpecRecord>({ records, level, render }: { records: readonly T[]; level: SectionLevel; render: (records: T[], heading: string | null) => ReactNode }) {
+  return (
+    <>
+      {groupRecords(records).map((g) => (g.heading === null
+        ? <Fragment key="">{render(g.records, null)}</Fragment>
+        : <Section key={g.key} title={g.heading} count={g.records.length} level={level} className="record-group">{render(g.records, g.heading)}</Section>))}
+    </>
   );
 }
 
