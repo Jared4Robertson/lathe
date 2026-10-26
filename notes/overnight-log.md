@@ -51,6 +51,21 @@ Jared, going to bed: "Please make any decisions needed in order to complete the 
 - 01:13 `f2acc70` Text per level (87): in Nested, one text size per height level counted from the leaves (Exploring's header is about 26 px framed, its stages readable); Voronoi keeps per-cell text. App 344, check 0 errors; stability 43 on real exit codes.
 - 01:14 Started the graph shapes (88), including shapes for tonight's new kinds.
 
+- 02:15 `5718dfd` Graph shapes (88): every kind has its shape in Tree and in traces, and a small shape mark in Nested and Voronoi. The Model view's events are flags, and the key lists every shape.
+  - "Setting" isn't a kind, so it got no shape.
+  - An open question is an elongated diamond.
+  
+  On main: app 345, stability 44, perf all within budget at load 5 (re-center at depth 3: Tree 92 ms, Nested 83 ms, Voronoi 95 ms).
+
+### Night two: where things stand (02:20)
+Every brief from tonight is merged into local `main`. Nothing is pushed, no agents are running, and every suite passes on main.
+- **Your calls to review:**
+  - the trial-4 kinds and fields;
+  - App code and App experience stay patterns, not standards;
+  - Voronoi keeps per-cell text;
+  - levels are counted from the leaves up in Nested.
+- **Worth a look in the app:** grouped requirements (Exploring UC03 to UC05), the technical flow LA-CHK-DF01, the APIs, the `LA-STD-CODE` standard, and the graph's shapes in all three layouts.
+
 ## Where things stand (03:05)
 All queued briefs are merged into local `main`. Nothing is pushed. No agents are running.
 - **Your dev server on port 5199 needs a restart** (`npm --prefix app run dev`). It has been up since before the moves, and its hot reload is broken.
