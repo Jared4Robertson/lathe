@@ -2,6 +2,8 @@ import type { MouseEvent, ReactNode } from 'react';
 import { LongList } from '../components/LongList';
 import type { SpecIndex } from '../specs/data';
 import { FILE_KIND, PARENT, graphEdgeLabel, nodeParent, parseGroupId, type Neighborhood } from './model';
+import { MARKS, SHAPES, type Mark, type Shape } from './shapes';
+import { MarkIcon, ShapeIcon } from './shape-icons';
 
 // The graph's part of the side bar: what the framed picture connects to the center, the files a
 // trace reaches, and the legend. Kept apart from GraphPage (React Flow) so the side bar can show
@@ -81,17 +83,27 @@ export function Legend() {
       <summary>Legend</summary>
       <section aria-label="Legend">
         <ul className="plain">
-          <li><span className="graph-swatch stage-define" /> Define (aggregate, rule, use case, requirement)</li>
-          <li><span className="graph-swatch stage-design" /> Design (flow, flow step, view, API, endpoint, integration, component, technical flow, technical step, test, and in Shared a standard and its rules, as plain boxes)</li>
-          <li><span className="graph-swatch stage-structural" /> Structural (product, domain, question)</li>
-          <li><span className="graph-swatch stage-hexagon" /> Domain, drawn as a hexagon</li>
-          <li><span className="graph-swatch kind-domain_event" /> Domain event, drawn as a pill</li>
-          <li><span className="graph-swatch kind-question" /> Open question, with a dashed border</li>
+          <li><span className="graph-swatch stage-define" /> Define (capability, aggregate, entity, rule, event, use case, requirement, pattern)</li>
+          <li><span className="graph-swatch stage-design" /> Design (flow, flow step, view, API, endpoint, integration, layer, component, technical flow, technical step, test, and in Shared a standard and its rules)</li>
+          <li><span className="graph-swatch stage-structural" /> Structural (product, domain, fitness)</li>
+          <li><span className="graph-swatch kind-domain_event" /> Domain event, in the spark colors</li>
+          <li><span className="graph-swatch kind-question" /> Open question, in the warning color (dashed in the Nested and Voronoi views)</li>
+          <li><span className="graph-swatch stage-group" /> Groups: a stage, folder or group, in gray</li>
           <li><span className="graph-swatch is-focus" /> The focus, ringed</li>
+        </ul>
+        <h4 className="graph-legend-heading">Shapes</h4>
+        <ul className="plain">
+          {(Object.keys(SHAPES) as Shape[]).map((shape) => (
+            <li key={shape}><span className={`graph-swatch is-shape shape-${shape}`}><ShapeIcon shape={shape} /></span> {SHAPES[shape].kinds}: {SHAPES[shape].name}</li>
+          ))}
+          {(Object.keys(MARKS) as Mark[]).map((mark) => (
+            <li key={mark}><span className={`graph-swatch is-shape mark-${mark}`}><MarkIcon mark={mark} /></span> {MARKS[mark]}</li>
+          ))}
+        </ul>
+        <p className="hint">In the Tree view each box's outline is its kind's shape. In the Nested and Voronoi views every box keeps its rectangle or cell, and its shape is the small mark before its kind and ID.</p>
+        <ul className="plain">
           <li><span className="graph-swatch stage-nested" /> Nested view: a box holding its children below its name</li>
-          <li><span className="graph-swatch stage-hexagon-mark" /> Nested and Voronoi views: a domain, with a hexagon mark</li>
           <li><span className="graph-swatch is-cell" /> Voronoi view: a cell made of its children's cells, its name at its top</li>
-          <li><span className="graph-swatch stage-group" /> Stage, folder or group, as the nav names it, with its count</li>
           <li><span className="graph-swatch stage-bar" /> A bar: children too small to draw at this zoom</li>
           <li><span className="graph-swatch stage-file" /> File named by a component or test</li>
           <li><span className="graph-line rel-structure" /> parent / child (the tree, through stages, folders and groups)</li>

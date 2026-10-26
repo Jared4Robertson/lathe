@@ -139,9 +139,57 @@ test.describe('graph', () => {
     await page.waitForURL(/\/LA-EXP(\?|$)/);
     await expect(domain).toHaveClass(/is-focus/);
     expect((await outline()).clip).toMatch(/^polygon\(/);
-    // Every other kind keeps its box.
+    // The product is a rounded box, not clipped (LA-EXP-DR65).
     const product = await page.locator('.pane-graph .react-flow__node[data-id="LA"] .graph-node').evaluate((el) => getComputedStyle(el).clipPath);
     expect(product).toBe('none');
+  });
+
+  test('LA-EXP-T202 in the Tree view every label line and badge sits inside its box\'s shape, and in the Nested view every record shows its shape\'s mark', async ({ page }) => {
+    /** The label lines and badges whose corners, hit-tested, land outside their own box's outline (a clipped or rounded shape takes no pointer outside it). */
+    const outside = () => page.evaluate(() => {
+      const out: string[] = [];
+      const canvas = document.querySelector('.pane-graph .graph-flow')!.getBoundingClientRect();
+      for (const node of document.querySelectorAll<HTMLElement>('.pane-graph .react-flow__node[data-id]:not(.is-bar)')) {
+        const box = node.querySelector<HTMLElement>('.graph-node');
+        if (!box) continue;
+        const b = box.getBoundingClientRect();
+        // Boxes wholly in the canvas and big enough on screen to read.
+        if (b.left < canvas.left || b.right > canvas.right || b.top < canvas.top || b.bottom > canvas.bottom || b.width < 60) continue;
+        for (const part of box.querySelectorAll<HTMLElement>('small > span:not(.graph-marks), strong > span, .graph-mark')) {
+          if (part.getBoundingClientRect().width === 0) continue;
+          // A line's text, not its block's full width; a badge as drawn.
+          const range = document.createRange();
+          range.selectNodeContents(part);
+          const r = part.classList.contains('graph-mark') ? part.getBoundingClientRect() : range.getBoundingClientRect();
+          const e = 1.5;
+          for (const [x, y] of [[r.left + e, r.top + e], [r.right - e, r.top + e], [r.left + e, r.bottom - e], [r.right - e, r.bottom - e]]) {
+            if (!document.elementsFromPoint(x, y).includes(box)) out.push(`${node.dataset.id} (${[...box.classList].find((c) => c.startsWith('shape-'))}): ${part.textContent} at ${Math.round(x - b.left)},${Math.round(y - b.top)}`);
+          }
+        }
+      }
+      return out;
+    });
+    for (const focus of [DOMAIN, `${DOMAIN}/define`, `${DOMAIN}/design`]) {
+      await openPage(page, `${focus}?view=graph`);
+      await nodes(page);
+      for (const depth of [1, 2, 3]) {
+        await page.locator('.graph-depth button', { hasText: String(depth) }).click();
+        await page.waitForTimeout(1300);
+        await page.mouse.move(1, 1);
+        expect(await outside(), `${focus} at depth ${depth}`).toEqual([]);
+      }
+    }
+    // Nested, every box keeps its rectangle and shows its shape's mark before its kind and ID line.
+    await openPage(page, `${DOMAIN}?view=graph`);
+    await nodes(page);
+    await page.locator('.pane-graph .graph-layout button', { hasText: 'Nested' }).click();
+    await page.locator('.pane-graph .graph-flow[data-layout="nested"] .react-flow__node').first().waitFor();
+    await page.waitForTimeout(1300);
+    const marks = await page.evaluate(() => [...document.querySelectorAll<HTMLElement>('.pane-graph .react-flow__node[data-id] .graph-node:not(.stage-file)')]
+      .map((box) => ({ id: box.closest<HTMLElement>('.react-flow__node')!.dataset.id!, icon: !!box.querySelector('small .graph-shape-icon'), outline: [...box.classList].some((c) => c === 'is-clipped' || c.startsWith('shape-')) })));
+    expect(marks.length).toBeGreaterThan(5);
+    expect(marks.filter((m) => !m.icon || m.outline)).toEqual([]);
+    await page.locator('.pane-graph .graph-layout button', { hasText: 'Tree' }).click();
   });
 
   test('LA-EXP-T177 at depth 2 on a domain, the domain, its stages and their folders are framed in the canvas, each showing its full title wrapped on whole words', async ({ page }) => {

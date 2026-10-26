@@ -14,7 +14,7 @@ import { treeChildren, treeGroup, treeParent } from '../src/graph/tree';
 import { openApp, section, startAtDepth } from './helpers';
 import { eventWorkspace } from './fixtures/events';
 
-// Domain events in the wiki, the ERD and the graph (brief 60): an aggregate's events as pills on
+// Domain events in the wiki, the ERD and the graph (brief 60): an aggregate's events as flags on
 // its ERD with the entity raising each and the aggregates reacting to it; cause and effect between
 // aggregates on a domain's ERD; the aggregate's "Domain events" list and the event's own page; and
 // events under their aggregate in the graph, their reacts_to links dashed and labeled.
@@ -27,7 +27,7 @@ const boxesShown = () => waitFor(() => expect(modelPane().querySelectorAll('.rea
 const CSS = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
 
 describe('domain events in the ERD', () => {
-  it('LA-EXP-T155 An aggregate\'s ERD draws each of its domain events as a spark pill with a short line from the entity raising it, and the aggregates reacting to it as faded context at the end of a dashed reacts-to line', async () => {
+  it('LA-EXP-T155 An aggregate\'s ERD draws each of its domain events as a spark flag with a short line from the entity raising it, and the aggregates reacting to it as faded context at the end of a dashed reacts-to line', async () => {
     const erd = aggregateErd(index(), 'P-D-A3');
     const byId = new Map(erd.boxes.map((b) => [b.id, b]));
     expect(erd.boxes.filter((b) => b.kind === 'event').map((b) => b.id)).toEqual(['P-D-EV01', 'P-D-EV02', 'P-D-EV03']);
@@ -51,17 +51,17 @@ describe('domain events in the ERD', () => {
     // Laid out so each event sits in the layer right after the entity raising it.
     expect(erdGraph(erd).layoutOptions).toMatchObject({ 'elk.layered.layering.strategy': 'LONGEST_PATH_SOURCE' });
     expect(erdGraph(aggregateErd(index(), 'P-D-A2')).layoutOptions?.['elk.layered.layering.strategy']).toBeUndefined();
-    // An event's page draws its aggregate's ERD with its pill picked out.
+    // An event's page draws its aggregate's ERD with its flag picked out.
     expect(erdFor(index(), 'P-D-EV02')).toMatchObject({ level: 'aggregate', scope: 'P-D-A3' });
     expect(erdFor(index(), 'P-D-EV02')!.boxes.filter((b) => b.highlight).map((b) => b.id)).toEqual(['P-D-EV02']);
 
     await openApp(`${addressOf('P-D-A3')}?view=model`, served());
     await screen.findByRole('heading', { level: 1, name: 'Loan' });
     await boxesShown();
-    const pill = box('P-D-EV01')!;
-    expect(pill.querySelector('.erd-box')).toHaveClass('erd-event', 'tone-current');
-    expect(pill).toHaveTextContent('Thing lentDomain event · 2 fields');
-    expect(pill).toHaveAttribute('aria-label', 'Domain event Thing lent');
+    const flag = box('P-D-EV01')!;
+    expect(flag.querySelector('.erd-box')).toHaveClass('erd-event', 'tone-current');
+    expect(flag).toHaveTextContent('Thing lentDomain event · 2 fields');
+    expect(flag).toHaveAttribute('aria-label', 'Domain event Thing lent');
     expect(box('P-D-EV03')).toHaveTextContent('Loan became overdueDomain event');
     expect(box('P-E-A1')).toHaveClass('is-context');
     await waitFor(() => expect(modelPane().querySelector('[data-line="P-D-EN03|raised_by|P-D-EV01"]')).toHaveClass('rel-raised_by'));
@@ -69,17 +69,18 @@ describe('domain events in the ERD', () => {
     const line = modelPane().querySelector('[data-line="P-D-EV01|reacts_to|P-D-A2"]')!;
     expect(line).toHaveClass('is-dashed', 'is-context', 'has-hover-label');
     expect(line.querySelector('title')).toHaveTextContent('Member reacts to Thing lent');
-    // Clicking a pill goes to the event.
-    fireEvent.click(pill);
+    // Clicking a flag goes to the event.
+    fireEvent.click(flag);
     expect(window.location.pathname).toBe(addressOf('P-D-EV01'));
-    // The event's own page offers the Model view: its aggregate's ERD with the pill picked out.
+    // The event's own page offers the Model view: its aggregate's ERD with the flag picked out.
     await openApp(`${addressOf('P-D-EV02')}?view=model`, served());
     await screen.findByRole('heading', { level: 1, name: 'Thing returned' });
     await boxesShown();
     expect(box('P-D-EV02')!.querySelector('.erd-box')).toHaveClass('is-highlight');
     expect(box('P-D-EV01')!.querySelector('.erd-box')).not.toHaveClass('is-highlight');
-    // Spark tokens for the pill and its lines (LA-EXP-DR52).
-    expect(CSS).toMatch(/\.erd-box\.erd-event\s*\{[^}]*var\(--spark\)[^}]*var\(--spark-bg\)[^}]*border-radius:\s*999px/);
+    // Spark tokens for the flag and its lines (LA-EXP-DR52): notched on the right, as the graph draws an event (LA-EXP-DR65).
+    expect(CSS).toMatch(/\.erd-box\.erd-event\s*\{[^}]*--flag: polygon\(0 0, 100% 0, calc\(100% - 14px\) 50%, 100% 100%, 0 100%\);[^}]*--edge: var\(--spark\)[^}]*clip-path: var\(--flag\)/);
+    expect(CSS).toMatch(/\.erd-box\.erd-event::before\s*\{[^}]*background: var\(--spark-bg\); clip-path: var\(--flag\)/);
     expect(CSS).toMatch(/\.rel-raised_by, \.rel-reacts_to\) :is\(\.erd-line-path, \.erd-end\) \{ stroke: var\(--spark\)/);
   });
 
@@ -135,7 +136,7 @@ describe('domain events in the ERD', () => {
     expect(CSS).toMatch(/pointer: coarse\) \{ \.erd-line\.has-event \.erd-line-label \{ opacity: 1/);
   });
 
-  it('LA-EXP-T156 The ERD\'s key explains the event pill, the raised-by line and the dashed reacts-to line in the relations\' own words, and keeps its one height', async () => {
+  it('LA-EXP-T156 The ERD\'s key explains the event flag, the raised-by line and the dashed reacts-to line in the relations\' own words, and keeps its one height', async () => {
     await openApp(`${addressOf('P-D-A3')}?view=model`, served());
     await screen.findByRole('heading', { level: 1, name: 'Loan' });
     await boxesShown();
@@ -212,7 +213,7 @@ describe('domain events in the wiki', () => {
 });
 
 describe('domain events in the graph', () => {
-  it('LA-EXP-T157 Events sit under their aggregate through a "Domain events" group, are drawn as spark pills, and their reacts_to links are dashed, labeled from the meta-model and drawn with the Links switch', async () => {
+  it('LA-EXP-T157 Events sit under their aggregate through a "Domain events" group, are drawn as spark flags, and their reacts_to links are dashed, labeled from the meta-model and drawn with the Links switch', async () => {
     const i = index();
     expect(treeChildren(i, 'P-D-A3')).toEqual(['P-D-A3/entity', 'P-D-A3/domain_event']);
     expect(treeGroup(i, 'P-D-A3/domain_event')).toMatchObject({ label: 'Domain events', kind: 'domain_event', count: 3, role: 'kind' });
@@ -238,9 +239,10 @@ describe('domain events in the graph', () => {
     const labels = [...document.querySelectorAll('.graph-edge-label')].map((l) => l.textContent);
     expect(labels.filter((l) => l === 'Reacts to')).toHaveLength(4);
     expect(labels).toContain('Raised by');
-    // Dashed, in spark, with Links on too; an event node is a spark pill, its group is not. Its ends are
-    // round to a one-line leaf's half height, so a taller event, its title wrapped, keeps its lines clear of them.
+    // Dashed, in spark, with Links on too; an event node is a spark flag (LA-EXP-DR65), its group is not.
     expect(CSS).toMatch(/\.react-flow__edge-path\.rel-event, \.graph-flow \.react-flow__edge-path\.rel-event\.is-link \{ stroke: var\(--spark\); stroke-dasharray/);
-    expect(CSS).toMatch(/\.graph-node\.kind-domain_event:not\(\.stage-group\)\s*\{[^}]*var\(--spark\)[^}]*var\(--spark-bg\)[^}]*border-radius: calc\(28px \* var\(--node-scale\)\)/);
+    expect(CSS).toMatch(/\.graph-node\.kind-domain_event:not\(\.stage-group\)\s*\{ --node-edge: var\(--spark\); --node-fill: var\(--spark-bg\); \}/);
+    const event = [...document.querySelectorAll('.react-flow__node .graph-node.kind-domain_event')].find((n) => !n.classList.contains('stage-group'));
+    if (event) expect(event).toHaveClass('shape-flag', 'is-clipped');
   });
 });

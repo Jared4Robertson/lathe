@@ -1,7 +1,7 @@
 ---
 id: LA-EXP-T157
 kind: test
-title: Events sit under their aggregate through a "Domain events" group, are drawn as spark pills, and their reacts_to links are dashed, labeled from the meta-model and drawn with the Links switch
+title: Events sit under their aggregate through a "Domain events" group, are drawn as spark flags, and their reacts_to links are dashed, labeled from the meta-model and drawn with the Links switch
 parent: LA-EXP
 test_type: component
 run_by: app/test/domain-events.test.tsx

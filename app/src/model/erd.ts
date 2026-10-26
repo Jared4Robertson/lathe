@@ -19,7 +19,7 @@ import { eventAggregate, eventsOf, raisedByLinks, reactingAggregates, reactionsO
 // - Context (LA-EXP-UC11-R06): on an aggregate's ERD, the entities that its referenced entities
 //   refer to sit one ring out, faded and out of focus; on a domain's ERD, the aggregates of other
 //   domains are context too. The camera frames the boxes in focus only.
-// - Domain events (LA-EXP-UC11-R07, R08): on an aggregate's ERD, each of its events is a pill beside
+// - Domain events (LA-EXP-UC11-R07, R08): on an aggregate's ERD, each of its events is a flag beside
 //   its entities, with a short line from the entity that raises it (`raised_by`), and the aggregates
 //   that react to it, from this domain or another, are faded context at the end of a dashed
 //   "reacts to" line. On a domain's ERD, a dashed "reacts to" line runs from the aggregate raising
@@ -50,7 +50,7 @@ export interface ErdField { field: string; kind: string }
 
 export interface ErdBox {
   id: string;
-  /** 'aggregate' on a domain's ERD (and a reacting aggregate on an aggregate's); 'entity', or 'event' for a domain event's pill, on an aggregate's. */
+  /** 'aggregate' on a domain's ERD (and a reacting aggregate on an aggregate's); 'entity', or 'event' for a domain event's flag, on an aggregate's. */
   kind: 'aggregate' | 'entity' | 'event';
   title: string;
   /** The owner in parentheses for a box from elsewhere: "(Loan)" or "(Lending · Loan)"; null for the diagram's own boxes. */
@@ -133,7 +133,7 @@ export function modelScope(index: SpecIndex, focus: string): { level: ErdLevel; 
     const aggregate = aggregateOf(index, record);
     return aggregate ? { level: 'aggregate', scope: aggregate.id, highlight: record.id } : null;
   }
-  // A domain event: its aggregate's ERD, with its pill picked out.
+  // A domain event: its aggregate's ERD, with its flag picked out.
   if (record.kind === 'domain_event') {
     const aggregate = eventAggregate(index, record);
     return aggregate ? { level: 'aggregate', scope: aggregate.id, highlight: record.id } : null;
@@ -254,7 +254,7 @@ export function aggregateErd(index: SpecIndex, aggregateId: string, highlight: s
       context: false,
     });
   }
-  // Its domain events: pills beside its entities.
+  // Its domain events: flags beside its entities.
   const events = eventsOf(index, aggregateId);
   for (const ev of events) {
     boxes.set(ev.id, {
@@ -336,12 +336,12 @@ export const ENTITY_WIDTH = 240;
 export const ENTITY_HEAD = 46;
 export const FIELD_ROW = 20;
 export const FOREIGN_ENTITY_HEIGHT = 50;
-export const EVENT_PILL = { width: 190, height: 48 };
+export const EVENT_FLAG = { width: 190, height: 48 };
 
 /** A box's size: an aggregate's and an event's are fixed; an entity's grows with its fields. */
 export function boxSize(box: ErdBox): { width: number; height: number } {
   if (box.kind === 'aggregate') return AGGREGATE_BOX;
-  if (box.kind === 'event') return EVENT_PILL;
+  if (box.kind === 'event') return EVENT_FLAG;
   if (box.foreign) return { width: ENTITY_WIDTH, height: FOREIGN_ENTITY_HEIGHT };
   return { width: ENTITY_WIDTH, height: ENTITY_HEAD + FIELD_ROW * Math.max(1, box.fields.length) + 8 };
 }

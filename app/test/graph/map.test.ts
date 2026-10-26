@@ -5,7 +5,8 @@ import { parseRecordFile } from '../../../lathe/src/parse';
 import { contentScale, NODE_HEIGHT, NODE_WIDTH } from '../../src/graph/layout';
 import { graphMap, layoutTree, LEVEL_ASPECT, linkEnds, MAX_LEVEL_STEP, MAX_ROOT_STEP, parentLine, typicalHeight, type GraphMap } from '../../src/graph/map';
 import { drawnFor, frameOnMap, MAX_DRAWN, MIN_DRAWN, viewRect } from '../../src/graph/camera';
-import { BADGE_ROOM, HEX_ROOM, isCentered, LABEL_PAD, labelFor, labelLines, labelHeight, metaWidth, textScaleOf, TITLE_FONT, titleWidth, WIDTH_MARGIN, wrapLabel, wrapText } from '../../src/graph/text';
+import { nodeShape, shapeOf, SHAPES } from '../../src/graph/shapes';
+import { BADGE_ROOM, isCentered, LABEL_PAD, labelFor, labelLines, labelHeight, metaWidth, textScaleOf, TITLE_FONT, titleWidth, WIDTH_MARGIN, wrapLabel, wrapText } from '../../src/graph/text';
 import { indexWorkspace, type SpecIndex } from '../../src/specs/data';
 import { groupedWorkspace, manyOfOneKindWorkspace, testIndex } from './workspace';
 
@@ -101,8 +102,8 @@ describe('levels and content', () => {
         expect(n.h, n.id).toBeGreaterThanOrEqual(n.text * labelHeight(label) - 1);
         // The lines give the text back, and each fits a leaf's width at text scale 1, so at every scale.
         expect(label.title.join('')).toBe(labelLines(index, n.id).title);
-        const hexagon = index.byId.get(n.id)?.kind === 'domain';
-        for (const line of label.title) expect(titleWidth(line.trimEnd()) * WIDTH_MARGIN).toBeLessThanOrEqual(NODE_WIDTH - 2 * LABEL_PAD - (hexagon ? 2 * HEX_ROOM : 0));
+        const { room } = SHAPES[nodeShape(index, n.id).shape];
+        for (const line of label.title) expect(titleWidth(line.trimEnd()) * WIDTH_MARGIN).toBeLessThanOrEqual(NODE_WIDTH - 2 * LABEL_PAD - room.l - room.r);
       }
     }
     // A parent whose own label needs more than its stack passes the difference to its last leaf: the stack still fills it.
@@ -121,13 +122,14 @@ describe('levels and content', () => {
     expect(wrapText('a well-formed', 13, chars, '-')).toEqual(['a well-formed']);
     expect(wrapText('abcdefghijkl', 5, chars)).toEqual(['abcde', 'fghij', 'kl']);
     expect(wrapText('app/src/graph/text.ts', 10, chars, '/')).toEqual(['app/src/', 'graph/', 'text.ts']);
-    // A longer title takes more lines; the badge's room and a hexagon's chamfer leave less room on a line.
+    // A longer title takes more lines; the badge's room and a shape's room leave less room on a line, and a shape's room above and below makes the box taller.
     const lines = { title: 'Walk the model as a graph', meta: 'Use case · LA-EXP-UC03' };
     expect(wrapLabel({ ...lines, title: `${lines.title} and on through every group in it` }).title.length).toBeGreaterThan(wrapLabel(lines).title.length);
     expect(wrapLabel(lines, { marked: true, centered: true }).meta).toEqual(['Use case · ', 'LA-EXP-UC03']);
     expect(wrapLabel(lines).meta).toEqual(['Use case · LA-EXP-UC03']);
     expect(BADGE_ROOM).toBe(30);
-    expect(labelHeight(wrapLabel(lines, { hexagon: true, marked: true, centered: true }))).toBeGreaterThan(labelHeight(wrapLabel(lines)));
+    expect(labelHeight(wrapLabel(lines, { shape: 'hexagon', marked: true, centered: true }))).toBeGreaterThan(labelHeight(wrapLabel(lines)));
+    expect(labelHeight(wrapLabel(lines, { shape: 'window' }))).toBe(labelHeight(wrapLabel(lines)) + SHAPES.window.room.t);
   });
 
   it("LA-EXP-T167 A parent line runs level from the parent's right edge to the child's left edge, at the child's middle", () => {
@@ -224,8 +226,8 @@ describe('real titles', () => {
       const all = records(path.join(specs, product));
       expect(all.length, product).toBeGreaterThan(product === 'lathe' ? 1000 : 50);
       for (const r of all) {
-        // As its box breaks it: a domain's hexagon leaves less room (the badge's room is beside the kind and ID line, not the title).
-        const title = wrapLabel({ title: r.title, meta: '' }, { hexagon: r.kind === 'domain' }).title;
+        // As its box breaks it: its kind's shape keeps room clear (the badge's room is beside the kind and ID line, not the title).
+        const title = wrapLabel({ title: r.title, meta: '' }, { shape: shapeOf(r.kind).shape }).title;
         expect(title.join(''), r.title).toBe(r.title);
         // Every line but the last ends after a space, or after a hyphen inside one word too wide for a line.
         for (const line of title.slice(0, -1)) expect(/\s$/.test(line) || (line.endsWith('-') && !/\s/.test(line)), `${r.title}: "${line}"`).toBe(true);

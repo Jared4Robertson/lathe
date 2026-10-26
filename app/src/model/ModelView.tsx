@@ -13,7 +13,7 @@ import { EdgeHints } from '../graph/hints';
 // with React Flow and laid out by ELK. An entity page draws its aggregate's ERD with the entity
 // highlighted. Clicking a box goes to it, as a graph node does. A key under the diagram explains
 // the colors and the line ends. Like the graph view it never reads the address, so it can sit in
-// any pane. Domain events (LA-EXP-UC11-R07, R08) are pills in the spark colors, their lines and
+// any pane. Domain events (LA-EXP-UC11-R07, R08) are flags in the spark colors, their lines and
 // the dashed "reacts to" lines in spark too, each "reacts to" line showing its label on hover.
 
 /** What a box is called, in its accessible name and the touch card. */
@@ -131,7 +131,7 @@ export function ModelView({ index, focus, onNavigate, onPeek }: ModelViewProps) 
   );
 }
 
-/** The key under the diagram: the colors (as emoji squares), the line ends, and the event pill and its lines. */
+/** The key under the diagram: the colors (as emoji squares), the line ends, and the event flag and its lines. */
 export function ErdKey({ erd, highlight, relations = [] }: { erd: Erd; highlight: boolean; relations?: readonly RelationRule[] }) {
   const end = (ends: [ErdLine['sourceEnd'], ErdLine['targetEnd']], dashed = false, relation = '') => {
     const g = lineGeometry({ x: 0, y: 0, width: 2, height: 2 }, { x: 46, y: 0, width: 2, height: 2 }, ends);

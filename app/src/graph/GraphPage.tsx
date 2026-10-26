@@ -57,6 +57,8 @@ import { isCentered, labelFor, labelHeight, labelLines, marksOf, type WrappedLab
 import { drawnFor, drawnKey, drawnNested, fitBoxes, frameNested, frameOnMap, glideDuration, MAX_ZOOM, mergeDrawn, zoomPath, type Drawn, type Viewport } from './camera';
 import { EdgeHints, type Side } from './hints';
 import { readMotion } from './motion';
+import { nodeShape, shapeVars, SHAPES, type Mark, type Shape } from './shapes';
+import { MarkIcon, ShapeIcon } from './shape-icons';
 import { Button } from '../components/Button';
 
 // The graph view: the product's tree as one fixed map (map.ts), explored by a camera (camera.ts).
@@ -94,6 +96,11 @@ interface NodeData extends Record<string, unknown> {
   header?: number;
   /** In the Voronoi view (LA-EXP-DR64): the cell's outline and its label's box, in the node's own units (its bounding box from 0, 0). */
   cell?: { points: string; label: { x: number; y: number; w: number; h: number } };
+  /** Its kind's shape and mark (LA-EXP-DR65): its outline in the Tree view and a trace, a small mark in the Nested and Voronoi views. */
+  shape: Shape;
+  mark?: Mark;
+  /** In the Tree view and a trace, what its style carries for its shape: its outline, a decoration's notch, its label's room. */
+  outline?: Record<string, string | number>;
 }
 interface EdgeData extends Record<string, unknown> {
   relation: string;
@@ -134,12 +141,12 @@ function Marks({ data }: { data: NodeData }) {
   );
 }
 
-/** The node's scales as CSS variables (LA-EXP-DR58): its border and shape (`--box-scale`), its text, padding and marks (`--node-scale`). */
-const scaleStyle = (scale: number, text: number): CSSProperties | undefined =>
-  scale !== 1 || text !== 1 ? ({ '--box-scale': scale, '--node-scale': text } as CSSProperties) : undefined;
+/** The node's scales as CSS variables (LA-EXP-DR58): its border and shape (`--box-scale`), its text, padding and marks (`--node-scale`); and its shape's outline and room (LA-EXP-DR65). */
+const nodeStyle = (scale: number, text: number, outline?: Record<string, string | number>): CSSProperties | undefined =>
+  scale !== 1 || text !== 1 || outline ? ({ ...(scale !== 1 || text !== 1 ? { '--box-scale': scale, '--node-scale': text } : {}), ...outline } as CSSProperties) : undefined;
 
 function GraphNodeView({ data }: NodeProps<Node<NodeData>>) {
-  /** Whether a domain draws a hexagon mark before its kind and ID line (Nested and Voronoi), rather than being a hexagon (Tree). */
+  /** Whether the box shows its shape as a mark before its kind and ID line (Nested and Voronoi), rather than as its outline (Tree and a trace; LA-EXP-DR65). */
   const marked = data.header !== undefined || data.cell !== undefined;
   const classes = [
     'graph-node',
@@ -147,18 +154,28 @@ function GraphNodeView({ data }: NodeProps<Node<NodeData>>) {
     `kind-${data.kind}`,
     data.isFocus ? 'is-focus' : '',
     data.centered ? 'is-centered' : '',
-    // A domain is a hexagon in the Tree view (LA-EXP-DR61), and in the Nested and Voronoi views a box or a cell with a hexagon mark (LA-EXP-DR62, LA-EXP-DR64).
-    data.kind === 'domain' && !data.group ? (marked ? 'has-hexagon-mark' : 'is-hexagon') : '',
+    // Its kind's shape is its outline in the Tree view; in the Nested and Voronoi views it is a box or a cell (LA-EXP-DR62, LA-EXP-DR64).
+    marked ? '' : `shape-${data.shape}`,
+    !marked && SHAPES[data.shape].draw === 'clipped' ? 'is-clipped' : '',
     data.header ? 'is-container' : '',
     data.cell ? 'is-cell' : '',
   ].filter(Boolean).join(' ');
-  const style = scaleStyle(data.scale, data.text);
+  const style = nodeStyle(data.scale, data.text, marked ? undefined : data.outline);
+  /** The marks before the kind and ID line: its shape's in the Nested and Voronoi views (not a file's), and its kind's mark in every view. */
+  const marks = (
+    <>
+      {marked && data.kind !== FILE_KIND && <ShapeIcon shape={data.shape} />}
+      {data.mark && <MarkIcon mark={data.mark} />}
+    </>
+  );
+  /** A circle's badge sits at the end of its kind and ID line, which its room keeps inside the circle; every other box's at its top right. */
+  const inMeta = !marked && data.shape === 'circle';
   const label = (
     <>
       {/* The lines as the map broke them; a marked box keeps room beside its kind and ID line for the badge. */}
-      <small className={data.errors + data.warnings + data.gaps.length > 0 ? 'graph-badge-room' : undefined}>{data.lines.meta.map((l, i) => <span key={i}>{i === 0 && data.kind === 'domain' && marked && !data.group && <span className="graph-hexagon-mark" aria-hidden="true" />}{l}</span>)}</small>
+      <small className={data.errors + data.warnings + data.gaps.length > 0 ? 'graph-badge-room' : undefined}>{data.lines.meta.map((l, i) => <span key={i}>{i === 0 && marks}{l}</span>)}{inMeta && <Marks data={data} />}</small>
       <strong>{data.lines.title.map((l, i) => <span key={i}>{l}</span>)}</strong>
-      <Marks data={data} />
+      {!inMeta && <Marks data={data} />}
     </>
   );
   const handles = (
@@ -602,14 +619,15 @@ function boxData(index: SpecIndex, id: string, focus: string, scale: number, tex
   const centered = nested ? nested.centered : isCentered(text, parent);
   const lines = nested ? nested.lines : labelFor(index, id, centered);
   const record = index.byId.get(id);
+  const shaped = nodeShape(index, id);
   if (record) {
-    return { id, kind: record.kind, stage: stageOf(index, record.kind), title, kindLabel: kindLabel(index, record.kind), meta, group: false, ...marksOf(index, id), isFocus: id === focus, scale, text, lines, centered };
+    return { id, kind: record.kind, stage: stageOf(index, record.kind), title, kindLabel: kindLabel(index, record.kind), meta, group: false, ...marksOf(index, id), isFocus: id === focus, scale, text, lines, centered, ...shaped };
   }
   if (id.startsWith('file:')) {
     const node = graph.nodes.find((n) => n.id === id);
-    return { id, kind: FILE_KIND, stage: 'file', title: node?.title ?? title, kindLabel: 'File', meta, group: false, errors: 0, warnings: 0, gaps: [], isFocus: false, scale, text, lines, centered };
+    return { id, kind: FILE_KIND, stage: 'file', title: node?.title ?? title, kindLabel: 'File', meta, group: false, errors: 0, warnings: 0, gaps: [], isFocus: false, scale, text, lines, centered, ...shaped };
   }
-  return { id, kind: treeGroup(index, id)?.kind ?? 'folder', stage: 'group', title, kindLabel: 'Group', meta, group: true, ...marksOf(index, id), isFocus: id === focus, scale, text, lines, centered };
+  return { id, kind: treeGroup(index, id)?.kind ?? 'folder', stage: 'group', title, kindLabel: 'Group', meta, group: true, ...marksOf(index, id), isFocus: id === focus, scale, text, lines, centered, ...shaped };
 }
 
 /** The accessible name of a box. */
@@ -840,6 +858,8 @@ function GraphCanvas({ index, graph, layout, depth, filters, onNavigate, minimap
       // Nested and Voronoi, a box's border grows with its text, so a large box's edge stays in proportion to its label, and its lines are the map's (LA-EXP-DR62, LA-EXP-DR64).
       const data = boxData(index, b.id, focus, inNested ? Math.max(0.5, b.text) : contentScale(b.w, b.h), b.text, b.parent, graph, inNested);
       if (inNested && 'header' in inNested) data.header = inNested.header;
+      // In the Tree view and a trace, its outline is its kind's shape at its size (LA-EXP-DR65).
+      if (!inNested) data.outline = shapeVars(data.shape, b.w, b.h, data.scale);
       if (inNested && 'polygon' in inNested) {
         const r = (v: number) => Math.round(v * 100) / 100;
         data.cell = { points: inNested.polygon.map(([x, y]) => `${r(x - b.x)},${r(y - b.y)}`).join(' '), label: { x: inNested.label.x - b.x, y: inNested.label.y - b.y, w: inNested.label.w, h: inNested.label.h } };
@@ -888,7 +908,7 @@ function GraphCanvas({ index, graph, layout, depth, filters, onNavigate, minimap
         const up = map.nodes.get(b.id)?.parent;
         const p = up ? byId.get(up) : undefined;
         if (!p) continue;
-        const shape = (id: string) => (index.byId.get(id)?.kind === 'domain' ? 'hexagon' as const : 'box' as const);
+        const shape = (id: string) => nodeShape(index, id).shape;
         edges.push({ id: `${p.id}|${PARENT}|${b.id}`, source: p.id, target: b.id, type: 'line', focusable: false, selectable: false, data: { relation: PARENT, points: parentLine(p, b, shape(p.id), shape(b.id)), label: '', link: false, scale: contentScale(b.w, b.h) } });
       }
     }

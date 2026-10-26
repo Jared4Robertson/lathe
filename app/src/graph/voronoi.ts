@@ -2,7 +2,7 @@ import { voronoiMapSimulation, type VoronoiMapPolygon } from 'd3-voronoi-map';
 import polylabel from 'polylabel';
 import type { SpecIndex } from '../specs/data';
 import type { MapNode, PlacedMap } from './map';
-import { BADGE_ROOM, hasMarks, HEX_ROOM, LABEL_PAD, labelHeight, labelLines, metaWidth, titleWidth, WIDTH_MARGIN, wrapLabel, type WrappedLabel } from './text';
+import { LABEL_PAD, labelHeight, linesIn as linesAt, mapLabel, wordsFit as wordsFitAt, type MapLabel, type WrappedLabel } from './text';
 import { treeChildren } from './tree';
 
 // The graph's Voronoi map (LA-EXP-DR64): the same tree as the Tree and Nested maps, one product's,
@@ -63,8 +63,6 @@ export const MAX_ROUNDS = 400;
 const STEPS_DOWN = 40;
 const STEP_DOWN = 0.85;
 
-/** What a cell's label says, and what it keeps room for: a domain's hexagon mark, the problem badge. */
-export interface VoronoiLabel { title: string; meta: string; hexagon?: boolean; marked?: boolean }
 
 export interface VoronoiNode extends MapNode {
   /** Its outline's corners, in world coordinates; x, y, w and h are its bounding box. */
@@ -180,15 +178,9 @@ export function hexagon(area: number): XY[] {
 
 // ---------- Labels ----------
 
-/** Whether every word of a label fits on a line `width` wide at text scale 1, so wrapping never breaks a word. */
-function wordsFit(label: VoronoiLabel, width: number): boolean {
-  const inner = width - 2 * LABEL_PAD - (label.hexagon ? 2 * HEX_ROOM : 0);
-  const words = (text: string) => text.split(/\s+/).filter(Boolean);
-  return words(label.title).every((w) => titleWidth(w) * WIDTH_MARGIN <= inner)
-    && words(label.meta).every((w) => metaWidth(w) * WIDTH_MARGIN <= inner - (label.marked ? 2 * BADGE_ROOM : 0));
-}
-
-const linesIn = (label: VoronoiLabel, width: number): WrappedLabel => wrapLabel(label, { hexagon: label.hexagon, marked: label.marked, centered: true, width });
+/** Whether every word of a cell's label fits on a line `width` wide at text scale 1, so wrapping never breaks a word: a cell's label is always centered. */
+const wordsFit = (label: MapLabel, width: number) => wordsFitAt(label, width, true);
+const linesIn = (label: MapLabel, width: number): WrappedLabel => linesAt(label, width, true);
 
 /** A cell's text scale for its own size (LA-EXP-DR58): in proportion to the square root of its area. */
 export const cellTextScale = (area: number, parent: boolean) => Math.sqrt(area) / (parent ? PARENT_TEXT_SIZE : LEAF_TEXT_SIZE);
@@ -199,7 +191,7 @@ interface Placed { text: number; lines: WrappedLabel; label: { x: number; y: num
 const WIDTHS = [0.96, 0.88, 0.8, 0.72, 0.64, 0.56, 0.48, 0.4];
 
 /** A leaf's label at a scale, centered on the cell's largest inscribed point, as wide as the cell allows: null when it does not fit. */
-function leafLabel(p: Polygon, pole: XY, label: VoronoiLabel, s: number): Placed | null {
+function leafLabel(p: Polygon, pole: XY, label: MapLabel, s: number): Placed | null {
   const across = chord(p, pole[1]);
   if (!across) return null;
   const room = 2 * Math.min(pole[0] - across[0], across[1] - pole[0]);
@@ -222,7 +214,7 @@ const HEADER_TOPS = [0.02, 0.05, 0.08, 0.12, 0.16, 0.2, 0.25];
  * label, as wide as the cell allows there, fits, with its children's outline cut below it, leaving
  * them at least MIN_CHILD_SHARE of the cell. Null when it does not fit.
  */
-function headerLabel(p: Polygon, label: VoronoiLabel, s: number, pad: number): Placed | null {
+function headerLabel(p: Polygon, label: MapLabel, s: number, pad: number): Placed | null {
   const box = bounds(p);
   const whole = polygonArea(p);
   for (const top of HEADER_TOPS) {
@@ -250,7 +242,7 @@ function headerLabel(p: Polygon, label: VoronoiLabel, s: number, pad: number): P
 }
 
 /** A cell's label at its own scale, or the first smaller scale it fits at; null only for a degenerate cell (fewer than three corners). */
-function placeLabel(p: Polygon, label: VoronoiLabel, parent: boolean, pad: (s: number) => number): Placed | null {
+function placeLabel(p: Polygon, label: MapLabel, parent: boolean, pad: (s: number) => number): Placed | null {
   if (p.length < 3) return null;
   const base = cellTextScale(polygonArea(p), parent);
   const pole = parent ? null : (polylabel([p as XY[]], Math.max(1e-3, Math.sqrt(polygonArea(p)) / 200)) as unknown as XY);
@@ -350,7 +342,7 @@ export function voronoiCells(outline: Polygon, sites: readonly Site[]): Map<stri
 export function layoutVoronoi(
   roots: readonly string[],
   childrenOf: (id: string) => readonly string[],
-  labelOf: (id: string) => VoronoiLabel = (id) => ({ title: id, meta: '' }),
+  labelOf: (id: string) => MapLabel = (id) => ({ title: id, meta: '' }),
 ): VoronoiMap {
   const parent = new Map<string, string | null>();
   const level = new Map<string, number>();
@@ -423,7 +415,7 @@ export function layoutVoronoi(
 }
 
 /** What a layout reads of one product's tree: each node's children and label, from its root, a parent before its children. */
-export interface VoronoiTree { root: string; nodes: { id: string; children: string[]; label: VoronoiLabel }[] }
+export interface VoronoiTree { root: string; nodes: { id: string; children: string[]; label: MapLabel }[] }
 
 /** The tree under a root as the layout reads it, and a key that changes only when it does. */
 export function voronoiTree(index: SpecIndex, root: string): { tree: VoronoiTree; key: string } {
@@ -433,7 +425,7 @@ export function voronoiTree(index: SpecIndex, root: string): { tree: VoronoiTree
     seen.add(id);
     const children = treeChildren(index, id).filter((c) => !seen.has(c));
     for (const c of children) seen.add(c);
-    nodes.push({ id, children, label: { ...labelLines(index, id), hexagon: index.byId.get(id)?.kind === 'domain', marked: hasMarks(index, id) } });
+    nodes.push({ id, children, label: mapLabel(index, id) });
     for (const c of children) walk(c);
   };
   walk(root);

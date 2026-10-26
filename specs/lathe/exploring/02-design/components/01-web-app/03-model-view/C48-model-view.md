@@ -10,4 +10,4 @@ links:
   implements: [LA-EXP-V05]
   depends_on: [LA-EXP-C46, LA-EXP-C47, LA-EXP-C42, LA-EXP-C57]
 ---
-Draws a page's ERD with React Flow: each box (blue or gray, root mark, fields, highlight), each line with its ends, a click or Enter on a box going to it, the hover ring, the fit moving with the shared motion, and the key under the diagram with 🟦 and ⬜ for the colors and a drawing of each line end. Domain events are spark pills; a "reacts to" line shows its label on hover (on a domain, the event's name, always shown by touch), and the key explains the pill and its lines. Its icon is `app/src/model/ModelIcon.tsx`.
+Draws a page's ERD with React Flow: each box (blue or gray, root mark, fields, highlight), each line with its ends, a click or Enter on a box going to it, the hover ring, the fit moving with the shared motion, and the key under the diagram with 🟦 and ⬜ for the colors and a drawing of each line end. Domain events are spark flags, notched on the right (`LA-EXP-DR65`); a "reacts to" line shows its label on hover (on a domain, the event's name, always shown by touch), and the key explains the pill and its lines. Its icon is `app/src/model/ModelIcon.tsx`.
