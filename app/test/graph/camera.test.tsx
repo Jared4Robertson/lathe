@@ -1,10 +1,9 @@
 import './setup';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, waitFor } from '@testing-library/react';
-import { drawnNested, frameMap, frameNested, frameOnMap, FRAME_MAX_ZOOM, FRAME_PADDING, glideDuration, MAX_DRAWN, MAX_ZOOM, MIN_DRAWN, PARENT_STRIP, PARENT_STRIP_MAX, REVEAL_ZOOM, viewRect, zoomPath } from '../../src/graph/camera';
+import { drawnNested, frameMap, frameNested, frameOnMap, FRAME_MAX_ZOOM, FRAME_PADDING, glideDuration, MAX_DRAWN, MAX_ZOOM, MIN_DRAWN, PARENT_STRIP, PARENT_STRIP_MAX, viewRect, zoomPath } from '../../src/graph/camera';
 import { nestedMap } from '../../src/graph/nested';
 import { readyVoronoiMap } from '../../src/graph/voronoi';
-import { labelShown, MIN_LABEL_PX, TITLE_FONT } from '../../src/graph/text';
 import { graphMap } from '../../src/graph/map';
 import { MOTION_SPEED_MS } from '../../src/graph/motion';
 import { openApp, startAtDepth } from '../helpers';
@@ -59,8 +58,6 @@ describe('graph camera', () => {
       expect(top.y).toBeGreaterThanOrEqual(FRAME_PADDING - 0.5);
       expect(bottom.y).toBeLessThanOrEqual(h - FRAME_PADDING + 0.5);
       expect(v.zoom).toBeLessThanOrEqual(FRAME_MAX_ZOOM);
-      // Never so far out that the focus's own title is under MIN_LABEL_PX on screen (LA-EXP-DR60).
-      expect(TITLE_FONT * f.text * v.zoom).toBeGreaterThanOrEqual(MIN_LABEL_PX - 1e-9);
       // Centered on the focus's middle, top to bottom.
       expect((top.y + bottom.y) / 2).toBeCloseTo(h / 2, 6);
       // The parent is in view at the left edge, a strip of it at least, and the focus right of it.
@@ -151,14 +148,7 @@ describe('graph camera on the page', () => {
 
 describe('graph camera in the Nested layout', () => {
   const map = nestedMap(testIndex(), 'P');
-  /** How many levels a node lies inside another, or -1. */
-  const inside = (id: string, focus: string) => {
-    let d = 0;
-    for (let at: string | null = id; at !== null; at = map.nodes.get(at)!.parent, d++) if (at === focus) return d;
-    return -1;
-  };
-
-  it('LA-EXP-T188 The camera frames the focus box, and depth labels the levels inside it until the person zooms in', () => {
+  it('LA-EXP-T188 The camera frames the focus box, whatever the depth, and draws each box in view and big enough with its label', () => {
     for (const focus of ['P', 'P-D', 'P-D/define', 'P-D-UC01', 'P-D-UC01-R01']) {
       const n = map.nodes.get(focus)!;
       const v = frameNested(map, focus, 1000, 800);
@@ -168,9 +158,8 @@ describe('graph camera in the Nested layout', () => {
       expect(n.w * v.zoom).toBeLessThanOrEqual(1000 - 2 * FRAME_PADDING + 1e-6);
       expect(n.h * v.zoom).toBeLessThanOrEqual(800 - 2 * FRAME_PADDING + 1e-6);
       expect(v.zoom).toBeLessThanOrEqual(MAX_ZOOM);
-      for (const depth of [1, 2, 3]) {
-        const limit = { focus, depth, framed: v.zoom };
-        const d = drawnNested(map, v, 1000, 800, [], limit);
+      {
+        const d = drawnNested(map, v, 1000, 800, []);
         const rect = viewRect(v, 1000, 800);
         const order = d.boxes.map((b) => b.id);
         expect(d.bars).toEqual([]);
@@ -181,18 +170,10 @@ describe('graph camera in the Nested layout', () => {
           expect(m.x + m.w >= rect.x0 && m.x <= rect.x1 && m.y + m.h >= rect.y0 && m.y <= rect.y1, b.id).toBe(true);
           expect(Math.min(m.w, m.h) * v.zoom).toBeGreaterThanOrEqual(MIN_DRAWN);
           if (m.parent !== null) expect(order.indexOf(m.parent), b.id).toBeLessThan(order.indexOf(b.id));
-          // Deeper than the depth inside the focus, or a label that does not fit its box: plain. Otherwise labeled while its title reads.
-          expect(b.label, `${b.id} at depth ${depth}`).toBe(map.nodes.get(b.id)!.fits && inside(b.id, focus) <= depth && labelShown(m.text, v.zoom));
+          // A drawn box is only its ID: its label is always drawn, at the map's text scale.
+          expect(Object.keys(b)).toEqual(['id']);
         }
-        // Zoomed in REVEAL_ZOOM times past the frame, the deeper boxes are labeled as their titles read.
-        const z = { ...v, zoom: v.zoom * REVEAL_ZOOM };
-        for (const b of drawnNested(map, z, 1000, 800, [], limit).boxes) expect(b.label).toBe(map.nodes.get(b.id)!.fits && labelShown(map.nodes.get(b.id)!.text, z.zoom));
       }
-    }
-    // A focus whose label fits is labeled at its frame: its title reads.
-    for (const focus of ['P', 'P-D', 'P-D-UC01'].filter((id) => map.nodes.get(id)!.fits)) {
-      const v = frameNested(map, focus, 1000, 800);
-      expect(drawnNested(map, v, 1000, 800, [], { focus, depth: 1, framed: v.zoom }).boxes.find((b) => b.id === focus)?.label).toBe(true);
     }
   });
 

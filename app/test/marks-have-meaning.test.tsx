@@ -29,7 +29,7 @@ describe('the Graph view key', () => {
   // label moved into its header band.
   const LAYOUT = new Set(['is-centered', 'is-container']);
   // A node class shown in the key by a swatch of another name.
-  const SWATCH: Record<string, string> = { 'is-hexagon': 'stage-hexagon', 'is-plain': 'stage-plain' };
+  const SWATCH: Record<string, string> = { 'is-hexagon': 'stage-hexagon' };
 
   it('LA-PLT-T133 Every box look, badge and line style the Graph view can draw is in its key, with what it means', () => {
     const { container } = render(<Legend />);

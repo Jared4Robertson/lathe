@@ -21,7 +21,7 @@ async function open(page: Page, url: string, ready = TITLE) {
 }
 
 /**
- * A framed level may run past the canvas's right edge (in a narrow pane, LA-EXP-DR59): a box is in view when its left part is and it is 24 px tall or more, and is clicked there.
+ * A box may lie partly outside the canvas, past its edge: a box is in view when its left part is and it is 24 px tall or more, and is clicked there.
  */
 
 /** The ID of a record box (not the center) whose left part is inside the graph's canvas, where a click lands on it. */
@@ -106,7 +106,8 @@ test.describe('performance', () => {
       await page.locator('.graph-layout button', { hasText: layout }).click();
       await page.locator(`.graph-flow[data-layout="${layout.toLowerCase()}"] .react-flow__node`).first().waitFor();
     }
-    await page.locator('.graph-depth button', { hasText: '3' }).click();
+    // The Nested camera frames the focus's box, so it has no depth (LA-EXP-DR63).
+    if (layout === 'Tree') await page.locator('.graph-depth button', { hasText: '3' }).click();
     await quiet(page, 900);
     const works: number[] = [];
     const frames: number[] = [];
@@ -120,6 +121,8 @@ test.describe('performance', () => {
         await page.waitForURL((u) => u.pathname !== before);
         await page.locator(`.graph-flow .react-flow__node[data-id="${id}"] .is-focus`).waitFor();
       }, 900);
+      // Nested, a framed leaf fills the pane with nothing else in view: go back to the record before the next hop, outside the measure.
+      if (layout === 'Nested' && hop < 3) { await page.goBack(); await page.waitForURL((u) => u.pathname === before); await quiet(page, 900); }
       works.push(r.workMs);
       frames.push(r.worstFrameMs);
       slow.push(r.slowFrames);

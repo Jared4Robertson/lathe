@@ -92,7 +92,6 @@ export function Legend() {
           <li><span className="graph-swatch stage-hexagon-mark" /> Nested and Voronoi views: a domain, with a hexagon mark</li>
           <li><span className="graph-swatch is-cell" /> Voronoi view: a cell made of its children's cells, its name at its top</li>
           <li><span className="graph-swatch stage-group" /> Stage, folder or group, as the nav names it, with its count</li>
-          <li><span className="graph-swatch stage-plain" /> A box too small on screen for its text: zoom in, or hover it, for its name</li>
           <li><span className="graph-swatch stage-bar" /> A bar: children too small to draw at this zoom</li>
           <li><span className="graph-swatch stage-file" /> File named by a component or test</li>
           <li><span className="graph-line rel-structure" /> parent / child (the tree, through stages, folders and groups)</li>
@@ -107,8 +106,8 @@ export function Legend() {
         </ul>
         <p className="hint">The graph is one map of the nav's tree: a domain holds Define and Design, each stage its folders, each folder its records. Levels run left to right, each parent as tall as its children, and nothing changes size: focusing moves the camera. Depth is how many levels below the focus the camera frames, folders included. A trace runs left to right, from the rule to the files that build and test it.</p>
         <p className="hint">The Nested layout (v) draws the same tree as boxes inside boxes: the product made of its domains, each domain of Define and Design, each stage of its folders, each box as big as the records under it. Focusing frames the box; depth is how many levels inside it are labeled, and zooming in labels the rest.</p>
-        <p className="hint">The Voronoi layout draws the same tree as polygon cells inside cells: the product a hexagon split into its domains, each domain split into Define and Design, and so on down, each cell as big as the records under it. It frames and labels as the Nested layout does.</p>
-        <p className="hint">Click a record or a group, or press Enter on it, to focus it. Scroll, pinch or drag to look around. Arrow keys or Tab move between labeled boxes; + and - change the depth, l switches Links, t switches trace mode, and . frames the focus again. Alt+Up steps out to the parent, Alt+Down in to the first child, and Alt+Shift+Left or Right to a sibling.</p>
+        <p className="hint">The Voronoi layout draws the same tree as polygon cells inside cells: the product a hexagon split into its domains, each domain split into Define and Design, and so on down, each cell as big as the records under it and never too small for its name. It frames and labels as the Nested layout does.</p>
+        <p className="hint">Click a record or a group, or press Enter on it, to focus it. Scroll, pinch or drag to look around. Arrow keys or Tab move between the boxes; + and - change the depth, l switches Links, t switches trace mode, and . frames the focus again. Alt+Up steps out to the parent, Alt+Down in to the first child, and Alt+Shift+Left or Right to a sibling.</p>
       </section>
     </details>
   );
