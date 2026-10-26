@@ -221,8 +221,8 @@ describe('graph camera in the Nested layout', () => {
     const map = () => readyVoronoiMap(testIndex(), 'P')!;
     await waitFor(() => expect(calls.at(-1)?.viewport).toEqual(frameNested(map(), 'P-D-UC01', 1000, 800)));
     expect(document.querySelector('.graph-flow.is-voronoi')).not.toBeNull();
+    expect(node('P-D-UC01')!.style.clipPath).toMatch(/^polygon\(/);
     const cell = node('P-D-UC01')!.querySelector<HTMLElement>('.graph-node.is-cell')!;
-    expect(cell.style.clipPath).toMatch(/^polygon\(/);
     expect(cell.querySelector('.graph-cell-shape polygon')).not.toBeNull();
     expect(cell.querySelector('.graph-cell-label strong')?.textContent).toBe('Lend a thing');
     fireEvent.click(node('P-D-UC01-R01')!);
