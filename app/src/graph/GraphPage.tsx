@@ -114,7 +114,7 @@ interface BarData extends Record<string, unknown> { bar: true }
 export function relationStyle(relation: string): string {
   if (relation === PARENT) return 'structure';
   if (['satisfies', 'proves', 'fulfills'].includes(relation)) return 'trace';
-  if (['uses', 'implements', 'depends_on'].includes(relation)) return 'design';
+  if (['uses', 'implements', 'depends_on', 'meets'].includes(relation)) return 'design';
   if (relation === 'names') return 'file';
   if (relation === 'follows') return 'pattern';
   // A domain event's links (LA-EXP-UC04-R07): dashed, in the spark colors events are drawn in.

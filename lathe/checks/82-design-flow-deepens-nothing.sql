@@ -1,6 +1,6 @@
 -- A technical flow that deepens no flow.
 --
--- A technical flow says how the system carries out a flow (FORMAT.md section 21), so it names that flow with
+-- A technical flow says how the system carries out a flow (FORMAT.md section 22), so it names that flow with
 -- `deepens`. One that deepens nothing is design with no flow to carry out: the flow is missing, or the link
 -- is. A link to a flow that does not exist is only dangling-link. Link the flow it carries out with
 -- `deepens`, or write the flow first.

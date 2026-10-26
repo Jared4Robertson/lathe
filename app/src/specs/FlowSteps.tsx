@@ -6,7 +6,7 @@ import { ProblemBadge, RecordLink, Section } from './parts';
 import { Button } from '../components/Button';
 
 // A flow's steps as a table, in order (FORMAT.md section 14): the step, what happens, what it uses
-// and what it carries out. A technical flow's steps (section 21) read the same way, with the
+// and what it carries out. A technical flow's steps (section 22) read the same way, with the
 // component each step uses and what it satisfies, and their transaction, locks and statements
 // folded under the row. A flow with several paths shows a table per path, main first, then the
 // others by name, each in its own order. Each row shows one level: the step's title and the IDs it links to. What

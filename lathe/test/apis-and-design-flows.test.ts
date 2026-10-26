@@ -1,4 +1,4 @@
-// APIs, integrations and technical flows (FORMAT.md sections 20 and 21): the kinds, where they sit,
+// APIs, integrations and technical flows (FORMAT.md sections 21 and 22): the kinds, where they sit,
 // the order check on technical steps, coverage counting a step's satisfies as design, and the
 // design-flow-deepens-nothing warning.
 import path from 'node:path';
@@ -20,7 +20,7 @@ beforeAll(async () => {
 });
 
 describe('APIs and integrations', () => {
-  it('LA-AUT-T122 An API sits in a domain and holds its endpoints and the interaction requirements they share', () => {
+  it('LA-AUT-T130 An API sits in a domain and holds its endpoints and the interaction requirements they share', () => {
     const kind = (name: string) => good.kinds.find((k) => k.kind === name);
     expect(kind('api')).toMatchObject({ label: 'API', stage: 'design', section: 'interaction-design', parent_kinds: ['domain'], obligation: false });
     expect(kind('endpoint')?.parent_kinds).toEqual(['domain', 'api']);
@@ -30,7 +30,7 @@ describe('APIs and integrations', () => {
     expect(errorsOf(good)).toEqual([]);
   });
 
-  it("LA-AUT-T123 An integration holds one interaction requirement per exchange and may name its system, and an interaction requirement may sit under the domain", () => {
+  it("LA-AUT-T131 An integration holds one interaction requirement per exchange and may name its system, and an interaction requirement may sit under the domain", () => {
     const kind = (name: string) => good.kinds.find((k) => k.kind === name);
     expect(kind('integration')).toMatchObject({ stage: 'design', section: 'interaction-design', parent_kinds: ['domain'], required_fields: [] });
     expect(kind('interaction_requirement')?.parent_kinds).toEqual(['view', 'endpoint', 'flow', 'api', 'integration', 'domain']);
@@ -45,14 +45,14 @@ describe('APIs and integrations', () => {
 });
 
 describe('technical flows', () => {
-  it('LA-AUT-T124 A technical flow sits in a domain or a layer and deepens a flow, and its steps have an order, use components and satisfy obligations', () => {
+  it('LA-AUT-T132 A technical flow sits in a domain or a layer and deepens a flow, and its steps have an order, use components and satisfy obligations', () => {
     const kind = (name: string) => good.kinds.find((k) => k.kind === name);
     expect(kind('design_flow')).toMatchObject({ label: 'Technical flow', stage: 'design', section: 'technical-specification', parent_kinds: ['domain', 'layer'] });
     expect(kind('design_step')).toMatchObject({ label: 'Technical step', parent_kinds: ['design_flow'], required_fields: ['order'], obligation: false });
     const rules = good.relations.filter((r) => r.source_kind === 'design_flow' || r.source_kind === 'design_step')
       .map((r) => `${r.source_kind} ${r.relation} ${r.target_kind} ${r.role}`.trim()).sort();
     expect(rules).toEqual([
-      'design_flow deepens flow',
+      'design_flow deepens flow', 'design_step meets standard_rule',
       'design_step satisfies domain_rule design', 'design_step satisfies interaction_requirement design',
       'design_step satisfies pattern_rule design', 'design_step satisfies requirement design',
       'design_step uses component',
@@ -66,7 +66,7 @@ describe('technical flows', () => {
     expect(recordsOf(good, 'step-order')).toEqual([]);
   });
 
-  it("LA-AUT-T125 A technical step's satisfies counts as design, but only a component whose file exists counts as built", () => {
+  it("LA-AUT-T133 A technical step's satisfies counts as design, but only a component whose file exists counts as built", () => {
     const coverage = good.coverage.find((c) => c.domain === 'AD-D')!;
     const of = (kind: string) => coverage.obligations.find((o) => o.kind === kind)!;
     // AD-D-DR01 and AD-D-UC01-R01 and R02 are designed only by technical steps.
@@ -78,7 +78,7 @@ describe('technical flows', () => {
     expect(recordsOf(good, 'unsatisfied')).toEqual([]);
   });
 
-  it("LA-AUT-T126 A technical step's order is checked on its path, as a flow step's is", () => {
+  it("LA-AUT-T134 A technical step's order is checked on its path, as a flow step's is", () => {
     expect(recordsOf(broken, 'step-order')).toEqual(['DS-D-DF01-S01', 'DS-D-DF01-S02', 'DS-D-DF01-S03', 'DS-D-DF01-S04']);
     expect(messagesOf(broken, 'step-order', 'DS-D-DF01-S01')).toEqual([
       'Technical step DS-D-DF01-S01 has order 1 in technical flow DS-D-DF01, the same as DS-D-DF01-S02; each step of a technical flow needs its own order.',
@@ -93,7 +93,7 @@ describe('technical flows', () => {
     for (const p of broken.problems.filter((x) => x.check === 'step-order')) expect(p.severity).toBe('error');
   });
 
-  it('LA-AUT-T127 A technical flow that deepens no flow is a design-flow-deepens-nothing warning', () => {
+  it('LA-AUT-T135 A technical flow that deepens no flow is a design-flow-deepens-nothing warning', () => {
     expect(recordsOf(good, 'design-flow-deepens-nothing')).toEqual(['AD-D-DF02']);
     expect(messagesOf(good, 'design-flow-deepens-nothing', 'AD-D-DF02')).toEqual([
       'Technical flow AD-D-DF02 deepens no flow; link the flow it carries out with "deepens".',
