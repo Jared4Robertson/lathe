@@ -221,7 +221,7 @@ describe('graph groups on the page', () => {
     fireEvent.click(node('P-D/question')!);
     await waitFor(() => expect(window.location.pathname).toBe('/P-D/question'));
     await waitFor(() => expect(groupNode('P-D/question')!.className).toContain('is-focus'));
-    // Its name and count: in its label once its title reads on screen (LA-EXP-DR60), and always in its tooltip.
+    // Its name and count: in its label (LA-EXP-DR60), and in its tooltip.
     expect(groupNode('P-D/question')!.getAttribute('title')).toBe('Open questions (1) (in P-D)');
     expect(document.querySelector('.graph-group-chevron')).toBeNull();
 

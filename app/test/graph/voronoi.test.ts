@@ -158,7 +158,6 @@ describe('the Voronoi map', () => {
         const own = cellTextScale(polygonArea(n.polygon), n.children.length > 0);
         // Its own size's scale, or (a title too long for it) a smaller one, never larger.
         expect(n.text).toBeLessThanOrEqual(own * (1 + 1e-9));
-        expect(n.fits, n.id).toBe(true);
         expect(holds(n.polygon, n.label), `${n.id}'s label inside it`).toBe(true);
         // No word is broken: every line but the last ends after a space.
         for (const line of n.lines.title.slice(0, -1)) expect(/\s$/.test(line), `${n.id}: "${line}"`).toBe(true);
@@ -204,19 +203,17 @@ describe('graph camera in the Voronoi layout', () => {
       // Centered on the cell's box.
       expect((n.x + n.w / 2) * v.zoom + v.x).toBeCloseTo(500, 6);
       expect((n.y + n.h / 2) * v.zoom + v.y).toBeCloseTo(400, 6);
-      for (const depth of [1, 2, 3]) {
-        const d = drawnNested(map, v, 1000, 800, [], { focus, depth, framed: v.zoom });
-        expect(d.boxes.length).toBeLessThanOrEqual(MAX_DRAWN);
-        const rect = viewRect(v, 1000, 800);
-        const at = new Map(d.boxes.map((b, i) => [b.id, i]));
-        for (const b of d.boxes) {
-          const c = map.nodes.get(b.id)!;
-          expect(c.w * v.zoom).toBeGreaterThanOrEqual(MIN_DRAWN);
-          expect(c.x + c.w >= rect.x0 && c.x <= rect.x1).toBe(true);
-          if (c.parent && at.has(c.parent)) expect(at.get(c.parent)!).toBeLessThan(at.get(b.id)!);
-        }
-        expect(d.boxes.find((b) => b.id === focus)?.label).toBe(true);
+      const d = drawnNested(map, v, 1000, 800, [focus]);
+      expect(d.boxes.length).toBeLessThanOrEqual(MAX_DRAWN);
+      const rect = viewRect(v, 1000, 800);
+      const at = new Map(d.boxes.map((b, i) => [b.id, i]));
+      for (const b of d.boxes) {
+        const c = map.nodes.get(b.id)!;
+        expect(c.w * v.zoom).toBeGreaterThanOrEqual(MIN_DRAWN);
+        expect(c.x + c.w >= rect.x0 && c.x <= rect.x1).toBe(true);
+        if (c.parent && at.has(c.parent)) expect(at.get(c.parent)!).toBeLessThan(at.get(b.id)!);
       }
+      expect(d.boxes.some((b) => b.id === focus)).toBe(true);
     }
   });
 });
