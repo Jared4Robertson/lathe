@@ -36,11 +36,15 @@ import { treeChildren } from './tree';
 type XY = [number, number];
 type Polygon = readonly XY[];
 
-/** The map area one leaf record stands for: a leaf cell about VORONOI_LEAF_SIZE across, with a little more for the headers and padding above it. */
-export const VORONOI_LEAF_SIZE = 270;
-export const LEAF_AREA = VORONOI_LEAF_SIZE * VORONOI_LEAF_SIZE * 1.3;
-/** A parent cell's text scale is 1 at this size (the square root of its area), a leaf's at VORONOI_LEAF_SIZE: a parent's grows a little slower, so its header takes a small share of it. */
-export const PARENT_TEXT_SIZE = 1.25 * VORONOI_LEAF_SIZE;
+/** The map area one leaf record stands for: a leaf cell about 270 across, with a little more for the headers and padding above it. */
+export const LEAF_AREA = 270 * 270 * 1.3;
+/**
+ * A cell's text scale is its size (the square root of its area) over one of these: a leaf's text
+ * scale is 1 at LEAF_TEXT_SIZE across, so a typical title wraps to two or three lines in it; a
+ * parent's grows more slowly, so its header takes a small share of it.
+ */
+export const LEAF_TEXT_SIZE = 240;
+export const PARENT_TEXT_SIZE = 340;
 /** The padding inside a cell around its children, and the gap between two siblings, at its text scale 1. */
 export const CELL_PAD = 10;
 export const CELL_GAP = 8;
@@ -183,7 +187,7 @@ function wordsFit(label: VoronoiLabel, width: number): boolean {
 const linesIn = (label: VoronoiLabel, width: number): WrappedLabel => wrapLabel(label, { hexagon: label.hexagon, marked: label.marked, centered: true, width });
 
 /** A cell's text scale for its own size (LA-EXP-DR58): in proportion to the square root of its area. */
-export const cellTextScale = (area: number, parent: boolean) => Math.sqrt(area) / (parent ? PARENT_TEXT_SIZE : VORONOI_LEAF_SIZE);
+export const cellTextScale = (area: number, parent: boolean) => Math.sqrt(area) / (parent ? PARENT_TEXT_SIZE : LEAF_TEXT_SIZE);
 
 interface Placed { text: number; lines: WrappedLabel; label: { x: number; y: number; w: number; h: number }; cut: number }
 
