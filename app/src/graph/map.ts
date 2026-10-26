@@ -89,6 +89,34 @@ export function typicalHeight(heights: readonly number[]): number {
   for (const h of sorted) { seen += h; if (seen >= half) return h; }
   return sorted[sorted.length - 1];
 }
+/** A level's typical box size: the median of the square root of its boxes' areas, weighted by area, as a Tree level's typical height. */
+export function typicalSize(areas: readonly number[]): number {
+  const sorted = [...areas].sort((a, b) => a - b);
+  const half = sorted.reduce((s, a) => s + a, 0) / 2;
+  let seen = 0;
+  for (const a of sorted) { seen += a; if (seen >= half) return Math.sqrt(a); }
+  return Math.sqrt(sorted.at(-1) ?? 0);
+}
+
+/**
+ * A nesting level's text scale in the Nested and Voronoi maps (LA-EXP-DR62, LA-EXP-DR64): its
+ * typical box size over a leaf's, never below the level below's (`below`, 1 for the deepest) nor
+ * more than MAX_LEVEL_STEP times it. A box's planned area (`areasAt`: the larger of its share by
+ * records and the least its label and children need at a scale) grows with the scale, so the two
+ * settle together, only ever growing, as a Tree level's width and its leaves' heights do. Set once
+ * when the map is built, from the deepest level up.
+ */
+export function settleLevelScale(areasAt: (scale: number) => readonly number[], below: number, leafArea: number): number {
+  const scaleFor = (areas: readonly number[]) => Math.min(MAX_LEVEL_STEP * below, Math.max(below, typicalSize(areas) / Math.sqrt(leafArea)));
+  let s = scaleFor(areasAt(below));
+  for (let round = 0; round < SETTLE_ROUNDS; round++) {
+    const next = scaleFor(areasAt(s));
+    if (next <= s * (1 + 1e-9)) break;
+    s = next;
+  }
+  return s;
+}
+
 /** Even, so a box's middle is a whole pixel. */
 const even = (n: number) => 2 * Math.round(n / 2);
 

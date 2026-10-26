@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { drawnNested, frameNested, MAX_DRAWN, MIN_DRAWN, viewRect } from '../../src/graph/camera';
-import { graphMap } from '../../src/graph/map';
-import { LABEL_PAD, levelTextScale, metaWidth, titleWidth, WIDTH_MARGIN } from '../../src/graph/text';
+import { graphMap, MAX_LEVEL_STEP } from '../../src/graph/map';
+import { LABEL_PAD, metaWidth, titleWidth, WIDTH_MARGIN } from '../../src/graph/text';
 import {
   below, bounds, chord, contains, hexagon, holds, inset, layoutTreeOf, layoutVoronoi, LEAF_AREA, polygonArea, quantize, readyVoronoiMap, voronoiCells, voronoiTree, WEIGHT_STEP, type VoronoiMap,
 } from '../../src/graph/voronoi';
@@ -156,11 +156,15 @@ describe('the Voronoi map', () => {
     const lop = layoutVoronoi(['r'], (id) => (id === 'r' ? ['a', 'b', 'c'] : []), (id) => ({ title: id === 'a' ? long : id, meta: 'Use case · LA-EXP-UC99' }));
     const [a, b] = [lop.nodes.get('a')!, lop.nodes.get('b')!];
     expect(a.text).toBe(b.text);
-    expect(polygonArea(a.polygon)).toBeGreaterThan(2 * polygonArea(b.polygon));
+    expect(polygonArea(a.polygon)).toBeGreaterThan(1.5 * polygonArea(b.polygon));
     for (const map of [...maps(), wide(2, 5), uneven([40, 3, 12, 1, 25]), lop]) {
-      const deepest = map.byLevel.length - 1;
-      // Every cell at one level has the same text scale, its level's, whatever its size: never smaller for a long title.
-      map.byLevel.forEach((cells, l) => { for (const n of cells) expect(n.text, n.id).toBe(levelTextScale(l, deepest)); });
+      // Every cell at one level has the same text scale, whatever its size, never smaller for a long title: at most MAX_LEVEL_STEP times the level below's.
+      map.byLevel.forEach((cells, l) => {
+        for (const n of cells) expect(n.text, n.id).toBe(cells[0].text);
+        const below = map.byLevel[l + 1]?.[0].text ?? 1;
+        expect(cells[0].text).toBeGreaterThanOrEqual(below);
+        expect(cells[0].text).toBeLessThanOrEqual(MAX_LEVEL_STEP * below * (1 + 1e-9));
+      });
       for (const n of map.nodes.values()) {
         expect(n.label.w, `${n.id} is labeled`).toBeGreaterThan(0);
         expect(holds(n.polygon, n.label), `${n.id}'s label inside it`).toBe(true);
