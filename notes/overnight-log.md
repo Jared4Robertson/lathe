@@ -33,6 +33,19 @@ Jared, going to bed: "Please make any decisions needed in order to complete the 
 - 00:30 Text per level (87), first pass, **not merged**: with a fixed 1.5× step the upper titles were tiny against their boxes. Sent back to take the scale from each level's typical box size.
 - 00:55 Text per level (87), second pass: one size per level from the top fails. Lathe has leaves high up (24 pattern rules under Shared) that would get huge text and inflate the map. **Decision:** levels are counted from the leaves up. A leaf is level 0, and a parent is one more than its tallest child, so every record reads at leaf size wherever it sits. Sent back with that rule. The 16 px stability check stays.
 
+- 00:40 `84ceaca` API, integration and technical flows (90):
+  - the `api`, `integration`, `design_flow` ("Technical flow") and `design_step` kinds; a step's `satisfies` counts as design;
+  - `flow-step-order` became `step-order`, a hard cutover;
+  - dogfood: Lathe's three APIs, the technical flow LA-CHK-DF01 "Load and check a workspace", and the Tool Library's three APIs.
+  
+  App 342, engine 272. Checked the technical flow and API pages in the browser.
+- 00:50 `3069a3d` Groups and waivers (89), merged by the coordinator on top of 90:
+  - six merge conflicts resolved by keeping both sides;
+  - four clashing IDs renumbered (AUT-C80, AUT-T136, EXP-C71, EXP-T200);
+  - Groups became FORMAT section 23.
+  
+  Delivered: the `group` field (97 of Lathe's requirements grouped), `applies_when` waivers with the `applies-when-unknown` check, and one owed-pattern-rules table shared by coverage and four checks. Engine 277, app 344, check 0 errors; stability 43, a11y 125, on real exit codes.
+
 ## Where things stand (03:05)
 All queued briefs are merged into local `main`. Nothing is pushed. No agents are running.
 - **Your dev server on port 5199 needs a restart** (`npm --prefix app run dev`). It has been up since before the moves, and its hot reload is broken.
