@@ -458,10 +458,13 @@ const PARITY: { feature: string; run: (page: Page, layout: Layout) => Promise<vo
       const ring = await page.evaluate(() => {
         const el = document.activeElement as HTMLElement | null;
         const box = el?.querySelector<HTMLElement>('.graph-node');
-        // A Voronoi cell's ring is its outline's stroke, in the ring's color.
+        // A Voronoi cell's ring is its outline's stroke, and a clipped shape's its edge (LA-EXP-DR65), in the ring's color.
+        const steel = getComputedStyle(document.documentElement).getPropertyValue('--steel').trim();
         const ringed = (b: HTMLElement) => (b.classList.contains('is-cell')
-          ? getComputedStyle(b).getPropertyValue('--cell-edge').trim() === getComputedStyle(document.documentElement).getPropertyValue('--steel').trim() ? 'stroke' : 'none'
-          : getComputedStyle(b).outlineStyle);
+          ? getComputedStyle(b).getPropertyValue('--cell-edge').trim() === steel ? 'stroke' : 'none'
+          : b.classList.contains('is-clipped')
+            ? getComputedStyle(b).getPropertyValue('--node-edge').trim() === steel ? 'edge' : 'none'
+            : getComputedStyle(b).outlineStyle);
         return { node: !!el?.classList.contains('react-flow__node'), outline: box ? ringed(box) : 'none', id: el?.dataset.id ?? '' };
       });
       expect(ring.node, 'keyboard focus is on a box').toBe(true);
