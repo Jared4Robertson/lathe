@@ -41,8 +41,8 @@ export const NESTED_ASPECT = 1.6;
 /** How much more room children need than their least areas summed, for the squarified shapes. */
 export const PACK_SLACK = 1.15;
 /** How many times the map is laid out again for boxes whose label does not fit their cell, and how much such a box's least area grows each time. */
-export const FIT_PASSES = 24;
-export const FIT_GROWTH = 1.25;
+export const FIT_PASSES = 40;
+export const FIT_GROWTH = 1.5;
 
 export interface NestedNode extends MapNode {
   /** Its label's lines, wrapped on whole words for its width at its level's text scale, and whether they are centered (a leaf's) or at the top left (a parent's). */
