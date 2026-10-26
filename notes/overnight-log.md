@@ -228,3 +228,9 @@ Lathe now matches S2 on UC requirements (206/206) and domain rules (98/98) acros
   - tab commands in the menus, with Ctrl+Tab working.
   
   The restore prompt is fixed: `ApplePersistenceIgnoreState` is set, and tests quit Electron gracefully. App 250 and desktop 61 unit tests passed.
+
+## Brief 93 merged: every Nested box a square
+- Merged `a8f042d` on main's height-level text rule. All checks green: stability 44, a11y 125, perf within budget.
+- LA map 262,118 square, since the 3x-per-level cap compounds with squares.
+- Shared reads as a 7 px square beside the domains.
+- Brief 92 (text by depth) is left unmerged on `worktree-agent-ad713c924f2f49163`: its headers can't be read when framed.
