@@ -1,7 +1,7 @@
 // Coverage queries, driven by the meta-model. Every kind marked as an obligation in kinds.csv is
 // counted; a link counts as design or proof by its relation rule's role in relations.csv.
-// For each obligation a domain owes: designed (a 'design' link targets it), built (a 'design' link from
-// a component whose file exists), proved (a 'proof' link from an automated or manual source; a
+// For each obligation a domain owes: designed (a 'design' link targets it, from a component or a
+// technical flow's step), built (a 'design' link from a component whose file exists), proved (a 'proof' link from an automated or manual source; a
 // source with no state is automated), planned (not proved, but a 'proof' link from a planned
 // source targets it) and planned_any (a 'proof' link from a planned source targets it, proved or
 // not, so proof still owed by a planned test is not hidden by another test that already proves it).
@@ -13,7 +13,7 @@
 // pattern when the domain itself `follows` it, which owes every rule, or when one of its use cases does,
 // which owes every rule except one that names a setting that every following use case in that domain
 // marks "Not applicable:" with a reason. A rule with no setting applies wherever its pattern is followed.
-// In each domain that owes it, only components and tests in that domain design and prove it.
+// In each domain that owes it, only components, technical steps and tests in that domain design and prove it.
 // A proof-only obligation kind (kinds.csv obligation `proof`) asks for proof alone: it counts as designed
 // and built, so its designed and built equal its total and it has no 'satisfies' gaps.
 // The unsatisfied and unproved checks (lathe/checks/15-unsatisfied.sql, 16-unproved.sql) apply the same rules.

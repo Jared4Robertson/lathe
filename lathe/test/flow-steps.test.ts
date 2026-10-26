@@ -10,7 +10,7 @@ const recordsOf = (ws: Workspace, check: string) => ws.problems.filter((p) => p.
 const messagesOf = (ws: Workspace, check: string, record: string) =>
   ws.problems.filter((p) => p.check === check && p.record === record).map((p) => p.message).sort();
 
-const STEP_CHECKS = ['flow-step-order', 'flow-step-fulfills-outside-flow', 'flow-fulfills-differs-from-steps'];
+const STEP_CHECKS = ['step-order', 'flow-step-fulfills-outside-flow', 'flow-fulfills-differs-from-steps'];
 
 let good: Workspace;
 let broken: Workspace;
@@ -36,20 +36,20 @@ describe('flow steps', () => {
   });
 
   it('LA-AUT-T40 A step order that is not a whole number is an error', () => {
-    expect(messagesOf(broken, 'flow-step-order', 'FB-D-F01-S02')).toEqual([
+    expect(messagesOf(broken, 'step-order', 'FB-D-F01-S02')).toEqual([
       'Flow step FB-D-F01-S02 has order "two", which is not a whole number such as 1 or 2.',
     ]);
-    for (const p of broken.problems.filter((x) => x.check === 'flow-step-order')) expect(p.severity).toBe('error');
+    for (const p of broken.problems.filter((x) => x.check === 'step-order')) expect(p.severity).toBe('error');
   });
 
   it('LA-AUT-T41 Two steps of one flow with the same order are an error, 1 and 01 alike; steps of other flows may share it', () => {
-    expect(recordsOf(broken, 'flow-step-order')).toEqual(['FB-D-F01-S01', 'FB-D-F01-S02', 'FB-D-F01-S03']);
-    expect(messagesOf(broken, 'flow-step-order', 'FB-D-F01-S01')).toEqual([
+    expect(recordsOf(broken, 'step-order')).toEqual(['FB-D-F01-S01', 'FB-D-F01-S02', 'FB-D-F01-S03']);
+    expect(messagesOf(broken, 'step-order', 'FB-D-F01-S01')).toEqual([
       'Flow step FB-D-F01-S01 has order 1 in flow FB-D-F01, the same as FB-D-F01-S03; each step of a flow needs its own order.',
     ]);
     // FB-D-F02-S01 and FB-D-F03-S01 also have order 1, in other flows.
-    expect(recordsOf(broken, 'flow-step-order')).not.toContain('FB-D-F03-S01');
-    expect(recordsOf(good, 'flow-step-order')).toEqual([]);
+    expect(recordsOf(broken, 'step-order')).not.toContain('FB-D-F03-S01');
+    expect(recordsOf(good, 'step-order')).toEqual([]);
   });
 
   it('LA-AUT-T42 A step with no order is reported once, as a missing required field', () => {
