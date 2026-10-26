@@ -1,6 +1,7 @@
 import type { SpecIndex } from '../specs/data';
 import { contentScale, NODE_HEIGHT, NODE_WIDTH } from './layout';
 import { isCentered, labelFor, labelHeight, textScaleOf } from './text';
+import { outlineInset, type Shape } from './shapes';
 import { treeChildren, treeParent } from './tree';
 
 // The graph's one map per product (LA-EXP-DR57): the product's tree, the nav's (tree.ts), with the
@@ -251,28 +252,18 @@ type Point = { x: number; y: number };
 /** A node's center in the map. */
 export const centerOf = (n: Rect) => ({ x: n.x + n.w / 2, y: n.y + n.h / 2 });
 
-/** A hexagon's chamfer (LA-EXP-DR61): 12 px at the node's content scale, at most a quarter of its width (as the stylesheet draws it). */
-export const hexChamfer = (r: Pick<Rect, 'w' | 'h'>) => Math.min(r.w / 4, 12 * contentScale(r.w, r.h));
-
-/**
- * How far in from its box a node's outline is on its left or right side, at a height in it: 0 for
- * a box; for a hexagon, the chamfer at its middle (the point's tip is the box's edge), down to the
- * full chamfer at its top and bottom.
- */
-export function outlineInset(r: Rect, shape: 'box' | 'hexagon', y: number): number {
-  if (shape === 'box') return 0;
-  const half = r.h / 2;
-  return hexChamfer(r) * Math.min(1, Math.abs(y - (r.y + half)) / half);
-}
-
 /**
  * A parent line (LA-EXP-DR57): level, at the child's middle, from the parent's outline on its
- * right side to the child's outline on its left. A box's outline is its edge; a domain's hexagon
- * (LA-EXP-DR61) is met on its slanted side, and a line into a domain meets the tip of its point.
+ * right side to the child's outline on its left (LA-EXP-DR65). A box's outline is its edge; a
+ * shape's is where its edge crosses that height, so a line into a domain's hexagon meets the tip
+ * of its point and a line out of one starts on its slanted side.
  */
-export function parentLine(parent: Rect, child: Rect, parentShape: 'box' | 'hexagon' = 'box', childShape: 'box' | 'hexagon' = 'box'): [Point, Point] {
+export function parentLine(parent: Rect, child: Rect, parentShape: Shape = 'box', childShape: Shape = 'box'): [Point, Point] {
   const y = child.y + child.h / 2;
-  return [{ x: parent.x + parent.w - outlineInset(parent, parentShape, y), y }, { x: child.x + outlineInset(child, childShape, y), y }];
+  return [
+    { x: parent.x + parent.w - outlineInset(parent, parentShape, contentScale(parent.w, parent.h), y, 'right'), y },
+    { x: child.x + outlineInset(child, childShape, contentScale(child.w, child.h), y, 'left'), y },
+  ];
 }
 
 /** A cross-link's ends: each box's middle, on the side that faces the other box (the right side when they overlap). */

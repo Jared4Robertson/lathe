@@ -1,6 +1,7 @@
 import { kindLabel, type SpecIndex } from '../specs/data';
 import { NODE_WIDTH } from './layout';
 import { gapsFor, groupLabel, groupMarks, groupOwner } from './model';
+import { nodeShape, SHAPES, type Room, type Shape } from './shapes';
 
 // A box's label as part of the map (LA-EXP-DR58): its two lines, the kind and ID line and the
 // title, are sized once, in map units, by its level's text scale (the level's width over a leaf's),
@@ -21,8 +22,8 @@ export const BORDER = 1.5;
 /** The padding on each side of a label, and the room kept beside the kind and ID line for the problem badge. */
 export const LABEL_PAD = 14;
 export const BADGE_ROOM = 30;
-/** A hexagon (a domain, LA-EXP-DR61) keeps its chamfer clear of its label too, at most this at text scale 1. */
-export const HEX_ROOM = 12;
+/** The room a small mark takes before the kind and ID line (a shape's in the Nested and Voronoi views, a gear or a ruler), its gap included (LA-EXP-DR65). */
+export const MARK_ROOM = 18;
 /** The estimate errs wide by this much, so a line never overflows whatever face draws it. */
 export const WIDTH_MARGIN = 1.05;
 
@@ -101,30 +102,56 @@ export function marksOf(index: SpecIndex, id: string) {
 
 
 /** A label's lines, as the page draws them: each a block of its own, so the page wraps nothing itself. */
-export interface WrappedLabel { title: string[]; meta: string[]; file: boolean }
+export interface WrappedLabel {
+  title: string[];
+  meta: string[];
+  file: boolean;
+  /** The height its shape keeps clear above and below it, at text scale 1 (LA-EXP-DR65): none for a box. */
+  pad?: number;
+}
 
 /** Whether a box's label is centered (LA-EXP-DR58): a parent's always, and a leaf's in a level wider than a leaf. */
 export const isCentered = (text: number, parent: boolean) => parent || text !== 1;
 
+/** What a label keeps room for besides its padding: its shape's room (the Tree view), the marks before its kind and ID line, the problem badge. */
+interface LabelRoom { shape?: Shape; marks?: number; marked?: boolean; centered?: boolean }
+
+const NO_ROOM: Room = { l: 0, r: 0, t: 0, b: 0 };
+
+/** How much less a kind and ID line holds than a title: the marks before it, and the badge's room beside it (on both sides once centered). */
+const metaRoom = ({ marks = 0, marked = false, centered = false }: LabelRoom) => marks * MARK_ROOM + (marked ? (centered ? 2 : 1) * BADGE_ROOM : 0);
+
 /**
  * A label broken into lines for its box (LA-EXP-DR58). Wrapping is the same at every text scale (a
  * level's width and its text grow together), so lines are broken once, at text scale 1 in a leaf's
- * width (or `width`, a Nested box's width over its text scale), less the padding, a domain's chamfer,
- * and the badge's room beside the kind and ID line (on both sides once centered), all erring wide.
+ * width (or `width`, a Nested box's width over its text scale), less the padding, its shape's room
+ * (LA-EXP-DR65), and beside the kind and ID line its marks and the badge's room, all erring wide.
  */
-export function wrapLabel(lines: { title: string; meta: string }, { hexagon = false, marked = false, centered = false, file = false, width = NODE_WIDTH } = {}): WrappedLabel {
-  const inner = width - 2 * LABEL_PAD - (hexagon ? 2 * HEX_ROOM : 0);
+export function wrapLabel(lines: { title: string; meta: string }, { shape, marks = 0, marked = false, centered = false, file = false, width = NODE_WIDTH }: LabelRoom & { file?: boolean; width?: number } = {}): WrappedLabel {
+  const room = shape ? SHAPES[shape].room : NO_ROOM;
+  const inner = width - 2 * LABEL_PAD - room.l - room.r;
   const titleOf = file ? (s: string) => metaWidth(s, FILE_FONT) * WIDTH_MARGIN : (s: string) => titleWidth(s) * WIDTH_MARGIN;
-  return {
+  const label: WrappedLabel = {
     title: wrapText(lines.title, inner, titleOf, file ? '/-' : '-'),
-    meta: wrapText(lines.meta, inner - (marked ? (centered ? 2 : 1) * BADGE_ROOM : 0), (s) => metaWidth(s) * WIDTH_MARGIN, '-'),
+    meta: wrapText(lines.meta, inner - metaRoom({ marks, marked, centered }), (s) => metaWidth(s) * WIDTH_MARGIN, '-'),
     file,
   };
+  const pad = room.t + room.b + (shape === 'circle' ? ellipseRoom(textHeight(label), inner, width) : 0);
+  return pad > 0 ? { ...label, pad } : label;
 }
 
-/** How tall a box must be for its wrapped label at text scale 1: its lines, the padding above and below, and the border. */
-export const labelHeight = (label: WrappedLabel) =>
-  2 * (LABEL_PAD_BLOCK + BORDER) + LINE_HEIGHT * (label.meta.length * META_FONT + label.title.length * (label.file ? FILE_FONT : TITLE_FONT));
+/** A label's lines' height at text scale 1. */
+const textHeight = (label: WrappedLabel) => LINE_HEIGHT * (label.meta.length * META_FONT + label.title.length * (label.file ? FILE_FONT : TITLE_FONT));
+
+/** The height a circle (an ellipse filling its box) needs past its label's padding so the label's corners stay inside it, at text scale 1. */
+function ellipseRoom(text: number, inner: number, width: number): number {
+  const across = Math.min(0.95, inner / width);
+  const needed = (text + 4) / Math.sqrt(1 - across * across);
+  return Math.max(0, Math.ceil(needed - text - 2 * (LABEL_PAD_BLOCK + BORDER)));
+}
+
+/** How tall a box must be for its wrapped label at text scale 1: its lines, the padding above and below, the border, and its shape's room. */
+export const labelHeight = (label: WrappedLabel) => 2 * (LABEL_PAD_BLOCK + BORDER) + textHeight(label) + (label.pad ?? 0);
 
 const wrapCache = new WeakMap<SpecIndex, Map<string, WrappedLabel>>();
 /** A node's label broken into lines, centered or not, cached per index: what the map sizes a box for and the page draws. */
@@ -134,7 +161,8 @@ export function labelFor(index: SpecIndex, id: string, centered: boolean): Wrapp
   const key = `${centered ? 'c' : 'l'}${id}`;
   const known = cache.get(key);
   if (known) return known;
-  const label = wrapLabel(labelLines(index, id), { hexagon: index.byId.get(id)?.kind === 'domain', marked: hasMarks(index, id), centered, file: id.startsWith('file:') });
+  const { shape, mark } = nodeShape(index, id);
+  const label = wrapLabel(labelLines(index, id), { shape, marks: mark ? 1 : 0, marked: hasMarks(index, id), centered, file: id.startsWith('file:') });
   cache.set(key, label);
   return label;
 }
@@ -144,19 +172,25 @@ export const textScaleOf = (w: number) => Math.max(1, w / NODE_WIDTH);
 
 // ---------- The Nested map's labels ----------
 
-/** What a Nested box's label says, and what it keeps room for: a domain's hexagon mark, the problem badge. */
-export interface MapLabel { title: string; meta: string; hexagon?: boolean; marked?: boolean }
+/** What a Nested or Voronoi box's label says, and what it keeps room for: the marks before its kind and ID line (its shape's, and a gear or a ruler), the problem badge. */
+export interface MapLabel { title: string; meta: string; marks?: number; marked?: boolean }
+
+/** A node's label in the Nested and Voronoi maps: its lines, its marks (its shape's and its kind's, LA-EXP-DR65) and whether it has the badge. */
+export function mapLabel(index: SpecIndex, id: string): MapLabel {
+  const marks = id.startsWith('file:') ? 0 : nodeShape(index, id).mark ? 2 : 1;
+  return { ...labelLines(index, id), marks, marked: hasMarks(index, id) };
+}
 
 /** A label's lines in a box `width` wide at text scale 1 (`wrapLabel`), centered or at the top left. */
 export const linesIn = (label: MapLabel, width: number, centered: boolean): WrappedLabel =>
-  wrapLabel(label, { hexagon: label.hexagon, marked: label.marked, centered, width });
+  wrapLabel(label, { marks: label.marks, marked: label.marked, centered, width });
 
 /** Whether every word of a label fits on a line of a box `width` wide at text scale 1, so wrapping never breaks a word. */
 export function wordsFit(label: MapLabel, width: number, centered: boolean): boolean {
-  const inner = width - 2 * LABEL_PAD - (label.hexagon ? 2 * HEX_ROOM : 0);
+  const inner = width - 2 * LABEL_PAD;
   const words = (text: string) => text.split(/\s+/).filter(Boolean);
   return words(label.title).every((w) => titleWidth(w) * WIDTH_MARGIN <= inner)
-    && words(label.meta).every((w) => metaWidth(w) * WIDTH_MARGIN <= inner - (label.marked ? (centered ? 2 : 1) * BADGE_ROOM : 0));
+    && words(label.meta).every((w) => metaWidth(w) * WIDTH_MARGIN <= inner - metaRoom({ ...label, centered }));
 }
 
 /** The shape a label wraps toward for its least box: about 3 wide to 2 tall. */
@@ -165,8 +199,8 @@ export const LABEL_ASPECT = 1.5;
 /** The narrowest box a label fits at text scale 1: its widest word, its padding and the badge's room. */
 export function narrowestWidth(label: MapLabel, centered: boolean): number {
   const words = (text: string, measure: (s: string) => number) => text.split(/\s+/).filter(Boolean).map((w) => measure(w) * WIDTH_MARGIN);
-  const badge = label.marked ? (centered ? 2 : 1) * BADGE_ROOM : 0;
-  return 2 * LABEL_PAD + (label.hexagon ? 2 * HEX_ROOM : 0) + Math.max(1, ...words(label.title, titleWidth), ...words(label.meta, metaWidth).map((w) => w + badge));
+  const room = metaRoom({ ...label, centered });
+  return 2 * LABEL_PAD + Math.max(1, ...words(label.title, titleWidth), ...words(label.meta, metaWidth).map((w) => w + room));
 }
 
 /**
@@ -175,10 +209,9 @@ export function narrowestWidth(label: MapLabel, centered: boolean): number {
  * scale it is this box times the scale.
  */
 export function labelBox(label: MapLabel, centered: boolean): { w: number; h: number } {
-  const pad = 2 * LABEL_PAD + (label.hexagon ? 2 * HEX_ROOM : 0);
   const narrowest = narrowestWidth(label, centered);
-  const badge = label.marked ? (centered ? 2 : 1) * BADGE_ROOM : 0;
-  const widest = Math.max(narrowest, pad + Math.max(titleWidth(label.title), metaWidth(label.meta) + badge) * WIDTH_MARGIN + 1);
+  const room = metaRoom({ ...label, centered });
+  const widest = Math.max(narrowest, 2 * LABEL_PAD + Math.max(titleWidth(label.title), metaWidth(label.meta) + room) * WIDTH_MARGIN + 1);
   let best = { w: widest, h: labelHeight(linesIn(label, widest, centered)) };
   for (let i = 0; i <= 8; i++) {
     const w = narrowest + ((widest - narrowest) * i) / 8;

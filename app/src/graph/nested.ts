@@ -1,7 +1,7 @@
 import type { SpecIndex } from '../specs/data';
 import { NODE_HEIGHT, NODE_WIDTH } from './layout';
 import { settleLevelScale, type MapNode, type PlacedMap } from './map';
-import { hasMarks, labelBox, labelHeight, labelLines, linesIn, narrowestWidth, wordsFit, type MapLabel, type WrappedLabel } from './text';
+import { labelBox, labelHeight, linesIn, mapLabel, narrowestWidth, wordsFit, type MapLabel, type WrappedLabel } from './text';
 import { treeChildren } from './tree';
 
 // The graph's Nested map (LA-EXP-DR62): the same tree as the Tree map (map.ts), one product's, the
@@ -268,7 +268,7 @@ export function nestedMap(index: SpecIndex, root: string): NestedMap {
   if (!maps) { maps = new Map(); cache.set(index, maps); }
   const known = maps.get(root);
   if (known) return known;
-  const map = layoutNested([root], (id) => treeChildren(index, id), (id) => ({ ...labelLines(index, id), hexagon: index.byId.get(id)?.kind === 'domain', marked: hasMarks(index, id) }));
+  const map = layoutNested([root], (id) => treeChildren(index, id), (id) => mapLabel(index, id));
   maps.set(root, map);
   return map;
 }
