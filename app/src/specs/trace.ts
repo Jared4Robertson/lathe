@@ -60,7 +60,7 @@ export function owingDomains(index: SpecIndex, record: SpecRecord): string[] {
   return domains
     .filter((d) => {
       const followed = patternsFollowedBy(index, d.id).find((f) => f.pattern.id === record.parent);
-      return followed && ruleStatus(index, record, d.id, followed.byDomain ? [] : followed.useCases).applies;
+      return followed && ruleStatus(index, record, d.id, followed).applies;
     })
     .map((d) => d.id)
     .sort((a, b) => a.localeCompare(b, 'en', { numeric: true }));

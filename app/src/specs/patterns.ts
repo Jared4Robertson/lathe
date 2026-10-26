@@ -1,11 +1,13 @@
 import { byIdOrder, type SpecIndex, type SpecLink, type SpecRecord } from './data';
 
 // Patterns and their rules, as the pages show them (FORMAT.md sections 10 and 11). A domain
-// follows a pattern when any of its use cases `follows` it, and then owes each of the pattern's
-// rules: designed when a component in the domain satisfies it, built when that component's file
-// exists, proved when an automated or manual test in the domain proves it, planned when only a
-// planned test there does. A rule that names a setting does not apply in a domain whose following
-// use cases all mark that setting `Not applicable:` with a reason. Pure logic, tested directly.
+// follows a pattern when the domain itself or any of its use cases `follows` it, and then owes each
+// of the pattern's rules: designed when a component in the domain satisfies it, built when that
+// component's file exists, proved when an automated or manual test in the domain proves it, planned
+// when only a planned test there does. A rule does not apply in a domain when it names a setting that
+// all the domain's following use cases mark `Not applicable:` with a reason (unless the domain follows
+// the pattern itself), or when no follower there meets its `applies_when`: it is waived there, as the
+// engine's owed_pattern_rules table counts it (lathe/src/coverage.ts). Pure logic, tested directly.
 
 const NOT_APPLICABLE = /^not applicable:\s*(.*)$/is;
 
@@ -13,6 +15,36 @@ const NOT_APPLICABLE = /^not applicable:\s*(.*)$/is;
 export function notApplicableReason(value: string | undefined): string | null {
   const m = value?.trim().match(NOT_APPLICABLE);
   return m ? m[1].trim() : null;
+}
+
+/** A rule's `applies_when`: the setting it reads, and the value it must (or, with `not`, must not) be. */
+export interface AppliesWhen {
+  setting: string;
+  not: boolean;
+  value: string;
+}
+
+const APPLIES_WHEN = /^(\S+)\s+is\s+(not\s+)?(\S.*)$/is;
+
+/**
+ * A rule's `applies_when`, or null when it has none. A malformed one, or one naming a setting its pattern
+ * does not list, is an applies-when-unknown error and waives nothing, so it is null too.
+ */
+export function appliesWhenOf(index: SpecIndex, rule: SpecRecord): AppliesWhen | null {
+  const m = rule.fields.applies_when?.trim().match(APPLIES_WHEN);
+  const pattern = rule.parent ? index.byId.get(rule.parent) : undefined;
+  if (!m || !pattern || pattern.kind !== 'pattern' || !settingsOf(pattern).includes(m[1])) return null;
+  return { setting: m[1], not: !!m[2], value: m[3].trim() };
+}
+
+/** `applies_when` as a phrase: "scope is not single". */
+export const appliesWhenText = (c: AppliesWhen) => `${c.setting} is ${c.not ? 'not ' : ''}${c.value}`;
+
+/** Whether a follower's value for the setting meets the condition: a real value, compared trimmed and in any letter case. */
+export function meetsAppliesWhen(c: AppliesWhen, value: string | undefined): boolean {
+  const given = value?.trim() ?? '';
+  if (given === '' || /^not\s+applicable\s*:/i.test(given)) return false;
+  return (given.toLowerCase() === c.value.toLowerCase()) !== c.not;
 }
 
 /** A pattern's settings, from its space-separated `settings` field. */
@@ -31,16 +63,32 @@ export function followersOf(index: SpecIndex, patternId: string): SpecRecord[] {
     .sort(byIdOrder);
 }
 
-/** The domains that follow a pattern, each with its following use cases, in domain ID order. */
-export function followingDomains(index: SpecIndex, patternId: string): { domain: string; useCases: SpecRecord[] }[] {
+/** How a domain follows a pattern: through these use cases, and (`byDomain`) itself. */
+export interface Followed {
+  useCases: readonly SpecRecord[];
+  byDomain: boolean;
+}
+
+/**
+ * The domains that follow a pattern, each with its following use cases and whether the domain itself
+ * follows it, in domain ID order.
+ */
+export function followingDomains(index: SpecIndex, patternId: string): ({ domain: string; useCases: SpecRecord[] } & Followed)[] {
   const byDomain = new Map<string, SpecRecord[]>();
+  const itself = new Set<string>();
+  for (const l of index.incoming.get(patternId) ?? []) {
+    if (l.relation === 'follows' && index.byId.get(l.source)?.kind === 'domain') {
+      itself.add(l.source);
+      if (!byDomain.has(l.source)) byDomain.set(l.source, []);
+    }
+  }
   for (const uc of followersOf(index, patternId)) {
     if (!uc.domain) continue;
     byDomain.set(uc.domain, [...(byDomain.get(uc.domain) ?? []), uc]);
   }
   return [...byDomain.entries()]
     .sort(([a], [b]) => a.localeCompare(b, 'en', { numeric: true }))
-    .map(([domain, useCases]) => ({ domain, useCases }));
+    .map(([domain, useCases]) => ({ domain, useCases, byDomain: itself.has(domain) }));
 }
 
 /**
@@ -66,7 +114,13 @@ export function patternsFollowedBy(index: SpecIndex, domainId: string): { patter
 }
 
 export type RuleStatus =
-  | { applies: false; setting: string; reasons: { useCase: string; reason: string }[] }
+  /** Every following use case marks the rule's setting Not applicable, with these reasons. */
+  | { applies: false; why: 'not-applicable'; setting: string; reasons: { useCase: string; reason: string }[] }
+  /**
+   * Waived: no follower meets the rule's `applies_when`. `given` holds the distinct values the
+   * followers give its setting, as first written; empty when none gives a value.
+   */
+  | { applies: false; why: 'waived'; condition: AppliesWhen; given: string[] }
   | {
       applies: true;
       /** Components in the domain that design the rule. */
@@ -90,13 +144,30 @@ export function linkRole(index: SpecIndex, link: SpecLink): '' | 'design' | 'pro
 
 const testStateOf = (r: SpecRecord) => r.fields.state?.trim() || 'automated';
 
-/** Whether a rule applies in a domain, and if so what in that domain designs, builds and proves it. */
-export function ruleStatus(index: SpecIndex, rule: SpecRecord, domainId: string, useCases: readonly SpecRecord[]): RuleStatus {
+/**
+ * Whether a rule applies in a domain that follows its pattern as `followed` says, and if so what in that
+ * domain designs, builds and proves it.
+ */
+export function ruleStatus(index: SpecIndex, rule: SpecRecord, domainId: string, followed: Followed): RuleStatus {
+  const { useCases } = followed;
   const setting = rule.fields.setting?.trim();
-  if (setting && useCases.length > 0) {
+  if (setting && !followed.byDomain && useCases.length > 0) {
     const reasons = useCases.map((uc) => ({ useCase: uc.id, reason: notApplicableReason(uc.fields[setting]) }));
     if (reasons.every((r) => r.reason !== null)) {
-      return { applies: false, setting, reasons: reasons.map((r) => ({ useCase: r.useCase, reason: r.reason! })) };
+      return { applies: false, why: 'not-applicable', setting, reasons: reasons.map((r) => ({ useCase: r.useCase, reason: r.reason! })) };
+    }
+  }
+  const condition = appliesWhenOf(index, rule);
+  if (condition) {
+    const domain = index.byId.get(domainId);
+    const followers = [...(followed.byDomain && domain ? [domain] : []), ...useCases];
+    if (!followers.some((f) => meetsAppliesWhen(condition, f.fields[condition.setting]))) {
+      const given = new Map<string, string>();
+      for (const f of followers) {
+        const value = f.fields[condition.setting]?.trim() ?? '';
+        if (value !== '' && notApplicableReason(value) === null && !given.has(value.toLowerCase())) given.set(value.toLowerCase(), value);
+      }
+      return { applies: false, why: 'waived', condition, given: [...given.values()] };
     }
   }
   const designedBy: string[] = [];

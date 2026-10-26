@@ -654,6 +654,7 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 .data-table th, .data-table td { text-align: left; vertical-align: top; padding: 4px 10px 4px 0; border-bottom: 1px solid var(--rule); }
 .data-table thead th { font-weight: 600; color: var(--muted); }
 .data-table tbody th { font-weight: 400; }
+.data-table tbody .group-row th { font-weight: 600; padding-top: 12px; }
 .data-table td.setting-na { color: var(--muted); font-style: italic; }
 .table-scroll { max-width: 100%; overflow-x: auto; }
 .pattern-domain h3 { margin: 16px 0 6px; font-size: 1rem; }

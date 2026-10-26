@@ -11,7 +11,7 @@ import { FlowSteps } from './FlowSteps';
 import { DomainEvents } from './DomainEvents';
 import { LongList } from '../components/LongList';
 import { DesktopRecordActions } from '../shell/desktopRecord';
-import { NavigateContext, PageHeader, ProblemBadge, ProblemList, RecordLink, RecordTree, Section, SpecLink, TestStateTag, idText, listTitle, testState } from './parts';
+import { Grouped, NavigateContext, PageHeader, ProblemBadge, ProblemList, RecordLink, RecordTree, Section, SpecLink, TestStateTag, idText, listTitle, testState } from './parts';
 
 // One record's content: header, body, problems, fields, parent, children and links both ways.
 // Kept apart from the page chrome so another view (such as the graph, side by side) can host it.
@@ -162,7 +162,10 @@ function RecordBody({ index, record, actions, header, side }: { index: SpecIndex
           {/* Without the facts beside it, the body lists the direct children itself; the problems show either way (the side bar does not repeat them). */}
           {!side && children.length > 0 && record.kind !== 'pattern' && (
             <Section title={childrenTitle} count={children.length}>
-              <RecordTree index={index} records={children} label={`${childrenTitle} of ${id}`} showKind />
+              {/* Requirements, interaction requirements and pattern rules read under their groups. */}
+              <Grouped records={children} level={3} render={(records, heading) => (
+                <RecordTree index={index} records={records} label={heading ? `${heading}: ${childrenTitle} of ${id}` : `${childrenTitle} of ${id}`} showKind />
+              )} />
             </Section>
           )}
           <Section title="Problems" count={problems.length}>

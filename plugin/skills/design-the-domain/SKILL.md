@@ -20,7 +20,7 @@ The design says how the product carries out its use cases: the paths people take
 | `flow_step` | `<flow>-S<nn>`, such as `TL-LEND-F01-S01` | `order` (a whole number); optional `path`, such as `main`, `api` or `refused` | `uses` the view, endpoint or component the step goes through; `fulfills` the requirements, domain rules and interaction requirements the step carries out |
 | `view` | `<P>-<D>-V<nn>` | | `uses` endpoints; `fulfills` requirements |
 | `endpoint` | `<P>-<D>-E<nn>` | `method`, `route` | `fulfills` requirements |
-| `interaction_requirement` | `<view, endpoint or flow>-R<nn>`, such as `TL-LEND-E04-R01` | | `fulfills` the use case requirements and domain rules it carries out at this view, endpoint or flow |
+| `interaction_requirement` | `<view, endpoint or flow>-R<nn>`, such as `TL-LEND-E04-R01` | optional `group`, a short heading such as Errors or Paging, once there are more than about 8 | `fulfills` the use case requirements and domain rules it carries out at this view, endpoint or flow |
 | `layer` | `<P>-<D>-LAY<nn>` | `order` (a whole number, its place among the layers beside it, unique there) | none; it holds the domain's components, and may hold sub-layers |
 | `component` | `<P>-<D>-C<nn>` | `component_type` (model, service, router, ...), `file` (path from the repo root) | `satisfies` requirements, domain rules and interaction requirements; `implements` endpoints and views; `depends_on` components |
 
@@ -142,7 +142,7 @@ The component that enforces it adds it to its `satisfies` list (`satisfies: [...
 ## Rules
 
 - Link a component to the requirements, rules and interaction requirements it actually enforces, not to everything it touches. An obligation no component satisfies is a warning (not designed).
-- Every component satisfies at least one obligation. One that satisfies none is a `component-satisfies-nothing` warning: link what it designs or implements, or remove it. There are no waivers; shared infrastructure (a server entry point, a store) links the requirements and rules it makes possible.
+- Every component satisfies at least one obligation. One that satisfies none is a `component-satisfies-nothing` warning: link what it designs or implements, or remove it. No component is waived; shared infrastructure (a server entry point, a store) links the requirements and rules it makes possible.
 - A component's `file` may not exist yet; that is a warning, and it clears when the code is written. Coverage counts it as **built** once the file exists.
 - An endpoint's body lists every response, including each refusal and its code; each refusal that must be built and tested is also an interaction requirement.
 - Once a domain has a flow, every use case in it needs a flow that `carries_out` it (otherwise `use-case-without-flow`). One flow may carry out several use cases. A flow that only `fulfills` a use case's requirements does not carry out the use case.
