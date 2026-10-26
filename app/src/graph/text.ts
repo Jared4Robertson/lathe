@@ -25,8 +25,6 @@ export const BADGE_ROOM = 30;
 export const HEX_ROOM = 12;
 /** The estimate errs wide by this much, so a line never overflows whatever face draws it. */
 export const WIDTH_MARGIN = 1.05;
-/** Below this many pixels of title text on screen, a box draws no label, only its shape (LA-EXP-DR60). */
-export const MIN_LABEL_PX = 7;
 
 // Advance widths in em of the title's face, Public Sans at 600, or the fallback faces if it does not
 // load (system-ui, Helvetica Neue), whichever is widest, measured in Chromium. Any other character
@@ -143,6 +141,3 @@ export function labelFor(index: SpecIndex, id: string, centered: boolean): Wrapp
 
 /** A level's text scale (LA-EXP-DR58): its width over a leaf level's. Every box in the level has it; fixed by the map, never by the camera. */
 export const textScaleOf = (w: number) => Math.max(1, w / NODE_WIDTH);
-
-/** Whether a box's label is drawn at a zoom (LA-EXP-DR60): its title, at its text scale, at least MIN_LABEL_PX on screen. It only shows or hides the label, never resizes it. */
-export const labelShown = (text: number, zoom: number) => TITLE_FONT * text * zoom >= MIN_LABEL_PX;

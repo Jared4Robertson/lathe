@@ -96,26 +96,25 @@ describe('the graph tree, its depth and its camera', () => {
     expect(screen.getByRole('button', { name: 'Links' })).toHaveAttribute('aria-pressed', 'true');
   });
 
-  it('LA-EXP-T171 A box too small on screen for its text is drawn plain and out of focus, and the summary counts the framed picture', async () => {
+  it('LA-EXP-T171 Every drawn box shows its label, however small on screen, and is a keyboard stop; the summary counts the framed picture', async () => {
     // A use case with sixty requirements: framed from its domain, they are a few pixels tall each.
     const w = testWorkspace();
     const req = w.records.find((r) => r.id === 'P-D-UC01-R01')!;
     for (let i = 2; i <= 60; i++) w.records.push({ ...req, id: `P-D-UC01-R${String(i).padStart(2, '0')}`, title: `Rule ${i}`, path: `specs/P-D-UC01-R${i}.md` });
     await showGraph('/P-D', w, 3);
-    await waitFor(() => expect(document.querySelector('.react-flow__node.is-plain')).not.toBeNull());
-    const plain = document.querySelector<HTMLElement>('.react-flow__node.is-plain')!;
-    // Plain: no text, hidden from assistive technology, not a keyboard stop; its name is in its tooltip.
-    expect(plain.querySelector('strong')).toBeNull();
-    expect(plain.getAttribute('aria-hidden')).toBe('true');
-    expect(plain.hasAttribute('aria-label')).toBe(false);
-    expect(plain.getAttribute('tabindex')).not.toBe('0');
-    expect(plain.querySelector('.graph-node')!.getAttribute('title')).toBeTruthy();
-    // The keyboard visits labeled boxes only, column by column.
+    await waitFor(() => expect(document.querySelectorAll('.react-flow__node[data-id]').length).toBeGreaterThan(5));
+    // Each box draws its kind and ID line and its title, has its name and is a keyboard stop.
+    for (const node of document.querySelectorAll<HTMLElement>('.react-flow__node[data-id]:not(.is-bar)')) {
+      expect(node.querySelector('small'), node.dataset.id).not.toBeNull();
+      expect(node.querySelector('strong')?.textContent, node.dataset.id).toBeTruthy();
+      expect(node.hasAttribute('aria-label'), node.dataset.id).toBe(true);
+      expect(node.getAttribute('aria-hidden'), node.dataset.id).toBeNull();
+    }
+    // The keyboard visits every drawn box, column by column.
     const boxes: Omit<Box, 'text' | 'parent'>[] = [
-      { id: 'a', x: 0, y: 0, w: 10, h: 10, label: true },
-      { id: 'b', x: 20, y: 30, w: 10, h: 10, label: true },
-      { id: 'c', x: 20, y: 0, w: 10, h: 10, label: true },
-      { id: 'd', x: 40, y: 0, w: 10, h: 10, label: false },
+      { id: 'a', x: 0, y: 0, w: 10, h: 10 },
+      { id: 'b', x: 20, y: 30, w: 10, h: 10 },
+      { id: 'c', x: 20, y: 0, w: 10, h: 10 },
     ];
     expect(keyboardOrder(boxes)).toEqual(['a', 'c', 'b']);
     // The summary counts the framed picture: the domain, its parent and three levels below it.

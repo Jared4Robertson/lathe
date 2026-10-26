@@ -1,13 +1,12 @@
 import type { GraphMap, MapNode, PlacedMap } from './map';
 import { heightOf, widthOf, type Point } from './layout';
-import { labelShown, MIN_LABEL_PX, TITLE_FONT } from './text';
 
 // The camera over the one map (LA-EXP-DR59). Focusing a node, by a click, the address, Back and
 // Forward, the step keys or the trail, moves the camera only: it frames the focus and the levels
 // the depth shows below it, with the parent's level kept at the left edge for context, in one
 // smooth zoom and pan (a van Wijk and Nuij path, as d3's zoom uses). Nothing in the map moves or
 // changes size. What is drawn is chosen by the level of detail (LA-EXP-DR60): only what is in
-// view and big enough to see, labels only where they can be read, and never more than a budget.
+// view and big enough to see, each box with its label, and never more than a budget.
 
 export interface Viewport { x: number; y: number; zoom: number }
 
@@ -26,9 +25,6 @@ export const FRAME_MAX_ZOOM = 1;
  * levels below it fill the pane, the parent's level showing in a strip at the left edge (the frame
  * starts at the parent's right edge, past the strip). A node with fewer levels below it frames what
  * it has. Zoomed in no further than FRAME_MAX_ZOOM, and centered in the space right of the strip.
- * Never zoomed out so far that the focus's own title is under MIN_LABEL_PX on screen: in a narrow
- * pane, deep levels may then run past its right edge, the frame starting at the strip, and are
- * reached by panning.
  */
 export function frameOnMap(map: GraphMap, focus: string, depth: number, width: number, height: number): Viewport {
   const node = map.nodes.get(focus);
@@ -47,12 +43,9 @@ export function frameOnMap(map: GraphMap, focus: string, depth: number, width: n
   const right = last.x + last.width;
   const strip = parent ? Math.min(PARENT_STRIP_MAX, width * PARENT_STRIP) : 0;
   const room = { w: width - strip - 2 * FRAME_PADDING, h: height - 2 * FRAME_PADDING };
-  const fits = room.w / (right - left);
-  const readable = MIN_LABEL_PX / (TITLE_FONT * node.text);
-  const zoom = Math.min(FRAME_MAX_ZOOM, room.h / node.h, Math.max(fits, readable));
+  const zoom = Math.min(FRAME_MAX_ZOOM, room.h / node.h, room.w / (right - left));
   const cy = node.y + node.h / 2;
-  const x = zoom <= fits ? strip + FRAME_PADDING + room.w / 2 - ((left + right) / 2) * zoom : strip + FRAME_PADDING - left * zoom;
-  return { x, y: height / 2 - cy * zoom, zoom };
+  return { x: strip + FRAME_PADDING + room.w / 2 - ((left + right) / 2) * zoom, y: height / 2 - cy * zoom, zoom };
 }
 
 /** The whole map in the pane: the overview's camera, and the least the camera zooms out. */
@@ -128,8 +121,8 @@ export const MIN_DRAWN = 3;
 /** The most boxes a picture draws (LA-PAT-APP-UX-R11): a level that would pass it is drawn as bars. */
 export const MAX_DRAWN = 260;
 
-/** A drawn box: labeled, or a plain filled box too small on screen for its text. Its text's size is the map's (MapNode.text), never the camera's. */
-export interface DrawnBox { id: string; label: boolean }
+/** A drawn box, always with its label (LA-EXP-DR60), its text's size the map's (MapNode.text), never the camera's. */
+export interface DrawnBox { id: string }
 /** A bar standing for some children too small to draw (or past the budget): in their level, from the first's top to the last's bottom. */
 export interface DrawnBar { id: string; parent: string; level: number; y: number; h: number }
 export interface Drawn { boxes: DrawnBox[]; bars: DrawnBar[] }
@@ -143,8 +136,7 @@ export function viewRect(v: Viewport, width: number, height: number) {
 
 /**
  * What a viewport draws of the map (LA-EXP-DR60), level by level from the roots: a node in view
- * and at least MIN_DRAWN pixels tall is drawn, labeled when its title is at least MIN_LABEL_PX on
- * screen at this zoom (`labelShown`), plain otherwise. A run of drawn parent's children too small to see is one bar.
+ * and at least MIN_DRAWN pixels tall is drawn, with its label. A run of drawn parent's children too small to see is one bar.
  * A level that would take the boxes past MAX_DRAWN is drawn as one bar per parent instead, and
  * nothing below it. `always` adds nodes drawn whatever their size or place (the focus, linked
  * records). The same viewport always draws the same.
@@ -157,7 +149,7 @@ export function drawnFor(map: GraphMap, v: Viewport, width: number, height: numb
   const drawn = new Set<string>();
   const inY = (n: MapNode) => n.y + n.h >= rect.y0 && n.y <= rect.y1;
   const inX = (n: MapNode) => n.x + n.w >= rect.x0 && n.x <= rect.x1;
-  const box = (n: MapNode): DrawnBox => ({ id: n.id, label: labelShown(n.text, z) });
+  const box = (n: MapNode): DrawnBox => ({ id: n.id });
   /** The bars for a parent's children too small to draw, one per run of them. */
   const barsOf = (p: MapNode, small: (c: MapNode) => boolean) => {
     let run: MapNode[] = [];
@@ -203,7 +195,7 @@ export function drawnFor(map: GraphMap, v: Viewport, width: number, height: numb
   return { boxes, bars };
 }
 
-/** Several pictures as one: every box in any, labeled as the last picture that has it labels it (the view the glide ends on), and every bar. */
+/** Several pictures as one: every box in any, and every bar. */
 export function mergeDrawn(pictures: readonly Drawn[]): Drawn {
   const boxes = new Map<string, DrawnBox>();
   for (const p of pictures) for (const b of p.boxes) boxes.set(b.id, b);
@@ -213,12 +205,9 @@ export function mergeDrawn(pictures: readonly Drawn[]): Drawn {
 }
 
 /** A key that changes only when what is drawn changes. */
-export const drawnKey = (d: Drawn) => `${d.boxes.map((b) => `${b.id}${b.label ? '+' : ''}`).join(' ')}|${d.bars.map((b) => b.id).join(' ')}`;
+export const drawnKey = (d: Drawn) => `${d.boxes.map((b) => b.id).join(' ')}|${d.bars.map((b) => b.id).join(' ')}`;
 
 // ---------- The Nested view (LA-EXP-DR63) ----------
-
-/** How much further than the framed zoom the person zooms in before boxes deeper than the depth are labeled. */
-export const REVEAL_ZOOM = 1.25;
 
 /** The camera that frames a focus in the Nested map: its box fills the pane within the padding, centered, zoomed in no further than MAX_ZOOM. */
 export function frameNested(map: PlacedMap, focus: string, width: number, height: number): Viewport {
@@ -228,32 +217,17 @@ export function frameNested(map: PlacedMap, focus: string, width: number, height
   return { x: width / 2 - (node.x + node.w / 2) * zoom, y: height / 2 - (node.y + node.h / 2) * zoom, zoom };
 }
 
-/** Which boxes the depth labels in the Nested view: the focus and this many levels inside it, framed at this zoom. */
-export interface NestedDepth { focus: string; depth: number; framed: number }
-
 /**
  * What a viewport draws of the Nested map (LA-EXP-DR63), level by level from the roots, a parent
  * before its children so each child is drawn over its parent: a box in view and at least MIN_DRAWN
- * pixels each way on screen is drawn, labeled when its label fits it and its title reads (`labelShown`) and, when it lies
- * more levels inside the focus than the depth, only once the camera is REVEAL_ZOOM times past the
- * framed zoom. A level that would take the drawing past MAX_DRAWN is not drawn, nor anything below
- * it: its parents stand for it, so there are no bars. `always` adds boxes drawn whatever their size or place.
+ * pixels each way on screen is drawn, with its label. A level that would take the drawing past
+ * MAX_DRAWN is not drawn, nor anything below it: its parents stand for it, so there are no bars.
+ * `always` adds boxes drawn whatever their size or place.
  */
-export function drawnNested(map: PlacedMap, v: Viewport, width: number, height: number, always: Iterable<string> = [], limit?: NestedDepth): Drawn {
+export function drawnNested(map: PlacedMap, v: Viewport, width: number, height: number, always: Iterable<string> = []): Drawn {
   const rect = viewRect(v, width, height);
   const z = v.zoom;
-  const focus = limit ? map.nodes.get(limit.focus) : undefined;
-  const revealed = !limit || z >= limit.framed * REVEAL_ZOOM - 1e-9;
-  /** How many levels a node lies inside the focus, or -1 when it is not inside it. */
-  const inside = (n: MapNode): number => {
-    if (!focus || n.level < focus.level) return -1;
-    let at: MapNode | undefined = n;
-    while (at && at.level > focus.level) at = at.parent === null ? undefined : map.nodes.get(at.parent);
-    return at?.id === focus.id ? n.level - focus.level : -1;
-  };
-  // A box whose label does not fit it at its level's text scale is always plain (LA-EXP-DR62).
-  const fits = (n: MapNode) => !('fits' in n) || n.fits !== false;
-  const box = (n: MapNode): DrawnBox => ({ id: n.id, label: fits(n) && !(!revealed && limit && inside(n) > limit.depth) && labelShown(n.text, z) });
+  const box = (n: MapNode): DrawnBox => ({ id: n.id });
   const seen = (n: MapNode) => n.x + n.w >= rect.x0 && n.x <= rect.x1 && n.y + n.h >= rect.y0 && n.y <= rect.y1 && n.w * z >= MIN_DRAWN && n.h * z >= MIN_DRAWN;
   const boxes: DrawnBox[] = [];
   const drawn = new Set<string>();

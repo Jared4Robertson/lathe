@@ -8,7 +8,7 @@ How the web app behaves for the person using it, so that every page feels the sa
 
 ## How a domain uses the pattern
 
-The domain links the pattern with `follows`. The pattern has no settings: every rule applies to all of the domain's pages. Each rule is proved by a test in `app/test` that reads the source or renders the main pages, and that names the file and line to fix when it fails. `LA-PAT-APP-UX-R08` is proved in a real browser by the stability suite (`app/stability`, `npm --prefix app run test:stability`), and at the source by `app/test/nothing-jumps.test.tsx`. `LA-PAT-APP-UX-R11` is proved on the production build by the performance suite (`app/perf`, `npm --prefix app run test:perf`). `LA-PAT-APP-UX-R10` is proved in a real browser by the accessibility suite (`app/a11y`, `npm --prefix app run test:a11y`).
+The domain links the pattern with `follows`. The pattern has no settings: every rule applies to all of the domain's pages. Each rule is proved by a test in `app/test` that reads the source or renders the main pages, and that names the file and line to fix when it fails. `LA-PAT-APP-UX-R08` is proved in a real browser by the stability suite (`app/stability`, `npm --prefix app run test:stability`), and at the source by `app/test/nothing-jumps.test.tsx`. `LA-PAT-APP-UX-R11` is proved on the production build by the performance suite (`app/perf`, `npm --prefix app run test:perf`). `LA-PAT-APP-UX-R10` is proved in a real browser by the accessibility suite (`app/a11y`, `npm --prefix app run test:a11y`). `LA-PAT-APP-UX-R12` is proved by a sweep over the repo's own specs in the unit run and in a real browser by the stability suite.
 
 ## Rules
 
@@ -23,5 +23,6 @@ The domain links the pattern with `follows`. The pattern has no settings: every 
 - `LA-PAT-APP-UX-R09`: actions look like actions.
 - `LA-PAT-APP-UX-R10`: every page passes the accessibility audit.
 - `LA-PAT-APP-UX-R11`: Lathe stays within its performance budgets.
+- `LA-PAT-APP-UX-R12`: every drawn box shows its name.
 
-New rules continue from UX-R12.
+New rules continue from UX-R13.

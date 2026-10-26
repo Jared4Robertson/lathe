@@ -259,8 +259,7 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
    once, in map units (px here, whatever the person's text size), and a parent's or a grown leaf's label is centered both
    ways; --box-scale sets its border and outline. Each line is a block of its own, broken on whole words by the map
    (app/src/graph/text.ts), so the page wraps nothing and nothing is cut off; a leaf is tall enough for its lines. Nothing in
-   the map changes size: the camera zooms. A box whose title would be under 7 px on screen is plain: filled, with no text
-   (LA-EXP-DR60). Each line's height is in proportion to its text, so no glyph is clipped. */
+   the map changes size: the camera zooms, and every drawn box shows its label (LA-EXP-DR60). Each line's height is in proportion to its text, so no glyph is clipped. */
 .graph-node { --node-scale: 1; --box-scale: 1; --node-border: calc(1.5px * var(--box-scale)); width: 100%; height: 100%; box-sizing: border-box; padding: calc(6px * var(--node-scale)) calc(14px * var(--node-scale)); border: var(--node-border) solid var(--g-structural); background: var(--g-structural-bg); display: flex; flex-direction: column; justify-content: center; cursor: pointer; overflow: hidden; position: relative; border-radius: var(--node-radius); }
 .graph-node small, .graph-node strong, .graph-node small > span, .graph-node strong > span { display: block; white-space: nowrap; line-height: 1.4; }
 /* A marked box's kind and ID line keeps room beside it for the problem badge (both sides once centered); app/src/graph/text.ts breaks its lines with the same numbers. */
@@ -282,8 +281,7 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-handle { opacity: 0; pointer-events: none; top: 50% !important; bottom: auto !important; }
 .graph-flow .react-flow__node:focus { outline: none; }
 .graph-flow .react-flow__node:focus-visible .graph-node { outline: calc(3px * var(--box-scale)) solid var(--steel); outline-offset: calc(3px * var(--box-scale)); }
-/* A plain box and a bar (LA-EXP-DR60): too small on screen for text, so a filled shape in its stage's color. */
-.graph-node.is-plain { padding: 0; }
+/* A bar (LA-EXP-DR60): children too small on screen to draw, one filled shape for each run of them. */
 .graph-bar { width: 100%; height: 100%; background: var(--rule); opacity: 0.6; border-radius: var(--node-radius); }
 .graph-flow .react-flow__node.is-bar { pointer-events: none; }
 /* The Nested view (LA-EXP-DR62): each box holds its children below a header band, as tall as its label (set by the map),
@@ -310,7 +308,6 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-swatch.stage-define { border-color: var(--g-define); background: var(--g-define-bg); }
 .graph-swatch.stage-design { border-color: var(--g-design); background: var(--g-design-bg); }
 .graph-swatch.stage-file { border-style: dashed; border-color: var(--g-file); background: var(--paper); }
-.graph-swatch.stage-plain { background: var(--g-design-bg); border-color: var(--g-design); }
 .graph-swatch.stage-bar { background: var(--rule); border-color: var(--rule); opacity: 0.6; }
 .graph-line { display: inline-block; width: 22px; height: 0; border-top: 1.5px solid var(--muted); vertical-align: middle; }
 .graph-line.rel-structure { border-top: 2.5px solid var(--ink); }
@@ -437,7 +434,6 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 /* ---------- End of obligation kinds, test states and record content ---------- */
 /* ---- Graph groups (brief 15): a folder of one kind of child, with a tab and a count. ---- */
 .graph-node.stage-group { border: var(--node-border) solid var(--muted); background: var(--sheet); border-top-width: calc(5px * var(--box-scale)); }
-.graph-node.stage-group.is-plain { padding: 0; }
 .graph-node.stage-group.is-focus { box-shadow: 0 0 0 calc(2px * var(--box-scale)) var(--ink); }
 .graph-swatch.stage-group { border-color: var(--muted); border-top-width: 4px; background: var(--paper); }
 
