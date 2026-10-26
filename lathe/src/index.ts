@@ -4,7 +4,7 @@ import { existsSync } from 'node:fs';
 import { readdir, readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { DuckDBInstance, type DuckDBConnection } from '@duckdb/node-api';
-import { COVERAGE_COUNTS_SQL, COVERAGE_GAPS_SQL, COVERAGE_TESTS_SQL } from './coverage.ts';
+import { COVERAGE_COUNTS_SQL, COVERAGE_GAPS_SQL, COVERAGE_TESTS_SQL, OWED_PATTERN_RULES_SQL } from './coverage.ts';
 import { loadConfig, PACKAGE_DIR } from './config.ts';
 import { hasFieldsColumns, parseRecordFile, proseTokens, readFieldsTable, type ProseToken } from './parse.ts';
 import { ENGINE_CHECKS as ENGINE_CHECK_DOCS, parseCheckHeader, type CheckHeader, type CheckReference, type FormatReference, type KindReference } from './reference.ts';
@@ -679,6 +679,8 @@ export async function loadWorkspace(root: string, options: LoadOptions = {}): Pr
     // The product's settings from lathe.config.json that checks read, one row each, such as structure.maxChildren.
     await connection.run('CREATE TABLE settings (name VARCHAR, value VARCHAR)');
     await append(connection, 'settings', [['structure.maxChildren', String(config.maxChildren)]]);
+    // The pattern rules each domain owes, worked out once for coverage and the checks alike.
+    await connection.run(OWED_PATTERN_RULES_SQL);
 
     const checkFiles = await findCheckFiles(checksDir, config.checksDir, root);
     await loadCheckDocs(connection, checkFiles.files);

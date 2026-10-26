@@ -1,10 +1,10 @@
 -- An obligation that no automated or manual test proves yet.
 --
 -- A test proves an obligation through a `proof` link such as `proves`. A test with no state is automated; a
--- planned test is not proof. A pattern rule is owed by each domain that follows its pattern, itself or
--- through a use case (unless, followed only through use cases, its setting is Not applicable in every one of
--- them there, as in lathe/src/coverage.ts), and only a test in that domain proves it there, so it is
--- reported once for each domain that owes it and lacks one. An automated test's proof counts only when its
+-- planned test is not proof. A pattern rule is owed by the domains the owed_pattern_rules table names (each
+-- domain that follows its pattern, unless the rule is Not applicable or waived there, as in
+-- lathe/src/coverage.ts), and only a test in that domain proves it there, so it is reported once for each
+-- domain that owes it and lacks one. An automated test's proof counts only when its
 -- file backs it, as in coverage: the file names the test's own ID (or its key), or names that target. An
 -- unbacked claim is also a proof-not-in-file error. Write a test that `proves` it, and name the test in its
 -- file.
@@ -28,35 +28,6 @@ proof_links AS (
   WHERE x.source_kind <> 'test' OR x.state <> 'automated'
      OR coalesce((SELECT bool_or(f.contains_id) FROM file_facts f WHERE f.path = x.path), false)
      OR EXISTS (SELECT 1 FROM file_mentions m WHERE m.path = x.path AND m.mentioned = x.target)
-),
-follows AS (
-  SELECT DISTINCT u.domain, l.target AS pattern, u.path
-  FROM records u JOIN links l ON l.path = u.path AND l.relation = 'follows'
-  WHERE u.kind = 'use_case' AND u.id <> '' AND u.domain IS NOT NULL
-),
-domain_follows AS (
-  SELECT DISTINCT d.id AS domain, l.target AS pattern
-  FROM records d JOIN links l ON l.path = d.path AND l.relation = 'follows'
-  WHERE d.kind = 'domain' AND d.id <> ''
-),
-owed_pattern_rules AS (
-  SELECT DISTINCT f.domain, r.id, r.kind
-  FROM records r JOIN domain_follows f ON f.pattern = r.parent
-  WHERE r.kind = 'pattern_rule' AND r.domain IS NULL AND r.id <> ''
-    AND r.kind IN (SELECT kind FROM kinds WHERE obligation)
-  UNION
-  SELECT domain, id, kind FROM (
-    SELECT f.domain, r.id, r.kind,
-      bool_and(coalesce(trim(st.value), '') <> ''
-               AND regexp_full_match(coalesce(trim(uv.value), ''), '(?is)not\s+applicable\s*:\s*\S.*')) AS not_applicable
-    FROM records r
-    JOIN follows f ON f.pattern = r.parent
-    LEFT JOIN fields st ON st.path = r.path AND st.name = 'setting'
-    LEFT JOIN fields uv ON uv.path = f.path AND uv.name = trim(st.value)
-    WHERE r.kind = 'pattern_rule' AND r.domain IS NULL AND r.id <> ''
-      AND r.kind IN (SELECT kind FROM kinds WHERE obligation)
-    GROUP BY f.domain, r.id, r.kind
-  ) WHERE NOT not_applicable
 )
 SELECT DISTINCT 'warning' AS severity, 'unproved' AS "check", r.id AS record,
        'No test proves ' || replace(r.kind, '_', ' ') || ' ' || r.id ||

@@ -35,9 +35,9 @@ A `test` has a `state`: `automated` (the default), `manual` or `planned`. An aut
 
 ## 5. Checks
 
-Each check is one SQL file in `lathe/checks/`: a `SELECT` over the loaded tables that returns rows of `(severity, check, record, message)`. Its name is its file name without the number and `.sql`. An **error** means the workspace is broken, and `lathe check` exits non-zero; a **warning** is work still to do, such as an obligation not yet proved, two stages that do not join up yet, or a level of the spec that is the wrong size: a record with more children of one kind than `structure.maxChildren` in `lathe.config.json` (default 15), or a capability or layer with only one child. One mistake gives one error.
+Each check is one SQL file in `lathe/checks/`: a `SELECT` over the loaded tables that returns rows of `(severity, check, record, message)`. Its name is its file name without the number and `.sql`. An **error** means the workspace is broken, and `lathe check` exits non-zero; a **warning** is work still to do, such as an obligation not yet proved, two stages that do not join up yet, or a level of the spec that is the wrong size: a record with more children of one kind than `structure.maxChildren` in `lathe.config.json` (default 15), counted per flow path and per group, or a capability, layer or group with only one child. One mistake gives one error.
 
-Nothing outlives its purpose: a component that satisfies no obligation is a `component-satisfies-nothing` warning, and a test that proves and supports nothing is a `test-proves-nothing` warning. There are no waivers; shared infrastructure links the obligations it makes possible.
+Nothing outlives its purpose: a component that satisfies no obligation is a `component-satisfies-nothing` warning, and a test that proves and supports nothing is a `test-proves-nothing` warning. A component or test is never waived; shared infrastructure links the obligations it makes possible.
 
 A check documents itself in its header comment: one summary sentence, a blank comment line, the explanation ending with how to fix what it reports, a blank comment line, then `-- severity: error` (or `warning`, or `error, warning`) and an optional `-- kinds:` line naming the kinds it concerns. The reference is built from these headers, and `undocumented` reports a check, kind or relation that lacks its text.
 
@@ -59,11 +59,11 @@ A product adds to the meta-model with a `metaExtensions` folder holding a `kinds
 
 ## 10. Capabilities and patterns
 
-A domain with more than a handful of use cases groups them into **capabilities**, ordered slices through Define and Design: a use case, flow or test may sit under a capability instead of the domain, and still counts in the domain. Behavior that several use cases share is written once as a **pattern** under the product, with **settings** each following use case fills in. A use case `follows` a pattern and gives each setting as a header field, a value or `Not applicable:` with a reason; a domain may follow a pattern too.
+A domain with more than a handful of use cases groups them into **capabilities**, ordered slices through Define and Design: a use case, flow or test may sit under a capability instead of the domain, and still counts in the domain. Behavior that several use cases share is written once as a **pattern** under the product, with **settings** each following use case fills in. A use case `follows` a pattern and gives each setting as a header field, a value or `Not applicable:` with a reason; a domain may follow a pattern too, and may give settings the same way.
 
 ## 11. Pattern rules
 
-A pattern's rules are `pattern_rule` records under it. Each domain that follows the pattern, itself or through a use case, owes each rule and proves it with its own tests; by default a rule needs proof only. A rule that names a `setting` does not apply in a domain whose following use cases all give that setting as Not applicable.
+A pattern's rules are `pattern_rule` records under it. Each domain that follows the pattern, itself or through a use case, owes each rule and proves it with its own tests; by default a rule needs proof only. A rule that names a `setting` does not apply in a domain whose following use cases all give that setting as Not applicable, unless the domain follows the pattern itself. A rule that applies only for some values of a setting says so in `applies_when`, as `<setting> is <value>` or `<setting> is not <value>`: it is owed in a domain only when at least one follower there (a following use case, or the domain when it follows the pattern itself) gives that setting a value, not Not applicable, that meets it, compared trimmed and in any letter case. Elsewhere it is **waived**: neither owed nor proved, and the app shows it as waived there. An `applies_when` that is malformed or names a setting the pattern does not list is an `applies-when-unknown` error, and waives nothing.
 
 ## 12. Citing records in prose
 
@@ -103,6 +103,10 @@ A capability is something a person using the product would name, with its own te
 - **Bad:** the same library split into Frontend, Backend and Database. Borrowing a tool is then designed in three domains, its rules sit apart from the screens that enforce them, and no domain can say whether borrowing is done.
 
 A domain whose title or code names a technology layer or delivery channel is a `domain-named-for-technology` warning.
+
+## 20. Groups
+
+A use case with many requirements, a view, endpoint or flow with many interaction requirements, and a pattern with many rules sort them into **groups**: each `requirement`, `interaction_requirement` and `pattern_rule` may name a short heading in `group`, such as Validation or Paging. Groups are compared trimmed and in any letter case. The app shows the ungrouped ones first, without a heading, then each group under its heading in the order the groups first appear, and the side bar's Outline lists the groups. `too-many-children` counts children per group, as it counts flow steps per path, and a group with only one member is a `lone-child` warning, like a layer with one child. A group is a field, not a record: renaming one changes no ID.
 
 <!-- Everything below is generated from the meta-model and the check files by `lathe format`. Do not edit it here. -->
 
@@ -250,7 +254,7 @@ Something an actor does with the product to reach a goal.
 
 ### UC requirement (`requirement`)
 
-One rule a use case must follow, stated with MUST, MUST NOT, SHOULD or MAY. Shown as a UC (use case) requirement, to tell it apart from interaction requirements and pattern rules.
+One rule a use case must follow, stated with MUST, MUST NOT, SHOULD or MAY. Shown as a UC (use case) requirement, to tell it apart from interaction requirements and pattern rules. An optional `group` names a short heading it is shown under among its siblings, such as Validation or Paging.
 
 - **Stage:** Define
 - **Folder:** [Capabilities](#folder-use-cases)
@@ -261,7 +265,7 @@ One rule a use case must follow, stated with MUST, MUST NOT, SHOULD or MAY. Show
 - **ID:** `<use case>-R<nn>`, such as `TL-LEND-UC01-R01`
 - **Links out:** none
 - **Links in:** Carried out in ([`fulfills`](#relation-fulfills)), Designed by ([`satisfies`](#relation-satisfies)), Proved by ([`proves`](#relation-proves)), Questions about this ([`about`](#relation-about)), Supported by ([`supports`](#relation-supports))
-- **Checks:** [`unsatisfied`](#check-unsatisfied), [`unproved`](#check-unproved), [`obligation-outside-domain`](#check-obligation-outside-domain)
+- **Checks:** [`unsatisfied`](#check-unsatisfied), [`unproved`](#check-unproved), [`obligation-outside-domain`](#check-obligation-outside-domain), [`lone-child`](#check-lone-child)
 
 <a id="kind-pattern"></a>
 
@@ -278,13 +282,13 @@ Behavior several use cases share, stated once with the settings each use case th
 - **ID:** `<P>-PAT-<name>`, such as `TL-PAT-LIBRARIAN-ACTION`
 - **Links out:** none
 - **Links in:** Followed by ([`follows`](#relation-follows)), Questions about this ([`about`](#relation-about))
-- **Checks:** [`pattern-setting-missing`](#check-pattern-setting-missing), [`pattern-setting-clash`](#check-pattern-setting-clash), [`bad-pattern-settings`](#check-bad-pattern-settings), [`pattern-rule-setting-unknown`](#check-pattern-rule-setting-unknown), [`pattern-not-followed`](#check-pattern-not-followed)
+- **Checks:** [`pattern-setting-missing`](#check-pattern-setting-missing), [`pattern-setting-clash`](#check-pattern-setting-clash), [`bad-pattern-settings`](#check-bad-pattern-settings), [`pattern-rule-setting-unknown`](#check-pattern-rule-setting-unknown), [`pattern-not-followed`](#check-pattern-not-followed), [`applies-when-unknown`](#check-applies-when-unknown)
 
 <a id="kind-pattern_rule"></a>
 
 ### Pattern rule (`pattern_rule`)
 
-One rule of a pattern, stated with MUST, MUST NOT, SHOULD or MAY. Every domain that follows the pattern designs and proves it, unless the rule names a setting (in `setting`) that all of that domain's following use cases mark Not applicable.
+One rule of a pattern, stated with MUST, MUST NOT, SHOULD or MAY. Every domain that follows the pattern designs and proves it, unless the rule names a setting (in `setting`) that all of that domain's following use cases mark Not applicable. An optional `applies_when`, written `<setting> is <value>` or `<setting> is not <value>`, waives it in a domain where no follower gives that setting a value that meets it. An optional `group` names a short heading it is shown under among its siblings, such as Validation or Paging.
 
 - **Stage:** Define
 - **Folder:** [Shared](#folder-shared)
@@ -295,7 +299,7 @@ One rule of a pattern, stated with MUST, MUST NOT, SHOULD or MAY. Every domain t
 - **ID:** `<pattern>-R<nn>`, such as `TL-PAT-LIBRARIAN-ACTION-R01`
 - **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about)), Designed by ([`satisfies`](#relation-satisfies)), Proved by ([`proves`](#relation-proves)), Carried out in ([`fulfills`](#relation-fulfills)), Supported by ([`supports`](#relation-supports))
-- **Checks:** [`unproved`](#check-unproved), [`pattern-rule-setting-unknown`](#check-pattern-rule-setting-unknown)
+- **Checks:** [`unproved`](#check-unproved), [`pattern-rule-setting-unknown`](#check-pattern-rule-setting-unknown), [`applies-when-unknown`](#check-applies-when-unknown), [`lone-child`](#check-lone-child)
 
 <a id="kind-flow"></a>
 
@@ -367,7 +371,7 @@ An HTTP endpoint: its method, route, request and responses.
 
 ### Interaction requirement (`interaction_requirement`)
 
-One rule a view, endpoint or flow must follow, such as a field's limits or an error's response, stated with MUST, MUST NOT, SHOULD or MAY.
+One rule a view, endpoint or flow must follow, such as a field's limits or an error's response, stated with MUST, MUST NOT, SHOULD or MAY. An optional `group` names a short heading it is shown under among its siblings, such as Validation or Paging.
 
 - **Stage:** Design
 - **Folder:** [Interaction design](#folder-interaction-design)
@@ -378,7 +382,7 @@ One rule a view, endpoint or flow must follow, such as a field's limits or an er
 - **ID:** `<view, endpoint or flow>-R<nn>`, such as `TL-LEND-E03-R01`
 - **Links out:** Carries out ([`fulfills`](#relation-fulfills))
 - **Links in:** Designed by ([`satisfies`](#relation-satisfies)), Proved by ([`proves`](#relation-proves)), Questions about this ([`about`](#relation-about)), Carried out in ([`fulfills`](#relation-fulfills)), Supported by ([`supports`](#relation-supports))
-- **Checks:** [`unsatisfied`](#check-unsatisfied), [`unproved`](#check-unproved), [`obligation-outside-domain`](#check-obligation-outside-domain), [`interaction-requirement-fulfills-nothing`](#check-interaction-requirement-fulfills-nothing)
+- **Checks:** [`unsatisfied`](#check-unsatisfied), [`unproved`](#check-unproved), [`obligation-outside-domain`](#check-obligation-outside-domain), [`interaction-requirement-fulfills-nothing`](#check-interaction-requirement-fulfills-nothing), [`lone-child`](#check-lone-child)
 
 <a id="kind-layer"></a>
 
@@ -908,11 +912,11 @@ file, or fix its `key` or `key_file`.
 An obligation that no design link targets yet.
 
 An obligation is any kind the meta-model marks as one. A proof-only obligation kind (kinds.csv obligation
-`proof`) asks for no design, so it is never reported. A pattern rule is owed by each domain that follows
-its pattern, itself or through a use case (unless, followed only through use cases, its setting is Not
-applicable in every one of them there, as in lathe/src/coverage.ts), and only a component in that domain
-designs it there, so it is reported once for each domain that owes it and lacks one. Link a component to
-it with `satisfies`, or another design relation.
+`proof`) asks for no design, so it is never reported. A pattern rule is owed by the domains the
+owed_pattern_rules table names (each domain that follows its pattern, unless the rule is Not applicable or
+waived there, as in lathe/src/coverage.ts), and only a component in that domain designs it there, so it is
+reported once for each domain that owes it and lacks one. Link a component to it with `satisfies`, or
+another design relation.
 
 <a id="check-unproved"></a>
 
@@ -923,10 +927,10 @@ it with `satisfies`, or another design relation.
 An obligation that no automated or manual test proves yet.
 
 A test proves an obligation through a `proof` link such as `proves`. A test with no state is automated; a
-planned test is not proof. A pattern rule is owed by each domain that follows its pattern, itself or
-through a use case (unless, followed only through use cases, its setting is Not applicable in every one of
-them there, as in lathe/src/coverage.ts), and only a test in that domain proves it there, so it is
-reported once for each domain that owes it and lacks one. An automated test's proof counts only when its
+planned test is not proof. A pattern rule is owed by the domains the owed_pattern_rules table names (each
+domain that follows its pattern, unless the rule is Not applicable or waived there, as in
+lathe/src/coverage.ts), and only a test in that domain proves it there, so it is reported once for each
+domain that owes it and lacks one. An automated test's proof counts only when its
 file backs it, as in coverage: the file names the test's own ID (or its key), or names that target. An
 unbacked claim is also a proof-not-in-file error. Write a test that `proves` it, and name the test in its
 file.
@@ -1148,6 +1152,22 @@ It counts in no domain's coverage, so it is reported rather than silently droppe
 pattern is the exception: each domain that follows the pattern owes it (pattern-not-followed reports a
 pattern nobody follows). Move the record under a domain, or fix its parent chain.
 
+<a id="check-applies-when-unknown"></a>
+
+### `applies-when-unknown`
+
+**Error** · Lathe's `checks/36-applies-when-unknown.sql` · Kinds: [`pattern_rule`](#kind-pattern_rule), [`pattern`](#kind-pattern)
+
+A pattern rule's `applies_when` is well formed and names one of its pattern's settings.
+
+A pattern rule that applies only for some values of a setting says so in `applies_when`, written
+`<setting> is <value>` or `<setting> is not <value>`; it is then waived in each domain where no follower
+(a following use case, or the domain when it follows the pattern itself) gives that setting a value that
+meets it. A malformed field, or one naming a setting the pattern does not list, waives nothing. A rule
+whose parent is not a pattern is reported by the parent checks instead. Write the field as
+`<setting> is <value>` with one of the pattern's settings, add the setting to the pattern, or remove the
+field.
+
 <a id="check-proof-not-in-file"></a>
 
 ### `proof-not-in-file`
@@ -1283,9 +1303,8 @@ test that still owes its proof, so the list behind `planned_any` is never only a
 yet proved whose test is only planned is reported by unproved instead.
 
 Proof is judged as in lathe/src/coverage.ts: an obligation in a domain is owed by that domain and any test
-may prove it; a pattern rule is owed by each domain that follows its pattern, itself or through one of its
-use cases (unless the domain follows only through use cases that all mark the rule's setting Not
-applicable), and only tests in that domain prove it there or owe it there. An automated test's proof counts
+may prove it; a pattern rule is owed by the domains the owed_pattern_rules table names (unless Not
+applicable or waived there), and only tests in that domain prove it there or owe it there. An automated test's proof counts
 only when its file backs it. Write the planned test, or drop its claim if the proof it owes is already
 made.
 
@@ -1298,9 +1317,9 @@ made.
 A test whose proofs count in no domain's coverage.
 
 A test's proof of a target counts, as in lathe/src/coverage.ts, when the target is an obligation in a
-domain, or a pattern rule owed by the domain the test sits in (a domain owes a pattern rule when it follows
-the pattern itself, or when one of its use cases does, unless every following use case there marks the
-rule's setting Not applicable). A test is reported when it has at least one `proof` link to a record that
+domain, or a pattern rule owed by the domain the test sits in (the owed_pattern_rules table: a domain owes
+a pattern rule when it follows the pattern itself, or when one of its use cases does, unless the rule is Not
+applicable or waived there). A test is reported when it has at least one `proof` link to a record that
 exists and none of its proofs counts; the message says why for each target. A target that does not exist
 is only a dangling-link. The test's state does not matter: a planned test that will prove nothing counted
 is reported too. Point the test at an obligation that counts, or move it into the domain that owes the
@@ -1381,19 +1400,23 @@ The setting is read from `lathe.config.json` (default 15) through the settings t
 many children of one kind is missing a level between them, such as a capability, a layer or another
 aggregate. Children are counted per kind. Tests are exempt: the app groups them by what they prove
 (FORMAT.md section 15), so they are never shown as one list. A flow's steps are counted per path
-(FORMAT.md section 14), since each path reads as its own list. A child whose parent does not exist is only
-unknown-parent. Add a level and move the children into it.
+(FORMAT.md section 14), since each path reads as its own list, and requirements, interaction requirements
+and pattern rules per `group` (FORMAT.md section 20), since each group reads under its own heading; the
+ungrouped ones are one list. Groups are compared trimmed and in any letter case. A child whose parent does
+not exist is only unknown-parent. Add a level, or a group, and move the children into it.
 
 <a id="check-lone-child"></a>
 
 ### `lone-child`
 
-**Warning** · Lathe's `checks/65-lone-child.sql` · Kinds: [`capability`](#kind-capability), [`layer`](#kind-layer)
+**Warning** · Lathe's `checks/65-lone-child.sql` · Kinds: [`capability`](#kind-capability), [`layer`](#kind-layer), [`requirement`](#kind-requirement), [`interaction_requirement`](#kind-interaction_requirement), [`pattern_rule`](#kind-pattern_rule)
 
-A capability or a layer with exactly one child, of any kind.
+A capability, a layer or a group with exactly one child, of any kind.
 
 A level that holds one record groups nothing. Only its own children are counted, not theirs, and one with
-no children is not reported. Merge it into a neighbor, or give it more.
+no children is not reported. A group (the `group` of requirements, interaction requirements and pattern
+rules, FORMAT.md section 20) is counted among its parent's children of one kind, compared trimmed and in any
+letter case, and reported on that parent. Merge it into a neighbor, or give it more.
 
 <a id="check-entity-role"></a>
 

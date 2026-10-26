@@ -3,6 +3,7 @@ id: LA-PAT-APP-UX-R05
 kind: pattern_rule
 title: A row or card that leads to one record is one link
 parent: LA-PAT-APP-UX
+group: Moving around
 ---
 A list row or a card that leads to one record MUST be clickable anywhere on it, through one real link (`<a href>`) to that record, marked `row-link`, whose `::after` stretches over the whole row (`position: absolute; inset: 0`, the row being `position: relative`), as a domain card's title link already does. A plain click navigates within the app; Cmd/Ctrl-click and middle-click open a new tab, because it is a real link. A row MUST have exactly one such link.
 

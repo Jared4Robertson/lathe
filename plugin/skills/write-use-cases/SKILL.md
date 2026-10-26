@@ -22,10 +22,12 @@ The app and `lathe check` call a `requirement` record a **UC requirement** (use 
 | --- | --- | --- | --- |
 | `capability` | the domain | `<P>-<D>-CAP<nn>` | Required field `order`: a whole number, its place in the domain, unique within the domain. Body: what the capability covers, in a sentence or two. |
 | `use_case` | the domain, or one of its capabilities | `<P>-<D>-UC<nn>` | Required field `actor`: the role that does it (see Roles). Body: the goal in one sentence, the main steps as a numbered list, then what happens when a step fails. `applies` the domain rules it relies on; `follows` the patterns it shares, with one header field per setting. |
-| `requirement` | the use case | `<use case>-R<nn>` | Title: the rule in a few words. Body: the rule in full with MUST / MUST NOT / SHOULD / MAY. |
+| `requirement` | the use case | `<use case>-R<nn>` | Title: the rule in a few words. Body: the rule in full with MUST / MUST NOT / SHOULD / MAY. Optional field `group`: a short heading it is shown under, such as Validation or Paging. |
 | `pattern` | the product | `<P>-PAT-<NAME>` | Optional field `settings`: setting names separated by spaces, lower case with underscores; leave it out when every use case applies the pattern the same way. Body: purpose, how a use case or domain uses it, a Settings table if it has settings (setting, what the use case decides), and a list of its rules. |
 
-Keep each use case's requirements in a folder next to it: `use-cases/UC03-borrow-a-tool.md` and `use-cases/UC03-borrow-a-tool/R01-due-date-shown.md`. Keep capabilities in `01-define/capabilities/` and patterns in a `patterns/` folder beside the product's domains.
+Keep each use case's requirements in a folder next to it: `use-cases/UC03-borrow-a-tool.md` and `use-cases/UC03-borrow-a-tool/R01-due-date-shown.md`.
+
+Once a use case has more than about 8 requirements, or a pattern more than about 8 rules, sort them into groups: give each a `group`, a short heading such as Validation, Paging or Errors (FORMAT.md section 20). The app shows the ungrouped ones first, then each group under its heading, and `too-many-children` counts each group as its own list. Give every group at least two members (a group of one is a `lone-child` warning), and keep the IDs as they are: a group is a field, so moving a record into one changes no ID. Keep capabilities in `01-define/capabilities/` and patterns in a `patterns/` folder beside the product's domains.
 
 ## Roles
 
@@ -43,7 +45,7 @@ Once a domain has more than a handful of use cases, group them into ordered capa
 
 When two or more use cases would state the same rules, write those rules once as a pattern and let each use case follow it. A setting is what each use case decides differently, such as the record it saves or the permission it needs. A pattern that every use case applies the same way, such as API conventions, has no settings.
 
-When a pattern applies to a whole domain, as S2 adopts most of its patterns, let the **domain** follow it: add `follows: [<pattern ID>]` to the domain record's `links`. The domain then owes every rule of the pattern, and its use cases need not follow it one by one. A domain gives no settings, so when a pattern has settings, let the use cases that apply it follow it and give them.
+When a pattern applies to a whole domain, as S2 adopts most of its patterns, let the **domain** follow it: add `follows: [<pattern ID>]` to the domain record's `links`. The domain then owes every rule of the pattern, and its use cases need not follow it one by one. A domain is never asked for settings; it may give them as header fields on its own record, which only a rule's `applies_when` reads. When the use cases decide a pattern's settings differently, let them follow it and give them.
 
 - A use case that `follows` a pattern with settings gives every setting as a plain header field named exactly as the pattern lists it: a value, or `"Not applicable: <reason>"` (quoted, because of the colon). A missing setting, or `Not applicable:` without a reason, is an error.
 - The use case's requirements do not restate the pattern's rules. Write a requirement only for what this use case adds; a use case whose rules all come from its patterns may have none.
@@ -51,6 +53,7 @@ When a pattern applies to a whole domain, as S2 adopts most of its patterns, let
 - Do not make a pattern for one use case. If only one use case has the behavior, it is that use case's requirements.
 - Write each of the pattern's rules as a `pattern_rule` record under the pattern (ID: the pattern's ID with `-R<nn>`, such as `TL-PAT-LIBRARIAN-ACTION-R01`), not in its body. A rule that depends on a setting names it in `setting`.
 - Every domain that follows the pattern, itself or through any of its use cases, owes each of its rules: a test in that domain `proves` it. Pattern rules need proof only by default, so no component has to `satisfy` one, though a component may, to say which code carries it out. A rule whose `setting` all of a domain's following use cases mark `Not applicable:` is not owed there, unless the domain itself follows the pattern. A rule with no `setting` is owed wherever the pattern is followed.
+- A rule that holds only for some values of a setting says so in `applies_when`, as `<setting> is <value>` or `<setting> is not <value>`, such as `scope is not single`. It is owed in a domain only when at least one follower there (a following use case, or the domain when it follows the pattern itself) gives that setting a value that meets it, compared trimmed and in any letter case; elsewhere it is waived, neither owed nor proved, and the app shows "Waived here: <setting> is <value>". Use `applies_when` when a use case's value decides it, and `Not applicable:` when the setting does not apply at all. A malformed `applies_when`, or one naming a setting the pattern does not list, is an `applies-when-unknown` error.
 - An interaction requirement or a flow step may `fulfill` a pattern rule, to say where it is carried out. A step may fulfill only the rules of the patterns its flow's use cases or its domain follow.
 
 ## Example

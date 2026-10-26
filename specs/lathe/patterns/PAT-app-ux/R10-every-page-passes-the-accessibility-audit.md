@@ -3,6 +3,7 @@ id: LA-PAT-APP-UX-R10
 kind: pattern_rule
 title: Every page passes the accessibility audit
 parent: LA-PAT-APP-UX
+group: Quality bars
 ---
 Every page and state the app draws MUST pass the accessibility suite (`app/a11y`, run by `npm --prefix app run test:a11y`), with no finding:
 

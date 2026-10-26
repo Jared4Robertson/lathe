@@ -35,9 +35,9 @@ A `test` has a `state`: `automated` (the default), `manual` or `planned`. An aut
 
 ## 5. Checks
 
-Each check is one SQL file in `lathe/checks/`: a `SELECT` over the loaded tables that returns rows of `(severity, check, record, message)`. Its name is its file name without the number and `.sql`. An **error** means the workspace is broken, and `lathe check` exits non-zero; a **warning** is work still to do, such as an obligation not yet proved, two stages that do not join up yet, or a level of the spec that is the wrong size: a record with more children of one kind than `structure.maxChildren` in `lathe.config.json` (default 15), or a capability or layer with only one child. One mistake gives one error.
+Each check is one SQL file in `lathe/checks/`: a `SELECT` over the loaded tables that returns rows of `(severity, check, record, message)`. Its name is its file name without the number and `.sql`. An **error** means the workspace is broken, and `lathe check` exits non-zero; a **warning** is work still to do, such as an obligation not yet proved, two stages that do not join up yet, or a level of the spec that is the wrong size: a record with more children of one kind than `structure.maxChildren` in `lathe.config.json` (default 15), counted per flow path and per group, or a capability, layer or group with only one child. One mistake gives one error.
 
-Nothing outlives its purpose: a component that satisfies no obligation is a `component-satisfies-nothing` warning, and a test that proves and supports nothing is a `test-proves-nothing` warning. There are no waivers; shared infrastructure links the obligations it makes possible.
+Nothing outlives its purpose: a component that satisfies no obligation is a `component-satisfies-nothing` warning, and a test that proves and supports nothing is a `test-proves-nothing` warning. A component or test is never waived; shared infrastructure links the obligations it makes possible.
 
 A check documents itself in its header comment: one summary sentence, a blank comment line, the explanation ending with how to fix what it reports, a blank comment line, then `-- severity: error` (or `warning`, or `error, warning`) and an optional `-- kinds:` line naming the kinds it concerns. The reference is built from these headers, and `undocumented` reports a check, kind or relation that lacks its text.
 
@@ -59,11 +59,11 @@ A product adds to the meta-model with a `metaExtensions` folder holding a `kinds
 
 ## 10. Capabilities and patterns
 
-A domain with more than a handful of use cases groups them into **capabilities**, ordered slices through Define and Design: a use case, flow or test may sit under a capability instead of the domain, and still counts in the domain. Behavior that several use cases share is written once as a **pattern** under the product, with **settings** each following use case fills in. A use case `follows` a pattern and gives each setting as a header field, a value or `Not applicable:` with a reason; a domain may follow a pattern too.
+A domain with more than a handful of use cases groups them into **capabilities**, ordered slices through Define and Design: a use case, flow or test may sit under a capability instead of the domain, and still counts in the domain. Behavior that several use cases share is written once as a **pattern** under the product, with **settings** each following use case fills in. A use case `follows` a pattern and gives each setting as a header field, a value or `Not applicable:` with a reason; a domain may follow a pattern too, and may give settings the same way.
 
 ## 11. Pattern rules
 
-A pattern's rules are `pattern_rule` records under it. Each domain that follows the pattern, itself or through a use case, owes each rule and proves it with its own tests; by default a rule needs proof only. A rule that names a `setting` does not apply in a domain whose following use cases all give that setting as Not applicable.
+A pattern's rules are `pattern_rule` records under it. Each domain that follows the pattern, itself or through a use case, owes each rule and proves it with its own tests; by default a rule needs proof only. A rule that names a `setting` does not apply in a domain whose following use cases all give that setting as Not applicable, unless the domain follows the pattern itself. A rule that applies only for some values of a setting says so in `applies_when`, as `<setting> is <value>` or `<setting> is not <value>`: it is owed in a domain only when at least one follower there (a following use case, or the domain when it follows the pattern itself) gives that setting a value, not Not applicable, that meets it, compared trimmed and in any letter case. Elsewhere it is **waived**: neither owed nor proved, and the app shows it as waived there. An `applies_when` that is malformed or names a setting the pattern does not list is an `applies-when-unknown` error, and waives nothing.
 
 ## 12. Citing records in prose
 
@@ -103,3 +103,7 @@ A capability is something a person using the product would name, with its own te
 - **Bad:** the same library split into Frontend, Backend and Database. Borrowing a tool is then designed in three domains, its rules sit apart from the screens that enforce them, and no domain can say whether borrowing is done.
 
 A domain whose title or code names a technology layer or delivery channel is a `domain-named-for-technology` warning.
+
+## 20. Groups
+
+A use case with many requirements, a view, endpoint or flow with many interaction requirements, and a pattern with many rules sort them into **groups**: each `requirement`, `interaction_requirement` and `pattern_rule` may name a short heading in `group`, such as Validation or Paging. Groups are compared trimmed and in any letter case. The app shows the ungrouped ones first, without a heading, then each group under its heading in the order the groups first appear, and the side bar's Outline lists the groups. `too-many-children` counts children per group, as it counts flow steps per path, and a group with only one member is a `lone-child` warning, like a layer with one child. A group is a field, not a record: renaming one changes no ID.
