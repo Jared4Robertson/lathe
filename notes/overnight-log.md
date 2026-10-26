@@ -48,6 +48,9 @@ Jared, going to bed: "Please make any decisions needed in order to complete the 
 
 - 01:50 Text per level (87), third pass, after about 25 tuning runs: Nested meets every bar (Exploring header 26 px framed, stages 23–26 px). Voronoi can't meet them together: 16 px record labels on a framed use case, readable stage headers and at least 95% of cells within 5% of record share. **Decision (option 1):** Nested gets one text size per height level, and Voronoi keeps its per-cell sizing, because its irregular cells can't share a size per level without breaking its proportions. Voronoi still passes the "every drawn cell shows its name" rule.
 
+- 01:13 `f2acc70` Text per level (87): in Nested, one text size per height level counted from the leaves (Exploring's header is about 26 px framed, its stages readable); Voronoi keeps per-cell text. App 344, check 0 errors; stability 43 on real exit codes.
+- 01:14 Started the graph shapes (88), including shapes for tonight's new kinds.
+
 ## Where things stand (03:05)
 All queued briefs are merged into local `main`. Nothing is pushed. No agents are running.
 - **Your dev server on port 5199 needs a restart** (`npm --prefix app run dev`). It has been up since before the moves, and its hot reload is broken.
