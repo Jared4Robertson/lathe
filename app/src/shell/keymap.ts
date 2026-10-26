@@ -82,7 +82,7 @@ export const COMMANDS: readonly Command[] = [
   { id: 'graphTrace', title: 'Trace mode on or off', group: 'Graph', keys: ['t'], when: 'graph' },
   { id: 'graphFit', title: 'Frame the focus again', group: 'Graph', keys: ['.'], when: 'graph' },
   { id: 'graphLinks', title: 'Links on or off: the center\'s own links, one step', group: 'Graph', keys: ['l'], when: 'graph' },
-  { id: 'graphLayout', title: 'Tree or Nested layout: parents beside their children, or made of them', group: 'Graph', keys: ['v'], when: 'graph' },
+  { id: 'graphLayout', title: 'Tree, Nested or Voronoi layout: parents beside their children, or made of them as boxes or cells', group: 'Graph', keys: ['v'], when: 'graph' },
   // Stepping through the tree, as a file explorer does. Alt+Left and Alt+Right stay the browser's Back and Forward, so siblings take Shift too.
   { id: 'graphStepOut', title: 'Step out to the parent', group: 'Graph', keys: ['Alt+ArrowUp'], when: 'graph' },
   { id: 'graphStepIn', title: 'Step in to the first child', group: 'Graph', keys: ['Alt+ArrowDown'], when: 'graph' },

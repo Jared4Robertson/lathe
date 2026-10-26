@@ -64,7 +64,7 @@ export interface MapLevel {
 /** What both views' maps share (the Tree map here, the Nested map in nested.ts): what the camera, the minimap and the filters read. */
 export interface PlacedMap {
   /** Which view it lays out (LA-EXP-UC03-R16). */
-  view: 'tree' | 'nested';
+  view: 'tree' | 'nested' | 'voronoi';
   nodes: ReadonlyMap<string, MapNode>;
   /** The roots, top to bottom: the product (or the top of a tree no product reaches). */
   roots: readonly string[];

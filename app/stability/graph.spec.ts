@@ -286,9 +286,9 @@ test.describe('graph', () => {
   });
 });
 
-// LA-EXP-T189 (LA-EXP-UC03-R16, LA-EXP-UC03-R06, LA-EXP-UC03-R10): one table of the graph's
-// features, run in the Tree and the Nested layout alike, so neither falls behind the other.
-const LAYOUT_NAMES = { tree: 'Tree', nested: 'Nested' } as const;
+// LA-EXP-T189 (LA-EXP-UC03-R16, LA-EXP-UC03-R17, LA-EXP-UC03-R06, LA-EXP-UC03-R10): one table of the
+// graph's features, run in the Tree, Nested and Voronoi layouts alike, so none falls behind the others.
+const LAYOUT_NAMES = { tree: 'Tree', nested: 'Nested', voronoi: 'Voronoi' } as const;
 type Layout = keyof typeof LAYOUT_NAMES;
 
 const path = (page: Page) => new URL(page.url()).pathname;
@@ -305,7 +305,8 @@ async function labeledInView(page: Page): Promise<{ id: string; x: number; y: nu
     const area = { left: c.left + 60, right: c.right - 30, top: c.top + 20, bottom: c.bottom - 30 };
     for (const el of document.querySelectorAll<HTMLElement>('.pane-graph .react-flow__node[data-id^="LA-"]:not(.is-plain)')) {
       if (el.querySelector('.is-focus')) continue;
-      const r = el.getBoundingClientRect();
+      // A Voronoi cell is hit inside its outline: at its label.
+      const r = (el.querySelector('.graph-cell-label') ?? el).getBoundingClientRect();
       const l = Math.max(r.left, area.left); const rt = Math.min(r.right, area.right);
       const t = Math.max(r.top, area.top); const b = Math.min(r.bottom, area.bottom);
       if (rt - l < 40 || b - t < 16) continue;
@@ -386,7 +387,11 @@ const PARITY: { feature: string; run: (page: Page, layout: Layout) => Promise<vo
       const ring = await page.evaluate(() => {
         const el = document.activeElement as HTMLElement | null;
         const box = el?.querySelector<HTMLElement>('.graph-node');
-        return { node: !!el?.classList.contains('react-flow__node'), outline: box ? getComputedStyle(box).outlineStyle : 'none', id: el?.dataset.id ?? '' };
+        // A Voronoi cell is clipped to its outline, so its ring is its outline's stroke, in the ring's color.
+        const ringed = (b: HTMLElement) => (b.classList.contains('is-cell')
+          ? getComputedStyle(b).getPropertyValue('--cell-edge').trim() === getComputedStyle(document.documentElement).getPropertyValue('--steel').trim() ? 'stroke' : 'none'
+          : getComputedStyle(b).outlineStyle);
+        return { node: !!el?.classList.contains('react-flow__node'), outline: box ? ringed(box) : 'none', id: el?.dataset.id ?? '' };
       });
       expect(ring.node, 'keyboard focus is on a box').toBe(true);
       expect(ring.outline, 'the focus ring shows').not.toBe('none');
@@ -470,7 +475,8 @@ const PARITY: { feature: string; run: (page: Page, layout: Layout) => Promise<vo
       const clipped = await page.evaluate(() => {
         const out: string[] = [];
         for (const node of document.querySelectorAll<HTMLElement>('.pane-graph .react-flow__node[data-id]')) {
-          const box = node.querySelector<HTMLElement>('.graph-node');
+          // A Voronoi cell's label sits in a box of its own inside the cell.
+          const box = node.querySelector<HTMLElement>('.graph-cell-label') ?? node.querySelector<HTMLElement>('.graph-node');
           if (!box) continue;
           for (const line of box.querySelectorAll<HTMLElement>('small, strong')) {
             if (line.scrollWidth > line.clientWidth + 0.5) out.push(`${node.dataset.id} ${line.tagName}: ${line.scrollWidth} wide in ${line.clientWidth}`);
@@ -485,19 +491,29 @@ const PARITY: { feature: string; run: (page: Page, layout: Layout) => Promise<vo
   },
 ];
 
-for (const layout of ['tree', 'nested'] as const) {
+for (const layout of ['tree', 'nested', 'voronoi'] as const) {
   test(`LA-EXP-T189 every graph feature works in the ${LAYOUT_NAMES[layout]} layout`, async ({ page }) => {
     await openPage(page, `${RECORD}?view=graph`);
     await nodes(page);
     await page.locator('.pane-graph .react-flow__node[data-id^="LA-"]:not(.is-plain)').nth(1).waitFor();
     await page.waitForTimeout(900);
-    if (layout === 'nested') {
+    if (layout !== 'tree') {
+      // v steps to the next layout: Nested, then Voronoi.
       await page.locator('.pane-graph .graph-count').click();
-      await page.keyboard.press('v');
+      for (let i = 0; i < (layout === 'nested' ? 1 : 2); i++) await page.keyboard.press('v');
+      await expect(page.locator('.pane-graph .graph-flow')).toHaveAttribute('data-layout', layout);
+      await page.locator('.pane-graph .react-flow__node[data-id^="LA-"]:not(.is-plain)').nth(1).waitFor();
       await page.waitForTimeout(1300);
     }
     for (const row of PARITY) await test.step(row.feature, () => row.run(page, layout));
-    if (layout === 'nested') {
+    if (layout === 'voronoi') {
+      await test.step('every drawn cell is clipped to its outline', async () => {
+        const unclipped = await page.evaluate(() => [...document.querySelectorAll<HTMLElement>('.pane-graph .react-flow__node[data-id] .graph-node')]
+          .filter((el) => !el.classList.contains('is-cell') || !getComputedStyle(el).clipPath.startsWith('polygon(')).map((el) => el.closest<HTMLElement>('.react-flow__node')!.dataset.id));
+        expect(unclipped).toEqual([]);
+      });
+    }
+    if (layout !== 'tree') {
       await test.step('every drawn child lies inside its parent on screen', async () => {
         const outside = await page.evaluate(() => {
           const rects = new Map([...document.querySelectorAll<HTMLElement>('.pane-graph .react-flow__node[data-id]')].map((el) => [el.dataset.id!, el.getBoundingClientRect()]));
@@ -516,7 +532,7 @@ for (const layout of ['tree', 'nested'] as const) {
       await test.step('the layout is kept with the tab across a reload', async () => {
         await page.reload();
         await nodes(page);
-        await expect(page.locator('.pane-graph .graph-layout button[aria-pressed="true"]')).toHaveText('Nested');
+        await expect(page.locator('.pane-graph .graph-layout button[aria-pressed="true"]')).toHaveText(LAYOUT_NAMES[layout]);
       });
     }
   });

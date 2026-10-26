@@ -30,11 +30,11 @@ const PAGES: State[] = [
   { name: 'Format', url: '/format', ready: '#main h1' },
   { name: 'Appearance', url: '/settings/appearance', ready: '#main h1' },
 ].map((p) => ({ name: p.name, run: (page: Page) => open(page, p.url, p.ready) }));
-// The graph in its Nested layout (LA-EXP-UC03-R16): the same roles and names as the Tree layout.
-PAGES.push({ name: 'graph, Nested layout', run: async (page: Page) => {
+// The graph in its Nested and Voronoi layouts (LA-EXP-UC03-R16, LA-EXP-UC03-R17): the same roles and names as the Tree layout.
+for (const layout of ['Nested', 'Voronoi'] as const) PAGES.push({ name: `graph, ${layout} layout`, run: async (page: Page) => {
   await open(page, `${RECORD}?view=graph`, '.pane-graph .graph-flow .react-flow__node');
-  await page.locator('.pane-graph .graph-layout button', { hasText: 'Nested' }).click();
-  await page.locator('.pane-graph .graph-flow.is-nested .react-flow__node').first().waitFor();
+  await page.locator('.pane-graph .graph-layout button', { hasText: layout }).click();
+  await page.locator(`.pane-graph .graph-flow[data-layout="${layout.toLowerCase()}"] .react-flow__node`).first().waitFor();
   await page.waitForTimeout(900);
 } });
 

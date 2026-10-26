@@ -291,6 +291,26 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
    its kind and ID line, sized with its text. Children are drawn after their parent, so they lie over it. */
 .graph-flow.is-nested .graph-node.is-container { justify-content: flex-start; align-items: flex-start; text-align: left; }
 .graph-flow.is-nested .graph-node.is-container .graph-badge-room { padding-inline: 0 calc(30px * var(--node-scale)); }
+/* The Voronoi view (LA-EXP-DR64): each cell is a polygon. The node is its bounding box, clipped to the outline so only
+   the cell takes the pointer; the outline is an SVG polygon in its stage's colors, its stroke twice the border's width
+   since the clip keeps only its inner half. Hover, focus, the keyboard ring and a tap's selection color the stroke, as a
+   hexagon's edge does, since a box-shadow or outline would be clipped away. The label sits in the box the map gave it,
+   centered, its text scale the cell's own. */
+.graph-flow .graph-node.is-cell { --cell-fill: var(--g-structural-bg); --cell-edge: var(--g-structural); --cell-w: var(--node-border); padding: 0; border: 0; background: transparent; border-radius: 0; box-shadow: none; display: block; }
+.graph-cell-shape { position: absolute; inset: 0; overflow: visible; }
+.graph-cell-shape polygon { fill: var(--cell-fill); stroke: var(--cell-edge); stroke-width: calc(2 * var(--cell-w)); stroke-linejoin: round; }
+.graph-cell-label { position: absolute; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: calc(7.5px * var(--node-scale)) calc(14px * var(--node-scale)); }
+.graph-node.is-cell.stage-define { --cell-fill: var(--g-define-bg); --cell-edge: var(--g-define); }
+.graph-node.is-cell.stage-design { --cell-fill: var(--g-design-bg); --cell-edge: var(--g-design); }
+.graph-node.is-cell.stage-group { --cell-fill: var(--sheet); --cell-edge: var(--muted); }
+.graph-node.is-cell.kind-domain_event:not(.stage-group) { --cell-fill: var(--spark-bg); --cell-edge: var(--spark); }
+.graph-node.is-cell.kind-question .graph-cell-shape polygon { stroke-dasharray: calc(6px * var(--box-scale)) calc(4px * var(--box-scale)); --cell-edge: var(--warn); }
+.graph-node.is-cell.kind-question { --cell-edge: var(--warn); }
+.graph-node.is-cell.is-focus { --cell-edge: var(--ink); --cell-w: calc(3px * var(--box-scale)); box-shadow: none; }
+.graph-flow .react-flow__node:hover .graph-node.is-cell:not(.is-focus) { --cell-edge: var(--steel); --cell-w: calc(2.5px * var(--box-scale)); box-shadow: none; }
+.graph-flow .react-flow__node:focus-visible .graph-node.is-cell { --cell-edge: var(--steel); --cell-w: calc(3px * var(--box-scale)); outline: none; }
+.react-flow__node.is-armed .graph-node.is-cell { --cell-edge: var(--steel); --cell-w: calc(3px * var(--box-scale)); box-shadow: none; }
+.graph-swatch.stage-voronoi { border: 0; border-radius: 0; background: linear-gradient(115deg, var(--g-define-bg) 46%, var(--g-define) 46% 56%, var(--g-design-bg) 56%); clip-path: polygon(30% 0, 100% 10%, 90% 85%, 35% 100%, 0 50%); }
 .graph-hexagon-mark { display: inline-block; width: calc(11px * var(--node-scale)); height: calc(9.5px * var(--node-scale)); margin-right: calc(5px * var(--node-scale)); vertical-align: baseline; background: var(--g-structural); clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%); }
 .graph-swatch.stage-hexagon-mark { border-radius: 2px; background: var(--g-structural-bg); position: relative; }
 .graph-swatch.stage-hexagon-mark::before { content: ""; position: absolute; left: 2px; top: 2px; width: 7px; height: 6px; background: var(--g-structural); clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%); }

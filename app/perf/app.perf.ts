@@ -23,21 +23,26 @@ async function open(page: Page, url: string, ready = TITLE) {
 /**
  * A framed level may run past the canvas's right edge (in a narrow pane, LA-EXP-DR59): a box is in view when its left part is and it is 24 px tall or more, and is clicked there.
  */
-const AT_LEFT = { x: 20, y: 12 };
 
 /** The ID of a record box (not the center) whose left part is inside the graph's canvas, where a click lands on it. */
-async function visibleNode(page: Page, n: number): Promise<string> {
-  const ids = await page.evaluate(() => {
+async function visibleNode(page: Page, n: number): Promise<{ id: string; at: { x: number; y: number } }> {
+  const found = await page.evaluate(() => {
     const canvas = document.querySelector('.pane-graph .graph-flow')!.getBoundingClientRect();
+    // The click point: near a box's top left, or a Voronoi cell's label's middle, inside its outline.
+    const pointOf = (el: HTMLElement) => {
+      const r = el.getBoundingClientRect();
+      const label = el.querySelector('.graph-cell-label')?.getBoundingClientRect();
+      return label ? { x: label.left + label.width / 2 - r.left, y: label.top + label.height / 2 - r.top } : { x: 20, y: 12 };
+    };
     return [...document.querySelectorAll<HTMLElement>('.graph-flow .react-flow__node[data-id^="LA-"]')]
       .filter((el) => !el.querySelector('.is-focus'))
       .filter((el) => { const r = el.getBoundingClientRect(); return r.height >= 24 && r.left >= canvas.left && r.left + 40 <= canvas.right && r.top >= canvas.top && r.bottom <= canvas.bottom - 40; })
-      // The click point hits this box, not a box drawn over it (a child, in the Nested layout).
-      .filter((el) => { const r = el.getBoundingClientRect(); return document.elementFromPoint(r.left + 20, r.top + 12)?.closest('.react-flow__node') === el; })
-      .map((el) => el.dataset.id!);
+      // The click point hits this box, not a box drawn over it (a child, in the Nested and Voronoi layouts).
+      .filter((el) => { const r = el.getBoundingClientRect(); const p = pointOf(el); return document.elementFromPoint(r.left + p.x, r.top + p.y)?.closest('.react-flow__node') === el; })
+      .map((el) => ({ id: el.dataset.id!, at: pointOf(el) }));
   });
-  expect(ids.length, 'a record box in view').toBeGreaterThan(0);
-  return ids[Math.min(n, ids.length - 1)];
+  expect(found.length, 'a record box in view').toBeGreaterThan(0);
+  return found[Math.min(n, found.length - 1)];
 }
 
 test.describe('performance', () => {
@@ -92,14 +97,14 @@ test.describe('performance', () => {
     await record({ name: 'view switch: close the Graph pane', value: closeGraph.workMs, unit: 'ms', budget: BUDGETS.viewSwitchMs, detail: `longest frame ${Math.round(closeGraph.worstFrameMs)} ms` });
   });
 
-  // In the Tree layout and in the Nested layout (LA-EXP-UC03-R16): the same budgets.
-  for (const layout of ['Tree', 'Nested'] as const) test(`LA-PLT-T93 a graph re-center at depth 3 takes under 500 ms of main-thread work, and glides at 60 Hz, in the ${layout} layout`, async ({ page }) => {
-    const label = layout === 'Tree' ? 'graph re-center at depth 3' : 'Nested graph re-center at depth 3';
+  // In the Tree, Nested and Voronoi layouts (LA-EXP-UC03-R16): the same budgets.
+  for (const layout of ['Tree', 'Nested', 'Voronoi'] as const) test(`LA-PLT-T93 a graph re-center at depth 3 takes under 500 ms of main-thread work, and glides at 60 Hz, in the ${layout} layout`, async ({ page }) => {
+    const label = layout === 'Tree' ? 'graph re-center at depth 3' : `${layout} graph re-center at depth 3`;
     await open(page, `${RECORD}?view=graph`);
     await page.locator('.graph-flow .react-flow__node').first().waitFor();
-    if (layout === 'Nested') {
-      await page.locator('.graph-layout button', { hasText: 'Nested' }).click();
-      await page.locator('.graph-flow.is-nested .react-flow__node').first().waitFor();
+    if (layout !== 'Tree') {
+      await page.locator('.graph-layout button', { hasText: layout }).click();
+      await page.locator(`.graph-flow[data-layout="${layout.toLowerCase()}"] .react-flow__node`).first().waitFor();
     }
     await page.locator('.graph-depth button', { hasText: '3' }).click();
     await quiet(page, 900);
@@ -109,9 +114,9 @@ test.describe('performance', () => {
     const notes: string[] = [];
     for (const hop of [1, 2, 3]) {
       const before = new URL(page.url()).pathname;
-      const id = await visibleNode(page, hop);
+      const { id, at } = await visibleNode(page, hop);
       const r = await work(page, async () => {
-        await page.locator(`.graph-flow .react-flow__node[data-id="${id}"]`).click({ position: AT_LEFT });
+        await page.locator(`.graph-flow .react-flow__node[data-id="${id}"]`).click({ position: at });
         await page.waitForURL((u) => u.pathname !== before);
         await page.locator(`.graph-flow .react-flow__node[data-id="${id}"] .is-focus`).waitFor();
       }, 900);
