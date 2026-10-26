@@ -37,7 +37,7 @@ A `test` has a `state`: `automated` (the default), `manual` or `planned`. An aut
 
 Each check is one SQL file in `lathe/checks/`: a `SELECT` over the loaded tables that returns rows of `(severity, check, record, message)`. Its name is its file name without the number and `.sql`. An **error** means the workspace is broken, and `lathe check` exits non-zero; a **warning** is work still to do, such as an obligation not yet proved, two stages that do not join up yet, or a level of the spec that is the wrong size: a record with more children of one kind than `structure.maxChildren` in `lathe.config.json` (default 15), or a capability or layer with only one child. One mistake gives one error.
 
-Nothing outlives its purpose: a component that satisfies no obligation is a `component-satisfies-nothing` warning, and a test that proves and supports nothing is a `test-proves-nothing` warning. There are no waivers; shared infrastructure links the obligations it makes possible.
+Nothing outlives its purpose: a component that satisfies no obligation is a `component-satisfies-nothing` warning, and a test that proves and supports nothing is a `test-proves-nothing` warning. There are no waivers; shared infrastructure links the obligations it makes possible. A standard rule that nothing meets or cites is a `standard-rule-unmet` warning (section 20).
 
 A check documents itself in its header comment: one summary sentence, a blank comment line, the explanation ending with how to fix what it reports, a blank comment line, then `-- severity: error` (or `warning`, or `error, warning`) and an optional `-- kinds:` line naming the kinds it concerns. The reference is built from these headers, and `undocumented` reports a check, kind or relation that lacks its text.
 
@@ -79,7 +79,7 @@ A flow can be written as `flow_step` records under it, in `order`: each says wha
 
 ## 15. Folders
 
-A domain's specs are laid out in folders by stage: in Define, the domain model and use cases; in Design, interaction design (flows, views, APIs with their endpoints, and integrations), technical specification (components in their layers, and technical flows) and the test plan; and at product level what domains share. `meta/sections.csv` names these folders and each kind's `section` says which one it sits in, so the app reads the same way whatever folders the files are in. The app groups the test plan by what each test proves: acceptance, domain rule, pattern, interaction and engineering tests.
+A domain's specs are laid out in folders by stage: in Define, the domain model and use cases; in Design, interaction design (flows, views, APIs with their endpoints, and integrations), technical specification (components in their layers, and technical flows) and the test plan; and at product level what domains share: patterns and standards. `meta/sections.csv` names these folders and each kind's `section` says which one it sits in, so the app reads the same way whatever folders the files are in. The app groups the test plan by what each test proves: acceptance, domain rule, pattern, interaction and engineering tests.
 
 ## 16. Layers
 
@@ -104,11 +104,17 @@ A capability is something a person using the product would name, with its own te
 
 A domain whose title or code names a technology layer or delivery channel is a `domain-named-for-technology` warning.
 
-## 20. APIs and integrations
+## 20. Standards
+
+A **standard** is a library of engineering rules that holds for the product's code, such as logging, error handling or naming. It sits under the product, beside the patterns, and its rules are `standard_rule` records under it, each with its own ID (`<standard>-R<nn>`). A component or test that follows a rule links to it with `meets` (read from the rule as Met by); a body may also cite the rule's ID, which is a mention like any other. A standard rule is not an obligation: no domain owes it, and nothing counts it as designed or proved. A rule that nothing meets or cites, other than the rule and its own standard, is a `standard-rule-unmet` warning, because nothing outlives its purpose.
+
+The rule of thumb between the two: a rule you prove with tests is a pattern rule; a rule you follow and cite is a standard rule. A pattern's rules are owed by each domain that follows it and proved there, which is what a pattern gives that a standard does not.
+
+## 21. APIs and integrations
 
 A domain's endpoints are grouped by resource into **APIs**: an `api` under the domain holds the `endpoint` records for one resource, such as Loans, and the `interaction_requirement`s that hold for every endpoint in it, such as how it pages or what an unknown ID answers. Its body may hold a `## Shapes` table of the request and response shapes its endpoints share. An endpoint may still sit directly in the domain. An **integration** is an outside system the domain exchanges with, such as a payment provider: an `integration` under the domain, with an optional `system` field naming the system, holds one interaction requirement per exchange. An interaction requirement may also sit directly under the domain, for a rule shared across the domain's interaction design.
 
-## 21. Technical flows
+## 22. Technical flows
 
 A flow says what a person sees; a **technical flow** says how the system carries it out. A `design_flow`, in the domain or one of its layers, `deepens` the flow it carries out, and its steps are `design_step` records under it, ordered, with an optional `path`, as a flow's steps are (section 14). Each step `uses` the component that does it and `satisfies` the obligations it designs; a step's `satisfies` counts as design, as a component's does, but only a component whose file exists counts as built. A step may say which `transaction` it runs in, what it `locks` and how many `statements` it runs. Failure, limits and signals stay as tables in the technical flow's body. A technical flow that deepens no flow is a `design-flow-deepens-nothing` warning.
 
@@ -127,7 +133,7 @@ A product: the root of a set of specifications.
 - **Stage:** none (structural)
 - **Folder:** none
 - **Parents:** none (a root record)
-- **Children:** [`domain`](#kind-domain), [`pattern`](#kind-pattern), [`question`](#kind-question), [`fitness`](#kind-fitness)
+- **Children:** [`domain`](#kind-domain), [`pattern`](#kind-pattern), [`standard`](#kind-standard), [`question`](#kind-question), [`fitness`](#kind-fitness)
 - **Required fields:** none
 - **Obligation:** no
 - **ID:** `<P>`, such as `TL`
@@ -305,6 +311,40 @@ One rule of a pattern, stated with MUST, MUST NOT, SHOULD or MAY. Every domain t
 - **Links in:** Questions about this ([`about`](#relation-about)), Designed by ([`satisfies`](#relation-satisfies)), Proved by ([`proves`](#relation-proves)), Carried out in ([`fulfills`](#relation-fulfills)), Supported by ([`supports`](#relation-supports))
 - **Checks:** [`unproved`](#check-unproved), [`pattern-rule-setting-unknown`](#check-pattern-rule-setting-unknown)
 
+<a id="kind-standard"></a>
+
+### Standard (`standard`)
+
+A library of engineering rules that holds for the product's code, such as logging, error handling or naming. A component, design step or test that follows one of its rules `meets` it; a standard asks nothing of a domain.
+
+- **Stage:** Design
+- **Folder:** [Shared](#folder-shared)
+- **Parents:** [`product`](#kind-product)
+- **Children:** [`standard_rule`](#kind-standard_rule)
+- **Required fields:** none
+- **Obligation:** no
+- **ID:** `<P>-STD-<name>`, such as `TL-STD-CODE`
+- **Links out:** none
+- **Links in:** Questions about this ([`about`](#relation-about))
+- **Checks:** [`standard-rule-unmet`](#check-standard-rule-unmet)
+
+<a id="kind-standard_rule"></a>
+
+### Standard rule (`standard_rule`)
+
+One rule of a standard, stated with MUST, MUST NOT, SHOULD or MAY. It is not an obligation: what follows it links to it with `meets` or cites its ID, and a rule that nothing meets or cites is a warning. A rule proved by tests is a pattern rule instead.
+
+- **Stage:** Design
+- **Folder:** [Shared](#folder-shared)
+- **Parents:** [`standard`](#kind-standard)
+- **Children:** none
+- **Required fields:** none
+- **Obligation:** no
+- **ID:** `<standard>-R<nn>`, such as `TL-STD-CODE-R01`
+- **Links out:** none
+- **Links in:** Questions about this ([`about`](#relation-about)), Met by ([`meets`](#relation-meets))
+- **Checks:** [`standard-rule-unmet`](#check-standard-rule-unmet)
+
 <a id="kind-flow"></a>
 
 ### Flow (`flow`)
@@ -450,9 +490,9 @@ A unit of code in the target design, such as a model, service or router. It sits
 - **Required fields:** `component_type`, `file`
 - **Obligation:** no
 - **ID:** `<P>-<D>-C<nn>`, such as `TL-LEND-C01`
-- **Links out:** Satisfies ([`satisfies`](#relation-satisfies)), Implements ([`implements`](#relation-implements)), Depends on ([`depends_on`](#relation-depends_on)), Reacts to ([`reacts_to`](#relation-reacts_to))
+- **Links out:** Satisfies ([`satisfies`](#relation-satisfies)), Implements ([`implements`](#relation-implements)), Depends on ([`depends_on`](#relation-depends_on)), Reacts to ([`reacts_to`](#relation-reacts_to)), Meets ([`meets`](#relation-meets))
 - **Links in:** Depended on by ([`depends_on`](#relation-depends_on)), Questions about this ([`about`](#relation-about)), Covered by ([`covers`](#relation-covers)), Used by ([`uses`](#relation-uses))
-- **Checks:** [`component-file-missing`](#check-component-file-missing), [`component-outside-layer`](#check-component-outside-layer), [`event-unheard`](#check-event-unheard), [`component-satisfies-nothing`](#check-component-satisfies-nothing)
+- **Checks:** [`component-file-missing`](#check-component-file-missing), [`component-outside-layer`](#check-component-outside-layer), [`event-unheard`](#check-event-unheard), [`component-satisfies-nothing`](#check-component-satisfies-nothing), [`standard-rule-unmet`](#check-standard-rule-unmet)
 
 <a id="kind-design_flow"></a>
 
@@ -484,7 +524,7 @@ One step of a technical flow, in order: what the system does, the component that
 - **Required fields:** `order`
 - **Obligation:** no
 - **ID:** `<technical flow>-S<nn>`, such as `TL-LEND-DF01-S01`
-- **Links out:** Uses ([`uses`](#relation-uses)), Satisfies ([`satisfies`](#relation-satisfies))
+- **Links out:** Uses ([`uses`](#relation-uses)), Satisfies ([`satisfies`](#relation-satisfies)), Meets ([`meets`](#relation-meets))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`step-order`](#check-step-order)
 
@@ -501,9 +541,9 @@ A test that proves obligations, or supports them without proving them. Its state
 - **Required fields:** `test_type`
 - **Obligation:** no
 - **ID:** `<P>-<D>-T<nn>`, such as `TL-LEND-T01`
-- **Links out:** Proves ([`proves`](#relation-proves)), Runs ([`runs`](#relation-runs)), Covers ([`covers`](#relation-covers)), Supports ([`supports`](#relation-supports))
+- **Links out:** Proves ([`proves`](#relation-proves)), Runs ([`runs`](#relation-runs)), Covers ([`covers`](#relation-covers)), Supports ([`supports`](#relation-supports)), Meets ([`meets`](#relation-meets))
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`bad-test-state`](#check-bad-test-state), [`test-run-by-missing`](#check-test-run-by-missing), [`proof-not-in-file`](#check-proof-not-in-file), [`test-type-mismatch`](#check-test-type-mismatch), [`proof-still-owed`](#check-proof-still-owed), [`proof-counts-nowhere`](#check-proof-counts-nowhere), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-proves-nothing`](#check-test-proves-nothing)
+- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`bad-test-state`](#check-bad-test-state), [`test-run-by-missing`](#check-test-run-by-missing), [`proof-not-in-file`](#check-proof-not-in-file), [`test-type-mismatch`](#check-test-type-mismatch), [`proof-still-owed`](#check-proof-still-owed), [`proof-counts-nowhere`](#check-proof-counts-nowhere), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-proves-nothing`](#check-test-proves-nothing), [`standard-rule-unmet`](#check-standard-rule-unmet)
 
 <a id="kind-question"></a>
 
@@ -744,6 +784,16 @@ Every relation, from `meta/relations.csv`: which kind may link to which, what th
 | --- | --- | --- | --- | --- | --- |
 | [`design_flow`](#kind-design_flow) | [`flow`](#kind-flow) | - | Deepens | Deepened by | The technical flow says how the system carries out the flow. |
 
+<a id="relation-meets"></a>
+
+### `meets`
+
+| From | To | Role | Forward | Reverse | Meaning |
+| --- | --- | --- | --- | --- | --- |
+| [`component`](#kind-component) | [`standard_rule`](#kind-standard_rule) | - | Meets | Met by | The component follows the standard rule. |
+| [`test`](#kind-test) | [`standard_rule`](#kind-standard_rule) | - | Meets | Met by | The test follows the standard rule. |
+| [`design_step`](#kind-design_step) | [`standard_rule`](#kind-standard_rule) | - | Meets | Met by | The design step follows the standard rule. |
+
 ## Folders
 
 The folders kinds sit in, from `meta/sections.csv`, in stage then order.
@@ -752,10 +802,10 @@ The folders kinds sit in, from `meta/sections.csv`, in stage then order.
 
 ### Shared (`shared`)
 
-What a product's domains share: patterns and their rules.
+What a product's domains share: patterns, standards and their rules.
 
 - **Stage:** Product level, order 1
-- **Kinds:** [`pattern`](#kind-pattern), [`pattern_rule`](#kind-pattern_rule)
+- **Kinds:** [`pattern`](#kind-pattern), [`pattern_rule`](#kind-pattern_rule), [`standard`](#kind-standard), [`standard_rule`](#kind-standard_rule)
 
 <a id="folder-domain-model"></a>
 
@@ -1318,7 +1368,7 @@ test proves.
 A step's order is a whole number that no other step on its path of the flow has, and each path's steps are numbered without gaps.
 
 The steps of a flow (`flow_step`) and of a technical flow (`design_step`) are read in `order` (FORMAT.md
-sections 14 and 21), within their `path`: a short name such as main or
+sections 14 and 22), within their `path`: a short name such as main or
 refused, compared trimmed and in any letter case. A step with no path is on the main path. Orders are
 compared as numbers, so 1 and 01 clash, and the steps of each path of a flow are numbered 1, 2, 3 and so
 on. A path whose orders skip a number is reported once, on the first step after the gap, and only when
@@ -1469,7 +1519,7 @@ The setting is read from `lathe.config.json` (default 15) through the settings t
 many children of one kind is missing a level between them, such as a capability, a layer or another
 aggregate. Children are counted per kind. Tests are exempt: the app groups them by what they prove
 (FORMAT.md section 15), so they are never shown as one list. The steps of a flow or a technical flow are
-counted per path (FORMAT.md sections 14 and 21), since each path reads as its own list. A child whose parent does not exist is only
+counted per path (FORMAT.md sections 14 and 22), since each path reads as its own list. A child whose parent does not exist is only
 unknown-parent. Add a level and move the children into it.
 
 <a id="check-lone-child"></a>
@@ -1721,15 +1771,30 @@ product, and a link to a record that does not exist, are reported by other check
 ID is duplicated, the link is reported only if no record with that ID is in the source's product. Remove
 the link; to point a reader at the other product, name the ID in prose, where it is a plain citation.
 
+<a id="check-standard-rule-unmet"></a>
+
+### `standard-rule-unmet`
+
+**Warning** · Lathe's `checks/81-standard-rule-unmet.sql` · Kinds: [`standard_rule`](#kind-standard_rule), [`standard`](#kind-standard), [`component`](#kind-component), [`test`](#kind-test)
+
+A standard rule that nothing meets or cites.
+
+A standard rule asks nothing of a domain, so it owes no coverage (FORMAT.md section 20), but a rule that no
+component, design step or test `meets`, and that no other record of its product cites in its prose, has no
+use, and nothing outlives its purpose. A citation from the rule itself or from its own standard does not
+count, so a standard that lists its rules by ID does not keep them all alive. A `meets` link from any
+record counts here; one from a kind the meta-model does not allow is relation-not-allowed. Link what
+follows the rule with `meets`, cite the rule where it is followed, or remove the rule.
+
 <a id="check-design-flow-deepens-nothing"></a>
 
 ### `design-flow-deepens-nothing`
 
-**Warning** · Lathe's `checks/81-design-flow-deepens-nothing.sql` · Kinds: [`design_flow`](#kind-design_flow)
+**Warning** · Lathe's `checks/82-design-flow-deepens-nothing.sql` · Kinds: [`design_flow`](#kind-design_flow)
 
 A technical flow that deepens no flow.
 
-A technical flow says how the system carries out a flow (FORMAT.md section 21), so it names that flow with
+A technical flow says how the system carries out a flow (FORMAT.md section 22), so it names that flow with
 `deepens`. One that deepens nothing is design with no flow to carry out: the flow is missing, or the link
 is. A link to a flow that does not exist is only dangling-link. Link the flow it carries out with
 `deepens`, or write the flow first.

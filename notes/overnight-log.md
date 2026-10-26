@@ -22,6 +22,17 @@ Jared, going to bed: "Please make any decisions needed in order to complete the 
 
 **Running at 00:05:** 87 (text per level), 89 (groups and waivers), 90 (API, integration and technical flows), 91 (standards). Brief 88 (shapes) starts when 87 merges.
 
+**Merges and calls since:**
+- 00:27 `33ce118` Engineering standards (91):
+  - `standard`, `standard_rule` and `meets`, owing no coverage;
+  - the `standard-rule-unmet` warning;
+  - FORMAT section 20;
+  - the dogfood standard `LA-STD-CODE`, three rules checked against the code.
+  
+  App 337, engine 266, check 0 errors; stability 43, a11y 125.
+- 00:30 Text per level (87), first pass, **not merged**: with a fixed 1.5× step the upper titles were tiny against their boxes. Sent back to take the scale from each level's typical box size.
+- 00:55 Text per level (87), second pass: one size per level from the top fails. Lathe has leaves high up (24 pattern rules under Shared) that would get huge text and inflate the map. **Decision:** levels are counted from the leaves up. A leaf is level 0, and a parent is one more than its tallest child, so every record reads at leaf size wherever it sits. Sent back with that rule. The 16 px stability check stays.
+
 ## Where things stand (03:05)
 All queued briefs are merged into local `main`. Nothing is pushed. No agents are running.
 - **Your dev server on port 5199 needs a restart** (`npm --prefix app run dev`). It has been up since before the moves, and its hot reload is broken.

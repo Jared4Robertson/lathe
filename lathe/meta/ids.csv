@@ -10,6 +10,8 @@ use_case,<P>-<D>-UC<nn>,TL-LEND-UC01
 requirement,<use case>-R<nn>,TL-LEND-UC01-R01
 pattern,<P>-PAT-<name>,TL-PAT-LIBRARIAN-ACTION
 pattern_rule,<pattern>-R<nn>,TL-PAT-LIBRARIAN-ACTION-R01
+standard,<P>-STD-<name>,TL-STD-CODE
+standard_rule,<standard>-R<nn>,TL-STD-CODE-R01
 flow,<P>-<D>-F<nn>,TL-LEND-F01
 flow_step,<flow>-S<nn>,TL-LEND-F01-S01
 view,<P>-<D>-V<nn>,TL-LEND-V01

@@ -4,7 +4,7 @@
 -- many children of one kind is missing a level between them, such as a capability, a layer or another
 -- aggregate. Children are counted per kind. Tests are exempt: the app groups them by what they prove
 -- (FORMAT.md section 15), so they are never shown as one list. The steps of a flow or a technical flow are
--- counted per path (FORMAT.md sections 14 and 21), since each path reads as its own list. A child whose parent does not exist is only
+-- counted per path (FORMAT.md sections 14 and 22), since each path reads as its own list. A child whose parent does not exist is only
 -- unknown-parent. Add a level and move the children into it.
 --
 -- severity: warning

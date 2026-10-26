@@ -1,7 +1,7 @@
 import type { Kind, SpecRecord, Workspace } from '../../../lathe/src/types';
 import { workspace as fixtureWorkspace } from './workspace';
 
-// APIs, integrations and technical flows for the app tests (FORMAT.md sections 20 and 21).
+// APIs, integrations and technical flows for the app tests (FORMAT.md sections 21 and 22).
 
 const KINDS: Kind[] = [
   { kind: 'api', label: 'API', stage: 'design', section: 'interaction-design', parent_kinds: ['domain'], required_fields: [], obligation: false, proof_only: false, description: 'A group of endpoints for one resource.' },

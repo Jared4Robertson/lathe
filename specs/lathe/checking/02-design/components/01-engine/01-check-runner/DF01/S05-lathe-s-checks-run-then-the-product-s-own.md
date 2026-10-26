@@ -8,5 +8,6 @@ statements: one SELECT per check file
 links:
   uses: [LA-CHK-C12]
   satisfies: [LA-CHK-UC05-R01, LA-CHK-UC05-R02]
+  meets: [LA-STD-CODE-R03]
 ---
 Each check file is one SELECT over the same tables, returning `(severity, check, record, message)` rows; each is named by its file name.

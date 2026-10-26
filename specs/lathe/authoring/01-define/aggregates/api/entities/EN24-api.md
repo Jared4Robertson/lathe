@@ -2,7 +2,7 @@
 id: LA-AUT-EN24
 kind: entity
 title: API
-parent: LA-AUT-A12
+parent: LA-AUT-A15
 role: root
 ---
 One API of a domain: the endpoints for one resource.

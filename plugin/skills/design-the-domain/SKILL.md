@@ -24,9 +24,9 @@ The design says how the product carries out its use cases: the paths people take
 | `integration` | `<P>-<D>-INT<nn>` | optional `system`, the outside system's name | none; it holds one interaction requirement per exchange |
 | `interaction_requirement` | `<view, endpoint, flow, API or integration>-R<nn>`, such as `TL-LEND-E04-R01`, or `<P>-<D>-IR<nn>` under the domain | | `fulfills` the use case requirements and domain rules it carries out at this view, endpoint, flow, API or integration |
 | `layer` | `<P>-<D>-LAY<nn>` | `order` (a whole number, its place among the layers beside it, unique there) | none; it holds the domain's components, and may hold sub-layers |
-| `component` | `<P>-<D>-C<nn>` | `component_type` (model, service, router, ...), `file` (path from the repo root) | `satisfies` requirements, domain rules and interaction requirements; `implements` endpoints and views; `depends_on` components |
+| `component` | `<P>-<D>-C<nn>` | `component_type` (model, service, router, ...), `file` (path from the repo root) | `satisfies` requirements, domain rules and interaction requirements; `implements` endpoints and views; `depends_on` components; `meets` the standard rules it follows (see Standards) |
 | `design_flow` (technical flow) | `<P>-<D>-DF<nn>` | | `deepens` the flow it carries out |
-| `design_step` (technical step) | `<technical flow>-S<nn>`, such as `TL-LEND-DF01-S01` | `order`; optional `path`, `transaction`, `locks`, `statements` | `uses` the component that does it; `satisfies` the obligations it designs |
+| `design_step` (technical step) | `<technical flow>-S<nn>`, such as `TL-LEND-DF01-S01` | `order`; optional `path`, `transaction`, `locks`, `statements` | `uses` the component that does it; `satisfies` the obligations it designs; `meets` standard rules it follows |
 
 Every design record's parent is the domain, except an endpoint, whose parent is the API for its resource, an interaction requirement, whose parent is the view, endpoint, flow, API or integration it constrains (or the domain, for a rule shared across its interaction design), a technical flow, whose parent is a layer when the domain has layers, a technical step, whose parent is its technical flow, a flow step, whose parent is its flow, a flow, whose parent is the capability of the use cases it carries out when the domain has capabilities (see `write-use-cases`), and a component, whose parent is its layer when the domain has layers (see below). Any link not in the meta-model's `relations.csv` is an error. Each relation reads by a label from either end, such as Satisfies and Designed by; `lathe format` lists every relation each kind may make and receive, with its labels.
 
@@ -41,6 +41,14 @@ A domain's components go in **layers**: ordered groups by what the code is, such
 - Once a domain has one layer, every component of the domain belongs in one; a component left under the domain is a `component-outside-layer` warning. A repeated or non-whole `order` is a `layer-order` error.
 - A component in a layer still counts in its domain: coverage, owed pattern rules and flow steps treat it exactly as one directly under the domain.
 
+## Standards
+
+A product's engineering rules for its code, such as logging, error handling or naming, live in **standards** at product level, beside the patterns (FORMAT.md section 20): a `standard` record under the product (ID `<P>-STD-<NAME>`, such as `TL-STD-CODE`) and its `standard_rule` records under it (`<standard>-R<nn>`, such as `TL-STD-CODE-R01`), one rule each with MUST / MUST NOT / SHOULD / MAY. Keep them in a `standards/` folder beside `patterns/`.
+
+- A component or a test that follows a rule says so with `meets: [<rule ID>]` (read from the rule as Met by), or cites the rule's ID in its body. Neither counts as design or proof: a standard rule is not an obligation and no domain owes it.
+- Write only rules the code really follows. A rule that nothing meets or cites, other than the rule and its own standard, is a `standard-rule-unmet` warning: link what follows it, or remove it.
+- A rule you prove with tests is a pattern rule (see `write-use-cases`); a rule you follow and cite is a standard rule.
+
 ## Interaction requirements
 
 An interaction requirement is one rule a view, endpoint or flow must follow: a field's type and limits, the status and error code of each refusal, what a success returns, what a screen shows or disables. Like a requirement, it is an obligation: Lathe counts it as designed, built, proved or planned, and warns while no component satisfies it or no test proves it.
@@ -52,7 +60,7 @@ An interaction requirement is one rule a view, endpoint or flow must follow: a f
 
 ## APIs and integrations
 
-Group a domain's endpoints by resource (FORMAT.md section 20):
+Group a domain's endpoints by resource (FORMAT.md section 21):
 
 - One `api` per resource, such as Members, Tools or Loans, under the domain. Each endpoint's parent is its API. Moving an endpoint into an API changes only its `parent`, never its ID.
 - A rule that holds for every endpoint of the API, such as how it pages or what an unknown ID answers, is an interaction requirement under the API, not a copy under each endpoint.
@@ -92,7 +100,7 @@ What the checks say:
 
 ## Technical flows
 
-A flow says what a person sees; a technical flow says how the code carries it out (FORMAT.md section 21). Write one where the design is worth citing step by step, such as a flow whose steps run in a transaction, lock rows or call several components:
+A flow says what a person sees; a technical flow says how the code carries it out (FORMAT.md section 22). Write one where the design is worth citing step by step, such as a flow whose steps run in a transaction, lock rows or call several components:
 
 - One `design_flow` per flow it deepens, in the layer whose components do most of the work (or the domain), with `deepens` naming the flow. One that deepens nothing is a `design-flow-deepens-nothing` warning.
 - One `design_step` per step, under it, ordered and with an optional `path`, as a flow's steps are. `uses` names the component that does the step; `satisfies` names the obligations the step designs, and counts as design, as a component's `satisfies` does. Only a component whose file exists counts as built.
