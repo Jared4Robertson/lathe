@@ -88,7 +88,7 @@ describe('proof that counts nowhere', () => {
 
   it('LA-TRC-T72 A test proving a rule that every following use case marks Not applicable is reported', () => {
     expect(messagesOf(main, 'proof-counts-nowhere', 'OS-C-T01')).toEqual([
-      'Test OS-C-T01\'s proof counts in no domain\'s coverage: OS-PAT4-R01 is owed by no domain: every use case that follows OS-PAT4 marks its setting Not applicable.' + NOWHERE_FIX,
+      'Test OS-C-T01\'s proof counts in no domain\'s coverage: OS-PAT4-R01 is owed by no domain: wherever OS-PAT4 is followed, its setting is Not applicable or no follower meets its applies_when.' + NOWHERE_FIX,
     ]);
   });
 
