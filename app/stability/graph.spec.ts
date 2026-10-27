@@ -77,7 +77,7 @@ test.describe('graph', () => {
     };
     await check('the product');
     const keys = [PANE_BAR, PANE_TITLE, GRAPH_HEADER, GRAPH_CANVAS, DRAWING];
-    for (const id of ['LA-EXP', 'LA-EXP/define', 'LA-EXP/define/use-cases', 'LA-EXP-CAP03', 'LA-EXP-UC03']) {
+    for (const id of ['LA-EXP', 'LA-EXP/use-cases', 'LA-EXP/use-cases/capability', 'LA-EXP-CAP03', 'LA-EXP-UC03']) {
       const before = new URL(page.url()).pathname;
       const r = await step(page, 'graph', `focus ${id}`, { keys, allow: ['.side-bar', GRAPH_BOXES] }, async () => {
         await clickBox(page, id);
@@ -146,7 +146,7 @@ test.describe('graph', () => {
       }
       return out;
     }, GRAPH);
-    for (const focus of [DOMAIN, `${DOMAIN}/define`, `${DOMAIN}/design`]) {
+    for (const focus of [DOMAIN, `${DOMAIN}/domain-model`, `${DOMAIN}/use-cases`]) {
       await openPage(page, `${focus}?view=graph`);
       await nodes(page);
       for (const depth of [1, 2, 3]) {
@@ -235,7 +235,7 @@ test.describe('graph', () => {
   test('LA-EXP-T183 no label is clipped: each line fits its width and height, and the label fits its box, in light and dark, focused or not, at several zooms', async ({ page }) => {
     for (const scheme of ['light', 'dark'] as const) {
       await page.emulateMedia({ colorScheme: scheme });
-      for (const focus of [DOMAIN, `${DOMAIN}/define`]) {
+      for (const focus of [DOMAIN, `${DOMAIN}/use-cases`]) {
         await openPage(page, `${focus}?view=graph`);
         await nodes(page);
         for (const depth of [1, 2, 3]) {

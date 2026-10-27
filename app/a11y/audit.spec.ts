@@ -7,7 +7,7 @@ import { audit, LOOKS, useLook } from './axe';
 // (LA-PAT-APP-UX-R10). Each page or state in each look is one test, so a failure names both.
 
 /** A group: a domain's Technical specification folder, at its parent, stage and folder. */
-const GROUP = '/LA-EXP/design/technical-specification';
+const GROUP = '/LA-EXP/technical-specification';
 
 async function open(page: Page, url: string, ready: string) {
   await page.goto(url);
