@@ -68,19 +68,22 @@ Where no technical kind fits, such as a server's entry point, a CLI command or a
 
 ## Example: the Tool Library
 
-The handler of Borrow a tool, the repository and data model of the Loan, the event handler of the policy that hears Tool returned, and the event type Tool returned would have once its code is written (the Tool Library has no event code yet, so its events show as not built):
+The handler of Borrow a tool, the repository and data model of the Loan, and the event type of Tool returned with the event handler of the policy that hears it. Every Tool Library event goes by outbox: one path for all six keeps the code plain, and an event a later policy hears needs no change.
 
 ```
 add  { "command_handler": { "id": "TL-LEND-CMD05-H", "title": "LendingService.borrow", "command_id": "TL-LEND-CMD05",
-       "file": "src/lending-service.ts", "description": "Runs the checks in order and opens the loan, in one transaction." } }
+       "file": "src/lending-service.ts",
+       "description": "Runs the checks in order in one transaction and inserts the loan with its due date. It saves LoanOpened to the outbox in that transaction and runs the relay once it commits." } }
 add  { "repository": { "id": "TL-LEND-A3-REPO", "title": "Store (loans)", "aggregate_id": "TL-LEND-A3", "file": "src/store.ts",
        "description": "insertLoan, findLoan, activeLoansForMember, activeLoanForTool and markReturned on the SQLite store." } }
 add  { "data_model": { "id": "TL-LEND-EN04-DM", "title": "Loan", "entity_id": "TL-LEND-EN04", "file": "src/model.ts",
        "description": "The Loan interface; mapped from its row by toLoan in src/store.ts." } }
-add  { "event_handler": { "id": "TL-LEND-PO01-H", "title": "LendingService.return (needs_repair)", "policy_id": "TL-LEND-PO01",
-       "file": "src/lending-service.ts", "description": "The needs_repair branch of return, which reports damage on the tool." } }
 add  { "event_type": { "id": "TL-LEND-EV06-ET", "title": "ToolReturned", "domain_event_id": "TL-LEND-EV06", "delivery": "outbox",
-       "file": "src/events.ts", "description": "Saved with the loan's return and delivered to the damage policy afterwards." } }
+       "file": "src/events.ts",
+       "description": "The ToolReturned interface, as LendingService.return saves it. TL-LEND-PO01 hears it, so it goes by outbox: saved in the return's transaction, relayed to its handlers after commit." } }
+add  { "event_handler": { "id": "TL-LEND-PO01-H", "title": "reportDamageOnReturn", "policy_id": "TL-LEND-PO01",
+       "file": "src/event-handlers.ts",
+       "description": "Subscribed to ToolReturned on the outbox; for a return needing repair it invokes Report damage's handler, in its own transaction." } }
 ```
 
 The loans table, with its primary key, a foreign key to the members table, and the partial unique key that enforces one active loan per tool:
