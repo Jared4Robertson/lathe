@@ -1,0 +1,5 @@
+{"id":"TL-LEND-EN01","title":"Member","aggregate_id":"TL-LEND-A1","role":"root","description":"A person registered to borrow tools, known to the library by their email."}
+{"id":"TL-LEND-EN02","title":"Tool","aggregate_id":"TL-LEND-A2","role":"root","description":"One physical item in the catalog, known by the number on its tag."}
+{"id":"TL-LEND-EN03","title":"Damage report","aggregate_id":"TL-LEND-A2","role":"child","description":"What is wrong with a tool while it needs repair, from the report until a librarian marks the tool repaired."}
+{"id":"TL-LEND-EN04","title":"Loan","aggregate_id":"TL-LEND-A3","role":"root","description":"One member holding one tool, from borrowing to return."}
+{"id":"TL-LEND-EN05","title":"Return","aggregate_id":"TL-LEND-A3","role":"child","description":"The end of a loan: when the tool came back and what the librarian found, recorded once and never changed."}
