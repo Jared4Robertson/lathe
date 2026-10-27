@@ -1,9 +1,9 @@
 import type { Look } from './look';
-import type { Plate, PlateLine } from './plate';
+import type { Plate } from './plate';
 import { notchOf, type Mark, type Outline, type Shape } from './shapes';
 import { MARK_PATHS, SHAPE_PATHS } from './shape-icons';
 import { fontFor, type GraphFonts } from './fonts';
-import type { Face } from './text';
+import { onScreen } from './hit';
 
 // The graph's canvas painter (LA-EXP-DR59, LA-EXP-DR60): each frame it draws what the camera
 // shows, in screen pixels, from the map's plates (plate.ts). Every point is placed by the camera in
@@ -58,19 +58,37 @@ export interface PaintState {
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
 /** A line's stroke: color, width over its scale, dashes and opacity, as the stylesheet drew each relation's family. */
-function lineStroke(look: Look, line: Line): { color: string; width: number; dash: number[]; alpha: number } {
+export function lineStroke(look: Look, line: Pick<Line, 'link' | 'style'>): { color: string; width: number; dash: number[]; alpha: number } {
   if (!line.link) return { color: look.ink, width: 2, dash: [], alpha: 0.75 };
   if (line.style === 'event') return { color: look.spark, width: 1.2, dash: [4, 4], alpha: 1 };
   return { color: look.linkEdge, width: 1.2, dash: [6, 4], alpha: 1 };
 }
 
-/** A box's edge and fill colors: its stage's, a group's, a file's, an open question's edge, a domain event's spark colors. */
-export function boxColors(look: Look, p: Plate): { edge: string; fill: string } {
-  if (p.file) return { edge: look.fileEdge, fill: look.paper };
-  if (p.group) return { edge: look.muted, fill: look.sheet };
-  const fill = p.kind === 'domain_event' ? look.sparkBg : p.stage === 'define' ? look.defineFill : p.stage === 'design' ? look.designFill : look.structuralFill;
-  const edge = p.kind === 'question' ? look.warn : p.kind === 'domain_event' ? look.spark : p.stage === 'define' ? look.defineEdge : p.stage === 'design' ? look.designEdge : look.structuralEdge;
-  return { edge, fill };
+/** Every look a box is drawn in, by its swatch in the graph's key (panel.tsx): its stage's colors, a group's, a file's, a domain event's and an open question's. */
+export const BOX_LOOKS = ['stage-define', 'stage-design', 'stage-structural', 'stage-group', 'stage-file', 'kind-domain_event', 'kind-question'] as const;
+export type BoxLook = (typeof BOX_LOOKS)[number];
+
+/** A box's look: a file's, a group's, an open question's, a domain event's, or its stage's. */
+export function boxLook(p: Pick<Plate, 'file' | 'group' | 'kind' | 'stage'>): BoxLook {
+  if (p.file) return 'stage-file';
+  if (p.group) return 'stage-group';
+  if (p.kind === 'question') return 'kind-question';
+  if (p.kind === 'domain_event') return 'kind-domain_event';
+  return `stage-${p.stage as 'define' | 'design' | 'structural'}`;
+}
+
+/** A box's edge and fill colors, by its look: an open question keeps its stage's fill. */
+export function boxColors(look: Look, p: Pick<Plate, 'file' | 'group' | 'kind' | 'stage'>): { edge: string; fill: string } {
+  const stageFill = p.stage === 'define' ? look.defineFill : p.stage === 'design' ? look.designFill : look.structuralFill;
+  switch (boxLook(p)) {
+    case 'stage-file': return { edge: look.fileEdge, fill: look.paper };
+    case 'stage-group': return { edge: look.muted, fill: look.sheet };
+    case 'kind-question': return { edge: look.warn, fill: stageFill };
+    case 'kind-domain_event': return { edge: look.spark, fill: look.sparkBg };
+    case 'stage-define': return { edge: look.defineEdge, fill: look.defineFill };
+    case 'stage-design': return { edge: look.designEdge, fill: look.designFill };
+    default: return { edge: look.structuralEdge, fill: look.structuralFill };
+  }
 }
 
 /** Draws one frame. */
@@ -129,7 +147,7 @@ export function paint(ctx: CanvasRenderingContext2D, dpr: number, cam: Camera, f
   }
 
   for (const p of frame.plates) {
-    if (X(p.x + p.w) < 0 || X(p.x) > cam.w || Y(p.y + p.h) < 0 || Y(p.y) > cam.h) continue;
+    if (!onScreen(p, cam)) continue;
     ctx.globalAlpha = dim(!!state.lit?.has(p.id));
     paintBox(ctx, p, cam, look, fonts, state, X, Y);
   }
@@ -424,6 +442,3 @@ function paintIcon(ctx: CanvasRenderingContext2D, draw: 'shape' | 'mark', name: 
   }
   ctx.restore();
 }
-
-/** The fonts a frame's text is drawn in, as a face's CSS font at a size: what the scene hook reports. */
-export const lineFont = (fonts: GraphFonts, line: PlateLine, zoom: number) => fontFor(fonts, line.face as Face, line.size * zoom);

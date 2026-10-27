@@ -26,8 +26,10 @@ export type Stage = 'define' | 'design' | 'structural' | 'group' | 'file';
 export interface PlateLine { text: string; face: Face; size: number; x: number; baseline: number; top: number; height: number; width: number; tone: 'ink' | 'muted' }
 /** A small drawing before the kind and ID line: a shape's mark (Nested and Voronoi) or a kind's mark. */
 export interface PlateIcon { draw: 'shape' | 'mark'; name: Shape | Mark; x: number; y: number; w: number; h: number }
+/** The problem badges' tones, by their swatches in the graph's key: errors, warnings, coverage gaps. */
+export const BADGE_TONES = ['error', 'warning', 'gap'] as const;
 /** A problem badge: "!" for errors or warnings, "gap" for coverage gaps. */
-export interface PlateBadge { label: string; tone: 'error' | 'warning'; x: number; y: number; w: number; h: number; size: number }
+export interface PlateBadge { label: string; tone: (typeof BADGE_TONES)[number]; x: number; y: number; w: number; h: number; size: number }
 
 export interface Plate {
   id: string;
@@ -131,10 +133,10 @@ function placeLines({ lines, box, centered, top, t, icons }: Place): { lines: Pl
 
 /** A box's problem badges, right to left from their right edge at a top. */
 function badgesAt(marks: { errors: number; warnings: number; gaps: string[] }, right: number, top: number, t: number): PlateBadge[] {
-  const pills: { label: string; tone: 'error' | 'warning' }[] = [];
+  const pills: { label: string; tone: PlateBadge['tone'] }[] = [];
   if (marks.errors > 0) pills.push({ label: '!', tone: 'error' });
   else if (marks.warnings > 0) pills.push({ label: '!', tone: 'warning' });
-  if (marks.gaps.length > 0) pills.push({ label: 'gap', tone: 'warning' });
+  if (marks.gaps.length > 0) pills.push({ label: 'gap', tone: 'gap' });
   const m = textMeasure();
   const widths = pills.map((p) => Math.max(BADGE.minW, m.em(p.label, 'badge') * BADGE.font + 2 * BADGE.pad) * t);
   let x = right - widths.reduce((s, w) => s + w, 0) - BADGE.gap * t * (pills.length - 1);

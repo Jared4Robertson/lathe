@@ -6,38 +6,24 @@ import { nestedMap } from '../../src/graph/nested';
 import { readyVoronoiMap } from '../../src/graph/voronoi';
 import { graphMap } from '../../src/graph/map';
 import { MOTION_SPEED_MS } from '../../src/graph/motion';
+import { roundCamera } from '../../src/graph/GraphPage';
+import { inPolygon } from '../../src/graph/hit';
 import { openApp, startAtDepth } from '../helpers';
 import { testIndex, testWorkspace } from './workspace';
+import { boxElement, drawnBox, graphHost, isCenter, scene } from './scene';
 
 // Focusing moves the camera, never the map (LA-EXP-DR59): the camera frames the focus and the
 // levels the depth shows below it, the parent kept at the left edge, in one smooth zoom and pan on
 // the shared motion; under reduced motion it moves at once.
 
-const calls = vi.hoisted(() => [] as { viewport: { x: number; y: number; zoom: number }; options?: { duration?: number } }[]);
+const node = (id: string) => boxElement(id);
 
-// The page's viewport moves, recorded on their way to React Flow.
-vi.mock('@xyflow/react', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@xyflow/react')>();
-  const wrapped = new WeakMap<object, unknown>();
-  return {
-    ...actual,
-    useReactFlow: () => {
-      const flow = actual.useReactFlow();
-      if (!wrapped.has(flow.setViewport)) {
-        wrapped.set(flow.setViewport, (viewport: (typeof calls)[number]['viewport'], options?: (typeof calls)[number]['options']) => {
-          calls.push({ viewport, options });
-          return flow.setViewport(viewport, options as never);
-        });
-      }
-      return { ...flow, setViewport: wrapped.get(flow.setViewport) };
-    },
-  };
-});
-
-const node = (id: string) => document.querySelector<HTMLElement>(`.react-flow__node[data-id="${id}"]`);
-const isCenter = (id: string) => !!node(id)?.querySelector('.graph-node.is-focus');
-/** Every drawn box's place and size on the canvas. */
-const boxes = () => new Map([...document.querySelectorAll<HTMLElement>('.react-flow__node')].map((el) => [el.dataset.id!, `${el.style.transform} ${el.style.width} ${el.style.height}`]));
+/** The camera now, and the counts of its moves and glides, as the canvas's scene reports them. */
+const camera = () => scene().camera;
+const moves = () => scene().moves;
+const glides = () => scene().glides;
+/** Every drawn box's place and size in the map. */
+const boxes = () => new Map(scene().boxes.map((b) => [b.id, JSON.stringify(b.map)]));
 const reducedMotion = () =>
   vi.stubGlobal('matchMedia', (query: string) => ({ matches: query.includes('prefers-reduced-motion: reduce'), media: query, addEventListener: () => {}, removeEventListener: () => {} }));
 
@@ -96,7 +82,6 @@ describe('graph camera', () => {
 
 describe('graph camera on the page', () => {
   beforeEach(() => {
-    calls.length = 0;
     // jsdom lays nothing out; the canvas is 1000 by 800.
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({ x: 0, y: 0, top: 0, left: 0, width: 1000, height: 800, right: 1000, bottom: 800, toJSON: () => ({}) } as DOMRect);
   });
@@ -106,23 +91,24 @@ describe('graph camera on the page', () => {
     startAtDepth(1);
     await openApp('/P-D-UC01?view=graph', { workspace: testWorkspace() });
     await waitFor(() => expect(isCenter('P-D-UC01')).toBe(true));
-    await waitFor(() => expect(calls.length).toBeGreaterThan(0));
+    await waitFor(() => expect(moves()).toBeGreaterThan(0));
   }
 
   it('LA-EXP-T130 Focusing a child glides the camera on the shared motion, and no box moves or changes size', async () => {
     await open();
     // The first picture appears at once, framed.
-    expect(calls.every((c) => c.options?.duration === 0)).toBe(true);
-    expect(calls.at(-1)!.viewport).toEqual(frameOnMap(graphMap(testIndex(), 'P'), 'P-D-UC01', 1, 1000, 800));
+    expect(glides()).toBe(0);
+    expect(camera()).toEqual(roundCamera(frameOnMap(graphMap(testIndex(), 'P'), 'P-D-UC01', 1, 1000, 800)));
     const before = boxes();
-    const first = calls.length;
+    const first = moves();
 
     fireEvent.click(node('P-D-UC01-R01')!);
     await waitFor(() => expect(isCenter('P-D-UC01-R01')).toBe(true));
     // The camera glides there, frame by frame, and ends framing the new focus.
     const target = frameOnMap(graphMap(testIndex(), 'P'), 'P-D-UC01-R01', 1, 1000, 800);
-    await waitFor(() => expect(calls.at(-1)!.viewport).toEqual(target), { timeout: 3000 });
-    expect(calls.length - first).toBeGreaterThan(2);
+    await waitFor(() => expect(camera()).toEqual(roundCamera(target)), { timeout: 3000 });
+    expect(glides()).toBe(1);
+    expect(moves() - first).toBeGreaterThan(2);
     // Every box drawn before and after is where it was, at the size it was.
     const after = boxes();
     const both = [...before.keys()].filter((id) => after.has(id));
@@ -132,17 +118,18 @@ describe('graph camera on the page', () => {
     // Back glides back.
     window.history.back();
     await waitFor(() => expect(isCenter('P-D-UC01')).toBe(true));
-    await waitFor(() => expect(calls.at(-1)!.viewport).toEqual(frameOnMap(graphMap(testIndex(), 'P'), 'P-D-UC01', 1, 1000, 800)), { timeout: 3000 });
+    await waitFor(() => expect(camera()).toEqual(roundCamera(frameOnMap(graphMap(testIndex(), 'P'), 'P-D-UC01', 1, 1000, 800))), { timeout: 3000 });
   });
 
   it('LA-EXP-T131 Under reduced motion focusing frames the new focus at once', async () => {
     reducedMotion();
     await open();
-    const first = calls.length;
+    const first = moves();
     fireEvent.click(node('P-D-UC01-R01')!);
     await waitFor(() => expect(isCenter('P-D-UC01-R01')).toBe(true));
-    await waitFor(() => expect(calls.length).toBe(first + 1));
-    expect(calls[first]).toEqual({ viewport: frameOnMap(graphMap(testIndex(), 'P'), 'P-D-UC01-R01', 1, 1000, 800), options: { duration: 0 } });
+    await waitFor(() => expect(moves()).toBe(first + 1));
+    expect(glides()).toBe(0);
+    expect(camera()).toEqual(roundCamera(frameOnMap(graphMap(testIndex(), 'P'), 'P-D-UC01-R01', 1, 1000, 800)));
   });
 });
 
@@ -178,36 +165,44 @@ describe('graph camera in the Nested layout', () => {
   });
 
   it('LA-EXP-T188 On the page, focusing a child in the Nested layout glides to its box, and Back glides back', async () => {
-    calls.length = 0;
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({ x: 0, y: 0, top: 0, left: 0, width: 1000, height: 800, right: 1000, bottom: 800, toJSON: () => ({}) } as DOMRect);
     startAtDepth(1, 'nested');
     await openApp('/P-D-UC01?view=graph', { workspace: testWorkspace() });
     await waitFor(() => expect(isCenter('P-D-UC01')).toBe(true));
-    await waitFor(() => expect(calls.at(-1)?.viewport).toEqual(frameNested(nestedMap(testIndex(), 'P'), 'P-D-UC01', 1000, 800)));
+    await waitFor(() => expect(camera()).toEqual(roundCamera(frameNested(nestedMap(testIndex(), 'P'), 'P-D-UC01', 1000, 800))));
     expect(document.querySelector('.graph-flow.is-nested')).not.toBeNull();
+    const before = glides();
     fireEvent.click(node('P-D-UC01-R01')!);
     await waitFor(() => expect(isCenter('P-D-UC01-R01')).toBe(true));
-    await waitFor(() => expect(calls.at(-1)!.viewport).toEqual(frameNested(nestedMap(testIndex(), 'P'), 'P-D-UC01-R01', 1000, 800)), { timeout: 3000 });
+    await waitFor(() => expect(camera()).toEqual(roundCamera(frameNested(nestedMap(testIndex(), 'P'), 'P-D-UC01-R01', 1000, 800))), { timeout: 3000 });
+    expect(glides()).toBe(before + 1);
     window.history.back();
     await waitFor(() => expect(isCenter('P-D-UC01')).toBe(true));
-    await waitFor(() => expect(calls.at(-1)!.viewport).toEqual(frameNested(nestedMap(testIndex(), 'P'), 'P-D-UC01', 1000, 800)), { timeout: 3000 });
+    await waitFor(() => expect(camera()).toEqual(roundCamera(frameNested(nestedMap(testIndex(), 'P'), 'P-D-UC01', 1000, 800))), { timeout: 3000 });
   });
 
   it('LA-EXP-T193 On the page, the Voronoi layout draws each cell as its outline, the pointer taking the outline and not its box, and focusing a child glides to its cell', async () => {
-    calls.length = 0;
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({ x: 0, y: 0, top: 0, left: 0, width: 1000, height: 800, right: 1000, bottom: 800, toJSON: () => ({}) } as DOMRect);
     startAtDepth(1, 'voronoi');
     await openApp('/P-D-UC01?view=graph', { workspace: testWorkspace() });
     await waitFor(() => expect(isCenter('P-D-UC01')).toBe(true));
     const map = () => readyVoronoiMap(testIndex(), 'P')!;
-    await waitFor(() => expect(calls.at(-1)?.viewport).toEqual(frameNested(map(), 'P-D-UC01', 1000, 800)));
+    await waitFor(() => expect(camera()).toEqual(roundCamera(frameNested(map(), 'P-D-UC01', 1000, 800))));
     expect(document.querySelector('.graph-flow.is-voronoi')).not.toBeNull();
-    expect(node('P-D-UC01')!.style.pointerEvents).toBe('none');
-    const cell = node('P-D-UC01')!.querySelector<HTMLElement>('.graph-node.is-cell')!;
-    expect(cell.querySelector('.graph-cell-shape polygon')).not.toBeNull();
-    expect(cell.querySelector('.graph-cell-label strong')?.textContent).toBe('Lend a thing');
+    // The cell is drawn as its outline, with its label inside it.
+    const cell = drawnBox('P-D-UC01')!;
+    expect(cell.view).toBe('voronoi');
+    expect(cell.polygon!.length).toBeGreaterThanOrEqual(3);
+    expect(cell.lines.map((l) => l.text).join(' ')).toContain('Lend a thing');
+    // The pointer takes the outline, not its box: a corner of its bounding box outside the outline is not the cell.
+    const corners = [[cell.rect.left + 1, cell.rect.top + 1], [cell.rect.left + cell.rect.width - 1, cell.rect.top + 1], [cell.rect.left + 1, cell.rect.top + cell.rect.height - 1], [cell.rect.left + cell.rect.width - 1, cell.rect.top + cell.rect.height - 1]];
+    const outside = corners.filter(([x, y]) => !inPolygon(cell.polygon!, { x, y }));
+    expect(outside.length).toBeGreaterThan(0);
+    for (const [x, y] of outside) expect(graphHost()!.graphHit!(x, y)).not.toBe('P-D-UC01');
+    const [cx, cy] = [cell.label.left + cell.label.width / 2, cell.label.top + cell.label.height / 2];
+    expect(graphHost()!.graphHit!(cx, cy)).toBe('P-D-UC01');
     fireEvent.click(node('P-D-UC01-R01')!);
     await waitFor(() => expect(isCenter('P-D-UC01-R01')).toBe(true));
-    await waitFor(() => expect(calls.at(-1)!.viewport).toEqual(frameNested(map(), 'P-D-UC01-R01', 1000, 800)), { timeout: 3000 });
+    await waitFor(() => expect(camera()).toEqual(roundCamera(frameNested(map(), 'P-D-UC01-R01', 1000, 800))), { timeout: 3000 });
   });
 });

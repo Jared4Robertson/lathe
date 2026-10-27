@@ -6,11 +6,12 @@ import { DEFAULT_GRAPH_SETTINGS, GraphView } from '../../src/graph/GraphPage';
 import { openApp, startAtDepth } from '../helpers';
 import { testIndex, testWorkspace } from './workspace';
 import { marksOf } from '../../src/graph/text';
+import { boxElement, boxElements, cameraOf, drawnBox, graphHost, scene } from './scene';
 
 // The graph as the focus page hosts it: in the Graph view of a record's, group's, product's or
 // domain's own address, with the side bar beside it.
 
-const node = (id: string) => document.querySelector<HTMLElement>(`.react-flow__node[data-id="${id}"]`);
+const node = (id: string) => boxElement(id);
 const sideBar = () => within(screen.getByRole('complementary', { name: 'Side bar' }));
 const title = () => screen.getByRole('heading', { level: 1 }).textContent;
 /** The address of a record in the test workspace (the product and domain have overview pages). */
@@ -27,7 +28,7 @@ async function back() {
 async function showGraph(path: string, workspace: Workspace = testWorkspace(), depth = 1, links = true) {
   startAtDepth(depth);
   await openApp(path.includes('?') ? path : `${path}?view=graph`, { workspace });
-  await waitFor(() => expect(document.querySelectorAll('.react-flow__node').length).toBeGreaterThan(0));
+  await waitFor(() => expect(boxElements().length).toBeGreaterThan(0));
   if (links) fireEvent.click(screen.getByRole('button', { name: 'Links' }));
 }
 
@@ -101,44 +102,44 @@ describe('graph page', () => {
     expect(depth.getAllByRole('button').map((b) => b.textContent)).toEqual(['1', '2', '3']);
     expect(depth.getByRole('button', { name: '1' })).toHaveAttribute('aria-pressed', 'true');
     await waitFor(() => expect(node('P-D/define/use-cases')).not.toBeNull());
-    expect(document.querySelector('.react-flow__edge-path.graph-edge:not(.rel-structure)')).toBeNull();
+    expect(scene().lines.filter((l) => l.style !== 'structure')).toEqual([]);
     const count = () => document.querySelector('.graph-count')!.textContent;
-    const viewport = () => document.querySelector<HTMLElement>('.react-flow__viewport')!.style.transform;
+    const viewport = () => scene().camera;
     const one = count();
     // Depth 2 frames the folders' records too: more in the picture, and the camera takes them in.
     fireEvent.click(depth.getByRole('button', { name: '2' }));
     await waitFor(() => expect(count()).not.toBe(one));
     expect(count()).toBe('3 records · 3 groups · 5 links');
-    expect(viewport()).toMatch(/scale\(/);
+    expect(viewport().zoom).toBeGreaterThan(0);
     // Links brings in what the focus links to, dashed in their own color; a stage links to nothing.
     await showGraph('/P-D-UC01-R01', testWorkspace(), 1, false);
     fireEvent.click(screen.getByRole('button', { name: 'Links' }));
     await waitFor(() => expect(node('P-D-V01')).not.toBeNull());
     expect(node('P-D-T01')).not.toBeNull();
-    expect(document.querySelector('.react-flow__edge-path.is-link')).not.toBeNull();
+    await waitFor(() => expect(scene().lines.some((l) => l.link)).toBe(true));
   });
 
   it('LA-EXP-T20 Nodes show their stage and kind, records with errors or gaps are marked, edges carry their relation, and there is a legend', async () => {
     await showGraph('/P-D-UC01-R01');
     await waitFor(() => expect(node('P-D-T01')).not.toBeNull());
-    expect(node('P-D-UC01-R01')!.querySelector('.graph-node')!.className).toContain('stage-define');
-    expect(node('P-D-UC01-R01')!.querySelector('.graph-node')!.className).toContain('is-focus');
-    expect(node('P-D-T01')!.querySelector('.graph-node')!.className).toContain('stage-design');
-    expect(node('P-D-T01')!.querySelector('.graph-mark.error')).not.toBeNull();
-    expect(node('P-D-V01')!.querySelector('.graph-mark')).toBeNull();
+    expect(drawnBox('P-D-UC01-R01')!.stage).toBe('define');
+    expect(drawnBox('P-D-UC01-R01')!.focus).toBe(true);
+    expect(drawnBox('P-D-T01')!.stage).toBe('design');
+    expect(drawnBox('P-D-T01')!.badges.map((b) => [b.label, b.tone])).toContainEqual(['!', 'error']);
+    expect(drawnBox('P-D-V01')!.badges).toEqual([]);
     expect(screen.getByRole('region', { name: 'Legend' })).toBeTruthy();
 
-    const edges = [...document.querySelectorAll('.react-flow__edge-path')].map((p) => p.getAttribute('class'));
-    expect(edges.some((c) => c?.includes('rel-trace'))).toBe(true);
-    expect(edges.some((c) => c?.includes('rel-structure'))).toBe(true);
+    const edges = scene().lines.map((l) => l.style);
+    expect(edges).toContain('trace');
+    expect(edges).toContain('structure');
 
     // From the aggregate: its rule P-D-DR01 has a coverage gap; from the domain, the domain is a structural record.
     await showGraph('/P-D-A1', testWorkspace(), 1, false);
     await waitFor(() => expect(node('P-D-DR01')).not.toBeNull());
-    expect(node('P-D-DR01')!.querySelector('.graph-mark.gap')).not.toBeNull();
+    expect(drawnBox('P-D-DR01')!.badges.map((b) => b.label)).toContain('gap');
     await showGraph('/P-D', testWorkspace(), 1, false);
     await waitFor(() => expect(node('P-D')).not.toBeNull());
-    expect(node('P-D')!.querySelector('.graph-node')!.className).toContain('stage-structural');
+    expect(drawnBox('P-D')!.stage).toBe('structural');
   });
 
   it('LA-EXP-T21 Arrow keys move between nodes, Enter re-centers on the focused node, and Escape clears the filters', async () => {
@@ -150,7 +151,7 @@ describe('graph page', () => {
     fireEvent.keyDown(center, { key: 'ArrowRight' });
     const moved = document.activeElement as HTMLElement;
     expect(moved).not.toBe(center);
-    expect(moved.classList.contains('react-flow__node')).toBe(true);
+    expect(moved.classList.contains('graph-box')).toBe(true);
     fireEvent.keyDown(moved, { key: 'ArrowLeft' });
     expect(document.activeElement).toBe(center);
     fireEvent.keyDown(center, { key: 'ArrowRight' });
@@ -178,7 +179,8 @@ describe('graph page', () => {
       expect(within(screen.getByRole('navigation', { name: 'Main' })).queryByRole('link', { name: 'Graph' })).toBeNull();
       fireEvent.click(graph);
       expect(window.location.pathname + window.location.search).toBe(`${path}?view=wiki,graph`);
-      await waitFor(() => expect(document.querySelector('.react-flow__node.is-focus, .graph-node.is-focus')).not.toBeNull());
+      await waitFor(() => expect(document.querySelector('.graph-box.is-focus')).not.toBeNull());
+      expect(scene().boxes.some((b) => b.focus)).toBe(true);
     }
   });
 
@@ -203,11 +205,11 @@ describe('graph page', () => {
   it('LA-EXP-T26 The page draws the map in columns with a solid parent/child spine, and links between siblings never move anything', async () => {
     await showGraph('/P-D-UC01-R01');
     await waitFor(() => expect(node('P-D-T01')).not.toBeNull());
-    const left = (id: string) => Number(/translate\(([-\d.]+)px, ?([-\d.]+)px\)/.exec(node(id)!.style.transform)![1]);
+    const left = (id: string) => drawnBox(id)!.map.x;
     expect(left('P-D-UC01')).toBeLessThan(left('P-D-UC01-R01'));
     // What satisfies and proves the requirement keeps its own place in the map: a component and a test, one level apart.
     expect(left('P-D-C01')).toBeLessThan(left('P-D-T01'));
-    expect(document.querySelector('.react-flow__edge-path.rel-structure')).not.toBeNull();
+    expect(scene().lines.some((l) => l.style === 'structure' && !l.link)).toBe(true);
 
     const w = testWorkspace();
     w.records.push({ ...w.records.find((r) => r.id === 'P-D-A1')!, id: 'P-D-A2', title: 'Owner', path: 'specs/P-D-A2.md' });
@@ -218,18 +220,19 @@ describe('graph page', () => {
     // The two aggregates are siblings, in one column, with both links drawn between them.
     await waitFor(() => expect(node('P-D-A2')).not.toBeNull());
     expect(left('P-D-A2')).toBe(left('P-D-A1'));
-    await waitFor(() => expect(document.querySelector('.graph-edge-group[data-source="P-D-A1"][data-target="P-D-A2"] .is-link')).not.toBeNull());
-    expect(document.querySelector('.graph-edge-group[data-source="P-D-A2"][data-target="P-D-A1"] .is-link')).not.toBeNull();
+    const link = (source: string, target: string) => scene().lines.some((l) => l.link && l.source === source && l.target === target);
+    await waitFor(() => expect(link('P-D-A1', 'P-D-A2')).toBe(true));
+    expect(link('P-D-A2', 'P-D-A1')).toBe(true);
   });
 });
 
 describe('graph groups on the page', () => {
-  const groupNode = (id: string) => node(id)?.querySelector<HTMLElement>('.graph-node') ?? null;
+  const groupNode = (id: string) => drawnBox(id) ?? null;
 
   it('LA-EXP-T33 A group shows its name and count, with no chevron; clicking the group, or Enter on it, goes to it', async () => {
     await showGraph('/P-D', testWorkspace(), 1, false);
     await waitFor(() => expect(node('P-D/question')).not.toBeNull());
-    expect(groupNode('P-D/question')!.className).toContain('stage-group');
+    expect(groupNode('P-D/question')!.stage).toBe('group');
     // Nothing to open or fold in place: every member is in the map, so a group has no chevron and no button.
     expect(node('P-D/question')!.querySelector('button')).toBeNull();
     expect(document.querySelector('.graph-group-chevron')).toBeNull();
@@ -237,9 +240,10 @@ describe('graph groups on the page', () => {
     // Clicking the group itself goes to its address, where it is the center, framed and labeled with its name and count.
     fireEvent.click(node('P-D/question')!);
     await waitFor(() => expect(window.location.pathname).toBe('/P-D/question'));
-    await waitFor(() => expect(groupNode('P-D/question')!.className).toContain('is-focus'));
+    await waitFor(() => expect(groupNode('P-D/question')!.focus).toBe(true));
     // Its name and count: in its label (LA-EXP-DR60), and in its tooltip.
-    expect(groupNode('P-D/question')!.getAttribute('title')).toBe('Open questions (1) (in P-D)');
+    expect(groupNode('P-D/question')!.lines.map((l) => l.text)).toContain('Open questions (1)');
+    expect(groupNode('P-D/question')!.tip).toBe('Open questions (1) (in P-D)');
     expect(document.querySelector('.graph-group-chevron')).toBeNull();
 
     // Enter on a group goes to it too.
@@ -259,11 +263,11 @@ describe('graph groups on the page', () => {
     fireEvent.click(link);
     expect(window.location.pathname).toBe('/P-D/define');
     await waitFor(() => expect(title()).toBe('Define (2)'));
-    await waitFor(() => expect(groupNode('P-D/define')?.className).toContain('is-focus'));
-    const left = (id: string) => Number(/translate\(([-\d.]+)px/.exec(node(id)!.style.transform)![1]);
+    await waitFor(() => expect(groupNode('P-D/define')?.focus).toBe(true));
+    const left = (id: string) => drawnBox(id)!.map.x;
     expect(left('P-D')).toBeLessThan(left('P-D/define'));
     expect(left('P-D/define')).toBeLessThan(left('P-D/define/use-cases'));
-    expect(groupNode('P-D/define')!.className).toContain('is-focus');
+    expect(groupNode('P-D/define')!.focus).toBe(true);
     const trail = within(screen.getByRole('navigation', { name: 'Records visited' }));
     // A record by its title and ID; a group by its name alone, its parent named in its tooltip.
     expect(trail.getAllByRole('listitem').map((li) => li.textContent)).toEqual(['Domain (P-D)', 'Define']);
@@ -283,8 +287,8 @@ describe('graph groups on the page', () => {
   it('LA-EXP-T36 Groups are drawn as folders and carry a mark when a member or anything beneath it has errors or gaps; the legend explains them', async () => {
     await showGraph('/P-D', testWorkspace(), 1, false);
     await waitFor(() => expect(node('P-D/design')).not.toBeNull());
-    expect(groupNode('P-D/design')!.querySelector('.graph-mark.error')).not.toBeNull();
-    expect(groupNode('P-D/define')!.querySelector('.graph-mark.gap')).not.toBeNull();
+    expect(groupNode('P-D/design')!.badges.map((b) => [b.label, b.tone])).toContainEqual(['!', 'error']);
+    expect(groupNode('P-D/define')!.badges.map((b) => b.label)).toContain('gap');
     const legend = within(screen.getByRole('region', { name: 'Legend' }));
     expect(legend.getByText(/Stage, folder or group/)).toBeTruthy();
     // A labeled group is named for assistive technology by its name, count and owner; one with nothing wrong beneath it carries no mark.
@@ -312,12 +316,12 @@ describe('graph groups on the page', () => {
     expect(window.location.pathname).toBe('/somewhere-else');
 
     // When its container changes size, it fits the picture to the new size.
-    const flow = document.querySelector<HTMLElement>('.graph-flow')!;
-    const viewport = () => document.querySelector<HTMLElement>('.react-flow__viewport')!.style.transform;
+    const flow = graphHost()!;
+    const viewport = () => cameraOf();
     const sized = (width: number, height: number) => () => ({ x: 0, y: 0, top: 0, left: 0, width, height, right: width, bottom: height, toJSON: () => ({}) }) as DOMRect;
     flow.getBoundingClientRect = sized(1000, 800);
     act(() => fireResize(flow));
-    await waitFor(() => expect(viewport()).toMatch(/translate\(/));
+    await waitFor(() => expect(scene().camera.zoom).toBeGreaterThan(0));
     const wide = viewport();
     flow.getBoundingClientRect = sized(300, 800);
     act(() => fireResize(flow));
@@ -329,21 +333,18 @@ describe('the map on the page', () => {
   it('LA-EXP-T168 Tall parents carry their height and content scale, and every parent line is level', async () => {
     await showGraph('/P-D', testWorkspace(), 2, false);
     await waitFor(() => expect(node('P-D/define')).not.toBeNull());
-    const height = (id: string) => parseFloat(node(id)!.style.height);
-    const scale = (id: string) => node(id)!.querySelector<HTMLElement>('.graph-node')!.style.getPropertyValue('--node-scale');
+    const height = (id: string) => drawnBox(id)!.map.h;
+    const scale = (id: string) => drawnBox(id)!.textScale;
     // The domain spans its stages, and its content grows with it.
     expect(height('P-D')).toBeGreaterThan(height('P-D/define') + height('P-D/design'));
     expect(Number(scale('P-D'))).toBeGreaterThan(1);
     // A leaf's box keeps a leaf's scale (its text may grow to read while zoomed out).
-    const leaf = [...document.querySelectorAll<HTMLElement>('.react-flow__node')].find((el) => parseFloat(el.style.height) === 56)!;
-    expect(['', '1']).toContain(leaf.querySelector<HTMLElement>('.graph-node')!.style.getPropertyValue('--box-scale'));
+    const leaf = scene().boxes.find((b) => b.map.h === 56)!;
+    expect(leaf.boxScale).toBe(1);
     // Every parent line is level.
-    const lines = [...document.querySelectorAll<SVGPathElement>('.react-flow__edge-path.rel-structure')];
+    const lines = scene().lines.filter((l) => l.style === 'structure');
     expect(lines.length).toBeGreaterThan(3);
-    for (const line of lines) {
-      const [, , y1, , y2] = /M ([-\d.]+) ([-\d.]+) L ([-\d.]+) ([-\d.]+)/.exec(line.getAttribute('d')!)!.map(Number);
-      expect(y1).toBe(y2);
-    }
+    for (const line of lines) expect(line.points[0][1]).toBe(line.points[1][1]);
   });
 });
 

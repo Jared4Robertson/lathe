@@ -10,7 +10,7 @@
   --hover-speed: 120ms;
   /* Motion: the speed and easing every move and fade shares, in CSS and in JS (app/src/graph/motion.ts); reduced motion turns each off (LA-PAT-APP-UX-R04). */
   --motion-speed: 320ms; --motion-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
-  --node-radius: 4px; /* every graph node is the same rectangle; color tells the stage */
+  --node-radius: 4px; /* an ERD box's corners; the graph's canvas rounds a plain box the same (app/src/graph/shapes.ts) */
   /* The Model view's context ring (LA-EXP-UC11-R06): faded and a little smaller; the graph's hover spotlight dims the rest a step; the vignette's width at a canvas's edges. */
   --context-opacity: 0.35; --context-scale: 0.9; --spotlight-dim: 0.5; --vignette: 56px;
   /* The graph's cross-links (the Links switch), dashed apart from the tree's solid lines, and the minimap's mask. */
@@ -92,7 +92,6 @@ h3 { font-size: 0.95rem; margin-top: 8px; }
 .react-flow__node { font-family: var(--body); transition: opacity var(--hover-speed); }
 @media (prefers-reduced-motion: reduce) { .react-flow__node { transition: none; } }
 .react-flow__edge-path { stroke: var(--ink); stroke-width: 1.3; }
-.edge-label { position: absolute; pointer-events: none; font: 0.65625rem var(--mono); color: var(--muted); background: var(--paper); padding: 0 4px; border-radius: 3px; }
 .react-flow__controls button { background: var(--sheet); border-color: var(--rule); fill: var(--ink); }
 
 /* Specs */
@@ -262,16 +261,16 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-canvas-draw { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .graph-access { position: absolute; top: 0; left: 0; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .graph-box { position: absolute; top: 0; left: 0; width: 1px; height: 1px; }
-.graph-controls { position: absolute; left: 12px; bottom: 12px; z-index: 5; display: grid; gap: 2px; padding: 2px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; box-shadow: 0 2px 6px var(--shadow-soft); }
+.graph-controls { position: absolute; left: 12px; bottom: 12px; z-index: 5; display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; padding: 2px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; box-shadow: 0 2px 6px var(--shadow-soft); }
 .graph-controls .icon-button { color: var(--ink); }
 .graph-swatch.is-cell { border: 0; border-radius: 0; background: linear-gradient(115deg, var(--g-define-bg) 46%, var(--g-define) 46% 56%, var(--g-design-bg) 56%); clip-path: polygon(30% 0, 100% 10%, 90% 85%, 35% 100%, 0 50%); }
-/* A kind's shape as a small mark before the kind and ID line (Nested and Voronoi), and a kind's own mark (a gear, a ruler, a
-   port, a marker) in every view, sized with the text; app/src/graph/text.ts keeps MARK_ROOM for each. In the key they are ink on sheet. */
-.graph-shape-icon, .graph-mark-icon { display: inline-block; height: calc(10px * var(--node-scale, 1)); margin-right: calc(4px * var(--node-scale, 1)); vertical-align: calc(-1.5px * var(--node-scale, 1)); overflow: visible; fill: color-mix(in srgb, var(--node-edge, var(--ink)) 14%, var(--node-fill, var(--sheet))); stroke: var(--node-edge, var(--ink)); stroke-width: 1.2; stroke-linejoin: round; stroke-linecap: round; }
-.graph-shape-icon { width: calc(14px * var(--node-scale, 1)); }
-.graph-mark-icon { width: calc(10px * var(--node-scale, 1)); }
-.graph-swatch.is-shape { width: auto; height: auto; border: 0; border-radius: 0; background: none; line-height: 0; --node-edge: var(--ink); --node-fill: var(--sheet); }
+/* The key's marks: each kind's shape and each kind's own mark (a gear, a ruler, a port, a marker), ink on sheet, as the canvas
+   draws them before a box's kind and ID line (app/src/graph/shape-icons.tsx), and the problem badges as the canvas draws them. */
+.graph-shape-icon, .graph-mark-icon { display: inline-block; overflow: visible; fill: color-mix(in srgb, var(--ink) 14%, var(--sheet)); stroke: var(--ink); stroke-width: 1.2; stroke-linejoin: round; stroke-linecap: round; }
+.graph-swatch.is-shape { width: auto; height: auto; border: 0; border-radius: 0; background: none; line-height: 0; }
 .graph-swatch.is-shape :is(.graph-shape-icon, .graph-mark-icon) { margin: 0; height: 12px; width: 17px; vertical-align: middle; }
+.graph-mark { display: inline-grid; place-items: center; min-width: 15px; height: 15px; padding: 0 3px; box-sizing: border-box; border-radius: 8px; font: 700 9.5px var(--mono); color: var(--on-mark); background: var(--warn); }
+.graph-mark.error { background: var(--error); }
 .graph-swatch.stage-nested { border-color: var(--muted); background: linear-gradient(var(--g-define-bg), var(--g-define-bg)) 3px 5px / 10px 3px no-repeat, var(--sheet); }
 
 /* Edges: parent/child is the solid spine of the tree; every other relation is a lighter, dashed cross-link. A parent line

@@ -6,6 +6,7 @@ import { COMMANDS } from '../src/shell/keymap';
 import { workspace } from './fixtures/workspace';
 import { openApp } from './helpers';
 import { testWorkspace } from './graph/workspace';
+import { boxElements } from './graph/scene';
 
 // Tabs for open pages, as editors are in VS Code (LA-EXP-UC10): the preview tab, lasting tabs,
 // closing and cycling, each tab's own views, scroll and graph settings, and the address following
@@ -137,7 +138,7 @@ describe('tabs for open pages', () => {
     fireEvent.click(viewToggle('Graph'));
     expect(tabs()).toEqual(['Lend a thing<']);
     expect(address()).toBe('/P-D-UC01?view=wiki,graph');
-    await waitFor(() => expect(document.querySelectorAll('.react-flow__node').length).toBeGreaterThan(0));
+    await waitFor(() => expect(boxElements().length).toBeGreaterThan(0));
     fireEvent.click(screen.getByRole('button', { name: '2' }));
     const wiki = () => document.querySelector<HTMLElement>('.pane-wiki > .pane-scroll')!;
     wiki().scrollTop = 120;

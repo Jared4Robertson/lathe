@@ -14,18 +14,21 @@ import { entityWorkspace } from '../fixtures/entities';
 import { layerWorkspace } from '../fixtures/layers';
 import { openApp, startAtDepth } from '../helpers';
 import { testIndex, testWorkspace } from './workspace';
+import { boxElement, boxElements, drawnBox, graphHost, isCenter, scene } from './scene';
 
 // The graph's tree is the nav's tree, depth counts its levels below the focus, and the picture is
 // one map seen through a camera: what is too small to read is drawn plain and kept out of focus.
 
 const ids = (n: Neighborhood) => n.nodes.map((x) => x.id).sort();
-const node = (id: string) => document.querySelector<HTMLElement>(`.react-flow__node[data-id="${id}"]`);
-const isCenter = (id: string) => !!node(id)?.querySelector('.graph-node.is-focus');
+const node = (id: string) => boxElement(id);
+/** The links drawn now (the Links switch), and the tree's parent lines. */
+const drawnLinks = () => scene().lines.filter((l) => l.link);
+const parentLines = () => scene().lines.filter((l) => !l.link);
 
 async function showGraph(path: string, workspace: Workspace = testWorkspace(), depth = 1) {
   startAtDepth(depth);
   await openApp(`${path}?view=graph`, { workspace });
-  await waitFor(() => expect(document.querySelectorAll('.react-flow__node').length).toBeGreaterThan(0));
+  await waitFor(() => expect(boxElements().length).toBeGreaterThan(0));
 }
 
 describe('the graph tree, its depth and its camera', () => {
@@ -83,16 +86,16 @@ describe('the graph tree, its depth and its camera', () => {
     const links = screen.getByRole('button', { name: 'Links' });
     expect(links).toHaveAttribute('aria-pressed', 'false');
     expect(links).toHaveAttribute('aria-keyshortcuts', 'L');
-    expect(document.querySelector('.react-flow__edge-path.is-link')).toBeNull();
+    expect(drawnLinks()).toEqual([]);
     fireEvent.keyDown(document.body, { key: 'l', code: 'KeyL' });
-    await waitFor(() => expect(document.querySelectorAll('.react-flow__edge-path.is-link')).toHaveLength(3));
+    await waitFor(() => expect(drawnLinks()).toHaveLength(3));
     expect(screen.getByRole('button', { name: 'Links' })).toHaveAttribute('aria-pressed', 'true');
     // The tree's own lines are not links.
-    expect(document.querySelector('.react-flow__edge-path.rel-structure.is-link')).toBeNull();
+    expect(drawnLinks().filter((l) => l.style === 'structure')).toEqual([]);
     // Walking on keeps it on: the view's own link to its endpoint is drawn.
     fireEvent.click(node('P-D-V01')!);
     await waitFor(() => expect(isCenter('P-D-V01')).toBe(true));
-    await waitFor(() => expect(document.querySelector('.react-flow__edge[data-id="P-D-V01|uses|P-D-E01"], .graph-edge-group[data-source="P-D-V01"][data-target="P-D-E01"]')).not.toBeNull());
+    await waitFor(() => expect(drawnLinks().some((l) => l.source === 'P-D-V01' && l.target === 'P-D-E01')).toBe(true));
     expect(screen.getByRole('button', { name: 'Links' })).toHaveAttribute('aria-pressed', 'true');
   });
 
@@ -102,13 +105,17 @@ describe('the graph tree, its depth and its camera', () => {
     const req = w.records.find((r) => r.id === 'P-D-UC01-R01')!;
     for (let i = 2; i <= 60; i++) w.records.push({ ...req, id: `P-D-UC01-R${String(i).padStart(2, '0')}`, title: `Rule ${i}`, path: `specs/P-D-UC01-R${i}.md` });
     await showGraph('/P-D', w, 3);
-    await waitFor(() => expect(document.querySelectorAll('.react-flow__node[data-id]').length).toBeGreaterThan(5));
-    // Each box draws its kind and ID line and its title, has its name and is a keyboard stop.
-    for (const node of document.querySelectorAll<HTMLElement>('.react-flow__node[data-id]:not(.is-bar)')) {
-      expect(node.querySelector('small'), node.dataset.id).not.toBeNull();
-      expect(node.querySelector('strong')?.textContent, node.dataset.id).toBeTruthy();
-      expect(node.hasAttribute('aria-label'), node.dataset.id).toBe(true);
-      expect(node.getAttribute('aria-hidden'), node.dataset.id).toBeNull();
+    await waitFor(() => expect(boxElements().length).toBeGreaterThan(5));
+    // Each drawn box draws its kind and ID line and its title, and is a keyboard stop with its name.
+    for (const box of scene().boxes) {
+      expect(box.lines.some((l) => l.face === 'meta' && l.text !== ''), box.id).toBe(true);
+      expect(box.lines.filter((l) => l.face === 'title' || box.file).map((l) => l.text).join(''), box.id).toBeTruthy();
+    }
+    for (const el of boxElements()) {
+      expect(el.hasAttribute('aria-label'), el.dataset.id).toBe(true);
+      expect(el.tabIndex, el.dataset.id).toBe(0);
+      expect(el.getAttribute('aria-hidden'), el.dataset.id).toBeNull();
+      expect(drawnBox(el.dataset.id!), `${el.dataset.id} is drawn`).toBeDefined();
     }
     // The keyboard visits every drawn box, column by column.
     const boxes: Omit<Box, 'text' | 'parent'>[] = [
@@ -167,7 +174,7 @@ describe('the graph tree, its depth and its camera', () => {
     await waitFor(() => expect(isCenter('P-D-UC01')).toBe(true));
     fireEvent.click(within(screen.getByRole('group', { name: 'Step through the tree' })).getByRole('button', { name: 'Step out to the parent' }));
     await waitFor(() => expect(window.location.pathname).toBe('/P-D/define/use-cases'));
-    await waitFor(() => expect(node('P-D/define/use-cases')?.querySelector('.is-focus')).toBeTruthy());
+    await waitFor(() => expect(isCenter('P-D/define/use-cases')).toBe(true));
     fireEvent.keyDown(document.body, { key: 'ArrowLeft', code: 'ArrowLeft', altKey: true, shiftKey: true });
     await waitFor(() => expect(window.location.pathname).toBe('/P-D/define/domain-model'));
   });
@@ -182,30 +189,29 @@ describe('the graph tree, its depth and its camera', () => {
     await showGraph('/P-D-UC01-R01');
     fireEvent.click(screen.getByRole('button', { name: 'Links' }));
     // Every linked record is drawn, wherever it is in the map, and each link is a curve to it.
-    await waitFor(() => expect(document.querySelectorAll('.react-flow__edge-path.is-link')).toHaveLength(3));
+    await waitFor(() => expect(drawnLinks()).toHaveLength(3));
     for (const id of ['P-D-V01', 'P-D-C01', 'P-D-T01']) expect(node(id)).not.toBeNull();
-    for (const path of document.querySelectorAll('.react-flow__edge-path.is-link')) expect(path.getAttribute('d')).toMatch(/^M [-\d.]+ [-\d.]+ C /);
-    // The tree's parent lines stay straight and level.
-    for (const path of document.querySelectorAll('.react-flow__edge-path.rel-structure')) {
-      const [, y1, , y2] = path.getAttribute('d')!.match(/^M [-\d.]+ ([-\d.]+) L ([-\d.]+) ([-\d.]+)$/)!;
-      expect(y1).toBe(y2);
-    }
+    // Each link joins the focus's box to a linked record's, drawn as a curve (paint.ts); the tree's parent lines stay straight and level.
+    for (const l of drawnLinks()) expect([l.source, l.target]).toContain('P-D-UC01-R01');
+    expect(parentLines().length).toBeGreaterThan(0);
+    for (const l of parentLines()) expect(l.points[0][1]).toBe(l.points[1][1]);
   });
 
   it('LA-EXP-T150 Hovering or focusing a box spotlights it, its lines and the boxes it joins, and leaving restores the picture', async () => {
     await showGraph('/P-D-UC01-R01');
     fireEvent.click(screen.getByRole('button', { name: 'Links' }));
     await waitFor(() => expect(node('P-D-V01')).not.toBeNull());
-    const flow = document.querySelector<HTMLElement>('.graph-flow')!;
+    const flow = graphHost()!;
     node('P-D-V01')!.focus();
     await waitFor(() => expect(flow.className).toContain('has-spotlight'));
-    expect(node('P-D-V01')!.className).toContain('is-lit');
-    expect(node('P-D-UC01-R01')!.className).toContain('is-lit');
-    expect(node('P-D-UC01')!.className).not.toContain('is-lit');
-    expect(document.querySelector('.graph-edge-group.is-lit[data-source="P-D-V01"][data-target="P-D-UC01-R01"]')).not.toBeNull();
+    expect(drawnBox('P-D-V01')!.lit).toBe(true);
+    expect(drawnBox('P-D-UC01-R01')!.lit).toBe(true);
+    expect(drawnBox('P-D-UC01')!.lit).toBe(false);
+    expect(scene().lines.find((l) => l.source === 'P-D-V01' && l.target === 'P-D-UC01-R01')!.lit).toBe(true);
     fireEvent.blur(node('P-D-V01')!);
     expect(flow.className).not.toContain('has-spotlight');
-    expect(document.querySelector('.is-lit')).toBeNull();
+    expect(scene().spotlight).toBe(false);
+    expect(scene().boxes.every((b) => b.lit === null)).toBe(true);
   });
 });
 

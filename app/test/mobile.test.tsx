@@ -7,6 +7,7 @@ import { useThemeColor } from '../src/shell/themeColor';
 import { isTap } from '../src/graph/touch';
 import { openApp } from './helpers';
 import { testWorkspace } from './graph/workspace';
+import { boxElement, drawnBox, pointOn, tapAt, tapEmpty } from './graph/scene';
 
 // Lathe on a phone (notes/mobile-design.md): a compact top bar, the page bar compact under it, one
 // view at a time, sheets for the nav, the side bar, the open pages and quick find, and taps that
@@ -168,18 +169,20 @@ describe('Lathe on a phone', () => {
     await openApp('/P-D-UC01-R01?view=graph', served());
     // Links on, so the view that fulfills the requirement is drawn.
     fireEvent.click(await screen.findByRole('button', { name: 'Links' }));
-    await waitFor(() => expect(document.querySelector('.react-flow__node[data-id="P-D-V01"]')).not.toBeNull());
-    const node = () => document.querySelector<HTMLElement>('.react-flow__node[data-id="P-D-V01"]')!;
-    fireEvent.click(node());
+    await waitFor(() => expect(boxElement('P-D-V01')).not.toBeNull());
+    const node = () => boxElement('P-D-V01')!;
+    // A finger's tap on the box drawn on the canvas.
+    tapAt(pointOn('P-D-V01'));
     expect(window.location.pathname).toBe('/P-D-UC01-R01');
     const card = await waitFor(() => { const c = document.querySelector<HTMLElement>('.tap-card'); expect(c).not.toBeNull(); return c!; });
     expect(card).toHaveAttribute('role', 'status');
     expect(card).toHaveTextContent('Thing page');
     expect(node()).toHaveClass('is-armed');
+    expect(drawnBox('P-D-V01')!.armed).toBe(true);
     // A tap on the canvas lets go.
-    fireEvent.click(document.querySelector('.react-flow__pane')!);
-    expect(document.querySelector('.tap-card')).toBeNull();
-    // The chip opens it.
+    tapEmpty();
+    await waitFor(() => expect(document.querySelector('.tap-card')).toBeNull());
+    // The chip opens it (selected again, here by the box in the keyboard's layer).
     fireEvent.click(node());
     fireEvent.click(screen.getByRole('button', { name: 'Open Thing page' }));
     expect(window.location.pathname).toBe('/P-D-V01');

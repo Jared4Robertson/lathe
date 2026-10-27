@@ -8,17 +8,18 @@ import { parseSpecRoute } from '../src/specs/data';
 import { addressOf, parseViews, viewsFromSearch, withView } from '../src/views/address';
 import { main, openApp, openSideBar } from './helpers';
 import { testWorkspace } from './graph/workspace';
+import { boxElement, boxElements, isCenter } from './graph/scene';
 
 // The focus page: one address per record or group, its Wiki, Graph and Model views panes you open
 // and close side by side, with the side bar as the page's last column.
 
 const served = () => ({ workspace: testWorkspace() });
-const node = (id: string) => document.querySelector<HTMLElement>(`.react-flow__node[data-id="${id}"]`);
+const node = (id: string) => boxElement(id);
 const title = () => screen.getByRole('heading', { level: 1 }).textContent;
 /** A view toggle, in the rightmost pane's title bar. */
 const viewToggle = (name: 'Wiki' | 'Graph' | 'Model') => within(screen.getByRole('group', { name: 'View' })).getByRole('button', { name });
 const sideBar = () => screen.getByRole('complementary', { name: 'Side bar' });
-const graphShown = () => waitFor(() => expect(document.querySelectorAll('.react-flow__node').length).toBeGreaterThan(0));
+const graphShown = () => waitFor(() => expect(boxElements().length).toBeGreaterThan(0));
 
 async function back() {
   await act(async () => {
@@ -131,7 +132,7 @@ describe('one address, three views', () => {
   it('LA-EXP-T40 Both panes show one focus: a node click moves the wiki, a wiki link moves the graph, Back moves both, and graph settings survive', async () => {
     await openApp('/P-D-UC01?view=wiki,graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
-    await waitFor(() => expect(node('P-D-UC01')?.querySelector('.graph-node')?.className).toContain('is-focus'));
+    await waitFor(() => expect(isCenter('P-D-UC01')).toBe(true));
     fireEvent.click(screen.getByRole('button', { name: '2' }));
     fireEvent.click(screen.getByRole('button', { name: 'Links' }));
 
@@ -140,7 +141,7 @@ describe('one address, three views', () => {
     await userEvent.setup().click(wiki.getAllByRole('link', { name: /P-D-UC01-R01/ })[0]);
     expect(window.location.pathname).toBe('/P-D-UC01-R01');
     await waitFor(() => expect(title()).toBe('The owner is shown'));
-    await waitFor(() => expect(node('P-D-UC01-R01')?.querySelector('.graph-node')?.className).toContain('is-focus'));
+    await waitFor(() => expect(isCenter('P-D-UC01-R01')).toBe(true));
     expect(within(screen.getByRole('region', { name: 'Wiki pane' })).getByText('The page MUST show the owner.')).toBeInTheDocument();
 
     // A node in the graph moves the wiki.
@@ -148,12 +149,12 @@ describe('one address, three views', () => {
     fireEvent.click(node('P-D-V01')!);
     expect(window.location.pathname + window.location.search).toBe('/P-D-V01?view=wiki,graph');
     await waitFor(() => expect(title()).toBe('Thing page'));
-    await waitFor(() => expect(node('P-D-V01')!.querySelector('.graph-node')!.className).toContain('is-focus'));
+    await waitFor(() => expect(isCenter('P-D-V01')).toBe(true));
 
     // Back moves both.
     await back();
     await waitFor(() => expect(title()).toBe('The owner is shown'));
-    await waitFor(() => expect(node('P-D-UC01-R01')!.querySelector('.graph-node')!.className).toContain('is-focus'));
+    await waitFor(() => expect(isCenter('P-D-UC01-R01')).toBe(true));
     // The depth set earlier is kept, through page moves and a trip to the Wiki view.
     expect(screen.getByRole('button', { name: '2' })).toHaveAttribute('aria-pressed', 'true');
     fireEvent.click(screen.getByRole('button', { name: 'Close the graph pane' }));
@@ -184,7 +185,7 @@ describe('one address, three views', () => {
       await openApp(`${path}?view=wiki,graph`, served());
       await screen.findByRole('heading', { level: 1, name });
       expect(within(screen.getByRole('region', { name: 'Wiki pane' })).getAllByRole('heading').length).toBeGreaterThan(0);
-      await waitFor(() => expect(node(id)?.querySelector('.graph-node')?.className).toContain('is-focus'));
+      await waitFor(() => expect(isCenter(id)).toBe(true));
     }
   });
 

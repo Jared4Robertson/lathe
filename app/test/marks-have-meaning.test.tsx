@@ -9,6 +9,9 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { relationStyle } from '../src/graph/GraphPage';
 import { NAMES, PARENT } from '../src/graph/model';
 import { Legend } from '../src/graph/panel';
+import { BOX_LOOKS } from '../src/graph/paint';
+import { BADGE_TONES } from '../src/graph/plate';
+import { SHAPES } from '../src/graph/shapes';
 import { erdFor } from '../src/model/erd';
 import { ErdKey } from '../src/model/ModelView';
 import { indexWorkspace } from '../src/specs/data';
@@ -16,7 +19,7 @@ import { eventWorkspace } from './fixtures/events';
 import { testWorkspace } from './graph/workspace';
 
 const CSS = readFileSync(path.resolve(import.meta.dirname, '../src/styles.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, ' ');
-/** The modifier classes a stylesheet gives an element class, as in `.graph-node.shape-stadium` or `.graph-mark.error`. */
+/** The modifier classes a stylesheet gives an element class, as in `.erd-box.erd-event`. */
 const modifiers = (base: string) =>
   new Set([...CSS.matchAll(new RegExp(`\\.${base}((?:\\.[A-Za-z0-9_-]+)+)`, 'g'))].flatMap((m) => m[1].split('.').filter(Boolean)));
 /** The words beside a key's mark: what the entry says it means. */
@@ -25,10 +28,6 @@ const meaning = (el: Element | null) => (el?.closest('li, tr')?.textContent ?? '
 afterEach(cleanup);
 
 describe('the Graph view key', () => {
-  // Classes that change how a box is laid out or drawn, not what it looks like it means: a centered label, a Nested box's
-  // label moved into its header band, and a shape drawn by clipping (its shape's own class carries its meaning).
-  const LAYOUT = new Set(['is-centered', 'is-container', 'is-clipped']);
-
   it('LA-PLT-T133 Every box look, badge and line style the Graph view can draw is in its key, with what it means', () => {
     const { container } = render(<Legend />);
     const entry = (selector: string) => container.querySelector(selector);
@@ -37,11 +36,14 @@ describe('the Graph view key', () => {
       const el = entry(selector);
       if (!el || meaning(el) === '') missing.push(`${what} (${selector})`);
     };
-    for (const look of modifiers('graph-node')) {
-      if (!LAYOUT.has(look)) needs(`box ${look}`, `.graph-swatch.${look}`);
-    }
+    // Every look the canvas draws a box in (paint.ts), the focus's ring, each layout's boxes, and a bar.
+    for (const look of BOX_LOOKS) needs(`box ${look}`, `.graph-swatch.${look}`);
+    needs('the focus', '.graph-swatch.is-focus');
+    for (const shape of Object.keys(SHAPES)) needs(`shape ${shape}`, `.graph-swatch.shape-${shape}`);
+    needs('a Nested box', '.graph-swatch.stage-nested');
+    needs('a Voronoi cell', '.graph-swatch.is-cell');
     needs('bar', '.graph-swatch.stage-bar');
-    for (const badge of modifiers('graph-mark')) needs(`badge ${badge}`, `.graph-mark.${badge}`);
+    for (const badge of BADGE_TONES) needs(`badge ${badge}`, `.graph-mark.${badge}`);
     const relations = [PARENT, NAMES, ...new Set(testWorkspace().relations.map((r) => r.relation))];
     for (const style of new Set(relations.map(relationStyle))) needs(`line ${style}`, `.graph-line.rel-${style}`);
     needs('cross-link', '.graph-line.is-link');
