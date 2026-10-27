@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { ColumnDescription } from '../../../lathe/src/store/schema';
-import { formatPath, kindOrder, textOf, type SpecIndex, type Workspace } from '../specs/data';
+import { formatPath, kindOrder, partTablesOf, textOf, type SpecIndex, type Workspace } from '../specs/data';
 
 // The format reference in the app: every kind (its table and typed columns), relation, folder and
 // check of this space, read from the schema the server serves with the data and from the check
@@ -102,9 +102,7 @@ export function referenceOf(workspace: Workspace): FormatReference {
       parent_kinds: k.parent_kinds,
       child_kinds: workspace.kinds.filter((c) => c.parent_kinds.includes(k.kind)).map((c) => c.kind),
       columns: table?.columns ?? [],
-      parts: Object.values(schema.tables)
-        .filter((t) => t.role === 'part' && t.foreignKeys.some((f) => f.columns.length === 1 && f.columns[0] === t.ownerColumn && f.table === k.kind))
-        .map((t) => ({ table: t.name, description: t.description ?? '' })),
+      parts: partTablesOf(schema, k.kind).map((t) => ({ table: t, description: schema.tables[t].description ?? '' })),
       obligation: k.proof_only ? 'proof' : k.obligation ? 'yes' : 'no',
       id: described?.idPattern ? { pattern: described.idPattern, example: described.idExample ?? '' } : null,
       product: described?.productId ?? null,
