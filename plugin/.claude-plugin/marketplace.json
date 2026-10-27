@@ -6,7 +6,7 @@
     {
       "name": "lathe",
       "source": "./",
-      "description": "Skills for writing Lathe spec records, and a hook that runs lathe check after spec edits."
+      "description": "Skills for writing Lathe specs, MCP tools that change the spec data through the command layer, and a hook that refuses hand edits to data files."
     }
   ]
 }
