@@ -92,7 +92,7 @@ function probes({ firstKeys, deferred }: { firstKeys: string[]; deferred: string
     for (let i = 0; at && at !== document.body && i < 5; i++, at = at.parentElement) {
       let s = at.tagName.toLowerCase();
       if (at.id) s += `#${at.id}`;
-      const classes = [...at.classList].filter((c) => !c.startsWith('react-flow__node-')).slice(0, 3);
+      const classes = [...at.classList].slice(0, 3);
       if (classes.length) s += `.${classes.join('.')}`;
       parts.unshift(s);
     }

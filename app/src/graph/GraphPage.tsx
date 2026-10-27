@@ -1105,7 +1105,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
             const fontPx = l.size * v.zoom;
             const font = fontFor(fonts, l.face, fontPx);
             let drawnWidth = l.width * v.zoom;
-            if (measureCtx && fontPx >= TEXT_BAR_PX) { measureCtx.font = font; drawnWidth = measureCtx.measureText(l.text).width; }
+            if (measureCtx && fontPx >= TEXT_BAR_PX) { measureCtx.font = font; drawnWidth = measureCtx.measureText(l.text.trimEnd()).width; }
             return { text: l.text, face: l.face, fontPx, font, rect: rect(l.x, l.top, l.width, l.height), bar: fontPx < TEXT_BAR_PX, drawnWidth };
           }),
           icons: p.icons.map((i) => ({ draw: i.draw, name: i.name, rect: rect(i.x, i.y, i.w, i.h) })),

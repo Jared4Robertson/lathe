@@ -22,7 +22,7 @@ export type PlateView = 'tree' | 'nested' | 'voronoi' | 'trace';
 /** Which colors a box takes: its stage's, a group's, a file's. */
 export type Stage = 'define' | 'design' | 'structural' | 'group' | 'file';
 
-/** One line of a label, at its place in the map: its left end and baseline, its font size and width in map units. */
+/** One line of a label, at its place in the map: its text as the map broke it (a space it ends with is not drawn), its left end and baseline, its font size, and its width in map units. */
 export interface PlateLine { text: string; face: Face; size: number; x: number; baseline: number; top: number; height: number; width: number; tone: 'ink' | 'muted' }
 /** A small drawing before the kind and ID line: a shape's mark (Nested and Voronoi) or a kind's mark. */
 export interface PlateIcon { draw: 'shape' | 'mark'; name: Shape | Mark; x: number; y: number; w: number; h: number }
@@ -125,7 +125,7 @@ function placeLines({ lines, box, centered, top, t, icons }: Place): { lines: Pl
       }
     }
     if (l.face === 'meta' && l.tone === 'muted') metaWidth = Math.max(metaWidth, lead + width);
-    out.push({ text: l.text.trimEnd(), face: l.face, size: l.size, x: left + lead, baseline, top: y, height: lh, width, tone: l.tone });
+    out.push({ text: l.text, face: l.face, size: l.size, x: left + lead, baseline, top: y, height: lh, width, tone: l.tone });
     y += lh;
   });
   return { lines: out, icons: placedIcons, metaWidth };

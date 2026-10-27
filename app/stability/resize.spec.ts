@@ -35,7 +35,7 @@ test.describe('resize', () => {
 
   test('LA-PLT-T75 drag the gap between two panes', async ({ page }) => {
     await openPage(page, `${RECORD}?view=wiki,graph`);
-    await page.locator('.pane-graph .graph-flow .react-flow__node').first().waitFor();
+    await page.locator('.pane-graph .graph-flow .graph-box').first().waitFor({ state: 'attached' });
     const handle = page.locator('.pane-gap').first();
     const keys = ['nav#nav', '.side-bar-column', '.pane-wiki', '.pane-graph', '.pane-graph .graph-canvas'];
     const r = await step(page, 'resize', 'drag the pane gap', { keys, allow: ALL, resizes: ['.pane-wiki', '.pane-graph', '.pane-graph .graph-canvas'] }, () => drag(page, handle, -160));

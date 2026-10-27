@@ -8,7 +8,7 @@ import { FOCUS, GRAPH_CANVAS, RECORD, SHELL } from './scenarios';
 test.describe('theme', () => {
   test('LA-PLT-T80 switching theme moves nothing', async ({ page }) => {
     await openPage(page, `${RECORD}?view=wiki,graph`);
-    await page.locator('.pane-graph .graph-flow .react-flow__node').first().waitFor();
+    await page.locator('.pane-graph .graph-flow .graph-box').first().waitFor({ state: 'attached' });
     await page.locator('#main').click({ position: { x: 300, y: 400 } });
     await page.keyboard.press('g');
     await page.keyboard.press('t');

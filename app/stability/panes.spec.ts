@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { expectStable, openPage, step } from './measure';
 import { AGGREGATE, RECORD } from './scenarios';
+import { sceneOf } from './scene';
 
 // LA-PLT-T73: opening and closing the Wiki, Graph and Model panes, the maximize command
 // (Ctrl+3) and the side bar. The panes are what changes (each takes its share of the width),
@@ -11,8 +12,8 @@ const PANES = ['.focus-views'];
 const NAV = 'nav#nav';
 const SIDE_BAR = '.side-bar-column';
 const WIKI_BAR = '.pane-wiki > .pane-bar';
-/** A canvas's first box: it appears where the fitted picture puts it, never at the default view and then moved. */
-const FIRST_NODE = (view: 'graph' | 'model') => `.pane-${view} .react-flow__node`;
+/** A canvas's first box: it appears where the fitted picture puts it, never at the default view and then moved. The graph's canvas draws its boxes, so its drawing holds still and its camera frames the first picture at once. */
+const FIRST_NODE = (view: 'graph' | 'model') => (view === 'graph' ? '.pane-graph .graph-flow canvas' : `.pane-${view} .react-flow__node`);
 
 test.describe('panes', () => {
   test('LA-PLT-T102 at 1024 px with three panes and the side bar open, no two panels overlap', async ({ page }) => {
@@ -30,9 +31,10 @@ test.describe('panes', () => {
     await openPage(page, RECORD);
     const open = await step(page, 'panes', 'open Graph (Ctrl+2)', { keys: [NAV, SIDE_BAR, '.pane-wiki .pane-title h1', FIRST_NODE('graph')], allow: PANES, resizes: ['.pane-wiki .pane-title h1'] }, async () => {
       await page.keyboard.press('Control+2');
-      await page.locator('.pane-graph .graph-flow .react-flow__node').first().waitFor();
+      await page.locator('.pane-graph .graph-flow .graph-box').first().waitFor({ state: 'attached' });
     });
     expectStable(open);
+    expect((await sceneOf(page)).glides, 'the first picture is framed at once').toBe(0);
     const close = await step(page, 'panes', 'close Graph (Ctrl+2)', { keys: [NAV, SIDE_BAR, WIKI_BAR], allow: PANES, resizes: [WIKI_BAR] }, async () => {
       await page.keyboard.press('Control+2');
       await expect(page.locator('.pane-graph')).toHaveCount(0);
@@ -49,7 +51,7 @@ test.describe('panes', () => {
     expectStable(open);
     const graph = await step(page, 'panes', 'add Graph beside Model', { keys: [NAV, SIDE_BAR, '.pane-model .model-canvas'], allow: PANES, resizes: ['.pane-model .model-canvas'] }, async () => {
       await page.keyboard.press('Control+2');
-      await page.locator('.pane-graph .graph-flow .react-flow__node').first().waitFor();
+      await page.locator('.pane-graph .graph-flow .graph-box').first().waitFor({ state: 'attached' });
     });
     expectStable(graph);
     const wiki = await step(page, 'panes', 'close Wiki with two others open', { keys: [NAV, SIDE_BAR, '.pane-graph > .pane-bar'], allow: PANES, resizes: ['.pane-graph > .pane-bar'] }, async () => {
@@ -61,7 +63,7 @@ test.describe('panes', () => {
 
   test('LA-PLT-T73 maximize a pane and come back', async ({ page }) => {
     await openPage(page, `${RECORD}?view=wiki,graph`);
-    await page.locator('.pane-graph .graph-flow .react-flow__node').first().waitFor();
+    await page.locator('.pane-graph .graph-flow .graph-box').first().waitFor({ state: 'attached' });
     await page.locator('.pane-graph .graph-canvas').click({ position: { x: 5, y: 5 } });
     const full = await step(page, 'panes', 'maximize (Ctrl+3)', { keys: [NAV], allow: PANES }, async () => {
       await page.keyboard.press('Control+3');

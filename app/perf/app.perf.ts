@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { expect, test, type Page } from '@playwright/test';
 import { BUDGETS } from './budgets';
 import { heapMb, installProbes, quiet, record, work } from './measure';
+import { focusDrawn, reachableBoxes, sceneOf } from '../stability/scene';
 
 // LA-PLT-T90 to T605: the app's performance budgets (LA-PAT-APP-UX-R11), on the production build.
 
@@ -20,27 +21,13 @@ async function open(page: Page, url: string, ready = TITLE) {
   await quiet(page, 600);
 }
 
-/**
- * A box may lie partly outside the canvas, past its edge: a box is in view when its left part is and it is 24 px tall or more, and is clicked there.
- */
+/** The graph's boxes, in its keyboard layer: there once the canvas has drawn them. */
+const BOXES = '.pane-graph .graph-flow .graph-box';
+const boxesDrawn = (page: Page, layout?: string) => page.locator(layout ? `.graph-flow[data-layout="${layout}"] .graph-box` : BOXES).first().waitFor({ state: 'attached' });
 
-/** The ID of a record box (not the center) whose left part is inside the graph's canvas, where a click lands on it. */
+/** The n-th record box (not the center) a click can reach on the graph's canvas, and the point of the page where the pointer finds it. */
 async function visibleNode(page: Page, n: number): Promise<{ id: string; at: { x: number; y: number } }> {
-  const found = await page.evaluate(() => {
-    const canvas = document.querySelector('.pane-graph .graph-flow')!.getBoundingClientRect();
-    // The click point: near a box's top left, or a Voronoi cell's label's middle, inside its outline.
-    const pointOf = (el: HTMLElement) => {
-      const r = el.getBoundingClientRect();
-      const label = el.querySelector('.graph-cell-label')?.getBoundingClientRect();
-      return label ? { x: label.left + label.width / 2 - r.left, y: label.top + label.height / 2 - r.top } : { x: 20, y: 12 };
-    };
-    return [...document.querySelectorAll<HTMLElement>('.graph-flow .react-flow__node[data-id^="LA-"]')]
-      .filter((el) => !el.querySelector('.is-focus'))
-      .filter((el) => { const r = el.getBoundingClientRect(); return r.height >= 24 && r.left >= canvas.left && r.left + 40 <= canvas.right && r.top >= canvas.top && r.bottom <= canvas.bottom - 40; })
-      // The click point hits this box, not a box drawn over it (a child, in the Nested and Voronoi layouts).
-      .filter((el) => { const r = el.getBoundingClientRect(); const p = pointOf(el); return document.elementFromPoint(r.left + p.x, r.top + p.y)?.closest('.react-flow__node') === el; })
-      .map((el) => ({ id: el.dataset.id!, at: pointOf(el) }));
-  });
+  const found = await reachableBoxes(page);
   expect(found.length, 'a record box in view').toBeGreaterThan(0);
   return found[Math.min(n, found.length - 1)];
 }
@@ -81,13 +68,13 @@ test.describe('performance', () => {
     await open(page, RECORD);
     // Warm: the graph's code and ELK load on the first switch; time a later one.
     await page.keyboard.press('Control+2');
-    await page.locator('.pane-graph .graph-flow .react-flow__node').first().waitFor();
+    await boxesDrawn(page);
     await quiet(page);
     await page.keyboard.press('Control+2');
     await expect(page.locator('.pane-graph')).toHaveCount(0);
     const openGraph = await work(page, async () => {
       await page.keyboard.press('Control+2');
-      await page.locator('.pane-graph .graph-flow .react-flow__node').first().waitFor();
+      await boxesDrawn(page);
     });
     await record({ name: 'view switch: open the Graph pane', value: openGraph.workMs, unit: 'ms', budget: BUDGETS.viewSwitchMs, detail: `longest frame ${Math.round(openGraph.worstFrameMs)} ms` });
     const closeGraph = await work(page, async () => {
@@ -101,10 +88,10 @@ test.describe('performance', () => {
   for (const layout of ['Tree', 'Nested', 'Voronoi'] as const) test(`LA-PLT-T93 a graph re-center at depth 3 takes under 500 ms of main-thread work, and glides at 60 Hz, in the ${layout} layout`, async ({ page }) => {
     const label = layout === 'Tree' ? 'graph re-center at depth 3' : `${layout} graph re-center at depth 3`;
     await open(page, `${RECORD}?view=graph`);
-    await page.locator('.graph-flow .react-flow__node').first().waitFor();
+    await boxesDrawn(page);
     if (layout !== 'Tree') {
       await page.locator('.graph-layout button', { hasText: layout }).click();
-      await page.locator(`.graph-flow[data-layout="${layout.toLowerCase()}"] .react-flow__node`).first().waitFor();
+      await boxesDrawn(page, layout.toLowerCase());
     }
     // The Nested camera frames the focus's box, so it has no depth (LA-EXP-DR63).
     if (layout === 'Tree') await page.locator('.graph-depth button', { hasText: '3' }).click();
@@ -117,9 +104,9 @@ test.describe('performance', () => {
       const before = new URL(page.url()).pathname;
       const { id, at } = await visibleNode(page, hop);
       const r = await work(page, async () => {
-        await page.locator(`.graph-flow .react-flow__node[data-id="${id}"]`).click({ position: at });
+        await page.mouse.click(at.x, at.y);
         await page.waitForURL((u) => u.pathname !== before);
-        await page.locator(`.graph-flow .react-flow__node[data-id="${id}"] .is-focus`).waitFor();
+        await focusDrawn(page, id);
       }, 900);
       // Nested, a framed leaf fills the pane with nothing else in view: go back to the record before the next hop, outside the measure.
       if (layout === 'Nested' && hop < 3) { await page.goBack(); await page.waitForURL((u) => u.pathname === before); await quiet(page, 900); }
@@ -128,11 +115,37 @@ test.describe('performance', () => {
       slow.push(r.slowFrames);
       notes.push(`${id}: ${Math.round(r.workMs)} ms work, longest frame ${Math.round(r.worstFrameMs)} ms, ${r.slowFrames} of ${r.frames} frames over 20 ms${r.worst.scripts.length ? ` [${r.worst.scripts.join('; ')}]` : ''}`);
     }
-    const nodes = await page.locator('.graph-flow .react-flow__node').count();
+    const nodes = (await sceneOf(page)).boxes.length;
     await record({ name: `${label}: main-thread work`, value: Math.max(...works), unit: 'ms', budget: BUDGETS.recenterMs, detail: `worst of 3 (${nodes} boxes in the last picture); ${notes.join(' | ')}` });
     await record({ name: `${label}: longest frame`, value: Math.max(...frames), unit: 'ms', budget: BUDGETS.recenterFrameMs, detail: 'the longest time between two frames, worst of 3' });
     // "Under" a count of 3 is 3 or fewer, so the budget is one more.
     await record({ name: `${label}: frames over 20 ms`, value: Math.max(...slow), unit: 'frames', budget: BUDGETS.recenterSlowFrames + 1, detail: `worst of 3: ${slow.join(', ')}; at most ${BUDGETS.recenterSlowFrames}` });
+  });
+
+  // The canvas's free camera on Lathe's map (LA-EXP-DR59): a wheel zoom in and out about the pointer, and a drag pan, in each layout.
+  for (const layout of ['Tree', 'Nested', 'Voronoi'] as const) test(`LA-PLT-T137 zoom and pan on Lathe's map are measured, frame by frame, in the ${layout} layout`, async ({ page }) => {
+    await open(page, '/LA?view=graph');
+    await boxesDrawn(page);
+    if (layout !== 'Tree') {
+      await page.locator('.graph-layout button', { hasText: layout }).click();
+      await boxesDrawn(page, layout.toLowerCase());
+    }
+    await quiet(page, 900);
+    const box = (await page.locator('.pane-graph .graph-canvas').boundingBox())!;
+    const mid = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+    await page.mouse.move(mid.x, mid.y);
+    const zoom = await work(page, async () => {
+      for (let i = 0; i < 20; i++) { await page.mouse.wheel(0, -120); await page.waitForTimeout(16); }
+      for (let i = 0; i < 20; i++) { await page.mouse.wheel(0, 120); await page.waitForTimeout(16); }
+    });
+    const pan = await work(page, async () => {
+      await page.mouse.down();
+      for (let i = 1; i <= 40; i++) await page.mouse.move(mid.x - i * 8, mid.y - i * 4);
+      await page.mouse.up();
+    });
+    const boxes = (await sceneOf(page)).boxes.length;
+    await record({ name: `${layout} zoom on LA: longest frame`, value: zoom.worstFrameMs, unit: 'ms', budget: null, detail: `${Math.round(zoom.workMs)} ms work over ${zoom.frames} frames, ${zoom.slowFrames} over 20 ms; ${boxes} boxes in the last picture` });
+    await record({ name: `${layout} pan on LA: longest frame`, value: pan.worstFrameMs, unit: 'ms', budget: null, detail: `${Math.round(pan.workMs)} ms work over ${pan.frames} frames, ${pan.slowFrames} over 20 ms` });
   });
 
   test('LA-PLT-T94 opening the Model pane takes under 100 ms of main-thread work', async ({ page }) => {
@@ -159,7 +172,7 @@ test.describe('performance', () => {
 
   test('LA-PLT-T95 memory after 50 navigations', async ({ page }) => {
     await open(page, `${RECORD}?view=wiki,graph`);
-    await page.locator('.pane-graph .graph-flow .react-flow__node').first().waitFor();
+    await boxesDrawn(page);
     const start = await heapMb(page);
     const links = await page.evaluate(() => [...new Set([...document.querySelectorAll<HTMLAnchorElement>('#nav a[href^="/LA"]')].map((a) => a.getAttribute('href')!))]
       // Record and group pages only: a space's Checks page has no views to open.
