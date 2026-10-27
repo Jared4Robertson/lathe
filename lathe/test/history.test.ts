@@ -63,11 +63,11 @@ beforeAll(async () => {
   await store.set('use_case', UC, { title: 'Write a short note', goal: 'A writer keeps a thought.' });
   git(repo, 'commit', '--quiet', '-am', 'Say more about UC01');
   await store.apply([
-    { op: 'add', table: 'use_case_actor', row: { use_case_id: UC, position: 1, role_name: 'Writer' } },
     { op: 'link', relation: 'follows', source: UC, target: 'EX-PAT-NOTE' },
+    { op: 'add', table: 'setting_value', row: { follower_id: UC, pattern_id: 'EX-PAT-NOTE', setting: 'record', value: 'Note' } },
   ]);
   git(repo, 'add', '.');
-  git(repo, 'commit', '--quiet', '-m', 'Give UC01 its actor and pattern');
+  git(repo, 'commit', '--quiet', '-m', 'Give UC01 its pattern');
   // A commit that changes only another record's rows is not in UC01's history.
   await store.set('pattern', 'EX-PAT-NOTE', { description: 'What every note action does.' });
   git(repo, 'commit', '--quiet', '-am', 'Describe the pattern');
@@ -77,7 +77,7 @@ beforeAll(async () => {
   }
   // Not committed: a change in the working tree, and a data file git does not know yet.
   await store.set('use_case', UC, { goal: 'A writer keeps every thought.' });
-  await store.add('setting_value', { follower_id: UC, pattern_id: 'EX-PAT-NOTE', setting: 'record', value: 'Note' });
+  await store.add('use_case_actor', { use_case_id: UC, position: 1, role_name: 'Writer' });
 });
 
 afterAll(async () => {
@@ -117,9 +117,8 @@ describe.skipIf(!hasGit)('record history', () => {
     expect(older.commits[0].changes).toEqual([
       { table: 'use_case', key: UC, change: 'added', fields: [{ name: 'id', after: UC }, { name: 'title', after: 'Write a note' }, { name: 'capability_id', after: 'EX-NOTE-CAP01' }] },
     ]);
-    const parts = answer.commits.find((c) => c.subject === 'Give UC01 its actor and pattern')!;
+    const parts = answer.commits.find((c) => c.subject === 'Give UC01 its pattern')!;
     expect(parts.changes).toEqual([
-      { table: 'use_case_actor', key: `use_case_id ${UC}, position 1`, change: 'added', fields: [{ name: 'use_case_id', after: UC }, { name: 'position', after: 1 }, { name: 'role_name', after: 'Writer' }] },
       { table: 'follows', key: `source_id ${UC}, target_id EX-PAT-NOTE`, change: 'added', fields: [{ name: 'source_id', after: UC }, { name: 'target_id', after: 'EX-PAT-NOTE' }] },
     ]);
     const titled = answer.commits.find((c) => c.subject === 'Say more about UC01')!;
@@ -130,7 +129,7 @@ describe.skipIf(!hasGit)('record history', () => {
 
     expect(answer.uncommitted).toEqual([
       { table: 'use_case', key: UC, change: 'changed', fields: [{ name: 'goal', before: `A writer keeps thought ${EXTRA}.`, after: 'A writer keeps every thought.' }] },
-      { table: 'setting_value', key: `follower_id ${UC}, pattern_id EX-PAT-NOTE, setting record`, change: 'added', fields: [{ name: 'follower_id', after: UC }, { name: 'pattern_id', after: 'EX-PAT-NOTE' }, { name: 'setting', after: 'record' }, { name: 'value', after: 'Note' }] },
+      { table: 'use_case_actor', key: `use_case_id ${UC}, position 1`, change: 'added', fields: [{ name: 'use_case_id', after: UC }, { name: 'position', after: 1 }, { name: 'role_name', after: 'Writer' }] },
     ]);
   });
 

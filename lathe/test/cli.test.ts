@@ -46,7 +46,7 @@ describe('lathe check', () => {
     const gaps = lathe('check', '--root', short).stdout;
     expect(gaps).toContain('  SP-D records short of a minimum (');
     expect(gaps).toContain('    [use-case-without-flow] Use case SP-D-UC01 has no flow.');
-    expect(gaps).toContain('  SP (outside the domains) records short of a minimum (4):');
+    expect(gaps).toContain('  SP (outside the domains) records short of a minimum (5):');
   });
 
   it('LA-CHK-T03 The check exits 1 on any error and 0 otherwise, whatever the warnings and gaps', () => {

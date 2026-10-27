@@ -59,14 +59,14 @@ describe("a product's own checks", () => {
   it("LA-CHK-T26 A product check named like one of Lathe's checks is refused by the store, so it never runs", async () => {
     const root = await build(complete());
     const store = await openStore(root);
-    const clash = store.add('check', { ...row('unused', 1, "SELECT NULL AS record, 'THIS PRODUCT CHECK RAN' AS message"), severity: 'error' });
+    const clash = store.add('check', { ...row('view-unused', 1, "SELECT NULL AS record, 'THIS PRODUCT CHECK RAN' AS message"), severity: 'error' });
     await expect(clash).rejects.toThrow(StoreError);
     await expect(clash).rejects.toMatchObject({ problems: [expect.objectContaining({ rule: 'primary-key', message: expect.stringContaining("one of Lathe's own (lathe/data/check.jsonl)") })] });
     await store.close();
     // The same row written into the data file is refused when the data loads.
-    writeFileSync(path.join(root, 'data', 'check.jsonl'), `${JSON.stringify(row('unused', 1, 'SELECT 1'))}\n`);
+    writeFileSync(path.join(root, 'data', 'check.jsonl'), `${JSON.stringify(row('view-unused', 1, 'SELECT 1'))}\n`);
     const loaded = await loadWorkspace(root);
-    expect(ofCheck(loaded, 'data-refused')).toEqual([expect.objectContaining({ severity: 'error', message: expect.stringContaining('check unused is already on lathe/data/check.jsonl') })]);
+    expect(ofCheck(loaded, 'data-refused')).toEqual([expect.objectContaining({ severity: 'error', message: expect.stringContaining('check view-unused is already on lathe/data/check.jsonl') })]);
   });
 
   it('LA-CHK-T27 A product check that fails to run is an error naming the check', () => {
@@ -85,6 +85,6 @@ describe("a product's own checks", () => {
   it("LA-CHK-T29 Without check rows of its own only Lathe's checks run", () => {
     const own = new Set(['every-event-heard', 'broken', 'every-domain']);
     expect(ws.problems.filter((p) => !own.has(p.check)).every((p) => latheChecks.includes(p.check))).toBe(true);
-    expect(ws.problems.filter((p) => !own.has(p.check)).map((p) => p.check)).toEqual(['technical-file-missing']);
+    expect(ws.problems.filter((p) => !own.has(p.check)).map((p) => p.check)).toEqual(['technical-file-missing', 'not-built']);
   });
 });

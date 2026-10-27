@@ -11,8 +11,5 @@
     "perf/**/*.ts",
     "scripts/**/*.ts"
   ],
-  "ignore": [
-    "test/fixtures/**"
-  ],
   "ignoreExportsUsedInFile": true
 }
