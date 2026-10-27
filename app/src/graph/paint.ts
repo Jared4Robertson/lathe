@@ -98,7 +98,7 @@ export function paint(ctx: CanvasRenderingContext2D, dpr: number, cam: Camera, f
   const Y = (y: number) => (y - cam.cy) * zoom + cam.h / 2;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.globalAlpha = 1;
-  // The paper is the pane's own background (the stylesheet's), so the vignette over the canvas's edges matches it.
+  // The paper is the pane's own background (the stylesheet's): the canvas draws the map over it, transparent elsewhere.
   ctx.clearRect(0, 0, cam.w, cam.h);
   paintDots(ctx, cam, look);
 
@@ -177,6 +177,52 @@ export function paint(ctx: CanvasRenderingContext2D, dpr: number, cam: Camera, f
     ctx.textBaseline = 'alphabetic';
   }
   ctx.globalAlpha = 1;
+  paintVignette(ctx, dpr, cam, look);
+}
+
+/**
+ * The cut-off at the frame reads as meant: the map fades into the paper at the canvas's edges, as
+ * under an inset shadow of the paper `look.vignette` wide spreading a third of that. The fade is
+ * cut out of what the canvas drew (so the paper beneath shows through it exactly), with a mask
+ * drawn once per size and kept.
+ */
+const vignettes = new WeakMap<CanvasRenderingContext2D, { key: string; image: HTMLCanvasElement | null }>();
+function paintVignette(ctx: CanvasRenderingContext2D, dpr: number, cam: Camera, look: Look) {
+  if (look.vignette <= 0 || typeof document === 'undefined') return;
+  const w = Math.round(cam.w * dpr);
+  const h = Math.round(cam.h * dpr);
+  const key = `${w}x${h}|${look.vignette}|${dpr}`;
+  let v = vignettes.get(ctx);
+  if (!v || v.key !== key) {
+    const image = document.createElement('canvas');
+    image.width = w;
+    image.height = h;
+    const g = image.getContext('2d');
+    if (g) {
+      const blur = look.vignette * dpr;
+      const spread = blur / 3;
+      const far = 4 * blur;
+      // A frame of paper round the canvas, its inner edge the spread in from the canvas's edge: only its shadow is drawn
+      // (the frame itself lies far off the image, its shadow offset back onto it), blurred both ways across that edge, as an inset box-shadow is.
+      const away = w + h + 2 * far;
+      g.beginPath();
+      g.rect(-far - away, -far, w + 2 * far, h + 2 * far);
+      g.rect(spread - away, spread, w - 2 * spread, h - 2 * spread);
+      g.fillStyle = '#000';
+      g.shadowColor = '#000';
+      g.shadowBlur = blur;
+      g.shadowOffsetX = away;
+      g.fill('evenodd');
+    }
+    v = { key, image: g ? image : null };
+    vignettes.set(ctx, v);
+  }
+  if (!v.image) return;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalCompositeOperation = 'destination-out';
+  ctx.drawImage(v.image, 0, 0);
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
 
 /** The dots behind the map, only while they are far enough apart to draw: a tile 24 map units square, placed by the camera. */

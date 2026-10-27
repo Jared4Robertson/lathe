@@ -11,7 +11,7 @@
   /* Motion: the speed and easing every move and fade shares, in CSS and in JS (app/src/graph/motion.ts); reduced motion turns each off (LA-PAT-APP-UX-R04). */
   --motion-speed: 320ms; --motion-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
   --node-radius: 4px; /* an ERD box's corners; the graph's canvas rounds a plain box the same (app/src/graph/shapes.ts) */
-  /* The Model view's context ring (LA-EXP-UC11-R06): faded and a little smaller; the graph's hover spotlight dims the rest a step; the vignette's width at a canvas's edges. */
+  /* The Model view's context ring (LA-EXP-UC11-R06): faded and a little smaller; the graph's hover spotlight dims the rest a step; the vignette's width at a canvas's edges (the graph's canvas draws its own, app/src/graph/paint.ts). */
   --context-opacity: 0.35; --context-scale: 0.9; --spotlight-dim: 0.5; --vignette: 56px;
   /* The graph's cross-links (the Links switch), dashed apart from the tree's solid lines, and the minimap's mask. */
   --link-edge: var(--spark); --minimap-mask: color-mix(in srgb, var(--ink) 8%, transparent);
@@ -306,8 +306,6 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 @media (prefers-reduced-motion: no-preference) {
   .graph-edge-hint { transition: background var(--hover-speed), color var(--hover-speed); }
 }
-/* The cut-off at the frame reads as meant: a soft vignette of the canvas's own background at its edges. */
-.graph-flow::after { content: ""; position: absolute; inset: 0; z-index: 4; pointer-events: none; box-shadow: inset 0 0 var(--vignette) calc(var(--vignette) / 3) var(--paper); }
 /* Edge hints: how many linked records lie past each edge; a click brings the nearest into view. */
 .graph-edge-hints { position: absolute; inset: 0; z-index: 6; pointer-events: none; }
 .graph-edge-hint { position: absolute; pointer-events: auto; font: 600 0.75rem var(--body); font-variant-numeric: tabular-nums; padding: 2px 8px; border: 1px solid var(--rule); border-radius: 10px; background: var(--sheet); color: var(--muted); cursor: pointer; white-space: nowrap; }
