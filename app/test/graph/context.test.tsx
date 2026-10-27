@@ -1,14 +1,14 @@
 import './setup';
+import type { SpecData } from '../../../lathe/src/server/contract';
+import { addRows, indexOf } from '../fixtures/load';
 import { describe, expect, it } from 'vitest';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
-import type { Workspace } from '../../../lathe/src/types';
 import { graphSummary, keyboardOrder, stepTarget, type Box } from '../../src/graph/GraphPage';
 import { panToward, pastEdges } from '../../src/graph/hints';
 import { groupLabel, groupMembers, neighborhood, type Neighborhood } from '../../src/graph/model';
 import { splitsByKind, treeChildren, treeParent } from '../../src/graph/tree';
 import { aggregateErd, domainErd } from '../../src/model/erd';
 import { focusRects } from '../../src/model/ModelView';
-import { indexWorkspace } from '../../src/specs/data';
 import { domainFolders } from '../../src/specs/folders';
 import { entityWorkspace } from '../fixtures/entities';
 import { layerWorkspace } from '../fixtures/layers';
@@ -25,15 +25,15 @@ const node = (id: string) => boxElement(id);
 const drawnLinks = () => scene().lines.filter((l) => l.link);
 const parentLines = () => scene().lines.filter((l) => !l.link);
 
-async function showGraph(path: string, workspace: Workspace = testWorkspace(), depth = 1) {
+async function showGraph(path: string, workspace: SpecData = testWorkspace(), depth = 1) {
   startAtDepth(depth);
-  await openApp(`${path}?view=graph`, { workspace });
+  await openApp(`${path}?view=graph`, { data: workspace });
   await waitFor(() => expect(boxElements().length).toBeGreaterThan(0));
 }
 
 describe('the graph tree, its depth and its camera', () => {
   it('LA-EXP-T142 Depth counts levels below a domain and a use case, as a file explorer does', () => {
-    const index = indexWorkspace(layerWorkspace());
+    const index = indexOf(layerWorkspace());
     // From the domain: depth 1 its stages, depth 2 their folders, depth 3 what is in them.
     expect(ids(neighborhood(index, 'DM-SHOP', 1))).toEqual(expect.arrayContaining(['DM-SHOP/define', 'DM-SHOP/design']));
     expect(ids(neighborhood(index, 'DM-SHOP', 1)).some((id) => id.split('/').length > 2)).toBe(false);
@@ -50,7 +50,7 @@ describe('the graph tree, its depth and its camera', () => {
   });
 
   it('LA-EXP-T143 The graph\'s tree is the nav\'s: a domain\'s stages, their folders and records, the one-kind rule, and a product\'s Shared folder and domains', () => {
-    const index = indexWorkspace(layerWorkspace());
+    const index = indexOf(layerWorkspace());
     const { stages } = domainFolders(index, 'DM-SHOP');
     expect(treeChildren(index, 'DM-SHOP').slice(0, 2)).toEqual(['DM-SHOP/define', 'DM-SHOP/design']);
     expect(groupLabel(index, 'DM-SHOP/design')).toBe(`Design (${stages.find((s) => s.stage === 'design')!.count})`);
@@ -102,8 +102,7 @@ describe('the graph tree, its depth and its camera', () => {
   it('LA-EXP-T171 Every drawn box shows its label, however small on screen, and is a keyboard stop; the summary counts the framed picture', async () => {
     // A use case with sixty requirements: framed from its domain, they are a few pixels tall each.
     const w = testWorkspace();
-    const req = w.records.find((r) => r.id === 'P-D-UC01-R01')!;
-    for (let i = 2; i <= 60; i++) w.records.push({ ...req, id: `P-D-UC01-R${String(i).padStart(2, '0')}`, title: `Rule ${i}`, path: `specs/P-D-UC01-R${i}.md` });
+    for (let i = 2; i <= 60; i++) addRows(w, 'requirement', { id: `P-D-UC01-R${String(i).padStart(2, '0')}`, title: `Rule ${i}`, use_case_id: 'P-D-UC01', statement: `Rule ${i} MUST hold.` });
     await showGraph('/P-D', w, 3);
     await waitFor(() => expect(boxElements().length).toBeGreaterThan(5));
     // Each drawn box draws its kind and ID line and its title, and is a keyboard stop with its name.
@@ -125,7 +124,7 @@ describe('the graph tree, its depth and its camera', () => {
     ];
     expect(keyboardOrder(boxes)).toEqual(['a', 'c', 'b']);
     // The summary counts the framed picture: the domain, its parent and three levels below it.
-    const n = neighborhood(indexWorkspace(w), 'P-D', 3);
+    const n = neighborhood(indexOf(w), 'P-D', 3);
     expect(document.querySelector('.graph-count')!.textContent).toBe(graphSummary(n));
     expect(graphSummary(n)).toBe('7 records · 11 groups · 17 links');
   });
@@ -216,7 +215,7 @@ describe('the graph tree, its depth and its camera', () => {
 });
 
 describe('the context ring in the Model view', () => {
-  const index = () => indexWorkspace(entityWorkspace());
+  const index = () => indexOf(entityWorkspace());
 
   it('LA-EXP-T151 An aggregate\'s ERD shows what its referenced entities refer to one ring out, faded; a domain\'s ERD fades the aggregates of other domains', () => {
     const loan = aggregateErd(index(), 'P-D-A3');
@@ -238,7 +237,7 @@ describe('the context ring in the Model view', () => {
     const rects = new Map(erd.boxes.map((b, i) => [b.id, { x: i * 300, y: 0, width: 240, height: 80 }]));
     expect([...focusRects(erd, rects).keys()]).not.toContain('P-E-EN01');
     expect(focusRects(erd, rects).size).toBe(5);
-    await openApp('/P-D-A3?view=model', { workspace: entityWorkspace() });
+    await openApp('/P-D-A3?view=model', { data: entityWorkspace() });
     await waitFor(() => expect(document.querySelector('.model-flow .react-flow__node[data-id="P-E-EN01"]')).not.toBeNull());
     const ring = document.querySelector<HTMLElement>('.model-flow .react-flow__node[data-id="P-E-EN01"]')!;
     expect(ring.className).toContain('is-context');

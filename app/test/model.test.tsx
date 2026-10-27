@@ -1,9 +1,9 @@
 import './graph/setup';
+import { indexOf } from './fixtures/load';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { indexWorkspace } from '../src/specs/data';
 import { aggregateErd, domainErd, endPath, erdFor, ENTITY_RELATIONS, lineGeometry } from '../src/model/erd';
 import { viewsOffered, viewsShown } from '../src/views/address';
 import { openApp } from './helpers';
@@ -12,8 +12,8 @@ import { entityWorkspace } from './fixtures/entities';
 // The Model view: an ERD of a domain at aggregate level, and of each aggregate's entities, offered
 // only on domain, aggregate and entity pages.
 
-const served = () => ({ workspace: entityWorkspace() });
-const index = () => indexWorkspace(entityWorkspace());
+const served = () => ({ data: entityWorkspace() });
+const index = () => indexOf(entityWorkspace());
 const modelPane = () => screen.getByRole('region', { name: 'Model pane' });
 const box = (id: string) => modelPane().querySelector<HTMLElement>(`.react-flow__node[data-id="${id}"]`);
 const boxesShown = () => waitFor(() => expect(modelPane().querySelectorAll('.react-flow__node').length).toBeGreaterThan(0));
@@ -142,7 +142,7 @@ describe('the Model view', () => {
 
   it('LA-EXP-T125 An ERD draws exactly one line per relationship link: each aggregate\'s for the links its entities hold, the domain\'s for each aggregate pair and direction they join', () => {
     const i = index();
-    const entityLinks = entityWorkspace().links.filter((l) => (ENTITY_RELATIONS as readonly string[]).includes(l.relation));
+    const entityLinks = i.workspace.links.filter((l) => (ENTITY_RELATIONS as readonly string[]).includes(l.relation));
     const aggregates = ['P-D-A1', 'P-D-A2', 'P-D-A3', 'P-D-A4'];
     const drawn = aggregates.flatMap((a) => aggregateErd(i, a).lines.filter((l) => !l.context));
     // Every link of the domain's entities appears in focus in exactly one aggregate's ERD, once (elsewhere it may be the faded ring).
