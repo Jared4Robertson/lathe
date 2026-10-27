@@ -12,7 +12,7 @@ const summary = (name: string) => within(section('Summary')).getByText(name, { s
 
 describe('owed proof and tests by state', () => {
   it('LA-TRC-T108 The planned bar says how many more obligations, already proved, still have a planned test', async () => {
-    await openApp('/DM', { workspace: owedWorkspace() });
+    await openApp('/DM', { data: owedWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     // DM-SHOP's domain rule: planned 0, planned_any 1.
     const rule = more(card('Shopping'), 'domain_rule') as HTMLElement;
@@ -24,18 +24,18 @@ describe('owed proof and tests by state', () => {
     expect(card('Paying').querySelector('.bar-more')).toBeNull();
 
     // The domain page shows the same.
-    await openApp('/DM-SHOP', { workspace: owedWorkspace() });
+    await openApp('/DM-SHOP', { data: owedWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     expect(more(section(/^Coverage/), 'domain_rule')?.textContent).toBe('1 more planned');
   });
 
   it("LA-TRC-T109 Each domain's coverage shows its tests by state, on the product and domain pages", async () => {
-    await openApp('/DM', { workspace: owedWorkspace() });
+    await openApp('/DM', { data: owedWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     expect(testsLine(card('Shopping'))).toBe('Tests 1 automated, 1 manual, 1 planned');
     expect(testsLine(card('Paying'))).toBe('Tests 2 automated, 0 manual, 0 planned');
 
-    await openApp('/DM-SHOP', { workspace: owedWorkspace() });
+    await openApp('/DM-SHOP', { data: owedWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     const line = within(section(/^Coverage/)).getByLabelText('Tests by state');
     expect(line.textContent).toBe('Tests 1 automated, 1 manual, 1 planned');
@@ -43,7 +43,7 @@ describe('owed proof and tests by state', () => {
   });
 
   it("LA-TRC-T110 The summary counts the product's tests by state, and planned beside proof", async () => {
-    await openApp('/DM', { workspace: owedWorkspace() });
+    await openApp('/DM', { data: owedWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     expect(summary('Tests')).toBe('3 automated, 1 manual, 1 planned');
     expect(summary('Planned')).toBe('1 of 8 obligations, by tests not written yet; 1 more planned beside proof');

@@ -347,7 +347,7 @@ declare global {
     onFullScreen: (listener: (fullScreen: boolean) => void) => () => void;
     /** Sets the Dock badge to the product's number of check errors (LA-CHK-UC07-R02). */
     setErrorCount: (count: number) => void;
-    /** The record actions (LA-AUT-UC15-R01): reveal its spec file, open it in the editor, copy its ID, or a native menu of the three. */
+    /** The record actions (LA-AUT-UC15-R01): reveal its data file, open it in the editor, copy its ID, or a native menu of the three. */
     revealRecord: (id: string) => void;
     openRecordInEditor: (id: string) => void;
     copyRecordId: (id: string) => void;

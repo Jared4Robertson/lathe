@@ -16,10 +16,10 @@ import { badgeFor, dockMenuTemplate, parseErrorCount } from './dock.ts';
 import { editorLaunch, editorName, parseSettings, type Editor, type Settings } from './editor.ts';
 import { addRecent, checkFolder, parseRecent, productNames, windowTitle } from './folders.ts';
 import { routeOpenFile, routeSecondInstance, folderArgument } from './instance.ts';
-import { aboutModel, errorModel, FORMAT_URL, launchModel, launchStep, modelQuery, parseLocalAction, REPO_URL, specErrorMessage, type AboutModel, type LaunchModel, type LocalAction } from './launch.ts';
+import { aboutModel, errorModel, launchModel, launchStep, modelQuery, parseLocalAction, REFERENCE_URL, REPO_URL, specErrorMessage, type AboutModel, type LaunchModel, type LocalAction } from './launch.ts';
 import { menuTemplate } from './menu.ts';
 import { optOutOfWindowRestoration } from './persistence.ts';
-import { parseRecordRequest, recordMenuTemplate, SpecFiles } from './records.ts';
+import { DataFiles, parseRecordRequest, recordMenuTemplate } from './records.ts';
 import { serveModulePath, startDev, startServe, type AppServer } from './servers.ts';
 import { runSmoke, smokeFile, writeSmoke } from './smoke.ts';
 import { readJson, writeJson } from './store.ts';
@@ -67,7 +67,7 @@ interface Entry {
   launchSeen?: string;
   /** The product's check errors, as the page last reported them. */
   errors: number;
-  specs: SpecFiles | null;
+  dataFiles: DataFiles | null;
   /** Bumped on each launch, so an old watch stops. */
   launchRun: number;
 }
@@ -312,7 +312,7 @@ async function openFolder(input: string) {
   rememberRecent(addRecent(recent, folder));
   app.addRecentDocument(folder);
 
-  const names = productNames(check.specsDir);
+  const names = productNames(check.dataDir);
   const placed = windowFor(windowStates, folder, screen.getAllDisplays().map((d) => d.workArea));
   // No system title bar: the app draws its own, in the shell's color, so the window never flashes white.
   const chromeOptions = chromeWindowOptions(process.platform, dark(), savedChrome);
@@ -332,7 +332,7 @@ async function openFolder(input: string) {
     },
   });
   if (MAC) win.setRepresentedFilename(folder);
-  const entry: Entry = { folder, product: names.length === 1 ? names[0] : path.basename(folder), win, errors: 0, specs: new SpecFiles(check.specsDir), launchRun: 0 };
+  const entry: Entry = { folder, product: names.length === 1 ? names[0] : path.basename(folder), win, errors: 0, dataFiles: new DataFiles(check.dataDir), launchRun: 0 };
   open.set(folder, entry);
 
   // The window keeps the product's name and folder, whatever the page calls itself.
@@ -414,7 +414,7 @@ function openInEditor(file: string) {
   settings = parseSettings(readJson(SETTINGS_FILE()));
   const launch = editorLaunch(settings, file, process.platform);
   const failed = (message: string) => {
-    void dialog.showMessageBox({ type: 'warning', message: `Lathe couldn't open the spec file in ${editorName(settings)}.`, detail: `${message}\n\nChoose another editor in File › Open Records In.` });
+    void dialog.showMessageBox({ type: 'warning', message: `Lathe couldn't open the data file in ${editorName(settings)}.`, detail: `${message}\n\nChoose another editor in File › Open Records In.` });
   };
   if (launch.kind === 'open-path') {
     void shell.openPath(launch.path).then((error) => error && failed(error));
@@ -428,7 +428,7 @@ function openInEditor(file: string) {
 function runRecordAction(entry: Entry, input: unknown) {
   const request = parseRecordRequest(input);
   if (!request) return;
-  const file = entry.specs?.find(request.id) ?? null;
+  const file = entry.dataFiles?.find(request.id) ?? null;
   const reveal = () => file && shell.showItemInFolder(file);
   const edit = () => file && openInEditor(file);
   const copy = () => clipboard.writeText(request.id);
@@ -594,7 +594,7 @@ if (!SMOKE && !app.requestSingleInstanceLock()) {
     if (about && about.win.webContents === event.sender) {
       const action = parseLocalAction(input, about.model.actions);
       if (action === 'open-repo') void shell.openExternal(REPO_URL);
-      if (action === 'open-format') void shell.openExternal(FORMAT_URL);
+      if (action === 'open-reference') void shell.openExternal(REFERENCE_URL);
     }
   });
 

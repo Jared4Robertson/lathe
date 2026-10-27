@@ -1,0 +1,9 @@
+{"id":"DN-BACKEND","title":"Catalog","product_id":"DN","description":"The tools on offer."}
+{"id":"DN-BUILD","title":"Building permits","product_id":"DN","description":"Permits to build."}
+{"id":"DN-DATA","title":"Reporting databases","product_id":"DN","description":"Where reports are kept."}
+{"id":"DN-ELEC","title":"ELECTRON shell","product_id":"DN","description":"The window."}
+{"id":"DN-ENG","title":"Engineering reviews","product_id":"DN","description":"Reviews by engineers."}
+{"id":"DN-FRONTEND","title":"Front-end","product_id":"DN","description":"The screens."}
+{"id":"DN-LEND","title":"Lending","product_id":"DN","description":"Members borrow tools. The web app, the API and the server all serve it, and the desktop app too."}
+{"id":"DN-PAY","title":"Payments API","product_id":"DN","description":"Taking payments."}
+{"id":"DN-WEB","title":"Web App","product_id":"DN","description":"The pages."}

@@ -4,11 +4,11 @@ import { describe, expect, it } from 'vitest';
 import { renderMarkdown } from '../src/specs/Markdown';
 import { main, openApp, openSideBar, section } from './helpers';
 
-// The record page's wiki shows the body, its Traceability, children and problems; the side bar's
-// Details, in the Wiki view, adds only what the page leaves out: the spec file, the raw header
-// fields and the raw links (brief 64).
+// The record page's wiki shows its text fields, its Traceability, children and problems; the side
+// bar's Details, in the Wiki view, adds only what the page leaves out: the data file and line, the
+// row's columns as stored and the raw links (brief 64).
 const side = () => main().querySelector('aside.record-side') as HTMLElement;
-/** A raw header field's value in the side bar. */
+/** A stored column's value in the side bar. */
 const field = (name: string) => within(side()).getByText(name, { selector: 'dt code' }).closest('div')?.querySelector('dd')?.textContent;
 
 /** The Traceability groups of the wiki, as label -> linked record addresses. */
@@ -27,18 +27,18 @@ const rawLinks = (heading: 'Links out' | 'Links in') => {
 };
 
 describe('record page', () => {
-  it('LA-EXP-T06 The record page shows the ID, kind, title, fields, rendered body, parent and children', async () => {
+  it('LA-EXP-T06 The record page shows the ID, kind, title, text fields as Markdown, parent and children', async () => {
     openSideBar();
     await openApp('/DM-SHOP-UC01');
     expect(await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' })).toBeInTheDocument();
     expect(main().querySelector('.record-id')).toHaveTextContent('DM-SHOP-UC01');
     expect(main().querySelector('.pane-title .eyebrow')).toHaveTextContent('Use case');
     expect(within(main()).getByText('A shopper adds an item.').closest('.markdown')).not.toBeNull();
-    // The side bar: the file's header as written, and the spec file.
-    expect(field('kind')).toBe('use_case');
-    expect(field('actor')).toBe('Shopper');
-    expect(within(side()).getByText('specs/dm/DM-SHOP-UC01.md')).toBeInTheDocument();
-    expect(within(side()).getByText('parent', { selector: 'dt code' }).closest('div')!.querySelector('a')).toHaveAttribute('href', '/DM-SHOP');
+    // The side bar: the row's columns as stored, and its data file and line.
+    expect(field('id')).toBe('"DM-SHOP-UC01"');
+    expect(field('goal')).toBe('"A shopper adds an item."');
+    expect(within(side()).getByText('data/use_case.jsonl:2')).toBeInTheDocument();
+    expect(within(side()).getByText('domain_id', { selector: 'dt code' }).closest('div')!.querySelector('a')).toHaveAttribute('href', '/DM-SHOP');
 
     // The children are the wiki's.
     const children = within(main()).getByRole('heading', { name: /^UC requirements/ });
@@ -47,7 +47,7 @@ describe('record page', () => {
     expect(items.map((a) => a.getAttribute('href'))).toEqual(['/DM-SHOP-UC01-R01', '/DM-SHOP-UC01-R02']);
     expect(within(side()).queryByRole('heading', { name: /^UC requirements/ })).toBeNull();
 
-    // Markdown in a body is rendered.
+    // Markdown in a text field is rendered.
     await openApp('/DM');
     expect((await screen.findByText('component tests')).tagName).toBe('STRONG');
   });
@@ -62,7 +62,7 @@ describe('record page', () => {
       'Proved by': ['/DM-SHOP-T01'],
       'Carried out in': ['/DM-SHOP-E01', '/DM-SHOP-F01', '/DM-SHOP-V01'],
     });
-    // Raw in the side bar, as the files write them.
+    // Raw in the side bar, as the link tables hold them.
     expect(within(side()).getByText('This record links to nothing.')).toBeInTheDocument();
     expect(rawLinks('Links in')).toEqual(expect.arrayContaining(['satisfies DM-SHOP-C01', 'proves DM-SHOP-T01']));
 
@@ -76,7 +76,7 @@ describe('record page', () => {
       Satisfies: ['/DM-SHOP-DR01', '/DM-SHOP-UC01-R01', '/DM-SHOP-UC01-R02'],
       Implements: ['/DM-SHOP-E01'],
     });
-    expect(rawLinks('Links out')).toEqual(['satisfies DM-SHOP-UC01-R01', 'satisfies DM-SHOP-UC01-R02', 'satisfies DM-SHOP-DR01', 'implements DM-SHOP-E01']);
+    expect(rawLinks('Links out')).toEqual(['satisfies DM-SHOP-DR01', 'satisfies DM-SHOP-UC01-R01', 'satisfies DM-SHOP-UC01-R02', 'implements DM-SHOP-E01']);
     expect(within(side()).getByText('Nothing links to this record.')).toBeInTheDocument();
   });
 

@@ -62,18 +62,19 @@ describe('coverage by the meta-model', () => {
   it("LA-TRC-T07 The meta-model's obligation and role columns are loaded into the workspace", async () => {
     const obligations = states.kinds.filter((k) => k.obligation).map((k) => k.kind);
     expect(obligations).toEqual(['domain_rule', 'requirement', 'pattern_rule', 'interaction_requirement']);
+    // A relation's role holds for each pair it allows; pairs come in relation, then source and target order.
     expect(states.relations.filter((r) => r.role === 'design').map((r) => `${r.source_kind} ${r.relation} ${r.target_kind}`)).toEqual([
-      'component satisfies requirement', 'component satisfies domain_rule', 'component satisfies interaction_requirement', 'component satisfies pattern_rule',
-      'design_step satisfies requirement', 'design_step satisfies domain_rule', 'design_step satisfies interaction_requirement', 'design_step satisfies pattern_rule',
+      'component satisfies domain_rule', 'component satisfies interaction_requirement', 'component satisfies pattern_rule', 'component satisfies requirement',
+      'design_step satisfies domain_rule', 'design_step satisfies interaction_requirement', 'design_step satisfies pattern_rule', 'design_step satisfies requirement',
     ]);
     expect(states.relations.filter((r) => r.role === 'proof').map((r) => `${r.relation} ${r.target_kind}`)).toEqual([
-      'proves requirement', 'proves domain_rule', 'proves interaction_requirement', 'proves pattern_rule',
+      'proves domain_rule', 'proves interaction_requirement', 'proves pattern_rule', 'proves requirement',
     ]);
     expect(states.relations.find((r) => r.relation === 'fulfills')?.role).toBe('');
     expect(extension.relations.find((r) => r.relation === 'sketches')?.role).toBe('design');
     expect(extension.kinds.find((k) => k.kind === 'invariant')?.obligation).toBe(true);
     expect(extension.kinds.find((k) => k.kind === 'sketch')?.obligation).toBe(false);
-    // An extension folder without the new columns still loads: nothing in it is an obligation or has a role.
+    // A product kind that is not an obligation, and a product relation with no role, load as such.
     const configured = await loadWorkspace(fixture('configured'));
     expect(configured.problems.filter((p) => p.severity === 'error')).toEqual([]);
     expect(configured.kinds.find((k) => k.kind === 'report')?.obligation).toBe(false);

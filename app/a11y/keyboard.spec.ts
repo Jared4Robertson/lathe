@@ -1,11 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
-import { DOMAIN, PRODUCT, RECORD } from '../stability/scenarios';
+import { DOMAIN, EDITED, keepData, PRODUCT, RECORD } from '../stability/scenarios';
 
 // What axe can't check, walked with the keyboard alone (LA-PAT-APP-UX-R10):
 // LA-PLT-T98 every control on the main pages is reached by Tab and Shift+Tab, with no trap;
 // LA-PLT-T99 the main tasks by keyboard: open a record, switch views, re-center the graph, fold
 // rows, open and close the side bar, pick a theme, and the announcer saying what changed;
-// LA-PLT-T100 focus after navigation, and back on the opener when a dialog or a sheet closes.
+// LA-PLT-T100 focus after navigation, and back on the opener when a dialog or a sheet closes;
+// and changing a record by keyboard: Edit, the form's first field, Save, and focus back on Edit.
 
 /** What has keyboard focus now: a short description, its accessible name and whether it is in view. */
 const focused = (page: Page) => page.evaluate(() => {
@@ -219,5 +220,39 @@ test.describe('keyboard on a phone', () => {
       await expect(page.locator('.side-bar-sheet')).toHaveCount(0);
       await expect(page.getByRole('button', { name: 'Show the side bar' }).first()).toBeFocused();
     }
+  });
+
+});
+
+test.describe('changing records by keyboard', () => {
+  test('edit a record with the keyboard, and focus comes back to its actions', async ({ page }) => {
+    const restore = keepData();
+    try {
+      await open(page, EDITED);
+      await tabUntil(page, (el) => el.textContent?.trim() === 'Edit' && !!el.closest('[role="toolbar"]'), 'the record\'s Edit');
+      await page.keyboard.press('Enter');
+      await expect.poll(async () => (await focused(page)).name).toBe('');
+      expect(await page.evaluate(() => document.activeElement?.id.endsWith('-field-title'))).toBe(true);
+      await page.keyboard.press('End');
+      await page.keyboard.type(', by keyboard');
+      await tabUntil(page, (el) => el.textContent?.trim() === 'Save', 'Save');
+      await page.keyboard.press('Enter');
+      await expect(page.getByRole('form')).toHaveCount(0, { timeout: 20_000 });
+      await expect(announcer(page)).toHaveText(`Saved ${EDITED.slice(1)}`);
+      await expect.poll(async () => (await focused(page)).name).toBe('Edit');
+      await expect(page.locator('.pane-title h1')).toContainText(', by keyboard');
+    } finally {
+      restore();
+    }
+  });
+
+  test('the remove question takes focus, and Cancel gives it back', async ({ page }) => {
+    await open(page, RECORD);
+    await tabUntil(page, (el) => el.textContent?.trim() === 'Remove' && !!el.closest('[role="toolbar"]'), 'the record\'s Remove');
+    await page.keyboard.press('Enter');
+    await expect.poll(async () => (await focused(page)).name).toBe(`Remove ${RECORD.slice(1)}?`);
+    await tabUntil(page, (el) => el.textContent?.trim() === 'Cancel', 'Cancel');
+    await page.keyboard.press('Enter');
+    await expect.poll(async () => (await focused(page)).name).toBe('Edit');
   });
 });

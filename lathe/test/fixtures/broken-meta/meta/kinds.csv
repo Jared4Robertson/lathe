@@ -1,5 +1,0 @@
-kind,label,stage,parent_kinds,required_fields,description
-product,Product,,,,"Root."
-domain,Domain,,product,,"A domain."
-domain,Domain again,,product,,"Defined twice."
-widget,Widget,define,domain gadget,owner Bad-Name title,"A widget."

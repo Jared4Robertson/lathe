@@ -1,12 +1,12 @@
 import { readdirSync, readFileSync } from 'node:fs';
+import { indexOf } from '../fixtures/load';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { parseRecordFile } from '../../../lathe/src/parse';
 import { COLUMN_GAP_SHARE, COLUMN_RATIO, graphMap, layoutTree, linkEnds, MAP_SIZE, parentLine, ROOT_WIDTH, ROW_GAP_SHARE, sizeText, type GraphMap, type MapNode } from '../../src/graph/map';
 import { drawnFor, frameOnMap, MAX_DRAWN, MIN_DRAWN, MIN_ZOOM, viewRect } from '../../src/graph/camera';
 import { shapeOf, SHAPES } from '../../src/graph/shapes';
 import { BADGE_ROOM, BORDER, LABEL_PAD, labelHeight, largestFit, metaWidth, MARK_ROOM, narrowestWidth, TITLE_FONT, titleWidth, treeLabel, wrapLabel, wrapText, type MapLabel } from '../../src/graph/text';
-import { indexWorkspace, type SpecIndex } from '../../src/specs/data';
+import type { SpecIndex } from '../../src/specs/data';
 import { groupedWorkspace, manyOfOneKindWorkspace, siblingGroups, testIndex } from './workspace';
 
 // The graph is one fixed map of its product's tree (LA-EXP-DR57), laid out top-down from the
@@ -14,7 +14,7 @@ import { groupedWorkspace, manyOfOneKindWorkspace, siblingGroups, testIndex } fr
 // Each parent spans its children stacked, an equal part each; every box in a column has its
 // column's width; the camera draws only what is in view and big enough to see (LA-EXP-DR60).
 
-const indexes = (): SpecIndex[] => [testIndex(), indexWorkspace(groupedWorkspace()), indexWorkspace(manyOfOneKindWorkspace())];
+const indexes = (): SpecIndex[] => [testIndex(), indexOf(groupedWorkspace()), indexOf(manyOfOneKindWorkspace())];
 const maps = (): GraphMap[] => indexes().map((index) => graphMap(index, 'P'));
 
 /** A synthetic tree: `n` roots, each with `k` children, each with `k` leaves. */
@@ -215,20 +215,19 @@ describe('the level of detail', () => {
 });
 
 describe('real titles', () => {
-  /** Every record of Lathe's own spec and the Tool Library's, read from the spec folders. */
+  /** Every record of Lathe's own spec and the Tool Library's, read from their data folders: each row with an ID and a title. */
   const records = (dir: string): { title: string; kind: string; file?: string }[] =>
-    readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
-      const at = path.join(dir, e.name);
-      if (e.isDirectory()) return records(at);
-      if (!e.name.endsWith('.md')) return [];
-      const parsed = parseRecordFile(readFileSync(at, 'utf8'));
-      return parsed.ok ? [{ title: parsed.record.title, kind: parsed.record.kind, file: parsed.record.fields.file }] : [];
-    });
+    readdirSync(dir).filter((f) => f.endsWith('.jsonl')).flatMap((f) =>
+      readFileSync(path.join(dir, f), 'utf8').split('\n').filter(Boolean).flatMap((line) => {
+        const row = JSON.parse(line) as Record<string, unknown>;
+        if (typeof row.id !== 'string' || typeof row.title !== 'string') return [];
+        return [{ title: row.title, kind: f.slice(0, -'.jsonl'.length), file: typeof row.file === 'string' ? row.file : undefined }];
+      }));
 
   it("LA-EXP-T190 Every title in Lathe's spec and the Tool Library wraps on whole words, none broken inside a word", () => {
-    const specs = path.resolve(import.meta.dirname, '../../../specs');
+    const repo = path.resolve(import.meta.dirname, '../../..');
     for (const product of ['lathe', 'tool-library']) {
-      const all = records(path.join(specs, product));
+      const all = records(path.join(repo, product === 'lathe' ? 'data' : 'examples/tool-library/data'));
       expect(all.length, product).toBeGreaterThan(product === 'lathe' ? 1000 : 50);
       for (const r of all) {
         // As its box breaks it: its kind's shape keeps room clear (the badge's room is beside the kind and ID line, not the title).

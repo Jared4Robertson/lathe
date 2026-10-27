@@ -14,7 +14,7 @@ import { boxElement, drawnBox, pointOn, tapAt, tapEmpty } from './graph/scene';
 // select before they open on the graph and the ERD. Proves LA-PLT-UC08-R01 to R07 and R09, LA-PLT-DR16,
 // LA-EXP-DR42 and LA-PLT-DR17, and the side bar sheet of LA-EXP-UC05-R11.
 
-const served = () => ({ workspace: testWorkspace() });
+const served = () => ({ data: testWorkspace() });
 
 /** A phone: narrow, with a finger for a pointer (every media query matches, reduced motion included). */
 function phone() {

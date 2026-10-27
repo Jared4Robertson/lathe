@@ -1,3 +1,0 @@
-kind,label,stage,parent_kinds,required_fields,obligation,description
-domain_rule,Business rule,,domain,source,,
-policy,Policy,define,domain,,yes,"A policy the business sets."

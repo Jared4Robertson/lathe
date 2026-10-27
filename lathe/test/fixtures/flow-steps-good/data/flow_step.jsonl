@@ -1,0 +1,3 @@
+{"id":"FS-D-F01-S01","title":"The member picks a tool","flow_id":"FS-D-F01","path":"main","position":1,"description":"The member opens the catalog and picks a tool."}
+{"id":"FS-D-F01-S02","title":"The member borrows it","flow_id":"FS-D-F01","path":"main","position":2,"description":"The catalog calls the borrow endpoint."}
+{"id":"FS-D-F01-S03","title":"The due date is shown","flow_id":"FS-D-F01","path":"main","position":3,"description":"The catalog shows the due date."}

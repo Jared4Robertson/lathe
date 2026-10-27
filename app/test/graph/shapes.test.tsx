@@ -1,4 +1,5 @@
 import './setup';
+import { indexOf } from '../fixtures/load';
 import { describe, expect, it } from 'vitest';
 import { cleanup, render, waitFor } from '@testing-library/react';
 import { Legend } from '../../src/graph/panel';
@@ -46,7 +47,7 @@ describe('a shape for each kind', () => {
     // On the canvas a domain is drawn as the hexagon, its outline the polygon; every node in its kind's shape.
     cleanup();
     startAtDepth(1);
-    await openApp('/P?view=graph', { workspace: testWorkspace() });
+    await openApp('/P?view=graph', { data: testWorkspace() });
     await waitFor(() => expect(drawnBox('P-D')).toBeDefined());
     expect(drawnBox('P-D')!.shape).toBe('hexagon');
     expect(drawnBox('P-D')!.polygon).toHaveLength(6);
@@ -58,7 +59,7 @@ describe('a shape for each kind', () => {
 
   it('LA-EXP-T201 Every kind is drawn in its own shape, a group as a folder and a kind a product adds as a plain box, each shape keeping its label and badge clear of its notches and corners at every size, and the key shows every shape and mark', () => {
     // Every kind of the meta-model has the shape (and mark) the table gives it.
-    for (const { kind } of testWorkspace().kinds) {
+    for (const { kind } of indexOf(testWorkspace()).workspace.kinds) {
       expect(TABLE[kind], `${kind} is in the table`).toBeDefined();
       expect(shapeOf(kind), kind).toEqual(TABLE[kind][1] ? { shape: TABLE[kind][0], mark: TABLE[kind][1] } : { shape: TABLE[kind][0] });
     }

@@ -1,15 +1,29 @@
 // @vitest-environment node
 import path from 'node:path';
+import type { SpecData } from '../../../lathe/src/server/contract';
+import { indexOf } from '../fixtures/load';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { loadWorkspace } from '../../../lathe/src/index';
-import type { Workspace } from '../../../lathe/src/types';
+import { openStore } from '../../../lathe/src/store/index';
 import { drawnFor, drawnNested, FRAME_PADDING, frameNested, frameOnMap, MAX_ZOOM, MIN_ZOOM, type Drawn, type Viewport } from '../../src/graph/camera';
 import { graphMap, sizeText, type GraphMap, type PlacedMap } from '../../src/graph/map';
 import { nestedMap } from '../../src/graph/nested';
 import { holds, polygonArea, readyVoronoiMap, type VoronoiMap } from '../../src/graph/voronoi';
 import { BORDER, labelHeight, labelLines, TITLE_FONT } from '../../src/graph/text';
 import { treeOf } from '../../src/graph/tree';
-import { indexWorkspace, spaceIndex, type SpecIndex } from '../../src/specs/data';
+import { spaceIndex, type SpecIndex } from '../../src/specs/data';
+
+/** This repo's products, Lathe's (data/) and the Tool Library's (examples/tool-library/data/), as one data set read through the store. */
+async function repoData(): Promise<SpecData> {
+  const repo = path.resolve(import.meta.dirname, '../../..');
+  const data: SpecData = { schema: undefined as unknown as SpecData['schema'], dataDir: 'data', tables: {}, problems: [], coverage: [] };
+  for (const dir of ['data', 'examples/tool-library/data']) {
+    const store = await openStore(repo, { dataDir: path.join(repo, dir) });
+    data.schema ??= store.schema;
+    for (const table of store.schema.loadOrder) data.tables[table] = [...(data.tables[table] ?? []), ...store.rows(table)];
+    await store.close();
+  }
+  return data;
+}
 import { siblingGroups } from './workspace';
 import { plateOf, type Plate, type PlateSource } from '../../src/graph/plate';
 import { inPolygon } from '../../src/graph/hit';
@@ -35,7 +49,7 @@ const sourceOf = (map: PlacedMap, id: string): PlateSource => {
 // and depth, each box the camera draws carries its label, its title and its kind and ID line in the
 // lines the page draws, siblings are the same size with one text scale (LA-EXP-DR58), and the label
 // fits its box at its scale, so nothing is clipped. The sweep frames every domain, stage and folder
-// group of every product in Lathe's own spec and the Tool Library's (both under the repo's specs/),
+// group of every product in Lathe's own spec and the Tool Library's (data/ and examples/tool-library/data/),
 // with the real camera, in two panes, at depths 1 to 3, and checks each drawn box's label as the
 // canvas places it (its plate) lies whole inside the box.
 
@@ -80,11 +94,11 @@ const LAYOUTS: Layout[] = [
 ];
 
 /** Every drawn box with no name, or whose label does not fit it, named with its layout, focus, depth, pane and size on screen. */
-function nameless(workspace: Workspace): { problems: string[]; frames: number } {
-  const whole = indexWorkspace(workspace);
+function nameless(workspace: SpecData): { problems: string[]; frames: number } {
+  const whole = indexOf(workspace);
   const problems: string[] = [];
   let frames = 0;
-  for (const product of workspace.records.filter((r) => r.kind === 'product')) {
+  for (const product of whole.products) {
     const index = spaceIndex(whole, product.id);
     const foci = [
       ...index.workspace.records.filter((r) => r.kind === 'domain' && r.product === product.id).map((r) => r.id),
@@ -127,18 +141,18 @@ function nameless(workspace: Workspace): { problems: string[]; frames: number } 
 }
 
 describe('every drawn box shows its name', () => {
-  let workspace: Workspace;
-  beforeAll(async () => { workspace = await loadWorkspace(path.resolve(import.meta.dirname, '../../..')); }, 60_000);
+  let workspace: SpecData;
+  beforeAll(async () => { workspace = await repoData(); }, 60_000);
 
   it('LA-PLT-T135 In the Tree, Nested and Voronoi layouts, at every domain, stage and folder of every product, at depths 1 to 3 in two panes, siblings share one size and text scale and every drawn box shows its name', () => {
-    expect(workspace.records.filter((r) => r.kind === 'product').map((r) => r.id).sort()).toEqual(['LA', 'TL']);
+    expect(indexOf(workspace).products.map((r) => r.id).sort()).toEqual(['LA', 'TL']);
     const { problems, frames } = nameless(workspace);
     expect(frames).toBeGreaterThan(100);
     expect(problems.length, problems.slice(0, 40).join('\n')).toBe(0);
   }, 120_000);
 
   it("LA-EXP-T204 A framed box's header reads at the same size on screen at every depth, and the camera can frame the deepest leaf", () => {
-    const whole = indexWorkspace(workspace);
+    const whole = indexOf(workspace);
     for (const product of ['LA', 'TL']) {
       const index = spaceIndex(whole, product);
       for (const layout of LAYOUTS) {

@@ -1,11 +1,13 @@
 #!/usr/bin/env node
 // The Lathe command line. Run `lathe help` for usage.
 import { existsSync } from 'node:fs';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
-import { CONFIG_FILE, formatReference, loadConfig, loadWorkspace, renderReference, type Problem } from '../src/index.ts';
+import { CONFIG_FILE, loadWorkspace, mergeDataFiles, openStore, StoreError, type Problem } from '../src/index.ts';
 import { serve } from '../src/server/serve.ts';
+import { serveMcp } from '../src/cli/mcp.ts';
+import { DATA_COMMANDS, DATA_USAGE, runDataCommand } from '../src/cli/writers.ts';
 
 /** A label inside a sentence: "Use case" -> "use case", but an acronym keeps its case ("UC requirement"). */
 const lowerLabel = (label: string) => (/^[A-Z]{2}/.test(label) ? label : label.charAt(0).toLowerCase() + label.slice(1));
@@ -13,29 +15,33 @@ const lowerLabel = (label: string) => (/^[A-Z]{2}/.test(label) ? label : label.c
 const USAGE = `Usage: lathe <command> [options]
 
 Commands:
-  init     Set up Lathe in a product repo: writes ${CONFIG_FILE} and a first product record.
+  init     Set up Lathe in a product repo: writes ${CONFIG_FILE} and a first product record in data/.
            --name "Tool Library" --prefix TL
-  check    Load and check the specs. Prints errors, warnings and coverage (one line per domain and
+  check    Load the data and check it. Prints errors, warnings and coverage (one line per domain and
            obligation kind); exits 1 on any error.
            --json prints the whole workspace instead.
-  format   Print the format reference as Markdown: the concepts, then every kind, relation, folder
-           and check, with the product's extensions and its own checks.
-           --out <file> writes it to the file instead.
   serve    Serve the web app for the product repo.  --port 5330 (default)
+  merge-data <base> <ours> <theirs> <path>
+           Git's merge driver for data/*.jsonl files (%O %A %B %P): merges the three versions row by row,
+           writes the result over <ours>, and exits 1 on a real clash or a row that breaks its table's rules.
+  mcp      Serve the data commands as MCP tools over stdio (the Claude Code plugin starts it).
 
+${DATA_USAGE}
 Options for every command:
   --root <dir>   The product repo (default: the current folder).
 `;
 
+// The data commands read their own flags, one per column of the schema.
+const dataCommand = (DATA_COMMANDS as readonly string[]).includes(process.argv[2] ?? '');
 const { positionals, values } = parseArgs({
   allowPositionals: true,
+  args: dataCommand ? [] : process.argv.slice(2),
   options: {
     root: { type: 'string' },
     json: { type: 'boolean' },
     name: { type: 'string' },
     prefix: { type: 'string' },
     port: { type: 'string' },
-    out: { type: 'string' },
     help: { type: 'boolean' },
   },
 });
@@ -84,11 +90,6 @@ async function check() {
   process.exitCode = errors.length ? 1 : 0;
 }
 
-// A product's folder name from its name: lowercase letters, digits and hyphens.
-function slugify(name: string) {
-  return name.toLowerCase().normalize('NFKD').replace(/\p{M}+/gu, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60);
-}
-
 async function init() {
   const name = values.name?.trim();
   const prefix = values.prefix?.trim();
@@ -97,29 +98,21 @@ async function init() {
 
   const configFile = path.join(root, CONFIG_FILE);
   if (!existsSync(configFile)) {
-    await writeFile(configFile, `${JSON.stringify({ specs: 'specs' }, null, 2)}\n`);
+    await writeFile(configFile, `${JSON.stringify({ data: 'data' }, null, 2)}\n`);
     console.log(`Wrote ${CONFIG_FILE}`);
   }
-  const config = loadConfig(root);
-  const productDir = path.join(config.specsDir, slugify(name));
-  const productFile = path.join(productDir, 'product.md');
-  if (existsSync(productFile)) fail(`${path.relative(root, productFile)} already exists.`);
-  await mkdir(productDir, { recursive: true });
-  await writeFile(productFile, `---\nid: ${prefix}\nkind: product\ntitle: ${name}\n---\nWhat ${name} is, who it is for, and what it must do.\n`);
-  console.log(`Wrote ${path.relative(root, productFile)}`);
-  console.log(`\nNext: add a domain under ${path.relative(root, productDir)}/, then run \`lathe check\`. Run \`lathe format\` for the record format.`);
-}
-
-async function format() {
-  const markdown = renderReference(await formatReference(root));
-  if (values.out === undefined) {
-    process.stdout.write(markdown);
-    return;
+  const store = await openStore(root);
+  try {
+    if (store.record(prefix)) fail(`The product ${prefix} already exists.`);
+    const { files } = await store.add('product', { id: prefix, title: name, description: `What ${name} is, who it is for, and what it must do.` });
+    for (const file of files) console.log(`Wrote ${path.relative(root, path.join(store.dataDir, file))}`);
+  } catch (error) {
+    if (error instanceof StoreError) fail(error.message);
+    throw error;
+  } finally {
+    await store.close();
   }
-  if (values.out.trim() === '') fail('--out needs a file name, such as --out REFERENCE.md.');
-  const file = path.resolve(values.out);
-  await writeFile(file, markdown);
-  console.log(`Wrote ${path.relative(process.cwd(), file) || file}`);
+  console.log('\nNext: add a domain under the product, then run `lathe check`. The tables and their columns are in REFERENCE.md.');
 }
 
 function startServer() {
@@ -135,16 +128,29 @@ function startServer() {
   server.on('error', (error) => fail(`Could not start the server: ${error.message}`));
 }
 
-if (values.help || command === 'help') {
+async function mergeData() {
+  const [base, ours, theirs, file] = positionals.slice(1);
+  if (!base || !ours || !theirs || !file) fail('lathe merge-data needs <base> <ours> <theirs> <path>, as git passes them: %O %A %B %P.');
+  const result = await mergeDataFiles(base, ours, theirs, file);
+  for (const clash of result.clashes) console.error(`${file}: ${clash}`);
+  for (const problem of result.problems) console.error(`${file}: ${problem}`);
+  process.exitCode = result.clashes.length || result.problems.length ? 1 : 0;
+}
+
+if (dataCommand) {
+  process.exitCode = await runDataCommand(process.argv.slice(2));
+} else if (values.help || command === 'help') {
   console.log(USAGE);
 } else if (command === 'check') {
   await check();
 } else if (command === 'init') {
   await init();
-} else if (command === 'format') {
-  await format();
 } else if (command === 'serve') {
   startServer();
+} else if (command === 'mcp') {
+  await serveMcp(root);
+} else if (command === 'merge-data') {
+  await mergeData();
 } else {
   fail(`Unknown command "${command}".\n\n${USAGE}`);
 }

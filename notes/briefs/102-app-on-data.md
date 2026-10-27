@@ -6,6 +6,8 @@ Read [00-common-rules.md](00-common-rules.md), the plan [notes/plans/database-fi
 The app reads every product from the typed tables and lets the Owner edit records in place, with forms generated from the schema. History comes from git.
 
 ## Decisions
+0. **Start:** your worktree starts from main. First run `git reset --hard db-first` (there's nothing to lose), then read `notes/db-first-interfaces.md`.
+   - Fixtures: you own converting the app's test fixtures (`app/test/fixtures/`) into data, written with the store. For screenshots of LA, merge `db-first` again once the import brief (99) lands there.
 1. **Server** (`app/server/`, the Vite dev server plugin and the desktop's server):
    - loads the workspace through the store and serves the typed data in place of the Markdown-derived index;
    - adds a write API (add, set, move, link, unlink, remove) that calls the command layer and returns the changed rows or the refusal;

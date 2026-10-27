@@ -1,0 +1,6 @@
+{"id":"STX-STD-CODE-R01","title":"Errors carry a code","standard_id":"STX-STD-CODE","statement":"An error MUST carry a code."}
+{"id":"STX-STD-CODE-R02","title":"Tests name what they check","standard_id":"STX-STD-CODE","statement":"A test MUST name what it checks."}
+{"id":"STX-STD-CODE-R03","title":"Every change is logged","standard_id":"STX-STD-CODE","statement":"Every change MUST be logged."}
+{"id":"STX-STD-CODE-R04","title":"Names are nouns","standard_id":"STX-STD-CODE","statement":"A module's name SHOULD be a noun."}
+{"id":"STX-STD-CODE-R05","title":"Dates are UTC","standard_id":"STX-STD-CODE","statement":"A stored date MUST be UTC, as STX-STD-CODE-R05 says of itself."}
+{"id":"STX-STD-CODE-R06","title":"Money is in cents","standard_id":"STX-STD-CODE","statement":"An amount MUST be held in cents."}

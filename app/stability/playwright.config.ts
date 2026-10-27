@@ -7,7 +7,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 // The stability suite (LA-PAT-APP-UX-R08, "Nothing jumps"): Playwright with Chromium only. It
 // starts the app's Vite dev server on a free port (never 5199, the Owner's own dev server) over a copy of
-// this repo's specs, so a scenario can edit a spec file while the page is open, and records the
+// this repo's data, so a scenario can edit a data file or a record while the page is open, and records the
 // layout shifts, long animation frames and the boxes of key elements in each scenario
 // (app/stability/measure.ts). Run it with `npm --prefix app run test:stability`; it runs one
 // worker, as the scenarios share one server and the machine's load.
@@ -37,7 +37,7 @@ async function freePort(): Promise<number> {
 if (!process.env.STABILITY_PORT) process.env.STABILITY_PORT = String(await freePort());
 if (!process.env.STABILITY_ROOT) {
   const root = mkdtempSync(path.join(tmpdir(), 'lathe-stability-'));
-  for (const part of ['specs', 'model', 'lathe-checks', 'lathe.config.json']) {
+  for (const part of ['data', 'lathe.config.json']) {
     const from = path.join(repo, part);
     if (existsSync(from)) cpSync(from, path.join(root, part), { recursive: true });
   }

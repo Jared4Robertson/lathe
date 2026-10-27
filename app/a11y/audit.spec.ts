@@ -1,5 +1,5 @@
 import { test, type Page } from '@playwright/test';
-import { AGGREGATE, DOMAIN, PRODUCT, RECORD } from '../stability/scenarios';
+import { AGGREGATE, DOMAIN, EDITED, PRODUCT, RECORD } from '../stability/scenarios';
 import { audit, LOOKS, useLook } from './axe';
 
 // LA-PLT-T97: every page and state the stability suite visits passes axe-core at WCAG 2.2 AA, at
@@ -30,6 +30,31 @@ const PAGES: State[] = [
   { name: 'Format', url: '/format', ready: '#main h1' },
   { name: 'Appearance', url: '/settings/appearance', ready: '#main h1' },
 ].map((p) => ({ name: p.name, run: (page: Page) => open(page, p.url, p.ready) }));
+// Changing records: the form generated from the schema (Edit and Add) and the question before a
+// removal with the store's refusal shown inline. None of them writes anything that stays: the
+// forms are not sent, and the store refuses the removal.
+PAGES.push(
+  { name: 'the record form', run: async (page: Page) => {
+    await open(page, EDITED, '.pane-title');
+    await page.getByRole('toolbar', { name: `Change ${EDITED.slice(1)}` }).getByRole('button', { name: 'Edit' }).click();
+    await page.getByRole('form').waitFor();
+  } },
+  { name: 'the add form, with its problems shown', run: async (page: Page) => {
+    await open(page, RECORD, '.pane-title');
+    const actions = page.getByRole('toolbar', { name: `Change ${RECORD.slice(1)}` });
+    await actions.getByRole('button', { name: 'Add…' }).click();
+    await actions.getByRole('group', { name: /Kinds to add/ }).getByRole('button', { name: 'UC requirement' }).click();
+    await page.getByRole('form').getByRole('button', { name: 'Add UC requirement' }).click();
+    await page.getByRole('form').getByRole('alert').waitFor();
+  } },
+  { name: 'the remove question and its refusal', run: async (page: Page) => {
+    await open(page, RECORD, '.pane-title');
+    await page.getByRole('toolbar', { name: `Change ${RECORD.slice(1)}` }).getByRole('button', { name: 'Remove' }).click();
+    const panel = page.getByRole('region', { name: `Remove ${RECORD.slice(1)}?` });
+    await panel.getByRole('button', { name: `Remove ${RECORD.slice(1)}` }).click();
+    await panel.getByRole('alert').waitFor({ timeout: 20_000 });
+  } },
+);
 // The graph in its Nested and Voronoi layouts (LA-EXP-UC03-R16, LA-EXP-UC03-R17): the same roles and names as the Tree layout.
 for (const layout of ['Nested', 'Voronoi'] as const) PAGES.push({ name: `graph, ${layout} layout`, run: async (page: Page) => {
   await open(page, `${RECORD}?view=graph`, '.pane-graph .graph-flow .graph-box');

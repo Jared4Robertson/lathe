@@ -1,0 +1,7 @@
+{"id":"EB-D-EN01","title":"Root","aggregate_id":"EB-D-A1","role":"root"}
+{"id":"EB-D-EN03","title":"Unreached","aggregate_id":"EB-D-A1","role":"child"}
+{"id":"EB-D-EN04","title":"No table","aggregate_id":"EB-D-A1","role":"child","description":"## Fieldz\n\n| Field | Meaning | Kind of value | Example |\n| --- | --- | --- | --- |\n| a | b | c | d |"}
+{"id":"EB-D-EN05","title":"Wrong columns","aggregate_id":"EB-D-A1","role":"child"}
+{"id":"EB-D-EN06","title":"Reached only from unreached","aggregate_id":"EB-D-A1","role":"child"}
+{"id":"EB-D-EN11","title":"Second root","aggregate_id":"EB-D-A2","role":"root"}
+{"id":"EB-D-EN12","title":"Its part","aggregate_id":"EB-D-A2","role":"child"}

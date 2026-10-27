@@ -1,0 +1,4 @@
+{"follower_id":"CX-D-UC01","pattern_id":"CX-PAT-ACTION","setting":"audit","not_applicable":"registering is recorded on the member itself"}
+{"follower_id":"CX-D-UC01","pattern_id":"CX-PAT-ACTION","setting":"permission","value":"members.write"}
+{"follower_id":"CX-D-UC02","pattern_id":"CX-PAT-ACTION","setting":"audit","value":"every loan"}
+{"follower_id":"CX-D-UC02","pattern_id":"CX-PAT-ACTION","setting":"permission","value":"loans.write"}

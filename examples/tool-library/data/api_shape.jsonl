@@ -1,0 +1,7 @@
+{"api_id":"TL-LEND-API01","position":1,"name":"Member","meaning":"A registered member.","fields":"`id`, `name`, `email`, `joinedAt`"}
+{"api_id":"TL-LEND-API01","position":2,"name":"Error","meaning":"Every refusal of every endpoint here.","fields":"`error` (a code such as `tool_on_loan`), `message` (a sentence)"}
+{"api_id":"TL-LEND-API02","position":1,"name":"Tool","meaning":"One tool and its condition.","fields":"`id`, `name`, `description`, `condition` (`good` or `needs_repair`), `damageNote`, `addedAt`"}
+{"api_id":"TL-LEND-API02","position":2,"name":"Catalog entry","meaning":"A tool as the catalog lists it.","fields":"A tool's fields, and `status`"}
+{"api_id":"TL-LEND-API02","position":3,"name":"Error","meaning":"Every refusal of every endpoint here.","fields":"`error` (a code such as `tool_on_loan`), `message` (a sentence)"}
+{"api_id":"TL-LEND-API03","position":1,"name":"Loan","meaning":"One member holding one tool.","fields":"`id`, `memberId`, `toolId`, `borrowedAt`, `dueDate`, `returnedAt`, `returnCondition`, `returnNote`"}
+{"api_id":"TL-LEND-API03","position":2,"name":"Error","meaning":"Every refusal of every endpoint here.","fields":"`error` (a code such as `tool_on_loan`), `message` (a sentence)"}

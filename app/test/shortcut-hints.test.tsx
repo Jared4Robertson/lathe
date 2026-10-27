@@ -62,7 +62,7 @@ describe('shortcut hints', () => {
     expect(formatBinding('Alt+1', false)).toBe('Alt+1');
 
     asMac();
-    await openApp('/P-D-UC01', { workspace: testWorkspace() });
+    await openApp('/P-D-UC01', { data: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     keyFocus(within(nav()).getByRole('button', { name: 'Collapse the navigation' }));
     expect(tooltip()).toHaveTextContent('Collapse the navigation ⌘B');
@@ -87,7 +87,7 @@ describe('shortcut hints', () => {
   });
 
   it('LA-PLT-T29 The command palette lists each command with its shortcut right-aligned in kbd styling', async () => {
-    await openApp('/P-D-UC01', { workspace: testWorkspace() });
+    await openApp('/P-D-UC01', { data: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     openPalette();
     const palette = screen.getByRole('dialog', { name: 'Command palette' });
@@ -108,7 +108,7 @@ describe('shortcut hints', () => {
 
   it('LA-PLT-T30 A rebinding in local storage changes the tooltip, the palette, the sheet and aria-keyshortcuts', async () => {
     window.localStorage.setItem(OVERRIDES_KEY, JSON.stringify({ toggleNav: 'Mod+J', viewGraph: ['Alt+G'] }));
-    await openApp('/P-D-UC01', { workspace: testWorkspace() });
+    await openApp('/P-D-UC01', { data: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     const collapse = within(nav()).getByRole('button', { name: 'Collapse the navigation' });
     expect(collapse).toHaveAttribute('aria-keyshortcuts', 'Control+J');
@@ -139,7 +139,7 @@ describe('shortcut hints', () => {
     expect(ariaKeyShortcuts(['+', '='], false)).toBe('Plus =');
     expect(ariaKeyShortcuts(['Mod+Alt+B'], false)).toBe('Control+Alt+B');
 
-    await openApp('/P-D-UC01', { workspace: testWorkspace() });
+    await openApp('/P-D-UC01', { data: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     expect(within(nav()).getByRole('button', { name: 'Collapse the navigation' })).toHaveAttribute('aria-keyshortcuts', 'Control+B');
     expect(within(nav()).getByRole('combobox', { name: 'Quick find' })).toHaveAttribute('aria-keyshortcuts', 'Control+P Control+K');

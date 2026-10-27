@@ -1,7 +1,0 @@
----
-id: LA-EXP-DR57
-kind: domain_rule
-title: "The graph is one fixed map of its product's tree"
-parent: LA-EXP-EN06
----
-Each product MUST have a graph of its own: its tree laid out once per load of the specs, as one icicle with the product as its single root, then its Shared folder, domains, stages, folders and records and their children, as the nav's tree has them (`LA-EXP-DR45`). No node, link, hint or minimap box of another product MAY be in it; a record no product reaches is the root of a map of its own. A node's size MUST come from the tree alone, top-down from the product's fixed box (`LA-EXP-DR58`), never from what is in focus: the product's box is as wide as it is tall; a parent's children split its height equally, a gap apart of a tenth of each one's part, their stack filling it from its top edge to its bottom edge, in the tree's order; and every box in one depth column has the same width, each column 0.4 times as wide as the one before, with a gap before it of 0.15 times its width, so the column widths are fixed fractions of the map. Each label is centered in its box. Each parent line MUST be drawn level, at the child's middle, from the parent's outline to the child's. Nothing in the map is ever laid out again or resized while the person walks it; filters hide nodes without moving the rest. A trace is a chain, not a tree, and keeps a small picture of its own, in columns of 190 by 56 boxes at text scale 1, each as tall as its wrapped label if taller.

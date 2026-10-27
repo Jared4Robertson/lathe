@@ -1,85 +1,60 @@
-// IDs cited in record bodies: SpecRecord.mentions and the unknown-id-in-prose warning (FORMAT.md section 11).
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+// IDs named in a record's text. The engine no longer reads structure out of text: an ID in a goal, statement or
+// notes field is plain text, kept as written, and only link tables link records. The mentions-prose fixture names
+// IDs of its own product, of another product, of no record, and in code spans and fences.
 import { beforeAll, describe, expect, it } from 'vitest';
-import { loadWorkspace, type Workspace } from '../src/index.ts';
-import { idTokensInProse } from '../src/parse.ts';
-
-const fixture = (name: string) => path.join(path.dirname(fileURLToPath(import.meta.url)), 'fixtures', name);
-const mentionsOf = (id: string) => ws.records.find((r) => r.id === id)?.mentions;
+import { ENGINE_CHECKS, type Workspace } from '../src/index.ts';
+import { load, refusals } from './helpers.ts';
 
 let ws: Workspace;
 beforeAll(async () => {
-  ws = await loadWorkspace(fixture('mentions-prose'));
+  ws = await load('mentions-prose');
 });
+const record = (id: string) => ws.records.find((r) => r.id === id)!;
+const text = (id: string) => Object.values(record(id).fields).filter((v): v is string => typeof v === 'string').join('\n');
 
-describe('mentions', () => {
-  it('LA-AUT-T33 A record mentions the existing IDs its body cites, in order of first mention', () => {
-    // A bare product or domain ID in plain prose (NX, MX-D) is not a citation (FORMAT.md section 11).
-    expect(mentionsOf('MX-D-UC01')).toEqual(['MX-D-UC02', 'MX-D-UC01-R01', 'MX-D-UC03']);
-    expect(mentionsOf('MX')).toEqual([]);
-    expect(mentionsOf('MX-D-UC02')).toEqual(['MX-D-UC01-R01', 'MX-D-UC01']);
-    // A body that cites nothing has no mentions.
-    expect(mentionsOf('MX-D')).toEqual([]);
-  });
-
-  it('LA-AUT-T121 A record never mentions another product\'s records: products are separate spaces', () => {
-    expect(mentionsOf('MX-D-UC04')).toEqual(['MX-D-UC02']);
-    // The other product's ID is still a known record, so it is no unknown ID either.
-    expect(ws.problems.filter((p) => p.record === 'MX-D-UC04' && p.check === 'unknown-id-in-prose')).toEqual([]);
-  });
-
-  it('LA-CHK-T12 IDs in fenced code blocks and in code spans with other text are not citations, but a code span holding one lone ID is', () => {
-    const cited = ws.records.flatMap((r) => r.mentions);
-    for (const id of ['MX-D-UC94', 'MX-D-UC95', 'MX-D-UC96', 'MX-D-UC97', 'MX-D-UC98']) expect(cited).not.toContain(id);
-    expect(ws.problems.filter((p) => p.message.includes('UC9'))).toEqual([]);
-    expect(idTokensInProse('A `B-1 x` C\n```js\nD-2\n```\nE ``F-3 ` x`` G\n~~~\nH-4\n```\n~~~\nI-5')).toEqual(['A', 'C', 'E', 'G', 'I-5']);
-    // A code span with one ID and nothing else is how writers format IDs, so it is a citation.
-    expect(idTokensInProse('See `TL-LEND-DR05` and ` TL-LEND-UC01 `, not `TL-LEND-DR06 x`.')).toEqual(['TL-LEND-DR05', 'TL-LEND-UC01']);
-    // A fence left open runs to the end of the body.
-    expect(idTokensInProse('A-1\n````\nB-2\n```\nC-3')).toEqual(['A-1']);
-  });
-
-  it('LA-AUT-T34 A token without a workspace product prefix, or not a whole ID, is ignored', () => {
-    const cited = ws.records.flatMap((r) => r.mentions);
-    expect(cited).not.toContain('ZZ-D-UC01');
-    expect(cited).not.toContain('MXY-D-UC01');
-    expect(ws.problems.filter((p) => /ZZ|MXY/.test(p.message))).toEqual([]);
-    expect(idTokensInProse('TL-LEND-DR05a tl-LEND-DR05 TL-LEND-DR05_x')).toEqual([]);
-    // A longer ID is read whole, so its tail is never taken for a shorter ID.
-    expect(idTokensInProse('X-TL-LEND-DR05')).toEqual(['X-TL-LEND-DR05']);
-    expect(idTokensInProse('(TL-LEND-DR05), [TL-LEND-DR05-R01](x.md) TL-LEND-DR05.')).toEqual([
-      'TL-LEND-DR05',
-      'TL-LEND-DR05-R01',
-      'TL-LEND-DR05',
-    ]);
-  });
-
-  it('LA-AUT-T35 Mentions hold no repeats and never the record itself', () => {
-    for (const r of ws.records) {
-      expect(new Set(r.mentions).size, r.id).toBe(r.mentions.length);
-      expect(r.mentions, r.id).not.toContain(r.id);
-    }
-    expect(mentionsOf('MX-D-UC01-R01')).toEqual(['MX-D-UC02', 'MX-D-T01']);
-  });
-
-  it('LA-AUT-T36 A cited ID with a known prefix that is not a record is one warning', () => {
-    expect(ws.problems.filter((p) => p.check === 'unknown-id-in-prose')).toEqual([
-      {
-        severity: 'warning',
-        check: 'unknown-id-in-prose',
-        record: 'MX-D-UC01',
-        message: 'MX-D-UC01 mentions MX-D-DR99, which does not exist.',
-      },
-    ]);
-  });
-
-  it('LA-AUT-T37 Mentions are not links', () => {
+describe('IDs in text', () => {
+  it('LA-AUT-T33 An ID a record names in its text is kept as written, and makes no link', () => {
+    expect(text('MX-D-UC01')).toContain('It follows MX-D-UC02, then\nMX-D-UC01-R01, then MX-D-UC02 again');
     expect(ws.links).toEqual([]);
-    expect(ws.problems.filter((p) => p.severity === 'error')).toEqual([]);
-    const gaps = ws.problems.filter((p) => p.record === 'MX-D-UC01-R01').map((p) => p.check).sort();
-    expect(gaps).toEqual(['unproved', 'unsatisfied']);
-    const requirements = ws.coverage.find((c) => c.domain === 'MX-D')?.obligations.find((o) => o.kind === 'requirement');
-    expect(requirements).toMatchObject({ total: 1, designed: 0, proved: 0 });
+    // A record carries its typed fields and parts, and no list of the IDs its text names.
+    expect(Object.keys(record('MX-D-UC01')).sort()).toEqual(['domain', 'fields', 'id', 'kind', 'parent', 'parts', 'product', 'title']);
+  });
+
+  it("LA-AUT-T121 A record's text naming another product's record is plain text: products are separate spaces", () => {
+    expect(text('MX-D-UC04')).toContain('NX-E-UC01');
+    expect(ws.links.some((l) => l.source === 'MX-D-UC04')).toBe(false);
+    expect(ws.problems.filter((p) => p.record === 'MX-D-UC04' && p.message.includes('NX-E-UC01'))).toEqual([]);
+  });
+
+  it('LA-CHK-T12 IDs in code spans and fenced code blocks are kept with the text as written', () => {
+    const all = ws.records.map((r) => text(r.id)).join('\n');
+    for (const id of ['MX-D-UC94', 'MX-D-UC95', 'MX-D-UC96', 'MX-D-UC97', 'MX-D-UC98']) expect(all).toContain(id);
+    expect(ws.problems.filter((p) => p.message.includes('UC9'))).toEqual([]);
+  });
+
+  it('LA-AUT-T34 A token that is not an ID of this workspace is plain text and no problem', () => {
+    expect(text('MX-D-UC01')).toContain('ZZ-D-UC01');
+    expect(ws.problems.filter((p) => p.message.includes('ZZ-D-UC01') || p.message.includes('MXY-D-UC01'))).toEqual([]);
+  });
+
+  it('LA-AUT-T35 Text keeps every repeat as written, its own ID included', () => {
+    expect(text('MX-D-UC01').match(/MX-D-UC02/g)!.length).toBeGreaterThanOrEqual(2);
+    expect(text('MX-D-UC01')).toContain('MX-D-UC01 is this record');
+  });
+
+  it('LA-AUT-T36 An ID in text that no record has is no warning: no check reads text for IDs', () => {
+    expect(text('MX-D-UC01')).toContain('MX-D-DR99');
+    expect(ws.problems.filter((p) => p.message.includes('MX-D-DR99'))).toEqual([]);
+    expect(ENGINE_CHECKS.map((c) => c.check)).toEqual(['data-refused']);
+  });
+
+  it('LA-AUT-T37 Only link tables link records: a link to a record that does not exist is refused, while text naming it is not', async () => {
+    const data = {
+      product: [{ id: 'MX', title: 'Mentions product' }],
+      domain: [{ id: 'MX-D', title: 'Domain', product_id: 'MX' }],
+      use_case: [{ id: 'MX-D-UC01', title: 'Cite', domain_id: 'MX-D', goal: 'It applies MX-D-DR99.' }],
+    };
+    expect(await refusals(data)).toEqual([]);
+    expect(await refusals({ ...data, applies: [{ source_id: 'MX-D-UC01', target_id: 'MX-D-DR99' }] })).toEqual([expect.objectContaining({ rule: 'foreign-key', table: 'applies' })]);
   });
 });

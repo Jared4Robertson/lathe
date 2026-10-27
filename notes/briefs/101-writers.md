@@ -6,6 +6,7 @@ Read [00-common-rules.md](00-common-rules.md), the plan [notes/plans/database-fi
 Everyone changes the spec through the command layer, and nothing edits files by hand. The Agent uses MCP tools from the Claude Code plugin; the Owner uses the CLI and the app.
 
 ## Decisions
+0. **Start:** your worktree starts from main. First run `git reset --hard db-first` (there's nothing to lose), then read `notes/db-first-interfaces.md`.
 1. **CLI:**
    - `lathe add <kind> --field value…`, `lathe set <id> --field value…`, `lathe move <id> --parent <id>`, `lathe link <from> <relation> <to>`, `lathe unlink …`, `lathe remove <id>`, `lathe show <id>` and `lathe list <kind> [--parent <id>]`.
    - Each one validates through the command layer and prints the error clearly on refusal.

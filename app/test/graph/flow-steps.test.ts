@@ -1,31 +1,25 @@
 import { describe, expect, it } from 'vitest';
-import type { SpecRecord, Workspace } from '../../../lathe/src/types';
+import type { SpecData } from '../../../lathe/src/server/contract';
+import { addRows, indexOf } from '../fixtures/load';
 import { groupId, isGrouped, neighborhood, TRACE_COLUMNS, traceChain } from '../../src/graph/model';
 import { traceGrid } from '../../src/graph/layout';
 import { graphMap } from '../../src/graph/map';
-import { indexWorkspace } from '../../src/specs/data';
 import { testWorkspace } from './workspace';
 
 // Flow steps in the graph: under their flow, through a group like other children, and in traces.
 
-function flowWorkspace(stepCount: number): Workspace {
+function flowWorkspace(stepCount: number): SpecData {
   const w = testWorkspace();
-  if (!w.kinds.some((k) => k.kind === 'flow_step')) {
-    w.kinds.push({ kind: 'flow_step', label: 'Flow step', stage: 'design', section: 'interaction-design', parent_kinds: ['flow'], required_fields: ['order'], obligation: false, proof_only: false, description: 'One step of a flow.' });
-  }
-  const record = (id: string, kind: string, title: string, parent: string, fields: Record<string, string> = {}): SpecRecord => ({
-    id, kind, title, parent, fields, body: '', product: 'P', domain: 'P-D', path: `specs/${id}.md`, mentions: [],
-  });
-  w.records.push(record('P-D-F01', 'flow', 'Lend a thing', 'P-D'));
-  w.links.push({ source: 'P-D-F01', relation: 'carries_out', target: 'P-D-UC01' });
+  addRows(w, 'flow', { id: 'P-D-F01', title: 'Lend a thing', domain_id: 'P-D' });
+  addRows(w, 'carries_out', { source_id: 'P-D-F01', target_id: 'P-D-UC01' });
   for (let i = 1; i <= stepCount; i++) {
     const id = `P-D-F01-S0${i}`;
-    w.records.push(record(id, 'flow_step', `Step ${i}`, 'P-D-F01', { order: String(i) }));
-    w.links.push({ source: id, relation: 'uses', target: 'P-D-V01' });
+    addRows(w, 'flow_step', { id, title: `Step ${i}`, flow_id: 'P-D-F01', path: 'main', position: i });
+    addRows(w, 'uses', { source_id: id, target_id: 'P-D-V01' });
   }
   // The first step fulfills the requirement and is carried out by the service.
-  w.links.push({ source: 'P-D-F01-S01', relation: 'fulfills', target: 'P-D-UC01-R01' });
-  w.links.push({ source: 'P-D-F01-S01', relation: 'uses', target: 'P-D-C01' });
+  addRows(w, 'fulfills', { source_id: 'P-D-F01-S01', target_id: 'P-D-UC01-R01' });
+  addRows(w, 'uses', { source_id: 'P-D-F01-S01', target_id: 'P-D-C01' });
   return w;
 }
 
@@ -35,7 +29,7 @@ const spine = (n: { edges: { source: string; target: string; relation: string }[
 
 describe('flow steps in the graph', () => {
   it('LA-EXP-T67 A flow step sits one column to the right of its flow, joined to it by the parent line', () => {
-    const index = indexWorkspace(flowWorkspace(3));
+    const index = indexOf(flowWorkspace(3));
     const n = neighborhood(index, 'P-D-F01', 2);
     expect(isGrouped(index, 'P-D-F01')).toBe(false);
     expect(recordIds(n)).toEqual(expect.arrayContaining(['P-D-F01', 'P-D-F01-S01', 'P-D-F01-S02', 'P-D-F01-S03']));
@@ -46,16 +40,13 @@ describe('flow steps in the graph', () => {
 
   it('LA-EXP-T68 A flow with only steps shows them directly, however many; with another kind of child too it reaches them through a "Flow steps" group', () => {
     // Six steps and nothing else: one kind, so no group.
-    const plain = indexWorkspace(flowWorkspace(6));
+    const plain = indexOf(flowWorkspace(6));
     expect(isGrouped(plain, 'P-D-F01')).toBe(false);
     expect(spine(neighborhood(plain, 'P-D-F01', 1))).toEqual(expect.arrayContaining(['P-D-F01 > P-D-F01-S01', 'P-D-F01 > P-D-F01-S06']));
     // An interaction requirement on the flow makes two kinds of child.
     const w = flowWorkspace(6);
-    if (!w.kinds.some((k) => k.kind === 'interaction_requirement')) {
-      w.kinds.push({ kind: 'interaction_requirement', label: 'Interaction requirement', stage: 'design', section: 'interaction-design', parent_kinds: ['view', 'endpoint', 'flow'], required_fields: [], obligation: true, proof_only: false, description: 'One rule a view, endpoint or flow must follow.' });
-    }
-    w.records.push({ id: 'P-D-F01-IR01', kind: 'interaction_requirement', title: 'Each step saves', parent: 'P-D-F01', fields: {}, body: '', product: 'P', domain: 'P-D', path: 'specs/P-D-F01-IR01.md', mentions: [] });
-    const index = indexWorkspace(w);
+    addRows(w, 'interaction_requirement', { id: 'P-D-F01-IR01', title: 'Each step saves', domain_id: 'P-D', flow_id: 'P-D-F01', statement: 'Each step MUST save.' });
+    const index = indexOf(w);
     expect(isGrouped(index, 'P-D-F01')).toBe(true);
     const gid = groupId('P-D-F01', 'flow_step');
     const folded = neighborhood(index, 'P-D-F01', 1);
@@ -73,7 +64,7 @@ describe('flow steps in the graph', () => {
   });
 
   it("LA-EXP-T69 A requirement's trace shows the step that fulfills it, the step's flow and the components the step uses", async () => {
-    const index = indexWorkspace(flowWorkspace(3));
+    const index = indexOf(flowWorkspace(3));
     const n = traceChain(index, 'P-D-UC01-R01');
     expect(recordIds(n)).toEqual(expect.arrayContaining(['P-D-F01', 'P-D-F01-S01', 'P-D-C01']));
     const edges = n.edges.map((e) => `${e.source} ${e.relation} ${e.target}`);

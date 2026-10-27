@@ -1,4 +1,0 @@
-relation,source_kind,target_kind,role,description,forward_label,reverse_label
-enforces,component,invariant,design,The component enforces the invariant.,Enforces,Enforced by
-sketches,sketch,invariant,design,The sketch designs the invariant.,Sketches,Sketched by
-checks,test,invariant,proof,The test checks the invariant.,Checks,Checked by
