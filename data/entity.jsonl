@@ -1,10 +1,10 @@
-{"id":"LA-AUT-EN01","title":"Product","aggregate_id":"LA-AUT-A1","role":"root","description":"A product: the root of a set of specifications, with the roles its use cases name. Every record under it shares one shape, described here once: an ID, a kind, a title, a parent (none only for the product), its other header fields, its links to other records by relation, and a Markdown body whose cited IDs are its mentions."}
-{"id":"LA-AUT-EN02","title":"Product extension","aggregate_id":"LA-AUT-A1","role":"child","description":"What a product adds to Lathe: its `lathe.config.json` (its specs and checks folders, ID prefixes and size limit) and the rows of its meta-model extension folder, which add a kind, relation or folder or widen a default one."}
+{"id":"LA-AUT-EN01","title":"Product","aggregate_id":"LA-AUT-A1","role":"root","description":"A product: the root of a set of specifications, with the roles its use cases name. Every record under it shares one shape, described here once: an ID unique across every kind, a kind whose table holds it, a title, a parent named by one of its kind's parent columns (none only for the product), its other typed columns, its part rows, and its links to other records as rows of each relation's table."}
+{"id":"LA-AUT-EN02","title":"Product kind","aggregate_id":"LA-AUT-A1","role":"child","description":"A kind or relation a product adds to Lathe's: a product_kind row with its product_kind_field rows, or a product_relation row. Lathe generates a table for each kind and a link table for each new relation, with the same keys and rules as its own. Lathe's own kinds cannot be widened; that takes a migration."}
 {"id":"LA-AUT-EN03","title":"Role","aggregate_id":"LA-AUT-A1","role":"child","description":"One role the product's use cases name as their actor, such as Owner, Reader or Agent. Specs name roles, never people."}
 {"id":"LA-AUT-EN04","title":"Domain","aggregate_id":"LA-AUT-A2","role":"root","description":"One domain of the product, named for the capability it serves."}
 {"id":"LA-AUT-EN05","title":"Capability","aggregate_id":"LA-AUT-A2","role":"child","description":"An ordered slice of a domain that groups its use cases, flows and tests."}
 {"id":"LA-AUT-EN06","title":"Aggregate","aggregate_id":"LA-AUT-A3","role":"root","description":"One aggregate of a domain: a cluster of records changed together as one unit, drawn as an ERD of its entities."}
-{"id":"LA-AUT-EN07","title":"Field","aggregate_id":"LA-AUT-A3","role":"child","description":"One row of an entity record's Fields table, which only entity records have."}
+{"id":"LA-AUT-EN07","title":"Field","aggregate_id":"LA-AUT-A3","role":"child","description":"One field an entity keeps, as an entity_field row: its place, name, meaning, kind of value and an example."}
 {"id":"LA-AUT-EN08","title":"Entity","aggregate_id":"LA-AUT-A3","role":"child","description":"One record an aggregate keeps, as one box of its ERD: the aggregate's root or one of its parts."}
 {"id":"LA-AUT-EN09","title":"Domain rule","aggregate_id":"LA-AUT-A3","role":"child","description":"A fact that must always hold for an aggregate's records, whatever use case changes them, under the aggregate or the entity it is about; a rule that holds across aggregates sits under the domain."}
 {"id":"LA-AUT-EN10","title":"Domain event","aggregate_id":"LA-AUT-A3","role":"child","description":"An unchangeable record that something happened, raised by its aggregate and named in the past tense."}
@@ -12,7 +12,7 @@
 {"id":"LA-AUT-EN12","title":"Requirement","aggregate_id":"LA-AUT-A4","role":"child","description":"One rule a use case must follow, stated with MUST, MUST NOT, SHOULD or MAY."}
 {"id":"LA-AUT-EN13","title":"Pattern","aggregate_id":"LA-AUT-A5","role":"root","description":"One pattern under the product."}
 {"id":"LA-AUT-EN14","title":"Pattern rule","aggregate_id":"LA-AUT-A5","role":"child","description":"One rule of a pattern, owed by every domain that follows it."}
-{"id":"LA-AUT-EN15","title":"Setting","aggregate_id":"LA-AUT-A5","role":"child","description":"One field name in a pattern's settings."}
+{"id":"LA-AUT-EN15","title":"Setting","aggregate_id":"LA-AUT-A5","role":"child","description":"One setting of a pattern, a pattern_setting row, and the answers its followers give as setting_value rows."}
 {"id":"LA-AUT-EN16","title":"Layer","aggregate_id":"LA-AUT-A6","role":"root","description":"One ordered part of a domain's technical specification, which holds components."}
 {"id":"LA-AUT-EN17","title":"Component","aggregate_id":"LA-AUT-A6","role":"child","description":"A unit of code in the target design, in its domain's layer."}
 {"id":"LA-AUT-EN18","title":"Flow","aggregate_id":"LA-AUT-A7","role":"root","description":"An end-to-end path through views and endpoints that carries out one or more use cases."}
@@ -25,9 +25,9 @@
 {"id":"LA-AUT-EN25","title":"Integration","aggregate_id":"LA-AUT-A13","role":"root","description":"One outside system a domain exchanges with."}
 {"id":"LA-AUT-EN26","title":"Technical flow","aggregate_id":"LA-AUT-A14","role":"root","description":"How the system carries out one flow."}
 {"id":"LA-AUT-EN27","title":"Technical step","aggregate_id":"LA-AUT-A14","role":"child","description":"One step of a technical flow: its place, the component that does it and what it designs."}
-{"id":"LA-CHK-EN01","title":"Check","aggregate_id":"LA-CHK-A1","role":"root","description":"One rule the engine applies, one SQL file that returns rows of severity, check, record and message."}
-{"id":"LA-CHK-EN02","title":"Problem","aggregate_id":"LA-CHK-A1","role":"child","description":"One thing a check found wrong or still to do in the loaded workspace."}
-{"id":"LA-CHK-EN03","title":"Size limit","aggregate_id":"LA-CHK-A2","role":"root","description":"The most children of one kind a record of the product should hold."}
+{"id":"LA-CHK-EN01","title":"Check","aggregate_id":"LA-CHK-A1","role":"root","description":"One rule the engine applies: a row of the `check` table whose query returns a row for each problem it finds."}
+{"id":"LA-CHK-EN02","title":"Problem","aggregate_id":"LA-CHK-A1","role":"child","description":"One row of the `problem` table: one thing a check found wrong or still to do in the loaded data. Problems are the result of a run, never stored."}
+{"id":"LA-CHK-EN03","title":"Size limit","aggregate_id":"LA-CHK-A2","role":"root","description":"A product's `product_setting` row: the most children of one kind a record of the product should hold."}
 {"id":"LA-CHK-EN04","title":"Child count","aggregate_id":"LA-CHK-A2","role":"child","description":"How many children of one kind one record holds, judged against the limit."}
 {"id":"LA-EXP-EN01","title":"Page","aggregate_id":"LA-EXP-A1","role":"root","description":"One place in the app, identified by its address, showing a view of one loaded workspace."}
 {"id":"LA-EXP-EN02","title":"Space","aggregate_id":"LA-EXP-A2","role":"root","description":"One product as a place to work in, in the rail."}
@@ -39,7 +39,7 @@
 {"id":"LA-EXP-EN08","title":"Edge","aggregate_id":"LA-EXP-A4","role":"child","description":"One line in the graph, for a link or for a parent and its child."}
 {"id":"LA-EXP-EN09","title":"Tab group","aggregate_id":"LA-EXP-A5","role":"root","description":"The tabs open in one space, in order, with one active."}
 {"id":"LA-EXP-EN10","title":"Tab","aggregate_id":"LA-EXP-A5","role":"child","description":"One open page, with what it shows and where the reader was in it."}
-{"id":"LA-PLT-EN01","title":"Workspace","aggregate_id":"LA-PLT-A1","role":"root","description":"The result of one load of a repo's specs: what the engine read, from where, and what it found."}
+{"id":"LA-PLT-EN01","title":"Workspace","aggregate_id":"LA-PLT-A1","role":"root","description":"The result of one load of a repo's data files: where the engine read them from, and what it found."}
 {"id":"LA-PLT-EN02","title":"Panel","aggregate_id":"LA-PLT-A2","role":"root","description":"One part of the page's layout, which always shows the page's focus and can be hidden without losing it."}
 {"id":"LA-PLT-EN03","title":"Command","aggregate_id":"LA-PLT-A3","role":"root","description":"Something a person can do from anywhere in the app, listed once in the keymap."}
 {"id":"LA-PLT-EN04","title":"Key binding","aggregate_id":"LA-PLT-A3","role":"child","description":"One chord or sequence that runs the command, never shared with another command active at the same time."}
@@ -49,10 +49,13 @@
 {"id":"LA-PLT-EN08","title":"Product window","aggregate_id":"LA-PLT-A6","role":"root","description":"One window showing one product folder."}
 {"id":"LA-PLT-EN09","title":"Recent folder","aggregate_id":"LA-PLT-A6","role":"child","description":"One folder the person opened lately, for File › Open Recent and the next launch."}
 {"id":"LA-PLT-EN10","title":"App server","aggregate_id":"LA-PLT-A7","role":"root","description":"What one window loads Lathe from."}
+{"id":"LA-PLT-EN11","title":"Write","aggregate_id":"LA-PLT-A8","role":"root","description":"One change to the data, all of whose commands take effect together or not at all."}
+{"id":"LA-PLT-EN12","title":"Command","aggregate_id":"LA-PLT-A8","role":"child","description":"One step of a write: a row added, changed, moved, linked, unlinked or removed."}
+{"id":"LA-PLT-EN13","title":"Refusal","aggregate_id":"LA-PLT-A8","role":"child","description":"One reason the store refused a write or a load: the rule it broke and where."}
 {"id":"LA-TRC-EN01","title":"Domain coverage","aggregate_id":"LA-TRC-A1","role":"root","description":"What a load counts for one domain: its tests by state, and below them each obligation kind and the gaps."}
 {"id":"LA-TRC-EN02","title":"Obligation count","aggregate_id":"LA-TRC-A1","role":"child","description":"The counts for one obligation kind in the domain, every one from links and from tests that run."}
 {"id":"LA-TRC-EN03","title":"Gap","aggregate_id":"LA-TRC-A1","role":"child","description":"One obligation of the domain that is missing its design or its proof."}
 {"id":"LA-TRC-EN04","title":"Proof claim","aggregate_id":"LA-TRC-A2","role":"root","description":"One test's claim to prove one obligation, and what the test's file must say to back it."}
 {"id":"LA-TRC-EN05","title":"Pattern following","aggregate_id":"LA-TRC-A3","role":"root","description":"A domain or use case that follows one pattern."}
-{"id":"LA-TRC-EN06","title":"Setting value","aggregate_id":"LA-TRC-A3","role":"child","description":"The value a following use case, or a domain that follows the pattern itself, gives one of the pattern's settings, as a header field named like the setting."}
+{"id":"LA-TRC-EN06","title":"Setting value","aggregate_id":"LA-TRC-A3","role":"child","description":"A `setting_value` row: the value a following use case, or a domain that follows the pattern itself, gives one of the pattern's settings."}
 {"id":"LA-TRC-EN07","title":"Owed pattern rule","aggregate_id":"LA-TRC-A3","role":"child","description":"One rule of the pattern that the following domain must prove for itself."}

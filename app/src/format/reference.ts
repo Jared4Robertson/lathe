@@ -120,7 +120,7 @@ export function referenceOf(workspace: Workspace): FormatReference {
       explanation: textOf(c, 'explanation'),
       origin: c.product_id === undefined ? 'lathe' : 'product',
       query: textOf(c, 'query'),
-      kinds: Array.isArray(c.kinds) ? [...c.kinds].sort(kindOrder) : [],
+      kinds: Array.isArray(c.kinds) ? [...c.kinds].sort(kindOrder(schema)) : [],
     };
   });
   // A problem of a check with no row is the engine's own.

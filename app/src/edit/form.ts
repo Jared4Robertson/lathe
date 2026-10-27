@@ -104,7 +104,7 @@ export function linkForms(index: SpecIndex, kind: string): LinkForm[] {
       relation: r.name,
       label: r.forwardLabel,
       description: r.description ?? '',
-      targets: [...new Set(r.pairs.filter((p) => p.source === kind).map((p) => p.target))].sort(kindOrder),
+      targets: [...new Set(r.pairs.filter((p) => p.source === kind).map((p) => p.target))].sort(kindOrder(index.workspace.schema)),
     }));
 }
 
@@ -118,7 +118,7 @@ export function linkTargets(index: SpecIndex, link: LinkForm, product: string | 
 
 /** The kinds whose records may sit under a record of this kind. */
 export const childKinds = (schema: SchemaDescription, kind: string) =>
-  Object.values(schema.kinds).filter((k) => k.parents.some((p) => p.kind === kind)).map((k) => k.name).sort(kindOrder);
+  Object.values(schema.kinds).filter((k) => k.parents.some((p) => p.kind === kind)).map((k) => k.name).sort(kindOrder(schema));
 
 // ---------- IDs ----------
 

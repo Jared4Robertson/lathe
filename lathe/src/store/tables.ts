@@ -365,7 +365,7 @@ export interface EntityFieldRow {
   entity_id: string;
   /** The field's place in the entity, from 1. */
   position: number;
-  /** The field's name, such as Returned at. */
+  /** The field's name, such as Returned at: one name in its entity, compared trimmed and in any letter case. */
   name: string;
   /** What the field means. */
   meaning: string;
@@ -381,7 +381,7 @@ export interface EventFieldRow {
   domain_event_id: string;
   /** The field's place in the event, from 1. */
   position: number;
-  /** The field's name, such as Repaired at. */
+  /** The field's name, such as Repaired at: one name in its event, compared trimmed and in any letter case. */
   name: string;
   /** What the field means. */
   meaning: string;
