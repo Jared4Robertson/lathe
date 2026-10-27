@@ -91,7 +91,7 @@
 {"entity_id":"LA-AUT-EN27","position":2,"name":"Position and path","meaning":"Its place on its path of the technical flow.","type":"Whole number from 1, unique on the path; a short path name, main by default.","example":"5, main"}
 {"entity_id":"LA-AUT-EN27","position":3,"name":"Uses","meaning":"The component that does it.","type":"Component reference.","example":"LA-CHK-C12"}
 {"entity_id":"LA-AUT-EN27","position":4,"name":"Satisfies","meaning":"The obligations it designs.","type":"List of record references.","example":"LA-CHK-UC05-R01"}
-{"entity_id":"LA-AUT-EN27","position":5,"name":"Transaction, locks and statements","meaning":"The transaction it runs in, what it locks and how many statements it runs.","type":"Text, optional.","example":"one SELECT per check file"}
+{"entity_id":"LA-AUT-EN27","position":5,"name":"Transaction, locks and statements","meaning":"The transaction it runs in, what it locks and how many statements it runs.","type":"Text, optional.","example":"one INSERT per changed row"}
 {"entity_id":"LA-CHK-EN01","position":1,"name":"Name","meaning":"The check's name, the key of its row across Lathe's checks and every product's.","type":"Text in lower case with hyphens, unique.","example":"unproved"}
 {"entity_id":"LA-CHK-EN01","position":2,"name":"Product","meaning":"The product a product's own check belongs to; none for Lathe's checks.","type":"Product reference, or none.","example":"LA"}
 {"entity_id":"LA-CHK-EN01","position":3,"name":"Position","meaning":"When it runs: Lathe's checks in position order, then the product's own.","type":"Whole number, from 1.","example":"4"}
