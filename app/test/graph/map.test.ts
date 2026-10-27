@@ -1,4 +1,5 @@
 import { readdirSync, readFileSync } from 'node:fs';
+import { indexOf } from '../fixtures/load';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { parseRecordFile } from '../../../lathe/src/parse';
@@ -6,7 +7,7 @@ import { COLUMN_GAP_SHARE, COLUMN_RATIO, graphMap, layoutTree, linkEnds, MAP_SIZ
 import { drawnFor, frameOnMap, MAX_DRAWN, MIN_DRAWN, MIN_ZOOM, viewRect } from '../../src/graph/camera';
 import { shapeOf, SHAPES } from '../../src/graph/shapes';
 import { BADGE_ROOM, BORDER, LABEL_PAD, labelHeight, largestFit, metaWidth, MARK_ROOM, narrowestWidth, TITLE_FONT, titleWidth, treeLabel, wrapLabel, wrapText, type MapLabel } from '../../src/graph/text';
-import { indexWorkspace, type SpecIndex } from '../../src/specs/data';
+import type { SpecIndex } from '../../src/specs/data';
 import { groupedWorkspace, manyOfOneKindWorkspace, siblingGroups, testIndex } from './workspace';
 
 // The graph is one fixed map of its product's tree (LA-EXP-DR57), laid out top-down from the
@@ -14,7 +15,7 @@ import { groupedWorkspace, manyOfOneKindWorkspace, siblingGroups, testIndex } fr
 // Each parent spans its children stacked, an equal part each; every box in a column has its
 // column's width; the camera draws only what is in view and big enough to see (LA-EXP-DR60).
 
-const indexes = (): SpecIndex[] => [testIndex(), indexWorkspace(groupedWorkspace()), indexWorkspace(manyOfOneKindWorkspace())];
+const indexes = (): SpecIndex[] => [testIndex(), indexOf(groupedWorkspace()), indexOf(manyOfOneKindWorkspace())];
 const maps = (): GraphMap[] => indexes().map((index) => graphMap(index, 'P'));
 
 /** A synthetic tree: `n` roots, each with `k` children, each with `k` leaves. */
