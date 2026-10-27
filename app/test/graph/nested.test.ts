@@ -9,7 +9,9 @@ import { groupedWorkspace, manyOfOneKindWorkspace, siblingGroups, testIndex } fr
 // The Nested map (LA-EXP-DR62): the Tree map's tree as nested squares, laid out once, top-down from
 // the product's square by one rule (LA-EXP-DR58): siblings are the same size, with the same text.
 
-const indexes = (): SpecIndex[] => [testIndex(), indexOf(groupedWorkspace()), indexOf(manyOfOneKindWorkspace())];
+/** The test workspaces' indexes, built once, so a map found by its index is the one the test laid out. */
+let built: SpecIndex[] | null = null;
+const indexes = (): SpecIndex[] => (built ??= [testIndex(), indexOf(groupedWorkspace()), indexOf(manyOfOneKindWorkspace())]);
 const maps = (): NestedMap[] => indexes().map((index) => nestedMap(index, 'P'));
 
 /** A synthetic tree: `n` roots, each with `k` children, each with `k` leaves. */
@@ -133,7 +135,7 @@ describe('the Nested map', () => {
     // Built once per index: the same map object, whatever the focus.
     const index = testIndex();
     expect(nestedMap(index, 'P')).toBe(nestedMap(index, 'P'));
-  }, 30_000);
+  });
 
   it('LA-EXP-T187 Every label fits its box: no word broken, a leaf\'s lines inside its square, a parent\'s inside its header band', () => {
     for (const map of all()) {
@@ -149,7 +151,7 @@ describe('the Nested map', () => {
         else expect(height, n.id).toBeLessThanOrEqual(HEADER_SHARE * n.h * (1 + eps));
       }
     }
-  }, 30_000);
+  });
 });
 
 /** A box's label as its map was given it: the real index's, or a synthetic tree's (its ID its title). */

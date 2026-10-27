@@ -237,7 +237,8 @@ describe('graph groups on the page', () => {
   it('LA-EXP-T33 A group shows its name and count, with no chevron; clicking the group, or Enter on it, goes to it', async () => {
     await showGraph('/P-D', testWorkspace(), 1, false);
     await waitFor(() => expect(node('P-D/question')).not.toBeNull());
-    expect(groupNode('P-D/question')!.stage).toBe('group');
+    expect(groupNode('P-D/question')!.group).toBe(true);
+    expect(groupNode('P-D/question')!.stage).toBe('structural');
     // Nothing to open or fold in place: every member is in the map, so a group has no chevron and no button.
     expect(node('P-D/question')!.querySelector('button')).toBeNull();
     expect(document.querySelector('.graph-group-chevron')).toBeNull();
@@ -294,6 +295,9 @@ describe('graph groups on the page', () => {
     await waitFor(() => expect(node('P-D/test-plan')).not.toBeNull());
     expect(groupNode('P-D/test-plan')!.badges.map((b) => [b.label, b.tone])).toContainEqual(['!', 'error']);
     expect(groupNode('P-D/domain-model')!.badges.map((b) => b.label)).toContain('gap');
+    // Each group carries its stage's color: a stage its own, a folder its kind's.
+    expect(groupNode('P-D/test-plan')!.stage).toBe('test-plan');
+    expect(groupNode('P-D/domain-model')!.stage).toBe('domain-model');
     const legend = within(screen.getByRole('region', { name: 'Legend' }));
     expect(legend.getByText(/Stage, folder or group/)).toBeTruthy();
     // A labeled group is named for assistive technology by its name, count and owner; one with nothing wrong beneath it carries no mark.

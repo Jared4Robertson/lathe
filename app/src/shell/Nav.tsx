@@ -20,8 +20,8 @@ import { addressOf, checksPathOf, HOME_PATH } from '../views/address';
 
 // The side navigation. At its far left is the space rail: one square icon per product (each
 // product is its own space). Beside it, the panel, all of it the current space's: a quick find of
-// the space, its overview, its shared folder, its domains (folded into stages and folders, as S2
-// lays out its specs) and groups, then Tools (the space's Checks), a section that folds on its
+// the space, its overview, its own stages (what sits at product level), its domains (each folded
+// into its five stages and their folders) and its groups, then Tools (the space's Checks), a section that folds on its
 // own, and a footer with Appearance and where the specs come from (the record format is a command and a
 // link in the shortcuts sheet). The nav
 // collapses to the rail alone (remembered), and on a narrow screen it is a drawer that keeps

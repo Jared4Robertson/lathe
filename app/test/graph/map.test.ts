@@ -14,7 +14,9 @@ import { groupedWorkspace, manyOfOneKindWorkspace, siblingGroups, testIndex } fr
 // Each parent spans its children stacked, an equal part each; every box in a column has its
 // column's width; the camera draws only what is in view and big enough to see (LA-EXP-DR60).
 
-const indexes = (): SpecIndex[] => [testIndex(), indexOf(groupedWorkspace()), indexOf(manyOfOneKindWorkspace())];
+/** The test workspaces' indexes, built once, so a map found by its index is the one the test laid out. */
+let built: SpecIndex[] | null = null;
+const indexes = (): SpecIndex[] => (built ??= [testIndex(), indexOf(groupedWorkspace()), indexOf(manyOfOneKindWorkspace())]);
 const maps = (): GraphMap[] => indexes().map((index) => graphMap(index, 'P'));
 
 /** A synthetic tree: `n` roots, each with `k` children, each with `k` leaves. */

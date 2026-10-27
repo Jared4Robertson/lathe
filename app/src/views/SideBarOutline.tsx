@@ -6,6 +6,7 @@ import { FILE_KIND, groupLabel } from '../graph/model';
 import { NodeLink, type GraphInfo } from '../graph/panel';
 import { erdFor } from '../model/erd';
 import { kindLabel, type SpecIndex } from '../specs/data';
+import { listTitle } from '../specs/parts';
 import type { SideMode } from './sideBarState';
 
 // The side bar's Outline (LA-EXP-UC12-R04): what the main view holds, as rows to jump to.
@@ -155,11 +156,17 @@ function GraphOutline({ index, graph, onNavigate, hrefFor }: SideBarOutlineProps
 
 function ModelOutline({ index, focus, onNavigate, hrefFor }: SideBarOutlineProps) {
   const erd = useMemo(() => erdFor(index, focus), [index, focus]);
-  if (!erd) return <p className="hint">The Model view shows a domain, an aggregate or an entity.</p>;
+  if (!erd) return <p className="hint">The Model view shows a domain, or an aggregate with its entities, commands, events and policies.</p>;
   if (erd.boxes.length === 0) return <p className="hint">{erd.level === 'domain' ? 'This domain has no aggregates yet.' : 'This aggregate has no entities yet.'}</p>;
+  // What the diagram draws in focus, kind by kind in the schema's order, then the faded context.
+  const inFocus = erd.boxes.filter((b) => !b.context);
+  const kinds = [...new Set(inFocus.map((b) => b.kind))];
   const parts = [
-    { key: 'focus', title: erd.level === 'domain' ? 'Aggregates' : 'Entities', boxes: erd.boxes.filter((b) => !b.context) },
-    { key: 'context', title: 'One ring out', boxes: erd.boxes.filter((b) => b.context) },
+    ...kinds.map((k) => {
+      const boxes = inFocus.filter((b) => b.kind === k);
+      return { key: k, title: listTitle(index, boxes.map((b) => index.byId.get(b.id)!).filter(Boolean), 'In focus'), boxes };
+    }),
+    { key: 'context', title: 'Faded', boxes: erd.boxes.filter((b) => b.context) },
   ].filter((p) => p.boxes.length > 0);
   return (
     <>

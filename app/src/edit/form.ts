@@ -9,7 +9,7 @@ import { TEXT_COLUMNS } from '../specs/RecordText';
 // holds every input as text; commandsFor turns a draft into the store's commands, one write.
 
 /** How a column is edited. */
-export type InputKind = 'line' | 'text' | 'integer' | 'boolean' | 'choice' | 'date' | 'list';
+export type InputKind = 'line' | 'text' | 'integer' | 'boolean' | 'choice' | 'date' | 'list' | 'record';
 
 export interface FormField {
   name: string;
@@ -21,13 +21,26 @@ export interface FormField {
   description: string;
   /** For a choice: its values in order. */
   values?: string[];
+  /** For a record: the kind it names (a field's value object or aggregate, a key's invariant or target table). */
+  references?: string;
 }
 
 const label = (name: string) => name.replaceAll('_', ' ');
 
-/** The input a column gets: an enum is a choice, a whole number a number, true/false a check (or a choice when it may be left out). */
-export function fieldOf(column: ColumnDescription): FormField {
+/** The kind a column names through a foreign key of its own, when it names a record of one kind. */
+function referencedKind(schema: SchemaDescription | undefined, table: TableDescription | undefined, column: string): string | undefined {
+  const key = table?.foreignKeys.find((f) => f.columns.length === 1 && f.columns[0] === column);
+  return key && schema?.kinds[key.table] ? key.table : undefined;
+}
+
+/**
+ * The input a column gets: a column naming a record of one kind is a choice among those records, an enum is a
+ * choice, a whole number a number, true/false a check (or a choice when it may be left out).
+ */
+export function fieldOf(column: ColumnDescription, schema?: SchemaDescription, table?: TableDescription): FormField {
   const base = { name: column.name, label: label(column.name), type: column.kind, required: column.required, description: column.description ?? '' };
+  const references = referencedKind(schema, table, column.name);
+  if (references) return { ...base, input: 'record', references };
   switch (column.kind) {
     case 'enum': return { ...base, input: 'choice', values: column.values ?? [] };
     case 'integer': return { ...base, input: 'integer' };
@@ -41,7 +54,16 @@ export function fieldOf(column: ColumnDescription): FormField {
 /** A kind's own fields: every column of its table but its ID and its parent columns, in the table's order. */
 export function formFields(schema: SchemaDescription, kind: string): FormField[] {
   const skip = new Set(['id', ...parentColumns(schema, kind)]);
-  return (schema.tables[kind]?.columns ?? []).filter((c) => !skip.has(c.name)).map(fieldOf);
+  const table = schema.tables[kind];
+  return (table?.columns ?? []).filter((c) => !skip.has(c.name)).map((c) => fieldOf(c, schema, table));
+}
+
+/** The records a field naming a record may choose: of its kind, in the same product, in ID order. */
+export function recordChoices(index: SpecIndex, field: FormField, product: string | null): SpecRecord[] {
+  if (!field.references) return [];
+  return index.workspace.records
+    .filter((r) => r.kind === field.references && (!product || r.product === product))
+    .sort((a, b) => a.id.localeCompare(b.id, 'en', { numeric: true }));
 }
 
 /** The part tables a kind's records own, each with the columns a person fills (not the owner, not a position the form keeps). */
@@ -64,7 +86,7 @@ export function partForms(schema: SchemaDescription, kind: string): PartForm[] {
         label: label(t.name),
         description: t.description ?? '',
         position,
-        fields: t.columns.filter((c) => c.name !== t.ownerColumn && c.name !== position).map(fieldOf),
+        fields: t.columns.filter((c) => c.name !== t.ownerColumn && c.name !== position).map((c) => fieldOf(c, schema, t)),
       };
     });
 }
@@ -116,9 +138,18 @@ export function linkTargets(index: SpecIndex, link: LinkForm, product: string | 
     .sort((a, b) => a.id.localeCompare(b.id, 'en', { numeric: true }));
 }
 
-/** The kinds whose records may sit under a record of this kind. */
-export const childKinds = (schema: SchemaDescription, kind: string) =>
-  Object.values(schema.kinds).filter((k) => k.parents.some((p) => p.kind === kind)).map((k) => k.name).sort(kindOrder(schema));
+/**
+ * The kinds that can be added from a record's page: those whose records may sit under it, and on a product's or a
+ * domain's page the kinds with no owner whose IDs take its scope (a value object or a view on a product's, a
+ * specification on a domain's), which take their product or domain from their ID.
+ */
+export function addableKinds(schema: SchemaDescription, kind: string): string[] {
+  const scope = kind === 'product' ? 'product' : kind === 'domain' ? 'domain' : null;
+  return Object.values(schema.kinds)
+    .filter((k) => k.parents.some((p) => p.kind === kind) || (scope !== null && k.parents.length === 0 && k.idScope === scope))
+    .map((k) => k.name)
+    .sort(kindOrder(schema));
+}
 
 // ---------- IDs ----------
 
@@ -127,7 +158,9 @@ const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 /**
  * The ID a new record of the kind under this parent should take, from the kind's ID convention: the
  * next free number (the convention's `<nn>`), or the fixed start of a named ID (a pattern's `<P>-PAT-`)
- * for the person to finish; '' when the convention says nothing usable.
+ * for the person to finish; '' when the convention says nothing usable. A kind with no owner takes the
+ * page it is added from (its product or domain) as `parentId`, for its ID's scope. Of several
+ * alternatives (an open question's `<P>-Q<nn> or <P>-<D>-Q<nn>`), the one that says most wins.
  */
 export function suggestId(index: SpecIndex, kind: string, parentId: string | null): string {
   const pattern = index.workspace.schema.kinds[kind]?.idPattern;
@@ -136,7 +169,8 @@ export function suggestId(index: SpecIndex, kind: string, parentId: string | nul
   const product = parent ? (parent.kind === 'product' ? parent.id : parent.product) : null;
   const domain = parent ? (parent.kind === 'domain' ? parent.id : parent.domain) : null;
   const parentLabel = parent ? (index.kinds.get(parent.kind)?.label ?? parent.kind).toLowerCase() : '';
-  // Alternatives are joined by "or" outside the placeholders ("<view, endpoint, flow, API or integration>-R<nn>, or <P>-<D>-IR<nn>").
+  const suggestions: string[] = [];
+  // Alternatives are joined by "or" outside the placeholders ("<entity or read model>-TB, or <domain>-TB<nn>").
   for (const alternative of pattern.split(/,? or (?![^<]*>)/)) {
     // <D> is the domain's whole ID, which starts with the product's: <P>-<D> is written as the domain's ID.
     // A new domain's own <D> is the part the person names.
@@ -159,11 +193,13 @@ export function suggestId(index: SpecIndex, kind: string, parentId: string | nul
       const taken = new RegExp(`^${escape(prefix)}(\\d+)$`);
       let max = 0;
       for (const id of index.byId.keys()) { const m = taken.exec(id); if (m) max = Math.max(max, Number(m[1])); }
-      return prefix + String(max + 1).padStart(digits.length, '0');
+      suggestions.push(prefix + String(max + 1).padStart(digits.length, '0'));
+    } else {
+      suggestions.push(start.replace(/<name>$/, ''));
     }
-    return start.replace(/<name>$/, '');
   }
-  return '';
+  // The alternative that resolves to the most: under a domain, its questions take the domain's ID.
+  return suggestions.reduce((best, s) => (s.length > best.length ? s : best), '');
 }
 
 // ---------- Drafts ----------
@@ -202,14 +238,19 @@ export function draftOf(index: SpecIndex, record: SpecRecord): Draft {
   return { id: record.id, values, parent: record.parent ?? '', links, parts };
 }
 
-/** The draft of a new record of the kind under a parent: empty fields (a required true/false starts false), a suggested ID. */
-export function newDraft(index: SpecIndex, kind: string, parent: string | null): Draft {
+/**
+ * The draft of a new record of the kind added from a record's page: empty fields (a required true/false starts
+ * false) and a suggested ID; it sits under that record, or under nothing for a kind with no owner, for which the
+ * page only sets the ID's scope.
+ */
+export function newDraft(index: SpecIndex, kind: string, from: string | null): Draft {
   const { schema } = index.workspace;
   const values = Object.fromEntries(formFields(schema, kind).map((f) => [f.name, f.input === 'boolean' ? 'false' : '']));
+  const owned = (schema.kinds[kind]?.parents.length ?? 0) > 0;
   return {
-    id: suggestId(index, kind, parent),
+    id: suggestId(index, kind, from),
     values,
-    parent: parent ?? '',
+    parent: owned ? from ?? '' : '',
     links: Object.fromEntries(linkForms(index, kind).map((l) => [l.relation, []])),
     parts: Object.fromEntries(partForms(schema, kind).map((p) => [p.table, []])),
   };
@@ -265,28 +306,12 @@ export function draftProblems(index: SpecIndex, kind: string, draft: Draft, addi
 export type CommandPlace = string;
 
 /**
- * The parent columns a new record under this parent takes, as the store's move fills them: the
- * parent's own column, then each other parent column that is required or shares a foreign key
- * with it, from the parent's ancestry (a domain rule under an entity takes its aggregate and domain;
- * an interaction requirement under an endpoint takes its domain, not its API).
+ * The parent column a new record under this parent takes: the one naming the parent's kind (an endpoint under a
+ * query fills query_id). A record has exactly one parent, so no other parent column is filled.
  */
 export function parentValues(index: SpecIndex, kind: string, parentId: string): Row {
-  const { schema } = index.workspace;
-  const parents = schema.kinds[kind]?.parents ?? [];
-  const table = schema.tables[kind];
-  const direct = parents.find((p) => p.kind === index.byId.get(parentId)?.kind);
-  if (!direct || !table) return {};
-  const ancestry = new Map<string, string>();
-  for (let at = index.byId.get(parentId); at && !ancestry.has(at.kind); at = at.parent ? index.byId.get(at.parent) : undefined) ancestry.set(at.kind, at.id);
-  const row: Row = { [direct.column]: parentId };
-  for (const p of parents) {
-    if (p === direct) continue;
-    const id = ancestry.get(p.kind);
-    const required = table.columns.find((c) => c.name === p.column)?.required ?? false;
-    const shared = table.foreignKeys.some((f) => f.columns.includes(p.column) && f.columns.includes(direct.column));
-    if (id && (required || shared)) row[p.column] = id;
-  }
-  return row;
+  const direct = (index.workspace.schema.kinds[kind]?.parents ?? []).find((p) => p.kind === index.byId.get(parentId)?.kind);
+  return direct ? { [direct.column]: parentId } : {};
 }
 
 function partRows(table: TableDescription, part: PartForm, owner: string, rows: Record<string, string>[]): Row[] {

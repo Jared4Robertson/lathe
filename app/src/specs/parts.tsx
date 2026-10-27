@@ -222,8 +222,10 @@ export function RecordRowBody({ index, record, showKind = false }: { index: Spec
   // A use case's row names its actors; a published event says so.
   const actors = record.kind === 'use_case' ? partsOf(index, record.id, 'use_case_actor').map((a) => textOf(a, 'role_name')).join(', ') : '';
   const published = record.kind === 'domain_event' && record.row.published === true ? 'published' : '';
-  const fields = [actors, published, ...rowFields(index, record.kind).map((f) => textOf(record.row, f))].filter(Boolean);
   const isTest = isTestKind(index, record.kind);
+  // A manual test's level says manual as its state does: it is shown once.
+  const shown = rowFields(index, record.kind).filter((f) => !(isTest && f === 'level' && textOf(record.row, 'level') === testState(record)));
+  const fields = [actors, published, ...shown.map((f) => textOf(record.row, f))].filter(Boolean);
   const gaps = gapsOf(index, record.id);
   return (
     <div className={`record-row ${isTest && notAutomatedYet(record) ? 'not-automated' : ''}`}>

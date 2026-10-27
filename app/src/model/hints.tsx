@@ -3,7 +3,8 @@ import { EdgeHintChips, panToward, pastEdges, type Point, type Side } from '../g
 import { readMotion } from '../graph/motion';
 
 // The Model view's edge hints (LA-EXP-UC03-R12, app/src/graph/hints.tsx): the chips over its
-// React Flow canvas, counting its faded context boxes past each edge through React Flow's camera.
+// React Flow canvas, counting the boxes past each edge through React Flow's camera: the faded
+// context, and any box a model too big to fit at a legible zoom leaves outside.
 
 /**
  * The chips, inside a React Flow provider. `centers` are the world centers of the boxes they count;
@@ -26,5 +27,5 @@ export function EdgeHints({ centers, wrapper }: { centers: readonly Point[]; wra
     const motion = readMotion();
     setViewport(panToward(getViewport(), side, width, height), motion.duration > 0 ? { duration: motion.duration, ease: motion.ease, interpolate: 'linear' } : { duration: 0 });
   };
-  return <EdgeHintChips past={{ up, down, left, right }} noun="faded" onPan={pan} />;
+  return <EdgeHintChips past={{ up, down, left, right }} noun="more" onPan={pan} />;
 }

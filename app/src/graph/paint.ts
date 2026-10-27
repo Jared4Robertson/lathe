@@ -79,7 +79,7 @@ export function boxLook(p: Pick<Plate, 'file' | 'group' | 'kind' | 'stage'>): Bo
   if (p.file) return 'stage-file';
   if (p.group) return 'stage-group';
   if (p.kind === 'question') return 'kind-question';
-  return `stage-${p.stage as Exclude<Plate['stage'], 'group' | 'file'>}`;
+  return `stage-${p.stage as Exclude<Plate['stage'], 'file'>}`;
 }
 
 /** A stage's edge and fill colors in the look; the structural colors for a box of no stage. */
@@ -98,7 +98,8 @@ export function stageColors(look: Look, stage: Plate['stage']): { edge: string; 
 export function boxColors(look: Look, p: Pick<Plate, 'file' | 'group' | 'kind' | 'stage'>): { edge: string; fill: string } {
   switch (boxLook(p)) {
     case 'stage-file': return { edge: look.fileEdge, fill: look.paper };
-    case 'stage-group': return { edge: look.muted, fill: look.sheet };
+    // A group is a folder outlined in its stage's color on the sheet, so it reads as its stage's and as a group.
+    case 'stage-group': return { edge: p.stage === 'structural' || p.stage === 'file' ? look.muted : stageColors(look, p.stage).edge, fill: look.sheet };
     case 'kind-question': return { edge: look.warn, fill: stageColors(look, p.stage).fill };
     default: return stageColors(look, p.stage);
   }

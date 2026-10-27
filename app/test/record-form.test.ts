@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  childKinds,
+  addableKinds,
   commandsFor,
   draftOf,
   draftProblems,
@@ -12,15 +12,15 @@ import {
   parentChoices,
   parentValues,
   partForms,
+  recordChoices,
   referrersOf,
   removedWith,
   suggestId,
 } from '../src/edit/form';
-import { addRows, indexOf } from './fixtures/load';
+import { indexOf } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
-import { entityWorkspace } from './fixtures/entities';
+import { modelWorkspace } from './fixtures/model';
 import { patternWorkspace } from './fixtures/patterns';
-import { apisWorkspace } from './fixtures/apis-and-design-flows';
 
 // The record form, generated from the schema description.
 
@@ -29,21 +29,22 @@ describe('form generation from the schema', () => {
   const { schema } = index.workspace;
 
   it('gives every column but the ID and the parent columns a typed input, in the table\'s order', () => {
-    expect(formFields(schema, 'requirement').map((f) => [f.name, f.input, f.required])).toEqual([
+    expect(formFields(schema, 'uc_requirement').map((f) => [f.name, f.input, f.required])).toEqual([
       ['title', 'line', true],
       ['statement', 'text', true],
       ['group_name', 'line', false],
     ]);
-    const test = formFields(schema, 'test');
-    expect(test.map((f) => f.name)).not.toContain('domain_id');
-    expect(test.map((f) => f.name)).not.toContain('capability_id');
+    const test = formFields(schema, 'use_case_test');
+    expect(test.map((f) => f.name)).not.toContain('uc_requirement_id');
     // An enum is a choice of its values; a text field holding prose is a text area.
-    expect(test.find((f) => f.name === 'state')).toMatchObject({ input: 'choice', values: ['automated', 'manual', 'planned'], required: true });
+    expect(test.find((f) => f.name === 'state')).toMatchObject({ input: 'choice', values: ['automated', 'manual', 'not automated yet'], required: true });
     expect(test.find((f) => f.name === 'then')).toMatchObject({ input: 'text', required: false });
     // A whole number, an optional true/false (a choice, so it can be left out), each with the column's meaning.
     expect(formFields(schema, 'capability').find((f) => f.name === 'position')).toMatchObject({ input: 'integer', type: 'integer' });
     expect(formFields(schema, 'pattern_rule').find((f) => f.name === 'applies_when_negated')).toMatchObject({ input: 'choice', type: 'boolean', values: ['true', 'false'] });
-    expect(formFields(schema, 'requirement')[1].description).toMatch(/MUST/);
+    expect(formFields(schema, 'uc_requirement')[1].description).toMatch(/MUST/);
+    // A column naming a record of one kind is a choice among those records: a pattern rule test's domain.
+    expect(formFields(schema, 'pattern_rule_test').find((f) => f.name === 'domain_id')).toMatchObject({ input: 'record', references: 'domain', required: true });
   });
 
   it('turns the text of each input into the value its column takes', () => {
@@ -51,117 +52,160 @@ describe('form generation from the schema', () => {
     expect(fieldValue(fields.position, ' 3 ')).toBe(3);
     expect(fieldValue(fields.applies_when_negated, 'true')).toBe(true);
     expect(fieldValue(fields.applies_when_negated, '')).toBeNull();
-    expect(fieldValue(fields.kinds, 'test\n\n use_case ')).toEqual(['test', 'use_case']);
+    expect(fieldValue(fields.kinds, 'command\n\n query ')).toEqual(['command', 'query']);
     expect(fieldValue(fields.title, '  Spaced  ')).toBe('Spaced');
   });
 
-  it('lists the part tables a kind owns, without the owner or the position the form keeps', () => {
-    const parts = partForms(schema, 'use_case');
-    expect(parts.map((p) => p.table)).toEqual(['setting_value', 'use_case_actor', 'use_case_step']);
-    const steps = parts.find((p) => p.table === 'use_case_step')!;
-    expect(steps.position).toBe('position');
-    expect(steps.fields.map((f) => f.name)).toEqual(['description']);
-    expect(partForms(schema, 'entity')[0].fields.map((f) => f.name)).toEqual(['name', 'meaning', 'type', 'example']);
+  it('lists the part tables a kind owns, without the owner or the position the form keeps, their references as record choices', () => {
+    expect(partForms(schema, 'use_case').map((p) => p.table)).toEqual(['setting_value', 'use_case_actor']);
+    const fields = partForms(schema, 'entity').find((p) => p.table === 'entity_field')!;
+    expect(fields.position).toBe('position');
+    expect(fields.fields.map((f) => [f.name, f.input])).toEqual([
+      ['name', 'line'], ['meaning', 'line'], ['type', 'choice'], ['type_value_object_id', 'record'], ['type_aggregate_id', 'record'],
+      ['required', 'boolean'], ['column_name', 'line'], ['example', 'line'],
+    ]);
+    // A table's keys name the invariant a unique key enforces and the table a foreign key points at.
+    const keys = partForms(schema, 'table').find((p) => p.table === 'table_key')!;
+    expect(keys.fields.filter((f) => f.input === 'record').map((f) => [f.name, f.references])).toEqual([['invariant_id', 'invariant'], ['target_table_id', 'table']]);
+    // A command's recorded exceptions name another aggregate and why.
+    expect(partForms(schema, 'command').map((p) => [p.table, p.fields.map((f) => f.name)])).toEqual([['command_change', ['aggregate_id', 'reason']]]);
+  });
+
+  it('offers a field naming a record the records of its kind in the same product', () => {
+    const model = indexOf(modelWorkspace());
+    const field = partForms(model.workspace.schema, 'entity').find((p) => p.table === 'entity_field')!.fields.find((f) => f.name === 'type_aggregate_id')!;
+    expect(recordChoices(model, field, 'P').map((r) => r.id)).toEqual(['P-D-A1', 'P-D-A2', 'P-D-A3', 'P-D-A4', 'P-E-A1']);
+    expect(recordChoices(index, field, 'NF').map((r) => r.id)).toEqual(['NF-NOTE-A1']);
   });
 
   it('offers as parents only records of the allowed parent kinds in the same product, and never the record\'s own subtree', () => {
     const groups = parentChoices(index, 'use_case', 'DM');
-    expect(groups.map((g) => g.kind)).toEqual(['domain']);
-    expect(groups[0].records.map((r) => r.id)).toEqual(['DM-PAY', 'DM-SHOP']);
+    expect(groups.map((g) => g.kind)).toEqual(['capability']);
+    expect(groups[0].records.map((r) => r.id)).toEqual(['DM-PAY-CAP01', 'DM-SHOP-CAP01']);
     expect(parentChoices(index, 'domain', 'DM', 'DM-SHOP')[0].records.map((r) => r.id)).toEqual(['DM']);
-    // A use case cannot move under its own requirement's subtree; the requirement offers use cases only.
-    expect(parentChoices(index, 'requirement', 'DM', 'DM-SHOP-UC01-R01')[0].records.map((r) => r.id)).toEqual(['DM-PAY-UC01', 'DM-SHOP-UC01']);
+    // Where a record may sit under either of two kinds, both are offered: an endpoint under a command or a query.
+    expect(parentChoices(index, 'endpoint', 'DM').map((g) => [g.kind, g.records.map((r) => r.id)])).toEqual([
+      ['command', ['DM-SHOP-CMD01']],
+      ['query', ['DM-SHOP-QRY01']],
+    ]);
+    // A kind with no owner has no parent to choose.
+    expect(parentChoices(index, 'view', 'DM')).toEqual([]);
   });
 
   it('offers the links a kind may start, each limited to its valid targets in the same product', () => {
-    const links = linkForms(index, 'component');
-    expect(links.map((l) => l.relation)).toEqual(['depends_on', 'implements', 'meets', 'reacts_to', 'satisfies']);
-    const satisfies = links.find((l) => l.relation === 'satisfies')!;
-    expect(satisfies.targets).toEqual(['domain_rule', 'requirement', 'pattern_rule', 'interaction_requirement']);
-    const targets = linkTargets(index, satisfies, 'DM', 'DM-SHOP-C01').map((r) => r.id);
-    expect(targets).toEqual(['DM-PAY-UC01-R01', 'DM-SHOP-DR01', 'DM-SHOP-UC01-R01', 'DM-SHOP-UC01-R02']);
+    const links = linkForms(index, 'flow_step');
+    expect(links.map((l) => l.relation)).toEqual(['exchanges_with', 'fulfills', 'happens_in', 'invokes']);
+    const invokes = links.find((l) => l.relation === 'invokes')!;
+    expect(invokes.targets).toEqual(['command', 'query']);
+    expect(linkTargets(index, invokes, 'DM', 'DM-SHOP-UC01-FL-S01').map((r) => r.id)).toEqual(['DM-SHOP-CMD01', 'DM-SHOP-QRY01']);
     // A question may be about any record of its product.
     const about = linkForms(index, 'question').find((l) => l.relation === 'about')!;
     expect(about.targets).toEqual(['*']);
-    expect(linkTargets(index, about, 'NF', null).map((r) => r.id)).toEqual(['NF', 'NF-NOTE']);
+    expect(linkTargets(index, about, 'NF', null).map((r) => r.id)).toEqual(['NF', 'NF-NOTE', 'NF-NOTE-A1']);
   });
 
-  it('lists the kinds that may sit under a kind', () => {
-    expect(childKinds(schema, 'use_case')).toEqual(['requirement', 'question']);
-    expect(childKinds(schema, 'requirement')).toEqual([]);
+  it('lists the kinds that may be added from a page: what may sit under it, and on a product or domain the kinds with no owner of its scope', () => {
+    expect(addableKinds(schema, 'use_case')).toEqual(['uc_requirement', 'flow']);
+    expect(addableKinds(schema, 'uc_requirement')).toEqual(['use_case_test']);
+    expect(addableKinds(schema, 'command')).toEqual(['policy', 'endpoint', 'command_handler']);
+    expect(addableKinds(schema, 'product')).toEqual(['domain', 'value_object', 'pattern', 'view', 'integration', 'ui_component', 'standard', 'question']);
+    expect(addableKinds(schema, 'domain')).toEqual(expect.arrayContaining(['aggregate', 'specification', 'read_model', 'capability', 'question']));
+    expect(addableKinds(schema, 'domain')).not.toContain('value_object');
   });
 });
 
 describe('IDs for new records', () => {
   it('suggests the next free number in the kind\'s convention, or the start of a named ID', () => {
     const index = indexOf(workspace());
-    expect(suggestId(index, 'requirement', 'DM-SHOP-UC01')).toBe('DM-SHOP-UC01-R03');
-    expect(suggestId(index, 'use_case', 'DM-SHOP')).toBe('DM-SHOP-UC02');
+    expect(suggestId(index, 'uc_requirement', 'DM-SHOP-UC01')).toBe('DM-SHOP-UC01-R03');
+    expect(suggestId(index, 'use_case', 'DM-SHOP-CAP01')).toBe('DM-SHOP-UC02');
+    expect(suggestId(index, 'aggregate', 'DM-SHOP')).toBe('DM-SHOP-A2');
+    expect(suggestId(index, 'flow', 'DM-PAY-UC01')).toBe('DM-PAY-UC01-FL');
+    expect(suggestId(index, 'use_case_test', 'DM-SHOP-UC01-R01')).toBe('DM-SHOP-UC01-R01-T02');
+    expect(suggestId(index, 'invariant_test', 'DM-SHOP-INV01')).toBe('DM-SHOP-INV01-T');
+    // An endpoint takes its domain's scope from its command or query.
+    expect(suggestId(index, 'endpoint', 'DM-SHOP-QRY01')).toBe('DM-SHOP-EP02');
+    // Of two alternatives, the one that says most: a domain's question, or the product's.
     expect(suggestId(index, 'question', 'DM-SHOP')).toBe('DM-SHOP-Q02');
     expect(suggestId(index, 'question', 'DM')).toBe('DM-Q02');
-    expect(suggestId(index, 'interaction_requirement', 'DM-SHOP-V01')).toBe('DM-SHOP-V01-R01');
-    expect(suggestId(index, 'interaction_requirement', 'DM-SHOP')).toBe('DM-SHOP-IR01');
+    // A kind with no owner takes its scope from the page it is added from.
+    expect(suggestId(index, 'value_object', 'DM')).toBe('DM-VO02');
+    expect(suggestId(index, 'view', 'DM')).toBe('DM-V02');
+    expect(suggestId(index, 'specification', 'DM-SHOP')).toBe('DM-SHOP-SP02');
     expect(suggestId(index, 'pattern', 'DM')).toBe('DM-PAT-');
     expect(suggestId(index, 'domain', 'DM')).toBe('DM-');
   });
 });
 
 describe('parent columns of a new record', () => {
-  it('fills the columns that are required or share a key with the parent\'s, from its ancestry', () => {
-    const index = indexOf(entityWorkspace());
-    expect(parentValues(index, 'domain_rule', 'P-D-EN03')).toEqual({ entity_id: 'P-D-EN03', aggregate_id: 'P-D-A3', domain_id: 'P-D' });
-    const apis = indexOf(apisWorkspace());
-    // Under an endpoint inside an API: the endpoint and the domain, not the API (one container only).
-    expect(parentValues(apis, 'interaction_requirement', 'DM-SHOP-E01')).toEqual({ endpoint_id: 'DM-SHOP-E01', domain_id: 'DM-SHOP' });
-    expect(parentValues(apis, 'question', 'DM-SHOP-UC01')).toEqual({ use_case_id: 'DM-SHOP-UC01', domain_id: 'DM-SHOP', product_id: 'DM' });
+  it('fills the one column naming the parent\'s kind', () => {
+    const index = indexOf(workspace());
+    expect(parentValues(index, 'endpoint', 'DM-SHOP-QRY01')).toEqual({ query_id: 'DM-SHOP-QRY01' });
+    expect(parentValues(index, 'endpoint', 'DM-SHOP-CMD01')).toEqual({ command_id: 'DM-SHOP-CMD01' });
+    expect(parentValues(index, 'question', 'DM-SHOP')).toEqual({ domain_id: 'DM-SHOP' });
+    expect(parentValues(index, 'question', 'DM')).toEqual({ product_id: 'DM' });
   });
 });
 
 describe('commands from a draft', () => {
-  it('adds a new record with its parent columns, parts and links in one write', () => {
+  it('adds a new record with its parent column, parts and links in one write', () => {
     const index = indexOf(workspace());
-    const draft = newDraft(index, 'use_case', 'DM-SHOP');
+    const draft = newDraft(index, 'use_case', 'DM-SHOP-CAP01');
     expect(draft.id).toBe('DM-SHOP-UC02');
     draft.values.title = 'Empty the basket';
     draft.values.goal = 'A shopper empties the basket.';
-    draft.parts.use_case_actor = [{ role_name: 'Shopper' }];
-    draft.parts.use_case_step = [{ description: 'The shopper asks.' }, { description: 'The basket empties.' }];
-    draft.links.applies = ['DM-SHOP-DR01'];
+    draft.parts.use_case_actor = [{ role_name: 'Shopper' }, { role_name: 'Clerk' }];
     const { commands, places } = commandsFor(index, 'use_case', draft, null);
     expect(commands).toEqual([
-      { op: 'add', table: 'use_case', row: { id: 'DM-SHOP-UC02', domain_id: 'DM-SHOP', title: 'Empty the basket', goal: 'A shopper empties the basket.' } },
-      { op: 'link', relation: 'applies', source: 'DM-SHOP-UC02', target: 'DM-SHOP-DR01' },
+      { op: 'add', table: 'use_case', row: { id: 'DM-SHOP-UC02', capability_id: 'DM-SHOP-CAP01', title: 'Empty the basket', goal: 'A shopper empties the basket.' } },
       { op: 'add', table: 'use_case_actor', row: { use_case_id: 'DM-SHOP-UC02', position: 1, role_name: 'Shopper' } },
-      { op: 'add', table: 'use_case_step', row: { use_case_id: 'DM-SHOP-UC02', position: 1, description: 'The shopper asks.' } },
-      { op: 'add', table: 'use_case_step', row: { use_case_id: 'DM-SHOP-UC02', position: 2, description: 'The basket empties.' } },
+      { op: 'add', table: 'use_case_actor', row: { use_case_id: 'DM-SHOP-UC02', position: 2, role_name: 'Clerk' } },
     ]);
-    expect(places).toEqual(['fields', 'links:applies', 'parts:use_case_actor', 'parts:use_case_step', 'parts:use_case_step']);
+    expect(places).toEqual(['fields', 'parts:use_case_actor', 'parts:use_case_actor']);
+  });
+
+  it('adds a kind with no owner without a parent column: its ID gives its product', () => {
+    const index = indexOf(workspace());
+    const draft = newDraft(index, 'view', 'DM');
+    expect(draft).toMatchObject({ id: 'DM-V02', parent: '' });
+    draft.values.title = 'Checkout';
+    expect(draftProblems(index, 'view', draft, true).has('parent')).toBe(false);
+    expect(commandsFor(index, 'view', draft, null).commands).toEqual([{ op: 'add', table: 'view', row: { id: 'DM-V02', title: 'Checkout' } }]);
   });
 
   it('changes only what changed: the columns set or cleared, a move, links taken and added, and a part table written again', () => {
-    const data = workspace();
-    addRows(data, 'use_case_step', { use_case_id: 'DM-SHOP-UC01', position: 1, description: 'Pick.' });
-    const index = indexOf(data);
-    const record = index.byId.get('DM-SHOP-UC01')!;
+    const index = indexOf(workspace());
+    const record = index.byId.get('DM-SHOP-UC01-FL-S01')!;
     const draft = draftOf(index, record);
-    expect(draft.parent).toBe('DM-SHOP');
-    expect(draft.links.applies).toEqual(['DM-SHOP-DR01']);
-    expect(draftProblems(index, 'use_case', draft, false).size).toBe(0);
+    expect(draft.parent).toBe('DM-SHOP-UC01-FL');
+    expect(draft.links.invokes).toEqual(['DM-SHOP-CMD01']);
+    expect(draftProblems(index, 'flow_step', draft, false).size).toBe(0);
     // Nothing changed: no commands.
-    expect(commandsFor(index, 'use_case', draft, record).commands).toEqual([]);
+    expect(commandsFor(index, 'flow_step', draft, record).commands).toEqual([]);
 
-    draft.values.title = 'Add an item';
-    draft.values.goal = '';
-    draft.parent = 'DM-PAY';
-    draft.links.applies = [];
-    draft.parts.use_case_step = [{ description: 'Pick.' }, { description: 'Add.' }];
-    expect(commandsFor(index, 'use_case', draft, record).commands).toEqual([
-      { op: 'set', table: 'use_case', key: 'DM-SHOP-UC01', changes: { title: 'Add an item', goal: null } },
-      { op: 'move', id: 'DM-SHOP-UC01', parent: 'DM-PAY' },
-      { op: 'unlink', relation: 'applies', source: 'DM-SHOP-UC01', target: 'DM-SHOP-DR01' },
-      { op: 'remove', table: 'use_case_step', key: { use_case_id: 'DM-SHOP-UC01', position: 1 } },
-      { op: 'add', table: 'use_case_step', row: { use_case_id: 'DM-SHOP-UC01', position: 1, description: 'Pick.' } },
-      { op: 'add', table: 'use_case_step', row: { use_case_id: 'DM-SHOP-UC01', position: 2, description: 'Add.' } },
+    draft.values.title = 'Shopper adds it';
+    draft.values.description = '';
+    draft.links.invokes = ['DM-SHOP-QRY01'];
+    expect(commandsFor(index, 'flow_step', draft, record).commands).toEqual([
+      { op: 'set', table: 'flow_step', key: 'DM-SHOP-UC01-FL-S01', changes: { title: 'Shopper adds it', description: null } },
+      { op: 'unlink', relation: 'invokes', source: 'DM-SHOP-UC01-FL-S01', target: 'DM-SHOP-CMD01' },
+      { op: 'link', relation: 'invokes', source: 'DM-SHOP-UC01-FL-S01', target: 'DM-SHOP-QRY01' },
+    ]);
+
+    // An endpoint moves between its two kinds of parent.
+    const endpoint = index.byId.get('DM-SHOP-EP01')!;
+    const moved = draftOf(index, endpoint);
+    moved.parent = 'DM-SHOP-QRY01';
+    expect(commandsFor(index, 'endpoint', moved, endpoint).commands).toEqual([{ op: 'move', id: 'DM-SHOP-EP01', parent: 'DM-SHOP-QRY01' }]);
+
+    // A part table changed is written again: an entity's fields.
+    const entity = index.byId.get('DM-SHOP-EN02')!;
+    const fields = draftOf(index, entity);
+    fields.parts.entity_field = [fields.parts.entity_field[1]];
+    expect(commandsFor(index, 'entity', fields, entity).commands).toEqual([
+      { op: 'remove', table: 'entity_field', key: { entity_id: 'DM-SHOP-EN02', position: 1 } },
+      { op: 'remove', table: 'entity_field', key: { entity_id: 'DM-SHOP-EN02', position: 2 } },
+      { op: 'add', table: 'entity_field', row: { entity_id: 'DM-SHOP-EN02', position: 1, name: 'Quantity', meaning: 'How many.', type_value_object_id: 'DM-VO01', required: true } },
     ]);
   });
 
@@ -182,8 +226,10 @@ describe('before a removal', () => {
   it('names what still references the record, and what goes with it', () => {
     const index = indexOf(patternWorkspace());
     const referrers = referrersOf(index, 'DM-SHOP-UC01').map((r) => `${r.id} ${r.how}`);
-    expect(referrers).toEqual(['DM-SHOP-UC01-R01 sits under it', 'DM-SHOP-UC01-R02 sits under it']);
-    expect(referrersOf(index, 'DM-PAT-CHECKOUT').map((r) => r.how)).toEqual(expect.arrayContaining(['links to it (follows)', 'names it in a setting value row']));
-    expect(removedWith(index, 'DM-SHOP-UC01')).toEqual({ parts: 3, links: 2 });
+    expect(referrers).toEqual(['DM-SHOP-UC01-R01 sits under it', 'DM-SHOP-UC01-R02 sits under it', 'DM-SHOP-UC01-FL sits under it']);
+    expect(referrersOf(index, 'DM-PAT-AUDIT').map((r) => r.how)).toEqual(expect.arrayContaining(['links to it (follows)', 'names it in a setting value row']));
+    // A value object is named by the fields typed by it.
+    expect(referrersOf(index, 'DM-VO01').map((r) => `${r.id} ${r.how}`)).toEqual(['DM-VO01-C01 sits under it', 'DM-SHOP-EN02 names it in a entity field row']);
+    expect(removedWith(index, 'DM-SHOP-UC01')).toEqual({ parts: 1, links: 1 });
   });
 });

@@ -44,7 +44,8 @@ export interface GraphInfo {
 /** The side bar's graph section: the records drawn next to the center and the files a trace reaches. */
 export function GraphConnections({ index, info, onNavigate, hrefFor }: { index: SpecIndex; info: GraphInfo; onNavigate: (id: string) => void; hrefFor: (id: string) => string }) {
   const { graph, tracing } = info;
-  const near = graph.nodes.filter((n) => n.distance === 1 && n.kind !== FILE_KIND);
+  // As the picture lays them out: column by column (the parent before the children), each column top to bottom in the tree's order.
+  const near = graph.nodes.filter((n) => n.distance === 1 && n.kind !== FILE_KIND).sort((a, b) => a.column - b.column || a.row - b.row);
   const files = graph.nodes.filter((n) => n.kind === FILE_KIND);
   return (
     <>
@@ -100,7 +101,7 @@ export function Legend({ stages = [] }: { stages?: readonly StageRule[] }) {
           ))}
           <li><span className="graph-swatch stage-structural" /> Structural (product)</li>
           <li><span className="graph-swatch kind-question" /> Open question, in the warning color (dashed in the Nested and Voronoi views)</li>
-          <li><span className="graph-swatch stage-group" /> Groups: a stage, folder or group, in gray</li>
+          <li><span className="graph-swatch stage-group" /> Groups: a stage, folder or group, a folder outlined in its stage's color (gray for open questions)</li>
           <li><span className="graph-swatch is-focus" /> The focus, ringed</li>
         </ul>
         <h4 className="graph-legend-heading">Shapes</h4>

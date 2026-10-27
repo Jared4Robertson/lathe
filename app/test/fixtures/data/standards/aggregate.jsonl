@@ -1,3 +1,3 @@
 {"id":"DM-PAY-A1","title":"Payment","domain_id":"DM-PAY"}
-{"id":"DM-SHOP-A1","title":"Basket","domain_id":"DM-SHOP","description":"A shopper's basket.","identity":"Basket ID"}
+{"id":"DM-SHOP-A1","title":"Basket","domain_id":"DM-SHOP","description":"The goods a person means to buy.","identity":"Basket ID"}
 {"id":"NF-NOTE-A1","title":"Note","domain_id":"NF-NOTE"}

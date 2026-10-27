@@ -16,7 +16,7 @@ import { usePanelSize, writePref } from '../shell/prefs';
 import { useNarrow } from '../shell/useNarrow';
 import type { Problem, SpecIndex, SpecRecord, SpecState } from '../specs/data';
 import { Markdown } from '../specs/Markdown';
-import { PageHeader, ProblemBadge, RecordTree, Section, listTitle } from '../specs/parts';
+import { KindBadge, PageHeader, ProblemBadge, RecordTree, Section, listTitle } from '../specs/parts';
 import { RecordContent, RecordEyebrow } from '../specs/RecordContent';
 import { foldedChildren } from '../specs/folders';
 import { DomainWiki, NotFound, ProductWiki, problemsUnder } from '../specs/SpecPages';
@@ -626,7 +626,7 @@ function PageTitle({ index, route, fixed = false }: { index: SpecIndex; route: F
   } else if (route.page === 'domain') {
     const domain = index.byId.get(focus)!;
     const product = index.byId.get(route.product)!;
-    eyebrow = <><Link to={addressOf(product.id)}>{product.title}</Link> · Domain · {rowPlace(domain)}</>;
+    eyebrow = <><Link to={addressOf(product.id)}>{product.title}</Link> · <KindBadge index={index} kind="domain" /> · {rowPlace(domain)}</>;
     title = domain.title;
     problems = problemsUnder(index, 'domain', focus);
   } else if (route.page === 'record') {

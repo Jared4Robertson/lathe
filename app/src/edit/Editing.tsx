@@ -8,7 +8,7 @@ import { kindLabel, type SpecIndex, type SpecRecord } from '../specs/data';
 import { RecordLink } from '../specs/parts';
 import { addressOf, HOME_PATH } from '../views/address';
 import {
-  childKinds,
+  addableKinds,
   commandsFor,
   draftOf,
   draftProblems,
@@ -18,6 +18,7 @@ import {
   newDraft,
   parentChoices,
   partForms,
+  recordChoices,
   referrersOf,
   removedWith,
   type CommandPlace,
@@ -43,7 +44,7 @@ export function Editable({ index, id, children }: { index: SpecIndex; id: string
   const toolbar = useRef<HTMLDivElement>(null);
   useEffect(() => { setMode({ mode: 'view' }); setAdding(false); }, [id]);
   if (!writer || !record) return <>{children}</>;
-  const kinds = childKinds(index.workspace.schema, record.kind);
+  const kinds = addableKinds(index.workspace.schema, record.kind);
   const back = () => {
     setMode({ mode: 'view' });
     setTimeout(() => toolbar.current?.querySelector<HTMLElement>('button')?.focus(), 0);
@@ -123,6 +124,8 @@ function RecordForm({ index, kind, record, parent, onDone }: { index: SpecIndex;
   const parents = useMemo(() => parentChoices(index, kind, product, record?.id), [index, kind, product, record?.id]);
   const label = kindLabel(index, kind);
   const title = record ? `Edit ${record.id}` : `Add a ${lowerLabel(label)}`;
+  // A kind with no owner sits under nothing: the page it is added from gives its ID's scope, and it has no parent picker.
+  const owned = (schema.kinds[kind]?.parents.length ?? 0) > 0;
   const problems = shown ?? new Map<string, string>();
   const refusedAt = (place: string) => (refusal?.problems ?? []).filter((p) => p.command !== undefined && refusal!.places[p.command] === place);
 
@@ -147,6 +150,17 @@ function RecordForm({ index, kind, record, parent, onDone }: { index: SpecIndex;
   const fieldInput = (f: FormField, value: string, onChange: (v: string) => void, id: string, error: string | undefined, describedBy: string | undefined, ref?: typeof first) => {
     const common = { id, 'aria-invalid': error ? true : undefined, 'aria-describedby': [describedBy, error ? `${id}-error` : undefined].filter(Boolean).join(' ') || undefined, 'aria-required': f.required || undefined };
     switch (f.input) {
+      case 'record': {
+        // A record of one kind in this product, or none when the column may be left out.
+        const choices = recordChoices(index, f, product);
+        return (
+          <select {...common} ref={ref} value={value} onChange={(e) => onChange(e.target.value)}>
+            {(!f.required || value === '') && <option value="">{f.required ? 'Choose…' : 'None'}</option>}
+            {value !== '' && !choices.some((r) => r.id === value) && <option value={value}>{value}</option>}
+            {choices.map((r) => <option key={r.id} value={r.id}>{r.id} · {r.title}</option>)}
+          </select>
+        );
+      }
       case 'text':
       case 'list':
         return <textarea {...common} ref={ref} value={value} rows={f.input === 'list' ? 3 : 4} onChange={(e) => onChange(e.target.value)} />;
@@ -178,7 +192,7 @@ function RecordForm({ index, kind, record, parent, onDone }: { index: SpecIndex;
   return (
     <form className="record-form" aria-labelledby={`${formId}-heading`} onSubmit={submit} noValidate>
       <header className="record-form-head">
-        <p className="eyebrow">{record ? kindLabel(index, record.kind) : `New ${lowerLabel(label)}${parent ? ` under ${parent}` : ''}`}</p>
+        <p className="eyebrow">{record ? kindLabel(index, record.kind) : `New ${lowerLabel(label)}${parent ? ` ${owned ? 'under' : 'in'} ${parent}` : ''}`}</p>
         <h2 id={`${formId}-heading`}>{title}</h2>
       </header>
       {reasons.length > 0 && (
@@ -204,7 +218,7 @@ function RecordForm({ index, kind, record, parent, onDone }: { index: SpecIndex;
         })}
         <PlaceRefusals problems={refusedAt('fields')} />
       </fieldset>
-      {(schema.kinds[kind]?.parents.length ?? 0) > 0 && (
+      {owned && (
         <fieldset className="form-group">
           <legend>Where it sits</legend>
           <FieldRow id={`${formId}-parent`} label="Parent" required description={`A ${lowerLabel(label)} sits under ${(schema.kinds[kind]?.parents ?? []).map((p) => lowerLabel(kindLabel(index, p.kind))).join(' or ')}.`} error={problems.get('parent')}>
