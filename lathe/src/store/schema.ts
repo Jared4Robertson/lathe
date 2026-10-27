@@ -105,6 +105,8 @@ export interface KindDescription {
   idExample: string | null;
   /** For a product's own kind, the product that declares it. */
   productId: string | null;
+  /** Its place in the order people read kinds, from 1 (meta_kind.position); null for a product's own kind, which follows Lathe's by name. */
+  position: number | null;
   description: string | null;
   /** The kinds its records may sit under, nearest first; a record's parent is the first of these columns with a value. */
   parents: KindParent[];
@@ -286,6 +288,7 @@ export async function describeSchema(connection: DuckDBConnection): Promise<Sche
     id_pattern: string | null;
     id_example: string | null;
     product_id: string | null;
+    position: number | null;
   }>(connection, 'SELECT * FROM meta_kind ORDER BY name')) {
     if (tables[k.name]?.role !== 'kind') throw new Error(`The kind ${k.name} has no kind table of the same name.`);
     kinds[k.name] = {
@@ -297,6 +300,7 @@ export async function describeSchema(connection: DuckDBConnection): Promise<Sche
       idPattern: k.id_pattern,
       idExample: k.id_example,
       productId: k.product_id,
+      position: k.position === null ? null : Number(k.position),
       description: tables[k.name].description,
       parents: parents.filter((p) => p.kind === k.name).map((p) => ({ kind: p.parent_kind, column: p.column_name })),
       supertypes: Object.keys(supertypes).filter((s) => supertypes[s].includes(k.name)),

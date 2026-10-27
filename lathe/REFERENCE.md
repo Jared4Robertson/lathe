@@ -57,7 +57,7 @@ A part of the product with its own model, language and owner: one business capab
 - **Stage:** none (structural)
 - **Folder:** none
 - **Parents:** [`product`](#kind-product) (`product_id`)
-- **Children:** [`aggregate`](#kind-aggregate), [`domain_rule`](#kind-domain_rule), [`capability`](#kind-capability), [`use_case`](#kind-use_case), [`flow`](#kind-flow), [`view`](#kind-view), [`api`](#kind-api), [`endpoint`](#kind-endpoint), [`integration`](#kind-integration), [`interaction_requirement`](#kind-interaction_requirement), [`layer`](#kind-layer), [`component`](#kind-component), [`design_flow`](#kind-design_flow), [`test`](#kind-test), [`question`](#kind-question)
+- **Children:** [`capability`](#kind-capability), [`aggregate`](#kind-aggregate), [`domain_rule`](#kind-domain_rule), [`use_case`](#kind-use_case), [`flow`](#kind-flow), [`view`](#kind-view), [`api`](#kind-api), [`endpoint`](#kind-endpoint), [`integration`](#kind-integration), [`interaction_requirement`](#kind-interaction_requirement), [`layer`](#kind-layer), [`component`](#kind-component), [`design_flow`](#kind-design_flow), [`test`](#kind-test), [`question`](#kind-question)
 - **Obligation:** no
 - **ID:** `<P>-<D>`, such as `TL-LEND`
 - **Links out:** Follows ([`follows`](#relation-follows))
@@ -77,6 +77,38 @@ A part of the product with its own model, language and owner: one business capab
 - **Key:** `id`
 - **Unique:** `id`, `product_id`
 - **Rule:** `("trim"(title) != '')`
+
+<a id="kind-capability"></a>
+
+### Capability (`capability`)
+
+An ordered slice of a domain that groups its use cases, flows and tests, such as Membership or Lending.
+
+- **Stage:** Define
+- **Folder:** [Capabilities](#folder-use-cases)
+- **Parents:** [`domain`](#kind-domain) (`domain_id`)
+- **Children:** [`use_case`](#kind-use_case), [`flow`](#kind-flow), [`test`](#kind-test)
+- **Obligation:** no
+- **ID:** `<P>-<D>-CAP<nn>`, such as `TL-LEND-CAP01`
+- **Links out:** none
+- **Links in:** Questions about this ([`about`](#relation-about))
+- **Checks:** [`use-case-outside-capability`](#check-use-case-outside-capability), [`lone-child`](#check-lone-child)
+
+<a id="table-capability"></a>
+
+| Column | Type | Required | Meaning |
+| --- | --- | --- | --- |
+| `id` | VARCHAR → `record_id` | yes | The capability's ID, such as TL-LEND-CAP01. |
+| `title` | VARCHAR | yes | The capability's name, such as Membership. |
+| `domain_id` | VARCHAR → [`domain`](#table-domain) | yes | The domain it belongs to. |
+| `position` | INTEGER | yes | Its place in the domain, from 1. |
+| `description` | VARCHAR | no | What the capability covers, in a sentence or two. |
+
+- **Key:** `id`
+- **Unique:** `id`, `domain_id`
+- **Unique:** `domain_id`, `position`
+- **Rule:** `("trim"(title) != '')`
+- **Rule:** `("position" >= 1)`
 
 <a id="kind-aggregate"></a>
 
@@ -202,38 +234,6 @@ A fact that must always hold for an aggregate's records, whatever use case chang
 - **Rule:** `("trim"(title) != '')`
 - **Rule:** `("trim"("statement") != '')`
 - **Rule:** `((entity_id IS NULL) OR (aggregate_id IS NOT NULL))`
-
-<a id="kind-capability"></a>
-
-### Capability (`capability`)
-
-An ordered slice of a domain that groups its use cases, flows and tests, such as Membership or Lending.
-
-- **Stage:** Define
-- **Folder:** [Capabilities](#folder-use-cases)
-- **Parents:** [`domain`](#kind-domain) (`domain_id`)
-- **Children:** [`use_case`](#kind-use_case), [`flow`](#kind-flow), [`test`](#kind-test)
-- **Obligation:** no
-- **ID:** `<P>-<D>-CAP<nn>`, such as `TL-LEND-CAP01`
-- **Links out:** none
-- **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`use-case-outside-capability`](#check-use-case-outside-capability), [`lone-child`](#check-lone-child)
-
-<a id="table-capability"></a>
-
-| Column | Type | Required | Meaning |
-| --- | --- | --- | --- |
-| `id` | VARCHAR → `record_id` | yes | The capability's ID, such as TL-LEND-CAP01. |
-| `title` | VARCHAR | yes | The capability's name, such as Membership. |
-| `domain_id` | VARCHAR → [`domain`](#table-domain) | yes | The domain it belongs to. |
-| `position` | INTEGER | yes | Its place in the domain, from 1. |
-| `description` | VARCHAR | no | What the capability covers, in a sentence or two. |
-
-- **Key:** `id`
-- **Unique:** `id`, `domain_id`
-- **Unique:** `domain_id`, `position`
-- **Rule:** `("trim"(title) != '')`
-- **Rule:** `("position" >= 1)`
 
 <a id="kind-use_case"></a>
 
