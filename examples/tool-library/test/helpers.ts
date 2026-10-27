@@ -2,7 +2,7 @@
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { subscribePolicies } from '../src/event-handlers.ts';
-import { EventDispatcher, type DomainEvent, type HandlerFailure } from '../src/events.ts';
+import { Outbox, type DomainEvent, type HandlerFailure } from '../src/events.ts';
 import { LendingService } from '../src/lending-service.ts';
 import { MemberService } from '../src/member-service.ts';
 import { DEFAULT_TIME_ZONE } from '../src/model.ts';
@@ -39,32 +39,32 @@ export interface ServiceOptions {
   timeZone?: string;
   /** Whether the policies' event handlers are subscribed, as the router subscribes them. Default true. */
   policies?: boolean;
-  /** Where a failing event handler is reported; the dispatcher logs it unless given. */
+  /** Where a failing event handler is reported; the outbox logs it unless given. */
   onFailure?: HandlerFailure;
 }
 
 /**
- * Services over a fresh in-memory store, for domain rule tests, sharing one event dispatcher.
- * `published` lists every event the dispatcher published, in order.
+ * Services over a fresh in-memory store, for domain rule tests, sharing one outbox.
+ * `delivered` lists every event the relay handed to its handlers, in order.
  */
 export function services(options: ServiceOptions = {}) {
   const store = new Store();
   const clock = new TestClock();
-  const events = new EventDispatcher(options.onFailure);
-  const published: DomainEvent[] = [];
+  const outbox = new Outbox(store, clock.now, options.onFailure);
+  const delivered: DomainEvent[] = [];
   for (const name of ['MemberRegistered', 'ToolAdded', 'DamageReported', 'ToolRepaired', 'LoanOpened', 'ToolReturned'] as const) {
-    events.subscribe(name, (event) => published.push(event));
+    outbox.subscribe(name, (event) => delivered.push(event));
   }
-  const tools = new ToolService(store, clock.now, events);
-  if (options.policies ?? true) subscribePolicies(events, tools);
+  const tools = new ToolService(store, clock.now, outbox);
+  if (options.policies ?? true) subscribePolicies(outbox, tools);
   return {
     store,
     clock,
-    events,
-    published,
-    members: new MemberService(store, clock.now, events),
+    outbox,
+    delivered,
+    members: new MemberService(store, clock.now, outbox),
     tools,
-    lending: new LendingService(store, clock.now, events, options.timeZone),
+    lending: new LendingService(store, clock.now, outbox, options.timeZone),
   };
 }
 

@@ -1,7 +1,7 @@
 // Lends tools to members and takes them back.
 // Spec: the command handlers TL-LEND-CMD05-H and CMD06-H (examples/tool-library/data/).
-// Each changes only the Loan, and publishes its event once its transaction has committed.
-import type { EventDispatcher } from './events.ts';
+// Each changes only the Loan, saves its event to the outbox in the same transaction, and runs the relay once it commits.
+import type { Outbox } from './events.ts';
 import {
   LendingError,
   DEFAULT_TIME_ZONE,
@@ -42,13 +42,13 @@ export class LendingService {
   private readonly store: Store;
   private readonly now: Clock;
   private readonly timeZone: string;
-  private readonly events: EventDispatcher;
+  private readonly outbox: Outbox;
 
   /** `timeZone` is the library's time zone, in which due dates and overdue loans are counted. */
-  constructor(store: Store, now: Clock, events: EventDispatcher, timeZone: string = DEFAULT_TIME_ZONE) {
+  constructor(store: Store, now: Clock, outbox: Outbox, timeZone: string = DEFAULT_TIME_ZONE) {
     this.store = store;
     this.now = now;
-    this.events = events;
+    this.outbox = outbox;
     this.timeZone = assertTimeZone(timeZone);
   }
 
@@ -92,17 +92,19 @@ export class LendingService {
       }
 
       // TL-LEND-INV04 / UC03-R01: the loan is due 14 calendar days after today, in the library's time zone.
-      return this.store.insertLoan(memberId, toolId, now.toISOString(), dueDate(now, this.timeZone));
+      const saved = this.store.insertLoan(memberId, toolId, now.toISOString(), dueDate(now, this.timeZone));
+      // TL-LEND-EV05
+      this.outbox.save({
+        type: 'LoanOpened',
+        loanId: saved.id,
+        memberId: saved.memberId,
+        toolId: saved.toolId,
+        borrowedAt: saved.borrowedAt,
+        dueDate: saved.dueDate,
+      });
+      return saved;
     });
-    // TL-LEND-EV05
-    this.events.publish({
-      type: 'LoanOpened',
-      loanId: loan.id,
-      memberId: loan.memberId,
-      toolId: loan.toolId,
-      borrowedAt: loan.borrowedAt,
-      dueDate: loan.dueDate,
-    });
+    this.outbox.relay();
     return loan;
   }
 
@@ -129,19 +131,22 @@ export class LendingService {
         throw new LendingError(409, 'already_returned', `Loan ${loanId} was already returned.`);
       }
       // TL-LEND-UC04-R04, TL-LEND-SP01: a return on a day after the due date is flagged as late.
-      return { ...this.store.markReturned(loanId, now.toISOString(), condition, note), late: isLate(loan, now, this.timeZone) };
+      const saved = { ...this.store.markReturned(loanId, now.toISOString(), condition, note), late: isLate(loan, now, this.timeZone) };
+      // TL-LEND-EV06, saved to the outbox with the return, so TL-LEND-PO01's reaction is never lost.
+      this.outbox.save({
+        type: 'ToolReturned',
+        loanId: saved.id,
+        memberId: saved.memberId,
+        toolId: saved.toolId,
+        returnedAt: now.toISOString(),
+        condition,
+        note,
+        late: saved.late,
+      });
+      return saved;
     });
-    // TL-LEND-EV06: published once the return is committed. The return stands whatever its handlers do.
-    this.events.publish({
-      type: 'ToolReturned',
-      loanId: returned.id,
-      memberId: returned.memberId,
-      toolId: returned.toolId,
-      returnedAt: now.toISOString(),
-      condition,
-      note,
-      late: returned.late,
-    });
+    // The return stands whatever its handlers do; one that fails leaves the event for the next relay run.
+    this.outbox.relay();
     return returned;
   }
 }

@@ -1,5 +1,5 @@
 // Domain model tests: each proves one constraint, invariant, specification, policy or domain service
-// against the model, the command handlers, the event dispatcher and an in-memory store.
+// against the model, the command handlers, the outbox and an in-memory store.
 // Each test name starts with its test record ID (examples/tool-library/data/).
 import { describe, expect, it } from 'vitest';
 import {
@@ -15,6 +15,7 @@ import {
   parseNote,
 } from '../src/model.ts';
 import { RETURNED_NEEDING_REPAIR } from '../src/event-handlers.ts';
+import type { Store } from '../src/store.ts';
 import { LAST_MINUTE_OF_DUE_DATE, START_DUE_DATE, START_OF_NEXT_DAY, services } from './helpers.ts';
 
 function rejectsWith(fn: () => unknown, code: string): void {
@@ -229,8 +230,13 @@ describe('Loan', () => {
 });
 
 describe('Policies', () => {
-  it('TL-LEND-PO01-T Return a tool changes only the loan when no event handler hears Tool returned', () => {
-    const { members, tools, lending, clock, published } = services({ policies: false });
+  /** The outbox's rows, oldest first. */
+  function outboxRows(store: Store) {
+    return store.db.prepare('SELECT type, delivered_at FROM outbox ORDER BY id').all() as { type: string; delivered_at: string | null }[];
+  }
+
+  it('TL-LEND-PO01-T Return a tool changes only the loan, and saves Tool returned to the outbox with it', () => {
+    const { members, tools, lending, clock, delivered, store } = services({ policies: false });
     const m = members.register({ name: 'Lu', email: 'lu@example.org' });
     const t = tools.add({ name: 'Router' });
     const loan = lending.borrow({ memberId: m.id, toolId: t.id });
@@ -238,9 +244,9 @@ describe('Policies', () => {
 
     const returned = lending.return(loan.id, { condition: 'needs_repair', note: 'Bit stuck' });
     expect(returned).toMatchObject({ returnCondition: 'needs_repair', returnNote: 'Bit stuck', late: false });
-    // The tool is untouched: only the policy takes it out of lending.
+    // With no event handler hearing Tool returned, the tool is untouched: only the policy takes it out of lending.
     expect(tools.get(t.id)).toMatchObject({ condition: 'good', damageNote: null, status: 'available' });
-    expect(published.at(-1)).toEqual({
+    expect(delivered.at(-1)).toEqual({
       type: 'ToolReturned',
       loanId: loan.id,
       memberId: m.id,
@@ -250,44 +256,61 @@ describe('Policies', () => {
       note: 'Bit stuck',
       late: false,
     });
+    // Every event was saved to the outbox and relayed; a refused return saves none.
+    expect(() => lending.return(loan.id, { condition: 'good' })).toThrow(LendingError);
+    expect(outboxRows(store).map((r) => r.type)).toEqual(['MemberRegistered', 'ToolAdded', 'LoanOpened', 'ToolReturned']);
+    expect(outboxRows(store).filter((r) => r.delivered_at === null)).toEqual([]);
   });
 
-  it('TL-LEND-PO01-T A tool returned needing repair is marked as needing repair through the event handler', () => {
-    const { members, tools, lending, clock, published } = services();
+  it('TL-LEND-PO01-T A tool returned needing repair is marked as needing repair through the outbox', () => {
+    const { members, tools, lending, clock, delivered, store } = services();
     const m = members.register({ name: 'Mo', email: 'mo@example.org' });
     const [chuck, blank, good] = ['Drill', 'Jigsaw', 'Clamp'].map((name) => tools.add({ name }).id);
     const loans = [chuck, blank, good].map((toolId) => lending.borrow({ memberId: m.id, toolId }).id);
-    published.length = 0;
+    delivered.length = 0;
 
-    // Tool returned is heard, and Report damage is invoked with the return note as the damage note.
+    // Tool returned is relayed from the outbox, and Report damage is invoked with the return note as the damage note.
     lending.return(loans[0], { condition: 'needs_repair', note: 'Chuck wobbles' });
-    expect(published.map((e) => e.type)).toEqual(['ToolReturned', 'DamageReported']);
-    expect(published[1]).toEqual({ type: 'DamageReported', toolId: chuck, note: 'Chuck wobbles', reportedAt: clock.now().toISOString() });
+    expect(delivered.map((e) => e.type)).toEqual(['ToolReturned', 'DamageReported']);
+    expect(delivered[1]).toEqual({ type: 'DamageReported', toolId: chuck, note: 'Chuck wobbles', reportedAt: clock.now().toISOString() });
     expect(tools.get(chuck)).toMatchObject({ condition: 'needs_repair', damageNote: 'Chuck wobbles', status: 'needs_repair' });
+    expect(outboxRows(store).slice(-2)).toEqual([
+      { type: 'ToolReturned', delivered_at: clock.now().toISOString() },
+      { type: 'DamageReported', delivered_at: clock.now().toISOString() },
+    ]);
 
     // With no return note, the damage note says it came back needing repair.
     lending.return(loans[1], { condition: 'needs_repair', note: '  ' });
     expect(tools.get(blank)).toMatchObject({ condition: 'needs_repair', damageNote: RETURNED_NEEDING_REPAIR });
 
     // A good return invokes nothing.
-    published.length = 0;
+    delivered.length = 0;
     lending.return(loans[2], { condition: 'good' });
-    expect(published.map((e) => e.type)).toEqual(['ToolReturned']);
+    expect(delivered.map((e) => e.type)).toEqual(['ToolReturned']);
     expect(tools.get(good)).toMatchObject({ condition: 'good', status: 'available' });
   });
 
-  it('TL-LEND-PO01-T The return stands when the event handler fails, and the failure is reported', () => {
+  it('TL-LEND-PO01-T A failed event handler leaves Tool returned in the outbox, delivered on the next relay run', () => {
     const failures: string[] = [];
-    const { members, tools, lending, store } = services({ onFailure: (_err, event) => failures.push(event.type) });
+    const { members, tools, lending, outbox, store } = services({ onFailure: (_err, event) => failures.push(event.type) });
     const m = members.register({ name: 'Nia', email: 'nia@example.org' });
     const t = tools.add({ name: 'Sledgehammer' });
     const loan = lending.borrow({ memberId: m.id, toolId: t.id });
-    // Make Report damage fail: the tools table refuses any change to the tool.
+    // Make Report damage fail: the tools table refuses any change.
     store.db.exec("CREATE TRIGGER no_tool_updates BEFORE UPDATE ON tools BEGIN SELECT RAISE(ABORT, 'tools are read-only'); END;");
 
+    // The return stands, the failure is reported, and the event stays undelivered.
     expect(lending.return(loan.id, { condition: 'needs_repair', note: 'Head loose' }).returnCondition).toBe('needs_repair');
     expect(failures).toEqual(['ToolReturned']);
     expect(store.findLoan(loan.id)).toMatchObject({ returnCondition: 'needs_repair', returnNote: 'Head loose' });
     expect(tools.get(t.id)).toMatchObject({ condition: 'good', damageNote: null });
+    expect(outboxRows(store).at(-1)).toEqual({ type: 'ToolReturned', delivered_at: null });
+
+    // Once the fault clears, the next relay run delivers it, and the tool is taken out of lending.
+    store.db.exec('DROP TRIGGER no_tool_updates');
+    outbox.relay();
+    expect(tools.get(t.id)).toMatchObject({ condition: 'needs_repair', damageNote: 'Head loose' });
+    expect(outboxRows(store).filter((r) => r.delivered_at === null)).toEqual([]);
+    expect(failures).toEqual(['ToolReturned']);
   });
 });
