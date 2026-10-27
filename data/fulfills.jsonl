@@ -23,6 +23,7 @@
 {"source_id":"LA-AUT-V02","target_id":"LA-AUT-UC14-R04"}
 {"source_id":"LA-AUT-V03","target_id":"LA-AUT-UC14-R03"}
 {"source_id":"LA-AUT-V03","target_id":"LA-AUT-UC14-R04"}
+{"source_id":"LA-CHK-F01","target_id":"LA-CHK-UC08-R01"}
 {"source_id":"LA-CHK-F03","target_id":"LA-AUT-UC14-R03"}
 {"source_id":"LA-CHK-F03","target_id":"LA-AUT-UC14-R05"}
 {"source_id":"LA-CHK-F03","target_id":"LA-CHK-UC07-R01"}

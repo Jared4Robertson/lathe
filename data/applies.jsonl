@@ -91,11 +91,6 @@
 {"source_id":"LA-CHK-UC01","target_id":"LA-CHK-DR04"}
 {"source_id":"LA-CHK-UC02","target_id":"LA-CHK-DR03"}
 {"source_id":"LA-CHK-UC02","target_id":"LA-CHK-DR04"}
-{"source_id":"LA-CHK-UC03","target_id":"LA-AUT-DR19"}
-{"source_id":"LA-CHK-UC03","target_id":"LA-AUT-DR20"}
-{"source_id":"LA-CHK-UC03","target_id":"LA-AUT-DR21"}
-{"source_id":"LA-CHK-UC03","target_id":"LA-AUT-DR22"}
-{"source_id":"LA-CHK-UC04","target_id":"LA-AUT-DR23"}
 {"source_id":"LA-CHK-UC04","target_id":"LA-CHK-DR05"}
 {"source_id":"LA-CHK-UC04","target_id":"LA-CHK-DR06"}
 {"source_id":"LA-CHK-UC04","target_id":"LA-CHK-DR07"}

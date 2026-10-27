@@ -2,7 +2,7 @@
 {"id":"LA-AUT-CAP02","title":"Adapting Lathe to a product","domain_id":"LA-AUT","position":2,"description":"The kinds of record and the relations between them, how a product adapts them, and how use cases are organized into capabilities and patterns."}
 {"id":"LA-AUT-CAP03","title":"Structuring a domain","domain_id":"LA-AUT","position":3,"description":"Domains by capability, and their capabilities, patterns, layers, entities, domain events and flow steps."}
 {"id":"LA-CHK-CAP01","title":"Running checks","domain_id":"LA-CHK","position":1,"description":"Running the checks, adding new ones, and how a test ties a record to the code that proves it."}
-{"id":"LA-CHK-CAP02","title":"Finding problems in the spec","domain_id":"LA-CHK","position":2,"description":"The structure checks: gaps, stale citations and levels of the wrong size."}
+{"id":"LA-CHK-CAP02","title":"Finding problems in the spec","domain_id":"LA-CHK","position":2,"description":"The structure checks: gaps between the stages, and levels of the wrong size."}
 {"id":"LA-EXP-CAP01","title":"Reading the spec","domain_id":"LA-EXP","position":1,"description":"Product, domain and record pages: coverage, obligation kinds and test states, finding a record and following its links."}
 {"id":"LA-EXP-CAP02","title":"Views, tabs and the side bar","domain_id":"LA-EXP","position":2,"description":"One address per record, its Wiki, Graph and Model views as panes opened and closed side by side, the nav, the side bar, quick find and keyboard shortcuts."}
 {"id":"LA-EXP-CAP03","title":"The graph","domain_id":"LA-EXP","position":3,"description":"Walking the model as a left-to-right graph with folder-like groups, and tracing an obligation to its code and tests."}

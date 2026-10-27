@@ -5,10 +5,10 @@
 {"domain_event_id":"LA-AUT-EV03","position":1,"name":"File","meaning":"The meta-model file that changed.","type":"File path.","example":"lathe/meta/relations.csv"}
 {"domain_event_id":"LA-AUT-EV03","position":2,"name":"Product","meaning":"The product whose extension changed, or none for Lathe's defaults.","type":"Product reference, or none.","example":"none"}
 {"domain_event_id":"LA-AUT-EV03","position":3,"name":"Changed at","meaning":"When the change was seen.","type":"Date and time.","example":"2026-10-24T23:24:05Z"}
-{"domain_event_id":"LA-CHK-EV01","position":1,"name":"File","meaning":"The check file that changed.","type":"File path.","example":"lathe/checks/01-duplicate-id.sql"}
+{"domain_event_id":"LA-CHK-EV01","position":1,"name":"File","meaning":"The data file that holds the check row.","type":"File path.","example":"data/check.jsonl"}
 {"domain_event_id":"LA-CHK-EV01","position":2,"name":"Change","meaning":"What happened to the file.","type":"`added`, `changed` or `removed`.","example":"changed"}
 {"domain_event_id":"LA-CHK-EV01","position":3,"name":"Changed at","meaning":"When the change was seen.","type":"Date and time.","example":"2026-10-24T14:10:00Z"}
-{"domain_event_id":"LA-CHK-EV02","position":1,"name":"Specs folder","meaning":"The folder that was loaded.","type":"Folder path.","example":"specs"}
+{"domain_event_id":"LA-CHK-EV02","position":1,"name":"Data folder","meaning":"The data folder that was loaded.","type":"Folder path.","example":"data"}
 {"domain_event_id":"LA-CHK-EV02","position":2,"name":"Records","meaning":"How many records were loaded.","type":"Whole number.","example":"1523"}
 {"domain_event_id":"LA-CHK-EV02","position":3,"name":"Errors","meaning":"How many problems are errors.","type":"Whole number.","example":"0"}
 {"domain_event_id":"LA-CHK-EV02","position":4,"name":"Warnings","meaning":"How many problems are warnings.","type":"Whole number.","example":"4"}
