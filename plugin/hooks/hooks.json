@@ -1,15 +1,15 @@
 {
-  "description": "Run lathe check after a spec record, lathe.config.json or the meta-model is edited, and report any errors to the agent.",
+  "description": "Refuse hand edits to a Lathe repo's data files: the spec changes only through Lathe's MCP tools, the CLI or the app.",
   "hooks": {
-    "PostToolUse": [
+    "PreToolUse": [
       {
-        "matcher": "Write|Edit|MultiEdit",
+        "matcher": "Write|Edit|MultiEdit|NotebookEdit",
         "hooks": [
           {
             "type": "command",
             "command": "node",
-            "args": ["${CLAUDE_PLUGIN_ROOT}/scripts/check-after-edit.mjs"],
-            "timeout": 60
+            "args": ["${CLAUDE_PLUGIN_ROOT}/scripts/guard-data-files.mjs"],
+            "timeout": 10
           }
         ]
       }
