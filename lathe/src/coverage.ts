@@ -27,7 +27,7 @@ export const ALLOWED_LEVELS: Readonly<Record<string, readonly string[]>> = {
   use_case_test: ['api', 'e2e-api', 'e2e-ui', 'manual'],
   view_test: ['unit', 'e2e-ui', 'manual'],
   endpoint_test: ['contract', 'api'],
-  flow_test: ['e2e-ui', 'manual'],
+  flow_test: ['e2e-ui', 'e2e-api', 'manual'],
   integration_test: ['contract', 'e2e-api', 'manual'],
   pattern_rule_test: ['unit', 'database', 'api', 'contract', 'e2e-api', 'e2e-ui', 'manual'],
 };

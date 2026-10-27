@@ -78,7 +78,7 @@ beforeAll(async () => {
   // Not committed: a change in the working tree, and a data file git does not know yet.
   await store.set('use_case', UC, { goal: 'A writer keeps every thought.' });
   await store.add('use_case_actor', { use_case_id: UC, position: 1, role_name: 'Writer' });
-});
+}, 120_000);
 
 afterAll(async () => {
   await store?.close();

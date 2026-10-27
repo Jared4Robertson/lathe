@@ -82,7 +82,7 @@ check('test-level-not-allowed', () => {
     data = changing(data, 'flow_test', (r) => r.id === 'EX-LEND-UC01-FL-T', { level: 'api' });
     const ws = await loadData(data);
     expect(ofCheck(ws, 'test-level-not-allowed').map((p) => p.message)).toEqual([
-      'Flow test EX-LEND-UC01-FL-T runs at level api, which a flow test does not allow; run it at e2e-ui, manual.',
+      'Flow test EX-LEND-UC01-FL-T runs at level api, which a flow test does not allow; run it at e2e-api, e2e-ui, manual.',
       'Constraint test EX-VO01-C01-T runs at level api, which a constraint test does not allow; run it at database, unit.',
     ]);
     // A constraint enforced by a SQL CHECK is tested at database level, which a constraint test allows.

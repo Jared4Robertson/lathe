@@ -43,7 +43,7 @@ Domains and their aggregates, entities, value objects, rules (constraints, invar
 A part of the product with its own model, language and owner, for one business capability: what DDD calls a bounded context. Domains meet only through published events.
 
 - **Parents:** [`product`](#kind-product) (`product_id`)
-- **Children:** [`aggregate`](#kind-aggregate), [`read_model`](#kind-read_model), [`domain_service`](#kind-domain_service), [`term`](#kind-term), [`capability`](#kind-capability), [`question`](#kind-question)
+- **Children:** [`aggregate`](#kind-aggregate), [`read_model`](#kind-read_model), [`domain_service`](#kind-domain_service), [`term`](#kind-term), [`capability`](#kind-capability), [`table`](#kind-table), [`question`](#kind-question)
 - **Obligation:** no
 - **ID:** `<P>-<D>`, such as `TL-LEND`; it starts with its parent's ID
 - **Links out:** Follows ([`follows`](#relation-follows))
@@ -305,7 +305,7 @@ An unchangeable record that something happened to an aggregate, named in the pas
 - **Obligation:** no
 - **ID:** `<P>-<D>-EV<nn>`, such as `TL-LEND-EV01`; it starts with its domain's ID
 - **Links out:** none
-- **Links in:** Questions about this ([`about`](#relation-about)), Heard by ([`hears`](#relation-hears)), Raised by ([`raises`](#relation-raises))
+- **Links in:** Questions about this ([`about`](#relation-about)), Feeds ([`fed_by`](#relation-fed_by)), Heard by ([`hears`](#relation-hears)), Raised by ([`raises`](#relation-raises))
 - **Parts:** [`event_field`](#table-event_field)
 - **Checks:** [`event-not-by-outbox`](#check-event-not-by-outbox), [`event-tense`](#check-event-tense)
 - **Gaps:** [`event-without-fields`](#gap-event-without-fields), [`event-not-raised`](#gap-event-not-raised), [`event-without-event-type`](#gap-event-without-event-type)
@@ -402,7 +402,7 @@ A view of its domain's data shaped for reading, which reads one or more of the d
 - **Children:** [`query`](#kind-query), [`table`](#kind-table), [`projection`](#kind-projection)
 - **Obligation:** no
 - **ID:** `<P>-<D>-RM<nn>`, such as `TL-LEND-RM01`; it starts with its domain's ID
-- **Links out:** Reads ([`reads`](#relation-reads))
+- **Links out:** Calls ([`calls`](#relation-calls)), Fed by ([`fed_by`](#relation-fed_by)), Reads ([`reads`](#relation-reads))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Parts:** [`read_model_field`](#table-read_model_field)
 - **Gaps:** [`read-model-without-fields`](#gap-read-model-without-fields), [`read-model-reads-nothing`](#gap-read-model-reads-nothing), [`read-model-without-query`](#gap-read-model-without-query), [`read-model-without-projection`](#gap-read-model-without-projection), [`read-model-without-table`](#gap-read-model-without-table)
@@ -1223,12 +1223,12 @@ Its entity in code: the entity's data, behavior and mapping to its table. A comm
 
 ### Table (`table`)
 
-Where an entity or a read model, its parent, is stored. Its columns follow from its parent's fields, a value object's fields flattened into columns, so it stores only what fields cannot say: its keys and indexes (table_key rows). An entity's table is always a table, normalized and the source of truth; a read model's is a projection that can be rebuilt, usually a view over its domain's entity tables.
+Where an entity or a read model, its parent, is stored; or, under a domain, a table of the domain's own infrastructure that implements no design record, such as its outbox. Its columns follow from its parent's fields, a value object's fields flattened into columns, so it stores only what fields cannot say: its keys and indexes (table_key rows). An entity's table is always a table, normalized and the source of truth; a read model's is a projection that can be rebuilt, usually a view over its domain's entity tables.
 
-- **Parents:** [`entity`](#kind-entity) (`entity_id`), [`read_model`](#kind-read_model) (`read_model_id`)
+- **Parents:** [`entity`](#kind-entity) (`entity_id`), [`read_model`](#kind-read_model) (`read_model_id`), [`domain`](#kind-domain) (`domain_id`)
 - **Children:** none
 - **Obligation:** no
-- **ID:** `<entity or read model>-TB`, such as `TL-LEND-EN01-TB`; it starts with its parent's ID
+- **ID:** `<entity or read model>-TB, or <domain>-TB<nn>`, such as `TL-LEND-EN01-TB`; it starts with its parent's ID
 - **Links out:** Meets ([`meets`](#relation-meets))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Parts:** [`table_key`](#table-table_key)
@@ -1240,8 +1240,9 @@ Where an entity or a read model, its parent, is stored. Its columns follow from 
 | --- | --- | --- | --- |
 | `id` | VARCHAR → `record_id` | yes | The table's ID: its entity's or read model's ID and TB, such as TL-LEND-EN01-TB. |
 | `title` | VARCHAR | yes | The table as people read it, such as Loans. |
-| `entity_id` | VARCHAR → [`entity`](#table-entity) | no | The entity it stores; exactly one of entity and read model is given. An entity has at most one table: a child entity marked in_root_table has none and is stored in its root's. |
-| `read_model_id` | VARCHAR → [`read_model`](#table-read_model) | no | The read model it stores; exactly one of entity and read model is given, and a read model has one table. |
+| `entity_id` | VARCHAR → [`entity`](#table-entity) | no | The entity it stores; exactly one of entity, read model and domain is given. An entity has at most one table: a child entity marked in_root_table has none and is stored in its root's. |
+| `read_model_id` | VARCHAR → [`read_model`](#table-read_model) | no | The read model it stores; exactly one of entity, read model and domain is given, and a read model has one table. |
+| `domain_id` | VARCHAR → [`domain`](#table-domain) | no | The domain whose own infrastructure it stores, such as its outbox, when it stores no entity or read model; its ID is the domain's and TB with a number, such as TL-LEND-TB01, and its storage is a table. |
 | `name` | VARCHAR | yes | Its name in the database, such as loans. |
 | `storage` | ENUM('table', 'view', 'materialized view') | yes | table: rows of its own; view: a query over other tables; materialized view: a query's result, kept. An entity's table is always table. |
 | `file` | VARCHAR | no | The file that creates it, such as a migration, from the product root; it may not exist yet. |
@@ -1252,7 +1253,8 @@ Where an entity or a read model, its parent, is stored. Its columns follow from 
 - **Unique:** `read_model_id`
 - **Rule:** `("trim"(title) != '')`
 - **Rule:** `("trim"("name") != '')`
-- **Rule:** `((entity_id IS NULL) != (read_model_id IS NULL))`
+- **Rule:** `(((CAST((entity_id IS NOT NULL) AS INTEGER) + CAST((read_model_id IS NOT NULL) AS INTEGER)) + CAST((domain_id IS NOT NULL) AS INTEGER)) = 1)`
+- **Rule:** `((domain_id IS NULL) OR ("storage" = 'table'))`
 - **Rule:** `((entity_id IS NULL) OR ("storage" = 'table'))`
 
 <a id="table-table_key"></a>
@@ -1989,7 +1991,7 @@ A smoke test of its flow's main path, end to end.
 - **Parents:** [`flow`](#kind-flow) (`flow_id`)
 - **Children:** none
 - **Obligation:** no
-- **Run by levels:** `e2e-ui`, `manual`
+- **Run by levels:** `e2e-ui`, `e2e-api`, `manual`
 - **ID:** `<flow>-T`, such as `TL-LEND-UC01-FL-T`; it starts with its parent's ID
 - **Links out:** Meets ([`meets`](#relation-meets))
 - **Links in:** Questions about this ([`about`](#relation-about))
@@ -2130,7 +2132,7 @@ A manual test may name a file that holds the steps a person follows. Nothing tie
 
 A test whose run by level its test kind does not allow.
 
-Each test kind is run at the levels that can prove what it tests: a constraint test at unit; an invariant or specification test at unit or database; a domain service test at unit; a policy test at database, api or e2e-api; a use case test at api, e2e-api, e2e-ui or manual; a view test at unit, e2e-ui or manual; an endpoint test at contract or api; a flow test at e2e-ui or manual; an integration test at contract, e2e-api or manual; a pattern rule test at any level. A test at another level proves nothing in coverage. Run the test at an allowed level and set its level, or make it the test kind of what it really proves.
+Each test kind is run at the levels that can prove what it tests: a constraint test at unit or database (a constraint enforced by a SQL CHECK can only be tested against the database); an invariant or specification test at unit or database; a domain service test at unit; a policy test at database, api or e2e-api; a use case test at api, e2e-api, e2e-ui or manual; a view test at unit, e2e-ui or manual; an endpoint test at contract or api; a flow test at e2e-ui, e2e-api (a product whose flows run through a CLI or an API rather than a browser) or manual; an integration test at contract, e2e-api or manual; a pattern rule test at any level. A test at another level proves nothing in coverage. Run the test at an allowed level and set its level, or make it the test kind of what it really proves.
 
 <a id="check-pattern-rule-test-outside-followers"></a>
 
@@ -2381,7 +2383,7 @@ The open question concerns the record.
 
 ### `calls`
 
-The command or query uses the domain service, of its own domain.
+The command, query or read model uses the domain service, of its own domain.
 
 - **Reads:** Calls / Called by
 - **Role:** none
@@ -2390,6 +2392,7 @@ The command or query uses the domain service, of its own domain.
 | --- | --- | --- |
 | [`command`](#kind-command) | [`domain_service`](#kind-domain_service) | The command uses the domain service. |
 | [`query`](#kind-query) | [`domain_service`](#kind-domain_service) | The query uses the domain service. |
+| [`read_model`](#kind-read_model) | [`domain_service`](#kind-domain_service) | The read model's projection uses the domain service. |
 
 <a id="relation-checks"></a>
 
@@ -2416,6 +2419,19 @@ The flow step exchanges with the integration's outside system.
 | From | To | Meaning |
 | --- | --- | --- |
 | [`flow_step`](#kind-flow_step) | [`integration`](#kind-integration) | The step exchanges with the outside system. |
+
+<a id="relation-fed_by"></a>
+
+### `fed_by`
+
+The read model is kept current from the event: of its own domain, or another domain's published one, which is how a read model shows another domain's data.
+
+- **Reads:** Fed by / Feeds
+- **Role:** none
+
+| From | To | Meaning |
+| --- | --- | --- |
+| [`read_model`](#kind-read_model) | [`domain_event`](#kind-domain_event) | The read model is kept current from the event. |
 
 <a id="relation-follows"></a>
 
