@@ -95,7 +95,7 @@ interface Place {
 }
 
 /** A label's lines placed in its box, as a column of lines centered or at the left, its icons before the first kind and ID line. */
-function placeLines({ lines, box, centered, top, t, icons }: Place): { lines: PlateLine[]; icons: PlateIcon[]; metaWidth: number } {
+function placeLines({ lines, box, centered, top, t, icons }: Place): { lines: PlateLine[]; icons: PlateIcon[] } {
   const m = textMeasure();
   const all = [
     ...lines.meta.map((text) => ({ text, face: 'meta' as Face, size: META_FONT * t, tone: 'muted' as const })),
@@ -107,7 +107,6 @@ function placeLines({ lines, box, centered, top, t, icons }: Place): { lines: Pl
   const iconRun = icons.reduce((s, i) => s + (ICON[i.draw].w + ICON.gap) * t, 0);
   const out: PlateLine[] = [];
   const placedIcons: PlateIcon[] = [];
-  let metaWidth = 0;
   all.forEach((l, i) => {
     const lh = l.size * LINE_HEIGHT;
     const { ascent, descent } = m.metrics(l.face);
@@ -123,11 +122,10 @@ function placeLines({ lines, box, centered, top, t, icons }: Place): { lines: Pl
         x += (size.w + ICON.gap) * t;
       }
     }
-    if (l.face === 'meta' && l.tone === 'muted') metaWidth = Math.max(metaWidth, lead + width);
     out.push({ text: l.text, face: l.face, size: l.size, x: left + lead, baseline, top: y, height: lh, width, tone: l.tone });
     y += lh;
   });
-  return { lines: out, icons: placedIcons, metaWidth };
+  return { lines: out, icons: placedIcons };
 }
 
 /** A box's problem badges, right to left from their right edge at a top. */
@@ -184,10 +182,8 @@ export function plateOf(index: SpecIndex, id: string, source: PlateSource, fileT
     const lines = source.view === 'trace' ? labelFor(index, id) : source.node.lines;
     const box = { left: x + inset + (LABEL_PAD + room.l) * t, right: x + w - inset - (LABEL_PAD + room.r) * t, top: y + inset + (LABEL_PAD_BLOCK + room.t) * t, bottom: y + h - inset - (LABEL_PAD_BLOCK + room.b) * t };
     const placed = placeLines({ lines, box, centered, top: false, t, icons: mark ? [{ draw: 'mark', name: mark }] : [] });
-    // A circle's badge sits at the end of its kind and ID line, which its room keeps inside the circle; every other box's at its top right.
-    const badges = !marked ? [] : shape === 'circle'
-      ? badgesAt(marks, centered ? (box.left + box.right) / 2 + placed.metaWidth / 2 + 30 * t : box.right, placed.lines[0]?.top ?? box.top, t)
-      : badgesAt(marks, x + w - inset - (BADGE.right + room.r) * t, y + inset + (BADGE.top + room.t) * t, t);
+    // Its badge sits at its top right, inside its shape's room.
+    const badges = !marked ? [] : badgesAt(marks, x + w - inset - (BADGE.right + room.r) * t, y + inset + (BADGE.top + room.t) * t, t);
     return { ...base, scale, outline, edged, border, decoration: shape, label: { x: box.left, y: box.top, w: box.right - box.left, h: box.bottom - box.top }, lines: placed.lines, icons: placed.icons, badges };
   }
 

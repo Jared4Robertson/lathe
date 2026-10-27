@@ -44,7 +44,6 @@ describe('lathe check', () => {
 
   it('LA-CHK-T03 The check exits 1 on any error and 0 otherwise, whatever the warnings', () => {
     expect(lathe('check', '--root', fixture('broken-links')).status).toBe(1);
-    expect(lathe('check', '--root', fixture('fitness')).status).toBe(1);
     const good = lathe('check', '--root', fixture('good'));
     expect(good.status).toBe(0);
     expect(good.stdout).toContain('0 errors, 0 warnings.');

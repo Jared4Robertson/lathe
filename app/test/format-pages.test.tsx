@@ -20,7 +20,7 @@ describe('format reference pages', () => {
     // It opens in the workbench: one pane with the title in it, and the side bar beside it.
     expect(pane()).toContainElement(screen.getByRole('heading', { level: 1 }));
     expect(fact(sideBar(), 'Kinds')).toBe(String(workspace().kinds.length));
-    expect(screen.getByRole('heading', { name: '7. Fitness' })).toHaveAttribute('id', '7-fitness');
+    expect(screen.getByRole('heading', { name: '7. What records do not carry' })).toHaveAttribute('id', '7-what-records-do-not-carry');
 
     const kinds = section(/^Kinds\d/);
     const define = within(kinds).getByRole('heading', { name: /^Define/ }).closest('section')!;

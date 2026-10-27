@@ -47,11 +47,11 @@ describe('obligation kinds and test states', () => {
     );
   });
 
-  it('LA-TRC-T90 The evidence counts every obligation kind, and planned apart from proved', async () => {
+  it('LA-TRC-T90 The summary counts every obligation kind, and planned apart from proved', async () => {
     await openApp('/DM', served());
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
-    const evidence = section('Evidence');
-    const value = (name: string) => within(evidence).getByText(name).nextElementSibling?.textContent;
+    const summary = section('Summary');
+    const value = (name: string) => within(summary).getByText(name).nextElementSibling?.textContent;
     expect(value('Designed')).toBe('4 of 8 obligations');
     expect(value('Built')).toBe('3 of 8 obligations');
     expect(value('Proved')).toBe('2 of 8 obligations');

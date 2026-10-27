@@ -8,7 +8,7 @@ import { openApp, section } from './helpers';
 const card = (title: string) => within(section(/^Domains/)).getByText(title).closest('article') as HTMLElement;
 const more = (element: HTMLElement, kind: string) => element.querySelector(`[data-kind="${kind}"] .bar.planned .bar-more`);
 const testsLine = (element: HTMLElement) => within(element).getByLabelText('Tests by state').textContent;
-const evidence = (name: string) => within(section('Evidence')).getByText(name, { selector: 'dt' }).nextElementSibling?.textContent;
+const summary = (name: string) => within(section('Summary')).getByText(name, { selector: 'dt' }).nextElementSibling?.textContent;
 
 describe('owed proof and tests by state', () => {
   it('LA-TRC-T108 The planned bar says how many more obligations, already proved, still have a planned test', async () => {
@@ -42,12 +42,12 @@ describe('owed proof and tests by state', () => {
     expect(line.querySelector('[data-state="planned"]')?.getAttribute('title')).toMatch(/does not count as proof/);
   });
 
-  it("LA-TRC-T110 The evidence counts the product's tests by state, and planned beside proof", async () => {
+  it("LA-TRC-T110 The summary counts the product's tests by state, and planned beside proof", async () => {
     await openApp('/DM', { workspace: owedWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
-    expect(evidence('Tests')).toBe('3 automated, 1 manual, 1 planned');
-    expect(evidence('Planned')).toBe('1 of 8 obligations, by tests not written yet; 1 more planned beside proof');
+    expect(summary('Tests')).toBe('3 automated, 1 manual, 1 planned');
+    expect(summary('Planned')).toBe('1 of 8 obligations, by tests not written yet; 1 more planned beside proof');
     // The proved count is unchanged: a planned test is never proof.
-    expect(evidence('Proved')).toBe('2 of 8 obligations');
+    expect(summary('Proved')).toBe('2 of 8 obligations');
   });
 });

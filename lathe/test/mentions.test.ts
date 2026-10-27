@@ -1,4 +1,4 @@
-// IDs cited in record bodies: SpecRecord.mentions and the unknown-id-in-prose warning (FORMAT.md section 12).
+// IDs cited in record bodies: SpecRecord.mentions and the unknown-id-in-prose warning (FORMAT.md section 11).
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { beforeAll, describe, expect, it } from 'vitest';
@@ -15,7 +15,7 @@ beforeAll(async () => {
 
 describe('mentions', () => {
   it('LA-AUT-T33 A record mentions the existing IDs its body cites, in order of first mention', () => {
-    // A bare product or domain ID in plain prose (NX, MX-D) is not a citation (FORMAT.md section 12).
+    // A bare product or domain ID in plain prose (NX, MX-D) is not a citation (FORMAT.md section 11).
     expect(mentionsOf('MX-D-UC01')).toEqual(['MX-D-UC02', 'MX-D-UC01-R01', 'MX-D-UC03']);
     expect(mentionsOf('MX')).toEqual([]);
     expect(mentionsOf('MX-D-UC02')).toEqual(['MX-D-UC01-R01', 'MX-D-UC01']);

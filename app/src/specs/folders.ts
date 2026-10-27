@@ -2,7 +2,7 @@ import { lowerLabel, plural } from '../plural';
 import { byIdOrder, kindLabel, type SpecIndex, type SpecRecord } from './data';
 import type { SectionRule } from '../../../lathe/src/types';
 
-// The folders a product's records are read in, as Client lays out its specs (FORMAT.md section 15):
+// The folders a product's records are read in, as Client lays out its specs (FORMAT.md section 14):
 // each domain has its stages (Define, Design) and in each stage its folders (Domain model, Use
 // cases; Interaction design, Technical specification, Test plan); the product has its shared
 // folders (Shared, holding the patterns). Labels and order come from the workspace's sections,

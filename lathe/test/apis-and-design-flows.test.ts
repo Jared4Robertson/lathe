@@ -1,4 +1,4 @@
-// APIs, integrations and technical flows (FORMAT.md sections 21 and 22): the kinds, where they sit,
+// APIs, integrations and technical flows (FORMAT.md sections 20 and 21): the kinds, where they sit,
 // the order check on technical steps, coverage counting a step's satisfies as design, and the
 // design-flow-deepens-nothing warning.
 import path from 'node:path';

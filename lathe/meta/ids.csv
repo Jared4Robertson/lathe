@@ -25,4 +25,3 @@ design_flow,<P>-<D>-DF<nn>,TL-LEND-DF01
 design_step,<technical flow>-S<nn>,TL-LEND-DF01-S01
 test,<P>-<D>-T<nn>,TL-LEND-T01
 question,<P>-<D>-Q<nn> or <P>-Q<nn>,TL-LEND-Q01
-fitness,<P>-FIT<nn>,LA-FIT01

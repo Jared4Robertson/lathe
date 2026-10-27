@@ -1,4 +1,4 @@
-// Which body tokens are citations: record IDs, known ID prefixes and bare product or domain IDs (FORMAT.md section 12).
+// Which body tokens are citations: record IDs, known ID prefixes and bare product or domain IDs (FORMAT.md section 11).
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { beforeAll, describe, expect, it } from 'vitest';

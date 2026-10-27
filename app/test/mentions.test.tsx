@@ -7,7 +7,7 @@ import { proseLinks } from '../src/specs/mentions';
 import { patternWorkspace } from './fixtures/patterns';
 import { openApp, openSideBar } from './helpers';
 
-// Record IDs cited in prose become links (FORMAT.md section 12): every ID in the record's
+// Record IDs cited in prose become links (FORMAT.md section 11): every ID in the record's
 // `mentions`, wherever it appears in the text but never inside code; unknown IDs that the engine
 // warned about look like broken links.
 

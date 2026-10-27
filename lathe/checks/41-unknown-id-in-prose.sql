@@ -1,6 +1,6 @@
 -- A record's body cites an ID that no record has.
 --
--- A citation is an ID-shaped token with one of the workspace's known prefixes (FORMAT.md section 12). Code
+-- A citation is an ID-shaped token with one of the workspace's known prefixes (FORMAT.md section 11). Code
 -- spans and fenced code blocks are not read. Fix the wording, or put the ID in code if it is only an
 -- example.
 --

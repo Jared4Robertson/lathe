@@ -1,6 +1,6 @@
 -- A domain event's `raised_by` names an entity of the event's own aggregate.
 --
--- An event is raised by its aggregate (FORMAT.md section 18), so the entity whose change raises it is one of
+-- An event is raised by its aggregate (FORMAT.md section 17), so the entity whose change raises it is one of
 -- that aggregate's entities. What another aggregate does about the event is said by its `reacts_to`. An
 -- event with no `raised_by` is not reported. A link to a record that does not exist, or that is not an
 -- entity, is reported by dangling-link or relation-not-allowed instead. When the target ID is duplicated, the

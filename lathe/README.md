@@ -42,9 +42,9 @@ A usage mistake (a missing option, an unknown command, a bad port) exits 2.
 | Key | Default | Meaning |
 | --- | --- | --- |
 | `specs` | `specs` | The folder of spec records. Every `*.md` under it is a record, except `README.md`. |
-| `metaExtensions` | none | A folder holding a `kinds.csv`, `relations.csv`, `sections.csv` and/or `ids.csv` with the same columns as [meta/](meta/). Their rows are added to Lathe's defaults for this product only, and a row for a kind Lathe already has widens it (FORMAT.md section 9). |
+| `metaExtensions` | none | A folder holding a `kinds.csv`, `relations.csv`, `sections.csv` and/or `ids.csv` with the same columns as [meta/](meta/). Their rows are added to Lathe's defaults for this product only, and a row for a kind Lathe already has widens it (FORMAT.md section 8). |
 | `checks` | none | A folder of the product's own checks, run after Lathe's (see [Add a product's own check](#add-a-products-own-check)). |
-| `idPrefixes` | `[]` | ID prefixes, besides every product's and domain's ID, that a record body may cite: a token such as `STD-04` is then read as a citation and reported if no record has it (FORMAT.md section 12). |
+| `idPrefixes` | `[]` | ID prefixes, besides every product's and domain's ID, that a record body may cite: a token such as `STD-04` is then read as a citation and reported if no record has it (FORMAT.md section 11). |
 | `structure.maxChildren` | 15 | The most children of one kind a record should have before the `too-many-children` warning (FORMAT.md section 5). A whole number of at least 1. |
 
 Every key is optional. A file that is not valid JSON, a key not in this table, an `idPrefixes` that is not a list of ID prefixes, or a `structure.maxChildren` that is not a whole number of at least 1 is refused when the config is read.
@@ -66,7 +66,7 @@ The engine turns the product's spec records into a checked database. It:
 2. Reads every `*.md` file in the specs folder except `README.md`, and parses its YAML header and body (see [FORMAT.md](FORMAT.md)). A file it cannot parse becomes a `parse-error` problem, and loading carries on.
 3. Works out each record's product and domain by walking its `parent` chain, so a record under a capability or a layer belongs to the domain above it. A loop in that chain is a `parent-cycle` error.
 4. Checks each test's `run_by` file and each component's `file`: does it exist, and which of the test's own ID and the IDs it proves does the file mention.
-5. Reads the IDs each body cites (FORMAT.md section 12), and each entity's and domain event's Fields table (sections 17 and 18).
+5. Reads the IDs each body cites (FORMAT.md section 11), and each entity's and domain event's Fields table (sections 16 and 17).
 6. Loads all of this into an in-memory DuckDB database, runs every check in `lathe/checks/` (including checks that the meta-model itself is consistent) and then the product's own checks, and computes coverage per domain: how many obligations are designed (a component satisfies them), built (that component's file exists), proved (an automated or manual test proves them) and planned (only a planned test does).
 
 Nothing is written to disk. The files are the source of truth, and the database is rebuilt on every load.
@@ -149,7 +149,7 @@ If a check's SQL fails to run, the engine reports that as an error problem for t
 
 ## Add a product's own check
 
-A rule that belongs to one product, not to Lathe, goes in the product's own `checks` folder (FORMAT.md section 13). This repo's `lathe.config.json` names `lathe-checks/`, which holds `01-endpoint-without-interaction-requirement.sql` and `02-actor-not-a-role.sql`.
+A rule that belongs to one product, not to Lathe, goes in the product's own `checks` folder (FORMAT.md section 12). This repo's `lathe.config.json` names `lathe-checks/`, which holds `01-endpoint-without-interaction-requirement.sql` and `02-actor-not-a-role.sql`.
 
 1. Name the folder in `lathe.config.json`: `"checks": "lathe-checks"`.
 2. Add `<number>-<check-name>.sql` files to it, written as Lathe's checks are (steps 1 to 4 above, header included), against the same tables.

@@ -1,7 +1,7 @@
 -- A step's order is a whole number that no other step on its path of the flow has, and each path's steps are numbered without gaps.
 --
 -- The steps of a flow (`flow_step`) and of a technical flow (`design_step`) are read in `order` (FORMAT.md
--- sections 14 and 22), within their `path`: a short name such as main or
+-- sections 13 and 21), within their `path`: a short name such as main or
 -- refused, compared trimmed and in any letter case. A step with no path is on the main path. Orders are
 -- compared as numbers, so 1 and 01 clash, and the steps of each path of a flow are numbered 1, 2, 3 and so
 -- on. A path whose orders skip a number is reported once, on the first step after the gap, and only when

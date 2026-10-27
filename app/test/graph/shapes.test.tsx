@@ -5,7 +5,7 @@ import { Legend } from '../../src/graph/panel';
 import { NODE_HEIGHT, NODE_WIDTH } from '../../src/graph/layout';
 import { parentLine } from '../../src/graph/map';
 import { MARKS, outlineInset, outlineOf, shapeOf, SHAPES, type Shape } from '../../src/graph/shapes';
-import { BORDER, LABEL_PAD, LABEL_PAD_BLOCK, labelHeight, wrapLabel } from '../../src/graph/text';
+import { BORDER, LABEL_PAD, LABEL_PAD_BLOCK } from '../../src/graph/text';
 import { openApp, startAtDepth } from '../helpers';
 import { testWorkspace } from './workspace';
 import { drawnBox, scene } from './scene';
@@ -20,7 +20,7 @@ const TABLE: Record<string, [Shape, string?]> = {
   interaction_requirement: ['page', 'marker'], pattern: ['stack'], flow: ['chevron-bar'], flow_step: ['chevron'],
   design_step: ['chevron'], view: ['window'], endpoint: ['port'], api: ['box', 'port'], integration: ['box', 'port'],
   layer: ['stripes'], component: ['component'], test: ['shield'], design_flow: ['chevron-bar', 'gear'],
-  question: ['diamond'], fitness: ['circle'], standard: ['stack', 'ruler'], standard_rule: ['octagon', 'ruler'],
+  question: ['diamond'], standard: ['stack', 'ruler'], standard_rule: ['octagon', 'ruler'],
 };
 
 describe('a shape for each kind', () => {
@@ -74,22 +74,11 @@ describe('a shape for each kind', () => {
     cleanup();
 
     // The safe area: a label's lines, where the stylesheet pads them (the padding and the shape's room, at the text
-    // scale), and its badge at the top right (a circle's at the end of its kind and ID line), lie inside the outline,
+    // scale), and its badge at the top right, lie inside the outline,
     // on a leaf and on boxes grown with their level. The text scale is never below the box scale.
     const BADGE = { w: 15, h: 15, top: 3, right: 8 };
-    // A circle's label is centered and its box made tall enough (an ellipse's corners are no place for text): checked on real labels.
-    for (const words of [2, 6, 12, 20, 30]) {
-      const label = wrapLabel({ title: Array(words).fill('fitness').join(' '), meta: 'Fitness · LA-F01' }, { shape: 'circle' });
-      const h = Math.max(NODE_HEIGHT, labelHeight(label));
-      const r = { x: 0, y: 0, w: NODE_WIDTH, h };
-      const half = (labelHeight(label) - (label.pad ?? 0)) / 2 - BORDER - LABEL_PAD_BLOCK;
-      for (const y of [h / 2 - half, h / 2 + half]) {
-        expect(outlineInset(r, 'circle', 1, y, 'left'), `circle with ${words} words at ${y}`).toBeLessThanOrEqual(LABEL_PAD + SHAPES.circle.room.l);
-      }
-    }
     for (const shape of Object.keys(SHAPES) as Shape[]) {
       const { room } = SHAPES[shape];
-      if (shape === 'circle') continue;
       for (const [w, h, scale, text] of [[NODE_WIDTH, NODE_HEIGHT, 1, 1], [NODE_WIDTH, 90, 1, 1], [NODE_WIDTH * 2, NODE_HEIGHT * 2, 2, 2], [NODE_WIDTH * 3, 2000, 3, 3], [NODE_WIDTH * 4, 400, 2, 4]]) {
         const r = { x: 0, y: 0, w, h };
         const inside = (x: number, y: number) => x >= outlineInset(r, shape, scale, y, 'left') - 0.01 && w - x >= outlineInset(r, shape, scale, y, 'right') - 0.01;

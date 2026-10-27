@@ -11,7 +11,7 @@ import { indexWorkspace } from '../src/specs/data';
 import { standardWorkspace } from './fixtures/standards';
 import { main, openApp, section } from './helpers';
 
-// Standards in the app (FORMAT.md section 20): under Shared in the nav beside the patterns, a standard's
+// Standards in the app (FORMAT.md section 19): under Shared in the nav beside the patterns, a standard's
 // page listing its rules with what meets each one, a rule's Traceability showing Met by, the format
 // reference's kind pages, and the graph's plain boxes and design lines.
 
