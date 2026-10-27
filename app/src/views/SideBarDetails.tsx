@@ -8,7 +8,8 @@ import { GraphConnections, type GraphInfo } from '../graph/panel';
 import { lowerLabel } from '../plural';
 import { Link } from '../router';
 import { DesktopRecordActions } from '../shell/desktopRecord';
-import { kindLabel, problemOrder, type SpecIndex, type SpecRecord } from '../specs/data';
+import { kindLabel, parentColumns, problemOrder, type SpecIndex, type SpecRecord } from '../specs/data';
+import { factsOf, rowPlace } from '../specs/RecordText';
 import { ProblemList, RecordLink, RecordTree, TestStateTag, idText, listTitle } from '../specs/parts';
 import { GAP_TEXT } from '../specs/Traceability';
 import { traceOf } from '../specs/trace';
@@ -87,7 +88,7 @@ function Identity({ index, eyebrow, title, id, target, focus, how, onNavigate, h
 function RecordDetails({ index, record, focus, how, onNavigate, hrefFor }: { index: SpecIndex; record: SpecRecord; focus: string; how: SideBarDetailsProps['how']; onNavigate: (id: string) => void; hrefFor: (id: string) => string }) {
   const kind = index.kinds.get(record.kind);
   const isTest = record.kind === 'test';
-  const fields = Object.entries(record.fields).filter(([name]) => !(isTest && name === 'state'));
+  const facts = factsOf(index, record);
   const problems = [...(index.problemsFor.get(record.id) ?? [])].sort(problemOrder);
   return (
     <>
@@ -95,14 +96,14 @@ function RecordDetails({ index, record, focus, how, onNavigate, hrefFor }: { ind
       <dl className="fields">
         <div><dt>Kind</dt><dd title={kind?.description}><Link to={kindPagePath(record.kind)}>{kind?.label ?? record.kind}</Link></dd></div>
         {isTest && <div><dt>State</dt><dd><TestStateTag record={record} /></dd></div>}
-        {fields.map(([name, value]) => (
-          <div key={name}>
-            {/* A required field's label leads to the field on the kind's page in the format reference. */}
-            <dt>{kind?.required_fields.includes(name) ? <Link to={kindFieldPath(record.kind, name)} title={`Required of every ${lowerLabel(kind.label)}`}>{name.replaceAll('_', ' ')}</Link> : name.replaceAll('_', ' ')}</dt>
-            <dd>{value}</dd>
+        {facts.map((f) => (
+          <div key={f.label}>
+            {/* A column's label leads to the column on the kind's page in the format reference. */}
+            <dt>{f.column ? <Link to={kindFieldPath(record.kind, f.column)} title={`The ${f.label} of a ${lowerLabel(kind?.label ?? record.kind)}`}>{f.label}</Link> : f.label}</dt>
+            <dd>{f.value}</dd>
           </div>
         ))}
-        <div><dt>Spec file</dt><dd><code>{record.path}</code><DesktopRecordActions id={record.id} /></dd></div>
+        <div><dt>Data file</dt><dd><code>{rowPlace(record)}</code><DesktopRecordActions id={record.id} /></dd></div>
         <div><dt>Parent</dt><dd>{record.parent ? <RecordLink index={index} id={record.parent} /> : <span className="hint">None (top level)</span>}</dd></div>
       </dl>
       {problems.length > 0 && (
@@ -186,28 +187,23 @@ function GroupDetails({ index, gid, focus, how, onNavigate, hrefFor }: { index: 
 
 // ---------- In the Wiki view, with nothing selected: only what the page does not show ----------
 
-/** The record as its file has it: the spec file, the raw header fields and the raw links both ways. */
+/** The record as its data file has it: the file and line, the row's columns and the raw links both ways. */
 function RawFacts({ index, record }: { index: SpecIndex; record: SpecRecord }) {
-  const header: [string, string][] = [
-    ['id', record.id],
-    ['kind', record.kind],
-    ['title', record.title],
-    ...(record.parent ? [['parent', record.parent] as [string, string]] : []),
-    ...Object.entries(record.fields),
-  ];
+  const parents = parentColumns(index.workspace.schema, record.kind);
+  const columns = Object.entries(record.row);
   const out = index.outgoing.get(record.id) ?? [];
   const into = index.incoming.get(record.id) ?? [];
   return (
     <>
       <section className="side-bar-section" aria-labelledby="side-file">
-        <h3 id="side-file">Spec file</h3>
-        <p className="side-file"><code>{record.path}</code></p>
+        <h3 id="side-file">Data file</h3>
+        <p className="side-file"><code>{rowPlace(record)}</code></p>
         <DesktopRecordActions id={record.id} />
       </section>
       <section className="side-bar-section" aria-labelledby="side-header">
-        <h3 id="side-header">Header fields</h3>
+        <h3 id="side-header">Columns</h3>
         <dl className="fields side-raw">
-          {header.map(([name, value]) => <div key={name}><dt><code>{name}</code></dt><dd>{name === 'parent' ? <RecordLink index={index} id={value} showTitle={false} /> : <code>{value}</code>}</dd></div>)}
+          {columns.map(([name, value]) => <div key={name}><dt><code>{name}</code></dt><dd>{parents.has(name) && typeof value === 'string' ? <RecordLink index={index} id={value} showTitle={false} /> : <code>{JSON.stringify(value)}</code>}</dd></div>)}
         </dl>
       </section>
       <section className="side-bar-section" aria-labelledby="side-links-out">
@@ -268,7 +264,7 @@ function RawGroupFacts({ index, gid }: { index: SpecIndex; gid: string }) {
   return (
     <section className="side-bar-section" aria-labelledby="side-group">
       <h3 id="side-group">Group</h3>
-      <p className="hint">A group has no spec file of its own: its address names it by its parent and its place in the tree. Select a row to see that record's details.</p>
+      <p className="hint">A group has no row of its own: its address names it by its parent and its place in the tree. Select a row to see that record's details.</p>
       <dl className="fields side-raw">
         <div><dt>Name</dt><dd>{groupLabel(index, gid)}</dd></div>
         <div><dt><code>parent</code></dt><dd><RecordLink index={index} id={groupOwner(index, gid)} showTitle={false} /></dd></div>

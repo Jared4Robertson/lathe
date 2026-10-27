@@ -106,8 +106,6 @@ code { font: 0.86em var(--mono); }
 .spec-body a { color: var(--steel); text-decoration-thickness: 1px; text-underline-offset: 2px; }
 .spec-page a:focus-visible, .spec-page input:focus-visible, .spec-page button:focus-visible { outline: 2px solid var(--steel); outline-offset: 2px; border-radius: 4px; }
 .hint { margin: 0; color: var(--muted); font-size: 0.86rem; }
-.source-note { margin: 12px 24px 0; padding: 8px 12px; border: 1px dashed var(--warn); border-radius: 6px; color: var(--ink); background: var(--sheet); font-size: 0.86rem; max-width: 1032px; box-sizing: border-box; }
-.source-note strong { color: var(--warn); }
 .spec-page > .error { margin: 12px 24px 0; }
 .spec-section { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
 .spec-section h2 { font-size: 1.05rem; display: flex; align-items: baseline; gap: 8px; }
@@ -183,6 +181,14 @@ code { font: 0.86em var(--mono); }
 .check-name { color: var(--muted); font-size: 0.75rem; }
 
 .markdown { max-width: 72ch; }
+.record-text { display: grid; gap: 12px; margin: 0 0 16px; }
+.record-text > .spec-section { margin: 0; }
+.scenario { display: grid; gap: 8px; margin: 0; max-width: 72ch; }
+.scenario > div { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 8px; }
+.scenario dt { font-weight: 600; color: var(--muted); }
+.scenario dd { margin: 0; }
+.use-case-steps { margin: 0; padding-left: 1.5em; display: grid; gap: 6px; max-width: 72ch; }
+.use-case-steps .markdown p { margin: 0; }
 .markdown > :first-child { margin-top: 0; }
 .markdown > :last-child { margin-bottom: 0; }
 .markdown pre { background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; padding: 10px; overflow-x: auto; }
@@ -206,7 +212,7 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .spec-body .tabs a { padding: 6px 12px; color: var(--muted); text-decoration: none; border-bottom: 2px solid transparent; margin-bottom: -1px; }
 .spec-body .tabs a[aria-current="page"] { color: var(--steel); border-bottom-color: var(--steel); font-weight: 600; }
 
-@media (max-width: 800px) { .record-layout { grid-template-columns: 1fr; } .spec-body { padding: 16px 16px 32px; } .source-note { margin: 12px 16px 0; } }
+@media (max-width: 800px) { .record-layout { grid-template-columns: 1fr; } .spec-body { padding: 16px 16px 32px; } }
 
 /* ---------- Graph view (?view=graph), owned by app/src/graph ---------- */
 .graph-page {
@@ -435,7 +441,6 @@ a.button-primary.button-primary { color: var(--on-mark); }
 .nav-badge.quiet { margin-left: auto; }
 .nav-foot { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; margin: 0 -10px; padding-top: 8px; border-top: 1px solid var(--rule); }
 .nav-source { margin: 0; padding: 0 18px; font-size: 0.75rem; color: var(--muted); }
-.nav-source.is-fixture { color: var(--warn); }
 .quick-find { position: relative; display: flex; align-items: center; gap: 6px; padding: 0 8px; border: 1px solid var(--rule); border-radius: 6px; background: var(--paper); color: var(--muted); }
 .quick-find:focus-within { border-color: var(--steel); box-shadow: 0 0 0 1px var(--steel); }
 .quick-find input { flex: 1; min-width: 0; min-height: 32px; border: 0; background: none; color: var(--ink); font: inherit; font-size: 0.88rem; outline: none; }
@@ -568,7 +573,6 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 .table-scroll { max-width: 100%; overflow-x: auto; }
 .pattern-domain h3 { margin: 16px 0 6px; font-size: 1rem; }
 .markdown a.mention { font-family: var(--mono); font-size: 0.9em; }
-.markdown .mention.broken { font-family: var(--mono); font-size: 0.9em; color: var(--error); text-decoration: underline wavy; text-decoration-thickness: 1px; text-underline-offset: 3px; cursor: help; }
 
 /* ---------- Owed proof and tests by state (brief 27) ---------- */
 .bar-more { grid-column: 2 / -1; font: italic 0.72rem var(--body); color: var(--muted); cursor: help; }

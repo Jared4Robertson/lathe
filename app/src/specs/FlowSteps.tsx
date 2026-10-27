@@ -1,7 +1,7 @@
 import { Fragment, useState } from 'react';
 import { Icon } from '../components/icons';
-import { kindLabel, type SpecIndex, type SpecRecord } from './data';
-import { RecordMarkdown } from './mentions';
+import { textOf, kindLabel, type SpecIndex, type SpecRecord } from './data';
+import { Prose } from './mentions';
 import { ProblemBadge, RecordLink, Section } from './parts';
 import { Button } from '../components/Button';
 
@@ -33,7 +33,7 @@ const STEP_TABLES: Record<string, StepTableKind> = {
   design_flow: {
     step: DESIGN_STEP,
     columns: [{ relation: 'uses', heading: 'Component' }, { relation: 'satisfies', heading: 'Satisfies' }],
-    details: ['transaction', 'locks', 'statements'],
+    details: ['transaction_name', 'locks', 'statements'],
   },
 };
 
@@ -42,7 +42,7 @@ export const hasSteps = (kind: string) => kind in STEP_TABLES;
 
 /** A step's order as a number, or null when it is not a whole number. */
 export function stepOrder(step: SpecRecord): number | null {
-  const raw = step.fields.order?.trim() ?? '';
+  const raw = textOf(step.row, 'position')?.trim() ?? '';
   return /^\d+$/.test(raw) ? Number(raw) : null;
 }
 
@@ -59,7 +59,7 @@ export function stepsOf(index: SpecIndex, flowId: string): SpecRecord[] {
 }
 
 /** A step's path, trimmed and in lower case: a step with no path is on the main path. */
-export const stepPath = (step: SpecRecord) => step.fields.path?.trim().toLowerCase() || 'main';
+export const stepPath = (step: SpecRecord) => textOf(step.row, 'path')?.trim().toLowerCase() || 'main';
 
 /** A flow's steps path by path: the main path first, then the others by name, each in order. */
 export function pathsOf(index: SpecIndex, flowId: string): { path: string; steps: SpecRecord[] }[] {
@@ -109,12 +109,12 @@ function TitledLinks({ index, ids, heading }: { index: SpecIndex; ids: string[];
 
 /** The fields a step's details show, by name. */
 function StepFields({ step, names }: { step: SpecRecord; names: string[] }) {
-  const given = names.filter((name) => step.fields[name]?.trim());
+  const given = names.filter((name) => textOf(step.row, name).trim());
   if (given.length === 0) return null;
   return (
     <dl className="fields step-fields">
       {given.map((name) => (
-        <div key={name}><dt>{name.replaceAll('_', ' ')}</dt><dd>{step.fields[name]}</dd></div>
+        <div key={name}><dt>{name.replaceAll('_', ' ')}</dt><dd>{textOf(step.row, name)}</dd></div>
       ))}
     </dl>
   );
@@ -164,7 +164,7 @@ export function FlowSteps({ index, flow }: { index: SpecIndex; flow: SpecRecord 
                         >
                           <Icon name={isOpen ? 'chevron-down' : 'chevron-right'} size={14} />
                         </button>
-                        <span className="step-order">{order ?? step.fields.order ?? '?'}</span>
+                        <span className="step-order">{order ?? textOf(step.row, 'position') ?? '?'}</span>
                         <RecordLink index={index} id={step.id} showTitle={false} />
                       </span>
                     </th>
@@ -179,7 +179,7 @@ export function FlowSteps({ index, flow }: { index: SpecIndex; flow: SpecRecord 
                     <tr className="flow-step-detail">
                       <td colSpan={2 + linked.length}>
                         <div className="flow-step-more" role="region" aria-label={`Details of ${step.id}`}>
-                          {step.body.trim() ? <RecordMarkdown index={index} record={step} /> : <p className="hint">The step says nothing more.</p>}
+                          {textOf(step.row, 'description').trim() ? <Prose index={index} source={textOf(step.row, 'description')} self={step.id} /> : <p className="hint">The step says nothing more.</p>}
                           <StepFields step={step} names={shape.details} />
                           {linked.map((c) => <TitledLinks key={c.relation} index={index} ids={c.ids} heading={c.heading} />)}
                         </div>

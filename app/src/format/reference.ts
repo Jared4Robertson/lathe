@@ -1,113 +1,153 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import concepts from '../../../lathe/FORMAT.md?raw';
-import type { CheckReference, FormatReference, KindReference, RelationReference } from '../../../lathe/src/reference';
-import { onLatheEvent } from '../events';
-import { formatPath, type SpecIndex, type Workspace } from '../specs/data';
+import { useMemo } from 'react';
+import type { ColumnDescription } from '../../../lathe/src/store/schema';
+import { formatPath, kindOrder, textOf, type SpecIndex, type Workspace } from '../specs/data';
 
-export type { CheckReference, FormatReference, KindReference, RelationReference };
-
-// The format reference in the app: what the engine serves at GET /api/format (every kind, relation,
-// folder and check of this product, with its extensions and its own checks), and the addresses of
-// the pages that show it. When the engine does not serve it (the sample fixture, or a test), the
-// app builds what it can from the loaded workspace, without the check explanations.
+// The format reference in the app: every kind (its table and typed columns), relation, folder and
+// check of this space, read from the schema the server serves with the data and from the check
+// table's rows; and the addresses of the pages that show it.
 
 export { formatPath };
 export const kindPagePath = (kind: string) => `${formatPath}/kinds/${encodeURIComponent(kind)}`;
 export const checkPagePath = (check: string) => `${formatPath}/checks/${encodeURIComponent(check)}`;
-/** The anchor of a kind page's fields, and of one required field within it. */
+/** The anchor of a kind page's columns, and of one column within it. */
 export const FIELDS_ANCHOR = 'fields';
 export const fieldAnchor = (field: string) => `field-${field}`;
 export const kindFieldPath = (kind: string, field?: string) => `${kindPagePath(kind)}#${field ? fieldAnchor(field) : FIELDS_ANCHOR}`;
 
-export interface FormatState {
-  /** The reference, from the engine or built from the workspace. Null until the specs load. */
-  reference: FormatReference | null;
-  /** 'engine' when GET /api/format answered; 'workspace' when the app built it from the workspace. */
-  source: 'engine' | 'workspace' | null;
+/** A kind as the reference describes it: its table's columns, where it sits, and its ID convention. */
+export interface KindReference {
+  kind: string;
+  label: string;
+  description: string;
+  /** 'define', 'design', or '' for the kinds outside the stages. */
+  stage: string;
+  /** The folder the kind sits in, or ''. */
+  section: string;
+  parent_kinds: string[];
+  /** The kinds that list this kind among their parents, in kind order. */
+  child_kinds: string[];
+  /** Its table's columns, in their order. */
+  columns: ColumnDescription[];
+  /** The part tables its records own (an entity's fields, a use case's steps). */
+  parts: { table: string; description: string }[];
+  /** 'yes': designed, built and proved; 'proof': proved only; 'no': not an obligation. */
+  obligation: 'yes' | 'proof' | 'no';
+  id: { pattern: string; example: string } | null;
+  /** For a product's own kind, the product that declares it. */
+  product: string | null;
 }
 
-/**
- * The reference as far as the workspace tells it: its kinds, relations and folders, and a check for
- * each check name a problem carries, with no explanation or source.
- */
-export function referenceFromWorkspace(workspace: Workspace): FormatReference {
-  const kinds: KindReference[] = workspace.kinds.map((k) => ({
-    kind: k.kind,
-    label: k.label,
-    description: k.description,
-    stage: k.stage,
-    section: k.section,
-    parent_kinds: k.parent_kinds,
-    child_kinds: workspace.kinds.filter((c) => c.parent_kinds.includes(k.kind)).map((c) => c.kind),
-    required_fields: k.required_fields,
-    obligation: k.proof_only ? 'proof' : k.obligation ? 'yes' : 'no',
-    id: null,
-  }));
-  const checks = new Map<string, CheckReference>();
+export interface RelationReference {
+  relation: string;
+  source_kind: string;
+  /** A kind, or '*' for any kind. */
+  target_kind: string;
+  role: 'design' | 'proof' | '';
+  description: string;
+  forward_label: string;
+  reverse_label: string;
+}
+
+export interface SectionReference {
+  section: string;
+  stage: string;
+  order: number;
+  label: string;
+  description: string;
+}
+
+export type Severity = 'error' | 'warning';
+
+export interface CheckReference {
+  /** The check's name, as problems carry it. */
+  check: string;
+  /** The highest severity it reports. */
+  severity: Severity;
+  severities: Severity[];
+  /** What the check asks, in one sentence. */
+  summary: string;
+  /** What it reports and how to fix it, as Markdown. */
+  explanation: string;
+  /** Lathe's own checks, the product's, or the engine itself (a problem whose check has no row). */
+  origin: 'lathe' | 'product' | 'engine';
+  /** The query it runs, or '' for the engine's own. */
+  query: string;
+  /** The kinds it concerns; empty when it concerns records of any kind. */
+  kinds: string[];
+}
+
+export interface FormatReference {
+  kinds: KindReference[];
+  relations: RelationReference[];
+  /** The folders, in stage then order. */
+  sections: SectionReference[];
+  /** The checks by their place, Lathe's before the product's, then the engine's own. */
+  checks: CheckReference[];
+}
+
+const SEVERITIES: Record<string, Severity[]> = { error: ['error'], warning: ['warning'], error_or_warning: ['error', 'warning'] };
+
+/** The reference for a workspace: its schema's kinds, relations and folders, and its check rows. */
+export function referenceOf(workspace: Workspace): FormatReference {
+  const { schema } = workspace;
+  const kinds: KindReference[] = workspace.kinds.map((k) => {
+    const described = schema.kinds[k.kind];
+    const table = schema.tables[k.kind];
+    return {
+      kind: k.kind,
+      label: k.label,
+      description: k.description,
+      stage: k.stage,
+      section: k.section,
+      parent_kinds: k.parent_kinds,
+      child_kinds: workspace.kinds.filter((c) => c.parent_kinds.includes(k.kind)).map((c) => c.kind),
+      columns: table?.columns ?? [],
+      parts: Object.values(schema.tables)
+        .filter((t) => t.role === 'part' && t.foreignKeys.some((f) => f.columns.length === 1 && f.columns[0] === t.ownerColumn && f.table === k.kind))
+        .map((t) => ({ table: t.name, description: t.description ?? '' })),
+      obligation: k.proof_only ? 'proof' : k.obligation ? 'yes' : 'no',
+      id: described?.idPattern ? { pattern: described.idPattern, example: described.idExample ?? '' } : null,
+      product: described?.productId ?? null,
+    };
+  });
+  const rows = [...workspace.checks].sort((a, b) =>
+    (a.product_id === undefined ? 0 : 1) - (b.product_id === undefined ? 0 : 1) || Number(a.position) - Number(b.position));
+  const checks: CheckReference[] = rows.map((c) => {
+    const severities = SEVERITIES[textOf(c, 'severity')] ?? ['error'];
+    return {
+      check: textOf(c, 'name'),
+      severity: severities[0],
+      severities,
+      summary: textOf(c, 'summary'),
+      explanation: textOf(c, 'explanation'),
+      origin: c.product_id === undefined ? 'lathe' : 'product',
+      query: textOf(c, 'query'),
+      kinds: Array.isArray(c.kinds) ? [...c.kinds].sort(kindOrder) : [],
+    };
+  });
+  // A problem of a check with no row is the engine's own.
+  const known = new Set(checks.map((c) => c.check));
+  const engine = new Map<string, Set<Severity>>();
   for (const p of workspace.problems) {
-    const known = checks.get(p.check);
-    const severities = [...new Set([...(known?.severities ?? []), p.severity])];
-    const ordered = (['error', 'warning'] as const).filter((s) => severities.includes(s));
-    checks.set(p.check, { check: p.check, severity: ordered[0], severities: ordered, summary: '', explanation: '', origin: 'lathe', source: '', kinds: [] });
+    if (known.has(p.check)) continue;
+    engine.set(p.check, (engine.get(p.check) ?? new Set()).add(p.severity));
+  }
+  for (const [check, found] of [...engine].sort(([a], [b]) => a.localeCompare(b))) {
+    const severities = (['error', 'warning'] as const).filter((s) => found.has(s));
+    checks.push({ check, severity: severities[0], severities, summary: '', explanation: '', origin: 'engine', query: '', kinds: [] });
   }
   return {
-    concepts,
     kinds,
     relations: workspace.relations.map((r) => ({ ...r })),
     sections: workspace.sections,
-    checks: [...checks.values()].sort((a, b) => a.check.localeCompare(b.check)),
+    checks,
   };
 }
 
-const isReference = (v: unknown): v is FormatReference =>
-  !!v && typeof v === 'object' && Array.isArray((v as FormatReference).kinds) && Array.isArray((v as FormatReference).checks);
-
-interface FormatStore {
-  engine: FormatReference | null;
-  /** Asks for the reference; it is fetched once, then again when the specs change. */
-  want: () => void;
-}
-
-const FormatContext = createContext<FormatStore | null>(null);
-export const FormatProvider = FormatContext.Provider;
-
-/** The shell's store of the reference: nothing is fetched until a page or quick find wants it. */
-export function useFormatStore(): FormatStore {
-  const [engine, setEngine] = useState<FormatReference | null>(null);
-  const [wanted, setWanted] = useState(false);
-  const asked = useRef(false);
-  const want = useCallback(() => {
-    if (asked.current) return;
-    asked.current = true;
-    setWanted(true);
-  }, []);
-  useEffect(() => {
-    if (!wanted) return;
-    let live = true;
-    const load = async () => {
-      try {
-        const response = await fetch('/api/format');
-        const body = response.ok ? await response.json() : null;
-        if (live) setEngine(isReference(body) ? body : null);
-      } catch {
-        if (live) setEngine(null);
-      }
-    };
-    load();
-    const off = onLatheEvent('spec:changed', load);
-    return () => { live = false; off(); };
-  }, [wanted]);
-  return useMemo(() => ({ engine, want }), [engine, want]);
-}
-
-/** The format reference for the loaded specs: the engine's, or one built from the workspace. */
-export function useFormat(index: SpecIndex | null, enabled = true): FormatState {
-  const store = useContext(FormatContext);
-  useEffect(() => { if (enabled) store?.want(); }, [enabled, store]);
+/** The format reference for the loaded data (the space's, when the index is a space's). */
+export function useFormat(index: SpecIndex | null): FormatReference | null {
   const workspace = index?.workspace ?? null;
-  const built = useMemo(() => (workspace ? referenceFromWorkspace(workspace) : null), [workspace]);
-  if (store?.engine) return { reference: store.engine, source: 'engine' };
-  return { reference: built, source: built ? 'workspace' : null };
+  return useMemo(() => (workspace ? referenceOf(workspace) : null), [workspace]);
 }
 
 // ---------- Lookups ----------
@@ -140,9 +180,21 @@ export function relationsOf(ref: FormatReference, kind: string): { out: Relation
   };
 }
 
-/** The checks that name the kind in their `kinds:` header line. */
+/** The checks whose row names the kind among its kinds. */
 export const checksOf = (ref: FormatReference, kind: string) => ref.checks.filter((c) => c.kinds.includes(kind));
 
 /** A relation's words, read from the source or from the target, falling back to its name. */
 export const relationWords = (r: RelationReference, from: 'source' | 'target') =>
   (from === 'source' ? r.forward_label : r.reverse_label) || r.relation.replaceAll('_', ' ');
+
+/** A column's type as the reference writes it: text, whole number, true or false, a date, one of an enum's values, or a list of texts. */
+export function columnType(column: ColumnDescription): string {
+  switch (column.kind) {
+    case 'text': return 'text';
+    case 'integer': return 'whole number';
+    case 'boolean': return 'true or false';
+    case 'date': return 'date (YYYY-MM-DD)';
+    case 'enum': return `one of ${(column.values ?? []).join(', ')}`;
+    case 'text_list': return 'list of texts';
+  }
+}

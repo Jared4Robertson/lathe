@@ -76,8 +76,7 @@ export const QuickFind = forwardRef<HTMLInputElement, QuickFindProps>(
     const [open, setOpen] = useState(false);
     const listId = useId();
     const shortcut = useShortcutHint('quickOpen');
-    // The format's checks are fetched once something is typed.
-    const { reference } = useFormat(index, query.trim() !== '');
+    const reference = useFormat(index);
     const checks = useMemo(() => reference?.checks.map((c) => c.check) ?? [], [reference]);
     const all = useMemo(() => findItems(index, checks), [index, checks]);
     const results = useMemo(() => rankItems(all, query, inline ? 20 : 8), [all, query, inline]);
