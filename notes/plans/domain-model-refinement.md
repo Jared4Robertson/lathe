@@ -77,6 +77,11 @@ The Owner worked through the model as a diagram and settled each point below. S2
     | Adapter | Integration |
 
     A command is carried out by its handler and its aggregate root's data model. Links that follow from the tree aren't stored, such as a handler loading its repository.
+
+    **Domain layer and application layer stay apart:**
+    - **Domain layer:** data models, value types, predicates, event types and services. A service, which implements a domain service, never uses a repository or an outside system. Its inputs are passed in, and it returns a value or a decision.
+    - **Application layer:** command handlers, query handlers and event handlers are what DDD calls application services. Only they, and projections, read or write storage. A command handler owns its transaction, and a projection writes only its own read model's table. Several handlers may share one file, such as one service class per aggregate. Lathe still records one handler per command or query.
+    - **Words:** clean architecture's "use case" or "interactor" is what Lathe calls a command handler. A Lathe use case is the actor's goal, one level up. The generated reference says so.
 18. **Products declare extra technical kinds** through product kinds. Lathe declares its own where its code fits none of these.
 
 ### Test plan
