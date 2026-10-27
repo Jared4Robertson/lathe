@@ -3,7 +3,7 @@ import type { SpecIndex, SpecRecord } from './data';
 import { addressOf } from '../views/address';
 import { Markdown, type ProseLinks } from './Markdown';
 
-// A record's body with the IDs it cites as links (FORMAT.md section 12). The engine lists the
+// A record's body with the IDs it cites as links (FORMAT.md section 11). The engine lists the
 // existing records a body cites in `mentions` (missing before pass 5: treated as none), and warns
 // with `unknown-id-in-prose` about a cited ID that is not a record; those show as broken links.
 

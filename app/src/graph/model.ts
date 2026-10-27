@@ -395,7 +395,7 @@ export const isGroup = (index: SpecIndex, id: string) => treeOf(index).groups.ha
 /** Whether the graph can center on an ID: a record or a group. */
 export const isGraphNode = (index: SpecIndex, id: string) => index.byId.has(id) || isGroup(index, id);
 
-/** A kind's label in the plural: "Use cases", "Open questions", "Fitness". */
+/** A kind's label in the plural: "Use cases", "Open questions", "Capabilities". */
 export function pluralLabel(index: SpecIndex, kind: string): string {
   return plural(kindLabel(index, kind));
 }

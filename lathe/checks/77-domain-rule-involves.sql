@@ -2,7 +2,7 @@
 --
 -- A domain rule sits on the aggregate, or the entity, it is about. One that holds across aggregates, such as
 -- two records saved together or a lifecycle rule for every record in the domain, sits under the domain
--- (FORMAT.md section 17) and says with `involves` which aggregates it ties together. Such a rule is reported
+-- (FORMAT.md section 16) and says with `involves` which aggregates it ties together. Such a rule is reported
 -- when it involves fewer than two aggregates: a rule about one aggregate belongs under that aggregate. It is
 -- also reported, once per link, for each aggregate it involves from another domain, since a rule across
 -- domains is a domain event's job: one domain raises the event and the other reacts to it. A rule under an

@@ -58,7 +58,7 @@ export interface SpecRecord {
   path: string;
   /** IDs of existing records of the same product (or of none) that this record's body cites in its prose, in order of first mention. */
   mentions: string[];
-  /** An entity or domain event's fields, from the Fields table in its body (FORMAT section 17); absent for other kinds. */
+  /** An entity or domain event's fields, from the Fields table in its body (FORMAT section 16); absent for other kinds. */
   entityFields?: EntityField[];
 }
 

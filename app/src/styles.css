@@ -326,22 +326,8 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 }
 /* ---------- End of graph view ---------- */
 
-/* Coverage, fitness and evidence */
-.fitness { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
-.fitness-latest { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 14px; border: 1px solid var(--rule); border-radius: 10px; background: var(--sheet); }
-.fitness-score { margin: 0; display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: baseline; }
-.score { display: inline-flex; gap: 6px; align-items: center; font: 0.9rem var(--mono); color: var(--muted); }
-.score strong { font: 700 1.6rem var(--display); color: var(--ink); }
-.score.invalid { color: var(--error); }
-.score-pips { display: inline-flex; gap: 3px; }
-.score-pips span { width: 10px; height: 10px; border-radius: 50%; border: 1px solid var(--steel); }
-.score-pips span.on { background: var(--steel); }
-.fitness-history > li { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; }
-.fitness-history .score strong { font-size: 1rem; }
-.fitness-history time { font: 0.8rem var(--mono); color: var(--muted); }
-.empty-fitness p { margin: 0; }
-.evidence { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 12px 14px; border: 1px dashed var(--rule); border-radius: 10px; }
-.evidence-list > div { grid-template-columns: 130px 1fr; }
+/* The product summary */
+.summary-list > div { grid-template-columns: 130px 1fr; }
 .spec-body > * { min-width: 0; }
 .markdown table { display: block; max-width: 100%; overflow-x: auto; }
 

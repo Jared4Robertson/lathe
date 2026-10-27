@@ -39,7 +39,7 @@ export function parseRecordFile(text: string): ParseResult {
   const structural: Record<string, string | null> = { id: null, kind: null, title: null, parent: null };
   for (const [name, value] of Object.entries(header)) {
     if (name === 'links' || value === null || value === undefined) continue;
-    // Plain values are kept as text, so `score: 4` and `score: "4"` mean the same. Lists and maps are not plain values.
+    // Plain values are kept as text, so `order: 4` and `order: "4"` mean the same. Lists and maps are not plain values.
     if (typeof value !== 'string' && typeof value !== 'number' && typeof value !== 'boolean') {
       return { ok: false, reason: `field "${name}" is not a plain value (text, a number or true/false)` };
     }
@@ -124,7 +124,7 @@ export function idTokensInProse(body: string): string[] {
   return proseTokens(body).map((t) => t.token);
 }
 
-/** What an entity's body says under its `## Fields` heading (FORMAT.md section 17), before any judgment. */
+/** What an entity's body says under its `## Fields` heading (FORMAT.md section 16), before any judgment. */
 export interface FieldsTable {
   /** Whether the body has a `## Fields` heading outside fenced code. */
   heading: boolean;

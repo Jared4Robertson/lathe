@@ -9,7 +9,7 @@ A domain model says what the product's records are, how they hold and refer to e
 
 ## Step one: find the slices
 
-Before you write any record, find the product's business capabilities and make each one a domain: a vertical slice that owns its domain model, use cases, flows, views, endpoints, components and tests (FORMAT.md section 19). Technology is a layer inside each domain's Design stage, such as Web app, Server or Desktop, never a domain. What every domain shares, such as the app shell or sign-in, goes in a platform domain or a pattern.
+Before you write any record, find the product's business capabilities and make each one a domain: a vertical slice that owns its domain model, use cases, flows, views, endpoints, components and tests (FORMAT.md section 18). Technology is a layer inside each domain's Design stage, such as Web app, Server or Desktop, never a domain. What every domain shares, such as the app shell or sign-in, goes in a platform domain or a pattern.
 
 Ask of each candidate domain:
 

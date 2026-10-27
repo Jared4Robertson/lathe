@@ -1,6 +1,6 @@
 -- A child entity that its aggregate's root does not reach.
 --
--- Each child entity is a part of its aggregate's root (FORMAT.md section 17), so a `has_one` or `has_many`
+-- Each child entity is a part of its aggregate's root (FORMAT.md section 16), so a `has_one` or `has_many`
 -- reaches it from the root, directly or through other children of the same aggregate. Links that cross
 -- aggregates (has-crosses-aggregate) and `refers_to` links do not count. An aggregate with no root, or more
 -- than one, is aggregate-root only, so its children are not reported. Link the child from the root or from

@@ -1,7 +1,7 @@
 import type { Kind, RelationRule, SpecRecord, Workspace } from '../../../lathe/src/types';
 import { patternWorkspace } from './patterns';
 
-// The pattern workspace with a standard beside the pattern, as FORMAT.md section 20 has it: DM-STD-CODE
+// The pattern workspace with a standard beside the pattern, as FORMAT.md section 19 has it: DM-STD-CODE
 // in Shared with two rules. R01 is met by the component DM-SHOP-C01 and the test DM-SHOP-T01; R02 is met
 // by nothing, so it has the standard-rule-unmet warning.
 

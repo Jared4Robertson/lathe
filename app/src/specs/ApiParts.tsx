@@ -3,7 +3,7 @@ import { kindLabel, type SpecIndex, type SpecRecord } from './data';
 import { RecordTree, Section } from './parts';
 
 // An API's page lists its endpoints and the interaction requirements they share, and an
-// integration's page lists its exchanges, one interaction requirement each (FORMAT.md section 21).
+// integration's page lists its exchanges, one interaction requirement each (FORMAT.md section 20).
 
 const childrenOf = (index: SpecIndex, id: string, kind: string) => (index.children.get(id) ?? []).filter((c) => c.kind === kind);
 

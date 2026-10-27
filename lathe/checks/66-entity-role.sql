@@ -1,6 +1,6 @@
 -- An entity's role is root or child.
 --
--- `root` is the aggregate's root record and `child` one of its parts (FORMAT.md section 17), in any letter
+-- `root` is the aggregate's root record and `child` one of its parts (FORMAT.md section 16), in any letter
 -- case. A missing or empty role is missing-required-field only. Fix the `role` value.
 --
 -- severity: error

@@ -1,6 +1,6 @@
 import type { SpecRecord } from './data';
 
-// Groups (FORMAT.md section 23): a requirement, interaction requirement, pattern rule or standard rule may name a
+// Groups (FORMAT.md section 22): a requirement, interaction requirement, pattern rule or standard rule may name a
 // short heading in `group`, such as Validation or Paging. The wiki shows the ungrouped records first,
 // without a heading, then each group under its heading in the order the groups first appear. Groups
 // are compared trimmed and in any letter case, and headed as first written. Pure logic, tested directly.

@@ -6,7 +6,7 @@ import { indexWorkspace } from '../src/specs/data';
 import { stepsWorkspace } from './fixtures/flow-steps';
 import { main, openApp, section } from './helpers';
 
-// A flow's steps on its record page (FORMAT.md section 14): a table in order, folded one level.
+// A flow's steps on its record page (FORMAT.md section 13): a table in order, folded one level.
 
 const table = () => within(section(/^Steps/)).getByRole('table');
 const bodyRows = () => within(table()).getAllByRole('row').slice(1).filter((r) => r.classList.contains('flow-step'));

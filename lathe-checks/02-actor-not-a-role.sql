@@ -1,6 +1,6 @@
 -- A use case's actor is one of its product's roles.
 --
--- This is this repo's own check (lathe/FORMAT.md section 13). Specs name roles, never people: each product
+-- This is this repo's own check (lathe/FORMAT.md section 12). Specs name roles, never people: each product
 -- lists its roles in its header as `actors`, separated by spaces (Lathe's are `Owner Reader Agent`), and a
 -- use case's `actor` names one or more of them, separated by commas. Change the actor to one of the
 -- product's roles, or add the role to the product's `actors` and say in its body what the role does. A
