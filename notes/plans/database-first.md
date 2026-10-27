@@ -24,6 +24,10 @@ Nothing is typed or constrained. SQL checks report broken data after it is writt
 3. **The schema is the meta-model.** `kinds.csv`, `relations.csv`, `sections.csv` and `ids.csv` give way to the tables, columns and keys themselves, changed by migrations.
 4. **Products may add their own kinds.** A product declares an extra kind, and Lathe generates its table from that declaration, with the same keys and enforcement as Lathe's own kinds. (Owner said yes to allowing product kinds; confirm this reading.)
 5. **The principle holds across all of Lathe,** not just Authoring. Each slice's aggregates become concrete tables (see Scope).
+6. **The source of truth is an operation log in the repo.**
+   - Every write is appended to the log as one line of text, and the database is built by replaying it.
+   - Branches merge by combining both logs and replaying them, so a conflict shows up as a constraint failure on replay.
+   - Git keeps branches, review and history; the database is never committed.
 
 ## Scope
 Each slice's aggregates, as tables:
@@ -41,7 +45,7 @@ Each slice's aggregates, as tables:
 - **Exploring:** the reading model (pages, folders, the graph's tree) as queries over the tables. Saved reader state (tabs, spaces) as tables, if it is kept.
 - **Platform:** workspace and products loaded, theme and settings as tables. Writes go through one command layer, used by the app, the CLI and the plugin's MCP tools. Each write is a transaction recorded with who made it (Owner or Agent), when and why.
 
-Out of scope until decided: where the source of truth lives (Open questions 1), and how far body prose becomes typed fields (Open questions 2).
+Out of scope until decided: how far body prose becomes typed fields (Open questions 1).
 
 ## Changes to existing specs
 To list once the open questions are settled. Expect:
@@ -54,9 +58,5 @@ To list once the open questions are settled. Expect:
 To write once the open questions are settled.
 
 ## Open questions
-1. **Where the source of truth lives.**
-   - Recommendation: an operation log in the repo, from which the database is built; branches merge by replaying both logs.
-   - Alternatives: a database file in the repo, or a database outside git.
-   - Owner to decide.
-2. **How far prose becomes typed fields:** for example, a requirement's `statement` and a test's `given`, `when` and `then`, with long notes only where a kind declares them. Recommendation: typed fields per kind. Owner to decide.
-3. **Domain rules on the domain as well as an aggregate.** Recommendation: allow both, with `aggregate_id` optional and `domain_id` required. Owner to decide.
+1. **How far prose becomes typed fields:** for example, a requirement's `statement` and a test's `given`, `when` and `then`, with long notes only where a kind declares them. Recommendation: typed fields per kind. Owner to decide.
+2. **Domain rules on the domain as well as an aggregate.** Recommendation: allow both, with `aggregate_id` optional and `domain_id` required. Owner to decide.
