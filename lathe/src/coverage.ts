@@ -33,7 +33,7 @@ CREATE OR REPLACE TABLE file_mentions (record VARCHAR NOT NULL, mentioned VARCHA
  *   and a rule with an applies-when setting that no follower there meets: a follower meets it when its setting_value
  *   for that setting has a value equal to applies_when_value (or, when applies_when_negated, different from it),
  *   compared trimmed and in any letter case. Such a rule is waived there: neither owed nor proved.
- * - obligation_kind (kind, label, proof_only, ord): the obligation kinds in schema order.
+ * - obligation_kind (kind, label, proof_only, ord): the obligation kinds in kind order (meta_kind.position, then a product's own by name).
  * - role_link: each design or proof link to an obligation, with its source's kind, domain and state, whether the
  *   source's file exists and whether its claim is backed (an automated test's file names the test, its key, or the
  *   target).
@@ -70,7 +70,7 @@ judged AS (
 SELECT domain, id, kind FROM judged WHERE NOT not_applicable AND meets;
 
 CREATE OR REPLACE VIEW obligation_kind AS
-SELECT name AS kind, label, obligation = 'proof' AS proof_only, rowid AS ord
+SELECT name AS kind, label, obligation = 'proof' AS proof_only, row_number() OVER (ORDER BY position NULLS LAST, name) AS ord
 FROM meta_kind WHERE obligation <> 'none';
 
 CREATE OR REPLACE VIEW role_link AS

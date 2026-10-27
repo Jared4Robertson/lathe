@@ -1,7 +1,9 @@
-{"api_id":"LA-AUT-API01","position":1,"name":"Format reference","meaning":"Every kind, relation, folder and check of the product, as `lathe/src/reference.ts` builds it.","fields":"`concepts`, `kinds`, `relations`, `sections`, `checks`"}
+{"api_id":"LA-AUT-API01","position":1,"name":"Reference","meaning":"Every kind, table, relation, folder and check of the product, as `lathe/src/reference.ts` builds it.","fields":"`kinds`, `tables`, `relations`, `sections`, `checks`"}
 {"api_id":"LA-AUT-API01","position":2,"name":"Error","meaning":"A refusal.","fields":"`error` (a sentence)"}
-{"api_id":"LA-EXP-API01","position":1,"name":"History","meaning":"The commits that touched a record's spec file, newest first, a page at a time.","fields":"`state`, `id`, `file`, `uncommitted`, `commits`, `more`"}
-{"api_id":"LA-EXP-API01","position":2,"name":"Diff","meaning":"One commit's change to the file, or the changes not committed yet.","fields":"`state`, `id`, `file`, `commit`, `diff`, `truncated`"}
+{"api_id":"LA-EXP-API01","position":1,"name":"History","meaning":"The commits that changed a record's rows, newest first, a page at a time, with the changes not committed yet.","fields":"`state`, `id`, `files`, `uncommitted`, `commits` (each `hash`, `short`, `date`, `author`, `subject`, `changes`), `more`"}
+{"api_id":"LA-EXP-API01","position":2,"name":"Change","meaning":"One of the record's rows a commit, or the working tree, changed.","fields":"`table`, `key`, `change` (added, removed or changed), `fields` (each `name`, `before`, `after`)"}
 {"api_id":"LA-EXP-API01","position":3,"name":"Error","meaning":"A refusal.","fields":"`error` (a sentence)"}
-{"api_id":"LA-PLT-API01","position":1,"name":"Workspace","meaning":"The whole spec, as `lathe/src/types.ts` defines it.","fields":"`kinds`, `sections`, `relations`, `records`, `links`, `problems`, `coverage`"}
-{"api_id":"LA-PLT-API01","position":2,"name":"Error","meaning":"A refusal.","fields":"`error` (a sentence)"}
+{"api_id":"LA-PLT-API01","position":1,"name":"Spec data","meaning":"The product's data, as `lathe/src/server/contract.ts` defines it: the schema, every stored table's rows, and the checks' problems and coverage.","fields":"`schema`, `dataDir`, `tables`, `problems`, `coverage`"}
+{"api_id":"LA-PLT-API01","position":2,"name":"Error","meaning":"A refusal before the store sees the request.","fields":"`error` (a sentence)"}
+{"api_id":"LA-PLT-API01","position":3,"name":"Write","meaning":"One write's commands, in order.","fields":"`commands` (add, set, move, link, unlink or remove, each with its table or relation and values)"}
+{"api_id":"LA-PLT-API01","position":4,"name":"Write answer","meaning":"The rows the write changed, or the store's refusal.","fields":"`ok`, then `tables`, `files`, `changes` (each `table`, `key`, `before`, `after`), or `error` and `problems` (each `rule`, `message`, `command`)"}

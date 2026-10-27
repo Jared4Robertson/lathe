@@ -12,16 +12,6 @@ export type { Coverage, Kind, Problem, Row, SchemaDescription, SpecData, Value }
 // holds a value, a link per row of a relation's table, and the part rows (an entity's fields, a use
 // case's actors and steps) under the record that owns them. Every view reads this index.
 
-/**
- * Lathe's kinds in the order the app lists and ranks them: the product and its domains, the Define
- * stage, the Design stage, then open questions. A product's own kinds follow, by name.
- */
-export const KIND_ORDER: readonly string[] = [
-  'product', 'domain', 'capability', 'aggregate', 'entity', 'domain_event', 'domain_rule', 'use_case', 'requirement',
-  'pattern', 'pattern_rule', 'standard', 'standard_rule', 'flow', 'flow_step', 'view', 'api', 'endpoint', 'integration',
-  'interaction_requirement', 'layer', 'component', 'design_flow', 'design_step', 'test', 'question',
-];
-
 /** One record: a row of its kind's table, placed in the tree. */
 export interface SpecRecord {
   id: string;
@@ -60,7 +50,7 @@ export interface Workspace {
   schema: SchemaDescription;
   /** The data folder, relative to the product root, such as data. */
   dataDir: string;
-  /** Every kind, in KIND_ORDER. */
+  /** Every kind, in the schema's kind order (kindOrder). */
   kinds: Kind[];
   /** The folders kinds sit in, by stage then place. */
   sections: SectionRule[];
@@ -103,9 +93,14 @@ export function partTablesOf(schema: SchemaDescription, kind: string): string[] 
     .sort();
 }
 
-const rankOf = (kind: string) => { const i = KIND_ORDER.indexOf(kind); return i < 0 ? KIND_ORDER.length : i; };
-/** Kinds in KIND_ORDER, a product's own kinds after Lathe's, by name. */
-export const kindOrder = (a: string, b: string) => rankOf(a) - rankOf(b) || a.localeCompare(b);
+/**
+ * Orders kind names as the schema does: Lathe's kinds by their position (the product and its domains, the Define
+ * stage, the Design stage, then open questions), a product's own kinds after them, by name.
+ */
+export function kindOrder(schema: SchemaDescription): (a: string, b: string) => number {
+  const rank = (kind: string) => schema.kinds[kind]?.position ?? Number.MAX_SAFE_INTEGER;
+  return (a, b) => rank(a) - rank(b) || a.localeCompare(b);
+}
 
 // Folders by stage: Define, Design, then those outside the stages (Shared).
 const stageRank = (stage: string | null) => (stage === 'define' ? 0 : stage === 'design' ? 1 : 2);
@@ -113,7 +108,7 @@ const stageRank = (stage: string | null) => (stage === 'define' ? 0 : stage === 
 /** Reads the schema's kinds, folders and relations, and the rows, into a Workspace. */
 export function buildWorkspace(data: SpecData): Workspace {
   const { schema } = data;
-  const names = Object.keys(schema.kinds).sort(kindOrder);
+  const names = Object.keys(schema.kinds).sort(kindOrder(schema));
   const kinds: Kind[] = names.map((name) => {
     const k = schema.kinds[name];
     const skip = new Set(['id', 'title', ...k.parents.map((p) => p.column)]);

@@ -4,7 +4,7 @@ import { cpSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writ
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
-import { LATHE_DATA_DIR, loadWorkspace, openStore, PACKAGE_DIR, tableText, type Row } from '../src/index.ts';
+import { LATHE_DATA_DIR, loadWorkspace, openStore, tableText, type Row } from '../src/index.ts';
 import { fixture } from './helpers.ts';
 
 const temps: string[] = [];
@@ -112,9 +112,6 @@ describe('loading', () => {
     expect(typeof requirement.fields.statement).toBe('string');
     // The result is plain JSON, as the app reads it from /api/spec.
     expect(JSON.parse(JSON.stringify(ws))).toEqual(ws);
-    // The sample workspace the app falls back to is the good fixture's, as the engine returns it today.
-    const sample = JSON.parse(readFileSync(path.join(PACKAGE_DIR, 'fixtures', 'workspace.sample.json'), 'utf8'));
-    expect(sample).toEqual(await loadWorkspace(fixture('good')));
   });
 
   it("LA-PLT-T04 Each record's product and domain come from its parents, and refused data is a data-refused error", async () => {

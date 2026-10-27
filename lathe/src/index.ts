@@ -204,9 +204,9 @@ async function computeCoverage(store: Store): Promise<Coverage[]> {
   });
 }
 
-/** The kinds in schema order (Lathe's by migration, then the product's), from meta_kind. */
+/** The kinds in the order people read them: Lathe's by meta_kind.position, then the product's by name. */
 async function kindOrder(store: Store): Promise<string[]> {
-  return (await store.query<{ name: string }>('SELECT name FROM meta_kind ORDER BY rowid')).map((k) => k.name);
+  return (await store.query<{ name: string }>('SELECT name FROM meta_kind ORDER BY position NULLS LAST, name')).map((k) => k.name);
 }
 
 /** The records, links and meta-model of an open store, as the engine returns them. */
