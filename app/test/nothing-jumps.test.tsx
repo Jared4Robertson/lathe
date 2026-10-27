@@ -103,7 +103,8 @@ describe('nothing jumps (LA-PAT-APP-UX-R08)', () => {
     expect(valueFor('.graph-count', 'text-overflow')).toBe('ellipsis');
     // The Model view: its caption is one line, and its key has one height for every ERD.
     expect(valueFor('.model-caption', 'white-space')).toBe('nowrap');
-    expect(valueFor('.erd-key', 'block-size')).toBe('var(--erd-key-height)');
+    // One height for every ERD at a given pane width: a narrow pane's key is a fixed multiple of it, never sized by its content.
+    expect(valueFor('.erd-key', 'block-size')).toMatch(/^(?:var\(--erd-key-height\)|calc\(var\(--erd-key-height\) \* [0-9.]+\))$/);
     expect(CSS).toMatch(/--erd-key-height:\s*[0-9.]+rem/);
     // A pane's title bar is one row.
     expect(valueFor('.pane-bar', 'display')).toBe('flex');

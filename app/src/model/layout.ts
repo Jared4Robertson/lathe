@@ -18,13 +18,13 @@ export function erdGraph(erd: Erd, aspect = 1.6): ElkNode {
       'elk.algorithm': 'layered',
       'elk.direction': 'RIGHT',
       'elk.layered.considerModelOrder.strategy': 'NODES_AND_EDGES',
-      'elk.layered.spacing.nodeNodeBetweenLayers': '90',
-      'elk.spacing.nodeNode': '28',
-      'elk.spacing.componentComponent': '60',
+      'elk.layered.spacing.nodeNodeBetweenLayers': '48',
+      'elk.spacing.nodeNode': '14',
+      'elk.spacing.componentComponent': '28',
       // A model wider than the canvas's shape wraps its layers into rows, read left to right then down.
       'elk.aspectRatio': String(Math.round(aspect * 100) / 100),
       'elk.layered.wrapping.strategy': 'MULTI_EDGE',
-      'elk.layered.wrapping.additionalEdgeSpacing': '20',
+      'elk.layered.wrapping.additionalEdgeSpacing': '10',
     },
     children: ordered.map((b) => ({ id: b.id, ...boxSize(b) })),
     edges: [

@@ -32,7 +32,14 @@ export const MIN_ZOOM = 1e-4;
  * The camera that frames a focus (LA-EXP-DR59): the focus and its descendants down to `depth`
  * levels below it fill the pane, the parent's level showing in a strip at the left edge (the frame
  * starts at the parent's right edge, past the strip). A node with fewer levels below it frames what
- * it has. Zoomed in no further than MAX_ZOOM, and centered in the space right of the strip.
+ * it has. Zoomed in no further than MAX_ZOOM.
+ *
+ * No box of the framed levels is cut at an edge. Top and bottom, the frame takes whole rows of the
+ * focus's level, the focus and as many of its neighbors as the width leaves room for, its edges in
+ * the gaps between rows (or the padding past the first and last row); every deeper box lies inside
+ * a box of the focus's level, so it is whole too. On the right, the frame ends in the gap before the
+ * next, unframed level (or the padding past the last level); what width is left over goes to the
+ * parent's strip on the left.
  */
 export function frameOnMap(map: GraphMap, focus: string, depth: number, width: number, height: number): Viewport {
   const node = map.nodes.get(focus);
@@ -45,15 +52,44 @@ export function frameOnMap(map: GraphMap, focus: string, depth: number, width: n
   };
   walk(node, 0);
   const last = map.levels[deepest];
-  // From the parent's right edge (the gap to the focus included), or the focus's left edge for a root, to the last level's right edge.
+  const next = map.levels[deepest + 1];
+  // From the parent's right edge (the gap to the focus included), or the focus's left edge for a root, to the middle
+  // of the gap before the next level, or the last level's right edge and the padding.
   const parent = node.parent === null ? null : map.nodes.get(node.parent)!;
   const left = parent ? parent.x + parent.w : node.x;
-  const right = last.x + last.width;
+  const lastRight = last.x + last.width;
+  const right = next ? (lastRight + next.x) / 2 : lastRight;
+  const rightPad = next ? 0 : FRAME_PADDING;
   const strip = parent ? Math.min(PARENT_STRIP_MAX, width * PARENT_STRIP) : 0;
-  const room = { w: width - strip - 2 * FRAME_PADDING, h: height - 2 * FRAME_PADDING };
-  const zoom = Math.min(MAX_ZOOM, room.h / node.h, room.w / (right - left));
-  const cy = node.y + node.h / 2;
-  return { x: strip + FRAME_PADDING + room.w / 2 - ((left + right) / 2) * zoom, y: height / 2 - cy * zoom, zoom };
+  const widthZoom = Math.min(MAX_ZOOM, (width - strip - FRAME_PADDING - rightPad) / (right - left));
+
+  // The rows of the focus's level the frame takes, from row i to row j, and the zoom that fits them.
+  const row = map.byLevel[node.level];
+  let i = row.indexOf(node);
+  let j = i;
+  // The margin past a row: half the gap to the next row, at most half a sibling gap (a twentieth of the row), so a
+  // wide gap to a cousin far away is not framed.
+  const margin = (gap: number, h: number) => Math.min(gap / 2, h / 20);
+  const rows = () => {
+    const top = i > 0 ? row[i].y - margin(row[i].y - (row[i - 1].y + row[i - 1].h), row[i].h) : row[i].y;
+    const bottom = j < row.length - 1 ? row[j].y + row[j].h + margin(row[j + 1].y - (row[j].y + row[j].h), row[j].h) : row[j].y + row[j].h;
+    const topPad = i > 0 ? 0 : FRAME_PADDING;
+    const pads = topPad + (j < row.length - 1 ? 0 : FRAME_PADDING);
+    return { top, topPad, zoom: (height - pads) / (bottom - top) };
+  };
+  let frame = rows();
+  // Take in a sibling at a time, above and below in turn, until the rows fit the width's zoom. Only siblings: a
+  // cousin may be far taller, and framing it would shrink the focus.
+  const sibling = (k: number) => k >= 0 && k < row.length && row[k].parent === node.parent;
+  for (let up = true; frame.zoom > widthZoom && (sibling(i - 1) || sibling(j + 1)); up = !up) {
+    if ((up && sibling(i - 1)) || !sibling(j + 1)) i--;
+    else j++;
+    frame = rows();
+  }
+  const zoom = Math.min(widthZoom, frame.zoom);
+  // Rows that fit at the width's zoom are centered on their middle; rows that set the zoom fill the height.
+  const y = frame.zoom <= widthZoom ? frame.topPad - frame.top * zoom : height / 2 - (row[i].y + (row[j].y + row[j].h)) / 2 * zoom;
+  return { x: width - rightPad - right * zoom, y, zoom };
 }
 
 /** The whole map in the pane: the overview's camera, and the least the camera zooms out. */

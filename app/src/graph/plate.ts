@@ -1,5 +1,5 @@
 import { kindLabel, type SpecIndex, type Stage as SchemaStage } from '../specs/data';
-import { FILE_KIND, stageOf } from './model';
+import { FILE_KIND, groupKindLabel, stageOf } from './model';
 import type { MapNode } from './map';
 import type { NestedNode } from './nested';
 import type { VoronoiNode } from './voronoi';
@@ -170,7 +170,7 @@ export function plateOf(index: SpecIndex, id: string, source: PlateSource, fileT
   const marks = file ? { errors: 0, warnings: 0, gaps: [] } : marksOf(index, id);
   const marked = marks.errors + marks.warnings + marks.gaps.length > 0;
   const base = {
-    id, kind, kindLabel: record ? kindLabel(index, record.kind) : file ? 'File' : 'Group', title: file ? fileTitle ?? words.title : words.title, meta: words.meta,
+    id, kind, kindLabel: record ? kindLabel(index, record.kind) : file ? 'File' : groupKindLabel(index, id), title: file ? fileTitle ?? words.title : words.title, meta: words.meta,
     stage, group: !record && !file, file, shape, view: source.view, x, y, w, h, text: t, ...marks,
     dashed: file || kind === 'question',
   };
@@ -216,11 +216,14 @@ export function plateOf(index: SpecIndex, id: string, source: PlateSource, fileT
   };
 }
 
-/** The accessible name of a box: "Use case (center) Browse the map", "Group Use cases (4) in LA-EXP". */
+/** The accessible name of a box: "Use case (center) Browse the map", "Stage Use cases (4) in LA-EXP". */
 export function plateName(p: Plate, isFocus: boolean): string {
-  if (p.group) return `Group ${p.title} in ${p.meta.replace(/^Group · /, '')}${isFocus ? ' (center)' : ''}`;
+  if (p.group) return `${p.kindLabel} ${p.title} in ${groupOwnerOf(p)}${isFocus ? ' (center)' : ''}`;
   return `${p.kindLabel} ${isFocus ? '(center) ' : ''}${p.title}`;
 }
 
+/** A group's owner, the end of its kind line ("Stage · LA-EXP"). */
+const groupOwnerOf = (p: Plate) => p.meta.split(' · ').at(-1) ?? '';
+
 /** A box's tooltip: "title (ID)", or a group's "title (in owner)". */
-export const plateTip = (p: Plate) => (p.group ? `${p.title} (${p.meta.replace(/^Group · /, 'in ')})` : `${p.title} (${p.id})`);
+export const plateTip = (p: Plate) => (p.group ? `${p.title} (in ${groupOwnerOf(p)})` : `${p.title} (${p.id})`);

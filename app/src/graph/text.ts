@@ -1,6 +1,6 @@
 import { gapsOf, kindLabel, type SpecIndex } from '../specs/data';
 import { NODE_WIDTH } from './layout';
-import { groupLabel, groupMarks, groupOwner } from './model';
+import { groupKindLabel, groupLabel, groupMarks, groupOwner } from './model';
 import { nodeShape, SHAPES, type Room, type Shape } from './shapes';
 
 // A box's label as part of the map (LA-EXP-DR58): its two lines, the kind and ID line and the
@@ -94,12 +94,12 @@ export function wrapText(text: string, width: number, measure: (s: string) => nu
   return greedy(text.match(/\S+\s*|\s+/g) ?? [], at ? byBreaks : byChars);
 }
 
-/** What a box's label says: its title and its kind and ID line ("Use case · LA-EXP-UC03", "Group · LA-EXP"). */
+/** What a box's label says: its title and its kind and ID line ("Use case · LA-EXP-UC03"; a group's "Stage · LA-EXP", "Aggregate folder · LA-EXP"). */
 export function labelLines(index: SpecIndex, id: string): { title: string; meta: string } {
   const record = index.byId.get(id);
   if (record) return { title: record.title, meta: `${kindLabel(index, record.kind)} · ${id}` };
   if (id.startsWith('file:')) return { title: id.slice(5), meta: 'File' };
-  return { title: groupLabel(index, id), meta: `Group · ${groupOwner(index, id)}` };
+  return { title: groupLabel(index, id), meta: `${groupKindLabel(index, id)} · ${groupOwner(index, id)}` };
 }
 
 /** Whether a box shows the problem badge: it or, for a group, its members have problems or coverage gaps. */

@@ -367,8 +367,8 @@ export type Point = { x: number; y: number };
 export interface Rect { x: number; y: number; width: number; height: number }
 
 /** A box with rows (fields, entities), and a sticky note (a command, policy, specification or query with none). */
-export const BOX_WIDTH = 230;
-export const STICKY_WIDTH = 200;
+export const BOX_WIDTH = 210;
+export const STICKY_WIDTH = 170;
 /** The parts of a box's height, in CSS pixels at the default text size (styles.css .erd-box): its padding and border, a title line, the kind line, a row, and the rows' rule. */
 const FRAME = 22;
 const TITLE_LINE = 16;

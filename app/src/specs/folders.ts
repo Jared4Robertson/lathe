@@ -182,6 +182,9 @@ function canStartIn(index: SpecIndex, kind: string, owner: string): boolean {
   return described.parent_kinds.some((p) => p === owner || (!CONTAINERS.has(p) && stageOfKind(index, p) !== described.stage && canSitIn(index, p, owner)));
 }
 
+/** The key, and graph address, of the folder holding a product's own stages: "TL/product-level". */
+export const productLevelKey = (productId: string) => `${productId}/product-level`;
+
 /** A domain's stages and folders. */
 export const domainFolders = (index: SpecIndex, domainId: string): OwnerFolders => ownerFolders(index, domainId);
 
@@ -207,7 +210,7 @@ export function branchOf(index: SpecIndex, id: string): string[] {
   for (let r: SpecRecord | undefined = record; r && !seen.has(r.id); r = r.parent ? index.byId.get(r.parent) : undefined) {
     seen.add(r.id);
     const stage = folders.stages.find((s) => s.folders.some((f) => f.records.some((x) => x.id === r!.id)));
-    const head = record.domain ? [`domain:${record.domain}`] : [];
+    const head = record.domain ? [`domain:${record.domain}`] : [productLevelKey(owner)];
     if (stage) return [...head, stage.key, stage.folders.find((f) => f.records.some((x) => x.id === r!.id))!.key];
     const loose = folders.loose.find((f) => f.records.some((x) => x.id === r!.id));
     if (loose) return [...head, loose.key];

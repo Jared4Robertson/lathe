@@ -38,14 +38,26 @@ describe('graph camera', () => {
       const v = frameOnMap(map, focus, depth, w, h);
       const f = map.nodes.get(focus)!;
       const screen = (x: number, y: number) => ({ x: x * v.zoom + v.x, y: y * v.zoom + v.y });
-      // The focus fills the height, or the levels fill the width; never past the camera's limit.
+      // The focus is whole in the pane; never past the camera's limit.
       const top = screen(f.x, f.y);
       const bottom = screen(f.x, f.y + f.h);
-      expect(top.y).toBeGreaterThanOrEqual(FRAME_PADDING - 0.5);
-      expect(bottom.y).toBeLessThanOrEqual(h - FRAME_PADDING + 0.5);
+      expect(top.y).toBeGreaterThanOrEqual(-0.5);
+      expect(bottom.y).toBeLessThanOrEqual(h + 0.5);
       expect(v.zoom).toBeLessThanOrEqual(MAX_ZOOM);
-      // Centered on the focus's middle, top to bottom.
-      expect((top.y + bottom.y) / 2).toBeCloseTo(h / 2, 6);
+      // No box under the focus's parent (the focus, its siblings, and all beneath them) is cut by the top or bottom edge.
+      const under = (n: { parent: string | null }): boolean => n.parent === f.parent || (n.parent !== null && n.parent !== f.parent && map.nodes.get(n.parent)!.level >= f.level && under(map.nodes.get(n.parent)!));
+      for (const level of map.byLevel.slice(f.level)) {
+        for (const n of level.filter(under)) {
+          const [y0, y1] = [screen(0, n.y).y, screen(0, n.y + n.h).y];
+          expect(y0 < -0.5 && y1 > 0.5, `${focus}: ${n.id} cut at the top`).toBe(false);
+          expect(y0 < h - 0.5 && y1 > h + 0.5, `${focus}: ${n.id} cut at the bottom`).toBe(false);
+        }
+      }
+      // No level is cut by the right edge: the frame ends before the next level, or past the last.
+      for (const level of map.levels) {
+        const [x0, x1] = [screen(level.x, 0).x, screen(level.x + level.width, 0).x];
+        expect(x0 < w - 0.5 && x1 > w + 0.5, `${focus}: a level cut at the right`).toBe(false);
+      }
       // The parent is in view at the left edge, a strip of it at least, and the focus right of it.
       const p = map.nodes.get(f.parent!)!;
       expect(screen(p.x + p.w, 0).x).toBeGreaterThanOrEqual(strip + FRAME_PADDING - 0.5);

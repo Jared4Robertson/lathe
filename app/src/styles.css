@@ -760,11 +760,12 @@ a.row-link.row-link:focus-visible { outline: none; }
 /* ---------- The Model view: a domain's model and an aggregate's (app/src/model) ---------- */
 /* Each kind in its event storming color (the --es-* tokens): aggregates and entities yellow, commands blue, events orange,
    policies lilac, specifications pink, read models and queries green. Another domain's box is gray (--muted on --paper, dashed). */
-.model-page { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.model-page { flex: 1; min-height: 0; display: flex; flex-direction: column; container: model-page / inline-size; }
 .model-header { padding: 10px 20px; border-bottom: 1px solid var(--rule); }
 /* One line, cut with an ellipsis (its whole text in its tooltip), so the canvas below never moves (LA-PAT-APP-UX-R08). */
 .model-caption { margin: 0; font-size: 0.86rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.model-canvas { position: relative; flex: 1; min-height: 360px; }
+/* The canvas takes what the title and the key leave, so the key always shows whole below it; the fit scales the model to it. */
+.model-canvas { position: relative; flex: 1; min-height: 160px; }
 .model-flow { position: absolute; inset: 0; }
 .model-empty, .model-missing { flex: 1; margin: 0; padding: 24px; }
 .model-flow .react-flow__node:focus { outline: none; }
@@ -811,6 +812,13 @@ a.row-link.row-link:focus-visible { outline: none; }
 .erd-key-ends { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 2px 18px; }
 .erd-key-ends li { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
 .erd-key-line { flex: none; overflow: visible; }
+/* In a narrow model pane the key's entries wrap into more rows: smaller and closer, in a taller key that still keeps one
+   height for every model at that width, so everything in it shows. */
+@container model-page (max-width: 640px) {
+  .erd-key { block-size: calc(var(--erd-key-height) * 1.55); font-size: 0.72rem; line-height: 1.3; padding: 8px 14px 10px; gap: 4px; }
+  .erd-key-ends { gap: 1px 12px; }
+  .erd-key-line { width: 34px; }
+}
 .erd-key-highlight { display: inline-block; width: 14px; height: 10px; border: 1.5px solid var(--es-aggregate); background: var(--es-aggregate-bg); box-shadow: 0 0 0 2px var(--ink); border-radius: 2px; }
 /* The model's context (LA-EXP-UC11-R06): faded and a little smaller, readable on hover, its lines faded with it. */
 .model-flow .react-flow__node.is-context .erd-box { opacity: var(--context-opacity); scale: var(--context-scale); }
