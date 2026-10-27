@@ -274,3 +274,9 @@ Lathe now matches S2 on UC requirements (206/206) and domain rules (98/98) acros
 - All checks passed.
 - Briefs 99 (import), 100 (engine), 101 (writers) and 102 (app) are launched in parallel from `db-first`.
 - Main also has a side bar fix: long titles wrap under their IDs.
+
+## Brief 99 merged into db-first: the import
+- LA has 1,894 records and 3,106 links; TL has 144 records and 310 links. Lathe's 69 built-in checks are in `lathe/data/check.jsonl`.
+- The round trip passes, with every word of every body kept. One sentence was dropped: a repeated lead-in in TL's API shapes.
+- My follow-up fixes on db-first: the merge rule now covers `**/data/*.jsonl`, the package ships `data`, and the interfaces note gained `test.notes`.
+- The engine (100) and app (102) agents were told to merge db-first.
