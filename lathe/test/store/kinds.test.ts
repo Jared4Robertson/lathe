@@ -44,7 +44,8 @@ describe.each(kinds)('the %s table', (kind) => {
   const row = data[kind][0];
   const file = `data/${kind}.jsonl`;
 
-  it.skipIf(!schema.kinds[kind].parents.length)('refuses a parent that does not exist', async () => {
+  // A product sits under nothing; every other kind has a parent.
+  if (schema.kinds[kind].parents.length) it('refuses a parent that does not exist', async () => {
     const column = schema.kinds[kind].parents.map((p) => p.column).find((c) => row[c] !== undefined)!;
     const problems = await refusal(withTable(data, kind, [{ ...row, [column]: 'TL-NOPE' }, ...data[kind].slice(1)]));
     expect(problems).toContainEqual(expect.objectContaining({ rule: 'foreign-key', file, line: 1, table: kind }));
@@ -65,7 +66,7 @@ describe.each(kinds)('the %s table', (kind) => {
   });
 
   const enums = table.columns.filter((c) => c.kind === 'enum');
-  it.skipIf(!enums.length)('refuses a value its enum does not have', async () => {
+  if (enums.length) it('refuses a value its enum does not have', async () => {
     for (const column of enums) {
       const problems = await refusal(withTable(data, kind, [{ ...row, [column.name]: 'bogus' }, ...data[kind].slice(1)]));
       expect(problems).toEqual([expect.objectContaining({ rule: 'column', file, line: 1 })]);
