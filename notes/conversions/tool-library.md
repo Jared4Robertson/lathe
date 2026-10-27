@@ -2,13 +2,13 @@
 
 The sorting sheet for brief 105, phase A. It lists the Tool Library's complete new spec, kind by kind in the plan's order ([domain-model-refinement.md](../plans/domain-model-refinement.md)), with each row's old source, and closes with a table that accounts for every old record and link.
 
-Phase B writes these records through the command layer once the schema has merged. Where the schema's final column names differ from the words used here, phase B follows the schema and updates this sheet.
+Phase B wrote these records into `examples/tool-library/data/` through the store's command functions, from a one-time script that isn't committed, and the sheet now matches what was written. The code, tests and README name the new IDs.
 
 ## Conventions
 - **Source** names the old record (`DR04`, `E04-R02`, `C05` and so on, all `TL-LEND-` unless written in full) or the code (`src/…`, `test/…`).
-- **Types** are the plan's basic types (text, whole number, decimal, date, time, yes/no), a value object (`VO01`…) or a reference to an aggregate (`→ A1`…). Here `time` means a moment, a date with a time of day, which is what every old "Date and time" field holds (see schema request 1).
-- **Optional** marks a field that may be empty.
-- **New** marks a row with no old record: work the conversion found missing. **Owed** marks a test that no old test proves; phase B writes it unless the coordinator says not to.
+- **Types** are the schema's basic types (text, whole number, decimal, date, time, date and time, yes/no), a value object (`VO01`…) or a reference to an aggregate (`→ A1`…).
+- **Optional** marks a field with `required: false`; every other field is required.
+- **New** marks a row with no old record: work the conversion found missing, including five tests no old test proved.
 
 ## Product, roles and domain
 
@@ -39,7 +39,9 @@ Phase B writes these records through the command layer once the schema has merge
 | TL-LEND-EN04 | Loan | A3 | root | (none: its fields are basic types and references) | EN04 |
 | TL-LEND-EN05 | Return | A3 | child | VO03 Condition, VO04 Note | EN05 |
 
-"Has value objects" follows from the field types below; it is listed here for reading, and stored only if the schema keeps it as a link.
+"Has value objects" follows from the field types below; it is listed here for reading and not stored. The two children have `in_root_table: true`: Damage report is stored in `tools` and Return in `loans`, so neither has a table of its own. The `has_one` links EN02→EN03 and EN04→EN05 stay.
+
+Fields whose column name differs from the field's name carry `column_name`: Member ID, Tool ID and Loan ID are `id`; Loan's Member and Tool are `member_id` and `tool_id`; Damage report's Note is `damage_note`; Return's Condition and Note are `return_condition` and `return_note`; the Catalog's Tool ID is `id`.
 
 ### Entity fields
 
@@ -48,20 +50,20 @@ Phase B writes these records through the command layer once the schema has merge
 | EN01 | 1 | Member ID | whole number | The library's number for the member, printed on their card. Assigned. | 12 | EN01 field 1 |
 | EN01 | 2 | Name | VO01 Name | What the member is called. | Ada Lovelace | field 2 |
 | EN01 | 3 | Email | VO02 Email address | How the library contacts the member. Unique among members (INV01). | ada@example.org | field 3 |
-| EN01 | 4 | Joined at | time | When the member was registered. | 2026-03-01T15:20:00Z | field 4 |
+| EN01 | 4 | Joined at | date and time | When the member was registered. | 2026-03-01T15:20:00Z | field 4 |
 | EN02 | 1 | Tool ID | whole number | The library's number for the tool, written on its tag. Assigned. | 7 | EN02 field 1 |
 | EN02 | 2 | Name | VO01 Name | What the tool is. | Cordless drill | field 2 |
 | EN02 | 3 | Description | text | Anything a borrower should know; may be blank. | 18 V, two batteries | field 3 |
 | EN02 | 4 | Condition | VO03 Condition | Whether the tool is fit to lend. A new tool starts good. | needs_repair | field 4 |
-| EN02 | 5 | Added at | time | When the tool joined the catalog. | 2026-02-20T09:00:00Z | field 5 |
+| EN02 | 5 | Added at | date and time | When the tool joined the catalog. | 2026-02-20T09:00:00Z | field 5 |
 | EN03 | 1 | Note | VO04 Note | What is wrong with the tool. | Chuck wobbles | EN03 field 1 |
-| EN03 | 2 | Reported at | time | When the damage was reported. Not stored by the code (see findings). | 2026-03-10T14:05:00Z | field 2 |
+| EN03 | 2 | Reported at | date and time | When the damage was reported. Not stored by the code (see findings). | 2026-03-10T14:05:00Z | field 2 |
 | EN04 | 1 | Loan ID | whole number | The library's number for the loan. Assigned. | 31 | EN04 field 1 |
 | EN04 | 2 | Member | → A1 Member | Who borrowed the tool. | 12 | field 2 + refers_to EN04→EN01 + relates_to A3→A1 |
 | EN04 | 3 | Tool | → A2 Tool | Which tool was borrowed. | 7 | field 3 + refers_to EN04→EN02 + relates_to A3→A2 |
-| EN04 | 4 | Borrowed at | time | When the loan started. | 2026-03-02T10:00:00Z | field 4 |
+| EN04 | 4 | Borrowed at | date and time | When the loan started. | 2026-03-02T10:00:00Z | field 4 |
 | EN04 | 5 | Due date | date | The last day of the loan, in the library's time zone (INV04). | 2026-03-16 | field 5 |
-| EN05 | 1 | Returned at | time | When the tool came back. | 2026-03-12T16:30:00Z | EN05 field 1 |
+| EN05 | 1 | Returned at | date and time | When the tool came back. | 2026-03-12T16:30:00Z | EN05 field 1 |
 | EN05 | 2 | Condition | VO03 Condition | The tool's condition as the librarian found it. | good | field 2 |
 | EN05 | 3 | Note | VO04 Note, optional | What the librarian noticed. A blank note is none. | Cleaned and charged | field 3 |
 
@@ -131,25 +133,25 @@ EV07 Loan became overdue is dropped: see judgment call 6.
 | EV01 | 1 | Member ID | → A1 Member | EV01 field 1 ("Whole number") |
 | EV01 | 2 | Name | VO01 Name | field 2 |
 | EV01 | 3 | Email | VO02 Email address | field 3 |
-| EV01 | 4 | Joined at | time | field 4 |
+| EV01 | 4 | Joined at | date and time | field 4 |
 | EV02 | 1 | Tool ID | → A2 Tool | EV02 field 1 |
 | EV02 | 2 | Name | VO01 Name | field 2 |
 | EV02 | 3 | Description | text | field 3 |
-| EV02 | 4 | Added at | time | field 4 |
+| EV02 | 4 | Added at | date and time | field 4 |
 | EV03 | 1 | Tool ID | → A2 Tool | EV03 field 1 |
 | EV03 | 2 | Note | VO04 Note | field 2 |
-| EV03 | 3 | Reported at | time | field 3 |
+| EV03 | 3 | Reported at | date and time | field 3 |
 | EV04 | 1 | Tool ID | → A2 Tool | EV04 field 1 |
-| EV04 | 2 | Repaired at | time | field 2 |
+| EV04 | 2 | Repaired at | date and time | field 2 |
 | EV05 | 1 | Loan ID | → A3 Loan | EV05 field 1 |
 | EV05 | 2 | Member | → A1 Member | field 2 |
 | EV05 | 3 | Tool | → A2 Tool | field 3 |
-| EV05 | 4 | Borrowed at | time | field 4 |
+| EV05 | 4 | Borrowed at | date and time | field 4 |
 | EV05 | 5 | Due date | date | field 5 |
 | EV06 | 1 | Loan ID | → A3 Loan | EV06 field 1 |
 | EV06 | 2 | Member | → A1 Member | field 2 |
 | EV06 | 3 | Tool | → A2 Tool | field 3 |
-| EV06 | 4 | Returned at | time | field 4 |
+| EV06 | 4 | Returned at | date and time | field 4 |
 | EV06 | 5 | Condition | VO03 Condition | field 5 |
 | EV06 | 6 | Note | VO04 Note, optional | field 6 |
 | EV06 | 7 | Late | yes/no | field 7; SP01 at the moment of return |
@@ -182,7 +184,7 @@ Each command changes one aggregate. Found in the code's services.
 | RM01 | 3 | Description | text | Anything a borrower should know. | `description` |
 | RM01 | 4 | Condition | VO03 Condition | Whether the tool is fit to lend. | `condition` |
 | RM01 | 5 | Damage note | VO04 Note, optional | What is wrong, while the tool needs repair. | `damageNote` |
-| RM01 | 6 | Added at | time | When the tool joined the catalog. | `addedAt` |
+| RM01 | 6 | Added at | date and time | When the tool joined the catalog. | `addedAt` |
 | RM01 | 7 | Status | text | What a borrower sees: `on_loan` while the tool has an active loan, else `needs_repair` when it needs repair (SP04), else `available`. | EN02 field 6; `toolStatus` |
 
 ### Queries
@@ -243,7 +245,7 @@ Goals, actors, notes, pattern `follows` links and setting values are unchanged.
 
 ### UC requirements
 
-All sixteen carry over with their IDs, titles and statements: TL-LEND-UC01-R01 to R03, UC02-R01 and R02, UC03-R01 to R04, UC04-R01 to R04, UC05-R01 to R03. Two statements drop a rule ID that no longer exists: UC03-R01 "(TL-LEND-DR07)" becomes "(TL-LEND-INV04)", and UC04-R02 and UC05-R03 "(TL-LEND-DR11)" become "(TL-LEND-INV02)".
+All sixteen carry over, as `uc_requirement` rows, with their IDs, titles and statements: TL-LEND-UC01-R01 to R03, UC02-R01 and R02, UC03-R01 to R04, UC04-R01 to R04, UC05-R01 to R03. Two statements drop a rule ID that no longer exists: UC03-R01 "(TL-LEND-DR07)" becomes "(TL-LEND-INV04)", and UC04-R02 and UC05-R03 "(TL-LEND-DR11)" become "(TL-LEND-INV02)".
 
 ## Interaction design
 
@@ -342,14 +344,14 @@ Each record names one file. Technical kinds with no code are left out and show a
 | TL-LEND-EN01-TB | Table | EN01 | src/store.ts | `members` | C02 |
 | TL-LEND-EN02-TB | Table | EN02 | src/store.ts | `tools` | C02 |
 | TL-LEND-EN04-TB | Table | EN04 | src/store.ts | `loans` | C02 |
-| TL-VO01-VT | Value type | VO01 | src/model.ts | `name()`, extracted in phase B from the two services | C03, C04 (judgment call 9) |
-| TL-VO02-VT | Value type | VO02 | src/model.ts | `email()`, extracted from `MemberService` | C03 |
+| TL-VO01-VT | Value type | VO01 | src/model.ts | `parseName`, extracted from the two services | C03, C04 (judgment call 9) |
+| TL-VO02-VT | Value type | VO02 | src/model.ts | `parseEmail`, extracted from `MemberService` | C03 |
 | TL-VO03-VT | Value type | VO03 | src/model.ts | `Condition`, `CONDITIONS`, `isCondition` | C01 |
-| TL-VO04-VT | Value type | VO04 | src/model.ts | `note()`, extracted from `ToolService` and `LendingService` | C04, C05 |
+| TL-VO04-VT | Value type | VO04 | src/model.ts | `parseNote`, extracted from `ToolService` and `LendingService` | C04, C05 |
 | TL-LEND-SP01-PR | Predicate | SP01 | src/model.ts | `isOverdue`, `isLate` | C01 |
-| TL-LEND-SP02-PR | Predicate | SP02 | src/model.ts | `hasOverdueLoan()`, extracted from `LendingService.borrow` | C05 |
-| TL-LEND-SP03-PR | Predicate | SP03 | src/model.ts | `atLoanLimit()`, extracted from `borrow`, with `MAX_ACTIVE_LOANS` | C01, C05 |
-| TL-LEND-SP04-PR | Predicate | SP04 | src/model.ts | `needsRepair()`, extracted from `borrow`, `markRepaired` and `toolStatus` | C01, C04, C05 |
+| TL-LEND-SP02-PR | Predicate | SP02 | src/model.ts | `hasOverdueLoan`, extracted from `LendingService.borrow` | C05 |
+| TL-LEND-SP03-PR | Predicate | SP03 | src/model.ts | `atLoanLimit`, extracted from `borrow`, with `MAX_ACTIVE_LOANS` | C01, C05 |
+| TL-LEND-SP04-PR | Predicate | SP04 | src/model.ts | `needsRepair`, extracted from `borrow`, `markRepaired` and `toolStatus` | C01, C04, C05 |
 | TL-LEND-DS01-SV | Service | DS01 | src/model.ts | `localDate`, `addDays`, `dueDate`, `assertTimeZone`, `DEFAULT_TIME_ZONE`, `LOAN_DAYS` | C01 |
 | TL-LEND-CMD01-H | Command handler | CMD01 | src/member-service.ts | `MemberService.register` | C03 |
 | TL-LEND-CMD02-H | Command handler | CMD02 | src/tool-service.ts | `ToolService.add` | C04 |
@@ -364,7 +366,7 @@ Each record names one file. Technical kinds with no code are left out and show a
 
 ### Tables and keys
 
-All three have storage `table`. Columns follow from the fields; the code's column names are snake case, and the ID field is `id` (schema request 3).
+All three have storage `table` and name `src/store.ts`. Columns follow from the fields, with `column_name` where they differ.
 
 | Table | Name | Key | Kind | Columns | Target or invariant |
 | --- | --- | --- | --- | --- | --- |
@@ -374,9 +376,9 @@ All three have storage `table`. Columns follow from the fields; the code's colum
 | EN04-TB | loans | (primary) | primary | id | |
 | EN04-TB | loans | (member) | foreign | member_id | EN01-TB |
 | EN04-TB | loans | (tool) | foreign | tool_id | EN02-TB |
-| EN04-TB | loans | loans_one_active_per_tool | unique, partial: `WHERE returned_at IS NULL` | tool_id | INV03 (schema request 4) |
+| EN04-TB | loans | loans_one_active_per_tool | unique, condition `returned_at IS NULL` | tool_id | INV03 |
 
-`tools` also holds EN03's note as `damage_note`, and `loans` holds EN05's fields as `returned_at`, `return_condition` and `return_note` (schema request 2). The code's CHECKs, on the condition values and the due date's shape, back up VO03-C01 and the `date` type; tables don't record CHECKs, so they are not written down here.
+`tools` also holds EN03's note as `damage_note`, and `loans` holds EN05's fields as `returned_at`, `return_condition` and `return_note`. The code's CHECKs, on the condition values and the due date's shape, back up VO03-C01 and the `date` type; tables don't record CHECKs, so the tables' descriptions mention them.
 
 RM01 Catalog has no table: the code has neither a view nor a projection. It shows as not built.
 
@@ -388,11 +390,11 @@ Every test names one parent and a run by. Levels: the `domain-rules.test.ts` tes
 
 | ID | Parent | Run by | Source |
 | --- | --- | --- | --- |
-| TL-VO01-C01-T | VO01-C01 | unit, automated, test/domain-rules.test.ts | **Owed** (proved today only through the API by T11 and T14) |
-| TL-VO02-C01-T | VO02-C01 | unit, automated, test/domain-rules.test.ts | **Owed** (T11 through the API) |
-| TL-VO02-C02-T | VO02-C02 | unit, automated, test/domain-rules.test.ts | **Owed** (T01 and T13 show it only in passing) |
+| TL-VO01-C01-T | VO01-C01 | unit, automated, test/domain-rules.test.ts | **New** (proved before only through the API, by T11 and T14) |
+| TL-VO02-C01-T | VO02-C01 | unit, automated, test/domain-rules.test.ts | **New** (T11, through the API) |
+| TL-VO02-C02-T | VO02-C02 | unit, automated, test/domain-rules.test.ts | **New** (T01 and T13 showed it only in passing) |
 | TL-VO03-C01-T | VO03-C01 | database, automated, test/domain-rules.test.ts | T04 |
-| TL-VO04-C01-T | VO04-C01 | unit, automated, test/domain-rules.test.ts | **Owed** (T24 through the API) |
+| TL-VO04-C01-T | VO04-C01 | unit, automated, test/domain-rules.test.ts | **New** (T24, through the API) |
 
 ### Invariant tests
 
@@ -462,7 +464,7 @@ T29, the manual smoke test of the README's curl steps, splits by the flow each s
 | TL-LEND-UC02-FL-T | UC02-FL | manual | T29: add a tool |
 | TL-LEND-UC03-FL-T | UC03-FL | manual | T29: borrow it |
 | TL-LEND-UC04-FL-T | UC04-FL | manual | T29: return it |
-| TL-LEND-UC05-FL-T | UC05-FL | manual | **Owed**: two curl steps, report damage and mark repaired, added to the README |
+| TL-LEND-UC05-FL-T | UC05-FL | manual | **New**: the README's fifth and sixth curl steps, report damage and mark repaired |
 
 ### Pattern rule tests
 
@@ -496,7 +498,7 @@ TL-PAT-LIBRARIAN-ACTION, its three rules, three settings and twelve setting valu
 | Command | 6 | Adapter | 0 |
 | Read model | 1 | UI component | 0 |
 | Read model field | 7 | Entry point (product kind) | 1 |
-| Query | 1 | Constraint test | 5 (4 owed) |
+| Query | 1 | Constraint test | 5 (4 new) |
 | Policy | 1 | Invariant test | 6 |
 | Domain service | 1 | Specification test | 4 |
 | Term | 11 | Policy test | 1 |
@@ -504,13 +506,13 @@ TL-PAT-LIBRARIAN-ACTION, its three rules, three settings and twelve setting valu
 | Use case | 5 | Use case test | 17 |
 | UC requirement | 16 | View test | 0 |
 | Flow | 5 | Endpoint test | 22 |
-| Flow step | 18 | Flow test | 5 (1 owed) |
+| Flow step | 18 | Flow test | 5 (1 new) |
 | View | 2 | Integration test | 0 |
 | View requirement | 0 | Pattern rule test | 3 |
 | Endpoint | 7 | Pattern, rules, settings | 1, 3, 3 |
 | API requirement | 19 | Integration | 0 |
 
-64 tests in all, from 34 old tests; 5 are owed.
+64 tests in all: 59 from the 34 old tests, and 5 new. 59 are automated; the 5 flow tests are manual.
 
 ## Judgment calls
 
@@ -519,18 +521,18 @@ TL-PAT-LIBRARIAN-ACTION, its three rules, three settings and twelve setting valu
 3. **DR06 moves from Tool to Loan.** The records that must be unique are active loans, and the unique key is on `loans`.
 4. **DR11 is an invariant of Tool,** "needs repair until marked repaired", merged with DR05's second sentence, since both say only CMD04 clears damage.
 5. **A return's effect on the tool is a policy (PO01),** because a command changes one aggregate: Return a tool changes the Loan, and the Tool follows through EV06. The code does both in one transaction; PO01-H names that branch.
-6. **EV07 Loan became overdue is dropped.** No command raises it, the code never raises it, and nothing hears it in the new model: a member's block is SP02, worked out from the loans when they borrow. Its rule (00:00 the next day) lives in SP01. The plan has no way to raise an event when time passes; see "Didn't fit".
+6. **EV07 Loan became overdue is dropped.** No command raises it, the code never raises it, and nothing hears it in the new model: a member's block is SP02, worked out from the loans when they borrow. Its rule (00:00 the next day) lives in SP01. Were it needed, it would be raised by a command that a schedule invokes.
 7. **Late is SP01 at the moment of return,** a field of EV06, not a field of the Return entity: the code works it out on return and never stores it.
 8. **Derived entity fields leave the entities** (Active loans, Overdue, Status, Late) for the specifications, the read model and the event field, because a table's columns follow from its entity's fields.
-9. **Phase B extracts small functions into `src/model.ts`** (`name`, `email`, `note`, `hasOverdueLoan`, `atLoanLimit`, `needsRepair`), so each value type and predicate names one real unit. No behavior changes. Without this, VO01, VO02, VO04, SP02, SP03 and SP04 show as not built, or would have to name the service file where the check is written inline. The coordinator may veto this before phase B.
+9. **Phase B extracted small functions into `src/model.ts`** (`parseName`, `parseEmail`, `parseNote`, `hasOverdueLoan`, `atLoanLimit`, `needsRepair`), so each value type and predicate names one real unit. No behavior changed. Without this, VO01, VO02, VO04, SP02, SP03 and SP04 would show as not built. Approved by the coordinator.
 10. **`src/server.ts` becomes a product kind, Entry point** (`TL-LEND-ENTRY01`, technical stage, under the domain), as decision 18 provides, because no technical kind fits a start-up file. The alternative is to drop C07 and leave server.ts untraced.
 11. **No view requirements.** The old views have none, and their notes stay notes. Promoting the notes (status badges, "Due back by" with no time, a condition with no default) to view requirements would owe view tests for a UI that isn't built.
 12. **The body limit stays EP06-R03,** under the endpoint whose free text motivated it, with its sentence that it holds for every endpoint.
 13. **Old tests split by what they prove,** and phase B splits the `it` blocks to match. T21 no longer counts as proof of E05-R03 (it only checks status); T23's split proves EP05-R03. T22 drops its proof of E03-R01, which T15 and T21 already give.
 14. **T29 splits into four manual flow tests,** one per flow its curl steps walk. Its old proof of four API requirements is dropped, since automated endpoint tests prove each.
-15. **Owed tests are written in phase B:** four constraint unit tests and the UC05 flow's manual curl steps. The coordinator may say to leave them as gaps.
-16. **Child entities keep their own data model records naming `src/model.ts`,** where their fields sit on the root's interface, and have no table of their own.
-17. **`time` means a moment.** Every "Date and time" field is typed `time`.
+15. **Five new tests:** four constraint unit tests, and the UC05 flow's manual test with two curl steps added to the README. Approved by the coordinator.
+16. **Child entities keep their own data model records naming `src/model.ts`,** where their fields sit on the root's interface, and are stored in their root's table (`in_root_table`).
+17. **Every timestamp is `date and time`.**
 18. **Status is `text`, not a value object.** A value object must be used by an entity, and Status belongs only to the read model.
 19. **Terms Late and Catalog are added** to the nine terms of the old Language table, because use cases and views use them.
 20. **QRY01 selects by no specification.** Its Status uses SP04, but it lists every tool rather than filtering by it.
@@ -539,20 +541,24 @@ TL-PAT-LIBRARIAN-ACTION, its three rules, three settings and twelve setting valu
 - **No event code at all.** The services change state directly; there are no event types or handlers by name. All six events show as not built.
 - **Damage report's "Reported at" isn't stored.** `tools` has `damage_note` but no time; EV03's Reported at likewise.
 - **The catalog has no storage of its own.** `ToolService.entry` asks for each tool's active loan on every request (one query per tool).
-- **SP04 is checked in three places** (`toolStatus`, `borrow`, `markRepaired`), and the name, email and note checks in the services; judgment call 9 gathers them.
+- **SP04 was checked in three places** (`toolStatus`, `borrow`, `markRepaired`), and the name, email and note checks were inline in the services. Phase B gathered them into named functions in `src/model.ts` (judgment call 9).
 - **PO01 runs in the Return command's transaction,** across two aggregates. That's the code's choice, and it keeps a return and its damage together; the model records it as a policy.
 
-## Didn't fit the plan (schema requests)
-1. **Moments.** The basic types list `date` and `time`. Every timestamp here is a date with a time of day. Either `time` is defined as a moment, or a `timestamp` type is added.
-2. **Child entities stored on their root's table.** Damage report and Return are one-to-one children whose columns sit in `tools` and `loans`. The plan gives every entity a table of its own. Request: a child entity may be stored in its root's table, its fields flattened like a value object's. The old `has_one` link (and its "one") goes with nothing to say it; the child role covers the rest.
-3. **Column names.** Columns follow from fields, but `Member ID` is `id` and `Joined at` is `joined_at`. A naming rule (snake case, the identity field is `id`, a reference is `<name>_id`) or a column name on each field is needed.
-4. **Partial unique keys.** INV03's key is unique only where `returned_at IS NULL`. Keys need an optional condition.
-5. **Optional fields.** Return's Note and the catalog's Damage note may be empty. Fields need a required flag.
-6. **Events raised by time.** "Loan became overdue" has no command. The plan has no scheduler or clock trigger (judgment call 6).
-7. **What implements an invariant.** The plan's table of technical kinds has no row for invariants. Two are enforced by unique keys, the rest by command handlers. Built status for an invariant needs a rule: for example, its aggregate's repository or root data model, or the unique key that names it.
-8. **Pattern rule tests** (the plan's open question 1), used for T33 and T34 above.
-9. **Product kinds in the technical stage** for Entry point, with an ID pattern such as `<P>-<D>-ENTRY<nn>`.
-10. **Value object fields.** The plan flattens a value object's fields into columns but stores no value object fields. Every value object here is one value, so this conversion doesn't need them.
+## What phase A found the plan missing
+The schema step took most of these in; the rest are the engine's.
+
+| Need | Now |
+| --- | --- |
+| A date with a time of day | The basic type `date and time`, used for every timestamp |
+| A child entity stored in its root's table | `entity.in_root_table`, set on Damage report and Return |
+| Column names that differ from field names | `column_name` on fields |
+| Partial unique keys | `table_key.condition`, on `loans_one_active_per_tool` |
+| Optional fields | `required` on fields |
+| Events raised when time passes | A command a schedule invokes; not needed, since EV07 is dropped |
+| What implements an invariant | Left to the engine step |
+| Pattern rule tests | The `pattern_rule_test` kind, with its domain |
+| Product kinds in the technical stage | `product_kind.stage`, used for `entry_point` |
+| Value object fields | `value_object_field`; not needed here, as every value object is one value |
 
 ## Accounted for
 
@@ -602,13 +608,13 @@ TL-PAT-LIBRARIAN-ACTION, its three rules, three settings and twelve setting valu
 | component C06 | 1 | EP01-H to EP07-H |
 | component C07 | 1 | TL-LEND-ENTRY01 (judgment call 10) |
 | pattern, pattern_rule, pattern_setting, setting_value | 1, 3, 3, 12 | unchanged |
-| test T01–T34 | 34 | 59 test records (Test plan above), plus 5 owed |
+| test T01–T34 | 34 | 59 test records (Test plan above); 5 more are new |
 
 ### Links
 
 | Old link | Rows | Where it went |
 | --- | --- | --- |
-| has_one EN02→EN03, EN04→EN05 | 2 | dropped: the child role under the aggregate says it (schema request 2) |
+| has_one EN02→EN03, EN04→EN05 | 2 | unchanged |
 | relates_to A3→A1, A3→A2 | 2 | EN04's reference fields Member → A1, Tool → A2 (decision 7) |
 | refers_to EN04→EN01, EN04→EN02 | 2 | the same reference fields |
 | raised_by EV→EN | 7 | events raised by commands (Domain events above); EV07's row dropped with it |

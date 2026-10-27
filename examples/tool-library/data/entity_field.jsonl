@@ -1,24 +1,19 @@
-{"entity_id":"TL-LEND-EN01","position":1,"name":"Member ID","meaning":"The library's number for the member, printed on their card.","type":"Whole number, assigned.","example":"12"}
-{"entity_id":"TL-LEND-EN01","position":2,"name":"Name","meaning":"What the member is called.","type":"Text, not blank.","example":"Ada Lovelace"}
-{"entity_id":"TL-LEND-EN01","position":3,"name":"Email","meaning":"How the library contacts the member, kept in lower case.","type":"Email address, unique among members.","example":"ada@example.org"}
-{"entity_id":"TL-LEND-EN01","position":4,"name":"Joined at","meaning":"When the member was registered.","type":"Date and time.","example":"2026-03-01T15:20:00Z"}
-{"entity_id":"TL-LEND-EN01","position":5,"name":"Active loans","meaning":"The member's loans not yet returned, at most 3.","type":"Derived count.","example":"0"}
-{"entity_id":"TL-LEND-EN01","position":6,"name":"Overdue","meaning":"Whether any of the member's active loans is past its due date.","type":"Derived yes or no.","example":"No"}
-{"entity_id":"TL-LEND-EN02","position":1,"name":"Tool ID","meaning":"The library's number for the tool, written on its tag.","type":"Whole number, assigned.","example":"7"}
-{"entity_id":"TL-LEND-EN02","position":2,"name":"Name","meaning":"What the tool is.","type":"Text, not blank.","example":"Cordless drill"}
-{"entity_id":"TL-LEND-EN02","position":3,"name":"Description","meaning":"Anything a borrower should know.","type":"Text, may be blank.","example":"18 V, two batteries"}
-{"entity_id":"TL-LEND-EN02","position":4,"name":"Condition","meaning":"Whether the tool is fit to lend. A new tool starts good.","type":"`good` or `needs_repair`.","example":"needs_repair"}
-{"entity_id":"TL-LEND-EN02","position":5,"name":"Added at","meaning":"When the tool joined the catalog.","type":"Date and time.","example":"2026-02-20T09:00:00Z"}
-{"entity_id":"TL-LEND-EN02","position":6,"name":"Status","meaning":"What a borrower sees in the catalog.","type":"Derived: `on_loan` while it has an active loan, else `needs_repair` when its condition is needs repair, else `available`.","example":"needs_repair"}
-{"entity_id":"TL-LEND-EN03","position":1,"name":"Note","meaning":"What is wrong with the tool.","type":"Text, not blank.","example":"Chuck wobbles"}
-{"entity_id":"TL-LEND-EN03","position":2,"name":"Reported at","meaning":"When the damage was reported.","type":"Date and time.","example":"2026-03-10T14:05:00Z"}
-{"entity_id":"TL-LEND-EN04","position":1,"name":"Loan ID","meaning":"The library's number for the loan.","type":"Whole number, assigned.","example":"31"}
-{"entity_id":"TL-LEND-EN04","position":2,"name":"Member","meaning":"Who borrowed the tool.","type":"Member reference.","example":"Member 12"}
-{"entity_id":"TL-LEND-EN04","position":3,"name":"Tool","meaning":"Which tool was borrowed.","type":"Tool reference.","example":"Tool 7"}
-{"entity_id":"TL-LEND-EN04","position":4,"name":"Borrowed at","meaning":"When the loan started.","type":"Date and time.","example":"2026-03-02T10:00:00Z"}
-{"entity_id":"TL-LEND-EN04","position":5,"name":"Due date","meaning":"The last day of the loan, in the library's time zone.","type":"Date: the borrow date in the library's time zone plus 14 days.","example":"2026-03-16"}
-{"entity_id":"TL-LEND-EN04","position":6,"name":"Overdue","meaning":"Whether the loan is not returned and today, in the library's time zone, is after its due date.","type":"Derived yes or no; never once returned.","example":"No"}
-{"entity_id":"TL-LEND-EN05","position":1,"name":"Returned at","meaning":"When the tool came back.","type":"Date and time.","example":"2026-03-12T16:30:00Z"}
-{"entity_id":"TL-LEND-EN05","position":2,"name":"Condition","meaning":"The tool's condition as the librarian found it.","type":"`good` or `needs_repair`.","example":"good"}
-{"entity_id":"TL-LEND-EN05","position":3,"name":"Note","meaning":"What the librarian noticed.","type":"Text, optional.","example":"Cleaned and charged"}
-{"entity_id":"TL-LEND-EN05","position":4,"name":"Late","meaning":"Whether the return came on a day after the due date, in the library's time zone.","type":"Derived yes or no.","example":"No"}
+{"entity_id":"TL-LEND-EN01","position":1,"name":"Member ID","meaning":"The library's number for the member, printed on their card.","type":"whole number","required":true,"column_name":"id","example":"12"}
+{"entity_id":"TL-LEND-EN01","position":2,"name":"Name","meaning":"What the member is called.","type_value_object_id":"TL-VO01","required":true,"example":"Ada Lovelace"}
+{"entity_id":"TL-LEND-EN01","position":3,"name":"Email","meaning":"How the library contacts the member. Unique among members (TL-LEND-INV01).","type_value_object_id":"TL-VO02","required":true,"example":"ada@example.org"}
+{"entity_id":"TL-LEND-EN01","position":4,"name":"Joined at","meaning":"When the member was registered.","type":"date and time","required":true,"example":"2026-03-01T15:20:00Z"}
+{"entity_id":"TL-LEND-EN02","position":1,"name":"Tool ID","meaning":"The library's number for the tool, written on its tag.","type":"whole number","required":true,"column_name":"id","example":"7"}
+{"entity_id":"TL-LEND-EN02","position":2,"name":"Name","meaning":"What the tool is.","type_value_object_id":"TL-VO01","required":true,"example":"Cordless drill"}
+{"entity_id":"TL-LEND-EN02","position":3,"name":"Description","meaning":"Anything a borrower should know; may be blank.","type":"text","required":false,"example":"18 V, two batteries"}
+{"entity_id":"TL-LEND-EN02","position":4,"name":"Condition","meaning":"Whether the tool is fit to lend. A new tool starts good.","type_value_object_id":"TL-VO03","required":true,"example":"needs_repair"}
+{"entity_id":"TL-LEND-EN02","position":5,"name":"Added at","meaning":"When the tool joined the catalog.","type":"date and time","required":true,"example":"2026-02-20T09:00:00Z"}
+{"entity_id":"TL-LEND-EN03","position":1,"name":"Note","meaning":"What is wrong with the tool.","type_value_object_id":"TL-VO04","required":true,"column_name":"damage_note","example":"Chuck wobbles"}
+{"entity_id":"TL-LEND-EN03","position":2,"name":"Reported at","meaning":"When the damage was reported. The code does not store it yet.","type":"date and time","required":true,"example":"2026-03-10T14:05:00Z"}
+{"entity_id":"TL-LEND-EN04","position":1,"name":"Loan ID","meaning":"The library's number for the loan.","type":"whole number","required":true,"column_name":"id","example":"31"}
+{"entity_id":"TL-LEND-EN04","position":2,"name":"Member","meaning":"Who borrowed the tool.","type_aggregate_id":"TL-LEND-A1","required":true,"column_name":"member_id","example":"12"}
+{"entity_id":"TL-LEND-EN04","position":3,"name":"Tool","meaning":"Which tool was borrowed.","type_aggregate_id":"TL-LEND-A2","required":true,"column_name":"tool_id","example":"7"}
+{"entity_id":"TL-LEND-EN04","position":4,"name":"Borrowed at","meaning":"When the loan started.","type":"date and time","required":true,"example":"2026-03-02T10:00:00Z"}
+{"entity_id":"TL-LEND-EN04","position":5,"name":"Due date","meaning":"The last day of the loan, in the library's time zone (TL-LEND-INV04).","type":"date","required":true,"example":"2026-03-16"}
+{"entity_id":"TL-LEND-EN05","position":1,"name":"Returned at","meaning":"When the tool came back.","type":"date and time","required":true,"example":"2026-03-12T16:30:00Z"}
+{"entity_id":"TL-LEND-EN05","position":2,"name":"Condition","meaning":"The tool's condition as the librarian found it.","type_value_object_id":"TL-VO03","required":true,"column_name":"return_condition","example":"good"}
+{"entity_id":"TL-LEND-EN05","position":3,"name":"Note","meaning":"What the librarian noticed. A blank note is none.","type_value_object_id":"TL-VO04","required":false,"column_name":"return_note","example":"Cleaned and charged"}

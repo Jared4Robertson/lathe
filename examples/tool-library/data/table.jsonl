@@ -1,0 +1,3 @@
+{"id":"TL-LEND-EN01-TB","title":"members","entity_id":"TL-LEND-EN01","name":"members","storage":"table","file":"src/store.ts"}
+{"id":"TL-LEND-EN02-TB","title":"tools","entity_id":"TL-LEND-EN02","name":"tools","storage":"table","file":"src/store.ts","description":"Also holds the damage report's note as `damage_note`. A CHECK keeps `condition` to good or needs_repair."}
+{"id":"TL-LEND-EN04-TB","title":"loans","entity_id":"TL-LEND-EN04","name":"loans","storage":"table","file":"src/store.ts","description":"Also holds the return as `returned_at`, `return_condition` and `return_note`. CHECKs keep `due_date` a date and `return_condition` to good or needs_repair."}

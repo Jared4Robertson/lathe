@@ -1,0 +1,1 @@
+{"id":"TL-LEND-PO01-T","title":"A tool returned needing repair is marked as needing repair, with the return note","policy_id":"TL-LEND-PO01","level":"api","state":"automated","file":"test/api.test.ts","when":"A loan is returned with the condition `needs_repair` and a note.","then":"The catalog shows the tool `needs_repair`, with the return note as its damage note."}

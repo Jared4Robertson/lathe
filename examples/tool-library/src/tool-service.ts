@@ -1,6 +1,7 @@
 // The catalog: adds tools, lists them with their status, and records damage and repair.
-// Spec: TL-LEND-C04 (specs/tool-library/lending/02-design/components/02-services/C04-tool-service.md)
-import { LendingError, toolStatus, type CatalogEntry, type Clock, type Tool } from './model.ts';
+// Spec: the command handlers TL-LEND-CMD02-H, CMD03-H and CMD04-H and the query handler TL-LEND-QRY01-H
+// (examples/tool-library/data/).
+import { LendingError, needsRepair, parseName, parseNote, toolStatus, type CatalogEntry, type Clock, type Tool } from './model.ts';
 import type { Store } from './store.ts';
 
 export interface AddToolInput {
@@ -17,11 +18,11 @@ export class ToolService {
     this.now = now;
   }
 
-  /** TL-LEND-UC02: add a tool to the catalog. */
+  /** TL-LEND-CMD02-H: add a tool to the catalog. */
   add(input: AddToolInput): CatalogEntry {
-    // TL-LEND-UC02-R01: a tool needs a name.
+    // TL-VO01-C01: a tool needs a name.
     // TL-PAT-LIBRARIAN-ACTION-R01: missing input is refused, naming it, before anything is saved.
-    const name = typeof input.name === 'string' ? input.name.trim() : '';
+    const name = parseName(input.name);
     if (!name) throw new LendingError(400, 'invalid_request', 'A tool needs a name.');
     const description = typeof input.description === 'string' ? input.description.trim() : '';
     // TL-LEND-UC02-R02: a new tool starts in good condition, so it is available.
@@ -29,7 +30,7 @@ export class ToolService {
     return this.entry(tool);
   }
 
-  /** The catalog, with each tool's status. */
+  /** TL-LEND-QRY01-H: the catalog, with each tool's status. */
   list(): CatalogEntry[] {
     return this.store.listTools().map((t) => this.entry(t));
   }
@@ -39,21 +40,21 @@ export class ToolService {
   }
 
   /**
-   * TL-LEND-UC05-R01: mark a tool as needing repair, with a note.
-   * TL-LEND-UC05-R03: an active loan on the tool is left as it is.
+   * TL-LEND-CMD03-H: mark a tool as needing repair, with a note (TL-VO04-C01).
+   * An active loan on the tool is left as it is (TL-LEND-UC05-R03).
    */
   reportDamage(id: number, note: unknown): CatalogEntry {
     // TL-PAT-LIBRARIAN-ACTION-R01: a missing note is refused before anything is saved.
-    const text = typeof note === 'string' ? note.trim() : '';
+    const text = parseNote(note);
     if (!text) throw new LendingError(400, 'invalid_request', 'Describe the damage in a note.');
     this.require(id);
     return this.entry(this.store.setToolCondition(id, 'needs_repair', text));
   }
 
-  /** TL-LEND-UC05-R02: mark a damaged tool repaired, which returns it to lending. */
+  /** TL-LEND-CMD04-H: mark a damaged tool repaired, which returns it to lending; it must need repair (TL-LEND-SP04). */
   markRepaired(id: number): CatalogEntry {
     const tool = this.require(id);
-    if (tool.condition !== 'needs_repair') {
+    if (!needsRepair(tool)) {
       throw new LendingError(409, 'tool_not_damaged', `Tool ${id} is not marked as needing repair.`);
     }
     return this.entry(this.store.setToolCondition(id, 'good', null));

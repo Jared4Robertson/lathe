@@ -1,8 +1,9 @@
 // Storage for members, tools and loans in SQLite (node:sqlite).
-// Spec: TL-LEND-C02 (specs/tool-library/lending/02-design/components/01-models-and-accessors/C02-store.md)
-// The schema backs up two domain rules even if a service forgets them:
-// TL-LEND-DR01 (unique email) and TL-LEND-DR06 (one active loan per tool).
-// A loan's due date is stored as a date (YYYY-MM-DD), not a time (TL-LEND-DR07).
+// Spec: the repositories TL-LEND-A1-REPO, A2-REPO and A3-REPO and the tables TL-LEND-EN01-TB, EN02-TB
+// and EN04-TB (examples/tool-library/data/).
+// The schema backs up two invariants even if a command handler forgets them:
+// TL-LEND-INV01 (unique email) and TL-LEND-INV03 (one active loan per tool).
+// A loan's due date is stored as a date (YYYY-MM-DD), not a time (TL-LEND-INV04).
 import { DatabaseSync } from 'node:sqlite';
 import type { Condition, Loan, Member, Tool } from './model.ts';
 

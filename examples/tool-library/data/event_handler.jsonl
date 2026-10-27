@@ -1,0 +1,1 @@
+{"id":"TL-LEND-PO01-H","title":"LendingService.return (needs repair)","policy_id":"TL-LEND-PO01","file":"src/lending-service.ts","description":"The `needs_repair` branch of `LendingService.return`, run inline in the return's transaction: it sets the tool to needs repair with the return note."}

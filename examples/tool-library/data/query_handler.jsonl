@@ -1,0 +1,1 @@
+{"id":"TL-LEND-QRY01-H","title":"ToolService.list","query_id":"TL-LEND-QRY01","file":"src/tool-service.ts","description":"Lists the tools in ID order, each with its status from its active loan and condition (`entry`)."}

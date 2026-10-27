@@ -1,0 +1,7 @@
+{"read_model_id":"TL-LEND-RM01","position":1,"name":"Tool ID","meaning":"The tool.","type_aggregate_id":"TL-LEND-A2","required":true,"column_name":"id","example":"7"}
+{"read_model_id":"TL-LEND-RM01","position":2,"name":"Name","meaning":"What the tool is.","type_value_object_id":"TL-VO01","required":true,"example":"Cordless drill"}
+{"read_model_id":"TL-LEND-RM01","position":3,"name":"Description","meaning":"Anything a borrower should know.","type":"text","required":false,"example":"18 V, two batteries"}
+{"read_model_id":"TL-LEND-RM01","position":4,"name":"Condition","meaning":"Whether the tool is fit to lend.","type_value_object_id":"TL-VO03","required":true,"example":"needs_repair"}
+{"read_model_id":"TL-LEND-RM01","position":5,"name":"Damage note","meaning":"What is wrong, while the tool needs repair.","type_value_object_id":"TL-VO04","required":false,"example":"Chuck wobbles"}
+{"read_model_id":"TL-LEND-RM01","position":6,"name":"Added at","meaning":"When the tool joined the catalog.","type":"date and time","required":true,"example":"2026-02-20T09:00:00Z"}
+{"read_model_id":"TL-LEND-RM01","position":7,"name":"Status","meaning":"What a borrower sees: `on_loan` while the tool has an active loan, else `needs_repair` when it needs repair (TL-LEND-SP04), else `available`.","type":"text","required":true,"example":"available"}

@@ -1,30 +1,25 @@
-{"domain_event_id":"TL-LEND-EV01","position":1,"name":"Member ID","meaning":"The library's number for the new member.","type":"Whole number.","example":"12"}
-{"domain_event_id":"TL-LEND-EV01","position":2,"name":"Name","meaning":"What the member is called.","type":"Text.","example":"Ada Lovelace"}
-{"domain_event_id":"TL-LEND-EV01","position":3,"name":"Email","meaning":"How the library contacts the member, in lower case.","type":"Email address.","example":"ada@example.org"}
-{"domain_event_id":"TL-LEND-EV01","position":4,"name":"Joined at","meaning":"When the member was registered.","type":"Date and time.","example":"2026-03-01T15:20:00Z"}
-{"domain_event_id":"TL-LEND-EV02","position":1,"name":"Tool ID","meaning":"The library's number for the new tool, written on its tag.","type":"Whole number.","example":"7"}
-{"domain_event_id":"TL-LEND-EV02","position":2,"name":"Name","meaning":"What the tool is.","type":"Text.","example":"Cordless drill"}
-{"domain_event_id":"TL-LEND-EV02","position":3,"name":"Description","meaning":"Anything a borrower should know.","type":"Text, may be blank.","example":"18 V, two batteries"}
-{"domain_event_id":"TL-LEND-EV02","position":4,"name":"Added at","meaning":"When the tool joined the catalog.","type":"Date and time.","example":"2026-02-20T09:00:00Z"}
-{"domain_event_id":"TL-LEND-EV03","position":1,"name":"Tool ID","meaning":"Which tool is damaged.","type":"Tool reference.","example":"Tool 7"}
-{"domain_event_id":"TL-LEND-EV03","position":2,"name":"Note","meaning":"What is wrong with the tool.","type":"Text, not blank.","example":"Chuck wobbles"}
-{"domain_event_id":"TL-LEND-EV03","position":3,"name":"Reported at","meaning":"When the damage was reported.","type":"Date and time.","example":"2026-03-10T14:05:00Z"}
-{"domain_event_id":"TL-LEND-EV04","position":1,"name":"Tool ID","meaning":"Which tool was repaired.","type":"Tool reference.","example":"Tool 7"}
-{"domain_event_id":"TL-LEND-EV04","position":2,"name":"Repaired at","meaning":"When the tool was marked repaired.","type":"Date and time.","example":"2026-03-14T11:00:00Z"}
-{"domain_event_id":"TL-LEND-EV05","position":1,"name":"Loan ID","meaning":"The library's number for the new loan.","type":"Whole number.","example":"31"}
-{"domain_event_id":"TL-LEND-EV05","position":2,"name":"Member","meaning":"Who borrowed the tool.","type":"Member reference.","example":"Member 12"}
-{"domain_event_id":"TL-LEND-EV05","position":3,"name":"Tool","meaning":"Which tool was borrowed.","type":"Tool reference.","example":"Tool 7"}
-{"domain_event_id":"TL-LEND-EV05","position":4,"name":"Borrowed at","meaning":"When the loan started.","type":"Date and time.","example":"2026-03-02T10:00:00Z"}
-{"domain_event_id":"TL-LEND-EV05","position":5,"name":"Due date","meaning":"The last day of the loan, in the library's time zone.","type":"Date: the borrow date plus 14 days.","example":"2026-03-16"}
-{"domain_event_id":"TL-LEND-EV06","position":1,"name":"Loan ID","meaning":"Which loan the return closes.","type":"Loan reference.","example":"Loan 31"}
-{"domain_event_id":"TL-LEND-EV06","position":2,"name":"Member","meaning":"Who returned the tool.","type":"Member reference.","example":"Member 12"}
-{"domain_event_id":"TL-LEND-EV06","position":3,"name":"Tool","meaning":"Which tool came back.","type":"Tool reference.","example":"Tool 7"}
-{"domain_event_id":"TL-LEND-EV06","position":4,"name":"Returned at","meaning":"When the tool came back.","type":"Date and time.","example":"2026-03-12T16:30:00Z"}
-{"domain_event_id":"TL-LEND-EV06","position":5,"name":"Condition","meaning":"The tool's condition as the librarian found it.","type":"`good` or `needs_repair`.","example":"good"}
-{"domain_event_id":"TL-LEND-EV06","position":6,"name":"Note","meaning":"What the librarian noticed.","type":"Text, optional.","example":"Cleaned and charged"}
-{"domain_event_id":"TL-LEND-EV06","position":7,"name":"Late","meaning":"Whether the return came on a day after the due date, in the library's time zone.","type":"Yes or no.","example":"No"}
-{"domain_event_id":"TL-LEND-EV07","position":1,"name":"Loan ID","meaning":"Which loan is overdue. Loan 31 came back in time; this is what it would have raised had it not.","type":"Loan reference.","example":"Loan 31"}
-{"domain_event_id":"TL-LEND-EV07","position":2,"name":"Member","meaning":"Who holds the tool, and now cannot borrow until it is returned.","type":"Member reference.","example":"Member 12"}
-{"domain_event_id":"TL-LEND-EV07","position":3,"name":"Tool","meaning":"Which tool is overdue.","type":"Tool reference.","example":"Tool 7"}
-{"domain_event_id":"TL-LEND-EV07","position":4,"name":"Due date","meaning":"The last day of the loan, in the library's time zone.","type":"Date.","example":"2026-03-16"}
-{"domain_event_id":"TL-LEND-EV07","position":5,"name":"Overdue from","meaning":"The moment the loan became overdue: 00:00 the next day in the library's time zone.","type":"Date and time.","example":"2026-03-17T04:00:00Z"}
+{"domain_event_id":"TL-LEND-EV01","position":1,"name":"Member ID","meaning":"The library's number for the new member.","type_aggregate_id":"TL-LEND-A1","required":true,"example":"12"}
+{"domain_event_id":"TL-LEND-EV01","position":2,"name":"Name","meaning":"What the member is called.","type_value_object_id":"TL-VO01","required":true,"example":"Ada Lovelace"}
+{"domain_event_id":"TL-LEND-EV01","position":3,"name":"Email","meaning":"How the library contacts the member, in lower case.","type_value_object_id":"TL-VO02","required":true,"example":"ada@example.org"}
+{"domain_event_id":"TL-LEND-EV01","position":4,"name":"Joined at","meaning":"When the member was registered.","type":"date and time","required":true,"example":"2026-03-01T15:20:00Z"}
+{"domain_event_id":"TL-LEND-EV02","position":1,"name":"Tool ID","meaning":"The library's number for the new tool, written on its tag.","type_aggregate_id":"TL-LEND-A2","required":true,"example":"7"}
+{"domain_event_id":"TL-LEND-EV02","position":2,"name":"Name","meaning":"What the tool is.","type_value_object_id":"TL-VO01","required":true,"example":"Cordless drill"}
+{"domain_event_id":"TL-LEND-EV02","position":3,"name":"Description","meaning":"Anything a borrower should know.","type":"text","required":false,"example":"18 V, two batteries"}
+{"domain_event_id":"TL-LEND-EV02","position":4,"name":"Added at","meaning":"When the tool joined the catalog.","type":"date and time","required":true,"example":"2026-02-20T09:00:00Z"}
+{"domain_event_id":"TL-LEND-EV03","position":1,"name":"Tool ID","meaning":"Which tool is damaged.","type_aggregate_id":"TL-LEND-A2","required":true,"example":"Tool 7"}
+{"domain_event_id":"TL-LEND-EV03","position":2,"name":"Note","meaning":"What is wrong with the tool.","type_value_object_id":"TL-VO04","required":true,"example":"Chuck wobbles"}
+{"domain_event_id":"TL-LEND-EV03","position":3,"name":"Reported at","meaning":"When the damage was reported.","type":"date and time","required":true,"example":"2026-03-10T14:05:00Z"}
+{"domain_event_id":"TL-LEND-EV04","position":1,"name":"Tool ID","meaning":"Which tool was repaired.","type_aggregate_id":"TL-LEND-A2","required":true,"example":"Tool 7"}
+{"domain_event_id":"TL-LEND-EV04","position":2,"name":"Repaired at","meaning":"When the tool was marked repaired.","type":"date and time","required":true,"example":"2026-03-14T11:00:00Z"}
+{"domain_event_id":"TL-LEND-EV05","position":1,"name":"Loan ID","meaning":"The library's number for the new loan.","type_aggregate_id":"TL-LEND-A3","required":true,"example":"31"}
+{"domain_event_id":"TL-LEND-EV05","position":2,"name":"Member","meaning":"Who borrowed the tool.","type_aggregate_id":"TL-LEND-A1","required":true,"example":"Member 12"}
+{"domain_event_id":"TL-LEND-EV05","position":3,"name":"Tool","meaning":"Which tool was borrowed.","type_aggregate_id":"TL-LEND-A2","required":true,"example":"Tool 7"}
+{"domain_event_id":"TL-LEND-EV05","position":4,"name":"Borrowed at","meaning":"When the loan started.","type":"date and time","required":true,"example":"2026-03-02T10:00:00Z"}
+{"domain_event_id":"TL-LEND-EV05","position":5,"name":"Due date","meaning":"The last day of the loan, in the library's time zone.","type":"date","required":true,"example":"2026-03-16"}
+{"domain_event_id":"TL-LEND-EV06","position":1,"name":"Loan ID","meaning":"Which loan the return closes.","type_aggregate_id":"TL-LEND-A3","required":true,"example":"Loan 31"}
+{"domain_event_id":"TL-LEND-EV06","position":2,"name":"Member","meaning":"Who returned the tool.","type_aggregate_id":"TL-LEND-A1","required":true,"example":"Member 12"}
+{"domain_event_id":"TL-LEND-EV06","position":3,"name":"Tool","meaning":"Which tool came back.","type_aggregate_id":"TL-LEND-A2","required":true,"example":"Tool 7"}
+{"domain_event_id":"TL-LEND-EV06","position":4,"name":"Returned at","meaning":"When the tool came back.","type":"date and time","required":true,"example":"2026-03-12T16:30:00Z"}
+{"domain_event_id":"TL-LEND-EV06","position":5,"name":"Condition","meaning":"The tool's condition as the librarian found it.","type_value_object_id":"TL-VO03","required":true,"example":"good"}
+{"domain_event_id":"TL-LEND-EV06","position":6,"name":"Note","meaning":"What the librarian noticed.","type_value_object_id":"TL-VO04","required":false,"example":"Cleaned and charged"}
+{"domain_event_id":"TL-LEND-EV06","position":7,"name":"Late","meaning":"Whether the return came on a day after the due date, in the library's time zone (TL-LEND-SP01).","type":"yes/no","required":true,"example":"No"}

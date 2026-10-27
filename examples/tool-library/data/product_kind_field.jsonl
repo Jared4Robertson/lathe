@@ -1,0 +1,2 @@
+{"kind":"entry_point","position":1,"name":"file","type":"text","required":true,"description":"The file, from the product root."}
+{"kind":"entry_point","position":2,"name":"description","type":"text","required":false,"description":"What it does at start-up."}
