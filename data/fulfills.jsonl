@@ -2,6 +2,9 @@
 {"source_id":"LA-AUT-E01-R01","target_id":"LA-AUT-UC11-R04"}
 {"source_id":"LA-AUT-F01","target_id":"LA-AUT-UC01-R01"}
 {"source_id":"LA-AUT-F01","target_id":"LA-AUT-UC01-R04"}
+{"source_id":"LA-AUT-F01","target_id":"LA-AUT-UC01-R05"}
+{"source_id":"LA-AUT-F01","target_id":"LA-AUT-UC01-R07"}
+{"source_id":"LA-AUT-F01","target_id":"LA-AUT-UC07-R01"}
 {"source_id":"LA-AUT-F02","target_id":"LA-AUT-DR71"}
 {"source_id":"LA-AUT-F02","target_id":"LA-AUT-UC02-R01"}
 {"source_id":"LA-AUT-F02","target_id":"LA-AUT-UC02-R02"}
@@ -17,6 +20,10 @@
 {"source_id":"LA-AUT-F04-S04","target_id":"LA-AUT-UC06-R06"}
 {"source_id":"LA-AUT-F05","target_id":"LA-AUT-UC15-R01"}
 {"source_id":"LA-AUT-F05","target_id":"LA-AUT-UC15-R02"}
+{"source_id":"LA-AUT-F08","target_id":"LA-AUT-UC19-R01"}
+{"source_id":"LA-AUT-F08","target_id":"LA-AUT-UC19-R02"}
+{"source_id":"LA-AUT-F08","target_id":"LA-AUT-UC19-R03"}
+{"source_id":"LA-AUT-F08","target_id":"LA-AUT-UC19-R04"}
 {"source_id":"LA-AUT-V01","target_id":"LA-AUT-UC14-R01"}
 {"source_id":"LA-AUT-V01","target_id":"LA-AUT-UC14-R04"}
 {"source_id":"LA-AUT-V02","target_id":"LA-AUT-UC14-R02"}
