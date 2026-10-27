@@ -156,7 +156,7 @@ describe('the graph tree, its depth and its camera', () => {
     expect(screen.getByRole('img', { name: 'Minimap' })).toBeInTheDocument();
   });
 
-  it('LA-EXP-T148 Alt+Up steps out to the parent, Alt+Down in to the first child, Alt+Shift+Left and Right to a sibling, from the keyboard and from buttons with their keys', async () => {
+  it('LA-EXP-T148 The plain arrows step through the tree on the canvas: Left out to the parent, Right in to the first child, Up and Down to a sibling, and buttons step too, naming their keys; no page-wide shortcut steps', async () => {
     const index = testIndex();
     expect(stepTarget(index, 'P-D-UC01', 'out')).toBe('P-D-CAP01');
     expect(stepTarget(index, 'P-D-UC01', 'in')).toBe('P-D-UC01-R01');
@@ -167,13 +167,16 @@ describe('the graph tree, its depth and its camera', () => {
 
     await showGraph('/P-D-UC01');
     const steps = within(screen.getByRole('group', { name: 'Step through the tree' }));
-    expect(steps.getByRole('button', { name: 'Step out to the parent' })).toHaveAttribute('aria-keyshortcuts', 'Alt+ArrowUp');
-    expect(steps.getByRole('button', { name: 'Step to the next sibling' })).toHaveAttribute('aria-keyshortcuts', 'Alt+Shift+ArrowRight');
+    expect(steps.getByRole('button', { name: 'Step out to the parent' })).toHaveAttribute('aria-keyshortcuts', 'ArrowLeft');
+    expect(steps.getByRole('button', { name: 'Step to the next sibling' })).toHaveAttribute('aria-keyshortcuts', 'ArrowDown');
     expect(steps.getByRole('button', { name: 'Step to the previous sibling' })).toBeDisabled();
+    // The page-wide Alt shortcuts are gone: from the page, nothing steps.
     fireEvent.keyDown(document.body, { key: 'ArrowDown', code: 'ArrowDown', altKey: true });
+    expect(window.location.pathname).toBe('/P-D-UC01');
+    fireEvent.keyDown(graphHost()!, { key: 'ArrowRight', code: 'ArrowRight' });
     await waitFor(() => expect(window.location.pathname).toBe('/P-D-UC01-R01'));
     await waitFor(() => expect(isCenter('P-D-UC01-R01')).toBe(true));
-    fireEvent.keyDown(document.body, { key: 'ArrowUp', code: 'ArrowUp', altKey: true });
+    fireEvent.keyDown(graphHost()!, { key: 'ArrowLeft', code: 'ArrowLeft' });
     await waitFor(() => expect(window.location.pathname).toBe('/P-D-UC01'));
     await waitFor(() => expect(isCenter('P-D-UC01')).toBe(true));
     for (const to of ['/P-D-CAP01', '/P-D/use-cases/capability', '/P-D/use-cases']) {
@@ -181,7 +184,7 @@ describe('the graph tree, its depth and its camera', () => {
       await waitFor(() => expect(window.location.pathname).toBe(to));
     }
     await waitFor(() => expect(isCenter('P-D/use-cases')).toBe(true));
-    fireEvent.keyDown(document.body, { key: 'ArrowLeft', code: 'ArrowLeft', altKey: true, shiftKey: true });
+    fireEvent.keyDown(graphHost()!, { key: 'ArrowUp', code: 'ArrowUp' });
     await waitFor(() => expect(window.location.pathname).toBe('/P-D/domain-model'));
   });
 

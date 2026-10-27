@@ -11,7 +11,7 @@ import { focusDrawn, reachableBoxes, sceneOf } from '../stability/scene';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const RECORD = '/LA-PLT-UC05';
 const DOMAIN = '/LA-EXP';
-const AGGREGATE = '/LA-EXP-A4';
+const AGGREGATE = '/LA-EXP-A1';
 const TITLE = '.focus-views .pane-title';
 
 async function open(page: Page, url: string, ready = TITLE) {

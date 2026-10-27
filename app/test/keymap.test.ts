@@ -103,7 +103,7 @@ describe('the keymap', () => {
   });
 
   it('LA-PLT-T18 A person can override bindings in local storage; a binding that takes a browser essential is dropped', () => {
-    window.localStorage.setItem(OVERRIDES_KEY, JSON.stringify({ toggleNav: 'Mod+J', quickOpen: ['Mod+W', 'Mod+O'], nope: 'Mod+Y', graphMove: 'X' }));
+    window.localStorage.setItem(OVERRIDES_KEY, JSON.stringify({ toggleNav: 'Mod+J', quickOpen: ['Mod+W', 'Mod+O'], nope: 'Mod+Y', graphStepOut: 'X' }));
     const overrides = readOverrides();
     expect(overrides).toEqual({ toggleNav: ['Mod+J'], quickOpen: ['Mod+W', 'Mod+O'] });
     const commands = resolveCommands(overrides, false);

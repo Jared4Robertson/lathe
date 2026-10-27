@@ -53,10 +53,10 @@ describe('graph camera', () => {
           expect(y0 < h - 0.5 && y1 > h + 0.5, `${focus}: ${n.id} cut at the bottom`).toBe(false);
         }
       }
-      // No level is cut by the right edge: the frame ends before the next level, or past the last.
-      for (const level of map.levels) {
-        const [x0, x1] = [screen(level.x, 0).x, screen(level.x + level.width, 0).x];
-        expect(x0 < w - 0.5 && x1 > w + 0.5, `${focus}: a level cut at the right`).toBe(false);
+      // No box under the focus's parent is cut by the right edge: the frame ends before the next column, or past the last.
+      for (const n of [...map.nodes.values()].filter(under)) {
+        const [x0, x1] = [screen(n.x, 0).x, screen(n.x + n.w, 0).x];
+        expect(x0 < w - 0.5 && x1 > w + 0.5, `${focus}: ${n.id} cut at the right`).toBe(false);
       }
       // The parent is in view at the left edge, a strip of it at least, and the focus right of it.
       const p = map.nodes.get(f.parent!)!;

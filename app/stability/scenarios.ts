@@ -7,9 +7,9 @@ export const DOMAIN = '/LA-EXP';
 /** A use case with requirements, links and a long body. */
 export const RECORD = '/LA-PLT-UC05';
 /** An aggregate: its page offers the Model view. */
-export const AGGREGATE = '/LA-EXP-A4';
+export const AGGREGATE = '/LA-EXP-A1';
 /** A UC requirement of RECORD: what the edit scenarios change, then put back. */
-export const EDITED = '/LA-PLT-UC05-R01';
+export const EDITED = '/LA-PLT-UC05-R05';
 
 /** The shell's frame: the nav and the page beside it. */
 export const SHELL = ['nav#nav', '#main'];

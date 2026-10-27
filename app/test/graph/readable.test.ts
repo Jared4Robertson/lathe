@@ -5,7 +5,7 @@ import { indexOf } from '../fixtures/load';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { openStore } from '../../../lathe/src/store/index';
 import { drawnFor, drawnNested, FRAME_PADDING, frameNested, frameOnMap, MAX_ZOOM, MIN_ZOOM, type Drawn, type Viewport } from '../../src/graph/camera';
-import { graphMap, sizeText, type GraphMap, type PlacedMap } from '../../src/graph/map';
+import { graphMap, treeText, type GraphMap, type PlacedMap } from '../../src/graph/map';
 import { nestedMap } from '../../src/graph/nested';
 import { holds, polygonArea, readyVoronoiMap, type VoronoiMap } from '../../src/graph/voronoi';
 import { BORDER, labelHeight, labelLines, TITLE_FONT } from '../../src/graph/text';
@@ -151,7 +151,7 @@ describe('every drawn box shows its name', () => {
     expect(problems.length, problems.slice(0, 40).join('\n')).toBe(0);
   }, 120_000);
 
-  it("LA-EXP-T204 A framed box's header reads at the same size on screen at every depth, and the camera can frame the deepest leaf", () => {
+  it("LA-EXP-T204 A framed box's header reads at about the same size on screen at every depth, and the camera can frame the deepest leaf", () => {
     const whole = indexOf(workspace);
     for (const product of ['LA', 'TL']) {
       const index = spaceIndex(whole, product);
@@ -166,15 +166,16 @@ describe('every drawn box shows its name', () => {
           const v = layout.frame(map, n.id, 1, 770, 640);
           expect(v.zoom, `${layout.name} ${n.id}`).toBeLessThanOrEqual(MAX_ZOOM);
           expect(v.zoom, `${layout.name} ${n.id}`).toBeGreaterThanOrEqual(MIN_ZOOM);
-          if (layout.name === 'Tree' && (n.parent === null || n.children.length === 0 || n.text < sizeText(n.w) * (1 - 1e-9) || v.zoom >= (640 - 2 * FRAME_PADDING) / n.h * (1 - 1e-9))) continue;
+          if (layout.name === 'Tree' && (n.parent === null || n.children.length === 0 || n.text < treeText(n.w) * (1 - 1e-9) || v.zoom >= (640 - 2 * FRAME_PADDING) / n.h * (1 - 1e-9))) continue;
           (sizes.get(n.level) ?? sizes.set(n.level, []).get(n.level)!).push(n.text * v.zoom * TITLE_FONT);
         }
         const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)];
         const medians = [...sizes.values()].map(median);
-        // Nested and Tree: exactly the same at every depth; Voronoi (whose frame fits a cell's box) within a few pixels.
+        // Nested: exactly the same at every depth; Tree (whose columns narrow with how many children share them) within a
+        // tenth or so; Voronoi (whose frame fits a cell's box) within a few pixels.
         const [lo, hi] = [Math.min(...medians), Math.max(...medians)];
-        if (layout.name !== 'Voronoi') expect(hi - lo, `${product} ${layout.name}: ${medians.map((m) => m.toFixed(1)).join(', ')}`).toBeLessThan(1e-6);
-        else expect(hi / lo, `${product} ${layout.name}: ${medians.map((m) => m.toFixed(1)).join(', ')}`).toBeLessThan(1.4);
+        if (layout.name === 'Nested') expect(hi - lo, `${product} ${layout.name}: ${medians.map((m) => m.toFixed(1)).join(', ')}`).toBeLessThan(1e-6);
+        else expect(hi / lo, `${product} ${layout.name}: ${medians.map((m) => m.toFixed(1)).join(', ')}`).toBeLessThan(layout.name === 'Tree' ? 1.2 : 1.4);
         // Readable: at least 9 pixels, at most 20, in every layout and at every depth.
         for (const m of medians) { expect(m).toBeGreaterThanOrEqual(9); expect(m).toBeLessThanOrEqual(20); }
         // The camera frames even the deepest, smallest leaf without reaching its zoom limit.

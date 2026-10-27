@@ -2,7 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { indexOf } from '../fixtures/load';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { COLUMN_GAP_SHARE, COLUMN_RATIO, graphMap, layoutTree, linkEnds, MAP_SIZE, parentLine, ROOT_WIDTH, ROW_GAP_SHARE, sizeText, type GraphMap, type MapNode } from '../../src/graph/map';
+import { COLUMN_GAP_SHARE, graphMap, groupWidth, layoutTree, linkEnds, MAP_SIZE, MAX_ASPECT, MAX_COLUMN_SHARE, parentLine, ROOT_WIDTH, ROW_GAP_SHARE, treeText, type GraphMap, type MapNode } from '../../src/graph/map';
 import { drawnFor, frameOnMap, MAX_DRAWN, MIN_DRAWN, MIN_ZOOM, viewRect } from '../../src/graph/camera';
 import { shapeOf, SHAPES } from '../../src/graph/shapes';
 import { BADGE_ROOM, BORDER, LABEL_PAD, labelHeight, largestFit, metaWidth, MARK_ROOM, narrowestWidth, TITLE_FONT, titleWidth, treeLabel, wrapLabel, wrapText, type MapLabel } from '../../src/graph/text';
@@ -73,15 +73,32 @@ describe('the one map', () => {
 });
 
 describe('columns and text', () => {
-  it('LA-EXP-T166 Every box in a column has its width, each column a fixed fraction of the one before, a gap before it', () => {
+  it('LA-EXP-T166 A column narrows with how many children share it: siblings take MAX_COLUMN_SHARE of their parent\'s width, at most MAX_ASPECT times their height, so no box is flatter than MAX_ASPECT to 1, each column a gap after its parent', () => {
     for (const map of all()) {
-      map.levels.forEach((level, l) => {
-        expect(level.width).toBeCloseTo(MAP_SIZE * ROOT_WIDTH * COLUMN_RATIO ** l, 6);
-        if (l > 0) expect(level.x - (map.levels[l - 1].x + map.levels[l - 1].width)).toBeCloseTo(COLUMN_GAP_SHARE * level.width, 6);
-        for (const n of map.byLevel[l]) expect([n.x, n.w]).toEqual([level.x, level.width]);
-      });
-      expect(map.width).toBeCloseTo(map.levels.at(-1)!.x + map.levels.at(-1)!.width, 6);
+      for (const r of map.roots) expect([map.nodes.get(r)!.x, map.nodes.get(r)!.w]).toEqual([0, MAP_SIZE * ROOT_WIDTH]);
+      for (const node of map.nodes.values()) {
+        // No box is flatter than MAX_ASPECT to 1.
+        expect(node.w / node.h, node.id).toBeLessThanOrEqual(MAX_ASPECT + eps);
+        if (node.children.length === 0) continue;
+        const kids = node.children.map((c) => map.nodes.get(c)!);
+        // Siblings share one width: MAX_COLUMN_SHARE of their parent's, narrowed to MAX_ASPECT times their height; their column starts a gap after the parent.
+        const w = Math.min(MAX_COLUMN_SHARE * node.w, MAX_ASPECT * kids[0].h);
+        expect(groupWidth(node.w, kids[0].h)).toBe(w);
+        for (const k of kids) {
+          expect(k.w, k.id).toBeCloseTo(w, 9);
+          expect(k.x, k.id).toBeCloseTo(node.x + node.w + COLUMN_GAP_SHARE * w, 9);
+        }
+      }
+      expect(map.width).toBeCloseTo(Math.max(...[...map.nodes.values()].map((n) => n.x + n.w)), 6);
     }
+    // The rule itself: the more children share a parent, the narrower their column; a single child takes MAX_COLUMN_SHARE of its parent's width.
+    const lop = busyAndQuiet();
+    const [busy, quiet, b0, q0] = ['busy', 'quiet', 'b0', 'q0'].map((id) => lop.nodes.get(id)!);
+    expect(b0.w).toBeLessThan(q0.w);
+    expect(b0.w).toBeCloseTo(MAX_ASPECT * b0.h, 9);
+    expect(q0.w).toBeCloseTo(MAX_COLUMN_SHARE * quiet.w, 9);
+    expect(b0.x).toBeLessThan(q0.x);
+    expect(busy.w).toBe(quiet.w);
   });
 
   it("LA-EXP-T182 Siblings share one text scale: their column's width over TEXT_SIZE, or the largest at which every sibling's whole label fits its box", () => {
@@ -91,13 +108,13 @@ describe('columns and text', () => {
         for (const n of group) expect([n.w, n.h, n.text], n.id).toEqual([w, h, text]);
         const border = (s: number) => BORDER * s;
         expect(text).toBeGreaterThan(0);
-        expect(text).toBeCloseTo(Math.min(...group.map((n) => largestFit(labelOf(map, n), true, w, h, sizeText(w), border))), 9);
+        expect(text).toBeCloseTo(Math.min(...group.map((n) => largestFit(labelOf(map, n), true, w, h, treeText(w), border))), 9);
       }
     }
     // A title too long for its box at the size share lowers its siblings' text with its own, never its cousins'.
     const lop = busyAndQuiet();
     const quiet = lop.nodes.get('q0')!;
-    expect(quiet.text).toBeLessThan(sizeText(quiet.w));
+    expect(quiet.text).toBeLessThan(treeText(quiet.w));
     expect(lop.nodes.get('busy')!.text).toBe(lop.nodes.get('quiet')!.text);
   });
 
@@ -173,14 +190,16 @@ describe('the level of detail', () => {
       // Always with its label; a drawn box carries no text size of its own.
       expect(b).toEqual({ id: b.id });
     }
-    // Zoomed far out, the leaves are too small: they are not drawn, and each run of them is one bar in its parent's next level.
+    // Zoomed far out, the leaves are too small: they are not drawn, and each run of them is one bar in its parent's children's column.
     const far = { x: 0, y: 0, zoom: MIN_ZOOM };
     const small = drawnFor(map, far, 1000, 800);
     expect(small.boxes.some((b) => map.nodes.get(b.id)!.h * far.zoom < MIN_DRAWN)).toBe(false);
     expect(small.bars.length).toBeGreaterThan(0);
     for (const bar of small.bars) {
       const p = map.nodes.get(bar.parent)!;
-      expect(bar.level).toBe(p.level + 1);
+      // In its parent's children's column.
+      const kid = map.nodes.get(p.children[0])!;
+      expect([bar.x, bar.w]).toEqual([kid.x, kid.w]);
       // Within its parent, give or take the doubles' last digit.
       expect(bar.y).toBeGreaterThanOrEqual(p.y - 1e-9 * p.h);
       expect(bar.y + bar.h).toBeLessThanOrEqual(p.y + p.h + 1e-9 * p.h);
@@ -193,7 +212,7 @@ describe('the level of detail', () => {
 
   it('LA-EXP-T176 A label keeps its size in the map: the camera never changes it', () => {
     // The text scale is the map's: a column's width over TEXT_SIZE at most, whatever the camera.
-    for (const n of map.nodes.values()) expect(n.text).toBeLessThanOrEqual(sizeText(n.w));
+    for (const n of map.nodes.values()) expect(n.text).toBeLessThanOrEqual(treeText(n.w));
     // Every zoom draws each box with the same text scale, the map's, and its label: zooming never changes a label's size.
     const view = frameOnMap(map, 'P-D', 2, 1000, 800);
     for (const zoom of [view.zoom / 4, view.zoom, view.zoom * 4]) {
