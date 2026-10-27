@@ -1,16 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { drawnNested, frameNested, MAX_DRAWN, MIN_DRAWN, viewRect } from '../../src/graph/camera';
-import { graphMap } from '../../src/graph/map';
+import { graphMap, MAP_SIZE } from '../../src/graph/map';
 import { LABEL_PAD, metaWidth, titleWidth, WIDTH_MARGIN } from '../../src/graph/text';
 import {
-  below, bounds, cellTextScale, chord, contains, hexagon, holds, inset, layoutTreeOf, layoutVoronoi, LEAF_AREA, polygonArea, quantize, readyVoronoiMap, voronoiCells, voronoiTree, WEIGHT_STEP, type VoronoiMap,
+  below, bounds, cellText, chord, contains, hexagon, holds, inset, layoutTreeOf, layoutVoronoi, polygonArea, PRODUCT_AREA, readyVoronoiMap, voronoiCells, voronoiTree, type VoronoiMap,
 } from '../../src/graph/voronoi';
 import { indexWorkspace, type SpecIndex } from '../../src/specs/data';
-import { groupedWorkspace, manyOfOneKindWorkspace, testIndex } from './workspace';
+import { groupedWorkspace, manyOfOneKindWorkspace, siblingGroups, testIndex } from './workspace';
 
-// The Voronoi map (LA-EXP-DR64): the Tree map's tree as a Voronoi treemap, the product a hexagon,
-// each cell split into its children's cells by a power diagram, sized by the leaf records under
-// it, laid out once; each cell's label at its own text scale (LA-EXP-DR58).
+// The Voronoi map (LA-EXP-DR64): the Tree map's tree as a Voronoi treemap, laid out once, top-down
+// from the product's fixed hexagon by one rule (LA-EXP-DR58): siblings are the same size (equal
+// areas), with the same text.
 
 type XY = [number, number];
 const indexes = (): SpecIndex[] => [testIndex(), indexWorkspace(groupedWorkspace()), indexWorkspace(manyOfOneKindWorkspace())];
@@ -33,10 +33,6 @@ function uneven(sizes: readonly number[], extra?: string): VoronoiMap {
   return layoutVoronoi(['root'], kids);
 }
 
-const leafCount = (map: VoronoiMap, id: string): number => {
-  const n = map.nodes.get(id)!;
-  return n.children.length === 0 ? 1 : n.children.reduce((s, c) => s + leafCount(map, c), 0);
-};
 /** The overlap of two convex polygons: one clipped by each edge of the other. */
 function overlap(a: readonly XY[], b: readonly XY[]): number {
   let out: readonly XY[] = a;
@@ -102,62 +98,56 @@ describe('the Voronoi map', () => {
     for (const n of tree.nodes.values()) expect(voronoi.nodes.get(n.id)!.children).toEqual(n.children);
   });
 
-  it('LA-EXP-T191 The product is a flat-topped hexagon in proportion to its leaves, and each cell is within about 5% of its share of its parent', () => {
-    const map = uneven([40, 3, 12, 1, 25, 8, 8]);
-    const root = map.nodes.get('root')!;
-    expect(root.polygon).toHaveLength(6);
-    expect(polygonArea(root.polygon)).toBeCloseTo(quantize(97) * LEAF_AREA, -2);
-    expect(root.polygon.filter(([, y]) => y === 0)).toHaveLength(2);
-    const hex = hexagon(1000);
-    expect(polygonArea(hex)).toBeCloseTo(1000, 6);
-    // Shares of the parent: within 5% for at least 95% of all cells across the test maps.
+  it("LA-EXP-T191 The product is a fixed flat-topped hexagon, and each parent's cell splits into equal-area cells, within about 5%, whatever the records under them", () => {
+    for (const map of [uneven([40, 3, 12, 1, 25, 8, 8]), ...maps(), wide(1, 6)]) {
+      const root = map.nodes.get(map.roots[0])!;
+      expect(root.polygon).toHaveLength(6);
+      expect(polygonArea(root.polygon)).toBeCloseTo(PRODUCT_AREA, -2);
+      expect(root.w).toBeCloseTo(MAP_SIZE, 6);
+      expect(root.polygon.filter(([, y]) => y === 0)).toHaveLength(2);
+    }
+    expect(polygonArea(hexagon(1000))).toBeCloseTo(1000, 6);
+    // Siblings' areas: within 5% of their mean for at least 95% of all cells across the test maps, however many records each holds.
     let close = 0;
     let all = 0;
-    for (const m of [map, ...maps(), wide(1, 6), wide(2, 5)]) {
-      for (const n of m.nodes.values()) {
-        if (n.children.length < 2) continue;
-        const kids = n.children.map((c) => m.nodes.get(c)!);
-        const area = kids.reduce((s, k) => s + polygonArea(k.polygon), 0);
-        const leaves = kids.reduce((s, k) => s + leafCount(m, k.id), 0);
-        for (const k of kids) {
+    for (const m of [uneven([40, 3, 12, 1, 25, 8, 8]), ...maps(), wide(1, 6), wide(2, 5)]) {
+      for (const group of siblingGroups(m)) {
+        if (group.length < 2) continue;
+        const mean = group.reduce((s, k) => s + polygonArea(k.polygon), 0) / group.length;
+        for (const k of group) {
           all++;
-          if (Math.abs(polygonArea(k.polygon) / area / (leafCount(m, k.id) / leaves) - 1) <= 0.05) close++;
+          if (Math.abs(polygonArea(k.polygon) / mean - 1) <= 0.05) close++;
         }
       }
     }
     expect(close / all).toBeGreaterThanOrEqual(0.95);
-    // A weight is rounded to within 2%.
-    for (const w of [1, 2, 3, 7, 50, 51, 999]) expect(Math.abs(quantize(w) / w - 1)).toBeLessThanOrEqual(WEIGHT_STEP - 1);
   });
 
-  it('LA-EXP-T191 The same tree always gives the same map, and adding a record moves nothing outside the parent whose rounded weight it changes', () => {
+  it('LA-EXP-T191 The same tree always gives the same map, and adding a record moves nothing outside its parent', () => {
     expect(uneven([50, 30, 20])).toEqual(uneven([50, 30, 20]));
     const before = uneven([50, 30, 20]);
     const after = uneven([50, 30, 20], 'c0');
-    // 50 and 51 leaves round to the same weight, so the product's split is the same: every cell outside c0 keeps its place
-    // (the whole map may grow a little with its leaves, and every cell with it).
-    expect(quantize(50)).toBe(quantize(51));
-    const grow = after.width / before.width;
+    // Every cell outside c0, and c0 itself, keeps its place exactly.
     for (const n of before.nodes.values()) {
-      if (n.id === 'c0' || n.id.startsWith('c0.')) continue;
-      after.nodes.get(n.id)!.polygon.forEach(([x, y], i) => {
-        expect(Math.abs(x - n.polygon[i][0] * grow), n.id).toBeLessThan(1e-6 * after.width);
-        expect(Math.abs(y - n.polygon[i][1] * grow), n.id).toBeLessThan(1e-6 * after.width);
-      });
+      if (n.id.startsWith('c0.')) continue;
+      expect(after.nodes.get(n.id)!.polygon, n.id).toEqual(n.polygon);
     }
     // The same shape anywhere, at any size, splits the same way.
-    const sites = [{ id: 'a', weight: 3 }, { id: 'b', weight: 1 }, { id: 'c', weight: 2 }];
+    const sites = ['a', 'b', 'c'];
     const small = voronoiCells(hexagon(100), sites);
     const big = voronoiCells(hexagon(100).map(([x, y]): XY => [x * 10 + 500, y * 10 - 20]), sites);
     for (const [id, cell] of small) big.get(id)!.forEach(([x, y], i) => { expect((x - 500) / 10).toBeCloseTo(cell[i][0], 6); expect((y + 20) / 10).toBeCloseTo(cell[i][1], 6); });
   });
 
-  it('LA-EXP-T192 Each cell has its own text scale, in proportion to its size; its label wraps on whole words inside its outline', () => {
+  it("LA-EXP-T192 Siblings share one text scale, at most their size's, and each label wraps on whole words inside its outline", () => {
     for (const map of [...maps(), wide(2, 5), uneven([40, 3, 12, 1, 25])]) {
+      for (const group of siblingGroups(map)) {
+        // One scale, no more than the smallest sibling's size allows.
+        for (const n of group) expect(n.text, n.id).toBe(group[0].text);
+        expect(group[0].text).toBeGreaterThan(0);
+        expect(group[0].text).toBeLessThanOrEqual(Math.min(...group.map((n) => cellText(n.polygon))) * (1 + 1e-9));
+      }
       for (const n of map.nodes.values()) {
-        const own = cellTextScale(polygonArea(n.polygon), n.children.length > 0);
-        // Its own size's scale, or (a title too long for it) a smaller one, never larger.
-        expect(n.text).toBeLessThanOrEqual(own * (1 + 1e-9));
         expect(holds(n.polygon, n.label), `${n.id}'s label inside it`).toBe(true);
         // No word is broken: every line but the last ends after a space.
         for (const line of n.lines.title.slice(0, -1)) expect(/\s$/.test(line), `${n.id}: "${line}"`).toBe(true);
@@ -167,9 +157,6 @@ describe('the Voronoi map', () => {
         // A parent's label is in its header, above where its children start.
         if (n.children.length > 0) expect(n.label.y + n.label.h).toBeLessThanOrEqual(n.cut + 1e-6);
       }
-      // A larger cell of the same kind has larger text: scale goes with the square root of the area.
-      const leaves = [...map.nodes.values()].filter((n) => n.children.length === 0 && n.text === cellTextScale(polygonArea(n.polygon), false));
-      for (const n of leaves) expect(n.text / Math.sqrt(polygonArea(n.polygon))).toBeCloseTo(leaves[0].text / Math.sqrt(polygonArea(leaves[0].polygon)), 9);
     }
   });
 

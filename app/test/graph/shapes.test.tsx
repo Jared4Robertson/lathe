@@ -2,7 +2,7 @@ import './setup';
 import { describe, expect, it } from 'vitest';
 import { cleanup, render, waitFor } from '@testing-library/react';
 import { Legend } from '../../src/graph/panel';
-import { NODE_HEIGHT, NODE_WIDTH } from '../../src/graph/layout';
+import { contentScale, NODE_HEIGHT, NODE_WIDTH } from '../../src/graph/layout';
 import { parentLine } from '../../src/graph/map';
 import { MARKS, outlineInset, outlinePolygon, shapeOf, shapeVars, SHAPES, type Shape } from '../../src/graph/shapes';
 import { BORDER, LABEL_PAD, LABEL_PAD_BLOCK, labelHeight, wrapLabel } from '../../src/graph/text';
@@ -32,8 +32,8 @@ describe('a shape for each kind', () => {
     expect(outlinePolygon('hexagon', NODE_WIDTH, NODE_HEIGHT, 1)).toBe('polygon(12px 0%, calc(100% - 12px) 0%, 100% 50%, calc(100% - 12px) 100%, 12px 100%, 0% 50%)');
     // A line out of a domain starts on its outline: at the point's tip in its middle, on the slanted side above and below.
     const domain = { x: 0, y: 0, w: 400, h: 1000 };
-    const c = chamfer(400, 1000, 2.1);
-    expect(outlineInset(domain, 'hexagon', 2.1, 500, 'right')).toBe(0);
+    const c = chamfer(400, 1000, contentScale(400, 1000));
+    expect(outlineInset(domain, 'hexagon', contentScale(400, 1000), 500, 'right')).toBe(0);
     expect(parentLine(domain, { x: 600, y: 472, w: NODE_WIDTH, h: NODE_HEIGHT }, 'hexagon')[0].x).toBe(400);
     expect(parentLine(domain, { x: 600, y: 0, w: NODE_WIDTH, h: NODE_HEIGHT }, 'hexagon')[0].x).toBeCloseTo(400 - c * (1 - 28 / 500), 6);
     // A line into a domain meets the tip of its point, at its middle.
