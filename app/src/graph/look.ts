@@ -16,9 +16,11 @@ export interface Look {
   spotlightDim: number; contextOpacity: number;
   /** How long the spotlight's fade takes, in ms: 0 under reduced motion. */
   fade: number;
+  /** How wide the vignette of the paper at the canvas's edges is, in CSS pixels. */
+  vignette: number;
 }
 
-const COLORS: Record<Exclude<keyof Look, 'spotlightDim' | 'contextOpacity' | 'fade'>, string> = {
+const COLORS: Record<Exclude<keyof Look, 'spotlightDim' | 'contextOpacity' | 'fade' | 'vignette'>, string> = {
   paper: '--paper', sheet: '--sheet', ink: '--ink', muted: '--muted', rule: '--rule',
   steel: '--steel', spark: '--spark', sparkBg: '--spark-bg', warn: '--warn', error: '--error', onMark: '--on-mark',
   hoverRing: '--hover-ring', linkEdge: '--link-edge',
@@ -33,7 +35,7 @@ export const PLAIN_LOOK: Look = {
   hoverRing: 'rgb(46 106 136 / 0.45)', linkEdge: '#B5512A',
   defineEdge: '#2E6A88', defineFill: '#E4EEF3', designEdge: '#B5512A', designFill: '#F8E8DF',
   structuralEdge: '#1D2830', structuralFill: '#FFFFFF', fileEdge: '#5A6870',
-  spotlightDim: 0.5, contextOpacity: 0.35, fade: 0,
+  spotlightDim: 0.5, contextOpacity: 0.35, fade: 0, vignette: 56,
 };
 
 /** Reads the look from the tokens as they apply at an element. */
@@ -54,6 +56,7 @@ export function readLook(at: HTMLElement): Look {
     look.spotlightDim = number('--spotlight-dim', PLAIN_LOOK.spotlightDim);
     look.contextOpacity = number('--context-opacity', PLAIN_LOOK.contextOpacity);
     look.fade = readMotion().duration;
+    look.vignette = number('--vignette', PLAIN_LOOK.vignette);
   } finally {
     probe.remove();
   }
