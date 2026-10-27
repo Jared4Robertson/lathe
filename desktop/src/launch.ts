@@ -7,7 +7,7 @@
 import type { Chrome } from './chrome.ts';
 import { displayPath } from './folders.ts';
 
-export type LocalAction = 'retry' | 'open-another' | 'reveal' | 'open-repo' | 'open-format';
+export type LocalAction = 'retry' | 'open-another' | 'reveal' | 'open-repo' | 'open-reference';
 
 export interface PageAction {
   id: LocalAction;
@@ -55,7 +55,7 @@ export interface AboutModel {
   colors: Chrome;
 }
 
-/** The About window: the app, engine and Electron versions, and links to the repo and the record format. */
+/** The About window: the app, engine and Electron versions, and links to the repo and the data reference. */
 export function aboutModel(versions: { app: string; engine: string | null; electron: string; chrome: string; node: string }, colors: Chrome): AboutModel {
   return {
     name: 'Lathe',
@@ -68,15 +68,15 @@ export function aboutModel(versions: { app: string; engine: string | null; elect
     ],
     actions: [
       { id: 'open-repo', label: 'Source Code' },
-      { id: 'open-format', label: 'Record Format' },
+      { id: 'open-reference', label: 'Data Reference' },
     ],
     colors,
   };
 }
 
-/** The repo, and its record format, which the About window links to. */
+/** The repo, and its data reference (every table, column, relation and check), which the About window links to. */
 export const REPO_URL = 'https://github.com/Jared4Robertson/SDLC-RSI';
-export const FORMAT_URL = `${REPO_URL}/blob/main/lathe/FORMAT.md`;
+export const REFERENCE_URL = `${REPO_URL}/blob/main/lathe/REFERENCE.md`;
 
 /** A button press from a local page, when it is one of the actions that page shows; else null. */
 export function parseLocalAction(input: unknown, offered: readonly PageAction[]): LocalAction | null {
