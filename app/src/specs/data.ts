@@ -88,9 +88,27 @@ export function parentColumns(schema: SchemaDescription, kind: string): Set<stri
   return new Set((schema.kinds[kind]?.parents ?? []).map((p) => p.column));
 }
 
+/**
+ * The part tables a kind's records own: those whose owner column points at the kind's table, or at
+ * a link the kind starts (a follower's setting values hang on its follows link).
+ */
+export function partTablesOf(schema: SchemaDescription, kind: string): string[] {
+  const starts = (table: string) => {
+    const relation = schema.relations[table];
+    return !!relation && (relation.sourceTable === kind || (schema.supertypes[relation.sourceTable] ?? []).includes(kind));
+  };
+  return Object.values(schema.tables)
+    .filter((t) => t.role === 'part' && t.foreignKeys.some((f) => f.columns[0] === t.ownerColumn && (f.table === kind || starts(f.table))))
+    .map((t) => t.name)
+    .sort();
+}
+
 const rankOf = (kind: string) => { const i = KIND_ORDER.indexOf(kind); return i < 0 ? KIND_ORDER.length : i; };
 /** Kinds in KIND_ORDER, a product's own kinds after Lathe's, by name. */
 export const kindOrder = (a: string, b: string) => rankOf(a) - rankOf(b) || a.localeCompare(b);
+
+// Folders by stage: Define, Design, then those outside the stages (Shared).
+const stageRank = (stage: string | null) => (stage === 'define' ? 0 : stage === 'design' ? 1 : 2);
 
 /** Reads the schema's kinds, folders and relations, and the rows, into a Workspace. */
 export function buildWorkspace(data: SpecData): Workspace {
@@ -112,7 +130,7 @@ export function buildWorkspace(data: SpecData): Workspace {
     };
   });
   const sections: SectionRule[] = [...schema.sections]
-    .sort((a, b) => (a.stage ?? '~').localeCompare(b.stage ?? '~') || a.position - b.position)
+    .sort((a, b) => stageRank(a.stage) - stageRank(b.stage) || a.position - b.position)
     .map((s) => ({ section: s.name, stage: s.stage ?? '', order: s.position, label: s.label, description: s.description }));
   const relations: RelationRule[] = Object.values(schema.relations).flatMap((r) =>
     r.pairs.map((p) => ({

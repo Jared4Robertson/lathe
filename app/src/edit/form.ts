@@ -1,6 +1,6 @@
 import type { ColumnDescription, ColumnKind, SchemaDescription, TableDescription } from '../../../lathe/src/store/schema';
 import type { Command } from '../../../lathe/src/store/store';
-import { kindOrder, parentColumns, partsOf, type Row, type SpecIndex, type SpecRecord, type Value } from '../specs/data';
+import { kindOrder, parentColumns, partsOf, partTablesOf, type Row, type SpecIndex, type SpecRecord, type Value } from '../specs/data';
 import { TEXT_COLUMNS } from '../specs/RecordText';
 
 // The record form, generated from the schema description (pure logic, tested directly): a kind's
@@ -55,9 +55,8 @@ export interface PartForm {
 }
 
 export function partForms(schema: SchemaDescription, kind: string): PartForm[] {
-  return Object.values(schema.tables)
-    .filter((t) => t.role === 'part' && t.foreignKeys.some((f) => f.columns.length === 1 && f.columns[0] === t.ownerColumn && f.table === kind))
-    .sort((a, b) => a.name.localeCompare(b.name))
+  return partTablesOf(schema, kind)
+    .map((name) => schema.tables[name])
     .map((t) => {
       const position = t.primaryKey.includes('position') ? 'position' : null;
       return {
@@ -137,8 +136,12 @@ export function suggestId(index: SpecIndex, kind: string, parentId: string | nul
   const product = parent ? (parent.kind === 'product' ? parent.id : parent.product) : null;
   const domain = parent ? (parent.kind === 'domain' ? parent.id : parent.domain) : null;
   const parentLabel = parent ? (index.kinds.get(parent.kind)?.label ?? parent.kind).toLowerCase() : '';
-  for (const alternative of pattern.split(/, or | or /)) {
-    const shape = alternative.replace(/\s+under the .*$/, '').trim();
+  // Alternatives are joined by "or" outside the placeholders ("<view, endpoint, flow, API or integration>-R<nn>, or <P>-<D>-IR<nn>").
+  for (const alternative of pattern.split(/,? or (?![^<]*>)/)) {
+    // <D> is the domain's whole ID, which starts with the product's: <P>-<D> is written as the domain's ID.
+    // A new domain's own <D> is the part the person names.
+    const own = kind === 'domain' ? alternative.replace('<D>', '<name>') : alternative;
+    const shape = own.replace(/\s+under the .*$/, '').replace('<P>-<D>', '<D>').trim();
     let unresolved = false;
     const start = shape.replace(/<([^>]+)>/g, (whole, name: string) => {
       if (name === 'P') { if (!product) unresolved = true; return product ?? ''; }
