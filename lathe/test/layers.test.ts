@@ -1,4 +1,4 @@
-// Layers (FORMAT.md section 16): ordered parts of a domain's technical specification that hold its
+// Layers (FORMAT.md section 15): ordered parts of a domain's technical specification that hold its
 // components. The layer-order and component-outside-layer checks, and a component in a layer belonging to
 // the layer's domain everywhere a domain matters.
 import path from 'node:path';

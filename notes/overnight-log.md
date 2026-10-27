@@ -253,3 +253,18 @@ Lathe now matches S2 on UC requirements (206/206) and domain rules (98/98) acros
 - Wrapping uses the real fonts' measurements; the width table is gone. A hidden DOM layer carries focus, the keyboard and screen readers.
 - Budgets held on LA with no WebGL needed.
 - All checks passed: stability 44, a11y 125, perf 11.
+
+## Night three: database first (plan notes/plans/database-first.md, agreed)
+- The owner asked for the full build, with no pending work left, overnight.
+- The integration branch is `db-first`, from main. Brief 98 (schema and store) is running.
+- Briefs 99 (import), 100 (engine), 101 (writers) and 102 (app) are written. They run in parallel once 98 merges into `db-first`.
+- Then Lathe's own spec is updated through the command layer, `specs/` is deleted, the full checks run once, and `db-first` merges into main.
+- Brief 97 (remove fitness) is running on main; `db-first` takes it in before the import starts.
+- The owner approved pushing main to origin once the db-first build is complete and merged.
+- If anything fails at the end, fix it and then push; leave main unpushed only for a failure that truly can't be fixed.
+
+## Brief 97 merged: fitness removed
+- The kind, its checks, the panel, the circle shape, LA-Q01, EV02, CHK-UC01-R06 and T09 are gone. The Evidence panel is now a plain Summary.
+- Checks passed: unit tests in every package, knip, a11y 125, stability 43 plus the fixed nav test (5/5).
+- `db-first` moved up to main.
+- Left over: in the side bar's Children list, a long pattern title overlaps its count; the header of check 41 misstates that code spans aren't read.

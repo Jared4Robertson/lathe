@@ -2,7 +2,7 @@
 --
 -- A level that holds one record groups nothing. Only its own children are counted, not theirs, and one with
 -- no children is not reported. A group (the `group` of requirements, interaction requirements, pattern rules
--- and standard rules, FORMAT.md section 23) is counted among its parent's children of one kind, compared trimmed and in any
+-- and standard rules, FORMAT.md section 22) is counted among its parent's children of one kind, compared trimmed and in any
 -- letter case, and reported on that parent. Merge it into a neighbor, or give it more.
 --
 -- severity: warning

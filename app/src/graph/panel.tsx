@@ -85,7 +85,7 @@ export function Legend() {
         <ul className="plain">
           <li><span className="graph-swatch stage-define" /> Define (capability, aggregate, entity, rule, event, use case, requirement, pattern)</li>
           <li><span className="graph-swatch stage-design" /> Design (flow, flow step, view, API, endpoint, integration, layer, component, technical flow, technical step, test, and in Shared a standard and its rules)</li>
-          <li><span className="graph-swatch stage-structural" /> Structural (product, domain, fitness)</li>
+          <li><span className="graph-swatch stage-structural" /> Structural (product, domain)</li>
           <li><span className="graph-swatch kind-domain_event" /> Domain event, in the spark colors</li>
           <li><span className="graph-swatch kind-question" /> Open question, in the warning color (dashed in the Nested and Voronoi views)</li>
           <li><span className="graph-swatch stage-group" /> Groups: a stage, folder or group, in gray</li>

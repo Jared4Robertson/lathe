@@ -27,7 +27,7 @@ The app and `lathe check` call a `requirement` record a **UC requirement** (use 
 
 Keep each use case's requirements in a folder next to it: `use-cases/UC03-borrow-a-tool.md` and `use-cases/UC03-borrow-a-tool/R01-due-date-shown.md`. Keep capabilities in `01-define/capabilities/` and patterns in a `patterns/` folder beside the product's domains.
 
-Once a use case has more than about 8 requirements, or a pattern more than about 8 rules, sort them into groups: give each a `group`, a short heading such as Validation, Paging or Errors (FORMAT.md section 23). The app shows the ungrouped ones first, then each group under its heading, and `too-many-children` counts each group as its own list. Give every group at least two members (a group of one is a `lone-child` warning), and keep the IDs as they are: a group is a field, so moving a record into one changes no ID.
+Once a use case has more than about 8 requirements, or a pattern more than about 8 rules, sort them into groups: give each a `group`, a short heading such as Validation, Paging or Errors (FORMAT.md section 22). The app shows the ungrouped ones first, then each group under its heading, and `too-many-children` counts each group as its own list. Give every group at least two members (a group of one is a `lone-child` warning), and keep the IDs as they are: a group is a field, so moving a record into one changes no ID.
 
 ## Roles
 

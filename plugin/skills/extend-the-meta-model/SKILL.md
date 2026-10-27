@@ -15,7 +15,7 @@ Extend only when the user asks for it, or a real need keeps recurring. Never ext
 
 ## Before you write
 
-1. Read section 9 of `FORMAT.md` in the Lathe package (`node_modules/@jaredrob/lathe/FORMAT.md` in a product repo, `lathe/FORMAT.md` in the Lathe repo), and run `npx lathe format` to see every kind, relation and folder the product has now. The default rows are in the package's `meta/kinds.csv`, `meta/relations.csv`, `meta/sections.csv` and `meta/ids.csv`.
+1. Read section 8 of `FORMAT.md` in the Lathe package (`node_modules/@jaredrob/lathe/FORMAT.md` in a product repo, `lathe/FORMAT.md` in the Lathe repo), and run `npx lathe format` to see every kind, relation and folder the product has now. The default rows are in the package's `meta/kinds.csv`, `meta/relations.csv`, `meta/sections.csv` and `meta/ids.csv`.
 2. Read the product's existing `metaExtensions` files, if any. Use the same columns as the defaults, header row included.
 
 ## What a row does
@@ -35,7 +35,7 @@ A widening can only add: it cannot remove a default parent kind, required field 
 
 ## Folders
 
-Each kind's `section` column names the folder it is read in: `domain-model` and `use-cases` in the Define stage, `interaction-design`, `technical-specification` and `test-plan` in the Design stage, and `shared` (patterns and standards) at product level. The folders, their order and labels are the rows of `sections.csv` (`section, stage, order, label, description`). A new kind should name a folder of its own stage; one with no `section` gets a folder of its own in the app. Components go in layers: a `layer` sits under a domain in the `technical-specification` folder, and a `component` sits in a layer, or in the domain when it has none. Layers are records each product names, not a field, so a product needs no extension to add its own. To move a default kind, widen it with just its `section`, such as `domain_rule,,,use-cases,,,,`; to add a folder, add a `sections.csv` row. See section 15 of `FORMAT.md`.
+Each kind's `section` column names the folder it is read in: `domain-model` and `use-cases` in the Define stage, `interaction-design`, `technical-specification` and `test-plan` in the Design stage, and `shared` (patterns and standards) at product level. The folders, their order and labels are the rows of `sections.csv` (`section, stage, order, label, description`). A new kind should name a folder of its own stage; one with no `section` gets a folder of its own in the app. Components go in layers: a `layer` sits under a domain in the `technical-specification` folder, and a `component` sits in a layer, or in the domain when it has none. Layers are records each product names, not a field, so a product needs no extension to add its own. To move a default kind, widen it with just its `section`, such as `domain_rule,,,use-cases,,,,`; to add a folder, add a `sections.csv` row. See section 14 of `FORMAT.md`.
 
 ## Obligations and roles
 
@@ -96,7 +96,7 @@ Use it consistently; Lathe checks only the format and uniqueness. Give every new
 
 ## A product's own checks
 
-A house rule that the meta-model cannot express, such as "each aggregate has exactly one Record view use case" or "each use case's actor is one of the product's roles" (the Lathe repo's own `lathe-checks/02-actor-not-a-role.sql`), is a product check, not an extension. Name a folder in `lathe.config.json` (`"checks": "lathe-checks"`) and add one `<number>-<check-name>.sql` file per rule, written as Lathe's own checks are: one `SELECT` over the same tables (`records`, `fields`, `links`, ...) returning `severity`, `"check"`, `record` and `message`, under a header comment that documents it (a summary sentence, a blank comment line, the explanation and how to fix it, a blank comment line, then `-- severity: warning` and an optional `-- kinds: aggregate`). See section 5 and section 13 of `FORMAT.md`; a check without that header is an `undocumented` error, and `lathe format` shows the product's checks with Lathe's.
+A house rule that the meta-model cannot express, such as "each aggregate has exactly one Record view use case" or "each use case's actor is one of the product's roles" (the Lathe repo's own `lathe-checks/02-actor-not-a-role.sql`), is a product check, not an extension. Name a folder in `lathe.config.json` (`"checks": "lathe-checks"`) and add one `<number>-<check-name>.sql` file per rule, written as Lathe's own checks are: one `SELECT` over the same tables (`records`, `fields`, `links`, ...) returning `severity`, `"check"`, `record` and `message`, under a header comment that documents it (a summary sentence, a blank comment line, the explanation and how to fix it, a blank comment line, then `-- severity: warning` and an optional `-- kinds: aggregate`). See section 5 and section 12 of `FORMAT.md`; a check without that header is an `undocumented` error, and `lathe format` shows the product's checks with Lathe's.
 
 - The check's name is the file name without its number and `.sql`. Do not reuse one of Lathe's check names: that file is not run, and is a `product-check-name-clash` error.
 - Use `warning` for work still to do and `error` only for a broken workspace, as Lathe does.

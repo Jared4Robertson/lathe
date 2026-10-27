@@ -9,7 +9,7 @@ import { patternWorkspace } from './fixtures/patterns';
 import { standardWorkspace } from './fixtures/standards';
 import { main, openApp, openSideBar, section, sideBar } from './helpers';
 
-// Groups (FORMAT.md section 23) and waivers by setting value (section 11) in the app, on the pattern
+// Groups (FORMAT.md section 22) and waivers by setting value (section 10) in the app, on the pattern
 // workspace: DM-SHOP-UC01 gives record Basket, DM-PAY-UC01 gives record Payment.
 
 const rule = (id: string, title: string, fields: Record<string, string>): SpecRecord =>

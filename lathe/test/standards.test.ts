@@ -1,4 +1,4 @@
-// Standards (FORMAT.md section 20): the standard and standard_rule kinds in Shared, the meets relation, no
+// Standards (FORMAT.md section 19): the standard and standard_rule kinds in Shared, the meets relation, no
 // coverage owed, and the standard-rule-unmet check.
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';

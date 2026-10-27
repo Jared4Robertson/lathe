@@ -55,7 +55,7 @@ Note: [types.ts](../../lathe/src/types.ts) declares `requirements_built` and `ru
 - **The define stage.** Product, domain, aggregate, domain rule, use case and requirement, and the `applies` relation, matched S2's structure one to one. S2's IDs (`ACC-022`, `ACC-022-R001`, `ACC-DM-R046`, `ACC-V13`) pass Lathe's ID check unchanged, even though they do not follow Lathe's `<P>-<D>-UC01` convention. That is fine, because the convention is advice.
 - **Code traceability.** All 14 component files exist. All 13 scenario, UI and contract tests passed the "file mentions the test ID" check: S2 writes each scenario ID into its test file, just as Lathe asks.
 - **Endpoints, views and open questions.** An endpoint as method and route, a view, and an open question with an owner all map directly. S2's open questions are tables with an owner and what each one blocks; Lathe's `question` covers the first two.
-- **No status in records.** S2 has a check that rejects history and planned work in current documents. This is the same principle as FORMAT.md section 8.
+- **No status in records.** S2 has a check that rejects history and planned work in current documents. This is the same principle as FORMAT.md section 7.
 
 ### 3.2 What needed a meta-model extension
 
@@ -201,7 +201,7 @@ All three default obligation kinds now agree with S2. The disagreements that are
 
 ### 6.4 What is new, broken or still awkward
 
-- **A. Restating a default relation is an error.** FORMAT.md section 9 says an identical row changes nothing, but "identical" includes the description and the role. So a product's existing extension broke on upgrade with 4 `meta-duplicate-relation` errors (P6 reproduces it). The message does not say which folders list the rule, and a product cannot change a default relation's role or description.
+- **A. Restating a default relation is an error.** FORMAT.md section 8 says an identical row changes nothing, but "identical" includes the description and the role. So a product's existing extension broke on upgrade with 4 `meta-duplicate-relation` errors (P6 reproduces it). The message does not say which folders list the rule, and a product cannot change a default relation's role or description.
 - **B. An obligation outside a domain is silently left out.** Coverage counts only records that sit in a domain. Shared rules under the product are marked `obligation: yes`, yet they get no coverage line and no note, while `unsatisfied` and `unproved` still check them. S2's shared rules sit outside every domain.
 - **C. One mention covers every proof.** If a test's file names any one ID it proves, the test passes for all of them. In P4, a test claims to prove two rules, its file names only one, and nothing is reported.
 - **D. Pattern proofs keyed by file are false errors.** S2 records a pattern proof in its test plan as the path of a dedicated file, and that file names no ID at all. Lathe calls it `test-file-missing-id`. That is the main trial's only error.
@@ -254,7 +254,7 @@ The same slice, reworked for the pass-6 format (FORMAT.md sections 4 to 14) and 
 - **Pattern proofs** are one `test` per row, with IDs like `ACC-PP-<rule>`: 25 automated, 3 manual and 12 planned (S2's "Not automated yet"). Of the 25 automated rows, 7 have files that name the rule's ID. The other 18 have files that name no ID, because the domain's test class inherits the marked tests from a shared conformance class. For each of these, `key` is the name of that conformance class (5 different keys).
 - **Flow steps.** S2's step tables for `ACC-F022` and `ACC-F030` became 28 `flow_step` records (16 and 12), with IDs that keep S2's step labels (`ACC-F022-W6`, `ACC-F030-P2`, `ACC-F030-WA4`). Each step has its own `uses` and `fulfills` links. The flows no longer carry any `fulfills` links. 7 step targets are outside the slice and were left out (6 in `ACC-F022`, 1 in `ACC-F030`).
 - **The extension shrank** from 3 kind rows and 10 relations to 1 kind and 4 relations: `design_flow` with `deepens` and `uses`, plus `fulfills` from an interaction requirement and from a flow step to a pattern rule. The `domain_rule` widening is gone (now a default), and so are `carries_out`, `fulfills` from a flow, and `runs`.
-- **House rules moved into `lathe-checks/`:** `one-record-view-per-aggregate` (from FORMAT.md section 13, matched on the Record view `records` setting); `proof-at-level` (an obligation's `verification` must have an automated or manual proving test with that `test_type`, compared without letter case); and `scenario-cites-unapplied-rule` (a `<use case>-AC<nn>` test proves only domain rules that its use case applies).
+- **House rules moved into `lathe-checks/`:** `one-record-view-per-aggregate` (from FORMAT.md section 12, matched on the Record view `records` setting); `proof-at-level` (an obligation's `verification` must have an automated or manual proving test with that `test_type`, compared without letter case); and `scenario-cites-unapplied-rule` (a `<use case>-AC<nn>` test proves only domain rules that its use case applies).
 - **Components** gained `satisfies` links to the 13 pattern rules that S2's component specs cite.
 
 That comes to 185 records and 280 links. The 62 tests are 45 automated, 5 manual and 12 planned.

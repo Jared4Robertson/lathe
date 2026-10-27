@@ -1,6 +1,6 @@
 import { byIdOrder, type SpecIndex, type SpecLink, type SpecRecord } from './data';
 
-// Patterns and their rules, as the pages show them (FORMAT.md sections 10 and 11). A domain
+// Patterns and their rules, as the pages show them (FORMAT.md sections 9 and 10). A domain
 // follows a pattern when the domain itself or any of its use cases `follows` it, and then owes each
 // of the pattern's rules: designed when a component in the domain satisfies it, built when that
 // component's file exists, proved when an automated or manual test in the domain proves it, planned
@@ -93,7 +93,7 @@ export function followingDomains(index: SpecIndex, patternId: string): ({ domain
 
 /**
  * The patterns a domain follows, in pattern ID order: those the domain itself follows (FORMAT
- * section 10; `byDomain`, so every rule applies) and those its use cases follow, each with them.
+ * section 9; `byDomain`, so every rule applies) and those its use cases follow, each with them.
  */
 export function patternsFollowedBy(index: SpecIndex, domainId: string): { pattern: SpecRecord; useCases: SpecRecord[]; byDomain: boolean }[] {
   const byPattern = new Map<string, SpecRecord[]>();

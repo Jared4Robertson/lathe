@@ -159,19 +159,12 @@ export function wrapLabel(lines: { title: string; meta: string }, { shape, marks
     meta: wrapText(lines.meta, inner - metaRoom({ marks, marked, centered }), (s) => metaWidth(s), '-'),
     file,
   };
-  const pad = room.t + room.b + (shape === 'circle' ? ellipseRoom(textHeight(label), inner, width) : 0);
+  const pad = room.t + room.b;
   return pad > 0 ? { ...label, pad } : label;
 }
 
 /** A label's lines' height at text scale 1. */
 const textHeight = (label: WrappedLabel) => LINE_HEIGHT * (label.meta.length * META_FONT + label.title.length * (label.file ? FILE_FONT : TITLE_FONT));
-
-/** The height a circle (an ellipse filling its box) needs past its label's padding so the label's corners stay inside it, at text scale 1. */
-function ellipseRoom(text: number, inner: number, width: number): number {
-  const across = Math.min(0.95, inner / width);
-  const needed = (text + 4) / Math.sqrt(1 - across * across);
-  return Math.max(0, Math.ceil(needed - text - 2 * (LABEL_PAD_BLOCK + BORDER)));
-}
 
 /** How tall a box must be for its wrapped label at text scale 1: its lines, the padding above and below, the border, and its shape's room. */
 export const labelHeight = (label: WrappedLabel) => 2 * (LABEL_PAD_BLOCK + BORDER) + textHeight(label) + (label.pad ?? 0);

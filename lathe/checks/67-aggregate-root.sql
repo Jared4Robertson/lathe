@@ -1,7 +1,7 @@
 -- An aggregate that holds entities has exactly one root.
 --
 -- The root is the record the aggregate is named for, through which its other entities are reached (FORMAT.md
--- section 17). An aggregate with no entities is not reported. Give exactly one of its entities `role: root`.
+-- section 16). An aggregate with no entities is not reported. Give exactly one of its entities `role: root`.
 --
 -- severity: error
 -- kinds: aggregate entity

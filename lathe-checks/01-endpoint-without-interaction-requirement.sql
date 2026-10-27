@@ -1,6 +1,6 @@
 -- Every endpoint states at least one interaction requirement.
 --
--- This is this repo's own check (lathe/FORMAT.md section 13). An interaction requirement is an
+-- This is this repo's own check (lathe/FORMAT.md section 12). An interaction requirement is an
 -- `interaction_requirement` record whose parent is the endpoint, so that what the endpoint answers is an
 -- obligation a component satisfies and a test proves, not only prose in the endpoint's body. Write what the
 -- endpoint answers as an interaction requirement under it.

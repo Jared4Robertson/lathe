@@ -1,4 +1,4 @@
-// Domains as vertical slices of business capability (FORMAT.md section 19): the domain-named-for-technology
+// Domains as vertical slices of business capability (FORMAT.md section 18): the domain-named-for-technology
 // check, and the guidance in the format and the plugin's modeling skill.
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
@@ -57,7 +57,7 @@ describe('the domain-named-for-technology check', () => {
 describe('the guidance', () => {
   it('LA-AUT-T12 The record format says what a domain is, with a good and a bad example', () => {
     const format = readFileSync(path.join(here, '..', 'FORMAT.md'), 'utf8');
-    const section = format.split(/^## /m).find((s) => s.startsWith('19. Domains')) ?? '';
+    const section = format.split(/^## /m).find((s) => s.startsWith('18. Domains')) ?? '';
     expect(section).toContain('vertical slice');
     expect(section).toContain('business capability');
     expect(section).toMatch(/Define stage holds its domain model .* and its use cases/);

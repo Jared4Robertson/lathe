@@ -8,4 +8,4 @@ run_by: lathe/test/domain-rule-involves.test.ts
 links:
   proves: [LA-AUT-UC10-R01]
 ---
-Expects the `involves` relation from domain rule to aggregate loaded from the meta-model with its labels and no role, the rule's links read from its front matter, and the domain rule's description and section 17 of the record format naming it and the check.
+Expects the `involves` relation from domain rule to aggregate loaded from the meta-model with its labels and no role, the rule's links read from its front matter, and the domain rule's description and section 16 of the record format naming it and the check.
