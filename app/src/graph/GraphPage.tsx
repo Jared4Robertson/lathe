@@ -49,12 +49,12 @@ import {
   type Neighborhood,
 } from './model';
 import { boxExit, contentScale, traceGrid, type Point } from './layout';
-import { centerOf, graphMap, linkEnds, mapRootOf, parentLine, type GraphMap, type PlacedMap } from './map';
+import { centerOf, graphMap, linkEnds, mapRootOf, parentLine, type GraphMap, type MapNode, type PlacedMap } from './map';
 import { nestedMap, type NestedMap, type NestedNode } from './nested';
 import { readyVoronoiMap, voronoiMap, type VoronoiMap, type VoronoiNode } from './voronoi';
 import { treeGroup } from './tree';
-import { isCentered, labelFor, labelHeight, labelLines, marksOf, type WrappedLabel } from './text';
-import { drawnFor, drawnKey, drawnNested, fitBoxes, frameNested, frameOnMap, glideDuration, MAX_ZOOM, mergeDrawn, zoomPath, type Drawn, type Viewport } from './camera';
+import { labelFor, labelHeight, labelLines, marksOf, type WrappedLabel } from './text';
+import { drawnFor, drawnKey, drawnNested, fitBoxes, frameNested, frameOnMap, glideDuration, MAX_ZOOM, mergeDrawn, MIN_ZOOM, zoomPath, type Drawn, type Viewport } from './camera';
 import { EdgeHints, type Side } from './hints';
 import { readMotion } from './motion';
 import { nodeShape, shapeVars, SHAPES, type Mark, type Shape } from './shapes';
@@ -613,11 +613,11 @@ export function hiddenNodes(index: SpecIndex, map: PlacedMap, filters: Filters, 
 }
 
 /** A box's data: what it shows and how it is named. */
-function boxData(index: SpecIndex, id: string, focus: string, scale: number, text: number, parent: boolean, graph: Neighborhood, nested?: NestedNode | VoronoiNode): NodeData {
-  // The same lines the map sized the box for (text.ts, or the Nested or Voronoi map's), so the label always fits it.
+function boxData(index: SpecIndex, id: string, focus: string, scale: number, text: number, graph: Neighborhood, placed?: MapNode): NodeData {
+  // The same lines the map sized the box for (its map's, or a trace's from text.ts), so the label always fits it.
   const { title, meta } = labelLines(index, id);
-  const centered = nested ? nested.centered : isCentered(text, parent);
-  const lines = nested ? nested.lines : labelFor(index, id, centered);
+  const centered = placed ? placed.centered : false;
+  const lines = placed ? placed.lines : labelFor(index, id);
   const record = index.byId.get(id);
   const shaped = nodeShape(index, id);
   if (record) {
@@ -779,7 +779,7 @@ function GraphCanvas({ index, graph, layout, depth, filters, onNavigate, minimap
   }, [getViewport, setViewport, size, tracing, show, drawnAt]);
 
   // A trace's boxes are leaves at text scale 1, each as tall as its wrapped label needs (text.ts).
-  const tracePlaced = useMemo(() => (tracing ? traceGrid(graph, (id) => 2 * Math.ceil(labelHeight(labelFor(index, id, false)) / 2)) : null), [tracing, graph, index]);
+  const tracePlaced = useMemo(() => (tracing ? traceGrid(graph, (id) => 2 * Math.ceil(labelHeight(labelFor(index, id)) / 2)) : null), [tracing, graph, index]);
   /** The camera that frames the focus: on the map, the focus and the levels the depth shows; in a trace, the whole chain. */
   const framing = useCallback((): Viewport | null => {
     if (!size) return null;
@@ -856,7 +856,7 @@ function GraphCanvas({ index, graph, layout, depth, filters, onNavigate, minimap
     const nodes: FlowNode[] = boxes.map((b) => {
       const inNested = !tracing && map.view !== 'tree' ? map.nodes.get(b.id) as NestedNode | VoronoiNode : undefined;
       // Nested and Voronoi, a box's border grows with its text, so a large box's edge stays in proportion to its label, and its lines are the map's (LA-EXP-DR62, LA-EXP-DR64).
-      const data = boxData(index, b.id, focus, inNested ? Math.max(0.5, b.text) : contentScale(b.w, b.h), b.text, b.parent, graph, inNested);
+      const data = boxData(index, b.id, focus, inNested ? Math.max(0.5, b.text) : contentScale(b.w, b.h), b.text, graph, tracing ? undefined : map.nodes.get(b.id));
       if (inNested && 'header' in inNested) data.header = inNested.header;
       // In the Tree view and a trace, its outline is its kind's shape at its size (LA-EXP-DR65).
       if (!inNested) data.outline = shapeVars(data.shape, b.w, b.h, data.scale);
@@ -1047,7 +1047,7 @@ function GraphCanvas({ index, graph, layout, depth, filters, onNavigate, minimap
         onPaneClick={tap.clear}
         onMove={onMove}
         onMoveEnd={() => { if (glide.current === null) follow(); }}
-        minZoom={0.0005}
+        minZoom={MIN_ZOOM}
         maxZoom={MAX_ZOOM}
         zoomOnDoubleClick={false}
         proOptions={{ hideAttribution: true }}

@@ -4,11 +4,12 @@ import { gapsFor, groupLabel, groupMarks, groupOwner } from './model';
 import { nodeShape, SHAPES, type Room, type Shape } from './shapes';
 
 // A box's label as part of the map (LA-EXP-DR58): its two lines, the kind and ID line and the
-// title, are sized once, in map units, by its level's text scale (the level's width over a leaf's),
-// and never change size relative to the box; only the camera changes how big they look. A long
-// title wraps on whole words, never cut off or ended with an ellipsis, and a leaf grows taller to
-// fit it. Lines are broken here, from a table of character widths, never measured in the page, so
-// the map is laid out once and the page draws exactly these lines.
+// title, are sized once, in map units, when the map is built, and never change size relative to
+// the box; only the camera changes how big they look. Siblings share one text scale: the largest,
+// at most a fixed share of their box's size, at which every sibling's whole label fits its room
+// (`largestFit`). A long title wraps on whole words, never cut off or ended with an ellipsis.
+// Lines are broken here, from a table of character widths, never measured in the page, so the map
+// is laid out once and the page draws exactly these lines.
 
 /** A label's font sizes and padding at text scale 1 (a leaf-wide level), in map units; the stylesheet draws them with these. */
 export const TITLE_FONT = 12.5;
@@ -101,6 +102,7 @@ export function marksOf(index: SpecIndex, id: string) {
 }
 
 
+
 /** A label's lines, as the page draws them: each a block of its own, so the page wraps nothing itself. */
 export interface WrappedLabel {
   title: string[];
@@ -109,9 +111,6 @@ export interface WrappedLabel {
   /** The height its shape keeps clear above and below it, at text scale 1 (LA-EXP-DR65): none for a box. */
   pad?: number;
 }
-
-/** Whether a box's label is centered (LA-EXP-DR58): a parent's always, and a leaf's in a level wider than a leaf. */
-export const isCentered = (text: number, parent: boolean) => parent || text !== 1;
 
 /** What a label keeps room for besides its padding: its shape's room (the Tree view), the marks before its kind and ID line, the problem badge. */
 interface LabelRoom { shape?: Shape; marks?: number; marked?: boolean; centered?: boolean }
@@ -122,10 +121,9 @@ const NO_ROOM: Room = { l: 0, r: 0, t: 0, b: 0 };
 const metaRoom = ({ marks = 0, marked = false, centered = false }: LabelRoom) => marks * MARK_ROOM + (marked ? (centered ? 2 : 1) * BADGE_ROOM : 0);
 
 /**
- * A label broken into lines for its box (LA-EXP-DR58). Wrapping is the same at every text scale (a
- * level's width and its text grow together), so lines are broken once, at text scale 1 in a leaf's
- * width (or `width`, a Nested box's width over its text scale), less the padding, its shape's room
- * (LA-EXP-DR65), and beside the kind and ID line its marks and the badge's room, all erring wide.
+ * A label broken into lines for a box `width` wide at text scale 1 (LA-EXP-DR58), less the padding,
+ * its shape's room (LA-EXP-DR65), and beside the kind and ID line its marks and the badge's room,
+ * all erring wide. At a text scale `s`, a box `w` wide wraps its label at `w / s`.
  */
 export function wrapLabel(lines: { title: string; meta: string }, { shape, marks = 0, marked = false, centered = false, file = false, width = NODE_WIDTH }: LabelRoom & { file?: boolean; width?: number } = {}): WrappedLabel {
   const room = shape ? SHAPES[shape].room : NO_ROOM;
@@ -153,27 +151,16 @@ function ellipseRoom(text: number, inner: number, width: number): number {
 /** How tall a box must be for its wrapped label at text scale 1: its lines, the padding above and below, the border, and its shape's room. */
 export const labelHeight = (label: WrappedLabel) => 2 * (LABEL_PAD_BLOCK + BORDER) + textHeight(label) + (label.pad ?? 0);
 
-const wrapCache = new WeakMap<SpecIndex, Map<string, WrappedLabel>>();
-/** A node's label broken into lines, centered or not, cached per index: what the map sizes a box for and the page draws. */
-export function labelFor(index: SpecIndex, id: string, centered: boolean): WrappedLabel {
-  let cache = wrapCache.get(index);
-  if (!cache) { cache = new Map(); wrapCache.set(index, cache); }
-  const key = `${centered ? 'c' : 'l'}${id}`;
-  const known = cache.get(key);
-  if (known) return known;
+// ---------- A map's labels ----------
+
+/** What a box's label says, and what it keeps room for: its shape's room (the Tree view), the marks before its kind and ID line, the problem badge, a file's face. */
+export interface MapLabel { title: string; meta: string; shape?: Shape; marks?: number; marked?: boolean; file?: boolean }
+
+/** A node's label in the Tree map and a trace: its kind's shape is its outline, so the label keeps its shape's room, and its kind's mark comes before its kind and ID line (LA-EXP-DR65). */
+export function treeLabel(index: SpecIndex, id: string): MapLabel {
   const { shape, mark } = nodeShape(index, id);
-  const label = wrapLabel(labelLines(index, id), { shape, marks: mark ? 1 : 0, marked: hasMarks(index, id), centered, file: id.startsWith('file:') });
-  cache.set(key, label);
-  return label;
+  return { ...labelLines(index, id), shape, marks: mark ? 1 : 0, marked: hasMarks(index, id), file: id.startsWith('file:') };
 }
-
-/** A level's text scale (LA-EXP-DR58): its width over a leaf level's. Every box in the level has it; fixed by the map, never by the camera. */
-export const textScaleOf = (w: number) => Math.max(1, w / NODE_WIDTH);
-
-// ---------- The Nested map's labels ----------
-
-/** What a Nested or Voronoi box's label says, and what it keeps room for: the marks before its kind and ID line (its shape's, and a gear or a ruler), the problem badge. */
-export interface MapLabel { title: string; meta: string; marks?: number; marked?: boolean }
 
 /** A node's label in the Nested and Voronoi maps: its lines, its marks (its shape's and its kind's, LA-EXP-DR65) and whether it has the badge. */
 export function mapLabel(index: SpecIndex, id: string): MapLabel {
@@ -183,19 +170,53 @@ export function mapLabel(index: SpecIndex, id: string): MapLabel {
 
 /** A label's lines in a box `width` wide at text scale 1 (`wrapLabel`), centered or at the top left. */
 export const linesIn = (label: MapLabel, width: number, centered: boolean): WrappedLabel =>
-  wrapLabel(label, { marks: label.marks, marked: label.marked, centered, width });
+  wrapLabel(label, { shape: label.shape, marks: label.marks, marked: label.marked, centered, file: label.file, width });
 
-/** Whether every word of a label fits on a line of a box `width` wide at text scale 1, so wrapping never breaks a word. */
-export function wordsFit(label: MapLabel, width: number, centered: boolean): boolean {
-  const inner = width - 2 * LABEL_PAD;
-  const words = (text: string) => text.split(/\s+/).filter(Boolean);
-  return words(label.title).every((w) => titleWidth(w) * WIDTH_MARGIN <= inner)
-    && words(label.meta).every((w) => metaWidth(w) * WIDTH_MARGIN <= inner - metaRoom({ ...label, centered }));
+const wrapCache = new WeakMap<SpecIndex, Map<string, WrappedLabel>>();
+/** A node's label in a trace, broken into lines for a leaf's width at text scale 1, at the top left, cached per index. */
+export function labelFor(index: SpecIndex, id: string): WrappedLabel {
+  let cache = wrapCache.get(index);
+  if (!cache) { cache = new Map(); wrapCache.set(index, cache); }
+  const known = cache.get(id);
+  if (known) return known;
+  const label = linesIn(treeLabel(index, id), NODE_WIDTH, false);
+  cache.set(id, label);
+  return label;
 }
 
-/** The narrowest box a label fits at text scale 1: its widest word, its padding and the badge's room. */
+/** The narrowest box a label fits at text scale 1, no word broken: its widest word, its padding, its shape's room and the badge's. */
 export function narrowestWidth(label: MapLabel, centered: boolean): number {
   const words = (text: string, measure: (s: string) => number) => text.split(/\s+/).filter(Boolean).map((w) => measure(w) * WIDTH_MARGIN);
-  const room = metaRoom({ ...label, centered });
-  return 2 * LABEL_PAD + Math.max(1, ...words(label.title, titleWidth), ...words(label.meta, metaWidth).map((w) => w + room));
+  const room = label.shape ? SHAPES[label.shape].room : NO_ROOM;
+  const title = label.file ? (s: string) => metaWidth(s, FILE_FONT) : (s: string) => titleWidth(s);
+  const meta = metaRoom({ ...label, centered });
+  return 2 * LABEL_PAD + room.l + room.r + Math.max(1, ...words(label.title, title), ...words(label.meta, metaWidth).map((w) => w + meta));
+}
+
+/** How many halvings find the largest text scale a label fits at: to well under a millionth of it. */
+const FIT_ROUNDS = 40;
+
+/**
+ * The largest text scale, at most `most`, at which a label fits a room `w` by `h` in map units
+ * (LA-EXP-DR58), inside a border `border` thick on every side: wrapped at the room's width over the
+ * scale, no word broken, its lines, padding and shape's room no taller than the room. A smaller
+ * scale always fits at least as well (more words to a line, fewer lines, each smaller), so the
+ * largest is found by halving. 0 only for a room no wider or taller than its border.
+ */
+export function largestFit(label: MapLabel, centered: boolean, w: number, h: number, most: number, border = 0): number {
+  const narrowest = narrowestWidth(label, centered);
+  const across = w - 2 * border;
+  const down = h - 2 * border;
+  if (across <= 0 || down <= 0 || most <= 0) return 0;
+  const fits = (s: number) => across / s >= narrowest && labelHeight(linesIn(label, across / s, centered)) * s <= down;
+  // No scale fits past the one at which its widest word fills the room's width, nor the one at which its shortest wrapping (one line each) fills its height.
+  const hi0 = Math.min(most, across / narrowest, down / labelHeight(linesIn(label, Infinity, centered)));
+  if (fits(hi0)) return hi0;
+  let lo = 0;
+  let hi = hi0;
+  for (let round = 0; round < FIT_ROUNDS; round++) {
+    const mid = (lo + hi) / 2;
+    if (fits(mid)) lo = mid; else hi = mid;
+  }
+  return lo;
 }

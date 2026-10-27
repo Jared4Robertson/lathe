@@ -6,6 +6,7 @@ import { DEFAULT_GRAPH_SETTINGS, GraphView } from '../../src/graph/GraphPage';
 import { openApp, startAtDepth } from '../helpers';
 import { testIndex, testWorkspace } from './workspace';
 import { marksOf } from '../../src/graph/text';
+import { contentScale } from '../../src/graph/layout';
 
 // The graph as the focus page hosts it: in the Graph view of a record's, group's, product's or
 // domain's own address, with the side bar beside it.
@@ -326,7 +327,7 @@ describe('graph groups on the page', () => {
 });
 
 describe('the map on the page', () => {
-  it('LA-EXP-T168 Tall parents carry their height and content scale, and every parent line is level', async () => {
+  it('LA-EXP-T168 Tall parents carry their height and content scale, every box its own box scale, and every parent line is level', async () => {
     await showGraph('/P-D', testWorkspace(), 2, false);
     await waitFor(() => expect(node('P-D/define')).not.toBeNull());
     const height = (id: string) => parseFloat(node(id)!.style.height);
@@ -334,9 +335,11 @@ describe('the map on the page', () => {
     // The domain spans its stages, and its content grows with it.
     expect(height('P-D')).toBeGreaterThan(height('P-D/define') + height('P-D/design'));
     expect(Number(scale('P-D'))).toBeGreaterThan(1);
-    // A leaf's box keeps a leaf's scale (its text may grow to read while zoomed out).
-    const leaf = [...document.querySelectorAll<HTMLElement>('.react-flow__node')].find((el) => parseFloat(el.style.height) === 56)!;
-    expect(['', '1']).toContain(leaf.querySelector<HTMLElement>('.graph-node')!.style.getPropertyValue('--box-scale'));
+    // Every box's border grows with its own box, however small: its box scale is its size over a trace box's.
+    for (const el of document.querySelectorAll<HTMLElement>('.react-flow__node:not(.is-bar)')) {
+      const box = el.querySelector<HTMLElement>('.graph-node')!.style.getPropertyValue('--box-scale');
+      expect(Number(box), el.dataset.id).toBeCloseTo(contentScale(parseFloat(el.style.width), parseFloat(el.style.height)), 6);
+    }
     // Every parent line is level.
     const lines = [...document.querySelectorAll<SVGPathElement>('.react-flow__edge-path.rel-structure')];
     expect(lines.length).toBeGreaterThan(3);

@@ -4,7 +4,7 @@ import type { Neighborhood } from './model';
 // a chain, not a tree, so it keeps a picture of its own: each of its columns a stack of leaf boxes
 // in the model's row order, centered on the focus's middle (LA-EXP-UC03-R08).
 
-/** A leaf's size: every box in a trace, and every leaf of the map. */
+/** A trace's box: every box in a trace, at text scale 1. */
 export const NODE_WIDTH = 190;
 export const NODE_HEIGHT = 56;
 /** The space between two columns of a trace, and between two boxes stacked in one. */
@@ -64,10 +64,7 @@ export function boxExit(cx: number, cy: number, tx: number, ty: number, w = NODE
 
 /**
  * How much a node's border, outline and parent line grow (its box scale, LA-EXP-DR58): by the
- * smaller of its width over a leaf's and its height over a leaf's. A leaf's scale is 1, and no
- * node's is below 1. Rounded down to hundredths. Its label grows by its text scale instead (text.ts).
+ * smaller of its width over a leaf's and its height over a leaf's, so a trace's box is at 1 and a
+ * map's box at its own size, however small. Its label grows by its text scale instead (text.ts).
  */
-export function contentScale(width: number, height: number): number {
-  const scale = Math.max(1, Math.min(width / NODE_WIDTH, height / NODE_HEIGHT));
-  return Math.floor(scale * 100) / 100;
-}
+export const contentScale = (width: number, height: number) => Math.min(width / NODE_WIDTH, height / NODE_HEIGHT);
