@@ -25,10 +25,14 @@ Briefs 98–102 rebuilt Lathe on typed tables stored as JSONL, with the CLI, MCP
   - the merge driver is set up per repo.
 - **Components and tests:** every component's `file` and every test's `file` must name a file that exists after the cutover. Add components for the new code (store, schema, migrations, merge driver, CLI commands, MCP server, app forms and write API), each satisfying what it builds, and tests for what the briefs tested, each proving its obligations.
 - **From the writers brief:** `data/flow.jsonl` LA-CHK-F01 still describes the old after-edit hook; rewrite it for the guard hook and the checked writes. The CLI's tests are in `lathe/test/cli/` and the plugin scripts are in `plugin/scripts/`.
+- **From the engine brief:**
+  - 87 `component-file-missing` warnings come from components naming deleted files (`lathe/checks/*.sql`, `meta/*.csv`, `FORMAT.md`, `parse.ts`). Repoint each one to the code that now does its job (the schema migrations, the store, the check rows in `lathe/data/check.jsonl`, `scripts/reference.ts`), or remove it, so that built coverage returns to full: LA-AUT, LA-CHK and LA-TRC were fully built before the cutover.
+  - About 80 LA test records now prove "refused by the store" rather than "reported as an error" under the same ID. Find them by reading each test's file, and reword their when and then.
+- **Schema fix:** `entity_field` and `event_field` names are unique only when they match exactly. Add a migration that makes them unique trimmed and in any letter case, with a store test.
 - **Leftovers:** remove every record that describes something deleted, with nothing outliving its purpose.
 
 ## Checks
-- `lathe check` on LA: 0 errors, and no new warnings beyond the 5 known `event-unheard` ones; fix any you can.
+- `lathe check` on LA: 0 errors and 0 warnings beyond the 5 known `event-unheard` ones; fix what you can, including all 87 `component-file-missing` warnings.
 - Coverage: designed, built and proved don't drop against `db-first` before your change; report both.
 - Sweep: no record mentions Markdown files, YAML headers, `specs/`, FORMAT.md or `lathe format`, except a record that says they were removed.
 - Typecheck and unit tests in lathe, gated on real exit codes. Never use port 5199.
