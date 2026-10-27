@@ -361,13 +361,6 @@ export function neighborhood(
 
 // ---- Group nodes: a folder per kind of child between a record and its children ----
 
-/**
- * A group's ID: its parent's ID and the kind of its members ("DM-SHOP-A1/command"). Record IDs never contain a
- * slash. A stage and its folders add their own parts: "DM-SHOP/domain-model", "DM-SHOP/domain-model/aggregate",
- * the keys the folder model (specs/folders.ts) gives them.
- */
-export const groupId = (parent: string, kind: string) => `${parent}/${kind}`;
-
 /** The parent, member kind and any further parts of a group ID, or null for an ID that cannot be a group. */
 export function parseGroupId(id: string): { parent: string; kind: string; path: string[] } | null {
   if (id.startsWith('file:') || id.startsWith('bar:')) return null;

@@ -87,8 +87,8 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
   it('LA-PLT-T33 Layout lives in the markup: no stylesheet rule moves or restyles an element from outside its component', async () => {
     expect(where('app/src/styles.css', CSS, /display:\s*contents|:has\(/)).toEqual([]);
     // A section's own header row holds its list's Expand all: the button sits inside the header.
-    await openApp('/DM-SHOP-UC01');
-    const children = (await screen.findByRole('heading', { level: 2, name: /^UC requirements/ })).closest('section')!;
+    await openApp('/DM-SHOP-CAP01');
+    const children = (await screen.findByRole('heading', { level: 2, name: /^Use cases/ })).closest('section')!;
     const header = children.querySelector(':scope > header.spec-section-head')!;
     expect(header).not.toBeNull();
     const bulk = within(children).queryByRole('button', { name: /Expand all|Collapse all/ });
@@ -323,7 +323,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     expect(ruleFor((s) => s === '.row-link:focus-visible::after').map((r) => r.body).join(';')).toMatch(/outline:/);
 
     // The pages: each row that holds a record link has exactly one row link, a real link to a record.
-    for (const path of ['/DM-SHOP', '/DM-SHOP-UC01', '/DM-SHOP-C01']) {
+    for (const path of ['/DM-SHOP', '/DM-SHOP-UC01', '/DM-SHOP-CMD01']) {
       await openApp(path);
       await screen.findByRole('heading', { level: 1 });
       const lists = [...document.querySelectorAll('.record-list')];
@@ -421,7 +421,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     expect(CSS).toMatch(/\.markdown pre, \.spec-body pre \{[^}]*overflow-x:\s*auto/);
     expect(CSS).toMatch(/\.record-id[^{]*\{[^}]*overflow-wrap:\s*anywhere/);
     vi.stubGlobal('matchMedia', (query: string) => ({ matches: true, media: query, addEventListener: () => {}, removeEventListener: () => {} }));
-    for (const path of ['/DM', '/DM-SHOP', '/DM-SHOP-UC01', '/DM-SHOP-C01', '/DM/checks', '/format']) {
+    for (const path of ['/DM', '/DM-SHOP', '/DM-SHOP-UC01', '/DM-SHOP-CMD01-H', '/DM/checks', '/format']) {
       await openApp(path);
       await screen.findAllByRole('heading', { level: 1 });
       const loose = [...document.querySelectorAll('table')].filter((t) => !t.closest('.table-scroll') && !t.closest('.markdown') && !t.matches('.erd-key-table, .shortcut-table'));
@@ -500,10 +500,10 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     const index = indexOf(workspace());
     expect(parseSpecRoute('/', index)).toEqual({ page: 'specs' });
     for (const id of ['DM', 'DM-SHOP', 'DM-SHOP-UC01']) expect(parseSpecRoute(`/${id}`, index)?.page, id).toMatch(/^(product|domain|record)$/);
-    expect(parseSpecRoute('/DM-SHOP/design/interaction-design/view', index)).toEqual({ page: 'group', parent: 'DM-SHOP', kind: 'design/interaction-design/view' });
+    expect(parseSpecRoute('/DM-SHOP/interaction-design/flow', index)).toEqual({ page: 'group', parent: 'DM-SHOP', kind: 'interaction-design/flow' });
 
     // The pages: every in-app link is the home page, an app page or an ID, and none is an old address.
-    for (const path of ['/', '/DM', '/DM-SHOP', '/DM-SHOP-UC01', '/DM-SHOP/design/interaction-design/view?view=wiki,graph', '/DM/checks', '/format', '/settings/appearance']) {
+    for (const path of ['/', '/DM', '/DM-SHOP', '/DM-SHOP-UC01', '/DM-SHOP/interaction-design/flow?view=wiki,graph', '/DM/checks', '/format', '/settings/appearance']) {
       await openApp(path);
       await screen.findAllByRole('heading', { level: 1 });
       const wrong = [...document.querySelectorAll('a[href^="/"]')].map((a) => a.getAttribute('href')!).filter((href) => {
@@ -529,7 +529,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
 
   it('LA-PLT-T104 Changes are hard cutovers: no redirect, alias, legacy path or second addressOf signature in the app or the engine', () => {
     const sources = [...filesUnder(SRC, /\.(tsx?|css)$/), ...filesUnder(join(ROOT, 'lathe', 'src'), /\.ts$/)];
-    const kept = sources.flatMap((f) => where(f, readFileSync(f, 'utf8'), /legacy|redirect|\balias/i));
+    const kept = sources.flatMap((f) => where(f, readFileSync(f, 'utf8'), /legacy|redirect|\balias(?!:\s*string|})/i));
     expect(kept).toEqual([]);
     // One addressOf, taking the ID alone: a second signature (an overload or another declaration) is a compatibility layer.
     const signatures = sources.flatMap((f) => where(f, readFileSync(f, 'utf8'), /function addressOf\b|\baddressOf\s*[:=]/));

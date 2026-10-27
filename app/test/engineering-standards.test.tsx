@@ -52,7 +52,7 @@ describe('standards in the nav and the wiki', () => {
     await openApp('/DM-STD-CODE-R01', served());
     await screen.findByRole('heading', { level: 1, name: 'Handlers own their transaction' });
     const trace = section(/^Traceability/);
-    const metBy = within(trace).getByRole('heading', { name: /^Designed by/ }).closest('section')!;
+    const metBy = within(trace).getByRole('heading', { name: /^Met by/ }).closest('section')!;
     expect(within(metBy).getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual(['/DM-SHOP-CMD01-H']);
 
     await openApp('/DM-SHOP-CMD01-H', served());

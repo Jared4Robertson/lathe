@@ -3,6 +3,7 @@ import { Background, Controls, Handle, Position, ReactFlow, ReactFlowProvider, u
 import type { RelationRule, SpecIndex } from '../specs/data';
 import { relationLabelOf } from '../specs/labels';
 import { readMotion } from '../graph/motion';
+import { lowerLabel } from '../plural';
 import { erdFor, LINE_WORDS, lineGeometry, lineOffsets, RELATION_ENDS, type Erd, type ErdBox, type ErdKind, type ErdLine, type ErdRelation, type Rect } from './erd';
 import { layoutErd } from './layout';
 import { TapCard, useTapToOpen } from '../graph/touch';
@@ -120,7 +121,7 @@ function LineView({ data }: EdgeProps<LineEdge>) {
  */
 export function lineWords(line: ErdLine, label: string, titles: ReadonlyMap<string, string>): { label: string; title: string; hover: string | null } {
   const name = (id: string) => titles.get(id) ?? id;
-  const words = label.toLowerCase();
+  const words = lowerLabel(label);
   const sentence = line.reversed ? `${name(line.target)} ${words} ${name(line.source)}` : `${name(line.source)} ${words} ${name(line.target)}`;
   const title = line.via.length > 0 ? `${sentence} (${line.via.join('; ')})` : sentence;
   return { label: words, title, hover: line.dashed ? words : null };

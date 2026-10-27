@@ -5,8 +5,6 @@ import { modelWorkspace } from '../fixtures/model';
 // The graph tests' workspace: the `model` fixture (fixtures/model.ts), product P with domains P-D and
 // P-E, and variants of it for the tests of groups.
 
-export { PROBLEMS } from '../fixtures/model';
-
 export const testWorkspace = (): SpecData => modelWorkspace();
 
 export const testIndex = () => indexOf(testWorkspace());
