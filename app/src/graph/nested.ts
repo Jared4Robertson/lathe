@@ -1,6 +1,6 @@
 import type { SpecIndex } from '../specs/data';
 import { settleLevelScale, typicalSize, type MapNode, type PlacedMap } from './map';
-import { labelHeight, linesIn, mapLabel, metaWidth, narrowestWidth, titleWidth, WIDTH_MARGIN, type MapLabel, type WrappedLabel } from './text';
+import { labelHeight, linesIn, mapLabel, metaWidth, narrowestWidth, textMeasure, titleWidth, type MapLabel, type WrappedLabel } from './text';
 import { treeChildren } from './tree';
 
 // The graph's Nested map (LA-EXP-DR62): the same tree as the Tree map (map.ts), one product's, the
@@ -83,7 +83,7 @@ interface Step { w: number; h: number }
 function wrapSteps(label: MapLabel, centered: boolean): Step[] {
   const tall = (w: number) => labelHeight(linesIn(label, w, centered));
   const narrowest = narrowestWidth(label, centered);
-  const oneLine = narrowest + (titleWidth(label.title) + metaWidth(label.meta)) * WIDTH_MARGIN + 1;
+  const oneLine = narrowest + titleWidth(label.title) + metaWidth(label.meta) + 1;
   const shortest = tall(oneLine);
   const steps: Step[] = [{ w: narrowest, h: tall(narrowest) }];
   while (steps.at(-1)!.h > shortest) {
@@ -230,13 +230,14 @@ export function layoutNested(roots: readonly string[], childrenOf: (id: string) 
 
 const cache = new WeakMap<SpecIndex, Map<string, NestedMap>>();
 
-/** The Nested map of one product (or of a tree no product reaches), from its root, as the Tree map has it (`mapRootOf`): built on first use, then read. */
+/** The Nested map of one product (or of a tree no product reaches), from its root, as the Tree map has it (`mapRootOf`): built on first use with the current text measure, then read. */
 export function nestedMap(index: SpecIndex, root: string): NestedMap {
   let maps = cache.get(index);
   if (!maps) { maps = new Map(); cache.set(index, maps); }
-  const known = maps.get(root);
+  const key = `${textMeasure().key}|${root}`;
+  const known = maps.get(key);
   if (known) return known;
   const map = layoutNested([root], (id) => treeChildren(index, id), (id) => mapLabel(index, id));
-  maps.set(root, map);
+  maps.set(key, map);
   return map;
 }
