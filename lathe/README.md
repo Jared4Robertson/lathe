@@ -22,6 +22,7 @@ npx lathe serve            # http://127.0.0.1:5330
 | `check [--json]` | Loads and checks the specs. Prints the errors, then the warnings, then the coverage: one line per domain and obligation kind (designed, built, proved and planned, with the gaps), and one line of test counts (automated, manual, planned). Exits 1 on any error; warnings alone do not fail it. `--json` prints the whole `Workspace` instead. |
 | `format [--out <file>]` | Prints the format reference as Markdown: the concepts of [FORMAT.md](FORMAT.md), then every kind, relation (with its labels), folder and check, generated from the meta-model with the product's extensions and from each check's header comment, the product's own checks included. `--out` writes it to a file, relative to the current folder. |
 | `serve [--port <n>]` | Serves the web app and its API for the product repo at `http://127.0.0.1:<port>` (default 5330). Open pages reload when the specs change. |
+| `merge-data <base> <ours> <theirs> <path>` | Git's merge driver for the data files (`%O %A %B %P`; see [The data store](#the-data-store)). Merges the three versions row by row, writes the result over `<ours>`, and exits 1 on a real clash or a row that breaks its table's own rules. |
 
 A usage mistake (a missing option, an unknown command, a bad port) exits 2.
 
@@ -32,6 +33,7 @@ A usage mistake (a missing option, an unknown command, a bad port) exits 2.
 ```json
 {
   "specs": "specs",
+  "data": "data",
   "metaExtensions": "lathe-meta",
   "checks": "lathe-checks",
   "idPrefixes": ["STD", "SYS"],
@@ -42,12 +44,40 @@ A usage mistake (a missing option, an unknown command, a bad port) exits 2.
 | Key | Default | Meaning |
 | --- | --- | --- |
 | `specs` | `specs` | The folder of spec records. Every `*.md` under it is a record, except `README.md`. |
+| `data` | `data` | The folder of data files, one `<table>.jsonl` per table, that the store loads (see [The data store](#the-data-store)). |
 | `metaExtensions` | none | A folder holding a `kinds.csv`, `relations.csv`, `sections.csv` and/or `ids.csv` with the same columns as [meta/](meta/). Their rows are added to Lathe's defaults for this product only, and a row for a kind Lathe already has widens it (FORMAT.md section 8). |
 | `checks` | none | A folder of the product's own checks, run after Lathe's (see [Add a product's own check](#add-a-products-own-check)). |
 | `idPrefixes` | `[]` | ID prefixes, besides every product's and domain's ID, that a record body may cite: a token such as `STD-04` is then read as a citation and reported if no record has it (FORMAT.md section 11). |
 | `structure.maxChildren` | 15 | The most children of one kind a record should have before the `too-many-children` warning (FORMAT.md section 5). A whole number of at least 1. |
 
 Every key is optional. A file that is not valid JSON, a key not in this table, an `idPrefixes` that is not a list of ID prefixes, or a `structure.maxChildren` that is not a whole number of at least 1 is refused when the config is read.
+
+## The data store
+
+Lathe is moving from Markdown records to structured data (the plan is [notes/plans/database-first.md](../notes/plans/database-first.md)). The store in [src/store/](src/store/) is its foundation; the engine still reads Markdown until its cutover.
+
+- **The schema** is the numbered SQL migrations in [schema/](schema/), applied in order to DuckDB: a table per kind with typed columns, keys and checks, the `record_id` registry, supertype tables such as `obligation`, a link table per relation, and the meta-model's own `meta_*` tables. `describeSchema` reads every table, column, key, check and comment back as a `SchemaDescription`; `npm run schema` regenerates the row types in [src/store/tables.ts](src/store/tables.ts) from it.
+- **The data** is one file per table, `data/<table>.jsonl`: rows sorted by key, columns in the table's order, one JSON object per line, UTF-8, with a trailing newline, so a change to a row is a one-line diff. The database is never committed; git is the history.
+- **Writes** go through the command layer: `add`, `set`, `move`, `link`, `unlink` and `remove`, or `apply` for several in one transaction. Each write is checked against every key, check and validation query before it rewrites the files of the tables it changed.
+
+```ts
+import { openStore } from '@jaredrob/lathe';
+
+const store = await openStore('/path/to/repo');           // loads data/*.jsonl, or throws a StoreError naming file, line and rule
+await store.add('requirement', { id: 'TL-LEND-UC01-R02', title: 'Member is known', use_case_id: 'TL-LEND-UC01', statement: 'The library MUST refuse an unknown member.' });
+await store.link('proves', 'TL-LEND-T03', 'TL-LEND-UC01-R02');
+const rows = await store.query('SELECT id, title FROM requirement');
+await store.close();
+```
+
+**The merge driver.** Two branches that each add rows to the same file would clash line by line in git's own merge. `lathe merge-data` merges data files row by row instead, keeping both sides' rows against the base, and fails only on a real clash: one key added on both sides with different content, or one row changed on both sides. The repo's `.gitattributes` names it for the data files (`data/*.jsonl merge=lathe-data`), and each clone sets it up once:
+
+```sh
+git config merge.lathe-data.name "Lathe data files"
+git config merge.lathe-data.driver "npx lathe merge-data %O %A %B %P"
+```
+
+The driver checks the merged table's own rules (columns, types, keys and checks); keys to other tables are checked when the data next loads, since the other files may still be mid-merge.
 
 ## Build the package
 

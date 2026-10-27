@@ -66,7 +66,7 @@ export function normalizeRow(table: TableDescription, input: unknown): { row: Ro
 }
 
 /** The columns that identify a row: its primary key. */
-export const keyColumns = (table: TableDescription): string[] => table.primaryKey;
+const keyColumns = (table: TableDescription): string[] => table.primaryKey;
 
 /** A row's key as one string, for maps: its primary key's values joined. */
 export const rowKey = (table: TableDescription, row: Row): string => keyColumns(table).map((c) => String(row[c] ?? '')).join('\u0000');
@@ -112,6 +112,3 @@ export function rowLine(table: TableDescription, row: Row): string {
 export function tableText(table: TableDescription, rows: Row[]): string {
   return sortRows(table, rows).map((row) => `${rowLine(table, row)}\n`).join('');
 }
-
-/** Whether two rows hold the same values. */
-export const sameRow = (table: TableDescription, a: Row, b: Row): boolean => rowLine(table, a) === rowLine(table, b);
