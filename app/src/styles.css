@@ -339,8 +339,8 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-steps { display: inline-flex; gap: 2px; flex: none; }
 /* The center's own links, with Links on: dashed in their own color. */
 .graph-line.is-link { border-top: 1.5px dashed var(--link-edge); }
-/* Domain events in the graph (LA-EXP-UC04-R07, LA-EXP-DR52): flags in the spark colors, and their reacts_to and raised_by
-   links dashed in spark, with Links on too. */
+/* Event lines in the graph (LA-EXP-UC04-R07, LA-EXP-DR52): a command raising an event and a policy hearing it,
+   dashed in spark, with Links on too. */
 .graph-swatch.kind-question { border-style: dashed; border-color: var(--warn); }
 .graph-swatch.is-focus { box-shadow: 0 0 0 2px var(--ink); }
 .graph-line.rel-event { border-top: 1.5px dashed var(--spark); }
@@ -578,7 +578,7 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 .rule-mark { font: 500 0.68rem var(--mono); padding: 0 6px; border-radius: 4px; border: 1px solid var(--rule); white-space: nowrap; }
 .rule-mark.ok { color: var(--steel); border-color: var(--steel); background: var(--steel-bg); }
 .rule-mark.missing { color: var(--warn); border-color: var(--warn); }
-.rule-mark.planned { border-style: dashed; font-style: italic; color: var(--muted); }
+.rule-mark.not-automated { border-style: dashed; font-style: italic; color: var(--muted); }
 .rule-mark.na { color: var(--muted); border-style: dashed; }
 
 /* A record's Traceability section (LA-TRC-UC14). */
