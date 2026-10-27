@@ -205,6 +205,14 @@ Process managers (sagas), context-map relationships and engineering checks. Each
 4. **Lathe's own spec** (Authoring, Checking, Traceability, Exploring) is updated to describe the new model, once LA's data is converted.
 5. **Integration:** merge the branches into one integration branch and run the full checks once: lathe, app and desktop typecheck, tests and knip; `lathe check` with no errors on both products; and the stability, a11y and perf suites. Fix by area, then merge into main with the Owner's approval.
 
+## Next, after the cutover (Owner, 2026-10-27)
+Built once this cutover has merged, as their own change. Drawn from what S2 has and Lathe lacked.
+1. **A discovery stage, first in the order:** a **business outcome** kind under the product, with a measurable statement, its measure and its target. Capabilities link to the outcomes they serve, many to many. Coverage reports an outcome no capability serves, and a capability that serves no outcome, as gaps. That completes the trace from why to proof: outcome, capability, use case, code, test.
+2. **Test data sets** (test plan stage), under a domain: the environment, accounts and starting records some tests need, how to prepare and reset them, and the file that builds them (a seed or fixture). Tests link to the data sets they start from. A data set no test uses is reported, and so is a data set whose file doesn't exist.
+3. **Test size and markers on the run by:** a size (small, volume or worst case; small when not given) and two markers, smoke and external.
+
+Later, when a product needs them: process managers (workflows), the context map and system map, engineering checks, and service levels as standards.
+
 ## Open questions
 1. **What proves a pattern rule or a standard rule?** Today, 72 of LA's tests prove pattern rules.
    - Recommendation: a **pattern rule test** under the pattern rule, naming the adopting domain it proves the rule in. Standard rules are proved by the engine's checks or linters, named in a run by.
