@@ -3,32 +3,33 @@ import path from 'node:path';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { loadWorkspace } from '../../../lathe/src/index';
 import type { Workspace } from '../../../lathe/src/types';
-import { drawnFor, drawnNested, frameNested, frameOnMap, type Drawn, type Viewport } from '../../src/graph/camera';
-import { graphMap, type GraphMap, type PlacedMap } from '../../src/graph/map';
-import { nestedMap, type NestedMap } from '../../src/graph/nested';
-import { holds, readyVoronoiMap, type VoronoiMap } from '../../src/graph/voronoi';
-import { isCentered, labelFor, labelHeight, labelLines, type WrappedLabel } from '../../src/graph/text';
+import { drawnFor, drawnNested, FRAME_PADDING, frameNested, frameOnMap, MAX_ZOOM, MIN_ZOOM, type Drawn, type Viewport } from '../../src/graph/camera';
+import { graphMap, sizeText, type GraphMap, type PlacedMap } from '../../src/graph/map';
+import { nestedMap } from '../../src/graph/nested';
+import { holds, polygonArea, readyVoronoiMap, type VoronoiMap } from '../../src/graph/voronoi';
+import { BORDER, labelHeight, labelLines, TITLE_FONT } from '../../src/graph/text';
 import { treeOf } from '../../src/graph/tree';
 import { indexWorkspace, spaceIndex, type SpecIndex } from '../../src/specs/data';
-import { heightLevels } from './workspace';
+import { siblingGroups } from './workspace';
 
 // Every drawn box shows its name (LA-PAT-APP-UX-R12): in every layout of the graph, at every focus
 // and depth, each box the camera draws carries its label, its title and its kind and ID line in the
-// lines the page draws, every box at one Tree or Nested level has one text scale, and the label fits
-// its box at its scale, so nothing is clipped. The sweep
-// frames every domain, stage and folder group of every product in Lathe's own spec and the Tool
-// Library's (both under the repo's specs/), with the real camera, in two panes, at depths 1 to 3.
+// lines the page draws, siblings are the same size with one text scale (LA-EXP-DR58), and the label
+// fits its box at its scale, so nothing is clipped. The sweep frames every domain, stage and folder
+// group of every product in Lathe's own spec and the Tool Library's (both under the repo's specs/),
+// with the real camera, in two panes, at depths 1 to 3.
 
 const PANES = [[770, 640], [1200, 800]] as const;
 const DEPTHS = [1, 2, 3] as const;
 
-/** A layout of the graph: its map of a product, its camera for a focus and depth, what that camera draws, and the label each box draws with how tall it is. */
+/** A layout of the graph: its map of a product, its camera for a focus and depth, what that camera draws, how tall each box's label is with its border, and each box's size (what siblings share). */
 interface Layout {
   name: string;
   map: (index: SpecIndex, root: string) => PlacedMap;
   frame: (map: PlacedMap, focus: string, depth: number, w: number, h: number) => Viewport;
   drawn: (map: PlacedMap, v: Viewport, focus: string, w: number, h: number) => Drawn;
-  label: (index: SpecIndex, map: PlacedMap, id: string) => { lines: WrappedLabel; height: number };
+  height: (map: PlacedMap, id: string) => number;
+  size: (map: PlacedMap, id: string) => number;
 }
 const LAYOUTS: Layout[] = [
   {
@@ -36,21 +37,16 @@ const LAYOUTS: Layout[] = [
     map: graphMap,
     frame: (map, focus, depth, w, h) => frameOnMap(map as GraphMap, focus, depth, w, h),
     drawn: (map, v, focus, w, h) => drawnFor(map as GraphMap, v, w, h, [focus]),
-    label: (index, map, id) => {
-      const n = map.nodes.get(id)!;
-      const lines = labelFor(index, id, isCentered(n.text, n.children.length > 0));
-      return { lines, height: n.text * labelHeight(lines) };
-    },
+    height: (map, id) => { const n = map.nodes.get(id)!; return n.text * (labelHeight(n.lines) + 2 * BORDER); },
+    size: (map, id) => map.nodes.get(id)!.h,
   },
   {
     name: 'Nested',
     map: nestedMap,
     frame: (map, focus, _depth, w, h) => frameNested(map, focus, w, h),
     drawn: (map, v, focus, w, h) => drawnNested(map, v, w, h, [focus]),
-    label: (_index, map, id) => {
-      const n = (map as NestedMap).nodes.get(id)!;
-      return { lines: n.lines, height: n.text * labelHeight(n.lines) };
-    },
+    height: (map, id) => { const n = map.nodes.get(id)!; return n.text * labelHeight(n.lines); },
+    size: (map, id) => map.nodes.get(id)!.w,
   },
   {
     // Voronoi (LA-EXP-DR64): laid out here, not in a worker (there are none in node); a cell's label fits when its box lies inside the cell's outline.
@@ -58,10 +54,8 @@ const LAYOUTS: Layout[] = [
     map: (index, root) => readyVoronoiMap(index, root)!,
     frame: (map, focus, _depth, w, h) => frameNested(map, focus, w, h),
     drawn: (map, v, focus, w, h) => drawnNested(map, v, w, h, [focus]),
-    label: (_index, map, id) => {
-      const n = (map as VoronoiMap).nodes.get(id)!;
-      return { lines: n.lines, height: holds(n.polygon, n.label) && n.text > 0 ? n.text * labelHeight(n.lines) : Infinity };
-    },
+    height: (map, id) => { const n = (map as VoronoiMap).nodes.get(id)!; return holds(n.polygon, n.label) && n.text > 0 ? n.text * labelHeight(n.lines) : Infinity; },
+    size: (map, id) => polygonArea((map as VoronoiMap).nodes.get(id)!.polygon),
   },
 ];
 
@@ -78,13 +72,13 @@ function nameless(workspace: Workspace): { problems: string[]; frames: number } 
     ];
     for (const layout of LAYOUTS) {
       const map = layout.map(index, product.id);
-      // One text scale per level (LA-EXP-DR58, LA-EXP-DR62): every box at a level has the same, a Tree level by depth, a Nested level by height from
-      // the leaves. A Voronoi cell's text is its own size's (LA-EXP-DR64), so Voronoi has no levels to check.
-      // A product's children (its domains and Shared) share one Nested scale instead, the largest of theirs (LA-EXP-DR62).
-      if (layout.name !== 'Voronoi') (layout.name === 'Tree' ? map.byLevel : [...heightLevels(map.nodes).map((boxes) => boxes.filter((n) => n.level !== 1)), map.byLevel[1] ?? []].filter((boxes) => boxes.length > 0)).forEach((boxes, l) => {
-        const scales = [...new Set(boxes.map((n) => n.text))];
-        if (scales.length !== 1) problems.push(`${layout.name} ${product.id} level ${l} has ${scales.length} text scales: ${scales.slice(0, 5).join(', ')}`);
-      });
+      // Siblings are the same size, with one text scale (LA-EXP-DR58): equal boxes in the Tree and Nested maps, equal areas within 5% in the Voronoi map.
+      for (const group of siblingGroups(map)) {
+        const sizes = group.map((n) => layout.size(map, n.id));
+        const spread = Math.max(...sizes) / Math.min(...sizes) - 1;
+        if (spread > (layout.name === 'Voronoi' ? 0.1 : 0)) problems.push(`${layout.name} ${product.id}: ${group[0].parent}'s children differ in size by ${(spread * 100).toFixed(1)}%`);
+        if (new Set(group.map((n) => n.text)).size !== 1) problems.push(`${layout.name} ${product.id}: ${group[0].parent}'s children have ${new Set(group.map((n) => n.text)).size} text scales`);
+      }
       for (const focus of foci) {
         if (!map.nodes.has(focus)) continue;
         for (const [w, h] of PANES) for (const depth of DEPTHS) {
@@ -93,7 +87,8 @@ function nameless(workspace: Workspace): { problems: string[]; frames: number } 
           for (const b of layout.drawn(map, v, focus, w, h).boxes) {
             const n = map.nodes.get(b.id)!;
             const { title, meta } = labelLines(index, b.id);
-            const { lines, height } = layout.label(index, map, b.id);
+            const { lines } = n;
+            const height = layout.height(map, b.id);
             const at = `${layout.name} ${focus} depth ${depth} in ${w}x${h}: ${b.id} (${Math.round(n.w * v.zoom)} x ${Math.round(n.h * v.zoom)} px)`;
             if (lines.title.join('') !== title || lines.meta.join('') !== meta || title === '') problems.push(`${at} does not show its name`);
             else if (n.text <= 0 || height > n.h + 0.5) problems.push(`${at}: its label does not fit it`);
@@ -109,10 +104,43 @@ describe('every drawn box shows its name', () => {
   let workspace: Workspace;
   beforeAll(async () => { workspace = await loadWorkspace(path.resolve(import.meta.dirname, '../../..')); }, 60_000);
 
-  it('LA-PLT-T135 In the Tree, Nested and Voronoi layouts, at every domain, stage and folder of every product, at depths 1 to 3 in two panes, every Tree and Nested level has one text scale and every drawn box shows its name', () => {
+  it('LA-PLT-T135 In the Tree, Nested and Voronoi layouts, at every domain, stage and folder of every product, at depths 1 to 3 in two panes, siblings share one size and text scale and every drawn box shows its name', () => {
     expect(workspace.records.filter((r) => r.kind === 'product').map((r) => r.id).sort()).toEqual(['LA', 'TL']);
     const { problems, frames } = nameless(workspace);
     expect(frames).toBeGreaterThan(100);
     expect(problems.length, problems.slice(0, 40).join('\n')).toBe(0);
+  }, 120_000);
+
+  it("LA-EXP-T204 A framed box's header reads at the same size on screen at every depth, and the camera can frame the deepest leaf", () => {
+    const whole = indexWorkspace(workspace);
+    for (const product of ['LA', 'TL']) {
+      const index = spaceIndex(whole, product);
+      for (const layout of LAYOUTS) {
+        const map = layout.map(index, product);
+        // The title's size on screen, framed at depth 1 in a 770 by 640 pane. In the Tree, of each parent whose text its column sets (not one
+        // whose siblings' labels need less, in boxes much wider than tall) and whose frame its columns' width sets (not a box taller than
+        // its columns are wide, which reads smaller), the product aside (its frame keeps no parent strip): a Tree frame takes in its
+        // children's column too.
+        const sizes = new Map<number, number[]>();
+        for (const n of map.nodes.values()) {
+          const v = layout.frame(map, n.id, 1, 770, 640);
+          expect(v.zoom, `${layout.name} ${n.id}`).toBeLessThanOrEqual(MAX_ZOOM);
+          expect(v.zoom, `${layout.name} ${n.id}`).toBeGreaterThanOrEqual(MIN_ZOOM);
+          if (layout.name === 'Tree' && (n.parent === null || n.children.length === 0 || n.text < sizeText(n.w) * (1 - 1e-9) || v.zoom >= (640 - 2 * FRAME_PADDING) / n.h * (1 - 1e-9))) continue;
+          (sizes.get(n.level) ?? sizes.set(n.level, []).get(n.level)!).push(n.text * v.zoom * TITLE_FONT);
+        }
+        const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)];
+        const medians = [...sizes.values()].map(median);
+        // Nested and Tree: exactly the same at every depth; Voronoi (whose frame fits a cell's box) within a few pixels.
+        const [lo, hi] = [Math.min(...medians), Math.max(...medians)];
+        if (layout.name !== 'Voronoi') expect(hi - lo, `${product} ${layout.name}: ${medians.map((m) => m.toFixed(1)).join(', ')}`).toBeLessThan(1e-6);
+        else expect(hi / lo, `${product} ${layout.name}: ${medians.map((m) => m.toFixed(1)).join(', ')}`).toBeLessThan(1.4);
+        // Readable: at least 9 pixels, at most 20, in every layout and at every depth.
+        for (const m of medians) { expect(m).toBeGreaterThanOrEqual(9); expect(m).toBeLessThanOrEqual(20); }
+        // The camera frames even the deepest, smallest leaf without reaching its zoom limit.
+        const smallest = [...map.nodes.values()].reduce((a, b) => (Math.min(b.w, b.h) < Math.min(a.w, a.h) ? b : a));
+        expect(layout.frame(map, smallest.id, 1, 770, 640).zoom, `${layout.name} ${smallest.id}`).toBeLessThan(MAX_ZOOM);
+      }
+    }
   }, 120_000);
 });

@@ -48,13 +48,13 @@ import {
   type Filters,
   type Neighborhood,
 } from './model';
-import { boxExit, contentScale, traceGrid, type Point } from './layout';
-import { centerOf, graphMap, linkEnds, mapRootOf, parentLine, type GraphMap, type PlacedMap } from './map';
+import { boxExit, traceGrid, type Point } from './layout';
+import { centerOf, graphMap, linkEnds, mapRootOf, parentLine, type GraphMap, type MapNode, type PlacedMap } from './map';
 import { nestedMap, type NestedMap, type NestedNode } from './nested';
 import { readyVoronoiMap, voronoiMap, type VoronoiMap, type VoronoiNode } from './voronoi';
 import { treeGroup } from './tree';
-import { isCentered, labelFor, labelHeight, labelLines, marksOf, type WrappedLabel } from './text';
-import { drawnFor, drawnKey, drawnNested, fitBoxes, frameNested, frameOnMap, glideDuration, MAX_ZOOM, mergeDrawn, zoomPath, type Drawn, type Viewport } from './camera';
+import { labelFor, labelHeight, labelLines, marksOf, type WrappedLabel } from './text';
+import { drawnFor, drawnKey, drawnNested, fitBoxes, frameNested, frameOnMap, glideDuration, MAX_ZOOM, mergeDrawn, MIN_ZOOM, zoomPath, type Drawn, type Viewport } from './camera';
 import { EdgeHints, type Side } from './hints';
 import { readMotion } from './motion';
 import { nodeShape, shapeVars, SHAPES, type Mark, type Shape } from './shapes';
@@ -85,11 +85,11 @@ interface NodeData extends Record<string, unknown> {
   warnings: number;
   gaps: string[];
   isFocus: boolean;
-  /** How much its box's border and shape grow with its size (LA-EXP-DR58): 1 for a leaf. */
+  /** How much its box's border and shape grow (LA-EXP-DR58): its text scale (at least half in the Nested and Voronoi views), 1 in a trace. */
   scale: number;
-  /** How much its text, padding and marks grow: its level's, fixed by the map, never by the camera (LA-EXP-DR58). */
+  /** How much its text, padding and marks grow: the scale it shares with its siblings, fixed by the map, never by the camera (LA-EXP-DR58). */
   text: number;
-  /** Its label's lines as the map broke them (text.ts, or nested.ts in the Nested view), and whether it is centered. */
+  /** Its label's lines as its map broke them (or text.ts in a trace), and whether it is centered. */
   lines: WrappedLabel;
   centered: boolean;
   /** In the Nested view (LA-EXP-DR62): a box drawn with its children inside it has a header band of this height (map units) holding its label at the top; 0 for a leaf, whose label is centered. */
@@ -110,7 +110,7 @@ interface EdgeData extends Record<string, unknown> {
   label: string;
   /** A cross-link added by the Links switch: a dashed curve, in its own color. */
   link: boolean;
-  /** How much its stroke grows, as a box's border does (LA-EXP-DR58): its child's content scale for a parent line, 1 for a link. */
+  /** How much its stroke grows, as a box's border does (LA-EXP-DR58): its child's text scale for a parent line, 1 for a link. */
   scale: number;
 }
 type FlowNode = Node<NodeData | BarData>;
@@ -613,11 +613,11 @@ export function hiddenNodes(index: SpecIndex, map: PlacedMap, filters: Filters, 
 }
 
 /** A box's data: what it shows and how it is named. */
-function boxData(index: SpecIndex, id: string, focus: string, scale: number, text: number, parent: boolean, graph: Neighborhood, nested?: NestedNode | VoronoiNode): NodeData {
-  // The same lines the map sized the box for (text.ts, or the Nested or Voronoi map's), so the label always fits it.
+function boxData(index: SpecIndex, id: string, focus: string, scale: number, text: number, graph: Neighborhood, placed?: MapNode): NodeData {
+  // The same lines the map sized the box for (its map's, or a trace's from text.ts), so the label always fits it.
   const { title, meta } = labelLines(index, id);
-  const centered = nested ? nested.centered : isCentered(text, parent);
-  const lines = nested ? nested.lines : labelFor(index, id, centered);
+  const centered = placed ? placed.centered : false;
+  const lines = placed ? placed.lines : labelFor(index, id);
   const record = index.byId.get(id);
   const shaped = nodeShape(index, id);
   if (record) {
@@ -779,7 +779,7 @@ function GraphCanvas({ index, graph, layout, depth, filters, onNavigate, minimap
   }, [getViewport, setViewport, size, tracing, show, drawnAt]);
 
   // A trace's boxes are leaves at text scale 1, each as tall as its wrapped label needs (text.ts).
-  const tracePlaced = useMemo(() => (tracing ? traceGrid(graph, (id) => 2 * Math.ceil(labelHeight(labelFor(index, id, false)) / 2)) : null), [tracing, graph, index]);
+  const tracePlaced = useMemo(() => (tracing ? traceGrid(graph, (id) => 2 * Math.ceil(labelHeight(labelFor(index, id)) / 2)) : null), [tracing, graph, index]);
   /** The camera that frames the focus: on the map, the focus and the levels the depth shows; in a trace, the whole chain. */
   const framing = useCallback((): Viewport | null => {
     if (!size) return null;
@@ -856,7 +856,7 @@ function GraphCanvas({ index, graph, layout, depth, filters, onNavigate, minimap
     const nodes: FlowNode[] = boxes.map((b) => {
       const inNested = !tracing && map.view !== 'tree' ? map.nodes.get(b.id) as NestedNode | VoronoiNode : undefined;
       // Nested and Voronoi, a box's border grows with its text, so a large box's edge stays in proportion to its label, and its lines are the map's (LA-EXP-DR62, LA-EXP-DR64).
-      const data = boxData(index, b.id, focus, inNested ? Math.max(0.5, b.text) : contentScale(b.w, b.h), b.text, b.parent, graph, inNested);
+      const data = boxData(index, b.id, focus, inNested ? Math.max(0.5, b.text) : b.text, b.text, graph, tracing ? undefined : map.nodes.get(b.id));
       if (inNested && 'header' in inNested) data.header = inNested.header;
       // In the Tree view and a trace, its outline is its kind's shape at its size (LA-EXP-DR65).
       if (!inNested) data.outline = shapeVars(data.shape, b.w, b.h, data.scale);
@@ -909,7 +909,7 @@ function GraphCanvas({ index, graph, layout, depth, filters, onNavigate, minimap
         const p = up ? byId.get(up) : undefined;
         if (!p) continue;
         const shape = (id: string) => nodeShape(index, id).shape;
-        edges.push({ id: `${p.id}|${PARENT}|${b.id}`, source: p.id, target: b.id, type: 'line', focusable: false, selectable: false, data: { relation: PARENT, points: parentLine(p, b, shape(p.id), shape(b.id)), label: '', link: false, scale: contentScale(b.w, b.h) } });
+        edges.push({ id: `${p.id}|${PARENT}|${b.id}`, source: p.id, target: b.id, type: 'line', focusable: false, selectable: false, data: { relation: PARENT, points: parentLine(p, b, shape(p.id), shape(b.id)), label: '', link: false, scale: b.text } });
       }
     }
     // The Links switch: the focus's own links, as curves between their boxes; in the Voronoi view, between their cells' labels, inside the cells.
@@ -1047,7 +1047,7 @@ function GraphCanvas({ index, graph, layout, depth, filters, onNavigate, minimap
         onPaneClick={tap.clear}
         onMove={onMove}
         onMoveEnd={() => { if (glide.current === null) follow(); }}
-        minZoom={0.0005}
+        minZoom={MIN_ZOOM}
         maxZoom={MAX_ZOOM}
         zoomOnDoubleClick={false}
         proOptions={{ hideAttribution: true }}

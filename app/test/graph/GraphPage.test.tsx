@@ -326,7 +326,7 @@ describe('graph groups on the page', () => {
 });
 
 describe('the map on the page', () => {
-  it('LA-EXP-T168 Tall parents carry their height and content scale, and every parent line is level', async () => {
+  it('LA-EXP-T168 Tall parents carry their height and text scale, every box its text scale as its box scale, and every parent line is level', async () => {
     await showGraph('/P-D', testWorkspace(), 2, false);
     await waitFor(() => expect(node('P-D/define')).not.toBeNull());
     const height = (id: string) => parseFloat(node(id)!.style.height);
@@ -334,9 +334,10 @@ describe('the map on the page', () => {
     // The domain spans its stages, and its content grows with it.
     expect(height('P-D')).toBeGreaterThan(height('P-D/define') + height('P-D/design'));
     expect(Number(scale('P-D'))).toBeGreaterThan(1);
-    // A leaf's box keeps a leaf's scale (its text may grow to read while zoomed out).
-    const leaf = [...document.querySelectorAll<HTMLElement>('.react-flow__node')].find((el) => parseFloat(el.style.height) === 56)!;
-    expect(['', '1']).toContain(leaf.querySelector<HTMLElement>('.graph-node')!.style.getPropertyValue('--box-scale'));
+    // Every box's border grows with its text, however small: its box scale is its text scale.
+    for (const el of document.querySelectorAll<HTMLElement>('.react-flow__node:not(.is-bar) .graph-node')) {
+      expect(el.style.getPropertyValue('--box-scale'), el.parentElement!.dataset.id).toBe(el.style.getPropertyValue('--node-scale'));
+    }
     // Every parent line is level.
     const lines = [...document.querySelectorAll<SVGPathElement>('.react-flow__edge-path.rel-structure')];
     expect(lines.length).toBeGreaterThan(3);
