@@ -385,7 +385,7 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-minimap-view { fill: var(--minimap-mask); stroke: var(--steel); stroke-width: 2; }
 /* By touch: the toolbar's toggles and the edge hints are touch-sized. */
 @media (pointer: coarse) {
-  :is(.graph-links button, .graph-step, .graph-edge-hint, .graph-controls .icon-button) { min-width: var(--touch-target); min-height: var(--touch-target); }
+  :is(.graph-links button, .graph-step, .graph-more > summary, .graph-edge-hint, .graph-controls .icon-button) { min-width: var(--touch-target); min-height: var(--touch-target); }
 }
 /* ---------- End of graph view ---------- */
 
@@ -834,30 +834,26 @@ a.row-link.row-link:focus-visible { outline: none; }
 .erd-key-swatch.erd-key-other { border-style: dashed; border-color: var(--muted); background: var(--paper); }
 /* One grid of fixed cells, their width set by the pane's width only: the lists add no box of their own, so a model
    with other entries changes what the cells say, never where the key's parts sit (LA-PAT-APP-UX-R08). */
-.erd-key-grid { display: grid; grid-template-columns: repeat(auto-fill, 9.5rem); grid-auto-rows: 20px; gap: 2px 12px; }
-.erd-key-ends + .erd-key-ends > li:first-child { grid-column-start: 1; }
-.erd-key-ends { display: contents; list-style: none; }
+.erd-key-grid { display: grid; grid-template-columns: repeat(auto-fill, 9.5rem); gap: 2px 12px; }
+/* Each list is a row group of the key's grid, sharing its columns (subgrid), so every cell has a fixed place. */
+.erd-key-ends { display: grid; grid-column: 1 / -1; grid-template-columns: subgrid; grid-auto-rows: 20px; row-gap: 2px; margin: 0; padding: 0; list-style: none; }
 .erd-key-ends li { display: flex; align-items: center; gap: 6px; min-width: 0; white-space: nowrap; }
 .erd-key-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .erd-key-line { flex: none; overflow: visible; }
-/* In a narrow model pane the key's entries wrap into more rows: smaller and closer, in a taller key that still keeps one
-   height for every model at that width, so everything in it shows. */
 /* The key's button shows only in a narrow pane. */
 .erd-key-toggle { display: none; }
 /* In a narrow model pane the key is one bar of one height, so the canvas keeps the room: its button opens the whole
    key over the bottom of the canvas, and nothing below or beside it moves (LA-PAT-APP-UX-R08). */
 @container model-page (max-width: 640px) {
   .erd-key { position: relative; block-size: calc(var(--erd-key-height) * 0.28); overflow: visible; justify-content: center; padding: 0 14px; font-size: 0.75rem; line-height: 1.3; }
-  .erd-key-toggle { display: inline-flex; align-self: flex-start; align-items: center; min-block-size: 28px; padding: 2px 12px; border: 1px solid var(--rule); border-radius: 10px; background: var(--sheet); color: var(--ink); font: 600 0.75rem var(--body); cursor: pointer; transition: background var(--hover-speed); }
-  .erd-key-toggle:hover { background: var(--hover-bg); }
-  .erd-key-toggle:focus-visible { outline: 2px solid var(--steel); outline-offset: 2px; }
-  .erd-key-grid { display: none; grid-template-columns: repeat(auto-fill, 9.5rem); grid-auto-rows: 18px; gap: 1px 10px; }
+  .erd-key-toggle { display: inline-flex; align-self: flex-start; padding: 2px 12px; border-color: var(--rule); border-radius: 10px; background: var(--sheet); color: var(--ink); font: 600 0.75rem var(--body); }
+  .erd-key-grid { display: none; grid-template-columns: repeat(auto-fill, 9.5rem); gap: 1px 10px; }
+  .erd-key-ends { grid-auto-rows: 18px; row-gap: 1px; }
   .erd-key.is-open .erd-key-grid {
-    display: grid; position: absolute; z-index: 7; inset-inline: 8px; bottom: calc(100% + 4px); max-block-size: 60vh; overflow-y: auto; scrollbar-gutter: stable;
+    display: grid; grid-template-columns: repeat(auto-fill, 9.5rem); position: absolute; z-index: 7; inset-inline: 8px; bottom: calc(100% + 4px); max-block-size: 60vh; overflow-y: auto; scrollbar-gutter: stable;
     padding: 10px 12px; border: 1px solid var(--rule); border-radius: var(--panel-radius); background: var(--sheet); box-shadow: 0 6px 20px var(--shadow);
   }
 }
-@media (prefers-reduced-motion: reduce) { .erd-key-toggle { transition: none; } }
 .erd-key-highlight { flex: none; display: inline-block; width: 14px; height: 10px; border: 1.5px solid var(--es-aggregate); background: var(--es-aggregate-bg); box-shadow: 0 0 0 2px var(--ink); border-radius: 2px; }
 /* The model's context (LA-EXP-UC11-R06): faded and a little smaller, readable on hover, its lines faded with it. */
 .model-flow .react-flow__node.is-context .erd-box { opacity: var(--context-opacity); scale: var(--context-scale); }
