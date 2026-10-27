@@ -45,9 +45,9 @@ describe('pattern logic', () => {
   it('LA-TRC-T99 A rule is proved per domain, by its pattern rule tests that name that domain', () => {
     const ix = index();
     const r01 = ix.byId.get('DM-PAT-AUDIT-R01')!;
-    expect(ruleStatus(ix, r01, 'DM-SHOP', patternsFollowedBy(ix, 'DM-SHOP')[0])).toEqual({ applies: true, provedBy: ['DM-PAT-AUDIT-R01-T01'], plannedBy: [] });
+    expect(ruleStatus(ix, r01, 'DM-SHOP', patternsFollowedBy(ix, 'DM-SHOP')[0])).toEqual({ applies: true, provedBy: ['DM-PAT-AUDIT-R01-T01'], notAutomatedBy: [] });
     // In DM-PAY only a test not automated yet is meant to prove it.
-    expect(ruleStatus(ix, r01, 'DM-PAY', patternsFollowedBy(ix, 'DM-PAY')[0])).toEqual({ applies: true, provedBy: [], plannedBy: ['DM-PAT-AUDIT-R01-T02'] });
+    expect(ruleStatus(ix, r01, 'DM-PAY', patternsFollowedBy(ix, 'DM-PAY')[0])).toEqual({ applies: true, provedBy: [], notAutomatedBy: ['DM-PAT-AUDIT-R01-T02'] });
   });
 
   it('LA-TRC-T100 A rule that names a setting every following use case marks Not applicable does not apply in that domain', () => {

@@ -88,12 +88,12 @@ function TraceList({ index, group }: { index: SpecIndex; group: TraceGroup }) {
 }
 
 /** IDs as compact links in a table cell, or a flag when there are none. */
-function Cell({ index, ids, flag, planned = [] }: { index: SpecIndex; ids: string[]; flag: string | null; planned?: string[] }) {
+function Cell({ index, ids, flag, notAutomated = [] }: { index: SpecIndex; ids: string[]; flag: string | null; notAutomated?: string[] }) {
   return (
     <span className="trace-cell">
       {ids.map((id) => <RecordLink key={id} index={index} id={id} showTitle={false} />)}
-      {planned.map((id) => (
-        <span key={id} className="rule-mark planned" title={`${id} is not automated yet: it is not proof yet.`}>
+      {notAutomated.map((id) => (
+        <span key={id} className="rule-mark not-automated" title={`${id} is not automated yet: it is not proof yet.`}>
           <RecordLink index={index} id={id} showTitle={false} /> not automated yet
         </span>
       ))}
@@ -125,7 +125,7 @@ function RequirementTable({ index, useCase, rows }: { index: SpecIndex; useCase:
                   <th scope="row"><RecordLink index={index} id={record.id} /></th>
                   <td>{j && (j.needsDesign ? <Cell index={index} ids={j.designedBy} flag={has(j, 'not-designed') ? 'not designed' : null} /> : <span className="hint">Not asked</span>)}</td>
                   <td>{j && (j.needsDesign ? <Cell index={index} ids={j.builtBy} flag={has(j, 'not-built') || has(j, 'not-designed') ? 'not built' : null} /> : <span className="hint">Not asked</span>)}</td>
-                  <td>{j && <Cell index={index} ids={j.provedBy} planned={j.provedBy.length === 0 ? j.plannedBy : []} flag={has(j, 'not-proved') || has(j, 'not-automated') ? 'not proved' : null} />}</td>
+                  <td>{j && <Cell index={index} ids={j.provedBy} notAutomated={j.provedBy.length === 0 ? j.notAutomatedBy : []} flag={has(j, 'not-proved') || has(j, 'not-automated') ? 'not proved' : null} />}</td>
                 </tr>
               );
             })}

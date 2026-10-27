@@ -34,7 +34,7 @@ const field = (name: string) => within(side()).getByText(name, { selector: 'dt' 
 const stage = (name: string) => main().querySelector(`.stage-${name}`) as HTMLElement;
 
 describe('obligation kinds and test states', () => {
-  it('LA-TRC-T89 Coverage shows one group per obligation kind, labeled, with designed, built, proved and planned', async () => {
+  it('LA-TRC-T89 Coverage shows one group per obligation kind, labeled, with designed, built, proved and not automated', async () => {
     await openApp('/DM', served());
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     expect(groups(card('Shopping'))).toEqual([

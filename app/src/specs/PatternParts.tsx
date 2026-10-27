@@ -57,8 +57,8 @@ export function RuleMarks({ index, status }: { index: SpecIndex; status: RuleSta
   return (
     <span className="rule-marks">
       {mark('proved', status.provedBy, 'proved', 'No automated or manual pattern rule test proves it in this domain.')}
-      {status.provedBy.length === 0 && status.plannedBy.length > 0 && (
-        <span className="rule-mark planned" title={`A test not automated yet is meant to prove it: ${list(status.plannedBy)}. It is not proof yet.`} data-mark="planned">not automated yet</span>
+      {status.provedBy.length === 0 && status.notAutomatedBy.length > 0 && (
+        <span className="rule-mark not-automated" title={`A test not automated yet is meant to prove it: ${list(status.notAutomatedBy)}. It is not proof yet.`} data-mark="not-automated">not automated yet</span>
       )}
     </span>
   );

@@ -40,7 +40,7 @@ export interface Judgment {
   builtBy: string[];
   provedBy: string[];
   /** Its tests not automated yet: they do not count as proof. */
-  plannedBy: string[];
+  notAutomatedBy: string[];
   gaps: TraceGap[];
 }
 
@@ -125,7 +125,7 @@ export function judge(index: SpecIndex, record: SpecRecord, domain: string): Jud
   const needsDesign = record.kind !== 'pattern_rule';
   const designedBy = needsDesign ? designersOf(index, record) : [];
   const builtBy = buildersOf(index, record, designedBy);
-  const { proved: provedBy, notAutomated: plannedBy } = testsOf(index, record, domain);
+  const { proved: provedBy, notAutomated: notAutomatedBy } = testsOf(index, record, domain);
   const coverage = index.coverage.get(domain);
   const missing = new Set((coverage?.gaps ?? []).filter((g) => g.id === record.id).map((g) => g.missing));
   const designed = coverage ? !missing.has('designed') : designedBy.length > 0;
@@ -134,8 +134,8 @@ export function judge(index: SpecIndex, record: SpecRecord, domain: string): Jud
   const gaps: TraceGap[] = [];
   if (needsDesign && !designed) gaps.push({ kind: 'not-designed', check: 'not-designed' });
   if (needsDesign && designed && !built) gaps.push({ kind: 'not-built', check: 'not-built' });
-  if (!proved) gaps.push({ kind: plannedBy.length > 0 ? 'not-automated' : 'not-proved', check: 'not-proved' });
-  return { domain, needsDesign, designedBy, builtBy, provedBy, plannedBy, gaps };
+  if (!proved) gaps.push({ kind: notAutomatedBy.length > 0 ? 'not-automated' : 'not-proved', check: 'not-proved' });
+  return { domain, needsDesign, designedBy, builtBy, provedBy, notAutomatedBy, gaps };
 }
 
 /** Links grouped by their label read from this record's end, in label order; an empty group never appears. */
