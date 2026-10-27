@@ -8,8 +8,7 @@ type Watched = { dir: string; event: 'spec:changed' };
 // Serves Lathe's API (lathe/src/server/api.ts: the spec, writes and history) inside the Vite dev server. The module
 // is loaded through Vite, so edits to the engine are picked up without a restart, and its packages resolve from
 // lathe/node_modules. `root` is the product folder: vite.config.ts passes LATHE_ROOT, or this repo when it is not set.
-// Sends spec:changed when the product's data files change, or the package's schema, its own data (Lathe's checks)
-// or its checks folder.
+// Sends spec:changed when the product's data files change, or the package's own data (Lathe's checks) or schema.
 export function latheApi(root: string, engineDir = path.resolve(import.meta.dirname, '../../lathe')): Plugin {
   const message = (error: unknown) => (error instanceof Error ? error.message : String(error));
   const fail = (res: import('node:http').ServerResponse, error: string) => {
@@ -47,10 +46,10 @@ export function latheApi(root: string, engineDir = path.resolve(import.meta.dirn
       } catch {
         watched = [{ dir: path.resolve(root, 'data'), event: 'spec:changed' }];
       }
-      // The package's schema, its own data and its checks decide what the pages show, as the product's data does.
-      for (const dir of ['schema', 'data', 'checks']) {
+      // The package's own data (Lathe's checks) and its schema decide what the pages show, as the product's data does.
+      for (const dir of ['data', 'schema']) {
         const full = path.join(engineDir, dir);
-        if (existsSync(full)) watched.push({ dir: full, event: 'spec:changed' });
+        if (existsSync(full) && !watched.some((w) => w.dir === full)) watched.push({ dir: full, event: 'spec:changed' });
       }
       for (const { dir } of watched) server.watcher.add(dir);
       server.watcher.on('all', (_kind: string, changed: string) => {

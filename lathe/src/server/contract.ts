@@ -9,7 +9,7 @@ import type { Row, Value } from '../store/rows.ts';
 import type { SchemaDescription } from '../store/schema.ts';
 import type { Coverage, Problem } from '../types.ts';
 
-export type { Command, Row, StoreProblem, Value };
+export type { Row, StoreProblem, Value };
 
 /** GET /api/spec. */
 export interface SpecData {

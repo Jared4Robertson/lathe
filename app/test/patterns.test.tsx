@@ -93,7 +93,7 @@ describe('Patterns we follow, on the domain page', () => {
     expect(line).toHaveTextContent('Pattern rules 2');
     expect(within(line).getByRole('img', { name: 'designed: 1 of 2' })).toBeInTheDocument();
     expect(within(line).getByRole('img', { name: 'planned: 1 of 2' })).toBeInTheDocument();
-    expect(within(coverage).getAllByRole('listitem').map((li) => li.textContent)).toContainEqual(expect.stringMatching(/DM-PAT-CHECKOUT-R02.*Pattern rule with nothing that satisfies it/));
+    expect(within(coverage).getAllByRole('listitem').map((li) => li.textContent)).toContainEqual(expect.stringMatching(/DM-PAT-CHECKOUT-R02.*Pattern rule with nothing that proves it/));
   });
 
   it('LA-TRC-T111 A pattern the domain itself follows is listed, followed by the whole domain, and every rule applies', async () => {

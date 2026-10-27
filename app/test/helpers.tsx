@@ -1,7 +1,8 @@
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import { expect, vi } from 'vitest';
 import App from '../src/App';
-import type { Command, SpecData, WriteAnswer } from '../../lathe/src/server/contract';
+import type { SpecData, WriteAnswer } from '../../lathe/src/server/contract';
+import type { Command } from '../../lathe/src/store/store';
 import { workspace as fixtureWorkspace } from './fixtures/workspace';
 
 export interface Served {

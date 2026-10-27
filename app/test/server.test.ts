@@ -1,5 +1,4 @@
 // @vitest-environment node
-import { existsSync } from 'node:fs';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { tmpdir } from 'node:os';
@@ -174,14 +173,13 @@ describe('dev API plugin', () => {
     expect((await request(broken.middlewares[0], '/EX')).nextCalled).toBe(true);
   });
 
-  it('LA-PLT-T12 The server sends spec:changed when a data file, or the package\'s schema or checks, change', async () => {
+  it('LA-PLT-T12 The server sends spec:changed when a data file, or the package\'s own data or schema, change', async () => {
     const product = await mkdtemp(path.join(tmpdir(), 'lathe-app-watch-'));
     try {
       const data = path.join(product, 'data');
       await mkdir(data);
       const fake = await start(async () => realApi, product);
-      const engineFolders = ['schema', 'data', 'checks'].map((d) => path.join(engineDir, d)).filter((d) => existsSync(d));
-      expect(fake.watched).toEqual([data, ...engineFolders]);
+      expect(fake.watched).toEqual([data, path.join(engineDir, 'data'), path.join(engineDir, 'schema')]);
       const change = (file: string) => {
         fake.sent.length = 0;
         for (const listener of fake.listeners) listener('change', file);

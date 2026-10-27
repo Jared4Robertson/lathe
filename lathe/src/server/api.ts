@@ -16,7 +16,7 @@ import { buildReference, loadWorkspace } from '../index.ts';
 import { describeKey, rowKey, type Row } from '../store/rows.ts';
 import { formatProblem, LATHE_DATA_DIR, openStore, StoreError, type Command, type Store } from '../store/store.ts';
 import type { Coverage, Problem } from '../types.ts';
-import type { RowChange, SpecData, WriteAnswer } from './contract.ts';
+import type { RowChange, SpecData, WriteAnswer, WriteRequest } from './contract.ts';
 import { recordHistory } from './history.ts';
 
 /** The most a write's body may hold. */
@@ -51,6 +51,9 @@ export function dataSignature(dataDir: string): string {
     .join('\n');
 }
 
+// What the store read: the product's data folder and Lathe's own (its checks), loaded beside it.
+const storeSignature = (dataDir: string) => `${dataSignature(dataDir)}\n--\n${dataSignature(LATHE_DATA_DIR)}`;
+
 // Runs a task on the root's opened store, after every task before it, opening the store afresh when its files
 // changed under it.
 async function withStore<T>(root: string, task: (opened: Opened) => Promise<T>): Promise<T> {
@@ -58,7 +61,7 @@ async function withStore<T>(root: string, task: (opened: Opened) => Promise<T>):
   let pending = stores.get(root);
   if (!pending) {
     pending = (async () => {
-      const signature = dataSignature(dataDir);
+      const signature = storeSignature(dataDir);
       return { store: await openStore(root), signature, checks: null, queue: Promise.resolve() };
     })();
     stores.set(root, pending);
@@ -66,8 +69,8 @@ async function withStore<T>(root: string, task: (opened: Opened) => Promise<T>):
   }
   const opened = await pending;
   const run = opened.queue.then(async () => {
-    if (dataSignature(dataDir) !== opened.signature) {
-      const signature = dataSignature(dataDir);
+    if (storeSignature(dataDir) !== opened.signature) {
+      const signature = storeSignature(dataDir);
       const fresh = await openStore(root);
       await opened.store.close().catch(() => undefined);
       opened.store = fresh;
@@ -235,7 +238,7 @@ async function write(root: string, commands: Command[]): Promise<{ status: numbe
     const before = new Map(Object.keys(store.schema.tables).filter((t) => store.schema.tables[t].stored).map((t) => [t, store.rows(t)]));
     try {
       const result = await store.apply(commands);
-      opened.signature = dataSignature(config.dataDir);
+      opened.signature = storeSignature(config.dataDir);
       opened.checks = null;
       return { status: 200, answer: { ok: true, tables: result.tables, files: result.files, changes: rowChanges(store, before, result.tables) } };
     } catch (error) {
@@ -277,7 +280,7 @@ export async function handleApi(root: string, req: IncomingMessage, res: ServerR
     const problem = writeRequestProblem(body);
     if (problem) return (send(res, 400, { error: problem }), true);
     try {
-      const { status, answer } = await write(root, (body as { commands: Command[] }).commands);
+      const { status, answer } = await write(root, (body as WriteRequest).commands);
       send(res, status, answer, { 'cache-control': 'no-store' });
     } catch (error) {
       send(res, 500, { error: storeMessage(error) });
