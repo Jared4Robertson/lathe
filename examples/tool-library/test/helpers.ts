@@ -1,6 +1,8 @@
 // Shared test setup: a fresh in-memory store and a clock the test can move.
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
+import { subscribePolicies } from '../src/event-handlers.ts';
+import { Outbox, type DomainEvent, type HandlerFailure } from '../src/events.ts';
 import { LendingService } from '../src/lending-service.ts';
 import { MemberService } from '../src/member-service.ts';
 import { DEFAULT_TIME_ZONE } from '../src/model.ts';
@@ -32,16 +34,37 @@ export class TestClock {
   }
 }
 
-/** Services over a fresh in-memory store, for domain rule tests. Uses the default time zone unless given one. */
-export function services(timeZone?: string) {
+export interface ServiceOptions {
+  /** The library's time zone; the default unless given. */
+  timeZone?: string;
+  /** Whether the policies' event handlers are subscribed, as the router subscribes them. Default true. */
+  policies?: boolean;
+  /** Where a failing event handler is reported; the outbox logs it unless given. */
+  onFailure?: HandlerFailure;
+}
+
+/**
+ * Services over a fresh in-memory store, for domain rule tests, sharing one outbox.
+ * `delivered` lists every event the relay handed to its handlers, in order.
+ */
+export function services(options: ServiceOptions = {}) {
   const store = new Store();
   const clock = new TestClock();
+  const outbox = new Outbox(store, clock.now, options.onFailure);
+  const delivered: DomainEvent[] = [];
+  for (const name of ['MemberRegistered', 'ToolAdded', 'DamageReported', 'ToolRepaired', 'LoanOpened', 'ToolReturned'] as const) {
+    outbox.subscribe(name, (event) => delivered.push(event));
+  }
+  const tools = new ToolService(store, clock.now, outbox);
+  if (options.policies ?? true) subscribePolicies(outbox, tools);
   return {
     store,
     clock,
-    members: new MemberService(store, clock.now),
-    tools: new ToolService(store, clock.now),
-    lending: new LendingService(store, clock.now, timeZone),
+    outbox,
+    delivered,
+    members: new MemberService(store, clock.now, outbox),
+    tools,
+    lending: new LendingService(store, clock.now, outbox, options.timeZone),
   };
 }
 

@@ -5,6 +5,8 @@
 // TL-PAT-LIBRARIAN-ACTION-R02: each librarian action answers with the record as the store saved it
 // (the store returns rows with RETURNING *), so what the librarian sees is what is stored.
 import type { IncomingMessage, ServerResponse } from 'node:http';
+import { subscribePolicies } from './event-handlers.ts';
+import { Outbox } from './events.ts';
 import { LendingService } from './lending-service.ts';
 import { MemberService } from './member-service.ts';
 import { DEFAULT_TIME_ZONE, LendingError, type Clock, type LibrarySettings } from './model.ts';
@@ -107,15 +109,20 @@ function send(res: ServerResponse, status: number, body: unknown): void {
 /**
  * Builds the request handler for a store. `now` is the clock, so tests can move time;
  * `settings.timeZone` is the library's time zone (default America/New_York).
+ * The command handlers share one outbox, with every policy's event handler subscribed. The relay runs once
+ * here, so events a crash or a failed handler left undelivered are delivered when the API starts.
  */
 export function createRouter(
   store: Store,
   now: Clock = () => new Date(),
   settings: LibrarySettings = { timeZone: DEFAULT_TIME_ZONE },
 ) {
-  const members = new MemberService(store, now);
-  const tools = new ToolService(store, now);
-  const lending = new LendingService(store, now, settings.timeZone);
+  const outbox = new Outbox(store, now);
+  const members = new MemberService(store, now, outbox);
+  const tools = new ToolService(store, now, outbox);
+  const lending = new LendingService(store, now, outbox, settings.timeZone);
+  subscribePolicies(outbox, tools);
+  outbox.relay();
 
   const routes: Route[] = [
     // TL-LEND-EP01-H: R01-R03

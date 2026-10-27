@@ -16,6 +16,8 @@ CREATE TABLE operation (id VARCHAR PRIMARY KEY, kind VARCHAR NOT NULL, FOREIGN K
 COMMENT ON TABLE operation IS 'Commands and queries: what a flow step invokes and what calls a domain service.';
 CREATE TABLE reads_source (id VARCHAR PRIMARY KEY, kind VARCHAR NOT NULL, FOREIGN KEY (id, kind) REFERENCES record_id (id, kind));
 COMMENT ON TABLE reads_source IS 'The records that read aggregates: specifications and read models.';
+CREATE TABLE calls_source (id VARCHAR PRIMARY KEY, kind VARCHAR NOT NULL, FOREIGN KEY (id, kind) REFERENCES record_id (id, kind));
+COMMENT ON TABLE calls_source IS 'The records that use domain services: commands, queries and read models.';
 CREATE TABLE follows_source (id VARCHAR PRIMARY KEY, kind VARCHAR NOT NULL, FOREIGN KEY (id, kind) REFERENCES record_id (id, kind));
 COMMENT ON TABLE follows_source IS 'The records that may follow a pattern: domains and use cases.';
 CREATE TABLE meets_source (id VARCHAR PRIMARY KEY, kind VARCHAR NOT NULL, FOREIGN KEY (id, kind) REFERENCES record_id (id, kind));
@@ -23,12 +25,13 @@ COMMENT ON TABLE meets_source IS 'The records that may meet a standard rule: the
 
 INSERT INTO meta_table VALUES ('record_id', 'registry', NULL);
 INSERT INTO meta_table
-  SELECT name, 'supertype', NULL FROM (VALUES ('obligation'), ('operation'), ('reads_source'), ('follows_source'), ('meets_source')) AS t (name);
+  SELECT name, 'supertype', NULL FROM (VALUES ('obligation'), ('operation'), ('reads_source'), ('calls_source'), ('follows_source'), ('meets_source')) AS t (name);
 INSERT INTO meta_supertype_member
   SELECT 'obligation', kind FROM (VALUES ('constraint'), ('invariant'), ('specification'), ('policy'), ('domain_service'),
     ('uc_requirement'), ('view_requirement'), ('api_requirement'), ('pattern_rule'), ('standard_rule')) AS t (kind)
   UNION ALL SELECT 'operation', kind FROM (VALUES ('command'), ('query')) AS t (kind)
   UNION ALL SELECT 'reads_source', kind FROM (VALUES ('specification'), ('read_model')) AS t (kind)
+  UNION ALL SELECT 'calls_source', kind FROM (VALUES ('command'), ('query'), ('read_model')) AS t (kind)
   UNION ALL SELECT 'follows_source', kind FROM (VALUES ('domain'), ('use_case')) AS t (kind)
   UNION ALL SELECT 'meets_source', kind FROM (VALUES ('repository'), ('data_model'), ('table'), ('value_type'), ('predicate'),
     ('event_type'), ('projection'), ('command_handler'), ('query_handler'), ('event_handler'), ('service'), ('ui_component'),
