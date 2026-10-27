@@ -1,0 +1,7 @@
+{"api_id":"LA-AUT-API01","position":1,"name":"Format reference","meaning":"Every kind, relation, folder and check of the product, as `lathe/src/reference.ts` builds it.","fields":"`concepts`, `kinds`, `relations`, `sections`, `checks`"}
+{"api_id":"LA-AUT-API01","position":2,"name":"Error","meaning":"A refusal.","fields":"`error` (a sentence)"}
+{"api_id":"LA-EXP-API01","position":1,"name":"History","meaning":"The commits that touched a record's spec file, newest first, a page at a time.","fields":"`state`, `id`, `file`, `uncommitted`, `commits`, `more`"}
+{"api_id":"LA-EXP-API01","position":2,"name":"Diff","meaning":"One commit's change to the file, or the changes not committed yet.","fields":"`state`, `id`, `file`, `commit`, `diff`, `truncated`"}
+{"api_id":"LA-EXP-API01","position":3,"name":"Error","meaning":"A refusal.","fields":"`error` (a sentence)"}
+{"api_id":"LA-PLT-API01","position":1,"name":"Workspace","meaning":"The whole spec, as `lathe/src/types.ts` defines it.","fields":"`kinds`, `sections`, `relations`, `records`, `links`, `problems`, `coverage`"}
+{"api_id":"LA-PLT-API01","position":2,"name":"Error","meaning":"A refusal.","fields":"`error` (a sentence)"}
