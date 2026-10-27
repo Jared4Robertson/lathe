@@ -116,20 +116,28 @@ test.describe('keyboard', () => {
     await expect(page).not.toHaveURL(/graph/);
   });
 
-  test('LA-PLT-T99 re-center the graph with the arrow keys and Enter', async ({ page }) => {
+  test('LA-PLT-T99 re-center the graph with Tab and Enter, and step through the tree with the arrow keys', async ({ page }) => {
     await open(page, `${RECORD}?view=graph`, '.pane-graph .graph-flow .graph-box');
     await tabUntil(page, (el) => !!el.closest('.graph-box'), 'a box in the graph');
     const first = await page.evaluate(() => document.activeElement!.closest('.graph-box')!.getAttribute('data-id'));
     let target = first;
-    for (let i = 0; i < 8 && (target === first || target === 'LA-PLT-UC05' || target!.startsWith('file:') || target!.includes('/')); i++) {
-      await page.keyboard.press('ArrowRight');
+    for (let i = 0; i < 8 && (target === first || target === RECORD.slice(1) || target!.startsWith('file:') || target!.includes('/')); i++) {
+      await page.keyboard.press('Tab');
       target = await page.evaluate(() => document.activeElement!.closest('.graph-box')?.getAttribute('data-id') ?? '');
     }
-    expect(target, 'the arrow keys move between boxes').not.toBe(first);
+    expect(target, 'Tab moves between boxes').not.toBe(first);
     await page.keyboard.press('Enter');
     await expect(page).toHaveURL(new RegExp(target!));
     // LA-PLT-T100: focus follows the box that became the center.
     await expect.poll(() => page.evaluate(() => document.activeElement?.closest('.graph-box')?.getAttribute('data-id'))).toBe(target);
+    // The plain arrows step through the tree: Left to the parent, Right back in to its first child; the keyboard follows.
+    const at = new URL(page.url()).pathname;
+    await page.keyboard.press('ArrowLeft');
+    await expect.poll(() => new URL(page.url()).pathname).not.toBe(at);
+    const parent = new URL(page.url()).pathname;
+    await expect.poll(() => page.evaluate(() => document.activeElement?.closest('.graph-box')?.getAttribute('data-id'))).toBe(decodeURIComponent(parent.slice(1)));
+    await page.keyboard.press('ArrowRight');
+    await expect.poll(() => new URL(page.url()).pathname).not.toBe(parent);
   });
 
   test('LA-PLT-T99 fold and unfold a row with the keyboard', async ({ page }) => {

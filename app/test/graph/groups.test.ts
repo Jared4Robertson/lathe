@@ -135,8 +135,8 @@ describe('graph groups', () => {
     expect(x('P-D/domain-model/aggregate')).toBeLessThan(x('P-D-A1'));
     expect(x('P-D-A1')).toBe(x('P-D-A4'));
     expect(x('P-D-A4')).toBeLessThan(x('P-D-A4/entity'));
-    // An aggregate's group and a read model's ungrouped query are both one level below a folder's record, so they share a column.
-    expect(x('P-D-A4/entity')).toBe(x('P-D-QRY01'));
+    // An aggregate's group and a read model's ungrouped query are both one level below a folder's record: one level, each in its own parent's column.
+    expect(map.nodes.get('P-D-A4/entity')!.level).toBe(map.nodes.get('P-D-QRY01')!.level);
     // Every group's column is one after its parent's and one before its members'.
     for (const g of n.nodes.filter((node) => node.group)) {
       if (g.id !== 'P-D/domain-model') expect(column(n, g.id)).toBe(column(n, g.group!.parent) + 1);

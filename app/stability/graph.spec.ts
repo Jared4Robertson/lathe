@@ -386,11 +386,12 @@ const PARITY: { feature: string; run: (page: Page, layout: Layout) => Promise<vo
     },
   },
   {
-    feature: 'the step keys step out to the parent and back in',
+    feature: 'once the graph has focus, the plain Left arrow steps out to the parent',
     run: async (page) => {
       const here = path(page);
-      await page.locator('.pane-graph .graph-count').click();
-      await page.keyboard.press('Alt+ArrowUp');
+      // The graph pane takes focus as a click on its canvas gives it.
+      await page.locator('.pane-graph .graph-flow').focus();
+      await page.keyboard.press('ArrowLeft');
       await page.waitForURL((u) => u.pathname !== here);
       await page.goBack();
       await page.waitForURL((u) => u.pathname === here);
@@ -398,11 +399,11 @@ const PARITY: { feature: string; run: (page: Page, layout: Layout) => Promise<vo
     },
   },
   {
-    feature: 'Tab and the arrow keys reach the drawn boxes with a visible focus ring, and Enter focuses one',
+    feature: 'Tab reaches the drawn boxes with a visible focus ring, and Enter focuses one',
     run: async (page) => {
       const here = path(page);
       await page.locator('.pane-graph .graph-box').first().focus();
-      await page.keyboard.press('ArrowRight');
+      await page.keyboard.press('Tab');
       const id = await page.evaluate(() => (document.activeElement as HTMLElement | null)?.closest<HTMLElement>('.graph-box')?.dataset.id ?? '');
       expect(id, 'keyboard focus is on a box').not.toBe('');
       // The box the keyboard is on is drawn with the focus ring.

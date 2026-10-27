@@ -167,12 +167,14 @@ describe('graph neighborhood', () => {
 
   it('LA-EXP-T24 The graph reads left to right by column, and so does a trace', async () => {
     const map = graphMap(index, 'P');
-    // One x and one width per level, levels in order.
-    for (const level of map.byLevel) {
+    // Siblings share one x and one width, each column right of its parent's.
+    for (const parent of map.nodes.values()) {
+      const level = parent.children.map((c) => map.nodes.get(c)!);
+      if (level.length === 0) continue;
       expect(new Set(level.map((n) => n.x)).size).toBe(1);
       expect(new Set(level.map((n) => n.w)).size).toBe(1);
+      expect(level[0].x).toBeGreaterThan(parent.x + parent.w);
     }
-    for (let l = 1; l < map.levels.length; l++) expect(map.levels[l].x).toBeGreaterThan(map.levels[l - 1].x + map.levels[l - 1].width);
     // Ancestors to the left of a record.
     const col = (id: string) => map.nodes.get(id)!.x;
     const chain = ['P-D/use-cases', 'P-D/use-cases/capability', 'P-D-CAP01', 'P-D-UC01', 'P-D-UC01-R01'];

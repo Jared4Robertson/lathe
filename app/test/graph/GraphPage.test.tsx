@@ -150,23 +150,38 @@ describe('graph page', () => {
     expect(drawnBox('P-D')!.stage).toBe('domain-model');
   });
 
-  it('LA-EXP-T21 Arrow keys move between nodes, Enter re-centers on the focused node, and Escape clears the filters', async () => {
+  it('LA-EXP-T21 The plain arrows step through the tree while the graph has focus, Enter re-centers on the focused box, and Escape clears the filters', async () => {
     await showGraph(`/${STEP}`);
     await waitFor(() => expect(node('P-V01')).not.toBeNull());
     const center = node(STEP)!;
     center.focus();
     expect(document.activeElement).toBe(center);
-    fireEvent.keyDown(center, { key: 'ArrowRight' });
-    const moved = document.activeElement as HTMLElement;
-    expect(moved).not.toBe(center);
-    expect(moved.classList.contains('graph-box')).toBe(true);
-    fireEvent.keyDown(moved, { key: 'ArrowLeft' });
-    expect(document.activeElement).toBe(center);
-    fireEvent.keyDown(center, { key: 'ArrowRight' });
-    const target = (document.activeElement as HTMLElement).dataset.id!;
-    fireEvent.keyDown(document.activeElement!, { key: 'Enter' });
-    expect(window.location.pathname).toBe(addressOf(target));
-    await waitFor(() => expect(document.activeElement).toBe(node(target)));
+    // Left steps out to the parent, and the keyboard follows to its box.
+    fireEvent.keyDown(center, { key: 'ArrowLeft' });
+    expect(window.location.pathname).toBe('/P-D-UC01-FL');
+    await waitFor(() => expect(document.activeElement).toBe(node('P-D-UC01-FL')));
+    // Right steps in to the first child; Down and Up walk the siblings in the tree's order.
+    fireEvent.keyDown(document.activeElement!, { key: 'ArrowRight' });
+    expect(window.location.pathname).toBe(`/${STEP}`);
+    await waitFor(() => expect(document.activeElement).toBe(node(STEP)));
+    fireEvent.keyDown(document.activeElement!, { key: 'ArrowDown' });
+    const sibling = window.location.pathname;
+    expect(sibling).toMatch(/^\/P-D-UC01-FL-S0[23]$/);
+    // From the canvas itself (a click there gives the graph focus) the arrows step too, and focus stays on the canvas.
+    const canvas = graphHost()!;
+    canvas.focus();
+    fireEvent.keyDown(canvas, { key: 'ArrowUp' });
+    expect(window.location.pathname).toBe(`/${STEP}`);
+    expect(document.activeElement).toBe(canvas);
+    // With a modifier, or in a text field, the arrows do nothing here.
+    fireEvent.keyDown(canvas, { key: 'ArrowLeft', altKey: true });
+    expect(window.location.pathname).toBe(`/${STEP}`);
+    // Enter on a box with keyboard focus re-centers on it (Tab, the browser's, steps through the boxes).
+    await waitFor(() => expect(node('P-V01')).not.toBeNull());
+    node('P-V01')!.focus();
+    fireEvent.keyDown(node('P-V01')!, { key: 'Enter' });
+    expect(window.location.pathname).toBe(addressOf('P-V01'));
+    await waitFor(() => expect(document.activeElement).toBe(node('P-V01')));
 
     // Hide views, then Escape brings them back.
     const views = screen.getByRole('checkbox', { name: 'View' }) as HTMLInputElement;

@@ -118,8 +118,13 @@ export const DEFAULT_GRAPH_SETTINGS: GraphSettings = { layout: 'tree', depth: 1,
 /** The view after this one, for the switch's command. */
 export const nextLayout = (layout: GraphLayout): GraphLayout => GRAPH_LAYOUTS[(GRAPH_LAYOUTS.findIndex((l) => l.layout === layout) + 1) % GRAPH_LAYOUTS.length].layout;
 
-/** Where a step command goes from a node: its parent, its first child, or its previous or next sibling in the tree. */
-export function stepTarget(index: SpecIndex, focus: string, step: 'out' | 'in' | 'previous' | 'next'): string | null {
+/** A step through the tree: out to the parent, in to the first child, to the previous or next sibling. */
+type Step = 'out' | 'in' | 'previous' | 'next';
+/** The step each plain arrow key takes while the graph has focus: Left out, Right in, Up and Down along the siblings. */
+export const ARROW_STEPS: Readonly<Record<string, Step>> = { ArrowLeft: 'out', ArrowRight: 'in', ArrowUp: 'previous', ArrowDown: 'next' };
+
+/** Where a step goes from a node: its parent, its first child, or its previous or next sibling in the tree. */
+export function stepTarget(index: SpecIndex, focus: string, step: Step): string | null {
   const ok = (id: string | null | undefined) => (id && isGraphNode(index, id) ? id : null);
   if (step === 'out') return ok(nodeParent(index, focus));
   if (step === 'in') return ok(nodeChildren(index, focus).find((c) => isGraphNode(index, c)));
@@ -235,15 +240,11 @@ export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted,
   useCommand('graphTrace', () => update({ trace: !latest.current.trace }), valid && canTrace(index, focus));
   useCommand('graphLinks', () => update({ links: !latest.current.links }), valid && !tracing);
   useCommand('graphLayout', () => update({ layout: nextLayout(latest.current.layout) }), valid && !tracing);
-  // Stepping through the tree moves the focus, as a click does.
-  const stepTo = (step: 'out' | 'in' | 'previous' | 'next') => () => {
+  // Stepping through the tree moves the focus, as a click does (the arrow keys do it on the canvas, GraphStage).
+  const stepTo = (step: Step) => () => {
     const to = stepTarget(index, focus, step);
     if (to) onNavigate(to);
   };
-  useCommand('graphStepOut', stepTo('out'), valid);
-  useCommand('graphStepIn', stepTo('in'), valid);
-  useCommand('graphStepPrevious', stepTo('previous'), valid);
-  useCommand('graphStepNext', stepTo('next'), valid);
 
   if (!valid) {
     return (
@@ -254,10 +255,10 @@ export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted,
   }
   const counts = graphSummary(graph);
   const steps = [
-    { step: 'out' as const, command: 'graphStepOut', label: 'Step out to the parent', mark: '↑' },
-    { step: 'in' as const, command: 'graphStepIn', label: 'Step in to the first child', mark: '↓' },
-    { step: 'previous' as const, command: 'graphStepPrevious', label: 'Step to the previous sibling', mark: '←' },
-    { step: 'next' as const, command: 'graphStepNext', label: 'Step to the next sibling', mark: '→' },
+    { step: 'out' as const, command: 'graphStepOut', label: 'Step out to the parent', mark: '←' },
+    { step: 'in' as const, command: 'graphStepIn', label: 'Step in to the first child', mark: '→' },
+    { step: 'previous' as const, command: 'graphStepPrevious', label: 'Step to the previous sibling', mark: '↑' },
+    { step: 'next' as const, command: 'graphStepNext', label: 'Step to the next sibling', mark: '↓' },
   ];
 
   return (
@@ -495,6 +496,8 @@ export interface SceneBox {
   ring: boolean;
   armed: boolean;
   lit: boolean | null;
+  /** Drawn faded: a box of another branch crossing the opening frame's top or bottom edge. */
+  faded: boolean;
   /** Its box in the map, and its text's and border's scales there: fixed by the map, never by the camera. */
   map: { x: number; y: number; w: number; h: number };
   textScale: number;
@@ -678,12 +681,36 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
   // Frame the focus whenever it, the depth or the pane's size changes: a glide, except the first
   // picture, a resize and a map that has just been laid out, which frame at once.
   const framedFor = useRef<{ w: number; h: number } | null>(null);
+  /** The camera that frames the focus, while the camera is there: boxes of other branches crossing its edges fade. */
+  const openingFrame = useRef<Viewport | null>(null);
+  /**
+   * The boxes the opening frame shows faded: those of other branches (outside the focus's own subtree, and not an
+   * ancestor of the focus, whose strip the frame keeps at its left edge) that cross the pane's top or bottom edge, so
+   * the frame shows no box cut (LA-EXP-DS09). Only while the camera is at that frame; once the person zooms or pans,
+   * everything is drawn as it is.
+   */
+  const fadedAt = (v: Viewport, plates: readonly Plate[], h: number): ReadonlySet<string> | null => {
+    if (tracing || !openingFrame.current || !sameView(v, openingFrame.current)) return null;
+    const node = map.nodes.get(focus);
+    if (!node) return null;
+    const ancestors = new Set<string>();
+    for (let at: string | null = node.parent; at !== null; at = map.nodes.get(at)?.parent ?? null) ancestors.add(at);
+    const inBranch = (id: string) => {
+      if (id === focus || ancestors.has(id)) return true;
+      for (let at = map.nodes.get(id)?.parent ?? null; at !== null; at = map.nodes.get(at)?.parent ?? null) if (at === focus) return true;
+      return false;
+    };
+    const [top, bottom] = [-v.y / v.zoom, (h - v.y) / v.zoom];
+    const faded = new Set(plates.filter((p) => !inBranch(p.id) && ((p.y < top && p.y + p.h > top) || (p.y < bottom && p.y + p.h > bottom))).map((p) => p.id));
+    return faded.size > 0 ? faded : null;
+  };
   const framedEmpty = useRef(false);
   useLayoutEffect(() => {
     const target = framing();
     if (!target || !size) return;
     const resized = framedFor.current !== null && (framedFor.current.w !== size.w || framedFor.current.h !== size.h);
     moveTo(target, framedFor.current !== null && !resized && !framedEmpty.current);
+    openingFrame.current = target;
     framedFor.current = size;
     framedEmpty.current = map.nodes.size === 0;
   }, [framing]);
@@ -782,10 +809,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
     if (!tracing && map.view !== 'tree') shown.sort((a, b) => (map.nodes.get(a.id) as NestedNode).order - (map.nodes.get(b.id) as NestedNode).order);
     const bars: Bar[] = [];
     if (!tracing && map.view === 'tree') {
-      for (const bar of drawnAt(v).bars) {
-        const level = map.levels[bar.level];
-        bars.push({ x: level.x, y: bar.y, w: level.width, h: bar.h });
-      }
+      for (const bar of drawnAt(v).bars) bars.push({ x: bar.x, y: bar.y, w: bar.w, h: bar.h });
     }
     const byId = new Map(shown.map((p) => [p.id, p]));
     const lines: Line[] = [];
@@ -849,7 +873,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
     if (!ctx.current) return;
     const spot = spotNow();
     const sp = spotlight.current;
-    const state: PaintState = { focus, hover: hover.current, ring: ring.current, armed: tap.current?.armed ?? null, lit: sp.lit, litLines: sp.litLines, spot: spot.value };
+    const state: PaintState = { focus, hover: hover.current, ring: ring.current, armed: tap.current?.armed ?? null, lit: sp.lit, litLines: sp.litLines, spot: spot.value, faded: fadedAt(view.current, frame.plates, s.h) };
     paint(ctx.current, dpr, camOf(view.current, s), frame, look.current, fonts, state);
     if (!spot.done) requestPaint();
     else if (sp.to === 0 && sp.lit) { sp.lit = null; sp.litLines = null; }
@@ -936,18 +960,25 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
     if (fromKeyboard) refocus.current = id;
     onNavigate(id);
   };
+  // The keys while the graph has focus (its canvas, after a click, or one of its boxes; never a text field): the plain
+  // arrows step through the tree, each step moving the graph's focus (Left to the parent, Right to the first child, Up
+  // and Down to the previous and next sibling); Enter centers on the box with keyboard focus. Tab and Shift+Tab step
+  // through the boxes, as the page's own focus order.
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
-    if (order.length === 0 || !(e.target as HTMLElement).closest?.('.graph-box')) return;
-    const current = active.current && order.includes(active.current) ? order.indexOf(active.current) : -1;
-    const move = (step: number) => {
+    const target = e.target as HTMLElement;
+    if (target.closest?.('input, textarea, select, [contenteditable="true"]')) return;
+    if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+    const step = ARROW_STEPS[e.key];
+    if (step) {
       e.preventDefault();
-      const next = order[(current + step + order.length) % order.length];
-      active.current = next;
-      domNode(next)?.focus({ preventScroll: true });
-    };
-    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') move(1);
-    else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') move(current < 0 ? 0 : -1);
-    else if (e.key === 'Enter' && active.current) {
+      const to = stepTarget(index, focus, step);
+      if (!to) return;
+      // From a box with keyboard focus, the keyboard follows to the new focus's box; from the canvas it stays there.
+      if (target.closest?.('.graph-box')) refocus.current = to;
+      onNavigate(to);
+      return;
+    }
+    if (e.key === 'Enter' && active.current && target.closest?.('.graph-box')) {
       e.preventDefault();
       activate(active.current, true);
     }
@@ -984,6 +1015,8 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
   };
   const onPointerDown = (e: ReactPointerEvent<HTMLCanvasElement>) => {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
+    // A click on the canvas gives the graph focus, so the arrow keys step through the tree.
+    if (!wrapper.current?.contains(document.activeElement)) wrapper.current?.focus({ preventScroll: true });
     canvas.current?.setPointerCapture?.(e.pointerId);
     const at = local(e);
     pointers.current.set(e.pointerId, at);
@@ -1089,6 +1122,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
       const rect = (x: number, y: number, w: number, h: number): Rect => ({ left: X(x), top: Y(y), width: w * v.zoom, height: h * v.zoom });
       const measureCtx = canvas.current!.getContext?.('2d') ?? null;
       const sp = spotlight.current;
+      const faded = fadedAt(v, frame.plates, s.h);
       return {
         layout: tracing ? 'trace' : layout,
         camera: roundCamera(v),
@@ -1101,7 +1135,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
         lines: frame.lines.map((l) => ({ id: l.id, source: l.source, target: l.target, style: l.style, link: l.link, label: l.label, lit: sp.id !== null && sp.litLines ? sp.litLines.has(l.id) : null, points: l.points.map((p) => [X(p.x), Y(p.y)] as [number, number]) })),
         boxes: frame.plates.map((p) => ({
           id: p.id, kind: p.kind, stage: p.stage, shape: p.shape, view: p.view, focus: p.id === focus, file: p.file, group: p.group,
-          hover: hover.current === p.id, ring: ring.current === p.id, armed: tapToOpen.armed === p.id, lit: sp.id !== null && sp.lit ? sp.lit.has(p.id) : null,
+          hover: hover.current === p.id, ring: ring.current === p.id, armed: tapToOpen.armed === p.id, lit: sp.id !== null && sp.lit ? sp.lit.has(p.id) : null, faded: !!faded?.has(p.id),
           map: { x: p.x, y: p.y, w: p.w, h: p.h }, textScale: p.text, boxScale: p.scale,
           rect: rect(p.x, p.y, p.w, p.h),
           polygon: p.outline.kind === 'polygon' ? p.outline.points.map(([x, y]) => [X(x), Y(y)] as [number, number]) : null,
@@ -1129,6 +1163,9 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
       className={`graph-flow${nested && !tracing ? ' is-nested' : ''}${layout === 'voronoi' && !tracing ? ' is-voronoi' : ''}`}
       data-layout={tracing ? 'trace' : layout}
       data-ready={size && (layout !== 'voronoi' || tracing || voronoi) ? 'true' : undefined}
+      tabIndex={-1}
+      role="group"
+      aria-label="Graph canvas: the arrow keys step through the tree"
       onKeyDown={onKeyDown}
     >
       <canvas

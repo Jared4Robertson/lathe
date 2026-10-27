@@ -75,7 +75,6 @@ export const COMMANDS: readonly Command[] = [
   { id: 'chooseColorMode', title: 'Light, dark or system', group: 'View', keys: [], when: 'global' },
   { id: 'openAppearance', title: 'Open Appearance settings', group: 'View', keys: [], when: 'global' },
   // Graph
-  { id: 'graphMove', title: 'Move between boxes', group: 'Graph', keys: ['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp'], when: 'graph', local: true },
   { id: 'graphActivate', title: 'Center on the focused box, or open or close a group', group: 'Graph', keys: ['Enter'], when: 'graph', local: true },
   { id: 'graphDepthUp', title: 'More depth', group: 'Graph', keys: ['+', '='], when: 'graph' },
   { id: 'graphDepthDown', title: 'Less depth', group: 'Graph', keys: ['-'], when: 'graph' },
@@ -83,11 +82,12 @@ export const COMMANDS: readonly Command[] = [
   { id: 'graphFit', title: 'Frame the focus again', group: 'Graph', keys: ['.'], when: 'graph' },
   { id: 'graphLinks', title: 'Links on or off: the center\'s own links, one step', group: 'Graph', keys: ['l'], when: 'graph' },
   { id: 'graphLayout', title: 'Tree, Nested or Voronoi layout: parents beside their children, or made of them as boxes or cells', group: 'Graph', keys: ['v'], when: 'graph' },
-  // Stepping through the tree, as a file explorer does. Alt+Left and Alt+Right stay the browser's Back and Forward, so siblings take Shift too.
-  { id: 'graphStepOut', title: 'Step out to the parent', group: 'Graph', keys: ['Alt+ArrowUp'], when: 'graph' },
-  { id: 'graphStepIn', title: 'Step in to the first child', group: 'Graph', keys: ['Alt+ArrowDown'], when: 'graph' },
-  { id: 'graphStepPrevious', title: 'Step to the previous sibling', group: 'Graph', keys: ['Alt+Shift+ArrowLeft'], when: 'graph' },
-  { id: 'graphStepNext', title: 'Step to the next sibling', group: 'Graph', keys: ['Alt+Shift+ArrowRight'], when: 'graph' },
+  // Stepping through the tree, as a file explorer does, with the plain arrows while the graph has focus (after a click on
+  // its canvas or a box); never while a text field has it. Each step moves the graph's focus. Tab steps through the boxes.
+  { id: 'graphStepOut', title: 'Step out to the parent', group: 'Graph', keys: ['ArrowLeft'], when: 'graph', local: true },
+  { id: 'graphStepIn', title: 'Step in to the first child', group: 'Graph', keys: ['ArrowRight'], when: 'graph', local: true },
+  { id: 'graphStepPrevious', title: 'Step to the previous sibling', group: 'Graph', keys: ['ArrowUp'], when: 'graph', local: true },
+  { id: 'graphStepNext', title: 'Step to the next sibling', group: 'Graph', keys: ['ArrowDown'], when: 'graph', local: true },
   // Lists
   { id: 'focusSearch', title: 'Focus the nearest search box', group: 'Lists', keys: ['/'], when: 'global' },
   { id: 'treeExpand', title: 'Expand the row (or move into it)', group: 'Lists', keys: ['ArrowRight'], when: 'list', local: true },

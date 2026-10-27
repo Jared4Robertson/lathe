@@ -27,10 +27,10 @@ describe('graph columns by tree depth', () => {
     const byParent = new Map<string, Set<number>>();
     for (const [child, parent] of parentOf) byParent.set(parent, (byParent.get(parent) ?? new Set()).add(column.get(child)!));
     for (const cols of byParent.values()) expect(cols.size).toBe(1);
-    // In the map: the records straight in a domain's folders, whatever their stage and kind, at one x.
+    // In the map: the records straight in a domain's folders, whatever their stage and kind, at one level; a folder's records at one x.
     const members = ['P-D-A1', 'P-D-CAP01', 'P-D-UC01-FL', 'P-D-EN02-TB', 'P-D-INV01-T'];
     expect(new Set(members.map((id) => map.nodes.get(id)!.level)).size).toBe(1);
-    expect(new Set(members.map(x)).size).toBe(1);
+    expect(new Set(['P-D-A1', 'P-D-A2', 'P-D-A3', 'P-D-A4'].map(x)).size).toBe(1);
   });
 
   it('LA-EXP-T79 The focus\'s ancestors sit one column each to its left and its descendants to its right', async () => {

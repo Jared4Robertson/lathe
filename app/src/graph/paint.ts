@@ -51,6 +51,8 @@ export interface PaintState {
   armed: string | null;
   /** The hover spotlight: the boxes and lines it keeps bright, and how far its dimming has faded in (0 to 1). */
   lit: ReadonlySet<string> | null;
+  /** On the opening frame, the boxes of other branches that cross its top or bottom edge, drawn faded so nothing is shown cut (frameOnMap). */
+  faded: ReadonlySet<string> | null;
   litLines: ReadonlySet<string> | null;
   spot: number;
 }
@@ -162,7 +164,7 @@ export function paint(ctx: CanvasRenderingContext2D, dpr: number, cam: Camera, f
 
   for (const p of frame.plates) {
     if (!onScreen(p, cam)) continue;
-    ctx.globalAlpha = dim(!!state.lit?.has(p.id));
+    ctx.globalAlpha = dim(!!state.lit?.has(p.id)) * (state.faded?.has(p.id) ? look.contextOpacity : 1);
     paintBox(ctx, p, cam, look, fonts, state, X, Y);
   }
 
