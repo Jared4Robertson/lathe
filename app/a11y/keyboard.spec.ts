@@ -222,6 +222,9 @@ test.describe('keyboard on a phone', () => {
     }
   });
 
+});
+
+test.describe('changing records by keyboard', () => {
   test('edit a record with the keyboard, and focus comes back to its actions', async ({ page }) => {
     const restore = keepData();
     try {
