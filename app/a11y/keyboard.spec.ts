@@ -45,7 +45,7 @@ async function open(page: Page, url: string, ready = '.focus-views .pane-title')
 
 test.describe('keyboard', () => {
   test('LA-PLT-T98 Tab reaches every control and comes back round, with no trap', async ({ page }) => {
-    await open(page, `${RECORD}?view=wiki,graph`, '.pane-graph .graph-flow .react-flow__node');
+    await open(page, `${RECORD}?view=wiki,graph`, '.pane-graph .graph-flow .graph-box');
     // Every control the page draws that Tab should reach: buttons, links and fields not hidden or disabled.
     const reachable = await page.evaluate(() => {
       const all = [...document.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])')];
@@ -116,19 +116,19 @@ test.describe('keyboard', () => {
   });
 
   test('LA-PLT-T99 re-center the graph with the arrow keys and Enter', async ({ page }) => {
-    await open(page, `${RECORD}?view=graph`, '.pane-graph .graph-flow .react-flow__node');
-    await tabUntil(page, (el) => !!el.closest('.react-flow__node'), 'a box in the graph');
-    const first = await page.evaluate(() => document.activeElement!.closest('.react-flow__node')!.getAttribute('data-id'));
+    await open(page, `${RECORD}?view=graph`, '.pane-graph .graph-flow .graph-box');
+    await tabUntil(page, (el) => !!el.closest('.graph-box'), 'a box in the graph');
+    const first = await page.evaluate(() => document.activeElement!.closest('.graph-box')!.getAttribute('data-id'));
     let target = first;
     for (let i = 0; i < 8 && (target === first || target === 'LA-PLT-UC05' || target!.startsWith('file:') || target!.includes('/')); i++) {
       await page.keyboard.press('ArrowRight');
-      target = await page.evaluate(() => document.activeElement!.closest('.react-flow__node')?.getAttribute('data-id') ?? '');
+      target = await page.evaluate(() => document.activeElement!.closest('.graph-box')?.getAttribute('data-id') ?? '');
     }
     expect(target, 'the arrow keys move between boxes').not.toBe(first);
     await page.keyboard.press('Enter');
     await expect(page).toHaveURL(new RegExp(target!));
     // LA-PLT-T100: focus follows the box that became the center.
-    await expect.poll(() => page.evaluate(() => document.activeElement?.closest('.react-flow__node')?.getAttribute('data-id'))).toBe(target);
+    await expect.poll(() => page.evaluate(() => document.activeElement?.closest('.graph-box')?.getAttribute('data-id'))).toBe(target);
   });
 
   test('LA-PLT-T99 fold and unfold a row with the keyboard', async ({ page }) => {

@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { expectStable, openPage, step } from './measure';
 import { DOMAIN, FOCUS, GRAPH_CANVAS, GRAPH_HEADER, RECORD, SHELL } from './scenarios';
+import { reachableBoxes } from './scene';
 
 // LA-PLT-T72: moving between records through the nav, a link, a graph click, Back and quick
 // find keeps the shell, the pane bar and the side bar where they were. The page's content
@@ -14,17 +15,11 @@ const TITLE = [FOCUS[1]];
 
 /** The IDs of the graph's boxes wholly inside its canvas, in DOM order (the map runs past the canvas's edges). */
 /**
- * A box may lie partly outside the canvas, past its edge: a box is in view when its left part is and it is 24 px tall or more, and is clicked or hovered there.
+ * The record boxes a click or the pointer can reach on the graph's canvas (a box may lie partly
+ * outside it, past its edge), with a point on each where the pointer finds it.
  */
-const AT_LEFT = { x: 20, y: 12 };
-async function boxesInView(page: Page, except = ''): Promise<string[]> {
-  return page.evaluate((except) => {
-    const canvas = document.querySelector('.graph-flow')!.getBoundingClientRect();
-    return [...document.querySelectorAll<HTMLElement>('.graph-flow .react-flow__node[data-id^="LA-"]')]
-      .filter((el) => el.dataset.id !== except)
-      .filter((el) => { const r = el.getBoundingClientRect(); return r.height >= 24 && r.left >= canvas.left && r.left + 40 <= canvas.right && r.top >= canvas.top && r.bottom <= canvas.bottom - 40; })
-      .map((el) => el.dataset.id!);
-  }, except);
+async function boxesInView(page: Page, except = ''): Promise<{ id: string; at: { x: number; y: number } }[]> {
+  return (await reachableBoxes(page)).filter((b) => b.id !== except);
 }
 
 test.describe('navigate', () => {
@@ -51,13 +46,13 @@ test.describe('navigate', () => {
 
   test('LA-PLT-T72 by clicking a graph node, then Back', async ({ page }) => {
     await openPage(page, `${RECORD}?view=graph`);
-    await page.locator('.graph-flow .react-flow__node').nth(1).waitFor();
+    await page.locator('.graph-flow .graph-box').nth(1).waitFor({ state: 'attached' });
+    await page.waitForTimeout(500);
     const keys = [...KEYS, GRAPH_CANVAS, GRAPH_HEADER];
     const [inView] = await boxesInView(page, 'LA-PLT-UC05');
     expect(inView, 'a box in view').toBeTruthy();
-    const node = page.locator(`.graph-flow .react-flow__node[data-id="${inView}"]`);
     const r = await step(page, 'navigate', 'graph click', { keys, allow: CONTENT, resizes: TITLE }, async () => {
-      await node.click({ position: AT_LEFT });
+      await page.mouse.click(inView.at.x, inView.at.y);
       await page.waitForURL((u) => !u.pathname.endsWith('LA-PLT-UC05'));
     });
     expectStable(r);

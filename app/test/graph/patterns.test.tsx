@@ -6,6 +6,7 @@ import { canTrace, neighborhood, traceChain } from '../../src/graph/model';
 import { indexWorkspace } from '../../src/specs/data';
 import { patternWorkspace } from '../fixtures/patterns';
 import { openApp, startAtDepth } from '../helpers';
+import { boxElement, scene } from './scene';
 
 // Patterns in the graph: a pattern's rules sit under it, one column to its right, and a use
 // case's `follows` link is a cross-link.
@@ -52,9 +53,9 @@ describe('patterns in the graph', () => {
   it('LA-EXP-T61 The graph view of a pattern draws its rules and the follows lines with their own style', async () => {
     startAtDepth(1);
     await openApp('/DM-PAT-CHECKOUT?view=graph', { workspace: patternWorkspace() });
-    await waitFor(() => expect(document.querySelector('.react-flow__node[data-id="DM-PAT-CHECKOUT-R01"]')).not.toBeNull());
+    await waitFor(() => expect(boxElement('DM-PAT-CHECKOUT-R01')).not.toBeNull());
     fireEvent.click(screen.getByRole('button', { name: 'Links' }));
-    await waitFor(() => expect(document.querySelector('.react-flow__edge-path.rel-pattern')).not.toBeNull());
+    await waitFor(() => expect(scene().lines.some((l) => l.link && l.style === 'pattern')).toBe(true));
     expect(screen.getByRole('region', { name: 'Legend' })).toHaveTextContent('follows');
   });
 });

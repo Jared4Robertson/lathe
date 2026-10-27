@@ -22,6 +22,8 @@ class MemoryStorage {
   setItem(key: string, value: string) { this.items.set(key, String(value)); }
 }
 if (typeof window !== 'undefined') {
+  // jsdom draws nothing on a canvas: the graph computes its scene and draws nothing (getContext gives null, as a browser without 2D would).
+  HTMLCanvasElement.prototype.getContext = (() => null) as typeof HTMLCanvasElement.prototype.getContext;
   for (const name of ['localStorage', 'sessionStorage']) {
     Object.defineProperty(window, name, { configurable: true, value: new MemoryStorage() });
     Object.defineProperty(globalThis, name, { configurable: true, value: (window as unknown as Record<string, unknown>)[name] });

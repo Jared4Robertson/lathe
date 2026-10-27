@@ -10,10 +10,17 @@ import './desktopRecord.css';
 // title opens the shell's native menu of the same three. The product's error count goes to the Dock.
 // In a browser none of this is drawn or listened for, so the app is unchanged there.
 
-/** The record a right-click is on: a graph node, a link to a record's page, or the page's own title. */
-export function recordIdAt(target: Element | null, pathname: string, known: (id: string) => boolean): string | null {
+/**
+ * The record a right-click is on: a graph box (on the graph's canvas, the box under the point, found
+ * by its hit test; in its keyboard layer, the focused box), a Model view node, a link to a record's
+ * page, or the page's own title.
+ */
+export function recordIdAt(target: Element | null, pathname: string, known: (id: string) => boolean, at?: { x: number; y: number }): string | null {
   if (!target) return null;
-  const node = target.closest('.react-flow__node[data-id]')?.getAttribute('data-id');
+  const canvas = target.closest<HTMLElement & { graphHit?: (x: number, y: number) => string | null }>('.graph-flow');
+  const hit = at && target.tagName === 'CANVAS' && canvas?.graphHit ? canvas.graphHit(at.x, at.y) : null;
+  if (hit && known(hit)) return hit;
+  const node = target.closest('.react-flow__node[data-id], .graph-box[data-id]')?.getAttribute('data-id');
   if (node && known(node)) return node;
   const href = target.closest('a[href]')?.getAttribute('href');
   if (href?.startsWith('/')) {
@@ -47,7 +54,7 @@ export function useDesktopRecordMenu(index: SpecIndex | null) {
       const target = event.target instanceof Element ? event.target : null;
       // Text fields and selected text keep the shell's Cut, Copy and Paste menu.
       if (target?.closest('input, textarea, [contenteditable="true"]') || window.getSelection()?.toString().trim()) return;
-      const id = recordIdAt(target, window.location.pathname, (candidate) => index.byId.has(candidate));
+      const id = recordIdAt(target, window.location.pathname, (candidate) => index.byId.has(candidate), { x: event.clientX, y: event.clientY });
       if (!id) return;
       event.preventDefault();
       showRecordMenu(id);

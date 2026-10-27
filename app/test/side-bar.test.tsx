@@ -6,12 +6,13 @@ import { sideModeOf, sideStateFrom } from '../src/views/sideBarState';
 import { entityWorkspace } from './fixtures/entities';
 import { main, openApp, openSideBar, sideBar } from './helpers';
 import { testWorkspace } from './graph/workspace';
+import { boxElement, hoverBox, leaveCanvas } from './graph/scene';
 
 // The side bar (brief 64, LA-EXP-UC12): a secondary side bar with three views,
 // Details, Outline and History, closed in the Wiki view and open in the Graph and Model views,
 // remembered per view mode and per tab.
 
-const node = (id: string) => document.querySelector<HTMLElement>(`.react-flow__node[data-id="${id}"]`);
+const node = (id: string) => boxElement(id);
 const side = () => within(sideBar());
 const switcher = () => within(side().getByRole('group', { name: 'Side bar views' }));
 const name = () => sideBar().querySelector('.side-bar-name')?.textContent;
@@ -80,13 +81,13 @@ describe('the side bar', () => {
     await waitFor(() => expect(side().getByRole('heading', { name: /Connected in the graph/ })).toBeInTheDocument());
 
     // Hover: the node lit by the spotlight.
-    fireEvent.mouseEnter(node('P-D-V01')!);
+    hoverBox('P-D-V01');
     await waitFor(() => expect(name()).toBe('Thing page'));
     expect(sideBar().querySelector('.side-bar-identity .eyebrow')).toHaveTextContent(/^Under the pointer/);
     expect(side().getByRole('link', { name: 'Open' })).toHaveAttribute('href', '/P-D-V01?view=graph');
     // Leaving gives the page's record back, in the same box.
     const box = sideBar();
-    fireEvent.mouseLeave(node('P-D-V01')!);
+    leaveCanvas();
     await waitFor(() => expect(name()).toBe('The owner is shown'));
     expect(sideBar()).toBe(box);
     // Keyboard focus does the same.

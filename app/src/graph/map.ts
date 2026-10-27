@@ -1,5 +1,5 @@
 import type { SpecIndex } from '../specs/data';
-import { BORDER, largestFit, linesIn, treeLabel, type MapLabel, type WrappedLabel } from './text';
+import { BORDER, largestFit, linesIn, treeLabel, type MapLabel, type WrappedLabel, textMeasure } from './text';
 import { outlineInset, type Shape } from './shapes';
 import { treeChildren, treeParent } from './tree';
 
@@ -177,10 +177,11 @@ const cache = new WeakMap<SpecIndex, Map<string, GraphMap>>();
 export function graphMap(index: SpecIndex, root: string): GraphMap {
   let maps = cache.get(index);
   if (!maps) { maps = new Map(); cache.set(index, maps); }
-  const known = maps.get(root);
+  const key = `${textMeasure().key}|${root}`;
+  const known = maps.get(key);
   if (known) return known;
   const map = layoutTree([root], (id) => treeChildren(index, id), (id) => treeLabel(index, id));
-  maps.set(root, map);
+  maps.set(key, map);
   return map;
 }
 

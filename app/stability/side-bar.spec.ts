@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { expectStable, openPage, step } from './measure';
 import { GRAPH_CANVAS, GRAPH_HEADER, RECORD } from './scenarios';
+import { reachableBoxes } from './scene';
 
 // LA-PLT-T89: the side bar (brief 64). Switching its view between Details, Outline and History,
 // and the node under the pointer changing what Details shows, change only the side bar's own
@@ -15,23 +16,17 @@ const ALLOW = ['.side-bar'];
 
 /** The IDs of the graph's boxes wholly inside its canvas, in DOM order (the map runs past the canvas's edges). */
 /**
- * A box may lie partly outside the canvas, past its edge: a box is in view when its left part is and it is 24 px tall or more, and is clicked or hovered there.
+ * The record boxes a click or the pointer can reach on the graph's canvas (a box may lie partly
+ * outside it, past its edge), with a point on each where the pointer finds it.
  */
-const AT_LEFT = { x: 20, y: 12 };
-async function boxesInView(page: Page, except = ''): Promise<string[]> {
-  return page.evaluate((except) => {
-    const canvas = document.querySelector('.graph-flow')!.getBoundingClientRect();
-    return [...document.querySelectorAll<HTMLElement>('.graph-flow .react-flow__node[data-id^="LA-"]')]
-      .filter((el) => el.dataset.id !== except)
-      .filter((el) => { const r = el.getBoundingClientRect(); return r.height >= 24 && r.left >= canvas.left && r.left + 40 <= canvas.right && r.top >= canvas.top && r.bottom <= canvas.bottom - 40; })
-      .map((el) => el.dataset.id!);
-  }, except);
+async function boxesInView(page: Page, except = ''): Promise<{ id: string; at: { x: number; y: number } }[]> {
+  return (await reachableBoxes(page)).filter((b) => b.id !== except);
 }
 
 test.describe('side bar', () => {
   test('LA-PLT-T89 switching the side bar\'s view moves nothing outside it', async ({ page }) => {
     await openPage(page, `${RECORD}?view=wiki,graph`);
-    await page.locator('.graph-flow .react-flow__node').first().waitFor();
+    await page.locator('.graph-flow .graph-box').first().waitFor({ state: 'attached' });
     await page.waitForTimeout(600);
     for (const view of ['Outline', 'History', 'Details']) {
       const r = await step(page, 'side bar', `switch to ${view}`, { keys: KEYS, allow: ALLOW }, async () => {
@@ -44,14 +39,13 @@ test.describe('side bar', () => {
 
   test('LA-PLT-T89 Details following the node under the pointer moves nothing outside it', async ({ page }) => {
     await openPage(page, `${RECORD}?view=wiki,graph`);
-    const nodes = page.locator('.graph-flow .react-flow__node[data-id^="LA-"]');
-    await nodes.first().waitFor();
+    await page.locator('.graph-flow .graph-box[data-id^="LA-"]').first().waitFor({ state: 'attached' });
     await page.waitForTimeout(600);
     const r = await step(page, 'side bar', 'hover nodes, then leave', { keys: KEYS, allow: ALLOW }, async () => {
-      const ids = (await boxesInView(page)).slice(0, 3);
-      expect(ids.length, 'boxes in view').toBeGreaterThan(0);
-      for (const id of ids) {
-        await page.locator(`.graph-flow .react-flow__node[data-id="${id}"]`).hover({ position: AT_LEFT });
+      const boxes = (await boxesInView(page)).slice(0, 3);
+      expect(boxes.length, 'boxes in view').toBeGreaterThan(0);
+      for (const { at } of boxes) {
+        await page.mouse.move(at.x, at.y);
         await page.waitForTimeout(150);
       }
       await page.mouse.move(5, 5);

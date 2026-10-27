@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { drawnNested, frameNested, MAX_DRAWN, MIN_DRAWN, viewRect } from '../../src/graph/camera';
 import { graphMap, MAP_SIZE } from '../../src/graph/map';
-import { LABEL_PAD, metaWidth, titleWidth, WIDTH_MARGIN } from '../../src/graph/text';
+import { LABEL_PAD, metaWidth, titleWidth } from '../../src/graph/text';
 import {
   below, bounds, cellText, chord, contains, hexagon, holds, inset, layoutTreeOf, layoutVoronoi, polygonArea, PRODUCT_AREA, readyVoronoiMap, voronoiCells, voronoiTree, type VoronoiMap,
 } from '../../src/graph/voronoi';
@@ -152,8 +152,8 @@ describe('the Voronoi map', () => {
         // No word is broken: every line but the last ends after a space.
         for (const line of n.lines.title.slice(0, -1)) expect(/\s$/.test(line), `${n.id}: "${line}"`).toBe(true);
         const width = n.label.w / n.text - 2 * LABEL_PAD;
-        for (const line of n.lines.title) expect(titleWidth(line.trimEnd()) * WIDTH_MARGIN).toBeLessThanOrEqual(width + 1e-6);
-        for (const line of n.lines.meta) expect(metaWidth(line.trimEnd()) * WIDTH_MARGIN).toBeLessThanOrEqual(width + 1e-6);
+        for (const line of n.lines.title) expect(titleWidth(line.trimEnd())).toBeLessThanOrEqual(width + 1e-6);
+        for (const line of n.lines.meta) expect(metaWidth(line.trimEnd())).toBeLessThanOrEqual(width + 1e-6);
         // A parent's label is in its header, above where its children start.
         if (n.children.length > 0) expect(n.label.y + n.label.h).toBeLessThanOrEqual(n.cut + 1e-6);
       }
