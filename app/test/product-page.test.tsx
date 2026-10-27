@@ -16,14 +16,14 @@ describe('product page', () => {
     const shop = card('Shopping');
     expect(within(shop).getByRole('link', { name: /DM-SHOP\s*Shopping/ })).toHaveAttribute('href', '/DM-SHOP');
     expect(within(shop).getByText('UC requirements')).toBeInTheDocument();
-    expect(within(shop).getByText('Domain rules')).toBeInTheDocument();
+    expect(within(shop).getByText('Invariants')).toBeInTheDocument();
     expect(within(shop).getByRole('img', { name: 'designed: 2 of 2' })).toBeInTheDocument();
     expect(within(shop).getByRole('img', { name: 'proved: 1 of 2' })).toBeInTheDocument();
     expect(within(shop).getByRole('img', { name: 'proved: 0 of 1' })).toBeInTheDocument();
     // A full bar is drawn full; a partial one is drawn to its share.
     const fills = [...shop.querySelectorAll<HTMLElement>('.bar-fill')].map((f) => [f.style.width, f.classList.contains('full')]);
     expect(fills).toEqual([
-      ['100%', true], ['100%', true], ['0%', false], ['0%', false],
+      ['100%', true], ['0%', false], ['0%', false], ['100%', false],
       ['100%', true], ['50%', false], ['50%', false], ['0%', false],
     ]);
   });
@@ -32,7 +32,7 @@ describe('product page', () => {
     await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     expect(bars(card('Shopping'))).toEqual([
-      'designed 1/1', 'built 1/1', 'proved 0/1', 'planned 0/1',
+      'designed 1/1', 'built 0/1', 'proved 0/1', 'planned 1/1',
       'designed 2/2', 'built 1/2', 'proved 1/2', 'planned 0/2',
     ]);
     // A count of zero is drawn as a bar like any other.
@@ -56,14 +56,30 @@ describe('product page', () => {
     const items = within(questions).getAllByRole('listitem');
     expect(items.map((li) => li.textContent)).toEqual([
       expect.stringMatching(/DM-Q01.*Should the shop ship abroad\?.*owner Owner.*about DM/),
-      expect.stringMatching(/DM-SHOP-Q01.*What happens to a basket overnight\?.*owner Ana.*about DM-SHOP-A1/),
+      expect.stringMatching(/DM-SHOP-Q01.*What happens to a basket overnight\?.*owner Owner.*about DM-SHOP-A1/),
     ]);
 
     const problems = within(section(/^Problems in this product/)).getAllByRole('listitem');
     // Only this product's problems, errors first.
     expect(problems.map((li) => li.querySelector('.severity')?.textContent)).toEqual(['error', 'warning', 'warning', 'warning']);
-    expect(problems[0]).toHaveTextContent('DM-SHOP-T01');
-    expect(main()).not.toHaveTextContent('NF-NOTE links to NF-NOTE-X9');
+    expect(problems[0]).toHaveTextContent('DM-SHOP-UC01-R01-T01');
+    expect(main()).not.toHaveTextContent('NF-NOTE has no use cases yet');
+  });
+
+  it('LA-TRC-T86 The product page lists what sits at product level in its stages, each in its stage\'s color', async () => {
+    await openApp('/DM');
+    await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
+    const level = section(/^Product level/);
+    const stages = [...level.querySelectorAll('.stage')].map((s) => [s.className, s.querySelector('.stage-title')?.textContent]);
+    expect(stages).toEqual([
+      ['stage stage-domain-model', 'Domain model1'],
+      ['stage stage-interaction-design', 'Interaction design1'],
+    ]);
+    expect(within(level).getByRole('heading', { name: /^Value objects/ })).toBeInTheDocument();
+    expect(within(level).getByRole('heading', { name: /^Views/ })).toBeInTheDocument();
+    expect(within(level).getByRole('link', { name: /DM-V01\s*Basket page/ })).toHaveAttribute('href', '/DM-V01');
+    // A domain's records are never listed at product level.
+    expect(level).not.toHaveTextContent('DM-SHOP-SP01');
   });
 
   it("LA-TRC-T85 The product page sums up the product's coverage, open questions and problems", async () => {
@@ -72,7 +88,7 @@ describe('product page', () => {
     const summary = section('Summary');
     const value = (name: string) => within(summary).getByText(name).nextElementSibling?.textContent;
     expect(value('Designed')).toBe('3 of 4 obligations');
-    expect(value('Built')).toBe('2 of 4 obligations');
+    expect(value('Built')).toBe('1 of 4 obligations');
     expect(value('Proved')).toBe('1 of 4 obligations');
     expect(value('Open questions')).toBe('2');
     expect(value('Errors')).toBe('1');

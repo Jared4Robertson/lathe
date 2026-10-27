@@ -61,7 +61,7 @@ describe('form generation from the schema', () => {
     const fields = partForms(schema, 'entity').find((p) => p.table === 'entity_field')!;
     expect(fields.position).toBe('position');
     expect(fields.fields.map((f) => [f.name, f.input])).toEqual([
-      ['name', 'line'], ['meaning', 'line'], ['type', 'choice'], ['type_value_object_id', 'record'], ['type_aggregate_id', 'record'],
+      ['name', 'line'], ['meaning', 'text'], ['type', 'choice'], ['type_value_object_id', 'record'], ['type_aggregate_id', 'record'],
       ['required', 'boolean'], ['column_name', 'line'], ['example', 'line'],
     ]);
     // A table's keys name the invariant a unique key enforces and the table a foreign key points at.
@@ -226,7 +226,7 @@ describe('before a removal', () => {
   it('names what still references the record, and what goes with it', () => {
     const index = indexOf(patternWorkspace());
     const referrers = referrersOf(index, 'DM-SHOP-UC01').map((r) => `${r.id} ${r.how}`);
-    expect(referrers).toEqual(['DM-SHOP-UC01-R01 sits under it', 'DM-SHOP-UC01-R02 sits under it', 'DM-SHOP-UC01-FL sits under it']);
+    expect(referrers).toEqual(['DM-SHOP-UC01-FL sits under it', 'DM-SHOP-UC01-R01 sits under it', 'DM-SHOP-UC01-R02 sits under it']);
     expect(referrersOf(index, 'DM-PAT-AUDIT').map((r) => r.how)).toEqual(expect.arrayContaining(['links to it (follows)', 'names it in a setting value row']));
     // A value object is named by the fields typed by it.
     expect(referrersOf(index, 'DM-VO01').map((r) => `${r.id} ${r.how}`)).toEqual(['DM-VO01-C01 sits under it', 'DM-SHOP-EN02 names it in a entity field row']);

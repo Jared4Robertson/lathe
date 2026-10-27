@@ -15,7 +15,7 @@ import { BADGE_TONES } from '../src/graph/plate';
 import { SHAPES } from '../src/graph/shapes';
 import { erdFor } from '../src/model/erd';
 import { ErdKey } from '../src/model/ModelView';
-import { eventWorkspace } from './fixtures/events';
+import { modelWorkspace } from './fixtures/model';
 import { testWorkspace } from './graph/workspace';
 
 const CSS = readFileSync(path.resolve(import.meta.dirname, '../src/styles.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, ' ');
@@ -54,8 +54,10 @@ describe('the Graph view key', () => {
 describe('the Model view key', () => {
   // Box and line classes that answer the pointer or the keyboard, not marks with a meaning.
   const INTERACTION = new Set(['is-focus', 'has-hover-label', 'has-event']);
-  // Every class the stylesheet gives a box or a line, and what in the ERD draws it, checked below.
-  const EXPLAINED = new Set(['tone-other', 'is-highlight', 'erd-event', 'is-dashed', 'rel-raised_by', 'rel-reacts_to', 'is-context']);
+  // Every class the stylesheet gives a box or a line, and what in the ERD draws it, checked below: each box kind's
+  // event storming color (erd-<kind>, explained by its swatch), the other domain's tone, the highlight, dashes and fading.
+  const KINDS = ['aggregate', 'entity', 'command', 'event', 'policy', 'specification', 'read_model', 'query'];
+  const EXPLAINED = new Set(['tone-other', 'is-highlight', 'is-dashed', 'is-context', ...KINDS.map((k) => `erd-${k}`)]);
 
   it('LA-PLT-T134 Every mark a styled ERD box or line can carry is one the key test explains', () => {
     const styled = [...modifiers('erd-box'), ...modifiers('erd-line')].filter((c) => !INTERACTION.has(c));
@@ -63,8 +65,8 @@ describe('the Model view key', () => {
   });
 
   it('LA-PLT-T134 Every box, badge and line an ERD draws is in its key, with what it means', () => {
-    const index = indexOf(eventWorkspace());
-    const scopes = index.workspace.records.filter((r) => ['domain', 'aggregate', 'entity'].includes(r.kind)).map((r) => r.id);
+    const index = indexOf(modelWorkspace());
+    const scopes = index.workspace.records.filter((r) => ['domain', 'aggregate', 'entity', 'command', 'domain_event', 'policy', 'read_model'].includes(r.kind)).map((r) => r.id);
     const missing: string[] = [];
     let drawn = 0;
     for (const scope of scopes) {
@@ -83,8 +85,8 @@ describe('the Model view key', () => {
       for (const box of erd.boxes) {
         drawn++;
         needs(`${box.tone} box`, `.tone-${box.tone}`);
-        if (box.kind === 'event') needs('event', box.highlight ? '.erd-key-event.is-highlight' : '.erd-key-event');
-        else if (box.highlight) needs('highlighted box', '.erd-key-highlight');
+        needs(`${box.kind} box`, `.erd-key-swatch.erd-key-${box.kind}`);
+        if (box.highlight) needs('highlighted box', '.erd-key-highlight');
         if (box.root) needs('root badge', '.erd-root');
         if (box.context) needs('faded box', '.erd-key-context');
         // A box from elsewhere carries its owner in parentheses, which its color's row explains.

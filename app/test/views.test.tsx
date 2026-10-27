@@ -50,8 +50,8 @@ describe('one address, three views', () => {
     await openApp('/P-D-UC01?view=graph', served());
     expect(await screen.findByRole('region', { name: 'Graph pane' })).toBeInTheDocument();
     expect(window.location.pathname + window.location.search).toBe('/P-D-UC01?view=graph');
-    await openApp('/P-D/design/interaction-design/view', served());
-    expect(await screen.findByRole('heading', { level: 1, name: 'Views (1)' })).toBeInTheDocument();
+    await openApp('/P-D/domain-model/term', served());
+    expect(await screen.findByRole('heading', { level: 1, name: 'Terms (1)' })).toBeInTheDocument();
   });
 
   it('LA-EXP-T39 The view toggles open and close panes, at least one stays open, and the open set is remembered and named in the link', async () => {
@@ -84,14 +84,14 @@ describe('one address, three views', () => {
     expect(screen.queryByRole('button', { name: 'Close the graph pane' })).toBeNull();
 
     // Remembered: another record opens in the Graph view.
-    await openApp('/P-D-V01', served());
-    await screen.findByRole('heading', { level: 1, name: 'Thing page' });
+    await openApp('/P-V01', served());
+    await screen.findByRole('heading', { level: 1, name: 'Loan desk' });
     expect(viewToggle('Graph')).toHaveAttribute('aria-pressed', 'true');
     expect(viewToggle('Wiki')).toHaveAttribute('aria-pressed', 'false');
 
     // A link's views win, and become the remembered ones.
-    await openApp('/P-D-V01?view=wiki,graph', served());
-    await screen.findByRole('heading', { level: 1, name: 'Thing page' });
+    await openApp('/P-V01?view=wiki,graph', served());
+    await screen.findByRole('heading', { level: 1, name: 'Loan desk' });
     expect(screen.getByRole('button', { name: 'Close the wiki pane' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Close the graph pane' })).toBeInTheDocument();
     expect(window.localStorage.getItem('lathe:view')).toBe('"wiki,graph"');
@@ -141,20 +141,20 @@ describe('one address, three views', () => {
     const wiki = within(screen.getByRole('region', { name: 'Wiki pane' }));
     await userEvent.setup().click(wiki.getAllByRole('link', { name: /P-D-UC01-R01/ })[0]);
     expect(window.location.pathname).toBe('/P-D-UC01-R01');
-    await waitFor(() => expect(title()).toBe('The owner is shown'));
+    await waitFor(() => expect(title()).toBe('The loan is recorded'));
     await waitFor(() => expect(isCenter('P-D-UC01-R01')).toBe(true));
-    expect(within(screen.getByRole('region', { name: 'Wiki pane' })).getByText('The page MUST show the owner.')).toBeInTheDocument();
+    expect(within(screen.getByRole('region', { name: 'Wiki pane' })).getByText('The loan MUST be recorded.')).toBeInTheDocument();
 
-    // A node in the graph moves the wiki.
-    await waitFor(() => expect(node('P-D-V01')).not.toBeNull());
-    fireEvent.click(node('P-D-V01')!);
-    expect(window.location.pathname + window.location.search).toBe('/P-D-V01?view=wiki,graph');
-    await waitFor(() => expect(title()).toBe('Thing page'));
-    await waitFor(() => expect(isCenter('P-D-V01')).toBe(true));
+    // A node in the graph moves the wiki: the flow step that fulfills it, reached by the Links switch.
+    await waitFor(() => expect(node('P-D-UC01-FL-S01')).not.toBeNull());
+    fireEvent.click(node('P-D-UC01-FL-S01')!);
+    expect(window.location.pathname + window.location.search).toBe('/P-D-UC01-FL-S01?view=wiki,graph');
+    await waitFor(() => expect(title()).toBe('Librarian lends the thing'));
+    await waitFor(() => expect(isCenter('P-D-UC01-FL-S01')).toBe(true));
 
     // Back moves both.
     await back();
-    await waitFor(() => expect(title()).toBe('The owner is shown'));
+    await waitFor(() => expect(title()).toBe('The loan is recorded'));
     await waitFor(() => expect(isCenter('P-D-UC01-R01')).toBe(true));
     // The depth set earlier is kept, through page moves and a trip to the Wiki view.
     expect(screen.getByRole('button', { name: '2' })).toHaveAttribute('aria-pressed', 'true');
@@ -165,18 +165,17 @@ describe('one address, three views', () => {
   });
 
   it('LA-EXP-T41 A group page shows its parent, its kind, and its members with their coverage marks', async () => {
-    // The aggregate holds an event too, so its rules are a group of their own in the tree.
-    const w = addRows(testWorkspace(), 'domain_event', { id: 'P-D-EV01', title: 'Thing lent', aggregate_id: 'P-D-A1' });
-    await openApp('/P-D-A1/domain_rule', { data: w });
-    await screen.findByRole('heading', { level: 1, name: 'Domain rules (2)' });
+    // The aggregate holds entities, events and commands too, so its invariants are a group of their own in the tree.
+    await openApp('/P-D-A3/invariant', served());
+    await screen.findByRole('heading', { level: 1, name: 'Invariants (2)' });
     const wiki = within(screen.getByRole('region', { name: 'Wiki pane' }));
-    expect(wiki.getByRole('link', { name: /P-D-A1\s*Thing/ })).toHaveAttribute('href', '/P-D-A1');
-    expect(wiki.getByText(/A fact that must always hold/)).toBeInTheDocument();
-    const members = within(wiki.getByRole('list', { name: 'Domain rules of P-D-A1/domain_rule' })).getAllByRole('listitem');
-    expect(members.map((li) => li.querySelector('code')?.textContent)).toEqual(['P-D-DR01', 'P-D-DR02']);
-    expect(within(members[0]).getByText('not proved')).toBeInTheDocument();
-    expect(within(members[1]).getByText('not satisfied')).toBeInTheDocument();
-    expect(within(members[1]).getByText('2 warnings')).toBeInTheDocument();
+    expect(wiki.getByRole('link', { name: /P-D-A3\s*Loan/ })).toHaveAttribute('href', '/P-D-A3');
+    expect(wiki.getByText(/A rule that holds for one aggregate on every change/)).toBeInTheDocument();
+    const members = within(wiki.getByRole('list', { name: 'Invariants of P-D-A3/invariant' })).getAllByRole('listitem');
+    expect(members.map((li) => li.querySelector('code')?.textContent)).toEqual(['P-D-INV01', 'P-D-INV02']);
+    expect(within(members[0]).queryByText('not proved')).toBeNull();
+    expect(within(members[1]).getByText('not proved')).toBeInTheDocument();
+    expect(within(members[1]).getByText('1 warning')).toBeInTheDocument();
   });
 
   it('LA-EXP-T42 Product and domain pages have the same views, their graph centered on the product or domain', async () => {
@@ -190,15 +189,14 @@ describe('one address, three views', () => {
 
   it('LA-EXP-T43 Lists in the side bar, the graph part of the side bar and group pages stay at 10 rows and can be searched', async () => {
     const w = testWorkspace();
-    for (let i = 2; i <= 13; i++) {
-      const id = `P-D-UC01-R${String(i).padStart(2, '0')}`;
-      addRows(w, 'requirement', { id, title: `Rule ${i}`, use_case_id: 'P-D-UC01', statement: `Rule ${i} MUST hold.` });
+    for (let i = 3; i <= 13; i++) {
+      const id = `P-D-INV${String(i).padStart(2, '0')}`;
+      addRows(w, 'invariant', { id, title: `Rule ${i}`, aggregate_id: 'P-D-A3', statement: `Rule ${i} MUST hold.` });
     }
-    // A question too, so the requirements are a group of their own in the tree.
-    addRows(w, 'question', { id: 'P-D-UC01-Q01', title: 'Who may lend?', product_id: 'P', domain_id: 'P-D', use_case_id: 'P-D-UC01', owner: 'Ana' });
-    await openApp('/P-D-UC01/requirement?view=wiki,graph', { data: w });
-    await screen.findByRole('heading', { level: 1, name: 'UC requirements (13)' });
-    expect(within(screen.getByRole('region', { name: 'Wiki pane' })).getByRole('searchbox', { name: 'Filter UC requirements of P-D-UC01/requirement' })).toBeInTheDocument();
+    // The aggregate holds entities, events and commands too, so its invariants are a group of their own in the tree.
+    await openApp('/P-D-A3/invariant?view=wiki,graph', { data: w });
+    await screen.findByRole('heading', { level: 1, name: 'Invariants (13)' });
+    expect(within(screen.getByRole('region', { name: 'Wiki pane' })).getByRole('searchbox', { name: 'Filter invariants of P-D-A3/invariant' })).toBeInTheDocument();
     await waitFor(() => expect(within(sideBar()).getByRole('searchbox', { name: 'Filter connected records' })).toBeInTheDocument());
     // The side bar's Outline: the graph's records by level, each list searchable past 10 rows (brief 64).
     fireEvent.click(within(sideBar()).getByRole('button', { name: 'Outline' }));
@@ -277,16 +275,16 @@ describe('the side bar', () => {
     expect(JSON.parse(window.localStorage.getItem('lathe:side-bar')!)).toMatchObject({ graph: { open: false } });
     // Remembered in the Graph view of another record, in a new session's first tab too.
     window.sessionStorage.clear();
-    await openApp('/P-D-V01?view=graph', served());
-    await screen.findByRole('heading', { level: 1, name: 'Thing page' });
+    await openApp('/P-V01?view=graph', served());
+    await screen.findByRole('heading', { level: 1, name: 'Loan desk' });
     expect(screen.queryByRole('complementary', { name: 'Side bar' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Show the side bar' }));
-    expect(within(sideBar()).getByText('Thing page', { selector: '.side-bar-name' })).toBeInTheDocument();
+    expect(within(sideBar()).getByText('Loan desk', { selector: '.side-bar-name' })).toBeInTheDocument();
     expect(screen.getAllByRole('complementary', { name: 'Side bar' })).toHaveLength(1);
 
     // The Wiki view keeps its own choice: closed until opened there.
-    await openApp('/P-D-V01?view=wiki', served());
-    await screen.findByRole('heading', { level: 1, name: 'Thing page' });
+    await openApp('/P-V01?view=wiki', served());
+    await screen.findByRole('heading', { level: 1, name: 'Loan desk' });
     expect(screen.queryByRole('complementary', { name: 'Side bar' })).toBeNull();
   });
 

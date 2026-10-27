@@ -180,6 +180,14 @@ export function StageMark({ stage }: { stage: Stage }) {
   return <span className={`stage-mark stage-${stage}`} aria-hidden="true" />;
 }
 
+/** A record's Stage fact, its color mark beside its stage's label; nothing for a kind outside the stages. */
+export function StageFact({ index, kind }: { index: SpecIndex; kind: string }) {
+  const stage = index.kinds.get(kind)?.stage;
+  if (!stage) return null;
+  const label = index.workspace.stages.find((s) => s.stage === stage)?.label ?? stage;
+  return <div><dt>Stage</dt><dd><StageMark stage={stage} /> {label}</dd></div>;
+}
+
 /** A kind's name in its stage's color, as a badge: the kind's label, and its stage for assistive technology and the tooltip. */
 export function KindBadge({ index, kind }: { index: SpecIndex; kind: string }) {
   const stage = index.kinds.get(kind)?.stage ?? null;

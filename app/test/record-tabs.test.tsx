@@ -40,51 +40,51 @@ describe('tabs for open pages', () => {
 
     // A wiki link opens in the preview tab, replacing it.
     fireEvent.click(within(screen.getByRole('region', { name: 'Wiki pane' })).getAllByRole('link', { name: /P-D-UC01-R01/ })[0]);
-    await waitFor(() => expect(title()).toBe('The owner is shown'));
-    expect(tabs()).toEqual(['The owner is shown*<']);
+    await waitFor(() => expect(title()).toBe('The loan is recorded'));
+    expect(tabs()).toEqual(['The loan is recorded*<']);
 
     // Double-click keeps it; the next open adds a preview after it.
-    fireEvent.doubleClick(tab('The owner is shown'));
-    expect(tabs()).toEqual(['The owner is shown<']);
-    await go('/P-D-V01', 'Thing page');
-    expect(tabs()).toEqual(['The owner is shown', 'Thing page*<']);
+    fireEvent.doubleClick(tab('The loan is recorded'));
+    expect(tabs()).toEqual(['The loan is recorded<']);
+    await go('/P-V01', 'Loan desk');
+    expect(tabs()).toEqual(['The loan is recorded', 'Loan desk*<']);
     // A group tab shows its label.
-    await go('/P-D/design/interaction-design/view', 'Views (1)');
-    expect(tabs()).toEqual(['The owner is shown', 'Views (1)*<']);
-    expect(tab('Views (1)').querySelector('code')).toBeNull();
+    await go('/P-D/domain-model/term', 'Terms (1)');
+    expect(tabs()).toEqual(['The loan is recorded', 'Terms (1)*<']);
+    expect(tab('Terms (1)').querySelector('code')).toBeNull();
 
     // A link to a page already open activates its tab.
-    await go('/P-D-UC01-R01', 'The owner is shown');
-    expect(tabs()).toEqual(['The owner is shown<', 'Views (1)*']);
+    await go('/P-D-UC01-R01', 'The loan is recorded');
+    expect(tabs()).toEqual(['The loan is recorded<', 'Terms (1)*']);
 
     // Clicking a tab activates it and the address follows.
-    fireEvent.click(tab('Views (1)'));
-    await waitFor(() => expect(title()).toBe('Views (1)'));
-    expect(window.location.pathname).toBe('/P-D/design/interaction-design/view');
+    fireEvent.click(tab('Terms (1)'));
+    await waitFor(() => expect(title()).toBe('Terms (1)'));
+    expect(window.location.pathname).toBe('/P-D/domain-model/term');
 
     // Close the group tab; Back to it reopens it, as the preview.
-    fireEvent.click(tab('Views (1)').closest('.tab')!.querySelector('.tab-close[aria-label="Close Views (1)"]')!);
-    await waitFor(() => expect(title()).toBe('The owner is shown'));
-    expect(tabs()).toEqual(['The owner is shown<']);
+    fireEvent.click(tab('Terms (1)').closest('.tab')!.querySelector('.tab-close[aria-label="Close Terms (1)"]')!);
+    await waitFor(() => expect(title()).toBe('The loan is recorded'));
+    expect(tabs()).toEqual(['The loan is recorded<']);
     await act(async () => {
       window.history.back();
       await new Promise((resolve) => window.addEventListener('popstate', resolve, { once: true }));
     });
-    await waitFor(() => expect(title()).toBe('Views (1)'));
-    expect(tabs()).toEqual(['The owner is shown', 'Views (1)*<']);
+    await waitFor(() => expect(title()).toBe('Terms (1)'));
+    expect(tabs()).toEqual(['The loan is recorded', 'Terms (1)*<']);
   });
 
   it('LA-EXP-T116 Closing by button, middle-click or Alt+Shift+W activates the right neighbor or else the left, and the last tab stays as the preview', async () => {
     await openApp('/P-D-UC01', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     fireEvent.doubleClick(tab('Lend a thing'));
-    await go('/P-D-V01', 'Thing page');
-    fireEvent.doubleClick(tab('Thing page'));
+    await go('/P-V01', 'Loan desk');
+    fireEvent.doubleClick(tab('Loan desk'));
     await go('/P-D-A1', 'Thing');
     fireEvent.doubleClick(tab('Thing'));
     // Back to the middle tab, then close it: its right neighbor becomes active.
-    fireEvent.click(tab('Thing page'));
-    await waitFor(() => expect(title()).toBe('Thing page'));
+    fireEvent.click(tab('Loan desk'));
+    await waitFor(() => expect(title()).toBe('Loan desk'));
     key({ key: 'W', code: 'KeyW', altKey: true, shiftKey: true });
     await waitFor(() => expect(title()).toBe('Thing'));
     expect(tabs()).toEqual(['Lend a thing', 'Thing<']);
@@ -107,25 +107,25 @@ describe('tabs for open pages', () => {
     key({ key: 'k', code: 'KeyK', altKey: true });
     key({ key: 'Enter', code: 'Enter' });
     expect(tabs()).toEqual(['Lend a thing<']);
-    await go('/P-D-V01', 'Thing page');
-    expect(tabs()).toEqual(['Lend a thing', 'Thing page*<']);
+    await go('/P-V01', 'Loan desk');
+    expect(tabs()).toEqual(['Lend a thing', 'Loan desk*<']);
 
     key({ key: 'Tab', code: 'Tab', ctrlKey: true });
     await waitFor(() => expect(title()).toBe('Lend a thing'));
     key({ key: 'Tab', code: 'Tab', ctrlKey: true });
-    await waitFor(() => expect(title()).toBe('Thing page'));
+    await waitFor(() => expect(title()).toBe('Loan desk'));
     key({ key: 'Tab', code: 'Tab', ctrlKey: true, shiftKey: true });
     await waitFor(() => expect(title()).toBe('Lend a thing'));
 
     // Only the active tab is in the Tab order; the arrows move focus, Enter activates, Delete closes.
     expect(tab('Lend a thing')).toHaveAttribute('tabindex', '0');
-    expect(tab('Thing page')).toHaveAttribute('tabindex', '-1');
+    expect(tab('Loan desk')).toHaveAttribute('tabindex', '-1');
     tab('Lend a thing').focus();
     fireEvent.keyDown(tab('Lend a thing'), { key: 'ArrowRight' });
-    expect(tab('Thing page')).toHaveFocus();
-    fireEvent.keyDown(tab('Thing page'), { key: 'Enter' });
-    await waitFor(() => expect(title()).toBe('Thing page'));
-    fireEvent.keyDown(tab('Thing page'), { key: 'Delete' });
+    expect(tab('Loan desk')).toHaveFocus();
+    fireEvent.keyDown(tab('Loan desk'), { key: 'Enter' });
+    await waitFor(() => expect(title()).toBe('Loan desk'));
+    fireEvent.keyDown(tab('Loan desk'), { key: 'Delete' });
     await waitFor(() => expect(title()).toBe('Lend a thing'));
     expect(tabs()).toEqual(['Lend a thing<']);
     await waitFor(() => expect(tab('Lend a thing')).toHaveFocus());
@@ -145,14 +145,14 @@ describe('tabs for open pages', () => {
     fireEvent.scroll(wiki());
 
     // A new tab starts from the active one's views and settings; change them there.
-    await go('/P-D-V01', 'Thing page');
-    expect(address()).toBe('/P-D-V01');
+    await go('/P-V01', 'Loan desk');
+    expect(address()).toBe('/P-V01');
     expect(viewToggle('Graph')).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByRole('button', { name: '2' })).toHaveAttribute('aria-pressed', 'true');
     expect(wiki().scrollTop).toBe(0);
     fireEvent.click(screen.getByRole('button', { name: '1' }));
     fireEvent.click(screen.getByRole('button', { name: 'Close the graph pane' }));
-    expect(tabs()).toEqual(['Lend a thing', 'Thing page<']);
+    expect(tabs()).toEqual(['Lend a thing', 'Loan desk<']);
 
     // Back on the first tab: its two panes, its depth and its scroll.
     fireEvent.click(tab('Lend a thing'));
@@ -162,9 +162,9 @@ describe('tabs for open pages', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: '2' })).toHaveAttribute('aria-pressed', 'true'));
     expect(wiki().scrollTop).toBe(120);
     // And the second: the wiki alone.
-    fireEvent.click(tab('Thing page'));
-    await waitFor(() => expect(title()).toBe('Thing page'));
-    expect(address()).toBe('/P-D-V01?view=wiki');
+    fireEvent.click(tab('Loan desk'));
+    await waitFor(() => expect(title()).toBe('Loan desk'));
+    expect(address()).toBe('/P-V01?view=wiki');
     expect(screen.queryByRole('region', { name: 'Graph pane' })).toBeNull();
     // A link naming other views to a page open in a tab shows the tab as it was, and the address says so.
     await go('/P-D-UC01?view=wiki', 'Lend a thing');
@@ -175,22 +175,22 @@ describe('tabs for open pages', () => {
     await openApp('/P-D-UC01?view=wiki,graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     fireEvent.doubleClick(tab('Lend a thing'));
-    await go('/P-D-V01?view=wiki', 'Thing page');
-    fireEvent.doubleClick(tab('Thing page'));
+    await go('/P-V01?view=wiki', 'Loan desk');
+    fireEvent.doubleClick(tab('Loan desk'));
     await go('/P-D-A1', 'Thing');
     fireEvent.click(tab('Lend a thing'));
     await waitFor(() => expect(title()).toBe('Lend a thing'));
     const before = { tabs: tabs(), address: address() };
-    expect(before).toEqual({ tabs: ['Lend a thing<', 'Thing page', 'Thing*'], address: '/P-D-UC01?view=wiki,graph' });
+    expect(before).toEqual({ tabs: ['Lend a thing<', 'Loan desk', 'Thing*'], address: '/P-D-UC01?view=wiki,graph' });
 
     // Reload at the same address.
     await openApp(address(), served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     expect(tabs()).toEqual(before.tabs);
     expect(screen.getByRole('region', { name: 'Graph pane' })).toBeInTheDocument();
-    fireEvent.click(tab('Thing page'));
-    await waitFor(() => expect(title()).toBe('Thing page'));
-    expect(address()).toBe('/P-D-V01?view=wiki');
+    fireEvent.click(tab('Loan desk'));
+    await waitFor(() => expect(title()).toBe('Loan desk'));
+    expect(address()).toBe('/P-V01?view=wiki');
     expect(screen.queryByRole('region', { name: 'Graph pane' })).toBeNull();
   });
 

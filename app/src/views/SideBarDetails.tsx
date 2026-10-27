@@ -10,7 +10,7 @@ import { Link } from '../router';
 import { DesktopRecordActions } from '../shell/desktopRecord';
 import { kindLabel, parentColumns, problemOrder, type SpecIndex, type SpecRecord } from '../specs/data';
 import { factsOf, rowPlace } from '../specs/RecordText';
-import { ProblemList, RecordLink, RecordTree, TestStateTag, idText, isTestKind, listTitle } from '../specs/parts';
+import { ProblemList, RecordLink, RecordTree, StageFact, TestStateTag, idText, isTestKind, listTitle } from '../specs/parts';
 import { parentlessText } from '../specs/RecordContent';
 import { GAP_TEXT } from '../specs/Traceability';
 import { traceOf } from '../specs/trace';
@@ -96,6 +96,7 @@ function RecordDetails({ index, record, focus, how, onNavigate, hrefFor }: { ind
       <Identity index={index} eyebrow={kindLabel(index, record.kind)} title={record.title} id={record.id} target={record.id} focus={focus} how={how} onNavigate={onNavigate} hrefFor={hrefFor} />
       <dl className="fields">
         <div><dt>Kind</dt><dd title={kind?.description}><Link to={kindPagePath(record.kind)}>{kind?.label ?? record.kind}</Link></dd></div>
+        <StageFact index={index} kind={record.kind} />
         {isTest && <div><dt>State</dt><dd><TestStateTag record={record} /></dd></div>}
         {facts.map((f) => (
           <div key={f.label}>

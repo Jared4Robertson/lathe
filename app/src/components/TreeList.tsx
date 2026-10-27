@@ -82,8 +82,9 @@ export function TreeList<T>({ items, nestedOf, renderRow, itemKey, searchText, c
     return () => { mounted.delete(scope); };
   }, [scope, foldableKey]);
 
-  // With a page search, keep the rows that match or hold a match.
-  const visible = pageQ ? items.filter((i) => matchOf(searchText(i), pageQ) || nestedOf(i).some((n) => matchOf(searchText(n), pageQ))) : items;
+  // With a page search, keep the rows that match or hold a match at any depth (a capability's use case's UC requirement).
+  const holds = (i: T, depth = 0): boolean => matchOf(searchText(i), pageQ) || (depth < 8 && nestedOf(i).some((n) => holds(n, depth + 1)));
+  const visible = pageQ ? items.filter((i) => holds(i)) : items;
   const allOpen = foldable.length > 0 && foldable.every((k) => opened.has(k));
 
   const onRowKey = (item: T, e: KeyboardEvent<HTMLLIElement>) => {

@@ -12,7 +12,7 @@ import { StandardSections } from './StandardParts';
 import { DomainEvents } from './DomainEvents';
 import { LongList } from '../components/LongList';
 import { DesktopRecordActions } from '../shell/desktopRecord';
-import { Grouped, KindBadge, NavigateContext, StageMark, PageHeader, ProblemBadge, ProblemList, RecordLink, RecordTree, Section, SpecLink, TestStateTag, idText, isTestKind, listTitle, notAutomatedYet } from './parts';
+import { Grouped, KindBadge, NavigateContext, StageFact, PageHeader, ProblemBadge, ProblemList, RecordLink, RecordTree, Section, SpecLink, TestStateTag, idText, isTestKind, listTitle, notAutomatedYet } from './parts';
 
 // One record's content: header, text fields, problems, facts, parent, children and links both ways.
 // Kept apart from the page chrome so another view (such as the graph, side by side) can host it.
@@ -159,12 +159,11 @@ export function RecordFacts({ index, record }: { index: SpecIndex; record: SpecR
   // A test's state gets its own row, with its tag.
   const facts = factsOf(index, record);
   const childrenTitle = listTitle(index, children, 'Children');
-  const stage = kind?.stage ? index.workspace.stages.find((s) => s.stage === kind.stage)?.label : null;
   return (
     <>
       <dl className="fields">
         <div><dt>Kind</dt><dd title={kind?.description}><SpecLink to={kindPagePath(record.kind)} title={`How a ${lowerLabel(kind?.label ?? record.kind)} works`}>{kind?.label ?? record.kind}</SpecLink></dd></div>
-        {stage && <div><dt>Stage</dt><dd><span className={`stage-${kind?.stage}`}><StageMark stage={kind!.stage!} /></span> {stage}</dd></div>}
+        <StageFact index={index} kind={record.kind} />
         {isTest && <div><dt>State</dt><dd><TestStateTag record={record} /></dd></div>}
         {facts.map((f) => (
           <div key={f.label}>

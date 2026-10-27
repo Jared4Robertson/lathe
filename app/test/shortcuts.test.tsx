@@ -184,7 +184,7 @@ describe('keyboard shortcuts', () => {
     await waitFor(() => expect(node('P-D-UC01')).not.toBeNull());
     press(document.body, 't', 'KeyT');
     expect(screen.getByRole('checkbox', { name: 'Trace mode' })).toBeChecked();
-    await waitFor(() => expect(node('file:src/thing.ts')).not.toBeNull());
+    await waitFor(() => expect(node('file:test/lend.test.ts')).not.toBeNull());
   });
 
   it('LA-PLT-T26 F12, Shift+F12, Ctrl+Shift+E, Ctrl+Shift+I, / and Ctrl+- reach links, incoming links, the nav, the side bar, search and Back', async () => {
@@ -195,11 +195,11 @@ describe('keyboard shortcuts', () => {
     const sideBar = screen.getByRole('complementary', { name: 'Side bar' });
 
     // F12 on a focused link opens its record.
-    const link = within(sideBar).getAllByRole('link', { name: /P-D-DR01/ })[0];
+    const link = within(sideBar).getAllByRole('link', { name: /P-D-CAP01/ })[0];
     link.focus();
     press(link, 'F12', 'F12');
-    expect(window.location.pathname).toBe('/P-D-DR01');
-    await screen.findByRole('heading', { level: 1, name: 'A thing has one owner' });
+    expect(window.location.pathname).toBe('/P-D-CAP01');
+    await screen.findByRole('heading', { level: 1, name: 'Lending' });
 
     // Shift+F12 shows the incoming links in the side bar.
     press(document.body, 'F12', 'F12', { shiftKey: true });

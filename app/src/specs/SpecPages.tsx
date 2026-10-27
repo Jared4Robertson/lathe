@@ -175,7 +175,9 @@ function StageSections({ index, folders, query, level = 2 }: { index: SpecIndex;
   const matches = (r: SpecRecord) => !q || recordText(r).toLowerCase().includes(q);
   const nested = (r: SpecRecord) => foldedChildren(index, r);
   const tree = (records: SpecRecord[], label: string) => {
-    const visible = records.filter((r) => matches(r) || nested(r).some(matches)).length;
+    // A row shows when it, or anything folded under it at any depth, matches.
+    const deep = (r: SpecRecord): boolean => matches(r) || nested(r).some(deep);
+    const visible = records.filter(deep).length;
     return visible === 0 ? <p className="hint">Nothing matches.</p> : <RecordTree index={index} records={records} label={label} query={query} nested={nested} />;
   };
   const folderSection = (folder: Folder, at: SectionLevel) => (

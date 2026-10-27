@@ -34,7 +34,7 @@ describe('Lathe on a phone', () => {
     // The top bar: the menu, the title on one line under a link one step up, and quick find.
     expect(within(topbar()).getByRole('button', { name: 'Open the navigation' })).toBeInTheDocument();
     expect(topbar().querySelector('.topbar-title')).toHaveTextContent('Lend a thing');
-    expect(within(topbar()).getByRole('link', { name: 'Up to Domain' })).toHaveAttribute('href', '/P-D?view=wiki,graph');
+    expect(within(topbar()).getByRole('link', { name: 'Up to Lending' })).toHaveAttribute('href', '/P-D-CAP01?view=wiki,graph');
     expect(within(topbar()).getByRole('button', { name: 'Quick find' })).toBeInTheDocument();
     // One view: the first the address names; no pane headers and no handles.
     expect([...document.querySelectorAll('.pane')].map((p) => p.getAttribute('aria-label'))).toEqual(['Wiki pane']);
@@ -105,21 +105,21 @@ describe('Lathe on a phone', () => {
     expect(screen.queryByRole('dialog', { name: 'Open pages' })).toBeNull();
     await waitFor(() => expect(pagesButton()).toHaveFocus());
     // Another page opens in a second tab.
-    await openApp('/P-D-V01', served());
-    await screen.findByRole('heading', { level: 1, name: 'Thing page' });
+    await openApp('/P-V01', served());
+    await screen.findByRole('heading', { level: 1, name: 'Loan desk' });
     expect(pagesButton()).toHaveAccessibleName('Open pages: 2');
     fireEvent.click(pagesButton());
     sheet = screen.getByRole('dialog', { name: 'Open pages' });
     const rows = within(within(sheet).getByRole('list', { name: 'Open pages' })).getAllByRole('listitem');
-    expect(rows.map((r) => r.querySelector('.tab-title')!.textContent)).toEqual(['Lend a thing', 'Thing page']);
-    expect(within(sheet).getByRole('button', { current: 'page' })).toHaveTextContent('Thing page');
+    expect(rows.map((r) => r.querySelector('.tab-title')!.textContent)).toEqual(['Lend a thing', 'Loan desk']);
+    expect(within(sheet).getByRole('button', { current: 'page' })).toHaveTextContent('Loan desk');
     // Choosing a page goes there and closes the sheet.
     fireEvent.click(within(sheet).getByRole('button', { name: 'P-D-UC01 Lend a thing' }));
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     expect(screen.queryByRole('dialog', { name: 'Open pages' })).toBeNull();
     // A row's close button closes its tab.
     fireEvent.click(pagesButton());
-    fireEvent.click(within(screen.getByRole('dialog', { name: 'Open pages' })).getByRole('button', { name: /^Close P-D-V01 Thing page/ }));
+    fireEvent.click(within(screen.getByRole('dialog', { name: 'Open pages' })).getByRole('button', { name: /^Close P-V01 Loan desk/ }));
     await waitFor(() => expect(pagesButton()).toHaveAccessibleName('Open pages: 1'));
   });
 
@@ -133,11 +133,11 @@ describe('Lathe on a phone', () => {
     const sheet = screen.getByRole('dialog', { name: 'Quick find' });
     const box = within(sheet).getByRole('combobox', { name: 'Quick find' });
     await waitFor(() => expect(box).toHaveFocus());
-    fireEvent.change(box, { target: { value: 'thing page' } });
+    fireEvent.change(box, { target: { value: 'loan desk' } });
     const results = within(sheet).getByRole('listbox', { name: 'Quick find results' });
     expect(results).toHaveClass('is-inline');
-    fireEvent.mouseDown(within(results).getByRole('option', { name: /Thing page/ }));
-    expect(window.location.pathname).toBe('/P-D-V01');
+    fireEvent.mouseDown(within(results).getByRole('option', { name: /Loan desk/ }));
+    expect(window.location.pathname).toBe('/P-V01');
     await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Quick find' })).toBeNull());
     // Escape closes it, and focus goes back to the button.
     const again = within(topbar()).getByRole('button', { name: 'Quick find' });
@@ -167,25 +167,25 @@ describe('Lathe on a phone', () => {
     phone();
     window.sessionStorage.setItem('lathe:graph-settings', JSON.stringify({ layout: 'tree', depth: 1, trace: false, hiddenKinds: [], hiddenRelations: [], links: false, minimap: false }));
     await openApp('/P-D-UC01-R01?view=graph', served());
-    // Links on, so the view that fulfills the requirement is drawn.
+    // Links on, so the flow step that fulfills the UC requirement is drawn.
     fireEvent.click(await screen.findByRole('button', { name: 'Links' }));
-    await waitFor(() => expect(boxElement('P-D-V01')).not.toBeNull());
-    const node = () => boxElement('P-D-V01')!;
+    await waitFor(() => expect(boxElement('P-D-UC01-FL-S01')).not.toBeNull());
+    const node = () => boxElement('P-D-UC01-FL-S01')!;
     // A finger's tap on the box drawn on the canvas.
-    tapAt(pointOn('P-D-V01'));
+    tapAt(pointOn('P-D-UC01-FL-S01'));
     expect(window.location.pathname).toBe('/P-D-UC01-R01');
     const card = await waitFor(() => { const c = document.querySelector<HTMLElement>('.tap-card'); expect(c).not.toBeNull(); return c!; });
     expect(card).toHaveAttribute('role', 'status');
-    expect(card).toHaveTextContent('Thing page');
+    expect(card).toHaveTextContent('Librarian lends the thing');
     expect(node()).toHaveClass('is-armed');
-    expect(drawnBox('P-D-V01')!.armed).toBe(true);
+    expect(drawnBox('P-D-UC01-FL-S01')!.armed).toBe(true);
     // A tap on the canvas lets go.
     tapEmpty();
     await waitFor(() => expect(document.querySelector('.tap-card')).toBeNull());
     // The chip opens it (selected again, here by the box in the keyboard's layer).
     fireEvent.click(node());
-    fireEvent.click(screen.getByRole('button', { name: 'Open Thing page' }));
-    expect(window.location.pathname).toBe('/P-D-V01');
+    fireEvent.click(screen.getByRole('button', { name: 'Open Librarian lends the thing' }));
+    expect(window.location.pathname).toBe('/P-D-UC01-FL-S01');
     // A click that says it came from a mouse opens at once; a finger's or a pen's selects first.
     expect(isTap({ pointerType: 'mouse' } as unknown as Event, true)).toBe(false);
     expect(isTap({ pointerType: 'touch' } as unknown as Event, false)).toBe(true);

@@ -127,12 +127,12 @@ describe('nothing jumps (LA-PAT-APP-UX-R08)', () => {
     await openApp('/P-D-UC01-R01?view=graph', { data: testWorkspace() });
     await waitFor(() => expect(document.querySelector('.graph-links button')).not.toBeNull());
     fireEvent.click(document.querySelector<HTMLElement>('.graph-links button')!);
-    await waitFor(() => expect(boxElement('P-D-V01')).not.toBeNull());
+    await waitFor(() => expect(boxElement('P-D-UC01-FL-S01')).not.toBeNull());
     const canvas = document.querySelector('.graph-flow');
     const drawing = document.querySelector('.graph-flow canvas');
-    fireEvent.click(boxElement('P-D-V01')!);
-    await waitFor(() => expect(window.location.pathname).toBe('/P-D-V01'));
-    await waitFor(() => expect(boxElement('P-D-E01')).not.toBeNull());
+    fireEvent.click(boxElement('P-D-UC01-FL-S01')!);
+    await waitFor(() => expect(window.location.pathname).toBe('/P-D-UC01-FL-S01'));
+    await waitFor(() => expect(boxElement('P-D-UC01-FL')).not.toBeNull());
     expect(document.querySelector('.graph-flow')).toBe(canvas);
     expect(document.querySelector('.graph-flow canvas')).toBe(drawing);
   });
@@ -153,7 +153,7 @@ describe('nothing jumps (LA-PAT-APP-UX-R08)', () => {
     const panel = () => screen.getByRole('navigation', { name: 'Main' }).querySelector<HTMLElement>('.space-items')!;
     const unfold = () => within(panel()).getByRole('button', { name: 'Unfold Shopping' });
     expect(unfold()).toHaveAttribute('aria-expanded', 'false');
-    // A link in the page (here, the address set from outside the nav) moves to a requirement inside Shopping.
+    // A link in the page (here, the address set from outside the nav) moves to a UC requirement inside Shopping.
     act(() => navigate('/DM-SHOP-UC01-R01'));
     await screen.findByRole('heading', { level: 1, name: 'The basket shows the new item' });
     expect(unfold()).toHaveAttribute('aria-expanded', 'false');
@@ -161,7 +161,7 @@ describe('nothing jumps (LA-PAT-APP-UX-R08)', () => {
     expect(unfold().closest('.nav-row')).toHaveClass('holds-current');
     // Opening the marked row opens the branch down to the page.
     fireEvent.click(unfold());
-    expect(within(await within(panel()).findByRole('list', { name: 'Capabilities of Shopping' })).getByRole('link', { name: 'Add an item to the basket' })).toBeInTheDocument();
+    expect(within(await within(panel()).findByRole('list', { name: 'Capabilities of Shopping' })).getByRole('link', { name: 'Buying' })).toBeInTheDocument();
   });
 
   it('LA-PLT-T79 the fonts are the app\'s own, preloaded, and never swap in', () => {
