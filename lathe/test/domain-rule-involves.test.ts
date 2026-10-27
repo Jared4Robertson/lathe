@@ -1,25 +1,23 @@
-// Domain rules across aggregates (FORMAT.md section 16): the involves relation from a domain rule to an
-// aggregate, the domain-rule-involves check, and the record format's words for them.
-import { readFileSync } from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { beforeAll, describe, expect, it } from 'vitest';
-import { loadWorkspace, type Workspace } from '../src/index.ts';
+// Domain rules across aggregates: the involves relation from a domain rule to an aggregate, the
+// domain-rule-involves check, and the reference's words for them.
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { buildReference, type Workspace } from '../src/index.ts';
+import { everyKind, fixture, load, refusals, removeData, withTable } from './helpers.ts';
 
-const here = path.dirname(fileURLToPath(import.meta.url));
 const CHECK = 'domain-rule-involves';
 
 let ws: Workspace;
 beforeAll(async () => {
   // rule-involves: Lending (RI-D) has Loan, Tool and Member; Accounts (RI-E) has Account. DR01 and DR09 sit
   // under Lending and involve two and three of its aggregates; DR08 sits under Tool with no involves.
-  ws = await loadWorkspace(path.join(here, 'fixtures', 'rule-involves'));
+  ws = await load('rule-involves');
 });
+afterAll(removeData);
 
 const messagesOf = (id: string) => ws.problems.filter((p) => p.check === CHECK && p.record === id).map((p) => p.message);
 
 describe('the involves relation', () => {
-  it('LA-AUT-T109 A domain rule involves aggregates, labeled "Involves" and "Involved in" with no role, and the record format says when', () => {
+  it('LA-AUT-T109 A domain rule involves aggregates, labeled "Involves" and "Involved in" with no role, and the reference says when', async () => {
     expect(ws.relations.filter((r) => r.relation === 'involves')).toEqual([{
       relation: 'involves', source_kind: 'domain_rule', target_kind: 'aggregate', role: '',
       forward_label: 'Involves', reverse_label: 'Involved in',
@@ -29,17 +27,17 @@ describe('the involves relation', () => {
       { source: 'RI-D-DR01', relation: 'involves', target: 'RI-D-A1' },
       { source: 'RI-D-DR01', relation: 'involves', target: 'RI-D-A2' },
     ]);
-    expect(ws.kinds.find((k) => k.kind === 'domain_rule')?.description).toContain('naming with `involves` the two or more aggregates');
-    const format = readFileSync(path.join(here, '..', 'FORMAT.md'), 'utf8');
-    const section = format.split(/^## /m).find((s) => s.startsWith('16. Entities')) ?? '';
-    expect(section).toContain('sits under the domain and names with `involves` the two or more aggregates of that domain it ties together');
-    expect(section).toContain("a rule across domains is a domain event's job");
-    expect(section).toContain('`domain-rule-involves`');
+    expect(ws.kinds.find((k) => k.kind === 'domain_rule')?.description).toContain('unless it holds across aggregates, when it names them with involves');
+    const reference = await buildReference(fixture('rule-involves'));
+    const check = reference.checks.find((c) => c.check === CHECK)!;
+    expect(check.kinds).toEqual(['domain_rule', 'aggregate']);
+    expect(check.explanation).toContain('says with `involves` which aggregates it ties together');
+    expect(check.explanation).toContain("a rule across domains is a domain event's job");
   });
 });
 
 describe('the domain-rule-involves check', () => {
-  it('LA-AUT-T106 A rule under a domain that involves fewer than two aggregates is a warning that says to move a one-aggregate rule onto it; a link that dangles is not counted', () => {
+  it('LA-AUT-T106 A rule under a domain that involves fewer than two aggregates is a warning that says to move a one-aggregate rule onto it; a link to no aggregate is refused', async () => {
     expect(messagesOf('RI-D-DR02')).toEqual([
       'Domain rule RI-D-DR02 sits under the domain RI-D but involves no aggregate; name with involves the two or more '
         + 'aggregates it ties together, or move it under the aggregate it is about.',
@@ -47,9 +45,12 @@ describe('the domain-rule-involves check', () => {
     const one = 'sits under the domain RI-D but involves only RI-D-A1; a rule about one aggregate belongs under it, so move it '
       + 'under RI-D-A1, or name with involves every aggregate it ties together.';
     expect(messagesOf('RI-D-DR03')).toEqual([`Domain rule RI-D-DR03 ${one}`]);
-    // DR05 also involves RI-D-A9, which does not exist: dangling-link reports it, and it does not count.
     expect(messagesOf('RI-D-DR05')).toEqual([`Domain rule RI-D-DR05 ${one}`]);
-    expect(ws.problems.filter((p) => p.record === 'RI-D-DR05' && p.check === 'dangling-link')).toHaveLength(1);
+    // An involves link to a record that is not an aggregate never loads.
+    const data = everyKind();
+    const problems = await refusals(withTable(data, 'involves', [...data.involves, { source_id: 'TL-LEND-DR02', target_id: 'TL-LEND-A9' }]));
+    expect(problems).toEqual([expect.objectContaining({ rule: 'foreign-key', table: 'involves' })]);
+    expect(problems[0].message).toContain('"TL-LEND-A9" names no aggregate');
     for (const id of ['RI-D-DR01', 'RI-D-DR09']) expect(messagesOf(id), id).toEqual([]);
   });
 

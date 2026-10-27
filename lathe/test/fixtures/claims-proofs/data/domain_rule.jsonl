@@ -1,0 +1,4 @@
+{"id":"CL-D-DR01","title":"Rule 01","domain_id":"CL-D","aggregate_id":"CL-D-A1","statement":"A loan MUST hold rule 1."}
+{"id":"CL-D-DR02","title":"Rule 02","domain_id":"CL-D","aggregate_id":"CL-D-A1","statement":"A loan MUST hold rule 2."}
+{"id":"CL-D-DR03","title":"Rule 03","domain_id":"CL-D","aggregate_id":"CL-D-A1","statement":"A loan MUST hold rule 3."}
+{"id":"CL-D-DR04","title":"Rule 04","domain_id":"CL-D","aggregate_id":"CL-D-A1","statement":"A loan MUST hold rule 4."}

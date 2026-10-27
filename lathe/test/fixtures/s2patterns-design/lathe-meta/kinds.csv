@@ -1,4 +1,0 @@
-kind,label,stage,parent_kinds,required_fields,obligation,description
-pattern_rule,,,,,yes,
-control,Control,define,domain,,Proof,"A control an auditor checks: it needs proof only."
-memo,Memo,,domain,,maybe,"A note; not an obligation."

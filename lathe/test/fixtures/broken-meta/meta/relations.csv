@@ -1,6 +1,0 @@
-relation,source_kind,target_kind,description,forward_label,reverse_label
-uses,widget,domain,Fine.,Uses,Used by
-uses,widget,domain,Listed twice.,Uses,Used by
-uses,widget,gizmo,Unknown target.,Uses,Used by
-about,sprocket,*,Unknown source.,About,Questions about this
-about,widget,*,Star target is fine.,About,Questions about this

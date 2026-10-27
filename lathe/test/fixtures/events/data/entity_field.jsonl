@@ -1,0 +1,4 @@
+{"entity_id":"EVT-D-EN01","position":1,"name":"Loan ID","meaning":"The loan.","type":"Text","example":"Loan 31"}
+{"entity_id":"EVT-D-EN02","position":1,"name":"Returned at","meaning":"When.","type":"Date and time","example":"2026-03-12"}
+{"entity_id":"EVT-D-EN03","position":1,"name":"Tool ID","meaning":"The tool.","type":"Text","example":"Tool 7"}
+{"entity_id":"EVT-D-EN09","position":1,"name":"Text","meaning":"The note.","type":"Text","example":"Late"}

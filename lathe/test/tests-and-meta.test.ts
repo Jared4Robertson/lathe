@@ -1,26 +1,33 @@
-// Test states and proof by named ID, and meta-model extensions that widen default kinds.
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { beforeAll, describe, expect, it } from 'vitest';
-import { loadWorkspace, type Workspace } from '../src/index.ts';
+// Test states and proof by named ID, and a product's own kinds and relations beside Lathe's.
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import type { Row, Workspace } from '../src/index.ts';
+import { everyKind, load, refusals, removeData, withTable } from './helpers.ts';
 
-const fixture = (name: string) => path.join(path.dirname(fileURLToPath(import.meta.url)), 'fixtures', name);
-const recordsOf = (ws: Workspace, check: string) =>
-  ws.problems.filter((p) => p.check === check).map((p) => p.record).sort();
+const recordsOf = (ws: Workspace, check: string) => ws.problems.filter((p) => p.check === check).map((p) => p.record).sort();
 const errorsAbout = (ws: Workspace, id: string) => ws.problems.filter((p) => p.severity === 'error' && p.record === id);
 
-const TEST_CHECKS = ['test-file-missing', 'test-file-missing-id', 'proof-not-in-file', 'bad-test-state', 'test-run-by-missing'];
+const TEST_CHECKS = ['test-file-missing', 'test-file-missing-id', 'proof-not-in-file'];
 
 let proof: Workspace;
 let widened: Workspace;
-let duplicate: Workspace;
 let plain: Workspace;
 beforeAll(async () => {
-  proof = await loadWorkspace(fixture('proof-states'));
-  widened = await loadWorkspace(fixture('widen-extension'));
-  duplicate = await loadWorkspace(fixture('widen-duplicate'));
-  plain = await loadWorkspace(fixture('good'));
+  proof = await load('proof-states');
+  widened = await load('widen-extension');
+  plain = await load('good');
 });
+afterAll(removeData);
+
+/** The everyKind product with its one test changed. */
+const withTest = (changes: Record<string, string | undefined>) => {
+  const data = everyKind();
+  const test: Row = { ...data.test[0] };
+  for (const [k, v] of Object.entries(changes)) {
+    if (v === undefined) delete test[k];
+    else test[k] = v;
+  }
+  return withTable(data, 'test', [test]);
+};
 
 describe('tests prove what their files name', () => {
   it("LA-TRC-T09 A rule test keyed by the rule's ID needs no test ID in code", () => {
@@ -43,102 +50,85 @@ describe('tests prove what their files name', () => {
 });
 
 describe('test states', () => {
-  it('LA-TRC-T12 A test state other than automated, manual or planned is an error', () => {
-    const found = proof.problems.filter((p) => p.check === 'bad-test-state');
-    expect(found).toEqual([
-      { severity: 'error', check: 'bad-test-state', record: 'PX-D-T08', message: expect.stringContaining('"someday"') },
-    ]);
-    // Its file names it, so a bad state is its only problem.
-    expect(errorsAbout(proof, 'PX-D-T08')).toHaveLength(1);
+  it('LA-TRC-T12 A test state other than automated, manual or planned is refused', async () => {
+    const problems = await refusals(withTest({ state: 'someday' }));
+    expect(problems).toEqual([expect.objectContaining({ rule: 'column', table: 'test' })]);
+    expect(problems[0].message).toContain('automated, manual, planned');
+    // A test always has a state.
+    expect(await refusals(withTest({ state: undefined }))).toEqual([expect.objectContaining({ rule: 'required', table: 'test' })]);
   });
 
-  it('LA-TRC-T13 An automated test needs a run_by; a manual or planned test does not', () => {
-    // PX-D-T07 is automated by its state, PX-D-T10 by default.
-    expect(recordsOf(proof, 'test-run-by-missing')).toEqual(['PX-D-T07', 'PX-D-T10']);
-    expect(errorsAbout(proof, 'PX-D-T03')).toEqual([]); // planned
-    expect(errorsAbout(proof, 'PX-D-T04')).toEqual([]); // manual
+  it('LA-TRC-T13 An automated test needs a file; a manual or planned test does not', async () => {
+    expect(await refusals(withTest({ file: undefined }))).toEqual([expect.objectContaining({ rule: 'check', table: 'test', key: 'TL-LEND-T01' })]);
+    expect(await refusals(withTest({ file: undefined, state: 'manual' }))).toEqual([]);
+    expect(await refusals(withTest({ file: undefined, state: 'planned' }))).toEqual([]);
+    expect(errorsAbout(proof, 'PX-D-T03')).toEqual([]); // planned, no file
+    expect(errorsAbout(proof, 'PX-D-T04')).toEqual([]); // manual, no file
   });
 
-  it("LA-TRC-T14 A manual or planned test's run_by is checked only for existing", () => {
+  it("LA-TRC-T14 A manual or planned test's file is checked only for existing", () => {
     // PX-D-T05 (manual) names a file that does not exist.
     expect(recordsOf(proof, 'test-file-missing')).toEqual(['PX-D-T05']);
     // PX-D-T06 (planned) names a file that exists but does not mention it, which is fine.
     expect(errorsAbout(proof, 'PX-D-T06')).toEqual([]);
     // Every error in the fixture comes from a test check.
-    const other = proof.problems.filter((p) => p.severity === 'error' && !TEST_CHECKS.includes(p.check));
-    expect(other).toEqual([]);
+    expect(proof.problems.filter((p) => p.severity === 'error' && !TEST_CHECKS.includes(p.check))).toEqual([]);
   });
 });
 
-describe('extensions widen default kinds', () => {
+describe("a product's own kinds and relations", () => {
   const kind = (ws: Workspace, name: string) => ws.kinds.find((k) => k.kind === name);
 
-  it('LA-AUT-T21 An extension lets a domain rule sit under a domain', () => {
-    expect(kind(widened, 'domain_rule')).toMatchObject({
-      parent_kinds: ['aggregate', 'domain', 'entity'],
-      required_fields: ['source'],
-    });
+  it("LA-AUT-T21 A domain rule may sit under its domain alone, and a product cannot widen Lathe's own kinds", async () => {
+    expect(widened.records.find((r) => r.id === 'WX-D-DR01')).toMatchObject({ parent: 'WX-D', domain: 'WX-D' });
     expect(errorsAbout(widened, 'WX-D-DR01')).toEqual([]);
-    // The widened kind keeps the default's parent, and gains the extension's required field.
-    expect(errorsAbout(widened, 'WX-D-DR02').map((p) => p.check)).toEqual(['missing-required-field']);
-    expect(widened.kinds.filter((k) => k.kind === 'domain_rule')).toHaveLength(1);
-    expect(recordsOf(widened, 'meta-duplicate-kind')).toEqual([]);
-    // Without the extension the same kind has only its default parents (a domain is one of them since pass 5),
-    // and no required field: the extension's widening is what adds 'source'.
-    expect(kind(plain, 'domain_rule')?.parent_kinds).toEqual(['aggregate', 'domain', 'entity']);
-    expect(kind(plain, 'domain_rule')?.required_fields).toEqual([]);
+    expect(kind(plain, 'domain_rule')?.parent_kinds).toEqual(['entity', 'aggregate', 'domain']);
+    expect(kind(widened, 'domain_rule')).toEqual(kind(plain, 'domain_rule'));
+    // A product kind may not take a Lathe kind's name: changing Lathe's kinds is a migration.
+    const data = everyKind();
+    const widen = await refusals(withTable(data, 'product_kind', [...data.product_kind, { name: 'domain_rule', product_id: 'TL', label: 'Business rule', description: 'A rule.', parent_kind: 'product', obligation: 'full' }]));
+    expect(widen).toEqual([expect.objectContaining({ rule: 'product-kind', table: 'product_kind' })]);
+    expect(widen[0].message).toContain('domain_rule');
   });
 
-  it("LA-AUT-T22 An extension's non-empty values replace the default's and empty ones keep it", () => {
-    const widenedRule = kind(widened, 'domain_rule')!;
-    const defaultRule = kind(plain, 'domain_rule')!;
-    expect(widenedRule.label).toBe('Business rule');
-    expect(widenedRule.stage).toBe(defaultRule.stage);
-    expect(widenedRule.obligation).toBe(true);
-    expect(widenedRule.description).toBe(defaultRule.description);
-    // A new kind is added as it is, after the defaults.
-    expect(kind(widened, 'policy')).toMatchObject({ label: 'Policy', stage: 'define', parent_kinds: ['domain'], obligation: true });
+  it("LA-AUT-T22 A product's own kind is added after Lathe's, with its own label, stage and obligation, and Lathe's kinds keep theirs", () => {
+    expect(kind(widened, 'policy')).toMatchObject({ label: 'Policy', stage: 'define', parent_kinds: ['domain'], obligation: true, description: 'A policy the business sets.' });
     expect(widened.kinds.map((k) => k.kind).slice(0, plain.kinds.length)).toEqual(plain.kinds.map((k) => k.kind));
+    expect(widened.kinds.slice(0, plain.kinds.length)).toEqual(plain.kinds);
     expect(widened.kinds.at(-1)?.kind).toBe('policy');
   });
 
-  it('LA-AUT-T23 A relation row identical to a default one changes nothing', () => {
+  it("LA-AUT-T23 A product relation with Lathe's name adds a pair and changes none of Lathe's", () => {
     const proves = (ws: Workspace) => ws.relations.filter((r) => r.relation === 'proves' && r.target_kind === 'domain_rule');
     expect(proves(widened)).toEqual(proves(plain));
     expect(widened.relations).toHaveLength(plain.relations.length + 1);
-    expect(recordsOf(widened, 'meta-duplicate-relation')).toEqual([]);
+    expect(widened.relations).toContainEqual(expect.objectContaining({ relation: 'proves', source_kind: 'test', target_kind: 'policy', role: 'proof' }));
   });
 
-  it('LA-AUT-T24 A kind defined twice in one folder is an error naming that folder', () => {
-    const found = duplicate.problems.filter((p) => p.check === 'meta-duplicate-kind');
-    expect(found).toEqual([
-      {
-        severity: 'error',
-        check: 'meta-duplicate-kind',
-        record: null,
-        message: expect.stringContaining('lathe-meta/kinds.csv defines kind "domain_rule" 2 times'),
-      },
-    ]);
-    // Both rows still widen the kind.
-    expect(kind(duplicate, 'domain_rule')?.parent_kinds).toEqual(['aggregate', 'domain', 'entity', 'product']);
+  it('LA-AUT-T24 A kind declared twice is refused, naming the file and line', async () => {
+    const data = everyKind();
+    const problems = await refusals(withTable(data, 'product_kind', [...data.product_kind, ...data.product_kind]));
+    expect(problems).toEqual([expect.objectContaining({ rule: 'primary-key', file: 'data/product_kind.jsonl', line: 2, key: 'invariant' })]);
+    expect(problems[0].message).toContain('line 1');
   });
 });
 
 describe('test state edges found by the S2 re-trial', () => {
   let edges: Workspace;
   beforeAll(async () => {
-    edges = await loadWorkspace(fixture('proof-edges'));
+    edges = await load('proof-edges');
   });
 
-  it('LA-TRC-T15 A test state is read in any letter case, the same way by the checks and by coverage', () => {
-    expect(recordsOf(edges, 'bad-test-state')).toEqual([]);
+  it('LA-TRC-T15 A test state is one lower-case value, read the same way by the checks and by coverage', async () => {
+    expect(await refusals(withTest({ state: 'Manual' }))).toEqual([expect.objectContaining({ rule: 'column', table: 'test' })]);
+    // QX-D-T01 is manual and proves QX-D-DR01: coverage counts it, and no check reports the test.
     const rules = edges.coverage[0].obligations.find((o) => o.kind === 'domain_rule')!;
     expect(rules.proved).toBe(1);
+    expect(edges.problems.filter((p) => p.record === 'QX-D-T01')).toEqual([]);
   });
 
   it('LA-TRC-T16 A planned test that names a file not written yet is a warning, not an error', () => {
-    const found = edges.problems.filter((p) => p.check === 'test-file-missing');
-    expect(found).toEqual([
+    expect(edges.problems.filter((p) => p.check === 'test-file-missing')).toEqual([
       { severity: 'warning', check: 'test-file-missing', record: 'QX-D-T02', message: expect.stringContaining('does not exist yet') },
     ]);
     expect(edges.problems.filter((p) => p.severity === 'error')).toEqual([]);

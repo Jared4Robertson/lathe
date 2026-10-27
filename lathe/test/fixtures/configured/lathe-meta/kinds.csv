@@ -1,2 +1,0 @@
-kind,label,stage,parent_kinds,required_fields,description
-report,Report,design,domain,,"A report the product produces."

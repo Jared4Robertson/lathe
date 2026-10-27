@@ -1,0 +1,2 @@
+{"id":"SW-D-DR01","title":"Applied rule","domain_id":"SW-D","aggregate_id":"SW-D-A1","statement":"A thing MUST hold."}
+{"id":"SW-D-DR02","title":"Rule nothing applies","domain_id":"SW-D","aggregate_id":"SW-D-A1","statement":"A thing MUST hold."}

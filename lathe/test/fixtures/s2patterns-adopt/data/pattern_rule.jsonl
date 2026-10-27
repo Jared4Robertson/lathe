@@ -1,0 +1,4 @@
+{"id":"SX-PAT-ACT-R01","title":"A staff action without permission is refused","pattern_id":"SX-PAT-ACT","statement":"The product MUST do this."}
+{"id":"SX-PAT-ACT-R02","title":"A staff action is audited","pattern_id":"SX-PAT-ACT","statement":"The product MUST do this.","setting":"audit"}
+{"id":"SX-PAT-API-R01","title":"Errors use the shared error shape","pattern_id":"SX-PAT-API","statement":"The product MUST do this."}
+{"id":"SX-PAT-API-R02","title":"Lists are paged","pattern_id":"SX-PAT-API","statement":"The product MUST do this."}

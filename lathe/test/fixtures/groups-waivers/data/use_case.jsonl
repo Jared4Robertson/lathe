@@ -1,0 +1,4 @@
+{"id":"GW-A-UC01","title":"Act on one record","domain_id":"GW-A","goal":"Text."}
+{"id":"GW-B-UC01","title":"Act on one record","domain_id":"GW-B","goal":"Text."}
+{"id":"GW-B-UC02","title":"Act on many records","domain_id":"GW-B","goal":"Text."}
+{"id":"GW-E-UC01","title":"Act without a scope","domain_id":"GW-E","goal":"Text."}

@@ -1,11 +1,12 @@
 // Lathe's HTTP API, shared by `lathe serve` and the app's Vite dev server:
-//   GET  /api/spec                the whole spec Workspace
-//   GET  /api/format              the format reference (FormatReference): concepts, kinds, relations, folders, checks
-//   GET  /api/history?id=<ID>     the git history of a record's spec file (&skip=<n> for older commits)
-//   GET  /api/history?id=<ID>&commit=<hash>   that commit's diff of the file ("working": the uncommitted changes)
+//   GET  /api/spec                the whole spec Workspace, from the product's data/ folder
+//   GET  /api/reference           the reference (Reference): kinds, tables, relations, folders, checks
+//   GET  /api/history?id=<ID>     the git history of a record's row (&skip=<n> for older commits)
+//   GET  /api/history?id=<ID>&commit=<hash>   that commit's change of the row ("working": the uncommitted change)
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { loadConfig } from '../config.ts';
-import { formatReference, loadWorkspace } from '../index.ts';
+import { buildReference, loadWorkspace } from '../index.ts';
+import { LATHE_DATA_DIR } from '../store/store.ts';
 import { COMMIT_PATTERN, recordDiff, recordHistory } from './history.ts';
 
 function send(res: ServerResponse, status: number, body: unknown, headers: Record<string, string> = {}) {
@@ -27,9 +28,9 @@ export async function handleApi(root: string, req: IncomingMessage, res: ServerR
       send(res, 200, await loadWorkspace(config.root), { 'x-lathe-source': 'engine' });
       return true;
     }
-    if (pathname === '/api/format') {
+    if (pathname === '/api/reference') {
       if (req.method !== 'GET') return (send(res, 405, { error: 'Method not allowed' }), true);
-      send(res, 200, await formatReference(config.root), { 'x-lathe-source': 'engine' });
+      send(res, 200, await buildReference(config.root), { 'x-lathe-source': 'engine' });
       return true;
     }
     if (pathname === '/api/history') {
@@ -52,13 +53,8 @@ export async function handleApi(root: string, req: IncomingMessage, res: ServerR
   return true;
 }
 
-/** The folders whose changes should make open pages reload, and the event each sends. */
+/** The folders whose changes should make open pages reload, and the event each sends: the product's data and Lathe's. */
 export function watchTargets(root: string): { dir: string; event: 'spec:changed' }[] {
   const config = loadConfig(root);
-  // A product's own checks and meta-model extensions change what the spec pages show, as its records do.
-  const extras = [config.checksDir, ...config.metaDirs.slice(1)].filter((dir): dir is string => Boolean(dir));
-  return [
-    { dir: config.specsDir, event: 'spec:changed' },
-    ...extras.map((dir) => ({ dir, event: 'spec:changed' as const })),
-  ];
+  return [...new Set([config.dataDir, LATHE_DATA_DIR])].map((dir) => ({ dir, event: 'spec:changed' as const }));
 }

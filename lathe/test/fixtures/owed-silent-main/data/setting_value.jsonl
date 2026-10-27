@@ -1,0 +1,3 @@
+{"follower_id":"OS-A-UC01","pattern_id":"OS-PAT","setting":"audit","value":"Logged"}
+{"follower_id":"OS-B-UC01","pattern_id":"OS-PAT","setting":"audit","value":"Logged"}
+{"follower_id":"OS-C-UC01","pattern_id":"OS-PAT4","setting":"notify","not_applicable":"nobody needs telling"}
