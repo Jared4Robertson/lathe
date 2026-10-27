@@ -1,0 +1,4 @@
+{"id":"DS-D-DF01-S01","title":"First","design_flow_id":"DS-D-DF01","path":"main","position":1,"description":"Text."}
+{"id":"DS-D-DF01-S03","title":"Second","design_flow_id":"DS-D-DF01","path":"main","position":2,"description":"Text."}
+{"id":"DS-D-DF01-S04","title":"Refused, after a gap","design_flow_id":"DS-D-DF01","path":"Refused","position":2,"description":"Text."}
+{"id":"DS-D-DF01-S05","title":"No order","design_flow_id":"DS-D-DF01","path":"main","position":3,"description":"Text."}

@@ -1,0 +1,2 @@
+{"id":"CS-D-UC01-R01","title":"Only a planned test proves this","use_case_id":"CS-D-UC01","statement":"A booking MUST name a day."}
+{"id":"CS-D-UC01-R02","title":"A planned and an automated test prove this","use_case_id":"CS-D-UC01","statement":"A booking MUST name a desk."}

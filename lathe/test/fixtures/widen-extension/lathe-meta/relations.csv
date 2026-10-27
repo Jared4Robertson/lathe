@@ -1,3 +1,0 @@
-relation,source_kind,target_kind,role,description,forward_label,reverse_label
-proves,test,domain_rule,proof,The test proves the domain rule.,Proves,Proved by
-proves,test,policy,proof,The test proves the policy.,Proves,Proved by

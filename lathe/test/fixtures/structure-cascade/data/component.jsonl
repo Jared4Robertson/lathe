@@ -1,0 +1,2 @@
+{"id":"SC-D-C01","title":"Service","domain_id":"SC-D","component_type":"service","file":"code/service.ts","description":"A component."}
+{"id":"SC-D-C02","title":"Router","domain_id":"SC-D","component_type":"router","file":"code/router.ts","description":"A component."}

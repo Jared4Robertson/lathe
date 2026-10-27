@@ -1,0 +1,2 @@
+{"id":"GW-B-V01-IR01","title":"Errors are shown","domain_id":"GW-B","view_id":"GW-B-V01","statement":"It MUST show errors.","group_name":"Errors"}
+{"id":"GW-B-V01-IR02","title":"The form is labeled","domain_id":"GW-B","view_id":"GW-B-V01","statement":"It MUST be labeled."}

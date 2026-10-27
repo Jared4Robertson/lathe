@@ -1,0 +1,7 @@
+{"id":"SZ-D-DR01","title":"Rule 1","domain_id":"SZ-D","aggregate_id":"SZ-D-A1","statement":"It MUST hold."}
+{"id":"SZ-D-DR02","title":"Rule 2","domain_id":"SZ-D","aggregate_id":"SZ-D-A1","statement":"It MUST hold."}
+{"id":"SZ-D-DR03","title":"Rule 3","domain_id":"SZ-D","aggregate_id":"SZ-D-A1","statement":"It MUST hold."}
+{"id":"SZ-D-DR04","title":"Rule 4","domain_id":"SZ-D","aggregate_id":"SZ-D-A1","statement":"It MUST hold."}
+{"id":"SZ-D-DR11","title":"Rule 11","domain_id":"SZ-D","aggregate_id":"SZ-D-A2","statement":"It MUST hold."}
+{"id":"SZ-D-DR12","title":"Rule 12","domain_id":"SZ-D","aggregate_id":"SZ-D-A2","statement":"It MUST hold."}
+{"id":"SZ-D-DR13","title":"Rule 13","domain_id":"SZ-D","aggregate_id":"SZ-D-A2","statement":"It MUST hold."}

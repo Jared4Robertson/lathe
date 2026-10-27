@@ -1,0 +1,3 @@
+{"id":"EN-D-A1","title":"Loan","domain_id":"EN-D","description":"A loan."}
+{"id":"EN-E-A1","title":"Member","domain_id":"EN-E","description":"A member."}
+{"id":"EN-E-A2","title":"Empty","domain_id":"EN-E","description":"An aggregate with no entities yet."}
