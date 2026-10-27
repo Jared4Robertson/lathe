@@ -1,6 +1,6 @@
 // Tests over HTTP: use case tests prove a UC requirement as the actor meets it; endpoint tests prove
-// an endpoint's API requirement (TL-LEND-EP0n-R0n), its statuses, codes and bodies; and the policy
-// and pattern rule tests prove what a librarian action does to what is stored.
+// an endpoint's API requirement (TL-LEND-EP0n-R0n), its statuses, codes and bodies; and the pattern
+// rule tests prove what a librarian action does to what is stored.
 // Where a use case test and an endpoint test share a scenario, it is one helper both run.
 // Each test name starts with its test record ID (examples/tool-library/data/).
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -302,13 +302,10 @@ describe('TL-LEND-UC04 Return a tool', () => {
     return t;
   }
 
-  it('TL-LEND-PO01-T A tool returned needing repair is marked as needing repair, with the return note', async () => {
-    const t = await returnNeedingRepair();
-    expect(await entryOf(t)).toMatchObject({ status: 'needs_repair', condition: 'needs_repair', damageNote: 'Chuck wobbles' });
-  });
-
   it('TL-LEND-UC04-R03-T01 A tool returned needing repair is taken out of lending', async () => {
     const t = await returnNeedingRepair();
+    // The policy runs after the return commits, before the return's response: the next request sees it.
+    expect(await entryOf(t)).toMatchObject({ status: 'needs_repair', condition: 'needs_repair', damageNote: 'Chuck wobbles' });
     const res = await borrow(await member('Tia'), t);
     expect(res.body.error).toBe('tool_needs_repair');
   });
