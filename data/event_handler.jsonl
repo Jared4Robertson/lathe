@@ -1,0 +1,6 @@
+{"id":"LA-EXP-PO01-H","title":"useSpaceState's last page on each address","policy_id":"LA-EXP-PO01","file":"app/src/shell/spaces.tsx","description":"useSpaceState's last page on each address"}
+{"id":"LA-EXP-PO02-H","title":"arrive on each address","policy_id":"LA-EXP-PO02","file":"app/src/views/useTabs.ts","description":"arrive on each address"}
+{"id":"LA-EXP-PO03-H","title":"the address moved after an activate or close","policy_id":"LA-EXP-PO03","file":"app/src/views/useTabs.ts","description":"the address moved after an activate or close"}
+{"id":"LA-PLT-PO01-H","title":"startApp","policy_id":"LA-PLT-PO01","file":"desktop/src/main.ts","description":"startApp (inline, as the window opens)"}
+{"id":"LA-PLT-PO02-H","title":"the closed","policy_id":"LA-PLT-PO02","file":"desktop/src/main.ts","description":"the closed, before-quit, SIGINT and SIGTERM handlers that stop servers"}
+{"id":"LA-PLT-PO03-H","title":"rememberRecent","policy_id":"LA-PLT-PO03","file":"desktop/src/main.ts","description":"rememberRecent, app.addRecentDocument"}

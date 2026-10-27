@@ -1810,7 +1810,7 @@ Proves its policy: when its event happens, its command is sent.
 - **Parents:** [`policy`](#kind-policy) (`policy_id`)
 - **Children:** none
 - **Obligation:** no
-- **Run by levels:** `database`, `api`, `e2e-api`
+- **Run by levels:** `database`, `api`, `e2e-api`, `e2e-ui`, `manual`
 - **ID:** `<policy>-T`, such as `TL-LEND-PO01-T`; it starts with its parent's ID
 - **Links out:** Meets ([`meets`](#relation-meets))
 - **Links in:** Questions about this ([`about`](#relation-about))
@@ -2132,7 +2132,7 @@ A manual test may name a file that holds the steps a person follows. Nothing tie
 
 A test whose run by level its test kind does not allow.
 
-Each test kind is run at the levels that can prove what it tests: a constraint test at unit or database (a constraint enforced by a SQL CHECK can only be tested against the database); an invariant or specification test at unit or database; a domain service test at unit; a policy test at database, api or e2e-api; a use case test at api, e2e-api, e2e-ui or manual; a view test at unit, e2e-ui or manual; an endpoint test at contract or api; a flow test at e2e-ui, e2e-api (a product whose flows run through a CLI or an API rather than a browser) or manual; an integration test at contract, e2e-api or manual; a pattern rule test at any level. A test at another level proves nothing in coverage. Run the test at an allowed level and set its level, or make it the test kind of what it really proves.
+Each test kind is run at the levels that can prove what it tests: a constraint test at unit or database (a constraint enforced by a SQL CHECK can only be tested against the database); an invariant or specification test at unit or database; a domain service test at unit; a policy test at database, api or e2e-api, or at e2e-ui or manual where only the running app shows the reaction; a use case test at api, e2e-api, e2e-ui or manual; a view test at unit, e2e-ui or manual; an endpoint test at contract or api; a flow test at e2e-ui, e2e-api (a product whose flows run through a CLI or an API rather than a browser) or manual; an integration test at contract, e2e-api or manual; a pattern rule test at any level. A test at another level proves nothing in coverage. Run the test at an allowed level and set its level, or make it the test kind of what it really proves.
 
 <a id="check-pattern-rule-test-outside-followers"></a>
 

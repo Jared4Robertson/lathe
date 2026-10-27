@@ -13,8 +13,6 @@
 {"use_case_id":"LA-AUT-UC07","position":2,"role_name":"Agent"}
 {"use_case_id":"LA-AUT-UC08","position":1,"role_name":"Owner"}
 {"use_case_id":"LA-AUT-UC08","position":2,"role_name":"Agent"}
-{"use_case_id":"LA-AUT-UC09","position":1,"role_name":"Owner"}
-{"use_case_id":"LA-AUT-UC09","position":2,"role_name":"Agent"}
 {"use_case_id":"LA-AUT-UC10","position":1,"role_name":"Owner"}
 {"use_case_id":"LA-AUT-UC10","position":2,"role_name":"Agent"}
 {"use_case_id":"LA-AUT-UC11","position":1,"role_name":"Owner"}
@@ -34,6 +32,10 @@
 {"use_case_id":"LA-AUT-UC18","position":2,"role_name":"Agent"}
 {"use_case_id":"LA-AUT-UC19","position":1,"role_name":"Owner"}
 {"use_case_id":"LA-AUT-UC19","position":2,"role_name":"Agent"}
+{"use_case_id":"LA-AUT-UC20","position":1,"role_name":"Owner"}
+{"use_case_id":"LA-AUT-UC20","position":2,"role_name":"Agent"}
+{"use_case_id":"LA-AUT-UC21","position":1,"role_name":"Owner"}
+{"use_case_id":"LA-AUT-UC21","position":2,"role_name":"Agent"}
 {"use_case_id":"LA-CHK-UC01","position":1,"role_name":"Agent"}
 {"use_case_id":"LA-CHK-UC01","position":2,"role_name":"Owner"}
 {"use_case_id":"LA-CHK-UC02","position":1,"role_name":"Agent"}

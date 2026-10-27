@@ -1,0 +1,15 @@
+{"id":"LA-AUT-A1-REPO","title":"Store","aggregate_id":"LA-AUT-A1","file":"lathe/src/store/store.ts","description":"`openStore`, `Store` (load, `rows`, `record`, writes), with `rows.ts` for the data file form and `insert.ts` for loading order."}
+{"id":"LA-CHK-A1-REPO","title":"Check rows","aggregate_id":"LA-CHK-A1","file":"lathe/src/store/store.ts","description":"The store's rows of `check`, with `lathe/data/check.jsonl` loaded beside the product's data as read-only rows."}
+{"id":"LA-CHK-A2-REPO","title":"Product settings","aggregate_id":"LA-CHK-A2","file":"lathe/src/store/store.ts","description":"The store's rows of `product_setting`."}
+{"id":"LA-EXP-A1-REPO","title":"the browser's history","aggregate_id":"LA-EXP-A1","file":"app/src/router.tsx","description":"the browser's history: navigate, useLocation, entryState, noteInEntry"}
+{"id":"LA-EXP-A2-REPO","title":"lathe","aggregate_id":"LA-EXP-A2","file":"app/src/shell/spaces.tsx","description":"lathe:space, lathe:space-pages in session storage"}
+{"id":"LA-EXP-A3-REPO","title":"lathe","aggregate_id":"LA-EXP-A3","file":"app/src/shell/Nav.tsx","description":"lathe:nav-folders, lathe:nav-sections in session storage"}
+{"id":"LA-EXP-A5-REPO","title":"lathe","aggregate_id":"LA-EXP-A5","file":"app/src/views/useTabs.ts","description":"lathe:tabs in session storage, parseTabSet"}
+{"id":"LA-PLT-A10-REPO","title":"loadConfig","aggregate_id":"LA-PLT-A10","file":"lathe/src/config.ts","description":"loadConfig: reads lathe.config.json"}
+{"id":"LA-PLT-A2-REPO","title":"readPref","aggregate_id":"LA-PLT-A2","file":"app/src/shell/prefs.ts","description":"readPref, writePref, usePanelSize: sizes and shown states in local storage"}
+{"id":"LA-PLT-A3-REPO","title":"COMMANDS","aggregate_id":"LA-PLT-A3","file":"app/src/shell/keymap.ts","description":"COMMANDS, SPACE_KEYS, readOverrides (lathe:keybindings)"}
+{"id":"LA-PLT-A4-REPO","title":"themeStore","aggregate_id":"LA-PLT-A4","file":"app/src/theme/store.ts","description":"themeStore, STORAGE_KEYS: the person's themes, the chosen one, the mode and its stylesheet"}
+{"id":"LA-PLT-A6-REPO","title":"parseWindowStates","aggregate_id":"LA-PLT-A6","file":"desktop/src/windowState.ts","description":"parseWindowStates, saveWindow (window-state.json)"}
+{"id":"LA-PLT-A8-REPO","title":"the changed tables' files rewritten through a temporary file and a rename","aggregate_id":"LA-PLT-A8","file":"lathe/src/store/store.ts","description":"the changed tables' files rewritten through a temporary file and a rename"}
+{"id":"LA-PLT-A9-REPO","title":"parseRecent","aggregate_id":"LA-PLT-A9","file":"desktop/src/folders.ts","description":"parseRecent (recent-folders.json)"}
+{"id":"LA-TRC-A3-REPO","title":"the store's follows links and setting_value rows","aggregate_id":"LA-TRC-A3","file":"lathe/src/store/store.ts","description":"the store's follows links and setting_value rows"}
