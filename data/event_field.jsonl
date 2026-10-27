@@ -1,0 +1,35 @@
+{"domain_event_id":"LA-AUT-EV01","position":1,"name":"Specs folder","meaning":"The product's specs folder that changed.","type":"Folder path.","example":"specs"}
+{"domain_event_id":"LA-AUT-EV01","position":2,"name":"File","meaning":"The record file that changed.","type":"File path.","example":"lathe/modeling/01-define/aggregates/A2-record.md"}
+{"domain_event_id":"LA-AUT-EV01","position":3,"name":"Change","meaning":"What happened to the file.","type":"`added`, `changed` or `removed`.","example":"changed"}
+{"domain_event_id":"LA-AUT-EV01","position":4,"name":"Changed at","meaning":"When the change was seen.","type":"Date and time.","example":"2026-10-24T14:02:00Z"}
+{"domain_event_id":"LA-AUT-EV03","position":1,"name":"File","meaning":"The meta-model file that changed.","type":"File path.","example":"lathe/meta/relations.csv"}
+{"domain_event_id":"LA-AUT-EV03","position":2,"name":"Product","meaning":"The product whose extension changed, or none for Lathe's defaults.","type":"Product reference, or none.","example":"none"}
+{"domain_event_id":"LA-AUT-EV03","position":3,"name":"Changed at","meaning":"When the change was seen.","type":"Date and time.","example":"2026-10-24T23:24:05Z"}
+{"domain_event_id":"LA-CHK-EV01","position":1,"name":"File","meaning":"The check file that changed.","type":"File path.","example":"lathe/checks/01-duplicate-id.sql"}
+{"domain_event_id":"LA-CHK-EV01","position":2,"name":"Change","meaning":"What happened to the file.","type":"`added`, `changed` or `removed`.","example":"changed"}
+{"domain_event_id":"LA-CHK-EV01","position":3,"name":"Changed at","meaning":"When the change was seen.","type":"Date and time.","example":"2026-10-24T14:10:00Z"}
+{"domain_event_id":"LA-CHK-EV02","position":1,"name":"Specs folder","meaning":"The folder that was loaded.","type":"Folder path.","example":"specs"}
+{"domain_event_id":"LA-CHK-EV02","position":2,"name":"Records","meaning":"How many records were loaded.","type":"Whole number.","example":"1523"}
+{"domain_event_id":"LA-CHK-EV02","position":3,"name":"Errors","meaning":"How many problems are errors.","type":"Whole number.","example":"0"}
+{"domain_event_id":"LA-CHK-EV02","position":4,"name":"Warnings","meaning":"How many problems are warnings.","type":"Whole number.","example":"4"}
+{"domain_event_id":"LA-CHK-EV02","position":5,"name":"Checked at","meaning":"When the load finished.","type":"Date and time.","example":"2026-10-24T14:02:01Z"}
+{"domain_event_id":"LA-EXP-EV01","position":1,"name":"Address","meaning":"The page's path and query.","type":"App address.","example":"/LA-AUT-A1?view=wiki,graph"}
+{"domain_event_id":"LA-EXP-EV01","position":2,"name":"Product","meaning":"The product the page belongs to, which makes it the current space.","type":"Product reference, or none.","example":"LA"}
+{"domain_event_id":"LA-EXP-EV01","position":3,"name":"Focus","meaning":"The record or group the page shows.","type":"Record ID, group, or none.","example":"LA-AUT-A1"}
+{"domain_event_id":"LA-EXP-EV01","position":4,"name":"Views","meaning":"The panes open on the page.","type":"Wiki, Graph and Model, in order.","example":"Wiki, Graph"}
+{"domain_event_id":"LA-EXP-EV01","position":5,"name":"Opened at","meaning":"When the page opened.","type":"Date and time.","example":"2026-10-24T14:05:00Z"}
+{"domain_event_id":"LA-PLT-EV01","position":1,"name":"Theme","meaning":"The theme now chosen.","type":"A built-in theme's name or one of the reader's own.","example":"Workshop"}
+{"domain_event_id":"LA-PLT-EV01","position":2,"name":"Previous theme","meaning":"The theme it replaced.","type":"Theme name.","example":"Lathe"}
+{"domain_event_id":"LA-PLT-EV01","position":3,"name":"Chosen at","meaning":"When it was kept.","type":"Date and time.","example":"2026-10-24T14:40:00Z"}
+{"domain_event_id":"LA-PLT-EV02","position":1,"name":"Mode","meaning":"The choice now kept.","type":"`system`, `light` or `dark`.","example":"dark"}
+{"domain_event_id":"LA-PLT-EV02","position":2,"name":"Previous mode","meaning":"The choice it replaced.","type":"`system`, `light` or `dark`.","example":"system"}
+{"domain_event_id":"LA-PLT-EV02","position":3,"name":"Chosen at","meaning":"When it was kept.","type":"Date and time.","example":"2026-10-24T14:41:00Z"}
+{"domain_event_id":"LA-PLT-EV03","position":1,"name":"Theme","meaning":"The new theme's name.","type":"Text, not blank.","example":"Workshop copy"}
+{"domain_event_id":"LA-PLT-EV03","position":2,"name":"Made from","meaning":"The theme it copies, or the file it came from.","type":"Theme name or file name.","example":"Workshop"}
+{"domain_event_id":"LA-PLT-EV03","position":3,"name":"Made at","meaning":"When it was made.","type":"Date and time.","example":"2026-10-24T14:45:00Z"}
+{"domain_event_id":"LA-PLT-EV04","position":1,"name":"Folder","meaning":"The product folder the window shows.","type":"Folder path.","example":"~/Development/Lathe"}
+{"domain_event_id":"LA-PLT-EV04","position":2,"name":"Products","meaning":"The names in the window's title.","type":"Product titles.","example":"Lathe"}
+{"domain_event_id":"LA-PLT-EV04","position":3,"name":"Opened at","meaning":"When the window opened.","type":"Date and time.","example":"2026-10-24T08:30:00Z"}
+{"domain_event_id":"LA-PLT-EV05","position":1,"name":"Folder","meaning":"The product folder the window showed.","type":"Folder path.","example":"~/Development/Lathe"}
+{"domain_event_id":"LA-PLT-EV05","position":2,"name":"Bounds","meaning":"Where the window was and how big.","type":"Position and size, and whether it was maximized or full screen.","example":"120, 80, 1440 by 900, not maximized"}
+{"domain_event_id":"LA-PLT-EV05","position":3,"name":"Closed at","meaning":"When the window closed.","type":"Date and time.","example":"2026-10-24T18:00:00Z"}

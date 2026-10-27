@@ -268,3 +268,9 @@ Lathe now matches S2 on UC requirements (206/206) and domain rules (98/98) acros
 - Checks passed: unit tests in every package, knip, a11y 125, stability 43 plus the fixed nav test (5/5).
 - `db-first` moved up to main.
 - Left over: in the side bar's Children list, a long pattern title overlaps its count; the header of check 41 misstates that code spans aren't read.
+
+## Brief 98 merged into db-first: the schema and the store
+- 80 tables (61 stored as `data/<table>.jsonl`), supertypes for links that target several kinds, four validation queries, and a merge driver that checks only the merged table's own rules.
+- All checks passed.
+- Briefs 99 (import), 100 (engine), 101 (writers) and 102 (app) are launched in parallel from `db-first`.
+- Main also has a side bar fix: long titles wrap under their IDs.

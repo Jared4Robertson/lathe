@@ -267,6 +267,8 @@ export interface TestRow {
   when?: string;
   /** What the test expects. */
   then?: string;
+  /** Longer notes on the test, such as why it is manual, when to run it or how its code is keyed. */
+  notes?: string;
 }
 
 /** The test exercises the component. */
