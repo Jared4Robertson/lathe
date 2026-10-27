@@ -24,7 +24,7 @@ describe('LA-PLT-T125 The launch view names the product, and the error page says
   });
 
   it('reads the engine\'s message from the spec API\'s answer', () => {
-    expect(specErrorMessage(400, { error: 'Unknown kind "usecase" in specs/a.md' })).toBe('Unknown kind "usecase" in specs/a.md');
+    expect(specErrorMessage(400, { error: 'data/use_case.jsonl:2: use_case.domain_id is required [required]' })).toBe('data/use_case.jsonl:2: use_case.domain_id is required [required]');
     expect(specErrorMessage(500, null)).toBe('GET /api/spec answered 500.');
     expect(specErrorMessage(400, { error: '  ' })).toBe('GET /api/spec answered 400.');
   });
@@ -41,7 +41,7 @@ describe('LA-PLT-T125 The launch view names the product, and the error page says
   it('passes the model to the page as JSON, and gives About the versions and its two links', () => {
     const about = aboutModel({ app: '0.1.0', engine: '0.1.0', electron: '45.0.0', chrome: '140', node: '24' }, colors);
     expect(about.versions.map((v) => v.label)).toEqual(['Version', 'Engine', 'Electron', 'Chromium', 'Node.js']);
-    expect(about.actions.map((a) => a.id)).toEqual(['open-repo', 'open-format']);
+    expect(about.actions.map((a) => a.id)).toEqual(['open-repo', 'open-reference']);
     expect(aboutModel({ app: '1', engine: null, electron: '1', chrome: '1', node: '1' }, colors).versions[1].value).toBe('unknown');
     expect(JSON.parse(modelQuery(about).model)).toEqual(about);
   });

@@ -1,12 +1,12 @@
-// The desktop-only record actions (LA-AUT-UC15-R01): reveal a record's spec file in Finder, open it in
+// The desktop-only record actions (LA-AUT-UC15-R01): reveal a record's data file in Finder, open it in
 // the editor, copy its ID, or a native menu of the three. The page names only a record ID; the main
-// process checks the request (LA-PLT-DR38) and finds the file itself, among the folder's spec files,
+// process checks the request (LA-PLT-DR38) and finds the file itself, among the folder's data files,
 // so a page can never name a file of its own.
 import type { MenuItemConstructorOptions } from 'electron';
-import { readdirSync, readFileSync, existsSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
-/** A record ID, as FORMAT section 2 defines it. */
+/** A record ID, as the schema shapes them: capitals and digits in parts joined by hyphens. */
 export const RECORD_ID = /^[A-Z][A-Z0-9]*(-[A-Z0-9]+)*$/;
 const MAX_ID = 128;
 
@@ -29,74 +29,54 @@ export function parseRecordRequest(input: unknown): RecordRequest | null {
   return { action: action as RecordAction, id };
 }
 
-/** The record ID in a spec file's front matter, if it has one. */
-export function frontMatterId(text: string): string | null {
-  const header = text.match(/^---\r?\n([\s\S]*?)\r?\n---/);
-  const id = header?.[1].match(/^id:\s*(.+?)\s*$/m)?.[1].replace(/^(["'])(.*)\1$/, '$2');
-  return id && RECORD_ID.test(id) ? id : null;
+// A data file's line that holds the record starts with its id column: {"id":"<ID>", then a comma or the end.
+function holds(text: string, id: string): boolean {
+  const start = `{"id":${JSON.stringify(id)}`;
+  return text.split('\n').some((line) => line.startsWith(start) && /^[,}]/.test(line.slice(start.length)));
 }
 
-/** Every spec file under a folder by record ID (the first file wins, as the engine reports duplicates). */
-export function indexSpecFiles(specsDir: string): Map<string, string> {
-  const files = new Map<string, string>();
-  const walk = (dir: string) => {
-    let entries;
+/** The data file (<table>.jsonl in the data folder) that holds the record, or null. Only a kind's table starts its rows with id. */
+export function findDataFile(dataDir: string, id: string): string | null {
+  let files: string[];
+  try {
+    files = readdirSync(dataDir).filter((f) => f.endsWith('.jsonl')).sort();
+  } catch {
+    return null;
+  }
+  for (const name of files) {
+    const file = path.join(dataDir, name);
     try {
-      entries = readdirSync(dir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name));
+      if (holds(readFileSync(file, 'utf8'), id)) return file;
     } catch {
-      return;
+      // A file that cannot be read holds no record to open.
     }
-    for (const entry of entries) {
-      if (entry.name.startsWith('.') || entry.name === 'node_modules') continue;
-      const full = path.join(dir, entry.name);
-      if (entry.isDirectory()) walk(full);
-      else if (entry.isFile() && entry.name.endsWith('.md')) {
-        let id: string | null = null;
-        try {
-          id = frontMatterId(readFileSync(full, 'utf8'));
-        } catch {
-          id = null;
-        }
-        if (id && !files.has(id)) files.set(id, full);
-      }
-    }
-  };
-  walk(specsDir);
-  return files;
+  }
+  return null;
 }
 
-/**
- * Finds records' spec files, reading the folder again when a record is not where it was last seen
- * (it was added, moved or renamed since).
- */
-export class SpecFiles {
-  private index: Map<string, string> | null = null;
-  private readonly specsDir: string;
-  constructor(specsDir: string) {
-    this.specsDir = specsDir;
+/** Finds records' data files, reading the folder again when a record is not where it was last seen. */
+export class DataFiles {
+  private readonly known = new Map<string, string>();
+  private readonly dataDir: string;
+  constructor(dataDir: string) {
+    this.dataDir = dataDir;
   }
 
   find(id: string): string | null {
-    const known = this.index?.get(id);
-    if (known && existsSync(known) && frontMatterIdOf(known) === id) return known;
-    this.index = indexSpecFiles(this.specsDir);
-    return this.index.get(id) ?? null;
-  }
-}
-
-function frontMatterIdOf(file: string) {
-  try {
-    return frontMatterId(readFileSync(file, 'utf8'));
-  } catch {
-    return null;
+    const known = this.known.get(id);
+    if (known && existsSync(known) && holds(readFileSync(known, 'utf8'), id)) return known;
+    const found = findDataFile(this.dataDir, id);
+    if (found) this.known.set(id, found);
+    else this.known.delete(id);
+    return found;
   }
 }
 
 /** What a platform calls revealing a file. */
 export function revealLabel(platform: NodeJS.Platform): string {
-  if (platform === 'darwin') return 'Reveal Spec File in Finder';
-  if (platform === 'win32') return 'Show Spec File in File Explorer';
-  return 'Show Spec File in Folder';
+  if (platform === 'darwin') return 'Reveal Data File in Finder';
+  if (platform === 'win32') return 'Show Data File in File Explorer';
+  return 'Show Data File in Folder';
 }
 
 export interface RecordMenuActions {

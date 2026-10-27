@@ -48,8 +48,8 @@ beforeAll(() => {
   // No macOS window restoration for the unpacked Electron, even before it runs once (src/persistence.ts).
   if (process.platform === 'darwin') for (const args of restorationDefaultsCommands()) execFileSync('defaults', args);
   write(path.join(product, 'lathe.config.json'), '{}\n');
-  write(path.join(product, 'specs', 'smoke', 'product.md'), '---\nid: SMK\nkind: product\ntitle: Smoke Shop\n---\nA product for the desktop smoke test.\n');
-  write(path.join(product, 'specs', 'smoke', 'orders', 'domain.md'), '---\nid: SMK-ORD\nkind: domain\ntitle: Orders\nparent: SMK\n---\nOrders.\n');
+  write(path.join(product, 'data', 'product.jsonl'), '{"id":"SMK","title":"Smoke Shop","description":"A product for the desktop smoke test."}\n');
+  write(path.join(product, 'data', 'domain.jsonl'), '{"id":"SMK-ORD","title":"Orders","product_id":"SMK","description":"Orders."}\n');
 }, 300_000);
 
 /** Every Electron this file started; none outlives it. */
