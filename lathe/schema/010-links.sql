@@ -17,8 +17,10 @@ CREATE TABLE selects_by (source_id VARCHAR NOT NULL REFERENCES query (id), targe
 COMMENT ON TABLE selects_by IS 'The query selects the records that satisfy the specification, of its own domain.';
 CREATE TABLE hears (source_id VARCHAR NOT NULL UNIQUE REFERENCES policy (id), target_id VARCHAR NOT NULL REFERENCES domain_event (id), PRIMARY KEY (source_id, target_id));
 COMMENT ON TABLE hears IS 'The policy hears the event: one event per policy, of its own domain or another domain''s published one.';
-CREATE TABLE calls (source_id VARCHAR NOT NULL REFERENCES operation (id), target_id VARCHAR NOT NULL REFERENCES domain_service (id), PRIMARY KEY (source_id, target_id));
-COMMENT ON TABLE calls IS 'The command or query uses the domain service, of its own domain.';
+CREATE TABLE calls (source_id VARCHAR NOT NULL REFERENCES calls_source (id), target_id VARCHAR NOT NULL REFERENCES domain_service (id), PRIMARY KEY (source_id, target_id));
+COMMENT ON TABLE calls IS 'The command, query or read model uses the domain service, of its own domain.';
+CREATE TABLE fed_by (source_id VARCHAR NOT NULL REFERENCES read_model (id), target_id VARCHAR NOT NULL REFERENCES domain_event (id), PRIMARY KEY (source_id, target_id));
+COMMENT ON TABLE fed_by IS 'The read model is kept current from the event: of its own domain, or another domain''s published one, which is how a read model shows another domain''s data.';
 CREATE TABLE fulfills (source_id VARCHAR NOT NULL REFERENCES flow_step (id), target_id VARCHAR NOT NULL REFERENCES uc_requirement (id), PRIMARY KEY (source_id, target_id));
 COMMENT ON TABLE fulfills IS 'The flow step fulfills the UC requirement, of its own use case; this designs the requirement.';
 CREATE TABLE invokes (source_id VARCHAR NOT NULL UNIQUE REFERENCES flow_step (id), target_id VARCHAR NOT NULL REFERENCES operation (id), PRIMARY KEY (source_id, target_id));
@@ -44,6 +46,7 @@ INSERT INTO meta_relation VALUES
   ('reads', NULL, 'domain', 'Reads', 'Read by', NULL),
   ('selects_by', NULL, 'domain', 'Selects by', 'Selects for', NULL),
   ('hears', NULL, 'product', 'Hears', 'Heard by', NULL),
+  ('fed_by', NULL, 'product', 'Fed by', 'Feeds', NULL),
   ('calls', NULL, 'domain', 'Calls', 'Called by', NULL),
   ('fulfills', 'design', 'product', 'Fulfills', 'Fulfilled by', NULL),
   ('invokes', NULL, 'product', 'Invokes', 'Invoked by', NULL),
@@ -65,6 +68,8 @@ INSERT INTO meta_relation_pair VALUES
   ('hears', 'policy', 'domain_event', 'Whenever the event happens, the policy sends its command.'),
   ('calls', 'command', 'domain_service', 'The command uses the domain service.'),
   ('calls', 'query', 'domain_service', 'The query uses the domain service.'),
+  ('calls', 'read_model', 'domain_service', 'The read model''s projection uses the domain service.'),
+  ('fed_by', 'read_model', 'domain_event', 'The read model is kept current from the event.'),
   ('fulfills', 'flow_step', 'uc_requirement', 'The step fulfills the UC requirement of its use case.'),
   ('invokes', 'flow_step', 'command', 'The step sends the command.'),
   ('invokes', 'flow_step', 'query', 'The step asks the query.'),
