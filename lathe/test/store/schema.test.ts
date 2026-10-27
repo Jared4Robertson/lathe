@@ -40,14 +40,18 @@ describe('the schema description', () => {
         const fk = table.foreignKeys.find((f) => f.columns[0] === parent.column && f.table === parent.kind);
         expect(fk, `${kind.name}.${parent.column} -> ${parent.kind}`).toBeTruthy();
       }
-      // One parent: a lone parent column is required; two are both optional, with a CHECK that exactly one is given.
+      // One parent: a lone parent column is required; two or three are all optional, with a CHECK that exactly one is given.
       const columns = kind.parents.map((p) => table.columns.find((c) => c.name === p.column)!);
       if (columns.length === 1) expect(columns[0].required, kind.name).toBe(true);
       if (columns.length === 2) {
         expect(columns.map((c) => c.required), kind.name).toEqual([false, false]);
         expect(table.checks, kind.name).toContainEqual(expect.stringContaining(`(${columns[0].name} IS NULL) != (${columns[1].name} IS NULL)`));
       }
-      expect(columns.length, kind.name).toBeLessThanOrEqual(2);
+      if (columns.length === 3) {
+        expect(columns.map((c) => c.required), kind.name).toEqual([false, false, false]);
+        expect(table.checks.join(' '), kind.name).toContain('= 1');
+      }
+      expect(columns.length, kind.name).toBeLessThanOrEqual(3);
     }
   });
 

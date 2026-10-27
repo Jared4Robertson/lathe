@@ -1,105 +1,109 @@
 ---
 name: plan-tests
-description: Write or change Lathe test records and the tests they name - automated, manual or planned. Use when planning which tests prove which requirements, domain rules and interaction requirements, when writing a test for a Lathe test record, or when deciding whether to plan a test instead of writing it, in a repo with lathe.config.json.
+description: Write or change Lathe test records and the tests they name - one test kind per thing tested (constraint, invariant, specification, policy, domain service, use case, view, endpoint, flow, integration and pattern rule tests), each under what it proves, with its run by (level, state, and a file or a manual reason). Use when planning which tests prove which obligations, writing a test for a Lathe test record, or deciding whether a test is automated, manual or not automated yet, in a repo with lathe.config.json.
 ---
 
 # Plan tests
 
-A `test` record says what one test proves and how it is run. An obligation (a requirement, domain rule, interaction requirement, pattern rule, or a product's own obligation kind) is **proved** when an automated or manual test `proves` it, and **planned** when only a planned test does.
+Every test proves exactly its parent: a constraint test its constraint, a use case test its UC requirement, and so on. An obligation is **proved** when its tests exist, at a level its kind allows, automated or manual. Write the test plan last, after the record it proves.
 
 ## How you write
 
 The spec is typed data in the repo's `data/` folder, one table per kind. Change it only with Lathe's MCP tools, never by editing files: `add`, `set`, `move`, `link`, `unlink` and `remove` write; `show`, `list` and `next_id` read; `check` runs the checks. Each write is checked against the schema and refused, with its reasons, when it breaks the model; a refusal changes nothing, so fix the input and try again. Writes never commit: commit per task, the test record with its test.
 
-- `lathe add test --help` in a shell prints the test table's columns, as the `add` tool's input schema does (`npx lathe` in a product repo; `npm --prefix lathe run lathe -- <command> --root ..` in the Lathe repo).
-- Take each new test's ID from `next_id` (`kind`: `test`, `parent`: its domain or capability). IDs are never reused or renumbered.
+- The `add` tool's input schema lists each test kind's columns. In a shell, `lathe add <test kind> --help` prints the same (`npx lathe` in a product repo; `npm --prefix lathe run lathe -- <command> --root ..` in the Lathe repo).
+- Take each test's ID from `next_id`, with what it proves as `parent`. A kind with exactly one test per parent gives that one ID (`TL-LEND-INV01-T`); the others are numbered (`TL-LEND-UC01-R01-T01`).
 
-## The record
+## The test kinds
 
-| Column | Meaning |
-| --- | --- |
-| `id` | `<P>-<D>-T<nn>`, the next free number in the domain. |
-| `domain_id`, `capability_id` | The domain, and, when the domain has capabilities, the capability of the use cases whose requirements it proves. A test that proves only domain rules stays under the domain. |
-| `title` | What the test shows, as a sentence. |
-| `test_type` | Required, in lower case: for example `domain_rule`, `requirement`, `endpoint`, `unit`, `acceptance`. |
-| `state` | Required: `automated`, `manual` or `planned`. |
-| `file` | The test file, as a path from the repo root. Required for an automated test (the store refuses one without); optional for manual and planned ones. |
-| `key` | Optional. Text the `file` must contain in place of an ID, such as a test function name. |
-| `key_file` | Optional, with `file`. The file that holds the key (or the IDs) when the test runs from a shared class in another file, as a path from the repo root. That file is then read in place of `file`, which must still exist. |
-| `given`, `when`, `then` | What the test does: the state it starts from, the action, and what it expects. For a manual test they are the procedure a person follows. |
-| `notes` | Optional. What those do not say, such as why the test is manual or planned, when to run it, or how its code is keyed. |
+| Test kind | Proves (its parent) | How many | ID | Levels it allows |
+| --- | --- | --- | --- | --- |
+| `constraint_test` | a constraint | exactly one | `<constraint>-T` | unit |
+| `invariant_test` | an invariant | exactly one | `<invariant>-T` | unit, database |
+| `specification_test` | a specification | exactly one | `<specification>-T` | unit, database |
+| `policy_test` | a policy | exactly one | `<policy>-T` | database, api, e2e-api |
+| `domain_service_test` | a domain service | at least one | `<domain service>-T<nn>` | unit |
+| `use_case_test` | a UC requirement | at least one | `<UC requirement>-T<nn>` | api, e2e-api, e2e-ui, manual |
+| `view_test` | a view requirement | at least one | `<view requirement>-T<nn>` | unit, e2e-ui, manual |
+| `endpoint_test` | an API requirement | at least one | `<API requirement>-T<nn>` | contract, api |
+| `flow_test` | a flow: a smoke test of its main path | exactly one | `<flow>-T` | e2e-ui, manual |
+| `integration_test` | an integration | any | `<integration>-T<nn>` | contract, e2e-api, manual |
+| `pattern_rule_test` | a pattern rule, in one adopting domain (`domain_id`) | one per rule and domain | `<pattern rule>-T<nn>` | any |
 
-Its links:
+Technical records have no tests of their own: each is proved by the tests of what it implements. A standard rule is proved by the checks or linters that enforce it, named in its statement. A test at a level its kind does not allow is a warning.
 
-- `proves`: the obligations this test proves.
-- `supports`: the obligations it backs without proving them, such as a check of a lock, a transaction or a budget the design chose. Support is never proof, so the file need not name these IDs.
-- `runs` a flow it walks end to end and `covers` a component it exercises; neither counts as proof. `meets` a standard rule it follows.
+Most kinds take `given`, `when` and `then`: the state it starts from, the action, and what it expects. A constraint test takes `accepts` and `refuses` (the values the value object takes and refuses); a flow test takes `steps` (a list, one item per step of the main path) and `expected_result`.
 
-## The three states
+## Run by
 
-- **automated**: code runs it. `file` must name a file that exists and names this test's ID, or every ID it proves, or its `key` (see below). A missing file is `test-file-missing`; each proved ID the file leaves out is `proof-not-in-file`; a missing key, or a file that names no ID of a test that proves nothing, is `test-file-missing-id`.
-- **manual**: a person runs it, following its `given`, `when` and `then`, with `notes` saying why code cannot run it. It counts as proof. Use it only for what code cannot sensibly check (a smoke test of the README's steps, a look at a printed page). If it names a `file`, the file must exist.
-- **planned**: not written yet. It shows what will prove an obligation, but it is not proof: coverage counts the obligation as **planned**, and the `unproved` warning stays. If it names a `file`, the file must exist, so leave `file` out until the file is written.
+Every test has a run by:
 
-## Three ways code can carry the proof
+- `level`: `unit` (pure code, no storage), `database` (with real storage), `api` (over HTTP against the product's server), `contract` (against an API's or an outside system's agreed shape), `e2e-api` (end to end through the API), `e2e-ui` (end to end through the user interface) or `manual`.
+- `state`: `automated` (a file runs it), `manual` (a person follows it) or `not automated yet` (meant to be automated, and not proof until it is).
+- `file`: the test file, from the product root. Required when automated; give it otherwise only when the file exists.
+- `manual_reason`: why a person runs it rather than a file. Required when manual, and only then; a manual test's level is usually `manual`.
 
-An automated test's `file` must contain **one** of:
+The store refuses an automated test with no file, and a manual reason on a test that is not manual.
 
-1. **the test record's ID**, for example in the test's name: `it('TL-LEND-T01 A second member with the same email is rejected', ...)`. The test record then vouches for everything it `proves`.
-2. **every ID the test proves**: `it('TL-LEND-DR01 Email is unique, whatever its case', ...)`. Use this when the product keys its tests by the rule they prove; the code then needs no separate test ID. A test that proves two records must name both: each one the file leaves out is a `proof-not-in-file` error.
-3. **the test's `key`**, when the record has one: text the file must contain exactly, such as a test function name (`test_librarian_actions_are_checked`) or the heading of a dedicated proof file that names no ID. With a `key`, the ID rules do not apply.
+## The test names its ID
 
-When the proof sits in a shared class that the `file` inherits from another file, name that file in `key_file`: the key, or the IDs, are looked for there instead. A key file that is missing or outside the repo root is `test-file-missing`.
-
-An engineering check that tests a mechanism (a lock, a transaction, a budget) backs an obligation but does not prove it: link it with `supports`, not `proves`. A test that only supports owes no ID in its file, and its links never count in coverage.
-
-IDs are matched as whole IDs: `TL-LEND-DR05` is not found in `TL-LEND-DR050` or `TL-LEND-DR05-R01`. Pick one style per product and keep to it. Put the ID at the start of the test's name, so a failing test points straight at its record.
-
-## When to plan instead of write
-
-Write the test with the record when you can: the code under test exists, or you are writing it now. Plan it (`state: planned`, no `file`) when:
-
-- the design is ready but the code it tests is not written yet;
-- the test needs something not in place yet (a fixture, a browser runner, a second service);
-- you are laying out what will prove a set of obligations before building them.
-
-Say in `given`, `when` and `then` what it will check, and in `notes` why it is planned. When the test is written, `set` its `state` to `automated` and its `file` in one write. Never mark a test automated before its file names the ID, every ID it proves, or its key.
-
-## Examples
-
-An automated test keyed by its own ID:
-
-```
-add  { "test": { "id": "TL-LEND-T01", "title": "A second member with the same email is rejected, whatever its case",
-       "domain_id": "TL-LEND", "test_type": "domain_rule", "state": "automated", "file": "test/domain-rules.test.ts",
-       "given": "A registered member", "when": "Another member registers with the same email in a different case and with spaces",
-       "then": "It is refused as email_taken" } }
-link { "source": "TL-LEND-T01", "relation": "proves", "target": "TL-LEND-DR01" }
-```
+An automated test's file names the test record's ID, at the start of the test's name, so a failing test points straight at its record and the check can find it:
 
 ```ts
-it('TL-LEND-T01 A second member with the same email is rejected, whatever its case', () => {
+it('TL-LEND-INV01-T A second member with the same email is rejected, whatever its case', () => {
   // ...
 });
 ```
 
-A planned test of an interaction requirement:
+When one test in code proves two records, split it into one test per record, each named with its own ID. IDs are matched whole: `TL-LEND-INV01-T` is not found in `TL-LEND-INV01-T2`.
+
+## Automated, manual or not automated yet
+
+Write the test with its record when you can. Use `not automated yet` (no `file`) when the code it tests is not written, or the test needs something not in place yet, such as a browser runner; say in `given`, `when` and `then` what it will check, and in `notes` why it waits. When it is written, `set` its `state` to `automated` and its `file` in one write. Use `manual` only for what code cannot sensibly check, such as a smoke test of the README's steps, with the reason.
+
+## Examples: the Tool Library
+
+An invariant test, a constraint test and a use case test:
 
 ```
-add  { "test": { "id": "TL-LEND-T14", "title": "Borrowing a tool on loan answers 409 tool_on_loan",
-       "domain_id": "TL-LEND", "test_type": "endpoint", "state": "planned",
-       "given": "A tool on loan to one member", "when": "Another member borrows it",
-       "then": "409 { \"error\": \"tool_on_loan\" }, and no second loan",
-       "notes": "Planned: the HTTP test harness is not set up yet." } }
-link { "source": "TL-LEND-T14", "relation": "proves", "target": "TL-LEND-E04-R01" }
+add  { "invariant_test": { "id": "TL-LEND-INV01-T", "title": "A second member with the same email is rejected, whatever its case",
+       "invariant_id": "TL-LEND-INV01", "level": "database", "state": "automated", "file": "test/domain-rules.test.ts",
+       "when": "Registers a member, then another with the same email in a different case and with spaces.",
+       "then": "Refused as email_taken; inserting the duplicate straight into the store also fails." } }
+add  { "constraint_test": { "id": "TL-VO02-C02-T", "title": "An email address is kept trimmed and in lower case", "constraint_id": "TL-VO02-C02",
+       "level": "unit", "state": "automated", "file": "test/domain-rules.test.ts",
+       "accepts": "' Ada@Example.org ' as ada@example.org", "refuses": "an address with a space inside" } }
+add  { "use_case_test": { "id": "TL-LEND-UC03-R04-T01", "title": "Borrowing a tool on loan or needing repair is refused with the reason",
+       "uc_requirement_id": "TL-LEND-UC03-R04", "level": "api", "state": "automated", "file": "test/api.test.ts",
+       "given": "One tool on loan and one needing repair", "when": "A member borrows each", "then": "Each is refused, saying which" } }
 ```
 
-Once it is written: `set { "test": { "id": "TL-LEND-T14", "state": "automated", "file": "test/loans-api.test.ts" } }`.
+An endpoint test not automated yet, then automated:
+
+```
+add  { "endpoint_test": { "id": "TL-LEND-EP05-R02-T01", "title": "Returning an unknown loan gives 404 loan_not_found",
+       "api_requirement_id": "TL-LEND-EP05-R02", "level": "api", "state": "not automated yet",
+       "when": "POST /loans/999/return", "then": "404 loan_not_found, and nothing changes",
+       "notes": "Waits for the HTTP test harness." } }
+```
+
+Once it is written: `set { "endpoint_test": { "id": "TL-LEND-EP05-R02-T01", "state": "automated", "file": "test/api.test.ts" } }`.
+
+A manual flow test, and a pattern rule test in the domain that adopts the pattern:
+
+```
+add  { "flow_test": { "id": "TL-LEND-UC04-FL-T", "title": "The README returns a tool against a running server", "flow_id": "TL-LEND-UC04-FL",
+       "level": "manual", "state": "manual",
+       "manual_reason": "It checks what a newcomer meets: the real entry point, the documented port and the README's commands as written.",
+       "steps": ["Start the server with npm start", "Borrow a tool with the README's command", "Return it with the README's command"],
+       "expected_result": "The loan is returned, not late." } }
+add  { "pattern_rule_test": { "id": "TL-PAT-LIBRARIAN-ACTION-R01-T01", "title": "Each librarian action missing its required input is refused",
+       "pattern_rule_id": "TL-PAT-LIBRARIAN-ACTION-R01", "domain_id": "TL-LEND", "level": "api", "state": "automated", "file": "test/api.test.ts" } }
+```
 
 ## Rules
 
-- Write an automated test record and its test together.
-- One test proves one behavior. It may prove several records when they are one behavior (an interaction requirement, the use case requirement it fulfills, and the domain rule behind them).
-- Every test proves or supports at least one obligation. One that does neither is a `test-proves-nothing` warning, whatever its state; `runs` and `covers` say what it touches, not what it shows, and `meets` names a standard rule it follows. Link what it proves, or remove it.
-- Aim for every obligation to be proved; each one that is not is an `unproved` warning and a gap in coverage, and a planned test does not clear it.
+- One test proves one behavior: its parent. A test that seems to prove two records is two tests.
+- Write an automated test record and its test together, and never mark a test automated before its file names its ID.
+- Aim for every obligation to be proved; each one that is not is a gap in coverage, and a test not automated yet does not close it.
 - Finish with the `check-and-fix` skill.

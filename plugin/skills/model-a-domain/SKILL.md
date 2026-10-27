@@ -1,121 +1,200 @@
 ---
 name: model-a-domain
-description: Split a product into domains by business capability, then write or change a Lathe domain model - the domain record, its aggregates, their entities (the records each aggregate keeps, with their fields and the links an ERD draws), the domain events they raise and their domain rules. Use when deciding a product's domains, adding a domain, an aggregate, an entity, a domain event or a domain rule to a repo with lathe.config.json, or when deciding whether a rule belongs on an aggregate or in a use case.
+description: Split a product into domains by business capability, then write or change a Lathe domain model in event storming order - aggregates, their entities and fields, the commands that change them and the events they raise, then invariants, value objects and their constraints, specifications, policies, read models and queries, domain services and the domain's terms. Also the order of the whole spec, from the domain model to the tests. Use when deciding a product's domains, or adding or changing any domain model record, in a repo with lathe.config.json.
 ---
 
 # Model a domain
 
-A domain model says what the product's records are, how they hold and refer to each other, and what must always be true of them, whoever changes them. It has no actors, screens or code. The app draws it as ERDs (entity-relationship diagrams): one of each domain at aggregate level, and one of each aggregate's entities.
+A domain model says what the product's records are, what may change them, what that change announces, and what must always be true of them, whoever asks. It has no actors, screens or code. Lathe's model is drawn from domain-driven design, CQRS and event storming, and every record has exactly one parent: what can be worked out from the tree is never stored twice.
 
 ## Step one: find the slices
 
-Before you write any record, find the product's business capabilities and make each one a domain: a vertical slice that owns its domain model, use cases, flows, views, endpoints, components and tests. Technology is a layer inside each domain's Design stage, such as Web app, Server or Desktop, never a domain. What every domain shares, such as the app shell or sign-in, goes in a platform domain or a pattern.
+Before you write any record, find the product's business capabilities and make each one a domain: a vertical slice that owns its domain model, use cases, flows, endpoints, technical records and tests. A domain is what DDD calls a bounded context: one model, one language and one owner. Technology is never a domain: it shows in the technical records that implement each design record (see `write-the-technical-spec`). What every domain shares, such as sign-in, goes in a generic domain or a pattern.
 
 Ask of each candidate domain:
 
 - Would a person who uses the product name it, in their own words? Lending is; the frontend is not.
-- Does it have its own terms, records and rules, which its language can hold?
+- Does it have its own terms, records and rules, which its glossary can hold?
 - Would it still exist if the product were rebuilt on other technology? A capability would; a layer would not.
-- Can one use case be specified, built and proved inside it, from rule to screen to test, without another domain designing the same thing again?
+- Can one use case be specified, built and proved inside it, from command to screen to test, without another domain designing the same thing again?
 - Is it named for what it does for someone, rather than where its code runs (web app, API, server, database, desktop, mobile, engine)?
 
-A candidate that fails these is a layer or a platform concern, not a domain. A domain named for a technology is a `domain-named-for-technology` warning.
+A candidate that fails these is a layer or a platform concern, not a domain. Give each domain its `subdomain_type`: `core` for the product's edge, `supporting` for what the core needs but is not its edge, `generic` for what is solved the same way everywhere. It guides how much modeling the domain deserves.
+
+## The order of the whole spec
+
+Write a product stage by stage, in this order, so that each record's links point at records written before it. Each stage has its skill.
+
+1. **Domain model** (this skill), in event storming order: aggregates with their entities and fields; commands and the events they raise; then invariants, value objects and their constraints, specifications, policies, read models and queries, domain services and terms.
+2. **Use cases** (`write-use-cases`): capabilities, use cases with their actors, and their UC requirements; patterns they share.
+3. **Interaction design** (`design-interactions`): each use case's one flow and its steps, which invoke the commands and queries and fulfill the UC requirements; the views, endpoints and integrations the steps reach, with their view and API requirements.
+4. **Technical specification** (`write-the-technical-spec`): one technical record for each design record it implements, tables and their keys, standards.
+5. **Test plan** (`plan-tests`): one test kind per thing tested, each with its run by.
+
+Finish each stage with `check-and-fix`. The checks report what a later stage still owes (a command no step invokes, an obligation with no test) as gaps, not errors, because records are written stage by stage.
 
 ## How you write
 
 The spec is typed data in the repo's `data/` folder, one table per kind. Change it only with Lathe's MCP tools, never by editing files: `add`, `set`, `move`, `link`, `unlink` and `remove` write; `show`, `list` and `next_id` read; `check` runs the checks. Each write is checked against the schema and refused, with its reasons, when it breaks the model; a refusal changes nothing, so fix the input and try again. Writes never commit: commit per task.
 
-- The `add` tool's input schema lists every table with its columns, their types and what each means. In a shell, `lathe add <table> --help` prints the same (`npx lathe` in a product repo; `npm --prefix lathe run lathe -- <command> --root ..` in the Lathe repo).
-- A record is a row of its kind's table: `id`, `title`, the column naming its parent (`domain_id`, `aggregate_id`, ...), then its own columns. Give every parent column the kind has above it too: a domain rule under an entity names its `entity_id`, `aggregate_id` and `domain_id`. Or add it under the domain and `move` it: move fills them in.
-- Take each new record's ID from `next_id`. IDs are never reused or renumbered.
+- The `add` tool's input schema lists every table with its columns, their types and what each means; the `link` tool's lists every relation with the kinds it joins. In a shell, `lathe add <table> --help` and `lathe add --help` print the same (`npx lathe` in a product repo; `npm --prefix lathe run lathe -- <command> --root ..` in the Lathe repo).
+- A record is a row of its kind's table: `id`, `title`, the one column naming its parent (`domain_id`, `aggregate_id`, ...), then its own columns. Value objects and specifications have no parent column: their product, or a specification's domain, is the one their ID starts with.
+- Take each new record's ID from `next_id`, with the record it will sit under as `parent`; for a value object give the product, for a specification its domain. Domain model IDs are numbered across the domain (`TL-LEND-CMD05`), whatever aggregate they sit under. IDs are never reused or renumbered.
 
 ## Before you write
 
-1. Read the product (`show` its ID) and the domain's existing records (`list` each kind with the domain as `parent`, and `show` the ones you change).
-2. `list` the domain's aggregates, entities, events and rules before adding one, so a new record does not repeat an old one.
+1. `show` the product and the domain, and `list` each domain model kind with the domain or the aggregate as `parent`, so a new record does not repeat an old one.
+2. `list` the domain's terms (`term`, `parent`: the domain) and use them exactly.
 
 ## The records
 
 | Kind | Parent | ID | Holds |
 | --- | --- | --- | --- |
-| `domain` | the product (`product_id`) | `<P>-<D>` | `description`: what the domain covers. `notes`: its language, the terms and their meanings, as a Markdown table. |
-| `aggregate` | the domain (`domain_id`) | `<P>-<D>-A<n>` | One cluster of records changed together, named for its root. `description`, and `identity`: its business identity. A `relates_to` link to each aggregate it refers to by ID. |
-| `entity` | an aggregate (`aggregate_id`) | `<P>-<D>-EN<nn>`, numbered across the domain | One record the aggregate keeps: one box of its ERD. `role`: `root` for the record the aggregate is named for (exactly one per aggregate; the store refuses any other count), `child` for each of its parts. `description`: what it is. Its fields are `entity_field` rows. |
-| `entity_field` (part) | an entity (`entity_id`) | its `position`, 1, 2, 3 | One field: `name`, `meaning`, `type` (the kind of value) and `example`. |
-| `domain_event` | an aggregate (`aggregate_id`) | `<P>-<D>-EV<nn>`, numbered across the domain | Something that happened in the domain, which the aggregate raises. Title in the past tense (Loan opened). `description`: what happened and what raises it. What it carries are `event_field` rows, with the same columns as an entity's fields. |
-| `domain_rule` | an entity, an aggregate, or the domain for a rule across its aggregates | `<P>-<D>-DR<nn>` | One fact that must always hold. `statement`: the rule in one sentence with MUST / MUST NOT. Title: the rule in a few words. `domain_id` always; `aggregate_id` for the aggregate it constrains; `entity_id` too when the aggregate has many rules and this one is about that entity. |
+| `domain` | the product | `<P>-<D>` | `subdomain_type`; `description`: what it covers. |
+| `aggregate` | the domain | `<P>-<D>-A<n>` | The consistency boundary, named for its root. `identity`: what tells two apart in the business. |
+| `entity` | an aggregate | `<P>-<D>-EN<nn>` | A record with an identity. `role`: `root` (exactly one per aggregate) or `child`; `in_root_table: true` for a child stored in its root's table. Its fields are `entity_field` rows. |
+| `command` | an aggregate | `<P>-<D>-CMD<nn>` | A request to change that one aggregate, named as an imperative (Borrow a tool). Links: `raises` events, `checks` specifications, `calls` domain services. |
+| `domain_event` | an aggregate | `<P>-<D>-EV<nn>` | Something that happened, in the past tense (Loan opened). `published`: whether other domains may hear it. Its fields are `event_field` rows. |
+| `invariant` | an aggregate | `<P>-<D>-INV<nn>` | `statement`: what holds for that aggregate on every change. |
+| `value_object` | none | `<P>-VO<nn>` | A value with no identity, such as an email address. Its fields are `value_object_field` rows when it has more than one part. |
+| `constraint` | a value object | `<value object>-C<nn>` | `statement`: the value object's own rule, checked when a value is created. |
+| `specification` | none | `<P>-<D>-SP<nn>` | `statement`: a named yes-or-no predicate. Links: `reads` the aggregates it reads, all of its domain. |
+| `policy` | the command it invokes | `<P>-<D>-PO<nn>` | `statement`: whenever an event, then this command. Link: `hears` its one event. |
+| `read_model` | the domain | `<P>-<D>-RM<nn>` | A view of the domain's data shaped for reading. Its fields are `read_model_field` rows. Link: `reads` the aggregates it reads. |
+| `query` | a read model | `<P>-<D>-QRY<nn>` | A question asked of that read model; it changes nothing. Links: `selects_by` specifications, `calls` domain services. |
+| `domain_service` | the domain | `<P>-<D>-DS<nn>` | `statement`: domain logic that belongs to no single entity and is not a yes-or-no check, such as a due date or a late fee. |
+| `term` | the domain | `<P>-<D>-TM<nn>` | The word as `title`, and `meaning`: what it means in this domain. |
 
-## Entities
+Every `statement` is one rule in one sentence or two, with MUST / MUST NOT where it is a rule.
 
-- Start from the root: the record the aggregate is named for. Add a child only for a part that lives and dies with the root, such as a line of an order or a step of a process. Anything with a life of its own is the root of another aggregate.
-- Link each child from the root, or from the child it is part of, with `has_one` or `has_many`. A child nothing reaches is an `entity-unreferenced` warning.
-- A reference to a record elsewhere is `refers_to`, never `has_one` or `has_many`: parts stay in their aggregate. When an aggregate's entities refer to another aggregate's, also link the aggregates with `relates_to`.
-- One `entity_field` row per field, each name once, in the domain's terms. `type` says what values it takes (text, a whole number, a date and time, one of a list, the ID of another entity); `example` gives one real-looking value.
+## 1. Aggregates and entities
 
-## Domain events
+- An aggregate is what one command changes as a unit, in one transaction, keeping all its invariants. Start from the records that must change together and stay consistent; anything with a life of its own is the root of another aggregate.
+- Each aggregate has one `root` entity, named as the aggregate is. Add a `child` only for a part that lives and dies with the root, such as a return of a loan, and link it from the root, or from the child it is part of, with `has_one` or `has_many`.
+- A child stored in its root's table, as its columns, has `in_root_table: true` and no table of its own.
+- One `entity_field` row per field, in `position` order, each name once. A field's type is exactly one of: `type`, a basic type (`text`, `whole number`, `decimal`, `date`, `time`, `date and time`, `yes/no`); `type_value_object_id`, a value object; or `type_aggregate_id`, a reference to another aggregate by its ID. `required` says whether every record gives it a value. `column_name` names its column when that differs from the field's name, such as `id` for a Loan ID. `example` gives one real-looking value.
+- Aggregates refer to each other by ID only: a Loan's Member is a field typed by the Member aggregate, never a `has_one`. A reference to an aggregate of the same domain becomes a foreign key; one to another domain's stays a plain ID.
+- Leave out fields that are worked out, such as a count of active loans or an overdue flag: they are specifications or read model fields, since a table's columns follow from its entity's fields.
 
-- Add an event for something that happened that other parts of the product care about: another aggregate changes, a use case starts, or a component does its work. Leave out what nothing would ever react to, such as a screen being scrolled.
-- Name it in the past tense, subject first: Loan opened, Tool returned, Loan became overdue. A title that does not read as past tense is an `event-tense` warning.
-- `raised_by` links it to the entity of its own aggregate whose change raises it. Leave it out when no entity's change raises it, such as an event raised by time passing, and say so in its description.
-- Link what reacts to it with `reacts_to`, from the reacting record: an aggregate that changes (from any aggregate or domain), a use case that starts, or a component that handles it. An event nothing reacts to is an `event-unheard` warning; that can be fine for an event kept for the record.
-- Its fields list what the event carries, not the whole entity: the IDs it concerns, when it happened, and the values that changed.
+## 2. Commands and events
 
-## Rule or requirement?
+- **One aggregate per command.** A command changes exactly one aggregate, its parent. When something must follow in another aggregate, raise an event and let a policy send that aggregate's command: the change follows through the event.
+- **A recorded exception.** When a change to another aggregate of the same domain truly cannot follow through an event, because the two must never be seen apart, add a `command_change` row to the command with that aggregate and the `reason`. The store refuses the command's own aggregate and another domain's; the check lists every exception as a warning, so each stays visible and deliberate. Prefer the event and the policy.
+- A command `raises` each event it may raise, of its own aggregate. An event no command raises is a gap.
+- Name an event in the past tense, subject first: Loan opened, Tool returned. Its `event_field` rows carry what happened, not the whole entity: the IDs it concerns, when it happened and the values that changed, typed as entity fields are.
+- `published: true` makes the event's shape a promise to other domains, which may then hear it. Domains meet only through published events: commands, queries, read models and specifications stay inside their own domain.
+- **The outbox.** An event a policy hears, or that is published, crosses a transaction: it is delivered by outbox, saved in the same transaction as its aggregate and delivered reliably afterwards, so a reaction is never lost. Its event type says so (`delivery: "outbox"`, see `write-the-technical-spec`); the check warns while it does not.
 
-- A statement about records, fields and their states only is a **domain rule** on the aggregate it constrains.
-- A rule that holds across two or more aggregates of one domain, such as records saved together or a lifecycle rule for every record, sits under the domain (no `aggregate_id`), with an `involves` link to each aggregate it ties together; a rule across domains is a domain event that one raises and the other reacts to.
-- A statement that needs an actor or an action is a **requirement** on a use case (see the `write-use-cases` skill).
-- Something undecided is a `question` with an `owner`, linked with `about` to the records it concerns. The owner is a role, such as Owner, never a person's name. Never write "TBD" into a rule.
+## 3. Rules: invariants, value objects and constraints, specifications, policies
 
-## Example
+Sort each rule by what it does:
 
-An aggregate that refers to two others, with its root and one child:
+- **Constraint**: a value's own format, checked when the value is created, such as an email address looking like an address. It belongs to a value object; make the value object if the field has none, and type the fields that hold the value by it.
+- **Invariant**: holds for one aggregate on every change, such as a loan being returned once. Uniqueness across records (no two members share an email) is an invariant too, enforced by a unique key of the table.
+- **Specification**: a named yes-or-no predicate over one or more aggregates of one domain, such as Member has an overdue loan. Link the aggregates it `reads`; commands `checks` it before acting, and queries may select by it (`selects_by`).
+- **Policy**: "whenever event X, then command Y". It sits under the command it sends and `hears` one event: its own domain's, or another domain's published one. A reaction in another aggregate is a policy, never a second change in the first command.
+- A rule that needs an actor or a screen is not a domain rule: it is a UC requirement (`write-use-cases`) or a view or API requirement (`design-interactions`).
+
+## 4. Read models and queries
+
+- A read model is a view of the domain's data shaped for reading, such as the Catalog with each tool's status. It sits under the domain, `reads` the aggregates it reads (one or several, all of its domain) and has `read_model_field` rows, typed as entity fields are, including fields worked out from others.
+- A query sits under the one read model it reads and changes nothing. Link the specifications it selects by, and the domain services it calls.
+
+## 5. Domain services and terms
+
+- A domain service holds logic that belongs to no single entity and is not a yes-or-no check, such as counting days in the library's time zone. Commands and queries of its domain `calls` it. It uses no storage and no outside system: its inputs are passed in.
+- Each term of the domain's language is a `term` with its `meaning` in this domain. Use the terms in titles, statements and code alike.
+
+## Example: the Tool Library's Lending domain
+
+An aggregate with its root, a child stored in the root's table, and fields of each type:
 
 ```
 add  { "aggregate": { "id": "TL-LEND-A3", "title": "Loan", "domain_id": "TL-LEND",
        "description": "One member holding one tool, from borrowing to return.", "identity": "Loan ID" } }
-link { "source": "TL-LEND-A3", "relation": "relates_to", "target": "TL-LEND-A1" }
-link { "source": "TL-LEND-A3", "relation": "relates_to", "target": "TL-LEND-A2" }
-
-add  { "entity": { "id": "TL-LEND-EN01", "title": "Loan", "aggregate_id": "TL-LEND-A3", "role": "root",
+add  { "entity": { "id": "TL-LEND-EN04", "title": "Loan", "aggregate_id": "TL-LEND-A3", "role": "root",
        "description": "One member holding one tool, from borrowing to return." } }
-add  { "entity_field": { "entity_id": "TL-LEND-EN01", "position": 1, "name": "Loan ID",
-       "meaning": "The loan's identity.", "type": "Text", "example": "L-0042" } }
-add  { "entity_field": { "entity_id": "TL-LEND-EN01", "position": 2, "name": "Due at",
-       "meaning": "When the loan should end.", "type": "Date and time: Borrowed at plus 14 days", "example": "2026-03-16T10:00:00Z" } }
-
-add  { "entity": { "id": "TL-LEND-EN02", "title": "Renewal", "aggregate_id": "TL-LEND-A3", "role": "child",
-       "description": "One extension of a loan's due date." } }
-link { "source": "TL-LEND-EN01", "relation": "has_many", "target": "TL-LEND-EN02" }
-link { "source": "TL-LEND-EN01", "relation": "refers_to", "target": "TL-MEM-EN01" }
+add  { "entity_field": { "entity_id": "TL-LEND-EN04", "position": 1, "name": "Loan ID", "meaning": "The library's number for the loan.",
+       "type": "whole number", "required": true, "column_name": "id", "example": "31" } }
+add  { "entity_field": { "entity_id": "TL-LEND-EN04", "position": 2, "name": "Member", "meaning": "Who borrowed the tool.",
+       "type_aggregate_id": "TL-LEND-A1", "required": true, "column_name": "member_id", "example": "12" } }
+add  { "entity_field": { "entity_id": "TL-LEND-EN04", "position": 5, "name": "Due date", "meaning": "The last day of the loan, in the library's time zone.",
+       "type": "date", "required": true, "example": "2026-03-16" } }
+add  { "entity": { "id": "TL-LEND-EN05", "title": "Return", "aggregate_id": "TL-LEND-A3", "role": "child", "in_root_table": true,
+       "description": "The end of a loan: when the tool came back and what the librarian found." } }
+add  { "entity_field": { "entity_id": "TL-LEND-EN05", "position": 2, "name": "Condition", "meaning": "The tool's condition as the librarian found it.",
+       "type_value_object_id": "TL-VO03", "required": true, "column_name": "return_condition", "example": "good" } }
+link { "source": "TL-LEND-EN04", "relation": "has_one", "target": "TL-LEND-EN05" }
 ```
 
-An event the root raises, which the Tool aggregate reacts to, since the tool is no longer available:
+A command on the Loan, the event it raises, the specifications it checks and the domain service it calls:
 
 ```
-add  { "domain_event": { "id": "TL-LEND-EV05", "title": "Loan opened", "aggregate_id": "TL-LEND-A3",
-       "description": "A librarian lent a tool to a member, which opens a loan." } }
-add  { "event_field": { "domain_event_id": "TL-LEND-EV05", "position": 1, "name": "Loan ID",
-       "meaning": "The loan that opened.", "type": "Loan reference", "example": "L-0042" } }
-link { "source": "TL-LEND-EV05", "relation": "raised_by", "target": "TL-LEND-EN01" }
-link { "source": "TL-LEND-A2", "relation": "reacts_to", "target": "TL-LEND-EV05" }
+add  { "command": { "id": "TL-LEND-CMD06", "title": "Return a tool", "aggregate_id": "TL-LEND-A3",
+       "description": "Closes a loan, recording the time, the tool's condition and an optional note, and whether the return was late." } }
+add  { "domain_event": { "id": "TL-LEND-EV06", "title": "Tool returned", "aggregate_id": "TL-LEND-A3", "published": false,
+       "description": "A librarian recorded a tool's return, which closes its loan and says what condition the tool came back in." } }
+add  { "event_field": { "domain_event_id": "TL-LEND-EV06", "position": 1, "name": "Loan ID", "meaning": "The loan returned.",
+       "type_aggregate_id": "TL-LEND-A3", "required": true } }
+add  { "event_field": { "domain_event_id": "TL-LEND-EV06", "position": 7, "name": "Late", "meaning": "Whether the loan was overdue at the moment of return.",
+       "type": "yes/no", "required": true } }
+link { "source": "TL-LEND-CMD06", "relation": "raises", "target": "TL-LEND-EV06" }
+link { "source": "TL-LEND-CMD06", "relation": "checks", "target": "TL-LEND-SP01" }
+link { "source": "TL-LEND-CMD06", "relation": "calls", "target": "TL-LEND-DS01" }
 ```
 
-A rule on the Tool aggregate:
+A tool returned needing repair must leave lending, but Return a tool changes only the Loan. The Tool follows through the event: a policy under the Tool's Report damage command hears Tool returned.
 
 ```
-add  { "domain_rule": { "id": "TL-LEND-DR06", "title": "A tool is lent to one member at a time",
-       "domain_id": "TL-LEND", "aggregate_id": "TL-LEND-A2",
-       "statement": "A tool MUST NOT have more than one active loan; it can be lent again once its loan is returned." } }
+add  { "policy": { "id": "TL-LEND-PO01", "title": "A tool returned needing repair is taken out of lending", "command_id": "TL-LEND-CMD03",
+       "statement": "Whenever a tool is returned with the condition needs_repair, report damage on it with the return's note as the damage note." } }
+link { "source": "TL-LEND-PO01", "relation": "hears", "target": "TL-LEND-EV06" }
 ```
 
-In a shell the same writes are `lathe add aggregate --id TL-LEND-A3 --title Loan --domain_id TL-LEND ...` and `lathe link TL-LEND-A3 relates_to TL-LEND-A1`.
+Since a policy hears Tool returned, its event type is delivered by outbox (`write-the-technical-spec`). Were the two changes truly inseparable, the alternative is a recorded exception on the command:
+
+```
+add  { "command_change": { "command_id": "TL-LEND-CMD06", "aggregate_id": "TL-LEND-A2",
+       "reason": "A tool returned needing repair must never be seen as available, even for a moment." } }
+```
+
+Rules sorted by what they do: a value object with its constraint, an invariant, and a specification with the aggregates it reads:
+
+```
+add  { "value_object": { "id": "TL-VO02", "title": "Email address", "description": "How the library contacts a member." } }
+add  { "constraint": { "id": "TL-VO02-C02", "title": "An email address is kept trimmed and in lower case", "value_object_id": "TL-VO02",
+       "statement": "An email address MUST be trimmed and kept in lower case, so two spellings of one address are the same address." } }
+add  { "invariant": { "id": "TL-LEND-INV01", "title": "One member per email", "aggregate_id": "TL-LEND-A1",
+       "statement": "Two members MUST NOT share an email address." } }
+add  { "specification": { "id": "TL-LEND-SP03", "title": "Member is at the loan limit",
+       "statement": "A member is at the loan limit when they hold 3 active loans. A loan stops counting when it is returned." } }
+link { "source": "TL-LEND-SP03", "relation": "reads", "target": "TL-LEND-A1" }
+link { "source": "TL-LEND-SP03", "relation": "reads", "target": "TL-LEND-A3" }
+link { "source": "TL-LEND-CMD05", "relation": "checks", "target": "TL-LEND-SP03" }
+```
+
+A read model with a worked-out field, its query, a domain service and a term:
+
+```
+add  { "read_model": { "id": "TL-LEND-RM01", "title": "Catalog", "domain_id": "TL-LEND", "description": "Every tool with its status, as a borrower sees it." } }
+add  { "read_model_field": { "read_model_id": "TL-LEND-RM01", "position": 7, "name": "Status", "type": "text", "required": true,
+       "meaning": "on_loan while the tool has an active loan, else needs_repair when it needs repair, else available." } }
+link { "source": "TL-LEND-RM01", "relation": "reads", "target": "TL-LEND-A2" }
+link { "source": "TL-LEND-RM01", "relation": "reads", "target": "TL-LEND-A3" }
+add  { "query": { "id": "TL-LEND-QRY01", "title": "List the catalog", "read_model_id": "TL-LEND-RM01",
+       "description": "Every tool in the catalog, in ID order, with its status." } }
+add  { "domain_service": { "id": "TL-LEND-DS01", "title": "Library calendar", "domain_id": "TL-LEND",
+       "statement": "Counts days in the library's time zone: the date of a moment there, and the date a number of calendar days after another." } }
+add  { "term": { "id": "TL-LEND-TM06", "title": "Active loan", "domain_id": "TL-LEND", "meaning": "A loan that has not been returned." } }
+```
+
+In a shell the same writes are `lathe add command --id TL-LEND-CMD06 --title "Return a tool" --aggregate_id TL-LEND-A3 ...` and `lathe link TL-LEND-CMD06 raises TL-LEND-EV06`.
 
 ## Rules
 
 - Records carry no status, approval or history. A record in the data is in force; git holds the history.
-- One rule per `domain_rule` record. Use the domain's terms exactly as its language defines them.
-- When a question is decided, `remove` the question (its `about` links go with it), and write the answer into the records it affects.
+- One rule per record. Use the domain's terms exactly.
+- Something undecided is a `question` under the product or the domain, with an `owner` (a role, such as Owner, never a person), linked with `about` to the records it concerns. Never write "TBD" into a rule. When it is decided, `remove` the question (its `about` links go with it) and write the answer into the records it affects.
 - Specs name roles, never people: write "a librarian" or "the owner", not someone's name.
-- The store refuses what breaks the model outright, such as a second root, a link between kinds its relation does not join, or a field position used twice; the checks warn about the rest. Each check's explanation, with how to fix what it reports, is in `REFERENCE.md` in the Lathe package.
-- Finish with the `check-and-fix` skill. A new domain rule shows as a warning until a component satisfies it and a test proves it; that is expected.
+- The store refuses what breaks the model outright: a second root, a command change of the command's own aggregate, a policy hearing another domain's unpublished event, a specification reading another domain's aggregate, a field with no type or two, an ID that does not start with its domain's. The checks report the rest. Each check's explanation, with how to fix what it reports, is in `REFERENCE.md` in the Lathe package.
+- Finish with the `check-and-fix` skill. New obligations (constraints, invariants, specifications, policies, domain services) show as gaps until a technical record implements each and a test proves it; that is expected.

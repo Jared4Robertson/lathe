@@ -116,7 +116,7 @@ async function init() {
   } finally {
     await store.close();
   }
-  console.log('\nNext: add a domain under the product, then run `lathe check`. The tables and their columns are in REFERENCE.md.');
+  console.log('\nNext: add a domain under the product, with its subdomain_type, then its aggregates, commands and events (`lathe add --help`), and run `lathe check`. The tables and their columns are in REFERENCE.md.');
 }
 
 function startServer() {

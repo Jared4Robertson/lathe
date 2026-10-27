@@ -162,7 +162,7 @@ describe('link and unlink', () => {
       expect.objectContaining({ rule: 'foreign-key', message: expect.stringContaining('names no domain_service') }),
     ]);
     expect(await refused(store, [{ op: 'link', relation: 'calls', source: 'TL-LEND-UC01', target: 'TL-LEND-DS01' }])).toEqual([
-      expect.objectContaining({ rule: 'foreign-key', message: expect.stringContaining('names no operation (command, query)') }),
+      expect.objectContaining({ rule: 'foreign-key', message: expect.stringContaining('names no calls_source (command, query, read_model)') }),
     ]);
     expect(await refused(store, [{ op: 'link', relation: 'teaches', source: 'TL-LEND-UC01', target: 'TL-LEND-UC01' }])).toEqual([expect.objectContaining({ rule: 'unknown-relation' })]);
     await store.close();
