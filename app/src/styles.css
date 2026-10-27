@@ -218,8 +218,8 @@ code { font: 0.86em var(--mono); }
 .scenario > div { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 8px; }
 .scenario dt { font-weight: 600; color: var(--muted); }
 .scenario dd { margin: 0; }
-.use-case-steps { margin: 0; padding-left: 1.5em; display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; max-width: 72ch; }
-.use-case-steps .markdown p { margin: 0; }
+.test-steps { margin: 0; padding-left: 1.5em; display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; max-width: 72ch; }
+.test-steps .markdown p { margin: 0; }
 .markdown > :first-child { margin-top: 0; }
 .markdown > :last-child { margin-bottom: 0; }
 .markdown pre { background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; padding: 10px; overflow-x: auto; }
@@ -385,7 +385,6 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .record-row.not-automated > .record-link { font-style: italic; }
 .record-row.not-automated > .record-link > * { opacity: 0.65; }
 .not-automated-note { margin: 0; padding: 8px 12px; border: 1px dashed var(--muted); border-radius: 8px; color: var(--muted); font-size: 0.88rem; }
-.fulfills-at { margin: 0 0 6px; font-size: 0.88rem; color: var(--muted); }
 /* The record content lays itself out by its own width, so it reads at half the screen beside the graph. */
 .record-content { container-type: inline-size; display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; min-width: 0; }
 @container (max-width: 760px) {
@@ -594,7 +593,6 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 /* Record links listed in a cell are 24 px targets (WCAG 2.5.8, LA-PLT-DR24). */
 .trace-cell > .record-link { min-block-size: 24px; align-items: center; }
 .data-table.trace-requirements { width: 100%; }
-.trace-run-by { margin: 0; display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; font-size: 0.88rem; }
 .flow-path > h3 { display: flex; align-items: baseline; gap: 8px; margin: 10px 0 4px; font-size: 0.9rem; }
 .rule-na-reasons { font-size: 0.8rem; color: var(--muted); }
 .data-table { border-collapse: collapse; font-size: 0.86rem; margin: 0 0 12px; }

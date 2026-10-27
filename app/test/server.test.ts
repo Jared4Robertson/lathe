@@ -67,8 +67,9 @@ beforeAll(async () => {
   const store = await openStore(root);
   await store.apply([
     { op: 'add', table: 'product', row: { id: 'EX', title: 'Example' } },
-    { op: 'add', table: 'domain', row: { id: 'EX-NOTE', title: 'Notes', product_id: 'EX' } },
-    { op: 'add', table: 'use_case', row: { id: 'EX-NOTE-UC01', title: 'Write a note', domain_id: 'EX-NOTE' } },
+    { op: 'add', table: 'domain', row: { id: 'EX-NOTE', title: 'Notes', product_id: 'EX', subdomain_type: 'core' } },
+    { op: 'add', table: 'capability', row: { id: 'EX-NOTE-CAP01', title: 'Writing', domain_id: 'EX-NOTE', position: 1 } },
+    { op: 'add', table: 'use_case', row: { id: 'EX-NOTE-UC01', title: 'Write a note', capability_id: 'EX-NOTE-CAP01' } },
   ]);
   await store.close();
 });
@@ -88,8 +89,8 @@ describe('dev API plugin', () => {
     expect(data.dataDir).toBe('data');
     expect(data.tables.product).toEqual([{ id: 'EX', title: 'Example' }]);
     expect(data.tables.use_case.map((r) => r.id)).toEqual(['EX-NOTE-UC01']);
-    expect(data.tables.requirement).toBeUndefined();
-    expect(data.schema.kinds.use_case.parents.map((p) => p.kind)).toEqual(['capability', 'domain']);
+    expect(data.tables.uc_requirement).toBeUndefined();
+    expect(data.schema.kinds.use_case.parents.map((p) => p.kind)).toEqual(['capability']);
     expect(Array.isArray(data.problems) && Array.isArray(data.coverage)).toBe(true);
     // Non-API paths pass through.
     expect((await request(fake.middlewares[0], '/EX')).nextCalled).toBe(true);
@@ -99,22 +100,22 @@ describe('dev API plugin', () => {
     const fake = await start(async () => realApi, root);
     const written = await post(fake.middlewares[0], [
       { op: 'set', table: 'use_case', key: 'EX-NOTE-UC01', changes: { goal: 'A writer keeps a thought.' } },
-      { op: 'add', table: 'requirement', row: { id: 'EX-NOTE-UC01-R01', title: 'The note is saved', use_case_id: 'EX-NOTE-UC01', statement: 'The note MUST be saved.' } },
+      { op: 'add', table: 'uc_requirement', row: { id: 'EX-NOTE-UC01-R01', title: 'The note is saved', use_case_id: 'EX-NOTE-UC01', statement: 'The note MUST be saved.' } },
     ]);
     expect(written.status).toBe(200);
     const answer = written.json() as Extract<WriteAnswer, { ok: true }>;
     expect(answer.ok).toBe(true);
-    expect([...answer.tables].sort()).toEqual(['requirement', 'use_case']);
+    expect([...answer.tables].sort()).toEqual(['uc_requirement', 'use_case']);
     expect(answer.changes).toContainEqual({
       table: 'use_case',
       key: 'EX-NOTE-UC01',
-      before: { id: 'EX-NOTE-UC01', title: 'Write a note', domain_id: 'EX-NOTE' },
-      after: { id: 'EX-NOTE-UC01', title: 'Write a note', domain_id: 'EX-NOTE', goal: 'A writer keeps a thought.' },
+      before: { id: 'EX-NOTE-UC01', title: 'Write a note', capability_id: 'EX-NOTE-CAP01' },
+      after: { id: 'EX-NOTE-UC01', title: 'Write a note', capability_id: 'EX-NOTE-CAP01', goal: 'A writer keeps a thought.' },
     });
-    expect(answer.changes).toContainEqual(expect.objectContaining({ table: 'requirement', key: 'EX-NOTE-UC01-R01', before: null }));
-    expect(await readFile(path.join(root, 'data/requirement.jsonl'), 'utf8')).toContain('The note MUST be saved.');
+    expect(answer.changes).toContainEqual(expect.objectContaining({ table: 'uc_requirement', key: 'EX-NOTE-UC01-R01', before: null }));
+    expect(await readFile(path.join(root, 'data/uc_requirement.jsonl'), 'utf8')).toContain('The note MUST be saved.');
     const data = (await request(fake.middlewares[0], '/api/spec')).json() as SpecData;
-    expect(data.tables.requirement.map((r) => r.id)).toEqual(['EX-NOTE-UC01-R01']);
+    expect(data.tables.uc_requirement.map((r) => r.id)).toEqual(['EX-NOTE-UC01-R01']);
   });
 
   it('answers a refused write with every reason and changes nothing', async () => {
@@ -122,7 +123,7 @@ describe('dev API plugin', () => {
     const before = await readFile(path.join(root, 'data/use_case.jsonl'), 'utf8');
     const refused = await post(fake.middlewares[0], [
       { op: 'set', table: 'use_case', key: 'EX-NOTE-UC01', changes: { goal: 'Changed' } },
-      { op: 'add', table: 'requirement', row: { id: 'EX-NOTE-UC09-R01', title: 'Orphan', use_case_id: 'EX-NOTE-UC09', statement: 'It MUST fail.' } },
+      { op: 'add', table: 'uc_requirement', row: { id: 'EX-NOTE-UC09-R01', title: 'Orphan', use_case_id: 'EX-NOTE-UC09', statement: 'It MUST fail.' } },
     ]);
     expect(refused.status).toBe(422);
     const answer = refused.json() as Extract<WriteAnswer, { ok: false }>;
@@ -185,7 +186,7 @@ describe('dev API plugin', () => {
         for (const listener of fake.listeners) listener('change', file);
         return fake.sent;
       };
-      expect(change(path.join(data, 'requirement.jsonl'))).toEqual([{ type: 'custom', event: 'spec:changed' }]);
+      expect(change(path.join(data, 'uc_requirement.jsonl'))).toEqual([{ type: 'custom', event: 'spec:changed' }]);
       expect(change(path.join(engineDir, 'schema', '005-use-cases.sql'))).toEqual([{ type: 'custom', event: 'spec:changed' }]);
       expect(change(path.join(product, 'data-old', 'x.jsonl'))).toEqual([]);
       expect(change(path.join(product, 'README.md'))).toEqual([]);

@@ -1,4 +1,4 @@
-import { textOf, byIdOrder, partsOf, type SpecIndex, type SpecLink, type SpecRecord } from './data';
+import { textOf, byIdOrder, type SpecIndex, type SpecLink, type SpecRecord } from './data';
 import { linkLabel } from './labels';
 import { patternsFollowedBy, ruleStatus } from './patterns';
 
@@ -221,7 +221,3 @@ export function traceOf(index: SpecIndex, record: SpecRecord, skip: ReadonlySet<
 
 /** Whether a trace has nothing to show. */
 export const traceEmpty = (t: Trace) => t.groups.length === 0 && t.judgments.length === 0 && t.requirements.length === 0 && !t.runBy;
-
-/** A command's recorded exceptions: the other aggregates of its domain it also changes, each with why. */
-export const recordedChanges = (index: SpecIndex, id: string) =>
-  partsOf(index, id, 'command_change').map((r) => ({ aggregate: textOf(r, 'aggregate_id'), reason: textOf(r, 'reason') }));
