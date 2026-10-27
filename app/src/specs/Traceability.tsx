@@ -36,7 +36,7 @@ function GapCallout({ gap }: { gap: TraceGap }) {
 
 /** The gaps of an obligation in its own domain, or one line per owing domain for a pattern rule. */
 function Judgments({ index, record, judgments }: { index: SpecIndex; record: SpecRecord; judgments: Judgment[] }) {
-  if (record.domain) {
+  if (record.kind !== 'pattern_rule') {
     const gaps = judgments.flatMap((j) => j.gaps);
     if (gaps.length === 0) return null;
     return (

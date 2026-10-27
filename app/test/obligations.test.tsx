@@ -1,16 +1,25 @@
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
+import type { SpecData } from '../../lathe/src/server/contract';
 import { RecordContent } from '../src/specs/RecordContent';
-import { obligationWorkspace } from './fixtures/obligations';
+import { productKindWorkspace } from './fixtures/product-kinds';
 import { main, openApp, section } from './helpers';
 // The Graph view, where the side bar is open, needs a ResizeObserver in jsdom.
 import './graph/setup';
-import { indexOf } from './fixtures/load';
+import { addRows, indexOf } from './fixtures/load';
 
-// Coverage per obligation kind, interaction requirements under their view or endpoint, and test states.
+// Coverage per obligation kind (a product's own obligation kind among them), proof still owed, what sits
+// under an endpoint, test states, and the Traceability of an obligation, on the product-kinds workspace:
+// DM declares `security_control`, and DM-SHOP-EP01-SC01 is one.
 
-const served = () => ({ data: obligationWorkspace() });
+/** The workspace with a manual test of DM-SHOP-UC01-R02 beside the automated and the not automated yet ones. */
+function workspace(): SpecData {
+  return addRows(productKindWorkspace(), 'use_case_test', {
+    id: 'DM-SHOP-UC01-R02-T01', title: 'A person fills a basket to 50', uc_requirement_id: 'DM-SHOP-UC01-R02', level: 'manual', state: 'manual', manual_reason: 'A person fills the basket by hand.',
+  });
+}
+const served = () => ({ data: workspace() });
 const card = (title: string) => within(section(/^Domains/)).getByText(title).closest('article') as HTMLElement;
 /** Each coverage group as "Heading total: bar, bar, ...". */
 const groups = (element: HTMLElement) =>
@@ -22,28 +31,28 @@ const groups = (element: HTMLElement) =>
 const ids = (element: Element) => [...element.querySelectorAll('a.record-link code')].map((c) => c.textContent);
 const side = () => main().querySelector('aside.record-side') as HTMLElement;
 const field = (name: string) => within(side()).getByText(name, { selector: 'dt' }).nextElementSibling as HTMLElement;
+const stage = (name: string) => main().querySelector(`.stage-${name}`) as HTMLElement;
 
 describe('obligation kinds and test states', () => {
   it('LA-TRC-T89 Coverage shows one group per obligation kind, labeled, with designed, built, proved and planned', async () => {
     await openApp('/DM', served());
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     expect(groups(card('Shopping'))).toEqual([
-      'Domain rules 1: designed 1/1, built 1/1, proved 1/1, planned 0/1',
+      'Invariants 1: designed 1/1, built 0/1, proved 0/1, planned 1/1',
       'UC requirements 2: designed 2/2, built 1/2, proved 1/2, planned 0/2',
-      'Interaction requirements 3: designed 1/3, built 1/3, proved 0/3, planned 1/3',
       'Security controls 1: designed 0/1, built 0/1, proved 0/1, planned 0/1',
     ]);
     // A planned bar is drawn apart from proof, and never as full.
-    const planned = card('Shopping').querySelector('[data-kind="interaction_requirement"] .bar.planned') as HTMLElement;
-    expect(within(planned).getByRole('img', { name: 'planned: 1 of 3' })).toBeInTheDocument();
+    const planned = card('Shopping').querySelector('[data-kind="invariant"] .bar.planned') as HTMLElement;
+    expect(within(planned).getByRole('img', { name: 'planned: 1 of 1' })).toBeInTheDocument();
     expect(card('Shopping').querySelectorAll('.bar.planned .bar-fill.full')).toHaveLength(0);
 
     // The domain page shows the same groups.
     await openApp('/DM-SHOP', served());
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
-    expect(groups(section(/^Coverage/))).toHaveLength(4);
+    expect(groups(section(/^Coverage/))).toHaveLength(3);
     expect(within(section(/^Coverage/)).getAllByRole('listitem').map((li) => li.textContent)).toContainEqual(
-      expect.stringMatching(/DM-SHOP-E01-S01.*Security control with nothing that satisfies it/),
+      expect.stringMatching(/DM-SHOP-EP01-SC01.*Security control with nothing that designs it/),
     );
   });
 
@@ -52,120 +61,155 @@ describe('obligation kinds and test states', () => {
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     const summary = section('Summary');
     const value = (name: string) => within(summary).getByText(name).nextElementSibling?.textContent;
-    expect(value('Designed')).toBe('4 of 8 obligations');
-    expect(value('Built')).toBe('3 of 8 obligations');
-    expect(value('Proved')).toBe('2 of 8 obligations');
-    expect(value('Planned')).toBe('1 of 8 obligations, by tests not written yet');
+    expect(value('Designed')).toBe('3 of 5 obligations');
+    expect(value('Built')).toBe('1 of 5 obligations');
+    expect(value('Proved')).toBe('1 of 5 obligations');
+    expect(value('Planned')).toBe('1 of 5 obligations, by tests not written yet');
   });
 
-  it('LA-TRC-T91 The domain page lists interaction requirements under their view, endpoint or flow', async () => {
+  it('LA-TRC-T91 The domain page lists an endpoint in Interaction design, with its API requirements and a product\'s own kind folded under it', async () => {
     await openApp('/DM-SHOP', served());
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     const user = userEvent.setup();
-    const view = within(section(/^Views/)).getByRole('link', { name: /^DM-SHOP-V01\s*Basket page/ }).closest('li') as HTMLElement;
-    expect(view).toHaveTextContent('1 interaction requirement');
-    await user.click(within(view).getByRole('button', { name: 'Expand DM-SHOP-V01' }));
-    expect(ids(within(view).getByRole('list', { name: 'Interaction requirements of DM-SHOP-V01' }))).toEqual(['DM-SHOP-V01-R01']);
-    // An endpoint lists its interaction requirements and a product's own obligation kind under it.
-    const endpoint = within(section(/^Endpoints/)).getByRole('link', { name: /^DM-SHOP-E01\s*Add to basket/ }).closest('li') as HTMLElement;
-    await user.click(within(endpoint).getByRole('button', { name: 'Expand DM-SHOP-E01' }));
-    expect(ids(endpoint.querySelector('ul.nested') as HTMLElement)).toEqual(['DM-SHOP-E01-R01', 'DM-SHOP-E01-R02', 'DM-SHOP-E01-S01']);
+    const endpoints = within(stage('interaction-design')).getByRole('heading', { name: /^Endpoints/ }).closest('section') as HTMLElement;
+    const endpoint = within(endpoints).getByRole('link', { name: /^DM-SHOP-EP01\s*Add to basket/ }).closest('li') as HTMLElement;
+    expect(endpoint).toHaveTextContent('2 children');
+    await user.click(within(endpoint).getByRole('button', { name: 'Expand DM-SHOP-EP01' }));
+    expect(ids(endpoint.querySelector('ul.nested') as HTMLElement)).toEqual(['DM-SHOP-EP01-R01', 'DM-SHOP-EP01-SC01']);
     // Their gaps show on their rows, and they are not listed again under "Other records".
-    const row = within(endpoint).getByRole('link', { name: /DM-SHOP-E01-R02/ }).closest('.record-row') as HTMLElement;
-    expect(within(row).getByText('not satisfied')).toBeInTheDocument();
+    const row = within(endpoint).getByRole('link', { name: /DM-SHOP-EP01-SC01/ }).closest('.record-row') as HTMLElement;
+    expect(within(row).getByText('not designed')).toBeInTheDocument();
     expect(within(main()).queryByRole('heading', { name: /^Other records/ })).toBeNull();
-    // The count is of views and endpoints, not of what sits under them.
-    expect(section(/^Endpoints/).querySelector('.section-count')).toHaveTextContent('1');
+    // The count is of endpoints, not of what sits under them.
+    expect(endpoints.querySelector('.section-count')).toHaveTextContent('1');
 
-    // Searching for an interaction requirement keeps its endpoint above it.
-    await user.click(within(endpoint).getByRole('button', { name: 'Collapse DM-SHOP-E01' }));
-    await user.type(screen.getByLabelText('Filter records'), '409');
-    expect(ids(section(/^Endpoints/))).toEqual(['DM-SHOP-E01', 'DM-SHOP-E01-R01']);
-    expect(within(section(/^Views/)).getByText('Nothing matches.')).toBeInTheDocument();
+    // Searching for an API requirement keeps its endpoint above it.
+    await user.click(within(endpoint).getByRole('button', { name: 'Collapse DM-SHOP-EP01' }));
+    await user.type(screen.getByLabelText('Filter records'), 'answers 201');
+    expect(ids(endpoints)).toEqual(['DM-SHOP-EP01', 'DM-SHOP-EP01-R01']);
+    const flows = within(stage('interaction-design')).getByRole('heading', { name: /^Flows/ }).closest('section') as HTMLElement;
+    expect(within(flows).getByText('Nothing matches.')).toBeInTheDocument();
   });
 
-  it('LA-TRC-T92 The domain page tags each test with its state, and a planned test looks unfinished', async () => {
+  it('LA-TRC-T92 The domain page tags each test with its state, and one not automated yet looks unfinished', async () => {
     await openApp('/DM-SHOP', served());
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
-    const rows = [...section(/^Test plan/).querySelectorAll('.record-row')] as HTMLElement[];
+    const rows = [...stage('test-plan').querySelectorAll('.record-row')] as HTMLElement[];
     const states = rows.map((r) => [r.querySelector('code')?.textContent, r.querySelector('.test-state')?.textContent]);
-    // A test with no state is automated.
-    expect(states).toEqual([['DM-SHOP-T01', 'automated'], ['DM-SHOP-T02', 'manual'], ['DM-SHOP-T03', 'planned']]);
-    const planned = rows[2];
-    expect(planned).toHaveClass('planned');
-    expect(planned.querySelector('.test-state')).toHaveClass('planned');
-    expect(planned.querySelector('.test-state')).toHaveAttribute('title', expect.stringMatching(/does not count as proof/));
-    expect(rows[0]).not.toHaveClass('planned');
-    expect(rows[1]).not.toHaveClass('planned');
+    expect(states).toEqual([['DM-SHOP-INV01-T', 'not automated yet'], ['DM-SHOP-UC01-R01-T01', 'automated'], ['DM-SHOP-UC01-R02-T01', 'manual']]);
+    const notYet = rows[0];
+    expect(notYet).toHaveClass('not-automated');
+    expect(notYet.querySelector('.test-state')).toHaveClass('not-automated');
+    expect(notYet.querySelector('.test-state')).toHaveAttribute('title', expect.stringMatching(/does not count as proof/));
+    expect(rows[1]).not.toHaveClass('not-automated');
+    expect(rows[2]).not.toHaveClass('not-automated');
   });
 
-  it('LA-TRC-T93 The record page shows a test state, and says a planned test is not proof', async () => {
+  it('LA-TRC-T93 The record page shows a test state and how the test is run, and says one not automated yet is not proof', async () => {
     // The state is a fact in the side bar's Details, open in the Graph view (brief 64).
-    await openApp('/DM-SHOP-T03?view=wiki,graph', served());
-    await screen.findByRole('heading', { level: 1, name: 'A full basket answers 409' });
-    expect(field('State')).toHaveTextContent('planned');
+    await openApp('/DM-SHOP-INV01-T?view=wiki,graph', served());
+    await screen.findByRole('heading', { level: 1, name: 'A 51st line is refused' });
+    expect(field('State')).toHaveTextContent('not automated yet');
     expect(within(side()).queryByText('state', { selector: 'dt' })).toBeNull();
-    expect(screen.getByRole('note')).toHaveTextContent('Planned test. It is not written yet, so it does not count as proof');
+    expect(screen.getByRole('note')).toHaveTextContent('Not automated yet. No file runs it, so it does not count as proof');
 
-    await openApp('/DM-SHOP-T02?view=wiki,graph', served());
+    await openApp('/DM-SHOP-UC01-R02-T01?view=wiki,graph', served());
     await screen.findByRole('heading', { level: 1, name: 'A person fills a basket to 50' });
     expect(field('State')).toHaveTextContent('manual');
     expect(screen.queryByRole('note')).toBeNull();
+    const runBy = section(/^Run by/);
+    expect(runBy).toHaveTextContent('Manual becauseA person fills the basket by hand.');
 
-    await openApp('/DM-SHOP-T01?view=wiki,graph', served());
+    await openApp('/DM-SHOP-UC01-R01-T01?view=wiki,graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Adding an item shows it' });
     expect(field('State')).toHaveTextContent('automated');
+    expect(section(/^Run by/)).toHaveTextContent('test/basket.test.ts');
   });
 
-  it('LA-TRC-T94 The record page shows where an interaction requirement sits and what it fulfills', async () => {
-    await openApp('/DM-SHOP-E01-R01', served());
-    await screen.findByRole('heading', { level: 1, name: 'Adding to a full basket answers 409' });
-    const fulfills = section(/^Carries out/);
-    expect(fulfills).toHaveTextContent(/At the endpoint\s*DM-SHOP-E01\s*Add to basket/);
-    expect(within(fulfills).getByRole('link', { name: /^DM-SHOP-E01\s*Add to basket$/ })).toHaveAttribute('href', '/DM-SHOP-E01');
-    const items = within(fulfills).getAllByRole('listitem');
-    expect(items.map((li) => li.textContent)).toEqual([expect.stringMatching(/DM-SHOP-UC01-R02.*A full basket refuses the item.*UC requirement/)]);
-    expect(within(items[0]).getByRole('link')).toHaveAttribute('href', '/DM-SHOP-UC01-R02');
+  it('LA-TRC-T94 An obligation\'s Traceability shows what designs it and what proves it, and names a gap', async () => {
+    await openApp('/DM-SHOP-UC01-R01', served());
+    await screen.findByRole('heading', { level: 1, name: 'The basket shows the new item' });
+    const trace = section(/^Traceability/);
+    const designed = within(trace).getByRole('heading', { name: /^Designed by/ }).closest('section') as HTMLElement;
+    expect(within(designed).getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual(['/DM-SHOP-UC01-FL-S01']);
+    const proved = within(trace).getByRole('heading', { name: /^Proved by/ }).closest('section') as HTMLElement;
+    expect(within(proved).getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual(['/DM-SHOP-UC01-R01-T01']);
 
-    // One that fulfills nothing yet says how to link it.
-    await openApp('/DM-SHOP-E01-R02', served());
-    await screen.findByRole('heading', { level: 1, name: 'An unknown item answers 404' });
-    expect(section(/^Carries out/)).toHaveTextContent('It carries out nothing yet.');
-
-    // Other kinds have no such section.
-    await openApp('/DM-SHOP-UC01-R02', served());
-    await screen.findByRole('heading', { level: 1, name: 'A full basket refuses the item' });
-    expect(within(main()).queryByRole('heading', { name: /^Carries out/ })).toBeNull();
+    // A product's own obligation that coverage finds not designed and not proved says so, naming each gap.
+    await openApp('/DM-SHOP-EP01-SC01', served());
+    await screen.findByRole('heading', { level: 1, name: 'Only the basket\'s shopper adds' });
+    const gaps = [...section(/^Traceability/).querySelectorAll('[data-gap]')].map((g) => g.getAttribute('data-gap'));
+    expect(gaps).toEqual(['not-designed', 'not-proved']);
   });
 
   it('LA-TRC-T95 The record content takes a record ID and sends the links it follows to its host', async () => {
     cleanup();
-    window.history.replaceState(null, '', '/graph/DM-SHOP-E01-R01');
-    const index = indexOf(obligationWorkspace());
+    window.history.replaceState(null, '', '/graph/DM-SHOP-UC01-R01');
+    const index = indexOf(workspace());
     const onNavigate = vi.fn();
-    const { container } = render(<RecordContent index={index} id="DM-SHOP-E01-R01" onNavigate={onNavigate} />);
+    const { container } = render(<RecordContent index={index} id="DM-SHOP-UC01-R01" onNavigate={onNavigate} />);
     // It sizes itself by its own width (a CSS container), so it reads at half the screen.
     expect(container.firstElementChild).toHaveClass('record-content');
-    expect(screen.getByRole('heading', { level: 1, name: 'Adding to a full basket answers 409' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'The basket shows the new item' })).toBeInTheDocument();
 
     const user = userEvent.setup();
-    const fulfills = screen.getByRole('heading', { name: /^Carries out/ }).closest('section') as HTMLElement;
-    const link = within(fulfills).getByRole('link', { name: /DM-SHOP-UC01-R02/ });
-    expect(link).toHaveAttribute('href', '/DM-SHOP-UC01-R02');
+    const designed = screen.getByRole('heading', { name: /^Designed by/ }).closest('section') as HTMLElement;
+    const link = within(designed).getByRole('link', { name: /DM-SHOP-UC01-FL-S01/ });
+    expect(link).toHaveAttribute('href', '/DM-SHOP-UC01-FL-S01');
     await user.click(link);
-    expect(onNavigate).toHaveBeenCalledWith('/DM-SHOP-UC01-R02');
-    expect(window.location.pathname).toBe('/graph/DM-SHOP-E01-R01');
+    expect(onNavigate).toHaveBeenCalledWith('/DM-SHOP-UC01-FL-S01');
+    expect(window.location.pathname).toBe('/graph/DM-SHOP-UC01-R01');
 
     // Links in the header and side panel go through the host too.
-    await user.click(within(container.querySelector('aside') as HTMLElement).getByRole('link', { name: /DM-SHOP-C01/ }));
-    expect(onNavigate).toHaveBeenLastCalledWith('/DM-SHOP-C01');
+    await user.click(within(container.querySelector('aside') as HTMLElement).getByRole('link', { name: /DM-SHOP-UC01-R01-T01/ }));
+    expect(onNavigate).toHaveBeenLastCalledWith('/DM-SHOP-UC01-R01-T01');
     await user.click(within(container.querySelector('.eyebrow') as HTMLElement).getByRole('link', { name: 'Shopping' }));
     expect(onNavigate).toHaveBeenLastCalledWith('/DM-SHOP');
-    expect(window.location.pathname).toBe('/graph/DM-SHOP-E01-R01');
+    expect(window.location.pathname).toBe('/graph/DM-SHOP-UC01-R01');
 
     // An unknown ID says so.
     cleanup();
     render(<RecordContent index={index} id="DM-NOPE" onNavigate={onNavigate} />);
     expect(screen.getByText(/There's no record with the ID/)).toHaveTextContent('DM-NOPE');
+  });
+});
+
+describe('owed proof and tests by state', () => {
+  /** The workspace with proof still owed: DM-SHOP's UC requirements have one more test meant to prove them (planned_any 1, planned 0). */
+  const owed = (): SpecData => {
+    const ws = workspace();
+    const shop = ws.coverage.find((c) => c.domain === 'DM-SHOP')!;
+    shop.obligations = shop.obligations.map((o) => (o.kind === 'uc_requirement' ? { ...o, planned_any: 1 } : o));
+    shop.tests = { automated: 1, manual: 1, planned: 1 };
+    return ws;
+  };
+  const more = (element: HTMLElement, kind: string) => element.querySelector(`[data-kind="${kind}"] .bar.planned .bar-more`);
+  const testsLine = (element: HTMLElement) => within(element).getByLabelText('Tests by state').textContent;
+
+  it('LA-TRC-T108 The planned bar says how many more obligations, already proved, still have a test meant to prove them', async () => {
+    await openApp('/DM', { data: owed() });
+    await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
+    const reqs = more(card('Shopping'), 'uc_requirement') as HTMLElement;
+    expect(reqs.textContent).toBe('1 more planned');
+    expect(reqs.getAttribute('title')).toMatch(/Already proved.*proof still owed/);
+    // Where planned_any equals planned (invariants: 1 and 1), nothing more is shown.
+    expect(more(card('Shopping'), 'invariant')).toBeNull();
+    expect(card('Paying').querySelector('.bar-more')).toBeNull();
+  });
+
+  it("LA-TRC-T109 Each domain's coverage shows its tests by state, on the product and domain pages, and the summary counts them", async () => {
+    await openApp('/DM', { data: owed() });
+    await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
+    expect(testsLine(card('Shopping'))).toBe('Tests 1 automated, 1 manual, 1 planned');
+    expect(testsLine(card('Paying'))).toBe('Tests 0 automated, 0 manual, 0 planned');
+    const summary = (name: string) => within(section('Summary')).getByText(name, { selector: 'dt' }).nextElementSibling?.textContent;
+    expect(summary('Tests')).toBe('1 automated, 1 manual, 1 planned');
+    expect(summary('Planned')).toBe('1 of 5 obligations, by tests not written yet; 1 more planned beside proof');
+
+    await openApp('/DM-SHOP', { data: owed() });
+    await screen.findByRole('heading', { level: 1, name: 'Shopping' });
+    const line = within(section(/^Coverage/)).getByLabelText('Tests by state');
+    expect(line.textContent).toBe('Tests 1 automated, 1 manual, 1 planned');
+    expect(line.querySelector('[data-state="planned"]')?.getAttribute('title')).toMatch(/does not count as proof/);
   });
 });

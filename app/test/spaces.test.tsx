@@ -23,8 +23,8 @@ const announcer = () => screen.getByTestId('announcer');
 function spacesWorkspace(): SpecData {
   const ws = setRow(workspace(), 'product', 'NF', { icon: '📓', color: '#335577' });
   addRows(ws, 'capability',
-    { id: 'DM-SHOP-CAP02', title: 'Paying for the basket', domain_id: 'DM-SHOP', position: 2 },
-    { id: 'DM-SHOP-CAP01', title: 'Filling the basket', domain_id: 'DM-SHOP', position: 1 },
+    { id: 'DM-SHOP-CAP02', title: 'Paying for the basket', domain_id: 'DM-SHOP', position: 3 },
+    { id: 'DM-SHOP-CAP03', title: 'Filling the basket', domain_id: 'DM-SHOP', position: 2 },
   );
   addRows(ws, 'product', { id: 'AB', title: 'Alpha beta', icon: 'far too long' });
   addRows(ws, 'domain', { id: 'AB-ONE', title: 'First things', product_id: 'AB' });
@@ -85,17 +85,17 @@ describe('product spaces', () => {
     expect(within(panel()).getByRole('link', { name: 'Notes' })).toBeInTheDocument();
   });
 
-  it('LA-EXP-T72 Choosing a space scopes the nav to its domains, capabilities and groups', async () => {
+  it('LA-EXP-T72 Choosing a space scopes the nav to its domains, stages, capabilities and groups', async () => {
     await openApp('/DM', { data: spacesWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     expect(within(nav().querySelector<HTMLElement>('.nav-space')!).getByRole('link', { name: 'Demo shop' })).toHaveAttribute('href', '/DM');
     expect(within(within(panel()).getByRole('list', { name: 'Domains of Demo shop' })).getAllByRole('link', { name: /^(Paying|Shopping)$/ }).map((a) => a.textContent)).toEqual(['Paying', 'Shopping']);
-    // Capabilities in their order, in their domain's Define › Use cases folder, before the use cases outside any capability.
+    // Capabilities in their order, in their domain's Use cases stage.
     const user = userEvent.setup();
     await user.click(within(panel()).getByRole('button', { name: 'Unfold Shopping' }));
-    await user.click(within(within(panel()).getByRole('list', { name: 'Folders of Shopping' })).getByRole('button', { name: /^Define/ }));
-    await user.click(within(within(panel()).getByRole('list', { name: 'Define of Shopping' })).getByRole('button', { name: /^Capabilities/ }));
-    expect(within(panel()).getByRole('list', { name: 'Capabilities of Shopping' }).textContent).toBe('Filling the basketPaying for the basketAdd an item to the basket');
+    await user.click(within(within(panel()).getByRole('list', { name: 'Folders of Shopping' })).getByRole('button', { name: /^Use cases/ }));
+    await user.click(within(within(panel()).getByRole('list', { name: 'Use cases of Shopping' })).getByRole('button', { name: /^Capabilities/ }));
+    expect(within(panel()).getByRole('list', { name: 'Capabilities of Shopping' }).textContent).toBe('BuyingFilling the basketPaying for the basket');
     // The product's groups: its open questions.
     const groups = within(panel()).getByRole('list', { name: 'Groups of Demo shop' });
     expect(within(groups).getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual(['/DM/question']);

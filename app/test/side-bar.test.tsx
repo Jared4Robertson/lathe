@@ -3,7 +3,7 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { changeSummary } from '../src/views/history';
 import { sideModeOf, sideStateFrom } from '../src/views/sideBarState';
-import { entityWorkspace } from './fixtures/entities';
+import { modelWorkspace } from './fixtures/model';
 import { main, openApp, openSideBar, sideBar } from './helpers';
 import { testWorkspace } from './graph/workspace';
 import { boxElement, hoverBox, leaveCanvas } from './graph/scene';
@@ -71,43 +71,44 @@ describe('the side bar', () => {
   it('LA-EXP-T161 In the Graph view Details shows the node under the pointer or keyboard focus, else the selected one, else the page\'s record, with Open and a compact Traceability; the graph adds what it connects', async () => {
     window.sessionStorage.setItem('lathe:graph-settings', JSON.stringify({ layout: 'tree', depth: 1, trace: false, hiddenKinds: [], hiddenRelations: [], links: true, minimap: false }));
     await openApp('/P-D-UC01-R01?view=graph', { data: testWorkspace() });
-    await waitFor(() => expect(node('P-D-V01')).not.toBeNull());
-    expect(name()).toBe('The owner is shown');
+    await waitFor(() => expect(node('P-D-UC01-FL-S01')).not.toBeNull());
+    expect(name()).toBe('The loan is recorded');
     expect(side().queryByRole('link', { name: 'Open' })).toBeNull();
     const trace = side().getByRole('region', { name: /^Traceability/ });
     expect(within(trace).getByText(/^Designed by/)).toBeInTheDocument();
-    expect(within(trace).getByRole('link', { name: 'P-D-C01' })).toBeInTheDocument();
+    expect(within(trace).getByRole('link', { name: 'P-D-UC01-FL-S01' })).toBeInTheDocument();
+    expect(within(trace).getByText(/^Proved by/)).toBeInTheDocument();
     expect(side().getByText('Data file')).toBeInTheDocument();
     await waitFor(() => expect(side().getByRole('heading', { name: /Connected in the graph/ })).toBeInTheDocument());
 
     // Hover: the node lit by the spotlight.
-    hoverBox('P-D-V01');
-    await waitFor(() => expect(name()).toBe('Thing page'));
+    hoverBox('P-D-UC01-FL-S01');
+    await waitFor(() => expect(name()).toBe('Librarian lends the thing'));
     expect(sideBar().querySelector('.side-bar-identity .eyebrow')).toHaveTextContent(/^Under the pointer/);
-    expect(side().getByRole('link', { name: 'Open' })).toHaveAttribute('href', '/P-D-V01?view=graph');
+    expect(side().getByRole('link', { name: 'Open' })).toHaveAttribute('href', '/P-D-UC01-FL-S01?view=graph');
     // Leaving gives the page's record back, in the same box.
     const box = sideBar();
     leaveCanvas();
-    await waitFor(() => expect(name()).toBe('The owner is shown'));
+    await waitFor(() => expect(name()).toBe('The loan is recorded'));
     expect(sideBar()).toBe(box);
     // Keyboard focus does the same.
-    node('P-D-C01')!.focus();
-    await waitFor(() => expect(name()).toBe('Thing service'));
+    node('P-D-UC01')!.focus();
+    await waitFor(() => expect(name()).toBe('Lend a thing'));
     expect(sideBar().querySelector('.side-bar-identity .eyebrow')).toHaveTextContent(/^Under the pointer/);
-    fireEvent.blur(node('P-D-C01')!);
-    await waitFor(() => expect(name()).toBe('The owner is shown'));
+    fireEvent.blur(node('P-D-UC01')!);
+    await waitFor(() => expect(name()).toBe('The loan is recorded'));
   });
 
   it('LA-EXP-T162 In the Wiki view Details shows only what the page does not: the data file and line, the columns of its row and the raw links; a focused or right-clicked record row shows that record', async () => {
     openSideBar();
-    await openApp('/P-D-UC01', { data: testWorkspace() });
-    await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
+    await openApp('/P-D-UC01-FL-S01', { data: testWorkspace() });
+    await screen.findByRole('heading', { level: 1, name: 'Librarian lends the thing' });
     expect(side().getByRole('heading', { name: 'Data file' })).toBeInTheDocument();
     expect(side().getByRole('heading', { name: 'Columns' })).toBeInTheDocument();
-    expect(side().getByText('domain_id', { selector: 'dt code' })).toBeInTheDocument();
-    expect(side().getByText('applies', { selector: 'code' })).toBeInTheDocument();
-    // Nothing the wiki shows: no children, no problems list, no identity block.
-    expect(side().queryByRole('heading', { name: /^UC requirements/ })).toBeNull();
+    expect(side().getByText('flow_id', { selector: 'dt code' })).toBeInTheDocument();
+    expect(side().getByText('invokes', { selector: 'code' })).toBeInTheDocument();
+    // Nothing the wiki shows: no Traceability, no problems list, no identity block.
+    expect(side().queryByRole('heading', { name: /^Traceability/ })).toBeNull();
     expect(side().queryByRole('heading', { name: /^Problems/ })).toBeNull();
     expect(name()).toBeUndefined();
 
@@ -115,13 +116,13 @@ describe('the side bar', () => {
     const wiki = screen.getByRole('region', { name: 'Wiki pane' });
     const row = within(wiki).getAllByRole('link', { name: /^P-D-UC01-R01/ }).find((a) => a.classList.contains('row-link'))!;
     fireEvent.focusIn(row);
-    await waitFor(() => expect(name()).toBe('The owner is shown'));
+    await waitFor(() => expect(name()).toBe('The loan is recorded'));
     expect(sideBar().querySelector('.side-bar-identity .eyebrow')).toHaveTextContent(/^Selected/);
     fireEvent.focusOut(row, { relatedTarget: document.body });
     await waitFor(() => expect(name()).toBeUndefined());
     // Right-clicked: it stays until a click elsewhere.
     fireEvent.contextMenu(row);
-    await waitFor(() => expect(name()).toBe('The owner is shown'));
+    await waitFor(() => expect(name()).toBe('The loan is recorded'));
     fireEvent.pointerDown(main().querySelector('.pane-title')!, { button: 0 });
     await waitFor(() => expect(name()).toBeUndefined());
   });
@@ -143,7 +144,7 @@ describe('the side bar', () => {
 
     // The Model view: the boxes, those in focus first.
     openSideBar('outline', ['model']);
-    await openApp('/P-D?view=model', { data: entityWorkspace() });
+    await openApp('/P-D?view=model', { data: modelWorkspace() });
     await screen.findAllByRole('heading', { level: 1 });
     await waitFor(() => expect(side().getByRole('heading', { name: /^Aggregates/ })).toBeInTheDocument());
     const boxes = side().getByRole('list', { name: 'Aggregates' });

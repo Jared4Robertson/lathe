@@ -14,7 +14,7 @@ const pane = () => main().querySelector('.pane') as HTMLElement;
 const fact = (box: HTMLElement, name: string) => within(box).getByText(name, { selector: 'dt' }).nextElementSibling?.textContent;
 
 describe('format reference pages', () => {
-  it('LA-AUT-T110 The format page says how records are kept, then shows the kinds by stage and folder, the relations and the checks by severity, as clickable rows', async () => {
+  it('LA-AUT-T110 The format page says how records are kept, then shows the kinds by stage, the relations and the checks by severity, as clickable rows', async () => {
     await openApp('/format');
     expect(await screen.findByRole('heading', { level: 1, name: 'Record format' })).toBeInTheDocument();
     // It opens in the workbench: one pane with the title in it, and the side bar beside it.
@@ -23,14 +23,17 @@ describe('format reference pages', () => {
     expect(section('How records are kept')).toHaveTextContent('Every table\'s rows are one file in data/');
 
     const kinds = section(/^Kinds\d/);
-    const define = within(kinds).getByRole('heading', { name: /^Define/ }).closest('section')!;
-    const useCases = within(define).getByRole('heading', { name: /^Capabilities/ }).closest('section')!;
+    // The five stages in order, then the kinds outside them.
+    expect([...kinds.querySelectorAll(':scope > section > .spec-section-head h3')].map((h) => h.firstChild?.textContent)).toEqual([
+      'Domain model', 'Use cases', 'Interaction design', 'Technical specification', 'Test plan', 'Outside the stages',
+    ]);
+    const useCases = within(kinds).getByRole('heading', { name: /^Use cases/ }).closest('section')!;
     const row = within(useCases).getByRole('link', { name: /use_case\s*Use case/ });
     expect(row).toHaveAttribute('href', '/format/kinds/use_case');
     expect(row).toHaveClass('row-link');
 
     const relations = section(/^Relations\d/);
-    expect(within(relations).getAllByText('Satisfies').length).toBeGreaterThan(0);
+    expect(within(relations).getAllByText('Fulfills').length).toBeGreaterThan(0);
 
     const checks = section(/^Checks\d/);
     const errors = within(checks).getByRole('heading', { name: /^Errors/ }).closest('section')!;
@@ -43,65 +46,80 @@ describe('format reference pages', () => {
   it('LA-AUT-T111 A kind page shows where the kind sits, its columns, its links in and out by their labels, its checks, an example and its records', async () => {
     await openApp('/format/kinds/use_case');
     expect(await screen.findByRole('heading', { level: 1, name: 'Use case' })).toBeInTheDocument();
-    expect(within(main()).getByText(/^Something an actor does with the product to reach a goal\./)).toBeInTheDocument();
+    expect(within(main()).getByText(/^An actor's goal:/)).toBeInTheDocument();
 
     const where = section('Where it sits');
-    expect(fact(where, 'Stage')).toBe('Define');
-    expect(fact(where, 'Folder')).toMatch(/^Capabilities/);
-    expect(within(section(/^Allowed parents/)).getByRole('link', { name: /domain/ })).toHaveAttribute('href', '/format/kinds/domain');
+    expect(fact(where, 'Stage')).toMatch(/^Use cases/);
+    expect(fact(where, 'Parent')).toBe('Exactly one, of the kind below.');
+    expect(within(section(/^Allowed parents/)).getByRole('link', { name: /capability/ })).toHaveAttribute('href', '/format/kinds/capability');
 
     const fields = document.getElementById('fields')!;
     // Each column of its table, with its type, whether it is required and its meaning.
     const goal = within(fields).getByText('goal').closest('tr')!;
     expect(goal).toHaveAttribute('id', 'field-goal');
     expect(goal).toHaveTextContent(/goaltextno/);
-    expect(within(fields).getByText('domain_id').closest('tr')).toHaveTextContent(/domain_idtextyes/);
+    expect(within(fields).getByText('capability_id').closest('tr')).toHaveTextContent(/capability_idtextyes/);
     expect(fact(fields, 'ID')).toBe('<P>-<D>-UC<nn>, such as TL-LEND-UC01');
+    expect(fact(fields, 'ID starts with')).toBe("Its domain's ID and a hyphen");
     expect(fact(fields, 'Obligation')).toMatch(/^Not an obligation/);
 
     // Links by their readable words, each naming the kind at the other end.
     const out = section(/^Links out/);
-    expect(within(out).getByText('Applies')).toBeInTheDocument();
-    expect(within(out).getByRole('link', { name: /domain_rule/ })).toHaveAttribute('href', '/format/kinds/domain_rule');
+    expect(within(out).getByText('Follows')).toBeInTheDocument();
+    expect(within(out).getByRole('link', { name: /pattern/ })).toHaveAttribute('href', '/format/kinds/pattern');
     const into = section(/^Links in/);
     expect(within(into).getByText('Questions about this')).toBeInTheDocument();
 
-    expect(within(section(/^Checks that concern it/)).getByRole('link', { name: /use-case-without-flow/ })).toHaveAttribute('href', '/format/checks/use-case-without-flow');
+    expect(within(section(/^Checks that concern it/)).getByText(/No check names this kind/)).toBeInTheDocument();
 
     const example = section('Example');
     // The first use case by ID in the current space.
     expect(within(example).getByRole('link', { name: /DM-PAY-UC01/ })).toHaveAttribute('href', '/DM-PAY-UC01');
     // Its row as its data file holds it.
     expect(example).toHaveTextContent('on line 1 of data/use_case.jsonl');
-    expect(example.querySelector('pre')).toHaveTextContent('{"id":"DM-PAY-UC01","title":"Pay by card","domain_id":"DM-PAY"}');
+    expect(example.querySelector('pre')).toHaveTextContent('{"id":"DM-PAY-UC01","title":"Pay by card","capability_id":"DM-PAY-CAP01"}');
 
     const records = section(/^Records/);
     expect(records).toHaveTextContent('2 use cases in Demo shop, under:');
-    expect(within(records).getByRole('link', { name: /DM-SHOP\s*Shopping/ })).toHaveAttribute('href', '/DM-SHOP');
-    expect(within(records).getByRole('link', { name: /DM-PAY\s*Paying/ })).toHaveAttribute('href', '/DM-PAY');
+    expect(within(records).getByRole('link', { name: /DM-SHOP-CAP01\s*Buying/ })).toHaveAttribute('href', '/DM-SHOP-CAP01');
+    expect(within(records).getByRole('link', { name: /DM-PAY-CAP01\s*Paying/ })).toHaveAttribute('href', '/DM-PAY-CAP01');
 
     // The side bar holds the kind's facts.
     expect(fact(sideBar(), 'Obligation')).toBe('None');
+    expect(fact(sideBar(), 'Stage')).toBe('Use cases');
     expect(fact(sideBar(), 'Records')).toBe('2');
-    expect(within(sideBar()).getByRole('link', { name: 'domain_id' })).toHaveAttribute('href', '#field-domain_id');
+    expect(within(sideBar()).getByRole('link', { name: 'capability_id' })).toHaveAttribute('href', '#field-capability_id');
+
+    // A kind with no owner says so, and a kind with two possible parents lists both.
+    await openApp('/format/kinds/view');
+    await screen.findByRole('heading', { level: 1, name: 'View' });
+    expect(fact(section('Where it sits'), 'Parent')).toMatch(/^None: it has no owner/);
+    await openApp('/format/kinds/endpoint');
+    await screen.findByRole('heading', { level: 1, name: 'Endpoint' });
+    expect(within(section(/^Allowed parents/)).getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual(['/format/kinds/command', '/format/kinds/query']);
   });
 
   it('LA-AUT-T112 A check page shows its severity, explanation and query, and its problems now as clickable rows', async () => {
     await openApp('/format/checks/unproved');
     expect(await screen.findByRole('heading', { level: 1, name: 'unproved' })).toBeInTheDocument();
     expect(within(main()).getByText('Every obligation is proved by a test.')).toBeInTheDocument();
-    expect(within(main()).getByText('proves').tagName).toBe('STRONG');
+    expect(within(main()).getByText('Add a test under it.')).toBeInTheDocument();
     expect(section('Query').querySelector('pre')).toHaveTextContent(/^SELECT 'warning' AS severity, 'unproved'/);
     const problems = section(/^Problems now/);
     expect(problems).toHaveTextContent('Problems now2');
-    const row = within(problems).getByRole('link', { name: 'DM-SHOP-DR01' });
+    const row = within(problems).getByRole('link', { name: 'DM-SHOP-INV01' });
     expect(row).toHaveClass('row-link');
-    expect(row).toHaveAttribute('href', '/DM-SHOP-DR01');
+    expect(row).toHaveAttribute('href', '/DM-SHOP-INV01');
     expect(fact(sideBar(), 'Problems')).toBe('2');
     expect(fact(sideBar(), 'From')).toBe("Lathe's checks");
 
+    // An explanation reads as Markdown.
+    await openApp('/format/checks/undesigned');
+    await screen.findByRole('heading', { level: 1, name: 'undesigned' });
+    expect(within(main()).getByText('fulfills').tagName).toBe('CODE');
+
     // A check that reports nothing says so; an unknown one says it is not in the format.
-    await openApp('/format/checks/use-case-without-flow');
+    await openApp('/format/checks/command-change');
     expect(await screen.findByText('This check reports nothing now.')).toBeInTheDocument();
     await openApp('/format/checks/no-such-check');
     expect(await screen.findByText(/The format has no check called/)).toBeInTheDocument();
@@ -111,13 +129,13 @@ describe('format reference pages', () => {
 
   it('LA-AUT-T113 The side bar\'s kind, each problem code and each column label link to their format pages', async () => {
     // The side bar's Details, open in the Graph view (brief 64).
-    await openApp('/DM-SHOP-E01?view=wiki,graph');
+    await openApp('/DM-SHOP-EP01?view=wiki,graph');
     await screen.findByRole('heading', { level: 1, name: 'Add to basket' });
     expect(within(sideBar()).getByRole('link', { name: 'Endpoint' })).toHaveAttribute('href', '/format/kinds/endpoint');
     expect(within(sideBar()).getByRole('link', { name: 'method' })).toHaveAttribute('href', '/format/kinds/endpoint#field-method');
 
     // A problem's code on a record page, a domain page and the Checks page.
-    await openApp('/DM-SHOP-DR01');
+    await openApp('/DM-SHOP-INV01');
     await screen.findByRole('heading', { level: 1, name: 'A basket holds at most 50 items' });
     expect(within(sideBar()).getByRole('link', { name: 'unproved' })).toHaveAttribute('href', '/format/checks/unproved');
     await openApp('/DM-SHOP');
@@ -128,9 +146,9 @@ describe('format reference pages', () => {
     expect(within(main()).getByRole('link', { name: 'test-file-missing' })).toHaveAttribute('href', '/format/checks/test-file-missing');
 
     // A group's kind leads to the kind's page too.
-    await openApp('/DM-SHOP/design/interaction-design/view');
-    await screen.findByRole('heading', { level: 1, name: /^Views/ });
-    expect(within(sideBar()).getByRole('link', { name: 'View' })).toHaveAttribute('href', '/format/kinds/view');
+    await openApp('/DM-SHOP/interaction-design/flow');
+    await screen.findByRole('heading', { level: 1, name: /^Flows/ });
+    expect(within(sideBar()).getByRole('link', { name: 'Flow' })).toHaveAttribute('href', '/format/kinds/flow');
   });
 
   it('LA-AUT-T114 The record format is a palette command and a link in the shortcuts sheet, not a nav footer link', async () => {
@@ -151,10 +169,10 @@ describe('format reference pages', () => {
   });
 
   it('LA-AUT-T115 Quick find finds kinds and checks by name and leads to their pages', async () => {
-    const items = findItems(indexOf(workspace()), ['use-case-without-flow']);
+    const items = findItems(indexOf(workspace()), ['command-change']);
     const kind = rankItems(items, 'Kind: Use case')[0];
     expect(kind).toMatchObject({ title: 'Kind: Use case', to: '/format/kinds/use_case' });
-    expect(rankItems(items, 'use-case-without')[0]).toMatchObject({ title: 'Check: use-case-without-flow', to: '/format/checks/use-case-without-flow' });
+    expect(rankItems(items, 'command-cha')[0]).toMatchObject({ title: 'Check: command-change', to: '/format/checks/command-change' });
     // A check that reports a problem now is found even before the reference loads.
     expect(rankItems(findItems(indexOf(workspace()), []), 'unproved')[0]).toMatchObject({ title: 'Check: unproved' });
 

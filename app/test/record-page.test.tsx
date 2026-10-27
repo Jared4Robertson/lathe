@@ -2,11 +2,13 @@ import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { renderMarkdown } from '../src/specs/Markdown';
-import { main, openApp, openSideBar, section } from './helpers';
+import { modelWorkspace } from './fixtures/model';
+import { main, openApp, openSideBar, section, sideBar } from './helpers';
 
-// The record page's wiki shows its text fields, its Traceability, children and problems; the side
-// bar's Details, in the Wiki view, adds only what the page leaves out: the data file and line, the
-// row's columns as stored and the raw links (brief 64).
+// The record page's wiki shows its text fields, its parts (fields with their types, a table's keys,
+// a command's recorded exceptions), its Traceability, children and problems; the side bar's Details,
+// in the Wiki view, adds only what the page leaves out: the data file and line, the row's columns
+// as stored and the raw links (brief 64).
 const side = () => main().querySelector('aside.record-side') as HTMLElement;
 /** A stored column's value in the side bar. */
 const field = (name: string) => within(side()).getByText(name, { selector: 'dt code' }).closest('div')?.querySelector('dd')?.textContent;
@@ -26,26 +28,32 @@ const rawLinks = (heading: 'Links out' | 'Links in') => {
   return [...h.closest('section')!.querySelectorAll('li')].map((li) => li.textContent?.replace(/\s+/g, ' ').trim());
 };
 
+/** A table's body rows, each as its cells' text (a link's ID and title run together). */
+const rows = (table: Element) => [...table.querySelectorAll('tbody tr')].map((tr) => [...tr.querySelectorAll('th, td')].map((c) => c.textContent?.replace(/\s+/g, ' ').trim()));
+
 describe('record page', () => {
   it('LA-EXP-T06 The record page shows the ID, kind, title, text fields as Markdown, parent and children', async () => {
     openSideBar();
     await openApp('/DM-SHOP-UC01');
     expect(await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' })).toBeInTheDocument();
     expect(main().querySelector('.record-id')).toHaveTextContent('DM-SHOP-UC01');
-    expect(main().querySelector('.pane-title .eyebrow')).toHaveTextContent('Use case');
+    // The kind is a badge in its stage's color.
+    const badge = main().querySelector('.pane-title .eyebrow .kind-badge')!;
+    expect(badge).toHaveTextContent('Use case');
+    expect(badge).toHaveClass('stage-use-cases');
     expect(within(main()).getByText('A shopper adds an item.').closest('.markdown')).not.toBeNull();
     // The side bar: the row's columns as stored, and its data file and line.
     expect(field('id')).toBe('"DM-SHOP-UC01"');
     expect(field('goal')).toBe('"A shopper adds an item."');
     expect(within(side()).getByText('data/use_case.jsonl:2')).toBeInTheDocument();
-    expect(within(side()).getByText('domain_id', { selector: 'dt code' }).closest('div')!.querySelector('a')).toHaveAttribute('href', '/DM-SHOP');
+    expect(within(side()).getByText('capability_id', { selector: 'dt code' }).closest('div')!.querySelector('a')).toHaveAttribute('href', '/DM-SHOP-CAP01');
 
-    // The children are the wiki's.
-    const children = within(main()).getByRole('heading', { name: /^UC requirements/ });
-    expect(children).toHaveTextContent(/^UC requirements\s*2$/);
+    // The children are the wiki's: its UC requirements and its flow.
+    const children = within(main()).getByRole('heading', { name: /^Children/ });
+    expect(children).toHaveTextContent(/^Children\s*3$/);
     const items = [...children.closest('section')!.querySelectorAll('a.row-link')];
-    expect(items.map((a) => a.getAttribute('href'))).toEqual(['/DM-SHOP-UC01-R01', '/DM-SHOP-UC01-R02']);
-    expect(within(side()).queryByRole('heading', { name: /^UC requirements/ })).toBeNull();
+    expect(items.map((a) => a.getAttribute('href'))).toEqual(expect.arrayContaining(['/DM-SHOP-UC01-R01', '/DM-SHOP-UC01-R02', '/DM-SHOP-UC01-FL']));
+    expect(within(side()).queryByRole('heading', { name: /^Children/ })).toBeNull();
 
     // Markdown in a text field is rendered.
     await openApp('/DM');
@@ -56,32 +64,31 @@ describe('record page', () => {
     openSideBar();
     await openApp('/DM-SHOP-UC01-R01');
     await screen.findByRole('heading', { level: 1, name: 'The basket shows the new item' });
-    // Grouped by label in the wiki's Traceability.
+    // A UC requirement is designed by the steps that fulfill it and proved by its tests.
     expect(traceGroups()).toEqual({
-      'Designed by': ['/DM-SHOP-C01'],
-      'Proved by': ['/DM-SHOP-T01'],
-      'Carried out in': ['/DM-SHOP-E01', '/DM-SHOP-F01', '/DM-SHOP-V01'],
+      'Designed by': ['/DM-SHOP-UC01-FL-S01'],
+      'Proved by': ['/DM-SHOP-UC01-R01-T01'],
     });
     // Raw in the side bar, as the link tables hold them.
     expect(within(side()).getByText('This record links to nothing.')).toBeInTheDocument();
-    expect(rawLinks('Links in')).toEqual(expect.arrayContaining(['satisfies DM-SHOP-C01', 'proves DM-SHOP-T01']));
+    expect(rawLinks('Links in')).toEqual(['fulfills DM-SHOP-UC01-FL-S01']);
 
-    // Follow an incoming link to the component, then see its outgoing links.
+    // Follow it to the step, then see its links out by their labels.
     const user = userEvent.setup();
-    const trace = section(/^Traceability/);
-    await user.click(within(trace).getByRole('link', { name: /DM-SHOP-C01/ }));
-    expect(window.location.pathname).toBe('/DM-SHOP-C01');
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Basket service');
+    await user.click(within(section(/^Traceability/)).getByRole('link', { name: /DM-SHOP-UC01-FL-S01/ }));
+    expect(window.location.pathname).toBe('/DM-SHOP-UC01-FL-S01');
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Shopper adds the item');
     expect(traceGroups()).toMatchObject({
-      Satisfies: ['/DM-SHOP-DR01', '/DM-SHOP-UC01-R01', '/DM-SHOP-UC01-R02'],
-      Implements: ['/DM-SHOP-E01'],
+      Fulfills: ['/DM-SHOP-UC01-R01'],
+      Invokes: ['/DM-SHOP-CMD01'],
+      'Happens in': ['/DM-V01'],
     });
-    expect(rawLinks('Links out')).toEqual(['satisfies DM-SHOP-DR01', 'satisfies DM-SHOP-UC01-R01', 'satisfies DM-SHOP-UC01-R02', 'implements DM-SHOP-E01']);
+    expect(rawLinks('Links out')).toEqual(expect.arrayContaining(['fulfills DM-SHOP-UC01-R01', 'invokes DM-SHOP-CMD01', 'happens_in DM-V01']));
     expect(within(side()).getByText('Nothing links to this record.')).toBeInTheDocument();
   });
 
   it('LA-EXP-T08 A record body is sanitized before it is shown', async () => {
-    await openApp('/DM-SHOP-C01');
+    await openApp('/DM-SHOP-CMD01-H');
     await screen.findByRole('heading', { level: 1, name: 'Basket service' });
     const body = main().querySelector('.markdown') as HTMLElement;
     expect(body).toHaveTextContent('Holds baskets.');
@@ -97,15 +104,66 @@ describe('record page', () => {
   });
 
   it('LA-EXP-T09 The record page lists every problem about the record', async () => {
-    await openApp('/DM-SHOP-T01');
+    await openApp('/DM-SHOP-UC01-R01-T01');
     await screen.findByRole('heading', { level: 1, name: 'Adding an item shows it' });
     const problems = within(section(/^Problems/)).getAllByRole('listitem');
     expect(problems).toHaveLength(1);
-    expect(problems[0]).toHaveTextContent(/error.*Test DM-SHOP-T01 is run by test\/basket.test.ts, which does not exist\..*test-file-missing/);
+    expect(problems[0]).toHaveTextContent(/error.*Test DM-SHOP-UC01-R01-T01 is run by test\/basket.test.ts, which does not exist\..*test-file-missing/);
     expect(within(main()).getByText('1 error')).toBeInTheDocument();
 
     await openApp('/DM-SHOP-UC01');
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     expect(within(section(/^Problems/)).getByText('No problems.')).toBeInTheDocument();
+  });
+
+  it('LA-EXP-T06 A record\'s fields show their types: a basic type, a value object as a link, a reference to an aggregate with an arrow', async () => {
+    await openApp('/P-D-EN03', { data: modelWorkspace() });
+    await screen.findByRole('heading', { level: 1, name: 'Loan' });
+    const table = section(/^Fields/).querySelector('table')!;
+    expect(rows(table)).toEqual([
+      ['Loan ID', 'The loan\'s number.', 'whole number', 'yes', 'id', ''],
+      ['Thing', 'What was lent.', '→ P-D-A1Thing', 'yes', 'thing_id', ''],
+      ['Member', 'Who borrowed it.', '→ P-D-A2Member', 'yes', 'member_id', ''],
+      ['Due date', 'When it is due back.', 'date', 'yes', '', '2026-03-16'],
+    ]);
+    expect(within(table).getByRole('link', { name: /P-D-A2/ })).toHaveAttribute('href', '/P-D-A2');
+
+    // A value object's link, and an optional field.
+    await openApp('/P-D-EN02', { data: modelWorkspace() });
+    await screen.findByRole('heading', { level: 1, name: 'Member' });
+    const member = section(/^Fields/).querySelector('table')!;
+    expect(within(member).getByRole('link', { name: /P-VO01/ })).toHaveAttribute('href', '/P-VO01');
+    expect(rows(member)[2]).toEqual(['Account', 'The member\'s account.', '→ P-E-A1Account', 'no', '']);
+  });
+
+  it('LA-EXP-T06 A table shows its keys: the primary key, a unique key with the invariant it enforces and its condition, a foreign key with its target', async () => {
+    await openApp('/P-D-EN03-TB', { data: modelWorkspace() });
+    await screen.findByRole('heading', { level: 1, name: 'Loans table' });
+    const keys = section(/^Keys/);
+    expect(keys.querySelector('h2, h3')).toHaveTextContent(/^Keys\s*3$/);
+    expect(rows(keys.querySelector('table')!)).toEqual([
+      ['unnamed', 'primary', 'id', ''],
+      ['loans_one_open_per_thing', 'unique', 'thing_id', 'enforces P-D-INV01A thing is lent to one member at a timewhere returned_at IS NULL'],
+      ['unnamed', 'foreign', 'member_id', 'references P-D-EN02-TBMembers table'],
+    ]);
+  });
+
+  it('LA-EXP-T06 A command shows the other aggregates it also changes, each with its reason', async () => {
+    await openApp('/P-D-CMD02', { data: modelWorkspace() });
+    await screen.findByRole('heading', { level: 1, name: 'Return thing' });
+    const also = section(/^Also changes/);
+    expect(within(also).getByRole('link', { name: /P-D-A1/ })).toHaveAttribute('href', '/P-D-A1');
+    expect(also).toHaveTextContent('The thing must be lendable again in the same transaction as its return.');
+    expect(also).toHaveTextContent(/recorded exception/);
+  });
+
+  it('LA-EXP-T06 A record\'s kind shows in its stage\'s color, and a kind with no owner says why it has no parent', async () => {
+    openSideBar('details', ['graph']);
+    await openApp('/DM-V01?view=graph');
+    await screen.findByRole('heading', { level: 1, name: 'Basket page' });
+    expect(document.querySelector('.pane-title .eyebrow .kind-badge')).toHaveClass('stage-interaction-design');
+    // The view sits at product level: its eyebrow names the product only.
+    expect(document.querySelector('.pane-title .eyebrow')).toHaveTextContent(/^Demo shop · View/);
+    expect(sideBar()).toHaveTextContent('None: it has no owner. It exists because other records use it.');
   });
 });

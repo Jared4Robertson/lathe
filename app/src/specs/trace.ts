@@ -102,10 +102,14 @@ export function testsOf(index: SpecIndex, record: SpecRecord, domain?: string): 
   return { proved: sortIds(tests.filter((t) => !planned.includes(t)).map((t) => t.id)), planned: sortIds(planned.map((t) => t.id)) };
 }
 
-/** The domains that owe an obligation: its own, or for a pattern rule each domain following its pattern where it applies. */
+/**
+ * Where an obligation is owed: its own domain; at product level (a view requirement, a constraint, a standard rule)
+ * its product; for a pattern rule each domain following its pattern where it applies.
+ */
 export function owingDomains(index: SpecIndex, record: SpecRecord): string[] {
   if (record.domain) return [record.domain];
-  if (record.kind !== 'pattern_rule' || !record.parent) return [];
+  if (record.kind !== 'pattern_rule') return record.product ? [record.product] : [];
+  if (!record.parent) return [];
   const domains = index.workspace.records.filter((d) => d.kind === 'domain' && d.product === record.product);
   return domains
     .filter((d) => {
@@ -176,7 +180,8 @@ export function traceOf(index: SpecIndex, record: SpecRecord, skip: ReadonlySet<
     const { proved, planned } = testsOf(index, record);
     const own = new Set(['fulfills', 'meets']);
     trace.groups = [
-      ...(designers.length > 0 ? [{ key: 'design', label: 'Designed by', role: 'design' as TraceRole, ids: designers }] : []),
+      // A standard rule is met, in its relation's own words, by what follows it.
+      ...(designers.length > 0 ? [{ key: 'design', label: record.kind === 'standard_rule' ? 'Met by' : 'Designed by', role: 'design' as TraceRole, ids: designers }] : []),
       ...(proved.length + planned.length > 0 ? [{ key: 'proof', label: 'Proved by', role: 'proof' as TraceRole, ids: sortIds([...proved, ...planned]) }] : []),
       ...grouped(index, into.filter((l) => !own.has(l.relation)), 'target'),
       ...grouped(index, out, 'source'),

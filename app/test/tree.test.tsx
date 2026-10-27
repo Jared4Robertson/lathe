@@ -12,33 +12,34 @@ describe('one level deep', () => {
   it('LA-EXP-T50 Folded rows keep their counts and marks, open and close by button, Expand all or arrow keys, and stay open while moving around', async () => {
     await openApp('/DM-SHOP');
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
-    const useCases = section(/^Capabilities/);
-    const uc = row(useCases, 'DM-SHOP-UC01');
-    // Folded by default, with the count of what it holds and a mark for a gap below it.
-    const toggle = within(uc).getByRole('button', { name: 'Expand DM-SHOP-UC01' });
+    const capabilities = section(/^Capabilities/);
+    const cap = row(capabilities, 'DM-SHOP-CAP01');
+    // Folded by default, with the count of what it holds.
+    const toggle = within(cap).getByRole('button', { name: 'Expand DM-SHOP-CAP01' });
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
-    expect(uc).toHaveTextContent('2 UC requirements');
-    expect(uc.querySelector('ul.nested')).toBeNull();
-    const aggregates = section(/^Domain model/);
-    expect(row(aggregates, 'DM-SHOP-A1')).toHaveTextContent('1 domain rule');
+    expect(cap).toHaveTextContent('1 use case');
+    expect(cap.querySelector('ul.nested')).toBeNull();
+    // An aggregate folds what sits under it in the domain model: its entities, invariant, event and command.
+    const aggregates = section(/^Aggregates/);
+    expect(row(aggregates, 'DM-SHOP-A1')).toHaveTextContent('5 children');
 
-    // The button opens and closes it.
+    // The button opens and closes it, showing the use case within with its actor.
     fireEvent.click(toggle);
-    expect(within(uc).getByRole('button', { name: 'Collapse DM-SHOP-UC01' })).toHaveAttribute('aria-expanded', 'true');
-    expect(within(uc).getByRole('link', { name: /DM-SHOP-UC01-R02/ }).closest('li')).toHaveTextContent('not proved');
+    expect(within(cap).getByRole('button', { name: 'Collapse DM-SHOP-CAP01' })).toHaveAttribute('aria-expanded', 'true');
+    expect(row(cap, 'DM-SHOP-UC01')).toHaveTextContent('Shopper');
 
     // Left closes it (focus on the row), Right opens it, Right again moves into it, Left goes back up.
-    const open = within(uc).getByRole('button', { name: 'Collapse DM-SHOP-UC01' });
+    const open = within(cap).getByRole('button', { name: 'Collapse DM-SHOP-CAP01' });
     open.focus();
     fireEvent.keyDown(open, { key: 'ArrowLeft' });
-    expect(uc.querySelector('ul.nested')).toBeNull();
-    fireEvent.keyDown(within(uc).getByRole('button', { name: 'Expand DM-SHOP-UC01' }), { key: 'ArrowRight' });
-    expect(uc.querySelector('ul.nested')).not.toBeNull();
-    fireEvent.keyDown(within(uc).getByRole('button', { name: 'Collapse DM-SHOP-UC01' }), { key: 'ArrowRight' });
+    expect(cap.querySelector('ul.nested')).toBeNull();
+    fireEvent.keyDown(within(cap).getByRole('button', { name: 'Expand DM-SHOP-CAP01' }), { key: 'ArrowRight' });
+    expect(cap.querySelector('ul.nested')).not.toBeNull();
+    fireEvent.keyDown(within(cap).getByRole('button', { name: 'Collapse DM-SHOP-CAP01' }), { key: 'ArrowRight' });
     const child = document.activeElement as HTMLElement;
-    expect(child.textContent).toContain('DM-SHOP-UC01-R01');
+    expect(child.textContent).toContain('DM-SHOP-UC01');
     fireEvent.keyDown(child, { key: 'ArrowLeft' });
-    expect(within(uc).getByRole('button', { name: 'Collapse DM-SHOP-UC01' })).toHaveFocus();
+    expect(within(cap).getByRole('button', { name: 'Collapse DM-SHOP-CAP01' })).toHaveFocus();
 
     // Expand all and Collapse all, per section.
     const user = userEvent.setup();
@@ -50,8 +51,8 @@ describe('one level deep', () => {
     await openApp('/DM');
     await openApp('/DM-SHOP');
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
-    expect(row(section(/^Domain model/), 'DM-SHOP-A1').querySelector('ul.nested')).not.toBeNull();
-    expect(row(section(/^Capabilities/), 'DM-SHOP-UC01').querySelector('ul.nested')).not.toBeNull();
+    expect(row(section(/^Aggregates/), 'DM-SHOP-A1').querySelector('ul.nested')).not.toBeNull();
+    expect(row(section(/^Capabilities/), 'DM-SHOP-CAP01').querySelector('ul.nested')).not.toBeNull();
   });
 
   it('LA-EXP-T51 A record page shows its direct children with theirs folded, in the wiki and the side bar, and a product page lists its domains but not their contents', async () => {
@@ -59,18 +60,18 @@ describe('one level deep', () => {
     await openApp('/DM-SHOP');
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     const wiki = screen.getByRole('region', { name: 'Wiki pane' });
-    // A domain's one page lists its records in their folders, each with its own children folded.
+    // A domain's one page lists its records in their stages and folders, each with its own children folded.
     const children = within(wiki).getByRole('heading', { name: /^Capabilities/ }).closest('section') as HTMLElement;
-    const uc = row(children, 'DM-SHOP-UC01');
-    expect(uc).toHaveTextContent('2 UC requirements');
-    expect(uc.querySelector('ul.nested')).toBeNull();
-    expect(within(children).queryByRole('link', { name: /DM-SHOP-UC01-R01/ })).toBeNull();
+    const cap = row(children, 'DM-SHOP-CAP01');
+    expect(cap).toHaveTextContent('1 use case');
+    expect(cap.querySelector('ul.nested')).toBeNull();
+    expect(within(children).queryByRole('link', { name: /DM-SHOP-UC01/ })).toBeNull();
 
     // On a record's page the side bar does not repeat the children the wiki lists (brief 64).
-    await openApp('/DM-SHOP-UC01');
-    await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
-    expect(within(main()).getByRole('list', { name: 'UC requirements of DM-SHOP-UC01' })).toBeInTheDocument();
-    expect(within(sideBar()).queryByRole('list', { name: /^UC requirements/ })).toBeNull();
+    await openApp('/DM-SHOP-CAP01');
+    await screen.findByRole('heading', { level: 1, name: 'Buying' });
+    expect(within(main()).getByRole('list', { name: 'Use cases of DM-SHOP-CAP01' })).toBeInTheDocument();
+    expect(within(sideBar()).queryByRole('list', { name: /^Use cases/ })).toBeNull();
 
     await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });

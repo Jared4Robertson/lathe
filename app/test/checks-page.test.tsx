@@ -15,9 +15,9 @@ describe('checks page', () => {
       records: [...s.querySelectorAll('li')].map((li) => li.querySelector('a')?.getAttribute('href') ?? li.querySelector('code')?.textContent),
     }));
     expect(groups).toEqual([
-      { check: 'test-file-missing', severities: ['error'], records: ['/DM-SHOP-T01'] },
-      { check: 'unproved', severities: ['warning', 'warning'], records: ['/DM-SHOP-DR01', '/DM-SHOP-UC01-R02'] },
-      { check: 'unsatisfied', severities: ['warning'], records: ['/DM-PAY-UC01-R01'] },
+      { check: 'test-file-missing', severities: ['error'], records: ['/DM-SHOP-UC01-R01-T01'] },
+      { check: 'undesigned', severities: ['warning'], records: ['/DM-PAY-UC01-R01'] },
+      { check: 'unproved', severities: ['warning', 'warning'], records: ['/DM-SHOP-INV01', '/DM-SHOP-UC01-R02'] },
       { check: 'Workspace', severities: ['error'], records: ['workspace'] },
       { check: 'engine', severities: ['error'], records: ['workspace'] },
     ]);

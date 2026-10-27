@@ -16,22 +16,27 @@ const list = (items: Item[]) => (
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
-/** A product with 12 domains; its first domain has 12 use cases, the first with 12 requirements, and 12 problems. */
+/**
+ * A product with 12 domains; its first domain has 12 capabilities (the first holding 12 use cases, the first of them
+ * with 12 UC requirements), a specification 12 commands check, and 12 problems.
+ */
 function bigWorkspace(): SpecData {
   const ws = baseWorkspace();
   addRows(ws, 'product', { id: 'BG', title: 'Big product' });
-  for (let d = 1; d <= 12; d++) addRows(ws, 'domain', { id: `BG-D${pad(d)}`, title: `Domain ${d}`, product_id: 'BG' });
+  for (let d = 1; d <= 12; d++) addRows(ws, 'domain', { id: `BG-D${pad(d)}`, title: `Domain ${d}`, product_id: 'BG', subdomain_type: 'core' });
   addRows(ws, 'aggregate', { id: 'BG-D01-A1', title: 'Ledger', domain_id: 'BG-D01' });
-  addRows(ws, 'domain_rule', { id: 'BG-D01-DR01', title: 'A ledger balances', domain_id: 'BG-D01', aggregate_id: 'BG-D01-A1', statement: 'A ledger MUST balance.' });
+  addRows(ws, 'specification', { id: 'BG-D01-SP01', title: 'A ledger balances', statement: 'A ledger balances when its debits equal its credits.' });
   for (let u = 1; u <= 12; u++) {
-    addRows(ws, 'use_case', { id: `BG-D01-UC${pad(u)}`, title: u === 9 ? 'Close the month' : `Use case ${u}`, domain_id: 'BG-D01' });
+    addRows(ws, 'capability', { id: `BG-D01-CAP${pad(u)}`, title: u === 9 ? 'Close the month' : `Capability ${u}`, domain_id: 'BG-D01', position: u });
+    addRows(ws, 'use_case', { id: `BG-D01-UC${pad(u)}`, title: `Use case ${u}`, capability_id: 'BG-D01-CAP01' });
     addRows(ws, 'use_case_actor', { use_case_id: `BG-D01-UC${pad(u)}`, position: 1, role_name: 'Clerk' });
-    addRows(ws, 'applies', { source_id: `BG-D01-UC${pad(u)}`, target_id: 'BG-D01-DR01' });
-    addRows(ws, 'requirement', { id: `BG-D01-UC01-R${pad(u)}`, title: `Requirement ${u}`, use_case_id: 'BG-D01-UC01', statement: `Requirement ${u} MUST hold.` });
+    addRows(ws, 'command', { id: `BG-D01-CMD${pad(u)}`, title: `Command ${u}`, aggregate_id: 'BG-D01-A1' });
+    addRows(ws, 'checks', { source_id: `BG-D01-CMD${pad(u)}`, target_id: 'BG-D01-SP01' });
+    addRows(ws, 'uc_requirement', { id: `BG-D01-UC01-R${pad(u)}`, title: `Requirement ${u}`, use_case_id: 'BG-D01-UC01', statement: `Requirement ${u} MUST hold.` });
   }
-  ws.problems.push(...Array.from({ length: 12 }, (_, i) => ({ severity: 'warning' as const, check: 'unproved', record: `BG-D01-UC01-R${pad(i + 1)}`, message: `No test proves requirement BG-D01-UC01-R${pad(i + 1)}.` })));
+  ws.problems.push(...Array.from({ length: 12 }, (_, i) => ({ severity: 'warning' as const, check: 'unproved', record: `BG-D01-UC01-R${pad(i + 1)}`, message: `No test proves UC requirement BG-D01-UC01-R${pad(i + 1)}.` })));
   ws.coverage.push(...Array.from({ length: 12 }, (_, d): Coverage => ({ domain: `BG-D${pad(d + 1)}`, obligations: [], tests: { automated: 0, manual: 0, planned: 0 }, gaps: [] })));
-  ws.coverage.find((c) => c.domain === 'BG-D01')!.gaps = Array.from({ length: 12 }, (_, i) => ({ id: `BG-D01-UC01-R${pad(i + 1)}`, kind: 'requirement', missing: 'proves' as const }));
+  ws.coverage.find((c) => c.domain === 'BG-D01')!.gaps = Array.from({ length: 12 }, (_, i) => ({ id: `BG-D01-UC01-R${pad(i + 1)}`, kind: 'uc_requirement', missing: 'proves' as const }));
   return ws;
 }
 
@@ -92,12 +97,12 @@ describe('long lists', () => {
     await screen.findByRole('heading', { level: 1, name: 'Domain 1' });
     const useCases = section(/^Capabilities/);
     const search = within(useCases).getByRole('searchbox', { name: 'Filter capabilities' });
-    await user.click(within(useCases).getByRole('button', { name: 'Expand BG-D01-UC01' }));
-    expect(within(useCases).getByRole('searchbox', { name: 'Filter UC requirements of BG-D01-UC01' })).toBeInTheDocument();
+    await user.click(within(useCases).getByRole('button', { name: 'Expand BG-D01-CAP01' }));
+    expect(within(useCases).getByRole('searchbox', { name: 'Filter use cases of BG-D01-CAP01' })).toBeInTheDocument();
     await user.type(search, 'close the month');
     const region = within(useCases).getByRole('region', { name: 'Capabilities (scrolls)' });
     expect(within(useCases).getByText('1 of 12')).toBeInTheDocument();
-    expect(within(region).getAllByRole('listitem').map((li) => li.textContent)).toEqual([expect.stringMatching(/^BG-D01-UC09\s*Close the month/)]);
+    expect(within(region).getAllByRole('listitem').map((li) => li.textContent)).toEqual([expect.stringMatching(/^BG-D01-CAP09\s*Close the month/)]);
     expect(within(section(/^Coverage/)).getByRole('searchbox', { name: 'Filter coverage gaps' })).toBeInTheDocument();
     expect(within(section(/^Problems in this domain/)).getByRole('searchbox', { name: 'Filter problems' })).toBeInTheDocument();
 
@@ -106,10 +111,10 @@ describe('long lists', () => {
     await openApp('/BG-D01', served);
     await screen.findByRole('heading', { level: 1, name: 'Domain 1' });
     expect(within(main()).getByRole('searchbox', { name: 'Filter children' })).toBeInTheDocument();
-    await openApp('/BG-D01-DR01', served);
+    await openApp('/BG-D01-SP01', served);
     await screen.findByRole('heading', { level: 1, name: 'A ledger balances' });
-    const linksIn = within(main()).getByRole('searchbox', { name: /^Filter applied by$/i });
-    await user.type(linksIn, 'UC09');
+    const linksIn = within(main()).getByRole('searchbox', { name: /^Filter checked by$/i });
+    await user.type(linksIn, 'CMD09');
     expect(within(main()).getByText('1 of 12')).toBeInTheDocument();
 
     // The checks page.

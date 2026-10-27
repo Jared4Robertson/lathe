@@ -16,9 +16,9 @@ import { boxElement, drawnIds } from './graph/scene';
 /** The fixture with Demo shop's use case linking to and naming Notebook's domain, and a record of no product. */
 function crossingWorkspace(): SpecData {
   const ws = setRow(workspace(), 'use_case', 'DM-SHOP-UC01', { goal: 'Like NF-NOTE, it keeps a list.' });
-  addRows(ws, 'use_case', { id: 'ZZ-LOOSE', title: 'A loose use case', domain_id: 'ZZ-GONE' });
-  addRows(ws, 'applies', { source_id: 'DM-SHOP-UC01', target_id: 'NF-NOTE' });
-  ws.problems.push({ severity: 'error', check: 'link-crosses-product', record: 'DM-SHOP-UC01', message: 'DM-SHOP-UC01 applies NF-NOTE, a record of NF, not of its own product DM.' });
+  addRows(ws, 'use_case', { id: 'ZZ-LOOSE', title: 'A loose use case', capability_id: 'ZZ-GONE' });
+  addRows(ws, 'follows', { source_id: 'DM-SHOP-UC01', target_id: 'NF-NOTE' });
+  ws.problems.push({ severity: 'error', check: 'link-crosses-product', record: 'DM-SHOP-UC01', message: 'DM-SHOP-UC01 follows NF-NOTE, a record of NF, not of its own product DM.' });
   return ws;
 }
 

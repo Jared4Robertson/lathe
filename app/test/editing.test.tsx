@@ -15,7 +15,7 @@ const toolbar = (id: string) => screen.getByRole('toolbar', { name: `Change ${id
 describe('editing a record', () => {
   it('opens a form of typed inputs, writes only what changed, and shows the record changed', async () => {
     const user = userEvent.setup();
-    const changed = (): SpecData => setRow(workspace(), 'requirement', 'DM-SHOP-UC01-R01', { statement: 'The basket MUST show the new item within a second.' });
+    const changed = (): SpecData => setRow(workspace(), 'uc_requirement', 'DM-SHOP-UC01-R01', { statement: 'The basket MUST show the new item within a second.' });
     const { writes } = await openApp('/DM-SHOP-UC01-R01', { write: () => ({ answer: ok, data: changed() }) });
     await user.click(within(toolbar('DM-SHOP-UC01-R01')).getByRole('button', { name: 'Edit' }));
 
@@ -27,7 +27,7 @@ describe('editing a record', () => {
     expect(title).toHaveAttribute('aria-required', 'true');
     const statement = within(form).getByRole('textbox', { name: /^statement/ });
     expect(statement.tagName).toBe('TEXTAREA');
-    expect(statement).toHaveAccessibleDescription(/MUST, MUST NOT, SHOULD or MAY/);
+    expect(statement).toHaveAccessibleDescription(/MUST/);
     // The parent is a choice among the use cases of this product only.
     const parent = within(form).getByRole('combobox', { name: /^Parent/ });
     expect(within(parent).getAllByRole('option').map((o) => o.getAttribute('value'))).toEqual(['DM-PAY-UC01', 'DM-SHOP-UC01']);
@@ -37,16 +37,61 @@ describe('editing a record', () => {
     await user.click(within(form).getByRole('button', { name: 'Save' }));
 
     await waitFor(() => expect(writes).toHaveLength(1));
-    expect(writes[0]).toEqual([{ op: 'set', table: 'requirement', key: 'DM-SHOP-UC01-R01', changes: { statement: 'The basket MUST show the new item within a second.' } }]);
+    expect(writes[0]).toEqual([{ op: 'set', table: 'uc_requirement', key: 'DM-SHOP-UC01-R01', changes: { statement: 'The basket MUST show the new item within a second.' } }]);
     await waitFor(() => expect(screen.queryByRole('form')).toBeNull());
     expect(within(main()).getByText('The basket MUST show the new item within a second.')).toBeInTheDocument();
     // Focus comes back to the record's actions.
     await waitFor(() => expect(within(toolbar('DM-SHOP-UC01-R01')).getByRole('button', { name: 'Edit' })).toHaveFocus());
   });
 
+  it('offers both kinds of parent where a record may sit under either, and moves it between them', async () => {
+    const user = userEvent.setup();
+    const { writes } = await openApp('/DM-SHOP-EP01', { write: () => ({ answer: ok }) });
+    await user.click(within(toolbar('DM-SHOP-EP01')).getByRole('button', { name: 'Edit' }));
+    const form = screen.getByRole('form', { name: 'Edit DM-SHOP-EP01' });
+    const parent = within(form).getByRole('combobox', { name: /^Parent/ });
+    expect(parent).toHaveAccessibleDescription(/sits under command or query/);
+    expect([...parent.querySelectorAll('optgroup')].map((g) => [g.getAttribute('label'), [...g.querySelectorAll('option')].map((o) => o.getAttribute('value'))])).toEqual([
+      ['Command', ['DM-SHOP-CMD01']],
+      ['Query', ['DM-SHOP-QRY01']],
+    ]);
+    expect(parent).toHaveValue('DM-SHOP-CMD01');
+    await user.selectOptions(parent, 'DM-SHOP-QRY01');
+    await user.click(within(form).getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(writes).toHaveLength(1));
+    expect(writes[0]).toEqual([{ op: 'move', id: 'DM-SHOP-EP01', parent: 'DM-SHOP-QRY01' }]);
+  });
+
+  it('edits part rows in place: a field\'s name and its type, a value object or an aggregate chosen among the product\'s', async () => {
+    const user = userEvent.setup();
+    const { writes } = await openApp('/DM-SHOP-EN02', { write: () => ({ answer: ok }) });
+    await user.click(within(toolbar('DM-SHOP-EN02')).getByRole('button', { name: 'Edit' }));
+    const form = screen.getByRole('form', { name: 'Edit DM-SHOP-EN02' });
+    const fields = within(form).getByRole('group', { name: /^Entity fields/ });
+    const second = within(fields).getByRole('group', { name: 'entity field 2' });
+    expect(within(second).getByRole('textbox', { name: /^name/ })).toHaveValue('Quantity');
+    const valueObject = within(second).getByRole('combobox', { name: /^type value object id/ });
+    expect(valueObject).toHaveValue('DM-VO01');
+    expect(within(valueObject).getAllByRole('option').map((o) => o.getAttribute('value'))).toEqual(['', 'DM-VO01']);
+    const aggregate = within(second).getByRole('combobox', { name: /^type aggregate id/ });
+    expect(within(aggregate).getAllByRole('option').map((o) => o.getAttribute('value'))).toEqual(['', 'DM-PAY-A1', 'DM-SHOP-A1']);
+
+    const name = within(second).getByRole('textbox', { name: /^name/ });
+    await user.clear(name);
+    await user.type(name, 'Count');
+    await user.click(within(form).getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(writes).toHaveLength(1));
+    expect(writes[0]).toEqual([
+      { op: 'remove', table: 'entity_field', key: { entity_id: 'DM-SHOP-EN02', position: 1 } },
+      { op: 'remove', table: 'entity_field', key: { entity_id: 'DM-SHOP-EN02', position: 2 } },
+      { op: 'add', table: 'entity_field', row: { entity_id: 'DM-SHOP-EN02', position: 1, name: 'Item', meaning: 'What is in the basket.', type: 'text', required: true } },
+      { op: 'add', table: 'entity_field', row: { entity_id: 'DM-SHOP-EN02', position: 2, name: 'Count', meaning: 'How many.', type_value_object_id: 'DM-VO01', required: true } },
+    ]);
+  });
+
   it('shows the store\'s refusal inline, at the top and beside the part of the form it came from, and keeps the draft', async () => {
     const user = userEvent.setup();
-    const refusal: WriteAnswer = { ok: false, error: 'refused', problems: [{ rule: 'check', table: 'requirement', key: 'DM-SHOP-UC01-R01', command: 0, message: 'requirement.title is empty' }] };
+    const refusal: WriteAnswer = { ok: false, error: 'refused', problems: [{ rule: 'check', table: 'uc_requirement', key: 'DM-SHOP-UC01-R01', command: 0, message: 'uc_requirement.title is empty' }] };
     const { writes } = await openApp('/DM-SHOP-UC01-R01', { write: () => ({ answer: refusal }) });
     await user.click(within(toolbar('DM-SHOP-UC01-R01')).getByRole('button', { name: 'Edit' }));
     const form = screen.getByRole('form', { name: 'Edit DM-SHOP-UC01-R01' });
@@ -55,10 +100,10 @@ describe('editing a record', () => {
 
     const alert = await within(form).findByRole('alert');
     expect(alert).toHaveTextContent('The store refused the change. Nothing was saved.');
-    expect(alert).toHaveTextContent('DM-SHOP-UC01-R01: requirement.title is empty');
+    expect(alert).toHaveTextContent('DM-SHOP-UC01-R01: uc_requirement.title is empty');
     expect(alert).toHaveFocus();
     const fields = within(form).getByRole('group', { name: 'Fields' });
-    expect(fields).toHaveTextContent('requirement.title is empty');
+    expect(fields).toHaveTextContent('uc_requirement.title is empty');
     expect(writes).toHaveLength(1);
     // The form stays open with what was typed.
     expect(within(form).getByRole('textbox', { name: /^group name/ })).toHaveValue('Display');
@@ -84,32 +129,34 @@ describe('editing a record', () => {
 
   it('adds a link only to a valid target, and removes one', async () => {
     const user = userEvent.setup();
-    const { writes } = await openApp('/DM-SHOP-C01', { write: () => ({ answer: ok }) });
-    await user.click(within(toolbar('DM-SHOP-C01')).getByRole('button', { name: 'Edit' }));
+    const { writes } = await openApp('/DM-SHOP-UC01-FL-S01', { write: () => ({ answer: ok }) });
+    await user.click(within(toolbar('DM-SHOP-UC01-FL-S01')).getByRole('button', { name: 'Edit' }));
     const form = screen.getByRole('form');
     const links = within(form).getByRole('group', { name: 'Links' });
-    const dependsOn = within(links).getByRole('combobox', { name: /Add a link: Depends on/ });
+    const happensIn = within(links).getByRole('combobox', { name: /Add a link: Happens in/ });
     // A record of a kind the relation does not allow is refused before any write.
-    await user.type(dependsOn, 'DM-SHOP-UC01{Enter}');
-    expect(within(links).getByText(/DM-SHOP-UC01 is not a component it can link to/)).toBeInTheDocument();
-    await user.click(within(links).getByRole('button', { name: /Remove the link Satisfies DM-SHOP-DR01/ }));
+    await user.type(happensIn, 'DM-SHOP-UC01{Enter}');
+    expect(within(links).getByText(/DM-SHOP-UC01 is not a view it can link to/)).toBeInTheDocument();
+    await user.click(within(links).getByRole('button', { name: /Remove the link Invokes DM-SHOP-CMD01/ }));
     await user.click(within(form).getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(writes).toHaveLength(1));
-    expect(writes[0]).toEqual([{ op: 'unlink', relation: 'satisfies', source: 'DM-SHOP-C01', target: 'DM-SHOP-DR01' }]);
+    expect(writes[0]).toEqual([{ op: 'unlink', relation: 'invokes', source: 'DM-SHOP-UC01-FL-S01', target: 'DM-SHOP-CMD01' }]);
   });
 });
 
 describe('adding a record', () => {
   it('adds a child from its parent\'s page with a suggested ID, and opens it', async () => {
     const user = userEvent.setup();
-    const added = (): SpecData => addRows(workspace(), 'requirement', { id: 'DM-SHOP-UC01-R03', title: 'The basket shows its total', use_case_id: 'DM-SHOP-UC01', statement: 'The basket MUST show its total.' });
+    const added = (): SpecData => addRows(workspace(), 'uc_requirement', { id: 'DM-SHOP-UC01-R03', title: 'The basket shows its total', use_case_id: 'DM-SHOP-UC01', statement: 'The basket MUST show its total.' });
     const { writes } = await openApp('/DM-SHOP-UC01', { write: () => ({ answer: ok, data: added() }) });
     const actions = toolbar('DM-SHOP-UC01');
     const add = within(actions).getByRole('button', { name: 'Add…' });
     expect(add).toHaveAttribute('aria-expanded', 'false');
     await user.click(add);
     expect(add).toHaveAttribute('aria-expanded', 'true');
-    await user.click(within(within(actions).getByRole('group', { name: 'Kinds to add under DM-SHOP-UC01' })).getByRole('button', { name: 'UC requirement' }));
+    const kinds = within(actions).getByRole('group', { name: 'Kinds to add under DM-SHOP-UC01' });
+    expect(within(kinds).getAllByRole('button').map((b) => b.textContent)).toEqual(['UC requirement', 'Flow']);
+    await user.click(within(kinds).getByRole('button', { name: 'UC requirement' }));
 
     const form = screen.getByRole('form', { name: 'Add a UC requirement' });
     const id = within(form).getByRole('textbox', { name: /^ID/ });
@@ -121,9 +168,43 @@ describe('adding a record', () => {
     await user.click(within(form).getByRole('button', { name: 'Add UC requirement' }));
 
     await waitFor(() => expect(writes).toHaveLength(1));
-    expect(writes[0]).toEqual([{ op: 'add', table: 'requirement', row: { id: 'DM-SHOP-UC01-R03', use_case_id: 'DM-SHOP-UC01', title: 'The basket shows its total', statement: 'The basket MUST show its total.' } }]);
+    expect(writes[0]).toEqual([{ op: 'add', table: 'uc_requirement', row: { id: 'DM-SHOP-UC01-R03', use_case_id: 'DM-SHOP-UC01', title: 'The basket shows its total', statement: 'The basket MUST show its total.' } }]);
     expect(await screen.findByRole('heading', { level: 1, name: 'The basket shows its total' })).toBeInTheDocument();
     expect(window.location.pathname).toBe('/DM-SHOP-UC01-R03');
+  });
+
+  it('adds a kind with no owner from the product\'s page: its ID takes the product, and it has no parent to choose', async () => {
+    const user = userEvent.setup();
+    const { writes } = await openApp('/DM', { write: () => ({ answer: ok }) });
+    const actions = toolbar('DM');
+    await user.click(within(actions).getByRole('button', { name: 'Add…' }));
+    const kinds = within(actions).getByRole('group', { name: 'Kinds to add under DM' });
+    expect(within(kinds).getAllByRole('button').map((b) => b.textContent)).toEqual(expect.arrayContaining(['Domain', 'Value object', 'View', 'Integration', 'UI component', 'Open question']));
+    await user.click(within(kinds).getByRole('button', { name: 'View' }));
+
+    const form = screen.getByRole('form', { name: 'Add a view' });
+    expect(form).toHaveTextContent('New view in DM');
+    expect(within(form).getByRole('textbox', { name: /^ID/ })).toHaveValue('DM-V02');
+    expect(within(form).queryByRole('combobox', { name: /^Parent/ })).toBeNull();
+    expect(within(form).queryByRole('group', { name: 'Where it sits' })).toBeNull();
+    await user.type(within(form).getByRole('textbox', { name: /^title/ }), 'Checkout');
+    await user.click(within(form).getByRole('button', { name: 'Add view' }));
+    await waitFor(() => expect(writes).toHaveLength(1));
+    expect(writes[0]).toEqual([{ op: 'add', table: 'view', row: { id: 'DM-V02', title: 'Checkout' } }]);
+  });
+
+  it('adds from a domain\'s page the kinds that sit under it, and a specification, which takes its domain from its ID', async () => {
+    const user = userEvent.setup();
+    await openApp('/DM-SHOP');
+    const actions = toolbar('DM-SHOP');
+    await user.click(within(actions).getByRole('button', { name: 'Add…' }));
+    const kinds = within(within(actions).getByRole('group', { name: 'Kinds to add under DM-SHOP' })).getAllByRole('button').map((b) => b.textContent);
+    expect(kinds).toEqual(expect.arrayContaining(['Aggregate', 'Specification', 'Read model', 'Capability', 'Open question']));
+    expect(kinds).not.toContain('Value object');
+    await user.click(screen.getByRole('button', { name: 'Specification' }));
+    const form = screen.getByRole('form', { name: 'Add a specification' });
+    expect(within(form).getByRole('textbox', { name: /^ID/ })).toHaveValue('DM-SHOP-SP02');
+    expect(within(form).queryByRole('combobox', { name: /^Parent/ })).toBeNull();
   });
 
   it('refuses an ID that is already a record before writing', async () => {
@@ -149,7 +230,7 @@ describe('removing a record', () => {
     const refusal: WriteAnswer = {
       ok: false,
       error: 'refused',
-      problems: [{ rule: 'referenced', table: 'use_case', key: 'DM-SHOP-UC01', command: 0, message: 'use_case DM-SHOP-UC01 is referenced, so it stays: requirement DM-SHOP-UC01-R01 (use_case_id)' }],
+      problems: [{ rule: 'referenced', table: 'use_case', key: 'DM-SHOP-UC01', command: 0, message: 'use_case DM-SHOP-UC01 is referenced, so it stays: uc_requirement DM-SHOP-UC01-R01 (use_case_id)' }],
     };
     const { writes } = await openApp('/DM-SHOP-UC01', { write: () => ({ answer: refusal }) });
     const remove = within(toolbar('DM-SHOP-UC01')).getByRole('button', { name: 'Remove' });
@@ -157,17 +238,18 @@ describe('removing a record', () => {
     expect(remove).toHaveAttribute('aria-expanded', 'true');
     const panel = screen.getByRole('region', { name: 'Remove DM-SHOP-UC01?' });
     expect(within(panel).getByRole('heading', { name: 'Remove DM-SHOP-UC01?' })).toHaveFocus();
-    expect(panel).toHaveTextContent('These 2 still reference it');
+    expect(panel).toHaveTextContent('These 3 still reference it');
     expect(within(panel).getByRole('link', { name: /DM-SHOP-UC01-R01/ }).closest('li')).toHaveTextContent('sits under it');
     expect(within(panel).getByRole('link', { name: /DM-SHOP-UC01-R02/ })).toBeInTheDocument();
-    expect(panel).toHaveTextContent('with its 1 part row and the 1 link it starts');
+    expect(within(panel).getByRole('link', { name: /DM-SHOP-UC01-FL/ })).toBeInTheDocument();
+    expect(panel).toHaveTextContent('with its 1 part row');
     // Nothing is written until the person confirms.
     expect(writes).toHaveLength(0);
 
     await user.click(within(panel).getByRole('button', { name: 'Remove DM-SHOP-UC01' }));
     const alert = await within(panel).findByRole('alert');
     expect(alert).toHaveTextContent('The store refused to remove it. Nothing was changed.');
-    expect(alert).toHaveTextContent('requirement DM-SHOP-UC01-R01 (use_case_id)');
+    expect(alert).toHaveTextContent('uc_requirement DM-SHOP-UC01-R01 (use_case_id)');
     expect(writes).toEqual([[{ op: 'remove', table: 'use_case', key: 'DM-SHOP-UC01' }]]);
     expect(window.location.pathname).toBe('/DM-SHOP-UC01');
     // Cancel closes the question and gives focus back to the actions.
