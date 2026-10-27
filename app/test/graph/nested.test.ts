@@ -127,7 +127,10 @@ describe('the Nested map', () => {
     expect(a.w * a.h).toBeGreaterThan(b.w * b.h);
     for (const map of [...maps(), wide(1, 6), wide(3, 4), lop]) {
       // Every box at one height level has the same text scale, whatever its size: 1 or more at the leaves, at most MAX_LEVEL_STEP times the level below's.
-      heightLevels(map.nodes).forEach((boxes, h, levels) => {
+      // A root's children are set aside: they share the largest of their levels' scales (T203).
+      // A level holding only a root's children has no box left to compare with, so the level above it is not compared.
+      heightLevels(map.nodes).map((all) => all.filter((n) => n.level !== 1)).forEach((boxes, h, levels) => {
+        if (boxes.length === 0 || (h > 0 && levels[h - 1].length === 0)) return;
         for (const n of boxes) expect(n.text, n.id).toBe(boxes[0].text);
         const below = h > 0 ? levels[h - 1][0].text : 1;
         expect(boxes[0].text).toBeGreaterThanOrEqual(below);
@@ -145,5 +148,32 @@ describe('the Nested map', () => {
     // Built once per index: the same map object, whatever the focus.
     const index = testIndex();
     expect(nestedMap(index, 'P')).toBe(nestedMap(index, 'P'));
+  });
+
+  it("LA-EXP-T203 A product's children share one text scale, the largest among them, so a small top-level folder's header reads at a deep domain's size and its square holds it", () => {
+    // A product with a deep domain (four levels of five) and a small folder of three leaves beside it.
+    const deep = (id: string): string[] => (id.split('.').length >= 4 ? [] : Array.from({ length: 5 }, (_, i) => `${id}.${i}`));
+    const kids = (id: string): string[] => (id === 'p' ? ['d', 's'] : id === 's' ? ['s.a', 's.b', 's.c'] : id.startsWith('s.') ? [] : deep(id));
+    const map = layoutNested(['p'], kids, (id) => ({ title: id === 's' ? 'Shared' : id, meta: '' }));
+    const [d, s] = [map.nodes.get('d')!, map.nodes.get('s')!];
+    // By its height level alone the folder would take its leaves' level's next step; the domain's is far above that.
+    const leaf = map.nodes.get('s.a')!;
+    expect(d.text).toBeGreaterThan(MAX_LEVEL_STEP * leaf.text);
+    // The two share the domain's scale, the largest; the folder's leaves keep theirs.
+    expect(s.text).toBe(d.text);
+    expect(leaf.text).toBe(map.nodes.get('d.0.0.0')!.text);
+    // The folder's square holds its header at that scale above its padding, and its children below it.
+    expect(s.w).toBe(s.h);
+    expect(s.header).toBeCloseTo(s.text * labelHeight(s.lines), 9);
+    for (const line of s.lines.title) expect(titleWidth(line.trimEnd()) * WIDTH_MARGIN * s.text).toBeLessThanOrEqual(s.w - 2 * LABEL_PAD * s.text + eps);
+    expect(s.header + NEST_PAD * s.text).toBeLessThanOrEqual(s.h + eps);
+    for (const c of s.children.map((id) => map.nodes.get(id)!)) {
+      expect(c.y).toBeGreaterThanOrEqual(s.y + s.header - eps);
+      expect(c.y + c.h).toBeLessThanOrEqual(s.y + s.h + eps);
+    }
+    // Deeper boxes keep their height level's scale: the domain's children all share one, below the domain's.
+    const below = d.children.map((id) => map.nodes.get(id)!.text);
+    expect(new Set(below).size).toBe(1);
+    expect(below[0]).toBeLessThan(d.text);
   });
 });
