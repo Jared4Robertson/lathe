@@ -38,7 +38,7 @@ The Owner worked through the model as a diagram and settled each point below. S2
 4. **Commands and queries (CQRS):**
    - A command raises events and checks specifications.
    - A query belongs to the one read model it reads, and changes nothing.
-   - A read model belongs to its domain and reads that domain's aggregates. It may span several aggregates.
+   - A read model belongs to its domain and reads that domain's aggregates. It may span several aggregates. It has fields of its own, typed like an entity's, and is stored in a table of its own.
 5. **Domains meet only through published events.** A domain event may be marked published, which makes its shape a promise to other domains. A policy may hear its own domain's events, or another domain's published ones. Commands, queries, read models and specifications stay inside their own domain.
 6. **"Domain" keeps its name.** It is what DDD calls a bounded context: a model, a language and an owner, for one business capability.
 
@@ -59,11 +59,12 @@ The Owner worked through the model as a diagram and settled each point below. S2
     | Technical kind | Implements |
     | --- | --- |
     | Repository | Aggregate: loads and saves it |
-    | Data model | Entity: its code, behavior and mapping to storage |
+    | Data model | Entity: its code, behavior and mapping to its table |
+    | Table | Entity or read model: its storage, with name, primary and foreign keys, unique keys and indexes |
     | Value type | Value object, and so its constraints |
     | Predicate | Specification |
     | Event type | Domain event: its shape, a contract when published |
-    | Projection | Read model: builds it and keeps it current |
+    | Projection | Read model: fills its table and keeps it current |
     | Command handler | Command |
     | Query handler | Query |
     | Event handler | Policy |
@@ -101,7 +102,7 @@ The Owner worked through the model as a diagram and settled each point below. S2
 ## Scope
 
 ### The kinds
-Forty-five kinds. **Parent** is the one foreign key that places a record. **Links** are relations to other records.
+Forty-six kinds. **Parent** is the one foreign key that places a record. **Links** are relations to other records.
 
 | Stage | Kind | Parent | Links | ID |
 | --- | --- | --- | --- | --- |
@@ -116,7 +117,7 @@ Forty-five kinds. **Parent** is the one foreign key that places a record. **Link
 | | Specification | — (reads 1+ aggregates, all of one domain) | | `<P>-<D>-SP<nn>` |
 | | Domain event | Aggregate | raised by 1+ commands; published flag | `<P>-<D>-EV<nn>` |
 | | Command | Aggregate | raises events; checks specifications | `<P>-<D>-CMD<nn>` |
-| | Read model | Domain | reads 1+ aggregates | `<P>-<D>-RM<nn>` |
+| | Read model | Domain | reads 1+ aggregates; has fields | `<P>-<D>-RM<nn>` |
 | | Query | Read model | selects by specifications | `<P>-<D>-QRY<nn>` |
 | | Policy | Command | hears one event | `<P>-<D>-PO<nn>` |
 | Use cases | Capability | Domain | | `<P>-<D>-CAP<nn>` |
@@ -130,6 +131,7 @@ Forty-five kinds. **Parent** is the one foreign key that places a record. **Link
 | | API requirement | Endpoint | | `<endpoint>-R<nn>` |
 | | Integration | — (used by 1+ steps) | | `<P>-INT<nn>` |
 | Technical | Repository, data model, value type, predicate, event type, projection, command handler, query handler, event handler, endpoint handler, adapter | What it implements (one) | | `<parent>-` plus REPO, DM, VT, PR, ET, PJ, H or AD |
+| | Table | Its entity or read model (one) | | `<parent>-TB` |
 | | UI component | — (used by 1+ views) | | `<P>-UI<nn>` |
 | Test plan | Constraint, invariant, specification, policy and flow tests | Their parent (one) | | `<parent>-T` |
 | | Use case, view, endpoint and integration tests | Their parent | | `<parent>-T<nn>` |
@@ -139,7 +141,8 @@ The domain-model IDs are scoped to the domain, which follows from the parent. Ki
 ### Kept as they are
 - Patterns and their rules and settings.
 - Standards and their rules.
-- Entity fields and event fields. A field's type becomes a value object or a basic type from a fixed list: text, whole number, decimal, date, time and yes/no. Free-text types go.
+- Entity fields and event fields, joined by read model fields, which are new. A field's type becomes a value object or a basic type from a fixed list: text, whole number, decimal, date, time and yes/no. Free-text types go.
+- A table's columns follow from its entity's or read model's fields, with a value object's fields flattened into columns, so columns aren't stored twice. A table stores only what fields can't say: its keys and indexes. A unique key names the invariant it enforces.
 - Product kinds, checks, the command layer, the merge driver and JSONL storage.
 - Open questions. A question sits under its product or domain, with an optional `about` link to any record.
 
@@ -165,7 +168,7 @@ Domain services, a glossary, context-map relationships and engineering checks. E
 
 ## Changes to existing specs
 - **The vertical slices plan** ([vertical-slice-domains.md](vertical-slice-domains.md)): decision 1's "technology is a layer inside a domain's design stage" is replaced. Domains stay vertical slices, but technology is expressed through the technical kinds that implement each design kind, and layers go.
-- **Authoring, Lathe's own spec of its model:** the meta-model, the record kinds and their rules are rewritten for the forty-five kinds, the new relations and the enforcement above.
+- **Authoring, Lathe's own spec of its model:** the meta-model, the record kinds and their rules are rewritten for the forty-six kinds, the new relations and the enforcement above.
 - **Checking:** check records are rewritten. Retired checks become schema refusals, and the new "nothing uses it" and coverage checks are added.
 - **Traceability:** coverage is reworked to cover the new obligations, designed through flow steps and implementations, built through technical files, and proved through test kinds.
 - **Exploring:** stage colors and order, kind pages for the new kinds, and the graph and Model views drawing the new tree.
@@ -173,7 +176,7 @@ Domain services, a glossary, context-map relationships and engineering checks. E
 - **The reference** (`REFERENCE.md`) is regenerated from the schema.
 
 ## Build steps
-1. **Schema.** Rewrite the stage files in `lathe/schema/` for the forty-five kinds, their relations, ID patterns, stage order and the refusals above. This is a hard cutover with no upgrade migrations, since the database is rebuilt from the data files on every load. The store supports kinds with no owner and parents that may be one of two kinds (an endpoint under a command or a query).
+1. **Schema.** Rewrite the stage files in `lathe/schema/` for the forty-six kinds, their relations, ID patterns, stage order and the refusals above. This is a hard cutover with no upgrade migrations, since the database is rebuilt from the data files on every load. The store supports kinds with no owner and parents that may be one of two kinds (an endpoint under a command or a query, a table under an entity or a read model).
 2. **Conversion of the Tool Library, as the worked example.**
    - A one-time converter in the store makes the mechanical moves, then is deleted.
    - Judgment moves are made by hand through the command layer: sorting rules into the four kinds, splitting use cases into commands, queries and flow steps, mapping components to technical kinds, and splitting tests by what they prove.
@@ -191,5 +194,5 @@ Domain services, a glossary, context-map relationships and engineering checks. E
    - Recommendation: a **pattern rule test** under the pattern rule, naming the adopting domain it proves the rule in. Standard rules are proved by the engine's checks or linters, named in a run by.
    - Owner: Owner.
 2. **Which technical kinds does Lathe declare for itself?** Candidates include check, CLI command, schema migration and graph layout.
-   - Recommendation: declare them while converting LA, only where none of the twelve technical kinds fits, and list them for review with the LA conversion.
+   - Recommendation: declare them while converting LA, only where none of the thirteen technical kinds fits, and list them for review with the LA conversion.
    - Owner: Owner.
