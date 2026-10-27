@@ -108,6 +108,17 @@ describe('refusals across tables', () => {
     expect(problems.map((p) => p.rule)).toEqual(['command-change-in-domain', 'command-change-in-domain']);
   });
 
+  it("refuses a read model fed by another domain's unpublished event, and a domain's table stored as a view", async () => {
+    const problems = await refusal(
+      adding({
+        ...catalog,
+        fed_by: [{ source_id: 'TL-LEND-RM01', target_id: 'TL-CAT-EV01' }],
+      }),
+    );
+    expect(problems.map((p) => p.rule)).toEqual(['read-model-fed-by-published']);
+    await expect(refusal(adding({ table: [{ id: 'TL-LEND-TB02', title: 'Cache', domain_id: 'TL-LEND', name: 'cache', storage: 'view' }] }))).resolves.not.toEqual([]);
+  });
+
   it('refuses a query and its read model in different domains', async () => {
     const problems = await refusal(adding({ ...catalog, query: [{ id: 'TL-CAT-QRY01', title: 'List listings', read_model_id: 'TL-LEND-RM01' }] }));
     expect(problems).toEqual([expect.objectContaining({ rule: 'id-prefix', file: 'data/query.jsonl', line: 2, key: 'TL-CAT-QRY01' })]);
