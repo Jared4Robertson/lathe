@@ -41,6 +41,12 @@ export interface LoadTimings {
   coverage: number;
   /** The whole load. */
   total: number;
+  /**
+   * The steps inside the phases, by name: the store's (reading the files, the schema, each table's insert,
+   * record_scope, each validation query, the commit), then the file facts, the coverage tables, each check (checks
+   * run side by side, so theirs overlap) and the records read back. `perf/engine.ts --profile` prints them.
+   */
+  steps: Record<string, number>;
 }
 
 /** A record that names a file, as the checks read it (file_facts). */
@@ -129,12 +135,14 @@ const CHECK_CONNECTIONS = 4;
 // for each problem; severity may be left out when the check's own severity is error or warning. A query that fails is
 // one error under the check's name. A product's check reports only on records of its product (and on none). Checks
 // only read the tables, so they run side by side on a few connections; their problems keep run order.
-async function runChecks(store: Store, checks: Row[], scope: Map<string, string | null>): Promise<Problem[]> {
+async function runChecks(store: Store, checks: Row[], scope: Map<string, string | null>, steps?: Record<string, number>): Promise<Problem[]> {
   const runOne = async (on: DuckDBConnection, check: Row): Promise<Problem[]> => {
     const name = String(check.name);
     const fixed = check.severity === 'error_or_warning' ? null : (check.severity as 'error' | 'warning');
     try {
+      const start = performance.now();
       const rows = await readRows<{ severity?: string; record: string | null; message: string }>(on, String(check.query));
+      if (steps) steps[`check ${name}`] = Math.round((performance.now() - start) * 10) / 10;
       const product = check.product_id === undefined ? null : String(check.product_id);
       return rows
         .map((row): Problem => ({
@@ -273,16 +281,25 @@ export async function readWorkspace(store: Store, root: string, timings?: Partia
     if (timings) timings[phase] = Math.round((now - mark) * 10) / 10;
     mark = now;
   };
+  const steps = timings ? (timings.steps ??= {}) : undefined;
+  const step = async <T,>(name: string, run: () => Promise<T>): Promise<T> => {
+    const start = performance.now();
+    try {
+      return await run();
+    } finally {
+      if (steps) steps[name] = Math.round((performance.now() - start) * 10) / 10;
+    }
+  };
   const order = await kindOrder(store);
-  const read = await readRecords(store, order);
-  const facts = await gatherFileFacts(path.resolve(root), store);
+  const read = await step('read records', () => readRecords(store, order));
+  const facts = await step('file facts', () => gatherFileFacts(path.resolve(root), store));
   const connection = store.connection;
   await connection.run(FACT_TABLES_SQL);
   await append(connection, 'file_facts', facts.map((f) => [f.record, f.kind, f.file, f.file_exists, f.contains_id]));
-  await connection.run(coverageViewsSql(store.schema));
+  await step('coverage tables', () => connection.run(coverageViewsSql(store.schema)));
   lap('files');
   const scope = new Map(read.records.map((r) => [r.id, r.product]));
-  const problems = await runChecks(store, orderChecks(store.rows('check')), scope);
+  const problems = await runChecks(store, orderChecks(store.rows('check')), scope, steps);
   lap('checks');
   const coverage = await computeCoverage(store);
   lap('coverage');
@@ -304,7 +321,7 @@ export async function loadWorkspace(root: string, options: LoadOptions = {}): Pr
   const timings = options.timings;
   let store: Store;
   try {
-    store = await openStore(config.root, storeOptions(options));
+    store = await openStore(config.root, { ...storeOptions(options), ...(timings ? { steps: (timings.steps ??= {}) } : {}) });
   } catch (error) {
     if (error instanceof StoreError) return refusedWorkspace(error);
     throw error;

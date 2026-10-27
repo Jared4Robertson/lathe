@@ -1,6 +1,6 @@
-// Putting rows into a DuckDB table: one JSON parameter per chunk of rows, read with every column's type, so the
-// database's own keys and checks judge each row.
-import type { DuckDBConnection } from '@duckdb/node-api';
+// Putting rows into a DuckDB table so the database's own keys and checks judge each row: through an appender, or as
+// one JSON parameter per chunk of rows, read with every column's type.
+import { LIST, VARCHAR, type DuckDBConnection } from '@duckdb/node-api';
 import type { Row } from './rows.ts';
 import { sqlName, sqlString, type TableDescription } from './schema.ts';
 
@@ -16,6 +16,34 @@ export async function insertRows(connection: DuckDBConnection, table: TableDescr
   const insert = `INSERT INTO ${sqlName(table.name)} (${columns.join(', ')}) SELECT ${columns.map((c) => `r.${c}`).join(', ')} FROM (SELECT unnest(from_json(`;
   for (let i = 0; i < rows.length; i += INSERT_CHUNK) {
     await connection.run(`${insert}${sqlString(JSON.stringify(rows.slice(i, i + INSERT_CHUNK)))}::JSON, ${sqlString(shape)})) AS r)`);
+  }
+}
+
+const TEXT_LIST = LIST(VARCHAR);
+
+/**
+ * Appends the rows to the table in the given database, through an appender: the database judges every key, foreign
+ * key, CHECK and NOT NULL as insertRows does, without reading the rows back from JSON (several times faster). Its
+ * refusals say less about the row, so a caller that needs to name the row runs insertRows after a refusal.
+ */
+export async function appendRows(connection: DuckDBConnection, database: string, table: TableDescription, rows: Row[]): Promise<void> {
+  const appender = await connection.createAppender(table.name, 'main', database);
+  try {
+    for (const row of rows) {
+      for (const column of table.columns) {
+        const value = row[column.name];
+        if (value === undefined) appender.appendNull();
+        else if (column.kind === 'integer') appender.appendInteger(value as number);
+        else if (column.kind === 'boolean') appender.appendBoolean(value as boolean);
+        else if (column.kind === 'text_list') appender.appendList(value as string[], TEXT_LIST);
+        // Text, and enums and dates written as text, which the appender casts to the column's type.
+        else appender.appendVarchar(value as string);
+      }
+      appender.endRow();
+    }
+    appender.flushSync();
+  } finally {
+    appender.closeSync();
   }
 }
 

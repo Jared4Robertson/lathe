@@ -9,7 +9,9 @@
 // Timings mean nothing on a machine that is busy with other work, so when the one-minute load average is above
 // PERF_MAX_LOAD (12 by default) it still measures and prints, but judges nothing and exits 3 ("not run: machine
 // busy"). A budget is never loosened to make a busy run pass. Prints one line per measurement, with the load's
-// phases, and exits 1 when a budget is missed.
+// phases, and exits 1 when a budget is missed. With --profile it also prints the steps of Lathe's live reload (the
+// store's schema copy, reading the files, each table's insert, record_scope, each validation query, the commit, the
+// file facts, the coverage tables and each check), to find where the time goes.
 
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { loadavg, tmpdir } from 'node:os';
@@ -23,6 +25,7 @@ const repo = path.resolve(here, '../..');
 export const ENGINE_BUDGETS = { loadMs: 2000, reloadMs: 500 } as const;
 const MAX_LOAD = Number(process.env.PERF_MAX_LOAD ?? 12);
 const RUNS = 5;
+const PROFILE = process.argv.includes('--profile');
 
 const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)];
 const phases = (t: Partial<LoadTimings>) => (['open', 'files', 'checks', 'coverage'] as const).map((p) => `${p} ${Math.round(t[p] ?? 0)}`).join(', ');
@@ -89,17 +92,24 @@ async function reload(root: string) {
   const store = await openStore(root);
   const [first] = store.rows('use_case');
   await store.close();
-  const times: number[] = [];
-  let last: Partial<LoadTimings> = {};
+  const runs: { ms: number; timings: Partial<LoadTimings> }[] = [];
   for (let i = 0; i < RUNS; i++) {
     const writer = await openStore(root);
     await writer.set('use_case', String(first.id), { title: `${first.title} ${i}` });
     await writer.close();
-    const r = await timedLoad(root);
-    times.push(r.ms);
-    last = r.timings;
+    runs.push(await timedLoad(root));
   }
-  return { ms: median(times), timings: last };
+  // The median run, with its own phases.
+  return [...runs].sort((a, b) => a.ms - b.ms)[Math.floor(runs.length / 2)];
+}
+
+/** The steps of a load, slowest first, with the totals of the inserts, validation queries and checks. */
+function profile(t: Partial<LoadTimings>): string {
+  const steps = Object.entries(t.steps ?? {});
+  const sum = (prefix: string) => steps.filter(([n]) => n.startsWith(prefix)).reduce((a, [, ms]) => a + ms, 0);
+  const totals = ['insert ', 'validate ', 'check '].map((p) => `  ${`${p.trim()} (all, summed)`.padEnd(48)} ${sum(p).toFixed(1).padStart(7)} ms`);
+  const slowest = steps.sort((a, b) => b[1] - a[1]).filter(([, ms]) => ms >= 1).map(([n, ms]) => `  ${n.padEnd(48)} ${ms.toFixed(1).padStart(7)} ms`);
+  return [...totals, ...slowest].join('\n');
 }
 
 const before = loadavg()[0];
@@ -121,6 +131,7 @@ try {
   judge(`Lathe's spec, cold load (${cold.records})`, cold.ms, ENGINE_BUDGETS.loadMs, phases(cold.timings));
   const live = await reload(lathe);
   judge("Lathe's spec, live reload", live.ms, ENGINE_BUDGETS.reloadMs, phases(live.timings));
+  if (PROFILE) lines.push(`Steps of that reload (1 ms and over):\n${profile(live.timings)}`);
   const refs: number[] = [];
   for (let i = 0; i < RUNS; i++) { const t = performance.now(); await buildReference(lathe); refs.push(performance.now() - t); }
   judge('Reference (first, then cached)', refs[0], null, `cached ${median(refs.slice(1)).toFixed(1)} ms`);

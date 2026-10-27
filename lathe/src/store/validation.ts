@@ -18,9 +18,6 @@ export interface ValidationQuery {
  * The views every database of the store has:
  * - record_parent (id, kind, parent_id): every record with its one parent, or none for a product and a kind with no
  *   owner;
- * - record_scope (id, product_id, domain_id, aggregate_id): every record with the product, domain and aggregate it
- *   sits in, through its parents; a record of a kind with no owner takes its product, or for a specification its
- *   domain, from the longest product or domain ID its own ID starts with (followed by a hyphen);
  * - link (relation, source_id, target_id): every link of every relation.
  */
 export function storeViewsSql(schema: SchemaDescription): string {
@@ -29,6 +26,26 @@ export function storeViewsSql(schema: SchemaDescription): string {
     const parent = k.parents.length ? `coalesce(${k.parents.map((p) => sqlName(p.column)).join(', ')})` : 'NULL';
     return `SELECT id, ${sqlString(k.name)} AS kind, ${parent}::VARCHAR AS parent_id FROM ${sqlName(k.name)}`;
   });
+  const links = Object.keys(schema.relations)
+    .sort()
+    .map((r) => `SELECT ${sqlString(r)} AS relation, source_id, target_id FROM ${sqlName(r)}`);
+  return `
+CREATE OR REPLACE VIEW record_parent AS
+${parents.join('\nUNION ALL ')};
+CREATE OR REPLACE VIEW link AS
+${links.join('\nUNION ALL ')};
+`;
+}
+
+/**
+ * The record_scope table (id, product_id, domain_id, aggregate_id), made once the data is in, in the same
+ * transaction: every record with the product, domain and aggregate it sits in, through its parents; a record of a
+ * kind with no owner takes its product, or for a specification its domain, from the longest product or domain ID its
+ * own ID starts with (followed by a hyphen). A data database never changes after its load (a write builds a new
+ * one), so the walk up the parents is worked out once and shared by the validation queries, the checks and coverage.
+ */
+export function recordScopeSql(schema: SchemaDescription): string {
+  const kinds = Object.values(schema.kinds).sort((a, b) => a.name.localeCompare(b.name));
   // The records that place what sits under them: products, domains and aggregates, and the kinds with no owner.
   const anchors = [
     'SELECT id, id AS product_id, NULL::VARCHAR AS domain_id, NULL::VARCHAR AS aggregate_id FROM product',
@@ -42,13 +59,8 @@ export function storeViewsSql(schema: SchemaDescription): string {
           : `SELECT r.id, max_by(p.id, length(p.id)), NULL, NULL FROM ${sqlName(k.name)} r LEFT JOIN product p ON starts_with(r.id, p.id || '-') GROUP BY r.id`,
       ),
   ];
-  const links = Object.keys(schema.relations)
-    .sort()
-    .map((r) => `SELECT ${sqlString(r)} AS relation, source_id, target_id FROM ${sqlName(r)}`);
   return `
-CREATE OR REPLACE VIEW record_parent AS
-${parents.join('\nUNION ALL ')};
-CREATE OR REPLACE VIEW record_scope AS
+CREATE TABLE record_scope AS
 WITH RECURSIVE up (id, ancestor) AS (
   SELECT id, id FROM record_parent
   UNION ALL
@@ -60,8 +72,6 @@ anchor (id, product_id, domain_id, aggregate_id) AS (
 SELECT up.id, max(a.product_id) AS product_id, max(a.domain_id) AS domain_id, max(a.aggregate_id) AS aggregate_id
 FROM up LEFT JOIN anchor a ON a.id = up.ancestor
 GROUP BY up.id;
-CREATE OR REPLACE VIEW link AS
-${links.join('\nUNION ALL ')};
 `;
 }
 
@@ -113,24 +123,6 @@ FROM link l
 JOIN record_scope a ON a.id = l.source_id
 JOIN record_scope b ON b.id = l.target_id
 WHERE a.product_id IS DISTINCT FROM b.product_id`,
-    },
-    {
-      name: 'link-scope',
-      description:
-        "A link of a relation whose scope is domain or aggregate joins two records of one domain, or one aggregate: a command and the specifications it checks, a query and the specifications it selects by, a specification or read model and the aggregates it reads, a command or query and the domain services it calls, and a command and the events it raises.",
-      sql: `
-SELECT l.relation AS table_name, l.source_id || chr(0) || l.target_id AS row_key,
-       l.source_id || ' is in ' || r.scope || ' ' || coalesce(CASE r.scope WHEN 'domain' THEN a.domain_id ELSE a.aggregate_id END, 'none')
-       || ', so it cannot ' || l.relation || ' ' || l.target_id || ', which is in ' || r.scope || ' '
-       || coalesce(CASE r.scope WHEN 'domain' THEN b.domain_id ELSE b.aggregate_id END, 'none')
-       || ': ' || l.relation || ' links records of one ' || r.scope AS message
-FROM link l
-JOIN meta_relation r ON r.name = l.relation AND r.scope <> 'product'
-JOIN record_scope a ON a.id = l.source_id
-JOIN record_scope b ON b.id = l.target_id
-WHERE a.product_id IS NOT DISTINCT FROM b.product_id
-  AND ((r.scope = 'domain' AND a.domain_id IS DISTINCT FROM b.domain_id)
-    OR (r.scope = 'aggregate' AND a.aggregate_id IS DISTINCT FROM b.aggregate_id))`,
     },
     {
       name: 'step-fulfills-own-use-case',
@@ -245,6 +237,32 @@ JOIN record_scope b ON b.id = k.target_table_id
 WHERE k.type = 'foreign' AND a.domain_id IS DISTINCT FROM b.domain_id`,
     },
   ];
+  // The relations of domain or aggregate scope, each read from its own link table: the scope is known per relation,
+  // so the other relations' links are never joined to record_scope.
+  const scoped = Object.values(schema.relations)
+    .filter((r) => r.scope !== 'product')
+    .sort((a, b) => a.name.localeCompare(b.name));
+  if (scoped.length) {
+    queries.splice(2, 0, {
+      name: 'link-scope',
+      description:
+        "A link of a relation whose scope is domain or aggregate joins two records of one domain, or one aggregate: a command and the specifications it checks, a query and the specifications it selects by, a specification or read model and the aggregates it reads, a command or query and the domain services it calls, and a command and the events it raises.",
+      sql: scoped
+        .map((r) => {
+          const column = r.scope === 'domain' ? 'domain_id' : 'aggregate_id';
+          return `
+SELECT ${sqlString(r.name)} AS table_name, l.source_id || chr(0) || l.target_id AS row_key,
+       l.source_id || ${sqlString(` is in ${r.scope} `)} || coalesce(a.${column}, 'none')
+       || ${sqlString(`, so it cannot ${r.name} `)} || l.target_id || ${sqlString(`, which is in ${r.scope} `)} || coalesce(b.${column}, 'none')
+       || ${sqlString(`: ${r.name} links records of one ${r.scope}`)} AS message
+FROM ${sqlName(r.name)} l
+JOIN record_scope a ON a.id = l.source_id
+JOIN record_scope b ON b.id = l.target_id
+WHERE a.product_id IS NOT DISTINCT FROM b.product_id AND a.${column} IS DISTINCT FROM b.${column}`;
+        })
+        .join('\nUNION ALL'),
+    });
+  }
   const refs = references(schema);
   if (refs.length) {
     queries.push({

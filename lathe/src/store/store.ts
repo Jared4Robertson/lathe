@@ -1,6 +1,6 @@
 // The store: loads data/*.jsonl into the typed tables and writes through one command layer. Every write builds the
-// new state in a fresh database inside one transaction (keys, checks, then the validation queries), and only then
-// replaces the current state and rewrites the files of the tables it changed.
+// new state in a fresh database (every row inside one transaction, judged by the keys and checks, then the validation
+// queries), and only then replaces the current state and rewrites the files of the tables it changed.
 //
 // Why a fresh database: DuckDB checks a foreign key as each statement runs, even inside a transaction, so it refuses
 // to delete or re-key a row that another row references, even when the same transaction removes that reference
@@ -10,11 +10,11 @@ import { mkdir, rename, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { DuckDBInstance, type DuckDBConnection } from '@duckdb/node-api';
 import { loadConfig, PACKAGE_DIR } from '../config.ts';
-import { insertRows } from './insert.ts';
+import { appendRows, insertRows } from './insert.ts';
 import { productKindSql, type DeclarationProblem } from './product-kinds.ts';
 import { describeKey, normalizeRow, rowKey, sortRows, tableText, type Row, type Value } from './rows.ts';
 import { applyMigrations, describeSchema, readMigrations, sqlName, type SchemaDescription, type TableDescription } from './schema.ts';
-import { storeViewsSql, validationQueries } from './validation.ts';
+import { recordScopeSql, storeViewsSql, validationQueries } from './validation.ts';
 
 /** Where a row came from: a line of a data file, or a command of the write that made or changed it. */
 export type Origin = { file: string; line: number } | { command: number };
@@ -85,6 +85,11 @@ export interface StoreOptions {
    * the product's folder alone.
    */
   latheDataDir?: string | null;
+  /**
+   * Filled with how long each step of the load took, in milliseconds: reading the files, the schema, copying it, each
+   * table's insert, record_scope, each validation query and the commit (`perf/engine.ts --profile` prints them).
+   */
+  steps?: Record<string, number>;
 }
 
 /** The package's own data folder: Lathe's built-in checks, as data/check.jsonl. */
@@ -113,9 +118,14 @@ interface Engine {
 }
 let engine: Promise<Engine> | undefined;
 const BASE_DB = 'lathe_base';
+/** How many validation queries run at once, each on its own connection to the new data. */
+const VALIDATION_CONNECTIONS = 4;
 // The schema databases built for products' own kinds and relations, by the SQL that adds them.
 const schemaDatabases = new Map<string, Promise<{ schemaDb: string; schema: SchemaDescription }>>();
 let databases = 0;
+// One empty data database per schema database, copied while nothing waits on it, so a load or write starts filling
+// straight away. It holds the schema and the meta-model's rows, never a product's data (LA-PLT-UC01-R04).
+const spares = new Map<string, Promise<string>>();
 
 function sharedEngine(): Promise<Engine> {
   engine ??= (async () => {
@@ -142,7 +152,7 @@ export async function openStore(root: string, options: StoreOptions = {}): Promi
   // Lathe's own folder opened as a product's (Lathe's package itself) is loaded once, as the product's.
   const beside = latheDataDir === null || path.resolve(latheDataDir) === dataDir ? null : path.resolve(latheDataDir);
   const { instance, baseSchema } = await sharedEngine();
-  const store = new Store(instance, await instance.connect(), baseSchema, dataDir, beside);
+  const store = new Store(instance, await instance.connect(), baseSchema, dataDir, beside, options.steps);
   try {
     await store.load();
   } catch (error) {
@@ -168,13 +178,26 @@ export class Store {
   /** The rows loaded from latheDataDir, which no write changes or writes out. */
   private builtIn = new WeakSet<Row>();
   private queue: Promise<unknown> = Promise.resolve();
+  private readonly steps: Record<string, number> | undefined;
 
-  constructor(instance: DuckDBInstance, connection: DuckDBConnection, baseSchema: SchemaDescription, dataDir: string, latheDataDir: string | null) {
+  constructor(instance: DuckDBInstance, connection: DuckDBConnection, baseSchema: SchemaDescription, dataDir: string, latheDataDir: string | null, steps?: Record<string, number>) {
     this.instance = instance;
     this.main = connection;
     this.baseSchema = baseSchema;
     this.dataDir = dataDir;
     this.latheDataDir = latheDataDir;
+    this.steps = steps;
+  }
+
+  // Runs one step of a load, timing it when the store was opened with steps.
+  private async step<T>(name: string, run: () => T | Promise<T>): Promise<T> {
+    if (!this.steps) return run();
+    const start = performance.now();
+    try {
+      return await run();
+    } finally {
+      this.steps[name] = Math.round((performance.now() - start) * 10) / 10;
+    }
   }
 
   /** Whether the row is one of Lathe's own, loaded from latheDataDir, and so read-only. */
@@ -283,10 +306,14 @@ export class Store {
     };
 
     const isDeclaration = (file: string) => (DECLARATION_TABLES as readonly string[]).includes(file.slice(0, -'.jsonl'.length));
-    for (const folder of folders) for (const file of folder.files.filter(isDeclaration)) read(this.baseSchema, folder, file);
+    await this.step('read declarations', () => {
+      for (const folder of folders) for (const file of folder.files.filter(isDeclaration)) read(this.baseSchema, folder, file);
+    });
     if (problems.length) throw new StoreError(problems);
-    const { schemaDb, schema } = await this.buildSchema(tables, this.origins);
-    for (const folder of folders) for (const file of folder.files.filter((f) => !isDeclaration(f))) read(schema, folder, file);
+    const { schemaDb, schema } = await this.step('schema', () => this.buildSchema(tables, this.origins));
+    await this.step('read files', () => {
+      for (const folder of folders) for (const file of folder.files.filter((f) => !isDeclaration(f))) read(schema, folder, file);
+    });
     if (problems.length) throw new StoreError(problems);
 
     const dataDb = await this.buildData(schemaDb, schema, tables, this.origins);
@@ -366,61 +393,124 @@ export class Store {
     return { rows: new Map([['record_id', registry], ...supertypes]), problems };
   }
 
-  // Builds the data in a fresh database copied from the schema database, inside one transaction: the registry, every
-  // table in dependency order, then the validation queries. Returns the database's name, or throws a StoreError.
+  // Builds the data in a fresh database copied from the schema database: the registry and every table in dependency
+  // order inside one transaction, then record_scope and the validation queries. Returns the database's name, or
+  // throws a StoreError and drops the database.
   private async buildData(schemaDb: string, schema: SchemaDescription, tables: Tables, origins: WeakMap<Row, Origin>): Promise<string> {
-    const { rows: derived, problems } = this.registry(schema, tables, origins);
+    const { rows: derived, problems } = await this.step('registry', () => this.registry(schema, tables, origins));
     if (problems.length) throw new StoreError(problems);
-    const name = `lathe_data_${++databases}`;
+    const name = await this.step('copy schema', () => this.emptyDatabase(schemaDb, schema));
     const builder = await this.instance.connect();
     const discard = async () => {
       await builder.run(`USE ${sqlName(schemaDb)}`);
       await builder.run(`DETACH ${sqlName(name)}`);
     };
     try {
-      await builder.run(`ATTACH ':memory:' AS ${sqlName(name)}`);
-      await builder.run(`COPY FROM DATABASE ${sqlName(schemaDb)} TO ${sqlName(name)} (SCHEMA)`);
       await builder.run(`USE ${sqlName(name)}`);
-      // The meta-model's rows come along; the data tables start empty.
-      await builder.run(
-        Object.values(schema.tables)
-          .filter((t) => t.role === 'meta')
-          .map((t) => `INSERT INTO ${sqlName(t.name)} SELECT * FROM ${sqlName(schemaDb)}.${sqlName(t.name)};`)
-          .join('\n'),
-      );
       const order = ['record_id', ...Object.keys(schema.supertypes).sort(), ...schema.loadOrder];
       const rowsOf = (table: string) => derived.get(table) ?? [...(tables.get(table)?.values() ?? [])];
+      // Every table's rows go in through an appender, in dependency order. When the database refuses a row, the
+      // inserts run again table by table as JSON, to find the table that broke a key or check and the rows that did.
+      const filled = order.filter((table) => rowsOf(table).length);
       await builder.run('BEGIN TRANSACTION');
-      for (const table of order) {
-        const rows = rowsOf(table);
-        if (!rows.length) continue;
-        try {
-          await insertRows(builder, schema.tables[table], rows);
-        } catch (error) {
-          await builder.run('ROLLBACK');
-          const found = await this.diagnose(builder, schema, table, order, rowsOf, origins, error);
-          await discard();
-          throw new StoreError(found);
+      try {
+        for (const table of filled) await this.step(`insert ${table}`, () => appendRows(builder, name, schema.tables[table], rowsOf(table)));
+      } catch {
+        await builder.run('ROLLBACK');
+        await builder.run('BEGIN TRANSACTION');
+        for (const table of filled) {
+          try {
+            await insertRows(builder, schema.tables[table], rowsOf(table));
+          } catch (error) {
+            await builder.run('ROLLBACK');
+            const found = await this.diagnose(builder, schema, table, order, rowsOf, origins, error);
+            await discard();
+            throw new StoreError(found);
+          }
         }
       }
+      // The database is the store's own until switchTo makes it current, so the rows are committed before the
+      // validation queries run, and a refusal drops the database whole. DuckDB reads committed tables far faster
+      // than a transaction's own uncommitted rows (a join over them can take a hundred times as long).
+      await this.step('commit', () => builder.run('COMMIT'));
+      await this.step('record_scope', () => builder.run(recordScopeSql(schema)));
+      // The validation queries only read, so they run side by side on a few connections; their problems keep the
+      // queries' order.
+      const queries = validationQueries(schema);
+      const found: { table_name: string; row_key: string; message: string }[][] = new Array(queries.length);
+      const extra = await Promise.all(
+        Array.from({ length: Math.min(VALIDATION_CONNECTIONS, queries.length) - 1 }, async () => {
+          const connection = await this.instance.connect();
+          await connection.run(`USE ${sqlName(name)}`);
+          return connection;
+        }),
+      );
+      let next = 0;
+      try {
+        await this.step('validation queries, side by side', () =>
+          Promise.all(
+            [builder, ...extra].map(async (on) => {
+              while (next < queries.length) {
+                const at = next++;
+                found[at] = await this.step(`validate ${queries[at].name}`, async () => (await on.runAndReadAll(queries[at].sql)).getRowObjectsJson() as unknown as (typeof found)[number]);
+              }
+            }),
+          ),
+        );
+      } finally {
+        for (const connection of extra) connection.closeSync();
+      }
       const broken: StoreProblem[] = [];
-      for (const query of validationQueries(schema)) {
-        const rows = (await builder.runAndReadAll(query.sql)).getRowObjectsJson() as unknown as { table_name: string; row_key: string; message: string }[];
-        for (const r of rows) {
+      for (const [at, query] of queries.entries()) {
+        for (const r of found[at]) {
           const row = tables.get(r.table_name)?.get(r.row_key);
           const key = row ? describeKey(schema.tables[r.table_name], row) : r.row_key;
           broken.push(problemAt(origins, row, { rule: query.name, table: r.table_name, key, message: r.message }));
         }
       }
       if (broken.length) {
-        await builder.run('ROLLBACK');
         await discard();
         throw new StoreError(broken);
       }
-      await builder.run('COMMIT');
       return name;
     } finally {
       builder.closeSync();
+      // The next load or write of this schema finds its empty database ready.
+      this.prepareSpare(schemaDb, schema);
+    }
+  }
+
+  // An empty data database of the schema: the spare made after the last load, or a new copy.
+  private async emptyDatabase(schemaDb: string, schema: SchemaDescription): Promise<string> {
+    const spare = spares.get(schemaDb);
+    spares.delete(schemaDb);
+    return (spare && (await spare.catch(() => undefined))) || this.copySchema(schemaDb, schema);
+  }
+
+  private prepareSpare(schemaDb: string, schema: SchemaDescription) {
+    if (spares.has(schemaDb)) return;
+    const spare = this.copySchema(schemaDb, schema);
+    spares.set(schemaDb, spare);
+    spare.catch(() => spares.delete(schemaDb));
+  }
+
+  // A new database with the schema database's tables, views and meta-model rows, and no data.
+  private async copySchema(schemaDb: string, schema: SchemaDescription): Promise<string> {
+    const name = `lathe_data_${++databases}`;
+    const copier = await this.instance.connect();
+    try {
+      await copier.run(`ATTACH ':memory:' AS ${sqlName(name)}`);
+      await copier.run(`COPY FROM DATABASE ${sqlName(schemaDb)} TO ${sqlName(name)} (SCHEMA)`);
+      // The meta-model's rows come along; the data tables start empty.
+      await copier.run(
+        Object.values(schema.tables)
+          .filter((t) => t.role === 'meta')
+          .map((t) => `INSERT INTO ${sqlName(name)}.${sqlName(t.name)} SELECT * FROM ${sqlName(schemaDb)}.${sqlName(t.name)};`)
+          .join('\n'),
+      );
+      return name;
+    } finally {
+      copier.closeSync();
     }
   }
 
