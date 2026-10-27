@@ -1,0 +1,9 @@
+{"entity_id":"P-D-EN01","position":1,"name":"Thing ID","meaning":"The thing id.","type":"Whole number","example":"1"}
+{"entity_id":"P-D-EN01","position":2,"name":"Name","meaning":"The name.","type":"Text","example":"1"}
+{"entity_id":"P-D-EN02","position":1,"name":"Member ID","meaning":"The member id.","type":"Whole number","example":"1"}
+{"entity_id":"P-D-EN03","position":1,"name":"Loan ID","meaning":"The loan id.","type":"Whole number","example":"1"}
+{"entity_id":"P-D-EN03","position":2,"name":"Borrowed at","meaning":"The borrowed at.","type":"Date and time","example":"1"}
+{"entity_id":"P-D-EN03","position":3,"name":"Due date","meaning":"The due date.","type":"Date","example":"1"}
+{"entity_id":"P-D-EN04","position":1,"name":"Returned at","meaning":"The returned at.","type":"Date and time","example":"1"}
+{"entity_id":"P-D-EN05","position":1,"name":"Sent at","meaning":"The sent at.","type":"Date and time","example":"1"}
+{"entity_id":"P-E-EN01","position":1,"name":"Account ID","meaning":"The account id.","type":"Text","example":"1"}
