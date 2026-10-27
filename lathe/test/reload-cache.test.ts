@@ -1,5 +1,5 @@
-// LA-PLT-T09: a reload after a write gives the same workspace as a fresh load, with each phase timed; the reference
-// is kept until a data file or migration it reads changes (LA-PLT-DR02, LA-PLT-DR01).
+// A reload after a write gives the same workspace as a fresh load, with each phase timed; the reference is kept until
+// a data file or migration it reads changes (LA-PLT-UC01-R03, LA-PLT-UC01-R04).
 import { afterAll, describe, expect, it } from 'vitest';
 import { buildReference, loadWorkspace, openStore, type LoadTimings } from '../src/index.ts';
 import { build, complete, removeData } from './helpers.ts';
@@ -7,7 +7,7 @@ import { build, complete, removeData } from './helpers.ts';
 afterAll(removeData);
 
 describe('reloading', () => {
-  it('LA-PLT-T09 A reload after a write gives the same workspace as a fresh load, with each phase timed', async () => {
+  it('LA-PLT-UC01-R03-T02 A reload after a write gives the same workspace as a fresh load, with each phase timed', async () => {
     const root = await build(complete());
     const cold: Partial<LoadTimings> = {};
     const first = await loadWorkspace(root, { timings: cold });
@@ -25,7 +25,7 @@ describe('reloading', () => {
     expect(await loadWorkspace(root)).toEqual(reloaded);
   });
 
-  it('LA-PLT-T09 The reference is kept until a data file it reads changes', async () => {
+  it('LA-PLT-UC01-R04-T02 The reference is kept until a data file it reads changes', async () => {
     const root = await build(complete());
     const first = await buildReference(root);
     expect(await buildReference(root)).toBe(first);

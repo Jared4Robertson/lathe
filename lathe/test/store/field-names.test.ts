@@ -22,7 +22,7 @@ const eventLoanId = { domain_event_id: 'TL-LEND-EV01', position: 1, name: 'Loan 
 const overdue = { read_model_id: 'TL-LEND-RM01', position: 1, name: 'Days overdue', meaning: 'How late.', type: 'whole number', required: false };
 const address = { value_object_id: 'TL-VO01', position: 1, name: 'Address', meaning: 'As typed.', type: 'text', required: true };
 
-describe('LA-AUT-T137 A field name is unique in its entity or event trimmed and in any letter case', () => {
+describe('LA-AUT-INV16-T A field name is unique in its entity or event trimmed and in any letter case', () => {
   it('refuses an entity field named like another of the same entity but for spacing and case', async () => {
     const root = writeData(withTable(everyKind(), 'entity_field', [loanId, { ...loanId, position: 2, name: ' loan id ' }]));
     expect(await loadRefused(root)).toEqual([expect.objectContaining({ table: 'entity_field', file: expect.stringContaining('entity_field.jsonl'), line: 2 })]);

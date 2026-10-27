@@ -31,5 +31,3 @@
 {"domain_event_id":"LA-PLT-EV05","position":1,"name":"Folder","meaning":"The product folder the window showed.","type":"text","required":true,"example":"~/Development/Lathe"}
 {"domain_event_id":"LA-PLT-EV05","position":2,"name":"Bounds","meaning":"Where the window was and how big.","type_value_object_id":"LA-VO64","required":true,"example":"120, 80, 1440 by 900, not maximized"}
 {"domain_event_id":"LA-PLT-EV05","position":3,"name":"Closed at","meaning":"When the window closed.","type":"date and time","required":true,"example":"2026-10-24T18:00:00Z"}
-{"domain_event_id":"LA-PLT-EV06","position":1,"name":"Tables changed","meaning":"The tables the write changed.","type":"text","required":true}
-{"domain_event_id":"LA-PLT-EV06","position":2,"name":"Files rewritten","meaning":"The data files it rewrote.","type":"text","required":true}

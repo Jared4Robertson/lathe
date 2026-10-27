@@ -453,12 +453,6 @@
 {"entity_id":"LA-PLT-EN10","position":1,"name":"Source","meaning":"Which server it is: `serve()` in the shell or from `lathe serve`, a Vite dev server the shell starts, or the shared 5199 dev server.","type":"text","required":true,"example":"serve()"}
 {"entity_id":"LA-PLT-EN10","position":2,"name":"Folder","meaning":"The product folder it reads.","type":"text","required":true,"example":"~/Development/tool-library"}
 {"entity_id":"LA-PLT-EN10","position":3,"name":"Port","meaning":"Where it answers; never 5199 for one the shell starts (INV06).","type":"whole number","required":true,"example":"61234"}
-{"entity_id":"LA-PLT-EN12","position":1,"name":"Operation","meaning":"What the command does: add, set, move, link, unlink or remove.","type":"text","required":true,"example":"set"}
-{"entity_id":"LA-PLT-EN12","position":2,"name":"Target","meaning":"The row it acts on: a table and a key, a record ID, or a relation and its two ends.","type":"text","required":true,"example":"use_case LA-PLT-UC02"}
-{"entity_id":"LA-PLT-EN12","position":3,"name":"Values","meaning":"The columns it sets or clears, or the record's new parent for a move.","type":"text","required":false,"example":"goal: \"Lathe is installed…\""}
-{"entity_id":"LA-PLT-EN13","position":1,"name":"Rule","meaning":"The constraint or validation query the data broke.","type":"text","required":true,"example":"foreign-key"}
-{"entity_id":"LA-PLT-EN13","position":2,"name":"Message","meaning":"What is wrong, naming the table, row and value.","type":"text","required":true,"example":"view TL-V02: … names no domain"}
-{"entity_id":"LA-PLT-EN13","position":3,"name":"Where","meaning":"The data file and line of a loaded row, or the index of the command that brought it.","type":"text","required":true,"example":"command 2"}
 {"entity_id":"LA-PLT-EN14","position":1,"name":"Chosen theme","meaning":"The theme in use, by its ID; Lathe when it is gone (INV04).","type":"text","required":true,"example":"workshop"}
 {"entity_id":"LA-PLT-EN14","position":2,"name":"Color mode","meaning":"System (the default, following the system), Light or Dark.","type":"text","required":true,"example":"system"}
 {"entity_id":"LA-PLT-EN16","position":1,"name":"Root folder","meaning":"The product repo's folder.","type":"text","required":true,"example":"~/Development/tool-library"}
