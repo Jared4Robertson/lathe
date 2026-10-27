@@ -9,6 +9,7 @@ import {
   listText,
   nextId,
   parentColumns,
+  placement,
   readSchema,
   refusalText,
   rowTables,
@@ -35,8 +36,10 @@ export const DATA_USAGE = `Data commands (each validates through the command lay
   remove <id>                           Remove a record with its parts and the links it starts.
   remove <table> --<key> <value> ...    Remove a part, declaration or checking row.
   show <id>                             Print a record, its parts, children and links.
-  list <table> [--parent <id>]          Print a table's rows, or those under the parent.
-  next-id <kind> --parent <id>          Print the next free ID for a record of the kind under the parent.
+  list <table> [--parent <id>]          Print a table's rows, or those under the parent (for a kind with no owner,
+                                        those of the product or domain).
+  next-id <kind> --parent <id>          Print the next free ID for a record of the kind under the parent. For a kind
+                                        with no owner, --parent names the product (or domain) its ID starts with.
   Add --json for the result as JSON. Run \`lathe add --help\` for the tables, and \`lathe add <table> --help\` for
   a table's columns, from the schema.
 `;
@@ -134,7 +137,7 @@ export function tableHelp(schema: SchemaDescription, name?: string): string {
   const kind = schema.kinds[name];
   const lines = [`lathe add ${name} --<column> <value> ...`, '', table.description ?? ''];
   if (kind) {
-    lines.push('', `ID: ${kind.idPattern ?? 'any'}${kind.idExample ? `, such as ${kind.idExample}` : ''}. Parent: ${kind.parents.map((p) => `${p.kind} (${p.column})`).join(', nearer than ') || 'none'}.`);
+    lines.push('', `ID: ${kind.idPattern ?? 'any'}${kind.idExample ? `, such as ${kind.idExample}` : ''}. ${placement(kind)}`);
   }
   lines.push('', 'Columns:', ...table.columns.map((c) => columnLine(schema, table, c)));
   return lines.join('\n');

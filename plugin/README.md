@@ -15,9 +15,9 @@ The skills teach the way of working, not the lists: every table, column and rela
 | `move` | Moves a record under another parent; what sits inside it moves along. |
 | `link`, `unlink` | Adds or removes a link between two records. |
 | `remove` | Removes a record with its parts and the links it starts, or a part row; refused while anything else references it. |
-| `show` | Reads a record with its parts, children and links. |
-| `list` | Reads a table's rows, or those under a parent. |
-| `next_id` | Gives the next free ID for a kind under a parent. |
+| `show` | Reads a record with its parent (or, with no owner, its product or domain), parts, children and links. |
+| `list` | Reads a table's rows, or those under a parent (for a kind with no owner, those of a product or domain). |
+| `next_id` | Gives the next free ID for a kind under a parent: scoped to the parent, the domain or the product, as the kind's ID pattern says. |
 | `check` | Runs `lathe check`: every error and warning. |
 
 A write returns the rows it changed and the files it wrote, or the refusal with every reason; a refusal changes nothing. Writes never commit: the Agent commits per task, so git history shows who changed what. The launcher finds the repo with `lathe.config.json` at or above the project folder and runs that repo's own `lathe mcp` (`node_modules/.bin/lathe` in a product repo, `lathe/bin/lathe.ts` from source in the Lathe repo), so the tools match its installed Lathe and its own kinds. It never uses `npx`, so it never downloads anything. The same operations are the `lathe` CLI's `add`, `set`, `move`, `link`, `unlink`, `remove`, `show`, `list` and `next-id` commands, for the Owner.
@@ -26,12 +26,13 @@ A write returns the rows it changed and the files it wrote, or the refusal with 
 
 | Skill | For |
 | --- | --- |
-| `model-a-domain` | Domains as vertical slices of business capability, then the domain record, aggregates, their entities and fields (for the ERDs), the domain events they raise, and domain rules. |
-| `write-use-cases` | Use cases with their actors and steps, their requirements, the roles that act in them, the capabilities that group them, and the patterns they follow with their settings. |
-| `design-the-domain` | Flows and their steps, views, APIs and endpoints, integrations, their interaction requirements, and components in their layers, with the links that trace them. |
-| `plan-tests` | Test records (automated, manual or planned), and test names that carry the test's ID or the ID of what it proves. |
-| `check-and-fix` | Running the check, handling a refused write, fixing errors, and reporting warnings (gaps, links between stages, structure sizes) and coverage (designed, built, proved, planned). |
-| `extend-the-meta-model` | A product's own kinds, their fields and relations (with their labels), obligation kinds and relation roles, and a product's own checks. |
+| `model-a-domain` | Domains as vertical slices of business capability, the order of the whole spec, and the domain model in event storming order: aggregates, entities and fields, commands and events (one aggregate per command, recorded exceptions, the outbox), invariants, value objects and constraints, specifications, policies, read models and queries, domain services and terms. |
+| `write-use-cases` | Capabilities, use cases with their actors and UC requirements, the product's roles, and the patterns use cases share with their settings and rules. |
+| `design-interactions` | Each use case's one flow and its steps (invoking a command or query, in a view, fulfilling UC requirements), views and view requirements, endpoints under their command or query with API requirements, and integrations. |
+| `write-the-technical-spec` | The one technical record that implements each design record, with its file; tables and their keys; event types and their delivery; the domain and application layers; standards. |
+| `plan-tests` | The test kinds, one per thing tested, each under what it proves, with its run by (level, state, and a file or manual reason), and test names that carry the test's ID. |
+| `check-and-fix` | Running the check, reading a refused write, fixing errors, and reporting warnings, gaps and coverage (designed, built, proved). |
+| `extend-the-meta-model` | A product's own kinds in any of the five stages, their fields and relations (with their labels), obligation kinds and relation roles, and a product's own checks. |
 
 **Hook.** Before every `Write`, `Edit`, `MultiEdit` or `NotebookEdit`, [scripts/guard-data-files.mjs](scripts/guard-data-files.mjs) refuses an edit of a `.jsonl` file in a Lathe repo's data folder (the one `lathe.config.json` names, default `data/`, and `lathe/data/` in the Lathe repo), and tells the agent to use the tools instead. Every other edit goes through untouched.
 
@@ -61,7 +62,7 @@ plugin/
   scripts/mcp-server.mjs            starts the repo's own lathe mcp
   scripts/guard-data-files.mjs      what the hook runs
   scripts/lathe-root.mjs            what both scripts share: the repo root, its data folders, its lathe command
-  skills/<name>/SKILL.md            the six skills
+  skills/<name>/SKILL.md            the seven skills
 ```
 
 The MCP server itself is `lathe mcp` in the Lathe package (`lathe/src/cli/mcp.ts`); its tests, and the tests of these scripts and of the skills' examples against the schema, are in `lathe/test/cli/`. Validate after changing the plugin: `claude plugin validate plugin`.

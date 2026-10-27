@@ -183,18 +183,21 @@ CREATE TABLE "table" (
   title VARCHAR NOT NULL CHECK (trim(title) <> ''),
   entity_id VARCHAR UNIQUE REFERENCES entity (id),
   read_model_id VARCHAR UNIQUE REFERENCES read_model (id),
+  domain_id VARCHAR REFERENCES domain (id),
   name VARCHAR NOT NULL CHECK (trim(name) <> ''),
   storage table_storage NOT NULL,
   file VARCHAR,
   description VARCHAR,
-  CHECK ((entity_id IS NULL) <> (read_model_id IS NULL)),
+  CHECK ((entity_id IS NOT NULL)::INTEGER + (read_model_id IS NOT NULL)::INTEGER + (domain_id IS NOT NULL)::INTEGER = 1),
+  CHECK (domain_id IS NULL OR storage = 'table'),
   CHECK (entity_id IS NULL OR storage = 'table')
 );
-COMMENT ON TABLE "table" IS 'Where an entity or a read model, its parent, is stored. Its columns follow from its parent''s fields, a value object''s fields flattened into columns, so it stores only what fields cannot say: its keys and indexes (table_key rows). An entity''s table is always a table, normalized and the source of truth; a read model''s is a projection that can be rebuilt, usually a view over its domain''s entity tables.';
+COMMENT ON TABLE "table" IS 'Where an entity or a read model, its parent, is stored; or, under a domain, a table of the domain''s own infrastructure that implements no design record, such as its outbox. Its columns follow from its parent''s fields, a value object''s fields flattened into columns, so it stores only what fields cannot say: its keys and indexes (table_key rows). An entity''s table is always a table, normalized and the source of truth; a read model''s is a projection that can be rebuilt, usually a view over its domain''s entity tables.';
 COMMENT ON COLUMN "table".id IS 'The table''s ID: its entity''s or read model''s ID and TB, such as TL-LEND-EN01-TB.';
 COMMENT ON COLUMN "table".title IS 'The table as people read it, such as Loans.';
-COMMENT ON COLUMN "table".entity_id IS 'The entity it stores; exactly one of entity and read model is given. An entity has at most one table: a child entity marked in_root_table has none and is stored in its root''s.';
-COMMENT ON COLUMN "table".read_model_id IS 'The read model it stores; exactly one of entity and read model is given, and a read model has one table.';
+COMMENT ON COLUMN "table".entity_id IS 'The entity it stores; exactly one of entity, read model and domain is given. An entity has at most one table: a child entity marked in_root_table has none and is stored in its root''s.';
+COMMENT ON COLUMN "table".read_model_id IS 'The read model it stores; exactly one of entity, read model and domain is given, and a read model has one table.';
+COMMENT ON COLUMN "table".domain_id IS 'The domain whose own infrastructure it stores, such as its outbox, when it stores no entity or read model; its ID is the domain''s and TB with a number, such as TL-LEND-TB01, and its storage is a table.';
 COMMENT ON COLUMN "table".name IS 'Its name in the database, such as loans.';
 COMMENT ON COLUMN "table".storage IS 'table: rows of its own; view: a query over other tables; materialized view: a query''s result, kept. An entity''s table is always table.';
 COMMENT ON COLUMN "table".file IS 'The file that creates it, such as a migration, from the product root; it may not exist yet.';
@@ -275,7 +278,7 @@ INSERT INTO meta_kind VALUES
   ('service', 'Service', 'technical-specification', 38, false, '<domain service>-SV', 'TL-LEND-DS01-SV', 'parent', NULL),
   ('endpoint_handler', 'Endpoint handler', 'technical-specification', 40, false, '<endpoint>-H', 'TL-LEND-EP01-H', 'parent', NULL),
   ('adapter', 'Adapter', 'technical-specification', 41, false, '<integration>-AD', 'TL-INT01-AD', 'parent', NULL),
-  ('table', 'Table', 'technical-specification', 30, false, '<entity or read model>-TB', 'TL-LEND-EN01-TB', 'parent', NULL),
+  ('table', 'Table', 'technical-specification', 30, false, '<entity or read model>-TB, or <domain>-TB<nn>', 'TL-LEND-EN01-TB', 'parent', NULL),
   ('ui_component', 'UI component', 'technical-specification', 39, false, '<P>-UI<nn>', 'TL-UI01', 'product', NULL),
   ('standard', 'Standard', 'technical-specification', 42, false, '<P>-STD-<name>', 'TL-STD-CODE', 'parent', NULL),
   ('standard_rule', 'Standard rule', 'technical-specification', 43, true, '<standard>-R<nn>', 'TL-STD-CODE-R01', 'parent', NULL);
@@ -292,7 +295,7 @@ INSERT INTO meta_kind_parent VALUES
   ('service', 'domain_service', 1, 'domain_service_id'),
   ('endpoint_handler', 'endpoint', 1, 'endpoint_id'),
   ('adapter', 'integration', 1, 'integration_id'),
-  ('table', 'entity', 1, 'entity_id'), ('table', 'read_model', 2, 'read_model_id'),
+  ('table', 'entity', 1, 'entity_id'), ('table', 'read_model', 2, 'read_model_id'), ('table', 'domain', 3, 'domain_id'),
   ('standard', 'product', 1, 'product_id'),
   ('standard_rule', 'standard', 1, 'standard_id');
 INSERT INTO meta_table VALUES

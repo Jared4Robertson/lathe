@@ -82,6 +82,7 @@ export function everyKind(): Data {
     table: [
       { id: 'TL-LEND-EN01-TB', title: 'Loans', entity_id: 'TL-LEND-EN01', name: 'loans', storage: 'table', file: 'migrations/001.sql' },
       { id: 'TL-LEND-RM01-TB', title: 'Loans by member', read_model_id: 'TL-LEND-RM01', name: 'loans_by_member', storage: 'view' },
+      { id: 'TL-LEND-TB01', title: 'Outbox', domain_id: 'TL-LEND', name: 'outbox', storage: 'table' },
     ],
     table_key: [
       { table_id: 'TL-LEND-EN01-TB', position: 1, type: 'primary', columns: ['id'] },
@@ -129,6 +130,7 @@ export function everyKind(): Data {
     ],
     selects_by: [{ source_id: 'TL-LEND-QRY01', target_id: 'TL-LEND-SP01' }],
     hears: [{ source_id: 'TL-LEND-PO01', target_id: 'TL-LEND-EV01' }],
+    fed_by: [{ source_id: 'TL-LEND-RM01', target_id: 'TL-LEND-EV01' }],
     calls: [{ source_id: 'TL-LEND-CMD01', target_id: 'TL-LEND-DS01' }],
     fulfills: [{ source_id: 'TL-LEND-UC01-FL-S01', target_id: 'TL-LEND-UC01-R01' }],
     invokes: [{ source_id: 'TL-LEND-UC01-FL-S01', target_id: 'TL-LEND-CMD01' }],
