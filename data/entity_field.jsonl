@@ -92,20 +92,20 @@
 {"entity_id":"LA-AUT-EN27","position":3,"name":"Uses","meaning":"The component that does it.","type":"Component reference.","example":"LA-CHK-C12"}
 {"entity_id":"LA-AUT-EN27","position":4,"name":"Satisfies","meaning":"The obligations it designs.","type":"List of record references.","example":"LA-CHK-UC05-R01"}
 {"entity_id":"LA-AUT-EN27","position":5,"name":"Transaction, locks and statements","meaning":"The transaction it runs in, what it locks and how many statements it runs.","type":"Text, optional.","example":"one SELECT per check file"}
-{"entity_id":"LA-CHK-EN01","position":1,"name":"Name","meaning":"The check's name, from its file name without the number and `.sql`.","type":"Text, unique.","example":"unproved"}
-{"entity_id":"LA-CHK-EN01","position":2,"name":"File","meaning":"The SQL file that holds it.","type":"File path.","example":"lathe/checks/16-unproved.sql"}
-{"entity_id":"LA-CHK-EN01","position":3,"name":"Order","meaning":"When it runs: Lathe's checks in file name order, then the product's own.","type":"Whole number, from the file name.","example":"16"}
-{"entity_id":"LA-CHK-EN01","position":4,"name":"Origin","meaning":"Whether Lathe ships it or the product adds it.","type":"`Lathe` or `product`.","example":"Lathe"}
-{"entity_id":"LA-CHK-EN01","position":5,"name":"Summary","meaning":"What it asks, in one sentence: the first paragraph of its header comment.","type":"Text.","example":"An obligation that no automated or manual test proves yet."}
-{"entity_id":"LA-CHK-EN01","position":6,"name":"Explanation","meaning":"What it reports, what it leaves to other checks, and how to fix it: the rest of the header.","type":"Markdown.","example":"A test proves an obligation through a `proof` link…"}
-{"entity_id":"LA-CHK-EN01","position":7,"name":"Severity","meaning":"The severities it returns, from its header's `severity:` line.","type":"`error`, `warning`, or both.","example":"warning"}
-{"entity_id":"LA-CHK-EN01","position":8,"name":"Kinds","meaning":"The kinds it concerns, from its header's optional `kinds:` line.","type":"Kind references; none for any kind.","example":"requirement domain_rule"}
+{"entity_id":"LA-CHK-EN01","position":1,"name":"Name","meaning":"The check's name, the key of its row across Lathe's checks and every product's.","type":"Text in lower case with hyphens, unique.","example":"unproved"}
+{"entity_id":"LA-CHK-EN01","position":2,"name":"Product","meaning":"The product a product's own check belongs to; none for Lathe's checks.","type":"Product reference, or none.","example":"LA"}
+{"entity_id":"LA-CHK-EN01","position":3,"name":"Position","meaning":"When it runs: Lathe's checks in position order, then the product's own.","type":"Whole number, from 1.","example":"4"}
+{"entity_id":"LA-CHK-EN01","position":4,"name":"Severity","meaning":"What its problems are: errors, warnings, or either when its query says which for each row.","type":"`error`, `warning` or `error_or_warning`.","example":"warning"}
+{"entity_id":"LA-CHK-EN01","position":5,"name":"Summary","meaning":"What it asks, in one sentence.","type":"Text, one sentence.","example":"An obligation that no automated or manual test proves yet."}
+{"entity_id":"LA-CHK-EN01","position":6,"name":"Explanation","meaning":"What it reports, what it leaves to other checks, and how to fix what it reports.","type":"Text.","example":"A test proves an obligation through a `proof` link…"}
+{"entity_id":"LA-CHK-EN01","position":7,"name":"Query","meaning":"The one SELECT that finds its problems, returning `record` and `message`, and `severity` when its rows say which.","type":"SQL text.","example":"SELECT DISTINCT i.id AS record, … FROM coverage_item i WHERE NOT i.proved"}
+{"entity_id":"LA-CHK-EN01","position":8,"name":"Kinds","meaning":"The kinds it concerns.","type":"List of kind names; none for any kind.","example":"requirement domain_rule"}
 {"entity_id":"LA-CHK-EN02","position":1,"name":"Severity","meaning":"Whether the workspace is broken or has work still to do.","type":"`error` or `warning`.","example":"warning"}
-{"entity_id":"LA-CHK-EN02","position":2,"name":"Check","meaning":"The check that found it.","type":"Check reference, by name.","example":"unproved"}
+{"entity_id":"LA-CHK-EN02","position":2,"name":"Check","meaning":"The check that found it, by name (`check_name`).","type":"Check reference, by name.","example":"unproved"}
 {"entity_id":"LA-CHK-EN02","position":3,"name":"Record","meaning":"The record it is about.","type":"Record reference, or none for the whole workspace.","example":"TL-LEND-E06-R03"}
 {"entity_id":"LA-CHK-EN02","position":4,"name":"Message","meaning":"What is wrong, and the fix.","type":"Text.","example":"No test proves interaction requirement TL-LEND-E06-R03 yet: its test is only planned."}
 {"entity_id":"LA-CHK-EN03","position":1,"name":"Product","meaning":"The product the limit is for.","type":"Record reference.","example":"TL"}
-{"entity_id":"LA-CHK-EN03","position":2,"name":"Max children","meaning":"The limit, from the product's config.","type":"Whole number, at least 1; 15 when the config does not give it.","example":"15"}
+{"entity_id":"LA-CHK-EN03","position":2,"name":"Max children","meaning":"The limit, the product's `product_setting.max_children`.","type":"Whole number, at least 1; 15 when the product has no row.","example":"15"}
 {"entity_id":"LA-CHK-EN04","position":1,"name":"Parent","meaning":"The record whose children are counted.","type":"Record reference.","example":"TL-LEND-A2"}
 {"entity_id":"LA-CHK-EN04","position":2,"name":"Kind","meaning":"The kind of children counted; tests are never counted.","type":"Kind reference.","example":"domain_rule"}
 {"entity_id":"LA-CHK-EN04","position":3,"name":"Count","meaning":"How many it holds.","type":"Derived count.","example":"4"}
@@ -206,13 +206,13 @@
 {"entity_id":"LA-TRC-EN04","position":2,"name":"Obligation","meaning":"What it claims to prove.","type":"Record reference.","example":"TL-LEND-DR05"}
 {"entity_id":"LA-TRC-EN04","position":3,"name":"Relation","meaning":"The link that makes the claim.","type":"A relation with the `proof` role.","example":"proves"}
 {"entity_id":"LA-TRC-EN04","position":4,"name":"Test state","meaning":"Whether the test runs as code, is carried out by a person, or is not written yet.","type":"`automated`, `manual` or `planned`.","example":"automated"}
-{"entity_id":"LA-TRC-EN04","position":5,"name":"Run by","meaning":"The file that runs or carries out the test.","type":"File path, relative to the repo root; optional for a manual or planned test.","example":"examples/tool-library/test/domain-rules.test.ts"}
+{"entity_id":"LA-TRC-EN04","position":5,"name":"File","meaning":"The file that runs or carries out the test: its `file`, or its `key_file` when it names one.","type":"File path from the product root; optional for a manual or planned test.","example":"examples/tool-library/test/domain-rules.test.ts"}
 {"entity_id":"LA-TRC-EN04","position":6,"name":"Backed by","meaning":"What in the file backs the claim.","type":"Derived: the test's own ID, every ID it proves, its key, or nothing.","example":"Every ID it proves"}
 {"entity_id":"LA-TRC-EN04","position":7,"name":"Counts in","meaning":"The domains whose coverage counts the claim.","type":"Derived list of domains, or none.","example":"TL-LEND"}
 {"entity_id":"LA-TRC-EN05","position":1,"name":"Follower","meaning":"The domain or use case that follows the pattern.","type":"Record reference.","example":"TL-LEND-UC01"}
 {"entity_id":"LA-TRC-EN05","position":2,"name":"Pattern","meaning":"The pattern followed.","type":"Record reference.","example":"TL-PAT-LIBRARIAN-ACTION"}
 {"entity_id":"LA-TRC-EN05","position":3,"name":"Domain","meaning":"The domain that owes the pattern's rules because of it.","type":"Derived record reference.","example":"TL-LEND"}
-{"entity_id":"LA-TRC-EN06","position":1,"name":"Setting","meaning":"The pattern's setting.","type":"Field name the pattern lists.","example":"required_input"}
-{"entity_id":"LA-TRC-EN06","position":2,"name":"Value","meaning":"What the setting is for this use case.","type":"Text, or `Not applicable:` followed by a reason.","example":"The member's name and a valid email address."}
+{"entity_id":"LA-TRC-EN06","position":1,"name":"Setting","meaning":"The pattern's setting.","type":"A setting its pattern lists (a `pattern_setting` name).","example":"required_input"}
+{"entity_id":"LA-TRC-EN06","position":2,"name":"Value","meaning":"What the setting is for this follower: its `value`, or why it does not apply (`not_applicable`).","type":"Text, or a not-applicable reason.","example":"The member's name and a valid email address."}
 {"entity_id":"LA-TRC-EN07","position":1,"name":"Pattern rule","meaning":"The rule owed.","type":"Record reference.","example":"TL-PAT-LIBRARIAN-ACTION-R01"}
-{"entity_id":"LA-TRC-EN07","position":2,"name":"Applies","meaning":"Whether the domain owes it: not when every following use case gives its setting as not applicable, nor when it is waived because no follower meets its `applies_when`.","type":"Derived yes or no.","example":"Yes"}
+{"entity_id":"LA-TRC-EN07","position":2,"name":"Applies","meaning":"Whether the domain owes it: not when every following use case gives its setting a not-applicable reason, nor when it is waived because no follower meets its applies-when setting.","type":"Derived yes or no.","example":"Yes"}

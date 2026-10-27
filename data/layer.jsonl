@@ -9,8 +9,9 @@
 {"id":"LA-AUT-LAY09","title":"Web app","domain_id":"LA-AUT","position":2,"description":"The slice's code in the web app, in `app/`."}
 {"id":"LA-AUT-LAY10","title":"Desktop","domain_id":"LA-AUT","position":3,"description":"The slice's code in the desktop app's Electron shell, in `desktop/`."}
 {"id":"LA-CHK-LAY01","title":"Engine","domain_id":"LA-CHK","position":1,"description":"The slice's code in the engine, the `@jaredrob/lathe` package in `lathe/`."}
-{"id":"LA-CHK-LAY02","title":"Check runner","domain_id":"LA-CHK","parent_layer_id":"LA-CHK-LAY01","position":1,"description":"The command line, the checks folder, product checks and the settings checks read."}
-{"id":"LA-CHK-LAY03","title":"Structure checks","domain_id":"LA-CHK","parent_layer_id":"LA-CHK-LAY01","position":2,"description":"The checks that find structural gaps, stale citations and levels of the wrong size."}
+{"id":"LA-CHK-LAY02","title":"Check runner","domain_id":"LA-CHK","parent_layer_id":"LA-CHK-LAY01","position":1,"description":"The command line, the check runner, Lathe's check rows and a product's, the `check` table and the setting the checks read."}
+{"id":"LA-CHK-LAY03","title":"Structure checks","domain_id":"LA-CHK","parent_layer_id":"LA-CHK-LAY01","position":2,"description":"The checks that find structural gaps and levels of the wrong size, and the store's refusals that keep one mistake one problem."}
+{"id":"LA-CHK-LAY04","title":"Plugin","domain_id":"LA-CHK","position":2,"description":"The slice's part of the Claude Code plugin, in `plugin/`: the hook that keeps every change to the data checked."}
 {"id":"LA-EXP-LAY01","title":"Web app","domain_id":"LA-EXP","position":1,"description":"The slice's code in the web app, in `app/`."}
 {"id":"LA-EXP-LAY02","title":"Graph model and layout","domain_id":"LA-EXP","parent_layer_id":"LA-EXP-LAY01","position":1,"description":"A sub-layer of the graph: the tree it walks (the nav's), the one map of it, the picture the camera frames around a focus, groups, patterns and flow steps, and a trace's columns. The code is in `app/src/graph/` (`tree.ts`, `map.ts`, `model.ts`, `layout.ts`)."}
 {"id":"LA-EXP-LAY03","title":"Graph canvas and page","domain_id":"LA-EXP","parent_layer_id":"LA-EXP-LAY01","position":2,"description":"The graph's canvas, camera and motion, its page, addresses and part of the side bar."}
@@ -35,5 +36,5 @@
 {"id":"LA-TRC-LAY02","title":"Coverage queries and report","domain_id":"LA-TRC","parent_layer_id":"LA-TRC-LAY01","position":1,"description":"Counting coverage by the meta-model, and reporting it with owed proof and tests by state."}
 {"id":"LA-TRC-LAY03","title":"Coverage checks","domain_id":"LA-TRC","parent_layer_id":"LA-TRC-LAY01","position":2,"description":"The checks that report what is not designed or not proved."}
 {"id":"LA-TRC-LAY04","title":"Proof checks and test files","domain_id":"LA-TRC","parent_layer_id":"LA-TRC-LAY01","position":3,"description":"Reading test files for the IDs and keys they name, and the checks on what a test claims."}
-{"id":"LA-TRC-LAY05","title":"Pattern following","domain_id":"LA-TRC","parent_layer_id":"LA-TRC-LAY01","position":4,"description":"The pattern rules a domain owes, in the meta-model and the checks."}
+{"id":"LA-TRC-LAY05","title":"Pattern following","domain_id":"LA-TRC","parent_layer_id":"LA-TRC-LAY01","position":4,"description":"The pattern rules a domain owes, in the schema, the coverage views and the checks."}
 {"id":"LA-TRC-LAY06","title":"Web app","domain_id":"LA-TRC","position":2,"description":"The slice's code in the web app, in `app/`."}

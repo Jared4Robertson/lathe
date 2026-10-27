@@ -25,9 +25,9 @@
 {"id":"LA-AUT-EN25","title":"Integration","aggregate_id":"LA-AUT-A13","role":"root","description":"One outside system a domain exchanges with."}
 {"id":"LA-AUT-EN26","title":"Technical flow","aggregate_id":"LA-AUT-A14","role":"root","description":"How the system carries out one flow."}
 {"id":"LA-AUT-EN27","title":"Technical step","aggregate_id":"LA-AUT-A14","role":"child","description":"One step of a technical flow: its place, the component that does it and what it designs."}
-{"id":"LA-CHK-EN01","title":"Check","aggregate_id":"LA-CHK-A1","role":"root","description":"One rule the engine applies, one SQL file that returns rows of severity, check, record and message."}
-{"id":"LA-CHK-EN02","title":"Problem","aggregate_id":"LA-CHK-A1","role":"child","description":"One thing a check found wrong or still to do in the loaded workspace."}
-{"id":"LA-CHK-EN03","title":"Size limit","aggregate_id":"LA-CHK-A2","role":"root","description":"The most children of one kind a record of the product should hold."}
+{"id":"LA-CHK-EN01","title":"Check","aggregate_id":"LA-CHK-A1","role":"root","description":"One rule the engine applies: a row of the `check` table whose query returns a row for each problem it finds."}
+{"id":"LA-CHK-EN02","title":"Problem","aggregate_id":"LA-CHK-A1","role":"child","description":"One row of the `problem` table: one thing a check found wrong or still to do in the loaded data. Problems are the result of a run, never stored."}
+{"id":"LA-CHK-EN03","title":"Size limit","aggregate_id":"LA-CHK-A2","role":"root","description":"A product's `product_setting` row: the most children of one kind a record of the product should hold."}
 {"id":"LA-CHK-EN04","title":"Child count","aggregate_id":"LA-CHK-A2","role":"child","description":"How many children of one kind one record holds, judged against the limit."}
 {"id":"LA-EXP-EN01","title":"Page","aggregate_id":"LA-EXP-A1","role":"root","description":"One place in the app, identified by its address, showing a view of one loaded workspace."}
 {"id":"LA-EXP-EN02","title":"Space","aggregate_id":"LA-EXP-A2","role":"root","description":"One product as a place to work in, in the rail."}
@@ -54,5 +54,5 @@
 {"id":"LA-TRC-EN03","title":"Gap","aggregate_id":"LA-TRC-A1","role":"child","description":"One obligation of the domain that is missing its design or its proof."}
 {"id":"LA-TRC-EN04","title":"Proof claim","aggregate_id":"LA-TRC-A2","role":"root","description":"One test's claim to prove one obligation, and what the test's file must say to back it."}
 {"id":"LA-TRC-EN05","title":"Pattern following","aggregate_id":"LA-TRC-A3","role":"root","description":"A domain or use case that follows one pattern."}
-{"id":"LA-TRC-EN06","title":"Setting value","aggregate_id":"LA-TRC-A3","role":"child","description":"The value a following use case, or a domain that follows the pattern itself, gives one of the pattern's settings, as a header field named like the setting."}
+{"id":"LA-TRC-EN06","title":"Setting value","aggregate_id":"LA-TRC-A3","role":"child","description":"A `setting_value` row: the value a following use case, or a domain that follows the pattern itself, gives one of the pattern's settings."}
 {"id":"LA-TRC-EN07","title":"Owed pattern rule","aggregate_id":"LA-TRC-A3","role":"child","description":"One rule of the pattern that the following domain must prove for itself."}
