@@ -1,7 +1,7 @@
 import type { SpecRecord, Workspace } from '../../../lathe/src/types';
 import { workspace as fixtureWorkspace } from './workspace';
 
-// Flow steps for the app tests (FORMAT.md section 14).
+// Flow steps for the app tests (FORMAT.md section 13).
 
 /** The fixture workspace with the flow_step kind and three steps under DM-SHOP-F01, written out of order. */
 export function stepsWorkspace(): Workspace {

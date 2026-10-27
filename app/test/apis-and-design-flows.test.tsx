@@ -7,7 +7,7 @@ import { indexWorkspace } from '../src/specs/data';
 import { domainFolders } from '../src/specs/folders';
 import { apisWorkspace } from './fixtures/apis-and-design-flows';
 
-// APIs, integrations and technical flows in the app (FORMAT.md sections 21 and 22): their pages,
+// APIs, integrations and technical flows in the app (FORMAT.md sections 20 and 21): their pages,
 // their folders, and a technical step in a trace.
 
 const index = () => indexWorkspace(apisWorkspace());

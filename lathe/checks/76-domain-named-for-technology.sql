@@ -1,6 +1,6 @@
 -- A domain is named for a technology layer or delivery channel rather than a business capability.
 --
--- A domain is a vertical slice of business capability (FORMAT.md section 19): it owns its records and rules,
+-- A domain is a vertical slice of business capability (FORMAT.md section 18): it owns its records and rules,
 -- its views, its code and its tests, and technology is a layer inside its Design stage. A domain whose title
 -- or domain code (its ID after the product prefix, such as LEND in TL-LEND) names a technology splits one
 -- capability across several domains. The words are web app, frontend, front end, backend, back end, API, UI,

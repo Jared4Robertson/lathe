@@ -1,6 +1,6 @@
 -- A standard rule that nothing meets or cites.
 --
--- A standard rule asks nothing of a domain, so it owes no coverage (FORMAT.md section 20), but a rule that no
+-- A standard rule asks nothing of a domain, so it owes no coverage (FORMAT.md section 19), but a rule that no
 -- component, design step or test `meets`, and that no other record of its product cites in its prose, has no
 -- use, and nothing outlives its purpose. A citation from the rule itself or from its own standard does not
 -- count, so a standard that lists its rules by ID does not keep them all alive. A `meets` link from any

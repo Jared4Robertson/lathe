@@ -104,7 +104,7 @@ function Workbench({ index, reference, route, fromEngine }: PageProps & { route:
     setTimeout(() => sideBarEl.current?.focus(), 0);
   });
 
-  // A new page starts at the top, or at the part its address names (#fields, #7-fitness).
+  // A new page starts at the top, or at the part its address names (#fields, #7-what-records-do-not-carry).
   useEffect(() => {
     const scrollToHash = () => {
       const id = decodeURIComponent(window.location.hash.slice(1));

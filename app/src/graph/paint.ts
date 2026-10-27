@@ -284,8 +284,7 @@ function outlinePath(ctx: CanvasRenderingContext2D, p: Plate, outline: Outline, 
   const h = p.h * zoom + 2 * grow;
   const rx = outline.rx * zoom + grow;
   const ry = outline.ry * zoom + grow;
-  if (rx * 2 >= w - 1e-6 && ry * 2 >= h - 1e-6) ctx.ellipse(x + w / 2, y + h / 2, w / 2, h / 2, 0, 0, Math.PI * 2);
-  else ctx.roundRect(x, y, w, h, [{ x: Math.min(rx, w / 2), y: Math.min(ry, h / 2) }]);
+  ctx.roundRect(x, y, w, h, [{ x: Math.min(rx, w / 2), y: Math.min(ry, h / 2) }]);
 }
 
 function paintBox(ctx: CanvasRenderingContext2D, p: Plate, cam: Camera, look: Look, fonts: GraphFonts, state: PaintState, X: (x: number) => number, Y: (y: number) => number) {

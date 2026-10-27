@@ -1,6 +1,6 @@
 -- A `has_one` or `has_many` link stays inside its aggregate.
 --
--- These relations link an entity to its parts, and parts belong to their aggregate (FORMAT.md section 17),
+-- These relations link an entity to its parts, and parts belong to their aggregate (FORMAT.md section 16),
 -- so both ends sit in the same aggregate. Only `refers_to` may cross aggregates and domains. A link to a
 -- record that does not exist, or that is not an entity, is reported by dangling-link or relation-not-allowed
 -- instead. When the target ID is duplicated, the link is reported only if no entity with that ID shares the

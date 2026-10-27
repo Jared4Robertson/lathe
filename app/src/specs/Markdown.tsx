@@ -4,7 +4,7 @@ import DOMPurify from 'dompurify';
 import { navigate } from '../router';
 import { NavigateContext } from './parts';
 
-/** "7. Fitness" -> "7-fitness": the anchor a heading gets, so a page can link to a section. */
+/** "7. What records do not carry" -> "7-what-records-do-not-carry": the anchor a heading gets, so a page can link to a section. */
 export const headingId = (text: string) =>
   text.toLowerCase().replace(/<[^>]*>/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
@@ -36,7 +36,7 @@ export function linkMentions(html: string, links: ProseLinks): string {
   if (links.titles.size === 0 && links.broken.size === 0) return html;
   const template = document.createElement('template');
   template.innerHTML = html;
-  // An inline code span holding one lone ID is a citation (FORMAT.md section 12): wrap the code in the link.
+  // An inline code span holding one lone ID is a citation (FORMAT.md section 11): wrap the code in the link.
   for (const code of Array.from(template.content.querySelectorAll('code'))) {
     if (code.closest('pre, a')) continue;
     const id = (code.textContent ?? '').trim();

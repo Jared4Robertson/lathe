@@ -1,4 +1,4 @@
-// Entities and the ERD (FORMAT.md section 17): the entity kind and its three relations, the Fields table read
+// Entities and the ERD (FORMAT.md section 16): the entity kind and its three relations, the Fields table read
 // into entityFields, and the checks entity-role, aggregate-root, entity-fields, has-crosses-aggregate and
 // entity-unreferenced.
 import path from 'node:path';

@@ -4,7 +4,7 @@ import { checkPagePath } from '../format/reference';
 import { RecordMarkdown } from './mentions';
 import { DomainPatterns } from './PatternParts';
 import { patternsFollowedBy } from './patterns';
-import { CoverageBars, EvidencePanel, FitnessPanel, pluralLabel } from './ProductHealth';
+import { CoverageBars, ProductSummary, pluralLabel } from './ProductHealth';
 import { LongList } from '../components/LongList';
 import { countOf } from '../plural';
 import { PageHeader, ProblemBadge, ProblemList, RecordLink, RecordTree, Section, idText, levelBelow, recordText } from './parts';
@@ -100,7 +100,7 @@ function SpecsHome({ index }: { index: SpecIndex }) {
 export const problemsUnder = (index: SpecIndex, key: 'product' | 'domain', id: string) =>
   index.workspace.problems.filter((p) => p.record && index.byId.get(p.record)?.[key] === id);
 
-/** A product's wiki: its body, its domains (not their contents), fitness, evidence, open questions and problems. */
+/** A product's wiki: its body, its domains (not their contents), its summary, open questions and problems. */
 export function ProductWiki({ index, id }: { index: SpecIndex; id: string }) {
   const product = index.byId.get(id)!;
   const domains = index.domainsOf.get(id) ?? [];
@@ -124,11 +124,8 @@ export function ProductWiki({ index, id }: { index: SpecIndex; id: string }) {
           ))}
         </div>
       </Section>
-      <Section title="Fitness">
-        <FitnessPanel index={index} productId={id} />
-      </Section>
-      <Section title="Evidence">
-        <EvidencePanel index={index} productId={id} />
+      <Section title="Summary">
+        <ProductSummary index={index} productId={id} />
       </Section>
       <Section title="Open questions" count={questions.length}>
         <QuestionList index={index} questions={questions} />

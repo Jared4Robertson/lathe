@@ -1,6 +1,6 @@
 -- A domain event that nothing reacts to.
 --
--- An event is worth naming when something changes because it happened (FORMAT.md section 18): an aggregate,
+-- An event is worth naming when something changes because it happened (FORMAT.md section 17): an aggregate,
 -- which may sit in another aggregate or domain, a use case that starts, or a component that handles it, each
 -- linking to the event with `reacts_to`. An event kept only for the record can be fine, so this is a
 -- warning. A `reacts_to` link from any record counts here; one from a kind the meta-model does not allow is

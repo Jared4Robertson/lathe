@@ -14,7 +14,7 @@ export interface LatheConfig {
   metaDirs: string[];
   /** The product's own checks folder (SQL files run after Lathe's checks), or null when it has none. */
   checksDir: string | null;
-  /** Extra ID prefixes a record body may cite besides every product's and domain's ID (FORMAT.md section 12). */
+  /** Extra ID prefixes a record body may cite besides every product's and domain's ID (FORMAT.md section 11). */
   idPrefixes: string[];
   /** The most children of one kind a record should have before too-many-children warns (structure.maxChildren). */
   maxChildren: number;
@@ -27,7 +27,7 @@ interface ConfigFile {
   specs?: string;
   /** A folder with kinds.csv and/or relations.csv whose rows are added to Lathe's defaults. */
   metaExtensions?: string;
-  /** A folder of the product's own check SQL files, run after Lathe's checks (FORMAT.md section 13). */
+  /** A folder of the product's own check SQL files, run after Lathe's checks (FORMAT.md section 12). */
   checks?: string;
   /** Extra ID prefixes, such as ["STD", "SYS"]: a body token starting with one followed by "-" is a citation. */
   idPrefixes?: unknown;

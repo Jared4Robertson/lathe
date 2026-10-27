@@ -37,7 +37,7 @@ A `test` has a `state`: `automated` (the default), `manual` or `planned`. An aut
 
 Each check is one SQL file in `lathe/checks/`: a `SELECT` over the loaded tables that returns rows of `(severity, check, record, message)`. Its name is its file name without the number and `.sql`. An **error** means the workspace is broken, and `lathe check` exits non-zero; a **warning** is work still to do, such as an obligation not yet proved, two stages that do not join up yet, or a level of the spec that is the wrong size: a record with more children of one kind than `structure.maxChildren` in `lathe.config.json` (default 15), counted per flow path and per group, or a capability, layer or group with only one child. One mistake gives one error.
 
-Nothing outlives its purpose: a component that satisfies no obligation is a `component-satisfies-nothing` warning, and a test that proves and supports nothing is a `test-proves-nothing` warning. A component or test is never waived; shared infrastructure links the obligations it makes possible. A standard rule that nothing meets or cites is a `standard-rule-unmet` warning (section 20).
+Nothing outlives its purpose: a component that satisfies no obligation is a `component-satisfies-nothing` warning, and a test that proves and supports nothing is a `test-proves-nothing` warning. A component or test is never waived; shared infrastructure links the obligations it makes possible. A standard rule that nothing meets or cites is a `standard-rule-unmet` warning (section 19).
 
 A check documents itself in its header comment: one summary sentence, a blank comment line, the explanation ending with how to fix what it reports, a blank comment line, then `-- severity: error` (or `warning`, or `error, warning`) and an optional `-- kinds:` line naming the kinds it concerns. The reference is built from these headers, and `undocumented` reports a check, kind or relation that lacks its text.
 
@@ -45,55 +45,51 @@ A check documents itself in its header comment: one summary sentence, a blank co
 
 A kind's `obligation` says what it asks: `yes`, an obligation that must be designed, built and proved; `proof`, one that needs proof only; anything else, none. A relation's `role` says what a link does: `design` (a component `satisfies` it) or `proof` (a test `proves` it). Each obligation is counted in the domain that owes it, as **designed**, **built** (designed by a component whose file exists), **proved** (by an automated or manual test) and **planned**, with its gaps.
 
-## 7. Fitness
-
-A `fitness` record is the owner's judgment, the person who decides what the product is for: on a `date`, a `score` from 1 (does not serve its purpose) to 5 (serves it fully), and in the body the experiences behind it. Lathe never writes these itself. What it can count (coverage, open questions, checks) is evidence for that judgment, never the score.
-
-## 8. What records do not carry
+## 7. What records do not carry
 
 Records carry no status, approval or decision history: a record in the specs is in force, uncertainty is an open `question`, and git keeps the history. A decided question is removed and its answer written into the records it affects.
 
-## 9. Extending the meta-model
+## 8. Extending the meta-model
 
 A product adds to the meta-model with a `metaExtensions` folder holding a `kinds.csv`, `relations.csv`, `sections.csv` and/or `ids.csv` with the same columns. A new row is added as it is. A row for a kind, folder or relation rule that already exists changes it: a kind's `parent_kinds` and `required_fields` are widened, and any other non-empty value replaces the default's. Once the extensions are merged, every kind and relation needs a `description`, and every relation a `forward_label` and a `reverse_label` (`undocumented` and `relation-unlabeled` otherwise). The product's reference shows the result.
 
-## 10. Capabilities and patterns
+## 9. Capabilities and patterns
 
 A domain with more than a handful of use cases groups them into **capabilities**, ordered slices through Define and Design: a use case, flow or test may sit under a capability instead of the domain, and still counts in the domain. Behavior that several use cases share is written once as a **pattern** under the product, with **settings** each following use case fills in. A use case `follows` a pattern and gives each setting as a header field, a value or `Not applicable:` with a reason; a domain may follow a pattern too, and may give settings the same way.
 
-## 11. Pattern rules
+## 10. Pattern rules
 
 A pattern's rules are `pattern_rule` records under it. Each domain that follows the pattern, itself or through a use case, owes each rule and proves it with its own tests; by default a rule needs proof only. A rule that names a `setting` does not apply in a domain whose following use cases all give that setting as Not applicable, unless the domain follows the pattern itself. A rule that applies only for some values of a setting says so in `applies_when`, as `<setting> is <value>` or `<setting> is not <value>`: it is owed in a domain only when at least one follower there (a following use case, or the domain when it follows the pattern itself) gives that setting a value, not Not applicable, that meets it, compared trimmed and in any letter case. Elsewhere it is **waived**: neither owed nor proved, and the app shows it as waived there. An `applies_when` that is malformed or names a setting the pattern does not list is an `applies-when-unknown` error, and waives nothing.
 
-## 12. Citing records in prose
+## 11. Citing records in prose
 
 A record's body may cite other records by ID, such as "the loan follows TL-LEND-DR05", so that a renamed or removed record does not leave a stale reference. A citation is a whole ID-shaped token that is a record's ID or starts with a known prefix (every product and domain ID, and `idPrefixes` in `lathe.config.json`). A bare product or domain ID counts only as a code span holding just that ID, and other code is not read. The cited IDs that exist in the record's own product, or in no product, are the record's **mentions**; another product's ID in prose is plain text, because products are separate spaces. Mentions are not links: they count for nothing. Links stay inside their product too: a link from one product's record to another product's is an error (`link-crosses-product`).
 
-## 13. A product's own checks
+## 12. A product's own checks
 
 A product keeps its house rules as checks of its own: `lathe.config.json` names a folder in `checks`, and every `*.sql` file in it runs after Lathe's, over the same tables, with the same row contract and the same header. A product check named like one of Lathe's is not run. Its checks appear in the product's reference with Lathe's.
 
-## 14. Flow steps
+## 13. Flow steps
 
 A flow can be written as `flow_step` records under it, in `order`: each says what happens, `uses` the view, endpoint or component it goes through, and `fulfills` what it carries out. A flow with more than one path, such as an API path or a refused path beside the main one, names each step's `path`; a step with no path is on the main path. The steps of each path are numbered 1, 2, 3 and so on. Once a flow has steps, what it fulfills is what its steps fulfill.
 
-## 15. Folders
+## 14. Folders
 
 A domain's specs are laid out in folders by stage: in Define, the domain model and use cases; in Design, interaction design (flows, views, APIs with their endpoints, and integrations), technical specification (components in their layers, and technical flows) and the test plan; and at product level what domains share: patterns and standards. `meta/sections.csv` names these folders and each kind's `section` says which one it sits in, so the app reads the same way whatever folders the files are in. The app groups the test plan by what each test proves: acceptance, domain rule, pattern, interaction and engineering tests.
 
-## 16. Layers
+## 15. Layers
 
 A domain's components are grouped into **layers**, ordered parts of its technical specification such as Models, Services or Web app, as its use cases are grouped into capabilities. A layer may hold sub-layers, each a layer under it with its own order among them. A component in a layer, at any depth, still belongs to the layer's domain everywhere a domain matters. Layers are records, so each product names its own.
 
-## 17. Entities and the ERD
+## 16. Entities and the ERD
 
-An aggregate is drawn as an ERD of the records it keeps. Each is an `entity` under the aggregate: one `root`, the record the aggregate is named for, and any number of `child` parts. Its body lists its fields in a table under a `## Fields` heading, with the columns Field, Meaning, Kind of value and Example. A domain rule about one entity may sit under that entity rather than the aggregate, and still belongs to the aggregate and its domain. A domain rule that holds across aggregates, such as two records saved together or a lifecycle rule for every record in the domain, sits under the domain and names with `involves` the two or more aggregates of that domain it ties together; a rule across domains is a domain event's job instead (section 18). `domain-rule-involves` warns of a rule under a domain that involves fewer than two aggregates or one of another domain, and of a rule under an aggregate or entity that uses `involves`. `has_one` and `has_many` link an entity to its parts inside the aggregate; `refers_to` may cross aggregates and domains. The app draws a domain's ERD at aggregate level and each aggregate's ERD with its entities.
+An aggregate is drawn as an ERD of the records it keeps. Each is an `entity` under the aggregate: one `root`, the record the aggregate is named for, and any number of `child` parts. Its body lists its fields in a table under a `## Fields` heading, with the columns Field, Meaning, Kind of value and Example. A domain rule about one entity may sit under that entity rather than the aggregate, and still belongs to the aggregate and its domain. A domain rule that holds across aggregates, such as two records saved together or a lifecycle rule for every record in the domain, sits under the domain and names with `involves` the two or more aggregates of that domain it ties together; a rule across domains is a domain event's job instead (section 17). `domain-rule-involves` warns of a rule under a domain that involves fewer than two aggregates or one of another domain, and of a rule under an aggregate or entity that uses `involves`. `has_one` and `has_many` link an entity to its parts inside the aggregate; `refers_to` may cross aggregates and domains. The app draws a domain's ERD at aggregate level and each aggregate's ERD with its entities.
 
-## 18. Domain events
+## 17. Domain events
 
 A `domain_event` is an unchangeable record that something happened in the domain, named in the past tense (Loan opened, Tool returned). It sits under the aggregate that raises it, and `raised_by` may name the entity of that aggregate whose change raises it; an event raised by time passing, or in an aggregate with no entities, has none. Its body says in a sentence what happened, then lists what the event carries in a `## Fields` table with the same columns as an entity's. What happens next is said by the records that react: an aggregate that changes, a use case that starts or a component that handles the event links to it with `reacts_to`, from any aggregate or domain. An event that nothing reacts to is reported as a warning, since that can be fine but is often a missing link.
 
-## 19. Domains
+## 18. Domains
 
 A domain is a vertical slice of the product: one business capability with its own language, such as Lending or Billing. It owns everything about that capability. Its Define stage holds its domain model (aggregates, entities, events and rules) and its use cases; its Design stage holds its flows, views, endpoints, components and tests. Technology is a layer inside a domain's Design stage, such as Web app, Engine or Desktop, never a domain of its own, so each capability is specified, built and proved in one place. What every domain shares, such as the app shell, sign-in or the server, goes in a platform domain or a pattern, not in a domain named for a technology.
 
@@ -104,21 +100,21 @@ A capability is something a person using the product would name, with its own te
 
 A domain whose title or code names a technology layer or delivery channel is a `domain-named-for-technology` warning.
 
-## 20. Standards
+## 19. Standards
 
 A **standard** is a library of engineering rules that holds for the product's code, such as logging, error handling or naming. It sits under the product, beside the patterns, and its rules are `standard_rule` records under it, each with its own ID (`<standard>-R<nn>`). A component or test that follows a rule links to it with `meets` (read from the rule as Met by); a body may also cite the rule's ID, which is a mention like any other. A standard rule is not an obligation: no domain owes it, and nothing counts it as designed or proved. A rule that nothing meets or cites, other than the rule and its own standard, is a `standard-rule-unmet` warning, because nothing outlives its purpose.
 
 The rule of thumb between the two: a rule you prove with tests is a pattern rule; a rule you follow and cite is a standard rule. A pattern's rules are owed by each domain that follows it and proved there, which is what a pattern gives that a standard does not.
 
-## 21. APIs and integrations
+## 20. APIs and integrations
 
 A domain's endpoints are grouped by resource into **APIs**: an `api` under the domain holds the `endpoint` records for one resource, such as Loans, and the `interaction_requirement`s that hold for every endpoint in it, such as how it pages or what an unknown ID answers. Its body may hold a `## Shapes` table of the request and response shapes its endpoints share. An endpoint may still sit directly in the domain. An **integration** is an outside system the domain exchanges with, such as a payment provider: an `integration` under the domain, with an optional `system` field naming the system, holds one interaction requirement per exchange. An interaction requirement may also sit directly under the domain, for a rule shared across the domain's interaction design.
 
-## 22. Technical flows
+## 21. Technical flows
 
-A flow says what a person sees; a **technical flow** says how the system carries it out. A `design_flow`, in the domain or one of its layers, `deepens` the flow it carries out, and its steps are `design_step` records under it, ordered, with an optional `path`, as a flow's steps are (section 14). Each step `uses` the component that does it and `satisfies` the obligations it designs; a step's `satisfies` counts as design, as a component's does, but only a component whose file exists counts as built. A step may say which `transaction` it runs in, what it `locks` and how many `statements` it runs. Failure, limits and signals stay as tables in the technical flow's body. A technical flow that deepens no flow is a `design-flow-deepens-nothing` warning.
+A flow says what a person sees; a **technical flow** says how the system carries it out. A `design_flow`, in the domain or one of its layers, `deepens` the flow it carries out, and its steps are `design_step` records under it, ordered, with an optional `path`, as a flow's steps are (section 13). Each step `uses` the component that does it and `satisfies` the obligations it designs; a step's `satisfies` counts as design, as a component's does, but only a component whose file exists counts as built. A step may say which `transaction` it runs in, what it `locks` and how many `statements` it runs. Failure, limits and signals stay as tables in the technical flow's body. A technical flow that deepens no flow is a `design-flow-deepens-nothing` warning.
 
-## 23. Groups
+## 22. Groups
 
 A use case with many requirements, a view, endpoint or flow with many interaction requirements, a pattern with many rules and a standard with many rules sort them into **groups**: each `requirement`, `interaction_requirement`, `pattern_rule` and `standard_rule` may name a short heading in `group`, such as Validation or Paging. Groups are compared trimmed and in any letter case. The app shows the ungrouped ones first, without a heading, then each group under its heading in the order the groups first appear, and the side bar's Outline lists the groups. `too-many-children` counts children per group, as it counts flow steps per path, and a group with only one member is a `lone-child` warning, like a layer with one child. A group is a field, not a record: renaming one changes no ID.
 
@@ -137,7 +133,7 @@ A product: the root of a set of specifications.
 - **Stage:** none (structural)
 - **Folder:** none
 - **Parents:** none (a root record)
-- **Children:** [`domain`](#kind-domain), [`pattern`](#kind-pattern), [`standard`](#kind-standard), [`question`](#kind-question), [`fitness`](#kind-fitness)
+- **Children:** [`domain`](#kind-domain), [`pattern`](#kind-pattern), [`standard`](#kind-standard), [`question`](#kind-question)
 - **Required fields:** none
 - **Obligation:** no
 - **ID:** `<P>`, such as `TL`
@@ -564,23 +560,6 @@ Something undecided, with the person who decides it.
 - **ID:** `<P>-<D>-Q<nn> or <P>-Q<nn>`, such as `TL-LEND-Q01`
 - **Links out:** About ([`about`](#relation-about))
 - **Links in:** Questions about this ([`about`](#relation-about))
-
-<a id="kind-fitness"></a>
-
-### Fitness (`fitness`)
-
-How well the product serves its purpose, as judged by the person it serves on a date: a score from 1 to 5 and the experiences behind it.
-
-- **Stage:** none (structural)
-- **Folder:** none
-- **Parents:** [`product`](#kind-product)
-- **Children:** none
-- **Required fields:** `date`, `score`
-- **Obligation:** no
-- **ID:** `<P>-FIT<nn>`, such as `LA-FIT01`
-- **Links out:** none
-- **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`bad-fitness-date`](#check-bad-fitness-date), [`bad-fitness-score`](#check-bad-fitness-score)
 
 ## Relations
 
@@ -1151,28 +1130,6 @@ Each kind's required fields are valid field names.
 A field name is lower-case letters, digits and underscores, starting with a letter, and not one of the
 fields every record has (`id`, `kind`, `title`, `parent`, `links`). Rename the field in `kinds.csv`.
 
-<a id="check-bad-fitness-date"></a>
-
-### `bad-fitness-date`
-
-**Error** · Lathe's `checks/24-bad-fitness-date.sql` · Kinds: [`fitness`](#kind-fitness)
-
-A fitness record's date is a real calendar date written YYYY-MM-DD.
-
-A missing date is missing-required-field. Write the date of the judgment in that form, such as
-`2026-03-02`.
-
-<a id="check-bad-fitness-score"></a>
-
-### `bad-fitness-score`
-
-**Error** · Lathe's `checks/25-bad-fitness-score.sql` · Kinds: [`fitness`](#kind-fitness)
-
-A fitness record's score is a whole number from 1 to 5.
-
-1 means the product does not serve its purpose, 5 that it serves it fully. A missing score is
-missing-required-field. Write the score as `score: 4` or `score: "4"`.
-
 <a id="check-bad-test-state"></a>
 
 ### `bad-test-state`
@@ -1329,7 +1286,7 @@ own ID there, or remove the claim.
 
 A record's body cites an ID that no record has.
 
-A citation is an ID-shaped token with one of the workspace's known prefixes (FORMAT.md section 12). Code
+A citation is an ID-shaped token with one of the workspace's known prefixes (FORMAT.md section 11). Code
 spans and fenced code blocks are not read. Fix the wording, or put the ID in code if it is only an
 example.
 
@@ -1388,7 +1345,7 @@ test proves.
 A step's order is a whole number that no other step on its path of the flow has, and each path's steps are numbered without gaps.
 
 The steps of a flow (`flow_step`) and of a technical flow (`design_step`) are read in `order` (FORMAT.md
-sections 14 and 22), within their `path`: a short name such as main or
+sections 13 and 21), within their `path`: a short name such as main or
 refused, compared trimmed and in any letter case. A step with no path is on the main path. Orders are
 compared as numbers, so 1 and 01 clash, and the steps of each path of a flow are numbered 1, 2, 3 and so
 on. A path whose orders skip a number is reported once, on the first step after the gap, and only when
@@ -1486,7 +1443,7 @@ file that carries it out.
 
 Every section a kind names in `kinds.csv` is a folder that `sections.csv` lists.
 
-A kind in an unknown folder is shown in no folder of the app (FORMAT.md section 15). Fix the kind's
+A kind in an unknown folder is shown in no folder of the app (FORMAT.md section 14). Fix the kind's
 `section`, or add the folder to the product's `sections.csv`.
 
 <a id="check-section-stage-mismatch"></a>
@@ -1497,7 +1454,7 @@ A kind in an unknown folder is shown in no folder of the app (FORMAT.md section 
 
 A kind's section belongs to the kind's own stage.
 
-A Define kind sits in a Define folder and a Design kind in a Design folder (FORMAT.md section 15). A
+A Define kind sits in a Define folder and a Design kind in a Design folder (FORMAT.md section 14). A
 product-level section, listed with no stage (such as shared), may hold a kind of any stage. Change the
 kind's `section` or `stage`, or the folder's stage.
 
@@ -1537,9 +1494,9 @@ A record with more children of one kind than the product's `structure.maxChildre
 The setting is read from `lathe.config.json` (default 15) through the settings table. A parent with that
 many children of one kind is missing a level between them, such as a capability, a layer or another
 aggregate. Children are counted per kind. Tests are exempt: the app groups them by what they prove
-(FORMAT.md section 15), so they are never shown as one list. The steps of a flow or a technical flow are
-counted per path (FORMAT.md sections 14 and 22), since each path reads as its own list, and requirements,
-interaction requirements, pattern rules and standard rules per `group` (FORMAT.md section 23), since each
+(FORMAT.md section 14), so they are never shown as one list. The steps of a flow or a technical flow are
+counted per path (FORMAT.md sections 13 and 21), since each path reads as its own list, and requirements,
+interaction requirements, pattern rules and standard rules per `group` (FORMAT.md section 22), since each
 group reads under its own heading; the ungrouped ones are one list. Groups are compared trimmed and in any
 letter case. A child whose parent does not exist is only unknown-parent. Add a level, or a group, and move
 the children into it.
@@ -1554,7 +1511,7 @@ A capability, a layer or a group with exactly one child, of any kind.
 
 A level that holds one record groups nothing. Only its own children are counted, not theirs, and one with
 no children is not reported. A group (the `group` of requirements, interaction requirements, pattern rules
-and standard rules, FORMAT.md section 23) is counted among its parent's children of one kind, compared trimmed and in any
+and standard rules, FORMAT.md section 22) is counted among its parent's children of one kind, compared trimmed and in any
 letter case, and reported on that parent. Merge it into a neighbor, or give it more.
 
 <a id="check-entity-role"></a>
@@ -1565,7 +1522,7 @@ letter case, and reported on that parent. Merge it into a neighbor, or give it m
 
 An entity's role is root or child.
 
-`root` is the aggregate's root record and `child` one of its parts (FORMAT.md section 17), in any letter
+`root` is the aggregate's root record and `child` one of its parts (FORMAT.md section 16), in any letter
 case. A missing or empty role is missing-required-field only. Fix the `role` value.
 
 <a id="check-aggregate-root"></a>
@@ -1577,7 +1534,7 @@ case. A missing or empty role is missing-required-field only. Fix the `role` val
 An aggregate that holds entities has exactly one root.
 
 The root is the record the aggregate is named for, through which its other entities are reached (FORMAT.md
-section 17). An aggregate with no entities is not reported. Give exactly one of its entities `role: root`.
+section 16). An aggregate with no entities is not reported. Give exactly one of its entities `role: root`.
 
 <a id="check-entity-fields"></a>
 
@@ -1588,7 +1545,7 @@ section 17). An aggregate with no entities is not reported. Give exactly one of 
 Each entity or event lists its fields in a Fields table.
 
 An entity's table lists the fields it keeps and a domain event's the fields it carries. The table sits under
-a `## Fields` heading (FORMAT.md sections 17 and 18), with the columns Field, Meaning, Kind of value and
+a `## Fields` heading (FORMAT.md sections 16 and 17), with the columns Field, Meaning, Kind of value and
 Example, in any letter case, one row per field and each field name once. The engine reads the table into entity_tables and,
 when its columns are right, its rows into entity_fields. Field names are compared trimmed, without code span
 backticks, and in any letter case. A table with the wrong columns is reported for that alone. Add the
@@ -1602,7 +1559,7 @@ heading and table, fix its columns, or merge the repeated field.
 
 A `has_one` or `has_many` link stays inside its aggregate.
 
-These relations link an entity to its parts, and parts belong to their aggregate (FORMAT.md section 17),
+These relations link an entity to its parts, and parts belong to their aggregate (FORMAT.md section 16),
 so both ends sit in the same aggregate. Only `refers_to` may cross aggregates and domains. A link to a
 record that does not exist, or that is not an entity, is reported by dangling-link or relation-not-allowed
 instead. When the target ID is duplicated, the link is reported only if no entity with that ID shares the
@@ -1616,7 +1573,7 @@ source's aggregate. Use `refers_to`, or move the part into the aggregate.
 
 A child entity that its aggregate's root does not reach.
 
-Each child entity is a part of its aggregate's root (FORMAT.md section 17), so a `has_one` or `has_many`
+Each child entity is a part of its aggregate's root (FORMAT.md section 16), so a `has_one` or `has_many`
 reaches it from the root, directly or through other children of the same aggregate. Links that cross
 aggregates (has-crosses-aggregate) and `refers_to` links do not count. An aggregate with no root, or more
 than one, is aggregate-root only, so its children are not reported. Link the child from the root or from
@@ -1662,7 +1619,7 @@ extension is merged, a label is still empty. Write the missing label, in sentenc
 
 A domain event that nothing reacts to.
 
-An event is worth naming when something changes because it happened (FORMAT.md section 18): an aggregate,
+An event is worth naming when something changes because it happened (FORMAT.md section 17): an aggregate,
 which may sit in another aggregate or domain, a use case that starts, or a component that handles it, each
 linking to the event with `reacts_to`. An event kept only for the record can be fine, so this is a
 warning. A `reacts_to` link from any record counts here; one from a kind the meta-model does not allow is
@@ -1677,7 +1634,7 @@ event unheard on purpose.
 
 A domain event's title reads as something that happened, in the past tense.
 
-An event is named for what happened, such as Loan opened or Payment sent (FORMAT.md section 18). The
+An event is named for what happened, such as Loan opened or Payment sent (FORMAT.md section 17). The
 check is a heuristic over the title's words, in any letter case and split at anything but a letter: the
 title passes when its last word, or any word after its first (the word after a one-word subject, as in Loan
 became overdue), is a past form. A past form is a word of four or more letters ending in "-ed", other than
@@ -1709,7 +1666,7 @@ upset, withdrew, withdrawn, withheld, woke, woken, wore, worn, won, wound, wrote
 
 A domain event's `raised_by` names an entity of the event's own aggregate.
 
-An event is raised by its aggregate (FORMAT.md section 18), so the entity whose change raises it is one of
+An event is raised by its aggregate (FORMAT.md section 17), so the entity whose change raises it is one of
 that aggregate's entities. What another aggregate does about the event is said by its `reacts_to`. An
 event with no `raised_by` is not reported. A link to a record that does not exist, or that is not an
 entity, is reported by dangling-link or relation-not-allowed instead. When the target ID is duplicated, the
@@ -1724,7 +1681,7 @@ entity of the event's aggregate, or move the event under the aggregate that rais
 
 A domain is named for a technology layer or delivery channel rather than a business capability.
 
-A domain is a vertical slice of business capability (FORMAT.md section 19): it owns its records and rules,
+A domain is a vertical slice of business capability (FORMAT.md section 18): it owns its records and rules,
 its views, its code and its tests, and technology is a layer inside its Design stage. A domain whose title
 or domain code (its ID after the product prefix, such as LEND in TL-LEND) names a technology splits one
 capability across several domains. The words are web app, frontend, front end, backend, back end, API, UI,
@@ -1743,7 +1700,7 @@ A domain rule under its domain names the aggregates it ties together with `invol
 
 A domain rule sits on the aggregate, or the entity, it is about. One that holds across aggregates, such as
 two records saved together or a lifecycle rule for every record in the domain, sits under the domain
-(FORMAT.md section 17) and says with `involves` which aggregates it ties together. Such a rule is reported
+(FORMAT.md section 16) and says with `involves` which aggregates it ties together. Such a rule is reported
 when it involves fewer than two aggregates: a rule about one aggregate belongs under that aggregate. It is
 also reported, once per link, for each aggregate it involves from another domain, since a rule across
 domains is a domain event's job: one domain raises the event and the other reacts to it. A rule under an
@@ -1803,7 +1760,7 @@ the link; to point a reader at the other product, name the ID in prose, where it
 
 A standard rule that nothing meets or cites.
 
-A standard rule asks nothing of a domain, so it owes no coverage (FORMAT.md section 20), but a rule that no
+A standard rule asks nothing of a domain, so it owes no coverage (FORMAT.md section 19), but a rule that no
 component, design step or test `meets`, and that no other record of its product cites in its prose, has no
 use, and nothing outlives its purpose. A citation from the rule itself or from its own standard does not
 count, so a standard that lists its rules by ID does not keep them all alive. A `meets` link from any
@@ -1818,7 +1775,7 @@ follows the rule with `meets`, cite the rule where it is followed, or remove the
 
 A technical flow that deepens no flow.
 
-A technical flow says how the system carries out a flow (FORMAT.md section 22), so it names that flow with
+A technical flow says how the system carries out a flow (FORMAT.md section 21), so it names that flow with
 `deepens`. One that deepens nothing is design with no flow to carry out: the flow is missing, or the link
 is. A link to a flow that does not exist is only dangling-link. Link the flow it carries out with
 `deepens`, or write the flow first.

@@ -100,9 +100,9 @@ describe('product spaces', () => {
     await user.click(within(within(panel()).getByRole('list', { name: 'Folders of Shopping' })).getByRole('button', { name: /^Define/ }));
     await user.click(within(within(panel()).getByRole('list', { name: 'Define of Shopping' })).getByRole('button', { name: /^Capabilities/ }));
     expect(within(panel()).getByRole('list', { name: 'Capabilities of Shopping' }).textContent).toBe('Filling the basketPaying for the basketAdd an item to the basket');
-    // The product's groups (its open questions and fitness records), in the meta-model's order.
+    // The product's groups: its open questions.
     const groups = within(panel()).getByRole('list', { name: 'Groups of Demo shop' });
-    expect(within(groups).getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual(['/DM/question', '/DM/fitness']);
+    expect(within(groups).getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual(['/DM/question']);
     expect(within(nav()).queryByRole('link', { name: 'Notes' })).toBeNull();
 
     await userEvent.setup().click(spaceLink('Notebook'));

@@ -1,6 +1,6 @@
 -- A domain event's title reads as something that happened, in the past tense.
 --
--- An event is named for what happened, such as Loan opened or Payment sent (FORMAT.md section 18). The
+-- An event is named for what happened, such as Loan opened or Payment sent (FORMAT.md section 17). The
 -- check is a heuristic over the title's words, in any letter case and split at anything but a letter: the
 -- title passes when its last word, or any word after its first (the word after a one-word subject, as in Loan
 -- became overdue), is a past form. A past form is a word of four or more letters ending in "-ed", other than

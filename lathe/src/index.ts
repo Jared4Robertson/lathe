@@ -127,14 +127,14 @@ async function exists(file: string | null, allowFolder: boolean): Promise<boolea
   }
 }
 
-/** An ID-shaped token a record's body cites (FORMAT.md section 12); it may not exist. */
+/** An ID-shaped token a record's body cites (FORMAT.md section 11); it may not exist. */
 interface ProseCitation {
   path: string;
   record: string;
   cited: string;
 }
 
-// Reads the IDs each record's body cites (FORMAT.md section 12). A token is a citation when it is the ID of a
+// Reads the IDs each record's body cites (FORMAT.md section 11). A token is a citation when it is the ID of a
 // record, or starts with a known prefix followed by "-": every product's and domain's ID, and the config's
 // idPrefixes. A product's or domain's own ID is too common a word to count in plain prose, so it is a citation
 // only when written as a code span holding just that ID. Each record's mentions are the cited IDs that exist, in
@@ -158,7 +158,7 @@ function readProseCitations(records: LoadedRecord[], idPrefixes: string[]): Pros
   return citations;
 }
 
-/** What an entity's or domain event's Fields table says (FORMAT.md sections 17 and 18), for the entity-fields check. */
+/** What an entity's or domain event's Fields table says (FORMAT.md sections 16 and 17), for the entity-fields check. */
 interface EntityTableFact {
   path: string;
   record: string;
@@ -471,7 +471,7 @@ interface CheckFiles {
   problems: Problem[];
 }
 
-// Finds Lathe's check files, then the product's own checks folder if it has one (FORMAT.md section 13), and
+// Finds Lathe's check files, then the product's own checks folder if it has one (FORMAT.md section 12), and
 // reads each file's header. A product check named like one of Lathe's checks is not run: it is a
 // product-check-name-clash error, so the two never mix in a report.
 async function findCheckFiles(checksDir: string, productChecksDir: string | null, root: string): Promise<CheckFiles> {
@@ -663,7 +663,7 @@ export async function loadWorkspace(root: string, options: LoadOptions = {}): Pr
     // Every distinct ID a record's body cites (a record's ID, or a token with a known prefix), existing or not.
     await connection.run('CREATE TABLE prose_mentions (path VARCHAR, record VARCHAR, cited VARCHAR)');
     await append(connection, 'prose_mentions', citations.map((c) => [c.path, c.record, c.cited]));
-    // Each entity's and domain event's Fields table (FORMAT.md sections 17 and 18): whether it has the heading,
+    // Each entity's and domain event's Fields table (FORMAT.md sections 16 and 17): whether it has the heading,
     // the table's columns, and, when they are right, its rows in table order (position from 1).
     await connection.run(`
       CREATE TABLE entity_tables (path VARCHAR, record VARCHAR, heading BOOLEAN, columns VARCHAR, columns_ok BOOLEAN);
