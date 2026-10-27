@@ -5,7 +5,7 @@
 import path from 'node:path';
 import { loadWorkspace } from '../index.ts';
 import { describeKey, rowKey, rowLine, type Row, type Value } from '../store/rows.ts';
-import { sqlString, type SchemaDescription, type TableDescription } from '../store/schema.ts';
+import { sqlString, type KindDescription, type SchemaDescription, type TableDescription } from '../store/schema.ts';
 import { openStore, StoreError, type Command, type Store, type StoreProblem } from '../store/store.ts';
 
 /** One row a write added, changed or removed. */
@@ -45,6 +45,9 @@ class Refusal extends Error {
   }
 }
 
+/** A kind or table's name with its article: a view, an endpoint. */
+const a = (name: string) => `${/^[aeio]/.test(name) ? 'an' : 'a'} ${name}`;
+
 const refuse = (rule: string, message: string): never => {
   throw new Refusal(rule, message);
 };
@@ -61,7 +64,7 @@ export async function withStore<T>(root: string, run: (store: Store) => Promise<
   try {
     return { ok: true, value: await run(store) };
   } catch (error) {
-    if (error instanceof StoreError || error instanceof Refusal) return { ok: false, problems: error.problems };
+    if (error instanceof StoreError || error instanceof Refusal) return { ok: false, problems: error.problems.map((p) => ({ ...p, message: reasonText(p) })) };
     throw error;
   } finally {
     await store.close();
@@ -114,8 +117,16 @@ function resolve(store: Store, target: string, fields: Record<string, Value | nu
 /** Turns a writer's request into the store's command. */
 function command(store: Store, request: WriteRequest): Command {
   switch (request.op) {
-    case 'add':
+    case 'add': {
+      // A kind with two possible parents names exactly one; said here in words rather than as the table's CHECK.
+      const parents = store.schema.kinds[request.table]?.parents ?? [];
+      const given = parents.filter((p) => request.row[p.column] !== undefined && request.row[p.column] !== null);
+      if (parents.length > 1 && given.length !== 1) {
+        const which = parents.map((p) => `${p.kind} (${p.column})`).join(' or ');
+        refuse('parent', `${a(request.table)} sits under exactly one of ${which}; ${given.length ? `give only one, not ${given.map((p) => p.column).join(' and ')}` : 'give one'}`);
+      }
       return { op: 'add', table: request.table, row: request.row };
+    }
     case 'set': {
       const { table, key, rest } = resolve(store, request.target, request.fields);
       if (!Object.keys(rest).length) refuse('command', `give at least one column of ${table.name} to change`);
@@ -176,7 +187,9 @@ export interface Shown {
   label: string;
   row: Row;
   parent: string | null;
-  /** Rows of part tables it owns, such as entity fields or use case steps. */
+  /** The product, domain and aggregate it sits in, through its parents or, with no owner, its ID. */
+  scope: { product: string | null; domain: string | null; aggregate: string | null };
+  /** Rows of part tables it owns, such as entity fields or a command's recorded changes. */
   parts: { table: string; rows: Row[] }[];
   /** Records whose parent it is. */
   children: { id: string; kind: string; title: string }[];
@@ -200,6 +213,9 @@ export async function show(root: string, id: string): Promise<Outcome<Shown>> {
       title: title(c.id),
     }));
     const [parent] = await store.query<{ parent_id: string | null }>(`SELECT parent_id FROM record_parent WHERE id = ${sqlString(id)}`);
+    const [scope] = await store.query<{ product_id: string | null; domain_id: string | null; aggregate_id: string | null }>(
+      `SELECT product_id, domain_id, aggregate_id FROM record_scope WHERE id = ${sqlString(id)}`,
+    );
     const links: Shown['links'] = [];
     for (const relation of Object.values(schema.relations).sort((a, b) => a.name.localeCompare(b.name))) {
       for (const row of store.rows(relation.name)) {
@@ -207,7 +223,16 @@ export async function show(root: string, id: string): Promise<Outcome<Shown>> {
         if (row.target_id === id) links.push({ relation: relation.name, label: relation.reverseLabel, direction: 'in', id: String(row.source_id), title: title(String(row.source_id)) });
       }
     }
-    return { kind: record.kind, label: schema.kinds[record.kind].label, row: record.row, parent: parent?.parent_id ?? null, parts, children, links };
+    return {
+      kind: record.kind,
+      label: schema.kinds[record.kind].label,
+      row: record.row,
+      parent: parent?.parent_id ?? null,
+      scope: { product: scope?.product_id ?? null, domain: scope?.domain_id ?? null, aggregate: scope?.aggregate_id ?? null },
+      parts,
+      children,
+      links,
+    };
   });
 }
 
@@ -223,8 +248,13 @@ export async function list(root: string, table: string, parent?: string): Promis
     if (parent === undefined) return rows;
     if (description.role === 'kind') {
       const columns = [...parentColumns(schema, table)];
-      if (!columns.length) refuse('command', `a ${table} sits under nothing, so --parent does not apply`);
-      return rows.filter((r) => columns.some((c) => r[c] === parent));
+      if (columns.length) return rows.filter((r) => columns.some((c) => r[c] === parent));
+      if (table === 'product') refuse('command', 'a product sits under nothing, so --parent does not apply');
+      // A kind with no owner: the records of the product or domain its IDs start with.
+      const ids = new Set(
+        (await store.query<{ id: string }>(`SELECT id FROM record_scope WHERE product_id = ${sqlString(parent)} OR domain_id = ${sqlString(parent)}`)).map((r) => r.id),
+      );
+      return rows.filter((r) => ids.has(String(r.id)));
     }
     if (description.role === 'part' && description.ownerColumn) return rows.filter((r) => r[description.ownerColumn!] === parent);
     if (description.role === 'link') return rows.filter((r) => r.source_id === parent || r.target_id === parent);
@@ -232,44 +262,62 @@ export async function list(root: string, table: string, parent?: string): Promis
   });
 }
 
-// One way a kind's IDs are written: a base (the product, the domain or the parent's ID), letters, and a number.
-interface IdShape {
-  base: 'product' | 'domain' | 'parent';
-  letters: string;
-  width: number;
+/** How a kind's records are placed, in one sentence: its parent or parents, or, with no owner, where its ID starts. */
+export function placement(kind: KindDescription): string {
+  const columns = kind.parents.map((p) => `${p.kind} (${p.column})`);
+  if (columns.length > 1) return `Parent: exactly one of ${columns.join(' or ')}.`;
+  if (columns.length === 1) return `Parent: ${columns[0]}.`;
+  if (kind.name === 'product') return 'Parent: none.';
+  return `No owner: no parent column; its ${kind.idScope === 'domain' ? 'domain' : 'product'} is the one its ID starts with.`;
 }
 
-// Reads a kind's ID pattern, such as "<P>-<D>-UC<nn>" or "<use case>-R<nn>"; alternatives are joined by "or".
-function idShapes(pattern: string): IdShape[] {
-  return pattern
-    .split(/,?\s+or\s+(?![^<]*>)/)
-    .map((alternative) => /^((?:<[^>]+>)(?:-<[^>]+>)*)-([A-Z]+)<(n+)>/.exec(alternative.trim()))
-    .filter((m): m is RegExpExecArray => m !== null)
-    .map((m) => ({ base: m[1] === '<P>' ? 'product' : m[1] === '<P>-<D>' ? 'domain' : 'parent', letters: m[2], width: m[3].length }));
+// The end of a kind's ID after its base: letters and a number (C<nn>), letters alone (FL, REPO), or null for a name
+// the writer chooses (<P>-PAT-<name>) or none (<P>-<D>). Alternatives joined by "or" share their end.
+function idEnd(pattern: string): { letters: string; width: number } | null {
+  const alternative = pattern.split(/,?\s+or\s+(?![^<]*>)/)[0].trim();
+  const m = /-([A-Z]+)(?:<(n+)>)?$/.exec(alternative);
+  return m ? { letters: m[1], width: m[2]?.length ?? 0 } : null;
 }
 
-/** The next free ID for a record of the kind under the parent, by the kind's ID pattern. */
-export async function nextId(root: string, kind: string, parent: string): Promise<Outcome<string>> {
+// What a kind's IDs start with, from its id scope, or for a product's own kind (free IDs) from its pattern's start.
+function idBase(kind: KindDescription): 'product' | 'domain' | 'parent' {
+  if (kind.idScope) return kind.idScope;
+  const pattern = kind.idPattern ?? '';
+  return pattern.startsWith('<P>-<D>-') ? 'domain' : pattern.startsWith('<P>-') ? 'product' : 'parent';
+}
+
+/**
+ * The next free ID for a record of the kind, by its ID pattern. Under is the record it will sit under; for a kind with
+ * no owner it is the product (or a domain of it) its ID starts with, and for a specification its domain. A kind with
+ * one record per parent (<use case>-FL, <aggregate>-REPO, <constraint>-T) gives that ID while it is free.
+ */
+export async function nextId(root: string, kind: string, under: string): Promise<Outcome<string>> {
   return withStore(root, async (store) => {
     const schema = store.schema;
     const description = schema.kinds[kind] ?? refuse('unknown-kind', `there is no kind ${kind}; the kinds are ${Object.keys(schema.kinds).sort().join(', ')}`);
-    const under = store.record(parent) ?? refuse('missing', `no record has the ID ${parent}`);
-    if (!description.parents.some((p) => p.kind === under.kind)) {
-      refuse('parent', `a ${kind} sits under ${description.parents.map((p) => p.kind).join(' or ') || 'nothing'}, not under ${under.kind} ${parent}`);
+    const record = store.record(under) ?? refuse('missing', `no record has the ID ${under}`);
+    const owned = description.parents.length > 0;
+    if (owned && !description.parents.some((p) => p.kind === record.kind)) {
+      refuse('parent', `${a(kind)} sits under ${description.parents.map((p) => p.kind).join(' or ')}, not under ${record.kind} ${under}`);
+    }
+    const base = idBase(description);
+    if (!owned) {
+      if (kind === 'product') refuse('id-pattern', 'a product\'s ID is its prefix, which you choose (such as TL)');
+      const allowed = base === 'domain' ? ['domain'] : ['product', 'domain'];
+      if (!allowed.includes(record.kind)) refuse('parent', `${a(kind)} has no owner; give the ${allowed.join(' or ')} its ID starts with, not ${record.kind} ${under}`);
     }
     const pattern = description.idPattern ?? refuse('id-pattern', `the kind ${kind} has no ID pattern`);
-    const shapes = idShapes(pattern);
-    if (!shapes.length) refuse('id-pattern', `a ${kind}'s ID ends in a name you choose (${pattern}, such as ${description.idExample}), so it has no next number`);
-    const [scope] = await store.query<{ product_id: string | null; domain_id: string | null }>(`SELECT product_id, domain_id FROM record_scope WHERE id = ${sqlString(parent)}`);
-    const pick =
-      (!['product', 'domain'].includes(under.kind) ? shapes.find((s) => s.base === 'parent') : undefined) ??
-      (scope?.domain_id ? shapes.find((s) => s.base === 'domain') : undefined) ??
-      shapes.find((s) => s.base === 'product') ??
-      shapes.find((s) => s.base === 'parent') ??
-      refuse('id-pattern', `a ${kind} under ${under.kind} ${parent} has no ID pattern (${pattern})`);
-    const base = pick.base === 'parent' ? parent : pick.base === 'domain' ? scope?.domain_id : scope?.product_id;
-    if (!base) refuse('id-pattern', `${parent} sits in no ${pick.base}, which a ${kind}'s ID starts with (${pattern})`);
-    const shape = new RegExp(`^${base!.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}-${pick.letters}(\\d+)$`);
+    const end = idEnd(pattern) ?? refuse('id-pattern', `${a(kind)}'s ID ends in a name you choose (${pattern}, such as ${description.idExample}), so it has no next number`);
+    const [scope] = await store.query<{ product_id: string | null; domain_id: string | null }>(`SELECT product_id, domain_id FROM record_scope WHERE id = ${sqlString(under)}`);
+    const start = base === 'parent' ? under : base === 'domain' ? scope?.domain_id : scope?.product_id;
+    if (!start) refuse('id-pattern', `${under} sits in no ${base}, which ${a(kind)}'s ID starts with (${pattern})`);
+    if (!end.width) {
+      const id = `${start}-${end.letters}`;
+      const taken = store.record(id);
+      if (taken) refuse('exists', `${under} already has its ${kind}: ${id}${taken.kind === kind ? '' : ` (${a(taken.kind)})`}; ${a(kind)}'s ID is ${pattern}, one per ${base === 'parent' ? description.parents.map((p) => p.kind).join(' or ') : base}`);
+      return id;
+    }
+    const shape = new RegExp(`^${start!.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}-${end.letters}(\\d+)$`);
     let highest = 0;
     for (const k of Object.keys(schema.kinds)) {
       for (const row of store.rows(k)) {
@@ -277,7 +325,7 @@ export async function nextId(root: string, kind: string, parent: string): Promis
         if (m) highest = Math.max(highest, Number(m[1]));
       }
     }
-    return `${base}-${pick.letters}${String(highest + 1).padStart(pick.width, '0')}`;
+    return `${start}-${end.letters}${String(highest + 1).padStart(end.width, '0')}`;
   });
 }
 
@@ -304,6 +352,43 @@ export async function check(root: string): Promise<{ errors: number; warnings: n
 
 const count = (n: number, noun: string) => `${n} ${noun}${n === 1 ? '' : 's'}`;
 
+// The table rules (CHECK constraints) the schema has, from DuckDB's printing of them to words: the rule with its
+// parentheses, casts and quotes taken out, then matched against the shapes the schema uses. Any other rule reads as
+// its expression.
+const RULE_SHAPES: [RegExp, (...m: string[]) => string][] = [
+  [/^(\w+) IS NULL <> (\w+) IS NULL$/, (a, b) => `exactly one of ${a} and ${b} is given`],
+  [/^(\w+) IS NOT NULL \+ (\w+) IS NOT NULL \+ (\w+) IS NOT NULL = 1$/, (a, b, c) => `exactly one of ${a}, ${b} and ${c} is given`],
+  [/^(\w+) IS NULL OR (\w+) = '([^']*)'$/, (a, b, v) => `${a} is given only when ${b} is ${v}`],
+  [/^(\w+) <> '([^']*)' OR (\w+) IS NOT NULL$/, (a, v, b) => `${b} is given when ${a} is ${v}`],
+  [/^(\w+) = '([^']*)' = (\w+) IS NOT NULL$/, (a, v, b) => `${b} is given when, and only when, ${a} is ${v}`],
+  [/^(\w+) IS NULL OR (\w+) <> (\w+)$/, (a, _, b) => `${a} is not the ${b}`],
+  [/^(\w+) <> (\w+)$/, (a, b) => `${a} and ${b} differ`],
+  [/^len (\w+) >= 1$/, (a) => `${a} has at least one item`],
+  [/^(\w+) >= (\d+)$/, (a, n) => `${a} is ${n} or more`],
+  [/^(\w+)$/, (a) => `${a} is true when given`],
+];
+
+function ruleInWords(expression: string): string {
+  const plain = expression
+    .replace(/CAST\(\((.*?)\) AS INTEGER\)/g, '$1')
+    .replace(/"/g, '')
+    .replace(/!=/g, '<>')
+    .replace(/[()]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  for (const [shape, words] of RULE_SHAPES) {
+    const m = shape.exec(plain);
+    if (m) return words(...m.slice(1));
+  }
+  return plain;
+}
+
+/** A refusal's reason, with a broken table rule said in words. */
+function reasonText(p: StoreProblem): string {
+  if (p.rule !== 'check') return p.message;
+  return p.message.replace(/CHECK constraint failed on table "[^"]+" with expression CHECK\((.*)\)$/s, (_, expression: string) => ruleInWords(expression));
+}
+
 /** A refusal: nothing changed, then each reason. */
 export function refusalText(problems: StoreProblem[]): string {
   const where = (p: StoreProblem) => (p.file ? `${p.file}:${p.line}: ` : '');
@@ -324,6 +409,7 @@ export function writtenText(written: Written): string {
 export function shownText(shown: Shown): string {
   const lines = [`${shown.label} ${shown.row.id}: ${shown.row.title}`, `  kind: ${shown.kind}`];
   if (shown.parent) lines.push(`  parent: ${shown.parent}`);
+  else if (shown.kind !== 'product') lines.push(`  no owner; in ${shown.scope.domain ? `domain ${shown.scope.domain}` : `product ${shown.scope.product}`}`);
   for (const [column, value] of Object.entries(shown.row)) if (column !== 'id' && column !== 'title') lines.push(`  ${column}: ${Array.isArray(value) ? value.join(', ') : value}`);
   for (const part of shown.parts) {
     lines.push(`${part.table}:`);

@@ -179,7 +179,7 @@ export interface DomainServiceRow {
   statement: string;
 }
 
-/** The command or query uses the domain service, of its own domain. */
+/** The command, query or read model uses the domain service, of its own domain. */
 export interface CallsRow {
   source_id: string;
   target_id: string;
@@ -549,6 +549,12 @@ export interface FlowStepRow {
 
 /** The flow step exchanges with the integration's outside system. */
 export interface ExchangesWithRow {
+  source_id: string;
+  target_id: string;
+}
+
+/** The read model is kept current from the event: of its own domain, or another domain's published one, which is how a read model shows another domain's data. */
+export interface FedByRow {
   source_id: string;
   target_id: string;
 }
@@ -1093,16 +1099,18 @@ export interface SpecificationTestRow {
   notes?: string;
 }
 
-/** Where an entity or a read model, its parent, is stored. Its columns follow from its parent's fields, a value object's fields flattened into columns, so it stores only what fields cannot say: its keys and indexes (table_key rows). An entity's table is always a table, normalized and the source of truth; a read model's is a projection that can be rebuilt, usually a view over its domain's entity tables. */
+/** Where an entity or a read model, its parent, is stored; or, under a domain, a table of the domain's own infrastructure that implements no design record, such as its outbox. Its columns follow from its parent's fields, a value object's fields flattened into columns, so it stores only what fields cannot say: its keys and indexes (table_key rows). An entity's table is always a table, normalized and the source of truth; a read model's is a projection that can be rebuilt, usually a view over its domain's entity tables. */
 export interface TableRow {
   /** The table's ID: its entity's or read model's ID and TB, such as TL-LEND-EN01-TB. */
   id: string;
   /** The table as people read it, such as Loans. */
   title: string;
-  /** The entity it stores; exactly one of entity and read model is given. An entity has at most one table: a child entity marked in_root_table has none and is stored in its root's. */
+  /** The entity it stores; exactly one of entity, read model and domain is given. An entity has at most one table: a child entity marked in_root_table has none and is stored in its root's. */
   entity_id?: string;
-  /** The read model it stores; exactly one of entity and read model is given, and a read model has one table. */
+  /** The read model it stores; exactly one of entity, read model and domain is given, and a read model has one table. */
   read_model_id?: string;
+  /** The domain whose own infrastructure it stores, such as its outbox, when it stores no entity or read model; its ID is the domain's and TB with a number, such as TL-LEND-TB01, and its storage is a table. */
+  domain_id?: string;
   /** Its name in the database, such as loans. */
   name: string;
   /** table: rows of its own; view: a query over other tables; materialized view: a query's result, kept. An entity's table is always table. */
@@ -1299,6 +1307,7 @@ export interface TableRows {
   flow: FlowRow;
   flow_step: FlowStepRow;
   exchanges_with: ExchangesWithRow;
+  fed_by: FedByRow;
   flow_test: FlowTestRow;
   pattern: PatternRow;
   follows: FollowsRow;
