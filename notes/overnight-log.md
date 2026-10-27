@@ -240,3 +240,10 @@ Lathe now matches S2 on UC requirements (206/206) and domain rules (98/98) acros
 - The cost: domains' text rose about 1.4×, and the LA map is now 347,285 units square.
 - All checks passed.
 - Brief 95 (canvas renderer) is running; the top-down layout is proposed for after it lands.
+
+## Brief 96 merged: equal siblings, laid out top-down
+- Fixed product box (300,000 units); siblings split their parent equally and share one text size; text is about 3% of a box's size.
+- Framed headers read at about 18 px in Nested at every depth, 13–15 px in Voronoi, and 12 px in the Tree at depths 1–5.
+- The Tree's deep, thin boxes read small until zoomed in.
+- All checks passed.
+- Brief 95 (canvas) is to merge main and keep the new layout.
