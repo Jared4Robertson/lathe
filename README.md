@@ -36,6 +36,13 @@ npm --prefix lathe install && npm --prefix app install && npm --prefix desktop i
 | The desktop app | `npm --prefix desktop run dev` (hot-reloading), `npm --prefix desktop run start` (from the built package) or `npm --prefix desktop run pack` (a `Lathe.app` in `desktop/release/`). |
 | Tests | `npm --prefix lathe test`, `npm --prefix app test` and `npm --prefix desktop test` (at most 2 workers each), with `run typecheck` in each package. `npm --prefix app run test:stability` runs the stability suite: Playwright in Chromium, checking that nothing on the page jumps, in about two minutes. |
 
+Once per clone, set up the merge driver for the data files (`data/*.jsonl`, named in [.gitattributes](.gitattributes)), so git merges them row by row (see the [package README](lathe/README.md#the-data-store)):
+
+```sh
+git config merge.lathe-data.name "Lathe data files"
+git config merge.lathe-data.driver "node lathe/bin/lathe.ts merge-data %O %A %B %P"
+```
+
 The npm scripts run in `lathe/`, so `--root ..` names this repo. In a product repo, the same commands are `npx lathe check`, `npx lathe format` and `npx lathe serve`; the [package README](lathe/README.md) has every option.
 
 ## A tour of the app

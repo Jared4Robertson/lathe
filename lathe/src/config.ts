@@ -10,6 +10,8 @@ export interface LatheConfig {
   root: string;
   /** Folder of spec records. */
   specsDir: string;
+  /** Folder of data files, one data/<table>.jsonl per table (the store's source of truth). */
+  dataDir: string;
   /** Meta-model folders, in order: Lathe's defaults first, then the product's extensions. */
   metaDirs: string[];
   /** The product's own checks folder (SQL files run after Lathe's checks), or null when it has none. */
@@ -25,6 +27,8 @@ export const DEFAULT_MAX_CHILDREN = 15;
 
 interface ConfigFile {
   specs?: string;
+  /** The folder of data files, one <table>.jsonl per table; default data. */
+  data?: string;
   /** A folder with kinds.csv and/or relations.csv whose rows are added to Lathe's defaults. */
   metaExtensions?: string;
   /** A folder of the product's own check SQL files, run after Lathe's checks (FORMAT.md section 12). */
@@ -36,7 +40,7 @@ interface ConfigFile {
 }
 
 /** The keys lathe.config.json may hold; any other key is an error, never silently ignored. */
-const CONFIG_KEYS = ['specs', 'metaExtensions', 'checks', 'idPrefixes', 'structure'] as const;
+const CONFIG_KEYS = ['specs', 'data', 'metaExtensions', 'checks', 'idPrefixes', 'structure'] as const;
 
 const ID_PREFIX = /^[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*$/;
 
@@ -98,6 +102,7 @@ export function loadConfig(root: string): LatheConfig {
   return {
     root,
     specsDir: inside(config.specs, 'specs'),
+    dataDir: inside(config.data, 'data'),
     metaDirs,
     checksDir: config.checks ? inside(config.checks, '') : null,
     idPrefixes: readIdPrefixes(config.idPrefixes),
