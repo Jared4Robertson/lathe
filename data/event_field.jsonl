@@ -1,9 +1,9 @@
-{"domain_event_id":"LA-AUT-EV01","position":1,"name":"Specs folder","meaning":"The product's specs folder that changed.","type":"Folder path.","example":"specs"}
-{"domain_event_id":"LA-AUT-EV01","position":2,"name":"File","meaning":"The record file that changed.","type":"File path.","example":"lathe/modeling/01-define/aggregates/A2-record.md"}
+{"domain_event_id":"LA-AUT-EV01","position":1,"name":"Data folder","meaning":"The product's data folder that changed.","type":"Folder path.","example":"data"}
+{"domain_event_id":"LA-AUT-EV01","position":2,"name":"File","meaning":"The data file that changed.","type":"File path.","example":"data/use_case.jsonl"}
 {"domain_event_id":"LA-AUT-EV01","position":3,"name":"Change","meaning":"What happened to the file.","type":"`added`, `changed` or `removed`.","example":"changed"}
 {"domain_event_id":"LA-AUT-EV01","position":4,"name":"Changed at","meaning":"When the change was seen.","type":"Date and time.","example":"2026-10-24T14:02:00Z"}
-{"domain_event_id":"LA-AUT-EV03","position":1,"name":"File","meaning":"The meta-model file that changed.","type":"File path.","example":"lathe/meta/relations.csv"}
-{"domain_event_id":"LA-AUT-EV03","position":2,"name":"Product","meaning":"The product whose extension changed, or none for Lathe's defaults.","type":"Product reference, or none.","example":"none"}
+{"domain_event_id":"LA-AUT-EV03","position":1,"name":"File","meaning":"The migration or declaration file that changed.","type":"File path.","example":"lathe/schema/015-kind-position.sql"}
+{"domain_event_id":"LA-AUT-EV03","position":2,"name":"Product","meaning":"The product whose declaration changed, or none for Lathe's schema.","type":"Product reference, or none.","example":"none"}
 {"domain_event_id":"LA-AUT-EV03","position":3,"name":"Changed at","meaning":"When the change was seen.","type":"Date and time.","example":"2026-10-24T23:24:05Z"}
 {"domain_event_id":"LA-CHK-EV01","position":1,"name":"File","meaning":"The data file that holds the check row.","type":"File path.","example":"data/check.jsonl"}
 {"domain_event_id":"LA-CHK-EV01","position":2,"name":"Change","meaning":"What happened to the file.","type":"`added`, `changed` or `removed`.","example":"changed"}
