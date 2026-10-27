@@ -1,10 +1,13 @@
-// The Lending domain's events and the in-process dispatcher that publishes them.
-// Spec: the event types TL-LEND-EV01-ET to EV06-ET (examples/tool-library/data/).
-// A command handler raises its events and publishes them only after its transaction commits.
-// The dispatcher calls each subscribed event handler synchronously, in the order subscribed. An event
-// handler that fails is logged and never undoes the command that raised the event: this is eventual
-// consistency, done in-process for the example, with no message broker.
-import type { Condition } from './model.ts';
+// The Lending domain's events and the outbox that delivers them.
+// Spec: the event types TL-LEND-EV01-ET to EV06-ET (examples/tool-library/data/), each delivered by outbox.
+// A command handler saves its events to the outbox table in the same transaction as its aggregate's change,
+// then, once that transaction commits, runs the relay. The relay hands each undelivered event, oldest first,
+// to the event handlers subscribed to it and marks it delivered when every one succeeds. A handler that fails
+// is logged and leaves its event undelivered, for the next relay run: the reaction is never lost, and a handler
+// may see an event more than once. This is eventual consistency, done in-process for the example, with no
+// message broker.
+import type { Clock, Condition } from './model.ts';
+import type { Store } from './store.ts';
 
 /** TL-LEND-EV01-ET: a librarian registered a new member. */
 export interface MemberRegistered {
@@ -65,22 +68,26 @@ export interface ToolReturned {
 
 export type DomainEvent = MemberRegistered | ToolAdded | DamageReported | ToolRepaired | LoanOpened | ToolReturned;
 export type EventName = DomainEvent['type'];
-export type EventOf<N extends EventName> = Extract<DomainEvent, { type: N }>;
-export type EventHandler<N extends EventName> = (event: EventOf<N>) => void;
+export type EventHandler<N extends EventName> = (event: Extract<DomainEvent, { type: N }>) => void;
 
 /** Where a failing event handler is reported. */
 export type HandlerFailure = (error: unknown, event: DomainEvent) => void;
 
 const logFailure: HandlerFailure = (error, event) => {
-  console.error(`An event handler for ${event.type} failed; the command that raised it still stands.`, error);
+  console.error(`An event handler for ${event.type} failed; the event stays in the outbox for the next relay run.`, error);
 };
 
-/** Publishes domain events to the event handlers subscribed to them, in this process. */
-export class EventDispatcher {
-  private readonly handlers = new Map<EventName, ((event: DomainEvent) => void)[]>();
+/** The outbox: saves events with their command's change, and relays them to their handlers after commit. */
+export class Outbox {
+  private readonly store: Store;
+  private readonly now: Clock;
   private readonly onFailure: HandlerFailure;
+  private readonly handlers = new Map<EventName, ((event: DomainEvent) => void)[]>();
+  private relaying = false;
 
-  constructor(onFailure: HandlerFailure = logFailure) {
+  constructor(store: Store, now: Clock, onFailure: HandlerFailure = logFailure) {
+    this.store = store;
+    this.now = now;
     this.onFailure = onFailure;
   }
 
@@ -90,16 +97,42 @@ export class EventDispatcher {
     this.handlers.set(name, list);
   }
 
-  /** Calls every handler of each event, in order. Call it only once the raising transaction has committed. */
-  publish(...events: DomainEvent[]): void {
-    for (const event of events) {
-      for (const handler of this.handlers.get(event.type) ?? []) {
-        try {
-          handler(event);
-        } catch (error) {
-          this.onFailure(error, event);
-        }
+  /** Saves an event to the outbox table. Call it inside the transaction that changes its aggregate. */
+  save(event: DomainEvent): void {
+    this.store.saveEvent(event.type, JSON.stringify(event), this.now().toISOString());
+  }
+
+  /**
+   * The relay: delivers every undelivered event, oldest first, including those its handlers raise.
+   * Call it after the raising transaction commits. A run tries each event once; one whose handler
+   * fails stays undelivered until the next run. A call made while a run is going on (from a handler's
+   * own command) leaves its events to that run.
+   */
+  relay(): void {
+    if (this.relaying) return;
+    this.relaying = true;
+    try {
+      let after = 0;
+      for (let next = this.store.nextUndeliveredEvent(after); next; next = this.store.nextUndeliveredEvent(after)) {
+        after = next.id;
+        const event = JSON.parse(next.event) as DomainEvent;
+        if (this.deliver(event)) this.store.markEventDelivered(next.id, this.now().toISOString());
+      }
+    } finally {
+      this.relaying = false;
+    }
+  }
+
+  /** Hands the event to each of its handlers; false when one fails. */
+  private deliver(event: DomainEvent): boolean {
+    for (const handler of this.handlers.get(event.type) ?? []) {
+      try {
+        handler(event);
+      } catch (error) {
+        this.onFailure(error, event);
+        return false;
       }
     }
+    return true;
   }
 }

@@ -2,7 +2,7 @@
 
 The sorting sheet for brief 105, phase A. It lists the Tool Library's complete new spec, kind by kind in the plan's order ([domain-model-refinement.md](../plans/domain-model-refinement.md)), with each row's old source, and closes with a table that accounts for every old record and link.
 
-Phase B wrote these records into `examples/tool-library/data/` through the store's command functions, from a one-time script that isn't committed, and the sheet now matches what was written. The code, tests and README name the new IDs. Brief 106 then made the code raise the six domain events and run PO01 through its event handler, adding the event types the same way; the sheet shows the result.
+Phase B wrote these records into `examples/tool-library/data/` through the store's command functions, from a one-time script that isn't committed, and the sheet now matches what was written. The code, tests and README name the new IDs. Brief 106 then made the code raise the six domain events, delivered by outbox, and run PO01 through its event handler, adding the event types the same way; the sheet shows the result.
 
 ## Conventions
 - **Source** names the old record (`DR04`, `E04-R02`, `C05` and so on, all `TL-LEND-` unless written in full) or the code (`src/…`, `test/…`).
@@ -197,7 +197,7 @@ Each command changes one aggregate. Found in the code's services.
 
 | ID | Title | Parent (the command it invokes) | Hears | Statement | Source |
 | --- | --- | --- | --- | --- | --- |
-| TL-LEND-PO01 | A tool returned needing repair is taken out of lending | CMD03 Report damage | EV06 Tool returned | Whenever a tool is returned with the condition `needs_repair`, report damage on it with the return's note as the damage note (or "Returned needing repair." when there is none). A return recorded as `good` invokes nothing (INV02). The reaction follows the return's commit, in its own transaction: if it fails, the return still stands. | UC04-R03; reacts_to A2→EV06 and C05→EV06; the `condition === 'needs_repair'` branch of `LendingService.return` |
+| TL-LEND-PO01 | A tool returned needing repair is taken out of lending | CMD03 Report damage | EV06 Tool returned | Whenever a tool is returned with the condition `needs_repair`, report damage on it with the return's note as the damage note (or "Returned needing repair." when there is none). A return recorded as `good` invokes nothing (INV02). The reaction follows the return's commit, in its own transaction, and is never lost: Tool returned is delivered by outbox, so if the reaction fails, the return still stands and the reaction is tried again. | UC04-R03; reacts_to A2→EV06 and C05→EV06; the `condition === 'needs_repair'` branch of `LendingService.return` |
 
 ### Domain services
 
@@ -334,7 +334,7 @@ Each record names one file. Technical kinds with no code are left out and show a
 | ID | Kind | Implements | File | What in the file | Source |
 | --- | --- | --- | --- | --- | --- |
 | TL-LEND-A1-REPO | Repository | A1 | src/store.ts | `insertMember`, `findMember`, `findMemberByEmail` | C02 |
-| TL-LEND-A2-REPO | Repository | A2 | src/store.ts | `insertTool`, `findTool`, `listTools`, `setToolCondition`; CMD03 and CMD04 run in `transaction` | C02 |
+| TL-LEND-A2-REPO | Repository | A2 | src/store.ts | `insertTool`, `findTool`, `listTools`, `setToolCondition`; each of its commands runs in `transaction` | C02 |
 | TL-LEND-A3-REPO | Repository | A3 | src/store.ts | `insertLoan`, `findLoan`, `activeLoansForMember`, `activeLoanForTool`, `markReturned`, `transaction` | C02 |
 | TL-LEND-EN01-DM | Data model | EN01 | src/model.ts | `Member`; mapped by `toMember` in store.ts | C01 |
 | TL-LEND-EN02-DM | Data model | EN02 | src/model.ts | `Tool`; `toTool` | C01 |
@@ -352,16 +352,16 @@ Each record names one file. Technical kinds with no code are left out and show a
 | TL-LEND-SP02-PR | Predicate | SP02 | src/model.ts | `hasOverdueLoan`, extracted from `LendingService.borrow` | C05 |
 | TL-LEND-SP03-PR | Predicate | SP03 | src/model.ts | `atLoanLimit`, extracted from `borrow`, with `MAX_ACTIVE_LOANS` | C01, C05 |
 | TL-LEND-SP04-PR | Predicate | SP04 | src/model.ts | `needsRepair`, extracted from `borrow`, `markRepaired` and `toolStatus` | C01, C04, C05 |
-| TL-LEND-EV01-ET … EV06-ET | Event type (6) | EV01 … EV06 | src/events.ts | `MemberRegistered`, `ToolAdded`, `DamageReported`, `ToolRepaired`, `LoanOpened`, `ToolReturned`; EV06-ET also `EventDispatcher`, which publishes each event after its command's transaction commits | **New** (brief 106) |
+| TL-LEND-EV01-ET … EV06-ET | Event type (6), delivery `outbox` | EV01 … EV06 | src/events.ts | `MemberRegistered`, `ToolAdded`, `DamageReported`, `ToolRepaired`, `LoanOpened`, `ToolReturned`; EV06-ET also `Outbox`, which saves each event in its command's transaction and relays it after commit, and the `outbox` table's functions in src/store.ts | **New** (brief 106) |
 | TL-LEND-DS01-SV | Service | DS01 | src/model.ts | `localDate`, `addDays`, `dueDate`, `assertTimeZone`, `DEFAULT_TIME_ZONE`, `LOAN_DAYS` | C01 |
-| TL-LEND-CMD01-H | Command handler | CMD01 | src/member-service.ts | `MemberService.register`. Each command handler publishes its event after its transaction commits. | C03 |
+| TL-LEND-CMD01-H | Command handler | CMD01 | src/member-service.ts | `MemberService.register`. Each command handler saves its event to the outbox in its transaction and runs the relay after commit. | C03 |
 | TL-LEND-CMD02-H | Command handler | CMD02 | src/tool-service.ts | `ToolService.add` | C04 |
 | TL-LEND-CMD03-H | Command handler | CMD03 | src/tool-service.ts | `ToolService.reportDamage` | C04 |
 | TL-LEND-CMD04-H | Command handler | CMD04 | src/tool-service.ts | `ToolService.markRepaired` | C04 |
 | TL-LEND-CMD05-H | Command handler | CMD05 | src/lending-service.ts | `LendingService.borrow` | C05 |
 | TL-LEND-CMD06-H | Command handler | CMD06 | src/lending-service.ts | `LendingService.return` | C05 |
 | TL-LEND-QRY01-H | Query handler | QRY01 | src/tool-service.ts | `ToolService.list`, `entry` | C04 |
-| TL-LEND-PO01-H | Event handler | PO01 | src/event-handlers.ts | `reportDamageOnReturn`, subscribed to Tool returned by `subscribePolicies`; it invokes CMD03-H in its own transaction | C05; reacts_to C05→EV06. Was the inline `needs_repair` branch of `LendingService.return` until brief 106. |
+| TL-LEND-PO01-H | Event handler | PO01 | src/event-handlers.ts | `reportDamageOnReturn`, subscribed to Tool returned on the outbox by `subscribePolicies`; the relay hands it each event after commit, and it invokes CMD03-H in its own transaction | C05; reacts_to C05→EV06. Was the inline `needs_repair` branch of `LendingService.return` until brief 106. |
 | TL-LEND-EP01-H … EP07-H | Endpoint handler (7) | EP01 … EP07 | src/router.ts | each route in `createRouter`; EP06-H also `readBody`, `MAX_BODY_BYTES`, `sendAndClose` (shared by every route) | C06; implements C06→E01…E07 |
 | TL-LEND-ENTRY01 | Entry point (product kind) | TL-LEND | src/server.ts | the start-up: port, database, `TIME_ZONE` checked at start | C07 (judgment call 10) |
 
@@ -382,6 +382,8 @@ All three have storage `table` and name `src/store.ts`. Columns follow from the 
 `tools` also holds EN03's note as `damage_note`, and `loans` holds EN05's fields as `returned_at`, `return_condition` and `return_note`. The code's CHECKs, on the condition values and the due date's shape, back up VO03-C01 and the `date` type; tables don't record CHECKs, so the tables' descriptions mention them.
 
 RM01 Catalog has no table: the code has neither a view nor a projection. It shows as not built.
+
+The `outbox` table in src/store.ts (`id`, `type`, `event` as JSON, `raised_at`, `delivered_at`, with a partial index on undelivered rows) has no table record: a table sits under an entity or a read model, and the outbox is neither. It is storage for the domain's events, so the event type records, EV06-ET above all, name it. Recording it would take a table that may sit under a domain (one outbox per domain), which is the schema's call.
 
 ## Test plan
 
@@ -416,7 +418,7 @@ Every test names one parent and a run by. Levels: the `domain-rules.test.ts` tes
 | TL-LEND-SP02-T | SP02 | database, test/domain-rules.test.ts | T03 |
 | TL-LEND-SP03-T | SP03 | database, test/domain-rules.test.ts | T02 |
 | TL-LEND-SP04-T | SP04 | database, test/domain-rules.test.ts | T05 (the test named `TL-LEND-DR05`) |
-| TL-LEND-PO01-T | PO01 | database, test/domain-rules.test.ts | T22, its first part, moved by brief 106 from the API to the dispatcher: without the handler a return changes only the loan; with it, Damage reported follows Tool returned and the tool needs repair with the return note; a failing handler leaves the return standing. UC04-R03-T01 keeps the check over HTTP. |
+| TL-LEND-PO01-T | PO01 | database, test/domain-rules.test.ts | T22, its first part, moved by brief 106 from the API to the outbox: without the handler a return changes only the loan and saves Tool returned with it; with it, Damage reported follows Tool returned and the tool needs repair with the return note; a failed handler leaves Tool returned undelivered, and the next relay run delivers it. UC04-R03-T01 keeps the check over HTTP. |
 | TL-LEND-DS01-T01 | DS01 | unit, test/domain-rules.test.ts | T07, its second part: New York dates when UTC is on the next day, across a year end, Auckland, and an unknown time zone refused |
 
 ### Use case tests
@@ -521,7 +523,7 @@ TL-PAT-LIBRARIAN-ACTION, its three rules, three settings and twelve setting valu
 2. **Rules sorted by what they do.** Value formats became constraints (DR04's values, and the name, email and note formats that sat only in requirements). Uniqueness and lifecycle rules of one aggregate became invariants (DR01, DR06, DR07, DR09, DR10, DR11). Yes-or-no checks a command makes became specifications (DR02, DR03, DR05, DR08). The one reaction became a policy (UC04-R03's effect on the tool).
 3. **DR06 moves from Tool to Loan.** The records that must be unique are active loans, and the unique key is on `loans`.
 4. **DR11 is an invariant of Tool,** "needs repair until marked repaired", merged with DR05's second sentence, since both say only CMD04 clears damage.
-5. **A return's effect on the tool is a policy (PO01),** because a command changes one aggregate: Return a tool changes the Loan, and the Tool follows through EV06. Since brief 106 the code does the same: PO01-H hears EV06 after the return commits and invokes CMD03 in its own transaction.
+5. **A return's effect on the tool is a policy (PO01),** because a command changes one aggregate: Return a tool changes the Loan, and the Tool follows through EV06. Since brief 106 the code does the same: EV06 is saved to the outbox with the return, and PO01-H, relayed it after the return commits, invokes CMD03 in its own transaction.
 6. **EV07 Loan became overdue is dropped.** No command raises it, the code never raises it, and nothing hears it in the new model: a member's block is SP02, worked out from the loans when they borrow. Its rule (00:00 the next day) lives in SP01. Were it needed, it would be raised by a command that a schedule invokes.
 7. **Late is SP01 at the moment of return,** a field of EV06, not a field of the Return entity: the code works it out on return and never stores it.
 8. **Derived entity fields leave the entities** (Active loans, Overdue, Status, Late) for the specifications, the read model and the event field, because a table's columns follow from its entity's fields.
@@ -537,13 +539,15 @@ TL-PAT-LIBRARIAN-ACTION, its three rules, three settings and twelve setting valu
 18. **Status is `text`, not a value object.** A value object must be used by an entity, and Status belongs only to the read model.
 19. **Terms Late and Catalog are added** to the nine terms of the old Language table, because use cases and views use them.
 20. **QRY01 selects by no specification.** Its Status uses SP04, but it lists every tool rather than filtering by it.
+21. **Every event goes by outbox,** not only EV06, the one a policy hears: one path for all six keeps the code plain, and an event a later policy hears needs no change. Brief 106.
+22. **The relay runs after each command and once when the API starts,** synchronously, in the same process. A run tries each undelivered event once, oldest first, including those its handlers raise; one whose handler fails waits for the next run. Delivery is at least once, so a handler may see an event twice; PO01's is harmless to repeat. Brief 106.
 
 ## Findings in the code
-- **No event code at all,** at conversion. Brief 106 added the six event types and an in-process dispatcher in `src/events.ts`; each command handler publishes its event after its transaction commits.
+- **No event code at all,** at conversion. Brief 106 added the six event types and an outbox in `src/events.ts`: each command handler saves its event to the `outbox` table in its transaction, and a relay delivers it after commit.
 - **Damage report's "Reported at" isn't stored.** `tools` has `damage_note` but no time; EV03 carries the time, but nothing keeps it.
 - **The catalog has no storage of its own.** `ToolService.entry` asks for each tool's active loan on every request (one query per tool).
 - **SP04 was checked in three places** (`toolStatus`, `borrow`, `markRepaired`), and the name, email and note checks were inline in the services. Phase B gathered them into named functions in `src/model.ts` (judgment call 9).
-- **PO01 ran in the Return command's transaction,** across two aggregates, at conversion. Brief 106 moved it to its event handler (Owner's decision), so a return changes only the loan and the tool follows in-process, synchronously after the commit; a failing handler is logged and the return stands.
+- **PO01 ran in the Return command's transaction,** across two aggregates, at conversion. Brief 106 moved it to its event handler (Owner's decision), so a return changes only the loan and the tool follows through the outbox, synchronously after the commit; a failing handler is logged, the return stands, and the event waits for the next relay run.
 
 ## What phase A found the plan missing
 The schema step took most of these in; the rest are the engine's.
