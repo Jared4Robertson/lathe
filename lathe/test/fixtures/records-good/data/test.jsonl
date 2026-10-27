@@ -1,1 +1,0 @@
-{"id":"MX-D-T01","title":"A new mark is saved","domain_id":"MX-D","test_type":"unit","state":"automated","file":"code/mark_test.txt","when":"Saves a mark and reads it back."}

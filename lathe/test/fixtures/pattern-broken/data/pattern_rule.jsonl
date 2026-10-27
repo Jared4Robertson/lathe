@@ -1,3 +1,0 @@
-{"id":"QX-PAT-IDLE-R01","title":"Idle one","pattern_id":"QX-PAT-IDLE","statement":"It MUST idle."}
-{"id":"QX-PAT-IDLE-R02","title":"Idle two","pattern_id":"QX-PAT-IDLE","statement":"It MUST idle twice."}
-{"id":"QX-PAT-USED-R02","title":"Known setting","pattern_id":"QX-PAT-USED","statement":"It MUST be logged.","setting":"audit"}

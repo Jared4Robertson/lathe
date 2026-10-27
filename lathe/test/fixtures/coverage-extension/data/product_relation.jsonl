@@ -1,3 +1,0 @@
-{"name":"checks","source_kind":"test","target_kind":"invariant","product_id":"EXT","role":"proof","forward_label":"Checks","reverse_label":"Checked by","description":"The test checks the invariant."}
-{"name":"enforces","source_kind":"component","target_kind":"invariant","product_id":"EXT","role":"design","forward_label":"Enforces","reverse_label":"Enforced by","description":"The component enforces the invariant."}
-{"name":"sketches","source_kind":"sketch","target_kind":"invariant","product_id":"EXT","role":"design","forward_label":"Sketches","reverse_label":"Sketched by","description":"The sketch designs the invariant."}

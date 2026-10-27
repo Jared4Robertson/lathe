@@ -1,2 +1,0 @@
-it('BX-D-T03 All good')
-it('BX-D-T99 Something else')

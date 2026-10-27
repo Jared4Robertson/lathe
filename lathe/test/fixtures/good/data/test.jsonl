@@ -1,1 +1,0 @@
-{"id":"EX-NOTE-T01","title":"Saving a note shows it","domain_id":"EX-NOTE","test_type":"acceptance","state":"automated","file":"code/notes_test.py","when":"Saves a note."}

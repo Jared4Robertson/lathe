@@ -41,9 +41,11 @@ async function seed(root: string) {
   await s.apply([
     { op: 'add', table: 'product', row: { id: 'EX', title: 'Example' } },
     { op: 'add', table: 'role', row: { product_id: 'EX', name: 'Writer' } },
-    { op: 'add', table: 'domain', row: { id: 'EX-NOTE', title: 'Notes', product_id: 'EX' } },
-    { op: 'add', table: 'domain_rule', row: { id: 'EX-NOTE-DR01', title: 'A note has a title', domain_id: 'EX-NOTE', statement: 'A note MUST have a title.' } },
-    { op: 'add', table: 'use_case', row: { id: UC, title: 'Write a note', domain_id: 'EX-NOTE' } },
+    { op: 'add', table: 'domain', row: { id: 'EX-NOTE', title: 'Notes', product_id: 'EX', subdomain_type: 'core' } },
+    { op: 'add', table: 'capability', row: { id: 'EX-NOTE-CAP01', title: 'Writing', domain_id: 'EX-NOTE', position: 1 } },
+    { op: 'add', table: 'pattern', row: { id: 'EX-PAT-NOTE', title: 'A note action', product_id: 'EX' } },
+    { op: 'add', table: 'pattern_setting', row: { pattern_id: 'EX-PAT-NOTE', position: 1, name: 'record' } },
+    { op: 'add', table: 'use_case', row: { id: UC, title: 'Write a note', capability_id: 'EX-NOTE-CAP01' } },
   ]);
   return s;
 }
@@ -62,20 +64,20 @@ beforeAll(async () => {
   git(repo, 'commit', '--quiet', '-am', 'Say more about UC01');
   await store.apply([
     { op: 'add', table: 'use_case_actor', row: { use_case_id: UC, position: 1, role_name: 'Writer' } },
-    { op: 'link', relation: 'applies', source: UC, target: 'EX-NOTE-DR01' },
+    { op: 'link', relation: 'follows', source: UC, target: 'EX-PAT-NOTE' },
   ]);
   git(repo, 'add', '.');
-  git(repo, 'commit', '--quiet', '-m', 'Give UC01 its actor and rule');
+  git(repo, 'commit', '--quiet', '-m', 'Give UC01 its actor and pattern');
   // A commit that changes only another record's rows is not in UC01's history.
-  await store.set('domain_rule', 'EX-NOTE-DR01', { statement: 'A note MUST have a short title.' });
-  git(repo, 'commit', '--quiet', '-am', 'Reword DR01');
+  await store.set('pattern', 'EX-PAT-NOTE', { description: 'What every note action does.' });
+  git(repo, 'commit', '--quiet', '-am', 'Describe the pattern');
   for (let i = 1; i <= EXTRA; i++) {
     await store.set('use_case', UC, { goal: `A writer keeps thought ${i}.` });
     git(repo, 'commit', '--quiet', '-am', `Goal ${i}`);
   }
   // Not committed: a change in the working tree, and a data file git does not know yet.
   await store.set('use_case', UC, { goal: 'A writer keeps every thought.' });
-  await store.add('use_case_step', { use_case_id: UC, position: 1, description: 'The writer types the note.' });
+  await store.add('setting_value', { follower_id: UC, pattern_id: 'EX-PAT-NOTE', setting: 'record', value: 'Note' });
 });
 
 afterAll(async () => {
@@ -99,12 +101,12 @@ describe.skipIf(!hasGit)('record history', () => {
     expect(answer.state).toBe('ok');
     expect(answer.files).toContain('data/use_case.jsonl');
     expect(answer.files).toContain('data/use_case_actor.jsonl');
-    expect(answer.files).toContain('data/applies.jsonl');
+    expect(answer.files).toContain('data/follows.jsonl');
     expect(answer.commits).toHaveLength(HISTORY_PAGE);
     expect(answer.more).toBe(true);
     expect(answer.commits[0].subject).toBe(`Goal ${EXTRA}`);
     expect(answer.commits[0].author).toBe('Owner');
-    expect(answer.commits.map((c) => c.subject)).not.toContain('Reword DR01');
+    expect(answer.commits.map((c) => c.subject)).not.toContain('Describe the pattern');
     expect(answer.commits[0].changes).toEqual([
       { table: 'use_case', key: UC, change: 'changed', fields: [{ name: 'goal', before: `A writer keeps thought ${EXTRA - 1}.`, after: `A writer keeps thought ${EXTRA}.` }] },
     ]);
@@ -113,12 +115,12 @@ describe.skipIf(!hasGit)('record history', () => {
     expect(older.more).toBe(false);
     expect(older.commits.map((c) => c.subject)).toEqual(['Add the example product']);
     expect(older.commits[0].changes).toEqual([
-      { table: 'use_case', key: UC, change: 'added', fields: [{ name: 'id', after: UC }, { name: 'title', after: 'Write a note' }, { name: 'domain_id', after: 'EX-NOTE' }] },
+      { table: 'use_case', key: UC, change: 'added', fields: [{ name: 'id', after: UC }, { name: 'title', after: 'Write a note' }, { name: 'capability_id', after: 'EX-NOTE-CAP01' }] },
     ]);
-    const parts = answer.commits.find((c) => c.subject === 'Give UC01 its actor and rule')!;
+    const parts = answer.commits.find((c) => c.subject === 'Give UC01 its actor and pattern')!;
     expect(parts.changes).toEqual([
       { table: 'use_case_actor', key: `use_case_id ${UC}, position 1`, change: 'added', fields: [{ name: 'use_case_id', after: UC }, { name: 'position', after: 1 }, { name: 'role_name', after: 'Writer' }] },
-      { table: 'applies', key: `source_id ${UC}, target_id EX-NOTE-DR01`, change: 'added', fields: [{ name: 'source_id', after: UC }, { name: 'target_id', after: 'EX-NOTE-DR01' }] },
+      { table: 'follows', key: `source_id ${UC}, target_id EX-PAT-NOTE`, change: 'added', fields: [{ name: 'source_id', after: UC }, { name: 'target_id', after: 'EX-PAT-NOTE' }] },
     ]);
     const titled = answer.commits.find((c) => c.subject === 'Say more about UC01')!;
     expect(titled.changes[0].fields).toEqual([
@@ -128,7 +130,7 @@ describe.skipIf(!hasGit)('record history', () => {
 
     expect(answer.uncommitted).toEqual([
       { table: 'use_case', key: UC, change: 'changed', fields: [{ name: 'goal', before: `A writer keeps thought ${EXTRA}.`, after: 'A writer keeps every thought.' }] },
-      { table: 'use_case_step', key: `use_case_id ${UC}, position 1`, change: 'added', fields: [{ name: 'use_case_id', after: UC }, { name: 'position', after: 1 }, { name: 'description', after: 'The writer types the note.' }] },
+      { table: 'setting_value', key: `follower_id ${UC}, pattern_id EX-PAT-NOTE, setting record`, change: 'added', fields: [{ name: 'follower_id', after: UC }, { name: 'pattern_id', after: 'EX-PAT-NOTE' }, { name: 'setting', after: 'record' }, { name: 'value', after: 'Note' }] },
     ]);
   });
 
@@ -156,9 +158,9 @@ describe.skipIf(!hasGit)('record history', () => {
   });
 
   it("git's -G finds a line by its first column's value only", async () => {
-    const touched = await runGit(repo, ['log', '--format=%s', '-G', firstColumnPattern('EX-NOTE-DR01'), '--', 'data']);
-    // The DR01 commits, and not the link from UC01 that names DR01 as its target.
-    expect(touched.stdout.trim().split('\n')).toEqual(['Reword DR01', 'Add the example product']);
+    const touched = await runGit(repo, ['log', '--format=%s', '-G', firstColumnPattern('EX-PAT-NOTE'), '--', 'data']);
+    // The pattern's commits, and not the link from UC01 that names the pattern as its target.
+    expect(touched.stdout.trim().split('\n')).toEqual(['Describe the pattern', 'Add the example product']);
   });
 });
 
@@ -182,9 +184,9 @@ describe('reading history', () => {
       '--- a/data/use_case.jsonl',
       '+++ b/data/use_case.jsonl',
       '@@ -1 +1 @@',
-      `-{"id":"${UC}","title":"Old","domain_id":"EX-NOTE"}`,
-      `+{"id":"${UC}","title":"New","domain_id":"EX-NOTE"}`,
-      '+{"id":"EX-NOTE-UC02","title":"Other","domain_id":"EX-NOTE"}',
+      `-{"id":"${UC}","title":"Old","capability_id":"EX-NOTE-CAP01"}`,
+      `+{"id":"${UC}","title":"New","capability_id":"EX-NOTE-CAP01"}`,
+      '+{"id":"EX-NOTE-UC02","title":"Other","capability_id":"EX-NOTE-CAP01"}',
       '+not json',
       'diff --git a/data/requirement.jsonl b/data/requirement.jsonl',
       `+{"id":"${UC}","title":"Not a table of UC01's rows"}`,

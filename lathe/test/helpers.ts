@@ -1,28 +1,92 @@
-// What the engine's tests share: fixture folders (each a product root with data/*.jsonl written by the store), loading
-// them with Lathe's built-in checks, and building a small product from rows to see what the store refuses.
+// What the engine's tests share: products written with the store into a fresh folder, with the code files their
+// records name, then loaded with Lathe's built-in checks. complete() is a small product with a record of nearly every
+// kind that gives no problem and no gap; sparse() falls short of every minimum coverage reports.
+import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { loadWorkspace, openStore, StoreError, type Problem, type StoreProblem, type Workspace } from '../src/index.ts';
+import { vi } from 'vitest';
+import { loadWorkspace, openStore, StoreError, type Command, type Problem, type Row, type StoreProblem, type Workspace } from '../src/index.ts';
 import { writeData, type Data } from './store/fixture.ts';
 
-export { everyKind, removeData, withTable, writeData, type Data } from './store/fixture.ts';
+export { removeData, withTable, writeData, type Data } from './store/fixture.ts';
 
-/** A fixture folder's path: lathe/test/fixtures/<name>, a product root with its data/ folder. */
-export const fixture = (name: string) => path.join(path.dirname(fileURLToPath(import.meta.url)), 'fixtures', name);
+// Each test writes and loads whole products through the store, which takes seconds when the machine is busy.
+vi.setConfig({ testTimeout: 120_000, hookTimeout: 120_000 });
 
-/** Loads a fixture with Lathe's built-in checks. */
-export const load = (name: string): Promise<Workspace> => loadWorkspace(fixture(name));
+export interface BuildOptions {
+  /** IDs the code files leave out, so a file exists but does not name them. */
+  silent?: string[];
+  /** Files not written, though records name them. */
+  missing?: string[];
+  /** Files written as given, in place of the generated ones. */
+  files?: Record<string, string>;
+}
+
+/**
+ * Writes the rows into a fresh product folder through the store's command layer (a link through link, every other
+ * row through add), in the schema's load order, the product's own kinds after their declarations. Then writes each
+ * file a record names, holding a comment line with the ID of each record that names it.
+ */
+export async function build(data: Data, options: BuildOptions = {}): Promise<string> {
+  const root = writeData({});
+  const store = await openStore(root, { latheDataDir: null });
+  const done = new Set<string>();
+  try {
+    for (let pass = 0; pass < 2; pass++) {
+      const tables = store.schema.loadOrder.filter((t) => data[t]?.length && !done.has(t));
+      const commands = tables.flatMap((table): Command[] =>
+        data[table].map((row) =>
+          store.schema.tables[table].role === 'link'
+            ? { op: 'link', relation: table, source: String(row.source_id), target: String(row.target_id) }
+            : { op: 'add', table, row },
+        ),
+      );
+      if (commands.length) await store.apply(commands);
+      for (const t of tables) done.add(t);
+    }
+  } finally {
+    await store.close();
+  }
+  const unknown = Object.keys(data).filter((t) => data[t].length && !done.has(t));
+  if (unknown.length) throw new Error(`build: no table ${unknown.join(', ')}`);
+  const files = new Map<string, string[]>();
+  for (const rows of Object.values(data)) {
+    for (const row of rows) {
+      if (typeof row.file !== 'string' || typeof row.id !== 'string') continue;
+      const lines = files.get(row.file) ?? [];
+      if (!options.silent?.includes(row.id)) lines.push(`// ${row.id}`);
+      files.set(row.file, lines);
+    }
+  }
+  for (const [file, lines] of files) {
+    if (options.missing?.includes(file) || options.files?.[file] !== undefined) continue;
+    write(root, file, `${lines.join('\n')}\n`);
+  }
+  for (const [file, text] of Object.entries(options.files ?? {})) write(root, file, text);
+  return root;
+}
+
+function write(root: string, file: string, text: string) {
+  const at = path.join(root, file);
+  mkdirSync(path.dirname(at), { recursive: true });
+  writeFileSync(at, text);
+}
+
+/** Builds the rows as a product and loads it with Lathe's built-in checks. */
+export const loadData = async (data: Data, options: BuildOptions = {}): Promise<Workspace> => loadWorkspace(await build(data, options));
 
 /** The problems one check found. */
 export const ofCheck = (ws: Workspace, check: string): Problem[] => ws.problems.filter((p) => p.check === check);
 
 /** The records a list of problems is about, sorted. */
-export const records = (problems: Problem[]) => problems.map((p) => p.record).sort();
+export const records = (problems: { record: string | null }[]) => problems.map((p) => p.record).sort();
 
-/** Writes the rows as a fresh product's data files and loads them with Lathe's built-in checks. */
-export const loadData = (data: Data): Promise<Workspace> => loadWorkspace(writeData(data));
+/** Every gap in a workspace's coverage, as `missing id`. */
+export const gaps = (ws: Workspace) => ws.coverage.flatMap((c) => c.gaps.map((g) => `${g.missing} ${g.id}`)).sort();
 
-/** What the store refuses when the rows are loaded, or [] when they load. */
+/** One obligation kind's coverage in a domain, or in the product outside the domains (domain null). */
+export const obligation = (ws: Workspace, domain: string | null, kind: string) => ws.coverage.find((c) => c.domain === domain)?.obligations.find((o) => o.kind === kind);
+
+/** What the store refuses when the rows are written as data files and loaded, or [] when they load. */
 export async function refusals(data: Data): Promise<StoreProblem[]> {
   try {
     const store = await openStore(writeData(data), { latheDataDir: null });
@@ -32,4 +96,241 @@ export async function refusals(data: Data): Promise<StoreProblem[]> {
     if (error instanceof StoreError) return error.problems;
     throw error;
   }
+}
+
+/** A copy of the data with rows added to tables. */
+export function adding(data: Data, more: Data): Data {
+  const copy = structuredClone(data);
+  for (const [table, rows] of Object.entries(more)) copy[table] = [...(copy[table] ?? []), ...rows];
+  return copy;
+}
+
+/** A copy of the data with the rows matching a test removed from a table. */
+export function without(data: Data, table: string, match: (row: Row) => boolean): Data {
+  return { ...structuredClone(data), [table]: (data[table] ?? []).filter((r) => !match(r)) };
+}
+
+/** A copy of the data with the rows of a table matching a test changed; a change to undefined leaves the column out. */
+export function changing(data: Data, table: string, match: (row: Row) => boolean, changes: Record<string, Row[string] | undefined>): Data {
+  const change = (r: Row): Row => Object.fromEntries(Object.entries({ ...r, ...changes }).filter(([, v]) => v !== undefined)) as Row;
+  return { ...structuredClone(data), [table]: (data[table] ?? []).map((r) => (match(r) ? change(r) : r)) };
+}
+
+const automated = (level: string, file: string) => ({ level, state: 'automated', file });
+
+/** A small product with a record of nearly every kind, every obligation designed, built and proved, and no gap. */
+export function complete(): Data {
+  return {
+    product: [{ id: 'EX', title: 'Example library' }],
+    role: [{ product_id: 'EX', name: 'Member' }, { product_id: 'EX', name: 'Librarian' }],
+
+    domain: [{ id: 'EX-LEND', title: 'Lending', product_id: 'EX', subdomain_type: 'core' }],
+    aggregate: [
+      { id: 'EX-LEND-A1', title: 'Loan', domain_id: 'EX-LEND' },
+      { id: 'EX-LEND-A2', title: 'Tool', domain_id: 'EX-LEND' },
+    ],
+    entity: [
+      { id: 'EX-LEND-EN01', title: 'Loan', aggregate_id: 'EX-LEND-A1', role: 'root' },
+      { id: 'EX-LEND-EN02', title: 'Return', aggregate_id: 'EX-LEND-A1', role: 'child', in_root_table: true },
+      { id: 'EX-LEND-EN03', title: 'Tool', aggregate_id: 'EX-LEND-A2', role: 'root' },
+    ],
+    entity_field: [
+      { entity_id: 'EX-LEND-EN01', position: 1, name: 'Loan ID', meaning: 'The loan number.', type: 'whole number', required: true, column_name: 'id' },
+      { entity_id: 'EX-LEND-EN01', position: 2, name: 'Borrower email', meaning: 'Where reminders go.', type_value_object_id: 'EX-VO01', required: true },
+      { entity_id: 'EX-LEND-EN01', position: 3, name: 'Tool', meaning: 'The tool lent.', type_aggregate_id: 'EX-LEND-A2', required: true, column_name: 'tool_id' },
+      { entity_id: 'EX-LEND-EN02', position: 1, name: 'Returned at', meaning: 'When it came back.', type: 'date', required: false },
+      { entity_id: 'EX-LEND-EN03', position: 1, name: 'Name', meaning: 'What the tool is called.', type: 'text', required: true },
+    ],
+    value_object: [{ id: 'EX-VO01', title: 'Email address' }],
+    value_object_field: [{ value_object_id: 'EX-VO01', position: 1, name: 'Address', meaning: 'The address as typed.', type: 'text', required: true }],
+    constraint: [{ id: 'EX-VO01-C01', title: 'One at sign', value_object_id: 'EX-VO01', statement: 'An email address MUST hold exactly one @.' }],
+    invariant: [{ id: 'EX-LEND-INV01', title: 'One active loan per tool', aggregate_id: 'EX-LEND-A1', statement: 'A tool MUST NOT have two active loans.' }],
+    specification: [{ id: 'EX-LEND-SP01', title: 'Tool is free', statement: 'A tool is free when no active loan names it.' }],
+    domain_event: [
+      { id: 'EX-LEND-EV01', title: 'Loan opened', aggregate_id: 'EX-LEND-A1', published: false },
+      { id: 'EX-LEND-EV02', title: 'Tool added', aggregate_id: 'EX-LEND-A2', published: false },
+    ],
+    event_field: [
+      { domain_event_id: 'EX-LEND-EV01', position: 1, name: 'Loan', meaning: 'Which loan.', type_aggregate_id: 'EX-LEND-A1', required: true },
+      { domain_event_id: 'EX-LEND-EV02', position: 1, name: 'Tool', meaning: 'Which tool.', type_aggregate_id: 'EX-LEND-A2', required: true },
+    ],
+    command: [
+      { id: 'EX-LEND-CMD01', title: 'Open a loan', aggregate_id: 'EX-LEND-A1' },
+      { id: 'EX-LEND-CMD02', title: 'Add a tool', aggregate_id: 'EX-LEND-A2' },
+      { id: 'EX-LEND-CMD03', title: 'Remind the borrower', aggregate_id: 'EX-LEND-A1' },
+    ],
+    read_model: [{ id: 'EX-LEND-RM01', title: 'Free tools', domain_id: 'EX-LEND' }],
+    read_model_field: [{ read_model_id: 'EX-LEND-RM01', position: 1, name: 'Tool', meaning: 'A free tool.', type_aggregate_id: 'EX-LEND-A2', required: true }],
+    query: [{ id: 'EX-LEND-QRY01', title: 'List free tools', read_model_id: 'EX-LEND-RM01' }],
+    policy: [{ id: 'EX-LEND-PO01', title: 'Remind on loan', command_id: 'EX-LEND-CMD03', statement: 'Whenever a loan is opened, the library MUST remind the borrower.' }],
+    domain_service: [{ id: 'EX-LEND-DS01', title: 'Due date', domain_id: 'EX-LEND', statement: 'The due date MUST be 14 days after the loan starts.' }],
+    term: [{ id: 'EX-LEND-TM01', title: 'Loan', domain_id: 'EX-LEND', meaning: 'One tool lent to one member until it is returned.' }],
+
+    capability: [{ id: 'EX-LEND-CAP01', title: 'Lending', domain_id: 'EX-LEND', position: 1 }],
+    use_case: [
+      { id: 'EX-LEND-UC01', title: 'Borrow a tool', capability_id: 'EX-LEND-CAP01' },
+      { id: 'EX-LEND-UC02', title: 'Add a tool', capability_id: 'EX-LEND-CAP01' },
+    ],
+    use_case_actor: [
+      { use_case_id: 'EX-LEND-UC01', position: 1, role_name: 'Member' },
+      { use_case_id: 'EX-LEND-UC02', position: 1, role_name: 'Librarian' },
+    ],
+    uc_requirement: [
+      { id: 'EX-LEND-UC01-R01', title: 'Tool is free', use_case_id: 'EX-LEND-UC01', statement: 'The library MUST refuse a tool on loan.' },
+      { id: 'EX-LEND-UC02-R01', title: 'Tool is named', use_case_id: 'EX-LEND-UC02', statement: 'The library MUST refuse a tool with no name.' },
+    ],
+    pattern: [{ id: 'EX-PAT-ACT', title: 'Librarian action', product_id: 'EX' }],
+    pattern_setting: [{ pattern_id: 'EX-PAT-ACT', position: 1, name: 'record', meaning: 'The record the action saves.' }],
+    pattern_rule: [{ id: 'EX-PAT-ACT-R01', title: 'A saved record reads the same', pattern_id: 'EX-PAT-ACT', statement: 'A saved record MUST read the same everywhere.' }],
+
+    flow: [
+      { id: 'EX-LEND-UC01-FL', title: 'Borrow at the desk', use_case_id: 'EX-LEND-UC01' },
+      { id: 'EX-LEND-UC02-FL', title: 'Add at the desk', use_case_id: 'EX-LEND-UC02' },
+    ],
+    flow_step: [
+      { id: 'EX-LEND-UC01-FL-S01', title: 'Borrow a tool', flow_id: 'EX-LEND-UC01-FL', path: 'main', position: 1 },
+      { id: 'EX-LEND-UC01-FL-S02', title: 'See the loan', flow_id: 'EX-LEND-UC01-FL', path: 'main', position: 2 },
+      { id: 'EX-LEND-UC02-FL-S01', title: 'Add a tool', flow_id: 'EX-LEND-UC02-FL', path: 'main', position: 1 },
+    ],
+    view: [{ id: 'EX-V01', title: 'Catalog', route: '/catalog' }],
+    view_requirement: [{ id: 'EX-V01-R01', title: 'Free tools first', view_id: 'EX-V01', statement: 'The catalog MUST list free tools first.' }],
+    endpoint: [{ id: 'EX-LEND-EP01', title: 'Borrow a tool', command_id: 'EX-LEND-CMD01', method: 'POST', route: '/loans' }],
+    api_requirement: [{ id: 'EX-LEND-EP01-R01', title: 'Unknown tool', endpoint_id: 'EX-LEND-EP01', statement: 'An unknown tool MUST give 404.' }],
+    integration: [{ id: 'EX-INT01', title: 'Mail', system: 'Mail service' }],
+
+    repository: [
+      { id: 'EX-LEND-A1-REPO', title: 'Loans', aggregate_id: 'EX-LEND-A1', file: 'src/store.ts' },
+      { id: 'EX-LEND-A2-REPO', title: 'Tools', aggregate_id: 'EX-LEND-A2', file: 'src/store.ts' },
+    ],
+    data_model: [
+      { id: 'EX-LEND-EN01-DM', title: 'Loan', entity_id: 'EX-LEND-EN01', file: 'src/model.ts' },
+      { id: 'EX-LEND-EN02-DM', title: 'Return', entity_id: 'EX-LEND-EN02', file: 'src/model.ts' },
+      { id: 'EX-LEND-EN03-DM', title: 'Tool', entity_id: 'EX-LEND-EN03', file: 'src/model.ts' },
+    ],
+    table: [
+      { id: 'EX-LEND-EN01-TB', title: 'loans', entity_id: 'EX-LEND-EN01', name: 'loans', storage: 'table', file: 'src/schema.sql' },
+      { id: 'EX-LEND-EN03-TB', title: 'tools', entity_id: 'EX-LEND-EN03', name: 'tools', storage: 'table', file: 'src/schema.sql' },
+      { id: 'EX-LEND-RM01-TB', title: 'free_tools', read_model_id: 'EX-LEND-RM01', name: 'free_tools', storage: 'view', file: 'src/schema.sql' },
+    ],
+    table_key: [
+      { table_id: 'EX-LEND-EN01-TB', position: 1, type: 'primary', columns: ['id'] },
+      { table_id: 'EX-LEND-EN03-TB', position: 1, type: 'primary', columns: ['id'] },
+    ],
+    value_type: [{ id: 'EX-VO01-VT', title: 'EmailAddress', value_object_id: 'EX-VO01', file: 'src/email.ts' }],
+    predicate: [{ id: 'EX-LEND-SP01-PR', title: 'isFree', specification_id: 'EX-LEND-SP01', file: 'src/loans.ts' }],
+    event_type: [
+      { id: 'EX-LEND-EV01-ET', title: 'LoanOpened', domain_event_id: 'EX-LEND-EV01', delivery: 'outbox', file: 'src/events.ts' },
+      { id: 'EX-LEND-EV02-ET', title: 'ToolAdded', domain_event_id: 'EX-LEND-EV02', delivery: 'in process', file: 'src/events.ts' },
+    ],
+    projection: [{ id: 'EX-LEND-RM01-PJ', title: 'freeTools', read_model_id: 'EX-LEND-RM01', file: 'src/schema.sql' }],
+    command_handler: [
+      { id: 'EX-LEND-CMD01-H', title: 'openLoan', command_id: 'EX-LEND-CMD01', file: 'src/loans.ts' },
+      { id: 'EX-LEND-CMD02-H', title: 'addTool', command_id: 'EX-LEND-CMD02', file: 'src/tools.ts' },
+      { id: 'EX-LEND-CMD03-H', title: 'remind', command_id: 'EX-LEND-CMD03', file: 'src/loans.ts' },
+    ],
+    query_handler: [{ id: 'EX-LEND-QRY01-H', title: 'listFreeTools', query_id: 'EX-LEND-QRY01', file: 'src/tools.ts' }],
+    event_handler: [{ id: 'EX-LEND-PO01-H', title: 'onLoanOpened', policy_id: 'EX-LEND-PO01', file: 'src/loans.ts' }],
+    service: [{ id: 'EX-LEND-DS01-SV', title: 'dueDate', domain_service_id: 'EX-LEND-DS01', file: 'src/dates.ts' }],
+    ui_component: [{ id: 'EX-UI01', title: 'CatalogPage', file: 'web/catalog.tsx' }],
+    endpoint_handler: [{ id: 'EX-LEND-EP01-H', title: 'postLoan', endpoint_id: 'EX-LEND-EP01', file: 'src/router.ts' }],
+    adapter: [{ id: 'EX-INT01-AD', title: 'mailer', integration_id: 'EX-INT01', file: 'src/mail.ts' }],
+    standard: [{ id: 'EX-STD-CODE', title: 'Code', product_id: 'EX' }],
+    standard_rule: [{ id: 'EX-STD-CODE-R01', title: 'Node prefix', standard_id: 'EX-STD-CODE', statement: 'Code MUST import node: modules.' }],
+
+    constraint_test: [{ id: 'EX-VO01-C01-T', title: 'One at sign', constraint_id: 'EX-VO01-C01', ...automated('unit', 'test/email.test.ts'), accepts: 'a@b.org', refuses: 'a@@b.org' }],
+    invariant_test: [{ id: 'EX-LEND-INV01-T', title: 'A second loan is refused', invariant_id: 'EX-LEND-INV01', ...automated('database', 'test/loans.test.ts') }],
+    specification_test: [{ id: 'EX-LEND-SP01-T', title: 'Free tools', specification_id: 'EX-LEND-SP01', ...automated('unit', 'test/loans.test.ts') }],
+    policy_test: [{ id: 'EX-LEND-PO01-T', title: 'A reminder follows a loan', policy_id: 'EX-LEND-PO01', ...automated('database', 'test/loans.test.ts') }],
+    domain_service_test: [{ id: 'EX-LEND-DS01-T01', title: 'Fourteen days', domain_service_id: 'EX-LEND-DS01', ...automated('unit', 'test/dates.test.ts') }],
+    use_case_test: [
+      { id: 'EX-LEND-UC01-R01-T01', title: 'A lent tool is refused', uc_requirement_id: 'EX-LEND-UC01-R01', ...automated('api', 'test/api.test.ts') },
+      { id: 'EX-LEND-UC02-R01-T01', title: 'A nameless tool is refused', uc_requirement_id: 'EX-LEND-UC02-R01', ...automated('api', 'test/api.test.ts') },
+    ],
+    view_test: [{ id: 'EX-V01-R01-T01', title: 'Free tools come first', view_requirement_id: 'EX-V01-R01', ...automated('e2e-ui', 'e2e/catalog.spec.ts') }],
+    endpoint_test: [{ id: 'EX-LEND-EP01-R01-T01', title: 'Unknown tool gives 404', api_requirement_id: 'EX-LEND-EP01-R01', ...automated('api', 'test/api.test.ts') }],
+    flow_test: [
+      { id: 'EX-LEND-UC01-FL-T', title: 'Borrow end to end', flow_id: 'EX-LEND-UC01-FL', ...automated('e2e-ui', 'e2e/borrow.spec.ts') },
+      { id: 'EX-LEND-UC02-FL-T', title: 'Add end to end', flow_id: 'EX-LEND-UC02-FL', level: 'manual', state: 'manual', manual_reason: 'Done at the desk.' },
+    ],
+    integration_test: [{ id: 'EX-INT01-T01', title: 'A mail is sent', integration_id: 'EX-INT01', level: 'manual', state: 'manual', manual_reason: 'The mail service has no test mode.' }],
+    pattern_rule_test: [{ id: 'EX-PAT-ACT-R01-T01', title: 'A saved tool reads the same', pattern_rule_id: 'EX-PAT-ACT-R01', domain_id: 'EX-LEND', ...automated('api', 'test/api.test.ts') }],
+
+    has_one: [{ source_id: 'EX-LEND-EN01', target_id: 'EX-LEND-EN02' }],
+    raises: [
+      { source_id: 'EX-LEND-CMD01', target_id: 'EX-LEND-EV01' },
+      { source_id: 'EX-LEND-CMD02', target_id: 'EX-LEND-EV02' },
+    ],
+    checks: [{ source_id: 'EX-LEND-CMD01', target_id: 'EX-LEND-SP01' }],
+    reads: [
+      { source_id: 'EX-LEND-RM01', target_id: 'EX-LEND-A2' },
+      { source_id: 'EX-LEND-SP01', target_id: 'EX-LEND-A1' },
+    ],
+    hears: [{ source_id: 'EX-LEND-PO01', target_id: 'EX-LEND-EV01' }],
+    calls: [{ source_id: 'EX-LEND-CMD01', target_id: 'EX-LEND-DS01' }],
+    fulfills: [
+      { source_id: 'EX-LEND-UC01-FL-S01', target_id: 'EX-LEND-UC01-R01' },
+      { source_id: 'EX-LEND-UC02-FL-S01', target_id: 'EX-LEND-UC02-R01' },
+    ],
+    invokes: [
+      { source_id: 'EX-LEND-UC01-FL-S01', target_id: 'EX-LEND-CMD01' },
+      { source_id: 'EX-LEND-UC01-FL-S02', target_id: 'EX-LEND-QRY01' },
+      { source_id: 'EX-LEND-UC02-FL-S01', target_id: 'EX-LEND-CMD02' },
+    ],
+    happens_in: [
+      { source_id: 'EX-LEND-UC01-FL-S01', target_id: 'EX-V01' },
+      { source_id: 'EX-LEND-UC02-FL-S01', target_id: 'EX-V01' },
+    ],
+    exchanges_with: [{ source_id: 'EX-LEND-UC01-FL-S02', target_id: 'EX-INT01' }],
+    renders: [{ source_id: 'EX-UI01', target_id: 'EX-V01' }],
+    follows: [{ source_id: 'EX-LEND-UC02', target_id: 'EX-PAT-ACT' }],
+    setting_value: [{ follower_id: 'EX-LEND-UC02', pattern_id: 'EX-PAT-ACT', setting: 'record', value: 'Tool' }],
+    meets: [
+      { source_id: 'EX-LEND-CMD01-H', target_id: 'EX-STD-CODE-R01' },
+      { source_id: 'EX-LEND-EP01-R01-T01', target_id: 'EX-STD-CODE-R01' },
+    ],
+  };
+}
+
+/** A product with one record short of every minimum coverage reports (GAP_RULES). */
+export function sparse(): Data {
+  return {
+    product: [{ id: 'SP', title: 'Sparse' }],
+    domain: [
+      { id: 'SP-D', title: 'Lending', product_id: 'SP', subdomain_type: 'core' },
+      { id: 'SP-E', title: 'Empty', product_id: 'SP', subdomain_type: 'generic' },
+    ],
+    aggregate: [
+      { id: 'SP-D-A1', title: 'Loan', domain_id: 'SP-D' },
+      { id: 'SP-D-A2', title: 'Tool', domain_id: 'SP-D' },
+    ],
+    entity: [{ id: 'SP-D-EN01', title: 'Return', aggregate_id: 'SP-D-A1', role: 'child' }],
+    value_object: [{ id: 'SP-VO01', title: 'Email address' }],
+    domain_event: [{ id: 'SP-D-EV01', title: 'Tool added', aggregate_id: 'SP-D-A2', published: false }],
+    command: [{ id: 'SP-D-CMD01', title: 'Add a tool', aggregate_id: 'SP-D-A2' }],
+    read_model: [
+      { id: 'SP-D-RM01', title: 'Free tools', domain_id: 'SP-D' },
+      { id: 'SP-D-RM02', title: 'Loans', domain_id: 'SP-D' },
+    ],
+    query: [{ id: 'SP-D-QRY01', title: 'List loans', read_model_id: 'SP-D-RM02' }],
+    specification: [{ id: 'SP-D-SP01', title: 'Tool is free', statement: 'A tool is free when no loan names it.' }],
+    policy: [{ id: 'SP-D-PO01', title: 'React', command_id: 'SP-D-CMD01', statement: 'Whenever something happens, the library MUST add a tool.' }],
+    domain_service: [{ id: 'SP-D-DS01', title: 'Late fee', domain_id: 'SP-D', statement: 'The fee MUST be a day rate times the days late.' }],
+    capability: [
+      { id: 'SP-D-CAP01', title: 'Empty', domain_id: 'SP-D', position: 1 },
+      { id: 'SP-D-CAP02', title: 'Lending', domain_id: 'SP-D', position: 2 },
+    ],
+    use_case: [
+      { id: 'SP-D-UC01', title: 'Borrow a tool', capability_id: 'SP-D-CAP02' },
+      { id: 'SP-D-UC02', title: 'Return a tool', capability_id: 'SP-D-CAP02' },
+    ],
+    pattern: [{ id: 'SP-PAT-X', title: 'Ruleless', product_id: 'SP' }],
+    flow: [{ id: 'SP-D-UC02-FL', title: 'Return', use_case_id: 'SP-D-UC02' }],
+    flow_step: [{ id: 'SP-D-UC02-FL-S01', title: 'Refuse', flow_id: 'SP-D-UC02-FL', path: 'refused', position: 1 }],
+    view: [{ id: 'SP-V01', title: 'Catalog' }],
+    endpoint: [{ id: 'SP-D-EP01', title: 'Add a tool', command_id: 'SP-D-CMD01', method: 'POST', route: '/tools' }],
+    integration: [{ id: 'SP-INT01', title: 'Mail' }],
+    checks: [{ source_id: 'SP-D-CMD01', target_id: 'SP-D-SP01' }],
+    happens_in: [{ source_id: 'SP-D-UC02-FL-S01', target_id: 'SP-V01' }],
+    exchanges_with: [{ source_id: 'SP-D-UC02-FL-S01', target_id: 'SP-INT01' }],
+  };
 }

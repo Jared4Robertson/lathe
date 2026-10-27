@@ -1,3 +1,0 @@
-{"id":"PU-D-T01","title":"Names nothing it proves","domain_id":"PU-D","test_type":"domain_rule","state":"automated","file":"code/silent.test.txt"}
-{"id":"PU-D-T02","title":"Names the rule it proves","domain_id":"PU-D","test_type":"domain_rule","state":"automated","file":"code/rule.test.txt"}
-{"id":"PU-D-T03","title":"Names its own ID","domain_id":"PU-D","test_type":"domain_rule","state":"automated","file":"code/own.test.txt"}

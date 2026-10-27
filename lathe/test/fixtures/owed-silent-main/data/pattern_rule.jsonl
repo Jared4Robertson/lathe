@@ -1,4 +1,0 @@
-{"id":"OS-PAT-R01","title":"A staff action is audited","pattern_id":"OS-PAT","statement":"It MUST be audited as `audit` says."}
-{"id":"OS-PAT2-R01","title":"A rule of the unfollowed pattern","pattern_id":"OS-PAT2","statement":"It MUST hold."}
-{"id":"OS-PAT3-R01","title":"A rule only domain B owes","pattern_id":"OS-PAT3","statement":"It MUST hold."}
-{"id":"OS-PAT4-R01","title":"Someone is told","pattern_id":"OS-PAT4","statement":"The product MUST tell `notify`.","setting":"notify"}

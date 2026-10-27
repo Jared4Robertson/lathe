@@ -1,1 +1,0 @@
-CS-D-T01 proves CS-D-V01-IR01 and CS-D-UC01-R02.

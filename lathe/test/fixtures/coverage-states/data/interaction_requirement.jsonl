@@ -1,2 +1,0 @@
-{"id":"CS-D-V01-IR01","title":"The day field rejects past days","domain_id":"CS-D","view_id":"CS-D-V01","statement":"The day field MUST reject a day in the past."}
-{"id":"CS-D-V01-IR02","title":"The page shows the desk's owner","domain_id":"CS-D","view_id":"CS-D-V01","statement":"The page MUST show the desk's owner."}

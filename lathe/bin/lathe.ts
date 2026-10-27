@@ -67,21 +67,25 @@ async function check() {
     if (workspace.coverage.length) {
       console.log('\nCoverage:');
       for (const c of workspace.coverage) {
+        const scope = c.domain ?? `${c.product} (outside the domains)`;
         const counted = c.obligations.filter((o) => o.total > 0);
-        if (!counted.length) console.log(`  ${c.domain}: no obligations`);
+        const kinds = new Set(counted.map((o) => o.kind));
+        const minimums = c.gaps.filter((g) => !['designed', 'built', 'proved'].includes(g.missing));
+        const tested = c.tests.automated + c.tests.manual + c.tests.not_automated;
+        if (!counted.length && !minimums.length && !tested) continue;
         for (const o of counted) {
-          const gaps = c.gaps.filter((g) => g.kind === o.kind).length;
           const of = (n: number) => `${n}/${o.total}`;
-          // planned_any is shown only where it differs: some proved obligations still have planned tests.
-          const owed = o.planned_any !== undefined && o.planned_any !== o.planned ? `; ${of(o.planned_any)} with a planned test` : '';
-          // A proof-only kind (such as a pattern rule) is not asked to be designed or built.
-          const proofOnly = workspace.kinds.find((k) => k.kind === o.kind)?.proof_only;
-          const design = proofOnly ? 'proof only' : `${of(o.designed)} designed, ${of(o.built)} built`;
-          console.log(
-            `  ${c.domain} ${lowerLabel(o.label)}: ${design}, ${of(o.proved)} proved, ${of(o.planned)} planned; ${gaps} ${gaps === 1 ? 'gap' : 'gaps'}${owed}`,
-          );
+          // A proof-only kind (a pattern rule) is not asked to be designed or built.
+          const design = o.proof_only ? 'proof only' : `${of(o.designed)} designed, ${of(o.built)} built`;
+          const waiting = o.not_automated ? `, ${of(o.not_automated)} not automated yet` : '';
+          console.log(`  ${scope} ${lowerLabel(o.label)}: ${design}, ${of(o.proved)} proved${waiting}`);
+          for (const g of c.gaps.filter((x) => x.kind === o.kind && kinds.has(x.kind) && ['designed', 'built', 'proved'].includes(x.missing))) console.log(`    gap: ${g.message}`);
         }
-        if (c.tests) console.log(`  ${c.domain} tests: ${c.tests.automated} automated, ${c.tests.manual} manual, ${c.tests.planned} planned`);
+        if (tested) console.log(`  ${scope} tests: ${c.tests.automated} automated, ${c.tests.manual} manual, ${c.tests.not_automated} not automated yet`);
+        if (minimums.length) {
+          console.log(`  ${scope} records short of a minimum (${minimums.length}):`);
+          for (const g of minimums) console.log(`    [${g.missing}] ${g.message}`);
+        }
       }
     }
     const count = (n: number, noun: string) => `${n} ${noun}${n === 1 ? '' : 's'}`;

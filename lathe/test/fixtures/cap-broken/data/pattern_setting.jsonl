@@ -1,6 +1,0 @@
-{"pattern_id":"YX-PAT-A","position":1,"name":"permission"}
-{"pattern_id":"YX-PAT-A","position":2,"name":"audit"}
-{"pattern_id":"YX-PAT-B","position":1,"name":"audit"}
-{"pattern_id":"YX-PAT-B","position":2,"name":"notify"}
-{"pattern_id":"YX-PAT-BAD","position":1,"name":"permission"}
-{"pattern_id":"YX-PAT-BAD","position":3,"name":"title"}

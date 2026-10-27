@@ -1,2 +1,0 @@
-it('PX-D-DR030 Another rule', () => {});
-it('PX-D-DR03-R01 Not an ID it proves', () => {});

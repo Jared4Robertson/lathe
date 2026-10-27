@@ -1,2 +1,0 @@
-{"name":"proves","source_kind":"test","target_kind":"control","product_id":"SD","role":"proof","forward_label":"Proves","reverse_label":"Proved by","description":"The test proves the control."}
-{"name":"satisfies","source_kind":"component","target_kind":"control","product_id":"SD","role":"design","forward_label":"Satisfies","reverse_label":"Designed by","description":"The component carries out the control."}

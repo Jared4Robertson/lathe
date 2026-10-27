@@ -1,2 +1,0 @@
-it('CL-D-DR01 Rule one holds', () => {});
-it('CL-D-DR02 Rule two holds', () => {});

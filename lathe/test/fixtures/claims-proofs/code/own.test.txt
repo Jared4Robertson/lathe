@@ -1,1 +1,0 @@
-it('CL-D-T01 Both rules hold', () => {});
