@@ -1,2 +1,0 @@
-{"id":"AD-D-C01","title":"Loan service","domain_id":"AD-D","layer_id":"AD-D-LAY01","component_type":"service","file":"src/loans.ts","description":"Text."}
-{"id":"AD-D-C02","title":"Mailer","domain_id":"AD-D","layer_id":"AD-D-LAY01","component_type":"service","file":"src/mailer.ts","description":"Text."}

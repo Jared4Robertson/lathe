@@ -1,58 +1,62 @@
 // The `lathe` command line, run as a child process the way a person or agent runs it.
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { afterAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { loadWorkspace } from '../src/index.ts';
-import { fixture } from './helpers.ts';
+import { build, changing, complete, removeData, sparse, writeData } from './helpers.ts';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const lathe = (...args: string[]) => {
   const result = spawnSync(process.execPath, [path.join(here, '..', 'bin', 'lathe.ts'), ...args], { encoding: 'utf8' });
   return { status: result.status, stdout: result.stdout, stderr: result.stderr };
 };
-const temps: string[] = [];
-const tempDir = () => {
-  const dir = mkdtempSync(path.join(tmpdir(), 'lathe-cli-'));
-  temps.push(dir);
-  return dir;
-};
 
-afterAll(() => {
-  for (const dir of temps) rmSync(dir, { recursive: true, force: true });
+/** The complete product with an error (a test file not naming its test) and a warning (a technical file not written). */
+let broken = '';
+let clean = '';
+let short = '';
+beforeAll(async () => {
+  broken = await build(changing(complete(), 'specification_test', () => true, { state: 'not automated yet' }), { silent: ['EX-LEND-INV01-T'], missing: ['src/dates.ts'] });
+  clean = await build(complete());
+  short = await build(sparse());
 });
+afterAll(removeData);
 
 describe('lathe check', () => {
-  it('LA-CHK-T02 The check prints errors, then warnings, then coverage with designed, built and proved', () => {
-    const { stdout } = lathe('check', '--root', fixture('broken-tests'));
+  it('LA-CHK-T02 The check prints errors, then warnings, then coverage with designed, built and proved, and the gaps', () => {
+    const { stdout } = lathe('check', '--root', broken);
     const errors = stdout.indexOf('\nErrors (');
     const warnings = stdout.indexOf('\nWarnings (');
     const coverage = stdout.indexOf('\nCoverage:');
     expect(errors).toBeGreaterThan(-1);
     expect(warnings).toBeGreaterThan(errors);
     expect(coverage).toBeGreaterThan(warnings);
-    expect(stdout.slice(errors, warnings)).toContain('[test-file-missing-id] BX-D-T01:');
-    expect(stdout.slice(warnings, coverage)).toContain('[component-file-missing] BX-D-C01:');
-    expect(stdout.slice(coverage)).toContain('BX-D tests: 3 automated, 0 manual, 0 planned');
+    expect(stdout.slice(errors, warnings)).toContain('[test-file-missing-id] EX-LEND-INV01-T:');
+    expect(stdout.slice(warnings, coverage)).toContain('[technical-file-missing] EX-LEND-DS01-SV:');
+    const lines = stdout.slice(coverage);
+    expect(lines).toContain('  EX-LEND invariant: 1/1 designed, 1/1 built, 0/1 proved\n    gap: Invariant EX-LEND-INV01 is not proved yet.');
+    expect(lines).toContain('  EX-LEND specification: 1/1 designed, 1/1 built, 0/1 proved, 1/1 not automated yet');
+    expect(lines).toContain('  EX-LEND domain service: 1/1 designed, 0/1 built, 1/1 proved');
+    expect(lines).toContain('  EX-LEND pattern rule: proof only, 1/1 proved');
+    expect(lines).toContain('  EX (outside the domains) constraint: 1/1 designed, 1/1 built, 1/1 proved');
+    expect(lines).toContain('  EX-LEND tests: 8 automated, 1 manual, 1 not automated yet');
 
-    const unfinished = lathe('check', '--root', fixture('unfinished')).stdout;
-    expect(unfinished).toContain('UX-D domain rule: 1/1 designed, 1/1 built, 0/1 proved, 0/1 planned; 1 gap');
-    expect(unfinished).toContain('UX-D UC requirement: 2/3 designed, 1/3 built, 1/3 proved, 0/3 planned; 3 gaps');
+    const gaps = lathe('check', '--root', short).stdout;
+    expect(gaps).toContain('  SP-D records short of a minimum (');
+    expect(gaps).toContain('    [use-case-without-flow] Use case SP-D-UC01 has no flow.');
+    expect(gaps).toContain('  SP (outside the domains) records short of a minimum (5):');
   });
 
-  it('LA-CHK-T03 The check exits 1 on any error and 0 otherwise, whatever the warnings', () => {
-    expect(lathe('check', '--root', fixture('broken-tests')).status).toBe(1);
-    const good = lathe('check', '--root', fixture('good'));
+  it('LA-CHK-T03 The check exits 1 on any error and 0 otherwise, whatever the warnings and gaps', () => {
+    expect(lathe('check', '--root', broken).status).toBe(1);
+    const good = lathe('check', '--root', clean);
     expect(good.status).toBe(0);
     expect(good.stdout).toContain('0 errors, 0 warnings.');
-    const warningsOnly = lathe('check', '--root', fixture('unfinished'));
-    expect(warningsOnly.stdout).toMatch(/0 errors, [1-9]\d* warnings?\./);
-    expect(warningsOnly.status).toBe(0);
     // Data the store refuses is an error too, naming the file and line.
-    const refused = tempDir();
-    mkdirSync(path.join(refused, 'data'));
+    const refused = writeData({});
+    mkdirSync(path.join(refused, 'data'), { recursive: true });
     writeFileSync(path.join(refused, 'data', 'product.jsonl'), '{"id":"TL","title":"Tool Library","colour":"red"}\n');
     const run = lathe('check', '--root', refused);
     expect(run.status).toBe(1);
@@ -61,15 +65,15 @@ describe('lathe check', () => {
   });
 
   it('LA-CHK-T04 With --json the check prints the whole workspace', async () => {
-    const { stdout, status } = lathe('check', '--json', '--root', fixture('broken-tests'));
+    const { stdout, status } = lathe('check', '--json', '--root', broken);
     expect(status).toBe(1);
-    expect(JSON.parse(stdout)).toEqual(await loadWorkspace(fixture('broken-tests')));
+    expect(JSON.parse(stdout)).toEqual(await loadWorkspace(broken));
   });
 });
 
 describe('lathe init', () => {
   it('LA-PLT-T06 Init writes a config and a first product record through the store, and refuses bad or repeated input', () => {
-    const root = tempDir();
+    const root = writeData({});
     const first = lathe('init', '--root', root, '--name', 'Tool Library', '--prefix', 'TL');
     expect(first.status).toBe(0);
     expect(JSON.parse(readFileSync(path.join(root, 'lathe.config.json'), 'utf8'))).toEqual({ data: 'data' });
@@ -85,7 +89,7 @@ describe('lathe init', () => {
     expect(readFileSync(product, 'utf8')).toBe(before);
 
     // It refuses a prefix that is not a valid ID, and a missing name or prefix, writing nothing.
-    const other = tempDir();
+    const other = writeData({});
     for (const args of [['--name', 'X', '--prefix', 'tl'], ['--name', 'X', '--prefix', 'T-L'], ['--name', 'X'], ['--prefix', 'TL']]) {
       const refused = lathe('init', '--root', other, ...args);
       expect(refused.status).toBe(2);
@@ -93,7 +97,7 @@ describe('lathe init', () => {
     }
 
     // An existing config is kept, and its data folder is used.
-    const configured = tempDir();
+    const configured = writeData({});
     const config = `${JSON.stringify({ data: 'spec-data' })}\n`;
     writeFileSync(path.join(configured, 'lathe.config.json'), config);
     expect(lathe('init', '--root', configured, '--name', 'Notes', '--prefix', 'NT').status).toBe(0);

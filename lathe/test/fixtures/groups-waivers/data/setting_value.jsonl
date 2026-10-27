@@ -1,9 +1,0 @@
-{"follower_id":"GW-A-UC01","pattern_id":"GW-PAT-ACT","setting":"audit","value":"Logged"}
-{"follower_id":"GW-A-UC01","pattern_id":"GW-PAT-ACT","setting":"scope","value":"single"}
-{"follower_id":"GW-B-UC01","pattern_id":"GW-PAT-ACT","setting":"audit","value":"Logged"}
-{"follower_id":"GW-B-UC01","pattern_id":"GW-PAT-ACT","setting":"scope","value":"single"}
-{"follower_id":"GW-B-UC02","pattern_id":"GW-PAT-ACT","setting":"audit","value":"Logged"}
-{"follower_id":"GW-B-UC02","pattern_id":"GW-PAT-ACT","setting":"scope","value":"Many"}
-{"follower_id":"GW-C","pattern_id":"GW-PAT-ACT","setting":"scope","value":"single"}
-{"follower_id":"GW-E-UC01","pattern_id":"GW-PAT-ACT","setting":"audit","value":"Logged"}
-{"follower_id":"GW-E-UC01","pattern_id":"GW-PAT-ACT","setting":"scope","not_applicable":"it acts on no record."}

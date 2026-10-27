@@ -1,6 +1,0 @@
-{"id":"LY-A-T01","title":"Borrowing is checked","domain_id":"LY-A","test_type":"unit","state":"automated","file":"code/a.test.txt","then":"Text."}
-{"id":"LY-A-T02","title":"Borrowing again","domain_id":"LY-A","test_type":"unit","state":"planned","then":"Text."}
-{"id":"LY-A-T03","title":"Unfollowed rule","domain_id":"LY-A","test_type":"unit","state":"planned","then":"Text."}
-{"id":"LY-B-T01","title":"Borrowing is checked","domain_id":"LY-B","test_type":"unit","state":"automated","file":"code/b.test.txt","then":"Text."}
-{"id":"LY-B-T02","title":"Borrowing again","domain_id":"LY-B","test_type":"unit","state":"planned","then":"Text."}
-{"id":"LY-B-T03","title":"Unfollowed rule","domain_id":"LY-B","test_type":"unit","state":"planned","then":"Text."}

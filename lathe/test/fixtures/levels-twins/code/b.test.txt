@@ -1,1 +1,0 @@
-LV-B-T01 proves borrowing in domain B.

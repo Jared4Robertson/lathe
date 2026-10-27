@@ -1,1 +1,0 @@
-SD-A-T01 proves SD-PAT-R01, SD-PAT-R02, SD-A-CT01.

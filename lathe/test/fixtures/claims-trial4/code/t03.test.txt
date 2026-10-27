@@ -1,1 +1,0 @@
-TC-D-T03 proves the second requirement.

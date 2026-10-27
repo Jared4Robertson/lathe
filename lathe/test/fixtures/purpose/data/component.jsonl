@@ -1,3 +1,0 @@
-{"id":"PP-D-C01","title":"Serves a requirement","domain_id":"PP-D","component_type":"service","file":"code/c01.ts"}
-{"id":"PP-D-C02","title":"Only renders the page","domain_id":"PP-D","component_type":"page","file":"code/c02.ts"}
-{"id":"PP-D-C03","title":"Satisfies a record that is gone","domain_id":"PP-D","component_type":"service","file":"code/c03.ts"}

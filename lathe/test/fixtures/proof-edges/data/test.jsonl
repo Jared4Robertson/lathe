@@ -1,2 +1,0 @@
-{"id":"QX-D-T01","title":"Checked by hand","domain_id":"QX-D","test_type":"unit","state":"manual","then":"A manual test whose state is written with a capital letter."}
-{"id":"QX-D-T02","title":"Not written yet","domain_id":"QX-D","test_type":"unit","state":"planned","file":"code/later.test.txt","then":"A planned test naming the file it will live in."}

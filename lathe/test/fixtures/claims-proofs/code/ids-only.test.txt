@@ -1,1 +1,0 @@
-it('CL-D-T06 CL-D-DR01 Rule one holds', () => {});

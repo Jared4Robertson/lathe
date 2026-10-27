@@ -1,4 +1,0 @@
-{"entity_id":"LV-A-EN01","position":1,"name":"Tool","meaning":"The tool lent.","type":"Reference","example":"T-1"}
-{"entity_id":"LV-A-EN01","position":2,"name":"Due","meaning":"When it is due back.","type":"Date","example":"2026-01-01"}
-{"entity_id":"LV-B-EN01","position":1,"name":"Tool","meaning":"The tool lent.","type":"Reference","example":"T-1"}
-{"entity_id":"LV-B-EN01","position":2,"name":"Due","meaning":"When it is due back.","type":"Date","example":"2026-01-01"}
