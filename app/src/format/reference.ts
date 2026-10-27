@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
 import type { ColumnDescription } from '../../../lathe/src/store/schema';
-import { formatPath, kindOrder, partTablesOf, textOf, type SpecIndex, type Workspace } from '../specs/data';
+import { formatPath, kindOrder, partTablesOf, textOf, type SpecIndex, type Stage, type StageRule, type Workspace } from '../specs/data';
 
-// The format reference in the app: every kind (its table and typed columns), relation, folder and
+// The format reference in the app: every kind (its table and typed columns), relation, stage and
 // check of this space, read from the schema the server serves with the data and from the check
 // table's rows; and the addresses of the pages that show it.
 
@@ -19,10 +19,9 @@ export interface KindReference {
   kind: string;
   label: string;
   description: string;
-  /** 'define', 'design', or '' for the kinds outside the stages. */
-  stage: string;
-  /** The folder the kind sits in, or ''. */
-  section: string;
+  /** Its stage, or null for the kinds outside the stages (the product, an open question). */
+  stage: Stage | null;
+  /** The kinds its records may sit under: none for a kind with no owner, two for an endpoint, a table and an open question. */
   parent_kinds: string[];
   /** The kinds that list this kind among their parents, in kind order. */
   child_kinds: string[];
@@ -30,9 +29,11 @@ export interface KindReference {
   columns: ColumnDescription[];
   /** The part tables its records own (an entity's fields, a use case's steps). */
   parts: { table: string; description: string }[];
-  /** 'yes': designed, built and proved; 'proof': proved only; 'no': not an obligation. */
-  obligation: 'yes' | 'proof' | 'no';
+  /** Whether it is an obligation: designed, built and proved. */
+  obligation: boolean;
   id: { pattern: string; example: string } | null;
+  /** What its IDs start with: its product's, its domain's or its parent's ID; null for a product's own kind. */
+  idScope: string | null;
   /** For a product's own kind, the product that declares it. */
   product: string | null;
 }
@@ -46,14 +47,6 @@ export interface RelationReference {
   description: string;
   forward_label: string;
   reverse_label: string;
-}
-
-export interface SectionReference {
-  section: string;
-  stage: string;
-  order: number;
-  label: string;
-  description: string;
 }
 
 export type Severity = 'error' | 'warning';
@@ -79,15 +72,15 @@ export interface CheckReference {
 export interface FormatReference {
   kinds: KindReference[];
   relations: RelationReference[];
-  /** The folders, in stage then order. */
-  sections: SectionReference[];
+  /** The five stages, in order. */
+  stages: StageRule[];
   /** The checks by their place, Lathe's before the product's, then the engine's own. */
   checks: CheckReference[];
 }
 
 const SEVERITIES: Record<string, Severity[]> = { error: ['error'], warning: ['warning'], error_or_warning: ['error', 'warning'] };
 
-/** The reference for a workspace: its schema's kinds, relations and folders, and its check rows. */
+/** The reference for a workspace: its schema's kinds, relations and stages, and its check rows. */
 export function referenceOf(workspace: Workspace): FormatReference {
   const { schema } = workspace;
   const kinds: KindReference[] = workspace.kinds.map((k) => {
@@ -98,13 +91,13 @@ export function referenceOf(workspace: Workspace): FormatReference {
       label: k.label,
       description: k.description,
       stage: k.stage,
-      section: k.section,
       parent_kinds: k.parent_kinds,
       child_kinds: workspace.kinds.filter((c) => c.parent_kinds.includes(k.kind)).map((c) => c.kind),
       columns: table?.columns ?? [],
       parts: partTablesOf(schema, k.kind).map((t) => ({ table: t, description: schema.tables[t].description ?? '' })),
-      obligation: k.proof_only ? 'proof' : k.obligation ? 'yes' : 'no',
+      obligation: k.obligation,
       id: described?.idPattern ? { pattern: described.idPattern, example: described.idExample ?? '' } : null,
+      idScope: k.id_scope,
       product: described?.productId ?? null,
     };
   });
@@ -137,7 +130,7 @@ export function referenceOf(workspace: Workspace): FormatReference {
   return {
     kinds,
     relations: workspace.relations.map((r) => ({ ...r })),
-    sections: workspace.sections,
+    stages: workspace.stages,
     checks,
   };
 }
@@ -150,15 +143,19 @@ export function useFormat(index: SpecIndex | null): FormatReference | null {
 
 // ---------- Lookups ----------
 
-export const STAGE_LABELS: Record<string, string> = { define: 'Define', design: 'Design', '': 'Product level' };
-export const stageName = (stage: string) => STAGE_LABELS[stage] ?? stage;
+/** A stage's label from the reference ("Domain model"), or "Outside the stages" for none. */
+export const stageName = (ref: FormatReference, stage: Stage | null) =>
+  stage ? ref.stages.find((s) => s.stage === stage)?.label ?? stage : 'Outside the stages';
 
-export const OBLIGATION_TEXT: Record<KindReference['obligation'], string> = {
-  yes: 'An obligation: it must be designed (satisfied), built and proved.',
-  proof: 'An obligation that needs proof only: a test must prove it.',
-  no: 'Not an obligation: coverage does not count it.',
+export const obligationText = (obligation: boolean) =>
+  obligation ? 'An obligation: it must be designed, built and proved.' : 'Not an obligation: coverage does not count it.';
+export const obligationShort = (obligation: boolean) => (obligation ? 'Designed, built and proved' : 'None');
+
+export const ID_SCOPE_TEXT: Record<string, string> = {
+  product: "Its product's ID and a hyphen",
+  domain: "Its domain's ID and a hyphen",
+  parent: "Its parent's ID and a hyphen",
 };
-export const OBLIGATION_SHORT: Record<KindReference['obligation'], string> = { yes: 'Designed, built and proved', proof: 'Proved only', no: 'None' };
 
 export const ORIGIN_TEXT: Record<CheckReference['origin'], string> = {
   lathe: "Lathe's checks",
@@ -168,7 +165,6 @@ export const ORIGIN_TEXT: Record<CheckReference['origin'], string> = {
 
 export const findKind = (ref: FormatReference, kind: string) => ref.kinds.find((k) => k.kind === kind);
 export const findCheck = (ref: FormatReference, check: string) => ref.checks.find((c) => c.check === check);
-export const sectionOf = (ref: FormatReference, kind: KindReference) => ref.sections.find((s) => s.section === kind.section);
 
 /** The relations a kind's records link out by (it is the source) and are linked by (it is the target, or any kind is). */
 export function relationsOf(ref: FormatReference, kind: string): { out: RelationReference[]; in: RelationReference[] } {

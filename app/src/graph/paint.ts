@@ -64,30 +64,43 @@ export function lineStroke(look: Look, line: Pick<Line, 'link' | 'style'>): { co
   return { color: look.linkEdge, width: 1.2, dash: [6, 4], alpha: 1 };
 }
 
-/** Every look a box is drawn in, by its swatch in the graph's key (panel.tsx): its stage's colors, a group's, a file's, a domain event's and an open question's. */
-export const BOX_LOOKS = ['stage-define', 'stage-design', 'stage-structural', 'stage-group', 'stage-file', 'kind-domain_event', 'kind-question'] as const;
+/**
+ * Every look a box is drawn in, by its swatch in the graph's key (panel.tsx): each of the five stages' colors, the
+ * structural records' (product, domain), a group's, a file's and an open question's.
+ */
+export const BOX_LOOKS = [
+  'stage-domain-model', 'stage-use-cases', 'stage-interaction-design', 'stage-technical-specification', 'stage-test-plan',
+  'stage-structural', 'stage-group', 'stage-file', 'kind-question',
+] as const;
 export type BoxLook = (typeof BOX_LOOKS)[number];
 
-/** A box's look: a file's, a group's, an open question's, a domain event's, or its stage's. */
+/** A box's look: a file's, a group's, an open question's, or its stage's. */
 export function boxLook(p: Pick<Plate, 'file' | 'group' | 'kind' | 'stage'>): BoxLook {
   if (p.file) return 'stage-file';
   if (p.group) return 'stage-group';
   if (p.kind === 'question') return 'kind-question';
-  if (p.kind === 'domain_event') return 'kind-domain_event';
-  return `stage-${p.stage as 'define' | 'design' | 'structural'}`;
+  return `stage-${p.stage as Exclude<Plate['stage'], 'group' | 'file'>}`;
+}
+
+/** A stage's edge and fill colors in the look; the structural colors for a box of no stage. */
+export function stageColors(look: Look, stage: Plate['stage']): { edge: string; fill: string } {
+  switch (stage) {
+    case 'domain-model': return { edge: look.domainModelEdge, fill: look.domainModelFill };
+    case 'use-cases': return { edge: look.useCasesEdge, fill: look.useCasesFill };
+    case 'interaction-design': return { edge: look.interactionDesignEdge, fill: look.interactionDesignFill };
+    case 'technical-specification': return { edge: look.technicalSpecificationEdge, fill: look.technicalSpecificationFill };
+    case 'test-plan': return { edge: look.testPlanEdge, fill: look.testPlanFill };
+    default: return { edge: look.structuralEdge, fill: look.structuralFill };
+  }
 }
 
 /** A box's edge and fill colors, by its look: an open question keeps its stage's fill. */
 export function boxColors(look: Look, p: Pick<Plate, 'file' | 'group' | 'kind' | 'stage'>): { edge: string; fill: string } {
-  const stageFill = p.stage === 'define' ? look.defineFill : p.stage === 'design' ? look.designFill : look.structuralFill;
   switch (boxLook(p)) {
     case 'stage-file': return { edge: look.fileEdge, fill: look.paper };
     case 'stage-group': return { edge: look.muted, fill: look.sheet };
-    case 'kind-question': return { edge: look.warn, fill: stageFill };
-    case 'kind-domain_event': return { edge: look.spark, fill: look.sparkBg };
-    case 'stage-define': return { edge: look.defineEdge, fill: look.defineFill };
-    case 'stage-design': return { edge: look.designEdge, fill: look.designFill };
-    default: return { edge: look.structuralEdge, fill: look.structuralFill };
+    case 'kind-question': return { edge: look.warn, fill: stageColors(look, p.stage).fill };
+    default: return stageColors(look, p.stage);
   }
 }
 

@@ -7,6 +7,8 @@ import { Icon } from '../components/icons';
 import { NodeLink, type GraphInfo } from './panel';
 import { TapCard, useTapToOpen } from './touch';
 import {
+  ENFORCES,
+  NAMES,
   NO_FILTERS,
   PARENT,
   TRACE_RELATIONS,
@@ -63,12 +65,12 @@ import { hitPlate } from './hit';
 /** CSS family for an edge's relation, so related relations share a line style. */
 export function relationStyle(relation: string): string {
   if (relation === PARENT) return 'structure';
-  if (['satisfies', 'proves', 'fulfills'].includes(relation)) return 'trace';
-  if (['uses', 'implements', 'depends_on', 'meets'].includes(relation)) return 'design';
-  if (relation === 'names') return 'file';
+  if (['fulfills', ENFORCES].includes(relation)) return 'trace';
+  if (['invokes', 'happens_in', 'exchanges_with', 'renders', 'meets'].includes(relation)) return 'design';
+  if (relation === NAMES) return 'file';
   if (relation === 'follows') return 'pattern';
-  // A domain event's links (LA-EXP-UC04-R07): dashed, in the spark colors events are drawn in.
-  if (['reacts_to', 'raised_by'].includes(relation)) return 'event';
+  // A domain event's links: dashed, in the spark colors.
+  if (['raises', 'hears'].includes(relation)) return 'event';
   return 'other';
 }
 
@@ -327,9 +329,9 @@ export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted,
   );
 }
 
-/** The trace preset's button, worded with the relations' labels (LA-EXP-V03-R07): "Only satisfies, proves and carries out links". */
+/** The trace preset's button, worded with the relations' labels (LA-EXP-V03-R07): "Only fulfills, invokes and happens in links". */
 export function traceOnlyLabel(index: SpecIndex): string {
-  const words = ['satisfies', 'proves', 'fulfills'].map((r) => lowerLabel(graphRelationLabel(r, index)));
+  const words = ['fulfills', 'invokes', 'happens_in'].map((r) => lowerLabel(graphRelationLabel(r, index)));
   return `Only ${words.slice(0, -1).join(', ')} and ${words.at(-1)} links`;
 }
 

@@ -1,6 +1,6 @@
 import type { MouseEvent, ReactNode } from 'react';
 import { LongList } from '../components/LongList';
-import type { SpecIndex } from '../specs/data';
+import type { SpecIndex, Stage, StageRule } from '../specs/data';
 import { FILE_KIND, PARENT, graphEdgeLabel, nodeParent, parseGroupId, type Neighborhood } from './model';
 import { MARKS, SHAPES, type Mark, type Shape } from './shapes';
 import { MarkIcon, ShapeIcon } from './shape-icons';
@@ -50,7 +50,7 @@ export function GraphConnections({ index, info, onNavigate, hrefFor }: { index: 
     <>
       <section className="side-bar-section" aria-labelledby="side-bar-near">
         <h3 id="side-bar-near">{tracing ? 'Traceability chain' : 'Connected in the graph'} <span className="section-count">{near.length}</span></h3>
-        {near.length === 0 ? <p className="hint">{tracing ? 'Nothing fulfills, satisfies or proves it yet.' : 'Nothing connected (check the filters).'}</p> : (
+        {near.length === 0 ? <p className="hint">{tracing ? 'Nothing designs, builds or proves it yet.' : 'Nothing connected (check the filters).'}</p> : (
           <LongList
             label="Connected records"
             className="plain graph-near"
@@ -72,21 +72,33 @@ export function GraphConnections({ index, info, onNavigate, hrefFor }: { index: 
           <LongList label="Files" className="plain" items={files} itemKey={(f) => f.id} searchText={(f) => f.title} render={(f) => <code>{f.title}</code>} />
         </section>
       )}
-      <Legend />
+      <Legend stages={index.workspace.stages} />
     </>
   );
 }
 
-export function Legend() {
+/** What each stage's swatch holds, in the key. */
+const STAGE_KINDS: Readonly<Record<Stage, string>> = {
+  'domain-model': 'domain, aggregate, entity, value object, constraint, invariant, specification, domain event, command, read model, query, policy, domain service, term',
+  'use-cases': 'capability, use case, UC requirement, pattern and its rules',
+  'interaction-design': 'flow, flow step, view, view requirement, endpoint, API requirement, integration',
+  'technical-specification': 'the technical record that implements each design record, a table, a UI component, a standard and its rules',
+  'test-plan': 'every kind of test',
+};
+const STAGE_NAMES = Object.keys(STAGE_KINDS) as Stage[];
+
+/** The graph's key: one swatch per stage, labeled by the stage's label from the schema (or its name in words). */
+export function Legend({ stages = [] }: { stages?: readonly StageRule[] }) {
+  const label = (stage: Stage) => stages.find((s) => s.stage === stage)?.label ?? `${stage.charAt(0).toUpperCase()}${stage.slice(1).replaceAll('-', ' ')}`;
   return (
     <details className="graph-legend">
       <summary>Legend</summary>
       <section aria-label="Legend">
         <ul className="plain">
-          <li><span className="graph-swatch stage-define" /> Define (capability, aggregate, entity, rule, event, use case, requirement, pattern)</li>
-          <li><span className="graph-swatch stage-design" /> Design (flow, flow step, view, API, endpoint, integration, layer, component, technical flow, technical step, test, and in Shared a standard and its rules)</li>
-          <li><span className="graph-swatch stage-structural" /> Structural (product, domain)</li>
-          <li><span className="graph-swatch kind-domain_event" /> Domain event, in the spark colors</li>
+          {STAGE_NAMES.map((stage) => (
+            <li key={stage}><span className={`graph-swatch stage-${stage}`} /> {label(stage)} ({STAGE_KINDS[stage]})</li>
+          ))}
+          <li><span className="graph-swatch stage-structural" /> Structural (product)</li>
           <li><span className="graph-swatch kind-question" /> Open question, in the warning color (dashed in the Nested and Voronoi views)</li>
           <li><span className="graph-swatch stage-group" /> Groups: a stage, folder or group, in gray</li>
           <li><span className="graph-swatch is-focus" /> The focus, ringed</li>
@@ -105,20 +117,20 @@ export function Legend() {
           <li><span className="graph-swatch stage-nested" /> Nested view: a box holding its children below its name</li>
           <li><span className="graph-swatch is-cell" /> Voronoi view: a cell made of its children's cells, its name at its top</li>
           <li><span className="graph-swatch stage-bar" /> A bar: children too small to draw at this zoom</li>
-          <li><span className="graph-swatch stage-file" /> File named by a component or test</li>
+          <li><span className="graph-swatch stage-file" /> File named by a technical record or a test</li>
           <li><span className="graph-line rel-structure" /> parent / child (the tree, through stages, folders and groups)</li>
-          <li><span className="graph-line is-link" /> the center's own links, with Links on (satisfies, proves, uses and the rest)</li>
-          <li><span className="graph-line rel-trace" /> satisfies, proves, fulfills</li>
-          <li><span className="graph-line rel-design" /> uses, implements, depends on, meets (a standard rule)</li>
-          <li><span className="graph-line rel-pattern" /> follows (a use case's pattern, a cross-link)</li>
-          <li><span className="graph-line rel-event" /> raised by, reacts to (a domain event's links)</li>
-          <li><span className="graph-line rel-file" /> names file (a component's or test's file)</li>
+          <li><span className="graph-line is-link" /> the center's own links, with Links on (fulfills, invokes, raises and the rest)</li>
+          <li><span className="graph-line rel-trace" /> fulfills (a step and a UC requirement), enforces (a table's unique key and an invariant)</li>
+          <li><span className="graph-line rel-design" /> invokes, happens in, exchanges with, renders, meets (a standard rule)</li>
+          <li><span className="graph-line rel-pattern" /> follows (a domain's or use case's pattern, a cross-link)</li>
+          <li><span className="graph-line rel-event" /> raises, hears (a domain event's links)</li>
+          <li><span className="graph-line rel-file" /> names file (a technical record's or test's file)</li>
           <li><span className="graph-line rel-other" /> other links</li>
-          <li><span className="graph-mark error">!</span> has errors <span className="graph-mark warning">!</span> has warnings <span className="graph-mark gap">gap</span> not satisfied or not proved (on a group: among its members)</li>
+          <li><span className="graph-mark error">!</span> has errors <span className="graph-mark warning">!</span> has warnings <span className="graph-mark gap">gap</span> not designed or not proved (on a group: among its members)</li>
         </ul>
-        <p className="hint">The graph is one map of the nav's tree: a domain holds Define and Design, each stage its folders, each folder its records. Levels run left to right, each parent as tall as its children, and nothing changes size: focusing moves the camera. Depth is how many levels below the focus the camera frames, folders included. A trace runs left to right, from the rule to the files that build and test it.</p>
-        <p className="hint">The Nested layout (v) draws the same tree as boxes inside boxes: the product made of its domains, each domain of Define and Design, each stage of its folders, each box as big as the records under it. Focusing frames the box; depth is how many levels inside it are labeled, and zooming in labels the rest.</p>
-        <p className="hint">The Voronoi layout draws the same tree as polygon cells inside cells: the product a hexagon split into its domains, each domain split into Define and Design, and so on down, each cell as big as the records under it and never too small for its name. It frames and labels as the Nested layout does.</p>
+        <p className="hint">The graph is one map of the nav's tree: a product holds its own stages and its domains, a domain its five stages, each stage a folder per kind, each folder the records that start a branch of the stage, and each record what sits under it in the same stage. Levels run left to right, each parent as tall as its children, and nothing changes size: focusing moves the camera. Depth is how many levels below the focus the camera frames, folders included. A trace runs left to right, from an obligation to what designs it, the technical records that build it, the tests that prove it and their files.</p>
+        <p className="hint">The Nested layout (v) draws the same tree as boxes inside boxes: the product made of its stages and domains, each domain of its stages, each stage of its folders, each box as big as the records under it. Focusing frames the box; depth is how many levels inside it are labeled, and zooming in labels the rest.</p>
+        <p className="hint">The Voronoi layout draws the same tree as polygon cells inside cells: the product a hexagon split into its stages and domains, each domain split into its stages, and so on down, each cell as big as the records under it and never too small for its name. It frames and labels as the Nested layout does.</p>
         <p className="hint">Click a record or a group, or press Enter on it, to focus it. Scroll, pinch or drag to look around. Arrow keys or Tab move between the boxes; + and - change the depth, l switches Links, t switches trace mode, and . frames the focus again. Alt+Up steps out to the parent, Alt+Down in to the first child, and Alt+Shift+Left or Right to a sibling.</p>
       </section>
     </details>

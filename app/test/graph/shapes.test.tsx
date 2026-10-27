@@ -16,12 +16,18 @@ import { drawnBox, scene } from './scene';
 
 /** The shapes the brief's table gives each kind, and the marks that tell two kinds of one shape apart. */
 const TABLE: Record<string, [Shape, string?]> = {
-  product: ['product'], domain: ['hexagon'], capability: ['slice'], aggregate: ['double'], entity: ['box'],
-  domain_rule: ['octagon'], pattern_rule: ['octagon'], domain_event: ['flag'], use_case: ['stadium'], requirement: ['page'],
-  interaction_requirement: ['page', 'marker'], pattern: ['stack'], flow: ['chevron-bar'], flow_step: ['chevron'],
-  design_step: ['chevron'], view: ['window'], endpoint: ['port'], api: ['box', 'port'], integration: ['box', 'port'],
-  layer: ['stripes'], component: ['component'], test: ['shield'], design_flow: ['chevron-bar', 'gear'],
-  question: ['diamond'], standard: ['stack', 'ruler'], standard_rule: ['octagon', 'ruler'],
+  product: ['product'], domain: ['hexagon'], aggregate: ['double'], entity: ['box'], value_object: ['box', 'value'],
+  constraint: ['octagon'], invariant: ['octagon'], specification: ['octagon'], domain_event: ['flag'], command: ['parallelogram'],
+  read_model: ['box', 'lens'], query: ['parallelogram', 'lens'], policy: ['octagon', 'gear'], domain_service: ['box', 'gear'],
+  term: ['box', 'marker'], capability: ['slice'], use_case: ['stadium'], uc_requirement: ['page'], pattern: ['stack'],
+  pattern_rule: ['octagon'], flow: ['chevron-bar'], flow_step: ['chevron'], view: ['window'], view_requirement: ['page'],
+  endpoint: ['port'], api_requirement: ['page'], integration: ['box', 'port'], repository: ['component'], data_model: ['component'],
+  table: ['stripes'], value_type: ['component'], predicate: ['component'], event_type: ['component'], projection: ['component'],
+  command_handler: ['component'], query_handler: ['component'], event_handler: ['component'], service: ['component'],
+  ui_component: ['component'], endpoint_handler: ['component'], adapter: ['component'], standard: ['stack', 'ruler'],
+  standard_rule: ['octagon', 'ruler'], constraint_test: ['shield'], invariant_test: ['shield'], specification_test: ['shield'],
+  policy_test: ['shield'], domain_service_test: ['shield'], use_case_test: ['shield'], view_test: ['shield'], endpoint_test: ['shield'],
+  flow_test: ['shield'], integration_test: ['shield'], pattern_rule_test: ['shield'], question: ['diamond'],
 };
 
 describe('a shape for each kind', () => {

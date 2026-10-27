@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { indexOf } from '../fixtures/load';
-import { neighborhood, traceChain, traceColumn, type Neighborhood } from '../../src/graph/model';
+import { neighborhood, traceChain, traceColumn, TRACE_COLUMNS, type Neighborhood } from '../../src/graph/model';
 import { graphMap } from '../../src/graph/map';
 import { groupedWorkspace, testIndex } from './workspace';
 
@@ -16,18 +16,19 @@ describe('graph columns by tree depth', () => {
   const x = (id: string) => map.nodes.get(id)!.x;
 
   it('LA-EXP-T78 Siblings of mixed kinds share a column, in the model and on the canvas', async () => {
-    // From the Design stage at depth 2: the views' and endpoints' groups, the components and the test plan's group are all one level below a folder.
-    const n = neighborhood(index, 'P-D/design', 2);
+    // From the Domain model stage at depth 2: aggregates, the specification, the read model, the domain service
+    // and the term are all one level below a folder.
+    const n = neighborhood(index, 'P-D/domain-model', 2);
     const column = columnOf(n);
-    const level = ['P-D/design/interaction-design/view', 'P-D/design/interaction-design/endpoint', 'P-D-C01', 'P-D-C02', 'P-D/design/test-plan/acceptance/P-D-UC01'];
+    const level = ['P-D-A1', 'P-D-A4', 'P-D-SP01', 'P-D-RM01', 'P-D-DS01', 'P-D-TM01'];
     expect(new Set(level.map((id) => column.get(id))).size).toBe(1);
     // Every node with the same parent, record or group, is in one column.
     const parentOf = new Map(n.edges.filter((e) => e.relation === 'parent').map((e) => [e.target, e.source]));
     const byParent = new Map<string, Set<number>>();
     for (const [child, parent] of parentOf) byParent.set(parent, (byParent.get(parent) ?? new Set()).add(column.get(child)!));
     for (const cols of byParent.values()) expect(cols.size).toBe(1);
-    // In the map: the records straight in a domain's folders (aggregates, use cases, components), whatever their kind, at one x.
-    const members = ['P-D-A1', 'P-D-UC01', 'P-D-C01', 'P-D-C02'];
+    // In the map: the records straight in a domain's folders, whatever their stage and kind, at one x.
+    const members = ['P-D-A1', 'P-D-CAP01', 'P-D-UC01-FL', 'P-D-EN02-TB', 'P-D-INV01-T'];
     expect(new Set(members.map((id) => map.nodes.get(id)!.level)).size).toBe(1);
     expect(new Set(members.map(x)).size).toBe(1);
   });
@@ -35,57 +36,58 @@ describe('graph columns by tree depth', () => {
   it('LA-EXP-T79 The focus\'s ancestors sit one column each to its left and its descendants to its right', async () => {
     // The framed picture: the parent one column to the left, the descendants to the right.
     const column = columnOf(neighborhood(index, 'P-D-UC01', 3));
-    expect(['P-D/define/use-cases', 'P-D-UC01', 'P-D-UC01-R01'].map((id) => column.get(id))).toEqual([0, 1, 2]);
+    expect(['P-D-CAP01', 'P-D-UC01', 'P-D-UC01-R01'].map((id) => column.get(id))).toEqual([0, 1, 2]);
     // The map: every ancestor one level further left.
-    expect(x('P')).toBeLessThan(x('P-D'));
-    expect(x('P-D')).toBeLessThan(x('P-D/define'));
-    expect(x('P-D/define')).toBeLessThan(x('P-D/define/use-cases'));
-    expect(x('P-D/define/use-cases')).toBeLessThan(x('P-D-UC01'));
-    expect(x('P-D-UC01')).toBeLessThan(x('P-D-UC01-R01'));
+    const chain = ['P', 'P-D', 'P-D/use-cases', 'P-D/use-cases/capability', 'P-D-CAP01', 'P-D-UC01', 'P-D-UC01-R01'];
+    for (let i = 1; i < chain.length; i++) expect(x(chain[i - 1])).toBeLessThan(x(chain[i]));
   });
 
   it('LA-EXP-T80 A cross-linked record sits one column after the record it is reached from, unless its tree position places it', () => {
-    // Without parent lines, what the requirement links to is reached from it, one column after it.
-    const chain = neighborhood(index, 'P-D-UC01-R01', 1, { hiddenKinds: new Set(), hiddenRelations: new Set(['parent']) }, { links: true });
+    // Without parent lines, what the step links to is reached from it, one column after it.
+    const chain = neighborhood(index, 'P-D-UC01-FL-S01', 1, { hiddenKinds: new Set(), hiddenRelations: new Set(['parent']) }, { links: true });
     const column = columnOf(chain);
-    expect(chain.via.get('P-D-V01')).toBe('P-D-UC01-R01');
-    expect(column.get('P-D-V01')).toBe(column.get('P-D-UC01-R01')! + 1);
-    // With the tree: the service's view sits one column after it, but the router, which depends on it,
-    // is also its sibling in Technical specification: its tree position wins, beside the service.
-    const service = neighborhood(index, 'P-D-C01', 1, undefined, { links: true });
-    const sc = columnOf(service);
-    expect(sc.get('P-D-V01')).toBe(sc.get('P-D-C01')! + 1);
-    expect(sc.get('P-D-C02')).toBe(sc.get('P-D-C01'));
-    expect(service.edges.map((e) => e.id)).toContain('P-D/design/technical-specification|parent|P-D-C02');
+    expect(chain.via.get('P-V01')).toBe('P-D-UC01-FL-S01');
+    expect(column.get('P-V01')).toBe(column.get('P-D-UC01-FL-S01')! + 1);
+    // With the tree: the specification a command checks sits one column after it.
+    const command = columnOf(neighborhood(index, 'P-D-CMD01', 1, undefined, { links: true }));
+    expect(command.get('P-D-SP01')).toBe(command.get('P-D-CMD01')! + 1);
+    // But the Loan's returns and reminders are also its siblings among the aggregate's entities: their tree position
+    // wins, beside it.
+    const loan = neighborhood(index, 'P-D-EN03', 1, undefined, { links: true });
+    const lc = columnOf(loan);
+    expect(lc.get('P-D-EN04')).toBe(lc.get('P-D-EN03'));
+    expect(lc.get('P-D-EN05')).toBe(lc.get('P-D-EN03'));
+    expect(loan.edges.map((e) => e.id)).toContain('P-D-A3/entity|parent|P-D-EN04');
     // In the map a linked record keeps its own place: links never move anything.
-    expect(map.nodes.get('P-D-V01')!.parent).toBe('P-D/design/interaction-design/view');
+    expect(map.nodes.get('P-V01')!.parent).toBe('P/interaction-design/view');
   });
 
   it('LA-EXP-T81 A group sits in its own column between its parent and its members', () => {
     const grouped = graphMap(indexOf(groupedWorkspace()), 'P');
     const level = (id: string) => grouped.nodes.get(id)!.level;
-    expect(level('P-D/define/use-cases')).toBe(level('P-D/define') + 1);
-    expect(level('P-D-UC02')).toBe(level('P-D/define/use-cases') + 1);
-    expect(level('P-D-UC02/requirement')).toBe(level('P-D-UC02') + 1);
-    expect(level('P-D-UC01-R01')).toBe(level('P-D-UC02/requirement'));
+    expect(level('P-D/domain-model/aggregate')).toBe(level('P-D/domain-model') + 1);
+    expect(level('P-D-A4')).toBe(level('P-D/domain-model/aggregate') + 1);
+    expect(level('P-D-A4/entity')).toBe(level('P-D-A4') + 1);
+    expect(level('P-D-QRY01')).toBe(level('P-D-A4/entity'));
     // Every member is in the map, one level after its group.
-    expect(level('P-D-UC02-R01')).toBe(level('P-D-UC02/requirement') + 1);
+    expect(level('P-D-EN06')).toBe(level('P-D-A4/entity') + 1);
   });
 
   it('LA-EXP-T82 Within a column nodes follow their parent\'s place, then the nav\'s order, and keep it when the graph re-centers', async () => {
     const grouped = indexOf(groupedWorkspace());
-    const n = neighborhood(grouped, 'P-D/define/use-cases', 2);
+    const n = neighborhood(grouped, 'P-D/domain-model/aggregate', 2);
     const row = rowOf(n);
-    // UC01 before UC02 (the nav's order); UC01's requirement before UC02's groups, following their parents.
-    expect(row.get('P-D-UC01')!).toBeLessThan(row.get('P-D-UC02')!);
-    expect(row.get('P-D-UC01-R01')!).toBeLessThan(row.get('P-D-UC02/requirement')!);
-    // UC02's groups follow the meta-model's kind order: requirements, then questions.
-    expect(row.get('P-D-UC02/requirement')!).toBeLessThan(row.get('P-D-UC02/question')!);
-    // The domain's stages and folders follow the nav: Define before Design, each stage's folders in their order.
+    // A1 before A4 (the nav's order); A1's groups before A4's, following their parents.
+    expect(row.get('P-D-A1')!).toBeLessThan(row.get('P-D-A4')!);
+    expect(row.get('P-D-A1/entity')!).toBeLessThan(row.get('P-D-A4/entity')!);
+    // A4's groups follow the schema's kind order: entities, then commands.
+    expect(row.get('P-D-A4/entity')!).toBeLessThan(row.get('P-D-A4/command')!);
+    // The domain's stages and folders follow the nav: the five stages in order, each stage's folders in kind order.
     const domain = rowOf(neighborhood(grouped, 'P-D', 2));
-    expect(domain.get('P-D/define')!).toBeLessThan(domain.get('P-D/design')!);
-    const folders = ['P-D/define/domain-model', 'P-D/define/use-cases', 'P-D/design/interaction-design', 'P-D/design/technical-specification', 'P-D/design/test-plan'];
-    expect(folders.map((id) => domain.get(id))).toEqual([0, 1, 2, 3, 4]);
+    const stages = ['P-D/domain-model', 'P-D/use-cases', 'P-D/interaction-design', 'P-D/technical-specification', 'P-D/test-plan'];
+    expect(stages.map((id) => domain.get(id))).toEqual([0, 1, 2, 3, 4]);
+    expect(domain.get('P-D/domain-model/aggregate')!).toBeLessThan(domain.get('P-D/domain-model/specification')!);
+    expect(domain.get('P-D/domain-model/term')!).toBeLessThan(domain.get('P-D/use-cases/capability')!);
     // Rows within each column are 0, 1, 2 ... and the map holds them top to bottom, whatever is in focus.
     const placed = graphMap(grouped, 'P').nodes;
     for (const c of new Set(n.nodes.map((x) => x.column))) {
@@ -96,9 +98,9 @@ describe('graph columns by tree depth', () => {
     }
   });
 
-  it('LA-EXP-T83 Trace mode keeps its own columns, from the rule to the files', () => {
+  it('LA-EXP-T83 Trace mode keeps its own columns, from the obligation to the files', () => {
     const t = traceChain(index, 'P-D-UC01-R01');
-    for (const node of t.nodes) expect(node.column).toBe(traceColumn(node.kind));
+    for (const node of t.nodes) expect(node.column).toBe(node.distance === 0 ? TRACE_COLUMNS.obligation : traceColumn(index, node.kind));
     expect(columnOf(t).get('P-D-UC01-R01')).toBe(0);
   });
 });

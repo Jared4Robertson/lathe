@@ -65,7 +65,7 @@ describe('the one map', () => {
     expect(lop.nodes.get('b0')!.h).toBeLessThan(lop.nodes.get('q0')!.h);
     // The tree is the nav's: a domain spans its stages, the product its domain.
     const map = graphMap(testIndex(), 'P');
-    expect(map.nodes.get('P-D')!.children).toEqual(['P-D/define', 'P-D/design', 'P-D/question']);
+    expect(map.nodes.get('P-D')!.children).toEqual(['P-D/domain-model', 'P-D/use-cases', 'P-D/interaction-design', 'P-D/technical-specification', 'P-D/test-plan', 'P-D/question']);
     expect(map.roots).toEqual(['P']);
   });
 });
@@ -162,7 +162,7 @@ describe('the level of detail', () => {
     const d = drawnFor(map, view, 1000, 800);
     const drawn = new Set(d.boxes.map((b) => b.id));
     expect(drawn).toContain('P-D');
-    expect(drawn).toContain('P-D/define');
+    expect(drawn).toContain('P-D/domain-model');
     const rect = viewRect(view, 1000, 800);
     for (const b of d.boxes) {
       const n = map.nodes.get(b.id)!;

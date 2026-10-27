@@ -13,13 +13,12 @@ import { Tooltip } from '../shell/Tooltip';
 import { useNarrow } from '../shell/useNarrow';
 import { addressOf } from '../views/address';
 import { treeGroup } from '../graph/tree';
-import { byIdOrder, type Problem, type SpecIndex, type SpecRecord, type SpecState } from '../specs/data';
+import { byIdOrder, type Problem, type SpecIndex, type SpecRecord, type SpecState, type Stage } from '../specs/data';
 import { Markdown } from '../specs/Markdown';
 import { PageHeader, ProblemList, RecordLink, Section } from '../specs/parts';
 import {
   FIELDS_ANCHOR,
-  OBLIGATION_SHORT,
-  OBLIGATION_TEXT,
+  ID_SCOPE_TEXT,
   ORIGIN_TEXT,
   checkPagePath,
   checksOf,
@@ -29,9 +28,10 @@ import {
   findKind,
   formatPath,
   kindPagePath,
+  obligationShort,
+  obligationText,
   relationWords,
   relationsOf,
-  sectionOf,
   stageName,
   useFormat,
   type CheckReference,
@@ -42,7 +42,7 @@ import {
 import './format.css';
 
 // The format reference's pages (LA-AUT-UC14): /format (the concepts, then an index of the kinds by
-// stage and folder, the relations, and the checks by severity), /format/kinds/<kind> and
+// stage, the relations, and the checks by severity), /format/kinds/<kind> and
 // /format/checks/<check>. Each opens in the workbench as a record does: one pane with the page's
 // title in it, and the side bar beside it showing the kind's or the check's facts (a bottom sheet
 // on a phone). The pages read the schema and the check rows served with the data, so a product's
@@ -352,7 +352,7 @@ function homePage({ index, reference }: PageProps): Page {
         <dl className="fields">
           <div><dt>Kinds</dt><dd>{reference.kinds.length}</dd></div>
           <div><dt>Relations</dt><dd>{reference.relations.length}</dd></div>
-          <div><dt>Folders</dt><dd>{reference.sections.length}</dd></div>
+          <div><dt>Stages</dt><dd>{reference.stages.length}</dd></div>
           <div><dt>Checks</dt><dd>{reference.checks.length} ({errors.length} error, {warnings.length} warning)</dd></div>
           <div><dt>From</dt><dd>The schema, with this product's own kinds, and the check table</dd></div>
         </dl>
@@ -367,35 +367,21 @@ function homePage({ index, reference }: PageProps): Page {
   };
 }
 
-/** The kinds by stage, then by folder in each stage's order; kinds outside any folder last in their stage. */
+/** The kinds by stage, in the stages' order and each stage's kind order; the kinds outside the stages last. */
 function KindIndex({ reference }: { reference: FormatReference }) {
-  const stages = ['define', 'design', ''];
-  const stageOf = (k: KindReference) => sectionOf(reference, k)?.stage ?? k.stage;
-  for (const k of reference.kinds) if (!stages.includes(stageOf(k))) stages.push(stageOf(k));
+  const groups: { stage: Stage | null; title: string; description: string }[] = [
+    ...reference.stages.map((s) => ({ stage: s.stage, title: s.label, description: s.description })),
+    { stage: null, title: stageName(reference, null), description: 'The product, which holds everything else, and open questions.' },
+  ];
   return (
     <>
-      {stages.map((stage) => {
-        const kinds = reference.kinds.filter((k) => stageOf(k) === stage);
+      {groups.map((g) => {
+        const kinds = reference.kinds.filter((k) => k.stage === g.stage);
         if (kinds.length === 0) return null;
-        const folders = reference.sections.filter((s) => s.stage === stage).sort((a, b) => a.order - b.order);
-        const loose = kinds.filter((k) => !sectionOf(reference, k));
         return (
-          <Section key={stage || 'product'} level={3} title={stageName(stage)} count={kinds.length}>
-            {folders.map((f) => {
-              const inFolder = kinds.filter((k) => k.section === f.section).map((k) => k.kind);
-              if (inFolder.length === 0) return null;
-              return (
-                <Section key={f.section} level={4} title={f.label} count={inFolder.length}>
-                  {f.description && <p className="hint">{f.description}</p>}
-                  <KindRows reference={reference} kinds={inFolder} label={`Kinds in ${f.label}`} meta={kindMeta} />
-                </Section>
-              );
-            })}
-            {loose.length > 0 && (
-              <Section level={4} title={folders.length > 0 ? 'Outside any folder' : 'Kinds'} count={loose.length}>
-                <KindRows reference={reference} kinds={loose.map((k) => k.kind)} label={`${stageName(stage)} kinds outside any folder`} meta={kindMeta} />
-              </Section>
-            )}
+          <Section key={g.stage ?? 'none'} level={3} title={g.title} count={kinds.length} className={g.stage ? `stage-${g.stage}` : undefined}>
+            <p className="hint">{g.description}</p>
+            <KindRows reference={reference} kinds={kinds.map((k) => k.kind)} label={`Kinds in ${g.title}`} meta={kindMeta} />
           </Section>
         );
       })}
@@ -403,7 +389,7 @@ function KindIndex({ reference }: { reference: FormatReference }) {
   );
 }
 
-const kindMeta = (k: KindReference) => (k.obligation === 'no' ? null : <small className="meta">obligation: {lowerLabel(OBLIGATION_SHORT[k.obligation])}</small>);
+const kindMeta = (k: KindReference) => (k.obligation ? <small className="meta">obligation: {lowerLabel(obligationShort(true))}</small> : null);
 
 function AllRelations({ reference }: { reference: FormatReference }) {
   if (reference.relations.length === 0) return <p className="hint">None.</p>;
@@ -436,10 +422,9 @@ function AllRelations({ reference }: { reference: FormatReference }) {
 export const rowLineOf = (record: SpecRecord) => JSON.stringify(record.row);
 
 function kindPage({ index, reference }: PageProps, kind: KindReference): Page {
-  const folder = sectionOf(reference, kind);
   const relations = relationsOf(reference, kind.kind);
   const checks = checksOf(reference, kind.kind);
-  const where = [stageName(folder?.stage ?? kind.stage), folder?.label].filter(Boolean).join(' › ');
+  const where = stageName(reference, kind.stage);
   const required = kind.columns.filter((c) => c.required);
   return {
     title: <PageHeader eyebrow={<><Link to={formatPath}>Record format</Link> · Kind · {where}</>} title={kind.label} />,
@@ -452,9 +437,8 @@ function kindPage({ index, reference }: PageProps, kind: KindReference): Page {
           <p className="record-id"><code>{kind.kind}</code></p>
         </div>
         <dl className="fields">
-          <div><dt>Stage</dt><dd>{stageName(folder?.stage ?? kind.stage)}</dd></div>
-          <div><dt>Folder</dt><dd>{folder?.label ?? 'None'}</dd></div>
-          <div><dt>Obligation</dt><dd>{OBLIGATION_SHORT[kind.obligation]}</dd></div>
+          <div><dt>Stage</dt><dd>{stageName(reference, kind.stage)}</dd></div>
+          <div><dt>Obligation</dt><dd>{obligationShort(kind.obligation)}</dd></div>
           <div><dt>ID</dt><dd>{kind.id ? <code>{kind.id.pattern}</code> : 'No convention given'}</dd></div>
           <div><dt>Required</dt><dd>{required.map((c, i) => <span key={c.name}>{i > 0 && ', '}<a href={`#${fieldAnchor(c.name)}`}>{c.name}</a></span>)}</dd></div>
           <div><dt>Records</dt><dd>{index.workspace.records.filter((r) => r.kind === kind.kind).length}</dd></div>
@@ -472,7 +456,7 @@ function kindPage({ index, reference }: PageProps, kind: KindReference): Page {
 
 function KindBody({ index, reference, kind }: { index: SpecIndex; reference: FormatReference; kind: KindReference }) {
   const spaces = useSpaces();
-  const folder = sectionOf(reference, kind);
+  const stage = reference.stages.find((s) => s.stage === kind.stage);
   const relations = relationsOf(reference, kind.kind);
   const checks = checksOf(reference, kind.kind);
   // The current space's records: `index` is the space's own, so no other product's are counted.
@@ -489,11 +473,13 @@ function KindBody({ index, reference, kind }: { index: SpecIndex; reference: For
       {kind.description ? <Markdown source={kind.description} /> : <p className="hint">This kind has no description.</p>}
       <Section title="Where it sits">
         <dl className="fields format-facts">
-          <div><dt>Stage</dt><dd>{stageName(folder?.stage ?? kind.stage)}</dd></div>
-          <div><dt>Folder</dt><dd>{folder ? <>{folder.label}{folder.description && <span className="meta"> · {folder.description}</span>}</> : 'None: it sits outside the folders.'}</dd></div>
+          <div><dt>Stage</dt><dd>{stage ? <>{stage.label}<span className="meta"> · {stage.description}</span></> : 'None: it sits outside the stages.'}</dd></div>
+          <div><dt>Parent</dt><dd>{kind.parent_kinds.length === 0
+            ? (kind.kind === 'product' ? 'None: a product holds everything else.' : 'None: it has no owner. It exists because other records use it, and its product follows from its ID.')
+            : kind.parent_kinds.length === 1 ? 'Exactly one, of the kind below.' : 'Exactly one, of one of the kinds below.'}</dd></div>
         </dl>
         <Section level={3} title="Allowed parents" count={kind.parent_kinds.length}>
-          <KindRows reference={reference} kinds={kind.parent_kinds} label={`Allowed parents of ${kind.label}`} />
+          {kind.parent_kinds.length > 0 && <KindRows reference={reference} kinds={kind.parent_kinds} label={`Allowed parents of ${kind.label}`} />}
         </Section>
         <Section level={3} title="Allowed children" count={kind.child_kinds.length}>
           <KindRows reference={reference} kinds={kind.child_kinds} label={`Allowed children of ${kind.label}`} />
@@ -527,8 +513,9 @@ function KindBody({ index, reference, kind }: { index: SpecIndex; reference: For
           </>
         )}
         <dl className="fields format-facts">
-          <div><dt>Obligation</dt><dd>{OBLIGATION_TEXT[kind.obligation]}</dd></div>
+          <div><dt>Obligation</dt><dd>{obligationText(kind.obligation)}</dd></div>
           <div><dt>ID</dt><dd>{kind.id ? <><code>{kind.id.pattern}</code>{kind.id.example && <>, such as <code>{kind.id.example}</code></>}</> : 'No convention given.'}</dd></div>
+          {kind.idScope && <div><dt>ID starts with</dt><dd>{ID_SCOPE_TEXT[kind.idScope] ?? kind.idScope}</dd></div>}
         </dl>
       </section>
       <Section title="Links out" count={relations.out.length}>

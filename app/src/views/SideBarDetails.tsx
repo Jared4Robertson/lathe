@@ -10,7 +10,8 @@ import { Link } from '../router';
 import { DesktopRecordActions } from '../shell/desktopRecord';
 import { kindLabel, parentColumns, problemOrder, type SpecIndex, type SpecRecord } from '../specs/data';
 import { factsOf, rowPlace } from '../specs/RecordText';
-import { ProblemList, RecordLink, RecordTree, TestStateTag, idText, listTitle } from '../specs/parts';
+import { ProblemList, RecordLink, RecordTree, TestStateTag, idText, isTestKind, listTitle } from '../specs/parts';
+import { parentlessText } from '../specs/RecordContent';
 import { GAP_TEXT } from '../specs/Traceability';
 import { traceOf } from '../specs/trace';
 import type { SideMode } from './sideBarState';
@@ -87,7 +88,7 @@ function Identity({ index, eyebrow, title, id, target, focus, how, onNavigate, h
 /** A record in the canvas or a selected row: identity, short fields, data file, parent, problems and a compact Traceability. */
 function RecordDetails({ index, record, focus, how, onNavigate, hrefFor }: { index: SpecIndex; record: SpecRecord; focus: string; how: SideBarDetailsProps['how']; onNavigate: (id: string) => void; hrefFor: (id: string) => string }) {
   const kind = index.kinds.get(record.kind);
-  const isTest = record.kind === 'test';
+  const isTest = isTestKind(index, record.kind);
   const facts = factsOf(index, record);
   const problems = [...(index.problemsFor.get(record.id) ?? [])].sort(problemOrder);
   return (
@@ -104,7 +105,7 @@ function RecordDetails({ index, record, focus, how, onNavigate, hrefFor }: { ind
           </div>
         ))}
         <div><dt>Data file</dt><dd><code>{rowPlace(record)}</code><DesktopRecordActions id={record.id} /></dd></div>
-        <div><dt>Parent</dt><dd>{record.parent ? <RecordLink index={index} id={record.parent} /> : <span className="hint">None (top level)</span>}</dd></div>
+        <div><dt>Parent</dt><dd>{record.parent ? <RecordLink index={index} id={record.parent} /> : <span className="hint">{parentlessText(index, record)}</span>}</dd></div>
       </dl>
       {problems.length > 0 && (
         <Part title="Problems" count={problems.length} id="side-problems">
@@ -124,7 +125,7 @@ function TraceSummary({ index, record }: { index: SpecIndex; record: SpecRecord 
   const trace = traceOf(index, record);
   const gaps = trace.judgments.flatMap((j) => j.gaps.map((g) => ({ domain: j.domain, gap: g })));
   const groups = [
-    ...(trace.requirements.length > 0 ? [{ key: 'requirements', label: 'Requirements', ids: trace.requirements.map((r) => r.record.id) }] : []),
+    ...(trace.requirements.length > 0 ? [{ key: 'requirements', label: 'UC requirements', ids: trace.requirements.map((r) => r.record.id) }] : []),
     ...trace.groups,
   ];
   const nothing = groups.length === 0 && gaps.length === 0 && !trace.runBy;
@@ -177,7 +178,7 @@ function GroupDetails({ index, gid, focus, how, onNavigate, hrefFor }: { index: 
           <ul className="plain side-bar-gaps">
             {marks.errors > 0 && <li className="problem error">{marks.errors} error{marks.errors > 1 ? 's' : ''}</li>}
             {marks.warnings > 0 && <li className="problem warning">{marks.warnings} warning{marks.warnings > 1 ? 's' : ''}</li>}
-            {marks.gaps.map((g) => <li key={g}>{g === 'satisfies' ? 'Some are not satisfied.' : 'Some are not proved.'}</li>)}
+            {marks.gaps.map((g) => <li key={g}>{g === 'satisfies' ? 'Some are not designed.' : 'Some are not proved.'}</li>)}
           </ul>
         )}
       </Part>

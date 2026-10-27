@@ -10,7 +10,9 @@ export interface Look {
   paper: string; sheet: string; ink: string; muted: string; rule: string;
   steel: string; spark: string; sparkBg: string; warn: string; error: string; onMark: string;
   hoverRing: string; linkEdge: string;
-  defineEdge: string; defineFill: string; designEdge: string; designFill: string;
+  domainModelEdge: string; domainModelFill: string; useCasesEdge: string; useCasesFill: string;
+  interactionDesignEdge: string; interactionDesignFill: string; technicalSpecificationEdge: string; technicalSpecificationFill: string;
+  testPlanEdge: string; testPlanFill: string;
   structuralEdge: string; structuralFill: string; fileEdge: string;
   /** How much the hover spotlight dims the rest, and how faint an unlit line then is. */
   spotlightDim: number; contextOpacity: number;
@@ -24,7 +26,10 @@ const COLORS: Record<Exclude<keyof Look, 'spotlightDim' | 'contextOpacity' | 'fa
   paper: '--paper', sheet: '--sheet', ink: '--ink', muted: '--muted', rule: '--rule',
   steel: '--steel', spark: '--spark', sparkBg: '--spark-bg', warn: '--warn', error: '--error', onMark: '--on-mark',
   hoverRing: '--hover-ring', linkEdge: '--link-edge',
-  defineEdge: '--g-define', defineFill: '--g-define-bg', designEdge: '--g-design', designFill: '--g-design-bg',
+  domainModelEdge: '--g-domain-model', domainModelFill: '--g-domain-model-bg', useCasesEdge: '--g-use-cases', useCasesFill: '--g-use-cases-bg',
+  interactionDesignEdge: '--g-interaction-design', interactionDesignFill: '--g-interaction-design-bg',
+  technicalSpecificationEdge: '--g-technical-specification', technicalSpecificationFill: '--g-technical-specification-bg',
+  testPlanEdge: '--g-test-plan', testPlanFill: '--g-test-plan-bg',
   structuralEdge: '--g-structural', structuralFill: '--g-structural-bg', fileEdge: '--g-file',
 };
 
@@ -33,7 +38,9 @@ export const PLAIN_LOOK: Look = {
   paper: '#F4F6F5', sheet: '#FFFFFF', ink: '#1D2830', muted: '#5A6870', rule: '#CBD3D6',
   steel: '#2E6A88', spark: '#B5512A', sparkBg: '#F8E8DF', warn: '#875C00', error: '#9E4320', onMark: '#fff',
   hoverRing: 'rgb(46 106 136 / 0.45)', linkEdge: '#B5512A',
-  defineEdge: '#2E6A88', defineFill: '#E4EEF3', designEdge: '#B5512A', designFill: '#F8E8DF',
+  domainModelEdge: '#2E6A88', domainModelFill: '#E4EEF3', useCasesEdge: '#2F7148', useCasesFill: '#E2F1E7',
+  interactionDesignEdge: '#6A4C9C', interactionDesignFill: '#EEE8F6', technicalSpecificationEdge: '#B5512A', technicalSpecificationFill: '#F8E8DF',
+  testPlanEdge: '#A3365F', testPlanFill: '#F7E4EC',
   structuralEdge: '#1D2830', structuralFill: '#FFFFFF', fileEdge: '#5A6870',
   spotlightDim: 0.5, contextOpacity: 0.35, fade: 0, vignette: 56,
 };
