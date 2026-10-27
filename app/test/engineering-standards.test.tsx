@@ -27,9 +27,11 @@ describe('standards in the nav and the wiki', () => {
   it('LA-AUT-T125 The product lists its standards at product level, in the Technical specification stage', async () => {
     await openApp('/DM', served());
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
-    const own = list('Product level of Demo shop');
-    expect(rows(own)).toEqual(['Domain model1', 'Interaction design1', 'Technical specification1']);
+    expect(rows(list('Product level of Demo shop'))).toEqual(['Product level3']);
     const user = userEvent.setup();
+    await user.click(head(list('Product level of Demo shop'), /^Product level/));
+    const own = list('Stages of Demo shop');
+    expect(rows(own)).toEqual(['Domain model1', 'Interaction design1', 'Technical specification1']);
     await user.click(head(own, /^Technical specification/));
     const stage = list('Technical specification of Demo shop');
     expect(rows(stage)).toEqual(['Standards1']);

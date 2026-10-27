@@ -104,10 +104,13 @@ describe('folders by stage', () => {
   it('LA-EXP-T88 The product shows its own stages only when it has records at product level, before its domains', async () => {
     await openApp('/DM', { data: patternWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
-    const own = list('Product level of Demo shop');
+    // One Product level folder before the domains holds the product's own stages, as the graph's tree has it.
+    expect(rows(list('Product level of Demo shop'))).toEqual(['Product level4']);
+    const user = userEvent.setup();
+    await user.click(head(list('Product level of Demo shop'), /^Product level/));
+    const own = list('Stages of Demo shop');
     // A pattern rule test sits under its rule, at product level too.
     expect(rows(own)).toEqual(['Domain model1', 'Use cases1', 'Interaction design1', 'Test plan1']);
-    const user = userEvent.setup();
     await user.click(head(own, /^Use cases/));
     await user.click(head(list('Use cases of Demo shop'), /^Patterns/));
     expect(within(list('Patterns of Demo shop')).getByRole('link', { name: 'Audited action' })).toHaveAttribute('href', '/DM-PAT-AUDIT');
@@ -152,7 +155,7 @@ describe('folders by stage', () => {
     // A flow step folds under its flow, in Interaction design.
     expect(branchOf(index, 'DM-SHOP-UC01-FL-S02')).toEqual(['domain:DM-SHOP', 'DM-SHOP/interaction-design', 'DM-SHOP/interaction-design/flow']);
     // At product level: a constraint folds under its value object; a view at product level.
-    expect(branchOf(index, 'DM-VO01-C01')).toEqual(['DM/domain-model', 'DM/domain-model/value_object']);
+    expect(branchOf(index, 'DM-VO01-C01')).toEqual(['DM/product-level', 'DM/domain-model', 'DM/domain-model/value_object']);
     expect(productFolders(index, 'DM').stages.filter((s) => s.count > 0).map((s) => [s.label, s.folders.filter((f) => f.count > 0).map((f) => f.label)])).toEqual([
       ['Domain model', ['Value objects']],
       ['Interaction design', ['Views']],

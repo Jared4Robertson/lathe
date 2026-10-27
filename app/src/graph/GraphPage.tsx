@@ -1182,7 +1182,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
       {!tracing && size && linkedCenters.length > 0 && <EdgeHintChips past={past} noun="linked" onPan={panToward} />}
       {armedPlate && (
         <TapCard
-          kind={armedPlate.group ? 'Group' : armedPlate.kindLabel}
+          kind={armedPlate.kindLabel}
           name={armedPlate.title}
           onOpen={tapToOpen.openArmed}
           onDismiss={tapToOpen.clear}

@@ -194,32 +194,25 @@ export function ErdKey({ erd, highlight, relations = [] }: { erd: Erd; highlight
   );
 }
 
-/** The boxes in focus: every box but the faded context, or every box when all are context. */
-export function focusRects(erd: Erd, rects: Map<string, Rect>): Map<string, Rect> {
-  const inFocus = new Map([...rects].filter(([id]) => !erd.boxes.find((b) => b.id === id)?.context));
-  return inFocus.size > 0 ? inFocus : rects;
-}
-
-/** The least zoom a fit goes to, so box titles stay legible; what is past the edges then is counted by the edge hints. */
-export const FIT_MIN_ZOOM = 0.6;
+/** The margin a fit keeps around the boxes: wider at the left, clear of the zoom controls in the bottom left corner. */
+export const FIT_MARGIN = { left: 60, right: 24, top: 24, bottom: 24 };
 
 /**
- * The viewport that fits every box, never zoomed in past 1 nor out past FIT_MIN_ZOOM. When the boxes don't fit at
- * that zoom, the camera starts at their top left corner, where the model reads from.
+ * The viewport that shows every box, faded context included, inside the margin, centered, never zoomed in past 1:
+ * the opening frame of a model leaves nothing out. A big model stays legible by its compact layout (layout.ts).
  */
-export function fitRects(rects: Map<string, Rect>, width: number, height: number, padding = 32) {
+export function fitRects(rects: Map<string, Rect>, width: number, height: number, margin = FIT_MARGIN) {
   const all = [...rects.values()];
   const minX = Math.min(...all.map((r) => r.x));
   const minY = Math.min(...all.map((r) => r.y));
   const maxX = Math.max(...all.map((r) => r.x + r.width));
   const maxY = Math.max(...all.map((r) => r.y + r.height));
-  const zoom = Math.max(FIT_MIN_ZOOM, Math.min(1, (width - 2 * padding) / (maxX - minX || 1), (height - 2 * padding) / (maxY - minY || 1)));
-  const fitsX = (maxX - minX) * zoom <= width - 2 * padding;
-  const fitsY = (maxY - minY) * zoom <= height - 2 * padding;
+  const innerW = Math.max(1, width - margin.left - margin.right);
+  const innerH = Math.max(1, height - margin.top - margin.bottom);
+  const zoom = Math.max(0.05, Math.min(1, innerW / (maxX - minX || 1), innerH / (maxY - minY || 1)));
   return {
-    // Clear of the zoom controls at the bottom left.
-    x: fitsX ? width / 2 - ((minX + maxX) / 2) * zoom : padding + 24 - minX * zoom,
-    y: fitsY ? height / 2 - ((minY + maxY) / 2) * zoom : padding - minY * zoom,
+    x: margin.left + innerW / 2 - ((minX + maxX) / 2) * zoom,
+    y: margin.top + innerH / 2 - ((minY + maxY) / 2) * zoom,
     zoom,
   };
 }
@@ -282,13 +275,12 @@ function ErdCanvas({ relations, erd, focus, onNavigate, onPeek }: { relations: r
     return { nodes, edges };
   }, [placed, focus, relations]);
 
-  // Fit the boxes in focus, moving there with the shared motion (LA-PAT-APP-UX-R04), or at once;
-  // the faded context may run past the canvas's edges (LA-EXP-UC11-R06).
+  // Fit every box, moving there with the shared motion (LA-PAT-APP-UX-R04), or at once.
   const fit = useCallback((animate: boolean) => {
     const box = wrapper.current?.getBoundingClientRect();
     if (!placed || placed.rects.size === 0 || !box || box.width <= 0 || box.height <= 0) return;
     const motion = readMotion();
-    setViewport(fitRects(focusRects(placed.erd, placed.rects), box.width, box.height), animate && motion.duration > 0 ? { duration: motion.duration, ease: motion.ease } : { duration: 0 });
+    setViewport(fitRects(placed.rects, box.width, box.height), animate && motion.duration > 0 ? { duration: motion.duration, ease: motion.ease } : { duration: 0 });
   }, [placed, setViewport]);
   // The edge hints count every box past an edge: the faded context, and what a big model leaves outside.
   const centers = useMemo(() => (placed ? placed.erd.boxes.flatMap((b) => {
@@ -357,7 +349,7 @@ function ErdCanvas({ relations, erd, focus, onNavigate, onPeek }: { relations: r
         onNodeMouseEnter={(_, n) => onPeek?.('hover', n.id)}
         onNodeMouseLeave={() => onPeek?.('hover', null)}
         onPaneClick={tap.clear}
-        minZoom={0.1}
+        minZoom={0.05}
         proOptions={{ hideAttribution: true }}
       >
         <Background gap={24} size={1} />

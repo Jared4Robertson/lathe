@@ -249,6 +249,7 @@ describe('graph groups on the page', () => {
     await waitFor(() => expect(groupNode('P-D/question')!.focus).toBe(true));
     // Its name and count: in its label (LA-EXP-DR60), and in its tooltip.
     expect(groupNode('P-D/question')!.lines.map((l) => l.text)).toContain('Open questions (1)');
+    expect(groupNode('P-D/question')!.lines.map((l) => l.text).join(' ')).toMatch(/^Open question folder · P-D/);
     expect(groupNode('P-D/question')!.tip).toBe('Open questions (1) (in P-D)');
     expect(document.querySelector('.graph-group-chevron')).toBeNull();
 
@@ -301,7 +302,7 @@ describe('graph groups on the page', () => {
     const legend = within(screen.getByRole('region', { name: 'Legend' }));
     expect(legend.getByText(/Stage, folder or group/)).toBeTruthy();
     // A labeled group is named for assistive technology by its name, count and owner; one with nothing wrong beneath it carries no mark.
-    expect(node('P-D/test-plan')!.getAttribute('aria-label')).toMatch(/^Group Test plan \(\d+\) in P-D$/);
+    expect(node('P-D/test-plan')!.getAttribute('aria-label')).toMatch(/^Stage Test plan \(\d+\) in P-D$/);
     expect(marksOf(testIndex(), 'P-D/question')).toEqual({ errors: 0, warnings: 0, gaps: [] });
   });
 

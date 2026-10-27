@@ -7,7 +7,7 @@ import { treeParent } from '../graph/tree';
 import { LatheLogo } from '../LatheLogo';
 import { Link } from '../router';
 import { parseSpecRoute, type SpecIndex, type SpecRecord, type SpecState, type Stage } from '../specs/data';
-import { branchOf, domainFolders, productFolders, type Folder, type StageFolders } from '../specs/folders';
+import { branchOf, domainFolders, productFolders, productLevelKey, type Folder, type StageFolders } from '../specs/folders';
 import { recordText, StageMark } from '../specs/parts';
 import { useShortcutHint } from './commands';
 import { SPACE_KEYS, spaceCommandId } from './keymap';
@@ -366,8 +366,13 @@ function SpaceItems({ index, space, path, reveal }: { index: SpecIndex; space: S
         </li>
       </ul>
       {ownStages.length > 0 && (
+        // What sits at product level, in one folder before the domains, as the graph's tree has it.
         <ul className="nav-tree nav-shared" aria-label={`Product level of ${space.title}`}>
-          {stageRows(ownStages, space.title, 0)}
+          <NavFolder id={productLevelKey(space.id)} depth={0} label="Product level" count={ownStages.reduce((n, s) => n + s.count, 0)} open={isOpen(productLevelKey(space.id))} holds={holds(productLevelKey(space.id))} onToggle={() => toggle(productLevelKey(space.id))}>
+            <ul className="nav-tree" aria-label={`Stages of ${space.title}`}>
+              {stageRows(ownStages, space.title, 1)}
+            </ul>
+          </NavFolder>
         </ul>
       )}
       {domains.length > 0 && (

@@ -7,6 +7,7 @@ import { graphSummary, keyboardOrder, stepTarget, type Box } from '../../src/gra
 import { panToward, pastEdges } from '../../src/graph/hints';
 import { groupLabel, groupMembers, neighborhood, type Neighborhood } from '../../src/graph/model';
 import { treeChildren, treeParent } from '../../src/graph/tree';
+import { labelLines } from '../../src/graph/text';
 import { domainFolders } from '../../src/specs/folders';
 import { openApp, startAtDepth } from '../helpers';
 import { testIndex, testWorkspace } from './workspace';
@@ -71,12 +72,16 @@ describe('the graph tree, its depth and its camera', () => {
     // An aggregate's own stage folds under it, through a group per kind; a command's policy under the command.
     expect(treeChildren(index, 'P-D-A3')).toEqual(['P-D-A3/entity', 'P-D-A3/invariant', 'P-D-A3/domain_event', 'P-D-A3/command']);
     expect(treeChildren(index, 'P-D-CMD04')).toEqual(['P-D-PO01']);
-    // The product: its own stages (what sits at product level), then its domains.
-    expect(treeChildren(index, 'P')).toEqual(['P/domain-model', 'P/interaction-design', 'P/technical-specification', 'P/test-plan', 'P-D', 'P-E']);
+    // The product: its Product level (its own stages, what sits at product level), then its domains.
+    expect(treeChildren(index, 'P')).toEqual(['P/product-level', 'P-D', 'P-E']);
+    expect(treeChildren(index, 'P/product-level')).toEqual(['P/domain-model', 'P/interaction-design', 'P/technical-specification', 'P/test-plan']);
+    expect(groupLabel(index, 'P/product-level')).toBe('Product level (7)');
+    expect(labelLines(index, 'P/product-level').meta).toBe('Level · P');
+    expect(labelLines(index, 'P/domain-model').meta).toBe('Stage · P');
     expect(treeChildren(index, 'P/domain-model/value_object')).toEqual(['P-VO01']);
     expect(treeChildren(index, 'P-VO01')).toEqual(['P-VO01-C01']);
     // Every child's parent is the node that lists it.
-    for (const id of ['P', 'P-D', 'P-D/domain-model', 'P-D/test-plan', 'P-D/interaction-design', 'P-D-A3', 'P/technical-specification']) {
+    for (const id of ['P', 'P/product-level', 'P-D', 'P-D/domain-model', 'P-D/test-plan', 'P-D/interaction-design', 'P-D-A3', 'P/technical-specification']) {
       for (const c of treeChildren(index, id)) expect(treeParent(index, c)).toBe(id);
     }
   });

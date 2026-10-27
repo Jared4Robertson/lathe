@@ -398,6 +398,14 @@ export const groupName = (index: SpecIndex, gid: string) => treeGroup(index, gid
 /** The nearest record above a group: the domain of a stage or folder, the record of a kind group. */
 export const groupOwner = (index: SpecIndex, gid: string) => treeGroup(index, gid)?.owner ?? parseGroupId(gid)?.parent ?? gid;
 
+/** What a group is, as its box's kind line names it: "Level" (a product's Product level), "Stage", or a folder of its kind ("Aggregate folder", "Command folder"). */
+export function groupKindLabel(index: SpecIndex, gid: string): string {
+  const g = treeGroup(index, gid);
+  if (g?.role === 'level') return 'Level';
+  if (g?.role === 'stage') return 'Stage';
+  return g?.kind ? `${kindLabel(index, g.kind)} folder` : 'Folder';
+}
+
 /** The problems and coverage gaps of a group's members and everything beneath them, summed for the group's mark. */
 export function groupMarks(index: SpecIndex, gid: string): { errors: number; warnings: number; gaps: string[] } {
   let errors = 0;
