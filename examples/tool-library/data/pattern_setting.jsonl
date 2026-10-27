@@ -1,0 +1,3 @@
+{"pattern_id":"TL-PAT-LIBRARIAN-ACTION","position":1,"name":"record","meaning":"The record the action saves or changes."}
+{"pattern_id":"TL-PAT-LIBRARIAN-ACTION","position":2,"name":"required_input","meaning":"What the librarian must enter for the action to go ahead."}
+{"pattern_id":"TL-PAT-LIBRARIAN-ACTION","position":3,"name":"result","meaning":"What the library shows the librarian once the record is saved."}
