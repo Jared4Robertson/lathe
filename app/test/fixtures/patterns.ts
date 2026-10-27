@@ -27,7 +27,6 @@ export function patternWorkspace(): SpecData {
         gaps: [
           ...c.gaps,
           { id: 'DM-PAT-CHECKOUT-R01', kind: 'pattern_rule', missing: 'proves' as const },
-          { id: 'DM-PAT-CHECKOUT-R02', kind: 'pattern_rule', missing: 'satisfies' as const },
           { id: 'DM-PAT-CHECKOUT-R02', kind: 'pattern_rule', missing: 'proves' as const },
         ],
       };
