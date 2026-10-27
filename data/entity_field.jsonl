@@ -153,11 +153,9 @@
 {"entity_id":"LA-EXP-EN10","position":4,"name":"Pane sizes","meaning":"Each pane's weight, which the gaps share out.","type":"Whole number per view, 1 to 10000.","example":"wiki 160, graph 40"}
 {"entity_id":"LA-EXP-EN10","position":5,"name":"Wiki scroll","meaning":"How far down the wiki pane was.","type":"Pixels from the top.","example":"120"}
 {"entity_id":"LA-EXP-EN10","position":6,"name":"Graph settings","meaning":"The graph's depth, trace, filters and open groups.","type":"Depth 1 to 3, yes or no, kinds and relations hidden, groups open.","example":"Depth 2"}
-{"entity_id":"LA-PLT-EN01","position":1,"name":"Specs folder","meaning":"Where the records were read from.","type":"Folder path, relative to the root.","example":"specs"}
-{"entity_id":"LA-PLT-EN01","position":2,"name":"Checks folder","meaning":"Where the product's own checks were read from.","type":"Folder path, or none.","example":"lathe-checks"}
-{"entity_id":"LA-PLT-EN01","position":3,"name":"Extensions folder","meaning":"Where the product's meta-model extension was read from.","type":"Folder path, or none.","example":"None"}
-{"entity_id":"LA-PLT-EN01","position":4,"name":"ID prefixes","meaning":"Prefixes besides product and domain IDs that a body may cite.","type":"List of prefixes, or none.","example":"None"}
-{"entity_id":"LA-PLT-EN01","position":5,"name":"Errors","meaning":"How many problems are errors.","type":"Derived count.","example":"0"}
+{"entity_id":"LA-PLT-EN01","position":1,"name":"Data folder","meaning":"Where the product's data files were read from, as `lathe.config.json` names it.","type":"Folder path, relative to the root.","example":"data"}
+{"entity_id":"LA-PLT-EN01","position":2,"name":"Refusals","meaning":"The rows the store refused on load, each with its file, line and rule; while there are any, nothing else is checked.","type":"List of store problems, or none.","example":"data/view.jsonl:2: domain_id \"TL-NOPE\" names no domain"}
+{"entity_id":"LA-PLT-EN01","position":3,"name":"Errors","meaning":"How many problems are errors.","type":"Derived count.","example":"0"}
 {"entity_id":"LA-PLT-EN02","position":1,"name":"Panel","meaning":"Which part of the page it is.","type":"Navigation, wiki pane, graph pane or side bar.","example":"Side bar"}
 {"entity_id":"LA-PLT-EN02","position":2,"name":"Shown","meaning":"Whether it is on screen; a hidden panel keeps a control that brings it back.","type":"Yes or no.","example":"Yes"}
 {"entity_id":"LA-PLT-EN03","position":1,"name":"Command ID","meaning":"The command's name in the keymap.","type":"Text, unique.","example":"commandPalette"}
@@ -188,6 +186,15 @@
 {"entity_id":"LA-PLT-EN10","position":1,"name":"Source","meaning":"Which server it is.","type":"`serve()` in the shell, a Vite dev server the shell starts, or the shared 5199 dev server.","example":"serve()"}
 {"entity_id":"LA-PLT-EN10","position":2,"name":"Folder","meaning":"The product folder it reads.","type":"Folder path.","example":"~/Development/tool-library"}
 {"entity_id":"LA-PLT-EN10","position":3,"name":"Port","meaning":"Where it answers.","type":"Port number, never 5199 for one the shell starts.","example":"61234"}
+{"entity_id":"LA-PLT-EN11","position":1,"name":"Commands","meaning":"What the write does, in order.","type":"List of commands, at least one.","example":"add requirement, link proves"}
+{"entity_id":"LA-PLT-EN11","position":2,"name":"Tables changed","meaning":"The tables whose rows the write changed.","type":"Derived list of table names.","example":"requirement, proves"}
+{"entity_id":"LA-PLT-EN11","position":3,"name":"Files rewritten","meaning":"The data files rewritten for those tables, and no others.","type":"Derived list of file names.","example":"requirement.jsonl, proves.jsonl"}
+{"entity_id":"LA-PLT-EN12","position":1,"name":"Operation","meaning":"What the command does.","type":"`add`, `set`, `move`, `link`, `unlink` or `remove`.","example":"set"}
+{"entity_id":"LA-PLT-EN12","position":2,"name":"Target","meaning":"The row it acts on: a table and a row, a record ID or a part row by its key, or a relation and its two ends.","type":"Table and key, or relation and IDs.","example":"use_case LA-PLT-UC02"}
+{"entity_id":"LA-PLT-EN12","position":3,"name":"Values","meaning":"The columns it sets or clears, or the record's new parent for a move.","type":"Map from column name to value, null clearing one.","example":"goal: \"Lathe is installed...\""}
+{"entity_id":"LA-PLT-EN13","position":1,"name":"Rule","meaning":"The constraint or validation query the data broke.","type":"Rule name.","example":"foreign-key"}
+{"entity_id":"LA-PLT-EN13","position":2,"name":"Message","meaning":"What is wrong, naming the table, row and value.","type":"Text.","example":"view TL-LEND-V02: domain_id \"TL-NOPE\" names no domain"}
+{"entity_id":"LA-PLT-EN13","position":3,"name":"Where","meaning":"The data file and line of a row that was loaded, or the index of the command that brought it.","type":"File and line, or command number from 0.","example":"command 2"}
 {"entity_id":"LA-TRC-EN01","position":1,"name":"Domain","meaning":"The domain counted.","type":"Record reference.","example":"TL-LEND"}
 {"entity_id":"LA-TRC-EN01","position":2,"name":"Automated tests","meaning":"The domain's tests that run as code.","type":"Derived count.","example":"32"}
 {"entity_id":"LA-TRC-EN01","position":3,"name":"Manual tests","meaning":"The domain's tests a person carries out.","type":"Derived count.","example":"1"}

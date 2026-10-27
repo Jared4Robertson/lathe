@@ -39,7 +39,7 @@
 {"id":"LA-EXP-EN08","title":"Edge","aggregate_id":"LA-EXP-A4","role":"child","description":"One line in the graph, for a link or for a parent and its child."}
 {"id":"LA-EXP-EN09","title":"Tab group","aggregate_id":"LA-EXP-A5","role":"root","description":"The tabs open in one space, in order, with one active."}
 {"id":"LA-EXP-EN10","title":"Tab","aggregate_id":"LA-EXP-A5","role":"child","description":"One open page, with what it shows and where the reader was in it."}
-{"id":"LA-PLT-EN01","title":"Workspace","aggregate_id":"LA-PLT-A1","role":"root","description":"The result of one load of a repo's specs: what the engine read, from where, and what it found."}
+{"id":"LA-PLT-EN01","title":"Workspace","aggregate_id":"LA-PLT-A1","role":"root","description":"The result of one load of a repo's data files: where the engine read them from, and what it found."}
 {"id":"LA-PLT-EN02","title":"Panel","aggregate_id":"LA-PLT-A2","role":"root","description":"One part of the page's layout, which always shows the page's focus and can be hidden without losing it."}
 {"id":"LA-PLT-EN03","title":"Command","aggregate_id":"LA-PLT-A3","role":"root","description":"Something a person can do from anywhere in the app, listed once in the keymap."}
 {"id":"LA-PLT-EN04","title":"Key binding","aggregate_id":"LA-PLT-A3","role":"child","description":"One chord or sequence that runs the command, never shared with another command active at the same time."}
@@ -49,6 +49,9 @@
 {"id":"LA-PLT-EN08","title":"Product window","aggregate_id":"LA-PLT-A6","role":"root","description":"One window showing one product folder."}
 {"id":"LA-PLT-EN09","title":"Recent folder","aggregate_id":"LA-PLT-A6","role":"child","description":"One folder the person opened lately, for File › Open Recent and the next launch."}
 {"id":"LA-PLT-EN10","title":"App server","aggregate_id":"LA-PLT-A7","role":"root","description":"What one window loads Lathe from."}
+{"id":"LA-PLT-EN11","title":"Write","aggregate_id":"LA-PLT-A8","role":"root","description":"One change to the data, all of whose commands take effect together or not at all."}
+{"id":"LA-PLT-EN12","title":"Command","aggregate_id":"LA-PLT-A8","role":"child","description":"One step of a write: a row added, changed, moved, linked, unlinked or removed."}
+{"id":"LA-PLT-EN13","title":"Refusal","aggregate_id":"LA-PLT-A8","role":"child","description":"One reason the store refused a write or a load: the rule it broke and where."}
 {"id":"LA-TRC-EN01","title":"Domain coverage","aggregate_id":"LA-TRC-A1","role":"root","description":"What a load counts for one domain: its tests by state, and below them each obligation kind and the gaps."}
 {"id":"LA-TRC-EN02","title":"Obligation count","aggregate_id":"LA-TRC-A1","role":"child","description":"The counts for one obligation kind in the domain, every one from links and from tests that run."}
 {"id":"LA-TRC-EN03","title":"Gap","aggregate_id":"LA-TRC-A1","role":"child","description":"One obligation of the domain that is missing its design or its proof."}
