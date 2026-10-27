@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { Background, Controls, Handle, Position, ReactFlow, ReactFlowProvider, useReactFlow, type Edge, type EdgeProps, type Node, type NodeProps } from '@xyflow/react';
 import type { RelationRule, SpecIndex } from '../specs/data';
 import { relationLabelOf } from '../specs/labels';
@@ -28,13 +28,13 @@ const KEY_ORDER: readonly ErdKind[] = ['policy', 'command', 'specification', 'ag
 
 /** The key's lines in order, each with what its label alone does not say (its whole meaning is the entry's tooltip). */
 const LINE_KEY: Record<ErdRelation, { note: string; meaning: string }> = {
-  refers_to: { note: 'many to one', meaning: 'A field holds the other aggregate\'s ID.' },
-  has_one: { note: 'one to one', meaning: 'An entity has one of the other.' },
-  has_many: { note: 'one to many', meaning: 'An entity has many of the other.' },
+  refers_to: { note: 'n:1', meaning: 'A field holds the other aggregate\'s ID: many to one.' },
+  has_one: { note: '1:1', meaning: 'An entity has one of the other: one to one.' },
+  has_many: { note: '1:n', meaning: 'An entity has many of the other: one to many.' },
   changes: { note: '', meaning: 'The aggregate the command changes.' },
-  also_changes: { note: 'a recorded exception', meaning: 'Another aggregate the command changes in the same transaction, with its reason.' },
+  also_changes: { note: '', meaning: 'A recorded exception: another aggregate the command changes in the same transaction, with its reason.' },
   raises: { note: '', meaning: 'The events the command raises.' },
-  hears: { note: 'afterwards', meaning: 'The policy reacts to the event after it is saved, through the outbox.' },
+  hears: { note: 'later', meaning: 'The policy reacts to the event after it is saved, through the outbox.' },
   invokes: { note: '', meaning: 'The command the policy runs.' },
   checks: { note: 'first', meaning: 'A specification the command checks before acting.' },
   reads: { note: '', meaning: 'What a read model or a specification reads.' },
@@ -161,10 +161,12 @@ export function ModelView({ index, focus, onNavigate, onPeek }: ModelViewProps) 
 
 /** The key under the diagram: the owners, the event storming colors of the kinds drawn, the badges and every kind of line drawn. */
 export function ErdKey({ erd, highlight, relations = [] }: { erd: Erd; highlight: boolean; relations?: readonly RelationRule[] }) {
+  const [open, setOpen] = useState(false);
+  const gridId = useId();
   const sample = (relation: ErdRelation, dashed: boolean) => {
-    const g = lineGeometry({ x: 0, y: 0, width: 2, height: 2 }, { x: 46, y: 0, width: 2, height: 2 }, RELATION_ENDS[relation]);
+    const g = lineGeometry({ x: 0, y: 0, width: 2, height: 2 }, { x: 34, y: 0, width: 2, height: 2 }, RELATION_ENDS[relation]);
     return (
-      <svg className={`erd-key-line rel-${relation}${dashed ? ' is-dashed' : ''}`} viewBox="-2 -9 52 18" width="52" height="18" aria-hidden="true">
+      <svg className={`erd-key-line rel-${relation}${dashed ? ' is-dashed' : ''}`} viewBox="-2 -9 40 18" width="36" height="18" aria-hidden="true">
         <path className="erd-line-path" d={g.line} />
         {g.sourceEnd && <path className="erd-end" d={g.sourceEnd} />}
         {g.targetEnd && <path className="erd-end" d={g.targetEnd} />}
@@ -174,22 +176,41 @@ export function ErdKey({ erd, highlight, relations = [] }: { erd: Erd; highlight
   const kinds = KEY_ORDER.filter((k) => erd.boxes.some((b) => b.kind === k));
   const lines = [...new Map(erd.lines.map((l) => [l.relation, l])).values()].sort((a, b) => LINE_ORDER.indexOf(a.relation) - LINE_ORDER.indexOf(b.relation));
   const other = erd.boxes.some((b) => b.tone === 'other');
+  // Every entry is a cell of one grid of fixed cells, the colors' first and then the lines', so a model with other
+  // entries never moves the key itself, only what is written in its cells (LA-PAT-APP-UX-R08): each cell is keyed by
+  // its place, so it stays where it is and only its words change, and the lines start on a row of their own. A
+  // cell's whole meaning is its tooltip.
+  const text = (words: string) => <span className="erd-key-text">{words}</span>;
+  type Entry = { className?: string; title: string; mark: ReactNode; words: string };
+  const colors: Entry[] = [
+    ...kinds.map((k) => ({ title: BOX_KIND[k], mark: <span className={`erd-key-swatch erd-key-${k}`} aria-hidden="true" />, words: BOX_KIND[k] })),
+    { className: 'tone-current', title: "This domain's records", mark: <span className="erd-key-swatch erd-key-current" aria-hidden="true" />, words: 'This domain' },
+    ...(other ? [{ className: 'tone-other', title: "Another domain's records, its name in parentheses", mark: <span className="erd-key-swatch erd-key-other" aria-hidden="true" />, words: 'Other domain, in parentheses' }] : []),
+    ...(erd.boxes.some((b) => b.context) ? [{ title: erd.level === 'aggregate' ? 'Faded: records of other aggregates and domains' : 'Faded: records of other domains', mark: <span className="erd-key-context" aria-hidden="true" />, words: 'Faded: elsewhere' }] : []),
+    ...(erd.boxes.some((b) => b.root) ? [{ title: "The aggregate's root entity", mark: <span className="erd-root">root</span>, words: 'Root entity' }] : []),
+    ...(highlight ? [{ title: 'The record this page is about', mark: <span className="erd-key-highlight" aria-hidden="true" />, words: 'This record' }] : []),
+  ];
+  const lineEntries: Entry[] = lines.map((l) => {
+    const { note, meaning } = LINE_KEY[l.relation];
+    return { title: meaning, mark: sample(l.relation, l.dashed), words: `${lineLabel(relations, l.relation)}${note && ` (${note})`}` };
+  });
+  const cells = (entries: Entry[]) => entries.map((e, i) => <li key={i} className={e.className} title={e.title}>{e.mark} {text(e.words)}</li>);
   return (
-    <div className="erd-key" role="group" aria-label="Key" tabIndex={0}>
-      <ul className="erd-key-ends" aria-label="Colors">
-        {kinds.map((k) => <li key={k}><span className={`erd-key-swatch erd-key-${k}`} aria-hidden="true" /> {BOX_KIND[k]}</li>)}
-        <li className="tone-current"><span className="erd-key-swatch erd-key-current" aria-hidden="true" /> {erd.level === 'domain' ? 'This domain' : 'This aggregate and this domain'}</li>
-        {other && <li className="tone-other"><span className="erd-key-swatch erd-key-other" aria-hidden="true" /> Another domain, named in parentheses</li>}
-        {erd.boxes.some((b) => b.context) && <li><span className="erd-key-context" aria-hidden="true" /> Faded: {erd.level === 'aggregate' ? 'other aggregates and domains' : 'other domains'}</li>}
-        {erd.boxes.some((b) => b.root) && <li><span className="erd-root">root</span> Root entity</li>}
-        {highlight && <li><span className="erd-key-highlight" aria-hidden="true" /> This record</li>}
-      </ul>
-      <ul className="erd-key-ends" aria-label="Lines">
-        {lines.map((l) => {
-          const { note, meaning } = LINE_KEY[l.relation];
-          return <li key={l.relation} title={meaning}>{sample(l.relation, l.dashed)} {lineLabel(relations, l.relation)}{note && ` (${note})`}</li>;
-        })}
-      </ul>
+    <div
+      className={`erd-key${open ? ' is-open' : ''}`}
+      role="group"
+      aria-label="Key"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === 'Escape' && open) { e.stopPropagation(); setOpen(false); } }}
+    >
+      {/* In a narrow pane the key is one bar: this button opens the whole key over the canvas, moving nothing. */}
+      <button type="button" className="erd-key-toggle" aria-expanded={open} aria-controls={gridId} onClick={() => setOpen((o) => !o)}>
+        {open ? 'Hide the key' : 'Key'}
+      </button>
+      <div className="erd-key-grid" id={gridId}>
+        <ul className="erd-key-ends" aria-label="Colors">{cells(colors)}</ul>
+        <ul className="erd-key-ends" aria-label="Lines">{cells(lineEntries)}</ul>
+      </div>
     </div>
   );
 }

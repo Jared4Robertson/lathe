@@ -175,11 +175,11 @@ describe('the Model view', () => {
     await boxesShown();
     const key = within(modelPane()).getByRole('group', { name: 'Key' });
     const colors = within(key).getByRole('list', { name: 'Colors' });
-    for (const text of ['Policy', 'Command', 'Specification', 'Aggregate', 'Domain event', 'Read model', 'Query', 'This domain', 'Another domain, named in parentheses']) expect(colors).toHaveTextContent(text);
+    for (const text of ['Policy', 'Command', 'Specification', 'Aggregate', 'Domain event', 'Read model', 'Query', 'This domain', 'Other domain, in parentheses']) expect(colors).toHaveTextContent(text);
     const lines = within(key).getByRole('list', { name: 'Lines' });
-    expect(lines).toHaveTextContent('Refers to (many to one)');
+    expect(lines).toHaveTextContent('Refers to (n:1)');
     expect(lines).toHaveTextContent('Raises');
-    expect(lines).toHaveTextContent('Hears (afterwards)');
+    expect(lines).toHaveTextContent('Hears (later)');
     expect(lines.querySelector('.erd-key-line.rel-hears.is-dashed')).not.toBeNull();
     // Under the diagram, keeping one height.
     expect(modelPane().querySelector('.model-canvas')!.compareDocumentPosition(key.closest('.erd-key')!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
