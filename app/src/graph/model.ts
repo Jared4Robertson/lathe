@@ -1,6 +1,6 @@
 import { plural } from '../plural';
 import type { SpecIndex, SpecRecord } from '../specs/data';
-import { byIdOrder, kindLabel } from '../specs/data';
+import { textOf, byIdOrder, kindLabel } from '../specs/data';
 import { treeChildren, treeGroup, treeOf, treeParent } from './tree';
 import { linkLabel, relationLabelOf } from '../specs/labels';
 
@@ -500,7 +500,7 @@ export function traceChain(index: SpecIndex, focus: string, filters: Filters = N
   if (shownRelation(NAMES) && shownKind(FILE_KIND)) {
     for (const node of [...nodes.values()]) {
       const r = index.byId.get(node.id)!;
-      const path = r.kind === 'component' ? r.fields.file : r.kind === 'test' ? r.fields.run_by : undefined;
+      const path = r.kind === 'component' ? textOf(r.row, 'file') : r.kind === 'test' ? textOf(r.row, 'file') : undefined;
       if (!path) continue;
       const id = fileNodeId(path);
       if (!nodes.has(id)) {

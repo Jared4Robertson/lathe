@@ -1,0 +1,190 @@
+import { screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { describe, expect, it } from 'vitest';
+import type { SpecData, WriteAnswer } from '../../lathe/src/server/contract';
+import { addRows, removeRows, setRow } from './fixtures/load';
+import { workspace } from './fixtures/workspace';
+import { main, openApp } from './helpers';
+
+// Changing records in place: Edit, Add and Remove on a record's page, the form generated from the
+// schema, one write per change through POST /api/write, and the store's refusals shown inline.
+
+const ok: WriteAnswer = { ok: true, tables: [], files: [], changes: [] };
+const toolbar = (id: string) => screen.getByRole('toolbar', { name: `Change ${id}` });
+
+describe('editing a record', () => {
+  it('opens a form of typed inputs, writes only what changed, and shows the record changed', async () => {
+    const user = userEvent.setup();
+    const changed = (): SpecData => setRow(workspace(), 'requirement', 'DM-SHOP-UC01-R01', { statement: 'The basket MUST show the new item within a second.' });
+    const { writes } = await openApp('/DM-SHOP-UC01-R01', { write: () => ({ answer: ok, data: changed() }) });
+    await user.click(within(toolbar('DM-SHOP-UC01-R01')).getByRole('button', { name: 'Edit' }));
+
+    const form = screen.getByRole('form', { name: 'Edit DM-SHOP-UC01-R01' });
+    // Every input has its label; the first takes focus; a required one says so; its column's meaning describes it.
+    const title = within(form).getByRole('textbox', { name: /^title/ });
+    expect(title).toHaveFocus();
+    expect(title).toHaveValue('The basket shows the new item');
+    expect(title).toHaveAttribute('aria-required', 'true');
+    const statement = within(form).getByRole('textbox', { name: /^statement/ });
+    expect(statement.tagName).toBe('TEXTAREA');
+    expect(statement).toHaveAccessibleDescription(/MUST, MUST NOT, SHOULD or MAY/);
+    // The parent is a choice among the use cases of this product only.
+    const parent = within(form).getByRole('combobox', { name: /^Parent/ });
+    expect(within(parent).getAllByRole('option').map((o) => o.getAttribute('value'))).toEqual(['DM-PAY-UC01', 'DM-SHOP-UC01']);
+
+    await user.clear(statement);
+    await user.type(statement, 'The basket MUST show the new item within a second.');
+    await user.click(within(form).getByRole('button', { name: 'Save' }));
+
+    await waitFor(() => expect(writes).toHaveLength(1));
+    expect(writes[0]).toEqual([{ op: 'set', table: 'requirement', key: 'DM-SHOP-UC01-R01', changes: { statement: 'The basket MUST show the new item within a second.' } }]);
+    await waitFor(() => expect(screen.queryByRole('form')).toBeNull());
+    expect(within(main()).getByText('The basket MUST show the new item within a second.')).toBeInTheDocument();
+    // Focus comes back to the record's actions.
+    await waitFor(() => expect(within(toolbar('DM-SHOP-UC01-R01')).getByRole('button', { name: 'Edit' })).toHaveFocus());
+  });
+
+  it('shows the store\'s refusal inline, at the top and beside the part of the form it came from, and keeps the draft', async () => {
+    const user = userEvent.setup();
+    const refusal: WriteAnswer = { ok: false, error: 'refused', problems: [{ rule: 'check', table: 'requirement', key: 'DM-SHOP-UC01-R01', command: 0, message: 'requirement.title is empty' }] };
+    const { writes } = await openApp('/DM-SHOP-UC01-R01', { write: () => ({ answer: refusal }) });
+    await user.click(within(toolbar('DM-SHOP-UC01-R01')).getByRole('button', { name: 'Edit' }));
+    const form = screen.getByRole('form', { name: 'Edit DM-SHOP-UC01-R01' });
+    await user.type(within(form).getByRole('textbox', { name: /^group name/ }), 'Display');
+    await user.click(within(form).getByRole('button', { name: 'Save' }));
+
+    const alert = await within(form).findByRole('alert');
+    expect(alert).toHaveTextContent('The store refused the change. Nothing was saved.');
+    expect(alert).toHaveTextContent('DM-SHOP-UC01-R01: requirement.title is empty');
+    expect(alert).toHaveFocus();
+    const fields = within(form).getByRole('group', { name: 'Fields' });
+    expect(fields).toHaveTextContent('requirement.title is empty');
+    expect(writes).toHaveLength(1);
+    // The form stays open with what was typed.
+    expect(within(form).getByRole('textbox', { name: /^group name/ })).toHaveValue('Display');
+  });
+
+  it('does not write while the form has a problem it can see, and says what to fix beside each input', async () => {
+    const user = userEvent.setup();
+    const { writes } = await openApp('/DM-SHOP-UC01-R01');
+    await user.click(within(toolbar('DM-SHOP-UC01-R01')).getByRole('button', { name: 'Edit' }));
+    const form = screen.getByRole('form');
+    const title = within(form).getByRole('textbox', { name: /^title/ });
+    await user.clear(title);
+    await user.click(within(form).getByRole('button', { name: 'Save' }));
+    expect(await within(form).findByRole('alert')).toHaveTextContent('Title is required.');
+    expect(title).toHaveAttribute('aria-invalid', 'true');
+    expect(title).toHaveAccessibleDescription(/Title is required\./);
+    expect(writes).toHaveLength(0);
+    // Cancel leaves the record as it was.
+    await user.click(within(form).getByRole('button', { name: 'Cancel' }));
+    expect(screen.queryByRole('form')).toBeNull();
+    expect(within(main()).getByText(/The basket MUST show the item at once/)).toBeInTheDocument();
+  });
+
+  it('adds a link only to a valid target, and removes one', async () => {
+    const user = userEvent.setup();
+    const { writes } = await openApp('/DM-SHOP-C01', { write: () => ({ answer: ok }) });
+    await user.click(within(toolbar('DM-SHOP-C01')).getByRole('button', { name: 'Edit' }));
+    const form = screen.getByRole('form');
+    const links = within(form).getByRole('group', { name: 'Links' });
+    const dependsOn = within(links).getByRole('combobox', { name: /Add a link: Depends on/ });
+    // A record of a kind the relation does not allow is refused before any write.
+    await user.type(dependsOn, 'DM-SHOP-UC01{Enter}');
+    expect(within(links).getByText(/DM-SHOP-UC01 is not a component it can link to/)).toBeInTheDocument();
+    await user.click(within(links).getByRole('button', { name: /Remove the link Satisfies DM-SHOP-DR01/ }));
+    await user.click(within(form).getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(writes).toHaveLength(1));
+    expect(writes[0]).toEqual([{ op: 'unlink', relation: 'satisfies', source: 'DM-SHOP-C01', target: 'DM-SHOP-DR01' }]);
+  });
+});
+
+describe('adding a record', () => {
+  it('adds a child from its parent\'s page with a suggested ID, and opens it', async () => {
+    const user = userEvent.setup();
+    const added = (): SpecData => addRows(workspace(), 'requirement', { id: 'DM-SHOP-UC01-R03', title: 'The basket shows its total', use_case_id: 'DM-SHOP-UC01', statement: 'The basket MUST show its total.' });
+    const { writes } = await openApp('/DM-SHOP-UC01', { write: () => ({ answer: ok, data: added() }) });
+    const actions = toolbar('DM-SHOP-UC01');
+    const add = within(actions).getByRole('button', { name: 'Add…' });
+    expect(add).toHaveAttribute('aria-expanded', 'false');
+    await user.click(add);
+    expect(add).toHaveAttribute('aria-expanded', 'true');
+    await user.click(within(within(actions).getByRole('group', { name: 'Kinds to add under DM-SHOP-UC01' })).getByRole('button', { name: 'UC requirement' }));
+
+    const form = screen.getByRole('form', { name: 'Add a UC requirement' });
+    const id = within(form).getByRole('textbox', { name: /^ID/ });
+    expect(id).toHaveValue('DM-SHOP-UC01-R03');
+    expect(id).toHaveFocus();
+    expect(within(form).getByRole('combobox', { name: /^Parent/ })).toHaveValue('DM-SHOP-UC01');
+    await user.type(within(form).getByRole('textbox', { name: /^title/ }), 'The basket shows its total');
+    await user.type(within(form).getByRole('textbox', { name: /^statement/ }), 'The basket MUST show its total.');
+    await user.click(within(form).getByRole('button', { name: 'Add UC requirement' }));
+
+    await waitFor(() => expect(writes).toHaveLength(1));
+    expect(writes[0]).toEqual([{ op: 'add', table: 'requirement', row: { id: 'DM-SHOP-UC01-R03', use_case_id: 'DM-SHOP-UC01', title: 'The basket shows its total', statement: 'The basket MUST show its total.' } }]);
+    expect(await screen.findByRole('heading', { level: 1, name: 'The basket shows its total' })).toBeInTheDocument();
+    expect(window.location.pathname).toBe('/DM-SHOP-UC01-R03');
+  });
+
+  it('refuses an ID that is already a record before writing', async () => {
+    const user = userEvent.setup();
+    const { writes } = await openApp('/DM-SHOP-UC01');
+    await user.click(within(toolbar('DM-SHOP-UC01')).getByRole('button', { name: 'Add…' }));
+    await user.click(screen.getByRole('button', { name: 'UC requirement' }));
+    const form = screen.getByRole('form');
+    const id = within(form).getByRole('textbox', { name: /^ID/ });
+    await user.clear(id);
+    await user.type(id, 'DM-SHOP-UC01-R01');
+    await user.type(within(form).getByRole('textbox', { name: /^title/ }), 'Again');
+    await user.type(within(form).getByRole('textbox', { name: /^statement/ }), 'It MUST hold.');
+    await user.click(within(form).getByRole('button', { name: 'Add UC requirement' }));
+    expect(await within(form).findByRole('alert')).toHaveTextContent('DM-SHOP-UC01-R01 is already a record.');
+    expect(writes).toHaveLength(0);
+  });
+});
+
+describe('removing a record', () => {
+  it('asks first, naming what still references the record, and shows the store\'s refusal inline', async () => {
+    const user = userEvent.setup();
+    const refusal: WriteAnswer = {
+      ok: false,
+      error: 'refused',
+      problems: [{ rule: 'referenced', table: 'use_case', key: 'DM-SHOP-UC01', command: 0, message: 'use_case DM-SHOP-UC01 is referenced, so it stays: requirement DM-SHOP-UC01-R01 (use_case_id)' }],
+    };
+    const { writes } = await openApp('/DM-SHOP-UC01', { write: () => ({ answer: refusal }) });
+    const remove = within(toolbar('DM-SHOP-UC01')).getByRole('button', { name: 'Remove' });
+    await user.click(remove);
+    expect(remove).toHaveAttribute('aria-expanded', 'true');
+    const panel = screen.getByRole('region', { name: 'Remove DM-SHOP-UC01?' });
+    expect(within(panel).getByRole('heading', { name: 'Remove DM-SHOP-UC01?' })).toHaveFocus();
+    expect(panel).toHaveTextContent('These 2 still reference it');
+    expect(within(panel).getByRole('link', { name: /DM-SHOP-UC01-R01/ }).closest('li')).toHaveTextContent('sits under it');
+    expect(within(panel).getByRole('link', { name: /DM-SHOP-UC01-R02/ })).toBeInTheDocument();
+    expect(panel).toHaveTextContent('with its 1 part row and the 1 link it starts');
+    // Nothing is written until the person confirms.
+    expect(writes).toHaveLength(0);
+
+    await user.click(within(panel).getByRole('button', { name: 'Remove DM-SHOP-UC01' }));
+    const alert = await within(panel).findByRole('alert');
+    expect(alert).toHaveTextContent('The store refused to remove it. Nothing was changed.');
+    expect(alert).toHaveTextContent('requirement DM-SHOP-UC01-R01 (use_case_id)');
+    expect(writes).toEqual([[{ op: 'remove', table: 'use_case', key: 'DM-SHOP-UC01' }]]);
+    expect(window.location.pathname).toBe('/DM-SHOP-UC01');
+    // Cancel closes the question and gives focus back to the actions.
+    await user.click(within(panel).getByRole('button', { name: 'Cancel' }));
+    expect(screen.queryByRole('region', { name: 'Remove DM-SHOP-UC01?' })).toBeNull();
+    await waitFor(() => expect(within(toolbar('DM-SHOP-UC01')).getByRole('button', { name: 'Edit' })).toHaveFocus());
+  });
+
+  it('removes a record nothing references, and goes to its parent', async () => {
+    const user = userEvent.setup();
+    const removed = (): SpecData => removeRows(workspace(), 'question', (r) => r.id === 'DM-SHOP-Q01');
+    const { writes } = await openApp('/DM-SHOP-Q01', { write: () => ({ answer: ok, data: removed() }) });
+    await user.click(within(toolbar('DM-SHOP-Q01')).getByRole('button', { name: 'Remove' }));
+    const panel = screen.getByRole('region', { name: 'Remove DM-SHOP-Q01?' });
+    expect(panel).toHaveTextContent('Nothing else references it.');
+    await user.click(within(panel).getByRole('button', { name: 'Remove DM-SHOP-Q01' }));
+    await waitFor(() => expect(window.location.pathname).toBe('/DM-SHOP'));
+    expect(writes).toEqual([[{ op: 'remove', table: 'question', key: 'DM-SHOP-Q01' }]]);
+  });
+});

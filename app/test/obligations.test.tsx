@@ -1,16 +1,16 @@
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import { indexWorkspace } from '../src/specs/data';
 import { RecordContent } from '../src/specs/RecordContent';
 import { obligationWorkspace } from './fixtures/obligations';
 import { main, openApp, section } from './helpers';
 // The Graph view, where the side bar is open, needs a ResizeObserver in jsdom.
 import './graph/setup';
+import { indexOf } from './fixtures/load';
 
 // Coverage per obligation kind, interaction requirements under their view or endpoint, and test states.
 
-const served = () => ({ workspace: obligationWorkspace() });
+const served = () => ({ data: obligationWorkspace() });
 const card = (title: string) => within(section(/^Domains/)).getByText(title).closest('article') as HTMLElement;
 /** Each coverage group as "Heading total: bar, bar, ...". */
 const groups = (element: HTMLElement) =>
@@ -141,7 +141,7 @@ describe('obligation kinds and test states', () => {
   it('LA-TRC-T95 The record content takes a record ID and sends the links it follows to its host', async () => {
     cleanup();
     window.history.replaceState(null, '', '/graph/DM-SHOP-E01-R01');
-    const index = indexWorkspace(obligationWorkspace());
+    const index = indexOf(obligationWorkspace());
     const onNavigate = vi.fn();
     const { container } = render(<RecordContent index={index} id="DM-SHOP-E01-R01" onNavigate={onNavigate} />);
     // It sizes itself by its own width (a CSS container), so it reads at half the screen.

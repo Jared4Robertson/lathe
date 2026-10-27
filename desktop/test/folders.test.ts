@@ -18,26 +18,28 @@ function folder(name: string, files: Record<string, string> = {}, dirs: string[]
   return root;
 }
 
-describe('LA-PLT-T106 A folder opens only when it holds lathe.config.json or a specs folder', () => {
-  it('opens a folder with lathe.config.json, reading its specs folder', () => {
-    const root = folder('configured', { 'lathe.config.json': '{ "specs": "records" }' });
-    expect(checkFolder(root)).toEqual({ ok: true, specsDir: path.join(root, 'records') });
+describe('LA-PLT-T106 A folder opens only when it holds lathe.config.json or a data folder', () => {
+  it('opens a folder with lathe.config.json, reading its data folder', () => {
+    const root = folder('configured', { 'lathe.config.json': '{ "data": "tables" }' });
+    expect(checkFolder(root)).toEqual({ ok: true, dataDir: path.join(root, 'tables') });
+    const plainConfig = folder('configured-default', { 'lathe.config.json': '{}' });
+    expect(checkFolder(plainConfig)).toEqual({ ok: true, dataDir: path.join(plainConfig, 'data') });
   });
 
-  it('opens a folder with a specs folder and no config', () => {
-    const root = folder('plain', {}, ['specs']);
-    expect(checkFolder(root)).toEqual({ ok: true, specsDir: path.join(root, 'specs') });
+  it('opens a folder with a data folder and no config', () => {
+    const root = folder('plain', {}, ['data']);
+    expect(checkFolder(root)).toEqual({ ok: true, dataDir: path.join(root, 'data') });
   });
 
   it('says what is missing otherwise', () => {
     const root = folder('empty');
     const check = checkFolder(root);
     expect(check.ok).toBe(false);
-    expect(!check.ok && check.message).toMatch(/has no lathe\.config\.json and no specs folder/);
+    expect(!check.ok && check.message).toMatch(/has no lathe\.config\.json and no data folder/);
   });
 
   it('refuses a config that is not valid JSON, naming the file', () => {
-    const root = folder('broken', { 'lathe.config.json': '{ specs: ' }, ['specs']);
+    const root = folder('broken', { 'lathe.config.json': '{ data: ' }, ['data']);
     const check = checkFolder(root);
     expect(!check.ok && check.message).toMatch(/lathe\.config\.json .* is not valid JSON/);
   });
@@ -50,11 +52,11 @@ describe('LA-PLT-T106 A folder opens only when it holds lathe.config.json or a s
 
   it('names the window after the products in the folder, then the folder', () => {
     const root = folder('products', {
-      'specs/b/product.md': '---\nid: B\nkind: product\ntitle: "Tool Library"\n---\nBody',
-      'specs/a/product.md': '---\nid: A\nkind: product\ntitle: Lathe\n---\nBody',
-      'specs/a/domain/domain.md': '---\nid: A-D\nkind: domain\ntitle: Not a product\nparent: A\n---\n',
+      'data/product.jsonl': '{"id":"LA","title":"Lathe"}\n{"id":"TL","title":"Tool Library"}\nnot json\n',
+      'data/domain.jsonl': '{"id":"LA-D","title":"Not a product","product_id":"LA"}\n',
     });
-    const names = productNames(path.join(root, 'specs'));
+    const names = productNames(path.join(root, 'data'));
+    expect(productNames(path.join(root, 'missing'))).toEqual([]);
     expect(names).toEqual(['Lathe', 'Tool Library']);
     expect(windowTitle('/Users/person/Development/Lathe', names, '/Users/owner')).toBe('Lathe, Tool Library — ~/Development/Lathe');
     expect(windowTitle('/srv/product', [], '/Users/owner')).toBe('product — /srv/product');

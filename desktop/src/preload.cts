@@ -10,7 +10,7 @@
 //   setErrorCount       sends the product's number of check errors, for the Dock badge (dock.ts);
 //   revealRecord, openRecordInEditor, copyRecordId, showRecordMenu
 //                       the record actions, by record ID only (the main process checks the request and
-//                       finds the spec file itself, records.ts).
+//                       finds the data file itself, records.ts).
 // Until the app subscribes, a menu choice presses the command's default keys in the page, so the
 // app's keymap runs it as if typed.
 const { contextBridge, ipcRenderer } = require('electron') as typeof import('electron');

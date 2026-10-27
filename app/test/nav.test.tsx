@@ -5,7 +5,7 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { rankItems, findItems } from '../src/shell/QuickFind';
-import { indexWorkspace } from '../src/specs/data';
+import { indexOf } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
 import { openApp } from './helpers';
 
@@ -97,11 +97,11 @@ describe('side navigation', () => {
     const foot = nav().querySelector('footer')!;
     // The record format left the footer (LA-AUT-UC14): it is a command and a link in the shortcuts sheet.
     expect(within(foot).queryByRole('link', { name: 'Record format' })).toBeNull();
-    expect(foot).toHaveTextContent('Specs read by the engine');
+    expect(foot).toHaveTextContent('Data from data/');
   });
 
   it('LA-EXP-T47 Quick find jumps to any record, domain or product by ID or title, with arrow keys and Enter', async () => {
-    const index = indexWorkspace(workspace());
+    const index = indexOf(workspace());
     const items = findItems(index);
     expect(rankItems(items, 'dm-shop')[0].id).toBe('DM-SHOP');
     expect(rankItems(items, 'basket').map((i) => i.id)).toContain('DM-SHOP-A1');

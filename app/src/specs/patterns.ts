@@ -1,54 +1,64 @@
-import { byIdOrder, type SpecIndex, type SpecLink, type SpecRecord } from './data';
+import { textOf, byIdOrder, partsOf, type Row, type SpecIndex, type SpecLink, type SpecRecord } from './data';
 
-// Patterns and their rules, as the pages show them (FORMAT.md sections 9 and 10). A domain
+// Patterns and their rules, as the pages show them (lathe/REFERENCE.md). A domain
 // follows a pattern when the domain itself or any of its use cases `follows` it, and then owes each
 // of the pattern's rules: designed when a component in the domain satisfies it, built when that
 // component's file exists, proved when an automated or manual test in the domain proves it, planned
 // when only a planned test there does. A rule does not apply in a domain when it names a setting that
-// all the domain's following use cases mark `Not applicable:` with a reason (unless the domain follows
-// the pattern itself), or when no follower there meets its `applies_when`: it is waived there, as the
+// all the domain's following use cases mark not applicable with a reason (unless the domain follows
+// the pattern itself), or when no follower there meets its applies-when condition: it is waived there, as the
 // engine's owed_pattern_rules table counts it (lathe/src/coverage.ts). Pure logic, tested directly.
 
-const NOT_APPLICABLE = /^not applicable:\s*(.*)$/is;
-
-/** The reason a setting value gives for not applying, or null when it is a real value. */
-export function notApplicableReason(value: string | undefined): string | null {
-  const m = value?.trim().match(NOT_APPLICABLE);
-  return m ? m[1].trim() : null;
+/** What a follower gives one of a pattern's settings (a setting_value row): a value, or the reason it does not apply. */
+export interface SettingValue {
+  value?: string;
+  notApplicable?: string;
 }
 
-/** A rule's `applies_when`: the setting it reads, and the value it must (or, with `not`, must not) be. */
+/** What a follower (a use case or a domain) gives a setting of the pattern, or undefined when it gives nothing. */
+export function settingValue(index: SpecIndex, followerId: string, patternId: string, setting: string): SettingValue | undefined {
+  const row = partsOf(index, followerId, 'setting_value').find((r) => r.pattern_id === patternId && r.setting === setting);
+  return row ? settingOfRow(row) : undefined;
+}
+
+/** A setting_value row as a SettingValue. */
+export const settingOfRow = (row: Row): SettingValue => ({
+  ...(row.value !== undefined ? { value: textOf(row, 'value') } : {}),
+  ...(row.not_applicable !== undefined ? { notApplicable: textOf(row, 'not_applicable') } : {}),
+});
+
+/** The reason a setting value gives for not applying, or null when it is a real value (or none). */
+export const notApplicableReason = (given: SettingValue | undefined): string | null => given?.notApplicable?.trim() || null;
+
+/** A setting value as the pages write it: the value, or "Not applicable: <reason>". */
+export const settingText = (given: SettingValue) => (given.notApplicable !== undefined ? `Not applicable: ${given.notApplicable}` : given.value ?? '');
+
+/** A rule's applies-when condition: the setting it reads, and the value it must (or, with `not`, must not) be. */
 export interface AppliesWhen {
   setting: string;
   not: boolean;
   value: string;
 }
 
-const APPLIES_WHEN = /^(\S+)\s+is\s+(not\s+)?(\S.*)$/is;
-
-/**
- * A rule's `applies_when`, or null when it has none. A malformed one, or one naming a setting its pattern
- * does not list, is an applies-when-unknown error and waives nothing, so it is null too.
- */
-export function appliesWhenOf(index: SpecIndex, rule: SpecRecord): AppliesWhen | null {
-  const m = rule.fields.applies_when?.trim().match(APPLIES_WHEN);
-  const pattern = rule.parent ? index.byId.get(rule.parent) : undefined;
-  if (!m || !pattern || pattern.kind !== 'pattern' || !settingsOf(pattern).includes(m[1])) return null;
-  return { setting: m[1], not: !!m[2], value: m[3].trim() };
+/** A rule's applies-when condition, from its applies_when columns, or null when it has none. */
+export function appliesWhenOf(rule: SpecRecord): AppliesWhen | null {
+  const setting = textOf(rule.row, 'applies_when_setting');
+  if (!setting) return null;
+  return { setting, not: rule.row.applies_when_negated === true, value: textOf(rule.row, 'applies_when_value') };
 }
 
-/** `applies_when` as a phrase: "scope is not single". */
+/** The condition as a phrase: "scope is not single". */
 export const appliesWhenText = (c: AppliesWhen) => `${c.setting} is ${c.not ? 'not ' : ''}${c.value}`;
 
 /** Whether a follower's value for the setting meets the condition: a real value, compared trimmed and in any letter case. */
-export function meetsAppliesWhen(c: AppliesWhen, value: string | undefined): boolean {
-  const given = value?.trim() ?? '';
-  if (given === '' || /^not\s+applicable\s*:/i.test(given)) return false;
-  return (given.toLowerCase() === c.value.toLowerCase()) !== c.not;
+export function meetsAppliesWhen(c: AppliesWhen, given: SettingValue | undefined): boolean {
+  const value = given?.value?.trim() ?? '';
+  if (value === '' || notApplicableReason(given) !== null) return false;
+  return (value.toLowerCase() === c.value.toLowerCase()) !== c.not;
 }
 
-/** A pattern's settings, from its space-separated `settings` field. */
-export const settingsOf = (pattern: SpecRecord) => (pattern.fields.settings ?? '').split(/\s+/).filter(Boolean);
+/** A pattern's settings, from its pattern_setting rows, in order. */
+export const settingsOf = (index: SpecIndex, pattern: SpecRecord) => partsOf(index, pattern.id, 'pattern_setting').map((r) => textOf(r, 'name'));
 
 /** A pattern's rules, in ID order. */
 export const rulesOf = (index: SpecIndex, patternId: string) =>
@@ -142,7 +152,7 @@ export function linkRole(index: SpecIndex, link: SpecLink): '' | 'design' | 'pro
   return rule?.role ?? '';
 }
 
-const testStateOf = (r: SpecRecord) => r.fields.state?.trim() || 'automated';
+const testStateOf = (r: SpecRecord) => textOf(r.row, 'state')?.trim() || 'automated';
 
 /**
  * Whether a rule applies in a domain that follows its pattern as `followed` says, and if so what in that
@@ -150,24 +160,26 @@ const testStateOf = (r: SpecRecord) => r.fields.state?.trim() || 'automated';
  */
 export function ruleStatus(index: SpecIndex, rule: SpecRecord, domainId: string, followed: Followed): RuleStatus {
   const { useCases } = followed;
-  const setting = rule.fields.setting?.trim();
+  const setting = textOf(rule.row, 'setting')?.trim();
   if (setting && !followed.byDomain && useCases.length > 0) {
-    const reasons = useCases.map((uc) => ({ useCase: uc.id, reason: notApplicableReason(uc.fields[setting]) }));
+    const reasons = useCases.map((uc) => ({ useCase: uc.id, reason: notApplicableReason(settingValue(index, uc.id, rule.parent ?? '', setting)) }));
     if (reasons.every((r) => r.reason !== null)) {
       return { applies: false, why: 'not-applicable', setting, reasons: reasons.map((r) => ({ useCase: r.useCase, reason: r.reason! })) };
     }
   }
-  const condition = appliesWhenOf(index, rule);
+  const condition = appliesWhenOf(rule);
   if (condition) {
+    const given = (f: SpecRecord) => settingValue(index, f.id, rule.parent ?? '', condition.setting);
     const domain = index.byId.get(domainId);
     const followers = [...(followed.byDomain && domain ? [domain] : []), ...useCases];
-    if (!followers.some((f) => meetsAppliesWhen(condition, f.fields[condition.setting]))) {
-      const given = new Map<string, string>();
+    if (!followers.some((f) => meetsAppliesWhen(condition, given(f)))) {
+      const values = new Map<string, string>();
       for (const f of followers) {
-        const value = f.fields[condition.setting]?.trim() ?? '';
-        if (value !== '' && notApplicableReason(value) === null && !given.has(value.toLowerCase())) given.set(value.toLowerCase(), value);
+        const g = given(f);
+        const value = g?.value?.trim() ?? '';
+        if (value !== '' && notApplicableReason(g) === null && !values.has(value.toLowerCase())) values.set(value.toLowerCase(), value);
       }
-      return { applies: false, why: 'waived', condition, given: [...given.values()] };
+      return { applies: false, why: 'waived', condition, given: [...values.values()] };
     }
   }
   const designedBy: string[] = [];
@@ -181,7 +193,7 @@ export function ruleStatus(index: SpecIndex, rule: SpecRecord, domainId: string,
     if (role === 'design') {
       designedBy.push(source.id);
       const fileMissing = (index.problemsFor.get(source.id) ?? []).some((p) => p.check === 'component-file-missing');
-      if (source.kind === 'component' && source.fields.file && !fileMissing) builtBy.push(source.id);
+      if (source.kind === 'component' && textOf(source.row, 'file') && !fileMissing) builtBy.push(source.id);
     } else if (role === 'proof' && source.kind === 'test') {
       (testStateOf(source) === 'planned' ? plannedBy : provedBy).push(source.id);
     }

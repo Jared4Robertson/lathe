@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { indexOf } from '../fixtures/load';
 import { neighborhood, traceChain, traceColumn, type Neighborhood } from '../../src/graph/model';
 import { graphMap } from '../../src/graph/map';
-import { indexWorkspace } from '../../src/specs/data';
 import { groupedWorkspace, testIndex } from './workspace';
 
 // Columns follow the parent/child tree: in the one map a level is a column, so every sibling shares
@@ -62,7 +62,7 @@ describe('graph columns by tree depth', () => {
   });
 
   it('LA-EXP-T81 A group sits in its own column between its parent and its members', () => {
-    const grouped = graphMap(indexWorkspace(groupedWorkspace()), 'P');
+    const grouped = graphMap(indexOf(groupedWorkspace()), 'P');
     const level = (id: string) => grouped.nodes.get(id)!.level;
     expect(level('P-D/define/use-cases')).toBe(level('P-D/define') + 1);
     expect(level('P-D-UC02')).toBe(level('P-D/define/use-cases') + 1);
@@ -73,7 +73,7 @@ describe('graph columns by tree depth', () => {
   });
 
   it('LA-EXP-T82 Within a column nodes follow their parent\'s place, then the nav\'s order, and keep it when the graph re-centers', async () => {
-    const grouped = indexWorkspace(groupedWorkspace());
+    const grouped = indexOf(groupedWorkspace());
     const n = neighborhood(grouped, 'P-D/define/use-cases', 2);
     const row = rowOf(n);
     // UC01 before UC02 (the nav's order); UC01's requirement before UC02's groups, following their parents.
