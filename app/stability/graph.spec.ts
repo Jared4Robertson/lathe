@@ -256,7 +256,7 @@ test.describe('graph', () => {
   test('LA-EXP-T184 a label keeps its size in the map when the focus changes and the camera zooms', async ({ page }) => {
     await openPage(page, `${DOMAIN}?view=graph`);
     await nodes(page);
-    const target = `${DOMAIN.slice(1)}/design`;
+    const target = `${DOMAIN.slice(1)}/interaction-design`;
     const size = async () => {
       const s = await sceneOf(page);
       const b = s.boxes.find((x) => x.id === target)!;
@@ -266,7 +266,7 @@ test.describe('graph', () => {
     const before = await size();
     // Focusing it moves the camera only: its font size in map units stays, and its size on screen follows the zoom.
     await clickBox(page, target);
-    await page.waitForURL(/\/design(\?|$)/);
+    await page.waitForURL(/\/interaction-design(\?|$)/);
     await page.waitForTimeout(1300);
     const focused = await size();
     expect(focused.font).toBe(before.font);
@@ -340,6 +340,9 @@ async function labeledInView(page: Page, orFocus = false): Promise<{ id: string;
   throw new Error('no labeled record box in view');
 }
 
+/** A flow step of RECORD's use case: it invokes a query, fulfills a requirement and happens in a view, so Links has something to draw. */
+const LINKED = `${RECORD}-FL-S01`;
+
 /** The table: each feature of the graph, checked the same way in either layout. */
 const PARITY: { feature: string; run: (page: Page, layout: Layout) => Promise<void> }[] = [
   {
@@ -350,12 +353,20 @@ const PARITY: { feature: string; run: (page: Page, layout: Layout) => Promise<vo
     },
   },
   {
-    feature: 'Links draws the focus\'s links as curves (on a use case with links)',
+    feature: 'Links draws the focus\'s links as curves (on a flow step, which invokes a query, fulfills a requirement and happens in a view)',
     run: async (page) => {
+      // The use case has no links of its own: its flow's first step has, so the graph goes there and back, in the app.
+      const here = path(page);
+      await page.evaluate((to) => { window.history.pushState(null, '', `${to}?view=graph`); window.dispatchEvent(new PopStateEvent('popstate')); }, LINKED);
+      await page.waitForURL((u) => u.pathname === LINKED);
+      await page.waitForTimeout(900);
       await page.locator('.pane-graph .graph-links button').click();
       await expect.poll(async () => (await sceneOf(page)).lines.filter((l) => l.link).length).toBeGreaterThan(0);
       await page.locator('.pane-graph .graph-links button').click();
       await expect.poll(async () => (await sceneOf(page)).lines.filter((l) => l.link).length).toBe(0);
+      await page.goBack();
+      await page.waitForURL((u) => u.pathname === here);
+      await page.waitForTimeout(900);
     },
   },
   {
@@ -422,7 +433,8 @@ const PARITY: { feature: string; run: (page: Page, layout: Layout) => Promise<vo
       await page.locator('.pane-graph .graph-zoom-out').click();
       await page.waitForTimeout(600);
       expect(await cameraOf(page)).not.toBe(framed);
-      await page.locator('.pane-graph .graph-count').click();
+      // The graph takes focus, as a click on its canvas gives it (the count may be squeezed out of view by the toolbar).
+      await page.locator('.pane-graph .graph-flow').focus();
       await page.keyboard.press('.');
       await page.waitForTimeout(1300);
       expect(await cameraOf(page)).toBe(framed);

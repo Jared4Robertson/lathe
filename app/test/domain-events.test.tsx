@@ -52,7 +52,7 @@ describe('domain events in the Model view', () => {
     expect(key.querySelector('.erd-key-swatch.erd-key-event')).not.toBeNull();
     const lines = within(key).getByRole('list', { name: 'Lines' });
     expect(lines).toHaveTextContent('Raises');
-    expect(lines).toHaveTextContent('Hears (afterwards)');
+    expect(lines).toHaveTextContent('Hears (later)');
     // Each line's whole meaning is its entry's tooltip.
     expect(within(lines).getByText(/Hears/).closest('li')).toHaveAttribute('title', 'The policy reacts to the event after it is saved, through the outbox.');
     expect(lines.querySelector('.erd-key-line.rel-hears.is-dashed')).not.toBeNull();

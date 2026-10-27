@@ -113,7 +113,8 @@ export function TreeList<T>({ items, nestedOf, renderRow, itemKey, searchText, c
   };
 
   const tools = bulk && foldable.length > 0 ? (
-    <Button onClick={() => setExpanded(foldable, !allOpen)}>
+    // One width for both words, so the button moves nothing when its word changes (UX-R08).
+    <Button className="bulk-toggle" onClick={() => setExpanded(foldable, !allOpen)}>
       {allOpen ? 'Collapse all' : 'Expand all'}
     </Button>
   ) : undefined;
