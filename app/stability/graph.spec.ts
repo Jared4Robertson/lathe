@@ -318,12 +318,17 @@ type Layout = keyof typeof LAYOUT_NAMES;
 const path = (page: Page) => new URL(page.url()).pathname;
 const drawnCount = async (page: Page) => (await sceneOf(page)).boxes.length;
 
-/** A labeled record box, not the focus, with a good part of it in the canvas, and a point on it where the pointer finds it. */
-async function labeledInView(page: Page): Promise<{ id: string; x: number; y: number }> {
+/**
+ * A labeled record box, not the focus, with a good part of it in the canvas, and a point on it where
+ * the pointer finds it. With `orFocus`, the focus itself when it is the only one (a framed leaf in the
+ * Nested layout fills the pane).
+ */
+async function labeledInView(page: Page, orFocus = false): Promise<{ id: string; x: number; y: number }> {
   const s = await sceneOf(page);
   const c = s.canvas;
-  for (const b of s.boxes) {
-    if (!b.id.startsWith('LA-') || b.focus || b.lines.every((l) => l.bar)) continue;
+  const order = orFocus ? [...s.boxes.filter((b) => !b.focus), ...s.boxes.filter((b) => b.focus)] : s.boxes.filter((b) => !b.focus);
+  for (const b of order) {
+    if (!b.id.startsWith('LA-') || b.lines.every((l) => l.bar)) continue;
     const r = b.label;
     const l = Math.max(r.left, c.left + 60); const rt = Math.min(r.left + r.width, c.left + c.width - 30);
     const t = Math.max(r.top, c.top + 20); const bt = Math.min(r.top + r.height, c.top + c.height - 30);
@@ -464,7 +469,7 @@ const PARITY: { feature: string; run: (page: Page, layout: Layout) => Promise<vo
   {
     feature: 'hovering a box spotlights it and Details follows the hover',
     run: async (page) => {
-      const { id, x, y } = await labeledInView(page);
+      const { id, x, y } = await labeledInView(page, true);
       await page.mouse.move(x, y);
       await expect(page.locator(`${GRAPH}.has-spotlight`)).toBeAttached();
       // Details names what is under the pointer: its title, as its box shows it.
