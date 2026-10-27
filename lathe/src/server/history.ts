@@ -1,17 +1,18 @@
-// A record's history, from git (LA-EXP-UC12): the commits that touched its spec file, newest
-// first, and one commit's diff of that file. It backs GET /api/history in api.ts.
+// A record's history, from git (LA-EXP-UC12): the commits that changed its row, newest first, and one commit's change
+// of that row. It backs GET /api/history in api.ts.
 //
-// - The file is found from the specs (the record with that ID), never from a path in the request.
-// - git runs with an argument array (no shell), inside the product root, with a time limit and an
-//   output cap, and with nothing that writes: no optional locks, no prompts, no pager, no external
-//   diff or text conversion. The git config is never read for changes or written.
+// - A record is one line of its kind's data file, data/<kind>.jsonl, which starts {"id":"<ID>". The file is found
+//   from the data, by the record's ID, never from a path in the request. A commit changed the row when its diff of
+//   that file adds or removes a line holding the row (git log -G).
+// - git runs with an argument array (no shell), inside the product root, with a time limit and an output cap, and
+//   with nothing that writes: no optional locks, no prompts, no pager, no external diff or text conversion. The git
+//   config is never read for changes or written.
 // - A product folder that is not a git repo, or a machine without git, is an answer, not an error.
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { loadConfig } from '../config.ts';
-import { parseRecordFile } from '../parse.ts';
 
 /** How long one git command may run. */
 export const GIT_TIME_LIMIT_MS = 5000;
@@ -35,9 +36,9 @@ export type HistoryAnswer =
   | {
       state: 'ok';
       id: string;
-      /** The spec file, relative to the product root. */
+      /** The data file holding the record's row, relative to the product root. */
       file: string;
-      /** Changes in the working tree not committed yet: 'modified', 'added' (staged or untracked), or null. */
+      /** The row's change in the working tree not committed yet: 'modified', 'added' (new since the last commit), or null. */
       uncommitted: 'modified' | 'added' | null;
       commits: HistoryCommit[];
       /** Whether older commits are left to load. */
@@ -52,6 +53,8 @@ export type DiffAnswer =
 
 /** What the history API takes as a commit: a hex hash of 4 to 40 characters, or "working" for the uncommitted changes. */
 export const COMMIT_PATTERN = /^(?:[0-9a-f]{4,40}|working)$/;
+
+const ID = /^[A-Z][A-Z0-9]*(-[A-Z0-9]+)*$/;
 
 interface GitResult { code: number | null; stdout: string; stderr: string; truncated: boolean; timedOut: boolean; missing: boolean }
 
@@ -88,20 +91,30 @@ export function runGit(cwd: string, args: string[], { timeout = GIT_TIME_LIMIT_M
   });
 }
 
-/** The spec file of the record with this ID, relative to the product root, or null when no record has it. */
+/** How a record's row starts in its data file: its id is the first column. */
+const rowStart = (id: string) => `{"id":${JSON.stringify(id)},`;
+/** A regular expression for git log -G that matches the row's line; an ID holds only capitals, digits and hyphens. */
+const rowPattern = (id: string) => `^\\{"id":"${id}",`;
+
+/** The data file holding the record with this ID, relative to the product root, or null when no record has it. */
 export async function recordFile(root: string, id: string): Promise<string | null> {
   const config = loadConfig(root);
-  if (!existsSync(config.specsDir)) return null;
-  const entries = await readdir(config.specsDir, { recursive: true, withFileTypes: true });
-  const files = entries
-    .filter((e) => e.isFile() && e.name.endsWith('.md') && e.name !== 'README.md')
-    .map((e) => path.relative(config.root, path.join(e.parentPath, e.name)).split(path.sep).join('/'))
-    .sort();
-  for (const file of files) {
-    const parsed = parseRecordFile(await readFile(path.join(config.root, file), 'utf8'));
-    if (parsed.ok && parsed.record.id === id) return file;
+  if (!ID.test(id) || !existsSync(config.dataDir)) return null;
+  const start = rowStart(id);
+  for (const name of (await readdir(config.dataDir)).filter((f) => f.endsWith('.jsonl')).sort()) {
+    const text = await readFile(path.join(config.dataDir, name), 'utf8');
+    if (text.startsWith(start) || text.includes(`\n${start}`)) return path.relative(config.root, path.join(config.dataDir, name)).split(path.sep).join('/');
   }
   return null;
+}
+
+/** The lines of a unified diff that change the record's row, under the file's header; empty when none does. */
+export function rowDiff(diff: string, id: string): string {
+  const start = rowStart(id);
+  const lines = diff.split('\n');
+  const isHeader = (l: string) => l.startsWith('--- ') || l.startsWith('+++ ');
+  const changed = lines.filter((l) => !isHeader(l) && (l.startsWith('+') || l.startsWith('-')) && l.slice(1).startsWith(start));
+  return changed.length ? `${[...lines.filter(isHeader), ...changed].join('\n')}\n` : '';
 }
 
 /** Whether the product root is inside a git work tree; the reason when it is not. */
@@ -124,70 +137,54 @@ export function parseLog(text: string): HistoryCommit[] {
   });
 }
 const LOG_FORMAT = `--format=%H${FIELD}%h${FIELD}%aI${FIELD}%an${FIELD}%s${RECORD}`;
+const DIFF_FLAGS = ['--no-color', '--no-ext-diff', '--no-textconv'];
 
-/** The working tree's state for the file: modified, added (staged or untracked) or clean. */
-async function uncommittedState(root: string, file: string): Promise<'modified' | 'added' | null> {
-  const status = await runGit(root, ['status', '--porcelain=v1', '--untracked-files=all', '--', file]);
-  const line = status.stdout.split('\n').find((l) => l.trim());
-  if (!line) return null;
-  const code = line.slice(0, 2);
-  return code === '??' || code.includes('A') ? 'added' : 'modified';
+/** The row's uncommitted change against HEAD: 'added' when the row is new, 'modified' when it changed, or null. */
+async function uncommitted(root: string, file: string, id: string): Promise<{ state: 'modified' | 'added' | null; diff: string; truncated: boolean }> {
+  const tracked = (await runGit(root, ['ls-files', '--error-unmatch', '--', file])).code === 0;
+  const hasHead = (await runGit(root, ['rev-parse', '--verify', '--quiet', 'HEAD'])).code === 0;
+  // An untracked file is shown as wholly added; `git diff --no-index` exits 1 when the files differ, as they do here.
+  const result = tracked && hasHead
+    ? await runGit(root, ['diff', ...DIFF_FLAGS, 'HEAD', '--', file])
+    : await runGit(root, ['diff', ...DIFF_FLAGS, '--no-index', '--', '/dev/null', file]);
+  const diff = rowDiff(result.stdout, id);
+  if (!diff) return { state: null, diff: '', truncated: result.truncated };
+  const start = rowStart(id);
+  const removed = diff.split('\n').some((l) => l.startsWith('-') && !l.startsWith('--- ') && l.slice(1).startsWith(start));
+  return { state: removed ? 'modified' : 'added', diff, truncated: result.truncated };
 }
 
-/** The commits that touched a record's spec file, newest first, `skip` in, with whether more remain. */
+/** The commits that changed a record's row, newest first, `skip` in, with whether more remain. */
 export async function recordHistory(root: string, id: string, skip = 0): Promise<HistoryAnswer> {
   const config = loadConfig(root);
   const file = await recordFile(config.root, id);
   if (!file) return { state: 'no-record', id };
   const repo = await repoState(config.root);
   if (!repo.ok) return { state: 'no-repo', id, file, message: repo.message };
-  const log = await runGit(config.root, ['log', '--follow', '--no-color', LOG_FORMAT, `--skip=${Math.max(0, Math.floor(skip))}`, `--max-count=${HISTORY_PAGE + 1}`, '--', file]);
+  const log = await runGit(config.root, ['log', '--no-color', '-E', '-G', rowPattern(id), LOG_FORMAT, `--skip=${Math.max(0, Math.floor(skip))}`, `--max-count=${HISTORY_PAGE + 1}`, '--', file]);
   // A repository with no commits yet answers with an error and no history: that is an empty list.
   const commits = log.code === 0 ? parseLog(log.stdout) : [];
-  const uncommitted = await uncommittedState(config.root, file);
-  return { state: 'ok', id, file, uncommitted, commits: commits.slice(0, HISTORY_PAGE), more: commits.length > HISTORY_PAGE };
+  const { state } = await uncommitted(config.root, file, id);
+  return { state: 'ok', id, file, uncommitted: state, commits: commits.slice(0, HISTORY_PAGE), more: commits.length > HISTORY_PAGE };
 }
 
-/** One commit's diff of a record's spec file (following renames), or the uncommitted changes for "working". */
+/** One commit's change of a record's row, or its uncommitted change for "working". */
 export async function recordDiff(root: string, id: string, commit: string): Promise<DiffAnswer> {
   const config = loadConfig(root);
   const file = await recordFile(config.root, id);
   if (!file) return { state: 'no-record', id };
   const repo = await repoState(config.root);
   if (!repo.ok) return { state: 'no-repo', id, file, message: repo.message };
-  const flags = ['--no-color', '--no-ext-diff', '--no-textconv'];
   if (commit === 'working') {
-    const state = await uncommittedState(config.root, file);
-    if (!state) return { state: 'ok', id, file, commit, diff: '', truncated: false };
-    // Against HEAD when the file is tracked; an untracked file is shown as wholly added.
-    const tracked = await runGit(config.root, ['ls-files', '--error-unmatch', '--', file]);
-    const hasHead = (await runGit(config.root, ['rev-parse', '--verify', '--quiet', 'HEAD'])).code === 0;
-    const result = tracked.code === 0 && hasHead
-      ? await runGit(config.root, ['diff', ...flags, 'HEAD', '--', file])
-      : await runGit(config.root, ['diff', ...flags, '--no-index', '--', '/dev/null', file]);
-    // `git diff --no-index` exits 1 when the files differ, as they always do here.
-    if (result.code !== 0 && result.code !== 1) return { state: 'no-commit', id, file, commit };
-    return { state: 'ok', id, file, commit, diff: result.stdout, truncated: result.truncated };
+    const working = await uncommitted(config.root, file, id);
+    return { state: 'ok', id, file, commit, diff: working.diff, truncated: working.truncated };
   }
   if (!COMMIT_PATTERN.test(commit)) return { state: 'no-commit', id, file, commit };
-  // The file's own history, following renames, names the commit and the file's path(s) in it; a
-  // commit that did not touch the file is not in it, so it shows nothing of other files.
-  const touched = await fileCommits(config.root, file);
-  const found = touched.find((c) => c.hash.startsWith(commit));
+  // The row's own history names the commit; a commit that did not change the row is not in it.
+  const touched = await runGit(config.root, ['log', '--no-color', '-E', '-G', rowPattern(id), '--format=%H', '--', file]);
+  const found = touched.code === 0 ? touched.stdout.split('\n').map((l) => l.trim()).find((h) => /^[0-9a-f]{40,64}$/.test(h) && h.startsWith(commit)) : undefined;
   if (!found) return { state: 'no-commit', id, file, commit };
-  const result = await runGit(config.root, ['show', '-M', ...flags, '--format=', found.hash, '--', ...found.paths]);
+  const result = await runGit(config.root, ['show', ...DIFF_FLAGS, '--format=', found, '--', file]);
   if (result.code !== 0 && !result.truncated) return { state: 'no-commit', id, file, commit };
-  return { state: 'ok', id, file, commit: found.hash, diff: result.stdout.replace(/^\n+/, ''), truncated: result.truncated };
-}
-
-/** Every commit that touched the file, following renames, with the file's path or paths (old and new) in each. */
-async function fileCommits(root: string, file: string): Promise<{ hash: string; paths: string[] }[]> {
-  const log = await runGit(root, ['log', '--follow', '--no-color', '-M', '--name-status', `--format=${RECORD}%H`, '--', file]);
-  if (log.code !== 0) return [];
-  return log.stdout.split(RECORD).filter((r) => r.trim()).flatMap((r) => {
-    const [hash, ...lines] = r.split('\n').map((l) => l.trim()).filter(Boolean);
-    if (!hash || !/^[0-9a-f]{40,64}$/.test(hash)) return [];
-    const paths = lines.flatMap((l) => l.split('\t').slice(1)).filter(Boolean);
-    return [{ hash, paths: paths.length > 0 ? [...new Set(paths)] : [file] }];
-  });
+  return { state: 'ok', id, file, commit: found, diff: rowDiff(result.stdout, id), truncated: result.truncated };
 }

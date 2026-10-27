@@ -7,9 +7,9 @@
       "section": "",
       "parent_kinds": [],
       "required_fields": [],
-      "description": "A product: the root of a set of specifications.",
       "obligation": false,
-      "proof_only": false
+      "proof_only": false,
+      "description": "A product: the root of a set of specifications."
     },
     {
       "kind": "domain",
@@ -20,9 +20,9 @@
         "product"
       ],
       "required_fields": [],
-      "description": "A part of the product with its own model, language and owner.",
       "obligation": false,
-      "proof_only": false
+      "proof_only": false,
+      "description": "A part of the product with its own model, language and owner: one business capability, never a technology layer."
     },
     {
       "kind": "aggregate",
@@ -33,9 +33,9 @@
         "domain"
       ],
       "required_fields": [],
-      "description": "A cluster of records changed together as one unit, with its own identity and rules.",
       "obligation": false,
-      "proof_only": false
+      "proof_only": false,
+      "description": "A cluster of records changed together as one unit, with its own identity and rules."
     },
     {
       "kind": "entity",
@@ -48,9 +48,9 @@
       "required_fields": [
         "role"
       ],
-      "description": "A record the domain keeps, as one box of an aggregate's ERD: the aggregate's root (role: root) or one of its children (role: child). Its body holds a Fields table: Field, Meaning, Kind of value, Example.",
       "obligation": false,
-      "proof_only": false
+      "proof_only": false,
+      "description": "A record the domain keeps, as one box of an aggregate's ERD: the aggregate's root or one of its children. Its fields are entity_field rows."
     },
     {
       "kind": "domain_event",
@@ -61,9 +61,9 @@
         "aggregate"
       ],
       "required_fields": [],
-      "description": "An unchangeable record that something happened in the domain, raised by its aggregate and named in the past tense (Loan opened). Its body holds a Fields table of what it carries: Field, Meaning, Kind of value, Example.",
       "obligation": false,
-      "proof_only": false
+      "proof_only": false,
+      "description": "An unchangeable record that something happened in the domain, raised by its aggregate and named in the past tense (Loan opened). What it carries are event_field rows."
     },
     {
       "kind": "domain_rule",
@@ -71,12 +71,31 @@
       "stage": "define",
       "section": "domain-model",
       "parent_kinds": [
-        "aggregate"
+        "entity",
+        "aggregate",
+        "domain"
       ],
-      "required_fields": [],
-      "description": "A fact that must always hold for an aggregate's records, whatever use case changes them.",
+      "required_fields": [
+        "statement"
+      ],
       "obligation": true,
-      "proof_only": false
+      "proof_only": false,
+      "description": "A fact that must always hold for an aggregate's records, whatever use case changes them. It names its domain, and its aggregate unless it holds across aggregates, when it names them with involves."
+    },
+    {
+      "kind": "capability",
+      "label": "Capability",
+      "stage": "define",
+      "section": "use-cases",
+      "parent_kinds": [
+        "domain"
+      ],
+      "required_fields": [
+        "position"
+      ],
+      "obligation": false,
+      "proof_only": false,
+      "description": "An ordered slice of a domain that groups its use cases, flows and tests, such as Membership or Lending."
     },
     {
       "kind": "use_case",
@@ -84,14 +103,13 @@
       "stage": "define",
       "section": "use-cases",
       "parent_kinds": [
+        "capability",
         "domain"
       ],
-      "required_fields": [
-        "actor"
-      ],
-      "description": "Something an actor does with the product to reach a goal.",
+      "required_fields": [],
       "obligation": false,
-      "proof_only": false
+      "proof_only": false,
+      "description": "Something an actor does with the product to reach a goal. Its actors are use_case_actor rows and its steps use_case_step rows."
     },
     {
       "kind": "requirement",
@@ -101,10 +119,68 @@
       "parent_kinds": [
         "use_case"
       ],
-      "required_fields": [],
-      "description": "One rule a use case must follow, stated with MUST, MUST NOT, SHOULD or MAY.",
+      "required_fields": [
+        "statement"
+      ],
       "obligation": true,
-      "proof_only": false
+      "proof_only": false,
+      "description": "One rule a use case must follow. Shown as a UC (use case) requirement, to tell it apart from interaction requirements and pattern rules."
+    },
+    {
+      "kind": "pattern",
+      "label": "Pattern",
+      "stage": "define",
+      "section": "shared",
+      "parent_kinds": [
+        "product"
+      ],
+      "required_fields": [],
+      "obligation": false,
+      "proof_only": false,
+      "description": "Behavior several use cases share, stated once with the settings each use case that follows it fills in. Its settings are pattern_setting rows and its rules pattern_rule records."
+    },
+    {
+      "kind": "pattern_rule",
+      "label": "Pattern rule",
+      "stage": "define",
+      "section": "shared",
+      "parent_kinds": [
+        "pattern"
+      ],
+      "required_fields": [
+        "statement"
+      ],
+      "obligation": true,
+      "proof_only": true,
+      "description": "One rule of a pattern. Every domain that follows the pattern proves it, unless it names a setting all of that domain's followers mark Not applicable, or its applies-when condition is met by no follower there."
+    },
+    {
+      "kind": "standard",
+      "label": "Standard",
+      "stage": "design",
+      "section": "shared",
+      "parent_kinds": [
+        "product"
+      ],
+      "required_fields": [],
+      "obligation": false,
+      "proof_only": false,
+      "description": "A library of engineering rules that holds for the product's code, such as logging, error handling or naming. What follows one of its rules meets it; a standard asks nothing of a domain."
+    },
+    {
+      "kind": "standard_rule",
+      "label": "Standard rule",
+      "stage": "design",
+      "section": "shared",
+      "parent_kinds": [
+        "standard"
+      ],
+      "required_fields": [
+        "statement"
+      ],
+      "obligation": false,
+      "proof_only": false,
+      "description": "One rule of a standard. It is not an obligation: what follows it links to it with meets."
     },
     {
       "kind": "flow",
@@ -112,12 +188,29 @@
       "stage": "design",
       "section": "interaction-design",
       "parent_kinds": [
+        "capability",
         "domain"
       ],
       "required_fields": [],
-      "description": "An end-to-end path through views and endpoints that carries out one or more use cases.",
       "obligation": false,
-      "proof_only": false
+      "proof_only": false,
+      "description": "An end-to-end path through views and endpoints that carries out one or more use cases. Its steps are flow_step records."
+    },
+    {
+      "kind": "flow_step",
+      "label": "Flow step",
+      "stage": "design",
+      "section": "interaction-design",
+      "parent_kinds": [
+        "flow"
+      ],
+      "required_fields": [
+        "path",
+        "position"
+      ],
+      "obligation": false,
+      "proof_only": false,
+      "description": "One step of a flow, in order on its path: what happens, through which view, endpoint or component, and what the step carries out."
     },
     {
       "kind": "view",
@@ -128,9 +221,22 @@
         "domain"
       ],
       "required_fields": [],
-      "description": "A screen or page a person uses.",
       "obligation": false,
-      "proof_only": false
+      "proof_only": false,
+      "description": "A screen or page a person uses."
+    },
+    {
+      "kind": "api",
+      "label": "API",
+      "stage": "design",
+      "section": "interaction-design",
+      "parent_kinds": [
+        "domain"
+      ],
+      "required_fields": [],
+      "obligation": false,
+      "proof_only": false,
+      "description": "A group of endpoints for one resource, such as Loans: it holds the resource's endpoints and the interaction requirements that hold for every endpoint in it. The shapes its endpoints share are api_shape rows."
     },
     {
       "kind": "endpoint",
@@ -138,15 +244,49 @@
       "stage": "design",
       "section": "interaction-design",
       "parent_kinds": [
+        "api",
         "domain"
       ],
       "required_fields": [
         "method",
         "route"
       ],
-      "description": "An HTTP endpoint: its method, route, request and responses.",
       "obligation": false,
-      "proof_only": false
+      "proof_only": false,
+      "description": "An HTTP endpoint: its method, route, request and responses. It sits in the API for its resource, or in the domain."
+    },
+    {
+      "kind": "integration",
+      "label": "Integration",
+      "stage": "design",
+      "section": "interaction-design",
+      "parent_kinds": [
+        "domain"
+      ],
+      "required_fields": [],
+      "obligation": false,
+      "proof_only": false,
+      "description": "An outside system the domain exchanges with, such as a payment provider or a mail service. It holds one interaction requirement per exchange."
+    },
+    {
+      "kind": "interaction_requirement",
+      "label": "Interaction requirement",
+      "stage": "design",
+      "section": "interaction-design",
+      "parent_kinds": [
+        "view",
+        "endpoint",
+        "flow",
+        "api",
+        "integration",
+        "domain"
+      ],
+      "required_fields": [
+        "statement"
+      ],
+      "obligation": true,
+      "proof_only": false,
+      "description": "One rule a view, endpoint, flow, API or integration must follow, such as a field's limits, an error's response or one exchange with an outside system. One under an API holds for every endpoint in it; one with none of them holds across the domain's interaction design."
     },
     {
       "kind": "layer",
@@ -154,14 +294,15 @@
       "stage": "design",
       "section": "technical-specification",
       "parent_kinds": [
+        "layer",
         "domain"
       ],
       "required_fields": [
-        "order"
+        "position"
       ],
-      "description": "An ordered part of a domain's technical specification that groups its components by what they are, such as Models, Services or Web app. Its order is a whole number giving its place in the domain.",
       "obligation": false,
-      "proof_only": false
+      "proof_only": false,
+      "description": "An ordered part of a domain's technical specification that groups its components by what they are, such as Models, Services or Web app. It sits in the domain, or in another layer of it as a sub-layer."
     },
     {
       "kind": "component",
@@ -169,16 +310,46 @@
       "stage": "design",
       "section": "technical-specification",
       "parent_kinds": [
-        "domain",
-        "layer"
+        "layer",
+        "domain"
       ],
       "required_fields": [
         "component_type",
         "file"
       ],
-      "description": "A unit of code in the target design, such as a model, service or router. It sits in its domain's layer, or in the domain when the domain has no layers.",
       "obligation": false,
-      "proof_only": false
+      "proof_only": false,
+      "description": "A unit of code in the target design, such as a model, service or router. It sits in a layer of its domain, or in the domain when the domain has no layers."
+    },
+    {
+      "kind": "design_flow",
+      "label": "Technical flow",
+      "stage": "design",
+      "section": "technical-specification",
+      "parent_kinds": [
+        "layer",
+        "domain"
+      ],
+      "required_fields": [],
+      "obligation": false,
+      "proof_only": false,
+      "description": "A technical flow: how the system carries out a flow. It deepens the flow, and its design_step records say, in order, which component does each part and what it designs."
+    },
+    {
+      "kind": "design_step",
+      "label": "Technical step",
+      "stage": "design",
+      "section": "technical-specification",
+      "parent_kinds": [
+        "design_flow"
+      ],
+      "required_fields": [
+        "path",
+        "position"
+      ],
+      "obligation": false,
+      "proof_only": false,
+      "description": "One step of a technical flow, in order on its path: what the system does, the component that does it (uses) and the obligations it designs (satisfies)."
     },
     {
       "kind": "test",
@@ -186,15 +357,16 @@
       "stage": "design",
       "section": "test-plan",
       "parent_kinds": [
+        "capability",
         "domain"
       ],
       "required_fields": [
         "test_type",
-        "run_by"
+        "state"
       ],
-      "description": "A test that proves requirements or domain rules, and the file that runs it.",
       "obligation": false,
-      "proof_only": false
+      "proof_only": false,
+      "description": "A test that proves obligations, or supports them without proving them. An automated test names the file that runs it; a manual test describes its procedure; a planned test is not proof."
     },
     {
       "kind": "question",
@@ -202,28 +374,21 @@
       "stage": "",
       "section": "",
       "parent_kinds": [
-        "product",
-        "domain",
         "aggregate",
         "use_case",
-        "component"
+        "component",
+        "domain",
+        "product"
       ],
       "required_fields": [
         "owner"
       ],
-      "description": "Something undecided, with the person who decides it.",
       "obligation": false,
-      "proof_only": false
+      "proof_only": false,
+      "description": "Something undecided, with the role that decides it. A decided question is removed and its answer written into the records it affects."
     }
   ],
   "sections": [
-    {
-      "section": "shared",
-      "stage": "",
-      "order": 1,
-      "label": "Shared",
-      "description": "What a product's domains share: patterns and their rules."
-    },
     {
       "section": "domain-model",
       "stage": "define",
@@ -243,14 +408,14 @@
       "stage": "design",
       "order": 1,
       "label": "Interaction design",
-      "description": "Flows and their steps, views, endpoints and interaction requirements."
+      "description": "Flows and their steps, views, APIs and their endpoints, integrations, and interaction requirements."
     },
     {
       "section": "technical-specification",
       "stage": "design",
       "order": 2,
       "label": "Technical specification",
-      "description": "The components of the target design."
+      "description": "The components of the target design, in their layers, and the technical flows that use them."
     },
     {
       "section": "test-plan",
@@ -258,186 +423,310 @@
       "order": 3,
       "label": "Test plan",
       "description": "The tests that prove the obligations."
+    },
+    {
+      "section": "shared",
+      "stage": "",
+      "order": 1,
+      "label": "Shared",
+      "description": "What a product's domains share: patterns, standards and their rules."
     }
   ],
   "relations": [
     {
-      "relation": "relates_to",
-      "source_kind": "aggregate",
-      "target_kind": "aggregate",
-      "description": "One aggregate refers to another by ID.",
+      "relation": "about",
+      "source_kind": "question",
+      "target_kind": "*",
       "role": "",
-      "forward_label": "Relates to",
-      "reverse_label": "Related to by"
+      "description": "The open question concerns that record.",
+      "forward_label": "About",
+      "reverse_label": "Questions about this"
     },
     {
       "relation": "applies",
       "source_kind": "use_case",
       "target_kind": "domain_rule",
-      "description": "The use case relies on the domain rule.",
       "role": "",
+      "description": "The use case relies on the domain rule.",
       "forward_label": "Applies",
       "reverse_label": "Applied by"
     },
     {
-      "relation": "fulfills",
+      "relation": "carries_out",
       "source_kind": "flow",
-      "target_kind": "requirement",
-      "description": "The flow carries out the requirement.",
+      "target_kind": "use_case",
       "role": "",
+      "description": "The flow carries out the use case.",
       "forward_label": "Carries out",
-      "reverse_label": "Carried out in"
+      "reverse_label": "Carried out by flow"
     },
     {
-      "relation": "fulfills",
-      "source_kind": "view",
-      "target_kind": "requirement",
-      "description": "The view carries out the requirement.",
+      "relation": "covers",
+      "source_kind": "test",
+      "target_kind": "component",
       "role": "",
-      "forward_label": "Carries out",
-      "reverse_label": "Carried out in"
+      "description": "The test exercises the component.",
+      "forward_label": "Covers",
+      "reverse_label": "Covered by"
     },
     {
-      "relation": "fulfills",
-      "source_kind": "endpoint",
-      "target_kind": "requirement",
-      "description": "The endpoint carries out the requirement.",
+      "relation": "deepens",
+      "source_kind": "design_flow",
+      "target_kind": "flow",
       "role": "",
-      "forward_label": "Carries out",
-      "reverse_label": "Carried out in"
-    },
-    {
-      "relation": "uses",
-      "source_kind": "flow",
-      "target_kind": "view",
-      "description": "The flow passes through the view.",
-      "role": "",
-      "forward_label": "Uses",
-      "reverse_label": "Used by"
-    },
-    {
-      "relation": "uses",
-      "source_kind": "flow",
-      "target_kind": "endpoint",
-      "description": "The flow calls the endpoint.",
-      "role": "",
-      "forward_label": "Uses",
-      "reverse_label": "Used by"
-    },
-    {
-      "relation": "uses",
-      "source_kind": "view",
-      "target_kind": "endpoint",
-      "description": "The view calls the endpoint.",
-      "role": "",
-      "forward_label": "Uses",
-      "reverse_label": "Used by"
-    },
-    {
-      "relation": "satisfies",
-      "source_kind": "component",
-      "target_kind": "requirement",
-      "description": "The component designs or implements the requirement.",
-      "role": "design",
-      "forward_label": "Satisfies",
-      "reverse_label": "Designed by"
-    },
-    {
-      "relation": "satisfies",
-      "source_kind": "component",
-      "target_kind": "domain_rule",
-      "description": "The component enforces the domain rule.",
-      "role": "design",
-      "forward_label": "Satisfies",
-      "reverse_label": "Designed by"
-    },
-    {
-      "relation": "implements",
-      "source_kind": "component",
-      "target_kind": "endpoint",
-      "description": "The component serves the endpoint.",
-      "role": "",
-      "forward_label": "Implements",
-      "reverse_label": "Implemented by"
-    },
-    {
-      "relation": "implements",
-      "source_kind": "component",
-      "target_kind": "view",
-      "description": "The component renders the view.",
-      "role": "",
-      "forward_label": "Implements",
-      "reverse_label": "Implemented by"
+      "description": "The technical flow says how the system carries out the flow.",
+      "forward_label": "Deepens",
+      "reverse_label": "Deepened by"
     },
     {
       "relation": "depends_on",
       "source_kind": "component",
       "target_kind": "component",
-      "description": "The component calls or imports the other.",
       "role": "",
+      "description": "The component calls or imports the other.",
       "forward_label": "Depends on",
       "reverse_label": "Depended on by"
     },
     {
-      "relation": "proves",
-      "source_kind": "test",
+      "relation": "follows",
+      "source_kind": "domain",
+      "target_kind": "pattern",
+      "role": "",
+      "description": "The whole domain follows the pattern, and so owes each of its rules.",
+      "forward_label": "Follows",
+      "reverse_label": "Followed by"
+    },
+    {
+      "relation": "follows",
+      "source_kind": "use_case",
+      "target_kind": "pattern",
+      "role": "",
+      "description": "The use case follows the pattern and gives a value for each of its settings.",
+      "forward_label": "Follows",
+      "reverse_label": "Followed by"
+    },
+    {
+      "relation": "fulfills",
+      "source_kind": "endpoint",
       "target_kind": "requirement",
-      "description": "The test proves the requirement.",
-      "role": "proof",
-      "forward_label": "Proves",
-      "reverse_label": "Proved by"
+      "role": "",
+      "description": "The endpoint carries out the requirement.",
+      "forward_label": "Carries out",
+      "reverse_label": "Carried out in"
     },
     {
-      "relation": "proves",
-      "source_kind": "test",
+      "relation": "fulfills",
+      "source_kind": "flow",
       "target_kind": "domain_rule",
-      "description": "The test proves the domain rule.",
-      "role": "proof",
-      "forward_label": "Proves",
-      "reverse_label": "Proved by"
+      "role": "",
+      "description": "The flow carries out the domain rule.",
+      "forward_label": "Carries out",
+      "reverse_label": "Carried out in"
     },
     {
-      "relation": "about",
-      "source_kind": "question",
-      "target_kind": "*",
-      "description": "The open question concerns that record.",
+      "relation": "fulfills",
+      "source_kind": "flow",
+      "target_kind": "interaction_requirement",
       "role": "",
-      "forward_label": "About",
-      "reverse_label": "Questions about this"
+      "description": "The flow carries out the interaction requirement.",
+      "forward_label": "Carries out",
+      "reverse_label": "Carried out in"
     },
     {
-      "relation": "has_one",
-      "source_kind": "entity",
-      "target_kind": "entity",
-      "description": "The entity holds exactly one of the other entity, as a part of it (one to one).",
+      "relation": "fulfills",
+      "source_kind": "flow",
+      "target_kind": "requirement",
       "role": "",
-      "forward_label": "Has one",
-      "reverse_label": "Part of"
+      "description": "The flow carries out the requirement.",
+      "forward_label": "Carries out",
+      "reverse_label": "Carried out in"
+    },
+    {
+      "relation": "fulfills",
+      "source_kind": "flow_step",
+      "target_kind": "domain_rule",
+      "role": "",
+      "description": "The step carries out the domain rule.",
+      "forward_label": "Carries out",
+      "reverse_label": "Carried out in"
+    },
+    {
+      "relation": "fulfills",
+      "source_kind": "flow_step",
+      "target_kind": "interaction_requirement",
+      "role": "",
+      "description": "The step carries out the interaction requirement.",
+      "forward_label": "Carries out",
+      "reverse_label": "Carried out in"
+    },
+    {
+      "relation": "fulfills",
+      "source_kind": "flow_step",
+      "target_kind": "pattern_rule",
+      "role": "",
+      "description": "The step carries out the pattern rule.",
+      "forward_label": "Carries out",
+      "reverse_label": "Carried out in"
+    },
+    {
+      "relation": "fulfills",
+      "source_kind": "flow_step",
+      "target_kind": "requirement",
+      "role": "",
+      "description": "The step carries out the requirement.",
+      "forward_label": "Carries out",
+      "reverse_label": "Carried out in"
+    },
+    {
+      "relation": "fulfills",
+      "source_kind": "interaction_requirement",
+      "target_kind": "domain_rule",
+      "role": "",
+      "description": "The interaction requirement carries out the domain rule at a view, endpoint or flow.",
+      "forward_label": "Carries out",
+      "reverse_label": "Carried out in"
+    },
+    {
+      "relation": "fulfills",
+      "source_kind": "interaction_requirement",
+      "target_kind": "pattern_rule",
+      "role": "",
+      "description": "The interaction requirement carries out the pattern rule at its view, endpoint or flow.",
+      "forward_label": "Carries out",
+      "reverse_label": "Carried out in"
+    },
+    {
+      "relation": "fulfills",
+      "source_kind": "interaction_requirement",
+      "target_kind": "requirement",
+      "role": "",
+      "description": "The interaction requirement carries out the use case requirement at a view, endpoint or flow.",
+      "forward_label": "Carries out",
+      "reverse_label": "Carried out in"
+    },
+    {
+      "relation": "fulfills",
+      "source_kind": "view",
+      "target_kind": "requirement",
+      "role": "",
+      "description": "The view carries out the requirement.",
+      "forward_label": "Carries out",
+      "reverse_label": "Carried out in"
     },
     {
       "relation": "has_many",
       "source_kind": "entity",
       "target_kind": "entity",
-      "description": "The entity holds any number of the other entity, as parts of it (one to many).",
       "role": "",
+      "description": "The entity holds any number of the other entity, as parts of it (one to many).",
       "forward_label": "Has many",
       "reverse_label": "Part of"
     },
     {
-      "relation": "refers_to",
+      "relation": "has_one",
       "source_kind": "entity",
       "target_kind": "entity",
-      "description": "The entity holds a reference to one of the other entity, which may sit in another aggregate or domain (many to one).",
       "role": "",
-      "forward_label": "Refers to",
-      "reverse_label": "Referred to by"
+      "description": "The entity holds exactly one of the other entity, as a part of it (one to one).",
+      "forward_label": "Has one",
+      "reverse_label": "Part of"
+    },
+    {
+      "relation": "implements",
+      "source_kind": "component",
+      "target_kind": "endpoint",
+      "role": "",
+      "description": "The component serves the endpoint.",
+      "forward_label": "Implements",
+      "reverse_label": "Implemented by"
+    },
+    {
+      "relation": "implements",
+      "source_kind": "component",
+      "target_kind": "view",
+      "role": "",
+      "description": "The component renders the view.",
+      "forward_label": "Implements",
+      "reverse_label": "Implemented by"
+    },
+    {
+      "relation": "involves",
+      "source_kind": "domain_rule",
+      "target_kind": "aggregate",
+      "role": "",
+      "description": "The domain rule, under its domain, holds across this aggregate and the others it names.",
+      "forward_label": "Involves",
+      "reverse_label": "Involved in"
+    },
+    {
+      "relation": "meets",
+      "source_kind": "component",
+      "target_kind": "standard_rule",
+      "role": "",
+      "description": "The component follows the standard rule.",
+      "forward_label": "Meets",
+      "reverse_label": "Met by"
+    },
+    {
+      "relation": "meets",
+      "source_kind": "design_step",
+      "target_kind": "standard_rule",
+      "role": "",
+      "description": "The design step follows the standard rule.",
+      "forward_label": "Meets",
+      "reverse_label": "Met by"
+    },
+    {
+      "relation": "meets",
+      "source_kind": "test",
+      "target_kind": "standard_rule",
+      "role": "",
+      "description": "The test follows the standard rule.",
+      "forward_label": "Meets",
+      "reverse_label": "Met by"
+    },
+    {
+      "relation": "proves",
+      "source_kind": "test",
+      "target_kind": "domain_rule",
+      "role": "proof",
+      "description": "The test proves the domain rule.",
+      "forward_label": "Proves",
+      "reverse_label": "Proved by"
+    },
+    {
+      "relation": "proves",
+      "source_kind": "test",
+      "target_kind": "interaction_requirement",
+      "role": "proof",
+      "description": "The test proves the interaction requirement.",
+      "forward_label": "Proves",
+      "reverse_label": "Proved by"
+    },
+    {
+      "relation": "proves",
+      "source_kind": "test",
+      "target_kind": "pattern_rule",
+      "role": "proof",
+      "description": "The test proves the pattern rule, for the domain it sits in.",
+      "forward_label": "Proves",
+      "reverse_label": "Proved by"
+    },
+    {
+      "relation": "proves",
+      "source_kind": "test",
+      "target_kind": "requirement",
+      "role": "proof",
+      "description": "The test proves the requirement.",
+      "forward_label": "Proves",
+      "reverse_label": "Proved by"
     },
     {
       "relation": "raised_by",
       "source_kind": "domain_event",
       "target_kind": "entity",
-      "description": "The event is raised when that entity of its aggregate changes.",
       "role": "",
+      "description": "The event is raised when that entity of its aggregate changes.",
       "forward_label": "Raised by",
       "reverse_label": "Raises"
     },
@@ -445,17 +734,8 @@
       "relation": "reacts_to",
       "source_kind": "aggregate",
       "target_kind": "domain_event",
+      "role": "",
       "description": "The aggregate changes in response to the event, which may come from another aggregate or domain.",
-      "role": "",
-      "forward_label": "Reacts to",
-      "reverse_label": "Reacted to by"
-    },
-    {
-      "relation": "reacts_to",
-      "source_kind": "use_case",
-      "target_kind": "domain_event",
-      "description": "The use case starts when the event happens.",
-      "role": "",
       "forward_label": "Reacts to",
       "reverse_label": "Reacted to by"
     },
@@ -463,10 +743,217 @@
       "relation": "reacts_to",
       "source_kind": "component",
       "target_kind": "domain_event",
-      "description": "The component handles the event.",
       "role": "",
+      "description": "The component handles the event.",
       "forward_label": "Reacts to",
       "reverse_label": "Reacted to by"
+    },
+    {
+      "relation": "reacts_to",
+      "source_kind": "use_case",
+      "target_kind": "domain_event",
+      "role": "",
+      "description": "The use case starts when the event happens.",
+      "forward_label": "Reacts to",
+      "reverse_label": "Reacted to by"
+    },
+    {
+      "relation": "refers_to",
+      "source_kind": "entity",
+      "target_kind": "entity",
+      "role": "",
+      "description": "The entity holds a reference to one of the other entity, which may sit in another aggregate or domain (many to one).",
+      "forward_label": "Refers to",
+      "reverse_label": "Referred to by"
+    },
+    {
+      "relation": "relates_to",
+      "source_kind": "aggregate",
+      "target_kind": "aggregate",
+      "role": "",
+      "description": "One aggregate refers to another by ID.",
+      "forward_label": "Relates to",
+      "reverse_label": "Related to by"
+    },
+    {
+      "relation": "runs",
+      "source_kind": "test",
+      "target_kind": "flow",
+      "role": "",
+      "description": "The test runs the flow end to end.",
+      "forward_label": "Runs",
+      "reverse_label": "Run by"
+    },
+    {
+      "relation": "satisfies",
+      "source_kind": "component",
+      "target_kind": "domain_rule",
+      "role": "design",
+      "description": "The component enforces the domain rule.",
+      "forward_label": "Satisfies",
+      "reverse_label": "Designed by"
+    },
+    {
+      "relation": "satisfies",
+      "source_kind": "component",
+      "target_kind": "interaction_requirement",
+      "role": "design",
+      "description": "The component designs or implements the interaction requirement.",
+      "forward_label": "Satisfies",
+      "reverse_label": "Designed by"
+    },
+    {
+      "relation": "satisfies",
+      "source_kind": "component",
+      "target_kind": "pattern_rule",
+      "role": "design",
+      "description": "The component designs or implements the pattern rule, for the domain it sits in.",
+      "forward_label": "Satisfies",
+      "reverse_label": "Designed by"
+    },
+    {
+      "relation": "satisfies",
+      "source_kind": "component",
+      "target_kind": "requirement",
+      "role": "design",
+      "description": "The component designs or implements the requirement.",
+      "forward_label": "Satisfies",
+      "reverse_label": "Designed by"
+    },
+    {
+      "relation": "satisfies",
+      "source_kind": "design_step",
+      "target_kind": "domain_rule",
+      "role": "design",
+      "description": "The step enforces the domain rule, through the component it uses.",
+      "forward_label": "Satisfies",
+      "reverse_label": "Designed by"
+    },
+    {
+      "relation": "satisfies",
+      "source_kind": "design_step",
+      "target_kind": "interaction_requirement",
+      "role": "design",
+      "description": "The step designs the interaction requirement, through the component it uses.",
+      "forward_label": "Satisfies",
+      "reverse_label": "Designed by"
+    },
+    {
+      "relation": "satisfies",
+      "source_kind": "design_step",
+      "target_kind": "pattern_rule",
+      "role": "design",
+      "description": "The step designs the pattern rule, for the domain it sits in, through the component it uses.",
+      "forward_label": "Satisfies",
+      "reverse_label": "Designed by"
+    },
+    {
+      "relation": "satisfies",
+      "source_kind": "design_step",
+      "target_kind": "requirement",
+      "role": "design",
+      "description": "The step designs the requirement, through the component it uses.",
+      "forward_label": "Satisfies",
+      "reverse_label": "Designed by"
+    },
+    {
+      "relation": "supports",
+      "source_kind": "test",
+      "target_kind": "domain_rule",
+      "role": "",
+      "description": "The test checks a mechanism that backs the domain rule without proving it.",
+      "forward_label": "Supports",
+      "reverse_label": "Supported by"
+    },
+    {
+      "relation": "supports",
+      "source_kind": "test",
+      "target_kind": "interaction_requirement",
+      "role": "",
+      "description": "The test checks a mechanism that backs the interaction requirement without proving it.",
+      "forward_label": "Supports",
+      "reverse_label": "Supported by"
+    },
+    {
+      "relation": "supports",
+      "source_kind": "test",
+      "target_kind": "pattern_rule",
+      "role": "",
+      "description": "The test checks a mechanism that backs the pattern rule without proving it.",
+      "forward_label": "Supports",
+      "reverse_label": "Supported by"
+    },
+    {
+      "relation": "supports",
+      "source_kind": "test",
+      "target_kind": "requirement",
+      "role": "",
+      "description": "The test checks a mechanism that backs the use case requirement without proving it.",
+      "forward_label": "Supports",
+      "reverse_label": "Supported by"
+    },
+    {
+      "relation": "uses",
+      "source_kind": "design_step",
+      "target_kind": "component",
+      "role": "",
+      "description": "The step is carried out by the component.",
+      "forward_label": "Uses",
+      "reverse_label": "Used by"
+    },
+    {
+      "relation": "uses",
+      "source_kind": "flow",
+      "target_kind": "endpoint",
+      "role": "",
+      "description": "The flow calls the endpoint.",
+      "forward_label": "Uses",
+      "reverse_label": "Used by"
+    },
+    {
+      "relation": "uses",
+      "source_kind": "flow",
+      "target_kind": "view",
+      "role": "",
+      "description": "The flow passes through the view.",
+      "forward_label": "Uses",
+      "reverse_label": "Used by"
+    },
+    {
+      "relation": "uses",
+      "source_kind": "flow_step",
+      "target_kind": "component",
+      "role": "",
+      "description": "The step is carried out by the component.",
+      "forward_label": "Uses",
+      "reverse_label": "Used by"
+    },
+    {
+      "relation": "uses",
+      "source_kind": "flow_step",
+      "target_kind": "endpoint",
+      "role": "",
+      "description": "The step calls the endpoint.",
+      "forward_label": "Uses",
+      "reverse_label": "Used by"
+    },
+    {
+      "relation": "uses",
+      "source_kind": "flow_step",
+      "target_kind": "view",
+      "role": "",
+      "description": "The step happens in the view.",
+      "forward_label": "Uses",
+      "reverse_label": "Used by"
+    },
+    {
+      "relation": "uses",
+      "source_kind": "view",
+      "target_kind": "endpoint",
+      "role": "",
+      "description": "The view calls the endpoint.",
+      "forward_label": "Uses",
+      "reverse_label": "Used by"
     }
   ],
   "records": [
@@ -475,272 +962,155 @@
       "kind": "product",
       "title": "Example product",
       "parent": null,
+      "fields": {
+        "description": "A tiny product."
+      },
       "product": "EX",
       "domain": null,
-      "fields": {},
-      "body": "A tiny product used to build the app before real data exists.",
-      "path": "specs/example/product.md",
-      "mentions": []
+      "parts": {}
     },
     {
       "id": "EX-NOTE",
       "kind": "domain",
       "title": "Notes",
       "parent": "EX",
+      "fields": {
+        "product_id": "EX",
+        "description": "People write notes."
+      },
       "product": "EX",
       "domain": "EX-NOTE",
-      "fields": {},
-      "body": "People write and share short notes.",
-      "path": "specs/example/notes/domain.md",
-      "mentions": []
+      "parts": {}
     },
     {
       "id": "EX-NOTE-A1",
       "kind": "aggregate",
       "title": "Note",
       "parent": "EX-NOTE",
+      "fields": {
+        "domain_id": "EX-NOTE",
+        "description": "A short text."
+      },
       "product": "EX",
       "domain": "EX-NOTE",
-      "fields": {},
-      "body": "A short piece of text a person writes.",
-      "path": "specs/example/notes/01-define/aggregates/note.md",
-      "mentions": []
+      "parts": {}
     },
     {
       "id": "EX-NOTE-DR01",
       "kind": "domain_rule",
       "title": "A note has text",
       "parent": "EX-NOTE-A1",
-      "product": "EX",
-      "domain": "EX-NOTE",
-      "fields": {},
-      "body": "A Note MUST have between 1 and 500 characters of text.",
-      "path": "specs/example/notes/01-define/aggregates/note-rules.md",
-      "mentions": []
-    },
-    {
-      "id": "EX-NOTE-EN01",
-      "kind": "entity",
-      "title": "Note",
-      "parent": "EX-NOTE-A1",
-      "product": "EX",
-      "domain": "EX-NOTE",
       "fields": {
-        "role": "root"
+        "domain_id": "EX-NOTE",
+        "aggregate_id": "EX-NOTE-A1",
+        "statement": "A Note MUST have text."
       },
-      "body": "The note itself.\n\n## Fields\n\n| Field | Meaning | Kind of value | Example |\n| --- | --- | --- | --- |\n| Note ID | The note's identity. | Text | N-1 |\n| Text | What the note says. | Text, 1 to 500 characters | Buy milk |",
-      "path": "specs/example/notes/01-define/aggregates/note/EN01-note.md",
-      "mentions": [],
-      "entityFields": [
-        {
-          "field": "Note ID",
-          "meaning": "The note's identity.",
-          "kind": "Text",
-          "example": "N-1"
-        },
-        {
-          "field": "Text",
-          "meaning": "What the note says.",
-          "kind": "Text, 1 to 500 characters",
-          "example": "Buy milk"
-        }
-      ]
-    },
-    {
-      "id": "EX-NOTE-EN02",
-      "kind": "entity",
-      "title": "Revision",
-      "parent": "EX-NOTE-A1",
       "product": "EX",
       "domain": "EX-NOTE",
-      "fields": {
-        "role": "child"
-      },
-      "body": "One earlier version of a note's text.\n\n## Fields\n\n| Field | Meaning | Kind of value | Example |\n| --- | --- | --- | --- |\n| Saved at | When this version was saved. | Date and time | 2026-03-02T10:00:00Z |\n| Text | What the note said then. | Text | Buy bread |",
-      "path": "specs/example/notes/01-define/aggregates/note/EN02-revision.md",
-      "mentions": [],
-      "entityFields": [
-        {
-          "field": "Saved at",
-          "meaning": "When this version was saved.",
-          "kind": "Date and time",
-          "example": "2026-03-02T10:00:00Z"
-        },
-        {
-          "field": "Text",
-          "meaning": "What the note said then.",
-          "kind": "Text",
-          "example": "Buy bread"
-        }
-      ]
-    },
-    {
-      "id": "EX-NOTE-EV01",
-      "kind": "domain_event",
-      "title": "Note written",
-      "parent": "EX-NOTE-A1",
-      "product": "EX",
-      "domain": "EX-NOTE",
-      "fields": {},
-      "body": "A note was written and saved.\n\n## Fields\n\n| Field | Meaning | Kind of value | Example |\n| --- | --- | --- | --- |\n| Note ID | Which note was written. | Note reference | N-1 |\n| Written at | When it was saved. | Date and time | 2026-03-02T10:00:00Z |",
-      "path": "specs/example/notes/01-define/aggregates/note/events/EV01-note-written.md",
-      "mentions": [],
-      "entityFields": [
-        {
-          "field": "Note ID",
-          "meaning": "Which note was written.",
-          "kind": "Note reference",
-          "example": "N-1"
-        },
-        {
-          "field": "Written at",
-          "meaning": "When it was saved.",
-          "kind": "Date and time",
-          "example": "2026-03-02T10:00:00Z"
-        }
-      ]
-    },
-    {
-      "id": "EX-NOTE-A2",
-      "kind": "aggregate",
-      "title": "Author",
-      "parent": "EX-NOTE",
-      "product": "EX",
-      "domain": "EX-NOTE",
-      "fields": {},
-      "body": "A person who writes notes.",
-      "path": "specs/example/notes/01-define/aggregates/author.md",
-      "mentions": []
-    },
-    {
-      "id": "EX-NOTE-EN03",
-      "kind": "entity",
-      "title": "Author",
-      "parent": "EX-NOTE-A2",
-      "product": "EX",
-      "domain": "EX-NOTE",
-      "fields": {
-        "role": "root"
-      },
-      "body": "The person.\n\n## Fields\n\n| Field | Meaning | Kind of value | Example |\n| --- | --- | --- | --- |\n| Author ID | The author's identity. | Text | U-7 |\n| Name | What the author is called. | Text | Sam |",
-      "path": "specs/example/notes/01-define/aggregates/author/EN03-author.md",
-      "mentions": [],
-      "entityFields": [
-        {
-          "field": "Author ID",
-          "meaning": "The author's identity.",
-          "kind": "Text",
-          "example": "U-7"
-        },
-        {
-          "field": "Name",
-          "meaning": "What the author is called.",
-          "kind": "Text",
-          "example": "Sam"
-        }
-      ]
+      "parts": {}
     },
     {
       "id": "EX-NOTE-UC01",
       "kind": "use_case",
       "title": "Write a note",
       "parent": "EX-NOTE",
+      "fields": {
+        "domain_id": "EX-NOTE",
+        "goal": "A person writes a note."
+      },
       "product": "EX",
       "domain": "EX-NOTE",
-      "fields": {
-        "actor": "Person"
-      },
-      "body": "A person writes a note.",
-      "path": "specs/example/notes/01-define/use-cases/UC01.md",
-      "mentions": []
+      "parts": {
+        "use_case_actor": [
+          {
+            "use_case_id": "EX-NOTE-UC01",
+            "position": 1,
+            "role_name": "Person"
+          }
+        ]
+      }
     },
     {
       "id": "EX-NOTE-UC01-R01",
       "kind": "requirement",
       "title": "A saved note is visible at once",
       "parent": "EX-NOTE-UC01",
+      "fields": {
+        "use_case_id": "EX-NOTE-UC01",
+        "statement": "The note MUST appear at once."
+      },
       "product": "EX",
       "domain": "EX-NOTE",
-      "fields": {},
-      "body": "When a person saves a note, the note MUST appear in their list immediately.",
-      "path": "specs/example/notes/01-define/use-cases/UC01-R01.md",
-      "mentions": []
+      "parts": {}
     },
     {
       "id": "EX-NOTE-E01",
       "kind": "endpoint",
       "title": "Create a note",
       "parent": "EX-NOTE",
-      "product": "EX",
-      "domain": "EX-NOTE",
       "fields": {
+        "domain_id": "EX-NOTE",
         "method": "POST",
-        "route": "/notes"
+        "route": "/notes",
+        "description": "Creates a note."
       },
-      "body": "Creates a note and returns it.",
-      "path": "specs/example/notes/02-design/endpoints/E01.md",
-      "mentions": []
-    },
-    {
-      "id": "EX-NOTE-LAY01",
-      "kind": "layer",
-      "title": "Services",
-      "parent": "EX-NOTE",
       "product": "EX",
       "domain": "EX-NOTE",
-      "fields": {
-        "order": "1"
-      },
-      "body": "The note services, in `examples/notes/src/`.",
-      "path": "specs/example/notes/02-design/components/01-services.md",
-      "mentions": []
+      "parts": {}
     },
     {
       "id": "EX-NOTE-C01",
       "kind": "component",
       "title": "note_service.ts",
-      "parent": "EX-NOTE-LAY01",
+      "parent": "EX-NOTE",
+      "fields": {
+        "domain_id": "EX-NOTE",
+        "component_type": "service",
+        "file": "code/note_service.ts",
+        "description": "Creates notes."
+      },
       "product": "EX",
       "domain": "EX-NOTE",
-      "fields": {
-        "component_type": "service",
-        "file": "examples/notes/src/note_service.ts"
-      },
-      "body": "Creates and lists notes.",
-      "path": "specs/example/notes/02-design/components/01-services/C01.md",
-      "mentions": []
+      "parts": {}
     },
     {
       "id": "EX-NOTE-T01",
       "kind": "test",
-      "title": "Saving a note shows it in the list",
+      "title": "Saving a note shows it",
       "parent": "EX-NOTE",
+      "fields": {
+        "domain_id": "EX-NOTE",
+        "test_type": "acceptance",
+        "state": "automated",
+        "file": "code/notes_test.py",
+        "when": "Saves a note."
+      },
       "product": "EX",
       "domain": "EX-NOTE",
-      "fields": {
-        "test_type": "acceptance",
-        "run_by": "examples/notes/test/notes.test.ts"
-      },
-      "body": "Saves a note and reads the list.",
-      "path": "specs/example/notes/02-design/tests/T01.md",
-      "mentions": []
+      "parts": {}
     },
     {
       "id": "EX-NOTE-Q01",
       "kind": "question",
       "title": "How long are notes kept?",
       "parent": "EX-NOTE",
+      "fields": {
+        "product_id": "EX",
+        "domain_id": "EX-NOTE",
+        "owner": "Owner",
+        "description": "Undecided."
+      },
       "product": "EX",
       "domain": "EX-NOTE",
-      "fields": {
-        "owner": "Owner"
-      },
-      "body": "Undecided.",
-      "path": "specs/example/notes/questions/Q01.md",
-      "mentions": []
+      "parts": {}
     }
   ],
   "links": [
+    {
+      "source": "EX-NOTE-Q01",
+      "relation": "about",
+      "target": "EX-NOTE-A1"
+    },
     {
       "source": "EX-NOTE-UC01",
       "relation": "applies",
@@ -753,7 +1123,17 @@
     },
     {
       "source": "EX-NOTE-C01",
-      "relation": "satisfies",
+      "relation": "implements",
+      "target": "EX-NOTE-E01"
+    },
+    {
+      "source": "EX-NOTE-T01",
+      "relation": "proves",
+      "target": "EX-NOTE-DR01"
+    },
+    {
+      "source": "EX-NOTE-T01",
+      "relation": "proves",
       "target": "EX-NOTE-UC01-R01"
     },
     {
@@ -763,54 +1143,11 @@
     },
     {
       "source": "EX-NOTE-C01",
-      "relation": "implements",
-      "target": "EX-NOTE-E01"
-    },
-    {
-      "source": "EX-NOTE-T01",
-      "relation": "proves",
+      "relation": "satisfies",
       "target": "EX-NOTE-UC01-R01"
-    },
-    {
-      "source": "EX-NOTE-Q01",
-      "relation": "about",
-      "target": "EX-NOTE-A1"
-    },
-    {
-      "source": "EX-NOTE-EN01",
-      "relation": "has_many",
-      "target": "EX-NOTE-EN02"
-    },
-    {
-      "source": "EX-NOTE-EN01",
-      "relation": "refers_to",
-      "target": "EX-NOTE-EN03"
-    },
-    {
-      "source": "EX-NOTE-EV01",
-      "relation": "raised_by",
-      "target": "EX-NOTE-EN01"
-    },
-    {
-      "source": "EX-NOTE-C01",
-      "relation": "reacts_to",
-      "target": "EX-NOTE-EV01"
     }
   ],
-  "problems": [
-    {
-      "severity": "warning",
-      "check": "unproved",
-      "record": "EX-NOTE-DR01",
-      "message": "No test proves this domain rule."
-    },
-    {
-      "severity": "warning",
-      "check": "component-file-missing",
-      "record": "EX-NOTE-C01",
-      "message": "examples/notes/src/note_service.ts does not exist yet."
-    }
-  ],
+  "problems": [],
   "coverage": [
     {
       "domain": "EX-NOTE",
@@ -820,8 +1157,8 @@
           "label": "Domain rule",
           "total": 1,
           "designed": 1,
-          "built": 0,
-          "proved": 0,
+          "built": 1,
+          "proved": 1,
           "planned": 0,
           "planned_any": 0
         },
@@ -830,8 +1167,28 @@
           "label": "UC requirement",
           "total": 1,
           "designed": 1,
-          "built": 0,
+          "built": 1,
           "proved": 1,
+          "planned": 0,
+          "planned_any": 0
+        },
+        {
+          "kind": "pattern_rule",
+          "label": "Pattern rule",
+          "total": 0,
+          "designed": 0,
+          "built": 0,
+          "proved": 0,
+          "planned": 0,
+          "planned_any": 0
+        },
+        {
+          "kind": "interaction_requirement",
+          "label": "Interaction requirement",
+          "total": 0,
+          "designed": 0,
+          "built": 0,
+          "proved": 0,
           "planned": 0,
           "planned_any": 0
         }
@@ -841,13 +1198,7 @@
         "manual": 0,
         "planned": 0
       },
-      "gaps": [
-        {
-          "id": "EX-NOTE-DR01",
-          "kind": "domain_rule",
-          "missing": "proves"
-        }
-      ]
+      "gaps": []
     }
   ]
 }

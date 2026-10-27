@@ -1,20 +1,20 @@
-// Domains as vertical slices of business capability (FORMAT.md section 18): the domain-named-for-technology
-// check, and the guidance in the format and the plugin's modeling skill.
+// Domains as vertical slices of business capability: the domain-named-for-technology check, and the guidance in the
+// reference and the plugin's modeling skill.
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { loadWorkspace, type Workspace } from '../src/index.ts';
+import { buildReference, renderReference, type Workspace } from '../src/index.ts';
+import { fixture, load } from './helpers.ts';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const fixture = (name: string) => path.join(here, 'fixtures', name);
 const CHECK = 'domain-named-for-technology';
 const FIX = "; name the domain for the capability it serves, and make the technology a layer in each domain's Design stage.";
 
 let ws: Workspace;
 beforeAll(async () => {
   // domain-names: DN-LEND, DN-BUILD and DN-ENG are named for capabilities; the others for technologies.
-  ws = await loadWorkspace(fixture('domain-names'));
+  ws = await load('domain-names');
 });
 
 const messageOf = (id: string) => ws.problems.find((p) => p.check === CHECK && p.record === id)?.message;
@@ -47,26 +47,23 @@ describe('the domain-named-for-technology check', () => {
     );
   });
 
-  it('LA-AUT-T105 A technology word inside a longer word, or only in the domain\'s body, is not reported', () => {
-    // Building holds "ui", Engineering holds "engine", and Lending's body names the web app, API, server and desktop.
+  it('LA-AUT-T105 A technology word inside a longer word, or only in the domain\'s description, is not reported', () => {
+    // Building holds "ui", Engineering holds "engine", and Lending's description names the web app, API, server and desktop.
     for (const id of ['DN-BUILD', 'DN-ENG', 'DN-LEND']) expect(messageOf(id), id).toBeUndefined();
     expect(ws.problems.filter((p) => p.severity === 'error')).toEqual([]);
   });
 });
 
 describe('the guidance', () => {
-  it('LA-AUT-T12 The record format says what a domain is, with a good and a bad example', () => {
-    const format = readFileSync(path.join(here, '..', 'FORMAT.md'), 'utf8');
-    const section = format.split(/^## /m).find((s) => s.startsWith('18. Domains')) ?? '';
-    expect(section).toContain('vertical slice');
-    expect(section).toContain('business capability');
-    expect(section).toMatch(/Define stage holds its domain model .* and its use cases/);
-    expect(section).toMatch(/Design stage holds its flows, views, endpoints, components and tests/);
-    expect(section).toContain('Technology is a layer inside a domain\'s Design stage');
-    expect(section).toContain('platform domain or a pattern');
-    expect(section).toContain('**Good:**');
-    expect(section).toContain('**Bad:**');
-    expect(section).toContain('`domain-named-for-technology`');
+  it('LA-AUT-T12 The reference says what a domain is: one business capability, never a technology layer, with the check that holds it', async () => {
+    const reference = await buildReference(fixture('domain-names'));
+    expect(reference.kinds.find((k) => k.kind === 'domain')?.description).toContain('one business capability, never a technology layer');
+    const check = reference.checks.find((c) => c.check === CHECK)!;
+    expect(check).toMatchObject({ severity: 'warning', origin: 'lathe', kinds: ['domain'] });
+    expect(check.explanation).toContain('vertical slice of business capability');
+    expect(check.explanation).toContain('technology is a layer inside its Design stage');
+    // The kind's entry in the rendered reference links the check.
+    expect(renderReference(reference)).toContain(`[\`${CHECK}\`](#check-${CHECK})`);
   });
 
   it('LA-AUT-T13 The modeling skill\'s first step finds the business capabilities and makes each a slice, with the questions that tell one from a layer', () => {

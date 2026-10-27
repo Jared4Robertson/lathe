@@ -1,0 +1,8 @@
+{"entity_id":"EN-D-EN01","position":1,"name":"Loan ID","meaning":"The loan's identity.","type":"Text","example":"`L-1`"}
+{"entity_id":"EN-D-EN01","position":2,"name":"Due at","meaning":"When the loan should end.","type":"Date and time","example":"2026-03-16"}
+{"entity_id":"EN-D-EN01","position":3,"name":"Status","meaning":"Where the loan is.","type":"One of `open | closed`","example":"open"}
+{"entity_id":"EN-D-EN01","position":4,"name":"Note","meaning":"A pipe kept by escaping.","type":"Text: a | b","example":"a | b"}
+{"entity_id":"EN-D-EN02","position":1,"name":"Renewed at","meaning":"When the loan was renewed.","type":"Date and time","example":"2026-03-10"}
+{"entity_id":"EN-D-EN03","position":1,"name":"Approved by","meaning":"Who approved the renewal.","type":"Text","example":"Sam"}
+{"entity_id":"EN-D-EN03","position":2,"name":"Short","meaning":"A row with fewer cells.","type":"Text"}
+{"entity_id":"EN-E-EN01","position":1,"name":"Member ID","meaning":"The member's identity.","type":"Text","example":"M-1"}

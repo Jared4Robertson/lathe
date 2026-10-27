@@ -1,0 +1,7 @@
+{"source_id":"SF-A-F01-S01","target_id":"SF-PAT-DOM-R01"}
+{"source_id":"SF-A-F01-S02","target_id":"SF-PAT-UC-R01"}
+{"source_id":"SF-A-F01-S03","target_id":"SF-PAT-OTHER-R01"}
+{"source_id":"SF-A-F01-S04","target_id":"SF-A-V01-R01"}
+{"source_id":"SF-A-F01-S05","target_id":"SF-A-V01-R02"}
+{"source_id":"SF-A-V01-R01","target_id":"SF-PAT-UC-R01"}
+{"source_id":"SF-A-V01-R02","target_id":"SF-PAT-OTHER-R01"}

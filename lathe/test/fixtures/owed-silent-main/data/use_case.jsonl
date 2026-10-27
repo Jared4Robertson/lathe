@@ -1,0 +1,3 @@
+{"id":"OS-A-UC01","title":"Lend a tool","domain_id":"OS-A","goal":"Text."}
+{"id":"OS-B-UC01","title":"Lend a tool in B","domain_id":"OS-B","goal":"Text."}
+{"id":"OS-C-UC01","title":"Count the tools","domain_id":"OS-C","goal":"Text."}
