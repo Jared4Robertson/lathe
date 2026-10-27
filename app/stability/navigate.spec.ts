@@ -25,11 +25,13 @@ async function boxesInView(page: Page, except = ''): Promise<{ id: string; at: {
 test.describe('navigate', () => {
   test('LA-PLT-T72 through the nav', async ({ page }) => {
     await openPage(page, DOMAIN);
-    const link = page.locator('nav#nav .nav-space a[href^="/LA/"]:not([aria-current])').first();
+    // Another domain of the product, from the nav.
+    const link = page.locator('nav#nav .nav-space a[href^="/LA-"]:not([aria-current])').first();
     await expect(link).toBeVisible();
+    const href = await link.getAttribute('href');
     const r = await step(page, 'navigate', 'through the nav', { keys: KEYS, allow: CONTENT, resizes: TITLE }, async () => {
       await link.click();
-      await page.waitForURL(/\/LA\//);
+      await page.waitForURL((u) => u.pathname === href);
     });
     expectStable(r);
   });
