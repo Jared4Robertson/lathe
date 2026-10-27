@@ -1,11 +1,11 @@
 // `lathe serve`: serves the built web app and the API for one product repo, with no build tools.
-// Pages reload through server-sent events (GET /api/events) when specs change.
+// Pages reload through server-sent events (GET /api/events) when the data files change.
 import { existsSync, watch, type FSWatcher } from 'node:fs';
 import { readFile, stat } from 'node:fs/promises';
 import { createServer, type ServerResponse } from 'node:http';
 import path from 'node:path';
 import { PACKAGE_DIR } from '../config.ts';
-import { handleApi, watchTargets } from './api.ts';
+import { closeStores, handleApi, watchTargets } from './api.ts';
 
 /** Where `npm --prefix lathe run build` puts the built web app. */
 export const APP_DIR = path.join(PACKAGE_DIR, 'dist', 'app');
@@ -85,7 +85,7 @@ export function serve({ root, port, host = '127.0.0.1', appDir = APP_DIR }: Serv
     }
   });
 
-  server.on('close', () => watchers.forEach((w) => w.close()));
+  server.on('close', () => { watchers.forEach((w) => w.close()); void closeStores(root); });
   server.listen(port, host);
   return server;
 }
