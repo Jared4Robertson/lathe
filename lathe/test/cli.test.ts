@@ -25,7 +25,7 @@ beforeAll(async () => {
 afterAll(removeData);
 
 describe('lathe check', () => {
-  it('LA-CHK-T02 The check prints errors, then warnings, then coverage with designed, built and proved, and the gaps', () => {
+  it('LA-CHK-UC01-R01-T01 The check prints errors, then warnings, then coverage', () => {
     const { stdout } = lathe('check', '--root', broken);
     const errors = stdout.indexOf('\nErrors (');
     const warnings = stdout.indexOf('\nWarnings (');
@@ -35,7 +35,11 @@ describe('lathe check', () => {
     expect(coverage).toBeGreaterThan(warnings);
     expect(stdout.slice(errors, warnings)).toContain('[test-file-missing-id] EX-LEND-INV01-T:');
     expect(stdout.slice(warnings, coverage)).toContain('[technical-file-missing] EX-LEND-DS01-SV:');
-    const lines = stdout.slice(coverage);
+  });
+
+  it('LA-TRC-UC02-R05-T01 The check prints one coverage line per domain and obligation kind, with designed, built and proved, and the gaps', () => {
+    const { stdout } = lathe('check', '--root', broken);
+    const lines = stdout.slice(stdout.indexOf('\nCoverage:'));
     expect(lines).toContain('  EX-LEND invariant: 1/1 designed, 1/1 built, 0/1 proved\n    gap: Invariant EX-LEND-INV01 is not proved yet.');
     expect(lines).toContain('  EX-LEND specification: 1/1 designed, 1/1 built, 0/1 proved, 1/1 not automated yet');
     expect(lines).toContain('  EX-LEND domain service: 1/1 designed, 0/1 built, 1/1 proved');
@@ -49,12 +53,14 @@ describe('lathe check', () => {
     expect(gaps).toContain('  SP (outside the domains) records short of a minimum (5):');
   });
 
-  it('LA-CHK-T03 The check exits 1 on any error and 0 otherwise, whatever the warnings and gaps', () => {
+  it('LA-CHK-UC01-R02-T01 The check exits 1 on any error and 0 otherwise, whatever the warnings and gaps', () => {
     expect(lathe('check', '--root', broken).status).toBe(1);
     const good = lathe('check', '--root', clean);
     expect(good.status).toBe(0);
     expect(good.stdout).toContain('0 errors, 0 warnings.');
-    // Data the store refuses is an error too, naming the file and line.
+  });
+
+  it('LA-CHK-UC01-R05-T01 Data the store refuses is an error naming the file and line, not a crash', () => {
     const refused = writeData({});
     mkdirSync(path.join(refused, 'data'), { recursive: true });
     writeFileSync(path.join(refused, 'data', 'product.jsonl'), '{"id":"TL","title":"Tool Library","colour":"red"}\n');
@@ -64,7 +70,7 @@ describe('lathe check', () => {
     expect(run.stdout).toContain('data/product.jsonl:1');
   });
 
-  it('LA-CHK-T04 With --json the check prints the whole workspace', async () => {
+  it('LA-CHK-UC01-R03-T01 With --json the check prints the whole workspace', async () => {
     const { stdout, status } = lathe('check', '--json', '--root', broken);
     expect(status).toBe(1);
     expect(JSON.parse(stdout)).toEqual(await loadWorkspace(broken));
@@ -72,7 +78,7 @@ describe('lathe check', () => {
 });
 
 describe('lathe init', () => {
-  it('LA-PLT-T06 Init writes a config and a first product record through the store, and refuses bad or repeated input', () => {
+  it('LA-PLT-UC02-R01-T01 Init writes a config and a first product record through the store, and refuses bad or repeated input', () => {
     const root = writeData({});
     const first = lathe('init', '--root', root, '--name', 'Tool Library', '--prefix', 'TL');
     expect(first.status).toBe(0);

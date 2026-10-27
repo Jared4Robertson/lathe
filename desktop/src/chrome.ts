@@ -57,7 +57,7 @@ export interface ChromeWindowOptions {
 
 /**
  * The chrome the pages last sent, by the system's appearance at the time, kept in the user data
- * folder so a new window opens in the theme's shell color rather than the default (LA-PLT-UC15-R10).
+ * folder so a new window opens in the theme's shell color rather than the default (LA-V68-R01).
  */
 export type SavedChrome = Partial<Record<'light' | 'dark', Chrome>>;
 

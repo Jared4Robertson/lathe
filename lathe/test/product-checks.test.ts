@@ -38,51 +38,64 @@ beforeAll(async () => {
 afterAll(removeData);
 
 describe("a product's own checks", () => {
-  it("LA-CHK-T23 A product check runs after Lathe's checks, against the same tables", () => {
+  it("LA-CHK-DS01-T01 Lathe's checks run first, then the product's, each by position", () => {
     const checks = ws.problems.map((p) => p.check);
     const firstProduct = checks.indexOf('every-event-heard');
     expect(firstProduct).toBeGreaterThan(-1);
     const lastLathe = checks.reduce((last, check, i) => (latheChecks.includes(check) ? i : last), -1);
     expect(lastLathe).toBeGreaterThan(-1);
     expect(lastLathe).toBeLessThan(firstProduct);
+    expect(checks.slice(firstProduct)).toEqual(['every-event-heard', 'broken', 'every-domain', 'every-domain']);
+  });
+
+  it("LA-CHK-UC05-R01-T01 A product check runs against the same tables as Lathe's", () => {
     expect(ofCheck(ws, 'every-event-heard')).toEqual([{ severity: 'warning', check: 'every-event-heard', record: 'EX-LEND-EV02', message: 'Domain event EX-LEND-EV02 is heard by no policy.' }]);
   });
 
-  it("LA-CHK-T24 A product check's name comes from its row, not from a check column its query returns", () => {
+  it("LA-CHK-UC05-R02-T01 A product check's name comes from its row, not from a check column its query returns", () => {
     expect(ofCheck(ws, 'house-rule')).toEqual([]);
   });
 
-  it("A product check reports only on its own product's records, and on none", () => {
+  it("LA-CHK-UC05-R01-T02 A product check reports only on its own product's records, and on none", () => {
     expect(ofCheck(ws, 'every-domain').map((p) => p.record)).toEqual(['EX-LEND', null]);
   });
 
-  it("LA-CHK-T26 A product check named like one of Lathe's checks is refused by the store, so it never runs", async () => {
+  /** The complete product, built, with a store open on it, and a product check named like one of Lathe's. */
+  const clashing = async () => {
     const root = await build(complete());
-    const store = await openStore(root);
-    const clash = store.add('check', { ...row('view-unused', 1, "SELECT NULL AS record, 'THIS PRODUCT CHECK RAN' AS message"), severity: 'error' });
+    return { root, store: await openStore(root), check: row('view-unused', 1, "SELECT NULL AS record, 'THIS PRODUCT CHECK RAN' AS message") };
+  };
+
+  it("LA-CHK-INV01-T A product check named like one of Lathe's checks is refused by the store, naming Lathe's file", async () => {
+    const { store, check } = await clashing();
+    const clash = store.add('check', { ...check, severity: 'error' });
     await expect(clash).rejects.toThrow(StoreError);
     await expect(clash).rejects.toMatchObject({ problems: [expect.objectContaining({ rule: 'primary-key', message: expect.stringContaining("one of Lathe's own (lathe/data/check.jsonl)") })] });
     await store.close();
-    // The same row written into the data file is refused when the data loads.
+  });
+
+  it("LA-CHK-UC05-R03-T01 A product check named like one of Lathe's checks never runs: written into the data file, it is refused when the data loads", async () => {
+    const { root, store } = await clashing();
+    await store.close();
     writeFileSync(path.join(root, 'data', 'check.jsonl'), `${JSON.stringify(row('view-unused', 1, 'SELECT 1'))}\n`);
     const loaded = await loadWorkspace(root);
     expect(ofCheck(loaded, 'data-refused')).toEqual([expect.objectContaining({ severity: 'error', message: expect.stringContaining('check view-unused is already on lathe/data/check.jsonl') })]);
   });
 
-  it('LA-CHK-T27 A product check that fails to run is an error naming the check', () => {
+  it('LA-CHK-UC05-R04-T01 A product check that fails to run is an error naming the check', () => {
     const found = ofCheck(ws, 'broken');
     expect(found).toHaveLength(1);
     expect(found[0]).toMatchObject({ severity: 'error', record: null });
     expect(found[0].message).toContain('The check broken could not run');
   });
 
-  it('LA-CHK-T28 A product names no checks folder: lathe.config.json refuses a checks setting, since checks are rows', async () => {
+  it('LA-CHK-UC05-R05-T01 A product names no checks folder: lathe.config.json refuses a checks setting, since checks are rows', async () => {
     const root = writeData({});
     writeFileSync(path.join(root, 'lathe.config.json'), JSON.stringify({ checks: 'nowhere' }));
     await expect(loadWorkspace(root)).rejects.toThrow('unknown setting "checks"');
   });
 
-  it("LA-CHK-T29 Without check rows of its own only Lathe's checks run", () => {
+  it("LA-CHK-UC05-R01-T03 Without check rows of its own only Lathe's checks run", () => {
     const own = new Set(['every-event-heard', 'broken', 'every-domain']);
     expect(ws.problems.filter((p) => !own.has(p.check)).every((p) => latheChecks.includes(p.check))).toBe(true);
     expect(ws.problems.filter((p) => !own.has(p.check)).map((p) => p.check)).toEqual(['technical-file-missing', 'not-built']);

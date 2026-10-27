@@ -39,7 +39,7 @@ afterAll(() => {
 });
 
 describe('checks', () => {
-  it('LA-CHK-T05 A new check needs only a new check row', async () => {
+  it('LA-CHK-UC02-R01-T01 A new check needs only a new check row', async () => {
     const own = await build(adding(complete(), {
       check: [{
         name: 'every-loan-command', product_id: 'EX', position: 1, severity: 'warning',
@@ -54,7 +54,7 @@ describe('checks', () => {
     ]);
   });
 
-  it('LA-CHK-T06 Checks can read every typed table and the engine\'s views, with file facts already computed', async () => {
+  it('LA-CHK-UC02-R02-T01 Checks can read every typed table and the engine\'s views, with file facts already computed', async () => {
     const checks = await checksFolder([{
       name: 'tables',
       query: `SELECT NULL AS record,
@@ -69,7 +69,7 @@ describe('checks', () => {
     expect(loaded.problems[0].message).toBe(`${loaded.records.length} ${loaded.links.length} ${tests} ${files}/${files} 11 11`);
   });
 
-  it('LA-CHK-T07 Every check runs, in position order, even after one fails', async () => {
+  it('LA-CHK-UC02-R03-T01 Every check runs, in position order, even after one fails', async () => {
     const one = (name: string) => `SELECT NULL AS record, '${name} ran.' AS message`;
     const checks = await checksFolder([
       { name: 'first', query: one('first') },
@@ -81,7 +81,7 @@ describe('checks', () => {
     expect(loaded.problems[1]).toMatchObject({ severity: 'error', record: null, message: expect.stringContaining('The check broken could not run') });
   });
 
-  it("LA-CHK-T08 Each check is one SELECT query in its row, and Lathe's checks are named and placed in order", async () => {
+  it("LA-CHK-INV04-T Each check is one SELECT query in its row, and Lathe's checks are named and placed in order", async () => {
     const store = await openStore(path.dirname(LATHE_DATA_DIR), { latheDataDir: null });
     const rows = store.rows('check');
     const kinds = new Set(Object.keys(store.schema.kinds));
@@ -102,7 +102,7 @@ describe('checks', () => {
 });
 
 describe('loading', () => {
-  it('LA-PLT-T03 loadWorkspace returns the Workspace contract', () => {
+  it('LA-PLT-UC01-R01-T01 loadWorkspace returns the Workspace contract', () => {
     expect(Object.keys(ws).sort()).toEqual(['coverage', 'kinds', 'links', 'problems', 'records', 'relations', 'stages']);
     expect(Object.keys(ws.kinds[0]).sort()).toEqual(['description', 'id_scope', 'kind', 'label', 'obligation', 'parent_kinds', 'position', 'required_fields', 'stage']);
     expect(ws.stages.map((s) => s.stage)).toEqual(['domain-model', 'use-cases', 'interaction-design', 'technical-specification', 'test-plan']);
@@ -126,7 +126,7 @@ describe('loading', () => {
     expect(JSON.parse(JSON.stringify(ws))).toEqual(ws);
   });
 
-  it("LA-PLT-T04 Each record's product, domain and aggregate come from its parents, or from its ID when it has no owner", () => {
+  it("LA-PLT-UC01-R02-T01 Each record's product, domain and aggregate come from its parents, or from its ID when it has no owner", () => {
     const at = (id: string) => ws.records.find((r) => r.id === id);
     expect(at('EX')).toMatchObject({ product: 'EX', domain: null, aggregate: null, parent: null });
     expect(at('EX-LEND')).toMatchObject({ product: 'EX', domain: 'EX-LEND', aggregate: null, parent: 'EX' });
@@ -141,7 +141,7 @@ describe('loading', () => {
     expect(at('EX-LEND-EP01')).toMatchObject({ parent: 'EX-LEND-CMD01', aggregate: 'EX-LEND-A1' });
   });
 
-  it('A product whose data the store refuses loads no records, and each refusal is a data-refused error', async () => {
+  it('LA-CHK-UC01-R04-T01 A product whose data the store refuses loads no records, and each refusal is a data-refused error', async () => {
     const broken = await build(complete());
     const file = path.join(broken, 'data', 'command.jsonl');
     writeFileSync(file, readFileSync(file, 'utf8').replace('"aggregate_id":"EX-LEND-A2"', '"aggregate_id":"EX-LEND-A9"'));
@@ -153,23 +153,37 @@ describe('loading', () => {
     expect(loaded.problems.map((p) => p.message).join('\n')).toContain('EX-LEND-A9');
   });
 
-  it("LA-AUT-T18 A product's own kind takes effect on the next load, with its own table and stage", async () => {
-    const own = await build(adding(complete(), {
+  /** The complete product with a kind of its own, memo, and one memo. */
+  const withMemo = () =>
+    build(adding(complete(), {
       product_kind: [{ name: 'memo', product_id: 'EX', label: 'Memo', description: 'A short note.', parent_kind: 'domain', stage: 'use-cases', obligation: false }],
       memo: [{ id: 'EX-LEND-M01', title: 'A memo', domain_id: 'EX-LEND' }],
     }));
-    const added = await loadWorkspace(own);
+
+  it("LA-AUT-UC04-R01-T01 A product's own kind takes effect on the next load, with its own table and stage", async () => {
+    const added = await loadWorkspace(await withMemo());
     expect(added.kinds.at(-1)).toMatchObject({ kind: 'memo', stage: 'use-cases', position: null, id_scope: null, parent_kinds: ['domain'] });
     expect(added.records.find((r) => r.id === 'EX-LEND-M01')).toMatchObject({ kind: 'memo', parent: 'EX-LEND', domain: 'EX-LEND' });
     expect(added.problems).toEqual([]);
+  });
 
-    // Removing the kind while a memo is left is refused: the memo's rows have no table.
-    const again = await openStore(own);
+  it("LA-PLT-UC02-R03-T01 A product's own kind is a row of its own data, adding a table for that product only", async () => {
+    const own = await openStore(await withMemo());
+    expect(own.rows('product_kind').map((r) => r.name)).toContain('memo');
+    expect(own.schema.tables.memo).toBeDefined();
+    await own.close();
+    const plain = await openStore(root);
+    expect(plain.schema.tables.memo).toBeUndefined();
+    await plain.close();
+  });
+
+  it('LA-AUT-UC03-R02-T01 Removing a kind while a record of it is left is refused, since its rows would have no table', async () => {
+    const again = await openStore(await withMemo());
     await expect(again.remove('product_kind', { name: 'memo' })).rejects.toThrow(/memo/);
     await again.close();
   });
 
-  it('LA-PLT-T05 Each load reads the files afresh and writes nothing', async () => {
+  it('LA-PLT-UC01-R04-T01 Each load reads the files afresh and writes nothing', async () => {
     const fresh = await build(complete());
     const before = listing(fresh);
     const first = await loadWorkspace(fresh);
@@ -188,7 +202,7 @@ describe('loading', () => {
 });
 
 describe('the Tool Library', () => {
-  it('checks with no errors, and every obligation it has is designed and proved', async () => {
+  it('LA-TRC-UC07-R05-T03 checks with no errors, and every obligation it has is designed and proved, its pattern rules for proof alone', async () => {
     const tl = await loadWorkspace(path.join(PACKAGE_DIR, '..', 'examples', 'tool-library'));
     expect(tl.problems.filter((p) => p.severity === 'error')).toEqual([]);
     const lending = tl.coverage.find((c) => c.domain === 'TL-LEND')!;

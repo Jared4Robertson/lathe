@@ -3,7 +3,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { openStore, LATHE_DATA_DIR, type Workspace } from '../src/index.ts';
 import path from 'node:path';
-import { adding, changing, complete, loadData, ofCheck, records, removeData, without } from './helpers.ts';
+import { adding, changing, complete, gaps, loadData, ofCheck, records, removeData, without } from './helpers.ts';
 
 afterAll(removeData);
 
@@ -24,6 +24,18 @@ describe("Lathe's checks", () => {
     const tested = describedChecks.sort();
     expect(names).toEqual(tested);
   });
+
+  it('LA-CHK-UC01-R06-T01 every problem names its check and, when it has one, its record', async () => {
+    let data = without(complete(), 'happens_in', () => true);
+    data = changing(data, 'specification_test', () => true, { state: 'not automated yet' });
+    const ws = await loadData(data, { silent: ['EX-LEND-INV01-T'], missing: ['src/dates.ts'] });
+    expect(new Set(ws.problems.map((p) => p.check)).size).toBeGreaterThan(3);
+    for (const problem of ws.problems) {
+      expect(problem.check).toMatch(/^[a-z]+(-[a-z]+)*$/);
+      expect(problem.message, problem.check).toMatch(/\.$/);
+      if (problem.record !== null) expect(problem.message, problem.check).toContain(problem.record);
+    }
+  });
 });
 
 /** The checks this file tests, one describe each. */
@@ -34,7 +46,7 @@ const check = (name: string, body: () => void) => {
 };
 
 check('test-file-missing', () => {
-  it("LA-TRC-T14 an automated or manual test's missing file is an error; one not automated yet is a warning", async () => {
+  it("LA-TRC-UC05-R05-T01 an automated or manual test's missing file is an error; one not automated yet is a warning", async () => {
     let data = changing(complete(), 'integration_test', () => true, { file: 'manual/mail.md' });
     data = changing(data, 'domain_service_test', () => true, { state: 'not automated yet', file: 'test/later.test.ts' });
     const ws = await loadData(data, { missing: ['test/email.test.ts', 'manual/mail.md', 'test/later.test.ts'] });
@@ -53,14 +65,20 @@ check('test-file-missing', () => {
 });
 
 check('test-file-missing-id', () => {
-  it("LA-AUT-T17 an automated test whose file does not name it is an error, and it proves nothing", async () => {
+  it('LA-AUT-INV21-T an automated test whose file does not name it is an error', async () => {
     const ws = await loadData(complete(), { silent: ['EX-LEND-INV01-T'] });
     expect(ofCheck(ws, 'test-file-missing-id')).toEqual([
       expect.objectContaining({ severity: 'error', record: 'EX-LEND-INV01-T', message: expect.stringContaining('does not mention EX-LEND-INV01-T') }),
     ]);
   });
 
-  it('LA-TRC-T11 a test file names an ID only as a whole ID', async () => {
+  it('LA-TRC-UC03-R01-T01 an automated test whose file does not name it proves nothing', async () => {
+    const ws = await loadData(complete(), { silent: ['EX-LEND-INV01-T'] });
+    expect(gaps(ws)).toEqual(['proved EX-LEND-INV01']);
+    expect(gaps(clean)).toEqual([]);
+  });
+
+  it('LA-TRC-UC05-R01-T03 a test file names an ID only as a whole ID', async () => {
     const files = { 'test/loans.test.ts': "it('EX-LEND-INV01-T2 is another test', () => {});\nit('EX-LEND-SP01-T ok');\nit('EX-LEND-PO01-T ok');\n" };
     const ws = await loadData(complete(), { files });
     expect(records(ofCheck(ws, 'test-file-missing-id'))).toEqual(['EX-LEND-INV01-T']);
@@ -68,7 +86,7 @@ check('test-file-missing-id', () => {
 });
 
 check('manual-test-file-silent', () => {
-  it('LA-TRC-T74 a manual test whose file exists but never names it is a warning', async () => {
+  it('LA-TRC-UC08-R03-T01 a manual test whose file exists but never names it is a warning', async () => {
     const data = changing(complete(), 'integration_test', () => true, { file: 'manual/mail.md' });
     const ws = await loadData(data, { files: { 'manual/mail.md': 'Send a mail and look for it.\n' } });
     expect(ofCheck(ws, 'manual-test-file-silent')).toEqual([expect.objectContaining({ severity: 'warning', record: 'EX-INT01-T01' })]);
@@ -153,7 +171,7 @@ describe('coverage gaps as warnings', () => {
   });
   const mirrors = (name: string, missing: string) =>
     check(name, () => {
-      it(`names exactly the obligations coverage lists as not ${missing}`, () => {
+      it(`LA-TRC-UC01-R03-T01 names exactly the obligations coverage lists as not ${missing}, as warnings`, () => {
         const listed = ws.coverage.flatMap((c) => c.gaps.filter((g) => g.missing === missing).map((g) => ({ severity: 'warning', check: name, record: g.id, message: g.message })));
         expect(listed.length).toBeGreaterThan(0);
         expect(ofCheck(ws, name)).toEqual(listed);
@@ -163,7 +181,7 @@ describe('coverage gaps as warnings', () => {
   mirrors('not-built', 'built');
   mirrors('not-proved', 'proved');
 
-  it('they say which obligation lacks what', () => {
+  it('LA-TRC-UC01-R02-T01 they say which obligation lacks what', () => {
     expect(ofCheck(ws, 'not-designed').map((p) => p.message)).toEqual(['UC requirement EX-LEND-UC02-R01 is not designed yet.']);
     expect(ofCheck(ws, 'not-built').map((p) => p.record)).toEqual(['EX-LEND-DS01']);
     expect(ofCheck(ws, 'not-proved').map((p) => p.message)).toEqual(['Specification EX-LEND-SP01 is not proved yet: its test is not automated yet.']);
@@ -190,16 +208,22 @@ check('pattern-rule-test-outside-followers', () => {
 });
 
 check('pattern-setting-missing', () => {
-  it("LA-TRC-T17 a use case that gives no value for one of its pattern's settings is an error", async () => {
+  it("LA-AUT-INV20-T a use case that gives no value for one of its pattern's settings is an error naming the setting", async () => {
     const ws = await loadData(without(complete(), 'setting_value', () => true));
     expect(ofCheck(ws, 'pattern-setting-missing')).toEqual([
       expect.objectContaining({ severity: 'error', record: 'EX-LEND-UC02', message: expect.stringContaining('setting "record"') }),
     ]);
   });
+
+  it('LA-TRC-INV04-T a use case that answers each setting of its pattern is in place; one that answers none is an error', async () => {
+    expect(ofCheck(clean, 'pattern-setting-missing')).toEqual([]);
+    const ws = await loadData(without(complete(), 'setting_value', () => true));
+    expect(records(ofCheck(ws, 'pattern-setting-missing'))).toEqual(['EX-LEND-UC02']);
+  });
 });
 
 check('pattern-not-followed', () => {
-  it('LA-TRC-T32 a pattern no use case or domain follows is a warning', async () => {
+  it('LA-TRC-UC04-R07-T01 a pattern no use case or domain follows is a warning', async () => {
     const data = without(without(complete(), 'setting_value', () => true), 'follows', () => true);
     const ws = await loadData(without(data, 'pattern_rule_test', () => true));
     expect(ofCheck(ws, 'pattern-not-followed')).toEqual([
@@ -209,7 +233,7 @@ check('pattern-not-followed', () => {
 });
 
 check('command-change-recorded', () => {
-  it('each recorded exception to one aggregate per command is a warning with its reason', async () => {
+  it('LA-CHK-UC04-R12-T01 each recorded exception to one aggregate per command is a warning with its reason', async () => {
     const ws = await loadData(adding(complete(), { command_change: [{ command_id: 'EX-LEND-CMD01', aggregate_id: 'EX-LEND-A2', reason: 'The tool must never show as free while lent.' }] }));
     expect(ofCheck(ws, 'command-change-recorded')).toEqual([
       {
@@ -221,7 +245,7 @@ check('command-change-recorded', () => {
 });
 
 check('event-not-by-outbox', () => {
-  it('an event a policy hears, or a published one, not delivered by outbox is a warning', async () => {
+  it('LA-CHK-UC04-R13-T01 an event a policy hears, or a published one, not delivered by outbox is a warning', async () => {
     let data = changing(complete(), 'event_type', (r) => r.id === 'EX-LEND-EV01-ET', { delivery: 'in process' });
     data = changing(data, 'domain_event', (r) => r.id === 'EX-LEND-EV02', { published: true });
     const ws = await loadData(data);
@@ -231,7 +255,7 @@ check('event-not-by-outbox', () => {
     ]);
   });
 
-  it('an event with no event type, or whose event type gives no delivery, is reported too', async () => {
+  it('LA-CHK-UC04-R13-T01 an event with no event type, or whose event type gives no delivery, is reported too', async () => {
     let data = without(complete(), 'event_type', (r) => r.id === 'EX-LEND-EV01-ET');
     data = changing(data, 'event_type', () => true, { delivery: undefined });
     data = changing(data, 'domain_event', (r) => r.id === 'EX-LEND-EV02', { published: true });
@@ -242,7 +266,7 @@ check('event-not-by-outbox', () => {
     ]);
   });
 
-  it('an event a policy hears whose aggregate is stored in no table, such as one inside a browser tab, is exempt', async () => {
+  it('LA-CHK-UC04-R13-T01 an event a policy hears whose aggregate is stored in no table, such as one inside a browser tab, is exempt', async () => {
     let data = changing(complete(), 'event_type', (r) => r.id === 'EX-LEND-EV01-ET', { delivery: 'in process' });
     data = without(data, 'table_key', (r) => r.table_id === 'EX-LEND-EN01-TB');
     data = without(data, 'table', (r) => r.id === 'EX-LEND-EN01-TB');
@@ -251,7 +275,7 @@ check('event-not-by-outbox', () => {
 });
 
 check('has-crosses-aggregate', () => {
-  it('LA-AUT-T75 has_one or has_many to an entity of another aggregate is an error', async () => {
+  it('LA-AUT-INV25-T has_one or has_many to an entity of another aggregate is an error', async () => {
     const ws = await loadData(adding(complete(), { has_many: [{ source_id: 'EX-LEND-EN01', target_id: 'EX-LEND-EN03' }] }));
     expect(ofCheck(ws, 'has-crosses-aggregate')).toEqual([
       expect.objectContaining({ severity: 'error', record: 'EX-LEND-EN01', message: expect.stringContaining('by a field typed by it') }),
@@ -260,14 +284,14 @@ check('has-crosses-aggregate', () => {
 });
 
 check('entity-unreferenced', () => {
-  it("LA-AUT-T76 a child entity its root does not reach by has_one or has_many is a warning", async () => {
+  it("LA-AUT-INV28-T a child entity its root does not reach by has_one or has_many is a warning", async () => {
     const ws = await loadData(without(complete(), 'has_one', () => true));
     expect(ofCheck(ws, 'entity-unreferenced')).toEqual([expect.objectContaining({ severity: 'warning', record: 'EX-LEND-EN02' })]);
   });
 });
 
 check('event-tense', () => {
-  it('LA-AUT-T93 a title with no past form as its last word or after its first is a warning', async () => {
+  it('LA-AUT-INV27-T a title with no past form as its last word or after its first is a warning', async () => {
     const data = adding(complete(), {
       domain_event: [
         { id: 'EX-LEND-EV03', title: 'Return tool', aggregate_id: 'EX-LEND-A1', published: false },
@@ -281,7 +305,7 @@ check('event-tense', () => {
 });
 
 check('domain-named-for-technology', () => {
-  it('LA-AUT-T103 a domain whose title or code names a technology is a warning; one only described so is not', async () => {
+  it('LA-AUT-INV26-T a domain whose title or code names a technology is a warning; one only described so is not', async () => {
     const data = adding(complete(), {
       domain: [
         { id: 'EX-WEB', title: 'Web app', product_id: 'EX', subdomain_type: 'generic' },
@@ -297,7 +321,7 @@ check('domain-named-for-technology', () => {
 });
 
 check('step-order', () => {
-  it('LA-AUT-T42 a path whose positions skip a number is reported once, on the first step after the gap', async () => {
+  it('LA-AUT-INV18-T a path whose positions skip a number is reported once, on the first step after the gap', async () => {
     const data = adding(complete(), {
       flow_step: [
         { id: 'EX-LEND-UC01-FL-S03', title: 'Refused', flow_id: 'EX-LEND-UC01-FL', path: 'refused', position: 2 },
@@ -317,27 +341,32 @@ check('too-many-children', () => {
   const requirements = (n: number, group?: (i: number) => string) =>
     Array.from({ length: n }, (_, i) => ({ id: `EX-LEND-UC01-R${String(i + 2).padStart(2, '0')}`, title: `Rule ${i}`, use_case_id: 'EX-LEND-UC01', statement: 'It MUST hold.', ...(group ? { group_name: group(i) } : {}) }));
 
-  it('LA-CHK-T32 a record with more children of one kind than max_children is a warning naming the parent, kind and count', async () => {
+  it('LA-CHK-UC06-R01-T01 a record with more children of one kind than max_children is a warning naming the parent, kind and count', async () => {
     const ws = await loadData(adding(complete(), { product_setting: [{ product_id: 'EX', max_children: 3 }], uc_requirement: requirements(3) }));
     expect(ofCheck(ws, 'too-many-children')).toEqual([
       expect.objectContaining({ severity: 'warning', record: 'EX-LEND-UC01', message: expect.stringContaining('Use case EX-LEND-UC01 has 4 children of kind uc_requirement, more than the 3') }),
     ]);
   });
 
-  it('LA-CHK-T36 without the setting the limit is 15, and tests are never counted', async () => {
-    const tests = Array.from({ length: 20 }, (_, i) => ({ id: `EX-LEND-UC01-R01-T${String(i + 2).padStart(2, '0')}`, title: `Test ${i}`, uc_requirement_id: 'EX-LEND-UC01-R01', level: 'api', state: 'not automated yet' }));
-    const ws = await loadData(adding(complete(), { uc_requirement: requirements(15), use_case_test: tests }));
+  it('LA-CHK-UC06-R02-T01 without the setting the limit is 15', async () => {
+    const ws = await loadData(adding(complete(), { uc_requirement: requirements(15) }));
     expect(ofCheck(ws, 'too-many-children').map((p) => p.message)).toEqual([expect.stringContaining('has 16 children of kind uc_requirement, more than the 15')]);
   });
 
-  it('LA-CHK-T53 grouped requirements are counted per group, groups compared in any letter case', async () => {
+  it('LA-CHK-UC06-R01-T04 tests are never counted, however many a record holds', async () => {
+    const tests = Array.from({ length: 20 }, (_, i) => ({ id: `EX-LEND-UC01-R01-T${String(i + 2).padStart(2, '0')}`, title: `Test ${i}`, uc_requirement_id: 'EX-LEND-UC01-R01', level: 'api', state: 'not automated yet' }));
+    const ws = await loadData(adding(complete(), { use_case_test: tests }));
+    expect(ofCheck(ws, 'too-many-children')).toEqual([]);
+  });
+
+  it('LA-CHK-UC06-R06-T01 grouped requirements are counted per group, groups compared in any letter case', async () => {
     const ws = await loadData(adding(complete(), { product_setting: [{ product_id: 'EX', max_children: 2 }], uc_requirement: requirements(4, (i) => (i < 3 ? (i ? 'Limits' : 'limits ') : 'Other')) }));
     expect(ofCheck(ws, 'too-many-children').map((p) => p.message)).toEqual([expect.stringContaining('has 3 children of kind uc_requirement in group Limits')]);
   });
 });
 
 check('lone-child', () => {
-  it('LA-CHK-T39 a capability with exactly one use case is a warning naming it', async () => {
+  it('LA-CHK-UC06-R03-T01 a capability with exactly one use case is a warning naming it', async () => {
     const data = changing(complete(), 'use_case', (r) => r.id === 'EX-LEND-UC02', { capability_id: 'EX-LEND-CAP02' });
     const ws = await loadData(adding(data, { capability: [{ id: 'EX-LEND-CAP02', title: 'Catalog', domain_id: 'EX-LEND', position: 2 }] }));
     expect(ofCheck(ws, 'lone-child').map((p) => p.message)).toEqual([
@@ -346,7 +375,7 @@ check('lone-child', () => {
     ]);
   });
 
-  it('LA-CHK-T54 a group with one member is a warning on its parent, standard rules included', async () => {
+  it('LA-CHK-UC06-R07-T01 a group with one member is a warning on its parent, standard rules included', async () => {
     let data = changing(complete(), 'standard_rule', () => true, { group_name: 'Imports' });
     data = changing(data, 'api_requirement', () => true, { group_name: 'Errors' });
     data = adding(data, { api_requirement: [{ id: 'EX-LEND-EP01-R02', title: 'Bad body', endpoint_id: 'EX-LEND-EP01', statement: 'A bad body MUST give 400.', group_name: ' errors' }] });

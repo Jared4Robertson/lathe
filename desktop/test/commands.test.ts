@@ -14,14 +14,14 @@ function template(mac: boolean, recent: string[] = []) {
   return { actions, menu: menuTemplate(actions, mac) };
 }
 
-describe('LA-PLT-T110 The native menus offer the app commands, by command ID, without taking any key', () => {
-  it('has File, Edit, View, Window and Help, plus the app menu on a Mac', () => {
+describe('The native menus offer the app commands, by command ID, without taking any key', () => {
+  it('LA-V66-R01-T01 has File, Edit, View, Window and Help, plus the app menu on a Mac', () => {
     const names = template(true).menu.map((m) => m.label ?? m.role);
     expect(names).toEqual(['appMenu', 'File', 'editMenu', 'View', 'windowMenu', 'help']);
     expect(template(false).menu.map((m) => m.label ?? m.role)).toEqual(['File', 'editMenu', 'View', 'windowMenu', 'help']);
   });
 
-  it('opens a product folder with Cmd+O, lists recent folders and closes the window', () => {
+  it('LA-V66-R04-T01 opens a product folder with Cmd+O, lists recent folders and closes the window', () => {
     const { menu, actions } = template(true, ['/a', '/b']);
     const file = submenu(menu.find((m) => m.label === 'File'));
     expect(file[0]).toMatchObject({ label: 'Open Product Folder…', accelerator: 'CmdOrCtrl+O' });
@@ -33,7 +33,7 @@ describe('LA-PLT-T110 The native menus offer the app commands, by command ID, wi
     expect(submenu(template(true).menu.find((m) => m.label === 'File')).find((m) => m.label === 'Open Recent')?.submenu).toEqual([{ label: 'No Recent Folders', enabled: false }]);
   });
 
-  it('has reload, developer tools, zoom and full screen in View, and the record format and shortcuts in Help', () => {
+  it('LA-V66-R01-T01 has reload, developer tools, zoom and full screen in View, and the record format and shortcuts in Help', () => {
     const { menu, actions } = template(true);
     const view = submenu(menu.find((m) => m.label === 'View'));
     for (const role of ['reload', 'toggleDevTools', 'resetZoom', 'zoomIn', 'zoomOut', 'togglefullscreen']) expect(view.some((m) => m.role === role)).toBe(true);
@@ -43,7 +43,7 @@ describe('LA-PLT-T110 The native menus offer the app commands, by command ID, wi
     expect(actions.runCommand).toHaveBeenCalledWith('showShortcuts');
   });
 
-  it('sends each app command by its ID, with no accelerator of its own but for keys a page never gets', () => {
+  it('LA-V66-R03-T01 sends each app command by its ID, with no accelerator of its own but for keys a page never gets', () => {
     const { menu, actions } = template(true);
     const items = flat(menu).filter((m) => MENU_COMMANDS.some((c) => c.label === m.label));
     expect(items).toHaveLength(MENU_COMMANDS.length);
@@ -55,7 +55,7 @@ describe('LA-PLT-T110 The native menus offer the app commands, by command ID, wi
     expect(actions.runCommand.mock.calls.map(([id]) => id)).toEqual(MENU_COMMANDS.map((c) => c.id));
   });
 
-  it("names only commands in the app's keymap, each with one of its default bindings on a Mac and elsewhere", () => {
+  it("LA-V66-R03-T01 names only commands in the app's keymap, each with one of its default bindings on a Mac and elsewhere", () => {
     for (const command of MENU_COMMANDS) {
       const entry = COMMANDS.find((c) => c.id === command.id);
       expect(entry, command.id).toBeDefined();
@@ -65,7 +65,7 @@ describe('LA-PLT-T110 The native menus offer the app commands, by command ID, wi
     }
   });
 
-  it("presses keys that the app's keymap reads as the binding, on a Mac and elsewhere", () => {
+  it("LA-V66-R03-T01 presses keys that the app's keymap reads as the binding, on a Mac and elsewhere", () => {
     for (const mac of [true, false]) {
       for (const command of MENU_COMMANDS) {
         const keys = commandKeys(command, mac);
@@ -76,7 +76,7 @@ describe('LA-PLT-T110 The native menus offer the app commands, by command ID, wi
   });
 });
 
-describe('LA-PLT-T126 The app menu has About and Settings, File chooses the editor, and View has the record tabs', () => {
+describe('The app menu has About and Settings, File chooses the editor, and View has the record tabs', () => {
   function full(mac: boolean) {
     const actions = {
       recent: [],
@@ -93,23 +93,25 @@ describe('LA-PLT-T126 The app menu has About and Settings, File chooses the edit
     return { actions, menu: menuTemplate(actions, mac) };
   }
 
-  it('opens About Lathe and Settings (Cmd+,) from the app menu, with no Check for Updates yet', () => {
+  it('LA-V70-R01-T02 opens About Lathe from the app menu, or from Help elsewhere, with no Check for Updates yet', () => {
     const { menu, actions } = full(true);
     const appMenu = submenu(menu[0]);
     expect(menu[0].role).toBe('appMenu');
     expect(appMenu[0].label).toBe('About Lathe');
     (appMenu[0].click as () => void)();
     expect(actions.about).toHaveBeenCalled();
-    const settings = appMenu.find((m) => m.label === 'Settings…')!;
+    expect(flat(menu).some((m) => /update/i.test(m.label ?? ''))).toBe(false);
+    expect(appMenu.some((m) => m.role === 'quit')).toBe(true);
+    expect(submenu(full(false).menu.find((m) => m.role === 'help')).some((m) => m.label === 'About Lathe')).toBe(true);
+  });
+
+  it('LA-V66-R05-T01 opens Settings (Cmd+,) from the app menu, or from File elsewhere', () => {
+    const { menu, actions } = full(true);
+    const settings = submenu(menu[0]).find((m) => m.label === 'Settings…')!;
     expect(settings.accelerator).toBe('CmdOrCtrl+,');
     (settings.click as () => void)();
     expect(actions.settings).toHaveBeenCalled();
-    expect(flat(menu).some((m) => /update/i.test(m.label ?? ''))).toBe(false);
-    expect(appMenu.some((m) => m.role === 'quit')).toBe(true);
-    // Elsewhere Settings sits in File and About in Help.
-    const other = full(false).menu;
-    expect(submenu(other.find((m) => m.label === 'File')).some((m) => m.label === 'Settings…')).toBe(true);
-    expect(submenu(other.find((m) => m.role === 'help')).some((m) => m.label === 'About Lathe')).toBe(true);
+    expect(submenu(full(false).menu.find((m) => m.label === 'File')).some((m) => m.label === 'Settings…')).toBe(true);
   });
 
   it('chooses the editor in File › Open Records In, with the current one checked', () => {
@@ -121,7 +123,7 @@ describe('LA-PLT-T126 The app menu has About and Settings, File chooses the edit
     expect(actions.chooseEditor).toHaveBeenCalledWith('zed');
   });
 
-  it('has View › Tabs: Ctrl+Tab and Ctrl+Shift+Tab owned by the menu, keep and close through the app\'s keys', () => {
+  it('LA-V96-R17-T01 has View › Tabs: Ctrl+Tab and Ctrl+Shift+Tab owned by the menu, keep and close through the app\'s keys', () => {
     const { menu, actions } = full(true);
     const tabs = submenu(submenu(menu.find((m) => m.label === 'View')).find((m) => m.label === 'Tabs'));
     expect(tabs.map((m) => [m.label, m.accelerator])).toEqual([

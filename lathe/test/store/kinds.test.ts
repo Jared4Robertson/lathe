@@ -52,7 +52,7 @@ describe.each(kinds)('the %s table', (kind) => {
     expect(problems.find((p) => p.file === file)!.message).toContain('TL-NOPE');
   });
 
-  it('refuses an ID another record has, of any kind', async () => {
+  it('LA-AUT-INV01-T refuses an ID another record has, of any kind', async () => {
     const other = kind === 'domain' ? 'TL' : 'TL-LEND';
     const problems = await refusal(withTable(data, kind, [...data[kind], { ...row, id: other }]));
     expect(problems).toEqual([expect.objectContaining({ rule: 'unique-id', key: other })]);
@@ -74,7 +74,7 @@ describe.each(kinds)('the %s table', (kind) => {
     }
   });
 
-  it('refuses a row without a required field', async () => {
+  it('LA-AUT-INV04-T refuses a row without a required field', async () => {
     const parents = new Set(schema.kinds[kind].parents.map((p) => p.column));
     const required = table.columns.filter((c) => c.required && c.name !== 'id' && !parents.has(c.name));
     for (const column of required) {
@@ -87,7 +87,7 @@ describe.each(kinds)('the %s table', (kind) => {
 });
 
 describe('loading files', () => {
-  it('names the file and line of a line that is not JSON, a column the table lacks, and a file for no table', async () => {
+  it('LA-AUT-UC01-R01-T04 names the file and line of a line that is not JSON, a column the table lacks, and a file for no table', async () => {
     const root = writeData(data);
     const { writeFileSync, appendFileSync } = await import('node:fs');
     appendFileSync(`${root}/data/uc_requirement.jsonl`, '{"id": "TL-LEND-UC01-R02",\n');
