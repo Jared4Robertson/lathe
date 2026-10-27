@@ -80,7 +80,8 @@ function nameless(workspace: Workspace): { problems: string[]; frames: number } 
       const map = layout.map(index, product.id);
       // One text scale per level (LA-EXP-DR58, LA-EXP-DR62): every box at a level has the same, a Tree level by depth, a Nested level by height from
       // the leaves. A Voronoi cell's text is its own size's (LA-EXP-DR64), so Voronoi has no levels to check.
-      if (layout.name !== 'Voronoi') (layout.name === 'Tree' ? map.byLevel : heightLevels(map.nodes)).forEach((boxes, l) => {
+      // A product's children (its domains and Shared) share one Nested scale instead, the largest of theirs (LA-EXP-DR62).
+      if (layout.name !== 'Voronoi') (layout.name === 'Tree' ? map.byLevel : [...heightLevels(map.nodes).map((boxes) => boxes.filter((n) => n.level !== 1)), map.byLevel[1] ?? []].filter((boxes) => boxes.length > 0)).forEach((boxes, l) => {
         const scales = [...new Set(boxes.map((n) => n.text))];
         if (scales.length !== 1) problems.push(`${layout.name} ${product.id} level ${l} has ${scales.length} text scales: ${scales.slice(0, 5).join(', ')}`);
       });
