@@ -1,6 +1,6 @@
 # The store's interfaces
 
-What the engine, the CLI and MCP tools, and the app build on: the schema in `lathe/schema/` and the store in `lathe/src/store/`, exported from `@jaredrob/lathe`. The model is the one in [plans/domain-model-refinement.md](plans/domain-model-refinement.md): concrete kinds from DDD, CQRS and event storming, each record with exactly one parent.
+What the engine, the CLI and MCP tools, and the app build on: the schema in `lathe/schema/` and the store in `lathe/src/store/`, exported from `@jaredrob/lathe`. The model is concrete kinds from DDD, CQRS and event storming, each record with exactly one parent; `lathe/REFERENCE.md` describes every kind.
 
 ## How it fits together
 
