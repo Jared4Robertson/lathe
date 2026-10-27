@@ -16,8 +16,8 @@ describe('checks page', () => {
     }));
     expect(groups).toEqual([
       { check: 'test-file-missing', severities: ['error'], records: ['/DM-SHOP-UC01-R01-T01'] },
-      { check: 'undesigned', severities: ['warning'], records: ['/DM-PAY-UC01-R01'] },
-      { check: 'unproved', severities: ['warning', 'warning'], records: ['/DM-SHOP-INV01', '/DM-SHOP-UC01-R02'] },
+      { check: 'not-designed', severities: ['warning'], records: ['/DM-PAY-UC01-R01'] },
+      { check: 'not-proved', severities: ['warning', 'warning'], records: ['/DM-SHOP-INV01', '/DM-SHOP-UC01-R02'] },
       { check: 'Workspace', severities: ['error'], records: ['workspace'] },
       { check: 'engine', severities: ['error'], records: ['workspace'] },
     ]);

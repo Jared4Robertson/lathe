@@ -39,8 +39,8 @@ describe('format reference pages', () => {
     const errors = within(checks).getByRole('heading', { name: /^Errors/ }).closest('section')!;
     const warnings = within(checks).getByRole('heading', { name: /^Warnings/ }).closest('section')!;
     expect(within(errors).getByRole('link', { name: /test-file-missing/ })).toHaveAttribute('href', '/format/checks/test-file-missing');
-    expect(within(warnings).getByRole('link', { name: /unproved/ })).toHaveAttribute('href', '/format/checks/unproved');
-    expect(within(errors).queryByRole('link', { name: /unproved/ })).toBeNull();
+    expect(within(warnings).getByRole('link', { name: /not-proved/ })).toHaveAttribute('href', '/format/checks/not-proved');
+    expect(within(errors).queryByRole('link', { name: /not-proved/ })).toBeNull();
   });
 
   it('LA-AUT-T111 A kind page shows where the kind sits, its columns, its links in and out by their labels, its checks, an example and its records', async () => {
@@ -100,11 +100,11 @@ describe('format reference pages', () => {
   });
 
   it('LA-AUT-T112 A check page shows its severity, explanation and query, and its problems now as clickable rows', async () => {
-    await openApp('/format/checks/unproved');
-    expect(await screen.findByRole('heading', { level: 1, name: 'unproved' })).toBeInTheDocument();
+    await openApp('/format/checks/not-proved');
+    expect(await screen.findByRole('heading', { level: 1, name: 'not-proved' })).toBeInTheDocument();
     expect(within(main()).getByText('Every obligation is proved by a test.')).toBeInTheDocument();
     expect(within(main()).getByText('Add a test under it.')).toBeInTheDocument();
-    expect(section('Query').querySelector('pre')).toHaveTextContent(/^SELECT 'warning' AS severity, 'unproved'/);
+    expect(section('Query').querySelector('pre')).toHaveTextContent(/^SELECT 'warning' AS severity, 'not-proved'/);
     const problems = section(/^Problems now/);
     expect(problems).toHaveTextContent('Problems now2');
     const row = within(problems).getByRole('link', { name: 'DM-SHOP-INV01' });
@@ -114,12 +114,12 @@ describe('format reference pages', () => {
     expect(fact(sideBar(), 'From')).toBe("Lathe's checks");
 
     // An explanation reads as Markdown.
-    await openApp('/format/checks/undesigned');
-    await screen.findByRole('heading', { level: 1, name: 'undesigned' });
+    await openApp('/format/checks/not-designed');
+    await screen.findByRole('heading', { level: 1, name: 'not-designed' });
     expect(within(main()).getByText('fulfills').tagName).toBe('CODE');
 
     // A check that reports nothing says so; an unknown one says it is not in the format.
-    await openApp('/format/checks/command-change');
+    await openApp('/format/checks/command-change-recorded');
     expect(await screen.findByText('This check reports nothing now.')).toBeInTheDocument();
     await openApp('/format/checks/no-such-check');
     expect(await screen.findByText(/The format has no check called/)).toBeInTheDocument();
@@ -137,7 +137,7 @@ describe('format reference pages', () => {
     // A problem's code on a record page, a domain page and the Checks page.
     await openApp('/DM-SHOP-INV01');
     await screen.findByRole('heading', { level: 1, name: 'A basket holds at most 50 items' });
-    expect(within(sideBar()).getByRole('link', { name: 'unproved' })).toHaveAttribute('href', '/format/checks/unproved');
+    expect(within(sideBar()).getByRole('link', { name: 'not-proved' })).toHaveAttribute('href', '/format/checks/not-proved');
     await openApp('/DM-SHOP');
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     expect(within(section(/^Problems in this domain/)).getByRole('link', { name: 'test-file-missing' })).toHaveAttribute('href', '/format/checks/test-file-missing');
@@ -169,19 +169,19 @@ describe('format reference pages', () => {
   });
 
   it('LA-AUT-T115 Quick find finds kinds and checks by name and leads to their pages', async () => {
-    const items = findItems(indexOf(workspace()), ['command-change']);
+    const items = findItems(indexOf(workspace()), ['command-change-recorded']);
     const kind = rankItems(items, 'Kind: Use case')[0];
     expect(kind).toMatchObject({ title: 'Kind: Use case', to: '/format/kinds/use_case' });
-    expect(rankItems(items, 'command-cha')[0]).toMatchObject({ title: 'Check: command-change', to: '/format/checks/command-change' });
+    expect(rankItems(items, 'command-cha')[0]).toMatchObject({ title: 'Check: command-change-recorded', to: '/format/checks/command-change-recorded' });
     // A check that reports a problem now is found even before the reference loads.
-    expect(rankItems(findItems(indexOf(workspace()), []), 'unproved')[0]).toMatchObject({ title: 'Check: unproved' });
+    expect(rankItems(findItems(indexOf(workspace()), []), 'not-proved')[0]).toMatchObject({ title: 'Check: not-proved' });
 
     await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     const find = screen.getAllByRole('combobox', { name: 'Quick find' })[0];
-    await userEvent.type(find, 'Check: unpro');
+    await userEvent.type(find, 'Check: not-pro');
     await userEvent.keyboard('{Enter}');
-    expect(window.location.pathname).toBe('/format/checks/unproved');
+    expect(window.location.pathname).toBe('/format/checks/not-proved');
   });
 
   it('LA-AUT-T116 The pages are built from the loaded data: a check with no row in the check table is the engine\'s own, listed without an explanation', async () => {

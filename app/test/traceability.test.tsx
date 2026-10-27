@@ -63,21 +63,21 @@ describe('traceability', () => {
 
   it('LA-TRC-T113 Gap callouts say not designed, not built and not proved (or not automated yet), agree with coverage, link to their check, and a pattern rule has one line per domain', () => {
     const index = indexOf(workspace());
-    // Coverage reports DM-SHOP-UC01-R02 unproved; its step invokes nothing, so nothing builds it.
+    // Coverage reports DM-SHOP-UC01-R02 not-proved; its step invokes nothing, so nothing builds it.
     let trace = show(index, 'DM-SHOP-UC01-R02');
     expect(gapKinds(trace)).toEqual(['not-built', 'not-proved']);
-    expect(within(trace).getByRole('link', { name: 'unproved' })).toHaveAttribute('href', '/format/checks/unproved');
+    expect(within(trace).getByRole('link', { name: 'not-proved' })).toHaveAttribute('href', '/format/checks/not-proved');
     cleanup();
     // DM-PAY-UC01-R01: neither designed nor proved.
     trace = show(index, 'DM-PAY-UC01-R01');
     expect(gapKinds(trace)).toEqual(['not-designed', 'not-proved']);
-    expect(within(trace).getByRole('link', { name: 'undesigned' })).toHaveAttribute('href', '/format/checks/undesigned');
+    expect(within(trace).getByRole('link', { name: 'not-designed' })).toHaveAttribute('href', '/format/checks/not-designed');
     cleanup();
     // An invariant whose only test is not automated yet.
     trace = show(index, 'DM-SHOP-INV01');
-    expect(gapKinds(trace)).toContain('only-planned');
+    expect(gapKinds(trace)).toContain('not-automated');
     expect(trace).toHaveTextContent('Not proved yet: its test is not automated yet.');
-    expect(testsOf(index, index.byId.get('DM-SHOP-INV01')!)).toEqual({ proved: [], planned: ['DM-SHOP-INV01-T'] });
+    expect(testsOf(index, index.byId.get('DM-SHOP-INV01')!)).toEqual({ proved: [], notAutomated: ['DM-SHOP-INV01-T'] });
     cleanup();
 
     // A pattern rule, per following domain, proved by its tests that name the domain; it needs no design.
@@ -87,7 +87,7 @@ describe('traceability', () => {
     // R03 applies only when `who` is clerk, which DM-SHOP marks not applicable: no domain owes it.
     expect(owingDomains(patterns, patterns.byId.get('DM-PAT-AUDIT-R03')!)).toEqual([]);
     expect(judge(patterns, r01, 'DM-SHOP')).toMatchObject({ needsDesign: false, provedBy: ['DM-PAT-AUDIT-R01-T01'], gaps: [] });
-    expect(judge(patterns, patterns.byId.get('DM-PAT-AUDIT-R02')!, 'DM-SHOP').gaps.map((g) => [g.kind, g.check])).toEqual([['not-proved', 'unproved']]);
+    expect(judge(patterns, patterns.byId.get('DM-PAT-AUDIT-R02')!, 'DM-SHOP').gaps.map((g) => [g.kind, g.check])).toEqual([['not-proved', 'not-proved']]);
     trace = show(patterns, 'DM-PAT-AUDIT-R01');
     const lines = [...trace.querySelectorAll('.trace-domain')];
     expect(lines.map((l) => l.querySelector('a code')?.textContent)).toEqual(['DM-SHOP']);
@@ -99,10 +99,11 @@ describe('traceability', () => {
     // The callouts agree with coverage's gaps for every obligation in every domain.
     for (const c of patterns.workspace.coverage) {
       for (const g of c.gaps) {
-        const judged = judge(patterns, patterns.byId.get(g.id)!, c.domain);
-        if (g.missing === 'satisfies' && !judged.needsDesign) continue;
+        const judged = judge(patterns, patterns.byId.get(g.id)!, c.domain ?? c.product);
+        if (g.missing !== 'proved' && !judged.needsDesign) continue;
         const kinds = judged.gaps.map((x) => x.kind);
-        expect(kinds).toContain(g.missing === 'satisfies' ? 'not-designed' : kinds.includes('only-planned') ? 'only-planned' : 'not-proved');
+        const expected = g.missing === 'designed' ? 'not-designed' : g.missing === 'built' ? 'not-built' : kinds.includes('not-automated') ? 'not-automated' : 'not-proved';
+        expect(kinds).toContain(expected);
       }
     }
   });

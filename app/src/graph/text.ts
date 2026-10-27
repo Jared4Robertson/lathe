@@ -1,6 +1,6 @@
-import { kindLabel, type SpecIndex } from '../specs/data';
+import { gapsOf, kindLabel, type SpecIndex } from '../specs/data';
 import { NODE_WIDTH } from './layout';
-import { gapsFor, groupLabel, groupMarks, groupOwner } from './model';
+import { groupLabel, groupMarks, groupOwner } from './model';
 import { nodeShape, SHAPES, type Room, type Shape } from './shapes';
 
 // A box's label as part of the map (LA-EXP-DR58): its two lines, the kind and ID line and the
@@ -121,7 +121,7 @@ export function marksOf(index: SpecIndex, id: string) {
   else {
     const problems = index.problemsFor.get(id) ?? [];
     const errors = problems.filter((p) => p.severity === 'error').length;
-    marks = { errors, warnings: problems.length - errors, gaps: gapsFor(index, id) };
+    marks = { errors, warnings: problems.length - errors, gaps: gapsOf(index, id) };
   }
   cache.set(id, marks);
   return marks;

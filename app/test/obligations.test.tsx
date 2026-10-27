@@ -38,33 +38,33 @@ describe('obligation kinds and test states', () => {
     await openApp('/DM', served());
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     expect(groups(card('Shopping'))).toEqual([
-      'Invariants 1: designed 1/1, built 0/1, proved 0/1, planned 1/1',
-      'UC requirements 2: designed 2/2, built 1/2, proved 1/2, planned 0/2',
-      'Security controls 1: designed 0/1, built 0/1, proved 0/1, planned 0/1',
+      'Invariants 1: designed 1/1, built 0/1, proved 0/1, not automated 1/1',
+      'UC requirements 2: designed 2/2, built 1/2, proved 1/2, not automated 0/2',
+      'Security controls 1: designed 0/1, built 0/1, proved 0/1, not automated 0/1',
     ]);
-    // A planned bar is drawn apart from proof, and never as full.
-    const planned = card('Shopping').querySelector('[data-kind="invariant"] .bar.planned') as HTMLElement;
-    expect(within(planned).getByRole('img', { name: 'planned: 1 of 1' })).toBeInTheDocument();
-    expect(card('Shopping').querySelectorAll('.bar.planned .bar-fill.full')).toHaveLength(0);
+    // A not automated bar is drawn apart from proof, and never as full.
+    const notAutomated = card('Shopping').querySelector('[data-kind="invariant"] .bar.not-automated') as HTMLElement;
+    expect(within(notAutomated).getByRole('img', { name: 'not automated: 1 of 1' })).toBeInTheDocument();
+    expect(card('Shopping').querySelectorAll('.bar.not-automated .bar-fill.full')).toHaveLength(0);
 
     // The domain page shows the same groups.
     await openApp('/DM-SHOP', served());
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     expect(groups(section(/^Coverage/))).toHaveLength(3);
     expect(within(section(/^Coverage/)).getAllByRole('listitem').map((li) => li.textContent)).toContainEqual(
-      expect.stringMatching(/DM-SHOP-EP01-SC01.*Security control with nothing that designs it/),
+      expect.stringMatching(/DM-SHOP-EP01-SC01.*Security control not designed/),
     );
   });
 
-  it('LA-TRC-T90 The summary counts every obligation kind, and planned apart from proved', async () => {
+  it('LA-TRC-T90 The summary counts every obligation kind, and tests not automated yet apart from proved', async () => {
     await openApp('/DM', served());
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     const summary = section('Summary');
     const value = (name: string) => within(summary).getByText(name).nextElementSibling?.textContent;
-    expect(value('Designed')).toBe('3 of 5 obligations');
-    expect(value('Built')).toBe('1 of 5 obligations');
-    expect(value('Proved')).toBe('1 of 5 obligations');
-    expect(value('Planned')).toBe('1 of 5 obligations, by tests not written yet');
+    expect(value('Designed')).toBe('3 of 7 obligations');
+    expect(value('Built')).toBe('1 of 7 obligations');
+    expect(value('Proved')).toBe('1 of 7 obligations');
+    expect(value('Not automated yet')).toBe('1 of 7 obligations, by tests no file runs yet');
   });
 
   it('LA-TRC-T91 The domain page lists an endpoint in Interaction design, with its API requirements and a product\'s own kind folded under it', async () => {
@@ -174,42 +174,38 @@ describe('obligation kinds and test states', () => {
   });
 });
 
-describe('owed proof and tests by state', () => {
-  /** The workspace with proof still owed: DM-SHOP's UC requirements have one more test meant to prove them (planned_any 1, planned 0). */
-  const owed = (): SpecData => {
+describe('tests by state and tests not automated yet', () => {
+  /** The workspace with tests in every state: DM-SHOP has one automated, one manual and one not automated yet. */
+  const states = (): SpecData => {
     const ws = workspace();
-    const shop = ws.coverage.find((c) => c.domain === 'DM-SHOP')!;
-    shop.obligations = shop.obligations.map((o) => (o.kind === 'uc_requirement' ? { ...o, planned_any: 1 } : o));
-    shop.tests = { automated: 1, manual: 1, planned: 1 };
+    ws.coverage.find((c) => c.domain === 'DM-SHOP')!.tests = { automated: 1, manual: 1, not_automated: 1 };
     return ws;
   };
-  const more = (element: HTMLElement, kind: string) => element.querySelector(`[data-kind="${kind}"] .bar.planned .bar-more`);
   const testsLine = (element: HTMLElement) => within(element).getByLabelText('Tests by state').textContent;
 
-  it('LA-TRC-T108 The planned bar says how many more obligations, already proved, still have a test meant to prove them', async () => {
-    await openApp('/DM', { data: owed() });
+  it('LA-TRC-T108 The not automated bar counts the obligations not proved whose test is not automated yet', async () => {
+    await openApp('/DM', { data: states() });
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
-    const reqs = more(card('Shopping'), 'uc_requirement') as HTMLElement;
-    expect(reqs.textContent).toBe('1 more planned');
-    expect(reqs.getAttribute('title')).toMatch(/Already proved.*proof still owed/);
-    // Where planned_any equals planned (invariants: 1 and 1), nothing more is shown.
-    expect(more(card('Shopping'), 'invariant')).toBeNull();
-    expect(card('Paying').querySelector('.bar-more')).toBeNull();
+    const bar = card('Shopping').querySelector('[data-kind="invariant"] .bar.not-automated') as HTMLElement;
+    expect(bar).toHaveTextContent('not automated1/1');
+    expect(bar.getAttribute('title')).toMatch(/not automated yet.*not proof/i);
+    // A kind with no obligations in the domain draws no bars.
+    expect(card('Paying').querySelector('[data-kind="invariant"]')).toBeNull();
   });
 
   it("LA-TRC-T109 Each domain's coverage shows its tests by state, on the product and domain pages, and the summary counts them", async () => {
-    await openApp('/DM', { data: owed() });
+    await openApp('/DM', { data: states() });
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
-    expect(testsLine(card('Shopping'))).toBe('Tests 1 automated, 1 manual, 1 planned');
-    expect(testsLine(card('Paying'))).toBe('Tests 0 automated, 0 manual, 0 planned');
+    expect(testsLine(card('Shopping'))).toBe('Tests 1 automated, 1 manual, 1 not automated yet');
+    expect(testsLine(card('Paying'))).toBe('Tests 0 automated, 0 manual, 0 not automated yet');
     const summary = (name: string) => within(section('Summary')).getByText(name, { selector: 'dt' }).nextElementSibling?.textContent;
-    expect(summary('Tests')).toBe('1 automated, 1 manual, 1 planned');
-    expect(summary('Planned')).toBe('1 of 5 obligations, by tests not written yet; 1 more planned beside proof');
+    expect(summary('Tests')).toBe('1 automated, 1 manual, 1 not automated yet');
+    expect(summary('Not automated yet')).toBe('1 of 7 obligations, by tests no file runs yet');
 
-    await openApp('/DM-SHOP', { data: owed() });
+    await openApp('/DM-SHOP', { data: states() });
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     const line = within(section(/^Coverage/)).getByLabelText('Tests by state');
-    expect(line.textContent).toBe('Tests 1 automated, 1 manual, 1 planned');
-    expect(line.querySelector('[data-state="planned"]')?.getAttribute('title')).toMatch(/does not count as proof/);
+    expect(line.textContent).toBe('Tests 1 automated, 1 manual, 1 not automated yet');
+    expect(line.querySelector('[data-state="not_automated"]')?.getAttribute('title')).toMatch(/does not count as proof/);
   });
 });

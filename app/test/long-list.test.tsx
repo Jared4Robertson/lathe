@@ -5,7 +5,7 @@ import type { Coverage } from '../../lathe/src/types';
 import type { SpecData } from '../../lathe/src/server/contract';
 import { LongList } from '../src/components/LongList';
 import { addRows } from './fixtures/load';
-import { workspace as baseWorkspace } from './fixtures/workspace';
+import { gap, workspace as baseWorkspace } from './fixtures/workspace';
 import { main, openApp, openSideBar, section } from './helpers';
 
 interface Item { id: string; title: string }
@@ -34,9 +34,9 @@ function bigWorkspace(): SpecData {
     addRows(ws, 'checks', { source_id: `BG-D01-CMD${pad(u)}`, target_id: 'BG-D01-SP01' });
     addRows(ws, 'uc_requirement', { id: `BG-D01-UC01-R${pad(u)}`, title: `Requirement ${u}`, use_case_id: 'BG-D01-UC01', statement: `Requirement ${u} MUST hold.` });
   }
-  ws.problems.push(...Array.from({ length: 12 }, (_, i) => ({ severity: 'warning' as const, check: 'unproved', record: `BG-D01-UC01-R${pad(i + 1)}`, message: `No test proves UC requirement BG-D01-UC01-R${pad(i + 1)}.` })));
-  ws.coverage.push(...Array.from({ length: 12 }, (_, d): Coverage => ({ domain: `BG-D${pad(d + 1)}`, obligations: [], tests: { automated: 0, manual: 0, planned: 0 }, gaps: [] })));
-  ws.coverage.find((c) => c.domain === 'BG-D01')!.gaps = Array.from({ length: 12 }, (_, i) => ({ id: `BG-D01-UC01-R${pad(i + 1)}`, kind: 'uc_requirement', missing: 'proves' as const }));
+  ws.problems.push(...Array.from({ length: 12 }, (_, i) => ({ severity: 'warning' as const, check: 'not-proved', record: `BG-D01-UC01-R${pad(i + 1)}`, message: `No test proves UC requirement BG-D01-UC01-R${pad(i + 1)}.` })));
+  ws.coverage.push(...Array.from({ length: 12 }, (_, d): Coverage => ({ product: 'BG', domain: `BG-D${pad(d + 1)}`, obligations: [], tests: { automated: 0, manual: 0, not_automated: 0 }, gaps: [] })));
+  ws.coverage.find((c) => c.domain === 'BG-D01')!.gaps = Array.from({ length: 12 }, (_, i) => gap(`BG-D01-UC01-R${pad(i + 1)}`, 'uc_requirement', 'proved'));
   return ws;
 }
 
@@ -120,6 +120,6 @@ describe('long lists', () => {
     // The checks page.
     await openApp('/BG/checks', served);
     await screen.findByRole('heading', { level: 1, name: 'Checks' });
-    expect(within(section(/^unproved/)).getByRole('searchbox', { name: 'Filter problems' })).toBeInTheDocument();
+    expect(within(section(/^not-proved/)).getByRole('searchbox', { name: 'Filter problems' })).toBeInTheDocument();
   });
 });

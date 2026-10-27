@@ -1,6 +1,6 @@
 import type { SpecData } from '../../../lathe/src/server/contract';
 import { fixture } from './load';
-import { obligation, workspace } from './workspace';
+import { gap, obligation, workspace } from './workspace';
 
 // The component-test workspace with a pattern (data/patterns/): DM-PAT-AUDIT, with the settings
 // retention and who and three rules, followed by DM-SHOP and its use case DM-SHOP-UC01.
@@ -13,14 +13,14 @@ export function patternWorkspace(): SpecData {
   const coverage = base.coverage.map((c) => (c.domain === 'DM-SHOP'
     ? {
       ...c,
-      obligations: [...c.obligations, obligation('pattern_rule', 'Pattern rule', 2, 0, 0, 1)],
-      gaps: [...c.gaps, { id: 'DM-PAT-AUDIT-R02', kind: 'pattern_rule', missing: 'proves' as const }],
+      obligations: [...c.obligations, obligation('pattern_rule', 'Pattern rule', 2, 2, 2, 1, 0, true)],
+      gaps: [...c.gaps, gap('DM-PAT-AUDIT-R02', 'pattern_rule', 'proved')],
     }
     : c));
   return fixture('patterns', {
     problems: [
       ...base.problems,
-      { severity: 'warning', check: 'unproved', record: 'DM-PAT-AUDIT-R02', message: 'DM-PAT-AUDIT-R02 is not proved in DM-SHOP.' },
+      { severity: 'warning', check: 'not-proved', record: 'DM-PAT-AUDIT-R02', message: 'DM-PAT-AUDIT-R02 is not proved in DM-SHOP.' },
     ],
     coverage,
   });

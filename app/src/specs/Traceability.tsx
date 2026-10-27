@@ -18,7 +18,7 @@ export const GAP_TEXT: Record<GapKind, { title: string; detail: string }> = {
   'not-designed': { title: 'Not designed yet', detail: 'nothing specifies how it is carried out.' },
   'not-built': { title: 'Not built yet', detail: 'no technical record carrying it out names a file that exists.' },
   'not-proved': { title: 'Not proved yet', detail: 'no automated or manual test proves it.' },
-  'only-planned': { title: 'Not proved yet', detail: 'its test is not automated yet.' },
+  'not-automated': { title: 'Not proved yet', detail: 'its test is not automated yet.' },
 };
 
 function CheckLink({ check }: { check: string }) {
@@ -125,7 +125,7 @@ function RequirementTable({ index, useCase, rows }: { index: SpecIndex; useCase:
                   <th scope="row"><RecordLink index={index} id={record.id} /></th>
                   <td>{j && (j.needsDesign ? <Cell index={index} ids={j.designedBy} flag={has(j, 'not-designed') ? 'not designed' : null} /> : <span className="hint">Not asked</span>)}</td>
                   <td>{j && (j.needsDesign ? <Cell index={index} ids={j.builtBy} flag={has(j, 'not-built') || has(j, 'not-designed') ? 'not built' : null} /> : <span className="hint">Not asked</span>)}</td>
-                  <td>{j && <Cell index={index} ids={j.provedBy} planned={j.provedBy.length === 0 ? j.plannedBy : []} flag={has(j, 'not-proved') || has(j, 'only-planned') ? 'not proved' : null} />}</td>
+                  <td>{j && <Cell index={index} ids={j.provedBy} planned={j.provedBy.length === 0 ? j.plannedBy : []} flag={has(j, 'not-proved') || has(j, 'not-automated') ? 'not proved' : null} />}</td>
                 </tr>
               );
             })}

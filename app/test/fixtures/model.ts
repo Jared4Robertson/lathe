@@ -1,7 +1,7 @@
 import type { Coverage, Problem } from '../../../lathe/src/types';
 import type { SpecData } from '../../../lathe/src/server/contract';
 import { fixture, indexOf } from './load';
-import { obligation } from './workspace';
+import { gap, obligation } from './workspace';
 
 // A product with a whole domain model, for the Model view, the graph and the record pages
 // (data/model/). P has, at product level, a value object (P-VO01 Name, with its constraint, value
@@ -17,11 +17,12 @@ import { obligation } from './workspace';
 
 export const PROBLEMS: Problem[] = [
   { severity: 'error', check: 'test-file-missing', record: 'P-D-UC01-R01-T01', message: 'Test P-D-UC01-R01-T01 is run by test/lend.test.ts, which does not exist.' },
-  { severity: 'warning', check: 'unproved', record: 'P-D-INV02', message: 'No test proves invariant P-D-INV02.' },
-  { severity: 'warning', check: 'command-change', record: 'P-D-CMD02', message: 'Return thing also changes P-D-A1: the thing must be lendable again in the same transaction as its return.' },
+  { severity: 'warning', check: 'not-proved', record: 'P-D-INV02', message: 'No test proves invariant P-D-INV02.' },
+  { severity: 'warning', check: 'command-change-recorded', record: 'P-D-CMD02', message: 'Return thing also changes P-D-A1: the thing must be lendable again in the same transaction as its return.' },
 ];
 
 const coverage = (): Coverage[] => [{
+  product: 'P',
   domain: 'P-D',
   obligations: [
     obligation('invariant', 'Invariant', 2, 1, 1, 1),
@@ -30,15 +31,16 @@ const coverage = (): Coverage[] => [{
     obligation('domain_service', 'Domain service', 1, 0, 0, 0),
     obligation('uc_requirement', 'UC requirement', 2, 2, 1, 1, 1),
   ],
-  tests: { automated: 3, manual: 1, planned: 1 },
+  tests: { automated: 3, manual: 1, not_automated: 1 },
   gaps: [
-    { id: 'P-D-INV02', kind: 'invariant', missing: 'proves' },
-    { id: 'P-D-UC01-R02', kind: 'uc_requirement', missing: 'proves' },
+    gap('P-D-INV02', 'invariant', 'proved'),
+    gap('P-D-UC01-R02', 'uc_requirement', 'proved'),
   ],
 }, {
+  product: 'P',
   domain: 'P-E',
   obligations: [],
-  tests: { automated: 0, manual: 0, planned: 0 },
+  tests: { automated: 0, manual: 0, not_automated: 0 },
   gaps: [],
 }];
 

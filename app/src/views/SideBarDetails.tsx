@@ -10,7 +10,7 @@ import { Link } from '../router';
 import { DesktopRecordActions } from '../shell/desktopRecord';
 import { kindLabel, parentColumns, problemOrder, type SpecIndex, type SpecRecord } from '../specs/data';
 import { factsOf, rowPlace } from '../specs/RecordText';
-import { ProblemList, RecordLink, RecordTree, StageFact, TestStateTag, idText, isTestKind, listTitle } from '../specs/parts';
+import { ProblemList, RecordLink, RecordTree, StageFact, gapText, TestStateTag, idText, isTestKind, listTitle } from '../specs/parts';
 import { parentlessText } from '../specs/RecordContent';
 import { GAP_TEXT } from '../specs/Traceability';
 import { traceOf } from '../specs/trace';
@@ -179,7 +179,7 @@ function GroupDetails({ index, gid, focus, how, onNavigate, hrefFor }: { index: 
           <ul className="plain side-bar-gaps">
             {marks.errors > 0 && <li className="problem error">{marks.errors} error{marks.errors > 1 ? 's' : ''}</li>}
             {marks.warnings > 0 && <li className="problem warning">{marks.warnings} warning{marks.warnings > 1 ? 's' : ''}</li>}
-            {marks.gaps.map((g) => <li key={g}>{g === 'satisfies' ? 'Some are not designed.' : 'Some are not proved.'}</li>)}
+            {marks.gaps.map((g) => <li key={g}>Some: {gapText(g)}.</li>)}
           </ul>
         )}
       </Part>
