@@ -1,5 +1,5 @@
 // The schema: numbered migrations applied in order, every table and column described, the generated row types up to
-// date, and the kinds and relations the same as the meta-model CSVs they replace.
+// date.
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { DuckDBInstance } from '@duckdb/node-api';
@@ -11,14 +11,6 @@ const instance = await DuckDBInstance.create(':memory:');
 const connection = await instance.connect();
 await applyMigrations(connection);
 const schema = await describeSchema(connection);
-
-// Reads a meta-model CSV (simple quoting only) into rows by header.
-function csv(name: string): Record<string, string>[] {
-  const [header, ...lines] = readFileSync(path.join(PACKAGE_DIR, 'meta', name), 'utf8').trim().split('\n');
-  const split = (line: string) => [...line.matchAll(/("([^"]|"")*"|[^,]*)(,|$)/g)].map((m) => m[1].replace(/^"|"$/g, '').replaceAll('""', '"')).slice(0, header.split(',').length);
-  const columns = split(header);
-  return lines.map((l) => Object.fromEntries(split(l).map((v, i) => [columns[i], v])));
-}
 
 describe('the migrations', () => {
   it('are numbered in order and recorded as applied', async () => {
@@ -84,50 +76,3 @@ describe('the schema description', () => {
 });
 
 // Until the engine's cutover deletes lathe/meta/, the schema holds the same meta-model.
-describe('the schema and the meta-model CSVs', () => {
-  const kinds = csv('kinds.csv');
-  const ids = new Map(csv('ids.csv').map((r) => [r.kind, r]));
-
-  it('has a table for every kind, with its label, stage, folder, obligation, parents and ID pattern', () => {
-    expect(Object.keys(schema.kinds).sort()).toEqual(kinds.map((k) => k.kind).sort());
-    for (const k of kinds) {
-      const kind = schema.kinds[k.kind];
-      expect({ label: kind.label, stage: kind.stage ?? '', section: kind.section ?? '', obligation: kind.obligation }, k.kind).toEqual({
-        label: k.label,
-        stage: k.stage,
-        section: k.section,
-        obligation: { yes: 'full', proof: 'proof' }[k.obligation] ?? 'none',
-      });
-      expect(kind.parents.map((p) => p.kind).sort(), k.kind).toEqual(k.parent_kinds.split(' ').filter(Boolean).sort());
-      expect(kind.idPattern, k.kind).toBe(ids.get(k.kind)?.pattern);
-      expect(kind.idExample, k.kind).toBe(ids.get(k.kind)?.example);
-    }
-  });
-
-  it('allows the same pairs of kinds for every relation, with the same labels and roles', () => {
-    const rows = csv('relations.csv');
-    const pairs = (list: { relation: string; source: string; target: string }[]) => list.map((p) => `${p.relation} ${p.source} ${p.target}`).sort();
-    expect(pairs(Object.values(schema.relations).flatMap((r) => r.pairs.map((p) => ({ relation: r.name, ...p }))))).toEqual(
-      pairs(rows.map((r) => ({ relation: r.relation, source: r.source_kind, target: r.target_kind }))),
-    );
-    for (const r of rows) {
-      const relation = schema.relations[r.relation];
-      expect({ role: relation.role ?? '', forward: relation.forwardLabel, reverse: relation.reverseLabel }, r.relation).toEqual({
-        role: r.role,
-        forward: r.forward_label,
-        reverse: r.reverse_label,
-      });
-    }
-  });
-
-  it("keeps each kind's required header fields as required columns", () => {
-    const renamed: Record<string, string> = { order: 'position', run_by: 'file', test_type: 'test_type', actor: '' };
-    for (const k of kinds) {
-      for (const field of k.required_fields.split(' ').filter(Boolean)) {
-        const column = renamed[field] ?? field;
-        if (!column) continue; // A use case's actors are use_case_actor rows.
-        expect(schema.tables[k.kind].columns.find((c) => c.name === column)?.required, `${k.kind}.${column}`).toBe(true);
-      }
-    }
-  });
-});

@@ -249,7 +249,8 @@ loaded beside every product's data; a product adds its own as rows of its \`data
 export function renderReference(ref: Reference): string {
   const kindLink = (kind: string) =>
     kind === '*' ? 'any record' : ref.kinds.some((k) => k.kind === kind) ? `[${code(kind)}](#${kindAnchor(kind)})` : code(kind);
-  const tableLink = (table: string) => (ref.tables.some((t) => t.name === table) ? `[${code(table)}](#${tableAnchor(table)})` : code(table));
+  const shown = new Set<TableRole>(['kind', 'part', 'declaration', 'checking']);
+  const tableLink = (table: string) => (ref.tables.some((t) => t.name === table && shown.has(t.role)) ? `[${code(table)}](#${tableAnchor(table)})` : code(table));
   const sectionLink = (section: string) => {
     const s = ref.sections.find((x) => x.section === section);
     return s ? `[${s.label}](#${sectionAnchor(section)})` : code(section);

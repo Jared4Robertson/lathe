@@ -322,7 +322,10 @@ export class Store {
           await builder.run(`ATTACH ':memory:' AS ${sqlName(name)}`);
           await builder.run(`COPY FROM DATABASE ${BASE_DB} TO ${sqlName(name)}`);
           await builder.run(`USE ${sqlName(name)}`);
-          await builder.run(sql);
+          // A declaration DuckDB refuses (a pair Lathe already allows, a folder that does not exist) is a refusal.
+          await builder.run(sql).catch((error: Error) => {
+            throw new StoreError([{ rule: 'product-kind', message: `the product's kinds and relations cannot be added: ${error.message.split('\n')[0]}` }]);
+          });
           await builder.run(storeViewsSql(await describeSchema(builder)));
           return { schemaDb: name, schema: await describeSchema(builder) };
         } finally {

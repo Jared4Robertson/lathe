@@ -182,10 +182,15 @@ async function runChecks(store: Store, checks: Row[], scope: Map<string, string 
 
 // Coverage per domain: one entry per obligation kind in schema order, and the domain's tests by state.
 async function computeCoverage(store: Store): Promise<Coverage[]> {
+  // The three queries only read, so they run side by side, each on its own connection.
+  const on = async <T,>(sql: string) => {
+    const c = await store.connect();
+    try { return await readRows<T>(c, sql); } finally { c.closeSync(); }
+  };
   const [rows, gaps, tests] = await Promise.all([
-    store.query<ObligationCoverage & { domain: string }>(COVERAGE_COUNTS_SQL),
-    store.query<CoverageGap & { domain: string }>(COVERAGE_GAPS_SQL),
-    store.query<TestCounts & { domain: string }>(COVERAGE_TESTS_SQL),
+    on<ObligationCoverage & { domain: string }>(COVERAGE_COUNTS_SQL),
+    on<CoverageGap & { domain: string }>(COVERAGE_GAPS_SQL),
+    on<TestCounts & { domain: string }>(COVERAGE_TESTS_SQL),
   ]);
   return store.rows('domain').map((d) => {
     const domain = String(d.id);
