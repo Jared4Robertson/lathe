@@ -1,6 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode, type RefObject } from 'react';
 import { Icon } from '../components/icons';
 import { rowPlace } from '../specs/RecordText';
+import { Editable } from '../edit/Editing';
 import { ResizeHandle } from '../components/ResizeHandle';
 import { expandAllOnPage } from '../components/TreeList';
 import type { GraphSettings } from '../graph/GraphPage';
@@ -661,9 +662,9 @@ function PageTitle({ index, route, fixed = false }: { index: SpecIndex; route: F
 
 function WikiContent({ index, route }: { index: SpecIndex; route: FocusRoute }) {
   switch (route.page) {
-    case 'product': return <ProductWiki index={index} id={route.product} />;
-    case 'domain': return <DomainWiki index={index} id={route.domain} />;
-    case 'record': return <div className="spec-body"><RecordContent index={index} id={route.id} header={false} side={false} /></div>;
+    case 'product': return <Editable key={route.product} index={index} id={route.product}><ProductWiki index={index} id={route.product} /></Editable>;
+    case 'domain': return <Editable key={route.domain} index={index} id={route.domain}><DomainWiki index={index} id={route.domain} /></Editable>;
+    case 'record': return <Editable key={route.id} index={index} id={route.id}><div className="spec-body"><RecordContent index={index} id={route.id} header={false} side={false} /></div></Editable>;
     case 'group': return <GroupWiki index={index} gid={focusOf(route)} />;
   }
 }
