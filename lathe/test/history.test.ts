@@ -1,8 +1,8 @@
-// GET /api/history (LA-EXP-E01): a record's git history, against a temporary git repo made here.
+// GET /api/history (LA-EXP-E01): the git history of a record's row, against a temporary git repo made here.
 // The repo gets its author from the environment and ignores the machine's own git config, so the
 // test reads and writes no git config.
 import { spawnSync } from 'node:child_process';
-import { cpSync, mkdtempSync, readFileSync, renameSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -32,7 +32,17 @@ function git(cwd: string, ...args: string[]) {
 }
 const hasGit = spawnSync('git', ['--version']).status === 0;
 
-const UC = 'specs/example/notes/01-define/use-cases/UC01.md';
+const UC_FILE = 'data/use_case.jsonl';
+const AGGREGATES = 'data/aggregate.jsonl';
+/** Rewrites one row of a data file, as the store would. */
+function setRow(root: string, file: string, id: string, change: (row: Record<string, unknown>) => Record<string, unknown>) {
+  const full = path.join(root, file);
+  const lines = readFileSync(full, 'utf8').split('\n').map((line) => {
+    if (!line.startsWith(`{"id":"${id}",`)) return line;
+    return JSON.stringify(change(JSON.parse(line)));
+  });
+  writeFileSync(full, lines.join('\n'));
+}
 
 beforeAll(() => {
   if (!hasGit) return;
@@ -44,16 +54,13 @@ beforeAll(() => {
   git(repo, 'init', '--quiet');
   git(repo, 'add', '.');
   git(repo, 'commit', '--quiet', '-m', 'Add the example product');
-  writeFileSync(path.join(repo, UC), `${readFileSync(path.join(repo, UC), 'utf8')}\nA second paragraph.\n`);
+  setRow(repo, UC_FILE, 'EX-NOTE-UC01', (row) => ({ ...row, goal: 'A person writes a short note.' }));
   git(repo, 'commit', '--quiet', '-am', 'Say more about UC01');
-  // A rename: the history follows the file back to its old name.
-  mkdirSync(path.join(repo, 'specs/example/notes/01-define/use-cases/moved'));
-  renameSync(path.join(repo, UC), path.join(repo, 'specs/example/notes/01-define/use-cases/moved/UC01.md'));
-  git(repo, 'add', '-A');
-  git(repo, 'commit', '--quiet', '-m', 'Move UC01');
+  // A commit that changes another row of another file: not in UC01's history.
+  setRow(repo, AGGREGATES, 'EX-NOTE-A1', (row) => ({ ...row, description: 'A short text, kept.' }));
+  git(repo, 'commit', '--quiet', '-am', 'Change A1');
   // Not committed: a change in the working tree.
-  const moved = path.join(repo, 'specs/example/notes/01-define/use-cases/moved/UC01.md');
-  writeFileSync(moved, readFileSync(moved, 'utf8').replace('A second paragraph.', 'A changed paragraph.'));
+  setRow(repo, UC_FILE, 'EX-NOTE-UC01', (row) => ({ ...row, goal: 'A person writes a changed note.' }));
 });
 
 afterAll(() => { for (const dir of temps) rmSync(dir, { recursive: true, force: true }); });
@@ -72,40 +79,41 @@ async function get(root: string, url: string) {
 }
 
 describe.skipIf(!hasGit)('the history API', () => {
-  it('LA-EXP-T158 GET /api/history lists the commits that touched a record\'s spec file, newest first and through renames, with the uncommitted change first, and one commit\'s diff', async () => {
-    // The file comes from the specs, by the record's ID.
-    expect(await recordFile(repo, 'EX-NOTE-UC01')).toBe('specs/example/notes/01-define/use-cases/moved/UC01.md');
+  it("LA-EXP-T158 GET /api/history lists the commits that changed a record's row, newest first, with the uncommitted change first, and one commit's change", async () => {
+    // The file comes from the data, by the record's ID.
+    expect(await recordFile(repo, 'EX-NOTE-UC01')).toBe(UC_FILE);
 
     const list = await get(repo, '/api/history?id=EX-NOTE-UC01');
     expect(list.handled).toBe(true);
     expect(list.status).toBe(200);
     expect(list.headers['cache-control']).toBe('no-store');
     expect(list.json.state).toBe('ok');
-    expect(list.json.file).toBe('specs/example/notes/01-define/use-cases/moved/UC01.md');
+    expect(list.json.file).toBe(UC_FILE);
     expect(list.json.uncommitted).toBe('modified');
-    expect(list.json.commits.map((c: { subject: string }) => c.subject)).toEqual(['Move UC01', 'Say more about UC01', 'Add the example product']);
-    const [, second] = list.json.commits;
-    expect(second.author).toBe('Owner');
-    expect(second.short.length).toBeGreaterThanOrEqual(4);
-    expect(second.hash).toMatch(/^[0-9a-f]{40}$/);
-    expect(Number.isNaN(Date.parse(second.date))).toBe(false);
+    expect(list.json.commits.map((c: { subject: string }) => c.subject)).toEqual(['Say more about UC01', 'Add the example product']);
+    const [first] = list.json.commits;
+    expect(first.author).toBe('Owner');
+    expect(first.short.length).toBeGreaterThanOrEqual(4);
+    expect(first.hash).toMatch(/^[0-9a-f]{40}$/);
+    expect(Number.isNaN(Date.parse(first.date))).toBe(false);
     expect(list.json.more).toBe(false);
 
-    // One commit's diff of the file, as a unified diff, by its short hash too.
-    const diff = await get(repo, `/api/history?id=EX-NOTE-UC01&commit=${second.short}`);
+    // One commit's change of the row, as the row's lines of a unified diff, by its short hash too.
+    const diff = await get(repo, `/api/history?id=EX-NOTE-UC01&commit=${first.short}`);
     expect(diff.status).toBe(200);
-    expect(diff.json.commit).toBe(second.hash);
-    expect(diff.json.diff).toContain('@@');
-    expect(diff.json.diff).toContain('+A second paragraph.');
+    expect(diff.json.commit).toBe(first.hash);
+    expect(diff.json.diff).toContain('-{"id":"EX-NOTE-UC01"');
+    expect(diff.json.diff).toContain('A person writes a short note.');
     expect(diff.json.truncated).toBe(false);
 
     // The uncommitted change, against HEAD.
     const working = await get(repo, '/api/history?id=EX-NOTE-UC01&commit=working');
-    expect(working.json.diff).toContain('-A second paragraph.');
-    expect(working.json.diff).toContain('+A changed paragraph.');
+    expect(working.json.diff).toContain('A person writes a changed note.');
 
-    // A commit that did not touch the record's file shows nothing of other files.
-    expect(await recordDiff(repo, 'EX-NOTE-C01', list.json.commits[0].hash)).toMatchObject({ state: 'no-commit' });
+    // A commit that did not change the record's row shows nothing of other rows.
+    const other = (await recordHistory(repo, 'EX-NOTE-A1'));
+    expect(other.state === 'ok' && other.commits.map((c) => c.subject)).toEqual(['Change A1', 'Add the example product']);
+    expect(await recordDiff(repo, 'EX-NOTE-UC01', other.state === 'ok' ? other.commits[0].hash : '')).toMatchObject({ state: 'no-commit' });
   });
 
   it('LA-EXP-T159 GET /api/history refuses a raw path or a bad commit, answers 404 for an unknown record, and says calmly when the folder is not a git repo', async () => {
@@ -140,9 +148,8 @@ describe.skipIf(!hasGit)('the history API', () => {
     expect(slow.timedOut || slow.code === 0).toBe(true);
 
     // Paging: more than one page of commits on one file.
-    const file = path.join(repo, 'specs/example/notes/01-define/aggregates/note.md');
     for (let i = 0; i < HISTORY_PAGE + 2; i++) {
-      writeFileSync(file, `${readFileSync(file, 'utf8')}\nLine ${i}.\n`);
+      setRow(repo, AGGREGATES, 'EX-NOTE-A1', (row) => ({ ...row, description: `A short text, version ${i}.` }));
       git(repo, 'commit', '--quiet', '-am', `Note ${i}`);
     }
     const first = await recordHistory(repo, 'EX-NOTE-A1');

@@ -31,7 +31,7 @@ describe('the fixture', () => {
   });
 
   it('loads, with every row in its table', async () => {
-    const opened = await openStore(writeData(data));
+    const opened = await openStore(writeData(data), { latheDataDir: null });
     for (const table of schema.loadOrder) expect(opened.rows(table)).toHaveLength(data[table].length);
     const [count] = await opened.query<{ n: number }>('SELECT count(*)::INTEGER AS n FROM record_id');
     expect(count.n).toBe(kinds.reduce((n, k) => n + data[k].length, 0));

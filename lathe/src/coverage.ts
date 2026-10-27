@@ -81,8 +81,7 @@ SELECT DISTINCT l.relation, l.source_id AS source, l.target_id AS target, ob.kin
   -- An automated test's claim counts only when its file backs it: the file names the test's own ID (or its key), or
   -- names this target. An unbacked claim is reported by proof-not-in-file.
   CASE WHEN s.kind <> 'test' OR t.state <> 'automated' THEN true
-       ELSE coalesce(ff.contains_id, false)
-            OR EXISTS (SELECT 1 FROM file_mentions m WHERE m.record = l.source_id AND m.mentioned = l.target_id)
+       ELSE coalesce(ff.contains_id, false) OR m.record IS NOT NULL
   END AS backed
 FROM link l
 JOIN meta_relation r ON r.name = l.relation AND r.role IS NOT NULL
@@ -90,7 +89,8 @@ JOIN obligation ob ON ob.id = l.target_id
 JOIN record_id s ON s.id = l.source_id
 LEFT JOIN record_scope ss ON ss.id = l.source_id
 LEFT JOIN test t ON t.id = l.source_id
-LEFT JOIN file_facts ff ON ff.record = l.source_id;
+LEFT JOIN file_facts ff ON ff.record = l.source_id
+LEFT JOIN (SELECT DISTINCT record, mentioned FROM file_mentions) m ON m.record = l.source_id AND m.mentioned = l.target_id;
 
 CREATE OR REPLACE VIEW coverage_item AS
 WITH owed AS (
@@ -101,18 +101,15 @@ WITH owed AS (
   SELECT domain, id, kind, true AS per_domain FROM owed_pattern_rules
 )
 SELECT o.domain, o.id, o.kind, o.per_domain,
-  k.proof_only OR EXISTS (SELECT 1 FROM role_link x WHERE x.target = o.id AND x.role = 'design'
-                                    AND (NOT o.per_domain OR x.source_domain = o.domain)) AS designed,
-  k.proof_only OR EXISTS (SELECT 1 FROM role_link x WHERE x.target = o.id AND x.role = 'design'
-                                    AND (NOT o.per_domain OR x.source_domain = o.domain)
-                                    AND x.source_kind = 'component' AND x.source_file_exists) AS built,
-  EXISTS (SELECT 1 FROM role_link x WHERE x.target = o.id AND x.role = 'proof'
-                    AND (NOT o.per_domain OR x.source_domain = o.domain)
-                    AND x.state IN ('automated', 'manual') AND x.backed) AS proved,
-  EXISTS (SELECT 1 FROM role_link x WHERE x.target = o.id AND x.role = 'proof'
-                    AND (NOT o.per_domain OR x.source_domain = o.domain)
-                    AND x.state = 'planned') AS planned_proof
-FROM owed o JOIN obligation_kind k ON k.kind = o.kind;
+  k.proof_only OR coalesce(bool_or(x.role = 'design'), false) AS designed,
+  k.proof_only OR coalesce(bool_or(x.role = 'design' AND x.source_kind = 'component' AND x.source_file_exists), false) AS built,
+  coalesce(bool_or(x.role = 'proof' AND x.state IN ('automated', 'manual') AND x.backed), false) AS proved,
+  coalesce(bool_or(x.role = 'proof' AND x.state = 'planned'), false) AS planned_proof
+FROM owed o
+JOIN obligation_kind k ON k.kind = o.kind
+-- In a domain that owes a pattern rule, only links from records in that domain count.
+LEFT JOIN role_link x ON x.target = o.id AND (NOT o.per_domain OR x.source_domain = o.domain)
+GROUP BY o.domain, o.id, o.kind, o.per_domain, k.proof_only;
 
 CREATE OR REPLACE VIEW coverage_count AS
 SELECT d.id AS domain, k.kind, k.label,
