@@ -1,5 +1,6 @@
 // Registers members.
 // Spec: the command handler TL-LEND-CMD01-H (examples/tool-library/data/).
+import type { Outbox } from './events.ts';
 import { LendingError, parseEmail, parseName, type Clock, type Member } from './model.ts';
 import type { Store } from './store.ts';
 
@@ -11,10 +12,12 @@ export interface RegisterMemberInput {
 export class MemberService {
   private readonly store: Store;
   private readonly now: Clock;
+  private readonly outbox: Outbox;
 
-  constructor(store: Store, now: Clock) {
+  constructor(store: Store, now: Clock, outbox: Outbox) {
     this.store = store;
     this.now = now;
+    this.outbox = outbox;
   }
 
   /** TL-LEND-CMD01-H: register a member. */
@@ -27,12 +30,17 @@ export class MemberService {
     if (!email) throw new LendingError(400, 'invalid_request', 'A member needs a valid email address.');
 
     // TL-LEND-INV01: one member per email.
-    return this.store.transaction(() => {
+    const member = this.store.transaction(() => {
       if (this.store.findMemberByEmail(email)) {
         throw new LendingError(409, 'email_taken', `A member with the email ${email} is already registered.`);
       }
-      // TL-LEND-UC01-R03: the new member, with its ID, is returned.
-      return this.store.insertMember(name, email, this.now().toISOString());
+      const saved = this.store.insertMember(name, email, this.now().toISOString());
+      // TL-LEND-EV01, saved to the outbox with the member and relayed once they are committed.
+      this.outbox.save({ type: 'MemberRegistered', memberId: saved.id, name: saved.name, email: saved.email, joinedAt: saved.joinedAt });
+      return saved;
     });
+    this.outbox.relay();
+    // TL-LEND-UC01-R03: the new member, with its ID, is returned.
+    return member;
   }
 }
