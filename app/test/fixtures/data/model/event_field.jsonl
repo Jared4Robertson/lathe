@@ -1,0 +1,3 @@
+{"domain_event_id":"P-D-EV01","position":1,"name":"Loan","meaning":"The loan.","type_aggregate_id":"P-D-A3","required":true}
+{"domain_event_id":"P-D-EV01","position":2,"name":"Thing","meaning":"What was lent.","type_aggregate_id":"P-D-A1","required":true}
+{"domain_event_id":"P-E-EV01","position":1,"name":"Account","meaning":"The account closed.","type_aggregate_id":"P-E-A1","required":true}

@@ -1,0 +1,2 @@
+{"id":"P-D-UC01-R01","title":"The loan is recorded","use_case_id":"P-D-UC01","statement":"The loan MUST be recorded."}
+{"id":"P-D-UC01-R02","title":"A member at the limit is refused","use_case_id":"P-D-UC01","statement":"A member at the limit MUST be refused."}

@@ -1,3 +1,0 @@
-{"id":"DM-SHOP-F01-S01","title":"The basket shows the item","flow_id":"DM-SHOP-F01","path":"main","position":10,"description":"The basket page lists the **new item** at once."}
-{"id":"DM-SHOP-F01-S02","title":"The shopper picks an item","flow_id":"DM-SHOP-F01","path":"main","position":1}
-{"id":"DM-SHOP-F01-S03","title":"The page adds it to the basket","flow_id":"DM-SHOP-F01","path":"main","position":2,"description":"It calls the endpoint."}

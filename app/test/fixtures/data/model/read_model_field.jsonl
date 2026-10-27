@@ -1,0 +1,2 @@
+{"read_model_id":"P-D-RM01","position":1,"name":"Thing","meaning":"The thing.","type_aggregate_id":"P-D-A1","required":true}
+{"read_model_id":"P-D-RM01","position":2,"name":"Lent","meaning":"Whether it is out.","type":"yes/no","required":true}

@@ -1,0 +1,47 @@
+import type { Coverage, Problem } from '../../../lathe/src/types';
+import type { SpecData } from '../../../lathe/src/server/contract';
+import { fixture, indexOf } from './load';
+import { obligation } from './workspace';
+
+// A product with a whole domain model, for the Model view, the graph and the record pages
+// (data/model/). P has, at product level, a value object (P-VO01 Name, with its constraint, value
+// type and test), a view, a UI component and an integration with its adapter. P-D (Domain, core):
+// four aggregates (Thing, Member, Loan, Shelf) with entities whose fields are typed by the value
+// object and by references to aggregates (Member's Account is P-E's), invariants, a specification
+// reading two aggregates, events (Member joined published), commands raising them (Return thing
+// records an exception: it also changes Thing), two policies (one hearing P-E's published Account
+// closed), a read model with a query, a domain service and a term; a use case with its flow (a main
+// and a refused path), two endpoints, technical records (a repository, a data model, a handler,
+// tables with keys) and tests of several kinds; and an open question. P-E (Accounts) has Account
+// with its published event and the command raising it.
+
+export const PROBLEMS: Problem[] = [
+  { severity: 'error', check: 'test-file-missing', record: 'P-D-UC01-R01-T01', message: 'Test P-D-UC01-R01-T01 is run by test/lend.test.ts, which does not exist.' },
+  { severity: 'warning', check: 'unproved', record: 'P-D-INV02', message: 'No test proves invariant P-D-INV02.' },
+  { severity: 'warning', check: 'command-change', record: 'P-D-CMD02', message: 'Return thing also changes P-D-A1: the thing must be lendable again in the same transaction as its return.' },
+];
+
+const coverage = (): Coverage[] => [{
+  domain: 'P-D',
+  obligations: [
+    obligation('invariant', 'Invariant', 2, 1, 1, 1),
+    obligation('specification', 'Specification', 1, 0, 0, 0),
+    obligation('policy', 'Policy', 2, 0, 0, 1),
+    obligation('domain_service', 'Domain service', 1, 0, 0, 0),
+    obligation('uc_requirement', 'UC requirement', 2, 2, 1, 1, 1),
+  ],
+  tests: { automated: 3, manual: 1, planned: 1 },
+  gaps: [
+    { id: 'P-D-INV02', kind: 'invariant', missing: 'proves' },
+    { id: 'P-D-UC01-R02', kind: 'uc_requirement', missing: 'proves' },
+  ],
+}, {
+  domain: 'P-E',
+  obligations: [],
+  tests: { automated: 0, manual: 0, planned: 0 },
+  gaps: [],
+}];
+
+export const modelWorkspace = (): SpecData => fixture('model', { problems: structuredClone(PROBLEMS), coverage: coverage() });
+
+export const modelIndex = () => indexOf(modelWorkspace());

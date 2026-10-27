@@ -1,2 +1,2 @@
-{"source_id":"DM-PAY-UC01","target_id":"DM-PAT-CHECKOUT"}
-{"source_id":"DM-SHOP-UC01","target_id":"DM-PAT-CHECKOUT"}
+{"source_id":"DM-SHOP","target_id":"DM-PAT-AUDIT"}
+{"source_id":"DM-SHOP-UC01","target_id":"DM-PAT-AUDIT"}

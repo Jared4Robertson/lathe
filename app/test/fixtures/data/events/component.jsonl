@@ -1,2 +1,0 @@
-{"id":"P-D-C01","title":"Thing service","domain_id":"P-D","component_type":"service","file":"src/thing.ts"}
-{"id":"P-D-C02","title":"Thing router","domain_id":"P-D","component_type":"router","file":"src/router.ts"}

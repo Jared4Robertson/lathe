@@ -1,0 +1,2 @@
+{"id":"P-D-PO01","title":"When an account closes, suspend the member","command_id":"P-D-CMD04","statement":"Whenever an account closes, the member holding it MUST be suspended."}
+{"id":"P-D-PO02","title":"When a loan opens, mark the thing lent","command_id":"P-D-CMD05","statement":"Whenever a loan opens, its thing MUST be marked lent."}

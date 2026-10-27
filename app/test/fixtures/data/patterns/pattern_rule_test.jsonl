@@ -1,0 +1,1 @@
+{"id":"DM-PAT-AUDIT-R01-T01","title":"Adding an item is recorded","pattern_rule_id":"DM-PAT-AUDIT-R01","domain_id":"DM-SHOP","level":"api","state":"automated","file":"test/audit.test.ts"}

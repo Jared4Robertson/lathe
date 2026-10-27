@@ -1,1 +1,0 @@
-{"id":"P-D-E01","title":"Get a thing","domain_id":"P-D","method":"GET","route":"/api/things/:id"}

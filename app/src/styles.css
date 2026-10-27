@@ -19,11 +19,23 @@
   --steel: #2E6A88; --steel-bg: #E4EEF3; --spark: #B5512A; --spark-bg: #F8E8DF; --warn: #875C00;
   /* The workbench: panels sit on the shell, a gap apart, and every gap between two panels resizes them (LA-PAT-APP-UX-R02). */
   --shell: #DDE3E6; --panel-gap: 6px; --panel-radius: 8px;
-  /* Errors take the spark color, and the graph's stages follow the accent, spark and ink, unless a theme sets them apart. */
+  /* Errors take the spark color. Each of the five stages has its own color and fill, used wherever a kind shows its
+     stage (the graph, the nav, badges); the product and open questions are structural, in ink. */
   --error: #9E4320; --error-bg: var(--spark-bg); /* darker than --spark, so error text passes AA on its tint */
-  --g-define: var(--steel); --g-define-bg: var(--steel-bg);
-  --g-design: var(--spark); --g-design-bg: var(--spark-bg);
+  --g-domain-model: #2E6A88; --g-domain-model-bg: #E4EEF3;
+  --g-use-cases: #2F7148; --g-use-cases-bg: #E2F1E7;
+  --g-interaction-design: #6A4C9C; --g-interaction-design-bg: #EEE8F6;
+  --g-technical-specification: #B5512A; --g-technical-specification-bg: #F8E8DF;
+  --g-test-plan: #A3365F; --g-test-plan-bg: #F7E4EC;
   --g-structural: var(--ink); --g-structural-bg: var(--sheet);
+  /* The Model view's event storming colors: aggregates yellow, commands blue, events orange, policies lilac, read
+     models and queries green, rules (invariants and specifications) pink. */
+  --es-aggregate: #7A6000; --es-aggregate-bg: #FFF4C2;
+  --es-command: #2E5FA8; --es-command-bg: #DCE8FA;
+  --es-event: #A84B12; --es-event-bg: #FFE3CC;
+  --es-policy: #7A4FA0; --es-policy-bg: #EEE2F8;
+  --es-read-model: #2F7148; --es-read-model-bg: #DDF2E3;
+  --es-rule: #9C3F6E; --es-rule-bg: #F8E1EE;
   --g-file: var(--muted);
   /* The title above a graph or a model pane: one fixed height, so the canvas below it never moves. */
   --pane-title-height: 104px;
@@ -54,6 +66,17 @@
     --on-mark: #11171B; /* dark text on the bright dark-mode marks passes AA; white did not */
     --error: var(--spark);
     --shell: #0A0F12;
+    --g-domain-model: #7DB4D0; --g-domain-model-bg: #1A2E3A;
+    --g-use-cases: #7CC79A; --g-use-cases-bg: #17301F;
+    --g-interaction-design: #B9A0E6; --g-interaction-design-bg: #261E36;
+    --g-technical-specification: #E88A5E; --g-technical-specification-bg: #3A2219;
+    --g-test-plan: #E58AAE; --g-test-plan-bg: #3A1A27;
+    --es-aggregate: #E9C85A; --es-aggregate-bg: #332A0C;
+    --es-command: #8DB4F0; --es-command-bg: #172640;
+    --es-event: #F0A06A; --es-event-bg: #3B2414;
+    --es-policy: #C6A4EA; --es-policy-bg: #2A1E38;
+    --es-read-model: #7CC79A; --es-read-model-bg: #17301F;
+    --es-rule: #E796BF; --es-rule-bg: #3A1A2C;
     color-scheme: dark;
   }
 }

@@ -1,0 +1,14 @@
+{"entity_id":"P-D-EN01","position":1,"name":"Thing ID","meaning":"The thing's number.","type":"whole number","required":true,"column_name":"id"}
+{"entity_id":"P-D-EN01","position":2,"name":"Name","meaning":"What the thing is.","type_value_object_id":"P-VO01","required":true}
+{"entity_id":"P-D-EN02","position":1,"name":"Member ID","meaning":"The member's number.","type":"whole number","required":true,"column_name":"id"}
+{"entity_id":"P-D-EN02","position":2,"name":"Name","meaning":"What the member is called.","type_value_object_id":"P-VO01","required":true}
+{"entity_id":"P-D-EN02","position":3,"name":"Account","meaning":"The member's account.","type_aggregate_id":"P-E-A1","required":false}
+{"entity_id":"P-D-EN03","position":1,"name":"Loan ID","meaning":"The loan's number.","type":"whole number","required":true,"column_name":"id"}
+{"entity_id":"P-D-EN03","position":2,"name":"Thing","meaning":"What was lent.","type_aggregate_id":"P-D-A1","required":true,"column_name":"thing_id"}
+{"entity_id":"P-D-EN03","position":3,"name":"Member","meaning":"Who borrowed it.","type_aggregate_id":"P-D-A2","required":true,"column_name":"member_id"}
+{"entity_id":"P-D-EN03","position":4,"name":"Due date","meaning":"When it is due back.","type":"date","required":true,"example":"2026-03-16"}
+{"entity_id":"P-D-EN04","position":1,"name":"Returned at","meaning":"When it came back.","type":"date and time","required":true}
+{"entity_id":"P-D-EN05","position":1,"name":"Member","meaning":"Who is reminded.","type_aggregate_id":"P-D-A2","required":true}
+{"entity_id":"P-D-EN05","position":2,"name":"Sent at","meaning":"When it was sent.","type":"date and time","required":true}
+{"entity_id":"P-D-EN06","position":1,"name":"Thing","meaning":"The thing on the shelf.","type_aggregate_id":"P-D-A1","required":true}
+{"entity_id":"P-E-EN01","position":1,"name":"Account ID","meaning":"The account's number.","type":"whole number","required":true}

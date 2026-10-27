@@ -1,4 +1,0 @@
-{"domain_event_id":"P-D-EV01","position":1,"name":"Loan ID","meaning":"The loan id.","type":"Whole number","example":"1"}
-{"domain_event_id":"P-D-EV01","position":2,"name":"Thing","meaning":"The thing.","type":"Thing reference","example":"1"}
-{"domain_event_id":"P-D-EV02","position":1,"name":"Loan ID","meaning":"The loan id.","type":"Whole number","example":"1"}
-{"domain_event_id":"P-E-EV01","position":1,"name":"Account ID","meaning":"The account id.","type":"Text","example":"1"}

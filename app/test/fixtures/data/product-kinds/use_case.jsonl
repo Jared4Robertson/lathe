@@ -1,0 +1,2 @@
+{"id":"DM-PAY-UC01","title":"Pay for the basket","capability_id":"DM-PAY-CAP01"}
+{"id":"DM-SHOP-UC01","title":"Add to basket","capability_id":"DM-SHOP-CAP01","goal":"The shopper keeps an item to **buy later**."}

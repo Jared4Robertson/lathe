@@ -1,15 +1,12 @@
 import type { SpecData } from '../../../lathe/src/server/contract';
 import { fixture } from './load';
-import { patternWorkspace } from './patterns';
+import { workspace } from './workspace';
 
-// The pattern workspace with a standard beside the pattern (data/standards/): DM-STD-CODE in Shared
-// with two rules. R01 is met by the component DM-SHOP-C01 and the test DM-SHOP-T01; R02 is met by
-// nothing, so it has the standard-rule-unmet warning.
+// The component-test workspace with a standard (data/standards/): DM-STD-CODE at product level with
+// two rules. R01 (grouped under Transactions) is met by the command handler DM-SHOP-CMD01-H; R02 by
+// the table DM-SHOP-EN01-TB.
 
 export function standardWorkspace(): SpecData {
-  const base = patternWorkspace();
-  return fixture('standards', {
-    problems: [...base.problems, { severity: 'warning', check: 'standard-rule-unmet', record: 'DM-STD-CODE-R02', message: 'Nothing meets or cites standard rule DM-STD-CODE-R02 (Amounts are in cents).' }],
-    coverage: base.coverage,
-  });
+  const base = workspace();
+  return fixture('standards', { problems: base.problems, coverage: base.coverage });
 }

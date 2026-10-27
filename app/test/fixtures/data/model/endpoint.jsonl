@@ -1,0 +1,2 @@
+{"id":"P-D-EP01","title":"Open a loan","command_id":"P-D-CMD01","method":"POST","route":"/loans"}
+{"id":"P-D-EP02","title":"List things","query_id":"P-D-QRY01","method":"GET","route":"/things"}

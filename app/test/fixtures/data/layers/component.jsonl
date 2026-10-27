@@ -1,5 +1,0 @@
-{"id":"DM-SHOP-C01","title":"Basket service","domain_id":"DM-SHOP","component_type":"service","file":"src/basket.ts","description":"Holds baskets.\n\n<script>window.__pwned = true</script><img src=\"x\" onerror=\"window.__pwned = true\"><a href=\"javascript:alert(1)\">bad link</a>"}
-{"id":"DM-SHOP-C02","title":"Basket model","domain_id":"DM-SHOP","layer_id":"DM-SHOP-LAY02","component_type":"module","file":"src/DM-SHOP-C02.ts"}
-{"id":"DM-SHOP-C03","title":"Item model","domain_id":"DM-SHOP","layer_id":"DM-SHOP-LAY02","component_type":"module","file":"src/DM-SHOP-C03.ts"}
-{"id":"DM-SHOP-C04","title":"Checkout service","domain_id":"DM-SHOP","layer_id":"DM-SHOP-LAY03","component_type":"module","file":"src/DM-SHOP-C04.ts"}
-{"id":"DM-SHOP-C05","title":"Basket page component","domain_id":"DM-SHOP","layer_id":"DM-SHOP-LAY01","component_type":"module","file":"src/DM-SHOP-C05.ts"}

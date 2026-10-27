@@ -1,2 +1,3 @@
-{"id":"DM-PAT-CHECKOUT-R01","title":"The step shows what it saved","pattern_id":"DM-PAT-CHECKOUT","statement":"The step MUST show the saved record."}
-{"id":"DM-PAT-CHECKOUT-R02","title":"The step writes an audit line","pattern_id":"DM-PAT-CHECKOUT","statement":"The step MUST write the audit line its `audit` setting names.","setting":"audit"}
+{"id":"DM-PAT-AUDIT-R01","title":"Each change is recorded","pattern_id":"DM-PAT-AUDIT","statement":"Each change MUST be recorded."}
+{"id":"DM-PAT-AUDIT-R02","title":"Records are kept","pattern_id":"DM-PAT-AUDIT","statement":"Records MUST be kept for {retention}.","setting":"retention"}
+{"id":"DM-PAT-AUDIT-R03","title":"The clerk is named","pattern_id":"DM-PAT-AUDIT","statement":"The clerk MUST be named.","applies_when_setting":"who","applies_when_negated":false,"applies_when_value":"clerk"}
