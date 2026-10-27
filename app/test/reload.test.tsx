@@ -1,5 +1,6 @@
 import { act, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { setRow } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
 import { openApp, serve } from './helpers';
 
@@ -14,19 +15,18 @@ vi.mock('../src/events', () => ({
 }));
 
 describe('reload on change', () => {
-  it('LA-PLT-T13 An open spec page reloads the workspace when the server reports spec:changed', async () => {
+  it('LA-PLT-T13 An open spec page reloads the data when the server reports spec:changed', async () => {
     const { requests } = await openApp('/DM-SHOP-C01');
     await screen.findByRole('heading', { level: 1, name: 'Basket service' });
     expect(requests.filter((r) => r === 'GET /api/spec')).toHaveLength(1);
 
-    // An agent renames the component on disk; the server sends spec:changed.
-    const changed = workspace();
-    changed.records.find((r) => r.id === 'DM-SHOP-C01')!.title = 'Basket store';
-    const after = serve({ workspace: changed });
+    // An agent renames the component in its data file; the server sends spec:changed.
+    const changed = setRow(workspace(), 'component', 'DM-SHOP-C01', { title: 'Basket store' });
+    const after = serve({ data: changed });
     await act(async () => { for (const callback of listeners.get('spec:changed') ?? []) callback(); });
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Basket store' })).toBeInTheDocument();
-    expect(after).toEqual(['GET /api/spec']);
+    expect(after.requests).toEqual(['GET /api/spec']);
     // The address and page stay the same; no manual refresh.
     expect(window.location.pathname).toBe('/DM-SHOP-C01');
   });

@@ -1,7 +1,7 @@
 import './graph/setup';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { diffLines } from '../src/views/history';
+import { changeSummary } from '../src/views/history';
 import { sideModeOf, sideStateFrom } from '../src/views/sideBarState';
 import { entityWorkspace } from './fixtures/entities';
 import { main, openApp, openSideBar, sideBar } from './helpers';
@@ -39,11 +39,11 @@ describe('the side bar', () => {
     expect(sideModeOf(['graph'], true)).toBe('graph');
     expect(sideStateFrom({ wiki: { open: 'yes', view: 'details' }, graph: { open: true, view: 'nope' }, model: { open: false, view: 'history' } })).toEqual({ model: { open: false, view: 'history' } });
 
-    await openApp('/P-D-UC01', { workspace: testWorkspace() });
+    await openApp('/P-D-UC01', { data: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     expect(screen.queryByRole('complementary', { name: 'Side bar' })).toBeNull();
 
-    await openApp('/P-D-UC01?view=graph', { workspace: testWorkspace() });
+    await openApp('/P-D-UC01?view=graph', { data: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     const buttons = switcher().getAllByRole('button');
     expect(buttons.map((b) => [b.getAttribute('aria-label'), b.getAttribute('aria-pressed')])).toEqual([['Details', 'true'], ['Outline', 'false'], ['History', 'false']]);
@@ -58,7 +58,7 @@ describe('the side bar', () => {
     expect(sideBar().querySelector('#side-view')).toHaveAttribute('aria-labelledby', 'side-view-title');
 
     // A reload brings the tab back with Outline in the Graph view (LA-PAT-APP-UX-R06).
-    await openApp('/P-D-UC01?view=graph', { workspace: testWorkspace() });
+    await openApp('/P-D-UC01?view=graph', { data: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     expect(switcher().getByRole('button', { name: 'Outline' })).toHaveAttribute('aria-pressed', 'true');
     // The Wiki view of the same tab keeps its own: closed.
@@ -70,14 +70,14 @@ describe('the side bar', () => {
 
   it('LA-EXP-T161 In the Graph view Details shows the node under the pointer or keyboard focus, else the selected one, else the page\'s record, with Open and a compact Traceability; the graph adds what it connects', async () => {
     window.sessionStorage.setItem('lathe:graph-settings', JSON.stringify({ layout: 'tree', depth: 1, trace: false, hiddenKinds: [], hiddenRelations: [], links: true, minimap: false }));
-    await openApp('/P-D-UC01-R01?view=graph', { workspace: testWorkspace() });
+    await openApp('/P-D-UC01-R01?view=graph', { data: testWorkspace() });
     await waitFor(() => expect(node('P-D-V01')).not.toBeNull());
     expect(name()).toBe('The owner is shown');
     expect(side().queryByRole('link', { name: 'Open' })).toBeNull();
     const trace = side().getByRole('region', { name: /^Traceability/ });
     expect(within(trace).getByText(/^Designed by/)).toBeInTheDocument();
     expect(within(trace).getByRole('link', { name: 'P-D-C01' })).toBeInTheDocument();
-    expect(side().getByText('Spec file')).toBeInTheDocument();
+    expect(side().getByText('Data file')).toBeInTheDocument();
     await waitFor(() => expect(side().getByRole('heading', { name: /Connected in the graph/ })).toBeInTheDocument());
 
     // Hover: the node lit by the spotlight.
@@ -98,13 +98,13 @@ describe('the side bar', () => {
     await waitFor(() => expect(name()).toBe('The owner is shown'));
   });
 
-  it('LA-EXP-T162 In the Wiki view Details shows only what the page does not: the spec file, the raw header fields and the raw links; a focused or right-clicked record row shows that record', async () => {
+  it('LA-EXP-T162 In the Wiki view Details shows only what the page does not: the data file and line, the columns of its row and the raw links; a focused or right-clicked record row shows that record', async () => {
     openSideBar();
-    await openApp('/P-D-UC01', { workspace: testWorkspace() });
+    await openApp('/P-D-UC01', { data: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
-    expect(side().getByRole('heading', { name: 'Spec file' })).toBeInTheDocument();
-    expect(side().getByRole('heading', { name: 'Header fields' })).toBeInTheDocument();
-    expect(side().getByText('actor', { selector: 'dt code' })).toBeInTheDocument();
+    expect(side().getByRole('heading', { name: 'Data file' })).toBeInTheDocument();
+    expect(side().getByRole('heading', { name: 'Columns' })).toBeInTheDocument();
+    expect(side().getByText('domain_id', { selector: 'dt code' })).toBeInTheDocument();
     expect(side().getByText('applies', { selector: 'code' })).toBeInTheDocument();
     // Nothing the wiki shows: no children, no problems list, no identity block.
     expect(side().queryByRole('heading', { name: /^UC requirements/ })).toBeNull();
@@ -128,7 +128,7 @@ describe('the side bar', () => {
 
   it('LA-PLT-T88 Outline lists the wiki\'s sections, scrolls there on a click and marks the one in view; in the Model view it lists the boxes', async () => {
     openSideBar('outline');
-    await openApp('/P-D-UC01', { workspace: testWorkspace() });
+    await openApp('/P-D-UC01', { data: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     const sections = await waitFor(() => side().getByRole('list', { name: 'Sections' }));
     const rows = within(sections).getAllByRole('button').map((b) => b.textContent);
@@ -143,7 +143,7 @@ describe('the side bar', () => {
 
     // The Model view: the boxes, those in focus first.
     openSideBar('outline', ['model']);
-    await openApp('/P-D?view=model', { workspace: entityWorkspace() });
+    await openApp('/P-D?view=model', { data: entityWorkspace() });
     await screen.findAllByRole('heading', { level: 1 });
     await waitFor(() => expect(side().getByRole('heading', { name: /^Aggregates/ })).toBeInTheDocument());
     const boxes = side().getByRole('list', { name: 'Aggregates' });
@@ -152,54 +152,64 @@ describe('the side bar', () => {
   });
 
   it('LA-EXP-T163 History lists the commits that touched the record\'s file, the uncommitted change first, shows a commit\'s diff inline, loads more, and says calmly when there is no git', async () => {
-    const commit = (n: number) => ({ hash: `${String(n).padStart(4, '0')}${'a'.repeat(36)}`, short: `${String(n).padStart(4, '0')}aaa`, date: '2026-10-24T10:00:00Z', author: 'Owner', subject: `Change ${n}` });
+    const statement = { table: 'use_case', key: 'P-D-UC01', change: 'changed' as const, fields: [{ name: 'goal', before: 'Lend it.', after: 'Lend a thing to a member.' }] };
+    const actor = { table: 'use_case_actor', key: 'use_case_id P-D-UC01, position 1', change: 'added' as const, fields: [{ name: 'role_name', after: 'Member' }] };
+    const commit = (n: number) => ({ hash: `${String(n).padStart(4, '0')}${'a'.repeat(36)}`, short: `${String(n).padStart(4, '0')}aaa`, date: '2026-10-24T10:00:00Z', author: 'Owner', subject: `Change ${n}`, changes: n === 1 ? [statement, actor] : [statement], truncated: false });
     openSideBar('history');
-    await openApp('/P-D-UC01', { workspace: testWorkspace() });
-    // On top of the specs the page loaded: the history answers.
+    await openApp('/P-D-UC01', { data: testWorkspace() });
+    // On top of the data the page loaded: the history answers.
     const asked = serveHistory((q) => {
-      if (q.get('commit') === 'working') return { state: 'ok', id: q.get('id'), file: 'specs/P-D-UC01.md', commit: 'working', diff: 'diff --git a/x b/x\n@@ -1 +1 @@\n-old line\n+new line\n', truncated: false };
-      if (q.get('commit')) return { state: 'ok', id: q.get('id'), file: 'specs/P-D-UC01.md', commit: q.get('commit'), diff: '@@ -1,2 +1,2 @@\n same\n-was\n+is\n', truncated: false };
       const skip = Number(q.get('skip') ?? 0);
-      return { state: 'ok', id: q.get('id'), file: 'specs/P-D-UC01.md', uncommitted: skip ? null : 'modified', commits: skip ? [commit(21)] : Array.from({ length: 20 }, (_, i) => commit(i + 1)), more: !skip };
+      return {
+        state: 'ok', id: q.get('id'), files: ['data/use_case.jsonl', 'data/use_case_actor.jsonl'],
+        uncommitted: skip ? [] : [{ table: 'use_case', key: 'P-D-UC01', change: 'changed', fields: [{ name: 'title', before: 'Lend', after: 'Lend a thing' }] }],
+        commits: skip ? [commit(21)] : Array.from({ length: 20 }, (_, i) => commit(i + 1)), more: !skip,
+      };
     });
     // Show the view again, so its request goes to these answers; it asks by the record's ID.
     fireEvent.click(switcher().getByRole('button', { name: 'Details' }));
     fireEvent.click(switcher().getByRole('button', { name: 'History' }));
-    const list = await side().findByRole('list', { name: 'Commits that touched specs/P-D-UC01.md' });
+    const list = await side().findByRole('list', { name: 'Commits that changed P-D-UC01' });
+    expect(side().getByText('data/use_case.jsonl')).toBeInTheDocument();
     const rows = within(list).getAllByRole('button');
     expect(rows[0]).toHaveTextContent('Not committed');
+    expect(rows[0]).toHaveTextContent('title changed');
     expect(rows[1]).toHaveTextContent(/Change 1.*Owner.*0001aaa/);
+    // Each commit says what it changed: the record's fields, and its parts by table.
+    expect(rows[1]).toHaveTextContent('goal changed · use case actor: added');
     expect(rows).toHaveLength(21);
     expect(asked[0]).toBe('/api/history?id=P-D-UC01');
+    expect(changeSummary(statement)).toBe('goal changed');
 
-    // The uncommitted change's diff, inline, its lines marked added and removed.
+    // The uncommitted change's fields, inline, before and after.
     fireEvent.click(rows[0]);
     expect(rows[0]).toHaveAttribute('aria-expanded', 'true');
-    const diff = await side().findByLabelText('Uncommitted changes');
-    expect(diff.querySelector('.diff-remove')).toHaveTextContent('-old line');
-    expect(diff.querySelector('.diff-add')).toHaveTextContent('+new line');
-    expect(diff.querySelector('.diff-meta')).toHaveTextContent('diff --git');
+    const working = await side().findByRole('region', { name: 'Uncommitted changes' });
+    expect(working.querySelector('.history-before')).toHaveTextContent('Lend');
+    expect(working.querySelector('.history-after')).toHaveTextContent('Lend a thing');
     // One open at a time.
     fireEvent.click(rows[1]);
-    expect(await side().findByLabelText('Diff of 0001aaa')).toBeInTheDocument();
-    expect(side().queryByLabelText('Uncommitted changes')).toBeNull();
+    const first = await side().findByRole('region', { name: 'Changes in 0001aaa' });
+    expect(within(first).getByRole('heading', { name: /The record/ })).toBeInTheDocument();
+    expect(within(first).getByRole('heading', { name: /use case actor \(use_case_id P-D-UC01, position 1\)/ })).toBeInTheDocument();
+    expect(side().queryByRole('region', { name: 'Uncommitted changes' })).toBeNull();
+    // Every history request names the record; there is no second request per commit.
+    expect(asked.every((u) => !u.includes('commit='))).toBe(true);
 
     fireEvent.click(side().getByRole('button', { name: 'Load more' }));
     await waitFor(() => expect(within(list).getAllByRole('button')).toHaveLength(22));
     expect(side().queryByRole('button', { name: 'Load more' })).toBeNull();
 
     // No git: said calmly.
-    serveHistory((q) => ({ state: 'no-repo', id: q.get('id'), file: 'specs/P-D-UC01.md', message: 'The product folder is not a git repository, so its records have no history yet.' }));
+    serveHistory((q) => ({ state: 'no-repo', id: q.get('id'), files: ['data/use_case.jsonl'], message: 'The product folder is not a git repository, so its records have no history yet.' }));
     fireEvent.click(switcher().getByRole('button', { name: 'Details' }));
     fireEvent.click(switcher().getByRole('button', { name: 'History' }));
     expect(await side().findByText(/not a git repository/)).toBeInTheDocument();
-
-    expect(diffLines('diff --git a/x b/x\nindex 1..2\n--- a/x\n+++ b/x\n@@ -1 +1 @@\n-a\n+b\n c\n').map((l) => l.kind)).toEqual(['meta', 'meta', 'meta', 'meta', 'hunk', 'remove', 'add', 'context']);
   });
 
   it('LA-EXP-T164 On a phone the side bar is a bottom sheet with the same three views', async () => {
     vi.stubGlobal('matchMedia', (query: string) => ({ matches: true, media: query, addEventListener: () => {}, removeEventListener: () => {} }));
-    await openApp('/P-D-UC01', { workspace: testWorkspace() });
+    await openApp('/P-D-UC01', { data: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     fireEvent.click(screen.getByRole('button', { name: 'Show the side bar' }));
     const sheet = screen.getByRole('dialog', { name: 'Side bar' });
