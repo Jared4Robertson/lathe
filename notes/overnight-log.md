@@ -234,3 +234,9 @@ Lathe now matches S2 on UC requirements (206/206) and domain rules (98/98) acros
 - LA map 262,118 square, since the 3x-per-level cap compounds with squares.
 - Shared reads as a 7 px square beside the domains.
 - Brief 92 (text by depth) is left unmerged on `worktree-agent-ad713c924f2f49163`: its headers can't be read when framed.
+
+## Brief 94 merged: readable top-level boxes in Nested
+- The product's children share the largest text scale among them: Shared went from a 7 px square to 88 px.
+- The cost: domains' text rose about 1.4×, and the LA map is now 347,285 units square.
+- All checks passed.
+- Brief 95 (canvas renderer) is running; the top-down layout is proposed for after it lands.
