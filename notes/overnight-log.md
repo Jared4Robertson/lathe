@@ -280,3 +280,8 @@ Lathe now matches S2 on UC requirements (206/206) and domain rules (98/98) acros
 - The round trip passes, with every word of every body kept. One sentence was dropped: a repeated lead-in in TL's API shapes.
 - My follow-up fixes on db-first: the merge rule now covers `**/data/*.jsonl`, the package ships `data`, and the interfaces note gained `test.notes`.
 - The engine (100) and app (102) agents were told to merge db-first.
+
+## Brief 101 merged into db-first: writers
+- The CLI has `add`, `set`, `move`, `link`, `unlink`, `remove`, `show`, `list`, `next-id` and `mcp`. The MCP server is built in, with no new dependency; the plugin has a launcher and a hook that refuses hand edits to data files.
+- All six skills are rewritten. Checks passed: lathe 472, app 351, desktop 63, knip, plugin validate.
+- Leftovers: `lathe init`, a README line and the shape of `check` go to the engine agent; LA-CHK-F01 goes to brief 103.
