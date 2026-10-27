@@ -126,6 +126,17 @@ COMMENT ON COLUMN command.title IS 'What it asks for, in the imperative, such as
 COMMENT ON COLUMN command.aggregate_id IS 'The aggregate it changes.';
 COMMENT ON COLUMN command.description IS 'What it does, in a sentence or two.';
 
+CREATE TABLE command_change (
+  command_id VARCHAR NOT NULL REFERENCES command (id),
+  aggregate_id VARCHAR NOT NULL REFERENCES aggregate (id),
+  reason VARCHAR NOT NULL CHECK (trim(reason) <> ''),
+  PRIMARY KEY (command_id, aggregate_id)
+);
+COMMENT ON TABLE command_change IS 'A recorded exception to one aggregate per command: another aggregate of the same domain the command changes in the same transaction, and why. Checks list every one.';
+COMMENT ON COLUMN command_change.command_id IS 'The command that also changes the aggregate.';
+COMMENT ON COLUMN command_change.aggregate_id IS 'The other aggregate it changes in the same transaction: of the command''s domain, never its own.';
+COMMENT ON COLUMN command_change.reason IS 'Why the change cannot follow through an event and a policy.';
+
 CREATE TABLE read_model (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
   title VARCHAR NOT NULL CHECK (trim(title) <> ''),
@@ -335,6 +346,6 @@ INSERT INTO meta_table VALUES
   ('domain', 'kind', NULL), ('aggregate', 'kind', NULL), ('entity', 'kind', NULL), ('entity_field', 'part', 'entity_id'),
   ('value_object', 'kind', NULL), ('value_object_field', 'part', 'value_object_id'), ('constraint', 'kind', NULL),
   ('invariant', 'kind', NULL), ('specification', 'kind', NULL), ('domain_event', 'kind', NULL),
-  ('event_field', 'part', 'domain_event_id'), ('command', 'kind', NULL), ('read_model', 'kind', NULL),
+  ('event_field', 'part', 'domain_event_id'), ('command', 'kind', NULL), ('command_change', 'part', 'command_id'), ('read_model', 'kind', NULL),
   ('read_model_field', 'part', 'read_model_id'), ('query', 'kind', NULL), ('policy', 'kind', NULL),
   ('domain_service', 'kind', NULL), ('term', 'kind', NULL);

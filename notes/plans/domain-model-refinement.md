@@ -29,6 +29,8 @@ The Owner worked through the model as a diagram and settled each point below. S2
 
 ### Domain model
 1. **Aggregates are the consistency boundary.** A command changes exactly one aggregate. Changes to other aggregates follow through events (eventual consistency). Commands belong to their aggregate.
+   - **A recorded exception:** a command may also change other aggregates of its own domain in the same transaction, each named with the reason the change can't follow through an event and a policy. Checks list every exception as a warning, so each stays visible and deliberate. The command handler owns that one transaction, and every touched aggregate's invariants hold.
+   - **The outbox is the standard for events that cross a transaction.** An event a policy hears, or that is published to other domains, is delivered by outbox: saved in the same transaction as its aggregate and delivered reliably afterwards, so a reaction is never lost. An event type records its delivery (`in process` or `outbox`), and a check warns when such an event isn't delivered by outbox.
 2. **Entities have value objects, many-to-many.** A value object has no other owner and exists because entities use it. Event fields may also use value objects.
 3. **Rules split by what they do:**
    - **Constraint:** a value object's own rule, checked when the value is created. It belongs to the value object.

@@ -235,6 +235,16 @@ export interface ChecksRow {
   target_id: string;
 }
 
+/** A recorded exception to one aggregate per command: another aggregate of the same domain the command changes in the same transaction, and why. Checks list every one. */
+export interface CommandChangeRow {
+  /** The command that also changes the aggregate. */
+  command_id: string;
+  /** The other aggregate it changes in the same transaction: of the command's domain, never its own. */
+  aggregate_id: string;
+  /** Why the change cannot follow through an event and a policy. */
+  reason: string;
+}
+
 /** Carries out its command: an application service that owns the transaction, loads the aggregate through its repository, checks specifications and raises events. What clean architecture calls a use case or interactor. */
 export interface CommandHandlerRow {
   /** The command handler's ID: its command's ID and H, such as TL-LEND-CMD01-H. */
@@ -487,6 +497,8 @@ export interface EventTypeRow {
   title: string;
   /** The domain event it implements; one event type each. */
   domain_event_id: string;
+  /** How the event reaches what hears it: in process, after the transaction commits; or outbox, saved in the same transaction as its aggregate and delivered reliably afterwards. An event a policy hears or another domain may hear is delivered by outbox. */
+  delivery?: "in process" | "outbox";
   /** The file that holds its code, from the product root; it may not exist yet, and several records may share one file. */
   file?: string;
   /** How it works, in a sentence or two. */
@@ -1267,6 +1279,7 @@ export interface TableRows {
   check: CheckRow;
   specification: SpecificationRow;
   checks: ChecksRow;
+  command_change: CommandChangeRow;
   command_handler: CommandHandlerRow;
   value_object: ValueObjectRow;
   constraint: ConstraintRow;
