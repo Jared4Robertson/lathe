@@ -1,5 +1,4 @@
 import type { SpecIndex } from '../specs/data';
-import { contentScale } from './layout';
 import { BORDER, largestFit, linesIn, treeLabel, type MapLabel, type WrappedLabel } from './text';
 import { outlineInset, type Shape } from './shapes';
 import { treeChildren, treeParent } from './tree';
@@ -27,8 +26,12 @@ import { treeChildren, treeParent } from './tree';
 //
 // Pure and deterministic: the same index always gives the same map, and it is built once per index.
 
-/** The product's box in every layout: the Tree map's height, the Nested map's side, the Voronoi hexagon's width, in map units. */
-export const MAP_SIZE = 500_000;
+/**
+ * The product's box in every layout: the Tree map's height, the Nested map's side, the Voronoi
+ * hexagon's width, in map units. Small enough that the product's title (its text scale times a
+ * title's font) stays under the 10,000 px a browser draws a font at.
+ */
+export const MAP_SIZE = 300_000;
 /**
  * A box's text scale is at most its size over this (LA-EXP-DR58): its width (the Tree map, where
  * siblings split their parent's height), its side (the Nested map) or the square root of its area
@@ -137,13 +140,14 @@ export function layoutTree(roots: readonly string[], childrenOf: (id: string) =>
   const byLevelIds: string[][] = [];
   const place = (ids: readonly string[], l: number, y0: number, h: number, gap: number, up: string | null) => {
     const { x, width: w } = levels[l];
-    const border = BORDER * contentScale(w, h);
+    // Its border grows with its text (LA-EXP-DR58).
+    const border = (s: number) => BORDER * s;
     const labels = ids.map((id) => labelOf(id));
     const text = Math.min(...labels.map((label) => largestFit(label, true, w, h, sizeText(w), border)));
     ids.forEach((id, i) => {
       const y = y0 + i * (h + gap);
       const own = kids.get(id)!;
-      const lines = linesIn(labels[i], text > 0 ? (w - 2 * border) / text : Infinity, true);
+      const lines = linesIn(labels[i], text > 0 ? (w - 2 * border(text)) / text : Infinity, true);
       nodes.set(id, { id, parent: up, children: own, level: l, x, y, w, h, text, lines, centered: true });
       (byLevelIds[l] ??= []).push(id);
       if (own.length === 0) return;
@@ -181,6 +185,8 @@ export function graphMap(index: SpecIndex, root: string): GraphMap {
 }
 
 type Rect = Pick<MapNode, 'x' | 'y' | 'w' | 'h'>;
+/** A box with its text scale, which its border and outline grow by (LA-EXP-DR58). */
+type Scaled = Rect & Pick<MapNode, 'text'>;
 type Point = { x: number; y: number };
 
 /** A node's center in the map. */
@@ -192,11 +198,11 @@ export const centerOf = (n: Rect) => ({ x: n.x + n.w / 2, y: n.y + n.h / 2 });
  * shape's is where its edge crosses that height, so a line into a domain's hexagon meets the tip
  * of its point and a line out of one starts on its slanted side.
  */
-export function parentLine(parent: Rect, child: Rect, parentShape: Shape = 'box', childShape: Shape = 'box'): [Point, Point] {
+export function parentLine(parent: Scaled, child: Scaled, parentShape: Shape = 'box', childShape: Shape = 'box'): [Point, Point] {
   const y = child.y + child.h / 2;
   return [
-    { x: parent.x + parent.w - outlineInset(parent, parentShape, contentScale(parent.w, parent.h), y, 'right'), y },
-    { x: child.x + outlineInset(child, childShape, contentScale(child.w, child.h), y, 'left'), y },
+    { x: parent.x + parent.w - outlineInset(parent, parentShape, parent.text, y, 'right'), y },
+    { x: child.x + outlineInset(child, childShape, child.text, y, 'left'), y },
   ];
 }
 

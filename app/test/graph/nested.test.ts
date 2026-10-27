@@ -26,7 +26,7 @@ const all = (): NestedMap[] => [...maps(), wide(1, 6), wide(3, 4), busyAndQuiet(
 const eps = 1e-6;
 
 /** The border a box's label keeps clear of, as the map sizes it. */
-const borderOf = (n: NestedNode) => BORDER * Math.max(0.5, sizeText(n.w));
+const borderOf = (n: NestedNode) => BORDER * Math.max(0.5, n.text);
 
 describe('the Nested map', () => {
   it('LA-EXP-T185 Each box holds its children below its header band, inside its padding, none overlapping, over the same tree as the Tree map', () => {
@@ -116,7 +116,7 @@ describe('the Nested map', () => {
         expect(text).toBeLessThanOrEqual(most);
         expect(text).toBeGreaterThan(0);
         // The largest that fits: the size's share, or one sibling's label fills its room.
-        const fits = group.map((n) => largestFit(labelOf(map, n), n.centered, n.w, n.centered ? n.w : HEADER_SHARE * n.w, most, borderOf(n)));
+        const fits = group.map((n) => largestFit(labelOf(map, n), n.centered, n.w, n.centered ? n.w : HEADER_SHARE * n.w, most, (s) => BORDER * Math.max(0.5, s)));
         expect(text).toBeCloseTo(Math.min(...fits), 9);
         // One header band for the parents among them: the tallest of their labels.
         const parents = group.filter((n) => n.children.length > 0);

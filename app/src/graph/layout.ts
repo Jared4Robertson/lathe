@@ -61,10 +61,3 @@ export function boxExit(cx: number, cy: number, tx: number, ty: number, w = NODE
   const scale = 1 / Math.max(Math.abs(dx) / (w / 2), Math.abs(dy) / (h / 2));
   return { x: cx + dx * scale, y: cy + dy * scale };
 }
-
-/**
- * How much a node's border, outline and parent line grow (its box scale, LA-EXP-DR58): by the
- * smaller of its width over a leaf's and its height over a leaf's, so a trace's box is at 1 and a
- * map's box at its own size, however small. Its label grows by its text scale instead (text.ts).
- */
-export const contentScale = (width: number, height: number) => Math.min(width / NODE_WIDTH, height / NODE_HEIGHT);

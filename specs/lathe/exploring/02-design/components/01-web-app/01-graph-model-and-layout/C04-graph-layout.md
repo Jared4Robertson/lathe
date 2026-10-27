@@ -8,4 +8,4 @@ file: app/src/graph/layout.ts
 links:
   satisfies: [LA-EXP-UC03-R08, LA-EXP-DR58]
 ---
-A trace box's size, 190 by 56 at text scale 1; `traceGrid`, which stacks a trace's columns of boxes in row order, each as tall as its wrapped label needs, centered on the center, since a trace is a chain and not part of the map; `boxExit`, where a line leaves a box; and `contentScale`, a node's box scale for its border and outline, the smaller of its width and height over a trace box's, however small (`LA-EXP-DR58`).
+A trace box's size, 190 by 56 at text scale 1; `traceGrid`, which stacks a trace's columns of boxes in row order, each as tall as its wrapped label needs, centered on the center, since a trace is a chain and not part of the map; and `boxExit`, where a line leaves a box.

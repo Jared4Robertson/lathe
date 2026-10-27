@@ -2,7 +2,6 @@ import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { parseRecordFile } from '../../../lathe/src/parse';
-import { contentScale, NODE_HEIGHT, NODE_WIDTH } from '../../src/graph/layout';
 import { COLUMN_GAP_SHARE, COLUMN_RATIO, graphMap, layoutTree, linkEnds, MAP_SIZE, parentLine, ROOT_WIDTH, ROW_GAP_SHARE, sizeText, type GraphMap, type MapNode } from '../../src/graph/map';
 import { drawnFor, frameOnMap, MAX_DRAWN, MIN_DRAWN, MIN_ZOOM, viewRect } from '../../src/graph/camera';
 import { shapeOf, SHAPES } from '../../src/graph/shapes';
@@ -72,15 +71,6 @@ describe('the one map', () => {
 });
 
 describe('columns and text', () => {
-  it("LA-EXP-T166 A box's scale is the smaller of its width and height over a trace box's, however small", () => {
-    expect(contentScale(NODE_WIDTH, NODE_HEIGHT)).toBe(1);
-    expect(contentScale(NODE_WIDTH, NODE_HEIGHT / 2)).toBe(0.5);
-    // Limited by the shorter way.
-    expect(contentScale(NODE_WIDTH * 1.5, NODE_HEIGHT * 10)).toBe(1.5);
-    expect(contentScale(NODE_WIDTH * 2, NODE_HEIGHT * 1.25)).toBe(1.25);
-    expect(contentScale(NODE_WIDTH / 100, NODE_HEIGHT)).toBe(0.01);
-  });
-
   it('LA-EXP-T166 Every box in a column has its width, each column a fixed fraction of the one before, a gap before it', () => {
     for (const map of all()) {
       map.levels.forEach((level, l) => {
@@ -97,7 +87,7 @@ describe('columns and text', () => {
       for (const group of siblingGroups(map)) {
         const { w, h, text } = group[0];
         for (const n of group) expect([n.w, n.h, n.text], n.id).toEqual([w, h, text]);
-        const border = BORDER * contentScale(w, h);
+        const border = (s: number) => BORDER * s;
         expect(text).toBeGreaterThan(0);
         expect(text).toBeCloseTo(Math.min(...group.map((n) => largestFit(labelOf(map, n), true, w, h, sizeText(w), border))), 9);
       }
@@ -113,7 +103,7 @@ describe('columns and text', () => {
     for (const map of all()) {
       for (const n of map.nodes.values()) {
         const label = labelOf(map, n);
-        const border = BORDER * contentScale(n.w, n.h);
+        const border = BORDER * n.text;
         const room = label.shape ? SHAPES[label.shape].room : { l: 0, r: 0 };
         const across = (n.w - 2 * border) / n.text;
         expect(across, n.id).toBeGreaterThanOrEqual(narrowestWidth(label, true) - 1e-6);
