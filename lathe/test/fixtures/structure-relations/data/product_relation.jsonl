@@ -1,0 +1,1 @@
+{"name":"owns","source_kind":"component","target_kind":"aggregate","product_id":"SR","forward_label":"Owns","reverse_label":"Owned by","description":"The component owns the aggregate."}

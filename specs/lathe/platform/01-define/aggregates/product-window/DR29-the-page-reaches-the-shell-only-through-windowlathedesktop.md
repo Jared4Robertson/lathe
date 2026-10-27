@@ -1,7 +1,0 @@
----
-id: LA-PLT-DR29
-kind: domain_rule
-title: The page reaches the shell only through window.latheDesktop
-parent: LA-PLT-A6
----
-Every window MUST run its page with context isolation and the sandbox on and Node integration off. The preload MUST expose only `window.latheDesktop` with `isDesktop`, `platform`, `onCommand` and `setChrome`, and nothing of Node or Electron.

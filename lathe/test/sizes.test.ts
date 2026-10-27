@@ -1,20 +1,18 @@
-// Structure sizes (FORMAT.md section 5): too-many-children, a record with more children of one kind than the
-// product's structure.maxChildren setting (default 15), and lone-child, a capability or layer with one child.
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { beforeAll, describe, expect, it } from 'vitest';
-import { DEFAULT_MAX_CHILDREN, loadConfig, loadWorkspace, type Workspace } from '../src/index.ts';
+// Structure sizes: too-many-children, a record with more children of one kind than its product's max_children
+// setting (a product_setting row, default 15), and lone-child, a capability or layer with one child.
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { DEFAULT_MAX_CHILDREN, type Workspace } from '../src/index.ts';
+import { everyKind, load, ofCheck, refusals, removeData, withTable } from './helpers.ts';
 
-const fixture = (name: string) => path.join(path.dirname(fileURLToPath(import.meta.url)), 'fixtures', name);
-const ofCheck = (ws: Workspace, check: string) => ws.problems.filter((p) => p.check === check);
 const recordsOf = (ws: Workspace, check: string) => ofCheck(ws, check).map((p) => p.record).sort();
+afterAll(removeData);
 
 let sizes: Workspace;
 let defaults: Workspace;
 beforeAll(async () => {
-  // structure-sizes sets maxChildren to 3.
-  sizes = await loadWorkspace(fixture('structure-sizes'));
-  defaults = await loadWorkspace(fixture('structure-default'));
+  // structure-sizes sets max_children to 3.
+  sizes = await load('structure-sizes');
+  defaults = await load('structure-default');
 });
 
 describe('too-many-children', () => {
@@ -55,20 +53,23 @@ describe('too-many-children', () => {
 
   it('LA-CHK-T36 Without the setting, maxChildren is 15', () => {
     expect(DEFAULT_MAX_CHILDREN).toBe(15);
-    expect(loadConfig(fixture('structure-default')).maxChildren).toBe(15);
     // SD-D has 16 components, SD-E has 15.
     expect(ofCheck(defaults, 'too-many-children')).toEqual([
       expect.objectContaining({ record: 'SD-D', message: expect.stringContaining('16 children of kind component, more than the 15') }),
     ]);
   });
 
-  it('LA-CHK-T37 maxChildren is read from structure.maxChildren in lathe.config.json', () => {
-    expect(loadConfig(fixture('structure-sizes')).maxChildren).toBe(3);
+  it("LA-CHK-T37 maxChildren is read from the product's product_setting row, max_children", () => {
+    // structure-sizes has the row { product_id: SZ, max_children: 3 }; structure-default has none.
+    expect(recordsOf(sizes, 'too-many-children')).toEqual(['SZ-D', 'SZ-D-A1', 'SZ-D-F02']);
+    expect(ofCheck(sizes, 'too-many-children').every((p) => p.message.includes("more than the 3 that the product's max_children setting allows"))).toBe(true);
   });
 
   it('LA-CHK-T38 A maxChildren that is not a whole number of at least 1 is refused', async () => {
-    expect(() => loadConfig(fixture('structure-bad-config'))).toThrow(/structure.maxChildren must be a whole number of at least 1/);
-    await expect(loadWorkspace(fixture('structure-bad-config'))).rejects.toThrow(/maxChildren/);
+    const setting = (value: unknown) => withTable(everyKind(), 'product_setting', [{ product_id: 'TL', max_children: value as number }]);
+    expect(await refusals(setting(0))).toEqual([expect.objectContaining({ rule: 'check', table: 'product_setting' })]);
+    expect(await refusals(setting('lots'))).toEqual([expect.objectContaining({ rule: 'column', table: 'product_setting' })]);
+    expect(await refusals(setting(2.5))).toEqual([expect.objectContaining({ rule: 'column', table: 'product_setting' })]);
   });
 });
 
@@ -109,8 +110,8 @@ describe('the structure checks', () => {
     expect(defaults.problems.filter((p) => p.severity === 'error')).toEqual([]);
   });
 
-  it('LA-CHK-T44 A check reads the maxChildren setting from the settings table', () => {
-    // The fixture's own check reports the structure.maxChildren row it reads.
-    expect(ofCheck(sizes, 'max-children-setting').map((p) => p.message)).toEqual(['structure.maxChildren is 3.']);
+  it('LA-CHK-T44 A check reads the maxChildren setting from the product_setting table', () => {
+    // The fixture's own check reports the product_setting row it reads.
+    expect(ofCheck(sizes, 'max-children-setting')).toEqual([{ severity: 'warning', check: 'max-children-setting', record: 'SZ', message: 'max_children for SZ is 3.' }]);
   });
 });

@@ -9,7 +9,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { mkdir, rename, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { DuckDBInstance, type DuckDBConnection } from '@duckdb/node-api';
-import { loadConfig } from '../config.ts';
+import { loadConfig, PACKAGE_DIR } from '../config.ts';
 import { insertRows } from './insert.ts';
 import { productKindSql, type DeclarationProblem } from './product-kinds.ts';
 import { describeKey, normalizeRow, rowKey, sortRows, tableText, type Row, type Value } from './rows.ts';
@@ -79,7 +79,16 @@ export interface WriteResult {
 export interface StoreOptions {
   /** The data folder, in place of the one lathe.config.json names (default data/ at the root). */
   dataDir?: string;
+  /**
+   * Lathe's own data folder, loaded beside the product's: the package's data/, which holds Lathe's built-in checks.
+   * Its rows are read-only: a write never changes them and never writes them into the product's folder. null loads
+   * the product's folder alone.
+   */
+  latheDataDir?: string | null;
 }
+
+/** The package's own data folder: Lathe's built-in checks, as data/check.jsonl. */
+export const LATHE_DATA_DIR = path.join(PACKAGE_DIR, 'data');
 
 const DECLARATION_TABLES = ['product_kind', 'product_kind_field', 'product_relation'] as const;
 
@@ -129,8 +138,11 @@ function sharedEngine(): Promise<Engine> {
 /** Opens the store of the product repo at root: reads its data files and loads them with every key and check. */
 export async function openStore(root: string, options: StoreOptions = {}): Promise<Store> {
   const dataDir = path.resolve(options.dataDir ?? loadConfig(root).dataDir);
+  const latheDataDir = options.latheDataDir === undefined ? LATHE_DATA_DIR : options.latheDataDir;
+  // Lathe's own folder opened as a product's (Lathe's package itself) is loaded once, as the product's.
+  const beside = latheDataDir === null || path.resolve(latheDataDir) === dataDir ? null : path.resolve(latheDataDir);
   const { instance, baseSchema } = await sharedEngine();
-  const store = new Store(instance, await instance.connect(), baseSchema, dataDir);
+  const store = new Store(instance, await instance.connect(), baseSchema, dataDir, beside);
   try {
     await store.load();
   } catch (error) {
@@ -143,6 +155,8 @@ export async function openStore(root: string, options: StoreOptions = {}): Promi
 /** A product repo's data: the typed tables in DuckDB, kept in step with the data files. */
 export class Store {
   readonly dataDir: string;
+  /** Lathe's own data folder, loaded beside dataDir with read-only rows, or null. */
+  readonly latheDataDir: string | null;
   private readonly instance: DuckDBInstance;
   private readonly main: DuckDBConnection;
   private readonly baseSchema: SchemaDescription;
@@ -151,13 +165,21 @@ export class Store {
   private dataDb = '';
   private tables: Tables = new Map();
   private origins = new WeakMap<Row, Origin>();
+  /** The rows loaded from latheDataDir, which no write changes or writes out. */
+  private builtIn = new WeakSet<Row>();
   private queue: Promise<unknown> = Promise.resolve();
 
-  constructor(instance: DuckDBInstance, connection: DuckDBConnection, baseSchema: SchemaDescription, dataDir: string) {
+  constructor(instance: DuckDBInstance, connection: DuckDBConnection, baseSchema: SchemaDescription, dataDir: string, latheDataDir: string | null) {
     this.instance = instance;
     this.main = connection;
     this.baseSchema = baseSchema;
     this.dataDir = dataDir;
+    this.latheDataDir = latheDataDir;
+  }
+
+  /** Whether the row is one of Lathe's own, loaded from latheDataDir, and so read-only. */
+  isBuiltIn(row: Row): boolean {
+    return this.builtIn.has(row);
   }
 
   /** The schema, Lathe's and the product's own kinds and relations. */
@@ -210,21 +232,26 @@ export class Store {
 
   // Loading.
 
-  /** Reads every data file and loads it. Called once, by openStore. */
+  /** Reads every data file, Lathe's own folder's first and then the product's, and loads them. Called once, by openStore. */
   async load(): Promise<void> {
-    const files = existsSync(this.dataDir) ? readdirSync(this.dataDir).filter((f) => f.endsWith('.jsonl')).sort() : [];
+    const listed = (dir: string) => (existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith('.jsonl')).sort() : []);
+    const folders = [
+      ...(this.latheDataDir ? [{ dir: this.latheDataDir, display: 'lathe/data', builtIn: true }] : []),
+      { dir: this.dataDir, display: path.basename(this.dataDir), builtIn: false },
+    ].map((f) => ({ ...f, files: listed(f.dir) }));
     const problems: StoreProblem[] = [];
     const tables: Tables = new Map();
-    const read = (schema: SchemaDescription, file: string) => {
+    const read = (schema: SchemaDescription, folder: (typeof folders)[number], file: string) => {
       const name = file.slice(0, -'.jsonl'.length);
       const table = schema.tables[name];
-      const display = path.join(path.basename(this.dataDir), file);
+      const display = `${folder.display}/${file}`;
       if (!table?.stored) {
         problems.push({ rule: 'unknown-table', file: display, line: 1, message: `${file} names no stored table; data files are named <table>.jsonl` });
         return;
       }
-      const rows = new Map<string, Row>();
-      const lines = readFileSync(path.join(this.dataDir, file), 'utf8').split('\n');
+      // A table's rows from both folders share one map, so a key given in both is a duplicate.
+      const rows = tables.get(name) ?? new Map<string, Row>();
+      const lines = readFileSync(path.join(folder.dir, file), 'utf8').split('\n');
       if (lines.at(-1) === '') lines.pop();
       lines.forEach((text, index) => {
         const line = index + 1;
@@ -243,21 +270,23 @@ export class Store {
         const key = rowKey(table, result.row);
         const earlier = rows.get(key);
         if (earlier) {
-          const at = this.origins.get(earlier) as { line: number };
-          problems.push({ rule: 'primary-key', file: display, line, table: name, key: describeKey(table, result.row), message: `${name} ${describeKey(table, result.row)} is already on line ${at.line}` });
+          const at = this.origins.get(earlier) as { file: string; line: number };
+          const where = at.file === display ? `line ${at.line}` : `${at.file}:${at.line}`;
+          problems.push({ rule: 'primary-key', file: display, line, table: name, key: describeKey(table, result.row), message: `${name} ${describeKey(table, result.row)} is already on ${where}` });
           return;
         }
         rows.set(key, result.row);
         this.origins.set(result.row, { file: display, line });
+        if (folder.builtIn) this.builtIn.add(result.row);
       });
       tables.set(name, rows);
     };
 
-    const declarationFiles = files.filter((f) => (DECLARATION_TABLES as readonly string[]).includes(f.slice(0, -'.jsonl'.length)));
-    for (const file of declarationFiles) read(this.baseSchema, file);
+    const isDeclaration = (file: string) => (DECLARATION_TABLES as readonly string[]).includes(file.slice(0, -'.jsonl'.length));
+    for (const folder of folders) for (const file of folder.files.filter(isDeclaration)) read(this.baseSchema, folder, file);
     if (problems.length) throw new StoreError(problems);
     const { schemaDb, schema } = await this.buildSchema(tables, this.origins);
-    for (const file of files.filter((f) => !declarationFiles.includes(f))) read(schema, file);
+    for (const folder of folders) for (const file of folder.files.filter((f) => !isDeclaration(f))) read(schema, folder, file);
     if (problems.length) throw new StoreError(problems);
 
     const dataDb = await this.buildData(schemaDb, schema, tables, this.origins);
@@ -293,7 +322,10 @@ export class Store {
           await builder.run(`ATTACH ':memory:' AS ${sqlName(name)}`);
           await builder.run(`COPY FROM DATABASE ${BASE_DB} TO ${sqlName(name)}`);
           await builder.run(`USE ${sqlName(name)}`);
-          await builder.run(sql);
+          // A declaration DuckDB refuses (a pair Lathe already allows, a folder that does not exist) is a refusal.
+          await builder.run(sql).catch((error: Error) => {
+            throw new StoreError([{ rule: 'product-kind', message: `the product's kinds and relations cannot be added: ${error.message.split('\n')[0]}` }]);
+          });
           await builder.run(storeViewsSql(await describeSchema(builder)));
           return { schemaDb: name, schema: await describeSchema(builder) };
         } finally {
@@ -587,11 +619,13 @@ export class Store {
         const result = normalizeRow(table, command.row);
         if ('problem' in result) fail(result.problem.includes('is required') ? 'required' : 'column', result.problem);
         const row = (result as { row: Row }).row;
-        if (draft.get(table.name)?.has(rowKey(table, row))) fail('primary-key', `${table.name} ${describeKey(table, row)} already exists`);
+        const twin = draft.get(table.name)?.get(rowKey(table, row));
+        if (twin) fail('primary-key', `${table.name} ${describeKey(table, row)} already exists${this.builtIn.has(twin) ? ` as one of Lathe's own (lathe/data/${table.name}.jsonl)` : ''}`);
         place(table.name, row);
       } else if (command.op === 'set') {
         const table = this.tableOf(command.table, schema);
         const current = this.find(draft, table, command.key) ?? fail('missing', `there is no ${table.name} ${keyText(command.key)}`);
+        if (this.builtIn.has(current)) fail('built-in', `${table.name} ${describeKey(table, current)} is Lathe's own (lathe/data/${table.name}.jsonl), so it cannot change`);
         const parentColumns = new Set(schema.kinds[table.name]?.parents.map((p) => p.column) ?? []);
         const next: Record<string, unknown> = { ...current };
         for (const [column, value] of Object.entries(command.changes)) {
@@ -620,6 +654,7 @@ export class Store {
       } else if (command.op === 'remove') {
         const table = this.tableOf(command.table, schema);
         const row = this.find(draft, table, command.key) ?? fail('missing', `there is no ${table.name} ${keyText(command.key)}`);
+        if (this.builtIn.has(row)) fail('built-in', `${table.name} ${describeKey(table, row)} is Lathe's own (lathe/data/${table.name}.jsonl), so it cannot be removed`);
         const removed = this.removalSet(schema, draft, table, row);
         const referrers = this.referrers(schema, draft, removed);
         if (referrers.length) {
@@ -812,7 +847,7 @@ export class Store {
     const written: string[] = [];
     for (const name of changed) {
       const file = path.join(this.dataDir, `${name}.jsonl`);
-      const rows = [...(this.tables.get(name)?.values() ?? [])];
+      const rows = [...(this.tables.get(name)?.values() ?? [])].filter((row) => !this.builtIn.has(row));
       const table = this.currentSchema.tables[name];
       if (!rows.length || !table) {
         if (existsSync(file)) {

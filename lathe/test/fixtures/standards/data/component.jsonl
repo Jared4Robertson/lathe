@@ -1,0 +1,2 @@
+{"id":"STX-D-C01","title":"Loan service","domain_id":"STX-D","component_type":"service","file":"src/loan.ts","description":"Opens loans."}
+{"id":"STX-D-C02","title":"Loan log","domain_id":"STX-D","component_type":"service","file":"src/log.ts","description":"Logs each loan, as STX-STD-CODE-R03 asks."}

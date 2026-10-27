@@ -1,20 +1,21 @@
 // LA-PLT-T08: the engine's performance budgets (LA-PLT-DR02), measured: `npm --prefix lathe run test:perf`.
 //
-// - Loading Lathe's own spec (a cold load: every file parsed) takes under 2 s.
-// - A live reload after one record file changes takes under 500 ms.
-// It also measures, without a budget, a synthetic product of about 10,000 records (Lathe's spec
-// copied six times under other ID prefixes, in a temporary folder), and the format reference.
+// - Loading Lathe's own spec (a cold load: the data files read and loaded with every key and rule, then checked)
+//   takes under 2 s.
+// - A live reload after one row changes takes under 500 ms.
+// It also measures, without a budget, a synthetic product of about 10,000 records (Lathe's data copied six times
+// under other ID prefixes, in a temporary folder), and the reference.
 //
-// Timings mean nothing on a machine that is busy with other work, so when the one-minute load
-// average is above PERF_MAX_LOAD (12 by default) it still measures and prints, but judges nothing
-// and exits 3 ("not run: machine busy"). A budget is never loosened to make a busy run pass.
-// Prints one line per measurement, with the load's phases, and exits 1 when a budget is missed.
+// Timings mean nothing on a machine that is busy with other work, so when the one-minute load average is above
+// PERF_MAX_LOAD (12 by default) it still measures and prints, but judges nothing and exits 3 ("not run: machine
+// busy"). A budget is never loosened to make a busy run pass. Prints one line per measurement, with the load's
+// phases, and exits 1 when a budget is missed.
 
-import { cpSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync, existsSync, statSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { loadavg, tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { clearParseCache, formatReference, loadWorkspace, type LoadTimings } from '../src/index.ts';
+import { buildReference, loadWorkspace, openStore, sortRows, tableText, type LoadTimings, type Row } from '../src/index.ts';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repo = path.resolve(here, '../..');
@@ -24,81 +25,66 @@ const MAX_LOAD = Number(process.env.PERF_MAX_LOAD ?? 12);
 const RUNS = 5;
 
 const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)];
-const phases = (t: Partial<LoadTimings>) =>
-  (['parse', 'files', 'load', 'checks', 'coverage'] as const).map((p) => `${p} ${Math.round(t[p] ?? 0)}`).join(', ');
+const phases = (t: Partial<LoadTimings>) => (['open', 'files', 'checks', 'coverage'] as const).map((p) => `${p} ${Math.round(t[p] ?? 0)}`).join(', ');
 
-/** A copy of the repo's specs, checks and config in a temporary folder; the code folders are linked, so tests' run_by files resolve. */
+/** A copy of the repo's data and config in a temporary folder; the code folders are linked, so tests' files resolve. */
 function copyOfRepo(): string {
   const root = mkdtempSync(path.join(tmpdir(), 'lathe-perf-'));
   for (const name of readdirSync(repo)) {
     if (name.startsWith('.') || name === 'node_modules') continue;
     const from = path.join(repo, name);
-    if (['specs', 'lathe-checks', 'lathe.config.json', 'model'].includes(name)) cpSync(from, path.join(root, name), { recursive: true });
+    if (['data', 'lathe.config.json'].includes(name)) cpSync(from, path.join(root, name), { recursive: true });
     else symlinkSync(from, path.join(root, name));
   }
   return root;
 }
 
-/** Lathe's spec six times over, under the prefixes LB to LG: about 10,000 records. */
-function syntheticProduct(): { root: string; records: number } {
+/** Lathe's data six times over, under the prefixes LB to LG: about 10,000 records. Its own checks are left out. */
+async function syntheticProduct(): Promise<{ root: string }> {
   const root = mkdtempSync(path.join(tmpdir(), 'lathe-perf-10k-'));
-  const source = path.join(repo, 'specs/lathe');
-  let records = 0;
-  for (const prefix of ['LB', 'LC', 'LD', 'LE', 'LF', 'LG']) {
-    const walk = (dir: string, rel: string) => {
-      for (const entry of readdirSync(dir, { withFileTypes: true })) {
-        const from = path.join(dir, entry.name);
-        const to = path.join(root, 'specs', prefix, rel, entry.name);
-        if (entry.isDirectory()) { walk(from, path.join(rel, entry.name)); continue; }
-        if (!entry.name.endsWith('.md')) continue;
-        const text = readFileSync(from, 'utf8').replace(/(?<![A-Za-z0-9])LA(?![a-z0-9])/g, prefix);
-        mkdirSync(path.dirname(to), { recursive: true });
-        writeFileSync(to, text);
-        if (entry.name !== 'README.md') records++;
-      }
-    };
-    walk(source, '');
+  const source = path.join(repo, 'data');
+  const schemaStore = await openStore(root, { dataDir: path.join(root, 'none'), latheDataDir: null });
+  const schema = schemaStore.schema;
+  await schemaStore.close();
+  mkdirSync(path.join(root, 'data'));
+  for (const file of readdirSync(source).filter((f) => f.endsWith('.jsonl') && f !== 'check.jsonl')) {
+    const table = schema.tables[file.slice(0, -'.jsonl'.length)];
+    const text = readFileSync(path.join(source, file), 'utf8');
+    const rows: Row[] = [];
+    for (const prefix of ['LB', 'LC', 'LD', 'LE', 'LF', 'LG']) {
+      const copied = text.replace(/(?<![A-Za-z0-9])LA(?![a-z0-9])/g, prefix);
+      for (const line of copied.split('\n').filter(Boolean)) rows.push(JSON.parse(line));
+    }
+    writeFileSync(path.join(root, 'data', file), tableText(table, sortRows(table, rows)));
   }
-  // The code folders are linked, so a test's run_by file resolves as it does in this repo.
+  // The code folders are linked, so a test's file resolves as it does in this repo.
   for (const name of ['app', 'lathe', 'desktop', 'examples', 'plugin']) if (existsSync(path.join(repo, name))) symlinkSync(path.join(repo, name), path.join(root, name));
-  writeFileSync(path.join(root, 'lathe.config.json'), JSON.stringify({ specs: 'specs' }));
-  return { root, records };
+  return { root };
 }
 
-async function timedLoad(root: string, cold: boolean) {
-  if (cold) clearParseCache();
+async function timedLoad(root: string) {
   const timings: Partial<LoadTimings> = {};
   const start = performance.now();
   const workspace = await loadWorkspace(root, { timings });
   return { ms: performance.now() - start, timings, records: workspace.records.length };
 }
 
-/** Changes one record file (a word added to its body, so its size and time change) and reloads; the median of RUNS. */
-async function reload(root: string, file: string) {
-  await timedLoad(root, true);
+/** Changes one row through the store (its title, so the data file changes) and reloads; the median of RUNS. */
+async function reload(root: string) {
+  const store = await openStore(root);
+  const [first] = store.rows('use_case');
+  await store.close();
   const times: number[] = [];
   let last: Partial<LoadTimings> = {};
-  const original = readFileSync(file, 'utf8');
-  try {
-    for (let i = 0; i < RUNS; i++) {
-      writeFileSync(file, `${original}\nChanged ${i}.\n`);
-      const r = await timedLoad(root, false);
-      times.push(r.ms);
-      last = r.timings;
-    }
-  } finally {
-    writeFileSync(file, original);
+  for (let i = 0; i < RUNS; i++) {
+    const writer = await openStore(root);
+    await writer.set('use_case', String(first.id), { title: `${first.title} ${i}` });
+    await writer.close();
+    const r = await timedLoad(root);
+    times.push(r.ms);
+    last = r.timings;
   }
   return { ms: median(times), timings: last };
-}
-
-function firstRecord(dir: string): string {
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    const p = path.join(dir, entry.name);
-    if (entry.isDirectory()) { const found = firstRecord(p); if (found) return found; }
-    else if (entry.name.endsWith('.md') && entry.name !== 'README.md' && statSync(p).isFile()) return p;
-  }
-  return '';
 }
 
 const before = loadavg()[0];
@@ -112,20 +98,20 @@ const judge = (name: string, ms: number, budget: number | null, detail: string) 
 };
 
 const lathe = copyOfRepo();
-const big = syntheticProduct();
+const big = await syntheticProduct();
 try {
   const colds = [];
-  for (let i = 0; i < 3; i++) colds.push(await timedLoad(lathe, true));
+  for (let i = 0; i < 3; i++) colds.push(await timedLoad(lathe));
   const cold = colds.sort((a, b) => a.ms - b.ms)[1];
   judge(`Lathe's spec, cold load (${cold.records})`, cold.ms, ENGINE_BUDGETS.loadMs, phases(cold.timings));
-  const live = await reload(lathe, firstRecord(path.join(lathe, 'specs/lathe')));
-  judge('Lathe\'s spec, live reload', live.ms, ENGINE_BUDGETS.reloadMs, `${phases(live.timings)}; ${live.timings.parsed} file parsed`);
+  const live = await reload(lathe);
+  judge("Lathe's spec, live reload", live.ms, ENGINE_BUDGETS.reloadMs, phases(live.timings));
   const refs: number[] = [];
-  for (let i = 0; i < RUNS; i++) { const t = performance.now(); await formatReference(lathe); refs.push(performance.now() - t); }
-  judge('Format reference (first, then cached)', refs[0], null, `cached ${median(refs.slice(1)).toFixed(1)} ms`);
-  const bigCold = await timedLoad(big.root, true);
+  for (let i = 0; i < RUNS; i++) { const t = performance.now(); await buildReference(lathe); refs.push(performance.now() - t); }
+  judge('Reference (first, then cached)', refs[0], null, `cached ${median(refs.slice(1)).toFixed(1)} ms`);
+  const bigCold = await timedLoad(big.root);
   judge(`Synthetic product, cold load (${bigCold.records})`, bigCold.ms, null, phases(bigCold.timings));
-  const bigLive = await reload(big.root, firstRecord(path.join(big.root, 'specs')));
+  const bigLive = await reload(big.root);
   judge('Synthetic product, live reload', bigLive.ms, null, phases(bigLive.timings));
 } finally {
   rmSync(lathe, { recursive: true, force: true });

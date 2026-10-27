@@ -1,9 +1,0 @@
----
-id: LA-EXP-DR62
-kind: domain_rule
-title: "The Nested map holds each box's children inside it, every box a square"
-parent: LA-EXP-A4
----
-In the Nested view the graph MUST lay out the same tree as the Tree view (`LA-EXP-DR45`), its product's alone with the product as its single root and nothing of another product, once per load of the specs, as nested squares, top-down from the product's fixed square by `LA-EXP-DR58`'s rule: siblings are the same size, with the same text. A parent's room under its header band, inside its padding, MUST hold its children as a grid of equal squares in the tree's order, row by row, a gap apart, with the column count that makes the squares largest; room the grid leaves is blank. The padding and the gaps are shares of the box's side (8 and 6 at its side's text scale), so the layout is the same at any size. Siblings share one text scale, their side over 400 map units or the largest below it at which every sibling's whole label fits: a leaf's centered in its square, a parent's in a header band at most a quarter of its square. Siblings share one header band too, as tall as the tallest of their labels at that scale. Record counts size nothing.
-
-A box with children MUST show its label in its header band at its top and hold its children below it, so no two siblings overlap and no child leaves its parent. A label's kind and ID line and its title each wrap on whole words, never inside one, and nothing is clipped: a leaf's label is centered in it, a parent's sits at the top left of its header band. Every drawn box shows its label (`LA-EXP-DR60`). A domain is a square there, with a small hexagon mark in its header (`LA-EXP-DR61` holds in the Tree view). The focus never changes the map, and filters hide boxes without moving the rest. No parent lines are drawn: holding is the parent link.

@@ -1,0 +1,6 @@
+{"id":"OW-A-T01","title":"An automated test with no state","domain_id":"OW-A","test_type":"unit","state":"automated","file":"code/a.test.txt","then":"Text."}
+{"id":"OW-A-T02","title":"A test marked automated","domain_id":"OW-A","test_type":"unit","state":"automated","file":"code/a.test.txt","then":"Text."}
+{"id":"OW-A-T03","title":"A manual test","domain_id":"OW-A","test_type":"manual","state":"manual","then":"Open the page and check the tool is lent."}
+{"id":"OW-A-T04","title":"A planned test beside the proof","domain_id":"OW-A","test_type":"acceptance","state":"planned","then":"Not written yet."}
+{"id":"OW-A-T05","title":"A second planned test","domain_id":"OW-A","test_type":"unit","state":"planned","then":"Not written yet."}
+{"id":"OW-B-T01","title":"An automated test in B","domain_id":"OW-B","test_type":"unit","state":"automated","file":"code/b.test.txt","then":"Text."}

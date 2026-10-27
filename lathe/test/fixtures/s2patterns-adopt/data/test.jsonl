@@ -1,0 +1,4 @@
+{"id":"SX-A-T01","title":"Test SX-A-T01","domain_id":"SX-A","test_type":"acceptance","state":"automated","file":"code/sx-a-t01.test.txt","then":"Text."}
+{"id":"SX-B-T01","title":"Test SX-B-T01","domain_id":"SX-B","test_type":"acceptance","state":"automated","file":"code/sx-b-t01.test.txt","then":"Text."}
+{"id":"SX-C-T01","title":"Test SX-C-T01","domain_id":"SX-C","test_type":"acceptance","state":"automated","file":"code/sx-c-t01.test.txt","then":"Text."}
+{"id":"SX-E-T01","title":"Test SX-E-T01","domain_id":"SX-E","test_type":"acceptance","state":"planned","then":"Text."}

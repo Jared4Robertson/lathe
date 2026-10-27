@@ -1,23 +1,26 @@
-// The shape the Lathe engine returns from loadWorkspace(root) and the web app reads from GET /api/spec.
-// This file is the contract between the engine and the app: add fields if needed, never rename or remove.
+// The shape the Lathe engine returns from loadWorkspace(root) and the web app reads from GET /api/spec: the typed
+// records of the product's data/ folder, read through the store, with the problems the checks found and coverage.
+import type { Row } from './store/rows.ts';
 
 export interface Kind {
   kind: string;
   label: string;
   /** 'define', 'design', or '' for structural kinds (product, domain, question). */
   stage: string;
-  /** The folder the kind sits in within its stage, from meta/sections.csv ('' for none), as S2 lays out its specs. */
+  /** The folder the kind sits in within its stage ('' for none), from the schema's meta_section. */
   section: string;
+  /** The kinds its records may sit under, nearest first. */
   parent_kinds: string[];
+  /** The columns every record of the kind must give, besides its id, title and parent columns. */
   required_fields: string[];
   /** An obligation must be designed (satisfied), built and proved; coverage counts every obligation kind. */
   obligation: boolean;
-  /** An obligation that needs proof only (kinds.csv obligation value `proof`): designed and built are not asked of it. */
+  /** An obligation that needs proof only (obligation `proof` in the schema): designed and built are not asked of it. */
   proof_only: boolean;
   description: string;
 }
 
-/** A folder within a stage (or 'shared' at product level), from meta/sections.csv, in display order. */
+/** A folder within a stage (or 'shared' at product level), from the schema's meta_section, in display order. */
 export interface SectionRule {
   section: string;
   /** 'define', 'design', or '' for product-level folders such as Shared. */
@@ -27,6 +30,7 @@ export interface SectionRule {
   description: string;
 }
 
+/** One pair of kinds a relation may link. */
 export interface RelationRule {
   relation: string;
   source_kind: string;
@@ -45,29 +49,16 @@ export interface SpecRecord {
   id: string;
   kind: string;
   title: string;
+  /** The record it sits under: the first of its kind's parent columns that holds a value; null for a product. */
   parent: string | null;
   /** The ID of the product this record sits under (itself for a product). */
   product: string | null;
   /** The ID of the domain this record sits under (itself for a domain), or null above domain level. */
   domain: string | null;
-  /** Every other plain header field, such as actor, method, route, run_by, file. */
-  fields: Record<string, string>;
-  /** The Markdown body. */
-  body: string;
-  /** The file path relative to the repo root. */
-  path: string;
-  /** IDs of existing records of the same product (or of none) that this record's body cites in its prose, in order of first mention. */
-  mentions: string[];
-  /** An entity or domain event's fields, from the Fields table in its body (FORMAT section 16); absent for other kinds. */
-  entityFields?: EntityField[];
-}
-
-/** One row of an entity or domain event's Fields table. */
-export interface EntityField {
-  field: string;
-  meaning: string;
-  kind: string;
-  example: string;
+  /** The record's typed columns besides id and title, as stored, parent columns included: a requirement's statement, a test's given, when and then. */
+  fields: Row;
+  /** The rows of the part tables the record owns, by table, in key order: an entity's entity_field rows, a use case's use_case_step rows. */
+  parts: Record<string, Row[]>;
 }
 
 export interface SpecLink {
@@ -78,7 +69,7 @@ export interface SpecLink {
 
 export interface Problem {
   severity: 'error' | 'warning';
-  /** The check's name, from its SQL file name, e.g. 'unknown-kind'. */
+  /** The check's name, its row's `name` in the check table, e.g. 'unproved'. */
   check: string;
   /** The record the problem is about, or null for workspace-level problems. */
   record: string | null;
@@ -118,16 +109,16 @@ export interface TestCounts {
 
 export interface Coverage {
   domain: string;
-  /** Every obligation kind in the meta-model, in meta-model order, including requirement and domain_rule. */
+  /** Every obligation kind in the schema, in schema order, including requirement and domain_rule. */
   obligations: ObligationCoverage[];
-  /** The domain's tests by state (a test with no state is automated). */
+  /** The domain's tests by state. */
   tests: TestCounts;
   gaps: CoverageGap[];
 }
 
 export interface Workspace {
   kinds: Kind[];
-  /** The folders kinds sit in (meta/sections.csv), in stage then order. */
+  /** The folders kinds sit in, in stage then order. */
   sections: SectionRule[];
   relations: RelationRule[];
   records: SpecRecord[];

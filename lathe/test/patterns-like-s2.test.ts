@@ -1,15 +1,14 @@
 // Patterns used as S2 uses them: adopted per domain, with or without settings, their rules needing proof
 // only, and carried out by interaction requirements and flow steps (brief 32, third S2 trial N2-N6).
-// Fixtures: s2patterns-adopt (domains SX-A to SX-E), s2patterns-flows (SF-A) and s2patterns-design (an
-// extension that makes pattern rules full obligations again, and adds proof-only and non-obligation kinds).
+// Fixtures: s2patterns-adopt (domains SX-A to SX-E), s2patterns-flows (SF-A) and s2patterns-design (a product
+// that declares a proof-only kind and a kind that is not an obligation).
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { loadWorkspace, type Workspace } from '../src/index.ts';
+import { everyKind, load, ofCheck, refusals, removeData } from './helpers.ts';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const fixture = (name: string) => path.join(HERE, 'fixtures', name);
-const ofCheck = (ws: Workspace, check: string) => ws.problems.filter((p) => p.check === check);
 const coverageOf = (ws: Workspace, domain: string) => ws.coverage.find((c) => c.domain === domain);
 const line = (ws: Workspace, domain: string, kind = 'pattern_rule') => coverageOf(ws, domain)?.obligations.find((o) => o.kind === kind);
 const gaps = (ws: Workspace, domain: string) => coverageOf(ws, domain)?.gaps.filter((g) => g.kind === 'pattern_rule');
@@ -19,16 +18,17 @@ let adopt: Workspace;
 let flows: Workspace;
 let design: Workspace;
 beforeAll(async () => {
-  [adopt, flows, design] = await Promise.all(['s2patterns-adopt', 's2patterns-flows', 's2patterns-design'].map((f) => loadWorkspace(fixture(f))));
+  [adopt, flows, design] = await Promise.all(['s2patterns-adopt', 's2patterns-flows', 's2patterns-design'].map(load));
 });
+afterAll(removeData);
 
-describe('obligation values in kinds.csv', () => {
-  it('LA-AUT-T56 An obligation value is yes or true, proof (proof only) or anything else (not an obligation)', () => {
+describe('obligation values in the schema', () => {
+  it('LA-AUT-T56 A kind\'s obligation is full, proof (proof only) or none (not an obligation)', () => {
     expect(kindOf(adopt, 'pattern_rule')).toMatchObject({ obligation: true, proof_only: true });
     expect(kindOf(adopt, 'requirement')).toMatchObject({ obligation: true, proof_only: false });
     expect(kindOf(adopt, 'pattern')).toMatchObject({ obligation: false, proof_only: false, required_fields: [] });
-    // The extension widens pattern_rule back to yes, adds control as "Proof" and memo as "maybe".
-    expect(kindOf(design, 'pattern_rule')).toMatchObject({ obligation: true, proof_only: false });
+    // The product declares control with obligation proof and memo with none; Lathe's pattern_rule stays proof only.
+    expect(kindOf(design, 'pattern_rule')).toMatchObject({ obligation: true, proof_only: true });
     expect(kindOf(design, 'control')).toMatchObject({ obligation: true, proof_only: true });
     expect(kindOf(design, 'memo')).toMatchObject({ obligation: false, proof_only: false });
     for (const ws of [adopt, flows, design]) expect(ws.problems.filter((p) => p.severity === 'error')).toEqual([]);
@@ -36,8 +36,8 @@ describe('obligation values in kinds.csv', () => {
 });
 
 describe('a domain that follows a pattern', () => {
-  it('LA-TRC-T51 A domain that follows a pattern itself owes every one of its rules, even where its use cases say Not applicable', () => {
-    // SX-B follows Staff action itself; its one use case marks audit Not applicable, yet R02 (setting audit) is owed.
+  it('LA-TRC-T51 A domain that follows a pattern itself owes every one of its rules, even where its use cases say not applicable', () => {
+    // SX-B follows Staff action itself; its one use case marks audit not applicable, yet R02 (setting audit) is owed.
     expect(line(adopt, 'SX-B')).toMatchObject({ total: 2, proved: 1 });
     expect(gaps(adopt, 'SX-B')).toEqual([{ id: 'SX-PAT-ACT-R02', kind: 'pattern_rule', missing: 'proves' }]);
     expect(ofCheck(adopt, 'unproved').map((p) => p.message)).toContain(
@@ -51,7 +51,7 @@ describe('a domain that follows a pattern', () => {
     expect(gaps(adopt, 'SX-A')).toEqual([]);
   });
 
-  it('LA-TRC-T53 Not applicable still works through use-case settings when the domain follows only through its use cases', () => {
+  it('LA-TRC-T53 Not applicable still works through use-case setting values when the domain follows only through its use cases', () => {
     expect(line(adopt, 'SX-C')).toMatchObject({ total: 1, proved: 1 });
     expect(gaps(adopt, 'SX-C')).toEqual([]);
     expect(adopt.problems.filter((p) => p.message.includes('SX-C') && p.record?.startsWith('SX-PAT'))).toEqual([]);
@@ -65,10 +65,8 @@ describe('a domain that follows a pattern', () => {
 
 describe('patterns without settings', () => {
   it('LA-TRC-T55 A pattern may have no settings; its rules apply wherever it is followed and nothing asks for settings', () => {
-    expect(adopt.records.find((r) => r.id === 'SX-PAT-API')?.fields.settings).toBeUndefined();
-    expect(ofCheck(adopt, 'missing-required-field')).toEqual([]);
+    expect(adopt.records.find((r) => r.id === 'SX-PAT-API')?.parts.pattern_setting).toBeUndefined();
     expect(ofCheck(adopt, 'pattern-setting-missing')).toEqual([]);
-    expect(ofCheck(adopt, 'bad-pattern-settings')).toEqual([]);
     // SX-E's use case follows API conventions and gives no fields; both rules are owed there.
     expect(line(adopt, 'SX-E')?.total).toBe(2);
   });
@@ -97,14 +95,15 @@ describe('proof-only obligations', () => {
     ]);
   });
 
-  it('LA-TRC-T58 A product that makes pattern rules full obligations again has them designed per domain, a domain that follows itself included', () => {
-    expect(line(design, 'SD-A')).toMatchObject({ total: 2, designed: 1, built: 1, proved: 2 });
-    expect(line(design, 'SD-B')).toMatchObject({ total: 2, designed: 0, built: 0, proved: 2 });
-    expect(ofCheck(design, 'unsatisfied').map((p) => [p.record, p.message.match(/ in (SD-[AB])/)?.[1]])).toEqual([
-      ['SD-PAT-R01', 'SD-B'],
-      ['SD-PAT-R02', 'SD-A'],
-      ['SD-PAT-R02', 'SD-B'],
-    ]);
+  it('LA-TRC-T58 A product cannot make pattern rules full obligations again: pattern_rule is Lathe\'s kind, so it is never widened', async () => {
+    // Widening a kind of Lathe's is a migration, not a declaration: a product kind may not take a table name Lathe has.
+    const data = everyKind();
+    const widened = { ...data, product_kind: [{ ...data.product_kind[0], name: 'pattern_rule', parent_kind: 'pattern' }], product_kind_field: [], product_relation: [], invariant: [], enforces: [], proves: data.proves.filter((l) => l.target_id !== 'TL-LEND-INV01') };
+    expect(await refusals(widened)).toEqual([expect.objectContaining({ rule: 'product-kind', message: expect.stringContaining('pattern_rule has the name of a table Lathe already has') })]);
+    // So a pattern rule asks for proof alone in every domain that owes it, and is never unsatisfied.
+    expect(line(design, 'SD-A')).toMatchObject({ total: 2, designed: 2, built: 2, proved: 2 });
+    expect(line(design, 'SD-B')).toMatchObject({ total: 2, designed: 2, built: 2, proved: 2 });
+    expect(ofCheck(design, 'unsatisfied')).toEqual([]);
     expect(ofCheck(design, 'unproved')).toEqual([]);
   });
 
@@ -125,7 +124,8 @@ describe('pattern rules as targets of interaction requirements and flow steps', 
   it('LA-TRC-T61 An interaction requirement and a flow step may fulfill a pattern rule', () => {
     const rules = flows.relations.filter((r) => r.relation === 'fulfills' && r.target_kind === 'pattern_rule').map((r) => r.source_kind).sort();
     expect(rules).toEqual(['flow_step', 'interaction_requirement']);
-    expect(ofCheck(flows, 'relation-not-allowed')).toEqual([]);
+    expect(ofCheck(flows, 'data-refused')).toEqual([]);
+    expect(flows.links.filter((l) => l.relation === 'fulfills' && l.target.startsWith('SF-PAT')).length).toBeGreaterThan(0);
     expect(ofCheck(flows, 'interaction-requirement-fulfills-nothing')).toEqual([]);
   });
 
@@ -148,7 +148,7 @@ describe('pattern rules as targets of interaction requirements and flow steps', 
 
 describe("the Tool Library's pattern", () => {
   it('LA-TRC-T64 The Tool Library still reads sensibly: its proof-only pattern rules are proved, with nothing asked for design', async () => {
-    const repo = await loadWorkspace(path.resolve(HERE, '..', '..'));
+    const repo = await loadWorkspace(path.resolve(HERE, '..', '..', 'examples', 'tool-library'));
     expect(line(repo, 'TL-LEND')).toMatchObject({ total: 3, designed: 3, built: 3, proved: 3, planned: 0 });
     expect(repo.problems.filter((p) => p.record?.startsWith('TL-PAT'))).toEqual([]);
   });

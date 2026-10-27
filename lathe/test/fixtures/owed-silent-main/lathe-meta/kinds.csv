@@ -1,3 +1,0 @@
-kind,label,stage,parent_kinds,required_fields,obligation,description
-pattern_rule,,,,,yes,
-domain_rule,,,product,,,
