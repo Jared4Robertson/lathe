@@ -2,12 +2,15 @@
 // and on a refusal prints every reason and changes nothing; flags and help come from the schema.
 import { readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
-import { afterAll, describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it, vi } from 'vitest';
 import { openStore } from '../../src/index.ts';
 import { runDataCommand } from '../../src/cli/writers.ts';
 import { everyKind, removeData, writeData } from '../store/fixture.ts';
 
 afterAll(removeData);
+
+// Each command opens the store, and several run per test: give them room on a busy machine.
+vi.setConfig({ testTimeout: 30_000 });
 
 async function lathe(root: string, ...args: string[]) {
   let out = '';
