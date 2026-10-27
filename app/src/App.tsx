@@ -4,6 +4,7 @@ import { navigate, useLocation } from './router';
 import { formatPath, parseSpecRoute, useSpec, type SpecState } from './specs/data';
 import { SpecView } from './specs/SpecPages';
 import { FormatPages, isFormatRoute } from './format/FormatPages';
+import { postWrite, WriterProvider, type Writer } from './edit/write';
 import { CommandsProvider, useAnnounce, useCommand } from './shell/commands';
 import { SPACE_KEYS, spaceCommandId } from './shell/keymap';
 import { Nav } from './shell/Nav';
@@ -40,6 +41,15 @@ const NAV_WIDTH = { key: 'lathe:nav-width', fallback: 304, min: 256, max: 560, c
 function Shell() {
   const { path, search } = useLocation();
   const spec = useSpec();
+  const { reload } = spec;
+  // Writes go through the server's command layer; the data is read again after one goes through.
+  const writer = useMemo<Writer>(() => ({
+    write: async (commands) => {
+      const answer = await postWrite(commands);
+      if (answer.ok) await reload();
+      return answer;
+    },
+  }), [reload]);
   const specRoute = parseSpecRoute(path, spec.index);
   const isAppearance = path === APPEARANCE_PATH;
   const announce = useAnnounce();
@@ -126,6 +136,7 @@ function Shell() {
   }
 
   return (
+    <WriterProvider value={writer}>
     <SpacesProvider value={spaces}>
     <SpaceCommands spaces={spaces} />
     <DesktopTitleBar index={spaces.index} />
@@ -178,6 +189,7 @@ function Shell() {
       {page}
     </div>
     </SpacesProvider>
+    </WriterProvider>
   );
 }
 
