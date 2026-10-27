@@ -260,3 +260,4 @@ Lathe now matches S2 on UC requirements (206/206) and domain rules (98/98) acros
 - Briefs 99 (import), 100 (engine), 101 (writers) and 102 (app) are written. They run in parallel once 98 merges into `db-first`.
 - Then Lathe's own spec is updated through the command layer, `specs/` is deleted, the full checks run once, and `db-first` merges into main.
 - Brief 97 (remove fitness) is running on main; `db-first` takes it in before the import starts.
+- The owner approved pushing main to origin once the db-first build is complete and merged.
