@@ -1,6 +1,8 @@
 // The catalog: adds tools, lists them with their status, and records damage and repair.
 // Spec: the command handlers TL-LEND-CMD02-H, CMD03-H and CMD04-H and the query handler TL-LEND-QRY01-H
 // (examples/tool-library/data/).
+// Each command handler publishes its event once its write has committed.
+import type { EventDispatcher } from './events.ts';
 import { LendingError, needsRepair, parseName, parseNote, toolStatus, type CatalogEntry, type Clock, type Tool } from './model.ts';
 import type { Store } from './store.ts';
 
@@ -12,10 +14,12 @@ export interface AddToolInput {
 export class ToolService {
   private readonly store: Store;
   private readonly now: Clock;
+  private readonly events: EventDispatcher;
 
-  constructor(store: Store, now: Clock) {
+  constructor(store: Store, now: Clock, events: EventDispatcher) {
     this.store = store;
     this.now = now;
+    this.events = events;
   }
 
   /** TL-LEND-CMD02-H: add a tool to the catalog. */
@@ -27,6 +31,8 @@ export class ToolService {
     const description = typeof input.description === 'string' ? input.description.trim() : '';
     // TL-LEND-UC02-R02: a new tool starts in good condition, so it is available.
     const tool = this.store.insertTool(name, description, this.now().toISOString());
+    // TL-LEND-EV02
+    this.events.publish({ type: 'ToolAdded', toolId: tool.id, name: tool.name, description: tool.description, addedAt: tool.addedAt });
     return this.entry(tool);
   }
 
@@ -41,23 +47,35 @@ export class ToolService {
 
   /**
    * TL-LEND-CMD03-H: mark a tool as needing repair, with a note (TL-VO04-C01).
-   * An active loan on the tool is left as it is (TL-LEND-UC05-R03).
+   * An active loan on the tool is left as it is (TL-LEND-UC05-R03). The librarian's endpoint and
+   * the event handler TL-LEND-PO01-H both invoke it.
    */
   reportDamage(id: number, note: unknown): CatalogEntry {
     // TL-PAT-LIBRARIAN-ACTION-R01: a missing note is refused before anything is saved.
     const text = parseNote(note);
     if (!text) throw new LendingError(400, 'invalid_request', 'Describe the damage in a note.');
-    this.require(id);
-    return this.entry(this.store.setToolCondition(id, 'needs_repair', text));
+    const reportedAt = this.now().toISOString();
+    const tool = this.store.transaction(() => {
+      this.require(id);
+      return this.store.setToolCondition(id, 'needs_repair', text);
+    });
+    // TL-LEND-EV03
+    this.events.publish({ type: 'DamageReported', toolId: id, note: text, reportedAt });
+    return this.entry(tool);
   }
 
   /** TL-LEND-CMD04-H: mark a damaged tool repaired, which returns it to lending; it must need repair (TL-LEND-SP04). */
   markRepaired(id: number): CatalogEntry {
-    const tool = this.require(id);
-    if (!needsRepair(tool)) {
-      throw new LendingError(409, 'tool_not_damaged', `Tool ${id} is not marked as needing repair.`);
-    }
-    return this.entry(this.store.setToolCondition(id, 'good', null));
+    const repairedAt = this.now().toISOString();
+    const tool = this.store.transaction(() => {
+      if (!needsRepair(this.require(id))) {
+        throw new LendingError(409, 'tool_not_damaged', `Tool ${id} is not marked as needing repair.`);
+      }
+      return this.store.setToolCondition(id, 'good', null);
+    });
+    // TL-LEND-EV04
+    this.events.publish({ type: 'ToolRepaired', toolId: id, repairedAt });
+    return this.entry(tool);
   }
 
   private require(id: number): Tool {
