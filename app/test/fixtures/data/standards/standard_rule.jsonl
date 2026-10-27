@@ -1,0 +1,2 @@
+{"id":"DM-STD-CODE-R01","title":"Errors carry a code","standard_id":"DM-STD-CODE","statement":"An error MUST carry a code."}
+{"id":"DM-STD-CODE-R02","title":"Amounts are in cents","standard_id":"DM-STD-CODE","statement":"An amount MUST be held in cents."}

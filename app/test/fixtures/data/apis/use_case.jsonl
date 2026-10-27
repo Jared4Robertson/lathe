@@ -1,0 +1,2 @@
+{"id":"DM-PAY-UC01","title":"Pay by card","domain_id":"DM-PAY"}
+{"id":"DM-SHOP-UC01","title":"Add an item to the basket","domain_id":"DM-SHOP","goal":"A shopper adds an item."}

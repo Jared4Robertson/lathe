@@ -1,51 +1,56 @@
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import { expect, vi } from 'vitest';
 import App from '../src/App';
-import type { Workspace } from '../../lathe/src/types';
-import type { FormatReference } from '../src/format/reference';
-import { formatReference } from './fixtures/format';
+import type { Command, SpecData, WriteAnswer } from '../../lathe/src/server/contract';
 import { workspace as fixtureWorkspace } from './fixtures/workspace';
 
 export interface Served {
-  workspace?: Workspace;
-  source?: 'engine' | 'fixture';
-  reason?: string;
-  /** What GET /api/format answers: the fixture's reference by default, or null for no answer (as when the engine is not there). */
-  format?: FormatReference | null;
+  /** What GET /api/spec answers: the component-test workspace by default. */
+  data?: SpecData;
+  /**
+   * What POST /api/write answers for a write's commands; by default every write goes through and
+   * changes nothing. A function that returns new data serves it from then on.
+   */
+  write?: (commands: Command[]) => { answer: WriteAnswer; data?: SpecData };
 }
 
 /** Every request the page made, as "METHOD /path". */
 export type Requests = string[];
 
-/** Stubs fetch with the given workspace, and records every request. */
-export function serve(served: Served = {}): Requests {
+/** The writes the page sent, each its commands. */
+export type Writes = Command[][];
+
+/** Stubs fetch with the given data, and records every request and write. */
+export function serve(served: Served = {}): { requests: Requests; writes: Writes } {
   const requests: Requests = [];
-  const ws = served.workspace ?? fixtureWorkspace();
+  const writes: Writes = [];
+  let data = served.data ?? fixtureWorkspace();
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = typeof input === 'string' ? input : input instanceof URL ? input.pathname : input.url;
     requests.push(`${init?.method ?? 'GET'} ${url}`);
-    const json = (body: unknown, headers: Record<string, string> = {}) =>
-      new Response(JSON.stringify(body), { status: 200, headers: { 'content-type': 'application/json', ...headers } });
-    if (url === '/api/spec') {
-      const headers: Record<string, string> = { 'x-lathe-source': served.source ?? 'engine' };
-      if (served.reason) headers['x-lathe-source-reason'] = encodeURIComponent(served.reason);
-      return json(ws, headers);
+    const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
+    if (url === '/api/spec') return json(data);
+    if (url === '/api/write' && init?.method === 'POST') {
+      const { commands } = JSON.parse(String(init.body)) as { commands: Command[] };
+      writes.push(commands);
+      const result = served.write?.(commands) ?? { answer: { ok: true, tables: [], files: [], changes: [] } };
+      if (result.data) data = result.data;
+      return json(result.answer, result.answer.ok ? 200 : 422);
     }
-    if (url === '/api/format' && served.format !== null) return json(served.format ?? formatReference());
-    return new Response(JSON.stringify({ error: 'not found' }), { status: 404 });
+    return new Response(JSON.stringify({ error: 'not found' }), { status: 404, headers: { 'content-type': 'application/json' } });
   }));
-  return requests;
+  return { requests, writes };
 }
 
 /** Opens the app at an address with the given data, and waits for the specs to load. */
 export async function openApp(path: string, served: Served = {}) {
   cleanup();
   window.history.replaceState(null, '', path);
-  const requests = serve(served);
+  const { requests, writes } = serve(served);
   const view = render(<App />);
-  // The specs have loaded (or failed to) once the shell says so.
+  // The data has loaded (or failed to) once the shell says so.
   await waitFor(() => expect(document.querySelector('.app[data-specs]')?.getAttribute('data-specs')).not.toBe('loading'));
-  return { ...view, requests };
+  return { ...view, requests, writes };
 }
 
 export const main = () => screen.getByRole('main');

@@ -1,0 +1,3 @@
+{"id":"DM-PAY-UC01-R01","title":"A declined card leaves the basket unpaid","use_case_id":"DM-PAY-UC01","statement":"A declined card leaves the basket unpaid."}
+{"id":"DM-SHOP-UC01-R01","title":"The basket shows the new item","use_case_id":"DM-SHOP-UC01","statement":"The basket MUST show the item at once."}
+{"id":"DM-SHOP-UC01-R02","title":"A full basket refuses the item","use_case_id":"DM-SHOP-UC01","statement":"A full basket MUST refuse a new item."}
