@@ -50,7 +50,7 @@ describe('editing a record', () => {
     await user.click(within(toolbar('DM-SHOP-EP01')).getByRole('button', { name: 'Edit' }));
     const form = screen.getByRole('form', { name: 'Edit DM-SHOP-EP01' });
     const parent = within(form).getByRole('combobox', { name: /^Parent/ });
-    expect(parent).toHaveAccessibleDescription(/sits under command or query/);
+    expect(parent).toHaveAccessibleDescription(/An endpoint sits under a command or a query./);
     expect([...parent.querySelectorAll('optgroup')].map((g) => [g.getAttribute('label'), [...g.querySelectorAll('option')].map((o) => o.getAttribute('value'))])).toEqual([
       ['Command', ['DM-SHOP-CMD01']],
       ['Query', ['DM-SHOP-QRY01']],
