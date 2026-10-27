@@ -101,8 +101,7 @@
 {"source_id":"LA-EXP-V05","target_id":"LA-EXP-UC11-R03"}
 {"source_id":"LA-EXP-V05","target_id":"LA-EXP-UC11-R04"}
 {"source_id":"LA-EXP-V05","target_id":"LA-EXP-UC11-R05"}
-{"source_id":"LA-PLT-E01","target_id":"LA-PLT-UC03-R02"}
-{"source_id":"LA-PLT-E01-R01","target_id":"LA-PLT-UC03-R02"}
+{"source_id":"LA-PLT-E01-R01","target_id":"LA-PLT-UC03-R01"}
 {"source_id":"LA-PLT-E02","target_id":"LA-PLT-UC16-R01"}
 {"source_id":"LA-PLT-E02-R01","target_id":"LA-PLT-UC16-R01"}
 {"source_id":"LA-PLT-E02-R02","target_id":"LA-PLT-UC16-R02"}

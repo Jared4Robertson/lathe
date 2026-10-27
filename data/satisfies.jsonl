@@ -290,7 +290,6 @@
 {"source_id":"LA-CHK-DF01-S07","target_id":"LA-CHK-UC01-R02"}
 {"source_id":"LA-CHK-DF01-S08","target_id":"LA-CHK-UC01-R03"}
 {"source_id":"LA-EXP-C01","target_id":"LA-CHK-UC07-R01"}
-{"source_id":"LA-EXP-C01","target_id":"LA-EXP-DR02"}
 {"source_id":"LA-EXP-C01","target_id":"LA-EXP-DR03"}
 {"source_id":"LA-EXP-C01","target_id":"LA-EXP-UC01-R01"}
 {"source_id":"LA-EXP-C01","target_id":"LA-EXP-UC01-R02"}
@@ -655,16 +654,13 @@
 {"source_id":"LA-PLT-C06","target_id":"LA-PLT-E02-R01"}
 {"source_id":"LA-PLT-C06","target_id":"LA-PLT-E02-R02"}
 {"source_id":"LA-PLT-C06","target_id":"LA-PLT-UC03-R01"}
-{"source_id":"LA-PLT-C06","target_id":"LA-PLT-UC03-R02"}
 {"source_id":"LA-PLT-C06","target_id":"LA-PLT-UC16-R01"}
 {"source_id":"LA-PLT-C06","target_id":"LA-PLT-UC16-R02"}
 {"source_id":"LA-PLT-C07","target_id":"LA-EXP-DR01"}
 {"source_id":"LA-PLT-C07","target_id":"LA-EXP-UC01-R04"}
 {"source_id":"LA-PLT-C08","target_id":"LA-PLT-E01-R01"}
 {"source_id":"LA-PLT-C08","target_id":"LA-PLT-UC03-R01"}
-{"source_id":"LA-PLT-C08","target_id":"LA-PLT-UC03-R02"}
 {"source_id":"LA-PLT-C09","target_id":"LA-EXP-DR01"}
-{"source_id":"LA-PLT-C09","target_id":"LA-EXP-DR02"}
 {"source_id":"LA-PLT-C09","target_id":"LA-PLT-UC03-R01"}
 {"source_id":"LA-PLT-C09","target_id":"LA-PLT-UC09-R07"}
 {"source_id":"LA-PLT-C10","target_id":"LA-EXP-UC05-R02"}
@@ -849,6 +845,8 @@
 {"source_id":"LA-PLT-C59","target_id":"LA-PLT-DR46"}
 {"source_id":"LA-PLT-C59","target_id":"LA-PLT-DR47"}
 {"source_id":"LA-PLT-C60","target_id":"LA-PLT-UC02-R05"}
+{"source_id":"LA-PLT-C61","target_id":"LA-PLT-E01-R01"}
+{"source_id":"LA-PLT-C61","target_id":"LA-PLT-E02-R01"}
 {"source_id":"LA-TRC-C01","target_id":"LA-AUT-DR12"}
 {"source_id":"LA-TRC-C01","target_id":"LA-TRC-DR01"}
 {"source_id":"LA-TRC-C01","target_id":"LA-TRC-DR02"}
