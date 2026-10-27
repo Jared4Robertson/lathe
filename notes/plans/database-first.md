@@ -24,10 +24,13 @@ Nothing is typed or constrained. SQL checks report broken data after it is writt
 3. **The schema is the meta-model.** `kinds.csv`, `relations.csv`, `sections.csv` and `ids.csv` give way to the tables, columns and keys themselves, changed by migrations.
 4. **Products may add their own kinds.** A product declares an extra kind, and Lathe generates its table from that declaration, with the same keys and enforcement as Lathe's own kinds. (Owner said yes to allowing product kinds; confirm this reading.)
 5. **The principle holds across all of Lathe,** not just Authoring. Each slice's aggregates become concrete tables (see Scope).
-6. **The source of truth is an operation log in the repo.**
-   - Every write is appended to the log as one line of text, and the database is built by replaying it.
-   - Branches merge by combining both logs and replaying them, so a conflict shows up as a constraint failure on replay.
-   - Git keeps branches, review and history; the database is never committed.
+6. **The source of truth is one JSONL file per table in the repo,** such as `data/requirement.jsonl`.
+   - Each file holds one row per line, sorted by ID, with columns in a fixed order, so a change to a row is a one-line diff.
+   - DuckDB loads the files into the typed tables, with their keys and constraints. A file that breaks the schema fails to load with a constraint error.
+   - Every write goes through the command layer, which validates and then rewrites the affected lines.
+   - Git is the history: `git log` and `git blame` show what changed and when, and the commit author shows whether the Owner or an Agent made it.
+   - The database itself is never committed.
+   - A merge driver for the data files keeps both sides' lines, sorts them again and runs the constraints. A real clash, such as one ID added twice or one row changed on both sides, fails with a clear error. (Owner chose this over an operation log.)
 
 ## Scope
 Each slice's aggregates, as tables:
