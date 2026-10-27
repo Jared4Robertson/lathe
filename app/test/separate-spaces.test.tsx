@@ -32,7 +32,7 @@ describe('separate spaces', () => {
     expect(dm.byId.has('ZZ-LOOSE')).toBe(true);
     expect(dm.byId.has('NF-NOTE')).toBe(false);
     expect(dm.workspace.links.some((l) => l.target === 'NF-NOTE' || l.source.startsWith('NF'))).toBe(false);
-    expect(dm.workspace.coverage.map((c) => c.domain).sort()).toEqual(['DM-PAY', 'DM-SHOP']);
+    expect(dm.workspace.coverage.map((c) => c.domain ?? c.product).sort()).toEqual(['DM', 'DM-PAY', 'DM-SHOP']);
     expect(dm.workspace.problems.map((p) => p.record)).not.toContain('NF-NOTE');
     expect(dm.workspace.problems.some((p) => p.record === null)).toBe(true);
     const nf = spaceIndex(index, 'NF');

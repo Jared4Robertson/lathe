@@ -97,8 +97,10 @@ describe('domain page', () => {
     const coverage = section(/^Coverage/);
     const gaps = within(coverage).getAllByRole('listitem');
     expect(gaps.map((li) => li.textContent)).toEqual([
-      expect.stringMatching(/DM-SHOP-UC01-R02.*UC requirement with nothing that proves it/),
-      expect.stringMatching(/DM-SHOP-INV01.*Invariant with nothing that proves it/),
+      expect.stringMatching(/DM-SHOP-INV01.*Invariant not built/),
+      expect.stringMatching(/DM-SHOP-INV01.*Invariant not proved/),
+      expect.stringMatching(/DM-SHOP-UC01-R02.*UC requirement not built/),
+      expect.stringMatching(/DM-SHOP-UC01-R02.*UC requirement not proved/),
     ]);
     // Gaps also show on the record's row.
     await userEvent.setup().click(within(section(/^Aggregates/)).getByRole('button', { name: 'Expand all' }));
@@ -108,8 +110,8 @@ describe('domain page', () => {
     const problems = within(section(/^Problems in this domain/)).getAllByRole('listitem');
     expect(problems.map((li) => li.textContent)).toEqual([
       expect.stringMatching(/^error.*DM-SHOP-UC01-R01-T01.*does not exist.*test-file-missing$/),
-      expect.stringMatching(/^warning.*DM-SHOP-INV01.*unproved$/),
-      expect.stringMatching(/^warning.*DM-SHOP-UC01-R02.*unproved$/),
+      expect.stringMatching(/^warning.*DM-SHOP-INV01.*not-proved$/),
+      expect.stringMatching(/^warning.*DM-SHOP-UC01-R02.*not-proved$/),
     ]);
     expect(main()).not.toHaveTextContent('DM-PAY-UC01-R01');
   });

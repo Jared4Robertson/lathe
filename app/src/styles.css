@@ -170,7 +170,7 @@ code { font: 0.86em var(--mono); }
 .coverage { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; }
 .coverage-heading { margin: 4px 0 0; font-size: 0.78rem; font-weight: 600; }
 .coverage-heading span { font: 0.72rem var(--mono); color: var(--muted); margin-left: 4px; }
-.bar { display: grid; grid-template-columns: 64px 1fr 40px; align-items: center; gap: 8px; font-size: 0.78rem; color: var(--muted); }
+.bar { display: grid; grid-template-columns: 96px 1fr 40px; align-items: center; gap: 8px; font-size: 0.78rem; color: var(--muted); }
 .bar-track { height: 6px; border-radius: 3px; background: var(--paper); border: 1px solid var(--rule); overflow: hidden; }
 .bar-fill { display: block; height: 100%; background: var(--warn); }
 .bar-fill.full { background: var(--steel); }
@@ -375,8 +375,8 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 
 /* ---------- Obligation kinds, test states and record content (brief 14) ---------- */
 .coverage-group { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; }
-.bar.planned .bar-fill { background: repeating-linear-gradient(135deg, var(--muted) 0 3px, transparent 3px 6px); }
-.bar.planned .bar-label { font-style: italic; }
+.bar.not-automated .bar-fill { background: repeating-linear-gradient(135deg, var(--muted) 0 3px, transparent 3px 6px); }
+.bar.not-automated .bar-label { font-style: italic; }
 .test-state { display: inline-block; font: 500 0.68rem var(--mono); padding: 0 6px; border-radius: 4px; border: 1px solid var(--rule); color: var(--muted); white-space: nowrap; }
 .test-state.automated { color: var(--steel); border-color: var(--steel); background: var(--steel-bg); }
 .test-state.manual { color: var(--ink); border-color: var(--muted); }
@@ -586,7 +586,7 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 .trace-gaps > li { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
 .trace-gap { display: inline-flex; flex-wrap: wrap; gap: 4px 6px; align-items: baseline; padding: 4px 10px; border: 1px solid var(--warn); border-radius: 6px; color: var(--ink); font-size: 0.88rem; }
 .trace-gap strong { color: var(--warn); }
-.trace-gap.only-planned { border-style: dashed; }
+.trace-gap.not-automated { border-style: dashed; }
 .trace-row { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; }
 .trace-row > .record-row { flex: 1 1 auto; min-width: 0; }
 .trace-cell { display: inline-flex; flex-wrap: wrap; gap: 2px 8px; align-items: baseline; }
@@ -606,11 +606,10 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 .markdown a.mention { font-family: var(--mono); font-size: 0.9em; }
 
 /* ---------- Owed proof and tests by state (brief 27) ---------- */
-.bar-more { grid-column: 2 / -1; font: italic 0.72rem var(--body); color: var(--muted); cursor: help; }
 .test-counts { margin: 6px 0 0; font-size: 0.78rem; color: var(--muted); }
 .test-counts-label { font-weight: 600; color: var(--ink); }
 .test-count { font-family: var(--mono); font-size: 0.75rem; }
-.test-count.planned { font-style: italic; }
+.test-count.not_automated { font-style: italic; }
 
 /* ---------- Brief 28: flow steps ---------- */
 .data-table.flow-steps { width: 100%; }

@@ -107,7 +107,7 @@ describe('Patterns we follow, on the domain page', () => {
     const line = coverage.querySelector('[data-kind="pattern_rule"]') as HTMLElement;
     expect(line).toHaveTextContent('Pattern rules 2');
     expect(within(line).getByRole('img', { name: 'proved: 1 of 2' })).toBeInTheDocument();
-    expect(within(coverage).getAllByRole('listitem').map((li) => li.textContent)).toContainEqual(expect.stringMatching(/DM-PAT-AUDIT-R02.*Pattern rule with nothing that proves it/));
+    expect(within(coverage).getAllByRole('listitem').map((li) => li.textContent)).toContainEqual(expect.stringMatching(/DM-PAT-AUDIT-R02.*Pattern rule not proved/));
   });
 
   it('LA-TRC-T111 A pattern the domain itself follows is listed, followed by the whole domain, and every rule applies', async () => {

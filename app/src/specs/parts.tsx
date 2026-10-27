@@ -2,7 +2,7 @@ import { lowerLabel, plural as pluralOf } from '../plural';
 import { createContext, Fragment, useContext, useState, type AnchorHTMLAttributes, type ReactNode } from 'react';
 import { Link } from '../router';
 import { checkPagePath } from '../format/reference';
-import { textOf, kindLabel, partsOf, problemOrder, type Problem, type SpecIndex, type SpecRecord, type Stage } from './data';
+import { gapsOf, textOf, kindLabel, partsOf, problemOrder, type Problem, type SpecIndex, type SpecRecord, type Stage } from './data';
 import { groupRecords } from './groups';
 import { addressOf } from '../views/address';
 import { ActionsSlotContext } from '../components/ActionsSlot';
@@ -201,12 +201,13 @@ export function KindBadge({ index, kind }: { index: SpecIndex; kind: string }) {
 
 // ---------- Record rows and trees ----------
 
-/** The coverage gaps of one record: what is missing ('satisfies' or 'proves'). */
-export function gapsOf(index: SpecIndex, id: string): string[] {
-  const domain = index.byId.get(id)?.domain;
-  if (!domain) return [];
-  return (index.coverage.get(domain)?.gaps ?? []).filter((g) => g.id === id).map((g) => g.missing);
-}
+/**
+ * A coverage gap's `missing` in a few words: an obligation not designed, built or proved, or the minimum a record
+ * misses, named by its gap rule ("use-case-without-flow" reads "use case without flow").
+ */
+export const gapText = (missing: string) =>
+  missing === 'designed' || missing === 'built' || missing === 'proved' ? `not ${missing}` : missing.replaceAll('-', ' ');
+
 
 // Fields worth showing in a list row, by kind; a technical record shows its file, a test its level and file.
 const ROW_FIELDS: Record<string, string[]> = {
@@ -245,7 +246,7 @@ export function RecordRowBody({ index, record, showKind = false }: { index: Spec
         {(index.outgoing.get(record.id) ?? []).filter((l) => l.relation === 'follows').map((l) => (
           <span key={l.target} className="pattern-tag" title={`Follows the pattern ${l.target}`}>{index.byId.get(l.target)?.title ?? l.target}</span>
         ))}
-        {gaps.map((g) => <span key={g} className="badge warning">{g === 'satisfies' ? 'not designed' : 'not proved'}</span>)}
+        {gaps.map((g) => <span key={g} className="badge warning">{gapText(g)}</span>)}
         <ProblemBadge problems={index.problemsFor.get(record.id) ?? []} />
       </span>
     </div>

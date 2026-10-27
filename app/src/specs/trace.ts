@@ -23,7 +23,7 @@ export interface TraceGroup {
   ids: string[];
 }
 
-export type GapKind = 'not-designed' | 'not-built' | 'not-proved' | 'only-planned';
+export type GapKind = 'not-designed' | 'not-built' | 'not-proved' | 'not-automated';
 
 export interface TraceGap {
   kind: GapKind;
@@ -54,7 +54,7 @@ const linked = (index: SpecIndex, id: string, relation: string, way: 'out' | 'in
 export function isBuilt(index: SpecIndex, id: string): boolean {
   const record = index.byId.get(id);
   if (!record || !textOf(record.row, 'file').trim()) return false;
-  return !(index.problemsFor.get(id) ?? []).some((p) => p.check.endsWith('file-missing'));
+  return !(index.problemsFor.get(id) ?? []).some((p) => p.check === 'technical-file-missing');
 }
 
 /**
@@ -96,10 +96,10 @@ export function buildersOf(index: SpecIndex, record: SpecRecord, designers: read
 }
 
 /** The tests of an obligation (its children of the test plan), split into proof and those not automated yet; for a pattern rule, those in one domain. */
-export function testsOf(index: SpecIndex, record: SpecRecord, domain?: string): { proved: string[]; planned: string[] } {
+export function testsOf(index: SpecIndex, record: SpecRecord, domain?: string): { proved: string[]; notAutomated: string[] } {
   const tests = childrenInStage(index, record.id, 'test-plan').filter((t) => !domain || record.kind !== 'pattern_rule' || textOf(t.row, 'domain_id') === domain);
-  const planned = tests.filter((t) => textOf(t.row, 'state') === 'not automated yet');
-  return { proved: sortIds(tests.filter((t) => !planned.includes(t)).map((t) => t.id)), planned: sortIds(planned.map((t) => t.id)) };
+  const notAutomated = tests.filter((t) => textOf(t.row, 'state') === 'not automated yet');
+  return { proved: sortIds(tests.filter((t) => !notAutomated.includes(t)).map((t) => t.id)), notAutomated: sortIds(notAutomated.map((t) => t.id)) };
 }
 
 /**
@@ -125,15 +125,16 @@ export function judge(index: SpecIndex, record: SpecRecord, domain: string): Jud
   const needsDesign = record.kind !== 'pattern_rule';
   const designedBy = needsDesign ? designersOf(index, record) : [];
   const builtBy = buildersOf(index, record, designedBy);
-  const { proved: provedBy, planned: plannedBy } = testsOf(index, record, domain);
+  const { proved: provedBy, notAutomated: plannedBy } = testsOf(index, record, domain);
   const coverage = index.coverage.get(domain);
   const missing = new Set((coverage?.gaps ?? []).filter((g) => g.id === record.id).map((g) => g.missing));
-  const designed = coverage ? !missing.has('satisfies') : designedBy.length > 0;
-  const proved = coverage ? !missing.has('proves') : provedBy.length > 0;
+  const designed = coverage ? !missing.has('designed') : designedBy.length > 0;
+  const built = coverage ? !missing.has('built') : builtBy.length > 0;
+  const proved = coverage ? !missing.has('proved') : provedBy.length > 0;
   const gaps: TraceGap[] = [];
-  if (needsDesign && !designed) gaps.push({ kind: 'not-designed', check: 'undesigned' });
-  if (needsDesign && designed && builtBy.length === 0) gaps.push({ kind: 'not-built', check: 'unbuilt' });
-  if (!proved) gaps.push({ kind: plannedBy.length > 0 ? 'only-planned' : 'not-proved', check: 'unproved' });
+  if (needsDesign && !designed) gaps.push({ kind: 'not-designed', check: 'not-designed' });
+  if (needsDesign && designed && !built) gaps.push({ kind: 'not-built', check: 'not-built' });
+  if (!proved) gaps.push({ kind: plannedBy.length > 0 ? 'not-automated' : 'not-proved', check: 'not-proved' });
   return { domain, needsDesign, designedBy, builtBy, provedBy, plannedBy, gaps };
 }
 
@@ -177,12 +178,12 @@ export function traceOf(index: SpecIndex, record: SpecRecord, skip: ReadonlySet<
     trace.judgments = owingDomains(index, record).map((d) => judge(index, record, d));
     // A record's own domain (or the product, for a standard rule): Designed by and Proved by as groups, then the rest.
     const designers = record.kind === 'pattern_rule' ? [] : designersOf(index, record);
-    const { proved, planned } = testsOf(index, record);
+    const { proved, notAutomated } = testsOf(index, record);
     const own = new Set(['fulfills', 'meets']);
     trace.groups = [
       // A standard rule is met, in its relation's own words, by what follows it.
       ...(designers.length > 0 ? [{ key: 'design', label: record.kind === 'standard_rule' ? 'Met by' : 'Designed by', role: 'design' as TraceRole, ids: designers }] : []),
-      ...(proved.length + planned.length > 0 ? [{ key: 'proof', label: 'Proved by', role: 'proof' as TraceRole, ids: sortIds([...proved, ...planned]) }] : []),
+      ...(proved.length + notAutomated.length > 0 ? [{ key: 'proof', label: 'Proved by', role: 'proof' as TraceRole, ids: sortIds([...proved, ...notAutomated]) }] : []),
       ...grouped(index, into.filter((l) => !own.has(l.relation)), 'target'),
       ...grouped(index, out, 'source'),
     ];
@@ -209,7 +210,7 @@ export function traceOf(index: SpecIndex, record: SpecRecord, skip: ReadonlySet<
       level: textOf(record.row, 'level'),
       state,
       file,
-      missing: !!file && (index.problemsFor.get(record.id) ?? []).some((p) => p.check.endsWith('file-missing')),
+      missing: !!file && (index.problemsFor.get(record.id) ?? []).some((p) => p.check === 'test-file-missing'),
       manualReason: textOf(record.row, 'manual_reason').trim() || null,
     };
     return trace;

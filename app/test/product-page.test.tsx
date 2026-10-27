@@ -32,16 +32,13 @@ describe('product page', () => {
     await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     expect(bars(card('Shopping'))).toEqual([
-      'designed 1/1', 'built 0/1', 'proved 0/1', 'planned 1/1',
-      'designed 2/2', 'built 1/2', 'proved 1/2', 'planned 0/2',
+      'designed 1/1', 'built 0/1', 'proved 0/1', 'not automated 1/1',
+      'designed 2/2', 'built 1/2', 'proved 1/2', 'not automated 0/2',
     ]);
-    // A count of zero is drawn as a bar like any other.
+    // A count of zero is drawn as a bar like any other; a kind with no obligations in the domain draws none.
     const pay = card('Paying');
-    expect(bars(pay)).toEqual([
-      'designed 0/0', 'built 0/0', 'proved 0/0', 'planned 0/0',
-      'designed 0/1', 'built 0/1', 'proved 0/1', 'planned 0/1',
-    ]);
-    expect(within(pay).getAllByRole('img', { name: /^built: 0 of/ })).toHaveLength(2);
+    expect(bars(pay)).toEqual(['designed 0/1', 'built 0/1', 'proved 0/1', 'not automated 0/1']);
+    expect(within(pay).getAllByRole('img', { name: /^built: 0 of/ })).toHaveLength(1);
 
     // The same counts on the domain page.
     await openApp('/DM-PAY');
@@ -87,9 +84,9 @@ describe('product page', () => {
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     const summary = section('Summary');
     const value = (name: string) => within(summary).getByText(name).nextElementSibling?.textContent;
-    expect(value('Designed')).toBe('3 of 4 obligations');
-    expect(value('Built')).toBe('1 of 4 obligations');
-    expect(value('Proved')).toBe('1 of 4 obligations');
+    expect(value('Designed')).toBe('3 of 6 obligations');
+    expect(value('Built')).toBe('1 of 6 obligations');
+    expect(value('Proved')).toBe('1 of 6 obligations');
     expect(value('Open questions')).toBe('2');
     expect(value('Errors')).toBe('1');
     expect(value('Warnings')).toBe('3');

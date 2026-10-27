@@ -7,12 +7,12 @@ import { patternsFollowedBy } from './patterns';
 import { CoverageBars, ProductSummary } from './ProductHealth';
 import { LongList } from '../components/LongList';
 import { countOf } from '../plural';
-import { PageHeader, ProblemBadge, ProblemList, RecordLink, RecordTree, Section, StageMark, idText, levelBelow, recordText, type SectionLevel } from './parts';
+import { PageHeader, ProblemBadge, ProblemList, RecordLink, RecordTree, Section, StageMark, gapText, idText, levelBelow, recordText, type SectionLevel } from './parts';
 import { allFolders, domainFolders, foldedChildren, productFolders, type Folder, type OwnerFolders } from './folders';
 import {
   byIdOrder,
-  isWorkspaceProblem,
   kindLabel,
+  isWorkspaceProblem,
   problemOrder,
   textOf,
   type Problem,
@@ -123,6 +123,11 @@ export function ProductWiki({ index, id }: { index: SpecIndex; id: string }) {
         <Section title="Product level" count={ownCount} className="product-level">
           <p className="hint">What the product's domains share: records with no domain of their own, and what sits under them.</p>
           <StageSections index={index} folders={{ stages: own.stages.filter((s) => s.count > 0), loose: [] }} query="" level={3} />
+          {index.coverage.get(id) && (
+            <Section level={3} title="Coverage at product level" className="product-coverage">
+              <CoverageBars coverage={index.coverage.get(id)} />
+            </Section>
+          )}
         </Section>
       )}
       <Section title="Summary">
@@ -252,7 +257,7 @@ export function DomainWiki({ index, id }: { index: SpecIndex; id: string }) {
             render={(g) => (
               <>
                 <RecordLink index={index} id={g.id} row />
-                <small className="meta">{kindLabel(index, g.kind)} with nothing that {g.missing === 'satisfies' ? 'designs' : 'proves'} it</small>
+                <small className="meta" title={g.message}>{kindLabel(index, g.kind)} {gapText(g.missing)}</small>
               </>
             )}
           />

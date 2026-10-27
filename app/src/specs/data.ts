@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { Coverage, Problem } from '../../../lathe/src/types';
+import type { Coverage, Kind, Problem, RelationRule, StageRule } from '../../../lathe/src/types';
 import type { Row, SpecData, Value } from '../../../lathe/src/server/contract';
-import type { IdScope, SchemaDescription, Stage } from '../../../lathe/src/store/schema';
+import type { SchemaDescription, Stage } from '../../../lathe/src/store/schema';
 import { onLatheEvent } from '../events';
 import { isRecordId, SPACE_CHECKS } from '../views/address';
 
-export type { Coverage, Problem, Row, SchemaDescription, SpecData, Stage, Value };
+export type { Coverage, Kind, Problem, RelationRule, Row, SchemaDescription, SpecData, Stage, StageRule, Value };
 
 // The app's spec index, built from the typed rows GET /api/spec serves (lathe/src/server/contract.ts):
 // a record per row of a kind's table, its parent from the one of its kind's parent columns that
@@ -13,45 +13,6 @@ export type { Coverage, Problem, Row, SchemaDescription, SpecData, Stage, Value 
 // case's actors, a table's keys) under the record that owns them. A kind with no owner (a value
 // object, a specification, a view, an integration, a UI component) has no parent: its product, and a
 // specification's domain, follow from its ID. Every view reads this index.
-
-/** A kind as the app reads it from the schema description. */
-export interface Kind {
-  kind: string;
-  label: string;
-  /** Its stage; null for the product, an open question, and a product's kind declared outside the stages. */
-  stage: Stage | null;
-  /** The kinds its records may sit under: none for a product and a kind with no owner, two for an endpoint, a table and an open question. */
-  parent_kinds: string[];
-  /** The columns every record of the kind must give, besides its id, title and parent columns. */
-  required_fields: string[];
-  /** An obligation must be designed, built and proved; coverage counts every obligation kind. */
-  obligation: boolean;
-  /** What its IDs start with: its product's, its domain's or its parent's ID; null for a product's own kind. */
-  id_scope: IdScope | null;
-  description: string;
-}
-
-/** A stage, in the order a product is modeled: domain model, use cases, interaction design, technical specification, test plan. */
-export interface StageRule {
-  stage: Stage;
-  label: string;
-  description: string;
-}
-
-/** One pair of kinds a relation may link. */
-export interface RelationRule {
-  relation: string;
-  source_kind: string;
-  /** A kind, or '*' for any kind. */
-  target_kind: string;
-  /** 'design': the link designs its target (a step fulfilling a UC requirement); 'proof': it proves it; '' otherwise. */
-  role: 'design' | 'proof' | '';
-  description: string;
-  /** The link in plain words read from the source, in sentence case: "Fulfills". */
-  forward_label: string;
-  /** The link in plain words read from the target, in sentence case: "Fulfilled by". */
-  reverse_label: string;
-}
 
 /** One record: a row of its kind's table, placed in the tree. */
 export interface SpecRecord {
@@ -164,6 +125,7 @@ export function buildWorkspace(data: SpecData): Workspace {
       kind: name,
       label: k.label,
       stage: k.stage,
+      position: k.position,
       parent_kinds: k.parents.map((p) => p.kind),
       required_fields: (schema.tables[name]?.columns ?? []).filter((c) => c.required && !skip.has(c.name)).map((c) => c.name),
       obligation: k.obligation,
@@ -173,7 +135,7 @@ export function buildWorkspace(data: SpecData): Workspace {
   });
   const stages: StageRule[] = [...schema.stages]
     .sort((a, b) => a.position - b.position)
-    .map((s) => ({ stage: s.name, label: s.label, description: s.description }));
+    .map((s) => ({ stage: s.name, position: s.position, label: s.label, description: s.description }));
   const relations: RelationRule[] = Object.values(schema.relations).flatMap((r) =>
     r.pairs.map((p) => ({
       relation: r.name,
@@ -254,6 +216,7 @@ export interface SpecIndex {
   /** Each record's part rows, by part table, in key order. */
   parts: Map<string, Map<string, Row[]>>;
   problemsFor: Map<string, Problem[]>;
+  /** Coverage by domain, and by product for its records outside every domain. */
   coverage: Map<string, Coverage>;
   products: SpecRecord[];
   domainsOf: Map<string, SpecRecord[]>;
@@ -299,13 +262,24 @@ export function indexWorkspace(workspace: Workspace): SpecIndex {
     incoming,
     parts,
     problemsFor,
-    coverage: new Map(workspace.coverage.map((c) => [c.domain, c])),
+    coverage: new Map(workspace.coverage.map((c) => [c.domain ?? c.product, c])),
     products: records.filter((r) => r.kind === 'product'),
     domainsOf,
   };
 }
 
-/** A record's rows of one part table (an entity's fields, a use case's steps), in key order. */
+/**
+ * The coverage gaps recorded for one record: what it misses, as coverage names it ('designed', 'built', 'proved', or a
+ * gap rule's name such as use-case-without-flow). A record outside every domain is counted in its product's coverage.
+ */
+export function gapsOf(index: SpecIndex, id: string): string[] {
+  const record = index.byId.get(id);
+  const scope = record?.domain ?? record?.product;
+  if (!scope) return [];
+  return (index.coverage.get(scope)?.gaps ?? []).filter((g) => g.id === id).map((g) => g.missing);
+}
+
+/** A record's rows of one part table (an entity's fields, a table's keys), in key order. */
 export const partsOf = (index: SpecIndex, id: string, table: string): Row[] => index.parts.get(id)?.get(table) ?? [];
 
 /** True when a problem belongs to no product: it names no record, or a record no product holds. */
@@ -335,7 +309,7 @@ export function spaceIndex(index: SpecIndex, product: string): SpecIndex {
     parts: workspace.parts.filter((p) => !elsewhere(p.owner)),
     checks: workspace.checks.filter((c) => c.product_id === undefined || c.product_id === product),
     problems: workspace.problems.filter((p) => !p.record || !elsewhere(p.record)),
-    coverage: workspace.coverage.filter((c) => !elsewhere(c.domain)),
+    coverage: workspace.coverage.filter((c) => c.product === product),
   });
   known.set(product, space);
   return space;

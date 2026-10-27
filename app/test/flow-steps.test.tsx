@@ -69,7 +69,7 @@ describe('flow steps on a flow page', () => {
 
   it('LA-EXP-T65 A step row carries its problems, and a flow without steps shows no steps table', async () => {
     const data = workspace();
-    data.problems.push({ severity: 'warning', check: 'unproved', record: 'DM-SHOP-UC01-FL-S02', message: 'A step with a problem.' });
+    data.problems.push({ severity: 'warning', check: 'not-proved', record: 'DM-SHOP-UC01-FL-S02', message: 'A step with a problem.' });
     await openApp('/DM-SHOP-UC01-FL', { data });
     await screen.findByRole('heading', { level: 1, name: 'Fill a basket' });
     expect(cells(bodyRows(tables()[0])[1])[1]).toHaveTextContent('1 warning');

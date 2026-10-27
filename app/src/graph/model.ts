@@ -1,6 +1,6 @@
 import { plural } from '../plural';
 import type { SpecIndex, SpecRecord, Stage } from '../specs/data';
-import { textOf, byIdOrder, kindLabel } from '../specs/data';
+import { textOf, byIdOrder, gapsOf, kindLabel } from '../specs/data';
 import { treeChildren, treeGroup, treeOf, treeParent } from './tree';
 import { linkLabel, relationLabelOf } from '../specs/labels';
 
@@ -399,13 +399,13 @@ export const groupName = (index: SpecIndex, gid: string) => treeGroup(index, gid
 export const groupOwner = (index: SpecIndex, gid: string) => treeGroup(index, gid)?.owner ?? parseGroupId(gid)?.parent ?? gid;
 
 /** The problems and coverage gaps of a group's members and everything beneath them, summed for the group's mark. */
-export function groupMarks(index: SpecIndex, gid: string): { errors: number; warnings: number; gaps: ('satisfies' | 'proves')[] } {
+export function groupMarks(index: SpecIndex, gid: string): { errors: number; warnings: number; gaps: string[] } {
   let errors = 0;
   let warnings = 0;
-  const gaps = new Set<'satisfies' | 'proves'>();
+  const gaps = new Set<string>();
   const visit = (id: string) => {
     for (const p of index.problemsFor.get(id) ?? []) if (p.severity === 'error') errors++; else warnings++;
-    for (const g of gapsFor(index, id)) gaps.add(g);
+    for (const g of gapsOf(index, id)) gaps.add(g);
     for (const c of index.children.get(id) ?? []) visit(c.id);
   };
   for (const m of groupMembers(index, gid)) visit(m.id);
@@ -559,12 +559,6 @@ export function kindGroups(index: SpecIndex): { stage: Stage | ''; title: string
 /** The relations kept by the "traceability only" preset: what a trace draws. */
 export const TRACE_RELATIONS = new Set([PARENT, 'fulfills', 'invokes', 'happens_in', 'meets', ENFORCES, NAMES]);
 
-/** The coverage gaps recorded for one record (what is missing: 'satisfies' or 'proves'). */
-export function gapsFor(index: SpecIndex, id: string): ('satisfies' | 'proves')[] {
-  const domain = index.byId.get(id)?.domain;
-  if (!domain) return [];
-  return (index.coverage.get(domain)?.gaps ?? []).filter((g) => g.id === id).map((g) => g.missing);
-}
 
 /** Keeps the breadcrumb trail: going back to a record in the trail cuts the trail there. */
 export function nextTrail(trail: string[], focus: string, max = 8): string[] {
