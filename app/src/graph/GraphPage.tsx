@@ -28,12 +28,12 @@ import {
   type Filters,
   type Neighborhood,
 } from './model';
-import { boxExit, contentScale, traceGrid, type Point } from './layout';
+import { boxExit, traceGrid, type Point } from './layout';
 import { centerOf, graphMap, linkEnds, mapRootOf, parentLine, type GraphMap, type PlacedMap } from './map';
 import { nestedMap, type NestedMap, type NestedNode } from './nested';
 import { readyVoronoiMap, voronoiMap, type VoronoiMap, type VoronoiNode } from './voronoi';
 import { labelFor, labelHeight, setTextMeasure, type TextMeasure } from './text';
-import { drawnFor, drawnKey, drawnNested, fitBoxes, frameNested, frameOnMap, glideDuration, maxZoomFor, MAX_ZOOM, mergeDrawn, MIN_ZOOM, zoomPath, type Drawn, type Viewport } from './camera';
+import { drawnFor, drawnKey, drawnNested, fitBoxes, frameNested, frameOnMap, glideDuration, MAX_ZOOM, mergeDrawn, MIN_ZOOM, zoomPath, type Drawn, type Viewport } from './camera';
 import { EdgeHintChips, pastEdges, type Side } from './hints';
 import { readMotion } from './motion';
 import { nodeShape } from './shapes';
@@ -665,7 +665,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
   }, [getViewport, setViewport, size, tracing, show, drawnAt]);
 
   // A trace's boxes are leaves at text scale 1, each as tall as its wrapped label needs (text.ts).
-  const tracePlaced = useMemo(() => (tracing ? traceGrid(graph, (id) => 2 * Math.ceil(labelHeight(labelFor(index, id, false)) / 2)) : null), [tracing, graph, index, measure]);
+  const tracePlaced = useMemo(() => (tracing ? traceGrid(graph, (id) => 2 * Math.ceil(labelHeight(labelFor(index, id)) / 2)) : null), [tracing, graph, index, measure]);
   /** The camera that frames the focus: on the map, the focus and the levels the depth shows; in a trace, the whole chain. */
   const framing = useCallback((): Viewport | null => {
     if (!size) return null;
@@ -730,7 +730,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
   }, [tracing, show, getViewport]);
   useEffect(() => () => { if (pending.current !== null) cancelAnimationFrame(pending.current); pending.current = null; }, []);
 
-  const zoomLimit = useMemo(() => (size && !tracing ? maxZoomFor(map, size.w, size.h) : MAX_ZOOM), [map, size, tracing]);
+  const zoomLimit = MAX_ZOOM;
   /** Zooms by a factor about a point of the pane, within the camera's limits. */
   const zoomAt = useCallback((sx: number, sy: number, factor: number) => {
     const v = getViewport();
@@ -762,7 +762,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
     let source: PlateSource | null = null;
     if (tracePlaced) {
       const at = tracePlaced.positions.get(id);
-      if (at) source = { view: 'trace', node: { ...at, w: tracePlaced.widths.get(id)!, h: tracePlaced.heights.get(id)!, text: 1, children: [] } };
+      if (at) source = { view: 'trace', node: { ...at, w: tracePlaced.widths.get(id)!, h: tracePlaced.heights.get(id)!, text: 1 } };
     } else {
       const n = map.nodes.get(id);
       if (n) source = map.view === 'tree' ? { view: 'tree', node: n } : map.view === 'nested' ? { view: 'nested', node: n as NestedNode } : { view: 'voronoi', node: n as VoronoiNode };
@@ -805,7 +805,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
         const p = up ? byId.get(up) : undefined;
         if (!p) continue;
         const shape = (id: string) => nodeShape(index, id).shape;
-        lines.push({ id: `${p.id}|${PARENT}|${b.id}`, source: p.id, target: b.id, style: 'structure', link: false, points: parentLine(p, b, shape(p.id), shape(b.id)), scale: contentScale(b.w, b.h), label: '' });
+        lines.push({ id: `${p.id}|${PARENT}|${b.id}`, source: p.id, target: b.id, style: 'structure', link: false, points: parentLine(p, b, shape(p.id), shape(b.id)), scale: b.text, label: '' });
       }
     }
     // The Links switch: the focus's own links, as curves between their boxes; in the Voronoi view, between their cells' labels, inside the cells.
@@ -820,6 +820,8 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
     return { plates: shown, bars, lines };
   }, [tracing, graph, drawnAt, plateFor, map, index, parentShown]);
   const lastFrame = useRef<{ plates: Plate[]; bars: Bar[]; lines: Line[] } | null>(null);
+  // What the last frame drew is stale once anything it was drawn from changes: the pointer then hit-tests a fresh frame.
+  lastFrame.current = null;
 
   // ---- The spotlight, the pointer, the keyboard's ring and a tap's selection ----
   const hover = useRef<string | null>(null);

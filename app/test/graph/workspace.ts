@@ -101,18 +101,9 @@ export function manyOfOneKindWorkspace(): Workspace {
   return w;
 }
 
-/** A map's boxes by height from the leaves (0 for a leaf, one more than its tallest child for a parent): the Nested map's text levels. */
-export function heightLevels<N extends { id: string; children: readonly string[] }>(nodes: ReadonlyMap<string, N>): N[][] {
-  const height = new Map<string, number>();
-  const of = (id: string): number => {
-    const known = height.get(id);
-    if (known !== undefined) return known;
-    const kids = nodes.get(id)!.children;
-    const h = kids.length === 0 ? 0 : 1 + Math.max(...kids.map(of));
-    height.set(id, h);
-    return h;
-  };
-  const levels: N[][] = [];
-  for (const n of nodes.values()) (levels[of(n.id)] ??= []).push(n);
-  return levels;
+/** A map's groups of siblings (LA-EXP-DR58): its roots, then each parent's children, in the tree's order. */
+export function siblingGroups<N extends { children: readonly string[] }>(map: { roots: readonly string[]; nodes: ReadonlyMap<string, N> }): N[][] {
+  const groups = [map.roots.map((id) => map.nodes.get(id)!)];
+  for (const n of map.nodes.values()) if (n.children.length > 0) groups.push(n.children.map((id) => map.nodes.get(id)!));
+  return groups;
 }

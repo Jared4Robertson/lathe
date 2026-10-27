@@ -1,8 +1,8 @@
 import { voronoiMapSimulation, type VoronoiMapPolygon } from 'd3-voronoi-map';
 import polylabel from 'polylabel';
 import type { SpecIndex } from '../specs/data';
-import type { MapNode, PlacedMap } from './map';
-import { LABEL_PAD, labelHeight, linesIn as linesAt, mapLabel, textMeasure, wordsFit as wordsFitAt, type MapLabel, type WrappedLabel } from './text';
+import { MAP_SIZE, sizeText, type MapNode, type PlacedMap } from './map';
+import { labelHeight, linesIn as linesAt, mapLabel, narrowestWidth, textMeasure, type MapLabel, type WrappedLabel } from './text';
 import type { MeasureSpec } from './fonts';
 import { treeChildren } from './tree';
 
@@ -11,30 +11,24 @@ import { treeChildren } from './tree';
 // polygon cells, one per domain; a domain's cell is split into Define and Design, and so on down.
 // Laid out once per spec load and never changed by the focus: focusing moves the camera (camera.ts).
 //
-// - A cell's area is in proportion to the leaf records under it (a leaf counts one), within about
-//   5%: each parent's children are a weighted Voronoi diagram (a power diagram) clipped to the
-//   parent's outline, iterated until their areas match their weights (d3-voronoi-map).
+// The one rule (LA-EXP-DR58), top-down from the product's hexagon, MAP_SIZE across: siblings are
+// the same size, with the same text.
+// - Each parent's cell, inside its padding and below its header, is split into equal-area cells for
+//   its children, within about 5%: a Voronoi diagram (a power diagram) clipped to it, iterated
+//   until the areas match (d3-voronoi-map). Record counts size nothing.
 // - Every cell is convex: the product's hexagon is, and a power diagram's cells clipped to a convex
 //   outline are, so a cell's outline, its inset and its header's cut are all found by clipping.
-// - Seeds are deterministic: a parent's children start on a circle round its largest inscribed
-//   point in the tree's order, clockwise from the upper left, each at the middle of its share of
-//   the circle by weight and nudged by its ID, so the same spec always gives the same picture.
+// - Seeds are deterministic: a parent's children start evenly round a circle about its largest
+//   inscribed point, in the tree's order clockwise from the upper left, each nudged by its ID, so
+//   the same spec always gives the same picture.
 // - Stability: the diagram is chaotic (a tiny change of input can end in a different picture), so
-//   the layout keeps its input from changing. Each parent is laid out in its own frame, and each
-//   weight is rounded to within 2%, so adding a record changes only the parents whose rounded
-//   weight it changes; everything outside them keeps its place exactly. (Seeding from the last
-//   layout was tried, and moved cells more than starting afresh.)
-// - Text (LA-EXP-DR58): each cell's text scale comes from its own size (the square root of its
-//   area), set here once and never by the focus or the zoom. A leaf's label is centered on its
-//   largest inscribed point; a parent's sits in a header at the top of its cell, its children
-//   below the header's cut. A label wraps on whole words and is never clipped: when it does not
-//   fit at its cell's scale (a very long title), the scale steps down until it does.
-// - No cell is too small for its name (LA-PAT-APP-UX-R12): a cell's text scale is in proportion
-//   to its size and its label is wrapped to its width, so the whole layout is the same at any
-//   size, and a label that fits a cell of some shape fits it however small or large the cell is.
-//   Giving a cell more area cannot make its name fit better, so cells get no least areas (unlike
-//   the Nested map's boxes, whose text scale is the largest their label fits at); a title too long
-//   for its cell's shape steps its own scale down instead, and every drawn cell shows its name.
+//   each parent is laid out in its own frame: adding a record changes only its parent's split, and
+//   everything outside that parent's cell keeps its place exactly.
+// - Siblings share one text scale: their size (the square root of a cell's area) over TEXT_SIZE,
+//   or the largest below it at which every sibling's label fits its room, the smallest sibling
+//   cell's room deciding. A leaf's label is centered on its largest inscribed point; a parent's
+//   sits in a header at the top of its cell, its children below the header's cut. A label wraps on
+//   whole words and is never clipped, so every drawn cell shows its name (LA-PAT-APP-UX-R12).
 // - Laid out in a web worker (voronoi.worker.ts) where there is one: a large product takes a few
 //   hundred milliseconds.
 //
@@ -43,16 +37,9 @@ import { treeChildren } from './tree';
 type XY = [number, number];
 type Polygon = readonly XY[];
 
-/** The map area one leaf record stands for: a leaf cell about 270 across, with a little more for the headers and padding above it. */
-export const LEAF_AREA = 270 * 270 * 1.3;
-/**
- * A cell's text scale is its size (the square root of its area) over one of these: a leaf's text
- * scale is 1 at LEAF_TEXT_SIZE across, so a typical title wraps to two or three lines in it; a
- * parent's grows more slowly, so its header takes a small share of it.
- */
-export const LEAF_TEXT_SIZE = 240;
-export const PARENT_TEXT_SIZE = 340;
-/** The padding inside a cell around its children, and the gap between two siblings, at its text scale 1. */
+/** The product's hexagon: a flat-topped regular hexagon MAP_SIZE across. */
+export const PRODUCT_AREA = ((3 * Math.sqrt(3)) / 8) * MAP_SIZE ** 2;
+/** The padding inside a cell around its children, and the gap between two siblings, at its size's text scale (the square root of its area over TEXT_SIZE). */
 export const CELL_PAD = 10;
 export const CELL_GAP = 8;
 /** A header never leaves its children less than this share of the cell. */
@@ -60,10 +47,10 @@ export const MIN_CHILD_SHARE = 0.55;
 /** The area error the layout stops at (over the parent's area), and the most rounds it takes to get there. */
 export const CONVERGENCE = 0.002;
 export const MAX_ROUNDS = 400;
-/** How many times a label's scale may step down, by STEP_DOWN, for a title too long for its cell: down to about a thousandth, so in practice it always fits. */
-const STEPS_DOWN = 40;
-const STEP_DOWN = 0.85;
-
+/** How many halvings find the largest scale a cell's label fits at, and how far a scale steps down when one sibling's label does not fit at their shared one. */
+const FIT_ROUNDS = 30;
+const STEP_DOWN = 0.9;
+const STEPS_DOWN = 120;
 
 export interface VoronoiNode extends MapNode {
   /** Its outline's corners, in world coordinates; x, y, w and h are its bounding box. */
@@ -179,14 +166,13 @@ export function hexagon(area: number): XY[] {
 
 // ---------- Labels ----------
 
-/** Whether every word of a cell's label fits on a line `width` wide at text scale 1, so wrapping never breaks a word: a cell's label is always centered. */
-const wordsFit = (label: MapLabel, width: number) => wordsFitAt(label, width, true);
+/** A cell's label's lines in a width at text scale 1: always centered. */
 const linesIn = (label: MapLabel, width: number): WrappedLabel => linesAt(label, width, true);
 
-/** A cell's text scale for its own size (LA-EXP-DR58): in proportion to the square root of its area. */
-export const cellTextScale = (area: number, parent: boolean) => Math.sqrt(area) / (parent ? PARENT_TEXT_SIZE : LEAF_TEXT_SIZE);
+/** A cell's size's text scale: the square root of its area over TEXT_SIZE, the most its label's scale may be. */
+export const cellText = (p: Polygon) => sizeText(Math.sqrt(polygonArea(p)));
 
-interface Placed { text: number; lines: WrappedLabel; label: { x: number; y: number; w: number; h: number }; cut: number }
+interface Placed { lines: WrappedLabel; label: { x: number; y: number; w: number; h: number }; cut: number }
 
 /** Line widths to try a label at, as shares of the room across: the widest first. */
 const WIDTHS = [0.96, 0.88, 0.8, 0.72, 0.64, 0.56, 0.48, 0.4];
@@ -196,13 +182,14 @@ function leafLabel(p: Polygon, pole: XY, label: MapLabel, s: number): Placed | n
   const across = chord(p, pole[1]);
   if (!across) return null;
   const room = 2 * Math.min(pole[0] - across[0], across[1] - pole[0]);
+  const narrowest = narrowestWidth(label, true);
   for (const share of WIDTHS) {
     const width = (room * share) / s;
-    if (width <= 2 * LABEL_PAD || !wordsFit(label, width)) continue;
+    if (width < narrowest) continue;
     const lines = linesIn(label, width);
     const h = labelHeight(lines) * s;
     const box = { x: pole[0] - (width * s) / 2, y: pole[1] - h / 2, w: width * s, h };
-    if (holds(p, box)) return { text: s, lines, label: box, cut: bounds(p).y };
+    if (holds(p, box)) return { lines, label: box, cut: bounds(p).y };
   }
   return null;
 }
@@ -218,6 +205,7 @@ const HEADER_TOPS = [0.02, 0.05, 0.08, 0.12, 0.16, 0.2, 0.25];
 function headerLabel(p: Polygon, label: MapLabel, s: number, pad: number): Placed | null {
   const box = bounds(p);
   const whole = polygonArea(p);
+  const narrowest = narrowestWidth(label, true);
   for (const top of HEADER_TOPS) {
     const y0 = box.y + top * box.h;
     const first = chord(p, y0);
@@ -231,27 +219,50 @@ function headerLabel(p: Polygon, label: MapLabel, s: number, pad: number): Place
       const left = Math.max(first[0], end[0]);
       const right = Math.min(first[1], end[1]);
       const width = ((right - left) * share) / s;
-      if (width <= 2 * LABEL_PAD || !wordsFit(label, width)) continue;
+      if (width < narrowest) continue;
       lines = linesIn(label, width);
       const lh = labelHeight(lines) * s;
       const rect = { x: (left + right) / 2 - (width * s) / 2, y: y0, w: width * s, h: lh };
       const cut = y0 + lh + pad;
-      if (holds(p, rect) && polygonArea(below(p, cut)) >= MIN_CHILD_SHARE * whole) return { text: s, lines, label: rect, cut };
+      if (holds(p, rect) && polygonArea(below(p, cut)) >= MIN_CHILD_SHARE * whole) return { lines, label: rect, cut };
     }
   }
   return null;
 }
 
-/** A cell's label at its own scale, or the first smaller scale it fits at; null only for a degenerate cell (fewer than three corners). */
-function placeLabel(p: Polygon, label: MapLabel, parent: boolean, pad: (s: number) => number): Placed | null {
-  if (p.length < 3) return null;
-  const base = cellTextScale(polygonArea(p), parent);
-  const pole = parent ? null : (polylabel([p as XY[]], Math.max(1e-3, Math.sqrt(polygonArea(p)) / 200)) as unknown as XY);
-  for (let step = 0, s = base; step <= STEPS_DOWN; step++, s *= STEP_DOWN) {
-    const placed = parent ? headerLabel(p, label, s, pad(s)) : leafLabel(p, pole!, label, s);
-    if (placed) return placed;
+/** A cell as its label is placed in it: its outline, its largest inscribed point (a leaf's), and its padding (a parent's). */
+interface Room { polygon: Polygon; pole: XY | null; pad: number }
+
+const placeAt = (room: Room, label: MapLabel, s: number): Placed | null =>
+  room.polygon.length < 3 || s <= 0 ? null : room.pole ? leafLabel(room.polygon, room.pole, label, s) : headerLabel(room.polygon, label, s, room.pad);
+
+/** The largest scale, at most `most`, at which a cell's label is placed, found by halving; 0 for a degenerate cell. */
+function largestPlaced(room: Room, label: MapLabel, most: number): number {
+  if (placeAt(room, label, most)) return most;
+  let lo = 0;
+  let hi = most;
+  for (let round = 0; round < FIT_ROUNDS; round++) {
+    const mid = (lo + hi) / 2;
+    if (placeAt(room, label, mid)) lo = mid; else hi = mid;
   }
-  return null;
+  return lo;
+}
+
+/**
+ * Siblings' labels at one shared scale (LA-EXP-DR58): the largest at which every sibling's fits its
+ * cell, no more than their size's (the smallest sibling's); stepped down a little more if one
+ * sibling's does not fit at it, as a cell's room is not quite monotone in the scale.
+ */
+function shareLabels(rooms: readonly Room[], labels: readonly MapLabel[]): { text: number; placed: (Placed | null)[] } {
+  const live = rooms.map((_, i) => i).filter((i) => rooms[i].polygon.length >= 3);
+  const most = Math.min(...live.map((i) => cellText(rooms[i].polygon)));
+  let text = Math.min(...live.map((i) => largestPlaced(rooms[i], labels[i], most)));
+  if (!Number.isFinite(text)) return { text: 0, placed: rooms.map(() => null) };
+  for (let step = 0; step <= STEPS_DOWN; step++, text *= STEP_DOWN) {
+    const placed = rooms.map((r, i) => placeAt(r, labels[i], text));
+    if (live.every((i) => placed[i])) return { text, placed };
+  }
+  return { text, placed: rooms.map((r, i) => placeAt(r, labels[i], text)) };
 }
 
 // ---------- The layout ----------
@@ -275,52 +286,39 @@ function hash(s: string): number {
 }
 
 interface Site { id: string; weight: number }
-/**
- * A weight rounded to the nearest power of WEIGHT_STEP (exported for tests): within 2% of it, so a
- * cell's area stays within the layout's 5%, and adding one record to a parent of many leaves almost
- * never changes its rounded weight, so its cell and everything outside it keep their places exactly.
- */
-export const WEIGHT_STEP = 1.04;
-export const quantize = (w: number) => (w <= 0 ? 0 : WEIGHT_STEP ** Math.round(Math.log(w) / Math.log(WEIGHT_STEP)));
-/** The lightest a sibling's weight is treated as, over the heaviest's (the library's floor, lowered so a one-record cell beside a large one keeps its size). */
-export const MIN_WEIGHT_RATIO = 0.001;
 /** Where the first child's seed is on its parent's circle: the upper left. */
 const SEED_ANGLE = (-3 * Math.PI) / 4;
 
 /**
- * The cells of some children in their parent's outline (exported for tests): a power diagram,
- * iterated until each cell's area is in proportion to its weight. The children start on a circle
- * round the outline's largest inscribed point, in the tree's order clockwise from the upper left,
- * each at the middle of its share of the circle by weight (so a small change of weights moves the
- * seeds only a little), nudged by its ID.
+ * The equal-area cells of some children in their parent's outline (exported for tests): a power
+ * diagram, iterated until the cells' areas match. The children start evenly round a circle about
+ * the outline's largest inscribed point, in the tree's order clockwise from the upper left, each
+ * nudged by its ID.
  */
-export function voronoiCells(outline: Polygon, sites: readonly Site[]): Map<string, XY[]> {
+export function voronoiCells(outline: Polygon, ids: readonly string[]): Map<string, XY[]> {
   const cells = new Map<string, XY[]>();
-  if (sites.length === 0 || outline.length < 3) return cells;
-  if (sites.length === 1) { cells.set(sites[0].id, [...outline]); return cells; }
+  if (ids.length === 0 || outline.length < 3) return cells;
+  if (ids.length === 1) { cells.set(ids[0], [...outline]); return cells; }
   // Laid out in the outline's own frame, its bounding box from (0, 0) to 1 across, rounded: the
   // same shape anywhere in the map, at any size, gives exactly the same cells.
   const box = bounds(outline);
   const size = Math.max(box.w, box.h) || 1;
   const clip: XY[] = outline.map(([x, y]) => [Math.round(((x - box.x) / size) * 1e9) / 1e9, Math.round(((y - box.y) / size) * 1e9) / 1e9]);
   const area = polygonArea(clip);
-  const total = sites.reduce((s, d) => s + d.weight, 0);
   const pole = polylabel([clip], Math.sqrt(area) / 100);
   const radius = pole.distance / 2;
-  let before = 0;
-  const seeds = new Map(sites.map((d) => {
-    const angle = SEED_ANGLE + (2 * Math.PI * (before + d.weight / 2)) / total;
-    before += d.weight;
-    const nudge = ((hash(d.id) % 1000) / 1000 - 0.5) * 1e-3 * radius;
-    return [d.id, [pole[0] + Math.cos(angle) * (radius + nudge), pole[1] + Math.sin(angle) * (radius + nudge)] as XY] as const;
+  const sites: Site[] = ids.map((id) => ({ id, weight: 1 }));
+  const seeds = new Map(ids.map((id, i) => {
+    const angle = SEED_ANGLE + (2 * Math.PI * (i + 0.5)) / ids.length;
+    const nudge = ((hash(id) % 1000) / 1000 - 0.5) * 1e-3 * radius;
+    return [id, [pole[0] + Math.cos(angle) * (radius + nudge), pole[1] + Math.sin(angle) * (radius + nudge)] as XY] as const;
   }));
-  const simulation = voronoiMapSimulation([...sites])
+  const simulation = voronoiMapSimulation(sites)
     .weight((d) => d.weight)
     .clip(clip)
     .convergenceRatio(CONVERGENCE)
     .maxIterationCount(MAX_ROUNDS)
-    .minWeightRatio(MIN_WEIGHT_RATIO)
-    .prng(seeded(hash(sites.map((s) => s.id).join(' '))))
+    .prng(seeded(hash(ids.join(' '))))
     .initialPosition((d) => seeds.get(d.id)!)
     .stop();
   // The library may give up on a degenerate round; the last good one stands.
@@ -348,14 +346,11 @@ export function layoutVoronoi(
   const parent = new Map<string, string | null>();
   const level = new Map<string, number>();
   const kids = new Map<string, string[]>();
-  const leaves = new Map<string, number>();
-  const byLevelIds: string[][] = [];
   const treeOrder = new Map<string, number>();
   const visit = (id: string, up: string | null, l: number) => {
     parent.set(id, up);
     level.set(id, l);
     treeOrder.set(id, treeOrder.size);
-    (byLevelIds[l] ??= []).push(id);
     const own: string[] = [];
     kids.set(id, own);
     for (const c of childrenOf(id)) {
@@ -363,53 +358,61 @@ export function layoutVoronoi(
       own.push(c);
       visit(c, id, l + 1);
     }
-    leaves.set(id, own.length === 0 ? 1 : own.reduce((s, c) => s + leaves.get(c)!, 0));
   };
   const top: string[] = [];
   for (const r of roots) { if (!level.has(r)) { top.push(r); visit(r, null, 0); } }
 
-  const total = top.reduce((s, r) => s + leaves.get(r)!, 0);
-  const world = total === 0 ? [] : hexagon(quantize(total) * LEAF_AREA);
+  const world = top.length === 0 ? [] : hexagon(PRODUCT_AREA);
   const polygons = new Map<string, XY[]>();
-  const siteOf = (ids: readonly string[]): Site[] => ids.map((id) => ({ id, weight: quantize(leaves.get(id)!) }));
   const split = (clip: Polygon, ids: readonly string[], gap: number) => {
-    const cells = voronoiCells(clip, siteOf(ids));
+    const cells = voronoiCells(clip, ids);
     // Each cell is inset by half the gap, or less for a cell too small for it, so a gap never eats a small cell.
     for (const id of ids) {
       const cell = cells.get(id) ?? [];
-      polygons.set(id, inset(cell, Math.min(gap, CELL_GAP * cellTextScale(polygonArea(cell), (kids.get(id) ?? []).length > 0)) / 2));
+      polygons.set(id, inset(cell, Math.min(gap, CELL_GAP * cellText(cell)) / 2));
     }
   };
   if (top.length === 1) polygons.set(top[0], world);
-  else split(world, top, CELL_GAP * 4);
+  else split(world, top, CELL_GAP * 4 * cellText(world));
 
-  // From the roots down: each cell's label, then its children in its outline below the label.
+  // From the roots down, a group of siblings at a time: their shared text and labels, then each one's children in its outline below its label.
   const nodes = new Map<string, VoronoiNode>();
-  const queue = [...top];
-  for (let i = 0; i < queue.length; i++) {
-    const id = queue[i];
-    const own = kids.get(id)!;
-    const polygon = polygons.get(id)!;
-    const box = polygon.length >= 3 ? bounds(polygon) : { x: 0, y: 0, w: 0, h: 0 };
-    const placed = placeLabel(polygon, labelOf(id), own.length > 0, (s) => CELL_PAD * s);
-    const text = placed?.text ?? cellTextScale(polygonArea(polygon), own.length > 0);
-    nodes.set(id, {
-      id, parent: parent.get(id)!, children: own, level: level.get(id)!, ...box, text,
-      polygon, lines: placed?.lines ?? linesIn(labelOf(id), box.w / Math.max(text, 1e-9)), centered: true,
-      label: placed?.label ?? { x: box.x, y: box.y, w: 0, h: 0 }, cut: placed?.cut ?? box.y, order: treeOrder.get(id)!,
+  const byLevelIds: string[][] = [];
+  const groups: string[][] = top.length > 0 ? [top] : [];
+  for (let g = 0; g < groups.length; g++) {
+    const ids = groups[g];
+    const labels = ids.map((id) => labelOf(id));
+    const rooms: Room[] = ids.map((id) => {
+      const polygon = polygons.get(id)!;
+      const leaf = kids.get(id)!.length === 0;
+      const pole = leaf && polygon.length >= 3 ? (polylabel([polygon as XY[]], Math.max(1e-3, Math.sqrt(polygonArea(polygon)) / 200)) as unknown as XY) : null;
+      return { polygon, pole, pad: CELL_PAD * (polygon.length >= 3 ? cellText(polygon) : 0) };
     });
-    if (own.length === 0) continue;
-    const pad = CELL_PAD * text;
-    const room = placed ? below(inset(polygon, pad), placed.cut) : inset(polygon, pad);
-    split(room.length >= 3 ? room : polygon, own, CELL_GAP * text);
-    queue.push(...own);
+    const { text, placed } = shareLabels(rooms, labels);
+    ids.forEach((id, i) => {
+      const own = kids.get(id)!;
+      const { polygon, pad } = rooms[i];
+      const box = polygon.length >= 3 ? bounds(polygon) : { x: 0, y: 0, w: 0, h: 0 };
+      const at = placed[i];
+      const l = level.get(id)!;
+      nodes.set(id, {
+        id, parent: parent.get(id)!, children: own, level: l, ...box, text,
+        polygon, lines: at?.lines ?? linesIn(labels[i], Infinity), centered: true,
+        label: at?.label ?? { x: box.x, y: box.y, w: 0, h: 0 }, cut: at?.cut ?? box.y, order: treeOrder.get(id)!,
+      });
+      (byLevelIds[l] ??= []).push(id);
+      if (own.length === 0) return;
+      const room = at ? below(inset(polygon, pad), at.cut) : inset(polygon, pad);
+      split(room.length >= 3 ? room : polygon, own, CELL_GAP * cellText(polygon));
+      groups.push(own);
+    });
   }
 
   return {
     view: 'voronoi',
     nodes,
     roots: top,
-    byLevel: byLevelIds.map((ids) => ids.map((id) => nodes.get(id)!)),
+    byLevel: byLevelIds.map((ids) => ids.map((id) => nodes.get(id)!).sort((a, b) => a.order - b.order)),
     width: world.length ? bounds(world).w : 0,
     height: world.length ? bounds(world).h : 0,
   };

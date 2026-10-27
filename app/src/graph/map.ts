@@ -1,6 +1,5 @@
 import type { SpecIndex } from '../specs/data';
-import { contentScale, NODE_HEIGHT, NODE_WIDTH } from './layout';
-import { isCentered, labelFor, labelHeight, textMeasure, textScaleOf } from './text';
+import { BORDER, largestFit, linesIn, treeLabel, type MapLabel, type WrappedLabel, textMeasure } from './text';
 import { outlineInset, type Shape } from './shapes';
 import { treeChildren, treeParent } from './tree';
 
@@ -9,33 +8,47 @@ import { treeChildren, treeParent } from './tree';
 // is in it: each product is a space of its own. Every node has one place and one size in it,
 // whatever is in focus: focusing anything moves the camera (camera.ts), never the map.
 //
-// - Every node in one level (its depth in the tree, a product at 0) has the same width
-//   (LA-EXP-DR58), in proportion to the level's typical height (its median by height: the height of
-//   the node a point of the level most likely lies in), never narrower than the level below nor more
-//   than MAX_LEVEL_STEP times as wide, and the product's level no more than MAX_ROOT_STEP times, so it
-//   stays usable. The gap between two siblings, and between two levels, grows with the width.
-// - Every node in a level has one text scale, the level's width over a leaf's (text.ts), so a
-//   parent's text is at most MAX_LEVEL_STEP times its child's. A label wraps on whole words.
-// - A leaf is as tall as NODE_HEIGHT, or as its wrapped label needs at its level's text scale if
-//   taller. A parent is exactly as tall as its children stacked, the gaps between them included,
-//   and their stack starts at its top edge. A parent whose own label needs more room than its stack
-//   (one short child in a wide level) passes the difference down to its last leaf, so the stack
-//   still fills it exactly.
-// - A leaf's height and its level's width depend on each other: each level settles them together,
-//   from its typical height, before the level above is sized.
+// One rule sizes every layout, top-down from one fixed product box (LA-EXP-DR58): siblings are the
+// same size, with the same text. Each parent splits its room equally among its children, so a busy
+// parent packs its children smaller; record counts size nothing.
+// - The product's box is MAP_SIZE tall and ROOT_WIDTH of that wide.
+// - Siblings split their parent's height equally, a gap apart that is a share of each one's part,
+//   their stack filling the parent from its top edge to its bottom edge.
+// - Every box in one depth column has the same width: each column COLUMN_RATIO of the one before,
+//   a gap before it that is a share of its width, so the widths are fixed fractions of the map.
+// - Siblings share one text scale: their column's width over TEXT_SIZE, or less when a sibling's
+//   whole label (its kind and ID line, and its title wrapped on whole words) would not fit its box
+//   at that, the largest at which every sibling's does. Every label is centered.
 // - Filters do not change the map: a hidden kind is not drawn, but keeps its place.
+//
+// Map units are doubles, never rounded, so the deepest boxes keep their places however small they
+// are against the product.
 //
 // Pure and deterministic: the same index always gives the same map, and it is built once per index.
 
-/** How wide a level is for its typical height: the width over the height. */
-export const LEVEL_ASPECT = 1;
-/** The most one level is wider than the level below it (LA-EXP-DR58). */
-export const MAX_LEVEL_STEP = 3;
-/** The most the root's level (the product) is wider than the level below it, so a product's picture leaves room for its domains. */
-export const MAX_ROOT_STEP = 1.5;
-/** The gap between two sibling leaves, and between a leaf level and the level before it. */
-export const ROW_GAP = 16;
-export const COLUMN_GAP = 64;
+/**
+ * The product's box in every layout: the Tree map's height, the Nested map's side, the Voronoi
+ * hexagon's width, in map units. Small enough that the product's title (its text scale times a
+ * title's font) stays under the 10,000 px a browser draws a font at.
+ */
+export const MAP_SIZE = 300_000;
+/**
+ * A box's text scale is at most its size over this (LA-EXP-DR58): its width (the Tree map, where
+ * siblings split their parent's height), its side (the Nested map) or the square root of its area
+ * (the Voronoi map). So a box's text is the same share of it at every depth, and a framed box's
+ * header reads at about the same size on screen.
+ */
+export const TEXT_SIZE = 400;
+/** The product's column's width over its height, in the Tree map. */
+export const ROOT_WIDTH = 1;
+/** Each depth column's width over the one before it, in the Tree map. */
+export const COLUMN_RATIO = 0.4;
+/** The gap before a column, over its width; the gap between two siblings, over each one's equal part of their parent's height. */
+export const COLUMN_GAP_SHARE = 0.15;
+export const ROW_GAP_SHARE = 0.1;
+
+/** A box's largest text scale for its size (LA-EXP-DR58): its size over TEXT_SIZE. */
+export const sizeText = (size: number) => size / TEXT_SIZE;
 
 export interface MapNode {
   id: string;
@@ -48,21 +61,20 @@ export interface MapNode {
   y: number;
   w: number;
   h: number;
-  /** Its label's scale (LA-EXP-DR58): its level's width over a leaf's, fixed by the map. */
+  /** Its label's scale (LA-EXP-DR58), shared with its siblings, fixed by the map. */
   text: number;
+  /** Its label's lines, wrapped on whole words for its box at its text scale, and whether they are centered in it. */
+  lines: WrappedLabel;
+  centered: boolean;
 }
 
 export interface MapLevel {
-  /** Its left edge and its width, shared by every node in it, in proportion to its typical height within the caps; its gaps grow with it. */
+  /** Its left edge and its width, shared by every node in it: a fixed fraction of the map's. */
   x: number;
   width: number;
-  /** The text scale of every box in it: its width over a leaf's. */
-  text: number;
-  /** The gap between two siblings in it. */
-  rowGap: number;
 }
 
-/** What both views' maps share (the Tree map here, the Nested map in nested.ts): what the camera, the minimap and the filters read. */
+/** What every layout's map shares (the Tree map here, the Nested and Voronoi maps in nested.ts and voronoi.ts): what the camera, the minimap and the filters read. */
 export interface PlacedMap {
   /** Which view it lays out (LA-EXP-UC03-R16). */
   view: 'tree' | 'nested' | 'voronoi';
@@ -81,47 +93,6 @@ export interface GraphMap extends PlacedMap {
   levels: readonly MapLevel[];
 }
 
-/** The typical height of a level: its median weighted by height, so a level of a few tall nodes and many short ones takes the tall ones' scale. */
-export function typicalHeight(heights: readonly number[]): number {
-  if (heights.length === 0) return NODE_HEIGHT;
-  const sorted = [...heights].sort((a, b) => a - b);
-  const half = sorted.reduce((sum, h) => sum + h, 0) / 2;
-  let seen = 0;
-  for (const h of sorted) { seen += h; if (seen >= half) return h; }
-  return sorted[sorted.length - 1];
-}
-/** A level's typical box size: the median of the square root of its boxes' areas, weighted by area, as a Tree level's typical height. */
-export function typicalSize(areas: readonly number[]): number {
-  const sorted = [...areas].sort((a, b) => a - b);
-  const half = sorted.reduce((s, a) => s + a, 0) / 2;
-  let seen = 0;
-  for (const a of sorted) { seen += a; if (seen >= half) return Math.sqrt(a); }
-  return Math.sqrt(sorted.at(-1) ?? 0);
-}
-
-/**
- * A height level's text scale in the Nested map (LA-EXP-DR62), a box's
- * level being its height from the leaves: its typical box size over a leaf's, never below the
- * level below's (`below`, 1 for the leaves) nor
- * more than MAX_LEVEL_STEP times it. A box's planned area (`areasAt`: the larger of its share by
- * records and the least its label and children need at a scale) grows with the scale, so the two
- * settle together, only ever growing, as a Tree level's width and its leaves' heights do. Set once
- * when the map is built, from the leaves up.
- */
-export function settleLevelScale(areasAt: (scale: number) => readonly number[], below: number, leafArea: number): number {
-  const scaleFor = (areas: readonly number[]) => Math.min(MAX_LEVEL_STEP * below, Math.max(below, typicalSize(areas) / Math.sqrt(leafArea)));
-  let s = scaleFor(areasAt(below));
-  for (let round = 0; round < SETTLE_ROUNDS; round++) {
-    const next = scaleFor(areasAt(s));
-    if (next <= s * (1 + 1e-9)) break;
-    s = next;
-  }
-  return s;
-}
-
-/** Even, so a box's middle is a whole pixel. */
-const even = (n: number) => 2 * Math.round(n / 2);
-
 /** The root of the map that holds a node: its product, or the top of its tree when no product reaches it. */
 export function mapRootOf(index: SpecIndex, id: string): string {
   let at = id;
@@ -130,24 +101,20 @@ export function mapRootOf(index: SpecIndex, id: string): string {
   return at;
 }
 
-/** How many times a level settles its width and its leaves' heights together; it settles in two or three. */
-const SETTLE_ROUNDS = 12;
-
 /**
- * Lays out a tree given by its roots, a children function and, for each node, how tall its label
- * is at text scale 1, wrapped in a leaf's width, centered or not (exported for tests; no taller
- * than a leaf when not given).
+ * Lays out a tree given by its roots, a children function and, for each node, its label (its ID
+ * when not given) as an icicle (exported for tests).
  */
-export function layoutTree(roots: readonly string[], childrenOf: (id: string) => readonly string[], labelHeightOf: (id: string, centered: boolean) => number = () => 0): GraphMap {
+export function layoutTree(roots: readonly string[], childrenOf: (id: string) => readonly string[], labelOf: (id: string) => MapLabel = (id) => ({ title: id, meta: '' })): GraphMap {
   // Levels, by a walk from the roots; a node reached twice keeps its first place.
   const parent = new Map<string, string | null>();
   const level = new Map<string, number>();
   const kids = new Map<string, string[]>();
-  const byLevelIds: string[][] = [];
+  let depth = 0;
   const visit = (id: string, up: string | null, l: number) => {
     parent.set(id, up);
     level.set(id, l);
-    (byLevelIds[l] ??= []).push(id);
+    depth = Math.max(depth, l + 1);
     const own: string[] = [];
     kids.set(id, own);
     for (const c of childrenOf(id)) {
@@ -159,67 +126,38 @@ export function layoutTree(roots: readonly string[], childrenOf: (id: string) =>
   const top: string[] = [];
   for (const r of roots) { if (!level.has(r)) { top.push(r); visit(r, null, 0); } }
 
-  // Heights and widths, from the deepest level up: a level's heights need only the level below.
-  const depth = byLevelIds.length;
-  const h = new Map<string, number>();
-  const widths: number[] = new Array(depth).fill(NODE_WIDTH);
-  const rowGaps: number[] = new Array(depth).fill(ROW_GAP);
-  const evenUp = (n: number) => 2 * Math.ceil(n / 2);
-  for (let l = depth - 1; l >= 0; l--) {
-    const ids = byLevelIds[l];
-    const stack = ids.map((id) => {
-      const own = kids.get(id)!;
-      return own.length === 0 ? 0 : own.reduce((sum, k) => sum + h.get(k)!, 0) + rowGaps[l + 1] * (own.length - 1);
-    });
-    const below = l + 1 < depth ? widths[l + 1] : NODE_WIDTH;
-    const cap = (l === 0 ? MAX_ROOT_STEP : MAX_LEVEL_STEP) * below;
-    // A node's height at a width: a leaf's base height or its label's, a parent's stack or its label's.
-    const heightsAt = (w: number) => {
-      const text = textScaleOf(w);
-      return ids.map((id, i) => {
-        const leaf = stack[i] === 0;
-        return Math.max(leaf ? NODE_HEIGHT : stack[i], evenUp(text * labelHeightOf(id, isCentered(text, !leaf))));
-      });
-    };
-    const widthFor = (heights: number[]) => even(Math.min(cap, Math.max(below, LEVEL_ASPECT * typicalHeight(heights))));
-    // Wider means taller leaves, which may mean wider again: settle the two together, only ever growing.
-    let w = widthFor(heightsAt(below));
-    for (let round = 0; round < SETTLE_ROUNDS; round++) {
-      const next = widthFor(heightsAt(w));
-      if (next <= w) break;
-      w = next;
-    }
-    widths[l] = w;
-    rowGaps[l] = even((ROW_GAP * w) / NODE_WIDTH);
-    heightsAt(w).forEach((height, i) => {
-      const id = ids[i];
-      h.set(id, height);
-      // A parent taller than its stack for its own label passes the difference down to its last leaf.
-      const extra = height - stack[i];
-      if (stack[i] === 0 || extra <= 0) return;
-      for (let at = kids.get(id)!.at(-1); at !== undefined; at = kids.get(at)!.at(-1)) h.set(at, h.get(at)! + extra);
-    });
-  }
-
-  // Each level's left edge: the levels before it, each at its width, a gap apart that grows with the narrower.
+  // Each column's left edge and width: fixed fractions of the product's box, a gap before each.
   const levels: MapLevel[] = [];
-  let x = 0;
-  for (let l = 0; l < depth; l++) {
-    levels.push({ x, width: widths[l], text: textScaleOf(widths[l]), rowGap: rowGaps[l] });
-    if (l + 1 < depth) x += widths[l] + even((COLUMN_GAP * widths[l + 1]) / NODE_WIDTH);
+  for (let l = 0, x = 0; l < depth; l++) {
+    const width = MAP_SIZE * ROOT_WIDTH * COLUMN_RATIO ** l;
+    if (l > 0) x += COLUMN_GAP_SHARE * width;
+    levels.push({ x, width });
+    x += width;
   }
 
-  // Places: the roots stacked a root gap apart; each node's children stacked from its top edge.
+  // From the roots down: each group of siblings an equal part of its parent's height, sharing one text scale.
   const nodes = new Map<string, MapNode>();
-  const place = (id: string, y: number) => {
-    const l = level.get(id)!;
-    const own = kids.get(id)!;
-    nodes.set(id, { id, parent: parent.get(id)!, children: own, level: l, x: levels[l].x, y, w: widths[l], h: h.get(id)!, text: levels[l].text });
-    let at = y;
-    for (const k of own) { place(k, at); at += h.get(k)! + rowGaps[l + 1]; }
+  const byLevelIds: string[][] = [];
+  const place = (ids: readonly string[], l: number, y0: number, h: number, gap: number, up: string | null) => {
+    const { x, width: w } = levels[l];
+    // Its border grows with its text (LA-EXP-DR58).
+    const border = (s: number) => BORDER * s;
+    const labels = ids.map((id) => labelOf(id));
+    const text = Math.min(...labels.map((label) => largestFit(label, true, w, h, sizeText(w), border)));
+    ids.forEach((id, i) => {
+      const y = y0 + i * (h + gap);
+      const own = kids.get(id)!;
+      const lines = linesIn(labels[i], text > 0 ? (w - 2 * border(text)) / text : Infinity, true);
+      nodes.set(id, { id, parent: up, children: own, level: l, x, y, w, h, text, lines, centered: true });
+      (byLevelIds[l] ??= []).push(id);
+      if (own.length === 0) return;
+      const part = h / own.length;
+      const between = ROW_GAP_SHARE * part;
+      place(own, l + 1, y, (h - between * (own.length - 1)) / own.length, between, id);
+    });
   };
-  let y = 0;
-  for (const r of top) { place(r, y); y += h.get(r)! + rowGaps[0]; }
+  if (top.length > 0) place(top, 0, 0, MAP_SIZE, ROW_GAP_SHARE * MAP_SIZE, null);
+
   const byLevel = byLevelIds.map((ids) => ids.map((id) => nodes.get(id)!).sort((a, b) => a.y - b.y));
   const last = levels.at(-1);
   return {
@@ -229,25 +167,27 @@ export function layoutTree(roots: readonly string[], childrenOf: (id: string) =>
     levels,
     byLevel,
     width: last ? last.x + last.width : 0,
-    height: Math.max(0, y - rowGaps[0]),
+    height: top.length === 0 ? 0 : top.length * MAP_SIZE + (top.length - 1) * ROW_GAP_SHARE * MAP_SIZE,
   };
 }
 
 const cache = new WeakMap<SpecIndex, Map<string, GraphMap>>();
 
-/** The map of one product (or of a tree no product reaches), from its root: built on first use with the current text measure, then read. */
+/** The map of one product (or of a tree no product reaches), from its root: built on first use, then read. */
 export function graphMap(index: SpecIndex, root: string): GraphMap {
   let maps = cache.get(index);
   if (!maps) { maps = new Map(); cache.set(index, maps); }
   const key = `${textMeasure().key}|${root}`;
   const known = maps.get(key);
   if (known) return known;
-  const map = layoutTree([root], (id) => treeChildren(index, id), (id, centered) => labelHeight(labelFor(index, id, centered)));
+  const map = layoutTree([root], (id) => treeChildren(index, id), (id) => treeLabel(index, id));
   maps.set(key, map);
   return map;
 }
 
 type Rect = Pick<MapNode, 'x' | 'y' | 'w' | 'h'>;
+/** A box with its text scale, which its border and outline grow by (LA-EXP-DR58). */
+type Scaled = Rect & Pick<MapNode, 'text'>;
 type Point = { x: number; y: number };
 
 /** A node's center in the map. */
@@ -259,11 +199,11 @@ export const centerOf = (n: Rect) => ({ x: n.x + n.w / 2, y: n.y + n.h / 2 });
  * shape's is where its edge crosses that height, so a line into a domain's hexagon meets the tip
  * of its point and a line out of one starts on its slanted side.
  */
-export function parentLine(parent: Rect, child: Rect, parentShape: Shape = 'box', childShape: Shape = 'box'): [Point, Point] {
+export function parentLine(parent: Scaled, child: Scaled, parentShape: Shape = 'box', childShape: Shape = 'box'): [Point, Point] {
   const y = child.y + child.h / 2;
   return [
-    { x: parent.x + parent.w - outlineInset(parent, parentShape, contentScale(parent.w, parent.h), y, 'right'), y },
-    { x: child.x + outlineInset(child, childShape, contentScale(child.w, child.h), y, 'left'), y },
+    { x: parent.x + parent.w - outlineInset(parent, parentShape, parent.text, y, 'right'), y },
+    { x: child.x + outlineInset(child, childShape, child.text, y, 'left'), y },
   ];
 }
 
