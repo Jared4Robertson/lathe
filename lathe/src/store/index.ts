@@ -1,5 +1,5 @@
 // The store's public interface: the schema, loading the data files, the command layer and the merge driver.
-export { openStore, Store, StoreError, formatProblem } from './store.ts';
+export { openStore, Store, StoreError, formatProblem, LATHE_DATA_DIR } from './store.ts';
 export type { Command, KeyInput, Origin, StoreOptions, StoreProblem, WriteResult } from './store.ts';
 export { readMigrations, applyMigrations, describeSchema, SCHEMA_DIR, STORED_ROLES } from './schema.ts';
 export type {
