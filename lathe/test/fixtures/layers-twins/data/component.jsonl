@@ -1,4 +1,0 @@
-{"id":"LY-A-C01","title":"Lending service","domain_id":"LY-A","layer_id":"LY-A-LAY01","component_type":"service","file":"code/a.ts","description":"Text."}
-{"id":"LY-A-C02","title":"Return service","domain_id":"LY-A","layer_id":"LY-A-LAY01","component_type":"service","file":"code/LY-A-missing.ts","description":"Text."}
-{"id":"LY-B-C01","title":"Lending service","domain_id":"LY-B","component_type":"service","file":"code/b.ts","description":"Text."}
-{"id":"LY-B-C02","title":"Return service","domain_id":"LY-B","component_type":"service","file":"code/LY-B-missing.ts","description":"Text."}

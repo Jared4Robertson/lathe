@@ -1,268 +1,307 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import path from 'node:path';
+// Lathe's checks, one at a time: each starts from the complete product, which gives no problem, and changes one
+// thing to break the rule.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { loadWorkspace, type Workspace } from '../src/index.ts';
-import { everyKind, load, loadData, ofCheck, records, refusals, removeData, withTable, writeData, type Data } from './helpers.ts';
+import { openStore, LATHE_DATA_DIR, type Workspace } from '../src/index.ts';
+import path from 'node:path';
+import { adding, changing, complete, loadData, ofCheck, records, removeData, without } from './helpers.ts';
 
-/** One obligation kind's line in a domain's coverage: total, designed, built and proved. */
-const line = (kind: string, total: number, designed: number, built: number, proved: number) => expect.objectContaining({ kind, total, designed, built, proved });
-
-const FIXTURES = ['good', 'broken-tests', 'configured', 'unfinished'];
-const WARNINGS = ['unsatisfied', 'unproved', 'use-case-without-requirements', 'component-file-missing', 'rule-not-applied', 'use-case-without-flow', 'interaction-requirement-fulfills-nothing', 'test-type-mismatch', 'component-satisfies-nothing', 'test-proves-nothing'];
-const workspaces: Record<string, Workspace> = {};
-beforeAll(async () => {
-  for (const name of FIXTURES) workspaces[name] = await load(name);
-});
 afterAll(removeData);
 
-/** A small product: a use case with one requirement, nothing designed or proved. */
-const small = (): Data => ({
-  product: [{ id: 'BX', title: 'Broken product' }],
-  domain: [{ id: 'BX-D', title: 'Domain', product_id: 'BX' }],
-  use_case: [{ id: 'BX-D-UC01', title: 'Do it', domain_id: 'BX-D' }],
-  requirement: [{ id: 'BX-D-UC01-R01', title: 'It is done', use_case_id: 'BX-D-UC01', statement: 'It MUST be done.' }],
-  view: [{ id: 'BX-D-V01', title: 'A view', domain_id: 'BX-D' }],
-  question: [{ id: 'BX-D-Q01', title: 'Anything?', product_id: 'BX', domain_id: 'BX-D', owner: 'Owner' }],
+let clean: Workspace;
+beforeAll(async () => {
+  clean = await loadData(complete());
 });
 
-describe('Lathe-cited checks', () => {
-  it('LA-AUT-T14 Duplicate IDs are refused by the store, in one table or across two', async () => {
-    const data = everyKind();
-    expect(await refusals(withTable(data, 'aggregate', [...data.aggregate, { id: 'TL-LEND-A1', title: 'Again', domain_id: 'TL-LEND' }]))).toEqual([
-      expect.objectContaining({ rule: 'primary-key', file: 'data/aggregate.jsonl', key: 'TL-LEND-A1' }),
-    ]);
-    const twice = await refusals(withTable(data, 'view', [...data.view, { id: 'TL-LEND-A1', title: 'A view with an aggregate ID', domain_id: 'TL-LEND' }]));
-    expect(twice).toEqual([expect.objectContaining({ rule: 'unique-id', key: 'TL-LEND-A1' })]);
-    expect(twice[0].message).toContain('already a aggregate');
+describe("Lathe's checks", () => {
+  it('the complete product breaks none of them', () => {
+    expect(clean.problems).toEqual([]);
   });
 
-  it('LA-AUT-T15 A link to a missing record is refused by the store', async () => {
-    const data = everyKind();
-    const problems = await refusals(withTable(data, 'applies', [{ source_id: 'TL-LEND-UC01', target_id: 'TL-LEND-DR99' }]));
-    expect(problems).toEqual([expect.objectContaining({ rule: 'foreign-key', file: 'data/applies.jsonl', line: 1 })]);
-    expect(problems[0].message).toContain('TL-LEND-DR99');
-  });
-
-  it('LA-AUT-T16 A disallowed relation is refused by the store; a question may be about any record', async () => {
-    const data = small();
-    // A view cannot satisfy: satisfies starts at a component or a technical step.
-    expect(await refusals({ ...data, satisfies: [{ source_id: 'BX-D-V01', target_id: 'BX-D-UC01-R01' }] })).toEqual([
-      expect.objectContaining({ rule: 'foreign-key', file: 'data/satisfies.jsonl' }),
-    ]);
-    // A view may fulfill a requirement, but not a domain rule: the pair is not allowed.
-    const rule = { ...data, domain_rule: [{ id: 'BX-D-DR01', title: 'A rule', domain_id: 'BX-D', statement: 'It MUST hold.' }] };
-    expect(await refusals({ ...rule, fulfills: [{ source_id: 'BX-D-V01', target_id: 'BX-D-DR01' }] })).toEqual([
-      expect.objectContaining({ rule: 'relation-pair', table: 'fulfills' }),
-    ]);
-    // An unknown relation has no table.
-    expect(await refusals({ ...data, admires: [{ source_id: 'BX-D-V01', target_id: 'BX-D-UC01' }] })).toEqual([
-      expect.objectContaining({ rule: 'unknown-table', file: 'data/admires.jsonl' }),
-    ]);
-    expect(await refusals({ ...data, about: [{ source_id: 'BX-D-Q01', target_id: 'BX-D-V01' }] })).toEqual([]);
-  });
-
-  it("LA-AUT-T17 A test whose file lacks its ID is reported as an error", () => {
-    const ws = workspaces['broken-tests'];
-    expect(ofCheck(ws, 'test-file-missing-id')).toMatchObject([{ severity: 'error', record: 'BX-D-T01' }]);
-    expect(ofCheck(ws, 'test-file-missing')).toMatchObject([{ severity: 'error', record: 'BX-D-T02' }]);
-    // BX-D-T03's file names it, so neither file check reports it.
-    expect(ws.problems.some((p) => p.record === 'BX-D-T03' && p.check.startsWith('test-file'))).toBe(false);
-  });
-
-  it('LA-TRC-T01 Coverage counts satisfied and proved requirements and lists the gaps', async () => {
-    expect(workspaces.good.coverage).toMatchObject([
-      { domain: 'EX-NOTE', obligations: expect.arrayContaining([line('requirement', 1, 1, 1, 1), line('domain_rule', 1, 1, 1, 1)]), gaps: [] },
-    ]);
-    const ws = await loadData(small());
-    expect(ws.coverage).toMatchObject([
-      {
-        domain: 'BX-D',
-        obligations: expect.arrayContaining([line('requirement', 1, 0, 0, 0), line('domain_rule', 0, 0, 0, 0)]),
-        gaps: [
-          { id: 'BX-D-UC01-R01', kind: 'requirement', missing: 'satisfies' },
-          { id: 'BX-D-UC01-R01', kind: 'requirement', missing: 'proves' },
-        ],
-      },
-    ]);
-  });
-
-  it('LA-CHK-T01 A malformed data file is a data-refused error naming the file and line, not a crash', async () => {
-    const root = writeData(small());
-    writeFileSync(path.join(root, 'data', 'aggregate.jsonl'), '{"id":"BX-D-A1","title":"Fine","domain_id":"BX-D"}\nnot json\n');
-    const ws = await loadWorkspace(root);
-    const found = ofCheck(ws, 'data-refused');
-    expect(found).toEqual([expect.objectContaining({ severity: 'error', record: null })]);
-    expect(found[0].message).toContain('data/aggregate.jsonl:2');
-    expect(ws.records).toEqual([]);
-    expect(ws.problems).toEqual(found);
+  it('every check row has a test here', async () => {
+    const store = await openStore(path.dirname(LATHE_DATA_DIR), { latheDataDir: null });
+    const names = store.rows('check').map((r) => String(r.name)).sort();
+    await store.close();
+    const tested = describedChecks.sort();
+    expect(names).toEqual(tested);
   });
 });
 
-describe('product configuration', () => {
-  const temps: string[] = [];
-  afterAll(() => { for (const dir of temps) rmSync(dir, { recursive: true, force: true }); });
+/** The checks this file tests, one describe each. */
+const describedChecks: string[] = [];
+const check = (name: string, body: () => void) => {
+  describedChecks.push(name);
+  describe(name, body);
+};
 
-  it("LA-PLT-T01 A product's lathe.config.json chooses the data folder", async () => {
-    const root = mkdtempSync(path.join(tmpdir(), 'lathe-configured-'));
-    temps.push(root);
-    mkdirSync(path.join(root, 'docs', 'data'), { recursive: true });
-    writeFileSync(path.join(root, 'lathe.config.json'), JSON.stringify({ data: 'docs/data' }));
-    writeFileSync(path.join(root, 'docs', 'data', 'product.jsonl'), '{"id":"CX","title":"Configured product"}\n');
-    // data/ at the root is not the configured folder, so it is not read.
-    mkdirSync(path.join(root, 'data'));
-    writeFileSync(path.join(root, 'data', 'product.jsonl'), 'not read\n');
-    const ws = await loadWorkspace(root);
-    expect(ws.records.map((r) => r.id)).toEqual(['CX']);
-    expect(ws.problems).toEqual([]);
+check('test-file-missing', () => {
+  it("LA-TRC-T14 an automated or manual test's missing file is an error; one not automated yet is a warning", async () => {
+    let data = changing(complete(), 'integration_test', () => true, { file: 'manual/mail.md' });
+    data = changing(data, 'domain_service_test', () => true, { state: 'not automated yet', file: 'test/later.test.ts' });
+    const ws = await loadData(data, { missing: ['test/email.test.ts', 'manual/mail.md', 'test/later.test.ts'] });
+    expect(ofCheck(ws, 'test-file-missing').map((p) => [p.severity, p.record])).toEqual([
+      ['error', 'EX-INT01-T01'],
+      ['warning', 'EX-LEND-DS01-T01'],
+      ['error', 'EX-VO01-C01-T'],
+    ]);
+    expect(ofCheck(ws, 'test-file-missing')[2].message).toBe('Constraint test EX-VO01-C01-T names the file test/email.test.ts, which does not exist.');
   });
 
-  it("LA-PLT-T02 A product's own kinds and relations add tables to the schema", () => {
-    const ws = workspaces.configured;
-    expect(ws.kinds.map((k) => k.kind)).toEqual(expect.arrayContaining(['product', 'requirement', 'report']));
-    expect(ws.records.find((r) => r.id === 'CX-D-RP1')).toMatchObject({ kind: 'report', parent: 'CX-D', domain: 'CX-D' });
-    expect(ws.relations).toContainEqual(expect.objectContaining({ relation: 'summarizes', source_kind: 'report', target_kind: 'aggregate' }));
-    expect(ws.links).toContainEqual({ source: 'CX-D-RP1', relation: 'summarizes', target: 'CX-D-A1' });
-    expect(ws.problems.filter((p) => p.severity === 'error')).toEqual([]);
+  it('a folder is not a test file', async () => {
+    const ws = await loadData(changing(complete(), 'policy_test', () => true, { file: 'src' }), { missing: ['src'] });
+    expect(records(ofCheck(ws, 'test-file-missing'))).toEqual(['EX-LEND-PO01-T']);
   });
 });
 
-describe('coverage and the schema', () => {
-  it('LA-TRC-T02 Coverage counts designed, built and proved separately', () => {
-    expect(workspaces.unfinished.coverage).toMatchObject([
-      {
-        domain: 'UX-D',
-        obligations: expect.arrayContaining([line('requirement', 3, 2, 1, 1), line('domain_rule', 1, 1, 1, 0)]),
-        gaps: [
-          { id: 'UX-D-DR01', kind: 'domain_rule', missing: 'proves' },
-          { id: 'UX-D-UC01-R02', kind: 'requirement', missing: 'proves' },
-          { id: 'UX-D-UC01-R03', kind: 'requirement', missing: 'satisfies' },
-          { id: 'UX-D-UC01-R03', kind: 'requirement', missing: 'proves' },
-        ],
-      },
+check('test-file-missing-id', () => {
+  it("LA-AUT-T17 an automated test whose file does not name it is an error, and it proves nothing", async () => {
+    const ws = await loadData(complete(), { silent: ['EX-LEND-INV01-T'] });
+    expect(ofCheck(ws, 'test-file-missing-id')).toEqual([
+      expect.objectContaining({ severity: 'error', record: 'EX-LEND-INV01-T', message: expect.stringContaining('does not mention EX-LEND-INV01-T') }),
     ]);
-    // Built never exceeds designed.
-    for (const ws of Object.values(workspaces)) {
-      for (const c of ws.coverage) {
-        for (const o of c.obligations) {
-          expect(o.built).toBeLessThanOrEqual(o.designed);
-          expect(o.proved + o.planned).toBeLessThanOrEqual(o.total);
-        }
-      }
+  });
+
+  it('LA-TRC-T11 a test file names an ID only as a whole ID', async () => {
+    const files = { 'test/loans.test.ts': "it('EX-LEND-INV01-T2 is another test', () => {});\nit('EX-LEND-SP01-T ok');\nit('EX-LEND-PO01-T ok');\n" };
+    const ws = await loadData(complete(), { files });
+    expect(records(ofCheck(ws, 'test-file-missing-id'))).toEqual(['EX-LEND-INV01-T']);
+  });
+});
+
+check('manual-test-file-silent', () => {
+  it('LA-TRC-T74 a manual test whose file exists but never names it is a warning', async () => {
+    const data = changing(complete(), 'integration_test', () => true, { file: 'manual/mail.md' });
+    const ws = await loadData(data, { files: { 'manual/mail.md': 'Send a mail and look for it.\n' } });
+    expect(ofCheck(ws, 'manual-test-file-silent')).toEqual([expect.objectContaining({ severity: 'warning', record: 'EX-INT01-T01' })]);
+    expect(ofCheck(await loadData(data), 'manual-test-file-silent')).toEqual([]);
+  });
+});
+
+check('test-level-not-allowed', () => {
+  it('a test at a level its kind does not allow is a warning naming the allowed levels', async () => {
+    let data = changing(complete(), 'constraint_test', () => true, { level: 'database' });
+    data = changing(data, 'flow_test', (r) => r.id === 'EX-LEND-UC01-FL-T', { level: 'api' });
+    const ws = await loadData(data);
+    expect(ofCheck(ws, 'test-level-not-allowed').map((p) => p.message)).toEqual([
+      'Flow test EX-LEND-UC01-FL-T runs at level api, which a flow test does not allow; run it at e2e-ui, manual.',
+      'Constraint test EX-VO01-C01-T runs at level database, which a constraint test does not allow; run it at unit.',
+    ]);
+  });
+
+  it('a pattern rule test may run at any level', async () => {
+    for (const level of ['unit', 'database', 'contract', 'e2e-api', 'e2e-ui']) {
+      const ws = await loadData(changing(complete(), 'pattern_rule_test', () => true, { level }));
+      expect(ofCheck(ws, 'test-level-not-allowed'), level).toEqual([]);
     }
   });
+});
 
-  it('LA-TRC-T03 Coverage gaps are warnings, so an unfinished design has no errors', () => {
-    const ws = workspaces.unfinished;
-    expect(ws.problems.filter((p) => p.severity === 'error')).toEqual([]);
-    expect(records(ofCheck(ws, 'unsatisfied'))).toEqual(['UX-D-UC01-R03']);
-    expect(records(ofCheck(ws, 'unproved'))).toEqual(['UX-D-DR01', 'UX-D-UC01-R02', 'UX-D-UC01-R03']);
-    expect(ofCheck(ws, 'component-file-missing')).toMatchObject([{ severity: 'warning', record: 'UX-D-C02' }]);
-  });
-
-  it("LA-AUT-T19 A product kind or relation that names an undefined kind, repeats itself or has a bad field name is refused", async () => {
-    const product = { product: [{ id: 'CX', title: 'Product' }] };
-    const kind = { name: 'report', product_id: 'CX', label: 'Report', description: 'A report.', parent_kind: 'domain', obligation: 'none' };
-    const unknownParent = await refusals({ ...product, product_kind: [{ ...kind, parent_kind: 'gadget' }] });
-    expect(unknownParent).toEqual([expect.objectContaining({ rule: 'product-kind' })]);
-    expect(unknownParent[0].message).toContain('gadget');
-    expect(await refusals({ ...product, product_kind: [kind, kind] })).toEqual([expect.objectContaining({ rule: 'primary-key', table: 'product_kind' })]);
-    const relation = { name: 'summarizes', source_kind: 'sprocket', target_kind: 'aggregate', product_id: 'CX', forward_label: 'Summarizes', reverse_label: 'Summarized by', description: 'It summarizes.' };
-    const unknownEnd = await refusals({ ...product, product_relation: [relation] });
-    expect(unknownEnd).toEqual([expect.objectContaining({ rule: 'product-kind' })]);
-    expect(unknownEnd[0].message).toContain('sprocket');
-    expect(await refusals({ ...product, product_kind: [kind], product_kind_field: [{ kind: 'report', position: 1, name: 'Bad-Name', type: 'text', required: false, description: 'A field.' }] })).toEqual([
-      expect.objectContaining({ rule: 'check', table: 'product_kind_field' }),
+check('technical-file-missing', () => {
+  it("a technical record whose file does not exist is a warning; a folder will do", async () => {
+    let data = changing(complete(), 'adapter', () => true, { file: 'src/mail' });
+    data = changing(data, 'ui_component', () => true, { file: 'src' });
+    const ws = await loadData(data, { missing: ['src/dates.ts', 'src/mail', 'src'] });
+    expect(ofCheck(ws, 'technical-file-missing')).toEqual([
+      expect.objectContaining({ severity: 'warning', record: 'EX-INT01-AD', message: 'Adapter EX-INT01-AD names src/mail, which does not exist yet.' }),
+      expect.objectContaining({ severity: 'warning', record: 'EX-LEND-DS01-SV' }),
     ]);
-    // Lathe's own schema, and a product's own kinds, load with no error.
-    for (const name of ['good', 'configured']) expect(workspaces[name].problems.filter((p) => p.severity === 'error')).toEqual([]);
   });
 });
 
-describe('the good workspace', () => {
-  it('has no problems', () => {
-    expect(workspaces.good.problems).toEqual([]);
+check('unused', () => {
+  it('a view, integration, value object, specification or UI component nothing uses is an error', async () => {
+    let data = without(complete(), 'happens_in', () => true);
+    data = without(data, 'exchanges_with', () => true);
+    data = without(data, 'checks', () => true);
+    data = without(data, 'renders', () => true);
+    data = changing(data, 'entity_field', (r) => r.type_value_object_id === 'EX-VO01', { type_value_object_id: undefined, type: 'text' });
+    const ws = await loadData(data);
+    expect(ofCheck(ws, 'unused').map((p) => [p.severity, p.record])).toEqual([
+      ['error', 'EX-INT01'],
+      ['error', 'EX-LEND-SP01'],
+      ['error', 'EX-UI01'],
+      ['error', 'EX-V01'],
+      ['error', 'EX-VO01'],
+    ]);
   });
 
-  it('loads records with their typed fields, parts, product and domain', () => {
-    const uc = workspaces.good.records.find((r) => r.id === 'EX-NOTE-UC01');
-    expect(uc).toEqual({
-      id: 'EX-NOTE-UC01',
-      kind: 'use_case',
-      title: 'Write a note',
-      parent: 'EX-NOTE',
-      product: 'EX',
-      domain: 'EX-NOTE',
-      fields: { domain_id: 'EX-NOTE', goal: 'A person writes a note.' },
-      parts: { use_case_actor: [{ use_case_id: 'EX-NOTE-UC01', position: 1, role_name: 'Person' }] },
+  it('a value object used by another value object, an event or a read model is used; a query selecting by a specification uses it', async () => {
+    let data = changing(complete(), 'entity_field', (r) => r.type_value_object_id === 'EX-VO01', { type_value_object_id: undefined, type: 'text' });
+    data = adding(data, { read_model_field: [{ read_model_id: 'EX-LEND-RM01', position: 2, name: 'Email', meaning: 'Whom to tell.', type_value_object_id: 'EX-VO01', required: false }] });
+    data = without(data, 'checks', () => true);
+    data = adding(data, { selects_by: [{ source_id: 'EX-LEND-QRY01', target_id: 'EX-LEND-SP01' }] });
+    expect(ofCheck(await loadData(data), 'unused')).toEqual([]);
+  });
+});
+
+check('pattern-rule-test-domain', () => {
+  it('a pattern rule test naming a domain that does not follow the pattern is an error', async () => {
+    let data = adding(complete(), { domain: [{ id: 'EX-SHOP', title: 'Shop', product_id: 'EX', subdomain_type: 'supporting' }] });
+    data = adding(data, { pattern_rule_test: [{ id: 'EX-PAT-ACT-R01-T02', title: 'In the shop', pattern_rule_id: 'EX-PAT-ACT-R01', domain_id: 'EX-SHOP', level: 'api', state: 'not automated yet' }] });
+    const ws = await loadData(data);
+    expect(ofCheck(ws, 'pattern-rule-test-domain')).toEqual([expect.objectContaining({ severity: 'error', record: 'EX-PAT-ACT-R01-T02' })]);
+    // Once the domain follows the pattern itself, the test is in place.
+    const following = adding(data, { follows: [{ source_id: 'EX-SHOP', target_id: 'EX-PAT-ACT' }] });
+    expect(ofCheck(await loadData(following), 'pattern-rule-test-domain')).toEqual([]);
+  });
+});
+
+check('pattern-setting-missing', () => {
+  it("LA-TRC-T17 a use case that gives no value for one of its pattern's settings is an error", async () => {
+    const ws = await loadData(without(complete(), 'setting_value', () => true));
+    expect(ofCheck(ws, 'pattern-setting-missing')).toEqual([
+      expect.objectContaining({ severity: 'error', record: 'EX-LEND-UC02', message: expect.stringContaining('setting "record"') }),
+    ]);
+  });
+});
+
+check('pattern-not-followed', () => {
+  it('LA-TRC-T32 a pattern no use case or domain follows is a warning', async () => {
+    const data = without(without(complete(), 'setting_value', () => true), 'follows', () => true);
+    const ws = await loadData(without(data, 'pattern_rule_test', () => true));
+    expect(ofCheck(ws, 'pattern-not-followed')).toEqual([
+      { severity: 'warning', check: 'pattern-not-followed', record: 'EX-PAT-ACT', message: "No use case or domain follows pattern EX-PAT-ACT, so its 1 rule is not counted in any domain's coverage." },
+    ]);
+  });
+});
+
+check('command-changes-another-aggregate', () => {
+  it('each recorded exception to one aggregate per command is a warning with its reason', async () => {
+    const ws = await loadData(adding(complete(), { command_change: [{ command_id: 'EX-LEND-CMD01', aggregate_id: 'EX-LEND-A2', reason: 'The tool must never show as free while lent.' }] }));
+    expect(ofCheck(ws, 'command-changes-another-aggregate')).toEqual([
+      {
+        severity: 'warning', check: 'command-changes-another-aggregate', record: 'EX-LEND-CMD01',
+        message: 'Command EX-LEND-CMD01 also changes aggregate EX-LEND-A2 in the same transaction: The tool must never show as free while lent.',
+      },
+    ]);
+  });
+});
+
+check('event-not-outbox', () => {
+  it('an event a policy hears, or a published one, not delivered by outbox is a warning', async () => {
+    let data = changing(complete(), 'event_type', (r) => r.id === 'EX-LEND-EV01-ET', { delivery: 'in process' });
+    data = changing(data, 'domain_event', (r) => r.id === 'EX-LEND-EV02', { published: true });
+    const ws = await loadData(data);
+    expect(ofCheck(ws, 'event-not-outbox').map((p) => p.message)).toEqual([
+      'Domain event EX-LEND-EV01 is heard by policy EX-LEND-PO01, but its event type EX-LEND-EV01-ET is delivered in process; deliver it by outbox.',
+      'Domain event EX-LEND-EV02 is published, but its event type EX-LEND-EV02-ET is delivered in process; deliver it by outbox.',
+    ]);
+  });
+
+  it('an event with no event type, or whose event type gives no delivery, is reported too', async () => {
+    let data = without(complete(), 'event_type', (r) => r.id === 'EX-LEND-EV01-ET');
+    data = changing(data, 'event_type', () => true, { delivery: undefined });
+    data = changing(data, 'domain_event', (r) => r.id === 'EX-LEND-EV02', { published: true });
+    const ws = await loadData(data);
+    expect(ofCheck(ws, 'event-not-outbox').map((p) => p.message)).toEqual([
+      'Domain event EX-LEND-EV01 is heard by policy EX-LEND-PO01, but has no event type; give it one delivered by outbox.',
+      'Domain event EX-LEND-EV02 is published, but its event type EX-LEND-EV02-ET gives no delivery; deliver it by outbox.',
+    ]);
+  });
+});
+
+check('has-crosses-aggregate', () => {
+  it('LA-AUT-T75 has_one or has_many to an entity of another aggregate is an error', async () => {
+    const ws = await loadData(adding(complete(), { has_many: [{ source_id: 'EX-LEND-EN01', target_id: 'EX-LEND-EN03' }] }));
+    expect(ofCheck(ws, 'has-crosses-aggregate')).toEqual([
+      expect.objectContaining({ severity: 'error', record: 'EX-LEND-EN01', message: expect.stringContaining('by a field typed by it') }),
+    ]);
+  });
+});
+
+check('entity-unreferenced', () => {
+  it("LA-AUT-T76 a child entity its root does not reach by has_one or has_many is a warning", async () => {
+    const ws = await loadData(without(complete(), 'has_one', () => true));
+    expect(ofCheck(ws, 'entity-unreferenced')).toEqual([expect.objectContaining({ severity: 'warning', record: 'EX-LEND-EN02' })]);
+  });
+});
+
+check('event-tense', () => {
+  it('LA-AUT-T93 a title with no past form as its last word or after its first is a warning', async () => {
+    const data = adding(complete(), {
+      domain_event: [
+        { id: 'EX-LEND-EV03', title: 'Return tool', aggregate_id: 'EX-LEND-A1', published: false },
+        { id: 'EX-LEND-EV04', title: 'Loan became overdue', aggregate_id: 'EX-LEND-A1', published: false },
+        { id: 'EX-LEND-EV05', title: 'Fee needed', aggregate_id: 'EX-LEND-A1', published: false },
+        { id: 'EX-LEND-EV06', title: 'Speed', aggregate_id: 'EX-LEND-A1', published: false },
+      ],
     });
-    expect(workspaces.good.records.find((r) => r.id === 'EX')).toMatchObject({ parent: null, product: 'EX', domain: null });
-    expect(workspaces.good.records.find((r) => r.id === 'EX-NOTE-DR01')).toMatchObject({ product: 'EX', domain: 'EX-NOTE', parent: 'EX-NOTE-A1' });
-  });
-
-  it('loads links, kinds and relations from the schema', () => {
-    const ws = workspaces.good;
-    expect(ws.records).toHaveLength(10);
-    expect(ws.links).toContainEqual({ source: 'EX-NOTE-C01', relation: 'satisfies', target: 'EX-NOTE-DR01' });
-    expect(ws.links).toHaveLength(8);
-    expect(ws.kinds.find((k) => k.kind === 'question')?.parent_kinds).toEqual(['aggregate', 'use_case', 'component', 'domain', 'product']);
-    expect(ws.kinds.find((k) => k.kind === 'endpoint')?.required_fields).toEqual(['method', 'route']);
-    expect(ws.kinds.find((k) => k.kind === 'product')).toMatchObject({ stage: '', parent_kinds: [], required_fields: [] });
-    expect(ws.relations).toContainEqual(expect.objectContaining({ relation: 'about', source_kind: 'question', target_kind: '*' }));
+    expect(records(ofCheck(await loadData(data), 'event-tense'))).toEqual(['EX-LEND-EV03', 'EX-LEND-EV06']);
   });
 });
 
-describe('problems', () => {
-  it('LA-CHK-T10 Data the schema refuses is an error, and work to do is a warning', async () => {
-    const seen = new Set<string>();
-    const bare = small();
-    bare.use_case = [...bare.use_case, { id: 'BX-D-UC02', title: 'Do nothing', domain_id: 'BX-D' }];
-    const all = [...Object.values(workspaces), await loadData(bare)];
-    for (const ws of all) {
-      for (const p of ws.problems) {
-        seen.add(p.check);
-        expect(p.severity, `${p.check}: ${p.message}`).toBe(WARNINGS.includes(p.check) ? 'warning' : 'error');
-      }
-    }
-    // Every kind of work to do appears in the fixtures; the structural warnings have their own fixtures in
-    // structure.test.ts and purpose.test.ts.
-    const structural = ['rule-not-applied', 'use-case-without-flow', 'interaction-requirement-fulfills-nothing', 'test-type-mismatch'];
-    for (const check of [...WARNINGS.filter((w) => !structural.includes(w)), 'test-file-missing', 'test-file-missing-id']) expect(seen).toContain(check);
-    // Broken data is never loaded: it is one data-refused error per refusal.
-    const refused = await loadWorkspace(writeData({ ...small(), applies: [{ source_id: 'BX-D-UC01', target_id: 'BX-D-DR99' }] }));
-    expect(refused.problems).toEqual([expect.objectContaining({ severity: 'error', check: 'data-refused' })]);
+check('domain-named-for-technology', () => {
+  it('LA-AUT-T103 a domain whose title or code names a technology is a warning; one only described so is not', async () => {
+    const data = adding(complete(), {
+      domain: [
+        { id: 'EX-WEB', title: 'Web app', product_id: 'EX', subdomain_type: 'generic' },
+        { id: 'EX-DB', title: 'Records', product_id: 'EX', subdomain_type: 'generic' },
+        { id: 'EX-SHOP', title: 'Shop', product_id: 'EX', subdomain_type: 'generic', description: 'Served by its own server.' },
+        { id: 'EX-TOUR', title: 'Guided tours', product_id: 'EX', subdomain_type: 'generic' },
+      ],
+    });
+    const found = ofCheck(await loadData(data), 'domain-named-for-technology');
+    expect(records(found)).toEqual(['EX-DB', 'EX-WEB']);
+    expect(found.find((p) => p.record === 'EX-DB')?.message).toContain('its code DB says "db"');
   });
+});
 
-  it('LA-CHK-T11 Every problem names its check and, when it has one, its record', () => {
-    for (const ws of Object.values(workspaces)) {
-      for (const p of ws.problems) {
-        expect(p.check).toMatch(/^[a-z][a-z-]*$/);
-        expect(p.message.trim().endsWith('.')).toBe(true);
-        expect(p.record, `${p.check}: ${p.message}`).not.toBeNull();
-        expect(p.message, p.check).toContain(p.record);
-      }
-    }
+check('step-order', () => {
+  it('LA-AUT-T42 a path whose positions skip a number is reported once, on the first step after the gap', async () => {
+    const data = adding(complete(), {
+      flow_step: [
+        { id: 'EX-LEND-UC01-FL-S03', title: 'Refused', flow_id: 'EX-LEND-UC01-FL', path: 'refused', position: 2 },
+        { id: 'EX-LEND-UC01-FL-S04', title: 'Told why', flow_id: 'EX-LEND-UC01-FL', path: 'Refused', position: 3 },
+      ],
+    });
+    expect(ofCheck(await loadData(data), 'step-order')).toEqual([
+      {
+        severity: 'error', check: 'step-order', record: 'EX-LEND-UC01-FL-S03',
+        message: 'Flow step EX-LEND-UC01-FL-S03 has position 2 on path refused in flow EX-LEND-UC01-FL, but no step of that path has position 1; number the steps of a path 1, 2, 3 and so on, with no gaps.',
+      },
+    ]);
   });
+});
 
-  it('warns about a component file that does not exist yet', () => {
-    expect(ofCheck(workspaces['broken-tests'], 'component-file-missing')).toMatchObject([
-      { severity: 'warning', record: 'BX-D-C01', message: expect.stringContaining('code/later.ts') },
+check('too-many-children', () => {
+  const requirements = (n: number, group?: (i: number) => string) =>
+    Array.from({ length: n }, (_, i) => ({ id: `EX-LEND-UC01-R${String(i + 2).padStart(2, '0')}`, title: `Rule ${i}`, use_case_id: 'EX-LEND-UC01', statement: 'It MUST hold.', ...(group ? { group_name: group(i) } : {}) }));
+
+  it('LA-CHK-T32 a record with more children of one kind than max_children is a warning naming the parent, kind and count', async () => {
+    const ws = await loadData(adding(complete(), { product_setting: [{ product_id: 'EX', max_children: 3 }], uc_requirement: requirements(3) }));
+    expect(ofCheck(ws, 'too-many-children')).toEqual([
+      expect.objectContaining({ severity: 'warning', record: 'EX-LEND-UC01', message: expect.stringContaining('Use case EX-LEND-UC01 has 4 children of kind uc_requirement, more than the 3') }),
     ]);
   });
 
-  it('warns about unsatisfied and unproved requirements', async () => {
-    const ws = await loadData(small());
-    expect(ofCheck(ws, 'unsatisfied')).toMatchObject([{ severity: 'warning', record: 'BX-D-UC01-R01' }]);
-    expect(ofCheck(ws, 'unproved')).toMatchObject([{ severity: 'warning', record: 'BX-D-UC01-R01' }]);
+  it('LA-CHK-T36 without the setting the limit is 15, and tests are never counted', async () => {
+    const tests = Array.from({ length: 20 }, (_, i) => ({ id: `EX-LEND-UC01-R01-T${String(i + 2).padStart(2, '0')}`, title: `Test ${i}`, uc_requirement_id: 'EX-LEND-UC01-R01', level: 'api', state: 'not automated yet' }));
+    const ws = await loadData(adding(complete(), { uc_requirement: requirements(15), use_case_test: tests }));
+    expect(ofCheck(ws, 'too-many-children').map((p) => p.message)).toEqual([expect.stringContaining('has 16 children of kind uc_requirement, more than the 15')]);
+  });
+
+  it('LA-CHK-T53 grouped requirements are counted per group, groups compared in any letter case', async () => {
+    const ws = await loadData(adding(complete(), { product_setting: [{ product_id: 'EX', max_children: 2 }], uc_requirement: requirements(4, (i) => (i < 3 ? (i ? 'Limits' : 'limits ') : 'Other')) }));
+    expect(ofCheck(ws, 'too-many-children').map((p) => p.message)).toEqual([expect.stringContaining('has 3 children of kind uc_requirement in group Limits')]);
   });
 });
 
-describe('loading', () => {
-  it('returns an empty workspace with the schema when there is no data folder', async () => {
-    const ws = await loadWorkspace(path.join(tmpdir(), 'lathe-does-not-exist'));
-    expect(ws.records).toEqual([]);
-    expect(ws.problems).toEqual([]);
-    expect(ws.coverage).toEqual([]);
-    expect(ws.kinds.length).toBeGreaterThan(0);
+check('lone-child', () => {
+  it('LA-CHK-T39 a capability with exactly one use case is a warning naming it', async () => {
+    const data = changing(complete(), 'use_case', (r) => r.id === 'EX-LEND-UC02', { capability_id: 'EX-LEND-CAP02' });
+    const ws = await loadData(adding(data, { capability: [{ id: 'EX-LEND-CAP02', title: 'Catalog', domain_id: 'EX-LEND', position: 2 }] }));
+    expect(ofCheck(ws, 'lone-child').map((p) => p.message)).toEqual([
+      'Capability EX-LEND-CAP01 has only one use case, EX-LEND-UC01; merge it into a neighboring capability, or give it more.',
+      'Capability EX-LEND-CAP02 has only one use case, EX-LEND-UC02; merge it into a neighboring capability, or give it more.',
+    ]);
+  });
+
+  it('LA-CHK-T54 a group with one member is a warning on its parent, standard rules included', async () => {
+    let data = changing(complete(), 'standard_rule', () => true, { group_name: 'Imports' });
+    data = changing(data, 'api_requirement', () => true, { group_name: 'Errors' });
+    data = adding(data, { api_requirement: [{ id: 'EX-LEND-EP01-R02', title: 'Bad body', endpoint_id: 'EX-LEND-EP01', statement: 'A bad body MUST give 400.', group_name: ' errors' }] });
+    const ws = await loadData(data);
+    expect(ofCheck(ws, 'lone-child').map((p) => p.message)).toEqual([
+      'Standard EX-STD-CODE\'s group "Imports" has only one standard rule, EX-STD-CODE-R01; merge it into a neighboring group, or give it more.',
+    ]);
   });
 });

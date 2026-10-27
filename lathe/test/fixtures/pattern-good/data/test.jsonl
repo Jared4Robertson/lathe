@@ -1,2 +1,0 @@
-{"id":"PX-A-T01","title":"Staff actions in A","domain_id":"PX-A","test_type":"acceptance","state":"automated","file":"code/a.test.txt","then":"Text."}
-{"id":"PX-C-T01","title":"Staff actions in C","domain_id":"PX-C","test_type":"acceptance","state":"planned","then":"Text."}

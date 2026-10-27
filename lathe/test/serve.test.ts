@@ -45,8 +45,9 @@ beforeAll(async () => {
   const store = await openStore(root);
   await store.apply([
     { op: 'add', table: 'product', row: { id: 'EX', title: 'Example' } },
-    { op: 'add', table: 'domain', row: { id: 'EX-NOTE', title: 'Notes', product_id: 'EX' } },
-    { op: 'add', table: 'use_case', row: { id: 'EX-NOTE-UC01', title: 'Write a note', domain_id: 'EX-NOTE' } },
+    { op: 'add', table: 'domain', row: { id: 'EX-NOTE', title: 'Notes', product_id: 'EX', subdomain_type: 'core' } },
+    { op: 'add', table: 'capability', row: { id: 'EX-NOTE-CAP01', title: 'Writing', domain_id: 'EX-NOTE', position: 1 } },
+    { op: 'add', table: 'use_case', row: { id: 'EX-NOTE-UC01', title: 'Write a note', capability_id: 'EX-NOTE-CAP01' } },
   ]);
   await store.close();
   server = serve({ root, port: PORT, appDir });
@@ -149,7 +150,7 @@ describe.skipIf(!prebuilt && !canBuild)('lathe serve', () => {
     expect(await send('PUT', '/api/spec')).toBe(405);
     expect(await send('POST', '/api/meta')).toBe(404);
     expect(await send('PUT', '/api/kinds')).toBe(404);
-    expect(await send('POST', '/api/write', JSON.stringify({ commands: [{ op: 'add', table: 'meta_kind', row: { name: 'memo', label: 'Memo', obligation: 'none' } }] }))).toBe(422);
+    expect(await send('POST', '/api/write', JSON.stringify({ commands: [{ op: 'add', table: 'meta_kind', row: { name: 'memo', label: 'Memo', obligation: false } }] }))).toBe(422);
     expect(schemaFiles.map((file) => readFileSync(file, 'utf8'))).toEqual(before);
   });
 });

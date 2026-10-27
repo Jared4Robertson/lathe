@@ -1,20 +1,21 @@
 // The Lathe engine: loads a product's data/ folder through the store into the typed tables, runs the checks (rows of
-// the check table, Lathe's and the product's) against them, and computes traceability coverage from views over them.
+// the check table, Lathe's and the product's) against them, and computes coverage from views over them.
 import { existsSync, readdirSync, statSync } from 'node:fs';
 import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import type { DuckDBConnection } from '@duckdb/node-api';
-import { COVERAGE_COUNTS_SQL, COVERAGE_GAPS_SQL, COVERAGE_TESTS_SQL, COVERAGE_VIEWS_SQL, FACT_TABLES_SQL } from './coverage.ts';
+import { COVERAGE_COUNTS_SQL, COVERAGE_GAPS_SQL, COVERAGE_TESTS_SQL, coverageViewsSql, FACT_TABLES_SQL, TEST_KINDS } from './coverage.ts';
 import { loadConfig } from './config.ts';
 import { orderChecks, referenceOf, type Reference } from './reference.ts';
 import { formatProblem, openStore, Store, StoreError, LATHE_DATA_DIR, type StoreOptions } from './store/store.ts';
 import { SCHEMA_DIR } from './store/schema.ts';
 import type { Row } from './store/rows.ts';
-import type { Coverage, CoverageGap, Kind, ObligationCoverage, Problem, RelationRule, SectionRule, SpecLink, SpecRecord, TestCounts, Workspace } from './types.ts';
+import type { Coverage, CoverageGap, Kind, ObligationCoverage, Problem, RelationRule, SpecLink, SpecRecord, StageRule, TestCounts, Workspace } from './types.ts';
 
 export type * from './types.ts';
 export type * from './reference.ts';
-export { renderReference, kindAnchor, tableAnchor, relationAnchor, sectionAnchor, checkAnchor, ENGINE_CHECKS } from './reference.ts';
+export { renderReference, kindAnchor, tableAnchor, relationAnchor, stageAnchor, checkAnchor, gapAnchor, ENGINE_CHECKS } from './reference.ts';
+export { ALLOWED_LEVELS, GAP_RULES, OBLIGATION_COVERAGE, type GapRule } from './coverage.ts';
 export { loadConfig, PACKAGE_DIR, CONFIG_FILE, DEFAULT_MAX_CHILDREN, type LatheConfig } from './config.ts';
 // The database-first store: the schema, loading data/*.jsonl, the command layer and the merge driver.
 export * from './store/index.ts';
@@ -32,7 +33,7 @@ export interface LoadOptions {
 export interface LoadTimings {
   /** Opening the store: reading the data files and loading them into the typed tables with every key and rule. */
   open: number;
-  /** The facts about the files records name (a test's file, a component's file). */
+  /** The facts about the files records name (a technical record's file, a test's file). */
   files: number;
   /** Running Lathe's checks and the product's. */
   checks: number;
@@ -42,20 +43,14 @@ export interface LoadTimings {
   total: number;
 }
 
-/** A link of a test's or component's file, as the checks read it. */
+/** A record that names a file, as the checks read it (file_facts). */
 interface FileFact {
   record: string;
   kind: string;
   file: string;
   file_exists: boolean;
-  /** For a test: whether the file names the test's own ID, or its key when it has one. Null for a component. */
-  contains_id: boolean | null;
-  /** A test's key_file, the file that holds its key when it runs from a shared class in another file, or null. */
-  key_file: string | null;
-  /** Whether the key_file sits under the product root; null when the test has none. */
-  key_file_inside: boolean | null;
-  /** Whether the key_file exists as a file under the product root; null when the test has none. */
-  key_file_exists: boolean | null;
+  /** Whether the file names the record's own ID as a whole ID; false when it is missing or a folder. */
+  contains_id: boolean;
 }
 
 // Resolves a path named in a record, refusing anything outside root.
@@ -65,58 +60,49 @@ function resolveInside(root: string, file: string): string | null {
   return rel.startsWith('..') || path.isAbsolute(rel) ? null : resolved;
 }
 
-// A test's file must be a file; a component's file may also be a folder of files.
-async function exists(file: string | null, allowFolder: boolean): Promise<boolean> {
-  if (!file) return false;
+// What a path is: a file, a folder, or nothing (missing, or outside the root).
+async function entry(file: string | null): Promise<'file' | 'folder' | null> {
+  if (!file) return null;
   try {
     const info = await stat(file);
-    return info.isFile() || (allowFolder && info.isDirectory());
+    return info.isFile() ? 'file' : info.isDirectory() ? 'folder' : null;
   } catch {
-    return false;
+    return null;
   }
 }
 
-// True if the text names the ID as a whole ID: TL-LEND-DR05 is not found in TL-LEND-DR050 or TL-LEND-DR05-R01.
+// True if the text names the ID as a whole ID: TL-LEND-INV05 is not found in TL-LEND-INV050 or TL-LEND-INV05-T.
 function mentionsId(content: string, id: string): boolean {
   const escaped = id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   return new RegExp(`(?<![A-Za-z0-9-])${escaped}(?![A-Za-z0-9]|-[A-Za-z0-9])`).test(content);
 }
 
-// Facts about the files records name: a test's file and a component's file. For a test, contains_id says whether the
-// file names the test's own ID or, when the test has a `key`, whether the file contains that key text instead. Also
-// which IDs the file mentions (its own and its link targets), so a check can accept a test whose file names every ID
-// it proves. A test that runs from a shared class in another file names that file in `key_file`: its key, own ID and
-// proved IDs are then looked for in the key file instead, and its `file` must still exist. A key file outside the
-// root, or missing, contains nothing.
-async function gatherFileFacts(root: string, store: Store, targets: Map<string, string[]>): Promise<{ facts: FileFact[]; mentions: { record: string; mentioned: string }[] }> {
-  const named = [
-    ...store.rows('test').map((row) => ({ kind: 'test', row })),
-    ...store.rows('component').map((row) => ({ kind: 'component', row })),
-  ].filter(({ row }) => typeof row.file === 'string');
-  const each = await Promise.all(named.map(async ({ kind, row }) => {
-    const id = String(row.id);
-    const file = String(row.file);
-    const resolved = resolveInside(root, file);
-    const found = await exists(resolved, kind === 'component');
-    const mentions: { record: string; mentioned: string }[] = [];
-    let containsId: boolean | null = null;
-    const keyFile = kind === 'test' && typeof row.key_file === 'string' ? row.key_file : null;
-    const keyResolved = keyFile ? resolveInside(root, keyFile) : null;
-    const keyFound = keyFile ? await exists(keyResolved, false) : null;
-    if (kind === 'test') {
-      const source = keyFile ? (keyFound ? keyResolved : null) : found ? resolved : null;
-      const content = source ? await readFile(source, 'utf8') : '';
-      const key = typeof row.key === 'string' ? row.key : undefined;
-      containsId = key ? content.includes(key) : mentionsId(content, id);
-      for (const candidate of new Set([id, ...(targets.get(id) ?? [])])) if (mentionsId(content, candidate)) mentions.push({ record: id, mentioned: candidate });
+// Facts about the files records name: every record of a kind with a file column (the technical kinds, the test kinds,
+// and a product's own kinds with a file field) that gives one. A test's file must be a file; a technical record's may
+// also be a folder of files. Each file is read once, however many records name it, to see which of them it names.
+async function gatherFileFacts(root: string, store: Store): Promise<FileFact[]> {
+  const tests = new Set(TEST_KINDS);
+  const named = Object.keys(store.schema.kinds)
+    .filter((kind) => store.schema.tables[kind]?.columns.some((c) => c.name === 'file'))
+    .flatMap((kind) => store.rows(kind).filter((row) => typeof row.file === 'string').map((row) => ({ kind, id: String(row.id), file: String(row.file) })));
+  const contents = new Map<string, Promise<{ type: 'file' | 'folder' | null; text: string }>>();
+  const read = (resolved: string | null) => {
+    const key = resolved ?? '';
+    let known = contents.get(key);
+    if (!known) {
+      known = (async () => {
+        const type = await entry(resolved);
+        return { type, text: type === 'file' && resolved ? await readFile(resolved, 'utf8') : '' };
+      })();
+      contents.set(key, known);
     }
-    const fact: FileFact = {
-      record: id, kind, file, file_exists: found, contains_id: containsId,
-      key_file: keyFile, key_file_inside: keyFile ? keyResolved !== null : null, key_file_exists: keyFound,
-    };
-    return { fact, mentions };
+    return known;
+  };
+  return Promise.all(named.map(async ({ kind, id, file }): Promise<FileFact> => {
+    const { type, text } = await read(resolveInside(root, file));
+    const exists = type === 'file' || (type === 'folder' && !tests.has(kind));
+    return { record: id, kind, file, file_exists: exists, contains_id: type === 'file' && mentionsId(text, id) };
   }));
-  return { facts: each.map((e) => e.fact), mentions: each.flatMap((e) => e.mentions) };
 }
 
 async function readRows<T>(connection: DuckDBConnection, sql: string): Promise<T[]> {
@@ -180,28 +166,36 @@ async function runChecks(store: Store, checks: Row[], scope: Map<string, string 
   return results.flat();
 }
 
-// Coverage per domain: one entry per obligation kind in schema order, and the domain's tests by state.
+type Scoped<T> = T & { product: string; domain: string | null };
+
+// Coverage per domain, and per product outside every domain: one entry per obligation kind in kind order, the tests
+// by state, and the gaps.
 async function computeCoverage(store: Store): Promise<Coverage[]> {
   // The three queries only read, so they run side by side, each on its own connection.
   const on = async <T,>(sql: string) => {
     const c = await store.connect();
     try { return await readRows<T>(c, sql); } finally { c.closeSync(); }
   };
-  const [rows, gaps, tests] = await Promise.all([
-    on<ObligationCoverage & { domain: string }>(COVERAGE_COUNTS_SQL),
-    on<CoverageGap & { domain: string }>(COVERAGE_GAPS_SQL),
-    on<TestCounts & { domain: string }>(COVERAGE_TESTS_SQL),
+  const [counts, gaps, tests] = await Promise.all([
+    on<Scoped<ObligationCoverage>>(COVERAGE_COUNTS_SQL),
+    on<Scoped<CoverageGap>>(COVERAGE_GAPS_SQL),
+    on<Scoped<TestCounts>>(COVERAGE_TESTS_SQL),
   ]);
-  return store.rows('domain').map((d) => {
-    const domain = String(d.id);
-    const t = tests.find((x) => x.domain === domain) ?? { automated: 0, manual: 0, planned: 0 };
-    return {
-      domain,
-      obligations: rows.filter((r) => r.domain === domain).map(({ domain: _domain, ...o }) => o),
-      tests: { automated: t.automated, manual: t.manual, planned: t.planned },
-      gaps: gaps.filter((g) => g.domain === domain).map(({ id, kind, missing }) => ({ id, kind, missing })),
-    };
-  });
+  const key = (r: { product: string; domain: string | null }) => `${r.product}\u0000${r.domain ?? ''}`;
+  const group = <T extends { product: string; domain: string | null }>(rows: T[]) => {
+    const by = new Map<string, T[]>();
+    for (const r of rows) by.set(key(r), [...(by.get(key(r)) ?? []), r]);
+    return by;
+  };
+  const countsBy = group(counts);
+  const gapsBy = group(gaps);
+  return tests.map((t) => ({
+    product: t.product,
+    domain: t.domain,
+    obligations: (countsBy.get(key(t)) ?? []).map(({ kind, label, total, designed, built, proved, not_automated, proof_only }) => ({ kind, label, total, designed, built, proved, not_automated, proof_only })),
+    tests: { automated: t.automated, manual: t.manual, not_automated: t.not_automated },
+    gaps: (gapsBy.get(key(t)) ?? []).map(({ id, kind, missing, message }) => ({ id, kind, missing, message })),
+  }));
 }
 
 /** The kinds in the order people read them: Lathe's by meta_kind.position, then the product's by name. */
@@ -210,7 +204,7 @@ async function kindOrder(store: Store): Promise<string[]> {
 }
 
 /** The records, links and meta-model of an open store, as the engine returns them. */
-function readRecords(store: Store, order: string[]): { kinds: Kind[]; sections: SectionRule[]; relations: RelationRule[]; records: SpecRecord[]; links: SpecLink[] } {
+async function readRecords(store: Store, order: string[]): Promise<{ kinds: Kind[]; stages: StageRule[]; relations: RelationRule[]; records: SpecRecord[]; links: SpecLink[] }> {
   const schema = store.schema;
   const kinds: Kind[] = order.map((name) => {
     const k = schema.kinds[name];
@@ -218,29 +212,25 @@ function readRecords(store: Store, order: string[]): { kinds: Kind[]; sections: 
     return {
       kind: name,
       label: k.label,
-      stage: k.stage ?? '',
-      section: k.section ?? '',
+      stage: k.stage,
+      position: k.position,
       parent_kinds: k.parents.map((p) => p.kind),
       required_fields: schema.tables[name].columns.filter((c) => c.required && c.name !== 'id' && c.name !== 'title' && !parentColumns.has(c.name)).map((c) => c.name),
-      obligation: k.obligation !== 'none',
-      proof_only: k.obligation === 'proof',
+      obligation: k.obligation,
+      id_scope: k.idScope,
       description: k.description ?? '',
     };
   });
-  const sections: SectionRule[] = schema.sections.map((s) => ({ section: s.name, stage: s.stage ?? '', order: s.position, label: s.label, description: s.description }));
+  const stages: StageRule[] = schema.stages.map((s) => ({ stage: s.name, position: s.position, label: s.label, description: s.description }));
   const relations: RelationRule[] = Object.values(schema.relations).flatMap((r) =>
     r.pairs.map((p) => ({ relation: r.name, source_kind: p.source, target_kind: p.target, role: r.role ?? '', description: p.description, forward_label: r.forwardLabel, reverse_label: r.reverseLabel })),
   );
 
-  // Each record's parent is the first of its parent columns with a value; its product and domain come from its ancestry.
-  const base = order.flatMap((kind) =>
-    store.rows(kind).map((row) => {
-      const parent = schema.kinds[kind].parents.map((p) => row[p.column]).find((v) => v !== undefined);
-      const { id, title, ...fields } = row;
-      return { id: String(id), kind, title: String(title), parent: parent === undefined ? null : String(parent), fields: fields as Row };
-    }),
+  // Each record's product, domain and aggregate come from the store's record_scope view: through its parents, or for
+  // a record with no owner from its ID.
+  const scopes = new Map(
+    (await store.query<{ id: string; product_id: string | null; domain_id: string | null; aggregate_id: string | null }>('SELECT id, product_id, domain_id, aggregate_id FROM record_scope')).map((s) => [s.id, s]),
   );
-  const byId = new Map(base.map((r) => [r.id, r]));
   const parts = new Map<string, Record<string, Row[]>>();
   for (const table of Object.values(schema.tables)) {
     if (table.role !== 'part' || !table.ownerColumn) continue;
@@ -251,15 +241,28 @@ function readRecords(store: Store, order: string[]): { kinds: Kind[]; sections: 
       parts.set(owner, of);
     }
   }
-  const above = (id: string, kind: string): string | null => {
-    for (let at = byId.get(id), steps = 0; at && steps < 64; at = at.parent ? byId.get(at.parent) : undefined, steps++) if (at.kind === kind) return at.id;
-    return null;
-  };
-  const records: SpecRecord[] = base.map((r) => ({ ...r, product: above(r.id, 'product'), domain: above(r.id, 'domain'), parts: parts.get(r.id) ?? {} }));
+  const records: SpecRecord[] = order.flatMap((kind) =>
+    store.rows(kind).map((row) => {
+      const parent = schema.kinds[kind].parents.map((p) => row[p.column]).find((v) => v !== undefined);
+      const { id, title, ...fields } = row;
+      const scope = scopes.get(String(id));
+      return {
+        id: String(id),
+        kind,
+        title: String(title),
+        parent: parent === undefined ? null : String(parent),
+        product: scope?.product_id ?? null,
+        domain: scope?.domain_id ?? null,
+        aggregate: scope?.aggregate_id ?? null,
+        fields: fields as Row,
+        parts: parts.get(String(id)) ?? {},
+      };
+    }),
+  );
   const links: SpecLink[] = Object.keys(schema.relations)
     .sort()
     .flatMap((relation) => store.rows(relation).map((l) => ({ source: String(l.source_id), relation, target: String(l.target_id) })));
-  return { kinds, sections, relations, records, links };
+  return { kinds, stages, relations, records, links };
 }
 
 /** The workspace of an open store: its records and links, every check's problems, and coverage. root resolves the files records name. */
@@ -271,15 +274,12 @@ export async function readWorkspace(store: Store, root: string, timings?: Partia
     mark = now;
   };
   const order = await kindOrder(store);
-  const read = readRecords(store, order);
-  const targets = new Map<string, string[]>();
-  for (const l of read.links) targets.set(l.source, [...(targets.get(l.source) ?? []), l.target]);
-  const { facts, mentions } = await gatherFileFacts(path.resolve(root), store, targets);
+  const read = await readRecords(store, order);
+  const facts = await gatherFileFacts(path.resolve(root), store);
   const connection = store.connection;
   await connection.run(FACT_TABLES_SQL);
-  await append(connection, 'file_facts', facts.map((f) => [f.record, f.kind, f.file, f.file_exists, f.contains_id, f.key_file, f.key_file_inside, f.key_file_exists]));
-  await append(connection, 'file_mentions', mentions.map((m) => [m.record, m.mentioned]));
-  await connection.run(COVERAGE_VIEWS_SQL);
+  await append(connection, 'file_facts', facts.map((f) => [f.record, f.kind, f.file, f.file_exists, f.contains_id]));
+  await connection.run(coverageViewsSql(store.schema));
   lap('files');
   const scope = new Map(read.records.map((r) => [r.id, r.product]));
   const problems = await runChecks(store, orderChecks(store.rows('check')), scope);
@@ -292,7 +292,7 @@ export async function readWorkspace(store: Store, root: string, timings?: Partia
 /** A workspace whose data did not load: no records, and the store's refusals as data-refused errors. */
 function refusedWorkspace(error: StoreError): Workspace {
   return {
-    kinds: [], sections: [], relations: [], records: [], links: [], coverage: [],
+    kinds: [], stages: [], relations: [], records: [], links: [], coverage: [],
     problems: error.problems.map((p) => ({ severity: 'error', check: 'data-refused', record: p.key && /^[A-Z][A-Z0-9]*(-[A-Z0-9]+)*$/.test(p.key) ? p.key : null, message: formatProblem(p) })),
   };
 }
@@ -324,9 +324,9 @@ const storeOptions = (options: LoadOptions): StoreOptions => ({
 });
 
 /**
- * The reference for the product under root: its kinds, tables, relations and folders, with its own kinds and
- * relations, and every check (Lathe's, the engine's own, then the product's). While no data file or migration changes
- * (by size and modification time, or a file coming or going), the last answer stands.
+ * The reference for the product under root: its stages, kinds, tables and relations, with its own kinds and
+ * relations, every check (Lathe's, the engine's own, then the product's) and the coverage gaps. While no data file or
+ * migration changes (by size and modification time, or a file coming or going), the last answer stands.
  */
 export async function buildReference(root: string, options: LoadOptions = {}): Promise<Reference> {
   const config = loadConfig(root);

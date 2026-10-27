@@ -1,9 +1,0 @@
-{"source_id":"SW-D-T01","target_id":"SW-D-UC01-R01"}
-{"source_id":"SW-D-T02","target_id":"SW-D-DR01"}
-{"source_id":"SW-D-T03","target_id":"SW-D-DR02"}
-{"source_id":"SW-D-T04","target_id":"SW-D-UC02-R01"}
-{"source_id":"SW-D-T05","target_id":"SW-D-DR01"}
-{"source_id":"SW-D-T05","target_id":"SW-D-UC01-R01"}
-{"source_id":"SW-D-T06","target_id":"SW-D-DR02"}
-{"source_id":"SW-D-T07","target_id":"SW-D-V01-R01"}
-{"source_id":"SW-D-T08","target_id":"SW-D-V01-R02"}

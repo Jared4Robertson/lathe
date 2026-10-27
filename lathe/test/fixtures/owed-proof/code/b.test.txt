@@ -1,1 +1,0 @@
-OW-B-T01 proves the lending rules in domain B.

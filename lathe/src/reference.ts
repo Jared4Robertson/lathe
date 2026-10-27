@@ -1,8 +1,10 @@
-// The reference: every kind with its table's columns, every other table, every relation, every folder and every
-// check, read from the schema description and the check table's rows, so the reference is generated rather than kept
-// by hand. buildReference(root) in index.ts builds it for a product (with its own kinds, relations and checks);
-// renderReference writes it as Markdown, as lathe/REFERENCE.md holds it (`npm --prefix lathe run reference`).
-import type { ColumnDescription, SchemaDescription, TableDescription, TableRole } from './store/schema.ts';
+// The reference: the stages, every kind with its table's columns, every other table, every relation, every check and
+// every coverage gap, read from the schema description, the check table's rows and the engine's coverage rules, so the
+// reference is generated rather than kept by hand. buildReference(root) in index.ts builds it for a product (with its
+// own kinds, relations and checks); renderReference writes it as Markdown, by stage, as lathe/REFERENCE.md holds it
+// (`npm --prefix lathe run reference`).
+import { ALLOWED_LEVELS, GAP_RULES, OBLIGATION_COVERAGE } from './coverage.ts';
+import type { ColumnDescription, IdScope, SchemaDescription, Stage, TableDescription, TableRole } from './store/schema.ts';
 import type { Row } from './store/rows.ts';
 
 export interface ColumnReference {
@@ -32,21 +34,41 @@ export interface TableReference {
   checks: string[];
 }
 
+export interface StageReference {
+  stage: Stage;
+  position: number;
+  label: string;
+  description: string;
+}
+
+/** What designs, builds and proves an obligation kind. */
+export interface ObligationReference {
+  designed: string;
+  built: string;
+  proved: string;
+}
+
 /** A kind as the reference describes it, with the product's own kinds. */
 export interface KindReference {
   kind: string;
   label: string;
   description: string;
-  /** 'define', 'design', or '' for structural kinds. */
-  stage: string;
-  /** The folder the kind sits in, or ''. */
-  section: string;
-  /** The kinds its records may sit under, nearest first, with the column that names each. */
+  /** The stage its records belong to, or null outside the stages (product, open question). */
+  stage: Stage | null;
+  /** Its place in the order people read kinds; null for a product's own kind. */
+  position: number | null;
+  /** The kinds its records may sit under, with the column that names each; none for a kind with no owner. */
   parents: { kind: string; column: string }[];
   /** The kinds that may sit under this kind, by name. */
   child_kinds: string[];
-  /** full: designed, built and proved; proof: proved only; none: no obligation. */
-  obligation: 'full' | 'proof' | 'none';
+  /** Whether its records are obligations: designed, built and proved. */
+  obligation: boolean;
+  /** For one of Lathe's obligation kinds, what designs, builds and proves it; null otherwise. */
+  coverage: ObligationReference | null;
+  /** For a test kind, the run by levels it allows; null otherwise. */
+  levels: string[] | null;
+  /** What its IDs start with, or null when they are free. */
+  id_scope: IdScope | null;
   /** The ID convention, or null when none is given. */
   id: { pattern: string; example: string } | null;
   /** For a product's own kind, the product that declares it; null for Lathe's. */
@@ -57,23 +79,15 @@ export interface RelationReference {
   relation: string;
   /** 'design': its links design what they target; 'proof': they prove it; '' otherwise. */
   role: 'design' | 'proof' | '';
-  /** The link read from the source: "Satisfies". */
+  /** The link read from the source: "Fulfills". */
   forward_label: string;
-  /** The link read from the target: "Designed by". */
+  /** The link read from the target: "Fulfilled by". */
   reverse_label: string;
   description: string;
   /** The kinds it may link, as (source kind, target kind) pairs; a target kind of * is any record. */
   pairs: { source_kind: string; target_kind: string; description: string }[];
   /** For a product's own relation, the product that declares it; null for Lathe's. */
   product: string | null;
-}
-
-export interface SectionReference {
-  section: string;
-  stage: string;
-  order: number;
-  label: string;
-  description: string;
 }
 
 export interface CheckReference {
@@ -89,19 +103,32 @@ export interface CheckReference {
   origin: 'lathe' | 'product' | 'engine';
   /** For a product's own check, the product; null otherwise. */
   product: string | null;
-  /** The kinds it concerns; empty when it concerns records of any kind. */
+  /** The kinds it concerns, the main one first; empty when it concerns records of any kind. */
   kinds: string[];
+  /** The stage of its first kind; null for a check of any kind, or of a kind outside the stages. */
+  stage: Stage | null;
+}
+
+/** A minimum coverage reports when a record falls short of it. */
+export interface GapReference {
+  gap: string;
+  stage: Stage;
+  /** The kinds it concerns, the record's kind first. */
+  kinds: string[];
+  summary: string;
 }
 
 export interface Reference {
+  stages: StageReference[];
+  /** Every kind, in kind order: stage by stage, then outside the stages, then the product's own by name. */
   kinds: KindReference[];
   /** Every table, in schema order: kinds first, then parts, links, declarations and checking tables. */
   tables: TableReference[];
   relations: RelationReference[];
-  /** The folders, in stage then order. */
-  sections: SectionReference[];
   /** Lathe's checks in run order, then the engine's own, then the products'. */
   checks: CheckReference[];
+  /** The minimums coverage reports, by stage. */
+  gaps: GapReference[];
 }
 
 /** The problems the engine reports itself, outside any check row, documented as a check row would be. */
@@ -115,6 +142,7 @@ export const ENGINE_CHECKS: CheckReference[] = [
     origin: 'engine',
     product: null,
     kinds: [],
+    stage: null,
   },
 ];
 
@@ -141,11 +169,14 @@ export function referenceOf(schema: SchemaDescription, kindOrder: string[], chec
       kind: k.name,
       label: k.label,
       description: k.description ?? '',
-      stage: k.stage ?? '',
-      section: k.section ?? '',
+      stage: k.stage,
+      position: k.position,
       parents: k.parents.map((p) => ({ kind: p.kind, column: p.column })),
       child_kinds: kindNames.filter((c) => schema.kinds[c].parents.some((p) => p.kind === name)),
       obligation: k.obligation,
+      coverage: k.productId === null ? (OBLIGATION_COVERAGE[name] ?? null) : null,
+      levels: k.productId === null && ALLOWED_LEVELS[name] ? [...ALLOWED_LEVELS[name]] : null,
+      id_scope: k.idScope,
       id: k.idPattern ? { pattern: k.idPattern, example: k.idExample ?? '' } : null,
       product: k.productId,
     };
@@ -180,29 +211,28 @@ export function referenceOf(schema: SchemaDescription, kindOrder: string[], chec
     pairs: r.pairs.map((p) => ({ source_kind: p.source, target_kind: p.target, description: p.description })),
     product: r.productId,
   }));
-  const sections: SectionReference[] = schema.sections.map((s) => ({
-    section: s.name,
-    stage: s.stage ?? '',
-    order: s.position,
-    label: s.label,
-    description: s.description,
-  }));
-  const fromRow = (row: Row): CheckReference => ({
-    check: String(row.name),
-    severity: row.severity as CheckReference['severity'],
-    summary: String(row.summary),
-    explanation: String(row.explanation),
-    origin: row.product_id === undefined ? 'lathe' : 'product',
-    product: row.product_id === undefined ? null : String(row.product_id),
-    kinds: (row.kinds as string[] | undefined) ?? [],
-  });
+  const stages: StageReference[] = schema.stages.map((s) => ({ stage: s.name, position: s.position, label: s.label, description: s.description }));
+  const fromRow = (row: Row): CheckReference => {
+    const kinds = (row.kinds as string[] | undefined) ?? [];
+    return {
+      check: String(row.name),
+      severity: row.severity as CheckReference['severity'],
+      summary: String(row.summary),
+      explanation: String(row.explanation),
+      origin: row.product_id === undefined ? 'lathe' : 'product',
+      product: row.product_id === undefined ? null : String(row.product_id),
+      kinds,
+      stage: kinds.length ? (schema.kinds[kinds[0]]?.stage ?? null) : null,
+    };
+  };
   const ordered = orderChecks(checks);
   return {
+    stages,
     kinds,
     tables,
     relations,
-    sections,
     checks: [...ordered.filter((c) => c.product_id === undefined).map(fromRow), ...ENGINE_CHECKS, ...ordered.filter((c) => c.product_id !== undefined).map(fromRow)],
+    gaps: GAP_RULES.map((g) => ({ gap: g.name, stage: g.stage, kinds: g.kinds, summary: g.summary })),
   };
 }
 
@@ -214,19 +244,18 @@ export function orderChecks(rows: Row[]): Row[] {
 
 // Markdown -----------------------------------------------------------------------------------------------
 
+export const stageAnchor = (stage: string) => `stage-${stage}`;
 export const kindAnchor = (kind: string) => `kind-${kind}`;
 export const tableAnchor = (table: string) => `table-${table}`;
 export const relationAnchor = (relation: string) => `relation-${relation}`;
-export const sectionAnchor = (section: string) => `folder-${section}`;
 export const checkAnchor = (check: string) => `check-${check}`;
+export const gapAnchor = (gap: string) => `gap-${gap}`;
 
-const STAGES: Record<string, string> = { define: 'Define', design: 'Design', '': 'Product level' };
-const stageLabel = (stage: string) => STAGES[stage] ?? stage;
 const code = (text: string) => `\`${text}\``;
 const cell = (text: string) => text.replaceAll('|', '\\|').replaceAll('\n', ' ');
 const SEVERITY: Record<CheckReference['severity'], string> = { error: 'Error', warning: 'Warning', error_or_warning: 'Error or warning' };
+const ID_SCOPE: Record<IdScope, string> = { product: "its product's ID", domain: "its domain's ID", parent: "its parent's ID" };
 const ROLE_HEADINGS: Partial<Record<TableRole, string>> = {
-  part: 'Part tables: rows that belong to one record and are removed with it.',
   declaration: "Declaration tables: a product's own kinds and relations.",
   checking: 'Checking tables: the checks and their settings.',
 };
@@ -235,28 +264,41 @@ const INTRO = `# Lathe reference
 
 Lathe keeps a product's spec as typed rows: a table per kind of record, with typed columns and real keys, so data
 that breaks the model cannot be saved. Each stored table is one file, \`data/<table>.jsonl\`, with one JSON object
-per line, sorted by key. Containment is a foreign key (a requirement's \`use_case_id\`), a link is a row of its
-relation's table, and an ID is unique across every kind. Every write goes through the command layer (the CLI, the
-app and the plugin's tools), which validates it in one transaction and rewrites the lines it changed; git is the
-history.
+per line, sorted by key. Every record has exactly one parent, a foreign key such as a UC requirement's
+\`use_case_id\`, except the kinds with no owner (value objects, specifications, views, integrations and UI
+components), which exist because other records use them. Other relationships are links, a row of their relation's
+table, and an ID is unique across every kind. Every write goes through the command layer (the CLI, the app and the
+plugin's tools), which validates it in one transaction and rewrites the lines it changed; git is the history.
 
-The checks below are rows of the \`check\` table. Each holds the query that finds its problems: a SELECT over the
-tables returning \`severity\`, \`record\` and \`message\` for each problem. Lathe's own are in \`lathe/data/check.jsonl\`,
-loaded beside every product's data; a product adds its own as rows of its \`data/check.jsonl\` with its
-\`product_id\`. What the schema enforces is never a check: the store refuses it.`;
+The model is drawn from domain-driven design, CQRS and event storming, in five stages: the domain model, use cases on
+top of it, their interaction design, the technical records that implement each design record, and the test plan.
+Links run from what is defined first to what is defined later.
 
-/** The reference as one Markdown document: the kinds and their tables, the other tables, relations, folders and checks, each with an anchor. */
+**Words.** What clean architecture calls a use case or an interactor is what Lathe calls a command handler
+(\`command_handler\`): the application service that carries out one command. A Lathe use case (\`use_case\`) is the
+actor's goal, one level up: its flow's steps invoke commands and queries.
+
+**Checks** are rows of the \`check\` table. Each holds the query that finds its problems: a SELECT over the tables
+returning \`severity\`, \`record\` and \`message\` for each problem. An error means the data is broken; a warning is
+something to look at. Lathe's own checks are in \`lathe/data/check.jsonl\`, loaded beside every product's data; a
+product adds its own as rows of its \`data/check.jsonl\` with its \`product_id\`. What the schema enforces is never a
+check: the store refuses it.
+
+**Coverage** counts every obligation as designed, built and proved, per domain and for the product outside every
+domain, and lists as gaps each obligation still short of one, and each record short of a minimum the schema leaves to
+it (an "at least one" or "exactly one" that is missing while records are written stage by stage). An obligation is
+proved by a test of it, automated or manual, at a run by level its test kind allows, whose file (when automated)
+exists and names the test's ID.`;
+
+/** The reference as one Markdown document, by stage: each stage's kinds with their tables, checks and gaps; then the other tables, relations and checks of any kind, each with an anchor. */
 export function renderReference(ref: Reference): string {
   const kindLink = (kind: string) =>
     kind === '*' ? 'any record' : ref.kinds.some((k) => k.kind === kind) ? `[${code(kind)}](#${kindAnchor(kind)})` : code(kind);
   const shown = new Set<TableRole>(['kind', 'part', 'declaration', 'checking']);
   const tableLink = (table: string) => (ref.tables.some((t) => t.name === table && shown.has(t.role)) ? `[${code(table)}](#${tableAnchor(table)})` : code(table));
-  const sectionLink = (section: string) => {
-    const s = ref.sections.find((x) => x.section === section);
-    return s ? `[${s.label}](#${sectionAnchor(section)})` : code(section);
-  };
+  const checkLink = (check: string) => `[${code(check)}](#${checkAnchor(check)})`;
   const list = (items: string[], none = 'none') => (items.length ? items.join(', ') : none);
-  const out: string[] = [INTRO, '', '<!-- Generated from the schema and the check rows by `npm --prefix lathe run reference`. Do not edit it by hand. -->', ''];
+  const out: string[] = [INTRO, '', '<!-- Generated from the schema, the check rows and the coverage rules by `npm --prefix lathe run reference`. Do not edit it by hand. -->', ''];
 
   const columns = (t: TableReference) => {
     out.push('| Column | Type | Required | Meaning |', '| --- | --- | --- | --- |');
@@ -265,25 +307,28 @@ export function renderReference(ref: Reference): string {
       out.push(`| ${code(c.name)} | ${cell(type)} | ${c.required ? 'yes' : 'no'} | ${cell(c.description || '-')} |`);
     }
     out.push('');
-    const keys = [
+    out.push(
       `- **Key:** ${t.primary_key.map(code).join(', ') || 'none'}`,
       ...t.unique.map((u) => `- **Unique:** ${u.map(code).join(', ')}`),
       ...t.composite_keys.map((k) => `- **Foreign key:** ${code(k)}`),
       ...t.checks.map((c) => `- **Rule:** ${code(c)}`),
-    ];
-    out.push(...keys, '');
+      '',
+    );
   };
 
-  out.push('## Kinds', '', 'Every kind of record, with its table. A record of the kind is one row of the table named after it.', '');
-  for (const k of ref.kinds) {
-    const table = ref.tables.find((t) => t.name === k.kind);
+  const table = (t: TableReference, heading: string) => {
+    out.push(`<a id="${tableAnchor(t.name)}"></a>`, '', `${heading} ${code(t.name)}`, '', t.description || '_No description._', '');
+    columns(t);
+  };
+
+  const kind = (k: KindReference) => {
     out.push(`<a id="${kindAnchor(k.kind)}"></a>`, '', `### ${k.label} (${code(k.kind)})`, '', k.description.trim() || '_No description._', '');
-    out.push(`- **Stage:** ${k.stage ? stageLabel(k.stage) : 'none (structural)'}`);
-    out.push(`- **Folder:** ${k.section ? sectionLink(k.section) : 'none'}`);
-    out.push(`- **Parents:** ${list(k.parents.map((p) => `${kindLink(p.kind)} (${code(p.column)})`), k.kind === 'product' ? 'none (a root record)' : 'none')}`);
+    out.push(`- **Parents:** ${list(k.parents.map((p) => `${kindLink(p.kind)} (${code(p.column)})`), k.kind === 'product' ? 'none (a root record)' : 'none (no owner: it exists because other records use it)')}`);
     out.push(`- **Children:** ${list(k.child_kinds.map(kindLink))}`);
-    out.push(`- **Obligation:** ${k.obligation === 'full' ? 'yes: designed, built and proved' : k.obligation === 'proof' ? 'proof only' : 'no'}`);
-    if (k.id) out.push(`- **ID:** ${code(k.id.pattern)}, such as ${code(k.id.example)}`);
+    out.push(`- **Obligation:** ${k.obligation ? 'yes: designed, built and proved' : 'no'}`);
+    if (k.coverage) out.push(`  - **Designed:** ${k.coverage.designed}`, `  - **Built:** ${k.coverage.built}`, `  - **Proved:** ${k.coverage.proved}`);
+    if (k.levels) out.push(`- **Run by levels:** ${k.levels.map(code).join(', ')}`);
+    if (k.id) out.push(`- **ID:** ${code(k.id.pattern)}, such as ${code(k.id.example)}${k.id_scope ? `; it starts with ${ID_SCOPE[k.id_scope]}` : ''}`);
     if (k.product) out.push(`- **Declared by:** product ${code(k.product)}`);
     const byLabel = (rels: RelationReference[], label: (r: RelationReference) => string) => [...new Set(rels.map((r) => `${cell(label(r))} ([${code(r.relation)}](#${relationAnchor(r.relation)}))`))];
     const outgoing = byLabel(ref.relations.filter((r) => r.pairs.some((p) => p.source_kind === k.kind)), (r) => r.forward_label);
@@ -293,21 +338,64 @@ export function renderReference(ref: Reference): string {
     const parts = ref.tables.filter((t) => t.role === 'part' && t.owner_column && t.columns.find((c) => c.name === t.owner_column)?.references === `${k.kind}.id`);
     if (parts.length) out.push(`- **Parts:** ${parts.map((t) => tableLink(t.name)).join(', ')}`);
     const checks = ref.checks.filter((c) => c.kinds.includes(k.kind));
-    if (checks.length) out.push(`- **Checks:** ${checks.map((c) => `[${code(c.check)}](#${checkAnchor(c.check)})`).join(', ')}`);
+    if (checks.length) out.push(`- **Checks:** ${checks.map((c) => checkLink(c.check)).join(', ')}`);
+    const gaps = ref.gaps.filter((g) => g.kinds[0] === k.kind);
+    if (gaps.length) out.push(`- **Gaps:** ${gaps.map((g) => `[${code(g.gap)}](#${gapAnchor(g.gap)})`).join(', ')}`);
     out.push('');
-    if (table) {
-      out.push(`<a id="${tableAnchor(table.name)}"></a>`, '');
-      columns(table);
+    const own = ref.tables.find((t) => t.name === k.kind);
+    if (own) {
+      out.push(`<a id="${tableAnchor(own.name)}"></a>`, '');
+      columns(own);
     }
-  }
+    for (const p of parts) table(p, '####');
+  };
 
-  out.push('## Other tables', '', 'The tables that are not a kind of record and are kept in data files.', '');
-  for (const role of ['part', 'declaration', 'checking'] as const) {
-    out.push(`### ${ROLE_HEADINGS[role]}`, '');
-    for (const t of ref.tables.filter((x) => x.role === role)) {
-      out.push(`<a id="${tableAnchor(t.name)}"></a>`, '', `#### ${code(t.name)}`, '', t.description || '_No description._', '');
-      columns(t);
+  const check = (c: CheckReference) => {
+    const where = c.origin === 'lathe' ? "Lathe's" : c.origin === 'engine' ? 'the engine' : `product ${code(c.product ?? '')}`;
+    out.push(`<a id="${checkAnchor(c.check)}"></a>`, '', `### ${code(c.check)}`, '');
+    out.push(`**${SEVERITY[c.severity]}** · ${where}${c.kinds.length ? ` · Kinds: ${c.kinds.map(kindLink).join(', ')}` : ''}`, '');
+    out.push(c.summary || '_No summary._', '');
+    if (c.explanation) out.push(c.explanation, '');
+  };
+
+  const section = (title: string, intro: string, kinds: KindReference[], checks: CheckReference[], gaps: GapReference[], anchor: string | null) => {
+    if (anchor) out.push(`<a id="${anchor}"></a>`, '');
+    out.push(`## ${title}`, '', intro, '');
+    for (const k of kinds) kind(k);
+    if (checks.length) {
+      out.push(`### Checks: ${title.toLowerCase()}`, '');
+      for (const c of checks) check(c);
     }
+    if (gaps.length) {
+      out.push(`### Coverage gaps: ${title.toLowerCase()}`, '', 'Each is reported in coverage, under the record that falls short, never as a problem.', '');
+      out.push('| Gap | Kinds | What it reports |', '| --- | --- | --- |');
+      for (const g of gaps) out.push(`| <a id="${gapAnchor(g.gap)}"></a>${code(g.gap)} | ${g.kinds.map(kindLink).join(', ')} | ${cell(g.summary)} |`);
+      out.push('');
+    }
+  };
+
+  for (const s of ref.stages) {
+    section(s.label, s.description.trim(), ref.kinds.filter((k) => k.stage === s.stage), ref.checks.filter((c) => c.stage === s.stage), ref.gaps.filter((g) => g.stage === s.stage), stageAnchor(s.stage));
+  }
+  section(
+    'Outside the stages',
+    'The product, the roles its records name and its open questions, which belong to no stage.',
+    ref.kinds.filter((k) => k.stage === null),
+    ref.checks.filter((c) => c.stage === null && c.kinds.length > 0),
+    [],
+    null,
+  );
+
+  out.push('## Other tables', '', 'The tables that are not a kind of record or one of its parts, and are kept in data files.', '');
+  for (const role of ['declaration', 'checking'] as const) {
+    out.push(`### ${ROLE_HEADINGS[role]}`, '');
+    for (const t of ref.tables.filter((x) => x.role === role)) table(t, '####');
+  }
+  const placed = new Set(ref.kinds.flatMap((k) => ref.tables.filter((t) => t.role === 'part' && t.columns.find((c) => c.name === t.owner_column)?.references === `${k.kind}.id`).map((t) => t.name)));
+  const loose = ref.tables.filter((t) => t.role === 'part' && !placed.has(t.name));
+  if (loose.length) {
+    out.push('### Other part tables: rows that belong to one record and are removed with it.', '');
+    for (const t of loose) table(t, '####');
   }
 
   out.push(
@@ -326,20 +414,7 @@ export function renderReference(ref: Reference): string {
     out.push('');
   }
 
-  out.push('## Folders', '', 'The folders kinds sit in, in stage then order.', '');
-  for (const s of ref.sections) {
-    const kinds = ref.kinds.filter((k) => k.section === s.section).map((k) => kindLink(k.kind));
-    out.push(`<a id="${sectionAnchor(s.section)}"></a>`, '', `### ${s.label} (${code(s.section)})`, '', s.description.trim(), '');
-    out.push(`- **Stage:** ${stageLabel(s.stage)}, order ${s.order}`, `- **Kinds:** ${list(kinds)}`, '');
-  }
-
-  out.push('## Checks', '', "Every check: Lathe's, in the order they run, then the engine's own, then the product's.", '');
-  for (const c of ref.checks) {
-    const where = c.origin === 'lathe' ? "Lathe's" : c.origin === 'engine' ? 'the engine' : `product ${code(c.product ?? '')}`;
-    out.push(`<a id="${checkAnchor(c.check)}"></a>`, '', `### ${code(c.check)}`, '');
-    out.push(`**${SEVERITY[c.severity]}** · ${where}${c.kinds.length ? ` · Kinds: ${c.kinds.map(kindLink).join(', ')}` : ''}`, '');
-    out.push(c.summary || '_No summary._', '');
-    if (c.explanation) out.push(c.explanation, '');
-  }
+  out.push('## Checks of any kind', '', "The checks that concern records of any kind: Lathe's, in the order they run, then the engine's own, then the product's.", '');
+  for (const c of ref.checks.filter((x) => x.kinds.length === 0)) check(c);
   return `${out.join('\n').trimEnd()}\n`;
 }

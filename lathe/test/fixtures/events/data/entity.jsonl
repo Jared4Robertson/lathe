@@ -1,4 +1,0 @@
-{"id":"EVT-D-EN01","title":"Loan","aggregate_id":"EVT-D-A1","role":"root"}
-{"id":"EVT-D-EN02","title":"Return","aggregate_id":"EVT-D-A1","role":"child"}
-{"id":"EVT-D-EN03","title":"Tool","aggregate_id":"EVT-D-A2","role":"root"}
-{"id":"EVT-D-EN09","title":"Note","aggregate_id":"EVT-D-A1","role":"child"}
