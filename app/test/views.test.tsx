@@ -7,13 +7,14 @@ import { describe, expect, it, vi } from 'vitest';
 import { parseSpecRoute } from '../src/specs/data';
 import { addressOf, parseViews, viewsFromSearch, withView } from '../src/views/address';
 import { main, openApp, openSideBar } from './helpers';
+import { addRows } from './fixtures/load';
 import { testWorkspace } from './graph/workspace';
 import { boxElement, boxElements, isCenter } from './graph/scene';
 
 // The focus page: one address per record or group, its Wiki, Graph and Model views panes you open
 // and close side by side, with the side bar as the page's last column.
 
-const served = () => ({ workspace: testWorkspace() });
+const served = () => ({ data: testWorkspace() });
 const node = (id: string) => boxElement(id);
 const title = () => screen.getByRole('heading', { level: 1 }).textContent;
 /** A view toggle, in the rightmost pane's title bar. */
@@ -165,10 +166,8 @@ describe('one address, three views', () => {
 
   it('LA-EXP-T41 A group page shows its parent, its kind, and its members with their coverage marks', async () => {
     // The aggregate holds an event too, so its rules are a group of their own in the tree.
-    const w = testWorkspace();
-    const a1 = w.records.find((r) => r.id === 'P-D-A1')!;
-    w.records.push({ ...a1, id: 'P-D-EV01', kind: 'domain_event', title: 'Thing lent', parent: 'P-D-A1', fields: {}, path: 'specs/P-D-EV01.md' });
-    await openApp('/P-D-A1/domain_rule', { workspace: w });
+    const w = addRows(testWorkspace(), 'domain_event', { id: 'P-D-EV01', title: 'Thing lent', aggregate_id: 'P-D-A1' });
+    await openApp('/P-D-A1/domain_rule', { data: w });
     await screen.findByRole('heading', { level: 1, name: 'Domain rules (2)' });
     const wiki = within(screen.getByRole('region', { name: 'Wiki pane' }));
     expect(wiki.getByRole('link', { name: /P-D-A1\s*Thing/ })).toHaveAttribute('href', '/P-D-A1');
@@ -191,14 +190,13 @@ describe('one address, three views', () => {
 
   it('LA-EXP-T43 Lists in the side bar, the graph part of the side bar and group pages stay at 10 rows and can be searched', async () => {
     const w = testWorkspace();
-    const base = w.records.find((r) => r.id === 'P-D-UC01-R01')!;
     for (let i = 2; i <= 13; i++) {
       const id = `P-D-UC01-R${String(i).padStart(2, '0')}`;
-      w.records.push({ ...base, id, title: `Rule ${i}`, path: `specs/${id}.md` });
+      addRows(w, 'requirement', { id, title: `Rule ${i}`, use_case_id: 'P-D-UC01', statement: `Rule ${i} MUST hold.` });
     }
     // A question too, so the requirements are a group of their own in the tree.
-    w.records.push({ ...base, id: 'P-D-UC01-Q01', kind: 'question', title: 'Who may lend?', fields: { owner: 'Ana' }, path: 'specs/P-D-UC01-Q01.md' });
-    await openApp('/P-D-UC01/requirement?view=wiki,graph', { workspace: w });
+    addRows(w, 'question', { id: 'P-D-UC01-Q01', title: 'Who may lend?', product_id: 'P', domain_id: 'P-D', use_case_id: 'P-D-UC01', owner: 'Ana' });
+    await openApp('/P-D-UC01/requirement?view=wiki,graph', { data: w });
     await screen.findByRole('heading', { level: 1, name: 'UC requirements (13)' });
     expect(within(screen.getByRole('region', { name: 'Wiki pane' })).getByRole('searchbox', { name: 'Filter UC requirements of P-D-UC01/requirement' })).toBeInTheDocument();
     await waitFor(() => expect(within(sideBar()).getByRole('searchbox', { name: 'Filter connected records' })).toBeInTheDocument());

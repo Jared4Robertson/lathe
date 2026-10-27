@@ -12,7 +12,7 @@ import { boxElements } from './graph/scene';
 // closing and cycling, each tab's own views, scroll and graph settings, and the address following
 // the active tab, so a reload brings every tab back (LA-PAT-APP-UX-R06).
 
-const served = () => ({ workspace: testWorkspace() });
+const served = () => ({ data: testWorkspace() });
 const strip = () => screen.getByRole('tablist', { name: 'Open pages' });
 /** The tabs as "name" with "*" for the preview and "<" for the active one. */
 const tabs = () => within(strip()).getAllByRole('tab').map((t) => `${t.querySelector('.tab-title')!.textContent}${t.closest('.tab')!.classList.contains('is-preview') ? '*' : ''}${t.getAttribute('aria-selected') === 'true' ? '<' : ''}`);
@@ -195,7 +195,7 @@ describe('tabs for open pages', () => {
   });
 
   it('LA-EXP-T119 Each space keeps its own tabs: switching spaces swaps the tab set', async () => {
-    await openApp('/DM-SHOP-UC01', { workspace: workspace() });
+    await openApp('/DM-SHOP-UC01', { data: workspace() });
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     fireEvent.doubleClick(tab('Add an item to the basket'));
     await go('/DM', 'Demo shop');
