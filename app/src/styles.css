@@ -249,7 +249,8 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-page {
   display: flex; flex-direction: column; min-width: 0; min-height: 0; height: 100%;
 }
-.graph-header { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 14px 20px 10px; border-bottom: 1px solid var(--rule); align-items: stretch; }
+/* The header holds the Filters and More popovers, so they open within the pane's width and are never cut by its edges. */
+.graph-header { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 14px 20px 10px; border-bottom: 1px solid var(--rule); align-items: stretch; }
 .graph-trail ol { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: nowrap; gap: 4px; font-size: 0.82rem; line-height: 1.5; block-size: 1.5em; overflow: auto hidden; scrollbar-width: none; }
 .graph-trail li + li::before { content: "›"; color: var(--muted); margin-right: 4px; }
 .graph-trail a { color: var(--steel); text-decoration: none; }
@@ -263,8 +264,8 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-trail .trail-name { flex: 0 100 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .graph-trail .trail-id { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--muted); font-size: 0.78rem; }
 .graph-trail [aria-current="page"] .trail-name { font-weight: 700; }
-/* One line whatever the center (LA-PAT-APP-UX-R08): the count takes what is left and is cut with an ellipsis, so the canvas below never moves; trace and filters sit at the right end. */
-.graph-toolbar { display: flex; flex-wrap: nowrap; gap: 10px 12px; align-items: center; font-size: 0.88rem; white-space: nowrap; }
+/* One line whatever the center (LA-PAT-APP-UX-R08), so the canvas below never moves; trace and filters sit at the right end. */
+.graph-toolbar { display: flex; flex-wrap: nowrap; gap: 8px; align-items: center; font-size: 0.88rem; white-space: nowrap; }
 .graph-depth.is-idle { visibility: hidden; }
 .graph-depth { display: inline-flex; align-items: center; gap: 4px; flex: none; }
 .graph-depth span { margin-right: 4px; color: var(--muted); }
@@ -272,15 +273,34 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-depth button[aria-pressed="true"] { background: var(--steel); border-color: var(--steel); color: var(--sheet); font-weight: 600; }
 .graph-depth button:disabled { opacity: 0.5; cursor: default; }
 .graph-trace-toggle { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; flex: none; }
-.graph-filters { position: relative; flex: none; }
+.graph-filters { flex: none; }
 .graph-filters > summary { cursor: pointer; display: inline-flex; gap: 6px; align-items: baseline; }
-.graph-filter-body { position: absolute; z-index: 10; top: calc(100% + 6px); right: 0; width: min(560px, 80vw); display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px 14px; padding: 12px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; box-shadow: 0 6px 20px var(--shadow-soft); }
+.graph-filter-body { box-sizing: border-box; position: absolute; z-index: 10; top: calc(100% - 4px); right: 12px; width: min(560px, calc(100% - 24px)); display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px 14px; padding: 12px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; box-shadow: 0 6px 20px var(--shadow-soft); }
 .graph-filter-body fieldset { border: 0; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; align-content: start; }
 .graph-filter-body legend { font-weight: 600; font-size: 0.78rem; margin-bottom: 2px; }
 .graph-filter-body label { display: flex; gap: 6px; align-items: center; font-size: 0.82rem; }
+.graph-filters > summary .icon { align-self: center; }
+/* The toolbar's narrower forms (TOOLBAR_TIERS): compact hides the names beside the icons and tightens the steps, narrow
+   shows each layout by its first letter, menu moves depth, Links and the steps into More. The names stay the accessible ones. */
+.graph-toolbar:not([data-tier="full"]) :is(.graph-depth-name, .graph-trace-name, .graph-filters-name) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.graph-toolbar:not([data-tier="full"]) { gap: 6px; }
+.graph-toolbar:not([data-tier="full"]) .graph-step { padding-inline: 4px; }
+.graph-toolbar:is([data-tier="narrow"], [data-tier="menu"]) .graph-depth button { padding-inline: 6px; }
+.graph-more { flex: none; }
+.graph-more > summary { cursor: pointer; display: inline-flex; align-items: center; padding: 3px 4px; border-radius: 5px; list-style: none; }
+.graph-more > summary::-webkit-details-marker { display: none; }
+.graph-more > summary:hover { color: var(--steel); }
+.graph-more-body { box-sizing: border-box; position: absolute; z-index: 10; top: calc(100% - 4px); left: 12px; max-width: calc(100% - 24px); display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 10px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; box-shadow: 0 6px 20px var(--shadow-soft); }
+.graph-more-body .graph-depth.is-idle { display: none; }
+.graph-more-body .graph-depth { flex-wrap: wrap; }
+.graph-toolbar .graph-more-body .graph-depth-name { position: static; width: auto; height: auto; overflow: visible; clip: auto; }
 .graph-filter-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; }
 .graph-filter-body .hint { grid-column: 1 / -1; margin: 0; font-size: 0.78rem; }
-.graph-count { color: var(--muted); font-size: 0.8rem; flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+/* The count, right-aligned on the trail's line: whole, the trail giving way first; cut with an ellipsis only in a very narrow pane. */
+.graph-head-line { display: flex; flex-wrap: nowrap; align-items: baseline; gap: 12px; block-size: 1.5em; min-width: 0; }
+.graph-head-line > .graph-trail { flex: 1 1000 auto; min-width: 0; }
+.graph-count { flex: 0 1 auto; margin-left: auto; min-width: 0; color: var(--muted); font-size: 0.8rem; line-height: 1.5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+.graph-toolbar-end { display: inline-flex; flex-wrap: nowrap; gap: 8px; align-items: center; margin-left: auto; flex: none; }
 .graph-page :is(button, input, summary, a):focus-visible { outline: 2px solid var(--steel); outline-offset: 2px; }
 
 .graph-workspace { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr); }

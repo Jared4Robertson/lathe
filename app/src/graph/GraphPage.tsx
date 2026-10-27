@@ -112,6 +112,8 @@ const count = (n: number, noun: string) => `${n} ${n === 1 ? noun : `${noun}s`}`
 
 export const MAX_DEPTH = 3;
 const DEPTHS = [1, 2, 3];
+/** The toolbar's forms, widest first: names hidden behind icons, then one-letter layouts, then depth, Links and the steps in a More menu. */
+const TOOLBAR_TIERS = ['full', 'compact', 'narrow', 'menu'] as const;
 /** Depth is how many levels below the focus the camera frames, folders and stages included. The Nested and Voronoi cameras frame the focus's box or cell, whatever the depth, so they have none. */
 const DEPTH_LABELS = ['Frame the focus and its children', 'Frame two levels below the focus', 'Frame three levels below the focus'];
 export const DEFAULT_GRAPH_SETTINGS: GraphSettings = { layout: 'tree', depth: 1, filters: NO_FILTERS, trace: false, links: false, minimap: false };
@@ -246,6 +248,32 @@ export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted,
     if (to) onNavigate(to);
   };
 
+  // The toolbar is one row at every pane width (LA-PAT-APP-UX-R08). While it does not fit, it steps down a tier before paint
+  // (TOOLBAR_TIERS); the width each tier needed is kept, so a wider pane steps back up without trying each tier on screen.
+  const toolbar = useRef<HTMLDivElement>(null);
+  const [tier, setTier] = useState(0);
+  const [, setRoom] = useState(0);
+  const needs = useRef<number[]>([]);
+  const hiddenCount = filters.hiddenKinds.size + filters.hiddenRelations.size;
+  useLayoutEffect(() => { needs.current = []; setTier(0); }, [hiddenCount]);
+  useLayoutEffect(() => {
+    const el = toolbar.current;
+    if (!el || tier >= TOOLBAR_TIERS.length - 1 || el.scrollWidth <= el.clientWidth + 1) return;
+    needs.current[tier] = el.scrollWidth;
+    setTier(tier + 1);
+  });
+  useEffect(() => {
+    const el = toolbar.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(() => {
+      const room = el.clientWidth;
+      setTier((t) => { const fits = needs.current.findIndex((n, i) => i < t && n <= room + 1); return fits < 0 ? t : fits; });
+      setRoom(room);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [valid]);
+
   if (!valid) {
     return (
       <div className="placeholder graph-missing">
@@ -260,65 +288,83 @@ export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted,
     { step: 'previous' as const, command: 'graphStepPrevious', label: 'Step to the previous sibling', mark: '↑' },
     { step: 'next' as const, command: 'graphStepNext', label: 'Step to the next sibling', mark: '↓' },
   ];
+  const traceable = canTrace(index, focus);
+  const moreControls = (
+    <>
+      {/* Depth is the Tree camera's alone: elsewhere the group keeps its slot, so nothing beside it moves, but is not shown or reachable (LA-PAT-APP-CODE-R21). */}
+      <div className={`graph-depth${layout === 'tree' ? '' : ' is-idle'}`} role="group" aria-label="Depth" aria-hidden={layout !== 'tree' || undefined} inert={layout !== 'tree' || undefined}>
+        <span className="graph-depth-name">Depth</span>
+        {DEPTHS.map((d) => (
+          <Tooltip key={d} label={DEPTH_LABELS[d - 1]} command={d === depth + 1 ? 'graphDepthUp' : d === depth - 1 ? 'graphDepthDown' : undefined}>
+            <button type="button" aria-pressed={depth === d} disabled={tracing} onClick={() => setDepth(d)}>{d}</button>
+          </Tooltip>
+        ))}
+      </div>
+      <div className="graph-links" role="group" aria-label="Cross-links">
+        <Tooltip label="Links: the center's own links, one step" command="graphLinks">
+          <button type="button" aria-pressed={links} disabled={tracing} onClick={() => update({ links: !links })}>Links</button>
+        </Tooltip>
+      </div>
+      <div className="graph-steps" role="group" aria-label="Step through the tree">
+        {steps.map((s) => (
+          <Tooltip key={s.step} label={s.label} command={s.command}>
+            <Button className="graph-step" aria-label={s.label} disabled={!stepTarget(index, focus, s.step)} onClick={stepTo(s.step)}>{s.mark}</Button>
+          </Tooltip>
+        ))}
+      </div>
+    </>
+  );
 
   return (
     <section className="graph-page" aria-label="Graph" onKeyDown={onPageKey}>
       <header className="graph-header">
-        <nav className="graph-trail" aria-label="Records visited">
-          <ol ref={trailList} tabIndex={trailOverflows ? 0 : undefined}>
-            {trail.filter((id) => isGraphNode(index, id)).map((id) => {
-              const item = trailItem(index, id);
-              return (
-                <li key={id}>
-                  {id === focus
-                    ? <span className="trail-item" aria-current="page" title={item.full} aria-label={item.full}>{item.body}</span>
-                    : <NodeLink id={id} onNavigate={onNavigate} hrefFor={hrefFor} title={item.full} ariaLabel={item.full} className="trail-item">{item.body}</NodeLink>}
-                </li>
-              );
-            })}
-          </ol>
-        </nav>
-        <div className="graph-toolbar">
+        {/* The trail and, right-aligned on the same line, the count: one line of fixed height, the count one piece of text, so a
+            new count never moves anything (LA-PAT-APP-UX-R08). */}
+        <div className="graph-head-line">
+          <nav className="graph-trail" aria-label="Records visited">
+            <ol ref={trailList} tabIndex={trailOverflows ? 0 : undefined}>
+              {trail.filter((id) => isGraphNode(index, id)).map((id) => {
+                const item = trailItem(index, id);
+                return (
+                  <li key={id}>
+                    {id === focus
+                      ? <span className="trail-item" aria-current="page" title={item.full} aria-label={item.full}>{item.body}</span>
+                      : <NodeLink id={id} onNavigate={onNavigate} hrefFor={hrefFor} title={item.full} ariaLabel={item.full} className="trail-item">{item.body}</NodeLink>}
+                  </li>
+                );
+              })}
+            </ol>
+          </nav>
+          <span className="graph-count" title={counts}>{counts}</span>
+        </div>
+        {/* One row at every pane width (LA-PAT-APP-UX-R08): when the row does not fit, it steps down a tier at a time
+            (toolbarTier), never wrapping and never cutting anything off. */}
+        <div className="graph-toolbar" ref={toolbar} data-tier={TOOLBAR_TIERS[tier]}>
           <div className="graph-depth graph-layout" role="group" aria-label="Layout">
             {GRAPH_LAYOUTS.map((l) => (
               <Tooltip key={l.layout} label={l.tip} command={l.layout !== layout ? 'graphLayout' : undefined}>
-                <button type="button" aria-pressed={layout === l.layout} disabled={tracing} onClick={() => update({ layout: l.layout })}>{l.label}</button>
+                <button type="button" aria-pressed={layout === l.layout} aria-label={tier >= 2 ? l.label : undefined} disabled={tracing} onClick={() => update({ layout: l.layout })}>{tier >= 2 ? l.label[0] : l.label}</button>
               </Tooltip>
             ))}
           </div>
-          {/* Depth is the Tree camera's alone: elsewhere the group keeps its slot, so nothing beside it moves, but is not shown or reachable (LA-PAT-APP-CODE-R21). */}
-          <div className={`graph-depth${layout === 'tree' ? '' : ' is-idle'}`} role="group" aria-label="Depth" aria-hidden={layout !== 'tree' || undefined} inert={layout !== 'tree' || undefined}>
-            <span>Depth</span>
-            {DEPTHS.map((d) => (
-              <Tooltip key={d} label={DEPTH_LABELS[d - 1]} command={d === depth + 1 ? 'graphDepthUp' : d === depth - 1 ? 'graphDepthDown' : undefined}>
-                <button type="button" aria-pressed={depth === d} disabled={tracing} onClick={() => setDepth(d)}>{d}</button>
+          {tier >= 3 ? (
+            <details className="graph-more">
+              <Tooltip label="Depth, Links and the steps through the tree">
+                <summary aria-label="More: depth, Links and steps"><Icon name="dots" size={16} /></summary>
               </Tooltip>
-            ))}
-          </div>
-          <div className="graph-links" role="group" aria-label="Cross-links">
-            <Tooltip label="Links: the center's own links, one step" command="graphLinks">
-              <button type="button" aria-pressed={links} disabled={tracing} onClick={() => update({ links: !links })}>Links</button>
-            </Tooltip>
-          </div>
-          <div className="graph-steps" role="group" aria-label="Step through the tree">
-            {steps.map((s) => (
-              <Tooltip key={s.step} label={s.label} command={s.command}>
-                <Button className="graph-step" aria-label={s.label} disabled={!stepTarget(index, focus, s.step)} onClick={stepTo(s.step)}>{s.mark}</Button>
-              </Tooltip>
-            ))}
-          </div>
-          {/* Right after the depth, Links and the steps, whose widths never change, and as one piece of
-              text, so a new count never moves anything (LA-PAT-APP-UX-R08); trace and filters sit at the end. */}
-          <span className="graph-count" title={counts}>{counts}</span>
-          {canTrace(index, focus) && (
-            <label className="graph-trace-toggle">
+              <div className="graph-more-body">{moreControls}</div>
+            </details>
+          ) : moreControls}
+          {/* Trace and filters sit at the end. The trace switch keeps its slot where there is nothing to trace, so nothing beside it moves. */}
+          <div className="graph-toolbar-end">
+            <label className={`graph-trace-toggle${traceable ? '' : ' is-idle'}`} aria-hidden={!traceable || undefined} inert={!traceable || undefined}>
               <Tooltip label="Trace mode on or off" command="graphTrace">
-                <input type="checkbox" checked={trace} onChange={(e) => setTrace(e.target.checked)} />
+                <input type="checkbox" aria-label="Trace mode" checked={trace && traceable} onChange={(e) => setTrace(e.target.checked)} />
               </Tooltip>
-              Trace mode
+              <span className="graph-trace-name">Trace</span>
             </label>
-          )}
-          <FilterControls index={index} filters={filters} setFilters={setFilters} minimap={minimap} setMinimap={(on) => update({ minimap: on })} />
+            <FilterControls index={index} filters={filters} setFilters={setFilters} minimap={minimap} setMinimap={(on) => update({ minimap: on })} />
+          </div>
         </div>
       </header>
       <div className="graph-workspace">
@@ -354,7 +400,10 @@ function FilterControls({ index, filters, setFilters, minimap, setMinimap }: Fil
   const relations = relationsOf(index);
   return (
     <details className="graph-filters">
-      <summary>Filters{hidden > 0 && <span className="section-count">{hidden} hidden</span>}</summary>
+      {/* In a narrow toolbar only the icon shows; the name stays the summary's text (LA-PAT-APP-UX-R08). */}
+      <Tooltip label="Filters">
+        <summary><Icon name="filter" size={14} /><span className="graph-filters-name">Filters</span>{hidden > 0 && <span className="section-count">{hidden} hidden</span>}</summary>
+      </Tooltip>
       <div className="graph-filter-body">
         <fieldset>
           <legend>Picture</legend>
