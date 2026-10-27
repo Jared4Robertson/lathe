@@ -13,8 +13,11 @@ import { treeChildren } from './tree';
 // more than its tallest child for a parent), so every leaf record reads at leaf size wherever it
 // sits. A level's scale is its typical box size over a typical leaf's, at most MAX_LEVEL_STEP times
 // the level below's (map.ts's `settleLevelScale`), so every box at one level has the same text, set
-// once when the map is built and never by the focus or the zoom. Every box is a square sized to its
-// content at its level's scale, from the leaves up, so every label fits by construction:
+// once when the map is built and never by the focus or the zoom. The one exception is a root's
+// children (a product's domains and Shared): they share one scale, the largest among them, so a
+// small top-level folder's header reads at the domains' size and its square grows to hold it.
+// Every box is a square sized to its content at its scale, from the leaves up, so every label fits
+// by construction:
 // - A leaf is the smallest square that holds its label (its kind and ID line and its title,
 //   wrapped on whole words), its padding included.
 // - A parent's children are packed in the tree's order in rows (shelf packing), a gap apart, within
@@ -184,18 +187,29 @@ export function layoutNested(roots: readonly string[], childrenOf: (id: string) 
   // One text scale per height level, from the leaves up: its typical box size over a typical leaf's,
   // at most MAX_LEVEL_STEP times the level below's (map.ts's `settleLevelScale`); then each box's
   // side at that scale and, for a parent, where its children sit in it.
+  // A root's children (a product's domains and Shared) then share one scale, the largest among
+  // them, and are sized again at it before the root is: a small folder beside the domains reads at
+  // their size, its square as big as that header and its children (still at their own scales) need.
   const leafArea = typicalSize([...unitLeaf.values()].map((x) => x * x)) ** 2;
   const scales: number[] = new Array(byHeightIds.length).fill(1);
+  const shared = new Map<string, number>();
   const packs = new Map<string, Packed>();
+  const sizeAt = (id: string, s: number) => {
+    const { side: own, pack } = sideAt(id, s);
+    side.set(id, own);
+    if (pack) packs.set(id, pack);
+  };
   byHeightIds.forEach((ids, h) => {
-    scales[h] = settleLevelScale((s) => ids.map((id) => sideAt(id, s).side ** 2), h > 0 ? scales[h - 1] : 1, leafArea);
-    for (const id of ids) {
-      const { side: own, pack } = sideAt(id, scales[h]);
-      side.set(id, own);
-      if (pack) packs.set(id, pack);
+    for (const r of ids) {
+      if (parent.get(r) !== null || kids.get(r)!.length === 0) continue;
+      const own = kids.get(r)!;
+      const s = Math.max(...own.map((c) => scales[height.get(c)!]));
+      for (const c of own) { shared.set(c, s); sizeAt(c, s); }
     }
+    scales[h] = settleLevelScale((s) => ids.map((id) => sideAt(id, s).side ** 2), h > 0 ? scales[h - 1] : 1, leafArea);
+    for (const id of ids) if (!shared.has(id)) sizeAt(id, scales[h]);
   });
-  const scaleOf = (id: string) => scales[height.get(id)!];
+  const scaleOf = (id: string) => shared.get(id) ?? scales[height.get(id)!];
 
   // From the roots down: each box at its place, its children at theirs below its header.
   const nodes = new Map<string, NestedNode>();
