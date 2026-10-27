@@ -20,34 +20,34 @@ const line = (row: object) => `${JSON.stringify(row)}\n`;
 const v = (n: number, title = `View ${n}`) => line({ id: `TL-V0${n}`, title });
 
 describe('mergeData', () => {
-  it('keeps the rows both sides added, sorted', async () => {
+  it('LA-AUT-UC19-R01-T01 keeps the rows both sides added, sorted', async () => {
     const result = await mergeData(v(1), v(1) + v(3), v(1) + v(2), view);
     expect(result).toEqual({ text: v(1) + v(2) + v(3), clashes: [], problems: [] });
   });
 
-  it('takes a change or a removal made on one side only', async () => {
+  it('LA-AUT-UC19-R01-T02 takes a change or a removal made on one side only', async () => {
     const result = await mergeData(v(1) + v(2) + v(3), v(1, 'Catalog') + v(2) + v(3), v(1) + v(3), view);
     expect(result).toEqual({ text: v(1, 'Catalog') + v(3), clashes: [], problems: [] });
   });
 
-  it('keeps one copy of a row both sides added alike, and of a link both sides made', async () => {
+  it('LA-AUT-UC19-R01-T03 keeps one copy of a row both sides added alike, and of a link both sides made', async () => {
     const link = line({ source_id: 'TL-LEND-SP01', target_id: 'TL-LEND-A1' });
     expect(await mergeData('', link, link, reads)).toEqual({ text: link, clashes: [], problems: [] });
     expect((await mergeData(v(1), v(1) + v(2), v(1) + v(2), view)).clashes).toEqual([]);
   });
 
-  it('fails when one ID is added on both sides with different content', async () => {
+  it('LA-AUT-SP03-T fails when one ID is added on both sides with different content', async () => {
     const result = await mergeData(v(1), v(1) + v(2, 'Desk'), v(1) + v(2, 'Return desk'), view);
     expect(result.clashes).toEqual(['TL-V02 was added on both sides with different content']);
     expect(result.text).toBe(`${v(1)}<<<<<<< ours\n${v(2, 'Desk')}=======\n${v(2, 'Return desk')}>>>>>>> theirs\n`);
   });
 
-  it('fails when one row is changed on both sides, or removed on one and changed on the other', async () => {
+  it('LA-AUT-SP03-T fails when one row is changed on both sides, or removed on one and changed on the other', async () => {
     expect((await mergeData(v(1), v(1, 'Ours'), v(1, 'Theirs'), view)).clashes).toEqual(['TL-V01 was changed on both sides']);
     expect((await mergeData(v(1), '', v(1, 'Theirs'), view)).clashes).toEqual(['TL-V01 was removed on one side and changed on the other']);
   });
 
-  it("checks the merged table's own rules", async () => {
+  it("LA-AUT-UC19-R03-T01 checks the merged table's own rules", async () => {
     const step = (id: string, position: number) => line({ id, title: 'Step', flow_id: 'TL-LEND-UC01-FL', path: 'main', position });
     // Each side adds a step 2 to the same path: no line clashes, but the table's unique key does.
     const result = await mergeData(step('TL-LEND-UC01-FL-S01', 1), step('TL-LEND-UC01-FL-S01', 1) + step('TL-LEND-UC01-FL-S02', 2), step('TL-LEND-UC01-FL-S01', 1) + step('TL-LEND-UC01-FL-S03', 2), schema.tables.flow_step);
@@ -74,14 +74,14 @@ describe('lathe merge-data', () => {
     return path.join(dir, name);
   };
 
-  it('writes the merge over ours, as git expects', async () => {
+  it('LA-AUT-UC19-R04-T01 writes the merge over ours, as git expects', async () => {
     const [base, ours, theirs] = [write('base', v(1)), write('ours', v(1) + v(3)), write('theirs', v(1) + v(2))];
     const result = await mergeDataFiles(base, ours, theirs, 'data/view.jsonl');
     expect(result.clashes).toEqual([]);
     expect(readFileSync(ours, 'utf8')).toBe(v(1) + v(2) + v(3));
   });
 
-  it('exits 1 with the clash on a real clash, and 0 on a clean merge', () => {
+  it('LA-AUT-UC19-R02-T01 exits 1 with the clash on a real clash, and 0 on a clean merge', () => {
     const bin = path.join(import.meta.dirname, '..', '..', 'bin', 'lathe.ts');
     const run = (b: string, o: string, t: string) => {
       const args = [bin, 'merge-data', write('b', b), write('o', o), write('t', t), 'data/view.jsonl'];
@@ -98,7 +98,14 @@ describe('lathe merge-data', () => {
     expect(readFileSync(path.join(dir, 'o'), 'utf8')).toBe(v(1) + v(2));
   });
 
-  it('merges two branches that each added a row, through git with the driver set up as the README says', () => {
+  it("LA-PLT-UC02-R05-T01 the README says how each clone sets up the driver, and .gitattributes names the data files for it", () => {
+    const readme = readFileSync(path.join(import.meta.dirname, '..', '..', 'README.md'), 'utf8');
+    expect(readme).toContain('git config merge.lathe-data.name "Lathe data files"');
+    expect(readme).toContain('git config merge.lathe-data.driver "npx lathe merge-data %O %A %B %P"');
+    expect(readme).toContain('**/data/*.jsonl merge=lathe-data');
+  });
+
+  it('LA-INT04-T01 merges two branches that each added a row, through git with the driver set up as the README says', () => {
     const repo = mkdtempSync(path.join(tmpdir(), 'lathe-merge-repo-'));
     const bin = path.join(import.meta.dirname, '..', '..', 'bin', 'lathe.ts');
     const git = (...args: string[]) => execFileSync('git', args, { cwd: repo, stdio: 'pipe', env: { ...process.env, GIT_CONFIG_GLOBAL: '/dev/null', GIT_CONFIG_NOSYSTEM: '1' } }).toString();

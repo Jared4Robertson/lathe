@@ -1,4 +1,4 @@
-// LA-PLT-T08: the engine's performance budgets (LA-PLT-DR02), measured: `npm --prefix lathe run test:perf`.
+// LA-PLT-UC01-R03-T01: the engine's performance budgets (LA-PLT-UC01-R03), measured: `npm --prefix lathe run test:perf`.
 //
 // - Loading Lathe's own spec (a cold load: the data files read and loaded with every key and rule, then checked)
 //   takes under 2 s.

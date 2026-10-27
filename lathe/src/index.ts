@@ -25,7 +25,7 @@ export interface LoadOptions {
   dataDir?: string;
   /** Lathe's own data folder with the built-in checks, in place of the package's (null: none, used by tests). */
   latheDataDir?: string | null;
-  /** Filled with how long each phase of the load took, in milliseconds (the performance budgets, LA-PLT-DR02). */
+  /** Filled with how long each phase of the load took, in milliseconds (the performance budgets, LA-PLT-UC01-R03). */
   timings?: Partial<LoadTimings>;
 }
 

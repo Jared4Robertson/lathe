@@ -104,7 +104,7 @@ const LOADED = {
 const flags = (row: Record<string, string | number | boolean>) => Object.entries(row).flatMap(([column, value]) => [`--${column}`, String(value)]);
 
 describe('writing a spec end to end', () => {
-  it('with the lathe command', async () => {
+  it('LA-AUT-UC01-FL-T with the lathe command', async () => {
     const root = productRepo();
     const run = (...args: string[]) => {
       const result = lathe(root, ...args);
@@ -145,7 +145,7 @@ describe('writing a spec end to end', () => {
     expect(run('show', 'TL-LEND-UC01-R01')).toContain('Fulfilled by TL-LEND-UC01-FL-S01: The member borrows a free tool [fulfills, in]');
   }, 120_000);
 
-  it('with the MCP tools, as the plugin starts them', async () => {
+  it('LA-INT01-T01 with the MCP tools, as the plugin starts them', async () => {
     const root = productRepo();
     const server = spawn(process.execPath, [bin, 'mcp', '--root', root], { stdio: ['pipe', 'pipe', 'pipe'] });
     let buffer = '';

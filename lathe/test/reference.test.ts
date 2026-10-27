@@ -44,7 +44,7 @@ beforeAll(async () => {
 afterAll(removeData);
 
 describe('check rows', () => {
-  it('LA-CHK-T45 Every check row has a one-sentence summary, an explanation and a severity that matches its query', async () => {
+  it('LA-CHK-INV03-T Every check row has a one-sentence summary, an explanation and a severity that matches its query', async () => {
     const rows = await latheChecks();
     expect(rows.length).toBeGreaterThan(10);
     for (const row of rows) {
@@ -57,7 +57,7 @@ describe('check rows', () => {
     }
   });
 
-  it('LA-CHK-T46 A check row is read as summary, explanation, severity, kinds and stage, and one without them is refused', async () => {
+  it('LA-CHK-INV03-T A check row is read as summary, explanation, severity, kinds and stage, and one without them is refused', async () => {
     expect(defaults.checks.find((c) => c.check === 'value-object-unused')).toEqual({
       check: 'value-object-unused',
       severity: 'error',
@@ -76,7 +76,7 @@ describe('check rows', () => {
 });
 
 describe('the reference', () => {
-  it("LA-AUT-T78 The reference holds every stage, kind, table, relation, check and gap of Lathe's schema", async () => {
+  it("LA-AUT-UC11-R02-T01 The reference holds every stage, kind, table, relation, check and gap of Lathe's schema", async () => {
     expect(defaults.stages.map((s) => s.stage)).toEqual(['domain-model', 'use-cases', 'interaction-design', 'technical-specification', 'test-plan']);
     const useCase = defaults.kinds.find((k) => k.kind === 'use_case')!;
     expect(useCase).toMatchObject({
@@ -112,7 +112,7 @@ describe('the reference', () => {
     expect(defaults.gaps.map((g) => g.gap)).toEqual(GAP_RULES.map((g) => g.name));
   });
 
-  it("LA-AUT-T79 A product's reference shows its own kinds and relations and its own checks", async () => {
+  it("LA-AUT-UC11-R03-T01 A product's reference shows its own kinds and relations and its own checks", async () => {
     const ref = await buildReference(own);
     expect(ref.kinds.at(-1)).toMatchObject({ kind: 'cli_command', stage: 'technical-specification', obligation: false, position: null, id_scope: null, id: { pattern: '<command>-CLI', example: 'EX-LEND-CMD01-CLI' }, product: 'EX' });
     expect(ref.kinds.find((k) => k.kind === 'command')?.child_kinds).toContain('cli_command');
@@ -124,13 +124,13 @@ describe('the reference', () => {
     expect(ref.checks.at(-1)?.origin).toBe('product');
   });
 
-  it('LA-AUT-T80 The committed REFERENCE.md is the reference as the reference script writes it', () => {
+  it('LA-AUT-UC11-R05-T01 The committed REFERENCE.md is the reference as the reference script writes it', () => {
     const committed = readFileSync(path.join(PACKAGE_DIR, 'REFERENCE.md'), 'utf8');
     // When this fails, run `npm --prefix lathe run reference` and commit REFERENCE.md.
     expect(committed).toBe(renderReference(defaults));
   });
 
-  it('LA-AUT-T81 The Markdown goes stage by stage, each with its kinds, tables, checks and gaps, then other tables, relations and checks of any kind, each with an anchor', () => {
+  it('LA-AUT-UC11-R01-T01 The Markdown goes stage by stage, each with its kinds, tables, checks and gaps, then other tables, relations and checks of any kind, each with an anchor', () => {
     const markdown = renderReference(defaults);
     const at = (text: string) => markdown.indexOf(text);
     expect(at('# Lathe reference')).toBe(0);
@@ -146,7 +146,7 @@ describe('the reference', () => {
     expect(targets.filter((t) => !anchors.has(t))).toEqual([]);
   });
 
-  it("The reference says that clean architecture's use case is a command handler, and what proves each obligation", () => {
+  it("LA-AUT-UC11-R02-T01 The reference says that clean architecture's use case is a command handler, and what proves each obligation", () => {
     const markdown = renderReference(defaults);
     expect(markdown).toContain("What clean architecture calls a use case or an interactor is what Lathe calls a command handler\n(`command_handler`)");
     const start = markdown.indexOf('<a id="kind-invariant"></a>');
@@ -159,7 +159,7 @@ describe('the reference', () => {
 });
 
 describe('the schema documents itself', () => {
-  it('LA-AUT-T82 A product kind or relation without a description, or a check without its explanation, is refused', async () => {
+  it('LA-AUT-INV24-T A product kind or relation without a description, or a check without its explanation, is refused', async () => {
     const data = everyKind();
     const kind = data.product_kind[0];
     expect(await refusals(withTable(data, 'product_kind', [{ ...kind, description: ' ' }]))).toEqual([expect.objectContaining({ table: 'product_kind' })]);
@@ -169,7 +169,7 @@ describe('the schema documents itself', () => {
     expect(await refusals(withTable(data, 'check', [{ ...check, explanation: '' }]))).toEqual([expect.objectContaining({ table: 'check' })]);
   });
 
-  it("LA-AUT-T83 Lathe's stages, kinds, tables, checks and gaps are all documented, and a product's checks are held to the same rule", async () => {
+  it("LA-AUT-UC11-R06-T01 Lathe's stages, kinds, tables, checks and gaps are all documented, and a product's checks are held to the same rule", async () => {
     expect(defaults.stages.filter((s) => !s.description.trim())).toEqual([]);
     expect(defaults.kinds.filter((k) => k.description.trim() === '').map((k) => k.kind)).toEqual([]);
     expect(defaults.tables.filter((t) => t.description.trim() === '').map((t) => t.name)).toEqual([]);
@@ -181,7 +181,7 @@ describe('the schema documents itself', () => {
 });
 
 describe('relation labels', () => {
-  it('LA-AUT-T86 A product relation without both labels is refused, and all of Lathe\'s are labeled', async () => {
+  it('LA-AUT-INV23-T A product relation without both labels is refused, and all of Lathe\'s are labeled', async () => {
     const data = everyKind();
     const [documents] = data.product_relation;
     const { reverse_label: _r, ...noReverse } = documents;
@@ -190,7 +190,7 @@ describe('relation labels', () => {
     expect(defaults.relations.filter((r) => !r.forward_label.trim() || !r.reverse_label.trim())).toEqual([]);
   });
 
-  it('LA-AUT-T87 The reference reads each relation by its labels', () => {
+  it('LA-AUT-UC11-R07-T01 The reference reads each relation by its labels', () => {
     expect(defaults.relations.find((r) => r.relation === 'fulfills')).toMatchObject({ forward_label: 'Fulfills', reverse_label: 'Fulfilled by' });
     const markdown = renderReference(defaults);
     expect(markdown).toContain('- **Reads:** Fulfills / Fulfilled by');
@@ -201,7 +201,7 @@ describe('relation labels', () => {
 });
 
 describe('the reference script and GET /api/reference', () => {
-  it("LA-AUT-T84 The reference script prints a product's reference, or writes it with --out", async () => {
+  it("LA-AUT-UC11-R01-T02 The reference script prints a product's reference, or writes it with --out", async () => {
     const expected = renderReference(await buildReference(own));
     const printed = script('--root', own, '--print');
     expect(printed.status).toBe(0);
@@ -212,7 +212,7 @@ describe('the reference script and GET /api/reference', () => {
     expect(readFileSync(out, 'utf8')).toBe(expected);
   });
 
-  it('LA-AUT-T85 GET /api/reference serves the product reference as JSON', async () => {
+  it('LA-AUT-EP01-R01-T01 GET /api/reference serves the product reference as JSON', async () => {
     let status = 0;
     let body = '';
     const headers: Record<string, string> = {};

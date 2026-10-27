@@ -28,7 +28,7 @@ const files = (root: string) =>
 const mtimes = (root: string) => Object.fromEntries(readdirSync(path.join(root, 'data')).map((f) => [f, statSync(path.join(root, 'data', f)).mtimeMs]));
 
 describe('add', () => {
-  it('adds a record, registers its ID and supertypes, and rewrites only its table file', async () => {
+  it('LA-AUT-INV35-T adds a record, registers its ID and supertypes, and rewrites only its table file', async () => {
     const { store, root } = await fresh();
     const before = mtimes(root);
     const result = await store.add('uc_requirement', { id: 'TL-LEND-UC01-R02', title: 'Member is known', use_case_id: 'TL-LEND-UC01', statement: 'The library MUST refuse an unknown member.' });
@@ -61,7 +61,7 @@ describe('add', () => {
     await store.close();
   });
 
-  it('refuses a row whose key exists, a bad parent, and a link table', async () => {
+  it('LA-AUT-INV37-T refuses a row whose key exists, a bad parent, and a link table', async () => {
     const { store } = await fresh();
     expect(await refused(store, [{ op: 'add', table: 'view', row: { id: 'TL-V01', title: 'Again' } }])).toEqual([expect.objectContaining({ rule: 'primary-key', command: 0 })]);
     expect(await refused(store, [{ op: 'add', table: 'view_requirement', row: { id: 'TL-V09-R01', title: 'Lost', view_id: 'TL-V09', statement: 'x' } }])).toEqual([
@@ -75,7 +75,7 @@ describe('add', () => {
 });
 
 describe('set', () => {
-  it('changes and clears columns', async () => {
+  it('LA-AUT-INV38-T changes and clears columns', async () => {
     const { store } = await fresh();
     await store.set('view', 'TL-V01', { title: 'Tool catalog', route: null, description: 'Every tool.' });
     expect(store.record('TL-V01')!.row).toEqual({ id: 'TL-V01', title: 'Tool catalog', description: 'Every tool.' });
@@ -121,12 +121,17 @@ describe('move', () => {
     await store.close();
   });
 
-  it("refuses a parent its kind cannot sit under, a record with no owner, and a move that leaves an ID outside its domain", async () => {
+  it('LA-AUT-SP01-T refuses to move a record with no owner', async () => {
+    const { store } = await fresh();
+    expect(await refused(store, [{ op: 'move', id: 'TL-V01', parent: 'TL' }])).toEqual([expect.objectContaining({ rule: 'command', message: 'a view has no parent, so it cannot move' })]);
+    await store.close();
+  });
+
+  it("refuses a parent its kind cannot sit under, and a move that leaves an ID outside its domain", async () => {
     const { store } = await fresh();
     expect(await refused(store, [{ op: 'move', id: 'TL-LEND-UC01', parent: 'TL-LEND-A1' }])).toEqual([
       expect.objectContaining({ rule: 'parent', message: 'a use_case sits under capability, not under aggregate TL-LEND-A1' }),
     ]);
-    expect(await refused(store, [{ op: 'move', id: 'TL-V01', parent: 'TL' }])).toEqual([expect.objectContaining({ rule: 'command', message: 'a view has no parent, so it cannot move' })]);
     const problems = await refused(store, [
       { op: 'add', table: 'domain', row: { id: 'TL-CAT', title: 'Catalog', product_id: 'TL', subdomain_type: 'generic' } },
       { op: 'add', table: 'capability', row: { id: 'TL-CAT-CAP01', title: 'Listing', domain_id: 'TL-CAT', position: 1 } },
@@ -150,7 +155,7 @@ describe('link and unlink', () => {
     await store.close();
   });
 
-  it('refuses a link its ends allow but its relation does not, a wrong kind at an end, and an unknown relation', async () => {
+  it('LA-AUT-INV05-T refuses a link its ends allow but its relation does not, a wrong kind at an end, and an unknown relation', async () => {
     const { store } = await fresh();
     // A second pair widens documents to a link table whose target is any record, so its pairs are what hold.
     await store.add('product_relation', { name: 'documents', source_kind: 'cli_command', target_kind: 'integration', product_id: 'TL', forward_label: 'Documents', reverse_label: 'Documented by', description: 'The CLI command is documented with the integration.' });
@@ -182,7 +187,7 @@ describe('link and unlink', () => {
 });
 
 describe('remove', () => {
-  it('refuses a record others reference, saying what references it', async () => {
+  it('LA-AUT-SP02-T refuses a record others reference, saying what references it', async () => {
     const { store } = await fresh();
     const problems = await refused(store, [{ op: 'remove', table: 'uc_requirement', key: 'TL-LEND-UC01-R01' }]);
     expect(problems).toEqual([expect.objectContaining({ rule: 'referenced' })]);
@@ -198,7 +203,7 @@ describe('remove', () => {
     await store.close();
   });
 
-  it('removes a record with its parts and the links it starts', async () => {
+  it('LA-AUT-INV39-T removes a record with its parts and the links it starts', async () => {
     const { store, root } = await fresh();
     // The step's links are its own, so they go with it.
     await store.remove('flow_step', 'TL-LEND-UC01-FL-S01');
@@ -224,7 +229,7 @@ describe('remove', () => {
 });
 
 describe('a write', () => {
-  it('is all or nothing: a refused command leaves the data and the files as they were', async () => {
+  it('LA-AUT-INV33-T is all or nothing: a refused command leaves the data and the files as they were', async () => {
     const { store, root } = await fresh();
     const before = files(root);
     const problems = await refused(store, [
@@ -263,7 +268,7 @@ describe('a write', () => {
     await reopened.close();
   });
 
-  it('refuses an aggregate with two roots', async () => {
+  it('LA-AUT-INV34-T refuses an aggregate with two roots by its validation query, before any file changes', async () => {
     const { store } = await fresh();
     expect(await refused(store, [{ op: 'set', table: 'entity', key: 'TL-LEND-EN02', changes: { role: 'root', in_root_table: null } }])).toEqual([
       expect.objectContaining({ rule: 'aggregate-root', table: 'aggregate', key: 'TL-LEND-A1' }),
@@ -271,7 +276,7 @@ describe('a write', () => {
     await store.close();
   });
 
-  it('runs writes one after another, each on the state the one before left', async () => {
+  it('LA-AUT-INV36-T runs writes one after another, each on the state the one before left', async () => {
     const { store } = await fresh();
     await Promise.all([2, 3, 4].map((n) => store.add('view', { id: `TL-V0${n}`, title: `View ${n}` })));
     expect(store.rows('view').map((v) => v.id)).toEqual(['TL-V01', 'TL-V02', 'TL-V03', 'TL-V04']);

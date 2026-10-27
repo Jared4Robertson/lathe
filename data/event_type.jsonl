@@ -1,3 +1,4 @@
 {"id":"LA-AUT-EV01-ET","title":"spec:changed","domain_event_id":"LA-AUT-EV01","delivery":"in process","file":"lathe/src/server/api.ts","description":"`watchTargets`: `spec:changed` for the data folder and Lathe's check rows."}
 {"id":"LA-AUT-EV03-ET","title":"tools/list_changed","domain_event_id":"LA-AUT-EV03","delivery":"in process","file":"lathe/src/cli/mcp.ts","description":"The declarations-changed branch that sends `notifications/tools/list_changed`."}
+{"id":"LA-CHK-EV01-ET","title":"spec:changed","domain_event_id":"LA-CHK-EV01","delivery":"in process","file":"lathe/src/server/api.ts","description":"`watchTargets`: `spec:changed` when a file of check rows changes, Lathe's `lathe/data/check.jsonl` or the product's own in its data folder."}
 {"id":"LA-EXP-EV01-ET","title":"lathe:navigate","domain_event_id":"LA-EXP-EV01","delivery":"in process","file":"app/src/router.tsx","description":"the lathe:navigate event and popstate; delivery in process"}

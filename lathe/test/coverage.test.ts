@@ -14,7 +14,7 @@ beforeAll(async () => {
 });
 
 describe('coverage of the complete product', () => {
-  it('LA-TRC-T04 counts every obligation kind, in kind order, per domain and for the product outside the domains', () => {
+  it('LA-TRC-UC02-R01-T01 counts every obligation kind, in kind order, per domain and for the product outside the domains', () => {
     expect(clean.coverage.map((c) => [c.product, c.domain])).toEqual([['EX', 'EX-LEND'], ['EX', null]]);
     const lending = clean.coverage[0];
     expect(lending.obligations.map((o) => o.kind)).toEqual(['constraint', 'invariant', 'specification', 'policy', 'domain_service', 'uc_requirement', 'pattern_rule', 'view_requirement', 'api_requirement', 'standard_rule']);
@@ -29,7 +29,7 @@ describe('coverage of the complete product', () => {
     expect(gaps(clean)).toEqual([]);
   });
 
-  it('LA-TRC-T05 counts the tests of each scope by state', () => {
+  it('LA-TRC-UC06-R02-T01 counts the tests of each scope by state', () => {
     expect(clean.coverage[0].tests).toEqual({ automated: 9, manual: 1, not_automated: 0 });
     expect(clean.coverage[1].tests).toEqual({ automated: 2, manual: 1, not_automated: 0 });
   });
@@ -48,7 +48,7 @@ describe('designed and built', () => {
     ws = await loadData(data, { missing: ['src/dates.ts'] });
   });
 
-  it('a UC requirement is designed once a step fulfills it, a standard rule once a technical record meets it; the rest by construction', () => {
+  it('LA-TRC-UC01-R01-T01 a UC requirement is designed once a step fulfills it, a standard rule once a technical record meets it; the rest by construction', () => {
     expect(gaps(ws).filter((g) => g.startsWith('designed'))).toEqual([
       'designed EX-LEND-UC02-R01', // no step fulfills it
       'designed EX-STD-CODE-R01', // no technical record meets it
@@ -56,7 +56,7 @@ describe('designed and built', () => {
     expect(obligation(ws, null, 'constraint')).toMatchObject({ total: 1, designed: 1, built: 0, proved: 1 });
   });
 
-  it('LA-TRC-T02 an obligation is built once the technical record that implements it names a file that exists, counted apart from designed and proved', () => {
+  it('LA-TRC-UC01-R04-T01 an obligation is built once the technical record that implements it names a file that exists, counted apart from designed and proved', () => {
     expect(gaps(ws).filter((g) => g.startsWith('built'))).toEqual([
       'built EX-LEND-DS01', // its service's file is missing
       'built EX-LEND-EP01-R01', // its endpoint has no handler
@@ -99,13 +99,23 @@ describe('proved', () => {
     ws = await loadData(data, { silent: ['EX-LEND-PO01-T'] });
   });
 
-  it('LA-TRC-T05 only an automated or manual test at an allowed level, whose file names it, proves', () => {
+  it('LA-TRC-UC02-R03-T01 only an automated or manual test at an allowed level, whose file names it, proves', () => {
     expect(gaps(ws)).toEqual(['proved EX-LEND-PO01', 'proved EX-LEND-SP01', 'proved EX-STD-CODE-R01', 'proved EX-VO01-C01']);
     // A manual test proves.
     expect(obligation(ws, null, 'view_requirement')).toMatchObject(covered(1));
   });
 
-  it('a test not automated yet leaves its obligation unproved, counted and named as such', () => {
+  it('LA-TRC-UC02-R07-T01 a test at a level its kind does not allow proves nothing', () => {
+    // The constraint's test runs at api, which a constraint test does not allow.
+    expect(obligation(ws, null, 'constraint')).toMatchObject({ total: 1, proved: 0 });
+    expect(ws.coverage.find((c) => c.domain === null)?.gaps.find((g) => g.id === 'EX-VO01-C01')?.missing).toBe('proved');
+  });
+
+  it('LA-TRC-UC01-R02-T02 an automated test whose file does not name it leaves its obligation unproved, listed as a gap', () => {
+    expect(ws.coverage[0].gaps.find((g) => g.id === 'EX-LEND-PO01')).toEqual({ id: 'EX-LEND-PO01', kind: 'policy', missing: 'proved', message: 'Policy EX-LEND-PO01 is not proved yet.' });
+  });
+
+  it('LA-TRC-UC02-R03-T01 a test not automated yet leaves its obligation unproved, counted and named as such', () => {
     expect(obligation(ws, 'EX-LEND', 'specification')).toMatchObject({ total: 1, proved: 0, not_automated: 1 });
     expect(ws.coverage[0].gaps.find((g) => g.id === 'EX-LEND-SP01')?.message).toBe('Specification EX-LEND-SP01 is not proved yet: its test is not automated yet.');
     expect(ws.coverage[0].tests).toEqual({ automated: 8, manual: 1, not_automated: 1 });
@@ -124,7 +134,7 @@ describe('pattern rules', () => {
       use_case: [{ id: 'EX-SHOP-UC01', title: 'Sell a tool', capability_id: 'EX-SHOP-CAP01' }],
     });
 
-  it("LA-TRC-T21 each domain that follows a pattern owes its rules, proved only by its own pattern rule test", async () => {
+  it("LA-TRC-SP04-T each domain that follows a pattern owes its rules, proved only by its own pattern rule test", async () => {
     const data = adding(shop(), {
       follows: [{ source_id: 'EX-SHOP-UC01', target_id: 'EX-PAT-ACT' }],
       setting_value: [{ follower_id: 'EX-SHOP-UC01', pattern_id: 'EX-PAT-ACT', setting: 'record', value: 'Sale' }],
@@ -135,20 +145,24 @@ describe('pattern rules', () => {
     expect(ws.coverage.find((c) => c.domain === 'EX-SHOP')?.gaps.find((g) => g.missing === 'proved')?.message).toBe('Pattern rule EX-PAT-ACT-R01 is not proved yet in EX-SHOP.');
   });
 
-  it('LA-TRC-T22 a domain that does not follow the pattern owes none of its rules', async () => {
+  it('LA-TRC-UC04-R02-T01 a domain that does not follow the pattern owes none of its rules', async () => {
     const ws = await loadData(shop());
     expect(obligation(ws, 'EX-SHOP', 'pattern_rule')).toMatchObject({ total: 0 });
   });
 
-  it('LA-TRC-T25 a rule whose setting every following use case marks not applicable is waived there; a domain following itself owes it', async () => {
-    const data = changing(changing(complete(), 'pattern_rule', () => true, { setting: 'record' }), 'setting_value', () => true, { value: undefined, not_applicable: 'Adds nothing.' });
-    const waived = await loadData(data);
-    expect(obligation(waived, 'EX-LEND', 'pattern_rule')).toMatchObject({ total: 0 });
-    const itself = await loadData(adding(data, { follows: [{ source_id: 'EX-LEND', target_id: 'EX-PAT-ACT' }] }));
+  /** The complete product where every following use case marks the rule's setting not applicable. */
+  const notApplicable = () => changing(changing(complete(), 'pattern_rule', () => true, { setting: 'record' }), 'setting_value', () => true, { value: undefined, not_applicable: 'Adds nothing.' });
+
+  it('LA-TRC-SP02-T a rule whose setting every following use case marks not applicable is waived there', async () => {
+    expect(obligation(await loadData(notApplicable()), 'EX-LEND', 'pattern_rule')).toMatchObject({ total: 0 });
+  });
+
+  it('LA-TRC-UC07-R01-T01 a domain that follows the pattern itself owes the rule all the same', async () => {
+    const itself = await loadData(adding(notApplicable(), { follows: [{ source_id: 'EX-LEND', target_id: 'EX-PAT-ACT' }] }));
     expect(obligation(itself, 'EX-LEND', 'pattern_rule')).toMatchObject(covered(1));
   });
 
-  it('LA-TRC-T118 a rule no follower meets the applies-when setting of is waived in that domain', async () => {
+  it('LA-TRC-SP03-T a rule no follower meets the applies-when setting of is waived in that domain', async () => {
     const when = (value: string, negated = false) => changing(complete(), 'pattern_rule', () => true, { applies_when_setting: 'record', applies_when_value: value, applies_when_negated: negated });
     expect(obligation(await loadData(when(' tool ')), 'EX-LEND', 'pattern_rule')).toMatchObject({ total: 1 });
     expect(obligation(await loadData(when('Loan')), 'EX-LEND', 'pattern_rule')).toMatchObject({ total: 0 });
@@ -182,8 +196,8 @@ describe('minimums', () => {
 });
 
 describe("a product's own obligation kinds", () => {
-  it('LA-TRC-T06 are designed, built and proved through its design and proof links', async () => {
-    const data = adding(complete(), {
+  const houseRules = () =>
+    adding(complete(), {
       product_kind: [
         { name: 'house_rule', product_id: 'EX', label: 'House rule', description: 'A rule of the house.', parent_kind: 'domain', stage: 'use-cases', obligation: true },
         { name: 'script', product_id: 'EX', label: 'Script', description: 'A script.', parent_kind: 'domain', stage: 'technical-specification', obligation: false },
@@ -201,8 +215,16 @@ describe("a product's own obligation kinds", () => {
       enforces: [{ source_id: 'EX-LEND-SC01', target_id: 'EX-LEND-HR01' }],
       checks_rule: [{ source_id: 'EX-LEND-UC01-R01-T01', target_id: 'EX-LEND-HR01' }],
     });
-    const ws = await loadData(data);
+
+  it('LA-TRC-UC02-R02-T01 are designed, built and proved through its design and proof links', async () => {
+    const ws = await loadData(houseRules());
     expect(obligation(ws, 'EX-LEND', 'house_rule')).toMatchObject({ label: 'House rule', total: 2, designed: 1, built: 1, proved: 1 });
+  });
+
+  it("LA-TRC-UC02-R06-T01 are obligations as the product's kind declares, counted after Lathe's", async () => {
+    const ws = await loadData(houseRules());
+    expect(ws.kinds.find((k) => k.kind === 'house_rule')?.obligation).toBe(true);
+    expect(ws.kinds.find((k) => k.kind === 'script')?.obligation).toBe(false);
     expect(ws.coverage[0].obligations.at(-1)?.kind).toBe('house_rule');
     expect(obligation(ws, 'EX-LEND', 'script')).toBeUndefined();
   });
