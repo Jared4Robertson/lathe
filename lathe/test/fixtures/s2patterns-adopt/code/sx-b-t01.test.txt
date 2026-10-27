@@ -1,1 +1,0 @@
-SX-B-T01 proves SX-B-UC01-R01, SX-PAT-ACT-R01.

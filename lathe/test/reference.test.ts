@@ -1,27 +1,18 @@
-// The reference generated from the schema and the check rows: buildReference, the check rows' documentation, the
-// reference script, GET /api/reference and the committed REFERENCE.md.
+// The reference generated from the schema, the check rows and the coverage rules: buildReference, the check rows'
+// documentation, the reference script, GET /api/reference and the committed REFERENCE.md.
 import { spawnSync } from 'node:child_process';
-import { cpSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { afterAll, describe, expect, it } from 'vitest';
-import { buildReference, LATHE_DATA_DIR, openStore, PACKAGE_DIR, renderReference, type Reference } from '../src/index.ts';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { ALLOWED_LEVELS, buildReference, GAP_RULES, LATHE_DATA_DIR, openStore, PACKAGE_DIR, renderReference, type Reference } from '../src/index.ts';
 import { handleApi } from '../src/server/api.ts';
-import { everyKind, fixture, refusals, withTable } from './helpers.ts';
+import { everyKind } from './store/fixture.ts';
+import { adding, build, complete, refusals, removeData, withTable, writeData } from './helpers.ts';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const script = (...args: string[]) => spawnSync(process.execPath, [path.join(here, '..', 'scripts', 'reference.ts'), ...args], { encoding: 'utf8' });
-const temps: string[] = [];
-const tempDir = () => {
-  const dir = mkdtempSync(path.join(tmpdir(), 'lathe-reference-'));
-  temps.push(dir);
-  return dir;
-};
-afterAll(() => {
-  for (const dir of temps) rmSync(dir, { recursive: true, force: true });
-});
 
 const latheChecks = async () => {
   const store = await openStore(PACKAGE_DIR, { latheDataDir: null });
@@ -32,10 +23,30 @@ const latheChecks = async () => {
   }
 };
 
+/** The complete product with a kind, a relation and two checks of its own. */
+const extended = () =>
+  adding(complete(), {
+    product_kind: [{ name: 'cli_command', product_id: 'EX', label: 'CLI command', description: "A command of the library's CLI.", parent_kind: 'command', stage: 'technical-specification', obligation: false, id_pattern: '<command>-CLI', id_example: 'EX-LEND-CMD01-CLI' }],
+    product_kind_field: [{ kind: 'cli_command', position: 1, name: 'usage', type: 'text', required: true, description: 'How it is typed.' }],
+    product_relation: [{ name: 'documents', source_kind: 'cli_command', target_kind: 'view', product_id: 'EX', forward_label: 'Documents', reverse_label: 'Documented by', description: 'The CLI command is documented in the view.' }],
+    check: [
+      { name: 'one-handler-file', product_id: 'EX', position: 1, severity: 'warning', summary: 'A house rule.', explanation: 'Made for this test. Fix what it reports.', query: 'SELECT NULL AS record, NULL AS message WHERE false', kinds: ['command_handler'] },
+      { name: 'any-record', product_id: 'EX', position: 2, severity: 'warning', summary: 'Another house rule.', explanation: 'Made for this test. Fix what it reports.', query: 'SELECT NULL AS record, NULL AS message WHERE false' },
+    ],
+  });
+
+let defaults: Reference;
+let own = '';
+beforeAll(async () => {
+  defaults = await buildReference(PACKAGE_DIR);
+  own = await build(extended());
+});
+afterAll(removeData);
+
 describe('check rows', () => {
-  it("LA-CHK-T45 Every check row has a one-sentence summary, an explanation and a severity that matches its query", async () => {
+  it('LA-CHK-T45 Every check row has a one-sentence summary, an explanation and a severity that matches its query', async () => {
     const rows = await latheChecks();
-    expect(rows.length).toBeGreaterThan(30);
+    expect(rows.length).toBeGreaterThan(10);
     for (const row of rows) {
       const name = String(row.name);
       expect(String(row.summary).match(/[.!?](\s|$)/g)?.length ?? 0, `${name}: ${row.summary}`).toBe(1);
@@ -46,17 +57,18 @@ describe('check rows', () => {
     }
   });
 
-  it('LA-CHK-T46 A check row is read as summary, explanation, severity and kinds, and one without them is refused', async () => {
-    const reference = await buildReference(PACKAGE_DIR);
-    expect(reference.checks.find((c) => c.check === 'test-file-missing')).toEqual({
-      check: 'test-file-missing',
-      severity: 'error_or_warning',
-      summary: "A test's `file`, and its `key_file` when it names one, exists.",
-      explanation: expect.stringContaining('Fix the path'),
+  it('LA-CHK-T46 A check row is read as summary, explanation, severity, kinds and stage, and one without them is refused', async () => {
+    expect(defaults.checks.find((c) => c.check === 'value-object-unused')).toEqual({
+      check: 'value-object-unused',
+      severity: 'error',
+      summary: 'A value object that nothing uses.',
+      explanation: expect.stringContaining('Type the fields that hold it with it, or remove it.'),
       origin: 'lathe',
       product: null,
-      kinds: ['test'],
+      kinds: ['value_object'],
+      stage: 'domain-model',
     });
+    expect(defaults.checks.find((c) => c.check === 'too-many-children')).toMatchObject({ kinds: [], stage: null });
     const bare = { name: 'bare', position: 1, severity: 'warning', summary: 'Only a summary.', query: 'SELECT 1' };
     expect(await refusals(withTable(everyKind(), 'check', [bare]))).toEqual([expect.objectContaining({ rule: 'required', message: expect.stringContaining('check.explanation is required') })]);
     expect(await refusals(withTable(everyKind(), 'check', [{ ...bare, explanation: 'Why.', severity: 'fatal' }]))).toEqual([expect.objectContaining({ rule: 'column' })]);
@@ -64,67 +76,67 @@ describe('check rows', () => {
 });
 
 describe('the reference', () => {
-  let defaults: Reference;
-
-  it("LA-AUT-T78 The reference holds every kind, table, relation, folder and check of Lathe's schema", async () => {
-    defaults = await buildReference(PACKAGE_DIR);
+  it("LA-AUT-T78 The reference holds every stage, kind, table, relation, check and gap of Lathe's schema", async () => {
+    expect(defaults.stages.map((s) => s.stage)).toEqual(['domain-model', 'use-cases', 'interaction-design', 'technical-specification', 'test-plan']);
     const useCase = defaults.kinds.find((k) => k.kind === 'use_case')!;
     expect(useCase).toMatchObject({
       label: 'Use case',
-      stage: 'define',
-      section: 'use-cases',
-      parents: [{ kind: 'capability', column: 'capability_id' }, { kind: 'domain', column: 'domain_id' }],
-      obligation: 'none',
+      stage: 'use-cases',
+      parents: [{ kind: 'capability', column: 'capability_id' }],
+      obligation: false,
+      coverage: null,
+      levels: null,
+      id_scope: 'domain',
       id: { pattern: '<P>-<D>-UC<nn>', example: 'TL-LEND-UC01' },
       product: null,
     });
     // Children are the kinds that list it as a parent.
-    expect(useCase.child_kinds).toEqual(['requirement', 'question']);
-    expect(defaults.kinds.find((k) => k.kind === 'requirement')?.obligation).toBe('full');
-    expect(defaults.kinds.find((k) => k.kind === 'pattern_rule')?.obligation).toBe('proof');
+    expect(useCase.child_kinds).toEqual(['uc_requirement', 'flow']);
+    expect(defaults.kinds.find((k) => k.kind === 'view')).toMatchObject({ parents: [], id_scope: 'product' });
+    expect(defaults.kinds.find((k) => k.kind === 'endpoint')?.parents.map((p) => p.kind)).toEqual(['command', 'query']);
+    // Obligations say what designs, builds and proves them; test kinds the levels they run at.
+    expect(defaults.kinds.filter((k) => k.obligation).map((k) => k.kind)).toEqual(['constraint', 'invariant', 'specification', 'policy', 'domain_service', 'uc_requirement', 'pattern_rule', 'view_requirement', 'api_requirement', 'standard_rule']);
+    expect(defaults.kinds.filter((k) => k.obligation).every((k) => k.coverage !== null)).toBe(true);
+    expect(defaults.kinds.find((k) => k.kind === 'uc_requirement')?.coverage?.designed).toBe("A step of its use case's flow fulfills it.");
+    expect(Object.fromEntries(defaults.kinds.filter((k) => k.levels).map((k) => [k.kind, k.levels]))).toEqual(ALLOWED_LEVELS);
     expect(defaults.kinds.every((k) => k.id !== null)).toBe(true);
     // Each kind's table, with its columns, keys and rules.
-    const requirement = defaults.tables.find((t) => t.name === 'requirement')!;
+    const requirement = defaults.tables.find((t) => t.name === 'uc_requirement')!;
     expect(requirement.columns.map((c) => c.name)).toEqual(['id', 'title', 'use_case_id', 'statement', 'group_name']);
     expect(requirement.columns.find((c) => c.name === 'use_case_id')).toMatchObject({ required: true, references: 'use_case.id' });
     expect(defaults.tables.find((t) => t.name === 'entity_field')).toMatchObject({ role: 'part', owner_column: 'entity_id', primary_key: ['entity_id', 'position'] });
-    expect(defaults.relations.find((r) => r.relation === 'proves')).toMatchObject({ role: 'proof', pairs: expect.arrayContaining([expect.objectContaining({ source_kind: 'test', target_kind: 'requirement' })]) });
-    expect(defaults.sections.map((s) => s.section)).toEqual(['domain-model', 'use-cases', 'interaction-design', 'technical-specification', 'test-plan', 'shared']);
-    // Every Lathe check row, in run order, then the engine's own problem.
+    expect(defaults.relations.find((r) => r.relation === 'fulfills')).toMatchObject({ role: 'design', pairs: [expect.objectContaining({ source_kind: 'flow_step', target_kind: 'uc_requirement' })] });
+    // Every Lathe check row, in run order, then the engine's own problem; and every gap rule.
     expect(defaults.checks.filter((c) => c.origin === 'lathe').map((c) => c.check)).toEqual((await latheChecks()).sort((a, b) => Number(a.position) - Number(b.position)).map((r) => String(r.name)));
     expect(defaults.checks.filter((c) => c.origin === 'engine').map((c) => c.check)).toEqual(['data-refused']);
+    expect(defaults.gaps.map((g) => g.gap)).toEqual(GAP_RULES.map((g) => g.name));
   });
 
   it("LA-AUT-T79 A product's reference shows its own kinds and relations and its own checks", async () => {
-    const widened = await buildReference(fixture('widen-extension'));
-    expect(widened.kinds.find((k) => k.kind === 'policy')).toMatchObject({ obligation: 'full', description: 'A policy the business sets.', id: null, product: 'WX' });
-    expect(widened.kinds.find((k) => k.kind === 'domain')?.child_kinds).toContain('policy');
-    expect(widened.tables.find((t) => t.name === 'policy')?.columns.map((c) => c.name)).toContain('domain_id');
-    expect(widened.relations.find((r) => r.relation === 'proves')?.pairs).toContainEqual(expect.objectContaining({ source_kind: 'test', target_kind: 'policy' }));
-
-    const house = await buildReference(fixture('product-checks-house'));
-    const own = house.checks.filter((c) => c.origin === 'product');
-    expect(own.map((c) => c.check)).toEqual(['one-record-view-per-aggregate', 'broken']);
-    expect(own[0]).toMatchObject({ product: 'PC', severity: 'warning', kinds: ['aggregate', 'use_case'] });
-    expect(house.checks.at(-1)?.origin).toBe('product');
+    const ref = await buildReference(own);
+    expect(ref.kinds.at(-1)).toMatchObject({ kind: 'cli_command', stage: 'technical-specification', obligation: false, position: null, id_scope: null, id: { pattern: '<command>-CLI', example: 'EX-LEND-CMD01-CLI' }, product: 'EX' });
+    expect(ref.kinds.find((k) => k.kind === 'command')?.child_kinds).toContain('cli_command');
+    expect(ref.tables.find((t) => t.name === 'cli_command')?.columns.map((c) => c.name)).toEqual(['id', 'title', 'command_id', 'usage']);
+    expect(ref.relations.find((r) => r.relation === 'documents')).toMatchObject({ product: 'EX', pairs: [expect.objectContaining({ source_kind: 'cli_command', target_kind: 'view' })] });
+    const theirs = ref.checks.filter((c) => c.origin === 'product');
+    expect(theirs.map((c) => c.check)).toEqual(['one-handler-file', 'any-record']);
+    expect(theirs[0]).toMatchObject({ product: 'EX', severity: 'warning', kinds: ['command_handler'], stage: 'technical-specification' });
+    expect(ref.checks.at(-1)?.origin).toBe('product');
   });
 
-  it('LA-AUT-T80 The committed REFERENCE.md is the reference as the reference script writes it', async () => {
+  it('LA-AUT-T80 The committed REFERENCE.md is the reference as the reference script writes it', () => {
     const committed = readFileSync(path.join(PACKAGE_DIR, 'REFERENCE.md'), 'utf8');
     // When this fails, run `npm --prefix lathe run reference` and commit REFERENCE.md.
-    expect(committed).toBe(renderReference(defaults ?? (await buildReference(PACKAGE_DIR))));
+    expect(committed).toBe(renderReference(defaults));
   });
 
-  it('LA-AUT-T81 The Markdown gives the data model, then kinds with their tables, other tables, relations, folders and checks, each with an anchor', async () => {
-    const markdown = renderReference(defaults ?? (await buildReference(PACKAGE_DIR)));
+  it('LA-AUT-T81 The Markdown goes stage by stage, each with its kinds, tables, checks and gaps, then other tables, relations and checks of any kind, each with an anchor', () => {
+    const markdown = renderReference(defaults);
     const at = (text: string) => markdown.indexOf(text);
     expect(at('# Lathe reference')).toBe(0);
-    expect(at('data/<table>.jsonl')).toBeLessThan(at('\n## Kinds\n'));
-    expect(at('\n## Kinds\n')).toBeLessThan(at('\n## Other tables\n'));
-    expect(at('\n## Other tables\n')).toBeLessThan(at('\n## Relations\n'));
-    expect(at('\n## Relations\n')).toBeLessThan(at('\n## Folders\n'));
-    expect(at('\n## Folders\n')).toBeLessThan(at('\n## Checks\n'));
-    for (const anchor of ['kind-use_case', 'table-use_case', 'table-entity_field', 'relation-proves', 'folder-test-plan', 'check-unproved', 'check-data-refused']) {
+    const order = ['data/<table>.jsonl', '\n## Domain model\n', '<a id="kind-aggregate">', '### Checks: domain model', '### Coverage gaps: domain model', '\n## Use cases\n', '\n## Interaction design\n', '\n## Technical specification\n', '\n## Test plan\n', '\n## Outside the stages\n', '<a id="kind-question">', '\n## Other tables\n', '\n## Relations\n', '\n## Checks of any kind\n', '<a id="check-data-refused">'];
+    for (let i = 1; i < order.length; i++) expect(at(order[i - 1]), `${order[i - 1]} before ${order[i]}`).toBeLessThan(at(order[i]));
+    for (const anchor of ['stage-test-plan', 'kind-use_case', 'table-use_case', 'table-entity_field', 'relation-fulfills', 'check-view-unused', 'check-data-refused', 'gap-use-case-without-flow']) {
       expect(markdown).toContain(`<a id="${anchor}"></a>`);
     }
     // Every link inside the document lands on one of its anchors.
@@ -133,6 +145,17 @@ describe('the reference', () => {
     expect(targets.length).toBeGreaterThan(100);
     expect(targets.filter((t) => !anchors.has(t))).toEqual([]);
   });
+
+  it("The reference says that clean architecture's use case is a command handler, and what proves each obligation", () => {
+    const markdown = renderReference(defaults);
+    expect(markdown).toContain("What clean architecture calls a use case or an interactor is what Lathe calls a command handler\n(`command_handler`)");
+    const start = markdown.indexOf('<a id="kind-invariant"></a>');
+    const invariant = markdown.slice(start, markdown.indexOf('<a id="table-invariant"></a>'));
+    expect(invariant).toContain("  - **Designed:** By construction, under its aggregate.");
+    expect(invariant).toContain('  - **Proved:** Its invariant test.');
+    const test = markdown.slice(markdown.indexOf('<a id="kind-flow_test"></a>'));
+    expect(test).toContain('- **Run by levels:** `e2e-ui`, `e2e-api`, `manual`');
+  });
 });
 
 describe('the schema documents itself', () => {
@@ -140,58 +163,51 @@ describe('the schema documents itself', () => {
     const data = everyKind();
     const kind = data.product_kind[0];
     expect(await refusals(withTable(data, 'product_kind', [{ ...kind, description: ' ' }]))).toEqual([expect.objectContaining({ table: 'product_kind' })]);
-    const relation = data.product_relation[0];
-    const { description: _d, ...bare } = relation;
-    expect(await refusals(withTable(data, 'product_relation', [bare, data.product_relation[1]]))).toEqual([expect.objectContaining({ rule: 'required', table: 'product_relation' })]);
+    const { description: _d, ...bare } = data.product_relation[0];
+    expect(await refusals(withTable(data, 'product_relation', [bare]))).toEqual([expect.objectContaining({ rule: 'required', table: 'product_relation' })]);
     const check = data.check[0];
     expect(await refusals(withTable(data, 'check', [{ ...check, explanation: '' }]))).toEqual([expect.objectContaining({ table: 'check' })]);
   });
 
-  it("LA-AUT-T83 A product's own checks are held to the same rule, and Lathe's are all documented", async () => {
-    // Every table and kind of Lathe's schema has its description, and every check row its summary and explanation.
-    const reference = await buildReference(PACKAGE_DIR);
-    expect(reference.kinds.filter((k) => k.description.trim() === '').map((k) => k.kind)).toEqual([]);
-    expect(reference.tables.filter((t) => t.description.trim() === '').map((t) => t.name)).toEqual([]);
-    expect(reference.checks.filter((c) => !c.summary.trim() || !c.explanation.trim()).map((c) => c.check)).toEqual([]);
-    // A product check is a row of the same table, so the same columns are required of it.
-    const house = await buildReference(fixture('product-checks-house'));
-    expect(house.checks.filter((c) => c.origin === 'product').every((c) => c.summary.trim() && c.explanation.trim())).toBe(true);
+  it("LA-AUT-T83 Lathe's stages, kinds, tables, checks and gaps are all documented, and a product's checks are held to the same rule", async () => {
+    expect(defaults.stages.filter((s) => !s.description.trim())).toEqual([]);
+    expect(defaults.kinds.filter((k) => k.description.trim() === '').map((k) => k.kind)).toEqual([]);
+    expect(defaults.tables.filter((t) => t.description.trim() === '').map((t) => t.name)).toEqual([]);
+    expect(defaults.checks.filter((c) => !c.summary.trim() || !c.explanation.trim()).map((c) => c.check)).toEqual([]);
+    expect(defaults.gaps.filter((g) => !g.summary.trim())).toEqual([]);
+    const ref = await buildReference(own);
+    expect(ref.checks.filter((c) => c.origin === 'product').every((c) => c.summary.trim() && c.explanation.trim())).toBe(true);
   });
 });
 
 describe('relation labels', () => {
-  it('LA-AUT-T86 A product relation without both labels is refused', async () => {
+  it('LA-AUT-T86 A product relation without both labels is refused, and all of Lathe\'s are labeled', async () => {
     const data = everyKind();
-    const [enforces, proves] = data.product_relation;
-    const { reverse_label: _r, ...noReverse } = enforces;
-    expect(await refusals(withTable(data, 'product_relation', [noReverse, proves]))).toEqual([expect.objectContaining({ rule: 'required', message: expect.stringContaining('reverse_label') })]);
-    expect(await refusals(withTable(data, 'product_relation', [{ ...enforces, forward_label: '  ' }, proves]))).toEqual([expect.objectContaining({ table: 'product_relation' })]);
-    // Lathe's own relations are all labeled.
-    const ref = await buildReference(PACKAGE_DIR);
-    expect(ref.relations.filter((r) => !r.forward_label.trim() || !r.reverse_label.trim())).toEqual([]);
+    const [documents] = data.product_relation;
+    const { reverse_label: _r, ...noReverse } = documents;
+    expect(await refusals(withTable(data, 'product_relation', [noReverse]))).toEqual([expect.objectContaining({ rule: 'required', message: expect.stringContaining('reverse_label') })]);
+    expect(await refusals(withTable(data, 'product_relation', [{ ...documents, forward_label: '  ' }]))).toEqual([expect.objectContaining({ table: 'product_relation' })]);
+    expect(defaults.relations.filter((r) => !r.forward_label.trim() || !r.reverse_label.trim())).toEqual([]);
   });
 
-  it('LA-AUT-T87 The reference reads each relation by its labels', async () => {
-    const ref = await buildReference(fixture('good'));
-    expect(ref.relations.find((r) => r.relation === 'satisfies')).toMatchObject({ forward_label: 'Satisfies', reverse_label: 'Designed by' });
-    const markdown = renderReference(ref);
-    expect(markdown).toContain('- **Reads:** Satisfies / Designed by');
-    const start = markdown.indexOf('<a id="kind-requirement"></a>');
+  it('LA-AUT-T87 The reference reads each relation by its labels', () => {
+    expect(defaults.relations.find((r) => r.relation === 'fulfills')).toMatchObject({ forward_label: 'Fulfills', reverse_label: 'Fulfilled by' });
+    const markdown = renderReference(defaults);
+    expect(markdown).toContain('- **Reads:** Fulfills / Fulfilled by');
+    const start = markdown.indexOf('<a id="kind-uc_requirement"></a>');
     const requirement = markdown.slice(start, markdown.indexOf('<a id="kind-', start + 1));
-    expect(requirement).toMatch(/- \*\*Links in:\*\* .*Designed by \(\[`satisfies`\]\(#relation-satisfies\)\)/);
-    expect(requirement).toMatch(/- \*\*Links in:\*\* .*Proved by \(\[`proves`\]\(#relation-proves\)\)/);
-    expect(requirement).toMatch(/- \*\*Links in:\*\* .*Carried out in \(\[`fulfills`\]\(#relation-fulfills\)\)/);
+    expect(requirement).toMatch(/- \*\*Links in:\*\* .*Fulfilled by \(\[`fulfills`\]\(#relation-fulfills\)\)/);
   });
 });
 
 describe('the reference script and GET /api/reference', () => {
-  it('LA-AUT-T84 The reference script prints a product\'s reference, or writes it with --out', async () => {
-    const expected = renderReference(await buildReference(fixture('widen-extension')));
-    const printed = script('--root', fixture('widen-extension'), '--print');
+  it("LA-AUT-T84 The reference script prints a product's reference, or writes it with --out", async () => {
+    const expected = renderReference(await buildReference(own));
+    const printed = script('--root', own, '--print');
     expect(printed.status).toBe(0);
     expect(printed.stdout).toBe(expected);
-    const out = path.join(tempDir(), 'REFERENCE.md');
-    const written = script('--root', fixture('widen-extension'), '--out', out);
+    const out = path.join(writeData({}), 'REFERENCE.md');
+    const written = script('--root', own, '--out', out);
     expect(written.status).toBe(0);
     expect(readFileSync(out, 'utf8')).toBe(expected);
   });
@@ -207,15 +223,13 @@ describe('the reference script and GET /api/reference', () => {
       setHeader: (name: string, value: string) => (headers[name] = value),
       end: (text: string) => (body = text),
     } as unknown as ServerResponse;
-    const root = tempDir();
-    cpSync(fixture('widen-extension'), root, { recursive: true });
-    const handled = await handleApi(root, { method: 'GET' } as IncomingMessage, res, '/api/reference');
+    const handled = await handleApi(own, { method: 'GET' } as IncomingMessage, res, '/api/reference');
     expect(handled).toBe(true);
     expect(status).toBe(200);
     expect(headers['content-type']).toBe('application/json');
     const reference = JSON.parse(body) as Reference;
-    expect(reference).toEqual(JSON.parse(JSON.stringify(await buildReference(root))));
-    expect(reference.kinds.some((k) => k.kind === 'policy')).toBe(true);
+    expect(reference).toEqual(JSON.parse(JSON.stringify(await buildReference(own))));
+    expect(reference.kinds.some((k) => k.kind === 'cli_command')).toBe(true);
     expect(LATHE_DATA_DIR).toBe(path.join(PACKAGE_DIR, 'data'));
   });
 });

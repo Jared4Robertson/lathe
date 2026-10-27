@@ -1,2 +1,0 @@
-{"id":"OS-A-C01","title":"Component of A","domain_id":"OS-A","component_type":"service","file":"code/a.ts","description":"Text."}
-{"id":"OS-B-C01","title":"Component of B","domain_id":"OS-B","component_type":"service","file":"code/b.ts","description":"Text."}

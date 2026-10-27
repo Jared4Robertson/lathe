@@ -1,7 +1,0 @@
-{"id":"PX-D-T01","title":"Test 01","domain_id":"PX-D","test_type":"unit","state":"automated","file":"code/rules.test.txt"}
-{"id":"PX-D-T02","title":"Test 02","domain_id":"PX-D","test_type":"unit","state":"automated","file":"code/rules.test.txt"}
-{"id":"PX-D-T03","title":"Test 03","domain_id":"PX-D","test_type":"unit","state":"planned"}
-{"id":"PX-D-T04","title":"Test 04","domain_id":"PX-D","test_type":"unit","state":"manual"}
-{"id":"PX-D-T05","title":"Test 05","domain_id":"PX-D","test_type":"unit","state":"manual","file":"code/gone.md"}
-{"id":"PX-D-T06","title":"Test 06","domain_id":"PX-D","test_type":"unit","state":"planned","file":"code/rules.test.txt"}
-{"id":"PX-D-T09","title":"Test 09","domain_id":"PX-D","test_type":"unit","state":"automated","file":"code/near.test.txt"}

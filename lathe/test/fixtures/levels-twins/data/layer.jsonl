@@ -1,8 +1,0 @@
-{"id":"LV-A-LAY01","title":"Services","domain_id":"LV-A","position":1,"description":"Text."}
-{"id":"LV-A-LAY02","title":"Lending services","domain_id":"LV-A","parent_layer_id":"LV-A-LAY01","position":1,"description":"Text."}
-{"id":"LV-B-LAY01","title":"Services","domain_id":"LV-B","position":1,"description":"Text."}
-{"id":"LV-C-LAY01","title":"Web app","domain_id":"LV-C","position":1,"description":"Text."}
-{"id":"LV-C-LAY02","title":"Pages","domain_id":"LV-C","parent_layer_id":"LV-C-LAY01","position":1,"description":"Text."}
-{"id":"LV-C-LAY03","title":"Widgets","domain_id":"LV-C","parent_layer_id":"LV-C-LAY01","position":1,"description":"Text."}
-{"id":"LV-C-LAY04","title":"Hooks","domain_id":"LV-C","parent_layer_id":"LV-C-LAY01","position":2,"description":"Text."}
-{"id":"LV-C-LAY05","title":"Services","domain_id":"LV-C","position":2,"description":"Text."}

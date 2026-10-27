@@ -1,9 +1,0 @@
-{"id":"RI-D-DR01","title":"A loan and its tool change together","domain_id":"RI-D","statement":"A loan and its tool MUST change together."}
-{"id":"RI-D-DR02","title":"Every record keeps its history","domain_id":"RI-D","statement":"Every record MUST keep its history."}
-{"id":"RI-D-DR03","title":"A loan has a due date","domain_id":"RI-D","statement":"A loan MUST have a due date."}
-{"id":"RI-D-DR04","title":"A loan needs an open account","domain_id":"RI-D","statement":"A loan MUST belong to an open account."}
-{"id":"RI-D-DR05","title":"A loan names its shelf","domain_id":"RI-D","statement":"A loan MUST name its shelf."}
-{"id":"RI-D-DR06","title":"A loan's tool is lendable","domain_id":"RI-D","aggregate_id":"RI-D-A1","statement":"A loan's tool MUST be lendable."}
-{"id":"RI-D-DR07","title":"A loan ends once","domain_id":"RI-D","aggregate_id":"RI-D-A1","entity_id":"RI-D-EN01","statement":"A loan MUST end once."}
-{"id":"RI-D-DR08","title":"A tool has a name","domain_id":"RI-D","aggregate_id":"RI-D-A2","statement":"A tool MUST have a name."}
-{"id":"RI-D-DR09","title":"A member, a loan and a tool agree","domain_id":"RI-D","statement":"A member, their loan and its tool MUST agree."}

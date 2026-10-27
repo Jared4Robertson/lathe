@@ -1,2 +1,0 @@
-it('CL-D-DR040 Another rule', () => {});
-it('CL-D-DR04-R01 Not the rule it proves', () => {});
