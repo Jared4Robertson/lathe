@@ -3,7 +3,7 @@ import type { Mark, Shape } from './shapes';
 // The small marks for a kind's shape (LA-EXP-DR65): drawn before a box's kind and ID line in the
 // Nested and Voronoi views, where every box keeps its rectangle or cell (by the canvas, paint.ts,
 // from these same paths), and in the graph's key.
-// A mark (a gear, a ruler, a port, a marker) tells apart two kinds that share a shape, in every
+// A mark (a tag, a gear, a lens, a marker, a ruler, a port) tells apart two kinds that share a shape, in every
 // view. Each is a line drawing in its box's edge and fill colors.
 
 /** Each shape's drawing in a 16 by 11 box: one path, or layers drawn back to front. */
@@ -16,6 +16,7 @@ export const SHAPE_PATHS: Readonly<Record<Shape, string | readonly string[]>> = 
   double: 'M1 1h14v9H1z M3 3h10v5H3z',
   octagon: 'M4 1h8l3 3v3l-3 3H4L1 7V4z',
   flag: 'M1 1.5h14l-3.5 4 3.5 4H1z',
+  parallelogram: 'M4 1.5h11l-3 8H1z',
   stadium: 'M5.5 1h5a4.5 4.5 0 0 1 0 9h-5a4.5 4.5 0 0 1 0-9z',
   page: 'M1 1h10.5L15 4.5V10H1z M11.5 1v3.5H15',
   stack: ['M3.5 1H15v6.5H3.5z', 'M1 3.5h11.5V10H1z'],
@@ -31,6 +32,8 @@ export const SHAPE_PATHS: Readonly<Record<Shape, string | readonly string[]>> = 
 
 /** Each mark's drawing in an 11 by 11 box. */
 export const MARK_PATHS: Readonly<Record<Mark, string>> = {
+  value: 'M1 5.5 4 2h6v7H4z M5.5 5.5h0.1',
+  lens: 'M4.5 1.5a3 3 0 1 0 0 6 3 3 0 1 0 0-6z M6.7 6.7 10 10',
   gear: 'M5.5 3.2a2.3 2.3 0 1 0 0 4.6 2.3 2.3 0 1 0 0-4.6z M5.5 1v2.2 M5.5 7.8V10 M1 5.5h2.2 M7.8 5.5H10 M2.3 2.3l1.6 1.6 M7.1 7.1l1.6 1.6 M2.3 8.7l1.6-1.6 M7.1 3.9l1.6-1.6',
   ruler: 'M1 3.5h9v4H1z M3 3.5v2 M5 3.5v1.2 M7 3.5v2 M9 3.5v1.2',
   port: 'M1 5.5h3 M4 3h5v5H4z',
@@ -46,7 +49,7 @@ export function ShapeIcon({ shape }: { shape: Shape }) {
   );
 }
 
-/** A kind's mark (a gear, a ruler, a port, a marker). */
+/** A kind's mark (a tag, a gear, a lens, a marker, a ruler, a port). */
 export function MarkIcon({ mark }: { mark: Mark }) {
   return (
     <svg className={`graph-mark-icon mark-${mark}`} viewBox="0 0 11 11" aria-hidden="true" focusable="false">

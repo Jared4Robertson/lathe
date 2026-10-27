@@ -1,23 +1,45 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { Background, Controls, Handle, Position, ReactFlow, ReactFlowProvider, useReactFlow, type Edge, type EdgeProps, type Node, type NodeProps } from '@xyflow/react';
-import type { SpecIndex } from '../specs/data';
-import type { RelationRule } from '../../../lathe/src/types';
+import type { RelationRule, SpecIndex } from '../specs/data';
 import { relationLabelOf } from '../specs/labels';
 import { readMotion } from '../graph/motion';
-import { erdFor, lineGeometry, lineOffsets, RELATION_ENDS, type Erd, type ErdBox, type ErdLine, type Rect } from './erd';
+import { erdFor, LINE_WORDS, lineGeometry, lineOffsets, RELATION_ENDS, type Erd, type ErdBox, type ErdKind, type ErdLine, type ErdRelation, type Rect } from './erd';
 import { layoutErd } from './layout';
 import { TapCard, useTapToOpen } from '../graph/touch';
 import { EdgeHints } from './hints';
 
-// The Model view: the ERD of a domain (at aggregate level) or of an aggregate (its entities), drawn
-// with React Flow and laid out by ELK. An entity page draws its aggregate's ERD with the entity
-// highlighted. Clicking a box goes to it, as a graph node does. A key under the diagram explains
-// the colors and the line ends. Like the graph view it never reads the address, so it can sit in
-// any pane. Domain events (LA-EXP-UC11-R07, R08) are flags in the spark colors, their lines and
-// the dashed "reacts to" lines in spark too, each "reacts to" line showing its label on hover.
+// The Model view: a domain's model (its aggregates and the commands, events, policies, specifications,
+// read models and queries around them) or an aggregate's (its entities and fields, and its commands,
+// events and policies), in event storming colors, drawn with React Flow and laid out by ELK left to
+// right in event storming order. An entity, command, event or policy page draws its aggregate's model
+// with that record highlighted. Clicking a box goes to it, as a graph node does. A key under the
+// diagram explains the colors and the lines. Like the graph view it never reads the address, so it
+// can sit in any pane.
 
-/** What a box is called, in its accessible name and the touch card. */
-const BOX_KIND: Record<ErdBox['kind'], string> = { aggregate: 'Aggregate', entity: 'Entity', event: 'Domain event' };
+/** What a box is called, in its accessible name, the key and the touch card. */
+export const BOX_KIND: Record<ErdKind, string> = {
+  aggregate: 'Aggregate', entity: 'Entity', command: 'Command', event: 'Domain event', policy: 'Policy',
+  specification: 'Specification', read_model: 'Read model', query: 'Query',
+};
+
+/** The key's order of the box kinds, as event storming reads them. */
+const KEY_ORDER: readonly ErdKind[] = ['policy', 'command', 'specification', 'aggregate', 'entity', 'event', 'read_model', 'query'];
+
+/** What each line means, after its label, in the key. */
+const LINE_MEANING: Record<ErdRelation, string> = {
+  refers_to: 'a field holds the other aggregate\'s ID, many to one',
+  has_one: 'one to one',
+  has_many: 'one to many',
+  changes: 'the aggregate the command changes',
+  also_changes: 'a recorded exception: another aggregate it changes in the same transaction',
+  raises: 'the events the command raises',
+  hears: 'the policy reacts to the event afterwards',
+  invokes: 'the command the policy runs',
+  checks: 'a specification the command checks first',
+  reads: 'what a read model or specification reads',
+  queries: 'a query the read model answers',
+  selects_by: 'a specification the query selects by',
+};
 
 export interface ModelViewProps {
   index: SpecIndex;
@@ -29,17 +51,24 @@ export interface ModelViewProps {
 
 interface BoxData extends Record<string, unknown> { box: ErdBox; focus: boolean }
 /**
- * `label`: the line's relation in words, read from its link's source, from the meta-model
- * (LA-EXP-V03-R07). `title`: the whole sentence, for its tooltip. `hover`: the words shown on the line
- * while it is hovered (a "reacts to" line's event, or its label), or null.
+ * `label`: the line's words, read from its drawn source, from the schema's relations (LA-EXP-V03-R07)
+ * or the Model view's own for what is no stored link. `title`: the whole sentence, for its tooltip.
+ * `hover`: the words shown on a dashed line while it is hovered, or null.
  */
 interface LineData extends Record<string, unknown> { line: ErdLine; source: Rect; target: Rect; offset: number; label: string; title: string; hover: string | null }
 type BoxNode = Node<BoxData>;
 type LineEdge = Edge<LineData>;
 
+/** A line's label, in sentence case: the relation's own words, or the Model view's for what is no stored link. */
+export function lineLabel(relations: readonly RelationRule[], relation: ErdRelation): string {
+  const own = LINE_WORDS[relation];
+  if (own) return own.charAt(0).toUpperCase() + own.slice(1);
+  return relationLabelOf(relations, relation);
+}
+
 function BoxView({ data }: NodeProps<BoxNode>) {
   const { box } = data;
-  const classes = ['erd-box', `erd-${box.kind}`, `tone-${box.tone}`, box.foreign && 'is-foreign', box.highlight && 'is-highlight', data.focus && 'is-focus', box.context && 'is-context'].filter(Boolean).join(' ');
+  const classes = ['erd-box', `erd-${box.kind}`, `tone-${box.tone}`, box.highlight && 'is-highlight', data.focus && 'is-focus'].filter(Boolean).join(' ');
   return (
     <div className={classes} title={`${box.title} (${box.id})`}>
       <Handle type="target" position={Position.Left} className="erd-handle" isConnectable={false} />
@@ -48,19 +77,19 @@ function BoxView({ data }: NodeProps<BoxNode>) {
         <strong>{box.title}</strong>
         {box.root && <span className="erd-root" title="The aggregate's root entity">root</span>}
       </div>
-      {box.owner && <small className="erd-owner">{box.owner}</small>}
-      {box.kind === 'event' && <small className="erd-summary">{box.fields.length === 0 ? 'Domain event' : `Domain event · ${box.fields.length} ${box.fields.length === 1 ? 'field' : 'fields'}`}</small>}
-      {box.kind === 'aggregate' && (
-        <small className="erd-summary">
-          {box.rootTitle ? <>Root: {box.rootTitle}</> : 'No root entity'} · {box.entities} {box.entities === 1 ? 'entity' : 'entities'}
-        </small>
+      <small className="erd-summary">{BOX_KIND[box.kind]}{box.owner ? ` ${box.owner}` : ''}</small>
+      {box.kind === 'aggregate' && ((box.entities?.length ?? 0) > 0 || (box.valueObjects?.length ?? 0) > 0) && (
+        <ul className="erd-fields" aria-label={`Entities of ${box.title}`}>
+          {box.entities?.map((e) => <li key={e.id}><span className="erd-field">{e.title}</span>{e.root && <span className="erd-field-kind">root</span>}</li>)}
+          {(box.valueObjects?.length ?? 0) > 0 && (
+            <li title={`Value objects: ${box.valueObjects!.join(', ')}`}><span className="erd-field">Value objects: {box.valueObjects!.join(', ')}</span></li>
+          )}
+        </ul>
       )}
-      {box.kind === 'entity' && !box.foreign && (
-        box.fields.length > 0 ? (
-          <ul className="erd-fields" aria-label={`Fields of ${box.title}`}>
-            {box.fields.map((f) => <li key={f.field} title={`${f.field}: ${f.kind}`}><span className="erd-field">{f.field}</span><span className="erd-field-kind">{f.kind}</span></li>)}
-          </ul>
-        ) : <small className="erd-summary">No fields listed</small>
+      {box.kind !== 'aggregate' && box.fields.length > 0 && (
+        <ul className="erd-fields" aria-label={`Fields of ${box.title}`}>
+          {box.fields.map((f) => <li key={f.field} title={`${f.field}: ${f.kind}`}><span className="erd-field">{f.field}</span><span className="erd-field-kind">{f.kind}</span></li>)}
+        </ul>
       )}
     </div>
   );
@@ -72,7 +101,7 @@ function LineView({ data }: EdgeProps<LineEdge>) {
   const g = lineGeometry(data.source, data.target, [line.sourceEnd, line.targetEnd], data.offset);
   const mid = { x: (g.from.x + g.to.x) / 2, y: (g.from.y + g.to.y) / 2 };
   return (
-    <g className={`erd-line rel-${line.relation}${line.dashed ? ' is-dashed' : ''}${line.context ? ' is-context' : ''}${data.hover ? ' has-hover-label' : ''}${line.event ? ' has-event' : ''}`} data-line={line.id} data-ends={`${line.sourceEnd}-${line.targetEnd}`}>
+    <g className={`erd-line rel-${line.relation}${line.dashed ? ' is-dashed' : ''}${line.context ? ' is-context' : ''}${data.hover ? ' has-hover-label' : ''}`} data-line={line.id} data-ends={`${line.sourceEnd}-${line.targetEnd}`}>
       <title>{data.title}</title>
       {/* A wider, unseen stroke to hover, so a thin dashed line is easy to point at. */}
       {data.hover && <path className="erd-line-hit" d={g.line} />}
@@ -85,17 +114,15 @@ function LineView({ data }: EdgeProps<LineEdge>) {
 }
 
 /**
- * A line's words: its label, the sentence it says (read the way its link runs: "Member reacts to
- * Loan opened", "Loan opened raised by Loan") and, for a "reacts to" line, what shows on hover: the
- * event's name on a domain's ERD, where the event is not drawn, and the label on an aggregate's.
+ * A line's words: its label, the sentence it says, read the way its link runs ("Loan refers to Member
+ * (Loan.Member)", "Suspend member hears Account closed"), and for a dashed line what shows on hover.
  */
 export function lineWords(line: ErdLine, label: string, titles: ReadonlyMap<string, string>): { label: string; title: string; hover: string | null } {
   const name = (id: string) => titles.get(id) ?? id;
-  if (line.event) {
-    return { label, title: `${name(line.target)} ${label} ${line.event.title}, raised by ${name(line.source)}`, hover: line.event.title };
-  }
-  const title = line.reversed ? `${name(line.target)} ${label} ${name(line.source)}` : `${name(line.source)} ${label} ${name(line.target)}`;
-  return { label, title, hover: line.relation === 'reacts_to' ? label : null };
+  const words = label.toLowerCase();
+  const sentence = line.reversed ? `${name(line.target)} ${words} ${name(line.source)}` : `${name(line.source)} ${words} ${name(line.target)}`;
+  const title = line.via.length > 0 ? `${sentence} (${line.via.join('; ')})` : sentence;
+  return { label: words, title, hover: line.dashed ? words : null };
 }
 
 const nodeTypes = { box: BoxView };
@@ -103,14 +130,13 @@ const edgeTypes = { line: LineView };
 
 export function ModelView({ index, focus, onNavigate, onPeek }: ModelViewProps) {
   const erd = useMemo(() => erdFor(index, focus), [index, focus]);
-  if (!erd) return <p className="hint model-missing">The Model view shows a domain, an aggregate or an entity.</p>;
+  if (!erd) return <p className="hint model-missing">The Model view shows a domain, or an aggregate with its entities, commands, events and policies.</p>;
   const scope = index.byId.get(erd.scope);
   const empty = erd.boxes.length === 0;
   const counts = `${erd.boxes.length} ${erd.boxes.length === 1 ? 'box' : 'boxes'} · ${erd.lines.length} ${erd.lines.length === 1 ? 'line' : 'lines'}`;
-  const reacts = erd.lines.some((l) => l.relation === 'reacts_to');
   const caption = erd.level === 'domain'
-    ? `The aggregates of ${scope?.title}, how they refer to each other${reacts ? ' and how they react to each other\'s events' : ''}`
-    : `The entities of ${scope?.title} and their relationships${erd.boxes.some((b) => b.kind === 'event') ? ', and the domain events it raises' : ''}`;
+    ? `The aggregates of ${scope?.title} and the commands, events, policies, rules and read models around them`
+    : `The entities of ${scope?.title}, and its commands, events and policies`;
   return (
     <section className="model-page" aria-label="Model">
       <header className="model-header">
@@ -118,7 +144,7 @@ export function ModelView({ index, focus, onNavigate, onPeek }: ModelViewProps) 
         <p className="model-caption" title={`${caption} · ${counts}`}>{`${caption} · ${counts}`}</p>
       </header>
       {empty ? (
-        <p className="placeholder model-empty">{erd.level === 'domain' ? 'This domain has no aggregates yet.' : 'This aggregate has no entities yet: add entity records under it, each with a Fields table.'}</p>
+        <p className="placeholder model-empty">{erd.level === 'domain' ? 'This domain has no aggregates yet.' : 'This aggregate has no entities, commands or events yet.'}</p>
       ) : (
         <div className="model-canvas">
           <ReactFlowProvider>
@@ -131,66 +157,39 @@ export function ModelView({ index, focus, onNavigate, onPeek }: ModelViewProps) 
   );
 }
 
-/** The key under the diagram: the colors (as emoji squares), the line ends, and the event flag and its lines. */
+/** The key under the diagram: the owners, the event storming colors of the kinds drawn, the badges and every kind of line drawn. */
 export function ErdKey({ erd, highlight, relations = [] }: { erd: Erd; highlight: boolean; relations?: readonly RelationRule[] }) {
-  const end = (ends: [ErdLine['sourceEnd'], ErdLine['targetEnd']], dashed = false, relation = '') => {
-    const g = lineGeometry({ x: 0, y: 0, width: 2, height: 2 }, { x: 46, y: 0, width: 2, height: 2 }, ends);
+  const sample = (relation: ErdRelation, dashed: boolean) => {
+    const g = lineGeometry({ x: 0, y: 0, width: 2, height: 2 }, { x: 46, y: 0, width: 2, height: 2 }, RELATION_ENDS[relation]);
     return (
-      <svg className={`erd-key-line${dashed ? ' is-dashed' : ''}${relation ? ` rel-${relation}` : ''}`} viewBox="-2 -9 52 18" width="52" height="18" aria-hidden="true">
+      <svg className={`erd-key-line rel-${relation}${dashed ? ' is-dashed' : ''}`} viewBox="-2 -9 52 18" width="52" height="18" aria-hidden="true">
         <path className="erd-line-path" d={g.line} />
         {g.sourceEnd && <path className="erd-end" d={g.sourceEnd} />}
         {g.targetEnd && <path className="erd-end" d={g.targetEnd} />}
       </svg>
     );
   };
-  const events = erd.boxes.some((b) => b.kind === 'event');
-  const raised = erd.lines.some((l) => l.relation === 'raised_by');
-  const reacts = erd.lines.some((l) => l.relation === 'reacts_to');
-  const highlightsEvent = highlight && erd.boxes.some((b) => b.highlight && b.kind === 'event');
-  // The relations' labels, from the meta-model (LA-EXP-V03-R07).
-  const reactsTo = relationLabelOf(relations, 'reacts_to');
-  const raisedBy = relationLabelOf(relations, 'raised_by');
+  const kinds = KEY_ORDER.filter((k) => erd.boxes.some((b) => b.kind === k));
+  const lines = [...new Map(erd.lines.map((l) => [l.relation, l])).values()].sort((a, b) => Object.keys(LINE_MEANING).indexOf(a.relation) - Object.keys(LINE_MEANING).indexOf(b.relation));
+  const other = erd.boxes.some((b) => b.tone === 'other');
   return (
     <div className="erd-key" role="group" aria-label="Key" tabIndex={0}>
-      <table className="erd-key-table">
-        <thead><tr><th scope="col">Color</th><th scope="col">Owner</th></tr></thead>
-        <tbody>
-          <tr className="tone-current"><td>🟦</td><td>The current domain{erd.level === 'aggregate' ? ' (from another aggregate: its name in parentheses)' : ''}</td></tr>
-          <tr className="tone-other"><td>⬜</td><td>Another domain, named in parentheses</td></tr>
-        </tbody>
-      </table>
-      <ul className="erd-key-ends">
-        {erd.level === 'aggregate' ? (
-          <>
-            <li>{end(RELATION_ENDS.has_one, false, 'has_one')} Has one: one to one</li>
-            <li>{end(RELATION_ENDS.has_many, false, 'has_many')} Has many: one to many</li>
-            <li>{end(RELATION_ENDS.refers_to, false, 'refers_to')} Refers to: many to one</li>
-            <li><span className="erd-root">root</span> The aggregate's root entity</li>
-            {highlight && !highlightsEvent && <li><span className="erd-key-highlight" aria-hidden="true" /> This entity</li>}
-          </>
-        ) : (
-          <>
-            <li>{end(RELATION_ENDS.refers_to, false, 'refers_to')} Its entities refer to the other aggregate: many to one</li>
-            <li>{end(RELATION_ENDS.relates_to, true, 'relates_to')} Related aggregate, for one whose entities refer to no other</li>
-          </>
-        )}
-        {erd.boxes.some((b) => b.context) && <li><span className="erd-key-context" aria-hidden="true" /> Faded: one ring out, {erd.level === 'aggregate' ? `what the entities it refers to refer to${reacts ? ', and the aggregates reacting to its events' : ''}` : 'the aggregates of other domains'}</li>}
+      <ul className="erd-key-ends erd-key-kinds" aria-label="Colors">
+        {kinds.map((k) => <li key={k}><span className={`erd-key-swatch erd-key-${k}`} aria-hidden="true" /> {BOX_KIND[k]}</li>)}
+        <li className="tone-current"><span className="erd-key-swatch erd-key-current" aria-hidden="true" /> {erd.level === 'domain' ? 'This domain' : 'This aggregate and this domain'}</li>
+        {other && <li className="tone-other"><span className="erd-key-swatch erd-key-other" aria-hidden="true" /> Another domain, named in parentheses</li>}
       </ul>
-      {(events || reacts) && (
-        <ul className="erd-key-ends erd-key-events" aria-label="Domain events">
-          {events && <li><span className="erd-key-event" aria-hidden="true" /> A domain event</li>}
-          {highlightsEvent && <li><span className="erd-key-event is-highlight" aria-hidden="true" /> This event</li>}
-          {raised && <li>{end(RELATION_ENDS.raised_by, false, 'raised_by')} {raisedBy}: the entity whose change raises it</li>}
-          {reacts && (erd.level === 'aggregate'
-            ? <li>{end(RELATION_ENDS.reacts_to, true, 'reacts_to')} {reactsTo}: an aggregate that reacts to the event, faded</li>
-            : <li>{end(RELATION_ENDS.reacts_to, true, 'reacts_to')} {reactsTo}: the aggregate at the arrow reacts to an event the other raises; hover for the event</li>)}
-        </ul>
-      )}
+      <ul className="erd-key-ends" aria-label="Lines">
+        {lines.map((l) => <li key={l.relation}>{sample(l.relation, l.dashed)} {lineLabel(relations, l.relation)}: {LINE_MEANING[l.relation]}</li>)}
+        {erd.boxes.some((b) => b.root) && <li><span className="erd-root">root</span> The aggregate's root entity</li>}
+        {highlight && <li><span className="erd-key-highlight" aria-hidden="true" /> This record</li>}
+        {erd.boxes.some((b) => b.context) && <li><span className="erd-key-context" aria-hidden="true" /> Faded: {erd.level === 'aggregate' ? 'records of other aggregates and domains' : 'records of other domains'}</li>}
+      </ul>
     </div>
   );
 }
 
-/** The boxes in focus: every box but the context ring, or every box when all are context (a domain with no aggregates of its own). */
+/** The boxes in focus: every box but the faded context, or every box when all are context. */
 export function focusRects(erd: Erd, rects: Map<string, Rect>): Map<string, Rect> {
   const inFocus = new Map([...rects].filter(([id]) => !erd.boxes.find((b) => b.id === id)?.context));
   return inFocus.size > 0 ? inFocus : rects;
@@ -245,7 +244,7 @@ function ErdCanvas({ relations, erd, focus, onNavigate, onPeek }: { relations: r
         // A context box is out of focus: no keyboard stop, hidden from assistive technology, faded.
         ...(box.context
           ? { className: 'is-context', focusable: false, domAttributes: { 'aria-hidden': true } }
-          : { ariaLabel: `${BOX_KIND[box.kind]} ${box.title}${box.owner ? ` ${box.owner}` : ''}${box.root ? ', root' : ''}${box.highlight ? ` (this ${box.kind === 'event' ? 'event' : 'entity'})` : ''}` }),
+          : { ariaLabel: `${BOX_KIND[box.kind]} ${box.title}${box.owner ? ` ${box.owner}` : ''}${box.root ? ', root' : ''}${box.highlight ? ' (this record)' : ''}` }),
         data: { box, focus: isFocus },
       };
     });
@@ -257,13 +256,13 @@ function ErdCanvas({ relations, erd, focus, onNavigate, onPeek }: { relations: r
       type: 'line',
       focusable: false,
       selectable: false,
-      data: { line, source: rects.get(line.source)!, target: rects.get(line.target)!, offset: offsets.get(line.id) ?? 0, ...lineWords(line, relationLabelOf(relations, line.relation).toLowerCase(), titles) },
+      data: { line, source: rects.get(line.source)!, target: rects.get(line.target)!, offset: offsets.get(line.id) ?? 0, ...lineWords(line, lineLabel(relations, line.relation), titles) },
     }));
     return { nodes, edges };
   }, [placed, focus, relations]);
 
   // Fit the boxes in focus, moving there with the shared motion (LA-PAT-APP-UX-R04), or at once;
-  // the context ring may run past the canvas's edges (LA-EXP-UC11-R06).
+  // the faded context may run past the canvas's edges (LA-EXP-UC11-R06).
   const fit = useCallback((animate: boolean) => {
     const box = wrapper.current?.getBoundingClientRect();
     if (!placed || placed.rects.size === 0 || !box || box.width <= 0 || box.height <= 0) return;

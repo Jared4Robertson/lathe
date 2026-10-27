@@ -19,12 +19,12 @@ import type { SpecIndex } from '../specs/data';
 
 export type Shape =
   | 'box' | 'product' | 'hexagon' | 'folder' | 'slice'
-  | 'double' | 'octagon' | 'flag' | 'stadium' | 'page' | 'stack'
+  | 'double' | 'octagon' | 'flag' | 'parallelogram' | 'stadium' | 'page' | 'stack'
   | 'chevron-bar' | 'chevron' | 'window' | 'port' | 'stripes' | 'component' | 'shield'
   | 'diamond';
 
 /** A small glyph a kind adds before its kind and ID line: a shape shared with another kind, told apart. */
-export type Mark = 'gear' | 'ruler' | 'port' | 'marker';
+export type Mark = 'value' | 'gear' | 'lens' | 'marker' | 'ruler' | 'port';
 
 export interface KindShape { shape: Shape; mark?: Mark }
 
@@ -42,64 +42,99 @@ interface ShapeSpec {
   draw: 'clipped' | 'radius' | 'box';
 }
 
-/** Every shape the graph draws, in the key's order: structure, Define, Design, the rest. */
+/** Every shape the graph draws, in the key's order: structure, then stage by stage, then open questions. */
 export const SHAPES: Readonly<Record<Shape, ShapeSpec>> = {
   product: { name: 'a large rounded box', kinds: 'Product', room: { l: 0, r: 4, t: 0, b: 0 }, draw: 'radius' },
   hexagon: { name: 'a hexagon', kinds: 'Domain', room: { l: 12, r: 12, t: 0, b: 0 }, draw: 'clipped' },
   folder: { name: 'a folder with a tab', kinds: 'Stage, folder or group, with its count', room: { l: 0, r: 0, t: 8, b: 0 }, draw: 'clipped' },
-  slice: { name: 'a slice pointing right', kinds: 'Capability', room: { l: 0, r: 8, t: 0, b: 0 }, draw: 'clipped' },
   double: { name: 'a double border', kinds: 'Aggregate', room: { l: 2, r: 2, t: 2, b: 2 }, draw: 'box' },
-  box: { name: 'a plain box', kinds: 'Entity, and any kind a product adds', room: NO_ROOM, draw: 'box' },
-  octagon: { name: 'an octagon', kinds: 'Domain rule, pattern rule (a standard rule with a ruler)', room: NO_ROOM, draw: 'clipped' },
+  box: { name: 'a plain box', kinds: 'Entity (a value object, read model, domain service, term or integration with its mark), and any kind a product adds', room: NO_ROOM, draw: 'box' },
+  octagon: { name: 'an octagon', kinds: 'Constraint, invariant, specification, pattern rule (a policy with a gear, a standard rule with a ruler)', room: NO_ROOM, draw: 'clipped' },
   flag: { name: 'a flag, notched on the right', kinds: 'Domain event', room: { l: 0, r: 10, t: 0, b: 0 }, draw: 'clipped' },
+  parallelogram: { name: 'a slanted box', kinds: 'Command (a query with a lens)', room: { l: 8, r: 8, t: 0, b: 0 }, draw: 'clipped' },
+  slice: { name: 'a slice pointing right', kinds: 'Capability', room: { l: 0, r: 8, t: 0, b: 0 }, draw: 'clipped' },
   stadium: { name: 'a stadium', kinds: 'Use case', room: { l: 4, r: 8, t: 0, b: 0 }, draw: 'radius' },
-  page: { name: 'a page with a folded corner', kinds: 'UC requirement (an interaction requirement with a marker)', room: { l: 0, r: 10, t: 0, b: 0 }, draw: 'clipped' },
+  page: { name: 'a page with a folded corner', kinds: 'UC requirement, view requirement, API requirement', room: { l: 0, r: 10, t: 0, b: 0 }, draw: 'clipped' },
   stack: { name: 'stacked boxes', kinds: 'Pattern (a standard with a ruler)', room: { l: 0, r: 5, t: 5, b: 0 }, draw: 'clipped' },
-  'chevron-bar': { name: 'a chevron bar', kinds: 'Flow (a technical flow with a gear)', room: { l: 6, r: 16, t: 0, b: 0 }, draw: 'clipped' },
-  chevron: { name: 'a chevron', kinds: 'Flow step, technical step', room: { l: 6, r: 6, t: 0, b: 0 }, draw: 'clipped' },
+  'chevron-bar': { name: 'a chevron bar', kinds: 'Flow', room: { l: 6, r: 16, t: 0, b: 0 }, draw: 'clipped' },
+  chevron: { name: 'a chevron', kinds: 'Flow step', room: { l: 6, r: 6, t: 0, b: 0 }, draw: 'clipped' },
   window: { name: 'a window with a top bar', kinds: 'View', room: { l: 0, r: 0, t: 6, b: 0 }, draw: 'box' },
   port: { name: 'a box with a port notch on its left', kinds: 'Endpoint', room: { l: 2, r: 0, t: 0, b: 0 }, draw: 'clipped' },
-  stripes: { name: 'a striped box', kinds: 'Layer', room: { l: 0, r: 0, t: 5, b: 5 }, draw: 'box' },
-  component: { name: 'a box with component tabs', kinds: 'Component', room: { l: 4, r: 0, t: 0, b: 0 }, draw: 'clipped' },
-  shield: { name: 'a shield', kinds: 'Test', room: { l: 0, r: 0, t: 0, b: 6 }, draw: 'clipped' },
+  component: { name: 'a box with component tabs', kinds: 'Technical records: repository, data model, value type, predicate, event type, projection, handlers, service, UI component, adapter', room: { l: 4, r: 0, t: 0, b: 0 }, draw: 'clipped' },
+  stripes: { name: 'a striped box', kinds: 'Table', room: { l: 0, r: 0, t: 5, b: 5 }, draw: 'box' },
+  shield: { name: 'a shield', kinds: 'Every kind of test', room: { l: 0, r: 0, t: 0, b: 6 }, draw: 'clipped' },
   diamond: { name: 'a diamond', kinds: 'Open question', room: { l: 14, r: 14, t: 2, b: 2 }, draw: 'clipped' },
 };
 
 /** What each mark tells apart, for the key. */
 export const MARKS: Readonly<Record<Mark, string>> = {
-  gear: 'a gear: a technical flow, drawn as a flow',
+  value: 'a tag: a value object, drawn as a plain box',
+  gear: 'a gear: a policy (drawn as a rule) or a domain service (a plain box), logic that runs on its own',
+  lens: 'a lens: a query (drawn as a command) or a read model (a plain box), what is read',
+  marker: 'a marker: a glossary term, drawn as a plain box',
   ruler: 'a ruler: a standard or a standard rule, drawn as a pattern or a pattern rule',
-  port: 'a port: an API or an integration, drawn as a plain box',
-  marker: 'a marker: an interaction requirement, drawn as a page',
+  port: 'a port: an integration, drawn as a plain box',
 };
+
+const TECHNICAL: KindShape = { shape: 'component' };
+const TEST: KindShape = { shape: 'shield' };
 
 const KIND_SHAPES: Readonly<Record<string, KindShape>> = {
   product: { shape: 'product' },
   domain: { shape: 'hexagon' },
-  capability: { shape: 'slice' },
   aggregate: { shape: 'double' },
   entity: { shape: 'box' },
-  domain_rule: { shape: 'octagon' },
-  pattern_rule: { shape: 'octagon' },
+  value_object: { shape: 'box', mark: 'value' },
+  constraint: { shape: 'octagon' },
+  invariant: { shape: 'octagon' },
+  specification: { shape: 'octagon' },
   domain_event: { shape: 'flag' },
+  command: { shape: 'parallelogram' },
+  read_model: { shape: 'box', mark: 'lens' },
+  query: { shape: 'parallelogram', mark: 'lens' },
+  policy: { shape: 'octagon', mark: 'gear' },
+  domain_service: { shape: 'box', mark: 'gear' },
+  term: { shape: 'box', mark: 'marker' },
+  capability: { shape: 'slice' },
   use_case: { shape: 'stadium' },
-  requirement: { shape: 'page' },
-  interaction_requirement: { shape: 'page', mark: 'marker' },
+  uc_requirement: { shape: 'page' },
   pattern: { shape: 'stack' },
+  pattern_rule: { shape: 'octagon' },
   flow: { shape: 'chevron-bar' },
   flow_step: { shape: 'chevron' },
-  design_step: { shape: 'chevron' },
   view: { shape: 'window' },
+  view_requirement: { shape: 'page' },
   endpoint: { shape: 'port' },
-  api: { shape: 'box', mark: 'port' },
+  api_requirement: { shape: 'page' },
   integration: { shape: 'box', mark: 'port' },
-  layer: { shape: 'stripes' },
-  component: { shape: 'component' },
-  test: { shape: 'shield' },
-  design_flow: { shape: 'chevron-bar', mark: 'gear' },
-  question: { shape: 'diamond' },
+  repository: TECHNICAL,
+  data_model: TECHNICAL,
+  table: { shape: 'stripes' },
+  value_type: TECHNICAL,
+  predicate: TECHNICAL,
+  event_type: TECHNICAL,
+  projection: TECHNICAL,
+  command_handler: TECHNICAL,
+  query_handler: TECHNICAL,
+  event_handler: TECHNICAL,
+  service: TECHNICAL,
+  ui_component: TECHNICAL,
+  endpoint_handler: TECHNICAL,
+  adapter: TECHNICAL,
   standard: { shape: 'stack', mark: 'ruler' },
   standard_rule: { shape: 'octagon', mark: 'ruler' },
+  constraint_test: TEST,
+  invariant_test: TEST,
+  specification_test: TEST,
+  policy_test: TEST,
+  domain_service_test: TEST,
+  use_case_test: TEST,
+  view_test: TEST,
+  endpoint_test: TEST,
+  flow_test: TEST,
+  integration_test: TEST,
+  pattern_rule_test: TEST,
+  question: { shape: 'diamond' },
 };
 
 const PLAIN: KindShape = { shape: 'box' };
@@ -144,6 +179,10 @@ function polygonOf(shape: Shape, w: number, h: number, scale: number): Pt[] | nu
     case 'flag': {
       const n = notch(14, scale, w, 0.25);
       return [[0, 0, 0, 0], [1, 0, 0, 0], [1, -n, 0.5, 0], [1, 0, 1, 0], [0, 0, 1, 0]];
+    }
+    case 'parallelogram': {
+      const s = notch(10, scale, w, 0.2);
+      return [[0, s, 0, 0], [1, 0, 0, 0], [1, -s, 1, 0], [0, 0, 1, 0]];
     }
     case 'page': {
       const f = Math.min(notch(11, scale, w, 0.25), notch(11, scale, h, 0.34));

@@ -4,8 +4,8 @@ import { BORDER, labelHeight, largestFit, linesIn, mapLabel, type MapLabel, text
 import { treeChildren } from './tree';
 
 // The graph's Nested map (LA-EXP-DR62): the same tree as the Tree map (map.ts), one product's, the
-// product its single root, drawn as nested squares. A product is made of its domains, a domain of
-// Define and Design, a stage of its folders, a folder of its records, a record of its children:
+// product its single root, drawn as nested squares. A product is made of its stages and domains, a domain of
+// its stages, a stage of its folders, a folder of its records, a record of its children:
 // each box holds its children rather than linking to them. Laid out once per spec load, like the
 // Tree map, and never changed by the focus: focusing moves the camera (camera.ts).
 //

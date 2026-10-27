@@ -139,15 +139,23 @@ code { font: 0.86em var(--mono); }
 .spec-section-head h3, .spec-section-head h4, .spec-section-head h5, .spec-section-head h6 { margin: 0; min-width: 0; display: flex; align-items: baseline; gap: 8px; }
 .spec-section-head h3 { font-size: 1.05rem; }
 .spec-section-head h4 { font-size: 0.95rem; color: var(--muted); }
-/* Groups within a folder (a layer, a test group and the capabilities and use cases within it). */
 .spec-section-head h5 { font-size: 0.9rem; color: var(--muted); }
 .spec-section-head h6 { font-size: 0.86rem; font-weight: 500; color: var(--muted); }
-.spec-section.folder > .spec-section, .spec-section.folder-group > .spec-section { padding-left: 12px; border-left: 1px solid var(--rule); }
+.spec-section.folder > .spec-section { padding-left: 12px; border-left: 1px solid var(--rule); }
 .spec-section-actions { display: flex; gap: 8px; align-items: center; flex: none; }
 .spec-section-actions:empty { display: none; }
 .section-count { font: 500 0.75rem var(--mono); color: var(--muted); }
-.stage { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; padding-top: 6px; border-top: 1px solid var(--rule); }
-.stage-title { font: 500 0.78rem var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--steel); padding-top: 6px; }
+/* A stage on a domain's or product's page: a rule in its stage's color above it, and its color mark beside its title. */
+.stage { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; padding-top: 6px; border-top: 2px solid var(--stage-color, var(--rule)); }
+.stage-title { display: flex; align-items: center; gap: 8px; font: 500 0.78rem var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink); padding-top: 6px; }
+/* Each stage's color, for its mark, its badges and its rule (the graph reads the same tokens). */
+.stage-domain-model { --stage-color: var(--g-domain-model); --stage-fill: var(--g-domain-model-bg); }
+.stage-use-cases { --stage-color: var(--g-use-cases); --stage-fill: var(--g-use-cases-bg); }
+.stage-interaction-design { --stage-color: var(--g-interaction-design); --stage-fill: var(--g-interaction-design-bg); }
+.stage-technical-specification { --stage-color: var(--g-technical-specification); --stage-fill: var(--g-technical-specification-bg); }
+.stage-test-plan { --stage-color: var(--g-test-plan); --stage-fill: var(--g-test-plan-bg); }
+.stage-mark { flex: none; display: inline-block; width: 10px; height: 10px; border-radius: 2px; border: 1.5px solid var(--stage-color, var(--g-structural)); background: var(--stage-fill, var(--g-structural-bg)); }
+.kind-badge { display: inline-block; font: 500 0.72rem var(--mono); padding: 0 6px; border-radius: 4px; border: 1px solid var(--stage-color, var(--rule)); background: var(--stage-fill, var(--sheet)); color: var(--ink); white-space: nowrap; }
 
 .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
 .card { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; align-content: start; padding: 14px; border: 1px solid var(--rule); border-radius: 10px; background: var(--sheet); color: var(--ink); text-decoration: none; }
@@ -295,7 +303,7 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-box { position: absolute; top: 0; left: 0; width: 1px; height: 1px; }
 .graph-controls { position: absolute; left: 12px; bottom: 12px; z-index: 5; display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; padding: 2px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; box-shadow: 0 2px 6px var(--shadow-soft); }
 .graph-controls .icon-button { color: var(--ink); }
-.graph-swatch.is-cell { border: 0; border-radius: 0; background: linear-gradient(115deg, var(--g-define-bg) 46%, var(--g-define) 46% 56%, var(--g-design-bg) 56%); clip-path: polygon(30% 0, 100% 10%, 90% 85%, 35% 100%, 0 50%); }
+.graph-swatch.is-cell { border: 0; border-radius: 0; background: linear-gradient(115deg, var(--g-domain-model-bg) 46%, var(--g-domain-model) 46% 56%, var(--g-use-cases-bg) 56%); clip-path: polygon(30% 0, 100% 10%, 90% 85%, 35% 100%, 0 50%); }
 /* The key's marks: each kind's shape and each kind's own mark (a gear, a ruler, a port, a marker), ink on sheet, as the canvas
    draws them before a box's kind and ID line (app/src/graph/shape-icons.tsx), and the problem badges as the canvas draws them. */
 .graph-shape-icon, .graph-mark-icon { display: inline-block; overflow: visible; fill: color-mix(in srgb, var(--ink) 14%, var(--sheet)); stroke: var(--ink); stroke-width: 1.2; stroke-linejoin: round; stroke-linecap: round; }
@@ -303,13 +311,16 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-swatch.is-shape :is(.graph-shape-icon, .graph-mark-icon) { margin: 0; height: 12px; width: 17px; vertical-align: middle; }
 .graph-mark { display: inline-grid; place-items: center; min-width: 15px; height: 15px; padding: 0 3px; box-sizing: border-box; border-radius: 8px; font: 700 9.5px var(--mono); color: var(--on-mark); background: var(--warn); }
 .graph-mark.error { background: var(--error); }
-.graph-swatch.stage-nested { border-color: var(--muted); background: linear-gradient(var(--g-define-bg), var(--g-define-bg)) 3px 5px / 10px 3px no-repeat, var(--sheet); }
+.graph-swatch.stage-nested { border-color: var(--muted); background: linear-gradient(var(--g-domain-model-bg), var(--g-domain-model-bg)) 3px 5px / 10px 3px no-repeat, var(--sheet); }
 
 /* Edges: parent/child is the solid spine of the tree; every other relation is a lighter, dashed cross-link. A parent line
    grows with its child box (--edge-scale), as the box's border does, so it reads at the zoom that reads the box. */
 .graph-swatch { display: inline-block; width: 18px; height: 11px; border: 1.5px solid var(--g-structural); background: var(--g-structural-bg); border-radius: 2px; }
-.graph-swatch.stage-define { border-color: var(--g-define); background: var(--g-define-bg); }
-.graph-swatch.stage-design { border-color: var(--g-design); background: var(--g-design-bg); }
+.graph-swatch.stage-domain-model { border-color: var(--g-domain-model); background: var(--g-domain-model-bg); }
+.graph-swatch.stage-use-cases { border-color: var(--g-use-cases); background: var(--g-use-cases-bg); }
+.graph-swatch.stage-interaction-design { border-color: var(--g-interaction-design); background: var(--g-interaction-design-bg); }
+.graph-swatch.stage-technical-specification { border-color: var(--g-technical-specification); background: var(--g-technical-specification-bg); }
+.graph-swatch.stage-test-plan { border-color: var(--g-test-plan); background: var(--g-test-plan-bg); }
 .graph-swatch.stage-file { border-style: dashed; border-color: var(--g-file); background: var(--paper); }
 .graph-swatch.stage-bar { background: var(--rule); border-color: var(--rule); opacity: 0.6; }
 .graph-line { display: inline-block; width: 22px; height: 0; border-top: 1.5px solid var(--muted); vertical-align: middle; }
@@ -330,7 +341,6 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-line.is-link { border-top: 1.5px dashed var(--link-edge); }
 /* Domain events in the graph (LA-EXP-UC04-R07, LA-EXP-DR52): flags in the spark colors, and their reacts_to and raised_by
    links dashed in spark, with Links on too. */
-.graph-swatch.kind-domain_event { border-color: var(--spark); background: var(--spark-bg); }
 .graph-swatch.kind-question { border-style: dashed; border-color: var(--warn); }
 .graph-swatch.is-focus { box-shadow: 0 0 0 2px var(--ink); }
 .graph-line.rel-event { border-top: 1.5px dashed var(--spark); }
@@ -370,11 +380,11 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .test-state { display: inline-block; font: 500 0.68rem var(--mono); padding: 0 6px; border-radius: 4px; border: 1px solid var(--rule); color: var(--muted); white-space: nowrap; }
 .test-state.automated { color: var(--steel); border-color: var(--steel); background: var(--steel-bg); }
 .test-state.manual { color: var(--ink); border-color: var(--muted); }
-.test-state.planned { border-style: dashed; font-style: italic; background: transparent; }
+.test-state.not-automated { border-style: dashed; font-style: italic; background: transparent; }
 .test-state.unknown { color: var(--spark); border-color: var(--spark); }
-.record-row.planned > .record-link { font-style: italic; }
-.record-row.planned > .record-link > * { opacity: 0.65; }
-.planned-note { margin: 0; padding: 8px 12px; border: 1px dashed var(--muted); border-radius: 8px; color: var(--muted); font-size: 0.88rem; }
+.record-row.not-automated > .record-link { font-style: italic; }
+.record-row.not-automated > .record-link > * { opacity: 0.65; }
+.not-automated-note { margin: 0; padding: 8px 12px; border: 1px dashed var(--muted); border-radius: 8px; color: var(--muted); font-size: 0.88rem; }
 .fulfills-at { margin: 0 0 6px; font-size: 0.88rem; color: var(--muted); }
 /* The record content lays itself out by its own width, so it reads at half the screen beside the graph. */
 .record-content { container-type: inline-size; display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; min-width: 0; }
@@ -750,8 +760,9 @@ a.row-link.row-link:focus-visible { outline: none; }
 .pane-title.is-fixed h1 { font-size: 1.45rem; overflow-wrap: normal; }
 .pane-model > .pane-body > .model-page { flex: 1; }
 
-/* ---------- The Model view: ERDs of a domain and of an aggregate (app/src/model) ---------- */
-/* The current domain is blue (--steel, --steel-bg), another domain gray (--muted on --paper, dashed), as S2's domain models draw them. */
+/* ---------- The Model view: a domain's model and an aggregate's (app/src/model) ---------- */
+/* Each kind in its event storming color (the --es-* tokens): aggregates and entities yellow, commands blue, events orange,
+   policies lilac, specifications pink, read models and queries green. Another domain's box is gray (--muted on --paper, dashed). */
 .model-page { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .model-header { padding: 10px 20px; border-bottom: 1px solid var(--rule); }
 /* One line, cut with an ellipsis (its whole text in its tooltip), so the canvas below never moves (LA-PAT-APP-UX-R08). */
@@ -762,66 +773,62 @@ a.row-link.row-link:focus-visible { outline: none; }
 .model-flow .react-flow__node:focus { outline: none; }
 .model-flow .react-flow__node:focus-visible .erd-box { outline: 3px solid var(--steel); outline-offset: 3px; }
 .erd-handle { opacity: 0; pointer-events: none; }
-.erd-box { width: 100%; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; overflow: hidden; border: 1.5px solid var(--steel); border-radius: var(--node-radius); background: var(--steel-bg); color: var(--ink); cursor: pointer; transition: box-shadow var(--hover-speed); }
+.erd-box { --box-edge: var(--es-aggregate); --box-fill: var(--es-aggregate-bg); width: 100%; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; overflow: hidden; border: 1.5px solid var(--box-edge); border-radius: var(--node-radius); background: var(--box-fill); color: var(--ink); cursor: pointer; transition: box-shadow var(--hover-speed); }
 .erd-box:not(.is-focus):hover { box-shadow: 0 0 0 3px var(--hover-ring); }
 .erd-box.is-focus { cursor: default; }
-.erd-box.tone-other { border-style: dashed; border-color: var(--muted); background: var(--paper); }
+.erd-box.erd-command { --box-edge: var(--es-command); --box-fill: var(--es-command-bg); }
+.erd-box.erd-event { --box-edge: var(--es-event); --box-fill: var(--es-event-bg); }
+.erd-box.erd-policy { --box-edge: var(--es-policy); --box-fill: var(--es-policy-bg); }
+.erd-box.erd-specification { --box-edge: var(--es-rule); --box-fill: var(--es-rule-bg); }
+.erd-box:is(.erd-read_model, .erd-query) { --box-edge: var(--es-read-model); --box-fill: var(--es-read-model-bg); }
+.erd-box.tone-other { border-style: dashed; --box-edge: var(--muted); --box-fill: var(--paper); }
 .erd-box.is-highlight, .erd-box.is-highlight:hover { box-shadow: 0 0 0 3px var(--ink); }
 @media (prefers-reduced-motion: reduce) { .erd-box { transition: none; } }
 .erd-box-head { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; min-width: 0; }
 .erd-box-head strong { font: 700 0.8125rem/1.25 var(--display); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.erd-owner, .erd-summary { font: 0.65625rem/1.3 var(--mono); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.erd-root { flex: none; font: 600 0.59375rem/1.4 var(--mono); text-transform: uppercase; letter-spacing: 0.06em; padding: 0 5px; border-radius: 3px; color: var(--on-mark); background: var(--steel); }
+.erd-summary { font: 0.65625rem/1.3 var(--mono); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.erd-root { flex: none; font: 600 0.59375rem/1.4 var(--mono); text-transform: uppercase; letter-spacing: 0.06em; padding: 0 5px; border-radius: 3px; color: var(--es-aggregate-bg); background: var(--es-aggregate); }
 .erd-fields { list-style: none; margin: 4px 0 0; padding: 4px 0 0; border-top: 1px solid var(--rule); display: grid; grid-template-columns: minmax(0, 1fr); }
 .erd-fields li { display: flex; justify-content: space-between; gap: 8px; min-height: 20px; align-items: center; font-size: 0.71875rem; }
 .erd-field { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .erd-field-kind { flex: 0 1 auto; min-width: 0; max-width: 55%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 0.65625rem var(--mono); color: var(--muted); }
-.erd-line-path, .erd-end { fill: none; stroke: var(--steel); stroke-width: 1.4; }
+.erd-line-path, .erd-end { fill: none; stroke: var(--ink); stroke-width: 1.4; }
 .erd-line.is-dashed .erd-line-path, .erd-key-line.is-dashed .erd-line-path { stroke-dasharray: 6 4; }
-/* The key keeps one height whichever ERD it explains (a domain's has two line ends, an aggregate's up to five, in up to three rows),
-   so moving between a domain, an aggregate and an entity never resizes the canvas above it (LA-PAT-APP-UX-R08). */
+/* A line takes the color of what it leads to or comes from: a command's lines blue, an event's orange, a rule's pink, a read model's green. */
+:is(.erd-line, .erd-key-line):is(.rel-changes, .rel-also_changes, .rel-invokes) :is(.erd-line-path, .erd-end) { stroke: var(--es-command); }
+:is(.erd-line, .erd-key-line):is(.rel-raises, .rel-hears) :is(.erd-line-path, .erd-end) { stroke: var(--es-event); }
+:is(.erd-line, .erd-key-line):is(.rel-checks, .rel-selects_by) :is(.erd-line-path, .erd-end) { stroke: var(--es-rule); }
+:is(.erd-line, .erd-key-line):is(.rel-reads, .rel-queries) :is(.erd-line-path, .erd-end) { stroke: var(--es-read-model); }
+/* The key keeps one height whichever model it explains, scrolling what does not fit, so moving between a domain, an
+   aggregate and an entity never resizes the canvas above it (LA-PAT-APP-UX-R08). */
 .erd-key { flex: none; box-sizing: border-box; block-size: var(--erd-key-height); overflow-y: auto; scrollbar-gutter: stable; display: flex; flex-wrap: wrap; gap: 8px 28px; align-items: flex-start; padding: 10px 20px 12px; border-top: 1px solid var(--rule); font-size: 0.8rem; color: var(--muted); }
-.erd-key-table { border-collapse: collapse; }
-.erd-key-table th { text-align: left; font-weight: 600; color: var(--ink); padding: 0 12px 2px 0; }
-.erd-key-table td { padding: 1px 12px 1px 0; }
+.erd-key-swatch { flex: none; display: inline-block; width: 18px; height: 11px; border: 1.5px solid var(--es-aggregate); background: var(--es-aggregate-bg); border-radius: 2px; }
+.erd-key-swatch.erd-key-command { border-color: var(--es-command); background: var(--es-command-bg); }
+.erd-key-swatch.erd-key-event { border-color: var(--es-event); background: var(--es-event-bg); }
+.erd-key-swatch.erd-key-policy { border-color: var(--es-policy); background: var(--es-policy-bg); }
+.erd-key-swatch.erd-key-specification { border-color: var(--es-rule); background: var(--es-rule-bg); }
+.erd-key-swatch:is(.erd-key-read_model, .erd-key-query) { border-color: var(--es-read-model); background: var(--es-read-model-bg); }
+.erd-key-swatch.erd-key-current { border-color: var(--ink); background: var(--sheet); }
+.erd-key-swatch.erd-key-other { border-style: dashed; border-color: var(--muted); background: var(--paper); }
 .erd-key-ends { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, max-content); grid-template-rows: repeat(3, auto); grid-auto-flow: column; grid-auto-columns: max-content; gap: 3px 24px; }
 .erd-key-ends li { display: flex; align-items: center; gap: 8px; }
 .erd-key-line { flex: none; overflow: visible; }
-.erd-key-highlight { display: inline-block; width: 14px; height: 10px; border: 1.5px solid var(--steel); background: var(--steel-bg); box-shadow: 0 0 0 2px var(--ink); border-radius: 2px; }
-/* The ERD's context ring (LA-EXP-UC11-R06): faded and a little smaller, readable on hover, its lines faded with it. */
+.erd-key-highlight { display: inline-block; width: 14px; height: 10px; border: 1.5px solid var(--es-aggregate); background: var(--es-aggregate-bg); box-shadow: 0 0 0 2px var(--ink); border-radius: 2px; }
+/* The model's context (LA-EXP-UC11-R06): faded and a little smaller, readable on hover, its lines faded with it. */
 .model-flow .react-flow__node.is-context .erd-box { opacity: var(--context-opacity); scale: var(--context-scale); }
 .model-flow .react-flow__node.is-context:hover .erd-box { opacity: 1; }
 .model-flow .erd-line.is-context { opacity: var(--context-opacity); }
 .erd-key-context { display: inline-block; width: 14px; height: 10px; border: 1.5px dashed var(--muted); background: var(--paper); border-radius: 2px; opacity: var(--context-opacity); }
 .model-flow::after { content: ""; position: absolute; inset: 0; z-index: 4; pointer-events: none; box-shadow: inset 0 0 var(--vignette) calc(var(--vignette) / 3) var(--paper); }
 @media (pointer: coarse) { .model-flow .react-flow__node.is-context.is-armed .erd-box { opacity: 1; } }
-/* Domain events in the ERD (LA-EXP-UC11-R07, R08; LA-EXP-DR52): a flag, notched on the right, in the spark colors, the
-   shape the graph draws an event in (LA-EXP-DR65); the short line from the entity raising it and the dashed "reacts to"
-   lines in spark too. The flag is drawn as the graph's clipped shapes are: the box clipped to it and filled with its edge
-   color, an inner layer its fill, so hover, the highlight, the keyboard ring and a tap's selection color and thicken
-   the edge. A "reacts to" line shows its label on hover, over a wider unseen stroke that is easy to point at, fading in
-   on the shared hover speed. */
-.erd-box.erd-event {
-  --flag: polygon(0 0, 100% 0, calc(100% - 14px) 50%, 100% 100%, 0 100%); --edge: var(--spark); --edge-w: 1.5px;
-  position: relative; isolation: isolate; justify-content: center; border: 0; border-radius: 0; background: var(--edge); clip-path: var(--flag); padding: 8px 28px 8px 12px; box-shadow: none;
-}
-.erd-box.erd-event::before { content: ""; position: absolute; inset: var(--edge-w); z-index: -1; background: var(--spark-bg); clip-path: var(--flag); }
-.erd-box.erd-event:not(.is-focus):hover { --edge-w: 3px; box-shadow: none; }
-.erd-box.erd-event.is-highlight, .erd-box.erd-event.is-highlight:hover { --edge: var(--ink); --edge-w: 3px; box-shadow: none; }
-.model-flow .react-flow__node:focus-visible .erd-box.erd-event { --edge: var(--steel); --edge-w: 3px; outline: none; }
-.react-flow__node.is-armed .erd-box.erd-event { --edge: var(--steel); --edge-w: 3px; box-shadow: none; }
-:is(.erd-line, .erd-key-line):is(.rel-raised_by, .rel-reacts_to) :is(.erd-line-path, .erd-end) { stroke: var(--spark); }
-.erd-line.rel-reacts_to .erd-line-path, .erd-key-line.rel-reacts_to .erd-line-path { stroke-dasharray: 4 4; }
+/* A dashed line (a policy hearing an event, a recorded exception) shows its words on hover, over a wider unseen stroke
+   that is easy to point at, fading in on the shared hover speed. */
 .erd-line-hit { fill: none; stroke: transparent; stroke-width: 14; pointer-events: stroke; }
 .erd-line-label { font: 600 0.6875rem var(--mono); fill: var(--ink); stroke: var(--paper); stroke-width: 4px; paint-order: stroke; pointer-events: none; opacity: 0; transition: opacity var(--hover-speed); }
 .erd-line.has-hover-label:hover .erd-line-label { opacity: 1; }
 .erd-line.has-hover-label:hover :is(.erd-line-path, .erd-end) { stroke-width: 2.2; }
-/* By touch there is no hover: a domain's "reacts to" lines always show their event's name (LA-PAT-APP-UX-R07). */
-@media (pointer: coarse) { .erd-line.has-event .erd-line-label { opacity: 1; } }
-.erd-key-event { --flag: polygon(0 0, 100% 0, calc(100% - 5px) 50%, 100% 100%, 0 100%); display: inline-block; position: relative; isolation: isolate; width: 22px; height: 11px; background: var(--spark); clip-path: var(--flag); }
-.erd-key-event::before { content: ""; position: absolute; inset: 1.5px; z-index: -1; background: var(--spark-bg); clip-path: var(--flag); }
-.erd-key-event.is-highlight { background: var(--ink); }
-.erd-key-event.is-highlight::before { inset: 2.5px; }
+/* By touch there is no hover: dashed lines always show their words (LA-PAT-APP-UX-R07). */
+@media (pointer: coarse) { .erd-line.has-hover-label .erd-line-label { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .erd-line-label { transition: none; } }
 
 /* ---------- Themes and the Appearance page (app/src/theme, LA-PAT-APP-CODE-R15) ---------- */

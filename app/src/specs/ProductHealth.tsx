@@ -22,11 +22,11 @@ function Bar({ label, value, total, title, planned = false, children }: { label:
   );
 }
 
-const DESIGNED = 'Designed: a record designs it, such as a component that satisfies it (its file may not exist yet).';
-const BUILT = 'Built: a component whose file exists designs it.';
+const DESIGNED = 'Designed: its implementation is specified: a flow step fulfills a UC requirement, a technical record carries out anything else (its file may not exist yet).';
+const BUILT = 'Built: a technical record carrying it out names a file that exists.';
 const PROVED = 'Proved: an automated or manual test proves it.';
-const PLANNED = 'Planned: not proved yet, but a planned test is meant to prove it. A planned test is not proof.';
-const MORE_PLANNED = 'Already proved, but a planned test is meant to prove them too: proof still owed by tests not written yet.';
+const PLANNED = 'Not automated yet: not proved yet, but a test not automated yet is meant to prove it. It is not proof.';
+const MORE_PLANNED = 'Already proved, but a test not automated yet is meant to prove them too: proof still owed.';
 
 /** One bar group: an obligation kind's counts in a domain. */
 export interface ObligationGroup {
@@ -94,9 +94,9 @@ export function sumTestCounts(counts: TestCounts[]): TestCounts {
 }
 
 const TEST_TITLES: Record<(typeof TEST_STATES)[number], string> = {
-  automated: 'Automated: run by a test runner (a test with no state is automated).',
+  automated: 'Automated: a file runs it.',
   manual: 'Manual: a person runs it by following its steps.',
-  planned: 'Planned: not written yet. It does not count as proof.',
+  planned: 'Not automated yet: no file runs it. It does not count as proof.',
 };
 
 /** "12 automated, 1 manual, 2 planned". */

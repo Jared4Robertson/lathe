@@ -1,13 +1,12 @@
-import { textOf, byIdOrder, partsOf, type Row, type SpecIndex, type SpecLink, type SpecRecord } from './data';
+import { textOf, byIdOrder, partsOf, type Row, type SpecIndex, type SpecRecord } from './data';
 
 // Patterns and their rules, as the pages show them (lathe/REFERENCE.md). A domain
 // follows a pattern when the domain itself or any of its use cases `follows` it, and then owes each
-// of the pattern's rules: designed when a component in the domain satisfies it, built when that
-// component's file exists, proved when an automated or manual test in the domain proves it, planned
-// when only a planned test there does. A rule does not apply in a domain when it names a setting that
-// all the domain's following use cases mark not applicable with a reason (unless the domain follows
-// the pattern itself), or when no follower there meets its applies-when condition: it is waived there, as the
-// engine's owed_pattern_rules table counts it (lathe/src/coverage.ts). Pure logic, tested directly.
+// of the pattern's rules: proved there when a pattern rule test under the rule names the domain and
+// is automated or manual, planned when only one not automated yet does. A rule does not apply in a
+// domain when it names a setting that all the domain's following use cases mark not applicable with
+// a reason (unless the domain follows the pattern itself), or when no follower there meets its
+// applies-when condition: it is waived there. Pure logic, tested directly.
 
 /** What a follower gives one of a pattern's settings (a setting_value row): a value, or the reason it does not apply. */
 export interface SettingValue {
@@ -133,30 +132,15 @@ export type RuleStatus =
   | { applies: false; why: 'waived'; condition: AppliesWhen; given: string[] }
   | {
       applies: true;
-      /** Components in the domain that design the rule. */
-      designedBy: string[];
-      /** Those of them whose file exists. */
-      builtBy: string[];
-      /** Automated or manual tests in the domain that prove the rule. */
+      /** The rule's tests that name the domain, automated or manual: its proof there. */
       provedBy: string[];
-      /** Planned tests in the domain meant to prove it. */
+      /** Its tests in the domain not automated yet. */
       plannedBy: string[];
     };
 
-/** The role ('design', 'proof' or '') of a link, from the meta-model's relation rules. */
-export function linkRole(index: SpecIndex, link: SpecLink): '' | 'design' | 'proof' {
-  const source = index.byId.get(link.source)?.kind;
-  const target = index.byId.get(link.target)?.kind;
-  const rule = index.workspace.relations.find((r) =>
-    r.relation === link.relation && r.source_kind === source && (r.target_kind === target || r.target_kind === '*'));
-  return rule?.role ?? '';
-}
-
-const testStateOf = (r: SpecRecord) => textOf(r.row, 'state')?.trim() || 'automated';
-
 /**
  * Whether a rule applies in a domain that follows its pattern as `followed` says, and if so what in that
- * domain designs, builds and proves it.
+ * domain proves it.
  */
 export function ruleStatus(index: SpecIndex, rule: SpecRecord, domainId: string, followed: Followed): RuleStatus {
   const { useCases } = followed;
@@ -182,22 +166,12 @@ export function ruleStatus(index: SpecIndex, rule: SpecRecord, domainId: string,
       return { applies: false, why: 'waived', condition, given: [...values.values()] };
     }
   }
-  const designedBy: string[] = [];
-  const builtBy: string[] = [];
   const provedBy: string[] = [];
   const plannedBy: string[] = [];
-  for (const l of index.incoming.get(rule.id) ?? []) {
-    const source = index.byId.get(l.source);
-    if (!source || source.domain !== domainId) continue;
-    const role = linkRole(index, l);
-    if (role === 'design') {
-      designedBy.push(source.id);
-      const fileMissing = (index.problemsFor.get(source.id) ?? []).some((p) => p.check === 'component-file-missing');
-      if (source.kind === 'component' && textOf(source.row, 'file') && !fileMissing) builtBy.push(source.id);
-    } else if (role === 'proof' && source.kind === 'test') {
-      (testStateOf(source) === 'planned' ? plannedBy : provedBy).push(source.id);
-    }
+  for (const test of index.children.get(rule.id) ?? []) {
+    if (test.kind !== 'pattern_rule_test' || textOf(test.row, 'domain_id') !== domainId) continue;
+    (textOf(test.row, 'state') === 'not automated yet' ? plannedBy : provedBy).push(test.id);
   }
   const sorted = (ids: string[]) => [...new Set(ids)].sort((a, b) => a.localeCompare(b, 'en', { numeric: true }));
-  return { applies: true, designedBy: sorted(designedBy), builtBy: sorted(builtBy), provedBy: sorted(provedBy), plannedBy: sorted(plannedBy) };
+  return { applies: true, provedBy: sorted(provedBy), plannedBy: sorted(plannedBy) };
 }

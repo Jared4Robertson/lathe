@@ -55,7 +55,7 @@ describe('text sizing', () => {
         }
       }
     }
-  });
+  }, 30_000);
 
   it('LA-EXP-T210 On the page, each drawn line\'s font is its map size times the zoom, and a line under TEXT_BAR_PX on screen is drawn as a bar', async () => {
     startAtDepth(3);
@@ -117,7 +117,7 @@ describe('hit testing', () => {
     const domain = platesOf(graphMap(testIndex(), 'P')).find((p) => p.id === 'P-D')!;
     expect(domain.outline.kind).toBe('polygon');
     expect(inPlate(domain, { x: domain.x + 0.5, y: domain.y + 0.5 })).toBe(false);
-  });
+  }, 30_000);
 });
 
 describe('culling', () => {

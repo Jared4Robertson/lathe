@@ -1,19 +1,18 @@
 import { lowerLabel } from '../plural';
 import type { ReactNode } from 'react';
-import { kindLabel, type SpecIndex, type SpecLink as Link, type SpecRecord } from './data';
+import { type SpecIndex, type SpecLink as Link, type SpecRecord } from './data';
 import { addressOf } from '../views/address';
-import { groupByLabel, relationLabelOf } from './labels';
+import { groupByLabel } from './labels';
 import { Traceability } from './Traceability';
 import { RecordText, factsOf, rowPlace } from './RecordText';
 import { kindFieldPath, kindPagePath } from '../format/reference';
 import { PatternRuleSections, PatternSections } from './PatternParts';
-import { FlowSteps, hasSteps } from './FlowSteps';
-import { ApiSections, IntegrationSections, hasOwnChildSections } from './ApiParts';
+import { FlowSteps } from './FlowSteps';
 import { StandardSections } from './StandardParts';
 import { DomainEvents } from './DomainEvents';
 import { LongList } from '../components/LongList';
 import { DesktopRecordActions } from '../shell/desktopRecord';
-import { Grouped, NavigateContext, PageHeader, ProblemBadge, ProblemList, RecordLink, RecordTree, Section, SpecLink, TestStateTag, idText, listTitle, testState } from './parts';
+import { Grouped, KindBadge, NavigateContext, StageMark, PageHeader, ProblemBadge, ProblemList, RecordLink, RecordTree, Section, SpecLink, TestStateTag, idText, isTestKind, listTitle, notAutomatedYet } from './parts';
 
 // One record's content: header, text fields, problems, facts, parent, children and links both ways.
 // Kept apart from the page chrome so another view (such as the graph, side by side) can host it.
@@ -45,45 +44,8 @@ function LinkGroups({ index, links, direction }: { index: SpecIndex; links: Link
   );
 }
 
+/** A pattern's followers have their own section. */
 const PATTERN_SKIP: ReadonlySet<string> = new Set(['in:follows']);
-/** An interaction requirement's Carries out has its own section. */
-const FULFILLS_SKIP: ReadonlySet<string> = new Set(['out:fulfills']);
-
-/** For an interaction requirement: the view, endpoint, flow, API, integration or domain it sits at, and what it carries out. */
-function Fulfills({ index, record }: { index: SpecIndex; record: SpecRecord }) {
-  const parent = record.parent ? index.byId.get(record.parent) : undefined;
-  const targets = (index.outgoing.get(record.id) ?? []).filter((l) => l.relation === 'fulfills').map((l) => l.target);
-  const title = relationLabelOf(index.workspace.relations, 'fulfills');
-  return (
-    <Section title={title} count={targets.length}>
-      {parent && (
-        <p className="fulfills-at">
-          At the {lowerLabel(kindLabel(index, parent.kind))} <RecordLink index={index} id={parent.id} />
-        </p>
-      )}
-      {targets.length === 0 ? (
-        <p className="hint">It carries out nothing yet. Link it with <code>fulfills</code> to the requirement or domain rule it carries out.</p>
-      ) : (
-        <LongList
-          label={title}
-          className="record-list fulfills"
-          items={targets}
-          itemKey={(t) => t}
-          searchText={(t) => idText(index, t)}
-          render={(t) => {
-            const target = index.byId.get(t);
-            return (
-              <>
-                <RecordLink index={index} id={t} row />
-                {target && <small className="meta">{kindLabel(index, target.kind)}</small>}
-              </>
-            );
-          }}
-        />
-      )}
-    </Section>
-  );
-}
 
 export interface RecordContentProps {
   index: SpecIndex;
@@ -116,27 +78,26 @@ export function RecordContent({ index, id, onNavigate, actions, header = true, s
   );
 }
 
-/** The eyebrow over a record's title: its product, its domain and its kind, as links. */
+/** The eyebrow over a record's title: its product and its domain as links, and its kind as a badge in its stage's color. */
 export function RecordEyebrow({ index, record }: { index: SpecIndex; record: SpecRecord }) {
-  const kind = index.kinds.get(record.kind);
   const product = record.product ? index.byId.get(record.product) : undefined;
   const domain = record.domain ? index.byId.get(record.domain) : undefined;
   return (
     <>
       {product && record.kind !== 'product' && <><SpecLink to={addressOf(product.id)}>{product.title}</SpecLink> · </>}
       {domain && product && record.kind !== 'domain' && <><SpecLink to={addressOf(domain.id)}>{domain.title}</SpecLink> · </>}
-      {kind?.label ?? record.kind}
+      <KindBadge index={index} kind={record.kind} />
     </>
   );
 }
 
 function RecordBody({ index, record, actions, header, side }: { index: SpecIndex; record: SpecRecord; actions?: ReactNode; header: boolean; side: boolean }) {
   const { id } = record;
-  // An aggregate's domain events have their own section, so its children list leaves them out.
-  const children = (index.children.get(id) ?? []).filter((c) => !(record.kind === 'aggregate' && c.kind === 'domain_event'));
+  // An aggregate's domain events and a flow's steps have their own sections, so its children list leaves them out.
+  const children = (index.children.get(id) ?? []).filter((c) => !(record.kind === 'aggregate' && c.kind === 'domain_event') && !(record.kind === 'flow' && c.kind === 'flow_step'));
   const problems = index.problemsFor.get(id) ?? [];
-  const isTest = record.kind === 'test';
-  // A list of one kind is titled by that kind ("Domain rules"); a mixed one stays "Children".
+  const isTest = isTestKind(index, record.kind);
+  // A list of one kind is titled by that kind ("Commands"); a mixed one stays "Children".
   const childrenTitle = listTitle(index, children, 'Children');
   return (
     <>
@@ -148,26 +109,23 @@ function RecordBody({ index, record, actions, header, side }: { index: SpecIndex
       )}
       <div className={side ? 'record-layout' : 'record-layout single'}>
         <div className="record-main">
-          {isTest && testState(record) === 'planned' && (
-            <p className="planned-note" role="note">
-              <strong>Planned test.</strong> It is not written yet, so it does not count as proof of what it proves.
+          {isTest && notAutomatedYet(record) && (
+            <p className="not-automated-note" role="note">
+              <strong>Not automated yet.</strong> No file runs it, so it does not count as proof of what it proves.
             </p>
           )}
           <RecordText index={index} record={record} />
-          {record.kind === 'interaction_requirement' && <Fulfills index={index} record={record} />}
           {record.kind === 'pattern' && <PatternSections index={index} pattern={record} />}
           {record.kind === 'pattern_rule' && <PatternRuleSections index={index} rule={record} />}
           {record.kind === 'standard' && <StandardSections index={index} standard={record} />}
-          {hasSteps(record.kind) && <FlowSteps index={index} flow={record} />}
-          {record.kind === 'api' && <ApiSections index={index} api={record} />}
-          {record.kind === 'integration' && <IntegrationSections index={index} integration={record} />}
+          {record.kind === 'flow' && <FlowSteps index={index} flow={record} />}
           {record.kind === 'aggregate' && <DomainEvents index={index} aggregate={record} />}
           {/* After the body and its kind's own sections, before the children. A pattern's followers have their own section. */}
-          <Traceability index={index} record={record} skip={record.kind === 'pattern' ? PATTERN_SKIP : record.kind === 'interaction_requirement' ? FULFILLS_SKIP : undefined} />
-          {/* Without the facts beside it, the body lists the direct children itself (a pattern's and a standard's rules, and an API's or integration's children, have their own sections); the problems show either way (the side bar does not repeat them). */}
-          {!side && children.length > 0 && record.kind !== 'pattern' && record.kind !== 'standard' && !hasOwnChildSections(record.kind) && (
+          <Traceability index={index} record={record} skip={record.kind === 'pattern' ? PATTERN_SKIP : undefined} />
+          {/* Without the facts beside it, the body lists the direct children itself (a pattern's and a standard's rules have their own sections); the problems show either way (the side bar does not repeat them). */}
+          {!side && children.length > 0 && record.kind !== 'pattern' && record.kind !== 'standard' && (
             <Section title={childrenTitle} count={children.length}>
-              {/* Requirements, interaction requirements and pattern rules read under their groups. */}
+              {/* UC, view and API requirements and pattern and standard rules read under their groups. */}
               <Grouped records={children} level={3} render={(records, heading) => (
                 <RecordTree index={index} records={records} label={heading ? `${heading}: ${childrenTitle} of ${id}` : `${childrenTitle} of ${id}`} showKind />
               )} />
@@ -183,22 +141,30 @@ function RecordBody({ index, record, actions, header, side }: { index: SpecIndex
   );
 }
 
+/** Why a record has no parent: a product is the top; a kind with no owner exists because other records use it. */
+export const parentlessText = (index: SpecIndex, record: SpecRecord) =>
+  record.kind === 'product' ? 'None (top level).' : (index.kinds.get(record.kind)?.parent_kinds.length ?? 0) === 0
+    ? 'None: it has no owner. It exists because other records use it.'
+    : 'None (its parent is missing).';
+
 /**
- * A record's facts: kind, short fields, data file and line, parent, children (their own children folded) and its
- * links both ways. Shown beside the body, or in the side bar.
+ * A record's facts: kind, stage, short fields, data file and line, parent, children (their own children folded) and
+ * its links both ways. Shown beside the body, or in the side bar.
  */
 export function RecordFacts({ index, record }: { index: SpecIndex; record: SpecRecord }) {
   const { id } = record;
   const kind = index.kinds.get(record.kind);
   const children = index.children.get(id) ?? [];
-  const isTest = record.kind === 'test';
+  const isTest = isTestKind(index, record.kind);
   // A test's state gets its own row, with its tag.
   const facts = factsOf(index, record);
   const childrenTitle = listTitle(index, children, 'Children');
+  const stage = kind?.stage ? index.workspace.stages.find((s) => s.stage === kind.stage)?.label : null;
   return (
     <>
       <dl className="fields">
         <div><dt>Kind</dt><dd title={kind?.description}><SpecLink to={kindPagePath(record.kind)} title={`How a ${lowerLabel(kind?.label ?? record.kind)} works`}>{kind?.label ?? record.kind}</SpecLink></dd></div>
+        {stage && <div><dt>Stage</dt><dd><span className={`stage-${kind?.stage}`}><StageMark stage={kind!.stage!} /></span> {stage}</dd></div>}
         {isTest && <div><dt>State</dt><dd><TestStateTag record={record} /></dd></div>}
         {facts.map((f) => (
           <div key={f.label}>
@@ -210,7 +176,7 @@ export function RecordFacts({ index, record }: { index: SpecIndex; record: SpecR
         <div><dt>Data file</dt><dd><code>{rowPlace(record)}</code><DesktopRecordActions id={id} /></dd></div>
       </dl>
       <h3>Parent</h3>
-      {record.parent ? <RecordLink index={index} id={record.parent} /> : <p className="hint">None (top level).</p>}
+      {record.parent ? <RecordLink index={index} id={record.parent} /> : <p className="hint">{parentlessText(index, record)}</p>}
       <h3>{childrenTitle} <span className="section-count">{children.length}</span></h3>
       {children.length === 0 ? <p className="hint">None.</p> : <RecordTree index={index} records={children} label={childrenTitle} showKind bulk={false} />}
       <h3>Links out</h3>

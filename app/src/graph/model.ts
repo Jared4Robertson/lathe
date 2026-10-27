@@ -1,5 +1,5 @@
 import { plural } from '../plural';
-import type { SpecIndex, SpecRecord } from '../specs/data';
+import type { SpecIndex, SpecRecord, Stage } from '../specs/data';
 import { textOf, byIdOrder, kindLabel } from '../specs/data';
 import { treeChildren, treeGroup, treeOf, treeParent } from './tree';
 import { linkLabel, relationLabelOf } from '../specs/labels';
@@ -12,6 +12,8 @@ import { linkLabel, relationLabelOf } from '../specs/labels';
 export const PARENT = 'parent';
 /** The pseudo-relation from a component or test to the file it names (trace mode only). */
 export const NAMES = 'names';
+/** The pseudo-relation from a table to the invariant one of its unique keys enforces (trace mode only). */
+export const ENFORCES = 'enforces';
 /** The pseudo-kind of a file node in trace mode. */
 export const FILE_KIND = 'file';
 /** The stage of a group node: a folder of one kind of child between a record and its children. */
@@ -23,8 +25,8 @@ export interface GraphNode {
   distance: number;
   kind: string;
   title: string;
-  /** 'define', 'design', '' for structural kinds, 'file' or 'group'. */
-  stage: string;
+  /** The kind's stage (domain-model … test-plan), '' for structural kinds (product, open question), 'file' or 'group'. */
+  stage: Stage | '' | 'file' | 'group';
   /**
    * The column the layout puts this node in, counted from 0 at the left. In the hierarchy it is the
    * node's depth in the parent/child tree (see treeColumns); in trace mode it comes from TRACE_COLUMNS.
@@ -82,9 +84,15 @@ export function edgesOf(index: SpecIndex, id: string): GraphEdge[] {
   return edges.filter((e) => index.byId.has(e.source) && index.byId.has(e.target)).map((e) => ({ ...e, id: edgeId(e) }));
 }
 
-const STAGE_ORDER: Record<string, number> = { group: 0, '': 0, define: 1, design: 2, file: 3 };
+/** A node's stage's place in the sort: groups and structural records first, then the five stages in order, files last. */
+function stageRank(index: SpecIndex, stage: GraphNode['stage']): number {
+  if (stage === GROUP_STAGE || stage === '') return 0;
+  if (stage === 'file') return index.workspace.stages.length + 1;
+  return index.workspace.stages.findIndex((s) => s.stage === stage) + 1;
+}
 
-export const stageOf = (index: SpecIndex, kind: string) => (kind === FILE_KIND ? 'file' : index.kinds.get(kind)?.stage ?? '');
+/** A kind's stage as the graph colors it: its stage, '' for one outside the stages (structural), 'file' for a file. */
+export const stageOf = (index: SpecIndex, kind: string): GraphNode['stage'] => (kind === FILE_KIND ? 'file' : index.kinds.get(kind)?.stage ?? '');
 
 function kindOrder(index: SpecIndex) {
   const order = new Map(index.workspace.kinds.map((k, i) => [k.kind, i]));
@@ -96,7 +104,7 @@ function sortNodes(index: SpecIndex, nodes: GraphNode[]): GraphNode[] {
   return [...nodes].sort(
     (a, b) =>
       a.distance - b.distance ||
-      STAGE_ORDER[a.stage] - STAGE_ORDER[b.stage] ||
+      stageRank(index, a.stage) - stageRank(index, b.stage) ||
       kindRank(a.kind) - kindRank(b.kind) ||
       byIdOrder(a, b),
   );
@@ -104,30 +112,27 @@ function sortNodes(index: SpecIndex, nodes: GraphNode[]): GraphNode[] {
 
 function recordNode(index: SpecIndex, id: string, distance: number, mode: GraphMode): GraphNode {
   const r = index.byId.get(id)!;
-  const column = mode === 'trace' ? traceColumn(r.kind) : 0;
+  const column = mode === 'trace' ? (distance === 0 ? 0 : traceColumn(index, r.kind)) : 0;
   return { id, distance, kind: r.kind, title: r.title, stage: stageOf(index, r.kind), column, row: 0 };
 }
 
-/** Columns of a trace, left to right: the rule, what fulfills it, components, tests, files. */
-export const TRACE_COLUMNS: Record<string, number> = {
-  requirement: 0,
-  domain_rule: 0,
-  pattern_rule: 0,
-  flow: 1,
-  view: 1,
-  endpoint: 1,
-  // A step that fulfills the rule sits between its flow and the components it uses; a technical
-  // flow and its step that satisfies the rule sit just before those components.
-  flow_step: 1.5,
-  design_flow: 1.5,
-  design_step: 1.75,
-  component: 2,
-  test: 3,
-  [FILE_KIND]: 4,
-};
+/**
+ * Columns of a trace, left to right: the obligation; the flow and the step that fulfill it; what designs it (the
+ * views a step happens in, the commands and queries it invokes, the value object or aggregate the obligation sits
+ * in); the technical records that implement it; the tests that prove it; the files they name.
+ */
+export const TRACE_COLUMNS = { obligation: 0, flow: 1, step: 1.5, design: 2, technical: 3, test: 4, file: 5 } as const;
 
-/** The trace column of a kind; a kind the table does not know (one a product adds) goes with the components. */
-export const traceColumn = (kind: string) => TRACE_COLUMNS[kind] ?? TRACE_COLUMNS.component;
+/** The trace column of a kind, by its stage: a flow and a step, the design kinds, the technical kinds, the tests, a file. */
+export function traceColumn(index: SpecIndex, kind: string): number {
+  if (kind === FILE_KIND) return TRACE_COLUMNS.file;
+  if (kind === 'flow') return TRACE_COLUMNS.flow;
+  if (kind === 'flow_step') return TRACE_COLUMNS.step;
+  const stage = index.kinds.get(kind)?.stage;
+  if (stage === 'technical-specification') return TRACE_COLUMNS.technical;
+  if (stage === 'test-plan') return TRACE_COLUMNS.test;
+  return TRACE_COLUMNS.design;
+}
 
 /**
  * The column of every node in the hierarchy: its depth in the parent/child tree around the focus.
@@ -135,7 +140,7 @@ export const traceColumn = (kind: string) => TRACE_COLUMNS[kind] ?? TRACE_COLUMN
  * so every node with the same parent is in the same column, whatever its kind, and a group sits in
  * its own column between its parent and its members. The focus's tree is placed first, the focus's
  * ancestors to its left and its descendants to its right. A record reached only by a cross-link
- * (satisfies, proves, uses and the rest) goes one column after the node it was reached from on the
+ * (fulfills, invokes, raises and the rest) goes one column after the node it was reached from on the
  * shortest path from the focus, and the rest of its own tree is placed around it. A record in a tree
  * that is already placed keeps its tree position. Columns are shifted so the leftmost is 0.
  *
@@ -264,7 +269,7 @@ export function filterKind(index: SpecIndex, id: string): string | null {
  * (see tree.ts), a level being any node: a record, a stage, a folder or a group. It is the focus's
  * parent, kept at the left edge for context, the focus, and its descendants down to `depth` levels
  * below it (LA-EXP-DR46); the rest of the map stays where it is around it. With `options.links`,
- * the records the focused record links to and from (satisfies, proves, uses and the rest) join, one
+ * the records the focused record links to and from (fulfills, invokes, raises and the rest) join, one
  * hop, with the links between them and the focus.
  *
  * Filters hide kinds and relations, and nothing is reached through a hidden record; hiding the
@@ -357,10 +362,9 @@ export function neighborhood(
 // ---- Group nodes: a folder per kind of child between a record and its children ----
 
 /**
- * A group's ID: its parent's ID and the kind of its members. Record IDs never contain a slash. A
- * group within a parent's Tests folder (a test-plan group, as the Test plan folder has them) adds
- * its own parts: "DM-SHOP/test/acceptance/DM-SHOP-CAP01/DM-SHOP-UC02", the same keys the folder
- * model gives its groups when keyed by the Tests folder's ID.
+ * A group's ID: its parent's ID and the kind of its members ("DM-SHOP-A1/command"). Record IDs never contain a
+ * slash. A stage and its folders add their own parts: "DM-SHOP/domain-model", "DM-SHOP/domain-model/aggregate",
+ * the keys the folder model (specs/folders.ts) gives them.
  */
 export const groupId = (parent: string, kind: string) => `${parent}/${kind}`;
 
@@ -378,18 +382,10 @@ export function childKinds(index: SpecIndex, id: string): string[] {
   return [...new Set((index.children.get(id) ?? []).map((c) => c.kind))].sort((a, b) => rank(a) - rank(b));
 }
 
-/**
- * Whether a record's children are drawn through groups: only when it has more than one kind of
- * child to tell apart, however many there are. A capability points straight at its use cases.
- */
-export function isGrouped(index: SpecIndex, id: string): boolean {
-  return childKinds(index, id).length > 1;
-}
-
 /** The records in a group at the first record level, however deep its groups, as the nav lists them (none for an ID that is no group). */
 export const groupMembers = (index: SpecIndex, gid: string): SpecRecord[] => treeGroup(index, gid)?.members ?? [];
 
-/** Whether an ID names a group of the graph's tree: a stage, a folder, a kind group or a test-plan group. */
+/** Whether an ID names a group of the graph's tree: a stage, a folder or a kind group. */
 export const isGroup = (index: SpecIndex, id: string) => treeOf(index).groups.has(id);
 
 /** Whether the graph can center on an ID: a record or a group. */
@@ -403,7 +399,7 @@ export function pluralLabel(index: SpecIndex, kind: string): string {
 /** A group's label with its count, such as "Use cases (5)". */
 export const groupLabel = (index: SpecIndex, gid: string) => `${groupName(index, gid)} (${treeGroup(index, gid)?.count ?? 0})`;
 
-/** A group's name without its count, as the nav names it: "Define", "Technical specification", "Use cases", "Acceptance tests". */
+/** A group's name without its count, as the nav names it: "Domain model", "Aggregates", "Commands". */
 export const groupName = (index: SpecIndex, gid: string) => treeGroup(index, gid)?.label ?? gid;
 
 /** The nearest record above a group: the domain of a stage or folder, the record of a kind group. */
@@ -439,30 +435,43 @@ function groupNode(index: SpecIndex, id: string, distance: number): GraphNode {
   };
 }
 
-/** Trace mode is offered for requirements, domain rules and pattern rules only. */
+/** Trace mode is offered for every obligation: a constraint, invariant, specification, policy, domain service, UC, view or API requirement, pattern or standard rule, or a product's own obligation kind. */
 export const canTrace = (index: SpecIndex, id: string) => {
   const kind = index.byId.get(id)?.kind;
-  return kind === 'requirement' || kind === 'domain_rule' || kind === 'pattern_rule';
+  return !!kind && !!index.kinds.get(kind)?.obligation;
 };
 
 export const fileNodeId = (path: string) => `file:${path}`;
 
+const stageOfRecord = (index: SpecIndex, id: string) => index.kinds.get(index.byId.get(id)?.kind ?? '')?.stage ?? null;
+/** A record's children of one stage, in ID order. */
+const childrenIn = (index: SpecIndex, id: string, stage: string) =>
+  (index.children.get(id) ?? []).filter((c) => index.kinds.get(c.kind)?.stage === stage).sort(byIdOrder);
+
 /**
- * A requirement or domain rule's traceability chain: the flows, flow steps, views and endpoints
- * that fulfill it, the components and technical steps that satisfy it, the tests that prove it,
- * the components that implement those views and endpoints, a fulfilling or satisfying step's flow
- * and the components it uses, and the files the components and tests name.
+ * An obligation's traceability chain, left to right:
+ * - what designs it: for a UC requirement, the flow steps that fulfill it, each with its flow and the views it
+ *   happens in and the commands and queries it invokes; for a constraint, its value object; for an invariant, its
+ *   aggregate;
+ * - the technical records that implement it: its own technical children (a policy's event handler, a
+ *   specification's predicate, a domain service's service, a product kind's), a constraint's value object's value
+ *   type, an invariant's aggregate's repository and the tables whose unique key enforces it, a step's invoked
+ *   operation's handler, and for a standard rule what meets it;
+ * - the tests that prove it: its children in the test plan;
+ * - the files the technical records and tests name.
  */
 export function traceChain(index: SpecIndex, focus: string, filters: Filters = NO_FILTERS): Neighborhood {
   if (!canTrace(index, focus)) return { focus, mode: 'trace', nodes: [], edges: [], via: new Map() };
   const shownRelation = (relation: string) => !filters.hiddenRelations.has(relation);
   const shownKind = (kind: string) => !filters.hiddenKinds.has(kind);
+  const record = index.byId.get(focus)!;
 
   const nodes = new Map<string, GraphNode>([[focus, recordNode(index, focus, 0, 'trace')]]);
   const edges = new Map<string, GraphEdge>();
   const via = new Map<string, string>();
-  const add = (source: string, relation: string, target: string, reached: string, from: string, distance: number) => {
+  const add = (source: string, relation: string, target: string, reached: string, from: string) => {
     if (!shownRelation(relation)) return false;
+    const distance = (nodes.get(from)?.distance ?? 0) + 1;
     const node = nodes.get(reached) ?? (index.byId.has(reached) ? recordNode(index, reached, distance, 'trace') : null);
     if (!node || !shownKind(node.kind)) return false;
     if (!nodes.has(reached)) { nodes.set(reached, node); via.set(reached, from); }
@@ -470,41 +479,48 @@ export function traceChain(index: SpecIndex, focus: string, filters: Filters = N
     edges.set(edgeId(e), { ...e, id: edgeId(e) });
     return true;
   };
-
-  const direct = (index.incoming.get(focus) ?? []).filter((l) => ['fulfills', 'satisfies', 'proves'].includes(l.relation));
-  for (const l of direct) add(l.source, l.relation, l.target, l.source, focus, 1);
-
-  // Components that implement a fulfilling view or endpoint carry the chain on to code.
-  for (const l of direct.filter((d) => d.relation === 'fulfills' && nodes.has(d.source))) {
-    for (const impl of (index.incoming.get(l.source) ?? []).filter((i) => i.relation === 'implements')) {
-      add(impl.source, impl.relation, impl.target, impl.source, l.source, 2);
-    }
-  }
-
-  // A fulfilling flow step, or a satisfying technical step, brings its flow (its parent) and the components it uses.
-  const stepFlows: Record<string, { relation: string; flow: string }> = {
-    flow_step: { relation: 'fulfills', flow: 'flow' },
-    design_step: { relation: 'satisfies', flow: 'design_flow' },
+  /** A record's technical children, each drawn from it. */
+  const technical = (id: string) => {
+    for (const t of childrenIn(index, id, 'technical-specification')) add(id, PARENT, t.id, t.id, id);
   };
-  for (const l of direct.filter((d) => nodes.has(d.source))) {
-    const step = index.byId.get(l.source)!;
-    const shape = stepFlows[step.kind];
-    if (!shape || shape.relation !== l.relation) continue;
-    if (step.parent && index.byId.get(step.parent)?.kind === shape.flow) add(step.parent, PARENT, step.id, step.parent, step.id, 2);
-    for (const use of (index.outgoing.get(step.id) ?? []).filter((u) => u.relation === 'uses' && index.byId.get(u.target)?.kind === 'component')) {
-      add(use.source, use.relation, use.target, use.target, step.id, 2);
+
+  if (record.kind === 'uc_requirement') {
+    // The steps that fulfill it, each with its flow, where it happens and what it invokes, and that operation's handler.
+    for (const l of (index.incoming.get(focus) ?? []).filter((x) => x.relation === 'fulfills')) {
+      if (!add(l.source, l.relation, l.target, l.source, focus)) continue;
+      const step = index.byId.get(l.source)!;
+      if (step.parent && index.byId.get(step.parent)?.kind === 'flow') add(step.parent, PARENT, step.id, step.parent, step.id);
+      for (const out of (index.outgoing.get(step.id) ?? []).filter((x) => x.relation === 'happens_in' || x.relation === 'invokes')) {
+        if (add(out.source, out.relation, out.target, out.target, step.id) && out.relation === 'invokes') technical(out.target);
+      }
     }
   }
+  if (record.kind === 'constraint' && record.parent) {
+    // Its value object, and the value type that implements the value object and so its constraints.
+    if (add(record.parent, PARENT, focus, record.parent, focus)) technical(record.parent);
+  }
+  if (record.kind === 'invariant' && record.parent) {
+    // Its aggregate, the aggregate's repository, and each table whose unique key enforces it.
+    if (add(record.parent, PARENT, focus, record.parent, focus)) technical(record.parent);
+    const tables = new Set(index.workspace.parts.filter((p) => p.table === 'table_key' && p.row.invariant_id === focus).map((p) => p.owner));
+    for (const t of [...tables].sort()) add(t, ENFORCES, focus, t, focus);
+  }
+  technical(focus);
+  // What meets a standard rule implements it.
+  for (const l of (index.incoming.get(focus) ?? []).filter((x) => x.relation === 'meets')) add(l.source, l.relation, l.target, l.source, focus);
+  // The tests that prove it.
+  for (const t of childrenIn(index, focus, 'test-plan')) add(focus, PARENT, t.id, t.id, focus);
 
-  // Files named by the components and tests in the chain.
+  // Files named by the technical records and tests in the chain.
   if (shownRelation(NAMES) && shownKind(FILE_KIND)) {
     for (const node of [...nodes.values()]) {
-      const r = index.byId.get(node.id)!;
-      const path = r.kind === 'component' ? textOf(r.row, 'file') : r.kind === 'test' ? textOf(r.row, 'file') : undefined;
+      const stage = stageOfRecord(index, node.id);
+      if (stage !== 'technical-specification' && stage !== 'test-plan') continue;
+      const path = textOf(index.byId.get(node.id)!.row, 'file');
       if (!path) continue;
       const id = fileNodeId(path);
       if (!nodes.has(id)) {
-        nodes.set(id, { id, distance: node.distance + 1, kind: FILE_KIND, title: path, stage: 'file', column: TRACE_COLUMNS[FILE_KIND], row: 0 });
+        nodes.set(id, { id, distance: node.distance + 1, kind: FILE_KIND, title: path, stage: 'file', column: TRACE_COLUMNS.file, row: 0 });
         via.set(id, node.id);
       }
       const e = { source: node.id, relation: NAMES, target: id };
@@ -528,28 +544,27 @@ export function relationsOf(index: SpecIndex): string[] {
   return [PARENT, ...new Set(index.workspace.relations.map((r) => r.relation))];
 }
 
-export const RELATION_LABELS: Record<string, string> = { [PARENT]: 'parent / child', [NAMES]: 'names file' };
+export const RELATION_LABELS: Record<string, string> = { [PARENT]: 'parent / child', [NAMES]: 'names file', [ENFORCES]: 'enforces (unique key)' };
 /** A relation's label by its code (legends, filters), from the meta-model's labels (LA-EXP-V03-R07). */
 export const graphRelationLabel = (relation: string, index?: SpecIndex) => RELATION_LABELS[relation] ?? relationLabelOf(index?.workspace.relations ?? [], relation);
 /** One edge's label, read from its source, or from its target with `from`. */
 export const graphEdgeLabel = (index: SpecIndex, e: { source: string; relation: string; target: string }, from: 'source' | 'target' = 'source') =>
   RELATION_LABELS[e.relation] ?? linkLabel(index, e, from);
 
-/** The kinds a person can filter on, grouped by stage in the meta-model's order. */
-export function kindGroups(index: SpecIndex): { stage: string; title: string; kinds: { kind: string; label: string }[] }[] {
-  const groups = [
-    { stage: 'define', title: 'Define' },
-    { stage: 'design', title: 'Design' },
+/** The kinds a person can filter on, grouped by the five stages in order, then the structural kinds (product, open question). */
+export function kindGroups(index: SpecIndex): { stage: Stage | ''; title: string; kinds: { kind: string; label: string }[] }[] {
+  const groups: { stage: Stage | ''; title: string }[] = [
+    ...index.workspace.stages.map((s) => ({ stage: s.stage, title: s.label })),
     { stage: '', title: 'Structural' },
   ];
   return groups.map((g) => ({
     ...g,
-    kinds: index.workspace.kinds.filter((k) => k.stage === g.stage).map((k) => ({ kind: k.kind, label: kindLabel(index, k.kind) })),
+    kinds: index.workspace.kinds.filter((k) => (k.stage ?? '') === g.stage).map((k) => ({ kind: k.kind, label: kindLabel(index, k.kind) })),
   }));
 }
 
-/** The relations kept by the "traceability only" preset. */
-export const TRACE_RELATIONS = new Set(['satisfies', 'proves', 'fulfills', NAMES]);
+/** The relations kept by the "traceability only" preset: what a trace draws. */
+export const TRACE_RELATIONS = new Set([PARENT, 'fulfills', 'invokes', 'happens_in', 'meets', ENFORCES, NAMES]);
 
 /** The coverage gaps recorded for one record (what is missing: 'satisfies' or 'proves'). */
 export function gapsFor(index: SpecIndex, id: string): ('satisfies' | 'proves')[] {

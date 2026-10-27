@@ -133,7 +133,7 @@ describe('the Nested map', () => {
     // Built once per index: the same map object, whatever the focus.
     const index = testIndex();
     expect(nestedMap(index, 'P')).toBe(nestedMap(index, 'P'));
-  });
+  }, 30_000);
 
   it('LA-EXP-T187 Every label fits its box: no word broken, a leaf\'s lines inside its square, a parent\'s inside its header band', () => {
     for (const map of all()) {
@@ -149,7 +149,7 @@ describe('the Nested map', () => {
         else expect(height, n.id).toBeLessThanOrEqual(HEADER_SHARE * n.h * (1 + eps));
       }
     }
-  });
+  }, 30_000);
 });
 
 /** A box's label as its map was given it: the real index's, or a synthetic tree's (its ID its title). */

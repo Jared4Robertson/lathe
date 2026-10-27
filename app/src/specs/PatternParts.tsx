@@ -22,7 +22,7 @@ function RuleTags({ rule }: { rule: SpecRecord }) {
   );
 }
 
-/** Designed, built and proved marks for a rule in one domain, or Not applicable with its reasons, or Waived here. */
+/** A rule's proved mark in one domain, or Not applicable with its reasons, or Waived here. */
 export function RuleMarks({ index, status }: { index: SpecIndex; status: RuleStatus }) {
   if (!status.applies && status.why === 'waived') {
     const { setting } = status.condition;
@@ -56,11 +56,9 @@ export function RuleMarks({ index, status }: { index: SpecIndex; status: RuleSta
   );
   return (
     <span className="rule-marks">
-      {mark('designed', status.designedBy, 'designed', 'No component in this domain satisfies it.')}
-      {mark('built', status.builtBy, 'built', 'No component in this domain whose file exists satisfies it.')}
-      {mark('proved', status.provedBy, 'proved', 'No automated or manual test in this domain proves it.')}
+      {mark('proved', status.provedBy, 'proved', 'No automated or manual pattern rule test proves it in this domain.')}
       {status.provedBy.length === 0 && status.plannedBy.length > 0 && (
-        <span className="rule-mark planned" title={`A planned test is meant to prove it: ${list(status.plannedBy)}. A planned test is not proof.`} data-mark="planned">planned</span>
+        <span className="rule-mark planned" title={`A test not automated yet is meant to prove it: ${list(status.plannedBy)}. It is not proof yet.`} data-mark="planned">not automated yet</span>
       )}
     </span>
   );
@@ -68,8 +66,8 @@ export function RuleMarks({ index, status }: { index: SpecIndex; status: RuleSta
 
 /**
  * The domain page's "Patterns we follow": each pattern the domain's use cases follow, one row
- * each, with its rules folded under it, and per rule whether this domain designs, builds and
- * proves it, or marks it not applicable.
+ * each, with its rules folded under it, and per rule whether this domain proves it or marks it
+ * not applicable.
  */
 export function DomainPatterns({ index, domainId, query }: { index: SpecIndex; domainId: string; query?: string }) {
   const followed = patternsFollowedBy(index, domainId);
@@ -187,7 +185,7 @@ export function PatternSections({ index, pattern }: { index: SpecIndex; pattern:
               </div>
               {rules.length > 0 && (
                 <table className="data-table pattern-rule-status">
-                  <caption className="sr-only">How {domain} designs, builds and proves each rule of {pattern.id}</caption>
+                  <caption className="sr-only">How {domain} proves each rule of {pattern.id}</caption>
                   <thead><tr><th scope="col">Rule</th><th scope="col">In {domain}</th></tr></thead>
                   <tbody>
                     {rules.map((r) => (
@@ -207,7 +205,7 @@ export function PatternSections({ index, pattern }: { index: SpecIndex; pattern:
   );
 }
 
-/** A pattern rule's page: the domains that owe it and how each designs, builds and proves it. */
+/** A pattern rule's page: the domains that owe it and how each proves it. */
 export function PatternRuleSections({ index, rule }: { index: SpecIndex; rule: SpecRecord }) {
   const domains = rule.parent ? followingDomains(index, rule.parent) : [];
   return (

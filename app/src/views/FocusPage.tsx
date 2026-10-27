@@ -14,12 +14,11 @@ import { BottomSheet } from '../shell/BottomSheet';
 import { Tooltip } from '../shell/Tooltip';
 import { usePanelSize, writePref } from '../shell/prefs';
 import { useNarrow } from '../shell/useNarrow';
-import type { Problem, SpecIndex, SpecState } from '../specs/data';
+import type { Problem, SpecIndex, SpecRecord, SpecState } from '../specs/data';
 import { Markdown } from '../specs/Markdown';
 import { PageHeader, ProblemBadge, RecordTree, Section, listTitle } from '../specs/parts';
 import { RecordContent, RecordEyebrow } from '../specs/RecordContent';
-import { testGroups } from '../specs/folders';
-import { GroupSections } from '../specs/FolderGroups';
+import { foldedChildren } from '../specs/folders';
 import { DomainWiki, NotFound, ProductWiki, problemsUnder } from '../specs/SpecPages';
 import { addressOf, HOME_PATH, focusOf, VIEW_LABELS, VIEW_NAMES, viewsFromSearch, viewsOffered, viewsShown, withView, type FocusRoute, type ViewName } from './address';
 import { SideBar } from './SideBar';
@@ -637,7 +636,7 @@ function PageTitle({ index, route, fixed = false }: { index: SpecIndex; route: F
     problems = index.problemsFor.get(focus) ?? [];
   } else {
     const parent = index.byId.get(groupOwner(index, focus))!;
-    // The stage and folders above the group in the tree, named as in the side nav and the domain page: "Design › Interaction design".
+    // The stage and folders above the group in the tree, named as in the side nav and the domain page: "Domain model › Aggregates".
     const folder: string[] = [];
     for (let at = treeParent(index, focus); at !== null && !index.byId.has(at); at = treeParent(index, at)) folder.unshift(treeGroup(index, at)?.label ?? at);
     eyebrow = <><Link to={addressOf(parent.id)}>{parent.title}</Link> · {folder.length > 0 && <span className="group-folder">{folder.join(' › ')} · </span>}Group</>;
@@ -675,22 +674,34 @@ function GroupWiki({ index, gid }: { index: SpecIndex; gid: string }) {
   const kind = treeGroup(index, gid)?.kind;
   const members = groupMembers(index, gid);
   const parentRecord = index.byId.get(parent)!;
-  const description = kind ? index.kinds.get(kind)?.description : undefined;
-  const tests = members.length > 0 && members.every((m) => m.kind === 'test');
-  // A list of one kind is titled by that kind ("Use cases", "Tests"); a mixed one stays "Members".
+  const group = treeGroup(index, gid);
+  const stage = group?.role === 'stage' ? index.workspace.stages.find((s) => groupName(index, gid) === s.label) : undefined;
+  const description = kind ? index.kinds.get(kind)?.description : stage?.description;
+  // In a stage or its folders, a row folds only what is of its own stage, as in the nav; under a record, all its children.
+  const nested = group?.role === 'kind' && index.byId.has(parent) && parentRecord.kind !== 'product' && parentRecord.kind !== 'domain' ? undefined : (r: SpecRecord) => foldedChildren(index, r);
+  // A list of one kind is titled by that kind ("Use cases", "Commands"); a mixed one stays "Members".
   const membersTitle = listTitle(index, members, 'Members');
+  const kinds = [...new Set(members.map((m) => m.kind))];
   return (
     <div className="spec-body">
       <p className="group-intro">
         {groupName(index, gid)} of <Link to={addressOf(parent)} className="record-link"><code>{parent}</code> <span>{parentRecord.title}</span></Link>
       </p>
       {description && <Markdown source={description} />}
-      <Section title={membersTitle} count={members.length}>
-        {/* Tests are read in the test plan's groups, as on the domain page and in the nav. */}
-        {tests && testGroups(index, gid, members).length > 0
-          ? <GroupSections index={index} groups={testGroups(index, gid, members)} level={3} />
-          : <RecordTree index={index} records={members} label={`${membersTitle} of ${gid}`} />}
-      </Section>
+      {/* A stage lists its folders, one section per kind. */}
+      {kinds.length > 1 ? kinds.map((k) => {
+        const records = members.filter((m) => m.kind === k);
+        const title = listTitle(index, records, 'Members');
+        return (
+          <Section key={k} title={title} count={records.length}>
+            <RecordTree index={index} records={records} label={`${title} of ${gid}`} nested={nested} />
+          </Section>
+        );
+      }) : (
+        <Section title={membersTitle} count={members.length}>
+          <RecordTree index={index} records={members} label={`${membersTitle} of ${gid}`} nested={nested} />
+        </Section>
+      )}
     </div>
   );
 }

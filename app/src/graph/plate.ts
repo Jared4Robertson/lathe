@@ -1,4 +1,4 @@
-import { kindLabel, type SpecIndex } from '../specs/data';
+import { kindLabel, type SpecIndex, type Stage as SchemaStage } from '../specs/data';
 import { FILE_KIND, stageOf } from './model';
 import type { MapNode } from './map';
 import type { NestedNode } from './nested';
@@ -19,7 +19,7 @@ import {
 /** How a box is drawn: a Tree box or a trace's in its kind's shape, a Nested box, a Voronoi cell. */
 export type PlateView = 'tree' | 'nested' | 'voronoi' | 'trace';
 /** Which colors a box takes: its stage's, a group's, a file's. */
-export type Stage = 'define' | 'design' | 'structural' | 'group' | 'file';
+export type Stage = SchemaStage | 'structural' | 'group' | 'file';
 
 /** One line of a label, at its place in the map: its text as the map broke it (a space it ends with is not drawn), its left end and baseline, its font size, and its width in map units. */
 export interface PlateLine { text: string; face: Face; size: number; x: number; baseline: number; top: number; height: number; width: number; tone: 'ink' | 'muted' }
@@ -73,7 +73,7 @@ function stageFor(index: SpecIndex, id: string, kind: string): Stage {
   if (id.startsWith('file:')) return 'file';
   if (!index.byId.has(id)) return 'group';
   const stage = stageOf(index, kind);
-  return stage === 'define' || stage === 'design' ? stage : 'structural';
+  return stage === '' || stage === 'file' || stage === 'group' ? 'structural' : stage;
 }
 
 /** The size of an icon before the kind and ID line, at text scale 1: a shape's 14 by 10, a mark's 10 by 10, and the gap after each. */

@@ -1,53 +1,33 @@
-import type { Coverage, Problem } from '../../../lathe/src/types';
 import type { SpecData } from '../../../lathe/src/server/contract';
-import { addRows, fixture, indexOf } from '../fixtures/load';
+import { addRows, indexOf } from '../fixtures/load';
+import { modelWorkspace } from '../fixtures/model';
 
-// A small workspace for the graph tests (fixtures/data/graph/): one product P with one domain P-D,
-// an aggregate with two domain rules, a use case, a view, an endpoint, two components, a test and a
-// question.
+// The graph tests' workspace: the `model` fixture (fixtures/model.ts), product P with domains P-D and
+// P-E, and variants of it for the tests of groups.
 
-export const PROBLEMS: Problem[] = [
-  { severity: 'error', check: 'run-by-mentions-id', record: 'P-D-T01', message: 'test/thing.test.ts does not mention P-D-T01' },
-  { severity: 'warning', check: 'rule-not-proved', record: 'P-D-DR01', message: 'No test proves P-D-DR01' },
-  { severity: 'warning', check: 'rule-not-satisfied', record: 'P-D-DR02', message: 'No component satisfies P-D-DR02' },
-  { severity: 'warning', check: 'rule-not-proved', record: 'P-D-DR02', message: 'No test proves P-D-DR02' },
-];
+export { PROBLEMS } from '../fixtures/model';
 
-const coverage = (): Coverage[] => [{
-  domain: 'P-D',
-  obligations: [
-    { kind: 'domain_rule', label: 'Domain rule', total: 2, designed: 1, built: 1, proved: 0, planned: 0, planned_any: 0 },
-    { kind: 'requirement', label: 'UC requirement', total: 1, designed: 1, built: 1, proved: 1, planned: 0, planned_any: 0 },
-  ],
-  tests: { automated: 1, manual: 0, planned: 0 },
-  gaps: [
-    { id: 'P-D-DR01', kind: 'domain_rule', missing: 'proves' },
-    { id: 'P-D-DR02', kind: 'domain_rule', missing: 'satisfies' },
-    { id: 'P-D-DR02', kind: 'domain_rule', missing: 'proves' },
-  ],
-}];
-
-export const testWorkspace = (): SpecData => fixture('graph', { problems: structuredClone(PROBLEMS), coverage: coverage() });
+export const testWorkspace = (): SpecData => modelWorkspace();
 
 export const testIndex = () => indexOf(testWorkspace());
 
-/** A second use case, P-D-UC02, with `count` requirements. */
+/** A second use case, P-D-UC02, in P-D-CAP01, with `count` UC requirements. */
 function withReturns(count: number): SpecData {
   const w = testWorkspace();
-  addRows(w, 'use_case', { id: 'P-D-UC02', title: 'Return a thing', domain_id: 'P-D' });
-  for (let i = 1; i <= count; i++) addRows(w, 'requirement', { id: `P-D-UC02-R0${i}`, title: `Return rule ${i}`, use_case_id: 'P-D-UC02', statement: `Return rule ${i} MUST hold.` });
+  addRows(w, 'use_case', { id: 'P-D-UC02', title: 'Return a thing', capability_id: 'P-D-CAP01' });
+  for (let i = 1; i <= count; i++) addRows(w, 'uc_requirement', { id: `P-D-UC02-R0${i}`, title: `Return rule ${i}`, use_case_id: 'P-D-UC02', statement: `Return rule ${i} MUST hold.` });
   return w;
 }
 
 /**
- * The test workspace with a second use case that has six requirements and an open question: more
- * than one kind of child, so it reaches them through groups.
+ * The test workspace with a second use case that has six UC requirements, and a command under Shelf
+ * (P-D-A4), which then holds an entity and a command: more than one kind of child, so it reaches them
+ * through groups.
  */
-export function groupedWorkspace(): SpecData {
-  return addRows(withReturns(6), 'question', { id: 'P-D-UC02-Q01', title: 'Can a thing come back broken?', product_id: 'P', domain_id: 'P-D', use_case_id: 'P-D-UC02', owner: 'Ana' });
-}
+export const groupedWorkspace = (): SpecData =>
+  addRows(withReturns(6), 'command', { id: 'P-D-CMD06', title: 'Restock shelf', aggregate_id: 'P-D-A4' });
 
-/** The test workspace with a second use case that has seven requirements and nothing else: one kind, so no groups. */
+/** The test workspace with a second use case that has seven UC requirements and nothing else: one kind, so no groups. */
 export const manyOfOneKindWorkspace = (): SpecData => withReturns(7);
 
 /** A map's groups of siblings (LA-EXP-DR58): its roots, then each parent's children, in the tree's order. */

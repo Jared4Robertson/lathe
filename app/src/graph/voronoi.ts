@@ -8,7 +8,7 @@ import { treeChildren } from './tree';
 
 // The graph's Voronoi map (LA-EXP-DR64): the same tree as the Tree and Nested maps, one product's,
 // the product its single root, drawn as a Voronoi treemap. The product is a hexagon split into
-// polygon cells, one per domain; a domain's cell is split into Define and Design, and so on down.
+// polygon cells, one per stage and domain; a domain's cell is split into its stages, and so on down.
 // Laid out once per spec load and never changed by the focus: focusing moves the camera (camera.ts).
 //
 // The one rule (LA-EXP-DR58), top-down from the product's hexagon, MAP_SIZE across: siblings are

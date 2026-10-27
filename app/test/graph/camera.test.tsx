@@ -34,7 +34,7 @@ describe('graph camera', () => {
     const w = 1000;
     const h = 800;
     const strip = Math.min(PARENT_STRIP_MAX, w * PARENT_STRIP);
-    for (const [focus, depth] of [['P-D', 1], ['P-D', 2], ['P-D/define', 3], ['P-D-UC01', 1], ['P-D/question', 1]] as const) {
+    for (const [focus, depth] of [['P-D', 1], ['P-D', 2], ['P-D/use-cases', 3], ['P-D-UC01', 1], ['P-D/question', 1]] as const) {
       const v = frameOnMap(map, focus, depth, w, h);
       const f = map.nodes.get(focus)!;
       const screen = (x: number, y: number) => ({ x: x * v.zoom + v.x, y: y * v.zoom + v.y });
@@ -136,7 +136,7 @@ describe('graph camera on the page', () => {
 describe('graph camera in the Nested layout', () => {
   const map = nestedMap(testIndex(), 'P');
   it('LA-EXP-T188 The camera frames the focus box, whatever the depth, and draws each box in view and big enough with its label', () => {
-    for (const focus of ['P', 'P-D', 'P-D/define', 'P-D-UC01', 'P-D-UC01-R01']) {
+    for (const focus of ['P', 'P-D', 'P-D/use-cases', 'P-D-UC01', 'P-D-UC01-R01']) {
       const n = map.nodes.get(focus)!;
       const v = frameNested(map, focus, 1000, 800);
       // Centered, within the padding, never past MAX_ZOOM.

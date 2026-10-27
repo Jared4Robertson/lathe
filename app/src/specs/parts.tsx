@@ -2,7 +2,7 @@ import { lowerLabel, plural as pluralOf } from '../plural';
 import { createContext, Fragment, useContext, useState, type AnchorHTMLAttributes, type ReactNode } from 'react';
 import { Link } from '../router';
 import { checkPagePath } from '../format/reference';
-import { textOf, kindLabel, partsOf, problemOrder, type Problem, type SpecIndex, type SpecRecord } from './data';
+import { textOf, kindLabel, partsOf, problemOrder, type Problem, type SpecIndex, type SpecRecord, type Stage } from './data';
 import { groupRecords } from './groups';
 import { addressOf } from '../views/address';
 import { ActionsSlotContext } from '../components/ActionsSlot';
@@ -145,24 +145,48 @@ export function ProblemBadge({ problems }: { problems: Problem[] }) {
 
 // ---------- Test states ----------
 
-export type TestState = 'automated' | 'manual' | 'planned';
+export type TestState = 'automated' | 'manual' | 'not automated yet';
 
 const STATE_MEANING: Record<TestState, string> = {
   automated: 'Automated: a file runs it. It counts as proof.',
   manual: 'Manual: a person follows its procedure. It counts as proof.',
-  planned: 'Planned: not written yet. It does not count as proof.',
+  'not automated yet': 'Not automated yet: no file runs it. It does not count as proof.',
 };
+/** The class a state's tag takes. */
+const STATE_CLASS: Record<TestState, string> = { automated: 'automated', manual: 'manual', 'not automated yet': 'not-automated' };
 
-/** A test's state: its required `state` column, one of automated, manual and planned. */
-export const testState = (record: SpecRecord): string => textOf(record.row, 'state')?.trim() || 'automated';
+/** Whether a kind is a test: one of the test plan's kinds. */
+export const isTestKind = (index: SpecIndex, kind: string) => index.kinds.get(kind)?.stage === 'test-plan';
 
-/** A small tag naming a test's state. A planned test's tag looks unfinished (dashed). */
+/** A test's state, from its run by: automated, manual or not automated yet. */
+export const testState = (record: SpecRecord): string => textOf(record.row, 'state').trim();
+
+/** Whether a test is not automated yet, so it does not count as proof. */
+export const notAutomatedYet = (record: SpecRecord) => testState(record) === 'not automated yet';
+
+/** A small tag naming a test's state, and its level. A test not automated yet looks unfinished (dashed). */
 export function TestStateTag({ record }: { record: SpecRecord }) {
   const state = testState(record);
   const known = state in STATE_MEANING;
   return (
-    <span className={`test-state ${known ? state : 'unknown'}`} title={known ? STATE_MEANING[state as TestState] : 'Not a known test state.'}>
+    <span className={`test-state ${known ? STATE_CLASS[state as TestState] : 'unknown'}`} title={known ? STATE_MEANING[state as TestState] : 'Not a known test state.'}>
       {state}
+    </span>
+  );
+}
+
+/** A stage's color mark: a small square in the stage's color, hidden from assistive technology (the label beside it names the stage). */
+export function StageMark({ stage }: { stage: Stage }) {
+  return <span className={`stage-mark stage-${stage}`} aria-hidden="true" />;
+}
+
+/** A kind's name in its stage's color, as a badge: the kind's label, and its stage for assistive technology and the tooltip. */
+export function KindBadge({ index, kind }: { index: SpecIndex; kind: string }) {
+  const stage = index.kinds.get(kind)?.stage ?? null;
+  const stageName = stage ? index.workspace.stages.find((s) => s.stage === stage)?.label ?? stage : null;
+  return (
+    <span className={`kind-badge ${stage ? `stage-${stage}` : 'stage-none'}`} title={stageName ? `${kindLabel(index, kind)}, in ${stageName}` : kindLabel(index, kind)}>
+      {kindLabel(index, kind)}
     </span>
   );
 }
@@ -176,23 +200,33 @@ export function gapsOf(index: SpecIndex, id: string): string[] {
   return (index.coverage.get(domain)?.gaps ?? []).filter((g) => g.id === id).map((g) => g.missing);
 }
 
-// Fields worth showing in a list row, by kind.
+// Fields worth showing in a list row, by kind; a technical record shows its file, a test its level and file.
 const ROW_FIELDS: Record<string, string[]> = {
   endpoint: ['method', 'route'],
+  view: ['route'],
   integration: ['system'],
-  component: ['component_type', 'file'],
-  test: ['test_type', 'file'],
+  domain: ['subdomain_type'],
+  table: ['name', 'storage'],
+};
+
+const rowFields = (index: SpecIndex, kind: string): string[] => {
+  const stage = index.kinds.get(kind)?.stage;
+  if (ROW_FIELDS[kind]) return ROW_FIELDS[kind];
+  if (stage === 'test-plan') return ['level', 'file'];
+  if (stage === 'technical-specification') return ['file'];
+  return [];
 };
 
 /** One record as a list row: its link, a few fields, its test state, coverage marks and problems. */
 export function RecordRowBody({ index, record, showKind = false }: { index: SpecIndex; record: SpecRecord; showKind?: boolean }) {
-  // A use case's row names its actors.
+  // A use case's row names its actors; a published event says so.
   const actors = record.kind === 'use_case' ? partsOf(index, record.id, 'use_case_actor').map((a) => textOf(a, 'role_name')).join(', ') : '';
-  const fields = [actors, ...(ROW_FIELDS[record.kind] ?? []).map((f) => textOf(record.row, f))].filter(Boolean);
-  const isTest = record.kind === 'test';
+  const published = record.kind === 'domain_event' && record.row.published === true ? 'published' : '';
+  const fields = [actors, published, ...rowFields(index, record.kind).map((f) => textOf(record.row, f))].filter(Boolean);
+  const isTest = isTestKind(index, record.kind);
   const gaps = gapsOf(index, record.id);
   return (
-    <div className={`record-row ${isTest && testState(record) === 'planned' ? 'planned' : ''}`}>
+    <div className={`record-row ${isTest && notAutomatedYet(record) ? 'not-automated' : ''}`}>
       <RecordLink index={index} id={record.id} row />
       <span className="row-tags">
         {showKind && <small className="meta">{index.kinds.get(record.kind)?.label ?? record.kind}</small>}
@@ -201,7 +235,7 @@ export function RecordRowBody({ index, record, showKind = false }: { index: Spec
         {(index.outgoing.get(record.id) ?? []).filter((l) => l.relation === 'follows').map((l) => (
           <span key={l.target} className="pattern-tag" title={`Follows the pattern ${l.target}`}>{index.byId.get(l.target)?.title ?? l.target}</span>
         ))}
-        {gaps.map((g) => <span key={g} className="badge warning">{g === 'satisfies' ? 'not satisfied' : 'not proved'}</span>)}
+        {gaps.map((g) => <span key={g} className="badge warning">{g === 'satisfies' ? 'not designed' : 'not proved'}</span>)}
         <ProblemBadge problems={index.problemsFor.get(record.id) ?? []} />
       </span>
     </div>
@@ -231,26 +265,29 @@ export function listTitle(index: SpecIndex, records: readonly SpecRecord[], mixe
  * shape of every list of children on a wiki page and in the side bar. With `showKind`, each row
  * names its kind, but only when the list holds more than one kind.
  */
-export function RecordTree({ index, records, label, query, showKind = false, bulk = true }: {
+export function RecordTree({ index, records, label, query, showKind = false, bulk = true, nested }: {
   index: SpecIndex;
   records: readonly SpecRecord[];
   label: string;
   query?: string;
   showKind?: boolean;
   bulk?: boolean;
+  /** What folds under a row: its children by default; a stage's folder folds only those of its stage. */
+  nested?: (record: SpecRecord) => SpecRecord[];
 }) {
   // Rows are told apart by kind only when there is more than one kind to tell apart.
   const tagKinds = showKind && new Set(records.map((r) => r.kind)).size > 1;
+  const nestedOf = nested ?? ((r: SpecRecord) => index.children.get(r.id) ?? []);
   return (
     <TreeList
       label={label}
       items={records}
       itemKey={(r) => r.id}
-      nestedOf={(r) => index.children.get(r.id) ?? []}
+      nestedOf={nestedOf}
       renderRow={(r) => <RecordRowBody index={index} record={r} showKind={tagKinds} />}
       searchText={recordText}
-      countLabel={(_, nested) => nestedCount(index, nested)}
-      nestedLabel={(r) => `${listTitle(index, index.children.get(r.id) ?? [], 'Children')} of ${r.id}`}
+      countLabel={(_, inner) => nestedCount(index, inner)}
+      nestedLabel={(r) => `${listTitle(index, nestedOf(r), 'Children')} of ${r.id}`}
       query={query}
       bulk={bulk}
     />

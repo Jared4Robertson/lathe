@@ -4,20 +4,21 @@ import { checkPagePath } from '../format/reference';
 import { type SpecIndex, type SpecRecord } from './data';
 import { groupRecords } from './groups';
 import { RecordLink, RecordRowBody, Section, SpecLink, TestStateTag, idText } from './parts';
-import { isBuilt, traceEmpty, traceOf, type GapKind, type Judgment, type TraceGap, type TraceGroup } from './trace';
+import { isBuilt, traceEmpty, traceOf, type GapKind, type Judgment, type Trace, type TraceGap, type TraceGroup } from './trace';
 
-// A record's Traceability section (LA-TRC-UC14): what designs, proves, supports and carries it
-// out, or what it designs, proves and uses, each list titled by its links' label. For an obligation,
-// a callout names each gap coverage finds, linked to the check that reports it; a pattern rule has
-// one line per domain owing it. A use case shows its requirements in a table. The logic is in
-// trace.ts.
+// A record's Traceability section (LA-TRC-UC14): for an obligation, what designs it (the steps that
+// fulfill a UC requirement, the technical records that implement anything else) and the tests that
+// prove it, then its other links, each list titled by its label; a callout names each gap coverage
+// finds, linked to the check that reports it, and a pattern rule has one line per domain owing it. A
+// use case shows its UC requirements in a table; a test shows what it proves and how it is run. The
+// logic is in trace.ts.
 
 /** What each gap is called, in the wiki's callouts and the side bar's Coverage gaps alike. */
 export const GAP_TEXT: Record<GapKind, { title: string; detail: string }> = {
-  'not-designed': { title: 'Not designed yet', detail: 'nothing designs it.' },
-  'not-built': { title: 'Not built yet', detail: "no designing component's file exists." },
+  'not-designed': { title: 'Not designed yet', detail: 'nothing specifies how it is carried out.' },
+  'not-built': { title: 'Not built yet', detail: 'no technical record carrying it out names a file that exists.' },
   'not-proved': { title: 'Not proved yet', detail: 'no automated or manual test proves it.' },
-  'only-planned': { title: 'Not proved yet', detail: 'its test is only planned.' },
+  'only-planned': { title: 'Not proved yet', detail: 'its test is not automated yet.' },
 };
 
 function CheckLink({ check }: { check: string }) {
@@ -75,7 +76,7 @@ function TraceList({ index, group }: { index: SpecIndex; group: TraceGroup }) {
           return (
             <div className="trace-row">
               <RecordRowBody index={index} record={record} showKind={mixed} />
-              {group.role === 'design' && record.kind === 'component' && (
+              {group.role === 'design' && index.kinds.get(record.kind)?.stage === 'technical-specification' && (
                 <span className={`rule-mark ${isBuilt(index, id) ? 'ok' : 'missing'}`} data-mark="built">{isBuilt(index, id) ? 'built' : 'not built'}</span>
               )}
             </div>
@@ -92,8 +93,8 @@ function Cell({ index, ids, flag, planned = [] }: { index: SpecIndex; ids: strin
     <span className="trace-cell">
       {ids.map((id) => <RecordLink key={id} index={index} id={id} showTitle={false} />)}
       {planned.map((id) => (
-        <span key={id} className="rule-mark planned" title={`${id} is only planned: it is not proof yet.`}>
-          <RecordLink index={index} id={id} showTitle={false} /> planned
+        <span key={id} className="rule-mark planned" title={`${id} is not automated yet: it is not proof yet.`}>
+          <RecordLink index={index} id={id} showTitle={false} /> not automated yet
         </span>
       ))}
       {flag && <span className="badge warning">{flag}</span>}
@@ -109,9 +110,9 @@ function RequirementTable({ index, useCase, rows }: { index: SpecIndex; useCase:
   return (
     <div className="table-scroll">
       <table className="data-table trace-requirements">
-        <caption className="sr-only">How each requirement of {useCase.id} is designed, built and proved</caption>
+        <caption className="sr-only">How each UC requirement of {useCase.id} is designed, built and proved</caption>
         <thead>
-          <tr><th scope="col">Requirement</th><th scope="col">Designed</th><th scope="col">Built</th><th scope="col">Proved</th></tr>
+          <tr><th scope="col">UC requirement</th><th scope="col">Designed</th><th scope="col">Built</th><th scope="col">Proved</th></tr>
         </thead>
         {/* One body per group (lathe/REFERENCE.md), the ungrouped first, each group headed by its name. */}
         {groupRecords(rows.map((r) => r.record)).map((g) => (
@@ -135,14 +136,21 @@ function RequirementTable({ index, useCase, rows }: { index: SpecIndex; useCase:
   );
 }
 
-/** The file a test runs from, with its state. */
-function RunBy({ record, file, missing }: { record: SpecRecord; file: string; missing: boolean }) {
+/** How a test is run: its level and state, and the file that runs it or why a person runs it. */
+function RunBy({ record, runBy }: { record: SpecRecord; runBy: NonNullable<Trace['runBy']> }) {
   return (
     <Section title="Run by" level={3} className="trace-group">
-      <p className="trace-run-by">
-        <code>{file}</code> <TestStateTag record={record} />
-        {missing && <> <span className="badge error">file missing</span> <CheckLink check="test-file-missing" /></>}
-      </p>
+      <dl className="fields run-by">
+        <div><dt>Level</dt><dd>{runBy.level}</dd></div>
+        <div><dt>State</dt><dd><TestStateTag record={record} /></dd></div>
+        {runBy.file && (
+          <div>
+            <dt>File</dt>
+            <dd><code>{runBy.file}</code>{runBy.missing && <> <span className="badge error">file missing</span> <CheckLink check="test-file-missing" /></>}</dd>
+          </div>
+        )}
+        {runBy.manualReason && <div><dt>Manual because</dt><dd>{runBy.manualReason}</dd></div>}
+      </dl>
     </Section>
   );
 }
@@ -156,12 +164,12 @@ export function Traceability({ index, record, skip }: { index: SpecIndex; record
       <RequirementTable index={index} useCase={record} rows={trace.requirements} />
       {trace.groups.map((g, i) => (
         <Fragment key={g.key}>
-          {/* A test's file follows what it proves and supports. */}
-          {record.kind === 'test' && trace.runBy && i === trace.groups.findIndex((x) => x.key.startsWith('in:')) && <RunBy record={record} {...trace.runBy} />}
+          {/* A test's run by follows what it proves. */}
+          {trace.runBy && i === 1 && <RunBy record={record} runBy={trace.runBy} />}
           <TraceList index={index} group={g} />
         </Fragment>
       ))}
-      {record.kind === 'test' && trace.runBy && !trace.groups.some((x) => x.key.startsWith('in:')) && <RunBy record={record} {...trace.runBy} />}
+      {trace.runBy && trace.groups.length < 2 && <RunBy record={record} runBy={trace.runBy} />}
     </Section>
   );
 }

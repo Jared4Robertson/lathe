@@ -2,28 +2,31 @@ import type { ElkNode } from 'elkjs/lib/elk-api';
 import { elkLayout } from '../elk';
 import { boxSize, type Erd, type Rect } from './erd';
 
-// Lays out an ERD with ELK's layered algorithm, left to right along its lines, as the graph does.
-// The diagram's own boxes come first in model order and the boxes from elsewhere after them, so the
-// same diagram always gets the same picture.
+// Lays out a model with ELK's layered algorithm, left to right along its lines, in event storming
+// order: policies, commands, specifications, aggregates (or entities), events, then read models and
+// queries. A box that belongs to another (an event to its aggregate or root entity, a query to its read
+// model) gets an unseen edge from it, so it sits in a later layer. The diagram's own boxes come first
+// in model order and the faded context after them, so the same diagram always gets the same picture.
 
 export function erdGraph(erd: Erd): ElkNode {
-  const ordered = [...erd.boxes.filter((b) => !b.foreign), ...erd.boxes.filter((b) => b.foreign)];
+  const ordered = [...erd.boxes.filter((b) => !b.context), ...erd.boxes.filter((b) => b.context)];
+  const ids = new Set(erd.boxes.map((b) => b.id));
+  const belongs = erd.boxes.filter((b) => b.parent && ids.has(b.parent)).map((b) => ({ sources: [b.parent!], targets: [b.id] }));
   return {
     id: 'root',
     layoutOptions: {
       'elk.algorithm': 'layered',
       'elk.direction': 'RIGHT',
       'elk.layered.considerModelOrder.strategy': 'NODES_AND_EDGES',
-      'elk.layered.spacing.nodeNodeBetweenLayers': '120',
-      'elk.spacing.nodeNode': '40',
+      'elk.layered.spacing.nodeNodeBetweenLayers': '90',
+      'elk.spacing.nodeNode': '28',
       'elk.spacing.componentComponent': '60',
-      // With domain events, each box goes in the first layer its lines allow, so an event sits in
-      // the layer right after the entity raising it and its line stays short (LA-EXP-UC11-R07);
-      // the aggregates reacting to it come after.
-      ...(erd.boxes.some((b) => b.kind === 'event') ? { 'elk.layered.layering.strategy': 'LONGEST_PATH_SOURCE' } : {}),
     },
     children: ordered.map((b) => ({ id: b.id, ...boxSize(b) })),
-    edges: erd.lines.map((l, i) => ({ id: `e${i}`, sources: [l.source], targets: [l.target] })),
+    edges: [
+      ...erd.lines.map((l, i) => ({ id: `e${i}`, sources: [l.source], targets: [l.target] })),
+      ...belongs.map((e, i) => ({ id: `b${i}`, ...e })),
+    ],
   };
 }
 
