@@ -12,6 +12,7 @@ import {
   listText,
   nextId,
   parentColumns,
+  placement,
   readSchema,
   refusalText,
   rowTables,
@@ -74,7 +75,7 @@ function kindIntro(schema: SchemaDescription, table: TableDescription): string {
   const kind = schema.kinds[table.name];
   const parts = [table.description ?? table.name];
   if (kind?.idPattern) parts.push(`ID: ${kind.idPattern}${kind.idExample ? `, such as ${kind.idExample}` : ''}.`);
-  if (kind?.parents.length) parts.push(`Parent: ${kind.parents.map((p) => `${p.kind} (${p.column})`).join(', nearer than ')}.`);
+  if (kind) parts.push(placement(kind));
   return parts.join(' ');
 }
 
@@ -89,17 +90,24 @@ export function tools(schema: SchemaDescription): Tool[] {
     {
       name: 'add',
       description:
-        'Add one row: a record to its kind (give its id, title, parent column and fields), or a part, declaration or checking row. ' +
+        'Add one row: a record to its kind (give its id, title, its parent column, or one of two for an endpoint, a table or a question, and its fields; ' +
+        'a value object, specification, view, integration or UI component has no parent column), or a part row (such as an entity field, a table key, ' +
+        'a command change or a use case actor), a declaration or a checking row. ' +
         'Name the table as the only property, with the row as its value. Use next_id for a record\'s ID. Links use link. Returns the rows added, or the refusal with its reasons.',
       inputSchema: perTable(
         tables,
-        (t) => ({
-          type: 'object',
-          description: kindIntro(schema, t),
-          properties: Object.fromEntries(t.columns.map((c) => [c.name, columnSchema(c, false, true)])),
-          required: t.columns.filter((c) => c.required).map((c) => c.name),
-          additionalProperties: false,
-        }),
+        (t) => {
+          const parents = schema.kinds[t.name]?.parents ?? [];
+          return {
+            type: 'object',
+            description: kindIntro(schema, t),
+            properties: Object.fromEntries(t.columns.map((c) => [c.name, columnSchema(c, false, true)])),
+            required: t.columns.filter((c) => c.required).map((c) => c.name),
+            // A kind with two possible parents names exactly one of them.
+            ...(parents.length > 1 ? { oneOf: parents.map((p) => ({ required: [p.column] })) } : {}),
+            additionalProperties: false,
+          };
+        },
         'The table to add to, with the row.',
       ),
     },
@@ -181,12 +189,13 @@ export function tools(schema: SchemaDescription): Tool[] {
     },
     {
       name: 'show',
-      description: 'Read one record: its fields, its parent, its parts (such as entity fields or use case steps), its children, and the links it starts and receives.',
+      description: 'Read one record: its fields, its parent (or, with no owner, its product or domain), its parts (such as entity fields, table keys or a command\'s recorded changes), its children, and the links it starts and receives.',
       inputSchema: { type: 'object', properties: { id: id('The record.') }, required: ['id'], additionalProperties: false },
     },
     {
       name: 'list',
-      description: 'Read the rows of a table, or only those under a parent: records whose parent columns name it, parts it owns, or links that start or end at it.',
+      description:
+        'Read the rows of a table, or only those under a parent: records whose parent columns name it (for a kind with no owner, those of the product or domain), parts it owns, or links that start or end at it.',
       inputSchema: {
         type: 'object',
         properties: { table: { type: 'string', enum: stored, description: 'The table.' }, parent: id('Only the rows under this record.') },
@@ -196,10 +205,15 @@ export function tools(schema: SchemaDescription): Tool[] {
     },
     {
       name: 'next_id',
-      description: 'The next free ID for a record of a kind under a parent, by the kind\'s ID pattern. IDs are never reused or renumbered.',
+      description:
+        'The next free ID for a record of a kind under a parent, by the kind\'s ID pattern. IDs are never reused or renumbered. ' +
+        'A kind with one record per parent (a flow, a repository, a constraint test) gives its one ID while it is free.',
       inputSchema: {
         type: 'object',
-        properties: { kind: { type: 'string', enum: kinds, description: 'The kind of the new record.' }, parent: id('The record it will sit under.') },
+        properties: {
+          kind: { type: 'string', enum: kinds, description: 'The kind of the new record.' },
+          parent: id('The record it will sit under. For a kind with no owner (value object, specification, view, integration, UI component), the product its ID starts with, or for a specification its domain.'),
+        },
         required: ['kind', 'parent'],
         additionalProperties: false,
       },
