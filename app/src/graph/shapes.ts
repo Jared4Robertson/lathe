@@ -5,15 +5,14 @@ import type { SpecIndex } from '../specs/data';
 // kind's shape; in the Nested and Voronoi views a box keeps its rectangle or cell and shows its
 // shape as a small mark before its kind and ID line (shape-icons.tsx).
 //
-// Every outline here is drawn by the stylesheet in one of three ways:
-// - a polygon (`clipped`): the node is clipped to it and filled with its edge color, and an inner
-//   layer inset by the edge's width and clipped the same way is its fill, so the border follows the
-//   outline in every state (a box-shadow or outline would be clipped away);
-// - rounded corners (`radius`), so the usual border, ring and focus outline follow them;
+// Every outline here is drawn by the canvas (paint.ts) in one of three ways:
+// - a polygon (`clipped`): filled, and its edge drawn inside it, so the border follows the outline
+//   in every state (hover, focus and a tap's selection color the edge);
+// - rounded corners (`radius`), its border, ring and focus outline following them;
 // - a plain box with a drawing inside it (a second border, a top bar, stripes).
-// Notches and corners grow with the box (`--box-scale`), at most a fraction of its side. Each
+// Notches and corners grow with the box (its box scale), at most a fraction of its side. Each
 // shape keeps its label in a safe area: `room`, at text scale 1, past the usual padding, which
-// the map keeps when it wraps and sizes the label (text.ts) and the stylesheet pads by, so no line
+// the map keeps when it wraps and sizes the label (text.ts) and the canvas pads by, so no line
 // or badge meets a notch or a corner.
 //
 // Pure data and geometry, with no React, so the Voronoi worker can read it.
@@ -39,7 +38,7 @@ interface ShapeSpec {
   name: string;
   kinds: string;
   room: Room;
-  /** How it is drawn: a polygon clip, rounded corners, or a box (with a drawing inside it). */
+  /** How it is drawn: a polygon, rounded corners, or a box (with a drawing inside it). */
   draw: 'clipped' | 'radius' | 'box';
 }
 
@@ -195,8 +194,8 @@ function radiiOf(shape: Shape, w: number, h: number, scale: number): [number, nu
   return null;
 }
 
-/** The notch a decoration inside a shape lines up with (a page's fold, a stack's front sheet, a flow's inner chevron), in px. */
-function notchOf(shape: Shape, w: number, h: number, scale: number): number {
+/** The notch a decoration inside a shape lines up with (a page's fold, a stack's front sheet, a flow's inner chevron), in map units. */
+export function notchOf(shape: Shape, w: number, h: number, scale: number): number {
   const points = polygonOf(shape, w, h, scale);
   if (shape === 'page') return points![1][1] * -1;
   if (shape === 'stack') return points![1][1];
@@ -204,28 +203,23 @@ function notchOf(shape: Shape, w: number, h: number, scale: number): number {
   return 0;
 }
 
-const round = (v: number) => Math.round(v * 100) / 100;
-const cssAt = (f: number, d: number) => (d === 0 ? `${f * 100}%` : f === 0 ? `${round(d)}px` : `calc(${f * 100}% ${d < 0 ? '-' : '+'} ${round(Math.abs(d))}px)`);
-
-/** A clipped shape's outline as a CSS polygon, for a box `w` by `h` at a box scale; null for a shape that is not clipped. */
-export function outlinePolygon(shape: Shape, w: number, h: number, scale: number): string | null {
-  const points = polygonOf(shape, w, h, scale);
-  return points ? `polygon(${points.map(([fx, dx, fy, dy]) => `${cssAt(fx, dx)} ${cssAt(fy, dy)}`).join(', ')})` : null;
-}
-
 /**
- * What a Tree node's style carries for its shape: its outline, a decoration's notch, and its room
- * (unitless, at text scale 1) for the stylesheet's padding and badge; nothing for a plain box.
+ * A node's outline as the canvas draws it, in map units: a polygon's corners, a rounded box's
+ * radii (an ellipse's are half its sides), or a box with the shared corner radius.
  */
-export function shapeVars(shape: Shape, w: number, h: number, scale: number): Record<string, string | number> | undefined {
-  const { room } = SHAPES[shape];
-  const vars: Record<string, string | number> = {};
-  const outline = outlinePolygon(shape, w, h, scale);
-  if (outline) vars['--outline'] = outline;
-  const n = notchOf(shape, w, h, scale);
-  if (n) vars['--notch'] = `${round(n)}px`;
-  for (const side of ['l', 'r', 't', 'b'] as const) if (room[side]) vars[`--room-${side}`] = room[side];
-  return Object.keys(vars).length > 0 ? vars : undefined;
+export type Outline =
+  | { kind: 'polygon'; points: [number, number][] }
+  | { kind: 'round'; rx: number; ry: number };
+
+/** The shared corner radius of a plain box, in map units. */
+export const BOX_RADIUS = 4;
+
+/** A shape's outline for a box at a box scale (LA-EXP-DR65). */
+export function outlineOf(shape: Shape, r: Rect, scale: number): Outline {
+  const points = polygonOf(shape, r.w, r.h, scale);
+  if (points) return { kind: 'polygon', points: points.map(([fx, dx, fy, dy]) => [r.x + fx * r.w + dx, r.y + fy * r.h + dy]) };
+  const radii = radiiOf(shape, r.w, r.h, scale);
+  return radii ? { kind: 'round', rx: radii[0], ry: radii[1] } : { kind: 'round', rx: Math.min(BOX_RADIUS, r.w / 2, r.h / 2), ry: Math.min(BOX_RADIUS, r.w / 2, r.h / 2) };
 }
 
 type Rect = { x: number; y: number; w: number; h: number };

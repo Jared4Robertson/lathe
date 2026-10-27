@@ -4,10 +4,11 @@ import { cleanup, render, waitFor } from '@testing-library/react';
 import { Legend } from '../../src/graph/panel';
 import { NODE_HEIGHT, NODE_WIDTH } from '../../src/graph/layout';
 import { parentLine } from '../../src/graph/map';
-import { MARKS, outlineInset, outlinePolygon, shapeOf, shapeVars, SHAPES, type Shape } from '../../src/graph/shapes';
+import { MARKS, outlineInset, outlineOf, shapeOf, SHAPES, type Shape } from '../../src/graph/shapes';
 import { BORDER, LABEL_PAD, LABEL_PAD_BLOCK, labelHeight, wrapLabel } from '../../src/graph/text';
 import { openApp, startAtDepth } from '../helpers';
 import { testWorkspace } from './workspace';
+import { drawnBox, scene } from './scene';
 
 // A shape for each kind (LA-EXP-DR65), a domain's hexagon among them (LA-EXP-DR61): outlines that
 // grow with the box and keep its label clear, and tree lines that meet them.
@@ -29,7 +30,7 @@ describe('a shape for each kind', () => {
     expect(chamfer(NODE_WIDTH, NODE_HEIGHT, 1)).toBe(12);
     expect(chamfer(NODE_WIDTH * 3, NODE_HEIGHT * 10, 3)).toBe(36);
     expect(chamfer(40, 4000, 1)).toBe(10);
-    expect(outlinePolygon('hexagon', NODE_WIDTH, NODE_HEIGHT, 1)).toBe('polygon(12px 0%, calc(100% - 12px) 0%, 100% 50%, calc(100% - 12px) 100%, 12px 100%, 0% 50%)');
+    expect(outlineOf('hexagon', { x: 0, y: 0, w: NODE_WIDTH, h: NODE_HEIGHT }, 1)).toEqual({ kind: 'polygon', points: [[12, 0], [NODE_WIDTH - 12, 0], [NODE_WIDTH, NODE_HEIGHT / 2], [NODE_WIDTH - 12, NODE_HEIGHT], [12, NODE_HEIGHT], [0, NODE_HEIGHT / 2]] });
     // A line out of a domain starts on its outline: at the point's tip in its middle, on the slanted side above and below.
     // A box's outline grows with its text scale (LA-EXP-DR58).
     const domain = { x: 0, y: 0, w: 400, h: 1000, text: 2.1 };
@@ -42,17 +43,17 @@ describe('a shape for each kind', () => {
     // A box's outline is its edge.
     expect(outlineInset(domain, 'box', 1, 0, 'left')).toBe(0);
 
-    // On the page a domain carries the hexagon's class and outline; every node carries its kind's shape.
+    // On the canvas a domain is drawn as the hexagon, its outline the polygon; every node in its kind's shape.
     cleanup();
     startAtDepth(1);
     await openApp('/P?view=graph', { workspace: testWorkspace() });
-    await waitFor(() => expect(document.querySelector('.react-flow__node[data-id="P-D"] .graph-node')).not.toBeNull());
-    const domainNode = document.querySelector<HTMLElement>('.react-flow__node[data-id="P-D"] .graph-node')!;
-    expect(domainNode).toHaveClass('shape-hexagon', 'is-clipped');
-    expect(domainNode.style.getPropertyValue('--outline')).toMatch(/^polygon\(/);
-    expect(document.querySelector('.react-flow__node[data-id="P"] .graph-node')).toHaveClass('shape-product');
-    expect(document.querySelector('.react-flow__node[data-id="P"] .graph-node')).not.toHaveClass('is-clipped');
-    expect(document.querySelectorAll('.graph-node.shape-hexagon')).toHaveLength(document.querySelectorAll('.graph-node.kind-domain').length);
+    await waitFor(() => expect(drawnBox('P-D')).toBeDefined());
+    expect(drawnBox('P-D')!.shape).toBe('hexagon');
+    expect(drawnBox('P-D')!.polygon).toHaveLength(6);
+    expect(drawnBox('P')!.shape).toBe('product');
+    expect(drawnBox('P')!.polygon).toBeNull();
+    const boxes = scene().boxes;
+    expect(boxes.filter((b) => b.shape === 'hexagon')).toHaveLength(boxes.filter((b) => b.kind === 'domain').length);
   });
 
   it('LA-EXP-T201 Every kind is drawn in its own shape, a group as a folder and a kind a product adds as a plain box, each shape keeping its label and badge clear of its notches and corners at every size, and the key shows every shape and mark', () => {
@@ -106,10 +107,8 @@ describe('a shape for each kind', () => {
           expect(inside(bx, y) && inside(bx - BADGE.w * text, y), `${shape} ${w}x${h}: its badge at ${y}`).toBe(true);
         }
       }
-      // The outline the page draws: a clipped shape's polygon, its notch for what it draws inside, and its room.
-      const vars = shapeVars(shape, NODE_WIDTH, NODE_HEIGHT, 1) ?? {};
-      expect(Boolean(vars['--outline']), shape).toBe(SHAPES[shape].draw === 'clipped');
-      for (const side of ['l', 'r', 't', 'b'] as const) expect(vars[`--room-${side}`] ?? 0, `${shape} room ${side}`).toBe(room[side]);
+      // The outline the canvas draws: a polygon for a clipped shape, rounded corners for every other.
+      expect(outlineOf(shape, { x: 0, y: 0, w: NODE_WIDTH, h: NODE_HEIGHT }, 1).kind, shape).toBe(SHAPES[shape].draw === 'clipped' ? 'polygon' : 'round');
     }
   });
 });

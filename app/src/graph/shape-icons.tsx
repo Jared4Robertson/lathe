@@ -1,12 +1,13 @@
 import type { Mark, Shape } from './shapes';
 
 // The small marks for a kind's shape (LA-EXP-DR65): drawn before a box's kind and ID line in the
-// Nested and Voronoi views, where every box keeps its rectangle or cell, and in the graph's key.
+// Nested and Voronoi views, where every box keeps its rectangle or cell (by the canvas, paint.ts,
+// from these same paths), and in the graph's key.
 // A mark (a gear, a ruler, a port, a marker) tells apart two kinds that share a shape, in every
 // view. Each is a line drawing in its box's edge and fill colors.
 
 /** Each shape's drawing in a 16 by 11 box: one path, or layers drawn back to front. */
-const SHAPE_PATHS: Readonly<Record<Shape, string | readonly string[]>> = {
+export const SHAPE_PATHS: Readonly<Record<Shape, string | readonly string[]>> = {
   box: 'M1.5 1.5h13v8h-13z',
   product: 'M3.2 0.8h9.6a2.2 2.2 0 0 1 2.2 2.2v5a2.2 2.2 0 0 1-2.2 2.2H3.2A2.2 2.2 0 0 1 1 8V3a2.2 2.2 0 0 1 2.2-2.2z M3.6 3h8.8',
   hexagon: 'M4.5 1h7L15 5.5 11.5 10h-7L1 5.5z',
@@ -30,7 +31,7 @@ const SHAPE_PATHS: Readonly<Record<Shape, string | readonly string[]>> = {
 };
 
 /** Each mark's drawing in an 11 by 11 box. */
-const MARK_PATHS: Readonly<Record<Mark, string>> = {
+export const MARK_PATHS: Readonly<Record<Mark, string>> = {
   gear: 'M5.5 3.2a2.3 2.3 0 1 0 0 4.6 2.3 2.3 0 1 0 0-4.6z M5.5 1v2.2 M5.5 7.8V10 M1 5.5h2.2 M7.8 5.5H10 M2.3 2.3l1.6 1.6 M7.1 7.1l1.6 1.6 M2.3 8.7l1.6-1.6 M7.1 3.9l1.6-1.6',
   ruler: 'M1 3.5h9v4H1z M3 3.5v2 M5 3.5v1.2 M7 3.5v2 M9 3.5v1.2',
   port: 'M1 5.5h3 M4 3h5v5H4z',

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { graphMap, MAP_SIZE, sizeText } from '../../src/graph/map';
-import { BORDER, LABEL_PAD, labelHeight, largestFit, mapLabel, metaWidth, narrowestWidth, titleWidth, WIDTH_MARGIN, type MapLabel } from '../../src/graph/text';
+import { BORDER, LABEL_PAD, labelHeight, largestFit, mapLabel, metaWidth, narrowestWidth, titleWidth, type MapLabel } from '../../src/graph/text';
 import { gridOf, HEADER_SHARE, layoutNested, NEST_GAP, NEST_PAD, nestedMap, type NestedMap, type NestedNode } from '../../src/graph/nested';
 import { indexWorkspace, type SpecIndex } from '../../src/specs/data';
 import { groupedWorkspace, manyOfOneKindWorkspace, siblingGroups, testIndex } from './workspace';
@@ -17,7 +17,7 @@ function wide(n: number, k: number): NestedMap {
   return layoutNested(Array.from({ length: n }, (_, i) => `r${i}`), kids);
 }
 /** A product with a busy part (seven children of five leaves) and a quiet one (one leaf), each leaf with a word too wide for its size share. */
-const long = 'A title with a word too wide for a box at its size share: Extraordinarilylongunbrokenidentifierthatnoboxcanholdonline';
+const long = 'A title with a word too wide for a box at its size share: Extraordinarilylongunbrokenidentifierthatnoboxcanholdonlineandthatkeepsongoingwellpastanyboxwidth';
 function busyAndQuiet(): NestedMap {
   const kids = (id: string): string[] => (id === 'p' ? ['busy', 'quiet'] : id === 'busy' ? Array.from({ length: 7 }, (_, i) => `b${i}`) : /^b\d$/.test(id) ? Array.from({ length: 5 }, (_, j) => `${id}.${j}`) : id === 'quiet' ? ['q0'] : []);
   return layoutNested(['p'], kids, (id) => ({ title: id.includes('.') ? long : id, meta: 'Use case · LA-EXP-UC99' }));
@@ -140,8 +140,8 @@ describe('the Nested map', () => {
         const label = labelOf(map, n);
         const across = (n.w - 2 * borderOf(n)) / n.text;
         expect(across).toBeGreaterThanOrEqual(narrowestWidth(label, n.centered) - eps);
-        for (const line of n.lines.title) expect(titleWidth(line.trimEnd()) * WIDTH_MARGIN, n.id).toBeLessThanOrEqual(across - 2 * LABEL_PAD + eps);
-        for (const line of n.lines.meta) expect(metaWidth(line.trimEnd()) * WIDTH_MARGIN, n.id).toBeLessThanOrEqual(across - 2 * LABEL_PAD + eps);
+        for (const line of n.lines.title) expect(titleWidth(line.trimEnd()), n.id).toBeLessThanOrEqual(across - 2 * LABEL_PAD + eps);
+        for (const line of n.lines.meta) expect(metaWidth(line.trimEnd()), n.id).toBeLessThanOrEqual(across - 2 * LABEL_PAD + eps);
         expect(n.lines.title.join('')).toBe(label.title);
         const height = n.text * labelHeight(n.lines) + 2 * borderOf(n);
         if (n.children.length === 0) expect(height, n.id).toBeLessThanOrEqual(n.h * (1 + eps));

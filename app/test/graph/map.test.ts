@@ -5,7 +5,7 @@ import { parseRecordFile } from '../../../lathe/src/parse';
 import { COLUMN_GAP_SHARE, COLUMN_RATIO, graphMap, layoutTree, linkEnds, MAP_SIZE, parentLine, ROOT_WIDTH, ROW_GAP_SHARE, sizeText, type GraphMap, type MapNode } from '../../src/graph/map';
 import { drawnFor, frameOnMap, MAX_DRAWN, MIN_DRAWN, MIN_ZOOM, viewRect } from '../../src/graph/camera';
 import { shapeOf, SHAPES } from '../../src/graph/shapes';
-import { BADGE_ROOM, BORDER, LABEL_PAD, labelHeight, largestFit, metaWidth, MARK_ROOM, narrowestWidth, TITLE_FONT, titleWidth, treeLabel, WIDTH_MARGIN, wrapLabel, wrapText, type MapLabel } from '../../src/graph/text';
+import { BADGE_ROOM, BORDER, LABEL_PAD, labelHeight, largestFit, metaWidth, MARK_ROOM, narrowestWidth, TITLE_FONT, titleWidth, treeLabel, wrapLabel, wrapText, type MapLabel } from '../../src/graph/text';
 import { indexWorkspace, type SpecIndex } from '../../src/specs/data';
 import { groupedWorkspace, manyOfOneKindWorkspace, siblingGroups, testIndex } from './workspace';
 
@@ -26,7 +26,7 @@ function wide(n: number, k: number): GraphMap {
   return layoutTree(Array.from({ length: n }, (_, i) => `r${i}`), kids);
 }
 /** A product with a busy part (thirty leaves) and a quiet one (one leaf, its title with a word too wide for its column at its size share). */
-const long = 'A title with a word too wide for its column: Extraordinarilylongunbrokenidentifierthatnoboxcanholdonline';
+const long = 'A title with a word too wide for its column: Extraordinarilylongunbrokenidentifierthatnoboxcanholdonlineandthatkeepsongoingwellpastanyboxwidth';
 const busyAndQuiet = () => layoutTree(['p'], (id) => (id === 'p' ? ['busy', 'quiet'] : id === 'busy' ? Array.from({ length: 30 }, (_, i) => `b${i}`) : id === 'quiet' ? ['q0'] : []), (id) => ({ title: id === 'q0' ? long : id, meta: '' }));
 const all = (): GraphMap[] => [...maps(), wide(3, 8), wide(1, 30), busyAndQuiet()];
 
@@ -110,14 +110,14 @@ describe('columns and text', () => {
         expect(n.lines.title.join(''), n.id).toBe(label.title);
         expect(n.lines.meta.join(''), n.id).toBe(label.meta);
         const inner = across - 2 * LABEL_PAD - room.l - room.r;
-        for (const line of n.lines.title) expect((label.file ? metaWidth(line.trimEnd(), 11) : titleWidth(line.trimEnd())) * WIDTH_MARGIN, n.id).toBeLessThanOrEqual(inner + 1e-6);
+        for (const line of n.lines.title) expect((label.file ? metaWidth(line.trimEnd(), 11) : titleWidth(line.trimEnd())), n.id).toBeLessThanOrEqual(inner + 1e-6);
         const meta = inner - (label.marks ?? 0) * MARK_ROOM - (label.marked ? 2 * BADGE_ROOM : 0);
-        for (const line of n.lines.meta) expect(metaWidth(line.trimEnd()) * WIDTH_MARGIN, n.id).toBeLessThanOrEqual(meta + 1e-6);
+        for (const line of n.lines.meta) expect(metaWidth(line.trimEnd()), n.id).toBeLessThanOrEqual(meta + 1e-6);
         expect(n.text * labelHeight(n.lines) + 2 * border, n.id).toBeLessThanOrEqual(n.h * (1 + eps));
         expect(n.centered).toBe(true);
       }
     }
-    // The estimate errs wide: a title is at least its characters at 0.45 em, and a kind and ID line 0.6 em a character.
+    // The plain measure (no canvas, in the tests): a title is at least its characters at 0.45 em, and a kind and ID line 0.6 em a character.
     expect(titleWidth('Capabilities')).toBeGreaterThan(12 * 0.45 * TITLE_FONT);
     expect(metaWidth('Use case · LA-EXP-UC03')).toBeGreaterThanOrEqual(22 * 0.6 * 10.5);
     // Wrapping breaks only after a space; a word too wide for a line breaks after a hyphen, then between characters.

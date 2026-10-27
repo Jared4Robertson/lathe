@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { openApp, openSideBar } from './helpers';
 import { testWorkspace } from './graph/workspace';
 import { COMMANDS } from '../src/shell/keymap';
+import { boxElement, isCenter } from './graph/scene';
 
 // Shortcuts end to end: each key press goes to the window's listener, as in the browser. The test
 // browser is not a Mac, so Mod is Ctrl.
@@ -14,7 +15,7 @@ const press = (target: Element, key: string, code: string, mods: Partial<Record<
 const active = () => (document.activeElement ?? document.body) as HTMLElement;
 const nav = () => screen.getByRole('navigation', { name: 'Main' });
 const announcer = () => screen.getByTestId('announcer');
-const node = (id: string) => document.querySelector<HTMLElement>(`.react-flow__node[data-id="${id}"]`);
+const node = (id: string) => boxElement(id);
 
 describe('keyboard shortcuts', () => {
   it('LA-PLT-T19 Ctrl+P (or Ctrl+K) opens quick find, from anywhere, and the browser does not print', async () => {
@@ -176,7 +177,7 @@ describe('keyboard shortcuts', () => {
     expect(screen.getByRole('button', { name: '1' })).toHaveAttribute('aria-pressed', 'true');
     // . frames the focus again, and there is no command to open or fold a group in place: every child is in the map.
     press(document.body, '.', 'Period');
-    expect(node('P-D')?.querySelector('.is-focus')).not.toBeNull();
+    expect(isCenter('P-D')).toBe(true);
     expect(COMMANDS.some((c) => c.id === 'graphToggleGroup')).toBe(false);
 
     await openApp('/P-D-UC01-R01?view=graph', { workspace: testWorkspace() });

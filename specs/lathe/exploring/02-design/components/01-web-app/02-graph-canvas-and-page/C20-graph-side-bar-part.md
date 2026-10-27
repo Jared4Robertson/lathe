@@ -9,4 +9,4 @@ links:
   satisfies: [LA-EXP-UC05-R07, LA-EXP-UC05-R11, LA-EXP-UC12-R03]
   depends_on: [LA-EXP-C03, LA-EXP-C09]
 ---
-What the drawn graph connects to the center (and how), the files a trace reaches, and the legend, as long lists, kept apart from React Flow so the side bar loads without the graph. The side bar's Details shows it in the Graph view only.
+What the drawn graph connects to the center (and how), the files a trace reaches, and the legend, as long lists, kept apart from the graph's canvas so the side bar loads without the graph. The side bar's Details shows it in the Graph view only.

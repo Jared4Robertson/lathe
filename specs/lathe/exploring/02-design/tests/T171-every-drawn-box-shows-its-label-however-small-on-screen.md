@@ -8,4 +8,4 @@ run_by: app/test/graph/context.test.tsx
 links:
   proves: [LA-EXP-DR60, LA-EXP-DR46]
 ---
-Opens a domain's graph at depth 3 with sixty requirements a few pixels tall and expects every drawn box to show its kind and ID line and its title, with an accessible name and not hidden from assistive technology, no plain box; the keyboard order over every drawn box, column by column; and the summary counting the framed picture.
+Opens a domain's graph at depth 3 with sixty requirements a few pixels tall and expects every drawn box to show its kind and ID line and its title, and every box in the keyboard layer to be drawn, with an accessible name, a Tab stop and not hidden from assistive technology; the keyboard order over every drawn box, column by column; and the summary counting the framed picture.

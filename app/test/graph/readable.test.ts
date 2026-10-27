@@ -11,13 +11,33 @@ import { BORDER, labelHeight, labelLines, TITLE_FONT } from '../../src/graph/tex
 import { treeOf } from '../../src/graph/tree';
 import { indexWorkspace, spaceIndex, type SpecIndex } from '../../src/specs/data';
 import { siblingGroups } from './workspace';
+import { plateOf, type Plate, type PlateSource } from '../../src/graph/plate';
+import { inPolygon } from '../../src/graph/hit';
+import type { NestedNode } from '../../src/graph/nested';
+import type { VoronoiNode } from '../../src/graph/voronoi';
+
+/** The scene's check (the canvas draws a box's plate, plate.ts): every line of its label lies whole inside the box, and a cell's inside its outline. */
+function plateOutside(p: Plate): string | null {
+  const eps = 1e-6 * Math.max(1, p.w);
+  for (const l of p.lines) {
+    const corners = [[l.x, l.top], [l.x + l.width, l.top], [l.x, l.top + l.height], [l.x + l.width, l.top + l.height]] as const;
+    if (corners.some(([x, y]) => x < p.x - eps || x > p.x + p.w + eps || y < p.y - eps || y > p.y + p.h + eps)) return `"${l.text}" lies outside its box`;
+    if (p.view === 'voronoi' && p.outline.kind === 'polygon' && corners.some(([x, y]) => !inPolygon(p.outline.kind === 'polygon' ? p.outline.points : [], { x, y }))) return `"${l.text}" lies outside its cell`;
+  }
+  return null;
+}
+const sourceOf = (map: PlacedMap, id: string): PlateSource => {
+  const n = map.nodes.get(id)!;
+  return map.view === 'tree' ? { view: 'tree', node: n } : map.view === 'nested' ? { view: 'nested', node: n as NestedNode } : { view: 'voronoi', node: n as VoronoiNode };
+};
 
 // Every drawn box shows its name (LA-PAT-APP-UX-R12): in every layout of the graph, at every focus
 // and depth, each box the camera draws carries its label, its title and its kind and ID line in the
 // lines the page draws, siblings are the same size with one text scale (LA-EXP-DR58), and the label
 // fits its box at its scale, so nothing is clipped. The sweep frames every domain, stage and folder
 // group of every product in Lathe's own spec and the Tool Library's (both under the repo's specs/),
-// with the real camera, in two panes, at depths 1 to 3.
+// with the real camera, in two panes, at depths 1 to 3, and checks each drawn box's label as the
+// canvas places it (its plate) lies whole inside the box.
 
 const PANES = [[770, 640], [1200, 800]] as const;
 const DEPTHS = [1, 2, 3] as const;
@@ -72,6 +92,7 @@ function nameless(workspace: Workspace): { problems: string[]; frames: number } 
     ];
     for (const layout of LAYOUTS) {
       const map = layout.map(index, product.id);
+      const plates = new Map<string, string | null>();
       // Siblings are the same size, with one text scale (LA-EXP-DR58): equal boxes in the Tree and Nested maps, equal areas within 5% in the Voronoi map.
       for (const group of siblingGroups(map)) {
         const sizes = group.map((n) => layout.size(map, n.id));
@@ -92,6 +113,11 @@ function nameless(workspace: Workspace): { problems: string[]; frames: number } 
             const at = `${layout.name} ${focus} depth ${depth} in ${w}x${h}: ${b.id} (${Math.round(n.w * v.zoom)} x ${Math.round(n.h * v.zoom)} px)`;
             if (lines.title.join('') !== title || lines.meta.join('') !== meta || title === '') problems.push(`${at} does not show its name`);
             else if (n.text <= 0 || height > n.h + 0.5) problems.push(`${at}: its label does not fit it`);
+            else {
+              if (!plates.has(b.id)) plates.set(b.id, plateOutside(plateOf(index, b.id, sourceOf(map, b.id))));
+              const outside = plates.get(b.id);
+              if (outside) problems.push(`${at}: as drawn, ${outside}`);
+            }
           }
         }
       }

@@ -8,4 +8,4 @@ run_by: app/test/graph/camera.test.tsx
 links:
   proves: [LA-EXP-UC03-R17, LA-EXP-DR63]
 ---
-Frames the product, a domain and a use case in the Voronoi map on a canvas of 1000 by 800 and expects the focus's box centered, every drawn cell in view and at least 3 pixels across, a parent drawn before its children, the drawing within its budget and the focus drawn. On the page, with the Voronoi layout chosen, expects each cell drawn as a polygon with its label inside, its bounding box taking no pointer, and a click on a child gliding the camera to frame its cell.
+Frames the product, a domain and a use case in the Voronoi map on a canvas of 1000 by 800 and expects the focus's box centered, every drawn cell in view and at least 3 pixels across, a parent drawn before its children, the drawing within its budget and the focus drawn. On the page, with the Voronoi layout chosen, expects each cell drawn as its polygon with its label inside, the pointer finding the cell at its label's middle and not at a corner of its bounding box outside its outline, and a click on a child gliding the camera to frame its cell.

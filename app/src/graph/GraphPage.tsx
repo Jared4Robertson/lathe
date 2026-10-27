@@ -1,23 +1,5 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
-import {
-  Background,
-  BaseEdge,
-  ControlButton,
-  Controls,
-  EdgeLabelRenderer,
-  Handle,
-  MarkerType,
-  Position,
-  ReactFlow,
-  ReactFlowProvider,
-  useReactFlow,
-  useStore,
-  type Edge,
-  type EdgeProps,
-  type Node,
-  type NodeProps,
-} from '@xyflow/react';
-import { kindLabel, type SpecIndex } from '../specs/data';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type KeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
+import { type SpecIndex } from '../specs/data';
 import { lowerLabel } from '../plural';
 import { useCommand } from '../shell/commands';
 import { Tooltip } from '../shell/Tooltip';
@@ -25,7 +7,6 @@ import { Icon } from '../components/icons';
 import { NodeLink, type GraphInfo } from './panel';
 import { TapCard, useTapToOpen } from './touch';
 import {
-  FILE_KIND,
   NO_FILTERS,
   PARENT,
   TRACE_RELATIONS,
@@ -43,79 +24,41 @@ import {
   nodeParent,
   parseGroupId,
   relationsOf,
-  stageOf,
   traceChain,
   type Filters,
   type Neighborhood,
 } from './model';
 import { boxExit, traceGrid, type Point } from './layout';
-import { centerOf, graphMap, linkEnds, mapRootOf, parentLine, type GraphMap, type MapNode, type PlacedMap } from './map';
+import { centerOf, graphMap, linkEnds, mapRootOf, parentLine, type GraphMap, type PlacedMap } from './map';
 import { nestedMap, type NestedMap, type NestedNode } from './nested';
 import { readyVoronoiMap, voronoiMap, type VoronoiMap, type VoronoiNode } from './voronoi';
-import { treeGroup } from './tree';
-import { labelFor, labelHeight, labelLines, marksOf, type WrappedLabel } from './text';
+import { labelFor, labelHeight, setTextMeasure, type TextMeasure } from './text';
 import { drawnFor, drawnKey, drawnNested, fitBoxes, frameNested, frameOnMap, glideDuration, MAX_ZOOM, mergeDrawn, MIN_ZOOM, zoomPath, type Drawn, type Viewport } from './camera';
-import { EdgeHints, type Side } from './hints';
+import { EdgeHintChips, pastEdges, type Side } from './hints';
 import { readMotion } from './motion';
-import { nodeShape, shapeVars, SHAPES, type Mark, type Shape } from './shapes';
-import { MarkIcon, ShapeIcon } from './shape-icons';
+import { nodeShape } from './shapes';
 import { Button } from '../components/Button';
+import { measureSpec, pageMeasure, readGraphFonts, readyMeasure, fontFor, type GraphFonts } from './fonts';
+import { PLAIN_LOOK, readLook, useThemeVersion, type Look } from './look';
+import { plateName, plateOf, plateTip, type Plate, type PlateSource } from './plate';
+import { paint, TEXT_BAR_PX, type Bar, type Camera, type Line, type PaintState } from './paint';
+import { hitPlate } from './hit';
 
 // The graph view: the product's tree as one fixed map (map.ts), explored by a camera (camera.ts).
 // Clicking a record or a group focuses it (through onNavigate, so the host changes the address and
 // Back walks back along the path), and the camera glides to frame it; nothing in the map moves or
 // changes size. Trace mode is a chain, not the tree, and keeps a small picture of its own.
 //
+// The map is drawn on a canvas, every frame (paint.ts): each box in view its shape, its colors and
+// its label, the lines at the label's map size times the zoom, so text is crisp at any zoom. A
+// visually hidden layer of the drawn boxes, in the keyboard's order, carries focus, the arrow keys,
+// Enter and Escape, and each box's role and name for assistive technology; the box it focuses gets
+// the drawn focus ring. The pointer finds a box from the map's own outlines (hit.ts).
+//
 // GraphView is the graph on its own: it takes the focus and an onNavigate callback and never reads
 // the address, so it can sit in any pane. The focus page (app/src/views/FocusPage.tsx) hosts it in
 // the Graph and Split views, keeps its settings across pages, and shows what it connects in the
 // side bar.
-
-/** One drawn box: a node of the map (or of a trace), always with its label. */
-interface NodeData extends Record<string, unknown> {
-  id: string;
-  kind: string;
-  stage: string;
-  title: string;
-  kindLabel: string;
-  /** The line above the title: "Use case · LA-EXP-UC03", "Group · LA-EXP", "File". */
-  meta: string;
-  group: boolean;
-  errors: number;
-  warnings: number;
-  gaps: string[];
-  isFocus: boolean;
-  /** How much its box's border and shape grow (LA-EXP-DR58): its text scale (at least half in the Nested and Voronoi views), 1 in a trace. */
-  scale: number;
-  /** How much its text, padding and marks grow: the scale it shares with its siblings, fixed by the map, never by the camera (LA-EXP-DR58). */
-  text: number;
-  /** Its label's lines as its map broke them (or text.ts in a trace), and whether it is centered. */
-  lines: WrappedLabel;
-  centered: boolean;
-  /** In the Nested view (LA-EXP-DR62): a box drawn with its children inside it has a header band of this height (map units) holding its label at the top; 0 for a leaf, whose label is centered. */
-  header?: number;
-  /** In the Voronoi view (LA-EXP-DR64): the cell's outline and its label's box, in the node's own units (its bounding box from 0, 0). */
-  cell?: { points: string; label: { x: number; y: number; w: number; h: number } };
-  /** Its kind's shape and mark (LA-EXP-DR65): its outline in the Tree view and a trace, a small mark in the Nested and Voronoi views. */
-  shape: Shape;
-  mark?: Mark;
-  /** In the Tree view and a trace, what its style carries for its shape: its outline, a decoration's notch, its label's room. */
-  outline?: Record<string, string | number>;
-}
-interface EdgeData extends Record<string, unknown> {
-  relation: string;
-  /** Where it is drawn, in world coordinates: a parent line's two ends, or a link's curve's ends. */
-  points: [Point, Point];
-  /** The words drawn on a link: its relation's label, read from its source. */
-  label: string;
-  /** A cross-link added by the Links switch: a dashed curve, in its own color. */
-  link: boolean;
-  /** How much its stroke grows, as a box's border does (LA-EXP-DR58): its child's text scale for a parent line, 1 for a link. */
-  scale: number;
-}
-type FlowNode = Node<NodeData | BarData>;
-type FlowEdge = Edge<EdgeData>;
-interface BarData extends Record<string, unknown> { bar: true }
 
 /** CSS family for an edge's relation, so related relations share a line style. */
 export function relationStyle(relation: string): string {
@@ -128,126 +71,6 @@ export function relationStyle(relation: string): string {
   if (['reacts_to', 'raised_by'].includes(relation)) return 'event';
   return 'other';
 }
-
-function Marks({ data }: { data: NodeData }) {
-  if (data.errors === 0 && data.warnings === 0 && data.gaps.length === 0) return null;
-  const within = data.group ? ' among its members' : '';
-  return (
-    <span className="graph-marks">
-      {data.errors > 0 && <span className="graph-mark error" title={`${data.errors} error${data.errors > 1 ? 's' : ''}${within}`} aria-label="has errors">!</span>}
-      {data.errors === 0 && data.warnings > 0 && <span className="graph-mark warning" title={`${data.warnings} warning${data.warnings > 1 ? 's' : ''}${within}`} aria-label="has warnings">!</span>}
-      {data.gaps.length > 0 && <span className="graph-mark gap" title={data.gaps.map((g) => (g === 'satisfies' ? 'not satisfied' : 'not proved')).join(', ') + within} aria-label="has coverage gaps">gap</span>}
-    </span>
-  );
-}
-
-/** The node's scales as CSS variables (LA-EXP-DR58): its border and shape (`--box-scale`), its text, padding and marks (`--node-scale`); and its shape's outline and room (LA-EXP-DR65). */
-const nodeStyle = (scale: number, text: number, outline?: Record<string, string | number>): CSSProperties | undefined =>
-  scale !== 1 || text !== 1 || outline ? ({ ...(scale !== 1 || text !== 1 ? { '--box-scale': scale, '--node-scale': text } : {}), ...outline } as CSSProperties) : undefined;
-
-function GraphNodeView({ data }: NodeProps<Node<NodeData>>) {
-  /** Whether the box shows its shape as a mark before its kind and ID line (Nested and Voronoi), rather than as its outline (Tree and a trace; LA-EXP-DR65). */
-  const marked = data.header !== undefined || data.cell !== undefined;
-  const classes = [
-    'graph-node',
-    data.group ? 'stage-group' : `stage-${data.stage || 'structural'}`,
-    `kind-${data.kind}`,
-    data.isFocus ? 'is-focus' : '',
-    data.centered ? 'is-centered' : '',
-    // Its kind's shape is its outline in the Tree view; in the Nested and Voronoi views it is a box or a cell (LA-EXP-DR62, LA-EXP-DR64).
-    marked ? '' : `shape-${data.shape}`,
-    !marked && SHAPES[data.shape].draw === 'clipped' ? 'is-clipped' : '',
-    data.header ? 'is-container' : '',
-    data.cell ? 'is-cell' : '',
-  ].filter(Boolean).join(' ');
-  const style = nodeStyle(data.scale, data.text, marked ? undefined : data.outline);
-  /** The marks before the kind and ID line: its shape's in the Nested and Voronoi views (not a file's), and its kind's mark in every view. */
-  const marks = (
-    <>
-      {marked && data.kind !== FILE_KIND && <ShapeIcon shape={data.shape} />}
-      {data.mark && <MarkIcon mark={data.mark} />}
-    </>
-  );
-  /** A circle's badge sits at the end of its kind and ID line, which its room keeps inside the circle; every other box's at its top right. */
-  const inMeta = !marked && data.shape === 'circle';
-  const label = (
-    <>
-      {/* The lines as the map broke them; a marked box keeps room beside its kind and ID line for the badge. */}
-      <small className={data.errors + data.warnings + data.gaps.length > 0 ? 'graph-badge-room' : undefined}>{data.lines.meta.map((l, i) => <span key={i}>{i === 0 && marks}{l}</span>)}{inMeta && <Marks data={data} />}</small>
-      <strong>{data.lines.title.map((l, i) => <span key={i}>{l}</span>)}</strong>
-      {!inMeta && <Marks data={data} />}
-    </>
-  );
-  const handles = (
-    <>
-      <Handle type="target" position={Position.Left} className="graph-handle" isConnectable={false} />
-      <Handle type="source" position={Position.Right} className="graph-handle" isConnectable={false} />
-    </>
-  );
-  const title = data.group ? `${data.title} (${data.meta.replace(/^Group · /, 'in ')})` : `${data.title} (${data.id})`;
-  if (data.cell) {
-    // A Voronoi cell (LA-EXP-DR64): its node takes no pointer (`CELL_NODE`), its outline, drawn as a
-    // polygon, and its label do, so the pointer finds the cell under it, never a larger cell's box;
-    // the label sits in the box the map gave it.
-    const { points, label: at } = data.cell;
-    return (
-      <div className={classes} title={title} style={style}>
-        <svg className="graph-cell-shape" aria-hidden="true" width="100%" height="100%"><polygon points={points} /></svg>
-        {handles}
-        {<div className="graph-cell-label" style={{ left: at.x, top: at.y, width: at.w, height: at.h }}>{label}</div>}
-      </div>
-    );
-  }
-  return (
-    <div className={classes} title={title} style={style}>
-      {handles}
-      {label}
-    </div>
-  );
-}
-
-/** A Voronoi cell's node: its bounding box takes no pointer, only its outline and label inside it do (a clip would make every frame of a glide repaint the cells). */
-const CELL_NODE = { pointerEvents: 'none' } as const;
-
-/** A bar standing for children too small to draw (LA-EXP-DR60). */
-function BarView() {
-  return <div className="graph-bar" />;
-}
-
-const linePath = ([a, b]: [Point, Point]) => `M ${a.x} ${a.y} L ${b.x} ${b.y}`;
-/** A link's curve: leaving and entering its boxes level, bending between them. */
-function curvePath([a, b]: [Point, Point]) {
-  const bend = Math.max(40, Math.abs(b.x - a.x) / 2);
-  const dir = b.x >= a.x ? 1 : -1;
-  return `M ${a.x} ${a.y} C ${a.x + dir * bend} ${a.y}, ${b.x - dir * bend} ${b.y}, ${b.x} ${b.y}`;
-}
-
-function GraphEdgeView({ id, data, markerEnd, source, target }: EdgeProps<FlowEdge>) {
-  if (!data) return null;
-  const [a, b] = data.points;
-  // A cross-link (the Links switch) is a dashed curve in its own color, apart from the tree's level parent lines.
-  return (
-    <g className="graph-edge-group" data-source={source} data-target={target} style={data.scale !== 1 ? ({ '--edge-scale': data.scale } as CSSProperties) : undefined}>
-      <BaseEdge id={id} path={data.link ? curvePath(data.points) : linePath(data.points)} markerEnd={data.link ? markerEnd : undefined} interactionWidth={0} className={`graph-edge rel-${relationStyle(data.relation)}${data.link ? ' is-link' : ''}`} />
-      {data.link && data.label && (
-        <EdgeLabelRenderer>
-          <div className="edge-label graph-edge-label" style={{ transform: `translate(-50%, -50%) translate(${(a.x + b.x) / 2}px, ${(a.y + b.y) / 2}px)` }}>
-            {data.label}
-          </div>
-        </EdgeLabelRenderer>
-      )}
-    </g>
-  );
-}
-
-/** Where a node's two handles are: the middle of its left and right sides. */
-const nodeHandles = (width: number, height: number) => [
-  { type: 'target' as const, position: Position.Left, x: 0, y: height / 2, width: 1, height: 1 },
-  { type: 'source' as const, position: Position.Right, x: width, y: height / 2, width: 1, height: 1 },
-];
-
-const nodeTypes = { box: GraphNodeView, bar: BarView };
-const edgeTypes = { line: GraphEdgeView };
 
 const TRAIL_KEY = 'lathe:graph-trail';
 function readTrail(): string[] {
@@ -497,9 +320,7 @@ export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted,
       </header>
       <div className="graph-workspace">
         <div className="graph-canvas">
-          <ReactFlowProvider>
-            <GraphCanvas index={index} graph={graph} layout={layout} depth={depth} filters={filters} onNavigate={onNavigate} minimap={minimap} onPeek={onPeek} />
-          </ReactFlowProvider>
+          <GraphCanvas index={index} graph={graph} layout={layout} depth={depth} filters={filters} onNavigate={onNavigate} minimap={minimap} onPeek={onPeek} />
         </div>
       </div>
     </section>
@@ -612,45 +433,13 @@ export function hiddenNodes(index: SpecIndex, map: PlacedMap, filters: Filters, 
   return hidden;
 }
 
-/** A box's data: what it shows and how it is named. */
-function boxData(index: SpecIndex, id: string, focus: string, scale: number, text: number, graph: Neighborhood, placed?: MapNode): NodeData {
-  // The same lines the map sized the box for (its map's, or a trace's from text.ts), so the label always fits it.
-  const { title, meta } = labelLines(index, id);
-  const centered = placed ? placed.centered : false;
-  const lines = placed ? placed.lines : labelFor(index, id);
-  const record = index.byId.get(id);
-  const shaped = nodeShape(index, id);
-  if (record) {
-    return { id, kind: record.kind, stage: stageOf(index, record.kind), title, kindLabel: kindLabel(index, record.kind), meta, group: false, ...marksOf(index, id), isFocus: id === focus, scale, text, lines, centered, ...shaped };
-  }
-  if (id.startsWith('file:')) {
-    const node = graph.nodes.find((n) => n.id === id);
-    return { id, kind: FILE_KIND, stage: 'file', title: node?.title ?? title, kindLabel: 'File', meta, group: false, errors: 0, warnings: 0, gaps: [], isFocus: false, scale, text, lines, centered, ...shaped };
-  }
-  return { id, kind: treeGroup(index, id)?.kind ?? 'folder', stage: 'group', title, kindLabel: 'Group', meta, group: true, ...marksOf(index, id), isFocus: id === focus, scale, text, lines, centered, ...shaped };
-}
-
-/** The accessible name of a box. */
-function ariaName(d: NodeData): string {
-  if (d.group) return `Group ${d.title} in ${d.meta.replace(/^Group · /, '')}${d.isFocus ? ' (center)' : ''}`;
-  return `${d.kindLabel} ${d.isFocus ? '(center) ' : ''}${d.title}`;
-}
-
-/** The camera, as the store holds it. */
-const useZoom = () => useStore((s) => s.transform[2]);
-
-/** The dots behind the map, only while they are far enough apart to draw (a map zoomed far out would fill them in). */
-function MapBackground() {
-  const zoom = useZoom();
-  return zoom >= 0.25 ? <Background gap={24} size={1} /> : null;
-}
 
 /**
  * The minimap (LA-EXP-UC03-R15): a true overview of the one map, its upper levels as boxes (as many
  * as stay readable, at most about 400), the focus solid, and the viewport outlined as the camera
  * moves.
  */
-function MapOverview({ map, focus, hidden }: { map: PlacedMap; focus: string; hidden: ReadonlySet<string> }) {
+function MapOverview({ map, focus, hidden, view }: { map: PlacedMap; focus: string; hidden: ReadonlySet<string>; view: string }) {
   // A Voronoi cell is drawn as its outline (LA-EXP-DR64), every other node as its box.
   const shapeOf = (n: PlacedMap['byLevel'][number][number], className: string) => ('polygon' in n
     ? <polygon key={n.id} className={className} points={(n as VoronoiNode).polygon.map((p) => p.join(',')).join(' ')} />
@@ -663,10 +452,6 @@ function MapOverview({ map, focus, hidden }: { map: PlacedMap; focus: string; hi
     }
     return out;
   }, [map, hidden]);
-  const view = useStore((s) => {
-    const [x, y, zoom] = s.transform;
-    return `${-x / zoom} ${-y / zoom} ${s.width / zoom} ${s.height / zoom}`;
-  });
   const [vx, vy, vw, vh] = view.split(' ').map(Number);
   const f = map.nodes.get(focus);
   const W = 200;
@@ -688,7 +473,90 @@ const EMPTY_VORONOI: VoronoiMap = { view: 'voronoi', nodes: new Map(), roots: []
 
 const sameView = (a: Viewport, b: Viewport) => Math.abs(a.x - b.x) < 0.5 && Math.abs(a.y - b.y) < 0.5 && Math.abs(a.zoom - b.zoom) < 1e-6;
 
-function GraphCanvas({ index, graph, layout, depth, filters, onNavigate, minimap, onPeek }: {
+/** How much one step of the zoom buttons zooms. */
+const ZOOM_STEP = 1.2;
+/** How far the pointer moves before a press is a drag, in CSS pixels. */
+const DRAG_PX = 3;
+
+/** One drawn box in the scene the test hook reports, in the page's pixels. */
+export interface SceneBox {
+  id: string;
+  kind: string;
+  stage: string;
+  shape: string;
+  view: string;
+  focus: boolean;
+  file: boolean;
+  group: boolean;
+  /** Its states as drawn: under the pointer, ringed by the keyboard, selected by a tap, lit by the spotlight (null without one). */
+  hover: boolean;
+  ring: boolean;
+  armed: boolean;
+  lit: boolean | null;
+  /** Its box in the map, and its text's and border's scales there: fixed by the map, never by the camera. */
+  map: { x: number; y: number; w: number; h: number };
+  textScale: number;
+  boxScale: number;
+  rect: Rect;
+  /** Its outline's corners on screen, for a polygon or a cell. */
+  polygon: [number, number][] | null;
+  label: Rect;
+  /** Each line of its label: its text, face, font size in the map and on screen, the font it is drawn in, its place, whether it is drawn as a bar, and its width as the canvas measures it at its drawn font. */
+  lines: { text: string; face: string; mapPx: number; fontPx: number; font: string; rect: Rect; bar: boolean; drawnWidth: number }[];
+  icons: { draw: string; name: string; rect: Rect }[];
+  badges: { label: string; tone: string; rect: Rect }[];
+  tip: string;
+  name: string;
+}
+type Rect = { left: number; top: number; width: number; height: number };
+/** What the canvas draws now, as the test hook reports it (LA-PAT-APP-UX-R12): every drawn box with its label lines and their font sizes. */
+export interface Scene {
+  layout: string;
+  camera: { x: number; y: number; zoom: number };
+  /** How many times the camera has moved since the canvas was drawn first, and how many of those moves were glides. */
+  moves: number;
+  glides: number;
+  canvas: Rect;
+  textBarPx: number;
+  boxes: SceneBox[];
+  bars: Rect[];
+  lines: { id: string; source: string; target: string; style: string; link: boolean; label: string; lit: boolean | null; points: [number, number][] }[];
+  spotlight: boolean;
+}
+/** A camera as the scene reports it: to a hundredth of a pixel, and the zoom to nine significant digits. */
+export const roundCamera = (v: Viewport) => ({ x: Math.round(v.x * 100) / 100, y: Math.round(v.y * 100) / 100, zoom: Number(v.zoom.toPrecision(9)) });
+
+/** The canvas's element, with the hooks the tests read the drawn scene and hit-test through. */
+export type SceneHost = HTMLDivElement & { graphScene?: () => Scene; graphHit?: (clientX: number, clientY: number) => string | null };
+
+/** A tiny store of the camera, so the parts that follow it (the edge hints, the minimap) draw again only when what they show changes. */
+function cameraStore() {
+  const listeners = new Set<() => void>();
+  return {
+    subscribe: (l: () => void) => { listeners.add(l); return () => { listeners.delete(l); }; },
+    notify: () => { for (const l of listeners) l(); },
+  };
+}
+
+/**
+ * The canvas, once the label's faces have loaded and the text measure is ready (fonts.ts): the maps
+ * are laid out with that measure, and the canvas draws with those faces.
+ */
+function GraphCanvas(props: CanvasProps) {
+  const theme = useThemeVersion();
+  const fonts = useMemo<GraphFonts>(() => readGraphFonts(), [theme]);
+  const [measure, setMeasure] = useState<TextMeasure | null>(() => { void pageMeasure(fonts); return readyMeasure(fonts); });
+  useEffect(() => {
+    let live = true;
+    void pageMeasure(fonts).then((m) => { if (live) setMeasure(m); });
+    return () => { live = false; };
+  }, [fonts.body, fonts.mono]);
+  if (!measure) return <div className="graph-flow" data-layout={props.graph.mode === 'trace' ? 'trace' : props.layout} aria-busy="true" />;
+  setTextMeasure(measure);
+  return <GraphStage {...props} measure={measure} fonts={fonts} theme={theme} />;
+}
+
+interface CanvasProps {
   index: SpecIndex;
   graph: Neighborhood;
   layout: GraphLayout;
@@ -697,31 +565,35 @@ function GraphCanvas({ index, graph, layout, depth, filters, onNavigate, minimap
   onNavigate: (id: string) => void;
   minimap: boolean;
   onPeek?: GraphViewProps['onPeek'];
-}) {
+}
+
+function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap, onPeek, measure, fonts, theme }: CanvasProps & { measure: TextMeasure; fonts: GraphFonts; theme: number }) {
   const tracing = graph.mode === 'trace';
   const focus = graph.focus;
   // The focus's own product's map (no other product's nodes are in it), in any layout (LA-EXP-UC03-R16): the Tree map (map.ts), the Nested map (nested.ts) or the Voronoi map (voronoi.ts), under one camera.
   // The Voronoi map is laid out in a worker the first time; until it is ready the canvas is empty.
   const root = useMemo(() => mapRootOf(index, focus), [index, focus]);
-  const nested = layout !== 'tree';
-  const [laidOut, setLaidOut] = useState<{ index: SpecIndex; root: string; map: VoronoiMap } | null>(null);
-  const voronoi = layout === 'voronoi' ? (laidOut && laidOut.index === index && laidOut.root === root ? laidOut.map : readyVoronoiMap(index, root)) : undefined;
+  const [laidOut, setLaidOut] = useState<{ index: SpecIndex; root: string; key: string; map: VoronoiMap } | null>(null);
+  const voronoi = layout === 'voronoi' ? (laidOut && laidOut.index === index && laidOut.root === root && laidOut.key === measure.key ? laidOut.map : readyVoronoiMap(index, root)) : undefined;
   useEffect(() => {
     if (layout !== 'voronoi' || voronoi) return;
     let live = true;
-    void voronoiMap(index, root).then((m) => { if (live) setLaidOut({ index, root, map: m }); }, () => {});
+    void voronoiMap(index, root, measureSpec(measure, fonts)).then((m) => { if (live) setLaidOut({ index, root, key: measure.key, map: m }); }, () => {});
     return () => { live = false; };
-  }, [layout, voronoi, index, root]);
+  }, [layout, voronoi, index, root, measure, fonts]);
   const map: GraphMap | NestedMap | VoronoiMap = useMemo(
     () => (layout === 'voronoi' ? voronoi ?? EMPTY_VORONOI : layout === 'nested' ? nestedMap(index, root) : graphMap(index, root)),
-    [index, root, layout, voronoi],
+    [index, root, layout, voronoi, measure],
   );
-  const wrapper = useRef<HTMLDivElement>(null);
+  const wrapper = useRef<SceneHost>(null);
+  const canvas = useRef<HTMLCanvasElement>(null);
+  const layer = useRef<HTMLDivElement>(null);
   const active = useRef<string | null>(null);
   /** After a keyboard action, the node to put keyboard focus on once the camera has framed it. */
   const refocus = useRef<string | null>(null);
-  const { getViewport, setViewport } = useReactFlow();
   const [size, setSize] = useState<{ w: number; h: number } | null>(null);
+  const sizeRef = useRef(size);
+  sizeRef.current = size;
 
   const hidden = useMemo(() => hiddenNodes(index, map, filters, focus), [index, map, filters, focus]);
   const parentShown = !filters.hiddenRelations.has(PARENT);
@@ -729,7 +601,22 @@ function GraphCanvas({ index, graph, layout, depth, filters, onNavigate, minimap
   const linked = useMemo(() => [...new Set(graph.edges.filter((e) => e.relation !== PARENT).flatMap((e) => [e.source, e.target]))].filter((id) => id !== focus), [graph, focus]);
   const always = useMemo(() => [focus, ...linked], [focus, linked]);
 
-  // ---- What is drawn: the level of detail for the camera (LA-EXP-DR60) ----
+  // ---- The camera ----
+  const view = useRef<Viewport>({ x: 0, y: 0, zoom: 1 });
+  const store = useMemo(cameraStore, []);
+  const frameRequest = useRef<number | null>(null);
+  const paintRef = useRef<() => void>(() => {});
+  const requestPaint = useCallback(() => {
+    if (frameRequest.current !== null) return;
+    frameRequest.current = requestAnimationFrame(() => { frameRequest.current = null; paintRef.current(); });
+  }, []);
+  useEffect(() => () => { if (frameRequest.current !== null) cancelAnimationFrame(frameRequest.current); frameRequest.current = null; }, []);
+  const getViewport = useCallback(() => view.current, []);
+  /** How many times the camera has moved, and how many of its moves were glides: what the scene reports. */
+  const moves = useRef({ moves: 0, glides: 0 });
+  const setViewport = useCallback((v: Viewport) => { view.current = v; moves.current.moves++; requestPaint(); store.notify(); }, [requestPaint, store]);
+
+  // ---- What the keyboard's layer holds: the level of detail for the camera (LA-EXP-DR60) ----
   const [drawn, setDrawn] = useState<Drawn | null>(null);
   const shownKey = useRef('');
   const show = useCallback((d: Drawn) => {
@@ -745,11 +632,9 @@ function GraphCanvas({ index, graph, layout, depth, filters, onNavigate, minimap
       : drawnFor(map, v, size.w, size.h, always);
     return { boxes: d.boxes.filter((b) => !hidden.has(b.id)), bars: d.bars.filter((b) => !hidden.has(b.parent)) };
   }, [map, size, always, hidden]);
-
   const latestDrawnAt = useRef(drawnAt);
   latestDrawnAt.current = drawnAt;
 
-  // ---- The camera ----
   const glide = useRef<number | null>(null);
   const stopGlide = () => { if (glide.current !== null) { cancelAnimationFrame(glide.current); glide.current = null; } };
   useEffect(() => stopGlide, []);
@@ -759,18 +644,19 @@ function GraphCanvas({ index, graph, layout, depth, filters, onNavigate, minimap
     const from = getViewport();
     const motion = readMotion();
     if (!size || !animate || motion.duration === 0 || sameView(from, target)) {
-      setViewport(target, { duration: 0 });
+      setViewport(target);
       if (!tracing) show(drawnAt(target));
       return;
     }
     const path = zoomPath(from, target, size.w, size.h);
-    // Everything the glide passes over is drawn once, as it starts, and trimmed when it ends, so no frame of the move draws anew.
+    // Everything the glide passes over joins the keyboard's layer once, as it starts, and is trimmed when it ends.
     if (!tracing) show(mergeDrawn([0, 0.25, 0.5, 0.75, 1].map((t) => drawnAt(path.at(t)))));
     const duration = glideDuration(motion.duration, path.S);
+    moves.current.glides++;
     const start = performance.now();
     const step = (now: number) => {
       const t = Math.min(1, (now - start) / duration);
-      setViewport(path.at(motion.ease(t)), { duration: 0 });
+      setViewport(path.at(motion.ease(t)));
       if (t < 1) { glide.current = requestAnimationFrame(step); return; }
       glide.current = null;
       if (!tracing) show(latestDrawnAt.current(target));
@@ -779,7 +665,7 @@ function GraphCanvas({ index, graph, layout, depth, filters, onNavigate, minimap
   }, [getViewport, setViewport, size, tracing, show, drawnAt]);
 
   // A trace's boxes are leaves at text scale 1, each as tall as its wrapped label needs (text.ts).
-  const tracePlaced = useMemo(() => (tracing ? traceGrid(graph, (id) => 2 * Math.ceil(labelHeight(labelFor(index, id)) / 2)) : null), [tracing, graph, index]);
+  const tracePlaced = useMemo(() => (tracing ? traceGrid(graph, (id) => 2 * Math.ceil(labelHeight(labelFor(index, id)) / 2)) : null), [tracing, graph, index, measure]);
   /** The camera that frames the focus: on the map, the focus and the levels the depth shows; in a trace, the whole chain. */
   const framing = useCallback((): Viewport | null => {
     if (!size) return null;
@@ -800,93 +686,107 @@ function GraphCanvas({ index, graph, layout, depth, filters, onNavigate, minimap
     framedEmpty.current = map.nodes.size === 0;
   }, [framing]);
   // What is drawn follows the filters and the Links switch at once.
-  useEffect(() => { if (glide.current === null && !tracing && size) show(drawnAt(getViewport())); }, [drawnAt]);
+  useEffect(() => { if (glide.current === null && !tracing && size) show(drawnAt(getViewport())); requestPaint(); }, [drawnAt]);
 
   // The pane's size, observed once for the canvas's life.
   useLayoutEffect(() => {
     const el = wrapper.current;
     if (!el) return;
-    const measure = (box: { width: number; height: number }) => {
+    const measureBox = (box: { width: number; height: number }) => {
       if (box.width <= 0 || box.height <= 0) return;
       setSize((s) => (s && Math.round(s.w) === Math.round(box.width) && Math.round(s.h) === Math.round(box.height) ? s : { w: box.width, h: box.height }));
     };
-    measure(el.getBoundingClientRect());
+    measureBox(el.getBoundingClientRect());
     if (typeof ResizeObserver === 'undefined') return;
-    const observer = new ResizeObserver((entries) => measure(entries[0]?.contentRect ?? el.getBoundingClientRect()));
+    const observer = new ResizeObserver((entries) => measureBox(entries[0]?.contentRect ?? el.getBoundingClientRect()));
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
 
-  // Free zoom and pan (wheel, pinch, drag, the zoom buttons) move the same camera; what is drawn
-  // follows once a frame. A gesture during a glide takes over from it.
+  // The canvas's backing store: the pane's size at the screen's pixel ratio, so every line is sharp.
+  const [dpr, setDpr] = useState(() => (typeof window === 'undefined' ? 1 : window.devicePixelRatio || 1));
+  useEffect(() => {
+    if (typeof window.matchMedia !== 'function') return;
+    const query = window.matchMedia(`(resolution: ${dpr}dppx)`);
+    const changed = () => setDpr(window.devicePixelRatio || 1);
+    query.addEventListener?.('change', changed);
+    return () => query.removeEventListener?.('change', changed);
+  }, [dpr]);
+  useLayoutEffect(() => {
+    const c = canvas.current;
+    if (!c || !size) return;
+    c.width = Math.max(1, Math.round(size.w * dpr));
+    c.height = Math.max(1, Math.round(size.h * dpr));
+    paintRef.current();
+    store.notify();
+  }, [size, dpr]);
+
+  // Free zoom and pan (wheel, pinch, drag, the zoom buttons) move the same camera; the keyboard's
+  // layer follows once a frame. A gesture during a glide takes over from it.
   const pending = useRef<number | null>(null);
   const follow = useCallback(() => {
     if (pending.current !== null || tracing) return;
-    // Read when the frame comes, so it draws for the camera and the pane as they are then.
     pending.current = requestAnimationFrame(() => { pending.current = null; if (glide.current === null) show(latestDrawnAt.current(getViewport())); });
   }, [tracing, show, getViewport]);
-  useEffect(() => () => { if (pending.current !== null) cancelAnimationFrame(pending.current); }, []);
-  const onMove = useCallback((event: MouseEvent | TouchEvent | null) => {
-    if (event && glide.current !== null) stopGlide();
-    if (glide.current === null) follow();
-  }, [follow]);
+  useEffect(() => () => { if (pending.current !== null) cancelAnimationFrame(pending.current); pending.current = null; }, []);
+
+  const zoomLimit = MAX_ZOOM;
+  /** Zooms by a factor about a point of the pane, within the camera's limits. */
+  const zoomAt = useCallback((sx: number, sy: number, factor: number) => {
+    const v = getViewport();
+    const zoom = Math.min(zoomLimit, Math.max(MIN_ZOOM, v.zoom * factor));
+    const k = zoom / v.zoom;
+    setViewport({ x: sx - (sx - v.x) * k, y: sy - (sy - v.y) * k, zoom });
+  }, [getViewport, setViewport, zoomLimit]);
+  const zoomButton = (factor: number) => () => {
+    if (!size) return;
+    const v = getViewport();
+    const zoom = Math.min(zoomLimit, Math.max(MIN_ZOOM, v.zoom * factor));
+    const k = zoom / v.zoom;
+    moveTo({ x: size.w / 2 - (size.w / 2 - v.x) * k, y: size.h / 2 - (size.h / 2 - v.y) * k, zoom }, true);
+    follow();
+  };
 
   const frameFocus = useCallback(() => { const t = framing(); if (t) moveTo(t, true); }, [framing, moveTo]);
   useCommand('graphFit', frameFocus, !!size);
 
-  // ---- The boxes and lines ----
-  const boxes = useMemo((): Box[] => {
-    if (tracePlaced) {
-      return graph.nodes.map((n) => ({ id: n.id, ...tracePlaced.positions.get(n.id)!, w: tracePlaced.widths.get(n.id)!, h: tracePlaced.heights.get(n.id)!, text: 1, parent: false }));
-    }
-    if (!drawn) return [];
-    // What was drawn for the map before this one (the Voronoi map's empty stand-in, say) may name nodes this one lacks.
-    const placed = drawn.boxes.filter((b) => map.nodes.has(b.id)).map((b) => { const n = map.nodes.get(b.id)!; return { id: b.id, x: n.x, y: n.y, w: n.w, h: n.h, text: n.text, parent: n.children.length > 0 }; });
-    // Nested and Voronoi, a parent is drawn before its children, so each child lies over its parent (LA-EXP-DR63).
-    if (map.view !== 'tree') placed.sort((a, b) => map.nodes.get(a.id)!.order - map.nodes.get(b.id)!.order);
-    return placed;
-  }, [tracePlaced, graph, drawn, map]);
-  const order = useMemo(() => {
-    if (tracing || map.view === 'tree') return keyboardOrder(boxes);
-    return keyboardOrder(boxes, (id) => map.nodes.get(id)?.order ?? Infinity);
-  }, [boxes, map, tracing]);
+  // ---- The plates and lines (plate.ts, paint.ts) ----
+  const look = useRef<Look>(PLAIN_LOOK);
+  useLayoutEffect(() => { if (wrapper.current) look.current = readLook(wrapper.current); requestPaint(); }, [theme]);
 
-  const { nodes, edges } = useMemo(() => {
-    const byId = new Map(boxes.map((b) => [b.id, b]));
-    const nodes: FlowNode[] = boxes.map((b) => {
-      const inNested = !tracing && map.view !== 'tree' ? map.nodes.get(b.id) as NestedNode | VoronoiNode : undefined;
-      // Nested and Voronoi, a box's border grows with its text, so a large box's edge stays in proportion to its label, and its lines are the map's (LA-EXP-DR62, LA-EXP-DR64).
-      const data = boxData(index, b.id, focus, inNested ? Math.max(0.5, b.text) : b.text, b.text, graph, tracing ? undefined : map.nodes.get(b.id));
-      if (inNested && 'header' in inNested) data.header = inNested.header;
-      // In the Tree view and a trace, its outline is its kind's shape at its size (LA-EXP-DR65).
-      if (!inNested) data.outline = shapeVars(data.shape, b.w, b.h, data.scale);
-      if (inNested && 'polygon' in inNested) {
-        const r = (v: number) => Math.round(v * 100) / 100;
-        data.cell = { points: inNested.polygon.map(([x, y]) => `${r(x - b.x)},${r(y - b.y)}`).join(' '), label: { x: inNested.label.x - b.x, y: inNested.label.y - b.y, w: inNested.label.w, h: inNested.label.h } };
-      }
-      return {
-        id: b.id,
-        type: 'box',
-        position: { x: b.x, y: b.y },
-        width: b.w,
-        height: b.h,
-        draggable: false,
-        connectable: false,
-        selectable: false,
-        // Saying where the handles are means React Flow never has to measure a node.
-        handles: nodeHandles(b.w, b.h),
-        data,
-        ...(data.cell ? { style: CELL_NODE } : {}),
-        ariaLabel: ariaName(data),
-      };
-    });
-    if (!tracing && drawn && map.view === 'tree') {
-      for (const bar of drawn.bars) {
+  const fileTitles = useMemo(() => new Map(graph.nodes.filter((n) => n.id.startsWith('file:')).map((n) => [n.id, n.title])), [graph]);
+  const plates = useMemo(() => new Map<string, Plate>(), [map, tracePlaced, index, measure, fileTitles]);
+  const plateFor = useCallback((id: string): Plate | null => {
+    const known = plates.get(id);
+    if (known) return known;
+    let source: PlateSource | null = null;
+    if (tracePlaced) {
+      const at = tracePlaced.positions.get(id);
+      if (at) source = { view: 'trace', node: { ...at, w: tracePlaced.widths.get(id)!, h: tracePlaced.heights.get(id)!, text: 1 } };
+    } else {
+      const n = map.nodes.get(id);
+      if (n) source = map.view === 'tree' ? { view: 'tree', node: n } : map.view === 'nested' ? { view: 'nested', node: n as NestedNode } : { view: 'voronoi', node: n as VoronoiNode };
+    }
+    if (!source) return null;
+    const plate = plateOf(index, id, source, fileTitles.get(id));
+    plates.set(id, plate);
+    return plate;
+  }, [plates, tracePlaced, map, index, fileTitles]);
+
+  /** The boxes, bars and lines a camera shows, in draw order: in the Nested and Voronoi views a parent before its children, so each child lies over its parent (LA-EXP-DR63). */
+  const frameAt = useCallback((v: Viewport): { plates: Plate[]; bars: Bar[]; lines: Line[] } => {
+    const ids = tracing ? graph.nodes.map((n) => n.id) : drawnAt(v).boxes.map((b) => b.id);
+    const shown = ids.map(plateFor).filter((p): p is Plate => p !== null);
+    if (!tracing && map.view !== 'tree') shown.sort((a, b) => (map.nodes.get(a.id) as NestedNode).order - (map.nodes.get(b.id) as NestedNode).order);
+    const bars: Bar[] = [];
+    if (!tracing && map.view === 'tree') {
+      for (const bar of drawnAt(v).bars) {
         const level = map.levels[bar.level];
-        nodes.push({ id: bar.id, type: 'bar', position: { x: level.x, y: bar.y }, width: level.width, height: bar.h, draggable: false, connectable: false, selectable: false, focusable: false, handles: nodeHandles(level.width, bar.h), data: { bar: true }, className: 'is-bar', domAttributes: { 'aria-hidden': true } });
+        bars.push({ x: level.x, y: bar.y, w: level.width, h: bar.h });
       }
     }
-    const edges: FlowEdge[] = [];
+    const byId = new Map(shown.map((p) => [p.id, p]));
+    const lines: Line[] = [];
     if (tracing) {
       for (const e of graph.edges) {
         const s = byId.get(e.source);
@@ -894,40 +794,130 @@ function GraphCanvas({ index, graph, layout, depth, filters, onNavigate, minimap
         if (!s || !t) continue;
         const sc = centerOf(s);
         const tc = centerOf(t);
-        edges.push({
-          id: e.id, source: e.source, target: e.target, type: 'line', markerEnd: { type: MarkerType.ArrowClosed }, focusable: false, selectable: false,
-          data: { relation: e.relation, points: [boxExit(sc.x, sc.y, tc.x, tc.y, s.w, s.h), boxExit(tc.x, tc.y, sc.x, sc.y, t.w, t.h)], label: graphEdgeLabel(index, e), link: true, scale: 1 },
-        });
+        lines.push({ id: e.id, source: e.source, target: e.target, style: relationStyle(e.relation), link: true, points: [boxExit(sc.x, sc.y, tc.x, tc.y, s.w, s.h), boxExit(tc.x, tc.y, sc.x, sc.y, t.w, t.h)], scale: 1, label: graphEdgeLabel(index, e) });
       }
-      return { nodes, edges };
+      return { plates: shown, bars, lines };
     }
-    // The tree's parent lines: level, from the parent's right edge to the child's left edge, at the child's middle.
-    // Nested has none: holding is the parent link (LA-EXP-DR62).
+    // The tree's parent lines: level, from the parent's outline to the child's, at the child's middle. Nested and Voronoi have none: holding is the parent link (LA-EXP-DR62).
     if (parentShown && map.view === 'tree') {
-      for (const b of boxes) {
+      for (const b of shown) {
         const up = map.nodes.get(b.id)?.parent;
         const p = up ? byId.get(up) : undefined;
         if (!p) continue;
         const shape = (id: string) => nodeShape(index, id).shape;
-        edges.push({ id: `${p.id}|${PARENT}|${b.id}`, source: p.id, target: b.id, type: 'line', focusable: false, selectable: false, data: { relation: PARENT, points: parentLine(p, b, shape(p.id), shape(b.id)), label: '', link: false, scale: b.text } });
+        lines.push({ id: `${p.id}|${PARENT}|${b.id}`, source: p.id, target: b.id, style: 'structure', link: false, points: parentLine(p, b, shape(p.id), shape(b.id)), scale: b.text, label: '' });
       }
     }
     // The Links switch: the focus's own links, as curves between their boxes; in the Voronoi view, between their cells' labels, inside the cells.
-    const anchor = (b: Box) => { const n = map.nodes.get(b.id); return n && 'polygon' in n ? (n as VoronoiNode).label : b; };
+    const anchor = (b: Plate) => { const n = map.nodes.get(b.id); return n && 'polygon' in n ? (n as VoronoiNode).label : b; };
     for (const e of graph.edges) {
       if (e.relation === PARENT) continue;
       const s = byId.get(e.source);
       const t = byId.get(e.target);
       if (!s || !t) continue;
-      edges.push({ id: e.id, source: e.source, target: e.target, type: 'line', markerEnd: { type: MarkerType.ArrowClosed }, focusable: false, selectable: false, data: { relation: e.relation, points: linkEnds(anchor(s), anchor(t)), label: graphEdgeLabel(index, e), link: true, scale: 1 } });
+      lines.push({ id: e.id, source: e.source, target: e.target, style: relationStyle(e.relation), link: true, points: linkEnds(anchor(s), anchor(t)), scale: 1, label: graphEdgeLabel(index, e) });
     }
-    return { nodes, edges };
-  }, [boxes, drawn, tracing, map, index, focus, graph, parentShown]);
+    return { plates: shown, bars, lines };
+  }, [tracing, graph, drawnAt, plateFor, map, index, parentShown]);
+  const lastFrame = useRef<{ plates: Plate[]; bars: Bar[]; lines: Line[] } | null>(null);
+  // What the last frame drew is stale once anything it was drawn from changes: the pointer then hit-tests a fresh frame.
+  lastFrame.current = null;
 
-  const domNode = (id: string) =>
-    [...(wrapper.current?.querySelectorAll<HTMLElement>('.react-flow__node') ?? [])].find((el) => el.dataset.id === id) ?? null;
+  // ---- The spotlight, the pointer, the keyboard's ring and a tap's selection ----
+  const hover = useRef<string | null>(null);
+  const ring = useRef<string | null>(null);
+  const spotlight = useRef<{ id: string | null; lit: Set<string> | null; litLines: Set<string> | null; from: number; to: number; start: number }>({ id: null, lit: null, litLines: null, from: 0, to: 0, start: 0 });
 
-  // After a keyboard action, put focus back on the right node once it is drawn.
+  const camOf = (v: Viewport, s: { w: number; h: number }): Camera => ({ cx: (s.w / 2 - v.x) / v.zoom, cy: (s.h / 2 - v.y) / v.zoom, zoom: v.zoom, w: s.w, h: s.h });
+  const spotNow = () => {
+    const s = spotlight.current;
+    const fade = look.current.fade;
+    const t = fade > 0 ? Math.min(1, (performance.now() - s.start) / fade) : 1;
+    return { value: s.from + (s.to - s.from) * t, done: t >= 1 };
+  };
+  const ctx = useRef<CanvasRenderingContext2D | null | undefined>(undefined);
+  const tap = useRef<ReturnType<typeof useTapToOpen> | null>(null);
+
+  paintRef.current = () => {
+    const s = sizeRef.current;
+    if (!s) return;
+    const frame = frameAt(view.current);
+    lastFrame.current = frame;
+    if (ctx.current === undefined) ctx.current = canvas.current?.getContext('2d') ?? null;
+    if (!ctx.current) return;
+    const spot = spotNow();
+    const sp = spotlight.current;
+    const state: PaintState = { focus, hover: hover.current, ring: ring.current, armed: tap.current?.armed ?? null, lit: sp.lit, litLines: sp.litLines, spot: spot.value };
+    paint(ctx.current, dpr, camOf(view.current, s), frame, look.current, fonts, state);
+    if (!spot.done) requestPaint();
+    else if (sp.to === 0 && sp.lit) { sp.lit = null; sp.litLines = null; }
+  };
+  // Every render may change what is drawn: the focus, the filters, the plates, the theme.
+  useEffect(() => { requestPaint(); });
+
+  /**
+   * The hover spotlight: hovering or keyboard-focusing a labeled box brightens it, its lines and the
+   * boxes they join, and dims the rest a step; leaving restores the picture. It fades with the
+   * motion tokens (at once under reduced motion).
+   */
+  const spot = useCallback((id: string | null) => {
+    const root = wrapper.current;
+    if (!root) return;
+    const known = id !== null && (map.nodes.has(id) || graph.nodes.some((n) => n.id === id));
+    onPeek?.('hover', known && !id!.startsWith('file:') ? id : null);
+    const s = spotlight.current;
+    const value = spotNow().value;
+    if (!known) {
+      root.classList.remove('has-spotlight');
+      if (s.id !== null) { spotlight.current = { ...s, id: null, from: value, to: 0, start: performance.now() }; requestPaint(); }
+      return;
+    }
+    if (s.id === id) return;
+    const lit = new Set([id]);
+    const litLines = new Set<string>();
+    for (const line of lastFrame.current?.lines ?? frameAt(view.current).lines) {
+      if (line.source !== id && line.target !== id) continue;
+      lit.add(line.source);
+      lit.add(line.target);
+      litLines.add(line.id);
+    }
+    // Nested and Voronoi, holding is the parent link: the box lights its parent and everything inside it, as the Tree view's parent lines light theirs.
+    const held = map.view !== 'tree' && !tracing ? map.nodes.get(id!) : undefined;
+    if (held) {
+      if (held.parent) lit.add(held.parent);
+      const within = (n: string) => { for (const c of map.nodes.get(n)?.children ?? []) { lit.add(c); within(c); } };
+      within(held.id);
+    }
+    root.classList.add('has-spotlight');
+    spotlight.current = { id, lit, litLines, from: s.id === null ? value : 1, to: 1, start: performance.now() };
+    requestPaint();
+  }, [map, graph, onPeek, tracing, frameAt, requestPaint]);
+  // A new focus starts without a spotlight.
+  useEffect(() => () => spot(null), [focus]);
+
+  /** Whether a box can be focused by a click: a record or a group, not the focus, not a file. */
+  const canOpen = useCallback((id: string) => !id.startsWith('file:') && id !== focus && isGraphNode(index, id), [focus, index]);
+  // By touch, a first tap selects a node and a second tap (or the card's Open chip) opens it.
+  const tapToOpen = useTapToOpen(onNavigate, canOpen, wrapper, focus);
+  tap.current = tapToOpen;
+  const armedPlate = tapToOpen.armed ? plateFor(tapToOpen.armed) : null;
+  useEffect(() => { onPeek?.('selected', tapToOpen.armed); requestPaint(); }, [tapToOpen.armed, onPeek]);
+
+  // ---- The keyboard's layer ----
+  const boxIds = useMemo((): string[] => {
+    if (tracePlaced) return graph.nodes.map((n) => n.id);
+    if (!drawn) return [];
+    // What was drawn for the map before this one (the Voronoi map's empty stand-in, say) may name nodes this one lacks.
+    return drawn.boxes.filter((b) => map.nodes.has(b.id)).map((b) => b.id);
+  }, [tracePlaced, graph, drawn, map]);
+  const order = useMemo(() => {
+    const placed = boxIds.map((id) => plateFor(id)).filter((p): p is Plate => p !== null);
+    if (tracing || map.view === 'tree') return keyboardOrder(placed);
+    return keyboardOrder(placed, (id) => (map.nodes.get(id) as NestedNode | undefined)?.order ?? Infinity);
+  }, [boxIds, plateFor, map, tracing]);
+  const domNode = (id: string) => [...(layer.current?.querySelectorAll<HTMLElement>('.graph-box') ?? [])].find((el) => el.dataset.id === id) ?? null;
+
+  // After a keyboard action, put focus back on the right box once it is in the layer.
   useEffect(() => {
     if (!refocus.current) return;
     const id = refocus.current;
@@ -936,64 +926,22 @@ function GraphCanvas({ index, graph, layout, depth, filters, onNavigate, minimap
     refocus.current = null;
     el.focus({ preventScroll: true });
     active.current = id;
-  }, [nodes]);
+  }, [order]);
 
-  /**
-   * The hover spotlight: hovering or keyboard-focusing a labeled box brightens it, its lines and the
-   * boxes they join, and dims the rest a step; leaving restores the picture. It writes classes
-   * straight to the drawn elements, so nothing is drawn anew, and the CSS fades them with the
-   * motion tokens (at once under reduced motion).
-   */
-  const spot = useCallback((id: string | null) => {
-    const root = wrapper.current;
-    if (!root) return;
-    for (const el of root.querySelectorAll('.is-lit')) el.classList.remove('is-lit');
-    const known = id !== null && !id.startsWith('bar:') && (map.nodes.has(id) || graph.nodes.some((n) => n.id === id));
-    onPeek?.('hover', known && !id!.startsWith('file:') ? id : null);
-    if (!known) { root.classList.remove('has-spotlight'); return; }
-    const lit = new Set([id]);
-    const edgeIds = new Set<string>();
-    for (const e of edges) {
-      if (e.source !== id && e.target !== id) continue;
-      lit.add(e.source);
-      lit.add(e.target);
-      edgeIds.add(`${e.source} ${e.target}`);
-    }
-    // Nested and Voronoi, holding is the parent link: the box lights its parent and everything inside it, as the Tree view's parent lines light theirs.
-    const held = map.view !== 'tree' ? map.nodes.get(id!) : undefined;
-    if (held) {
-      if (held.parent) lit.add(held.parent);
-      const within = (n: string) => { for (const c of map.nodes.get(n)?.children ?? []) { lit.add(c); within(c); } };
-      within(held.id);
-    }
-    root.classList.add('has-spotlight');
-    for (const el of root.querySelectorAll<HTMLElement>('.react-flow__node')) if (lit.has(el.dataset.id ?? '')) el.classList.add('is-lit');
-    for (const el of root.querySelectorAll<SVGGElement>('g.graph-edge-group')) if (edgeIds.has(`${el.dataset.source} ${el.dataset.target}`)) el.classList.add('is-lit');
-  }, [edges, map, graph, onPeek]);
-  // A new focus starts without a spotlight.
-  useEffect(() => () => spot(null), [focus]);
-
-  /** Whether a box can be focused by a click: a record or a group, not the focus, not a file or a bar. */
-  const canOpen = useCallback((id: string) => !id.startsWith('file:') && !id.startsWith('bar:') && id !== focus && isGraphNode(index, id), [focus, index]);
   /** A click or Enter on a box: it becomes the focus, at its own address. */
   const activate = (id: string, fromKeyboard: boolean) => {
     if (!canOpen(id)) return;
     if (fromKeyboard) refocus.current = id;
     onNavigate(id);
   };
-  // By touch, a first tap selects a node and a second tap (or the card's Open chip) opens it.
-  const tap = useTapToOpen(onNavigate, canOpen, wrapper, focus);
-  const armedBox = tap.armed ? nodes.find((n) => n.id === tap.armed && n.type === 'box') : undefined;
-  useEffect(() => { onPeek?.('selected', tap.armed); }, [tap.armed, onPeek]);
-
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
-    if (order.length === 0) return;
+    if (order.length === 0 || !(e.target as HTMLElement).closest?.('.graph-box')) return;
     const current = active.current && order.includes(active.current) ? order.indexOf(active.current) : -1;
     const move = (step: number) => {
       e.preventDefault();
       const next = order[(current + step + order.length) % order.length];
       active.current = next;
-      domNode(next)?.focus();
+      domNode(next)?.focus({ preventScroll: true });
     };
     if (e.key === 'ArrowRight' || e.key === 'ArrowDown') move(1);
     else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') move(current < 0 ? 0 : -1);
@@ -1003,73 +951,241 @@ function GraphCanvas({ index, graph, layout, depth, filters, onNavigate, minimap
     }
   };
 
+  // ---- The pointer: hover, click, drag, wheel and pinch ----
+  const local = (e: { clientX: number; clientY: number }) => {
+    const r = canvas.current!.getBoundingClientRect();
+    return { x: e.clientX - r.left, y: e.clientY - r.top };
+  };
+  const hitAt = useCallback((x: number, y: number): Plate | null => {
+    const v = view.current;
+    const frame = lastFrame.current ?? frameAt(v);
+    return hitPlate(frame.plates, { x: (x - v.x) / v.zoom, y: (y - v.y) / v.zoom });
+  }, [frameAt]);
+  const setHover = (id: string | null) => {
+    if (hover.current === id) return;
+    hover.current = id;
+    const c = canvas.current;
+    const p = id ? plateFor(id) : null;
+    if (c) {
+      c.style.cursor = p && canOpen(p.id) ? 'pointer' : '';
+      c.title = p ? plateTip(p) : '';
+    }
+    spot(id);
+    requestPaint();
+  };
+  const pointers = useRef(new Map<number, { x: number; y: number }>());
+  const press = useRef<{ x: number; y: number; moved: boolean } | null>(null);
+  const pinch = useRef<{ dist: number; mid: { x: number; y: number } } | null>(null);
+  const twoPointers = () => {
+    const [a, b] = [...pointers.current.values()];
+    return { dist: Math.hypot(a.x - b.x, a.y - b.y), mid: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 } };
+  };
+  const onPointerDown = (e: ReactPointerEvent<HTMLCanvasElement>) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    canvas.current?.setPointerCapture?.(e.pointerId);
+    const at = local(e);
+    pointers.current.set(e.pointerId, at);
+    if (pointers.current.size === 1) press.current = { ...at, moved: false };
+    else if (pointers.current.size === 2) { pinch.current = twoPointers(); if (press.current) press.current.moved = true; stopGlide(); }
+  };
+  const onPointerMove = (e: ReactPointerEvent<HTMLCanvasElement>) => {
+    const at = local(e);
+    const before = pointers.current.get(e.pointerId);
+    if (!before) {
+      if (e.pointerType !== 'touch' && e.pointerType !== 'pen') setHover(hitAt(at.x, at.y)?.id ?? null);
+      return;
+    }
+    pointers.current.set(e.pointerId, at);
+    if (pointers.current.size >= 2 && pinch.current) {
+      const now = twoPointers();
+      const v = getViewport();
+      setViewport({ ...v, x: v.x + now.mid.x - pinch.current.mid.x, y: v.y + now.mid.y - pinch.current.mid.y });
+      zoomAt(now.mid.x, now.mid.y, now.dist / Math.max(1, pinch.current.dist));
+      pinch.current = now;
+      follow();
+      return;
+    }
+    const p = press.current;
+    if (!p) return;
+    if (!p.moved && Math.hypot(at.x - p.x, at.y - p.y) < DRAG_PX) return;
+    if (!p.moved) { p.moved = true; stopGlide(); }
+    const v = getViewport();
+    setViewport({ ...v, x: v.x + at.x - before.x, y: v.y + at.y - before.y });
+    follow();
+  };
+  const onPointerUp = (e: ReactPointerEvent<HTMLCanvasElement>) => {
+    if (!pointers.current.has(e.pointerId)) return;
+    pointers.current.delete(e.pointerId);
+    if (pointers.current.size < 2) pinch.current = null;
+    const p = press.current;
+    if (pointers.current.size > 0) return;
+    press.current = null;
+    if (!p || p.moved || e.type === 'pointercancel') { follow(); return; }
+    const hit = hitAt(p.x, p.y);
+    if (hit) tapToOpen.onNodeClick(e.nativeEvent, hit.id); else tapToOpen.clear();
+  };
+  // The wheel zooms about the pointer (a pinch on a trackpad comes as a wheel with Ctrl held), as d3's zoom does.
+  useEffect(() => {
+    const c = canvas.current;
+    if (!c) return;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      stopGlide();
+      const at = local(e);
+      const delta = -e.deltaY * (e.deltaMode === 1 ? 0.05 : e.deltaMode ? 1 : 0.002) * (e.ctrlKey ? 10 : 1);
+      zoomAt(at.x, at.y, 2 ** delta);
+      follow();
+    };
+    c.addEventListener('wheel', onWheel, { passive: false });
+    return () => c.removeEventListener('wheel', onWheel);
+  }, [zoomAt, follow]);
+
   // The edge hints count the linked records past each edge; a click brings the nearest of them into view.
   const linkedCenters = useMemo(() => (tracing ? [] : linked.flatMap((id) => { const n = map.nodes.get(id); return n && !hidden.has(id) ? [centerOf(n)] : []; })), [tracing, linked, map, hidden]);
+  const hintKey = useSyncExternalStore(store.subscribe, () => {
+    const s = sizeRef.current;
+    if (!s || linkedCenters.length === 0) return '0 0 0 0';
+    const p = pastEdges(linkedCenters, view.current, s.w, s.h);
+    return `${p.up} ${p.down} ${p.left} ${p.right}`;
+  });
+  const past = useMemo(() => { const [up, down, left, right] = hintKey.split(' ').map(Number); return { up, down, left, right }; }, [hintKey]);
   const panToward = useCallback((side: Side) => {
     if (!size) return;
     const v = getViewport();
     const at = (p: Point) => ({ x: p.x * v.zoom + v.x, y: p.y * v.zoom + v.y });
-    const past = linkedCenters.filter((c) => {
+    const beyond = linkedCenters.filter((c) => {
       const s = at(c);
       return side === 'up' ? s.y < 0 : side === 'down' ? s.y > size.h : side === 'left' ? s.x < 0 : s.x > size.w;
     });
     const mid = { x: size.w / 2, y: size.h / 2 };
-    const nearest = past.sort((a, b) => Math.hypot(at(a).x - mid.x, at(a).y - mid.y) - Math.hypot(at(b).x - mid.x, at(b).y - mid.y))[0];
+    const nearest = beyond.sort((a, b) => Math.hypot(at(a).x - mid.x, at(a).y - mid.y) - Math.hypot(at(b).x - mid.x, at(b).y - mid.y))[0];
     if (nearest) moveTo({ x: mid.x - nearest.x * v.zoom, y: mid.y - nearest.y * v.zoom, zoom: v.zoom }, true);
   }, [size, getViewport, linkedCenters, moveTo]);
+  // The minimap's view rectangle, in map units, as one key.
+  const minimapView = useSyncExternalStore(store.subscribe, () => {
+    const s = sizeRef.current;
+    const v = view.current;
+    if (!minimap || !s) return '0 0 0 0';
+    return `${-v.x / v.zoom} ${-v.y / v.zoom} ${s.w / v.zoom} ${s.h / v.zoom}`;
+  });
 
+  // ---- The test hook: the drawn scene, in the page's pixels ----
+  useEffect(() => {
+    const host = wrapper.current;
+    if (!host) return;
+    host.graphHit = (clientX, clientY) => {
+      const r = canvas.current!.getBoundingClientRect();
+      return hitAt(clientX - r.left, clientY - r.top)?.id ?? null;
+    };
+    host.graphScene = () => {
+      const s = sizeRef.current ?? { w: 0, h: 0 };
+      const v = view.current;
+      const r = canvas.current!.getBoundingClientRect();
+      const frame = frameAt(v);
+      const X = (x: number) => r.left + x * v.zoom + v.x;
+      const Y = (y: number) => r.top + y * v.zoom + v.y;
+      const rect = (x: number, y: number, w: number, h: number): Rect => ({ left: X(x), top: Y(y), width: w * v.zoom, height: h * v.zoom });
+      const measureCtx = canvas.current!.getContext?.('2d') ?? null;
+      const sp = spotlight.current;
+      return {
+        layout: tracing ? 'trace' : layout,
+        camera: roundCamera(v),
+        moves: moves.current.moves,
+        glides: moves.current.glides,
+        canvas: { left: r.left, top: r.top, width: s.w, height: s.h },
+        textBarPx: TEXT_BAR_PX,
+        spotlight: sp.id !== null,
+        bars: frame.bars.map((b) => rect(b.x, b.y, b.w, b.h)),
+        lines: frame.lines.map((l) => ({ id: l.id, source: l.source, target: l.target, style: l.style, link: l.link, label: l.label, lit: sp.id !== null && sp.litLines ? sp.litLines.has(l.id) : null, points: l.points.map((p) => [X(p.x), Y(p.y)] as [number, number]) })),
+        boxes: frame.plates.map((p) => ({
+          id: p.id, kind: p.kind, stage: p.stage, shape: p.shape, view: p.view, focus: p.id === focus, file: p.file, group: p.group,
+          hover: hover.current === p.id, ring: ring.current === p.id, armed: tapToOpen.armed === p.id, lit: sp.id !== null && sp.lit ? sp.lit.has(p.id) : null,
+          map: { x: p.x, y: p.y, w: p.w, h: p.h }, textScale: p.text, boxScale: p.scale,
+          rect: rect(p.x, p.y, p.w, p.h),
+          polygon: p.outline.kind === 'polygon' ? p.outline.points.map(([x, y]) => [X(x), Y(y)] as [number, number]) : null,
+          label: rect(p.label.x, p.label.y, p.label.w, p.label.h),
+          lines: p.lines.map((l) => {
+            const fontPx = l.size * v.zoom;
+            const font = fontFor(fonts, l.face, fontPx);
+            let drawnWidth = l.width * v.zoom;
+            if (measureCtx && fontPx >= TEXT_BAR_PX) { measureCtx.font = font; drawnWidth = measureCtx.measureText(l.text.trimEnd()).width; }
+            return { text: l.text, face: l.face, mapPx: l.size, fontPx, font, rect: rect(l.x, l.top, l.width, l.height), bar: fontPx < TEXT_BAR_PX, drawnWidth };
+          }),
+          icons: p.icons.map((i) => ({ draw: i.draw, name: i.name, rect: rect(i.x, i.y, i.w, i.h) })),
+          badges: p.badges.map((b) => ({ label: b.label, tone: b.tone, rect: rect(b.x, b.y, b.w, b.h) })),
+          tip: plateTip(p),
+          name: plateName(p, p.id === focus),
+        })),
+      };
+    };
+  });
+
+  const nested = layout !== 'tree';
   return (
     <div
       ref={wrapper}
       className={`graph-flow${nested && !tracing ? ' is-nested' : ''}${layout === 'voronoi' && !tracing ? ' is-voronoi' : ''}`}
       data-layout={tracing ? 'trace' : layout}
+      data-ready={size && (layout !== 'voronoi' || tracing || voronoi) ? 'true' : undefined}
       onKeyDown={onKeyDown}
-      onFocus={(e) => {
-        const id = (e.target as HTMLElement).closest?.('.react-flow__node')?.getAttribute('data-id');
-        if (id) active.current = id;
-        spot(id ?? null);
-      }}
-      onBlur={() => spot(null)}
     >
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        nodeTypes={nodeTypes}
-        edgeTypes={edgeTypes}
-        nodesDraggable={false}
-        nodesConnectable={false}
-        elementsSelectable={false}
-        edgesFocusable={false}
-        autoPanOnNodeFocus={false}
-        onNodeClick={(e, n) => { if (n.type === 'box') tap.onNodeClick(e, n.id); }}
-        onNodeMouseEnter={(_, n) => { if (n.type === 'box') spot(n.id); }}
-        onNodeMouseLeave={() => spot(null)}
-        onPaneClick={tap.clear}
-        onMove={onMove}
-        onMoveEnd={() => { if (glide.current === null) follow(); }}
-        minZoom={MIN_ZOOM}
-        maxZoom={MAX_ZOOM}
-        zoomOnDoubleClick={false}
-        proOptions={{ hideAttribution: true }}
+      <canvas
+        ref={canvas}
+        className="graph-canvas-draw"
+        aria-hidden="true"
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+        onPointerLeave={(e) => { if (!pointers.current.has(e.pointerId)) setHover(null); }}
+      />
+      <div
+        ref={layer}
+        className="graph-access"
+        onFocus={(e) => {
+          const el = (e.target as HTMLElement).closest?.<HTMLElement>('.graph-box');
+          const id = el?.dataset.id ?? null;
+          if (id) active.current = id;
+          ring.current = el && el.matches(':focus-visible') ? id : null;
+          spot(id);
+          requestPaint();
+        }}
+        onBlur={() => { ring.current = null; spot(null); requestPaint(); }}
       >
-        <MapBackground />
-        <Controls showInteractive={false} showFitView={false}>
-          <ControlButton onClick={frameFocus} className="graph-frame-focus" title="Frame the focus" aria-label="Frame the focus">
-            <Icon name="maximize" size={14} />
-          </ControlButton>
-        </Controls>
-      </ReactFlow>
-      {minimap && !tracing && <MapOverview map={map} focus={focus} hidden={hidden} />}
-      {!tracing && <EdgeHints centers={linkedCenters} wrapper={wrapper} noun="linked" onPan={panToward} />}
-      {armedBox && (
+        {order.map((id) => {
+          const p = plateFor(id);
+          if (!p) return null;
+          return (
+            <div
+              key={id}
+              className={`graph-box${id === focus ? ' is-focus' : ''}`}
+              data-id={id}
+              role="group"
+              aria-roledescription="node"
+              aria-label={plateName(p, id === focus)}
+              tabIndex={0}
+              onClick={(e) => tapToOpen.onNodeClick(e, id)}
+            />
+          );
+        })}
+      </div>
+      <div className="graph-controls" role="group" aria-label="Camera">
+        <Button variant="icon" className="graph-zoom-in" label="Zoom in" title="Zoom in" onClick={zoomButton(ZOOM_STEP)}><Icon name="plus" size={14} /></Button>
+        <Button variant="icon" className="graph-zoom-out" label="Zoom out" title="Zoom out" onClick={zoomButton(1 / ZOOM_STEP)}><Icon name="minus" size={14} /></Button>
+        <Tooltip label="Frame the focus" command="graphFit">
+          <Button variant="icon" className="graph-frame-focus" label="Frame the focus" onClick={frameFocus}><Icon name="maximize" size={14} /></Button>
+        </Tooltip>
+      </div>
+      {minimap && !tracing && <MapOverview map={map} focus={focus} hidden={hidden} view={minimapView} />}
+      {!tracing && size && linkedCenters.length > 0 && <EdgeHintChips past={past} noun="linked" onPan={panToward} />}
+      {armedPlate && (
         <TapCard
-          kind={(armedBox.data as NodeData).group ? 'Group' : (armedBox.data as NodeData).kindLabel}
-          name={(armedBox.data as NodeData).title}
-          onOpen={tap.openArmed}
-          onDismiss={tap.clear}
+          kind={armedPlate.group ? 'Group' : armedPlate.kindLabel}
+          name={armedPlate.title}
+          onOpen={tapToOpen.openArmed}
+          onDismiss={tapToOpen.clear}
         />
       )}
     </div>
   );
 }
-

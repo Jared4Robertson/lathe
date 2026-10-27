@@ -8,4 +8,4 @@ run_by: app/test/graph/GraphPage.test.tsx
 links:
   proves: [LA-EXP-UC03-R04]
 ---
-Expects stage classes on the nodes, an error mark on a test with an error, a gap mark on a rule with a gap, relation classes on the lines, and a legend.
+Expects each node drawn in its stage's colors, an error badge on a test with an error and none on a clean view, a gap badge on a rule with a gap, the lines' relation families, and a legend.

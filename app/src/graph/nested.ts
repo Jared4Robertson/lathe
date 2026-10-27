@@ -1,6 +1,6 @@
 import type { SpecIndex } from '../specs/data';
 import { MAP_SIZE, sizeText, type MapNode, type PlacedMap } from './map';
-import { BORDER, labelHeight, largestFit, linesIn, mapLabel, type MapLabel } from './text';
+import { BORDER, labelHeight, largestFit, linesIn, mapLabel, type MapLabel, textMeasure } from './text';
 import { treeChildren } from './tree';
 
 // The graph's Nested map (LA-EXP-DR62): the same tree as the Tree map (map.ts), one product's, the
@@ -129,9 +129,10 @@ const cache = new WeakMap<SpecIndex, Map<string, NestedMap>>();
 export function nestedMap(index: SpecIndex, root: string): NestedMap {
   let maps = cache.get(index);
   if (!maps) { maps = new Map(); cache.set(index, maps); }
-  const known = maps.get(root);
+  const key = `${textMeasure().key}|${root}`;
+  const known = maps.get(key);
   if (known) return known;
   const map = layoutNested([root], (id) => treeChildren(index, id), (id) => mapLabel(index, id));
-  maps.set(root, map);
+  maps.set(key, map);
   return map;
 }

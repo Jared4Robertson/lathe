@@ -6,6 +6,7 @@ import { navigate } from '../src/router';
 import { openApp, startAtDepth } from './helpers';
 import './graph/setup';
 import { testWorkspace } from './graph/workspace';
+import { boxElement } from './graph/scene';
 
 // "Nothing jumps" (LA-PAT-APP-UX-R08), at the level jsdom can check: the causes of jitter that
 // show in the source. The stability suite (app/stability, `npm --prefix app run test:stability`)
@@ -126,14 +127,14 @@ describe('nothing jumps (LA-PAT-APP-UX-R08)', () => {
     await openApp('/P-D-UC01-R01?view=graph', { workspace: testWorkspace() });
     await waitFor(() => expect(document.querySelector('.graph-links button')).not.toBeNull());
     fireEvent.click(document.querySelector<HTMLElement>('.graph-links button')!);
-    await waitFor(() => expect(document.querySelector('.react-flow__node[data-id="P-D-V01"]')).not.toBeNull());
+    await waitFor(() => expect(boxElement('P-D-V01')).not.toBeNull());
     const canvas = document.querySelector('.graph-flow');
-    const flow = document.querySelector('.graph-flow .react-flow');
-    fireEvent.click(document.querySelector('.react-flow__node[data-id="P-D-V01"]')!);
+    const drawing = document.querySelector('.graph-flow canvas');
+    fireEvent.click(boxElement('P-D-V01')!);
     await waitFor(() => expect(window.location.pathname).toBe('/P-D-V01'));
-    await waitFor(() => expect(document.querySelector('.react-flow__node[data-id="P-D-E01"]')).not.toBeNull());
+    await waitFor(() => expect(boxElement('P-D-E01')).not.toBeNull());
     expect(document.querySelector('.graph-flow')).toBe(canvas);
-    expect(document.querySelector('.graph-flow .react-flow')).toBe(flow);
+    expect(document.querySelector('.graph-flow canvas')).toBe(drawing);
   });
 
   it('LA-PLT-T79 what the graph connects reaches the side bar before paint, not an effect later', () => {
