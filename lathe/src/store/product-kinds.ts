@@ -76,7 +76,7 @@ export function productKindSql(
     }
     statements.push(`CREATE TABLE ${sqlName(name)} (\n  ${columns.join(',\n  ')}\n);`, ...comments);
     statements.push(
-      `INSERT INTO meta_kind VALUES (${[name, kind.label, kind.stage, kind.section, kind.obligation, kind.id_pattern, kind.id_example, kind.product_id].map(literal).join(', ')});`,
+      `INSERT INTO meta_kind (name, label, stage, section, obligation, id_pattern, id_example, product_id) VALUES (${[name, kind.label, kind.stage, kind.section, kind.obligation, kind.id_pattern, kind.id_example, kind.product_id].map(literal).join(', ')});`,
       `INSERT INTO meta_kind_parent VALUES (${literal(name)}, ${literal(parent)}, 1, ${literal(parentColumn)});`,
       `INSERT INTO meta_table VALUES (${literal(name)}, 'kind', NULL);`,
     );

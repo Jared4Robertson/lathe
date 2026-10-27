@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildWorkspace, indexWorkspace, KIND_ORDER, partsOf, textOf } from '../src/specs/data';
+import { buildWorkspace, indexWorkspace, partsOf, textOf } from '../src/specs/data';
 import { addRows, indexOf } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
 import { patternWorkspace } from './fixtures/patterns';
@@ -48,9 +48,12 @@ describe('the index from typed rows', () => {
     expect(partsOf(patterns, 'DM-PAT-CHECKOUT', 'pattern_setting').map((s) => s.name)).toEqual(['record', 'audit']);
   });
 
-  it('reads kinds, folders and relations from the schema, kinds in the app\'s order', () => {
+  it('reads kinds, folders and relations from the schema, kinds in the schema\'s order', () => {
     const ws = buildWorkspace(workspace());
-    expect(ws.kinds.map((k) => k.kind)).toEqual(KIND_ORDER.filter((k) => ws.kinds.some((x) => x.kind === k)));
+    const positions = ws.kinds.map((k) => ws.schema.kinds[k.kind].position);
+    expect(positions).toEqual([...positions].sort((a, b) => a! - b!));
+    expect(ws.kinds.slice(0, 3).map((k) => k.kind)).toEqual(['product', 'domain', 'capability']);
+    expect(ws.kinds.at(-1)!.kind).toBe('question');
     const requirement = ws.kinds.find((k) => k.kind === 'requirement')!;
     expect(requirement).toMatchObject({ label: 'UC requirement', stage: 'define', section: 'use-cases', parent_kinds: ['use_case'], obligation: true, proof_only: false });
     expect(requirement.required_fields).toEqual(['statement']);
