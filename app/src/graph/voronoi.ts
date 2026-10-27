@@ -2,7 +2,8 @@ import { voronoiMapSimulation, type VoronoiMapPolygon } from 'd3-voronoi-map';
 import polylabel from 'polylabel';
 import type { SpecIndex } from '../specs/data';
 import type { MapNode, PlacedMap } from './map';
-import { LABEL_PAD, labelHeight, linesIn as linesAt, mapLabel, wordsFit as wordsFitAt, type MapLabel, type WrappedLabel } from './text';
+import { LABEL_PAD, labelHeight, linesIn as linesAt, mapLabel, textMeasure, wordsFit as wordsFitAt, type MapLabel, type WrappedLabel } from './text';
+import type { MeasureSpec } from './fonts';
 import { treeChildren } from './tree';
 
 // The graph's Voronoi map (LA-EXP-DR64): the same tree as the Tree and Nested maps, one product's,
@@ -440,7 +441,7 @@ export function layoutTreeOf(tree: VoronoiTree): VoronoiMap {
 
 const cache = new WeakMap<SpecIndex, Map<string, VoronoiMap>>();
 const pending = new WeakMap<SpecIndex, Map<string, Promise<VoronoiMap>>>();
-/** Each product's last layout this session, with the tree it was built from: a spec loaded again with the same tree and labels (only a body changed, say) reuses it. */
+/** Each product's last layout this session, with the tree and measure it was built from: a spec loaded again with the same tree and labels (only a body changed, say) reuses it. */
 const last = new Map<string, { key: string; map: VoronoiMap }>();
 
 /** Whether this page can lay out in a worker; where it cannot (the tests, in jsdom), the layout runs at once on the main thread. */
@@ -449,8 +450,8 @@ const canWork = () => typeof Worker !== 'undefined';
 let worker: Worker | null = null;
 let asked = 0;
 const waiting = new Map<number, { resolve: (map: VoronoiMap) => void; reject: (error: unknown) => void }>();
-/** Lays out a tree in the worker (voronoi.worker.ts), started on first use; a worker that fails is dropped, and the next layout starts another. */
-function inWorker(tree: VoronoiTree): Promise<VoronoiMap> {
+/** Lays out a tree in the worker (voronoi.worker.ts), started on first use, measuring its text as `measure` says; a worker that fails is dropped, and the next layout starts another. */
+function inWorker(tree: VoronoiTree, measure: MeasureSpec): Promise<VoronoiMap> {
   if (!worker) {
     const started = new Worker(new URL('./voronoi.worker.ts', import.meta.url), { type: 'module' });
     started.onmessage = (e: MessageEvent<{ id: number; map: VoronoiMap }>) => { waiting.get(e.data.id)?.resolve(e.data.map); waiting.delete(e.data.id); };
@@ -459,7 +460,7 @@ function inWorker(tree: VoronoiTree): Promise<VoronoiMap> {
   }
   const id = ++asked;
   const to = worker;
-  return new Promise((resolve, reject) => { waiting.set(id, { resolve, reject }); to.postMessage({ id, tree }); });
+  return new Promise((resolve, reject) => { waiting.set(id, { resolve, reject }); to.postMessage({ id, tree, measure }); });
 }
 
 const mapsOf = (index: SpecIndex) => {
@@ -470,36 +471,38 @@ const mapsOf = (index: SpecIndex) => {
 
 /**
  * The Voronoi map of one product (or of a tree no product reaches), from its root, as the Tree map
- * has it (`mapRootOf`), if it is ready: laid out once per index, then read. A spec loaded again
- * with the same tree and labels gets the map it had at once. Where there is no worker it is laid
- * out here and now, so it is always ready.
+ * has it (`mapRootOf`), if it is ready: laid out once per index and text measure, then read. A
+ * spec loaded again with the same tree and labels gets the map it had at once. Where there is no
+ * worker it is laid out here and now, so it is always ready.
  */
 export function readyVoronoiMap(index: SpecIndex, root: string): VoronoiMap | undefined {
   const maps = mapsOf(index);
-  const known = maps.get(root);
+  const at = `${textMeasure().key}|${root}`;
+  const known = maps.get(at);
   if (known) return known;
   const { tree, key } = voronoiTree(index, root);
-  const before = last.get(root);
+  const before = last.get(at);
   let map = before && before.key === key ? before.map : undefined;
-  if (!map && !canWork()) { map = layoutTreeOf(tree); last.set(root, { key, map }); }
-  if (map) maps.set(root, map);
+  if (!map && !canWork()) { map = layoutTreeOf(tree); last.set(at, { key, map }); }
+  if (map) maps.set(at, map);
   return map;
 }
 
-/** The Voronoi map of one product, laid out in the worker, off the main thread, the first time an index asks for it. */
-export function voronoiMap(index: SpecIndex, root: string): Promise<VoronoiMap> {
+/** The Voronoi map of one product, laid out in the worker, off the main thread, the first time an index asks for it; `measure` tells the worker the faces the page measures with. */
+export function voronoiMap(index: SpecIndex, root: string, measure: MeasureSpec): Promise<VoronoiMap> {
   const ready = readyVoronoiMap(index, root);
   if (ready) return Promise.resolve(ready);
   let waits = pending.get(index);
   if (!waits) { waits = new Map(); pending.set(index, waits); }
-  const known = waits.get(root);
+  const at = `${textMeasure().key}|${root}`;
+  const known = waits.get(at);
   if (known) return known;
   const { tree, key } = voronoiTree(index, root);
-  const promise = inWorker(tree).then((map) => {
-    last.set(root, { key, map });
-    mapsOf(index).set(root, map);
+  const promise = inWorker(tree, measure).then((map) => {
+    last.set(at, { key, map });
+    mapsOf(index).set(at, map);
     return map;
-  }).finally(() => waits.delete(root));
-  waits.set(root, promise);
+  }).finally(() => waits.delete(at));
+  waits.set(at, promise);
   return promise;
 }

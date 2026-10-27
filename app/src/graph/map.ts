@@ -1,6 +1,6 @@
 import type { SpecIndex } from '../specs/data';
 import { contentScale, NODE_HEIGHT, NODE_WIDTH } from './layout';
-import { isCentered, labelFor, labelHeight, textScaleOf } from './text';
+import { isCentered, labelFor, labelHeight, textMeasure, textScaleOf } from './text';
 import { outlineInset, type Shape } from './shapes';
 import { treeChildren, treeParent } from './tree';
 
@@ -235,14 +235,15 @@ export function layoutTree(roots: readonly string[], childrenOf: (id: string) =>
 
 const cache = new WeakMap<SpecIndex, Map<string, GraphMap>>();
 
-/** The map of one product (or of a tree no product reaches), from its root: built on first use, then read. */
+/** The map of one product (or of a tree no product reaches), from its root: built on first use with the current text measure, then read. */
 export function graphMap(index: SpecIndex, root: string): GraphMap {
   let maps = cache.get(index);
   if (!maps) { maps = new Map(); cache.set(index, maps); }
-  const known = maps.get(root);
+  const key = `${textMeasure().key}|${root}`;
+  const known = maps.get(key);
   if (known) return known;
   const map = layoutTree([root], (id) => treeChildren(index, id), (id, centered) => labelHeight(labelFor(index, id, centered)));
-  maps.set(root, map);
+  maps.set(key, map);
   return map;
 }
 

@@ -7,10 +7,11 @@ import { nodeShape, SHAPES, type Room, type Shape } from './shapes';
 // title, are sized once, in map units, by its level's text scale (the level's width over a leaf's),
 // and never change size relative to the box; only the camera changes how big they look. A long
 // title wraps on whole words, never cut off or ended with an ellipsis, and a leaf grows taller to
-// fit it. Lines are broken here, from a table of character widths, never measured in the page, so
-// the map is laid out once and the page draws exactly these lines.
+// fit it. Lines are broken here, with the text measure the canvas draws with (the label's faces,
+// loaded, measured by the canvas's own text metrics: fonts.ts), once when the map is built, so the
+// map is laid out once per spec load and the canvas draws exactly these lines (paint.ts).
 
-/** A label's font sizes and padding at text scale 1 (a leaf-wide level), in map units; the stylesheet draws them with these. */
+/** A label's font sizes and padding at text scale 1 (a leaf-wide level), in map units; the canvas draws them with these. */
 export const TITLE_FONT = 12.5;
 export const META_FONT = 10.5;
 /** A file's title is in the mono face, a little smaller. */
@@ -24,22 +25,48 @@ export const LABEL_PAD = 14;
 export const BADGE_ROOM = 30;
 /** The room a small mark takes before the kind and ID line (a shape's in the Nested and Voronoi views, a gear or a ruler), its gap included (LA-EXP-DR65). */
 export const MARK_ROOM = 18;
-/** The estimate errs wide by this much, so a line never overflows whatever face draws it. */
-export const WIDTH_MARGIN = 1.05;
 
-// Advance widths in em of the title's face, Public Sans at 600, or the fallback faces if it does not
-// load (system-ui, Helvetica Neue), whichever is widest, measured in Chromium. Any other character
-// counts as a full em.
-const SANS_CHARS = '0123456789 !"#$%&\'()*+,-./:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~·—–’‘“”…→←↑↓×é';
-const SANS_WIDTHS = [640, 556, 618, 649, 644, 659, 643, 615, 661, 643, 278, 300, 463, 627, 671, 1000, 750, 278, 362, 362, 437, 633, 278, 438, 278, 371, 278, 278, 633, 633, 633, 556, 884, 719, 704, 741, 741, 648, 605, 759, 768, 297, 556, 722, 593, 907, 770, 778, 667, 778, 722, 682, 611, 741, 690, 962, 704, 667, 655, 362, 371, 362, 633, 560, 500, 574, 611, 574, 611, 574, 397, 626, 593, 258, 278, 574, 317, 906, 593, 611, 611, 611, 403, 537, 404, 593, 520, 814, 577, 551, 519, 362, 266, 362, 633, 278, 1134, 576, 278, 278, 463, 463, 1000, 1000, 1000, 804, 804, 633, 574];
-const SANS = new Map([...SANS_CHARS].map((c, i) => [c, SANS_WIDTHS[i] / 1000]));
-/** The kind and ID line's face, JetBrains Mono (or Menlo): every character 0.6 em, a little more to be safe. */
-const MONO_EM = 0.61;
+/** The faces the graph draws text in: a title (the body face at 600), a kind and ID line or a file's title (the mono face), a problem badge (mono at 700), a link's words (mono). */
+export type Face = 'title' | 'meta' | 'badge' | 'edge';
 
-/** A title's estimated width at a font size, in the same units. */
-export const titleWidth = (text: string, font = TITLE_FONT) => [...text].reduce((sum, c) => sum + (SANS.get(c) ?? 1), 0) * font;
-/** A kind and ID line's (or a file's title's) estimated width at a font size. */
-export const metaWidth = (text: string, font = META_FONT) => [...text].length * MONO_EM * font;
+/**
+ * How wide a text is in one of the graph's faces, in em (its width at a 1 px font), and each face's
+ * ascent and descent in em. `key` names the faces it measures, so a map laid out with one measure
+ * is never read with another.
+ */
+export interface TextMeasure {
+  key: string;
+  em: (text: string, face: Face) => number;
+  metrics: (face: Face) => { ascent: number; descent: number };
+}
+
+const NARROW = new Set(" .,:;'|!il1jI()[]{}`f-tr/");
+const WIDE = new Set('mwMW@%');
+/**
+ * The plain measure, where there is no canvas to measure with (the unit tests, in Node): a rough
+ * advance per character class in the sans face, 0.6 em per character in the mono face.
+ */
+export const PLAIN_MEASURE: TextMeasure = {
+  key: 'plain',
+  em: (text, face) => {
+    if (face !== 'title') return [...text].length * 0.6;
+    let w = 0;
+    for (const c of text) w += NARROW.has(c) ? 0.3 : WIDE.has(c) ? 0.88 : c >= 'A' && c <= 'Z' ? 0.7 : 0.58;
+    return w;
+  },
+  metrics: () => ({ ascent: 0.95, descent: 0.25 }),
+};
+
+let current: TextMeasure = PLAIN_MEASURE;
+/** Installs the measure the maps are laid out with: the canvas's, once its faces have loaded (fonts.ts). */
+export function setTextMeasure(measure: TextMeasure) { current = measure; }
+/** The measure the maps are laid out with now. */
+export const textMeasure = () => current;
+
+/** A title's width at a font size, in the same units. */
+export const titleWidth = (text: string, font = TITLE_FONT) => current.em(text, 'title') * font;
+/** A kind and ID line's (or a file's title's) width at a font size. */
+export const metaWidth = (text: string, font = META_FONT) => current.em(text, 'meta') * font;
 
 /**
  * Breaks a text into lines no wider than `width` by `measure`, greedily, only after a space, so no
@@ -101,7 +128,7 @@ export function marksOf(index: SpecIndex, id: string) {
 }
 
 
-/** A label's lines, as the page draws them: each a block of its own, so the page wraps nothing itself. */
+/** A label's lines, as the canvas draws them: it wraps nothing itself. */
 export interface WrappedLabel {
   title: string[];
   meta: string[];
@@ -125,15 +152,15 @@ const metaRoom = ({ marks = 0, marked = false, centered = false }: LabelRoom) =>
  * A label broken into lines for its box (LA-EXP-DR58). Wrapping is the same at every text scale (a
  * level's width and its text grow together), so lines are broken once, at text scale 1 in a leaf's
  * width (or `width`, a Nested box's width over its text scale), less the padding, its shape's room
- * (LA-EXP-DR65), and beside the kind and ID line its marks and the badge's room, all erring wide.
+ * (LA-EXP-DR65), and beside the kind and ID line its marks and the badge's room.
  */
 export function wrapLabel(lines: { title: string; meta: string }, { shape, marks = 0, marked = false, centered = false, file = false, width = NODE_WIDTH }: LabelRoom & { file?: boolean; width?: number } = {}): WrappedLabel {
   const room = shape ? SHAPES[shape].room : NO_ROOM;
   const inner = width - 2 * LABEL_PAD - room.l - room.r;
-  const titleOf = file ? (s: string) => metaWidth(s, FILE_FONT) * WIDTH_MARGIN : (s: string) => titleWidth(s) * WIDTH_MARGIN;
+  const titleOf = file ? (s: string) => metaWidth(s, FILE_FONT) : (s: string) => titleWidth(s);
   const label: WrappedLabel = {
     title: wrapText(lines.title, inner, titleOf, file ? '/-' : '-'),
-    meta: wrapText(lines.meta, inner - metaRoom({ marks, marked, centered }), (s) => metaWidth(s) * WIDTH_MARGIN, '-'),
+    meta: wrapText(lines.meta, inner - metaRoom({ marks, marked, centered }), (s) => metaWidth(s), '-'),
     file,
   };
   const pad = room.t + room.b + (shape === 'circle' ? ellipseRoom(textHeight(label), inner, width) : 0);
@@ -154,11 +181,11 @@ function ellipseRoom(text: number, inner: number, width: number): number {
 export const labelHeight = (label: WrappedLabel) => 2 * (LABEL_PAD_BLOCK + BORDER) + textHeight(label) + (label.pad ?? 0);
 
 const wrapCache = new WeakMap<SpecIndex, Map<string, WrappedLabel>>();
-/** A node's label broken into lines, centered or not, cached per index: what the map sizes a box for and the page draws. */
+/** A node's label broken into lines, centered or not, cached per index and measure: what the map sizes a box for and the canvas draws. */
 export function labelFor(index: SpecIndex, id: string, centered: boolean): WrappedLabel {
   let cache = wrapCache.get(index);
   if (!cache) { cache = new Map(); wrapCache.set(index, cache); }
-  const key = `${centered ? 'c' : 'l'}${id}`;
+  const key = `${current.key}|${centered ? 'c' : 'l'}${id}`;
   const known = cache.get(key);
   if (known) return known;
   const { shape, mark } = nodeShape(index, id);
@@ -189,13 +216,13 @@ export const linesIn = (label: MapLabel, width: number, centered: boolean): Wrap
 export function wordsFit(label: MapLabel, width: number, centered: boolean): boolean {
   const inner = width - 2 * LABEL_PAD;
   const words = (text: string) => text.split(/\s+/).filter(Boolean);
-  return words(label.title).every((w) => titleWidth(w) * WIDTH_MARGIN <= inner)
-    && words(label.meta).every((w) => metaWidth(w) * WIDTH_MARGIN <= inner - metaRoom({ ...label, centered }));
+  return words(label.title).every((w) => titleWidth(w) <= inner)
+    && words(label.meta).every((w) => metaWidth(w) <= inner - metaRoom({ ...label, centered }));
 }
 
 /** The narrowest box a label fits at text scale 1: its widest word, its padding and the badge's room. */
 export function narrowestWidth(label: MapLabel, centered: boolean): number {
-  const words = (text: string, measure: (s: string) => number) => text.split(/\s+/).filter(Boolean).map((w) => measure(w) * WIDTH_MARGIN);
+  const words = (text: string, measure: (s: string) => number) => text.split(/\s+/).filter(Boolean).map((w) => measure(w));
   const room = metaRoom({ ...label, centered });
   return 2 * LABEL_PAD + Math.max(1, ...words(label.title, titleWidth), ...words(label.meta, metaWidth).map((w) => w + room));
 }
