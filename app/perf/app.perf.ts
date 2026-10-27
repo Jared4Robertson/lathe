@@ -108,8 +108,9 @@ test.describe('performance', () => {
         await page.waitForURL((u) => u.pathname !== before);
         await focusDrawn(page, id);
       }, 900);
-      // Nested, a framed leaf fills the pane with nothing else in view: go back to the record before the next hop, outside the measure.
-      if (layout === 'Nested' && hop < 3) { await page.goBack(); await page.waitForURL((u) => u.pathname === before); await quiet(page, 900); }
+      // Nested and Voronoi, a framed leaf fills the pane with its equal siblings cut off at the edges (LA-EXP-DR58): go back to the record
+      // before the next hop, outside the measure.
+      if (layout !== 'Tree' && hop < 3) { await page.goBack(); await page.waitForURL((u) => u.pathname === before); await quiet(page, 900); }
       works.push(r.workMs);
       frames.push(r.worstFrameMs);
       slow.push(r.slowFrames);

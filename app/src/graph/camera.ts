@@ -7,6 +7,11 @@ import { heightOf, widthOf, type Point } from './layout';
 // smooth zoom and pan (a van Wijk and Nuij path, as d3's zoom uses). Nothing in the map moves or
 // changes size. What is drawn is chosen by the level of detail (LA-EXP-DR60): only what is in
 // view and big enough to see, each box with its label, and never more than a budget.
+//
+// The map's deepest boxes are very small against its product's box (map.ts), so a viewport is
+// kept in doubles and a map point's place on screen is `x * zoom + v.x`, worked out in doubles
+// relative to the camera: a renderer draws those small numbers, never map units scaled on the
+// graphics card, so a deep zoom does not jitter.
 
 export interface Viewport { x: number; y: number; zoom: number }
 
@@ -15,29 +20,19 @@ export const FRAME_PADDING = 32;
 /** How much of the pane the parent's level keeps at the left edge, at most. */
 export const PARENT_STRIP = 0.12;
 export const PARENT_STRIP_MAX = 96;
-/** How far the camera zooms in on a box whose text is at its natural size or larger: twice that size. */
-export const MAX_ZOOM = 2;
-/** How far out the camera zooms: far enough for the whole of any map. */
-export const MIN_ZOOM = 0.0005;
-
 /**
- * How far the free camera zooms in on a map in a pane: twice the zoom that frames its smallest box,
- * so the deepest leaf can always be framed and read, and never less than MAX_ZOOM.
+ * The most the camera zooms in (LA-EXP-DR59): enough to frame the deepest leaf of a large product's
+ * map and read its label, which is very small against the product's box (map.ts).
  */
-export function maxZoomFor(map: Pick<PlacedMap, 'nodes'>, width: number, height: number): number {
-  let smallest = Infinity;
-  for (const n of map.nodes.values()) smallest = Math.min(smallest, n.w, n.h);
-  if (!Number.isFinite(smallest) || smallest <= 0) return MAX_ZOOM;
-  return Math.max(MAX_ZOOM, (2 * Math.max(width, height)) / smallest);
-}
-/** The camera never zooms in past this when it frames a focus: a leaf at its own size. */
-export const FRAME_MAX_ZOOM = 1;
+export const MAX_ZOOM = 64;
+/** The least the camera zooms out: the whole of any product's map in a phone's pane. */
+export const MIN_ZOOM = 1e-4;
 
 /**
  * The camera that frames a focus (LA-EXP-DR59): the focus and its descendants down to `depth`
  * levels below it fill the pane, the parent's level showing in a strip at the left edge (the frame
  * starts at the parent's right edge, past the strip). A node with fewer levels below it frames what
- * it has. Zoomed in no further than FRAME_MAX_ZOOM, and centered in the space right of the strip.
+ * it has. Zoomed in no further than MAX_ZOOM, and centered in the space right of the strip.
  */
 export function frameOnMap(map: GraphMap, focus: string, depth: number, width: number, height: number): Viewport {
   const node = map.nodes.get(focus);
@@ -56,14 +51,14 @@ export function frameOnMap(map: GraphMap, focus: string, depth: number, width: n
   const right = last.x + last.width;
   const strip = parent ? Math.min(PARENT_STRIP_MAX, width * PARENT_STRIP) : 0;
   const room = { w: width - strip - 2 * FRAME_PADDING, h: height - 2 * FRAME_PADDING };
-  const zoom = Math.min(FRAME_MAX_ZOOM, room.h / node.h, room.w / (right - left));
+  const zoom = Math.min(MAX_ZOOM, room.h / node.h, room.w / (right - left));
   const cy = node.y + node.h / 2;
   return { x: strip + FRAME_PADDING + room.w / 2 - ((left + right) / 2) * zoom, y: height / 2 - cy * zoom, zoom };
 }
 
 /** The whole map in the pane: the overview's camera, and the least the camera zooms out. */
 export function frameMap(map: GraphMap, width: number, height: number): Viewport {
-  const zoom = Math.min(FRAME_MAX_ZOOM, (width - 2 * FRAME_PADDING) / Math.max(1, map.width), (height - 2 * FRAME_PADDING) / Math.max(1, map.height));
+  const zoom = Math.min(MAX_ZOOM, (width - 2 * FRAME_PADDING) / Math.max(1, map.width), (height - 2 * FRAME_PADDING) / Math.max(1, map.height));
   return { x: width / 2 - (map.width / 2) * zoom, y: height / 2 - (map.height / 2) * zoom, zoom };
 }
 
@@ -222,16 +217,11 @@ export const drawnKey = (d: Drawn) => `${d.boxes.map((b) => b.id).join(' ')}|${d
 
 // ---------- The Nested view (LA-EXP-DR63) ----------
 
-/**
- * The camera that frames a focus in the Nested map: its box fills the pane within the padding,
- * centered, its text drawn no larger than MAX_ZOOM times its natural size (a box whose text is
- * smaller than a leaf's, deep in the map, may take a deeper zoom, so it can always be framed).
- */
+/** The camera that frames a focus in the Nested map: its box fills the pane within the padding, centered, zoomed in no further than MAX_ZOOM. */
 export function frameNested(map: PlacedMap, focus: string, width: number, height: number): Viewport {
   const node = map.nodes.get(focus);
   if (!node || width <= 0 || height <= 0) return { x: width / 2, y: height / 2, zoom: 1 };
-  const most = MAX_ZOOM / Math.min(1, Math.max(1e-12, node.text));
-  const zoom = Math.min(most, (width - 2 * FRAME_PADDING) / Math.max(1e-12, node.w), (height - 2 * FRAME_PADDING) / Math.max(1e-12, node.h));
+  const zoom = Math.min(MAX_ZOOM, (width - 2 * FRAME_PADDING) / Math.max(1, node.w), (height - 2 * FRAME_PADDING) / Math.max(1, node.h));
   return { x: width / 2 - (node.x + node.w / 2) * zoom, y: height / 2 - (node.y + node.h / 2) * zoom, zoom };
 }
 

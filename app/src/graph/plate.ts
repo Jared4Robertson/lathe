@@ -1,13 +1,12 @@
 import { kindLabel, type SpecIndex } from '../specs/data';
 import { FILE_KIND, stageOf } from './model';
-import { contentScale } from './layout';
 import type { MapNode } from './map';
 import type { NestedNode } from './nested';
 import type { VoronoiNode } from './voronoi';
 import { treeGroup } from './tree';
 import { nodeShape, outlineOf, SHAPES, type Mark, type Outline, type Shape } from './shapes';
 import {
-  BORDER, FILE_FONT, isCentered, LABEL_PAD, LABEL_PAD_BLOCK, labelFor, labelLines, LINE_HEIGHT, META_FONT,
+  BORDER, FILE_FONT, LABEL_PAD, LABEL_PAD_BLOCK, labelFor, labelLines, LINE_HEIGHT, META_FONT,
   marksOf, textMeasure, TITLE_FONT, type Face, type WrappedLabel,
 } from './text';
 
@@ -149,7 +148,8 @@ function badgesAt(marks: { errors: number; warnings: number; gaps: string[] }, r
 
 /** Where a box's map node, a Nested one or a Voronoi one, comes from. */
 export type PlateSource =
-  | { view: 'tree' | 'trace'; node: Pick<MapNode, 'x' | 'y' | 'w' | 'h' | 'text' | 'children'> }
+  | { view: 'tree'; node: MapNode }
+  | { view: 'trace'; node: Pick<MapNode, 'x' | 'y' | 'w' | 'h' | 'text'> }
   | { view: 'nested'; node: NestedNode }
   | { view: 'voronoi'; node: VoronoiNode };
 
@@ -172,15 +172,16 @@ export function plateOf(index: SpecIndex, id: string, source: PlateSource, fileT
 
   if (source.view === 'tree' || source.view === 'trace') {
     // Its kind's shape is its outline (LA-EXP-DR65); a polygon's edge is drawn inside it, so it has no border to pad past.
-    const scale = contentScale(w, h);
+    // Its border grows with its text (LA-EXP-DR58): its box scale is its text scale.
+    const scale = t;
     const outline = outlineOf(shape, { x, y, w, h }, scale);
     const edged = outline.kind === 'polygon';
     const border = (shape === 'product' ? 2.5 : BORDER) * scale;
     const inset = edged ? 0 : border;
     const { room } = SHAPES[shape];
-    const parent = source.node.children.length > 0;
-    const centered = source.view === 'trace' ? false : isCentered(t, parent);
-    const lines = labelFor(index, id, centered);
+    // The lines its map broke its label into, centered or not; a trace's box's from text.ts, at the top left.
+    const centered = source.view === 'trace' ? false : source.node.centered;
+    const lines = source.view === 'trace' ? labelFor(index, id) : source.node.lines;
     const box = { left: x + inset + (LABEL_PAD + room.l) * t, right: x + w - inset - (LABEL_PAD + room.r) * t, top: y + inset + (LABEL_PAD_BLOCK + room.t) * t, bottom: y + h - inset - (LABEL_PAD_BLOCK + room.b) * t };
     const placed = placeLines({ lines, box, centered, top: false, t, icons: mark ? [{ draw: 'mark', name: mark }] : [] });
     // A circle's badge sits at the end of its kind and ID line, which its room keeps inside the circle; every other box's at its top right.

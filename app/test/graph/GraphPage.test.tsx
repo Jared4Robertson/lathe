@@ -330,7 +330,7 @@ describe('graph groups on the page', () => {
 });
 
 describe('the map on the page', () => {
-  it('LA-EXP-T168 Tall parents carry their height and content scale, and every parent line is level', async () => {
+  it('LA-EXP-T168 Tall parents carry their height and text scale, every box its text scale as its box scale, and every parent line is level', async () => {
     await showGraph('/P-D', testWorkspace(), 2, false);
     await waitFor(() => expect(node('P-D/define')).not.toBeNull());
     const height = (id: string) => drawnBox(id)!.map.h;
@@ -338,9 +338,8 @@ describe('the map on the page', () => {
     // The domain spans its stages, and its content grows with it.
     expect(height('P-D')).toBeGreaterThan(height('P-D/define') + height('P-D/design'));
     expect(Number(scale('P-D'))).toBeGreaterThan(1);
-    // A leaf's box keeps a leaf's scale (its text may grow to read while zoomed out).
-    const leaf = scene().boxes.find((b) => b.map.h === 56)!;
-    expect(leaf.boxScale).toBe(1);
+    // Every box's border grows with its text, however small: its box scale is its text scale.
+    for (const b of scene().boxes) expect(b.boxScale, b.id).toBe(b.textScale);
     // Every parent line is level.
     const lines = scene().lines.filter((l) => l.style === 'structure');
     expect(lines.length).toBeGreaterThan(3);

@@ -1,7 +1,7 @@
 import './setup';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, waitFor } from '@testing-library/react';
-import { drawnNested, frameMap, frameNested, frameOnMap, FRAME_MAX_ZOOM, FRAME_PADDING, glideDuration, MAX_DRAWN, MAX_ZOOM, MIN_DRAWN, PARENT_STRIP, PARENT_STRIP_MAX, viewRect, zoomPath } from '../../src/graph/camera';
+import { drawnNested, frameMap, frameNested, frameOnMap, FRAME_PADDING, glideDuration, MAX_DRAWN, MAX_ZOOM, MIN_DRAWN, PARENT_STRIP, PARENT_STRIP_MAX, viewRect, zoomPath } from '../../src/graph/camera';
 import { nestedMap } from '../../src/graph/nested';
 import { readyVoronoiMap } from '../../src/graph/voronoi';
 import { graphMap } from '../../src/graph/map';
@@ -38,12 +38,12 @@ describe('graph camera', () => {
       const v = frameOnMap(map, focus, depth, w, h);
       const f = map.nodes.get(focus)!;
       const screen = (x: number, y: number) => ({ x: x * v.zoom + v.x, y: y * v.zoom + v.y });
-      // The focus fills the height, or the levels fill the width; never past a leaf's own size.
+      // The focus fills the height, or the levels fill the width; never past the camera's limit.
       const top = screen(f.x, f.y);
       const bottom = screen(f.x, f.y + f.h);
       expect(top.y).toBeGreaterThanOrEqual(FRAME_PADDING - 0.5);
       expect(bottom.y).toBeLessThanOrEqual(h - FRAME_PADDING + 0.5);
-      expect(v.zoom).toBeLessThanOrEqual(FRAME_MAX_ZOOM);
+      expect(v.zoom).toBeLessThanOrEqual(MAX_ZOOM);
       // Centered on the focus's middle, top to bottom.
       expect((top.y + bottom.y) / 2).toBeCloseTo(h / 2, 6);
       // The parent is in view at the left edge, a strip of it at least, and the focus right of it.
@@ -53,8 +53,8 @@ describe('graph camera', () => {
     }
     // Deeper frames take more levels in: never a larger zoom.
     expect(frameOnMap(map, 'P-D', 3, w, h).zoom).toBeLessThanOrEqual(frameOnMap(map, 'P-D', 1, w, h).zoom);
-    // A leaf at its own size, at most.
-    expect(frameOnMap(map, 'P-D-UC01-R01', 1, w, h).zoom).toBe(FRAME_MAX_ZOOM);
+    // A leaf framed short of the limit: a deep leaf is small against the product's box, and the camera reaches it.
+    expect(frameOnMap(map, 'P-D-UC01-R01', 1, w, h).zoom).toBeLessThan(MAX_ZOOM);
     // The whole map fits the overview.
     const all = frameMap(map, w, h);
     expect(map.height * all.zoom).toBeLessThanOrEqual(h);

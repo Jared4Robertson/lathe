@@ -71,8 +71,8 @@ describe('graph groups', () => {
       const g = map.nodes.get(id)!;
       const members = g.children.map((c) => map.nodes.get(c)!);
       expect(members.map((m) => m.id)).toEqual(members.map((m) => m.id).filter((m) => map.nodes.get(m)!.parent === id));
-      expect(members[0].y).toBe(g.y);
-      expect(members.at(-1)!.y + members.at(-1)!.h).toBe(g.y + g.h);
+      expect(members[0].y).toBeCloseTo(g.y, 6);
+      expect(members.at(-1)!.y + members.at(-1)!.h).toBeCloseTo(g.y + g.h, 6);
     }
     expect(map.nodes.get('P-D-UC02/requirement')!.children).toHaveLength(6);
     // A record with two kinds of children reaches them through a group per kind.

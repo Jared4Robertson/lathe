@@ -1,43 +1,48 @@
 import { describe, expect, it } from 'vitest';
-import { graphMap, MAX_LEVEL_STEP, settleLevelScale, typicalSize } from '../../src/graph/map';
-import { LABEL_PAD, labelHeight, LINE_HEIGHT, linesIn, mapLabel, narrowestWidth, TITLE_FONT, titleWidth, wordsFit } from '../../src/graph/text';
-import { layoutNested, leafSide, NEST_PAD, nestedMap, shelfPack, type NestedMap } from '../../src/graph/nested';
-import { indexWorkspace } from '../../src/specs/data';
-import { groupedWorkspace, heightLevels, manyOfOneKindWorkspace, testIndex } from './workspace';
+import { graphMap, MAP_SIZE, sizeText } from '../../src/graph/map';
+import { BORDER, LABEL_PAD, labelHeight, largestFit, mapLabel, metaWidth, narrowestWidth, titleWidth, type MapLabel } from '../../src/graph/text';
+import { gridOf, HEADER_SHARE, layoutNested, NEST_GAP, NEST_PAD, nestedMap, type NestedMap, type NestedNode } from '../../src/graph/nested';
+import { indexWorkspace, type SpecIndex } from '../../src/specs/data';
+import { groupedWorkspace, manyOfOneKindWorkspace, siblingGroups, testIndex } from './workspace';
 
-// The Nested map (LA-EXP-DR62): the Tree map's tree as nested squares, each box holding its children
-// below its header band, packed in rows in the tree's order, sized to its content, laid out once.
+// The Nested map (LA-EXP-DR62): the Tree map's tree as nested squares, laid out once, top-down from
+// the product's square by one rule (LA-EXP-DR58): siblings are the same size, with the same text.
 
-const maps = (): NestedMap[] => [nestedMap(testIndex(), 'P'), nestedMap(indexWorkspace(groupedWorkspace()), 'P'), nestedMap(indexWorkspace(manyOfOneKindWorkspace()), 'P')];
+const indexes = (): SpecIndex[] => [testIndex(), indexWorkspace(groupedWorkspace()), indexWorkspace(manyOfOneKindWorkspace())];
+const maps = (): NestedMap[] => indexes().map((index) => nestedMap(index, 'P'));
 
 /** A synthetic tree: `n` roots, each with `k` children, each with `k` leaves. */
 function wide(n: number, k: number): NestedMap {
   const kids = (id: string): string[] => (id.split('.').length >= 3 ? [] : Array.from({ length: k }, (_, i) => `${id}.${i}`));
   return layoutNested(Array.from({ length: n }, (_, i) => `r${i}`), kids);
 }
-
-const leafCount = (map: NestedMap, id: string): number => {
-  const n = map.nodes.get(id)!;
-  return n.children.length === 0 ? 1 : n.children.reduce((s, c) => s + leafCount(map, c), 0);
-};
+/** A product with a busy part (seven children of five leaves) and a quiet one (one leaf), each leaf with a word too wide for its size share. */
+const long = 'A title with a word too wide for a box at its size share: Extraordinarilylongunbrokenidentifierthatnoboxcanholdonlineandthatkeepsongoingwellpastanyboxwidth';
+function busyAndQuiet(): NestedMap {
+  const kids = (id: string): string[] => (id === 'p' ? ['busy', 'quiet'] : id === 'busy' ? Array.from({ length: 7 }, (_, i) => `b${i}`) : /^b\d$/.test(id) ? Array.from({ length: 5 }, (_, j) => `${id}.${j}`) : id === 'quiet' ? ['q0'] : []);
+  return layoutNested(['p'], kids, (id) => ({ title: id.includes('.') ? long : id, meta: 'Use case · LA-EXP-UC99' }));
+}
+const all = (): NestedMap[] => [...maps(), wide(1, 6), wide(3, 4), busyAndQuiet()];
 const eps = 1e-6;
+
+/** The border a box's label keeps clear of, as the map sizes it. */
+const borderOf = (n: NestedNode) => BORDER * Math.max(0.5, n.text);
 
 describe('the Nested map', () => {
   it('LA-EXP-T185 Each box holds its children below its header band, inside its padding, none overlapping, over the same tree as the Tree map', () => {
-    for (const map of [...maps(), wide(1, 6), wide(3, 4)]) {
+    for (const map of all()) {
       for (const n of map.nodes.values()) {
-        expect(n.w).toBeGreaterThanOrEqual(0);
-        expect(n.h).toBeGreaterThanOrEqual(0);
         if (n.children.length === 0) { expect(n.header).toBe(0); continue; }
+        const pad = NEST_PAD * sizeText(n.w);
         const kids = n.children.map((c) => map.nodes.get(c)!);
         for (const k of kids) {
           expect(k.level).toBe(n.level + 1);
           expect(k.parent).toBe(n.id);
-          // Inside the box, below the header band.
-          expect(k.x).toBeGreaterThanOrEqual(n.x - eps);
-          expect(k.y).toBeGreaterThanOrEqual(n.y + n.header - eps);
-          expect(k.x + k.w).toBeLessThanOrEqual(n.x + n.w + eps);
-          expect(k.y + k.h).toBeLessThanOrEqual(n.y + n.h + eps);
+          // Inside the box, inside its padding, below the header band.
+          expect(k.x).toBeGreaterThanOrEqual(n.x + pad - eps * n.w);
+          expect(k.y).toBeGreaterThanOrEqual(n.y + Math.max(n.header, pad) - eps * n.w);
+          expect(k.x + k.w).toBeLessThanOrEqual(n.x + n.w - pad + eps * n.w);
+          expect(k.y + k.h).toBeLessThanOrEqual(n.y + n.h - pad + eps * n.w);
           // Before its children in the keyboard's order.
           expect(k.order).toBeGreaterThan(n.order);
         }
@@ -58,122 +63,96 @@ describe('the Nested map', () => {
     for (const n of tree.nodes.values()) expect(nested.nodes.get(n.id)!.children).toEqual(n.children);
   });
 
-  it('LA-EXP-T185 Every box is a square, sized to its content: a leaf the least that holds its label, a parent the least that holds its header and its children', () => {
-    for (const map of [...maps(), wide(1, 6), wide(3, 4)]) {
-      for (const n of map.nodes.values()) {
-        expect(n.w, n.id).toBe(n.h);
-        expect(n.w, n.id).toBeGreaterThan(0);
+  it('LA-EXP-T185 Top-down from the product\'s fixed square, siblings are equal squares: a busy parent packs its children smaller, and record counts size nothing', () => {
+    for (const map of all()) {
+      for (const r of map.roots) expect(map.nodes.get(r)!.w).toBe(MAP_SIZE);
+      for (const group of siblingGroups(map)) {
+        for (const n of group) {
+          expect(n.w, n.id).toBe(n.h);
+          expect(n.w, n.id).toBe(group[0].w);
+        }
       }
     }
-    // A leaf of a synthetic tree (its ID its title) is the least square for its label at its scale.
-    for (const n of wide(3, 4).nodes.values()) if (n.children.length === 0) expect(n.w, n.id).toBeCloseTo(n.text * leafSide({ title: n.id, meta: '' }), 6);
-    // A parent is no bigger than it must be: its children's block, inside its padding, reaches its bottom or its right side
-    // (or, for a short block, it is as wide as its label's widest word), give or take the one header line its least width saves.
-    for (const index of [testIndex(), indexWorkspace(groupedWorkspace()), indexWorkspace(manyOfOneKindWorkspace())]) {
-      const map = nestedMap(index, 'P');
+    // The busy part and the quiet one are the same size; the busy one's children are smaller than the quiet one's, its long titles notwithstanding.
+    const map = busyAndQuiet();
+    const [busy, quiet] = ['busy', 'quiet'].map((id) => map.nodes.get(id)!);
+    expect(busy.w).toBe(quiet.w);
+    expect(map.nodes.get('b0')!.w).toBeLessThan(map.nodes.get('q0')!.w);
+  });
+
+  it('LA-EXP-T186 Children are a grid of equal squares in the tree order, with the column count that makes them largest, the room it leaves blank', () => {
+    // Four squares in a square room: two by two. Five in a wide room: one row.
+    expect(gridOf(4, 100, 100, 0)).toEqual({ side: 50, columns: 2, rows: 2 });
+    expect(gridOf(5, 500, 100, 0)).toEqual({ side: 100, columns: 5, rows: 1 });
+    // Three in a square room: two columns, the last cell of the second row blank; the gap comes off the side.
+    expect(gridOf(3, 100, 100, 10)).toEqual({ side: 45, columns: 2, rows: 2 });
+    // No other column count gives larger squares.
+    for (const n of [1, 2, 3, 7, 12, 31]) {
+      const best = gridOf(n, 300, 200, 4);
+      for (let c = 1; c <= n; c++) expect(Math.min((300 - (c - 1) * 4) / c, (200 - (Math.ceil(n / c) - 1) * 4) / Math.ceil(n / c))).toBeLessThanOrEqual(best.side + eps);
+    }
+    // In a map, a parent's children run in the tree's order, row by row, a gap apart.
+    for (const map of all()) {
       for (const n of map.nodes.values()) {
         if (n.children.length === 0) continue;
         const kids = n.children.map((c) => map.nodes.get(c)!);
-        const right = Math.max(...kids.map((k) => k.x + k.w)) + NEST_PAD * n.text;
-        const bottom = Math.max(...kids.map((k) => k.y + k.h)) + NEST_PAD * n.text;
-        const word = narrowestWidth(mapLabel(index, n.id), false) * n.text;
-        expect(Math.min(n.x + n.w - right, n.y + n.h - bottom, n.w - word), n.id).toBeLessThan(1e-3 * n.w + LINE_HEIGHT * TITLE_FONT * n.text);
+        const gap = NEST_GAP * sizeText(n.w);
+        const columns = new Set(kids.map((k) => k.x)).size;
+        kids.forEach((k, i) => {
+          expect(k.x - kids[i % columns].x).toBeCloseTo(0, 6);
+          if (i % columns > 0) expect(k.x - kids[i - 1].x).toBeCloseTo(k.w + gap, 6);
+          if (i >= columns) expect(k.y - kids[i - columns].y).toBeCloseTo(k.w + gap, 6);
+        });
       }
     }
-    // Size follows content, not records: a parent of more children is bigger.
-    const lop = layoutNested(['r'], (id) => (id === 'r' ? ['a', 'b'] : id === 'a' ? ['a1', 'a2', 'a3'] : id === 'b' ? ['b1'] : []));
-    expect(lop.nodes.get('a')!.w).toBeGreaterThan(lop.nodes.get('b')!.w);
-    expect(leafCount(lop, 'r')).toBe(4);
   });
 
-  it('LA-EXP-T186 Children are packed in rows in the tree order, a gap apart, within the row width', () => {
-    // Four equal squares in a row width of two: a 2 by 2 grid, in reading order.
-    const grid = shelfPack([10, 10, 10, 10], 25, 2);
-    expect(grid.at).toEqual([{ x: 0, y: 0 }, { x: 12, y: 0 }, { x: 0, y: 12 }, { x: 12, y: 12 }]);
-    expect([grid.w, grid.h]).toEqual([22, 22]);
-    // A row is as tall as its tallest square; the next starts below it, and order is kept.
-    const rows = shelfPack([10, 20, 5, 30], 40, 1);
-    expect(rows.at).toEqual([{ x: 0, y: 0 }, { x: 11, y: 0 }, { x: 32, y: 0 }, { x: 0, y: 21 }]);
-    expect([rows.w, rows.h]).toEqual([37, 51]);
-    // A square wider than the row stands alone; nothing, nothing.
-    expect(shelfPack([50], 10, 1)).toEqual({ w: 50, h: 50, at: [{ x: 0, y: 0 }] });
-    expect(shelfPack([], 10, 1)).toEqual({ w: 0, h: 0, at: [] });
-  });
-
-  it('LA-EXP-T187 One text scale per level, from its typical box size, at most 3 times the level below, and every square sized to hold its label at it', () => {
-    // A leaf's least square holds its label at scale 1, every word across and its lines within it, and no smaller one does.
-    const label = { title: 'Walk the model as a graph', meta: 'Use case · LA-EXP-UC03' };
-    const least = leafSide(label);
-    expect(wordsFit(label, least, true)).toBe(true);
-    expect(labelHeight(linesIn(label, least, true))).toBeLessThanOrEqual(least + eps);
-    const less = least * 0.99;
-    expect(!wordsFit(label, less, true) || labelHeight(linesIn(label, less, true)) > less).toBe(true);
-    // A level's typical box size is its median by area; its scale, that size over a leaf's, settled with the
-    // boxes' areas at it, never below the level below's nor more than MAX_LEVEL_STEP times it.
-    expect(typicalSize([1, 1, 1, 100])).toBe(10);
-    expect(typicalSize([4, 4, 4])).toBe(2);
-    const leaf = 100 * 100;
-    expect(settleLevelScale(() => [leaf], 1, leaf)).toBe(1);
-    expect(settleLevelScale(() => [4 * leaf, 4 * leaf], 1, leaf)).toBeCloseTo(2, 9);
-    expect(settleLevelScale(() => [400 * leaf], 2, leaf)).toBe(MAX_LEVEL_STEP * 2);
-    expect(settleLevelScale(() => [leaf], 2, leaf)).toBe(2);
-    // Boxes whose least area grows with the scale settle with it, only ever growing.
-    expect(settleLevelScale((s) => [leaf * 2 * s], 1, leaf)).toBeGreaterThan(Math.sqrt(2));
-    // A leaf whose label needs more room gets it: a long title takes a bigger box than a short one beside it, at the same text.
-    const long = 'A title long enough to need much more room than one record would be given in this map, '.repeat(4).trim();
-    const lop = layoutNested(['r'], (id) => (id === 'r' ? ['a', 'b'] : []), (id) => ({ title: id === 'a' ? long : 'B', meta: 'Use case · LA-EXP-UC99' }));
-    const [a, b] = [lop.nodes.get('a')!, lop.nodes.get('b')!];
-    expect(a.text).toBe(b.text);
-    expect(a.w * a.h).toBeGreaterThan(b.w * b.h);
-    for (const map of [...maps(), wide(1, 6), wide(3, 4), lop]) {
-      // Every box at one height level has the same text scale, whatever its size: 1 or more at the leaves, at most MAX_LEVEL_STEP times the level below's.
-      // A root's children are set aside: they share the largest of their levels' scales (T203).
-      // A level holding only a root's children has no box left to compare with, so the level above it is not compared.
-      heightLevels(map.nodes).map((all) => all.filter((n) => n.level !== 1)).forEach((boxes, h, levels) => {
-        if (boxes.length === 0 || (h > 0 && levels[h - 1].length === 0)) return;
-        for (const n of boxes) expect(n.text, n.id).toBe(boxes[0].text);
-        const below = h > 0 ? levels[h - 1][0].text : 1;
-        expect(boxes[0].text).toBeGreaterThanOrEqual(below);
-        expect(boxes[0].text).toBeLessThanOrEqual(MAX_LEVEL_STEP * below * (1 + 1e-9));
-      });
-      for (const n of map.nodes.values()) {
-        // Its label, wrapped for its width at that scale, fits it: every word across, a leaf's lines in its height, a parent's header above its padding.
-        for (const line of n.lines.title) expect(titleWidth(line.trimEnd()) * n.text, n.id).toBeLessThanOrEqual(n.w - 2 * LABEL_PAD * n.text + eps);
-        const height = n.text * labelHeight(n.lines);
-        if (n.children.length === 0) { expect(n.header, n.id).toBe(0); expect(height, n.id).toBeLessThanOrEqual(n.h + eps); continue; }
-        expect(n.header, n.id).toBeCloseTo(height, 9);
-        expect(n.header + NEST_PAD * n.text, n.id).toBeLessThanOrEqual(n.h + eps);
+  it('LA-EXP-T187 Siblings share one text scale, their side over TEXT_SIZE or the largest at which every sibling\'s whole label fits, and one header band', () => {
+    for (const map of all()) {
+      for (const group of siblingGroups(map)) {
+        const most = sizeText(group[0].w);
+        const text = group[0].text;
+        for (const n of group) expect(n.text, n.id).toBe(text);
+        expect(text).toBeLessThanOrEqual(most);
+        expect(text).toBeGreaterThan(0);
+        // The largest that fits: the size's share, or one sibling's label fills its room.
+        const fits = group.map((n) => largestFit(labelOf(map, n), n.centered, n.w, n.centered ? n.w : HEADER_SHARE * n.w, most, (s) => BORDER * Math.max(0.5, s)));
+        expect(text).toBeCloseTo(Math.min(...fits), 9);
+        // One header band for the parents among them: the tallest of their labels.
+        const parents = group.filter((n) => n.children.length > 0);
+        for (const n of parents) expect(n.header).toBeCloseTo(Math.max(...parents.map((p) => text * labelHeight(p.lines))), 6);
       }
     }
+    // A long title in a busy part lowers its siblings' text with its own, never its cousins'.
+    const map = busyAndQuiet();
+    const leaf = map.nodes.get('b0.0')!;
+    expect(leaf.text).toBeLessThan(sizeText(leaf.w));
+    expect(map.nodes.get('b1.0')!.text).toBe(leaf.text);
+    expect(map.nodes.get('b0')!.text).toBe(sizeText(map.nodes.get('b0')!.w));
     // Built once per index: the same map object, whatever the focus.
     const index = testIndex();
     expect(nestedMap(index, 'P')).toBe(nestedMap(index, 'P'));
   });
 
-  it("LA-EXP-T203 A product's children share one text scale, the largest among them, so a small top-level folder's header reads at a deep domain's size and its square holds it", () => {
-    // A product with a deep domain (four levels of five) and a small folder of three leaves beside it.
-    const deep = (id: string): string[] => (id.split('.').length >= 4 ? [] : Array.from({ length: 5 }, (_, i) => `${id}.${i}`));
-    const kids = (id: string): string[] => (id === 'p' ? ['d', 's'] : id === 's' ? ['s.a', 's.b', 's.c'] : id.startsWith('s.') ? [] : deep(id));
-    const map = layoutNested(['p'], kids, (id) => ({ title: id === 's' ? 'Shared' : id, meta: '' }));
-    const [d, s] = [map.nodes.get('d')!, map.nodes.get('s')!];
-    // By its height level alone the folder would take its leaves' level's next step; the domain's is far above that.
-    const leaf = map.nodes.get('s.a')!;
-    expect(d.text).toBeGreaterThan(MAX_LEVEL_STEP * leaf.text);
-    // The two share the domain's scale, the largest; the folder's leaves keep theirs.
-    expect(s.text).toBe(d.text);
-    expect(leaf.text).toBe(map.nodes.get('d.0.0.0')!.text);
-    // The folder's square holds its header at that scale above its padding, and its children below it.
-    expect(s.w).toBe(s.h);
-    expect(s.header).toBeCloseTo(s.text * labelHeight(s.lines), 9);
-    for (const line of s.lines.title) expect(titleWidth(line.trimEnd()) * s.text).toBeLessThanOrEqual(s.w - 2 * LABEL_PAD * s.text + eps);
-    expect(s.header + NEST_PAD * s.text).toBeLessThanOrEqual(s.h + eps);
-    for (const c of s.children.map((id) => map.nodes.get(id)!)) {
-      expect(c.y).toBeGreaterThanOrEqual(s.y + s.header - eps);
-      expect(c.y + c.h).toBeLessThanOrEqual(s.y + s.h + eps);
+  it('LA-EXP-T187 Every label fits its box: no word broken, a leaf\'s lines inside its square, a parent\'s inside its header band', () => {
+    for (const map of all()) {
+      for (const n of map.nodes.values()) {
+        const label = labelOf(map, n);
+        const across = (n.w - 2 * borderOf(n)) / n.text;
+        expect(across).toBeGreaterThanOrEqual(narrowestWidth(label, n.centered) - eps);
+        for (const line of n.lines.title) expect(titleWidth(line.trimEnd()), n.id).toBeLessThanOrEqual(across - 2 * LABEL_PAD + eps);
+        for (const line of n.lines.meta) expect(metaWidth(line.trimEnd()), n.id).toBeLessThanOrEqual(across - 2 * LABEL_PAD + eps);
+        expect(n.lines.title.join('')).toBe(label.title);
+        const height = n.text * labelHeight(n.lines) + 2 * borderOf(n);
+        if (n.children.length === 0) expect(height, n.id).toBeLessThanOrEqual(n.h * (1 + eps));
+        else expect(height, n.id).toBeLessThanOrEqual(HEADER_SHARE * n.h * (1 + eps));
+      }
     }
-    // Deeper boxes keep their height level's scale: the domain's children all share one, below the domain's.
-    const below = d.children.map((id) => map.nodes.get(id)!.text);
-    expect(new Set(below).size).toBe(1);
-    expect(below[0]).toBeLessThan(d.text);
   });
 });
+
+/** A box's label as its map was given it: the real index's, or a synthetic tree's (its ID its title). */
+function labelOf(map: NestedMap, n: NestedNode): MapLabel {
+  for (const index of indexes()) if (nestedMap(index, 'P') === map) return mapLabel(index, n.id);
+  return { title: n.lines.title.join(''), meta: n.lines.meta.join('') };
+}
