@@ -1,0 +1,3 @@
+{"id":"LA-AUT-API01","title":"Format API","domain_id":"LA-AUT","description":"The product's format reference, at `/api/format`, served by `lathe serve` and the app's Vite plugin alike, for the app's format pages. It answers JSON, and any method but GET with 405."}
+{"id":"LA-EXP-API01","title":"History API","domain_id":"LA-EXP","description":"A record's git history, at `/api/history`, served by `lathe serve`, the app's Vite plugin and the desktop app alike. It answers JSON, and any method but GET with 405."}
+{"id":"LA-PLT-API01","title":"Spec API","domain_id":"LA-PLT","description":"The loaded workspace, at `/api/spec`, served by `lathe serve`, the app's Vite plugin and the desktop app alike. It answers JSON, and any method but GET with 405."}

@@ -1,0 +1,15 @@
+{"id":"LA-AUT-CAP01","title":"Writing records","domain_id":"LA-AUT","position":1,"description":"Writing a product's records, and reading them back in code."}
+{"id":"LA-AUT-CAP02","title":"Adapting Lathe to a product","domain_id":"LA-AUT","position":2,"description":"The kinds of record and the relations between them, how a product adapts them, and how use cases are organized into capabilities and patterns."}
+{"id":"LA-AUT-CAP03","title":"Structuring a domain","domain_id":"LA-AUT","position":3,"description":"Domains by capability, and their capabilities, patterns, layers, entities, domain events and flow steps."}
+{"id":"LA-CHK-CAP01","title":"Running checks","domain_id":"LA-CHK","position":1,"description":"Running the checks, adding new ones, and how a test ties a record to the code that proves it."}
+{"id":"LA-CHK-CAP02","title":"Finding problems in the spec","domain_id":"LA-CHK","position":2,"description":"The structure checks: gaps, stale citations and levels of the wrong size."}
+{"id":"LA-EXP-CAP01","title":"Reading the spec","domain_id":"LA-EXP","position":1,"description":"Product, domain and record pages: coverage, obligation kinds and test states, finding a record and following its links."}
+{"id":"LA-EXP-CAP02","title":"Views, tabs and the side bar","domain_id":"LA-EXP","position":2,"description":"One address per record, its Wiki, Graph and Model views as panes opened and closed side by side, the nav, the side bar, quick find and keyboard shortcuts."}
+{"id":"LA-EXP-CAP03","title":"The graph","domain_id":"LA-EXP","position":3,"description":"Walking the model as a left-to-right graph with folder-like groups, and tracing an obligation to its code and tests."}
+{"id":"LA-PLT-CAP01","title":"The workbench","domain_id":"LA-PLT","position":1,"description":"Panels, themes, phones, stability and accessibility: what every page stands on."}
+{"id":"LA-PLT-CAP02","title":"Commands and shortcuts","domain_id":"LA-PLT","position":2,"description":"Commands, their keys and the hints that show them."}
+{"id":"LA-PLT-CAP03","title":"Serving and live reload","domain_id":"LA-PLT","position":3,"description":"Setting Lathe up in a product's repo and loading a workspace from code."}
+{"id":"LA-PLT-CAP04","title":"The desktop app","domain_id":"LA-PLT","position":4,"description":"Opening products in windows, iterating on Lathe in the shell with hot reload, using Lathe from the native menus, a window that looks like part of Lathe, and an app that feels native on a Mac."}
+{"id":"LA-TRC-CAP01","title":"Counting coverage","domain_id":"LA-TRC","position":1,"description":"How much of each obligation is designed, built, proved or only planned, and what is still missing."}
+{"id":"LA-TRC-CAP02","title":"Proving with tests","domain_id":"LA-TRC","position":2,"description":"How a test claims proof or support, and how its file backs the claim."}
+{"id":"LA-TRC-CAP03","title":"Reading coverage and traces","domain_id":"LA-TRC","position":3,"description":"Coverage, owed proof, the patterns a domain owes and each record's traces, as the app shows them."}

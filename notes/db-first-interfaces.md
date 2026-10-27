@@ -40,7 +40,7 @@ The full description, with every column's meaning, is `store.schema` at run time
 | `requirement` | use_case_id, statement, group_name? | use_case |
 | `standard` | product_id, description? | product |
 | `standard_rule` | standard_id, statement, group_name? | standard |
-| `test` | domain_id, capability_id?, test_type, state (automated/manual/planned), file?, key?, key_file?, given?, when?, then? | capability, domain |
+| `test` | domain_id, capability_id?, test_type, state (automated/manual/planned), file?, key?, key_file?, given?, when?, then?, notes? | capability, domain |
 | `use_case` | domain_id, capability_id?, goal?, notes? | capability, domain |
 | `view` | domain_id, route?, description?, notes? | domain |
 
