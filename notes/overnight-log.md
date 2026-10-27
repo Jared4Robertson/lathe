@@ -291,3 +291,9 @@ Lathe now matches S2 on UC requirements (206/206) and domain rules (98/98) acros
 - Deleted: parse.ts, meta/, FORMAT.md, checks/, specs/ and the yaml dependency.
 - Coverage: designed and proved are unchanged. Built fell because components name files that were deleted; brief 103 repoints them.
 - The app and the desktop smoke test break until brief 102 (app) adopts the new record shapes; that agent was told.
+
+## Brief 102 merged into db-first: the app on data
+- `/api/spec`, `POST /api/write` (one transaction; 422 with the store's reasons on refusal) and `/api/history` by row.
+- Pages show typed fields. Edit, Add and Remove use forms generated from the schema.
+- Checks passed: tsc, app 380, desktop 62 with the smoke test, knip, stability 47, a11y 149, perf.
+- Brief 103 picked up: 3 spec errors from removed behavior, components and tests for the edit code, and a kind position in the schema so `KIND_ORDER` can go.
