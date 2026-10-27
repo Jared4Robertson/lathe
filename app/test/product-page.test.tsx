@@ -7,7 +7,7 @@ const bars = (element: HTMLElement) =>
   [...element.querySelectorAll('.bar')].map((bar) => [...bar.children].map((c) => c.textContent).filter(Boolean).join(' '));
 
 describe('product page', () => {
-  it('LA-TRC-T82 The product page shows each domain as a card with its coverage bars and counts', async () => {
+  it('LA-V51-R01-T01 The product page shows each domain as a card with its coverage bars and counts', async () => {
     await openApp('/DM');
     expect(await screen.findByRole('heading', { level: 1, name: 'Demo shop' })).toBeInTheDocument();
     const cards = within(section(/^Domains/)).getAllByRole('article');
@@ -28,7 +28,7 @@ describe('product page', () => {
     ]);
   });
 
-  it('LA-TRC-T83 Coverage shows designed, built and proved on the product and domain pages', async () => {
+  it('LA-V51-R01-T02 Coverage shows designed, built and proved on the product and domain pages', async () => {
     await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     expect(bars(card('Shopping'))).toEqual([
@@ -46,7 +46,7 @@ describe('product page', () => {
     expect(bars(section('Coverage'))).toEqual(bars(pay));
   });
 
-  it('LA-TRC-T84 The product page lists its open questions with owners, and the problems in its records', async () => {
+  it('LA-V51-R02-T01 The product page lists its open questions with owners, and the problems in its records', async () => {
     await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     const questions = section(/^Open questions/);
@@ -63,7 +63,7 @@ describe('product page', () => {
     expect(main()).not.toHaveTextContent('NF-NOTE has no use cases yet');
   });
 
-  it('LA-TRC-T86 The product page lists what sits at product level in its stages, each in its stage\'s color', async () => {
+  it('The product page lists what sits at product level in its stages, each in its stage\'s color', async () => {
     await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     const level = section(/^Product level/);
@@ -79,7 +79,7 @@ describe('product page', () => {
     expect(level).not.toHaveTextContent('DM-SHOP-SP01');
   });
 
-  it("LA-TRC-T85 The product page sums up the product's coverage, open questions and problems", async () => {
+  it("LA-V51-R03-T01 The product page sums up the product's coverage, open questions and problems", async () => {
     await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     const summary = section('Summary');

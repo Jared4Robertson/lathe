@@ -28,7 +28,7 @@ export const groupedWorkspace = (): SpecData =>
 /** The test workspace with a second use case that has seven UC requirements and nothing else: one kind, so no groups. */
 export const manyOfOneKindWorkspace = (): SpecData => withReturns(7);
 
-/** A map's groups of siblings (LA-EXP-DR58): its roots, then each parent's children, in the tree's order. */
+/** A map's groups of siblings (LA-EXP-DS06): its roots, then each parent's children, in the tree's order. */
 export function siblingGroups<N extends { children: readonly string[] }>(map: { roots: readonly string[]; nodes: ReadonlyMap<string, N> }): N[][] {
   const groups = [map.roots.map((id) => map.nodes.get(id)!)];
   for (const n of map.nodes.values()) if (n.children.length > 0) groups.push(n.children.map((id) => map.nodes.get(id)!));

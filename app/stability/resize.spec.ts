@@ -2,7 +2,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 import { expectStable, openPage, step } from './measure';
 import { RECORD } from './scenarios';
 
-// LA-PLT-T75: dragging each resize gap, and collapsing by drag. What sits beside the gap
+// LA-V61-R31-T01: dragging each resize gap, and collapsing by drag. What sits beside the gap
 // resizes with the pointer: its box may change on every move, but never jump back to a box it
 // left, and the panels on the far side of the page must hold still.
 
@@ -22,7 +22,7 @@ async function drag(page: Page, handle: Locator, dx: number, steps = 12) {
 const ALL = ['*'];
 
 test.describe('resize', () => {
-  test('LA-PLT-T75 drag the nav gap, then collapse the nav by drag', async ({ page }) => {
+  test('LA-V61-R31-T01 drag the nav gap, then collapse the nav by drag', async ({ page }) => {
     await openPage(page, RECORD);
     const handle = page.locator('.app-nav-handle');
     const keys = ['nav#nav', '#main', '.side-bar-column'];
@@ -33,7 +33,7 @@ test.describe('resize', () => {
     expectStable(c);
   });
 
-  test('LA-PLT-T75 drag the gap between two panes', async ({ page }) => {
+  test('LA-V61-R31-T01 drag the gap between two panes', async ({ page }) => {
     await openPage(page, `${RECORD}?view=wiki,graph`);
     await page.locator('.pane-graph .graph-flow .graph-box').first().waitFor({ state: 'attached' });
     const handle = page.locator('.pane-gap').first();
@@ -42,7 +42,7 @@ test.describe('resize', () => {
     expectStable(r);
   });
 
-  test('LA-PLT-T75 drag the side bar gap, then collapse it by drag', async ({ page }) => {
+  test('LA-V61-R31-T01 drag the side bar gap, then collapse it by drag', async ({ page }) => {
     await openPage(page, RECORD);
     const handle = page.locator('.focus-layout > .resize-handle');
     const keys = ['nav#nav', '.side-bar-column', '.pane-wiki > .pane-bar'];

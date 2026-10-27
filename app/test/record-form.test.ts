@@ -28,14 +28,17 @@ describe('form generation from the schema', () => {
   const index = indexOf(workspace());
   const { schema } = index.workspace;
 
-  it('gives every column but the ID and the parent columns a typed input, in the table\'s order', () => {
+  it('LA-EXP-DS12-T02 gives every column but the ID and the parent columns an input, in the table\'s order', () => {
     expect(formFields(schema, 'uc_requirement').map((f) => [f.name, f.input, f.required])).toEqual([
       ['title', 'line', true],
       ['statement', 'text', true],
       ['group_name', 'line', false],
     ]);
+    expect(formFields(schema, 'use_case_test').map((f) => f.name)).not.toContain('uc_requirement_id');
+  });
+
+  it('LA-V92-R30-T02 gives each input the type of its column', () => {
     const test = formFields(schema, 'use_case_test');
-    expect(test.map((f) => f.name)).not.toContain('uc_requirement_id');
     // An enum is a choice of its values; a text field holding prose is a text area.
     expect(test.find((f) => f.name === 'state')).toMatchObject({ input: 'choice', values: ['automated', 'manual', 'not automated yet'], required: true });
     expect(test.find((f) => f.name === 'then')).toMatchObject({ input: 'text', required: false });
@@ -78,7 +81,7 @@ describe('form generation from the schema', () => {
     expect(recordChoices(index, field, 'NF').map((r) => r.id)).toEqual(['NF-NOTE-A1']);
   });
 
-  it('offers as parents only records of the allowed parent kinds in the same product, and never the record\'s own subtree', () => {
+  it('LA-EXP-DS12-T03 offers as parents only records of the allowed parent kinds in the same product, and never the record\'s own subtree', () => {
     const groups = parentChoices(index, 'use_case', 'DM');
     expect(groups.map((g) => g.kind)).toEqual(['capability']);
     expect(groups[0].records.map((r) => r.id)).toEqual(['DM-PAY-CAP01', 'DM-SHOP-CAP01']);
@@ -92,7 +95,7 @@ describe('form generation from the schema', () => {
     expect(parentChoices(index, 'view', 'DM')).toEqual([]);
   });
 
-  it('offers the links a kind may start, each limited to its valid targets in the same product', () => {
+  it('LA-V92-R30-T03 offers the links a kind may start, each limited to its valid targets in the same product', () => {
     const links = linkForms(index, 'flow_step');
     expect(links.map((l) => l.relation)).toEqual(['exchanges_with', 'fulfills', 'happens_in', 'invokes']);
     const invokes = links.find((l) => l.relation === 'invokes')!;
@@ -115,7 +118,7 @@ describe('form generation from the schema', () => {
 });
 
 describe('IDs for new records', () => {
-  it('suggests the next free number in the kind\'s convention, or the start of a named ID', () => {
+  it('LA-V92-R31-T03 suggests the next free number in the kind\'s convention, or the start of a named ID', () => {
     const index = indexOf(workspace());
     expect(suggestId(index, 'uc_requirement', 'DM-SHOP-UC01')).toBe('DM-SHOP-UC01-R03');
     expect(suggestId(index, 'use_case', 'DM-SHOP-CAP01')).toBe('DM-SHOP-UC02');
@@ -173,15 +176,20 @@ describe('commands from a draft', () => {
     expect(commandsFor(index, 'view', draft, null).commands).toEqual([{ op: 'add', table: 'view', row: { id: 'DM-V02', title: 'Checkout' } }]);
   });
 
-  it('changes only what changed: the columns set or cleared, a move, links taken and added, and a part table written again', () => {
+  it('LA-V92-R08-T02 a form opened and left as it was sends no write', () => {
+    const index = indexOf(workspace());
+    const record = index.byId.get('DM-SHOP-UC01-FL-S01')!;
+    const draft = draftOf(index, record);
+    expect(draftProblems(index, 'flow_step', draft, false).size).toBe(0);
+    expect(commandsFor(index, 'flow_step', draft, record).commands).toEqual([]);
+  });
+
+  it('LA-V92-R29-T02 changes only what changed: the columns set or cleared, a move, links taken and added, and a part table written again', () => {
     const index = indexOf(workspace());
     const record = index.byId.get('DM-SHOP-UC01-FL-S01')!;
     const draft = draftOf(index, record);
     expect(draft.parent).toBe('DM-SHOP-UC01-FL');
     expect(draft.links.invokes).toEqual(['DM-SHOP-CMD01']);
-    expect(draftProblems(index, 'flow_step', draft, false).size).toBe(0);
-    // Nothing changed: no commands.
-    expect(commandsFor(index, 'flow_step', draft, record).commands).toEqual([]);
 
     draft.values.title = 'Shopper adds it';
     draft.values.description = '';
@@ -223,7 +231,7 @@ describe('commands from a draft', () => {
 });
 
 describe('before a removal', () => {
-  it('names what still references the record, and what goes with it', () => {
+  it('LA-V92-R32-T03 names what still references the record, and what goes with it', () => {
     const index = indexOf(patternWorkspace());
     const referrers = referrersOf(index, 'DM-SHOP-UC01').map((r) => `${r.id} ${r.how}`);
     expect(referrers).toEqual(['DM-SHOP-UC01-FL sits under it', 'DM-SHOP-UC01-R01 sits under it', 'DM-SHOP-UC01-R02 sits under it']);

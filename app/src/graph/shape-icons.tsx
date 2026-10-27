@@ -1,6 +1,6 @@
 import type { Mark, Shape } from './shapes';
 
-// The small marks for a kind's shape (LA-EXP-DR65): drawn before a box's kind and ID line in the
+// The small marks for a kind's shape (LA-V93-R06): drawn before a box's kind and ID line in the
 // Nested and Voronoi views, where every box keeps its rectangle or cell (by the canvas, paint.ts,
 // from these same paths), and in the graph's key.
 // A mark (a tag, a gear, a lens, a marker, a ruler, a port) tells apart two kinds that share a shape, in every

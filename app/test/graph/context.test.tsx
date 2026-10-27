@@ -30,7 +30,7 @@ async function showGraph(path: string, workspace: SpecData = testWorkspace(), de
 }
 
 describe('the graph tree, its depth and its camera', () => {
-  it('LA-EXP-T142 Depth counts levels below a domain and a use case, as a file explorer does', () => {
+  it.each(['LA-EXP-DS09-T06', 'LA-V93-R10-T06'])('%s Depth counts levels below a domain and a use case, as a file explorer does', () => {
     const index = testIndex();
     // From the domain: depth 1 its stages, depth 2 their folders, depth 3 what is in them.
     const one = ids(neighborhood(index, 'P-D', 1));
@@ -48,7 +48,7 @@ describe('the graph tree, its depth and its camera', () => {
     }
   });
 
-  it('LA-EXP-T143 The graph\'s tree is the nav\'s: a domain\'s five stages, a folder per kind, the records that start a branch of each stage, and a product\'s own stages and domains', () => {
+  it.each(['LA-EXP-DS04-T03', 'LA-V93-R23-T06'])('%s The graph\'s tree is the nav\'s: a domain\'s five stages, a folder per kind, the records that start a branch of each stage, and a product\'s own stages and domains', () => {
     const index = testIndex();
     const { stages } = domainFolders(index, 'P-D');
     expect(treeChildren(index, 'P-D')).toEqual([...STAGES, 'P-D/question']);
@@ -86,7 +86,7 @@ describe('the graph tree, its depth and its camera', () => {
     }
   });
 
-  it('LA-EXP-T144 The Links switch beside Depth is off by default, has a tooltip and the shortcut l, draws the center\'s links dashed, and is kept while walking', async () => {
+  it.each(['LA-V93-R10-T07', 'LA-V93-R08-T02'])('%s The Links switch beside Depth is off by default, has a tooltip and the shortcut l, draws the center\'s links dashed, and is kept while walking', async () => {
     await showGraph('/P-D-UC01-FL-S01');
     const links = screen.getByRole('button', { name: 'Links' });
     expect(links).toHaveAttribute('aria-pressed', 'false');
@@ -104,7 +104,7 @@ describe('the graph tree, its depth and its camera', () => {
     expect(screen.getByRole('button', { name: 'Links' })).toHaveAttribute('aria-pressed', 'true');
   });
 
-  it('LA-EXP-T171 Every drawn box shows its label, however small on screen, and is a keyboard stop; the summary counts the framed picture', async () => {
+  it.each(['LA-EXP-DS09-T09', 'LA-EXP-DS10-T03'])('%s Every drawn box shows its label, however small on screen, and is a keyboard stop; the summary counts the framed picture', async () => {
     // A use case with sixty requirements: framed from its domain, they are a few pixels tall each.
     const w = testWorkspace();
     for (let i = 3; i <= 60; i++) addRows(w, 'uc_requirement', { id: `P-D-UC01-R${String(i).padStart(2, '0')}`, title: `Rule ${i}`, use_case_id: 'P-D-UC01', statement: `Rule ${i} MUST hold.` });
@@ -134,13 +134,13 @@ describe('the graph tree, its depth and its camera', () => {
     expect(graphSummary(n)).toBe('27 records · 23 groups · 49 links');
   });
 
-  it('LA-EXP-T147 Filters have a Minimap switch, off by default and kept while walking, and the minimap is an overview of the whole map', async () => {
+  it('LA-V93-R20-T01 Filters have a Minimap switch, off by default and kept while walking, and the minimap is an overview of the whole map', async () => {
     await showGraph('/P-D-UC01-R01');
     fireEvent.click(screen.getByText('Filters'));
     const minimap = screen.getByRole('switch', { name: 'Minimap' }) as HTMLInputElement;
     expect(minimap.checked).toBe(false);
     expect(screen.queryByRole('switch', { name: /context ring/i })).toBeNull();
-    // The trace preset is worded with the relations' labels, never their codes (LA-EXP-V03-R07).
+    // The trace preset is worded with the relations' labels, never their codes (LA-V92-R07).
     expect(screen.getByRole('button', { name: 'Only fulfills, invokes and happens in links' })).toBeInTheDocument();
     expect(document.querySelector('.graph-minimap')).toBeNull();
     fireEvent.click(minimap);
@@ -156,7 +156,7 @@ describe('the graph tree, its depth and its camera', () => {
     expect(screen.getByRole('img', { name: 'Minimap' })).toBeInTheDocument();
   });
 
-  it('LA-EXP-T148 The plain arrows step through the tree on the canvas: Left out to the parent, Right in to the first child, Up and Down to a sibling, and buttons step too, naming their keys; no page-wide shortcut steps', async () => {
+  it('LA-V93-R19-T01 The plain arrows step through the tree on the canvas: Left out to the parent, Right in to the first child, Up and Down to a sibling, and buttons step too, naming their keys; no page-wide shortcut steps', async () => {
     const index = testIndex();
     expect(stepTarget(index, 'P-D-UC01', 'out')).toBe('P-D-CAP01');
     expect(stepTarget(index, 'P-D-UC01', 'in')).toBe('P-D-UC01-R01');
@@ -188,7 +188,7 @@ describe('the graph tree, its depth and its camera', () => {
     await waitFor(() => expect(window.location.pathname).toBe('/P-D/domain-model'));
   });
 
-  it('LA-EXP-T172 With Links on, links draw as curves between their boxes, and the edge hints count the linked records past each edge', async () => {
+  it.each(['LA-V93-R18-T01', 'LA-V93-R08-T03'])('%s With Links on, links draw as curves between their boxes, and the edge hints count the linked records past each edge', async () => {
     // The hints' arithmetic: a box's center past an edge counts for that edge; the plain pan moves half the canvas.
     const view = { x: 0, y: 0, zoom: 1 };
     expect(pastEdges([{ x: -10, y: 50 }, { x: 1200, y: -5 }, { x: 500, y: 900 }, { x: 500, y: 400 }], view, 1000, 800)).toEqual({ up: 1, down: 1, left: 1, right: 1 });
@@ -206,7 +206,7 @@ describe('the graph tree, its depth and its camera', () => {
     for (const l of parentLines()) expect(l.points[0][1]).toBe(l.points[1][1]);
   });
 
-  it('LA-EXP-T150 Hovering or focusing a box spotlights it, its lines and the boxes it joins, and leaving restores the picture', async () => {
+  it('LA-V93-R17-T01 Hovering or focusing a box spotlights it, its lines and the boxes it joins, and leaving restores the picture', async () => {
     await showGraph('/P-D-UC01-FL-S01');
     fireEvent.click(screen.getByRole('button', { name: 'Links' }));
     await waitFor(() => expect(node('P-V01')).not.toBeNull());

@@ -4,15 +4,15 @@ import { DOMAIN, GRAPH_CANVAS, GRAPH_HEADER, MODEL_CANVAS, RECORD } from './scen
 import { boxOf, cameraOf, clickBox, clippedLabels, focusDrawn, GRAPH, graphDrawn, hitAt, placesOf, pointOnBox, reachableBoxes, sceneOf } from './scene';
 import type { SceneHost } from '../src/graph/GraphPage';
 
-// LA-PLT-T76: re-centering the graph at depth 1, 2 and 3, and moving around the ERD. The camera
+// LA-V61-R32-T01: re-centering the graph at depth 1, 2 and 3, and moving around the ERD. The camera
 // glides (the canvas draws each frame anew, which is no layout shift); the pane's title, the
 // graph's header and its canvas must hold still, and the canvas must not be mounted anew.
-// LA-EXP-T173: focusing a domain, a stage, a folder and a record, then Back and Forward, moves the
+// LA-EXP-DS05-T13: focusing a domain, a stage, a folder and a record, then Back and Forward, moves the
 // camera only: no box of the one map changes its place or its size.
 
 const PANE_TITLE = '.pane-graph .pane-title';
 /**
- * The graph's keyboard layer. A re-center moves the camera over the one map (LA-EXP-DR59), and the
+ * The graph's keyboard layer. A re-center moves the camera over the one map (LA-EXP-DS09), and the
  * boxes the camera brings into view join the layer as it starts: that is the picture changing,
  * inside the canvas. The canvas, its header and the pane around it are keys and must hold still,
  * and anything else that shifts is still unexpected.
@@ -32,7 +32,7 @@ async function visibleNode(page: Page, n: number): Promise<{ id: string; at: { x
 
 test.describe('graph', () => {
   for (const depth of [1, 2, 3]) {
-    test(`LA-PLT-T76 re-center at depth ${depth}`, async ({ page }) => {
+    test(`LA-V61-R32-T01 re-center at depth ${depth}`, async ({ page }) => {
       await openPage(page, `${RECORD}?view=graph`);
       await nodes(page);
       if (depth > 1) {
@@ -53,7 +53,7 @@ test.describe('graph', () => {
     });
   }
 
-  test('LA-PLT-T76 change the depth', async ({ page }) => {
+  test('LA-V61-R32-T01 change the depth', async ({ page }) => {
     await openPage(page, `${RECORD}?view=graph`);
     await nodes(page);
     const keys = [PANE_BAR, PANE_TITLE, GRAPH_HEADER, GRAPH_CANVAS, DRAWING];
@@ -63,7 +63,7 @@ test.describe('graph', () => {
     }
   });
 
-  test('LA-EXP-T173 focusing anything moves the camera only: no box changes its place or size', async ({ page }) => {
+  test('LA-EXP-DS05-T13 focusing anything moves the camera only: no box changes its place or size', async ({ page }) => {
     await openPage(page, '/LA?view=graph');
     await nodes(page);
     const seen = new Map<string, string>();
@@ -79,12 +79,13 @@ test.describe('graph', () => {
     const keys = [PANE_BAR, PANE_TITLE, GRAPH_HEADER, GRAPH_CANVAS, DRAWING];
     for (const id of ['LA-EXP', 'LA-EXP/use-cases', 'LA-EXP/use-cases/capability', 'LA-EXP-CAP03', 'LA-EXP-UC03']) {
       const before = new URL(page.url()).pathname;
-      const r = await step(page, 'graph', `focus ${id}`, { keys, allow: ['.side-bar', GRAPH_BOXES] }, async () => {
-        await clickBox(page, id);
-        await page.waitForURL((u) => u.pathname !== before);
-        await focusDrawn(page, id);
-      });
-      expectStable(r);
+      const r = await test.step(`LA-EXP-UC04-R10-T01 the Reader reaches ${id} through the stages and kind groups the nav shows`, () =>
+        step(page, 'graph', `focus ${id}`, { keys, allow: ['.side-bar', GRAPH_BOXES] }, async () => {
+          await clickBox(page, id);
+          await page.waitForURL((u) => u.pathname !== before);
+          await focusDrawn(page, id);
+        }));
+      await test.step(`LA-PAT-APP-UX-R08-T02 focusing ${id} moves nothing outside the graph's boxes`, () => expectStable(r));
       await page.waitForTimeout(900);
       await check(id);
     }
@@ -94,17 +95,19 @@ test.describe('graph', () => {
       await check(move);
     }
     // The camera moved at every step; the map never did.
-    expect(new Set(cameras).size).toBeGreaterThan(5);
-    expect(seen.size).toBeGreaterThan(50);
+    await test.step('LA-EXP-DS09-T10 the camera moved at every focus, Back and Forward', () => expect(new Set(cameras).size).toBeGreaterThan(5));
+    await test.step('LA-V93-R16-T03 focusing moved the camera only: no box of the map changed its place or size', () => expect(seen.size).toBeGreaterThan(50));
   });
 
-  test('LA-EXP-T175 a domain is drawn as a hexagon: its outline is the polygon, in every state', async ({ page }) => {
+  test('LA-V93-R12-T03 a domain is drawn as a hexagon: its outline is the polygon, in every state', async ({ page }) => {
     await openPage(page, '/LA?view=graph');
     await nodes(page);
     const domain = () => boxOf(page, 'LA-EXP');
     const at = (await domain())!;
-    expect(at.shape).toBe('hexagon');
-    expect(at.polygon).toHaveLength(6);
+    await test.step('LA-V93-R05-T02 a domain is drawn as a hexagon', () => {
+      expect(at.shape).toBe('hexagon');
+      expect(at.polygon).toHaveLength(6);
+    });
     // Hovered, the same outline, in the hover state.
     const point = (await pointOnBox(page, 'LA-EXP'))!;
     await page.mouse.move(point.x, point.y);
@@ -116,12 +119,12 @@ test.describe('graph', () => {
     await page.waitForURL(/\/LA-EXP(\?|$)/);
     await focusDrawn(page, 'LA-EXP');
     expect((await domain())!.polygon).toHaveLength(6);
-    // The product is a rounded box, not a polygon (LA-EXP-DR65).
+    // The product is a rounded box, not a polygon (LA-V93-R06).
     expect((await boxOf(page, 'LA'))!.polygon).toBeNull();
     expect((await boxOf(page, 'LA'))!.shape).toBe('product');
   });
 
-  test('LA-EXP-T202 in the Tree view every label line and badge sits inside its box\'s shape, and in the Nested view every record shows its shape\'s mark', async ({ page }) => {
+  test('LA-V93-R12-T05 in the Tree view every label line and badge sits inside its box\'s shape, and in the Nested view every record shows its shape\'s mark', async ({ page }) => {
     /** The label lines and badges whose corners, hit-tested by the canvas, land outside their own box's outline. */
     const outside = () => page.evaluate((sel) => {
       const host = document.querySelector(sel) as SceneHost;
@@ -163,12 +166,14 @@ test.describe('graph', () => {
     await graphDrawn(page, 'nested', 1300);
     const marks = (await sceneOf(page)).boxes.filter((b) => !b.file)
       .map((b) => ({ id: b.id, icon: b.icons.some((i) => i.draw === 'shape' && i.name === b.shape), outline: b.polygon !== null || b.view !== 'nested' }));
-    expect(marks.length).toBeGreaterThan(5);
-    expect(marks.filter((m) => !m.icon || m.outline)).toEqual([]);
+    await test.step("LA-V93-R06-T02 in the Nested view every record shows its kind's shape as a mark", () => {
+      expect(marks.length).toBeGreaterThan(5);
+      expect(marks.filter((m) => !m.icon || m.outline)).toEqual([]);
+    });
     await page.locator('.pane-graph .graph-layout button', { hasText: 'Tree' }).click();
   });
 
-  test('LA-EXP-T177 at depth 2 on a domain, the domain, its stages and their folders are framed in the canvas, each showing its full title wrapped on whole words', async ({ page }) => {
+  test('LA-EXP-DS06-T05 at depth 2 on a domain, the domain, its stages and their folders are framed in the canvas, each showing its full title wrapped on whole words', async ({ page }) => {
     await openPage(page, `${DOMAIN}?view=graph`);
     await nodes(page);
     await page.locator('.graph-depth button', { hasText: '2' }).click();
@@ -190,23 +195,26 @@ test.describe('graph', () => {
         wrapped: title.length > 0 && title.every((l) => l.drawnWidth <= l.rect.width + 0.5 * s.camera.zoom + 0.5) && title.slice(0, -1).every((l) => /[\s-]$/.test(l.text)),
       };
     });
-    // The camera frames the domain and two levels below it in the canvas (LA-EXP-DR59): the domain, every stage and at least half the folders.
+    // The camera frames the domain and two levels below it in the canvas (LA-EXP-DS09): the domain, every stage and at least half the folders.
     const shown = boxes.filter((b) => b.inView).map((b) => b.id);
     const level = (n: number) => boxes.filter((b) => b.id.split('/').length === n + 1 && b.id.startsWith(domain)).map((b) => b.id);
-    expect(shown, 'the domain is framed').toContain(domain);
-    for (const stage of level(1)) expect(shown, `${stage} is framed`).toContain(stage);
-    expect(level(1).length).toBeGreaterThanOrEqual(2);
-    expect(level(2).filter((id) => shown.includes(id)).length * 2, 'half the folders are framed').toBeGreaterThanOrEqual(level(2).length);
-    // Every drawn box shows its label (LA-EXP-DR60).
-    for (const b of boxes) {
-      expect(b.title, `${b.id} is labeled`).not.toBeNull();
-      // The tooltip is "title (ID)" or, for a group, "title (in owner)": the label shows the whole title.
-      expect(b.full.startsWith(`${b.title} (`), `${b.id} shows its full title`).toBe(true);
-      expect(b.wrapped, `${b.id} fits its title, wrapped on whole words`).toBe(true);
-    }
+    await test.step('LA-V93-R10-T08 depth 2 frames the domain, its stages and at least half their folders', () => {
+      expect(shown, 'the domain is framed').toContain(domain);
+      for (const stage of level(1)) expect(shown, `${stage} is framed`).toContain(stage);
+      expect(level(1).length).toBeGreaterThanOrEqual(2);
+      expect(level(2).filter((id) => shown.includes(id)).length * 2, 'half the folders are framed').toBeGreaterThanOrEqual(level(2).length);
+    });
+    await test.step('LA-EXP-DS10-T05 every drawn box shows its label, its full title wrapped on whole words', () => {
+      for (const b of boxes) {
+        expect(b.title, `${b.id} is labeled`).not.toBeNull();
+        // The tooltip is "title (ID)" or, for a group, "title (in owner)": the label shows the whole title.
+        expect(b.full.startsWith(`${b.title} (`), `${b.id} shows its full title`).toBe(true);
+        expect(b.wrapped, `${b.id} fits its title, wrapped on whole words`).toBe(true);
+      }
+    });
   });
 
-  test('LA-PLT-T136 in each layout, focusing each of Lathe\'s domains at depth 2, framed and zoomed in, every drawn box shows its title text and its whole label inside it', async ({ page }) => {
+  test('in each layout, focusing each of Lathe\'s domains at depth 2, framed and zoomed in, every drawn box shows its title text and its whole label inside it', async ({ page }) => {
     for (const layout of ['Tree', 'Nested', 'Voronoi'] as const) {
       for (const domain of ['LA-AUT', 'LA-CHK', 'LA-EXP', 'LA-PLT', 'LA-TRC']) {
         await openPage(page, `/${domain}?view=graph`);
@@ -232,7 +240,7 @@ test.describe('graph', () => {
     }
   });
 
-  test('LA-EXP-T183 no label is clipped: each line fits its width and height, and the label fits its box, in light and dark, focused or not, at several zooms', async ({ page }) => {
+  test('LA-EXP-DS06-T07 no label is clipped: each line fits its width and height, and the label fits its box, in light and dark, focused or not, at several zooms', async ({ page }) => {
     for (const scheme of ['light', 'dark'] as const) {
       await page.emulateMedia({ colorScheme: scheme });
       for (const focus of [DOMAIN, `${DOMAIN}/use-cases`]) {
@@ -253,7 +261,7 @@ test.describe('graph', () => {
     }
   });
 
-  test('LA-EXP-T184 a label keeps its size in the map when the focus changes and the camera zooms', async ({ page }) => {
+  test('LA-EXP-DS06-T08 a label keeps its size in the map when the focus changes and the camera zooms', async ({ page }) => {
     await openPage(page, `${DOMAIN}?view=graph`);
     await nodes(page);
     const target = `${DOMAIN.slice(1)}/interaction-design`;
@@ -276,13 +284,15 @@ test.describe('graph', () => {
     await page.locator('.pane-graph .graph-zoom-in').click();
     await page.waitForTimeout(600);
     const zoomed = await size();
-    expect(zoomed.zoom).toBeGreaterThan(focused.zoom);
-    expect(zoomed.font).toBe(before.font);
-    expect(zoomed.lines).toEqual(before.lines);
-    expect(zoomed.screen / focused.screen).toBeCloseTo(zoomed.zoom / focused.zoom, 1);
+    await test.step('LA-EXP-DS10-T06 zooming the camera draws the label at its map size times the zoom', () => {
+      expect(zoomed.zoom).toBeGreaterThan(focused.zoom);
+      expect(zoomed.font).toBe(before.font);
+      expect(zoomed.lines).toEqual(before.lines);
+      expect(zoomed.screen / focused.screen).toBeCloseTo(zoomed.zoom / focused.zoom, 1);
+    });
   });
 
-  test('LA-PLT-T76 move around the ERD', async ({ page }) => {
+  test('LA-V61-R32-T01 move around the ERD', async ({ page }) => {
     await openPage(page, `${DOMAIN}?view=model`);
     await page.locator('.model-flow .react-flow__node').first().waitFor();
     await page.waitForTimeout(500);
@@ -310,7 +320,7 @@ test.describe('graph', () => {
   });
 });
 
-// LA-EXP-T189 (LA-EXP-UC03-R16, LA-EXP-UC03-R17, LA-EXP-UC03-R06, LA-EXP-UC03-R10): one table of the
+// LA-V93-R14-T02 (LA-V93-R21, LA-V93-R22, LA-V93-R14, LA-V93-R17): one table of the
 // graph's features, run in the Tree, Nested and Voronoi layouts alike, so none falls behind the others.
 const LAYOUT_NAMES = { tree: 'Tree', nested: 'Nested', voronoi: 'Voronoi' } as const;
 type Layout = keyof typeof LAYOUT_NAMES;
@@ -346,7 +356,7 @@ const LINKED = `${RECORD}-FL-S01`;
 /** The table: each feature of the graph, checked the same way in either layout. */
 const PARITY: { feature: string; run: (page: Page, layout: Layout) => Promise<void> }[] = [
   {
-    feature: 'the Layout switch and its v command',
+    feature: 'LA-V93-R21-T01 the Layout switch and its v command',
     run: async (page, layout) => {
       await expect(page.locator('.pane-graph .graph-layout button[aria-pressed="true"]')).toHaveText(LAYOUT_NAMES[layout]);
       await expect(page.locator(GRAPH)).toHaveAttribute('data-layout', layout);
@@ -370,7 +380,7 @@ const PARITY: { feature: string; run: (page: Page, layout: Layout) => Promise<vo
     },
   },
   {
-    feature: 'a click focuses a box, and the trail grows',
+    feature: 'LA-EXP-UC03-R18-T01 a click focuses a box, and the trail grows',
     run: async (page) => {
       const before = path(page);
       const { id, x, y } = await labeledInView(page);
@@ -444,7 +454,7 @@ const PARITY: { feature: string; run: (page: Page, layout: Layout) => Promise<vo
     feature: 'depth 1 to 3 frames more in the Tree layout; the Nested and Voronoi cameras frame the focus box or cell, so they have no depth',
     run: async (page, layout) => {
       if (layout !== 'tree') {
-        // The Depth group keeps its slot but is neither shown nor reachable (LA-EXP-T194).
+        // The Depth group keeps its slot but is neither shown nor reachable (LA-V93-R21).
         const depthGroup = page.locator('.pane-graph [aria-label="Depth"]');
         await expect(depthGroup).toBeHidden();
         await expect(depthGroup).toHaveAttribute('inert', '');
@@ -480,7 +490,7 @@ const PARITY: { feature: string; run: (page: Page, layout: Layout) => Promise<vo
     },
   },
   {
-    feature: 'hovering a box spotlights it and Details follows the hover',
+    feature: 'LA-V93-R17-T02 hovering a box spotlights it and Details follows the hover',
     run: async (page) => {
       const { id, x, y } = await labeledInView(page, true);
       await page.mouse.move(x, y);
@@ -510,7 +520,7 @@ const PARITY: { feature: string; run: (page: Page, layout: Layout) => Promise<vo
 ];
 
 for (const layout of ['tree', 'nested', 'voronoi'] as const) {
-  test(`LA-EXP-T189 every graph feature works in the ${LAYOUT_NAMES[layout]} layout`, async ({ page }) => {
+  test(`LA-V93-R14-T02 every graph feature works in the ${LAYOUT_NAMES[layout]} layout`, async ({ page }) => {
     await openPage(page, `${RECORD}?view=graph`);
     await nodes(page);
     await page.locator('.pane-graph .graph-box[data-id^="LA-"]').nth(1).waitFor({ state: 'attached' });
@@ -525,7 +535,7 @@ for (const layout of ['tree', 'nested', 'voronoi'] as const) {
     }
     for (const row of PARITY) await test.step(row.feature, () => row.run(page, layout));
     if (layout === 'voronoi') {
-      await test.step('every drawn cell is a polygon, and the pointer finds the cell under it, not a larger cell\'s box', async () => {
+      await test.step('LA-V93-R22-T01 every drawn cell is a polygon, and the pointer finds the cell under it, not a larger cell\'s box', async () => {
         const s = await sceneOf(page);
         const c = s.canvas;
         const wrong: string[] = [];

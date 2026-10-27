@@ -2,7 +2,7 @@ import type { Neighborhood } from './model';
 
 // Box sizes and the trace's layout. The hierarchy is one map of a product's tree (map.ts); a trace is
 // a chain, not a tree, so it keeps a picture of its own: each of its columns a stack of leaf boxes
-// in the model's row order, centered on the focus's middle (LA-EXP-UC03-R08).
+// in the model's row order, centered on the focus's middle (LA-V93-R15).
 
 /** A trace's box: every box in a trace, at text scale 1. */
 export const NODE_WIDTH = 190;

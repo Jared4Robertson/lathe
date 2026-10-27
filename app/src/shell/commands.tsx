@@ -142,7 +142,7 @@ export function CommandsProvider({ children }: { children: ReactNode }) {
   const titleOf = useCallback((c: Command) => handlers.current.get(c.id)?.at(-1)?.title ?? c.title, []);
   const api = useMemo(() => ({ commands, mac, register, run, available, titleOf, announce }), [commands, mac, register, run, available, titleOf, announce]);
 
-  // In the desktop app, a native menu choice arrives as a command ID and runs like its keys would (LA-PLT-UC13-R02).
+  // In the desktop app, a native menu choice arrives as a command ID and runs like its keys would (LA-V66-R02).
   useEffect(() => window.latheDesktop?.onCommand((id: string) => { run(id); }), [run]);
 
   useEffect(() => {

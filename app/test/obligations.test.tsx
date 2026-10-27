@@ -34,7 +34,7 @@ const field = (name: string) => within(side()).getByText(name, { selector: 'dt' 
 const stage = (name: string) => main().querySelector(`.stage-${name}`) as HTMLElement;
 
 describe('obligation kinds and test states', () => {
-  it('LA-TRC-T89 Coverage shows one group per obligation kind, labeled, with designed, built, proved and not automated', async () => {
+  it('LA-V91-R51-T01 Coverage shows one group per obligation kind, labeled, with designed, built, proved and not automated', async () => {
     await openApp('/DM', served());
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     expect(groups(card('Shopping'))).toEqual([
@@ -56,7 +56,7 @@ describe('obligation kinds and test states', () => {
     );
   });
 
-  it('LA-TRC-T90 The summary counts every obligation kind, and tests not automated yet apart from proved', async () => {
+  it('LA-V51-R03-T02 The summary counts every obligation kind, and tests not automated yet apart from proved', async () => {
     await openApp('/DM', served());
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     const summary = section('Summary');
@@ -67,7 +67,7 @@ describe('obligation kinds and test states', () => {
     expect(value('Not automated yet')).toBe('1 of 7 obligations, by tests no file runs yet');
   });
 
-  it('LA-TRC-T91 The domain page lists an endpoint in Interaction design, with its API requirements and a product\'s own kind folded under it', async () => {
+  it('LA-V91-R52-T01 The domain page lists an endpoint in Interaction design, with its API requirements and a product\'s own kind folded under it', async () => {
     await openApp('/DM-SHOP', served());
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     const user = userEvent.setup();
@@ -91,7 +91,7 @@ describe('obligation kinds and test states', () => {
     expect(within(flows).getByText('Nothing matches.')).toBeInTheDocument();
   });
 
-  it('LA-TRC-T92 The domain page tags each test with its state, and one not automated yet looks unfinished', async () => {
+  it('LA-V91-R53-T01 The domain page tags each test with its state, and one not automated yet looks unfinished', async () => {
     await openApp('/DM-SHOP', served());
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     const rows = [...stage('test-plan').querySelectorAll('.record-row')] as HTMLElement[];
@@ -105,7 +105,7 @@ describe('obligation kinds and test states', () => {
     expect(rows[2]).not.toHaveClass('not-automated');
   });
 
-  it('LA-TRC-T93 The record page shows a test state and how the test is run, and says one not automated yet is not proof', async () => {
+  it('LA-V92-R51-T01 The record page shows a test state and how the test is run, and says one not automated yet is not proof', async () => {
     // The state is a fact in the side bar's Details, open in the Graph view (brief 64).
     await openApp('/DM-SHOP-INV01-T?view=wiki,graph', served());
     await screen.findByRole('heading', { level: 1, name: 'A 51st line is refused' });
@@ -126,7 +126,7 @@ describe('obligation kinds and test states', () => {
     expect(section(/^Run by/)).toHaveTextContent('test/basket.test.ts');
   });
 
-  it('LA-TRC-T94 An obligation\'s Traceability shows what designs it and what proves it, and names a gap', async () => {
+  it('An obligation\'s Traceability shows what designs it and what proves it, and names a gap', async () => {
     await openApp('/DM-SHOP-UC01-R01', served());
     await screen.findByRole('heading', { level: 1, name: 'The basket shows the new item' });
     const trace = section(/^Traceability/);
@@ -142,7 +142,7 @@ describe('obligation kinds and test states', () => {
     expect(gaps).toEqual(['not-designed', 'not-proved']);
   });
 
-  it('LA-TRC-T95 The record content takes a record ID and sends the links it follows to its host', async () => {
+  it('LA-V92-R52-T01 The record content takes a record ID and sends the links it follows to its host', async () => {
     cleanup();
     window.history.replaceState(null, '', '/graph/DM-SHOP-UC01-R01');
     const index = indexOf(workspace());
@@ -183,7 +183,7 @@ describe('tests by state and tests not automated yet', () => {
   };
   const testsLine = (element: HTMLElement) => within(element).getByLabelText('Tests by state').textContent;
 
-  it('LA-TRC-T108 The not automated bar counts the obligations not proved whose test is not automated yet', async () => {
+  it('The not automated bar counts the obligations not proved whose test is not automated yet', async () => {
     await openApp('/DM', { data: states() });
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     const bar = card('Shopping').querySelector('[data-kind="invariant"] .bar.not-automated') as HTMLElement;
@@ -193,7 +193,7 @@ describe('tests by state and tests not automated yet', () => {
     expect(card('Paying').querySelector('[data-kind="invariant"]')).toBeNull();
   });
 
-  it("LA-TRC-T109 Each domain's coverage shows its tests by state, on the product and domain pages, and the summary counts them", async () => {
+  it("LA-V51-R04-T01 Each domain's coverage shows its tests by state, on the product and domain pages, and the summary counts them", async () => {
     await openApp('/DM', { data: states() });
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     expect(testsLine(card('Shopping'))).toBe('Tests 1 automated, 1 manual, 1 not automated yet');

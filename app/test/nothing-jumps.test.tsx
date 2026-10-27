@@ -84,14 +84,14 @@ function keepsGutter(selector: string): boolean {
 }
 
 describe('nothing jumps (LA-PAT-APP-UX-R08)', () => {
-  it('LA-PLT-T79 every scroll box keeps room for its scrollbar, so it never comes and goes with the content', () => {
+  it('LA-V61-R39-T01 every scroll box keeps room for its scrollbar, so it never comes and goes with the content', () => {
     const boxes = ALL.filter(scrollsVertically).flatMap((r) => selectors(r).map((s) => ({ s, line: r.line })));
     expect(boxes.length).toBeGreaterThan(5);
     const missing = boxes.filter(({ s }) => !keepsGutter(s)).map(({ s, line }) => `app/src/styles.css:${line}: ${s} needs scrollbar-gutter: stable`);
     expect(missing).toEqual([]);
   });
 
-  it('LA-PLT-T79 the bars above a canvas have one height whatever their text', () => {
+  it('LA-PAT-APP-UX-R08-T01 the bars above a canvas have one height whatever their text', () => {
     // The pane title above a graph or a model: a fixed block size, each line cut with an ellipsis.
     expect(valueFor('.pane-title.is-fixed', 'height') ?? valueFor('.pane-title.is-fixed', 'block-size')).toBe('var(--pane-title-height)');
     expect(valueFor('.pane-title.is-fixed :is(.eyebrow, h1, .record-id)', 'white-space')).toBe('nowrap');
@@ -115,7 +115,7 @@ describe('nothing jumps (LA-PAT-APP-UX-R08)', () => {
     expect(valueFor('.pane-bar', 'flex-wrap') ?? 'nowrap').toBe('nowrap');
   });
 
-  it('LA-PLT-T79 a count or caption that changes is one text, so a new number never moves the text after it', async () => {
+  it('LA-V61-R38-T02 a count or caption that changes is one text, so a new number never moves the text after it', async () => {
     startAtDepth(1);
     await openApp('/P-D-UC01-R01?view=graph', { data: testWorkspace() });
     await waitFor(() => expect(document.querySelector('.graph-count')).not.toBeNull());
@@ -128,7 +128,7 @@ describe('nothing jumps (LA-PAT-APP-UX-R08)', () => {
     expect(document.querySelector('.graph-toolbar .graph-count')).toBeNull();
   });
 
-  it('LA-PLT-T79 the graph canvas stays mounted when the graph re-centers', async () => {
+  it('LA-V61-R38-T02 the graph canvas stays mounted when the graph re-centers', async () => {
     startAtDepth(1);
     await openApp('/P-D-UC01-R01?view=graph', { data: testWorkspace() });
     await waitFor(() => expect(document.querySelector('.graph-links button')).not.toBeNull());
@@ -143,7 +143,7 @@ describe('nothing jumps (LA-PAT-APP-UX-R08)', () => {
     expect(document.querySelector('.graph-flow canvas')).toBe(drawing);
   });
 
-  it('LA-PLT-T79 what the graph connects reaches the side bar before paint, not an effect later', () => {
+  it('LA-V61-R38-T02 what the graph connects reaches the side bar before paint, not an effect later', () => {
     const source = readFileSync(join(__dirname, '..', 'src', 'graph', 'GraphPage.tsx'), 'utf8');
     expect(source).toMatch(/useLayoutEffect\(\(\) => \{ onGraph\?\.\(/);
     const model = readFileSync(join(__dirname, '..', 'src', 'model', 'ModelView.tsx'), 'utf8');
@@ -152,7 +152,7 @@ describe('nothing jumps (LA-PAT-APP-UX-R08)', () => {
     expect(model).toMatch(/observer\.observe\(el\);\n\s*return \(\) => observer\.disconnect\(\);\n\s*\}, \[\]\);/);
   });
 
-  it('LA-PLT-T79 a move made outside the nav leaves its rows where they are: the closed row holding the page is marked, and opens the branch down to it', async () => {
+  it('LA-V61-R38-T02 a move made outside the nav leaves its rows where they are: the closed row holding the page is marked, and opens the branch down to it', async () => {
     window.sessionStorage.clear();
     await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
@@ -170,7 +170,7 @@ describe('nothing jumps (LA-PAT-APP-UX-R08)', () => {
     expect(within(await within(panel()).findByRole('list', { name: 'Capabilities of Shopping' })).getByRole('link', { name: 'Buying' })).toBeInTheDocument();
   });
 
-  it('LA-PLT-T79 the fonts are the app\'s own, preloaded, and never swap in', () => {
+  it('LA-V61-R38-T02 the fonts are the app\'s own, preloaded, and never swap in', () => {
     const html = readFileSync(join(__dirname, '..', 'index.html'), 'utf8');
     expect(html).not.toMatch(/fonts\.googleapis|fonts\.gstatic/);
     expect(html.match(/<link rel="preload" href="\/fonts\/[^"]+\.woff2" as="font" type="font\/woff2" crossorigin \/>/g)?.length).toBe(6);

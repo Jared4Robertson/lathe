@@ -23,7 +23,7 @@ function crossingWorkspace(): SpecData {
 }
 
 describe('separate spaces', () => {
-  it("LA-EXP-T178 A space's index holds only its product's records, links, parts, coverage and problems, and the records and problems of no product", () => {
+  const proveLaExpSp01T = () => {
     const index = indexOf(crossingWorkspace());
     const dm = spaceIndex(index, 'DM');
     expect(spaceIndex(index, 'DM')).toBe(dm);
@@ -38,9 +38,11 @@ describe('separate spaces', () => {
     const nf = spaceIndex(index, 'NF');
     expect(nf.workspace.records.some((r) => r.product === 'DM')).toBe(false);
     expect(nf.workspace.problems.map((p) => p.record)).toEqual(expect.arrayContaining(['NF-NOTE', null]));
-  });
+  };
+  it("LA-EXP-SP01-T A space's index holds only its product's records, links, parts, coverage and problems, and the records and problems of no product", proveLaExpSp01T);
+  it("LA-V90-R15-T01 A space's index holds only its product's records, links, parts, coverage and problems", proveLaExpSp01T);
 
-  it('LA-EXP-T179 Each product has its own graph map with the product as its single root, and the graph shows nothing of another product', async () => {
+  const proveLaExpDs05T14 = async () => {
     const index = indexOf(crossingWorkspace());
     const dm = spaceIndex(index, 'DM');
     expect(mapRootOf(dm, 'DM-SHOP-UC01')).toBe('DM');
@@ -57,9 +59,11 @@ describe('separate spaces', () => {
     await waitFor(() => expect(boxElement('DM-SHOP-UC01')).not.toBeNull());
     const drawn = drawnIds();
     expect(drawn.filter((id) => !id.startsWith('DM'))).toEqual([]);
-  });
+  };
+  it('LA-EXP-DS05-T14 Each product has its own graph map with the product as its single root, and the graph shows nothing of another product', proveLaExpDs05T14);
+  it('LA-V90-R15-T02 Each product has its own graph map, showing nothing of another product', proveLaExpDs05T14);
 
-  it('LA-EXP-T180 No screen of one space shows another product: the side bar, text, the format reference and Checks', async () => {
+  it('LA-V90-R15-T03 No screen of one space shows another product: the side bar, text, the format reference and Checks', async () => {
     openSideBar();
     await openApp('/DM-SHOP-UC01', { data: crossingWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
@@ -78,7 +82,7 @@ describe('separate spaces', () => {
     expect(main().textContent).not.toMatch(/DM-/);
   });
 
-  it('LA-EXP-T181 The products page is the space chooser: each product with its name and domain count, nothing from inside it', async () => {
+  it('LA-V97-R01-T01 The products page is the space chooser: each product with its name and domain count, nothing from inside it', async () => {
     await openApp('/', { data: crossingWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Products' });
     const cards = [...main().querySelectorAll<HTMLAnchorElement>('a.card')];

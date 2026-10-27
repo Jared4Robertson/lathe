@@ -5,7 +5,7 @@ import { MARK_PATHS, SHAPE_PATHS } from './shape-icons';
 import { fontFor, type GraphFonts } from './fonts';
 import { onScreen } from './hit';
 
-// The graph's canvas painter (LA-EXP-DR59, LA-EXP-DR60): each frame it draws what the camera
+// The graph's canvas painter (LA-EXP-DS09, LA-EXP-DS10): each frame it draws what the camera
 // shows, in screen pixels, from the map's plates (plate.ts). Every point is placed by the camera in
 // double precision, relative to the camera's center, and drawn with no transform but the pixel
 // ratio, so a box deep in the map is as steady at a very deep zoom as at the top. Each line of a
@@ -37,7 +37,7 @@ export interface Line {
   label: string;
 }
 
-/** A bar standing for children too small to draw (LA-EXP-DR60), in map units. */
+/** A bar standing for children too small to draw (LA-EXP-DS10), in map units. */
 export interface Bar { x: number; y: number; w: number; h: number }
 
 /** What a frame draws, in draw order. */
@@ -408,7 +408,7 @@ function paintBox(ctx: CanvasRenderingContext2D, p: Plate, cam: Camera, look: Lo
   }
 }
 
-/** What a shape draws inside its outline (LA-EXP-DR65): a page's fold, a stack's front sheet, a flow's inner chevron, an aggregate's second border, a view's window bar, a layer's stripes. */
+/** What a shape draws inside its outline (LA-V93-R06): a page's fold, a stack's front sheet, a flow's inner chevron, an aggregate's second border, a view's window bar, a layer's stripes. */
 function paintDecoration(ctx: CanvasRenderingContext2D, p: Plate, shape: Shape, edge: string, fill: string, edgeW: number, X: (x: number) => number, Y: (y: number) => number, zoom: number) {
   const u = p.scale;
   // The padding box: inside a box's border, the whole box for a polygon (which has none).

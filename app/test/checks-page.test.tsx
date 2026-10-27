@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { main, openApp } from './helpers';
 
 describe('checks page', () => {
-  it("LA-CHK-T48 A space's Checks page lists its product's problems, errors first, grouped by check, each linking to its record, then the workspace's", async () => {
+  it("LA-V41-R01-T01 A space's Checks page lists its product's problems, errors first, grouped by check, each linking to its record, then the workspace's", async () => {
     await openApp('/DM/checks');
     await screen.findByRole('heading', { level: 1, name: 'Checks' });
     // Demo shop's one error and three warnings, and the workspace's one error; not Notebook's.

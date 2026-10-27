@@ -9,8 +9,8 @@ import {
 import type { SpecIndex } from '../../src/specs/data';
 import { groupedWorkspace, manyOfOneKindWorkspace, siblingGroups, testIndex } from './workspace';
 
-// The Voronoi map (LA-EXP-DR64): the Tree map's tree as a Voronoi treemap, laid out once, top-down
-// from the product's fixed hexagon by one rule (LA-EXP-DR58): siblings are the same size (equal
+// The Voronoi map (LA-EXP-DS08): the Tree map's tree as a Voronoi treemap, laid out once, top-down
+// from the product's fixed hexagon by one rule (LA-EXP-DS06): siblings are the same size (equal
 // areas), with the same text.
 
 type XY = [number, number];
@@ -72,7 +72,7 @@ const nearEdge = (poly: readonly XY[], [x, y]: XY, eps: number) => poly.some(([x
 });
 
 describe('the Voronoi map', () => {
-  it('LA-EXP-T191 Each cell holds its children inside its outline, below its header, none overlapping, over the same tree as the Tree map', () => {
+  it('LA-EXP-DS08-T01 Each cell holds its children inside its outline, below its header, none overlapping, over the same tree as the Tree map', () => {
     for (const map of [...maps(), wide(1, 6), wide(3, 4), uneven([40, 3, 12, 1, 25])]) {
       for (const n of map.nodes.values()) {
         expect(n.polygon.length).toBeGreaterThanOrEqual(3);
@@ -101,7 +101,7 @@ describe('the Voronoi map', () => {
     for (const n of tree.nodes.values()) expect(voronoi.nodes.get(n.id)!.children).toEqual(n.children);
   });
 
-  it("LA-EXP-T191 The product is a fixed flat-topped hexagon, and each parent's cell splits into equal-area cells, within about 5%, whatever the records under them", () => {
+  it("LA-EXP-DS08-T01 The product is a fixed flat-topped hexagon, and each parent's cell splits into equal-area cells, within about 5%, whatever the records under them", () => {
     for (const map of [uneven([40, 3, 12, 1, 25, 8, 8]), ...maps(), wide(1, 6)]) {
       const root = map.nodes.get(map.roots[0])!;
       expect(root.polygon).toHaveLength(6);
@@ -126,7 +126,7 @@ describe('the Voronoi map', () => {
     expect(close / all).toBeGreaterThanOrEqual(0.95);
   });
 
-  it('LA-EXP-T191 The same tree always gives the same map, and adding a record moves nothing outside its parent', () => {
+  it('LA-EXP-DS08-T01 The same tree always gives the same map, and adding a record moves nothing outside its parent', () => {
     expect(uneven([50, 30, 20])).toEqual(uneven([50, 30, 20]));
     const before = uneven([50, 30, 20]);
     const after = uneven([50, 30, 20], 'c0');
@@ -142,7 +142,7 @@ describe('the Voronoi map', () => {
     for (const [id, cell] of small) big.get(id)!.forEach(([x, y], i) => { expect((x - 500) / 10).toBeCloseTo(cell[i][0], 6); expect((y + 20) / 10).toBeCloseTo(cell[i][1], 6); });
   });
 
-  it("LA-EXP-T192 Siblings share one text scale, at most their size's, and each label wraps on whole words inside its outline", () => {
+  it.each(['LA-EXP-DS06-T11', 'LA-EXP-DS08-T02'])("%s Siblings share one text scale, at most their size's, and each label wraps on whole words inside its outline", () => {
     for (const map of [...maps(), wide(2, 5), uneven([40, 3, 12, 1, 25])]) {
       for (const group of siblingGroups(map)) {
         // One scale, no more than the smallest sibling's size allows.
@@ -163,7 +163,7 @@ describe('the Voronoi map', () => {
     }
   });
 
-  it('LA-EXP-T192 An index keeps one map whatever the focus, and the worker lays out the same tree the same way', () => {
+  it('LA-EXP-DS06-T11 An index keeps one map whatever the focus, and the worker lays out the same tree the same way', () => {
     const index = testIndex();
     expect(readyVoronoiMap(index, 'P')).toBe(readyVoronoiMap(index, 'P'));
     // A spec loaded again with the same tree and labels gets the same map at once.
@@ -172,7 +172,7 @@ describe('the Voronoi map', () => {
     expect(layoutTreeOf(voronoiTree(index, 'P').tree)).toEqual(readyVoronoiMap(index, 'P'));
   });
 
-  it('LA-EXP-T191 The convex helpers inset, cut and cross polygons', () => {
+  it('LA-EXP-DS08-T01 The convex helpers inset, cut and cross polygons', () => {
     const square: XY[] = [[0, 0], [10, 0], [10, 10], [0, 10]];
     expect(polygonArea(inset(square, 1))).toBeCloseTo(64, 9);
     expect(inset(square, 6)).toEqual([]);
@@ -186,7 +186,7 @@ describe('the Voronoi map', () => {
 
 describe('graph camera in the Voronoi layout', () => {
   const map = readyVoronoiMap(testIndex(), 'P')!;
-  it('LA-EXP-T193 The camera frames the focus cell; what is drawn is in view, big enough, a parent before its children, within the budget', () => {
+  it('LA-EXP-DS09-T12 The camera frames the focus cell; what is drawn is in view, big enough, a parent before its children, within the budget', () => {
     for (const focus of ['P', 'P-D', 'P-D-UC01']) {
       const n = map.nodes.get(focus)!;
       const v = frameNested(map, focus, 1000, 800);

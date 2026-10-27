@@ -3,7 +3,7 @@ import { expectStable, openPage, step } from './measure';
 import { GRAPH_CANVAS, GRAPH_HEADER, RECORD } from './scenarios';
 import { reachableBoxes } from './scene';
 
-// LA-PLT-T89: the side bar (brief 64). Switching its view between Details, Outline and History,
+// LA-V95-R09-T01: the side bar (brief 64). Switching its view between Details, Outline and History,
 // and the node under the pointer changing what Details shows, change only the side bar's own
 // content: the nav, the panes, the canvas, the side bar's box and its switcher hold still.
 
@@ -24,20 +24,21 @@ async function boxesInView(page: Page, except = ''): Promise<{ id: string; at: {
 }
 
 test.describe('side bar', () => {
-  test('LA-PLT-T89 switching the side bar\'s view moves nothing outside it', async ({ page }) => {
+  test('LA-V95-R09-T01 switching the side bar\'s view moves nothing outside it', async ({ page }) => {
     await openPage(page, `${RECORD}?view=wiki,graph`);
     await page.locator('.graph-flow .graph-box').first().waitFor({ state: 'attached' });
     await page.waitForTimeout(600);
     for (const view of ['Outline', 'History', 'Details']) {
-      const r = await step(page, 'side bar', `switch to ${view}`, { keys: KEYS, allow: ALLOW }, async () => {
-        await page.locator(SWITCH).getByRole('button', { name: view }).click();
-        await page.locator('.side-bar .side-view > h2', { hasText: view }).waitFor();
-      });
+      const r = await test.step(`LA-EXP-UC12-R07-T01 the Reader reads the record's ${view} in the side bar, on the page`, () =>
+        step(page, 'side bar', `switch to ${view}`, { keys: KEYS, allow: ALLOW }, async () => {
+          await page.locator(SWITCH).getByRole('button', { name: view }).click();
+          await page.locator('.side-bar .side-view > h2', { hasText: view }).waitFor();
+        }));
       expectStable(r);
     }
   });
 
-  test('LA-PLT-T89 Details following the node under the pointer moves nothing outside it', async ({ page }) => {
+  test('LA-V95-R09-T01 Details following the node under the pointer moves nothing outside it', async ({ page }) => {
     await openPage(page, `${RECORD}?view=wiki,graph`);
     await page.locator('.graph-flow .graph-box[data-id^="LA-"]').first().waitFor({ state: 'attached' });
     await page.waitForTimeout(600);

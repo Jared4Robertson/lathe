@@ -9,7 +9,7 @@ import { main, openApp, openSideBar, section, sideBar } from './helpers';
 const row = (scope: HTMLElement, id: string) => within(scope).getByRole('link', { name: new RegExp(`^${id}(?![-\\d])`) }).closest('li') as HTMLElement;
 
 describe('one level deep', () => {
-  it('LA-EXP-T50 Folded rows keep their counts and marks, open and close by button, Expand all or arrow keys, and stay open while moving around', async () => {
+  const proveLaV92R21T01 = async () => {
     await openApp('/DM-SHOP');
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     const capabilities = section(/^Capabilities/);
@@ -53,9 +53,12 @@ describe('one level deep', () => {
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     expect(row(section(/^Aggregates/), 'DM-SHOP-A1').querySelector('ul.nested')).not.toBeNull();
     expect(row(section(/^Capabilities/), 'DM-SHOP-CAP01').querySelector('ul.nested')).not.toBeNull();
-  });
+  };
+  it('LA-V92-R21-T01 Folded rows keep their counts and marks, open and close by button, Expand all or arrow keys, and stay open while moving around', proveLaV92R21T01);
+  it('LA-V92-R02-T01 Folded rows keep counts and marks and open by button, Expand all or arrow keys', proveLaV92R21T01);
+  it('LA-V92-R03-T01 Folded rows open by button, Expand all or arrow keys, and stay open while moving around', proveLaV92R21T01);
 
-  it('LA-EXP-T51 A record page shows its direct children with theirs folded, in the wiki and the side bar, and a product page lists its domains but not their contents', async () => {
+  const proveLaV92R21T02 = async () => {
     openSideBar();
     await openApp('/DM-SHOP');
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
@@ -78,5 +81,7 @@ describe('one level deep', () => {
     const domains = section(/^Domains/);
     expect(within(domains).getByRole('link', { name: /DM-SHOP\s*Shopping/ })).toBeInTheDocument();
     expect(within(main()).queryByRole('link', { name: /^DM-SHOP-UC01(?!-)/ })).toBeNull();
-  });
+  };
+  it('LA-V92-R21-T02 A record page shows its direct children with theirs folded, in the wiki and the side bar, and a product page lists its domains but not their contents', proveLaV92R21T02);
+  it('LA-V92-R02-T02 A record page shows one level, and the side bar does not repeat it', proveLaV92R21T02);
 });

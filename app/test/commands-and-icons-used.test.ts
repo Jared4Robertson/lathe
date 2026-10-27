@@ -1,4 +1,4 @@
-// LA-PLT-T131 and LA-PLT-T132 (LA-PAT-APP-CODE-R21): nothing outlives its purpose. Every command in the keymap is handled and can
+// LA-PAT-APP-CODE-R21: nothing outlives its purpose. Every command in the keymap is handled and can
 // be reached (by its shortcut, a button or menu that names it, or the command palette, which lists
 // every handled command that is not local to a component), every command a button names is in the
 // keymap, and every icon in icons.tsx is drawn somewhere. Checked at the source, so a removed
@@ -30,7 +30,7 @@ const handled = new Set([...source.matchAll(/useCommand\(\s*'([A-Za-z0-9]+)'/g)]
 if (/useCommand\(\s*spaceCommandId\(/.test(source)) for (let n = 1; n <= SPACE_KEYS; n++) handled.add(spaceCommandId(n));
 
 describe('commands', () => {
-  it('LA-PLT-T131 Every command in the keymap is handled and can be reached', () => {
+  it('Every command in the keymap is handled and can be reached', () => {
     const unhandled = COMMANDS.filter((c) => !c.local && !c.browser && !handled.has(c.id)).map((c) => c.id);
     expect(unhandled, 'commands no component registers with useCommand').toEqual([]);
     // A local or browser command is never in the palette, so its keys are the only way to it.
@@ -38,7 +38,7 @@ describe('commands', () => {
     expect(unreachable, 'local or browser commands with no keys').toEqual([]);
   });
 
-  it('LA-PLT-T131 Every command a button, a tooltip or a run names is in the keymap', () => {
+  it('Every command a button, a tooltip or a run names is in the keymap', () => {
     const ids = new Set(COMMANDS.map((c) => c.id));
     const named = [
       ...[...source.matchAll(/command=(?:"([^"]+)"|\{([^}]+)\})/g)].flatMap((m) => (m[1] ? [m[1]] : quoted(m[2]))),
@@ -50,7 +50,7 @@ describe('commands', () => {
 });
 
 describe('icons', () => {
-  it('LA-PLT-T132 Every icon in icons.tsx is drawn somewhere', () => {
+  it('Every icon in icons.tsx is drawn somewhere', () => {
     const table = readFileSync(ICONS_FILE, 'utf8').match(/const PATHS[^{]*\{([\s\S]*?)\n\};/)![1];
     const icons = [...table.matchAll(/^\s+'?([a-z][a-z-]*)'?:/gm)].map((m) => m[1]);
     expect(icons.length).toBeGreaterThan(10);

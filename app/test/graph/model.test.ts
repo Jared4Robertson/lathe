@@ -11,7 +11,7 @@ const filters = (kinds: string[] = [], relations: string[] = []): Filters => ({ 
 describe('graph neighborhood', () => {
   const index = testIndex();
 
-  it('LA-EXP-T13 Depth counts levels of the tree below the focus, stages and folders included, with the parent kept; siblings and links are not added', () => {
+  it.each(['LA-EXP-DS09-T01', 'LA-V93-R10-T01'])('%s Depth counts levels of the tree below the focus, stages and folders included, with the parent kept; siblings and links are not added', () => {
     // Depth 1: the requirement and its use case, the parent at the left edge. Its test is in the test plan, not below it.
     const one = neighborhood(index, 'P-D-UC01-R01', 1);
     expect(one.nodes[0]).toMatchObject({ id: 'P-D-UC01-R01', distance: 0 });
@@ -35,7 +35,7 @@ describe('graph neighborhood', () => {
     expect(ids(aggregate)).not.toContain('P-D-A1');
   });
 
-  it('LA-EXP-T14 The Links switch adds the records the focused record links to and from, one hop, in focus, with their links', () => {
+  it.each(['LA-EXP-SP05-T', 'LA-V93-R10-T02'])('%s The Links switch adds the records the focused record links to and from, one hop, in focus, with their links', () => {
     const n = neighborhood(index, 'P-D-UC01-FL-S01', 1, undefined, { links: true });
     expect(ids(n)).toEqual(['P-D-CMD01', 'P-D-UC01-FL', 'P-D-UC01-FL-S01', 'P-D-UC01-R01', 'P-V01']);
     expect(n.edges.filter((e) => e.relation !== 'parent').map((e) => `${e.source} ${e.relation} ${e.target}`).sort()).toEqual([
@@ -56,7 +56,7 @@ describe('graph neighborhood', () => {
     expect(n).toEqual(neighborhood(index, 'P-D-UC01-FL-S01', 1, undefined, { links: true }));
   });
 
-  it('LA-EXP-T15 Filters hide kinds and relations, nothing is reached through them, and the focus is never hidden', () => {
+  it.each(['LA-EXP-SP04-T', 'LA-V93-R13-T01'])('%s Filters hide kinds and relations, nothing is reached through them, and the focus is never hidden', () => {
     const links = { links: true };
     expect(ids(neighborhood(index, 'P-D-UC01-FL-S01', 1, filters(['view']), links))).not.toContain('P-V01');
     // Hiding invokes keeps the command out and drops its edge.
@@ -76,7 +76,7 @@ describe('graph neighborhood', () => {
     expect(ids(neighborhood(index, 'P-D-UC01-FL-S01', 3, filters([], ['parent', 'fulfills']), links))).toEqual(['P-D-CMD01', 'P-D-UC01-FL-S01', 'P-V01']);
   });
 
-  it('LA-TRC-T86 Trace mode shows what designs, builds and proves an obligation, and the files they name', () => {
+  it('LA-V93-R51-T01 Trace mode shows what designs, builds and proves an obligation, and the files they name', () => {
     // A UC requirement: the step that fulfills it, its flow, where it happens and what it invokes, that command's
     // handler, the test under the requirement, and their files.
     const t = traceChain(index, 'P-D-UC01-R01');
@@ -109,13 +109,13 @@ describe('graph neighborhood', () => {
     expect(ids(traceChain(index, 'P-D-UC01-R01', filters(['use_case_test', 'file'])))).toEqual(['P-D-CMD01', 'P-D-CMD01-H', 'P-D-UC01-FL', 'P-D-UC01-FL-S01', 'P-D-UC01-R01', 'P-V01']);
   });
 
-  it('LA-TRC-T87 Trace mode is offered for every obligation, and for nothing else', () => {
+  it('LA-V93-R52-T01 Trace mode is offered for every obligation, and for nothing else', () => {
     for (const id of ['P-D-UC01-R01', 'P-D-INV01', 'P-VO01-C01', 'P-D-SP01', 'P-D-PO02', 'P-D-DS01', 'P-D-EP01-R01', 'P-V01-R01']) expect(canTrace(index, id), id).toBe(true);
     for (const id of ['P', 'P-D', 'P-D-UC01', 'P-D-CMD01', 'P-D-UC01-R01-T01', 'P-V01', 'missing']) expect(canTrace(index, id), id).toBe(false);
     expect(traceChain(index, 'P-D-UC01').nodes).toEqual([]);
   });
 
-  it('LA-EXP-T16 The layout gives the same map every time, whatever the focus, with no overlaps', async () => {
+  it('LA-EXP-DS05-T01 The layout gives the same map every time, whatever the focus, with no overlaps', async () => {
     const map = graphMap(index, 'P');
     // Built once per index, and the same for an index built again from the same workspace.
     expect(graphMap(index, 'P')).toBe(map);
@@ -134,7 +134,7 @@ describe('graph neighborhood', () => {
     expect(traceGrid(traceChain(index, 'P-D-SP01')).positions.get('P-D-SP01')).toEqual({ x: -NODE_WIDTH / 2, y: -NODE_HEIGHT / 2 });
   });
 
-  it('LA-EXP-T17 The breadcrumb trail adds each record visited and cuts back when a visited record is revisited', () => {
+  it('LA-V93-R11-T01 The breadcrumb trail adds each record visited and cuts back when a visited record is revisited', () => {
     expect(nextTrail([], 'A')).toEqual(['A']);
     expect(nextTrail(['A'], 'B')).toEqual(['A', 'B']);
     expect(nextTrail(['A', 'B', 'C'], 'B')).toEqual(['A', 'B']);
@@ -142,7 +142,7 @@ describe('graph neighborhood', () => {
     expect(nextTrail(['1', '2', '3'], '4', 3)).toEqual(['2', '3', '4']);
   });
 
-  it('LA-EXP-T23 Columns follow the parent/child tree around the focus, and trace mode has its own columns', () => {
+  it('LA-V93-R15-T01 Columns follow the parent/child tree around the focus, and trace mode has its own columns', () => {
     const n = neighborhood(index, 'P-D/use-cases', 4);
     const column = new Map(n.nodes.map((x) => [x.id, x.column]));
     // The parent one column to the left, each level below one more to the right; the leftmost column is 0.
@@ -165,7 +165,7 @@ describe('graph neighborhood', () => {
     for (const node of t.nodes) expect(node.column).toBe(node.id === 'P-D-UC01-R01' ? TRACE_COLUMNS.obligation : traceColumn(index, node.kind));
   });
 
-  it('LA-EXP-T24 The graph reads left to right by column, and so does a trace', async () => {
+  it.each(['LA-EXP-DS06-T01', 'LA-V93-R15-T02'])('%s The graph reads left to right by column, and so does a trace', async () => {
     const map = graphMap(index, 'P');
     // Siblings share one x and one width, each column right of its parent's.
     for (const parent of map.nodes.values()) {
@@ -188,7 +188,7 @@ describe('graph neighborhood', () => {
     expect(x('file:src/loans.ts')).toBe(x('file:test/lend.test.ts'));
   });
 
-  it('LA-EXP-T25 Links between records in one column are drawn but never change the map', async () => {
+  it.each(['LA-V93-R15-T03', 'LA-V93-R08-T01'])('%s Links between records in one column are drawn but never change the map', async () => {
     const w = testWorkspace();
     addRows(w, 'entity', { id: 'P-D-EN07', title: 'Tag', aggregate_id: 'P-D-A3', role: 'child' });
     const before = graphMap(indexOf(w), 'P');

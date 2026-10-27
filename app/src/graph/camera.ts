@@ -1,11 +1,11 @@
 import type { GraphMap, MapNode, PlacedMap } from './map';
 import { heightOf, widthOf, type Point } from './layout';
 
-// The camera over the one map (LA-EXP-DR59). Focusing a node, by a click, the address, Back and
+// The camera over the one map (LA-EXP-DS09). Focusing a node, by a click, the address, Back and
 // Forward, the step keys or the trail, moves the camera only: it frames the focus and the levels
 // the depth shows below it, with the parent's level kept at the left edge for context, in one
 // smooth zoom and pan (a van Wijk and Nuij path, as d3's zoom uses). Nothing in the map moves or
-// changes size. What is drawn is chosen by the level of detail (LA-EXP-DR60): only what is in
+// changes size. What is drawn is chosen by the level of detail (LA-EXP-DS10): only what is in
 // view and big enough to see, each box with its label, and never more than a budget.
 //
 // The map's deepest boxes are very small against its product's box (map.ts), so a viewport is
@@ -23,7 +23,7 @@ export const PARENT_STRIP_MAX = 96;
 /** The least share of the zoom the width allows that taking in whole rows may leave the focus (frameOnMap). */
 export const ROWS_KEEP = 0.8;
 /**
- * The most the camera zooms in (LA-EXP-DR59): enough to frame the deepest leaf of a large product's
+ * The most the camera zooms in (LA-EXP-DS09): enough to frame the deepest leaf of a large product's
  * map and read its label, which is very small against the product's box (map.ts).
  */
 export const MAX_ZOOM = 64;
@@ -31,7 +31,7 @@ export const MAX_ZOOM = 64;
 export const MIN_ZOOM = 1e-4;
 
 /**
- * The camera that frames a focus (LA-EXP-DR59): the focus and its descendants down to `depth`
+ * The camera that frames a focus (LA-EXP-DS09): the focus and its descendants down to `depth`
  * levels below it fill the pane, the parent's level showing in a strip at the left edge (the frame
  * starts at the parent's right edge, past the strip). A node with fewer levels below it frames what
  * it has. Zoomed in no further than MAX_ZOOM.
@@ -183,7 +183,7 @@ export const MIN_DRAWN = 3;
 /** The most boxes a picture draws (LA-PAT-APP-UX-R11): a level that would pass it is drawn as bars. */
 export const MAX_DRAWN = 260;
 
-/** A drawn box, always with its label (LA-EXP-DR60), its text's size the map's (MapNode.text), never the camera's. */
+/** A drawn box, always with its label (LA-EXP-DS10), its text's size the map's (MapNode.text), never the camera's. */
 export interface DrawnBox { id: string }
 /** A bar standing for some children too small to draw (or past the budget): in their level, from the first's top to the last's bottom. */
 /** A run of a parent's children too small to draw, as one bar where they are: their column's left edge and width, and their stack's top and height. */
@@ -198,7 +198,7 @@ export function viewRect(v: Viewport, width: number, height: number) {
 }
 
 /**
- * What a viewport draws of the map (LA-EXP-DR60), level by level from the roots: a node in view
+ * What a viewport draws of the map (LA-EXP-DS10), level by level from the roots: a node in view
  * and at least MIN_DRAWN pixels tall is drawn, with its label. A run of drawn parent's children too small to see is one bar.
  * A level that would take the boxes past MAX_DRAWN is drawn as one bar per parent instead, and
  * nothing below it. `always` adds nodes drawn whatever their size or place (the focus, linked
@@ -270,7 +270,7 @@ export function mergeDrawn(pictures: readonly Drawn[]): Drawn {
 /** A key that changes only when what is drawn changes. */
 export const drawnKey = (d: Drawn) => `${d.boxes.map((b) => b.id).join(' ')}|${d.bars.map((b) => b.id).join(' ')}`;
 
-// ---------- The Nested view (LA-EXP-DR63) ----------
+// ---------- The Nested view (LA-EXP-DS09) ----------
 
 /** The camera that frames a focus in the Nested map: its box fills the pane within the padding, centered, zoomed in no further than MAX_ZOOM. */
 export function frameNested(map: PlacedMap, focus: string, width: number, height: number): Viewport {
@@ -281,7 +281,7 @@ export function frameNested(map: PlacedMap, focus: string, width: number, height
 }
 
 /**
- * What a viewport draws of the Nested map (LA-EXP-DR63), level by level from the roots, a parent
+ * What a viewport draws of the Nested map (LA-EXP-DS09), level by level from the roots, a parent
  * before its children so each child is drawn over its parent: a box in view and at least MIN_DRAWN
  * pixels each way on screen is drawn, with its label. A level that would take the drawing past
  * MAX_DRAWN is not drawn, nor anything below it: its parents stand for it, so there are no bars.

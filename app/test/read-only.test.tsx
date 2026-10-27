@@ -12,7 +12,7 @@ const RECORD_ACTIONS = ['Edit', 'Add…', 'Remove'];
 const isRecordAction = (button: HTMLButtonElement) => RECORD_ACTIONS.includes(button.textContent ?? '') || /^Add /.test(button.textContent ?? '');
 
 describe('pages read until the person acts', () => {
-  it('LA-EXP-T12 Pages only read GET /api/spec until the person acts: the record actions are the only controls that lead to a write, and opening a page or searching it sends none', async () => {
+  it('LA-V92-R08-T01 Pages only read GET /api/spec until the person acts: the record actions are the only controls that lead to a write, and opening a page or searching it sends none', async () => {
     const user = userEvent.setup();
     for (const page of PAGES) {
       const { requests, writes } = await openApp(page);

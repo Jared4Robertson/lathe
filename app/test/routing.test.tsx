@@ -10,7 +10,7 @@ const menu = () => screen.getByRole('navigation', { name: 'Main' });
 const heading = () => within(main()).getByRole('heading', { level: 1 });
 
 describe('routing', () => {
-  it('LA-EXP-T01 Every page has its own address, and back and forward move between pages', async () => {
+  it('LA-EXP-INV01-T Every page has its own address, and back and forward move between pages', async () => {
     // A record is at its bare ID; a product's and a domain's ID is their overview, once the specs are known.
     const index = indexOf(workspace());
     expect(parseSpecRoute('/DM', index)).toEqual({ page: 'product', product: 'DM' });
@@ -48,7 +48,7 @@ describe('routing', () => {
     expect(heading()).toHaveTextContent('Shopping');
   });
 
-  it('LA-EXP-T02 The menu lists each product and its domains beside the Tools section', async () => {
+  it('LA-V90-R04-T01 The menu lists each product and its domains beside the Tools section', async () => {
     await openApp('/DM');
     const nav = menu();
     expect(await within(nav).findByText('Tools')).toBeInTheDocument();

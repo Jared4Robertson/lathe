@@ -54,7 +54,7 @@ export interface ModelViewProps {
 
 interface BoxData extends Record<string, unknown> { box: ErdBox; focus: boolean }
 /**
- * `label`: the line's words, read from its drawn source, from the schema's relations (LA-EXP-V03-R07)
+ * `label`: the line's words, read from its drawn source, from the schema's relations (LA-V92-R07)
  * or the Model view's own for what is no stored link. `title`: the whole sentence, for its tooltip.
  * `hover`: the words shown on a dashed line while it is hovered, or null.
  */

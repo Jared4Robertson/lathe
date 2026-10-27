@@ -9,7 +9,7 @@ const pages = (set: TabSet<S>) => set.tabs.map((t) => `${t.page}${t.preview ? '*
 const open = (set: TabSet<S>, page: string, keep = false) => openTab(set, page, from, { keep });
 
 describe('the tab model', () => {
-  it('LA-EXP-T112 A plain open replaces the one preview tab in place, a page open in a tab activates it, and keeping makes a tab lasting', () => {
+  const proveLaExpInv06T = () => {
     let set = open(emptyTabs<S>(), '/a');
     expect(pages(set)).toEqual(['/a*<']);
     // A plain open replaces the preview, keeping its key.
@@ -39,9 +39,11 @@ describe('the tab model', () => {
     expect(set.tabs.filter((t) => t.preview)).toHaveLength(0);
     // Keys stay unique.
     expect(new Set(set.tabs.map((t) => t.key)).size).toBe(3);
-  });
+  };
+  it('LA-EXP-INV06-T A plain open replaces the one preview tab in place, a page open in a tab activates it, and keeping makes a tab lasting', proveLaExpInv06T);
+  it('LA-V96-R10-T01 A plain open replaces the preview tab in place, and keeping makes a tab lasting', proveLaExpInv06T);
 
-  it('LA-EXP-T113 Closing the active tab activates its right neighbor, or else the left; closing the last leaves it as a preview; cycling wraps', () => {
+  const proveLaExpInv07T = () => {
     let set = open(open(open(emptyTabs<S>(), '/a', true), '/b', true), '/c', true);
     expect(pages(set)).toEqual(['/a', '/b', '/c<']);
     set = cycleTab(set, 1);
@@ -68,9 +70,11 @@ describe('the tab model', () => {
     expect(activateTab(set, 'nope')).toBe(set);
     expect(cycleTab(set, 1)).toBe(set);
     expect(keepTab(set, 'nope')).toBe(set);
-  });
+  };
+  it('LA-EXP-INV07-T Closing the active tab activates its right neighbor, or else the left; closing the last leaves it as a preview; cycling wraps', proveLaExpInv07T);
+  it('LA-V96-R12-T01 Closing the active tab activates its right neighbor, or else the left; cycling wraps', proveLaExpInv07T);
 
-  it('LA-EXP-T114 Each tab keeps its own state, and a stored set is read back with anything malformed dropped', () => {
+  it('LA-EXP-INV08-T Each tab keeps its own state, and a stored set is read back with anything malformed dropped', () => {
     let set = open(open(emptyTabs<S>(), '/a', true), '/b', true);
     set = updateTab(set, set.tabs[0].key, () => ({ n: 42 }));
     expect(set.tabs.map((t) => t.state.n)).toEqual([42, 2]);

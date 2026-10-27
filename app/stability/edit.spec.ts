@@ -15,7 +15,7 @@ const TITLE = '.pane-wiki .pane-title';
 const CONTENT = ['.pane-wiki .pane-scroll'];
 
 test.describe('editing', () => {
-  test('open the form, save an edit', async ({ page }) => {
+  test('LA-EXP-UC14-FL-T open the form, save an edit', async ({ page }) => {
     const restore = keepData();
     try {
       await openPage(page, EDITED);
@@ -26,17 +26,18 @@ test.describe('editing', () => {
       });
       expectStable(open);
       await form.getByRole('textbox', { name: /^group name/ }).fill('Stability');
-      const save = await step(page, 'edit', 'save the edit', { keys: [NAV, SIDE_BAR, WIKI_BAR, TITLE], allow: CONTENT, settle: 1500 }, async () => {
-        await form.getByRole('button', { name: 'Save' }).click();
-        await expect(form).toHaveCount(0, { timeout: 20_000 });
-      });
+      const save = await test.step('LA-EXP-UC14-R07-T01 the Owner saves the change where the record is read, in one write', () =>
+        step(page, 'edit', 'save the edit', { keys: [NAV, SIDE_BAR, WIKI_BAR, TITLE], allow: CONTENT, settle: 1500 }, async () => {
+          await form.getByRole('button', { name: 'Save' }).click();
+          await expect(form).toHaveCount(0, { timeout: 20_000 });
+        }));
       expectStable(save);
     } finally {
       restore();
     }
   });
 
-  test('add a child from its parent\'s page', async ({ page }) => {
+  test('LA-V92-R31-T02 add a child from its parent\'s page', async ({ page }) => {
     const restore = keepData();
     try {
       await openPage(page, RECORD);
@@ -57,7 +58,7 @@ test.describe('editing', () => {
     }
   });
 
-  test('ask to remove a referenced record, and see the refusal', async ({ page }) => {
+  test('LA-V92-R32-T02 ask to remove a referenced record, and see the refusal', async ({ page }) => {
     const restore = keepData();
     try {
       await openPage(page, RECORD);
@@ -72,7 +73,7 @@ test.describe('editing', () => {
         await panel.getByRole('alert').waitFor({ timeout: 20_000 });
       });
       expectStable(refused);
-      await expect(panel.getByRole('alert')).toContainText('The store refused to remove it');
+      await test.step('LA-V92-R33-T02 the refusal shows inline, in the store\'s words', () => expect(panel.getByRole('alert')).toContainText('The store refused to remove it'));
     } finally {
       restore();
     }

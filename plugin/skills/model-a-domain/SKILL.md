@@ -21,6 +21,14 @@ Ask of each candidate domain:
 
 A candidate that fails these is a layer or a platform concern, not a domain. Give each domain its `subdomain_type`: `core` for the product's edge, `supporting` for what the core needs but is not its edge, `generic` for what is solved the same way everywhere. It guides how much modeling the domain deserves.
 
+## Principles
+
+Lathe follows four principles (`LA-STD-PRINCIPLES`), and so does a model written with it:
+- **Mistakes are refused, not found:** a rule that can be enforced when something is written is enforced then.
+- **One way to do each thing:** add a second way only when a real need shows the first cannot serve it.
+- **Deviations are deliberate and visible:** record a deliberate deviation with its reason, where checks list it.
+- **Change the standard, not the instance:** when the standard way proves wrong, change it everywhere at once, and remove what no longer serves a purpose.
+
 ## The order of the whole spec
 
 Write a product stage by stage, in this order, so that each record's links point at records written before it. Each stage has its skill.

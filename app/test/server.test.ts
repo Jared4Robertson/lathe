@@ -80,7 +80,7 @@ afterAll(async () => {
 });
 
 describe('dev API plugin', () => {
-  it('serves the typed data from the data folder, with the schema, and the folder it reads', async () => {
+  it('LA-PLT-EP01-R01-T01 serves the typed data from the data folder, with the schema, and the folder it reads', async () => {
     const fake = await start(async () => realApi, root);
     const spec = await request(fake.middlewares[0], '/api/spec');
     expect(spec.status).toBe(200);
@@ -96,12 +96,28 @@ describe('dev API plugin', () => {
     expect((await request(fake.middlewares[0], '/EX')).nextCalled).toBe(true);
   });
 
-  it('writes through the store and answers with the rows it changed', async () => {
-    const fake = await start(async () => realApi, root);
-    const written = await post(fake.middlewares[0], [
-      { op: 'set', table: 'use_case', key: 'EX-NOTE-UC01', changes: { goal: 'A writer keeps a thought.' } },
-      { op: 'add', table: 'uc_requirement', row: { id: 'EX-NOTE-UC01-R01', title: 'The note is saved', use_case_id: 'EX-NOTE-UC01', statement: 'The note MUST be saved.' } },
-    ]);
+  /** One write of a set and an add, made once and read by the tests below. */
+  let firstWrite: Promise<{ fake: Awaited<ReturnType<typeof start>>; written: Awaited<ReturnType<typeof request>> }> | undefined;
+  const writeOnce = () =>
+    (firstWrite ??= (async () => {
+      const fake = await start(async () => realApi, root);
+      const written = await post(fake.middlewares[0], [
+        { op: 'set', table: 'use_case', key: 'EX-NOTE-UC01', changes: { goal: 'A writer keeps a thought.' } },
+        { op: 'add', table: 'uc_requirement', row: { id: 'EX-NOTE-UC01-R01', title: 'The note is saved', use_case_id: 'EX-NOTE-UC01', statement: 'The note MUST be saved.' } },
+      ]);
+      return { fake, written };
+    })());
+
+  it('LA-PLT-UC16-R01-T01 writes through the store, in one write, which the data then shows', async () => {
+    const { fake, written } = await writeOnce();
+    expect(written.status).toBe(200);
+    expect(await readFile(path.join(root, 'data/uc_requirement.jsonl'), 'utf8')).toContain('The note MUST be saved.');
+    const data = (await request(fake.middlewares[0], '/api/spec')).json() as SpecData;
+    expect(data.tables.uc_requirement.map((r) => r.id)).toEqual(['EX-NOTE-UC01-R01']);
+  });
+
+  it('LA-AUT-EP02-R01-T01 answers an accepted write with the tables and the rows it changed, before and after', async () => {
+    const { written } = await writeOnce();
     expect(written.status).toBe(200);
     const answer = written.json() as Extract<WriteAnswer, { ok: true }>;
     expect(answer.ok).toBe(true);
@@ -113,12 +129,9 @@ describe('dev API plugin', () => {
       after: { id: 'EX-NOTE-UC01', title: 'Write a note', capability_id: 'EX-NOTE-CAP01', goal: 'A writer keeps a thought.' },
     });
     expect(answer.changes).toContainEqual(expect.objectContaining({ table: 'uc_requirement', key: 'EX-NOTE-UC01-R01', before: null }));
-    expect(await readFile(path.join(root, 'data/uc_requirement.jsonl'), 'utf8')).toContain('The note MUST be saved.');
-    const data = (await request(fake.middlewares[0], '/api/spec')).json() as SpecData;
-    expect(data.tables.uc_requirement.map((r) => r.id)).toEqual(['EX-NOTE-UC01-R01']);
   });
 
-  it('answers a refused write with every reason and changes nothing', async () => {
+  it('LA-AUT-EP02-R01-T02 answers a refused write with every reason and changes nothing', async () => {
     const fake = await start(async () => realApi, root);
     const before = await readFile(path.join(root, 'data/use_case.jsonl'), 'utf8');
     const refused = await post(fake.middlewares[0], [
@@ -133,13 +146,19 @@ describe('dev API plugin', () => {
     expect(await readFile(path.join(root, 'data/use_case.jsonl'), 'utf8')).toBe(before);
   });
 
-  it('refuses a write from another site, one not sent as JSON, and one that is not a list of commands', async () => {
-    const fake = await start(async () => realApi, root);
-    const m = fake.middlewares[0];
-    const set = [{ op: 'set', table: 'use_case', key: 'EX-NOTE-UC01', changes: { goal: 'x' } }];
+  const set = [{ op: 'set', table: 'use_case', key: 'EX-NOTE-UC01', changes: { goal: 'x' } }];
+
+  it('LA-PLT-UC16-R02-T01 refuses a write from another site, and one not sent as JSON, before the store sees it', async () => {
+    const m = (await start(async () => realApi, root)).middlewares[0];
     expect((await post(m, set, { origin: 'https://elsewhere.example' })).status).toBe(403);
     expect((await post(m, set, { 'sec-fetch-site': 'cross-site' })).status).toBe(403);
     expect((await post(m, set, { origin: 'http://127.0.0.1:5300' })).status).toBe(200);
+    expect((await request(m, '/api/write', { method: 'POST', body: '{}', headers: { 'content-type': 'text/plain' } })).status).toBe(415);
+  });
+
+  it('LA-AUT-EP02-R02-T01 answers 403, 415, 413, 405 and 400 to what is not a write from the app', async () => {
+    const m = (await start(async () => realApi, root)).middlewares[0];
+    expect((await post(m, set, { origin: 'https://elsewhere.example' })).status).toBe(403);
     expect((await request(m, '/api/write', { method: 'POST', body: '{}', headers: { 'content-type': 'text/plain' } })).status).toBe(415);
     expect((await request(m, '/api/write', { method: 'POST', body: '{not json', headers: { 'content-type': 'application/json' } })).status).toBe(400);
     expect((await post(m, [])).status).toBe(400);
@@ -150,7 +169,7 @@ describe('dev API plugin', () => {
     expect(big.status).toBe(413);
   });
 
-  it('reads the data again when a file changes under it', async () => {
+  it('LA-PLT-UC03-R01-T02 reads the data again when a file changes under it', async () => {
     const fake = await start(async () => realApi, root);
     const file = path.join(root, 'data/use_case.jsonl');
     await writeFile(file, (await readFile(file, 'utf8')).replace('Write a note', 'Write a long note'));
@@ -166,7 +185,7 @@ describe('dev API plugin', () => {
     expect((await request(fake.middlewares[0], '/api/spec')).status).toBe(200);
   });
 
-  it('answers 500 with the reason when the engine cannot be loaded', async () => {
+  it('LA-PLT-EP01-R01-T02 answers 500 with the reason when the engine cannot be loaded', async () => {
     const broken = await start(async () => { throw new Error('Cannot find module @duckdb/node-api'); }, root);
     const spec = await request(broken.middlewares[0], '/api/spec');
     expect(spec.status).toBe(500);
@@ -174,7 +193,7 @@ describe('dev API plugin', () => {
     expect((await request(broken.middlewares[0], '/EX')).nextCalled).toBe(true);
   });
 
-  it('LA-PLT-T12 The server sends spec:changed when a data file, or the package\'s own data or schema, change', async () => {
+  it('LA-PLT-UC03-R01-T01 The server sends spec:changed when a data file, or the package\'s own data or schema, change', async () => {
     const product = await mkdtemp(path.join(tmpdir(), 'lathe-app-watch-'));
     try {
       const data = path.join(product, 'data');

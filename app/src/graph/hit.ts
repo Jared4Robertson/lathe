@@ -1,6 +1,6 @@
 import type { Plate } from './plate';
 
-// Hit testing on the canvas (LA-EXP-C05): the box under the pointer, found from the map's own
+// Hit testing on the canvas (LA-UI92): the box under the pointer, found from the map's own
 // outlines in map units (a box's rectangle, a shape's polygon or rounded corners, a Voronoi cell's
 // polygon), never from the page. Boxes are tested from the last drawn to the first, so a child
 // drawn over its parent (Nested, Voronoi) is found before it.

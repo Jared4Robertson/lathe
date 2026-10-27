@@ -3,13 +3,13 @@ import { MAP_SIZE, sizeText, type MapNode, type PlacedMap } from './map';
 import { BORDER, labelHeight, largestFit, linesIn, mapLabel, type MapLabel, textMeasure } from './text';
 import { treeChildren } from './tree';
 
-// The graph's Nested map (LA-EXP-DR62): the same tree as the Tree map (map.ts), one product's, the
+// The graph's Nested map (LA-EXP-DS07): the same tree as the Tree map (map.ts), one product's, the
 // product its single root, drawn as nested squares. A product is made of its stages and domains, a domain of
 // its stages, a stage of its folders, a folder of its records, a record of its children:
 // each box holds its children rather than linking to them. Laid out once per spec load, like the
 // Tree map, and never changed by the focus: focusing moves the camera (camera.ts).
 //
-// The one rule (LA-EXP-DR58), top-down from the product's square, MAP_SIZE across: siblings are
+// The one rule (LA-EXP-DS06), top-down from the product's square, MAP_SIZE across: siblings are
 // the same size, with the same text.
 // - A parent's room under its header band, inside its padding, holds its children as a grid of
 //   equal squares in the tree's order, row by row, a gap apart, with the column count that makes
@@ -86,7 +86,7 @@ export function layoutNested(roots: readonly string[], childrenOf: (id: string) 
   /** Some siblings, each a square `side` across at its place: their shared text and header band, then each one's children inside it. */
   const place = (ids: readonly string[], side: number, at: readonly { x: number; y: number }[]) => {
     const most = sizeText(side);
-    // Its border grows with its text, never below half (LA-EXP-DR58).
+    // Its border grows with its text, never below half (LA-EXP-DS06).
     const border = (s: number) => BORDER * Math.max(0.5, s);
     const labels = ids.map((id) => labelOf(id));
     const leaf = ids.map((id) => kids.get(id)!.length === 0);

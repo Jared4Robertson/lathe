@@ -1,4 +1,4 @@
-// LA-PLT-T130 (LA-PAT-APP-CODE-R21): nothing outlives its purpose. Every class selector in the app's stylesheets is
+// LA-PAT-APP-CODE-R21: nothing outlives its purpose. Every class selector in the app's stylesheets is
 // used by the app: named literally in app/src (or app/index.html), or built by a known class-building
 // helper, a template literal such as `stage-${stage}` whose suffix the source names as a string. A
 // failure names the selector, its file and its line, so a removed feature's styles go with it.
@@ -59,7 +59,7 @@ const used = (name: string) =>
   prefixes.some((p) => name.startsWith(p) && name.length > p.length && (strings.has(name.slice(p.length)) || /^\d+$/.test(name.slice(p.length))));
 
 describe('unused CSS', () => {
-  it('LA-PLT-T130 Every class selector in the app stylesheets is used in app/src', () => {
+  it('Every class selector in the app stylesheets is used in app/src', () => {
     const unused = stylesheets.flatMap(classSelectors).filter((s) => !used(s.name));
     const named = new Map<string, string>();
     for (const s of unused) if (!named.has(`${s.file} ${s.name}`)) named.set(`${s.file} ${s.name}`, `${s.file}:${s.line} .${s.name}`);

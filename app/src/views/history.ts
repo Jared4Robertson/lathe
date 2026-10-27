@@ -1,4 +1,4 @@
-// The side bar's History (LA-EXP-UC12-R05): the client of GET /api/history. The answers' shapes are
+// The side bar's History (LA-V95-R08): the client of GET /api/history. The answers' shapes are
 // those of lathe/src/server/contract.ts: the commits that changed a record's rows, each with the
 // fields it changed.
 import type { HistoryAnswer, HistoryChange, HistoryCommit, Value } from '../../../lathe/src/server/contract';

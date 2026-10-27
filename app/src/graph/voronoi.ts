@@ -6,12 +6,12 @@ import { labelHeight, linesIn as linesAt, mapLabel, narrowestWidth, textMeasure,
 import type { MeasureSpec } from './fonts';
 import { treeChildren } from './tree';
 
-// The graph's Voronoi map (LA-EXP-DR64): the same tree as the Tree and Nested maps, one product's,
+// The graph's Voronoi map (LA-EXP-DS08): the same tree as the Tree and Nested maps, one product's,
 // the product its single root, drawn as a Voronoi treemap. The product is a hexagon split into
 // polygon cells, one per stage and domain; a domain's cell is split into its stages, and so on down.
 // Laid out once per spec load and never changed by the focus: focusing moves the camera (camera.ts).
 //
-// The one rule (LA-EXP-DR58), top-down from the product's hexagon, MAP_SIZE across: siblings are
+// The one rule (LA-EXP-DS06), top-down from the product's hexagon, MAP_SIZE across: siblings are
 // the same size, with the same text.
 // - Each parent's cell, inside its padding and below its header, is split into equal-area cells for
 //   its children, within about 5%: a Voronoi diagram (a power diagram) clipped to it, iterated
@@ -249,7 +249,7 @@ function largestPlaced(room: Room, label: MapLabel, most: number): number {
 }
 
 /**
- * Siblings' labels at one shared scale (LA-EXP-DR58): the largest at which every sibling's fits its
+ * Siblings' labels at one shared scale (LA-EXP-DS06): the largest at which every sibling's fits its
  * cell, no more than their size's (the smallest sibling's); stepped down a little more if one
  * sibling's does not fit at it, as a cell's room is not quite monotone in the scale.
  */

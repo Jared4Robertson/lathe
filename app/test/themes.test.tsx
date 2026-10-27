@@ -19,7 +19,7 @@ const themeStyle = () => document.getElementById('lathe-theme')?.textContent ?? 
 const stored = (key: string) => window.localStorage.getItem(key);
 
 describe('themes', () => {
-  it('LA-PLT-T53 Color theme (g then t) shows each theme as it is arrowed to; Enter keeps it and Escape puts back the one before', async () => {
+  it('LA-V63-R01-T01 Color theme (g then t) shows each theme as it is arrowed to, and Escape puts back the one before', async () => {
     await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     // Lathe and System at first, already written as the stylesheet the early script reads.
@@ -45,7 +45,11 @@ describe('themes', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(root().getAttribute('data-theme')).toBe('lathe');
     expect(themeStyle()).toBe(themeCss(BUILT_IN_THEMES[0]));
+  });
 
+  it('LA-V61-R06-T01 A theme chosen with Enter applies at once and is remembered with its stylesheet', async () => {
+    await openApp('/DM');
+    await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     // Typing filters; Enter keeps it, and it is remembered with its stylesheet.
     press('g', 'KeyG');
     press('t', 'KeyT');
@@ -60,7 +64,7 @@ describe('themes', () => {
     await waitFor(() => expect(screen.getByTestId('announcer')).toHaveTextContent('Color theme: Midnight'));
   });
 
-  it('LA-PLT-T54 Light, dark or system is a command and a choice on the Appearance page; it applies at once and is remembered', async () => {
+  it('LA-V63-R02-T01 Light, dark or system is a command; it applies at once and is remembered', async () => {
     const user = userEvent.setup();
     await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
@@ -81,7 +85,12 @@ describe('themes', () => {
     // The dark set applies under data-mode="dark" whatever the system says, and the light set never wins it back.
     expect(themeStyle()).toContain(':root[data-theme][data-mode="dark"] { --shell: #0A0F12;');
     expect(themeStyle()).toContain('@media (prefers-color-scheme: dark) { :root[data-theme]:not([data-mode="light"])');
+  });
 
+  it('LA-V62-R01-T01 The Appearance page, linked from the nav, offers light, dark or system too', async () => {
+    window.localStorage.setItem(STORAGE_KEYS.mode, JSON.stringify('dark'));
+    await openApp('/DM');
+    await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     // The same choice on the Appearance page, which the nav's footer links to.
     fireEvent.click(within(screen.getByRole('navigation', { name: 'Main' })).getByRole('link', { name: 'Appearance' }));
     await screen.findByRole('heading', { level: 1, name: 'Appearance' });
@@ -94,19 +103,51 @@ describe('themes', () => {
     expect(root().getAttribute('data-mode')).toBe('light');
   });
 
-  it('LA-PLT-T55 The Appearance page lists every theme with a preview; Duplicate and edit makes a copy in use, which is renamed, edited live, reset and deleted', async () => {
+  /** The Appearance page, open. */
+  const appearance = async () => {
     await openApp('/settings/appearance');
     await screen.findByRole('heading', { level: 1, name: 'Appearance' });
+  };
+  /** A copy of Workshop, open in the editor. */
+  const workshopCopy = async () => {
+    await appearance();
+    fireEvent.click(screen.getByRole('button', { name: 'Duplicate and edit Workshop' }));
+    await screen.findByRole('heading', { level: 2, name: 'Edit “Workshop copy”' });
+  };
+
+  it('LA-V62-R01-T02 The Appearance page lists every theme with a preview, the one in use marked', async () => {
+    await appearance();
     const list = screen.getByRole('list', { name: 'Themes' });
     expect(within(list).getAllByRole('listitem')).toHaveLength(5);
     expect(list.querySelectorAll('.theme-preview')).toHaveLength(5);
     // A preview draws with its theme's tokens, set inline as custom properties.
     expect((list.querySelectorAll<HTMLElement>('.theme-preview')[2]).style.getPropertyValue('--paper')).toBe('#F6F0E6');
     expect(screen.getByRole('button', { name: 'Use Lathe' })).toHaveAttribute('aria-pressed', 'true');
-
     fireEvent.click(screen.getByRole('button', { name: 'Use Graphite' }));
     expect(root().getAttribute('data-theme')).toBe('graphite');
+  });
 
+  it('LA-PLT-INV03-T A built-in theme is changed only through a copy, and Reset puts the copy back to it, keeping its name', async () => {
+    await workshopCopy();
+    expect(root().getAttribute('data-theme')).toBe('custom-workshop-copy');
+    fireEvent.input(screen.getByLabelText('Accent, light'), { target: { value: '#123456' } });
+    expect(themeStyle()).toContain('--steel: #123456;');
+    fireEvent.click(screen.getByRole('button', { name: 'Reset to Workshop' }));
+    expect(themeStyle()).toContain('--steel: #9C3F17;');
+    expect(screen.getByRole('heading', { level: 2, name: 'Edit “Workshop copy”' })).toBeInTheDocument();
+    expect(BUILT_IN_THEMES[2].light['--steel']).toBe('#9C3F17');
+  });
+
+  it('LA-PLT-INV04-T Deleting the theme in use goes back to Lathe', async () => {
+    await workshopCopy();
+    fireEvent.click(screen.getByRole('button', { name: 'Delete…' }));
+    fireEvent.click(within(screen.getByRole('group', { name: 'Confirm delete' })).getByRole('button', { name: 'Delete' }));
+    await waitFor(() => expect(window.location.search).toBe(''));
+    expect(root().getAttribute('data-theme')).toBe('lathe');
+  });
+
+  it('LA-V62-R02-T01 Duplicate and edit makes a copy in use, which is renamed, edited live, reset and deleted', async () => {
+    await appearance();
     fireEvent.click(screen.getByRole('button', { name: 'Duplicate and edit Workshop' }));
     await screen.findByRole('heading', { level: 2, name: 'Edit “Workshop copy”' });
     expect(window.location.search).toBe('?edit=custom-workshop-copy');
@@ -153,7 +194,8 @@ describe('themes', () => {
     expect(root().getAttribute('data-theme')).toBe('lathe');
   });
 
-  it('LA-PLT-T56 While editing, a color below WCAG AA contrast on what it is drawn on gets a warning beside its swatch', async () => {
+  /** A copy of Lathe in the editor, with its light muted text set to a pale gray. */
+  const paleMuted = async () => {
     await openApp('/settings/appearance');
     fireEvent.click(await screen.findByRole('button', { name: 'Duplicate and edit Lathe' }));
     await screen.findByRole('heading', { level: 2, name: 'Edit “Lathe copy”' });
@@ -163,9 +205,19 @@ describe('themes', () => {
     fireEvent.change(muted, { target: { value: '#B0B0B0' } });
     fireEvent.keyDown(muted, { key: 'Enter' });
     await waitFor(() => expect(row.querySelectorAll('.contrast-warning')).toHaveLength(2));
+    return { muted, row };
+  };
+
+  it('LA-PLT-DS02-T01 The contrast of a color on what it is drawn on is worked out against AA, per mode', async () => {
+    const { row } = await paleMuted();
     expect(row.querySelectorAll('.contrast-warning')[0]).toHaveTextContent('1.99:1 on Paper; needs 4.5:1');
     // Only the light cell warns: the dark set is unchanged.
     expect(row.querySelectorAll('[role="cell"]')[1].querySelectorAll('.contrast-warning')).toHaveLength(0);
+  });
+
+  it('LA-V62-R03-T01 While editing, a color below WCAG AA gets a warning beside its swatch, and a value that is not a color is refused', async () => {
+    const { muted, row } = await paleMuted();
+    expect(row.querySelectorAll('.contrast-warning').length).toBeGreaterThan(0);
     // A value that is not a color is refused and marked, and nothing changes.
     fireEvent.change(muted, { target: { value: 'red; } body { display: none' } });
     fireEvent.keyDown(muted, { key: 'Enter' });
@@ -173,28 +225,34 @@ describe('themes', () => {
     expect(themeStyle()).not.toContain('display: none');
   });
 
-  it('LA-PLT-T57 A theme exports as a small versioned JSON file and imports back; a file with anything but known tokens and their values is refused', async () => {
-    // The file: format, version, name and token names only.
-    const file = toFile(BUILT_IN_THEMES[2]);
+  const file = toFile(BUILT_IN_THEMES[2]);
+  const refused = (input: unknown) => { const r = parseTheme(input); return r.ok ? null : r.error; };
+
+  it('LA-VO63-C01-T A theme file says its format and version and holds known fields only', () => {
     expect(Object.keys(file)).toEqual(['format', 'version', 'name', 'light', 'dark', 'tokens']);
     expect(file.format).toBe('lathe-theme');
     expect(file.version).toBe(1);
     expect(parseTheme(JSON.parse(JSON.stringify(file)))).toEqual({ ok: true, theme: file });
-
-    const refused = (input: unknown) => { const r = parseTheme(input); return r.ok ? null : r.error; };
     expect(refused({ ...file, version: 2 })).toMatch(/version 2/);
     expect(refused({ ...file, format: 'other' })).toMatch(/not a theme file/);
     expect(refused({ ...file, selectors: {} })).toMatch(/Unknown field: selectors/);
+  });
+
+  it('LA-PLT-INV02-T A partial theme file takes Lathe\'s core colors for what it leaves out, in both modes', () => {
+    const partial = parseTheme({ format: 'lathe-theme', version: 1, name: 'Only ink', light: { '--ink': '#000000' } });
+    expect(partial.ok && partial.theme.light['--paper']).toBe('#F4F6F5');
+    expect(partial.ok && partial.theme.dark['--paper']).toBe('#11171B');
+  });
+
+  it('LA-VO62-C01-T Token values name known tokens, each with a value of its kind, and carry nothing else', () => {
     expect(refused({ ...file, light: { ...file.light, '--node-radius': '2px' } })).toMatch(/not a color token/);
     expect(refused({ ...file, light: { '.card': '#fff' } })).toMatch(/not a color token/);
     expect(refused({ ...file, light: { '--paper': '#fff; } body { color: red' } })).toMatch(/not a value it takes/);
     expect(refused({ ...file, tokens: { '--text-size': '40px' } })).toMatch(/not a value it takes/);
     expect(refused({ ...file, tokens: { '--body': 'x}; @import url(evil)' } })).toMatch(/not a value it takes/);
-    // A partial file takes Lathe's core colors for what it leaves out.
-    const partial = parseTheme({ format: 'lathe-theme', version: 1, name: 'Only ink', light: { '--ink': '#000000' } });
-    expect(partial.ok && partial.theme.light['--paper']).toBe('#F4F6F5');
-    expect(partial.ok && partial.theme.dark['--paper']).toBe('#11171B');
+  });
 
+  it('LA-V62-R04-T01 A theme file imports as a new theme of one\'s own, kept in local storage; a bad one is refused, saying why', async () => {
     await openApp('/settings/appearance');
     await screen.findByRole('heading', { level: 1, name: 'Appearance' });
     const upload = screen.getByLabelText('Import a theme file');
@@ -206,7 +264,7 @@ describe('themes', () => {
     expect(JSON.parse(stored(STORAGE_KEYS.themes)!)[0]).toMatchObject({ id: 'custom-shared', name: 'Shared', light: file.light });
   });
 
-  it('LA-PLT-T58 The early script in index.html puts the chosen theme and mode on the page before the app runs', () => {
+  it('LA-V61-R06-T02 The early script in index.html puts the chosen theme and mode on the page before the app runs', () => {
     const html = readFileSync(resolve(process.cwd(), 'index.html'), 'utf8');
     const script = html.match(/<script>([\s\S]*?)<\/script>/)?.[1];
     expect(script).toBeTruthy();
@@ -233,7 +291,7 @@ describe('themes', () => {
     expect(root().hasAttribute('data-mode')).toBe(false);
   });
 
-  it('LA-PLT-T60 The built-in themes: Lathe is the stylesheet unchanged, High contrast reaches AAA for text, and each passes AA for its text and controls in both modes', () => {
+  it('The built-in themes: Lathe is the stylesheet unchanged, High contrast reaches AAA for text, and each passes AA for its text and controls in both modes', () => {
     const css = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
     const block = (re: RegExp) => Object.fromEntries([...(css.match(re)?.[1] ?? '').matchAll(/(--[\w-]+):\s*([^;]+);/g)].map((m) => [m[1], m[2].trim()]));
     const rootLight = block(/^:root \{([\s\S]*?)\n\}/m);

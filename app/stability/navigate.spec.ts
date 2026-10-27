@@ -3,7 +3,7 @@ import { expectStable, openPage, step } from './measure';
 import { DOMAIN, FOCUS, GRAPH_CANVAS, GRAPH_HEADER, RECORD, SHELL } from './scenarios';
 import { reachableBoxes } from './scene';
 
-// LA-PLT-T72: moving between records through the nav, a link, a graph click, Back and quick
+// LA-V61-R28-T01: moving between records through the nav, a link, a graph click, Back and quick
 // find keeps the shell, the pane bar and the side bar where they were. The page's content
 // changes (it is a new page), so shifts inside the wiki pane's scroll box and the side bar's
 // body are the change itself; the frame around them must hold still.
@@ -23,7 +23,7 @@ async function boxesInView(page: Page, except = ''): Promise<{ id: string; at: {
 }
 
 test.describe('navigate', () => {
-  test('LA-PLT-T72 through the nav', async ({ page }) => {
+  test('LA-V61-R28-T01 through the nav', async ({ page }) => {
     await openPage(page, DOMAIN);
     // Another domain of the product, from the nav.
     const link = page.locator('nav#nav .nav-space a[href^="/LA-"]:not([aria-current])').first();
@@ -36,7 +36,7 @@ test.describe('navigate', () => {
     expectStable(r);
   });
 
-  test('LA-PLT-T72 through a link in the page', async ({ page }) => {
+  test('LA-V61-R28-T01 through a link in the page', async ({ page }) => {
     await openPage(page, RECORD);
     const link = page.locator('.pane-wiki .spec-body a.record-link[href^="/LA-"]').first();
     const r = await step(page, 'navigate', 'through a link', { keys: KEYS, allow: CONTENT, resizes: TITLE }, async () => {
@@ -46,7 +46,7 @@ test.describe('navigate', () => {
     expectStable(r);
   });
 
-  test('LA-PLT-T72 by clicking a graph node, then Back', async ({ page }) => {
+  test('LA-V61-R28-T01 by clicking a graph node, then Back', async ({ page }) => {
     await openPage(page, `${RECORD}?view=graph`);
     await page.locator('.graph-flow .graph-box').nth(1).waitFor({ state: 'attached' });
     await page.waitForTimeout(500);
@@ -68,7 +68,7 @@ test.describe('navigate', () => {
   // A new page starts at the top of the wiki pane. It must be drawn there from its first frame,
   // never drawn once at the last page's scroll and then moved up (a scroll set after paint). Back
   // comes back to the old page where it was scrolled, also from its first frame.
-  test('LA-PLT-T72 from a page scrolled half-way, and Back', async ({ page }) => {
+  test('LA-V61-R28-T01 from a page scrolled half-way, and Back', async ({ page }) => {
     await openPage(page, DOMAIN);
     await page.evaluate(() => {
       const box = document.querySelector('.pane-wiki .pane-scroll')!;
@@ -144,7 +144,7 @@ test.describe('navigate', () => {
     expect.soft(backFrames.find((f) => f.title === after)?.top ?? 0, 'Back does not start at the top').toBeGreaterThan(0);
   });
 
-  test('LA-PLT-T72 through quick find', async ({ page }) => {
+  test('LA-V61-R28-T01 through quick find', async ({ page }) => {
     await openPage(page, RECORD);
     await page.keyboard.press('Control+k');
     const find = page.locator('.quick-find input');

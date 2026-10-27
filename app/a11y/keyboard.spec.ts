@@ -2,10 +2,10 @@ import { expect, test, type Page } from '@playwright/test';
 import { DOMAIN, EDITED, keepData, PRODUCT, RECORD } from '../stability/scenarios';
 
 // What axe can't check, walked with the keyboard alone (LA-PAT-APP-UX-R10):
-// LA-PLT-T98 every control on the main pages is reached by Tab and Shift+Tab, with no trap;
-// LA-PLT-T99 the main tasks by keyboard: open a record, switch views, re-center the graph, fold
+// LA-V61-R41-T01 every control on the main pages is reached by Tab and Shift+Tab, with no trap;
+// LA-V61-R41-T02 the main tasks by keyboard: open a record, switch views, re-center the graph, fold
 // rows, open and close the side bar, pick a theme, and the announcer saying what changed;
-// LA-PLT-T100 focus after navigation, and back on the opener when a dialog or a sheet closes;
+// LA-V61-R42-T01 focus after navigation, and back on the opener when a dialog or a sheet closes;
 // and changing a record by keyboard: Edit, the form's first field, Save, and focus back on Edit.
 
 /** What has keyboard focus now: a short description, its accessible name and whether it is in view. */
@@ -45,7 +45,7 @@ async function open(page: Page, url: string, ready = '.focus-views .pane-title')
 }
 
 test.describe('keyboard', () => {
-  test('LA-PLT-T98 Tab reaches every control and comes back round, with no trap', async ({ page }) => {
+  test('LA-V61-R41-T01 Tab reaches every control and comes back round, with no trap', async ({ page }) => {
     await open(page, `${RECORD}?view=wiki,graph`, '.pane-graph .graph-flow .graph-box');
     // Every control the page draws that Tab should reach: buttons, links and fields not hidden or disabled.
     const reachable = await page.evaluate(() => {
@@ -79,7 +79,7 @@ test.describe('keyboard', () => {
     expect(await focused(page)).toEqual(back);
   });
 
-  test('LA-PLT-T99 open a record from the nav and from quick find', async ({ page }) => {
+  test('LA-V61-R41-T02 open a record from the nav and from quick find', async ({ page }) => {
     await open(page, PRODUCT);
     // The skip link is the first stop and moves focus to the page.
     await page.keyboard.press('Tab');
@@ -99,24 +99,24 @@ test.describe('keyboard', () => {
     await page.keyboard.press('Enter');
     await expect(page).toHaveURL(/LA-PLT-UC05/);
     await expect(page.locator('.focus-views .pane-title h1').first()).toBeVisible();
-    // LA-PLT-T100: after the move, focus is not lost on the body.
+    // LA-V61-R42-T01: after the move, focus is not lost on the body.
     expect((await focused(page)).tag).not.toBe('body');
   });
 
-  test('LA-PLT-T99 switch views from the page bar', async ({ page }) => {
+  test('LA-V61-R41-T02 switch views from the page bar', async ({ page }) => {
     await open(page, RECORD);
     await tabUntil(page, (el) => el.getAttribute('aria-label') === 'Graph' && !!el.closest('.page-bar'), 'the Graph view toggle');
     await page.keyboard.press('Enter');
     await expect(page).toHaveURL(/view=wiki(%2C|,)graph/);
     await expect(page.locator('.page-bar').getByRole('button', { name: 'Graph', exact: true })).toHaveAttribute('aria-pressed', 'true');
-    await expect(announcer(page)).toHaveText(/Graph view/);
+    await test.step('LA-V61-R43-T01 opening a view is announced', () => expect(announcer(page)).toHaveText(/Graph view/));
     // Focus stays on the toggle that was pressed.
     expect((await focused(page)).name).toBe('Graph');
     await page.keyboard.press('Space');
     await expect(page).not.toHaveURL(/graph/);
   });
 
-  test('LA-PLT-T99 re-center the graph with Tab and Enter, and step through the tree with the arrow keys', async ({ page }) => {
+  test('LA-V61-R41-T02 re-center the graph with Tab and Enter, and step through the tree with the arrow keys', async ({ page }) => {
     await open(page, `${RECORD}?view=graph`, '.pane-graph .graph-flow .graph-box');
     await tabUntil(page, (el) => !!el.closest('.graph-box'), 'a box in the graph');
     const first = await page.evaluate(() => document.activeElement!.closest('.graph-box')!.getAttribute('data-id'));
@@ -128,7 +128,7 @@ test.describe('keyboard', () => {
     expect(target, 'Tab moves between boxes').not.toBe(first);
     await page.keyboard.press('Enter');
     await expect(page).toHaveURL(new RegExp(target!));
-    // LA-PLT-T100: focus follows the box that became the center.
+    // LA-V61-R42-T01: focus follows the box that became the center.
     await expect.poll(() => page.evaluate(() => document.activeElement?.closest('.graph-box')?.getAttribute('data-id'))).toBe(target);
     // The plain arrows step through the tree: Left to the parent, Right back in to its first child; the keyboard follows.
     const at = new URL(page.url()).pathname;
@@ -140,7 +140,7 @@ test.describe('keyboard', () => {
     await expect.poll(() => new URL(page.url()).pathname).not.toBe(parent);
   });
 
-  test('LA-PLT-T99 fold and unfold a row with the keyboard', async ({ page }) => {
+  test('LA-V61-R41-T02 fold and unfold a row with the keyboard', async ({ page }) => {
     await open(page, DOMAIN);
     await tabUntil(page, (el) => el.classList.contains('tree-toggle') && !!el.closest('#main'), 'a row\'s fold button', 300);
     const toggle = page.locator(':focus');
@@ -151,7 +151,7 @@ test.describe('keyboard', () => {
     await expect(page.locator(':focus')).toHaveAttribute('aria-expanded', before ?? 'false');
   });
 
-  test('LA-PLT-T99 open and close the side bar, and focus it', async ({ page }) => {
+  test('LA-V61-R41-T02 open and close the side bar, and focus it', async ({ page }) => {
     // With the wiki alone the side bar starts hidden.
     await open(page, RECORD);
     const toggle = page.locator('.page-bar .side-bar-toggle');
@@ -163,9 +163,9 @@ test.describe('keyboard', () => {
     await expect(toggle).toHaveAttribute('aria-expanded', 'true');
     await toggle.focus();
     await page.keyboard.press('Enter');
-    await expect(announcer(page)).toHaveText('Side bar hidden');
+    await test.step('LA-V61-R43-T01 hiding the side bar is announced', () => expect(announcer(page)).toHaveText('Side bar hidden'));
     await expect(toggle).toHaveAttribute('aria-expanded', 'false');
-    // LA-PLT-T100: the toggle keeps focus when it hides the side bar, so the next Enter brings it back.
+    // LA-V61-R42-T01: the toggle keeps focus when it hides the side bar, so the next Enter brings it back.
     expect((await focused(page)).classes).toContain('side-bar-toggle');
     await page.keyboard.press('Enter');
     await expect(announcer(page)).toHaveText('Side bar shown');
@@ -173,7 +173,7 @@ test.describe('keyboard', () => {
     await expect.poll(async () => page.evaluate(() => !!document.activeElement?.closest('#side-bar'))).toBe(true);
   });
 
-  test('LA-PLT-T99 pick a theme, and focus comes back', async ({ page }) => {
+  test('LA-V61-R41-T02 pick a theme, and focus comes back', async ({ page }) => {
     await open(page, RECORD);
     await tabUntil(page, (el) => el.getAttribute('aria-label') === 'Wiki' && !!el.closest('.page-bar'), 'the Wiki view toggle');
     await page.keyboard.press('g');
@@ -183,12 +183,12 @@ test.describe('keyboard', () => {
     await page.keyboard.type('Midnight');
     await page.keyboard.press('Enter');
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'midnight');
-    await expect(announcer(page)).toHaveText(/Color theme: Midnight/);
-    // LA-PLT-T100: back on the control that had focus before the picker opened.
+    await test.step('LA-V61-R43-T01 choosing a theme is announced', () => expect(announcer(page)).toHaveText(/Color theme: Midnight/));
+    // LA-V61-R42-T01: back on the control that had focus before the picker opened.
     expect((await focused(page)).name).toBe('Wiki');
   });
 
-  test('LA-PLT-T100 the palette and the shortcuts sheet give focus back when they close', async ({ page }) => {
+  test('LA-V61-R42-T01 the palette and the shortcuts sheet give focus back when they close', async ({ page }) => {
     await open(page, RECORD);
     await tabUntil(page, (el) => el.classList.contains('side-bar-toggle'), 'the side bar toggle');
     for (const keys of ['Control+Shift+p', 'Control+/']) {
@@ -210,7 +210,7 @@ test.describe('keyboard', () => {
 test.describe('keyboard on a phone', () => {
   test.use({ viewport: { width: 375, height: 812 }, hasTouch: true, isMobile: true });
 
-  test('LA-PLT-T100 a sheet gives focus back to the button that opened it', async ({ page }) => {
+  test('LA-V61-R42-T01 a sheet gives focus back to the button that opened it', async ({ page }) => {
     await open(page, RECORD, '.pane-title');
     const opener = page.getByRole('button', { name: 'Open the navigation' });
     await opener.focus();
@@ -233,7 +233,7 @@ test.describe('keyboard on a phone', () => {
 });
 
 test.describe('changing records by keyboard', () => {
-  test('edit a record with the keyboard, and focus comes back to its actions', async ({ page }) => {
+  test('LA-V92-R34-T01 edit a record with the keyboard, and focus comes back to its actions', async ({ page }) => {
     const restore = keepData();
     try {
       await open(page, EDITED);

@@ -24,7 +24,7 @@ const fact = (box: HTMLElement, name: string) => within(box).getByText(name, { s
 const served = () => ({ data: standardWorkspace() });
 
 describe('standards in the nav and the wiki', () => {
-  it('LA-AUT-T125 The product lists its standards at product level, in the Technical specification stage', async () => {
+  it('LA-V92-R72-T01 The product lists its standards at product level, in the Technical specification stage', async () => {
     await openApp('/DM', served());
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     expect(rows(list('Product level of Demo shop'))).toEqual(['Product level3']);
@@ -39,7 +39,7 @@ describe('standards in the nav and the wiki', () => {
     expect(within(list('Standards of Demo shop')).getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual(['/DM-STD-CODE']);
   });
 
-  it('LA-AUT-T126 A standard\'s page lists its rules with what meets each one', async () => {
+  it('LA-V92-R72-T02 A standard\'s page lists its rules with what meets each one', async () => {
     await openApp('/DM-STD-CODE', served());
     await screen.findByRole('heading', { level: 1, name: 'Code standard' });
     const rules = section(/^Rules/);
@@ -50,7 +50,7 @@ describe('standards in the nav and the wiki', () => {
     expect(within(row('DM-STD-CODE-R02')).getAllByRole('link').map((a) => a.textContent)).toEqual(['DM-STD-CODE-R02Tables have a primary key', 'DM-SHOP-EN01-TB']);
   });
 
-  it('LA-AUT-T127 A standard rule\'s Traceability shows what meets it, and what meets it shows Meets', async () => {
+  it('LA-V92-R73-T01 A standard rule\'s Traceability shows what meets it, and what meets it shows Meets', async () => {
     await openApp('/DM-STD-CODE-R01', served());
     await screen.findByRole('heading', { level: 1, name: 'Handlers own their transaction' });
     const trace = section(/^Traceability/);
@@ -63,7 +63,7 @@ describe('standards in the nav and the wiki', () => {
     expect(within(meets).getByRole('link', { name: /DM-STD-CODE-R01/ })).toHaveAttribute('href', '/DM-STD-CODE-R01');
   });
 
-  it('LA-AUT-T128 The format reference has a page for each standard kind, from the schema', async () => {
+  it('LA-V92-R73-T02 The format reference has a page for each standard kind, from the schema', async () => {
     await openApp('/format/kinds/standard_rule', served());
     expect(await screen.findByRole('heading', { level: 1, name: 'Standard rule' })).toBeInTheDocument();
     const where = section('Where it sits');
@@ -77,7 +77,7 @@ describe('standards in the nav and the wiki', () => {
 });
 
 describe('standards in the graph', () => {
-  it('LA-AUT-T129 The graph draws a standard as stacked boxes with a ruler in the product\'s Technical specification, and meets as a design line in its key', () => {
+  it('LA-V93-R71-T01 The graph draws a standard as stacked boxes with a ruler in the product\'s Technical specification, and meets as a design line in its key', () => {
     const ix = indexOf(standardWorkspace());
     const n = neighborhood(ix, 'DM-STD-CODE', 1);
     expect(n.edges.map((e) => `${e.source} ${e.relation} ${e.target}`)).toEqual(expect.arrayContaining([

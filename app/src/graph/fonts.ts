@@ -1,7 +1,7 @@
 import { PLAIN_MEASURE, type Face, type TextMeasure } from './text';
 
 // The faces the graph's canvas draws its text in, and the measure the maps are laid out with
-// (LA-EXP-DR58): the theme's body and mono stacks (`--body`, `--mono`), loaded before the first
+// (LA-EXP-DS06): the theme's body and mono stacks (`--body`, `--mono`), loaded before the first
 // layout, measured by the canvas's own text metrics. A map is laid out once per spec load and
 // faces, and the canvas draws its lines with the very faces they were measured in, so every line
 // fits its box at any zoom. The Voronoi map is laid out in a worker (voronoi.worker.ts), which

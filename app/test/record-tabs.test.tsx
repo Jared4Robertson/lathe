@@ -27,20 +27,53 @@ const viewToggle = (name: 'Wiki' | 'Graph') => within(screen.getByRole('group', 
 const key = (init: KeyboardEventInit & { key: string; code?: string }) => fireEvent.keyDown(document.body, init);
 
 describe('tabs for open pages', () => {
-  it('LA-EXP-T115 A plain open replaces the italic preview tab, a double-click keeps it, a page already open activates its tab, and Back reopens a closed page as the preview', async () => {
+  /** A use case's page in its preview tab. */
+  const firstTab = async () => {
     await openApp('/P-D-UC01', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
-    expect(tabs()).toEqual(['Lend a thing*<']);
+  };
+  /** From the use case, a wiki link opened in the preview tab. */
+  const linkOpened = async () => {
+    await firstTab();
+    fireEvent.click(within(screen.getByRole('region', { name: 'Wiki pane' })).getAllByRole('link', { name: /P-D-UC01-R01/ })[0]);
+    await waitFor(() => expect(title()).toBe('The loan is recorded'));
+  };
+
+  it('LA-V96-R16-T01 Each tab shows its record\'s ID and title, a group\'s tab its label', async () => {
+    await firstTab();
     const first = tab('Lend a thing');
     expect(first).toHaveAccessibleName('P-D-UC01 Lend a thing, preview');
     expect(first.querySelector('.tab-id')).toHaveTextContent('P-D-UC01');
     expect(screen.getByRole('tabpanel')).toHaveAttribute('aria-labelledby', first.id);
+    await go('/P-D/domain-model/term', 'Terms (1)');
+    expect(tab('Terms (1)').querySelector('code')).toBeNull();
+  });
+
+  it('LA-V96-R10-T02 A plain open replaces the italic preview tab, and a page already open activates its tab', async () => {
+    await firstTab();
+    expect(tabs()).toEqual(['Lend a thing*<']);
+    await linkOpened();
+    expect(tabs()).toEqual(['The loan is recorded*<']);
+    fireEvent.doubleClick(tab('The loan is recorded'));
+    await go('/P-V01', 'Loan desk');
+    await go('/P-D-UC01-R01', 'The loan is recorded');
+    expect(tabs()).toEqual(['The loan is recorded<', 'Loan desk*']);
+  });
+
+  it('LA-V96-R11-T01 A double-click keeps the preview tab, and the next open adds a preview after it', async () => {
+    await linkOpened();
+    fireEvent.doubleClick(tab('The loan is recorded'));
+    expect(tabs()).toEqual(['The loan is recorded<']);
+    await go('/P-V01', 'Loan desk');
+    expect(tabs()).toEqual(['The loan is recorded', 'Loan desk*<']);
+  });
+
+  it('LA-EXP-PO02-T A page opened shows in a tab: a link to an open page activates it, and Back reopens a closed page as the preview', async () => {
+    await firstTab();
+    const first = tab('Lend a thing');
     // The active preview tab's tooltip names the keep command; its close button, the close command.
     expect(first.closest('.tab')!.querySelector('.tab-close[aria-label="Close P-D-UC01 Lend a thing"]')).toHaveAttribute('aria-keyshortcuts', 'Alt+Shift+W');
-
-    // A wiki link opens in the preview tab, replacing it.
-    fireEvent.click(within(screen.getByRole('region', { name: 'Wiki pane' })).getAllByRole('link', { name: /P-D-UC01-R01/ })[0]);
-    await waitFor(() => expect(title()).toBe('The loan is recorded'));
+    await linkOpened();
     expect(tabs()).toEqual(['The loan is recorded*<']);
 
     // Double-click keeps it; the next open adds a preview after it.
@@ -74,7 +107,19 @@ describe('tabs for open pages', () => {
     expect(tabs()).toEqual(['The loan is recorded', 'Terms (1)*<']);
   });
 
-  it('LA-EXP-T116 Closing by button, middle-click or Alt+Shift+W activates the right neighbor or else the left, and the last tab stays as the preview', async () => {
+  it('LA-EXP-PO03-T The address follows the active tab, clicked or cycled', async () => {
+    await firstTab();
+    fireEvent.doubleClick(tab('Lend a thing'));
+    await go('/P-V01', 'Loan desk');
+    fireEvent.click(tab('Lend a thing'));
+    await waitFor(() => expect(title()).toBe('Lend a thing'));
+    expect(window.location.pathname).toBe('/P-D-UC01');
+    key({ key: 'Tab', code: 'Tab', ctrlKey: true });
+    await waitFor(() => expect(title()).toBe('Loan desk'));
+    expect(window.location.pathname).toBe('/P-V01');
+  });
+
+  it('LA-V96-R12-T02 Closing by button, middle-click or Alt+Shift+W activates the right neighbor or else the left, and the last tab stays as the preview', async () => {
     await openApp('/P-D-UC01', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     fireEvent.doubleClick(tab('Lend a thing'));
@@ -99,14 +144,18 @@ describe('tabs for open pages', () => {
     expect(title()).toBe('Lend a thing');
   });
 
-  it('LA-EXP-T117 Ctrl+Tab and Ctrl+Shift+Tab cycle, the keep command keeps the preview, and on the focused strip the arrow keys move and Delete closes', async () => {
-    for (const id of ['keepTab', 'closeTab', 'nextTab', 'previousTab']) expect(COMMANDS.find((c) => c.id === id)?.group).toBe('Navigate');
-    await openApp('/P-D-UC01', served());
-    await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
+  it('LA-V96-R11-T02 The keep command keeps the preview tab', async () => {
+    await firstTab();
     // Off a Mac the keep command is Alt+K then Enter (Ctrl+K is quick open there).
     key({ key: 'k', code: 'KeyK', altKey: true });
     key({ key: 'Enter', code: 'Enter' });
     expect(tabs()).toEqual(['Lend a thing<']);
+  });
+
+  it('LA-V96-R13-T01 Ctrl+Tab and Ctrl+Shift+Tab cycle, and on the focused strip the arrow keys move and Delete closes', async () => {
+    for (const id of ['keepTab', 'closeTab', 'nextTab', 'previousTab']) expect(COMMANDS.find((c) => c.id === id)?.group).toBe('Navigate');
+    await firstTab();
+    fireEvent.doubleClick(tab('Lend a thing'));
     await go('/P-V01', 'Loan desk');
     expect(tabs()).toEqual(['Lend a thing', 'Loan desk*<']);
 
@@ -131,13 +180,17 @@ describe('tabs for open pages', () => {
     await waitFor(() => expect(tab('Lend a thing')).toHaveFocus());
   });
 
-  it('LA-EXP-T118 Each tab keeps its own views, wiki scroll and graph settings, and switching its views keeps it open', async () => {
-    await openApp('/P-D-UC01', served());
-    await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
-    // Opening the graph keeps the preview tab, and sets its depth.
+  it('LA-V96-R11-T03 Switching a preview tab\'s views keeps it open', async () => {
+    await firstTab();
     fireEvent.click(viewToggle('Graph'));
     expect(tabs()).toEqual(['Lend a thing<']);
     expect(address()).toBe('/P-D-UC01?view=wiki,graph');
+  });
+
+  it('LA-V96-R14-T01 Each tab keeps its own views, wiki scroll and graph settings', async () => {
+    await firstTab();
+    // Opening the graph keeps the preview tab, and sets its depth.
+    fireEvent.click(viewToggle('Graph'));
     await waitFor(() => expect(boxElements().length).toBeGreaterThan(0));
     fireEvent.click(screen.getByRole('button', { name: '2' }));
     const wiki = () => document.querySelector<HTMLElement>('.pane-wiki > .pane-scroll')!;
@@ -171,7 +224,23 @@ describe('tabs for open pages', () => {
     await waitFor(() => expect(address()).toBe('/P-D-UC01?view=wiki,graph'));
   });
 
-  it('LA-PLT-T48 Reloading brings back the same tabs, the preview, the active tab and each tab\'s views', async () => {
+  it('LA-V96-R15-T04 Reloading brings back each tab\'s views', async () => {
+    await openApp('/P-D-UC01?view=wiki,graph', served());
+    await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
+    fireEvent.doubleClick(tab('Lend a thing'));
+    await go('/P-V01?view=wiki', 'Loan desk');
+    fireEvent.doubleClick(tab('Loan desk'));
+    fireEvent.click(tab('Lend a thing'));
+    await waitFor(() => expect(title()).toBe('Lend a thing'));
+    await openApp(address(), served());
+    await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
+    expect(screen.getByRole('region', { name: 'Graph pane' })).toBeInTheDocument();
+    fireEvent.click(tab('Loan desk'));
+    await waitFor(() => expect(title()).toBe('Loan desk'));
+    expect(address()).toBe('/P-V01?view=wiki');
+  });
+
+  it('LA-PAT-APP-UX-R06-T01 Reloading brings back the same tabs, the preview, the active tab and each tab\'s views', async () => {
     await openApp('/P-D-UC01?view=wiki,graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     fireEvent.doubleClick(tab('Lend a thing'));
@@ -194,7 +263,7 @@ describe('tabs for open pages', () => {
     expect(screen.queryByRole('region', { name: 'Graph pane' })).toBeNull();
   });
 
-  it('LA-EXP-T119 Each space keeps its own tabs: switching spaces swaps the tab set', async () => {
+  it('LA-V96-R15-T01 Each space keeps its own tabs: switching spaces swaps the tab set', async () => {
     await openApp('/DM-SHOP-UC01', { data: workspace() });
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     fireEvent.doubleClick(tab('Add an item to the basket'));

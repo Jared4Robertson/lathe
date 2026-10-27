@@ -30,7 +30,16 @@ const ownKind = (name: string, label: string, stage: 'domain-model' | null): Kin
 });
 
 describe('folders by stage', () => {
-  it('LA-EXP-T84 Under the space, one level shows: domains are folded rows, and a domain unfolds into its stages and open questions with counts', async () => {
+  /** The space's page with Shopping unfolded into its stages. */
+  const shoppingUnfolded = async () => {
+    await openApp('/DM');
+    await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
+    const user = userEvent.setup();
+    await user.click(within(panel()).getByRole('button', { name: 'Unfold Shopping' }));
+    return { user, folders: list('Folders of Shopping') };
+  };
+
+  it('LA-V90-R16-T01 Under the space, one level shows: domains are folded rows, and a domain unfolds into its stages and open questions with counts', async () => {
     await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     const user = userEvent.setup();
@@ -39,8 +48,11 @@ describe('folders by stage', () => {
     expect(within(panel()).queryByRole('list', { name: 'Folders of Shopping' })).toBeNull();
 
     await user.click(within(panel()).getByRole('button', { name: 'Unfold Shopping' }));
-    const folders = list('Folders of Shopping');
-    expect(rows(folders)).toEqual(['Domain model4', 'Use cases1', 'Interaction design2', 'Technical specification2', 'Test plan2', 'Open questions1']);
+    expect(rows(list('Folders of Shopping'))).toEqual(['Domain model4', 'Use cases1', 'Interaction design2', 'Technical specification2', 'Test plan2', 'Open questions1']);
+  });
+
+  it('LA-V90-R17-T01 Stages and folders fold one level at a time, with counts', async () => {
+    const { user, folders } = await shoppingUnfolded();
     // Each stage folds on its own and opens one level: its folders, one per kind, still folded.
     await user.click(head(folders, /^Domain model/));
     expect(rows(list('Domain model of Shopping'))).toEqual(['Aggregates1', 'Specifications1', 'Read models1', 'Terms1']);
@@ -57,7 +69,7 @@ describe('folders by stage', () => {
     expect(within(panel()).queryByRole('list', { name: 'Interaction design of Shopping' })).toBeNull();
   });
 
-  it('LA-EXP-T85 A stage or folder with no records is left out of the nav', async () => {
+  it('LA-V90-R17-T02 A stage or folder with no records is left out of the nav', async () => {
     await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     const user = userEvent.setup();
@@ -68,22 +80,18 @@ describe('folders by stage', () => {
     expect(rows(list('Use cases of Paying'))).toEqual(['Capabilities1']);
   });
 
-  it("LA-EXP-T86 The current page's branch opens itself: a record's domain, stage and folder, or a group's folder", async () => {
+  it("LA-EXP-DS03-T01 The current page's branch opens itself: a record's domain, stage and folder, or a group's folder", async () => {
     // A UC requirement is not listed; the capability it sits under is, so that capability's branch opens.
     await openApp('/DM-SHOP-UC01-R01');
     await screen.findByRole('heading', { level: 1, name: 'The basket shows the new item' });
     expect(within(await findList('Capabilities of Shopping')).getByRole('link', { name: 'Buying' })).toHaveAttribute('href', '/DM-SHOP-CAP01');
     expect(within(panel()).queryByRole('list', { name: 'Interaction design of Shopping' })).toBeNull();
+  });
 
+  it("LA-V90-R18-T01 The current page's branch opens itself: a record's domain, stage and folder, and a domain page its domain", async () => {
     await openApp('/DM-SHOP-CMD01-H');
     await screen.findByRole('heading', { level: 1, name: 'Basket service' });
     expect(within(await findList('Command handlers of Shopping')).getByRole('link', { name: 'Basket service' })).toHaveAttribute('aria-current', 'page');
-
-    // A group page opens the folder of its kind, and names it as the nav does.
-    await openApp('/DM-SHOP/interaction-design/endpoint');
-    await screen.findByRole('heading', { level: 1, name: /^Endpoints/ });
-    expect(within(await findList('Endpoints of Shopping')).getByRole('link', { name: 'Add to basket' })).toBeInTheDocument();
-    expect(main().querySelector('.group-folder')).toHaveTextContent('Interaction design');
 
     // The domain page opens its domain.
     await openApp('/DM-PAY');
@@ -92,16 +100,32 @@ describe('folders by stage', () => {
     expect(window.sessionStorage.getItem('lathe:nav-folders')).toContain('domain:DM-PAY');
   });
 
-  it('LA-EXP-T87 Stage names and order come from the schema, in the nav and on the domain page alike', async () => {
+  it('LA-V91-R05-T01 A group page opens the folder of its kind, and names its stage as the nav does', async () => {
+    await openApp('/DM-SHOP/interaction-design/endpoint');
+    await screen.findByRole('heading', { level: 1, name: /^Endpoints/ });
+    expect(within(await findList('Endpoints of Shopping')).getByRole('link', { name: 'Add to basket' })).toBeInTheDocument();
+    expect(main().querySelector('.group-folder')).toHaveTextContent('Interaction design');
+  });
+
+  /** Shopping's page, with Test plan renamed and put first in the schema. */
+  const renamedStage = async () => {
     const w = workspace();
     w.schema.stages = w.schema.stages.map((s) => (s.name === 'test-plan' ? { ...s, label: 'Tests and checks', position: 0 } : s));
     await openApp('/DM-SHOP', { data: w });
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
+  };
+
+  it('LA-EXP-DS03-T02 Stage names and order come from the schema, in the nav', async () => {
+    await renamedStage();
     expect(rows(await findList('Folders of Shopping'))).toEqual(['Tests and checks2', 'Domain model4', 'Use cases1', 'Interaction design2', 'Technical specification2', 'Open questions1']);
+  });
+
+  it('LA-V91-R05-T02 The domain page heads its records with the same stages as the nav', async () => {
+    await renamedStage();
     expect([...main().querySelectorAll('h2.stage-title')].map((h) => h.childNodes[1]?.textContent)).toEqual(['Tests and checks', 'Domain model', 'Use cases', 'Interaction design', 'Technical specification']);
   });
 
-  it('LA-EXP-T88 The product shows its own stages only when it has records at product level, before its domains', async () => {
+  it('LA-V90-R16-T02 The product shows its own stages only when it has records at product level, before its domains', async () => {
     await openApp('/DM', { data: patternWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     // One Product level folder before the domains holds the product's own stages, as the graph's tree has it.
@@ -117,21 +141,28 @@ describe('folders by stage', () => {
     // The product's open questions are a group of their own.
     expect(within(list('Groups of Demo shop')).getByRole('link', { name: /Open questions/ })).toHaveAttribute('href', '/DM/question');
 
-    // A pattern rule's page opens the product's Use cases.
-    await openApp('/DM-PAT-AUDIT-R01', { data: patternWorkspace() });
-    await screen.findByRole('heading', { level: 1, name: 'Each change is recorded' });
-    expect(within(await findList('Patterns of Demo shop')).getByRole('link', { name: 'Audited action' })).toBeInTheDocument();
-
     // Notebook has nothing at product level.
     await openApp('/NF');
     await screen.findByRole('heading', { level: 1, name: 'Notebook' });
     expect(within(panel()).queryByRole('list', { name: 'Product level of Notebook' })).toBeNull();
   });
 
-  it("LA-EXP-T89 A record is listed in its stage's folder when its parent is of another stage, and folds under its parent in the same stage", async () => {
+  it("LA-V90-R18-T02 A pattern rule's page opens the product's own Use cases", async () => {
+    await openApp('/DM-PAT-AUDIT-R01', { data: patternWorkspace() });
+    await screen.findByRole('heading', { level: 1, name: 'Each change is recorded' });
+    expect(within(await findList('Patterns of Demo shop')).getByRole('link', { name: 'Audited action' })).toBeInTheDocument();
+  });
+
+  /** The demo shop with a second use case under the capability, and its flow. */
+  const twoUseCases = () => {
     const w = workspace();
     addRows(w, 'use_case', { id: 'DM-SHOP-UC02', title: 'Empty the basket', capability_id: 'DM-SHOP-CAP01' });
     addRows(w, 'flow', { id: 'DM-SHOP-UC02-FL', title: 'Empty a basket', use_case_id: 'DM-SHOP-UC02' });
+    return w;
+  };
+
+  it("LA-EXP-DS03-T03 A record is listed in its stage's folder when its parent is of another stage, and folds under its parent in the same stage", () => {
+    const w = twoUseCases();
     const index = indexOf(w);
     const { stages, loose } = domainFolders(index, 'DM-SHOP');
     const ids = Object.fromEntries(stages.flatMap((s) => s.folders).filter((f) => f.count > 0).map((f) => [f.kind, f.records.map((r) => r.id)]));
@@ -160,19 +191,22 @@ describe('folders by stage', () => {
       ['Domain model', ['Value objects']],
       ['Interaction design', ['Views']],
     ]);
+  });
 
-    // The domain page: the capability's use cases fold under it.
-    await openApp('/DM-SHOP', { data: w });
+  it("LA-V91-R05-T03 The domain page lists a capability's use cases under it, as the nav does", async () => {
+    await openApp('/DM-SHOP', { data: twoUseCases() });
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     const capabilities = within(main()).getByRole('heading', { level: 3, name: /^Capabilities/ }).closest('section') as HTMLElement;
     expect(within(capabilities).queryByRole('link', { name: /DM-SHOP-UC02/ })).toBeNull();
-    // In the nav, a capability's use case opens the branch of its capability, in Use cases.
-    await openApp('/DM-SHOP-UC02', { data: w });
+  });
+
+  it("LA-V90-R19-T01 Use cases lists capabilities, and a capability's use case opens its capability's branch", async () => {
+    await openApp('/DM-SHOP-UC02', { data: twoUseCases() });
     await screen.findByRole('heading', { level: 1, name: 'Empty the basket' });
     await waitFor(() => expect(list('Capabilities of Shopping').textContent).toBe('Buying'));
   });
 
-  it("LA-EXP-T90 A product's own kind gets its folder in its stage, or after the stages when it has no stage; the path names its stage", () => {
+  it("LA-EXP-DS03-T04 A product's own kind gets its folder in its stage, or after the stages when it has no stage; the path names its stage", () => {
     const w = workspace();
     w.schema.kinds.risk = ownKind('risk', 'Risk', 'domain-model');
     w.schema.kinds.memo = ownKind('memo', 'Memo', null);
@@ -187,15 +221,22 @@ describe('folders by stage', () => {
     expect(folderPath(index, 'question')).toEqual([]);
   });
 
-  it('LA-EXP-T91 What is folded is remembered for the session', async () => {
-    await openApp('/DM');
-    await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
-    const user = userEvent.setup();
-    await user.click(within(panel()).getByRole('button', { name: 'Unfold Shopping' }));
-    await user.click(head(list('Folders of Shopping'), /^Test plan/));
+  /** Test plan of Shopping opened, then another page. */
+  const testPlanOpened = async () => {
+    const { user, folders } = await shoppingUnfolded();
+    await user.click(head(folders, /^Test plan/));
     await openApp('/DM/checks');
     await screen.findByRole('heading', { level: 1, name: 'Checks' });
-    expect(rows(list('Test plan of Shopping'))).toEqual(['Invariant tests1', 'Use case tests1']);
+  };
+
+  it('LA-EXP-INV05-T What is folded is remembered for the session only', async () => {
+    await testPlanOpened();
+    expect(list('Test plan of Shopping')).toBeInTheDocument();
     expect(window.localStorage.getItem('lathe:nav-folders')).toBeNull();
+  });
+
+  it('LA-EXP-DS03-T05 A stage lists one folder per kind, in the schema\'s order', async () => {
+    await testPlanOpened();
+    expect(rows(list('Test plan of Shopping'))).toEqual(['Invariant tests1', 'Use case tests1']);
   });
 });
