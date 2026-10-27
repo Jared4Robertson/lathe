@@ -96,16 +96,45 @@ const problemAt = (origins: WeakMap<Row, Origin>, row: Row | undefined, p: Store
   return 'file' in origin ? { ...p, file: origin.file, line: origin.line } : { ...p, command: origin.command };
 };
 
+// One DuckDB instance serves every store in the process. Its lathe_base database holds Lathe's migrations, applied
+// once; each store copies it into databases of its own, named uniquely.
+interface Engine {
+  instance: DuckDBInstance;
+  baseSchema: SchemaDescription;
+}
+let engine: Promise<Engine> | undefined;
+const BASE_DB = 'lathe_base';
+// The schema databases built for products' own kinds and relations, by the SQL that adds them.
+const schemaDatabases = new Map<string, Promise<{ schemaDb: string; schema: SchemaDescription }>>();
+let databases = 0;
+
+function sharedEngine(): Promise<Engine> {
+  engine ??= (async () => {
+    const instance = await DuckDBInstance.create(':memory:');
+    const connection = await instance.connect();
+    try {
+      await connection.run(`ATTACH ':memory:' AS ${BASE_DB}`);
+      await connection.run(`USE ${BASE_DB}`);
+      await applyMigrations(connection, readMigrations());
+      const baseSchema = await describeSchema(connection);
+      await connection.run(storeViewsSql(baseSchema));
+      return { instance, baseSchema };
+    } finally {
+      connection.closeSync();
+    }
+  })();
+  return engine;
+}
+
 /** Opens the store of the product repo at root: reads its data files and loads them with every key and check. */
 export async function openStore(root: string, options: StoreOptions = {}): Promise<Store> {
   const dataDir = path.resolve(options.dataDir ?? loadConfig(root).dataDir);
-  const instance = await DuckDBInstance.create(':memory:');
-  const connection = await instance.connect();
-  const store = new Store(instance, connection, dataDir);
+  const { instance, baseSchema } = await sharedEngine();
+  const store = new Store(instance, await instance.connect(), baseSchema, dataDir);
   try {
     await store.load();
   } catch (error) {
-    store.close();
+    await store.close();
     throw error;
   }
   return store;
@@ -116,18 +145,18 @@ export class Store {
   readonly dataDir: string;
   private readonly instance: DuckDBInstance;
   private readonly main: DuckDBConnection;
-  private baseSchema!: SchemaDescription;
+  private readonly baseSchema: SchemaDescription;
   private currentSchema!: SchemaDescription;
   private schemaDb = '';
   private dataDb = '';
-  private generation = 0;
   private tables: Tables = new Map();
   private origins = new WeakMap<Row, Origin>();
   private queue: Promise<unknown> = Promise.resolve();
 
-  constructor(instance: DuckDBInstance, connection: DuckDBConnection, dataDir: string) {
+  constructor(instance: DuckDBInstance, connection: DuckDBConnection, baseSchema: SchemaDescription, dataDir: string) {
     this.instance = instance;
     this.main = connection;
+    this.baseSchema = baseSchema;
     this.dataDir = dataDir;
   }
 
@@ -173,20 +202,17 @@ export class Store {
     return this.origins.get(row);
   }
 
-  close(): void {
+  /** Drops the store's databases and closes its connection. */
+  async close(): Promise<void> {
+    await this.main.run(`USE ${BASE_DB}`);
+    if (this.dataDb) await this.detach(this.dataDb);
     this.main.closeSync();
-    this.instance.closeSync();
   }
 
   // Loading.
 
   /** Reads every data file and loads it. Called once, by openStore. */
   async load(): Promise<void> {
-    await this.main.run(`ATTACH ':memory:' AS lathe_base`);
-    await this.main.run('USE lathe_base');
-    await applyMigrations(this.main, readMigrations());
-    this.baseSchema = await describeSchema(this.main);
-
     const files = existsSync(this.dataDir) ? readdirSync(this.dataDir).filter((f) => f.endsWith('.jsonl')).sort() : [];
     const problems: StoreProblem[] = [];
     const tables: Tables = new Map();
@@ -242,32 +268,43 @@ export class Store {
     await this.switchTo(dataDb);
   }
 
-  // The schema database: Lathe's migrations, copied from lathe_base, then the product's kinds and relations.
+  // The schema database: Lathe's migrations, copied from lathe_base, then the product's kinds and relations. Each
+  // set of declarations is built once per process and shared by every store that declares the same; a schema
+  // database holds no data, so it is never dropped.
   private async buildSchema(tables: Tables, origins: WeakMap<Row, Origin>): Promise<{ schemaDb: string; schema: SchemaDescription }> {
     const declarations = {
       kinds: [...(tables.get('product_kind')?.values() ?? [])],
       fields: [...(tables.get('product_kind_field')?.values() ?? [])],
       relations: [...(tables.get('product_relation')?.values() ?? [])],
     };
-    const name = `lathe_schema_${++this.generation}`;
-    const builder = await this.instance.connect();
-    try {
-      await builder.run(`ATTACH ':memory:' AS ${sqlName(name)}`);
-      await builder.run(`COPY FROM DATABASE lathe_base TO ${sqlName(name)}`);
-      await builder.run(`USE ${sqlName(name)}`);
-      const { sql, problems } = productKindSql(this.baseSchema, declarations);
-      if (problems.length) {
-        await builder.run(`USE lathe_base`);
-        await builder.run(`DETACH ${sqlName(name)}`);
-        throw new StoreError(problems.map((p: DeclarationProblem) => problemAt(origins, p.row, { rule: 'product-kind', table: p.table, message: p.message })));
-      }
-      if (sql) await builder.run(sql);
-      const partial = await describeSchema(builder);
-      await builder.run(storeViewsSql(partial));
-      return { schemaDb: name, schema: await describeSchema(builder) };
-    } finally {
-      builder.closeSync();
+    // Without a product kind or relation, the schema is Lathe's own.
+    if (!declarations.kinds.length && !declarations.fields.length && !declarations.relations.length) {
+      return { schemaDb: BASE_DB, schema: this.baseSchema };
     }
+    const { sql, problems } = productKindSql(this.baseSchema, declarations);
+    if (problems.length) {
+      throw new StoreError(problems.map((p: DeclarationProblem) => problemAt(origins, p.row, { rule: 'product-kind', table: p.table, message: p.message })));
+    }
+    let built = schemaDatabases.get(sql);
+    if (!built) {
+      built = (async () => {
+        const name = `lathe_schema_${++databases}`;
+        const builder = await this.instance.connect();
+        try {
+          await builder.run(`ATTACH ':memory:' AS ${sqlName(name)}`);
+          await builder.run(`COPY FROM DATABASE ${BASE_DB} TO ${sqlName(name)}`);
+          await builder.run(`USE ${sqlName(name)}`);
+          await builder.run(sql);
+          await builder.run(storeViewsSql(await describeSchema(builder)));
+          return { schemaDb: name, schema: await describeSchema(builder) };
+        } finally {
+          builder.closeSync();
+        }
+      })();
+      schemaDatabases.set(sql, built);
+      built.catch(() => schemaDatabases.delete(sql));
+    }
+    return built;
   }
 
   // The registry and supertype rows every kind row brings, or the IDs two records share.
@@ -303,7 +340,7 @@ export class Store {
   private async buildData(schemaDb: string, schema: SchemaDescription, tables: Tables, origins: WeakMap<Row, Origin>): Promise<string> {
     const { rows: derived, problems } = this.registry(schema, tables, origins);
     if (problems.length) throw new StoreError(problems);
-    const name = `lathe_data_${++this.generation}`;
+    const name = `lathe_data_${++databases}`;
     const builder = await this.instance.connect();
     const discard = async () => {
       await builder.run(`USE ${sqlName(schemaDb)}`);
@@ -311,22 +348,29 @@ export class Store {
     };
     try {
       await builder.run(`ATTACH ':memory:' AS ${sqlName(name)}`);
-      await builder.run(`COPY FROM DATABASE ${sqlName(schemaDb)} TO ${sqlName(name)}`);
+      await builder.run(`COPY FROM DATABASE ${sqlName(schemaDb)} TO ${sqlName(name)} (SCHEMA)`);
       await builder.run(`USE ${sqlName(name)}`);
+      // The meta-model's rows come along; the data tables start empty.
+      await builder.run(
+        Object.values(schema.tables)
+          .filter((t) => t.role === 'meta')
+          .map((t) => `INSERT INTO ${sqlName(t.name)} SELECT * FROM ${sqlName(schemaDb)}.${sqlName(t.name)};`)
+          .join('\n'),
+      );
       const order = ['record_id', ...Object.keys(schema.supertypes).sort(), ...schema.loadOrder];
       const rowsOf = (table: string) => derived.get(table) ?? [...(tables.get(table)?.values() ?? [])];
       await builder.run('BEGIN TRANSACTION');
       for (const table of order) {
         const rows = rowsOf(table);
         if (!rows.length) continue;
-        const ordered = this.parentsFirst(schema.tables[table], rows, origins);
+        const ordered = this.levels(schema.tables[table], rows, origins);
         if ('problems' in ordered) {
           await builder.run('ROLLBACK');
           await discard();
           throw new StoreError(ordered.problems);
         }
         try {
-          await insertRows(builder, schema.tables[table], ordered.rows);
+          for (const level of ordered.levels) await insertRows(builder, schema.tables[table], level);
         } catch (error) {
           await builder.run('ROLLBACK');
           const found = await this.diagnose(builder, schema, table, order, rowsOf, origins, error);
@@ -355,37 +399,42 @@ export class Store {
     }
   }
 
-  // Orders a table's rows so a row comes after the row of the same table it points at (such as a sub-layer after
-  // its layer). A table that points at itself in a cycle cannot be loaded.
-  private parentsFirst(table: TableDescription, rows: Row[], origins: WeakMap<Row, Origin>): { rows: Row[] } | { problems: StoreProblem[] } {
+  // Splits a table's rows into levels, so a row comes in a later level than the row of the same table it points at
+  // (a sub-layer after its layer): DuckDB checks a row's foreign key against the rows already in the table, not the
+  // others of the same statement, so each level is inserted on its own. Rows that point at each other in a cycle
+  // cannot be loaded.
+  private levels(table: TableDescription, rows: Row[], origins: WeakMap<Row, Origin>): { levels: Row[][] } | { problems: StoreProblem[] } {
     const self = table.foreignKeys.filter((fk) => fk.table === table.name);
-    if (!self.length) return { rows };
+    if (!self.length) return { levels: [rows] };
     const byKey = new Map(rows.map((r) => [rowKey(table, r), r]));
-    const placed = new Set<Row>();
+    const depth = new Map<Row, number>();
     const visiting = new Set<Row>();
-    const out: Row[] = [];
     const problems: StoreProblem[] = [];
-    const visit = (row: Row) => {
-      if (placed.has(row)) return;
+    const visit = (row: Row): number => {
+      const known = depth.get(row);
+      if (known !== undefined) return known;
       if (visiting.has(row)) {
         problems.push(problemAt(origins, row, { rule: 'foreign-key', table: table.name, key: describeKey(table, row), message: `${table.name} ${describeKey(table, row)} sits inside itself, through a cycle of ${table.name} rows` }));
-        placed.add(row);
-        return;
+        depth.set(row, 0);
+        return 0;
       }
       visiting.add(row);
+      let level = 0;
       for (const fk of self) {
         const at = fk.references.indexOf(table.primaryKey[0]);
-        const value = row[fk.columns[at]];
-        if (at < 0 || value === undefined) continue;
-        const target = byKey.get(String(value));
-        if (target && target !== row) visit(target);
+        const value = at < 0 ? undefined : row[fk.columns[at]];
+        const target = value === undefined ? undefined : byKey.get(String(value));
+        if (target && target !== row) level = Math.max(level, visit(target) + 1);
       }
       visiting.delete(row);
-      placed.add(row);
-      out.push(row);
+      depth.set(row, level);
+      return level;
     };
     for (const row of rows) visit(row);
-    return problems.length ? { problems } : { rows: out };
+    if (problems.length) return { problems: [...new Map(problems.map((p) => [p.key, p])).values()] };
+    const levels: Row[][] = [];
+    for (const row of rows) (levels[depth.get(row)!] ??= []).push(row);
+    return { levels };
   }
 
   // Finds which rows of a table broke a key or check, after its insert failed: first the foreign keys and unique keys,
@@ -437,10 +486,11 @@ export class Store {
       for (const other of order) {
         if (other === failed) break;
         const before = rowsOf(other);
-        if (before.length) await insertRows(builder, schema.tables[other], before);
+        const split = this.levels(schema.tables[other], before, origins);
+        for (const level of 'levels' in split ? split.levels : [before]) if (level.length) await insertRows(builder, schema.tables[other], level);
       }
-      const ordered = this.parentsFirst(table, rows, origins);
-      for (const row of 'rows' in ordered ? ordered.rows : rows) {
+      const ordered = this.levels(table, rows, origins);
+      for (const row of 'levels' in ordered ? ordered.levels.flat() : rows) {
         try {
           await insertRows(builder, table, [row]);
         } catch (rowError) {
@@ -581,9 +631,7 @@ export class Store {
       }
       // A change to the product's own kinds or relations changes the schema the later commands see.
       if ((DECLARATION_TABLES as readonly string[]).includes('table' in command ? command.table : '') && index < commands.length - 1) {
-        const built = await this.buildSchema(draft, origins);
-        await this.detach(built.schemaDb);
-        schema = built.schema;
+        schema = (await this.buildSchema(draft, origins)).schema;
       }
     }
 
@@ -592,8 +640,6 @@ export class Store {
       const built = await this.buildSchema(draft, origins);
       schemaDb = built.schemaDb;
       schema = built.schema;
-    }
-    try {
       // Rows of product kinds are checked again against their (possibly changed) columns.
       const problems: StoreProblem[] = [];
       for (const name of Object.keys(schema.kinds).filter((k) => schema.kinds[k].productId !== null)) {
@@ -606,17 +652,12 @@ export class Store {
         if (!schema.tables[name] && draft.get(name)!.size) problems.push({ rule: 'unknown-table', table: name, message: `${name} has rows but is no longer a kind or relation` });
       }
       if (problems.length) throw new StoreError(problems);
-      const dataDb = await this.buildData(schemaDb, schema, draft, origins);
-      const previousSchemaDb = this.schemaDb;
-      this.tables = draft;
-      this.currentSchema = schema;
-      this.schemaDb = schemaDb;
-      await this.switchTo(dataDb);
-      if (schemaDb !== previousSchemaDb) await this.detach(previousSchemaDb);
-    } catch (error) {
-      if (schemaDb !== this.schemaDb) await this.detach(schemaDb);
-      throw error;
     }
+    const dataDb = await this.buildData(schemaDb, schema, draft, origins);
+    this.tables = draft;
+    this.currentSchema = schema;
+    this.schemaDb = schemaDb;
+    await this.switchTo(dataDb);
     const files = await this.writeFiles([...changed].sort());
     return { tables: [...changed].sort(), files };
   }

@@ -13,16 +13,9 @@ const jsonType = (sqlType: string) => (sqlType.startsWith('ENUM(') ? 'VARCHAR' :
 export async function insertRows(connection: DuckDBConnection, table: TableDescription, rows: Row[]): Promise<void> {
   const shape = `[{${table.columns.map((c) => `${JSON.stringify(c.name)}:${JSON.stringify(jsonType(c.sqlType))}`).join(',')}}]`;
   const columns = table.columns.map((c) => sqlName(c.name));
-  const statement = await connection.prepare(
-    `INSERT INTO ${sqlName(table.name)} (${columns.join(', ')}) SELECT ${columns.map((c) => `r.${c}`).join(', ')} FROM (SELECT unnest(from_json($1::JSON, ${sqlString(shape)})) AS r)`,
-  );
-  try {
-    for (let i = 0; i < rows.length; i += INSERT_CHUNK) {
-      statement.bindVarchar(1, JSON.stringify(rows.slice(i, i + INSERT_CHUNK)));
-      await statement.run();
-    }
-  } finally {
-    statement.destroySync();
+  const insert = `INSERT INTO ${sqlName(table.name)} (${columns.join(', ')}) SELECT ${columns.map((c) => `r.${c}`).join(', ')} FROM (SELECT unnest(from_json(`;
+  for (let i = 0; i < rows.length; i += INSERT_CHUNK) {
+    await connection.run(`${insert}${sqlString(JSON.stringify(rows.slice(i, i + INSERT_CHUNK)))}::JSON, ${sqlString(shape)})) AS r)`);
   }
 }
 
