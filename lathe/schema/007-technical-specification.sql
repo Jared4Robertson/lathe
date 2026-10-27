@@ -59,10 +59,13 @@ COMMENT ON COLUMN predicate.specification_id IS 'The specification it implements
 COMMENT ON COLUMN predicate.file IS 'The file that holds its code, from the product root; it may not exist yet, and several records may share one file.';
 COMMENT ON COLUMN predicate.description IS 'How it works, in a sentence or two.';
 
+CREATE TYPE event_delivery AS ENUM ('in process', 'outbox');
+
 CREATE TABLE event_type (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
   title VARCHAR NOT NULL CHECK (trim(title) <> ''),
   domain_event_id VARCHAR NOT NULL UNIQUE REFERENCES domain_event (id),
+  delivery event_delivery,
   file VARCHAR,
   description VARCHAR
 );
@@ -70,6 +73,7 @@ COMMENT ON TABLE event_type IS 'Its domain event''s shape in code; a contract wi
 COMMENT ON COLUMN event_type.id IS 'The event type''s ID: its domain event''s ID and ET, such as TL-LEND-EV01-ET.';
 COMMENT ON COLUMN event_type.title IS 'Its name in code, such as LoanOpened.';
 COMMENT ON COLUMN event_type.domain_event_id IS 'The domain event it implements; one event type each.';
+COMMENT ON COLUMN event_type.delivery IS 'How the event reaches what hears it: in process, after the transaction commits; or outbox, saved in the same transaction as its aggregate and delivered reliably afterwards. An event a policy hears or another domain may hear is delivered by outbox.';
 COMMENT ON COLUMN event_type.file IS 'The file that holds its code, from the product root; it may not exist yet, and several records may share one file.';
 COMMENT ON COLUMN event_type.description IS 'How it works, in a sentence or two.';
 

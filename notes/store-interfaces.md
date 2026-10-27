@@ -28,7 +28,7 @@ The full description, with every column's meaning, is `store.schema` at run time
 | domain-model | `invariant` | aggregate (aggregate_id) | statement | `<P>-<D>-INV<nn>` |
 | domain-model | `specification` | none | statement | `<P>-<D>-SP<nn>` |
 | domain-model | `domain_event` | aggregate (aggregate_id) | published (bool), description? | `<P>-<D>-EV<nn>` |
-| domain-model | `command` | aggregate (aggregate_id) | description? | `<P>-<D>-CMD<nn>` |
+| domain-model | `command` | aggregate (aggregate_id) | description?; part `command_change` (aggregate_id, reason): another aggregate of its domain it also changes in the same transaction, a recorded exception (`command-change-in-domain` refuses its own aggregate or another domain's) | `<P>-<D>-CMD<nn>` |
 | domain-model | `read_model` | domain (domain_id) | description? | `<P>-<D>-RM<nn>` |
 | domain-model | `query` | read_model (read_model_id) | description? | `<P>-<D>-QRY<nn>` |
 | domain-model | `policy` | command (command_id) | statement | `<P>-<D>-PO<nn>` |
@@ -51,7 +51,7 @@ The full description, with every column's meaning, is `store.schema` at run time
 | technical-specification | `table` | entity (entity_id) or read_model (read_model_id) | name, storage (table/view/materialized view), file?, description? | `<entity or read model>-TB` |
 | technical-specification | `value_type` | value_object (value_object_id) | file?, description? | `<value object>-VT` |
 | technical-specification | `predicate` | specification (specification_id) | file?, description? | `<specification>-PR` |
-| technical-specification | `event_type` | domain_event (domain_event_id) | file?, description? | `<domain event>-ET` |
+| technical-specification | `event_type` | domain_event (domain_event_id) | delivery? (in process/outbox), file?, description? | `<domain event>-ET` |
 | technical-specification | `projection` | read_model (read_model_id) | file?, description? | `<read model>-PJ` |
 | technical-specification | `command_handler` | command (command_id) | file?, description? | `<command>-H` |
 | technical-specification | `query_handler` | query (query_id) | file?, description? | `<query>-H` |
