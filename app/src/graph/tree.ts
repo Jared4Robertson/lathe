@@ -5,7 +5,7 @@ import { plural } from '../plural';
 import { kindLabel } from '../specs/data';
 
 // The graph's tree is the nav's tree (brief 56): a product holds its Shared folder, its domains,
-// then its open questions and fitness; a domain holds its stages (Define, Design) and the folders
+// then its open questions; a domain holds its stages (Define, Design) and the folders
 // outside every stage (open questions); a stage holds its folders; a folder holds its records, by
 // the same folder model the nav, the domain page and the group pages read (specs/folders.ts).
 // Every stage and folder is a level of the tree, like a file explorer, and is a group node in the
@@ -198,7 +198,7 @@ export function treeOf(index: SpecIndex): Tree {
       if (f.records.length > 0) addFolder(product.id, f.key, f, product.id);
     }
     for (const d of index.domainsOf.get(product.id) ?? []) { if (add(product.id, d.id)) addDomain(d); }
-    // The product's other children, by kind, as the nav's groups: open questions, fitness.
+    // The product's other children, by kind, as the nav's groups: open questions.
     const folderKinds = productFolderKinds(index);
     const rest = (index.children.get(product.id) ?? []).filter((c) => c.kind !== 'domain' && !folderKinds.has(c.kind));
     for (const kind of kindsOf(index, rest)) {

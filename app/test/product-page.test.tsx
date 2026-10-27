@@ -66,47 +66,21 @@ describe('product page', () => {
     expect(main()).not.toHaveTextContent('NF-NOTE links to NF-NOTE-X9');
   });
 
-  it('LA-TRC-T85 The product page shows the latest fitness and its history apart from the evidence, or says how to add one', async () => {
+  it("LA-TRC-T85 The product page sums up the product's coverage, open questions and problems", async () => {
     await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
-    const fitness = section('Fitness');
-    const latest = fitness.querySelector('.fitness-latest') as HTMLElement;
-    expect(within(latest).getByLabelText('Score 4 of 5')).toBeInTheDocument();
-    expect(within(latest).getByText('2026-10-20')).toBeInTheDocument();
-    expect(within(latest).getByText('two clicks').tagName).toBe('EM');
-    expect(within(latest).getByRole('link', { name: 'DM-FIT02' })).toHaveAttribute('href', '/DM-FIT02');
-
-    const history = within(fitness).getByRole('list');
-    expect(within(history).getAllByRole('listitem').map((li) => li.textContent)).toEqual([
-      expect.stringMatching(/2026-10-20.*4\/5.*DM-FIT02.*Finding things is quick/),
-      expect.stringMatching(/2026-09-01.*2\/5.*DM-FIT01.*Early days/),
-    ]);
-
-    // The evidence is its own section, with counts the page can make, and never a score.
-    const evidence = section('Evidence');
-    expect(fitness.contains(evidence)).toBe(false);
-    expect(evidence).toHaveTextContent('they are not the score');
-    const value = (name: string) => within(evidence).getByText(name).nextElementSibling?.textContent;
+    const summary = section('Summary');
+    const value = (name: string) => within(summary).getByText(name).nextElementSibling?.textContent;
     expect(value('Designed')).toBe('3 of 4 obligations');
     expect(value('Built')).toBe('2 of 4 obligations');
     expect(value('Proved')).toBe('1 of 4 obligations');
     expect(value('Open questions')).toBe('2');
     expect(value('Errors')).toBe('1');
     expect(value('Warnings')).toBe('3');
-    expect(within(evidence).queryByLabelText(/^Score/)).toBeNull();
 
-    // A product with no fitness record says so, and links to the format section.
+    // A product with nothing to count says so in numbers.
     await openApp('/NF');
     await screen.findByRole('heading', { level: 1, name: 'Notebook' });
-    const none = section('Fitness');
-    expect(none).toHaveTextContent('No fitness recorded yet.');
-    expect(within(none).getByRole('link', { name: /section 7: Fitness/ })).toHaveAttribute('href', '/format#7-fitness');
-    expect(within(section('Evidence')).getByText('Built').nextElementSibling).toHaveTextContent('0 of 0 obligations');
-  });
-
-  it('LA-TRC-T85 The format page shows the fitness section the product page links to', async () => {
-    await openApp('/format#7-fitness');
-    const heading = await screen.findByRole('heading', { name: '7. Fitness' });
-    expect(heading).toHaveAttribute('id', '7-fitness');
+    expect(within(section('Summary')).getByText('Built').nextElementSibling).toHaveTextContent('0 of 0 obligations');
   });
 });

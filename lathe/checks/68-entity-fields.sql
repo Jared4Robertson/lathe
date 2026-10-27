@@ -1,7 +1,7 @@
 -- Each entity or event lists its fields in a Fields table.
 --
 -- An entity's table lists the fields it keeps and a domain event's the fields it carries. The table sits under
--- a `## Fields` heading (FORMAT.md sections 17 and 18), with the columns Field, Meaning, Kind of value and
+-- a `## Fields` heading (FORMAT.md sections 16 and 17), with the columns Field, Meaning, Kind of value and
 -- Example, in any letter case, one row per field and each field name once. The engine reads the table into entity_tables and,
 -- when its columns are right, its rows into entity_fields. Field names are compared trimmed, without code span
 -- backticks, and in any letter case. A table with the wrong columns is reported for that alone. Add the

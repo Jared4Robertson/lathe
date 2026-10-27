@@ -32,7 +32,7 @@ Every design record's parent is the domain, except an endpoint, whose parent is 
 
 ## Layers
 
-A domain's components go in **layers**: ordered groups by what the code is, such as 01 Models, 02 Accessors, 03 Services, 04 Connectors, 05 Routers and API app, 06 Web app, 07 Infrastructure and configuration. Each product names its own layers to fit its code; that set is only a starting point. See section 16 of `FORMAT.md`.
+A domain's components go in **layers**: ordered groups by what the code is, such as 01 Models, 02 Accessors, 03 Services, 04 Connectors, 05 Routers and API app, 06 Web app, 07 Infrastructure and configuration. Each product names its own layers to fit its code; that set is only a starting point. See section 15 of `FORMAT.md`.
 
 - Read the domain's layers before adding a component, and put it in the layer it belongs to. Add a layer only when no existing one fits.
 - Keep each layer to about 15 components at most. Split a bigger one, for example by aggregate or capability, into layers with clear titles, or into sub-layers: layers whose parent is the bigger layer, each with its own order among them.
@@ -43,7 +43,7 @@ A domain's components go in **layers**: ordered groups by what the code is, such
 
 ## Standards
 
-A product's engineering rules for its code, such as logging, error handling or naming, live in **standards** at product level, beside the patterns (FORMAT.md section 20): a `standard` record under the product (ID `<P>-STD-<NAME>`, such as `TL-STD-CODE`) and its `standard_rule` records under it (`<standard>-R<nn>`, such as `TL-STD-CODE-R01`), one rule each with MUST / MUST NOT / SHOULD / MAY, and an optional `group` heading once a standard has more than about 8 (FORMAT.md section 23). Keep them in a `standards/` folder beside `patterns/`.
+A product's engineering rules for its code, such as logging, error handling or naming, live in **standards** at product level, beside the patterns (FORMAT.md section 19): a `standard` record under the product (ID `<P>-STD-<NAME>`, such as `TL-STD-CODE`) and its `standard_rule` records under it (`<standard>-R<nn>`, such as `TL-STD-CODE-R01`), one rule each with MUST / MUST NOT / SHOULD / MAY, and an optional `group` heading once a standard has more than about 8 (FORMAT.md section 22). Keep them in a `standards/` folder beside `patterns/`.
 
 - A component or a test that follows a rule says so with `meets: [<rule ID>]` (read from the rule as Met by), or cites the rule's ID in its body. Neither counts as design or proof: a standard rule is not an obligation and no domain owes it.
 - Write only rules the code really follows. A rule that nothing meets or cites, other than the rule and its own standard, is a `standard-rule-unmet` warning: link what follows it, or remove it.
@@ -60,7 +60,7 @@ An interaction requirement is one rule a view, endpoint or flow must follow: a f
 
 ## APIs and integrations
 
-Group a domain's endpoints by resource (FORMAT.md section 21):
+Group a domain's endpoints by resource (FORMAT.md section 20):
 
 - One `api` per resource, such as Members, Tools or Loans, under the domain. Each endpoint's parent is its API. Moving an endpoint into an API changes only its `parent`, never its ID.
 - A rule that holds for every endpoint of the API, such as how it pages or what an unknown ID answers, is an interaction requirement under the API, not a copy under each endpoint.
@@ -70,7 +70,7 @@ Group a domain's endpoints by resource (FORMAT.md section 21):
 
 ## Flow steps
 
-Write a flow of more than a couple of steps as `flow_step` records, so traceability reads per step (FORMAT.md section 14):
+Write a flow of more than a couple of steps as `flow_step` records, so traceability reads per step (FORMAT.md section 13):
 
 - One record per step, under the flow: `order` gives its place (1, 2, 3, with no gaps; each step of a flow its own), the title says what happens in a few words, the body may say more.
 - A flow with more than one path, such as an API path or a refused path beside the main one, gives each step a `path`. A step with no `path` is on the main path. Each path is numbered 1, 2, 3 on its own.
@@ -100,7 +100,7 @@ What the checks say:
 
 ## Technical flows
 
-A flow says what a person sees; a technical flow says how the code carries it out (FORMAT.md section 22). Write one where the design is worth citing step by step, such as a flow whose steps run in a transaction, lock rows or call several components:
+A flow says what a person sees; a technical flow says how the code carries it out (FORMAT.md section 21). Write one where the design is worth citing step by step, such as a flow whose steps run in a transaction, lock rows or call several components:
 
 - One `design_flow` per flow it deepens, in the layer whose components do most of the work (or the domain), with `deepens` naming the flow. One that deepens nothing is a `design-flow-deepens-nothing` warning.
 - One `design_step` per step, under it, ordered and with an optional `path`, as a flow's steps are. `uses` names the component that does the step; `satisfies` names the obligations the step designs, and counts as design, as a component's `satisfies` does. Only a component whose file exists counts as built.

@@ -27,7 +27,6 @@ export const SHAPE_PATHS: Readonly<Record<Shape, string | readonly string[]>> = 
   component: 'M4 1.5h11v8H4V8H1V6h3V5H1V3h3z',
   shield: 'M1 1h14v5l-7 4.5L1 6z',
   diamond: 'M1 5.5 4.5 2 8 1l3.5 1L15 5.5 11.5 9 8 10 4.5 9z',
-  circle: 'M8 1a7 4.5 0 1 1 0 9A7 4.5 0 1 1 8 1z',
 };
 
 /** Each mark's drawing in an 11 by 11 box. */

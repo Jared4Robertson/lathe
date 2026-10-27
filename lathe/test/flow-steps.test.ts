@@ -1,4 +1,4 @@
-// Flow steps (FORMAT.md section 14): the kind, the order check, what a step may fulfill, and a flow's
+// Flow steps (FORMAT.md section 13): the kind, the order check, what a step may fulfill, and a flow's
 // fulfills against its steps'.
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';

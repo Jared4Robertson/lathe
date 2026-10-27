@@ -11,6 +11,6 @@ One open question.
 
 | Field | Meaning | Kind of value | Example |
 | --- | --- | --- | --- |
-| ID | The product's or domain's ID and the question's number. | Text in the ID format. | LA-Q01 |
+| ID | The product's or domain's ID and the question's number. | Text in the ID format. | SHOP-Q01 |
 | Owner | The role that decides it. | Role name. | Owner |
 | About | The records it concerns. | List of record references. | TL-LEND-UC01 |

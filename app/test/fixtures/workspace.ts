@@ -2,33 +2,28 @@ import type { Coverage, Kind, ObligationCoverage, RelationRule, SpecLink, SpecRe
 import sample from '../../../lathe/fixtures/workspace.sample.json';
 
 // A small workspace for the component tests. Two products:
-// - DM (Demo): two domains, two fitness records, questions and problems.
-// - NF (No fitness): one domain and no fitness record.
+// - DM (Demo): two domains, questions and problems.
+// - NF (Notebook): one domain.
 
-// The sample's kinds, with the capability and fitness kinds when it lacks them (capability first, as in the meta-model).
+// The sample's kinds, with the capability kind when it lacks it (first, as in the meta-model).
 const sampleKinds = (sample as unknown as Workspace).kinds;
 const kinds: Kind[] = [
   ...(sampleKinds.some((k) => k.kind === 'capability') ? [] : [
     { kind: 'capability', label: 'Capability', stage: 'define', section: 'use-cases', parent_kinds: ['domain'], required_fields: ['order'], obligation: false, proof_only: false, description: 'An ordered slice of a domain.' },
   ]),
   ...sampleKinds,
-  ...(sampleKinds.some((k) => k.kind === 'fitness') ? [] : [
-    { kind: 'fitness', label: 'Fitness', stage: '', section: '', parent_kinds: ['product'], required_fields: ['date', 'score'], obligation: false, proof_only: false, description: 'How well the product serves its purpose.' },
-  ]),
 ];
 const relations: RelationRule[] = (sample as unknown as Workspace).relations;
 
 function record(id: string, kind: string, title: string, parent: string | null, fields: Record<string, string> = {}, body = ''): SpecRecord {
   const parts = id.split('-');
   const product = parts[0];
-  const domain = kind === 'product' || kind === 'fitness' || (kind === 'question' && parts.length === 2) ? null : parts.slice(0, 2).join('-');
+  const domain = kind === 'product' || (kind === 'question' && parts.length === 2) ? null : parts.slice(0, 2).join('-');
   return { id, kind, title, parent, product, domain, fields, body, path: `specs/${product.toLowerCase()}/${id}.md`, mentions: [] };
 }
 
 export const records: SpecRecord[] = [
   record('DM', 'product', 'Demo shop', null, {}, 'A demo product for the **component tests**.'),
-  record('DM-FIT01', 'fitness', 'Early days', 'DM', { date: '2026-09-01', score: '2' }, 'It was hard to find anything.'),
-  record('DM-FIT02', 'fitness', 'Finding things is quick', 'DM', { date: '2026-10-20', score: '4' }, 'I traced a requirement to its tests in *two clicks*.'),
   record('DM-Q01', 'question', 'Should the shop ship abroad?', 'DM', { owner: 'Owner' }, 'Undecided.'),
 
   record('DM-SHOP', 'domain', 'Shopping', 'DM', {}, 'People pick goods and pay.'),
@@ -49,7 +44,7 @@ export const records: SpecRecord[] = [
   record('DM-PAY-UC01', 'use_case', 'Pay by card', 'DM-PAY', { actor: 'Shopper' }),
   record('DM-PAY-UC01-R01', 'requirement', 'A declined card leaves the basket unpaid', 'DM-PAY-UC01'),
 
-  record('NF', 'product', 'Notebook', null, {}, 'A product with no fitness record.'),
+  record('NF', 'product', 'Notebook', null, {}, 'A second product, with one domain.'),
   record('NF-NOTE', 'domain', 'Notes', 'NF', {}, 'People write notes.'),
 ];
 

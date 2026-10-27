@@ -9,7 +9,7 @@ const records = (problems: Problem[]) => problems.map((p) => p.record).sort();
 /** One obligation kind's line in a domain's coverage: total, designed, built and proved. */
 const line = (kind: string, total: number, designed: number, built: number, proved: number) => expect.objectContaining({ kind, total, designed, built, proved });
 
-const FIXTURES = ['good', 'broken-links', 'broken-tests', 'broken-parse', 'broken-structure', 'configured', 'unfinished', 'fitness'];
+const FIXTURES = ['good', 'broken-links', 'broken-tests', 'broken-parse', 'broken-structure', 'configured', 'unfinished'];
 const WARNINGS = ['unsatisfied', 'unproved', 'use-case-without-requirements', 'component-file-missing', 'rule-not-applied', 'use-case-without-flow', 'interaction-requirement-fulfills-nothing', 'test-type-mismatch', 'component-satisfies-nothing', 'test-proves-nothing'];
 const workspaces: Record<string, Workspace> = {};
 beforeAll(async () => {
@@ -108,7 +108,7 @@ describe('product configuration', () => {
   });
 });
 
-describe('coverage, meta-model and fitness', () => {
+describe('coverage and meta-model', () => {
   it('LA-TRC-T02 Coverage counts designed, built and proved separately', () => {
     expect(workspaces.unfinished.coverage).toMatchObject([
       {
@@ -163,17 +163,6 @@ describe('coverage, meta-model and fitness', () => {
     for (const name of ['good', 'configured']) {
       expect(workspaces[name].problems.filter((p) => p.check.startsWith('meta-'))).toEqual([]);
     }
-  });
-
-  it("LA-CHK-T09 A fitness record's date must be a real YYYY-MM-DD date and its score 1 to 5", () => {
-    const ws = workspaces.fitness;
-    expect(records(ofCheck(ws, 'bad-fitness-date'))).toEqual(['FX-FIT02', 'FX-FIT05']);
-    expect(records(ofCheck(ws, 'bad-fitness-score'))).toEqual(['FX-FIT03', 'FX-FIT04']);
-    expect(records(ofCheck(ws, 'missing-required-field'))).toEqual(['FX-FIT06']);
-    for (const p of ws.problems) expect(p.severity).toBe('error');
-    expect(ws.problems.some((p) => p.record === 'FX-FIT01')).toBe(false);
-    // A leap day is a real date.
-    expect(ws.problems.some((p) => p.record === 'FX-FIT06' && p.check === 'bad-fitness-date')).toBe(false);
   });
 });
 
@@ -240,7 +229,7 @@ describe('structural checks', () => {
     // Every kind of work to do, and the main kinds of breakage, appear in the fixtures. The structural
     // warnings (rule-not-applied and the rest) have their own fixtures in structure.test.ts and purpose.test.ts.
     const structural = ['rule-not-applied', 'use-case-without-flow', 'interaction-requirement-fulfills-nothing', 'test-type-mismatch', 'component-satisfies-nothing', 'test-proves-nothing'];
-    for (const check of [...WARNINGS.filter((w) => !structural.includes(w)), 'parse-error', 'duplicate-id', 'dangling-link', 'meta-duplicate-kind', 'bad-fitness-score']) {
+    for (const check of [...WARNINGS.filter((w) => !structural.includes(w)), 'parse-error', 'duplicate-id', 'dangling-link', 'meta-duplicate-kind']) {
       expect(seen).toContain(check);
     }
   });

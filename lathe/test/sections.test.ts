@@ -1,5 +1,5 @@
 // Folders (sections): each kind's folder within its stage, and the folders a product's specs are read in,
-// as S2 lays out its specs (FORMAT.md section 15).
+// as S2 lays out its specs (FORMAT.md section 14).
 import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -45,7 +45,7 @@ describe('folders', () => {
     ]);
     expect(ws.sections[0].description).toContain('patterns');
     expect(Object.fromEntries(ws.kinds.map((k) => [k.kind, k.section]))).toMatchObject({
-      product: '', domain: '', question: '', fitness: '',
+      product: '', domain: '', question: '',
       aggregate: 'domain-model', domain_rule: 'domain-model',
       capability: 'use-cases', use_case: 'use-cases', requirement: 'use-cases',
       flow: 'interaction-design', flow_step: 'interaction-design', view: 'interaction-design', endpoint: 'interaction-design', interaction_requirement: 'interaction-design',

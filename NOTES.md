@@ -30,7 +30,7 @@ The definitions and relationships now live as data in [model/terms.csv](model/te
   |---|---|---|
   | Aggregate | A cluster of things with its own identity and rules, changed as one unit | Person, Tool |
   | Entity | A thing with identity that lives inside an aggregate | Experience (inside Person) |
-  | Value object | A description with no identity of its own; defined only by its contents | Value, Purpose, Condition and Fitness (inside Tool) |
+  | Value object | A description with no identity of its own; defined only by its contents | Value, Purpose and Condition (inside Tool) |
   | Domain event | An unchangeable record that something happened; named in the past tense | Action (e.g. "PersonActed"), Occurrence |
 - Where events come from:
   - Within the domain, an event is always raised by an aggregate, when something it is responsible for changes. Usually something prompts it (a request, another event, time passing), but the aggregate decides and records what happened.
@@ -54,13 +54,7 @@ The definitions and relationships now live as data in [model/terms.csv](model/te
     - **Purpose** = what the tool is *for*; the intended outcome, set by the person it serves. Stays fairly stable. (A knife is for cutting food.)
     - **Condition** = what the tool can actually do *right now*. Changes with use, wear and improvement. (This knife is dull.)
     - The **gap between them** is how well the tool serves its purpose. Improving a tool = closing that gap.
-  - **Decided: the gap is called Fitness** (from "fitness for purpose"; it also echoes fitness in evolution, where better-fitting things survive and improve).
-    - ~~Lives in the Person aggregate~~. **Revised: Fitness lives in the Tool aggregate, assigned by the Person it serves**, the same way Purpose is. Purpose, Condition and Fitness then sit side by side in Tool.
-    - It's still a judgment that belongs to a person: assigning it is an **Action** by that Person, which the Tool reacts to by updating its Fitness. A tool never assigns its own fitness.
-    - The evidence for that judgment is the person's **Experiences** of using the tool.
-    - So the full loop is: an Action changes a Tool's Condition → the person it serves has Experiences using it → they act to assign the Tool a new Fitness.
-    - Caveat: this works cleanly while a Tool serves one Person. If a tool serves many people, each would assign their own Fitness, and Tool would hold one per person. Revisit then.
-    - **Implication for Lathe:** a tool can't improve itself in a vacuum. Self-improvement needs a feedback loop from the Experiences of the people it serves.
+    - Only the person a tool serves can tell how wide that gap is, from their **Experiences** of using it. So a tool can't improve itself in a vacuum: self-improvement needs a feedback loop from the Experiences of the people it serves.
   - This is the heart of Lathe: improving a tool is an Action whose effect is a better Condition, and a Tool acting on a Tool (a lathe making a better lathe) is recursive self-improvement.
 - Revised foundation statement (draft 2): People want to have positive experiences, and to act in ways that lead to positive experiences for others and for themselves.
 
@@ -109,12 +103,11 @@ Jared asked for every recommendation to be applied, so these were decided on his
 
 | Question | Decision |
 | --- | --- |
-| LA-Q01 How is Fitness measured? | Both: Jared records his judgment as `fitness` records (date, score 1 to 5, the experiences behind it); coverage, open questions and checks are shown as evidence beside it, never as the score. Lathe never writes a fitness record. |
 | LA-Q02 When do specs move into product repos? | Already done by packaging: each product keeps its specs in its own repo with `lathe.config.json`; one Lathe instance reads one repo; the meta-model travels with the package as defaults plus product extensions. Lathe's repo keeps Lathe's spec and the Tool Library example. |
 | LA-Q03 Package name | `@jaredrob/lathe`. Publishing waits until the format settles and needs Jared's approval. |
 | LA-Q04 CI action or plugin first? | The Claude Code plugin first. |
 | LA-MOD-Q01 Diagrams and records | Separate: CSV diagrams are brainstorm canvases; a specified domain is drawn from its records (the Graph tab). No merge. |
-| LA-MOD-Q02 Status on records | No status field. A record in the specs is in force, uncertainty is an open question, git keeps history (FORMAT.md section 8). |
+| LA-MOD-Q02 Status on records | No status field. A record in the specs is in force, uncertainty is an open question, git keeps history (FORMAT.md section 7). |
 | LA-CHK-Q01 Edit the meta-model in the app | No. It changes in files, reviewed like records. |
 | LA-CHK-Q02 Do planned components count? | Report designed, built and proved separately. |
 | LA-CHK-Q03 Check the meta-model? | Yes, with error checks for consistency. |

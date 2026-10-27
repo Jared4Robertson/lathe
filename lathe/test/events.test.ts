@@ -1,4 +1,4 @@
-// Domain events (FORMAT.md section 18): the domain_event kind and its relations, the Fields table read into
+// Domain events (FORMAT.md section 17): the domain_event kind and its relations, the Fields table read into
 // entityFields as for entities, and the checks entity-fields, event-unheard, event-tense and
 // raised-by-outside-aggregate.
 import path from 'node:path';

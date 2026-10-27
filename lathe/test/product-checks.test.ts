@@ -1,4 +1,4 @@
-// A product's own checks: a `checks` folder in lathe.config.json, run after Lathe's checks (FORMAT.md section 13).
+// A product's own checks: a `checks` folder in lathe.config.json, run after Lathe's checks (FORMAT.md section 12).
 import { readdirSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';

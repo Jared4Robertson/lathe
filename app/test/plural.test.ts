@@ -7,7 +7,7 @@ describe('plural', () => {
     expect(plural('Use case')).toBe('Use cases');
     expect(plural('UC requirement')).toBe('UC requirements');
     expect(plural('Open question')).toBe('Open questions');
-    expect(plural('Fitness')).toBe('Fitness');
+    expect(plural('Status')).toBe('Status');
     expect(plural('Box')).toBe('Boxes');
     expect(plural('Key')).toBe('Keys');
   });

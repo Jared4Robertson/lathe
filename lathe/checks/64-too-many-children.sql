@@ -3,9 +3,9 @@
 -- The setting is read from `lathe.config.json` (default 15) through the settings table. A parent with that
 -- many children of one kind is missing a level between them, such as a capability, a layer or another
 -- aggregate. Children are counted per kind. Tests are exempt: the app groups them by what they prove
--- (FORMAT.md section 15), so they are never shown as one list. The steps of a flow or a technical flow are
--- counted per path (FORMAT.md sections 14 and 22), since each path reads as its own list, and requirements,
--- interaction requirements, pattern rules and standard rules per `group` (FORMAT.md section 23), since each
+-- (FORMAT.md section 14), so they are never shown as one list. The steps of a flow or a technical flow are
+-- counted per path (FORMAT.md sections 13 and 21), since each path reads as its own list, and requirements,
+-- interaction requirements, pattern rules and standard rules per `group` (FORMAT.md section 22), since each
 -- group reads under its own heading; the ungrouped ones are one list. Groups are compared trimmed and in any
 -- letter case. A child whose parent does not exist is only unknown-parent. Add a level, or a group, and move
 -- the children into it.

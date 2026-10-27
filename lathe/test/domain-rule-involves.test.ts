@@ -1,4 +1,4 @@
-// Domain rules across aggregates (FORMAT.md section 17): the involves relation from a domain rule to an
+// Domain rules across aggregates (FORMAT.md section 16): the involves relation from a domain rule to an
 // aggregate, the domain-rule-involves check, and the record format's words for them.
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
@@ -31,7 +31,7 @@ describe('the involves relation', () => {
     ]);
     expect(ws.kinds.find((k) => k.kind === 'domain_rule')?.description).toContain('naming with `involves` the two or more aggregates');
     const format = readFileSync(path.join(here, '..', 'FORMAT.md'), 'utf8');
-    const section = format.split(/^## /m).find((s) => s.startsWith('17. Entities')) ?? '';
+    const section = format.split(/^## /m).find((s) => s.startsWith('16. Entities')) ?? '';
     expect(section).toContain('sits under the domain and names with `involves` the two or more aggregates of that domain it ties together');
     expect(section).toContain("a rule across domains is a domain event's job");
     expect(section).toContain('`domain-rule-involves`');

@@ -1,4 +1,4 @@
-// Groups (FORMAT.md section 23) and waivers by setting value (section 11). Fixture: groups-waivers, with
+// Groups (FORMAT.md section 22) and waivers by setting value (section 10). Fixture: groups-waivers, with
 // structure.maxChildren 3. Pattern GW-PAT-ACT (settings scope audit) has R01 (no condition), R02 (applies when
 // scope is not single), R03 (applies when scope is many), R04 (an unknown setting) and R05 (malformed). Its
 // followers: GW-A (one use case, scope single), GW-B (single and Many), GW-C (the domain itself, scope single),

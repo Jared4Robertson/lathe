@@ -1,6 +1,6 @@
 -- Every section a kind names in `kinds.csv` is a folder that `sections.csv` lists.
 --
--- A kind in an unknown folder is shown in no folder of the app (FORMAT.md section 15). Fix the kind's
+-- A kind in an unknown folder is shown in no folder of the app (FORMAT.md section 14). Fix the kind's
 -- `section`, or add the folder to the product's `sections.csv`.
 --
 -- severity: error

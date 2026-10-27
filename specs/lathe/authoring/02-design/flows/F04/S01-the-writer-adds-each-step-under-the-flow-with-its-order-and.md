@@ -8,4 +8,4 @@ links:
   uses: [LA-AUT-C18, LA-AUT-C22]
   fulfills: [LA-AUT-UC06-R01]
 ---
-The owner, or an agent, writes one `flow_step` record per step under the flow, following FORMAT.md section 14: its order, what happens, what it `uses` and what it `fulfills`.
+The owner, or an agent, writes one `flow_step` record per step under the flow, following FORMAT.md section 13: its order, what happens, what it `uses` and what it `fulfills`.

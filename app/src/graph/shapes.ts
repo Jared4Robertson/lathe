@@ -21,7 +21,7 @@ export type Shape =
   | 'box' | 'product' | 'hexagon' | 'folder' | 'slice'
   | 'double' | 'octagon' | 'flag' | 'stadium' | 'page' | 'stack'
   | 'chevron-bar' | 'chevron' | 'window' | 'port' | 'stripes' | 'component' | 'shield'
-  | 'diamond' | 'circle';
+  | 'diamond';
 
 /** A small glyph a kind adds before its kind and ID line: a shape shared with another kind, told apart. */
 export type Mark = 'gear' | 'ruler' | 'port' | 'marker';
@@ -63,7 +63,6 @@ export const SHAPES: Readonly<Record<Shape, ShapeSpec>> = {
   component: { name: 'a box with component tabs', kinds: 'Component', room: { l: 4, r: 0, t: 0, b: 0 }, draw: 'clipped' },
   shield: { name: 'a shield', kinds: 'Test', room: { l: 0, r: 0, t: 0, b: 6 }, draw: 'clipped' },
   diamond: { name: 'a diamond', kinds: 'Open question', room: { l: 14, r: 14, t: 2, b: 2 }, draw: 'clipped' },
-  circle: { name: 'a circle', kinds: 'Fitness', room: { l: 14, r: 14, t: 0, b: 0 }, draw: 'radius' },
 };
 
 /** What each mark tells apart, for the key. */
@@ -99,7 +98,6 @@ const KIND_SHAPES: Readonly<Record<string, KindShape>> = {
   test: { shape: 'shield' },
   design_flow: { shape: 'chevron-bar', mark: 'gear' },
   question: { shape: 'diamond' },
-  fitness: { shape: 'circle' },
   standard: { shape: 'stack', mark: 'ruler' },
   standard_rule: { shape: 'octagon', mark: 'ruler' },
 };
@@ -190,7 +188,6 @@ function radiiOf(shape: Shape, w: number, h: number, scale: number): [number, nu
   const r = (px: number) => Math.min(px * scale, w / 2, h / 2);
   if (shape === 'product') return [r(18), r(18)];
   if (shape === 'stadium') return [r(24), r(24)];
-  if (shape === 'circle') return [w / 2, h / 2];
   return null;
 }
 
