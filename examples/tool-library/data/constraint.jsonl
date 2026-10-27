@@ -1,0 +1,5 @@
+{"id":"TL-VO01-C01","title":"A name is trimmed and not blank","value_object_id":"TL-VO01","statement":"A name MUST be trimmed of surrounding spaces and MUST NOT be blank."}
+{"id":"TL-VO02-C01","title":"An email address looks like an address","value_object_id":"TL-VO02","statement":"An email address MUST look like `x@y.z`, with no spaces."}
+{"id":"TL-VO02-C02","title":"An email address is kept trimmed and in lower case","value_object_id":"TL-VO02","statement":"An email address MUST be trimmed and kept in lower case, so two spellings of one address, differing only in case or surrounding spaces, are the same address."}
+{"id":"TL-VO03-C01","title":"A condition is good or needs repair","value_object_id":"TL-VO03","statement":"A condition MUST be either `good` or `needs_repair`. The same two values are used for a tool and for a return."}
+{"id":"TL-VO04-C01","title":"A note is trimmed and not blank","value_object_id":"TL-VO04","statement":"A note MUST be trimmed and MUST NOT be blank. Where a note is optional, a blank one is none."}

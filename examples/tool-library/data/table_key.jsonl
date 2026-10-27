@@ -1,0 +1,7 @@
+{"table_id":"TL-LEND-EN01-TB","position":1,"type":"primary","columns":["id"]}
+{"table_id":"TL-LEND-EN01-TB","position":2,"type":"unique","columns":["email"],"name":"members_email","invariant_id":"TL-LEND-INV01"}
+{"table_id":"TL-LEND-EN02-TB","position":1,"type":"primary","columns":["id"]}
+{"table_id":"TL-LEND-EN04-TB","position":1,"type":"primary","columns":["id"]}
+{"table_id":"TL-LEND-EN04-TB","position":2,"type":"foreign","columns":["member_id"],"target_table_id":"TL-LEND-EN01-TB"}
+{"table_id":"TL-LEND-EN04-TB","position":3,"type":"foreign","columns":["tool_id"],"target_table_id":"TL-LEND-EN02-TB"}
+{"table_id":"TL-LEND-EN04-TB","position":4,"type":"unique","columns":["tool_id"],"name":"loans_one_active_per_tool","invariant_id":"TL-LEND-INV03","condition":"returned_at IS NULL"}

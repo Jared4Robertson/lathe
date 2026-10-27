@@ -1,0 +1,4 @@
+{"id":"TL-VO01","title":"Name","description":"What a member or a tool is called."}
+{"id":"TL-VO02","title":"Email address","description":"How the library contacts a member."}
+{"id":"TL-VO03","title":"Condition","description":"Whether a tool is fit to lend."}
+{"id":"TL-VO04","title":"Note","description":"What a librarian wrote about a tool."}

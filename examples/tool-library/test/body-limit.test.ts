@@ -1,5 +1,5 @@
-// TL-LEND-T30: the 64 KB body limit (TL-LEND-E06-R03), over HTTP and over a raw socket.
-// The test name starts with its test record ID (specs/tool-library/lending/02-design/tests/T30.md).
+// TL-LEND-EP06-R03-T01: the 64 KB body limit (TL-LEND-EP06-R03), over HTTP and over a raw socket.
+// The test name starts with its test record ID (examples/tool-library/data/).
 import { connect } from 'node:net';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { MAX_BODY_BYTES } from '../src/router.ts';
@@ -85,8 +85,8 @@ function sendEndlessBody(path: string): Promise<{ response: string; written: num
   });
 }
 
-describe('TL-LEND-E06 Report damage', () => {
-  it('TL-LEND-T30 A damage report over 64 KB is refused with 413', async () => {
+describe('TL-LEND-EP06 Report damage to a tool', () => {
+  it('TL-LEND-EP06-R03-T01 A damage report over 64 KB is refused with 413', async () => {
     // Exactly at the limit: read, parsed and saved.
     const t = await tool();
     const atLimit = await post(`/tools/${t}/damage`, damageBody(MAX_BODY_BYTES));

@@ -1,7 +1,6 @@
-{"id":"TL-LEND-EV01","title":"Member registered","aggregate_id":"TL-LEND-A1","description":"A librarian registered a new member, who can now borrow tools."}
-{"id":"TL-LEND-EV02","title":"Tool added","aggregate_id":"TL-LEND-A2","description":"A librarian added a tool to the catalog, in good condition and ready to lend."}
-{"id":"TL-LEND-EV03","title":"Damage reported","aggregate_id":"TL-LEND-A2","description":"A librarian marked a tool as needing repair outside a return, which takes it out of lending and leaves any loan on it open."}
-{"id":"TL-LEND-EV04","title":"Tool repaired","aggregate_id":"TL-LEND-A2","description":"A librarian marked a damaged tool repaired, so it is in good condition and can be lent again."}
-{"id":"TL-LEND-EV05","title":"Loan opened","aggregate_id":"TL-LEND-A3","description":"A member borrowed a tool, and the loan runs until its due date."}
-{"id":"TL-LEND-EV06","title":"Tool returned","aggregate_id":"TL-LEND-A3","description":"A librarian recorded a tool's return, which closes its loan and says what condition the tool came back in."}
-{"id":"TL-LEND-EV07","title":"Loan became overdue","aggregate_id":"TL-LEND-A3","description":"A loan not yet returned became overdue, raised by time passing rather than by anyone's action, at 00:00 on the day after its due date in the library's time zone."}
+{"id":"TL-LEND-EV01","title":"Member registered","aggregate_id":"TL-LEND-A1","published":false,"description":"A librarian registered a new member, who can now borrow tools."}
+{"id":"TL-LEND-EV02","title":"Tool added","aggregate_id":"TL-LEND-A2","published":false,"description":"A librarian added a tool to the catalog, in good condition and ready to lend."}
+{"id":"TL-LEND-EV03","title":"Damage reported","aggregate_id":"TL-LEND-A2","published":false,"description":"A tool was marked as needing repair, by a librarian or when it was returned needing repair. It takes the tool out of lending and leaves any loan on it open."}
+{"id":"TL-LEND-EV04","title":"Tool repaired","aggregate_id":"TL-LEND-A2","published":false,"description":"A librarian marked a damaged tool repaired, so it is in good condition and can be lent again."}
+{"id":"TL-LEND-EV05","title":"Loan opened","aggregate_id":"TL-LEND-A3","published":false,"description":"A member borrowed a tool, and the loan runs until its due date."}
+{"id":"TL-LEND-EV06","title":"Tool returned","aggregate_id":"TL-LEND-A3","published":false,"description":"A librarian recorded a tool's return, which closes its loan and says what condition the tool came back in."}

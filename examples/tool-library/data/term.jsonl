@@ -1,0 +1,11 @@
+{"id":"TL-LEND-TM01","title":"Member","domain_id":"TL-LEND","meaning":"A person registered to borrow tools."}
+{"id":"TL-LEND-TM02","title":"Librarian","domain_id":"TL-LEND","meaning":"A volunteer who runs the library: registers members, adds tools, takes returns and records repairs."}
+{"id":"TL-LEND-TM03","title":"Tool","domain_id":"TL-LEND","meaning":"One physical item in the catalog, such as a particular drill."}
+{"id":"TL-LEND-TM04","title":"Condition","domain_id":"TL-LEND","meaning":"The state of a tool: `good` or `needs_repair`."}
+{"id":"TL-LEND-TM05","title":"Loan","domain_id":"TL-LEND","meaning":"One member holding one tool from when it is borrowed until it is returned."}
+{"id":"TL-LEND-TM06","title":"Active loan","domain_id":"TL-LEND","meaning":"A loan that has not been returned."}
+{"id":"TL-LEND-TM07","title":"Library time zone","domain_id":"TL-LEND","meaning":"The time zone in which the library counts days. A setting; `America/New_York` unless set."}
+{"id":"TL-LEND-TM08","title":"Due date","domain_id":"TL-LEND","meaning":"The last day of a loan: 14 calendar days after it starts, in the library's time zone."}
+{"id":"TL-LEND-TM09","title":"Overdue","domain_id":"TL-LEND","meaning":"An active loan on any day after its due date, in the library's time zone."}
+{"id":"TL-LEND-TM10","title":"Late","domain_id":"TL-LEND","meaning":"A return made on a day after the loan's due date, in the library's time zone."}
+{"id":"TL-LEND-TM11","title":"Catalog","domain_id":"TL-LEND","meaning":"Every tool the library has, each with its status."}

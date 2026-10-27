@@ -1,0 +1,6 @@
+{"id":"TL-LEND-CMD01-H","title":"MemberService.register","command_id":"TL-LEND-CMD01","file":"src/member-service.ts","description":"Parses the name and email, refuses a taken email and inserts the member, in one transaction."}
+{"id":"TL-LEND-CMD02-H","title":"ToolService.add","command_id":"TL-LEND-CMD02","file":"src/tool-service.ts","description":"Parses the name, trims the description and inserts the tool in good condition."}
+{"id":"TL-LEND-CMD03-H","title":"ToolService.reportDamage","command_id":"TL-LEND-CMD03","file":"src/tool-service.ts","description":"Parses the note and sets the tool to needs repair, leaving any loan alone."}
+{"id":"TL-LEND-CMD04-H","title":"ToolService.markRepaired","command_id":"TL-LEND-CMD04","file":"src/tool-service.ts","description":"Refuses a tool that does not need repair, then sets it to good and clears the note."}
+{"id":"TL-LEND-CMD05-H","title":"LendingService.borrow","command_id":"TL-LEND-CMD05","file":"src/lending-service.ts","description":"Runs the checks in order in one transaction and inserts the loan with its due date."}
+{"id":"TL-LEND-CMD06-H","title":"LendingService.return","command_id":"TL-LEND-CMD06","file":"src/lending-service.ts","description":"Requires a valid condition, refuses a second return, records the return and reports whether it was late."}

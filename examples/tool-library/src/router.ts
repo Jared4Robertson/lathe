@@ -1,7 +1,7 @@
 // The HTTP API: maps routes to services and service errors to HTTP responses.
-// Spec: TL-LEND-C06 (specs/tool-library/lending/02-design/components/03-router-and-server/C06-router.md)
+// Spec: the endpoint handlers TL-LEND-EP01-H to EP07-H (examples/tool-library/data/).
 // Every error response is JSON: { "error": "<code>", "message": "<sentence>" }.
-// Each route's statuses and bodies are its endpoint's interaction requirements (TL-LEND-E0n-R0n).
+// Each route's statuses and bodies are its endpoint's API requirements (TL-LEND-EP0n-R0n).
 // TL-PAT-LIBRARIAN-ACTION-R02: each librarian action answers with the record as the store saved it
 // (the store returns rows with RETURNING *), so what the librarian sees is what is stored.
 import type { IncomingMessage, ServerResponse } from 'node:http';
@@ -19,7 +19,7 @@ interface Route {
   handler: Handler;
 }
 
-// TL-LEND-E06-R03: a body over 64 KB is refused with 413 `body_too_large` before it is parsed,
+// TL-LEND-EP06-H, TL-LEND-EP06-R03: a body over 64 KB is refused with 413 `body_too_large` before it is parsed,
 // for every endpoint. A declared Content-Length over the limit is refused before any byte is read;
 // a chunked or endless body is read only up to the limit, then reading stops and the connection closes.
 export const MAX_BODY_BYTES = 64 * 1024;
@@ -118,27 +118,27 @@ export function createRouter(
   const lending = new LendingService(store, now, settings.timeZone);
 
   const routes: Route[] = [
-    // TL-LEND-E01: R01-R03
+    // TL-LEND-EP01-H: R01-R03
     { method: 'POST', pattern: /^\/members$/, handler: (_p, b) => ({ status: 201, body: members.register(b) }) },
-    // TL-LEND-E02: R01-R02
+    // TL-LEND-EP02-H: R01-R02
     { method: 'POST', pattern: /^\/tools$/, handler: (_p, b) => ({ status: 201, body: tools.add(b) }) },
-    // TL-LEND-E03: R01
+    // TL-LEND-EP03-H: R01
     { method: 'GET', pattern: /^\/tools$/, handler: () => ({ status: 200, body: tools.list() }) },
-    // TL-LEND-E04: R01-R05
+    // TL-LEND-EP04-H: R01-R05
     { method: 'POST', pattern: /^\/loans$/, handler: (_p, b) => ({ status: 201, body: lending.borrow(b) }) },
-    // TL-LEND-E05: R01-R03
+    // TL-LEND-EP05-H: R01-R03
     {
       method: 'POST',
       pattern: /^\/loans\/(\d+)\/return$/,
       handler: ([loanId], b) => ({ status: 200, body: lending.return(loanId, b) }),
     },
-    // TL-LEND-E06: R01-R03
+    // TL-LEND-EP06-H: R01-R03
     {
       method: 'POST',
       pattern: /^\/tools\/(\d+)\/damage$/,
       handler: ([toolId], b) => ({ status: 200, body: tools.reportDamage(toolId, b.note) }),
     },
-    // TL-LEND-E07: R01-R02
+    // TL-LEND-EP07-H: R01-R02
     {
       method: 'POST',
       pattern: /^\/tools\/(\d+)\/repair$/,

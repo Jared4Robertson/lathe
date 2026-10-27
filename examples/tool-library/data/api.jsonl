@@ -1,3 +1,0 @@
-{"id":"TL-LEND-API01","title":"Members","domain_id":"TL-LEND","description":"Registering members, at `/members`."}
-{"id":"TL-LEND-API02","title":"Tools","domain_id":"TL-LEND","description":"The catalog, at `/tools`: adding tools, listing them, and recording damage and repairs."}
-{"id":"TL-LEND-API03","title":"Loans","domain_id":"TL-LEND","description":"Borrowing and returning, at `/loans`."}

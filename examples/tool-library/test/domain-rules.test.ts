@@ -1,8 +1,19 @@
-// Domain rule tests: each proves one domain rule against the services and store.
-// Each test name starts with its test record ID (specs/tool-library/lending/02-design/tests/),
-// except the test for TL-LEND-DR05, which is keyed by the rule it proves, as Client keys its tests.
+// Domain model tests: each proves one constraint, invariant, specification or domain service
+// against the model, the command handlers and an in-memory store.
+// Each test name starts with its test record ID (examples/tool-library/data/).
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_TIME_ZONE, LOAN_DAYS, LendingError, dueDate, isCondition, isOverdue } from '../src/model.ts';
+import {
+  DEFAULT_TIME_ZONE,
+  LOAN_DAYS,
+  LendingError,
+  assertTimeZone,
+  dueDate,
+  isCondition,
+  isOverdue,
+  parseEmail,
+  parseName,
+  parseNote,
+} from '../src/model.ts';
 import { LAST_MINUTE_OF_DUE_DATE, START_DUE_DATE, START_OF_NEXT_DAY, services } from './helpers.ts';
 
 function rejectsWith(fn: () => unknown, code: string): void {
@@ -16,16 +27,54 @@ function rejectsWith(fn: () => unknown, code: string): void {
   throw new Error(`Expected a LendingError with code ${code}`);
 }
 
-describe('Member rules', () => {
-  it('TL-LEND-T01 A second member with the same email is rejected, whatever its case', () => {
+describe('Value objects', () => {
+  it('TL-VO01-C01-T A name is trimmed and not blank', () => {
+    expect(parseName(' Ada Lovelace ')).toBe('Ada Lovelace');
+    for (const value of ['', '   ', undefined, null, 7]) expect(parseName(value)).toBeNull();
+  });
+
+  it('TL-VO02-C01-T An email address looks like an address', () => {
+    expect(parseEmail('ada@example.org')).toBe('ada@example.org');
+    for (const value of ['not-an-email', 'ada@example', '@example.org', 'a da@example.org', '', undefined, 7]) {
+      expect(parseEmail(value)).toBeNull();
+    }
+  });
+
+  it('TL-VO02-C02-T An email address is kept trimmed and in lower case', () => {
+    expect(parseEmail('  Ada@Example.ORG ')).toBe('ada@example.org');
+    expect(parseEmail('ADA@example.org')).toBe(parseEmail('ada@EXAMPLE.org'));
+  });
+
+  it('TL-VO03-C01-T A condition is good or needs repair', () => {
+    const { members, tools, lending, store } = services();
+    expect(isCondition('good')).toBe(true);
+    expect(isCondition('needs_repair')).toBe(true);
+    expect(isCondition('broken')).toBe(false);
+
+    const m = members.register({ name: 'Di', email: 'di@example.org' });
+    const t = tools.add({ name: 'Ladder' });
+    expect(t.condition).toBe('good');
+    const loan = lending.borrow({ memberId: m.id, toolId: t.id });
+    rejectsWith(() => lending.return(loan.id, { condition: 'broken' }), 'invalid_condition');
+    expect(() => store.db.prepare("UPDATE tools SET condition = 'broken' WHERE id = ?").run(t.id)).toThrow();
+  });
+
+  it('TL-VO04-C01-T A note is trimmed and not blank', () => {
+    expect(parseNote(' Chuck wobbles ')).toBe('Chuck wobbles');
+    for (const value of ['', '   ', undefined, null, 7]) expect(parseNote(value)).toBeNull();
+  });
+});
+
+describe('Member', () => {
+  it('TL-LEND-INV01-T A second member with the same email is rejected, whatever its case', () => {
     const { members, store } = services();
     members.register({ name: 'Ada', email: 'ada@example.org' });
     rejectsWith(() => members.register({ name: 'Ada Two', email: 'ADA@example.org ' }), 'email_taken');
-    // The schema backs the rule up even without the service.
+    // The schema backs the invariant up even without the command handler.
     expect(() => store.insertMember('Ada Three', 'ada@example.org', new Date().toISOString())).toThrow();
   });
 
-  it('TL-LEND-T02 A member with 3 active loans cannot borrow a fourth', () => {
+  it('TL-LEND-SP03-T A member with 3 active loans cannot borrow a fourth', () => {
     const { members, tools, lending } = services();
     const m = members.register({ name: 'Bo', email: 'bo@example.org' });
     const ids = [1, 2, 3, 4].map((n) => tools.add({ name: `Tool ${n}` }).id);
@@ -37,7 +86,7 @@ describe('Member rules', () => {
     expect(lending.borrow({ memberId: m.id, toolId: ids[3] }).toolId).toBe(ids[3]);
   });
 
-  it('TL-LEND-T03 A member with an overdue loan cannot borrow', () => {
+  it('TL-LEND-SP02-T A member with an overdue loan cannot borrow', () => {
     const { members, tools, lending, clock } = services();
     const m = members.register({ name: 'Cy', email: 'cy@example.org' });
     const drill = tools.add({ name: 'Drill' });
@@ -59,22 +108,8 @@ describe('Member rules', () => {
   });
 });
 
-describe('Tool rules', () => {
-  it("TL-LEND-T04 A tool's condition is only good or needs repair", () => {
-    const { members, tools, lending, store } = services();
-    expect(isCondition('good')).toBe(true);
-    expect(isCondition('needs_repair')).toBe(true);
-    expect(isCondition('broken')).toBe(false);
-
-    const m = members.register({ name: 'Di', email: 'di@example.org' });
-    const t = tools.add({ name: 'Ladder' });
-    expect(t.condition).toBe('good');
-    const loan = lending.borrow({ memberId: m.id, toolId: t.id });
-    rejectsWith(() => lending.return(loan.id, { condition: 'broken' }), 'invalid_condition');
-    expect(() => store.db.prepare("UPDATE tools SET condition = 'broken' WHERE id = ?").run(t.id)).toThrow();
-  });
-
-  it('TL-LEND-DR05 A tool that needs repair cannot be lent', () => {
+describe('Tool', () => {
+  it('TL-LEND-SP04-T A tool that needs repair cannot be lent', () => {
     const { members, tools, lending } = services();
     const m = members.register({ name: 'Ed', email: 'ed@example.org' });
     const t = tools.add({ name: 'Sander' });
@@ -82,7 +117,7 @@ describe('Tool rules', () => {
     rejectsWith(() => lending.borrow({ memberId: m.id, toolId: t.id }), 'tool_needs_repair');
   });
 
-  it('TL-LEND-T27 A good return does not clear damage reported during the loan', () => {
+  it('TL-LEND-INV02-T A good return does not clear damage reported during the loan', () => {
     const { members, tools, lending } = services();
     const m = members.register({ name: 'Kai', email: 'kai@example.org' });
     const t = tools.add({ name: 'Chainsaw' });
@@ -103,14 +138,14 @@ describe('Tool rules', () => {
     expect(lending.borrow({ memberId: m.id, toolId: t.id }).toolId).toBe(t.id);
   });
 
-  it('TL-LEND-T06 A tool on loan cannot be lent again until it is returned', () => {
+  it('TL-LEND-INV03-T A tool on loan cannot be lent again until it is returned', () => {
     const { members, tools, lending, store } = services();
     const a = members.register({ name: 'Fay', email: 'fay@example.org' });
     const b = members.register({ name: 'Gus', email: 'gus@example.org' });
     const t = tools.add({ name: 'Wheelbarrow' });
     const loan = lending.borrow({ memberId: a.id, toolId: t.id });
     rejectsWith(() => lending.borrow({ memberId: b.id, toolId: t.id }), 'tool_on_loan');
-    // The schema backs the rule up even without the service.
+    // The schema backs the invariant up even without the command handler.
     expect(() => store.insertLoan(b.id, t.id, new Date().toISOString(), START_DUE_DATE)).toThrow();
 
     lending.return(loan.id, { condition: 'good' });
@@ -118,8 +153,8 @@ describe('Tool rules', () => {
   });
 });
 
-describe('Loan rules', () => {
-  it("TL-LEND-T07 A loan is due 14 calendar days after it starts, in the library's time zone", () => {
+describe('Loan', () => {
+  it("TL-LEND-INV04-T A loan is due 14 calendar days after it starts, in the library's time zone", () => {
     const { members, tools, lending, clock, store } = services();
     const m = members.register({ name: 'Hal', email: 'hal@example.org' });
     const t = tools.add({ name: 'Hedge trimmer' });
@@ -128,6 +163,17 @@ describe('Loan rules', () => {
     expect(loan.dueDate).toBe(START_DUE_DATE);
     expect(LOAN_DAYS).toBe(14);
 
+    // In another library time zone, the loan is due on that zone's date.
+    const auckland = services('Pacific/Auckland');
+    const a = auckland.members.register({ name: 'Hana', email: 'hana@example.org' });
+    const at = auckland.tools.add({ name: 'Mower' });
+    auckland.clock.set('2026-03-02T12:00:00.000Z'); // 01:00 on 3 March in Auckland, 07:00 on 2 March in New York.
+    expect(auckland.lending.borrow({ memberId: a.id, toolId: at.id }).dueDate).toBe('2026-03-17');
+    // The store accepts only a date as the due date.
+    expect(() => store.insertLoan(m.id, tools.add({ name: 'Rake' }).id, clock.now().toISOString(), '2026-03-16T10:00:00Z')).toThrow();
+  });
+
+  it("TL-LEND-DS01-T01 The library calendar counts days in the library's time zone", () => {
     const ny = DEFAULT_TIME_ZONE;
     expect(ny).toBe('America/New_York');
     // Across a year end.
@@ -136,17 +182,12 @@ describe('Loan rules', () => {
     expect(dueDate(new Date('2026-03-03T04:30:00Z'), ny)).toBe('2026-03-16');
     // The time zone is a setting: the same instant is 3 March in Auckland.
     expect(dueDate(new Date('2026-03-03T04:30:00Z'), 'Pacific/Auckland')).toBe('2026-03-17');
-    const auckland = services('Pacific/Auckland');
-    const a = auckland.members.register({ name: 'Hana', email: 'hana@example.org' });
-    const at = auckland.tools.add({ name: 'Mower' });
-    auckland.clock.set('2026-03-02T12:00:00.000Z'); // 01:00 on 3 March in Auckland, 07:00 on 2 March in New York.
-    expect(auckland.lending.borrow({ memberId: a.id, toolId: at.id }).dueDate).toBe('2026-03-17');
-    // An unknown time zone is refused, and the store accepts only a date as the due date.
+    // An unknown time zone is refused, by the calendar and so by the lending service.
+    expect(() => assertTimeZone('Mars/Olympus_Mons')).toThrow(RangeError);
     expect(() => services('Mars/Olympus_Mons')).toThrow(RangeError);
-    expect(() => store.insertLoan(m.id, tools.add({ name: 'Rake' }).id, clock.now().toISOString(), '2026-03-16T10:00:00Z')).toThrow();
   });
 
-  it("TL-LEND-T08 A loan is overdue only while it is active after its due date, in the library's time zone", () => {
+  it("TL-LEND-SP01-T A loan is overdue only while it is active after its due date, in the library's time zone", () => {
     const ny = DEFAULT_TIME_ZONE;
     const active = { dueDate: START_DUE_DATE, returnedAt: null };
     // Still not overdue at 23:59 on the due date in New York, though UTC is on the next day.
@@ -164,7 +205,7 @@ describe('Loan rules', () => {
     expect(isOverdue({ dueDate: START_DUE_DATE, returnedAt: '2026-03-20T00:00:00.000Z' }, new Date('2026-04-01T12:00:00Z'), ny)).toBe(false);
   });
 
-  it('TL-LEND-T09 A returned loan cannot be returned again', () => {
+  it('TL-LEND-INV05-T A returned loan cannot be returned again', () => {
     const { members, tools, lending } = services();
     const m = members.register({ name: 'Ivy', email: 'ivy@example.org' });
     const t = tools.add({ name: 'Pressure washer' });
@@ -173,7 +214,7 @@ describe('Loan rules', () => {
     rejectsWith(() => lending.return(loan.id, { condition: 'needs_repair' }), 'already_returned');
   });
 
-  it("TL-LEND-T10 A return records the tool's condition on the loan", () => {
+  it("TL-LEND-INV06-T A return records the tool's condition on the loan", () => {
     const { members, tools, lending, clock } = services();
     const m = members.register({ name: 'Jo', email: 'jo@example.org' });
     const t = tools.add({ name: 'Tile cutter' });
