@@ -329,7 +329,7 @@ A UC requirement stays one when it says what the system does for its actor, prov
 | UC15-R09, R12 | | unchanged |
 | UC16-R01, R02 | | unchanged |
 
-**New (4):**
+**New (5):**
 
 | ID | Title | Statement | Source |
 | --- | --- | --- | --- |
@@ -337,6 +337,7 @@ A UC requirement stays one when it says what the system does for its actor, prov
 | UC11-R05 | The page reaches the shell only through window.latheDesktop | DR29's statement. | DR29 |
 | UC11-R06 | Links that leave the app open in the system browser | DR30's statement. | DR30 |
 | UC15-R15 | macOS keeps no window state for Lathe | DR40's statement. | DR40 |
+| UC15-R16 | A record action names only a record ID, and the shell finds its data file | DR38's statement. | DR38 |
 
 **Moved (63)** to view requirements, listed under Views and view requirements: UC04-R01 to R07, UC05-R01 to R04, UC06-R01 to R03, UC07-R01 to R07, UC08-R01 to R10, UC09-R01 to R11, UC10-R01 to R04, UC11-R03, UC13-R01, R02, R04, UC14-R01 to R07, UC15-R01, R04, R05, R06, R10, R11.
 
@@ -457,7 +458,7 @@ Each step invokes at most one command or query and happens in at most one view. 
 | UC15-FL-S05 | main | The Dock badge counts the errors of the window in front | `LA-CHK-QRY03` (to resolve) | LA-V71 | | F05 step 3 |
 | UC15-FL-S06 | main | The Dock menu opens another folder and lists the recent ones | QRY06 | LA-V71 | | UC15-R04 |
 | UC15-FL-S07 | main | About Lathe shows the versions, and Settings… opens Appearance | | LA-V70 | | UC15's goal |
-| UC15-FL-S08 | main | From a record they reveal its data file in Finder, open it in the editor or copy its ID | Authoring's record action command (to resolve, `LA-AUT-UC15`) | LA-V03 | | UC15's goal |
+| UC15-FL-S08 | main | From a record they reveal its data file in Finder, open it in the editor or copy its ID; the shell takes only the ID and finds the file itself | Authoring's QRY05, which finds the file (to resolve, la-aut.md) | LA-V03 | UC15-R16 | UC15's goal; DR38 |
 | UC15-FL-S09 | main | Opening Lathe again, or a folder from Finder, goes to the running app | CMD10 | | UC15-R09 | UC15-R09 |
 | UC15-FL-S10 | main | A run that was killed leaves macOS nothing to reopen | | | UC15-R15 | DR40 |
 | UC16-FL-S01 | main | An Agent calls the plugin's MCP tools, or the Owner runs `lathe add` | CMD18 | | | F07 step 1 |
@@ -595,7 +596,7 @@ Each record names one file. Technical kinds with no code are left out and show a
 | VO65-VT | Value type | VO65 | desktop/src/chrome.ts | `Chrome`, `parseChrome`, `parseHexColor` | C50 |
 | SP01-PR | Predicate | SP01 | desktop/src/folders.ts | `checkFolder` | C41 |
 | SP02-PR | Predicate | SP02 | desktop/src/devSource.ts | `chooseDevSource`, `ROOT_HEADER`; also `freePort`, which keeps INV06 | C44 |
-| RM01-PJ | Projection | RM01 | lathe/src/index.ts | `readWorkspace`: opens the store afresh, fills the file facts, runs Lathe's checks then the product's on four connections and the coverage queries side by side; `buildReference`'s kept answer. Its shape is `Workspace` in `lathe/src/types.ts`. | C01, C04, C02 |
+| RM01-PJ | Projection | RM01 | lathe/src/index.ts | `readWorkspace`: opens the store afresh, gives each record its part rows (`readRecords`), fills the file facts, runs Lathe's checks then the product's on four connections and the coverage queries side by side; `buildReference`'s kept answer. Its shape is `Workspace` in `lathe/src/types.ts`. | C01, C04, C02 |
 | CMD01-H | Command handler | CMD01 | app/src/shell/prefs.ts | `usePanelSize`'s setter, within the limits | C10, C19 |
 | CMD02-H | Command handler | CMD02 | app/src/App.tsx | `toggleNav`, and the side bar, view and full screen commands the shell registers | C13, C19 |
 | CMD03-H … CMD09-H | Command handler (7) | CMD03 … CMD09 | app/src/theme/ThemeProvider.tsx | `choose`, `setMode`, `duplicate`, `importFile`, `update`, `reset`, `remove` | C23 |
@@ -784,6 +785,7 @@ None at an allowed level (database, api or e2e-api). PO01 and PO03 are seen in t
 | UC15-R09-T01 | manual | T128 step 6. Notes: T124 routes a second launch at unit level |
 | UC15-R12-T01 | manual | T128 step 8 |
 | UC15-R15-T01 | manual | T128 step 9. Notes: T127 (`desktop/test/persistence.test.ts`) checks the defaults at unit level |
+| UC15-R16-T01 | manual | T128 step 5. Notes: `LA-AUT-T118`'s part (`desktop/test/records.test.ts`) checks the refusals of paths, unknown actions and malformed IDs at unit level |
 | UC16-R01-T01 | api, app/test/server.test.ts | T155 |
 | UC16-R02-T01 | api, app/test/server.test.ts | T157 |
 
@@ -937,9 +939,9 @@ Given, when and then come from the source test. la-exp.md writes four of these I
 | Term | 12 (all new) | Constraint test | 5 |
 | Capability | 4 | Invariant test | 14 |
 | Use case | 16 | Specification test | 2 |
-| UC requirement | 26 (4 new) | Policy test | 0 |
+| UC requirement | 27 (5 new) | Policy test | 0 |
 | Flow | 16 | Domain service test | 5 |
-| Flow step | 92 | Use case test | 31 |
+| Flow step | 92 | Use case test | 32 |
 | View | 11 (all new) | View test | 117 |
 | View requirement | 76 | Endpoint test | 5 |
 | Endpoint | 2 | Flow test | 4 |
@@ -947,14 +949,14 @@ Given, when and then come from the source test. la-exp.md writes four of these I
 | Integration | 1 (new) | Pattern rule test | 24 |
 | Pattern, rules | 2, 24 | Standard, rules | 1, 3 |
 
-207 tests in all, every one from an old test: 203 from Platform's own 159, and 4 from parts of other domains' old tests (`LA-AUT-T54`, `T120`, `LA-EXP-T48`, `T133`). 189 are automated and 18 manual. None is new.
+208 tests in all, every one from an old test: 204 from Platform's own 159, and 4 from parts of other domains' old tests (`LA-AUT-T54`, `T120`, `LA-EXP-T48`, `T133`). 189 are automated and 19 manual. None is new.
 
 ## Judgment calls
 
 1. **The Workspace is a read model, not an aggregate.** Nothing changes it: it is what one load of the data files gives. RM01 is filled by its projection (`readWorkspace`) from every product's data, which are other domains' aggregates, so it depends on their published events rather than reading them. Its two rules were promises to the code that loads it: DR01 becomes UC01-R04 and DR02 merges into UC01-R03, which already said it.
 2. **EV06 Data written is new and published.** A write's tables and files changed (EN11's derived fields) are what it tells every reader; Authoring's Record changed (`LA-AUT-EV01`) describes the files changing for any reason, git included, and stays theirs.
 3. **A5 Control goes.** It had no commands and no state; its rules (DR21 to DR25) are what every page gives a keyboard or screen reader user, LA-V61-R44 to R48.
-4. **Requirements about a screen are view requirements.** Brief 108 lets a use case test run at api, e2e-api, e2e-ui or manual only, and most of Platform's proof is app and desktop unit tests. As la-trc.md and la-chk.md do, what a screen shows or how it answers the hand moves to the view it is about (63 requirements, and 12 domain rules); what the system does for its actor stays a UC requirement (22, and 4 new). The Reader use cases UC04 to UC10 and UC14 keep goals and flows with no UC requirements. la-exp.md keeps such requirements as use case tests at unit level; the apply step should make the sheets agree.
+4. **Requirements about a screen are view requirements.** Brief 108 lets a use case test run at api, e2e-api, e2e-ui or manual only, and most of Platform's proof is app and desktop unit tests. As la-trc.md and la-chk.md do, what a screen shows or how it answers the hand moves to the view it is about (63 requirements, and 12 domain rules); what the system does for its actor stays a UC requirement (22, and 5 new). The Reader use cases UC04 to UC10 and UC14 keep goals and flows with no UC requirements. la-exp.md keeps such requirements as use case tests at unit level; the apply step should make the sheets agree.
 5. **The Workbench (LA-V61) is a new view:** the frame every page shares, which no other sheet's view holds. Its 48 requirements sit in five groups of at most 13, so the size check (15) passes.
 6. **A3 is the Keymap, EN03 a Keyboard command and EN12 a Write command,** so no record is titled like the model's Command kind.
 7. **A4 becomes Appearance,** with a new root EN14 holding the chosen theme and the mode and EN06 Theme as its child: choosing a theme and a mode are the person's, and EV01 and EV02 are about that choice.
@@ -962,12 +964,12 @@ Given, when and then come from the source test. la-exp.md writes four of these I
 9. **A10 Product repo is new,** for `lathe init` (CMD21) and the folder check (SP01). CMD21 also adds the first product record through the command layer, a recorded exception the checks will list.
 10. **DR20 folds into `LA-PAT-APP-UX-R09`,** which says the same; its two tests prove that rule.
 11. **One pattern rule test per rule.** The schema allows one per rule and domain, and only Platform follows the app patterns, so the 66 links from Platform's tests and 6 from Exploring's to pattern rules become 24 records, each naming its main file with the others in its notes.
-12. **Rules sorted by what they do:** formats became constraints (DR06, DR11, DR13, DR36); one aggregate's rules invariants (DR04, DR12, DR14, DR15, DR27, DR31, DR33, DR41 to DR47); yes-or-no checks specifications (DR26, DR34); the one reaction a policy (DR35); calculations domain services (DR08 with DR09, DR28's placement, DR32); what a screen does view requirements (DR03, DR07, DR10, DR18, DR19, DR21 to DR25, DR37, DR39); what the system does UC requirements (DR29, DR30, DR40). DR05, DR16 and DR17 merge into the requirements that already said them. DR38 goes to Authoring (cross-domain item 9).
+12. **Rules sorted by what they do:** formats became constraints (DR06, DR11, DR13, DR36); one aggregate's rules invariants (DR04, DR12, DR14, DR15, DR27, DR31, DR33, DR41 to DR47); yes-or-no checks specifications (DR26, DR34); the one reaction a policy (DR35); calculations domain services (DR08 with DR09, DR28's placement, DR32); what a screen does view requirements (DR03, DR07, DR10, DR18, DR19, DR21 to DR25, DR37, DR39); what the system does UC requirements (DR29, DR30, DR38, DR40). DR05, DR16 and DR17 merge into the requirements that already said them.
 13. **Derived fields leave entities** for read models, a domain service and an event (EN01, EN04's derived fields, EN05, EN11's), and A5's EN07 goes with A5.
 14. **The Dock badge's query is Checking's.** la-chk.md has it (QRY03, `badgeFor`); Platform keeps the window's count (CMD14) and the badge's view requirement (DR37, LA-V71-R03), and the icon and its menu are a view, LA-V71, not an integration.
 15. **The app's data client is an API client** (`api_client`, la-exp.md's kind): `app/src/specs/data.ts` calls `GET /api/spec` (EP01-CL), and the write client `app/src/edit/write.ts`, which la-exp.md leaves to this sheet, is EP02-CL.
 16. **Product kinds are shared where they fit:** `cli_command` from la-chk.md, `api_client` from la-exp.md, `entry_point` from the Tool Library. Two are proposed here: `tooling` and `ipc_channel`.
-17. **No new tests, and some proofs drop.** Every new obligation was already proved by a part of an old test. Unit proofs of system behavior with no record of an allowed level (T106's title, T124's routing, T127) are named in the notes of the manual or e2e test that proves the same requirement. The policies have no test at an allowed level. DR17's and DR18's extra links on T62, T64 to T66, T72 and T73, DR19's on T76, DR12's on T60 and UC05-R04's on T30 drop, since the requirements those tests prove already state it and another test proves the merged requirement.
+17. **No new tests, and some proofs drop.** Every new obligation was already proved by a part of an old test. Unit proofs of system behavior with no record of an allowed level (T106's title, T124's routing, T127, `LA-AUT-T118`'s refusals) are named in the notes of the manual or e2e test that proves the same requirement. The policies have no test at an allowed level. DR17's and DR18's extra links on T62, T64 to T66, T72 and T73, DR19's on T76, DR12's on T60 and UC05-R04's on T30 drop, since the requirements those tests prove already state it and another test proves the merged requirement.
 18. **Harness and contract files get no record of their own:** the stability, accessibility and performance harnesses (C33, C35, C38) and the engine's perf script (C05) are test code the tests' run by names; `types.ts` (C02) and `contract.ts` (C61) are named in the descriptions of the projection and endpoint handlers whose shapes they are.
 19. **Platform has no tables.** Its state is in local storage, the shell's JSON files and memory. A8's data is every product's data files, whose tables are Authoring's.
 20. **Subdomain type supporting.** Platform serves the core domains and is built for Lathe, but isn't what makes Lathe worth having.
@@ -993,10 +995,10 @@ Given, when and then come from the source test. la-exp.md writes four of these I
 | 5 | Other domains' writes: la-chk.md's and la-trc.md's commands on their own tables name `store.ts` as handler, and la-exp.md's UC14 invokes "Platform's write command": that is CMD18 Apply a write, whose handler is `store.ts`. Each domain's own commands may stay (they change their aggregates) with handlers naming `store.ts`, or fold into CMD18 | CHK, TRC, EXP |
 | 6 | Other domains' steps that reached E01 or E02 (`uses` from `LA-CHK-F03`, `LA-EXP-F01`, `F02`, `F07`, `LA-TRC-F03`, `F04`) invoke QRY02 or CMD18; views that used E01 need nothing | CHK, EXP, TRC |
 | 7 | `LA-CHK-DF01-S02` used C01 and `LA-CHK-DF01-S05` meets `LA-STD-CODE-R03`: design flows go, so both links go with them | CHK |
-| 8 | Parts of Platform's old tests that prove other domains' records: la-exp.md places T14, T21, T45, T47, T48, T49, T52, T62, T73, T76, T79, T84, T85, T86, T87, T88, T89, T103, T105, T126; la-trc.md T86; la-chk.md's UC07-R02 (the Dock badge) takes T128 step 2 (manual) and T123's badge part; Authoring's sheet takes T126's and T128's `LA-AUT-UC15` parts | EXP, TRC, CHK, AUT |
-| 9 | DR38 (a record action names only a record ID, and the shell finds its data file) is the rule of Authoring's record actions (`LA-AUT-UC15`); its proof is `LA-AUT-T118`. UC15-FL-S08 invokes Authoring's record action command, and the preload's record actions are Authoring's IPC channels if it uses `ipc_channel` | AUT |
+| 8 | Parts of Platform's old tests that prove other domains' records: la-exp.md places T14, T21, T45, T47, T48, T49, T52, T62, T73, T76, T79, T84, T85, T86, T87, T88, T89, T103, T105, T126; la-trc.md T86; la-chk.md's UC07-R02 (the Dock badge) takes T128 step 2 (manual) and T123's badge part; la-aut.md's UC15 takes T126's and T128's `LA-AUT-UC15` parts (item 9) | EXP, TRC, CHK, AUT |
+| 9 | la-aut.md leaves DR38 to this sheet: it is UC15-R16 here, and `LA-AUT-T118`'s DR38 part is a note on UC15-R16-T01. UC15-FL-S08 invokes la-aut.md's QRY05; la-aut.md's LA-INT02-AD (Finder and the clipboard, in `main.ts`) stays Authoring's; the preload's record actions are Authoring's IPC channels if it uses `ipc_channel`. For the parts la-aut.md asks this sheet to decide: T126's Open Records In part proves `LA-AUT-UC15-R02`, and T128 step 5 proves `LA-AUT-UC15-R01` (manual), each a test under that requirement in la-aut.md | AUT |
 | 10 | `LA-AUT-T54`'s, `LA-AUT-T120`'s, `LA-EXP-T48`'s and `LA-EXP-T133`'s parts that proved Platform's records are UC02-R02-T03, LA-V67-R01-T04, LA-V61-R05-T01 and LA-V61-R23-T01 here | AUT, EXP |
-| 11 | A10-REPO and EN16-DM name `lathe/src/config.ts`, which `LA-AUT-C05` and `LA-CHK-C11` also name; QRY01-H names `loadWorkspace`, as la-chk.md's QRY01-H does | AUT, CHK |
+| 11 | A10-REPO and EN16-DM name `lathe/src/config.ts` (la-aut.md hands `LA-AUT-C05` to this sheet; `LA-CHK-C11` names the same file); QRY01-H names `loadWorkspace`, as la-chk.md's QRY01-H does; RM01-PJ takes `LA-AUT-C39`'s `readRecords`, which la-aut.md leaves to this sheet or la-exp.md; LA-UI62 takes `LA-AUT-C66` (`commands.tsx`) | AUT, CHK |
 | 12 | la-exp.md's LA-UI37 Space commands (`switchSpace1`…`9`) are keymap commands of A3; they stay its UI component | EXP |
 | 13 | Text that names old IDs: LA-V61-R19 (`LA-EXP-DR41`), R24 (`LA-TRC-DR35`), `LA-PAT-APP-UX-R07`'s notes (`LA-EXP-DR42`), `LA-PAT-APP-UX-R12` (`LA-EXP-DR58`, `DR60`) | EXP, TRC |
 | 14 | Other domains' `meets` of `LA-STD-CODE` (`LA-AUT-C57`, `C67`, `C72`, `LA-AUT-T122` to `T124`; `LA-TRC-C02`, `C03`, which la-trc.md moves to the `check` table) move with those records | AUT, TRC |
@@ -1062,7 +1064,7 @@ Given, when and then come from the source test. la-exp.md writes four of these I
 | domain_rule DR35 | 1 | PO02 |
 | domain_rule DR36 | 1 | VO65-C01; its "own page" → CMD13 |
 | domain_rule DR37 | 1 | LA-V71-R03 |
-| domain_rule DR38 | 1 | Authoring (cross-domain item 9) |
+| domain_rule DR38 | 1 | UC15-R16 |
 | domain_rule DR39 | 1 | LA-V69-R02 |
 | domain_rule DR40 | 1 | UC15-R15 |
 | domain_rule DR41 to DR47 | 7 | INV07 to INV13 |
@@ -1130,7 +1132,7 @@ Given, when and then come from the source test. la-exp.md writes four of these I
 | pattern LA-PAT-APP-CODE, LA-PAT-APP-UX | 2 | unchanged |
 | pattern_rule | 24 | unchanged |
 | standard LA-STD-CODE, standard_rule R01 to R03 | 1, 3 | unchanged |
-| test LA-PLT-T01 to T160 (T11 is unused) | 159 | 203 test records (Test plan above); their parts proving other domains' records go to those sheets (cross-domain item 8) |
+| test LA-PLT-T01 to T160 (T11 is unused) | 159 | 204 test records (Test plan above); their parts proving other domains' records go to those sheets (cross-domain item 8) |
 
 ### Links
 
