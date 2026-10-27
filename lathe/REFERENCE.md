@@ -904,7 +904,7 @@ One field of an entity, in order.
 | --- | --- | --- | --- |
 | `entity_id` | VARCHAR → [`entity`](#table-entity) | yes | The entity. |
 | `position` | INTEGER | yes | The field's place in the entity, from 1. |
-| `name` | VARCHAR | yes | The field's name, such as Returned at. |
+| `name` | VARCHAR | yes | The field's name, such as Returned at: one name in its entity, compared trimmed and in any letter case. |
 | `meaning` | VARCHAR | yes | What the field means. |
 | `type` | VARCHAR | yes | The kind of value it holds, such as Date and time. |
 | `example` | VARCHAR | no | An example value. |
@@ -926,7 +926,7 @@ One field a domain event carries, in order.
 | --- | --- | --- | --- |
 | `domain_event_id` | VARCHAR → [`domain_event`](#table-domain_event) | yes | The domain event. |
 | `position` | INTEGER | yes | The field's place in the event, from 1. |
-| `name` | VARCHAR | yes | The field's name, such as Repaired at. |
+| `name` | VARCHAR | yes | The field's name, such as Repaired at: one name in its event, compared trimmed and in any letter case. |
 | `meaning` | VARCHAR | yes | What the field means. |
 | `type` | VARCHAR | yes | The kind of value it holds. |
 | `example` | VARCHAR | no | An example value. |
