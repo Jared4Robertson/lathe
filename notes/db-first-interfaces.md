@@ -1,6 +1,6 @@
 # Database first: the schema and the store (brief 98's interfaces)
 
-What the import, engine, writers and app briefs build on. The plan is [plans/database-first.md](plans/database-first.md). The code is `lathe/schema/` (the migrations) and `lathe/src/store/` (the store), exported from `@jaredrob/lathe` beside the Markdown engine, which is untouched until the engine brief cuts over.
+The store's interfaces: what the engine, the CLI and MCP tools, and the app build on. The code is `lathe/schema/` (the migrations) and `lathe/src/store/` (the store), exported from `@jaredrob/lathe`.
 
 ## How it fits together
 
