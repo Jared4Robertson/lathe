@@ -4,22 +4,25 @@ import { expect, test, type Page } from '@playwright/test';
 import { expectStable, openPage, step } from './measure';
 import { DOMAIN, RECORD } from './scenarios';
 
-// LA-PLT-T77: a live reload while the page is scrolled half-way. The suite edits a spec file in
-// its copy of the specs (STABILITY_ROOT) while the page is open: the domain's body, above what
-// is in view, gets one more paragraph; with the graph open, the record's body gets one at its
-// end. What was at the top of the view must stay there, the scroll box must keep its place, and
-// the frame and the graph must not be drawn anew.
+// LA-PLT-T77: a live reload while the page is scrolled half-way. The suite edits a data file in
+// its copy of the data (STABILITY_ROOT) while the page is open: the domain's description, above
+// what is in view, gets one more paragraph first; with the graph open, the record's goal gets one
+// at its end. What was at the top of the view must stay there, the scroll box must keep its place,
+// and the frame and the graph must not be drawn anew.
 
-const DOMAIN_FILE = 'specs/lathe/exploring/domain.md';
-const RECORD_FILE = 'specs/lathe/platform/01-define/use-cases/UC05-see-each-command-s-shortcut-where-it-is-used.md';
-
-/** Adds a paragraph to a spec file's body: at its top (above what is in view), or at its end. Returns the undo. */
-function edit(name: string, paragraph: string, at: 'top' | 'end') {
-  const file = path.join(process.env.STABILITY_ROOT!, name);
+/**
+ * Adds a paragraph to a text column of a record's row in its data file: before its text (above what
+ * is in view), or after it. The row keeps its place and its columns' order. Returns the undo.
+ */
+function edit(table: string, id: string, column: string, paragraph: string, at: 'top' | 'end') {
+  const file = path.join(process.env.STABILITY_ROOT!, 'data', `${table}.jsonl`);
   const before = readFileSync(file, 'utf8');
-  const after = at === 'end'
-    ? `${before.trimEnd()}\n\n${paragraph}\n`
-    : before.replace(/^(---\n[\s\S]*?\n---\n)/, `$1${paragraph}\n\n`);
+  const after = before.split('\n').map((line) => {
+    if (!line.startsWith(`{"id":${JSON.stringify(id)},`)) return line;
+    const row = JSON.parse(line) as Record<string, unknown>;
+    row[column] = at === 'end' ? `${String(row[column])}\n\n${paragraph}` : `${paragraph}\n\n${String(row[column])}`;
+    return JSON.stringify(row);
+  }).join('\n');
   writeFileSync(file, after);
   return () => writeFileSync(file, before);
 }
@@ -56,8 +59,8 @@ test.describe('live reload', () => {
     expect(anchor, 'something is in view').not.toBeNull();
     let restore = () => {};
     try {
-      const r = await step(page, 'reload', 'spec edited while scrolled', { keys: ['nav#nav', '.pane-wiki > .pane-bar', '.pane-wiki .pane-scroll', '.side-bar-column'], settle: 1500 }, async () => {
-        restore = edit(DOMAIN_FILE, 'A paragraph the stability suite adds while the page is open, above what is in view, to see that nothing in view moves when the specs reload.', 'top');
+      const r = await step(page, 'reload', 'data edited while scrolled', { keys: ['nav#nav', '.pane-wiki > .pane-bar', '.pane-wiki .pane-scroll', '.side-bar-column'], settle: 1500 }, async () => {
+        restore = edit('domain', DOMAIN.slice(1), 'description', 'A paragraph the stability suite adds while the page is open, above what is in view, to see that nothing in view moves when the data reloads.', 'top');
         await expect(page.locator('.pane-wiki')).toContainText('the stability suite adds', { timeout: 20_000 });
       });
       expectStable(r);
@@ -74,8 +77,8 @@ test.describe('live reload', () => {
     let restore = () => {};
     try {
       const keys = ['.pane-graph .graph-canvas', '.pane-graph .graph-header', '.pane-graph .graph-flow canvas', '.pane-wiki > .pane-bar'];
-      const r = await step(page, 'reload', 'spec edited with the graph open', { keys, allow: ['.pane-wiki .pane-scroll', '.side-bar'], settle: 1500 }, async () => {
-        restore = edit(RECORD_FILE, 'Another paragraph from the stability suite, with the graph open.', 'end');
+      const r = await step(page, 'reload', 'data edited with the graph open', { keys, allow: ['.pane-wiki .pane-scroll', '.side-bar'], settle: 1500 }, async () => {
+        restore = edit('use_case', RECORD.slice(1), 'goal', 'Another paragraph from the stability suite, with the graph open.', 'end');
         await expect(page.locator('.pane-wiki')).toContainText('with the graph open', { timeout: 20_000 });
       });
       expectStable(r);

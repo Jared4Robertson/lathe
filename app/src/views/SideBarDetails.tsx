@@ -17,11 +17,11 @@ import type { SideMode } from './sideBarState';
 
 // The side bar's Details (LA-EXP-UC12-R03): what the page does not already show, with no repeats.
 // - In the Graph and Model views: the node under the pointer or keyboard focus, else the selected
-//   one, else the page's record: its kind, title, ID, header fields, spec file and parent, and a
+//   one, else the page's record: its kind, title, ID, short fields, data file and parent, and a
 //   compact Traceability summary in the relations' labels, with Open (and, in the desktop app,
 //   Reveal and Open in editor). The graph adds what it connects to the center.
 // - In the Wiki view: a record row that has focus or was right-clicked, as above; otherwise only
-//   what the page leaves out: the spec file, the raw header fields and the raw links.
+//   what the page leaves out: the data file and line, the row's columns and the raw links.
 
 export interface SideBarDetailsProps {
   index: SpecIndex;
@@ -84,7 +84,7 @@ function Identity({ index, eyebrow, title, id, target, focus, how, onNavigate, h
   );
 }
 
-/** A record in the canvas or a selected row: identity, header fields, spec file, parent, problems and a compact Traceability. */
+/** A record in the canvas or a selected row: identity, short fields, data file, parent, problems and a compact Traceability. */
 function RecordDetails({ index, record, focus, how, onNavigate, hrefFor }: { index: SpecIndex; record: SpecRecord; focus: string; how: SideBarDetailsProps['how']; onNavigate: (id: string) => void; hrefFor: (id: string) => string }) {
   const kind = index.kinds.get(record.kind);
   const isTest = record.kind === 'test';

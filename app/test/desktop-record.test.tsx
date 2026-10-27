@@ -46,13 +46,13 @@ describe('desktop record actions', () => {
     openSideBar('details', ['wiki', 'graph', 'model']);
     await openApp('/DM-SHOP-UC01');
     await heading();
-    expect(screen.queryByRole('group', { name: 'Spec file of DM-SHOP-UC01' })).toBeNull();
+    expect(screen.queryByRole('group', { name: 'Data file of DM-SHOP-UC01' })).toBeNull();
 
     const { bridge } = desktop();
     await openApp('/DM-SHOP-UC01');
     await heading();
     const sideBar = await screen.findByRole('complementary', { name: 'Side bar' });
-    const actions = within(sideBar).getByRole('group', { name: 'Spec file of DM-SHOP-UC01' });
+    const actions = within(sideBar).getByRole('group', { name: 'Data file of DM-SHOP-UC01' });
     fireEvent.click(within(actions).getByRole('button', { name: 'Reveal in Finder' }));
     fireEvent.click(within(actions).getByRole('button', { name: 'Open in editor' }));
     fireEvent.click(within(actions).getByRole('button', { name: 'Copy ID' }));

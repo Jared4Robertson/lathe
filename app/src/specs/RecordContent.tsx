@@ -184,7 +184,7 @@ function RecordBody({ index, record, actions, header, side }: { index: SpecIndex
 }
 
 /**
- * A record's facts: kind, fields, spec file, parent, children (their own children folded) and its
+ * A record's facts: kind, short fields, data file and line, parent, children (their own children folded) and its
  * links both ways. Shown beside the body, or in the side bar.
  */
 export function RecordFacts({ index, record }: { index: SpecIndex; record: SpecRecord }) {
