@@ -4,7 +4,7 @@ import { existsSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
-import { CONFIG_FILE, formatReference, loadConfig, loadWorkspace, renderReference, type Problem } from '../src/index.ts';
+import { CONFIG_FILE, formatReference, loadConfig, loadWorkspace, mergeDataFiles, renderReference, type Problem } from '../src/index.ts';
 import { serve } from '../src/server/serve.ts';
 
 /** A label inside a sentence: "Use case" -> "use case", but an acronym keeps its case ("UC requirement"). */
@@ -22,6 +22,9 @@ Commands:
            and check, with the product's extensions and its own checks.
            --out <file> writes it to the file instead.
   serve    Serve the web app for the product repo.  --port 5330 (default)
+  merge-data <base> <ours> <theirs> <path>
+           Git's merge driver for data/*.jsonl files (%O %A %B %P): merges the three versions row by row,
+           writes the result over <ours>, and exits 1 on a real clash or a row that breaks its table's rules.
 
 Options for every command:
   --root <dir>   The product repo (default: the current folder).
@@ -135,6 +138,15 @@ function startServer() {
   server.on('error', (error) => fail(`Could not start the server: ${error.message}`));
 }
 
+async function mergeData() {
+  const [base, ours, theirs, file] = positionals.slice(1);
+  if (!base || !ours || !theirs || !file) fail('lathe merge-data needs <base> <ours> <theirs> <path>, as git passes them: %O %A %B %P.');
+  const result = await mergeDataFiles(base, ours, theirs, file);
+  for (const clash of result.clashes) console.error(`${file}: ${clash}`);
+  for (const problem of result.problems) console.error(`${file}: ${problem}`);
+  process.exitCode = result.clashes.length || result.problems.length ? 1 : 0;
+}
+
 if (values.help || command === 'help') {
   console.log(USAGE);
 } else if (command === 'check') {
@@ -145,6 +157,8 @@ if (values.help || command === 'help') {
   await format();
 } else if (command === 'serve') {
   startServer();
+} else if (command === 'merge-data') {
+  await mergeData();
 } else {
   fail(`Unknown command "${command}".\n\n${USAGE}`);
 }

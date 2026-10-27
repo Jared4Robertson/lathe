@@ -14,6 +14,8 @@ export type * from './types.ts';
 export type * from './reference.ts';
 export { renderReference, parseCheckHeader, kindAnchor, relationAnchor, sectionAnchor, checkAnchor } from './reference.ts';
 export { loadConfig, PACKAGE_DIR, CONFIG_FILE, DEFAULT_MAX_CHILDREN, type LatheConfig } from './config.ts';
+// The database-first store: the schema, loading data/*.jsonl, the command layer and the merge driver.
+export * from './store/index.ts';
 
 export const CHECKS_DIR = path.join(PACKAGE_DIR, 'checks');
 
