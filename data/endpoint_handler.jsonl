@@ -1,0 +1,4 @@
+{"id":"LA-AUT-EP01-H","title":"the /api/reference route in handleApi","endpoint_id":"LA-AUT-EP01","file":"lathe/src/server/api.ts","description":"the `/api/reference` route in `handleApi`"}
+{"id":"LA-AUT-EP02-H","title":"handleApi's /api/write route","endpoint_id":"LA-AUT-EP02","file":"lathe/src/server/api.ts","description":"handleApi's /api/write route, writeRequestProblem, WRITE_BODY_LIMIT, WRITE_COMMAND_LIMIT; its shapes are WriteRequest and WriteAnswer in contract.ts"}
+{"id":"LA-EXP-EP01-H","title":"the /api/history route of handleApi","endpoint_id":"LA-EXP-EP01","file":"lathe/src/server/api.ts","description":"the /api/history route of handleApi"}
+{"id":"LA-PLT-EP01-H","title":"handleApi's /api/spec route; its shape is SpecData in lathe/src/server/contract.ts","endpoint_id":"LA-PLT-EP01","file":"lathe/src/server/api.ts","description":"handleApi's /api/spec route; its shape is SpecData in lathe/src/server/contract.ts"}

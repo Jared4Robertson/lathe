@@ -1,0 +1,29 @@
+{"id":"LA-VO01","title":"Record ID","description":"Names one record across the store."}
+{"id":"LA-VO02","title":"Title","description":"A record's name in a few words."}
+{"id":"LA-VO03","title":"Statement","description":"A rule or requirement in full."}
+{"id":"LA-VO04","title":"Position","description":"A record's place among its siblings."}
+{"id":"LA-VO05","title":"Path","description":"Which path through a flow a step is on, such as main or refused."}
+{"id":"LA-VO06","title":"Identifier","description":"A name code uses: a kind's, a field's, a relation's or a setting's."}
+{"id":"LA-VO07","title":"Subdomain type","description":"How much modeling a domain deserves."}
+{"id":"LA-VO08","title":"Entity role","description":"Whether an entity is its aggregate's root or a part."}
+{"id":"LA-VO09","title":"Basic type","description":"A field's type when it is no value object and no reference."}
+{"id":"LA-VO10","title":"Table storage","description":"How a table is stored."}
+{"id":"LA-VO11","title":"Key type","description":"What a table key is."}
+{"id":"LA-VO12","title":"HTTP method","description":"How an endpoint is called."}
+{"id":"LA-VO13","title":"Event delivery","description":"How an event type reaches what hears it."}
+{"id":"LA-VO14","title":"Run by","description":"How a test runs: its level, its state, and the file that runs it or why it is manual. Fields: Level, State, File (optional), Manual reason (optional)."}
+{"id":"LA-VO15","title":"Kind field type","description":"The type of a product kind's field."}
+{"id":"LA-VO16","title":"Stage","description":"Where a kind is read and colored."}
+{"id":"LA-VO17","title":"Relation role","description":"Whether a relation designs or proves."}
+{"id":"LA-VO18","title":"Group name","description":"A short heading a long list of requirements or rules is sorted under."}
+{"id":"LA-VO41","title":"Check name","description":"The name of a check, which its problems carry."}
+{"id":"LA-VO42","title":"Check severity","description":"What a check's problems are. An error means the data is broken; a warning means work is still to do."}
+{"id":"LA-VO43","title":"Children limit","description":"The most children of one kind a record should hold."}
+{"id":"LA-VO61","title":"Key binding","description":"A chord such as Mod+Shift+P, or chords separated by spaces for a sequence. \"Mod\" is Cmd on a Mac and Ctrl elsewhere."}
+{"id":"LA-VO62","title":"Token values","description":"A map from token names in the app's token table to values."}
+{"id":"LA-VO63","title":"Theme file","description":"A theme as data, as it is stored, exported and imported."}
+{"id":"LA-VO64","title":"Window bounds","description":"Where a window was and how big."}
+{"id":"LA-VO65","title":"Window chrome","description":"The two colors a page sends for its window."}
+{"id":"LA-VO90","title":"App address","description":"A place in the app: a path and its view query parameter."}
+{"id":"LA-VO91","title":"View set","description":"The views a page or a tab has open."}
+{"id":"LA-VO92","title":"Graph settings","description":"How a tab's graph is drawn."}

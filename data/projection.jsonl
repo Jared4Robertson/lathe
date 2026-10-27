@@ -1,0 +1,10 @@
+{"id":"LA-CHK-RM01-PJ","title":"runChecks","read_model_id":"LA-CHK-RM01","file":"lathe/src/index.ts","description":"`runChecks` (each row's query on a few connections side by side, problems in run order, a failed query as one error, a product's check kept to its product's records) and `refusedWorkspace` (one `data-refused` error per refusal)."}
+{"id":"LA-EXP-RM01-PJ","title":"indexWorkspace","read_model_id":"LA-EXP-RM01","file":"app/src/specs/data.ts","description":"indexWorkspace, spaceIndex"}
+{"id":"LA-EXP-RM02-PJ","title":"domainFolders","read_model_id":"LA-EXP-RM02","file":"app/src/specs/folders.ts","description":"domainFolders, productFolders"}
+{"id":"LA-EXP-RM03-PJ","title":"graphMap","read_model_id":"LA-EXP-RM03","file":"app/src/graph/map.ts","description":"graphMap, mapRootOf, kept per index and root"}
+{"id":"LA-PLT-RM01-PJ","title":"readWorkspace","read_model_id":"LA-PLT-RM01","file":"lathe/src/index.ts","description":"readWorkspace: opens the store afresh, gives each record its part rows (readRecords), fills the file facts, runs Lathe's checks then the product's on four connections and the coverage queries side by side; buildReference's kept answer. Its shape is Workspace in lathe/src/types.ts."}
+{"id":"LA-TRC-RM01-PJ","title":"COVERAGE_VIEWS_SQL","read_model_id":"LA-TRC-RM01","file":"lathe/src/coverage.ts","description":"COVERAGE_VIEWS_SQL: obligation_kind, coverage_item, coverage_count; pattern rules counted for proof alone"}
+{"id":"LA-TRC-RM02-PJ","title":"the coverage_gap view","read_model_id":"LA-TRC-RM02","file":"lathe/src/coverage.ts","description":"the coverage_gap view"}
+{"id":"LA-TRC-RM03-PJ","title":"the coverage_tests view","read_model_id":"LA-TRC-RM03","file":"lathe/src/coverage.ts","description":"the coverage_tests view"}
+{"id":"LA-TRC-RM04-PJ","title":"the owed_pattern_rules view","read_model_id":"LA-TRC-RM04","file":"lathe/src/coverage.ts","description":"the owed_pattern_rules view"}
+{"id":"LA-TRC-RM05-PJ","title":"gatherFileFacts","read_model_id":"LA-TRC-RM05","file":"lathe/src/index.ts","description":"gatherFileFacts"}

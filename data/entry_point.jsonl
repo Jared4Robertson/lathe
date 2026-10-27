@@ -1,0 +1,4 @@
+{"id":"LA-PLT-ENTRY01","title":"Desktop shell start-up","domain_id":"LA-PLT","file":"desktop/src/main.ts"}
+{"id":"LA-PLT-ENTRY02","title":"Single-instance lock","domain_id":"LA-PLT","file":"desktop/src/instance.ts"}
+{"id":"LA-PLT-ENTRY03","title":"Window restoration off","domain_id":"LA-PLT","file":"desktop/src/persistence.ts"}
+{"id":"LA-PLT-ENTRY04","title":"Dev API plugin","domain_id":"LA-PLT","file":"app/server/lathe.ts"}
