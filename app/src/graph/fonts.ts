@@ -69,6 +69,10 @@ async function loadFaces(set: FontFaceSet, fonts: GraphFonts) {
 }
 
 const measures = new Map<string, Promise<TextMeasure>>();
+const ready = new Map<string, TextMeasure>();
+
+/** The measure for the page's faces if it is ready, so a graph drawn again needs no wait. */
+export const readyMeasure = (fonts: GraphFonts): TextMeasure | null => ready.get(`${fonts.body}|${fonts.mono}`) ?? null;
 
 /**
  * The measure for the page's faces, once they have loaded (`document.fonts.ready`, and each face
@@ -79,14 +83,19 @@ export function pageMeasure(fonts: GraphFonts): Promise<TextMeasure> {
   const known = measures.get(key);
   if (known) return known;
   const ctx = typeof document !== 'undefined' ? document.createElement('canvas').getContext('2d') : null;
-  const promise = !ctx || typeof document.fonts === 'undefined'
-    ? Promise.resolve(PLAIN_MEASURE)
-    : (async () => {
-      await document.fonts.ready;
-      await loadFaces(document.fonts, fonts);
-      return canvasMeasure(ctx, fonts);
-    })();
+  if (!ctx || typeof document.fonts === 'undefined') {
+    ready.set(key, PLAIN_MEASURE);
+    const plain = Promise.resolve(PLAIN_MEASURE);
+    measures.set(key, plain);
+    return plain;
+  }
+  const promise = (async () => {
+    await document.fonts.ready;
+    await loadFaces(document.fonts, fonts);
+    return canvasMeasure(ctx, fonts);
+  })();
   measures.set(key, promise);
+  void promise.then((m) => ready.set(key, m));
   return promise;
 }
 
