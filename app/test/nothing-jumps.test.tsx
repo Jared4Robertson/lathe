@@ -100,6 +100,10 @@ describe('nothing jumps (LA-PAT-APP-UX-R08)', () => {
     expect(valueFor('.graph-trail ol', 'block-size')).toBeTruthy();
     expect(valueFor('.graph-trail ol', 'overflow')).toBe('auto hidden');
     expect(valueFor('.graph-toolbar', 'flex-wrap')).toBe('nowrap');
+    // The count sits on the trail's line, which has one height and never wraps; the count is cut only when nothing else gives.
+    expect(valueFor('.graph-head-line', 'flex-wrap')).toBe('nowrap');
+    expect(valueFor('.graph-head-line', 'block-size')).toBeTruthy();
+    expect(valueFor('.graph-count', 'white-space')).toBe('nowrap');
     expect(valueFor('.graph-count', 'text-overflow')).toBe('ellipsis');
     // The Model view: its caption is one line, and its key has one height for every ERD.
     expect(valueFor('.model-caption', 'white-space')).toBe('nowrap');
@@ -117,10 +121,11 @@ describe('nothing jumps (LA-PAT-APP-UX-R08)', () => {
     await waitFor(() => expect(document.querySelector('.graph-count')).not.toBeNull());
     const count = document.querySelector('.graph-count')!;
     expect([...count.childNodes].map((n) => n.nodeType)).toEqual([Node.TEXT_NODE]);
-    // It sits right after the depth, the Links switch and the steps, whose widths never change.
-    expect(count.previousElementSibling?.classList.contains('graph-steps')).toBe(true);
-    expect(count.previousElementSibling?.previousElementSibling?.classList.contains('graph-links')).toBe(true);
-    expect(count.previousElementSibling?.previousElementSibling?.previousElementSibling?.classList.contains('graph-depth')).toBe(true);
+    // It sits at the end of the trail's line, above the toolbar, so a new count moves nothing in the toolbar.
+    expect(count.parentElement?.classList.contains('graph-head-line')).toBe(true);
+    expect(count.previousElementSibling?.classList.contains('graph-trail')).toBe(true);
+    expect(count.nextElementSibling).toBeNull();
+    expect(document.querySelector('.graph-toolbar .graph-count')).toBeNull();
   });
 
   it('LA-PLT-T79 the graph canvas stays mounted when the graph re-centers', async () => {

@@ -517,7 +517,7 @@ for (const layout of ['tree', 'nested', 'voronoi'] as const) {
     await page.waitForTimeout(900);
     if (layout !== 'tree') {
       // v steps to the next layout: Nested, then Voronoi.
-      await page.locator('.pane-graph .graph-count').click();
+      await page.locator('.pane-graph .graph-flow').focus();
       for (let i = 0; i < (layout === 'nested' ? 1 : 2); i++) await page.keyboard.press('v');
       await expect(page.locator(GRAPH)).toHaveAttribute('data-layout', layout);
       await page.locator('.pane-graph .graph-box[data-id^="LA-"]').nth(1).waitFor({ state: 'attached' });
