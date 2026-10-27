@@ -247,3 +247,9 @@ Lathe now matches S2 on UC requirements (206/206) and domain rules (98/98) acros
 - The Tree's deep, thin boxes read small until zoomed in.
 - All checks passed.
 - Brief 95 (canvas) is to merge main and keep the new layout.
+
+## Brief 95 merged: the graph drawn on a canvas
+- React Flow is out of the graph (the Model view keeps it). Canvas 2D draws each visible box every frame, with text at map size × zoom, relative to the camera center.
+- Wrapping uses the real fonts' measurements; the width table is gone. A hidden DOM layer carries focus, the keyboard and screen readers.
+- Budgets held on LA with no WebGL needed.
+- All checks passed: stability 44, a11y 125, perf 11.
