@@ -682,3 +682,12 @@ Why: a check row is code kept as data and fits none of the fourteen kinds; a CLI
 | proves CHK-T → CHK records | 79 | each new test's parent (Test plan) |
 | proves CHK-T → AUT records (T12, T19, T52, T53) | 4 | LA-AUT's parts, to resolve |
 | proves AUT-, EXP-, PLT-T → CHK records | 12 | to resolve: their parts become UC01-R04, UC07-R02, LA-V41-R01, R02 and INV03 tests |
+
+## Applied (brief 111)
+Brief 111 wrote this sheet into `data/` with the other four; [la-id-map.json](la-id-map.json) maps every old ID to its new one (null for a dropped one). What it resolved here:
+- **Numbers:** LA-VO41–VO43 and LA-V41 stand. LA-INT41 is LA-INT01 (Authoring's Claude Code); LA-UI41 is LA-UI90, the one UI component of `SpecPages.tsx`.
+- **Check rows:** each of Lathe's rows is a `check_row` under the domain whose rules it reports, titled by its check name. CK03 is gone (a use case with no flow is now a coverage gap, not a row); `test-level-not-allowed` and the rest keep this sheet's numbers. The CLI command is `LA-CHK-QRY01-CLI`; the plugin's `check-and-fix` skill is `LA-CHK-SK01`.
+- **[PLT-write]** is `LA-AUT-CMD07`; `[EXP-V03]` is LA-V92, `[AUT-V03]` LA-V03.
+- **Published events:** EV01 is published; RM01 is `fed_by` LA-AUT-EV01, EV03 and LA-PLT-EV06.
+- **Standard:** EN01-TB and the INV04 test meet LA-STD-CODE-R01; RM01-PJ meets R03.
+- **To resolve tests:** UC07-R02-T01 is manual (the Dock walk, LA-PLT-T128); LA-V41-R01-T02 and LA-V41-R02-T01 are unit tests in `spaces.test.tsx` and `format-pages.test.tsx`.

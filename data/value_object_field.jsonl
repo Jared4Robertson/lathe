@@ -1,0 +1,25 @@
+{"value_object_id":"LA-VO14","position":1,"name":"Level","meaning":"unit, database, api, contract, e2e-api, e2e-ui or manual.","type":"text","required":true,"column_name":"level"}
+{"value_object_id":"LA-VO14","position":2,"name":"State","meaning":"automated, manual or not automated yet.","type":"text","required":true,"column_name":"state"}
+{"value_object_id":"LA-VO14","position":3,"name":"File","meaning":"The file that runs it, from the repo root; required when automated.","type":"text","required":false,"column_name":"file"}
+{"value_object_id":"LA-VO14","position":4,"name":"Manual reason","meaning":"Why a person runs it; given when manual, and only then.","type":"text","required":false,"column_name":"manual_reason"}
+{"value_object_id":"LA-VO63","position":1,"name":"Format","meaning":"Always \"lathe-theme\".","type":"text","required":true}
+{"value_object_id":"LA-VO63","position":2,"name":"Version","meaning":"The file format's version, 1.","type":"whole number","required":true}
+{"value_object_id":"LA-VO63","position":3,"name":"Name","meaning":"The theme's name, 1 to 60 characters.","type":"text","required":true}
+{"value_object_id":"LA-VO63","position":4,"name":"Light","meaning":"The light set's token values.","type_value_object_id":"LA-VO62","required":true}
+{"value_object_id":"LA-VO63","position":5,"name":"Dark","meaning":"The dark set's token values.","type_value_object_id":"LA-VO62","required":true}
+{"value_object_id":"LA-VO63","position":6,"name":"Tokens","meaning":"Token values shared by both modes.","type_value_object_id":"LA-VO62","required":true}
+{"value_object_id":"LA-VO64","position":1,"name":"X","meaning":"Its left edge, in screen points.","type":"whole number","required":true}
+{"value_object_id":"LA-VO64","position":2,"name":"Y","meaning":"Its top edge, in screen points.","type":"whole number","required":true}
+{"value_object_id":"LA-VO64","position":3,"name":"Width","meaning":"In screen points.","type":"whole number","required":true}
+{"value_object_id":"LA-VO64","position":4,"name":"Height","meaning":"In screen points.","type":"whole number","required":true}
+{"value_object_id":"LA-VO64","position":5,"name":"Maximized","meaning":"Whether it was maximized.","type":"yes/no","required":true}
+{"value_object_id":"LA-VO64","position":6,"name":"Full screen","meaning":"Whether it was full screen.","type":"yes/no","required":true}
+{"value_object_id":"LA-VO65","position":1,"name":"Background","meaning":"An opaque hex color for the window's background.","type":"text","required":true}
+{"value_object_id":"LA-VO65","position":2,"name":"Foreground","meaning":"An opaque hex color for the window's controls.","type":"text","required":true}
+{"value_object_id":"LA-VO92","position":1,"name":"Layout","meaning":"tree, nested or voronoi.","type":"text","required":true}
+{"value_object_id":"LA-VO92","position":2,"name":"Depth","meaning":"How many levels below the focus the camera frames, 1 to 3.","type":"whole number","required":true}
+{"value_object_id":"LA-VO92","position":3,"name":"Trace","meaning":"Whether trace mode is on.","type":"yes/no","required":true}
+{"value_object_id":"LA-VO92","position":4,"name":"Links","meaning":"Whether cross-links to the focus are drawn.","type":"yes/no","required":true}
+{"value_object_id":"LA-VO92","position":5,"name":"Minimap","meaning":"Whether the minimap shows.","type":"yes/no","required":true}
+{"value_object_id":"LA-VO92","position":6,"name":"Hidden kinds","meaning":"The kinds the filters hide.","type":"text","required":false}
+{"value_object_id":"LA-VO92","position":7,"name":"Hidden relations","meaning":"The relations the filters hide.","type":"text","required":false}

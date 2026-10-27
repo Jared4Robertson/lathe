@@ -1174,3 +1174,12 @@ Given, when and then come from the source test. la-exp.md writes four of these I
 | proves Platform test→pattern rule | 66 | the 24 pattern rule tests and their notes |
 | proves Platform test→another domain's record | 28 | cross-domain item 8 |
 | proves other domains' tests→Platform records and pattern rules | 11 | cross-domain items 2, 9 and 10 |
+
+## Applied (brief 111)
+Brief 111 wrote this sheet into `data/` with the other four; [la-id-map.json](la-id-map.json) maps every old ID to its new one (null for a dropped one). What it resolved here:
+- **One write path:** CMD18 is gone. Writes invoke Authoring's commands; `POST /api/write` is LA-AUT-EP02 under LA-AUT-CMD07, with its requirements, handler and client (`LA-AUT-EP02-CL`). A8 keeps its invariants and EV06 Data written, which is published, but no command now raises it: an open item.
+- **Product kinds:** tooling sits under the domain (`LA-PLT-TOOL01`–`TOOL04`); IPC channels under their command (`LA-PLT-CMD13-IPC`, `CMD14-IPC`); CLI commands are `LA-PLT-CMD17-CLI` and `CMD21-CLI`.
+- **Policy tests** may run at e2e-ui or manual: PO01-T and PO03-T (the desktop smoke test) and PO02-T (manual).
+- **Reader use cases keep an outcome:** UC04-R08, UC05-R05, UC06-R04, UC07-R08, UC08-R11, UC09-R12, UC10-R05 and UC14-R08, each proved manually.
+- **Exploring follows the app patterns too** (the coordinator's decision); its tests of UX-R04, R08, R11 and R12 are the T02s.
+- **Views of other sheets:** LA-V01 is LA-V90, LA-V03 LA-V92, LA-V04 LA-V93, LA-V06 LA-V95, LA-V07 LA-V96. LA-PAT-APP-UX-R03's title is shortened to fifteen words or fewer.

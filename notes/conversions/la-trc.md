@@ -778,3 +778,11 @@ None exist. No old test walks a whole flow, so each of the fourteen flows shows 
 | proves TRC-T→TRC records | 193 | each new test's parent (Test plan) |
 | proves TRC-T→AUT, EXP records | 12 | their parts to resolve in LA-AUT's and LA-EXP's sheets |
 | proves AUT-, EXP-, PLT-T → TRC records | 7 | to resolve: their parts become UC03-R01, UC04-R06, UC07-R04 tests, [EXP-V03]-R60's, and LA-EXP-V03-R07's |
+
+## Applied (brief 111)
+Brief 111 wrote this sheet into `data/` with the other four; [la-id-map.json](la-id-map.json) maps every old ID to its new one (null for a dropped one). What it resolved here:
+- **Numbers:** LA-V51, LA-UI52–UI54 and UI56 stand; LA-UI51 and UI57 are LA-UI90 (`SpecPages.tsx`), LA-UI55 is LA-UI100 (`parts.tsx`). `[EXP-V02]`, `[EXP-V03]`, `[EXP-V04]` are LA-V91, LA-V92, LA-V93; `[AUT-A2]` and `[AUT-A5]` are LA-AUT-A1.
+- **Reader use cases keep an outcome:** UC09-R06, UC10-R03, UC11-R08, UC12-R07, UC13-R04 and UC14-R07, each proved by a manual use case test.
+- **[AUT-add-test]** and **[AUT-add-pattern-rule]** are `LA-AUT-CMD01`. QRY04 selects by SP01–SP04.
+- **Read models** RM01–RM06 are `fed_by` LA-AUT-EV01, EV03, LA-CHK-EV01 and LA-PLT-EV06.
+- **Check rows:** CK08 and CK11 are gone (no such rows); `technical-file-missing` is CK12.
