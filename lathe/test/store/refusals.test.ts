@@ -93,6 +93,21 @@ describe('refusals across tables', () => {
     ]);
   });
 
+  it("records another aggregate of the command's domain, and refuses its own aggregate or another domain's", async () => {
+    const reason = 'The tool must never show as lent without its loan.';
+    await loads(everyKind());
+    const problems = await refusal(
+      adding({
+        ...catalog,
+        command_change: [
+          { command_id: 'TL-LEND-CMD01', aggregate_id: 'TL-LEND-A1', reason },
+          { command_id: 'TL-LEND-CMD01', aggregate_id: 'TL-CAT-A1', reason },
+        ],
+      }),
+    );
+    expect(problems.map((p) => p.rule)).toEqual(['command-change-in-domain', 'command-change-in-domain']);
+  });
+
   it('refuses a query and its read model in different domains', async () => {
     const problems = await refusal(adding({ ...catalog, query: [{ id: 'TL-CAT-QRY01', title: 'List listings', read_model_id: 'TL-LEND-RM01' }] }));
     expect(problems).toEqual([expect.objectContaining({ rule: 'id-prefix', file: 'data/query.jsonl', line: 2, key: 'TL-CAT-QRY01' })]);
