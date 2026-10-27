@@ -14,7 +14,8 @@ export default async function setup(project: TestProject) {
   const fixtures: Record<string, FixtureRows> = {};
   for (const name of readdirSync(DATA).sort()) {
     const dir = path.join(DATA, name);
-    const store = await openStore(dir, { dataDir: dir });
+    // Without Lathe's own checks beside it: a fixture holds the check rows its tests need.
+    const store = await openStore(dir, { dataDir: dir, latheDataDir: null });
     try {
       const tables: FixtureRows['tables'] = {};
       for (const table of store.schema.loadOrder) {
