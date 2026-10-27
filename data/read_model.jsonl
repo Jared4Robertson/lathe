@@ -1,0 +1,19 @@
+{"id":"LA-AUT-RM01","title":"Reference","domain_id":"LA-AUT","description":"Every kind, table, relation, stage and check of a product, generated from its schema and check rows."}
+{"id":"LA-AUT-RM02","title":"Record","domain_id":"LA-AUT","description":"One record as `lathe show` answers it: its row, parts, children and links."}
+{"id":"LA-CHK-RM01","title":"Problems","domain_id":"LA-CHK","description":"The result of a run: every problem the checks found in the loaded data, each naming its check and record. Never stored; worked out on every load."}
+{"id":"LA-EXP-RM01","title":"Space index","domain_id":"LA-EXP","description":"One index per space: the records of its product and of no product (SP01), their parts, the links among them, their coverage, and the space's problems with the workspace's."}
+{"id":"LA-EXP-RM02","title":"Folder tree","domain_id":"LA-EXP","description":"Each product's nav tree: Shared, then each domain's five stages, the kind groups inside a stage that holds several kinds (SP03), and the records in them, placed by DS03."}
+{"id":"LA-EXP-RM03","title":"Graph map","domain_id":"LA-EXP","description":"One map per product and layout: the folder tree (DS04) laid out once per load by DS05 (Tree), DS07 (Nested) or DS08 (Voronoi), every node with its place, size and label."}
+{"id":"LA-EXP-RM04","title":"ERD","domain_id":"LA-EXP","description":"What a domain's or an aggregate's ERD draws: boxes and lines, worked out on each request."}
+{"id":"LA-EXP-RM05","title":"Record history","domain_id":"LA-EXP","description":"The commits that changed a record's rows, read from git on each request."}
+{"id":"LA-EXP-RM06","title":"Spaces","domain_id":"LA-EXP","description":"Every product as a space in the rail, with its look and place."}
+{"id":"LA-PLT-RM01","title":"Workspace","domain_id":"LA-PLT","description":"Every product's records, links, problems and coverage, as one load of the data files gives them: `Workspace` in `lathe/src/types.ts`. Filled from the data files whenever they change."}
+{"id":"LA-PLT-RM02","title":"Keymap","domain_id":"LA-PLT","description":"Every keyboard command with its bindings as the platform shows them, which every hint, the palette and the sheet read."}
+{"id":"LA-PLT-RM03","title":"Themes","domain_id":"LA-PLT","description":"Every theme, which one is in use and the color mode."}
+{"id":"LA-PLT-RM04","title":"Recent folders","domain_id":"LA-PLT","description":"The recent folders, latest first, as File › Open Recent and the Dock menu list them."}
+{"id":"LA-TRC-RM01","title":"Coverage","domain_id":"LA-TRC","description":"Per domain and obligation kind: how many obligations are designed, built, proved and not automated yet, out of the total."}
+{"id":"LA-TRC-RM02","title":"Coverage gaps","domain_id":"LA-TRC","description":"Each obligation not designed, built or proved, with what it lacks."}
+{"id":"LA-TRC-RM03","title":"Tests by state","domain_id":"LA-TRC","description":"Each domain's tests by state: automated, manual and not automated yet."}
+{"id":"LA-TRC-RM04","title":"Owed pattern rules","domain_id":"LA-TRC","description":"Each pattern rule each following domain owes, with its standing there."}
+{"id":"LA-TRC-RM05","title":"File facts","domain_id":"LA-TRC","description":"Each test and technical record that names a file: whether the file exists, and whether a test's file names its ID."}
+{"id":"LA-TRC-RM06","title":"Record trace","domain_id":"LA-TRC","description":"The records that design, build and prove one record, by group."}

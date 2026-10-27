@@ -1203,3 +1203,14 @@ Records written for the new model rather than moved, with what changed:
 | meets T122, T123, T124→LA-STD-CODE-R03 | 3 | UC16-R01-T01, UC16-R02-T01, UC16-R02-T02 meet R03 |
 | proves from AUT tests | 305 | each new test's parent (Test plan above); proofs of other domains' records → Cross-domain links |
 | proves into AUT from other domains | 18 | Cross-domain links |
+
+## Applied (brief 111)
+Brief 111 wrote this sheet into `data/` with the other four; [la-id-map.json](la-id-map.json) maps every old ID to its new one (null for a dropped one). What it resolved here:
+- **Numbers:** this sheet's product-scoped numbers stand (LA-VO01–VO18, LA-V01–V04, LA-INT01–INT04, LA-UI01–UI05). LA-INT01 is now *Claude Code*, the one integration for the plugin's MCP server and its guard hook (`LA-INT01-HK01`); LA-INT04 Git is also Exploring's history, so its adapter is `runGit` in `lathe/src/server/history.ts`.
+- **INV01** is titled "An ID means one record" and says why the rule exists (the Owner's wording).
+- **Product kinds:** the eight of the brief. A product kind has one parent kind, so `cli_command` sits under its domain, keeps the ID `<operation>-CLI` and names its operation with `exposes`; `cli_handler` folds into the CLI command's `file`. CLI11 is `LA-AUT-QRY01-CLI`; CLI12, the row types generator, is tooling `LA-AUT-TOOL01`. Skills are the plugin's six authoring skills, `LA-AUT-SK01`–`SK06`.
+- **Check rows** `LA-AUT-CK01`–`CK06`: domain-named-for-technology, event-tense, entity-unreferenced, has-crosses-aggregate, step-order and LA's own actor-not-a-role.
+- **Screen behavior moved to views:** UC14-R05–R08 and UC16-R04–R06 became view requirements (LA-V02-R02, and R71 onward on LA-V92, LA-V65, LA-V90 and LA-V93), with their tests as view tests; UC14 keeps its outcome as UC14-R09, proved manually.
+- **One write path:** `POST /api/write` is `LA-AUT-EP02` under CMD07, with its requirements, handler and client (Platform's CMD18 is gone).
+- **Restored tests:** LA-VO03-C02-T (T11) and UC02-R02-T01 (T13) live in `lathe/test/own-spec.test.ts`.
+- **Views of other sheets:** the record page is LA-V92, the graph LA-V93; `[AUT-A…]` references in other sheets are LA-AUT-A1.

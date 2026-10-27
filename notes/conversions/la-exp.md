@@ -1246,3 +1246,10 @@ No other kind is needed: the graph's layouts are domain services (judgment call 
 | proves test→obligation | 346 | each new test's parent (Test plan above) |
 
 Links into Exploring from other domains (their sheets account for the rows): 24 `proves` (table "Other domains' tests…"), 24 `satisfies` (dropped), 9 `applies` (dropped), 3 `carries_out` and 1 `fulfills` from LA-TRC-F03 (its steps are UC01-FL's and UC02-FL's), 11 `uses` (the other domains' steps happen in LA-V01–LA-V03), 7 `covers` (dropped), 2 `implements` (LA-PLT-C07→V01 to Platform's UI component; LA-PLT-C37→E01 → EP01-H, QRY11-H, LA-INT01-AD here), 1 `refers_to` (LA-PLT-EN02→EN01: a field typed LA-VO01) and 4 `relates_to` (LA-AUT-A1, LA-PLT-A3, LA-PLT-A5, LA-TRC-A1 →A1: fields typed LA-VO01, or dropped, in those sheets).
+
+## Applied (brief 111)
+Brief 111 wrote this sheet into `data/` with the other four; [la-id-map.json](la-id-map.json) maps every old ID to its new one (null for a dropped one). What it resolved here:
+- **Numbers:** Exploring takes the block from 90: LA-VO90–VO92, LA-V90–V97 (Nav, Domain page, Record page, Graph view, Model view, Side bar, Focus page, Products page), LA-UI90–UI125. LA-UI01 is LA-UI90 for `SpecPages.tsx`, LA-UI11 is LA-UI100 for `parts.tsx`, LA-UI37 folds into Platform's LA-UI61 (`App.tsx`); LA-INT01 Git is LA-INT04.
+- **Screen behavior is view requirements:** every UC requirement went to the view its fulfilling step happens in, numbered after the view's own and grouped by its use case's title; their unit and e2e-ui tests became view tests (UC12-R05-T01, an api test, folds into EP01-R01-T01). Each use case keeps one UC requirement stating its outcome (UC01-R05 and so on, after its last old number), proved by an e2e-ui stability spec (UC03, UC04, UC12, UC14) or manually.
+- **Exploring follows LA-PAT-APP-CODE and LA-PAT-APP-UX,** so it owes all 24 rules; its four pattern rule tests are numbered T02 (Platform's are T01).
+- **Writes:** UC14-FL-S02 invokes `LA-AUT-CMD07`, S05 `LA-AUT-CMD06`. Read models RM01–RM06 are `fed_by` the four published events; RM03 calls DS04–DS08.

@@ -22,7 +22,7 @@ export const ALLOWED_LEVELS: Readonly<Record<string, readonly string[]>> = {
   constraint_test: ['unit', 'database'],
   invariant_test: ['unit', 'database'],
   specification_test: ['unit', 'database'],
-  policy_test: ['database', 'api', 'e2e-api'],
+  policy_test: ['database', 'api', 'e2e-api', 'e2e-ui', 'manual'],
   domain_service_test: ['unit'],
   use_case_test: ['api', 'e2e-api', 'e2e-ui', 'manual'],
   view_test: ['unit', 'e2e-ui', 'manual'],

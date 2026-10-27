@@ -1,0 +1,7 @@
+{"id":"LA-AUT-SK01","title":"Model a domain","domain_id":"LA-AUT","file":"plugin/skills/model-a-domain/SKILL.md"}
+{"id":"LA-AUT-SK02","title":"Design interactions","domain_id":"LA-AUT","file":"plugin/skills/design-interactions/SKILL.md"}
+{"id":"LA-AUT-SK03","title":"Extend the meta-model","domain_id":"LA-AUT","file":"plugin/skills/extend-the-meta-model/SKILL.md"}
+{"id":"LA-AUT-SK04","title":"Plan tests","domain_id":"LA-AUT","file":"plugin/skills/plan-tests/SKILL.md"}
+{"id":"LA-AUT-SK05","title":"Write the technical spec","domain_id":"LA-AUT","file":"plugin/skills/write-the-technical-spec/SKILL.md"}
+{"id":"LA-AUT-SK06","title":"Write use cases","domain_id":"LA-AUT","file":"plugin/skills/write-use-cases/SKILL.md"}
+{"id":"LA-CHK-SK01","title":"Check and fix","domain_id":"LA-CHK","file":"plugin/skills/check-and-fix/SKILL.md"}
