@@ -78,13 +78,15 @@ check('manual-test-file-silent', () => {
 
 check('test-level-not-allowed', () => {
   it('a test at a level its kind does not allow is a warning naming the allowed levels', async () => {
-    let data = changing(complete(), 'constraint_test', () => true, { level: 'database' });
+    let data = changing(complete(), 'constraint_test', () => true, { level: 'api' });
     data = changing(data, 'flow_test', (r) => r.id === 'EX-LEND-UC01-FL-T', { level: 'api' });
     const ws = await loadData(data);
     expect(ofCheck(ws, 'test-level-not-allowed').map((p) => p.message)).toEqual([
       'Flow test EX-LEND-UC01-FL-T runs at level api, which a flow test does not allow; run it at e2e-ui, manual.',
-      'Constraint test EX-VO01-C01-T runs at level database, which a constraint test does not allow; run it at unit.',
+      'Constraint test EX-VO01-C01-T runs at level api, which a constraint test does not allow; run it at database, unit.',
     ]);
+    // A constraint enforced by a SQL CHECK is tested at database level, which a constraint test allows.
+    expect(ofCheck(await loadData(changing(complete(), 'constraint_test', () => true, { level: 'database' })), 'test-level-not-allowed')).toEqual([]);
   });
 
   it('a pattern rule test may run at any level', async () => {
@@ -107,41 +109,83 @@ check('technical-file-missing', () => {
   });
 });
 
-check('unused', () => {
-  it('a view, integration, value object, specification or UI component nothing uses is an error', async () => {
+describe('nothing uses it', () => {
+  let ws: Workspace;
+  beforeAll(async () => {
     let data = without(complete(), 'happens_in', () => true);
     data = without(data, 'exchanges_with', () => true);
     data = without(data, 'checks', () => true);
     data = without(data, 'renders', () => true);
     data = changing(data, 'entity_field', (r) => r.type_value_object_id === 'EX-VO01', { type_value_object_id: undefined, type: 'text' });
-    const ws = await loadData(data);
-    expect(ofCheck(ws, 'unused').map((p) => [p.severity, p.record])).toEqual([
-      ['error', 'EX-INT01'],
-      ['error', 'EX-LEND-SP01'],
-      ['error', 'EX-UI01'],
-      ['error', 'EX-V01'],
-      ['error', 'EX-VO01'],
-    ]);
+    ws = await loadData(data);
   });
+  const unused: [string, string, string][] = [
+    ['view-unused', 'EX-V01', 'View EX-V01 is used by nothing: flow steps happen in it; link the steps that happen in it with happens_in, or remove it.'],
+    ['integration-unused', 'EX-INT01', 'Integration EX-INT01 is used by nothing: flow steps exchange with it; link the steps that exchange with it with exchanges_with, or remove it.'],
+    ['value-object-unused', 'EX-VO01', 'Value object EX-VO01 is used by nothing: fields of entities, value objects, events or read models are typed with it; type the fields that hold it with it, or remove it.'],
+    ['specification-unused', 'EX-LEND-SP01', 'Specification EX-LEND-SP01 is used by nothing: commands check it and queries select by it; link the commands that check it or the queries that select by it, or remove it.'],
+    ['ui-component-unused', 'EX-UI01', 'UI component EX-UI01 is used by nothing: it renders views; link the views it renders with renders, or remove it.'],
+  ];
+  for (const [name, record, message] of unused) {
+    check(name, () => {
+      it(`a record that nothing uses is a ${name} error`, () => {
+        expect(ofCheck(ws, name)).toEqual([{ severity: 'error', check: name, record, message }]);
+      });
+    });
+  }
 
-  it('a value object used by another value object, an event or a read model is used; a query selecting by a specification uses it', async () => {
+  it('a value object used by a read model is used; a query selecting by a specification uses it', async () => {
     let data = changing(complete(), 'entity_field', (r) => r.type_value_object_id === 'EX-VO01', { type_value_object_id: undefined, type: 'text' });
     data = adding(data, { read_model_field: [{ read_model_id: 'EX-LEND-RM01', position: 2, name: 'Email', meaning: 'Whom to tell.', type_value_object_id: 'EX-VO01', required: false }] });
     data = without(data, 'checks', () => true);
     data = adding(data, { selects_by: [{ source_id: 'EX-LEND-QRY01', target_id: 'EX-LEND-SP01' }] });
-    expect(ofCheck(await loadData(data), 'unused')).toEqual([]);
+    const used = await loadData(data);
+    expect(used.problems.filter((p) => p.check.endsWith('-unused'))).toEqual([]);
   });
 });
 
-check('pattern-rule-test-domain', () => {
-  it('a pattern rule test naming a domain that does not follow the pattern is an error', async () => {
+describe('coverage gaps as warnings', () => {
+  let ws: Workspace;
+  beforeAll(async () => {
+    let data = without(complete(), 'fulfills', (r) => r.source_id === 'EX-LEND-UC02-FL-S01');
+    data = changing(data, 'specification_test', () => true, { state: 'not automated yet' });
+    ws = await loadData(data, { missing: ['src/dates.ts'] });
+  });
+  const mirrors = (name: string, missing: string) =>
+    check(name, () => {
+      it(`names exactly the obligations coverage lists as not ${missing}`, () => {
+        const listed = ws.coverage.flatMap((c) => c.gaps.filter((g) => g.missing === missing).map((g) => ({ severity: 'warning', check: name, record: g.id, message: g.message })));
+        expect(listed.length).toBeGreaterThan(0);
+        expect(ofCheck(ws, name)).toEqual(listed);
+      });
+    });
+  mirrors('not-designed', 'designed');
+  mirrors('not-built', 'built');
+  mirrors('not-proved', 'proved');
+
+  it('they say which obligation lacks what', () => {
+    expect(ofCheck(ws, 'not-designed').map((p) => p.message)).toEqual(['UC requirement EX-LEND-UC02-R01 is not designed yet.']);
+    expect(ofCheck(ws, 'not-built').map((p) => p.record)).toEqual(['EX-LEND-DS01']);
+    expect(ofCheck(ws, 'not-proved').map((p) => p.message)).toEqual(['Specification EX-LEND-SP01 is not proved yet: its test is not automated yet.']);
+  });
+});
+
+check('pattern-rule-test-outside-followers', () => {
+  it('a pattern rule test naming a domain that does not follow the pattern is an error; one where the rule is waived is a warning', async () => {
     let data = adding(complete(), { domain: [{ id: 'EX-SHOP', title: 'Shop', product_id: 'EX', subdomain_type: 'supporting' }] });
     data = adding(data, { pattern_rule_test: [{ id: 'EX-PAT-ACT-R01-T02', title: 'In the shop', pattern_rule_id: 'EX-PAT-ACT-R01', domain_id: 'EX-SHOP', level: 'api', state: 'not automated yet' }] });
     const ws = await loadData(data);
-    expect(ofCheck(ws, 'pattern-rule-test-domain')).toEqual([expect.objectContaining({ severity: 'error', record: 'EX-PAT-ACT-R01-T02' })]);
+    expect(ofCheck(ws, 'pattern-rule-test-outside-followers')).toEqual([
+      expect.objectContaining({ severity: 'error', record: 'EX-PAT-ACT-R01-T02', message: expect.stringContaining('which does not follow pattern EX-PAT-ACT') }),
+    ]);
     // Once the domain follows the pattern itself, the test is in place.
     const following = adding(data, { follows: [{ source_id: 'EX-SHOP', target_id: 'EX-PAT-ACT' }] });
-    expect(ofCheck(await loadData(following), 'pattern-rule-test-domain')).toEqual([]);
+    expect(ofCheck(await loadData(following), 'pattern-rule-test-outside-followers')).toEqual([]);
+    // A rule waived in a following domain: its test there counts for nothing.
+    const waived = changing(complete(), 'pattern_rule', () => true, { applies_when_setting: 'record', applies_when_value: 'Loan', applies_when_negated: false });
+    expect(ofCheck(await loadData(waived), 'pattern-rule-test-outside-followers')).toEqual([
+      expect.objectContaining({ severity: 'warning', record: 'EX-PAT-ACT-R01-T01', message: expect.stringContaining('where the rule is not applicable or waived') }),
+    ]);
   });
 });
 
@@ -164,24 +208,24 @@ check('pattern-not-followed', () => {
   });
 });
 
-check('command-changes-another-aggregate', () => {
+check('command-change-recorded', () => {
   it('each recorded exception to one aggregate per command is a warning with its reason', async () => {
     const ws = await loadData(adding(complete(), { command_change: [{ command_id: 'EX-LEND-CMD01', aggregate_id: 'EX-LEND-A2', reason: 'The tool must never show as free while lent.' }] }));
-    expect(ofCheck(ws, 'command-changes-another-aggregate')).toEqual([
+    expect(ofCheck(ws, 'command-change-recorded')).toEqual([
       {
-        severity: 'warning', check: 'command-changes-another-aggregate', record: 'EX-LEND-CMD01',
+        severity: 'warning', check: 'command-change-recorded', record: 'EX-LEND-CMD01',
         message: 'Command EX-LEND-CMD01 also changes aggregate EX-LEND-A2 in the same transaction: The tool must never show as free while lent.',
       },
     ]);
   });
 });
 
-check('event-not-outbox', () => {
+check('event-not-by-outbox', () => {
   it('an event a policy hears, or a published one, not delivered by outbox is a warning', async () => {
     let data = changing(complete(), 'event_type', (r) => r.id === 'EX-LEND-EV01-ET', { delivery: 'in process' });
     data = changing(data, 'domain_event', (r) => r.id === 'EX-LEND-EV02', { published: true });
     const ws = await loadData(data);
-    expect(ofCheck(ws, 'event-not-outbox').map((p) => p.message)).toEqual([
+    expect(ofCheck(ws, 'event-not-by-outbox').map((p) => p.message)).toEqual([
       'Domain event EX-LEND-EV01 is heard by policy EX-LEND-PO01, but its event type EX-LEND-EV01-ET is delivered in process; deliver it by outbox.',
       'Domain event EX-LEND-EV02 is published, but its event type EX-LEND-EV02-ET is delivered in process; deliver it by outbox.',
     ]);
@@ -192,10 +236,17 @@ check('event-not-outbox', () => {
     data = changing(data, 'event_type', () => true, { delivery: undefined });
     data = changing(data, 'domain_event', (r) => r.id === 'EX-LEND-EV02', { published: true });
     const ws = await loadData(data);
-    expect(ofCheck(ws, 'event-not-outbox').map((p) => p.message)).toEqual([
+    expect(ofCheck(ws, 'event-not-by-outbox').map((p) => p.message)).toEqual([
       'Domain event EX-LEND-EV01 is heard by policy EX-LEND-PO01, but has no event type; give it one delivered by outbox.',
       'Domain event EX-LEND-EV02 is published, but its event type EX-LEND-EV02-ET gives no delivery; deliver it by outbox.',
     ]);
+  });
+
+  it('an event a policy hears whose aggregate is stored in no table, such as one inside a browser tab, is exempt', async () => {
+    let data = changing(complete(), 'event_type', (r) => r.id === 'EX-LEND-EV01-ET', { delivery: 'in process' });
+    data = without(data, 'table_key', (r) => r.table_id === 'EX-LEND-EN01-TB');
+    data = without(data, 'table', (r) => r.id === 'EX-LEND-EN01-TB');
+    expect(ofCheck(await loadData(data), 'event-not-by-outbox')).toEqual([]);
   });
 });
 

@@ -58,15 +58,15 @@ describe('check rows', () => {
   });
 
   it('LA-CHK-T46 A check row is read as summary, explanation, severity, kinds and stage, and one without them is refused', async () => {
-    expect(defaults.checks.find((c) => c.check === 'unused')).toEqual({
-      check: 'unused',
+    expect(defaults.checks.find((c) => c.check === 'value-object-unused')).toEqual({
+      check: 'value-object-unused',
       severity: 'error',
-      summary: 'A view, integration, value object, specification or UI component that nothing uses.',
-      explanation: expect.stringContaining('Link what uses it, or remove it.'),
+      summary: 'A value object that nothing uses.',
+      explanation: expect.stringContaining('Type the fields that hold it with it, or remove it.'),
       origin: 'lathe',
       product: null,
-      kinds: ['view', 'integration', 'value_object', 'specification', 'ui_component'],
-      stage: 'interaction-design',
+      kinds: ['value_object'],
+      stage: 'domain-model',
     });
     expect(defaults.checks.find((c) => c.check === 'too-many-children')).toMatchObject({ kinds: [], stage: null });
     const bare = { name: 'bare', position: 1, severity: 'warning', summary: 'Only a summary.', query: 'SELECT 1' };
@@ -136,7 +136,7 @@ describe('the reference', () => {
     expect(at('# Lathe reference')).toBe(0);
     const order = ['data/<table>.jsonl', '\n## Domain model\n', '<a id="kind-aggregate">', '### Checks: domain model', '### Coverage gaps: domain model', '\n## Use cases\n', '\n## Interaction design\n', '\n## Technical specification\n', '\n## Test plan\n', '\n## Outside the stages\n', '<a id="kind-question">', '\n## Other tables\n', '\n## Relations\n', '\n## Checks of any kind\n', '<a id="check-data-refused">'];
     for (let i = 1; i < order.length; i++) expect(at(order[i - 1]), `${order[i - 1]} before ${order[i]}`).toBeLessThan(at(order[i]));
-    for (const anchor of ['stage-test-plan', 'kind-use_case', 'table-use_case', 'table-entity_field', 'relation-fulfills', 'check-unused', 'check-data-refused', 'gap-use-case-without-flow']) {
+    for (const anchor of ['stage-test-plan', 'kind-use_case', 'table-use_case', 'table-entity_field', 'relation-fulfills', 'check-view-unused', 'check-data-refused', 'gap-use-case-without-flow']) {
       expect(markdown).toContain(`<a id="${anchor}"></a>`);
     }
     // Every link inside the document lands on one of its anchors.
@@ -151,7 +151,7 @@ describe('the reference', () => {
     expect(markdown).toContain("What clean architecture calls a use case or an interactor is what Lathe calls a command handler\n(`command_handler`)");
     const start = markdown.indexOf('<a id="kind-invariant"></a>');
     const invariant = markdown.slice(start, markdown.indexOf('<a id="table-invariant"></a>'));
-    expect(invariant).toContain("  - **Designed:** A data model of one of its aggregate's entities, or a table's unique key naming it.");
+    expect(invariant).toContain("  - **Designed:** By construction, under its aggregate.");
     expect(invariant).toContain('  - **Proved:** Its invariant test.');
     const test = markdown.slice(markdown.indexOf('<a id="kind-flow_test"></a>'));
     expect(test).toContain('- **Run by levels:** `e2e-ui`, `manual`');

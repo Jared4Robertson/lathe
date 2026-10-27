@@ -3,8 +3,9 @@
 // Every obligation (a member of the obligation supertype: constraints, invariants, specifications, policies, domain
 // services, UC requirements, view requirements, API requirements, pattern rules, standard rules and a product's own
 // obligation kinds) is counted as:
-// - designed: its implementation is specified. A UC requirement is designed once a flow step fulfills it; any other
-//   obligation once a technical record implements it (obligation_impl);
+// - designed: its implementation is specified. A UC requirement is designed once a flow step fulfills it, a standard
+//   rule once a technical record meets it, a product's own obligation once a design link targets it; the others by
+//   construction (DESIGNED_BY_CONSTRUCTION);
 // - built: a technical record that implements it names a file that exists;
 // - proved: a test of it exists, automated or manual, at a level its test kind allows (ALLOWED_LEVELS), and an
 //   automated test's file exists and names the test's ID.
@@ -18,7 +19,7 @@ import { sqlName, sqlString, type SchemaDescription, type Stage } from './store/
 
 /** The run by levels each test kind allows: a test at another level is reported by test-level-not-allowed and proves nothing. */
 export const ALLOWED_LEVELS: Readonly<Record<string, readonly string[]>> = {
-  constraint_test: ['unit'],
+  constraint_test: ['unit', 'database'],
   invariant_test: ['unit', 'database'],
   specification_test: ['unit', 'database'],
   policy_test: ['database', 'api', 'e2e-api'],
@@ -37,35 +38,43 @@ export const TEST_KINDS = Object.keys(ALLOWED_LEVELS);
 
 /** What designs, builds and proves each of Lathe's obligation kinds, as obligation_impl and obligation_proof count it. */
 export const OBLIGATION_COVERAGE: Readonly<Record<string, { designed: string; built: string; proved: string }>> = {
-  constraint: { designed: "Its value object has a value type.", built: "The value type's file exists.", proved: 'Its constraint test.' },
+  constraint: { designed: 'By construction, under its value object.', built: "Its value object's value type names a file that exists.", proved: 'Its constraint test.' },
   invariant: {
-    designed: "A data model of one of its aggregate's entities, or a table's unique key naming it.",
-    built: "That data model's file, or that table's file, exists.",
+    designed: 'By construction, under its aggregate.',
+    built: "A data model of one of its aggregate's entities, or the table whose unique key names it, names a file that exists.",
     proved: 'Its invariant test.',
   },
-  specification: { designed: 'It has a predicate.', built: "The predicate's file exists.", proved: 'Its specification test.' },
-  policy: { designed: 'It has an event handler.', built: "The event handler's file exists.", proved: 'Its policy test.' },
-  domain_service: { designed: 'It has a service.', built: "The service's file exists.", proved: 'One of its domain service tests.' },
+  specification: { designed: 'By construction.', built: 'Its predicate names a file that exists.', proved: 'Its specification test.' },
+  policy: { designed: 'By construction, under its command.', built: 'Its event handler names a file that exists.', proved: 'Its policy test.' },
+  domain_service: { designed: 'By construction, under its domain.', built: 'Its service names a file that exists.', proved: 'One of its domain service tests.' },
   uc_requirement: {
     designed: 'A step of its use case\'s flow fulfills it.',
     built: "A fulfilling step's command or query handler, or a UI component of the view it happens in, names a file that exists.",
     proved: 'One of its use case tests.',
   },
-  view_requirement: { designed: 'A UI component renders its view.', built: "That UI component's file exists.", proved: 'One of its view tests.' },
-  api_requirement: { designed: 'Its endpoint has an endpoint handler.', built: "The endpoint handler's file exists.", proved: 'One of its endpoint tests.' },
+  view_requirement: { designed: 'By construction, under its view.', built: 'A UI component that renders its view names a file that exists.', proved: 'One of its view tests.' },
+  api_requirement: { designed: 'By construction, under its endpoint.', built: "Its endpoint's handler names a file that exists.", proved: 'One of its endpoint tests.' },
   pattern_rule: {
-    designed: 'Not asked: proof only. It is owed by each domain that follows its pattern, unless waived there by a setting.',
-    built: 'Not asked.',
+    designed: 'Wherever it is owed: by each domain that follows its pattern, itself or through a use case, unless waived there by a setting.',
+    built: 'Not asked: proof only.',
     proved: 'Its pattern rule test naming the owing domain.',
   },
-  standard_rule: { designed: 'A technical record meets it.', built: "That record's file exists.", proved: 'A test meets it.' },
+  standard_rule: { designed: 'A technical record meets it.', built: 'A technical record that meets it names a file that exists.', proved: 'A test meets it.' },
 };
 
 /** The obligation kinds Lathe defines what designs, builds and proves; a product's own obligation kinds go by its design and proof links. */
 const LATHE_OBLIGATIONS = Object.keys(OBLIGATION_COVERAGE);
 
-/** The obligation kinds that ask for proof only. */
+/** The obligation kinds that ask for proof only: designed and built count as their total. */
 const PROOF_ONLY = ['pattern_rule'];
+
+/**
+ * The obligation kinds designed by construction: the record itself, under its parent, says what implements it (a
+ * constraint its value object's value type, a view requirement its view), and a pattern rule is owed only where a
+ * domain or use case follows its pattern. A UC requirement, a standard rule and a product's own obligation are designed
+ * by links.
+ */
+const DESIGNED_BY_CONSTRUCTION = ['constraint', 'invariant', 'specification', 'policy', 'domain_service', 'view_requirement', 'api_requirement', 'pattern_rule'];
 
 const list = (items: readonly string[]) => items.map(sqlString).join(', ');
 
@@ -88,11 +97,13 @@ export interface GapRule {
   kinds: string[];
   /** What it reports, in one sentence. */
   summary: string;
-  /** A SELECT returning (id, message) for each record short of the minimum. */
-  sql: string;
+  /** A SELECT returning (id, message) for each record short of the minimum, for the schema it runs on. */
+  sql: (schema: SchemaDescription) => string;
 }
 
-const gap = (name: string, stage: Stage, kinds: string[], summary: string, sql: string): GapRule => ({ name, stage, kinds, summary, sql: sql.trim() });
+const gap = (name: string, stage: Stage, kinds: string[], summary: string, sql: string | ((schema: SchemaDescription) => string)): GapRule => ({
+  name, stage, kinds, summary, sql: typeof sql === 'string' ? () => sql.trim() : sql,
+});
 
 /** A record of `kind` with no row in `table` whose `column` names it: a design record missing its technical record. */
 const missingImpl = (name: string, kind: string, label: string, table: string, column: string, what: string, extra = ''): GapRule =>
@@ -124,8 +135,10 @@ export const GAP_RULES: GapRule[] = [
     `SELECT e.id, 'Domain event ' || e.id || ' is raised by no command.' AS message FROM domain_event e WHERE NOT EXISTS (SELECT 1 FROM raises r WHERE r.target_id = e.id)`),
   gap('read-model-without-fields', 'domain-model', ['read_model', 'read_model_field'], 'A read model with no fields.',
     `SELECT m.id, 'Read model ' || m.id || ' lists no fields.' AS message FROM read_model m WHERE NOT EXISTS (SELECT 1 FROM read_model_field f WHERE f.read_model_id = m.id)`),
-  gap('read-model-reads-nothing', 'domain-model', ['read_model', 'aggregate'], 'A read model that reads no aggregate.',
-    `SELECT m.id, 'Read model ' || m.id || ' reads no aggregate.' AS message FROM read_model m WHERE NOT EXISTS (SELECT 1 FROM reads r WHERE r.source_id = m.id)`),
+  // A read model fed by events (fed_by, where the schema has it) may read no aggregate of its own.
+  gap('read-model-reads-nothing', 'domain-model', ['read_model', 'aggregate'], 'A read model that reads no aggregate and is fed by no event.', (schema) =>
+    `SELECT m.id, 'Read model ' || m.id || ' reads no aggregate${schema.relations.fed_by ? ' and is fed by no event' : ''}.' AS message FROM read_model m
+WHERE NOT EXISTS (SELECT 1 FROM reads r WHERE r.source_id = m.id)${schema.relations.fed_by ? '\n  AND NOT EXISTS (SELECT 1 FROM fed_by f WHERE f.source_id = m.id)' : ''}`),
   gap('read-model-without-query', 'domain-model', ['read_model', 'query'], 'A read model no query asks.',
     `SELECT m.id, 'Read model ' || m.id || ' has no query.' AS message FROM read_model m WHERE NOT EXISTS (SELECT 1 FROM query q WHERE q.read_model_id = m.id)`),
   gap('specification-reads-nothing', 'domain-model', ['specification', 'aggregate'], 'A specification that reads no aggregate.',
@@ -269,9 +282,9 @@ WITH owed AS (
 )
 SELECT o.product, o.domain, o.id, o.kind,
   o.kind IN (${list(PROOF_ONLY)}) AS proof_only,
-  o.kind IN (${list(PROOF_ONLY)})
+  o.kind IN (${list(DESIGNED_BY_CONSTRUCTION)})
     OR (o.kind = 'uc_requirement' AND EXISTS (SELECT 1 FROM fulfills f WHERE f.target_id = o.id))
-    OR (o.kind <> 'uc_requirement' AND EXISTS (SELECT 1 FROM obligation_impl i WHERE i.obligation_id = o.id)) AS designed,
+    OR (o.kind NOT IN (${list([...DESIGNED_BY_CONSTRUCTION, 'uc_requirement'])}) AND EXISTS (SELECT 1 FROM obligation_impl i WHERE i.obligation_id = o.id)) AS designed,
   o.kind IN (${list(PROOF_ONLY)})
     OR EXISTS (SELECT 1 FROM obligation_impl i JOIN file_facts f ON f.record = i.impl_id AND f.file_exists WHERE i.obligation_id = o.id) AS built,
   EXISTS (SELECT 1 FROM obligation_proof p WHERE p.obligation_id = o.id AND p.counts AND (o.kind <> 'pattern_rule' OR p.domain_id = o.domain)) AS proved,
@@ -324,7 +337,7 @@ WITH missing AS (
   FROM coverage_item i JOIN meta_kind k ON k.name = i.kind WHERE NOT i.proved
   UNION ALL
   SELECT s.product_id, s.domain_id, g.id, r.kind, g.missing, 4, g.message
-  FROM (${GAP_RULES.map((g) => `SELECT id, ${sqlString(g.name)} AS missing, message FROM (${g.sql})`).join('\n    UNION ALL ')}) g
+  FROM (${GAP_RULES.map((g) => `SELECT id, ${sqlString(g.name)} AS missing, message FROM (${g.sql(schema)})`).join('\n    UNION ALL ')}) g
   JOIN record_id r ON r.id = g.id JOIN record_scope s ON s.id = g.id
 )
 SELECT * FROM missing;`;

@@ -48,32 +48,35 @@ describe('designed and built', () => {
     ws = await loadData(data, { missing: ['src/dates.ts'] });
   });
 
-  it('an obligation is designed once the technical record that implements it exists', () => {
+  it('a UC requirement is designed once a step fulfills it, a standard rule once a technical record meets it; the rest by construction', () => {
     expect(gaps(ws).filter((g) => g.startsWith('designed'))).toEqual([
-      'designed EX-LEND-EP01-R01', // its endpoint has no handler
-      'designed EX-LEND-PO01', // no event handler
-      'designed EX-LEND-SP01', // no predicate
       'designed EX-LEND-UC02-R01', // no step fulfills it
       'designed EX-STD-CODE-R01', // no technical record meets it
-      'designed EX-V01-R01', // no UI component renders its view
-      'designed EX-VO01-C01', // its value object has no value type
     ]);
-    expect(obligation(ws, null, 'constraint')).toMatchObject({ total: 1, designed: 0, built: 0, proved: 1 });
+    expect(obligation(ws, null, 'constraint')).toMatchObject({ total: 1, designed: 1, built: 0, proved: 1 });
   });
 
-  it('LA-TRC-T02 an obligation is built once that record names a file that exists, counted apart from designed and proved', () => {
-    expect(gaps(ws).filter((g) => g.startsWith('built'))).toEqual(['built EX-LEND-DS01']);
+  it('LA-TRC-T02 an obligation is built once the technical record that implements it names a file that exists, counted apart from designed and proved', () => {
+    expect(gaps(ws).filter((g) => g.startsWith('built'))).toEqual([
+      'built EX-LEND-DS01', // its service's file is missing
+      'built EX-LEND-EP01-R01', // its endpoint has no handler
+      'built EX-LEND-PO01', // no event handler
+      'built EX-LEND-SP01', // no predicate
+      'built EX-V01-R01', // no UI component renders its view
+      'built EX-VO01-C01', // its value object has no value type
+    ]);
     expect(obligation(ws, 'EX-LEND', 'domain_service')).toMatchObject({ total: 1, designed: 1, built: 0, proved: 1 });
     // An obligation not designed is not reported as not built as well.
-    expect(gaps(ws)).not.toContain('built EX-LEND-SP01');
+    expect(gaps(ws)).not.toContain('built EX-LEND-UC02-R01');
   });
 
-  it('an invariant is designed by a data model of its aggregate, or by a unique key naming it', async () => {
+  it('an invariant is built by a data model of its aggregate, or by the table of a unique key naming it', async () => {
     const noModels = without(complete(), 'data_model', (r) => r.entity_id !== 'EX-LEND-EN03');
     const bare = await loadData(noModels);
-    expect(gaps(bare)).toEqual(['designed EX-LEND-INV01', 'entity-without-data-model EX-LEND-EN01', 'entity-without-data-model EX-LEND-EN02']);
-    const keyed = await loadData(adding(noModels, { table_key: [{ table_id: 'EX-LEND-EN01-TB', position: 2, type: 'unique', columns: ['tool_id'], invariant_id: 'EX-LEND-INV01' }] }), { missing: ['src/schema.sql'] });
-    expect(obligation(keyed, 'EX-LEND', 'invariant')).toMatchObject({ designed: 1, built: 0 });
+    expect(gaps(bare)).toEqual(['built EX-LEND-INV01', 'entity-without-data-model EX-LEND-EN01', 'entity-without-data-model EX-LEND-EN02']);
+    const key = { table_key: [{ table_id: 'EX-LEND-EN01-TB', position: 2, type: 'unique', columns: ['tool_id'], invariant_id: 'EX-LEND-INV01' }] };
+    expect(obligation(await loadData(adding(noModels, key)), 'EX-LEND', 'invariant')).toMatchObject({ designed: 1, built: 1 });
+    expect(obligation(await loadData(adding(noModels, key), { missing: ['src/schema.sql'] }), 'EX-LEND', 'invariant')).toMatchObject({ designed: 1, built: 0 });
   });
 
   it("a UC requirement is built through what its steps invoke, or a UI component of the view a step happens in", async () => {
@@ -89,7 +92,7 @@ describe('designed and built', () => {
 describe('proved', () => {
   let ws: Workspace;
   beforeAll(async () => {
-    let data = changing(complete(), 'constraint_test', () => true, { level: 'database' });
+    let data = changing(complete(), 'constraint_test', () => true, { level: 'api' });
     data = changing(data, 'specification_test', () => true, { state: 'not automated yet' });
     data = changing(data, 'view_test', () => true, { level: 'manual', state: 'manual', manual_reason: 'Looked at by eye.', file: undefined });
     data = without(data, 'meets', (r) => r.source_id === 'EX-LEND-EP01-R01-T01');
@@ -163,7 +166,7 @@ describe('minimums', () => {
     expect(ws.coverage.find((c) => c.domain === 'SP-D')?.gaps).toContainEqual({ id: 'SP-D-UC01', kind: 'use_case', missing: 'use-case-without-flow', message: 'Use case SP-D-UC01 has no flow.' });
     expect(ws.coverage.find((c) => c.domain === 'SP-E')?.gaps).toEqual([{ id: 'SP-E', kind: 'domain', missing: 'domain-without-aggregate', message: 'Domain SP-E has no aggregate.' }]);
     // Gaps are coverage, never problems.
-    expect(ws.problems.map((p) => p.check).sort()).toEqual(['pattern-not-followed', 'unused']);
+    expect(ws.problems.map((p) => p.check).sort()).toEqual(['not-built', 'not-built', 'not-built', 'not-proved', 'not-proved', 'not-proved', 'pattern-not-followed', 'value-object-unused']);
   });
 
   it('every gap rule has a unique name, a stage and a summary, and the complete product meets every minimum', () => {

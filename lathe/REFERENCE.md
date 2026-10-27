@@ -48,7 +48,7 @@ A part of the product with its own model, language and owner, for one business c
 - **ID:** `<P>-<D>`, such as `TL-LEND`; it starts with its parent's ID
 - **Links out:** Follows ([`follows`](#relation-follows))
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`pattern-rule-test-domain`](#check-pattern-rule-test-domain), [`pattern-not-followed`](#check-pattern-not-followed), [`domain-named-for-technology`](#check-domain-named-for-technology)
+- **Checks:** [`pattern-rule-test-outside-followers`](#check-pattern-rule-test-outside-followers), [`pattern-not-followed`](#check-pattern-not-followed), [`domain-named-for-technology`](#check-domain-named-for-technology)
 - **Gaps:** [`domain-without-aggregate`](#gap-domain-without-aggregate)
 
 <a id="table-domain"></a>
@@ -77,7 +77,7 @@ The consistency boundary: a cluster of entities changed together as one unit, by
 - **ID:** `<P>-<D>-A<n>`, such as `TL-LEND-A1`; it starts with its domain's ID
 - **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about)), Read by ([`reads`](#relation-reads))
-- **Checks:** [`command-changes-another-aggregate`](#check-command-changes-another-aggregate), [`has-crosses-aggregate`](#check-has-crosses-aggregate)
+- **Checks:** [`command-change-recorded`](#check-command-change-recorded), [`has-crosses-aggregate`](#check-has-crosses-aggregate)
 - **Gaps:** [`aggregate-without-root`](#gap-aggregate-without-root), [`aggregate-without-command`](#gap-aggregate-without-command), [`aggregate-without-repository`](#gap-aggregate-without-repository)
 
 <a id="table-aggregate"></a>
@@ -165,7 +165,7 @@ A value with no identity of its own, such as an email address or a money amount,
 - **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Parts:** [`value_object_field`](#table-value_object_field)
-- **Checks:** [`unused`](#check-unused)
+- **Checks:** [`value-object-unused`](#check-value-object-unused)
 - **Gaps:** [`value-object-without-fields`](#gap-value-object-without-fields), [`value-object-without-value-type`](#gap-value-object-without-value-type)
 
 <a id="table-value_object"></a>
@@ -215,8 +215,8 @@ A value object's own rule, checked when the value is created, such as an email a
 - **Parents:** [`value_object`](#kind-value_object) (`value_object_id`)
 - **Children:** [`constraint_test`](#kind-constraint_test)
 - **Obligation:** yes: designed, built and proved
-  - **Designed:** Its value object has a value type.
-  - **Built:** The value type's file exists.
+  - **Designed:** By construction, under its value object.
+  - **Built:** Its value object's value type names a file that exists.
   - **Proved:** Its constraint test.
 - **ID:** `<value object>-C<nn>`, such as `TL-VO01-C01`; it starts with its parent's ID
 - **Links out:** none
@@ -244,8 +244,8 @@ A rule that holds for one aggregate on every change. Uniqueness across records (
 - **Parents:** [`aggregate`](#kind-aggregate) (`aggregate_id`)
 - **Children:** [`invariant_test`](#kind-invariant_test)
 - **Obligation:** yes: designed, built and proved
-  - **Designed:** A data model of one of its aggregate's entities, or a table's unique key naming it.
-  - **Built:** That data model's file, or that table's file, exists.
+  - **Designed:** By construction, under its aggregate.
+  - **Built:** A data model of one of its aggregate's entities, or the table whose unique key names it, names a file that exists.
   - **Proved:** Its invariant test.
 - **ID:** `<P>-<D>-INV<nn>`, such as `TL-LEND-INV01`; it starts with its domain's ID
 - **Links out:** none
@@ -273,13 +273,13 @@ A named predicate over one or more aggregates of one domain (Evans), such as Mem
 - **Parents:** none (no owner: it exists because other records use it)
 - **Children:** [`predicate`](#kind-predicate), [`specification_test`](#kind-specification_test)
 - **Obligation:** yes: designed, built and proved
-  - **Designed:** It has a predicate.
-  - **Built:** The predicate's file exists.
+  - **Designed:** By construction.
+  - **Built:** Its predicate names a file that exists.
   - **Proved:** Its specification test.
 - **ID:** `<P>-<D>-SP<nn>`, such as `TL-LEND-SP01`; it starts with its domain's ID
 - **Links out:** Reads ([`reads`](#relation-reads))
 - **Links in:** Questions about this ([`about`](#relation-about)), Checked by ([`checks`](#relation-checks)), Selects for ([`selects_by`](#relation-selects_by))
-- **Checks:** [`unused`](#check-unused)
+- **Checks:** [`specification-unused`](#check-specification-unused)
 - **Gaps:** [`specification-reads-nothing`](#gap-specification-reads-nothing)
 
 <a id="table-specification"></a>
@@ -307,7 +307,7 @@ An unchangeable record that something happened to an aggregate, named in the pas
 - **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about)), Heard by ([`hears`](#relation-hears)), Raised by ([`raises`](#relation-raises))
 - **Parts:** [`event_field`](#table-event_field)
-- **Checks:** [`event-not-outbox`](#check-event-not-outbox), [`event-tense`](#check-event-tense)
+- **Checks:** [`event-not-by-outbox`](#check-event-not-by-outbox), [`event-tense`](#check-event-tense)
 - **Gaps:** [`event-without-fields`](#gap-event-without-fields), [`event-not-raised`](#gap-event-not-raised), [`event-without-event-type`](#gap-event-without-event-type)
 
 <a id="table-domain_event"></a>
@@ -362,7 +362,7 @@ A request to change exactly one aggregate, its parent. It checks specifications,
 - **Links out:** Calls ([`calls`](#relation-calls)), Checks ([`checks`](#relation-checks)), Raises ([`raises`](#relation-raises))
 - **Links in:** Questions about this ([`about`](#relation-about)), Invoked by ([`invokes`](#relation-invokes))
 - **Parts:** [`command_change`](#table-command_change)
-- **Checks:** [`command-changes-another-aggregate`](#check-command-changes-another-aggregate)
+- **Checks:** [`command-change-recorded`](#check-command-change-recorded)
 - **Gaps:** [`command-without-handler`](#gap-command-without-handler)
 
 <a id="table-command"></a>
@@ -480,13 +480,13 @@ Whenever an event, then a command (event storming). It belongs to the command it
 - **Parents:** [`command`](#kind-command) (`command_id`)
 - **Children:** [`event_handler`](#kind-event_handler), [`policy_test`](#kind-policy_test)
 - **Obligation:** yes: designed, built and proved
-  - **Designed:** It has an event handler.
-  - **Built:** The event handler's file exists.
+  - **Designed:** By construction, under its command.
+  - **Built:** Its event handler names a file that exists.
   - **Proved:** Its policy test.
 - **ID:** `<P>-<D>-PO<nn>`, such as `TL-LEND-PO01`; it starts with its domain's ID
 - **Links out:** Hears ([`hears`](#relation-hears))
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`event-not-outbox`](#check-event-not-outbox)
+- **Checks:** [`event-not-by-outbox`](#check-event-not-by-outbox)
 - **Gaps:** [`policy-hears-nothing`](#gap-policy-hears-nothing)
 
 <a id="table-policy"></a>
@@ -511,8 +511,8 @@ Domain logic that belongs to no single entity and is not a yes-or-no check, such
 - **Parents:** [`domain`](#kind-domain) (`domain_id`)
 - **Children:** [`service`](#kind-service), [`domain_service_test`](#kind-domain_service_test)
 - **Obligation:** yes: designed, built and proved
-  - **Designed:** It has a service.
-  - **Built:** The service's file exists.
+  - **Designed:** By construction, under its domain.
+  - **Built:** Its service names a file that exists.
   - **Proved:** One of its domain service tests.
 - **ID:** `<P>-<D>-DS<nn>`, such as `TL-LEND-DS01`; it starts with its domain's ID
 - **Links out:** none
@@ -560,9 +560,29 @@ A word of the domain's glossary and what it means there, so specs, code and conv
 
 ### Checks: domain model
 
-<a id="check-command-changes-another-aggregate"></a>
+<a id="check-value-object-unused"></a>
 
-### `command-changes-another-aggregate`
+### `value-object-unused`
+
+**Error** · Lathe's · Kinds: [`value_object`](#kind-value_object)
+
+A value object that nothing uses.
+
+A value object has no owner: it exists because fields of entities, value objects, events or read models are typed with it. One that nothing uses is a leftover, or a link is missing. Type the fields that hold it with it, or remove it.
+
+<a id="check-specification-unused"></a>
+
+### `specification-unused`
+
+**Error** · Lathe's · Kinds: [`specification`](#kind-specification)
+
+A specification that nothing uses.
+
+A specification has no owner: it exists because commands check it and queries select by it. One that nothing uses is a leftover, or a link is missing. Link the commands that check it or the queries that select by it, or remove it.
+
+<a id="check-command-change-recorded"></a>
+
+### `command-change-recorded`
 
 **Warning** · Lathe's · Kinds: [`command`](#kind-command), [`aggregate`](#kind-aggregate)
 
@@ -570,15 +590,15 @@ A command that also changes another aggregate in the same transaction: a recorde
 
 A command changes exactly one aggregate, its parent, and other aggregates follow through events and policies. A command may also change another aggregate of its own domain in the same transaction (a command_change row), with the reason the change cannot follow through an event; its handler owns that one transaction, and every touched aggregate's invariants hold. Each exception is listed so that it stays visible and deliberate. Keep it while the reason holds; otherwise raise an event and let a policy make the other change, and remove the row.
 
-<a id="check-event-not-outbox"></a>
+<a id="check-event-not-by-outbox"></a>
 
-### `event-not-outbox`
+### `event-not-by-outbox`
 
 **Warning** · Lathe's · Kinds: [`domain_event`](#kind-domain_event), [`event_type`](#kind-event_type), [`policy`](#kind-policy)
 
-An event a policy hears, or a published event, whose event type is not delivered by outbox.
+A published event, or an event a policy hears whose aggregate is stored in a table, whose event type is not delivered by outbox.
 
-An event that crosses a transaction (one a policy hears, or one published to other domains) is delivered by outbox: saved in the same transaction as its aggregate and delivered reliably afterwards, so a reaction is never lost. Its event type records that delivery. An event type delivered in process, or with no delivery given, or no event type at all, leaves the reaction to chance. Give the event an event type delivered by outbox.
+An event that crosses a transaction is delivered by outbox: saved in the same transaction as its aggregate and delivered reliably afterwards, so a reaction is never lost. That is every published event, and every event a policy hears whose aggregate is stored in a table (an entity of the aggregate has a table). An event inside one process with no transaction to join, such as one heard in the same browser tab, is exempt. Its event type records the delivery; one delivered in process, with no delivery given, or no event type at all, leaves the reaction to chance. Give the event an event type delivered by outbox.
 
 <a id="check-has-crosses-aggregate"></a>
 
@@ -634,7 +654,7 @@ Each is reported in coverage, under the record that falls short, never as a prob
 | <a id="gap-event-without-fields"></a>`event-without-fields` | [`domain_event`](#kind-domain_event), `event_field` | A domain event that carries no fields. |
 | <a id="gap-event-not-raised"></a>`event-not-raised` | [`domain_event`](#kind-domain_event), [`command`](#kind-command) | A domain event no command raises. |
 | <a id="gap-read-model-without-fields"></a>`read-model-without-fields` | [`read_model`](#kind-read_model), `read_model_field` | A read model with no fields. |
-| <a id="gap-read-model-reads-nothing"></a>`read-model-reads-nothing` | [`read_model`](#kind-read_model), [`aggregate`](#kind-aggregate) | A read model that reads no aggregate. |
+| <a id="gap-read-model-reads-nothing"></a>`read-model-reads-nothing` | [`read_model`](#kind-read_model), [`aggregate`](#kind-aggregate) | A read model that reads no aggregate and is fed by no event. |
 | <a id="gap-read-model-without-query"></a>`read-model-without-query` | [`read_model`](#kind-read_model), [`query`](#kind-query) | A read model no query asks. |
 | <a id="gap-specification-reads-nothing"></a>`specification-reads-nothing` | [`specification`](#kind-specification), [`aggregate`](#kind-aggregate) | A specification that reads no aggregate. |
 | <a id="gap-policy-hears-nothing"></a>`policy-hears-nothing` | [`policy`](#kind-policy), [`domain_event`](#kind-domain_event) | A policy that hears no event. |
@@ -808,13 +828,13 @@ One rule of a pattern. Every domain that follows the pattern owes it, unless it 
 - **Parents:** [`pattern`](#kind-pattern) (`pattern_id`)
 - **Children:** [`pattern_rule_test`](#kind-pattern_rule_test)
 - **Obligation:** yes: designed, built and proved
-  - **Designed:** Not asked: proof only. It is owed by each domain that follows its pattern, unless waived there by a setting.
-  - **Built:** Not asked.
+  - **Designed:** Wherever it is owed: by each domain that follows its pattern, itself or through a use case, unless waived there by a setting.
+  - **Built:** Not asked: proof only.
   - **Proved:** Its pattern rule test naming the owing domain.
 - **ID:** `<pattern>-R<nn>`, such as `TL-PAT-LIBRARIAN-ACTION-R01`; it starts with its parent's ID
 - **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`pattern-rule-test-domain`](#check-pattern-rule-test-domain), [`lone-child`](#check-lone-child)
+- **Checks:** [`pattern-rule-test-outside-followers`](#check-pattern-rule-test-outside-followers), [`lone-child`](#check-lone-child)
 
 <a id="table-pattern_rule"></a>
 
@@ -844,7 +864,7 @@ One rule of a pattern. Every domain that follows the pattern owes it, unless it 
 
 ### `pattern-setting-missing`
 
-**Error** · Lathe's · Kinds: [`use_case`](#kind-use_case), [`pattern`](#kind-pattern), `pattern_setting`
+**Error** · Lathe's · Kinds: [`use_case`](#kind-use_case), [`pattern`](#kind-pattern)
 
 A use case that follows a pattern gives each of the pattern's settings.
 
@@ -958,7 +978,7 @@ A screen or page a person uses. It has no owner: it exists because flow steps ha
 - **ID:** `<P>-V<nn>`, such as `TL-V01`; it starts with its product's ID
 - **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about)), Hosts ([`happens_in`](#relation-happens_in)), Rendered by ([`renders`](#relation-renders))
-- **Checks:** [`unused`](#check-unused)
+- **Checks:** [`view-unused`](#check-view-unused)
 - **Gaps:** [`view-without-ui-component`](#gap-view-without-ui-component)
 
 <a id="table-view"></a>
@@ -983,8 +1003,8 @@ One rule a view must follow, such as what it shows while loading or a field's li
 - **Parents:** [`view`](#kind-view) (`view_id`)
 - **Children:** [`view_test`](#kind-view_test)
 - **Obligation:** yes: designed, built and proved
-  - **Designed:** A UI component renders its view.
-  - **Built:** That UI component's file exists.
+  - **Designed:** By construction, under its view.
+  - **Built:** A UI component that renders its view names a file that exists.
   - **Proved:** One of its view tests.
 - **ID:** `<view>-R<nn>`, such as `TL-V01-R01`; it starts with its parent's ID
 - **Links out:** none
@@ -1046,8 +1066,8 @@ One rule an endpoint must follow, such as an error's response or a limit on its 
 - **Parents:** [`endpoint`](#kind-endpoint) (`endpoint_id`)
 - **Children:** [`endpoint_test`](#kind-endpoint_test)
 - **Obligation:** yes: designed, built and proved
-  - **Designed:** Its endpoint has an endpoint handler.
-  - **Built:** The endpoint handler's file exists.
+  - **Designed:** By construction, under its endpoint.
+  - **Built:** Its endpoint's handler names a file that exists.
   - **Proved:** One of its endpoint tests.
 - **ID:** `<endpoint>-R<nn>`, such as `TL-LEND-EP01-R01`; it starts with its parent's ID
 - **Links out:** none
@@ -1080,7 +1100,7 @@ An outside system the product exchanges with, such as a payment provider or a ma
 - **ID:** `<P>-INT<nn>`, such as `TL-INT01`; it starts with its product's ID
 - **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about)), Exchanged with by ([`exchanges_with`](#relation-exchanges_with))
-- **Checks:** [`unused`](#check-unused)
+- **Checks:** [`integration-unused`](#check-integration-unused)
 - **Gaps:** [`integration-without-adapter`](#gap-integration-without-adapter)
 
 <a id="table-integration"></a>
@@ -1097,15 +1117,25 @@ An outside system the product exchanges with, such as a payment provider or a ma
 
 ### Checks: interaction design
 
-<a id="check-unused"></a>
+<a id="check-view-unused"></a>
 
-### `unused`
+### `view-unused`
 
-**Error** · Lathe's · Kinds: [`view`](#kind-view), [`integration`](#kind-integration), [`value_object`](#kind-value_object), [`specification`](#kind-specification), [`ui_component`](#kind-ui_component)
+**Error** · Lathe's · Kinds: [`view`](#kind-view)
 
-A view, integration, value object, specification or UI component that nothing uses.
+A view that nothing uses.
 
-These kinds have no owner: each exists because other records use it. A view exists because flow steps happen in it, an integration because flow steps exchange with it, a value object because a field of an entity, value object, event or read model is typed with it, a specification because a command checks it or a query selects by it, and a UI component because it renders a view. One that nothing uses is a leftover, or a link is missing. Link what uses it, or remove it.
+A view has no owner: it exists because flow steps happen in it. One that nothing uses is a leftover, or a link is missing. Link the steps that happen in it with happens_in, or remove it.
+
+<a id="check-integration-unused"></a>
+
+### `integration-unused`
+
+**Error** · Lathe's · Kinds: [`integration`](#kind-integration)
+
+A integration that nothing uses.
+
+A integration has no owner: it exists because flow steps exchange with it. One that nothing uses is a leftover, or a link is missing. Link the steps that exchange with it with exchanges_with, or remove it.
 
 <a id="check-step-order"></a>
 
@@ -1317,7 +1347,7 @@ Its domain event's shape in code; a contract with other domains when the event i
 - **ID:** `<domain event>-ET`, such as `TL-LEND-EV01-ET`; it starts with its parent's ID
 - **Links out:** Meets ([`meets`](#relation-meets))
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`event-not-outbox`](#check-event-not-outbox)
+- **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`event-not-by-outbox`](#check-event-not-by-outbox)
 
 <a id="table-event_type"></a>
 
@@ -1486,7 +1516,7 @@ A piece of the user interface that renders one or more views. It has no owner: i
 - **ID:** `<P>-UI<nn>`, such as `TL-UI01`; it starts with its product's ID
 - **Links out:** Meets ([`meets`](#relation-meets)), Renders ([`renders`](#relation-renders))
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`unused`](#check-unused)
+- **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`ui-component-unused`](#check-ui-component-unused)
 
 <a id="table-ui_component"></a>
 
@@ -1591,7 +1621,7 @@ One rule of a standard. Technical records and tests that follow it link to it wi
 - **Children:** none
 - **Obligation:** yes: designed, built and proved
   - **Designed:** A technical record meets it.
-  - **Built:** That record's file exists.
+  - **Built:** A technical record that meets it names a file that exists.
   - **Proved:** A test meets it.
 - **ID:** `<standard>-R<nn>`, such as `TL-STD-CODE-R01`; it starts with its parent's ID
 - **Links out:** none
@@ -1624,23 +1654,33 @@ A technical record whose file does not exist yet.
 
 The technical specification may name a file before it is written, so this is work to do, not breakage: until the file exists, what the record implements is not built. A technical record's file may be a file or a folder of files under the product root. Write the file, or fix the path (relative to the product root).
 
+<a id="check-ui-component-unused"></a>
+
+### `ui-component-unused`
+
+**Error** · Lathe's · Kinds: [`ui_component`](#kind-ui_component)
+
+A ui component that nothing uses.
+
+A ui component has no owner: it exists because it renders views. One that nothing uses is a leftover, or a link is missing. Link the views it renders with renders, or remove it.
+
 ### Coverage gaps: technical specification
 
 Each is reported in coverage, under the record that falls short, never as a problem.
 
 | Gap | Kinds | What it reports |
 | --- | --- | --- |
-| <a id="gap-aggregate-without-repository"></a>`aggregate-without-repository` | [`aggregate`](#kind-aggregate), [`repository`](#kind-repository) | Aggregate with no repository implementing it. |
-| <a id="gap-entity-without-data-model"></a>`entity-without-data-model` | [`entity`](#kind-entity), [`data_model`](#kind-data_model) | Entity with no data model implementing it. |
-| <a id="gap-entity-without-table"></a>`entity-without-table` | [`entity`](#kind-entity), [`table`](#kind-table) | Entity with no table implementing it. |
-| <a id="gap-value-object-without-value-type"></a>`value-object-without-value-type` | [`value_object`](#kind-value_object), [`value_type`](#kind-value_type) | Value object with no value type implementing it. |
-| <a id="gap-event-without-event-type"></a>`event-without-event-type` | [`domain_event`](#kind-domain_event), [`event_type`](#kind-event_type) | Domain event with no event type implementing it. |
-| <a id="gap-read-model-without-projection"></a>`read-model-without-projection` | [`read_model`](#kind-read_model), [`projection`](#kind-projection) | Read model with no projection implementing it. |
-| <a id="gap-read-model-without-table"></a>`read-model-without-table` | [`read_model`](#kind-read_model), [`table`](#kind-table) | Read model with no table implementing it. |
-| <a id="gap-command-without-handler"></a>`command-without-handler` | [`command`](#kind-command), [`command_handler`](#kind-command_handler) | Command with no command handler implementing it. |
-| <a id="gap-query-without-handler"></a>`query-without-handler` | [`query`](#kind-query), [`query_handler`](#kind-query_handler) | Query with no query handler implementing it. |
-| <a id="gap-endpoint-without-handler"></a>`endpoint-without-handler` | [`endpoint`](#kind-endpoint), [`endpoint_handler`](#kind-endpoint_handler) | Endpoint with no endpoint handler implementing it. |
-| <a id="gap-integration-without-adapter"></a>`integration-without-adapter` | [`integration`](#kind-integration), [`adapter`](#kind-adapter) | Integration with no adapter implementing it. |
+| <a id="gap-aggregate-without-repository"></a>`aggregate-without-repository` | [`aggregate`](#kind-aggregate), [`repository`](#kind-repository) | An aggregate with no repository. |
+| <a id="gap-entity-without-data-model"></a>`entity-without-data-model` | [`entity`](#kind-entity), [`data_model`](#kind-data_model) | An entity with no data model. |
+| <a id="gap-entity-without-table"></a>`entity-without-table` | [`entity`](#kind-entity), [`table`](#kind-table) | An entity with no table. |
+| <a id="gap-value-object-without-value-type"></a>`value-object-without-value-type` | [`value_object`](#kind-value_object), [`value_type`](#kind-value_type) | A value object with no value type. |
+| <a id="gap-event-without-event-type"></a>`event-without-event-type` | [`domain_event`](#kind-domain_event), [`event_type`](#kind-event_type) | A domain event with no event type. |
+| <a id="gap-read-model-without-projection"></a>`read-model-without-projection` | [`read_model`](#kind-read_model), [`projection`](#kind-projection) | A read model with no projection. |
+| <a id="gap-read-model-without-table"></a>`read-model-without-table` | [`read_model`](#kind-read_model), [`table`](#kind-table) | A read model with no table. |
+| <a id="gap-command-without-handler"></a>`command-without-handler` | [`command`](#kind-command), [`command_handler`](#kind-command_handler) | A command with no command handler. |
+| <a id="gap-query-without-handler"></a>`query-without-handler` | [`query`](#kind-query), [`query_handler`](#kind-query_handler) | A query with no query handler. |
+| <a id="gap-endpoint-without-handler"></a>`endpoint-without-handler` | [`endpoint`](#kind-endpoint), [`endpoint_handler`](#kind-endpoint_handler) | An endpoint with no endpoint handler. |
+| <a id="gap-integration-without-adapter"></a>`integration-without-adapter` | [`integration`](#kind-integration), [`adapter`](#kind-adapter) | An integration with no adapter. |
 | <a id="gap-view-without-ui-component"></a>`view-without-ui-component` | [`view`](#kind-view), [`ui_component`](#kind-ui_component) | A view no UI component renders. |
 
 <a id="stage-test-plan"></a>
@@ -1658,7 +1698,7 @@ Proves its constraint: the values its value object accepts and refuses.
 - **Parents:** [`constraint`](#kind-constraint) (`constraint_id`)
 - **Children:** none
 - **Obligation:** no
-- **Run by levels:** `unit`
+- **Run by levels:** `unit`, `database`
 - **ID:** `<constraint>-T`, such as `TL-VO01-C01-T`; it starts with its parent's ID
 - **Links out:** Meets ([`meets`](#relation-meets))
 - **Links in:** Questions about this ([`about`](#relation-about))
@@ -2025,7 +2065,7 @@ Proves its pattern rule in one domain that adopts the pattern: one test per patt
 - **ID:** `<pattern rule>-T<nn>`, such as `TL-PAT-ACT-R01-T01`; it starts with its parent's ID
 - **Links out:** Meets ([`meets`](#relation-meets))
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`pattern-rule-test-domain`](#check-pattern-rule-test-domain)
+- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`pattern-rule-test-outside-followers`](#check-pattern-rule-test-outside-followers)
 
 <a id="table-pattern_rule_test"></a>
 
@@ -2092,15 +2132,15 @@ A test whose run by level its test kind does not allow.
 
 Each test kind is run at the levels that can prove what it tests: a constraint test at unit; an invariant or specification test at unit or database; a domain service test at unit; a policy test at database, api or e2e-api; a use case test at api, e2e-api, e2e-ui or manual; a view test at unit, e2e-ui or manual; an endpoint test at contract or api; a flow test at e2e-ui or manual; an integration test at contract, e2e-api or manual; a pattern rule test at any level. A test at another level proves nothing in coverage. Run the test at an allowed level and set its level, or make it the test kind of what it really proves.
 
-<a id="check-pattern-rule-test-domain"></a>
+<a id="check-pattern-rule-test-outside-followers"></a>
 
-### `pattern-rule-test-domain`
+### `pattern-rule-test-outside-followers`
 
-**Error** · Lathe's · Kinds: [`pattern_rule_test`](#kind-pattern_rule_test), [`pattern_rule`](#kind-pattern_rule), [`domain`](#kind-domain)
+**Error or warning** · Lathe's · Kinds: [`pattern_rule_test`](#kind-pattern_rule_test), [`pattern_rule`](#kind-pattern_rule), [`domain`](#kind-domain)
 
-A pattern rule test names a domain that follows the pattern.
+A pattern rule test names a domain that follows its pattern and owes its rule.
 
-A pattern rule test proves its rule in one domain that adopts the pattern: the domain follows the pattern itself, or one of its use cases does. A test naming another domain proves the rule where nothing owes it, so it counts nowhere. Name a domain that follows the pattern, link the domain or its use case to the pattern with `follows`, or remove the test.
+A pattern rule test proves its rule in one domain that follows the pattern: the domain itself follows it, or one of its use cases does. A test naming a domain that does not follow the pattern proves the rule where nothing owes it, an error. One naming a following domain where the rule is waived (every following use case there marks its setting not applicable, or no follower there meets its applies-when setting) counts for nothing, a warning. Name a domain that owes the rule, link the domain or its use case to the pattern with `follows`, or remove the test.
 
 ### Coverage gaps: test plan
 
@@ -2563,6 +2603,36 @@ The query selects the records that satisfy the specification, of its own domain.
 ## Checks of any kind
 
 The checks that concern records of any kind: Lathe's, in the order they run, then the engine's own, then the product's.
+
+<a id="check-not-designed"></a>
+
+### `not-designed`
+
+**Warning** · Lathe's
+
+An obligation whose implementation is not specified yet, as coverage counts it.
+
+Coverage counts an obligation as designed once its implementation is specified: a UC requirement once a step of its use case's flow fulfills it, a standard rule once a technical record meets it, a product's own obligation once a record links to it with a design relation. A constraint, invariant, specification, policy, domain service, view requirement and API requirement are designed by construction, and a pattern rule wherever it is owed. This warning names exactly the obligations coverage lists as not designed, so the two never disagree. Fulfill the UC requirement from a step of its flow, or link what designs the obligation.
+
+<a id="check-not-built"></a>
+
+### `not-built`
+
+**Warning** · Lathe's
+
+An obligation no file of what implements it exists for yet, as coverage counts it.
+
+Coverage counts an obligation as built once a technical record that implements it names a file that exists: a constraint's value type, an invariant's data model or the table whose unique key names it, a specification's predicate, a policy's event handler, a domain service's service, a UC requirement's command or query handler or the UI component of the view its step happens in, a view requirement's UI component, an API requirement's endpoint handler, a standard rule's meeting record. A pattern rule asks for proof only. This warning names exactly the obligations coverage lists as not built. Add the technical record with its file, or write the file it names.
+
+<a id="check-not-proved"></a>
+
+### `not-proved`
+
+**Warning** · Lathe's
+
+An obligation no automated or manual test at an allowed level proves yet, as coverage counts it.
+
+Coverage counts an obligation as proved once a test of it is automated or manual, at a level its test kind allows, and, when automated, its file exists and names the test's ID. A pattern rule is reported once for each domain that owes it, proved there only by its pattern rule test naming that domain. A test not automated yet does not prove, and the message says so. This warning names exactly the obligations coverage lists as not proved. Write the test, automate it or run it by hand, at a level its kind allows.
 
 <a id="check-too-many-children"></a>
 
