@@ -1,3 +1,3 @@
 {"id":"TL-LEND-A1-REPO","title":"Store (members)","aggregate_id":"TL-LEND-A1","file":"src/store.ts","description":"`insertMember`, `findMember` and `findMemberByEmail` on the SQLite store."}
-{"id":"TL-LEND-A2-REPO","title":"Store (tools)","aggregate_id":"TL-LEND-A2","file":"src/store.ts","description":"`insertTool`, `findTool`, `listTools` and `setToolCondition` on the SQLite store."}
+{"id":"TL-LEND-A2-REPO","title":"Store (tools)","aggregate_id":"TL-LEND-A2","file":"src/store.ts","description":"`insertTool`, `findTool`, `listTools` and `setToolCondition` on the SQLite store; Report damage and Mark a tool repaired each run in its `transaction()`."}
 {"id":"TL-LEND-A3-REPO","title":"Store (loans)","aggregate_id":"TL-LEND-A3","file":"src/store.ts","description":"`insertLoan`, `findLoan`, `activeLoansForMember`, `activeLoanForTool` and `markReturned`, which touches only an active loan, on the SQLite store; `transaction()` so a check and its write happen together."}

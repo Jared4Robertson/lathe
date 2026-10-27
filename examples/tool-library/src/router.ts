@@ -5,6 +5,8 @@
 // TL-PAT-LIBRARIAN-ACTION-R02: each librarian action answers with the record as the store saved it
 // (the store returns rows with RETURNING *), so what the librarian sees is what is stored.
 import type { IncomingMessage, ServerResponse } from 'node:http';
+import { subscribePolicies } from './event-handlers.ts';
+import { EventDispatcher } from './events.ts';
 import { LendingService } from './lending-service.ts';
 import { MemberService } from './member-service.ts';
 import { DEFAULT_TIME_ZONE, LendingError, type Clock, type LibrarySettings } from './model.ts';
@@ -107,15 +109,18 @@ function send(res: ServerResponse, status: number, body: unknown): void {
 /**
  * Builds the request handler for a store. `now` is the clock, so tests can move time;
  * `settings.timeZone` is the library's time zone (default America/New_York).
+ * The command handlers share one event dispatcher, with every policy's event handler subscribed.
  */
 export function createRouter(
   store: Store,
   now: Clock = () => new Date(),
   settings: LibrarySettings = { timeZone: DEFAULT_TIME_ZONE },
 ) {
-  const members = new MemberService(store, now);
-  const tools = new ToolService(store, now);
-  const lending = new LendingService(store, now, settings.timeZone);
+  const events = new EventDispatcher();
+  const members = new MemberService(store, now, events);
+  const tools = new ToolService(store, now, events);
+  const lending = new LendingService(store, now, events, settings.timeZone);
+  subscribePolicies(events, tools);
 
   const routes: Route[] = [
     // TL-LEND-EP01-H: R01-R03

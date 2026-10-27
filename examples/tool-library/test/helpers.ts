@@ -1,6 +1,8 @@
 // Shared test setup: a fresh in-memory store and a clock the test can move.
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
+import { subscribePolicies } from '../src/event-handlers.ts';
+import { EventDispatcher, type DomainEvent, type HandlerFailure } from '../src/events.ts';
 import { LendingService } from '../src/lending-service.ts';
 import { MemberService } from '../src/member-service.ts';
 import { DEFAULT_TIME_ZONE } from '../src/model.ts';
@@ -32,16 +34,37 @@ export class TestClock {
   }
 }
 
-/** Services over a fresh in-memory store, for domain rule tests. Uses the default time zone unless given one. */
-export function services(timeZone?: string) {
+export interface ServiceOptions {
+  /** The library's time zone; the default unless given. */
+  timeZone?: string;
+  /** Whether the policies' event handlers are subscribed, as the router subscribes them. Default true. */
+  policies?: boolean;
+  /** Where a failing event handler is reported; the dispatcher logs it unless given. */
+  onFailure?: HandlerFailure;
+}
+
+/**
+ * Services over a fresh in-memory store, for domain rule tests, sharing one event dispatcher.
+ * `published` lists every event the dispatcher published, in order.
+ */
+export function services(options: ServiceOptions = {}) {
   const store = new Store();
   const clock = new TestClock();
+  const events = new EventDispatcher(options.onFailure);
+  const published: DomainEvent[] = [];
+  for (const name of ['MemberRegistered', 'ToolAdded', 'DamageReported', 'ToolRepaired', 'LoanOpened', 'ToolReturned'] as const) {
+    events.subscribe(name, (event) => published.push(event));
+  }
+  const tools = new ToolService(store, clock.now, events);
+  if (options.policies ?? true) subscribePolicies(events, tools);
   return {
     store,
     clock,
-    members: new MemberService(store, clock.now),
-    tools: new ToolService(store, clock.now),
-    lending: new LendingService(store, clock.now, timeZone),
+    events,
+    published,
+    members: new MemberService(store, clock.now, events),
+    tools,
+    lending: new LendingService(store, clock.now, events, options.timeZone),
   };
 }
 

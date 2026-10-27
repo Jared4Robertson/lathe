@@ -1,5 +1,5 @@
-// Domain model tests: each proves one constraint, invariant, specification or domain service
-// against the model, the command handlers and an in-memory store.
+// Domain model tests: each proves one constraint, invariant, specification, policy or domain service
+// against the model, the command handlers, the event dispatcher and an in-memory store.
 // Each test name starts with its test record ID (examples/tool-library/data/).
 import { describe, expect, it } from 'vitest';
 import {
@@ -14,6 +14,7 @@ import {
   parseName,
   parseNote,
 } from '../src/model.ts';
+import { RETURNED_NEEDING_REPAIR } from '../src/event-handlers.ts';
 import { LAST_MINUTE_OF_DUE_DATE, START_DUE_DATE, START_OF_NEXT_DAY, services } from './helpers.ts';
 
 function rejectsWith(fn: () => unknown, code: string): void {
@@ -164,7 +165,7 @@ describe('Loan', () => {
     expect(LOAN_DAYS).toBe(14);
 
     // In another library time zone, the loan is due on that zone's date.
-    const auckland = services('Pacific/Auckland');
+    const auckland = services({ timeZone: 'Pacific/Auckland' });
     const a = auckland.members.register({ name: 'Hana', email: 'hana@example.org' });
     const at = auckland.tools.add({ name: 'Mower' });
     auckland.clock.set('2026-03-02T12:00:00.000Z'); // 01:00 on 3 March in Auckland, 07:00 on 2 March in New York.
@@ -184,7 +185,7 @@ describe('Loan', () => {
     expect(dueDate(new Date('2026-03-03T04:30:00Z'), 'Pacific/Auckland')).toBe('2026-03-17');
     // An unknown time zone is refused, by the calendar and so by the lending service.
     expect(() => assertTimeZone('Mars/Olympus_Mons')).toThrow(RangeError);
-    expect(() => services('Mars/Olympus_Mons')).toThrow(RangeError);
+    expect(() => services({ timeZone: 'Mars/Olympus_Mons' })).toThrow(RangeError);
   });
 
   it("TL-LEND-SP01-T A loan is overdue only while it is active after its due date, in the library's time zone", () => {
@@ -224,5 +225,69 @@ describe('Loan', () => {
     expect(returned.returnedAt).toBe(clock.now().toISOString());
     expect(returned.returnCondition).toBe('needs_repair');
     expect(returned.returnNote).toBe('Blade chipped');
+  });
+});
+
+describe('Policies', () => {
+  it('TL-LEND-PO01-T Return a tool changes only the loan when no event handler hears Tool returned', () => {
+    const { members, tools, lending, clock, published } = services({ policies: false });
+    const m = members.register({ name: 'Lu', email: 'lu@example.org' });
+    const t = tools.add({ name: 'Router' });
+    const loan = lending.borrow({ memberId: m.id, toolId: t.id });
+    clock.advanceDays(2);
+
+    const returned = lending.return(loan.id, { condition: 'needs_repair', note: 'Bit stuck' });
+    expect(returned).toMatchObject({ returnCondition: 'needs_repair', returnNote: 'Bit stuck', late: false });
+    // The tool is untouched: only the policy takes it out of lending.
+    expect(tools.get(t.id)).toMatchObject({ condition: 'good', damageNote: null, status: 'available' });
+    expect(published.at(-1)).toEqual({
+      type: 'ToolReturned',
+      loanId: loan.id,
+      memberId: m.id,
+      toolId: t.id,
+      returnedAt: clock.now().toISOString(),
+      condition: 'needs_repair',
+      note: 'Bit stuck',
+      late: false,
+    });
+  });
+
+  it('TL-LEND-PO01-T A tool returned needing repair is marked as needing repair through the event handler', () => {
+    const { members, tools, lending, clock, published } = services();
+    const m = members.register({ name: 'Mo', email: 'mo@example.org' });
+    const [chuck, blank, good] = ['Drill', 'Jigsaw', 'Clamp'].map((name) => tools.add({ name }).id);
+    const loans = [chuck, blank, good].map((toolId) => lending.borrow({ memberId: m.id, toolId }).id);
+    published.length = 0;
+
+    // Tool returned is heard, and Report damage is invoked with the return note as the damage note.
+    lending.return(loans[0], { condition: 'needs_repair', note: 'Chuck wobbles' });
+    expect(published.map((e) => e.type)).toEqual(['ToolReturned', 'DamageReported']);
+    expect(published[1]).toEqual({ type: 'DamageReported', toolId: chuck, note: 'Chuck wobbles', reportedAt: clock.now().toISOString() });
+    expect(tools.get(chuck)).toMatchObject({ condition: 'needs_repair', damageNote: 'Chuck wobbles', status: 'needs_repair' });
+
+    // With no return note, the damage note says it came back needing repair.
+    lending.return(loans[1], { condition: 'needs_repair', note: '  ' });
+    expect(tools.get(blank)).toMatchObject({ condition: 'needs_repair', damageNote: RETURNED_NEEDING_REPAIR });
+
+    // A good return invokes nothing.
+    published.length = 0;
+    lending.return(loans[2], { condition: 'good' });
+    expect(published.map((e) => e.type)).toEqual(['ToolReturned']);
+    expect(tools.get(good)).toMatchObject({ condition: 'good', status: 'available' });
+  });
+
+  it('TL-LEND-PO01-T The return stands when the event handler fails, and the failure is reported', () => {
+    const failures: string[] = [];
+    const { members, tools, lending, store } = services({ onFailure: (_err, event) => failures.push(event.type) });
+    const m = members.register({ name: 'Nia', email: 'nia@example.org' });
+    const t = tools.add({ name: 'Sledgehammer' });
+    const loan = lending.borrow({ memberId: m.id, toolId: t.id });
+    // Make Report damage fail: the tools table refuses any change to the tool.
+    store.db.exec("CREATE TRIGGER no_tool_updates BEFORE UPDATE ON tools BEGIN SELECT RAISE(ABORT, 'tools are read-only'); END;");
+
+    expect(lending.return(loan.id, { condition: 'needs_repair', note: 'Head loose' }).returnCondition).toBe('needs_repair');
+    expect(failures).toEqual(['ToolReturned']);
+    expect(store.findLoan(loan.id)).toMatchObject({ returnCondition: 'needs_repair', returnNote: 'Head loose' });
+    expect(tools.get(t.id)).toMatchObject({ condition: 'good', damageNote: null });
   });
 });
