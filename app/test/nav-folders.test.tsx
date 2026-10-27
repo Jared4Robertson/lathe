@@ -2,15 +2,16 @@ import './graph/setup';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { indexWorkspace, type SpecRecord, type Workspace } from '../src/specs/data';
+import type { KindDescription } from '../../lathe/src/store/schema';
 import { branchOf, domainFolders, folderPath } from '../src/specs/folders';
 import { workspace } from './fixtures/workspace';
 import { patternWorkspace } from './fixtures/patterns';
 import { main, openApp } from './helpers';
+import { addRows, indexOf } from './fixtures/load';
 
 // The side nav and the domain page read like Client's spec folders: Shared at product level, and in
 // each domain Define (Domain model, Use cases) and Design (Interaction design, Technical
-// specification, Test plan), then open questions. Names and order come from Workspace.sections.
+// specification, Test plan), then open questions. Names and order come from the schema's sections.
 
 const nav = () => screen.getByRole('navigation', { name: 'Main' });
 const panel = () => nav().querySelector<HTMLElement>('.space-items')!;
@@ -21,8 +22,11 @@ const findList = (name: string) => within(panel()).findByRole('list', { name });
 const rows = (el: HTMLElement) => [...el.querySelectorAll(':scope > li > .nav-folder-head')].map((b) => b.textContent);
 const head = (el: HTMLElement, name: RegExp) => within(el).getAllByRole('button', { name }).find((b) => b.closest('ul') === el)!;
 
-const rec = (id: string, kind: string, title: string, parent: string, fields: Record<string, string> = {}): SpecRecord =>
-  ({ id, kind, title, parent, product: 'DM', domain: 'DM-SHOP', fields, body: '', path: `specs/dm/${id}.md`, mentions: [] });
+/** A product's own kind under the domain, with no folder. */
+const ownKind = (name: string, label: string, stage: 'define' | null): KindDescription => ({
+  name, label, stage, section: null, obligation: 'none', idPattern: null, idExample: null, productId: 'DM', description: `A ${name}.`,
+  parents: [{ kind: 'domain', column: 'domain_id' }], supertypes: [],
+});
 
 describe('folders like Client', () => {
   it('LA-EXP-T84 Under the space, one level shows: domains are folded rows, and a domain unfolds into Define, Design and Open questions with counts', async () => {
@@ -87,10 +91,10 @@ describe('folders like Client', () => {
     expect(window.sessionStorage.getItem('lathe:nav-folders')).toContain('domain:DM-PAY');
   });
 
-  it('LA-EXP-T87 Folder names and order come from Workspace.sections, in the nav and on the domain page alike', async () => {
-    const w: Workspace = workspace();
-    w.sections = w.sections.map((s) => (s.section === 'test-plan' ? { ...s, label: 'Tests and checks', order: 0 } : s));
-    await openApp('/DM-SHOP', { workspace: w });
+  it('LA-EXP-T87 Folder names and order come from the schema sections, in the nav and on the domain page alike', async () => {
+    const w = workspace();
+    w.schema.sections = w.schema.sections.map((s) => (s.name === 'test-plan' ? { ...s, label: 'Tests and checks', position: 0 } : s));
+    await openApp('/DM-SHOP', { data: w });
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     const user = userEvent.setup();
     await user.click(head(list('Folders of Shopping'), /^Design/));
@@ -100,7 +104,7 @@ describe('folders like Client', () => {
   });
 
   it('LA-EXP-T88 The product shows a Shared folder only when it has patterns, and patterns leave its groups', async () => {
-    await openApp('/DM', { workspace: patternWorkspace() });
+    await openApp('/DM', { data: patternWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     const shared = list('Shared by Demo shop');
     expect(rows(shared)).toEqual(['Shared1']);
@@ -109,7 +113,7 @@ describe('folders like Client', () => {
     expect(within(list('Groups of Demo shop')).queryByRole('link', { name: /Patterns/ })).toBeNull();
 
     // A pattern rule's page opens Shared.
-    await openApp('/DM-PAT-CHECKOUT-R01', { workspace: patternWorkspace() });
+    await openApp('/DM-PAT-CHECKOUT-R01', { data: patternWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'The step shows what it saved' });
     expect(within(list('Shared of Demo shop')).getByRole('link', { name: 'Checkout step' })).toBeInTheDocument();
 
@@ -120,13 +124,11 @@ describe('folders like Client', () => {
 
   it("LA-EXP-T89 A capability's flows and tests sit in Interaction design and Test plan, its use cases under it; Use cases lists capabilities, then use cases outside any", async () => {
     const w = workspace();
-    w.records.push(
-      rec('DM-SHOP-CAP01', 'capability', 'Filling the basket', 'DM-SHOP', { order: '1' }),
-      rec('DM-SHOP-UC02', 'use_case', 'Empty the basket', 'DM-SHOP-CAP01', { actor: 'Shopper' }),
-      rec('DM-SHOP-F02', 'flow', 'Empty a basket', 'DM-SHOP-CAP01'),
-      rec('DM-SHOP-T02', 'test', 'Emptying clears it', 'DM-SHOP-CAP01', { test_type: 'acceptance', state: 'planned' }),
-    );
-    const index = indexWorkspace(w);
+    addRows(w, 'capability', { id: 'DM-SHOP-CAP01', title: 'Filling the basket', domain_id: 'DM-SHOP', position: 1 });
+    addRows(w, 'use_case', { id: 'DM-SHOP-UC02', title: 'Empty the basket', domain_id: 'DM-SHOP', capability_id: 'DM-SHOP-CAP01' });
+    addRows(w, 'flow', { id: 'DM-SHOP-F02', title: 'Empty a basket', domain_id: 'DM-SHOP', capability_id: 'DM-SHOP-CAP01' });
+    addRows(w, 'test', { id: 'DM-SHOP-T02', title: 'Emptying clears it', domain_id: 'DM-SHOP', capability_id: 'DM-SHOP-CAP01', test_type: 'acceptance', state: 'planned' });
+    const index = indexOf(w);
     const { stages, loose } = domainFolders(index, 'DM-SHOP');
     const ids = Object.fromEntries(stages.flatMap((s) => s.folders).map((f) => [f.section, f.records.map((r) => r.id)]));
     expect(ids).toEqual({
@@ -142,24 +144,23 @@ describe('folders like Client', () => {
     expect(branchOf(index, 'DM-SHOP-T02')).toEqual(['domain:DM-SHOP', 'DM-SHOP/design', 'DM-SHOP/design/test-plan', 'DM-SHOP/design/test-plan/acceptance/DM-SHOP-CAP01']);
 
     // The domain page: Use cases holds the capabilities and then the use cases outside any capability.
-    await openApp('/DM-SHOP', { workspace: w });
+    await openApp('/DM-SHOP', { data: w });
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     const useCases = within(main()).getByRole('heading', { level: 3, name: /^Capabilities/ }).closest('section') as HTMLElement;
     expect([...useCases.querySelectorAll('h4')].map((h) => h.firstChild?.textContent)).toEqual(['Capabilities', 'Use cases outside any capability']);
     // In the nav, the same: a capability's use case opens the branch of its capability, in Use cases.
-    await openApp('/DM-SHOP-UC02', { workspace: w });
+    await openApp('/DM-SHOP-UC02', { data: w });
     await screen.findByRole('heading', { level: 1, name: 'Empty the basket' });
     await waitFor(() => expect(list('Capabilities of Shopping').textContent).toBe('Filling the basketAdd an item to the basket'));
   });
 
   it('LA-EXP-T90 A kind in no known folder gets its own folder at the end of its stage, or after the stages when it has no stage; the path names its folder', () => {
     const w = workspace();
-    w.kinds.push(
-      { kind: 'risk', label: 'Risk', stage: 'define', section: '', parent_kinds: ['domain'], required_fields: [], obligation: false, proof_only: false, description: 'A risk.' },
-      { kind: 'memo', label: 'Memo', stage: '', section: '', parent_kinds: ['domain'], required_fields: [], obligation: false, proof_only: false, description: 'A memo.' },
-    );
-    w.records.push(rec('DM-SHOP-RK01', 'risk', 'Baskets get lost', 'DM-SHOP'), rec('DM-SHOP-M01', 'memo', 'A note', 'DM-SHOP'));
-    const index = indexWorkspace(w);
+    w.schema.kinds.risk = ownKind('risk', 'Risk', 'define');
+    w.schema.kinds.memo = ownKind('memo', 'Memo', null);
+    addRows(w, 'risk', { id: 'DM-SHOP-RK01', title: 'Baskets get lost', domain_id: 'DM-SHOP' });
+    addRows(w, 'memo', { id: 'DM-SHOP-M01', title: 'A note', domain_id: 'DM-SHOP' });
+    const index = indexOf(w);
     const { stages, loose } = domainFolders(index, 'DM-SHOP');
     expect(stages[0].folders.map((f) => f.label)).toEqual(['Domain model', 'Capabilities', 'Risks']);
     expect(loose.map((f) => f.label)).toEqual(['Open questions', 'Memos']);
@@ -181,8 +182,8 @@ describe('folders like Client', () => {
 
     // Without sections, each kind is a folder of its own under its stage.
     const w = workspace();
-    w.sections = [];
-    const index = indexWorkspace(w);
+    w.schema.sections = [];
+    const index = indexOf(w);
     const { stages } = domainFolders(index, 'DM-SHOP');
     expect(stages.map((s) => [s.label, s.folders.map((f) => f.label)])).toEqual([
       ['Define', ['Aggregates', 'Use cases']],
