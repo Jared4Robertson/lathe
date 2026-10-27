@@ -297,3 +297,9 @@ Lathe now matches S2 on UC requirements (206/206) and domain rules (98/98) acros
 - Pages show typed fields. Edit, Add and Remove use forms generated from the schema.
 - Checks passed: tsc, app 380, desktop 62 with the smoke test, knip, stability 47, a11y 149, perf.
 - Brief 103 picked up: 3 spec errors from removed behavior, components and tests for the edit code, and a kind position in the schema so `KIND_ORDER` can go.
+
+## Brief 103 merged; db-first merged into main
+- Lathe's own spec now describes the data model. `lathe check` on LA gives 0 errors and 1 warning (the known LA-PLT-EV03); TL gives 0 errors and 4 warnings (the known TL event-unheard ones). Built coverage is full again.
+- The full run on db-first passed: lathe (typecheck, tests, knip, check, perf), app (tsc, tests, knip, stability, a11y, perf), and desktop (typecheck, tests with the smoke test, knip).
+- The plan `notes/plans/database-first.md` is deleted now that it's built. `notes/db-first-interfaces.md` stays as the store's reference.
+- The merge driver is configured in this clone. Main is pushed to origin.
