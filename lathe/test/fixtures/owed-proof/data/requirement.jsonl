@@ -1,0 +1,5 @@
+{"id":"OW-A-UC01-R01","title":"Proved by an automated test, with a planned test as well","use_case_id":"OW-A-UC01","statement":"It MUST work."}
+{"id":"OW-A-UC01-R02","title":"Proved by a manual test, with a planned test as well","use_case_id":"OW-A-UC01","statement":"It MUST work."}
+{"id":"OW-A-UC01-R03","title":"Only planned tests are meant to prove this","use_case_id":"OW-A-UC01","statement":"It MUST work."}
+{"id":"OW-A-UC01-R04","title":"Proved by automated tests only","use_case_id":"OW-A-UC01","statement":"It MUST work."}
+{"id":"OW-B-UC01-R01","title":"Proved by an automated test in B","use_case_id":"OW-B-UC01","statement":"It MUST work."}

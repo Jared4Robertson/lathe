@@ -1,0 +1,2 @@
+{"id":"LY-A-DR01","title":"A tool is lent once at a time","domain_id":"LY-A","aggregate_id":"LY-A-A1","statement":"A tool MUST be lent to one member at a time."}
+{"id":"LY-B-DR01","title":"A tool is lent once at a time","domain_id":"LY-B","aggregate_id":"LY-B-A1","statement":"A tool MUST be lent to one member at a time."}

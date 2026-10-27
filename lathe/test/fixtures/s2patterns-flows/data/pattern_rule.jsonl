@@ -1,0 +1,3 @@
+{"id":"SF-PAT-DOM-R01","title":"A domain-wide rule","pattern_id":"SF-PAT-DOM","statement":"The product MUST do this."}
+{"id":"SF-PAT-OTHER-R01","title":"A rule of another pattern","pattern_id":"SF-PAT-OTHER","statement":"The product MUST do this."}
+{"id":"SF-PAT-UC-R01","title":"A use case pattern rule","pattern_id":"SF-PAT-UC","statement":"The product MUST do this."}

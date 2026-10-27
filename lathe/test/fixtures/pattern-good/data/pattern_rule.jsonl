@@ -1,0 +1,2 @@
+{"id":"PX-PAT-ACT-R01","title":"A staff action without the permission is refused","pattern_id":"PX-PAT-ACT","statement":"The product MUST refuse the action when the person lacks the `permission`."}
+{"id":"PX-PAT-ACT-R02","title":"A staff action is audited","pattern_id":"PX-PAT-ACT","statement":"The product MUST write the `audit` entry for each action.","setting":"audit"}

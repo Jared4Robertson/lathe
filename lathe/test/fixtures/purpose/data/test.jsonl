@@ -1,0 +1,5 @@
+{"id":"PP-D-T01","title":"Proves the requirement","domain_id":"PP-D","test_type":"acceptance","state":"manual","when":"Steps."}
+{"id":"PP-D-T02","title":"Supports the rule","domain_id":"PP-D","test_type":"unit","state":"manual","when":"Steps."}
+{"id":"PP-D-T03","title":"Planned proof of the rule","domain_id":"PP-D","test_type":"domain_rule","state":"planned","when":"Steps."}
+{"id":"PP-D-T04","title":"Only runs the flow","domain_id":"PP-D","test_type":"e2e","state":"manual","when":"Steps."}
+{"id":"PP-D-T05","title":"Has no links","domain_id":"PP-D","test_type":"unit","state":"manual","when":"Steps."}

@@ -1,0 +1,2 @@
+{"id":"CX-D-UC01-R01","title":"Name required","use_case_id":"CX-D-UC01","statement":"A name MUST be given."}
+{"id":"CX-D-UC02-R01","title":"Item available","use_case_id":"CX-D-UC02","statement":"The item MUST be available."}

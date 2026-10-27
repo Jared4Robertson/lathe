@@ -1,0 +1,4 @@
+{"id":"OS-PAT","title":"Staff action","product_id":"OS","description":"A staff action may be audited."}
+{"id":"OS-PAT2","title":"A pattern nobody follows","product_id":"OS","description":"Nobody follows it."}
+{"id":"OS-PAT3","title":"A pattern domain B follows itself","product_id":"OS","description":"Domain B follows it."}
+{"id":"OS-PAT4","title":"Notify someone","product_id":"OS","description":"Someone is told."}

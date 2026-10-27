@@ -1,0 +1,10 @@
+{"id":"CL-D-T01","title":"Names its own ID","domain_id":"CL-D","test_type":"unit","state":"automated","file":"code/own.test.txt"}
+{"id":"CL-D-T02","title":"Names every ID it proves","domain_id":"CL-D","test_type":"unit","state":"automated","file":"code/every.test.txt"}
+{"id":"CL-D-T03","title":"Names one of two IDs it proves","domain_id":"CL-D","test_type":"unit","state":"automated","file":"code/some.test.txt"}
+{"id":"CL-D-T04","title":"Names none of three IDs it proves","domain_id":"CL-D","test_type":"unit","state":"automated","file":"code/none.test.txt"}
+{"id":"CL-D-T05","title":"Keyed and its file has the key","domain_id":"CL-D","test_type":"unit","state":"automated","file":"code/keyed.test.txt","key":"loan access pattern proof"}
+{"id":"CL-D-T06","title":"Keyed but its file lacks the key","domain_id":"CL-D","test_type":"unit","state":"automated","file":"code/ids-only.test.txt","key":"missing pattern proof"}
+{"id":"CL-D-T07","title":"Names IDs that only look like the one it proves","domain_id":"CL-D","test_type":"unit","state":"automated","file":"code/near.test.txt"}
+{"id":"CL-D-T08","title":"Proves nothing and its file lacks its ID","domain_id":"CL-D","test_type":"unit","state":"automated","file":"code/none.test.txt"}
+{"id":"CL-D-T09","title":"Manual and its file names one ID","domain_id":"CL-D","test_type":"unit","state":"manual","file":"code/some.test.txt"}
+{"id":"CL-D-T10","title":"Planned and its file names one ID","domain_id":"CL-D","test_type":"unit","state":"planned","file":"code/some.test.txt"}

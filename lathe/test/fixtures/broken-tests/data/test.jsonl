@@ -1,0 +1,3 @@
+{"id":"BX-D-T01","title":"Names the wrong ID","domain_id":"BX-D","test_type":"unit","state":"automated","file":"code/wrong.test.txt"}
+{"id":"BX-D-T02","title":"File is gone","domain_id":"BX-D","test_type":"unit","state":"automated","file":"code/gone.test.txt"}
+{"id":"BX-D-T03","title":"All good","domain_id":"BX-D","test_type":"unit","state":"automated","file":"code/wrong.test.txt"}
