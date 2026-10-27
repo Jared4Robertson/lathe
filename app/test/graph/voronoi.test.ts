@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
+import { indexOf } from '../fixtures/load';
 import { drawnNested, frameNested, MAX_DRAWN, MIN_DRAWN, viewRect } from '../../src/graph/camera';
 import { graphMap, MAP_SIZE } from '../../src/graph/map';
 import { LABEL_PAD, metaWidth, titleWidth } from '../../src/graph/text';
 import {
   below, bounds, cellText, chord, contains, hexagon, holds, inset, layoutTreeOf, layoutVoronoi, polygonArea, PRODUCT_AREA, readyVoronoiMap, voronoiCells, voronoiTree, type VoronoiMap,
 } from '../../src/graph/voronoi';
-import { indexWorkspace, type SpecIndex } from '../../src/specs/data';
+import type { SpecIndex } from '../../src/specs/data';
 import { groupedWorkspace, manyOfOneKindWorkspace, siblingGroups, testIndex } from './workspace';
 
 // The Voronoi map (LA-EXP-DR64): the Tree map's tree as a Voronoi treemap, laid out once, top-down
@@ -13,7 +14,7 @@ import { groupedWorkspace, manyOfOneKindWorkspace, siblingGroups, testIndex } fr
 // areas), with the same text.
 
 type XY = [number, number];
-const indexes = (): SpecIndex[] => [testIndex(), indexWorkspace(groupedWorkspace()), indexWorkspace(manyOfOneKindWorkspace())];
+const indexes = (): SpecIndex[] => [testIndex(), indexOf(groupedWorkspace()), indexOf(manyOfOneKindWorkspace())];
 const maps = (): VoronoiMap[] => indexes().map((index) => readyVoronoiMap(index, 'P')!);
 
 /** A synthetic tree: `n` roots, each with `k` children, each with `k` leaves. */

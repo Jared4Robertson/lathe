@@ -25,14 +25,14 @@ describe('bare-ID addresses', () => {
     expect(rail.getByRole('link', { name: 'Notebook' })).toHaveAttribute('href', '/NF');
   });
 
-  it('LA-EXP-T138 A product\'s and a domain\'s one page, at its ID, shows its body, its facts, its links both ways and its problems', async () => {
+  it('LA-EXP-T138 A product\'s and a domain\'s one page, at its ID, shows its text, its facts, its links both ways and its problems', async () => {
     openSideBar();
     for (const [path, title, body] of [['/DM', 'Demo shop', /A demo product for the/], ['/DM-SHOP', 'Shopping', /People pick goods and pay/]] as const) {
       await openApp(path);
       await screen.findByRole('heading', { level: 1, name: title });
       expect(within(main()).getAllByText(body).length).toBeGreaterThan(0);
       for (const name of [/^Parent/, /^Links out/, /^Links in/, /^Problems/]) expect(within(sideBar()).getByRole('heading', { name })).toBeInTheDocument();
-      expect(within(sideBar()).getByText('Spec file')).toBeInTheDocument();
+      expect(within(sideBar()).getByText('Data file')).toBeInTheDocument();
       // No second page to send the Reader to.
       expect(screen.queryByRole('link', { name: /Open the (product|domain) overview/ })).toBeNull();
     }

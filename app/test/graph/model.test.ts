@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { addRows, indexOf } from '../fixtures/load';
 import { canTrace, fileNodeId, neighborhood, nextTrail, TRACE_COLUMNS, traceChain, traceColumn, type Filters } from '../../src/graph/model';
-import { indexWorkspace } from '../../src/specs/data';
 import { NODE_HEIGHT, NODE_WIDTH, traceGrid } from '../../src/graph/layout';
 import { graphMap } from '../../src/graph/map';
 import { testIndex, testWorkspace } from './workspace';
@@ -177,10 +177,10 @@ describe('graph neighborhood', () => {
 
   it('LA-EXP-T25 Links between records in one column are drawn but never change the map', async () => {
     const w = testWorkspace();
-    w.records.push({ ...w.records.find((r) => r.id === 'P-D-A1')!, id: 'P-D-A2', title: 'Owner', path: 'specs/P-D-A2.md' });
-    const before = graphMap(indexWorkspace(w), 'P');
-    w.links.push({ source: 'P-D-A1', relation: 'relates_to', target: 'P-D-A2' }, { source: 'P-D-A2', relation: 'relates_to', target: 'P-D-A1' });
-    const linked = indexWorkspace(w);
+    addRows(w, 'aggregate', { id: 'P-D-A2', title: 'Owner', domain_id: 'P-D' });
+    const before = graphMap(indexOf(w), 'P');
+    addRows(w, 'relates_to', { source_id: 'P-D-A1', target_id: 'P-D-A2' }, { source_id: 'P-D-A2', target_id: 'P-D-A1' });
+    const linked = indexOf(w);
     // Links on: the two aggregates are siblings, so they share a column, and both links are drawn.
     const n = neighborhood(linked, 'P-D-A1', 1, undefined, { links: true });
     const column = new Map(n.nodes.map((x) => [x.id, x.column]));

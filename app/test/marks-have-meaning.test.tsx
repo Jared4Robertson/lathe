@@ -2,6 +2,7 @@
 // Every mark the Graph or the Model view can draw (a box's shape or fill, a badge, a line style) is
 // listed in that view's key, with words that say what it means.
 import './graph/setup';
+import { indexOf } from './fixtures/load';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { cleanup, render } from '@testing-library/react';
@@ -14,7 +15,6 @@ import { BADGE_TONES } from '../src/graph/plate';
 import { SHAPES } from '../src/graph/shapes';
 import { erdFor } from '../src/model/erd';
 import { ErdKey } from '../src/model/ModelView';
-import { indexWorkspace } from '../src/specs/data';
 import { eventWorkspace } from './fixtures/events';
 import { testWorkspace } from './graph/workspace';
 
@@ -44,7 +44,7 @@ describe('the Graph view key', () => {
     needs('a Voronoi cell', '.graph-swatch.is-cell');
     needs('bar', '.graph-swatch.stage-bar');
     for (const badge of BADGE_TONES) needs(`badge ${badge}`, `.graph-mark.${badge}`);
-    const relations = [PARENT, NAMES, ...new Set(testWorkspace().relations.map((r) => r.relation))];
+    const relations = [PARENT, NAMES, ...new Set(indexOf(testWorkspace()).workspace.relations.map((r) => r.relation))];
     for (const style of new Set(relations.map(relationStyle))) needs(`line ${style}`, `.graph-line.rel-${style}`);
     needs('cross-link', '.graph-line.is-link');
     expect(missing).toEqual([]);
@@ -63,7 +63,7 @@ describe('the Model view key', () => {
   });
 
   it('LA-PLT-T134 Every box, badge and line an ERD draws is in its key, with what it means', () => {
-    const index = indexWorkspace(eventWorkspace());
+    const index = indexOf(eventWorkspace());
     const scopes = index.workspace.records.filter((r) => ['domain', 'aggregate', 'entity'].includes(r.kind)).map((r) => r.id);
     const missing: string[] = [];
     let drawn = 0;

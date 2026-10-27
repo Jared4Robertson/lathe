@@ -1,7 +1,8 @@
 import { fireResize } from './setup';
+import { addRows } from '../fixtures/load';
+import type { SpecData } from '../../../lathe/src/server/contract';
 import { describe, expect, it } from 'vitest';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import type { Workspace } from '../../../lathe/src/types';
 import { DEFAULT_GRAPH_SETTINGS, GraphView } from '../../src/graph/GraphPage';
 import { openApp, startAtDepth } from '../helpers';
 import { testIndex, testWorkspace } from './workspace';
@@ -25,9 +26,9 @@ async function back() {
 }
 
 /** Opens a graph page at a depth (1 unless asked). Most tests here are about links, so they turn Links on unless asked not to. */
-async function showGraph(path: string, workspace: Workspace = testWorkspace(), depth = 1, links = true) {
+async function showGraph(path: string, workspace: SpecData = testWorkspace(), depth = 1, links = true) {
   startAtDepth(depth);
-  await openApp(path.includes('?') ? path : `${path}?view=graph`, { workspace });
+  await openApp(path.includes('?') ? path : `${path}?view=graph`, { data: workspace });
   await waitFor(() => expect(boxElements().length).toBeGreaterThan(0));
   if (links) fireEvent.click(screen.getByRole('button', { name: 'Links' }));
 }
@@ -173,7 +174,7 @@ describe('graph page', () => {
       // Each page starts with the wiki alone (no view remembered, no tab to take one from); the Graph toggle opens the graph beside it.
       window.localStorage.removeItem('lathe:view');
       window.sessionStorage.removeItem('lathe:tabs');
-      await openApp(path, { workspace: testWorkspace() });
+      await openApp(path, { data: testWorkspace() });
       await screen.findByRole('heading', { level: 1 });
       const graph = within(screen.getByRole('group', { name: 'View' })).getByRole('button', { name: 'Graph' });
       expect(within(screen.getByRole('navigation', { name: 'Main' })).queryByRole('link', { name: 'Graph' })).toBeNull();
@@ -212,8 +213,8 @@ describe('graph page', () => {
     expect(scene().lines.some((l) => l.style === 'structure' && !l.link)).toBe(true);
 
     const w = testWorkspace();
-    w.records.push({ ...w.records.find((r) => r.id === 'P-D-A1')!, id: 'P-D-A2', title: 'Owner', path: 'specs/P-D-A2.md' });
-    w.links.push({ source: 'P-D-A1', relation: 'relates_to', target: 'P-D-A2' }, { source: 'P-D-A2', relation: 'relates_to', target: 'P-D-A1' });
+    addRows(w, 'aggregate', { id: 'P-D-A2', title: 'Owner', domain_id: 'P-D' });
+    addRows(w, 'relates_to', { source_id: 'P-D-A1', target_id: 'P-D-A2' }, { source_id: 'P-D-A2', target_id: 'P-D-A1' });
     await showGraph('/P-D-A1', w, 1, false);
     const links = screen.getByRole('button', { name: 'Links' });
     if (links.getAttribute('aria-pressed') !== 'true') fireEvent.click(links);
@@ -280,7 +281,7 @@ describe('graph groups on the page', () => {
     await waitFor(() => expect(title()).toBe('Define (2)'));
 
     // An address for a group that does not exist says so.
-    await openApp('/P-D/flow', { workspace: testWorkspace() });
+    await openApp('/P-D/flow', { data: testWorkspace() });
     await screen.findByText(/There's no record or group/);
   });
 

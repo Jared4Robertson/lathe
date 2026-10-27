@@ -2,16 +2,15 @@ import './graph/setup';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { referenceFromWorkspace } from '../src/format/reference';
 import { relationStyle } from '../src/graph/GraphPage';
 import { neighborhood } from '../src/graph/model';
 import { Legend } from '../src/graph/panel';
 import { shapeOf } from '../src/graph/shapes';
-import { indexWorkspace } from '../src/specs/data';
 import { standardWorkspace } from './fixtures/standards';
 import { main, openApp, section } from './helpers';
+import { indexOf } from './fixtures/load';
 
-// Standards in the app (FORMAT.md section 19): under Shared in the nav beside the patterns, a standard's
+// Standards in the app (the standard and standard_rule tables): under Shared in the nav beside the patterns, a standard's
 // page listing its rules with what meets each one, a rule's Traceability showing Met by, the format
 // reference's kind pages, and the graph's plain boxes and design lines.
 
@@ -21,7 +20,7 @@ const list = (name: string) => within(panel()).getByRole('list', { name });
 const rows = (el: HTMLElement) => [...el.querySelectorAll(':scope > li > .nav-folder-head')].map((b) => b.textContent);
 const head = (el: HTMLElement, name: RegExp) => within(el).getAllByRole('button', { name }).find((b) => b.closest('ul') === el)!;
 const fact = (box: HTMLElement, name: string) => within(box).getByText(name, { selector: 'dt' }).nextElementSibling?.textContent;
-const served = () => ({ workspace: standardWorkspace(), format: referenceFromWorkspace(standardWorkspace()) });
+const served = () => ({ data: standardWorkspace() });
 
 describe('standards in the nav and the wiki', () => {
   it('LA-AUT-T125 The product lists its standards under Shared, beside its patterns', async () => {
@@ -62,7 +61,7 @@ describe('standards in the nav and the wiki', () => {
     expect(within(meets).getByRole('link', { name: /DM-STD-CODE-R01/ })).toHaveAttribute('href', '/DM-STD-CODE-R01');
   });
 
-  it('LA-AUT-T128 The format reference has a page for each standard kind, from the meta-model', async () => {
+  it('LA-AUT-T128 The format reference has a page for each standard kind, from the schema', async () => {
     await openApp('/format/kinds/standard_rule', served());
     expect(await screen.findByRole('heading', { level: 1, name: 'Standard rule' })).toBeInTheDocument();
     const where = section('Where it sits');
@@ -72,13 +71,13 @@ describe('standards in the nav and the wiki', () => {
     const into = section(/^Links in/);
     expect(within(into).getAllByText('Met by').length).toBeGreaterThan(0);
     expect(within(into).getByRole('link', { name: /component/ })).toHaveAttribute('href', '/format/kinds/component');
-    expect(within(main()).getByText('One rule of a standard.')).toBeInTheDocument();
+    expect(within(main()).getByText(/^One rule of a standard\. It is not an obligation/)).toBeInTheDocument();
   });
 });
 
 describe('standards in the graph', () => {
   it('LA-AUT-T129 The graph draws a standard as a pattern with a ruler in Shared and meets as a design line in its key', () => {
-    const ix = indexWorkspace(standardWorkspace());
+    const ix = indexOf(standardWorkspace());
     const n = neighborhood(ix, 'DM-STD-CODE', 1);
     expect(n.edges.map((e) => `${e.source} ${e.relation} ${e.target}`)).toEqual(expect.arrayContaining([
       // Shared holds two kinds, so the graph groups it by kind.

@@ -7,7 +7,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 // The performance suite (LA-PAT-APP-UX-R11): Playwright with Chromium, one worker. It builds the app
 // for production and serves it with `lathe serve`'s server (perf/serve.ts) on a free port, never
-// 5199, over a copy of this repo's specs, then measures the first load, view switches, graph
+// 5199, over a copy of this repo's data, then measures the first load, view switches, graph
 // re-centers, the Model view and memory against the budgets in perf/budgets.ts. Run it with
 // `npm --prefix app run test:perf`, after the stability suite for a UI change.
 
@@ -32,8 +32,8 @@ async function freePort(): Promise<number> {
 
 if (!process.env.PERF_PORT) process.env.PERF_PORT = String(await freePort());
 if (!process.env.PERF_ROOT) {
-  const root = mkdtempSync(path.join(tmpdir(), 'lathe-perf-specs-'));
-  for (const part of ['specs', 'model', 'lathe-checks', 'lathe.config.json']) {
+  const root = mkdtempSync(path.join(tmpdir(), 'lathe-perf-data-'));
+  for (const part of ['data', 'lathe.config.json']) {
     const from = path.join(repo, part);
     if (existsSync(from)) cpSync(from, path.join(root, part), { recursive: true });
   }

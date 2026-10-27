@@ -1,9 +1,9 @@
 import './graph/setup';
+import { indexOf } from './fixtures/load';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { indexWorkspace } from '../src/specs/data';
 import { addressOf } from '../src/views/address';
 import { aggregateErd, domainErd, endPath, erdFor, lineOffsets } from '../src/model/erd';
 import { erdGraph } from '../src/model/layout';
@@ -22,8 +22,8 @@ import { PLAIN_LOOK } from '../src/graph/look';
 // aggregates on a domain's ERD; the aggregate's "Domain events" list and the event's own page; and
 // events under their aggregate in the graph, their reacts_to links dashed and labeled.
 
-const served = () => ({ workspace: eventWorkspace() });
-const index = () => indexWorkspace(eventWorkspace());
+const served = () => ({ data: eventWorkspace() });
+const index = () => indexOf(eventWorkspace());
 const modelPane = () => screen.getByRole('region', { name: 'Model pane' });
 const box = (id: string) => modelPane().querySelector<HTMLElement>(`.react-flow__node[data-id="${id}"]`);
 const boxesShown = () => waitFor(() => expect(modelPane().querySelectorAll('.react-flow__node').length).toBeGreaterThan(0));
@@ -104,7 +104,7 @@ describe('domain events in the ERD', () => {
       expect(l.links).toHaveLength(1);
       expect(l.links[0]).toMatchObject({ source: l.target, relation: 'reacts_to', target: l.event!.id });
     }
-    const aggregateLinks = eventWorkspace().links.filter((l) => l.relation === 'reacts_to' && index().byId.get(l.source)?.kind === 'aggregate');
+    const aggregateLinks = index().workspace.links.filter((l) => l.relation === 'reacts_to' && index().byId.get(l.source)?.kind === 'aggregate');
     const selfReactions = aggregateLinks.filter((l) => index().byId.get(l.target)?.parent === l.source);
     expect(reacts).toHaveLength(aggregateLinks.length - selfReactions.length);
     // Another domain's aggregate is context, and so are the lines to and from it.
@@ -162,7 +162,7 @@ describe('domain events in the ERD', () => {
     // An event's own ERD rings it, and its key says so.
     const own = erdFor(index(), 'P-D-EV02')!;
     cleanup();
-    render(<ErdKey erd={own} highlight relations={eventWorkspace().relations} />);
+    render(<ErdKey erd={own} highlight relations={index().workspace.relations} />);
     const ownKey = screen.getByRole('group', { name: 'Key' });
     expect(ownKey).toHaveTextContent('This event');
     expect(ownKey).not.toHaveTextContent('This entity');
@@ -197,9 +197,9 @@ describe('domain events in the wiki', () => {
 
     fireEvent.click(within(rows[0]).getByRole('link'));
     await screen.findByRole('heading', { level: 1, name: 'Thing lent' });
-    // Its Fields table, as an entity's.
-    const table = within(screen.getByRole('main')).getByRole('table');
-    expect(within(table).getAllByRole('columnheader').map((c) => c.textContent)).toEqual(['Field', 'Meaning', 'Kind of value', 'Example']);
+    // Its Fields table, from its event_field rows, as an entity's.
+    const table = within(section(/^Fields\d/)).getByRole('table');
+    expect(within(table).getAllByRole('columnheader').map((c) => c.textContent)).toEqual(['Field', 'Meaning', 'Type', 'Example']);
     expect(within(table).getByRole('cell', { name: 'Thing reference' })).toBeInTheDocument();
     const trace = section(/^Traceability/);
     const raised = within(trace).getByRole('heading', { name: /Raised by/ }).closest('section')!;

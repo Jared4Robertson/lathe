@@ -1,9 +1,9 @@
 import './setup';
+import { indexOf } from '../fixtures/load';
 import { describe, expect, it } from 'vitest';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { relationStyle } from '../../src/graph/GraphPage';
 import { canTrace, neighborhood, traceChain } from '../../src/graph/model';
-import { indexWorkspace } from '../../src/specs/data';
 import { patternWorkspace } from '../fixtures/patterns';
 import { openApp, startAtDepth } from '../helpers';
 import { boxElement, scene } from './scene';
@@ -11,7 +11,7 @@ import { boxElement, scene } from './scene';
 // Patterns in the graph: a pattern's rules sit under it, one column to its right, and a use
 // case's `follows` link is a cross-link.
 
-const index = () => indexWorkspace(patternWorkspace());
+const index = () => indexOf(patternWorkspace());
 const edge = (e: { source: string; relation: string; target: string }) => `${e.source} ${e.relation} ${e.target}`;
 
 describe('patterns in the graph', () => {
@@ -52,7 +52,7 @@ describe('patterns in the graph', () => {
 
   it('LA-EXP-T61 The graph view of a pattern draws its rules and the follows lines with their own style', async () => {
     startAtDepth(1);
-    await openApp('/DM-PAT-CHECKOUT?view=graph', { workspace: patternWorkspace() });
+    await openApp('/DM-PAT-CHECKOUT?view=graph', { data: patternWorkspace() });
     await waitFor(() => expect(boxElement('DM-PAT-CHECKOUT-R01')).not.toBeNull());
     fireEvent.click(screen.getByRole('button', { name: 'Links' }));
     await waitFor(() => expect(scene().lines.some((l) => l.link && l.style === 'pattern')).toBe(true));

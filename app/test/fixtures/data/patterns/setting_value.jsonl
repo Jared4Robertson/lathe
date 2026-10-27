@@ -1,0 +1,4 @@
+{"follower_id":"DM-PAY-UC01","pattern_id":"DM-PAT-CHECKOUT","setting":"audit","value":"The payments log"}
+{"follower_id":"DM-PAY-UC01","pattern_id":"DM-PAT-CHECKOUT","setting":"record","value":"Payment"}
+{"follower_id":"DM-SHOP-UC01","pattern_id":"DM-PAT-CHECKOUT","setting":"audit","not_applicable":"adding to a basket changes nothing worth auditing"}
+{"follower_id":"DM-SHOP-UC01","pattern_id":"DM-PAT-CHECKOUT","setting":"record","value":"Basket"}

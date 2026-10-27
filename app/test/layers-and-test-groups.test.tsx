@@ -4,11 +4,11 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { graphMap } from '../src/graph/map';
 import { neighborhood } from '../src/graph/model';
-import { indexWorkspace } from '../src/specs/data';
 import { branchOf, domainFolders, type Folder, type FolderGroup } from '../src/specs/folders';
 import { layerWorkspace } from './fixtures/layers';
 import { workspace } from './fixtures/workspace';
 import { main, openApp, openSideBar } from './helpers';
+import { addRows, indexOf, setRow } from './fixtures/load';
 
 // Technical specification lists a domain's layers in order, each holding its components, then the
 // components outside any layer; Test plan groups its tests by what they prove (computed, not
@@ -22,7 +22,7 @@ const findList = (name: string) => within(panel()).findByRole('list', { name });
 const rows = (el: HTMLElement) => [...el.querySelectorAll(':scope > li > .nav-folder-head, :scope > li > .nav-row > a')].map((b) => b.textContent);
 const head = (el: HTMLElement, name: RegExp) => within(el).getAllByRole('button', { name }).find((b) => b.closest('ul') === el)!;
 
-const designFolder = (index: ReturnType<typeof indexWorkspace>, domain: string, section: string) =>
+const designFolder = (index: ReturnType<typeof indexOf>, domain: string, section: string) =>
   domainFolders(index, domain).stages.flatMap((s) => s.folders).find((f) => f.section === section)!;
 /** A folder's groups as a tree of labels, counts and record IDs. */
 type Shape = { label: string; count: number; records?: string[]; groups?: Shape[] };
@@ -36,7 +36,7 @@ const tree = (f: Folder) => shape(f.groups);
 
 describe('layers and test groups', () => {
   it('LA-EXP-T94 Technical specification lists the layers in their order, each with its components, then those outside any layer', () => {
-    const index = indexWorkspace(layerWorkspace());
+    const index = indexOf(layerWorkspace());
     const spec = designFolder(index, 'DM-SHOP', 'technical-specification');
     expect(tree(spec)).toEqual([
       { label: 'Models', count: 2, records: ['DM-SHOP-C02', 'DM-SHOP-C03'] },
@@ -50,14 +50,14 @@ describe('layers and test groups', () => {
     expect(spec.count).toBe(5);
 
     // A domain with no layers lists its components as before.
-    const plain = designFolder(indexWorkspace(workspace()), 'DM-SHOP', 'technical-specification');
+    const plain = designFolder(indexOf(workspace()), 'DM-SHOP', 'technical-specification');
     expect(plain.groups).toEqual([]);
     expect(plain.records.map((r) => r.id)).toEqual(['DM-SHOP-C01']);
     expect(plain.count).toBe(1);
   });
 
   it('LA-EXP-T95 Test plan groups each test by family, then by what it proves: acceptance, domain rule, pattern, interaction, UI, design and engineering; empty groups are left out', () => {
-    const index = indexWorkspace(layerWorkspace());
+    const index = indexOf(layerWorkspace());
     expect(tree(designFolder(index, 'DM-SHOP', 'test-plan'))).toEqual([
       {
         label: 'Acceptance tests', count: 5, groups: [
@@ -82,13 +82,13 @@ describe('layers and test groups', () => {
     expect(pay.records.map((r) => r.id)).toEqual(['DM-PAY-T01']);
     // Only acceptance tests: the group level goes, the use cases stay (and with no use case in a
     // capability, the tests go straight into their use cases).
-    expect(tree(designFolder(indexWorkspace(workspace()), 'DM-SHOP', 'test-plan'))).toEqual([
+    expect(tree(designFolder(indexOf(workspace()), 'DM-SHOP', 'test-plan'))).toEqual([
       { label: 'Add an item to the basket', count: 1, records: ['DM-SHOP-T01'] },
     ]);
   });
 
   it('LA-EXP-T96 In the nav, layers are foldable rows that link to their pages, and test groups are rows that only fold, each with its count', async () => {
-    await openApp('/DM', { workspace: layerWorkspace() });
+    await openApp('/DM', { data: layerWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     const user = userEvent.setup();
     await user.click(within(panel()).getByRole('button', { name: 'Unfold Shopping' }));
@@ -117,7 +117,7 @@ describe('layers and test groups', () => {
   });
 
   it("LA-EXP-T97 The current page's branch opens through its layer or its test groups", async () => {
-    const index = indexWorkspace(layerWorkspace());
+    const index = indexOf(layerWorkspace());
     const spec = 'DM-SHOP/design/technical-specification';
     const plan = 'DM-SHOP/design/test-plan';
     expect(branchOf(index, 'DM-SHOP-C04')).toEqual(['domain:DM-SHOP', 'DM-SHOP/design', spec, `${spec}/DM-SHOP-LAY03`]);
@@ -125,24 +125,24 @@ describe('layers and test groups', () => {
     expect(branchOf(index, 'DM-SHOP-C01')).toEqual(['domain:DM-SHOP', 'DM-SHOP/design', spec, `${spec}/outside`]);
     expect(branchOf(index, 'DM-SHOP-T04')).toEqual(['domain:DM-SHOP', 'DM-SHOP/design', plan, `${plan}/acceptance`, `${plan}/acceptance/DM-SHOP-CAP01`, `${plan}/acceptance/DM-SHOP-CAP01/DM-SHOP-UC02`]);
 
-    await openApp('/DM-SHOP-C04', { workspace: layerWorkspace() });
+    await openApp('/DM-SHOP-C04', { data: layerWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Checkout service' });
     expect(within(await findList('Services of Shopping')).getByRole('link', { name: 'Checkout service' })).toHaveAttribute('aria-current', 'page');
 
     // A layer's page marks its row and opens it.
-    await openApp('/DM-SHOP-LAY02', { workspace: layerWorkspace() });
+    await openApp('/DM-SHOP-LAY02', { data: layerWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Models' });
     await findList('Models of Shopping');
     expect(within(list('Technical specification of Shopping')).getByRole('link', { name: /^Models/ })).toHaveAttribute('aria-current', 'page');
 
-    await openApp('/DM-SHOP-T05', { workspace: layerWorkspace() });
+    await openApp('/DM-SHOP-T05', { data: layerWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'A basket stops at 50 items' });
     expect(within(await findList('Domain rule tests of Shopping')).getByRole('link', { name: 'A basket stops at 50 items' })).toHaveAttribute('aria-current', 'page');
     expect(within(panel()).queryByRole('list', { name: 'Acceptance tests of Shopping' })).toBeNull();
   });
 
   it('LA-EXP-T98 The domain page heads the same layers and test groups, layers linking to their pages, with rows folded one level deep', async () => {
-    await openApp('/DM-SHOP', { workspace: layerWorkspace() });
+    await openApp('/DM-SHOP', { data: layerWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     const user = userEvent.setup();
     const folder = (name: RegExp) => within(main()).getByRole('heading', { level: 3, name }).closest('section') as HTMLElement;
@@ -175,7 +175,7 @@ describe('layers and test groups', () => {
   });
 
   it("LA-EXP-T99 A layer's record page lists its components as its children, as a capability's lists its own", async () => {
-    await openApp('/DM-SHOP-LAY02', { workspace: layerWorkspace() });
+    await openApp('/DM-SHOP-LAY02', { data: layerWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Models' });
     expect(main().querySelector('.eyebrow')).toHaveTextContent('Demo shop · Shopping · Layer');
     const children = within(main()).getByRole('heading', { level: 2, name: /^Components/ });
@@ -185,7 +185,7 @@ describe('layers and test groups', () => {
   });
 
   it('LA-EXP-T100 In the graph a domain reaches its components through Design, Technical specification, then a layer, one level each, read left to right', async () => {
-    const index = indexWorkspace(layerWorkspace());
+    const index = indexOf(layerWorkspace());
     // Depth 1 from the domain: its product and its stages; their folders are the next level, one more down.
     const domain = neighborhood(index, 'DM-SHOP', 1);
     const framed = domain.nodes.map((n) => n.id);
@@ -217,7 +217,7 @@ describe('layers and test groups', () => {
   });
 
   it("LA-EXP-T101 A group page of tests reads them in the test plan's groups", async () => {
-    await openApp('/DM-SHOP/design/test-plan', { workspace: layerWorkspace() });
+    await openApp('/DM-SHOP/design/test-plan', { data: layerWorkspace() });
     await screen.findByRole('heading', { level: 1, name: /^Test plan/ });
     const members = within(main()).getByRole('heading', { level: 2, name: /^Tests/ }).closest('section') as HTMLElement;
     // The domain's own tests (not the capability's) in their groups.
@@ -228,12 +228,13 @@ describe('layers and test groups', () => {
 
   it('LA-EXP-T102 Group labels name kinds through plural(), and what is folded in a group lasts for the session', async () => {
     const w = layerWorkspace();
-    w.kinds = w.kinds.map((k) => (k.kind === 'component' ? { ...k, label: 'Part' } : k.kind === 'use_case' ? { ...k, label: 'Story' } : k));
-    const index = indexWorkspace(w);
+    w.schema.kinds.component.label = 'Part';
+    w.schema.kinds.use_case.label = 'Story';
+    const index = indexOf(w);
     expect(designFolder(index, 'DM-SHOP', 'technical-specification').groups.at(-1)?.label).toBe('Parts outside any layer');
     expect(designFolder(index, 'DM-SHOP', 'test-plan').groups[0].groups.at(-1)?.label).toBe('Stories outside any capability');
 
-    await openApp('/DM-SHOP-C02', { workspace: layerWorkspace() });
+    await openApp('/DM-SHOP-C02', { data: layerWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Basket model' });
     await findList('Models of Shopping');
     await waitFor(() => expect(window.sessionStorage.getItem('lathe:nav-folders')).toContain('DM-SHOP/design/technical-specification/DM-SHOP-LAY02'));
@@ -242,11 +243,8 @@ describe('layers and test groups', () => {
 
   it('LA-EXP-T103 In the graph a capability with 7 use cases shows them directly, with no folder', () => {
     const w = layerWorkspace();
-    for (let i = 4; i <= 8; i++) {
-      w.records.push({ id: `DM-SHOP-UC0${i}`, kind: 'use_case', title: `Browse ${i}`, parent: 'DM-SHOP-CAP02', product: 'DM', domain: 'DM-SHOP', fields: { actor: 'Shopper' }, body: '', path: `specs/dm/DM-SHOP-UC0${i}.md`, mentions: [] });
-    }
-    w.records.push({ id: 'DM-SHOP-UC09', kind: 'use_case', title: 'Browse 9', parent: 'DM-SHOP-CAP02', product: 'DM', domain: 'DM-SHOP', fields: { actor: 'Shopper' }, body: '', path: 'specs/dm/DM-SHOP-UC09.md', mentions: [] });
-    const index = indexWorkspace(w);
+    for (let i = 4; i <= 9; i++) addRows(w, 'use_case', { id: `DM-SHOP-UC0${i}`, title: `Browse ${i}`, domain_id: 'DM-SHOP', capability_id: 'DM-SHOP-CAP02' });
+    const index = indexOf(w);
     expect((index.children.get('DM-SHOP-CAP02') ?? []).length).toBe(7);
     const n = neighborhood(index, 'DM-SHOP-CAP02', 1);
     expect(n.nodes.some((x) => x.group && x.group.parent === 'DM-SHOP-CAP02')).toBe(false);
@@ -261,7 +259,7 @@ describe('layers and test groups', () => {
     openSideBar('details', ['wiki', 'graph', 'model']);
     const user = userEvent.setup();
     // Test plan with one group (DM-PAY: an engineering check only): its tests are listed directly, in the nav and on the domain page.
-    await openApp('/DM-PAY', { workspace: layerWorkspace() });
+    await openApp('/DM-PAY', { data: layerWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Paying' });
     await user.click(head(list('Folders of Paying'), /^Design/));
     await user.click(head(list('Design of Paying'), /^Test plan/));
@@ -294,7 +292,7 @@ describe('layers and test groups', () => {
   });
 
   it("LA-EXP-T105 In the graph a domain's Test plan folder holds the test plan's groups, from the same folder model, each a group node that opens", async () => {
-    const index = indexWorkspace(layerWorkspace());
+    const index = indexOf(layerWorkspace());
     const plan = 'DM-SHOP/design/test-plan';
     const acceptance = `${plan}/acceptance`;
     // Depth 1 from the Test plan: the Design stage and the groups, labeled with their counts.
@@ -331,15 +329,15 @@ describe('layers and test groups', () => {
     expect(pay.edges.map((e) => `${e.source} > ${e.target}`)).toEqual(['DM-PAY/design/test-plan > DM-PAY-T01']);
 
     // A test-plan group has its own page.
-    await openApp(`/${acceptance}`, { workspace: layerWorkspace() });
+    await openApp(`/${acceptance}`, { data: layerWorkspace() });
     expect(await screen.findByRole('heading', { level: 1, name: 'Acceptance tests (5)' })).toBeInTheDocument();
   });
 
   it('LA-EXP-T106 The graph trail names each record by its title with its ID in parentheses, and a group by its name alone', async () => {
     const trail = () => within(screen.getByRole('navigation', { name: 'Records visited' }));
     const w = layerWorkspace();
-    w.records.find((r) => r.id === 'DM-SHOP-LAY02')!.title = 'Models, entities, value objects and every other kind of stored record';
-    await openApp('/DM-SHOP-LAY02?view=graph', { workspace: w });
+    setRow(w, 'layer', 'DM-SHOP-LAY02', { title: 'Models, entities, value objects and every other kind of stored record' });
+    await openApp('/DM-SHOP-LAY02?view=graph', { data: w });
     await screen.findByRole('heading', { level: 1, name: /^Models, entities/ });
     const item = await waitFor(() => trail().getByText(/^Models, entities/).closest('.trail-item') as HTMLElement);
     // The current item: its name (bold, cut short by CSS), the ID in code style, the full text as its tooltip.
@@ -350,7 +348,7 @@ describe('layers and test groups', () => {
     expect(item.querySelector('code.trail-id')).toHaveTextContent('(DM-SHOP-LAY02)');
 
     // A test-plan group's page: its name, with no count and no ID of its own; its parent in the tooltip.
-    await openApp('/DM-SHOP/design/test-plan/acceptance?view=graph', { workspace: layerWorkspace() });
+    await openApp('/DM-SHOP/design/test-plan/acceptance?view=graph', { data: layerWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Acceptance tests (5)' });
     const group = await waitFor(() => trail().getByText('Acceptance tests').closest('.trail-item') as HTMLElement);
     expect(group.textContent).toBe('Acceptance tests');

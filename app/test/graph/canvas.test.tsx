@@ -59,7 +59,7 @@ describe('text sizing', () => {
 
   it('LA-EXP-T210 On the page, each drawn line\'s font is its map size times the zoom, and a line under TEXT_BAR_PX on screen is drawn as a bar', async () => {
     startAtDepth(3);
-    await openApp('/P?view=graph', { workspace: testWorkspace() });
+    await openApp('/P?view=graph', { data: testWorkspace() });
     await waitFor(() => expect(boxElements().length).toBeGreaterThan(3));
     const s = scene();
     for (const box of s.boxes) {

@@ -1,5 +1,5 @@
 // Which editor "Open in editor" uses (LA-AUT-UC15-R02): VS Code by default, another known editor, the
-// system's default app for Markdown, or a command of the person's own. The choice is kept in
+// system's default app for the file, or a command of the person's own. The choice is kept in
 // settings.json in the user data folder; File › Open Records In sets it, and a custom command is
 // written there by hand ("editorCommand", which gets the file as its last argument).
 
@@ -52,7 +52,7 @@ export type Launch =
   | { kind: 'open-path'; path: string };
 
 /**
- * How to open a spec file in the chosen editor. On macOS a known editor opens by its bundle ID, so it
+ * How to open a data file in the chosen editor. On macOS a known editor opens by its bundle ID, so it
  * needs no command on the PATH (an app started from the Dock has a short one); a custom command runs
  * in a login shell, with the file passed as an argument, never spliced into the command's text.
  */

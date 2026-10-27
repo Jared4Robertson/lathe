@@ -1,0 +1,1 @@
+{"name":"security_control","product_id":"DM","label":"Security control","description":"A product kind: a control an endpoint must enforce.","parent_kind":"endpoint","stage":"design","section":"interaction-design","obligation":"full"}

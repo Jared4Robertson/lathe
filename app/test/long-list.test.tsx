@@ -1,8 +1,10 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import type { Coverage, SpecLink, SpecRecord, Workspace } from '../../lathe/src/types';
+import type { Coverage } from '../../lathe/src/types';
+import type { SpecData } from '../../lathe/src/server/contract';
 import { LongList } from '../src/components/LongList';
+import { addRows } from './fixtures/load';
 import { workspace as baseWorkspace } from './fixtures/workspace';
 import { main, openApp, openSideBar, section } from './helpers';
 
@@ -13,25 +15,20 @@ const list = (items: Item[]) => (
 );
 
 const pad = (n: number) => String(n).padStart(2, '0');
-function record(id: string, kind: string, title: string, parent: string | null, product: string, domain: string | null, fields: Record<string, string> = {}): SpecRecord {
-  return { id, kind, title, parent, product, domain, fields, body: '', path: `specs/big/${id}.md`, mentions: [] };
-}
 
 /** A product with 12 domains; its first domain has 12 use cases, the first with 12 requirements, and 12 problems. */
-function bigWorkspace(): Workspace {
+function bigWorkspace(): SpecData {
   const ws = baseWorkspace();
-  const records: SpecRecord[] = [record('BG', 'product', 'Big product', null, 'BG', null)];
-  for (let d = 1; d <= 12; d++) records.push(record(`BG-D${pad(d)}`, 'domain', `Domain ${d}`, 'BG', 'BG', `BG-D${pad(d)}`));
-  records.push(record('BG-D01-A1', 'aggregate', 'Ledger', 'BG-D01', 'BG', 'BG-D01'));
-  records.push(record('BG-D01-DR01', 'domain_rule', 'A ledger balances', 'BG-D01-A1', 'BG', 'BG-D01'));
-  const links: SpecLink[] = [];
+  addRows(ws, 'product', { id: 'BG', title: 'Big product' });
+  for (let d = 1; d <= 12; d++) addRows(ws, 'domain', { id: `BG-D${pad(d)}`, title: `Domain ${d}`, product_id: 'BG' });
+  addRows(ws, 'aggregate', { id: 'BG-D01-A1', title: 'Ledger', domain_id: 'BG-D01' });
+  addRows(ws, 'domain_rule', { id: 'BG-D01-DR01', title: 'A ledger balances', domain_id: 'BG-D01', aggregate_id: 'BG-D01-A1', statement: 'A ledger MUST balance.' });
   for (let u = 1; u <= 12; u++) {
-    records.push(record(`BG-D01-UC${pad(u)}`, 'use_case', u === 9 ? 'Close the month' : `Use case ${u}`, 'BG-D01', 'BG', 'BG-D01', { actor: 'Clerk' }));
-    links.push({ source: `BG-D01-UC${pad(u)}`, relation: 'applies', target: 'BG-D01-DR01' });
-    records.push(record(`BG-D01-UC01-R${pad(u)}`, 'requirement', `Requirement ${u}`, 'BG-D01-UC01', 'BG', 'BG-D01'));
+    addRows(ws, 'use_case', { id: `BG-D01-UC${pad(u)}`, title: u === 9 ? 'Close the month' : `Use case ${u}`, domain_id: 'BG-D01' });
+    addRows(ws, 'use_case_actor', { use_case_id: `BG-D01-UC${pad(u)}`, position: 1, role_name: 'Clerk' });
+    addRows(ws, 'applies', { source_id: `BG-D01-UC${pad(u)}`, target_id: 'BG-D01-DR01' });
+    addRows(ws, 'requirement', { id: `BG-D01-UC01-R${pad(u)}`, title: `Requirement ${u}`, use_case_id: 'BG-D01-UC01', statement: `Requirement ${u} MUST hold.` });
   }
-  ws.records.push(...records);
-  ws.links.push(...links);
   ws.problems.push(...Array.from({ length: 12 }, (_, i) => ({ severity: 'warning' as const, check: 'unproved', record: `BG-D01-UC01-R${pad(i + 1)}`, message: `No test proves requirement BG-D01-UC01-R${pad(i + 1)}.` })));
   ws.coverage.push(...Array.from({ length: 12 }, (_, d): Coverage => ({ domain: `BG-D${pad(d + 1)}`, obligations: [], tests: { automated: 0, manual: 0, planned: 0 }, gaps: [] })));
   ws.coverage.find((c) => c.domain === 'BG-D01')!.gaps = Array.from({ length: 12 }, (_, i) => ({ id: `BG-D01-UC01-R${pad(i + 1)}`, kind: 'requirement', missing: 'proves' as const }));
@@ -81,7 +78,7 @@ describe('long lists', () => {
   });
 
   it('LA-TRC-T97 Every list in the spec pages stays at 10 rows and can be searched', async () => {
-    const served = { workspace: bigWorkspace() };
+    const served = { data: bigWorkspace() };
     const user = userEvent.setup();
 
     // The menu's domain list.

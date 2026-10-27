@@ -18,40 +18,33 @@ const marked = new Marked({
 
 /** Record IDs to turn into links in rendered prose. */
 export interface ProseLinks {
-  /** The IDs the record mentions (they exist), with the title each link shows on hover. */
+  /** The IDs the text names that are records, with the title each link shows on hover. */
   titles: ReadonlyMap<string, string>;
-  /** IDs the engine reported as citing no record: shown with a broken-link style, not linked. */
-  broken: ReadonlySet<string>;
-  /** Where a mentioned ID links to. */
+  /** Where a named ID links to. */
   href: (id: string) => string;
 }
 
 /** An ID-shaped token: capital letters and digits in parts joined by hyphens, not inside a longer word. */
-const ID_TOKEN = /(?<![A-Za-z0-9_-])[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*(?![A-Za-z0-9_])/g;
+export const ID_TOKEN = /(?<![A-Za-z0-9_-])[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*(?![A-Za-z0-9_])/g;
 /** Text inside these is never linked. */
 const SKIP = new Set(['CODE', 'PRE', 'A', 'KBD', 'SAMP', 'SCRIPT', 'STYLE']);
 
-/** Turns every mentioned ID in the HTML's text (outside code and links, plus code spans holding one lone ID) into a link, and marks unknown IDs. */
+/** Turns every named record ID in the HTML's text (outside code and links, plus code spans holding one lone ID) into a link. */
 export function linkMentions(html: string, links: ProseLinks): string {
-  if (links.titles.size === 0 && links.broken.size === 0) return html;
+  if (links.titles.size === 0) return html;
   const template = document.createElement('template');
   template.innerHTML = html;
-  // An inline code span holding one lone ID is a citation (FORMAT.md section 11): wrap the code in the link.
+  // An inline code span holding one lone ID names that record: wrap the code in the link.
   for (const code of Array.from(template.content.querySelectorAll('code'))) {
     if (code.closest('pre, a')) continue;
     const id = (code.textContent ?? '').trim();
     const title = links.titles.get(id);
-    if (title === undefined && !links.broken.has(id)) continue;
-    const wrap = title !== undefined ? document.createElement('a') : document.createElement('span');
-    if (wrap instanceof HTMLAnchorElement) {
-      wrap.href = links.href(id);
-      wrap.className = 'mention';
-      wrap.title = title!;
-      wrap.dataset.mention = id;
-    } else {
-      wrap.className = 'mention broken';
-      wrap.title = `No record has the ID ${id}`;
-    }
+    if (title === undefined) continue;
+    const wrap = document.createElement('a');
+    wrap.href = links.href(id);
+    wrap.className = 'mention';
+    wrap.title = title;
+    wrap.dataset.mention = id;
     code.replaceWith(wrap);
     wrap.appendChild(code);
   }
@@ -70,23 +63,15 @@ export function linkMentions(html: string, links: ProseLinks): string {
     for (const m of value.matchAll(ID_TOKEN)) {
       const id = m[0];
       const title = links.titles.get(id);
-      if (title === undefined && !links.broken.has(id)) continue;
+      if (title === undefined) continue;
       parts.push(value.slice(last, m.index));
-      if (title !== undefined) {
-        const a = document.createElement('a');
-        a.href = links.href(id);
-        a.className = 'mention';
-        a.title = title;
-        a.dataset.mention = id;
-        a.textContent = id;
-        parts.push(a);
-      } else {
-        const span = document.createElement('span');
-        span.className = 'mention broken';
-        span.title = `No record has the ID ${id}`;
-        span.textContent = id;
-        parts.push(span);
-      }
+      const a = document.createElement('a');
+      a.href = links.href(id);
+      a.className = 'mention';
+      a.title = title;
+      a.dataset.mention = id;
+      a.textContent = id;
+      parts.push(a);
       last = m.index + id.length;
     }
     if (parts.length === 0) continue;
@@ -106,7 +91,6 @@ export function renderMarkdown(source: string, links?: ProseLinks): string {
 export function Markdown({ source, links }: { source: string; links?: ProseLinks }) {
   const html = useMemo(() => renderMarkdown(source, links), [source, links]);
   const onNavigate = useContext(NavigateContext);
-  if (!source.trim()) return <p className="hint">No body text.</p>;
   // A mention link moves within the app on a plain click, as every other record link does.
   const onClick = (e: MouseEvent<HTMLDivElement>) => {
     const a = (e.target as HTMLElement).closest?.('a.mention');

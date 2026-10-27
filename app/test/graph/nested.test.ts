@@ -1,14 +1,15 @@
 import { describe, expect, it } from 'vitest';
+import { indexOf } from '../fixtures/load';
 import { graphMap, MAP_SIZE, sizeText } from '../../src/graph/map';
 import { BORDER, LABEL_PAD, labelHeight, largestFit, mapLabel, metaWidth, narrowestWidth, titleWidth, type MapLabel } from '../../src/graph/text';
 import { gridOf, HEADER_SHARE, layoutNested, NEST_GAP, NEST_PAD, nestedMap, type NestedMap, type NestedNode } from '../../src/graph/nested';
-import { indexWorkspace, type SpecIndex } from '../../src/specs/data';
+import type { SpecIndex } from '../../src/specs/data';
 import { groupedWorkspace, manyOfOneKindWorkspace, siblingGroups, testIndex } from './workspace';
 
 // The Nested map (LA-EXP-DR62): the Tree map's tree as nested squares, laid out once, top-down from
 // the product's square by one rule (LA-EXP-DR58): siblings are the same size, with the same text.
 
-const indexes = (): SpecIndex[] => [testIndex(), indexWorkspace(groupedWorkspace()), indexWorkspace(manyOfOneKindWorkspace())];
+const indexes = (): SpecIndex[] => [testIndex(), indexOf(groupedWorkspace()), indexOf(manyOfOneKindWorkspace())];
 const maps = (): NestedMap[] => indexes().map((index) => nestedMap(index, 'P'));
 
 /** A synthetic tree: `n` roots, each with `k` children, each with `k` leaves. */
