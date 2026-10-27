@@ -1,7 +1,8 @@
 import { act, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { indexWorkspace, parseSpecRoute } from '../src/specs/data';
+import { parseSpecRoute } from '../src/specs/data';
+import { indexOf } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
 import { main, openApp } from './helpers';
 
@@ -11,7 +12,7 @@ const heading = () => within(main()).getByRole('heading', { level: 1 });
 describe('routing', () => {
   it('LA-EXP-T01 Every page has its own address, and back and forward move between pages', async () => {
     // A record is at its bare ID; a product's and a domain's ID is their overview, once the specs are known.
-    const index = indexWorkspace(workspace());
+    const index = indexOf(workspace());
     expect(parseSpecRoute('/DM', index)).toEqual({ page: 'product', product: 'DM' });
     expect(parseSpecRoute('/DM-SHOP', index)).toEqual({ page: 'domain', product: 'DM', domain: 'DM-SHOP' });
     expect(parseSpecRoute('/DM-SHOP')).toEqual({ page: 'record', id: 'DM-SHOP' });

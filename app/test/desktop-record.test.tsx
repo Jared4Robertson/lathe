@@ -1,7 +1,7 @@
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { recordIdAt } from '../src/shell/desktopRecord';
-import { indexWorkspace } from '../src/specs/data';
+import { indexOf } from './fixtures/load';
 import { openApp, openSideBar } from './helpers';
 import { workspace } from './fixtures/workspace';
 
@@ -46,13 +46,13 @@ describe('desktop record actions', () => {
     openSideBar('details', ['wiki', 'graph', 'model']);
     await openApp('/DM-SHOP-UC01');
     await heading();
-    expect(screen.queryByRole('group', { name: 'Spec file of DM-SHOP-UC01' })).toBeNull();
+    expect(screen.queryByRole('group', { name: 'Data file of DM-SHOP-UC01' })).toBeNull();
 
     const { bridge } = desktop();
     await openApp('/DM-SHOP-UC01');
     await heading();
     const sideBar = await screen.findByRole('complementary', { name: 'Side bar' });
-    const actions = within(sideBar).getByRole('group', { name: 'Spec file of DM-SHOP-UC01' });
+    const actions = within(sideBar).getByRole('group', { name: 'Data file of DM-SHOP-UC01' });
     fireEvent.click(within(actions).getByRole('button', { name: 'Reveal in Finder' }));
     fireEvent.click(within(actions).getByRole('button', { name: 'Open in editor' }));
     fireEvent.click(within(actions).getByRole('button', { name: 'Copy ID' }));
@@ -83,7 +83,7 @@ describe('desktop record actions', () => {
     await openApp('/DM-SHOP-UC01');
     await heading();
     // The window's own product's errors (Demo shop's and the workspace's), not Notebook's.
-    const index = indexWorkspace(workspace());
+    const index = indexOf(workspace());
     const errors = workspace().problems.filter((p) => p.severity === 'error' && index.byId.get(p.record ?? '')?.product !== 'NF').length;
     expect(errors).toBe(2);
     await waitFor(() => expect(bridge.setErrorCount).toHaveBeenLastCalledWith(errors));

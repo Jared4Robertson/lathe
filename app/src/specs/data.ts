@@ -1,9 +1,193 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { Coverage, Kind, Problem, SpecLink, SpecRecord, Workspace } from '../../../lathe/src/types';
+import type { Coverage, Kind, Problem, RelationRule, SectionRule } from '../../../lathe/src/types';
+import type { Row, SpecData, Value } from '../../../lathe/src/server/contract';
+import type { SchemaDescription } from '../../../lathe/src/store/schema';
 import { onLatheEvent } from '../events';
 import { isRecordId, SPACE_CHECKS } from '../views/address';
 
-export type { Coverage, Kind, Problem, SpecLink, SpecRecord, Workspace };
+export type { Coverage, Kind, Problem, Row, SchemaDescription, SpecData, Value };
+
+// The app's spec index, built from the typed rows GET /api/spec serves (lathe/src/server/contract.ts):
+// a record per row of a kind's table, its parent from the first of its kind's parent columns that
+// holds a value, a link per row of a relation's table, and the part rows (an entity's fields, a use
+// case's actors and steps) under the record that owns them. Every view reads this index.
+
+/**
+ * Lathe's kinds in the order the app lists and ranks them: the product and its domains, the Define
+ * stage, the Design stage, then open questions. A product's own kinds follow, by name.
+ */
+export const KIND_ORDER: readonly string[] = [
+  'product', 'domain', 'capability', 'aggregate', 'entity', 'domain_event', 'domain_rule', 'use_case', 'requirement',
+  'pattern', 'pattern_rule', 'standard', 'standard_rule', 'flow', 'flow_step', 'view', 'api', 'endpoint', 'integration',
+  'interaction_requirement', 'layer', 'component', 'design_flow', 'design_step', 'test', 'question',
+];
+
+/** One record: a row of its kind's table, placed in the tree. */
+export interface SpecRecord {
+  id: string;
+  kind: string;
+  title: string;
+  /** The record it sits under: the first of its kind's parent columns that holds a value; null for a product. */
+  parent: string | null;
+  /** The product it sits in (itself for a product). */
+  product: string | null;
+  /** The domain it sits in (itself for a domain), or null above domain level. */
+  domain: string | null;
+  /** The row as the data file holds it: every column that has a value, typed. */
+  row: Row;
+  /** Its data file, relative to the product root, such as data/use_case.jsonl. */
+  file: string;
+  /** Its line in that file, from 1. */
+  line: number;
+}
+
+/** One row of a relation's table. */
+export interface SpecLink {
+  source: string;
+  relation: string;
+  target: string;
+}
+
+/** One row of a part table (an entity's field, a use case's step), with the record that owns it. */
+export interface PartRow {
+  table: string;
+  owner: string;
+  row: Row;
+}
+
+/** The typed data read into records, links and parts, with what the checks found. */
+export interface Workspace {
+  schema: SchemaDescription;
+  /** The data folder, relative to the product root, such as data. */
+  dataDir: string;
+  /** Every kind, in KIND_ORDER. */
+  kinds: Kind[];
+  /** The folders kinds sit in, by stage then place. */
+  sections: SectionRule[];
+  /** Each relation's allowed pairs, one rule per pair. */
+  relations: RelationRule[];
+  records: SpecRecord[];
+  links: SpecLink[];
+  parts: PartRow[];
+  /** The rows of the check table: each check's name, severity, summary and explanation. */
+  checks: Row[];
+  problems: Problem[];
+  coverage: Coverage[];
+}
+
+/** A column's value as text: '' when it has none, a list joined by commas, a number or true/false written out. */
+export function textOf(row: Row, column: string): string {
+  const value = row[column];
+  if (value === undefined) return '';
+  if (Array.isArray(value)) return value.join(', ');
+  return String(value);
+}
+
+/** The columns of a kind's table that name a parent of the record (its own and the derived ones, such as domain_id). */
+export function parentColumns(schema: SchemaDescription, kind: string): Set<string> {
+  return new Set((schema.kinds[kind]?.parents ?? []).map((p) => p.column));
+}
+
+/**
+ * The part tables a kind's records own: those whose owner column points at the kind's table, or at
+ * a link the kind starts (a follower's setting values hang on its follows link).
+ */
+export function partTablesOf(schema: SchemaDescription, kind: string): string[] {
+  const starts = (table: string) => {
+    const relation = schema.relations[table];
+    return !!relation && (relation.sourceTable === kind || (schema.supertypes[relation.sourceTable] ?? []).includes(kind));
+  };
+  return Object.values(schema.tables)
+    .filter((t) => t.role === 'part' && t.foreignKeys.some((f) => f.columns[0] === t.ownerColumn && (f.table === kind || starts(f.table))))
+    .map((t) => t.name)
+    .sort();
+}
+
+const rankOf = (kind: string) => { const i = KIND_ORDER.indexOf(kind); return i < 0 ? KIND_ORDER.length : i; };
+/** Kinds in KIND_ORDER, a product's own kinds after Lathe's, by name. */
+export const kindOrder = (a: string, b: string) => rankOf(a) - rankOf(b) || a.localeCompare(b);
+
+// Folders by stage: Define, Design, then those outside the stages (Shared).
+const stageRank = (stage: string | null) => (stage === 'define' ? 0 : stage === 'design' ? 1 : 2);
+
+/** Reads the schema's kinds, folders and relations, and the rows, into a Workspace. */
+export function buildWorkspace(data: SpecData): Workspace {
+  const { schema } = data;
+  const names = Object.keys(schema.kinds).sort(kindOrder);
+  const kinds: Kind[] = names.map((name) => {
+    const k = schema.kinds[name];
+    const skip = new Set(['id', 'title', ...k.parents.map((p) => p.column)]);
+    return {
+      kind: name,
+      label: k.label,
+      stage: k.stage ?? '',
+      section: k.section ?? '',
+      parent_kinds: k.parents.map((p) => p.kind),
+      required_fields: (schema.tables[name]?.columns ?? []).filter((c) => c.required && !skip.has(c.name)).map((c) => c.name),
+      obligation: k.obligation !== 'none',
+      proof_only: k.obligation === 'proof',
+      description: k.description ?? '',
+    };
+  });
+  const sections: SectionRule[] = [...schema.sections]
+    .sort((a, b) => stageRank(a.stage) - stageRank(b.stage) || a.position - b.position)
+    .map((s) => ({ section: s.name, stage: s.stage ?? '', order: s.position, label: s.label, description: s.description }));
+  const relations: RelationRule[] = Object.values(schema.relations).flatMap((r) =>
+    r.pairs.map((p) => ({
+      relation: r.name,
+      source_kind: p.source,
+      target_kind: p.target,
+      role: r.role ?? '',
+      description: p.description || (r.description ?? ''),
+      forward_label: r.forwardLabel,
+      reverse_label: r.reverseLabel,
+    })),
+  );
+
+  const dir = data.dataDir.replace(/\/+$/, '');
+  const placed: Omit<SpecRecord, 'product' | 'domain'>[] = names.flatMap((kind) => {
+    const parents = schema.kinds[kind].parents;
+    return (data.tables[kind] ?? []).map((row, i) => {
+      const parent = parents.map((p) => row[p.column]).find((v): v is string => typeof v === 'string' && v !== '') ?? null;
+      return { id: String(row.id), kind, title: textOf(row, 'title'), parent, row, file: `${dir}/${kind}.jsonl`, line: i + 1 };
+    });
+  });
+  const byId = new Map(placed.map((r) => [r.id, r]));
+  const ancestor = (start: Omit<SpecRecord, 'product' | 'domain'>, kind: string): string | null => {
+    const seen = new Set<string>();
+    for (let r: typeof start | undefined = start; r && !seen.has(r.id); r = r.parent ? byId.get(r.parent) : undefined) {
+      seen.add(r.id);
+      if (r.kind === kind) return r.id;
+    }
+    return null;
+  };
+  const records: SpecRecord[] = placed.map((r) => ({ ...r, product: ancestor(r, 'product'), domain: ancestor(r, 'domain') }));
+
+  const links: SpecLink[] = [];
+  const parts: PartRow[] = [];
+  for (const table of Object.values(schema.tables)) {
+    const rows = data.tables[table.name];
+    if (!rows) continue;
+    if (table.role === 'link') {
+      for (const row of rows) links.push({ source: String(row.source_id), relation: table.name, target: String(row.target_id) });
+    } else if (table.role === 'part' && table.ownerColumn) {
+      for (const row of rows) parts.push({ table: table.name, owner: String(row[table.ownerColumn]), row });
+    }
+  }
+  return {
+    schema,
+    dataDir: dir,
+    kinds,
+    sections,
+    relations,
+    records,
+    links,
+    parts,
+    checks: data.tables.check ?? [],
+    problems: data.problems,
+    coverage: data.coverage,
+  };
+}
 
 export interface SpecIndex {
   workspace: Workspace;
@@ -12,6 +196,8 @@ export interface SpecIndex {
   children: Map<string, SpecRecord[]>;
   outgoing: Map<string, SpecLink[]>;
   incoming: Map<string, SpecLink[]>;
+  /** Each record's part rows, by part table, in key order. */
+  parts: Map<string, Map<string, Row[]>>;
   problemsFor: Map<string, Problem[]>;
   coverage: Map<string, Coverage>;
   products: SpecRecord[];
@@ -34,6 +220,7 @@ export function indexWorkspace(workspace: Workspace): SpecIndex {
   const incoming = new Map<string, SpecLink[]>();
   const problemsFor = new Map<string, Problem[]>();
   const domainsOf = new Map<string, SpecRecord[]>();
+  const parts = new Map<string, Map<string, Row[]>>();
   for (const r of records) {
     if (r.parent) push(children, r.parent, r);
     if (r.kind === 'domain' && r.product) push(domainsOf, r.product, r);
@@ -41,6 +228,11 @@ export function indexWorkspace(workspace: Workspace): SpecIndex {
   for (const l of workspace.links) {
     push(outgoing, l.source, l);
     push(incoming, l.target, l);
+  }
+  for (const p of workspace.parts) {
+    let owned = parts.get(p.owner);
+    if (!owned) { owned = new Map(); parts.set(p.owner, owned); }
+    push(owned, p.table, p.row);
   }
   for (const p of workspace.problems) if (p.record) push(problemsFor, p.record, p);
   return {
@@ -50,6 +242,7 @@ export function indexWorkspace(workspace: Workspace): SpecIndex {
     children,
     outgoing,
     incoming,
+    parts,
     problemsFor,
     coverage: new Map(workspace.coverage.map((c) => [c.domain, c])),
     products: records.filter((r) => r.kind === 'product'),
@@ -57,14 +250,17 @@ export function indexWorkspace(workspace: Workspace): SpecIndex {
   };
 }
 
-/** True when a problem belongs to no product: it names no record, or a record no product holds (a broken meta-model, the config, a record outside every product). */
+/** A record's rows of one part table (an entity's fields, a use case's steps), in key order. */
+export const partsOf = (index: SpecIndex, id: string, table: string): Row[] => index.parts.get(id)?.get(table) ?? [];
+
+/** True when a problem belongs to no product: it names no record, or a record no product holds. */
 export const isWorkspaceProblem = (index: SpecIndex, p: Problem) => !p.record || !index.byId.get(p.record)?.product;
 
 const spaceCache = new WeakMap<SpecIndex, Map<string, SpecIndex>>();
 
 /**
  * One product's space (hard separation between products): its own records, the records no product
- * holds, the links and mentions among them, their coverage, and its problems with the workspace's
+ * holds, the links and parts among them, their coverage, and its problems with the workspace's
  * (those of no product). Nothing of another product is in it: every view and count inside a space
  * reads this, never the whole workspace. Built once per index and product.
  */
@@ -75,15 +271,14 @@ export function spaceIndex(index: SpecIndex, product: string): SpecIndex {
   if (cached) return cached;
   const { workspace } = index;
   const inSpace = (r: SpecRecord | undefined) => !!r && (r.product === product || r.product === null);
-  // A link or problem about an ID that is no record (dangling) stays with the record that names it.
+  // A link or problem about an ID that is no record stays with the record that names it.
   const elsewhere = (id: string) => { const r = index.byId.get(id); return !!r && !inSpace(r); };
-  const records = workspace.records
-    .filter((r) => inSpace(r))
-    .map((r) => (r.mentions.some(elsewhere) ? { ...r, mentions: r.mentions.filter((id) => !elsewhere(id)) } : r));
   const space = indexWorkspace({
     ...workspace,
-    records,
+    records: workspace.records.filter((r) => inSpace(r)),
     links: workspace.links.filter((l) => !elsewhere(l.source) && !elsewhere(l.target)),
+    parts: workspace.parts.filter((p) => !elsewhere(p.owner)),
+    checks: workspace.checks.filter((c) => c.product_id === undefined || c.product_id === product),
     problems: workspace.problems.filter((p) => !p.record || !elsewhere(p.record)),
     coverage: workspace.coverage.filter((c) => !elsewhere(c.domain)),
   });
@@ -99,27 +294,22 @@ export const problemOrder = (a: Problem, b: Problem) =>
 
 export interface SpecState {
   index: SpecIndex | null;
-  source: 'engine' | 'fixture' | null;
-  sourceReason: string | null;
   error: string | null;
+  /** Fetches the data again, as after a write. */
+  reload: () => Promise<void>;
 }
 
-/** Fetches GET /api/spec once, and again whenever the server reports a spec change. */
+/** Fetches GET /api/spec once, again whenever the server reports a change to the data, and when asked. */
 export function useSpec(): SpecState {
-  const [workspace, setWorkspace] = useState<Workspace | null>(null);
-  const [source, setSource] = useState<SpecState['source']>(null);
-  const [sourceReason, setSourceReason] = useState<string | null>(null);
+  const [data, setData] = useState<SpecData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
+  const reload = useCallback(async () => {
     try {
       const response = await fetch('/api/spec');
       const body = await response.json();
       if (!response.ok) throw new Error(body.error ?? response.statusText);
-      setWorkspace(body);
-      setSource(response.headers.get('x-lathe-source') === 'fixture' ? 'fixture' : 'engine');
-      const reason = response.headers.get('x-lathe-source-reason');
-      setSourceReason(reason ? decodeURIComponent(reason) : null);
+      setData(body);
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -127,12 +317,12 @@ export function useSpec(): SpecState {
   }, []);
 
   useEffect(() => {
-    load();
-    return onLatheEvent('spec:changed', load);
-  }, [load]);
+    reload();
+    return onLatheEvent('spec:changed', reload);
+  }, [reload]);
 
-  const index = useMemo(() => (workspace ? indexWorkspace(workspace) : null), [workspace]);
-  return { index, source, sourceReason, error };
+  const index = useMemo(() => (data ? indexWorkspace(buildWorkspace(data)) : null), [data]);
+  return { index, error, reload };
 }
 
 // Records and groups are at their IDs, made by addressOf (app/src/views/address.ts); the app's own

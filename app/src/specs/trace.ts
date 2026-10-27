@@ -1,4 +1,4 @@
-import { byIdOrder, type SpecIndex, type SpecLink, type SpecRecord } from './data';
+import { textOf, byIdOrder, type SpecIndex, type SpecLink, type SpecRecord } from './data';
 import { linkLabel, roleOf } from './labels';
 import { patternsFollowedBy, ruleStatus } from './patterns';
 import { SUPPORT_RELATIONS } from './folders';
@@ -46,11 +46,11 @@ const sortIds = (ids: Iterable<string>) => [...new Set(ids)].sort((a, b) => a.lo
 /** A component counts as built when it names a file and the component-file-missing check does not report it. */
 export function isBuilt(index: SpecIndex, id: string): boolean {
   const record = index.byId.get(id);
-  if (!record || record.kind !== 'component' || !record.fields.file?.trim()) return false;
+  if (!record || record.kind !== 'component' || !textOf(record.row, 'file')?.trim()) return false;
   return !(index.problemsFor.get(id) ?? []).some((p) => p.check === 'component-file-missing');
 }
 
-const stateOf = (r: SpecRecord) => r.fields.state?.trim().toLowerCase() || 'automated';
+const stateOf = (r: SpecRecord) => textOf(r.row, 'state')?.trim().toLowerCase() || 'automated';
 
 /** The domains that owe an obligation: its own, or for a pattern rule each domain following its pattern where it applies. */
 export function owingDomains(index: SpecIndex, record: SpecRecord): string[] {
@@ -195,7 +195,7 @@ export function traceOf(index: SpecIndex, record: SpecRecord, skip: ReadonlySet<
   if (record.kind === 'test') {
     const rank = (l: SpecLink) => ({ rank: roleOf(index, l) === 'proof' ? 0 : SUPPORT_RELATIONS.has(l.relation) ? 1 : 2, role: 'plain' as TraceRole });
     trace.groups = [...grouped(index, out, 'source', rank), ...grouped(index, into, 'target', plain)];
-    const file = record.fields.run_by?.trim();
+    const file = textOf(record.row, 'file')?.trim();
     if (file) trace.runBy = { file, missing: (index.problemsFor.get(record.id) ?? []).some((p) => p.check === 'test-file-missing') };
     return trace;
   }

@@ -2,11 +2,11 @@ import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { stepsOf } from '../src/specs/FlowSteps';
-import { indexWorkspace } from '../src/specs/data';
 import { stepsWorkspace } from './fixtures/flow-steps';
 import { main, openApp, section } from './helpers';
+import { indexOf, setRow } from './fixtures/load';
 
-// A flow's steps on its record page (FORMAT.md section 13): a table in order, folded one level.
+// A flow's steps on its record page: a table in position order, folded one level.
 
 const table = () => within(section(/^Steps/)).getByRole('table');
 const bodyRows = () => within(table()).getAllByRole('row').slice(1).filter((r) => r.classList.contains('flow-step'));
@@ -15,7 +15,7 @@ const linkIds = (el: HTMLElement) => [...el.querySelectorAll('a')].map((a) => a.
 
 describe('flow steps on a flow page', () => {
   it('LA-EXP-T63 A flow page shows its steps in order as a table: step, what happens, uses, carries out', async () => {
-    await openApp('/DM-SHOP-F01', { workspace: stepsWorkspace() });
+    await openApp('/DM-SHOP-F01', { data: stepsWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Fill a basket' });
     expect(section(/^Steps/).querySelector('h2')).toHaveTextContent('Steps3');
     expect(within(table()).getAllByRole('columnheader').map((h) => h.textContent)).toEqual(['Step', 'What happens', 'Uses', 'Carries out']);
@@ -25,14 +25,15 @@ describe('flow steps on a flow page', () => {
     const [step, what, uses, fulfills] = cells(rows[1]);
     expect(step).toHaveTextContent('2DM-SHOP-F01-S03');
     expect(what).toHaveTextContent('The page adds it to the basket');
-    expect(linkIds(uses)).toEqual(['DM-SHOP-V01', 'DM-SHOP-E01']);
-    expect(linkIds(fulfills)).toEqual(['DM-SHOP-UC01-R02', 'DM-SHOP-DR01']);
+    // Links read in key order, as their tables hold them.
+    expect(linkIds(uses)).toEqual(['DM-SHOP-E01', 'DM-SHOP-V01']);
+    expect(linkIds(fulfills)).toEqual(['DM-SHOP-DR01', 'DM-SHOP-UC01-R02']);
     expect(within(fulfills).getByRole('link', { name: 'DM-SHOP-DR01' })).toHaveAttribute('href', '/DM-SHOP-DR01');
     expect(cells(rows[0])[3]).toHaveTextContent('None');
   });
 
   it("LA-EXP-T64 Each step's body and the titles of what it uses and fulfills are folded under its row", async () => {
-    await openApp('/DM-SHOP-F01', { workspace: stepsWorkspace() });
+    await openApp('/DM-SHOP-F01', { data: stepsWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Fill a basket' });
     const user = userEvent.setup();
     expect(within(table()).queryByText('new item')).toBeNull();
@@ -54,7 +55,7 @@ describe('flow steps on a flow page', () => {
   });
 
   it("LA-EXP-T65 A step row carries its problems, and a flow without steps shows no steps table", async () => {
-    await openApp('/DM-SHOP-F01', { workspace: stepsWorkspace() });
+    await openApp('/DM-SHOP-F01', { data: stepsWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Fill a basket' });
     expect(cells(bodyRows()[1])[1]).toHaveTextContent('1 warning');
     await openApp('/DM-SHOP-F01');
@@ -62,9 +63,9 @@ describe('flow steps on a flow page', () => {
     expect(within(main()).queryByRole('heading', { name: /^Steps/ })).toBeNull();
   });
 
-  it('LA-EXP-T66 Steps are ordered by their order as a number; a step without a whole-number order goes last', () => {
+  it('LA-EXP-T66 Steps are ordered by their position as a number, then by ID', () => {
     const w = stepsWorkspace();
-    w.records.find((r) => r.id === 'DM-SHOP-F01-S02')!.fields.order = 'first';
-    expect(stepsOf(indexWorkspace(w), 'DM-SHOP-F01').map((s) => s.id)).toEqual(['DM-SHOP-F01-S03', 'DM-SHOP-F01-S01', 'DM-SHOP-F01-S02']);
+    setRow(w, 'flow_step', 'DM-SHOP-F01-S02', { position: 2 });
+    expect(stepsOf(indexOf(w), 'DM-SHOP-F01').map((s) => s.id)).toEqual(['DM-SHOP-F01-S02', 'DM-SHOP-F01-S03', 'DM-SHOP-F01-S01']);
   });
 });

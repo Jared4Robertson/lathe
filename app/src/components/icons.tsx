@@ -17,12 +17,15 @@ const PATHS: Record<string, string[]> = {
   maximize: ['M4 8V6a2 2 0 0 1 2-2h2', 'M4 16v2a2 2 0 0 0 2 2h2', 'M16 4h2a2 2 0 0 1 2 2v2', 'M16 20h2a2 2 0 0 0 2-2v-2'],
   minimize: ['M15 19v-2a2 2 0 0 1 2-2h2', 'M15 5v2a2 2 0 0 0 2 2h2', 'M5 15h2a2 2 0 0 1 2 2v2', 'M5 9h2a2 2 0 0 0 2-2V5'],
   x: ['M18 6L6 18', 'M6 6l12 12'],
-  // The graph's zoom buttons.
+  // The graph's zoom buttons, and a record's Add.
   plus: ['M12 5v14', 'M5 12h14'],
   minus: ['M5 12h14'],
   // The side bar's views (brief 64): Details is `info`; Outline and History.
   outline: ['M9 6h11', 'M12 12h8', 'M15 18h5', 'M5 6v.01', 'M8 12v.01', 'M11 18v.01'],
   history: ['M12 8v4l2 2', 'M3.05 11a9 9 0 1 1 .5 4m-.5 5v-5h5'],
+  // A record's Edit and Remove actions (Add is `plus`).
+  edit: ['M7 7h-1a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-1', 'M20.385 6.585a2.1 2.1 0 0 0-2.97-2.97l-8.415 8.385v3h3l8.385-8.415z', 'M16 5l3 3'],
+  trash: ['M4 7h16', 'M10 11v6', 'M14 11v6', 'M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12', 'M9 7v-3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3'],
 };
 
 export type IconName = keyof typeof PATHS;

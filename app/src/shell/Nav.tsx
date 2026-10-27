@@ -121,9 +121,7 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
       {problems.length === 0 && index && <span className="nav-badge">0{' '}<span className="sr-only">problems</span></span>}
     </span>
   );
-  const sourceNote = spec.source === 'fixture'
-    ? <span title={spec.sourceReason ?? undefined}>Sample data, not your specs</span>
-    : spec.source === 'engine' ? <span>Specs read by the engine</span> : <span>Loading specs…</span>;
+  const sourceNote = index ? <span>Data from <code>{index.workspace.dataDir}/</code></span> : <span>Loading the data…</span>;
 
   const className = ['menu', 'panel', 'has-spaces', collapsed && !drawer ? 'is-rail' : '', drawer ? 'is-drawer' : '', drawer && drawerOpen ? 'is-open' : '', keyboard ? 'is-keyboard' : ''].filter(Boolean).join(' ');
 
@@ -217,7 +215,7 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
           <NavRow depth={0} selected={path === APPEARANCE_PATH}>
             <Link to={APPEARANCE_PATH} aria-current={here(path, APPEARANCE_PATH)}><PaletteIcon size={16} /> <span className="nav-label">Appearance</span></Link>
           </NavRow>
-          <p className={`nav-source ${spec.source === 'fixture' ? 'is-fixture' : ''}`}>{sourceNote}</p>
+          <p className="nav-source">{sourceNote}</p>
         </footer>
       </div>
     </nav>

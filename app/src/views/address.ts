@@ -10,7 +10,7 @@ import type { SpecIndex, SpecRoute } from '../specs/data';
 // of a record or group is made here, by addressOf. The open views (wiki, graph, model, one pane
 // each) are a query parameter, `?view=wiki,graph`, so a shared link opens as it was seen.
 
-/** A record ID, as FORMAT.md defines it: a capital first, then capitals and digits, in parts joined by hyphens. */
+/** A record ID, as the schema shapes it: a capital first, then capitals and digits, in parts joined by hyphens. */
 export const RECORD_ID = /^[A-Z][A-Z0-9]*(-[A-Z0-9]+)*$/;
 export const isRecordId = (part: string) => RECORD_ID.test(part);
 

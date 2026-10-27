@@ -13,13 +13,13 @@ describe('LA-AUT-T119 Open in editor uses VS Code by default, another known edit
   });
 
   it('opens a known editor by its app on a Mac, and by its command elsewhere', () => {
-    expect(editorLaunch({ editor: 'vscode' }, '/p/specs/a.md', 'darwin')).toEqual({ kind: 'exec', file: '/usr/bin/open', args: ['-b', 'com.microsoft.VSCode', '/p/specs/a.md'] });
+    expect(editorLaunch({ editor: 'vscode' }, '/p/data/use_case.jsonl', 'darwin')).toEqual({ kind: 'exec', file: '/usr/bin/open', args: ['-b', 'com.microsoft.VSCode', '/p/data/use_case.jsonl'] });
     expect(editorLaunch({ editor: 'zed' }, '/p/a.md', 'linux')).toEqual({ kind: 'exec', file: 'zed', args: ['/p/a.md'] });
     expect(editorLaunch({ editor: 'system' }, '/p/a.md', 'darwin')).toEqual({ kind: 'open-path', path: '/p/a.md' });
   });
 
   it('passes the file to a custom command as an argument, never in the command\'s text', () => {
-    const file = '/p/specs/odd "name"; rm -rf ~.md';
+    const file = '/p/data/odd "name"; rm -rf ~.jsonl';
     const launch = editorLaunch({ editor: 'custom', editorCommand: 'subl -w' }, file, 'darwin');
     expect(launch).toEqual({ kind: 'exec', file: '/bin/sh', args: ['-lc', 'subl -w "$1"', 'lathe', file] });
     if (launch.kind === 'exec') expect(launch.args[1]).not.toContain(file);

@@ -1,24 +1,23 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { neighborhood } from '../src/graph/model';
-import { indexWorkspace } from '../src/specs/data';
 import { linkMentions, renderMarkdown } from '../src/specs/Markdown';
 import { proseLinks } from '../src/specs/mentions';
 import { patternWorkspace } from './fixtures/patterns';
 import { openApp, openSideBar } from './helpers';
+import { indexOf, setRow } from './fixtures/load';
 
-// Record IDs cited in prose become links (FORMAT.md section 11): every ID in the record's
-// `mentions`, wherever it appears in the text but never inside code; unknown IDs that the engine
-// warned about look like broken links.
+// Record IDs named in a text field become links: every ID-shaped token that is a record of the
+// space (other than the record itself), wherever it appears in the text but never inside code with
+// other text; an ID that is no record stays plain text.
 
-const links = (titles: Record<string, string>, broken: string[] = []) => ({
+const links = (titles: Record<string, string>) => ({
   titles: new Map(Object.entries(titles)),
-  broken: new Set(broken),
   href: (id: string) => `/${id}`,
 });
 const body = () => document.querySelector('.record-main .markdown, .spec-body .markdown') as HTMLElement;
 
-describe('prose mentions', () => {
+describe('record IDs in text fields', () => {
   it('LA-EXP-T53 Every mentioned ID in the text becomes a link to its record, with its title on hover', () => {
     const html = renderMarkdown('See TL-LEND-DR01, and again TL-LEND-DR01.\n\n- In a list: TL-LEND-UC01', links({ 'TL-LEND-DR01': 'One loan at a time', 'TL-LEND-UC01': 'Lend a tool' }));
     const div = document.createElement('div');
@@ -51,22 +50,22 @@ describe('prose mentions', () => {
     expect(linkMentions('<p>TL-LEND-DR01</p>', links({}))).toBe('<p>TL-LEND-DR01</p>');
   });
 
-  it('LA-EXP-T55 Only the record\'s own mentions are linked; unknown IDs it was warned about look broken', () => {
-    const ix = indexWorkspace(patternWorkspace());
+  it('LA-EXP-T55 Only the IDs of records are linked, never the record itself; an ID that is no record is not', () => {
+    const ix = indexOf(patternWorkspace());
     const uc = ix.byId.get('DM-SHOP-UC01')!;
-    const p = proseLinks(ix, uc);
+    const p = proseLinks(ix, `${String(uc.row.goal)} See DM-SHOP-UC01.`, uc.id);
     expect([...p.titles]).toEqual([['DM-PAT-CHECKOUT', 'Checkout step'], ['DM-SHOP-DR01', 'A basket holds at most 50 items']]);
-    expect([...p.broken]).toEqual(['DM-SHOP-DR99']);
   });
 
-  it('LA-EXP-T56 On a record page the body links its mentions, marks unknown IDs, and a link moves within the app', async () => {
-    await openApp('/DM-SHOP-UC01', { workspace: patternWorkspace() });
+  it('LA-EXP-T56 On a record page a text field links the records it names, leaves an unknown ID as text, and a link moves within the app', async () => {
+    await openApp('/DM-SHOP-UC01', { data: patternWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     const prose = within(body());
-    // The body cites DM-SHOP-DR01 twice: in the text, and as code holding just that ID.
+    // The goal names DM-SHOP-DR01 twice: in the text, and as code holding just that ID.
     expect(prose.getAllByRole('link').map((a) => a.textContent)).toEqual(['DM-PAT-CHECKOUT', 'DM-SHOP-DR01', 'DM-SHOP-DR01']);
-    expect(prose.getByText('DM-SHOP-DR99')).toHaveClass('mention', 'broken');
-    expect(prose.getByText('DM-SHOP-DR99')).toHaveAttribute('title', 'No record has the ID DM-SHOP-DR99');
+    // DM-SHOP-DR99 is no record: it stays plain text.
+    expect(body()).toHaveTextContent('It once cited DM-SHOP-DR99.');
+    expect(body().querySelector('.mention:not(a)')).toBeNull();
     // The ID in code keeps its code style inside the link.
     expect(body().querySelector('a.mention code')!.textContent).toBe('DM-SHOP-DR01');
     fireEvent.click(prose.getAllByRole('link', { name: 'DM-SHOP-DR01' })[0]);
@@ -74,23 +73,22 @@ describe('prose mentions', () => {
     await screen.findByRole('heading', { level: 1, name: 'A basket holds at most 50 items' });
   });
 
-  it('LA-EXP-T57 A mention next to a longer ID links only the ID mentioned, is not a link between records, and domain pages link theirs too', async () => {
+  it('LA-EXP-T57 An ID inside a longer ID links only as the longer one, a named record is not a link between records, and domain pages link theirs too', async () => {
     openSideBar();
-    await openApp('/DM-PAY-UC01', { workspace: patternWorkspace() });
+    await openApp('/DM-PAY-UC01', { data: patternWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Pay by card' });
-    expect(within(body()).getAllByRole('link').map((a) => [a.textContent, a.getAttribute('title')])).toEqual([['DM-SHOP-UC01', 'Add an item to the basket']]);
-    expect(body()).toHaveTextContent('DM-SHOP-UC01-R01 is not cited here');
+    expect(within(body()).getAllByRole('link').map((a) => [a.textContent, a.getAttribute('title')])).toEqual([
+      ['DM-SHOP-UC01', 'Add an item to the basket'],
+      ['DM-SHOP-UC01-R01', 'The basket shows the new item'],
+    ]);
     // A mention is not a link between records: not in the links out, not in the graph.
     expect(within(screen.getByRole('complementary', { name: 'Side bar' })).queryByRole('link', { name: /^DM-SHOP-UC01/ })).toBeNull();
-    const ix = indexWorkspace(patternWorkspace());
+    const ix = indexOf(patternWorkspace());
     expect(neighborhood(ix, 'DM-PAY-UC01', 2).nodes.map((n) => n.id)).not.toContain('DM-SHOP-UC01');
 
-    const ws = patternWorkspace();
-    const domain = ws.records.find((r) => r.id === 'DM-SHOP')!;
-    domain.body = 'Shopping starts at DM-SHOP-UC01.';
-    domain.mentions = ['DM-SHOP-UC01'];
-    await openApp('/DM-SHOP', { workspace: ws });
+    const ws = setRow(patternWorkspace(), 'domain', 'DM-SHOP', { description: 'Shopping starts at DM-SHOP-UC01.' });
+    await openApp('/DM-SHOP', { data: ws });
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
-    await waitFor(() => expect(document.querySelector('.spec-body > .markdown a.mention')).toHaveAttribute('href', '/DM-SHOP-UC01'));
+    await waitFor(() => expect(document.querySelector('.spec-body .record-lead a.mention')).toHaveAttribute('href', '/DM-SHOP-UC01'));
   });
 });

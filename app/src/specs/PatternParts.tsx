@@ -1,9 +1,9 @@
 import { Fragment } from 'react';
 import { TreeList } from '../components/TreeList';
-import type { SpecIndex, SpecRecord } from './data';
+import { textOf, type SpecIndex, type SpecRecord } from './data';
 import { addressOf } from '../views/address';
 import { Grouped, RecordLink, Section, SpecLink, recordText } from './parts';
-import { appliesWhenOf, appliesWhenText, followingDomains, notApplicableReason, patternsFollowedBy, ruleStatus, rulesOf, settingsOf, type RuleStatus } from './patterns';
+import { appliesWhenOf, appliesWhenText, followingDomains, notApplicableReason, patternsFollowedBy, ruleStatus, rulesOf, settingText, settingValue, settingsOf, type RuleStatus } from './patterns';
 
 // The patterns a domain follows ("Patterns we follow" on the domain page) and a pattern's own page:
 // its settings, its rules, and the domains and use cases that follow it with each domain's proof
@@ -12,11 +12,11 @@ import { appliesWhenOf, appliesWhenText, followingDomains, notApplicableReason, 
 const list = (ids: string[]) => ids.join(', ');
 
 /** What a rule's row says of its setting and its condition: "setting audit", "applies when scope is not single". */
-function RuleTags({ index, rule }: { index: SpecIndex; rule: SpecRecord }) {
-  const condition = appliesWhenOf(index, rule);
+function RuleTags({ rule }: { rule: SpecRecord }) {
+  const condition = appliesWhenOf(rule);
   return (
     <>
-      {rule.fields.setting && <small className="meta"> setting {rule.fields.setting}</small>}
+      {textOf(rule.row, 'setting') && <small className="meta"> setting {textOf(rule.row, 'setting')}</small>}
       {condition && <small className="meta"> applies when {appliesWhenText(condition)}</small>}
     </>
   );
@@ -104,7 +104,7 @@ export function DomainPatterns({ index, domainId, query }: { index: SpecIndex; d
           <div className="record-row pattern-rule-row">
             <RecordLink index={index} id={r.id} row />
             <span className="row-tags">
-              <RuleTags index={index} rule={r} />
+              <RuleTags rule={r} />
               <RuleMarks index={index} status={status} />
             </span>
           </div>
@@ -116,7 +116,7 @@ export function DomainPatterns({ index, domainId, query }: { index: SpecIndex; d
 
 /** A pattern's page: its settings table, its rules, and who follows it with each domain's status per rule. */
 export function PatternSections({ index, pattern }: { index: SpecIndex; pattern: SpecRecord }) {
-  const settings = settingsOf(pattern);
+  const settings = settingsOf(index, pattern);
   const rules = rulesOf(index, pattern.id);
   const domains = followingDomains(index, pattern.id);
   return (
@@ -127,7 +127,7 @@ export function PatternSections({ index, pattern }: { index: SpecIndex; pattern:
             <thead><tr><th scope="col">Setting</th><th scope="col">Rules that depend on it</th></tr></thead>
             <tbody>
               {settings.map((s) => {
-                const dependent = rules.filter((r) => r.fields.setting?.trim() === s || appliesWhenOf(index, r)?.setting === s);
+                const dependent = rules.filter((r) => textOf(r.row, 'setting')?.trim() === s || appliesWhenOf(r)?.setting === s);
                 return (
                   <tr key={s}>
                     <th scope="row"><code>{s}</code></th>
@@ -146,7 +146,7 @@ export function PatternSections({ index, pattern }: { index: SpecIndex; pattern:
               {grouped.map((r) => (
                 <li key={r.id}>
                   <RecordLink index={index} id={r.id} row />
-                  <RuleTags index={index} rule={r} />
+                  <RuleTags rule={r} />
                 </li>
               ))}
             </ul>
@@ -176,9 +176,9 @@ export function PatternSections({ index, pattern }: { index: SpecIndex; pattern:
                       <tr key={uc.id}>
                         <th scope="row">{uc.kind === 'domain' ? <>The whole domain</> : <RecordLink index={index} id={uc.id} />}</th>
                         {settings.map((s) => {
-                          const value = uc.fields[s];
-                          const reason = notApplicableReason(value);
-                          return <td key={s} className={reason !== null ? 'setting-na' : undefined}>{value ?? <span className="hint">not given</span>}</td>;
+                          const given = settingValue(index, uc.id, pattern.id, s);
+                          const reason = notApplicableReason(given);
+                          return <td key={s} className={reason !== null ? 'setting-na' : undefined}>{given ? settingText(given) : <span className="hint">not given</span>}</td>;
                         })}
                       </tr>
                     ))}

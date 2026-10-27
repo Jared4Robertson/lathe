@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-// Removes the copy of the specs and the production build the suite served (perf/playwright.config.ts, perf/serve.ts).
+// Removes the copy of the data and the production build the suite served (perf/playwright.config.ts, perf/serve.ts).
 export default function teardown() {
   const here = path.dirname(fileURLToPath(import.meta.url));
   const root = process.env.PERF_ROOT;
