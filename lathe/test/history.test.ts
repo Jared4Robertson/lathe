@@ -1,8 +1,8 @@
-// GET /api/history (LA-EXP-E01): a record's git history, read from the commits that changed its rows in the data
+// GET /api/history (LA-EXP-EP01): a record's git history, read from the commits that changed its rows in the data
 // files, against a temporary git repo made here. The repo gets its author from the environment and ignores the
 // machine's own git config, so the test reads and writes no git config.
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -94,7 +94,7 @@ async function get(root: string, url: string) {
 }
 
 describe.skipIf(!hasGit)('record history', () => {
-  it("LA-EXP-T158 GET /api/history lists the commits that changed a record's rows, newest first, with the columns each changed and the uncommitted changes", async () => {
+  it("LA-EXP-EP01-R01-T01 GET /api/history lists the commits that changed a record's rows, newest first, with the columns each changed and the uncommitted changes", async () => {
     const { status, body } = await get(repo, `/api/history?id=${UC}`);
     expect(status).toBe(200);
     const answer = body as Extract<HistoryAnswer, { state: 'ok' }>;
@@ -133,22 +133,36 @@ describe.skipIf(!hasGit)('record history', () => {
     ]);
   });
 
-  it('LA-EXP-T159 GET /api/history answers 404 for an unknown record, 400 without an ID, and says calmly when the folder is not a git repo', async () => {
+  it('LA-EXP-EP01-R01-T02 GET /api/history answers 404 for an unknown record, 400 without an ID, and says calmly when the folder is not a git repo', async () => {
     expect((await get(repo, '/api/history?id=EX-NOTE-UC99')).status).toBe(404);
     expect((await get(repo, '/api/history?id=')).status).toBe(400);
     expect((await get(repo, `/api/history?id=${UC}&skip=-1`)).status).toBe(400);
     const noRepo = await get(plain, `/api/history?id=${UC}`);
     expect(noRepo.status).toBe(200);
-    expect(noRepo.body).toMatchObject({ state: 'no-repo', id: UC, files: ['data/use_case.jsonl'] });
+    expect(noRepo.body).toMatchObject({ state: 'no-repo', id: UC });
     expect(noRepo.body.message).toMatch(/not a git repository/);
   });
 
-  it('LA-EXP-T160 git runs with an argument array, inside the product root, cut at the output cap and stopped at the time limit', async () => {
-    // An argument is never read by a shell.
+  it("LA-EXP-EP01-R02-T01 GET /api/history finds the record's data file from the data by its ID, never from a path the request names", async () => {
+    expect((await get(plain, `/api/history?id=${UC}`)).body).toMatchObject({ files: ['data/use_case.jsonl'] });
+    expect([400, 404]).toContain((await get(repo, '/api/history?id=../data/use_case.jsonl')).status);
+  });
+
+  it('LA-EXP-EP01-R02-T02 git runs with an argument array, which no shell reads, and changes nothing', async () => {
+    const before = git(repo, 'status', '--porcelain');
     const echoed = await runGit(repo, ['log', '--format=%s', '-1', '--grep=$(touch pwned)']);
     expect(echoed.code).toBe(0);
+    expect(existsSync(path.join(repo, 'pwned'))).toBe(false);
+    expect(git(repo, 'status', '--porcelain')).toBe(before);
+  });
+
+  it('LA-INT04-T02 History runs git itself, inside the product root', async () => {
     const top = await runGit(repo, ['rev-parse', '--show-prefix'], {});
+    expect(top.code).toBe(0);
     expect(top.stdout.trim()).toBe('');
+  });
+
+  it('LA-EXP-EP01-R01-T03 git output is cut at the output cap and stopped at the time limit', async () => {
     const cut = await runGit(repo, ['log', '-p'], { cap: 64 });
     expect(cut.truncated).toBe(true);
     expect(cut.stdout.length).toBe(64);

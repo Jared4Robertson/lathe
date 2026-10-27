@@ -21,7 +21,7 @@ const tool = (all: Tool[], name: string) => all.find((t) => t.name === name)!;
 type Schema = { properties: Record<string, Schema>; required?: string[]; enum?: unknown[]; type?: unknown; description?: string; oneOf?: unknown };
 
 describe('the tools', () => {
-  it('are add, set, move, link, unlink, remove, show, list, next_id and check', async () => {
+  it('LA-AUT-UC01-R05-T08 are add, set, move, link, unlink, remove, show, list, next_id and check', async () => {
     const all = tools(await schemaOf(writeData(everyKind())));
     expect(all.map((t) => t.name)).toEqual(['add', 'set', 'move', 'link', 'unlink', 'remove', 'show', 'list', 'next_id', 'check']);
     for (const t of all) {
@@ -30,7 +30,7 @@ describe('the tools', () => {
     }
   });
 
-  it('take input schemas generated from the schema description, product kinds included', async () => {
+  it('LA-AUT-UC01-R06-T03 take input schemas generated from the schema description, product kinds included', async () => {
     const schema = await schemaOf(writeData(everyKind()));
     const all = tools(schema);
     const add = tool(all, 'add').inputSchema as unknown as Schema;
@@ -72,7 +72,7 @@ describe('the tools', () => {
 });
 
 describe('each tool', () => {
-  it('add returns the row added, and a refusal with its reason', async () => {
+  it('LA-AUT-UC01-R07-T02 add returns the row added, and a refusal with its reason', async () => {
     const root = writeData(everyKind());
     const added = await callTool(root, 'add', { uc_requirement: { id: 'TL-LEND-UC01-R02', title: 'Member known', use_case_id: 'TL-LEND-UC01', statement: 'The library MUST refuse an unknown member.' } });
     expect(added.isError).toBeUndefined();
@@ -189,7 +189,7 @@ describe('each tool', () => {
 });
 
 describe('the server', () => {
-  it('answers initialize, tools/list and tools/call over stdio, and says when the tools change', async () => {
+  it('LA-INT01-T02 answers initialize, tools/list and tools/call over stdio, and says when the tools change', async () => {
     const root = writeData(everyKind());
     const input = new PassThrough();
     const output = new PassThrough();

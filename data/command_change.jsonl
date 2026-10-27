@@ -1,1 +1,0 @@
-{"command_id":"LA-PLT-CMD21","aggregate_id":"LA-PLT-A8","reason":"It also adds the product's first record through the command layer, because a repo must never be left set up without its product."}

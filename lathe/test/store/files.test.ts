@@ -28,7 +28,7 @@ function commands(reverse: boolean): Command[] {
 }
 
 describe('data files', () => {
-  it('are the same bytes whatever order the rows were written in, and after a reload and a rewrite', async () => {
+  it('LA-AUT-UC01-R03-T02 are the same bytes whatever order the rows were written in, and after a reload and a rewrite', async () => {
     const first = writeData({});
     const a = await openStore(first);
     await a.apply(commands(false));
@@ -48,7 +48,7 @@ describe('data files', () => {
     expect(files(first)).toEqual(before);
   });
 
-  it('hold one JSON object per line, sorted by key, columns in table order, with a trailing newline', async () => {
+  it('LA-AUT-UC01-R01-T02 hold one JSON object per line, sorted by key, columns in table order, with a trailing newline', async () => {
     const root = writeData({});
     const store = await openStore(root);
     await store.apply(commands(true));
@@ -79,7 +79,7 @@ describe('data files', () => {
     await store.close();
   });
 
-  it('keep text as UTF-8, and drop a table file when its last row goes', async () => {
+  it('LA-AUT-UC01-R01-T03 keep text as UTF-8, and drop a table file when its last row goes', async () => {
     const root = writeData(everyKind());
     const store = await openStore(root);
     await store.set('product', 'TL', { icon: '🧰', description: 'Café “quotes”, naïve' });

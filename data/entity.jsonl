@@ -80,9 +80,6 @@
 {"id":"LA-PLT-EN08","title":"Product window","aggregate_id":"LA-PLT-A6","role":"root","description":"One window showing one product folder."}
 {"id":"LA-PLT-EN09","title":"Recent folder","aggregate_id":"LA-PLT-A9","role":"child","description":"One folder the person opened lately, for File › Open Recent and the next launch."}
 {"id":"LA-PLT-EN10","title":"App server","aggregate_id":"LA-PLT-A7","role":"root","description":"What one window loads Lathe from."}
-{"id":"LA-PLT-EN11","title":"Write","aggregate_id":"LA-PLT-A8","role":"root","description":"One change to the data, all of whose commands take effect together or not at all."}
-{"id":"LA-PLT-EN12","title":"Write command","aggregate_id":"LA-PLT-A8","role":"child","description":"One step of a write: a row added, changed, moved, linked, unlinked or removed."}
-{"id":"LA-PLT-EN13","title":"Refusal","aggregate_id":"LA-PLT-A8","role":"child","description":"One reason the store refused a write or a load: the rule it broke and where."}
 {"id":"LA-PLT-EN14","title":"Appearance","aggregate_id":"LA-PLT-A4","role":"root","description":"The person's appearance: the theme in use and the color mode."}
 {"id":"LA-PLT-EN15","title":"Recent folders","aggregate_id":"LA-PLT-A9","role":"root","description":"The list of recent folders, one per shell."}
 {"id":"LA-PLT-EN16","title":"Product repo","aggregate_id":"LA-PLT-A10","role":"root","description":"A product repo: its root folder and where its data files are."}

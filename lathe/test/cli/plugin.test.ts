@@ -60,7 +60,7 @@ function examples(text: string): { op: string; args: Record<string, unknown> }[]
 const guard = (input: object) => spawnSync(process.execPath, [path.join(pluginDir, 'scripts', 'guard-data-files.mjs')], { input: JSON.stringify(input), encoding: 'utf8' });
 
 describe('the plugin', () => {
-  it('declares the MCP server and the guard hook, and every script they name exists', () => {
+  it('LA-CHK-UC08-R03-T01 declares the MCP server and the guard hook, and every script they name exists', () => {
     const mcp = JSON.parse(readFileSync(path.join(pluginDir, '.mcp.json'), 'utf8'));
     expect(mcp.mcpServers.lathe).toEqual({ command: 'node', args: ['${CLAUDE_PLUGIN_ROOT}/scripts/mcp-server.mjs'] });
     const hooks = JSON.parse(readFileSync(path.join(pluginDir, 'hooks', 'hooks.json'), 'utf8'));
@@ -70,7 +70,7 @@ describe('the plugin', () => {
     for (const script of scripts) expect(existsSync(path.join(pluginDir, script))).toBe(true);
   });
 
-  it('no skill tells the Agent to write spec files by hand', () => {
+  it('LA-AUT-UC01-R08-T01 no skill tells the Agent to write spec files by hand', () => {
     for (const skill of SKILLS) {
       const text = readFileSync(path.join(pluginDir, 'skills', skill, 'SKILL.md'), 'utf8');
       expect(text, skill).not.toMatch(/specs\/|```markdown|^---\nid:|YAML|header|FORMAT\.md|metaExtensions|kinds\.csv|relations\.csv|lathe format|\b(?!REFERENCE\.md\b)[\w-]+\.md\b/m);
@@ -78,7 +78,7 @@ describe('the plugin', () => {
     }
   });
 
-  it("every example in the skills names real tables, columns and relations, with values of the columns' types", async () => {
+  it("LA-AUT-UC01-R08-T02 every example in the skills names real tables, columns and relations, with values of the columns' types", async () => {
     for (const skill of SKILLS) {
       const writes = examples(readFileSync(path.join(pluginDir, 'skills', skill, 'SKILL.md'), 'utf8'));
       // The product's own kinds and relations an example declares are part of the schema its other examples use.
@@ -115,7 +115,7 @@ describe('the plugin', () => {
 });
 
 describe('the guard hook', () => {
-  it('refuses an edit of a data file and points at the tools', () => {
+  it('LA-CHK-UC08-R01-T01 refuses an edit of a data file and points at the tools', () => {
     const root = productRepo();
     const result = guard({ tool_name: 'Edit', tool_input: { file_path: path.join(root, 'data', 'product.jsonl') } });
     expect(result.status).toBe(0);
@@ -127,7 +127,7 @@ describe('the guard hook', () => {
     expect(guard({ tool_name: 'Write', cwd: root, tool_input: { file_path: 'spec-data/view.jsonl' } }).stdout).toContain('"deny"');
   });
 
-  it('lets every other edit through, silently', () => {
+  it('LA-CHK-UC08-R02-T01 lets every other edit through, silently', () => {
     const root = productRepo();
     for (const file of [path.join(root, 'src', 'app.ts'), path.join(root, 'notes', 'rows.jsonl'), path.join(tmpdir(), 'elsewhere', 'data', 'x.jsonl')]) {
       const result = guard({ tool_name: 'Write', tool_input: { file_path: file } });
@@ -139,7 +139,7 @@ describe('the guard hook', () => {
 });
 
 describe('the MCP launcher', () => {
-  it("starts the repo's own lathe mcp for the project folder", async () => {
+  it("LA-INT01-T03 starts the repo's own lathe mcp for the project folder", async () => {
     const root = productRepo();
     const server = spawn(process.execPath, [path.join(pluginDir, 'scripts', 'mcp-server.mjs')], { env: { ...process.env, CLAUDE_PROJECT_DIR: root }, stdio: ['pipe', 'pipe', 'pipe'] });
     let out = '';
@@ -154,7 +154,7 @@ describe('the MCP launcher', () => {
     expect(messages[1].result.content[0].text).toBe('Product TL: Tool Library\n  kind: product');
   });
 
-  it('says why it cannot start outside a Lathe repo', () => {
+  it('LA-INT01-T03 says why it cannot start outside a Lathe repo', () => {
     const empty = realpathSync(mkdtempSync(path.join(tmpdir(), 'lathe-plugin-none-')));
     roots.push(empty);
     const result = spawnSync(process.execPath, [path.join(pluginDir, 'scripts', 'mcp-server.mjs')], { env: { ...process.env, CLAUDE_PROJECT_DIR: empty }, encoding: 'utf8', input: '' });

@@ -18,7 +18,7 @@ function folder(name: string, files: Record<string, string> = {}, dirs: string[]
   return root;
 }
 
-describe('LA-PLT-T106 A folder opens only when it holds lathe.config.json or a data folder', () => {
+describe('LA-PLT-SP01-T A folder opens only when it holds lathe.config.json or a data folder', () => {
   it('opens a folder with lathe.config.json, reading its data folder', () => {
     const root = folder('configured', { 'lathe.config.json': '{ "data": "tables" }' });
     expect(checkFolder(root)).toEqual({ ok: true, dataDir: path.join(root, 'tables') });
@@ -64,7 +64,7 @@ describe('LA-PLT-T106 A folder opens only when it holds lathe.config.json or a d
   });
 });
 
-describe('LA-PLT-T107 The recent folders list puts the latest first, each folder once, at most 10', () => {
+describe('LA-PLT-INV14-T The recent folders list puts the latest first, each folder once, at most 10', () => {
   it('puts the folder opened last first', () => {
     expect(addRecent(['/a', '/b'], '/c')).toEqual(['/c', '/a', '/b']);
   });
