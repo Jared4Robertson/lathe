@@ -181,13 +181,13 @@ code { font: 0.86em var(--mono); }
 .check-name { color: var(--muted); font-size: 0.75rem; }
 
 .markdown { max-width: 72ch; }
-.record-text { display: grid; gap: 12px; margin: 0 0 16px; }
+.record-text { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; margin: 0 0 16px; }
 .record-text > .spec-section { margin: 0; }
-.scenario { display: grid; gap: 8px; margin: 0; max-width: 72ch; }
+.scenario { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; margin: 0; max-width: 72ch; }
 .scenario > div { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 8px; }
 .scenario dt { font-weight: 600; color: var(--muted); }
 .scenario dd { margin: 0; }
-.use-case-steps { margin: 0; padding-left: 1.5em; display: grid; gap: 6px; max-width: 72ch; }
+.use-case-steps { margin: 0; padding-left: 1.5em; display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; max-width: 72ch; }
 .use-case-steps .markdown p { margin: 0; }
 .markdown > :first-child { margin-top: 0; }
 .markdown > :last-child { margin-bottom: 0; }
