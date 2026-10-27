@@ -3,6 +3,7 @@ import { Background, Controls, Handle, Position, ReactFlow, ReactFlowProvider, u
 import type { RelationRule, SpecIndex } from '../specs/data';
 import { relationLabelOf } from '../specs/labels';
 import { readMotion } from '../graph/motion';
+import { Button } from '../components/Button';
 import { lowerLabel } from '../plural';
 import { erdFor, LINE_WORDS, lineGeometry, lineOffsets, RELATION_ENDS, type Erd, type ErdBox, type ErdKind, type ErdLine, type ErdRelation, type Rect } from './erd';
 import { layoutErd } from './layout';
@@ -204,9 +205,9 @@ export function ErdKey({ erd, highlight, relations = [] }: { erd: Erd; highlight
       onKeyDown={(e) => { if (e.key === 'Escape' && open) { e.stopPropagation(); setOpen(false); } }}
     >
       {/* In a narrow pane the key is one bar: this button opens the whole key over the canvas, moving nothing. */}
-      <button type="button" className="erd-key-toggle" aria-expanded={open} aria-controls={gridId} onClick={() => setOpen((o) => !o)}>
+      <Button className="erd-key-toggle" aria-expanded={open} aria-controls={gridId} onClick={() => setOpen((o) => !o)}>
         {open ? 'Hide the key' : 'Key'}
-      </button>
+      </Button>
       <div className="erd-key-grid" id={gridId}>
         <ul className="erd-key-ends" aria-label="Colors">{cells(colors)}</ul>
         <ul className="erd-key-ends" aria-label="Lines">{cells(lineEntries)}</ul>
