@@ -184,7 +184,6 @@ export class Store {
 
   /** A table's rows, sorted by key. */
   rows(table: string): Row[] {
-    this.tableOf(table);
     return sortRows(this.tableOf(table), [...(this.tables.get(table)?.values() ?? [])]);
   }
 

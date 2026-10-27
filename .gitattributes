@@ -1,2 +1,4 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+# Data files merge row by row through Lathe's merge driver; set it up once per clone (README.md).
+data/*.jsonl merge=lathe-data
