@@ -17,7 +17,7 @@ export interface ProductRow {
   notes?: string;
 }
 
-/** A part of the product with its own model, language and owner: one business capability, never a technology layer. */
+/** A part of the product with its own model, language and owner, for one business capability: what DDD calls a bounded context. Domains meet only through published events. */
 export interface DomainRow {
   /** The domain's ID: the product prefix and the domain code, such as TL-LEND. */
   id: string;
@@ -25,13 +25,63 @@ export interface DomainRow {
   title: string;
   /** The product it belongs to. */
   product_id: string;
+  /** core: the product's edge; supporting: needed for the core but not its edge; generic: solved the same way everywhere. It guides how much modeling the domain deserves. */
+  subdomain_type: "core" | "supporting" | "generic";
   /** What the domain covers, in a paragraph. */
   description?: string;
-  /** Longer notes, such as its language or the example values it decides. */
+  /** Longer notes on the domain. */
   notes?: string;
 }
 
-/** A cluster of records changed together as one unit, with its own identity and rules. */
+/** Something undecided, with the role that decides it. It sits under its product or one of its domains, and may be about any record (the about link). A decided question is removed and its answer written into the records it affects. */
+export interface QuestionRow {
+  /** The question's ID: its product's or domain's ID and Q<nn>, such as TL-LEND-Q01 or TL-Q01. */
+  id: string;
+  /** The question. */
+  title: string;
+  /** The product it sits under, for a question of the whole product; exactly one of product and domain is given. */
+  product_id?: string;
+  /** The domain it sits under; exactly one of product and domain is given. */
+  domain_id?: string;
+  /** The role that decides it, one of the product's roles, such as Owner. */
+  owner: string;
+  /** What is open, and the options. */
+  description?: string;
+}
+
+/** The open question concerns the record. */
+export interface AboutRow {
+  source_id: string;
+  target_id: string;
+}
+
+/** An outside system the product exchanges with, such as a payment provider or a mail service. It has no owner: it exists because flow steps exchange with it, and its product follows from its ID. */
+export interface IntegrationRow {
+  /** The integration's ID: the product prefix and INT<nn>, such as TL-INT01. */
+  id: string;
+  /** The integration's name. */
+  title: string;
+  /** The outside system, such as Stripe. */
+  system?: string;
+  /** What the product exchanges with it, in a sentence or two. */
+  description?: string;
+}
+
+/** Talks to its integration's outside system, so the rest of the code does not. */
+export interface AdapterRow {
+  /** The adapter's ID: its integration's ID and AD, such as TL-INT01-AD. */
+  id: string;
+  /** Its name in code, such as mailer. */
+  title: string;
+  /** The integration it talks to; one adapter each. */
+  integration_id: string;
+  /** The file that holds its code, from the product root; it may not exist yet, and several records may share one file. */
+  file?: string;
+  /** How it works, in a sentence or two. */
+  description?: string;
+}
+
+/** The consistency boundary: a cluster of entities changed together as one unit, by one command at a time. Other aggregates follow its changes through events, and refer to it by ID only. */
 export interface AggregateRow {
   /** The aggregate's ID, such as TL-LEND-A1. */
   id: string;
@@ -47,7 +97,95 @@ export interface AggregateRow {
   notes?: string;
 }
 
-/** An ordered slice of a domain that groups its use cases, flows and tests, such as Membership or Lending. */
+/** A request to change exactly one aggregate, its parent. It checks specifications, raises events and may call domain services, all of its own domain. */
+export interface CommandRow {
+  /** The command's ID, such as TL-LEND-CMD01. */
+  id: string;
+  /** What it asks for, in the imperative, such as Open a loan. */
+  title: string;
+  /** The aggregate it changes. */
+  aggregate_id: string;
+  /** What it does, in a sentence or two. */
+  description?: string;
+}
+
+/** A view of its domain's data shaped for reading, which reads one or more of the domain's aggregates. Its fields are read_model_field rows, and it is stored in a table of its own. */
+export interface ReadModelRow {
+  /** The read model's ID, such as TL-LEND-RM01. */
+  id: string;
+  /** The read model's name, such as Overdue loans. */
+  title: string;
+  /** The domain it belongs to. */
+  domain_id: string;
+  /** What it shows, in a sentence or two. */
+  description?: string;
+}
+
+/** A question asked of one read model, its parent. It changes nothing, and may select by specifications and call domain services of its own domain. */
+export interface QueryRow {
+  /** The query's ID: its read model's domain's ID and QRY<nn>, such as TL-LEND-QRY01. */
+  id: string;
+  /** What it asks, such as List a member's loans. */
+  title: string;
+  /** The read model it reads. */
+  read_model_id: string;
+  /** What it returns, in a sentence or two. */
+  description?: string;
+}
+
+/** An HTTP endpoint that exposes exactly one command or query, its parent. Flow steps reach it through their command or query, never directly. */
+export interface EndpointRow {
+  /** The endpoint's ID, such as TL-LEND-EP01. */
+  id: string;
+  /** What the endpoint does, such as Borrow a tool. */
+  title: string;
+  /** The command it exposes; exactly one of command and query is given. */
+  command_id?: string;
+  /** The query it exposes; exactly one of command and query is given. */
+  query_id?: string;
+  /** The HTTP method. */
+  method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "HEAD" | "OPTIONS";
+  /** The route, such as /loans or /tools/{toolId}/damage. */
+  route: string;
+  /** Its request and responses, in a sentence or two. */
+  description?: string;
+  /** Longer notes on the endpoint. */
+  notes?: string;
+}
+
+/** One rule an endpoint must follow, such as an error's response or a limit on its request. */
+export interface ApiRequirementRow {
+  /** The requirement's ID: its endpoint's ID and R<nn>, such as TL-LEND-EP01-R01. */
+  id: string;
+  /** The requirement in a few words. */
+  title: string;
+  /** The endpoint it belongs to. */
+  endpoint_id: string;
+  /** The requirement, stated with MUST, MUST NOT, SHOULD or MAY. */
+  statement: string;
+  /** A short heading it is shown under among its siblings. */
+  group_name?: string;
+}
+
+/** Domain logic that belongs to no single entity and is not a yes-or-no check, such as calculating a late fee. Commands and queries of its domain call it; it uses no storage and no outside system. */
+export interface DomainServiceRow {
+  /** The domain service's ID, such as TL-LEND-DS01. */
+  id: string;
+  /** What it works out, such as Late fee. */
+  title: string;
+  /** The domain it belongs to. */
+  domain_id: string;
+  /** What it must work out, from what, stated with MUST, SHOULD or MAY. */
+  statement: string;
+}
+
+/** The command or query uses the domain service, of its own domain. */
+export interface CallsRow {
+  source_id: string;
+  target_id: string;
+}
+
+/** An ordered slice of a domain that groups its use cases, such as Membership or Lending. */
 export interface CapabilityRow {
   /** The capability's ID, such as TL-LEND-CAP01. */
   id: string;
@@ -61,169 +199,9 @@ export interface CapabilityRow {
   description?: string;
 }
 
-/** Something an actor does with the product to reach a goal. Its actors are use_case_actor rows and its steps use_case_step rows. */
-export interface UseCaseRow {
-  /** The use case's ID, such as TL-LEND-UC01. */
-  id: string;
-  /** What the actor does, such as Borrow a tool. */
-  title: string;
-  /** The domain it belongs to. */
-  domain_id: string;
-  /** The capability of that domain it sits in, if one. */
-  capability_id?: string;
-  /** What the actor wants to reach, in a sentence. */
-  goal?: string;
-  /** Longer notes, such as the order in which refusals are reported. */
-  notes?: string;
-}
-
-/** An ordered part of a domain's technical specification that groups its components by what they are, such as Models, Services or Web app. It sits in the domain, or in another layer of it as a sub-layer. */
-export interface LayerRow {
-  /** The layer's ID, such as TL-LEND-LAY01. */
-  id: string;
-  /** The layer's name, such as Services. */
-  title: string;
-  /** The domain it belongs to. */
-  domain_id: string;
-  /** The layer of that domain it sits in as a sub-layer, if one. */
-  parent_layer_id?: string;
-  /** Its place among the layers beside it, from 1. */
-  position: number;
-  /** What the layer holds, in a sentence or two. */
-  description?: string;
-}
-
-/** A unit of code in the target design, such as a model, service or router. It sits in a layer of its domain, or in the domain when the domain has no layers. */
-export interface ComponentRow {
-  /** The component's ID, such as TL-LEND-C01. */
-  id: string;
-  /** The component's name, often its file name. */
-  title: string;
-  /** The domain it belongs to. */
-  domain_id: string;
-  /** The layer of that domain it sits in, if one. */
-  layer_id?: string;
-  /** What kind of code it is, in lower case, such as service or module. */
-  component_type: string;
-  /** The file that holds its code, from the product root; it may not exist yet. */
-  file: string;
-  /** What the code does, in a paragraph. */
-  description?: string;
-}
-
-/** Something undecided, with the role that decides it. A decided question is removed and its answer written into the records it affects. */
-export interface QuestionRow {
-  /** The question's ID, such as TL-LEND-Q01 or TL-Q01. */
-  id: string;
-  /** The question. */
-  title: string;
-  /** The product it belongs to. */
-  product_id: string;
-  /** The domain of that product it sits in, if one. */
-  domain_id?: string;
-  /** The aggregate of that domain it sits under, if one. */
-  aggregate_id?: string;
-  /** The use case of that domain it sits under, if one. */
-  use_case_id?: string;
-  /** The component of that domain it sits under, if one. */
-  component_id?: string;
-  /** The role that decides it, one of the product's roles, such as Owner. */
-  owner: string;
-  /** What is open, and the options. */
-  description?: string;
-}
-
-/** The open question concerns the record. */
-export interface AboutRow {
-  source_id: string;
-  target_id: string;
-}
-
-/** A group of endpoints for one resource, such as Loans: it holds the resource's endpoints and the interaction requirements that hold for every endpoint in it. The shapes its endpoints share are api_shape rows. */
-export interface ApiRow {
-  /** The API's ID, such as TL-LEND-API01. */
-  id: string;
-  /** The resource's name, such as Loans. */
-  title: string;
-  /** The domain it belongs to. */
-  domain_id: string;
-  /** The resource and where it is served, in a sentence or two. */
-  description?: string;
-}
-
-/** One request or response shape an API's endpoints share, in order. */
-export interface ApiShapeRow {
-  /** The API. */
-  api_id: string;
-  /** The shape's place in the API, from 1. */
-  position: number;
-  /** The shape's name, such as Loan. */
-  name: string;
-  /** What the shape stands for. */
-  meaning: string;
-  /** Its fields, such as id, memberId, toolId. */
-  fields: string;
-}
-
-/** A record the domain keeps, as one box of an aggregate's ERD: the aggregate's root or one of its children. Its fields are entity_field rows. */
-export interface EntityRow {
-  /** The entity's ID, such as TL-LEND-EN01. */
-  id: string;
-  /** The entity's name, such as Return. */
-  title: string;
-  /** The aggregate it belongs to. */
-  aggregate_id: string;
-  /** root: the record the aggregate is named for; child: one of its parts. */
-  role: "root" | "child";
-  /** What the entity is, in a sentence or two. */
-  description?: string;
-}
-
-/** A fact that must always hold for an aggregate's records, whatever use case changes them. It names its domain, and its aggregate unless it holds across aggregates, when it names them with involves. */
-export interface DomainRuleRow {
-  /** The rule's ID, such as TL-LEND-DR01. */
-  id: string;
-  /** The rule in a few words. */
-  title: string;
-  /** The domain it belongs to. */
-  domain_id: string;
-  /** The aggregate it holds for, of the same domain; none for a rule across aggregates. */
-  aggregate_id?: string;
-  /** The entity of that aggregate it is about, if one. */
-  entity_id?: string;
-  /** The rule, stated with MUST, MUST NOT, SHOULD or MAY. */
-  statement: string;
-}
-
-/** The use case relies on the domain rule. */
-export interface AppliesRow {
-  source_id: string;
-  target_id: string;
-}
-
-/** An end-to-end path through views and endpoints that carries out one or more use cases. Its steps are flow_step records. */
-export interface FlowRow {
-  /** The flow's ID, such as TL-LEND-F01. */
-  id: string;
-  /** The flow's name, such as Borrow and return a tool. */
-  title: string;
-  /** The domain it belongs to. */
-  domain_id: string;
-  /** The capability of that domain it sits in, if one. */
-  capability_id?: string;
-  /** The path, in a paragraph. */
-  description?: string;
-}
-
-/** The flow carries out the use case. */
-export interface CarriesOutRow {
-  source_id: string;
-  target_id: string;
-}
-
 /** A check: a query over the tables that returns a row (severity, check, record, message) for each problem it finds. An error means the workspace is broken; a warning is work still to do. */
 export interface CheckRow {
-  /** The check's name, in lower case with hyphens, such as test-proves-nothing. */
+  /** The check's name, in lower case with hyphens, such as value-object-unused. */
   name: string;
   /** For a product's own check, the product; none for Lathe's checks. */
   product_id?: string;
@@ -241,125 +219,193 @@ export interface CheckRow {
   kinds?: string[];
 }
 
-/** A test that proves obligations, or supports them without proving them. An automated test names the file that runs it; a manual test describes its procedure; a planned test is not proof. */
-export interface TestRow {
-  /** The test's ID, such as TL-LEND-T01. */
+/** A named predicate over one or more aggregates of one domain (Evans), such as Member in good standing. Commands check it before acting, and queries may select by it. It has no owner: it reads its aggregates, and its domain follows from its ID. */
+export interface SpecificationRow {
+  /** The specification's ID: its domain's ID and SP<nn>, such as TL-LEND-SP01. */
+  id: string;
+  /** The predicate's name, such as Member in good standing. */
+  title: string;
+  /** When a record satisfies it, in a sentence. */
+  statement: string;
+}
+
+/** The command checks the specification, of its own domain, before it acts. */
+export interface ChecksRow {
+  source_id: string;
+  target_id: string;
+}
+
+/** Carries out its command: an application service that owns the transaction, loads the aggregate through its repository, checks specifications and raises events. What clean architecture calls a use case or interactor. */
+export interface CommandHandlerRow {
+  /** The command handler's ID: its command's ID and H, such as TL-LEND-CMD01-H. */
+  id: string;
+  /** Its name in code, such as openLoan. */
+  title: string;
+  /** The command it handles; one command handler each. */
+  command_id: string;
+  /** The file that holds its code, from the product root; it may not exist yet, and several records may share one file. */
+  file?: string;
+  /** How it works, in a sentence or two. */
+  description?: string;
+}
+
+/** A value with no identity of its own, such as an email address or a money amount, defined by its fields and checked by its constraints when it is created. It has no owner: it exists because entities, events or read models use it as a field's type, and its product follows from its ID. */
+export interface ValueObjectRow {
+  /** The value object's ID: the product prefix and VO<nn>, such as TL-VO01. */
+  id: string;
+  /** The value object's name, such as Email address. */
+  title: string;
+  /** What the value is, in a sentence or two. */
+  description?: string;
+}
+
+/** A value object's own rule, checked when the value is created, such as an email address having one @. */
+export interface ConstraintRow {
+  /** The constraint's ID: its value object's ID and C<nn>, such as TL-VO01-C01. */
+  id: string;
+  /** The rule in a few words. */
+  title: string;
+  /** The value object it belongs to. */
+  value_object_id: string;
+  /** The rule, stated with MUST, MUST NOT, SHOULD or MAY. */
+  statement: string;
+}
+
+/** Proves its constraint: the values its value object accepts and refuses. */
+export interface ConstraintTestRow {
+  /** The test's ID: its constraint's ID and T, such as TL-VO01-C01-T. */
   id: string;
   /** What the test shows, in a sentence. */
   title: string;
-  /** The domain it belongs to. */
-  domain_id: string;
-  /** The capability of that domain it sits in, if one. */
-  capability_id?: string;
-  /** What kind of test it is, in lower case, such as unit, acceptance or domain_rule. */
-  test_type: string;
-  /** automated: a file runs it; manual: a person follows its procedure; planned: meant to prove its obligations, but not proof yet. */
-  state: "automated" | "manual" | "planned";
+  /** The constraint it proves; it has exactly one test. */
+  constraint_id: string;
+  /** The level it runs at: unit, database, api, contract, e2e-api, e2e-ui or manual. */
+  level: "unit" | "database" | "api" | "contract" | "e2e-api" | "e2e-ui" | "manual";
+  /** automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. */
+  state: "automated" | "manual" | "not automated yet";
   /** The file that runs it, from the product root; an automated test must name one. */
   file?: string;
-  /** Text its file contains in place of IDs. */
-  key?: string;
-  /** The file that holds the key (or the IDs), when the test runs from a shared class in another file; that file is read in place of file, which must still exist. */
-  key_file?: string;
+  /** Why a person runs it rather than a file; a manual test must give one, and only a manual test. */
+  manual_reason?: string;
+  /** Values the value object accepts, such as a@b.org. */
+  accepts?: string;
+  /** Values it refuses, and how. */
+  refuses?: string;
+  /** Longer notes on the test, such as when to run it. */
+  notes?: string;
+}
+
+/** A record the domain keeps, with an identity: its aggregate's root or one of its children. Its fields are entity_field rows; the value objects it has are the ones its fields are typed with. */
+export interface EntityRow {
+  /** The entity's ID, such as TL-LEND-EN01. */
+  id: string;
+  /** The entity's name, such as Return. */
+  title: string;
+  /** The aggregate it belongs to. */
+  aggregate_id: string;
+  /** root: the record the aggregate is named for, at most one per aggregate; child: one of its parts. */
+  role: "root" | "child";
+  /** true: a child entity with no table of its own, stored in its aggregate root's table (which then holds its fields as columns); left out otherwise. An entity has at most one table. */
+  in_root_table?: boolean;
+  /** What the entity is, in a sentence or two. */
+  description?: string;
+}
+
+/** Its entity in code: the entity's data, behavior and mapping to its table. A command is carried out by its handler and its aggregate root's data model. */
+export interface DataModelRow {
+  /** The data model's ID: its entity's ID and DM, such as TL-LEND-EN01-DM. */
+  id: string;
+  /** Its name in code, such as Loan. */
+  title: string;
+  /** The entity it implements; one data model each. */
+  entity_id: string;
+  /** The file that holds its code, from the product root; it may not exist yet, and several records may share one file. */
+  file?: string;
+  /** How it works, in a sentence or two. */
+  description?: string;
+}
+
+/** An unchangeable record that something happened to an aggregate, named in the past tense (Loan opened), raised by its commands. What it carries are event_field rows. */
+export interface DomainEventRow {
+  /** The event's ID, such as TL-LEND-EV01. */
+  id: string;
+  /** The event's name, in the past tense, such as Tool repaired. */
+  title: string;
+  /** The aggregate it happens to. */
+  aggregate_id: string;
+  /** true: its shape is a promise to other domains, whose policies may hear it; false: only its own domain hears it. */
+  published: boolean;
+  /** What happened, in a sentence. */
+  description?: string;
+}
+
+/** Proves its domain service: from the inputs given, the value or decision it returns. */
+export interface DomainServiceTestRow {
+  /** The test's ID: its domain service's ID and T<nn>, such as TL-LEND-DS01-T01. */
+  id: string;
+  /** What the test shows, in a sentence. */
+  title: string;
+  /** The domain service it proves. */
+  domain_service_id: string;
+  /** The level it runs at: unit, database, api, contract, e2e-api, e2e-ui or manual. */
+  level: "unit" | "database" | "api" | "contract" | "e2e-api" | "e2e-ui" | "manual";
+  /** automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. */
+  state: "automated" | "manual" | "not automated yet";
+  /** The file that runs it, from the product root; an automated test must name one. */
+  file?: string;
+  /** Why a person runs it rather than a file; a manual test must give one, and only a manual test. */
+  manual_reason?: string;
   /** The state the test starts from. */
   given?: string;
   /** What the test does. */
   when?: string;
   /** What the test expects. */
   then?: string;
-  /** Longer notes on the test, such as why it is manual, when to run it or how its code is keyed. */
+  /** Longer notes on the test, such as when to run it. */
   notes?: string;
 }
 
-/** The test exercises the component. */
-export interface CoversRow {
-  source_id: string;
-  target_id: string;
+/** Serves its endpoint: reads the request, calls the command or query handler and writes the response. */
+export interface EndpointHandlerRow {
+  /** The endpoint handler's ID: its endpoint's ID and H, such as TL-LEND-EP01-H. */
+  id: string;
+  /** Its name in code, such as postLoan. */
+  title: string;
+  /** The endpoint it serves; one endpoint handler each. */
+  endpoint_id: string;
+  /** The file that holds its code, from the product root; it may not exist yet, and several records may share one file. */
+  file?: string;
+  /** How it works, in a sentence or two. */
+  description?: string;
 }
 
-/** A technical flow: how the system carries out a flow. It deepens the flow, and its design_step records say, in order, which component does each part and what it designs. */
-export interface DesignFlowRow {
-  /** The technical flow's ID, such as TL-LEND-DF01. */
+/** Proves its API requirement at the endpoint: the request and the response. */
+export interface EndpointTestRow {
+  /** The test's ID: its API requirement's ID and T<nn>, such as TL-LEND-EP01-R01-T01. */
   id: string;
-  /** What the system carries out, such as Load and check a workspace. */
+  /** What the test shows, in a sentence. */
   title: string;
-  /** The domain it belongs to. */
-  domain_id: string;
-  /** The layer of that domain it sits in, if one. */
-  layer_id?: string;
-  /** How the system carries it out, in a paragraph. */
-  description?: string;
-  /** Its failures, limits and signals. */
+  /** The API requirement it proves. */
+  api_requirement_id: string;
+  /** The level it runs at: unit, database, api, contract, e2e-api, e2e-ui or manual. */
+  level: "unit" | "database" | "api" | "contract" | "e2e-api" | "e2e-ui" | "manual";
+  /** automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. */
+  state: "automated" | "manual" | "not automated yet";
+  /** The file that runs it, from the product root; an automated test must name one. */
+  file?: string;
+  /** Why a person runs it rather than a file; a manual test must give one, and only a manual test. */
+  manual_reason?: string;
+  /** The state the test starts from. */
+  given?: string;
+  /** What the test does. */
+  when?: string;
+  /** What the test expects. */
+  then?: string;
+  /** Longer notes on the test, such as when to run it. */
   notes?: string;
 }
 
-/** The technical flow says how the system carries out the flow. */
-export interface DeepensRow {
-  source_id: string;
-  target_id: string;
-}
-
-/** The component calls or imports the other. */
-export interface DependsOnRow {
-  source_id: string;
-  target_id: string;
-}
-
-/** One step of a technical flow, in order on its path: what the system does, the component that does it (uses) and the obligations it designs (satisfies). */
-export interface DesignStepRow {
-  /** The step's ID: its technical flow's ID and S<nn>, such as TL-LEND-DF01-S01. */
-  id: string;
-  /** What the system does, in a few words. */
-  title: string;
-  /** The technical flow it belongs to. */
-  design_flow_id: string;
-  /** The path through the flow the step is on, such as main. */
-  path: string;
-  /** The step's place on its path, from 1. */
-  position: number;
-  /** What the system does in the step, in a sentence or two. */
-  description?: string;
-  /** The transaction the step runs in. */
-  transaction_name?: string;
-  /** What the step locks. */
-  locks?: string;
-  /** How many statements the step runs, such as one SELECT per check file. */
-  statements?: string;
-}
-
-/** An unchangeable record that something happened in the domain, raised by its aggregate and named in the past tense (Loan opened). What it carries are event_field rows. */
-export interface DomainEventRow {
-  /** The event's ID, such as TL-LEND-EV01. */
-  id: string;
-  /** The event's name, in the past tense, such as Tool repaired. */
-  title: string;
-  /** The aggregate that raises it. */
-  aggregate_id: string;
-  /** What happened, in a sentence. */
-  description?: string;
-}
-
-/** An HTTP endpoint: its method, route, request and responses. It sits in the API for its resource, or in the domain. */
-export interface EndpointRow {
-  /** The endpoint's ID, such as TL-LEND-E01. */
-  id: string;
-  /** What the endpoint does, such as Borrow a tool. */
-  title: string;
-  /** The domain it belongs to. */
-  domain_id: string;
-  /** The API of that domain it sits in, if one. */
-  api_id?: string;
-  /** The HTTP method. */
-  method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "HEAD" | "OPTIONS";
-  /** The route, such as /loans or /tools/{toolId}/damage. */
-  route: string;
-  /** Its request and responses, in a sentence or two. */
-  description?: string;
-  /** Longer notes on the endpoint. */
-  notes?: string;
-}
-
-/** One field of an entity, in order. */
+/** One field of an entity, in order. Its table's columns follow from it. */
 export interface EntityFieldRow {
   /** The entity. */
   entity_id: string;
@@ -369,13 +415,21 @@ export interface EntityFieldRow {
   name: string;
   /** What the field means. */
   meaning: string;
-  /** The kind of value it holds, such as Date and time. */
-  type: string;
+  /** Its basic type: text, whole number, decimal, date, time, date and time or yes/no; or none when a value object or an aggregate types it. */
+  type?: "text" | "whole number" | "decimal" | "date" | "time" | "date and time" | "yes/no";
+  /** The value object that is its type, if one. */
+  type_value_object_id?: string;
+  /** The aggregate it refers to by ID, if one. A reference within the domain is a foreign key of the entity's table; one to another domain stays a plain ID. */
+  type_aggregate_id?: string;
+  /** true: every record gives it a value; false: it may be empty. */
+  required: boolean;
+  /** Its column's name in the table, when that differs from the field's name, such as id for the field Member ID. */
+  column_name?: string;
   /** An example value. */
   example?: string;
 }
 
-/** One field a domain event carries, in order. */
+/** One field a domain event carries, in order. A published event's fields are a contract with other domains. */
 export interface EventFieldRow {
   /** The domain event. */
   domain_event_id: string;
@@ -385,15 +439,89 @@ export interface EventFieldRow {
   name: string;
   /** What the field means. */
   meaning: string;
-  /** The kind of value it holds. */
-  type: string;
+  /** Its basic type: text, whole number, decimal, date, time, date and time or yes/no; or none when a value object or an aggregate types it. */
+  type?: "text" | "whole number" | "decimal" | "date" | "time" | "date and time" | "yes/no";
+  /** The value object that is its type, if one. */
+  type_value_object_id?: string;
+  /** The aggregate it refers to by ID, if one. */
+  type_aggregate_id?: string;
+  /** true: every record gives it a value; false: it may be empty. */
+  required: boolean;
+  /** Its column's name in the table, when that differs from the field's name, such as id for the field Member ID. */
+  column_name?: string;
   /** An example value. */
   example?: string;
 }
 
-/** One step of a flow, in order on its path: what happens, through which view, endpoint or component, and what the step carries out. */
+/** Whenever an event, then a command (event storming). It belongs to the command it invokes and hears one event: its own domain's, or another domain's published one. */
+export interface PolicyRow {
+  /** The policy's ID, such as TL-LEND-PO01. */
+  id: string;
+  /** The reaction in a few words, such as Close loans of a retired tool. */
+  title: string;
+  /** The command it invokes. */
+  command_id: string;
+  /** The reaction: whenever the event, then the command, stated with MUST, SHOULD or MAY. */
+  statement: string;
+}
+
+/** Carries out its policy: hears the policy's event and sends its command. */
+export interface EventHandlerRow {
+  /** The event handler's ID: its policy's ID and H, such as TL-LEND-PO01-H. */
+  id: string;
+  /** Its name in code, such as onToolRetired. */
+  title: string;
+  /** The policy it carries out; one event handler each. */
+  policy_id: string;
+  /** The file that holds its code, from the product root; it may not exist yet, and several records may share one file. */
+  file?: string;
+  /** How it works, in a sentence or two. */
+  description?: string;
+}
+
+/** Its domain event's shape in code; a contract with other domains when the event is published. */
+export interface EventTypeRow {
+  /** The event type's ID: its domain event's ID and ET, such as TL-LEND-EV01-ET. */
+  id: string;
+  /** Its name in code, such as LoanOpened. */
+  title: string;
+  /** The domain event it implements; one event type each. */
+  domain_event_id: string;
+  /** The file that holds its code, from the product root; it may not exist yet, and several records may share one file. */
+  file?: string;
+  /** How it works, in a sentence or two. */
+  description?: string;
+}
+
+/** An actor's goal: its actors (use_case_actor rows), its UC requirements and its one flow. It changes nothing itself; its flow's steps invoke commands and queries. */
+export interface UseCaseRow {
+  /** The use case's ID, such as TL-LEND-UC01. */
+  id: string;
+  /** What the actor does, such as Borrow a tool. */
+  title: string;
+  /** The capability it sits in. */
+  capability_id: string;
+  /** What the actor wants to reach, in a sentence. */
+  goal?: string;
+  /** Longer notes, such as the order in which refusals are reported. */
+  notes?: string;
+}
+
+/** How its use case is carried out: the steps on its main path and its alternate paths. A use case has exactly one flow, and the flow belongs only to it. */
+export interface FlowRow {
+  /** The flow's ID: its use case's ID and FL, such as TL-LEND-UC01-FL. */
+  id: string;
+  /** The flow's name, such as Borrow a tool at the desk. */
+  title: string;
+  /** The use case it carries out; one flow per use case. */
+  use_case_id: string;
+  /** The path, in a paragraph. */
+  description?: string;
+}
+
+/** One step of a flow, in order on its path. It fulfills UC requirements of its own use case, invokes at most one command or query, happens in at most one view and may exchange with integrations. */
 export interface FlowStepRow {
-  /** The step's ID: its flow's ID and S<nn>, such as TL-LEND-F01-S01. */
+  /** The step's ID: its flow's ID and S<nn>, such as TL-LEND-UC01-FL-S01. */
   id: string;
   /** What happens, in a few words. */
   title: string;
@@ -405,6 +533,36 @@ export interface FlowStepRow {
   position: number;
   /** What happens in the step, in a sentence or two. */
   description?: string;
+}
+
+/** The flow step exchanges with the integration's outside system. */
+export interface ExchangesWithRow {
+  source_id: string;
+  target_id: string;
+}
+
+/** A smoke test of its flow's main path, end to end. */
+export interface FlowTestRow {
+  /** The test's ID: its flow's ID and T, such as TL-LEND-UC01-FL-T. */
+  id: string;
+  /** What the test shows, in a sentence. */
+  title: string;
+  /** The flow it proves; it has exactly one test. */
+  flow_id: string;
+  /** The level it runs at: unit, database, api, contract, e2e-api, e2e-ui or manual. */
+  level: "unit" | "database" | "api" | "contract" | "e2e-api" | "e2e-ui" | "manual";
+  /** automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. */
+  state: "automated" | "manual" | "not automated yet";
+  /** The file that runs it, from the product root; an automated test must name one. */
+  file?: string;
+  /** Why a person runs it rather than a file; a manual test must give one, and only a manual test. */
+  manual_reason?: string;
+  /** What the test does along the main path, step by step. */
+  steps?: string[];
+  /** What it expects at the end. */
+  expected_result?: string;
+  /** Longer notes on the test, such as when to run it. */
+  notes?: string;
 }
 
 /** Behavior several use cases share, stated once with the settings each use case that follows it fills in. Its settings are pattern_setting rows and its rules pattern_rule records. */
@@ -421,14 +579,48 @@ export interface PatternRow {
   notes?: string;
 }
 
-/** The use case or domain follows the pattern, and gives a value for each of its settings in setting_value rows. */
+/** The domain or use case follows the pattern, and gives a value for each of its settings in setting_value rows. */
 export interface FollowsRow {
   source_id: string;
   target_id: string;
 }
 
-/** The flow, flow step, view, endpoint or interaction requirement carries out the obligation. */
+/** One rule a use case must follow. Steps of the use case's own flow fulfill it. */
+export interface UcRequirementRow {
+  /** The requirement's ID: its use case's ID and R<nn>, such as TL-LEND-UC01-R01. */
+  id: string;
+  /** The requirement in a few words. */
+  title: string;
+  /** The use case it belongs to. */
+  use_case_id: string;
+  /** The requirement, stated with MUST, MUST NOT, SHOULD or MAY, in one sentence. */
+  statement: string;
+  /** A short heading it is shown under among its siblings, such as Validation or Paging. */
+  group_name?: string;
+}
+
+/** The flow step fulfills the UC requirement, of its own use case; this designs the requirement. */
 export interface FulfillsRow {
+  source_id: string;
+  target_id: string;
+}
+
+/** A screen or page a person uses. It has no owner: it exists because flow steps happen in it, and its product follows from its ID. */
+export interface ViewRow {
+  /** The view's ID: the product prefix and V<nn>, such as TL-V01. */
+  id: string;
+  /** The view's name, such as Catalog. */
+  title: string;
+  /** The address it is shown at, such as /catalog. */
+  route?: string;
+  /** What the view shows and lets a person do, in a paragraph. */
+  description?: string;
+  /** Longer notes on the view. */
+  notes?: string;
+}
+
+/** The flow step happens in the view: at most one per step. */
+export interface HappensInRow {
   source_id: string;
   target_id: string;
 }
@@ -445,73 +637,83 @@ export interface HasOneRow {
   target_id: string;
 }
 
-/** The component serves the endpoint or renders the view. */
-export interface ImplementsRow {
+/** The policy hears the event: one event per policy, of its own domain or another domain's published one. */
+export interface HearsRow {
   source_id: string;
   target_id: string;
 }
 
-/** An outside system the domain exchanges with, such as a payment provider or a mail service. It holds one interaction requirement per exchange. */
-export interface IntegrationRow {
-  /** The integration's ID, such as TL-LEND-INT01. */
+/** Proves an exchange with its integration's outside system. */
+export interface IntegrationTestRow {
+  /** The test's ID: its integration's ID and T<nn>, such as TL-INT01-T01. */
   id: string;
-  /** The integration's name. */
+  /** What the test shows, in a sentence. */
   title: string;
-  /** The domain it belongs to. */
-  domain_id: string;
-  /** The outside system, such as Stripe. */
-  system?: string;
-  /** What the domain exchanges with it, in a sentence or two. */
-  description?: string;
-}
-
-/** A screen or page a person uses. */
-export interface ViewRow {
-  /** The view's ID, such as TL-LEND-V01. */
-  id: string;
-  /** The view's name, such as Catalog. */
-  title: string;
-  /** The domain it belongs to. */
-  domain_id: string;
-  /** The address it is shown at, such as /<domain-id>. */
-  route?: string;
-  /** What the view shows and lets a person do, in a paragraph. */
-  description?: string;
-  /** Longer notes on the view. */
+  /** The integration it proves. */
+  integration_id: string;
+  /** The level it runs at: unit, database, api, contract, e2e-api, e2e-ui or manual. */
+  level: "unit" | "database" | "api" | "contract" | "e2e-api" | "e2e-ui" | "manual";
+  /** automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. */
+  state: "automated" | "manual" | "not automated yet";
+  /** The file that runs it, from the product root; an automated test must name one. */
+  file?: string;
+  /** Why a person runs it rather than a file; a manual test must give one, and only a manual test. */
+  manual_reason?: string;
+  /** The state the test starts from. */
+  given?: string;
+  /** What the test does. */
+  when?: string;
+  /** What the test expects. */
+  then?: string;
+  /** Longer notes on the test, such as when to run it. */
   notes?: string;
 }
 
-/** One rule a view, endpoint, flow, API or integration must follow, such as a field's limits, an error's response or one exchange with an outside system. One under an API holds for every endpoint in it; one with none of them holds across the domain's interaction design. */
-export interface InteractionRequirementRow {
-  /** The requirement's ID: its parent's ID and R<nn>, such as TL-LEND-E03-R01, or <P>-<D>-IR<nn> under the domain. */
+/** A rule that holds for one aggregate on every change. Uniqueness across records (no two members share an email) is an invariant, enforced by a unique key of the table. */
+export interface InvariantRow {
+  /** The invariant's ID, such as TL-LEND-INV01. */
   id: string;
-  /** The requirement in a few words. */
+  /** The rule in a few words. */
   title: string;
-  /** The domain it belongs to. */
-  domain_id: string;
-  /** The view of that domain it holds for, if one. */
-  view_id?: string;
-  /** The endpoint of that domain it holds for, if one. */
-  endpoint_id?: string;
-  /** The flow of that domain it holds for, if one. */
-  flow_id?: string;
-  /** The API of that domain it holds for, for every endpoint in it, if one. */
-  api_id?: string;
-  /** The integration of that domain whose exchange it states, if one. */
-  integration_id?: string;
-  /** The requirement, stated with MUST, MUST NOT, SHOULD or MAY. */
+  /** The aggregate it holds for. */
+  aggregate_id: string;
+  /** The rule, stated with MUST, MUST NOT, SHOULD or MAY. */
   statement: string;
-  /** A short heading it is shown under among its siblings, such as Validation or Paging. */
-  group_name?: string;
 }
 
-/** The domain rule, under its domain, holds across this aggregate and the others it names. */
-export interface InvolvesRow {
+/** Proves its invariant: a change that would break it is refused, and the aggregate stays as it was. */
+export interface InvariantTestRow {
+  /** The test's ID: its invariant's ID and T, such as TL-LEND-INV01-T. */
+  id: string;
+  /** What the test shows, in a sentence. */
+  title: string;
+  /** The invariant it proves; it has exactly one test. */
+  invariant_id: string;
+  /** The level it runs at: unit, database, api, contract, e2e-api, e2e-ui or manual. */
+  level: "unit" | "database" | "api" | "contract" | "e2e-api" | "e2e-ui" | "manual";
+  /** automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. */
+  state: "automated" | "manual" | "not automated yet";
+  /** The file that runs it, from the product root; an automated test must name one. */
+  file?: string;
+  /** Why a person runs it rather than a file; a manual test must give one, and only a manual test. */
+  manual_reason?: string;
+  /** The state the test starts from. */
+  given?: string;
+  /** What the test does. */
+  when?: string;
+  /** What the test expects. */
+  then?: string;
+  /** Longer notes on the test, such as when to run it. */
+  notes?: string;
+}
+
+/** The flow step invokes the command or query: at most one per step. */
+export interface InvokesRow {
   source_id: string;
   target_id: string;
 }
 
-/** A library of engineering rules that holds for the product's code, such as logging, error handling or naming. What follows one of its rules meets it; a standard asks nothing of a domain. */
+/** A library of engineering rules that holds for the product's code, such as logging, error handling or naming. What follows one of its rules meets it. */
 export interface StandardRow {
   /** The standard's ID, such as TL-STD-CODE. */
   id: string;
@@ -523,7 +725,7 @@ export interface StandardRow {
   description?: string;
 }
 
-/** One rule of a standard. It is not an obligation: what follows it links to it with meets. */
+/** One rule of a standard. Technical records and tests that follow it link to it with meets. */
 export interface StandardRuleRow {
   /** The rule's ID: its standard's ID and R<nn>, such as TL-STD-CODE-R01. */
   id: string;
@@ -537,7 +739,7 @@ export interface StandardRuleRow {
   group_name?: string;
 }
 
-/** The component, test or technical step follows the standard rule. */
+/** The technical record or test follows the standard rule. */
 export interface MeetsRow {
   source_id: string;
   target_id: string;
@@ -555,7 +757,7 @@ export interface PatternSettingRow {
   meaning?: string;
 }
 
-/** One rule of a pattern. Every domain that follows the pattern proves it, unless it names a setting all of that domain's followers mark Not applicable, or its applies-when condition is met by no follower there. */
+/** One rule of a pattern. Every domain that follows the pattern owes it, unless it names a setting all of that domain's followers mark Not applicable, or its applies-when condition is met by no follower there. */
 export interface PatternRuleRow {
   /** The rule's ID: its pattern's ID and R<nn>, such as TL-PAT-LIBRARIAN-ACTION-R01. */
   id: string;
@@ -579,25 +781,91 @@ export interface PatternRuleRow {
   notes?: string;
 }
 
-/** A kind a product adds to Lathe's, such as an invariant or a report. Its records sit under one parent kind, and its fields are product_kind_field rows. */
+/** Proves its pattern rule in one domain that adopts the pattern: one test per pattern rule and adopting domain. */
+export interface PatternRuleTestRow {
+  /** The test's ID: its pattern rule's ID and T<nn>, such as TL-PAT-ACT-R01-T01. */
+  id: string;
+  /** What the test shows, in a sentence. */
+  title: string;
+  /** The pattern rule it proves. */
+  pattern_rule_id: string;
+  /** The domain it proves the rule in, one that follows the pattern itself or through a use case; one test per pattern rule and domain. */
+  domain_id: string;
+  /** The level it runs at: unit, database, api, contract, e2e-api, e2e-ui or manual. */
+  level: "unit" | "database" | "api" | "contract" | "e2e-api" | "e2e-ui" | "manual";
+  /** automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. */
+  state: "automated" | "manual" | "not automated yet";
+  /** The file that runs it, from the product root; an automated test must name one. */
+  file?: string;
+  /** Why a person runs it rather than a file; a manual test must give one, and only a manual test. */
+  manual_reason?: string;
+  /** The state the test starts from. */
+  given?: string;
+  /** What the test does. */
+  when?: string;
+  /** What the test expects. */
+  then?: string;
+  /** Longer notes on the test, such as when to run it. */
+  notes?: string;
+}
+
+/** Proves its policy: when its event happens, its command is sent. */
+export interface PolicyTestRow {
+  /** The test's ID: its policy's ID and T, such as TL-LEND-PO01-T. */
+  id: string;
+  /** What the test shows, in a sentence. */
+  title: string;
+  /** The policy it proves; it has exactly one test. */
+  policy_id: string;
+  /** The level it runs at: unit, database, api, contract, e2e-api, e2e-ui or manual. */
+  level: "unit" | "database" | "api" | "contract" | "e2e-api" | "e2e-ui" | "manual";
+  /** automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. */
+  state: "automated" | "manual" | "not automated yet";
+  /** The file that runs it, from the product root; an automated test must name one. */
+  file?: string;
+  /** Why a person runs it rather than a file; a manual test must give one, and only a manual test. */
+  manual_reason?: string;
+  /** The state the test starts from. */
+  given?: string;
+  /** What the test does. */
+  when?: string;
+  /** What the test expects. */
+  then?: string;
+  /** Longer notes on the test, such as when to run it. */
+  notes?: string;
+}
+
+/** Its specification in code: a yes-or-no test over the records it is given. */
+export interface PredicateRow {
+  /** The predicate's ID: its specification's ID and PR, such as TL-LEND-SP01-PR. */
+  id: string;
+  /** Its name in code, such as isInGoodStanding. */
+  title: string;
+  /** The specification it implements; one predicate each. */
+  specification_id: string;
+  /** The file that holds its code, from the product root; it may not exist yet, and several records may share one file. */
+  file?: string;
+  /** How it works, in a sentence or two. */
+  description?: string;
+}
+
+/** A kind a product adds to Lathe's, such as a report or a CLI command. Its records sit under one parent kind, and its fields are product_kind_field rows. */
 export interface ProductKindRow {
   /** The kind's name, in lower case with underscores, which is also its table's name; it must not be a table Lathe already has. */
   name: string;
   /** The product that declares it; only that product's records may be of the kind. */
   product_id: string;
-  /** The kind's name as people read it, such as Invariant. */
+  /** The kind's name as people read it, such as Report. */
   label: string;
   /** What a record of the kind is. */
   description: string;
-  /** The kind its records sit under: one of Lathe's or another product kind. Its table gets a <parent_kind>_id column. */
+  /** The kind its records sit under, their one parent: one of Lathe's or another product kind. Its table gets a required <parent_kind>_id column. */
   parent_kind: string;
-  /** The stage its records belong to, if one. */
-  stage?: "define" | "design";
-  /** The folder its records are read in, if one. */
-  section?: string;
-  /** What a record of the kind asks: full, proof or none. An obligation kind joins the obligation supertype, so it can be designed, proved and carried out. */
-  obligation: "none" | "full" | "proof";
-  /** How its IDs are written. */
+  /** The stage its records belong to, any of the five, if one; such as technical-specification for a kind of code Lathe has no kind for. */
+  stage?: "domain-model" | "use-cases" | "interaction-design" | "technical-specification" | "test-plan";
+  /** Whether a record of the kind is an obligation, to be designed, built and proved. An obligation kind joins the obligation supertype. */
+  obligation: boolean;
+  /** How its IDs are written, its own pattern, such as <command>-CLI. */
   id_pattern?: string;
   /** An example ID. */
   id_example?: string;
@@ -629,7 +897,7 @@ export interface ProductRelationRow {
   target_kind: string;
   /** The product that declares it. */
   product_id: string;
-  /** design or proof, for a new relation that counts toward coverage. */
+  /** design or proof, for a new relation that counts toward coverage. A new relation's links stay inside one product. */
   role?: "design" | "proof";
   /** The link read from its source. */
   forward_label: string;
@@ -647,48 +915,100 @@ export interface ProductSettingRow {
   max_children: number;
 }
 
-/** The test proves the obligation; this counts as proof. */
-export interface ProvesRow {
-  source_id: string;
-  target_id: string;
-}
-
-/** The event is raised when that entity of its aggregate changes. */
-export interface RaisedByRow {
-  source_id: string;
-  target_id: string;
-}
-
-/** The aggregate changes, the use case starts or the component handles the event, which may come from another aggregate or domain. */
-export interface ReactsToRow {
-  source_id: string;
-  target_id: string;
-}
-
-/** The entity holds a reference to one of the other entity, which may sit in another aggregate or domain (many to one). */
-export interface RefersToRow {
-  source_id: string;
-  target_id: string;
-}
-
-/** One aggregate refers to another by ID. */
-export interface RelatesToRow {
-  source_id: string;
-  target_id: string;
-}
-
-/** One rule a use case must follow. Shown as a UC (use case) requirement, to tell it apart from interaction requirements and pattern rules. */
-export interface RequirementRow {
-  /** The requirement's ID: its use case's ID and R<nn>, such as TL-LEND-UC01-R01. */
+/** Fills its read model's table and keeps it current, from events or as a view's query. It writes only its own read model's table. */
+export interface ProjectionRow {
+  /** The projection's ID: its read model's ID and PJ, such as TL-LEND-RM01-PJ. */
   id: string;
-  /** The requirement in a few words. */
+  /** Its name in code, such as overdueLoans. */
   title: string;
-  /** The use case it belongs to. */
-  use_case_id: string;
-  /** The requirement, stated with MUST, MUST NOT, SHOULD or MAY, in one sentence. */
-  statement: string;
-  /** A short heading it is shown under among its siblings, such as Validation or Paging. */
-  group_name?: string;
+  /** The read model it fills; one projection each. */
+  read_model_id: string;
+  /** The file that holds its code, from the product root; it may not exist yet, and several records may share one file. */
+  file?: string;
+  /** How it works, in a sentence or two. */
+  description?: string;
+}
+
+/** Answers its query from its read model's table: an application service that changes nothing. */
+export interface QueryHandlerRow {
+  /** The query handler's ID: its query's ID and H, such as TL-LEND-QRY01-H. */
+  id: string;
+  /** Its name in code, such as listLoans. */
+  title: string;
+  /** The query it answers; one query handler each. */
+  query_id: string;
+  /** The file that holds its code, from the product root; it may not exist yet, and several records may share one file. */
+  file?: string;
+  /** How it works, in a sentence or two. */
+  description?: string;
+}
+
+/** The command raises the event, of the aggregate it changes. */
+export interface RaisesRow {
+  source_id: string;
+  target_id: string;
+}
+
+/** One field of a read model, in order. Its table's columns follow from it. */
+export interface ReadModelFieldRow {
+  /** The read model. */
+  read_model_id: string;
+  /** The field's place in the read model, from 1. */
+  position: number;
+  /** The field's name, such as Days overdue: one name in its read model, compared trimmed and in any letter case. */
+  name: string;
+  /** What the field means. */
+  meaning: string;
+  /** Its basic type: text, whole number, decimal, date, time, date and time or yes/no; or none when a value object or an aggregate types it. */
+  type?: "text" | "whole number" | "decimal" | "date" | "time" | "date and time" | "yes/no";
+  /** The value object that is its type, if one. */
+  type_value_object_id?: string;
+  /** The aggregate it refers to by ID, if one. */
+  type_aggregate_id?: string;
+  /** true: every record gives it a value; false: it may be empty. */
+  required: boolean;
+  /** Its column's name in the table, when that differs from the field's name, such as id for the field Member ID. */
+  column_name?: string;
+  /** An example value. */
+  example?: string;
+}
+
+/** The specification or read model reads the aggregate, of its own domain. */
+export interface ReadsRow {
+  source_id: string;
+  target_id: string;
+}
+
+/** A piece of the user interface that renders one or more views. It has no owner: it exists because views use it, and its product follows from its ID. */
+export interface UiComponentRow {
+  /** The UI component's ID: the product prefix and UI<nn>, such as TL-UI01. */
+  id: string;
+  /** Its name in code, such as CatalogPage. */
+  title: string;
+  /** The file that holds its code, from the product root; it may not exist yet. */
+  file?: string;
+  /** What it renders, in a sentence or two. */
+  description?: string;
+}
+
+/** The UI component renders the view, or part of it. */
+export interface RendersRow {
+  source_id: string;
+  target_id: string;
+}
+
+/** Loads and saves its aggregate, whole: the way command handlers reach the aggregate's storage. */
+export interface RepositoryRow {
+  /** The repository's ID: its aggregate's ID and REPO, such as TL-LEND-A1-REPO. */
+  id: string;
+  /** Its name in code, such as LoanRepository. */
+  title: string;
+  /** The aggregate it loads and saves; one repository each. */
+  aggregate_id: string;
+  /** The file that holds its code, from the product root; it may not exist yet, and several records may share one file. */
+  file?: string;
+  /** How it works, in a sentence or two. */
+  description?: string;
 }
 
 /** A role the product's records name, such as Owner, Reader or Agent: a use case's actors and a question's owner. Specs name roles, never people. */
@@ -701,16 +1021,24 @@ export interface RoleRow {
   description?: string;
 }
 
-/** The test runs the flow end to end. */
-export interface RunsRow {
+/** The query selects the records that satisfy the specification, of its own domain. */
+export interface SelectsByRow {
   source_id: string;
   target_id: string;
 }
 
-/** The component or technical step designs the obligation; this counts as design. */
-export interface SatisfiesRow {
-  source_id: string;
-  target_id: string;
+/** Its domain service in code. It never uses a repository or an outside system: its inputs are passed in, and it returns a value or a decision. */
+export interface ServiceRow {
+  /** The service's ID: its domain service's ID and SV, such as TL-LEND-DS01-SV. */
+  id: string;
+  /** Its name in code, such as lateFee. */
+  title: string;
+  /** The domain service it implements; one service each. */
+  domain_service_id: string;
+  /** The file that holds its code, from the product root; it may not exist yet, and several records may share one file. */
+  file?: string;
+  /** How it works, in a sentence or two. */
+  description?: string;
 }
 
 /** The value a use case or domain gives one setting of a pattern it follows: a value, or Not applicable with the reason. */
@@ -727,10 +1055,82 @@ export interface SettingValueRow {
   not_applicable?: string;
 }
 
-/** The test checks a mechanism that backs the obligation, such as a lock or a budget, without proving it; it never counts as proof. */
-export interface SupportsRow {
-  source_id: string;
-  target_id: string;
+/** Proves its specification: which records satisfy the predicate and which do not. */
+export interface SpecificationTestRow {
+  /** The test's ID: its specification's ID and T, such as TL-LEND-SP01-T. */
+  id: string;
+  /** What the test shows, in a sentence. */
+  title: string;
+  /** The specification it proves; it has exactly one test. */
+  specification_id: string;
+  /** The level it runs at: unit, database, api, contract, e2e-api, e2e-ui or manual. */
+  level: "unit" | "database" | "api" | "contract" | "e2e-api" | "e2e-ui" | "manual";
+  /** automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. */
+  state: "automated" | "manual" | "not automated yet";
+  /** The file that runs it, from the product root; an automated test must name one. */
+  file?: string;
+  /** Why a person runs it rather than a file; a manual test must give one, and only a manual test. */
+  manual_reason?: string;
+  /** The state the test starts from. */
+  given?: string;
+  /** What the test does. */
+  when?: string;
+  /** What the test expects. */
+  then?: string;
+  /** Longer notes on the test, such as when to run it. */
+  notes?: string;
+}
+
+/** Where an entity or a read model, its parent, is stored. Its columns follow from its parent's fields, a value object's fields flattened into columns, so it stores only what fields cannot say: its keys and indexes (table_key rows). An entity's table is always a table, normalized and the source of truth; a read model's is a projection that can be rebuilt, usually a view over its domain's entity tables. */
+export interface TableRow {
+  /** The table's ID: its entity's or read model's ID and TB, such as TL-LEND-EN01-TB. */
+  id: string;
+  /** The table as people read it, such as Loans. */
+  title: string;
+  /** The entity it stores; exactly one of entity and read model is given. An entity has at most one table: a child entity marked in_root_table has none and is stored in its root's. */
+  entity_id?: string;
+  /** The read model it stores; exactly one of entity and read model is given, and a read model has one table. */
+  read_model_id?: string;
+  /** Its name in the database, such as loans. */
+  name: string;
+  /** table: rows of its own; view: a query over other tables; materialized view: a query's result, kept. An entity's table is always table. */
+  storage: "table" | "view" | "materialized view";
+  /** The file that creates it, such as a migration, from the product root; it may not exist yet. */
+  file?: string;
+  /** Anything its keys do not say, in a sentence or two. */
+  description?: string;
+}
+
+/** One key or index of a table, in order: its primary key, a unique key with the invariant it enforces, a foreign key with the table it points at, or an index. A foreign key points at a table of the same domain: a reference to another domain's aggregate stays a plain ID. */
+export interface TableKeyRow {
+  /** The table. */
+  table_id: string;
+  /** The key's place among the table's keys, from 1. */
+  position: number;
+  /** primary (at most one per table), unique, foreign or index. */
+  type: "primary" | "unique" | "foreign" | "index";
+  /** Its columns, in order, by their names in the database. */
+  columns: string[];
+  /** Its name in the database, if it has one. */
+  name?: string;
+  /** For a unique key, the invariant it enforces, such as no two members sharing an email. */
+  invariant_id?: string;
+  /** For a foreign key, the table it points at, of the same domain; required for a foreign key and only for one. */
+  target_table_id?: string;
+  /** For a partial unique key, the rows it holds for, such as returned_at IS NULL for one active loan per tool; only a unique key has one. */
+  condition?: string;
+}
+
+/** A word of the domain's glossary and what it means there, so specs, code and conversation use one language. */
+export interface TermRow {
+  /** The term's ID, such as TL-LEND-TM01. */
+  id: string;
+  /** The term, such as Loan. */
+  title: string;
+  /** The domain whose language it belongs to. */
+  domain_id: string;
+  /** What it means in that domain. */
+  meaning: string;
 }
 
 /** One actor of a use case, in order: a role of the use case's product. */
@@ -743,85 +1143,197 @@ export interface UseCaseActorRow {
   role_name: string;
 }
 
-/** One step of a use case's main course, in order. */
-export interface UseCaseStepRow {
-  /** The use case. */
-  use_case_id: string;
-  /** The step's place, from 1. */
-  position: number;
-  /** What happens in the step, in a sentence. */
-  description: string;
+/** Proves its UC requirement, at the level the use case is stated: what the actor does and what the product does in answer. */
+export interface UseCaseTestRow {
+  /** The test's ID: its UC requirement's ID and T<nn>, such as TL-LEND-UC01-R01-T01. */
+  id: string;
+  /** What the test shows, in a sentence. */
+  title: string;
+  /** The UC requirement it proves. */
+  uc_requirement_id: string;
+  /** The level it runs at: unit, database, api, contract, e2e-api, e2e-ui or manual. */
+  level: "unit" | "database" | "api" | "contract" | "e2e-api" | "e2e-ui" | "manual";
+  /** automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. */
+  state: "automated" | "manual" | "not automated yet";
+  /** The file that runs it, from the product root; an automated test must name one. */
+  file?: string;
+  /** Why a person runs it rather than a file; a manual test must give one, and only a manual test. */
+  manual_reason?: string;
+  /** The state the test starts from. */
+  given?: string;
+  /** What the test does. */
+  when?: string;
+  /** What the test expects. */
+  then?: string;
+  /** Longer notes on the test, such as when to run it. */
+  notes?: string;
 }
 
-/** The flow, step or view passes through, calls or is carried out by the view, endpoint or component. */
-export interface UsesRow {
-  source_id: string;
-  target_id: string;
+/** One field of a value object, in order. A table flattens a value object's fields into columns. */
+export interface ValueObjectFieldRow {
+  /** The value object. */
+  value_object_id: string;
+  /** The field's place in the value object, from 1. */
+  position: number;
+  /** The field's name, such as Amount: one name in its value object, compared trimmed and in any letter case. */
+  name: string;
+  /** What the field means. */
+  meaning: string;
+  /** Its basic type: text, whole number, decimal, date, time, date and time or yes/no; or none when a value object or an aggregate types it. */
+  type?: "text" | "whole number" | "decimal" | "date" | "time" | "date and time" | "yes/no";
+  /** Another value object that is its type, if one. */
+  type_value_object_id?: string;
+  /** The aggregate it refers to by ID, if one. */
+  type_aggregate_id?: string;
+  /** true: every record gives it a value; false: it may be empty. */
+  required: boolean;
+  /** Its column's name in the table, when that differs from the field's name, such as id for the field Member ID. */
+  column_name?: string;
+  /** An example value. */
+  example?: string;
+}
+
+/** Its value object in code, which checks the value object's constraints when a value is created. */
+export interface ValueTypeRow {
+  /** The value type's ID: its value object's ID and VT, such as TL-VO01-VT. */
+  id: string;
+  /** Its name in code, such as EmailAddress. */
+  title: string;
+  /** The value object it implements; one value type each. */
+  value_object_id: string;
+  /** The file that holds its code, from the product root; it may not exist yet, and several records may share one file. */
+  file?: string;
+  /** How it works, in a sentence or two. */
+  description?: string;
+}
+
+/** One rule a view must follow, such as what it shows while loading or a field's limits. */
+export interface ViewRequirementRow {
+  /** The requirement's ID: its view's ID and R<nn>, such as TL-V01-R01. */
+  id: string;
+  /** The requirement in a few words. */
+  title: string;
+  /** The view it belongs to. */
+  view_id: string;
+  /** The requirement, stated with MUST, MUST NOT, SHOULD or MAY. */
+  statement: string;
+  /** A short heading it is shown under among its siblings. */
+  group_name?: string;
+}
+
+/** Proves its view requirement in the view. */
+export interface ViewTestRow {
+  /** The test's ID: its view requirement's ID and T<nn>, such as TL-V01-R01-T01. */
+  id: string;
+  /** What the test shows, in a sentence. */
+  title: string;
+  /** The view requirement it proves. */
+  view_requirement_id: string;
+  /** The level it runs at: unit, database, api, contract, e2e-api, e2e-ui or manual. */
+  level: "unit" | "database" | "api" | "contract" | "e2e-api" | "e2e-ui" | "manual";
+  /** automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. */
+  state: "automated" | "manual" | "not automated yet";
+  /** The file that runs it, from the product root; an automated test must name one. */
+  file?: string;
+  /** Why a person runs it rather than a file; a manual test must give one, and only a manual test. */
+  manual_reason?: string;
+  /** The state the test starts from. */
+  given?: string;
+  /** What the test does. */
+  when?: string;
+  /** What the test expects. */
+  then?: string;
+  /** Longer notes on the test, such as when to run it. */
+  notes?: string;
 }
 
 /** Each stored table's row type, by table name. */
 export interface TableRows {
   product: ProductRow;
   domain: DomainRow;
-  aggregate: AggregateRow;
-  capability: CapabilityRow;
-  use_case: UseCaseRow;
-  layer: LayerRow;
-  component: ComponentRow;
   question: QuestionRow;
   about: AboutRow;
-  api: ApiRow;
-  api_shape: ApiShapeRow;
-  entity: EntityRow;
-  domain_rule: DomainRuleRow;
-  applies: AppliesRow;
-  flow: FlowRow;
-  carries_out: CarriesOutRow;
-  check: CheckRow;
-  test: TestRow;
-  covers: CoversRow;
-  design_flow: DesignFlowRow;
-  deepens: DeepensRow;
-  depends_on: DependsOnRow;
-  design_step: DesignStepRow;
-  domain_event: DomainEventRow;
+  integration: IntegrationRow;
+  adapter: AdapterRow;
+  aggregate: AggregateRow;
+  command: CommandRow;
+  read_model: ReadModelRow;
+  query: QueryRow;
   endpoint: EndpointRow;
+  api_requirement: ApiRequirementRow;
+  domain_service: DomainServiceRow;
+  calls: CallsRow;
+  capability: CapabilityRow;
+  check: CheckRow;
+  specification: SpecificationRow;
+  checks: ChecksRow;
+  command_handler: CommandHandlerRow;
+  value_object: ValueObjectRow;
+  constraint: ConstraintRow;
+  constraint_test: ConstraintTestRow;
+  entity: EntityRow;
+  data_model: DataModelRow;
+  domain_event: DomainEventRow;
+  domain_service_test: DomainServiceTestRow;
+  endpoint_handler: EndpointHandlerRow;
+  endpoint_test: EndpointTestRow;
   entity_field: EntityFieldRow;
   event_field: EventFieldRow;
+  policy: PolicyRow;
+  event_handler: EventHandlerRow;
+  event_type: EventTypeRow;
+  use_case: UseCaseRow;
+  flow: FlowRow;
   flow_step: FlowStepRow;
+  exchanges_with: ExchangesWithRow;
+  flow_test: FlowTestRow;
   pattern: PatternRow;
   follows: FollowsRow;
+  uc_requirement: UcRequirementRow;
   fulfills: FulfillsRow;
+  view: ViewRow;
+  happens_in: HappensInRow;
   has_many: HasManyRow;
   has_one: HasOneRow;
-  implements: ImplementsRow;
-  integration: IntegrationRow;
-  view: ViewRow;
-  interaction_requirement: InteractionRequirementRow;
-  involves: InvolvesRow;
+  hears: HearsRow;
+  integration_test: IntegrationTestRow;
+  invariant: InvariantRow;
+  invariant_test: InvariantTestRow;
+  invokes: InvokesRow;
   standard: StandardRow;
   standard_rule: StandardRuleRow;
   meets: MeetsRow;
   pattern_setting: PatternSettingRow;
   pattern_rule: PatternRuleRow;
+  pattern_rule_test: PatternRuleTestRow;
+  policy_test: PolicyTestRow;
+  predicate: PredicateRow;
   product_kind: ProductKindRow;
   product_kind_field: ProductKindFieldRow;
   product_relation: ProductRelationRow;
   product_setting: ProductSettingRow;
-  proves: ProvesRow;
-  raised_by: RaisedByRow;
-  reacts_to: ReactsToRow;
-  refers_to: RefersToRow;
-  relates_to: RelatesToRow;
-  requirement: RequirementRow;
+  projection: ProjectionRow;
+  query_handler: QueryHandlerRow;
+  raises: RaisesRow;
+  read_model_field: ReadModelFieldRow;
+  reads: ReadsRow;
+  ui_component: UiComponentRow;
+  renders: RendersRow;
+  repository: RepositoryRow;
   role: RoleRow;
-  runs: RunsRow;
-  satisfies: SatisfiesRow;
+  selects_by: SelectsByRow;
+  service: ServiceRow;
   setting_value: SettingValueRow;
-  supports: SupportsRow;
+  specification_test: SpecificationTestRow;
+  table: TableRow;
+  table_key: TableKeyRow;
+  term: TermRow;
   use_case_actor: UseCaseActorRow;
-  use_case_step: UseCaseStepRow;
-  uses: UsesRow;
+  use_case_test: UseCaseTestRow;
+  value_object_field: ValueObjectFieldRow;
+  value_type: ValueTypeRow;
+  view_requirement: ViewRequirementRow;
+  view_test: ViewTestRow;
 }
 
 /** A stored table of Lathe's schema. */

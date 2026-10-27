@@ -10,21 +10,19 @@ CREATE TABLE product_kind (
   description VARCHAR NOT NULL CHECK (trim(description) <> ''),
   parent_kind VARCHAR NOT NULL,
   stage stage,
-  section VARCHAR REFERENCES meta_section (name),
-  obligation obligation_kind NOT NULL,
+  obligation BOOLEAN NOT NULL,
   id_pattern VARCHAR,
   id_example VARCHAR
 );
-COMMENT ON TABLE product_kind IS 'A kind a product adds to Lathe''s, such as an invariant or a report. Its records sit under one parent kind, and its fields are product_kind_field rows.';
+COMMENT ON TABLE product_kind IS 'A kind a product adds to Lathe''s, such as a report or a CLI command. Its records sit under one parent kind, and its fields are product_kind_field rows.';
 COMMENT ON COLUMN product_kind.name IS 'The kind''s name, in lower case with underscores, which is also its table''s name; it must not be a table Lathe already has.';
 COMMENT ON COLUMN product_kind.product_id IS 'The product that declares it; only that product''s records may be of the kind.';
-COMMENT ON COLUMN product_kind.label IS 'The kind''s name as people read it, such as Invariant.';
+COMMENT ON COLUMN product_kind.label IS 'The kind''s name as people read it, such as Report.';
 COMMENT ON COLUMN product_kind.description IS 'What a record of the kind is.';
-COMMENT ON COLUMN product_kind.parent_kind IS 'The kind its records sit under: one of Lathe''s or another product kind. Its table gets a <parent_kind>_id column.';
-COMMENT ON COLUMN product_kind.stage IS 'The stage its records belong to, if one.';
-COMMENT ON COLUMN product_kind.section IS 'The folder its records are read in, if one.';
-COMMENT ON COLUMN product_kind.obligation IS 'What a record of the kind asks: full, proof or none. An obligation kind joins the obligation supertype, so it can be designed, proved and carried out.';
-COMMENT ON COLUMN product_kind.id_pattern IS 'How its IDs are written.';
+COMMENT ON COLUMN product_kind.parent_kind IS 'The kind its records sit under, their one parent: one of Lathe''s or another product kind. Its table gets a required <parent_kind>_id column.';
+COMMENT ON COLUMN product_kind.stage IS 'The stage its records belong to, any of the five, if one; such as technical-specification for a kind of code Lathe has no kind for.';
+COMMENT ON COLUMN product_kind.obligation IS 'Whether a record of the kind is an obligation, to be designed, built and proved. An obligation kind joins the obligation supertype.';
+COMMENT ON COLUMN product_kind.id_pattern IS 'How its IDs are written, its own pattern, such as <command>-CLI.';
 COMMENT ON COLUMN product_kind.id_example IS 'An example ID.';
 
 CREATE TABLE product_kind_field (
@@ -61,7 +59,7 @@ COMMENT ON COLUMN product_relation.name IS 'The relation''s name, in lower case 
 COMMENT ON COLUMN product_relation.source_kind IS 'The kind a link starts from.';
 COMMENT ON COLUMN product_relation.target_kind IS 'The kind a link points at, or * for any record.';
 COMMENT ON COLUMN product_relation.product_id IS 'The product that declares it.';
-COMMENT ON COLUMN product_relation.role IS 'design or proof, for a new relation that counts toward coverage.';
+COMMENT ON COLUMN product_relation.role IS 'design or proof, for a new relation that counts toward coverage. A new relation''s links stay inside one product.';
 COMMENT ON COLUMN product_relation.forward_label IS 'The link read from its source.';
 COMMENT ON COLUMN product_relation.reverse_label IS 'The link read from its target.';
 COMMENT ON COLUMN product_relation.description IS 'What a link between these kinds means.';

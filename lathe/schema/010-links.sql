@@ -1,135 +1,104 @@
 -- A link table per relation, (source_id, target_id), with real foreign keys. An end that accepts several kinds points
--- at a supertype table; the pairs of kinds each relation allows are in meta_relation_pair. Then the setting values a
--- follower gives the pattern it follows.
+-- at a supertype table; the pairs of kinds each relation allows are in meta_relation_pair, and what the two ends must
+-- share in meta_relation.scope. A relation with at most one link per source has a unique source_id. Then the setting
+-- values a follower gives the pattern it follows.
 
-CREATE TABLE relates_to (source_id VARCHAR NOT NULL REFERENCES aggregate (id), target_id VARCHAR NOT NULL REFERENCES aggregate (id), PRIMARY KEY (source_id, target_id), CHECK (source_id <> target_id));
-COMMENT ON TABLE relates_to IS 'One aggregate refers to another by ID.';
-CREATE TABLE applies (source_id VARCHAR NOT NULL REFERENCES use_case (id), target_id VARCHAR NOT NULL REFERENCES domain_rule (id), PRIMARY KEY (source_id, target_id));
-COMMENT ON TABLE applies IS 'The use case relies on the domain rule.';
-CREATE TABLE follows (source_id VARCHAR NOT NULL REFERENCES follows_source (id), target_id VARCHAR NOT NULL REFERENCES pattern (id), PRIMARY KEY (source_id, target_id));
-COMMENT ON TABLE follows IS 'The use case or domain follows the pattern, and gives a value for each of its settings in setting_value rows.';
-CREATE TABLE fulfills (source_id VARCHAR NOT NULL REFERENCES fulfills_source (id), target_id VARCHAR NOT NULL REFERENCES obligation (id), PRIMARY KEY (source_id, target_id));
-COMMENT ON TABLE fulfills IS 'The flow, flow step, view, endpoint or interaction requirement carries out the obligation.';
-CREATE TABLE uses (source_id VARCHAR NOT NULL REFERENCES uses_source (id), target_id VARCHAR NOT NULL REFERENCES uses_target (id), PRIMARY KEY (source_id, target_id));
-COMMENT ON TABLE uses IS 'The flow, step or view passes through, calls or is carried out by the view, endpoint or component.';
-CREATE TABLE satisfies (source_id VARCHAR NOT NULL REFERENCES satisfies_source (id), target_id VARCHAR NOT NULL REFERENCES obligation (id), PRIMARY KEY (source_id, target_id));
-COMMENT ON TABLE satisfies IS 'The component or technical step designs the obligation; this counts as design.';
-CREATE TABLE implements (source_id VARCHAR NOT NULL REFERENCES component (id), target_id VARCHAR NOT NULL REFERENCES implements_target (id), PRIMARY KEY (source_id, target_id));
-COMMENT ON TABLE implements IS 'The component serves the endpoint or renders the view.';
-CREATE TABLE depends_on (source_id VARCHAR NOT NULL REFERENCES component (id), target_id VARCHAR NOT NULL REFERENCES component (id), PRIMARY KEY (source_id, target_id), CHECK (source_id <> target_id));
-COMMENT ON TABLE depends_on IS 'The component calls or imports the other.';
-CREATE TABLE proves (source_id VARCHAR NOT NULL REFERENCES test (id), target_id VARCHAR NOT NULL REFERENCES obligation (id), PRIMARY KEY (source_id, target_id));
-COMMENT ON TABLE proves IS 'The test proves the obligation; this counts as proof.';
-CREATE TABLE supports (source_id VARCHAR NOT NULL REFERENCES test (id), target_id VARCHAR NOT NULL REFERENCES obligation (id), PRIMARY KEY (source_id, target_id));
-COMMENT ON TABLE supports IS 'The test checks a mechanism that backs the obligation, such as a lock or a budget, without proving it; it never counts as proof.';
-CREATE TABLE about (source_id VARCHAR NOT NULL REFERENCES question (id), target_id VARCHAR NOT NULL REFERENCES record_id (id), PRIMARY KEY (source_id, target_id));
-COMMENT ON TABLE about IS 'The open question concerns the record.';
-CREATE TABLE carries_out (source_id VARCHAR NOT NULL REFERENCES flow (id), target_id VARCHAR NOT NULL REFERENCES use_case (id), PRIMARY KEY (source_id, target_id));
-COMMENT ON TABLE carries_out IS 'The flow carries out the use case.';
-CREATE TABLE runs (source_id VARCHAR NOT NULL REFERENCES test (id), target_id VARCHAR NOT NULL REFERENCES flow (id), PRIMARY KEY (source_id, target_id));
-COMMENT ON TABLE runs IS 'The test runs the flow end to end.';
-CREATE TABLE covers (source_id VARCHAR NOT NULL REFERENCES test (id), target_id VARCHAR NOT NULL REFERENCES component (id), PRIMARY KEY (source_id, target_id));
-COMMENT ON TABLE covers IS 'The test exercises the component.';
 CREATE TABLE has_one (source_id VARCHAR NOT NULL REFERENCES entity (id), target_id VARCHAR NOT NULL REFERENCES entity (id), PRIMARY KEY (source_id, target_id), CHECK (source_id <> target_id));
 COMMENT ON TABLE has_one IS 'The entity holds exactly one of the other entity, as a part of it (one to one).';
 CREATE TABLE has_many (source_id VARCHAR NOT NULL REFERENCES entity (id), target_id VARCHAR NOT NULL REFERENCES entity (id), PRIMARY KEY (source_id, target_id), CHECK (source_id <> target_id));
 COMMENT ON TABLE has_many IS 'The entity holds any number of the other entity, as parts of it (one to many).';
-CREATE TABLE refers_to (source_id VARCHAR NOT NULL REFERENCES entity (id), target_id VARCHAR NOT NULL REFERENCES entity (id), PRIMARY KEY (source_id, target_id), CHECK (source_id <> target_id));
-COMMENT ON TABLE refers_to IS 'The entity holds a reference to one of the other entity, which may sit in another aggregate or domain (many to one).';
-CREATE TABLE raised_by (source_id VARCHAR NOT NULL REFERENCES domain_event (id), target_id VARCHAR NOT NULL REFERENCES entity (id), PRIMARY KEY (source_id, target_id));
-COMMENT ON TABLE raised_by IS 'The event is raised when that entity of its aggregate changes.';
-CREATE TABLE reacts_to (source_id VARCHAR NOT NULL REFERENCES reacts_to_source (id), target_id VARCHAR NOT NULL REFERENCES domain_event (id), PRIMARY KEY (source_id, target_id));
-COMMENT ON TABLE reacts_to IS 'The aggregate changes, the use case starts or the component handles the event, which may come from another aggregate or domain.';
-CREATE TABLE involves (source_id VARCHAR NOT NULL REFERENCES domain_rule (id), target_id VARCHAR NOT NULL REFERENCES aggregate (id), PRIMARY KEY (source_id, target_id));
-COMMENT ON TABLE involves IS 'The domain rule, under its domain, holds across this aggregate and the others it names.';
-CREATE TABLE deepens (source_id VARCHAR NOT NULL REFERENCES design_flow (id), target_id VARCHAR NOT NULL REFERENCES flow (id), PRIMARY KEY (source_id, target_id));
-COMMENT ON TABLE deepens IS 'The technical flow says how the system carries out the flow.';
+CREATE TABLE raises (source_id VARCHAR NOT NULL REFERENCES command (id), target_id VARCHAR NOT NULL REFERENCES domain_event (id), PRIMARY KEY (source_id, target_id));
+COMMENT ON TABLE raises IS 'The command raises the event, of the aggregate it changes.';
+CREATE TABLE checks (source_id VARCHAR NOT NULL REFERENCES command (id), target_id VARCHAR NOT NULL REFERENCES specification (id), PRIMARY KEY (source_id, target_id));
+COMMENT ON TABLE checks IS 'The command checks the specification, of its own domain, before it acts.';
+CREATE TABLE reads (source_id VARCHAR NOT NULL REFERENCES reads_source (id), target_id VARCHAR NOT NULL REFERENCES aggregate (id), PRIMARY KEY (source_id, target_id));
+COMMENT ON TABLE reads IS 'The specification or read model reads the aggregate, of its own domain.';
+CREATE TABLE selects_by (source_id VARCHAR NOT NULL REFERENCES query (id), target_id VARCHAR NOT NULL REFERENCES specification (id), PRIMARY KEY (source_id, target_id));
+COMMENT ON TABLE selects_by IS 'The query selects the records that satisfy the specification, of its own domain.';
+CREATE TABLE hears (source_id VARCHAR NOT NULL UNIQUE REFERENCES policy (id), target_id VARCHAR NOT NULL REFERENCES domain_event (id), PRIMARY KEY (source_id, target_id));
+COMMENT ON TABLE hears IS 'The policy hears the event: one event per policy, of its own domain or another domain''s published one.';
+CREATE TABLE calls (source_id VARCHAR NOT NULL REFERENCES operation (id), target_id VARCHAR NOT NULL REFERENCES domain_service (id), PRIMARY KEY (source_id, target_id));
+COMMENT ON TABLE calls IS 'The command or query uses the domain service, of its own domain.';
+CREATE TABLE fulfills (source_id VARCHAR NOT NULL REFERENCES flow_step (id), target_id VARCHAR NOT NULL REFERENCES uc_requirement (id), PRIMARY KEY (source_id, target_id));
+COMMENT ON TABLE fulfills IS 'The flow step fulfills the UC requirement, of its own use case; this designs the requirement.';
+CREATE TABLE invokes (source_id VARCHAR NOT NULL UNIQUE REFERENCES flow_step (id), target_id VARCHAR NOT NULL REFERENCES operation (id), PRIMARY KEY (source_id, target_id));
+COMMENT ON TABLE invokes IS 'The flow step invokes the command or query: at most one per step.';
+CREATE TABLE happens_in (source_id VARCHAR NOT NULL UNIQUE REFERENCES flow_step (id), target_id VARCHAR NOT NULL REFERENCES view (id), PRIMARY KEY (source_id, target_id));
+COMMENT ON TABLE happens_in IS 'The flow step happens in the view: at most one per step.';
+CREATE TABLE exchanges_with (source_id VARCHAR NOT NULL REFERENCES flow_step (id), target_id VARCHAR NOT NULL REFERENCES integration (id), PRIMARY KEY (source_id, target_id));
+COMMENT ON TABLE exchanges_with IS 'The flow step exchanges with the integration''s outside system.';
+CREATE TABLE renders (source_id VARCHAR NOT NULL REFERENCES ui_component (id), target_id VARCHAR NOT NULL REFERENCES view (id), PRIMARY KEY (source_id, target_id));
+COMMENT ON TABLE renders IS 'The UI component renders the view, or part of it.';
+CREATE TABLE follows (source_id VARCHAR NOT NULL REFERENCES follows_source (id), target_id VARCHAR NOT NULL REFERENCES pattern (id), PRIMARY KEY (source_id, target_id));
+COMMENT ON TABLE follows IS 'The domain or use case follows the pattern, and gives a value for each of its settings in setting_value rows.';
 CREATE TABLE meets (source_id VARCHAR NOT NULL REFERENCES meets_source (id), target_id VARCHAR NOT NULL REFERENCES standard_rule (id), PRIMARY KEY (source_id, target_id));
-COMMENT ON TABLE meets IS 'The component, test or technical step follows the standard rule.';
+COMMENT ON TABLE meets IS 'The technical record or test follows the standard rule.';
+CREATE TABLE about (source_id VARCHAR NOT NULL REFERENCES question (id), target_id VARCHAR NOT NULL REFERENCES record_id (id), PRIMARY KEY (source_id, target_id));
+COMMENT ON TABLE about IS 'The open question concerns the record.';
 
 INSERT INTO meta_relation VALUES
-  ('relates_to', NULL, 'Relates to', 'Related to by', NULL),
-  ('applies', NULL, 'Applies', 'Applied by', NULL),
-  ('follows', NULL, 'Follows', 'Followed by', NULL),
-  ('fulfills', NULL, 'Carries out', 'Carried out in', NULL),
-  ('uses', NULL, 'Uses', 'Used by', NULL),
-  ('satisfies', 'design', 'Satisfies', 'Designed by', NULL),
-  ('implements', NULL, 'Implements', 'Implemented by', NULL),
-  ('depends_on', NULL, 'Depends on', 'Depended on by', NULL),
-  ('proves', 'proof', 'Proves', 'Proved by', NULL),
-  ('supports', NULL, 'Supports', 'Supported by', NULL),
-  ('about', NULL, 'About', 'Questions about this', NULL),
-  ('carries_out', NULL, 'Carries out', 'Carried out by flow', NULL),
-  ('runs', NULL, 'Runs', 'Run by', NULL),
-  ('covers', NULL, 'Covers', 'Covered by', NULL),
-  ('has_one', NULL, 'Has one', 'Part of', NULL),
-  ('has_many', NULL, 'Has many', 'Part of', NULL),
-  ('refers_to', NULL, 'Refers to', 'Referred to by', NULL),
-  ('raised_by', NULL, 'Raised by', 'Raises', NULL),
-  ('reacts_to', NULL, 'Reacts to', 'Reacted to by', NULL),
-  ('involves', NULL, 'Involves', 'Involved in', NULL),
-  ('deepens', NULL, 'Deepens', 'Deepened by', NULL),
-  ('meets', NULL, 'Meets', 'Met by', NULL);
+  ('has_one', NULL, 'product', 'Has one', 'Part of', NULL),
+  ('has_many', NULL, 'product', 'Has many', 'Part of', NULL),
+  ('raises', NULL, 'aggregate', 'Raises', 'Raised by', NULL),
+  ('checks', NULL, 'domain', 'Checks', 'Checked by', NULL),
+  ('reads', NULL, 'domain', 'Reads', 'Read by', NULL),
+  ('selects_by', NULL, 'domain', 'Selects by', 'Selects for', NULL),
+  ('hears', NULL, 'product', 'Hears', 'Heard by', NULL),
+  ('calls', NULL, 'domain', 'Calls', 'Called by', NULL),
+  ('fulfills', 'design', 'product', 'Fulfills', 'Fulfilled by', NULL),
+  ('invokes', NULL, 'product', 'Invokes', 'Invoked by', NULL),
+  ('happens_in', NULL, 'product', 'Happens in', 'Hosts', NULL),
+  ('exchanges_with', NULL, 'product', 'Exchanges with', 'Exchanged with by', NULL),
+  ('renders', NULL, 'product', 'Renders', 'Rendered by', NULL),
+  ('follows', NULL, 'product', 'Follows', 'Followed by', NULL),
+  ('meets', NULL, 'product', 'Meets', 'Met by', NULL),
+  ('about', NULL, 'product', 'About', 'Questions about this', NULL);
 
 INSERT INTO meta_relation_pair VALUES
-  ('relates_to', 'aggregate', 'aggregate', 'One aggregate refers to another by ID.'),
-  ('applies', 'use_case', 'domain_rule', 'The use case relies on the domain rule.'),
-  ('follows', 'use_case', 'pattern', 'The use case follows the pattern and gives a value for each of its settings.'),
-  ('follows', 'domain', 'pattern', 'The whole domain follows the pattern, and so owes each of its rules.'),
-  ('fulfills', 'flow', 'requirement', 'The flow carries out the requirement.'),
-  ('fulfills', 'flow', 'domain_rule', 'The flow carries out the domain rule.'),
-  ('fulfills', 'flow', 'interaction_requirement', 'The flow carries out the interaction requirement.'),
-  ('fulfills', 'view', 'requirement', 'The view carries out the requirement.'),
-  ('fulfills', 'endpoint', 'requirement', 'The endpoint carries out the requirement.'),
-  ('fulfills', 'interaction_requirement', 'requirement', 'The interaction requirement carries out the use case requirement at a view, endpoint or flow.'),
-  ('fulfills', 'interaction_requirement', 'domain_rule', 'The interaction requirement carries out the domain rule at a view, endpoint or flow.'),
-  ('fulfills', 'interaction_requirement', 'pattern_rule', 'The interaction requirement carries out the pattern rule at its view, endpoint or flow.'),
-  ('fulfills', 'flow_step', 'requirement', 'The step carries out the requirement.'),
-  ('fulfills', 'flow_step', 'interaction_requirement', 'The step carries out the interaction requirement.'),
-  ('fulfills', 'flow_step', 'domain_rule', 'The step carries out the domain rule.'),
-  ('fulfills', 'flow_step', 'pattern_rule', 'The step carries out the pattern rule.'),
-  ('uses', 'flow', 'view', 'The flow passes through the view.'),
-  ('uses', 'flow', 'endpoint', 'The flow calls the endpoint.'),
-  ('uses', 'view', 'endpoint', 'The view calls the endpoint.'),
-  ('uses', 'flow_step', 'view', 'The step happens in the view.'),
-  ('uses', 'flow_step', 'endpoint', 'The step calls the endpoint.'),
-  ('uses', 'flow_step', 'component', 'The step is carried out by the component.'),
-  ('uses', 'design_step', 'component', 'The step is carried out by the component.'),
-  ('satisfies', 'component', 'requirement', 'The component designs or implements the requirement.'),
-  ('satisfies', 'component', 'domain_rule', 'The component enforces the domain rule.'),
-  ('satisfies', 'component', 'interaction_requirement', 'The component designs or implements the interaction requirement.'),
-  ('satisfies', 'component', 'pattern_rule', 'The component designs or implements the pattern rule, for the domain it sits in.'),
-  ('satisfies', 'design_step', 'requirement', 'The step designs the requirement, through the component it uses.'),
-  ('satisfies', 'design_step', 'domain_rule', 'The step enforces the domain rule, through the component it uses.'),
-  ('satisfies', 'design_step', 'interaction_requirement', 'The step designs the interaction requirement, through the component it uses.'),
-  ('satisfies', 'design_step', 'pattern_rule', 'The step designs the pattern rule, for the domain it sits in, through the component it uses.'),
-  ('implements', 'component', 'endpoint', 'The component serves the endpoint.'),
-  ('implements', 'component', 'view', 'The component renders the view.'),
-  ('depends_on', 'component', 'component', 'The component calls or imports the other.'),
-  ('proves', 'test', 'requirement', 'The test proves the requirement.'),
-  ('proves', 'test', 'domain_rule', 'The test proves the domain rule.'),
-  ('proves', 'test', 'interaction_requirement', 'The test proves the interaction requirement.'),
-  ('proves', 'test', 'pattern_rule', 'The test proves the pattern rule, for the domain it sits in.'),
-  ('supports', 'test', 'requirement', 'The test checks a mechanism that backs the use case requirement without proving it.'),
-  ('supports', 'test', 'domain_rule', 'The test checks a mechanism that backs the domain rule without proving it.'),
-  ('supports', 'test', 'interaction_requirement', 'The test checks a mechanism that backs the interaction requirement without proving it.'),
-  ('supports', 'test', 'pattern_rule', 'The test checks a mechanism that backs the pattern rule without proving it.'),
-  ('about', 'question', '*', 'The open question concerns that record.'),
-  ('carries_out', 'flow', 'use_case', 'The flow carries out the use case.'),
-  ('runs', 'test', 'flow', 'The test runs the flow end to end.'),
-  ('covers', 'test', 'component', 'The test exercises the component.'),
   ('has_one', 'entity', 'entity', 'The entity holds exactly one of the other entity, as a part of it (one to one).'),
   ('has_many', 'entity', 'entity', 'The entity holds any number of the other entity, as parts of it (one to many).'),
-  ('refers_to', 'entity', 'entity', 'The entity holds a reference to one of the other entity, which may sit in another aggregate or domain (many to one).'),
-  ('raised_by', 'domain_event', 'entity', 'The event is raised when that entity of its aggregate changes.'),
-  ('reacts_to', 'aggregate', 'domain_event', 'The aggregate changes in response to the event, which may come from another aggregate or domain.'),
-  ('reacts_to', 'use_case', 'domain_event', 'The use case starts when the event happens.'),
-  ('reacts_to', 'component', 'domain_event', 'The component handles the event.'),
-  ('involves', 'domain_rule', 'aggregate', 'The domain rule, under its domain, holds across this aggregate and the others it names.'),
-  ('deepens', 'design_flow', 'flow', 'The technical flow says how the system carries out the flow.'),
-  ('meets', 'component', 'standard_rule', 'The component follows the standard rule.'),
-  ('meets', 'test', 'standard_rule', 'The test follows the standard rule.'),
-  ('meets', 'design_step', 'standard_rule', 'The design step follows the standard rule.');
+  ('raises', 'command', 'domain_event', 'The command raises the event, of the aggregate it changes.'),
+  ('checks', 'command', 'specification', 'The command checks the specification before it acts.'),
+  ('reads', 'specification', 'aggregate', 'The specification is a predicate over the aggregate.'),
+  ('reads', 'read_model', 'aggregate', 'The read model shows the aggregate''s data.'),
+  ('selects_by', 'query', 'specification', 'The query selects the records that satisfy the specification.'),
+  ('hears', 'policy', 'domain_event', 'Whenever the event happens, the policy sends its command.'),
+  ('calls', 'command', 'domain_service', 'The command uses the domain service.'),
+  ('calls', 'query', 'domain_service', 'The query uses the domain service.'),
+  ('fulfills', 'flow_step', 'uc_requirement', 'The step fulfills the UC requirement of its use case.'),
+  ('invokes', 'flow_step', 'command', 'The step sends the command.'),
+  ('invokes', 'flow_step', 'query', 'The step asks the query.'),
+  ('happens_in', 'flow_step', 'view', 'The step happens in the view.'),
+  ('exchanges_with', 'flow_step', 'integration', 'The step exchanges with the outside system.'),
+  ('renders', 'ui_component', 'view', 'The UI component renders the view, or part of it.'),
+  ('follows', 'domain', 'pattern', 'The whole domain follows the pattern, and so owes each of its rules.'),
+  ('follows', 'use_case', 'pattern', 'The use case follows the pattern and gives a value for each of its settings.'),
+  ('meets', 'repository', 'standard_rule', 'The repository follows the standard rule.'),
+  ('meets', 'data_model', 'standard_rule', 'The data model follows the standard rule.'),
+  ('meets', 'table', 'standard_rule', 'The table follows the standard rule.'),
+  ('meets', 'value_type', 'standard_rule', 'The value type follows the standard rule.'),
+  ('meets', 'predicate', 'standard_rule', 'The predicate follows the standard rule.'),
+  ('meets', 'event_type', 'standard_rule', 'The event type follows the standard rule.'),
+  ('meets', 'projection', 'standard_rule', 'The projection follows the standard rule.'),
+  ('meets', 'command_handler', 'standard_rule', 'The command handler follows the standard rule.'),
+  ('meets', 'query_handler', 'standard_rule', 'The query handler follows the standard rule.'),
+  ('meets', 'event_handler', 'standard_rule', 'The event handler follows the standard rule.'),
+  ('meets', 'service', 'standard_rule', 'The service follows the standard rule.'),
+  ('meets', 'ui_component', 'standard_rule', 'The UI component follows the standard rule.'),
+  ('meets', 'endpoint_handler', 'standard_rule', 'The endpoint handler follows the standard rule.'),
+  ('meets', 'adapter', 'standard_rule', 'The adapter follows the standard rule.'),
+  ('meets', 'constraint_test', 'standard_rule', 'The test follows the standard rule.'),
+  ('meets', 'invariant_test', 'standard_rule', 'The test follows the standard rule.'),
+  ('meets', 'specification_test', 'standard_rule', 'The test follows the standard rule.'),
+  ('meets', 'policy_test', 'standard_rule', 'The test follows the standard rule.'),
+  ('meets', 'domain_service_test', 'standard_rule', 'The test follows the standard rule.'),
+  ('meets', 'use_case_test', 'standard_rule', 'The test follows the standard rule.'),
+  ('meets', 'view_test', 'standard_rule', 'The test follows the standard rule.'),
+  ('meets', 'endpoint_test', 'standard_rule', 'The test follows the standard rule.'),
+  ('meets', 'flow_test', 'standard_rule', 'The test follows the standard rule.'),
+  ('meets', 'integration_test', 'standard_rule', 'The test follows the standard rule.'),
+  ('meets', 'pattern_rule_test', 'standard_rule', 'The test follows the standard rule.'),
+  ('about', 'question', '*', 'The open question concerns that record.');
 
 INSERT INTO meta_table SELECT name, 'link', NULL FROM meta_relation;
 

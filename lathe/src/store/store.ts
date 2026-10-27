@@ -56,7 +56,7 @@ export type Command =
   | { op: 'add'; table: string; row: Row }
   /** Changes columns of a row; a value of null clears the column. Keys and a record's parent columns stay (see move). */
   | { op: 'set'; table: string; key: KeyInput; changes: Record<string, Value | null> }
-  /** Moves a record under another parent, setting its parent columns, and its descendants' derived ones, to match. */
+  /** Moves a record under another parent, setting its parent column (and clearing the other, for a kind with two). */
   | { op: 'move'; id: string; parent: string }
   /** Links two records with a relation. */
   | { op: 'link'; relation: string; source: string; target: string }
@@ -394,14 +394,8 @@ export class Store {
       for (const table of order) {
         const rows = rowsOf(table);
         if (!rows.length) continue;
-        const ordered = this.levels(schema.tables[table], rows, origins);
-        if ('problems' in ordered) {
-          await builder.run('ROLLBACK');
-          await discard();
-          throw new StoreError(ordered.problems);
-        }
         try {
-          for (const level of ordered.levels) await insertRows(builder, schema.tables[table], level);
+          await insertRows(builder, schema.tables[table], rows);
         } catch (error) {
           await builder.run('ROLLBACK');
           const found = await this.diagnose(builder, schema, table, order, rowsOf, origins, error);
@@ -428,44 +422,6 @@ export class Store {
     } finally {
       builder.closeSync();
     }
-  }
-
-  // Splits a table's rows into levels, so a row comes in a later level than the row of the same table it points at
-  // (a sub-layer after its layer): DuckDB checks a row's foreign key against the rows already in the table, not the
-  // others of the same statement, so each level is inserted on its own. Rows that point at each other in a cycle
-  // cannot be loaded.
-  private levels(table: TableDescription, rows: Row[], origins: WeakMap<Row, Origin>): { levels: Row[][] } | { problems: StoreProblem[] } {
-    const self = table.foreignKeys.filter((fk) => fk.table === table.name);
-    if (!self.length) return { levels: [rows] };
-    const byKey = new Map(rows.map((r) => [rowKey(table, r), r]));
-    const depth = new Map<Row, number>();
-    const visiting = new Set<Row>();
-    const problems: StoreProblem[] = [];
-    const visit = (row: Row): number => {
-      const known = depth.get(row);
-      if (known !== undefined) return known;
-      if (visiting.has(row)) {
-        problems.push(problemAt(origins, row, { rule: 'foreign-key', table: table.name, key: describeKey(table, row), message: `${table.name} ${describeKey(table, row)} sits inside itself, through a cycle of ${table.name} rows` }));
-        depth.set(row, 0);
-        return 0;
-      }
-      visiting.add(row);
-      let level = 0;
-      for (const fk of self) {
-        const at = fk.references.indexOf(table.primaryKey[0]);
-        const value = at < 0 ? undefined : row[fk.columns[at]];
-        const target = value === undefined ? undefined : byKey.get(String(value));
-        if (target && target !== row) level = Math.max(level, visit(target) + 1);
-      }
-      visiting.delete(row);
-      depth.set(row, level);
-      return level;
-    };
-    for (const row of rows) visit(row);
-    if (problems.length) return { problems: [...new Map(problems.map((p) => [p.key, p])).values()] };
-    const levels: Row[][] = [];
-    for (const row of rows) (levels[depth.get(row)!] ??= []).push(row);
-    return { levels };
   }
 
   // Finds which rows of a table broke a key or check, after its insert failed: first the foreign keys and unique keys,
@@ -517,11 +473,9 @@ export class Store {
       for (const other of order) {
         if (other === failed) break;
         const before = rowsOf(other);
-        const split = this.levels(schema.tables[other], before, origins);
-        for (const level of 'levels' in split ? split.levels : [before]) if (level.length) await insertRows(builder, schema.tables[other], level);
+        if (before.length) await insertRows(builder, schema.tables[other], before);
       }
-      const ordered = this.levels(table, rows, origins);
-      for (const row of 'levels' in ordered ? ordered.levels.flat() : rows) {
+      for (const row of rows) {
         try {
           await insertRows(builder, table, [row]);
         } catch (rowError) {
@@ -702,59 +656,12 @@ export class Store {
     return tables.get(table.name)?.get(rowKey(table, values));
   }
 
-  // The record's parent: the first of its kind's parent columns, nearest first, that holds a value.
-  private parentOf(schema: SchemaDescription, kind: string, row: Row): string | undefined {
-    for (const p of schema.kinds[kind].parents) if (row[p.column] !== undefined) return String(row[p.column]);
-    return undefined;
-  }
-
   private kindOf(schema: SchemaDescription, tables: Tables, id: string): string | undefined {
     return Object.keys(schema.kinds).find((k) => tables.get(k)?.has(id));
   }
 
-  // The record and its ancestors, nearest first, as (kind, id).
-  private ancestry(schema: SchemaDescription, tables: Tables, id: string): { kind: string; id: string }[] {
-    const chain: { kind: string; id: string }[] = [];
-    let current: string | undefined = id;
-    while (current && chain.length < 64) {
-      const kind = this.kindOf(schema, tables, current);
-      if (!kind) break;
-      chain.push({ kind, id: current });
-      current = this.parentOf(schema, kind, tables.get(kind)!.get(current)!);
-    }
-    return chain;
-  }
-
-  // The parent columns a record under `parent` holds: the column for the parent's kind, and every parent column that
-  // is required or shares a foreign key with one already set, filled from the parent's ancestry. The rest are cleared.
-  private parentColumns(schema: SchemaDescription, tables: Tables, kind: string, parent: string): Record<string, string | undefined> | string {
-    const parentKind = this.kindOf(schema, tables, parent);
-    if (!parentKind) return `there is no record ${parent}`;
-    const options = schema.kinds[kind].parents;
-    const chosen = options.find((p) => p.kind === parentKind);
-    if (!chosen) return `a ${kind} sits under ${options.map((p) => p.kind).join(' or ')}, not under ${parentKind} ${parent}`;
-    const table = schema.tables[kind];
-    const required = new Set(table.columns.filter((c) => c.required).map((c) => c.name));
-    const names = new Set(options.map((p) => p.column));
-    const set = new Set([chosen.column]);
-    for (let grew = true; grew; ) {
-      grew = false;
-      for (const column of names) {
-        if (set.has(column)) continue;
-        if (required.has(column) || table.foreignKeys.some((fk) => fk.columns.includes(column) && fk.columns.some((c) => set.has(c)))) {
-          set.add(column);
-          grew = true;
-        }
-      }
-    }
-    const ancestry = this.ancestry(schema, tables, parent);
-    const values: Record<string, string | undefined> = {};
-    for (const option of options) {
-      values[option.column] = set.has(option.column) ? ancestry.find((a) => a.kind === option.kind)?.id : undefined;
-    }
-    return values;
-  }
-
+  // Moves a record under another parent: the column for the new parent's kind takes its ID, and the record's other
+  // parent column, if its kind has two, is cleared. What sits inside the record moves with it unchanged.
   private moveRecord(
     schema: SchemaDescription,
     tables: Tables,
@@ -764,36 +671,15 @@ export class Store {
     place: (table: string, row: Row) => void,
   ) {
     const kind = this.kindOf(schema, tables, id) ?? fail('missing', `there is no record ${id}`);
-    if (!schema.kinds[kind].parents.length) fail('command', `a ${kind} sits under nothing, so it cannot move`);
-    if (this.ancestry(schema, tables, parent).some((a) => a.id === id)) fail('command', `${id} cannot move under ${parent}, which sits inside it`);
-    const columns = this.parentColumns(schema, tables, kind, parent);
-    if (typeof columns === 'string') fail('parent', columns);
-    const relocate = (recordKind: string, row: Row, values: Record<string, string | undefined>) => {
-      const next: Row = { ...row };
-      for (const [column, value] of Object.entries(values)) {
-        if (value === undefined) delete next[column];
-        else next[column] = value;
-      }
-      if (Object.keys(values).some((column) => next[column] !== row[column])) place(recordKind, next);
-    };
-    relocate(kind, tables.get(kind)!.get(id)!, columns as Record<string, string | undefined>);
-    // Descendants keep their parent, and take its new place for the parent columns derived from it.
-    const children = new Map<string, { kind: string; id: string }[]>();
-    for (const k of Object.keys(schema.kinds)) {
-      for (const row of tables.get(k)?.values() ?? []) {
-        const p = this.parentOf(schema, k, row);
-        if (p) children.set(p, [...(children.get(p) ?? []), { kind: k, id: String(row.id) }]);
-      }
-    }
-    const walk = (of: string) => {
-      for (const child of children.get(of) ?? []) {
-        const row = tables.get(child.kind)!.get(child.id)!;
-        const values = this.parentColumns(schema, tables, child.kind, of);
-        if (typeof values !== 'string') relocate(child.kind, row, values);
-        walk(child.id);
-      }
-    };
-    walk(id);
+    const options = schema.kinds[kind].parents;
+    if (!options.length) fail('command', `a ${kind} has no parent, so it cannot move`);
+    const parentKind = this.kindOf(schema, tables, parent) ?? fail('parent', `there is no record ${parent}`);
+    const chosen = options.find((p) => p.kind === parentKind) ?? fail('parent', `a ${kind} sits under ${options.map((p) => p.kind).join(' or ')}, not under ${parentKind} ${parent}`);
+    const row = tables.get(kind)!.get(id)!;
+    const next: Row = { ...row };
+    for (const option of options) delete next[option.column];
+    next[chosen.column] = parent;
+    if (options.some((o) => next[o.column] !== row[o.column])) place(kind, next);
   }
 
   // What removing a row takes with it: a record's parts (and theirs), and the links it starts.

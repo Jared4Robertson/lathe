@@ -40,9 +40,45 @@ describe('the schema description', () => {
         const fk = table.foreignKeys.find((f) => f.columns[0] === parent.column && f.table === parent.kind);
         expect(fk, `${kind.name}.${parent.column} -> ${parent.kind}`).toBeTruthy();
       }
-      // At least one parent column is required, so every record but a product sits somewhere.
-      if (kind.name !== 'product') expect(kind.parents.some((p) => table.columns.find((c) => c.name === p.column)!.required), kind.name).toBe(true);
+      // One parent: a lone parent column is required; two are both optional, with a CHECK that exactly one is given.
+      const columns = kind.parents.map((p) => table.columns.find((c) => c.name === p.column)!);
+      if (columns.length === 1) expect(columns[0].required, kind.name).toBe(true);
+      if (columns.length === 2) {
+        expect(columns.map((c) => c.required), kind.name).toEqual([false, false]);
+        expect(table.checks, kind.name).toContainEqual(expect.stringContaining(`(${columns[0].name} IS NULL) != (${columns[1].name} IS NULL)`));
+      }
+      expect(columns.length, kind.name).toBeLessThanOrEqual(2);
     }
+  });
+
+  it('has the kinds with no owner the plan names, each taking its product or domain from its ID', () => {
+    const ownerless = Object.values(schema.kinds).filter((k) => !k.parents.length).map((k) => [k.name, k.idScope]);
+    expect(ownerless.sort()).toEqual([
+      ['integration', 'product'],
+      ['product', null],
+      ['specification', 'domain'],
+      ['ui_component', 'product'],
+      ['value_object', 'product'],
+      ['view', 'product'],
+    ]);
+  });
+
+  it('orders the kinds stage by stage, with product first and open questions last', () => {
+    const stages = schema.stages.map((s) => s.name);
+    expect(stages).toEqual(['domain-model', 'use-cases', 'interaction-design', 'technical-specification', 'test-plan']);
+    const kinds = Object.values(schema.kinds).sort((a, b) => a.position! - b.position!);
+    expect(kinds[0].name).toBe('product');
+    expect(kinds.at(-1)!.name).toBe('question');
+    const inner = kinds.slice(1, -1).map((k) => stages.indexOf(k.stage!));
+    expect(inner).toEqual([...inner].sort((a, b) => a - b));
+    expect(inner).not.toContain(-1);
+    expect(kinds.map((k) => k.position)).toEqual(kinds.map((_, i) => i + 1));
+  });
+
+  it('makes each obligation kind a member of the obligation supertype', () => {
+    const obligations = Object.values(schema.kinds).filter((k) => k.obligation).map((k) => k.name).sort();
+    expect(obligations).toEqual(schema.supertypes.obligation);
+    expect(obligations).toEqual(['api_requirement', 'constraint', 'domain_service', 'invariant', 'pattern_rule', 'policy', 'specification', 'standard_rule', 'uc_requirement', 'view_requirement']);
   });
 
   it("fits each relation's pairs to its link table's ends", () => {
@@ -75,4 +111,3 @@ describe('the schema description', () => {
   });
 });
 
-// Until the engine's cutover deletes lathe/meta/, the schema holds the same meta-model.

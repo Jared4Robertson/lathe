@@ -89,6 +89,15 @@ export interface TableDescription {
   checks: string[];
 }
 
+/** A stage, in the order a product is modeled; links run from what is defined first to what is defined later. */
+export type Stage = 'domain-model' | 'use-cases' | 'interaction-design' | 'technical-specification' | 'test-plan';
+
+/** What a kind's IDs start with, followed by a hyphen: its product's ID, its domain's ID or its parent's ID. */
+export type IdScope = 'product' | 'domain' | 'parent';
+
+/** What a link's two ends must share. */
+export type LinkScope = 'product' | 'domain' | 'aggregate';
+
 export interface KindParent {
   kind: string;
   column: string;
@@ -97,18 +106,25 @@ export interface KindParent {
 export interface KindDescription {
   name: string;
   label: string;
-  stage: 'define' | 'design' | null;
-  section: string | null;
-  /** full: designed, built and proved; proof: proved only; none: no obligation. */
-  obligation: 'none' | 'full' | 'proof';
+  /** The stage its records belong to; null for product and open question. */
+  stage: Stage | null;
+  /** Whether its records are obligations: designed, built and proved. */
+  obligation: boolean;
   idPattern: string | null;
   idExample: string | null;
+  /** What its IDs start with; null when its IDs are free (a product's own kind). */
+  idScope: IdScope | null;
   /** For a product's own kind, the product that declares it. */
   productId: string | null;
   /** Its place in the order people read kinds, from 1 (meta_kind.position); null for a product's own kind, which follows Lathe's by name. */
   position: number | null;
   description: string | null;
-  /** The kinds its records may sit under, nearest first; a record's parent is the first of these columns with a value. */
+  /**
+   * The kinds its records may sit under, and the column naming each. A record has exactly one parent: a kind with two
+   * (an endpoint under a command or a query, a table under an entity or a read model) gives a value in exactly one
+   * column. Empty for a product and for a kind with no owner (value object, specification, view, integration, UI
+   * component), whose product, or domain, follows from its ID.
+   */
   parents: KindParent[];
   /** The supertype tables its records are members of. */
   supertypes: string[];
@@ -124,6 +140,8 @@ export interface RelationPair {
 export interface RelationDescription {
   name: string;
   role: 'design' | 'proof' | null;
+  /** What its two ends must share: product (every link), domain or aggregate. */
+  scope: LinkScope;
   forwardLabel: string;
   reverseLabel: string;
   productId: string | null;
@@ -135,9 +153,9 @@ export interface RelationDescription {
   pairs: RelationPair[];
 }
 
-export interface SectionDescription {
-  name: string;
-  stage: 'define' | 'design' | null;
+export interface StageDescription {
+  name: Stage;
+  /** Its place in the order, from 1. */
   position: number;
   label: string;
   description: string;
@@ -152,7 +170,8 @@ export interface SchemaDescription {
   relations: Record<string, RelationDescription>;
   /** Each supertype table with its member kinds. */
   supertypes: Record<string, string[]>;
-  sections: SectionDescription[];
+  /** The stages, in order. */
+  stages: StageDescription[];
 }
 
 /** A SQL string literal. */
@@ -203,7 +222,7 @@ function dependencyOrder(tables: Record<string, TableDescription>): string[] {
   return order;
 }
 
-/** Describes the schema of the connection's current database: every table, kind, relation, supertype and folder. */
+/** Describes the schema of the connection's current database: every table, kind, relation, supertype and stage. */
 export async function describeSchema(connection: DuckDBConnection): Promise<SchemaDescription> {
   const [db] = await rows<{ db: string }>(connection, 'SELECT current_database() AS db');
   const where = `database_name = ${sqlString(db.db)} AND schema_name = 'main'`;
@@ -282,23 +301,23 @@ export async function describeSchema(connection: DuckDBConnection): Promise<Sche
   for (const k of await rows<{
     name: string;
     label: string;
-    stage: 'define' | 'design' | null;
-    section: string | null;
-    obligation: 'none' | 'full' | 'proof';
+    stage: Stage | null;
+    position: number | null;
+    obligation: boolean;
     id_pattern: string | null;
     id_example: string | null;
+    id_scope: IdScope | null;
     product_id: string | null;
-    position: number | null;
   }>(connection, 'SELECT * FROM meta_kind ORDER BY name')) {
     if (tables[k.name]?.role !== 'kind') throw new Error(`The kind ${k.name} has no kind table of the same name.`);
     kinds[k.name] = {
       name: k.name,
       label: k.label,
       stage: k.stage,
-      section: k.section,
       obligation: k.obligation,
       idPattern: k.id_pattern,
       idExample: k.id_example,
+      idScope: k.id_scope,
       productId: k.product_id,
       position: k.position === null ? null : Number(k.position),
       description: tables[k.name].description,
@@ -311,7 +330,7 @@ export async function describeSchema(connection: DuckDBConnection): Promise<Sche
     'SELECT * FROM meta_relation_pair ORDER BY relation, source_kind, target_kind',
   );
   const relations: Record<string, RelationDescription> = {};
-  for (const r of await rows<{ name: string; role: 'design' | 'proof' | null; forward_label: string; reverse_label: string; product_id: string | null }>(
+  for (const r of await rows<{ name: string; role: 'design' | 'proof' | null; scope: LinkScope; forward_label: string; reverse_label: string; product_id: string | null }>(
     connection,
     'SELECT * FROM meta_relation ORDER BY name',
   )) {
@@ -321,6 +340,7 @@ export async function describeSchema(connection: DuckDBConnection): Promise<Sche
     relations[r.name] = {
       name: r.name,
       role: r.role,
+      scope: r.scope,
       forwardLabel: r.forward_label,
       reverseLabel: r.reverse_label,
       productId: r.product_id,
@@ -330,10 +350,10 @@ export async function describeSchema(connection: DuckDBConnection): Promise<Sche
       pairs: pairs.filter((p) => p.relation === r.name).map((p) => ({ source: p.source_kind, target: p.target_kind, description: p.description })),
     };
   }
-  const sections = (await rows<SectionDescription>(connection, 'SELECT * FROM meta_section ORDER BY stage NULLS LAST, position')).map((s) => ({
+  const stages = (await rows<StageDescription>(connection, 'SELECT * FROM meta_stage ORDER BY position')).map((s) => ({
     ...s,
     position: Number(s.position),
   }));
   const loadOrder = dependencyOrder(tables).filter((name) => tables[name].stored);
-  return { tables, loadOrder, kinds, relations, supertypes, sections };
+  return { tables, loadOrder, kinds, relations, supertypes, stages };
 }

@@ -1,6 +1,6 @@
 # Brief: Lathe's own spec describes the data model (database first, step 7)
 
-Read [00-common-rules.md](00-common-rules.md), the plan [notes/plans/database-first.md](../plans/database-first.md) and [notes/db-first-interfaces.md](../db-first-interfaces.md) first. **Base branch: `db-first`.** Your worktree starts from main, so first run `git reset --hard db-first`. Finish with your branch ready to merge into `db-first`.
+Read [00-common-rules.md](00-common-rules.md), the plan [notes/plans/database-first.md](../plans/database-first.md) and [notes/store-interfaces.md](../store-interfaces.md) first. **Base branch: `db-first`.** Your worktree starts from main, so first run `git reset --hard db-first`. Finish with your branch ready to merge into `db-first`.
 
 ## Goal
 Briefs 98–102 rebuilt Lathe on typed tables stored as JSONL, with the CLI, MCP tools and an editing app. Lathe's own spec (in `data/`) still describes the old Markdown model. Update it so it describes Lathe as it now is, writing only through the CLI (`lathe add`, `set`, `move`, `link`, `remove`), never by editing JSONL by hand.
