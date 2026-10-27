@@ -1,0 +1,12 @@
+{"follower_id":"TL-LEND-UC01","pattern_id":"TL-PAT-LIBRARIAN-ACTION","setting":"record","value":"Member"}
+{"follower_id":"TL-LEND-UC01","pattern_id":"TL-PAT-LIBRARIAN-ACTION","setting":"required_input","value":"The member's name and a valid email address."}
+{"follower_id":"TL-LEND-UC01","pattern_id":"TL-PAT-LIBRARIAN-ACTION","setting":"result","value":"The new member with their ID, which goes on their card."}
+{"follower_id":"TL-LEND-UC02","pattern_id":"TL-PAT-LIBRARIAN-ACTION","setting":"record","value":"Tool"}
+{"follower_id":"TL-LEND-UC02","pattern_id":"TL-PAT-LIBRARIAN-ACTION","setting":"required_input","value":"The tool's name; a description is optional."}
+{"follower_id":"TL-LEND-UC02","pattern_id":"TL-PAT-LIBRARIAN-ACTION","setting":"result","value":"The tool's catalog entry with its ID, which goes on its tag."}
+{"follower_id":"TL-LEND-UC04","pattern_id":"TL-PAT-LIBRARIAN-ACTION","setting":"record","value":"Loan"}
+{"follower_id":"TL-LEND-UC04","pattern_id":"TL-PAT-LIBRARIAN-ACTION","setting":"required_input","value":"The tool's condition, good or needs repair; a note is optional."}
+{"follower_id":"TL-LEND-UC04","pattern_id":"TL-PAT-LIBRARIAN-ACTION","setting":"result","value":"The returned loan, saying whether it came back late."}
+{"follower_id":"TL-LEND-UC05","pattern_id":"TL-PAT-LIBRARIAN-ACTION","setting":"record","value":"Tool"}
+{"follower_id":"TL-LEND-UC05","pattern_id":"TL-PAT-LIBRARIAN-ACTION","setting":"required_input","value":"A note saying what is wrong, when marking the tool as needing repair; nothing more when marking it repaired."}
+{"follower_id":"TL-LEND-UC05","pattern_id":"TL-PAT-LIBRARIAN-ACTION","setting":"result","value":"The tool's catalog entry with its new condition and status."}

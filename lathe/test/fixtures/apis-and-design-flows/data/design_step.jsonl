@@ -1,0 +1,3 @@
+{"id":"AD-D-DF01-S01","title":"The loan service locks the tool and opens the loan","design_flow_id":"AD-D-DF01","path":"main","position":1,"description":"Text.","transaction_name":"borrow","locks":"the tool's row","statements":"2"}
+{"id":"AD-D-DF01-S02","title":"The mailer sends the due date","design_flow_id":"AD-D-DF01","path":"main","position":2,"description":"Text."}
+{"id":"AD-D-DF01-S03","title":"The loan service refuses a tool on loan","design_flow_id":"AD-D-DF01","path":"refused","position":1,"description":"Text."}

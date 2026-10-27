@@ -1,95 +1,138 @@
 # Lathe
 
-Lathe organizes a product's lifecycle (domain model, use cases, interaction design, technical specification, test plan) as records in the product's own repo, checks them, traces them to the code and tests, and serves a web app to browse them. The record format is in [FORMAT.md](FORMAT.md) (the concepts) and [REFERENCE.md](REFERENCE.md) (every kind, relation, folder and check).
+Lathe keeps a product's lifecycle (domain model, use cases, interaction design, technical specification, test plan) as typed data in the product's own repo, checks it, traces it to the code and tests, and serves a web app to browse and edit it. Every table, column, relation and check is listed in [REFERENCE.md](REFERENCE.md), generated from the schema and the check rows.
 
 ## Use it in a product repo
 
 ```sh
 npm install --save-dev /path/to/jaredrob-lathe-0.1.0.tgz   # until it is published
 npx lathe init --name "Tool Library" --prefix TL
+npx lathe add domain --id TL-LEND --title Lending --product_id TL
 npx lathe check
-npx lathe format           # the record format reference, as Markdown
 npx lathe serve            # http://127.0.0.1:5330
 ```
 
-## The command
+## The data model
 
-`lathe <command> [options]`. Every command takes `--root <dir>`, the product repo (default: the current folder). `lathe help` (or `--help`) prints the usage.
+- **A table per kind.** A domain, an aggregate, a use case, a requirement, a test and every other kind of record has a table of its own, with typed columns: a requirement's one-sentence `statement`, a test's `given`, `when` and `then` and its `state`. Long notes exist only where a kind declares a `notes` column.
+- **Containment is a foreign key.** A requirement names its use case in `use_case_id`, an entity its aggregate in `aggregate_id`. A record's parent is the first of its kind's parent columns that holds a value; its product and domain follow from there.
+- **Parts are rows of their own.** An entity's fields are `entity_field` rows, a use case's actors and steps are `use_case_actor` and `use_case_step` rows, a pattern's settings are `pattern_setting` rows and a follower's answers are `setting_value` rows. They go with their record when it is removed.
+- **A link is a row of its relation's table.** `proves` holds (`source_id`, `target_id`) pairs. Where a relation may target several kinds, it points at a supertype table such as `obligation` (every requirement, domain rule, interaction requirement and pattern rule), so every link has a real foreign key.
+- **IDs are unique across every kind.** The `record_id` registry holds every ID with its kind, so a bare ID resolves.
+- **The schema is the meta-model.** It is the numbered SQL migrations in [schema/](schema/), applied in order to DuckDB, with a comment on every table and column. A new column comes by a new migration; `npm --prefix lathe run schema` then regenerates the row types in [src/store/tables.ts](src/store/tables.ts).
+- **A product may add its own kinds and relations** as `product_kind`, `product_kind_field` and `product_relation` rows. Lathe generates a table for each, with the same keys and rules as its own kinds. Lathe's own kinds cannot be widened; that is a migration.
 
-| Command | What it does |
-| --- | --- |
-| `init --name <name> --prefix <P>` | Writes `lathe.config.json` (if there is none) and a first product record at `specs/<name>/product.md`. Both options are required; the prefix is capital letters and digits, starting with a letter. It stops if that product record already exists. |
-| `check [--json]` | Loads and checks the specs. Prints the errors, then the warnings, then the coverage: one line per domain and obligation kind (designed, built, proved and planned, with the gaps), and one line of test counts (automated, manual, planned). Exits 1 on any error; warnings alone do not fail it. `--json` prints the whole `Workspace` instead. |
-| `format [--out <file>]` | Prints the format reference as Markdown: the concepts of [FORMAT.md](FORMAT.md), then every kind, relation (with its labels), folder and check, generated from the meta-model with the product's extensions and from each check's header comment, the product's own checks included. `--out` writes it to a file, relative to the current folder. |
-| `serve [--port <n>]` | Serves the web app and its API for the product repo at `http://127.0.0.1:<port>` (default 5330). Open pages reload when the specs change. |
+What the schema enforces is never a check: data with a missing parent, a link to nothing, a value outside its enum, a duplicate ID or a link across products cannot be saved.
 
-A usage mistake (a missing option, an unknown command, a bad port) exits 2.
+## The data folder
 
-## The config
+The source of truth is `data/<table>.jsonl` at the product repo's root: one file per stored table with rows, one JSON object per line, rows sorted by key, columns in the table's order, columns without a value left out, UTF-8 with a trailing newline. A change to a row is a one-line diff, and git is the history: `git log` and `git blame` show what changed, when, and whether the Owner or an Agent made it. The database is built in memory on each load and never committed.
 
-`lathe.config.json`, at the product repo's root, names the product's folders and, optionally, its additions to the meta-model and its settings:
+`lathe.config.json`, at the root, is optional:
 
 ```json
-{
-  "specs": "specs",
-  "metaExtensions": "lathe-meta",
-  "checks": "lathe-checks",
-  "idPrefixes": ["STD", "SYS"],
-  "structure": { "maxChildren": 15 }
-}
+{ "data": "data" }
 ```
 
 | Key | Default | Meaning |
 | --- | --- | --- |
-| `specs` | `specs` | The folder of spec records. Every `*.md` under it is a record, except `README.md`. |
-| `metaExtensions` | none | A folder holding a `kinds.csv`, `relations.csv`, `sections.csv` and/or `ids.csv` with the same columns as [meta/](meta/). Their rows are added to Lathe's defaults for this product only, and a row for a kind Lathe already has widens it (FORMAT.md section 8). |
-| `checks` | none | A folder of the product's own checks, run after Lathe's (see [Add a product's own check](#add-a-products-own-check)). |
-| `idPrefixes` | `[]` | ID prefixes, besides every product's and domain's ID, that a record body may cite: a token such as `STD-04` is then read as a citation and reported if no record has it (FORMAT.md section 11). |
-| `structure.maxChildren` | 15 | The most children of one kind a record should have before the `too-many-children` warning (FORMAT.md section 5). A whole number of at least 1. |
+| `data` | `data` | The folder of data files. |
 
-Every key is optional. A file that is not valid JSON, a key not in this table, an `idPrefixes` that is not a list of ID prefixes, or a `structure.maxChildren` that is not a whole number of at least 1 is refused when the config is read.
+Any other key, or a file that is not one JSON object, is refused when the config is read. A product's settings are data too: `product_setting.max_children` (15 when the product has no row) is the most children of one kind a record has before the `too-many-children` warning.
 
-## Build the package
+## Changing the data
 
-From the Lathe repo:
+Every change goes through the command layer, which validates it in one transaction (every key, rule and validation query) and only then rewrites the lines it changed. Nobody edits the files by hand.
+
+- **The CLI.** `lathe add`, `set`, `move`, `link`, `unlink`, `remove`, `show`, `list` and `next-id`, with flags and help generated from the schema (`lathe add --help`, `lathe add requirement --help`). A refusal prints every reason, with the rule it broke, and changes nothing.
+- **The app.** Each record page edits the record in place with a form generated from the schema.
+- **The Claude Code plugin.** Its MCP tools (`lathe mcp`) expose the same operations to an Agent.
+- **Code.** `openStore` gives the same command layer:
+
+```ts
+import { openStore } from '@jaredrob/lathe';
+
+const store = await openStore('/path/to/repo');           // loads data/*.jsonl, or throws a StoreError naming file, line and rule
+await store.add('requirement', { id: 'TL-LEND-UC01-R02', title: 'Member is known', use_case_id: 'TL-LEND-UC01', statement: 'The library MUST refuse an unknown member.' });
+await store.link('proves', 'TL-LEND-T03', 'TL-LEND-UC01-R02');
+const rows = await store.query('SELECT id, title FROM requirement');
+await store.close();
+```
+
+## The merge driver
+
+Two branches that each add rows to the same file would clash line by line in git's own merge. `lathe merge-data` merges data files row by row instead, keeping both sides' rows against the base, and fails only on a real clash: one key added on both sides with different content, or one row changed on both sides. The repo's `.gitattributes` names it for the data files (`**/data/*.jsonl merge=lathe-data`), and each clone sets it up once:
 
 ```sh
-npm --prefix lathe run build   # compiles src/ and bin/ to dist/, regenerates REFERENCE.md, and builds the web app into dist/app
-cd lathe && npm pack           # writes jaredrob-lathe-<version>.tgz
+git config merge.lathe-data.name "Lathe data files"
+git config merge.lathe-data.driver "npx lathe merge-data %O %A %B %P"
 ```
+
+The driver checks the merged table's own rules (columns, types, keys and checks); keys to other tables are checked when the data next loads, since the other files may still be mid-merge.
+
+## The command
+
+`lathe <command> [options]`. Every command takes `--root <dir>`, the product repo (default: the current folder). `lathe help` prints the usage, the data commands included.
+
+| Command | What it does |
+| --- | --- |
+| `init --name <name> --prefix <P>` | Writes `lathe.config.json` (if there is none) and adds the product record to `data/product.jsonl` through the store. Both options are required; the prefix is capital letters and digits, starting with a letter. It stops if that product already exists. |
+| `check [--json]` | Loads the data and checks it. Prints the errors, then the warnings, then the coverage: one line per domain and obligation kind (designed, built, proved and planned, with the gaps), and one line of test counts. Exits 1 on any error, data the store refuses included; warnings alone do not fail it. `--json` prints the whole `Workspace` instead. |
+| `serve [--port <n>]` | Serves the web app and its API at `http://127.0.0.1:<port>` (default 5330). Open pages reload when the data changes. |
+| `merge-data <base> <ours> <theirs> <path>` | Git's merge driver for the data files (see [The merge driver](#the-merge-driver)). |
+| `mcp` | Serves the data commands as MCP tools over stdio, for the Claude Code plugin. |
+| `add`, `set`, `move`, `link`, `unlink`, `remove`, `show`, `list`, `next-id` | The data commands (see [Changing the data](#changing-the-data)). |
+
+A usage mistake (a missing option, an unknown command, a bad port) exits 2.
 
 ## The engine
 
-The engine turns the product's spec records into a checked database. It:
+`loadWorkspace(root)`:
 
-1. Reads the meta-model: Lathe's `meta/kinds.csv`, `meta/relations.csv`, `meta/sections.csv` (the folders kinds are read in) and `meta/ids.csv` (each kind's ID convention), plus the product's extensions.
-2. Reads every `*.md` file in the specs folder except `README.md`, and parses its YAML header and body (see [FORMAT.md](FORMAT.md)). A file it cannot parse becomes a `parse-error` problem, and loading carries on.
-3. Works out each record's product and domain by walking its `parent` chain, so a record under a capability or a layer belongs to the domain above it. A loop in that chain is a `parent-cycle` error.
-4. Checks each test's `run_by` file and each component's `file`: does it exist, and which of the test's own ID and the IDs it proves does the file mention.
-5. Reads the IDs each body cites (FORMAT.md section 11), and each entity's and domain event's Fields table (sections 16 and 17).
-6. Loads all of this into an in-memory DuckDB database, runs every check in `lathe/checks/` (including checks that the meta-model itself is consistent) and then the product's own checks, and computes coverage per domain: how many obligations are designed (a component satisfies them), built (that component's file exists), proved (an automated or manual test proves them) and planned (only a planned test does).
+1. Opens the store: reads `data/*.jsonl`, and Lathe's own `data/check.jsonl` from this package beside it, into the typed tables, with every key, rule and validation query. Data the store refuses becomes `data-refused` errors naming the file, line and rule, and nothing else is checked until it is fixed.
+2. Scans the code: each test's `file` (or its `key_file`) and each component's `file`, into `file_facts` (does it exist, does a test's file name the test's own ID or its `key`) and `file_mentions` (which of the test's own ID and its link targets the file names).
+3. Creates the coverage views over the typed tables (see below) and runs every check row: Lathe's in position order, then each product's. A product's check reports only on records of its product.
+4. Reads coverage per domain from the views.
 
-Nothing is written to disk. The files are the source of truth, and the database is rebuilt on every load.
-
-## The API
+Nothing is written to disk.
 
 ```ts
-import { loadWorkspace, formatReference, renderReference, loadConfig } from '@jaredrob/lathe';
+import { loadWorkspace, buildReference, renderReference } from '@jaredrob/lathe';
 
 const workspace = await loadWorkspace('/path/to/repo');       // kinds, sections, relations, records, links, problems, coverage
-const markdown = renderReference(await formatReference('/path/to/repo'));  // what `lathe format` prints
-const config = loadConfig('/path/to/repo');                  // the resolved lathe.config.json
+const markdown = renderReference(await buildReference('/path/to/repo'));  // the reference, with the product's own kinds and checks
 ```
 
-The types are in [src/types.ts](src/types.ts) (`Workspace` and its parts) and [src/reference.ts](src/reference.ts) (`FormatReference`). Each entity and domain event record carries its fields, read from the Fields table in its body (`entityFields`), for the app's ERDs.
+The types are in [src/types.ts](src/types.ts) (`Workspace` and its parts: each record carries its typed columns as `fields` and its part rows as `parts`) and [src/reference.ts](src/reference.ts) (`Reference`).
 
 `lathe serve` and the app's dev server share one HTTP API ([src/server/api.ts](src/server/api.ts)):
 
 | Request | Answer |
 | --- | --- |
 | `GET /api/spec` | The whole `Workspace`. |
-| `GET /api/format` | The `FormatReference`: the concepts, kinds, relations, folders and checks. |
-| `GET /api/events` | Server-sent events: `spec:changed` when the files change. |
+| `GET /api/reference` | The `Reference`: kinds, tables, relations, folders and checks. |
+| `GET /api/history?id=<ID>` | The commits that changed the record's row, newest first (`&commit=<hash>` for one commit's change of the row). |
+| `GET /api/events` | Server-sent events: `spec:changed` when a data file changes. |
+
+## Checks
+
+A check is a row of the `check` table: its `name`, `position`, `severity` (`error`, `warning`, or `error_or_warning` when each row says which), a one-sentence `summary`, an `explanation` ending with how to fix what it reports, the `kinds` it concerns, and its `query`. The query lives in the row, and nowhere else: one `SELECT` over the tables that returns `record` (an ID, or NULL) and `message`, plus `severity` when the check's severity is `error_or_warning`, with one row per problem. Write the message as a plain sentence naming the IDs involved. Use `error` when the data is broken and `warning` for work still to do; a rule the schema could enforce belongs in a migration, not a check.
+
+Lathe's checks are in this package's [data/check.jsonl](data/check.jsonl), loaded beside every product's data and never written by a product's writes. A product's own checks are rows of its own `data/check.jsonl` with its `product_id`; this repo's are `endpoint-without-interaction-requirement` and `actor-not-a-role`. A name is unique across both, so a product check cannot take one of Lathe's names. Add one with `lathe add check --name ... --query ...`, or through the app.
+
+A query can read every typed table, the `record_parent`, `record_scope` and `link` views, the `meta_*` tables, and what the engine adds for the checks:
+
+| Table or view | Columns |
+| --- | --- |
+| `file_facts` | `record`, `kind` (`test` or `component`), `file`, `file_exists`, `contains_id` (tests only), `key_file`, `key_file_inside`, `key_file_exists` |
+| `file_mentions` | `record`, `mentioned`: each of a test's own ID and its link targets that its file names |
+| `owed_pattern_rules` | `domain`, `id`, `kind`: each pattern rule a domain owes, as a follower of its pattern, unless not applicable or waived there |
+| `obligation_kind` | `kind`, `label`, `proof_only`, `ord`: the obligation kinds in schema order |
+| `role_link` | each design or proof link to an obligation, with its source's kind, domain and state, and whether its claim is backed by the test's file |
+| `coverage_item` | `domain`, `id`, `kind`, `per_domain`, `designed`, `built`, `proved`, `planned_proof`: each obligation a domain owes |
+| `coverage_count`, `coverage_gap`, `coverage_tests` | the per-domain counts, the gaps and the tests by state |
+
+If a check's query fails to run, the engine reports that as an error under the check's name rather than crashing. After adding or changing one of Lathe's checks, run `npm --prefix lathe run reference` to regenerate REFERENCE.md; a test fails when it is out of date.
 
 ## Work on Lathe itself
 
@@ -100,59 +143,17 @@ npm --prefix lathe install
 npm --prefix lathe run check                          # check this repo (Lathe dogfooding itself)
 npm --prefix lathe run check -- --json                # print the whole Workspace as JSON
 npm --prefix lathe run lathe -- check --root <dir>    # any command, against another root
-npm --prefix lathe run lathe -- format --root ..      # this repo's reference, its own checks included
-npm --prefix lathe run reference                      # regenerate REFERENCE.md after changing FORMAT.md, meta/ or checks/
+npm --prefix lathe run reference                      # regenerate REFERENCE.md after a migration or a change to Lathe's checks
+npm --prefix lathe test                               # vitest, at most 2 workers
+npm --prefix lathe run typecheck                      # tsc --noEmit
+npm --prefix lathe run test:perf                      # the engine's performance budgets
 ```
 
-In this repo the CLI runs from source on Node 26's built-in TypeScript support; the package ships compiled JavaScript, because Node does not run TypeScript from `node_modules`. `REFERENCE.md` holds Lathe's defaults only; a test fails when it is out of date.
+In this repo the CLI runs from source on Node 26's built-in TypeScript support; the package ships compiled JavaScript, because Node does not run TypeScript from `node_modules`. The test fixtures in `test/fixtures/` are small product roots, each with a `data/` folder written by the store: `good` passes every check, and the others hold the cases their tests name.
 
-## Tests and type checks
+## Build the package
 
 ```sh
-npm --prefix lathe test          # vitest, at most 2 workers
-npm --prefix lathe run typecheck # tsc --noEmit
+npm --prefix lathe run build   # compiles src/ and bin/ to dist/, regenerates REFERENCE.md, and builds the web app into dist/app
+cd lathe && npm pack           # writes jaredrob-lathe-<version>.tgz
 ```
-
-The fixture workspaces in `test/fixtures/` are small: `good` passes every check, and each `broken-*` breaks one group of checks on purpose.
-
-## The database the checks see
-
-| Table | Columns |
-| --- | --- |
-| `kinds` | `kind`, `label`, `stage`, `section`, `parent_kinds` (list), `required_fields` (list), `obligation` (true for `yes` or `proof`), `proof_only` (true for `proof`), `description` |
-| `relations` | `relation`, `source_kind`, `target_kind` (`*` means any kind), `role` (`design`, `proof` or empty), `description`, `forward_label`, `reverse_label` |
-| `sections` | `section`, `stage`, `order`, `label`, `description`: the folders kinds are read in |
-| `kind_ids` | `kind`, `pattern`, `example`: each kind's ID convention, from `ids.csv` |
-| `records` | `path`, `id`, `kind`, `title`, `parent`, `product`, `domain`, `body` |
-| `fields` | `path`, `record`, `name`, `value`: every plain header field that is not `id`, `kind`, `title`, `parent` or `links` |
-| `links` | `path`, `source`, `relation`, `target` |
-| `file_facts` | `path`, `record`, `kind` (`test` or `component`), `file`, `file_exists`, `contains_id` (tests only) |
-| `file_mentions` | `path`, `record`, `mentioned`: each of a test's own ID and its link targets that its `run_by` file mentions |
-| `prose_mentions` | `path`, `record`, `cited`: each distinct ID a record's body cites, whether or not a record has it |
-| `entity_tables` | `path`, `record`, `heading` (the body has a `## Fields` heading), `columns` (the table's header cells, joined by `, `; NULL without a table), `columns_ok`: one row per entity and domain event |
-| `entity_fields` | `path`, `record`, `position` (from 1), `field`, `meaning`, `kind`, `example`: one row per row of a Fields table whose columns are right |
-| `settings` | `name`, `value`: the settings from `lathe.config.json` that checks read, such as `structure.maxChildren` (always present, with its default when the config does not give it) |
-| `check_docs` | `source`, `"check"`, `origin` (`lathe` or `product`), `summary`, `explanation`, `severity`, `missing`: what each check file's header says, and what it lacks |
-| `meta_kind_rows`, `meta_relation_rows` | `folder` and the kind, or the relation with its source and target kinds: each meta-model row as read, for the meta-model checks |
-
-`path` is the record file's path relative to the root. It is unique, so use it to join a record to its own fields and links. IDs can be duplicated in a broken workspace. A missing `id`, `kind` or `title` is stored as an empty string, and a missing `parent` as NULL.
-
-## Add a check
-
-1. Add a file to `lathe/checks/` named `<number>-<check-name>.sql`, such as `76-view-without-endpoint.sql`. The checks run in file name order. The name without the number and `.sql` is the check's name.
-2. Write one `SELECT` that returns the columns `severity` (`'error'` or `'warning'`), `"check"`, `record` (the ID, or NULL) and `message`, with one row per problem. Quote `"check"`, because `CHECK` is an SQL keyword; the file name, not this column, names the check. Write the message as a plain sentence that names the IDs involved.
-3. Use `error` when the workspace is broken, and `warning` for work still to do.
-4. Start the file with its header comment, which is its documentation in the reference: one summary sentence, a blank comment line, the explanation ending with how to fix what it reports, a blank comment line, then `-- severity: error` (or `warning`, or `error, warning`) and, optionally, `-- kinds: use_case requirement` for the kinds it concerns. A header that lacks any of these is an `undocumented` error.
-5. Add a fixture and a test in `test/checks.test.ts`, and run `npm --prefix lathe run reference` to regenerate REFERENCE.md.
-
-If a check's SQL fails to run, the engine reports that as an error problem for that check rather than crashing.
-
-## Add a product's own check
-
-A rule that belongs to one product, not to Lathe, goes in the product's own `checks` folder (FORMAT.md section 12). This repo's `lathe.config.json` names `lathe-checks/`, which holds `01-endpoint-without-interaction-requirement.sql` and `02-actor-not-a-role.sql`.
-
-1. Name the folder in `lathe.config.json`: `"checks": "lathe-checks"`.
-2. Add `<number>-<check-name>.sql` files to it, written as Lathe's checks are (steps 1 to 4 above, header included), against the same tables.
-3. They run after all of Lathe's checks, in file name order, and their problems are reported with the others. `lathe format` lists them with Lathe's.
-
-A product check named like one of Lathe's checks is not run and is a `product-check-name-clash` error; a product check that fails to run is an error naming its file; and a `checks` folder that does not exist is a `product-checks-missing` error.

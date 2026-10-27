@@ -1,0 +1,1 @@
+{"id":"DM-SHOP-DR01","title":"A basket holds at most 50 items","domain_id":"DM-SHOP","aggregate_id":"DM-SHOP-A1","statement":"A basket MUST NOT hold more than 50 items."}

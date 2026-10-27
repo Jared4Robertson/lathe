@@ -1,0 +1,12 @@
+{"follower_id":"PX-A-UC01","pattern_id":"PX-PAT-ACT","setting":"audit","value":"Logged"}
+{"follower_id":"PX-A-UC01","pattern_id":"PX-PAT-ACT","setting":"permission","value":"staff"}
+{"follower_id":"PX-B-UC01","pattern_id":"PX-PAT-ACT","setting":"audit","value":"Logged"}
+{"follower_id":"PX-B-UC01","pattern_id":"PX-PAT-ACT","setting":"permission","value":"staff"}
+{"follower_id":"PX-C-UC01","pattern_id":"PX-PAT-ACT","setting":"audit","not_applicable":"nothing is changed"}
+{"follower_id":"PX-C-UC01","pattern_id":"PX-PAT-ACT","setting":"permission","value":"staff"}
+{"follower_id":"PX-C-UC02","pattern_id":"PX-PAT-ACT","setting":"audit","not_applicable":"it only reads"}
+{"follower_id":"PX-C-UC02","pattern_id":"PX-PAT-ACT","setting":"permission","value":"staff"}
+{"follower_id":"PX-D-UC01","pattern_id":"PX-PAT-ACT","setting":"audit","not_applicable":"nothing is changed"}
+{"follower_id":"PX-D-UC01","pattern_id":"PX-PAT-ACT","setting":"permission","value":"staff"}
+{"follower_id":"PX-D-UC02","pattern_id":"PX-PAT-ACT","setting":"audit","value":"Logged"}
+{"follower_id":"PX-D-UC02","pattern_id":"PX-PAT-ACT","setting":"permission","value":"staff"}

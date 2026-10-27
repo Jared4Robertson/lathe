@@ -1,0 +1,1 @@
+{"id":"OW-PAT-ACT-R01","title":"A staff action without the permission is refused","pattern_id":"OW-PAT-ACT","statement":"The product MUST refuse the action when the person lacks the `permission`."}

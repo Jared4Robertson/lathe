@@ -1,7 +1,7 @@
 import type { SpecIndex, SpecLink, SpecRecord } from '../specs/data';
 import { byIdOrder } from '../specs/data';
 
-// Domain events as the Model view and the wiki read them (FORMAT.md: `domain_event`): each sits
+// Domain events as the Model view and the wiki read them (the `domain_event` table): each sits
 // under the aggregate that raises it, `raised_by` may name the entity of that aggregate whose change
 // raises it, and the records that react link to it with `reacts_to`, from any aggregate or domain.
 // Pure lookups over the index, shared by the ERD (erd.ts) and the aggregate's wiki page.

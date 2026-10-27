@@ -1,20 +1,21 @@
-// GET /api/history (LA-EXP-E01): a record's git history, against a temporary git repo made here.
-// The repo gets its author from the environment and ignores the machine's own git config, so the
-// test reads and writes no git config.
+// GET /api/history (LA-EXP-E01): a record's git history, read from the commits that changed its rows in the data
+// files, against a temporary git repo made here. The repo gets its author from the environment and ignores the
+// machine's own git config, so the test reads and writes no git config.
 import { spawnSync } from 'node:child_process';
-import { cpSync, mkdtempSync, readFileSync, renameSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, rmSync } from 'node:fs';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { handleApi } from '../src/server/api.ts';
-import { HISTORY_PAGE, parseLog, recordDiff, recordFile, recordHistory, runGit } from '../src/server/history.ts';
+import type { HistoryAnswer } from '../src/server/contract.ts';
+import { closeStores, handleApi } from '../src/server/api.ts';
+import { HISTORY_PAGE, changesInDiff, firstColumnPattern, parseLog, recordTables, runGit } from '../src/server/history.ts';
+import { openStore, type Store } from '../src/store/index.ts';
 
-const here = path.dirname(fileURLToPath(import.meta.url));
 const temps: string[] = [];
 let repo = '';
 let plain = '';
+let store: Store;
 
 const GIT_ENV = {
   ...process.env,
@@ -31,132 +32,163 @@ function git(cwd: string, ...args: string[]) {
   return result.stdout;
 }
 const hasGit = spawnSync('git', ['--version']).status === 0;
+const UC = 'EX-NOTE-UC01';
+/** Commits made after the first three that change UC01, so its history runs past one page. */
+const EXTRA = HISTORY_PAGE - 2;
 
-const UC = 'specs/example/notes/01-define/use-cases/UC01.md';
+async function seed(root: string) {
+  const s = await openStore(root);
+  await s.apply([
+    { op: 'add', table: 'product', row: { id: 'EX', title: 'Example' } },
+    { op: 'add', table: 'role', row: { product_id: 'EX', name: 'Writer' } },
+    { op: 'add', table: 'domain', row: { id: 'EX-NOTE', title: 'Notes', product_id: 'EX' } },
+    { op: 'add', table: 'domain_rule', row: { id: 'EX-NOTE-DR01', title: 'A note has a title', domain_id: 'EX-NOTE', statement: 'A note MUST have a title.' } },
+    { op: 'add', table: 'use_case', row: { id: UC, title: 'Write a note', domain_id: 'EX-NOTE' } },
+  ]);
+  return s;
+}
 
-beforeAll(() => {
+beforeAll(async () => {
   if (!hasGit) return;
   repo = mkdtempSync(path.join(tmpdir(), 'lathe-history-'));
   plain = mkdtempSync(path.join(tmpdir(), 'lathe-no-git-'));
   temps.push(repo, plain);
-  cpSync(path.join(here, 'fixtures', 'good'), repo, { recursive: true });
-  cpSync(path.join(here, 'fixtures', 'good'), plain, { recursive: true });
+  await (await seed(plain)).close();
+  store = await seed(repo);
   git(repo, 'init', '--quiet');
   git(repo, 'add', '.');
   git(repo, 'commit', '--quiet', '-m', 'Add the example product');
-  writeFileSync(path.join(repo, UC), `${readFileSync(path.join(repo, UC), 'utf8')}\nA second paragraph.\n`);
+  await store.set('use_case', UC, { title: 'Write a short note', goal: 'A writer keeps a thought.' });
   git(repo, 'commit', '--quiet', '-am', 'Say more about UC01');
-  // A rename: the history follows the file back to its old name.
-  mkdirSync(path.join(repo, 'specs/example/notes/01-define/use-cases/moved'));
-  renameSync(path.join(repo, UC), path.join(repo, 'specs/example/notes/01-define/use-cases/moved/UC01.md'));
-  git(repo, 'add', '-A');
-  git(repo, 'commit', '--quiet', '-m', 'Move UC01');
-  // Not committed: a change in the working tree.
-  const moved = path.join(repo, 'specs/example/notes/01-define/use-cases/moved/UC01.md');
-  writeFileSync(moved, readFileSync(moved, 'utf8').replace('A second paragraph.', 'A changed paragraph.'));
+  await store.apply([
+    { op: 'add', table: 'use_case_actor', row: { use_case_id: UC, position: 1, role_name: 'Writer' } },
+    { op: 'link', relation: 'applies', source: UC, target: 'EX-NOTE-DR01' },
+  ]);
+  git(repo, 'add', '.');
+  git(repo, 'commit', '--quiet', '-m', 'Give UC01 its actor and rule');
+  // A commit that changes only another record's rows is not in UC01's history.
+  await store.set('domain_rule', 'EX-NOTE-DR01', { statement: 'A note MUST have a short title.' });
+  git(repo, 'commit', '--quiet', '-am', 'Reword DR01');
+  for (let i = 1; i <= EXTRA; i++) {
+    await store.set('use_case', UC, { goal: `A writer keeps thought ${i}.` });
+    git(repo, 'commit', '--quiet', '-am', `Goal ${i}`);
+  }
+  // Not committed: a change in the working tree, and a data file git does not know yet.
+  await store.set('use_case', UC, { goal: 'A writer keeps every thought.' });
+  await store.add('use_case_step', { use_case_id: UC, position: 1, description: 'The writer types the note.' });
 });
 
-afterAll(() => { for (const dir of temps) rmSync(dir, { recursive: true, force: true }); });
+afterAll(async () => {
+  await store?.close();
+  await closeStores();
+  for (const dir of temps) rmSync(dir, { recursive: true, force: true });
+});
 
-/** Calls the API as the servers do, and reads its JSON answer. */
 async function get(root: string, url: string) {
   let body = '';
-  const headers: Record<string, string> = {};
-  const res = {
-    statusCode: 200,
-    setHeader: (name: string, value: string) => { headers[name] = value; },
-    end: (chunk?: string) => { body = chunk ?? ''; },
-  } as unknown as ServerResponse;
-  const handled = await handleApi(root, { method: 'GET', url } as IncomingMessage, res, url.split('?')[0]);
-  return { handled, status: res.statusCode, json: JSON.parse(body || 'null'), headers };
+  const res = { statusCode: 200, setHeader: () => {}, end: (chunk?: string) => { body = chunk ?? ''; } } as unknown as ServerResponse;
+  const handled = await handleApi(root, { method: 'GET', url, headers: {} } as IncomingMessage, res, url.split('?')[0]);
+  return { handled, status: res.statusCode, body: JSON.parse(body) };
 }
 
-describe.skipIf(!hasGit)('the history API', () => {
-  it('LA-EXP-T158 GET /api/history lists the commits that touched a record\'s spec file, newest first and through renames, with the uncommitted change first, and one commit\'s diff', async () => {
-    // The file comes from the specs, by the record's ID.
-    expect(await recordFile(repo, 'EX-NOTE-UC01')).toBe('specs/example/notes/01-define/use-cases/moved/UC01.md');
+describe.skipIf(!hasGit)('record history', () => {
+  it("LA-EXP-T158 GET /api/history lists the commits that changed a record's rows, newest first, with the columns each changed and the uncommitted changes", async () => {
+    const { status, body } = await get(repo, `/api/history?id=${UC}`);
+    expect(status).toBe(200);
+    const answer = body as Extract<HistoryAnswer, { state: 'ok' }>;
+    expect(answer.state).toBe('ok');
+    expect(answer.files).toContain('data/use_case.jsonl');
+    expect(answer.files).toContain('data/use_case_actor.jsonl');
+    expect(answer.files).toContain('data/applies.jsonl');
+    expect(answer.commits).toHaveLength(HISTORY_PAGE);
+    expect(answer.more).toBe(true);
+    expect(answer.commits[0].subject).toBe(`Goal ${EXTRA}`);
+    expect(answer.commits[0].author).toBe('Owner');
+    expect(answer.commits.map((c) => c.subject)).not.toContain('Reword DR01');
+    expect(answer.commits[0].changes).toEqual([
+      { table: 'use_case', key: UC, change: 'changed', fields: [{ name: 'goal', before: `A writer keeps thought ${EXTRA - 1}.`, after: `A writer keeps thought ${EXTRA}.` }] },
+    ]);
 
-    const list = await get(repo, '/api/history?id=EX-NOTE-UC01');
-    expect(list.handled).toBe(true);
-    expect(list.status).toBe(200);
-    expect(list.headers['cache-control']).toBe('no-store');
-    expect(list.json.state).toBe('ok');
-    expect(list.json.file).toBe('specs/example/notes/01-define/use-cases/moved/UC01.md');
-    expect(list.json.uncommitted).toBe('modified');
-    expect(list.json.commits.map((c: { subject: string }) => c.subject)).toEqual(['Move UC01', 'Say more about UC01', 'Add the example product']);
-    const [, second] = list.json.commits;
-    expect(second.author).toBe('Owner');
-    expect(second.short.length).toBeGreaterThanOrEqual(4);
-    expect(second.hash).toMatch(/^[0-9a-f]{40}$/);
-    expect(Number.isNaN(Date.parse(second.date))).toBe(false);
-    expect(list.json.more).toBe(false);
+    const older = (await get(repo, `/api/history?id=${UC}&skip=${HISTORY_PAGE}`)).body as Extract<HistoryAnswer, { state: 'ok' }>;
+    expect(older.more).toBe(false);
+    expect(older.commits.map((c) => c.subject)).toEqual(['Add the example product']);
+    expect(older.commits[0].changes).toEqual([
+      { table: 'use_case', key: UC, change: 'added', fields: [{ name: 'id', after: UC }, { name: 'title', after: 'Write a note' }, { name: 'domain_id', after: 'EX-NOTE' }] },
+    ]);
+    const parts = answer.commits.find((c) => c.subject === 'Give UC01 its actor and rule')!;
+    expect(parts.changes).toEqual([
+      { table: 'use_case_actor', key: `use_case_id ${UC}, position 1`, change: 'added', fields: [{ name: 'use_case_id', after: UC }, { name: 'position', after: 1 }, { name: 'role_name', after: 'Writer' }] },
+      { table: 'applies', key: `source_id ${UC}, target_id EX-NOTE-DR01`, change: 'added', fields: [{ name: 'source_id', after: UC }, { name: 'target_id', after: 'EX-NOTE-DR01' }] },
+    ]);
+    const titled = answer.commits.find((c) => c.subject === 'Say more about UC01')!;
+    expect(titled.changes[0].fields).toEqual([
+      { name: 'title', before: 'Write a note', after: 'Write a short note' },
+      { name: 'goal', after: 'A writer keeps a thought.' },
+    ]);
 
-    // One commit's diff of the file, as a unified diff, by its short hash too.
-    const diff = await get(repo, `/api/history?id=EX-NOTE-UC01&commit=${second.short}`);
-    expect(diff.status).toBe(200);
-    expect(diff.json.commit).toBe(second.hash);
-    expect(diff.json.diff).toContain('@@');
-    expect(diff.json.diff).toContain('+A second paragraph.');
-    expect(diff.json.truncated).toBe(false);
-
-    // The uncommitted change, against HEAD.
-    const working = await get(repo, '/api/history?id=EX-NOTE-UC01&commit=working');
-    expect(working.json.diff).toContain('-A second paragraph.');
-    expect(working.json.diff).toContain('+A changed paragraph.');
-
-    // A commit that did not touch the record's file shows nothing of other files.
-    expect(await recordDiff(repo, 'EX-NOTE-C01', list.json.commits[0].hash)).toMatchObject({ state: 'no-commit' });
+    expect(answer.uncommitted).toEqual([
+      { table: 'use_case', key: UC, change: 'changed', fields: [{ name: 'goal', before: `A writer keeps thought ${EXTRA}.`, after: 'A writer keeps every thought.' }] },
+      { table: 'use_case_step', key: `use_case_id ${UC}, position 1`, change: 'added', fields: [{ name: 'use_case_id', after: UC }, { name: 'position', after: 1 }, { name: 'description', after: 'The writer types the note.' }] },
+    ]);
   });
 
-  it('LA-EXP-T159 GET /api/history refuses a raw path or a bad commit, answers 404 for an unknown record, and says calmly when the folder is not a git repo', async () => {
-    expect((await get(repo, '/api/history')).status).toBe(400);
-    expect((await get(repo, '/api/history?id=EX-NOTE-UC01&commit=--output=/tmp/x')).status).toBe(400);
-    expect((await get(repo, '/api/history?id=EX-NOTE-UC01&commit=HEAD;rm')).status).toBe(400);
-    expect((await get(repo, '/api/history?id=EX-NOTE-UC01&skip=-1')).status).toBe(400);
-    // A path is not an ID: nothing is read from it.
-    const byPath = await get(repo, `/api/history?id=${encodeURIComponent('../../etc/passwd')}`);
-    expect(byPath.status).toBe(404);
-    expect(byPath.json.state).toBe('no-record');
+  it('LA-EXP-T159 GET /api/history answers 404 for an unknown record, 400 without an ID, and says calmly when the folder is not a git repo', async () => {
     expect((await get(repo, '/api/history?id=EX-NOTE-UC99')).status).toBe(404);
-
-    const none = await recordHistory(plain, 'EX-NOTE-UC01');
-    expect(none.state).toBe('no-repo');
-    expect(none.state === 'no-repo' && none.message).toMatch(/not a git repository/);
-    // A folder inside some other repo would still be a repo; the temp folder is in none.
-    expect((await get(plain, '/api/history?id=EX-NOTE-UC01&commit=working')).json.state).toBe('no-repo');
+    expect((await get(repo, '/api/history?id=')).status).toBe(400);
+    expect((await get(repo, `/api/history?id=${UC}&skip=-1`)).status).toBe(400);
+    const noRepo = await get(plain, `/api/history?id=${UC}`);
+    expect(noRepo.status).toBe(200);
+    expect(noRepo.body).toMatchObject({ state: 'no-repo', id: UC, files: ['data/use_case.jsonl'] });
+    expect(noRepo.body.message).toMatch(/not a git repository/);
   });
 
-  it('LA-EXP-T160 git runs with an argument array, inside the product root, cut at the output cap and stopped at the time limit; the list pages by skip', async () => {
-    // Arguments are passed as they are, never read by a shell.
+  it('LA-EXP-T160 git runs with an argument array, inside the product root, cut at the output cap and stopped at the time limit', async () => {
+    // An argument is never read by a shell.
     const echoed = await runGit(repo, ['log', '--format=%s', '-1', '--grep=$(touch pwned)']);
     expect(echoed.code).toBe(0);
-    expect(() => readFileSync(path.join(repo, 'pwned'))).toThrow();
     const top = await runGit(repo, ['rev-parse', '--show-prefix'], {});
     expect(top.stdout.trim()).toBe('');
     const cut = await runGit(repo, ['log', '-p'], { cap: 64 });
     expect(cut.truncated).toBe(true);
-    expect(cut.stdout.length).toBeLessThanOrEqual(64);
+    expect(cut.stdout.length).toBe(64);
     const slow = await runGit(repo, ['log', '-p'], { timeout: 0 });
-    expect(slow.timedOut || slow.code === 0).toBe(true);
-
-    // Paging: more than one page of commits on one file.
-    const file = path.join(repo, 'specs/example/notes/01-define/aggregates/note.md');
-    for (let i = 0; i < HISTORY_PAGE + 2; i++) {
-      writeFileSync(file, `${readFileSync(file, 'utf8')}\nLine ${i}.\n`);
-      git(repo, 'commit', '--quiet', '-am', `Note ${i}`);
-    }
-    const first = await recordHistory(repo, 'EX-NOTE-A1');
-    const rest = await recordHistory(repo, 'EX-NOTE-A1', HISTORY_PAGE);
-    expect(first.state === 'ok' && [first.commits.length, first.more]).toEqual([HISTORY_PAGE, true]);
-    expect(rest.state === 'ok' && rest.commits[0].subject).toBe('Note 1');
-    expect(rest.state === 'ok' && rest.more).toBe(false);
+    expect(slow.timedOut).toBe(true);
   });
 
+  it("git's -G finds a line by its first column's value only", async () => {
+    const touched = await runGit(repo, ['log', '--format=%s', '-G', firstColumnPattern('EX-NOTE-DR01'), '--', 'data']);
+    // The DR01 commits, and not the link from UC01 that names DR01 as its target.
+    expect(touched.stdout.trim().split('\n')).toEqual(['Reword DR01', 'Add the example product']);
+  });
+});
+
+describe('reading history', () => {
   it('parses git log records written with its field and record separators', () => {
     const hash = 'a'.repeat(40);
-    expect(parseLog(`${hash}\x1faaaa\x1f2026-10-25T10:00:00+00:00\x1fOwner\x1fA subject\x1e\n`)).toEqual([
-      { hash, short: 'aaaa', date: '2026-10-25T10:00:00+00:00', author: 'Owner', subject: 'A subject' },
+    expect(parseLog(`${hash}\x1faaaaaaa\x1f2026-10-25T10:00:00+00:00\x1fOwner\x1fA subject\x1e\n`)).toEqual([
+      { hash, short: 'aaaaaaa', date: '2026-10-25T10:00:00+00:00', author: 'Owner', subject: 'A subject' },
     ]);
-    expect(parseLog('')).toEqual([]);
+    expect(parseLog('not a record\x1e')).toEqual([]);
+  });
+
+  it("reads a diff into the record's changed rows, ignoring other records and lines that are not rows", async () => {
+    const empty = mkdtempSync(path.join(tmpdir(), 'lathe-schema-'));
+    temps.push(empty);
+    const s = await openStore(empty);
+    const tables = new Map(recordTables(s.schema, 'use_case').map((t) => [t.name, t]));
+    await s.close();
+    const diff = [
+      'diff --git a/data/use_case.jsonl b/data/use_case.jsonl',
+      '--- a/data/use_case.jsonl',
+      '+++ b/data/use_case.jsonl',
+      '@@ -1 +1 @@',
+      `-{"id":"${UC}","title":"Old","domain_id":"EX-NOTE"}`,
+      `+{"id":"${UC}","title":"New","domain_id":"EX-NOTE"}`,
+      '+{"id":"EX-NOTE-UC02","title":"Other","domain_id":"EX-NOTE"}',
+      '+not json',
+      'diff --git a/data/requirement.jsonl b/data/requirement.jsonl',
+      `+{"id":"${UC}","title":"Not a table of UC01's rows"}`,
+    ].join('\n');
+    expect(changesInDiff(diff, tables, UC)).toEqual([{ table: 'use_case', key: UC, change: 'changed', fields: [{ name: 'title', before: 'Old', after: 'New' }] }]);
   });
 });

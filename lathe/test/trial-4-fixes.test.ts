@@ -1,24 +1,21 @@
 // The narrow extensions Client trial 4 asked for: the supports relation, a test's key_file, flow step paths,
-// one name for the Meaning column, domain rules under an entity and layers under a layer.
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { beforeAll, describe, expect, it } from 'vitest';
-import { loadWorkspace, type Workspace } from '../src/index.ts';
-import { hasFieldsColumns } from '../src/parse.ts';
+// one name for the meaning of an entity's field, domain rules under an entity and layers under a layer.
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import type { Workspace } from '../src/index.ts';
+import { everyKind, load, ofCheck, refusals, removeData, withTable } from './helpers.ts';
 
-const fixture = (name: string) => path.join(path.dirname(fileURLToPath(import.meta.url)), 'fixtures', name);
-const ofCheck = (ws: Workspace, check: string) => ws.problems.filter((p) => p.check === check);
 const ofRecord = (ws: Workspace, record: string) => ws.problems.filter((p) => p.record === record);
 const PROOF_FILE_CHECKS = ['test-file-missing-id', 'proof-not-in-file', 'proof-still-owed', 'manual-test-file-silent'];
 
 let claims: Workspace;
 let twins: Workspace;
 beforeAll(async () => {
-  claims = await loadWorkspace(fixture('claims-trial4'));
+  claims = await load('claims-trial4');
   // levels-twins: domains LV-A and LV-B are alike, except that LV-A keeps its domain rule under an entity and a
   // component in a sub-layer. LV-C holds sub-layers whose orders are checked.
-  twins = await loadWorkspace(fixture('levels-twins'));
+  twins = await load('levels-twins');
 });
+afterAll(removeData);
 
 describe('supports', () => {
   it('LA-TRC-T76 A test supports any obligation kind, with no role, labeled Supports and Supported by', () => {
@@ -27,7 +24,7 @@ describe('supports', () => {
       'test domain_rule', 'test interaction_requirement', 'test pattern_rule', 'test requirement',
     ]);
     for (const r of rules) expect(r).toMatchObject({ role: '', forward_label: 'Supports', reverse_label: 'Supported by' });
-    expect(ofCheck(claims, 'relation-not-allowed')).toEqual([]);
+    expect(ofCheck(claims, 'data-refused')).toEqual([]);
   });
 
   it('LA-TRC-T77 Support never counts as proof, automated or planned', () => {
@@ -40,19 +37,19 @@ describe('supports', () => {
     expect(ofCheck(claims, 'proof-counts-nowhere')).toEqual([]);
   });
 
-  it('LA-TRC-T78 A test that only supports owes no ID in its file, but its run_by must still exist', () => {
+  it('LA-TRC-T78 A test that only supports owes no ID in its file, but its file must still exist', () => {
     // T01's file names no ID and the test has no key.
     expect(ofRecord(claims, 'TC-D-T01')).toEqual([]);
     expect(ofRecord(claims, 'TC-D-T02')).toEqual([]);
     expect(ofRecord(claims, 'TC-D-T10')).toEqual([
-      { severity: 'error', check: 'test-file-missing', record: 'TC-D-T10', message: 'Test TC-D-T10 is run by code/gone.test.txt, which does not exist.' },
+      { severity: 'error', check: 'test-file-missing', record: 'TC-D-T10', message: 'Test TC-D-T10 names the file code/gone.test.txt, which does not exist.' },
     ]);
   });
 });
 
 describe('key_file', () => {
   it('LA-TRC-T79 With a key_file, the key is looked for in that file, and a key it lacks is test-file-missing-id', () => {
-    // T04's run_by file never names SharedChecks; its key file does.
+    // T04's file never names SharedChecks; its key file does.
     expect(ofRecord(claims, 'TC-D-T04')).toEqual([]);
     const rules = claims.coverage[0].obligations.find((o) => o.kind === 'domain_rule')!;
     expect(claims.coverage[0].gaps.filter((g) => g.missing === 'proves').map((g) => g.id)).not.toContain('TC-D-DR01');
@@ -88,38 +85,45 @@ describe('key_file', () => {
 });
 
 describe('flow paths', () => {
-  it('LA-AUT-T94 Steps are numbered within their path; a step with no path is on the main path, and path names match trimmed in any case', () => {
+  it('LA-AUT-T94 Steps are numbered within their path, main by default, and path names match trimmed in any case', () => {
+    expect(claims.records.find((r) => r.id === 'TC-D-F01-S01')?.fields.path).toBe('main');
     expect(claims.records.find((r) => r.id === 'TC-D-F01-S04')?.fields.path).toBe(' Refused ');
     for (const s of ['S01', 'S02', 'S03', 'S04']) expect(ofRecord(claims, `TC-D-F01-${s}`)).toEqual([]);
   });
 
-  it('LA-AUT-T95 A repeated order on a path, and a path whose numbering skips, are step-order errors', () => {
-    const found = ofCheck(claims, 'step-order').filter((p) => p.record?.startsWith('TC-D-F02') || p.record?.startsWith('TC-D-F04'));
+  it('LA-AUT-T95 A repeated position on a path is refused by the store, and a path whose numbering skips is a step-order error', async () => {
+    const found = ofCheck(claims, 'step-order');
     expect(found.map((p) => [p.record, p.message])).toEqual([
-      ['TC-D-F02-S02', 'Flow step TC-D-F02-S02 has order 4 in flow TC-D-F02, but no step has order 2, 3; number the steps of a flow 1, 2, 3 and so on, with no gaps.'],
-      ['TC-D-F02-S03', 'Flow step TC-D-F02-S03 has order 1 on path api in flow TC-D-F02, the same as TC-D-F02-S04; each step of a path needs its own order.'],
-      ['TC-D-F02-S04', 'Flow step TC-D-F02-S04 has order 1 on path api in flow TC-D-F02, the same as TC-D-F02-S03; each step of a path needs its own order.'],
+      ['TC-D-F02-S02', 'Flow step TC-D-F02-S02 has position 4 in flow TC-D-F02, but no step has position 2, 3; number the steps of a flow 1, 2, 3 and so on, with no gaps.'],
       // Reported once, on the first step after the first gap, naming every missing number.
-      ['TC-D-F04-S01', 'Flow step TC-D-F04-S01 has order 2 on path refused in flow TC-D-F04, but no step of that path has order 1, 4, 5; number the steps of a path 1, 2, 3 and so on, with no gaps.'],
+      ['TC-D-F04-S01', 'Flow step TC-D-F04-S01 has position 2 on path refused in flow TC-D-F04, but no step of that path has position 1, 4, 5; number the steps of a path 1, 2, 3 and so on, with no gaps.'],
     ]);
     expect(found.every((p) => p.severity === 'error')).toBe(true);
+    // Two steps with one flow, path and position: the second is refused.
+    const data = everyKind();
+    const twin = { ...data.flow_step[0], id: 'TL-LEND-F01-S02', title: 'Pick again' };
+    expect(await refusals(withTable(data, 'flow_step', [data.flow_step[0], twin]))).toEqual([
+      expect.objectContaining({ rule: 'unique', file: 'data/flow_step.jsonl', line: 2, key: 'TL-LEND-F01-S02' }),
+    ]);
   });
 
-  it('LA-AUT-T96 No gap is reported on a path that has an order that is not a whole number, or a step with no order', () => {
-    const f03 = claims.problems.filter((p) => p.record?.startsWith('TC-D-F03'));
-    expect(f03.map((p) => [p.check, p.record])).toEqual([
-      ['missing-required-field', 'TC-D-F03-S05'],
-      ['step-order', 'TC-D-F03-S02'],
-    ]);
+  it('LA-AUT-T96 A position that is not a whole number, or a step with none, is refused, so a gap is only ever between whole numbers', async () => {
+    const data = everyKind();
+    const { position: _position, ...unnumbered } = data.flow_step[0];
+    expect(await refusals(withTable(data, 'flow_step', [unnumbered]))).toEqual([expect.objectContaining({ rule: 'required', file: 'data/flow_step.jsonl' })]);
+    expect(await refusals(withTable(data, 'flow_step', [{ ...data.flow_step[0], position: 'x' }]))).toEqual([expect.objectContaining({ rule: 'column', file: 'data/flow_step.jsonl' })]);
+    // F03 is numbered 1, 2, 3 on main and 1, 2, 3 on api: nothing to report.
+    expect(claims.problems.filter((p) => p.record?.startsWith('TC-D-F03'))).toEqual([]);
   });
 });
 
 describe('grouping levels', () => {
   it('LA-AUT-T97 A domain rule may sit under an entity, and a layer under a layer', () => {
     const kind = (name: string) => twins.kinds.find((k) => k.kind === name);
-    expect(kind('domain_rule')?.parent_kinds).toEqual(['aggregate', 'domain', 'entity']);
-    expect(kind('layer')?.parent_kinds).toEqual(['domain', 'layer']);
-    expect(ofCheck(twins, 'parent-kind-not-allowed')).toEqual([]);
+    // Nearest first: a record's parent is the first of these that it names.
+    expect(kind('domain_rule')?.parent_kinds).toEqual(['entity', 'aggregate', 'domain']);
+    expect(kind('layer')?.parent_kinds).toEqual(['layer', 'domain']);
+    expect(ofCheck(twins, 'data-refused')).toEqual([]);
   });
 
   it("LA-AUT-T98 A rule under an entity, and a component in a sub-layer, belong to their ancestors' domain and product", () => {
@@ -129,13 +133,16 @@ describe('grouping levels', () => {
     expect(record('LV-A-C01')?.parent).toBe('LV-A-LAY02');
   });
 
-  it("LA-AUT-T99 A Fields table's Meaning column has one name, in any letter case", () => {
-    const fields = (id: string) => twins.records.find((r) => r.id === id)?.entityFields;
+  it("LA-AUT-T99 An entity's fields are entity_field rows, each with a name, a meaning and a type", async () => {
+    const fields = (id: string) => twins.records.find((r) => r.id === id)?.parts.entity_field?.map(({ entity_id: _e, ...f }) => f);
     expect(fields('LV-A-EN01')).toHaveLength(2);
     expect(fields('LV-A-EN01')).toEqual(fields('LV-B-EN01'));
+    expect(fields('LV-A-EN01')?.[0]).toEqual({ position: 1, name: 'Tool', meaning: 'The tool lent.', type: 'Reference', example: 'T-1' });
     expect(ofCheck(twins, 'entity-fields')).toEqual([]);
-    expect(hasFieldsColumns(['Field', 'meaning', 'Kind of value', 'Example'])).toBe(true);
-    expect(hasFieldsColumns(['Field', 'Business meaning', 'Kind of value', 'Example'])).toBe(false);
+    // The meaning is one column, required: a field without it is refused.
+    const data = everyKind();
+    const { meaning: _meaning, ...bare } = data.entity_field[0];
+    expect(await refusals(withTable(data, 'entity_field', [bare]))).toEqual([expect.objectContaining({ rule: 'required', file: 'data/entity_field.jsonl' })]);
   });
 
   it('LA-AUT-T100 Coverage counts a rule under an entity and a component in a sub-layer as one level up', () => {
@@ -166,10 +173,10 @@ describe('grouping levels', () => {
     }
   });
 
-  it('LA-AUT-T102 Sub-layers of one layer need their own orders; they may reuse the orders of layers elsewhere', () => {
+  it('LA-AUT-T102 Sub-layers of one layer need their own positions; they may reuse the positions of layers elsewhere', () => {
     expect(ofCheck(twins, 'layer-order').map((p) => [p.record, p.message])).toEqual([
-      ['LV-C-LAY02', 'Layer LV-C-LAY02 has order 1 in layer LV-C-LAY01, the same as LV-C-LAY03; each sub-layer of a layer needs its own order.'],
-      ['LV-C-LAY03', 'Layer LV-C-LAY03 has order 1 in layer LV-C-LAY01, the same as LV-C-LAY02; each sub-layer of a layer needs its own order.'],
+      ['LV-C-LAY02', 'Layer LV-C-LAY02 has position 1 in layer LV-C-LAY01, the same as LV-C-LAY03; each sub-layer of a layer needs its own position.'],
+      ['LV-C-LAY03', 'Layer LV-C-LAY03 has position 1 in layer LV-C-LAY01, the same as LV-C-LAY02; each sub-layer of a layer needs its own position.'],
     ]);
   });
 });

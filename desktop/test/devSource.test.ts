@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { chooseDevSource, freePort, ROOT_HEADER, SHARED_PORT, SHARED_URL, type Probe } from '../src/devSource.ts';
 
 const answers = (status: number, root?: string): Probe => async (url) => {
-  expect(url).toBe(`${SHARED_URL}/api/format`);
+  expect(url).toBe(`${SHARED_URL}/api/spec`);
   return { status, headers: root ? { [ROOT_HEADER]: encodeURIComponent(root) } : {} };
 };
 const silent: Probe = async () => null;

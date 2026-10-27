@@ -1,0 +1,2 @@
+{"name":"note","product_id":"OS","label":"Note","description":"A note kept on an aggregate; not an obligation.","parent_kind":"aggregate","stage":"define","section":"domain-model","obligation":"none"}
+{"name":"promise","product_id":"OS","label":"Promise","description":"A promise the whole product makes, outside every domain.","parent_kind":"product","obligation":"full"}

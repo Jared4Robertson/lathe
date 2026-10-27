@@ -52,8 +52,8 @@ describe('list titles', () => {
 
     // The title reads the workspace's kind label, so a renamed kind shows its own name.
     const w = workspace();
-    w.kinds = w.kinds.map((k) => (k.kind === 'domain_rule' ? { ...k, label: 'Invariant' } : k));
-    await openApp('/DM-SHOP-A1', { workspace: w });
+    w.schema.kinds.domain_rule.label = 'Invariant';
+    await openApp('/DM-SHOP-A1', { data: w });
     await screen.findByRole('heading', { level: 1, name: 'Basket' });
     expect(within(wiki()).getByRole('heading', { level: 2, name: /^Invariants/ })).toBeInTheDocument();
   });

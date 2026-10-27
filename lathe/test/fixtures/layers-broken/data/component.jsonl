@@ -1,0 +1,4 @@
+{"id":"LZ-D-C01","title":"Component LZ-D-C01","domain_id":"LZ-D","component_type":"service","file":"specs/lz/product.md","description":"Text."}
+{"id":"LZ-D-C02","title":"Component LZ-D-C02","domain_id":"LZ-D","layer_id":"LZ-D-LAY01","component_type":"service","file":"specs/lz/product.md","description":"Text."}
+{"id":"LZ-E-C01","title":"Component LZ-E-C01","domain_id":"LZ-E","layer_id":"LZ-E-LAY01","component_type":"service","file":"specs/lz/product.md","description":"Text."}
+{"id":"LZ-F-C01","title":"Component LZ-F-C01","domain_id":"LZ-F","component_type":"service","file":"specs/lz/product.md","description":"Text."}

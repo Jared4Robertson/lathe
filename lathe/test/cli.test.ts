@@ -1,14 +1,14 @@
 // The `lathe` command line, run as a child process the way a person or agent runs it.
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, describe, expect, it } from 'vitest';
 import { loadWorkspace } from '../src/index.ts';
+import { fixture } from './helpers.ts';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const fixture = (name: string) => path.join(here, 'fixtures', name);
 const lathe = (...args: string[]) => {
   const result = spawnSync(process.execPath, [path.join(here, '..', 'bin', 'lathe.ts'), ...args], { encoding: 'utf8' });
   return { status: result.status, stdout: result.stdout, stderr: result.stderr };
@@ -26,16 +26,16 @@ afterAll(() => {
 
 describe('lathe check', () => {
   it('LA-CHK-T02 The check prints errors, then warnings, then coverage with designed, built and proved', () => {
-    const { stdout } = lathe('check', '--root', fixture('broken-links'));
+    const { stdout } = lathe('check', '--root', fixture('broken-tests'));
     const errors = stdout.indexOf('\nErrors (');
     const warnings = stdout.indexOf('\nWarnings (');
     const coverage = stdout.indexOf('\nCoverage:');
     expect(errors).toBeGreaterThan(-1);
     expect(warnings).toBeGreaterThan(errors);
     expect(coverage).toBeGreaterThan(warnings);
-    expect(stdout.slice(errors, warnings)).toContain('[dangling-link] BX-D-UC01:');
-    expect(stdout.slice(warnings, coverage)).toContain('[unproved] BX-D-UC01-R01:');
-    expect(stdout.slice(coverage)).toContain('BX-D UC requirement: 0/1 designed, 0/1 built, 0/1 proved, 0/1 planned; 2 gaps');
+    expect(stdout.slice(errors, warnings)).toContain('[test-file-missing-id] BX-D-T01:');
+    expect(stdout.slice(warnings, coverage)).toContain('[component-file-missing] BX-D-C01:');
+    expect(stdout.slice(coverage)).toContain('BX-D tests: 3 automated, 0 manual, 0 planned');
 
     const unfinished = lathe('check', '--root', fixture('unfinished')).stdout;
     expect(unfinished).toContain('UX-D domain rule: 1/1 designed, 1/1 built, 0/1 proved, 0/1 planned; 1 gap');
@@ -43,38 +43,46 @@ describe('lathe check', () => {
   });
 
   it('LA-CHK-T03 The check exits 1 on any error and 0 otherwise, whatever the warnings', () => {
-    expect(lathe('check', '--root', fixture('broken-links')).status).toBe(1);
+    expect(lathe('check', '--root', fixture('broken-tests')).status).toBe(1);
     const good = lathe('check', '--root', fixture('good'));
     expect(good.status).toBe(0);
     expect(good.stdout).toContain('0 errors, 0 warnings.');
     const warningsOnly = lathe('check', '--root', fixture('unfinished'));
     expect(warningsOnly.stdout).toMatch(/0 errors, [1-9]\d* warnings?\./);
     expect(warningsOnly.status).toBe(0);
+    // Data the store refuses is an error too, naming the file and line.
+    const refused = tempDir();
+    mkdirSync(path.join(refused, 'data'));
+    writeFileSync(path.join(refused, 'data', 'product.jsonl'), '{"id":"TL","title":"Tool Library","colour":"red"}\n');
+    const run = lathe('check', '--root', refused);
+    expect(run.status).toBe(1);
+    expect(run.stdout).toContain('[data-refused]');
+    expect(run.stdout).toContain('data/product.jsonl:1');
   });
 
   it('LA-CHK-T04 With --json the check prints the whole workspace', async () => {
-    const { stdout, status } = lathe('check', '--json', '--root', fixture('broken-links'));
+    const { stdout, status } = lathe('check', '--json', '--root', fixture('broken-tests'));
     expect(status).toBe(1);
-    expect(JSON.parse(stdout)).toEqual(await loadWorkspace(fixture('broken-links')));
+    expect(JSON.parse(stdout)).toEqual(await loadWorkspace(fixture('broken-tests')));
   });
 });
 
 describe('lathe init', () => {
-  it('LA-PLT-T06 Init writes a config and a first product record, and refuses bad or repeated input', () => {
+  it('LA-PLT-T06 Init writes a config and a first product record through the store, and refuses bad or repeated input', () => {
     const root = tempDir();
     const first = lathe('init', '--root', root, '--name', 'Tool Library', '--prefix', 'TL');
     expect(first.status).toBe(0);
-    expect(JSON.parse(readFileSync(path.join(root, 'lathe.config.json'), 'utf8'))).toEqual({ specs: 'specs' });
-    const product = path.join(root, 'specs', 'tool-library', 'product.md');
-    expect(readFileSync(product, 'utf8')).toMatch(/^---\nid: TL\nkind: product\ntitle: Tool Library\n---\n/);
+    expect(JSON.parse(readFileSync(path.join(root, 'lathe.config.json'), 'utf8'))).toEqual({ data: 'data' });
+    const product = path.join(root, 'data', 'product.jsonl');
+    expect(JSON.parse(readFileSync(product, 'utf8'))).toMatchObject({ id: 'TL', title: 'Tool Library' });
     expect(lathe('check', '--root', root).status).toBe(0);
 
     // It does not overwrite the product record.
-    writeFileSync(product, `${readFileSync(product, 'utf8')}My own words.\n`);
+    const before = readFileSync(product, 'utf8');
     const again = lathe('init', '--root', root, '--name', 'Tool Library', '--prefix', 'TL');
     expect(again.status).toBe(2);
     expect(again.stderr).toContain('already exists');
-    expect(readFileSync(product, 'utf8')).toContain('My own words.');
+    expect(readFileSync(product, 'utf8')).toBe(before);
 
     // It refuses a prefix that is not a valid ID, and a missing name or prefix, writing nothing.
     const other = tempDir();
@@ -84,12 +92,12 @@ describe('lathe init', () => {
       expect(existsSync(path.join(other, 'lathe.config.json'))).toBe(false);
     }
 
-    // An existing config is kept, and its specs folder is used.
+    // An existing config is kept, and its data folder is used.
     const configured = tempDir();
-    const config = `${JSON.stringify({ specs: 'docs/specs' })}\n`;
+    const config = `${JSON.stringify({ data: 'spec-data' })}\n`;
     writeFileSync(path.join(configured, 'lathe.config.json'), config);
     expect(lathe('init', '--root', configured, '--name', 'Notes', '--prefix', 'NT').status).toBe(0);
     expect(readFileSync(path.join(configured, 'lathe.config.json'), 'utf8')).toBe(config);
-    expect(existsSync(path.join(configured, 'docs', 'specs', 'notes', 'product.md'))).toBe(true);
+    expect(existsSync(path.join(configured, 'spec-data', 'product.jsonl'))).toBe(true);
   });
 });

@@ -1,5 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode, type RefObject } from 'react';
 import { Icon } from '../components/icons';
+import { rowPlace } from '../specs/RecordText';
+import { Editable } from '../edit/Editing';
 import { ResizeHandle } from '../components/ResizeHandle';
 import { expandAllOnPage } from '../components/TreeList';
 import type { GraphSettings } from '../graph/GraphPage';
@@ -18,7 +20,7 @@ import { PageHeader, ProblemBadge, RecordTree, Section, listTitle } from '../spe
 import { RecordContent, RecordEyebrow } from '../specs/RecordContent';
 import { testGroups } from '../specs/folders';
 import { GroupSections } from '../specs/FolderGroups';
-import { DomainWiki, NotFound, ProductWiki, SourceNote, problemsUnder } from '../specs/SpecPages';
+import { DomainWiki, NotFound, ProductWiki, problemsUnder } from '../specs/SpecPages';
 import { addressOf, HOME_PATH, focusOf, VIEW_LABELS, VIEW_NAMES, viewsFromSearch, viewsOffered, viewsShown, withView, type FocusRoute, type ViewName } from './address';
 import { SideBar } from './SideBar';
 import { createPeekStore, saveLastSide, SIDE_VIEW_LABELS, sideFor, sideModeOf, type SideModeState, type SideView } from './sideBarState';
@@ -63,7 +65,6 @@ export function FocusPage({ spec, route, search }: { spec: SpecState; route: Foc
   }
   return (
     <main className="focus-page" id="main">
-      <SourceNote spec={spec} />
       {spec.error && index && <p className="error">Couldn't reload the specs: {spec.error}</p>}
       {body}
     </main>
@@ -620,13 +621,13 @@ function PageTitle({ index, route, fixed = false }: { index: SpecIndex; route: F
   let problems: Problem[];
   if (route.page === 'product') {
     const product = index.byId.get(focus)!;
-    eyebrow = <>Product · {product.path}</>;
+    eyebrow = <>Product · {rowPlace(product)}</>;
     title = product.title;
     problems = problemsUnder(index, 'product', focus);
   } else if (route.page === 'domain') {
     const domain = index.byId.get(focus)!;
     const product = index.byId.get(route.product)!;
-    eyebrow = <><Link to={addressOf(product.id)}>{product.title}</Link> · Domain · {domain.path}</>;
+    eyebrow = <><Link to={addressOf(product.id)}>{product.title}</Link> · Domain · {rowPlace(domain)}</>;
     title = domain.title;
     problems = problemsUnder(index, 'domain', focus);
   } else if (route.page === 'record') {
@@ -661,9 +662,9 @@ function PageTitle({ index, route, fixed = false }: { index: SpecIndex; route: F
 
 function WikiContent({ index, route }: { index: SpecIndex; route: FocusRoute }) {
   switch (route.page) {
-    case 'product': return <ProductWiki index={index} id={route.product} />;
-    case 'domain': return <DomainWiki index={index} id={route.domain} />;
-    case 'record': return <div className="spec-body"><RecordContent index={index} id={route.id} header={false} side={false} /></div>;
+    case 'product': return <Editable key={route.product} index={index} id={route.product}><ProductWiki index={index} id={route.product} /></Editable>;
+    case 'domain': return <Editable key={route.domain} index={index} id={route.domain}><DomainWiki index={index} id={route.domain} /></Editable>;
+    case 'record': return <Editable key={route.id} index={index} id={route.id}><div className="spec-body"><RecordContent index={index} id={route.id} header={false} side={false} /></div></Editable>;
     case 'group': return <GroupWiki index={index} gid={focusOf(route)} />;
   }
 }

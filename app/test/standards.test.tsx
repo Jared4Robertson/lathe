@@ -8,11 +8,12 @@ import { contrast } from '../src/theme/contrast';
 import { themeCss } from '../src/theme/css';
 import { BUILT_IN_THEMES } from '../src/theme/theme';
 import { COLOR_NAMES, SETTING_NAMES } from '../src/theme/tokens';
-import { indexWorkspace, parseSpecRoute } from '../src/specs/data';
+import { parseSpecRoute } from '../src/specs/data';
 import { APP_PAGES, isRecordId } from '../src/views/address';
 import { workspace } from './fixtures/workspace';
 // The split view loads the graph, which needs a ResizeObserver in jsdom.
 import './graph/setup';
+import { indexOf } from './fixtures/load';
 
 // The app's standards (LA-PAT-APP-CODE and LA-PAT-APP-UX): each test proves one of the patterns' rules,
 // by reading the source or by rendering pages. A failure names the file and line to fix.
@@ -346,8 +347,8 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     const files = [
       ...filesUnder(SRC, /\.(tsx?|css)$/),
       ...filesUnder(join(ROOT, 'lathe', 'src'), /\.ts$/),
-      ...filesUnder(join(ROOT, 'specs'), /\.md$/),
-      ...['README.md', 'lathe/FORMAT.md', 'lathe/README.md'].map((f) => join(ROOT, f)),
+      ...filesUnder(join(ROOT, 'data'), /\.jsonl$/),
+      ...['README.md', 'lathe/README.md'].map((f) => join(ROOT, f)),
     ];
     const hits = files.flatMap((f) => where(f, readFileSync(f, 'utf8'), word));
     expect(hits).toEqual([]);
@@ -496,7 +497,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
       expect(word, word).toMatch(/^[a-z][a-z-]*$/);
       expect(isRecordId(word), word).toBe(false);
     }
-    const index = indexWorkspace(workspace());
+    const index = indexOf(workspace());
     expect(parseSpecRoute('/', index)).toEqual({ page: 'specs' });
     for (const id of ['DM', 'DM-SHOP', 'DM-SHOP-UC01']) expect(parseSpecRoute(`/${id}`, index)?.page, id).toMatch(/^(product|domain|record)$/);
     expect(parseSpecRoute('/DM-SHOP/design/interaction-design/view', index)).toEqual({ page: 'group', parent: 'DM-SHOP', kind: 'design/interaction-design/view' });
@@ -515,7 +516,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
 
   it('LA-PLT-T103 An old address is no page: /records, /specs and /graph addresses say so, and the address stays as typed', async () => {
     for (const path of ['/records/DM-SHOP-UC01', '/records/DM-SHOP/use_case', '/specs', '/specs/DM/DM-SHOP', '/graph', '/graph/DM-SHOP-UC01']) {
-      expect(parseSpecRoute(path, indexWorkspace(workspace())), path).toEqual({ page: 'missing' });
+      expect(parseSpecRoute(path, indexOf(workspace())), path).toEqual({ page: 'missing' });
       await openApp(path);
       expect(await screen.findByText(/There's no such page\./), path).toBeInTheDocument();
       expect(window.location.pathname, path).toBe(path);

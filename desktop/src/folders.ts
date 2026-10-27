@@ -1,6 +1,6 @@
 // Product folders: whether a folder can be opened, the names of the products in it, and the
 // recent folders list (File › Open Recent). Nothing here touches Electron, so it is unit-tested.
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
@@ -8,13 +8,13 @@ export const CONFIG_FILE = 'lathe.config.json';
 /** How many folders File › Open Recent lists. */
 export const RECENT_LIMIT = 10;
 
-export type FolderCheck = { ok: true; specsDir: string } | { ok: false; message: string };
+export type FolderCheck = { ok: true; dataDir: string } | { ok: false; message: string };
 
 const isDir = (p: string) => existsSync(p) && statSync(p).isDirectory();
 
 /**
- * A folder opens when it holds a lathe.config.json (valid JSON), or else a specs/ folder.
- * Otherwise the message says what is missing.
+ * A folder opens when it holds a lathe.config.json (valid JSON, whose "data" names the data folder, data by
+ * default), or else a data/ folder. Otherwise the message says what is missing.
  */
 export function checkFolder(folder: string): FolderCheck {
   if (!isDir(folder)) return { ok: false, message: `${folder} is not a folder.` };
@@ -26,26 +26,29 @@ export function checkFolder(folder: string): FolderCheck {
     } catch (error) {
       return { ok: false, message: `${CONFIG_FILE} in ${folder} is not valid JSON: ${error instanceof Error ? error.message : String(error)}` };
     }
-    const specs = parsed && typeof parsed === 'object' && typeof (parsed as { specs?: unknown }).specs === 'string' ? (parsed as { specs: string }).specs : 'specs';
-    return { ok: true, specsDir: path.resolve(folder, specs) };
+    const data = parsed && typeof parsed === 'object' && typeof (parsed as { data?: unknown }).data === 'string' ? (parsed as { data: string }).data : 'data';
+    return { ok: true, dataDir: path.resolve(folder, data) };
   }
-  if (isDir(path.join(folder, 'specs'))) return { ok: true, specsDir: path.join(folder, 'specs') };
+  if (isDir(path.join(folder, 'data'))) return { ok: true, dataDir: path.join(folder, 'data') };
   return {
     ok: false,
-    message: `${folder} has no ${CONFIG_FILE} and no specs folder. Choose the root of a product repo: the folder that holds ${CONFIG_FILE}, or its specs folder's parent.`,
+    message: `${folder} has no ${CONFIG_FILE} and no data folder. Choose the root of a product repo: the folder that holds ${CONFIG_FILE}, or its data folder's parent.`,
   };
 }
 
-/** The title of each product record (specs/<product>/product.md), in folder order. */
-export function productNames(specsDir: string): string[] {
-  if (!isDir(specsDir)) return [];
+/** The title of each product (the rows of data/product.jsonl), in the file's order, which is by ID. */
+export function productNames(dataDir: string): string[] {
+  const file = path.join(dataDir, 'product.jsonl');
+  if (!existsSync(file)) return [];
   const names: string[] = [];
-  for (const entry of readdirSync(specsDir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
-    const file = path.join(specsDir, entry.name, 'product.md');
-    if (!entry.isDirectory() || !existsSync(file)) continue;
-    const header = readFileSync(file, 'utf8').match(/^---\r?\n([\s\S]*?)\r?\n---/);
-    const title = header?.[1].match(/^title:\s*(.+)$/m)?.[1].trim().replace(/^(["'])(.*)\1$/, '$2');
-    if (title) names.push(title);
+  for (const line of readFileSync(file, 'utf8').split('\n')) {
+    if (!line.trim()) continue;
+    try {
+      const title = (JSON.parse(line) as { title?: unknown }).title;
+      if (typeof title === 'string' && title.trim()) names.push(title.trim());
+    } catch {
+      // A line that is not JSON names no product; the server reports it when it loads the folder.
+    }
   }
   return names;
 }

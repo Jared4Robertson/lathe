@@ -16,7 +16,6 @@ import { treeGroup } from '../graph/tree';
 import { byIdOrder, type Problem, type SpecIndex, type SpecRecord, type SpecState } from '../specs/data';
 import { Markdown } from '../specs/Markdown';
 import { PageHeader, ProblemList, RecordLink, Section } from '../specs/parts';
-import { SourceNote } from '../specs/SpecPages';
 import {
   FIELDS_ANCHOR,
   OBLIGATION_SHORT,
@@ -24,6 +23,7 @@ import {
   ORIGIN_TEXT,
   checkPagePath,
   checksOf,
+  columnType,
   fieldAnchor,
   findCheck,
   findKind,
@@ -45,7 +45,8 @@ import './format.css';
 // stage and folder, the relations, and the checks by severity), /format/kinds/<kind> and
 // /format/checks/<check>. Each opens in the workbench as a record does: one pane with the page's
 // title in it, and the side bar beside it showing the kind's or the check's facts (a bottom sheet
-// on a phone). The pages read GET /api/format, so a product's extensions and its own checks show.
+// on a phone). The pages read the schema and the check rows served with the data, so a product's
+// own kinds and checks show.
 
 export type FormatRoute = { page: 'format' } | { page: 'format-kind'; kind: string } | { page: 'format-check'; check: string };
 export const isFormatRoute = (r: { page: string } | null): r is FormatRoute => !!r && ['format', 'format-kind', 'format-check'].includes(r.page);
@@ -56,16 +57,15 @@ const SIDE_BAR_WIDTH_KEY = 'lathe:side-bar-width';
 
 export function FormatPages({ spec, route }: { spec: SpecState; route: FormatRoute }) {
   const { index } = spec;
-  const { reference, source } = useFormat(index);
+  const reference = useFormat(index);
   let body: ReactNode;
   if (!index || !reference) {
     body = <div className="placeholder"><p>{spec.error ? `Couldn't load the specs: ${spec.error}` : 'Loading the format…'}</p></div>;
   } else {
-    body = <Workbench index={index} reference={reference} route={route} fromEngine={source === 'engine'} />;
+    body = <Workbench index={index} reference={reference} route={route} />;
   }
   return (
     <main className="focus-page format-page" id="main">
-      <SourceNote spec={spec} />
       {spec.error && index && <p className="error">Couldn't reload the specs: {spec.error}</p>}
       {body}
     </main>
@@ -75,11 +75,10 @@ export function FormatPages({ spec, route }: { spec: SpecState; route: FormatRou
 interface PageProps {
   index: SpecIndex;
   reference: FormatReference;
-  fromEngine: boolean;
 }
 
 /** One pane holding the page, and the side bar: the workbench as a record page lays it out. */
-function Workbench({ index, reference, route, fromEngine }: PageProps & { route: FormatRoute }) {
+function Workbench({ index, reference, route }: PageProps & { route: FormatRoute }) {
   const narrow = useNarrow();
   const announce = useAnnounce();
   const [open, setOpen] = usePref<boolean>(SIDE_BAR_KEY, true, isBool);
@@ -117,7 +116,7 @@ function Workbench({ index, reference, route, fromEngine }: PageProps & { route:
     return () => window.removeEventListener('hashchange', scrollToHash);
   }, [path]);
 
-  const page = pageFor({ index, reference, fromEngine }, route);
+  const page = pageFor({ index, reference }, route);
   const sideBarLabel = `${showing ? 'Hide' : 'Show'} the side bar`;
   const facts = (
     <aside ref={sideBarEl} id="side-bar" className="side bar record-side" aria-label="Side bar" tabIndex={-1}>
@@ -317,24 +316,17 @@ function RelationRows({ reference, relations, from, label }: { reference: Format
   );
 }
 
-const plainLinks = (markdown: string) =>
-  // FORMAT.md's links point at files beside it: the reference becomes this page's index, the rest plain text.
-  markdown
-    .replace(/^# .*\n+/, '')
-    .replace(/\[([^\]]+)\]\(REFERENCE\.md\)/g, '[$1](#kinds)')
-    .replace(/\[([^\]]+)\]\((?!https?:|#|\/)[^)]*\)/g, '$1');
-
 // ---------- /format ----------
 
-function homePage({ index, reference, fromEngine }: PageProps): Page {
+function homePage({ index, reference }: PageProps): Page {
   const errors = reference.checks.filter((c) => c.severity === 'error');
   const warnings = reference.checks.filter((c) => c.severity === 'warning');
   return {
-    title: <PageHeader eyebrow={fromEngine ? 'Reference · generated from the meta-model' : 'Reference · lathe/FORMAT.md'} title="Record format" />,
+    title: <PageHeader eyebrow="Reference · read from the schema" title="Record format" />,
     body: (
       <>
-        <Section title="Concepts">
-          <Markdown source={plainLinks(reference.concepts)} />
+        <Section title="How records are kept">
+          <p>Each kind of record is a table with typed columns. A record's parent is a column that names it, each relation is a table of links, and the database refuses data that breaks a key, a type or a rule. Every table's rows are one file in <code>{index.workspace.dataDir}/</code>, a row to a line, so git keeps their history.</p>
         </Section>
         <section className="spec-section" id="kinds" aria-labelledby="kinds-heading">
           <header className="spec-section-head"><h2 id="kinds-heading">Kinds<span className="section-count">{reference.kinds.length}</span></h2></header>
@@ -346,7 +338,6 @@ function homePage({ index, reference, fromEngine }: PageProps): Page {
         </section>
         <section className="spec-section" id="checks" aria-labelledby="checks-heading">
           <header className="spec-section-head"><h2 id="checks-heading">Checks<span className="section-count">{reference.checks.length}</span></h2></header>
-          {!fromEngine && <p className="hint">Only the checks that report a problem now are listed, without their explanations: the engine did not serve the format reference.</p>}
           <Section level={3} title="Errors" count={errors.length}><CheckRows index={index} checks={errors} label="Error checks" /></Section>
           <Section level={3} title="Warnings" count={warnings.length}><CheckRows index={index} checks={warnings} label="Warning checks" /></Section>
         </section>
@@ -363,7 +354,7 @@ function homePage({ index, reference, fromEngine }: PageProps): Page {
           <div><dt>Relations</dt><dd>{reference.relations.length}</dd></div>
           <div><dt>Folders</dt><dd>{reference.sections.length}</dd></div>
           <div><dt>Checks</dt><dd>{reference.checks.length} ({errors.length} error, {warnings.length} warning)</dd></div>
-          <div><dt>From</dt><dd>{fromEngine ? 'The engine, with this product\'s extensions and checks' : 'The loaded specs only'}</dd></div>
+          <div><dt>From</dt><dd>The schema, with this product's own kinds, and the check table</dd></div>
         </dl>
         <h3>On this page</h3>
         <ul className="plain">
@@ -441,27 +432,15 @@ function AllRelations({ reference }: { reference: FormatReference }) {
 
 // ---------- /format/kinds/<kind> ----------
 
-/** A record's header as YAML, as written in its file (the engine's reading of it). */
-export function headerOf(index: SpecIndex, record: SpecRecord): string {
-  const value = (v: string) => (v === '' || /^[\s>|'"[{&*!%@`#-]|: | #|:$/.test(v) || /^(true|false|null|yes|no|~)$/i.test(v) ? JSON.stringify(v) : v);
-  const lines = ['---', `id: ${record.id}`, `kind: ${record.kind}`, `title: ${value(record.title)}`];
-  if (record.parent) lines.push(`parent: ${record.parent}`);
-  for (const [name, v] of Object.entries(record.fields)) lines.push(`${name}: ${value(v)}`);
-  const links = new Map<string, string[]>();
-  for (const l of index.outgoing.get(record.id) ?? []) links.set(l.relation, [...(links.get(l.relation) ?? []), l.target]);
-  if (links.size > 0) {
-    lines.push('links:');
-    for (const [relation, targets] of links) lines.push(`  ${relation}: [${targets.join(', ')}]`);
-  }
-  lines.push('---');
-  return lines.join('\n');
-}
+/** A record's row as its data file holds it: one JSON object on one line. */
+export const rowLineOf = (record: SpecRecord) => JSON.stringify(record.row);
 
 function kindPage({ index, reference }: PageProps, kind: KindReference): Page {
   const folder = sectionOf(reference, kind);
   const relations = relationsOf(reference, kind.kind);
   const checks = checksOf(reference, kind.kind);
   const where = [stageName(folder?.stage ?? kind.stage), folder?.label].filter(Boolean).join(' › ');
+  const required = kind.columns.filter((c) => c.required);
   return {
     title: <PageHeader eyebrow={<><Link to={formatPath}>Record format</Link> · Kind · {where}</>} title={kind.label} />,
     body: <KindBody index={index} reference={reference} kind={kind} />,
@@ -477,7 +456,7 @@ function kindPage({ index, reference }: PageProps, kind: KindReference): Page {
           <div><dt>Folder</dt><dd>{folder?.label ?? 'None'}</dd></div>
           <div><dt>Obligation</dt><dd>{OBLIGATION_SHORT[kind.obligation]}</dd></div>
           <div><dt>ID</dt><dd>{kind.id ? <code>{kind.id.pattern}</code> : 'No convention given'}</dd></div>
-          <div><dt>Required</dt><dd>{kind.required_fields.length > 0 ? kind.required_fields.map((f, i) => <span key={f}>{i > 0 && ', '}<a href={`#${fieldAnchor(f)}`}>{f}</a></span>) : 'Nothing more'}</dd></div>
+          <div><dt>Required</dt><dd>{required.map((c, i) => <span key={c.name}>{i > 0 && ', '}<a href={`#${fieldAnchor(c.name)}`}>{c.name}</a></span>)}</dd></div>
           <div><dt>Records</dt><dd>{index.workspace.records.filter((r) => r.kind === kind.kind).length}</dd></div>
           <div><dt>Links</dt><dd>{relations.out.length} out, {relations.in.length} in</dd></div>
           <div><dt>Checks</dt><dd>{checks.length}</dd></div>
@@ -521,12 +500,31 @@ function KindBody({ index, reference, kind }: { index: SpecIndex; reference: For
         </Section>
       </Section>
       <section className="spec-section" id={FIELDS_ANCHOR} aria-labelledby="fields-heading">
-        <header className="spec-section-head"><h2 id="fields-heading">Fields<span className="section-count">{kind.required_fields.length}</span></h2></header>
-        <p>Every record has an <code>id</code>, a <code>kind</code> and a <code>title</code>, and a <code>parent</code> below the product.{kind.required_fields.length > 0 ? ` A ${lowerLabel(kind.label)} also needs:` : ' This kind needs nothing more.'}</p>
-        {kind.required_fields.length > 0 && (
-          <ul className="plain field-list">
-            {kind.required_fields.map((f) => <li key={f} id={fieldAnchor(f)}><code>{f}</code></li>)}
-          </ul>
+        <header className="spec-section-head"><h2 id="fields-heading">Columns<span className="section-count">{kind.columns.length}</span></h2></header>
+        <p>A {lowerLabel(kind.label)} is a row of the <code>{kind.kind}</code> table, in <code>{index.workspace.dataDir}/{kind.kind}.jsonl</code>. A required column must hold a value; the others may be left out.</p>
+        <div className="table-scroll">
+          <table className="data-table kind-columns">
+            <caption className="sr-only">The columns of the {kind.kind} table</caption>
+            <thead><tr><th scope="col">Column</th><th scope="col">Type</th><th scope="col">Required</th><th scope="col">Meaning</th></tr></thead>
+            <tbody>
+              {kind.columns.map((c) => (
+                <tr key={c.name} id={fieldAnchor(c.name)}>
+                  <th scope="row"><code>{c.name}</code></th>
+                  <td>{columnType(c)}</td>
+                  <td>{c.required ? 'yes' : 'no'}</td>
+                  <td>{c.description ?? ''}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {kind.parts.length > 0 && (
+          <>
+            <p>Its records also own rows of these tables, removed with them:</p>
+            <ul className="plain field-list">
+              {kind.parts.map((t) => <li key={t.table}><code>{t.table}</code>{t.description && <span className="meta"> · {t.description}</span>}</li>)}
+            </ul>
+          </>
         )}
         <dl className="fields format-facts">
           <div><dt>Obligation</dt><dd>{OBLIGATION_TEXT[kind.obligation]}</dd></div>
@@ -541,14 +539,14 @@ function KindBody({ index, reference, kind }: { index: SpecIndex; reference: For
       </Section>
       <Section title="Checks that concern it" count={checks.length}>
         {checks.length === 0
-          ? <p className="hint">No check names this kind in its header. The checks that apply to records of every kind still apply.</p>
+          ? <p className="hint">No check names this kind. The checks that apply to records of every kind still apply.</p>
           : <CheckRows index={index} checks={checks} label={`Checks that concern ${kind.label}`} />}
       </Section>
       <Section title="Example">
         {example ? (
           <>
-            <p>The first {lowerLabel(kind.label)}{inSpace}: <RecordLink index={index} id={example.id} /></p>
-            <div className="markdown"><pre className="record-header" tabIndex={0}><code>{headerOf(index, example)}</code></pre></div>
+            <p>The first {lowerLabel(kind.label)}{inSpace}, <RecordLink index={index} id={example.id} />, on line {example.line} of <code>{example.file}</code>:</p>
+            <div className="markdown"><pre className="record-header" tabIndex={0}><code>{rowLineOf(example)}</code></pre></div>
           </>
         ) : <p className="hint">No record of this kind yet.</p>}
       </Section>
@@ -589,13 +587,17 @@ function checkPage({ index, reference }: PageProps, check: CheckReference, probl
     ),
     body: (
       <>
-        {check.summary ? <Markdown source={check.summary} /> : <p className="hint">No explanation is available: the engine did not serve the format reference.</p>}
+        {check.summary ? <Markdown source={check.summary} /> : <p className="hint">The engine reports this itself: it has no row in the check table.</p>}
         {check.explanation && <Markdown source={check.explanation} />}
         <dl className="fields format-facts">
           <div><dt>Severity</dt><dd><SeverityTags check={check} /></dd></div>
           <div><dt>From</dt><dd>{ORIGIN_TEXT[check.origin]}</dd></div>
-          {check.source && <div><dt>Source</dt><dd><code>{check.source}</code></dd></div>}
         </dl>
+        {check.query && (
+          <Section title="Query">
+            <div className="markdown"><pre className="check-query" tabIndex={0}><code>{check.query}</code></pre></div>
+          </Section>
+        )}
         {check.kinds.length > 0 && (
           <Section title="Kinds it concerns" count={check.kinds.length}>
             <KindRows reference={reference} kinds={check.kinds} label={`Kinds ${check.check} concerns`} />
@@ -615,7 +617,6 @@ function checkPage({ index, reference }: PageProps, check: CheckReference, probl
         <dl className="fields">
           <div><dt>Severity</dt><dd><SeverityTags check={check} /></dd></div>
           <div><dt>From</dt><dd>{ORIGIN_TEXT[check.origin]}</dd></div>
-          {check.source && <div><dt>Source</dt><dd><code>{check.source}</code></dd></div>}
           <div><dt>Problems</dt><dd>{problems.length}</dd></div>
           <div><dt>Records</dt><dd>{new Set(problems.map((p) => p.record ?? 'workspace')).size}</dd></div>
         </dl>
