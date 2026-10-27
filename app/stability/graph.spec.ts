@@ -261,7 +261,7 @@ test.describe('graph', () => {
       const s = await sceneOf(page);
       const b = s.boxes.find((x) => x.id === target)!;
       const title = b.lines.filter((l) => l.face === 'title');
-      return { font: title[0].fontPx / s.camera.zoom, screen: title.reduce((h, l) => h + l.rect.height, 0), lines: title.map((l) => l.text), zoom: s.camera.zoom };
+      return { font: title[0].mapPx, screen: title.reduce((h, l) => h + l.rect.height, 0), lines: title.map((l) => l.text), zoom: s.camera.zoom };
     };
     const before = await size();
     // Focusing it moves the camera only: its font size in map units stays, and its size on screen follows the zoom.
@@ -269,7 +269,7 @@ test.describe('graph', () => {
     await page.waitForURL(/\/design(\?|$)/);
     await page.waitForTimeout(1300);
     const focused = await size();
-    expect(focused.font).toBeCloseTo(before.font, 6);
+    expect(focused.font).toBe(before.font);
     expect(focused.lines).toEqual(before.lines);
     expect(focused.screen / before.screen).toBeCloseTo(focused.zoom / before.zoom, 1);
     // Zooming in by the camera's control: the same.
@@ -277,7 +277,7 @@ test.describe('graph', () => {
     await page.waitForTimeout(600);
     const zoomed = await size();
     expect(zoomed.zoom).toBeGreaterThan(focused.zoom);
-    expect(zoomed.font).toBeCloseTo(before.font, 6);
+    expect(zoomed.font).toBe(before.font);
     expect(zoomed.lines).toEqual(before.lines);
     expect(zoomed.screen / focused.screen).toBeCloseTo(zoomed.zoom / focused.zoom, 1);
   });

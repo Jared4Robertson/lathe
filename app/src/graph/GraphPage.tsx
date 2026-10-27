@@ -501,7 +501,8 @@ export interface SceneBox {
   /** Its outline's corners on screen, for a polygon or a cell. */
   polygon: [number, number][] | null;
   label: Rect;
-  lines: { text: string; face: string; fontPx: number; font: string; rect: Rect; bar: boolean; drawnWidth: number }[];
+  /** Each line of its label: its text, face, font size in the map and on screen, the font it is drawn in, its place, whether it is drawn as a bar, and its width as the canvas measures it at its drawn font. */
+  lines: { text: string; face: string; mapPx: number; fontPx: number; font: string; rect: Rect; bar: boolean; drawnWidth: number }[];
   icons: { draw: string; name: string; rect: Rect }[];
   badges: { label: string; tone: string; rect: Rect }[];
   tip: string;
@@ -1106,7 +1107,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
             const font = fontFor(fonts, l.face, fontPx);
             let drawnWidth = l.width * v.zoom;
             if (measureCtx && fontPx >= TEXT_BAR_PX) { measureCtx.font = font; drawnWidth = measureCtx.measureText(l.text.trimEnd()).width; }
-            return { text: l.text, face: l.face, fontPx, font, rect: rect(l.x, l.top, l.width, l.height), bar: fontPx < TEXT_BAR_PX, drawnWidth };
+            return { text: l.text, face: l.face, mapPx: l.size, fontPx, font, rect: rect(l.x, l.top, l.width, l.height), bar: fontPx < TEXT_BAR_PX, drawnWidth };
           }),
           icons: p.icons.map((i) => ({ draw: i.draw, name: i.name, rect: rect(i.x, i.y, i.w, i.h) })),
           badges: p.badges.map((b) => ({ label: b.label, tone: b.tone, rect: rect(b.x, b.y, b.w, b.h) })),
