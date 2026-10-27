@@ -1,26 +1,22 @@
-// Structural warnings, relation rules restated by an extension, and errors that are not repeated as cascades.
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { beforeAll, describe, expect, it } from 'vitest';
-import { loadWorkspace, type Workspace } from '../src/index.ts';
+// Structural warnings, a product's own relations beside Lathe's, and refusals that are not repeated as cascades.
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import type { Workspace } from '../src/index.ts';
+import { everyKind, load, refusals, removeData, withTable } from './helpers.ts';
 
-const fixture = (name: string) => path.join(path.dirname(fileURLToPath(import.meta.url)), 'fixtures', name);
-const recordsOf = (ws: Workspace, check: string) =>
-  ws.problems.filter((p) => p.check === check).map((p) => p.record).sort();
+const recordsOf = (ws: Workspace, check: string) => ws.problems.filter((p) => p.check === check).map((p) => p.record).sort();
 const errors = (ws: Workspace) => ws.problems.filter((p) => p.severity === 'error');
 
 const STRUCTURAL = ['rule-not-applied', 'use-case-without-flow', 'interaction-requirement-fulfills-nothing', 'test-type-mismatch'];
 
 let warnings: Workspace;
-let cascade: Workspace;
 let relations: Workspace;
 let plain: Workspace;
 beforeAll(async () => {
-  warnings = await loadWorkspace(fixture('structure-warnings'));
-  cascade = await loadWorkspace(fixture('structure-cascade'));
-  relations = await loadWorkspace(fixture('structure-relations'));
-  plain = await loadWorkspace(fixture('good'));
+  warnings = await load('structure-warnings');
+  relations = await load('structure-relations');
+  plain = await load('good');
 });
+afterAll(removeData);
 
 describe('structural warnings', () => {
   it('LA-CHK-T13 A domain rule that no use case applies is a warning', () => {
@@ -64,86 +60,54 @@ describe('structural warnings', () => {
   });
 });
 
-describe('extensions restate default relation rules', () => {
+describe("a product's own relations", () => {
   const rule = (ws: Workspace, relation: string, source: string, target: string) =>
     ws.relations.filter((r) => r.relation === relation && r.source_kind === source && r.target_kind === target);
 
-  it("LA-AUT-T38 An extension row for an existing relation rule is the same rule, and its non-empty role, description or label replaces the default's", () => {
-    // Reworded: the description is replaced and the empty role keeps the default's.
-    expect(rule(relations, 'proves', 'test', 'domain_rule')).toEqual([
-      {
-        relation: 'proves',
-        source_kind: 'test',
-        target_kind: 'domain_rule',
-        role: 'proof',
-        description: 'The test checks the domain rule in code.',
-        forward_label: 'Proves',
-        reverse_label: 'Proved by',
-      },
+  it("LA-AUT-T38 A product relation adds a link table of its own, and Lathe's relations keep their roles, labels and descriptions", () => {
+    expect(rule(relations, 'owns', 'component', 'aggregate')).toEqual([
+      { relation: 'owns', source_kind: 'component', target_kind: 'aggregate', role: '', description: 'The component owns the aggregate.', forward_label: 'Owns', reverse_label: 'Owned by' },
     ]);
-    // Re-roled and relabeled: the role and the reverse label are replaced, and the empty description and
-    // forward label keep the default's.
-    const [defaultFulfills] = rule(plain, 'fulfills', 'flow', 'requirement');
-    expect(rule(relations, 'fulfills', 'flow', 'requirement')).toEqual([{ ...defaultFulfills, role: 'design', reverse_label: 'Built by flow' }]);
-    // So the flow now designs the requirement it fulfills.
-    const requirement = relations.coverage[0].obligations.find((o) => o.kind === 'requirement');
-    expect(requirement).toMatchObject({ total: 1, designed: 1 });
-    // One new rule; no default rule is listed twice, and the defaults keep their order.
-    expect(relations.relations).toHaveLength(plain.relations.length + 1);
-    expect(relations.relations.slice(0, plain.relations.length).map((r) => [r.relation, r.source_kind, r.target_kind])).toEqual(
-      plain.relations.map((r) => [r.relation, r.source_kind, r.target_kind]),
-    );
-    expect(recordsOf(relations, 'relation-not-allowed')).toEqual([]);
+    expect(relations.links).toContainEqual({ source: 'SR-D-C01', relation: 'owns', target: 'SR-D-A1' });
+    // Lathe's own pairs are the same as in a product with no relations of its own, in the same order.
+    expect(rule(relations, 'proves', 'test', 'domain_rule')).toEqual(rule(plain, 'proves', 'test', 'domain_rule'));
+    expect(rule(relations, 'fulfills', 'flow', 'requirement')).toEqual(rule(plain, 'fulfills', 'flow', 'requirement'));
+    const own = relations.relations.filter((r) => r.relation !== 'owns');
+    expect(own).toEqual(plain.relations);
+    // A flow's fulfills is not design, so it designs nothing: the requirement it fulfills is still unsatisfied.
+    expect(relations.coverage[0].obligations.find((o) => o.kind === 'requirement')).toMatchObject({ total: 1, designed: 0 });
   });
 
-  it('LA-CHK-T19 A relation rule listed twice in one folder is an error naming that folder', () => {
-    expect(relations.problems.filter((p) => p.check === 'meta-duplicate-relation')).toEqual([
-      {
-        severity: 'error',
-        check: 'meta-duplicate-relation',
-        record: null,
-        message: expect.stringContaining('lathe-meta/relations.csv lists relation rule "owns" from component to aggregate 2 times'),
-      },
-    ]);
-    // Only the restatements across folders are allowed: the default rules restated above are not reported.
-    expect(errors(relations).map((p) => p.check)).toEqual(['meta-duplicate-relation']);
-    // The later row's description wins, as for a restatement.
-    expect(rule(relations, 'owns', 'component', 'aggregate')[0].description).toBe('The component stores the aggregate.');
-    // An empty label in the later row keeps the earlier row's.
-    expect(rule(relations, 'owns', 'component', 'aggregate')[0]).toMatchObject({ forward_label: 'Owns', reverse_label: 'Owned by' });
+  it('LA-CHK-T19 A relation pair declared twice is refused, naming the file and line', async () => {
+    const data = everyKind();
+    const problems = await refusals(withTable(data, 'product_relation', [...data.product_relation, data.product_relation[0]]));
+    expect(problems).toEqual([expect.objectContaining({ rule: 'primary-key', file: 'data/product_relation.jsonl', line: 3 })]);
   });
 });
 
-describe('one mistake, one error', () => {
-  it("LA-CHK-T20 A rule test keyed by its rule's ID gives one duplicate-id error and no cascaded errors", () => {
-    expect(recordsOf(cascade, 'duplicate-id')).toEqual(['SC-D-DR01']);
-    // The use case applies, the component satisfies and the tests prove SC-D-DR01: each link fits one of
-    // the records with that ID, so none is reported.
-    for (const id of ['SC-D-UC01', 'SC-D-C01', 'SC-D-T02']) {
-      expect(errors(cascade).filter((p) => p.record === id)).toEqual([]);
-    }
-    expect(recordsOf(cascade, 'dangling-link')).toEqual([]);
-    expect(recordsOf(cascade, 'unsatisfied')).not.toContain('SC-D-DR01');
+describe('one mistake, one refusal', () => {
+  it("LA-CHK-T20 A test given its rule's ID is one unique-id refusal, and no link to the rule is refused with it", async () => {
+    const data = everyKind();
+    const problems = await refusals(withTable(data, 'test', [...data.test, { id: 'TL-LEND-DR01', title: 'Keyed by the rule', domain_id: 'TL-LEND', test_type: 'unit', state: 'manual' }]));
+    expect(problems).toEqual([expect.objectContaining({ rule: 'unique-id', table: 'test', key: 'TL-LEND-DR01', file: 'data/test.jsonl', line: 2 })]);
+    expect(problems[0].message).toContain('already a domain_rule (data/domain_rule.jsonl:1)');
   });
 
-  it('LA-CHK-T21 A link or parent that no record with a duplicated ID allows is still reported, once', () => {
-    const one = (check: string) => cascade.problems.filter((p) => p.check === check);
-    expect(one('relation-not-allowed')).toEqual([
-      expect.objectContaining({
-        record: 'SC-D-C02',
-        message: 'SC-D-C02 (component) implements SC-D-DR01 (domain_rule or test), but "implements" is not allowed from component to domain_rule or test.',
-      }),
-    ]);
-    expect(one('parent-kind-not-allowed')).toEqual([
-      expect.objectContaining({ record: 'SC-D-Q01', message: expect.stringContaining('sits under SC-D-DR01 (domain_rule or test)') }),
-    ]);
+  it('LA-CHK-T21 A link or parent that the schema does not allow is refused once, naming what it may be', async () => {
+    const data = everyKind();
+    const link = await refusals(withTable(data, 'implements', [...data.implements, { source_id: 'TL-LEND-C01', target_id: 'TL-LEND-DR01' }]));
+    expect(link).toEqual([expect.objectContaining({ rule: 'foreign-key', table: 'implements', line: 2 })]);
+    expect(link[0].message).toContain('names no implements_target (endpoint, view)');
+    // A question cannot sit under a domain rule: it has no column for one.
+    const parent = await refusals(withTable(data, 'question', [...data.question, { id: 'TL-LEND-Q09', title: 'Why?', product_id: 'TL', domain_id: 'TL-LEND', domain_rule_id: 'TL-LEND-DR01', owner: 'Owner' }]));
+    expect(parent).toEqual([expect.objectContaining({ rule: 'column', table: 'question', line: 2 })]);
   });
 
-  it('LA-CHK-T22 An unknown parent is reported once, as unknown-parent only', () => {
-    expect(errors(cascade).filter((p) => p.record === 'SC-D-UC02')).toEqual([
-      expect.objectContaining({ check: 'unknown-parent', message: 'SC-D-UC02 names parent SC-D-CAP09, which does not exist.' }),
+  it('LA-CHK-T22 An unknown parent is refused once, as a foreign key naming the missing record', async () => {
+    const data = everyKind();
+    const problems = await refusals(withTable(data, 'use_case', [...data.use_case, { id: 'TL-LEND-UC09', title: 'Lost', domain_id: 'TL-LEND', capability_id: 'TL-LEND-CAP09' }]));
+    expect(problems).toEqual([
+      expect.objectContaining({ rule: 'foreign-key', table: 'use_case', key: 'TL-LEND-UC09', message: 'use_case TL-LEND-UC09: capability_id "TL-LEND-CAP09" names no capability' }),
     ]);
-    // Altogether: the duplicate, the unknown parent, and the two links no record allows.
-    expect(errors(cascade).map((p) => p.check).sort()).toEqual(['duplicate-id', 'parent-kind-not-allowed', 'relation-not-allowed', 'unknown-parent']);
   });
 });

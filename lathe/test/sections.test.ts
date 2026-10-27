@@ -1,49 +1,33 @@
-// Folders (sections): each kind's folder within its stage, and the folders a product's specs are read in,
-// as S2 lays out its specs (FORMAT.md section 14).
-import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+// Folders (sections): each kind's folder within its stage, and the folders a product's records are read in, as S2
+// lays out its specs. The folders are the schema's meta_section rows; a product's own kind names one of them.
 import { afterAll, describe, expect, it } from 'vitest';
-import { loadWorkspace, PACKAGE_DIR, type Workspace } from '../src/index.ts';
+import { openStore, type Workspace } from '../src/index.ts';
+import { everyKind, load, loadData, refusals, removeData, withTable, writeData } from './helpers.ts';
 
-const fixture = (name: string) => path.join(path.dirname(fileURLToPath(import.meta.url)), 'fixtures', name);
-const temps: string[] = [];
-const tempDir = () => {
-  const dir = mkdtempSync(path.join(tmpdir(), 'lathe-sections-'));
-  temps.push(dir);
-  return dir;
-};
-
-afterAll(() => {
-  for (const dir of temps) rmSync(dir, { recursive: true, force: true });
-});
-
-/** The good fixture, with a product extension folder holding the given CSV files. */
-async function withExtension(files: Record<string, string>): Promise<Workspace> {
-  const root = tempDir();
-  cpSync(fixture('good'), root, { recursive: true });
-  writeFileSync(path.join(root, 'lathe.config.json'), JSON.stringify({ metaExtensions: 'lathe-meta' }));
-  mkdirSync(path.join(root, 'lathe-meta'));
-  for (const [name, text] of Object.entries(files)) writeFileSync(path.join(root, 'lathe-meta', name), text);
-  return loadWorkspace(root);
-}
+afterAll(removeData);
 
 const sectionOf = (ws: Workspace, kind: string) => ws.kinds.find((k) => k.kind === kind)?.section;
 const problemsOf = (ws: Workspace, check: string) => ws.problems.filter((p) => p.check === check);
 
+/** The everyKind product with a product kind, risk, placed by the given columns. */
+const withRisk = (columns: Record<string, string>) => {
+  const data = everyKind();
+  const risk = { name: 'risk', product_id: 'TL', label: 'Risk', description: 'A risk.', parent_kind: 'domain', obligation: 'none', ...columns };
+  return withTable(data, 'product_kind', [...data.product_kind, risk]);
+};
+
 describe('folders', () => {
-  it('LA-AUT-T57 The engine loads each kind\'s section and the folders of sections.csv, in stage then order', async () => {
-    const ws = await loadWorkspace(fixture('good'));
+  it("LA-AUT-T57 The engine loads each kind's section and the folders in stage then order", async () => {
+    const ws = await load('good');
     expect(ws.sections.map((s) => [s.stage, s.order, s.section, s.label])).toEqual([
-      ['', 1, 'shared', 'Shared'],
       ['define', 1, 'domain-model', 'Domain model'],
       ['define', 2, 'use-cases', 'Capabilities'],
       ['design', 1, 'interaction-design', 'Interaction design'],
       ['design', 2, 'technical-specification', 'Technical specification'],
       ['design', 3, 'test-plan', 'Test plan'],
+      ['', 1, 'shared', 'Shared'],
     ]);
-    expect(ws.sections[0].description).toContain('patterns');
+    expect(ws.sections.at(-1)!.description).toContain('patterns');
     expect(Object.fromEntries(ws.kinds.map((k) => [k.kind, k.section]))).toMatchObject({
       product: '', domain: '', question: '',
       aggregate: 'domain-model', domain_rule: 'domain-model',
@@ -53,55 +37,41 @@ describe('folders', () => {
       test: 'test-plan',
       pattern: 'shared', pattern_rule: 'shared',
     });
-    expect(ws.problems.filter((p) => p.check === 'unknown-section' || p.check === 'section-stage-mismatch')).toEqual([]);
+    expect(problemsOf(ws, 'section-stage-mismatch')).toEqual([]);
   });
 
-  it('LA-AUT-T58 An extension adds a folder, changes one, and moves or places a kind, merging as kinds do', async () => {
-    const ws = await withExtension({
-      'sections.csv': 'section,stage,order,label,description\nrisks,define,3,Risks,"What could go wrong."\ntest-plan,,,Tests and checks,\n',
-      'kinds.csv': 'kind,label,stage,section,parent_kinds,required_fields,obligation,description\nrisk,Risk,define,risks,domain,,no,A risk.\naggregate,,,,,,,\n',
-    });
-    expect(ws.sections.filter((s) => s.stage === 'define').map((s) => s.section)).toEqual(['domain-model', 'use-cases', 'risks']);
-    expect(ws.sections.find((s) => s.section === 'test-plan')).toMatchObject({ stage: 'design', order: 3, label: 'Tests and checks', description: 'The tests that prove the obligations.' });
-    expect(sectionOf(ws, 'risk')).toBe('risks');
-    // An empty section keeps the default's.
+  it("LA-AUT-T58 A product's own kind is placed in one of the schema's folders, and Lathe's kinds keep theirs", async () => {
+    const ws = await loadData(withRisk({ stage: 'define', section: 'domain-model' }));
+    expect(sectionOf(ws, 'risk')).toBe('domain-model');
     expect(sectionOf(ws, 'aggregate')).toBe('domain-model');
-    expect(ws.problems.filter((p) => p.severity === 'error')).toEqual([]);
-
-    const moved = await withExtension({ 'kinds.csv': 'kind,label,stage,section,parent_kinds,required_fields,obligation,description\ndomain_rule,,,use-cases,,,,\n' });
-    expect(sectionOf(moved, 'domain_rule')).toBe('use-cases');
-    expect(moved.problems.filter((p) => p.severity === 'error')).toEqual([]);
+    expect(ws.sections).toEqual((await load('good')).sections);
+    expect(problemsOf(ws, 'section-stage-mismatch')).toEqual([]);
   });
 
-  it('LA-AUT-T59 A kind naming a section sections.csv does not list is an unknown-section error', async () => {
-    const ws = await withExtension({ 'kinds.csv': 'kind,label,stage,section,parent_kinds,required_fields,obligation,description\nrisk,Risk,define,risk-log,domain,,no,A risk.\n' });
-    expect(problemsOf(ws, 'unknown-section')).toEqual([
-      { severity: 'error', check: 'unknown-section', record: null, message: 'Kind "risk" sits in section "risk-log", which sections.csv does not list.' },
-    ]);
-    // A kind with no section is fine.
-    const none = await withExtension({ 'kinds.csv': 'kind,label,stage,section,parent_kinds,required_fields,obligation,description\nrisk,Risk,define,,domain,,no,A risk.\n' });
-    expect(problemsOf(none, 'unknown-section')).toEqual([]);
+  it('LA-AUT-T59 A kind naming a folder that is not listed is refused', async () => {
+    // product_kind.section is a foreign key into the schema's folders.
+    await expect(openStore(writeData(withRisk({ stage: 'define', section: 'risk-log' })), { latheDataDir: null })).rejects.toThrow(/risk-log/);
+    // A kind with no folder is fine.
+    expect(await refusals(withRisk({ stage: 'define' }))).toEqual([]);
   });
 
-  it('LA-AUT-T60 A kind whose section belongs to another stage is a section-stage-mismatch error; a product-level folder takes any stage', async () => {
-    const ws = await withExtension({ 'kinds.csv': 'kind,label,stage,section,parent_kinds,required_fields,obligation,description\ncomponent,,,use-cases,,,,\nquestion,,,test-plan,,,,\n' });
-    expect(problemsOf(ws, 'section-stage-mismatch').map((p) => p.message)).toEqual([
-      'Kind "component" is in stage "design", but its section "use-cases" belongs to stage "define".',
-      'Kind "question" is in stage "", but its section "test-plan" belongs to stage "design".',
+  it('LA-AUT-T60 A kind in another stage\'s folder is a section-stage-mismatch error; a product-level folder takes any stage', async () => {
+    const ws = await loadData(withRisk({ stage: 'design', section: 'use-cases' }));
+    expect(problemsOf(ws, 'section-stage-mismatch')).toEqual([
+      { severity: 'error', check: 'section-stage-mismatch', record: null, message: 'Kind "risk" is in stage "design", but its folder "use-cases" belongs to stage "define".' },
     ]);
+    const stageless = await loadData(withRisk({ section: 'test-plan' }));
+    expect(problemsOf(stageless, 'section-stage-mismatch').map((p) => p.message)).toEqual(['Kind "risk" is in stage "", but its folder "test-plan" belongs to stage "design".']);
     // Patterns are define-stage kinds in the shared folder, which has no stage: no mismatch.
-    expect(problemsOf(await loadWorkspace(fixture('good')), 'section-stage-mismatch')).toEqual([]);
-    const shared = await withExtension({ 'kinds.csv': 'kind,label,stage,section,parent_kinds,required_fields,obligation,description\ncomponent,,,shared,,,,\n' });
+    expect(problemsOf(await load('good'), 'section-stage-mismatch')).toEqual([]);
+    const shared = await loadData(withRisk({ stage: 'design', section: 'shared' }));
     expect(problemsOf(shared, 'section-stage-mismatch')).toEqual([]);
   });
 
-  it('LA-AUT-T61 A meta-model folder without sections.csv gives no folders, and kinds without a section column sit in none', async () => {
-    const meta = tempDir();
-    cpSync(path.join(PACKAGE_DIR, 'meta', 'relations.csv'), path.join(meta, 'relations.csv'));
-    writeFileSync(path.join(meta, 'kinds.csv'), 'kind,label,stage,parent_kinds,required_fields,obligation,description\nproduct,Product,,,,no,Root.\ndomain,Domain,,product,,no,A domain.\n');
-    const ws = await loadWorkspace(fixture('good'), { metaDir: meta });
-    expect(ws.sections).toEqual([]);
-    expect(ws.kinds.map((k) => k.section)).toEqual(['', '']);
-    expect(problemsOf(ws, 'unknown-section')).toEqual([]);
+  it('LA-AUT-T61 Every folder is a row of the schema, and a kind with no folder sits in none', async () => {
+    const ws = await loadData(withRisk({}));
+    expect(sectionOf(ws, 'risk')).toBe('');
+    expect(ws.kinds.filter((k) => k.section !== '').every((k) => ws.sections.some((s) => s.section === k.section))).toBe(true);
+    expect(problemsOf(ws, 'section-stage-mismatch')).toEqual([]);
   });
 });
