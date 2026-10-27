@@ -105,7 +105,7 @@ h3 { font-size: 0.95rem; margin-top: 8px; }
 .record-id { margin: 6px 0 0; }
 code { font: 0.86em var(--mono); }
 .spec-body a { color: var(--steel); text-decoration-thickness: 1px; text-underline-offset: 2px; }
-.spec-page a:focus-visible, .spec-page input:focus-visible, .spec-page button:focus-visible, .spec-page .react-flow__node:focus-visible { outline: 2px solid var(--steel); outline-offset: 2px; border-radius: 4px; }
+.spec-page a:focus-visible, .spec-page input:focus-visible, .spec-page button:focus-visible { outline: 2px solid var(--steel); outline-offset: 2px; border-radius: 4px; }
 .hint { margin: 0; color: var(--muted); font-size: 0.86rem; }
 .source-note { margin: 12px 24px 0; padding: 8px 12px; border: 1px dashed var(--warn); border-radius: 6px; color: var(--ink); background: var(--sheet); font-size: 0.86rem; max-width: 1032px; box-sizing: border-box; }
 .source-note strong { color: var(--warn); }
@@ -246,7 +246,7 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 
 .graph-workspace { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr); }
 .graph-canvas { position: relative; min-height: 420px; }
-.graph-flow { position: absolute; inset: 0; }
+.graph-flow { position: absolute; inset: 0; background: var(--paper); }
 .graph-loading { position: absolute; top: 12px; left: 16px; z-index: 5; margin: 0; }
 .graph-near li { font-size: 0.85rem; }
 .graph-near a { color: var(--ink); text-decoration: none; }
@@ -256,54 +256,14 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-legend li { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 .graph-legend-heading { margin: 10px 0 0; font-size: 0.8rem; font-weight: 600; color: var(--ink); }
 
-/* Nodes: color and shape by stage, a ring on the center. In the one map (LA-EXP-DR57) a parent is as tall as its children.
-   Its label is part of the map (LA-EXP-DR58): --node-scale, its level's width over a leaf's, sets its text, padding and marks
-   once, in map units (px here, whatever the person's text size), and a parent's or a grown leaf's label is centered both
-   ways; --box-scale sets its border and outline. Each line is a block of its own, broken on whole words by the map
-   (app/src/graph/text.ts), so the page wraps nothing and nothing is cut off; a leaf is tall enough for its lines. Nothing in
-   the map changes size: the camera zooms, and every drawn box shows its label (LA-EXP-DR60). Each line's height is in proportion to its text, so no glyph is clipped. */
-.graph-node { --node-scale: 1; --box-scale: 1; --u: calc(1px * var(--box-scale)); --node-border: calc(1.5px * var(--box-scale)); --node-edge: var(--g-structural); --node-fill: var(--g-structural-bg); width: 100%; height: 100%; box-sizing: border-box; padding: calc((6px + var(--room-t, 0) * 1px) * var(--node-scale)) calc((14px + var(--room-r, 0) * 1px) * var(--node-scale)) calc((6px + var(--room-b, 0) * 1px) * var(--node-scale)) calc((14px + var(--room-l, 0) * 1px) * var(--node-scale)); border: var(--node-border) solid var(--node-edge); background: var(--node-fill); display: flex; flex-direction: column; justify-content: center; cursor: pointer; overflow: hidden; position: relative; border-radius: var(--node-radius); }
-.graph-node small, .graph-node strong, .graph-node small > span, .graph-node strong > span { display: block; white-space: nowrap; line-height: 1.4; }
-/* A marked box's kind and ID line keeps room beside it for the problem badge (both sides once centered); app/src/graph/text.ts breaks its lines with the same numbers. */
-.graph-node small { font: calc(10.5px * var(--node-scale))/1.4 var(--mono); color: var(--muted); }
-.graph-node .graph-badge-room { padding-right: calc(30px * var(--node-scale)); }
-.graph-node.is-centered { align-items: center; text-align: center; }
-.graph-node.is-centered .graph-badge-room { padding-inline: calc(30px * var(--node-scale)); }
-.graph-node strong { font-size: calc(12.5px * var(--node-scale)); font-weight: 600; color: var(--ink); }
-.graph-node.stage-define { --node-edge: var(--g-define); --node-fill: var(--g-define-bg); }
-.graph-node.stage-design { --node-edge: var(--g-design); --node-fill: var(--g-design-bg); }
-.graph-node.stage-file { --node-edge: var(--g-file); --node-fill: var(--paper); border-style: dashed; cursor: default; }
-.graph-node.stage-file strong { font: calc(11px * var(--node-scale))/1.4 var(--mono); }
-.graph-node.kind-question { --node-edge: var(--warn); border-style: dashed; }
-.graph-node.is-focus { box-shadow: 0 0 0 calc(2px * var(--box-scale)) var(--ink); }
-.graph-marks { position: absolute; top: calc((3px + var(--room-t, 0) * 1px) * var(--node-scale)); right: calc((8px + var(--room-r, 0) * 1px) * var(--node-scale)); display: flex; gap: calc(3px * var(--node-scale)); }
-.graph-mark { display: inline-grid; place-items: center; min-width: calc(15px * var(--node-scale)); height: calc(15px * var(--node-scale)); padding: 0 calc(3px * var(--node-scale)); box-sizing: border-box; border-radius: calc(8px * var(--node-scale)); font: 700 calc(9.5px * var(--node-scale)) var(--mono); color: var(--on-mark); background: var(--muted); }
-.graph-mark.error { background: var(--error); }
-.graph-mark.warning, .graph-mark.gap { background: var(--warn); }
-.graph-handle { opacity: 0; pointer-events: none; top: 50% !important; bottom: auto !important; }
-.graph-flow .react-flow__node:focus { outline: none; }
-.graph-flow .react-flow__node:focus-visible .graph-node { outline: calc(3px * var(--box-scale)) solid var(--steel); outline-offset: calc(3px * var(--box-scale)); }
-/* A bar (LA-EXP-DR60): children too small on screen to draw, one filled shape for each run of them. */
-.graph-bar { width: 100%; height: 100%; background: var(--rule); opacity: 0.6; border-radius: var(--node-radius); }
-.graph-flow .react-flow__node.is-bar { pointer-events: none; }
-/* The Nested view (LA-EXP-DR62): each box holds its children below a header band, as tall as its label (set by the map),
-   with its label at the top left; a leaf's label is centered in it. Every box is a box there, its kind's shape a small mark
-   before its kind and ID line, sized with its text (LA-EXP-DR65). Children are drawn after their parent, so they lie over it. */
-.graph-flow.is-nested .graph-node.is-container { justify-content: flex-start; align-items: flex-start; text-align: left; }
-.graph-flow.is-nested .graph-node.is-container .graph-badge-room { padding-inline: 0 calc(30px * var(--node-scale)); }
-/* The Voronoi view (LA-EXP-DR64): each cell is a polygon. The node is its bounding box, which takes no pointer: only the
-   outline, an SVG polygon in its stage's colors, and the label do, so the pointer finds the cell under it. Hover, focus,
-   the keyboard ring and a tap's selection color the stroke, as a clipped shape's edge does, since a box's shadow or outline
-   would not follow the cell. The label sits in the box the map gave it, centered, its text scale the cell's own. */
-.graph-flow .graph-node.is-cell { --cell-fill: var(--node-fill); --cell-edge: var(--node-edge); --cell-w: var(--node-border); padding: 0; border: 0; background: transparent; border-radius: 0; box-shadow: none; display: block; }
-.graph-cell-shape { position: absolute; inset: 0; overflow: visible; pointer-events: none; }
-.graph-cell-shape polygon { fill: var(--cell-fill); stroke: var(--cell-edge); stroke-width: var(--cell-w); stroke-linejoin: round; pointer-events: visiblePainted; }
-.graph-cell-label { pointer-events: auto; position: absolute; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: calc(7.5px * var(--node-scale)) calc(14px * var(--node-scale)); }
-.graph-node.is-cell.kind-question .graph-cell-shape polygon { stroke-dasharray: calc(6px * var(--box-scale)) calc(4px * var(--box-scale)); }
-.graph-node.is-cell.is-focus { --cell-edge: var(--ink); --cell-w: calc(3px * var(--box-scale)); box-shadow: none; }
-.graph-flow .react-flow__node:hover .graph-node.is-cell:not(.is-focus) { --cell-edge: var(--steel); --cell-w: calc(2.5px * var(--box-scale)); box-shadow: none; }
-.graph-flow .react-flow__node:focus-visible .graph-node.is-cell { --cell-edge: var(--steel); --cell-w: calc(3px * var(--box-scale)); outline: none; }
-.react-flow__node.is-armed .graph-node.is-cell { --cell-edge: var(--steel); --cell-w: calc(3px * var(--box-scale)); box-shadow: none; }
+/* The map is drawn on a canvas, every frame (app/src/graph/paint.ts): boxes, shapes, labels, lines, badges, marks and every
+   state in the stylesheet's colors, read from these tokens. The canvas fills the pane; the boxes' accessibility layer is
+   visually hidden (it carries focus, the keyboard, roles and names), and the camera's buttons sit at the bottom left. */
+.graph-canvas-draw { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.graph-access { position: absolute; top: 0; left: 0; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.graph-box { position: absolute; top: 0; left: 0; width: 1px; height: 1px; }
+.graph-controls { position: absolute; left: 12px; bottom: 12px; z-index: 5; display: grid; gap: 2px; padding: 2px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; box-shadow: 0 2px 6px var(--shadow-soft); }
+.graph-controls .icon-button { color: var(--ink); }
 .graph-swatch.is-cell { border: 0; border-radius: 0; background: linear-gradient(115deg, var(--g-define-bg) 46%, var(--g-define) 46% 56%, var(--g-design-bg) 56%); clip-path: polygon(30% 0, 100% 10%, 90% 85%, 35% 100%, 0 50%); }
 /* A kind's shape as a small mark before the kind and ID line (Nested and Voronoi), and a kind's own mark (a gear, a ruler, a
    port, a marker) in every view, sized with the text; app/src/graph/text.ts keeps MARK_ROOM for each. In the key they are ink on sheet. */
@@ -316,14 +276,6 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 
 /* Edges: parent/child is the solid spine of the tree; every other relation is a lighter, dashed cross-link. A parent line
    grows with its child box (--edge-scale), as the box's border does, so it reads at the zoom that reads the box. */
-.graph-flow .react-flow__edge-path.graph-edge { stroke-width: calc(1.2px * var(--edge-scale, 1)); }
-.graph-flow .react-flow__edge-path.rel-structure { stroke: var(--ink); stroke-width: calc(2px * var(--edge-scale, 1)); opacity: 0.75; }
-.graph-flow .react-flow__edge-path.rel-trace { stroke: var(--steel); stroke-dasharray: 6 4; }
-.graph-flow .react-flow__edge-path.rel-design { stroke: var(--spark); stroke-dasharray: 2 4; opacity: 0.8; }
-.graph-flow .react-flow__edge-path.rel-file { stroke: var(--muted); stroke-dasharray: 1 3; }
-.graph-flow .react-flow__edge-path.rel-pattern { stroke: var(--steel); stroke-dasharray: 10 3 2 3; opacity: 0.9; }
-.graph-flow .react-flow__edge-path.rel-other { stroke: var(--muted); stroke-dasharray: 3 3; }
-.graph-edge-label { font-size: 0.625rem; }
 .graph-swatch { display: inline-block; width: 18px; height: 11px; border: 1.5px solid var(--g-structural); background: var(--g-structural-bg); border-radius: 2px; }
 .graph-swatch.stage-define { border-color: var(--g-define); background: var(--g-define-bg); }
 .graph-swatch.stage-design { border-color: var(--g-design); background: var(--g-design-bg); }
@@ -344,65 +296,15 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-links button:disabled { opacity: 0.5; cursor: default; }
 .graph-steps { display: inline-flex; gap: 2px; flex: none; }
 /* The center's own links, with Links on: dashed in their own color. */
-.graph-flow .react-flow__edge-path.is-link { stroke: var(--link-edge); stroke-dasharray: 6 4; }
 .graph-line.is-link { border-top: 1.5px dashed var(--link-edge); }
 /* Domain events in the graph (LA-EXP-UC04-R07, LA-EXP-DR52): flags in the spark colors, and their reacts_to and raised_by
    links dashed in spark, with Links on too. */
 .graph-swatch.kind-domain_event { border-color: var(--spark); background: var(--spark-bg); }
 .graph-swatch.kind-question { border-style: dashed; border-color: var(--warn); }
 .graph-swatch.is-focus { box-shadow: 0 0 0 2px var(--ink); }
-.graph-node.kind-domain_event:not(.stage-group) { --node-edge: var(--spark); --node-fill: var(--spark-bg); }
-.graph-flow .react-flow__edge-path.rel-event, .graph-flow .react-flow__edge-path.rel-event.is-link { stroke: var(--spark); stroke-dasharray: 4 4; }
 .graph-line.rel-event { border-top: 1.5px dashed var(--spark); }
-/* A shape for each kind (LA-EXP-DR65), in the Tree view and a trace. A box keeps its rectangular footprint; its corners and
-   notches grow with it (--box-scale), and its label keeps clear of them by its shape's room (--room-l, -r, -t, -b, set
-   with its outline by app/src/graph/shapes.ts), which pads it and moves its badge.
-   A polygon shape (is-clipped), a domain's hexagon among them (LA-EXP-DR61), is drawn this way: the node is clipped to its outline (--outline) and filled with
-   its edge color, and an inner layer inset by the edge's width and clipped the same way is its fill, so the border
-   follows the outline in every state. Hover, focus, the keyboard ring and a tap's selection color the edge, since a
-   box-shadow or outline would be clipped away. A rounded shape keeps its border, so rings and outlines follow it. */
-.graph-node.is-clipped { --edge-w: var(--node-border); border: 0; border-radius: 0; background: var(--node-edge); clip-path: var(--outline); isolation: isolate; box-shadow: none; }
-.graph-node.is-clipped::before { content: ""; position: absolute; inset: var(--edge-w); z-index: -1; background: var(--node-fill); clip-path: var(--outline); }
-.graph-node.is-clipped.is-focus { --node-edge: var(--ink); --edge-w: calc(3px * var(--box-scale)); box-shadow: none; }
-.graph-flow .react-flow__node:hover .graph-node.is-clipped:not(.is-focus) { --node-edge: var(--steel); --edge-w: calc(2.5px * var(--box-scale)); box-shadow: none; }
-.graph-flow .react-flow__node:focus-visible .graph-node.is-clipped { --node-edge: var(--steel); --edge-w: calc(3px * var(--box-scale)); outline: none; }
-.react-flow__node.is-armed .graph-node.is-clipped { --node-edge: var(--steel); --edge-w: calc(3px * var(--box-scale)); box-shadow: none; }
-/* What a shape draws inside its outline: a page's folded corner, a stack's front sheet, a flow's inner chevron. */
-.graph-node.shape-page::after { content: ""; position: absolute; top: 0; right: 0; width: var(--notch); height: var(--notch); background: color-mix(in srgb, var(--node-edge) 55%, var(--node-fill)); clip-path: polygon(0 0, 0 100%, 100% 100%); pointer-events: none; }
-.graph-node.shape-stack::after { content: ""; position: absolute; left: 0; bottom: 0; top: var(--notch); right: var(--notch); border-top: var(--edge-w) solid var(--node-edge); border-right: var(--edge-w) solid var(--node-edge); pointer-events: none; }
-.graph-node.shape-chevron-bar::after {
-  content: ""; position: absolute; inset: 0; background: var(--node-edge); pointer-events: none;
-  --at: calc(14 * var(--u)); --w: calc(1.4 * var(--edge-w));
-  clip-path: polygon(calc(100% - var(--notch) - var(--at)) 0, calc(100% - var(--notch) - var(--at) + var(--w)) 0, calc(100% - var(--at) + var(--w)) 50%, calc(100% - var(--notch) - var(--at) + var(--w)) 100%, calc(100% - var(--notch) - var(--at)) 100%, calc(100% - var(--at)) 50%);
-}
-/* The rounded shapes: a product's large rounded box, a use case's stadium, a fitness's circle. */
-.graph-node.shape-product { border-radius: calc(18 * var(--u)); border-width: calc(2.5 * var(--u)); }
-.graph-node.shape-stadium { border-radius: calc(24 * var(--u)); }
-.graph-node.shape-circle { border-radius: 50%; }
-/* A circle's badge sits at the end of its kind and ID line, which its room keeps inside the circle. */
-.graph-node.shape-circle small { position: relative; }
-.graph-node.shape-circle small .graph-marks { display: flex; top: 0; right: 0; }
-/* The boxes with a drawing inside: an aggregate's second border, a view's window bar, a layer's stripes. */
-.graph-node.shape-double::after { content: ""; position: absolute; inset: calc(2 * var(--u)); border: calc(1 * var(--u)) solid var(--node-edge); border-radius: calc(3 * var(--u)); pointer-events: none; }
-.graph-node.shape-window::after {
-  content: ""; position: absolute; inset: 0 0 auto; height: calc(5 * var(--u)); pointer-events: none;
-  --dot: radial-gradient(circle, var(--node-fill) calc(1.1 * var(--u)), transparent calc(1.5 * var(--u)));
-  background: var(--dot) calc(3 * var(--u)) 0 / calc(4 * var(--u)) 100% no-repeat, var(--dot) calc(7.5 * var(--u)) 0 / calc(4 * var(--u)) 100% no-repeat, var(--dot) calc(12 * var(--u)) 0 / calc(4 * var(--u)) 100% no-repeat, var(--node-edge);
-}
-.graph-node.shape-stripes::after {
-  content: ""; position: absolute; inset: 0; pointer-events: none;
-  --line: linear-gradient(var(--node-edge), var(--node-edge));
-  background: var(--line) 0 calc(2 * var(--u)) / 100% var(--u) no-repeat, var(--line) 0 calc(4.5 * var(--u)) / 100% var(--u) no-repeat, var(--line) 0 calc(100% - 2 * var(--u)) / 100% var(--u) no-repeat, var(--line) 0 calc(100% - 4.5 * var(--u)) / 100% var(--u) no-repeat;
-}
-/* The hover spotlight: the hovered or focused node, its edges and its neighbors stay bright, the rest dims a step. */
-.graph-flow.has-spotlight .react-flow__node:not(.is-lit) .graph-node { opacity: var(--spotlight-dim); }
-.graph-flow.has-spotlight .react-flow__node.is-lit .graph-node { opacity: 1; }
-.graph-flow.has-spotlight .graph-edge-group:not(.is-lit) .react-flow__edge-path { opacity: calc(var(--context-opacity) * var(--spotlight-dim)); }
-.graph-flow.has-spotlight .graph-edge-group.is-lit .react-flow__edge-path { opacity: 1; }
-/* The spotlight fades on the motion tokens; under reduced motion it changes at once. */
+/* The edge hints take the hover tint on the hover speed; under reduced motion at once. */
 @media (prefers-reduced-motion: no-preference) {
-  .graph-flow .react-flow__node .graph-node { transition: opacity var(--motion-speed) var(--motion-ease); }
-  .graph-flow .react-flow__edge-path.graph-edge { transition: opacity var(--motion-speed) var(--motion-ease); }
   .graph-edge-hint { transition: background var(--hover-speed), color var(--hover-speed); }
 }
 /* The cut-off at the frame reads as meant: a soft vignette of the canvas's own background at its edges. */
@@ -423,7 +325,7 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-minimap-view { fill: var(--minimap-mask); stroke: var(--steel); stroke-width: 2; }
 /* By touch: the toolbar's toggles and the edge hints are touch-sized. */
 @media (pointer: coarse) {
-  :is(.graph-links button, .graph-step, .graph-edge-hint) { min-width: var(--touch-target); min-height: var(--touch-target); }
+  :is(.graph-links button, .graph-step, .graph-edge-hint, .graph-controls .icon-button) { min-width: var(--touch-target); min-height: var(--touch-target); }
 }
 /* ---------- End of graph view ---------- */
 
@@ -476,7 +378,6 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .menu .long-list-tools input { font-size: 0.8rem; }
 /* ---------- End of obligation kinds, test states and record content ---------- */
 /* ---- Graph groups (brief 15): a folder of one kind of child, with a tab and a count. ---- */
-.graph-node.stage-group { --node-edge: var(--muted); --node-fill: var(--sheet); }
 .graph-swatch.stage-group { border-color: var(--muted); background: var(--sheet); }
 
 /* ---------- App shell, nav, focus page, sideBar, trees and shortcuts (brief 18) ---------- */
@@ -753,8 +654,7 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 /* Hover: everything clickable answers the pointer the same way (LA-PAT-APP-UX-R01).
    Cards and graph nodes take a ring; rows and plain buttons take a tint; small text controls turn steel.
    The center node and file nodes are not clickable, so they keep the default cursor and no hover. */
-.card, .graph-node, .button, .graph-depth button,
-.quick-find-results li, .palette-list li, .graph-trace-toggle, .graph-filters > summary, .graph-legend summary {
+.card, .button, .graph-depth button, .quick-find-results li, .palette-list li, .graph-trace-toggle, .graph-filters > summary, .graph-legend summary {
   transition: background-color var(--hover-speed), border-color var(--hover-speed), box-shadow var(--hover-speed), color var(--hover-speed);
 }
 /* A row that leads to one record is one link (LA-PAT-APP-UX-R05): its record link, marked row-link, stretches over
@@ -773,14 +673,11 @@ a.row-link.row-link:focus-visible { outline: none; }
 .domain-card .card-title::after { content: ''; position: absolute; inset: 0; border-radius: inherit; }
 .spec-body a.card:hover, .spec-body .domain-card:hover { border-color: var(--steel); box-shadow: 0 0 0 3px var(--hover-ring); }
 .spec-body .domain-card:hover .card-title strong { color: var(--steel); }
-.graph-node.is-focus, .graph-node.stage-file { cursor: default; }
-.graph-flow .react-flow__node:hover .graph-node:not(.is-focus):not(.stage-file) { box-shadow: 0 0 0 calc(3px * var(--box-scale)) var(--hover-ring); }
 .graph-depth button:not([aria-pressed="true"]):not(:disabled):hover { background: var(--hover-bg); border-color: var(--steel); }
 .quick-find-results li:not(.active):hover, .palette-list li:not(.active):hover { background: var(--hover-bg); }
 .graph-trace-toggle:hover, .graph-filters > summary:hover, .graph-legend summary:hover { color: var(--steel); }
 @media (prefers-reduced-motion: reduce) {
-  .card, .graph-node, .button, .graph-depth button,
-  .quick-find-results li, .palette-list li, .graph-trace-toggle, .graph-filters > summary, .graph-legend summary { transition: none; }
+  .card, .button, .graph-depth button, .quick-find-results li, .palette-list li, .graph-trace-toggle, .graph-filters > summary, .graph-legend summary { transition: none; }
 }
 
 /* The workbench (LA-PAT-APP-UX-R02): each panel is a rounded box on the shell; the gap between two
@@ -1084,7 +981,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 
 /* A canvas by touch: the selected node is outlined, and a card at the bottom names it with an Open chip. */
 .graph-flow, .model-flow { touch-action: none; }
-.react-flow__node.is-armed :is(.graph-node, .erd-box) { box-shadow: 0 0 0 3px var(--steel); }
+.react-flow__node.is-armed .erd-box { box-shadow: 0 0 0 3px var(--steel); }
 .tap-card { position: absolute; z-index: 6; left: 56px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 8px; max-width: 420px; box-sizing: border-box; padding: 6px 6px 6px 14px; background: var(--sheet); color: var(--ink); border: 1px solid var(--rule); border-radius: 12px; box-shadow: 0 6px 20px var(--shadow); }
 .tap-card-text { flex: 1; min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr); }
 .tap-card-text small { color: var(--muted); font-size: 0.72rem; }

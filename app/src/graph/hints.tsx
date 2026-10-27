@@ -1,12 +1,11 @@
-import { useReactFlow, useStore } from '@xyflow/react';
 import { Button } from '../components/Button';
-import { readMotion } from './motion';
 
 // Edge hints (LA-EXP-UC03-R12): at each edge of a canvas a small chip counts the boxes of interest
 // past it ("3 ↑", "8 →"): the records the graph's center links to (the Links switch), or the Model
 // view's faded context boxes. A click pans the camera that way, with the shared motion, without
 // changing the focus: by about half the canvas, or as the host asks (the graph brings the nearest
 // linked record into view). The chips follow the camera, and an edge with nothing past it shows none.
+// The graph's canvas counts with its own camera; the Model view's wrapper is app/src/model/hints.tsx.
 
 export type Point = { x: number; y: number };
 export type Side = 'up' | 'down' | 'left' | 'right';
@@ -38,30 +37,8 @@ export function panToward(view: { x: number; y: number; zoom: number }, side: Si
   return { x: view.x + (h.dx * width) / 2, y: view.y + (h.dy * height) / 2, zoom: view.zoom };
 }
 
-/**
- * The chips, inside a React Flow provider. `centers` are the world centers of the boxes they count;
- * `wrapper` is the canvas element; `noun` says what they are ("faded", "linked"); `onPan`, when
- * given, moves the camera toward a side in place of the half-canvas pan.
- */
-export function EdgeHints({ centers, wrapper, noun = 'faded', onPan }: { centers: readonly Point[]; wrapper: { current: HTMLElement | null }; noun?: string; onPan?: (side: Side) => void }) {
-  const { getViewport, setViewport } = useReactFlow();
-  const width = wrapper.current?.clientWidth ?? 0;
-  const height = wrapper.current?.clientHeight ?? 0;
-  // The counts, as one key: the camera moves every frame of a glide, but the chips are drawn again
-  // only when a count changes (LA-PAT-APP-UX-R11). The canvas's size in the store redraws them on a resize.
-  const key = useStore((s) => {
-    const [x, y, zoom] = s.transform;
-    const p = pastEdges(centers, { x, y, zoom }, wrapper.current?.clientWidth ?? s.width, wrapper.current?.clientHeight ?? s.height);
-    return `${p.up} ${p.down} ${p.left} ${p.right} ${s.width}x${s.height}`;
-  });
-  if (width <= 0 || height <= 0 || centers.length === 0) return null;
-  const [up, down, left, right] = key.split(' ').map(Number);
-  const past: Record<Side, number> = { up, down, left, right };
-  const pan = (side: Side) => {
-    if (onPan) { onPan(side); return; }
-    const motion = readMotion();
-    setViewport(panToward(getViewport(), side, width, height), motion.duration > 0 ? { duration: motion.duration, ease: motion.ease, interpolate: 'linear' } : { duration: 0 });
-  };
+/** The chips for the counts past each edge: `noun` says what they are ("faded", "linked"); `onPan` moves the camera toward a side. */
+export function EdgeHintChips({ past, noun, onPan }: { past: Record<Side, number>; noun: string; onPan: (side: Side) => void }) {
   return (
     <div className="graph-edge-hints">
       {HINTS.map((h) => past[h.side] > 0 && (
@@ -70,7 +47,7 @@ export function EdgeHints({ centers, wrapper, noun = 'faded', onPan }: { centers
           className={`graph-edge-hint is-${h.side}`}
           aria-label={`${past[h.side]} ${noun} ${past[h.side] === 1 ? 'box' : 'boxes'} ${h.label}: pan that way`}
           title={`${past[h.side]} ${noun} ${h.label}`}
-          onClick={() => pan(h.side)}
+          onClick={() => onPan(h.side)}
         >
           {past[h.side]} {h.mark}
         </Button>

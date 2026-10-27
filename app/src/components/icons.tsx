@@ -17,6 +17,9 @@ const PATHS: Record<string, string[]> = {
   maximize: ['M4 8V6a2 2 0 0 1 2-2h2', 'M4 16v2a2 2 0 0 0 2 2h2', 'M16 4h2a2 2 0 0 1 2 2v2', 'M16 20h2a2 2 0 0 0 2-2v-2'],
   minimize: ['M15 19v-2a2 2 0 0 1 2-2h2', 'M15 5v2a2 2 0 0 0 2 2h2', 'M5 15h2a2 2 0 0 1 2 2v2', 'M5 9h2a2 2 0 0 0 2-2V5'],
   x: ['M18 6L6 18', 'M6 6l12 12'],
+  // The graph's zoom buttons.
+  plus: ['M12 5v14', 'M5 12h14'],
+  minus: ['M5 12h14'],
   // The side bar's views (brief 64): Details is `info`; Outline and History.
   outline: ['M9 6h11', 'M12 12h8', 'M15 18h5', 'M5 6v.01', 'M8 12v.01', 'M11 18v.01'],
   history: ['M12 8v4l2 2', 'M3.05 11a9 9 0 1 1 .5 4m-.5 5v-5h5'],

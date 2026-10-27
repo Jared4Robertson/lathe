@@ -15,8 +15,21 @@ export const FRAME_PADDING = 32;
 /** How much of the pane the parent's level keeps at the left edge, at most. */
 export const PARENT_STRIP = 0.12;
 export const PARENT_STRIP_MAX = 96;
-/** The camera's zoom limits: far enough out for the whole map, never past twice a leaf's size. */
+/** How far the camera zooms in on a box whose text is at its natural size or larger: twice that size. */
 export const MAX_ZOOM = 2;
+/** How far out the camera zooms: far enough for the whole of any map. */
+export const MIN_ZOOM = 0.0005;
+
+/**
+ * How far the free camera zooms in on a map in a pane: twice the zoom that frames its smallest box,
+ * so the deepest leaf can always be framed and read, and never less than MAX_ZOOM.
+ */
+export function maxZoomFor(map: Pick<PlacedMap, 'nodes'>, width: number, height: number): number {
+  let smallest = Infinity;
+  for (const n of map.nodes.values()) smallest = Math.min(smallest, n.w, n.h);
+  if (!Number.isFinite(smallest) || smallest <= 0) return MAX_ZOOM;
+  return Math.max(MAX_ZOOM, (2 * Math.max(width, height)) / smallest);
+}
 /** The camera never zooms in past this when it frames a focus: a leaf at its own size. */
 export const FRAME_MAX_ZOOM = 1;
 
@@ -209,11 +222,16 @@ export const drawnKey = (d: Drawn) => `${d.boxes.map((b) => b.id).join(' ')}|${d
 
 // ---------- The Nested view (LA-EXP-DR63) ----------
 
-/** The camera that frames a focus in the Nested map: its box fills the pane within the padding, centered, zoomed in no further than MAX_ZOOM. */
+/**
+ * The camera that frames a focus in the Nested map: its box fills the pane within the padding,
+ * centered, its text drawn no larger than MAX_ZOOM times its natural size (a box whose text is
+ * smaller than a leaf's, deep in the map, may take a deeper zoom, so it can always be framed).
+ */
 export function frameNested(map: PlacedMap, focus: string, width: number, height: number): Viewport {
   const node = map.nodes.get(focus);
   if (!node || width <= 0 || height <= 0) return { x: width / 2, y: height / 2, zoom: 1 };
-  const zoom = Math.min(MAX_ZOOM, (width - 2 * FRAME_PADDING) / Math.max(1, node.w), (height - 2 * FRAME_PADDING) / Math.max(1, node.h));
+  const most = MAX_ZOOM / Math.min(1, Math.max(1e-12, node.text));
+  const zoom = Math.min(most, (width - 2 * FRAME_PADDING) / Math.max(1e-12, node.w), (height - 2 * FRAME_PADDING) / Math.max(1e-12, node.h));
   return { x: width / 2 - (node.x + node.w / 2) * zoom, y: height / 2 - (node.y + node.h / 2) * zoom, zoom };
 }
 

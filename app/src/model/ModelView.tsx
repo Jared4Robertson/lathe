@@ -7,7 +7,7 @@ import { readMotion } from '../graph/motion';
 import { erdFor, lineGeometry, lineOffsets, RELATION_ENDS, type Erd, type ErdBox, type ErdLine, type Rect } from './erd';
 import { layoutErd } from './layout';
 import { TapCard, useTapToOpen } from '../graph/touch';
-import { EdgeHints } from '../graph/hints';
+import { EdgeHints } from './hints';
 
 // The Model view: the ERD of a domain (at aggregate level) or of an aggregate (its entities), drawn
 // with React Flow and laid out by ELK. An entity page draws its aggregate's ERD with the entity
