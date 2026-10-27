@@ -1,6 +1,6 @@
-{"use_case_id":"LA-PLT-UC02","position":1,"description":"The person installs the Lathe package in the product repo and runs `lathe init` with the product's name and ID prefix."}
-{"use_case_id":"LA-PLT-UC02","position":2,"description":"They write records in the product's specs folder and run `lathe check`."}
-{"use_case_id":"LA-PLT-UC02","position":3,"description":"They run `lathe serve` to browse the specs."}
+{"use_case_id":"LA-PLT-UC02","position":1,"description":"The person installs the Lathe package in the product repo, runs `lathe init` with the product's name and ID prefix, and sets up the merge driver for the data files once per clone."}
+{"use_case_id":"LA-PLT-UC02","position":2,"description":"They add records with `lathe add` (or an Agent through the plugin's MCP tools) and run `lathe check`."}
+{"use_case_id":"LA-PLT-UC02","position":3,"description":"They run `lathe serve` to browse and edit the spec."}
 {"use_case_id":"LA-TRC-UC03","position":1,"description":"An **automated** test (the default) names the file that runs it in `run_by`. The file names the test's own ID or, as a real product often does, every ID it proves, so no separate test ID is needed in code. A test whose code names no ID gives a `key` the file must contain instead."}
 {"use_case_id":"LA-TRC-UC03","position":2,"description":"A **manual** test describes its procedure in its body."}
 {"use_case_id":"LA-TRC-UC03","position":3,"description":"A **planned** test is written before the test exists, to show what will prove an obligation."}
