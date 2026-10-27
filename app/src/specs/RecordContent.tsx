@@ -4,7 +4,7 @@ import { kindLabel, type SpecIndex, type SpecLink as Link, type SpecRecord } fro
 import { addressOf } from '../views/address';
 import { groupByLabel, relationLabelOf } from './labels';
 import { Traceability } from './Traceability';
-import { RecordMarkdown } from './mentions';
+import { RecordText, factsOf, rowPlace } from './RecordText';
 import { kindFieldPath, kindPagePath } from '../format/reference';
 import { PatternRuleSections, PatternSections } from './PatternParts';
 import { FlowSteps, hasSteps } from './FlowSteps';
@@ -15,7 +15,7 @@ import { LongList } from '../components/LongList';
 import { DesktopRecordActions } from '../shell/desktopRecord';
 import { Grouped, NavigateContext, PageHeader, ProblemBadge, ProblemList, RecordLink, RecordTree, Section, SpecLink, TestStateTag, idText, listTitle, testState } from './parts';
 
-// One record's content: header, body, problems, fields, parent, children and links both ways.
+// One record's content: header, text fields, problems, facts, parent, children and links both ways.
 // Kept apart from the page chrome so another view (such as the graph, side by side) can host it.
 // It lays itself out by its own width, so it reads at half the screen as well as full.
 
@@ -153,7 +153,7 @@ function RecordBody({ index, record, actions, header, side }: { index: SpecIndex
               <strong>Planned test.</strong> It is not written yet, so it does not count as proof of what it proves.
             </p>
           )}
-          <RecordMarkdown index={index} record={record} />
+          <RecordText index={index} record={record} />
           {record.kind === 'interaction_requirement' && <Fulfills index={index} record={record} />}
           {record.kind === 'pattern' && <PatternSections index={index} pattern={record} />}
           {record.kind === 'pattern_rule' && <PatternRuleSections index={index} rule={record} />}
@@ -184,7 +184,7 @@ function RecordBody({ index, record, actions, header, side }: { index: SpecIndex
 }
 
 /**
- * A record's facts: kind, fields, spec file, parent, children (their own children folded) and its
+ * A record's facts: kind, short fields, data file and line, parent, children (their own children folded) and its
  * links both ways. Shown beside the body, or in the side bar.
  */
 export function RecordFacts({ index, record }: { index: SpecIndex; record: SpecRecord }) {
@@ -193,21 +193,21 @@ export function RecordFacts({ index, record }: { index: SpecIndex; record: SpecR
   const children = index.children.get(id) ?? [];
   const isTest = record.kind === 'test';
   // A test's state gets its own row, with its tag.
-  const fields = Object.entries(record.fields).filter(([name]) => !(isTest && name === 'state'));
+  const facts = factsOf(index, record);
   const childrenTitle = listTitle(index, children, 'Children');
   return (
     <>
       <dl className="fields">
         <div><dt>Kind</dt><dd title={kind?.description}><SpecLink to={kindPagePath(record.kind)} title={`How a ${lowerLabel(kind?.label ?? record.kind)} works`}>{kind?.label ?? record.kind}</SpecLink></dd></div>
         {isTest && <div><dt>State</dt><dd><TestStateTag record={record} /></dd></div>}
-        {fields.map(([name, value]) => (
-          <div key={name}>
-            {/* A required field's label leads to the field on the kind's page in the format reference. */}
-            <dt>{kind?.required_fields.includes(name) ? <SpecLink to={kindFieldPath(record.kind, name)} title={`Required of every ${lowerLabel(kind.label)}`}>{name.replaceAll('_', ' ')}</SpecLink> : name.replaceAll('_', ' ')}</dt>
-            <dd>{value}</dd>
+        {facts.map((f) => (
+          <div key={f.label}>
+            {/* A column's label leads to the column on the kind's page in the format reference. */}
+            <dt>{f.column ? <SpecLink to={kindFieldPath(record.kind, f.column)} title={`The ${f.label} of a ${lowerLabel(kind?.label ?? record.kind)}`}>{f.label}</SpecLink> : f.label}</dt>
+            <dd>{f.value}</dd>
           </div>
         ))}
-        <div><dt>Spec file</dt><dd><code>{record.path}</code><DesktopRecordActions id={id} /></dd></div>
+        <div><dt>Data file</dt><dd><code>{rowPlace(record)}</code><DesktopRecordActions id={id} /></dd></div>
       </dl>
       <h3>Parent</h3>
       {record.parent ? <RecordLink index={index} id={record.parent} /> : <p className="hint">None (top level).</p>}

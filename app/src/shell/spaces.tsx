@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { navigate } from '../router';
-import { parseSpecRoute, spaceIndex, type SpecIndex, type SpecRecord } from '../specs/data';
+import { textOf, parseSpecRoute, spaceIndex, type SpecIndex, type SpecRecord } from '../specs/data';
 import { addressOf, isSpacePath } from '../views/address';
 import { usePref } from './prefs';
 
@@ -53,13 +53,13 @@ export function colorOf(id: string): string {
 }
 
 export function spaceOf(product: SpecRecord): Space {
-  const icon = iconField(product.fields.icon);
+  const icon = iconField(textOf(product.row, 'icon'));
   return {
     id: product.id,
     title: product.title,
     mark: icon ?? monogramOf(product.id),
     monogram: icon === null,
-    color: colorField(product.fields.color) ?? colorOf(product.id),
+    color: colorField(textOf(product.row, 'color')) ?? colorOf(product.id),
   };
 }
 

@@ -1,10 +1,7 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { SpecRecord, Workspace } from '../../lathe/src/types';
 import { graphEdgeLabel, graphRelationLabel } from '../src/graph/model';
-import { indexWorkspace, type SpecIndex } from '../src/specs/data';
+import { type SpecIndex } from '../src/specs/data';
 import { branchOf, domainFolders, type FolderGroup } from '../src/specs/folders';
 import { pathsOf } from '../src/specs/FlowSteps';
 import { linkLabel, relationLabelOf } from '../src/specs/labels';
@@ -16,6 +13,7 @@ import { layerWorkspace } from './fixtures/layers';
 import { patternWorkspace } from './fixtures/patterns';
 import { workspace } from './fixtures/workspace';
 import { openApp } from './helpers';
+import { addRows, indexOf } from './fixtures/load';
 
 // A record's Traceability section (LA-TRC-UC14): its links grouped and titled by their labels
 // (LA-EXP-V03-R07), gap callouts that agree with coverage, a use case's requirement table, and the
@@ -36,13 +34,9 @@ const groupIds = (trace: HTMLElement, title: string) => {
   return [...heading.closest('section')!.querySelectorAll('a.row-link code')].map((c) => c.textContent);
 };
 
-function rec(id: string, kind: string, title: string, parent: string, fields: Record<string, string> = {}): SpecRecord {
-  return { id, kind, title, parent, product: 'DM', domain: 'DM-SHOP', fields, body: '', path: `specs/dm/${id}.md`, mentions: [] };
-}
-
 describe('traceability', () => {
   it('LA-TRC-T112 An obligation lists Designed by, Proved by and Carried out in, in that order, each component marked built', () => {
-    const index = indexWorkspace(workspace());
+    const index = indexOf(workspace());
     const trace = show(index, 'DM-SHOP-UC01-R01');
     expect(groupTitles(trace)).toEqual(['Designed by', 'Proved by', 'Carried out in']);
     expect(groupIds(trace, 'Designed by')).toEqual(['DM-SHOP-C01']);
@@ -58,7 +52,7 @@ describe('traceability', () => {
   });
 
   it('LA-TRC-T113 Gap callouts say not designed, not built and not proved (or only planned), agree with coverage, link to their check, and a pattern rule has one line per domain', () => {
-    const index = indexWorkspace(workspace());
+    const index = indexOf(workspace());
     // Coverage reports DM-SHOP-UC01-R02 unproved, and DM-PAY-UC01-R01 neither designed nor proved.
     let trace = show(index, 'DM-SHOP-UC01-R02');
     expect([...trace.querySelectorAll('.trace-gap')].map((g) => g.getAttribute('data-gap'))).toEqual(['not-proved']);
@@ -70,23 +64,27 @@ describe('traceability', () => {
     cleanup();
 
     // A pattern rule, per following domain: DM-SHOP's R02 is not applicable there, so only DM-PAY owes it.
-    const patterns = indexWorkspace(patternWorkspace());
+    const patterns = indexOf(patternWorkspace());
     const r01 = patterns.byId.get('DM-PAT-CHECKOUT-R01')!;
     expect(owingDomains(patterns, r01)).toEqual(['DM-PAY', 'DM-SHOP']);
     expect(owingDomains(patterns, patterns.byId.get('DM-PAT-CHECKOUT-R02')!)).toEqual(['DM-PAY']);
-    // DM-PAY designs R01 with a component whose file is missing, and only a planned test proves it.
-    expect(judge(patterns, r01, 'DM-PAY').gaps.map((g) => [g.kind, g.check])).toEqual([['not-built', 'component-file-missing'], ['only-planned', 'unproved']]);
+    // A pattern rule needs proof only: DM-PAY designs R01 with a component whose file is missing, which is no gap,
+    // and only a planned test proves it.
+    expect(judge(patterns, r01, 'DM-PAY').gaps.map((g) => [g.kind, g.check])).toEqual([['only-planned', 'unproved']]);
     expect(judge(patterns, r01, 'DM-SHOP').gaps).toEqual([]);
     trace = show(patterns, 'DM-PAT-CHECKOUT-R01');
     const lines = [...trace.querySelectorAll('.trace-domain')];
     expect(lines.map((l) => l.querySelector('a code')?.textContent)).toEqual(['DM-PAY', 'DM-SHOP']);
-    expect(lines[0]).toHaveTextContent(/Not built yet.*Not proved yet: its test is only planned/);
+    expect(lines[0]).toHaveTextContent('Not proved yet: its test is only planned');
+    expect(lines[0]).not.toHaveTextContent('Not built yet');
     expect(lines[1]).toHaveTextContent('designed, built and proved');
 
-    // The callouts agree with coverage's gaps for every obligation in every domain.
+    // The callouts agree with coverage's gaps for every obligation in every domain (a kind that needs proof only owes no design).
     for (const c of patterns.workspace.coverage) {
       for (const g of c.gaps) {
-        const kinds = judge(patterns, patterns.byId.get(g.id)!, c.domain).gaps.map((x) => x.kind);
+        const judged = judge(patterns, patterns.byId.get(g.id)!, c.domain);
+        if (g.missing === 'satisfies' && !judged.needsDesign) continue;
+        const kinds = judged.gaps.map((x) => x.kind);
         expect(kinds).toContain(g.missing === 'satisfies' ? 'not-designed' : kinds.includes('only-planned') ? 'only-planned' : 'not-proved');
       }
     }
@@ -94,10 +92,9 @@ describe('traceability', () => {
 
   it("LA-TRC-T114 A use case shows a requirement table (Designed, Built, Proved), then what carries it out, follows and applies", () => {
     const w = workspace();
-    w.records.push(rec('DM-SHOP-F02', 'flow', 'Fill and check out', 'DM-SHOP'));
-    w.links.push({ source: 'DM-SHOP-F02', relation: 'carries_out', target: 'DM-SHOP-UC01' });
-    w.relations = [...w.relations, { relation: 'carries_out', source_kind: 'flow', target_kind: 'use_case', role: '', description: '', forward_label: 'Carries out', reverse_label: 'Carried out by flow' }];
-    const trace = show(indexWorkspace(w), 'DM-SHOP-UC01');
+    addRows(w, 'flow', { id: 'DM-SHOP-F02', title: 'Fill and check out', domain_id: 'DM-SHOP' });
+    addRows(w, 'carries_out', { source_id: 'DM-SHOP-F02', target_id: 'DM-SHOP-UC01' });
+    const trace = show(indexOf(w), 'DM-SHOP-UC01');
     const table = within(trace).getByRole('table');
     expect(within(table).getAllByRole('columnheader').map((h) => h.textContent)).toEqual(['Requirement', 'Designed', 'Built', 'Proved']);
     const rows = [...table.querySelectorAll('tbody tr')] as HTMLElement[];
@@ -113,7 +110,7 @@ describe('traceability', () => {
   });
 
   it('LA-TRC-T115 A component shows Satisfies and Proved through; a test shows Proves and the file that runs it, with its state', () => {
-    const index = indexWorkspace(workspace());
+    const index = indexOf(workspace());
     let trace = show(index, 'DM-SHOP-C01');
     expect(groupTitles(trace)).toEqual(['Satisfies', 'Proved through', 'Implements']);
     expect(groupIds(trace, 'Satisfies')).toEqual(['DM-SHOP-DR01', 'DM-SHOP-UC01-R01', 'DM-SHOP-UC01-R02']);
@@ -127,7 +124,7 @@ describe('traceability', () => {
   });
 
   it('LA-TRC-T116 Supports links show as Supported by on the obligation and Supports on the test, never as proof', () => {
-    const index = indexWorkspace(layerWorkspace());
+    const index = indexOf(layerWorkspace());
     let trace = show(index, 'DM-SHOP-DR01');
     expect(groupTitles(trace)).toContain('Supported by');
     expect(groupIds(trace, 'Supported by')).toEqual(['DM-SHOP-T12']);
@@ -140,15 +137,15 @@ describe('traceability', () => {
 
   it('LA-EXP-T135 No page shows a relation code as a heading or label: wiki, record facts, graph and Model view read the labels', async () => {
     const w = layerWorkspace();
-    const index = indexWorkspace(w);
-    const codes = new Set(w.relations.map((r) => r.relation));
+    const index = indexOf(w);
+    const codes = new Set(Object.keys(w.schema.relations));
     const raw = (text: string) => {
       const t = text.replace(/\d+$/, '').trim();
       return [...codes].some((c) => t === c || t === c.replaceAll('_', ' ') || t === `${c} this` || t === `${c.replaceAll('_', ' ')} this`);
     };
     const offenders: string[] = [];
-    for (const r of w.records) {
-      await openApp(`/${r.id}`, { workspace: w });
+    for (const r of index.workspace.records) {
+      await openApp(`/${r.id}`, { data: w });
       await screen.findByRole('heading', { level: 1, name: r.title });
       for (const el of document.querySelectorAll('h1, h2, h3, h4, h5, h6, dt, th, legend, label, caption')) {
         if (raw(el.textContent ?? '')) offenders.push(`${r.id}: <${el.tagName.toLowerCase()}> ${el.textContent}`);
@@ -161,15 +158,15 @@ describe('traceability', () => {
     expect(graphEdgeLabel(index, { source: 'DM-SHOP-C01', relation: 'satisfies', target: 'DM-SHOP-DR01' }, 'target')).toBe('Designed by');
     expect(graphRelationLabel('depends_on', index)).toBe('Depends on');
     expect(graphRelationLabel('parent', index)).toBe('parent / child');
-    expect(relationLabelOf(w.relations, 'proves', 'target')).toBe('Proved by');
+    expect(relationLabelOf(index.workspace.relations, 'proves', 'target')).toBe('Proved by');
     expect(linkLabel(index, { source: 'DM-SHOP-T12', relation: 'supports', target: 'DM-SHOP-DR01' }, 'target')).toBe('Supported by');
   });
 
   it('LA-EXP-T136 A flow with several paths shows a table per path, the main path first, then the others by name', () => {
-    const w: Workspace = stepsWorkspace();
-    const step = (id: string, order: string, title: string, path?: string): SpecRecord => ({ ...rec(id, 'flow_step', title, 'DM-SHOP-F01', { order, ...(path ? { path } : {}) }) });
-    w.records.push(step('DM-SHOP-F01-S04', '1', 'The basket is full', 'Refused'), step('DM-SHOP-F01-S05', '2', 'The page says so', 'refused'), step('DM-SHOP-F01-S06', '1', 'A saved basket opens', 'api'));
-    const index = indexWorkspace(w);
+    const w = stepsWorkspace();
+    const step = (id: string, position: number, title: string, path: string) => ({ id, title, flow_id: 'DM-SHOP-F01', path, position });
+    addRows(w, 'flow_step', step('DM-SHOP-F01-S04', 1, 'The basket is full', 'Refused'), step('DM-SHOP-F01-S05', 2, 'The page says so', 'refused'), step('DM-SHOP-F01-S06', 1, 'A saved basket opens', 'api'));
+    const index = indexOf(w);
     expect(pathsOf(index, 'DM-SHOP-F01').map((p) => [p.path, p.steps.map((s) => s.id)])).toEqual([
       ['main', ['DM-SHOP-F01-S02', 'DM-SHOP-F01-S03', 'DM-SHOP-F01-S01']],
       ['api', ['DM-SHOP-F01-S06']],
@@ -186,13 +183,11 @@ describe('traceability', () => {
 
   it('LA-EXP-T137 Sub-layers nest as groups in Technical specification, and a domain rule under an entity sits under that entity', async () => {
     const w = layerWorkspace();
-    w.records.push(
-      rec('DM-SHOP-LAY04', 'layer', 'Basket services', 'DM-SHOP-LAY03', { order: '1' }),
-      rec('DM-SHOP-C06', 'component', 'Basket pricing', 'DM-SHOP-LAY04', { component_type: 'service', file: 'src/C06.ts' }),
-      rec('DM-SHOP-EN01', 'entity', 'Basket line', 'DM-SHOP-A1'),
-      rec('DM-SHOP-DR02', 'domain_rule', 'A line holds one or more of an item', 'DM-SHOP-EN01'),
-    );
-    const index = indexWorkspace(w);
+    addRows(w, 'layer', { id: 'DM-SHOP-LAY04', title: 'Basket services', domain_id: 'DM-SHOP', parent_layer_id: 'DM-SHOP-LAY03', position: 1 });
+    addRows(w, 'component', { id: 'DM-SHOP-C06', title: 'Basket pricing', domain_id: 'DM-SHOP', layer_id: 'DM-SHOP-LAY04', component_type: 'service', file: 'src/C06.ts' });
+    addRows(w, 'entity', { id: 'DM-SHOP-EN01', title: 'Basket line', aggregate_id: 'DM-SHOP-A1', role: 'root' });
+    addRows(w, 'domain_rule', { id: 'DM-SHOP-DR02', title: 'A line holds one or more of an item', domain_id: 'DM-SHOP', aggregate_id: 'DM-SHOP-A1', entity_id: 'DM-SHOP-EN01', statement: 'A line MUST hold one or more of an item.' });
+    const index = indexOf(w);
     const spec = domainFolders(index, 'DM-SHOP').stages.flatMap((s) => s.folders).find((f) => f.section === 'technical-specification')!;
     const services = spec.groups.find((g) => g.label === 'Services')!;
     const shape = (g: FolderGroup): unknown => ({ label: g.label, records: g.records.map((r) => r.id), groups: g.groups.map(shape) });
@@ -202,7 +197,7 @@ describe('traceability', () => {
 
     // The rule under the entity: the aggregate's page lists the entity with the rule folded under it,
     // and the nav opens to the aggregate holding it.
-    await openApp('/DM-SHOP-A1', { workspace: w });
+    await openApp('/DM-SHOP-A1', { data: w });
     await screen.findByRole('heading', { level: 1, name: 'Basket' });
     const entity = screen.getAllByRole('link', { name: /DM-SHOP-EN01/ })[0].closest('li') as HTMLElement;
     expect(entity).toHaveTextContent(/1 domain rule/);
@@ -210,15 +205,13 @@ describe('traceability', () => {
   });
 
   it('LA-TRC-T117 A domain rule under its domain shows the aggregates it involves under "Involves", and each aggregate shows it under "Involved in"; an interaction requirement\'s Carries out is not repeated', () => {
-    // The involves rule as lathe/meta/relations.csv has it, labels and all.
-    const row = readFileSync(resolve(process.cwd(), '../lathe/meta/relations.csv'), 'utf8').split('\n').find((l) => l.startsWith('involves,'))!;
-    const [relation, source_kind, target_kind, role, forward_label, reverse_label] = row.split(',');
-    expect([source_kind, target_kind, role, forward_label, reverse_label]).toEqual(['domain_rule', 'aggregate', '', 'Involves', 'Involved in']);
     const w = entityWorkspace();
-    w.relations = [...w.relations, { relation, source_kind, target_kind, role: '', forward_label, reverse_label, description: '' }];
-    w.records.push({ id: 'P-D-DR90', kind: 'domain_rule', title: 'A loan and its thing change together', parent: 'P-D', product: 'P', domain: 'P-D', fields: {}, body: '', path: 'specs/p/d/DR90.md', mentions: [] });
-    w.links.push({ source: 'P-D-DR90', relation: 'involves', target: 'P-D-A3' }, { source: 'P-D-DR90', relation: 'involves', target: 'P-D-A1' });
-    const index = indexWorkspace(w);
+    // The involves relation as the schema has it, labels and all.
+    const involves = w.schema.relations.involves;
+    expect([involves.pairs.map((p) => `${p.source}>${p.target}`), involves.role, involves.forwardLabel, involves.reverseLabel]).toEqual([['domain_rule>aggregate'], null, 'Involves', 'Involved in']);
+    addRows(w, 'domain_rule', { id: 'P-D-DR90', title: 'A loan and its thing change together', domain_id: 'P-D', statement: 'A loan and its thing MUST change together.' });
+    addRows(w, 'involves', { source_id: 'P-D-DR90', target_id: 'P-D-A3' }, { source_id: 'P-D-DR90', target_id: 'P-D-A1' });
+    const index = indexOf(w);
     let trace = show(index, 'P-D-DR90');
     // After what designs and proves it (here nothing), its links out under their forward label.
     expect(groupTitles(trace)).toEqual(['Involves']);
@@ -233,8 +226,8 @@ describe('traceability', () => {
     // An interaction requirement's Carries out has its own section on its page, so its Traceability leaves it out.
     const lw = layerWorkspace();
     const id = 'DM-SHOP-V01-IR01';
-    lw.links.push({ source: id, relation: 'fulfills', target: 'DM-SHOP-UC02-R01' });
-    const ir = indexWorkspace(lw);
+    addRows(lw, 'fulfills', { source_id: id, target_id: 'DM-SHOP-UC02-R01' });
+    const ir = indexOf(lw);
     trace = show(ir, id);
     expect(groupTitles(trace)).not.toContain('Carries out');
     expect(traceOf(ir, ir.byId.get(id)!).groups.map((g) => g.key)).toContain('out:Carries out');

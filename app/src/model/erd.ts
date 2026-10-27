@@ -1,5 +1,5 @@
 import type { SpecIndex, SpecLink, SpecRecord } from '../specs/data';
-import { byIdOrder } from '../specs/data';
+import { textOf, byIdOrder, partsOf } from '../specs/data';
 import { eventAggregate, eventsOf, raisedByLinks, reactingAggregates, reactionsOf } from './events';
 
 // The Model view's ERDs, as plain data (no React): what boxes and lines a domain's or an
@@ -109,11 +109,11 @@ const isEntityRelation = (r: string): r is EntityRelation => (ENTITY_RELATIONS a
 /** An aggregate's entities: the root first, then the children, in ID order. */
 export function entitiesOf(index: SpecIndex, aggregate: string): SpecRecord[] {
   const entities = (index.children.get(aggregate) ?? []).filter((r) => r.kind === 'entity');
-  const isRoot = (r: SpecRecord) => r.fields.role?.trim().toLowerCase() === 'root';
+  const isRoot = (r: SpecRecord) => textOf(r.row, 'role')?.trim().toLowerCase() === 'root';
   return [...entities].sort((a, b) => Number(isRoot(b)) - Number(isRoot(a)) || byIdOrder(a, b));
 }
 
-const isRootEntity = (r: SpecRecord) => r.fields.role?.trim().toLowerCase() === 'root';
+const isRootEntity = (r: SpecRecord) => textOf(r.row, 'role')?.trim().toLowerCase() === 'root';
 
 /** The aggregate an entity sits under, or null. */
 function aggregateOf(index: SpecIndex, entity: SpecRecord): SpecRecord | null {
@@ -249,7 +249,7 @@ export function aggregateErd(index: SpecIndex, aggregateId: string, highlight: s
       tone: 'current',
       foreign: false,
       root: isRootEntity(e),
-      fields: (e.entityFields ?? []).map((f) => ({ field: f.field, kind: f.kind })),
+      fields: partsOf(index, e.id, 'entity_field').map((f) => ({ field: textOf(f, 'name'), kind: textOf(f, 'type') })),
       highlight: e.id === highlight,
       context: false,
     });
@@ -265,7 +265,7 @@ export function aggregateErd(index: SpecIndex, aggregateId: string, highlight: s
       tone: 'current',
       foreign: false,
       root: false,
-      fields: (ev.entityFields ?? []).map((f) => ({ field: f.field, kind: f.kind })),
+      fields: partsOf(index, ev.id, 'event_field').map((f) => ({ field: textOf(f, 'name'), kind: textOf(f, 'type') })),
       highlight: ev.id === highlight,
       context: false,
     });

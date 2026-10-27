@@ -2,11 +2,11 @@
    then the view shown. The panel itself has its rules in styles.css. */
 
 :root {
-  /* A diff's added and removed lines: tints of the accent tokens, so every theme sets them. */
-  --diff-add-bg: color-mix(in srgb, var(--steel) 16%, transparent);
-  --diff-remove-bg: color-mix(in srgb, var(--spark) 16%, transparent);
-  --diff-add-ink: var(--steel);
-  --diff-remove-ink: var(--error);
+  /* A change's values before and after: tints of the accent tokens, so every theme sets them. */
+  --change-after-bg: color-mix(in srgb, var(--steel) 16%, transparent);
+  --change-before-bg: color-mix(in srgb, var(--spark) 16%, transparent);
+  --change-after-ink: var(--steel);
+  --change-before-ink: var(--error);
 }
 
 .side-switch { display: flex; gap: 2px; align-items: center; }
@@ -55,14 +55,11 @@ a.outline-record:hover span { color: var(--steel); }
 .history-meta { color: var(--muted); font-family: var(--mono); font-size: 0.72rem; }
 .history-row.is-working .history-subject { color: var(--warn); font-weight: 600; }
 .history-more { margin: 4px 0 0; }
-.history-diff {
-  margin: 0; padding: 6px 0; overflow: auto; max-height: 24rem; scrollbar-gutter: stable;
-  border: 1px solid var(--rule); border-radius: 6px; background: var(--paper);
-  font: 0.74rem/1.45 var(--mono); white-space: pre;
-}
-.history-diff:focus-visible { outline: 2px solid var(--steel); outline-offset: 1px; }
-.diff-line { display: block; padding: 0 8px; min-width: max-content; }
-.diff-add { background: var(--diff-add-bg); color: var(--diff-add-ink); }
-.diff-remove { background: var(--diff-remove-bg); color: var(--diff-remove-ink); }
-.diff-hunk { color: var(--muted); background: var(--hover-bg); }
-.diff-meta { color: var(--muted); }
+.history-summary { color: var(--muted); font-size: 0.74rem; overflow-wrap: anywhere; }
+.history-changes { display: grid; gap: 8px; padding: 6px 8px; border: 1px solid var(--rule); border-radius: 6px; background: var(--paper); }
+.history-change h4 { margin: 0 0 4px; font-size: 0.8rem; font-weight: 600; overflow-wrap: anywhere; }
+.history-change h4 small { color: var(--muted); font-weight: 400; }
+.history-fields dd { display: grid; gap: 2px; font-size: 0.8rem; }
+.history-before, .history-after { padding: 0 4px; border-radius: 3px; text-decoration: none; overflow-wrap: anywhere; white-space: pre-wrap; }
+.history-before { background: var(--change-before-bg); color: var(--change-before-ink); text-decoration: line-through; }
+.history-after { background: var(--change-after-bg); color: var(--change-after-ink); }

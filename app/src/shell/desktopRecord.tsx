@@ -66,14 +66,14 @@ export function useDesktopRecordMenu(index: SpecIndex | null) {
 
 const isMac = (platform: string) => platform === 'darwin';
 
-/** Reveal, Open in editor and Copy ID for a record's spec file: small quiet buttons, only in the desktop app. */
+/** Reveal, Open in editor and Copy ID for a record's data file: small quiet buttons, only in the desktop app. */
 export function DesktopRecordActions({ id }: { id: string }) {
   const bridge = desktopBridge();
   if (!bridge) return null;
   const { revealRecord, openRecordInEditor, copyRecordId } = bridge;
   const reveal = isMac(bridge.platform) ? 'Reveal in Finder' : 'Show in folder';
   return (
-    <span className="desktop-record-actions" role="group" aria-label={`Spec file of ${id}`}>
+    <span className="desktop-record-actions" role="group" aria-label={`Data file of ${id}`}>
       <Button onClick={() => revealRecord(id)}>{reveal}</Button>
       <Button onClick={() => openRecordInEditor(id)}>Open in editor</Button>
       <Button onClick={() => copyRecordId(id)}>Copy ID</Button>

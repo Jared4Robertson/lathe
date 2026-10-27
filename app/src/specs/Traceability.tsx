@@ -113,7 +113,7 @@ function RequirementTable({ index, useCase, rows }: { index: SpecIndex; useCase:
         <thead>
           <tr><th scope="col">Requirement</th><th scope="col">Designed</th><th scope="col">Built</th><th scope="col">Proved</th></tr>
         </thead>
-        {/* One body per group (FORMAT.md section 22), the ungrouped first, each group headed by its name. */}
+        {/* One body per group (lathe/REFERENCE.md), the ungrouped first, each group headed by its name. */}
         {groupRecords(rows.map((r) => r.record)).map((g) => (
           <tbody key={g.key} data-group={g.heading ?? undefined}>
             {g.heading !== null && <tr className="group-row"><th scope="rowgroup" colSpan={4}>{g.heading}</th></tr>}

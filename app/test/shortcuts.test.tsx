@@ -37,7 +37,7 @@ describe('keyboard shortcuts', () => {
   });
 
   it('LA-PLT-T20 Ctrl+B hides and shows the nav, Ctrl+Alt+B the side bar, each announced', async () => {
-    await openApp('/P-D-UC01', { workspace: testWorkspace() });
+    await openApp('/P-D-UC01', { data: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     press(document.body, 'b', 'KeyB', { ctrlKey: true });
     expect(nav().className).toContain('is-rail');
@@ -56,7 +56,7 @@ describe('keyboard shortcuts', () => {
   });
 
   it('LA-PLT-T21 Alt+W, Alt+G and Alt+M (or Ctrl+1, 2 and 4) toggle the views off a Mac, Ctrl+3 shows only the focused pane, and Ctrl+3 or Escape restores', async () => {
-    await openApp('/P-D-UC01', { workspace: testWorkspace() });
+    await openApp('/P-D-UC01', { data: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     press(document.body, '2', 'Digit2', { ctrlKey: true });
     expect(window.location.search).toBe('?view=wiki,graph');
@@ -110,7 +110,7 @@ describe('keyboard shortcuts', () => {
   });
 
   it('LA-PLT-T23 ? opens the shortcuts sheet and Ctrl+Shift+P the command palette, both searchable; the palette runs a command', async () => {
-    await openApp('/P-D-UC01', { workspace: testWorkspace() });
+    await openApp('/P-D-UC01', { data: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     press(document.body, '?', 'Slash', { shiftKey: true });
     const sheet = screen.getByRole('dialog', { name: 'Keyboard shortcuts' });
@@ -169,7 +169,7 @@ describe('keyboard shortcuts', () => {
   });
 
   it('LA-PLT-T25 In the graph, + and - change the depth, t switches trace mode and . frames the focus again', async () => {
-    await openApp('/P-D?view=graph', { workspace: testWorkspace() });
+    await openApp('/P-D?view=graph', { data: testWorkspace() });
     await waitFor(() => expect(node('P-D/question')).not.toBeNull());
     press(document.body, '+', 'Equal', { shiftKey: true });
     expect(screen.getByRole('button', { name: '2' })).toHaveAttribute('aria-pressed', 'true');
@@ -180,7 +180,7 @@ describe('keyboard shortcuts', () => {
     expect(isCenter('P-D')).toBe(true);
     expect(COMMANDS.some((c) => c.id === 'graphToggleGroup')).toBe(false);
 
-    await openApp('/P-D-UC01-R01?view=graph', { workspace: testWorkspace() });
+    await openApp('/P-D-UC01-R01?view=graph', { data: testWorkspace() });
     await waitFor(() => expect(node('P-D-UC01')).not.toBeNull());
     press(document.body, 't', 'KeyT');
     expect(screen.getByRole('checkbox', { name: 'Trace mode' })).toBeChecked();
@@ -190,7 +190,7 @@ describe('keyboard shortcuts', () => {
   it('LA-PLT-T26 F12, Shift+F12, Ctrl+Shift+E, Ctrl+Shift+I, / and Ctrl+- reach links, incoming links, the nav, the side bar, search and Back', async () => {
     // The side bar starts closed in the Wiki view (brief 64); this test reads it open.
     openSideBar('details', ['wiki', 'graph', 'model']);
-    await openApp('/P-D-UC01', { workspace: testWorkspace() });
+    await openApp('/P-D-UC01', { data: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     const sideBar = screen.getByRole('complementary', { name: 'Side bar' });
 
@@ -214,7 +214,7 @@ describe('keyboard shortcuts', () => {
     // / focuses the nearest search box: the page's, or quick find.
     press(document.body, '/', 'Slash');
     await waitFor(() => expect(within(nav()).getByRole('combobox', { name: 'Quick find' })).toHaveFocus());
-    await openApp('/P-D', { workspace: testWorkspace() });
+    await openApp('/P-D', { data: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Domain' });
     press(document.body, '/', 'Slash');
     expect(screen.getByRole('searchbox', { name: 'Filter records' })).toHaveFocus();

@@ -1,0 +1,72 @@
+/* Changing records in place: a record page's Edit, Add and Remove, the form generated from the
+   schema, and the question before a removal. Colors are the theme's tokens, so every theme sets them. */
+
+.record-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 12px 24px 0; }
+.record-add { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.record-add-kinds { display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 2px; border: 1px solid var(--rule); border-radius: 6px; background: var(--paper); }
+
+.record-form { display: grid; gap: 16px; max-width: 760px; }
+.record-form-head h2 { margin: 0; font-size: 1.3rem; }
+.record-form-head .eyebrow { margin: 0 0 2px; }
+.form-group { display: grid; gap: 12px; margin: 0; padding: 12px 14px 14px; border: 1px solid var(--rule); border-radius: 8px; min-width: 0; }
+.form-group > legend { padding: 0 6px; font-weight: 600; font-size: 0.92rem; color: var(--ink); }
+.form-field { display: grid; gap: 4px; min-width: 0; }
+.form-field > label { font-size: 0.85rem; font-weight: 600; color: var(--ink); }
+.form-field > label::first-letter { text-transform: uppercase; }
+.form-field.is-inline { grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: 8px; }
+.form-field.is-inline > label { grid-column: 2; grid-row: 1; }
+.form-field.is-inline > input { grid-column: 1; grid-row: 1; margin: 0; }
+.form-field.is-inline > .form-help, .form-field.is-inline > .form-error { grid-column: 1 / -1; }
+.form-required { color: var(--error); }
+.record-form :is(input[type="text"], input[type="number"], input[type="date"], textarea, select),
+.form-link-add input {
+  box-sizing: border-box; width: 100%; min-width: 0; min-height: 32px; padding: 5px 8px;
+  border: 1px solid var(--rule); border-radius: 6px; background: var(--paper); color: var(--ink);
+  font: inherit; font-size: 0.88rem;
+}
+.record-form textarea { resize: vertical; line-height: 1.45; }
+.record-form :is(input, textarea, select):focus-visible { outline: 2px solid var(--steel); outline-offset: 1px; }
+.record-form input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--steel); }
+.form-field.has-error :is(input, textarea, select), .form-link-add.has-error input { border-color: var(--error); }
+.form-help { margin: 0; color: var(--muted); font-size: 0.8rem; }
+.form-error { margin: 0; color: var(--error); font-size: 0.82rem; }
+ul.form-error { padding-left: 1.2em; }
+
+.form-part-rows { display: grid; gap: 10px; margin: 0; padding-left: 1.4em; }
+.form-part-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: start; }
+.form-part-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; }
+.form-part-fields .form-field > label { font-weight: 500; text-transform: none; }
+
+.form-link { display: grid; gap: 6px; padding: 8px 0 0; border-top: 1px solid var(--rule); }
+.form-link:first-of-type { border-top: 0; padding-top: 0; }
+.form-link-name { margin: 0; font-size: 0.88rem; }
+.form-link-name code { color: var(--muted); font-size: 0.8rem; }
+.form-link-targets { display: grid; gap: 2px; }
+.form-link-targets li { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.form-link-add { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; align-items: center; }
+.form-link-add .form-error { grid-column: 1 / -1; }
+
+.record-form-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.write-refusal { padding: 10px 14px; border: 1px solid var(--error); border-left-width: 4px; border-radius: 6px; background: var(--error-bg); color: var(--ink); font-size: 0.88rem; }
+.write-refusal p { margin: 0; }
+.write-refusal ul { margin: 6px 0 0; padding-left: 1.2em; }
+.write-refusal:focus-visible { outline: 2px solid var(--steel); outline-offset: 2px; }
+
+.remove-panel { display: grid; gap: 10px; margin: 12px 24px 0; padding: 14px 16px; border: 1px solid var(--error); border-radius: 8px; background: var(--sheet); max-width: 760px; }
+.remove-panel h2 { margin: 0; font-size: 1.1rem; }
+.remove-panel h2:focus-visible { outline: 2px solid var(--steel); outline-offset: 2px; }
+.remove-panel p { margin: 0; }
+.remove-referrers { display: grid; gap: 4px; }
+.remove-panel a.record-link { display: inline-flex; gap: 8px; align-items: baseline; color: var(--ink); text-decoration: none; }
+.remove-panel a.record-link code { color: var(--steel); white-space: nowrap; }
+.remove-panel a.record-link:hover span { text-decoration: underline; }
+
+@media (max-width: 800px) {
+  .record-actions { padding: 12px 16px 0; }
+  .remove-panel { margin: 12px 16px 0; }
+  .form-part-row { grid-template-columns: minmax(0, 1fr); }
+}
+@media (pointer: coarse) {
+  .record-form :is(input[type="text"], input[type="number"], input[type="date"], textarea, select), .form-link-add input { min-height: var(--touch-target); }
+}

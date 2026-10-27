@@ -19,7 +19,7 @@ describe('checks page', () => {
       { check: 'unproved', severities: ['warning', 'warning'], records: ['/DM-SHOP-DR01', '/DM-SHOP-UC01-R02'] },
       { check: 'unsatisfied', severities: ['warning'], records: ['/DM-PAY-UC01-R01'] },
       { check: 'Workspace', severities: ['error'], records: ['workspace'] },
-      { check: 'meta-model', severities: ['error'], records: ['workspace'] },
+      { check: 'engine', severities: ['error'], records: ['workspace'] },
     ]);
     expect(main().textContent).not.toContain('NF-NOTE');
   });

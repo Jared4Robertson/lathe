@@ -65,7 +65,7 @@ describe('the whole row is clickable', () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' })).toBeInTheDocument();
 
     // A second link in a row opens what it names, not the row's record.
-    await openApp('/DM-PAY', { workspace: patternWorkspace() });
+    await openApp('/DM-PAY', { data: patternWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Paying' });
     const pattern = rowOf(section(/^Patterns we follow/), 'DM-PAT-CHECKOUT');
     const followedBy = within(pattern).getByRole('link', { name: 'DM-PAY-UC01' });
@@ -73,7 +73,7 @@ describe('the whole row is clickable', () => {
     expect(window.location.pathname).toBe('/DM-PAY-UC01');
 
     // And the row's plain text opens the pattern.
-    await openApp('/DM-PAY', { workspace: patternWorkspace() });
+    await openApp('/DM-PAY', { data: patternWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Paying' });
     clickAt(within(rowOf(section(/^Patterns we follow/), 'DM-PAT-CHECKOUT')).getByText(/followed by/));
     expect(window.location.pathname).toBe('/DM-PAT-CHECKOUT');

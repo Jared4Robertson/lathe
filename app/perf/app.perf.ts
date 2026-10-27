@@ -43,7 +43,7 @@ test.describe('performance', () => {
 
   test('LA-PLT-T91 a record page is interactive within 1.5 s', async ({ page }) => {
     await installProbes(page);
-    // A warm server: the engine has loaded the specs once, as it has for any page after the first.
+    // A warm server: the server has loaded the data once, as it has for any page after the first.
     await page.goto(RECORD);
     await page.locator(TITLE).first().waitFor();
     const times: number[] = [];

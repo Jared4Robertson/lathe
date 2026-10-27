@@ -1,73 +1,16 @@
-import type { Coverage, Kind, ObligationCoverage, RelationRule, SpecLink, SpecRecord, Workspace } from '../../../lathe/src/types';
-import sample from '../../../lathe/fixtures/workspace.sample.json';
+import type { Coverage, ObligationCoverage } from '../../../lathe/src/types';
+import type { SpecData } from '../../../lathe/src/server/contract';
+import { fixture } from './load';
 
-// A small workspace for the component tests. Two products:
-// - DM (Demo): two domains, questions and problems.
+// A small workspace for the component tests (data/workspace/). Two products:
+// - DM (Demo shop): two domains, questions and problems.
 // - NF (Notebook): one domain.
-
-// The sample's kinds, with the capability kind when it lacks it (first, as in the meta-model).
-const sampleKinds = (sample as unknown as Workspace).kinds;
-const kinds: Kind[] = [
-  ...(sampleKinds.some((k) => k.kind === 'capability') ? [] : [
-    { kind: 'capability', label: 'Capability', stage: 'define', section: 'use-cases', parent_kinds: ['domain'], required_fields: ['order'], obligation: false, proof_only: false, description: 'An ordered slice of a domain.' },
-  ]),
-  ...sampleKinds,
-];
-const relations: RelationRule[] = (sample as unknown as Workspace).relations;
-
-function record(id: string, kind: string, title: string, parent: string | null, fields: Record<string, string> = {}, body = ''): SpecRecord {
-  const parts = id.split('-');
-  const product = parts[0];
-  const domain = kind === 'product' || (kind === 'question' && parts.length === 2) ? null : parts.slice(0, 2).join('-');
-  return { id, kind, title, parent, product, domain, fields, body, path: `specs/${product.toLowerCase()}/${id}.md`, mentions: [] };
-}
-
-export const records: SpecRecord[] = [
-  record('DM', 'product', 'Demo shop', null, {}, 'A demo product for the **component tests**.'),
-  record('DM-Q01', 'question', 'Should the shop ship abroad?', 'DM', { owner: 'Owner' }, 'Undecided.'),
-
-  record('DM-SHOP', 'domain', 'Shopping', 'DM', {}, 'People pick goods and pay.'),
-  record('DM-SHOP-A1', 'aggregate', 'Basket', 'DM-SHOP', {}, 'The goods a person means to buy.'),
-  record('DM-SHOP-DR01', 'domain_rule', 'A basket holds at most 50 items', 'DM-SHOP-A1', {}, 'A basket MUST NOT hold more than 50 items.'),
-  record('DM-SHOP-UC01', 'use_case', 'Add an item to the basket', 'DM-SHOP', { actor: 'Shopper' }, 'A shopper adds an item.'),
-  record('DM-SHOP-UC01-R01', 'requirement', 'The basket shows the new item', 'DM-SHOP-UC01', {}, 'The basket MUST show the item at once.'),
-  record('DM-SHOP-UC01-R02', 'requirement', 'A full basket refuses the item', 'DM-SHOP-UC01', {}, 'A full basket MUST refuse a new item.'),
-  record('DM-SHOP-F01', 'flow', 'Fill a basket', 'DM-SHOP'),
-  record('DM-SHOP-V01', 'view', 'Basket page', 'DM-SHOP', { route: '/basket' }),
-  record('DM-SHOP-E01', 'endpoint', 'Add to basket', 'DM-SHOP', { method: 'POST', route: '/basket/items' }),
-  record('DM-SHOP-C01', 'component', 'Basket service', 'DM-SHOP', { component_type: 'service', file: 'src/basket.ts' },
-    'Holds baskets.\n\n<script>window.__pwned = true</script><img src="x" onerror="window.__pwned = true"><a href="javascript:alert(1)">bad link</a>'),
-  record('DM-SHOP-T01', 'test', 'Adding an item shows it', 'DM-SHOP', { test_type: 'unit', run_by: 'test/basket.test.ts' }),
-  record('DM-SHOP-Q01', 'question', 'What happens to a basket overnight?', 'DM-SHOP', { owner: 'Ana' }),
-
-  record('DM-PAY', 'domain', 'Paying', 'DM', {}, 'People pay for a basket.'),
-  record('DM-PAY-UC01', 'use_case', 'Pay by card', 'DM-PAY', { actor: 'Shopper' }),
-  record('DM-PAY-UC01-R01', 'requirement', 'A declined card leaves the basket unpaid', 'DM-PAY-UC01'),
-
-  record('NF', 'product', 'Notebook', null, {}, 'A second product, with one domain.'),
-  record('NF-NOTE', 'domain', 'Notes', 'NF', {}, 'People write notes.'),
-];
-
-export const links: SpecLink[] = [
-  { source: 'DM-SHOP-UC01', relation: 'applies', target: 'DM-SHOP-DR01' },
-  { source: 'DM-SHOP-F01', relation: 'uses', target: 'DM-SHOP-V01' },
-  { source: 'DM-SHOP-F01', relation: 'fulfills', target: 'DM-SHOP-UC01-R01' },
-  { source: 'DM-SHOP-V01', relation: 'fulfills', target: 'DM-SHOP-UC01-R01' },
-  { source: 'DM-SHOP-E01', relation: 'fulfills', target: 'DM-SHOP-UC01-R01' },
-  { source: 'DM-SHOP-C01', relation: 'satisfies', target: 'DM-SHOP-UC01-R01' },
-  { source: 'DM-SHOP-C01', relation: 'satisfies', target: 'DM-SHOP-UC01-R02' },
-  { source: 'DM-SHOP-C01', relation: 'satisfies', target: 'DM-SHOP-DR01' },
-  { source: 'DM-SHOP-C01', relation: 'implements', target: 'DM-SHOP-E01' },
-  { source: 'DM-SHOP-T01', relation: 'proves', target: 'DM-SHOP-UC01-R01' },
-  { source: 'DM-Q01', relation: 'about', target: 'DM' },
-  { source: 'DM-SHOP-Q01', relation: 'about', target: 'DM-SHOP-A1' },
-];
 
 /** One obligation kind's coverage line; planned_any is planned unless given. */
 export const obligation = (kind: string, label: string, total: number, designed: number, built: number, proved: number, planned = 0, plannedAny = planned): ObligationCoverage =>
   ({ kind, label, total, designed, built, proved, planned, planned_any: plannedAny });
 
-const shopCoverage: Coverage = {
+const shopCoverage = (): Coverage => ({
   domain: 'DM-SHOP',
   obligations: [
     obligation('domain_rule', 'Domain rule', 1, 1, 1, 0),
@@ -78,9 +21,9 @@ const shopCoverage: Coverage = {
     { id: 'DM-SHOP-UC01-R02', kind: 'requirement', missing: 'proves' },
     { id: 'DM-SHOP-DR01', kind: 'domain_rule', missing: 'proves' },
   ],
-};
+});
 
-const payCoverage: Coverage = {
+const payCoverage = (): Coverage => ({
   domain: 'DM-PAY',
   obligations: [
     obligation('domain_rule', 'Domain rule', 0, 0, 0, 0),
@@ -91,9 +34,9 @@ const payCoverage: Coverage = {
     { id: 'DM-PAY-UC01-R01', kind: 'requirement', missing: 'satisfies' },
     { id: 'DM-PAY-UC01-R01', kind: 'requirement', missing: 'proves' },
   ],
-};
+});
 
-const noteCoverage: Coverage = {
+const noteCoverage = (): Coverage => ({
   domain: 'NF-NOTE',
   obligations: [
     obligation('domain_rule', 'Domain rule', 0, 0, 0, 0),
@@ -101,23 +44,18 @@ const noteCoverage: Coverage = {
   ],
   tests: { automated: 0, manual: 0, planned: 0 },
   gaps: [],
-};
+});
 
-export function workspace(): Workspace {
-  return {
-    kinds,
-    sections: (sample as unknown as Workspace).sections,
-    relations,
-    records: structuredClone(records),
-    links: structuredClone(links),
+export function workspace(): SpecData {
+  return fixture('workspace', {
     problems: [
       { severity: 'warning', check: 'unproved', record: 'DM-SHOP-DR01', message: 'No test proves domain rule DM-SHOP-DR01.' },
       { severity: 'warning', check: 'unproved', record: 'DM-SHOP-UC01-R02', message: 'No test proves requirement DM-SHOP-UC01-R02.' },
       { severity: 'error', check: 'test-file-missing', record: 'DM-SHOP-T01', message: 'Test DM-SHOP-T01 is run by test/basket.test.ts, which does not exist.' },
       { severity: 'warning', check: 'unsatisfied', record: 'DM-PAY-UC01-R01', message: 'No component satisfies requirement DM-PAY-UC01-R01.' },
-      { severity: 'error', check: 'dangling-link', record: 'NF-NOTE', message: 'NF-NOTE links to NF-NOTE-X9, which does not exist.' },
-      { severity: 'error', check: 'meta-model', record: null, message: 'The meta-model names an unknown kind.' },
+      { severity: 'error', check: 'lone-domain', record: 'NF-NOTE', message: 'NF-NOTE has no use cases yet.' },
+      { severity: 'error', check: 'engine', record: null, message: 'The checks could not read a file.' },
     ],
-    coverage: [shopCoverage, payCoverage, noteCoverage],
-  };
+    coverage: [shopCoverage(), payCoverage(), noteCoverage()],
+  });
 }

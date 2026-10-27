@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { indexOf } from '../fixtures/load';
 import {
   childKinds,
   groupLabel,
@@ -16,7 +17,6 @@ import {
 } from '../../src/graph/model';
 import { graphMap } from '../../src/graph/map';
 import { addressOf } from '../../src/views/address';
-import { indexWorkspace } from '../../src/specs/data';
 import { groupedWorkspace, testIndex } from './workspace';
 
 const ids = (n: Neighborhood) => n.nodes.map((x) => x.id).sort();
@@ -27,7 +27,7 @@ const filters = (kinds: string[] = [], relations: string[] = []): Filters => ({ 
 
 describe('graph groups', () => {
   const index = testIndex();
-  const grouped = indexWorkspace(groupedWorkspace());
+  const grouped = indexOf(groupedWorkspace());
 
   it('LA-EXP-T27 A record with several kinds of child has a group per child kind, labeled with the plural and a count', () => {
     expect(isGrouped(index, 'P-D')).toBe(true);
