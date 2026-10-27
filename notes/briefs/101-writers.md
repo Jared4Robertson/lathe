@@ -1,12 +1,12 @@
 # Brief: the CLI, MCP tools and plugin skills write data (database first, step 5)
 
-Read [00-common-rules.md](00-common-rules.md), the plan [notes/plans/database-first.md](../plans/database-first.md) and [notes/db-first-interfaces.md](../db-first-interfaces.md) first. **Base branch: `db-first`.** Work in your own worktree from it, and finish with your branch ready to merge into `db-first`.
+Read [00-common-rules.md](00-common-rules.md), the plan [notes/plans/database-first.md](../plans/database-first.md) and [notes/store-interfaces.md](../store-interfaces.md) first. **Base branch: `db-first`.** Work in your own worktree from it, and finish with your branch ready to merge into `db-first`.
 
 ## Goal
 Everyone changes the spec through the command layer, and nothing edits files by hand. The Agent uses MCP tools from the Claude Code plugin; the Owner uses the CLI and the app.
 
 ## Decisions
-0. **Start:** your worktree starts from main. First run `git reset --hard db-first` (there's nothing to lose), then read `notes/db-first-interfaces.md`.
+0. **Start:** your worktree starts from main. First run `git reset --hard db-first` (there's nothing to lose), then read `notes/store-interfaces.md`.
 1. **CLI:**
    - `lathe add <kind> --field value…`, `lathe set <id> --field value…`, `lathe move <id> --parent <id>`, `lathe link <from> <relation> <to>`, `lathe unlink …`, `lathe remove <id>`, `lathe show <id>` and `lathe list <kind> [--parent <id>]`.
    - Each one validates through the command layer and prints the error clearly on refusal.

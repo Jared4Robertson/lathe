@@ -1,20 +1,26 @@
 // What DuckDB cannot hold as a constraint, because it spans tables: the views the store adds over the tables, and
 // the validation queries every write runs in its transaction. A query returns one row per broken rule:
-// (table_name, row_key, message), where row_key is the row's key as the store keys it.
+// (table_name, row_key, message), where row_key is the row's key as the store keys it (columns joined by chr(0)).
+//
+// These are refusals only: broken data. What is merely missing ("at least one", "nothing uses it") is the checks'
+// to report, because records are written stage by stage.
 import { sqlName, sqlString, type SchemaDescription } from './schema.ts';
 
 export interface ValidationQuery {
   /** The rule's name, reported with each problem. */
   name: string;
-  /** What the rule says. */
+  /** What the rule refuses. */
   description: string;
   sql: string;
 }
 
 /**
  * The views every database of the store has:
- * - record_parent (id, kind, parent_id): every record with its parent, the first of its parent columns with a value;
- * - record_scope (id, product_id, domain_id): every record with the product and domain it sits in;
+ * - record_parent (id, kind, parent_id): every record with its one parent, or none for a product and a kind with no
+ *   owner;
+ * - record_scope (id, product_id, domain_id, aggregate_id): every record with the product, domain and aggregate it
+ *   sits in, through its parents; a record of a kind with no owner takes its product, or for a specification its
+ *   domain, from the longest product or domain ID its own ID starts with (followed by a hyphen);
  * - link (relation, source_id, target_id): every link of every relation.
  */
 export function storeViewsSql(schema: SchemaDescription): string {
@@ -23,6 +29,19 @@ export function storeViewsSql(schema: SchemaDescription): string {
     const parent = k.parents.length ? `coalesce(${k.parents.map((p) => sqlName(p.column)).join(', ')})` : 'NULL';
     return `SELECT id, ${sqlString(k.name)} AS kind, ${parent}::VARCHAR AS parent_id FROM ${sqlName(k.name)}`;
   });
+  // The records that place what sits under them: products, domains and aggregates, and the kinds with no owner.
+  const anchors = [
+    'SELECT id, id AS product_id, NULL::VARCHAR AS domain_id, NULL::VARCHAR AS aggregate_id FROM product',
+    'SELECT id, product_id, id, NULL FROM domain',
+    'SELECT id, NULL, NULL, id FROM aggregate',
+    ...kinds
+      .filter((k) => !k.parents.length && k.name !== 'product')
+      .map((k) =>
+        k.idScope === 'domain'
+          ? `SELECT r.id, max_by(d.product_id, length(d.id)), max_by(d.id, length(d.id)), NULL FROM ${sqlName(k.name)} r LEFT JOIN domain d ON starts_with(r.id, d.id || '-') GROUP BY r.id`
+          : `SELECT r.id, max_by(p.id, length(p.id)), NULL, NULL FROM ${sqlName(k.name)} r LEFT JOIN product p ON starts_with(r.id, p.id || '-') GROUP BY r.id`,
+      ),
+  ];
   const links = Object.keys(schema.relations)
     .sort()
     .map((r) => `SELECT ${sqlString(r)} AS relation, source_id, target_id FROM ${sqlName(r)}`);
@@ -34,16 +53,37 @@ WITH RECURSIVE up (id, ancestor) AS (
   SELECT id, id FROM record_parent
   UNION ALL
   SELECT up.id, p.parent_id FROM up JOIN record_parent p ON p.id = up.ancestor WHERE p.parent_id IS NOT NULL
+),
+anchor (id, product_id, domain_id, aggregate_id) AS (
+  ${anchors.join('\n  UNION ALL ')}
 )
-SELECT up.id,
-       max(CASE WHEN a.kind = 'product' THEN a.id END) AS product_id,
-       max(CASE WHEN a.kind = 'domain' THEN a.id END) AS domain_id
-FROM up JOIN record_parent a ON a.id = up.ancestor
+SELECT up.id, max(a.product_id) AS product_id, max(a.domain_id) AS domain_id, max(a.aggregate_id) AS aggregate_id
+FROM up LEFT JOIN anchor a ON a.id = up.ancestor
 GROUP BY up.id;
 CREATE OR REPLACE VIEW link AS
 ${links.join('\nUNION ALL ')};
 `;
 }
+
+// The columns of a stored kind or part table that name another record without placing the row: a field's value
+// object or aggregate, a key's invariant or target table. Each pairs the column with the column naming the row's own
+// record (a kind's id, a part's owner).
+function references(schema: SchemaDescription): { table: string; own: string; column: string }[] {
+  const found: { table: string; own: string; column: string }[] = [];
+  for (const table of Object.values(schema.tables)) {
+    if (table.role !== 'kind' && table.role !== 'part') continue;
+    const own = table.role === 'kind' ? 'id' : table.ownerColumn!;
+    const placing = new Set([own, ...(schema.kinds[table.name]?.parents.map((p) => p.column) ?? [])]);
+    for (const fk of table.foreignKeys) {
+      if (fk.columns.length !== 1 || placing.has(fk.columns[0]) || !schema.kinds[fk.table]) continue;
+      found.push({ table: table.name, own, column: fk.columns[0] });
+    }
+  }
+  return found.sort((a, b) => `${a.table}.${a.column}`.localeCompare(`${b.table}.${b.column}`));
+}
+
+const keyOf = (schema: SchemaDescription, table: string, alias: string) =>
+  schema.tables[table].primaryKey.map((c) => `${alias}.${sqlName(c)}::VARCHAR`).join(` || chr(0) || `);
 
 /** The validation queries, for the schema's kinds and relations. */
 export function validationQueries(schema: SchemaDescription): ValidationQuery[] {
@@ -64,26 +104,140 @@ WHERE NOT EXISTS (SELECT 1 FROM meta_relation_pair p
     },
     {
       name: 'link-crosses-product',
-      description: "A link stays inside its product: its source and target sit in the same product, because products are separate spaces.",
+      description: 'A link stays inside its product: its source and target sit in the same product, because products are separate spaces.',
       sql: `
 SELECT l.relation AS table_name, l.source_id || chr(0) || l.target_id AS row_key,
-       l.source_id || ' is in product ' || a.product_id || ', so it cannot ' || l.relation || ' ' || l.target_id
-       || ', which is in product ' || b.product_id AS message
+       l.source_id || ' is in product ' || coalesce(a.product_id, 'none') || ', so it cannot ' || l.relation || ' ' || l.target_id
+       || ', which is in product ' || coalesce(b.product_id, 'none') AS message
 FROM link l
 JOIN record_scope a ON a.id = l.source_id
 JOIN record_scope b ON b.id = l.target_id
 WHERE a.product_id IS DISTINCT FROM b.product_id`,
     },
     {
+      name: 'link-scope',
+      description:
+        "A link of a relation whose scope is domain or aggregate joins two records of one domain, or one aggregate: a command and the specifications it checks, a query and the specifications it selects by, a specification or read model and the aggregates it reads, a command or query and the domain services it calls, and a command and the events it raises.",
+      sql: `
+SELECT l.relation AS table_name, l.source_id || chr(0) || l.target_id AS row_key,
+       l.source_id || ' is in ' || r.scope || ' ' || coalesce(CASE r.scope WHEN 'domain' THEN a.domain_id ELSE a.aggregate_id END, 'none')
+       || ', so it cannot ' || l.relation || ' ' || l.target_id || ', which is in ' || r.scope || ' '
+       || coalesce(CASE r.scope WHEN 'domain' THEN b.domain_id ELSE b.aggregate_id END, 'none')
+       || ': ' || l.relation || ' links records of one ' || r.scope AS message
+FROM link l
+JOIN meta_relation r ON r.name = l.relation AND r.scope <> 'product'
+JOIN record_scope a ON a.id = l.source_id
+JOIN record_scope b ON b.id = l.target_id
+WHERE a.product_id IS NOT DISTINCT FROM b.product_id
+  AND ((r.scope = 'domain' AND a.domain_id IS DISTINCT FROM b.domain_id)
+    OR (r.scope = 'aggregate' AND a.aggregate_id IS DISTINCT FROM b.aggregate_id))`,
+    },
+    {
+      name: 'step-fulfills-own-use-case',
+      description: "A flow step fulfills only UC requirements of its own flow's use case.",
+      sql: `
+SELECT 'fulfills' AS table_name, l.source_id || chr(0) || l.target_id AS row_key,
+       l.source_id || ' is a step of the flow of ' || f.use_case_id || ', so it cannot fulfill ' || l.target_id
+       || ', a requirement of ' || q.use_case_id AS message
+FROM fulfills l
+JOIN flow_step s ON s.id = l.source_id
+JOIN flow f ON f.id = s.flow_id
+JOIN uc_requirement q ON q.id = l.target_id
+WHERE q.use_case_id <> f.use_case_id`,
+    },
+    {
+      name: 'policy-hears-published',
+      description: "A policy hears its own domain's events, or another domain's published ones: domains meet only through published events.",
+      sql: `
+SELECT 'hears' AS table_name, l.source_id || chr(0) || l.target_id AS row_key,
+       l.source_id || ' is a policy of domain ' || coalesce(a.domain_id, 'none') || ', so it cannot hear ' || l.target_id
+       || ', an event of domain ' || coalesce(b.domain_id, 'none') || ' that is not published' AS message
+FROM hears l
+JOIN domain_event e ON e.id = l.target_id
+JOIN record_scope a ON a.id = l.source_id
+JOIN record_scope b ON b.id = l.target_id
+WHERE a.domain_id IS DISTINCT FROM b.domain_id AND NOT e.published`,
+    },
+    {
+      name: 'id-prefix',
+      description:
+        "A record's ID starts with the ID of its scope and a hyphen (meta_kind.id_scope): its parent's, its domain's or its product's. A record with no owner takes its product, or its domain, from that prefix, which must name one; a domain-scoped record's ID names the domain its parent sits in, so a query and its read model, or an endpoint and its command, are of one domain.",
+      sql: `
+SELECT r.kind AS table_name, r.id AS row_key,
+       CASE
+         WHEN x.expected IS NULL AND NOT EXISTS (SELECT 1 FROM meta_kind_parent p WHERE p.kind = r.kind)
+           THEN r.id || ' is a ' || k.label || ', which has no owner: its ID starts with the ID of its ' || k.id_scope
+                || ' and a hyphen, but no ' || k.id_scope || '''s ID starts it'
+         WHEN x.expected IS NULL
+           THEN r.id || ' is a ' || k.label || ' in no ' || k.id_scope
+         ELSE r.id || ' is a ' || k.label || CASE k.id_scope WHEN 'parent' THEN ' under ' ELSE ' in ' || k.id_scope || ' ' END
+              || x.expected || ', so its ID starts with ' || x.expected || '-'
+       END AS message
+FROM record_parent r
+JOIN meta_kind k ON k.name = r.kind AND k.id_scope IS NOT NULL
+JOIN record_scope s ON s.id = r.id
+CROSS JOIN LATERAL (SELECT CASE k.id_scope WHEN 'parent' THEN r.parent_id WHEN 'domain' THEN s.domain_id ELSE s.product_id END AS expected) x
+WHERE x.expected IS NULL OR NOT starts_with(r.id, x.expected || '-')`,
+    },
+    {
       name: 'aggregate-root',
-      description: 'An aggregate that holds entities has exactly one root entity.',
+      description: 'An aggregate has at most one root entity.',
       sql: `
 SELECT 'aggregate' AS table_name, e.aggregate_id AS row_key,
-       'aggregate ' || e.aggregate_id || ' has ' || e.roots || ' root entities; an aggregate with entities has exactly one root' AS message
-FROM (SELECT aggregate_id, count(*) FILTER (WHERE role = 'root') AS roots FROM entity GROUP BY aggregate_id) e
-WHERE e.roots <> 1`,
+       'aggregate ' || e.aggregate_id || ' has ' || e.roots || ' root entities; an aggregate has one root' AS message
+FROM (SELECT aggregate_id, count(*) AS roots FROM entity WHERE role = 'root' GROUP BY aggregate_id) e
+WHERE e.roots > 1`,
+    },
+    {
+      name: 'entity-table',
+      description: "An entity stored in its root's table (in_root_table) has no table of its own.",
+      sql: `
+SELECT 'table' AS table_name, t.id AS row_key,
+       'entity ' || e.id || ' is stored in its root''s table (in_root_table), so it cannot have table ' || t.id || ' of its own' AS message
+FROM "table" t JOIN entity e ON e.id = t.entity_id WHERE e.in_root_table`,
+    },
+    {
+      name: 'one-primary-key',
+      description: 'A table has at most one primary key.',
+      sql: `
+SELECT 'table' AS table_name, k.table_id AS row_key,
+       'table ' || k.table_id || ' has ' || count(*) || ' primary keys; a table has one' AS message
+FROM table_key k WHERE k.type = 'primary' GROUP BY k.table_id HAVING count(*) > 1`,
+    },
+    {
+      name: 'foreign-key-crosses-domain',
+      description:
+        "A table's foreign key points at a table of the same domain: domains don't share tables, so a field's reference to another domain's aggregate stays a plain ID.",
+      sql: `
+SELECT 'table_key' AS table_name, ${keyOf(schema, 'table_key', 'k')} AS row_key,
+       'table ' || k.table_id || ' is in domain ' || coalesce(a.domain_id, 'none') || ', so its foreign key cannot point at table '
+       || k.target_table_id || ', which is in domain ' || coalesce(b.domain_id, 'none') AS message
+FROM table_key k
+JOIN record_scope a ON a.id = k.table_id
+JOIN record_scope b ON b.id = k.target_table_id
+WHERE k.type = 'foreign' AND a.domain_id IS DISTINCT FROM b.domain_id`,
     },
   ];
+  const refs = references(schema);
+  if (refs.length) {
+    queries.push({
+      name: 'reference-crosses-product',
+      description:
+        "A column that names another record (a field's value object or aggregate, a key's invariant or target table) names one of the same product.",
+      sql: refs
+        .map(
+          (r) => `
+SELECT ${sqlString(r.table)} AS table_name, ${keyOf(schema, r.table, 't')} AS row_key,
+       ${sqlString(`${r.table} `)} || ${keyOf(schema, r.table, 't').replaceAll('chr(0)', "', '")} || ' is in product ' || coalesce(a.product_id, 'none')
+       || ', so its ${r.column} cannot name ' || t.${sqlName(r.column)} || ', which is in product ' || coalesce(b.product_id, 'none') AS message
+FROM ${sqlName(r.table)} t
+JOIN record_scope a ON a.id = t.${sqlName(r.own)}
+JOIN record_scope b ON b.id = t.${sqlName(r.column)}
+WHERE a.product_id IS DISTINCT FROM b.product_id`,
+        )
+        .join('\nUNION ALL'),
+    });
+  }
   const productKinds = Object.values(schema.kinds).filter((k) => k.productId !== null);
   if (productKinds.length) {
     queries.push({

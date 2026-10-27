@@ -1,12 +1,12 @@
 # Brief: the app reads and edits the typed data (database first, step 6)
 
-Read [00-common-rules.md](00-common-rules.md), the plan [notes/plans/database-first.md](../plans/database-first.md) and [notes/db-first-interfaces.md](../db-first-interfaces.md) first. **Base branch: `db-first`.** Work in your own worktree from it, and finish with your branch ready to merge into `db-first`.
+Read [00-common-rules.md](00-common-rules.md), the plan [notes/plans/database-first.md](../plans/database-first.md) and [notes/store-interfaces.md](../store-interfaces.md) first. **Base branch: `db-first`.** Work in your own worktree from it, and finish with your branch ready to merge into `db-first`.
 
 ## Goal
 The app reads every product from the typed tables and lets the Owner edit records in place, with forms generated from the schema. History comes from git.
 
 ## Decisions
-0. **Start:** your worktree starts from main. First run `git reset --hard db-first` (there's nothing to lose), then read `notes/db-first-interfaces.md`.
+0. **Start:** your worktree starts from main. First run `git reset --hard db-first` (there's nothing to lose), then read `notes/store-interfaces.md`.
    - Fixtures: you own converting the app's test fixtures (`app/test/fixtures/`) into data, written with the store. For screenshots of LA, merge `db-first` again once the import brief (99) lands there.
 1. **Server** (`app/server/`, the Vite dev server plugin and the desktop's server):
    - loads the workspace through the store and serves the typed data in place of the Markdown-derived index;

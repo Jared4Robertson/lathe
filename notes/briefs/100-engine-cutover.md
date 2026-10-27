@@ -1,12 +1,12 @@
 # Brief: the engine on the typed tables (database first, step 4)
 
-Read [00-common-rules.md](00-common-rules.md), the plan [notes/plans/database-first.md](../plans/database-first.md) and [notes/db-first-interfaces.md](../db-first-interfaces.md) first. **Base branch: `db-first`.** Work in your own worktree from it, and finish with your branch ready to merge into `db-first`.
+Read [00-common-rules.md](00-common-rules.md), the plan [notes/plans/database-first.md](../plans/database-first.md) and [notes/store-interfaces.md](../store-interfaces.md) first. **Base branch: `db-first`.** Work in your own worktree from it, and finish with your branch ready to merge into `db-first`.
 
 ## Goal
 `lathe check` and coverage run on the typed tables loaded from `data/`, and the Markdown path is gone. This is a hard cutover.
 
 ## Decisions
-0. **Start:** your worktree starts from main. First run `git reset --hard db-first` (there's nothing to lose), then read `notes/db-first-interfaces.md`. When the import brief lands in `db-first`, merge `db-first` to get Lathe's real data.
+0. **Start:** your worktree starts from main. First run `git reset --hard db-first` (there's nothing to lose), then read `notes/store-interfaces.md`. When the import brief lands in `db-first`, merge `db-first` to get Lathe's real data.
 1. **Loading:** the engine's entry (`lathe/src/index.ts`) loads the workspace from `data/` through the store. The Markdown reader (`parse.ts`), the meta CSVs, `lathe format`, prose parsing (`prose_mentions`, `entity_tables`, `entity_fields`) and the generic `records`, `fields` and `links` tables all go.
 2. **Checks:**
    - Every check in `lathe/checks/` is rewritten against the typed tables.

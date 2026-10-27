@@ -42,8 +42,8 @@ describe('data files', () => {
     // Reload, change a row and change it back: every file is as it was.
     const before = files(first);
     const c = await openStore(first);
-    await c.set('view', 'TL-LEND-V01', { title: 'Changed' });
-    await c.set('view', 'TL-LEND-V01', { title: 'Catalog' });
+    await c.set('view', 'TL-V01', { title: 'Changed' });
+    await c.set('view', 'TL-V01', { title: 'Catalog' });
     await c.close();
     expect(files(first)).toEqual(before);
   });
@@ -86,7 +86,7 @@ describe('data files', () => {
     expect(readFileSync(path.join(root, 'data', 'product.jsonl'), 'utf8')).toBe(
       '{"id":"TL","title":"Tool Library","description":"Café “quotes”, naïve","icon":"🧰"}\n',
     );
-    await store.unlink('meets', 'TL-LEND-C01', 'TL-STD-CODE-R01');
+    await store.unlink('meets', 'TL-LEND-CMD01-H', 'TL-STD-CODE-R01');
     expect(readdirSync(path.join(root, 'data'))).not.toContain('meets.jsonl');
     await store.close();
   });

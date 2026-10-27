@@ -1,4 +1,4 @@
--- Products, the roles their records name, and their typed settings.
+-- Products, the roles their records name, and their typed settings. Products and roles sit outside the stages.
 
 CREATE TABLE product (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
@@ -35,5 +35,5 @@ COMMENT ON TABLE product_setting IS 'A product''s typed settings for its checks.
 COMMENT ON COLUMN product_setting.product_id IS 'The product.';
 COMMENT ON COLUMN product_setting.max_children IS 'The most children of one kind a record should have before too-many-children warns; the default is 15.';
 
-INSERT INTO meta_kind VALUES ('product', 'Product', NULL, NULL, 'none', '<P>', 'TL', NULL);
+INSERT INTO meta_kind VALUES ('product', 'Product', NULL, 1, false, '<P>', 'TL', NULL, NULL);
 INSERT INTO meta_table VALUES ('product', 'kind', NULL), ('role', 'part', 'product_id'), ('product_setting', 'checking', NULL);

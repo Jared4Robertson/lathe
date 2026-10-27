@@ -76,11 +76,11 @@ export function productKindSql(
     }
     statements.push(`CREATE TABLE ${sqlName(name)} (\n  ${columns.join(',\n  ')}\n);`, ...comments);
     statements.push(
-      `INSERT INTO meta_kind (name, label, stage, section, obligation, id_pattern, id_example, product_id) VALUES (${[name, kind.label, kind.stage, kind.section, kind.obligation, kind.id_pattern, kind.id_example, kind.product_id].map(literal).join(', ')});`,
+      `INSERT INTO meta_kind (name, label, stage, obligation, id_pattern, id_example, product_id) VALUES (${[name, kind.label, kind.stage].map(literal).join(', ')}, ${kind.obligation === true}, ${[kind.id_pattern, kind.id_example, kind.product_id].map(literal).join(', ')});`,
       `INSERT INTO meta_kind_parent VALUES (${literal(name)}, ${literal(parent)}, 1, ${literal(parentColumn)});`,
       `INSERT INTO meta_table VALUES (${literal(name)}, 'kind', NULL);`,
     );
-    if (kind.obligation !== 'none') statements.push(`INSERT INTO meta_supertype_member VALUES ('obligation', ${literal(name)});`);
+    if (kind.obligation === true) statements.push(`INSERT INTO meta_supertype_member VALUES ('obligation', ${literal(name)});`);
     taken.add(name);
   };
   for (const kind of [...declarations.kinds].sort((a, b) => String(a.name).localeCompare(String(b.name)))) add(kind, []);
@@ -90,7 +90,7 @@ export function productKindSql(
 
   // Relations: a name Lathe has gains pairs; a new name gets a link table.
   const supertypeOf = (table: string, kind: string) =>
-    table === 'record_id' || table === kind || (schema.supertypes[table]?.includes(kind) ?? false) || (table === 'obligation' && declared.get(kind)?.obligation !== undefined && declared.get(kind)?.obligation !== 'none');
+    table === 'record_id' || table === kind || (schema.supertypes[table]?.includes(kind) ?? false) || (table === 'obligation' && declared.get(kind)?.obligation === true);
   const byName = new Map<string, Row[]>();
   for (const r of declarations.relations) byName.set(String(r.name), [...(byName.get(String(r.name)) ?? []), r]);
   for (const [name, pairs] of [...byName].sort(([a], [b]) => a.localeCompare(b))) {
@@ -129,7 +129,7 @@ export function productKindSql(
     statements.push(
       `CREATE TABLE ${sqlName(name)} (source_id VARCHAR NOT NULL REFERENCES ${sqlName(end(sources))} (id), target_id VARCHAR NOT NULL REFERENCES ${sqlName(end(targets))} (id), PRIMARY KEY (source_id, target_id));`,
       `COMMENT ON TABLE ${sqlName(name)} IS ${literal(first.description)};`,
-      `INSERT INTO meta_relation VALUES (${[name, first.role, first.forward_label, first.reverse_label, first.product_id].map(literal).join(', ')});`,
+      `INSERT INTO meta_relation VALUES (${[name, first.role, 'product', first.forward_label, first.reverse_label, first.product_id].map(literal).join(', ')});`,
       `INSERT INTO meta_table VALUES (${literal(name)}, 'link', NULL);`,
       ...pairSql,
     );

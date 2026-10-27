@@ -1,5 +1,5 @@
 // Each kind's keys and checks: a good row loads; a bad parent, a duplicate ID, a bad enum value or a missing required
-// field fails to load, naming the file, the line and the rule.
+// field fails to load, naming the file, the line and the rule. The refusals across tables are in refusals.test.ts.
 import { afterAll, describe, expect, it } from 'vitest';
 import { openStore, StoreError, type Row, type StoreProblem } from '../../src/index.ts';
 import { everyKind, removeData, withTable, writeData, type Data } from './fixture.ts';
@@ -44,7 +44,7 @@ describe.each(kinds)('the %s table', (kind) => {
   const row = data[kind][0];
   const file = `data/${kind}.jsonl`;
 
-  // A product sits under nothing; every other kind has a parent.
+  // A product and the kinds with no owner sit under nothing; every other kind has one parent.
   if (schema.kinds[kind].parents.length) it('refuses a parent that does not exist', async () => {
     const column = schema.kinds[kind].parents.map((p) => p.column).find((c) => row[c] !== undefined)!;
     const problems = await refusal(withTable(data, kind, [{ ...row, [column]: 'TL-NOPE' }, ...data[kind].slice(1)]));
@@ -86,66 +86,19 @@ describe.each(kinds)('the %s table', (kind) => {
   });
 });
 
-describe('checks across columns', () => {
-  it('refuses an automated test with no file', async () => {
-    const { file: _file, ...test } = data.test[0];
-    const problems = await refusal(withTable(data, 'test', [test]));
-    expect(problems).toEqual([expect.objectContaining({ rule: 'check', file: 'data/test.jsonl', line: 1 })]);
-  });
-
-  it('refuses a domain rule whose aggregate is in another domain', async () => {
-    const changed = withTable(data, 'domain', [...data.domain, { id: 'TL-CAT', title: 'Catalog', product_id: 'TL' }]);
-    changed.domain_rule[0] = { ...changed.domain_rule[0], domain_id: 'TL-CAT' };
-    const problems = await refusal(changed);
-    expect(problems).toEqual([expect.objectContaining({ rule: 'foreign-key', file: 'data/domain_rule.jsonl', line: 1 })]);
-    expect(problems[0].message).toContain('its aggregate TL-LEND-A1 has domain_id "TL-LEND", but it gives domain_id "TL-CAT"');
-  });
-
-  it('refuses an interaction requirement under two parents', async () => {
-    const changed = structuredClone(data);
-    changed.interaction_requirement[0] = { ...changed.interaction_requirement[0], view_id: 'TL-LEND-V01' };
-    expect(await refusal(changed)).toEqual([expect.objectContaining({ rule: 'check', file: 'data/interaction_requirement.jsonl' })]);
-  });
-
-  it('refuses two capabilities in one place of a domain', async () => {
-    const changed = withTable(data, 'capability', [...data.capability, { id: 'TL-LEND-CAP02', title: 'Membership', domain_id: 'TL-LEND', position: 1 }]);
-    const problems = await refusal(changed);
-    expect(problems).toEqual([expect.objectContaining({ rule: 'unique', file: 'data/capability.jsonl', line: 2 })]);
-  });
-
-  it('refuses a layer cycle', async () => {
-    const changed = structuredClone(data);
-    changed.layer[1] = { ...changed.layer[1], parent_layer_id: 'TL-LEND-LAY01' };
-    const problems = await refusal(changed);
-    expect(problems.map((p) => p.rule)).toContain('foreign-key');
-    expect(problems[0].message).toContain('cycle');
-  });
-
-  it('refuses a pattern rule naming a setting its pattern lacks', async () => {
-    const changed = structuredClone(data);
-    changed.pattern_rule[0] = { ...changed.pattern_rule[0], setting: 'tone' };
-    expect(await refusal(changed)).toEqual([expect.objectContaining({ rule: 'foreign-key', file: 'data/pattern_rule.jsonl', line: 1 })]);
-  });
-
-  it('refuses a setting value for a pattern the follower does not follow', async () => {
-    const changed = withTable(data, 'follows', []);
-    expect(await refusal(changed)).toEqual([expect.objectContaining({ rule: 'foreign-key', file: 'data/setting_value.jsonl', line: 1 })]);
-  });
-});
-
 describe('loading files', () => {
   it('names the file and line of a line that is not JSON, a column the table lacks, and a file for no table', async () => {
     const root = writeData(data);
     const { writeFileSync, appendFileSync } = await import('node:fs');
-    appendFileSync(`${root}/data/requirement.jsonl`, '{"id": "TL-LEND-UC01-R02",\n');
-    appendFileSync(`${root}/data/view.jsonl`, `${JSON.stringify({ ...data.view[0], id: 'TL-LEND-V02', colour: 'red' })}\n`);
+    appendFileSync(`${root}/data/uc_requirement.jsonl`, '{"id": "TL-LEND-UC01-R02",\n');
+    appendFileSync(`${root}/data/view.jsonl`, `${JSON.stringify({ ...data.view[0], id: 'TL-V02', colour: 'red' })}\n`);
     writeFileSync(`${root}/data/widgets.jsonl`, '{}\n');
     try {
       await openStore(root);
       expect.unreachable();
     } catch (error) {
       expect((error as StoreError).problems).toEqual([
-        expect.objectContaining({ rule: 'json', file: 'data/requirement.jsonl', line: 2 }),
+        expect.objectContaining({ rule: 'json', file: 'data/uc_requirement.jsonl', line: 2 }),
         expect.objectContaining({ rule: 'column', file: 'data/view.jsonl', line: 2, message: expect.stringContaining('view has no column "colour"') }),
         expect.objectContaining({ rule: 'unknown-table', file: 'data/widgets.jsonl' }),
       ]);

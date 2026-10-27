@@ -14,10 +14,10 @@ const store = await openStore(writeData(everyKind()));
 const schema = store.schema;
 await store.close();
 const view = schema.tables.view;
-const proves = schema.tables.proves;
+const reads = schema.tables.reads;
 
 const line = (row: object) => `${JSON.stringify(row)}\n`;
-const v = (n: number, title = `View ${n}`) => line({ id: `TL-LEND-V0${n}`, title, domain_id: 'TL-LEND' });
+const v = (n: number, title = `View ${n}`) => line({ id: `TL-V0${n}`, title });
 
 describe('mergeData', () => {
   it('keeps the rows both sides added, sorted', async () => {
@@ -31,31 +31,38 @@ describe('mergeData', () => {
   });
 
   it('keeps one copy of a row both sides added alike, and of a link both sides made', async () => {
-    const link = line({ source_id: 'TL-LEND-T01', target_id: 'TL-LEND-DR01' });
-    expect(await mergeData('', link, link, proves)).toEqual({ text: link, clashes: [], problems: [] });
+    const link = line({ source_id: 'TL-LEND-SP01', target_id: 'TL-LEND-A1' });
+    expect(await mergeData('', link, link, reads)).toEqual({ text: link, clashes: [], problems: [] });
     expect((await mergeData(v(1), v(1) + v(2), v(1) + v(2), view)).clashes).toEqual([]);
   });
 
   it('fails when one ID is added on both sides with different content', async () => {
     const result = await mergeData(v(1), v(1) + v(2, 'Desk'), v(1) + v(2, 'Return desk'), view);
-    expect(result.clashes).toEqual(['TL-LEND-V02 was added on both sides with different content']);
+    expect(result.clashes).toEqual(['TL-V02 was added on both sides with different content']);
     expect(result.text).toBe(`${v(1)}<<<<<<< ours\n${v(2, 'Desk')}=======\n${v(2, 'Return desk')}>>>>>>> theirs\n`);
   });
 
   it('fails when one row is changed on both sides, or removed on one and changed on the other', async () => {
-    expect((await mergeData(v(1), v(1, 'Ours'), v(1, 'Theirs'), view)).clashes).toEqual(['TL-LEND-V01 was changed on both sides']);
-    expect((await mergeData(v(1), '', v(1, 'Theirs'), view)).clashes).toEqual(['TL-LEND-V01 was removed on one side and changed on the other']);
+    expect((await mergeData(v(1), v(1, 'Ours'), v(1, 'Theirs'), view)).clashes).toEqual(['TL-V01 was changed on both sides']);
+    expect((await mergeData(v(1), '', v(1, 'Theirs'), view)).clashes).toEqual(['TL-V01 was removed on one side and changed on the other']);
   });
 
   it("checks the merged table's own rules", async () => {
-    const step = (id: string, position: number) => line({ id, title: 'Step', flow_id: 'TL-LEND-F01', path: 'main', position });
+    const step = (id: string, position: number) => line({ id, title: 'Step', flow_id: 'TL-LEND-UC01-FL', path: 'main', position });
     // Each side adds a step 2 to the same path: no line clashes, but the table's unique key does.
-    const result = await mergeData(step('TL-LEND-F01-S01', 1), step('TL-LEND-F01-S01', 1) + step('TL-LEND-F01-S02', 2), step('TL-LEND-F01-S01', 1) + step('TL-LEND-F01-S03', 2), schema.tables.flow_step);
+    const result = await mergeData(step('TL-LEND-UC01-FL-S01', 1), step('TL-LEND-UC01-FL-S01', 1) + step('TL-LEND-UC01-FL-S02', 2), step('TL-LEND-UC01-FL-S01', 1) + step('TL-LEND-UC01-FL-S03', 2), schema.tables.flow_step);
     expect(result.clashes).toEqual([]);
     expect(result.problems).toEqual([expect.stringContaining('the merged flow_step breaks a rule of its table')]);
-    expect((await mergeData('', line({ id: 'TL-LEND-T09', title: 't', domain_id: 'TL-LEND', test_type: 'unit', state: 'done' }), '', schema.tables.test)).problems).toEqual([
-      'test.state "done" is not one of automated, manual, planned',
+    expect((await mergeData('', line({ id: 'TL-LEND-INV02-T', title: 't', invariant_id: 'TL-LEND-INV02', level: 'unit', state: 'done' }), '', schema.tables.invariant_test)).problems).toEqual([
+      'invariant_test.state "done" is not one of automated, manual, not automated yet',
     ]);
+    // The new tables merge by their keys too: a table's keys by table and position.
+    const key = (position: number, type: string) => line({ table_id: 'TL-LEND-EN01-TB', position, type, columns: ['id'] });
+    expect(await mergeData(key(1, 'primary'), key(1, 'primary') + key(2, 'index'), key(1, 'primary') + key(3, 'index'), schema.tables.table_key)).toEqual({
+      text: key(1, 'primary') + key(2, 'index') + key(3, 'index'),
+      clashes: [],
+      problems: [],
+    });
   });
 });
 
@@ -86,7 +93,7 @@ describe('lathe merge-data', () => {
         return { status: e.status, stderr: e.stderr.toString() };
       }
     };
-    expect(run(v(1), v(1, 'Ours'), v(1, 'Theirs'))).toEqual({ status: 1, stderr: 'data/view.jsonl: TL-LEND-V01 was changed on both sides\n' });
+    expect(run(v(1), v(1, 'Ours'), v(1, 'Theirs'))).toEqual({ status: 1, stderr: 'data/view.jsonl: TL-V01 was changed on both sides\n' });
     expect(run(v(1), v(1) + v(2), v(1))).toEqual({ status: 0, stderr: '' });
     expect(readFileSync(path.join(dir, 'o'), 'utf8')).toBe(v(1) + v(2));
   });

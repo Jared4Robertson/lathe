@@ -1,6 +1,6 @@
 # Brief: the schema and store for the new domain model (step 1)
 
-Read [00-common-rules.md](00-common-rules.md), the plan [notes/plans/domain-model-refinement.md](../plans/domain-model-refinement.md) and the store's interfaces [notes/db-first-interfaces.md](../db-first-interfaces.md) first. **Base branch: `domain-model`**, the integration branch for this hard cutover, not `main`. Work in your own worktree from it, and finish with your branch ready to merge into `domain-model` (merge `domain-model`, not `main`, into your branch before you report).
+Read [00-common-rules.md](00-common-rules.md), the plan [notes/plans/domain-model-refinement.md](../plans/domain-model-refinement.md) and the store's interfaces [notes/store-interfaces.md](../store-interfaces.md) first. **Base branch: `domain-model`**, the integration branch for this hard cutover, not `main`. Work in your own worktree from it, and finish with your branch ready to merge into `domain-model` (merge `domain-model`, not `main`, into your branch before you report).
 
 ## Goal
 The plan replaces Lathe's kinds with fifty concrete kinds from DDD, CQRS and event storming, each record with exactly one parent. This step rewrites the schema and adapts the store, so that the data of every product can be written in the new shape. The Tool Library is converted by hand on top of your branch next, then LA, the engine, the writers and the app, in parallel. Make the interfaces clear and documented.

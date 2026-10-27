@@ -1,12 +1,12 @@
 # Brief: import every product into `data/` (database first, step 3)
 
-Read [00-common-rules.md](00-common-rules.md), the plan [notes/plans/database-first.md](../plans/database-first.md) and the schema brief's report in [notes/db-first-interfaces.md](../db-first-interfaces.md) first. **Base branch: `db-first`.** Work in your own worktree from it, and finish with your branch ready to merge into `db-first`.
+Read [00-common-rules.md](00-common-rules.md), the plan [notes/plans/database-first.md](../plans/database-first.md) and the schema brief's report in [notes/store-interfaces.md](../store-interfaces.md) first. **Base branch: `db-first`.** Work in your own worktree from it, and finish with your branch ready to merge into `db-first`.
 
 ## Goal
 Convert every product's Markdown spec into the typed tables, using the command layer, and write the `data/*.jsonl` files. That covers Lathe (`specs/lathe`), the Tool Library and Lathe's built-in checks. After this, the data files hold everything the Markdown held. Test fixtures aren't yours: the engine brief (100) moves the lathe fixtures and the app brief (102) the app fixtures.
 
 ## Decisions
-0. **Start:** your worktree starts from main. First run `git reset --hard db-first` (there's nothing to lose), then read `notes/db-first-interfaces.md`.
+0. **Start:** your worktree starts from main. First run `git reset --hard db-first` (there's nothing to lose), then read `notes/store-interfaces.md`.
 1. **A one-time converter,** `lathe/scripts/import-markdown.ts`, uses the current Markdown parser (`lathe/src/parse.ts`) to read and the command layer to write. It's deleted in the engine brief's cutover, so keep it self-contained.
 2. **Bodies into typed fields.** For each kind, map the body's sections and text into that kind's typed fields:
    - a requirement's body becomes its `statement`;
