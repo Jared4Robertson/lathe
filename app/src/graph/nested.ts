@@ -86,11 +86,12 @@ export function layoutNested(roots: readonly string[], childrenOf: (id: string) 
   /** Some siblings, each a square `side` across at its place: their shared text and header band, then each one's children inside it. */
   const place = (ids: readonly string[], side: number, at: readonly { x: number; y: number }[]) => {
     const most = sizeText(side);
-    const border = BORDER * Math.max(0.5, most);
+    // Its border grows with its text, never below half (LA-EXP-DR58).
+    const border = (s: number) => BORDER * Math.max(0.5, s);
     const labels = ids.map((id) => labelOf(id));
     const leaf = ids.map((id) => kids.get(id)!.length === 0);
     const text = Math.min(...labels.map((label, i) => largestFit(label, leaf[i], side, leaf[i] ? side : HEADER_SHARE * side, most, border)));
-    const lines = labels.map((label, i) => linesIn(label, text > 0 ? (side - 2 * border) / text : Infinity, leaf[i]));
+    const lines = labels.map((label, i) => linesIn(label, text > 0 ? (side - 2 * border(text)) / text : Infinity, leaf[i]));
     const header = Math.max(0, ...lines.map((l, i) => (leaf[i] ? 0 : text * labelHeight(l))));
     const pad = NEST_PAD * most;
     const gap = NEST_GAP * most;

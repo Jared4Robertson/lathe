@@ -198,19 +198,27 @@ const FIT_ROUNDS = 40;
 
 /**
  * The largest text scale, at most `most`, at which a label fits a room `w` by `h` in map units
- * (LA-EXP-DR58), inside a border `border` thick on every side: wrapped at the room's width over the
- * scale, no word broken, its lines, padding and shape's room no taller than the room. A smaller
- * scale always fits at least as well (more words to a line, fewer lines, each smaller), so the
- * largest is found by halving. 0 only for a room no wider or taller than its border.
+ * (LA-EXP-DR58), inside its box's border, `border(s)` thick on every side at a scale `s`:
+ * wrapped at the room's width over the scale, no word broken, its lines, padding and shape's room
+ * no taller than the room. A smaller scale always fits at least as well (more words to a line,
+ * fewer lines, each smaller, and a border no thicker), so the largest is found by halving. 0 only
+ * for a room with no space inside its border.
  */
-export function largestFit(label: MapLabel, centered: boolean, w: number, h: number, most: number, border = 0): number {
+export function largestFit(label: MapLabel, centered: boolean, w: number, h: number, most: number, border: (s: number) => number = () => 0): number {
   const narrowest = narrowestWidth(label, centered);
-  const across = w - 2 * border;
-  const down = h - 2 * border;
-  if (across <= 0 || down <= 0 || most <= 0) return 0;
-  const fits = (s: number) => across / s >= narrowest && labelHeight(linesIn(label, across / s, centered)) * s <= down;
-  // No scale fits past the one at which its widest word fills the room's width, nor the one at which its shortest wrapping (one line each) fills its height.
-  const hi0 = Math.min(most, across / narrowest, down / labelHeight(linesIn(label, Infinity, centered)));
+  if (most <= 0 || w - 2 * border(0) <= 0 || h - 2 * border(0) <= 0) return 0;
+  const fits = (s: number) => (w - 2 * border(s)) / s >= narrowest && labelHeight(linesIn(label, (w - 2 * border(s)) / s, centered)) * s <= h - 2 * border(s);
+  // No scale fits past the one at which its widest word fills the room's width, nor the one at which its shortest wrapping
+  // (one line each) fills its height, inside the border at that scale: found by halving too, which needs no wrapping.
+  const shortest = labelHeight(linesIn(label, Infinity, centered));
+  const under = (s: number) => s * narrowest <= w - 2 * border(s) && s * shortest <= h - 2 * border(s);
+  let hi0 = Math.min(most, (w - 2 * border(0)) / narrowest, (h - 2 * border(0)) / shortest);
+  if (!under(hi0)) {
+    let below = 0;
+    for (let round = 0; round < FIT_ROUNDS; round++) { const mid = (below + hi0) / 2; if (under(mid)) below = mid; else hi0 = mid; }
+    hi0 = below;
+  }
+  if (hi0 <= 0) return 0;
   if (fits(hi0)) return hi0;
   let lo = 0;
   let hi = hi0;

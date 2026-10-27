@@ -4,7 +4,6 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { loadWorkspace } from '../../../lathe/src/index';
 import type { Workspace } from '../../../lathe/src/types';
 import { drawnFor, drawnNested, FRAME_PADDING, frameNested, frameOnMap, MAX_ZOOM, MIN_ZOOM, type Drawn, type Viewport } from '../../src/graph/camera';
-import { contentScale } from '../../src/graph/layout';
 import { graphMap, sizeText, type GraphMap, type PlacedMap } from '../../src/graph/map';
 import { nestedMap } from '../../src/graph/nested';
 import { holds, polygonArea, readyVoronoiMap, type VoronoiMap } from '../../src/graph/voronoi';
@@ -38,7 +37,7 @@ const LAYOUTS: Layout[] = [
     map: graphMap,
     frame: (map, focus, depth, w, h) => frameOnMap(map as GraphMap, focus, depth, w, h),
     drawn: (map, v, focus, w, h) => drawnFor(map as GraphMap, v, w, h, [focus]),
-    height: (map, id) => { const n = map.nodes.get(id)!; return n.text * labelHeight(n.lines) + 2 * BORDER * contentScale(n.w, n.h); },
+    height: (map, id) => { const n = map.nodes.get(id)!; return n.text * (labelHeight(n.lines) + 2 * BORDER); },
     size: (map, id) => map.nodes.get(id)!.h,
   },
   {
