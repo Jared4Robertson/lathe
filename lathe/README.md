@@ -129,7 +129,7 @@ A check is a row of the `check` table: its `name`, `position`, `severity` (`erro
 
 Lathe's checks are in this package's [data/check.jsonl](data/check.jsonl), loaded beside every product's data and never written by a product's writes. A product's own checks are rows of its own `data/check.jsonl` with its `product_id`, and report only on records of that product. A name is unique across both, so a product check cannot take one of Lathe's names. Add one with `lathe add check --name ... --query ...`, or through the app.
 
-A query can read every typed table, the `record_parent`, `record_scope` and `link` views, the `meta_*` tables, and what the engine adds for the checks:
+A query can read every typed table, the `record_parent` and `link` views, the `record_scope` table, the `meta_*` tables, and what the engine adds for the checks:
 
 | Table or view | Columns |
 | --- | --- |
