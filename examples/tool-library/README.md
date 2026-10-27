@@ -9,8 +9,14 @@ The specification is in [data/](data/), one JSON Lines file per table of Lathe's
 - **Domain model:** three aggregates (Member, Tool, Loan) with five entities; four value objects (`TL-VO01` Name to `TL-VO04` Note) and their constraints; six invariants (`TL-LEND-INV..`), four specifications (`TL-LEND-SP..`), six commands with the events they raise, the Catalog read model and its query, one policy (a tool returned needing repair is taken out of lending), the Library calendar domain service and the glossary.
 - **Use cases:** five use cases under three capabilities, each with its UC requirements (`TL-LEND-UC0n-R0n`) and one flow, whose steps invoke the commands and the query in the two designed views (no UI is built).
 - **Interaction design:** seven endpoints (`TL-LEND-EP0n`), each under the command or query it exposes; the API's own rules (each body's fields, each error's status and code, what a success returns) are API requirements (`TL-LEND-EP0n-R0n`).
-- **Technical specification:** the repositories, data models, tables, value types, predicates, handlers and service that implement them, each naming its file, and the Tool Library's own Entry point kind for `src/server.ts`.
+- **Technical specification:** the repositories, data models, tables, value types, predicates, event types, handlers and service that implement them, each naming its file, and the Tool Library's own Entry point kind for `src/server.ts`.
 - **Test plan:** one test kind per thing tested. Every source file names its technical records, and every automated test's name starts with its test record ID, so Lathe can trace each obligation to code and tests.
+
+## Events and eventual consistency
+
+Each command changes exactly one aggregate and raises its domain event: Member registered, Tool added, Damage reported, Tool repaired, Loan opened and Tool returned. Every event is delivered by outbox (`src/events.ts`), with no message broker: the command handler saves the event to the `outbox` table in the same SQLite transaction as its change, and once that commits, a small relay hands each undelivered event, oldest first, to the event handlers subscribed to it and marks it delivered.
+
+The one policy, a tool returned needing repair is taken out of lending (`TL-LEND-PO01`), is an event handler: it hears Tool returned and, when the tool came back needing repair, invokes Report damage in its own transaction, with the return note as the damage note. So Return a tool changes only the loan, and the tool follows. That is eventual consistency, done in-process for the example: the relay runs synchronously after the commit, so the tool already needs repair when the return's response is sent, and a caller sees it on its next request. If the handler fails, the return still stands, the failure is logged, and the event stays in the outbox until the next relay run (after the next command, or when the API starts), so the reaction is never lost. A handler may therefore see an event more than once; reporting the same damage twice is harmless.
 
 ## Requirements
 
@@ -30,8 +36,8 @@ npm test            # vitest, at most 2 workers
 npm run typecheck   # tsc --noEmit
 ```
 
-- `test/domain-rules.test.ts`: the constraint tests (`TL-VO0n-C0n-T`), invariant tests (`TL-LEND-INV0n-T`), specification tests (`TL-LEND-SP0n-T`) and the domain service test (`TL-LEND-DS01-T01`), against the model, the command handlers and an in-memory database.
-- `test/api.test.ts`: the use case tests (`TL-LEND-UC0n-R0n-T0n`), the endpoint tests (`TL-LEND-EP0n-R0n-T0n`), the policy test (`TL-LEND-PO01-T`) and the Librarian action pattern's rule tests (`TL-PAT-LIBRARIAN-ACTION-R0n-T01`), over HTTP on a free local port. A use case test and an endpoint test that share a scenario run one helper each.
+- `test/domain-rules.test.ts`: the constraint tests (`TL-VO0n-C0n-T`), invariant tests (`TL-LEND-INV0n-T`), specification tests (`TL-LEND-SP0n-T`), the policy test (`TL-LEND-PO01-T`) and the domain service test (`TL-LEND-DS01-T01`), against the model, the command handlers, the outbox and an in-memory database.
+- `test/api.test.ts`: the use case tests (`TL-LEND-UC0n-R0n-T0n`), the endpoint tests (`TL-LEND-EP0n-R0n-T0n`) and the Librarian action pattern's rule tests (`TL-PAT-LIBRARIAN-ACTION-R0n-T01`), over HTTP on a free local port. A use case test and an endpoint test that share a scenario run one helper each.
 - `test/body-limit.test.ts`: the 64 KB body limit (`TL-LEND-EP06-R03-T01`), over HTTP and over a raw socket that sends a body that never ends.
 
 The five flow tests (`TL-LEND-UC0n-FL-T`) are manual: they walk the curl steps below against a running server, and their records say why.
@@ -76,9 +82,11 @@ curl -s -X POST localhost:5310/tools/1/repair
 | File | Technical records |
 | --- | --- |
 | `src/model.ts` | The data models (`TL-LEND-EN0n-DM`), value types (`TL-VO0n-VT`), predicates (`TL-LEND-SP0n-PR`) and the Library calendar service (`TL-LEND-DS01-SV`). |
-| `src/store.ts` | The repositories (`TL-LEND-A1-REPO` to `A3-REPO`) and the tables `members`, `tools` and `loans` (`TL-LEND-EN01-TB`, `EN02-TB`, `EN04-TB`). |
+| `src/store.ts` | The repositories (`TL-LEND-A1-REPO` to `A3-REPO`), the tables `members`, `tools` and `loans` (`TL-LEND-EN01-TB`, `EN02-TB`, `EN04-TB`) and the `outbox` table. |
+| `src/events.ts` | The event types (`TL-LEND-EV01-ET` to `EV06-ET`) and the outbox's relay, which delivers them. |
+| `src/event-handlers.ts` | The event handler `TL-LEND-PO01-H`: a tool returned needing repair is taken out of lending. |
 | `src/member-service.ts` | The command handler `TL-LEND-CMD01-H`: registering members. |
 | `src/tool-service.ts` | The command handlers `TL-LEND-CMD02-H` to `CMD04-H` and the query handler `TL-LEND-QRY01-H`: the catalog, damage and repair. |
-| `src/lending-service.ts` | The command handlers `TL-LEND-CMD05-H` and `CMD06-H`, and the event handler `TL-LEND-PO01-H`: borrowing and returning. |
-| `src/router.ts` | The endpoint handlers `TL-LEND-EP01-H` to `EP07-H`: the HTTP API. |
+| `src/lending-service.ts` | The command handlers `TL-LEND-CMD05-H` and `CMD06-H`: borrowing and returning. |
+| `src/router.ts` | The endpoint handlers `TL-LEND-EP01-H` to `EP07-H`: the HTTP API. It gives the command handlers one outbox, subscribes the event handler and runs the relay once at start. |
 | `src/server.ts` | The entry point `TL-LEND-ENTRY01`. |
