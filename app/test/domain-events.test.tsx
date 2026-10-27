@@ -13,6 +13,9 @@ import { neighborhood } from '../src/graph/model';
 import { treeChildren, treeGroup, treeParent } from '../src/graph/tree';
 import { openApp, section, startAtDepth } from './helpers';
 import { eventWorkspace } from './fixtures/events';
+import { boxElements, drawnBox, scene } from './graph/scene';
+import { boxColors, lineStroke } from '../src/graph/paint';
+import { PLAIN_LOOK } from '../src/graph/look';
 
 // Domain events in the wiki, the ERD and the graph (brief 60): an aggregate's events as flags on
 // its ERD with the entity raising each and the aggregates reacting to it; cause and effect between
@@ -230,19 +233,21 @@ describe('domain events in the graph', () => {
 
     startAtDepth(1);
     await openApp(`${addressOf('P-D-EV01')}?view=graph`, served());
-    await waitFor(() => expect(document.querySelectorAll('.react-flow__node').length).toBeGreaterThan(0));
-    expect(document.querySelector('.react-flow__node[data-id="P-D-EV01"] .graph-node')).toHaveClass('kind-domain_event');
-    expect(document.querySelector('.react-flow__node[data-id="P-D-A3/domain_event"]')).toHaveTextContent('Domain events');
-    expect(document.querySelector('.react-flow__edge-path.rel-event')).toBeNull();
+    await waitFor(() => expect(boxElements().length).toBeGreaterThan(0));
+    expect(drawnBox('P-D-EV01')!.kind).toBe('domain_event');
+    expect(drawnBox('P-D-A3/domain_event')!.lines.map((l) => l.text).join(' ')).toContain('Domain events');
+    expect(scene().lines.filter((l) => l.style === 'event')).toEqual([]);
     fireEvent.click(screen.getByRole('button', { name: 'Links' }));
-    await waitFor(() => expect(document.querySelectorAll('.react-flow__edge-path.rel-event.is-link')).toHaveLength(5));
-    const labels = [...document.querySelectorAll('.graph-edge-label')].map((l) => l.textContent);
+    await waitFor(() => expect(scene().lines.filter((l) => l.style === 'event' && l.link)).toHaveLength(5));
+    const labels = scene().lines.filter((l) => l.link).map((l) => l.label);
     expect(labels.filter((l) => l === 'Reacts to')).toHaveLength(4);
     expect(labels).toContain('Raised by');
     // Dashed, in spark, with Links on too; an event node is a spark flag (LA-EXP-DR65), its group is not.
-    expect(CSS).toMatch(/\.react-flow__edge-path\.rel-event, \.graph-flow \.react-flow__edge-path\.rel-event\.is-link \{ stroke: var\(--spark\); stroke-dasharray/);
-    expect(CSS).toMatch(/\.graph-node\.kind-domain_event:not\(\.stage-group\)\s*\{ --node-edge: var\(--spark\); --node-fill: var\(--spark-bg\); \}/);
-    const event = [...document.querySelectorAll('.react-flow__node .graph-node.kind-domain_event')].find((n) => !n.classList.contains('stage-group'));
-    if (event) expect(event).toHaveClass('shape-flag', 'is-clipped');
+    expect(lineStroke(PLAIN_LOOK, { link: true, style: 'event' })).toMatchObject({ color: PLAIN_LOOK.spark, dash: [4, 4] });
+    expect(boxColors(PLAIN_LOOK, { file: false, group: false, kind: 'domain_event', stage: 'define' })).toEqual({ edge: PLAIN_LOOK.spark, fill: PLAIN_LOOK.sparkBg });
+    expect(boxColors(PLAIN_LOOK, { file: false, group: true, kind: 'domain_event', stage: 'group' })).toEqual({ edge: PLAIN_LOOK.muted, fill: PLAIN_LOOK.sheet });
+    const event = drawnBox('P-D-EV01')!;
+    expect(event.shape).toBe('flag');
+    expect(event.polygon).not.toBeNull();
   });
 });

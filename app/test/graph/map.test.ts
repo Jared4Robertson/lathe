@@ -6,7 +6,7 @@ import { contentScale, NODE_HEIGHT, NODE_WIDTH } from '../../src/graph/layout';
 import { graphMap, layoutTree, LEVEL_ASPECT, linkEnds, MAX_LEVEL_STEP, MAX_ROOT_STEP, parentLine, typicalHeight, type GraphMap } from '../../src/graph/map';
 import { drawnFor, frameOnMap, MAX_DRAWN, MIN_DRAWN, viewRect } from '../../src/graph/camera';
 import { nodeShape, shapeOf, SHAPES } from '../../src/graph/shapes';
-import { BADGE_ROOM, isCentered, LABEL_PAD, labelFor, labelLines, labelHeight, metaWidth, textScaleOf, TITLE_FONT, titleWidth, WIDTH_MARGIN, wrapLabel, wrapText } from '../../src/graph/text';
+import { BADGE_ROOM, isCentered, LABEL_PAD, labelFor, labelLines, labelHeight, metaWidth, textScaleOf, TITLE_FONT, titleWidth, wrapLabel, wrapText } from '../../src/graph/text';
 import { indexWorkspace, type SpecIndex } from '../../src/specs/data';
 import { groupedWorkspace, manyOfOneKindWorkspace, testIndex } from './workspace';
 
@@ -103,7 +103,7 @@ describe('levels and content', () => {
         // The lines give the text back, and each fits a leaf's width at text scale 1, so at every scale.
         expect(label.title.join('')).toBe(labelLines(index, n.id).title);
         const { room } = SHAPES[nodeShape(index, n.id).shape];
-        for (const line of label.title) expect(titleWidth(line.trimEnd()) * WIDTH_MARGIN).toBeLessThanOrEqual(NODE_WIDTH - 2 * LABEL_PAD - room.l - room.r);
+        for (const line of label.title) expect(titleWidth(line.trimEnd())).toBeLessThanOrEqual(NODE_WIDTH - 2 * LABEL_PAD - room.l - room.r);
       }
     }
     // A parent whose own label needs more than its stack passes the difference to its last leaf: the stack still fills it.
@@ -112,7 +112,7 @@ describe('levels and content', () => {
     expect(r.h).toBeGreaterThanOrEqual(r.text * 400);
     expect(tall.nodes.get('b')!.y + tall.nodes.get('b')!.h).toBe(r.y + r.h);
     expect(tall.nodes.get('a')!.h).toBe(NODE_HEIGHT);
-    // The estimate errs wide: a title is at least its characters at 0.45 em, and a kind and ID line 0.6 em a character.
+    // The plain measure (no canvas, in the tests): a title is at least its characters at 0.45 em, and a kind and ID line 0.6 em a character.
     expect(titleWidth('Capabilities')).toBeGreaterThan(12 * 0.45 * TITLE_FONT);
     expect(metaWidth('Use case · LA-EXP-UC03')).toBeGreaterThanOrEqual(22 * 0.6 * 10.5);
     // Wrapping breaks only after a space; a word too wide for a line breaks after a hyphen, then between characters.

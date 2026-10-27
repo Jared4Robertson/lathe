@@ -6,6 +6,7 @@ import { graphMap, mapRootOf } from '../src/graph/map';
 import { indexWorkspace, spaceIndex } from '../src/specs/data';
 import { workspace } from './fixtures/workspace';
 import { main, openApp, openSideBar, sideBar } from './helpers';
+import { boxElement, drawnIds } from './graph/scene';
 
 // Each product is a separate space (brief 82): every view and count inside a space reads the
 // space's own index, so nothing of another product shows in it, even where the specs link or cite
@@ -54,8 +55,8 @@ describe('separate spaces', () => {
     // The Links switch on: the link into Notebook is not drawn.
     window.sessionStorage.setItem('lathe:graph-settings', JSON.stringify({ depth: 2, trace: false, hiddenKinds: [], hiddenRelations: [], links: true, minimap: true }));
     await openApp('/DM-SHOP-UC01?view=graph', { workspace: crossingWorkspace() });
-    await waitFor(() => expect(document.querySelector('.react-flow__node[data-id="DM-SHOP-UC01"]')).not.toBeNull());
-    const drawn = [...document.querySelectorAll('.react-flow__node[data-id]')].map((n) => n.getAttribute('data-id')!);
+    await waitFor(() => expect(boxElement('DM-SHOP-UC01')).not.toBeNull());
+    const drawn = drawnIds();
     expect(drawn.filter((id) => !id.startsWith('DM'))).toEqual([]);
   });
 

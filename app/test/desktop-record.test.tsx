@@ -102,6 +102,7 @@ describe('desktop record actions', () => {
     document.body.innerHTML = `
       <div class="react-flow__node" data-id="DM-SHOP-UC01"><span id="in-node">x</span></div>
       <div class="react-flow__node" data-id="DM-SHOP/use_case"><span id="in-group">x</span></div>
+      <div class="graph-flow" id="graph"><canvas id="graph-canvas"></canvas><div class="graph-box" data-id="DM-SHOP"><span id="in-box">x</span></div></div>
       <a href="/DM-SHOP?view=graph"><span id="in-domain">x</span></a>
       <a href="/NOPE"><span id="unknown">x</span></a>
       <a href="https://example.com"><span id="outside">x</span></a>
@@ -109,6 +110,11 @@ describe('desktop record actions', () => {
     const at = (id: string, path = '/DM-SHOP-UC01') => recordIdAt(document.getElementById(id), path, known);
     expect(at('in-node')).toBe('DM-SHOP-UC01');
     expect(at('in-group')).toBeNull();
+    // On the graph's canvas, the box under the point, by the canvas's hit test; in its keyboard layer, the box.
+    (document.getElementById('graph') as HTMLElement & { graphHit?: (x: number, y: number) => string | null }).graphHit = (x) => (x < 100 ? 'DM-SHOP-UC01' : null);
+    expect(recordIdAt(document.getElementById('graph-canvas'), '/DM', known, { x: 50, y: 10 })).toBe('DM-SHOP-UC01');
+    expect(recordIdAt(document.getElementById('graph-canvas'), '/DM', known, { x: 500, y: 10 })).toBeNull();
+    expect(at('in-box')).toBe('DM-SHOP');
     expect(at('in-domain')).toBe('DM-SHOP');
     expect(at('unknown')).toBeNull();
     expect(at('outside')).toBeNull();

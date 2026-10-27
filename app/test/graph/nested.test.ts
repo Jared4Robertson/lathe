@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { graphMap, MAX_LEVEL_STEP, settleLevelScale, typicalSize } from '../../src/graph/map';
-import { LABEL_PAD, labelHeight, LINE_HEIGHT, linesIn, mapLabel, narrowestWidth, TITLE_FONT, titleWidth, WIDTH_MARGIN, wordsFit } from '../../src/graph/text';
+import { LABEL_PAD, labelHeight, LINE_HEIGHT, linesIn, mapLabel, narrowestWidth, TITLE_FONT, titleWidth, wordsFit } from '../../src/graph/text';
 import { layoutNested, leafSide, NEST_PAD, nestedMap, shelfPack, type NestedMap } from '../../src/graph/nested';
 import { indexWorkspace } from '../../src/specs/data';
 import { groupedWorkspace, heightLevels, manyOfOneKindWorkspace, testIndex } from './workspace';
@@ -138,7 +138,7 @@ describe('the Nested map', () => {
       });
       for (const n of map.nodes.values()) {
         // Its label, wrapped for its width at that scale, fits it: every word across, a leaf's lines in its height, a parent's header above its padding.
-        for (const line of n.lines.title) expect(titleWidth(line.trimEnd()) * WIDTH_MARGIN * n.text, n.id).toBeLessThanOrEqual(n.w - 2 * LABEL_PAD * n.text + eps);
+        for (const line of n.lines.title) expect(titleWidth(line.trimEnd()) * n.text, n.id).toBeLessThanOrEqual(n.w - 2 * LABEL_PAD * n.text + eps);
         const height = n.text * labelHeight(n.lines);
         if (n.children.length === 0) { expect(n.header, n.id).toBe(0); expect(height, n.id).toBeLessThanOrEqual(n.h + eps); continue; }
         expect(n.header, n.id).toBeCloseTo(height, 9);
@@ -165,7 +165,7 @@ describe('the Nested map', () => {
     // The folder's square holds its header at that scale above its padding, and its children below it.
     expect(s.w).toBe(s.h);
     expect(s.header).toBeCloseTo(s.text * labelHeight(s.lines), 9);
-    for (const line of s.lines.title) expect(titleWidth(line.trimEnd()) * WIDTH_MARGIN * s.text).toBeLessThanOrEqual(s.w - 2 * LABEL_PAD * s.text + eps);
+    for (const line of s.lines.title) expect(titleWidth(line.trimEnd()) * s.text).toBeLessThanOrEqual(s.w - 2 * LABEL_PAD * s.text + eps);
     expect(s.header + NEST_PAD * s.text).toBeLessThanOrEqual(s.h + eps);
     for (const c of s.children.map((id) => map.nodes.get(id)!)) {
       expect(c.y).toBeGreaterThanOrEqual(s.y + s.header - eps);

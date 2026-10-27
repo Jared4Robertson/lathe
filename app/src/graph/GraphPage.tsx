@@ -493,6 +493,10 @@ export interface SceneBox {
   ring: boolean;
   armed: boolean;
   lit: boolean | null;
+  /** Its box in the map, and its text's and border's scales there: fixed by the map, never by the camera. */
+  map: { x: number; y: number; w: number; h: number };
+  textScale: number;
+  boxScale: number;
   rect: Rect;
   /** Its outline's corners on screen, for a polygon or a cell. */
   polygon: [number, number][] | null;
@@ -508,13 +512,19 @@ type Rect = { left: number; top: number; width: number; height: number };
 export interface Scene {
   layout: string;
   camera: { x: number; y: number; zoom: number };
+  /** How many times the camera has moved since the canvas was drawn first, and how many of those moves were glides. */
+  moves: number;
+  glides: number;
   canvas: Rect;
   textBarPx: number;
   boxes: SceneBox[];
   bars: Rect[];
-  lines: { id: string; source: string; target: string; style: string; link: boolean }[];
+  lines: { id: string; source: string; target: string; style: string; link: boolean; label: string; lit: boolean | null; points: [number, number][] }[];
   spotlight: boolean;
 }
+/** A camera as the scene reports it: to a hundredth of a pixel, and the zoom to nine significant digits. */
+export const roundCamera = (v: Viewport) => ({ x: Math.round(v.x * 100) / 100, y: Math.round(v.y * 100) / 100, zoom: Number(v.zoom.toPrecision(9)) });
+
 /** The canvas's element, with the hooks the tests read the drawn scene and hit-test through. */
 export type SceneHost = HTMLDivElement & { graphScene?: () => Scene; graphHit?: (clientX: number, clientY: number) => string | null };
 
@@ -601,7 +611,9 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
   }, []);
   useEffect(() => () => { if (frameRequest.current !== null) cancelAnimationFrame(frameRequest.current); frameRequest.current = null; }, []);
   const getViewport = useCallback(() => view.current, []);
-  const setViewport = useCallback((v: Viewport) => { view.current = v; requestPaint(); store.notify(); }, [requestPaint, store]);
+  /** How many times the camera has moved, and how many of its moves were glides: what the scene reports. */
+  const moves = useRef({ moves: 0, glides: 0 });
+  const setViewport = useCallback((v: Viewport) => { view.current = v; moves.current.moves++; requestPaint(); store.notify(); }, [requestPaint, store]);
 
   // ---- What the keyboard's layer holds: the level of detail for the camera (LA-EXP-DR60) ----
   const [drawn, setDrawn] = useState<Drawn | null>(null);
@@ -639,6 +651,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
     // Everything the glide passes over joins the keyboard's layer once, as it starts, and is trimmed when it ends.
     if (!tracing) show(mergeDrawn([0, 0.25, 0.5, 0.75, 1].map((t) => drawnAt(path.at(t)))));
     const duration = glideDuration(motion.duration, path.S);
+    moves.current.glides++;
     const start = performance.now();
     const step = (now: number) => {
       const t = Math.min(1, (now - start) / duration);
@@ -976,7 +989,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
     const at = local(e);
     const before = pointers.current.get(e.pointerId);
     if (!before) {
-      if (e.pointerType === 'mouse') setHover(hitAt(at.x, at.y)?.id ?? null);
+      if (e.pointerType !== 'touch' && e.pointerType !== 'pen') setHover(hitAt(at.x, at.y)?.id ?? null);
       return;
     }
     pointers.current.set(e.pointerId, at);
@@ -1073,15 +1086,18 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
       const sp = spotlight.current;
       return {
         layout: tracing ? 'trace' : layout,
-        camera: { x: Math.round(v.x * 100) / 100, y: Math.round(v.y * 100) / 100, zoom: Math.round(v.zoom * 1e6) / 1e6 },
+        camera: roundCamera(v),
+        moves: moves.current.moves,
+        glides: moves.current.glides,
         canvas: { left: r.left, top: r.top, width: s.w, height: s.h },
         textBarPx: TEXT_BAR_PX,
         spotlight: sp.id !== null,
         bars: frame.bars.map((b) => rect(b.x, b.y, b.w, b.h)),
-        lines: frame.lines.map((l) => ({ id: l.id, source: l.source, target: l.target, style: l.style, link: l.link })),
+        lines: frame.lines.map((l) => ({ id: l.id, source: l.source, target: l.target, style: l.style, link: l.link, label: l.label, lit: sp.id !== null && sp.litLines ? sp.litLines.has(l.id) : null, points: l.points.map((p) => [X(p.x), Y(p.y)] as [number, number]) })),
         boxes: frame.plates.map((p) => ({
           id: p.id, kind: p.kind, stage: p.stage, shape: p.shape, view: p.view, focus: p.id === focus, file: p.file, group: p.group,
-          hover: hover.current === p.id, ring: ring.current === p.id, armed: tapToOpen.armed === p.id, lit: sp.lit ? sp.lit.has(p.id) : null,
+          hover: hover.current === p.id, ring: ring.current === p.id, armed: tapToOpen.armed === p.id, lit: sp.id !== null && sp.lit ? sp.lit.has(p.id) : null,
+          map: { x: p.x, y: p.y, w: p.w, h: p.h }, textScale: p.text, boxScale: p.scale,
           rect: rect(p.x, p.y, p.w, p.h),
           polygon: p.outline.kind === 'polygon' ? p.outline.points.map(([x, y]) => [X(x), Y(y)] as [number, number]) : null,
           label: rect(p.label.x, p.label.y, p.label.w, p.label.h),
