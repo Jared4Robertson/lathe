@@ -366,19 +366,40 @@ export function aggregateErd(index: SpecIndex, aggregateId: string, highlight: s
 export type Point = { x: number; y: number };
 export interface Rect { x: number; y: number; width: number; height: number }
 
-export const BOX_WIDTH = 220;
-export const BOX_HEAD = 46;
+/** A box with rows (fields, entities), and a sticky note (a command, policy, specification or query with none). */
+export const BOX_WIDTH = 230;
+export const STICKY_WIDTH = 200;
+/** The parts of a box's height, in CSS pixels at the default text size (styles.css .erd-box): its padding and border, a title line, the kind line, a row, and the rows' rule. */
+const FRAME = 22;
+const TITLE_LINE = 16;
+const KIND_LINE = 14;
 export const ROW = 20;
-export const STICKY = { width: 180, height: 56 };
+const ROWS_RULE = 11;
+/** About how many characters of a title fit on a line, by box width (the display face's bold at 0.8125rem). */
+const charsPerLine = (width: number) => Math.floor((width - 20) / 7.6);
 
 /** The rows a box lists: an entity's, event's or read model's fields; an aggregate's entities and its value objects' line. */
 export const boxRows = (box: ErdBox) => (box.kind === 'aggregate' ? (box.entities?.length ?? 0) + (box.valueObjects?.length ? 1 : 0) : box.fields.length);
 
-/** A box's size: a sticky note for a command, policy, specification or query; it grows with its rows for the rest. */
+/** How many lines a title takes, at most two (a longer one ends with an ellipsis, its whole text in the box's tooltip). */
+export function titleLines(title: string, width: number, badge = false): number {
+  const per = charsPerLine(width) - (badge ? 6 : 0);
+  let lines = 1;
+  let used = 0;
+  for (const word of title.split(/\s+/)) {
+    const need = used === 0 ? word.length : used + 1 + word.length;
+    if (need <= per || used === 0) used = need;
+    else { lines++; used = word.length; }
+  }
+  return Math.min(2, lines);
+}
+
+/** A box's size: a sticky note for a kind without rows; a box with rows grows with them. Each fits its title on up to two lines. */
 export function boxSize(box: ErdBox): { width: number; height: number } {
   const rows = boxRows(box);
-  if (rows === 0) return STICKY;
-  return { width: BOX_WIDTH, height: BOX_HEAD + ROW * rows + 8 };
+  const width = rows === 0 ? STICKY_WIDTH : BOX_WIDTH;
+  const head = FRAME + TITLE_LINE * titleLines(box.title, width, box.root) + KIND_LINE;
+  return { width, height: rows === 0 ? head : head + ROWS_RULE + ROW * rows };
 }
 
 /** Where the line from a box's center toward (tx, ty) leaves the box. */

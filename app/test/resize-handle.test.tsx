@@ -14,17 +14,17 @@ describe('resizable panels', () => {
     await openApp('/DM-SHOP-UC01');
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     const nav = handle('Resize the navigation');
-    expect(nav).toHaveAttribute('aria-valuenow', '304');
+    expect(nav).toHaveAttribute('aria-valuenow', '336');
     fireEvent.keyDown(nav, { key: 'ArrowRight' });
-    expect(nav).toHaveAttribute('aria-valuenow', '320');
+    expect(nav).toHaveAttribute('aria-valuenow', '352');
     fireEvent.keyDown(nav, { key: 'ArrowLeft', shiftKey: true });
-    expect(nav).toHaveAttribute('aria-valuenow', '256');
+    expect(nav).toHaveAttribute('aria-valuenow', '288');
     fireEvent.keyDown(nav, { key: 'End' });
     expect(nav).toHaveAttribute('aria-valuenow', '560');
     expect(window.localStorage.getItem('lathe:nav-width')).toBe('560');
     expect((document.querySelector('.app') as HTMLElement).style.getPropertyValue('--nav-width')).toBe('560px');
     fireEvent.doubleClick(nav);
-    expect(nav).toHaveAttribute('aria-valuenow', '304');
+    expect(nav).toHaveAttribute('aria-valuenow', '336');
 
     // The side bar sits after its handle, so Left grows it.
     const sideBar = handle('Resize the side bar');

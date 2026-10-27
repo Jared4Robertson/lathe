@@ -14,7 +14,9 @@ import { groupedWorkspace, manyOfOneKindWorkspace, siblingGroups, testIndex } fr
 // areas), with the same text.
 
 type XY = [number, number];
-const indexes = (): SpecIndex[] => [testIndex(), indexOf(groupedWorkspace()), indexOf(manyOfOneKindWorkspace())];
+/** The test workspaces' indexes, built once, so a map found by its index is the one the test laid out. */
+let built: SpecIndex[] | null = null;
+const indexes = (): SpecIndex[] => (built ??= [testIndex(), indexOf(groupedWorkspace()), indexOf(manyOfOneKindWorkspace())]);
 const maps = (): VoronoiMap[] => indexes().map((index) => readyVoronoiMap(index, 'P')!);
 
 /** A synthetic tree: `n` roots, each with `k` children, each with `k` leaves. */

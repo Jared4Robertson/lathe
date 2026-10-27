@@ -25,21 +25,22 @@ export const BOX_KIND: Record<ErdKind, string> = {
 /** The key's order of the box kinds, as event storming reads them. */
 const KEY_ORDER: readonly ErdKind[] = ['policy', 'command', 'specification', 'aggregate', 'entity', 'event', 'read_model', 'query'];
 
-/** What each line means, after its label, in the key. */
-const LINE_MEANING: Record<ErdRelation, string> = {
-  refers_to: 'a field holds the other aggregate\'s ID, many to one',
-  has_one: 'one to one',
-  has_many: 'one to many',
-  changes: 'the aggregate the command changes',
-  also_changes: 'a recorded exception: another aggregate it changes in the same transaction',
-  raises: 'the events the command raises',
-  hears: 'the policy reacts to the event afterwards',
-  invokes: 'the command the policy runs',
-  checks: 'a specification the command checks first',
-  reads: 'what a read model or specification reads',
-  queries: 'a query the read model answers',
-  selects_by: 'a specification the query selects by',
+/** The key's lines in order, each with what its label alone does not say (its whole meaning is the entry's tooltip). */
+const LINE_KEY: Record<ErdRelation, { note: string; meaning: string }> = {
+  refers_to: { note: 'many to one', meaning: 'A field holds the other aggregate\'s ID.' },
+  has_one: { note: 'one to one', meaning: 'An entity has one of the other.' },
+  has_many: { note: 'one to many', meaning: 'An entity has many of the other.' },
+  changes: { note: '', meaning: 'The aggregate the command changes.' },
+  also_changes: { note: 'a recorded exception', meaning: 'Another aggregate the command changes in the same transaction, with its reason.' },
+  raises: { note: '', meaning: 'The events the command raises.' },
+  hears: { note: 'afterwards', meaning: 'The policy reacts to the event after it is saved, through the outbox.' },
+  invokes: { note: '', meaning: 'The command the policy runs.' },
+  checks: { note: 'first', meaning: 'A specification the command checks before acting.' },
+  reads: { note: '', meaning: 'What a read model or a specification reads.' },
+  queries: { note: '', meaning: 'A query the read model answers.' },
+  selects_by: { note: '', meaning: 'A specification the query selects by.' },
 };
+const LINE_ORDER = Object.keys(LINE_KEY) as ErdRelation[];
 
 export interface ModelViewProps {
   index: SpecIndex;
@@ -170,20 +171,23 @@ export function ErdKey({ erd, highlight, relations = [] }: { erd: Erd; highlight
     );
   };
   const kinds = KEY_ORDER.filter((k) => erd.boxes.some((b) => b.kind === k));
-  const lines = [...new Map(erd.lines.map((l) => [l.relation, l])).values()].sort((a, b) => Object.keys(LINE_MEANING).indexOf(a.relation) - Object.keys(LINE_MEANING).indexOf(b.relation));
+  const lines = [...new Map(erd.lines.map((l) => [l.relation, l])).values()].sort((a, b) => LINE_ORDER.indexOf(a.relation) - LINE_ORDER.indexOf(b.relation));
   const other = erd.boxes.some((b) => b.tone === 'other');
   return (
     <div className="erd-key" role="group" aria-label="Key" tabIndex={0}>
-      <ul className="erd-key-ends erd-key-kinds" aria-label="Colors">
+      <ul className="erd-key-ends" aria-label="Colors">
         {kinds.map((k) => <li key={k}><span className={`erd-key-swatch erd-key-${k}`} aria-hidden="true" /> {BOX_KIND[k]}</li>)}
         <li className="tone-current"><span className="erd-key-swatch erd-key-current" aria-hidden="true" /> {erd.level === 'domain' ? 'This domain' : 'This aggregate and this domain'}</li>
         {other && <li className="tone-other"><span className="erd-key-swatch erd-key-other" aria-hidden="true" /> Another domain, named in parentheses</li>}
+        {erd.boxes.some((b) => b.context) && <li><span className="erd-key-context" aria-hidden="true" /> Faded: {erd.level === 'aggregate' ? 'other aggregates and domains' : 'other domains'}</li>}
+        {erd.boxes.some((b) => b.root) && <li><span className="erd-root">root</span> Root entity</li>}
+        {highlight && <li><span className="erd-key-highlight" aria-hidden="true" /> This record</li>}
       </ul>
       <ul className="erd-key-ends" aria-label="Lines">
-        {lines.map((l) => <li key={l.relation}>{sample(l.relation, l.dashed)} {lineLabel(relations, l.relation)}: {LINE_MEANING[l.relation]}</li>)}
-        {erd.boxes.some((b) => b.root) && <li><span className="erd-root">root</span> The aggregate's root entity</li>}
-        {highlight && <li><span className="erd-key-highlight" aria-hidden="true" /> This record</li>}
-        {erd.boxes.some((b) => b.context) && <li><span className="erd-key-context" aria-hidden="true" /> Faded: {erd.level === 'aggregate' ? 'records of other aggregates and domains' : 'records of other domains'}</li>}
+        {lines.map((l) => {
+          const { note, meaning } = LINE_KEY[l.relation];
+          return <li key={l.relation} title={meaning}>{sample(l.relation, l.dashed)} {lineLabel(relations, l.relation)}{note && ` (${note})`}</li>;
+        })}
       </ul>
     </div>
   );
@@ -195,15 +199,28 @@ export function focusRects(erd: Erd, rects: Map<string, Rect>): Map<string, Rect
   return inFocus.size > 0 ? inFocus : rects;
 }
 
-/** The viewport that fits every box, centered, never zoomed in past 1. */
-function fitRects(rects: Map<string, Rect>, width: number, height: number, padding = 32) {
+/** The least zoom a fit goes to, so box titles stay legible; what is past the edges then is counted by the edge hints. */
+export const FIT_MIN_ZOOM = 0.6;
+
+/**
+ * The viewport that fits every box, never zoomed in past 1 nor out past FIT_MIN_ZOOM. When the boxes don't fit at
+ * that zoom, the camera starts at their top left corner, where the model reads from.
+ */
+export function fitRects(rects: Map<string, Rect>, width: number, height: number, padding = 32) {
   const all = [...rects.values()];
   const minX = Math.min(...all.map((r) => r.x));
   const minY = Math.min(...all.map((r) => r.y));
   const maxX = Math.max(...all.map((r) => r.x + r.width));
   const maxY = Math.max(...all.map((r) => r.y + r.height));
-  const zoom = Math.max(0.1, Math.min(1, (width - 2 * padding) / (maxX - minX || 1), (height - 2 * padding) / (maxY - minY || 1)));
-  return { x: width / 2 - ((minX + maxX) / 2) * zoom, y: height / 2 - ((minY + maxY) / 2) * zoom, zoom };
+  const zoom = Math.max(FIT_MIN_ZOOM, Math.min(1, (width - 2 * padding) / (maxX - minX || 1), (height - 2 * padding) / (maxY - minY || 1)));
+  const fitsX = (maxX - minX) * zoom <= width - 2 * padding;
+  const fitsY = (maxY - minY) * zoom <= height - 2 * padding;
+  return {
+    // Clear of the zoom controls at the bottom left.
+    x: fitsX ? width / 2 - ((minX + maxX) / 2) * zoom : padding + 24 - minX * zoom,
+    y: fitsY ? height / 2 - ((minY + maxY) / 2) * zoom : padding - minY * zoom,
+    zoom,
+  };
 }
 
 function ErdCanvas({ relations, erd, focus, onNavigate, onPeek }: { relations: readonly RelationRule[]; erd: Erd; focus: string; onNavigate: (id: string) => void; onPeek?: ModelViewProps['onPeek'] }) {
@@ -214,7 +231,10 @@ function ErdCanvas({ relations, erd, focus, onNavigate, onPeek }: { relations: r
 
   useEffect(() => {
     let live = true;
-    layoutErd(erd).then(
+    // Laid out to about the canvas's shape, so a big model wraps into rows instead of one long band.
+    const box = wrapper.current?.getBoundingClientRect();
+    const aspect = box && box.width > 0 && box.height > 0 ? box.width / box.height : 1.6;
+    layoutErd(erd, aspect).then(
       (rects) => { if (live) { setPlaced({ erd, rects }); setError(null); } },
       (e) => { if (live) setError(e instanceof Error ? e.message : String(e)); },
     );
@@ -269,7 +289,8 @@ function ErdCanvas({ relations, erd, focus, onNavigate, onPeek }: { relations: r
     const motion = readMotion();
     setViewport(fitRects(focusRects(placed.erd, placed.rects), box.width, box.height), animate && motion.duration > 0 ? { duration: motion.duration, ease: motion.ease } : { duration: 0 });
   }, [placed, setViewport]);
-  const centers = useMemo(() => (placed ? placed.erd.boxes.filter((b) => b.context).flatMap((b) => {
+  // The edge hints count every box past an edge: the faded context, and what a big model leaves outside.
+  const centers = useMemo(() => (placed ? placed.erd.boxes.flatMap((b) => {
     const r = placed.rects.get(b.id);
     return r ? [{ x: r.x + r.width / 2, y: r.y + r.height / 2 }] : [];
   }) : []), [placed]);

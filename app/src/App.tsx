@@ -35,7 +35,7 @@ export default function App() {
 
 const NAV_KEY = 'lathe:nav-collapsed';
 /** The nav's width (the space rail and the panel), its limits, and below what a drag collapses it to the rail. */
-const NAV_WIDTH = { key: 'lathe:nav-width', fallback: 304, min: 256, max: 560, collapseBelow: 180 };
+const NAV_WIDTH = { key: 'lathe:nav-width', fallback: 336, min: 256, max: 560, collapseBelow: 180 };
 
 /** The app shell: the nav, the page for the address, and the commands that work everywhere. */
 function Shell() {

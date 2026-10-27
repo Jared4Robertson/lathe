@@ -177,8 +177,9 @@ describe('the Model view', () => {
     const colors = within(key).getByRole('list', { name: 'Colors' });
     for (const text of ['Policy', 'Command', 'Specification', 'Aggregate', 'Domain event', 'Read model', 'Query', 'This domain', 'Another domain, named in parentheses']) expect(colors).toHaveTextContent(text);
     const lines = within(key).getByRole('list', { name: 'Lines' });
-    expect(lines).toHaveTextContent('Refers to: a field holds the other aggregate\'s ID, many to one');
-    expect(lines).toHaveTextContent('Raises: the events the command raises');
+    expect(lines).toHaveTextContent('Refers to (many to one)');
+    expect(lines).toHaveTextContent('Raises');
+    expect(lines).toHaveTextContent('Hears (afterwards)');
     expect(lines.querySelector('.erd-key-line.rel-hears.is-dashed')).not.toBeNull();
     // Under the diagram, keeping one height.
     expect(modelPane().querySelector('.model-canvas')!.compareDocumentPosition(key.closest('.erd-key')!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();

@@ -46,7 +46,7 @@
   /* Touch (LA-PAT-APP-UX-R07): the least size of a target under a finger, and the radius of a sheet's top corners. */
   --touch-target: 44px; --sheet-radius: 14px;
   /* The ERD's key under the Model view: one height for every ERD, so the canvas never resizes (LA-PAT-APP-UX-R08). */
-  --erd-key-height: 5.5rem;
+  --erd-key-height: 7.25rem;
   --display: "Archivo", "Helvetica Neue", Arial, sans-serif;
   --body: "Public Sans", "Segoe UI", system-ui, sans-serif;
   --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
@@ -84,7 +84,7 @@
 html, body, #root { height: 100%; height: 100dvh; margin: 0; }
 html { font-size: calc(var(--text-size) * 16 / 15); }
 body { background: var(--paper); color: var(--ink); font: var(--text-size)/var(--line-height) var(--body); }
-.app { height: 100%; box-sizing: border-box; display: grid; grid-template-columns: var(--nav-width, 304px) var(--panel-gap) minmax(0, 1fr); padding: var(--panel-gap); background: var(--shell); }
+.app { height: 100%; box-sizing: border-box; display: grid; grid-template-columns: var(--nav-width, 336px) var(--panel-gap) minmax(0, 1fr); padding: var(--panel-gap); background: var(--shell); }
 .placeholder { display: grid; place-items: center; color: var(--muted); }
 .menu { background: var(--sheet); padding: 12px 10px; display: flex; flex-direction: column; gap: 8px; min-height: 0; overflow: hidden; box-sizing: border-box; }
 .brand { margin: 0; font: 700 1.3rem var(--display); display: flex; align-items: center; gap: 8px; color: var(--ink); text-decoration: none; }
@@ -403,7 +403,7 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .menu .long-list-tools input { font-size: 0.8rem; }
 /* ---------- End of obligation kinds, test states and record content ---------- */
 /* ---- Graph groups (brief 15): a folder of one kind of child, with a tab and a count. ---- */
-.graph-swatch.stage-group { border-color: var(--muted); background: var(--sheet); }
+.graph-swatch.stage-group { border-color: var(--g-domain-model); border-style: solid; background: var(--sheet); border-top-width: 3px; }
 
 /* ---------- App shell, nav, focus page, sideBar, trees and shortcuts (brief 18) ---------- */
 .icon { flex: none; display: block; }
@@ -595,7 +595,7 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 .trace-cell > .record-link { min-block-size: 24px; align-items: center; }
 .data-table.trace-requirements { width: 100%; }
 .trace-run-by { margin: 0; display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; font-size: 0.88rem; }
-.flow-path > h3 { margin: 10px 0 4px; font-size: 0.9rem; }
+.flow-path > h3 { display: flex; align-items: baseline; gap: 8px; margin: 10px 0 4px; font-size: 0.9rem; }
 .rule-na-reasons { font-size: 0.8rem; color: var(--muted); }
 .data-table { border-collapse: collapse; font-size: 0.86rem; margin: 0 0 12px; }
 .data-table th, .data-table td { text-align: left; vertical-align: top; padding: 4px 10px 4px 0; border-bottom: 1px solid var(--rule); }
@@ -646,16 +646,16 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 /* Every nav grid is one column as wide as the panel (minmax(0, 1fr)), so a long title truncates instead of widening the column. */
 .space-items { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; min-width: 0; }
 .menu.has-spaces .nav-scroll { overflow-x: hidden; }
-/* A domain's stages and folders in the nav, as Client lays out its specs. */
-/* A space's own lists (its Shared folder and its domains) sit side by side at the top level; only what is inside them is indented. */
+/* A domain's and a product's stages and folders in the nav: each stage's row carries its color mark. */
+/* A space's own lists (its own stages and its domains) sit side by side at the top level; only what is inside them is indented. */
 .menu .nav-tree { margin: 0; padding: 0; }
 .menu .long-list-tools { padding: 0 10px; }
 .nav-folder-head { gap: 6px; color: var(--muted); cursor: pointer; font-size: 0.84rem; }
 :is(.nav-folder-head, .nav-section-head) > .icon:first-child { width: var(--nav-twistie); }
-.nav-folder.is-stage > .nav-folder-head .nav-label { font: 500 0.74rem var(--mono); letter-spacing: 0.06em; text-transform: uppercase; }
-.menu :is(.nav-records .nav-row, .nav-folder.is-record > .nav-row) { color: var(--muted); font-size: 0.84rem; }
-/* A layer's row: its fold beside a link to its page, sized like a folder's row. */
-.menu :is(.nav-records .nav-row, .nav-folder.is-record > .nav-row):hover { color: var(--ink); }
+.nav-folder.is-stage > .nav-folder-head { color: var(--ink); }
+.nav-folder.is-stage > .nav-folder-head .nav-label { font-weight: 500; }
+.menu .nav-records .nav-row { color: var(--muted); font-size: 0.84rem; }
+.menu .nav-records .nav-row:hover { color: var(--ink); }
 .menu .nav-groups { margin-top: 2px; }
 .menu.is-drawer.has-spaces { width: min(356px, 92vw); }
 /* The checks page's space filter. */
@@ -784,12 +784,13 @@ a.row-link.row-link:focus-visible { outline: none; }
 .erd-box.tone-other { border-style: dashed; --box-edge: var(--muted); --box-fill: var(--paper); }
 .erd-box.is-highlight, .erd-box.is-highlight:hover { box-shadow: 0 0 0 3px var(--ink); }
 @media (prefers-reduced-motion: reduce) { .erd-box { transition: none; } }
-.erd-box-head { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; min-width: 0; }
-.erd-box-head strong { font: 700 0.8125rem/1.25 var(--display); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.erd-summary { font: 0.65625rem/1.3 var(--mono); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Heights match boxSize in app/src/model/erd.ts: a title of up to two lines, the kind line, then 20px rows. */
+.erd-box-head { flex: none; display: flex; align-items: flex-start; justify-content: space-between; gap: 6px; min-width: 0; }
+.erd-box-head strong { font: 700 0.8125rem/1.25 var(--display); overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow-wrap: anywhere; }
+.erd-summary { flex: none; font: 0.65625rem/1.3 var(--mono); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .erd-root { flex: none; font: 600 0.59375rem/1.4 var(--mono); text-transform: uppercase; letter-spacing: 0.06em; padding: 0 5px; border-radius: 3px; color: var(--es-aggregate-bg); background: var(--es-aggregate); }
 .erd-fields { list-style: none; margin: 4px 0 0; padding: 4px 0 0; border-top: 1px solid var(--rule); display: grid; grid-template-columns: minmax(0, 1fr); }
-.erd-fields li { display: flex; justify-content: space-between; gap: 8px; min-height: 20px; align-items: center; font-size: 0.71875rem; }
+.erd-fields li { display: flex; justify-content: space-between; gap: 8px; height: 20px; align-items: center; font-size: 0.71875rem; }
 .erd-field { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .erd-field-kind { flex: 0 1 auto; min-width: 0; max-width: 55%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 0.65625rem var(--mono); color: var(--muted); }
 .erd-line-path, .erd-end { fill: none; stroke: var(--ink); stroke-width: 1.4; }
@@ -801,7 +802,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 :is(.erd-line, .erd-key-line):is(.rel-reads, .rel-queries) :is(.erd-line-path, .erd-end) { stroke: var(--es-read-model); }
 /* The key keeps one height whichever model it explains, scrolling what does not fit, so moving between a domain, an
    aggregate and an entity never resizes the canvas above it (LA-PAT-APP-UX-R08). */
-.erd-key { flex: none; box-sizing: border-box; block-size: var(--erd-key-height); overflow-y: auto; scrollbar-gutter: stable; display: flex; flex-wrap: wrap; gap: 8px 28px; align-items: flex-start; padding: 10px 20px 12px; border-top: 1px solid var(--rule); font-size: 0.8rem; color: var(--muted); }
+.erd-key { flex: none; box-sizing: border-box; block-size: var(--erd-key-height); overflow-y: auto; scrollbar-gutter: stable; display: flex; flex-direction: column; gap: 6px; padding: 10px 20px 12px; border-top: 1px solid var(--rule); font-size: 0.8rem; line-height: 1.4; color: var(--muted); }
 .erd-key-swatch { flex: none; display: inline-block; width: 18px; height: 11px; border: 1.5px solid var(--es-aggregate); background: var(--es-aggregate-bg); border-radius: 2px; }
 .erd-key-swatch.erd-key-command { border-color: var(--es-command); background: var(--es-command-bg); }
 .erd-key-swatch.erd-key-event { border-color: var(--es-event); background: var(--es-event-bg); }
@@ -810,8 +811,8 @@ a.row-link.row-link:focus-visible { outline: none; }
 .erd-key-swatch:is(.erd-key-read_model, .erd-key-query) { border-color: var(--es-read-model); background: var(--es-read-model-bg); }
 .erd-key-swatch.erd-key-current { border-color: var(--ink); background: var(--sheet); }
 .erd-key-swatch.erd-key-other { border-style: dashed; border-color: var(--muted); background: var(--paper); }
-.erd-key-ends { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, max-content); grid-template-rows: repeat(3, auto); grid-auto-flow: column; grid-auto-columns: max-content; gap: 3px 24px; }
-.erd-key-ends li { display: flex; align-items: center; gap: 8px; }
+.erd-key-ends { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 2px 18px; }
+.erd-key-ends li { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
 .erd-key-line { flex: none; overflow: visible; }
 .erd-key-highlight { display: inline-block; width: 14px; height: 10px; border: 1.5px solid var(--es-aggregate); background: var(--es-aggregate-bg); box-shadow: 0 0 0 2px var(--ink); border-radius: 2px; }
 /* The model's context (LA-EXP-UC11-R06): faded and a little smaller, readable on hover, its lines faded with it. */

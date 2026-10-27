@@ -62,15 +62,24 @@ export function folderPath(index: SpecIndex, kind: string): string[] {
 }
 
 const order = (r: SpecRecord) => { const n = Number(textOf(r.row, 'position')); return Number.isInteger(n) ? n : Infinity; };
+/** A flow step's path ranks main first, then the others by name; other kinds have no path. */
+const pathRank = (a: SpecRecord, b: SpecRecord) => {
+  const pa = textOf(a.row, 'path').trim().toLowerCase() || 'main';
+  const pb = textOf(b.row, 'path').trim().toLowerCase() || 'main';
+  return pa === pb ? 0 : pa === 'main' ? -1 : pb === 'main' ? 1 : pa.localeCompare(pb);
+};
 const kindRank = (index: SpecIndex) => {
   const ranks = new Map(index.workspace.kinds.map((k, i) => [k.kind, i]));
   return (kind: string) => ranks.get(kind) ?? Infinity;
 };
 
-/** Records kind by kind in the schema's order; within a kind, those with a position (capabilities, flow steps) in their order, then by ID. */
+/**
+ * Records kind by kind in the schema's order; within a kind, those with a position in their order (capabilities, and
+ * flow steps path by path, the main path first), then by ID.
+ */
 export function sortRecords(index: SpecIndex, records: readonly SpecRecord[]): SpecRecord[] {
   const rank = kindRank(index);
-  return [...records].sort((a, b) => rank(a.kind) - rank(b.kind) || (a.kind === b.kind ? order(a) - order(b) : 0) || byIdOrder(a, b));
+  return [...records].sort((a, b) => rank(a.kind) - rank(b.kind) || (a.kind === b.kind ? pathRank(a, b) || order(a) - order(b) : 0) || byIdOrder(a, b));
 }
 
 const CONTAINERS: ReadonlySet<string> = new Set(['product', 'domain']);

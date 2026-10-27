@@ -15,6 +15,8 @@ import {
   type Neighborhood,
 } from '../../src/graph/model';
 import { graphMap } from '../../src/graph/map';
+import { boxColors } from '../../src/graph/paint';
+import { PLAIN_LOOK } from '../../src/graph/look';
 import { addressOf } from '../../src/views/address';
 import { groupedWorkspace, testIndex } from './workspace';
 
@@ -148,6 +150,9 @@ describe('graph groups', () => {
     // A use case test has an error.
     expect(groupMarks(index, 'P-D/test-plan/use_case_test')).toEqual({ errors: 1, warnings: 0, gaps: [] });
     expect(groupMarks(grouped, 'P-D-A4/command')).toEqual({ errors: 0, warnings: 0, gaps: [] });
+    // A group is a folder outlined in its stage's color; a group of no stage (open questions) in gray.
+    expect(boxColors(PLAIN_LOOK, { file: false, group: true, kind: 'use_case_test', stage: 'test-plan' })).toEqual({ edge: PLAIN_LOOK.testPlanEdge, fill: PLAIN_LOOK.sheet });
+    expect(boxColors(PLAIN_LOOK, { file: false, group: true, kind: 'question', stage: 'structural' })).toEqual({ edge: PLAIN_LOOK.muted, fill: PLAIN_LOOK.sheet });
   });
 
   it('LA-EXP-T32 Trace mode has no groups, and filters hide groups with their kind or with the parent relation', () => {

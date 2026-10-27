@@ -18,8 +18,8 @@ import {
 
 /** How a box is drawn: a Tree box or a trace's in its kind's shape, a Nested box, a Voronoi cell. */
 export type PlateView = 'tree' | 'nested' | 'voronoi' | 'trace';
-/** Which colors a box takes: its stage's, a group's, a file's. */
-export type Stage = SchemaStage | 'structural' | 'group' | 'file';
+/** Which colors a box takes: its stage's (a group's too, drawn as a folder), the structural records', a file's. */
+export type Stage = SchemaStage | 'structural' | 'file';
 
 /** One line of a label, at its place in the map: its text as the map broke it (a space it ends with is not drawn), its left end and baseline, its font size, and its width in map units. */
 export interface PlateLine { text: string; face: Face; size: number; x: number; baseline: number; top: number; height: number; width: number; tone: 'ink' | 'muted' }
@@ -68,11 +68,18 @@ export interface Plate {
   gaps: string[];
 }
 
-/** A node's own colors: its stage's, a group's, a file's. */
+/**
+ * A node's colors: its kind's stage; for a group, the stage it is (a stage group) or its kind's stage (a folder or a
+ * record's kind group); the structural colors for what has no stage; a file's.
+ */
 function stageFor(index: SpecIndex, id: string, kind: string): Stage {
   if (id.startsWith('file:')) return 'file';
-  if (!index.byId.has(id)) return 'group';
-  const stage = stageOf(index, kind);
+  const group = index.byId.has(id) ? undefined : treeGroup(index, id);
+  if (group?.role === 'stage') {
+    const named = index.workspace.stages.find((s) => s.stage === id.split('/')[1]);
+    return named ? named.stage : 'structural';
+  }
+  const stage = stageOf(index, group ? group.kind ?? '' : kind);
   return stage === '' || stage === 'file' || stage === 'group' ? 'structural' : stage;
 }
 
@@ -164,7 +171,7 @@ export function plateOf(index: SpecIndex, id: string, source: PlateSource, fileT
   const marked = marks.errors + marks.warnings + marks.gaps.length > 0;
   const base = {
     id, kind, kindLabel: record ? kindLabel(index, record.kind) : file ? 'File' : 'Group', title: file ? fileTitle ?? words.title : words.title, meta: words.meta,
-    stage, group: stage === 'group', file, shape, view: source.view, x, y, w, h, text: t, ...marks,
+    stage, group: !record && !file, file, shape, view: source.view, x, y, w, h, text: t, ...marks,
     dashed: file || kind === 'question',
   };
 
