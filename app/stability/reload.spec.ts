@@ -69,11 +69,11 @@ test.describe('live reload', () => {
 
   test('LA-PLT-T77 with the graph open', async ({ page }) => {
     await openPage(page, `${RECORD}?view=wiki,graph`);
-    await page.locator('.pane-graph .graph-flow .react-flow__node').first().waitFor();
+    await page.locator('.pane-graph .graph-flow .graph-box').first().waitFor({ state: 'attached' });
     await page.waitForTimeout(500);
     let restore = () => {};
     try {
-      const keys = ['.pane-graph .graph-canvas', '.pane-graph .graph-header', '.pane-graph .graph-flow .react-flow__renderer', '.pane-wiki > .pane-bar'];
+      const keys = ['.pane-graph .graph-canvas', '.pane-graph .graph-header', '.pane-graph .graph-flow canvas', '.pane-wiki > .pane-bar'];
       const r = await step(page, 'reload', 'spec edited with the graph open', { keys, allow: ['.pane-wiki .pane-scroll', '.side-bar'], settle: 1500 }, async () => {
         restore = edit(RECORD_FILE, 'Another paragraph from the stability suite, with the graph open.', 'end');
         await expect(page.locator('.pane-wiki')).toContainText('with the graph open', { timeout: 20_000 });
