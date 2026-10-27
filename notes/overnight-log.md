@@ -261,3 +261,4 @@ Lathe now matches S2 on UC requirements (206/206) and domain rules (98/98) acros
 - Then Lathe's own spec is updated through the command layer, `specs/` is deleted, the full checks run once, and `db-first` merges into main.
 - Brief 97 (remove fitness) is running on main; `db-first` takes it in before the import starts.
 - The owner approved pushing main to origin once the db-first build is complete and merged.
+- If anything fails at the end, fix it and then push; leave main unpushed only for a failure that truly can't be fixed.
