@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { main, openApp, section } from './helpers';
 import { workspace as demoWorkspace } from './fixtures/workspace';
+import { addRows } from './fixtures/load';
 
 const ids = (element: HTMLElement) => [...element.querySelectorAll('a.record-link code')].map((c) => c.textContent);
 
@@ -96,10 +97,9 @@ describe('domain page', () => {
 
   it('lists only capabilities in Capabilities when the domain keeps its use cases under capabilities', async () => {
     const w = demoWorkspace();
-    const shop = w.records.find((r) => r.id === 'DM-SHOP')!;
-    w.records.push({ ...shop, id: 'DM-SHOP-CAP01', kind: 'capability', title: 'Buying', parent: 'DM-SHOP', fields: { order: '1' }, body: '', path: 'specs/dm/cap01.md', mentions: [] });
-    for (const r of w.records) if (r.kind === 'use_case' && r.parent === 'DM-SHOP') r.parent = 'DM-SHOP-CAP01';
-    await openApp('/DM-SHOP', { workspace: w });
+    addRows(w, 'capability', { id: 'DM-SHOP-CAP01', title: 'Buying', domain_id: 'DM-SHOP', position: 1 });
+    for (const r of w.tables.use_case) if (r.domain_id === 'DM-SHOP') r.capability_id = 'DM-SHOP-CAP01';
+    await openApp('/DM-SHOP', { data: w });
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     expect(ids(section(/^Capabilities/))).toEqual(['DM-SHOP-CAP01']);
     expect(section(/^Capabilities/).querySelector('h4')).toBeNull();

@@ -3,14 +3,14 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { traceChain, TRACE_COLUMNS } from '../src/graph/model';
 import { RecordContent } from '../src/specs/RecordContent';
-import { indexWorkspace } from '../src/specs/data';
 import { domainFolders } from '../src/specs/folders';
 import { apisWorkspace } from './fixtures/apis-and-design-flows';
+import { indexOf } from './fixtures/load';
 
-// APIs, integrations and technical flows in the app (FORMAT.md sections 20 and 21): their pages,
+// APIs, integrations and technical flows in the app (the api, integration, design_flow and design_step tables): their pages,
 // their folders, and a technical step in a trace.
 
-const index = () => indexWorkspace(apisWorkspace());
+const index = () => indexOf(apisWorkspace());
 const sectionOf = (name: RegExp) => screen.getByRole('heading', { level: 2, name }).closest('section') as HTMLElement;
 const linkIds = (el: HTMLElement) => [...el.querySelectorAll('a')].map((a) => a.textContent);
 
@@ -56,7 +56,7 @@ describe('technical flows', () => {
     await user.click(within(main).getByRole('button', { name: 'Expand DM-SHOP-DF01-S01' }));
     const details = within(main).getByRole('region', { name: 'Details of DM-SHOP-DF01-S01' });
     expect(within(details).getByText('first').tagName).toBe('STRONG');
-    expect([...details.querySelectorAll('.step-fields dt')].map((d) => d.textContent)).toEqual(['transaction', 'locks', 'statements']);
+    expect([...details.querySelectorAll('.step-fields dt')].map((d) => d.textContent)).toEqual(['transaction name', 'locks', 'statements']);
     expect(details).toHaveTextContent('the basket row');
   });
 
