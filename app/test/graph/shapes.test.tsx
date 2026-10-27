@@ -31,13 +31,14 @@ describe('a shape for each kind', () => {
     expect(chamfer(40, 4000, 1)).toBe(10);
     expect(outlinePolygon('hexagon', NODE_WIDTH, NODE_HEIGHT, 1)).toBe('polygon(12px 0%, calc(100% - 12px) 0%, 100% 50%, calc(100% - 12px) 100%, 12px 100%, 0% 50%)');
     // A line out of a domain starts on its outline: at the point's tip in its middle, on the slanted side above and below.
-    const domain = { x: 0, y: 0, w: 400, h: 1000 };
+    // A box's outline grows with its text scale (LA-EXP-DR58).
+    const domain = { x: 0, y: 0, w: 400, h: 1000, text: 2.1 };
     const c = chamfer(400, 1000, 2.1);
     expect(outlineInset(domain, 'hexagon', 2.1, 500, 'right')).toBe(0);
-    expect(parentLine(domain, { x: 600, y: 472, w: NODE_WIDTH, h: NODE_HEIGHT }, 'hexagon')[0].x).toBe(400);
-    expect(parentLine(domain, { x: 600, y: 0, w: NODE_WIDTH, h: NODE_HEIGHT }, 'hexagon')[0].x).toBeCloseTo(400 - c * (1 - 28 / 500), 6);
+    expect(parentLine(domain, { x: 600, y: 472, w: NODE_WIDTH, h: NODE_HEIGHT, text: 1 }, 'hexagon')[0].x).toBe(400);
+    expect(parentLine(domain, { x: 600, y: 0, w: NODE_WIDTH, h: NODE_HEIGHT, text: 1 }, 'hexagon')[0].x).toBeCloseTo(400 - c * (1 - 28 / 500), 6);
     // A line into a domain meets the tip of its point, at its middle.
-    expect(parentLine({ x: -500, y: 0, w: 200, h: 4000 }, domain, 'box', 'hexagon')[1]).toEqual({ x: 0, y: 500 });
+    expect(parentLine({ x: -500, y: 0, w: 200, h: 4000, text: 1 }, domain, 'box', 'hexagon')[1]).toEqual({ x: 0, y: 500 });
     // A box's outline is its edge.
     expect(outlineInset(domain, 'box', 1, 0, 'left')).toBe(0);
 

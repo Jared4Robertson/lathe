@@ -7,6 +7,11 @@ import { heightOf, widthOf, type Point } from './layout';
 // smooth zoom and pan (a van Wijk and Nuij path, as d3's zoom uses). Nothing in the map moves or
 // changes size. What is drawn is chosen by the level of detail (LA-EXP-DR60): only what is in
 // view and big enough to see, each box with its label, and never more than a budget.
+//
+// The map's deepest boxes are very small against its product's box (map.ts), so a viewport is
+// kept in doubles and a map point's place on screen is `x * zoom + v.x`, worked out in doubles
+// relative to the camera: a renderer draws those small numbers, never map units scaled on the
+// graphics card, so a deep zoom does not jitter.
 
 export interface Viewport { x: number; y: number; zoom: number }
 
@@ -15,16 +20,19 @@ export const FRAME_PADDING = 32;
 /** How much of the pane the parent's level keeps at the left edge, at most. */
 export const PARENT_STRIP = 0.12;
 export const PARENT_STRIP_MAX = 96;
-/** The camera's zoom limits: far enough out for the whole map, never past twice a leaf's size. */
-export const MAX_ZOOM = 2;
-/** The camera never zooms in past this when it frames a focus: a leaf at its own size. */
-export const FRAME_MAX_ZOOM = 1;
+/**
+ * The most the camera zooms in (LA-EXP-DR59): enough to frame the deepest leaf of a large product's
+ * map and read its label, which is very small against the product's box (map.ts).
+ */
+export const MAX_ZOOM = 64;
+/** The least the camera zooms out: the whole of any product's map in a phone's pane. */
+export const MIN_ZOOM = 1e-4;
 
 /**
  * The camera that frames a focus (LA-EXP-DR59): the focus and its descendants down to `depth`
  * levels below it fill the pane, the parent's level showing in a strip at the left edge (the frame
  * starts at the parent's right edge, past the strip). A node with fewer levels below it frames what
- * it has. Zoomed in no further than FRAME_MAX_ZOOM, and centered in the space right of the strip.
+ * it has. Zoomed in no further than MAX_ZOOM, and centered in the space right of the strip.
  */
 export function frameOnMap(map: GraphMap, focus: string, depth: number, width: number, height: number): Viewport {
   const node = map.nodes.get(focus);
@@ -43,14 +51,14 @@ export function frameOnMap(map: GraphMap, focus: string, depth: number, width: n
   const right = last.x + last.width;
   const strip = parent ? Math.min(PARENT_STRIP_MAX, width * PARENT_STRIP) : 0;
   const room = { w: width - strip - 2 * FRAME_PADDING, h: height - 2 * FRAME_PADDING };
-  const zoom = Math.min(FRAME_MAX_ZOOM, room.h / node.h, room.w / (right - left));
+  const zoom = Math.min(MAX_ZOOM, room.h / node.h, room.w / (right - left));
   const cy = node.y + node.h / 2;
   return { x: strip + FRAME_PADDING + room.w / 2 - ((left + right) / 2) * zoom, y: height / 2 - cy * zoom, zoom };
 }
 
 /** The whole map in the pane: the overview's camera, and the least the camera zooms out. */
 export function frameMap(map: GraphMap, width: number, height: number): Viewport {
-  const zoom = Math.min(FRAME_MAX_ZOOM, (width - 2 * FRAME_PADDING) / Math.max(1, map.width), (height - 2 * FRAME_PADDING) / Math.max(1, map.height));
+  const zoom = Math.min(MAX_ZOOM, (width - 2 * FRAME_PADDING) / Math.max(1, map.width), (height - 2 * FRAME_PADDING) / Math.max(1, map.height));
   return { x: width / 2 - (map.width / 2) * zoom, y: height / 2 - (map.height / 2) * zoom, zoom };
 }
 
