@@ -4,6 +4,8 @@
 // The schema backs up two invariants even if a command handler forgets them:
 // TL-LEND-INV01 (unique email) and TL-LEND-INV03 (one active loan per tool).
 // A loan's due date is stored as a date (YYYY-MM-DD), not a time (TL-LEND-INV04).
+// The outbox table holds every domain event (TL-LEND-EV01-ET to EV06-ET), saved in its command's
+// transaction, until the relay in events.ts delivers it.
 import { DatabaseSync } from 'node:sqlite';
 import type { Condition, Loan, Member, Tool } from './model.ts';
 
@@ -36,6 +38,15 @@ CREATE TABLE IF NOT EXISTS loans (
   return_note TEXT
 );
 CREATE UNIQUE INDEX IF NOT EXISTS loans_one_active_per_tool ON loans (tool_id) WHERE returned_at IS NULL;
+
+CREATE TABLE IF NOT EXISTS outbox (
+  id INTEGER PRIMARY KEY,
+  type TEXT NOT NULL,
+  event TEXT NOT NULL,
+  raised_at TEXT NOT NULL,
+  delivered_at TEXT
+);
+CREATE INDEX IF NOT EXISTS outbox_undelivered ON outbox (id) WHERE delivered_at IS NULL;
 `;
 
 type Row = Record<string, unknown>;
@@ -170,5 +181,22 @@ export class Store {
       .get(returnedAt, condition, note, id) as Row | undefined;
     if (!r) throw new Error(`Loan ${id} is not active`);
     return toLoan(r);
+  }
+
+  /** Saves a domain event, as JSON, to the outbox. Called inside the transaction of the change that raised it. */
+  saveEvent(type: string, event: string, raisedAt: string): void {
+    this.db.prepare('INSERT INTO outbox (type, event, raised_at) VALUES (?, ?, ?)').run(type, event, raisedAt);
+  }
+
+  /** The oldest undelivered event after `afterId`. */
+  nextUndeliveredEvent(afterId: number): { id: number; event: string } | undefined {
+    const r = this.db
+      .prepare('SELECT id, event FROM outbox WHERE delivered_at IS NULL AND id > ? ORDER BY id LIMIT 1')
+      .get(afterId) as Row | undefined;
+    return r && { id: Number(r.id), event: String(r.event) };
+  }
+
+  markEventDelivered(id: number, deliveredAt: string): void {
+    this.db.prepare('UPDATE outbox SET delivered_at = ? WHERE id = ?').run(deliveredAt, id);
   }
 }
