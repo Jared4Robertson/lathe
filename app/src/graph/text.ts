@@ -3,7 +3,7 @@ import { NODE_WIDTH } from './layout';
 import { groupKindLabel, groupLabel, groupMarks, groupOwner } from './model';
 import { nodeShape, SHAPES, type Room, type Shape } from './shapes';
 
-// A box's label as part of the map (LA-EXP-DR58): its two lines, the kind and ID line and the
+// A box's label as part of the map (LA-EXP-DS06): its two lines, the kind and ID line and the
 // title, are sized once, in map units, when the map is built, and never change size relative to
 // the box; only the camera changes how big they look. Siblings share one text scale: the largest,
 // at most a fixed share of their box's size, at which every sibling's whole label fits its room
@@ -24,7 +24,7 @@ export const BORDER = 1.5;
 /** The padding on each side of a label, and the room kept beside the kind and ID line for the problem badge. */
 export const LABEL_PAD = 14;
 export const BADGE_ROOM = 30;
-/** The room a small mark takes before the kind and ID line (a shape's in the Nested and Voronoi views, a gear or a ruler), its gap included (LA-EXP-DR65). */
+/** The room a small mark takes before the kind and ID line (a shape's in the Nested and Voronoi views, a gear or a ruler), its gap included (LA-V93-R06). */
 export const MARK_ROOM = 18;
 /** The faces the graph draws text in: a title (the body face at 600), a kind and ID line or a file's title (the mono face), a problem badge (mono at 700), a link's words (mono). */
 export type Face = 'title' | 'meta' | 'badge' | 'edge';
@@ -134,7 +134,7 @@ export interface WrappedLabel {
   title: string[];
   meta: string[];
   file: boolean;
-  /** The height its shape keeps clear above and below it, at text scale 1 (LA-EXP-DR65): none for a box. */
+  /** The height its shape keeps clear above and below it, at text scale 1 (LA-V93-R06): none for a box. */
   pad?: number;
 }
 
@@ -147,8 +147,8 @@ const NO_ROOM: Room = { l: 0, r: 0, t: 0, b: 0 };
 const metaRoom = ({ marks = 0, marked = false, centered = false }: LabelRoom) => marks * MARK_ROOM + (marked ? (centered ? 2 : 1) * BADGE_ROOM : 0);
 
 /**
- * A label broken into lines for a box `width` wide at text scale 1 (LA-EXP-DR58), less the padding,
- * its shape's room (LA-EXP-DR65), and beside the kind and ID line its marks and the badge's room. At a text scale `s`, a box `w` wide wraps its label at `w / s`.
+ * A label broken into lines for a box `width` wide at text scale 1 (LA-EXP-DS06), less the padding,
+ * its shape's room (LA-V93-R06), and beside the kind and ID line its marks and the badge's room. At a text scale `s`, a box `w` wide wraps its label at `w / s`.
  */
 export function wrapLabel(lines: { title: string; meta: string }, { shape, marks = 0, marked = false, centered = false, file = false, width = NODE_WIDTH }: LabelRoom & { file?: boolean; width?: number } = {}): WrappedLabel {
   const room = shape ? SHAPES[shape].room : NO_ROOM;
@@ -174,13 +174,13 @@ export const labelHeight = (label: WrappedLabel) => 2 * (LABEL_PAD_BLOCK + BORDE
 /** What a box's label says, and what it keeps room for: its shape's room (the Tree view), the marks before its kind and ID line, the problem badge, a file's face. */
 export interface MapLabel { title: string; meta: string; shape?: Shape; marks?: number; marked?: boolean; file?: boolean }
 
-/** A node's label in the Tree map and a trace: its kind's shape is its outline, so the label keeps its shape's room, and its kind's mark comes before its kind and ID line (LA-EXP-DR65). */
+/** A node's label in the Tree map and a trace: its kind's shape is its outline, so the label keeps its shape's room, and its kind's mark comes before its kind and ID line (LA-V93-R06). */
 export function treeLabel(index: SpecIndex, id: string): MapLabel {
   const { shape, mark } = nodeShape(index, id);
   return { ...labelLines(index, id), shape, marks: mark ? 1 : 0, marked: hasMarks(index, id), file: id.startsWith('file:') };
 }
 
-/** A node's label in the Nested and Voronoi maps: its lines, its marks (its shape's and its kind's, LA-EXP-DR65) and whether it has the badge. */
+/** A node's label in the Nested and Voronoi maps: its lines, its marks (its shape's and its kind's, LA-V93-R06) and whether it has the badge. */
 export function mapLabel(index: SpecIndex, id: string): MapLabel {
   const marks = id.startsWith('file:') ? 0 : nodeShape(index, id).mark ? 2 : 1;
   return { ...labelLines(index, id), marks, marked: hasMarks(index, id) };
@@ -217,7 +217,7 @@ const FIT_ROUNDS = 40;
 
 /**
  * The largest text scale, at most `most`, at which a label fits a room `w` by `h` in map units
- * (LA-EXP-DR58), inside its box's border, `border(s)` thick on every side at a scale `s`:
+ * (LA-EXP-DS06), inside its box's border, `border(s)` thick on every side at a scale `s`:
  * wrapped at the room's width over the scale, no word broken, its lines, padding and shape's room
  * no taller than the room. A smaller scale always fits at least as well (more words to a line,
  * fewer lines, each smaller, and a border no thicker), so the largest is found by halving. 0 only

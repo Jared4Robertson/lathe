@@ -23,7 +23,7 @@ function stages() {
 }
 
 describe('domain page', () => {
-  it('LA-EXP-T03 The domain page groups records by stage, one section per kind, with what sits under a record in its stage folded under it', async () => {
+  it('LA-V91-R02-T01 The domain page groups records by stage, one section per kind, with what sits under a record in its stage folded under it', async () => {
     await openShop();
     const user = userEvent.setup();
     expect(stages()).toEqual([
@@ -70,7 +70,7 @@ describe('domain page', () => {
     expect(main()).not.toHaveTextContent('DM-V01 ');
   });
 
-  it('LA-EXP-T04 The search box filters records by ID or title as you type', async () => {
+  it('LA-V91-R03-T01 The search box filters records by ID or title as you type', async () => {
     await openShop();
     const user = userEvent.setup();
     const search = screen.getByLabelText('Filter records');
@@ -92,7 +92,7 @@ describe('domain page', () => {
     expect(ids(section(/^Capabilities/))).toEqual(['DM-SHOP-CAP01']);
   });
 
-  it('LA-EXP-T05 The domain page lists its coverage gaps, each with the missing link, and its problems', async () => {
+  it('LA-V91-R04-T01 The domain page lists its coverage gaps, each with the missing link, and its problems', async () => {
     await openShop();
     const coverage = section(/^Coverage/);
     const gaps = within(coverage).getAllByRole('listitem');
@@ -116,7 +116,7 @@ describe('domain page', () => {
     expect(main()).not.toHaveTextContent('DM-PAY-UC01-R01');
   });
 
-  it('LA-EXP-T03 A stage with nothing yet says so, and only kinds with records get a section', async () => {
+  it('LA-V91-R02-T01 A stage with nothing yet says so, and only kinds with records get a section', async () => {
     await openApp('/NF-NOTE');
     await screen.findByRole('heading', { level: 1, name: 'Notes' });
     expect(stages()).toEqual([

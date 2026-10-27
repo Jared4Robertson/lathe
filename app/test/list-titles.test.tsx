@@ -14,7 +14,7 @@ const sideBar = () => screen.getByRole('complementary', { name: 'Side bar' });
 const noListInSideBar = (name: RegExp) => { expect(within(sideBar()).queryByRole('list', { name })).toBeNull(); expect(within(sideBar()).queryByRole('heading', { name })).toBeNull(); };
 
 describe('list titles', () => {
-  it('LA-EXP-T120 A list of children or members of one kind is titled by that kind, in the wiki and the side bar', async () => {
+  it('LA-V92-R09-T02 A list of children or members of one kind is titled by that kind, in the wiki and the side bar', async () => {
     // A value object's constraints: the record page says "Constraints"; the side bar does not repeat them.
     openSideBar();
     await openApp('/DM-VO01');

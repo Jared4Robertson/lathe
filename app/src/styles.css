@@ -11,7 +11,7 @@
   /* Motion: the speed and easing every move and fade shares, in CSS and in JS (app/src/graph/motion.ts); reduced motion turns each off (LA-PAT-APP-UX-R04). */
   --motion-speed: 320ms; --motion-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
   --node-radius: 4px; /* an ERD box's corners; the graph's canvas rounds a plain box the same (app/src/graph/shapes.ts) */
-  /* The Model view's context ring (LA-EXP-UC11-R06): faded and a little smaller; the graph's hover spotlight dims the rest a step; the vignette's width at a canvas's edges (the graph's canvas draws its own, app/src/graph/paint.ts). */
+  /* The Model view's context ring (LA-V94-R06): faded and a little smaller; the graph's hover spotlight dims the rest a step; the vignette's width at a canvas's edges (the graph's canvas draws its own, app/src/graph/paint.ts). */
   --context-opacity: 0.35; --context-scale: 0.9; --spotlight-dim: 0.5; --vignette: 56px;
   /* The graph's cross-links (the Links switch), dashed apart from the tree's solid lines, and the minimap's mask. */
   --link-edge: var(--spark); --minimap-mask: color-mix(in srgb, var(--ink) 8%, transparent);
@@ -359,7 +359,7 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-steps { display: inline-flex; gap: 2px; flex: none; }
 /* The center's own links, with Links on: dashed in their own color. */
 .graph-line.is-link { border-top: 1.5px dashed var(--link-edge); }
-/* Event lines in the graph (LA-EXP-UC04-R07, LA-EXP-DR52): a command raising an event and a policy hearing it,
+/* Event lines in the graph (LA-V93-R28, LA-V93-R04): a command raising an event and a policy hearing it,
    dashed in spark, with Links on too. */
 .graph-swatch.kind-question { border-style: dashed; border-color: var(--warn); }
 .graph-swatch.is-focus { box-shadow: 0 0 0 2px var(--ink); }
@@ -378,7 +378,7 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-edge-hint.is-down { bottom: 8px; left: 50%; translate: -50% 0; }
 .graph-edge-hint.is-left { left: 8px; top: 50%; translate: 0 -50%; }
 .graph-edge-hint.is-right { right: 8px; top: 50%; translate: 0 -50%; }
-/* The minimap (LA-EXP-UC03-R15): the whole map's upper levels, the focus solid, the viewport outlined, all from tokens. */
+/* The minimap (LA-V93-R20): the whole map's upper levels, the focus solid, the viewport outlined, all from tokens. */
 .graph-minimap { position: absolute; right: 12px; bottom: 12px; z-index: 5; padding: 4px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; line-height: 0; pointer-events: none; }
 .graph-minimap-node { fill: var(--muted); opacity: 0.35; }
 .graph-minimap-node.is-focus { fill: var(--steel); opacity: 1; }
@@ -466,7 +466,7 @@ a.button-primary.button-primary { color: var(--on-mark); }
 .nav-section-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; }
 .menu .nav-section-body > .error { margin-inline: 10px; }
 .nav-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1; }
-/* Nav rows, as in VS Code's explorer (LA-EXP-DR41). Each row is as wide as the nav panel, indented by padding for its
+/* Nav rows, as in VS Code's explorer (LA-V90-R03). Each row is as wide as the nav panel, indented by padding for its
    depth (--depth, set by the row), with its indent guides drawn inside it, one under each ancestor's chevron. The
    current page's row carries the selection tint over all of it, the indent and the chevron included; a hovered row
    takes the hover tint (UX-R01); while the nav is used from the keyboard, the selected and the focused row show a 1px
@@ -613,7 +613,7 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 .trace-row { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; }
 .trace-row > .record-row { flex: 1 1 auto; min-width: 0; }
 .trace-cell { display: inline-flex; flex-wrap: wrap; gap: 2px 8px; align-items: baseline; }
-/* Record links listed in a cell are 24 px targets (WCAG 2.5.8, LA-PLT-DR24). */
+/* Record links listed in a cell are 24 px targets (WCAG 2.5.8, LA-V61-R47). */
 .trace-cell > .record-link { min-block-size: 24px; align-items: center; }
 .data-table.trace-requirements { width: 100%; }
 .flow-path > h3 { display: flex; align-items: baseline; gap: 8px; margin: 10px 0 4px; font-size: 0.9rem; }
@@ -727,7 +727,7 @@ a.row-link.row-link:focus-visible { outline: none; }
    panels is a ResizeHandle with a three-dot grip, which turns steel when hovered, focused or dragged. */
 .panel { box-sizing: border-box; min-width: 0; min-height: 0; overflow: hidden; border: 1px solid var(--rule); border-radius: var(--panel-radius); }
 .app.is-narrow .panel { border: 0; border-radius: 0; }
-/* A page that is one panel (Checks, Appearance) is drawn on the page's own surface, never on the shell behind the panels, where muted text loses its contrast (LA-PLT-DR25). */
+/* A page that is one panel (Checks, Appearance) is drawn on the page's own surface, never on the shell behind the panels, where muted text loses its contrast (LA-V61-R48). */
 .spec-page.panel { background: var(--paper); }
 .resize-handle { position: relative; min-width: 0; cursor: col-resize; touch-action: none; }
 .resize-handle::before { content: ""; position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; translate: -50% 0; border-radius: 1px; background: transparent; transition: background-color var(--hover-speed); }
@@ -855,7 +855,7 @@ a.row-link.row-link:focus-visible { outline: none; }
   }
 }
 .erd-key-highlight { flex: none; display: inline-block; width: 14px; height: 10px; border: 1.5px solid var(--es-aggregate); background: var(--es-aggregate-bg); box-shadow: 0 0 0 2px var(--ink); border-radius: 2px; }
-/* The model's context (LA-EXP-UC11-R06): faded and a little smaller, readable on hover, its lines faded with it. */
+/* The model's context (LA-V94-R06): faded and a little smaller, readable on hover, its lines faded with it. */
 .model-flow .react-flow__node.is-context .erd-box { opacity: var(--context-opacity); scale: var(--context-scale); }
 .model-flow .react-flow__node.is-context:hover .erd-box { opacity: 1; }
 .model-flow .erd-line.is-context { opacity: var(--context-opacity); }

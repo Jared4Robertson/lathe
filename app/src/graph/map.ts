@@ -3,12 +3,12 @@ import { BORDER, largestFit, linesIn, treeLabel, type MapLabel, type WrappedLabe
 import { outlineInset, type Shape } from './shapes';
 import { treeChildren, treeParent } from './tree';
 
-// The graph's one map per product (LA-EXP-DR57): the product's tree, the nav's (tree.ts), with the
+// The graph's one map per product (LA-EXP-DS05): the product's tree, the nav's (tree.ts), with the
 // product as its single root, laid out once per spec load as one icicle. Nothing of another product
 // is in it: each product is a space of its own. Every node has one place and one size in it,
 // whatever is in focus: focusing anything moves the camera (camera.ts), never the map.
 //
-// One rule sizes every layout, top-down from one fixed product box (LA-EXP-DR58): siblings are the
+// One rule sizes every layout, top-down from one fixed product box (LA-EXP-DS06): siblings are the
 // same size, with the same text. Each parent splits its room equally among its children, so a busy
 // parent packs its children smaller; record counts size nothing.
 // - The product's box is MAP_SIZE tall and ROOT_WIDTH of that wide.
@@ -36,7 +36,7 @@ import { treeChildren, treeParent } from './tree';
  */
 export const MAP_SIZE = 300_000;
 /**
- * A box's text scale is at most its size over this (LA-EXP-DR58): its width (the Tree map, where
+ * A box's text scale is at most its size over this (LA-EXP-DS06): its width (the Tree map, where
  * siblings split their parent's height), its side (the Nested map) or the square root of its area
  * (the Voronoi map). So a box's text is the same share of it at every depth, and a framed box's
  * header reads at about the same size on screen.
@@ -60,7 +60,7 @@ export const MAX_COLUMN_SHARE = 0.4;
 export const partHeight = (height: number, count: number) => (height - ROW_GAP_SHARE * (height / count) * (count - 1)) / count;
 
 /**
- * The width of a group of siblings, each `height` tall, under a parent `parentWidth` wide (LA-EXP-DR58): their
+ * The width of a group of siblings, each `height` tall, under a parent `parentWidth` wide (LA-EXP-DS06): their
  * parent's width times MAX_COLUMN_SHARE, narrowed to at most MAX_ASPECT times their height. So the more children a parent has, the shorter
  * each is and the narrower their column, and no box is flatter than MAX_ASPECT to 1.
  */
@@ -69,7 +69,7 @@ export const groupWidth = (parentWidth: number, height: number) => Math.min(MAX_
 export const COLUMN_GAP_SHARE = 0.15;
 export const ROW_GAP_SHARE = 0.1;
 
-/** A box's largest text scale for its size (LA-EXP-DR58): its size over TEXT_SIZE. */
+/** A box's largest text scale for its size (LA-EXP-DS06): its size over TEXT_SIZE. */
 export const sizeText = (size: number) => size / TEXT_SIZE;
 
 export interface MapNode {
@@ -83,7 +83,7 @@ export interface MapNode {
   y: number;
   w: number;
   h: number;
-  /** Its label's scale (LA-EXP-DR58), shared with its siblings, fixed by the map. */
+  /** Its label's scale (LA-EXP-DS06), shared with its siblings, fixed by the map. */
   text: number;
   /** Its label's lines, wrapped on whole words for its box at its text scale, and whether they are centered in it. */
   lines: WrappedLabel;
@@ -92,7 +92,7 @@ export interface MapNode {
 
 /** What every layout's map shares (the Tree map here, the Nested and Voronoi maps in nested.ts and voronoi.ts): what the camera, the minimap and the filters read. */
 export interface PlacedMap {
-  /** Which view it lays out (LA-EXP-UC03-R16). */
+  /** Which view it lays out (LA-V93-R21). */
   view: 'tree' | 'nested' | 'voronoi';
   nodes: ReadonlyMap<string, MapNode>;
   /** The roots, top to bottom: the product (or the top of a tree no product reaches). */
@@ -149,7 +149,7 @@ export function layoutTree(roots: readonly string[], childrenOf: (id: string) =>
     const w = up === null ? parentWidth : groupWidth(parentWidth, h);
     const x = up === null ? after : after + COLUMN_GAP_SHARE * w;
     right = Math.max(right, x + w);
-    // Its border grows with its text (LA-EXP-DR58).
+    // Its border grows with its text (LA-EXP-DS06).
     const border = (s: number) => BORDER * s;
     const labels = ids.map((id) => labelOf(id));
     const text = Math.min(...labels.map((label) => largestFit(label, true, w, h, treeText(w), border)));
@@ -191,7 +191,7 @@ export function graphMap(index: SpecIndex, root: string): GraphMap {
 }
 
 type Rect = Pick<MapNode, 'x' | 'y' | 'w' | 'h'>;
-/** A box with its text scale, which its border and outline grow by (LA-EXP-DR58). */
+/** A box with its text scale, which its border and outline grow by (LA-EXP-DS06). */
 type Scaled = Rect & Pick<MapNode, 'text'>;
 type Point = { x: number; y: number };
 
@@ -199,8 +199,8 @@ type Point = { x: number; y: number };
 export const centerOf = (n: Rect) => ({ x: n.x + n.w / 2, y: n.y + n.h / 2 });
 
 /**
- * A parent line (LA-EXP-DR57): level, at the child's middle, from the parent's outline on its
- * right side to the child's outline on its left (LA-EXP-DR65). A box's outline is its edge; a
+ * A parent line (LA-EXP-DS05): level, at the child's middle, from the parent's outline on its
+ * right side to the child's outline on its left (LA-V93-R06). A box's outline is its edge; a
  * shape's is where its edge crosses that height, so a line into a domain's hexagon meets the tip
  * of its point and a line out of one starts on its slanted side.
  */

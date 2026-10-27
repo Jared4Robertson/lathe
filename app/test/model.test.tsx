@@ -22,7 +22,7 @@ const CSS = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
 const lineIds = (erd: { lines: { id: string }[] }) => erd.lines.map((l) => l.id).sort();
 
 describe('the Model view', () => {
-  it('LA-EXP-T121 Model is offered on a domain and the kinds of its model, opens as a third pane after Wiki and Graph, and an address naming it elsewhere drops it', async () => {
+  const proveLaExpSp02T = async () => {
     const i = index();
     for (const id of ['P-D', 'P-D-A3', 'P-D-EN03', 'P-D-CMD01', 'P-D-EV01', 'P-D-PO01', 'P-D-RM01', 'P-D-QRY01', 'P-D-SP01']) {
       expect(viewsOffered(i, id)).toEqual(['wiki', 'graph', 'model']);
@@ -48,9 +48,11 @@ describe('the Model view', () => {
     // Alt+M turns it off again (off a Mac).
     fireEvent.keyDown(document.body, { key: 'm', code: 'KeyM', altKey: true });
     expect(window.location.search).toBe('?view=wiki,graph');
-  });
+  };
+  it('LA-EXP-SP02-T Model is offered on a domain and the kinds of its model, opens as a third pane after Wiki and Graph, and an address naming it elsewhere drops it', proveLaExpSp02T);
+  it('LA-V96-R18-T01 Model is offered only on a domain and the kinds of its model, as the third pane', proveLaExpSp02T);
 
-  it('LA-EXP-T122 A domain\'s model draws each aggregate with its entities and value objects, one many-to-one line per aggregate it refers to, and the commands, events, policies, specifications, read models and queries around them', async () => {
+  const proveLaV94R02T01 = async () => {
     const erd = domainErd(index(), 'P-D');
     const byId = new Map(erd.boxes.map((b) => [b.id, b]));
     expect(erd.boxes.filter((b) => b.kind === 'aggregate' && !b.context).map((b) => b.id)).toEqual(['P-D-A1', 'P-D-A2', 'P-D-A3', 'P-D-A4']);
@@ -101,9 +103,11 @@ describe('the Model view', () => {
     expect(modelPane().querySelector('[data-line="P-D-EV01|hears|P-D-PO02"]')).toHaveClass('is-dashed', 'has-hover-label');
     expect(modelPane().querySelector('[data-line="P-D-EV01|hears|P-D-PO02"] title')).toHaveTextContent('When a loan opens, mark the thing lent hears Loan opened');
     expect(modelPane().querySelector('[data-line="P-D-A3|refers_to|P-D-A2"] title')).toHaveTextContent('Loan refers to Member (Loan.Member; Reminder.Member)');
-  });
+  };
+  it('LA-V94-R02-T01 A domain\'s model draws each aggregate with its entities and value objects, one many-to-one line per aggregate it refers to, and the commands, events, policies, specifications, read models and queries around them', proveLaV94R02T01);
+  it('LA-V94-R01-T01 A domain\'s model draws its aggregates, the lines between them and their records', proveLaV94R02T01);
 
-  it('LA-EXP-T123 An aggregate\'s model shows each entity\'s title, root mark and fields with their types, crow\'s-foot ends by cardinality, the aggregates it refers to faded, and its commands, events and policies', async () => {
+  const proveLaV94R03T01 = async () => {
     const erd = aggregateErd(index(), 'P-D-A3');
     const byId = new Map(erd.boxes.map((b) => [b.id, b]));
     expect(byId.get('P-D-EN03')).toMatchObject({
@@ -148,9 +152,11 @@ describe('the Model view', () => {
     expect(box('P-D-EV01')).toHaveAttribute('aria-label', 'Domain event Loan opened');
     expect(box('P-D-A1')).toHaveClass('is-context');
     await waitFor(() => expect(modelPane().querySelector('[data-line="P-D-EN03|has_many|P-D-EN05"]')).toHaveAttribute('data-ends', 'one-many'));
-  });
+  };
+  it('LA-V94-R03-T01 An aggregate\'s model shows each entity\'s title, root mark and fields with their types, crow\'s-foot ends by cardinality, the aggregates it refers to faded, and its commands, events and policies', proveLaV94R03T01);
+  it('LA-V94-R01-T02 An aggregate\'s model shows its entities with their fields and crow\'s-foot ends', proveLaV94R03T01);
 
-  it('LA-EXP-T124 An entity, command, event or policy page draws its aggregate\'s model with that record highlighted; a read model, query or specification page its domain\'s', async () => {
+  it('LA-V94-R04-T01 An entity, command, event or policy page draws its aggregate\'s model with that record highlighted; a read model, query or specification page its domain\'s', async () => {
     expect(erdFor(index(), 'P-D-EN04')).toMatchObject({ level: 'aggregate', scope: 'P-D-A3' });
     expect(erdFor(index(), 'P-D-EN04')!.boxes.filter((b) => b.highlight).map((b) => b.id)).toEqual(['P-D-EN04']);
     expect(erdFor(index(), 'P-D-CMD02')).toMatchObject({ level: 'aggregate', scope: 'P-D-A3' });
@@ -169,7 +175,7 @@ describe('the Model view', () => {
     expect(within(modelPane()).getByRole('group', { name: 'Key' })).toHaveTextContent('This record');
   });
 
-  it('LA-PLT-T49 Clicking a box goes to it, boxes show a hover state, and a key under the diagram explains the event storming colors and every line drawn', async () => {
+  it('LA-V94-R05-T01 Clicking a box goes to it, boxes show a hover state, and a key under the diagram explains the event storming colors and every line drawn', async () => {
     await openApp('/P-D?view=wiki,model', served());
     await screen.findByRole('heading', { level: 1, name: 'Domain' });
     await boxesShown();
@@ -200,7 +206,7 @@ describe('the Model view', () => {
     expect(CSS).toMatch(/\.erd-box\.tone-other\s*\{[^}]*var\(--muted\)[^}]*var\(--paper\)/);
   });
 
-  it('LA-EXP-T125 A domain\'s model draws each raises, checks, hears and reads link of its records exactly once', () => {
+  it('LA-EXP-DS11-T01 A domain\'s model draws each raises, checks, hears and reads link of its records exactly once', () => {
     const i = index();
     const erd = domainErd(i, 'P-D');
     const drawn = new Set(erd.lines.map((l) => (l.reversed ? `${l.target}|${l.relation}|${l.source}` : `${l.source}|${l.relation}|${l.target}`)));
@@ -211,7 +217,7 @@ describe('the Model view', () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it('LA-EXP-T126 Above a graph or a model pane the page title keeps one fixed height, so the canvas never moves when the focus changes; in the wiki pane it wraps', async () => {
+  it('LA-V96-R09-T01 Above a graph or a model pane the page title keeps one fixed height, so the canvas never moves when the focus changes; in the wiki pane it wraps', async () => {
     await openApp('/P-D-A3?view=graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Loan' });
     const title = () => screen.getByRole('heading', { level: 1 }).closest<HTMLElement>('.pane-title')!;
@@ -228,7 +234,7 @@ describe('the Model view', () => {
     expect(title()).not.toHaveClass('is-fixed');
   });
 
-  it('LA-PLT-T50 With three panes open each gap is its own handle, resizing only the two panes beside it', async () => {
+  const proveLaV61R02T03 = async () => {
     await openApp('/P-D-A3?view=wiki,graph,model', served());
     await screen.findByRole('heading', { level: 1, name: 'Loan' });
     const first = screen.getByRole('separator', { name: 'Resize the wiki and graph panes' });
@@ -240,5 +246,7 @@ describe('the Model view', () => {
     expect(views.style.gridTemplateColumns).toBe('minmax(min(220px, calc((100% - 2 * var(--panel-gap)) / 3)), 100fr) var(--panel-gap) minmax(min(220px, calc((100% - 2 * var(--panel-gap)) / 3)), 110fr) var(--panel-gap) minmax(min(220px, calc((100% - 2 * var(--panel-gap)) / 3)), 90fr)');
     fireEvent.doubleClick(second);
     expect(views.style.gridTemplateColumns).toBe('minmax(min(220px, calc((100% - 2 * var(--panel-gap)) / 3)), 100fr) var(--panel-gap) minmax(min(220px, calc((100% - 2 * var(--panel-gap)) / 3)), 100fr) var(--panel-gap) minmax(min(220px, calc((100% - 2 * var(--panel-gap)) / 3)), 100fr)');
-  });
+  };
+  it('LA-V61-R02-T03 With three panes open each gap is its own handle, resizing only the two panes beside it', proveLaV61R02T03);
+  it('LA-V61-R03-T04 With three panes open each gap is its own handle, resizing only the two panes beside it', proveLaV61R02T03);
 });

@@ -1,7 +1,7 @@
 import { fireEvent } from '@testing-library/react';
 import type { Scene, SceneBox, SceneHost } from '../../src/graph/GraphPage';
 
-// Reading the graph as the canvas draws it (LA-EXP-C05): the canvas's scene, through its test hook,
+// Reading the graph as the canvas draws it (LA-UI92): the canvas's scene, through its test hook,
 // and the boxes' accessibility layer, which carries focus, the keyboard and each box's name.
 
 /** The graph's canvas element (the first, or the one in a container). */

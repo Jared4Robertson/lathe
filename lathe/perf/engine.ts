@@ -39,17 +39,32 @@ function copyOfRepo(): string {
   return root;
 }
 
-/** Lathe's data six times over, under the prefixes LB to LG: about 10,000 records. Its own checks are left out. */
+/**
+ * Lathe's data six times over, under the prefixes LB to LG: about 10,000 records. Its own checks are left out, and so
+ * are LA's own kinds and relations (a kind's name is one key across products, so six products cannot each declare
+ * it): their declarations, their records' tables and every row that names one of those records.
+ */
 async function syntheticProduct(): Promise<{ root: string }> {
   const root = mkdtempSync(path.join(tmpdir(), 'lathe-perf-10k-'));
   const source = path.join(repo, 'data');
   const schemaStore = await openStore(root, { dataDir: path.join(root, 'none'), latheDataDir: null });
   const schema = schemaStore.schema;
   await schemaStore.close();
+  const declarations = ['product_kind', 'product_kind_field', 'product_relation'];
+  const files = readdirSync(source).filter((f) => f.endsWith('.jsonl') && f !== 'check.jsonl');
+  const kept = files.filter((f) => schema.tables[f.slice(0, -'.jsonl'.length)] && !declarations.includes(f.slice(0, -'.jsonl'.length)));
+  // The IDs of the records of LA's own kinds, which no copy keeps.
+  const dropped = new Set(
+    files
+      .filter((f) => !schema.tables[f.slice(0, -'.jsonl'.length)])
+      .flatMap((f) => readFileSync(path.join(source, f), 'utf8').split('\n').filter(Boolean).map((line) => String(JSON.parse(line).id))),
+  );
+  const namesDropped = (row: Row) => Object.values(row).some((v) => typeof v === 'string' && dropped.has(v));
   mkdirSync(path.join(root, 'data'));
-  for (const file of readdirSync(source).filter((f) => f.endsWith('.jsonl') && f !== 'check.jsonl')) {
+  for (const file of kept) {
     const table = schema.tables[file.slice(0, -'.jsonl'.length)];
-    const text = readFileSync(path.join(source, file), 'utf8');
+    const own = readFileSync(path.join(source, file), 'utf8').split('\n').filter(Boolean).map((line) => JSON.parse(line) as Row).filter((row) => !namesDropped(row));
+    const text = own.map((row) => JSON.stringify(row)).join('\n');
     const rows: Row[] = [];
     for (const prefix of ['LB', 'LC', 'LD', 'LE', 'LF', 'LG']) {
       const copied = text.replace(/(?<![A-Za-z0-9])LA(?![a-z0-9])/g, prefix);

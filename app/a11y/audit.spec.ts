@@ -1,8 +1,8 @@
-import { test, type Page } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { AGGREGATE, DOMAIN, EDITED, PRODUCT, RECORD } from '../stability/scenarios';
-import { audit, LOOKS, useLook } from './axe';
+import { audit, LOOKS, useLook, type Finding } from './axe';
 
-// LA-PLT-T97: every page and state the stability suite visits passes axe-core at WCAG 2.2 AA, at
+// LA-V61-R40-T01: every page and state the stability suite visits passes axe-core at WCAG 2.2 AA, at
 // desktop and phone widths, in the Lathe theme's light and dark and in High contrast's
 // (LA-PAT-APP-UX-R10). Each page or state in each look is one test, so a failure names both.
 
@@ -55,7 +55,7 @@ PAGES.push(
     await panel.getByRole('alert').waitFor({ timeout: 20_000 });
   } },
 );
-// The graph in its Nested and Voronoi layouts (LA-EXP-UC03-R16, LA-EXP-UC03-R17): the same roles and names as the Tree layout.
+// The graph in its Nested and Voronoi layouts (LA-V93-R21, LA-V93-R22): the same roles and names as the Tree layout.
 for (const layout of ['Nested', 'Voronoi'] as const) PAGES.push({ name: `graph, ${layout} layout`, run: async (page: Page) => {
   await open(page, `${RECORD}?view=graph`, '.pane-graph .graph-flow .graph-box');
   await page.locator('.pane-graph .graph-layout button', { hasText: layout }).click();
@@ -113,13 +113,37 @@ const PHONE: State[] = [
   } },
 ];
 
+/** The records one axe run proves besides LA-V61-R40, each by the axe rules that check it. */
+const BY_RULE: { record: string; says: string; rules: string[] }[] = [
+  { record: 'LA-V61-R44-T01', says: "a control's name holds its visible text", rules: ['label-content-name-mismatch'] },
+  { record: 'LA-V61-R45-T01', says: 'no control sits inside another', rules: ['nested-interactive'] },
+  { record: 'LA-V61-R46-T01', says: 'a box that scrolls can be reached by keyboard', rules: ['scrollable-region-focusable'] },
+  { record: 'LA-V61-R47-T01', says: 'a target is at least 24 px, or has room around it', rules: ['target-size'] },
+  { record: 'LA-V61-R48-T01', says: 'text sits on surfaces with enough contrast', rules: ['color-contrast'] },
+];
+
+/** Audits the page, then names each record's share of the one run's findings, and the pattern rule's whole. */
+async function auditAll(page: Page, state: string) {
+  await audit(page, state);
+  const attached = test.info().attachments.at(-1)?.body;
+  const findings = JSON.parse(attached ? attached.toString() : '[]') as Finding[];
+  for (const r of BY_RULE) {
+    await test.step(`${r.record} ${r.says}`, () => {
+      expect.soft(findings.filter((f) => r.rules.includes(f.rule)).map((f) => f.targets), state).toEqual([]);
+    });
+  }
+  await test.step('LA-PAT-APP-UX-R10-T01 the page passes the accessibility audit with no finding', () => {
+    expect.soft(findings.map((f) => f.rule), state).toEqual([]);
+  });
+}
+
 for (const look of LOOKS) {
   test.describe(`desktop at 1440 px in ${look.name}`, () => {
     test.beforeEach(({ page }) => useLook(page, look));
     for (const s of DESKTOP) {
-      test(`LA-PLT-T97 ${s.name} passes axe`, async ({ page }) => {
+      test(`LA-V61-R40-T01 ${s.name} passes axe`, async ({ page }) => {
         await s.run(page);
-        await audit(page, `${look.name}, desktop: ${s.name}`);
+        await auditAll(page, `${look.name}, desktop: ${s.name}`);
       });
     }
   });
@@ -128,9 +152,9 @@ for (const look of LOOKS) {
     test.use({ viewport: { width: 375, height: 812 }, hasTouch: true, isMobile: true });
     test.beforeEach(({ page }) => useLook(page, look));
     for (const s of PHONE) {
-      test(`LA-PLT-T97 ${s.name} passes axe`, async ({ page }) => {
+      test(`LA-V61-R40-T01 ${s.name} passes axe`, async ({ page }) => {
         await s.run(page);
-        await audit(page, `${look.name}, phone: ${s.name}`);
+        await auditAll(page, `${look.name}, phone: ${s.name}`);
       });
     }
   });

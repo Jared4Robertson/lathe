@@ -9,10 +9,10 @@ import { BADGE_ROOM, BORDER, LABEL_PAD, labelHeight, largestFit, metaWidth, MARK
 import type { SpecIndex } from '../../src/specs/data';
 import { groupedWorkspace, manyOfOneKindWorkspace, siblingGroups, testIndex } from './workspace';
 
-// The graph is one fixed map of its product's tree (LA-EXP-DR57), laid out top-down from the
-// product's fixed box by one rule (LA-EXP-DR58): siblings are the same size, with the same text.
+// The graph is one fixed map of its product's tree (LA-EXP-DS05), laid out top-down from the
+// product's fixed box by one rule (LA-EXP-DS06): siblings are the same size, with the same text.
 // Each parent spans its children stacked, an equal part each; every box in a column has its
-// column's width; the camera draws only what is in view and big enough to see (LA-EXP-DR60).
+// column's width; the camera draws only what is in view and big enough to see (LA-EXP-DS10).
 
 /** The test workspaces' indexes, built once, so a map found by its index is the one the test laid out. */
 let built: SpecIndex[] | null = null;
@@ -40,7 +40,7 @@ function labelOf(map: GraphMap, n: MapNode): MapLabel {
 const eps = 1e-9;
 
 describe('the one map', () => {
-  it('LA-EXP-T165 A parent spans its children stacked, an equal part each, from its top edge to its bottom edge, each child beside it, nothing overlapping', () => {
+  it.each(['LA-EXP-DS05-T11', 'LA-V93-R29-T01'])('%s A parent spans its children stacked, an equal part each, from its top edge to its bottom edge, each child beside it, nothing overlapping', () => {
     for (const map of all()) {
       for (const r of map.roots) expect(map.nodes.get(r)!.h).toBe(MAP_SIZE);
       for (const node of map.nodes.values()) {
@@ -73,7 +73,7 @@ describe('the one map', () => {
 });
 
 describe('columns and text', () => {
-  it('LA-EXP-T166 A column narrows with how many children share it: siblings take MAX_COLUMN_SHARE of their parent\'s width, at most MAX_ASPECT times their height, so no box is flatter than MAX_ASPECT to 1, each column a gap after its parent', () => {
+  it('LA-EXP-DS06-T02 A column narrows with how many children share it: siblings take MAX_COLUMN_SHARE of their parent\'s width, at most MAX_ASPECT times their height, so no box is flatter than MAX_ASPECT to 1, each column a gap after its parent', () => {
     for (const map of all()) {
       for (const r of map.roots) expect([map.nodes.get(r)!.x, map.nodes.get(r)!.w]).toEqual([0, MAP_SIZE * ROOT_WIDTH]);
       for (const node of map.nodes.values()) {
@@ -101,7 +101,7 @@ describe('columns and text', () => {
     expect(busy.w).toBe(quiet.w);
   });
 
-  it("LA-EXP-T182 Siblings share one text scale: their column's width over TEXT_SIZE, or the largest at which every sibling's whole label fits its box", () => {
+  it("LA-EXP-DS06-T06 Siblings share one text scale: their column's width over TEXT_SIZE, or the largest at which every sibling's whole label fits its box", () => {
     for (const map of all()) {
       for (const group of siblingGroups(map)) {
         const { w, h, text } = group[0];
@@ -118,7 +118,7 @@ describe('columns and text', () => {
     expect(lop.nodes.get('busy')!.text).toBe(lop.nodes.get('quiet')!.text);
   });
 
-  it('LA-EXP-T182 Every label fits its box: every line within its width, no word broken, its lines no taller than the box', () => {
+  it('LA-EXP-DS06-T06 Every label fits its box: every line within its width, no word broken, its lines no taller than the box', () => {
     for (const map of all()) {
       for (const n of map.nodes.values()) {
         const label = labelOf(map, n);
@@ -156,7 +156,7 @@ describe('columns and text', () => {
     expect(labelHeight(wrapLabel(lines, { shape: 'window' }))).toBe(labelHeight(wrapLabel(lines)) + SHAPES.window.room.t);
   });
 
-  it("LA-EXP-T167 A parent line runs level from the parent's right edge to the child's left edge, at the child's middle", () => {
+  it("LA-EXP-DS05-T12 A parent line runs level from the parent's right edge to the child's left edge, at the child's middle", () => {
     const map = graphMap(testIndex(), 'P');
     for (const n of map.nodes.values()) {
       if (n.parent === null) continue;
@@ -175,7 +175,7 @@ describe('columns and text', () => {
 describe('the level of detail', () => {
   const map = graphMap(testIndex(), 'P');
 
-  it('LA-EXP-T170 Only boxes in view and big enough are drawn, each with its label, with bars for children too small, within a budget', () => {
+  it.each(['LA-EXP-DS10-T02', 'LA-PAT-APP-UX-R11-T02'])('%s Only boxes in view and big enough are drawn, each with its label, with bars for children too small, within a budget', () => {
     // Framed on the domain: the domain and its stages are drawn; nothing outside the view.
     const view = frameOnMap(map, 'P-D', 1, 1000, 800);
     const d = drawnFor(map, view, 1000, 800);
@@ -210,7 +210,7 @@ describe('the level of detail', () => {
     expect(drawnFor(map, view, 1000, 800)).toEqual(d);
   });
 
-  it('LA-EXP-T176 A label keeps its size in the map: the camera never changes it', () => {
+  it.each(['LA-EXP-DS06-T04', 'LA-EXP-DS10-T04'])('%s A label keeps its size in the map: the camera never changes it', () => {
     // The text scale is the map's: a column's width over TEXT_SIZE at most, whatever the camera.
     for (const n of map.nodes.values()) expect(n.text).toBeLessThanOrEqual(treeText(n.w));
     // Every zoom draws each box with the same text scale, the map's, and its label: zooming never changes a label's size.
@@ -222,7 +222,7 @@ describe('the level of detail', () => {
     }
   });
 
-  it('LA-EXP-T170 A product of thousands of records stays within the drawing budget at every zoom', () => {
+  it('LA-EXP-DS10-T02 A product of thousands of records stays within the drawing budget at every zoom', () => {
     const big = wide(4, 30);
     expect(big.nodes.size).toBeGreaterThan(3000);
     for (const zoom of [0.001, 0.01, 0.05, 0.2, 1]) {
@@ -245,7 +245,7 @@ describe('real titles', () => {
         return [{ title: row.title, kind: f.slice(0, -'.jsonl'.length), file: typeof row.file === 'string' ? row.file : undefined }];
       }));
 
-  it("LA-EXP-T190 Every title in Lathe's spec and the Tool Library wraps on whole words, none broken inside a word", () => {
+  it("LA-EXP-DS06-T10 Every title in Lathe's spec and the Tool Library wraps on whole words, none broken inside a word", () => {
     const repo = path.resolve(import.meta.dirname, '../../..');
     for (const product of ['lathe', 'tool-library']) {
       const all = records(path.join(repo, product === 'lathe' ? 'data' : 'examples/tool-library/data'));

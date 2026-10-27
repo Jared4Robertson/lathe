@@ -17,7 +17,7 @@ const cells = (row: HTMLElement) => [...row.querySelectorAll('th, td')] as HTMLE
 const linkIds = (el: HTMLElement) => [...el.querySelectorAll('a')].map((a) => a.textContent);
 
 describe('flow steps on a flow page', () => {
-  it('LA-EXP-T63 A flow page shows its steps in order as a table: step, what happens, invokes, happens in, fulfills, exchanges with', async () => {
+  const proveLaV92R23T01 = async () => {
     await openApp('/DM-SHOP-UC01-FL');
     await screen.findByRole('heading', { level: 1, name: 'Fill a basket' });
     expect(steps().querySelector('h2')).toHaveTextContent('Steps3');
@@ -41,9 +41,11 @@ describe('flow steps on a flow page', () => {
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     const s02 = bodyRows(tables()[0])[1];
     expect(linkIds(cells(s02)[5])).toEqual(['P-INT01']);
-  });
+  };
+  it('LA-V92-R23-T01 A flow page shows its steps in order as a table: step, what happens, invokes, happens in, fulfills, exchanges with', proveLaV92R23T01);
+  it('LA-V92-R11-T01 A flow page shows its steps in order as a table', proveLaV92R23T01);
 
-  it("LA-EXP-T64 Each step's description and the titles of what it links to are folded under its row", async () => {
+  it("LA-V92-R24-T01 Each step's description and the titles of what it links to are folded under its row", async () => {
     await openApp('/DM-SHOP-UC01-FL');
     await screen.findByRole('heading', { level: 1, name: 'Fill a basket' });
     const user = userEvent.setup();
@@ -67,7 +69,7 @@ describe('flow steps on a flow page', () => {
     expect(within(steps()).queryAllByRole('region', { name: /^Details of/ })).toHaveLength(0);
   });
 
-  it('LA-EXP-T65 A step row carries its problems, and a flow without steps shows no steps table', async () => {
+  it('LA-V92-R25-T01 A step row carries its problems, and a flow without steps shows no steps table', async () => {
     const data = workspace();
     data.problems.push({ severity: 'warning', check: 'not-proved', record: 'DM-SHOP-UC01-FL-S02', message: 'A step with a problem.' });
     await openApp('/DM-SHOP-UC01-FL', { data });
@@ -79,7 +81,7 @@ describe('flow steps on a flow page', () => {
     expect(within(main()).queryByRole('heading', { name: /^Steps/ })).toBeNull();
   });
 
-  it('LA-EXP-T66 Steps are ordered by their position as a number, then by ID', async () => {
+  it('LA-V92-R11-T02 Steps are ordered by their position as a number, then by ID', async () => {
     const data = workspace();
     addRows(data, 'flow_step', { id: 'DM-SHOP-UC01-FL-S04', title: 'The basket shows a total', flow_id: 'DM-SHOP-UC01-FL', path: 'main', position: 10 });
     await openApp('/DM-SHOP-UC01-FL', { data });
@@ -87,7 +89,7 @@ describe('flow steps on a flow page', () => {
     expect(bodyRows(tables()[0]).map((r) => r.getAttribute('data-step'))).toEqual(['DM-SHOP-UC01-FL-S01', 'DM-SHOP-UC01-FL-S02', 'DM-SHOP-UC01-FL-S04']);
   });
 
-  it('LA-EXP-T136 A flow with several paths shows a table per path, the main path first, then the others by name', async () => {
+  it('LA-V92-R26-T01 A flow with several paths shows a table per path, the main path first, then the others by name', async () => {
     const data = workspace();
     addRows(data, 'flow_step', { id: 'DM-SHOP-UC01-FL-S04', title: 'A saved basket opens', flow_id: 'DM-SHOP-UC01-FL', path: 'api', position: 1 });
     await openApp('/DM-SHOP-UC01-FL', { data });

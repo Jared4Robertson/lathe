@@ -1,4 +1,4 @@
-// LA-PLT-T129 (LA-PAT-APP-CODE-R21): no dead code. knip finds no unused file, export, dependency or binary in the app, the
+// LA-PAT-APP-CODE-R21-T01 (LA-PAT-APP-CODE-R21): no dead code. knip finds no unused file, export, dependency or binary in the app, the
 // engine or the desktop app, each with its own knip.json (an export used only in its own file is not
 // dead). It runs as part of the normal test run; `npm run knip` in a package runs it alone.
 import { spawnSync } from 'node:child_process';
@@ -14,7 +14,7 @@ function knip(pkg: string) {
   return { status: run.status, output: `${run.stdout ?? ''}${run.stderr ?? ''}${run.error ? String(run.error) : ''}`.trim() };
 }
 
-describe('LA-PLT-T129 No unused files, exports or dependencies', () => {
+describe('LA-PAT-APP-CODE-R21-T01 No unused files, exports or dependencies', () => {
   for (const pkg of ['app', 'lathe', 'desktop']) {
     it(`knip finds nothing unused in ${pkg}/`, () => {
       const { status, output } = knip(pkg);

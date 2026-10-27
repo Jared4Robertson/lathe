@@ -208,17 +208,12 @@ check('pattern-rule-test-outside-followers', () => {
 });
 
 check('pattern-setting-missing', () => {
-  it("LA-AUT-INV20-T a use case that gives no value for one of its pattern's settings is an error naming the setting", async () => {
+  it("LA-TRC-INV04-T a use case that answers each setting of its pattern is in place; one that gives no value for a setting is an error naming it", async () => {
+    expect(ofCheck(clean, 'pattern-setting-missing')).toEqual([]);
     const ws = await loadData(without(complete(), 'setting_value', () => true));
     expect(ofCheck(ws, 'pattern-setting-missing')).toEqual([
       expect.objectContaining({ severity: 'error', record: 'EX-LEND-UC02', message: expect.stringContaining('setting "record"') }),
     ]);
-  });
-
-  it('LA-TRC-INV04-T a use case that answers each setting of its pattern is in place; one that answers none is an error', async () => {
-    expect(ofCheck(clean, 'pattern-setting-missing')).toEqual([]);
-    const ws = await loadData(without(complete(), 'setting_value', () => true));
-    expect(records(ofCheck(ws, 'pattern-setting-missing'))).toEqual(['EX-LEND-UC02']);
   });
 });
 

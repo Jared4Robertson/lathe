@@ -22,7 +22,7 @@ const spine = (n: { edges: { source: string; target: string; relation: string }[
   n.edges.filter((e) => e.relation === 'parent').map((e) => `${e.source} > ${e.target}`).sort();
 
 describe('flow steps in the graph', () => {
-  it('LA-EXP-T67 A flow step sits one column to the right of its flow, joined to it by the parent line', () => {
+  it.each(['LA-V93-R31-T01', 'LA-V92-R12-T01'])('%s A flow step sits one column to the right of its flow, joined to it by the parent line', () => {
     const index = testIndex();
     const n = neighborhood(index, 'P-D-UC01-FL', 2);
     expect(recordIds(n)).toEqual(expect.arrayContaining(['P-D-UC01-FL', 'P-D-UC01-FL-S01', 'P-D-UC01-FL-S02', 'P-D-UC01-FL-S03']));
@@ -31,7 +31,7 @@ describe('flow steps in the graph', () => {
     for (const step of ['P-D-UC01-FL-S01', 'P-D-UC01-FL-S02', 'P-D-UC01-FL-S03']) expect(column.get(step)).toBe(column.get('P-D-UC01-FL')! + 1);
   });
 
-  it('LA-EXP-T68 A flow shows its steps directly, however many, and its flow test is listed in the test plan, not under it', () => {
+  it.each(['LA-V93-R31-T02', 'LA-V92-R12-T02'])('%s A flow shows its steps directly, however many, and its flow test is listed in the test plan, not under it', () => {
     const index = indexOf(flowWorkspace(6));
     expect(spine(neighborhood(index, 'P-D-UC01-FL', 1))).toEqual(expect.arrayContaining(['P-D-UC01-FL > P-D-UC01-FL-S01', 'P-D-UC01-FL > P-D-UC01-FL-S06']));
     expect(isGraphNode(index, 'P-D-UC01-FL/flow_step')).toBe(false);
@@ -42,7 +42,7 @@ describe('flow steps in the graph', () => {
     expect(map.nodes.get('P-D-UC01-FL-S05')!.parent).toBe('P-D-UC01-FL');
   });
 
-  it("LA-EXP-T69 A UC requirement's trace shows the step that fulfills it, the step's flow, what the step invokes and that operation's handler", async () => {
+  it.each(['LA-V93-R32-T01', 'LA-V93-R09-T01'])("%s A UC requirement's trace shows the step that fulfills it, the step's flow, what the step invokes and that operation's handler", async () => {
     const index = testIndex();
     const n = traceChain(index, 'P-D-UC01-R01');
     expect(recordIds(n)).toEqual(expect.arrayContaining(['P-D-UC01-FL', 'P-D-UC01-FL-S01', 'P-D-CMD01', 'P-D-CMD01-H']));

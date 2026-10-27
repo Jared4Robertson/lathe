@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { readMotion } from './motion';
 
-// The graph's look as the canvas draws it (LA-EXP-C05): the stylesheet's colors and opacities,
+// The graph's look as the canvas draws it (LA-UI92): the stylesheet's colors and opacities,
 // read from its tokens on the page, so the canvas follows the theme in light and dark exactly as
 // the rest of the page does. A color token may be any CSS color (a `color-mix`, a theme's own), so
 // each is read as the browser computes it, through a probe element.

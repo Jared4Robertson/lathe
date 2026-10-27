@@ -38,7 +38,7 @@ function groupedWorkspace(): SpecData {
 }
 
 describe('waivers by setting value', () => {
-  it('LA-TRC-T120 A rule no follower meets shows as Waived here, with the value given, and the gaps leave it out', async () => {
+  it('LA-V91-R56-T01 A rule no follower meets shows as Waived here, with the value given, and the gaps leave it out', async () => {
     const ix = indexOf(waiverWorkspace());
     const r03 = ix.byId.get('DM-PAT-AUDIT-R03')!;
     const r04 = ix.byId.get('DM-PAT-AUDIT-R04')!;
@@ -80,7 +80,7 @@ describe('waivers by setting value', () => {
 });
 
 describe('groups', () => {
-  it('LA-EXP-T200 UC requirements, pattern rules and standard rules read under their group headings, the ungrouped first, and the Outline lists the groups', async () => {
+  it('LA-V92-R22-T01 UC requirements, pattern rules and standard rules read under their group headings, the ungrouped first, and the Outline lists the groups', async () => {
     const ix = indexOf(groupedWorkspace());
     const reqs = (ix.children.get('DM-SHOP-UC01') ?? []).filter((r) => r.kind === 'uc_requirement');
     expect(groupRecords(reqs).map((g) => [g.heading, g.records.map((r) => r.id)])).toEqual([

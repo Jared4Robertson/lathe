@@ -47,7 +47,7 @@ const sourceOf = (map: PlacedMap, id: string): PlateSource => {
 
 // Every drawn box shows its name (LA-PAT-APP-UX-R12): in every layout of the graph, at every focus
 // and depth, each box the camera draws carries its label, its title and its kind and ID line in the
-// lines the page draws, siblings are the same size with one text scale (LA-EXP-DR58), and the label
+// lines the page draws, siblings are the same size with one text scale (LA-EXP-DS06), and the label
 // fits its box at its scale, so nothing is clipped. The sweep frames every domain, stage and folder
 // group of every product in Lathe's own spec and the Tool Library's (data/ and examples/tool-library/data/),
 // with the real camera, in two panes, at depths 1 to 3, and checks each drawn box's label as the
@@ -83,7 +83,7 @@ const LAYOUTS: Layout[] = [
     size: (map, id) => map.nodes.get(id)!.w,
   },
   {
-    // Voronoi (LA-EXP-DR64): laid out here, not in a worker (there are none in node); a cell's label fits when its box lies inside the cell's outline.
+    // Voronoi (LA-EXP-DS08): laid out here, not in a worker (there are none in node); a cell's label fits when its box lies inside the cell's outline.
     name: 'Voronoi',
     map: (index, root) => readyVoronoiMap(index, root)!,
     frame: (map, focus, _depth, w, h) => frameNested(map, focus, w, h),
@@ -107,7 +107,7 @@ function nameless(workspace: SpecData): { problems: string[]; frames: number } {
     for (const layout of LAYOUTS) {
       const map = layout.map(index, product.id);
       const plates = new Map<string, string | null>();
-      // Siblings are the same size, with one text scale (LA-EXP-DR58): equal boxes in the Tree and Nested maps, equal areas within 5% in the Voronoi map.
+      // Siblings are the same size, with one text scale (LA-EXP-DS06): equal boxes in the Tree and Nested maps, equal areas within 5% in the Voronoi map.
       for (const group of siblingGroups(map)) {
         const sizes = group.map((n) => layout.size(map, n.id));
         const spread = Math.max(...sizes) / Math.min(...sizes) - 1;
@@ -144,14 +144,14 @@ describe('every drawn box shows its name', () => {
   let workspace: SpecData;
   beforeAll(async () => { workspace = await repoData(); }, 60_000);
 
-  it('LA-PLT-T135 In the Tree, Nested and Voronoi layouts, at every domain, stage and folder of every product, at depths 1 to 3 in two panes, siblings share one size and text scale and every drawn box shows its name', () => {
+  it('LA-PAT-APP-UX-R12-T01 In the Tree, Nested and Voronoi layouts, at every domain, stage and folder of every product, at depths 1 to 3 in two panes, siblings share one size and text scale and every drawn box shows its name', () => {
     expect(indexOf(workspace).products.map((r) => r.id).sort()).toEqual(['LA', 'TL']);
     const { problems, frames } = nameless(workspace);
     expect(frames).toBeGreaterThan(100);
     expect(problems.length, problems.slice(0, 40).join('\n')).toBe(0);
   }, 120_000);
 
-  it("LA-EXP-T204 A framed box's header reads at about the same size on screen at every depth, and the camera can frame the deepest leaf", () => {
+  it.each(['LA-EXP-DS06-T12', 'LA-EXP-DS09-T13'])("%s A framed box's header reads at about the same size on screen at every depth, and the camera can frame the deepest leaf", () => {
     const whole = indexOf(workspace);
     for (const product of ['LA', 'TL']) {
       const index = spaceIndex(whole, product);

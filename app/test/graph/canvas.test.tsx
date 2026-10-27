@@ -16,7 +16,7 @@ import { openApp, startAtDepth } from '../helpers';
 import { testIndex, testWorkspace } from './workspace';
 import { boxElements, scene } from './scene';
 
-// The canvas renderer (LA-EXP-DR59, LA-EXP-DR60, LA-PAT-APP-UX-R12): every box's label placed once
+// The canvas renderer (LA-EXP-DS09, LA-EXP-DS10, LA-PAT-APP-UX-R12): every box's label placed once
 // in map units and drawn at its map size times the zoom, the pointer finding the box under it from
 // the map's own outlines, and only what is on screen drawn.
 
@@ -28,7 +28,7 @@ const platesOf = (map: PlacedMap): Plate[] => [...map.nodes.keys()].map((id) => 
 const maps = () => [graphMap(testIndex(), 'P'), nestedMap(testIndex(), 'P'), readyVoronoiMap(testIndex(), 'P')!] as PlacedMap[];
 
 describe('text sizing', () => {
-  it('LA-EXP-T210 Every label line is placed in map units at its face\'s size times its box\'s text scale, inside its box, in every layout', () => {
+  it.each(['LA-EXP-DS06-T13', 'LA-EXP-DS10-T07', 'LA-PAT-APP-UX-R12-T02'])('%s Every label line is placed in map units at its face\'s size times its box\'s text scale, inside its box, in every layout', () => {
     for (const map of maps()) {
       for (const p of platesOf(map)) {
         expect(p.lines.length, p.id).toBeGreaterThan(0);
@@ -57,7 +57,7 @@ describe('text sizing', () => {
     }
   });
 
-  it('LA-EXP-T210 On the page, each drawn line\'s font is its map size times the zoom, and a line under TEXT_BAR_PX on screen is drawn as a bar', async () => {
+  it('LA-EXP-DS06-T13 On the page, each drawn line\'s font is its map size times the zoom, and a line under TEXT_BAR_PX on screen is drawn as a bar', async () => {
     startAtDepth(3);
     await openApp('/P?view=graph', { data: testWorkspace() });
     await waitFor(() => expect(boxElements().length).toBeGreaterThan(3));
@@ -72,7 +72,7 @@ describe('text sizing', () => {
     }
   });
 
-  it('LA-EXP-T210 The text measure is the canvas\'s on the loaded faces, each width read once; without a canvas it is the plain measure', () => {
+  it('LA-EXP-DS06-T13 The text measure is the canvas\'s on the loaded faces, each width read once; without a canvas it is the plain measure', () => {
     const asked: string[] = [];
     const ctx = { font: '', measureText: (t: string) => { asked.push(`${ctx.font}|${t}`); return { width: t.length * 50, fontBoundingBoxAscent: 90, fontBoundingBoxDescent: 20 } as TextMetrics; } };
     const fonts = { body: '"Public Sans", sans-serif', mono: '"JetBrains Mono", monospace' };
@@ -92,7 +92,7 @@ describe('text sizing', () => {
 });
 
 describe('hit testing', () => {
-  it('LA-EXP-T211 The pointer finds the deepest box under it from the map\'s outlines: a shape\'s polygon, rounded corners, a cell', () => {
+  it('LA-V93-R07-T01 The pointer finds the deepest box under it from the map\'s outlines: a shape\'s polygon, rounded corners, a cell', () => {
     // A polygon, by the even-odd rule.
     const tri: [number, number][] = [[0, 0], [10, 0], [0, 10]];
     expect(inPolygon(tri, { x: 2, y: 2 })).toBe(true);
@@ -121,7 +121,7 @@ describe('hit testing', () => {
 });
 
 describe('culling', () => {
-  it('LA-EXP-T212 Only boxes on screen are drawn: a box is culled once it lies wholly past an edge of the pane', () => {
+  it.each(['LA-EXP-DS10-T08', 'LA-V93-R07-T02'])('%s Only boxes on screen are drawn: a box is culled once it lies wholly past an edge of the pane', () => {
     const cam = { cx: 500, cy: 400, zoom: 1, w: 1000, h: 800 };
     expect(onScreen({ x: 10, y: 10, w: 50, h: 50 }, cam)).toBe(true);
     expect(onScreen({ x: -60, y: 10, w: 50, h: 50 }, cam)).toBe(false);

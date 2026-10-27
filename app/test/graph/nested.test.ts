@@ -6,8 +6,8 @@ import { gridOf, HEADER_SHARE, layoutNested, NEST_GAP, NEST_PAD, nestedMap, type
 import type { SpecIndex } from '../../src/specs/data';
 import { groupedWorkspace, manyOfOneKindWorkspace, siblingGroups, testIndex } from './workspace';
 
-// The Nested map (LA-EXP-DR62): the Tree map's tree as nested squares, laid out once, top-down from
-// the product's square by one rule (LA-EXP-DR58): siblings are the same size, with the same text.
+// The Nested map (LA-EXP-DS07): the Tree map's tree as nested squares, laid out once, top-down from
+// the product's square by one rule (LA-EXP-DS06): siblings are the same size, with the same text.
 
 /** The test workspaces' indexes, built once, so a map found by its index is the one the test laid out. */
 let built: SpecIndex[] | null = null;
@@ -32,7 +32,7 @@ const eps = 1e-6;
 const borderOf = (n: NestedNode) => BORDER * Math.max(0.5, n.text);
 
 describe('the Nested map', () => {
-  it('LA-EXP-T185 Each box holds its children below its header band, inside its padding, none overlapping, over the same tree as the Tree map', () => {
+  it('LA-EXP-DS07-T01 Each box holds its children below its header band, inside its padding, none overlapping, over the same tree as the Tree map', () => {
     for (const map of all()) {
       for (const n of map.nodes.values()) {
         if (n.children.length === 0) { expect(n.header).toBe(0); continue; }
@@ -66,7 +66,7 @@ describe('the Nested map', () => {
     for (const n of tree.nodes.values()) expect(nested.nodes.get(n.id)!.children).toEqual(n.children);
   });
 
-  it('LA-EXP-T185 Top-down from the product\'s fixed square, siblings are equal squares: a busy parent packs its children smaller, and record counts size nothing', () => {
+  it('LA-EXP-DS07-T01 Top-down from the product\'s fixed square, siblings are equal squares: a busy parent packs its children smaller, and record counts size nothing', () => {
     for (const map of all()) {
       for (const r of map.roots) expect(map.nodes.get(r)!.w).toBe(MAP_SIZE);
       for (const group of siblingGroups(map)) {
@@ -83,7 +83,7 @@ describe('the Nested map', () => {
     expect(map.nodes.get('b0')!.w).toBeLessThan(map.nodes.get('q0')!.w);
   });
 
-  it('LA-EXP-T186 Children are a grid of equal squares in the tree order, with the column count that makes them largest, the room it leaves blank', () => {
+  it('LA-EXP-DS07-T02 Children are a grid of equal squares in the tree order, with the column count that makes them largest, the room it leaves blank', () => {
     // Four squares in a square room: two by two. Five in a wide room: one row.
     expect(gridOf(4, 100, 100, 0)).toEqual({ side: 50, columns: 2, rows: 2 });
     expect(gridOf(5, 500, 100, 0)).toEqual({ side: 100, columns: 5, rows: 1 });
@@ -110,7 +110,7 @@ describe('the Nested map', () => {
     }
   });
 
-  it('LA-EXP-T187 Siblings share one text scale, their side over TEXT_SIZE or the largest at which every sibling\'s whole label fits, and one header band', () => {
+  it.each(['LA-EXP-DS06-T09', 'LA-EXP-DS07-T03'])('%s Siblings share one text scale, their side over TEXT_SIZE or the largest at which every sibling\'s whole label fits, and one header band', () => {
     for (const map of all()) {
       for (const group of siblingGroups(map)) {
         const most = sizeText(group[0].w);
@@ -137,7 +137,7 @@ describe('the Nested map', () => {
     expect(nestedMap(index, 'P')).toBe(nestedMap(index, 'P'));
   });
 
-  it('LA-EXP-T187 Every label fits its box: no word broken, a leaf\'s lines inside its square, a parent\'s inside its header band', () => {
+  it('LA-EXP-DS06-T09 Every label fits its box: no word broken, a leaf\'s lines inside its square, a parent\'s inside its header band', () => {
     for (const map of all()) {
       for (const n of map.nodes.values()) {
         const label = labelOf(map, n);

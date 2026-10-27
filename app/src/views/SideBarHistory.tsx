@@ -3,7 +3,7 @@ import { Button } from '../components/Button';
 import type { SpecIndex, SpecRecord } from '../specs/data';
 import { changeSummary, fetchHistory, shortDate, valueText, type HistoryAnswer, type HistoryChange, type HistoryCommit } from './history';
 
-// The side bar's History (LA-EXP-UC12-R05): the commits that changed the record's rows (its own row,
+// The side bar's History (LA-V95-R08): the commits that changed the record's rows (its own row,
 // the part rows it owns and the links it starts) in their data files, newest first, with "Load
 // more", and the changes not committed yet first, labeled so. Each says what it changed; choosing
 // one shows each changed field before and after. The list reloads with the data, so an edit shows

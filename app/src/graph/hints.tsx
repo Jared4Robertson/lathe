@@ -1,6 +1,6 @@
 import { Button } from '../components/Button';
 
-// Edge hints (LA-EXP-UC03-R12): at each edge of a canvas a small chip counts the boxes of interest
+// Edge hints (LA-V93-R18): at each edge of a canvas a small chip counts the boxes of interest
 // past it ("3 ↑", "8 →"): the records the graph's center links to (the Links switch), or the Model
 // view's faded context boxes. A click pans the camera that way, with the shared motion, without
 // changing the focus: by about half the canvas, or as the host asks (the graph brings the nearest

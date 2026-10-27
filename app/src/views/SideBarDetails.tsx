@@ -16,7 +16,7 @@ import { GAP_TEXT } from '../specs/Traceability';
 import { traceOf } from '../specs/trace';
 import type { SideMode } from './sideBarState';
 
-// The side bar's Details (LA-EXP-UC12-R03): what the page does not already show, with no repeats.
+// The side bar's Details (LA-V95-R06): what the page does not already show, with no repeats.
 // - In the Graph and Model views: the node under the pointer or keyboard focus, else the selected
 //   one, else the page's record: its kind, title, ID, short fields, data file and parent, and a
 //   compact Traceability summary in the relations' labels, with Open (and, in the desktop app,

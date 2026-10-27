@@ -28,7 +28,7 @@ const index = () => indexOf(twoDomains());
 const rowOf = (scope: HTMLElement, id: string) => within(scope).getByRole('link', { name: new RegExp(`^${id}(?!-)`) }).closest('.record-row') as HTMLElement;
 
 describe('pattern logic', () => {
-  it('LA-TRC-T98 A domain follows the patterns it or its use cases follow, and a pattern lists its following domains', () => {
+  it('LA-V91-R54-T01 A domain follows the patterns it or its use cases follow, and a pattern lists its following domains', () => {
     const ix = index();
     expect(patternsFollowedBy(ix, 'DM-SHOP').map((f) => [f.pattern.id, f.byDomain, f.useCases.map((u) => u.id)])).toEqual([['DM-PAT-AUDIT', true, ['DM-SHOP-UC01']]]);
     expect(patternsFollowedBy(ix, 'NF-NOTE')).toEqual([]);
@@ -42,7 +42,7 @@ describe('pattern logic', () => {
     expect(notApplicableReason(settingValue(ix, 'DM-SHOP-UC01', 'DM-PAT-AUDIT', 'missing'))).toBeNull();
   });
 
-  it('LA-TRC-T99 A rule is proved per domain, by its pattern rule tests that name that domain', () => {
+  it('LA-V91-R54-T02 A rule is proved per domain, by its pattern rule tests that name that domain', () => {
     const ix = index();
     const r01 = ix.byId.get('DM-PAT-AUDIT-R01')!;
     expect(ruleStatus(ix, r01, 'DM-SHOP', patternsFollowedBy(ix, 'DM-SHOP')[0])).toEqual({ applies: true, provedBy: ['DM-PAT-AUDIT-R01-T01'], notAutomatedBy: [] });
@@ -50,7 +50,7 @@ describe('pattern logic', () => {
     expect(ruleStatus(ix, r01, 'DM-PAY', patternsFollowedBy(ix, 'DM-PAY')[0])).toEqual({ applies: true, provedBy: [], notAutomatedBy: ['DM-PAT-AUDIT-R01-T02'] });
   });
 
-  it('LA-TRC-T100 A rule that names a setting every following use case marks Not applicable does not apply in that domain', () => {
+  it('LA-V91-R55-T01 A rule that names a setting every following use case marks Not applicable does not apply in that domain', () => {
     const ix = index();
     const r02 = ix.byId.get('DM-PAT-AUDIT-R02')!;
     expect(ruleStatus(ix, r02, 'DM-PAY', patternsFollowedBy(ix, 'DM-PAY')[0])).toEqual({
@@ -65,7 +65,7 @@ describe('pattern logic', () => {
 });
 
 describe('Patterns we follow, on the domain page', () => {
-  it('LA-TRC-T101 The domain page lists each pattern it follows, its rules folded under it, with what proves each in the domain', async () => {
+  it('LA-V91-R54-T03 The domain page lists each pattern it follows, its rules folded under it, with what proves each in the domain', async () => {
     await openApp('/DM-PAY', { data: twoDomains() });
     await screen.findByRole('heading', { level: 1, name: 'Paying' });
     const patterns = section(/^Patterns we follow/);
@@ -83,7 +83,7 @@ describe('Patterns we follow, on the domain page', () => {
     expect(r02).toHaveTextContent('setting retention');
   });
 
-  it('LA-TRC-T102 A rule the domain marks Not applicable shows so, with the use case and its reason', async () => {
+  it('LA-V91-R55-T02 A rule the domain marks Not applicable shows so, with the use case and its reason', async () => {
     await openApp('/DM-PAY', { data: twoDomains() });
     await screen.findByRole('heading', { level: 1, name: 'Paying' });
     const patterns = section(/^Patterns we follow/);
@@ -100,7 +100,7 @@ describe('Patterns we follow, on the domain page', () => {
     expect(within(rowOf(shop, 'DM-PAT-AUDIT-R01')).getByText('proved')).toBeInTheDocument();
   });
 
-  it('LA-TRC-T103 Coverage shows the pattern rule line, and its gaps name the rule', async () => {
+  it('LA-V91-R51-T02 Coverage shows the pattern rule line, and its gaps name the rule', async () => {
     await openApp('/DM-SHOP', { data: twoDomains() });
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     const coverage = section(/^Coverage/);
@@ -110,7 +110,7 @@ describe('Patterns we follow, on the domain page', () => {
     expect(within(coverage).getAllByRole('listitem').map((li) => li.textContent)).toContainEqual(expect.stringMatching(/DM-PAT-AUDIT-R02.*Pattern rule not proved/));
   });
 
-  it('LA-TRC-T111 A pattern the domain itself follows is listed, followed by the whole domain, and every rule applies', async () => {
+  it('LA-V91-R54-T05 A pattern the domain itself follows is listed, followed by the whole domain, and every rule applies', async () => {
     const ws = twoDomains();
     // Paying follows the pattern itself, not through a use case.
     removeRows(ws, 'follows', (l) => l.source_id === 'DM-PAY-UC01');
@@ -126,7 +126,7 @@ describe('Patterns we follow, on the domain page', () => {
     expect(rowOf(section(/^Patterns we follow/), 'DM-PAT-AUDIT')).toHaveTextContent('followed by the whole domain');
   });
 
-  it('LA-TRC-T104 A domain that follows no pattern says so', async () => {
+  it('LA-V91-R54-T04 A domain that follows no pattern says so', async () => {
     await openApp('/NF-NOTE', { data: twoDomains() });
     await screen.findByRole('heading', { level: 1, name: 'Notes' });
     expect(within(section(/^Patterns we follow/)).getByText('This domain follows no pattern.')).toBeInTheDocument();
@@ -134,7 +134,7 @@ describe('Patterns we follow, on the domain page', () => {
 });
 
 describe('pattern pages', () => {
-  it('LA-TRC-T105 A pattern page shows its settings table, its rules, and each following domain with its use cases and settings', async () => {
+  it('LA-V92-R54-T01 A pattern page shows its settings table, its rules, and each following domain with its use cases and settings', async () => {
     await openApp('/DM-PAT-AUDIT', { data: twoDomains() });
     await screen.findByRole('heading', { level: 1, name: 'Audited action' });
     const settings = within(section(/^Settings/)).getByRole('table');
@@ -161,7 +161,7 @@ describe('pattern pages', () => {
     expect(within(pay).getByText('Not applicable: Payments keep no records')).toHaveClass('setting-na');
   });
 
-  it('LA-TRC-T106 A pattern page shows each following domain\'s proof status per rule', async () => {
+  it('LA-V92-R54-T02 A pattern page shows each following domain\'s proof status per rule', async () => {
     await openApp('/DM-PAT-AUDIT', { data: twoDomains() });
     await screen.findByRole('heading', { level: 1, name: 'Audited action' });
     const followed = section(/^Followed by/);
@@ -176,7 +176,7 @@ describe('pattern pages', () => {
     expect(statusOf('DM-PAY', 'DM-PAT-AUDIT-R03')).toHaveTextContent('Waived here: who is Shopper');
   });
 
-  it('LA-TRC-T107 A pattern rule page lists the domains that owe it, and a pattern nobody follows says so', async () => {
+  it('LA-V92-R55-T01 A pattern rule page lists the domains that owe it, and a pattern nobody follows says so', async () => {
     await openApp('/DM-PAT-AUDIT-R02', { data: twoDomains() });
     await screen.findByRole('heading', { level: 1, name: 'Records are kept' });
     const owed = section(/^Owed by/);

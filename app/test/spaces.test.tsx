@@ -32,7 +32,7 @@ function spacesWorkspace(): SpecData {
 }
 
 describe('product spaces', () => {
-  it('LA-EXP-T70 The rail lists the products in order, each with its icon or its monogram on a stable color', async () => {
+  it('LA-EXP-DS01-T01 The rail lists the products in order, each with its icon or its monogram on a stable color', async () => {
     // The icon field: one emoji or up to two characters; otherwise the ID's monogram.
     expect(iconField('📓')).toBe('📓');
     expect(iconField('TL')).toBe('TL');
@@ -46,7 +46,12 @@ describe('product spaces', () => {
     expect(colorField('url(x)')).toBeNull();
     expect(colorOf('TL')).toBe(colorOf('TL'));
     expect(colorOf('TL')).not.toBe(colorOf('LA'));
+    const index = indexOf(spacesWorkspace());
+    expect(spaceOf(index.byId.get('NF')!).color).toBe('#335577');
+    expect(spaceOf(index.byId.get('DM')!).color).toBe(colorOf('DM'));
+  });
 
+  it('LA-V90-R08-T01 The rail lists the products in order with their icons or monograms, and nothing above every product', async () => {
     await openApp('/DM', { data: spacesWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     const items = within(rail()).getAllByRole('link');
@@ -54,15 +59,12 @@ describe('product spaces', () => {
     expect(items.map((a) => a.querySelector('.space-mark')!.textContent)).toEqual(['AB', 'DM', '📓']);
     expect(items[0].querySelector('.space-mark')).toHaveClass('is-monogram');
     expect(items[2].querySelector('.space-mark')).toHaveClass('is-icon');
-    const index = indexOf(spacesWorkspace());
-    expect(spaceOf(index.byId.get('NF')!).color).toBe('#335577');
-    expect(spaceOf(index.byId.get('DM')!).color).toBe(colorOf('DM'));
     // Nothing after the spaces: no item above every product.
     expect(nav().querySelector('.space-rail hr')).toBeNull();
     expect(within(nav().querySelector<HTMLElement>('.space-rail')!).getAllByRole('link')).toHaveLength(3);
   });
 
-  it('LA-EXP-T71 The current space is the product of the page, marked with aria-current and an accent bar; its Checks page is inside it', async () => {
+  it('LA-EXP-DS02-T01 The current space is the product of the page, its Checks page included', () => {
     const index = indexOf(spacesWorkspace());
     expect(productOfPath(index, '/NF-NOTE')).toBe('NF');
     expect(productOfPath(index, '/DM-SHOP-UC01-R01')).toBe('DM');
@@ -70,14 +72,20 @@ describe('product spaces', () => {
     expect(productOfPath(index, '/NF/checks')).toBe('NF');
     expect(productOfPath(index, '/format')).toBeNull();
     expect(productOfPath(index, '/')).toBeNull();
+  });
 
+  it('LA-V90-R09-T01 The current space is marked with aria-current and an accent bar', async () => {
     await openApp('/NF-NOTE', { data: spacesWorkspace() });
     await waitFor(() => expect(spaceLink('Notebook')).toHaveAttribute('aria-current', 'true'));
     expect(spaceLink('Demo shop')).not.toHaveAttribute('aria-current');
     expect(spaceLink('Notebook')).toHaveClass('is-current');
     const css = (await import('node:fs')).readFileSync((await import('node:path')).resolve(process.cwd(), 'src/styles.css'), 'utf8');
     expect(css).toMatch(/\.space-item\[aria-current\]::before/);
+  });
 
+  it('LA-V41-R03-T01 The space\'s Checks page is inside it, at its product\'s ID, opened from the nav', async () => {
+    await openApp('/NF-NOTE', { data: spacesWorkspace() });
+    await waitFor(() => expect(spaceLink('Notebook')).toHaveAttribute('aria-current', 'true'));
     // Checks is the space's own page: the space stays Notebook.
     await userEvent.setup().click(within(nav()).getByRole('link', { name: /^Checks \d+ (errors?|warnings?|problems)/ }));
     expect(window.location.pathname).toBe('/NF/checks');
@@ -85,7 +93,7 @@ describe('product spaces', () => {
     expect(within(panel()).getByRole('link', { name: 'Notes' })).toBeInTheDocument();
   });
 
-  it('LA-EXP-T72 Choosing a space scopes the nav to its domains, stages, capabilities and groups', async () => {
+  it('LA-V90-R10-T01 Choosing a space scopes the nav to its domains, stages, capabilities and groups', async () => {
     await openApp('/DM', { data: spacesWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     expect(within(nav().querySelector<HTMLElement>('.nav-space')!).getByRole('link', { name: 'Demo shop' })).toHaveAttribute('href', '/DM');
@@ -109,7 +117,8 @@ describe('product spaces', () => {
     expect(within(nav()).queryByRole('list', { name: 'Groups of Demo shop' })).toBeNull();
   });
 
-  it('LA-EXP-T73 Choosing a space opens the last page visited in it this session, or its product page', async () => {
+  /** A page in Demo shop, then Notebook's product page and a page in it. */
+  const twoSpacesVisited = async () => {
     await openApp('/DM-SHOP-UC01', { data: spacesWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     const user = userEvent.setup();
@@ -118,17 +127,31 @@ describe('product spaces', () => {
     expect(window.location.pathname).toBe('/NF');
     await user.click(within(panel()).getByRole('link', { name: 'Notes' }));
     expect(window.location.pathname).toBe('/NF-NOTE');
+    return user;
+  };
+
+  it('LA-EXP-PO01-T A page opened in a space becomes its last page', async () => {
+    await twoSpacesVisited();
     expect(spaceLink('Demo shop')).toHaveAttribute('href', '/DM-SHOP-UC01');
+    expect(spaceLink('Notebook')).toHaveAttribute('href', '/NF-NOTE');
+  });
+
+  it('LA-V90-R11-T01 Choosing a space opens the last page visited in it, or its product page', async () => {
+    const user = await twoSpacesVisited();
     await user.click(spaceLink('Demo shop'));
     expect(window.location.pathname).toBe('/DM-SHOP-UC01');
     await user.click(spaceLink('Notebook'));
     expect(window.location.pathname).toBe('/NF-NOTE');
+  });
+
+  it('LA-EXP-INV04-T A space\'s last page is remembered for the session only', async () => {
+    await twoSpacesVisited();
     // Remembered for the session, not for ever.
     expect(JSON.parse(window.sessionStorage.getItem('lathe:space-pages')!)).toMatchObject({ DM: '/DM-SHOP-UC01', NF: '/NF-NOTE' });
     expect(window.localStorage.getItem('lathe:space-pages')).toBeNull();
   });
 
-  it('LA-EXP-T74 Alt+1 to Alt+9 switch spaces in rail order, and the palette has a Switch to command for each', async () => {
+  it('LA-EXP-DS01-T02 Alt+1 to Alt+9 switch spaces in rail order, and the palette has a Switch to command for each', async () => {
     await openApp('/', { data: spacesWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Products' });
     const press = (n: number) => fireEvent.keyDown(document.body, { key: String(n), code: `Digit${n}`, altKey: true });
@@ -142,6 +165,11 @@ describe('product spaces', () => {
     document.body.dispatchEvent(event);
     expect(event.defaultPrevented).toBe(false);
     expect(window.location.pathname).toBe('/AB');
+  });
+
+  it('LA-V90-R12-T01 Alt and a number leave every other shortcut working, and the palette has a Switch to command for each space', async () => {
+    await openApp('/AB', { data: spacesWorkspace() });
+    await screen.findByRole('heading', { level: 1, name: 'Alpha beta' });
     // Every other shortcut still works: Ctrl+Shift+M opens the space's Checks.
     fireEvent.keyDown(document.body, { key: 'M', code: 'KeyM', ctrlKey: true, shiftKey: true });
     expect(window.location.pathname).toBe('/AB/checks');
@@ -158,7 +186,7 @@ describe('product spaces', () => {
     await waitFor(() => expect(window.location.pathname).toBe('/DM'));
   });
 
-  it('LA-EXP-T75 Quick find searches the current space only', async () => {
+  it('LA-V90-R13-T01 Quick find searches the current space only', async () => {
     const index = indexOf(spacesWorkspace());
     const ranked = rankItems(findItems(spaceIndex(index, 'NF')), 'n', 50);
     expect(ranked.some((i) => i.id === 'NF-NOTE')).toBe(true);
@@ -186,7 +214,7 @@ describe('product spaces', () => {
     expect(within(list).getAllByRole('option').at(-1)).toHaveAttribute('aria-selected', 'true');
   });
 
-  it("LA-EXP-T76 Each space has its own Checks page: its product's problems, then the workspace's under Workspace", async () => {
+  it("LA-V41-R01-T02 Each space has its own Checks page: its product's problems, then the workspace's under Workspace", async () => {
     await openApp('/NF', { data: spacesWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Notebook' });
     await userEvent.setup().click(within(nav()).getByRole('link', { name: /^Checks \d+ (errors?|warnings?|problems)/ }));
@@ -199,7 +227,12 @@ describe('product spaces', () => {
     expect(within(main()).getByRole('heading', { level: 2, name: /^Workspace/ })).toBeInTheDocument();
     expect(within(main()).getByText('The checks could not read a file.')).toBeInTheDocument();
     expect(main().textContent).not.toMatch(/DM-/);
+  });
 
+  it("LA-V41-R03-T02 Each space has its own Checks page, and none lists every product's", async () => {
+    await openApp('/NF/checks', { data: spacesWorkspace() });
+    await screen.findByText('Notebook · checks');
+    expect(within(main()).queryByRole('group', { name: 'Show checks for' })).toBeNull();
     await userEvent.setup().click(spaceLink('Demo shop'));
     await userEvent.setup().click(within(nav()).getByRole('link', { name: /^Checks \d+ (errors?|warnings?|problems)/ }));
     expect(window.location.pathname).toBe('/DM/checks');
@@ -208,7 +241,7 @@ describe('product spaces', () => {
     expect(within(main()).getByText('The checks could not read a file.')).toBeInTheDocument();
   });
 
-  it('LA-EXP-T77 On a narrow screen the rail stays visible inside the nav drawer', async () => {
+  it('LA-V90-R14-T01 On a narrow screen the rail stays visible inside the nav drawer', async () => {
     vi.stubGlobal('matchMedia', (query: string) => ({ matches: true, media: query, addEventListener: () => {}, removeEventListener: () => {} }));
     await openApp('/DM', { data: spacesWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });

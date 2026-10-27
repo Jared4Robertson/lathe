@@ -32,7 +32,7 @@ function serveHistory(answer: (query: URLSearchParams) => unknown) {
 }
 
 describe('the side bar', () => {
-  it('LA-PLT-T87 One side bar with a labeled switcher of Details, Outline and History, each with its heading; closed in the Wiki view and open in the Graph view, its view kept per view mode and per tab across a reload', async () => {
+  const proveLaV95R04T01 = async () => {
     expect(sideModeOf(['wiki'], false)).toBe('wiki');
     expect(sideModeOf(['wiki', 'graph'], false)).toBe('graph');
     expect(sideModeOf(['wiki', 'model'], false)).toBe('model');
@@ -66,9 +66,11 @@ describe('the side bar', () => {
     fireEvent.click(screen.getByRole('button', { name: /^Graph/, pressed: true }));
     await waitFor(() => expect(window.location.search).toBe('?view=wiki'));
     expect(screen.queryByRole('complementary', { name: 'Side bar' })).toBeNull();
-  });
+  };
+  it('LA-V95-R04-T01 One side bar with a labeled switcher of Details, Outline and History, each with its heading; closed in the Wiki view and open in the Graph view, its view kept per view mode and per tab across a reload', proveLaV95R04T01);
+  it('LA-V95-R05-T03 The side bar\'s switcher, its headings, and its state per view mode and per tab across a reload', proveLaV95R04T01);
 
-  it('LA-EXP-T161 In the Graph view Details shows the node under the pointer or keyboard focus, else the selected one, else the page\'s record, with Open and a compact Traceability; the graph adds what it connects', async () => {
+  it('LA-V95-R06-T01 In the Graph view Details shows the node under the pointer or keyboard focus, else the selected one, else the page\'s record, with Open and a compact Traceability; the graph adds what it connects', async () => {
     window.sessionStorage.setItem('lathe:graph-settings', JSON.stringify({ layout: 'tree', depth: 1, trace: false, hiddenKinds: [], hiddenRelations: [], links: true, minimap: false }));
     await openApp('/P-D-UC01-R01?view=graph', { data: testWorkspace() });
     await waitFor(() => expect(node('P-D-UC01-FL-S01')).not.toBeNull());
@@ -99,7 +101,7 @@ describe('the side bar', () => {
     await waitFor(() => expect(name()).toBe('The loan is recorded'));
   });
 
-  it('LA-EXP-T162 In the Wiki view Details shows only what the page does not: the data file and line, the columns of its row and the raw links; a focused or right-clicked record row shows that record', async () => {
+  const proveLaV95R06T02 = async () => {
     openSideBar();
     await openApp('/P-D-UC01-FL-S01', { data: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Librarian lends the thing' });
@@ -125,9 +127,11 @@ describe('the side bar', () => {
     await waitFor(() => expect(name()).toBe('The loan is recorded'));
     fireEvent.pointerDown(main().querySelector('.pane-title')!, { button: 0 });
     await waitFor(() => expect(name()).toBeUndefined());
-  });
+  };
+  it('LA-V95-R06-T02 In the Wiki view Details shows only what the page does not: the data file and line, the columns of its row and the raw links; a focused or right-clicked record row shows that record', proveLaV95R06T02);
+  it('LA-V95-R01-T01 In the Wiki view Details shows only what the page does not', proveLaV95R06T02);
 
-  it('LA-PLT-T88 Outline lists the wiki\'s sections, scrolls there on a click and marks the one in view; in the Model view it lists the boxes', async () => {
+  it('LA-V95-R07-T01 Outline lists the wiki\'s sections, scrolls there on a click and marks the one in view; in the Model view it lists the boxes', async () => {
     openSideBar('outline');
     await openApp('/P-D-UC01', { data: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
@@ -152,7 +156,7 @@ describe('the side bar', () => {
     expect(within(boxes).getAllByRole('link')[0].className).toContain('row-link');
   });
 
-  it('LA-EXP-T163 History lists the commits that touched the record\'s file, the uncommitted change first, shows a commit\'s diff inline, loads more, and says calmly when there is no git', async () => {
+  it('LA-V95-R08-T01 History lists the commits that touched the record\'s file, the uncommitted change first, shows a commit\'s diff inline, loads more, and says calmly when there is no git', async () => {
     const statement = { table: 'use_case', key: 'P-D-UC01', change: 'changed' as const, fields: [{ name: 'goal', before: 'Lend it.', after: 'Lend a thing to a member.' }] };
     const actor = { table: 'use_case_actor', key: 'use_case_id P-D-UC01, position 1', change: 'added' as const, fields: [{ name: 'role_name', after: 'Member' }] };
     const commit = (n: number) => ({ hash: `${String(n).padStart(4, '0')}${'a'.repeat(36)}`, short: `${String(n).padStart(4, '0')}aaa`, date: '2026-10-24T10:00:00Z', author: 'Owner', subject: `Change ${n}`, changes: n === 1 ? [statement, actor] : [statement], truncated: false });
@@ -208,7 +212,7 @@ describe('the side bar', () => {
     expect(await side().findByText(/not a git repository/)).toBeInTheDocument();
   });
 
-  it('LA-EXP-T164 On a phone the side bar is a bottom sheet with the same three views', async () => {
+  it('LA-V95-R05-T02 On a phone the side bar is a bottom sheet with the same three views', async () => {
     vi.stubGlobal('matchMedia', (query: string) => ({ matches: true, media: query, addEventListener: () => {}, removeEventListener: () => {} }));
     await openApp('/P-D-UC01', { data: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });

@@ -14,7 +14,7 @@ const pane = () => main().querySelector('.pane') as HTMLElement;
 const fact = (box: HTMLElement, name: string) => within(box).getByText(name, { selector: 'dt' }).nextElementSibling?.textContent;
 
 describe('format reference pages', () => {
-  it('LA-AUT-T110 The format page says how records are kept, then shows the kinds by stage, the relations and the checks by severity, as clickable rows', async () => {
+  it('LA-V01-R01-T01 The format page says how records are kept, then shows the kinds by stage, the relations and the checks by severity, as clickable rows', async () => {
     await openApp('/format');
     expect(await screen.findByRole('heading', { level: 1, name: 'Record format' })).toBeInTheDocument();
     // It opens in the workbench: one pane with the title in it, and the side bar beside it.
@@ -43,7 +43,7 @@ describe('format reference pages', () => {
     expect(within(errors).queryByRole('link', { name: /not-proved/ })).toBeNull();
   });
 
-  it('LA-AUT-T111 A kind page shows where the kind sits, its columns, its links in and out by their labels, its checks, an example and its records', async () => {
+  const proveLaV01R02T01 = async () => {
     await openApp('/format/kinds/use_case');
     expect(await screen.findByRole('heading', { level: 1, name: 'Use case' })).toBeInTheDocument();
     expect(within(main()).getByText(/^An actor's goal:/)).toBeInTheDocument();
@@ -97,9 +97,11 @@ describe('format reference pages', () => {
     await openApp('/format/kinds/endpoint');
     await screen.findByRole('heading', { level: 1, name: 'Endpoint' });
     expect(within(section(/^Allowed parents/)).getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual(['/format/kinds/command', '/format/kinds/query']);
-  });
+  };
+  it('LA-V01-R02-T01 A kind page shows where the kind sits, its columns, its links in and out by their labels, its checks, an example and its records', proveLaV01R02T01);
+  it('LA-V02-R01-T01 A kind page shows where the kind sits, its columns, its links in and out by their labels, its checks, an example and its records', proveLaV01R02T01);
 
-  it('LA-AUT-T112 A check page shows its severity, explanation and query, and its problems now as clickable rows', async () => {
+  it('LA-V03-R01-T01 A check page shows its severity, explanation and query, and its problems now as clickable rows', async () => {
     await openApp('/format/checks/not-proved');
     expect(await screen.findByRole('heading', { level: 1, name: 'not-proved' })).toBeInTheDocument();
     expect(within(main()).getByText('Every obligation is proved by a test.')).toBeInTheDocument();
@@ -127,7 +129,7 @@ describe('format reference pages', () => {
     expect(await screen.findByText(/The format has no kind called/)).toBeInTheDocument();
   });
 
-  it('LA-AUT-T113 The side bar\'s kind, each problem code and each column label link to their format pages', async () => {
+  const proveLaV92R71T01 = async () => {
     // The side bar's Details, open in the Graph view (brief 64).
     await openApp('/DM-SHOP-EP01?view=wiki,graph');
     await screen.findByRole('heading', { level: 1, name: 'Add to basket' });
@@ -149,9 +151,11 @@ describe('format reference pages', () => {
     await openApp('/DM-SHOP/interaction-design/flow');
     await screen.findByRole('heading', { level: 1, name: /^Flows/ });
     expect(within(sideBar()).getByRole('link', { name: 'Flow' })).toHaveAttribute('href', '/format/kinds/flow');
-  });
+  };
+  it('LA-V92-R71-T01 The side bar\'s kind, each problem code and each column label link to their format pages', proveLaV92R71T01);
+  it('LA-V41-R02-T01 Each problem code links to its check\'s page', proveLaV92R71T01);
 
-  it('LA-AUT-T114 The record format is a palette command and a link in the shortcuts sheet, not a nav footer link', async () => {
+  it('LA-V65-R71-T01 The record format is a palette command and a link in the shortcuts sheet, not a nav footer link', async () => {
     await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     expect(within(screen.getByRole('navigation', { name: 'Main' })).queryByRole('link', { name: 'Record format' })).toBeNull();
@@ -168,7 +172,7 @@ describe('format reference pages', () => {
     expect(within(palette).getAllByRole('option').map((o) => o.querySelector('.palette-title')?.textContent)).toEqual(['Record format']);
   });
 
-  it('LA-AUT-T115 Quick find finds kinds and checks by name and leads to their pages', async () => {
+  it('LA-V90-R71-T01 Quick find finds kinds and checks by name and leads to their pages', async () => {
     const items = findItems(indexOf(workspace()), ['command-change-recorded']);
     const kind = rankItems(items, 'Kind: Use case')[0];
     expect(kind).toMatchObject({ title: 'Kind: Use case', to: '/format/kinds/use_case' });
@@ -184,7 +188,7 @@ describe('format reference pages', () => {
     expect(window.location.pathname).toBe('/format/checks/not-proved');
   });
 
-  it('LA-AUT-T116 The pages are built from the loaded data: a check with no row in the check table is the engine\'s own, listed without an explanation', async () => {
+  it('LA-V02-R02-T01 The pages are built from the loaded data: a check with no row in the check table is the engine\'s own, listed without an explanation', async () => {
     const { requests } = await openApp('/format');
     await screen.findByRole('heading', { level: 1, name: 'Record format' });
     expect(requests).toEqual(['GET /api/spec']);
@@ -195,7 +199,7 @@ describe('format reference pages', () => {
     expect(within(section(/^Problems now/)).getByText('The checks could not read a file.')).toBeInTheDocument();
   });
 
-  it('LA-AUT-T117 Format addresses parse to their pages', () => {
+  it('LA-V02-R02-T02 Format addresses parse to their pages', () => {
     expect(parseSpecRoute('/format')).toEqual({ page: 'format' });
     expect(parseSpecRoute('/format/kinds/use_case')).toEqual({ page: 'format-kind', kind: 'use_case' });
     expect(parseSpecRoute('/format/checks/too-many-children')).toEqual({ page: 'format-check', check: 'too-many-children' });

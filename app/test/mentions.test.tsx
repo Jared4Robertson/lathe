@@ -30,7 +30,7 @@ function withText() {
 }
 
 describe('record IDs in text fields', () => {
-  it('LA-EXP-T53 Every mentioned ID in the text becomes a link to its record, with its title on hover', () => {
+  it('LA-V92-R18-T01 Every mentioned ID in the text becomes a link to its record, with its title on hover', () => {
     const html = renderMarkdown('See TL-LEND-DR01, and again TL-LEND-DR01.\n\n- In a list: TL-LEND-UC01', links({ 'TL-LEND-DR01': 'One loan at a time', 'TL-LEND-UC01': 'Lend a tool' }));
     const div = document.createElement('div');
     div.innerHTML = html;
@@ -43,7 +43,7 @@ describe('record IDs in text fields', () => {
     expect(div.textContent).toContain('See TL-LEND-DR01, and again TL-LEND-DR01.');
   });
 
-  it('LA-EXP-T54 IDs inside code blocks, code with other text, links and longer IDs are never linked; a code span of one lone ID is', () => {
+  const proveLaV92R18T02 = () => {
     const html = renderMarkdown(
       'Code `see TL-LEND-DR01` and\n\n```\nTL-LEND-DR01\n```\n\n[a link to TL-LEND-DR01](https://example.com) and TL-LEND-DR01-R01 and XTL-LEND-DR01.',
       links({ 'TL-LEND-DR01': 'One loan at a time' }),
@@ -60,16 +60,20 @@ describe('record IDs in text fields', () => {
     expect(a.querySelector('code')!.textContent).toBe('TL-LEND-DR01');
     // Nothing to link leaves the HTML as it was.
     expect(linkMentions('<p>TL-LEND-DR01</p>', links({}))).toBe('<p>TL-LEND-DR01</p>');
-  });
+  };
+  it('LA-V92-R18-T02 IDs inside code blocks, code with other text, links and longer IDs are never linked; a code span of one lone ID is', proveLaV92R18T02);
+  it('LA-V92-R05-T01 IDs in code blocks, code with other text, links and longer IDs are not linked; a lone-ID code span is', proveLaV92R18T02);
 
-  it('LA-EXP-T55 Only the IDs of records are linked, never the record itself; an ID that is no record is not', () => {
+  const proveLaV92R18T03 = () => {
     const ix = indexOf(withText());
     const uc = ix.byId.get('DM-SHOP-UC01')!;
     const p = proseLinks(ix, `${String(uc.row.goal)} See DM-SHOP-UC01.`, uc.id);
     expect([...p.titles]).toEqual([['DM-PAT-AUDIT', 'Audited action'], ['DM-SHOP-INV01', 'A basket holds at most 50 items']]);
-  });
+  };
+  it('LA-V92-R18-T03 Only the IDs of records are linked, never the record itself; an ID that is no record is not', proveLaV92R18T03);
+  it('LA-V92-R19-T01 Only the IDs of records are linked, never the record itself', proveLaV92R18T03);
 
-  it('LA-EXP-T56 On a record page a text field links the records it names, leaves an unknown ID as text, and a link moves within the app', async () => {
+  const proveLaV92R18T04 = async () => {
     await openApp('/DM-SHOP-UC01', { data: withText() });
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     const prose = within(body());
@@ -83,9 +87,11 @@ describe('record IDs in text fields', () => {
     fireEvent.click(prose.getAllByRole('link', { name: 'DM-SHOP-INV01' })[0]);
     expect(window.location.pathname).toBe('/DM-SHOP-INV01');
     await screen.findByRole('heading', { level: 1, name: 'A basket holds at most 50 items' });
-  });
+  };
+  it('LA-V92-R18-T04 On a record page a text field links the records it names, leaves an unknown ID as text, and a link moves within the app', proveLaV92R18T04);
+  it('LA-V92-R19-T02 On a record page a text field links the records it names, and a link moves within the app', proveLaV92R18T04);
 
-  it('LA-EXP-T57 An ID inside a longer ID links only as the longer one, a named record is not a link between records, and domain pages link theirs too', async () => {
+  const proveLaV92R18T05 = async () => {
     openSideBar();
     await openApp('/DM-PAY-UC01', { data: withText() });
     await screen.findByRole('heading', { level: 1, name: 'Pay by card' });
@@ -102,5 +108,7 @@ describe('record IDs in text fields', () => {
     await openApp('/DM-SHOP', { data: ws });
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     await waitFor(() => expect(document.querySelector('.spec-body .record-lead a.mention')).toHaveAttribute('href', '/DM-SHOP-UC01'));
-  });
+  };
+  it('LA-V92-R18-T05 An ID inside a longer ID links only as the longer one, a named record is not a link between records, and domain pages link theirs too', proveLaV92R18T05);
+  it('LA-V92-R04-T01 An ID inside a longer ID links only as the longer one, and domain pages link theirs too', proveLaV92R18T05);
 });

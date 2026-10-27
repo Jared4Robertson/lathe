@@ -87,7 +87,7 @@ function writeTrail(trail: string[]) {
   try { window.sessionStorage.setItem(TRAIL_KEY, JSON.stringify(trail)); } catch { /* storage unavailable */ }
 }
 
-/** How the graph draws the tree (LA-EXP-UC03-R16): Tree, parents beside their children; Nested, parents made of them as boxes; Voronoi, as polygon cells. */
+/** How the graph draws the tree (LA-V93-R21): Tree, parents beside their children; Nested, parents made of them as boxes; Voronoi, as polygon cells. */
 export type GraphLayout = 'tree' | 'nested' | 'voronoi';
 export const GRAPH_LAYOUTS: readonly { layout: GraphLayout; label: string; tip: string }[] = [
   { layout: 'tree', label: 'Tree', tip: 'Tree: each parent beside its children' },
@@ -97,7 +97,7 @@ export const GRAPH_LAYOUTS: readonly { layout: GraphLayout; label: string; tip: 
 
 /** What the person set on the graph: the view, depth, filters, trace mode, the Links switch and the minimap. */
 export interface GraphSettings {
-  /** Tree, Nested or Voronoi (LA-EXP-UC03-R16). Tree by default. */
+  /** Tree, Nested or Voronoi (LA-V93-R21). Tree by default. */
   layout: GraphLayout;
   depth: number;
   filters: Filters;
@@ -376,7 +376,7 @@ export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted,
   );
 }
 
-/** The trace preset's button, worded with the relations' labels (LA-EXP-V03-R07): "Only fulfills, invokes and happens in links". */
+/** The trace preset's button, worded with the relations' labels (LA-V92-R07): "Only fulfills, invokes and happens in links". */
 export function traceOnlyLabel(index: SpecIndex): string {
   const words = ['fulfills', 'invokes', 'happens_in'].map((r) => lowerLabel(graphRelationLabel(r, index)));
   return `Only ${words.slice(0, -1).join(', ')} and ${words.at(-1)} links`;
@@ -467,7 +467,7 @@ export function keyboardOrder(boxes: readonly Pick<Box, 'id' | 'x' | 'y'>[], tre
 }
 
 /**
- * The nodes hidden by the kind filters (LA-EXP-UC03-R05): a node of a hidden kind and everything
+ * The nodes hidden by the kind filters (LA-V93-R13): a node of a hidden kind and everything
  * beneath it. The focus and its ancestors are never hidden. The map keeps their places.
  */
 export function hiddenNodes(index: SpecIndex, map: PlacedMap, filters: Filters, focus: string): Set<string> {
@@ -487,12 +487,12 @@ export function hiddenNodes(index: SpecIndex, map: PlacedMap, filters: Filters, 
 
 
 /**
- * The minimap (LA-EXP-UC03-R15): a true overview of the one map, its upper levels as boxes (as many
+ * The minimap (LA-V93-R20): a true overview of the one map, its upper levels as boxes (as many
  * as stay readable, at most about 400), the focus solid, and the viewport outlined as the camera
  * moves.
  */
 function MapOverview({ map, focus, hidden, view }: { map: PlacedMap; focus: string; hidden: ReadonlySet<string>; view: string }) {
-  // A Voronoi cell is drawn as its outline (LA-EXP-DR64), every other node as its box.
+  // A Voronoi cell is drawn as its outline (LA-EXP-DS08), every other node as its box.
   const shapeOf = (n: PlacedMap['byLevel'][number][number], className: string) => ('polygon' in n
     ? <polygon key={n.id} className={className} points={(n as VoronoiNode).polygon.map((p) => p.join(',')).join(' ')} />
     : <rect key={n.id} className={className} x={n.x} y={n.y} width={n.w} height={n.h} />);
@@ -624,7 +624,7 @@ interface CanvasProps {
 function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap, onPeek, measure, fonts, theme }: CanvasProps & { measure: TextMeasure; fonts: GraphFonts; theme: number }) {
   const tracing = graph.mode === 'trace';
   const focus = graph.focus;
-  // The focus's own product's map (no other product's nodes are in it), in any layout (LA-EXP-UC03-R16): the Tree map (map.ts), the Nested map (nested.ts) or the Voronoi map (voronoi.ts), under one camera.
+  // The focus's own product's map (no other product's nodes are in it), in any layout (LA-V93-R21): the Tree map (map.ts), the Nested map (nested.ts) or the Voronoi map (voronoi.ts), under one camera.
   // The Voronoi map is laid out in a worker the first time; until it is ready the canvas is empty.
   const root = useMemo(() => mapRootOf(index, focus), [index, focus]);
   const [laidOut, setLaidOut] = useState<{ index: SpecIndex; root: string; key: string; map: VoronoiMap } | null>(null);
@@ -670,7 +670,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
   const moves = useRef({ moves: 0, glides: 0 });
   const setViewport = useCallback((v: Viewport) => { view.current = v; moves.current.moves++; requestPaint(); store.notify(); }, [requestPaint, store]);
 
-  // ---- What the keyboard's layer holds: the level of detail for the camera (LA-EXP-DR60) ----
+  // ---- What the keyboard's layer holds: the level of detail for the camera (LA-EXP-DS10) ----
   const [drawn, setDrawn] = useState<Drawn | null>(null);
   const shownKey = useRef('');
   const show = useCallback((d: Drawn) => {
@@ -851,7 +851,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
     return plate;
   }, [plates, tracePlaced, map, index, fileTitles]);
 
-  /** The boxes, bars and lines a camera shows, in draw order: in the Nested and Voronoi views a parent before its children, so each child lies over its parent (LA-EXP-DR63). */
+  /** The boxes, bars and lines a camera shows, in draw order: in the Nested and Voronoi views a parent before its children, so each child lies over its parent (LA-EXP-DS09). */
   const frameAt = useCallback((v: Viewport): { plates: Plate[]; bars: Bar[]; lines: Line[] } => {
     const ids = tracing ? graph.nodes.map((n) => n.id) : drawnAt(v).boxes.map((b) => b.id);
     const shown = ids.map(plateFor).filter((p): p is Plate => p !== null);
@@ -873,7 +873,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
       }
       return { plates: shown, bars, lines };
     }
-    // The tree's parent lines: level, from the parent's outline to the child's, at the child's middle. Nested and Voronoi have none: holding is the parent link (LA-EXP-DR62).
+    // The tree's parent lines: level, from the parent's outline to the child's, at the child's middle. Nested and Voronoi have none: holding is the parent link (LA-EXP-DS07).
     if (parentShown && map.view === 'tree') {
       for (const b of shown) {
         const up = map.nodes.get(b.id)?.parent;

@@ -1,7 +1,7 @@
 import { expect, type Page } from '@playwright/test';
 import type { Scene, SceneBox, SceneHost } from '../src/graph/GraphPage';
 
-// The graph as its canvas draws it (LA-EXP-C05), read through the canvas's test hook: every drawn
+// The graph as its canvas draws it (LA-UI92), read through the canvas's test hook: every drawn
 // box with its place on screen and in the map, its label lines and their font sizes, its badges,
 // and the camera. The boxes' keyboard layer (`.graph-box`) carries focus and names.
 

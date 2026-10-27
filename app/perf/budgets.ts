@@ -1,5 +1,5 @@
 // The app's performance budgets (LA-PAT-APP-UX-R11), judged on the production build in Chromium on
-// the dev machine. The engine's budgets are in lathe/perf/engine.ts (LA-PLT-DR02).
+// the dev machine. The engine's budgets are in lathe/perf/engine.ts (LA-PLT-UC01-R03).
 
 export const BUDGETS = {
   /** The JavaScript the wiki's first load fetches (index.html's scripts and module preloads), gzipped. */

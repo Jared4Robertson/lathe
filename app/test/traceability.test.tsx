@@ -15,7 +15,7 @@ import { indexOf } from './fixtures/load';
 // by what specifies its implementation (the steps fulfilling a UC requirement, the technical records
 // carrying out anything else), built when one of those names a file that exists, and proved by the
 // tests under it; gap callouts agree with coverage; a use case shows its UC requirements in a table;
-// a test shows what it proves and how it is run; other links are titled by their labels (LA-EXP-V03-R07).
+// a test shows what it proves and how it is run; other links are titled by their labels (LA-V92-R07).
 
 afterEach(() => cleanup());
 
@@ -34,7 +34,7 @@ const groupIds = (trace: HTMLElement, title: string) => {
 const gapKinds = (trace: HTMLElement) => [...trace.querySelectorAll('.trace-gap')].map((g) => g.getAttribute('data-gap'));
 
 describe('traceability', () => {
-  it('LA-TRC-T112 An obligation lists Designed by, then Proved by; a technical record that designs it is marked built or not', () => {
+  it('LA-V92-R56-T01 An obligation lists Designed by, then Proved by; a technical record that designs it is marked built or not', () => {
     // A UC requirement is designed by the steps that fulfill it.
     const index = indexOf(workspace());
     let trace = show(index, 'DM-SHOP-UC01-R01');
@@ -61,7 +61,7 @@ describe('traceability', () => {
     expect(within(trace).queryByText('Invariant test', { selector: 'small' })).toBeNull();
   });
 
-  it('LA-TRC-T113 Gap callouts say not designed, not built and not proved (or not automated yet), agree with coverage, link to their check, and a pattern rule has one line per domain', () => {
+  it('LA-V92-R57-T01 Gap callouts say not designed, not built and not proved (or not automated yet), agree with coverage, link to their check, and a pattern rule has one line per domain', () => {
     const index = indexOf(workspace());
     // Coverage reports DM-SHOP-UC01-R02 not-proved; its step invokes nothing, so nothing builds it.
     let trace = show(index, 'DM-SHOP-UC01-R02');
@@ -108,7 +108,7 @@ describe('traceability', () => {
     }
   });
 
-  it('LA-TRC-T114 A use case shows a UC requirement table (Designed, Built, Proved) under its groups, then its links', () => {
+  it('LA-V92-R58-T01 A use case shows a UC requirement table (Designed, Built, Proved) under its groups, then its links', () => {
     const trace = show(indexOf(patternWorkspace()), 'DM-SHOP-UC01');
     const table = within(trace).getByRole('table');
     expect(within(table).getAllByRole('columnheader').map((h) => h.textContent)).toEqual(['UC requirement', 'Designed', 'Built', 'Proved']);
@@ -124,7 +124,7 @@ describe('traceability', () => {
     expect(groupIds(trace, 'Follows')).toEqual(['DM-PAT-AUDIT']);
   });
 
-  it('LA-TRC-T115 A test shows Proves (its parent) and how it is run: its level, its state, and the file that runs it or why it is manual', () => {
+  it('LA-V92-R59-T01 A test shows Proves (its parent) and how it is run: its level, its state, and the file that runs it or why it is manual', () => {
     const index = indexOf(workspace());
     let trace = show(index, 'DM-SHOP-UC01-R01-T01');
     expect(groupTitles(trace)).toEqual(['Proves', 'Run by']);
@@ -148,7 +148,7 @@ describe('traceability', () => {
     expect(traceOf(model, model.byId.get('P-D-UC01-FL-T')!).runBy).toMatchObject({ level: 'manual', state: 'manual', file: null });
   });
 
-  it('LA-EXP-T135 No page shows a relation code as a heading or label: wiki, record facts, graph and Model view read the labels', async () => {
+  it('LA-V92-R07-T01 No page shows a relation code as a heading or label: wiki, record facts, graph and Model view read the labels', async () => {
     const w = modelWorkspace();
     const index = indexOf(w);
     const codes = new Set(Object.keys(w.schema.relations));
@@ -175,7 +175,7 @@ describe('traceability', () => {
     expect(linkLabel(index, { source: 'P-D-CMD01', relation: 'checks', target: 'P-D-SP01' }, 'target')).toBe('Checked by');
   }, 120_000);
 
-  it('LA-TRC-T117 A record\'s links out show under their forward label and its links in under their reverse label; a UC requirement\'s steps are not repeated beside Designed by', () => {
+  it('A record\'s links out show under their forward label and its links in under their reverse label; a UC requirement\'s steps are not repeated beside Designed by', () => {
     const index = indexOf(modelWorkspace());
     // A policy: what proves it, then the event it hears.
     let trace = show(index, 'P-D-PO02');

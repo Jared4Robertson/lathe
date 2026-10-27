@@ -1,4 +1,4 @@
-// LA-PLT-T133 and LA-PLT-T134 (LA-PAT-APP-CODE-R21): nothing outlives its purpose, and a mark that can't be explained can't ship.
+// LA-PAT-APP-CODE-R21: nothing outlives its purpose, and a mark that can't be explained can't ship.
 // Every mark the Graph or the Model view can draw (a box's shape or fill, a badge, a line style) is
 // listed in that view's key, with words that say what it means.
 import './graph/setup';
@@ -28,7 +28,7 @@ const meaning = (el: Element | null) => (el?.closest('li, tr')?.textContent ?? '
 afterEach(cleanup);
 
 describe('the Graph view key', () => {
-  it('LA-PLT-T133 Every box look, badge and line style the Graph view can draw is in its key, with what it means', () => {
+  it('Every box look, badge and line style the Graph view can draw is in its key, with what it means', () => {
     const { container } = render(<Legend />);
     const entry = (selector: string) => container.querySelector(selector);
     const missing: string[] = [];
@@ -59,12 +59,12 @@ describe('the Model view key', () => {
   const KINDS = ['aggregate', 'entity', 'command', 'event', 'policy', 'specification', 'read_model', 'query'];
   const EXPLAINED = new Set(['tone-other', 'is-highlight', 'is-dashed', 'is-context', ...KINDS.map((k) => `erd-${k}`)]);
 
-  it('LA-PLT-T134 Every mark a styled ERD box or line can carry is one the key test explains', () => {
+  it('Every mark a styled ERD box or line can carry is one the key test explains', () => {
     const styled = [...modifiers('erd-box'), ...modifiers('erd-line')].filter((c) => !INTERACTION.has(c));
     expect(styled.filter((c) => !EXPLAINED.has(c))).toEqual([]);
   });
 
-  it('LA-PLT-T134 Every box, badge and line an ERD draws is in its key, with what it means', () => {
+  it('Every box, badge and line an ERD draws is in its key, with what it means', () => {
     const index = indexOf(modelWorkspace());
     const scopes = index.workspace.records.filter((r) => ['domain', 'aggregate', 'entity', 'command', 'domain_event', 'policy', 'read_model'].includes(r.kind)).map((r) => r.id);
     const missing: string[] = [];

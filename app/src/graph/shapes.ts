@@ -1,6 +1,6 @@
 import type { SpecIndex } from '../specs/data';
 
-// A shape for each kind (LA-EXP-DR65): a secondary cue, after the label, that keeps a box's
+// A shape for each kind (LA-V93-R06): a secondary cue, after the label, that keeps a box's
 // rectangular footprint so boxes still stack. In the Tree view (and a trace) a box's outline is its
 // kind's shape; in the Nested and Voronoi views a box keeps its rectangle or cell and shows its
 // shape as a small mark before its kind and ID line (shape-icons.tsx).
@@ -250,7 +250,7 @@ export type Outline =
 /** The shared corner radius of a plain box, in map units. */
 export const BOX_RADIUS = 4;
 
-/** A shape's outline for a box at a box scale (LA-EXP-DR65). */
+/** A shape's outline for a box at a box scale (LA-V93-R06). */
 export function outlineOf(shape: Shape, r: Rect, scale: number): Outline {
   const points = polygonOf(shape, r.w, r.h, scale);
   if (points) return { kind: 'polygon', points: points.map(([fx, dx, fy, dy]) => [r.x + fx * r.w + dx, r.y + fy * r.h + dy]) };

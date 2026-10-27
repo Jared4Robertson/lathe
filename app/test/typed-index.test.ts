@@ -55,7 +55,7 @@ describe('the index from typed rows', () => {
     expect(partsOf(patterns, 'DM-PAT-AUDIT', 'pattern_setting').map((s) => s.name)).toEqual(['retention', 'who']);
   });
 
-  it('reads kinds, stages and relations from the schema, kinds in the schema\'s order', () => {
+  it('LA-AUT-UC08-R05-T01 reads kinds, stages and relations from the schema, kinds in the schema\'s order', () => {
     const ws = buildWorkspace(workspace());
     const positions = ws.kinds.map((k) => ws.schema.kinds[k.kind].position);
     expect(positions).toEqual([...positions].sort((a, b) => a! - b!));

@@ -13,13 +13,17 @@ const ok: WriteAnswer = { ok: true, tables: [], files: [], changes: [] };
 const toolbar = (id: string) => screen.getByRole('toolbar', { name: `Change ${id}` });
 
 describe('editing a record', () => {
-  it('opens a form of typed inputs, writes only what changed, and shows the record changed', async () => {
+  /** A UC requirement's page with its form open, whose save gives back the requirement changed. */
+  const requirementForm = async () => {
     const user = userEvent.setup();
     const changed = (): SpecData => setRow(workspace(), 'uc_requirement', 'DM-SHOP-UC01-R01', { statement: 'The basket MUST show the new item within a second.' });
     const { writes } = await openApp('/DM-SHOP-UC01-R01', { write: () => ({ answer: ok, data: changed() }) });
     await user.click(within(toolbar('DM-SHOP-UC01-R01')).getByRole('button', { name: 'Edit' }));
+    return { user, writes, form: screen.getByRole('form', { name: 'Edit DM-SHOP-UC01-R01' }) };
+  };
 
-    const form = screen.getByRole('form', { name: 'Edit DM-SHOP-UC01-R01' });
+  it('LA-EXP-DS12-T01 opens a form of typed inputs, generated from the schema, each labeled and described by its column', async () => {
+    const { form } = await requirementForm();
     // Every input has its label; the first takes focus; a required one says so; its column's meaning describes it.
     const title = within(form).getByRole('textbox', { name: /^title/ });
     expect(title).toHaveFocus();
@@ -28,10 +32,17 @@ describe('editing a record', () => {
     const statement = within(form).getByRole('textbox', { name: /^statement/ });
     expect(statement.tagName).toBe('TEXTAREA');
     expect(statement).toHaveAccessibleDescription(/MUST/);
-    // The parent is a choice among the use cases of this product only.
+  });
+
+  it('LA-V92-R30-T01 the parent is picked among the records it may name, in the same product', async () => {
+    const { form } = await requirementForm();
     const parent = within(form).getByRole('combobox', { name: /^Parent/ });
     expect(within(parent).getAllByRole('option').map((o) => o.getAttribute('value'))).toEqual(['DM-PAY-UC01', 'DM-SHOP-UC01']);
+  });
 
+  it('LA-V92-R29-T01 Edit opens the form in place; Save writes only what changed and shows the record changed', async () => {
+    const { user, writes, form } = await requirementForm();
+    const statement = within(form).getByRole('textbox', { name: /^statement/ });
     await user.clear(statement);
     await user.type(statement, 'The basket MUST show the new item within a second.');
     await user.click(within(form).getByRole('button', { name: 'Save' }));
@@ -89,7 +100,8 @@ describe('editing a record', () => {
     ]);
   });
 
-  it('shows the store\'s refusal inline, at the top and beside the part of the form it came from, and keeps the draft', async () => {
+  /** A save the store refuses, from a UC requirement's form with its group name typed. */
+  const refusedSave = async () => {
     const user = userEvent.setup();
     const refusal: WriteAnswer = { ok: false, error: 'refused', problems: [{ rule: 'check', table: 'uc_requirement', key: 'DM-SHOP-UC01-R01', command: 0, message: 'uc_requirement.title is empty' }] };
     const { writes } = await openApp('/DM-SHOP-UC01-R01', { write: () => ({ answer: refusal }) });
@@ -97,13 +109,19 @@ describe('editing a record', () => {
     const form = screen.getByRole('form', { name: 'Edit DM-SHOP-UC01-R01' });
     await user.type(within(form).getByRole('textbox', { name: /^group name/ }), 'Display');
     await user.click(within(form).getByRole('button', { name: 'Save' }));
+    return { form, writes, alert: await within(form).findByRole('alert') };
+  };
 
-    const alert = await within(form).findByRole('alert');
+  it('LA-V92-R33-T01 shows the store\'s refusal inline, at the top and beside the part of the form it came from', async () => {
+    const { form, alert } = await refusedSave();
     expect(alert).toHaveTextContent('The store refused the change. Nothing was saved.');
     expect(alert).toHaveTextContent('DM-SHOP-UC01-R01: uc_requirement.title is empty');
+    expect(within(form).getByRole('group', { name: 'Fields' })).toHaveTextContent('uc_requirement.title is empty');
+  });
+
+  it('LA-V92-R10-T01 a refused change keeps the form open with the draft, takes focus to the reasons, and changes nothing', async () => {
+    const { form, writes, alert } = await refusedSave();
     expect(alert).toHaveFocus();
-    const fields = within(form).getByRole('group', { name: 'Fields' });
-    expect(fields).toHaveTextContent('uc_requirement.title is empty');
     expect(writes).toHaveLength(1);
     // The form stays open with what was typed.
     expect(within(form).getByRole('textbox', { name: /^group name/ })).toHaveValue('Display');
@@ -145,7 +163,7 @@ describe('editing a record', () => {
 });
 
 describe('adding a record', () => {
-  it('adds a child from its parent\'s page with a suggested ID, and opens it', async () => {
+  it('LA-V92-R31-T01 adds a child from its parent\'s page with a suggested ID, and opens it', async () => {
     const user = userEvent.setup();
     const added = (): SpecData => addRows(workspace(), 'uc_requirement', { id: 'DM-SHOP-UC01-R03', title: 'The basket shows its total', use_case_id: 'DM-SHOP-UC01', statement: 'The basket MUST show its total.' });
     const { writes } = await openApp('/DM-SHOP-UC01', { write: () => ({ answer: ok, data: added() }) });
@@ -225,7 +243,7 @@ describe('adding a record', () => {
 });
 
 describe('removing a record', () => {
-  it('asks first, naming what still references the record, and shows the store\'s refusal inline', async () => {
+  it('LA-V92-R32-T01 asks first, naming what still references the record, and shows the store\'s refusal inline', async () => {
     const user = userEvent.setup();
     const refusal: WriteAnswer = {
       ok: false,

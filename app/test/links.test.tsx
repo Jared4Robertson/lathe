@@ -9,7 +9,7 @@ const PAGES = ['/', '/DM', '/NF', '/DM-SHOP', '/DM-PAY', '/DM/checks',
   ...recordIds(workspace()).map((id) => addressOf(id))];
 
 describe('record IDs are links', () => {
-  it('LA-EXP-T10 Every record ID a page shows is a real link to that record', async () => {
+  it('LA-V92-R01-T01 Every record ID a page shows is a real link to that record', async () => {
     const ids = new Set(recordIds(workspace()));
     let checked = 0;
     for (const page of PAGES) {

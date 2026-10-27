@@ -18,30 +18,34 @@ const announcer = () => screen.getByTestId('announcer');
 const node = (id: string) => boxElement(id);
 
 describe('keyboard shortcuts', () => {
-  it('LA-PLT-T19 Ctrl+P (or Ctrl+K) opens quick find, from anywhere, and the browser does not print', async () => {
+  it('LA-V61-R08-T01 Ctrl+P (or Ctrl+K) opens quick find, from anywhere', async () => {
     await openApp('/DM/checks');
     await screen.findByRole('heading', { level: 1, name: 'Checks' });
-    const event = new KeyboardEvent('keydown', { key: 'p', code: 'KeyP', ctrlKey: true, bubbles: true, cancelable: true });
-    act(() => { document.body.dispatchEvent(event); });
-    expect(event.defaultPrevented).toBe(true);
+    press(document.body, 'p', 'KeyP', { ctrlKey: true });
     await waitFor(() => expect(within(nav()).getByRole('combobox', { name: 'Quick find' })).toHaveFocus());
 
     // From a collapsed nav too: it opens.
     fireEvent.click(within(nav()).getByRole('button', { name: 'Collapse the navigation' }));
     press(document.body, 'k', 'KeyK', { ctrlKey: true });
     await waitFor(() => expect(within(nav()).getByRole('combobox', { name: 'Quick find' })).toHaveFocus());
-    // A key nobody handles is left alone.
+  });
+
+  it('LA-V61-R09-T02 Ctrl+P keeps the browser from printing, and a key nobody handles is left to the browser', async () => {
+    await openApp('/DM/checks');
+    await screen.findByRole('heading', { level: 1, name: 'Checks' });
+    const event = new KeyboardEvent('keydown', { key: 'p', code: 'KeyP', ctrlKey: true, bubbles: true, cancelable: true });
+    act(() => { document.body.dispatchEvent(event); });
+    expect(event.defaultPrevented).toBe(true);
     const other = new KeyboardEvent('keydown', { key: 'j', code: 'KeyJ', ctrlKey: true, bubbles: true, cancelable: true });
     document.body.dispatchEvent(other);
     expect(other.defaultPrevented).toBe(false);
   });
 
-  it('LA-PLT-T20 Ctrl+B hides and shows the nav, Ctrl+Alt+B the side bar, each announced', async () => {
+  it('LA-V61-R08-T02 Ctrl+B hides and shows the nav, Ctrl+Alt+B the side bar', async () => {
     await openApp('/P-D-UC01', { data: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     press(document.body, 'b', 'KeyB', { ctrlKey: true });
     expect(nav().className).toContain('is-rail');
-    await waitFor(() => expect(announcer()).toHaveTextContent('Navigation collapsed'));
     press(document.body, 'b', 'KeyB', { ctrlKey: true });
     expect(nav().className).not.toContain('is-rail');
 
@@ -49,24 +53,31 @@ describe('keyboard shortcuts', () => {
     expect(screen.queryByRole('complementary', { name: 'Side bar' })).toBeNull();
     press(document.body, '∫', 'KeyB', { ctrlKey: true, altKey: true });
     expect(screen.getByRole('complementary', { name: 'Side bar' })).toBeInTheDocument();
-    await waitFor(() => expect(announcer()).toHaveTextContent('Side bar shown'));
     press(document.body, '∫', 'KeyB', { ctrlKey: true, altKey: true });
     expect(screen.queryByRole('complementary', { name: 'Side bar' })).toBeNull();
+  });
+
+  it('LA-V61-R11-T01 Hiding and showing the nav and the side bar is announced', async () => {
+    await openApp('/P-D-UC01', { data: testWorkspace() });
+    await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
+    press(document.body, 'b', 'KeyB', { ctrlKey: true });
+    await waitFor(() => expect(announcer()).toHaveTextContent('Navigation collapsed'));
+    press(document.body, '∫', 'KeyB', { ctrlKey: true, altKey: true });
+    await waitFor(() => expect(announcer()).toHaveTextContent('Side bar shown'));
+    press(document.body, '∫', 'KeyB', { ctrlKey: true, altKey: true });
     await waitFor(() => expect(announcer()).toHaveTextContent('Side bar hidden'));
   });
 
-  it('LA-PLT-T21 Alt+W, Alt+G and Alt+M (or Ctrl+1, 2 and 4) toggle the views off a Mac, Ctrl+3 shows only the focused pane, and Ctrl+3 or Escape restores', async () => {
+  it('LA-V61-R08-T03 Alt+W, Alt+G and Alt+M (or Ctrl+1, 2 and 4) toggle the views off a Mac, Ctrl+3 shows only the focused pane, and Ctrl+3 or Escape restores', async () => {
     await openApp('/P-D-UC01', { data: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     press(document.body, '2', 'Digit2', { ctrlKey: true });
     expect(window.location.search).toBe('?view=wiki,graph');
-    await waitFor(() => expect(announcer()).toHaveTextContent('Graph view opened'));
     press(document.body, 'w', 'KeyW', { altKey: true });
     expect(window.location.search).toBe('?view=graph');
     // The last open view stays open.
     press(document.body, 'g', 'KeyG', { altKey: true });
     expect(window.location.search).toBe('?view=graph');
-    await waitFor(() => expect(announcer()).toHaveTextContent('stays open'));
     press(document.body, '1', 'Digit1', { ctrlKey: true });
     expect(window.location.search).toBe('?view=wiki,graph');
     // Ctrl+4 and Alt+M do nothing where Model is not offered; Ctrl+3 is not Split any more.
@@ -93,14 +104,31 @@ describe('keyboard shortcuts', () => {
     expect(document.querySelector('.is-fullscreen')).toBeNull();
   });
 
-  it('LA-PLT-T22 F8 and Shift+F8 move through the problems on the page and say each one', async () => {
+  it('LA-V61-R11-T02 A view switched on or off by a key is announced, and so is the last view staying open', async () => {
+    await openApp('/P-D-UC01', { data: testWorkspace() });
+    await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
+    press(document.body, '2', 'Digit2', { ctrlKey: true });
+    await waitFor(() => expect(announcer()).toHaveTextContent('Graph view opened'));
+    press(document.body, 'w', 'KeyW', { altKey: true });
+    press(document.body, 'g', 'KeyG', { altKey: true });
+    await waitFor(() => expect(announcer()).toHaveTextContent('stays open'));
+  });
+
+  it('LA-V61-R11-T03 F8 says which problem it moved to', async () => {
+    await openApp('/DM/checks');
+    await screen.findByRole('heading', { level: 1, name: 'Checks' });
+    const problems = [...document.querySelectorAll<HTMLElement>('#main li.problem')];
+    press(document.body, 'F8', 'F8');
+    await waitFor(() => expect(announcer()).toHaveTextContent(`Problem 1 of ${problems.length}`));
+  });
+
+  it('LA-V61-R08-T04 F8 and Shift+F8 move through the problems on the page', async () => {
     await openApp('/DM/checks');
     await screen.findByRole('heading', { level: 1, name: 'Checks' });
     const problems = [...document.querySelectorAll<HTMLElement>('#main li.problem')];
     expect(problems.length).toBeGreaterThan(1);
     press(document.body, 'F8', 'F8');
     expect(active()).toBe(problems[0]);
-    await waitFor(() => expect(announcer()).toHaveTextContent(`Problem 1 of ${problems.length}`));
     press(active(), 'F8', 'F8');
     expect(active()).toBe(problems[1]);
     press(active(), 'F8', 'F8', { shiftKey: true });
@@ -109,14 +137,20 @@ describe('keyboard shortcuts', () => {
     expect(active()).toBe(problems[problems.length - 1]);
   });
 
-  it('LA-PLT-T23 ? opens the shortcuts sheet and Ctrl+Shift+P the command palette, both searchable; the palette runs a command', async () => {
+  it('LA-V61-R10-T02 The shortcuts sheet says how to change the bindings in local storage', async () => {
+    await openApp('/P-D-UC01', { data: testWorkspace() });
+    await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
+    press(document.body, '?', 'Slash', { shiftKey: true });
+    expect(within(screen.getByRole('dialog', { name: 'Keyboard shortcuts' })).getByText(/lathe:keybindings/)).toBeInTheDocument();
+  });
+
+  it('LA-V64-R01-T01 ? opens the shortcuts sheet and Ctrl+Shift+P the command palette, both searchable; the palette runs a command', async () => {
     await openApp('/P-D-UC01', { data: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     press(document.body, '?', 'Slash', { shiftKey: true });
     const sheet = screen.getByRole('dialog', { name: 'Keyboard shortcuts' });
     for (const group of ['Navigate', 'View', 'Graph', 'Lists']) expect(within(sheet).getByRole('heading', { name: group })).toBeInTheDocument();
     expect(within(sheet).getByRole('rowheader', { name: 'Command palette' }).nextElementSibling).toHaveTextContent('Ctrl+Shift+P');
-    expect(within(sheet).getByText(/lathe:keybindings/)).toBeInTheDocument();
     const user = userEvent.setup();
     await user.type(within(sheet).getByRole('searchbox', { name: 'Search shortcuts' }), 'side bar');
     expect(within(sheet).queryByRole('heading', { name: 'Graph' })).toBeNull();
@@ -146,7 +180,7 @@ describe('keyboard shortcuts', () => {
     expect(within(screen.getByRole('dialog')).getAllByRole('option').map((o) => o.textContent)).toEqual(['Expand all rows on this page', 'Collapse all rows on this page']);
   });
 
-  it('LA-PLT-T24 g then c, f or h jumps to Checks, the format or home, with a hint while it waits', async () => {
+  it('LA-V61-R08-T05 g then c, f or h jumps to Checks, the format or home, with a hint while it waits', async () => {
     await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     press(document.body, 'g', 'KeyG');
@@ -160,7 +194,14 @@ describe('keyboard shortcuts', () => {
     press(document.body, 'g', 'KeyG');
     press(document.body, 'h', 'KeyH');
     expect(window.location.pathname).toBe('/');
-    // Not while typing.
+  });
+
+  it('LA-V61-R09-T03 g then c does nothing while typing', async () => {
+    await openApp('/DM');
+    await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
+    press(document.body, 'g', 'KeyG');
+    press(document.body, 'h', 'KeyH');
+    expect(window.location.pathname).toBe('/');
     const find = within(nav()).getByRole('combobox', { name: 'Quick find' });
     find.focus();
     press(find, 'g', 'KeyG');
@@ -168,7 +209,7 @@ describe('keyboard shortcuts', () => {
     expect(window.location.pathname).toBe('/');
   });
 
-  it('LA-PLT-T25 In the graph, + and - change the depth, t switches trace mode and . frames the focus again', async () => {
+  it('LA-V61-R08-T06 In the graph, + and - change the depth, t switches trace mode and . frames the focus again', async () => {
     await openApp('/P-D?view=graph', { data: testWorkspace() });
     await waitFor(() => expect(node('P-D/question')).not.toBeNull());
     press(document.body, '+', 'Equal', { shiftKey: true });
@@ -187,7 +228,7 @@ describe('keyboard shortcuts', () => {
     await waitFor(() => expect(node('file:test/lend.test.ts')).not.toBeNull());
   });
 
-  it('LA-PLT-T26 F12, Shift+F12, Ctrl+Shift+E, Ctrl+Shift+I, / and Ctrl+- reach links, incoming links, the nav, the side bar, search and Back', async () => {
+  it('LA-V61-R08-T07 F12, Shift+F12, Ctrl+Shift+E, Ctrl+Shift+I, / and Ctrl+- reach links, incoming links, the nav, the side bar, search and Back', async () => {
     // The side bar starts closed in the Wiki view (brief 64); this test reads it open.
     openSideBar('details', ['wiki', 'graph', 'model']);
     await openApp('/P-D-UC01', { data: testWorkspace() });

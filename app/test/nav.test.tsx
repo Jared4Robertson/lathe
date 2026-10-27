@@ -15,7 +15,7 @@ import { openApp } from './helpers';
 const nav = () => screen.getByRole('navigation', { name: 'Main' });
 
 describe('side navigation', () => {
-  it('LA-EXP-T44 The nav collapses to a rail of icons with tooltips, is remembered, and expands again', async () => {
+  it('LA-V90-R05-T01 The nav collapses to a rail of icons with tooltips, is remembered, and expands again', async () => {
     await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     fireEvent.click(within(nav()).getByRole('button', { name: 'Collapse the navigation' }));
@@ -42,7 +42,7 @@ describe('side navigation', () => {
     expect(within(nav().querySelector<HTMLElement>('.nav-space')!).getByRole('link', { name: 'Demo shop' })).toHaveAttribute('href', '/DM');
   });
 
-  it('LA-EXP-T45 On a narrow screen the nav is a full-screen sheet opened from a menu button, closed by Escape, a click outside or choosing a page', async () => {
+  it('LA-V90-R05-T02 On a narrow screen the nav is a full-screen sheet opened from a menu button, closed by Escape, a click outside or choosing a page', async () => {
     vi.stubGlobal('matchMedia', (query: string) => ({ matches: true, media: query, addEventListener: () => {}, removeEventListener: () => {} }));
     await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
@@ -65,7 +65,7 @@ describe('side navigation', () => {
     await waitFor(() => expect(screen.queryByRole('navigation', { name: 'Main' })).toBeNull());
   });
 
-  it('LA-EXP-T46 Sections fold on their own, the current place is marked and its section opens itself, counts are quiet badges, and the footer says where the specs come from', async () => {
+  it('LA-V90-R06-T01 Sections fold on their own, the current place is marked and its section opens itself, counts are quiet badges, and the footer says where the specs come from', async () => {
     await openApp('/DM-SHOP');
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     const head = (name: RegExp) => within(nav()).getByRole('button', { name });
@@ -100,7 +100,7 @@ describe('side navigation', () => {
     expect(foot).toHaveTextContent('Data from data/');
   });
 
-  it('LA-EXP-T47 Quick find jumps to any record, domain or product by ID or title, with arrow keys and Enter', async () => {
+  it('LA-V90-R07-T01 Quick find jumps to any record, domain or product by ID or title, with arrow keys and Enter', async () => {
     const index = indexOf(workspace());
     const items = findItems(index);
     expect(rankItems(items, 'dm-shop')[0].id).toBe('DM-SHOP');
@@ -123,7 +123,7 @@ describe('side navigation', () => {
     expect(find).toHaveValue('');
   });
 
-  it('LA-EXP-T62 The nav has no Graph item, open or as a rail; the graph stays one view, Ctrl+2 or a palette command away', async () => {
+  const proveLaV96R01T02 = async () => {
     await openApp('/DM-SHOP');
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     expect(within(nav()).queryByRole('link', { name: /Graph/ })).toBeNull();
@@ -142,9 +142,12 @@ describe('side navigation', () => {
     const user = userEvent.setup();
     await user.type(within(screen.getByRole('dialog', { name: 'Command palette' })).getByRole('combobox'), 'graph view');
     expect(within(screen.getByRole('dialog')).getAllByRole('option')[0]).toHaveTextContent('Graph view');
-  });
+  };
+  it('LA-V96-R01-T02 The nav has no Graph item, open or as a rail; the graph stays one view, Ctrl+2 or a palette command away', proveLaV96R01T02);
+  it('LA-V90-R01-T01 The nav has no Graph item and the graph stays a view away', proveLaV96R01T02);
+  it('LA-V90-R05-T03 The nav has no Graph item, open or as a rail', proveLaV96R01T02);
 
-  it('LA-EXP-T134 A selected row is the whole row: the current page\'s nav row carries the selection over the panel\'s width, chevron included, with no inset bar', async () => {
+  it('LA-V90-R03-T01 A selected row is the whole row: the current page\'s nav row carries the selection over the panel\'s width, chevron included, with no inset bar', async () => {
     const css = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
     // A domain's page: its row (fold chevron and link) is the one selected element.
     await openApp('/DM-SHOP');

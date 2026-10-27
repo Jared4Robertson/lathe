@@ -32,7 +32,7 @@ const rawLinks = (heading: 'Links out' | 'Links in') => {
 const rows = (table: Element) => [...table.querySelectorAll('tbody tr')].map((tr) => [...tr.querySelectorAll('th, td')].map((c) => c.textContent?.replace(/\s+/g, ' ').trim()));
 
 describe('record page', () => {
-  it('LA-EXP-T06 The record page shows the ID, kind, title, text fields as Markdown, parent and children', async () => {
+  it('LA-V92-R13-T01 The record page shows the ID, kind, title, text fields as Markdown, parent and children', async () => {
     openSideBar();
     await openApp('/DM-SHOP-UC01');
     expect(await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' })).toBeInTheDocument();
@@ -60,7 +60,7 @@ describe('record page', () => {
     expect((await screen.findByText('component tests')).tagName).toBe('STRONG');
   });
 
-  it('LA-EXP-T07 The record page shows links out and links in, grouped and named by their labels, each clickable', async () => {
+  it('LA-V92-R14-T01 The record page shows links out and links in, grouped and named by their labels, each clickable', async () => {
     openSideBar();
     await openApp('/DM-SHOP-UC01-R01');
     await screen.findByRole('heading', { level: 1, name: 'The basket shows the new item' });
@@ -87,7 +87,7 @@ describe('record page', () => {
     expect(within(side()).getByText('Nothing links to this record.')).toBeInTheDocument();
   });
 
-  it('LA-EXP-T08 A record body is sanitized before it is shown', async () => {
+  it('LA-V92-R15-T01 A record body is sanitized before it is shown', async () => {
     await openApp('/DM-SHOP-CMD01-H');
     await screen.findByRole('heading', { level: 1, name: 'Basket service' });
     const body = main().querySelector('.markdown') as HTMLElement;
@@ -103,7 +103,7 @@ describe('record page', () => {
     expect(html).toContain('<p>hi</p>');
   });
 
-  it('LA-EXP-T09 The record page lists every problem about the record', async () => {
+  it('LA-V92-R16-T01 The record page lists every problem about the record', async () => {
     await openApp('/DM-SHOP-UC01-R01-T01');
     await screen.findByRole('heading', { level: 1, name: 'Adding an item shows it' });
     const problems = within(section(/^Problems/)).getAllByRole('listitem');
@@ -116,7 +116,7 @@ describe('record page', () => {
     expect(within(section(/^Problems/)).getByText('No problems.')).toBeInTheDocument();
   });
 
-  it('LA-EXP-T06 A record\'s fields show their types: a basic type, a value object as a link, a reference to an aggregate with an arrow', async () => {
+  it('LA-V92-R13-T01 A record\'s fields show their types: a basic type, a value object as a link, a reference to an aggregate with an arrow', async () => {
     await openApp('/P-D-EN03', { data: modelWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Loan' });
     const table = section(/^Fields/).querySelector('table')!;
@@ -136,7 +136,7 @@ describe('record page', () => {
     expect(rows(member)[2]).toEqual(['Account', 'The member\'s account.', '→ P-E-A1Account', 'no', '']);
   });
 
-  it('LA-EXP-T06 A table shows its keys: the primary key, a unique key with the invariant it enforces and its condition, a foreign key with its target', async () => {
+  it('LA-V92-R13-T01 A table shows its keys: the primary key, a unique key with the invariant it enforces and its condition, a foreign key with its target', async () => {
     await openApp('/P-D-EN03-TB', { data: modelWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Loans table' });
     const keys = section(/^Keys/);
@@ -148,7 +148,7 @@ describe('record page', () => {
     ]);
   });
 
-  it('LA-EXP-T06 A command shows the other aggregates it also changes, each with its reason', async () => {
+  it('LA-V92-R13-T01 A command shows the other aggregates it also changes, each with its reason', async () => {
     await openApp('/P-D-CMD02', { data: modelWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Return thing' });
     const also = section(/^Also changes/);
@@ -157,7 +157,7 @@ describe('record page', () => {
     expect(also).toHaveTextContent(/recorded exception/);
   });
 
-  it('LA-EXP-T06 A record\'s kind shows in its stage\'s color, and a kind with no owner says why it has no parent', async () => {
+  it('LA-V92-R13-T01 A record\'s kind shows in its stage\'s color, and a kind with no owner says why it has no parent', async () => {
     openSideBar('details', ['graph']);
     await openApp('/DM-V01?view=graph');
     await screen.findByRole('heading', { level: 1, name: 'Basket page' });

@@ -2,12 +2,12 @@ import { expect, test } from '@playwright/test';
 import { expectStable, openPage, step } from './measure';
 import { DOMAIN, FOCUS, SHELL } from './scenarios';
 
-// LA-PLT-T74: folding a row and Expand all. The rows below a row that opens move down: that is
+// LA-V61-R30-T01: folding a row and Expand all. The rows below a row that opens move down: that is
 // the change itself. The row itself, the lists above it, the title and the frame must hold still,
 // and nothing may jump and then correct.
 
 test.describe('fold', () => {
-  test('LA-PLT-T74 open and close one row', async ({ page }) => {
+  test('LA-V61-R30-T01 open and close one row', async ({ page }) => {
     await openPage(page, DOMAIN);
     const toggle = page.locator('.pane-wiki .tree-toggle').first();
     await toggle.scrollIntoViewIfNeeded();
@@ -27,7 +27,7 @@ test.describe('fold', () => {
     expectStable(close);
   });
 
-  test('LA-PLT-T74 Expand all and Collapse all', async ({ page }) => {
+  test('LA-V61-R30-T01 Expand all and Collapse all', async ({ page }) => {
     await openPage(page, DOMAIN);
     const bulk = page.locator('.pane-wiki').getByRole('button', { name: /^(Expand|Collapse) all$/ }).first();
     await bulk.scrollIntoViewIfNeeded();

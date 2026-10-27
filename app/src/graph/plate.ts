@@ -10,7 +10,7 @@ import {
   marksOf, textMeasure, TITLE_FONT, type Face, type WrappedLabel,
 } from './text';
 
-// A box as the canvas draws it (LA-EXP-DR58, LA-EXP-DR65): its outline, its colors' roles and,
+// A box as the canvas draws it (LA-EXP-DS06, LA-V93-R06): its outline, its colors' roles and,
 // placed once in map units, its label's lines, its marks and its problem badges. Nothing here
 // depends on the camera: the canvas draws a plate's lines at their map size times the zoom
 // (paint.ts), so a label keeps its size in the map and is crisp at any zoom. A plate is made once
@@ -158,7 +158,7 @@ export type PlateSource =
   | { view: 'nested'; node: NestedNode }
   | { view: 'voronoi'; node: VoronoiNode };
 
-/** A box's plate: its outline, colors' roles, and its label placed in it (LA-EXP-DR58, LA-EXP-DR62, LA-EXP-DR64, LA-EXP-DR65). `fileTitle` names a file box. */
+/** A box's plate: its outline, colors' roles, and its label placed in it (LA-EXP-DS06, LA-EXP-DS07, LA-EXP-DS08, LA-V93-R06). `fileTitle` names a file box. */
 export function plateOf(index: SpecIndex, id: string, source: PlateSource, fileTitle?: string): Plate {
   const { x, y, w, h, text: t } = source.node;
   const record = index.byId.get(id);
@@ -176,8 +176,8 @@ export function plateOf(index: SpecIndex, id: string, source: PlateSource, fileT
   };
 
   if (source.view === 'tree' || source.view === 'trace') {
-    // Its kind's shape is its outline (LA-EXP-DR65); a polygon's edge is drawn inside it, so it has no border to pad past.
-    // Its border grows with its text (LA-EXP-DR58): its box scale is its text scale.
+    // Its kind's shape is its outline (LA-V93-R06); a polygon's edge is drawn inside it, so it has no border to pad past.
+    // Its border grows with its text (LA-EXP-DS06): its box scale is its text scale.
     const scale = t;
     const outline = outlineOf(shape, { x, y, w, h }, scale);
     const edged = outline.kind === 'polygon';
@@ -194,7 +194,7 @@ export function plateOf(index: SpecIndex, id: string, source: PlateSource, fileT
     return { ...base, scale, outline, edged, border, decoration: shape, label: { x: box.left, y: box.top, w: box.right - box.left, h: box.bottom - box.top }, lines: placed.lines, icons: placed.icons, badges };
   }
 
-  // Nested and Voronoi (LA-EXP-DR62, LA-EXP-DR64): its border grows with its text; its shape is a mark before its kind and ID line.
+  // Nested and Voronoi (LA-EXP-DS07, LA-EXP-DS08): its border grows with its text; its shape is a mark before its kind and ID line.
   const scale = Math.max(0.5, t);
   const border = BORDER * scale;
   const icons: Place['icons'] = [...(file ? [] : [{ draw: 'shape' as const, name: shape }]), ...(mark ? [{ draw: 'mark' as const, name: mark }] : [])];

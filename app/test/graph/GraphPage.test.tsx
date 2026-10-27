@@ -34,7 +34,7 @@ async function showGraph(path: string, workspace: SpecData = testWorkspace(), de
 }
 
 describe('graph page', () => {
-  it('LA-EXP-T18 Clicking a node re-centers the graph and changes the address, Back walks back, and the trail shows the path', async () => {
+  it.each(['LA-V93-R10-T03', 'LA-V93-R11-T02'])('%s Clicking a node re-centers the graph and changes the address, Back walks back, and the trail shows the path', async () => {
     await showGraph(`/${STEP}`);
     expect(title()).toBe('Librarian lends the thing');
     await waitFor(() => expect(node('P-V01')).not.toBeNull());
@@ -54,7 +54,7 @@ describe('graph page', () => {
     expect(trail.getAllByRole('listitem').map((li) => li.textContent)).toEqual([`Librarian lends the thing (${STEP})`]);
   });
 
-  it('LA-PLT-T101 The trail is a Tab stop only while it overflows', async () => {
+  it('LA-V61-R41-T03 The trail is a Tab stop only while it overflows', async () => {
     await showGraph(`/${STEP}`);
     const list = () => screen.getByRole('navigation', { name: 'Records visited' }).querySelector('ol')!;
     // It fits: its links are the stops, and the list itself is not one.
@@ -67,7 +67,7 @@ describe('graph page', () => {
     await waitFor(() => expect(list()).toHaveAttribute('tabindex', '0'));
   });
 
-  it('LA-EXP-T19 The side bar shows the kind, title, problems, coverage gaps and a link to the record page', async () => {
+  it('LA-V95-R02-T01 The side bar shows the kind, title, problems, coverage gaps and a link to the record page', async () => {
     await showGraph('/P-D-INV02');
     const side = sideBar();
     expect(side.getAllByText('Invariant').length).toBeGreaterThan(0);
@@ -79,7 +79,7 @@ describe('graph page', () => {
     expect(side.getByRole('link', { name: 'P-D-INV02' }).getAttribute('href')).toBe('/P-D-INV02');
   });
 
-  it('LA-EXP-T194 Depth shows only in the Tree layout: in Nested and Voronoi its slot stays but is neither shown nor reachable', async () => {
+  it('LA-V93-R21-T02 Depth shows only in the Tree layout: in Nested and Voronoi its slot stays but is neither shown nor reachable', async () => {
     await showGraph('/P-D/use-cases', testWorkspace(), 1, false);
     const group = () => document.querySelector<HTMLElement>('[aria-label="Depth"]')!;
     expect(screen.getByRole('group', { name: 'Depth' })).toBeVisible();
@@ -96,7 +96,7 @@ describe('graph page', () => {
     expect(screen.getByRole('group', { name: 'Depth' })).toBeInTheDocument();
   });
 
-  it('LA-EXP-T93 The graph opens at depth 1, framing the parent and the children; depth 2 and 3 frame more levels below, and Links brings in the links', async () => {
+  it('LA-V93-R10-T05 The graph opens at depth 1, framing the parent and the children; depth 2 and 3 frame more levels below, and Links brings in the links', async () => {
     await showGraph('/P-D/use-cases', testWorkspace(), 1, false);
     const depth = within(screen.getByRole('group', { name: 'Depth' }));
     expect(depth.getAllByRole('button').map((b) => b.textContent)).toEqual(['1', '2', '3']);
@@ -119,7 +119,7 @@ describe('graph page', () => {
     await waitFor(() => expect(scene().lines.some((l) => l.link)).toBe(true));
   });
 
-  it('LA-EXP-T20 Nodes show their stage and kind, records with errors or gaps are marked, edges carry their relation, and there is a legend', async () => {
+  it('LA-V93-R12-T01 Nodes show their stage and kind, records with errors or gaps are marked, edges carry their relation, and there is a legend', async () => {
     await showGraph(`/${STEP}`);
     await waitFor(() => expect(node('P-D-UC01-R01')).not.toBeNull());
     expect(drawnBox(STEP)!.stage).toBe('interaction-design');
@@ -150,7 +150,7 @@ describe('graph page', () => {
     expect(drawnBox('P-D')!.stage).toBe('domain-model');
   });
 
-  it('LA-EXP-T21 The plain arrows step through the tree while the graph has focus, Enter re-centers on the focused box, and Escape clears the filters', async () => {
+  it('LA-V93-R14-T01 The plain arrows step through the tree while the graph has focus, Enter re-centers on the focused box, and Escape clears the filters', async () => {
     await showGraph(`/${STEP}`);
     await waitFor(() => expect(node('P-V01')).not.toBeNull());
     const center = node(STEP)!;
@@ -191,7 +191,7 @@ describe('graph page', () => {
     expect((screen.getByRole('checkbox', { name: 'View' }) as HTMLInputElement).checked).toBe(true);
   });
 
-  it('LA-EXP-T22 Record, domain and product pages show the graph in their Graph view, and the nav has no Graph item', async () => {
+  it('LA-V96-R01-T01 Record, domain and product pages show the graph in their Graph view, and the nav has no Graph item', async () => {
     for (const path of ['/P-D-UC01-R01', '/P-D', '/P']) {
       // Each page starts with the wiki alone (no view remembered, no tab to take one from); the Graph toggle opens the graph beside it.
       window.localStorage.removeItem('lathe:view');
@@ -207,7 +207,7 @@ describe('graph page', () => {
     }
   });
 
-  it('LA-TRC-T88 Trace mode is offered for an obligation and shows only its chain and files, and not offered for a use case', async () => {
+  it('LA-V93-R51-T02 Trace mode is offered for an obligation and shows only its chain and files, and not offered for a use case', async () => {
     await showGraph('/P-D-UC01-R01');
     await waitFor(() => expect(node('P-D-UC01')).not.toBeNull());
     fireEvent.click(screen.getByRole('checkbox', { name: 'Trace mode' }));
@@ -225,7 +225,7 @@ describe('graph page', () => {
     expect(screen.queryByRole('checkbox', { name: 'Trace mode' })).toBeNull();
   });
 
-  it('LA-EXP-T26 The page draws the map in columns with a solid parent/child spine, and links between siblings never move anything', async () => {
+  it.each(['LA-EXP-DS05-T02', 'LA-V93-R15-T04'])('%s The page draws the map in columns with a solid parent/child spine, and links between siblings never move anything', async () => {
     await showGraph(`/${STEP}`);
     await waitFor(() => expect(node('P-V01')).not.toBeNull());
     const left = (id: string) => drawnBox(id)!.map.x;
@@ -249,7 +249,7 @@ describe('graph page', () => {
 describe('graph groups on the page', () => {
   const groupNode = (id: string) => drawnBox(id) ?? null;
 
-  it('LA-EXP-T33 A group shows its name and count, with no chevron; clicking the group, or Enter on it, goes to it', async () => {
+  it.each(['LA-V93-R23-T04', 'LA-V93-R24-T01'])('%s A group shows its name and count, with no chevron; clicking the group, or Enter on it, goes to it', async () => {
     await showGraph('/P-D', testWorkspace(), 1, false);
     await waitFor(() => expect(node('P-D/question')).not.toBeNull());
     expect(groupNode('P-D/question')!.group).toBe(true);
@@ -262,7 +262,7 @@ describe('graph groups on the page', () => {
     fireEvent.click(node('P-D/question')!);
     await waitFor(() => expect(window.location.pathname).toBe('/P-D/question'));
     await waitFor(() => expect(groupNode('P-D/question')!.focus).toBe(true));
-    // Its name and count: in its label (LA-EXP-DR60), and in its tooltip.
+    // Its name and count: in its label (LA-EXP-DS10), and in its tooltip.
     expect(groupNode('P-D/question')!.lines.map((l) => l.text)).toContain('Open questions (1)');
     expect(groupNode('P-D/question')!.lines.map((l) => l.text).join(' ')).toMatch(/^Open question folder · P-D/);
     expect(groupNode('P-D/question')!.tip).toBe('Open questions (1) (in P-D)');
@@ -277,7 +277,7 @@ describe('graph groups on the page', () => {
     await waitFor(() => expect(window.location.pathname).toBe('/P-D/test-plan'));
   });
 
-  it('LA-EXP-T35 A group has its own address showing its parent to the left and its members to the right, and Back works', async () => {
+  it('LA-V93-R25-T02 A group has its own address showing its parent to the left and its members to the right, and Back works', async () => {
     await showGraph('/P-D', testWorkspace(), 1, false);
     // The domain's side bar lists its stages, linking to their addresses.
     const link = sideBar().getByRole('link', { name: 'Use cases (1)' });
@@ -306,7 +306,7 @@ describe('graph groups on the page', () => {
     await screen.findByText(/There's no record or group/);
   });
 
-  it('LA-EXP-T36 Groups are drawn as folders and carry a mark when a member or anything beneath it has errors or gaps; the legend explains them', async () => {
+  it.each(['LA-V93-R23-T05', 'LA-V93-R26-T02'])('%s Groups are drawn as folders and carry a mark when a member or anything beneath it has errors or gaps; the legend explains them', async () => {
     await showGraph('/P-D', testWorkspace(), 1, false);
     await waitFor(() => expect(node('P-D/test-plan')).not.toBeNull());
     expect(groupNode('P-D/test-plan')!.badges.map((b) => [b.label, b.tone])).toContainEqual(['!', 'error']);
@@ -321,7 +321,7 @@ describe('graph groups on the page', () => {
     expect(marksOf(testIndex(), 'P-D/question')).toEqual({ errors: 0, warnings: 0, gaps: [] });
   });
 
-  it('LA-EXP-T37 The graph is a component that takes its focus and reports moves through onNavigate, without reading or changing the address', async () => {
+  it('LA-V96-R02-T01 The graph is a component that takes its focus and reports moves through onNavigate, without reading or changing the address', async () => {
     window.history.replaceState(null, '', '/somewhere-else');
     const moves: string[] = [];
     const index = testIndex();
@@ -355,7 +355,7 @@ describe('graph groups on the page', () => {
 });
 
 describe('the map on the page', () => {
-  it('LA-EXP-T168 Tall parents carry their height and text scale, every box its text scale as its box scale, and every parent line is level', async () => {
+  it.each(['LA-EXP-DS06-T03', 'LA-V93-R29-T02'])('%s Tall parents carry their height and text scale, every box its text scale as its box scale, and every parent line is level', async () => {
     await showGraph('/P-D', testWorkspace(), 2, false);
     await waitFor(() => expect(node('P-D/domain-model')).not.toBeNull());
     const height = (id: string) => drawnBox(id)!.map.h;

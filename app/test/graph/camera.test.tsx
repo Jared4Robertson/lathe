@@ -12,7 +12,7 @@ import { openApp, startAtDepth } from '../helpers';
 import { testIndex, testWorkspace } from './workspace';
 import { boxElement, drawnBox, graphHost, isCenter, scene } from './scene';
 
-// Focusing moves the camera, never the map (LA-EXP-DR59): the camera frames the focus and the
+// Focusing moves the camera, never the map (LA-EXP-DS09): the camera frames the focus and the
 // levels the depth shows below it, the parent kept at the left edge, in one smooth zoom and pan on
 // the shared motion; under reduced motion it moves at once.
 
@@ -30,7 +30,7 @@ const reducedMotion = () =>
 describe('graph camera', () => {
   const map = graphMap(testIndex(), 'P');
 
-  it('LA-EXP-T129 The camera frames the focus and the levels the depth shows below it, the parent at the left edge', () => {
+  it.each(['LA-EXP-DS09-T03', 'LA-EXP-DS10-T01'])('%s The camera frames the focus and the levels the depth shows below it, the parent at the left edge', () => {
     const w = 1000;
     const h = 800;
     const strip = Math.min(PARENT_STRIP_MAX, w * PARENT_STRIP);
@@ -72,7 +72,7 @@ describe('graph camera', () => {
     expect(map.height * all.zoom).toBeLessThanOrEqual(h);
   });
 
-  it('LA-EXP-T169 The glide is one smooth zoom and pan: from the view as it is to the framed one, zooming out only as far as the pan needs', () => {
+  it('LA-EXP-DS09-T08 The glide is one smooth zoom and pan: from the view as it is to the framed one, zooming out only as far as the pan needs', () => {
     const from = frameOnMap(map, 'P-D', 1, 1000, 800);
     const to = frameOnMap(map, 'P-D-UC01-R01', 1, 1000, 800);
     const path = zoomPath(from, to, 1000, 800);
@@ -106,7 +106,7 @@ describe('graph camera on the page', () => {
     await waitFor(() => expect(moves()).toBeGreaterThan(0));
   }
 
-  it('LA-EXP-T130 Focusing a child glides the camera on the shared motion, and no box moves or changes size', async () => {
+  it.each(['LA-EXP-DS05-T10', 'LA-EXP-DS09-T04', 'LA-V93-R16-T01'])('%s Focusing a child glides the camera on the shared motion, and no box moves or changes size', async () => {
     await open();
     // The first picture appears at once, framed.
     expect(glides()).toBe(0);
@@ -133,7 +133,7 @@ describe('graph camera on the page', () => {
     await waitFor(() => expect(camera()).toEqual(roundCamera(frameOnMap(graphMap(testIndex(), 'P'), 'P-D-UC01', 1, 1000, 800))), { timeout: 3000 });
   });
 
-  it('LA-EXP-T131 Under reduced motion focusing frames the new focus at once', async () => {
+  it.each(['LA-EXP-DS09-T05', 'LA-V93-R01-T01', 'LA-V93-R16-T02'])('%s Under reduced motion focusing frames the new focus at once', async () => {
     reducedMotion();
     await open();
     const first = moves();
@@ -147,7 +147,7 @@ describe('graph camera on the page', () => {
 
 describe('graph camera in the Nested layout', () => {
   const map = nestedMap(testIndex(), 'P');
-  it('LA-EXP-T188 The camera frames the focus box, whatever the depth, and draws each box in view and big enough with its label', () => {
+  it('LA-EXP-DS09-T11 The camera frames the focus box, whatever the depth, and draws each box in view and big enough with its label', () => {
     for (const focus of ['P', 'P-D', 'P-D/use-cases', 'P-D-UC01', 'P-D-UC01-R01']) {
       const n = map.nodes.get(focus)!;
       const v = frameNested(map, focus, 1000, 800);
@@ -176,7 +176,7 @@ describe('graph camera in the Nested layout', () => {
     }
   });
 
-  it('LA-EXP-T188 On the page, focusing a child in the Nested layout glides to its box, and Back glides back', async () => {
+  it('LA-EXP-DS09-T11 On the page, focusing a child in the Nested layout glides to its box, and Back glides back', async () => {
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({ x: 0, y: 0, top: 0, left: 0, width: 1000, height: 800, right: 1000, bottom: 800, toJSON: () => ({}) } as DOMRect);
     startAtDepth(1, 'nested');
     await openApp('/P-D-UC01?view=graph', { data: testWorkspace() });
@@ -193,7 +193,7 @@ describe('graph camera in the Nested layout', () => {
     await waitFor(() => expect(camera()).toEqual(roundCamera(frameNested(nestedMap(testIndex(), 'P'), 'P-D-UC01', 1000, 800))), { timeout: 3000 });
   });
 
-  it('LA-EXP-T193 On the page, the Voronoi layout draws each cell as its outline, the pointer taking the outline and not its box, and focusing a child glides to its cell', async () => {
+  it.each(['LA-EXP-DS09-T12', 'LA-V93-R22-T02'])('%s On the page, the Voronoi layout draws each cell as its outline, the pointer taking the outline and not its box, and focusing a child glides to its cell', async () => {
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({ x: 0, y: 0, top: 0, left: 0, width: 1000, height: 800, right: 1000, bottom: 800, toJSON: () => ({}) } as DOMRect);
     startAtDepth(1, 'voronoi');
     await openApp('/P-D-UC01?view=graph', { data: testWorkspace() });

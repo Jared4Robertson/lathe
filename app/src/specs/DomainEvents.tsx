@@ -4,10 +4,10 @@ import type { SpecIndex, SpecRecord } from './data';
 import { linkLabel } from './labels';
 import { ProblemBadge, RecordLink, Section, listTitle, recordText } from './parts';
 
-// An aggregate's domain events on its wiki page (LA-TRC-UC14-R06): one list titled by its kind,
-// "Domain events" (LA-EXP-DR36), each row a whole-row link to the event (LA-PAT-APP-UX-R05) that
+// An aggregate's domain events on its wiki page (LA-V92-R60): one list titled by its kind,
+// "Domain events" (LA-V92-R09), each row a whole-row link to the event (LA-PAT-APP-UX-R05) that
 // says which commands raise it and how many policies hear it, in the relations' own words from the
-// schema (LA-EXP-V03-R07), and whether it is published. The event's page shows its Fields table in
+// schema (LA-V92-R07), and whether it is published. The event's page shows its Fields table in
 // its body, and its Traceability says "Raised by" and "Heard by".
 
 function EventRow({ index, event }: { index: SpecIndex; event: SpecRecord }) {

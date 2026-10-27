@@ -11,7 +11,7 @@ import { openApp, startAtDepth } from '../helpers';
 import { testWorkspace } from './workspace';
 import { drawnBox, scene } from './scene';
 
-// A shape for each kind (LA-EXP-DR65), a domain's hexagon among them (LA-EXP-DR61): outlines that
+// A shape for each kind (LA-V93-R06), a domain's hexagon among them (LA-V93-R05): outlines that
 // grow with the box and keep its label clear, and tree lines that meet them.
 
 /** The shapes the brief's table gives each kind, and the marks that tell two kinds of one shape apart. */
@@ -31,7 +31,7 @@ const TABLE: Record<string, [Shape, string?]> = {
 };
 
 describe('a shape for each kind', () => {
-  it('LA-EXP-T174 A domain node has the hexagon class and its outline, and the tree lines meet that outline', async () => {
+  it.each(['LA-V93-R12-T02', 'LA-V93-R05-T01'])('%s A domain node has the hexagon class and its outline, and the tree lines meet that outline', async () => {
     // The chamfer grows with the box scale, at most a quarter of the width.
     const chamfer = (w: number, h: number, scale: number) => outlineInset({ x: 0, y: 0, w, h }, 'hexagon', scale, 0, 'left');
     expect(chamfer(NODE_WIDTH, NODE_HEIGHT, 1)).toBe(12);
@@ -39,7 +39,7 @@ describe('a shape for each kind', () => {
     expect(chamfer(40, 4000, 1)).toBe(10);
     expect(outlineOf('hexagon', { x: 0, y: 0, w: NODE_WIDTH, h: NODE_HEIGHT }, 1)).toEqual({ kind: 'polygon', points: [[12, 0], [NODE_WIDTH - 12, 0], [NODE_WIDTH, NODE_HEIGHT / 2], [NODE_WIDTH - 12, NODE_HEIGHT], [12, NODE_HEIGHT], [0, NODE_HEIGHT / 2]] });
     // A line out of a domain starts on its outline: at the point's tip in its middle, on the slanted side above and below.
-    // A box's outline grows with its text scale (LA-EXP-DR58).
+    // A box's outline grows with its text scale (LA-EXP-DS06).
     const domain = { x: 0, y: 0, w: 400, h: 1000, text: 2.1 };
     const c = chamfer(400, 1000, 2.1);
     expect(outlineInset(domain, 'hexagon', 2.1, 500, 'right')).toBe(0);
@@ -63,7 +63,7 @@ describe('a shape for each kind', () => {
     expect(boxes.filter((b) => b.shape === 'hexagon')).toHaveLength(boxes.filter((b) => b.kind === 'domain').length);
   });
 
-  it('LA-EXP-T201 Every kind is drawn in its own shape, a group as a folder and a kind a product adds as a plain box, each shape keeping its label and badge clear of its notches and corners at every size, and the key shows every shape and mark', () => {
+  it.each(['LA-V93-R12-T04', 'LA-V93-R06-T01'])('%s Every kind is drawn in its own shape, a group as a folder and a kind a product adds as a plain box, each shape keeping its label and badge clear of its notches and corners at every size, and the key shows every shape and mark', () => {
     // Every kind of the meta-model has the shape (and mark) the table gives it.
     for (const { kind } of indexOf(testWorkspace()).workspace.kinds) {
       expect(TABLE[kind], `${kind} is in the table`).toBeDefined();

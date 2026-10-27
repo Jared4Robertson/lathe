@@ -6,7 +6,7 @@ import { BUDGETS } from './budgets';
 import { heapMb, installProbes, quiet, record, work } from './measure';
 import { focusDrawn, reachableBoxes, sceneOf } from '../stability/scene';
 
-// LA-PLT-T90 to T605: the app's performance budgets (LA-PAT-APP-UX-R11), on the production build.
+// LA-PAT-APP-UX-R11-T01 and LA-V61-R37-T01 to T04: the app's performance budgets (LA-PAT-APP-UX-R11), on the production build.
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const RECORD = '/LA-PLT-UC05';
@@ -33,7 +33,7 @@ async function visibleNode(page: Page, n: number): Promise<{ id: string; at: { x
 }
 
 test.describe('performance', () => {
-  test('LA-PLT-T90 the first load ships 250 KB of JavaScript or less', async () => {
+  test('LA-PAT-APP-UX-R11-T01 the first load ships 250 KB of JavaScript or less', async () => {
     const { chunks } = JSON.parse(readFileSync(path.join(here, 'results/bundle.json'), 'utf8')) as { chunks: { file: string; gzip: number; initial: boolean }[] };
     const initial = chunks.filter((c) => c.initial);
     const kb = initial.reduce((n, c) => n + c.gzip, 0) / 1024;
@@ -41,7 +41,7 @@ test.describe('performance', () => {
     await record({ name: 'first-load JavaScript (gzip)', value: kb, unit: 'KB', budget: BUDGETS.firstLoadKb, detail: `${initial.map((c) => c.file).join(', ')}; largest: ${largest}` });
   });
 
-  test('LA-PLT-T91 a record page is interactive within 1.5 s', async ({ page }) => {
+  test('LA-V61-R37-T01 a record page is interactive within 1.5 s', async ({ page }) => {
     await installProbes(page);
     // A warm server: the server has loaded the data once, as it has for any page after the first.
     await page.goto(RECORD);
@@ -64,7 +64,7 @@ test.describe('performance', () => {
     await record({ name: 'record page interactive', value: times[1], unit: 'ms', budget: BUDGETS.interactiveMs, detail: `median of 3: ${times.map(Math.round).join(', ')} ms` });
   });
 
-  test('LA-PLT-T92 a view switch takes under 100 ms of main-thread work', async ({ page }) => {
+  test('LA-V61-R37-T02 a view switch takes under 100 ms of main-thread work', async ({ page }) => {
     await open(page, RECORD);
     // Warm: the graph's code and ELK load on the first switch; time a later one.
     await page.keyboard.press('Control+2');
@@ -84,8 +84,8 @@ test.describe('performance', () => {
     await record({ name: 'view switch: close the Graph pane', value: closeGraph.workMs, unit: 'ms', budget: BUDGETS.viewSwitchMs, detail: `longest frame ${Math.round(closeGraph.worstFrameMs)} ms` });
   });
 
-  // In the Tree, Nested and Voronoi layouts (LA-EXP-UC03-R16): the same budgets.
-  for (const layout of ['Tree', 'Nested', 'Voronoi'] as const) test(`LA-PLT-T93 a graph re-center at depth 3 takes under 500 ms of main-thread work, and glides at 60 Hz, in the ${layout} layout`, async ({ page }) => {
+  // In the Tree, Nested and Voronoi layouts (LA-V93-R21): the same budgets.
+  for (const layout of ['Tree', 'Nested', 'Voronoi'] as const) test(`LA-V61-R37-T03 a graph re-center at depth 3 takes under 500 ms of main-thread work, and glides at 60 Hz, in the ${layout} layout`, async ({ page }) => {
     const label = layout === 'Tree' ? 'graph re-center at depth 3' : `${layout} graph re-center at depth 3`;
     await open(page, `${RECORD}?view=graph`);
     await boxesDrawn(page);
@@ -93,7 +93,7 @@ test.describe('performance', () => {
       await page.locator('.graph-layout button', { hasText: layout }).click();
       await boxesDrawn(page, layout.toLowerCase());
     }
-    // The Nested camera frames the focus's box, so it has no depth (LA-EXP-DR63).
+    // The Nested camera frames the focus's box, so it has no depth (LA-EXP-DS09).
     if (layout === 'Tree') await page.locator('.graph-depth button', { hasText: '3' }).click();
     await quiet(page, 900);
     const works: number[] = [];
@@ -108,7 +108,7 @@ test.describe('performance', () => {
         await page.waitForURL((u) => u.pathname !== before);
         await focusDrawn(page, id);
       }, 900);
-      // Nested and Voronoi, a framed leaf fills the pane with its equal siblings cut off at the edges (LA-EXP-DR58): go back to the record
+      // Nested and Voronoi, a framed leaf fills the pane with its equal siblings cut off at the edges (LA-EXP-DS06): go back to the record
       // before the next hop, outside the measure.
       if (layout !== 'Tree' && hop < 3) { await page.goBack(); await page.waitForURL((u) => u.pathname === before); await quiet(page, 900); }
       works.push(r.workMs);
@@ -123,8 +123,8 @@ test.describe('performance', () => {
     await record({ name: `${label}: frames over 20 ms`, value: Math.max(...slow), unit: 'frames', budget: BUDGETS.recenterSlowFrames + 1, detail: `worst of 3: ${slow.join(', ')}; at most ${BUDGETS.recenterSlowFrames}` });
   });
 
-  // The canvas's free camera on Lathe's map (LA-EXP-DR59): a wheel zoom in and out about the pointer, and a drag pan, in each layout.
-  for (const layout of ['Tree', 'Nested', 'Voronoi'] as const) test(`LA-PLT-T137 zoom and pan on Lathe's map are measured, frame by frame, in the ${layout} layout`, async ({ page }) => {
+  // The canvas's free camera on Lathe's map (LA-EXP-DS09): a wheel zoom in and out about the pointer, and a drag pan, in each layout.
+  for (const layout of ['Tree', 'Nested', 'Voronoi'] as const) test(`zoom and pan on Lathe's map are measured, frame by frame, in the ${layout} layout`, async ({ page }) => {
     await open(page, '/LA?view=graph');
     await boxesDrawn(page);
     if (layout !== 'Tree') {
@@ -149,7 +149,7 @@ test.describe('performance', () => {
     await record({ name: `${layout} pan on LA: longest frame`, value: pan.worstFrameMs, unit: 'ms', budget: null, detail: `${Math.round(pan.workMs)} ms work over ${pan.frames} frames, ${pan.slowFrames} over 20 ms` });
   });
 
-  test('LA-PLT-T94 opening the Model pane takes under 100 ms of main-thread work', async ({ page }) => {
+  test('LA-V61-R37-T04 opening the Model pane takes under 100 ms of main-thread work', async ({ page }) => {
     await open(page, AGGREGATE);
     const first = await work(page, async () => {
       await page.keyboard.press('Control+4');
@@ -171,7 +171,7 @@ test.describe('performance', () => {
     await record({ name: 'Model view: domain ERD drawn after the page', value: laid, unit: 'ms', budget: null });
   });
 
-  test('LA-PLT-T95 memory after 50 navigations', async ({ page }) => {
+  test('memory after 50 navigations', async ({ page }) => {
     await open(page, `${RECORD}?view=wiki,graph`);
     await boxesDrawn(page);
     const start = await heapMb(page);

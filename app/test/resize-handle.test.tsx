@@ -8,7 +8,7 @@ import { openApp, openSideBar } from './helpers';
 const handle = (name: string) => screen.getByRole('separator', { name });
 
 describe('resizable panels', () => {
-  it('LA-PLT-T43 A handle resizes its panel with the arrow keys, Shift, Home and End, remembers it, and double-click resets it', async () => {
+  const proveLaV61R02T02 = async () => {
     // The side bar starts closed in the Wiki view (brief 64); this test reads it open.
     openSideBar('details', ['wiki', 'graph', 'model']);
     await openApp('/DM-SHOP-UC01');
@@ -33,9 +33,11 @@ describe('resizable panels', () => {
     expect(sideBar).toHaveAttribute('aria-valuenow', '356');
     fireEvent.keyDown(sideBar, { key: 'Home' });
     expect(sideBar).toHaveAttribute('aria-valuenow', '260');
-  });
+  };
+  it('LA-V61-R02-T02 A handle resizes its panel with the arrow keys, Shift, Home and End, remembers it, and double-click resets it', proveLaV61R02T02);
+  it('LA-V61-R03-T02 A handle resizes its panel with the arrow keys, Shift, Home and End, remembers it, and double-click resets it', proveLaV61R02T02);
 
-  it('LA-PLT-T44 Remembered sizes come back, out-of-range ones fall back to the default, and the narrow layout has no handles', async () => {
+  const proveLaV61R03T03 = async () => {
     // The side bar starts closed in the Wiki view (brief 64); this test reads it open.
     openSideBar('details', ['wiki', 'graph', 'model']);
     window.localStorage.setItem('lathe:nav-width', '400');
@@ -50,5 +52,7 @@ describe('resizable panels', () => {
     await openApp('/DM-SHOP-UC01');
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     expect(within(document.body).queryAllByRole('separator').filter((s) => s.hasAttribute('aria-valuenow'))).toEqual([]);
-  });
+  };
+  it('LA-V61-R03-T03 Remembered sizes come back, out-of-range ones fall back to the default, and the narrow layout has no handles', proveLaV61R03T03);
+  it('LA-V61-R04-T01 Remembered sizes come back, out-of-range ones fall back to the default, and the narrow layout has no handles', proveLaV61R03T03);
 });

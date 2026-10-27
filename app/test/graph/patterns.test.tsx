@@ -15,7 +15,7 @@ const index = () => indexOf(patternWorkspace());
 const edge = (e: { source: string; relation: string; target: string }) => `${e.source} ${e.relation} ${e.target}`;
 
 describe('patterns in the graph', () => {
-  it('LA-EXP-T58 A pattern\'s rules appear under it, one column to its right', () => {
+  it('LA-V93-R30-T01 A pattern\'s rules appear under it, one column to its right', () => {
     const ix = index();
     const n = neighborhood(ix, 'DM-PAT-AUDIT', 1);
     const edges = n.edges.map(edge);
@@ -30,7 +30,7 @@ describe('patterns in the graph', () => {
     for (const rule of ['DM-PAT-AUDIT-R01', 'DM-PAT-AUDIT-R02', 'DM-PAT-AUDIT-R03']) expect(column(rule)).toBe(column('DM-PAT-AUDIT') + 1);
   });
 
-  it('LA-EXP-T59 A domain\'s and a use case\'s follows links are drawn as cross-links: shown, styled as pattern links, each follower one column after the pattern', () => {
+  it('LA-V93-R30-T02 A domain\'s and a use case\'s follows links are drawn as cross-links: shown, styled as pattern links, each follower one column after the pattern', () => {
     const ix = index();
     const n = neighborhood(ix, 'DM-PAT-AUDIT', 1, undefined, { links: true });
     expect(n.edges.map(edge)).toEqual(expect.arrayContaining(['DM-SHOP follows DM-PAT-AUDIT', 'DM-SHOP-UC01 follows DM-PAT-AUDIT']));
@@ -43,7 +43,7 @@ describe('patterns in the graph', () => {
     expect(neighborhood(ix, 'DM-SHOP-UC01', 1, undefined, { links: true }).nodes.map((x) => x.id)).toContain('DM-PAT-AUDIT');
   });
 
-  it('LA-EXP-T60 Trace mode is offered for a pattern rule and shows the tests that prove it, in each domain', () => {
+  it('LA-V93-R30-T03 Trace mode is offered for a pattern rule and shows the tests that prove it, in each domain', () => {
     const ix = index();
     expect(canTrace(ix, 'DM-PAT-AUDIT-R01')).toBe(true);
     expect(canTrace(ix, 'DM-PAT-AUDIT')).toBe(false);
@@ -51,7 +51,7 @@ describe('patterns in the graph', () => {
     expect(ids).toEqual(expect.arrayContaining(['DM-PAT-AUDIT-R01-T01', 'file:test/audit.test.ts']));
   });
 
-  it('LA-EXP-T61 The graph view of a pattern draws its rules and the follows lines with their own style', async () => {
+  it('LA-V93-R30-T04 The graph view of a pattern draws its rules and the follows lines with their own style', async () => {
     startAtDepth(1);
     await openApp('/DM-PAT-AUDIT?view=graph', { data: patternWorkspace() });
     await waitFor(() => expect(boxElement('DM-PAT-AUDIT-R01')).not.toBeNull());

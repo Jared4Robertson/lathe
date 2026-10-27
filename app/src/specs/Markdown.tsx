@@ -83,7 +83,7 @@ export function linkMentions(html: string, links: ProseLinks): string {
 
 /** Renders Markdown to HTML and sanitizes it, since records are written by agents as well as people. */
 export function renderMarkdown(source: string, links?: ProseLinks): string {
-  // A code block scrolls sideways in its own box, so it takes focus for the arrow keys (LA-PLT-DR23).
+  // A code block scrolls sideways in its own box, so it takes focus for the arrow keys (LA-V61-R46).
   const html = DOMPurify.sanitize(marked.parse(source, { async: false })).replace(/<pre>/g, '<pre tabindex="0">');
   return links ? linkMentions(html, links) : html;
 }

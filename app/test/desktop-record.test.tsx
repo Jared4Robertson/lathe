@@ -41,7 +41,7 @@ afterEach(() => {
 const heading = () => screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
 
 describe('desktop record actions', () => {
-  it('LA-AUT-T120 A record\'s facts offer Reveal, Open in editor and Copy ID in the desktop app, and nothing in a browser', async () => {
+  it('LA-AUT-UC15-R01-T02 A record\'s facts offer Reveal, Open in editor and Copy ID in the desktop app, and nothing in a browser', async () => {
     // The side bar starts closed in the Wiki view (brief 64); this test reads it open.
     openSideBar('details', ['wiki', 'graph', 'model']);
     await openApp('/DM-SHOP-UC01');
@@ -61,7 +61,7 @@ describe('desktop record actions', () => {
     expect(bridge.copyRecordId).toHaveBeenCalledWith('DM-SHOP-UC01');
   });
 
-  it('LA-AUT-T120 A right-click on a record link or the page title opens the native record menu; elsewhere the page keeps its own', async () => {
+  it('LA-AUT-UC15-R01-T02 A right-click on a record link or the page title opens the native record menu; elsewhere the page keeps its own', async () => {
     const { bridge } = desktop();
     await openApp('/DM-SHOP-UC01');
     const title = await heading();
@@ -78,7 +78,7 @@ describe('desktop record actions', () => {
     expect(bridge.showRecordMenu).not.toHaveBeenCalled();
   });
 
-  it('LA-AUT-T120 The page sends its error count for the Dock badge, and the title bar drops the traffic lights\' room in full screen', async () => {
+  it('LA-V67-R01-T04 The page sends its error count for the Dock badge, and the title bar drops the traffic lights\' room in full screen', async () => {
     const { bridge, setFullScreen } = desktop();
     await openApp('/DM-SHOP-UC01');
     await heading();
@@ -97,7 +97,7 @@ describe('desktop record actions', () => {
     expect(bar).not.toHaveClass('is-full-screen');
   });
 
-  it('LA-AUT-T120 finds the record under a graph node, a link to a record, product or domain page, or the page title', () => {
+  it('LA-AUT-UC15-R01-T02 finds the record under a graph node, a link to a record, product or domain page, or the page title', () => {
     const known = (id: string) => ['DM', 'DM-SHOP', 'DM-SHOP-UC01'].includes(id);
     document.body.innerHTML = `
       <div class="react-flow__node" data-id="DM-SHOP-UC01"><span id="in-node">x</span></div>
