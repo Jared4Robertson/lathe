@@ -28,31 +28,46 @@ const files = (root: string) =>
 const mtimes = (root: string) => Object.fromEntries(readdirSync(path.join(root, 'data')).map((f) => [f, statSync(path.join(root, 'data', f)).mtimeMs]));
 
 describe('add', () => {
-  it('adds a record, registers its ID and rewrites only its table file', async () => {
+  it('adds a record, registers its ID and supertypes, and rewrites only its table file', async () => {
     const { store, root } = await fresh();
     const before = mtimes(root);
-    const result = await store.add('requirement', { id: 'TL-LEND-UC01-R02', title: 'Member is known', use_case_id: 'TL-LEND-UC01', statement: 'The library MUST refuse an unknown member.' });
-    expect(result).toEqual({ tables: ['requirement'], files: ['requirement.jsonl'] });
-    expect(store.record('TL-LEND-UC01-R02')?.kind).toBe('requirement');
-    expect(await store.query("SELECT kind FROM record_id WHERE id = 'TL-LEND-UC01-R02'")).toEqual([{ kind: 'requirement' }]);
-    expect(await store.query("SELECT kind FROM obligation WHERE id = 'TL-LEND-UC01-R02'")).toEqual([{ kind: 'requirement' }]);
+    const result = await store.add('uc_requirement', { id: 'TL-LEND-UC01-R02', title: 'Member is known', use_case_id: 'TL-LEND-UC01', statement: 'The library MUST refuse an unknown member.' });
+    expect(result).toEqual({ tables: ['uc_requirement'], files: ['uc_requirement.jsonl'] });
+    expect(store.record('TL-LEND-UC01-R02')?.kind).toBe('uc_requirement');
+    expect(await store.query("SELECT kind FROM record_id WHERE id = 'TL-LEND-UC01-R02'")).toEqual([{ kind: 'uc_requirement' }]);
+    expect(await store.query("SELECT kind FROM obligation WHERE id = 'TL-LEND-UC01-R02'")).toEqual([{ kind: 'uc_requirement' }]);
     const after = mtimes(root);
-    expect(Object.keys(after).filter((f) => after[f] !== before[f])).toEqual(['requirement.jsonl']);
-    expect(readFileSync(path.join(root, 'data', 'requirement.jsonl'), 'utf8').split('\n')[1]).toBe(
+    expect(Object.keys(after).filter((f) => after[f] !== before[f])).toEqual(['uc_requirement.jsonl']);
+    expect(readFileSync(path.join(root, 'data', 'uc_requirement.jsonl'), 'utf8').split('\n')[1]).toBe(
       '{"id":"TL-LEND-UC01-R02","title":"Member is known","use_case_id":"TL-LEND-UC01","statement":"The library MUST refuse an unknown member."}',
     );
     await store.close();
   });
 
+  it('adds a record of each new kind: one with no owner, one under either of two parents, and a test', async () => {
+    const { store } = await fresh();
+    await store.apply([
+      { op: 'add', table: 'specification', row: { id: 'TL-LEND-SP02', title: 'Member in good standing', statement: 'A member owes nothing.' } },
+      { op: 'link', relation: 'reads', source: 'TL-LEND-SP02', target: 'TL-LEND-A1' },
+      { op: 'add', table: 'endpoint', row: { id: 'TL-LEND-EP02', title: 'Free tools', query_id: 'TL-LEND-QRY01', method: 'GET', route: '/tools/free' } },
+      { op: 'add', table: 'specification_test', row: { id: 'TL-LEND-SP02-T', title: 'Good standing', specification_id: 'TL-LEND-SP02', level: 'unit', state: 'manual', manual_reason: 'Not yet coded.' } },
+    ]);
+    expect(await store.query("SELECT * FROM record_scope WHERE id IN ('TL-LEND-SP02', 'TL-LEND-EP02', 'TL-LEND-SP02-T') ORDER BY id")).toEqual([
+      { id: 'TL-LEND-EP02', product_id: 'TL', domain_id: 'TL-LEND', aggregate_id: null },
+      { id: 'TL-LEND-SP02', product_id: 'TL', domain_id: 'TL-LEND', aggregate_id: null },
+      { id: 'TL-LEND-SP02-T', product_id: 'TL', domain_id: 'TL-LEND', aggregate_id: null },
+    ]);
+    expect(await store.query("SELECT parent_id FROM record_parent WHERE id = 'TL-LEND-EP02'")).toEqual([{ parent_id: 'TL-LEND-QRY01' }]);
+    await store.close();
+  });
+
   it('refuses a row whose key exists, a bad parent, and a link table', async () => {
     const { store } = await fresh();
-    expect(await refused(store, [{ op: 'add', table: 'view', row: { id: 'TL-LEND-V01', title: 'Again', domain_id: 'TL-LEND' } }])).toEqual([
-      expect.objectContaining({ rule: 'primary-key', command: 0 }),
+    expect(await refused(store, [{ op: 'add', table: 'view', row: { id: 'TL-V01', title: 'Again' } }])).toEqual([expect.objectContaining({ rule: 'primary-key', command: 0 })]);
+    expect(await refused(store, [{ op: 'add', table: 'view_requirement', row: { id: 'TL-V09-R01', title: 'Lost', view_id: 'TL-V09', statement: 'x' } }])).toEqual([
+      expect.objectContaining({ rule: 'foreign-key', command: 0, message: 'view_requirement TL-V09-R01: view_id "TL-V09" names no view' }),
     ]);
-    expect(await refused(store, [{ op: 'add', table: 'view', row: { id: 'TL-LEND-V02', title: 'Desk', domain_id: 'TL-NOPE' } }])).toEqual([
-      expect.objectContaining({ rule: 'foreign-key', command: 0, message: 'view TL-LEND-V02: domain_id "TL-NOPE" names no domain' }),
-    ]);
-    expect(await refused(store, [{ op: 'add', table: 'proves', row: { source_id: 'TL-LEND-T01', target_id: 'TL-LEND-DR01' } }])).toEqual([
+    expect(await refused(store, [{ op: 'add', table: 'reads', row: { source_id: 'TL-LEND-SP01', target_id: 'TL-LEND-A1' } }])).toEqual([
       expect.objectContaining({ rule: 'command', message: expect.stringContaining('use link') }),
     ]);
     await store.close();
@@ -62,60 +77,62 @@ describe('add', () => {
 describe('set', () => {
   it('changes and clears columns', async () => {
     const { store } = await fresh();
-    await store.set('view', 'TL-LEND-V01', { title: 'Tool catalog', route: null, description: 'Every tool.' });
-    expect(store.record('TL-LEND-V01')!.row).toEqual({ id: 'TL-LEND-V01', title: 'Tool catalog', domain_id: 'TL-LEND', description: 'Every tool.' });
+    await store.set('view', 'TL-V01', { title: 'Tool catalog', route: null, description: 'Every tool.' });
+    expect(store.record('TL-V01')!.row).toEqual({ id: 'TL-V01', title: 'Tool catalog', description: 'Every tool.' });
     await store.set('entity_field', { entity_id: 'TL-LEND-EN01', position: 1 }, { example: '32' });
     expect(store.rows('entity_field')[0].example).toBe('32');
+    await store.set('table_key', { table_id: 'TL-LEND-EN01-TB', position: 2 }, { condition: null });
+    expect(store.rows('table_key')[1].condition).toBeUndefined();
     await store.close();
   });
 
   it('refuses a key column, a parent column, an unknown column and a bad value', async () => {
     const { store } = await fresh();
-    expect(await refused(store, [{ op: 'set', table: 'view', key: 'TL-LEND-V01', changes: { id: 'TL-LEND-V09' } }])).toEqual([expect.objectContaining({ rule: 'command' })]);
-    expect(await refused(store, [{ op: 'set', table: 'view', key: 'TL-LEND-V01', changes: { domain_id: 'TL' } }])).toEqual([
+    expect(await refused(store, [{ op: 'set', table: 'view', key: 'TL-V01', changes: { id: 'TL-V09' } }])).toEqual([expect.objectContaining({ rule: 'command' })]);
+    expect(await refused(store, [{ op: 'set', table: 'endpoint', key: 'TL-LEND-EP01', changes: { query_id: 'TL-LEND-QRY01' } }])).toEqual([
       expect.objectContaining({ rule: 'command', message: expect.stringContaining('use move') }),
     ]);
-    expect(await refused(store, [{ op: 'set', table: 'view', key: 'TL-LEND-V01', changes: { colour: 'red' } }])).toEqual([expect.objectContaining({ rule: 'column' })]);
-    expect(await refused(store, [{ op: 'set', table: 'test', key: 'TL-LEND-T01', changes: { state: 'done' } }])).toEqual([expect.objectContaining({ rule: 'column' })]);
-    expect(await refused(store, [{ op: 'set', table: 'test', key: 'TL-LEND-T01', changes: { title: null } }])).toEqual([expect.objectContaining({ rule: 'required' })]);
-    expect(await refused(store, [{ op: 'set', table: 'view', key: 'TL-LEND-V77', changes: { title: 'x' } }])).toEqual([expect.objectContaining({ rule: 'missing' })]);
+    expect(await refused(store, [{ op: 'set', table: 'view', key: 'TL-V01', changes: { colour: 'red' } }])).toEqual([expect.objectContaining({ rule: 'column' })]);
+    expect(await refused(store, [{ op: 'set', table: 'invariant_test', key: 'TL-LEND-INV01-T', changes: { state: 'done' } }])).toEqual([expect.objectContaining({ rule: 'column' })]);
+    expect(await refused(store, [{ op: 'set', table: 'invariant_test', key: 'TL-LEND-INV01-T', changes: { title: null } }])).toEqual([expect.objectContaining({ rule: 'required' })]);
+    expect(await refused(store, [{ op: 'set', table: 'view', key: 'TL-V77', changes: { title: 'x' } }])).toEqual([expect.objectContaining({ rule: 'missing' })]);
     await store.close();
   });
 });
 
 describe('move', () => {
-  it('moves a record between parents of different kinds, setting and clearing its parent columns', async () => {
+  it('moves a record between its two parent kinds, setting one parent column and clearing the other', async () => {
     const { store } = await fresh();
-    await store.move('TL-LEND-UC01', 'TL-LEND');
-    expect(store.record('TL-LEND-UC01')!.row.capability_id).toBeUndefined();
-    await store.move('TL-LEND-DR02', 'TL-LEND-EN02');
-    expect(store.record('TL-LEND-DR02')!.row).toMatchObject({ domain_id: 'TL-LEND', aggregate_id: 'TL-LEND-A1', entity_id: 'TL-LEND-EN02' });
-    await store.move('TL-LEND-E01-R01', 'TL-LEND-API01');
-    expect(store.record('TL-LEND-E01-R01')!.row).toMatchObject({ domain_id: 'TL-LEND', api_id: 'TL-LEND-API01' });
-    expect(store.record('TL-LEND-E01-R01')!.row.endpoint_id).toBeUndefined();
+    await store.move('TL-LEND-EP01', 'TL-LEND-QRY01');
+    expect(store.record('TL-LEND-EP01')!.row).toMatchObject({ query_id: 'TL-LEND-QRY01' });
+    expect(store.record('TL-LEND-EP01')!.row.command_id).toBeUndefined();
+    await store.move('TL-LEND-Q01', 'TL');
+    expect(store.record('TL-LEND-Q01')!.row).toMatchObject({ product_id: 'TL' });
+    expect(store.record('TL-LEND-Q01')!.row.domain_id).toBeUndefined();
     await store.close();
   });
 
-  it('carries what sits inside along to another domain', async () => {
+  it('moves a record to another parent of its kind, keeping what sits inside it', async () => {
     const { store } = await fresh();
-    await store.add('domain', { id: 'TL-CAT', title: 'Catalog', product_id: 'TL' });
-    // The capability holds a use case, a flow and a test, whose own domain_id must follow it.
-    const result = await store.apply([
-      { op: 'unlink', relation: 'involves', source: 'TL-LEND-DR02', target: 'TL-LEND-A1' },
-      { op: 'move', id: 'TL-LEND-CAP01', parent: 'TL-CAT' },
-    ]);
-    expect(result.tables).toEqual(['capability', 'flow', 'involves', 'test', 'use_case']);
-    for (const id of ['TL-LEND-CAP01', 'TL-LEND-UC01', 'TL-LEND-F01', 'TL-LEND-T01']) expect(store.record(id)!.row.domain_id).toBe('TL-CAT');
-    expect(await store.query("SELECT domain_id FROM record_scope WHERE id = 'TL-LEND-UC01-R01'")).toEqual([{ domain_id: 'TL-CAT' }]);
+    await store.add('capability', { id: 'TL-LEND-CAP02', title: 'Returns', domain_id: 'TL-LEND', position: 2 });
+    const result = await store.move('TL-LEND-UC01', 'TL-LEND-CAP02');
+    expect(result.tables).toEqual(['use_case']);
+    expect(await store.query("SELECT parent_id FROM record_parent WHERE id = 'TL-LEND-UC01-FL'")).toEqual([{ parent_id: 'TL-LEND-UC01' }]);
     await store.close();
   });
 
-  it('refuses a parent its kind cannot sit under, and a move inside itself', async () => {
+  it("refuses a parent its kind cannot sit under, a record with no owner, and a move that leaves an ID outside its domain", async () => {
     const { store } = await fresh();
     expect(await refused(store, [{ op: 'move', id: 'TL-LEND-UC01', parent: 'TL-LEND-A1' }])).toEqual([
-      expect.objectContaining({ rule: 'parent', message: 'a use_case sits under capability or domain, not under aggregate TL-LEND-A1' }),
+      expect.objectContaining({ rule: 'parent', message: 'a use_case sits under capability, not under aggregate TL-LEND-A1' }),
     ]);
-    expect(await refused(store, [{ op: 'move', id: 'TL-LEND-LAY02', parent: 'TL-LEND-LAY01' }])).toEqual([expect.objectContaining({ rule: 'command' })]);
+    expect(await refused(store, [{ op: 'move', id: 'TL-V01', parent: 'TL' }])).toEqual([expect.objectContaining({ rule: 'command', message: 'a view has no parent, so it cannot move' })]);
+    const problems = await refused(store, [
+      { op: 'add', table: 'domain', row: { id: 'TL-CAT', title: 'Catalog', product_id: 'TL', subdomain_type: 'generic' } },
+      { op: 'add', table: 'capability', row: { id: 'TL-CAT-CAP01', title: 'Listing', domain_id: 'TL-CAT', position: 1 } },
+      { op: 'move', id: 'TL-LEND-UC01', parent: 'TL-CAT-CAP01' },
+    ]);
+    expect(problems).toEqual([expect.objectContaining({ rule: 'id-prefix', command: 2, key: 'TL-LEND-UC01', message: 'TL-LEND-UC01 is a Use case in domain TL-CAT, so its ID starts with TL-CAT-' })]);
     await store.close();
   });
 });
@@ -123,26 +140,31 @@ describe('move', () => {
 describe('link and unlink', () => {
   it('links and unlinks, keeping the file sorted by its key columns', async () => {
     const { store, root } = await fresh();
-    await store.link('proves', 'TL-LEND-T01', 'TL-LEND-DR01');
-    expect(readFileSync(path.join(root, 'data', 'proves.jsonl'), 'utf8')).toBe(
-      ['TL-LEND-DR01', 'TL-LEND-INV01', 'TL-LEND-UC01-R01'].map((t) => `{"source_id":"TL-LEND-T01","target_id":"${t}"}\n`).join(''),
+    await store.link('calls', 'TL-LEND-QRY01', 'TL-LEND-DS01');
+    expect(readFileSync(path.join(root, 'data', 'calls.jsonl'), 'utf8')).toBe(
+      ['TL-LEND-CMD01', 'TL-LEND-QRY01'].map((s) => `{"source_id":"${s}","target_id":"TL-LEND-DS01"}\n`).join(''),
     );
-    await store.unlink('proves', 'TL-LEND-T01', 'TL-LEND-DR01');
-    expect(store.rows('proves')).toHaveLength(2);
-    expect(await refused(store, [{ op: 'unlink', relation: 'proves', source: 'TL-LEND-T01', target: 'TL-LEND-DR01' }])).toEqual([expect.objectContaining({ rule: 'missing' })]);
+    await store.unlink('calls', 'TL-LEND-QRY01', 'TL-LEND-DS01');
+    expect(store.rows('calls')).toHaveLength(1);
+    expect(await refused(store, [{ op: 'unlink', relation: 'calls', source: 'TL-LEND-QRY01', target: 'TL-LEND-DS01' }])).toEqual([expect.objectContaining({ rule: 'missing' })]);
     await store.close();
   });
 
-  it('refuses a link its supertype ends allow but its relation does not', async () => {
+  it('refuses a link its ends allow but its relation does not, a wrong kind at an end, and an unknown relation', async () => {
     const { store } = await fresh();
-    // A view is a fulfills source and a domain rule an obligation, but a view carries out only requirements.
-    expect(await refused(store, [{ op: 'link', relation: 'fulfills', source: 'TL-LEND-V01', target: 'TL-LEND-DR01' }])).toEqual([
-      expect.objectContaining({ rule: 'relation-pair', command: 0, message: expect.stringContaining('TL-LEND-V01 (a view) cannot fulfills TL-LEND-DR01 (a domain_rule)') }),
+    // A second pair widens documents to a link table whose target is any record, so its pairs are what hold.
+    await store.add('product_relation', { name: 'documents', source_kind: 'cli_command', target_kind: 'integration', product_id: 'TL', forward_label: 'Documents', reverse_label: 'Documented by', description: 'The CLI command is documented with the integration.' });
+    expect(store.schema.relations.documents.targetTable).toBe('record_id');
+    expect(await refused(store, [{ op: 'link', relation: 'documents', source: 'TL-LEND-CMD01-CLI', target: 'TL-LEND-UC01-R01' }])).toEqual([
+      expect.objectContaining({ rule: 'relation-pair', command: 0, message: expect.stringContaining('TL-LEND-CMD01-CLI (a cli_command) cannot documents TL-LEND-UC01-R01 (a uc_requirement)') }),
     ]);
-    expect(await refused(store, [{ op: 'link', relation: 'proves', source: 'TL-LEND-T01', target: 'TL-LEND-UC01' }])).toEqual([
-      expect.objectContaining({ rule: 'foreign-key', message: expect.stringContaining('names no obligation') }),
+    expect(await refused(store, [{ op: 'link', relation: 'calls', source: 'TL-LEND-QRY01', target: 'TL-LEND-UC01' }])).toEqual([
+      expect.objectContaining({ rule: 'foreign-key', message: expect.stringContaining('names no domain_service') }),
     ]);
-    expect(await refused(store, [{ op: 'link', relation: 'teaches', source: 'TL-LEND-T01', target: 'TL-LEND-UC01' }])).toEqual([expect.objectContaining({ rule: 'unknown-relation' })]);
+    expect(await refused(store, [{ op: 'link', relation: 'calls', source: 'TL-LEND-UC01', target: 'TL-LEND-DS01' }])).toEqual([
+      expect.objectContaining({ rule: 'foreign-key', message: expect.stringContaining('names no operation (command, query)') }),
+    ]);
+    expect(await refused(store, [{ op: 'link', relation: 'teaches', source: 'TL-LEND-UC01', target: 'TL-LEND-UC01' }])).toEqual([expect.objectContaining({ rule: 'unknown-relation' })]);
     await store.close();
   });
 
@@ -150,9 +172,9 @@ describe('link and unlink', () => {
     const { store } = await fresh();
     const problems = await refused(store, [
       { op: 'add', table: 'product', row: { id: 'LA', title: 'Lathe' } },
-      { op: 'add', table: 'domain', row: { id: 'LA-AUT', title: 'Authoring', product_id: 'LA' } },
+      { op: 'add', table: 'domain', row: { id: 'LA-AUT', title: 'Authoring', product_id: 'LA', subdomain_type: 'core' } },
       { op: 'add', table: 'aggregate', row: { id: 'LA-AUT-A1', title: 'Record', domain_id: 'LA-AUT' } },
-      { op: 'link', relation: 'relates_to', source: 'TL-LEND-A1', target: 'LA-AUT-A1' },
+      { op: 'link', relation: 'reads', source: 'TL-LEND-RM01', target: 'LA-AUT-A1' },
     ]);
     expect(problems).toEqual([expect.objectContaining({ rule: 'link-crosses-product', command: 3 })]);
     await store.close();
@@ -162,34 +184,41 @@ describe('link and unlink', () => {
 describe('remove', () => {
   it('refuses a record others reference, saying what references it', async () => {
     const { store } = await fresh();
-    const problems = await refused(store, [{ op: 'remove', table: 'requirement', key: 'TL-LEND-UC01-R01' }]);
+    const problems = await refused(store, [{ op: 'remove', table: 'uc_requirement', key: 'TL-LEND-UC01-R01' }]);
     expect(problems).toEqual([expect.objectContaining({ rule: 'referenced' })]);
-    for (const line of ['TL-LEND-F01 carries out TL-LEND-UC01-R01', 'TL-LEND-C01 satisfies TL-LEND-UC01-R01', 'TL-LEND-T01 proves TL-LEND-UC01-R01']) {
+    for (const line of ['TL-LEND-UC01-FL-S01 fulfills TL-LEND-UC01-R01', 'use_case_test TL-LEND-UC01-R01-T01 (uc_requirement_id)']) {
       expect(problems[0].message).toContain(line);
     }
     expect(await refused(store, [{ op: 'remove', table: 'pattern_setting', key: { pattern_id: 'TL-PAT-ACT', position: 1 } }])).toEqual([
       expect.objectContaining({ rule: 'referenced', message: expect.stringContaining('pattern_rule TL-PAT-ACT-R01 (pattern_id, setting)') }),
+    ]);
+    expect(await refused(store, [{ op: 'remove', table: 'value_object', key: 'TL-VO01' }])).toEqual([
+      expect.objectContaining({ rule: 'referenced', message: expect.stringContaining('entity_field entity_id TL-LEND-EN01, position 2 (type_value_object_id)') }),
     ]);
     await store.close();
   });
 
   it('removes a record with its parts and the links it starts', async () => {
     const { store, root } = await fresh();
-    // The rule's involves link is its own, so it goes with it.
-    await store.remove('domain_rule', 'TL-LEND-DR02');
-    expect(store.record('TL-LEND-DR02')).toBeUndefined();
-    expect(store.rows('involves')).toEqual([]);
-    expect(readdirSync(path.join(root, 'data'))).not.toContain('involves.jsonl');
-    // A use case goes with its actors, steps, setting values and its own links, once nothing points at it.
-    const links = ['fulfills', 'satisfies', 'proves', 'supports'] as const;
+    // The step's links are its own, so they go with it.
+    await store.remove('flow_step', 'TL-LEND-UC01-FL-S01');
+    for (const table of ['fulfills', 'invokes', 'happens_in', 'exchanges_with']) {
+      expect(store.rows(table)).toEqual([]);
+      expect(readdirSync(path.join(root, 'data'))).not.toContain(`${table}.jsonl`);
+    }
+    // A use case goes with its actors, setting values and its own links, once nothing points at it.
     await store.apply([
-      ...links.map((relation) => ({ op: 'unlink' as const, relation, source: relation === 'fulfills' ? 'TL-LEND-F01' : relation === 'satisfies' ? 'TL-LEND-C01' : 'TL-LEND-T01', target: relation === 'supports' ? 'TL-LEND-DR01' : 'TL-LEND-UC01-R01' })),
-      { op: 'remove', table: 'requirement', key: 'TL-LEND-UC01-R01' },
+      { op: 'remove', table: 'flow_test', key: 'TL-LEND-UC01-FL-T' },
+      { op: 'remove', table: 'flow', key: 'TL-LEND-UC01-FL' },
+      { op: 'remove', table: 'use_case_test', key: 'TL-LEND-UC01-R01-T01' },
+      { op: 'remove', table: 'uc_requirement', key: 'TL-LEND-UC01-R01' },
       { op: 'unlink', relation: 'about', source: 'TL-LEND-Q01', target: 'TL-LEND-UC01' },
-      { op: 'unlink', relation: 'carries_out', source: 'TL-LEND-F01', target: 'TL-LEND-UC01' },
       { op: 'remove', table: 'use_case', key: 'TL-LEND-UC01' },
     ]);
-    for (const table of ['use_case', 'use_case_actor', 'use_case_step', 'setting_value', 'follows']) expect(store.rows(table)).toEqual([]);
+    for (const table of ['use_case', 'use_case_actor', 'setting_value', 'follows']) expect(store.rows(table)).toEqual([]);
+    // A table goes with its keys.
+    await store.remove('table', 'TL-LEND-RM01-TB');
+    expect(store.rows('table_key').map((k) => k.table_id)).toEqual(['TL-LEND-EN01-TB', 'TL-LEND-EN01-TB']);
     await store.close();
   });
 });
@@ -199,44 +228,44 @@ describe('a write', () => {
     const { store, root } = await fresh();
     const before = files(root);
     const problems = await refused(store, [
-      { op: 'add', table: 'view', row: { id: 'TL-LEND-V02', title: 'Desk', domain_id: 'TL-LEND' } },
-      { op: 'link', relation: 'uses', source: 'TL-LEND-V02', target: 'TL-LEND-E01' },
-      { op: 'add', table: 'test', row: { id: 'TL-LEND-T02', title: 'Broken', domain_id: 'TL-LEND', test_type: 'unit', state: 'automated' } },
+      { op: 'add', table: 'view', row: { id: 'TL-V02', title: 'Desk' } },
+      { op: 'link', relation: 'renders', source: 'TL-UI01', target: 'TL-V02' },
+      { op: 'add', table: 'domain_service_test', row: { id: 'TL-LEND-DS01-T02', title: 'Broken', domain_service_id: 'TL-LEND-DS01', level: 'unit', state: 'automated' } },
     ]);
     expect(problems).toEqual([expect.objectContaining({ rule: 'check', command: 2 })]);
-    expect(store.record('TL-LEND-V02')).toBeUndefined();
-    expect(await store.query("SELECT id FROM view WHERE id = 'TL-LEND-V02'")).toEqual([]);
+    expect(store.record('TL-V02')).toBeUndefined();
+    expect(await store.query("SELECT id FROM view WHERE id = 'TL-V02'")).toEqual([]);
     expect(files(root)).toEqual(before);
     await store.close();
   });
 
-  it('declares a product kind and adds its records in one write', async () => {
+  it('declares a product kind in any stage and adds its records in one write', async () => {
     const { store, root } = await fresh();
     await store.apply([
-      { op: 'add', table: 'product_kind', row: { name: 'report', product_id: 'TL', label: 'Report', description: 'A report the library prints.', parent_kind: 'domain', obligation: 'none' } },
+      { op: 'add', table: 'product_kind', row: { name: 'report', product_id: 'TL', label: 'Report', description: 'A report the library prints.', parent_kind: 'read_model', stage: 'interaction-design', obligation: true, id_pattern: '<read model>-REP<nn>' } },
       { op: 'add', table: 'product_kind_field', row: { kind: 'report', position: 1, name: 'printed_on', type: 'date', required: false, description: 'When it was printed.' } },
-      { op: 'add', table: 'report', row: { id: 'TL-LEND-REP01', title: 'Overdue loans', domain_id: 'TL-LEND', printed_on: '2026-03-02' } },
+      { op: 'add', table: 'report', row: { id: 'TL-LEND-RM01-REP01', title: 'Overdue loans', read_model_id: 'TL-LEND-RM01', printed_on: '2026-03-02' } },
     ]);
-    expect(store.schema.kinds.report).toMatchObject({ productId: 'TL', parents: [{ kind: 'domain', column: 'domain_id' }] });
-    expect(readFileSync(path.join(root, 'data', 'report.jsonl'), 'utf8')).toBe('{"id":"TL-LEND-REP01","title":"Overdue loans","domain_id":"TL-LEND","printed_on":"2026-03-02"}\n');
-    expect(await refused(store, [{ op: 'add', table: 'report', row: { id: 'TL-LEND-REP02', title: 'x', domain_id: 'TL-LEND', printed_on: '2026-02-30' } }])).toEqual([
+    expect(store.schema.kinds.report).toMatchObject({ productId: 'TL', stage: 'interaction-design', obligation: true, idScope: null, parents: [{ kind: 'read_model', column: 'read_model_id' }] });
+    expect(store.schema.supertypes.obligation).toContain('report');
+    expect(readFileSync(path.join(root, 'data', 'report.jsonl'), 'utf8')).toBe('{"id":"TL-LEND-RM01-REP01","title":"Overdue loans","read_model_id":"TL-LEND-RM01","printed_on":"2026-03-02"}\n');
+    expect(await refused(store, [{ op: 'add', table: 'report', row: { id: 'TL-LEND-RM01-REP02', title: 'x', read_model_id: 'TL-LEND-RM01', printed_on: '2026-02-30' } }])).toEqual([
       expect.objectContaining({ rule: 'column' }),
     ]);
-    expect(await refused(store, [{ op: 'add', table: 'product_kind', row: { name: 'view', product_id: 'TL', label: 'View', description: 'Again.', parent_kind: 'domain', obligation: 'none' } }])).toEqual([
+    expect(await refused(store, [{ op: 'add', table: 'product_kind', row: { name: 'view', product_id: 'TL', label: 'View', description: 'Again.', parent_kind: 'domain', obligation: false } }])).toEqual([
       expect.objectContaining({ rule: 'product-kind', message: expect.stringContaining('a table Lathe already has') }),
     ]);
-    // The product's own obligation can be proved, and its own relation links to it.
-    expect(await store.query("SELECT source_id FROM proves WHERE target_id = 'TL-LEND-INV01'")).toEqual([{ source_id: 'TL-LEND-T01' }]);
-    expect(await refused(store, [{ op: 'link', relation: 'enforces', source: 'TL-LEND-T01', target: 'TL-LEND-INV01' }])).toEqual([expect.objectContaining({ rule: 'foreign-key' })]);
+    // The product's own relation links only its own kinds.
+    expect(await refused(store, [{ op: 'link', relation: 'documents', source: 'TL-LEND-CMD01', target: 'TL-V01' }])).toEqual([expect.objectContaining({ rule: 'foreign-key' })]);
     await store.close();
     const reopened = await openStore(root);
-    expect(reopened.record('TL-LEND-REP01')?.kind).toBe('report');
+    expect(reopened.record('TL-LEND-RM01-REP01')?.kind).toBe('report');
     await reopened.close();
   });
 
   it('refuses an aggregate with two roots', async () => {
     const { store } = await fresh();
-    expect(await refused(store, [{ op: 'set', table: 'entity', key: 'TL-LEND-EN02', changes: { role: 'root' } }])).toEqual([
+    expect(await refused(store, [{ op: 'set', table: 'entity', key: 'TL-LEND-EN02', changes: { role: 'root', in_root_table: null } }])).toEqual([
       expect.objectContaining({ rule: 'aggregate-root', table: 'aggregate', key: 'TL-LEND-A1' }),
     ]);
     await store.close();
@@ -244,10 +273,8 @@ describe('a write', () => {
 
   it('runs writes one after another, each on the state the one before left', async () => {
     const { store } = await fresh();
-    await Promise.all(
-      [2, 3, 4].map((n) => store.add('view', { id: `TL-LEND-V0${n}`, title: `View ${n}`, domain_id: 'TL-LEND' })),
-    );
-    expect(store.rows('view').map((v) => v.id)).toEqual(['TL-LEND-V01', 'TL-LEND-V02', 'TL-LEND-V03', 'TL-LEND-V04']);
+    await Promise.all([2, 3, 4].map((n) => store.add('view', { id: `TL-V0${n}`, title: `View ${n}` })));
+    expect(store.rows('view').map((v) => v.id)).toEqual(['TL-V01', 'TL-V02', 'TL-V03', 'TL-V04']);
     const reader = await store.connect();
     expect((await reader.runAndReadAll('SELECT count(*)::INTEGER AS n FROM view')).getRowObjectsJson()).toEqual([{ n: 4 }]);
     reader.closeSync();

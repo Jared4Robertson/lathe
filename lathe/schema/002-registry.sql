@@ -11,36 +11,26 @@ COMMENT ON COLUMN record_id.kind IS 'The record''s kind, which is the table that
 
 -- Each supertype holds one row per record of its member kinds (meta_supertype_member).
 CREATE TABLE obligation (id VARCHAR PRIMARY KEY, kind VARCHAR NOT NULL, FOREIGN KEY (id, kind) REFERENCES record_id (id, kind));
-COMMENT ON TABLE obligation IS 'Every obligation: the records that must be designed or proved. A link that designs, proves, supports or carries out an obligation points here.';
+COMMENT ON TABLE obligation IS 'Every obligation: a record that must be designed, built and proved. Constraints, invariants, specifications, policies, domain services, UC requirements, view requirements, API requirements, pattern rules and standard rules, and a product''s own obligation kinds.';
+CREATE TABLE operation (id VARCHAR PRIMARY KEY, kind VARCHAR NOT NULL, FOREIGN KEY (id, kind) REFERENCES record_id (id, kind));
+COMMENT ON TABLE operation IS 'Commands and queries: what a flow step invokes and what calls a domain service.';
+CREATE TABLE reads_source (id VARCHAR PRIMARY KEY, kind VARCHAR NOT NULL, FOREIGN KEY (id, kind) REFERENCES record_id (id, kind));
+COMMENT ON TABLE reads_source IS 'The records that read aggregates: specifications and read models.';
 CREATE TABLE follows_source (id VARCHAR PRIMARY KEY, kind VARCHAR NOT NULL, FOREIGN KEY (id, kind) REFERENCES record_id (id, kind));
-COMMENT ON TABLE follows_source IS 'The records that may follow a pattern: use cases and domains.';
-CREATE TABLE fulfills_source (id VARCHAR PRIMARY KEY, kind VARCHAR NOT NULL, FOREIGN KEY (id, kind) REFERENCES record_id (id, kind));
-COMMENT ON TABLE fulfills_source IS 'The records that may carry out an obligation: flows, flow steps, views, endpoints and interaction requirements.';
-CREATE TABLE uses_source (id VARCHAR PRIMARY KEY, kind VARCHAR NOT NULL, FOREIGN KEY (id, kind) REFERENCES record_id (id, kind));
-COMMENT ON TABLE uses_source IS 'The records that may use a view, endpoint or component: flows, flow steps, views and technical steps.';
-CREATE TABLE uses_target (id VARCHAR PRIMARY KEY, kind VARCHAR NOT NULL, FOREIGN KEY (id, kind) REFERENCES record_id (id, kind));
-COMMENT ON TABLE uses_target IS 'The records that may be used: views, endpoints and components.';
-CREATE TABLE implements_target (id VARCHAR PRIMARY KEY, kind VARCHAR NOT NULL, FOREIGN KEY (id, kind) REFERENCES record_id (id, kind));
-COMMENT ON TABLE implements_target IS 'The records a component may implement: endpoints and views.';
-CREATE TABLE reacts_to_source (id VARCHAR PRIMARY KEY, kind VARCHAR NOT NULL, FOREIGN KEY (id, kind) REFERENCES record_id (id, kind));
-COMMENT ON TABLE reacts_to_source IS 'The records that may react to a domain event: aggregates, use cases and components.';
-CREATE TABLE satisfies_source (id VARCHAR PRIMARY KEY, kind VARCHAR NOT NULL, FOREIGN KEY (id, kind) REFERENCES record_id (id, kind));
-COMMENT ON TABLE satisfies_source IS 'The records that may design an obligation: components and technical steps.';
+COMMENT ON TABLE follows_source IS 'The records that may follow a pattern: domains and use cases.';
 CREATE TABLE meets_source (id VARCHAR PRIMARY KEY, kind VARCHAR NOT NULL, FOREIGN KEY (id, kind) REFERENCES record_id (id, kind));
-COMMENT ON TABLE meets_source IS 'The records that may meet a standard rule: components, tests and technical steps.';
+COMMENT ON TABLE meets_source IS 'The records that may meet a standard rule: the technical kinds and the test kinds.';
 
 INSERT INTO meta_table VALUES ('record_id', 'registry', NULL);
 INSERT INTO meta_table
-  SELECT name, 'supertype', NULL FROM (VALUES ('obligation'), ('follows_source'), ('fulfills_source'), ('uses_source'), ('uses_target'),
-    ('implements_target'), ('reacts_to_source'), ('satisfies_source'), ('meets_source')) AS t (name);
-INSERT INTO meta_supertype_member VALUES
-  ('obligation', 'requirement'), ('obligation', 'domain_rule'), ('obligation', 'interaction_requirement'), ('obligation', 'pattern_rule'),
-  ('follows_source', 'use_case'), ('follows_source', 'domain'),
-  ('fulfills_source', 'flow'), ('fulfills_source', 'flow_step'), ('fulfills_source', 'view'), ('fulfills_source', 'endpoint'),
-  ('fulfills_source', 'interaction_requirement'),
-  ('uses_source', 'flow'), ('uses_source', 'flow_step'), ('uses_source', 'view'), ('uses_source', 'design_step'),
-  ('uses_target', 'view'), ('uses_target', 'endpoint'), ('uses_target', 'component'),
-  ('implements_target', 'endpoint'), ('implements_target', 'view'),
-  ('reacts_to_source', 'aggregate'), ('reacts_to_source', 'use_case'), ('reacts_to_source', 'component'),
-  ('satisfies_source', 'component'), ('satisfies_source', 'design_step'),
-  ('meets_source', 'component'), ('meets_source', 'test'), ('meets_source', 'design_step');
+  SELECT name, 'supertype', NULL FROM (VALUES ('obligation'), ('operation'), ('reads_source'), ('follows_source'), ('meets_source')) AS t (name);
+INSERT INTO meta_supertype_member
+  SELECT 'obligation', kind FROM (VALUES ('constraint'), ('invariant'), ('specification'), ('policy'), ('domain_service'),
+    ('uc_requirement'), ('view_requirement'), ('api_requirement'), ('pattern_rule'), ('standard_rule')) AS t (kind)
+  UNION ALL SELECT 'operation', kind FROM (VALUES ('command'), ('query')) AS t (kind)
+  UNION ALL SELECT 'reads_source', kind FROM (VALUES ('specification'), ('read_model')) AS t (kind)
+  UNION ALL SELECT 'follows_source', kind FROM (VALUES ('domain'), ('use_case')) AS t (kind)
+  UNION ALL SELECT 'meets_source', kind FROM (VALUES ('repository'), ('data_model'), ('table'), ('value_type'), ('predicate'),
+    ('event_type'), ('projection'), ('command_handler'), ('query_handler'), ('event_handler'), ('service'), ('ui_component'),
+    ('endpoint_handler'), ('adapter'), ('constraint_test'), ('invariant_test'), ('specification_test'), ('policy_test'),
+    ('domain_service_test'), ('use_case_test'), ('view_test'), ('endpoint_test'), ('flow_test'), ('integration_test'), ('pattern_rule_test')) AS t (kind);

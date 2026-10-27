@@ -14,7 +14,7 @@ CREATE TABLE "check" (
   kinds VARCHAR[]
 );
 COMMENT ON TABLE "check" IS 'A check: a query over the tables that returns a row (severity, check, record, message) for each problem it finds. An error means the workspace is broken; a warning is work still to do.';
-COMMENT ON COLUMN "check".name IS 'The check''s name, in lower case with hyphens, such as test-proves-nothing.';
+COMMENT ON COLUMN "check".name IS 'The check''s name, in lower case with hyphens, such as value-object-unused.';
 COMMENT ON COLUMN "check".product_id IS 'For a product''s own check, the product; none for Lathe''s checks.';
 COMMENT ON COLUMN "check".position IS 'Its place in the run order, from 1: Lathe''s checks run first, then the product''s own.';
 COMMENT ON COLUMN "check".severity IS 'What its rows report: error, warning, or error_or_warning when its rows say which.';

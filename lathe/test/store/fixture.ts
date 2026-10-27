@@ -7,33 +7,50 @@ import type { Row } from '../../src/index.ts';
 
 export type Data = Record<string, Row[]>;
 
+const automated = (file: string) => ({ level: 'unit', state: 'automated', file });
+
 /** Every kind, part, link, declaration and checking table, with rows that load. */
 export function everyKind(): Data {
   return {
     product: [{ id: 'TL', title: 'Tool Library', description: 'A neighborhood tool library.' }],
     role: [{ product_id: 'TL', name: 'Member' }, { product_id: 'TL', name: 'Librarian' }],
     product_setting: [{ product_id: 'TL', max_children: 15 }],
-    domain: [{ id: 'TL-LEND', title: 'Lending', product_id: 'TL' }],
+
+    // Domain model.
+    domain: [{ id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core' }],
     aggregate: [
       { id: 'TL-LEND-A1', title: 'Loan', domain_id: 'TL-LEND', identity: 'Loan ID' },
       { id: 'TL-LEND-A2', title: 'Tool', domain_id: 'TL-LEND' },
     ],
     entity: [
       { id: 'TL-LEND-EN01', title: 'Loan', aggregate_id: 'TL-LEND-A1', role: 'root' },
-      { id: 'TL-LEND-EN02', title: 'Return', aggregate_id: 'TL-LEND-A1', role: 'child' },
+      { id: 'TL-LEND-EN02', title: 'Return', aggregate_id: 'TL-LEND-A1', role: 'child', in_root_table: true },
     ],
-    entity_field: [{ entity_id: 'TL-LEND-EN01', position: 1, name: 'Loan ID', meaning: 'The loan number.', type: 'Whole number', example: '31' }],
-    domain_event: [{ id: 'TL-LEND-EV01', title: 'Loan opened', aggregate_id: 'TL-LEND-A1' }],
-    event_field: [{ domain_event_id: 'TL-LEND-EV01', position: 1, name: 'Loan ID', meaning: 'Which loan.', type: 'Loan reference' }],
-    domain_rule: [
-      { id: 'TL-LEND-DR01', title: 'One active loan per tool', domain_id: 'TL-LEND', aggregate_id: 'TL-LEND-A1', entity_id: 'TL-LEND-EN01', statement: 'A tool MUST NOT have two active loans.' },
-      { id: 'TL-LEND-DR02', title: 'Loans and tools agree', domain_id: 'TL-LEND', statement: 'A loan MUST name a tool that exists.' },
+    entity_field: [
+      { entity_id: 'TL-LEND-EN01', position: 1, name: 'Loan ID', meaning: 'The loan number.', type: 'whole number', required: true, column_name: 'id', example: '31' },
+      { entity_id: 'TL-LEND-EN01', position: 2, name: 'Borrower email', meaning: 'Where reminders go.', type_value_object_id: 'TL-VO01', required: true },
+      { entity_id: 'TL-LEND-EN01', position: 3, name: 'Tool', meaning: 'The tool lent.', type_aggregate_id: 'TL-LEND-A2', required: true, column_name: 'tool_id' },
     ],
+    value_object: [{ id: 'TL-VO01', title: 'Email address' }],
+    value_object_field: [{ value_object_id: 'TL-VO01', position: 1, name: 'Address', meaning: 'The address as typed.', type: 'text', required: true }],
+    constraint: [{ id: 'TL-VO01-C01', title: 'One at sign', value_object_id: 'TL-VO01', statement: 'An email address MUST hold exactly one @.' }],
+    invariant: [{ id: 'TL-LEND-INV01', title: 'One active loan per tool', aggregate_id: 'TL-LEND-A1', statement: 'A tool MUST NOT have two active loans.' }],
+    specification: [{ id: 'TL-LEND-SP01', title: 'Tool is free', statement: 'A tool is free when no active loan names it.' }],
+    domain_event: [{ id: 'TL-LEND-EV01', title: 'Loan opened', aggregate_id: 'TL-LEND-A1', published: true }],
+    event_field: [{ domain_event_id: 'TL-LEND-EV01', position: 1, name: 'Loan ID', meaning: 'Which loan.', type_aggregate_id: 'TL-LEND-A1', required: true }],
+    command: [{ id: 'TL-LEND-CMD01', title: 'Open a loan', aggregate_id: 'TL-LEND-A1' }],
+    read_model: [{ id: 'TL-LEND-RM01', title: 'Loans by member', domain_id: 'TL-LEND' }],
+    read_model_field: [{ read_model_id: 'TL-LEND-RM01', position: 1, name: 'Days overdue', meaning: 'How late the loan is.', type: 'whole number', required: false }],
+    query: [{ id: 'TL-LEND-QRY01', title: 'List free tools', read_model_id: 'TL-LEND-RM01' }],
+    policy: [{ id: 'TL-LEND-PO01', title: 'Remind on loan', command_id: 'TL-LEND-CMD01', statement: 'Whenever a loan is opened, the library MUST open its reminder.' }],
+    domain_service: [{ id: 'TL-LEND-DS01', title: 'Late fee', domain_id: 'TL-LEND', statement: 'The fee MUST be a day rate times the days late.' }],
+    term: [{ id: 'TL-LEND-TM01', title: 'Loan', domain_id: 'TL-LEND', meaning: 'One tool lent to one member until it is returned.' }],
+
+    // Use cases.
     capability: [{ id: 'TL-LEND-CAP01', title: 'Lending', domain_id: 'TL-LEND', position: 1 }],
-    use_case: [{ id: 'TL-LEND-UC01', title: 'Borrow a tool', domain_id: 'TL-LEND', capability_id: 'TL-LEND-CAP01', goal: 'Take a tool home.' }],
+    use_case: [{ id: 'TL-LEND-UC01', title: 'Borrow a tool', capability_id: 'TL-LEND-CAP01', goal: 'Take a tool home.' }],
     use_case_actor: [{ use_case_id: 'TL-LEND-UC01', position: 1, role_name: 'Member' }],
-    use_case_step: [{ use_case_id: 'TL-LEND-UC01', position: 1, description: 'The member picks a tool.' }],
-    requirement: [{ id: 'TL-LEND-UC01-R01', title: 'Tool is free', use_case_id: 'TL-LEND-UC01', statement: 'The library MUST refuse a tool on loan.', group_name: 'Validation' }],
+    uc_requirement: [{ id: 'TL-LEND-UC01-R01', title: 'Tool is free', use_case_id: 'TL-LEND-UC01', statement: 'The library MUST refuse a tool on loan.', group_name: 'Validation' }],
     pattern: [{ id: 'TL-PAT-ACT', title: 'Librarian action', product_id: 'TL' }],
     pattern_setting: [{ pattern_id: 'TL-PAT-ACT', position: 1, name: 'record', meaning: 'The record the action saves.' }],
     pattern_rule: [
@@ -48,64 +65,88 @@ export function everyKind(): Data {
         applies_when_value: 'Tool',
       },
     ],
+
+    // Interaction design.
+    flow: [{ id: 'TL-LEND-UC01-FL', title: 'Borrow at the desk', use_case_id: 'TL-LEND-UC01' }],
+    flow_step: [{ id: 'TL-LEND-UC01-FL-S01', title: 'Pick a tool', flow_id: 'TL-LEND-UC01-FL', path: 'main', position: 1 }],
+    view: [{ id: 'TL-V01', title: 'Catalog', route: '/catalog' }],
+    view_requirement: [{ id: 'TL-V01-R01', title: 'Free tools first', view_id: 'TL-V01', statement: 'The catalog MUST list free tools first.' }],
+    endpoint: [{ id: 'TL-LEND-EP01', title: 'Borrow a tool', command_id: 'TL-LEND-CMD01', method: 'POST', route: '/loans' }],
+    api_requirement: [{ id: 'TL-LEND-EP01-R01', title: 'Unknown tool', endpoint_id: 'TL-LEND-EP01', statement: 'An unknown tool MUST give 404.' }],
+    integration: [{ id: 'TL-INT01', title: 'Mail', system: 'Mail service' }],
+
+    // Technical specification.
+    repository: [{ id: 'TL-LEND-A1-REPO', title: 'LoanRepository', aggregate_id: 'TL-LEND-A1', file: 'src/lending/loans.ts' }],
+    data_model: [{ id: 'TL-LEND-EN01-DM', title: 'Loan', entity_id: 'TL-LEND-EN01', file: 'src/lending/loan.ts' }],
+    table: [
+      { id: 'TL-LEND-EN01-TB', title: 'Loans', entity_id: 'TL-LEND-EN01', name: 'loans', storage: 'table', file: 'migrations/001.sql' },
+      { id: 'TL-LEND-RM01-TB', title: 'Loans by member', read_model_id: 'TL-LEND-RM01', name: 'loans_by_member', storage: 'view' },
+    ],
+    table_key: [
+      { table_id: 'TL-LEND-EN01-TB', position: 1, type: 'primary', columns: ['id'] },
+      { table_id: 'TL-LEND-EN01-TB', position: 2, type: 'unique', columns: ['tool_id'], invariant_id: 'TL-LEND-INV01', condition: 'returned_at IS NULL' },
+      { table_id: 'TL-LEND-RM01-TB', position: 1, type: 'foreign', columns: ['loan_id'], target_table_id: 'TL-LEND-EN01-TB' },
+    ],
+    value_type: [{ id: 'TL-VO01-VT', title: 'EmailAddress', value_object_id: 'TL-VO01' }],
+    predicate: [{ id: 'TL-LEND-SP01-PR', title: 'isFree', specification_id: 'TL-LEND-SP01' }],
+    event_type: [{ id: 'TL-LEND-EV01-ET', title: 'LoanOpened', domain_event_id: 'TL-LEND-EV01' }],
+    projection: [{ id: 'TL-LEND-RM01-PJ', title: 'loansByMember', read_model_id: 'TL-LEND-RM01' }],
+    command_handler: [{ id: 'TL-LEND-CMD01-H', title: 'openLoan', command_id: 'TL-LEND-CMD01', file: 'src/lending/loans.ts' }],
+    query_handler: [{ id: 'TL-LEND-QRY01-H', title: 'listFreeTools', query_id: 'TL-LEND-QRY01' }],
+    event_handler: [{ id: 'TL-LEND-PO01-H', title: 'onLoanOpened', policy_id: 'TL-LEND-PO01' }],
+    service: [{ id: 'TL-LEND-DS01-SV', title: 'lateFee', domain_service_id: 'TL-LEND-DS01' }],
+    ui_component: [{ id: 'TL-UI01', title: 'CatalogPage', file: 'web/catalog.tsx' }],
+    endpoint_handler: [{ id: 'TL-LEND-EP01-H', title: 'postLoan', endpoint_id: 'TL-LEND-EP01' }],
+    adapter: [{ id: 'TL-INT01-AD', title: 'mailer', integration_id: 'TL-INT01' }],
     standard: [{ id: 'TL-STD-CODE', title: 'Code', product_id: 'TL' }],
     standard_rule: [{ id: 'TL-STD-CODE-R01', title: 'Node prefix', standard_id: 'TL-STD-CODE', statement: 'Code MUST import node: modules.' }],
-    flow: [{ id: 'TL-LEND-F01', title: 'Borrow and return', domain_id: 'TL-LEND', capability_id: 'TL-LEND-CAP01' }],
-    flow_step: [{ id: 'TL-LEND-F01-S01', title: 'Pick a tool', flow_id: 'TL-LEND-F01', path: 'main', position: 1 }],
-    view: [{ id: 'TL-LEND-V01', title: 'Catalog', domain_id: 'TL-LEND', route: '/catalog' }],
-    api: [{ id: 'TL-LEND-API01', title: 'Loans', domain_id: 'TL-LEND' }],
-    api_shape: [{ api_id: 'TL-LEND-API01', position: 1, name: 'Loan', meaning: 'One loan.', fields: 'id, toolId' }],
-    endpoint: [{ id: 'TL-LEND-E01', title: 'Borrow a tool', domain_id: 'TL-LEND', api_id: 'TL-LEND-API01', method: 'POST', route: '/loans' }],
-    integration: [{ id: 'TL-LEND-INT01', title: 'Mail', domain_id: 'TL-LEND', system: 'Mail service' }],
-    interaction_requirement: [{ id: 'TL-LEND-E01-R01', title: 'Unknown tool', domain_id: 'TL-LEND', endpoint_id: 'TL-LEND-E01', statement: 'An unknown tool MUST give 404.' }],
-    // The sub-layer's ID sorts before its parent's, so loading must put parents first.
-    layer: [
-      { id: 'TL-LEND-LAY01', title: 'Services', domain_id: 'TL-LEND', parent_layer_id: 'TL-LEND-LAY02', position: 1 },
-      { id: 'TL-LEND-LAY02', title: 'Server', domain_id: 'TL-LEND', position: 1 },
-    ],
-    component: [
-      { id: 'TL-LEND-C01', title: 'lending-service.ts', domain_id: 'TL-LEND', layer_id: 'TL-LEND-LAY01', component_type: 'service', file: 'src/lending-service.ts' },
-      { id: 'TL-LEND-C02', title: 'store.ts', domain_id: 'TL-LEND', component_type: 'store', file: 'src/store.ts' },
-    ],
-    design_flow: [{ id: 'TL-LEND-DF01', title: 'Borrow', domain_id: 'TL-LEND', layer_id: 'TL-LEND-LAY02' }],
-    design_step: [{ id: 'TL-LEND-DF01-S01', title: 'Check and save', design_flow_id: 'TL-LEND-DF01', path: 'main', position: 1, transaction_name: 'borrow', statements: 'one INSERT' }],
-    test: [{ id: 'TL-LEND-T01', title: 'A tool on loan is refused', domain_id: 'TL-LEND', capability_id: 'TL-LEND-CAP01', test_type: 'acceptance', state: 'automated', file: 'test/api.test.ts', given: 'A tool on loan', when: 'A member borrows it', then: 'It is refused' }],
-    question: [{ id: 'TL-LEND-Q01', title: 'How long is a loan?', product_id: 'TL', domain_id: 'TL-LEND', owner: 'Librarian' }],
-    relates_to: [{ source_id: 'TL-LEND-A1', target_id: 'TL-LEND-A2' }],
-    applies: [{ source_id: 'TL-LEND-UC01', target_id: 'TL-LEND-DR01' }],
-    follows: [{ source_id: 'TL-LEND-UC01', target_id: 'TL-PAT-ACT' }],
-    setting_value: [{ follower_id: 'TL-LEND-UC01', pattern_id: 'TL-PAT-ACT', setting: 'record', value: 'Tool' }],
-    fulfills: [{ source_id: 'TL-LEND-F01', target_id: 'TL-LEND-UC01-R01' }],
-    uses: [{ source_id: 'TL-LEND-F01', target_id: 'TL-LEND-V01' }],
-    satisfies: [{ source_id: 'TL-LEND-C01', target_id: 'TL-LEND-UC01-R01' }],
-    implements: [{ source_id: 'TL-LEND-C01', target_id: 'TL-LEND-E01' }],
-    depends_on: [{ source_id: 'TL-LEND-C01', target_id: 'TL-LEND-C02' }],
-    proves: [
-      { source_id: 'TL-LEND-T01', target_id: 'TL-LEND-INV01' },
-      { source_id: 'TL-LEND-T01', target_id: 'TL-LEND-UC01-R01' },
-    ],
-    supports: [{ source_id: 'TL-LEND-T01', target_id: 'TL-LEND-DR01' }],
-    about: [{ source_id: 'TL-LEND-Q01', target_id: 'TL-LEND-UC01' }],
-    carries_out: [{ source_id: 'TL-LEND-F01', target_id: 'TL-LEND-UC01' }],
-    runs: [{ source_id: 'TL-LEND-T01', target_id: 'TL-LEND-F01' }],
-    covers: [{ source_id: 'TL-LEND-T01', target_id: 'TL-LEND-C01' }],
+
+    // Test plan.
+    constraint_test: [{ id: 'TL-VO01-C01-T', title: 'One at sign', constraint_id: 'TL-VO01-C01', ...automated('test/email.test.ts'), accepts: 'a@b.org', refuses: 'a@@b.org' }],
+    invariant_test: [{ id: 'TL-LEND-INV01-T', title: 'A second loan is refused', invariant_id: 'TL-LEND-INV01', ...automated('test/loans.test.ts'), given: 'A tool on loan', when: 'It is lent again', then: 'It is refused' }],
+    specification_test: [{ id: 'TL-LEND-SP01-T', title: 'Free tools', specification_id: 'TL-LEND-SP01', level: 'database', state: 'not automated yet' }],
+    policy_test: [{ id: 'TL-LEND-PO01-T', title: 'A reminder follows a loan', policy_id: 'TL-LEND-PO01', ...automated('test/policies.test.ts') }],
+    domain_service_test: [{ id: 'TL-LEND-DS01-T01', title: 'Three days late', domain_service_id: 'TL-LEND-DS01', ...automated('test/fees.test.ts') }],
+    use_case_test: [{ id: 'TL-LEND-UC01-R01-T01', title: 'A lent tool is refused', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'e2e-api', state: 'automated', file: 'test/borrow.test.ts' }],
+    view_test: [{ id: 'TL-V01-R01-T01', title: 'Free tools come first', view_requirement_id: 'TL-V01-R01', level: 'e2e-ui', state: 'automated', file: 'e2e/catalog.spec.ts' }],
+    endpoint_test: [{ id: 'TL-LEND-EP01-R01-T01', title: 'Unknown tool gives 404', api_requirement_id: 'TL-LEND-EP01-R01', level: 'api', state: 'automated', file: 'test/api.test.ts' }],
+    flow_test: [{ id: 'TL-LEND-UC01-FL-T', title: 'Borrow end to end', flow_id: 'TL-LEND-UC01-FL', level: 'e2e-ui', state: 'automated', file: 'e2e/borrow.spec.ts', steps: ['Open the catalog', 'Borrow a tool'], expected_result: 'The loan is listed.' }],
+    integration_test: [{ id: 'TL-INT01-T01', title: 'A mail is sent', integration_id: 'TL-INT01', level: 'manual', state: 'manual', manual_reason: 'The mail service has no test mode.' }],
+    pattern_rule_test: [{ id: 'TL-PAT-ACT-R01-T01', title: 'A saved tool reads the same', pattern_rule_id: 'TL-PAT-ACT-R01', domain_id: 'TL-LEND', ...automated('test/catalog.test.ts') }],
+
+    question: [{ id: 'TL-LEND-Q01', title: 'How long is a loan?', domain_id: 'TL-LEND', owner: 'Librarian' }],
+
+    // Links.
     has_one: [{ source_id: 'TL-LEND-EN01', target_id: 'TL-LEND-EN02' }],
     has_many: [{ source_id: 'TL-LEND-EN01', target_id: 'TL-LEND-EN02' }],
-    refers_to: [{ source_id: 'TL-LEND-EN02', target_id: 'TL-LEND-EN01' }],
-    raised_by: [{ source_id: 'TL-LEND-EV01', target_id: 'TL-LEND-EN01' }],
-    reacts_to: [{ source_id: 'TL-LEND-A2', target_id: 'TL-LEND-EV01' }],
-    involves: [{ source_id: 'TL-LEND-DR02', target_id: 'TL-LEND-A1' }],
-    deepens: [{ source_id: 'TL-LEND-DF01', target_id: 'TL-LEND-F01' }],
-    meets: [{ source_id: 'TL-LEND-C01', target_id: 'TL-STD-CODE-R01' }],
-    // A product's own kind, an obligation under the aggregate, with a relation of its own and a pair added to proves.
-    product_kind: [{ name: 'invariant', product_id: 'TL', label: 'Invariant', description: 'A product-specific obligation.', parent_kind: 'aggregate', stage: 'define', section: 'domain-model', obligation: 'full' }],
-    product_kind_field: [{ kind: 'invariant', position: 1, name: 'strength', type: 'text', required: true, description: 'How strictly it holds.' }],
-    product_relation: [
-      { name: 'enforces', source_kind: 'component', target_kind: 'invariant', product_id: 'TL', role: 'design', forward_label: 'Enforces', reverse_label: 'Enforced by', description: 'The component enforces the invariant.' },
-      { name: 'proves', source_kind: 'test', target_kind: 'invariant', product_id: 'TL', role: 'proof', forward_label: 'Proves', reverse_label: 'Proved by', description: 'The test proves the invariant.' },
+    raises: [{ source_id: 'TL-LEND-CMD01', target_id: 'TL-LEND-EV01' }],
+    checks: [{ source_id: 'TL-LEND-CMD01', target_id: 'TL-LEND-SP01' }],
+    reads: [
+      { source_id: 'TL-LEND-RM01', target_id: 'TL-LEND-A1' },
+      { source_id: 'TL-LEND-SP01', target_id: 'TL-LEND-A1' },
+      { source_id: 'TL-LEND-SP01', target_id: 'TL-LEND-A2' },
     ],
-    invariant: [{ id: 'TL-LEND-INV01', title: 'Loans are numbered', aggregate_id: 'TL-LEND-A1', strength: 'always' }],
-    enforces: [{ source_id: 'TL-LEND-C01', target_id: 'TL-LEND-INV01' }],
+    selects_by: [{ source_id: 'TL-LEND-QRY01', target_id: 'TL-LEND-SP01' }],
+    hears: [{ source_id: 'TL-LEND-PO01', target_id: 'TL-LEND-EV01' }],
+    calls: [{ source_id: 'TL-LEND-CMD01', target_id: 'TL-LEND-DS01' }],
+    fulfills: [{ source_id: 'TL-LEND-UC01-FL-S01', target_id: 'TL-LEND-UC01-R01' }],
+    invokes: [{ source_id: 'TL-LEND-UC01-FL-S01', target_id: 'TL-LEND-CMD01' }],
+    happens_in: [{ source_id: 'TL-LEND-UC01-FL-S01', target_id: 'TL-V01' }],
+    exchanges_with: [{ source_id: 'TL-LEND-UC01-FL-S01', target_id: 'TL-INT01' }],
+    renders: [{ source_id: 'TL-UI01', target_id: 'TL-V01' }],
+    follows: [{ source_id: 'TL-LEND-UC01', target_id: 'TL-PAT-ACT' }],
+    setting_value: [{ follower_id: 'TL-LEND-UC01', pattern_id: 'TL-PAT-ACT', setting: 'record', value: 'Tool' }],
+    meets: [{ source_id: 'TL-LEND-CMD01-H', target_id: 'TL-STD-CODE-R01' }],
+    about: [{ source_id: 'TL-LEND-Q01', target_id: 'TL-LEND-UC01' }],
+
+    // A product's own kind, a technical kind under the command, with a relation of its own.
+    product_kind: [{ name: 'cli_command', product_id: 'TL', label: 'CLI command', description: "A command of the library's CLI.", parent_kind: 'command', stage: 'technical-specification', obligation: false, id_pattern: '<command>-CLI' }],
+    product_kind_field: [{ kind: 'cli_command', position: 1, name: 'usage', type: 'text', required: true, description: 'How it is typed.' }],
+    product_relation: [
+      { name: 'documents', source_kind: 'cli_command', target_kind: 'view', product_id: 'TL', forward_label: 'Documents', reverse_label: 'Documented by', description: 'The CLI command is documented in the view.' },
+    ],
+    cli_command: [{ id: 'TL-LEND-CMD01-CLI', title: 'tl borrow', command_id: 'TL-LEND-CMD01', usage: 'tl borrow <tool>' }],
+    documents: [{ source_id: 'TL-LEND-CMD01-CLI', target_id: 'TL-V01' }],
     check: [{ name: 'duplicate-id', position: 1, severity: 'error', summary: 'An ID names one record.', explanation: 'Give each record its own ID.', query: 'SELECT 1 WHERE false', kinds: ['product'] }],
   };
 }
