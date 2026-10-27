@@ -1,0 +1,13 @@
+{"use_case_id":"TL-LEND-UC01","position":1,"description":"The librarian enters the member's name and email."}
+{"use_case_id":"TL-LEND-UC01","position":2,"description":"The library checks the email is not already registered and records the member."}
+{"use_case_id":"TL-LEND-UC01","position":3,"description":"The library shows the new member's ID, which goes on their card."}
+{"use_case_id":"TL-LEND-UC02","position":1,"description":"The librarian enters the tool's name and, optionally, a description."}
+{"use_case_id":"TL-LEND-UC02","position":2,"description":"The library records the tool in good condition and shows its ID, which goes on its tag."}
+{"use_case_id":"TL-LEND-UC03","position":1,"description":"The member picks a tool from the catalog."}
+{"use_case_id":"TL-LEND-UC03","position":2,"description":"The library checks the member can borrow and the tool can be lent."}
+{"use_case_id":"TL-LEND-UC03","position":3,"description":"The library records the loan and tells the member when it is due."}
+{"use_case_id":"TL-LEND-UC04","position":1,"description":"The librarian finds the loan and inspects the tool."}
+{"use_case_id":"TL-LEND-UC04","position":2,"description":"The librarian records the condition (`good` or `needs_repair`) and, optionally, a note."}
+{"use_case_id":"TL-LEND-UC04","position":3,"description":"The library ends the loan. A tool in good condition goes back on the shelf, unless damage was reported on it during the loan; a tool needing repair is taken out of lending."}
+{"use_case_id":"TL-LEND-UC05","position":1,"description":"The librarian marks the tool as needing repair and notes what is wrong."}
+{"use_case_id":"TL-LEND-UC05","position":2,"description":"Later, the librarian marks the tool repaired, and it can be lent again."}
