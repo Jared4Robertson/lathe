@@ -143,6 +143,7 @@ The domain-model IDs are scoped to the domain, which follows from the parent. Ki
 - Standards and their rules.
 - Entity fields and event fields, joined by read model fields, which are new. A field's type becomes a value object or a basic type from a fixed list: text, whole number, decimal, date, time and yes/no. Free-text types go.
 - A table's columns follow from its entity's or read model's fields, with a value object's fields flattened into columns, so columns aren't stored twice. A table stores only what fields can't say: its keys and indexes. A unique key names the invariant it enforces.
+- A table has a storage: `table`, `view` or `materialized view`. An entity's table is always `table`, normalized and the source of truth. A read model's table is a denormalized projection that can be rebuilt: usually a `view` over its domain's entity tables, whose query is its projection, or a `table` that its projection fills from events, such as another domain's published events.
 - Product kinds, checks, the command layer, the merge driver and JSONL storage.
 - Open questions. A question sits under its product or domain, with an optional `about` link to any record.
 
