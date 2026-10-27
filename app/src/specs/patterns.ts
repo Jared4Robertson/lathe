@@ -1,6 +1,6 @@
 import { textOf, byIdOrder, partsOf, type Row, type SpecIndex, type SpecLink, type SpecRecord } from './data';
 
-// Patterns and their rules, as the pages show them (FORMAT.md sections 9 and 10). A domain
+// Patterns and their rules, as the pages show them (lathe/REFERENCE.md). A domain
 // follows a pattern when the domain itself or any of its use cases `follows` it, and then owes each
 // of the pattern's rules: designed when a component in the domain satisfies it, built when that
 // component's file exists, proved when an automated or manual test in the domain proves it, planned

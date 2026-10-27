@@ -72,7 +72,7 @@ function SpecsHome({ index }: { index: SpecIndex }) {
   return (
     <div className="spec-body">
       <PageHeader eyebrow="Specs" title="Products" />
-      {index.products.length === 0 && <p className="hint">No products yet. Add a <code>product.md</code> under <code>specs/</code>.</p>}
+      {index.products.length === 0 && <p className="hint">No products yet. Run <code>lathe init</code> to add the first to <code>data/product.jsonl</code>.</p>}
       <div className="cards">
         {index.products.map((p) => (
           <Link key={p.id} to={addressOf(p.id)} className="card">

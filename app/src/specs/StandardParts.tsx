@@ -3,7 +3,7 @@ import { relationLabelOf } from './labels';
 import { groupRecords } from './groups';
 import { RecordLink, Section } from './parts';
 
-// A standard's page (FORMAT.md section 19): its rules, one row each under their groups (section 22), with what meets each one. A
+// A standard's page (lathe/REFERENCE.md): its rules, one row each under their groups (section 22), with what meets each one. A
 // standard rule owes no coverage, so there is nothing to judge: the page only shows who follows it.
 
 /** The records that meet a standard rule, in ID order. */

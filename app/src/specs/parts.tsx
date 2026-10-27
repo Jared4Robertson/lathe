@@ -106,7 +106,7 @@ export function Section({ title, titleTo, count, level = 2, className, children 
 }
 
 /**
- * Records under their group headings (FORMAT.md section 22): the ungrouped ones first, without a
+ * Records under their group headings (lathe/REFERENCE.md): the ungrouped ones first, without a
  * heading, then each group as a part of the page at `level`, in the order the groups first appear.
  * Records that name no group are drawn once, as they would be without groups.
  */
@@ -153,7 +153,7 @@ const STATE_MEANING: Record<TestState, string> = {
   planned: 'Planned: not written yet. It does not count as proof.',
 };
 
-/** A test's state: automated when the field is absent, as FORMAT.md section 4 says. Any other value is shown as written. */
+/** A test's state: its required `state` column, one of automated, manual and planned. */
 export const testState = (record: SpecRecord): string => textOf(record.row, 'state')?.trim() || 'automated';
 
 /** A small tag naming a test's state. A planned test's tag looks unfinished (dashed). */

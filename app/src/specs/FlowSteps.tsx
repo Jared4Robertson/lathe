@@ -5,7 +5,7 @@ import { Prose } from './mentions';
 import { ProblemBadge, RecordLink, Section } from './parts';
 import { Button } from '../components/Button';
 
-// A flow's steps as a table, in order (FORMAT.md section 13): the step, what happens, what it uses
+// A flow's steps as a table, in order (lathe/REFERENCE.md): the step, what happens, what it uses
 // and what it carries out. A technical flow's steps (section 21) read the same way, with the
 // component each step uses and what it satisfies, and their transaction, locks and statements
 // folded under the row. A flow with several paths shows a table per path, main first, then the
