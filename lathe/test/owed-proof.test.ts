@@ -1,18 +1,19 @@
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { beforeAll, describe, expect, it } from 'vitest';
-import { loadWorkspace, type Workspace } from '../src/index.ts';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import type { Workspace } from '../src/index.ts';
+import { everyKind, fixture, load, refusals, removeData, withTable } from './helpers.ts';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const fixture = (name: string) => path.join(here, 'fixtures', name);
 const domainOf = (ws: Workspace, domain: string) => ws.coverage.find((c) => c.domain === domain)!;
 const kindOf = (ws: Workspace, domain: string, kind: string) => domainOf(ws, domain).obligations.find((o) => o.kind === kind)!;
 
 let owed: Workspace;
 beforeAll(async () => {
-  owed = await loadWorkspace(fixture('owed-proof'));
+  owed = await load('owed-proof');
 });
+afterAll(removeData);
 
 describe('proof still owed by planned tests', () => {
   it('LA-TRC-T46 planned_any counts every obligation a planned test is meant to prove, proved or not', () => {
@@ -32,8 +33,8 @@ describe('proof still owed by planned tests', () => {
     expect(kindOf(owed, 'OW-B', 'pattern_rule')).toMatchObject({ total: 1, proved: 1, planned: 0, planned_any: 0 });
   });
 
-  it('LA-TRC-T48 Each domain counts its own tests by state; a test with no state is automated', () => {
-    // OW-A: T01 has no state, T02 says "Automated", T03 is manual, T04 "planned" and T05 "Planned".
+  it('LA-TRC-T48 Each domain counts its own tests by state, which every test gives', async () => {
+    // OW-A: T01 and T02 are automated, T03 is manual, T04 and T05 are planned.
     expect(domainOf(owed, 'OW-A').tests).toEqual({ automated: 2, manual: 1, planned: 2 });
     expect(domainOf(owed, 'OW-B').tests).toEqual({ automated: 1, manual: 0, planned: 0 });
     // A domain with no tests counts zero of each.
@@ -41,11 +42,16 @@ describe('proof still owed by planned tests', () => {
     const tests = owed.records.filter((r) => r.kind === 'test');
     const counted = owed.coverage.reduce((n, c) => n + c.tests.automated + c.tests.manual + c.tests.planned, 0);
     expect(counted).toBe(tests.length);
+    // A test with no state, or a state in another letter case, is refused: the state is one of three values.
+    const data = everyKind();
+    const { state: _state, ...stateless } = data.test[0];
+    expect(await refusals(withTable(data, 'test', [stateless]))).toEqual([expect.objectContaining({ rule: 'required', file: 'data/test.jsonl' })]);
+    expect(await refusals(withTable(data, 'test', [{ ...data.test[0], state: 'Planned' }]))).toEqual([expect.objectContaining({ rule: 'column', file: 'data/test.jsonl' })]);
   });
 
   it('LA-TRC-T49 planned_any is never less than planned nor more than the total, in every fixture', async () => {
     const names = ['owed-proof', 'coverage-states', 'coverage-extension', 'pattern-good', 'good', 'unfinished'];
-    const workspaces = await Promise.all(names.map((n) => loadWorkspace(fixture(n))));
+    const workspaces = await Promise.all(names.map(load));
     for (const ws of workspaces) {
       for (const c of ws.coverage) {
         expect(Object.keys(c.tests).sort()).toEqual(['automated', 'manual', 'planned']);

@@ -1,3 +1,0 @@
-relation,source_kind,target_kind,role,description,forward_label,reverse_label
-proves,test,control,proof,The test proves the control.,Proves,Proved by
-satisfies,component,control,design,The component carries out the control.,Satisfies,Designed by

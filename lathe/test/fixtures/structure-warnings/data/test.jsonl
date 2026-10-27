@@ -1,0 +1,8 @@
+{"id":"SW-D-T01","title":"Test 01","domain_id":"SW-D","test_type":"domain_rule","state":"manual","when":"Steps."}
+{"id":"SW-D-T02","title":"Test 02","domain_id":"SW-D","test_type":"acceptance","state":"manual","when":"Steps."}
+{"id":"SW-D-T03","title":"Test 03","domain_id":"SW-D","test_type":"acceptance","state":"manual","when":"Steps."}
+{"id":"SW-D-T04","title":"Test 04","domain_id":"SW-D","test_type":"unit","state":"manual","when":"Steps."}
+{"id":"SW-D-T05","title":"Test 05","domain_id":"SW-D","test_type":"acceptance","state":"manual","when":"Steps."}
+{"id":"SW-D-T06","title":"Test 06","domain_id":"SW-D","test_type":"domain_rule","state":"manual","when":"Steps."}
+{"id":"SW-D-T07","title":"Test 07","domain_id":"SW-D","test_type":"integration","state":"manual","when":"Steps."}
+{"id":"SW-D-T08","title":"Test 08","domain_id":"SW-D","test_type":"domain_rule","state":"manual","when":"Steps."}

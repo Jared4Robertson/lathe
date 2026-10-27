@@ -1,0 +1,4 @@
+{"id":"EN-D-EN01","title":"Loan","aggregate_id":"EN-D-A1","role":"root","description":"The loan itself.\n\n```markdown\n## Fields\n\n| Not | The | Real | Table |\n| --- | --- | --- | --- |\n```\n\nEvery loan has these fields.\n\n## Notes\n\n| Other | Table |\n| --- | --- |\n| Not | Read |"}
+{"id":"EN-D-EN02","title":"Renewal","aggregate_id":"EN-D-A1","role":"child"}
+{"id":"EN-D-EN03","title":"Approval","aggregate_id":"EN-D-A1","role":"child"}
+{"id":"EN-E-EN01","title":"Member","aggregate_id":"EN-E-A1","role":"root"}

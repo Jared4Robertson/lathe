@@ -1,0 +1,3 @@
+{"id":"SZ-D-C01","title":"Component 1","domain_id":"SZ-D","layer_id":"SZ-D-LAY01","component_type":"service","file":"lathe.config.json","description":"It MUST hold."}
+{"id":"SZ-D-C02","title":"Component 2","domain_id":"SZ-D","layer_id":"SZ-D-LAY02","component_type":"service","file":"lathe.config.json","description":"It MUST hold."}
+{"id":"SZ-D-C03","title":"Component 3","domain_id":"SZ-D","layer_id":"SZ-D-LAY02","component_type":"service","file":"lathe.config.json","description":"It MUST hold."}

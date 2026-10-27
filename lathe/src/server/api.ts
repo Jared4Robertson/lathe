@@ -3,6 +3,7 @@
 //   GET  /api/spec                SpecData: the schema, every stored table's rows, and the checks' problems and coverage
 //   POST /api/write               { commands } -> WriteAnswer: one transaction through the store's command layer
 //   GET  /api/history?id=<ID>     HistoryAnswer: the commits that changed the record's rows (&skip=<n> for older ones)
+//   GET  /api/reference           the product's Reference (reference.ts): kinds, tables, relations, folders, checks
 //
 // The store of each product root is opened once and kept (on globalThis, so it outlives a reload of this module in
 // the dev server). Before each request the data folder's files are compared with what the store last read or wrote;
@@ -11,9 +12,9 @@ import { existsSync, readdirSync, statSync } from 'node:fs';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import path from 'node:path';
 import { loadConfig } from '../config.ts';
-import { loadWorkspace } from '../index.ts';
+import { buildReference, loadWorkspace } from '../index.ts';
 import { describeKey, rowKey, type Row } from '../store/rows.ts';
-import { formatProblem, openStore, StoreError, type Command, type Store } from '../store/store.ts';
+import { formatProblem, LATHE_DATA_DIR, openStore, StoreError, type Command, type Store } from '../store/store.ts';
 import type { Coverage, Problem } from '../types.ts';
 import type { RowChange, SpecData, WriteAnswer } from './contract.ts';
 import { recordHistory } from './history.ts';
@@ -283,6 +284,15 @@ export async function handleApi(root: string, req: IncomingMessage, res: ServerR
     }
     return true;
   }
+  if (pathname === '/api/reference') {
+    if (req.method !== 'GET') return (send(res, 405, { error: 'Method not allowed' }), true);
+    try {
+      send(res, 200, await buildReference(loadConfig(root).root));
+    } catch (error) {
+      send(res, 500, { error: storeMessage(error) });
+    }
+    return true;
+  }
   if (pathname === '/api/history') {
     if (req.method !== 'GET') return (send(res, 405, { error: 'Method not allowed' }), true);
     const query = new URL(req.url ?? '/', 'http://localhost').searchParams;
@@ -303,9 +313,8 @@ export async function handleApi(root: string, req: IncomingMessage, res: ServerR
   return false;
 }
 
-/** The folders whose changes should make open pages reload, and the event each sends. */
+/** The folders whose changes should make open pages reload, and the event each sends: the product's data and Lathe's (its checks). */
 export function watchTargets(root: string): { dir: string; event: 'spec:changed' }[] {
   const config = loadConfig(root);
-  // A product's own checks change what the pages show, as its data does.
-  return [config.dataDir, config.checksDir].filter((dir): dir is string => Boolean(dir)).map((dir) => ({ dir, event: 'spec:changed' as const }));
+  return [...new Set([config.dataDir, LATHE_DATA_DIR])].map((dir) => ({ dir, event: 'spec:changed' as const }));
 }

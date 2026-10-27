@@ -1,14 +1,11 @@
 // Every proof a test claims is checked against its file, and an optional key replaces the ID rules.
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { loadWorkspace, type Workspace } from '../src/index.ts';
-
-const fixture = (name: string) => path.join(path.dirname(fileURLToPath(import.meta.url)), 'fixtures', name);
+import type { Workspace } from '../src/index.ts';
+import { load } from './helpers.ts';
 
 let ws: Workspace;
 beforeAll(async () => {
-  ws = await loadWorkspace(fixture('claims-proofs'));
+  ws = await load('claims-proofs');
 });
 
 const errorsAbout = (id: string) => ws.problems.filter((p) => p.severity === 'error' && p.record === id);

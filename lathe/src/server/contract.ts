@@ -53,7 +53,7 @@ export interface FieldChange {
 /** One of the record's rows a commit (or the working tree) changed: its own row, a part row it owns, or a link it starts. */
 export interface HistoryChange {
   table: string;
-  /** The row's key, such as TL-LEND-UC01, or TL-LEND-A1-E1 2 for an entity's second field. */
+  /** The row's key, as the store describes it: TL-LEND-UC01, or entity_id TL-LEND-A1-E1, position 2 for an entity's second field. */
   key: string;
   change: 'added' | 'removed' | 'changed';
   /** The columns that changed; for an added or removed row, every column it has. */

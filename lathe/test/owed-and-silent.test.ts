@@ -1,25 +1,22 @@
-// Owed and silent proofs (FORMAT.md section 5): proof-still-owed names each proved obligation a planned test
-// still owes, proof-counts-nowhere reports a test whose proof no domain counts, and manual-test-file-silent
-// reports a manual test whose run_by file never mentions it.
-// The owed-silent-main fixture widens pattern_rule to a full obligation in its own meta extension, so these
-// checks are tested the same whether pattern rules are full or proof-only obligations.
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+// Owed and silent proofs: proof-still-owed names each proved obligation a planned test still owes,
+// proof-counts-nowhere reports a test whose proof no domain counts, and manual-test-file-silent reports a manual
+// test whose file never mentions it. The owed-silent-main fixture declares a proof relation of its own, shows, that
+// reaches a note (not an obligation) and a promise (an obligation of the whole product, outside every domain).
 import { beforeAll, describe, expect, it } from 'vitest';
-import { loadWorkspace, type Workspace } from '../src/index.ts';
+import type { Workspace } from '../src/index.ts';
+import { load } from './helpers.ts';
 
-const fixture = (name: string) => path.join(path.dirname(fileURLToPath(import.meta.url)), 'fixtures', name);
 const recordsOf = (ws: Workspace, check: string) => ws.problems.filter((p) => p.check === check).map((p) => p.record).sort();
 const messagesOf = (ws: Workspace, check: string, record: string) =>
   ws.problems.filter((p) => p.check === check && p.record === record).map((p) => p.message).sort();
 
 const NEW_CHECKS = ['proof-still-owed', 'proof-counts-nowhere', 'manual-test-file-silent'];
 const NOWHERE_FIX = ' Prove what the test\'s domain owes, or move the test into a domain that owes what it proves.';
-const SILENT_FIX = '; name the test in the file, or point run_by at the file that carries it out.';
+const SILENT_FIX = '; name the test in the file, or point its file at the one that carries it out.';
 
 let main: Workspace;
 beforeAll(async () => {
-  main = await loadWorkspace(fixture('owed-silent-main'));
+  main = await load('owed-silent-main');
 });
 
 describe('proof still owed', () => {
@@ -51,7 +48,7 @@ describe('proof still owed', () => {
 
   it('LA-TRC-T68 proof-still-owed names exactly the obligations planned_any counts beyond planned, in every fixture', async () => {
     const names = ['owed-silent-main', 'owed-proof', 'coverage-states', 'good', 'unfinished'];
-    const workspaces = await Promise.all(names.map((n) => loadWorkspace(fixture(n))));
+    const workspaces = await Promise.all(names.map(load));
     for (const ws of workspaces) {
       const counted = ws.coverage.reduce((n, c) => n + c.obligations.reduce((m, o) => m + o.planned_any - o.planned, 0), 0);
       const named = new Set(
@@ -79,16 +76,16 @@ describe('proof that counts nowhere', () => {
 
   it('LA-TRC-T71 Each target is named with its reason, and a planned test is judged too', () => {
     expect(messagesOf(main, 'proof-counts-nowhere', 'OS-A-T07')).toEqual([
-      'Test OS-A-T07\'s proof counts in no domain\'s coverage: OS-A-A1 is not an obligation; OS-DR01 sits in no domain.' + NOWHERE_FIX,
+      'Test OS-A-T07\'s proof counts in no domain\'s coverage: OS-A-N1 is not an obligation; OS-PR01 sits in no domain.' + NOWHERE_FIX,
     ]);
     expect(messagesOf(main, 'proof-counts-nowhere', 'OS-A-T09')).toEqual([
-      'Test OS-A-T09\'s proof counts in no domain\'s coverage: OS-DR01 sits in no domain.' + NOWHERE_FIX,
+      'Test OS-A-T09\'s proof counts in no domain\'s coverage: OS-PR01 sits in no domain.' + NOWHERE_FIX,
     ]);
   });
 
-  it('LA-TRC-T72 A test proving a rule that every following use case marks Not applicable is reported', () => {
+  it('LA-TRC-T72 A test proving a rule that every following use case marks not applicable is reported', () => {
     expect(messagesOf(main, 'proof-counts-nowhere', 'OS-C-T01')).toEqual([
-      'Test OS-C-T01\'s proof counts in no domain\'s coverage: OS-PAT4-R01 is owed by no domain: wherever OS-PAT4 is followed, its setting is Not applicable or no follower meets its applies_when.' + NOWHERE_FIX,
+      'Test OS-C-T01\'s proof counts in no domain\'s coverage: OS-PAT4-R01 is owed by no domain: wherever OS-PAT4 is followed, its setting is not applicable or no follower meets its applies-when setting.' + NOWHERE_FIX,
     ]);
   });
 
@@ -99,12 +96,12 @@ describe('proof that counts nowhere', () => {
 });
 
 describe('manual test whose file is silent', () => {
-  it('LA-TRC-T74 A manual test whose run_by file names neither its ID, nor an ID it proves, nor its key is reported', () => {
+  it('LA-TRC-T74 A manual test whose file names neither its ID, nor an ID it proves, nor its key is reported', () => {
     expect(messagesOf(main, 'manual-test-file-silent', 'OS-A-T10')).toEqual([
-      'Manual test OS-A-T10 is run by code/manual-silent.md, but that file names neither OS-A-T10 nor any ID it proves' + SILENT_FIX,
+      'Manual test OS-A-T10 names the file code/manual-silent.md, but that file names neither OS-A-T10 nor any ID it proves' + SILENT_FIX,
     ]);
     expect(messagesOf(main, 'manual-test-file-silent', 'OS-A-T13')).toEqual([
-      'Manual test OS-A-T13 is run by code/manual-silent.md, but that file names neither OS-A-T13 nor any ID it proves nor its key "return-by-hand"' + SILENT_FIX,
+      'Manual test OS-A-T13 names the file code/manual-silent.md, but that file names neither OS-A-T13 nor any ID it proves nor its key "return-by-hand"' + SILENT_FIX,
     ]);
   });
 
@@ -122,7 +119,7 @@ describe('the three warnings', () => {
       expect(found.length).toBeGreaterThan(0);
       expect(found.every((p) => p.severity === 'warning')).toBe(true);
     }
-    const good = await loadWorkspace(fixture('good'));
+    const good = await load('good');
     expect(good.problems.filter((p) => NEW_CHECKS.includes(p.check))).toEqual([]);
   });
 });

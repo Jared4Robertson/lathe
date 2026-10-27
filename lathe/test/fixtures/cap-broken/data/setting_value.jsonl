@@ -1,0 +1,6 @@
+{"follower_id":"YX-D-UC02","pattern_id":"YX-PAT-A","setting":"permission","value":"things.write"}
+{"follower_id":"YX-D-UC03","pattern_id":"YX-PAT-A","setting":"permission","not_applicable":"it only reads"}
+{"follower_id":"YX-D-UC04","pattern_id":"YX-PAT-A","setting":"audit","value":"always"}
+{"follower_id":"YX-D-UC04","pattern_id":"YX-PAT-A","setting":"permission","value":"things.write"}
+{"follower_id":"YX-D-UC04","pattern_id":"YX-PAT-B","setting":"notify","value":"the owner"}
+{"follower_id":"YX-D-UC05","pattern_id":"YX-PAT-BAD","setting":"permission","value":"things.read"}

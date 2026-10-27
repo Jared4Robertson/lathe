@@ -1,0 +1,2 @@
+{"name":"invariant","product_id":"EXT","label":"Invariant","description":"A product-specific obligation.","parent_kind":"aggregate","stage":"define","obligation":"full"}
+{"name":"sketch","product_id":"EXT","label":"Sketch","description":"A design sketch.","parent_kind":"domain","stage":"design","obligation":"none"}
