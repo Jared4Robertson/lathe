@@ -1,5 +1,5 @@
 import { lowerLabel, plural } from '../plural';
-import { byIdOrder, kindLabel, type SpecIndex, type SpecRecord } from './data';
+import { textOf, byIdOrder, kindLabel, type SpecIndex, type SpecRecord } from './data';
 import type { SectionRule } from '../../../lathe/src/types';
 
 // The folders a product's records are read in, as Client lays out its specs (FORMAT.md section 14):
@@ -90,7 +90,7 @@ export function folderPath(index: SpecIndex, kind: string): string[] {
   return section.stage ? [stageLabel(section.stage), section.label] : [section.label];
 }
 
-const order = (r: SpecRecord) => { const n = Number(r.fields.order); return Number.isInteger(n) ? n : Infinity; };
+const order = (r: SpecRecord) => { const n = Number(textOf(r.row, 'position')); return Number.isInteger(n) ? n : Infinity; };
 const kindRank = (index: SpecIndex) => {
   const ranks = new Map(index.workspace.kinds.map((k, i) => [k.kind, i]));
   return (kind: string) => ranks.get(kind) ?? Infinity;
@@ -222,7 +222,7 @@ export function testGroupOf(index: SpecIndex, test: SpecRecord): TestGroup {
   // Acceptance: it sits under a capability, or proves a UC requirement, whatever else it proves.
   if (capabilityAbove(index, test) || ownersOf(index, test, 'requirement').length > 0) return 'acceptance';
   // Its type names its family.
-  const type = test.fields.test_type?.trim().toLowerCase();
+  const type = textOf(test.row, 'test_type')?.trim().toLowerCase();
   if (type === 'ui') return 'ui';
   if (type === 'design') return 'design';
   if (provedOf(index, test, 'domain_rule').length > 0) return 'domain-rules';

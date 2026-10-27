@@ -2,7 +2,7 @@ import { lowerLabel, plural as pluralOf } from '../plural';
 import { createContext, Fragment, useContext, useState, type AnchorHTMLAttributes, type ReactNode } from 'react';
 import { Link } from '../router';
 import { checkPagePath } from '../format/reference';
-import { kindLabel, problemOrder, type Problem, type SpecIndex, type SpecRecord } from './data';
+import { textOf, kindLabel, partsOf, problemOrder, type Problem, type SpecIndex, type SpecRecord } from './data';
 import { groupRecords } from './groups';
 import { addressOf } from '../views/address';
 import { ActionsSlotContext } from '../components/ActionsSlot';
@@ -154,7 +154,7 @@ const STATE_MEANING: Record<TestState, string> = {
 };
 
 /** A test's state: automated when the field is absent, as FORMAT.md section 4 says. Any other value is shown as written. */
-export const testState = (record: SpecRecord): string => record.fields.state?.trim() || 'automated';
+export const testState = (record: SpecRecord): string => textOf(record.row, 'state')?.trim() || 'automated';
 
 /** A small tag naming a test's state. A planned test's tag looks unfinished (dashed). */
 export function TestStateTag({ record }: { record: SpecRecord }) {
@@ -178,16 +178,17 @@ export function gapsOf(index: SpecIndex, id: string): string[] {
 
 // Fields worth showing in a list row, by kind.
 const ROW_FIELDS: Record<string, string[]> = {
-  use_case: ['actor'],
   endpoint: ['method', 'route'],
   integration: ['system'],
   component: ['component_type', 'file'],
-  test: ['test_type', 'run_by'],
+  test: ['test_type', 'file'],
 };
 
 /** One record as a list row: its link, a few fields, its test state, coverage marks and problems. */
 export function RecordRowBody({ index, record, showKind = false }: { index: SpecIndex; record: SpecRecord; showKind?: boolean }) {
-  const fields = (ROW_FIELDS[record.kind] ?? []).map((f) => record.fields[f]).filter(Boolean);
+  // A use case's row names its actors.
+  const actors = record.kind === 'use_case' ? partsOf(index, record.id, 'use_case_actor').map((a) => textOf(a, 'role_name')).join(', ') : '';
+  const fields = [actors, ...(ROW_FIELDS[record.kind] ?? []).map((f) => textOf(record.row, f))].filter(Boolean);
   const isTest = record.kind === 'test';
   const gaps = gapsOf(index, record.id);
   return (

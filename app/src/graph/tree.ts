@@ -1,5 +1,5 @@
 import type { SpecIndex, SpecRecord } from '../specs/data';
-import { byIdOrder } from '../specs/data';
+import { textOf, byIdOrder } from '../specs/data';
 import { domainFolders, productFolderKinds, productFolders, sectionOfKind, ungrouped, type Folder, type FolderGroup } from '../specs/folders';
 import { plural } from '../plural';
 import { kindLabel } from '../specs/data';
@@ -82,7 +82,7 @@ function listedElsewhere(index: SpecIndex, parent: SpecRecord, child: SpecRecord
 /** A record's children in the tree: its children the nav lists under it, kind by kind, in ID order within a kind. */
 export function recordTreeChildren(index: SpecIndex, record: SpecRecord): SpecRecord[] {
   const rank = kindRank(index);
-  const order = (r: SpecRecord) => { const n = Number(r.fields.order); return Number.isInteger(n) ? n : Infinity; };
+  const order = (r: SpecRecord) => { const n = Number(textOf(r.row, 'position')); return Number.isInteger(n) ? n : Infinity; };
   return (index.children.get(record.id) ?? [])
     .filter((c) => !listedElsewhere(index, record, c))
     .sort((a, b) => rank(a.kind) - rank(b.kind) || (a.kind === b.kind ? order(a) - order(b) : 0) || byIdOrder(a, b));

@@ -1,5 +1,5 @@
 import { plural } from '../plural';
-import { kindLabel, type SpecIndex, type SpecRecord } from './data';
+import { textOf, kindLabel, type SpecIndex, type SpecRecord } from './data';
 import { RecordTree, Section } from './parts';
 
 // An API's page lists its endpoints and the interaction requirements they share, and an
@@ -31,7 +31,7 @@ export function ApiSections({ index, api }: { index: SpecIndex; api: SpecRecord 
 
 export function IntegrationSections({ index, integration }: { index: SpecIndex; integration: SpecRecord }) {
   const exchanges = childrenOf(index, integration.id, 'interaction_requirement');
-  const system = integration.fields.system?.trim();
+  const system = textOf(integration.row, 'system')?.trim();
   return (
     <Section title="Exchanges" count={exchanges.length}>
       <p className="hint">

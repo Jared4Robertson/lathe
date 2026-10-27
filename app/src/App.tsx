@@ -4,7 +4,6 @@ import { navigate, useLocation } from './router';
 import { formatPath, parseSpecRoute, useSpec, type SpecState } from './specs/data';
 import { SpecView } from './specs/SpecPages';
 import { FormatPages, isFormatRoute } from './format/FormatPages';
-import { FormatProvider, useFormatStore } from './format/reference';
 import { CommandsProvider, useAnnounce, useCommand } from './shell/commands';
 import { SPACE_KEYS, spaceCommandId } from './shell/keymap';
 import { Nav } from './shell/Nav';
@@ -43,7 +42,6 @@ function Shell() {
   const spec = useSpec();
   const specRoute = parseSpecRoute(path, spec.index);
   const isAppearance = path === APPEARANCE_PATH;
-  const format = useFormatStore();
   const announce = useAnnounce();
 
   // The nav: collapsed to a rail (remembered), or a drawer on a narrow screen.
@@ -128,7 +126,6 @@ function Shell() {
   }
 
   return (
-    <FormatProvider value={format}>
     <SpacesProvider value={spaces}>
     <SpaceCommands spaces={spaces} />
     <DesktopTitleBar index={spaces.index} />
@@ -181,7 +178,6 @@ function Shell() {
       {page}
     </div>
     </SpacesProvider>
-    </FormatProvider>
   );
 }
 

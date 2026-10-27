@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { Link } from '../router';
 import { checkPagePath } from '../format/reference';
-import { RecordMarkdown } from './mentions';
+import { RecordText } from './RecordText';
 import { DomainPatterns } from './PatternParts';
 import { patternsFollowedBy } from './patterns';
 import { CoverageBars, ProductSummary, pluralLabel } from './ProductHealth';
@@ -15,6 +15,7 @@ import {
   isWorkspaceProblem,
   kindLabel,
   problemOrder,
+  textOf,
   type Problem,
   type SpecIndex,
   type SpecRecord,
@@ -29,16 +30,6 @@ import { addressOf, HOME_PATH } from '../views/address';
 // its Wiki pane beside or instead of the graph.
 
 // ---------- Shared pieces ----------
-
-export function SourceNote({ spec }: { spec: SpecState }) {
-  if (spec.source !== 'fixture') return null;
-  return (
-    <p className="source-note" role="note">
-      <strong>Sample data.</strong> This is <code>lathe/fixtures/workspace.sample.json</code>, not your specs
-      {spec.sourceReason ? ` (${spec.sourceReason})` : ''}.
-    </p>
-  );
-}
 
 const recordsIn = (index: SpecIndex, predicate: (r: SpecRecord) => boolean) => index.workspace.records.filter(predicate).sort(byIdOrder);
 
@@ -63,7 +54,6 @@ export function SpecView({ spec, space, route }: { spec: SpecState; space: SpecI
   }
   return (
     <main className="spec-page panel" id="main">
-      <SourceNote spec={spec} />
       {spec.error && index && <p className="error">Couldn't reload the specs: {spec.error}</p>}
       {page}
     </main>
@@ -100,7 +90,7 @@ function SpecsHome({ index }: { index: SpecIndex }) {
 export const problemsUnder = (index: SpecIndex, key: 'product' | 'domain', id: string) =>
   index.workspace.problems.filter((p) => p.record && index.byId.get(p.record)?.[key] === id);
 
-/** A product's wiki: its body, its domains (not their contents), its summary, open questions and problems. */
+/** A product's wiki: its text, its domains (not their contents), its summary, open questions and problems. */
 export function ProductWiki({ index, id }: { index: SpecIndex; id: string }) {
   const product = index.byId.get(id)!;
   const domains = index.domainsOf.get(id) ?? [];
@@ -108,7 +98,7 @@ export function ProductWiki({ index, id }: { index: SpecIndex; id: string }) {
   const problems = problemsUnder(index, 'product', id);
   return (
     <div className="spec-body">
-      <RecordMarkdown index={index} record={product} />
+      <RecordText index={index} record={product} />
       <Section title="Domains" count={domains.length}>
         {domains.length === 0 && <p className="hint">No domains yet.</p>}
         <div className="cards">
@@ -150,7 +140,7 @@ function QuestionList({ index, questions }: { index: SpecIndex; questions: SpecR
         <>
           <RecordLink index={index} id={q.id} row />
           <small className="meta">
-            {q.fields.owner && <>owner {q.fields.owner}</>}
+            {textOf(q.row, 'owner') && <>owner {textOf(q.row, 'owner')}</>}
             {(index.outgoing.get(q.id) ?? []).filter((l) => l.relation === 'about').map((l) => (
               <span key={l.target}> · about <RecordLink index={index} id={l.target} showTitle={false} /></span>
             ))}
@@ -237,7 +227,7 @@ export function DomainWiki({ index, id }: { index: SpecIndex; id: string }) {
 
   return (
     <div className="spec-body">
-      <RecordMarkdown index={index} record={domain} />
+      <RecordText index={index} record={domain} />
       <div className="search">
         <label htmlFor="record-search">Filter records</label>
         <input id="record-search" type="search" value={query} placeholder="ID or title" onChange={(e) => setQuery(e.target.value)} />
