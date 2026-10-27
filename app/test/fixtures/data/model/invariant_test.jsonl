@@ -1,0 +1,1 @@
+{"id":"P-D-INV01-T","title":"A second open loan of a thing is refused","invariant_id":"P-D-INV01","level":"database","state":"automated","file":"test/loans.test.ts","given":"An open loan of the drill","when":"A second loan of the drill opens","then":"It is refused"}

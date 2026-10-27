@@ -1,0 +1,1 @@
+{"id":"DM-SHOP-UC01-R01-T01","title":"Adding an item puts it in the basket","uc_requirement_id":"DM-SHOP-UC01-R01","level":"api","state":"automated","file":"test/basket.test.ts","given":"An empty basket","when":"The shopper adds a lamp","then":"The basket holds the lamp"}

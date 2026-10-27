@@ -1,2 +1,2 @@
-{"pattern_id":"DM-PAT-CHECKOUT","position":1,"name":"record"}
-{"pattern_id":"DM-PAT-CHECKOUT","position":2,"name":"audit"}
+{"pattern_id":"DM-PAT-AUDIT","position":1,"name":"retention","meaning":"How long records are kept."}
+{"pattern_id":"DM-PAT-AUDIT","position":2,"name":"who","meaning":"Who is recorded."}

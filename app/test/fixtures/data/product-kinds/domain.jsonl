@@ -1,0 +1,3 @@
+{"id":"DM-PAY","title":"Payments","product_id":"DM","subdomain_type":"generic"}
+{"id":"DM-SHOP","title":"Shop","product_id":"DM","subdomain_type":"core","description":"Where shoppers fill a basket."}
+{"id":"NF-NOTE","title":"Notes","product_id":"NF","subdomain_type":"core"}

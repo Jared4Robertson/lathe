@@ -1,6 +1,0 @@
-{"id":"P-D-EN01","title":"Thing","aggregate_id":"P-D-A1","role":"root"}
-{"id":"P-D-EN02","title":"Member","aggregate_id":"P-D-A2","role":"root"}
-{"id":"P-D-EN03","title":"Loan","aggregate_id":"P-D-A3","role":"root"}
-{"id":"P-D-EN04","title":"Return","aggregate_id":"P-D-A3","role":"child"}
-{"id":"P-D-EN05","title":"Reminder","aggregate_id":"P-D-A3","role":"child"}
-{"id":"P-E-EN01","title":"Account","aggregate_id":"P-E-A1","role":"root"}

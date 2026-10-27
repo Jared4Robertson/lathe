@@ -1,0 +1,4 @@
+{"entity_id":"DM-SHOP-EN01","position":1,"name":"Basket ID","meaning":"The basket's number.","type":"whole number","required":true,"column_name":"id","example":"7"}
+{"entity_id":"DM-SHOP-EN01","position":2,"name":"Opened at","meaning":"When the basket was opened.","type":"date and time","required":true}
+{"entity_id":"DM-SHOP-EN02","position":1,"name":"Item","meaning":"What is in the basket.","type":"text","required":true}
+{"entity_id":"DM-SHOP-EN02","position":2,"name":"Quantity","meaning":"How many.","type_value_object_id":"DM-VO01","required":true}

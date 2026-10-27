@@ -1,0 +1,2 @@
+{"id":"DM-SHOP-EN01","title":"Basket","aggregate_id":"DM-SHOP-A1","role":"root"}
+{"id":"DM-SHOP-EN02","title":"Basket line","aggregate_id":"DM-SHOP-A1","role":"child"}

@@ -1,0 +1,3 @@
+{"id":"P-D-EN02-TB","title":"Members table","entity_id":"P-D-EN02","name":"members","storage":"table"}
+{"id":"P-D-EN03-TB","title":"Loans table","entity_id":"P-D-EN03","name":"loans","storage":"table"}
+{"id":"P-D-RM01-TB","title":"Catalog view","read_model_id":"P-D-RM01","name":"catalog","storage":"view"}

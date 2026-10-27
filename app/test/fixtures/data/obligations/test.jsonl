@@ -1,3 +1,0 @@
-{"id":"DM-SHOP-T01","title":"Adding an item shows it","domain_id":"DM-SHOP","test_type":"unit","state":"automated","file":"test/basket.test.ts"}
-{"id":"DM-SHOP-T02","title":"A person fills a basket to 50","domain_id":"DM-SHOP","test_type":"acceptance","state":"manual","then":"Add 50 items, then try one more."}
-{"id":"DM-SHOP-T03","title":"A full basket answers 409","domain_id":"DM-SHOP","test_type":"api","state":"planned"}

@@ -1,4 +1,0 @@
-{"id":"DM-PAY-UC01","title":"Pay by card","domain_id":"DM-PAY"}
-{"id":"DM-SHOP-UC01","title":"Add an item to the basket","domain_id":"DM-SHOP","goal":"A shopper adds an item."}
-{"id":"DM-SHOP-UC02","title":"Empty the basket","domain_id":"DM-SHOP","capability_id":"DM-SHOP-CAP01"}
-{"id":"DM-SHOP-UC03","title":"Look at an item","domain_id":"DM-SHOP","capability_id":"DM-SHOP-CAP02"}

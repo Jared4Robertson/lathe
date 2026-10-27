@@ -1,0 +1,1 @@
+{"id":"P-VO01-C01-T","title":"A blank name is refused","constraint_id":"P-VO01-C01","level":"unit","state":"automated","file":"test/name.test.ts","accepts":"Ada","refuses":"(blank)"}

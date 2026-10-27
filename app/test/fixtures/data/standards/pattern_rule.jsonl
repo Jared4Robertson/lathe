@@ -1,2 +1,0 @@
-{"id":"DM-PAT-CHECKOUT-R01","title":"The step shows what it saved","pattern_id":"DM-PAT-CHECKOUT","statement":"The step MUST show the saved record."}
-{"id":"DM-PAT-CHECKOUT-R02","title":"The step writes an audit line","pattern_id":"DM-PAT-CHECKOUT","statement":"The step MUST write the audit line its `audit` setting names.","setting":"audit"}

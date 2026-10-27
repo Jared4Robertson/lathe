@@ -1,0 +1,4 @@
+{"table_id":"P-D-EN02-TB","position":1,"type":"primary","columns":["id"]}
+{"table_id":"P-D-EN03-TB","position":1,"type":"primary","columns":["id"]}
+{"table_id":"P-D-EN03-TB","position":2,"type":"unique","columns":["thing_id"],"name":"loans_one_open_per_thing","invariant_id":"P-D-INV01","condition":"returned_at IS NULL"}
+{"table_id":"P-D-EN03-TB","position":3,"type":"foreign","columns":["member_id"],"target_table_id":"P-D-EN02-TB"}

@@ -1,27 +1,68 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { Coverage, Kind, Problem, RelationRule, SectionRule } from '../../../lathe/src/types';
+import type { Coverage, Problem } from '../../../lathe/src/types';
 import type { Row, SpecData, Value } from '../../../lathe/src/server/contract';
-import type { SchemaDescription } from '../../../lathe/src/store/schema';
+import type { IdScope, SchemaDescription, Stage } from '../../../lathe/src/store/schema';
 import { onLatheEvent } from '../events';
 import { isRecordId, SPACE_CHECKS } from '../views/address';
 
-export type { Coverage, Kind, Problem, Row, SchemaDescription, SpecData, Value };
+export type { Coverage, Problem, Row, SchemaDescription, SpecData, Stage, Value };
 
 // The app's spec index, built from the typed rows GET /api/spec serves (lathe/src/server/contract.ts):
-// a record per row of a kind's table, its parent from the first of its kind's parent columns that
+// a record per row of a kind's table, its parent from the one of its kind's parent columns that
 // holds a value, a link per row of a relation's table, and the part rows (an entity's fields, a use
-// case's actors and steps) under the record that owns them. Every view reads this index.
+// case's actors, a table's keys) under the record that owns them. A kind with no owner (a value
+// object, a specification, a view, an integration, a UI component) has no parent: its product, and a
+// specification's domain, follow from its ID. Every view reads this index.
+
+/** A kind as the app reads it from the schema description. */
+export interface Kind {
+  kind: string;
+  label: string;
+  /** Its stage; null for the product, an open question, and a product's kind declared outside the stages. */
+  stage: Stage | null;
+  /** The kinds its records may sit under: none for a product and a kind with no owner, two for an endpoint, a table and an open question. */
+  parent_kinds: string[];
+  /** The columns every record of the kind must give, besides its id, title and parent columns. */
+  required_fields: string[];
+  /** An obligation must be designed, built and proved; coverage counts every obligation kind. */
+  obligation: boolean;
+  /** What its IDs start with: its product's, its domain's or its parent's ID; null for a product's own kind. */
+  id_scope: IdScope | null;
+  description: string;
+}
+
+/** A stage, in the order a product is modeled: domain model, use cases, interaction design, technical specification, test plan. */
+export interface StageRule {
+  stage: Stage;
+  label: string;
+  description: string;
+}
+
+/** One pair of kinds a relation may link. */
+export interface RelationRule {
+  relation: string;
+  source_kind: string;
+  /** A kind, or '*' for any kind. */
+  target_kind: string;
+  /** 'design': the link designs its target (a step fulfilling a UC requirement); 'proof': it proves it; '' otherwise. */
+  role: 'design' | 'proof' | '';
+  description: string;
+  /** The link in plain words read from the source, in sentence case: "Fulfills". */
+  forward_label: string;
+  /** The link in plain words read from the target, in sentence case: "Fulfilled by". */
+  reverse_label: string;
+}
 
 /** One record: a row of its kind's table, placed in the tree. */
 export interface SpecRecord {
   id: string;
   kind: string;
   title: string;
-  /** The record it sits under: the first of its kind's parent columns that holds a value; null for a product. */
+  /** The record it sits under: the one of its kind's parent columns that holds a value; null for a product and a kind with no owner. */
   parent: string | null;
   /** The product it sits in (itself for a product). */
   product: string | null;
-  /** The domain it sits in (itself for a domain), or null above domain level. */
+  /** The domain it sits in (itself for a domain), or null for what sits at product level. */
   domain: string | null;
   /** The row as the data file holds it: every column that has a value, typed. */
   row: Row;
@@ -38,7 +79,7 @@ export interface SpecLink {
   target: string;
 }
 
-/** One row of a part table (an entity's field, a use case's step), with the record that owns it. */
+/** One row of a part table (an entity's field, a table's key), with the record that owns it. */
 export interface PartRow {
   table: string;
   owner: string;
@@ -52,8 +93,8 @@ export interface Workspace {
   dataDir: string;
   /** Every kind, in the schema's kind order (kindOrder). */
   kinds: Kind[];
-  /** The folders kinds sit in, by stage then place. */
-  sections: SectionRule[];
+  /** The five stages, in order. */
+  stages: StageRule[];
   /** Each relation's allowed pairs, one rule per pair. */
   relations: RelationRule[];
   records: SpecRecord[];
@@ -94,18 +135,25 @@ export function partTablesOf(schema: SchemaDescription, kind: string): string[] 
 }
 
 /**
- * Orders kind names as the schema does: Lathe's kinds by their position (the product and its domains, the Define
- * stage, the Design stage, then open questions), a product's own kinds after them, by name.
+ * Orders kind names as the schema does: Lathe's kinds by their position (the product, the five stages in order, then
+ * open questions), a product's own kinds after them, by name.
  */
 export function kindOrder(schema: SchemaDescription): (a: string, b: string) => number {
   const rank = (kind: string) => schema.kinds[kind]?.position ?? Number.MAX_SAFE_INTEGER;
   return (a, b) => rank(a) - rank(b) || a.localeCompare(b);
 }
 
-// Folders by stage: Define, Design, then those outside the stages (Shared).
-const stageRank = (stage: string | null) => (stage === 'define' ? 0 : stage === 'design' ? 1 : 2);
+/**
+ * The product, or domain, an ID starts with: the longest of the IDs that, with a hyphen, starts it. A kind with no
+ * owner takes its product (and a specification its domain) from its ID this way.
+ */
+function prefixOwner(ids: readonly string[], id: string): string | null {
+  let best: string | null = null;
+  for (const owner of ids) if (id.startsWith(`${owner}-`) && (!best || owner.length > best.length)) best = owner;
+  return best;
+}
 
-/** Reads the schema's kinds, folders and relations, and the rows, into a Workspace. */
+/** Reads the schema's kinds, stages and relations, and the rows, into a Workspace. */
 export function buildWorkspace(data: SpecData): Workspace {
   const { schema } = data;
   const names = Object.keys(schema.kinds).sort(kindOrder(schema));
@@ -115,18 +163,17 @@ export function buildWorkspace(data: SpecData): Workspace {
     return {
       kind: name,
       label: k.label,
-      stage: k.stage ?? '',
-      section: k.section ?? '',
+      stage: k.stage,
       parent_kinds: k.parents.map((p) => p.kind),
       required_fields: (schema.tables[name]?.columns ?? []).filter((c) => c.required && !skip.has(c.name)).map((c) => c.name),
-      obligation: k.obligation !== 'none',
-      proof_only: k.obligation === 'proof',
+      obligation: k.obligation,
+      id_scope: k.idScope,
       description: k.description ?? '',
     };
   });
-  const sections: SectionRule[] = [...schema.sections]
-    .sort((a, b) => stageRank(a.stage) - stageRank(b.stage) || a.position - b.position)
-    .map((s) => ({ section: s.name, stage: s.stage ?? '', order: s.position, label: s.label, description: s.description }));
+  const stages: StageRule[] = [...schema.stages]
+    .sort((a, b) => a.position - b.position)
+    .map((s) => ({ stage: s.name, label: s.label, description: s.description }));
   const relations: RelationRule[] = Object.values(schema.relations).flatMap((r) =>
     r.pairs.map((p) => ({
       relation: r.name,
@@ -148,15 +195,28 @@ export function buildWorkspace(data: SpecData): Workspace {
     });
   });
   const byId = new Map(placed.map((r) => [r.id, r]));
-  const ancestor = (start: Omit<SpecRecord, 'product' | 'domain'>, kind: string): string | null => {
+  const productIds = placed.filter((r) => r.kind === 'product').map((r) => r.id);
+  const domainIds = placed.filter((r) => r.kind === 'domain').map((r) => r.id);
+  // A record's product and domain: the nearest of each up its parent chain. A chain that ends in a kind with no owner
+  // takes its product from that record's ID, and its domain too when that kind's IDs are domain-scoped.
+  const scopeOf = (start: Omit<SpecRecord, 'product' | 'domain'>): { product: string | null; domain: string | null } => {
     const seen = new Set<string>();
+    let product: string | null = null;
+    let domain: string | null = null;
+    let top = start;
     for (let r: typeof start | undefined = start; r && !seen.has(r.id); r = r.parent ? byId.get(r.parent) : undefined) {
       seen.add(r.id);
-      if (r.kind === kind) return r.id;
+      top = r;
+      if (r.kind === 'domain') domain ??= r.id;
+      if (r.kind === 'product') product = r.id;
     }
-    return null;
+    if (top.kind !== 'product' && !top.parent) {
+      product ??= prefixOwner(productIds, top.id);
+      if (!domain && schema.kinds[top.kind]?.idScope === 'domain') domain = prefixOwner(domainIds, top.id);
+    }
+    return { product, domain };
   };
-  const records: SpecRecord[] = placed.map((r) => ({ ...r, product: ancestor(r, 'product'), domain: ancestor(r, 'domain') }));
+  const records: SpecRecord[] = placed.map((r) => ({ ...r, ...scopeOf(r) }));
 
   const links: SpecLink[] = [];
   const parts: PartRow[] = [];
@@ -173,7 +233,7 @@ export function buildWorkspace(data: SpecData): Workspace {
     schema,
     dataDir: dir,
     kinds,
-    sections,
+    stages,
     relations,
     records,
     links,

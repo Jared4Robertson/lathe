@@ -1,0 +1,2 @@
+{"id":"P-D-INV01","title":"A thing is lent to one member at a time","aggregate_id":"P-D-A3","statement":"No two open loans MAY name the same thing."}
+{"id":"P-D-INV02","title":"A loan is returned once","aggregate_id":"P-D-A3","statement":"A loan MUST be returned at most once."}

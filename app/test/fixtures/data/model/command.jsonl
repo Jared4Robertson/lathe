@@ -1,0 +1,6 @@
+{"id":"P-D-CMD01","title":"Open loan","aggregate_id":"P-D-A3","description":"Lends a thing to a member."}
+{"id":"P-D-CMD02","title":"Return thing","aggregate_id":"P-D-A3"}
+{"id":"P-D-CMD03","title":"Register member","aggregate_id":"P-D-A2"}
+{"id":"P-D-CMD04","title":"Suspend member","aggregate_id":"P-D-A2"}
+{"id":"P-D-CMD05","title":"Mark thing lent","aggregate_id":"P-D-A1"}
+{"id":"P-E-CMD01","title":"Close account","aggregate_id":"P-E-A1"}

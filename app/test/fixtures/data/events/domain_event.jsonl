@@ -1,4 +1,0 @@
-{"id":"P-D-EV01","title":"Thing lent","aggregate_id":"P-D-A3","description":"Something happened: thing lent."}
-{"id":"P-D-EV02","title":"Thing returned","aggregate_id":"P-D-A3","description":"Something happened: thing returned."}
-{"id":"P-D-EV03","title":"Loan became overdue","aggregate_id":"P-D-A3","description":"Something happened: loan became overdue."}
-{"id":"P-E-EV01","title":"Account closed","aggregate_id":"P-E-A1","description":"Something happened: account closed."}

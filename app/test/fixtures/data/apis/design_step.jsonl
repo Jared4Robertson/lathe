@@ -1,3 +1,0 @@
-{"id":"DM-SHOP-DF01-S01","title":"The service locks the basket and adds the item","design_flow_id":"DM-SHOP-DF01","path":"main","position":1,"description":"It checks the count **first**.","transaction_name":"add item","locks":"the basket row","statements":"2"}
-{"id":"DM-SHOP-DF01-S02","title":"The service returns the basket","design_flow_id":"DM-SHOP-DF01","path":"main","position":2}
-{"id":"DM-SHOP-DF01-S03","title":"The service refuses a full basket","design_flow_id":"DM-SHOP-DF01","path":"refused","position":1}

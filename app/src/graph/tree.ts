@@ -1,39 +1,33 @@
 import type { SpecIndex, SpecRecord } from '../specs/data';
-import { textOf, byIdOrder } from '../specs/data';
-import { domainFolders, productFolderKinds, productFolders, sectionOfKind, ungrouped, type Folder, type FolderGroup } from '../specs/folders';
-import { plural } from '../plural';
 import { kindLabel } from '../specs/data';
+import { foldedChildren, ownerFolders, type Folder } from '../specs/folders';
+import { plural } from '../plural';
 
-// The graph's tree is the nav's tree (brief 56): a product holds its Shared folder, its domains,
-// then its open questions; a domain holds its stages (Define, Design) and the folders
-// outside every stage (open questions); a stage holds its folders; a folder holds its records, by
-// the same folder model the nav, the domain page and the group pages read (specs/folders.ts).
-// Every stage and folder is a level of the tree, like a file explorer, and is a group node in the
-// graph with an address of its own ("DM-SHOP/define", "DM-SHOP/design/technical-specification").
-//
-// The one-kind rule: a folder that mixes kinds the nav lists side by side (Interaction design:
-// flows, views, endpoints) splits into one group per kind; a folder of one kind does not, and nor
-// does one that lists containers and then the records outside any (Capabilities: capabilities, then
-// use cases outside any; Technical specification: layers, then components outside any). A record's
-// own children are drawn through one group per kind when they are of more than one kind, as before;
-// a capability's flows and tests are listed in Interaction design and Test plan, as the nav lists
-// them, so a capability's children are its use cases.
+// The graph's tree is the nav's tree: a product holds its own stages (what sits at product level),
+// its domains, then its open questions; a domain holds its stages, then the folders outside every
+// stage (open questions); a stage holds one folder per kind; a folder holds the records that start a
+// branch of the stage, by the same folder model the nav, the domain page and the group pages read
+// (specs/folders.ts). Every stage and folder is a level of the tree, like a file explorer, and is a
+// group node in the graph with an address of its own ("DM-SHOP/domain-model",
+// "DM-SHOP/domain-model/aggregate"). A record's children of its own stage fold under it, through one
+// group per kind when they are of more than one kind ("DM-SHOP-A1/command"); its children of a
+// later stage are listed in that stage's folder.
 //
 // The tree is built once per index (it is pure data) and every lookup is a map read.
 
 export interface TreeGroup {
-  /** The name, as the nav shows it: "Define", "Technical specification", "Flows", "Acceptance tests". */
+  /** The name, as the nav shows it: "Domain model", "Aggregates", "Commands". */
   label: string;
-  /** The kind of its records for a kind group or a test-plan group (what hiding a kind hides), or null for a stage or a named folder. */
+  /** The kind of its records for a folder or a kind group (what hiding a kind hides), or null for a stage. */
   kind: string | null;
   /** How many records it shows, as the nav counts them. */
   count: number;
-  /** Its records at the first record level beneath it, however deep its groups: what its marks and its page list. */
+  /** Its records at the first record level beneath it: what its marks and its page list. */
   members: SpecRecord[];
   /** The nearest record above it (its domain, product or parent record). */
   owner: string;
-  /** 'stage', 'folder', 'kind' (a folder split by kind, or a record's kind group) or 'tests' (a test-plan group). */
-  role: 'stage' | 'folder' | 'kind' | 'tests';
+  /** 'stage', 'folder' (a stage's folder of one kind) or 'kind' (a record's group of one kind of child, or a folder outside the stages). */
+  role: 'stage' | 'folder' | 'kind';
 }
 
 export interface Tree {
@@ -47,48 +41,11 @@ const kindRank = (index: SpecIndex) => {
   return (kind: string) => ranks.get(kind) ?? ranks.size;
 };
 
-/** The kinds of some records, in the meta-model's order. */
+/** The kinds of some records, in the schema's order. */
 function kindsOf(index: SpecIndex, records: readonly SpecRecord[]): string[] {
   const rank = kindRank(index);
   return [...new Set(records.map((r) => r.kind))].sort((a, b) => rank(a) - rank(b));
 }
-
-/**
- * Whether a folder's records split into one group per kind: they are of more than one kind, and
- * not every kind after the first can sit inside another kind in the folder (the nav's "capabilities,
- * then use cases outside any capability" is one list, not two).
- */
-export function splitsByKind(index: SpecIndex, kinds: readonly string[]): boolean {
-  if (kinds.length <= 1) return false;
-  // A kind sits inside another when the meta-model says it may, or when the specs already put one there.
-  const inside = (k: string) =>
-    (index.kinds.get(k)?.parent_kinds ?? []).some((p) => p !== k && kinds.includes(p)) ||
-    index.workspace.records.some((r) => r.kind === k && r.parent !== null && kinds.includes(index.byId.get(r.parent)?.kind ?? '') && index.byId.get(r.parent)!.kind !== k);
-  return !kinds.slice(1).every(inside);
-}
-
-/**
- * Whether a record's child is listed elsewhere in the nav: a capability's flows and tests sit in
- * Interaction design and Test plan, not under the capability (specs/folders.ts domainRecords).
- */
-function listedElsewhere(index: SpecIndex, parent: SpecRecord, child: SpecRecord): boolean {
-  if (parent.kind !== 'capability') return false;
-  const above = parent.parent ? index.byId.get(parent.parent) : undefined;
-  if (above?.kind !== 'domain') return false;
-  const section = (kind: string) => sectionOfKind(index, kind)?.section ?? `kind:${kind}`;
-  return section(child.kind) !== section(parent.kind);
-}
-
-/** A record's children in the tree: its children the nav lists under it, kind by kind, in ID order within a kind. */
-export function recordTreeChildren(index: SpecIndex, record: SpecRecord): SpecRecord[] {
-  const rank = kindRank(index);
-  const order = (r: SpecRecord) => { const n = Number(textOf(r.row, 'position')); return Number.isInteger(n) ? n : Infinity; };
-  return (index.children.get(record.id) ?? [])
-    .filter((c) => !listedElsewhere(index, record, c))
-    .sort((a, b) => rank(a.kind) - rank(b.kind) || (a.kind === b.kind ? order(a) - order(b) : 0) || byIdOrder(a, b));
-}
-
-const deepRecords = (g: FolderGroup): SpecRecord[] => [...g.records, ...g.groups.flatMap(deepRecords)];
 
 const cache = new WeakMap<SpecIndex, Tree>();
 
@@ -111,7 +68,7 @@ export function treeOf(index: SpecIndex): Tree {
   const addRecord = (r: SpecRecord) => {
     if (visited.has(r.id)) return;
     visited.add(r.id);
-    const kids = recordTreeChildren(index, r);
+    const kids = foldedChildren(index, r);
     const kinds = kindsOf(index, kids);
     if (kinds.length > 1) {
       for (const kind of kinds) {
@@ -119,95 +76,44 @@ export function treeOf(index: SpecIndex): Tree {
         const members = kids.filter((c) => c.kind === kind);
         add(r.id, gid);
         group(gid, { label: plural(kindLabel(index, kind)), kind, count: members.length, members, owner: r.id, role: 'kind' });
-        for (const m of members) { add(gid, m.id); addRecord(m); }
+        for (const m of members) { if (add(gid, m.id)) addRecord(m); }
       }
     } else {
-      for (const c of kids) { add(r.id, c.id); addRecord(c); }
+      for (const c of kids) { if (add(r.id, c.id)) addRecord(c); }
     }
   };
 
-  const addRecords = (parent: string, records: readonly SpecRecord[]) => {
-    for (const r of records) { if (add(parent, r.id)) addRecord(r); }
+  const addFolder = (parent: string, folder: Folder, owner: string, role: TreeGroup['role']) => {
+    add(parent, folder.key);
+    group(folder.key, { label: folder.label, kind: folder.kind, count: folder.count, members: folder.records, owner, role });
+    for (const r of folder.records) { if (add(folder.key, r.id)) addRecord(r); }
   };
 
-  /** A test-plan group (computed, not a record) and what is within it. */
-  const addTestGroup = (parent: string, g: FolderGroup, owner: string) => {
-    add(parent, g.key);
-    group(g.key, { label: g.label, kind: 'test', count: g.count, members: deepRecords(g).sort(byIdOrder), owner, role: 'tests' });
-    for (const inner of g.groups) addTestGroup(g.key, inner, owner);
-    addRecords(g.key, g.records);
-  };
-
-  /** A folder's contents: its groups (layers, test-plan groups) and records, split by kind when the one-kind rule asks. */
-  const addFolder = (parent: string, id: string, folder: Folder, owner: string, label = folder.label) => {
-    add(parent, id);
-    const members = folder.groups.length > 0 && !folder.kinds.includes('layer')
-      ? [...folder.groups.flatMap(deepRecords), ...ungrouped(folder)].sort(byIdOrder)
-      : folder.records;
-    const kinds = kindsOf(index, folder.records);
-    // A folder of a kind in no known section (open questions) is a group of that kind; a named folder has no kind of its own.
-    const ofKind = folder.section.startsWith('kind:');
-    group(id, { label, kind: ofKind ? folder.section.slice('kind:'.length) : null, count: folder.count, members, owner, role: ofKind ? 'kind' : 'folder' });
-    if (folder.groups.length > 0 && folder.kinds.includes('layer')) {
-      // Layers are records: each layer, in order, then the components outside any layer, straight in the folder.
-      for (const g of folder.groups) {
-        if (g.record) addRecords(id, [g.record]);
-        else addRecords(id, g.records);
-      }
-      addRecords(id, ungrouped(folder));
-      return;
-    }
-    if (folder.groups.length > 0) {
-      for (const g of folder.groups) addTestGroup(id, g, owner);
-      addRecords(id, ungrouped(folder));
-      return;
-    }
-    if (splitsByKind(index, kinds)) {
-      for (const kind of kinds) {
-        const kid = `${id}/${kind}`;
-        const records = folder.records.filter((r) => r.kind === kind);
-        add(id, kid);
-        group(kid, { label: plural(kindLabel(index, kind)), kind, count: records.length, members: records, owner, role: 'kind' });
-        addRecords(kid, records);
-      }
-      return;
-    }
-    addRecords(id, folder.records);
-  };
-
-  const addDomain = (d: SpecRecord) => {
-    visited.add(d.id);
-    const { stages, loose } = domainFolders(index, d.id);
+  /** A domain's or a product's stages with records, each with its folders with records, then its folders outside the stages. */
+  const addStages = (ownerId: string) => {
+    const { stages } = ownerFolders(index, ownerId);
     for (const stage of stages) {
       if (stage.count === 0) continue;
-      add(d.id, stage.key);
-      const shown = stage.folders.filter((f) => f.records.length > 0);
-      group(stage.key, { label: stage.label, kind: null, count: stage.count, members: shown.flatMap((f) => f.records), owner: d.id, role: 'stage' });
-      for (const f of shown) addFolder(stage.key, f.key, f, d.id);
+      add(ownerId, stage.key);
+      const shown = stage.folders.filter((f) => f.count > 0);
+      group(stage.key, { label: stage.label, kind: null, count: stage.count, members: shown.flatMap((f) => f.records), owner: ownerId, role: 'stage' });
+      for (const f of shown) addFolder(stage.key, f, ownerId, 'folder');
     }
-    // A folder outside every stage of one kind (open questions) is the domain's group of that kind, at its usual address.
-    for (const f of loose) {
-      const id = f.section.startsWith('kind:') ? `${d.id}/${f.section.slice('kind:'.length)}` : f.key;
-      addFolder(d.id, id, f, d.id);
-    }
+  };
+  const addLoose = (ownerId: string) => {
+    for (const f of ownerFolders(index, ownerId).loose) addFolder(ownerId, f, ownerId, 'kind');
   };
 
   for (const product of index.products) {
     visited.add(product.id);
-    for (const f of productFolders(index, product.id)) {
-      if (f.records.length > 0) addFolder(product.id, f.key, f, product.id);
+    addStages(product.id);
+    for (const d of index.domainsOf.get(product.id) ?? []) {
+      if (!add(product.id, d.id)) continue;
+      visited.add(d.id);
+      addStages(d.id);
+      addLoose(d.id);
     }
-    for (const d of index.domainsOf.get(product.id) ?? []) { if (add(product.id, d.id)) addDomain(d); }
-    // The product's other children, by kind, as the nav's groups: open questions.
-    const folderKinds = productFolderKinds(index);
-    const rest = (index.children.get(product.id) ?? []).filter((c) => c.kind !== 'domain' && !folderKinds.has(c.kind));
-    for (const kind of kindsOf(index, rest)) {
-      const gid = `${product.id}/${kind}`;
-      const members = rest.filter((c) => c.kind === kind);
-      add(product.id, gid);
-      group(gid, { label: plural(kindLabel(index, kind)), kind, count: members.length, members, owner: product.id, role: 'kind' });
-      addRecords(gid, members);
-    }
+    addLoose(product.id);
   }
   // Anything no product reaches (a record whose parent is missing) hangs from its own parent, as stored.
   for (const r of index.workspace.records) {

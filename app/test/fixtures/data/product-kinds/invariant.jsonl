@@ -1,0 +1,1 @@
+{"id":"DM-SHOP-INV01","title":"A basket holds at most 50 lines","aggregate_id":"DM-SHOP-A1","statement":"A basket MUST NOT hold more than 50 lines."}
