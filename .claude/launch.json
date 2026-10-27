@@ -8,8 +8,28 @@
     {
       "name": "model-app",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["--prefix", "app", "run", "dev"],
+      "runtimeArgs": [
+        "--prefix",
+        "app",
+        "run",
+        "dev"
+      ],
       "port": 5199
+    },
+    {
+      "name": "lathe-review",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "app",
+        "run",
+        "dev",
+        "--",
+        "--port",
+        "5260",
+        "--strictPort"
+      ],
+      "port": 5260
     }
   ]
 }
