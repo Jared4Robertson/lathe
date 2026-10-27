@@ -4,9 +4,9 @@
 {"id":"OS-A-T04","title":"A planned test with a silent file","domain_id":"OS-A","test_type":"unit","state":"planned","file":"code/manual-silent.md","then":"Not written yet."}
 {"id":"OS-A-T05","title":"Proves a rule of a pattern nobody follows","domain_id":"OS-A","test_type":"unit","state":"automated","file":"code/a.test.txt","then":"Text."}
 {"id":"OS-A-T06","title":"Proves a rule only another domain owes","domain_id":"OS-A","test_type":"unit","state":"automated","file":"code/a.test.txt","then":"Text."}
-{"id":"OS-A-T07","title":"Proves an aggregate and a rule outside every domain","domain_id":"OS-A","test_type":"unit","state":"automated","file":"code/a.test.txt","then":"Text."}
+{"id":"OS-A-T07","title":"Shows a note and a promise outside every domain","domain_id":"OS-A","test_type":"unit","state":"automated","file":"code/a.test.txt","then":"Text."}
 {"id":"OS-A-T08","title":"Proves something counted beside something not","domain_id":"OS-A","test_type":"unit","state":"automated","file":"code/a.test.txt","then":"Text."}
-{"id":"OS-A-T09","title":"A planned test of a rule outside every domain","domain_id":"OS-A","test_type":"unit","state":"planned","then":"Not written yet."}
+{"id":"OS-A-T09","title":"A planned test of a promise outside every domain","domain_id":"OS-A","test_type":"unit","state":"planned","then":"Not written yet."}
 {"id":"OS-A-T10","title":"A manual test whose file is silent","domain_id":"OS-A","test_type":"manual","state":"manual","file":"code/manual-silent.md","then":"Text."}
 {"id":"OS-A-T11","title":"A manual test whose file names only what it proves","domain_id":"OS-A","test_type":"manual","state":"manual","file":"code/manual-r04.md","then":"Text."}
 {"id":"OS-A-T12","title":"A manual test whose file holds its key","domain_id":"OS-A","test_type":"manual","state":"manual","file":"code/manual-key.md","key":"lend-by-hand","then":"Text."}

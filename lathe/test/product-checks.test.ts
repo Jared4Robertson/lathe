@@ -1,22 +1,28 @@
-// A product's own checks: a `checks` folder in lathe.config.json, run after Lathe's checks (FORMAT.md section 12).
-import { readdirSync } from 'node:fs';
+// A product's own checks: rows of its data/check.jsonl with its product_id, run after Lathe's built-in checks
+// (lathe/data/check.jsonl), against the same tables.
+import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { beforeAll, describe, expect, it } from 'vitest';
-import { CHECKS_DIR, loadWorkspace, type Workspace } from '../src/index.ts';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { LATHE_DATA_DIR, loadWorkspace, openStore, StoreError, type Workspace } from '../src/index.ts';
+import { fixture, load, ofCheck } from './helpers.ts';
 
-const fixture = (name: string) => path.join(path.dirname(fileURLToPath(import.meta.url)), 'fixtures', name);
-const ofCheck = (ws: Workspace, check: string) => ws.problems.filter((p) => p.check === check);
-const latheChecks = readdirSync(CHECKS_DIR)
-  .filter((f) => f.endsWith('.sql'))
-  .map((f) => f.replace(/\.sql$/, '').replace(/^\d+[-_]/, ''));
+const latheChecks = readFileSync(path.join(LATHE_DATA_DIR, 'check.jsonl'), 'utf8')
+  .split('\n')
+  .filter(Boolean)
+  .map((line) => JSON.parse(line).name as string);
+const temps: string[] = [];
+const temp = () => {
+  const dir = mkdtempSync(path.join(tmpdir(), 'lathe-product-checks-'));
+  temps.push(dir);
+  return dir;
+};
 
 const workspaces: Record<string, Workspace> = {};
 beforeAll(async () => {
-  for (const name of ['product-checks-house', 'product-checks-missing', 'product-checks-unbacked', 'good']) {
-    workspaces[name] = await loadWorkspace(fixture(name));
-  }
+  for (const name of ['product-checks-house', 'product-checks-unbacked', 'good']) workspaces[name] = await load(name);
 });
+afterAll(() => { for (const dir of temps) rmSync(dir, { recursive: true, force: true }); });
 
 describe("a product's own checks", () => {
   it("LA-CHK-T23 A product check runs after Lathe's checks, against the same tables", () => {
@@ -28,53 +34,58 @@ describe("a product's own checks", () => {
     const lastLathe = checks.reduce((last, check, i) => (latheChecks.includes(check) ? i : last), -1);
     expect(lastLathe).toBeGreaterThan(-1);
     expect(lastLathe).toBeLessThan(firstProduct);
-    // The product check read records, links and fields, as Lathe's checks do.
+    // The product check read the typed tables, as Lathe's checks do, and its severity comes from its row.
     expect(ofCheck(ws, 'one-record-view-per-aggregate').every((p) => p.severity === 'warning')).toBe(true);
   });
 
-  it("LA-CHK-T24 A product check's name comes from its file name, not its check column", () => {
+  it("LA-CHK-T24 A product check's name comes from its row, not from a check column its query returns", () => {
     const ws = workspaces['product-checks-house'];
-    // 01-one-record-view-per-aggregate.sql returns 'house-rule' in its check column.
+    // The query of one-record-view-per-aggregate returns 'house-rule' in a check column.
     expect(ofCheck(ws, 'house-rule')).toEqual([]);
     expect(ofCheck(ws, 'one-record-view-per-aggregate')).toHaveLength(2);
   });
 
   it('LA-CHK-T25 A one Record view use case per aggregate house rule is carried as a product check', () => {
     const found = ofCheck(workspaces['product-checks-house'], 'one-record-view-per-aggregate');
-    // PC-D-A1 has one; PC-D-A2 has none (PC-D-UC04 names it but follows no pattern); PC-D-A3 has two.
+    // PC-D-A1 has one; PC-D-A2 has none (PC-D-UC04 follows no pattern); PC-D-A3 has two.
     expect(found.map((p) => p.record)).toEqual(['PC-D-A2', 'PC-D-A3']);
     expect(found[0].message).toContain('0 Record view use cases');
     expect(found[1].message).toContain('PC-D-UC02, PC-D-UC03');
   });
 
-  it("LA-CHK-T26 A product check named like one of Lathe's checks is an error and is not run", () => {
-    const ws = workspaces['product-checks-house'];
-    expect(ofCheck(ws, 'product-check-name-clash')).toEqual([
-      {
-        severity: 'error',
-        check: 'product-check-name-clash',
-        record: null,
-        message: expect.stringContaining('house-checks/02-unproved.sql'),
-      },
-    ]);
+  it("LA-CHK-T26 A product check named like one of Lathe's checks is refused by the store, so it never runs", async () => {
+    const root = temp();
+    cpSync(fixture('product-checks-house'), root, { recursive: true });
+    const store = await openStore(root);
+    const clash = store.add('check', {
+      name: 'unproved', product_id: 'PC', position: 3, severity: 'error', summary: 'Named like a check of Lathe\'s.',
+      explanation: 'It must not run.', query: "SELECT NULL AS record, 'THIS PRODUCT CHECK RAN' AS message",
+    });
+    await expect(clash).rejects.toThrow(StoreError);
+    await expect(clash).rejects.toMatchObject({ problems: [expect.objectContaining({ rule: 'primary-key', message: expect.stringContaining("one of Lathe's own (lathe/data/check.jsonl)") })] });
+    await store.close();
+    // The same row written into the data file is refused when the data loads.
+    const file = path.join(root, 'data', 'check.jsonl');
+    writeFileSync(file, `${readFileSync(file, 'utf8')}${JSON.stringify({ name: 'unproved', product_id: 'PC', position: 3, severity: 'error', summary: 'Clash.', explanation: 'Clash.', query: 'SELECT 1' })}\n`);
+    const ws = await loadWorkspace(root);
+    expect(ofCheck(ws, 'data-refused')).toEqual([expect.objectContaining({ severity: 'error', message: expect.stringContaining('check unproved is already on lathe/data/check.jsonl') })]);
     expect(ws.problems.some((p) => p.message.includes('THIS PRODUCT CHECK RAN'))).toBe(false);
   });
 
-  it('LA-CHK-T27 A product check that fails to run is an error naming its file', () => {
+  it('LA-CHK-T27 A product check that fails to run is an error naming the check', () => {
     const found = ofCheck(workspaces['product-checks-house'], 'broken');
     expect(found).toHaveLength(1);
     expect(found[0]).toMatchObject({ severity: 'error', record: null });
-    expect(found[0].message).toContain('The check house-checks/03-broken.sql could not run');
+    expect(found[0].message).toContain('The check broken could not run');
   });
 
-  it('LA-CHK-T28 A configured checks folder that does not exist is an error', () => {
-    const found = ofCheck(workspaces['product-checks-missing'], 'product-checks-missing');
-    expect(found).toHaveLength(1);
-    expect(found[0]).toMatchObject({ severity: 'error', record: null });
-    expect(found[0].message).toContain('nowhere');
+  it('LA-CHK-T28 A product names no checks folder: lathe.config.json refuses a checks setting, since checks are rows', async () => {
+    const root = temp();
+    writeFileSync(path.join(root, 'lathe.config.json'), JSON.stringify({ checks: 'nowhere' }));
+    await expect(loadWorkspace(root)).rejects.toThrow('unknown setting "checks"');
   });
 
-  it("LA-CHK-T29 Without a checks folder only Lathe's checks run", () => {
+  it("LA-CHK-T29 Without check rows of its own only Lathe's checks run", () => {
     const ws = workspaces.good;
     expect(ws.problems.filter((p) => p.severity === 'error')).toEqual([]);
     expect(ws.problems.every((p) => latheChecks.includes(p.check))).toBe(true);
@@ -82,7 +93,7 @@ describe("a product's own checks", () => {
 });
 
 describe('the unproved check counts only backed proof', () => {
-  it("LA-TRC-T45 An automated test whose file backs neither its ID nor its claim leaves the obligation unproved, as coverage does", () => {
+  it('LA-TRC-T45 An automated test whose file backs neither its ID nor its claim leaves the obligation unproved, as coverage does', () => {
     const ws = workspaces['product-checks-unbacked'];
     expect(ofCheck(ws, 'unproved').map((p) => p.record)).toEqual(['PU-D-DR01']);
     expect(ofCheck(ws, 'proof-not-in-file').map((p) => p.record)).toEqual(['PU-D-T01']);
