@@ -173,6 +173,19 @@ JOIN record_scope b ON b.id = l.target_id
 WHERE a.domain_id IS DISTINCT FROM b.domain_id AND NOT e.published`,
     },
     {
+      name: 'read-model-fed-by-published',
+      description: "A read model is fed by its own domain's events, or another domain's published ones: domains meet only through published events.",
+      sql: `
+SELECT 'fed_by' AS table_name, l.source_id || chr(0) || l.target_id AS row_key,
+       l.source_id || ' is a read model of domain ' || coalesce(a.domain_id, 'none') || ', so it cannot be fed by ' || l.target_id
+       || ', an event of domain ' || coalesce(b.domain_id, 'none') || ' that is not published' AS message
+FROM fed_by l
+JOIN domain_event e ON e.id = l.target_id
+JOIN record_scope a ON a.id = l.source_id
+JOIN record_scope b ON b.id = l.target_id
+WHERE a.domain_id IS DISTINCT FROM b.domain_id AND NOT e.published`,
+    },
+    {
       name: 'id-prefix',
       description:
         "A record's ID starts with the ID of its scope and a hyphen (meta_kind.id_scope): its parent's, its domain's or its product's. A record with no owner takes its product, or its domain, from that prefix, which must name one; a domain-scoped record's ID names the domain its parent sits in, so a query and its read model, or an endpoint and its command, are of one domain.",
