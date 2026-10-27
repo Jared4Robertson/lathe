@@ -27,6 +27,7 @@ The spec is typed data in the repo's `data/` folder, one table per kind. Change 
 | `key` | Optional. Text the `file` must contain in place of an ID, such as a test function name. |
 | `key_file` | Optional, with `file`. The file that holds the key (or the IDs) when the test runs from a shared class in another file, as a path from the repo root. That file is then read in place of `file`, which must still exist. |
 | `given`, `when`, `then` | What the test does: the state it starts from, the action, and what it expects. For a manual test they are the procedure a person follows. |
+| `notes` | Optional. What those do not say, such as why the test is manual or planned, when to run it, or how its code is keyed. |
 
 Its links:
 
@@ -37,7 +38,7 @@ Its links:
 ## The three states
 
 - **automated**: code runs it. `file` must name a file that exists and names this test's ID, or every ID it proves, or its `key` (see below). A missing file is `test-file-missing`; each proved ID the file leaves out is `proof-not-in-file`; a missing key, or a file that names no ID of a test that proves nothing, is `test-file-missing-id`.
-- **manual**: a person runs it, following its `given`, `when` and `then`. It counts as proof. Use it only for what code cannot sensibly check (a smoke test of the README's steps, a look at a printed page). If it names a `file`, the file must exist.
+- **manual**: a person runs it, following its `given`, `when` and `then`, with `notes` saying why code cannot run it. It counts as proof. Use it only for what code cannot sensibly check (a smoke test of the README's steps, a look at a printed page). If it names a `file`, the file must exist.
 - **planned**: not written yet. It shows what will prove an obligation, but it is not proof: coverage counts the obligation as **planned**, and the `unproved` warning stays. If it names a `file`, the file must exist, so leave `file` out until the file is written.
 
 ## Three ways code can carry the proof
@@ -62,7 +63,7 @@ Write the test with the record when you can: the code under test exists, or you 
 - the test needs something not in place yet (a fixture, a browser runner, a second service);
 - you are laying out what will prove a set of obligations before building them.
 
-Say in `given`, `when` and `then` what it will check, and in the title or `then` why it is planned. When the test is written, `set` its `state` to `automated` and its `file` in one write. Never mark a test automated before its file names the ID, every ID it proves, or its key.
+Say in `given`, `when` and `then` what it will check, and in `notes` why it is planned. When the test is written, `set` its `state` to `automated` and its `file` in one write. Never mark a test automated before its file names the ID, every ID it proves, or its key.
 
 ## Examples
 
@@ -87,8 +88,9 @@ A planned test of an interaction requirement:
 ```
 add  { "test": { "id": "TL-LEND-T14", "title": "Borrowing a tool on loan answers 409 tool_on_loan",
        "domain_id": "TL-LEND", "test_type": "endpoint", "state": "planned",
-       "given": "A tool on loan to one member (planned: the HTTP test harness is not set up yet)",
-       "when": "Another member borrows it", "then": "409 { \"error\": \"tool_on_loan\" }, and no second loan" } }
+       "given": "A tool on loan to one member", "when": "Another member borrows it",
+       "then": "409 { \"error\": \"tool_on_loan\" }, and no second loan",
+       "notes": "Planned: the HTTP test harness is not set up yet." } }
 link { "source": "TL-LEND-T14", "relation": "proves", "target": "TL-LEND-E04-R01" }
 ```
 
