@@ -31,6 +31,10 @@ Nothing is typed or constrained. SQL checks report broken data after it is writt
    - Git is the history: `git log` and `git blame` show what changed and when, and the commit author shows whether the Owner or an Agent made it.
    - The database itself is never committed.
    - A merge driver for the data files keeps both sides' lines, sorts them again and runs the constraints. A real clash, such as one ID added twice or one row changed on both sides, fails with a clear error. (Owner chose this over an operation log.)
+7. **Text is typed fields per kind,** in place of a free Markdown body.
+   - For example, a requirement's one-sentence `statement`, a test's `given`, `when` and `then`, and a use case's `actor` and `goal`.
+   - Long notes exist only where a kind declares a notes field.
+   - The parsing and checks that read structure out of prose go: Fields tables, prose citations and body sections.
 
 ## Scope
 Each slice's aggregates, as tables:
@@ -48,7 +52,7 @@ Each slice's aggregates, as tables:
 - **Exploring:** the reading model (pages, folders, the graph's tree) as queries over the tables. Saved reader state (tabs, spaces) as tables, if it is kept.
 - **Platform:** workspace and products loaded, theme and settings as tables. Writes go through one command layer, used by the app, the CLI and the plugin's MCP tools. Each write is a transaction recorded with who made it (Owner or Agent), when and why.
 
-Out of scope until decided: how far body prose becomes typed fields (Open questions 1).
+Out of scope until decided: where domain rules may sit (Open questions 1).
 
 ## Changes to existing specs
 To list once the open questions are settled. Expect:
@@ -61,5 +65,4 @@ To list once the open questions are settled. Expect:
 To write once the open questions are settled.
 
 ## Open questions
-1. **How far prose becomes typed fields:** for example, a requirement's `statement` and a test's `given`, `when` and `then`, with long notes only where a kind declares them. Recommendation: typed fields per kind. Owner to decide.
-2. **Domain rules on the domain as well as an aggregate.** Recommendation: allow both, with `aggregate_id` optional and `domain_id` required. Owner to decide.
+1. **Domain rules on the domain as well as an aggregate.** Recommendation: allow both, with `aggregate_id` optional and `domain_id` required. Owner to decide.
