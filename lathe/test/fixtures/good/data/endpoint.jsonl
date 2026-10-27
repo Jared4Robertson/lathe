@@ -1,1 +1,0 @@
-{"id":"EX-NOTE-E01","title":"Create a note","domain_id":"EX-NOTE","method":"POST","route":"/notes","description":"Creates a note."}

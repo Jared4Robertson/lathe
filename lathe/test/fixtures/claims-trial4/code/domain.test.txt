@@ -1,2 +1,0 @@
-from shared import conformance
-class TestLoans(conformance.Base): pass

@@ -1,2 +1,0 @@
-class SharedChecks:
-    rule("TC-D-DR02")

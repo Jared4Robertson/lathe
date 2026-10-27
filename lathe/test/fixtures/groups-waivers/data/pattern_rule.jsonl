@@ -1,3 +1,0 @@
-{"id":"GW-PAT-ACT-R01","title":"An action is saved","pattern_id":"GW-PAT-ACT","statement":"It MUST be saved.","group_name":"Saving"}
-{"id":"GW-PAT-ACT-R02","title":"A batch action saves all or nothing","pattern_id":"GW-PAT-ACT","statement":"It MUST save every record or none.","group_name":"saving","applies_when_setting":"scope","applies_when_negated":true,"applies_when_value":"single"}
-{"id":"GW-PAT-ACT-R03","title":"A batch action pages its results","pattern_id":"GW-PAT-ACT","statement":"It MUST page.","group_name":"Paging","applies_when_setting":"scope","applies_when_negated":false,"applies_when_value":"MANY"}

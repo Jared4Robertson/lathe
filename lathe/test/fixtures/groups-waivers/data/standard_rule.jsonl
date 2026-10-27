@@ -1,2 +1,0 @@
-{"id":"GW-STD-CODE-R01","title":"Errors are logged","standard_id":"GW-STD-CODE","statement":"Every error MUST be logged.","group_name":"Logging"}
-{"id":"GW-STD-CODE-R02","title":"Names are plain","standard_id":"GW-STD-CODE","statement":"Names MUST be plain words."}

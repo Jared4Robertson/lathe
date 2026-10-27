@@ -1,2 +1,0 @@
-{"name":"control","product_id":"SD","label":"Control","description":"A control an auditor checks: it needs proof only.","parent_kind":"domain","stage":"define","obligation":"proof"}
-{"name":"memo","product_id":"SD","label":"Memo","description":"A note; not an obligation.","parent_kind":"domain","obligation":"none"}

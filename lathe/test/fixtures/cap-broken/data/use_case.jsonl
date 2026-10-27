@@ -1,6 +1,0 @@
-{"id":"YX-D-UC01","title":"Outside","domain_id":"YX-D","goal":"Text."}
-{"id":"YX-D-UC02","title":"Missing audit","domain_id":"YX-D","capability_id":"YX-D-CAP01","goal":"Text."}
-{"id":"YX-D-UC03","title":"No reason","domain_id":"YX-D","capability_id":"YX-D-CAP01","goal":"Text."}
-{"id":"YX-D-UC04","title":"Two patterns","domain_id":"YX-D","capability_id":"YX-D-CAP04","goal":"Text."}
-{"id":"YX-D-UC05","title":"Bad pattern","domain_id":"YX-D","capability_id":"YX-D-CAP04","goal":"Text."}
-{"id":"YX-F-UC01","title":"No capabilities here","domain_id":"YX-F","goal":"Text."}

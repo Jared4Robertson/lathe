@@ -30,7 +30,7 @@ npm --prefix lathe install && npm --prefix app install && npm --prefix desktop i
 | The web app, for working on Lathe | `npm --prefix app run dev` serves this repo at http://localhost:5199 and reloads as the data or app code change. `LATHE_ROOT=/path/to/product` points it at another product repo; `-- --port <n>` picks another port. |
 | Check the spec | `npm --prefix lathe run check` prints errors, warnings and coverage, and exits 1 on any error. |
 | Change the spec | `npm --prefix lathe run lathe -- add <table> --root .. --<column> <value> ...`, and `set`, `move`, `link`, `unlink` and `remove`, through the command layer; or edit a record in the app. `lathe help` lists them. |
-| The reference | `npm --prefix lathe run reference` regenerates [lathe/REFERENCE.md](lathe/REFERENCE.md): every table, relation, folder and check. |
+| The reference | `npm --prefix lathe run reference` regenerates [lathe/REFERENCE.md](lathe/REFERENCE.md): stage by stage, every kind with its table, its checks and its coverage gaps, then every relation. |
 | Serve a built app | `npm --prefix lathe run build`, then `npm --prefix lathe run lathe -- serve --root ..` serves the built app at http://127.0.0.1:5330. |
 | The desktop app | `npm --prefix desktop run dev` (hot-reloading), `npm --prefix desktop run start` (from the built package) or `npm --prefix desktop run pack` (a `Lathe.app` in `desktop/release/`). |
 | Tests | `npm --prefix lathe test`, `npm --prefix app test` and `npm --prefix desktop test` (at most 2 workers each), with `run typecheck` in each package. `npm --prefix app run test:stability` runs the stability suite: Playwright in Chromium, checking that nothing on the page jumps, in about two minutes. |
@@ -47,7 +47,7 @@ The npm scripts run in `lathe/`, so `--root ..` names this repo. In a product re
 ## A tour of the app
 
 - **Spaces.** Each product is a space. The rail at the far left of the nav has one icon per product; Alt+1 to Alt+9 switch between them. The nav, quick find and Checks follow the current space.
-- **The nav's folders.** Under each domain, the nav follows the stages and folders of the schema: Define (Domain model, Capabilities) and Design (Interaction design, Technical specification, Test plan), with the product's Shared folder (patterns) above the domains. Components sit in their layers and tests in groups by what they prove.
+- **The nav's stages.** Under each domain, the nav follows the five stages of the schema: domain model, use cases, interaction design, technical specification and test plan.
 - **Views.** A record, group, domain or product page opens in one or more views side by side: **Wiki** (the record as a page: its body, fields, children, links in and out, and problems; a domain page adds its stages, coverage and open questions), **Graph** (the records around it as boxes and arrows, by level), and **Model** (the ERD of a domain's aggregates or an aggregate's entities). Toggle them from the page bar or with Ctrl+W, Ctrl+G and Ctrl+M (Alt off a Mac); Ctrl+3 makes the focused view full screen. The address names the open views (`?view=wiki,graph`), so a link opens as it was seen.
 - **Tabs.** Each space keeps its own tabs, as VS Code's editors: a new page opens in the preview tab (italic) until you keep it (double-click, or Ctrl+K Enter). Ctrl+Tab cycles; Alt+Shift+W closes.
 - **The side bar.** On the right, it shows the focused record's kind, fields, parent, children, links both ways, problems and coverage gaps, and what the graph connects to it. Mod+Alt+B shows or hides it, and its edge drags to resize.
@@ -59,4 +59,4 @@ The npm scripts run in `lathe/`, so `--root ..` names this repo. In a product re
 
 ## The data model
 
-Records are rows in the data folder `lathe.config.json` names (here [data/](data/)): a table per kind with typed columns, containment as foreign keys, a table per relation, and checks as rows of the `check` table. The [package README](lathe/README.md#the-data-model) explains the model and how to change the data, and [lathe/REFERENCE.md](lathe/REFERENCE.md), generated from the schema and the check rows, lists every table, column, relation, folder and check.
+Records are rows in the data folder `lathe.config.json` names (here [data/](data/)): a table per kind with typed columns, one parent per record as a foreign key, a table per relation, and checks as rows of the `check` table. The kinds are drawn from domain-driven design, CQRS and event storming. The [package README](lathe/README.md#the-data-model) explains the model and how to change the data, and [lathe/REFERENCE.md](lathe/REFERENCE.md), generated from the schema, the check rows and the coverage rules, lists every table, column, relation, check and coverage gap by stage.

@@ -1,2 +1,0 @@
-{"id":"SD-A-T01","title":"Test SD-A-T01","domain_id":"SD-A","test_type":"acceptance","state":"automated","file":"code/sd-a-t01.test.txt","then":"Text."}
-{"id":"SD-B-T01","title":"Test SD-B-T01","domain_id":"SD-B","test_type":"acceptance","state":"automated","file":"code/sd-b-t01.test.txt","then":"Text."}

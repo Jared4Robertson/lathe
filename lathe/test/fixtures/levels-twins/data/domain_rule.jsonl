@@ -1,2 +1,0 @@
-{"id":"LV-A-DR01","title":"A tool is lent once at a time","domain_id":"LV-A","aggregate_id":"LV-A-A1","entity_id":"LV-A-EN01","statement":"A tool MUST be lent to one member at a time."}
-{"id":"LV-B-DR01","title":"A tool is lent once at a time","domain_id":"LV-B","aggregate_id":"LV-B-A1","statement":"A tool MUST be lent to one member at a time."}

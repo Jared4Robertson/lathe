@@ -1,104 +1,90 @@
 // A product's own checks: rows of its data/check.jsonl with its product_id, run after Lathe's built-in checks
-// (lathe/data/check.jsonl), against the same tables.
-import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+// (lathe/data/check.jsonl), against the same tables, and reporting only on records of their product.
+import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { LATHE_DATA_DIR, loadWorkspace, openStore, StoreError, type Workspace } from '../src/index.ts';
-import { fixture, load, ofCheck } from './helpers.ts';
+import { adding, build, complete, loadData, ofCheck, removeData, writeData } from './helpers.ts';
 
 const latheChecks = readFileSync(path.join(LATHE_DATA_DIR, 'check.jsonl'), 'utf8')
   .split('\n')
   .filter(Boolean)
   .map((line) => JSON.parse(line).name as string);
-const temps: string[] = [];
-const temp = () => {
-  const dir = mkdtempSync(path.join(tmpdir(), 'lathe-product-checks-'));
-  temps.push(dir);
-  return dir;
-};
 
-const workspaces: Record<string, Workspace> = {};
-beforeAll(async () => {
-  for (const name of ['product-checks-house', 'product-checks-unbacked', 'good']) workspaces[name] = await load(name);
+const row = (name: string, position: number, query: string) => ({
+  name, product_id: 'EX', position, severity: 'warning', summary: `The house rule ${name}.`, explanation: 'Made for this test. Fix what it reports.', query,
 });
-afterAll(() => { for (const dir of temps) rmSync(dir, { recursive: true, force: true }); });
+
+/** The complete product with a domain event nothing hears (a house rule here), two house checks and a product beside it. */
+const house = () =>
+  adding(complete(), {
+    product: [{ id: 'OT', title: 'Other product' }],
+    domain: [{ id: 'OT-D', title: 'Other', product_id: 'OT', subdomain_type: 'generic' }],
+    check: [
+      // One unheard event per aggregate; it returns a check column of its own, which is ignored.
+      row('every-event-heard', 1, `SELECT e.id AS record, 'house-rule' AS check, 'Domain event ' || e.id || ' is heard by no policy.' AS message
+FROM domain_event e WHERE NOT EXISTS (SELECT 1 FROM hears h WHERE h.target_id = e.id) ORDER BY record`),
+      row('broken', 2, 'SELECT * FROM no_such_table'),
+      // A product's check reports only on its own product's records, and on none.
+      row('every-domain', 3, "SELECT id AS record, 'Domain ' || id || '.' AS message FROM domain UNION ALL SELECT NULL, 'Workspace.' ORDER BY record NULLS LAST"),
+    ],
+  });
+
+let ws: Workspace;
+beforeAll(async () => {
+  // A Lathe check reports something too: a technical file not written yet.
+  ws = await loadData(house(), { missing: ['src/dates.ts'] });
+});
+afterAll(removeData);
 
 describe("a product's own checks", () => {
   it("LA-CHK-T23 A product check runs after Lathe's checks, against the same tables", () => {
-    const ws = workspaces['product-checks-house'];
     const checks = ws.problems.map((p) => p.check);
-    const firstProduct = checks.indexOf('one-record-view-per-aggregate');
+    const firstProduct = checks.indexOf('every-event-heard');
     expect(firstProduct).toBeGreaterThan(-1);
-    // Every Lathe check's problem comes before every product check's problem.
     const lastLathe = checks.reduce((last, check, i) => (latheChecks.includes(check) ? i : last), -1);
     expect(lastLathe).toBeGreaterThan(-1);
     expect(lastLathe).toBeLessThan(firstProduct);
-    // The product check read the typed tables, as Lathe's checks do, and its severity comes from its row.
-    expect(ofCheck(ws, 'one-record-view-per-aggregate').every((p) => p.severity === 'warning')).toBe(true);
+    expect(ofCheck(ws, 'every-event-heard')).toEqual([{ severity: 'warning', check: 'every-event-heard', record: 'EX-LEND-EV02', message: 'Domain event EX-LEND-EV02 is heard by no policy.' }]);
   });
 
   it("LA-CHK-T24 A product check's name comes from its row, not from a check column its query returns", () => {
-    const ws = workspaces['product-checks-house'];
-    // The query of one-record-view-per-aggregate returns 'house-rule' in a check column.
     expect(ofCheck(ws, 'house-rule')).toEqual([]);
-    expect(ofCheck(ws, 'one-record-view-per-aggregate')).toHaveLength(2);
   });
 
-  it('LA-CHK-T25 A one Record view use case per aggregate house rule is carried as a product check', () => {
-    const found = ofCheck(workspaces['product-checks-house'], 'one-record-view-per-aggregate');
-    // PC-D-A1 has one; PC-D-A2 has none (PC-D-UC04 follows no pattern); PC-D-A3 has two.
-    expect(found.map((p) => p.record)).toEqual(['PC-D-A2', 'PC-D-A3']);
-    expect(found[0].message).toContain('0 Record view use cases');
-    expect(found[1].message).toContain('PC-D-UC02, PC-D-UC03');
+  it("A product check reports only on its own product's records, and on none", () => {
+    expect(ofCheck(ws, 'every-domain').map((p) => p.record)).toEqual(['EX-LEND', null]);
   });
 
   it("LA-CHK-T26 A product check named like one of Lathe's checks is refused by the store, so it never runs", async () => {
-    const root = temp();
-    cpSync(fixture('product-checks-house'), root, { recursive: true });
+    const root = await build(complete());
     const store = await openStore(root);
-    const clash = store.add('check', {
-      name: 'unproved', product_id: 'PC', position: 3, severity: 'error', summary: 'Named like a check of Lathe\'s.',
-      explanation: 'It must not run.', query: "SELECT NULL AS record, 'THIS PRODUCT CHECK RAN' AS message",
-    });
+    const clash = store.add('check', { ...row('view-unused', 1, "SELECT NULL AS record, 'THIS PRODUCT CHECK RAN' AS message"), severity: 'error' });
     await expect(clash).rejects.toThrow(StoreError);
     await expect(clash).rejects.toMatchObject({ problems: [expect.objectContaining({ rule: 'primary-key', message: expect.stringContaining("one of Lathe's own (lathe/data/check.jsonl)") })] });
     await store.close();
     // The same row written into the data file is refused when the data loads.
-    const file = path.join(root, 'data', 'check.jsonl');
-    writeFileSync(file, `${readFileSync(file, 'utf8')}${JSON.stringify({ name: 'unproved', product_id: 'PC', position: 3, severity: 'error', summary: 'Clash.', explanation: 'Clash.', query: 'SELECT 1' })}\n`);
-    const ws = await loadWorkspace(root);
-    expect(ofCheck(ws, 'data-refused')).toEqual([expect.objectContaining({ severity: 'error', message: expect.stringContaining('check unproved is already on lathe/data/check.jsonl') })]);
-    expect(ws.problems.some((p) => p.message.includes('THIS PRODUCT CHECK RAN'))).toBe(false);
+    writeFileSync(path.join(root, 'data', 'check.jsonl'), `${JSON.stringify(row('view-unused', 1, 'SELECT 1'))}\n`);
+    const loaded = await loadWorkspace(root);
+    expect(ofCheck(loaded, 'data-refused')).toEqual([expect.objectContaining({ severity: 'error', message: expect.stringContaining('check view-unused is already on lathe/data/check.jsonl') })]);
   });
 
   it('LA-CHK-T27 A product check that fails to run is an error naming the check', () => {
-    const found = ofCheck(workspaces['product-checks-house'], 'broken');
+    const found = ofCheck(ws, 'broken');
     expect(found).toHaveLength(1);
     expect(found[0]).toMatchObject({ severity: 'error', record: null });
     expect(found[0].message).toContain('The check broken could not run');
   });
 
   it('LA-CHK-T28 A product names no checks folder: lathe.config.json refuses a checks setting, since checks are rows', async () => {
-    const root = temp();
+    const root = writeData({});
     writeFileSync(path.join(root, 'lathe.config.json'), JSON.stringify({ checks: 'nowhere' }));
     await expect(loadWorkspace(root)).rejects.toThrow('unknown setting "checks"');
   });
 
   it("LA-CHK-T29 Without check rows of its own only Lathe's checks run", () => {
-    const ws = workspaces.good;
-    expect(ws.problems.filter((p) => p.severity === 'error')).toEqual([]);
-    expect(ws.problems.every((p) => latheChecks.includes(p.check))).toBe(true);
-  });
-});
-
-describe('the unproved check counts only backed proof', () => {
-  it('LA-TRC-T45 An automated test whose file backs neither its ID nor its claim leaves the obligation unproved, as coverage does', () => {
-    const ws = workspaces['product-checks-unbacked'];
-    expect(ofCheck(ws, 'unproved').map((p) => p.record)).toEqual(['PU-D-DR01']);
-    expect(ofCheck(ws, 'proof-not-in-file').map((p) => p.record)).toEqual(['PU-D-T01']);
-    const rules = ws.coverage[0].obligations.find((o) => o.kind === 'domain_rule');
-    expect(rules).toMatchObject({ total: 3, proved: 2 });
-    expect(ws.coverage[0].gaps).toEqual([{ id: 'PU-D-DR01', kind: 'domain_rule', missing: 'proves' }]);
+    const own = new Set(['every-event-heard', 'broken', 'every-domain']);
+    expect(ws.problems.filter((p) => !own.has(p.check)).every((p) => latheChecks.includes(p.check))).toBe(true);
+    expect(ws.problems.filter((p) => !own.has(p.check)).map((p) => p.check)).toEqual(['technical-file-missing', 'not-built']);
   });
 });

@@ -1,2 +1,0 @@
-{"name":"shows","source_kind":"test","target_kind":"note","product_id":"OS","role":"proof","forward_label":"Shows","reverse_label":"Shown by","description":"The test shows the note holds."}
-{"name":"shows","source_kind":"test","target_kind":"promise","product_id":"OS","role":"proof","forward_label":"Shows","reverse_label":"Shown by","description":"The test shows the promise is kept."}
