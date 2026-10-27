@@ -40,21 +40,24 @@ The Owner worked through the model as a diagram and settled each point below. S2
    - A query belongs to the one read model it reads, and changes nothing.
    - A read model belongs to its domain and reads that domain's aggregates. It may span several aggregates. It has fields of its own, typed like an entity's, and is stored in a table of its own.
 5. **Domains meet only through published events.** A domain event may be marked published, which makes its shape a promise to other domains. A policy may hear its own domain's events, or another domain's published ones. Commands, queries, read models and specifications stay inside their own domain.
-6. **"Domain" keeps its name.** It is what DDD calls a bounded context: a model, a language and an owner, for one business capability.
+6. **"Domain" keeps its name.** It is what DDD calls a bounded context: a model, a language and an owner, for one business capability. Each domain has a **subdomain type**: core (the product's edge), supporting or generic. It guides how much modeling a domain deserves.
+7. **Aggregates reference each other by ID only.** A field may be typed as a reference to an aggregate, such as a Loan's member. A reference to an aggregate in the same domain becomes a foreign key on the table. A reference to another domain's aggregate stays a plain ID, because domains don't share tables. This replaces `relates_to`.
+8. **Domain services** hold domain logic that belongs to no single entity and isn't a yes-or-no check, such as calculating a late fee. A domain service belongs to its domain, and commands and queries of that domain use it.
+9. **Each domain has a glossary:** terms and what they mean in that domain, so specs, code and conversation use one language.
 
 ### Use cases
-7. **A use case is an actor's goal:** its actors, its UC requirements and its one flow. It changes nothing itself; its flow steps invoke commands and queries.
-8. **A use case has exactly one flow, and the flow belongs only to it.** Alternate courses are paths within the flow. Use case steps go.
-9. **Flow steps fulfill UC requirements.** A step may fulfill only requirements of its own use case. Every UC requirement must be fulfilled by at least one step of its flow.
+10. **A use case is an actor's goal:** its actors, its UC requirements and its one flow. It changes nothing itself; its flow steps invoke commands and queries.
+11. **A use case has exactly one flow, and the flow belongs only to it.** Alternate courses are paths within the flow. Use case steps go.
+12. **Flow steps fulfill UC requirements.** A step may fulfill only requirements of its own use case. Every UC requirement must be fulfilled by at least one step of its flow.
 
 ### Interaction design
-10. **A flow step invokes at most one command or query,** happens in at most one view, and may exchange with integrations.
-11. **An endpoint exposes exactly one command or query.** Steps reach endpoints through their command or query, never directly.
-12. **Views and integrations have no owner.** Each exists because flow steps use it. The API grouping of endpoints goes.
-13. **Interaction requirements split into view requirements and API requirements,** under their view and endpoint.
+13. **A flow step invokes at most one command or query,** happens in at most one view, and may exchange with integrations.
+14. **An endpoint exposes exactly one command or query.** Steps reach endpoints through their command or query, never directly.
+15. **Views and integrations have no owner.** Each exists because flow steps use it. The API grouping of endpoints goes.
+16. **Interaction requirements split into view requirements and API requirements,** under their view and endpoint.
 
 ### Technical specification
-14. **One concrete kind implements each design kind,** in place of the generic component, its free-text type and layers:
+17. **One concrete kind implements each design kind,** in place of the generic component, its free-text type and layers:
 
     | Technical kind | Implements |
     | --- | --- |
@@ -68,15 +71,16 @@ The Owner worked through the model as a diagram and settled each point below. S2
     | Command handler | Command |
     | Query handler | Query |
     | Event handler | Policy |
+    | Service | Domain service |
     | UI component | Views, many-to-many, with no other owner |
     | Endpoint handler | Endpoint |
     | Adapter | Integration |
 
     A command is carried out by its handler and its aggregate root's data model. Links that follow from the tree aren't stored, such as a handler loading its repository.
-15. **Products declare extra technical kinds** through product kinds. Lathe declares its own where its code fits none of these.
+18. **Products declare extra technical kinds** through product kinds. Lathe declares its own where its code fits none of these.
 
 ### Test plan
-16. **Nine test kinds, each named after what it tests, each with one parent:**
+19. **Ten test kinds, each named after what it tests, each with one parent:**
 
     | Test kind | Belongs to | How many |
     | --- | --- | --- |
@@ -84,6 +88,7 @@ The Owner worked through the model as a diagram and settled each point below. S2
     | Invariant test | Invariant | Exactly one |
     | Specification test | Specification | Exactly one |
     | Policy test | Policy | Exactly one |
+    | Domain service test | Domain service | At least one |
     | Use case test | UC requirement | At least one |
     | View test | View requirement | At least one |
     | Endpoint test | API requirement | At least one |
@@ -91,18 +96,18 @@ The Owner worked through the model as a diagram and settled each point below. S2
     | Integration test | Integration | Any |
 
     The `proves` link goes, and a test proves exactly its parent.
-17. **Technical kinds have no test kinds of their own.** Each is proved by the tests of what it implements.
-18. **Every test has a run by:** a level, a state and a file or manual reason.
+20. **Technical kinds have no test kinds of their own.** Each is proved by the tests of what it implements.
+21. **Every test has a run by:** a level, a state and a file or manual reason.
     - **Levels:** unit, database, api, contract, e2e-api, e2e-ui and manual. The integration level is renamed database, so it doesn't clash with integration tests.
     - **States:** automated, manual and not automated yet.
 
 ### Stages and order
-19. **Kinds are colored and ordered by stage:** domain model, use cases, interaction design, technical specification and test plan. Product and role sit outside the stages. In every diagram, links run from what is defined first to what is defined later.
+22. **Kinds are colored and ordered by stage:** domain model, use cases, interaction design, technical specification and test plan. Product and role sit outside the stages. In every diagram, links run from what is defined first to what is defined later.
 
 ## Scope
 
 ### The kinds
-Forty-six kinds. **Parent** is the one foreign key that places a record. **Links** are relations to other records.
+Fifty kinds. **Parent** is the one foreign key that places a record. **Links** are relations to other records.
 
 | Stage | Kind | Parent | Links | ID |
 | --- | --- | --- | --- | --- |
@@ -120,6 +125,8 @@ Forty-six kinds. **Parent** is the one foreign key that places a record. **Links
 | | Read model | Domain | reads 1+ aggregates; has fields | `<P>-<D>-RM<nn>` |
 | | Query | Read model | selects by specifications | `<P>-<D>-QRY<nn>` |
 | | Policy | Command | hears one event | `<P>-<D>-PO<nn>` |
+| | Domain service | Domain | used by commands and queries | `<P>-<D>-DS<nn>` |
+| | Term | Domain | | `<P>-<D>-TM<nn>` |
 | Use cases | Capability | Domain | | `<P>-<D>-CAP<nn>` |
 | | Use case | Capability | actors (roles) | `<P>-<D>-UC<nn>` |
 | | UC requirement | Use case | | `<use case>-R<nn>` |
@@ -130,10 +137,11 @@ Forty-six kinds. **Parent** is the one foreign key that places a record. **Links
 | | Endpoint | Its command or query | | `<P>-<D>-EP<nn>` |
 | | API requirement | Endpoint | | `<endpoint>-R<nn>` |
 | | Integration | — (used by 1+ steps) | | `<P>-INT<nn>` |
-| Technical | Repository, data model, value type, predicate, event type, projection, command handler, query handler, event handler, endpoint handler, adapter | What it implements (one) | | `<parent>-` plus REPO, DM, VT, PR, ET, PJ, H or AD |
+| Technical | Repository, data model, value type, predicate, event type, projection, command handler, query handler, event handler, service, endpoint handler, adapter | What it implements (one) | | `<parent>-` plus REPO, DM, VT, PR, ET, PJ, H, SV or AD |
 | | Table | Its entity or read model (one) | | `<parent>-TB` |
 | | UI component | — (used by 1+ views) | | `<P>-UI<nn>` |
 | Test plan | Constraint, invariant, specification, policy and flow tests | Their parent (one) | | `<parent>-T` |
+| | Domain service test | Its domain service | | `<parent>-T<nn>` |
 | | Use case, view, endpoint and integration tests | Their parent | | `<parent>-T<nn>` |
 
 The domain-model IDs are scoped to the domain, which follows from the parent. Kinds with no owner take product-scoped IDs.
@@ -141,7 +149,7 @@ The domain-model IDs are scoped to the domain, which follows from the parent. Ki
 ### Kept as they are
 - Patterns and their rules and settings.
 - Standards and their rules.
-- Entity fields and event fields, joined by read model fields, which are new. A field's type becomes a value object or a basic type from a fixed list: text, whole number, decimal, date, time and yes/no. Free-text types go.
+- Entity fields and event fields, joined by read model fields, which are new. A field's type becomes a value object or a basic type from a fixed list: text, whole number, decimal, date, time and yes/no, or a reference to an aggregate. Free-text types go.
 - A table's columns follow from its entity's or read model's fields, with a value object's fields flattened into columns, so columns aren't stored twice. A table stores only what fields can't say: its keys and indexes. A unique key names the invariant it enforces.
 - A table has a storage: `table`, `view` or `materialized view`. An entity's table is always `table`, normalized and the source of truth. A read model's table is a denormalized projection that can be rebuilt: usually a `view` over its domain's entity tables, whose query is its projection, or a `table` that its projection fills from events, such as another domain's published events.
 - Product kinds, checks, the command layer, the merge driver and JSONL storage.
@@ -159,17 +167,17 @@ The domain-model IDs are scoped to the domain, which follows from the parent. Ki
 - **Checks report what is missing,** because records are written stage by stage:
   - **Errors:** a view, integration, value object, specification or UI component that nothing uses.
   - **Coverage gaps, reported as designed, built and proved:** for example, a capability with no use case, a use case with no flow, a UC requirement no step fulfills, or an obligation with no test.
-- **Obligations:** constraint, invariant, specification, policy, UC requirement, view requirement, API requirement, pattern rule and standard rule.
+- **Obligations:** constraint, invariant, specification, policy, domain service, UC requirement, view requirement, API requirement, pattern rule and standard rule.
   - **Designed:** the obligation's implementation is specified. A UC requirement is designed once a flow step fulfills it.
   - **Built:** the implementing technical record names a file that exists.
   - **Proved:** its test exists, with a run by at a level its kind allows.
 
 ### Out of scope
-Domain services, a glossary, context-map relationships and engineering checks. Each can be added later as a kind when a product needs it.
+Process managers (sagas), context-map relationships and engineering checks. Each can be added later as a kind when a product needs it. Chained policies cover most processes until then, and published events already show which domains listen to which.
 
 ## Changes to existing specs
 - **The vertical slices plan** ([vertical-slice-domains.md](vertical-slice-domains.md)): decision 1's "technology is a layer inside a domain's design stage" is replaced. Domains stay vertical slices, but technology is expressed through the technical kinds that implement each design kind, and layers go.
-- **Authoring, Lathe's own spec of its model:** the meta-model, the record kinds and their rules are rewritten for the forty-six kinds, the new relations and the enforcement above.
+- **Authoring, Lathe's own spec of its model:** the meta-model, the record kinds and their rules are rewritten for the fifty kinds, the new relations and the enforcement above.
 - **Checking:** check records are rewritten. Retired checks become schema refusals, and the new "nothing uses it" and coverage checks are added.
 - **Traceability:** coverage is reworked to cover the new obligations, designed through flow steps and implementations, built through technical files, and proved through test kinds.
 - **Exploring:** stage colors and order, kind pages for the new kinds, and the graph and Model views drawing the new tree.
@@ -177,7 +185,7 @@ Domain services, a glossary, context-map relationships and engineering checks. E
 - **The reference** (`REFERENCE.md`) is regenerated from the schema.
 
 ## Build steps
-1. **Schema.** Rewrite the stage files in `lathe/schema/` for the forty-six kinds, their relations, ID patterns, stage order and the refusals above. This is a hard cutover with no upgrade migrations, since the database is rebuilt from the data files on every load. The store supports kinds with no owner and parents that may be one of two kinds (an endpoint under a command or a query, a table under an entity or a read model).
+1. **Schema.** Rewrite the stage files in `lathe/schema/` for the fifty kinds, their relations, ID patterns, stage order and the refusals above. This is a hard cutover with no upgrade migrations, since the database is rebuilt from the data files on every load. The store supports kinds with no owner and parents that may be one of two kinds (an endpoint under a command or a query, a table under an entity or a read model).
 2. **Conversion of the Tool Library, as the worked example.**
    - A one-time converter in the store makes the mechanical moves, then is deleted.
    - Judgment moves are made by hand through the command layer: sorting rules into the four kinds, splitting use cases into commands, queries and flow steps, mapping components to technical kinds, and splitting tests by what they prove.
@@ -195,5 +203,5 @@ Domain services, a glossary, context-map relationships and engineering checks. E
    - Recommendation: a **pattern rule test** under the pattern rule, naming the adopting domain it proves the rule in. Standard rules are proved by the engine's checks or linters, named in a run by.
    - Owner: Owner.
 2. **Which technical kinds does Lathe declare for itself?** Candidates include check, CLI command, schema migration and graph layout.
-   - Recommendation: declare them while converting LA, only where none of the thirteen technical kinds fits, and list them for review with the LA conversion.
+   - Recommendation: declare them while converting LA, only where none of the fourteen technical kinds fits, and list them for review with the LA conversion.
    - Owner: Owner.
