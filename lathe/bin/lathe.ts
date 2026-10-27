@@ -6,6 +6,8 @@ import path from 'node:path';
 import { parseArgs } from 'node:util';
 import { CONFIG_FILE, formatReference, loadConfig, loadWorkspace, mergeDataFiles, renderReference, type Problem } from '../src/index.ts';
 import { serve } from '../src/server/serve.ts';
+import { serveMcp } from '../src/cli/mcp.ts';
+import { DATA_COMMANDS, DATA_USAGE, runDataCommand } from '../src/cli/writers.ts';
 
 /** A label inside a sentence: "Use case" -> "use case", but an acronym keeps its case ("UC requirement"). */
 const lowerLabel = (label: string) => (/^[A-Z]{2}/.test(label) ? label : label.charAt(0).toLowerCase() + label.slice(1));
@@ -25,13 +27,18 @@ Commands:
   merge-data <base> <ours> <theirs> <path>
            Git's merge driver for data/*.jsonl files (%O %A %B %P): merges the three versions row by row,
            writes the result over <ours>, and exits 1 on a real clash or a row that breaks its table's rules.
+  mcp      Serve the data commands as MCP tools over stdio (the Claude Code plugin starts it).
 
+${DATA_USAGE}
 Options for every command:
   --root <dir>   The product repo (default: the current folder).
 `;
 
+// The data commands read their own flags, one per column of the schema.
+const dataCommand = (DATA_COMMANDS as readonly string[]).includes(process.argv[2] ?? '');
 const { positionals, values } = parseArgs({
   allowPositionals: true,
+  args: dataCommand ? [] : process.argv.slice(2),
   options: {
     root: { type: 'string' },
     json: { type: 'boolean' },
@@ -147,7 +154,9 @@ async function mergeData() {
   process.exitCode = result.clashes.length || result.problems.length ? 1 : 0;
 }
 
-if (values.help || command === 'help') {
+if (dataCommand) {
+  process.exitCode = await runDataCommand(process.argv.slice(2));
+} else if (values.help || command === 'help') {
   console.log(USAGE);
 } else if (command === 'check') {
   await check();
@@ -157,6 +166,8 @@ if (values.help || command === 'help') {
   await format();
 } else if (command === 'serve') {
   startServer();
+} else if (command === 'mcp') {
+  await serveMcp(root);
 } else if (command === 'merge-data') {
   await mergeData();
 } else {
