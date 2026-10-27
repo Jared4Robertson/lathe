@@ -24,6 +24,7 @@ Briefs 98–102 rebuilt Lathe on typed tables stored as JSONL, with the CLI, MCP
   - the command layer is an aggregate;
   - the merge driver is set up per repo.
 - **Components and tests:** every component's `file` and every test's `file` must name a file that exists after the cutover. Add components for the new code (store, schema, migrations, merge driver, CLI commands, MCP server, app forms and write API), each satisfying what it builds, and tests for what the briefs tested, each proving its obligations.
+- **From the writers brief:** `data/flow.jsonl` LA-CHK-F01 still describes the old after-edit hook; rewrite it for the guard hook and the checked writes. The CLI's tests are in `lathe/test/cli/` and the plugin scripts are in `plugin/scripts/`.
 - **Leftovers:** remove every record that describes something deleted, with nothing outliving its purpose.
 
 ## Checks
