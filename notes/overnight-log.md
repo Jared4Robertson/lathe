@@ -285,3 +285,9 @@ Lathe now matches S2 on UC requirements (206/206) and domain rules (98/98) acros
 - The CLI has `add`, `set`, `move`, `link`, `unlink`, `remove`, `show`, `list`, `next-id` and `mcp`. The MCP server is built in, with no new dependency; the plugin has a launcher and a hook that refuses hand edits to data files.
 - All six skills are rewritten. Checks passed: lathe 472, app 351, desktop 63, knip, plugin validate.
 - Leftovers: `lathe init`, a README line and the shape of `check` go to the engine agent; LA-CHK-F01 goes to brief 103.
+
+## Brief 100 merged into db-first: the engine cutover
+- 38 checks kept and rewritten; 31 retired into constraint tests. Checks are rows, and Lathe's own checks load from the package's `lathe/data`.
+- Deleted: parse.ts, meta/, FORMAT.md, checks/, specs/ and the yaml dependency.
+- Coverage: designed and proved are unchanged. Built fell because components name files that were deleted; brief 103 repoints them.
+- The app and the desktop smoke test break until brief 102 (app) adopts the new record shapes; that agent was told.
