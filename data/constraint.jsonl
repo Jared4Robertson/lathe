@@ -12,7 +12,7 @@
 {"id":"LA-VO11-C01","title":"A key is primary, unique, foreign or an index","value_object_id":"LA-VO11","statement":"A table key's type MUST be `primary`, `unique`, `foreign` or `index`."}
 {"id":"LA-VO12-C01","title":"A method is an HTTP method","value_object_id":"LA-VO12","statement":"An endpoint's method MUST be GET, POST, PUT, PATCH, DELETE, HEAD or OPTIONS."}
 {"id":"LA-VO13-C01","title":"An event is delivered in process or by outbox","value_object_id":"LA-VO13","statement":"An event type's delivery MUST be `in process` or `outbox`."}
-{"id":"LA-VO14-C01","title":"A level is one of seven","value_object_id":"LA-VO14","statement":"A run by's level MUST be unit, database, api, contract, e2e-api, e2e-ui or manual."}
+{"id":"LA-VO14-C01","title":"A level is one of five","value_object_id":"LA-VO14","statement":"A run by's level MUST be unit, integration, service, system or browser."}
 {"id":"LA-VO14-C02","title":"A state is automated, manual or not automated yet","value_object_id":"LA-VO14","statement":"A run by's state MUST be `automated`, `manual` or `not automated yet`."}
 {"id":"LA-VO14-C03","title":"An automated test names its file","value_object_id":"LA-VO14","statement":"An automated run by MUST name the file that runs it, relative to the repo root."}
 {"id":"LA-VO14-C04","title":"Only a manual test gives a manual reason","value_object_id":"LA-VO14","statement":"A manual run by MUST give its reason, and any other MUST NOT."}

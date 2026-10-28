@@ -73,10 +73,10 @@ check('test-file-missing', () => {
     const test = (changes: Record<string, string | undefined>) => changing(complete(), 'use_case_test', (r) => r.id === 'EX-LEND-UC01-R01-T01', changes);
     const refused = async (changes: Record<string, string | undefined>) => (await refusals(test(changes))).map((p) => p.rule);
     expect(await refused({ file: undefined })).toEqual(['check']);
-    expect(await refused({ state: 'manual', level: 'manual', file: undefined })).toEqual(['check']);
+    expect(await refused({ state: 'manual', level: 'browser', file: undefined })).toEqual(['check']);
     expect(await refused({ manual_reason: 'Looked at by eye.' })).toEqual(['check']);
     expect(await refused({ state: 'not automated yet', file: undefined })).toEqual([]);
-    expect(await refused({ state: 'manual', level: 'manual', file: undefined, manual_reason: 'Looked at by eye.' })).toEqual([]);
+    expect(await refused({ state: 'manual', level: 'browser', file: undefined, manual_reason: 'Looked at by eye.' })).toEqual([]);
     const later = await loadData(test({ state: 'not automated yet', file: 'test/later.test.ts' }), { missing: ['test/later.test.ts'] });
     expect(ofCheck(later, 'test-file-missing').map((p) => [p.severity, p.record])).toEqual([['warning', 'EX-LEND-UC01-R01-T01']]);
     expect(later.problems.filter((p) => p.severity === 'error')).toEqual([]);
@@ -215,19 +215,19 @@ check('manual-test-file-silent', () => {
 
 check('test-level-not-allowed', () => {
   it('LA-CHK-UC04-R04-T01 a test at a level its kind does not allow is a warning naming the allowed levels', async () => {
-    let data = changing(complete(), 'constraint_test', () => true, { level: 'api' });
-    data = changing(data, 'flow_test', (r) => r.id === 'EX-LEND-UC01-FL01-T', { level: 'api' });
+    let data = changing(complete(), 'constraint_test', () => true, { level: 'service' });
+    data = changing(data, 'flow_test', (r) => r.id === 'EX-LEND-UC01-FL01-T', { level: 'service' });
     const ws = await loadData(data);
     expect(ofCheck(ws, 'test-level-not-allowed').map((p) => p.message)).toEqual([
-      'Flow test EX-LEND-UC01-FL01-T runs at level api, which a flow test does not allow; run it at e2e-api, e2e-ui, manual.',
-      'Constraint test EX-VO01-C01-T runs at level api, which a constraint test does not allow; run it at database, unit.',
+      'Flow test EX-LEND-UC01-FL01-T runs at level service, which a flow test does not allow; run it at system, browser.',
+      'Constraint test EX-VO01-C01-T runs at level service, which a constraint test does not allow; run it at unit, integration.',
     ]);
-    // A constraint enforced by a SQL CHECK is tested at database level, which a constraint test allows.
-    expect(ofCheck(await loadData(changing(complete(), 'constraint_test', () => true, { level: 'database' })), 'test-level-not-allowed')).toEqual([]);
+    // A constraint enforced by a SQL CHECK is tested at integration level, against the database, which a constraint test allows.
+    expect(ofCheck(await loadData(changing(complete(), 'constraint_test', () => true, { level: 'integration' })), 'test-level-not-allowed')).toEqual([]);
   });
 
   it('LA-CHK-UC04-R04-T02 a pattern rule test may run at any level', async () => {
-    for (const level of ['unit', 'database', 'contract', 'e2e-api', 'e2e-ui']) {
+    for (const level of ['unit', 'integration', 'service', 'system', 'browser']) {
       const ws = await loadData(changing(complete(), 'pattern_rule_test', () => true, { level }));
       expect(ofCheck(ws, 'test-level-not-allowed'), level).toEqual([]);
     }
@@ -341,7 +341,7 @@ describe('coverage gaps as warnings', () => {
 check('pattern-rule-test-outside-followers', () => {
   it('LA-TRC-UC08-R02-T01 a pattern rule test naming a domain that does not follow the pattern is an error; one where the rule is waived is a warning', async () => {
     let data = adding(complete(), { domain: [{ id: 'EX-SHOP', title: 'Shop', product_id: 'EX', subdomain_type: 'supporting' }] });
-    data = adding(data, { pattern_rule_test: [{ id: 'EX-PAT-ACT-R01-T02', title: 'In the shop', pattern_rule_id: 'EX-PAT-ACT-R01', domain_id: 'EX-SHOP', level: 'api', state: 'not automated yet' }] });
+    data = adding(data, { pattern_rule_test: [{ id: 'EX-PAT-ACT-R01-T02', title: 'In the shop', pattern_rule_id: 'EX-PAT-ACT-R01', domain_id: 'EX-SHOP', level: 'service', state: 'not automated yet' }] });
     const ws = await loadData(data);
     expect(ofCheck(ws, 'pattern-rule-test-outside-followers')).toEqual([
       expect.objectContaining({ severity: 'error', record: 'EX-PAT-ACT-R01-T02', message: expect.stringContaining('which does not follow pattern EX-PAT-ACT') }),
@@ -509,14 +509,16 @@ check('step-without-endpoint', () => {
 });
 
 check('flow-test-level-for-interface', () => {
-  it("LA-AUT-UC06-R10-T01 a flow test at a level its flow's interface does not fit is reported; manual fits any", async () => {
+  it("LA-AUT-UC06-R10-T01 a flow test at a level its flow's interface does not fit is reported, manual or automated", async () => {
     expect(ofCheck(clean, 'flow-test-level-for-interface')).toEqual([]);
-    expect(ofCheck(await loadData(throughApi()), 'flow-test-level-for-interface')).toEqual([
-      {
-        severity: 'warning', check: 'flow-test-level-for-interface', record: 'EX-LEND-UC01-FL01-T',
-        message: 'Flow test EX-LEND-UC01-FL01-T runs at level e2e-ui, but its flow EX-LEND-UC01-FL01 goes through EX-IF01, an interface of kind API, which is tested at e2e-api (or manual, with a reason).',
-      },
-    ]);
+    // EX-LEND-UC01-FL01-T is automated, EX-LEND-UC02-FL01-T manual: a manual test names the level the person
+    // exercises, and is held to the same fit.
+    const warning = (useCase: string) => ({
+      severity: 'warning', check: 'flow-test-level-for-interface', record: `EX-LEND-${useCase}-FL01-T`,
+      message: `Flow test EX-LEND-${useCase}-FL01-T runs at level browser, but its flow EX-LEND-${useCase}-FL01 goes through EX-IF01, an interface of kind API, which is tested at system.`,
+    });
+    expect(ofCheck(await loadData(throughApi()), 'flow-test-level-for-interface')).toEqual([warning('UC01'), warning('UC02')]);
+    expect(ofCheck(await loadData(changing(throughApi(), 'flow_test', () => true, { level: 'system' })), 'flow-test-level-for-interface')).toEqual([]);
     expect(ofCheck(await loadData(changing(complete(), 'interface', () => true, { kind: 'other' })), 'flow-test-level-for-interface')).toEqual([]);
   });
 });
@@ -548,7 +550,7 @@ check('too-many-children', () => {
   });
 
   it('LA-CHK-UC06-R01-T04 tests are never counted, however many a record holds', async () => {
-    const tests = Array.from({ length: 20 }, (_, i) => ({ id: `EX-LEND-UC01-R01-T${String(i + 2).padStart(2, '0')}`, title: `Test ${i}`, uc_requirement_id: 'EX-LEND-UC01-R01', level: 'api', state: 'not automated yet' }));
+    const tests = Array.from({ length: 20 }, (_, i) => ({ id: `EX-LEND-UC01-R01-T${String(i + 2).padStart(2, '0')}`, title: `Test ${i}`, uc_requirement_id: 'EX-LEND-UC01-R01', level: 'service', state: 'not automated yet' }));
     const ws = await loadData(adding(complete(), { use_case_test: tests }));
     expect(ofCheck(ws, 'too-many-children')).toEqual([]);
   });

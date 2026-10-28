@@ -36,7 +36,7 @@ describe("Authoring's invariants kept by checks", () => {
     expect(ofCheck(clean, 'pattern-rule-test-outside-followers')).toEqual([]);
     const outside = adding(complete(), {
       domain: [{ id: 'EX-SHOP', title: 'Shop', product_id: 'EX', subdomain_type: 'supporting' }],
-      pattern_rule_test: [{ id: 'EX-PAT-ACT-R01-T02', title: 'In the shop', pattern_rule_id: 'EX-PAT-ACT-R01', domain_id: 'EX-SHOP', level: 'api', state: 'not automated yet' }],
+      pattern_rule_test: [{ id: 'EX-PAT-ACT-R01-T02', title: 'In the shop', pattern_rule_id: 'EX-PAT-ACT-R01', domain_id: 'EX-SHOP', level: 'service', state: 'not automated yet' }],
     });
     expect(ofCheck(await loadData(outside), 'pattern-rule-test-outside-followers')).toEqual([
       expect.objectContaining({ severity: 'error', record: 'EX-PAT-ACT-R01-T02', message: expect.stringContaining('which does not follow pattern EX-PAT-ACT') }),
@@ -61,14 +61,14 @@ describe("Authoring's invariants kept by checks", () => {
 
   it('LA-AUT-INV32-T A test run at a level its kind does not allow is a warning; one its kind allows is not', async () => {
     expect(ofCheck(clean, 'test-level-not-allowed')).toEqual([]);
-    const ws = await loadData(changing(complete(), 'constraint_test', () => true, { level: 'e2e-ui' }));
+    const ws = await loadData(changing(complete(), 'constraint_test', () => true, { level: 'browser' }));
     expect(ofCheck(ws, 'test-level-not-allowed')).toEqual([
       expect.objectContaining({
         severity: 'warning',
         record: 'EX-VO01-C01-T',
-        message: 'Constraint test EX-VO01-C01-T runs at level e2e-ui, which a constraint test does not allow; run it at database, unit.',
+        message: 'Constraint test EX-VO01-C01-T runs at level browser, which a constraint test does not allow; run it at unit, integration.',
       }),
     ]);
-    expect(ofCheck(await loadData(changing(complete(), 'constraint_test', () => true, { level: 'database' })), 'test-level-not-allowed')).toEqual([]);
+    expect(ofCheck(await loadData(changing(complete(), 'constraint_test', () => true, { level: 'integration' })), 'test-level-not-allowed')).toEqual([]);
   });
 });

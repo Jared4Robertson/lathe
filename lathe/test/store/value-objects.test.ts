@@ -175,11 +175,12 @@ describe("Authoring's value objects", () => {
     ).toEqual([]);
   });
 
-  const levels = ['unit', 'database', 'api', 'contract', 'e2e-api', 'e2e-ui', 'manual'];
+  const levels = ['unit', 'integration', 'service', 'system', 'browser'];
   const states = ['automated', 'manual', 'not automated yet'];
 
-  it("LA-VO14-C01-T A test's level other than the seven is refused", async () => {
-    for (const level of ['system', 'E2E-UI']) {
+  it("LA-VO14-C01-T A test's level other than the five is refused", async () => {
+    // The old names are refused like any other: e2e-ui, manual.
+    for (const level of ['e2e-ui', 'manual', 'Browser']) {
       expect(await refusals(firstRow('invariant_test', { level })), level).toEqual(notOneOf('invariant_test', 'level', level, levels));
     }
     const tests = levels.map((level, i) => ({ id: `TL-LEND-UC01-R01-T0${i + 2}`, title: `At ${level}`, uc_requirement_id: 'TL-LEND-UC01-R01', level, state: 'not automated yet' }));
@@ -191,9 +192,9 @@ describe("Authoring's value objects", () => {
       expect(await refusals(firstRow('invariant_test', { state })), state).toEqual(notOneOf('invariant_test', 'state', state, states));
     }
     const tests: Row[] = [
-      { id: 'TL-LEND-UC01-R01-T02', title: 'Automated', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'api', state: 'automated', file: 'test/api.test.ts' },
-      { id: 'TL-LEND-UC01-R01-T03', title: 'Manual', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'manual', state: 'manual', manual_reason: 'Done at the desk.' },
-      { id: 'TL-LEND-UC01-R01-T04', title: 'Later', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'api', state: 'not automated yet' },
+      { id: 'TL-LEND-UC01-R01-T02', title: 'Automated', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'service', state: 'automated', file: 'test/api.test.ts' },
+      { id: 'TL-LEND-UC01-R01-T03', title: 'Manual', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'browser', state: 'manual', manual_reason: 'Done at the desk.' },
+      { id: 'TL-LEND-UC01-R01-T04', title: 'Later', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'service', state: 'not automated yet' },
     ];
     expect(await refusals(adding({ use_case_test: tests }))).toEqual([]);
   });

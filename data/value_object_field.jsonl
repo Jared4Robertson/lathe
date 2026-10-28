@@ -11,7 +11,7 @@
 {"value_object_id":"LA-VO11","position":1,"name":"Type","meaning":"primary, unique, foreign or index.","type":"text","required":true,"example":"unique"}
 {"value_object_id":"LA-VO12","position":1,"name":"Method","meaning":"GET, POST, PUT, PATCH, DELETE, HEAD or OPTIONS.","type":"text","required":true,"example":"POST"}
 {"value_object_id":"LA-VO13","position":1,"name":"Delivery","meaning":"in process or outbox.","type":"text","required":true,"example":"outbox"}
-{"value_object_id":"LA-VO14","position":1,"name":"Level","meaning":"unit, database, api, contract, e2e-api, e2e-ui or manual.","type":"text","required":true,"column_name":"level"}
+{"value_object_id":"LA-VO14","position":1,"name":"Level","meaning":"How it runs, cheapest first: unit, integration, service, system or browser. A manual test names the level a person exercises.","type":"text","required":true,"column_name":"level"}
 {"value_object_id":"LA-VO14","position":2,"name":"State","meaning":"automated, manual or not automated yet.","type":"text","required":true,"column_name":"state"}
 {"value_object_id":"LA-VO14","position":3,"name":"File","meaning":"The file that runs it, from the repo root; required when automated.","type":"text","required":false,"column_name":"file"}
 {"value_object_id":"LA-VO14","position":4,"name":"Manual reason","meaning":"Why a person runs it; given when manual, and only then.","type":"text","required":false,"column_name":"manual_reason"}

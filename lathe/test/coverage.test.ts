@@ -129,9 +129,9 @@ describe('designed and built', () => {
 describe('proved', () => {
   let ws: Workspace;
   beforeAll(async () => {
-    let data = changing(complete(), 'constraint_test', () => true, { level: 'api' });
+    let data = changing(complete(), 'constraint_test', () => true, { level: 'service' });
     data = changing(data, 'specification_test', () => true, { state: 'not automated yet' });
-    data = changing(data, 'view_test', () => true, { level: 'manual', state: 'manual', manual_reason: 'Looked at by eye.', file: undefined });
+    data = changing(data, 'view_test', () => true, { level: 'browser', state: 'manual', manual_reason: 'Looked at by eye.', file: undefined });
     data = without(data, 'standard_rule_test', () => true);
     ws = await loadData(data, { silent: ['EX-LEND-PO01-T'] });
   });
@@ -340,7 +340,7 @@ describe('pattern rules, domain by domain', () => {
     const ws = await loadData(data);
     expect(obligation(ws, 'EX-LEND', 'pattern_rule')).toMatchObject(covered(1));
     expect(obligation(ws, 'EX-SHOP', 'pattern_rule')).toMatchObject({ total: 1, proved: 0, not_automated: 0 });
-    const planned = adding(data, { pattern_rule_test: [{ id: 'EX-PAT-ACT-R01-T02', title: 'A sale reads the same', pattern_rule_id: 'EX-PAT-ACT-R01', domain_id: 'EX-SHOP', level: 'api', state: 'not automated yet' }] });
+    const planned = adding(data, { pattern_rule_test: [{ id: 'EX-PAT-ACT-R01-T02', title: 'A sale reads the same', pattern_rule_id: 'EX-PAT-ACT-R01', domain_id: 'EX-SHOP', level: 'service', state: 'not automated yet' }] });
     expect(obligation(await loadData(planned), 'EX-SHOP', 'pattern_rule')).toMatchObject({ total: 1, proved: 0, not_automated: 1 });
   });
 
@@ -464,18 +464,18 @@ describe('the other obligation kinds and their gaps', () => {
 describe('the run by levels', () => {
   it('LA-TRC-DS02-T01 each test kind allows its own levels, and a pattern rule test or a standard rule test any', () => {
     expect(ALLOWED_LEVELS).toEqual({
-      constraint_test: ['unit', 'database'],
-      invariant_test: ['unit', 'database'],
-      specification_test: ['unit', 'database'],
-      policy_test: ['database', 'api', 'e2e-api', 'e2e-ui', 'manual'],
+      constraint_test: ['unit', 'integration'],
+      invariant_test: ['unit', 'integration'],
+      specification_test: ['unit', 'integration'],
+      policy_test: ['integration', 'service', 'system', 'browser'],
       domain_service_test: ['unit'],
-      use_case_test: ['api', 'e2e-api', 'e2e-ui', 'manual'],
-      view_test: ['unit', 'e2e-ui', 'manual'],
-      endpoint_test: ['contract', 'api'],
-      flow_test: ['e2e-ui', 'e2e-api', 'manual'],
-      integration_test: ['contract', 'e2e-api', 'manual'],
-      pattern_rule_test: ['unit', 'database', 'api', 'contract', 'e2e-api', 'e2e-ui', 'manual'],
-      standard_rule_test: ['unit', 'database', 'api', 'contract', 'e2e-api', 'e2e-ui', 'manual'],
+      use_case_test: ['service', 'system', 'browser'],
+      view_test: ['unit', 'browser'],
+      endpoint_test: ['service', 'system'],
+      flow_test: ['system', 'browser'],
+      integration_test: ['integration', 'service', 'system'],
+      pattern_rule_test: ['unit', 'integration', 'service', 'system', 'browser'],
+      standard_rule_test: ['unit', 'integration', 'service', 'system', 'browser'],
     });
   });
 });

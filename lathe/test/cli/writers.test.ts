@@ -97,7 +97,7 @@ describe('lathe add', () => {
     );
     const test = await lathe(root, 'add', 'domain_service_test', '--id', 'TL-LEND-DS01-T02', '--title', 'X', '--domain_service_id', 'TL-LEND-DS01', '--level', 'unit', '--state', 'automated');
     expect(test.err).toContain('breaks a rule of its table: file is given when state is automated [check]');
-    const manual = await lathe(root, 'add', 'domain_service_test', '--id', 'TL-LEND-DS01-T02', '--title', 'X', '--domain_service_id', 'TL-LEND-DS01', '--level', 'manual', '--state', 'manual');
+    const manual = await lathe(root, 'add', 'domain_service_test', '--id', 'TL-LEND-DS01-T02', '--title', 'X', '--domain_service_id', 'TL-LEND-DS01', '--level', 'unit', '--state', 'manual');
     expect(manual.err).toContain('breaks a rule of its table: manual_reason is given when, and only when, state is manual [check]');
     expect((await lathe(root, 'link', 'TL-LEND-EN01', 'has_one', 'TL-LEND-EN01')).err).toContain('source_id and target_id differ [check]');
     expect((await lathe(root, 'add', 'entity', '--id', 'TL-LEND-EN03', '--title', 'X', '--aggregate_id', 'TL-LEND-A2', '--role', 'root', '--in_root_table', 'true')).err).toContain(
@@ -145,7 +145,7 @@ describe('lathe add', () => {
     expect((await lathe(root, 'add', 'endpoint', '--help')).out).toContain('Parent: exactly one of command (command_id) or query (query_id).');
     expect((await lathe(root, 'add', 'view', '--help')).out).toContain('ID: <P>-V<nn>, such as TL-V01. No owner: no parent column; its product is the one its ID starts with.');
     expect((await lathe(root, 'add', 'specification', '--help')).out).toContain('No owner: no parent column; its domain is the one its ID starts with.');
-    expect((await lathe(root, 'add', 'flow_test', '--help')).out).toMatch(/--level +one of unit, database, api, contract, e2e-api, e2e-ui, manual, required\./);
+    expect((await lathe(root, 'add', 'flow_test', '--help')).out).toMatch(/--level +one of unit, integration, service, system, browser, required\./);
   });
 });
 

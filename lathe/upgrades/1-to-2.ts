@@ -6,9 +6,42 @@
 // it, renaming each flow, step and flow test, and every mention of their IDs in any table, links and text alike. Which
 // interface each flow really walks only the Owner knows: that, and the IDs in code (a test's file names its test's
 // ID), are the to-dos.
-import type { Converter, RawData } from '../src/upgrade.ts';
+//
+// Schema 2 also has five test levels, which say only how a test runs: unit, integration (was database), service (was
+// api and contract), system (was e2e-api) and browser (was e2e-ui). Manual stops being a level: a manual test's state
+// already says a person runs it, and it takes the level that fits its kind, browser for a flow, view, use case or
+// policy test (a person using the product), otherwise the lowest level its kind allows.
+import { ALLOWED_LEVELS } from '../src/coverage.ts';
+import type { Converter, RawData, UpgradeNotes } from '../src/upgrade.ts';
 
 type Raw = Record<string, unknown>;
+
+const RENAMED_LEVELS: Readonly<Record<string, string>> = { database: 'integration', api: 'service', contract: 'service', 'e2e-api': 'system', 'e2e-ui': 'browser' };
+/** The test kinds a person runs through the product itself, so a manual one runs at browser. */
+const MANUAL_IN_BROWSER = new Set(['flow_test', 'view_test', 'use_case_test', 'policy_test']);
+
+/** Gives every test one of the five levels. */
+function testLevels(data: RawData, notes: UpgradeNotes): void {
+  const counts = new Map<string, number>();
+  for (const [table, allowed] of Object.entries(ALLOWED_LEVELS)) {
+    const rows = data.read(table);
+    let changed = false;
+    const leveled = rows.map((row): Raw => {
+      const old = String(row.level);
+      const level = old === 'manual' ? (MANUAL_IN_BROWSER.has(table) ? 'browser' : allowed[0]!) : RENAMED_LEVELS[old];
+      if (!level) return row;
+      changed = true;
+      const key = `${old} to ${level}`;
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+      return { ...row, level };
+    });
+    if (changed) data.write(table, leveled);
+  }
+  if (counts.size) notes.changed(`Every test runs at one of the five levels: ${[...counts].map(([key, n]) => `${n} ${key}`).join(', ')}.`);
+  if ([...counts.keys()].some((key) => key.startsWith('manual '))) {
+    notes.todo('Each manual test now names the level a person exercises, browser for a flow, view, use case or policy test and otherwise the lowest its kind allows: set the one that fits, such as system for a person running the real CLI.');
+  }
+}
 
 /** The product of each use case, through its capability and domain. */
 function useCaseProducts(data: RawData): Map<string, string> {
@@ -24,6 +57,7 @@ const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 const converter: Converter = {
   files(data, notes) {
+    testLevels(data, notes);
     const flows = data.read('flow');
     if (flows.length === 0) return;
     const products = useCaseProducts(data);

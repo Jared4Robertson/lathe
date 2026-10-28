@@ -1,2 +1,2 @@
-{"id":"P-D-UC01-R01-T01","title":"Lending records the loan","uc_requirement_id":"P-D-UC01-R01","level":"api","state":"automated","file":"test/lend.test.ts"}
-{"id":"P-D-UC01-R02-T01","title":"A member at the limit is refused","uc_requirement_id":"P-D-UC01-R02","level":"api","state":"not automated yet"}
+{"id":"P-D-UC01-R01-T01","title":"Lending records the loan","uc_requirement_id":"P-D-UC01-R01","level":"service","state":"automated","file":"test/lend.test.ts"}
+{"id":"P-D-UC01-R02-T01","title":"A member at the limit is refused","uc_requirement_id":"P-D-UC01-R02","level":"service","state":"not automated yet"}

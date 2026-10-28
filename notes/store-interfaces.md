@@ -16,7 +16,7 @@ What the engine, the CLI and MCP tools, and the app build on: the schema in `lat
 
 ## Tables
 
-The full description, with every column's meaning, is `store.schema` at run time and the comments in the migrations. **Run by**, on every test kind: `level` (unit, database, api, contract, e2e-api, e2e-ui, manual), `state` (automated, manual, not automated yet), `file?` (required when automated), `manual_reason?` (required when manual, and only then), `size?` (volume or worst case; none is small) and the markers `smoke?` and `external?` (only true; none is no).
+The full description, with every column's meaning, is `store.schema` at run time and the comments in the migrations. **Run by**, on every test kind: `level` (how it runs, cheapest first: unit, integration, service, system, browser; a manual test names the level a person exercises, and a test runs at the lowest level that can observe its result), `state` (automated, manual, not automated yet), `file?` (required when automated), `manual_reason?` (required when manual, and only then), `size?` (volume or worst case; none is small) and the markers `smoke?` and `external?` (only true; none is no).
 
 | Stage | Kind | Parent | Columns besides id and title (? = optional) | ID |
 | --- | --- | --- | --- | --- |

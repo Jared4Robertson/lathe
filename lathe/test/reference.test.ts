@@ -154,7 +154,7 @@ describe('the reference', () => {
     expect(invariant).toContain("  - **Designed:** By construction, under its aggregate.");
     expect(invariant).toContain('  - **Proved:** Its invariant test.');
     const test = markdown.slice(markdown.indexOf('<a id="kind-flow_test"></a>'));
-    expect(test).toContain('- **Run by levels:** `e2e-ui`, `e2e-api`, `manual`');
+    expect(test).toContain('- **Run by levels:** `system`, `browser`');
   });
 });
 
