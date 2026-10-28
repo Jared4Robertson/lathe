@@ -20,7 +20,7 @@ function workspace(): SpecData {
   });
 }
 const served = () => ({ data: workspace() });
-const card = (title: string) => within(section(/^Domains/)).getByText(title).closest('article') as HTMLElement;
+const card = (title: string) => within(section(/^Domains/)).getByText(title).closest('.card') as HTMLElement;
 /** Each coverage group as "Heading total: bar, bar, ...". */
 const groups = (element: HTMLElement) =>
   [...element.querySelectorAll('.coverage-group')].map((g) => {
