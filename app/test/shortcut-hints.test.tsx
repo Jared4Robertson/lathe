@@ -73,7 +73,7 @@ describe('shortcut hints', () => {
 
   const proveLaPltDs01T01 = async () => {
     // The side bar starts closed in the Wiki view; this test reads it open.
-    openSideBar('details', ['wiki', 'graph', 'erd', 'trace']);
+    openSideBar('details');
     // In Apple's order: ⌃ ⌥ ⇧ ⌘.
     expect(formatBinding('Mod+Shift+P', true)).toBe('⇧⌘P');
     expect(formatBinding('Mod+Alt+B', true)).toBe('⌥⌘B');
@@ -130,7 +130,7 @@ describe('shortcut hints', () => {
   });
 
   it('LA-V61-R15-T01 A rebinding in local storage changes the tooltip, the palette, the sheet and aria-keyshortcuts', async () => {
-    window.localStorage.setItem(OVERRIDES_KEY, JSON.stringify({ toggleNav: 'Mod+J', viewGraph: ['Alt+G'] }));
+    window.localStorage.setItem(OVERRIDES_KEY, JSON.stringify({ toggleNav: 'Mod+J', stageGraph: ['Alt+G'] }));
     await openApp('/P-D-UC01', { data: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     const collapse = within(nav()).getByRole('button', { name: 'Collapse the navigation' });
@@ -155,7 +155,7 @@ describe('shortcut hints', () => {
 
   const proveLaPltDs01T02 = async () => {
     // The side bar starts closed in the Wiki view; this test reads it open.
-    openSideBar('details', ['wiki', 'graph', 'erd', 'trace']);
+    openSideBar('details');
     expect(ariaKeyShortcuts(['Mod+P', 'Mod+K'], false)).toBe('Control+P Control+K');
     expect(ariaKeyShortcuts(['Mod+P'], true)).toBe('Meta+P');
     expect(ariaKeyShortcuts(['g c'], false)).toBe('');

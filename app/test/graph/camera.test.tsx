@@ -103,7 +103,7 @@ describe('graph camera on the page', () => {
 
   async function open() {
     startAtDepth(1);
-    await openApp('/P-D-UC01?view=graph', { data: testWorkspace() });
+    await openApp('/P-D-UC01?stage=graph', { data: testWorkspace() });
     await waitFor(() => expect(isCenter('P-D-UC01')).toBe(true));
     await waitFor(() => expect(moves()).toBeGreaterThan(0));
   }
@@ -181,7 +181,7 @@ describe('graph camera in the Nested layout', () => {
   it('LA-EXP-DS09-T11 On the page, focusing a child in the Nested layout glides to its box, and Back glides back', async () => {
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({ x: 0, y: 0, top: 0, left: 0, width: 1000, height: 800, right: 1000, bottom: 800, toJSON: () => ({}) } as DOMRect);
     startAtDepth(1, 'nested');
-    await openApp('/P-D-UC01?view=graph', { data: testWorkspace() });
+    await openApp('/P-D-UC01?stage=graph', { data: testWorkspace() });
     await waitFor(() => expect(isCenter('P-D-UC01')).toBe(true));
     await waitFor(() => expect(camera()).toEqual(roundCamera(frameNested(nestedMap(testIndex(), 'P'), 'P-D-UC01', 1000, 800))));
     expect(document.querySelector('.graph-flow.is-nested')).not.toBeNull();
@@ -198,7 +198,7 @@ describe('graph camera in the Nested layout', () => {
   it.each(['LA-EXP-DS09-T12', 'LA-V93-R22-T02'])('%s On the page, the Voronoi layout draws each cell as its outline, the pointer taking the outline and not its box, and focusing a child glides to its cell', async () => {
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({ x: 0, y: 0, top: 0, left: 0, width: 1000, height: 800, right: 1000, bottom: 800, toJSON: () => ({}) } as DOMRect);
     startAtDepth(1, 'voronoi');
-    await openApp('/P-D-UC01?view=graph', { data: testWorkspace() });
+    await openApp('/P-D-UC01?stage=graph', { data: testWorkspace() });
     await waitFor(() => expect(isCenter('P-D-UC01')).toBe(true));
     const map = () => readyVoronoiMap(testIndex(), 'P')!;
     await waitFor(() => expect(camera()).toEqual(roundCamera(frameNested(map(), 'P-D-UC01', 1000, 800))));

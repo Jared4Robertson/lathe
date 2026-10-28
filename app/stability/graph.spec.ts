@@ -33,7 +33,7 @@ async function visibleNode(page: Page, n: number): Promise<{ id: string; at: { x
 test.describe('graph', () => {
   for (const depth of [1, 2, 3]) {
     test(`LA-V61-R32-T01 re-center at depth ${depth}`, async ({ page }) => {
-      await openPage(page, `${RECORD}?view=graph`);
+      await openPage(page, `${RECORD}?stage=graph`);
       await nodes(page);
       if (depth > 1) {
         await page.locator('.graph-depth button', { hasText: String(depth) }).click();
@@ -54,7 +54,7 @@ test.describe('graph', () => {
   }
 
   test('LA-V61-R32-T01 change the depth', async ({ page }) => {
-    await openPage(page, `${RECORD}?view=graph`);
+    await openPage(page, `${RECORD}?stage=graph`);
     await nodes(page);
     const keys = [PANE_BAR, PANE_TITLE, GRAPH_HEADER, GRAPH_CANVAS, DRAWING];
     for (const d of ['2', '3', '1']) {
@@ -64,7 +64,7 @@ test.describe('graph', () => {
   });
 
   test('LA-V93-R16-T03 focusing anything moves the camera only: no box changes its place or size', async ({ page }) => {
-    await openPage(page, '/LA?view=graph');
+    await openPage(page, '/LA?stage=graph');
     await nodes(page);
     const seen = new Map<string, string>();
     const cameras: string[] = [];
@@ -100,7 +100,7 @@ test.describe('graph', () => {
   });
 
   test('LA-V93-R12-T03 a domain is drawn as a hexagon: its outline is the polygon, in every state', async ({ page }) => {
-    await openPage(page, '/LA?view=graph');
+    await openPage(page, '/LA?stage=graph');
     await nodes(page);
     const domain = () => boxOf(page, 'LA-EXP');
     const at = (await domain())!;
@@ -150,7 +150,7 @@ test.describe('graph', () => {
       return out;
     }, GRAPH);
     for (const focus of [DOMAIN, `${DOMAIN}/domain-model`, `${DOMAIN}/use-cases`]) {
-      await openPage(page, `${focus}?view=graph`);
+      await openPage(page, `${focus}?stage=graph`);
       await nodes(page);
       for (const depth of [1, 2, 3]) {
         await page.locator('.graph-depth button', { hasText: String(depth) }).click();
@@ -160,7 +160,7 @@ test.describe('graph', () => {
       }
     }
     // Nested, every box keeps its rectangle and shows its shape's mark before its kind and ID line.
-    await openPage(page, `${DOMAIN}?view=graph`);
+    await openPage(page, `${DOMAIN}?stage=graph`);
     await nodes(page);
     await page.locator('.pane-graph .graph-layout button', { hasText: 'Nested' }).click();
     await graphDrawn(page, 'nested', 1300);
@@ -174,7 +174,7 @@ test.describe('graph', () => {
   });
 
   test('LA-V93-R10-T08 at depth 2 on a domain, the domain, its stages and their folders are framed in the canvas, each showing its full title wrapped on whole words', async ({ page }) => {
-    await openPage(page, `${DOMAIN}?view=graph`);
+    await openPage(page, `${DOMAIN}?stage=graph`);
     await nodes(page);
     await page.locator('.graph-depth button', { hasText: '2' }).click();
     await page.waitForTimeout(1300);
@@ -217,7 +217,7 @@ test.describe('graph', () => {
   test('LA-V93-R10-T08 in each layout, focusing each of Lathe\'s domains at depth 2, framed and zoomed in, every drawn box shows its title text and its whole label inside it', async ({ page }) => {
     for (const layout of ['Tree', 'Nested', 'Voronoi'] as const) {
       for (const domain of ['LA-AUT', 'LA-CHK', 'LA-EXP', 'LA-PLT', 'LA-TRC']) {
-        await openPage(page, `/${domain}?view=graph`);
+        await openPage(page, `/${domain}?stage=graph`);
         await nodes(page);
         if (layout === 'Tree') await page.locator('.graph-depth button', { hasText: '2' }).click();
         else if (!(await page.locator('.pane-graph .graph-layout button', { hasText: layout }).getAttribute('aria-pressed'))?.includes('true')) await page.locator('.pane-graph .graph-layout button', { hasText: layout }).click();
@@ -244,7 +244,7 @@ test.describe('graph', () => {
     for (const scheme of ['light', 'dark'] as const) {
       await page.emulateMedia({ colorScheme: scheme });
       for (const focus of [DOMAIN, `${DOMAIN}/use-cases`]) {
-        await openPage(page, `${focus}?view=graph`);
+        await openPage(page, `${focus}?stage=graph`);
         await nodes(page);
         for (const depth of [1, 2, 3]) {
           await page.locator('.graph-depth button', { hasText: String(depth) }).click();
@@ -262,7 +262,7 @@ test.describe('graph', () => {
   });
 
   test('LA-V93-R29-T05 a label keeps its size in the map when the focus changes and the camera zooms', async ({ page }) => {
-    await openPage(page, `${DOMAIN}?view=graph`);
+    await openPage(page, `${DOMAIN}?stage=graph`);
     await nodes(page);
     const target = `${DOMAIN.slice(1)}/interaction-design`;
     const size = async () => {
@@ -293,7 +293,7 @@ test.describe('graph', () => {
   });
 
   test('LA-V61-R32-T01 move around the ERD', async ({ page }) => {
-    await openPage(page, `${DOMAIN}?view=erd`);
+    await openPage(page, `${DOMAIN}?stage=erd`);
     await page.locator('.erd-flow .react-flow__node').first().waitFor();
     await page.waitForTimeout(500);
     const keys = ['.pane-erd > .pane-bar', '.pane-erd .pane-title', '.pane-erd .erd-header', ERD_CANVAS, '.pane-erd .erd-key'];
@@ -368,7 +368,7 @@ const PARITY: { feature: string; run: (page: Page, layout: Layout) => Promise<vo
     run: async (page) => {
       // The use case has no links of its own: its flow's first step has, so the graph goes there and back, in the app.
       const here = path(page);
-      await page.evaluate((to) => { window.history.pushState(null, '', `${to}?view=graph`); window.dispatchEvent(new PopStateEvent('popstate')); }, LINKED);
+      await page.evaluate((to) => { window.history.pushState(null, '', `${to}?stage=graph`); window.dispatchEvent(new PopStateEvent('popstate')); }, LINKED);
       await page.waitForURL((u) => u.pathname === LINKED);
       await page.waitForTimeout(900);
       await page.locator('.pane-graph .graph-links button').click();
@@ -522,7 +522,7 @@ const PARITY: { feature: string; run: (page: Page, layout: Layout) => Promise<vo
 
 for (const layout of ['tree', 'nested', 'voronoi'] as const) {
   test(`LA-V93-R14-T02 every graph feature works in the ${LAYOUT_NAMES[layout]} layout`, async ({ page }) => {
-    await openPage(page, `${RECORD}?view=graph`);
+    await openPage(page, `${RECORD}?stage=graph`);
     await nodes(page);
     await page.locator('.pane-graph .graph-box[data-id^="LA-"]').nth(1).waitFor({ state: 'attached' });
     await page.waitForTimeout(900);

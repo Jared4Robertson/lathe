@@ -29,12 +29,12 @@ describe('Lathe on a phone', () => {
   const proveLaV61R17T01 = async () => {
     phone();
     window.localStorage.setItem('lathe:view', '"wiki,graph"');
-    await openApp('/P-D-UC01?view=wiki,graph', served());
+    await openApp('/P-D-UC01?stage=graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     // The top bar: the menu, the title on one line under a link one step up, and quick find.
     expect(within(topbar()).getByRole('button', { name: 'Open the navigation' })).toBeInTheDocument();
     expect(topbar().querySelector('.topbar-title')).toHaveTextContent('Lend a thing');
-    expect(within(topbar()).getByRole('link', { name: 'Up to Lending' })).toHaveAttribute('href', '/P-D-CAP01?view=wiki,graph');
+    expect(within(topbar()).getByRole('link', { name: 'Up to Lending' })).toHaveAttribute('href', '/P-D-CAP01?stage=graph');
     expect(within(topbar()).getByRole('button', { name: 'Quick find' })).toBeInTheDocument();
     // One view: the first the address names; no pane headers and no handles.
     expect([...document.querySelectorAll('.pane')].map((p) => p.getAttribute('aria-label'))).toEqual(['Wiki pane']);
@@ -44,14 +44,14 @@ describe('Lathe on a phone', () => {
     expect(segment('Graph')).toHaveAttribute('aria-pressed', 'false');
     // Switching shows the graph alone and says so in the address; the wide screen's views stay remembered.
     fireEvent.click(segment('Graph'));
-    expect(window.location.search).toBe('?view=graph');
+    expect(window.location.search).toBe('?stage=graph');
     await waitFor(() => expect([...document.querySelectorAll('.pane')].map((p) => p.getAttribute('aria-label'))).toEqual(['Graph pane']));
     expect(segment('Graph')).toHaveAttribute('aria-pressed', 'true');
     expect(window.localStorage.getItem('lathe:view')).toBe('"wiki,graph"');
     // A page that names no product parent goes up to all products; a domain up to its product.
-    await openApp('/P-D?view=wiki', served());
+    await openApp('/P-D?stage=graph', served());
     await waitFor(() => expect(topbar().querySelector('.topbar-title')).toHaveTextContent('Domain'));
-    expect(within(topbar()).getByRole('link', { name: 'Up to Product' })).toHaveAttribute('href', '/P?view=wiki');
+    expect(within(topbar()).getByRole('link', { name: 'Up to Product' })).toHaveAttribute('href', '/P?stage=graph');
   };
   it('LA-V61-R17-T01 A phone shows a compact top bar with the title and a step up, and one view at a time switched from the page bar, leaving the views remembered for a wide screen alone', proveLaV61R17T01);
   it('LA-V61-R18-T01 A phone shows one view at a time, switched from the page bar, leaving the views remembered for a wide screen alone', proveLaV61R17T01);
@@ -170,7 +170,7 @@ describe('Lathe on a phone', () => {
   const proveLaV61R23T01 = async () => {
     phone();
     window.sessionStorage.setItem('lathe:graph-settings', JSON.stringify({ layout: 'tree', depth: 1, trace: false, hiddenKinds: [], hiddenRelations: [], links: false, minimap: false }));
-    await openApp('/P-D-UC01-R01?view=graph', served());
+    await openApp('/P-D-UC01-R01?stage=graph', served());
     // Links on, so the flow step that fulfills the UC requirement is drawn.
     fireEvent.click(await screen.findByRole('button', { name: 'Links' }));
     await waitFor(() => expect(boxElement('P-D-UC01-FL01-S01')).not.toBeNull());

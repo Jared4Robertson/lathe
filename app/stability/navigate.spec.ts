@@ -47,7 +47,7 @@ test.describe('navigate', () => {
   });
 
   test('LA-V61-R28-T01 by clicking a graph node, then Back', async ({ page }) => {
-    await openPage(page, `${RECORD}?view=graph`);
+    await openPage(page, `${RECORD}?stage=graph`);
     await page.locator('.graph-flow .graph-box').nth(1).waitFor({ state: 'attached' });
     await page.waitForTimeout(500);
     const keys = [...KEYS, GRAPH_CANVAS, GRAPH_HEADER];

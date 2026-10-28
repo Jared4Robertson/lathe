@@ -169,7 +169,7 @@ describe('record page', () => {
 
   it('LA-V92-R13-T01 A record\'s kind shows in its stage\'s color, and a kind with no owner says why it has no parent', async () => {
     openSideBar('details', ['graph']);
-    await openApp('/DM-V01?view=graph');
+    await openApp('/DM-V01?stage=graph');
     await screen.findByRole('heading', { level: 1, name: 'Basket page' });
     expect(document.querySelector('.pane-title .eyebrow .kind-badge')).toHaveClass('stage-interaction-design');
     // Both domains' flow steps happen in the view, so the product shares it: its eyebrow names the product only.

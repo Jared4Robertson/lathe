@@ -71,7 +71,7 @@ test.describe('live reload', () => {
   });
 
   test('LA-V61-R33-T01 with the graph open', async ({ page }) => {
-    await openPage(page, `${RECORD}?view=wiki,graph`);
+    await openPage(page, `${RECORD}?stage=graph`);
     await page.locator('.pane-graph .graph-flow .graph-box').first().waitFor({ state: 'attached' });
     await page.waitForTimeout(500);
     let restore = () => {};

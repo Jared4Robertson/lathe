@@ -184,7 +184,7 @@ describe('tabs for open pages', () => {
     await firstTab();
     fireEvent.click(viewToggle('Graph'));
     expect(tabs()).toEqual(['Lend a thing<']);
-    expect(address()).toBe('/P-D-UC01?view=wiki,graph');
+    expect(address()).toBe('/P-D-UC01?stage=graph');
   });
 
   it('LA-V96-R14-T01 Each tab keeps its own views and wiki scroll, and the graph\'s settings are the session\'s, whatever the tab', async () => {
@@ -210,28 +210,28 @@ describe('tabs for open pages', () => {
     // Back on the first tab: its two panes and its scroll, and the depth last set, not its own.
     fireEvent.click(tab('Lend a thing'));
     await waitFor(() => expect(title()).toBe('Lend a thing'));
-    expect(address()).toBe('/P-D-UC01?view=wiki,graph');
+    expect(address()).toBe('/P-D-UC01?stage=graph');
     expect(screen.getByRole('region', { name: 'Graph pane' })).toBeInTheDocument();
     await waitFor(() => expect(screen.getByRole('button', { name: '3' })).toHaveAttribute('aria-pressed', 'true'));
     expect(wiki().scrollTop).toBe(120);
     // And the second: the wiki alone.
     fireEvent.click(tab('Loan desk'));
     await waitFor(() => expect(title()).toBe('Loan desk'));
-    expect(address()).toBe('/P-V01?view=wiki');
+    expect(address()).toBe('/P-V01?stage=graph');
     expect(screen.queryByRole('region', { name: 'Graph pane' })).toBeNull();
     // A link naming other views to a page open in a tab shows the tab as it was, and the address says so.
-    await go('/P-D-UC01?view=wiki', 'Lend a thing');
-    await waitFor(() => expect(address()).toBe('/P-D-UC01?view=wiki,graph'));
+    await go('/P-D-UC01?stage=graph', 'Lend a thing');
+    await waitFor(() => expect(address()).toBe('/P-D-UC01?stage=graph'));
     // A tab stores no graph settings.
     const stored = JSON.parse(window.sessionStorage.getItem('lathe:tabs')!) as Record<string, { tabs: { state: object }[] }>;
     expect(Object.values(stored).flatMap((set) => set.tabs.map((t) => Object.keys(t.state))).flat()).not.toContain('graph');
   });
 
   it('LA-V96-R15-T04 Reloading brings back each tab\'s views', async () => {
-    await openApp('/P-D-UC01?view=wiki,graph', served());
+    await openApp('/P-D-UC01?stage=graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     fireEvent.doubleClick(tab('Lend a thing'));
-    await go('/P-V01?view=wiki', 'Loan desk');
+    await go('/P-V01?stage=graph', 'Loan desk');
     fireEvent.doubleClick(tab('Loan desk'));
     fireEvent.click(tab('Lend a thing'));
     await waitFor(() => expect(title()).toBe('Lend a thing'));
@@ -240,20 +240,20 @@ describe('tabs for open pages', () => {
     expect(screen.getByRole('region', { name: 'Graph pane' })).toBeInTheDocument();
     fireEvent.click(tab('Loan desk'));
     await waitFor(() => expect(title()).toBe('Loan desk'));
-    expect(address()).toBe('/P-V01?view=wiki');
+    expect(address()).toBe('/P-V01?stage=graph');
   });
 
   it.each(['LA-PAT-APP-UX-R06-T01', 'LA-PAT-APP-UX-R06-T02'])('%s Reloading brings back the same tabs, the preview, the active tab and each tab\'s views', async () => {
-    await openApp('/P-D-UC01?view=wiki,graph', served());
+    await openApp('/P-D-UC01?stage=graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     fireEvent.doubleClick(tab('Lend a thing'));
-    await go('/P-V01?view=wiki', 'Loan desk');
+    await go('/P-V01?stage=graph', 'Loan desk');
     fireEvent.doubleClick(tab('Loan desk'));
     await go('/P-D-A1', 'Thing');
     fireEvent.click(tab('Lend a thing'));
     await waitFor(() => expect(title()).toBe('Lend a thing'));
     const before = { tabs: tabs(), address: address() };
-    expect(before).toEqual({ tabs: ['Lend a thing<', 'Loan desk', 'Thing*'], address: '/P-D-UC01?view=wiki,graph' });
+    expect(before).toEqual({ tabs: ['Lend a thing<', 'Loan desk', 'Thing*'], address: '/P-D-UC01?stage=graph' });
 
     // Reload at the same address.
     await openApp(address(), served());
@@ -262,7 +262,7 @@ describe('tabs for open pages', () => {
     expect(screen.getByRole('region', { name: 'Graph pane' })).toBeInTheDocument();
     fireEvent.click(tab('Loan desk'));
     await waitFor(() => expect(title()).toBe('Loan desk'));
-    expect(address()).toBe('/P-V01?view=wiki');
+    expect(address()).toBe('/P-V01?stage=graph');
     expect(screen.queryByRole('region', { name: 'Graph pane' })).toBeNull();
   });
 

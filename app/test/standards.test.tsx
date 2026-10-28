@@ -135,7 +135,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
   });
 
   it.each(['LA-PAT-APP-CODE-R06-T01', 'LA-PAT-APP-CODE-R06-T02'])('%s Every button and link on the main pages has an accessible name', async () => {
-    for (const path of ['/', '/DM-SHOP', '/DM-SHOP-UC01', '/DM-SHOP-UC01?view=graph']) {
+    for (const path of ['/', '/DM-SHOP', '/DM-SHOP-UC01', '/DM-SHOP-UC01?stage=graph']) {
       await openApp(path);
       // The role queries compute each control's accessible name; keep the ones whose name is empty.
       const controls = ['button', 'link', 'textbox', 'searchbox', 'combobox', 'checkbox', 'radio'].flatMap((role) => screen.queryAllByRole(role));
@@ -170,7 +170,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     const separators = filesUnder(SRC, /\.tsx$/).filter((f) => !f.endsWith('ResizeHandle.tsx')).flatMap((f) => where(f, readFileSync(f, 'utf8'), /role="separator"/));
     expect(separators).toEqual([]);
     // On a record with the wiki and graph open and the side bar shown: nav, wiki, graph and sideBar, each gap a handle.
-    await openApp('/DM-SHOP-UC01?view=wiki,graph');
+    await openApp('/DM-SHOP-UC01?stage=graph');
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     // A focusable separator (one with a value) is a splitter; a plain divider line such as the rail's is not.
     const handles = screen.getAllByRole('separator').filter((h) => h.hasAttribute('aria-valuenow')).map((h) => [h.getAttribute('aria-label'), h.classList.contains('resize-handle')]);
@@ -187,8 +187,8 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
 
   it.each(['LA-PAT-APP-UX-R03-T01', 'LA-PAT-APP-UX-R03-T02'])('%s The page bar holds the page\'s tabs and layout controls; each pane\'s header holds only that pane\'s actions, on wide and narrow screens alike', async () => {
     // The side bar starts closed in the Wiki view; this test reads it open.
-    openSideBar('details', ['wiki', 'graph', 'erd', 'trace']);
-    for (const [path, narrow] of [['/DM-SHOP-UC01?view=wiki', false], ['/DM-SHOP-UC01?view=wiki,graph', false], ['/DM-SHOP-UC01?view=wiki,graph', true]] as const) {
+    openSideBar('details');
+    for (const [path, narrow] of [['/DM-SHOP-UC01?stage=graph', false], ['/DM-SHOP-UC01?stage=graph', false], ['/DM-SHOP-UC01?stage=graph', true]] as const) {
       if (narrow) vi.stubGlobal('matchMedia', (query: string) => ({ matches: true, media: query, addEventListener: () => {}, removeEventListener: () => {} }));
       await openApp(path);
       await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
@@ -251,7 +251,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
   });
 
   it('LA-V96-R04-T03 Wiki, Graph, ERD and Trace are pressed toggles in the page bar, the open ones shown as panes in that order, each naming its view and closable while another is open', async () => {
-    await openApp('/DM-SHOP-UC01?view=wiki,graph');
+    await openApp('/DM-SHOP-UC01?stage=graph');
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     const toggles = within(screen.getByRole('group', { name: 'View' })).getAllByRole('button');
     expect(toggles.filter((t) => t.getAttribute('aria-pressed') === 'true')).toHaveLength(2);
@@ -494,7 +494,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     expect(raw).toEqual([]);
 
     // The pages.
-    for (const path of ['/', '/DM', '/DM-SHOP', '/DM-SHOP-UC01', '/DM-SHOP-UC01?view=graph', '/DM/checks', '/format', '/settings/appearance']) {
+    for (const path of ['/', '/DM', '/DM-SHOP', '/DM-SHOP-UC01', '/DM-SHOP-UC01?stage=graph', '/DM/checks', '/format', '/settings/appearance']) {
       await openApp(path);
       // Every page waits for its content.
       await screen.findAllByRole('heading', { level: 1 });
@@ -527,7 +527,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     expect(parseSpecRoute('/DM-SHOP/interaction-design/flow', index)).toEqual({ page: 'group', parent: 'DM-SHOP', kind: 'interaction-design/flow' });
 
     // The pages: every in-app link is the home page, an app page or an ID, and none is an old address.
-    for (const path of ['/', '/DM', '/DM-SHOP', '/DM-SHOP-UC01', '/DM-SHOP/interaction-design/flow?view=wiki,graph', '/DM/checks', '/format', '/settings/appearance']) {
+    for (const path of ['/', '/DM', '/DM-SHOP', '/DM-SHOP-UC01', '/DM-SHOP/interaction-design/flow?stage=graph', '/DM/checks', '/format', '/settings/appearance']) {
       await openApp(path);
       await screen.findAllByRole('heading', { level: 1 });
       const wrong = [...document.querySelectorAll('a[href^="/"]')].map((a) => a.getAttribute('href')!).filter((href) => {

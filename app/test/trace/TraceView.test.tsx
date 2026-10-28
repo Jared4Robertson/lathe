@@ -25,16 +25,16 @@ describe('the Trace view', () => {
     expect(viewsOffered(i, 'P-D-A3')).toEqual(['wiki', 'graph', 'erd', 'trace']);
 
     // On an aggregate: Trace opens with its toggle or Ctrl+5, after ERD.
-    await openApp('/P-D-A3?view=wiki,erd', served());
+    await openApp('/P-D-A3?stage=erd', served());
     await screen.findByRole('heading', { level: 1, name: 'Loan' });
     expect(viewToggle('Trace')).toHaveAttribute('aria-pressed', 'false');
     fireEvent.keyDown(document.body, { key: '5', code: 'Digit5', ctrlKey: true });
-    expect(window.location.search).toBe('?view=wiki,erd,trace');
+    expect(window.location.search).toBe('?stage=trace');
     expect(panes()).toEqual(['Wiki pane', 'ERD pane', 'Trace pane']);
     await matrix();
     // Alt+T turns it off again (off a Mac).
     fireEvent.keyDown(document.body, { key: 't', code: 'KeyT', altKey: true });
-    expect(window.location.search).toBe('?view=wiki,erd');
+    expect(window.location.search).toBe('?stage=erd');
 
     // A test has nothing to trace: its toggle keeps its slot, dimmed, and says where it works; a link naming it shows the rest.
     await openApp('/P-D-UC01-R01-T01?view=graph,trace', served());
@@ -45,7 +45,7 @@ describe('the Trace view', () => {
   });
 
   it('LA-V98-R02-T02 An obligation\'s Trace view draws its chain as five columns of cards', async () => {
-    await openApp('/P-D-UC01-R01?view=trace', served());
+    await openApp('/P-D-UC01-R01?stage=trace', served());
     const chain = await within(tracePane()).findByRole('region', { name: 'Traceability chain' });
     const columns = [...chain.querySelectorAll('.trace-column')];
     expect(columns.map((c) => c.querySelector('.trace-column-name')!.firstChild!.textContent!.trim())).toEqual(['Obligation', 'Design', 'Build', 'Tests', 'Files']);
@@ -59,7 +59,7 @@ describe('the Trace view', () => {
   });
 
   it('LA-V98-R03-T02 A domain\'s Trace view draws a matrix with a heading row per parent', async () => {
-    await openApp('/P-D?view=trace', served());
+    await openApp('/P-D?stage=trace', served());
     const table = await matrix();
     expect(within(table.querySelector('thead')!).getAllByRole('columnheader').map((h) => h.textContent)).toEqual(['Obligation', 'Design', 'Build', 'Tests', 'Files']);
     const groups = [...table.querySelectorAll('tr.group-row')];
@@ -70,7 +70,7 @@ describe('the Trace view', () => {
   });
 
   it('LA-V98-R04-T02 Empty cells show as gaps, the header counts them, and Gaps only keeps those rows', async () => {
-    await openApp('/P-D?view=trace', served());
+    await openApp('/P-D?stage=trace', served());
     const table = await matrix();
     const rows = () => [...table.querySelectorAll('tbody tr:not(.group-row)')];
     const all = rows().length;
@@ -83,14 +83,14 @@ describe('the Trace view', () => {
     await waitFor(() => expect(rows().length).toBe(gapped));
     for (const r of rows()) expect(r.querySelector('td.is-gap')).not.toBeNull();
     // A use case whose every requirement is traced has no rows left under Gaps only.
-    await openApp('/P-D-UC01?view=trace', served());
+    await openApp('/P-D-UC01?stage=trace', served());
     await matrix();
     fireEvent.click(within(tracePane()).getByRole('checkbox', { name: 'Gaps only' }));
     if (within(tracePane()).queryByRole('table') === null) expect(tracePane()).toHaveTextContent('No gaps');
   });
 
   it('LA-V98-R07-T02 The matrix ends with its Untraced section, counted in the header and kept by Gaps only', async () => {
-    await openApp('/P-D?view=trace', served());
+    await openApp('/P-D?stage=trace', served());
     await matrix();
     const section = () => within(tracePane()).getByRole('region', { name: /^Untraced/ });
     const expected = untracedUnder(modelIndex(), 'P-D');
@@ -98,25 +98,25 @@ describe('the Trace view', () => {
     expect(count).toBeGreaterThan(0);
     expect(tracePane().querySelector('.trace-caption')).toHaveTextContent(`· ${count} untraced`);
     expect(within(section()).getByText('Flow steps')).toBeInTheDocument();
-    expect(within(section()).getByRole('link', { name: 'P-D-UC01-FL01-S02' })).toHaveAttribute('href', '/P-D-UC01-FL01-S02?view=trace');
+    expect(within(section()).getByRole('link', { name: 'P-D-UC01-FL01-S02' })).toHaveAttribute('href', '/P-D-UC01-FL01-S02?stage=trace');
     expect(within(section()).getAllByRole('link')).toHaveLength(count);
     // Gaps only keeps it.
     fireEvent.click(within(tracePane()).getByRole('checkbox', { name: 'Gaps only' }));
     expect(within(section()).getAllByRole('link')).toHaveLength(count);
     // Where everything is reached it says so.
-    await openApp('/P-D-UC01?view=trace', served());
+    await openApp('/P-D-UC01?stage=trace', served());
     await matrix();
     expect(section()).toHaveTextContent('Everything here serves a requirement or rule.');
   });
 
   it('LA-V98-R05-T01 Every cell links to its record, and a file to the record that names it', async () => {
-    await openApp('/P-D-UC01-R01?view=wiki,trace', served());
+    await openApp('/P-D-UC01-R01?stage=trace', served());
     const chain = await within(tracePane()).findByRole('region', { name: 'Traceability chain' });
     const file = within(chain).getByText('test/lend.test.ts').closest('a')!;
-    expect(file).toHaveAttribute('href', '/P-D-UC01-R01-T01?view=wiki,trace');
+    expect(file).toHaveAttribute('href', '/P-D-UC01-R01-T01?stage=trace');
     expect(file).toHaveAttribute('title', 'test/lend.test.ts, named by P-D-UC01-R01-T01');
     const step = within(chain).getByRole('link', { name: /P-D-UC01-FL01-S01/ });
-    expect(step).toHaveAttribute('href', '/P-D-UC01-FL01-S01?view=wiki,trace');
+    expect(step).toHaveAttribute('href', '/P-D-UC01-FL01-S01?stage=trace');
     // A click moves the focus; a flow step owes nothing, so the Trace pane leaves with it.
     fireEvent.click(step);
     await waitFor(() => expect(window.location.pathname).toBe('/P-D-UC01-FL01-S01'));
@@ -127,7 +127,7 @@ describe('the Trace view', () => {
     const data = modelWorkspace();
     const count = TRACE_PAGE + 20;
     addRows(data, 'uc_requirement', ...Array.from({ length: count }, (_, n) => ({ id: `P-D-UC01-R${String(n + 10).padStart(3, '0')}`, title: `Rule ${n + 10}`, use_case_id: 'P-D-UC01', statement: `Rule ${n + 10} MUST hold.` })));
-    await openApp('/P-D-UC01?view=trace', served(data));
+    await openApp('/P-D-UC01?stage=trace', served(data));
     const table = await matrix();
     const rows = () => table.querySelectorAll('tbody tr:not(.group-row)').length;
     expect(rows()).toBe(TRACE_PAGE);

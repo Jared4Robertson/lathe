@@ -87,7 +87,7 @@ test.describe('performance', () => {
   // In the Tree, Nested and Voronoi layouts (LA-V93-R21): the same budgets.
   for (const layout of ['Tree', 'Nested', 'Voronoi'] as const) test(`LA-V61-R37-T03 a graph re-center at depth 3 takes under 500 ms of main-thread work, and glides at 60 Hz, in the ${layout} layout`, async ({ page }) => {
     const label = layout === 'Tree' ? 'graph re-center at depth 3' : `${layout} graph re-center at depth 3`;
-    await open(page, `${RECORD}?view=graph`);
+    await open(page, `${RECORD}?stage=graph`);
     await boxesDrawn(page);
     if (layout !== 'Tree') {
       await page.locator('.graph-layout button', { hasText: layout }).click();
@@ -138,7 +138,7 @@ test.describe('performance', () => {
     await record({ name: 'ERD view: first open (loads its code and ELK)', value: first.workMs, unit: 'ms', budget: null, detail: `longest frame ${Math.round(first.worstFrameMs)} ms` });
     await record({ name: 'view switch: open the ERD pane', value: again.workMs, unit: 'ms', budget: BUDGETS.viewSwitchMs, detail: `longest frame ${Math.round(again.worstFrameMs)} ms` });
     // The time from the key press to the laid-out diagram, on a domain page (the ELK layout in its worker).
-    await page.goto(`${DOMAIN}?view=erd`);
+    await page.goto(`${DOMAIN}?stage=erd`);
     const start = await page.evaluate(() => performance.now());
     await page.locator('.pane-erd .erd-flow .react-flow__node').first().waitFor();
     const laid = (await page.evaluate(() => performance.now())) - start;
@@ -162,9 +162,9 @@ test.describe('performance', () => {
     await record({ name: 'Trace view: first open (loads its code)', value: first.workMs, unit: 'ms', budget: null, detail: `longest frame ${Math.round(first.worstFrameMs)} ms` });
     await record({ name: 'view switch: open the Trace pane', value: again.workMs, unit: 'ms', budget: BUDGETS.viewSwitchMs, detail: `longest frame ${Math.round(again.worstFrameMs)} ms` });
     // The product's whole matrix, its first page of rows and its Untraced section: from a domain's Trace view to the product's.
-    await open(page, `${DOMAIN}?view=trace`, rows);
+    await open(page, `${DOMAIN}?stage=trace`, rows);
     const product = await work(page, async () => {
-      await page.evaluate(() => { window.history.pushState(null, '', '/LA?view=trace'); window.dispatchEvent(new PopStateEvent('popstate')); });
+      await page.evaluate(() => { window.history.pushState(null, '', '/LA?stage=trace'); window.dispatchEvent(new PopStateEvent('popstate')); });
       await page.waitForFunction(() => window.location.pathname === '/LA' && document.querySelector('.pane-trace .trace-untraced') !== null);
     });
     const drawn = await page.locator(`${rows}:not(.group-row)`).count();

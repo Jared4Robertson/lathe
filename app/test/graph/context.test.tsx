@@ -25,7 +25,7 @@ const STAGES = ['P-D/domain-model', 'P-D/use-cases', 'P-D/interaction-design', '
 
 async function showGraph(path: string, workspace: SpecData = testWorkspace(), depth = 1) {
   startAtDepth(depth);
-  await openApp(`${path}?view=graph`, { data: workspace });
+  await openApp(`${path}?stage=graph`, { data: workspace });
   await waitFor(() => expect(boxElements().length).toBeGreaterThan(0));
 }
 
@@ -211,7 +211,7 @@ describe('the graph tree, its depth and its camera', () => {
   for (const layout of ['tree', 'nested', 'voronoi'] as const) {
     it(`LA-V93-R19-T02 In the ${VIEWS[layout]} view each arrow takes its view's step (in Tree, Left out, Right in, Up and Down across; in Nested and Voronoi, Up out, Down in, Left and Right across), the siblings loop, and the buttons, their tooltips and the shortcuts sheet say the same`, async () => {
       startAtDepth(1, layout);
-      await openApp(`/${FROM}?view=graph`, { data: testWorkspace() });
+      await openApp(`/${FROM}?stage=graph`, { data: testWorkspace() });
       await waitFor(() => expect(boxElements().length).toBeGreaterThan(0));
       expect(graphHost()).toHaveAttribute('data-layout', layout);
       // The step buttons keep their order in every view, each naming the arrow that takes its step here.

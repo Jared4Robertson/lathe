@@ -45,7 +45,7 @@ describe('patterns in the graph', () => {
 
   it('LA-V93-R30-T04 The graph view of a pattern draws its rules and the follows lines with their own style', async () => {
     startAtDepth(1);
-    await openApp('/DM-PAT-AUDIT?view=graph', { data: patternWorkspace() });
+    await openApp('/DM-PAT-AUDIT?stage=graph', { data: patternWorkspace() });
     await waitFor(() => expect(boxElement('DM-PAT-AUDIT-R01')).not.toBeNull());
     fireEvent.click(screen.getByRole('button', { name: 'Links' }));
     await waitFor(() => expect(scene().lines.some((l) => l.link && l.style === 'pattern')).toBe(true));

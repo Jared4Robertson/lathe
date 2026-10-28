@@ -9,7 +9,7 @@ afterEach(() => { delete window.latheDesktop; });
 describe('desktop menu commands', () => {
   it('LA-V66-R02-T02 A menu choice sent by ID runs the app command, and the app stops listening when it unmounts', async () => {
     // The side bar starts closed in the Wiki view; this test reads it open.
-    openSideBar('details', ['wiki', 'graph', 'erd', 'trace']);
+    openSideBar('details');
     let listener: ((id: string) => void) | null = null;
     let unsubscribed = false;
     window.latheDesktop = desktopBridgeStub({ onCommand: (l) => { listener = l; return () => { unsubscribed = true; }; } });

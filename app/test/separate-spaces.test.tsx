@@ -55,7 +55,7 @@ describe('separate spaces', () => {
 
     // The Links switch on: the link into Notebook is not drawn.
     window.sessionStorage.setItem('lathe:graph-settings', JSON.stringify({ depth: 2, trace: false, hiddenKinds: [], hiddenRelations: [], links: true, minimap: true }));
-    await openApp('/DM-SHOP-UC01?view=graph', { data: crossingWorkspace() });
+    await openApp('/DM-SHOP-UC01?stage=graph', { data: crossingWorkspace() });
     await waitFor(() => expect(boxElement('DM-SHOP-UC01')).not.toBeNull());
     const drawn = drawnIds();
     expect(drawn.filter((id) => !id.startsWith('DM'))).toEqual([]);

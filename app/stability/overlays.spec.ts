@@ -8,7 +8,7 @@ import { FOCUS, RECORD, SHELL } from './scenarios';
 
 test.describe('overlays', () => {
   test('LA-V61-R34-T01 a tooltip shows in place', async ({ page }) => {
-    await openPage(page, `${RECORD}?view=wiki,graph`);
+    await openPage(page, `${RECORD}?stage=graph`);
     const button = page.locator('.page-bar .pane-views button').first();
     const r = await step(page, 'overlays', 'tooltip on hover', { keys: [...SHELL, ...FOCUS, '.tooltip'] }, async () => {
       await button.hover();

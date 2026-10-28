@@ -65,7 +65,7 @@ test.describe('Traceability flows', () => {
     const column = (name: string) => pane.locator('.trace-column').filter({ has: page.locator('.trace-column-name', { hasText: new RegExp(`^${name}`) }) });
     const ids = (name: string) => column(name).locator('a.trace-card code').allTextContents();
     // S01, S02: the requirement's Trace view: its chain, column by column, every card a link.
-    await openPage(page, `/${REQUIREMENT}?view=trace`, '.pane-trace .trace-chain');
+    await openPage(page, `/${REQUIREMENT}?stage=trace`, '.pane-trace .trace-chain');
     await expect(pane.locator('[aria-current="page"]')).toContainText(REQUIREMENT);
     expect((await ids('Design')).sort()).toEqual([...new Set([...steps, ...flows, ...views, ...operations])].sort());
     expect(await ids('Build')).toEqual(expect.arrayContaining(handlers));
@@ -73,10 +73,10 @@ test.describe('Traceability flows', () => {
     // S03: the use case's matrix, a row per requirement under it, then the domain's, grouped by parent.
     const useCase = String(rowsOf(spec, 'uc_requirement').find((r) => r.id === REQUIREMENT)!.use_case_id);
     const requirements = rowsOf(spec, 'uc_requirement').filter((r) => r.use_case_id === useCase).map((r) => String(r.id));
-    await openPage(page, `/${useCase}?view=trace`, '.pane-trace .trace-matrix');
+    await openPage(page, `/${useCase}?stage=trace`, '.pane-trace .trace-matrix');
     const rows = pane.locator('.trace-matrix tbody tr:not(.group-row)');
     await expect(rows).toHaveCount(requirements.length);
-    await openPage(page, `/${TRC}?view=trace`, '.pane-trace .trace-matrix');
+    await openPage(page, `/${TRC}?stage=trace`, '.pane-trace .trace-matrix');
     await expect(pane.locator('.trace-matrix tr.group-row').first()).toBeVisible();
     expect(await pane.locator('.trace-matrix tr.group-row').count()).toBeGreaterThan(1);
     // S04: Gaps only keeps the rows with a gap, and each of them has one.
@@ -132,7 +132,7 @@ test.describe('Traceability flows', () => {
     await expect(wiki.getByRole('heading', { name: `Rules ${rules.length}`, level: 2 })).toBeVisible();
     await expect(wiki.getByRole('region', { name: `Followed in ${EXP}` })).toBeVisible();
     // S03: in the graph, the rules sit under the pattern and its followers are linked to it.
-    await openPage(page, `/${pattern}?view=graph`, '.pane-graph .graph-flow .graph-box');
+    await openPage(page, `/${pattern}?stage=graph`, '.pane-graph .graph-flow .graph-box');
     const ids = await page.locator('.pane-graph .graph-flow .graph-box').evaluateAll((els) => els.map((e) => e.getAttribute('data-id')));
     for (const r of rules) expect(ids).toContain(r.id);
     const traced = page.getByRole('complementary', { name: 'Side bar' }).getByRole('region', { name: 'Traceability' });

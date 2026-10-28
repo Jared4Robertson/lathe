@@ -44,7 +44,7 @@ describe('the side bar', () => {
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     expect(screen.queryByRole('complementary', { name: 'Side bar' })).toBeNull();
 
-    await openApp('/P-D-UC01?view=graph', { data: testWorkspace() });
+    await openApp('/P-D-UC01?stage=graph', { data: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     const buttons = switcher().getAllByRole('button');
     expect(buttons.map((b) => [b.getAttribute('aria-label'), b.getAttribute('aria-pressed')])).toEqual([['Details', 'true'], ['Outline', 'false'], ['History', 'false']]);
@@ -59,13 +59,13 @@ describe('the side bar', () => {
     expect(sideBar().querySelector('#side-view')).toHaveAttribute('aria-labelledby', 'side-view-title');
 
     // A reload brings the tab back with Outline in the Graph view (LA-PAT-APP-UX-R06).
-    await openApp('/P-D-UC01?view=graph', { data: testWorkspace() });
+    await openApp('/P-D-UC01?stage=graph', { data: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     expect(switcher().getByRole('button', { name: 'Outline' })).toHaveAttribute('aria-pressed', 'true');
     // The Wiki view of the same tab keeps its own: closed.
     fireEvent.click(screen.getByRole('button', { name: /^Wiki/, pressed: false }));
     fireEvent.click(screen.getByRole('button', { name: /^Graph/, pressed: true }));
-    await waitFor(() => expect(window.location.search).toBe('?view=wiki'));
+    await waitFor(() => expect(window.location.search).toBe('?stage=graph'));
     expect(screen.queryByRole('complementary', { name: 'Side bar' })).toBeNull();
   };
   it('LA-V95-R04-T01 One side bar with a labeled switcher of Details, Outline and History, each with its heading; closed in the Wiki view and open in the Graph view, its view kept per view mode and per tab across a reload', proveLaV95R04T01);
@@ -73,7 +73,7 @@ describe('the side bar', () => {
 
   it('LA-V95-R06-T01 In the Graph view Details shows the node under the pointer or keyboard focus, else the selected one, else the page\'s record, with Open and a compact Traceability; the graph adds what it connects', async () => {
     window.sessionStorage.setItem('lathe:graph-settings', JSON.stringify({ layout: 'tree', depth: 1, trace: false, hiddenKinds: [], hiddenRelations: [], links: true, minimap: false }));
-    await openApp('/P-D-UC01-R01?view=graph', { data: testWorkspace() });
+    await openApp('/P-D-UC01-R01?stage=graph', { data: testWorkspace() });
     await waitFor(() => expect(node('P-D-UC01-FL01-S01')).not.toBeNull());
     expect(name()).toBe('The loan is recorded');
     expect(side().queryByRole('link', { name: 'Open' })).toBeNull();
@@ -88,7 +88,7 @@ describe('the side bar', () => {
     hoverBox('P-D-UC01-FL01-S01');
     await waitFor(() => expect(name()).toBe('Librarian lends the thing'));
     expect(sideBar().querySelector('.side-bar-identity .eyebrow')).toHaveTextContent(/^Under the pointer/);
-    expect(side().getByRole('link', { name: 'Open' })).toHaveAttribute('href', '/P-D-UC01-FL01-S01?view=graph');
+    expect(side().getByRole('link', { name: 'Open' })).toHaveAttribute('href', '/P-D-UC01-FL01-S01?stage=graph');
     // Leaving gives the page's record back, in the same box.
     const box = sideBar();
     leaveCanvas();
@@ -149,7 +149,7 @@ describe('the side bar', () => {
 
     // The ERD view: the boxes, those in focus first.
     openSideBar('outline', ['erd']);
-    await openApp('/P-D?view=erd', { data: modelWorkspace() });
+    await openApp('/P-D?stage=erd', { data: modelWorkspace() });
     await screen.findAllByRole('heading', { level: 1 });
     await waitFor(() => expect(side().getByRole('heading', { name: /^Aggregates/ })).toBeInTheDocument());
     const boxes = side().getByRole('list', { name: 'Aggregates' });

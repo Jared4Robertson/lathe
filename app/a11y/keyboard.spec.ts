@@ -46,7 +46,7 @@ async function open(page: Page, url: string, ready = '.focus-views .pane-title')
 
 test.describe('keyboard', () => {
   test('LA-V61-R41-T01 Tab reaches every control and comes back round, with no trap', async ({ page }) => {
-    await open(page, `${RECORD}?view=wiki,graph`, '.pane-graph .graph-flow .graph-box');
+    await open(page, `${RECORD}?stage=graph`, '.pane-graph .graph-flow .graph-box');
     // Every control the page draws that Tab should reach: buttons, links and fields not hidden or disabled.
     const reachable = await page.evaluate(() => {
       const all = [...document.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])')];
@@ -107,7 +107,7 @@ test.describe('keyboard', () => {
     await open(page, RECORD);
     await tabUntil(page, (el) => el.getAttribute('aria-label') === 'Graph' && !!el.closest('.page-bar'), 'the Graph view toggle');
     await page.keyboard.press('Enter');
-    await expect(page).toHaveURL(/view=wiki(%2C|,)graph/);
+    await expect(page).toHaveURL(/stage=graph(%2C|,)graph/);
     await expect(page.locator('.page-bar').getByRole('button', { name: 'Graph', exact: true })).toHaveAttribute('aria-pressed', 'true');
     await test.step('LA-V61-R43-T01 opening a view is announced', () => expect(announcer(page)).toHaveText(/Graph view/));
     // Focus stays on the toggle that was pressed.
@@ -117,7 +117,7 @@ test.describe('keyboard', () => {
   });
 
   test('LA-V61-R41-T02 re-center the graph with Tab and Enter, and step through the tree with the arrow keys', async ({ page }) => {
-    await open(page, `${RECORD}?view=graph`, '.pane-graph .graph-flow .graph-box');
+    await open(page, `${RECORD}?stage=graph`, '.pane-graph .graph-flow .graph-box');
     await tabUntil(page, (el) => !!el.closest('.graph-box'), 'a box in the graph');
     const first = await page.evaluate(() => document.activeElement!.closest('.graph-box')!.getAttribute('data-id'));
     let target = first;

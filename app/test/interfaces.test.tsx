@@ -18,7 +18,7 @@ const served = () => {
 
 describe('flows by interface', () => {
   it('LA-V92-R77-T01 A use case lists its flows by interface, and a flow names its interface', async () => {
-    await openApp(`${addressOf('DM-SHOP-UC01')}?view=wiki`, served());
+    await openApp(`${addressOf('DM-SHOP-UC01')}?stage=graph`, served());
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     const rows = within(within(section(/^Flows by interface/)).getByRole('list', { name: 'Flows of DM-SHOP-UC01' })).getAllByRole('listitem');
     // One row per flow, a whole-row link, with its interface's name, and its kind when the name does not say it.
@@ -26,7 +26,7 @@ describe('flows by interface', () => {
     expect(within(rows[1]).getAllByRole('link')).toHaveLength(1);
     expect(within(rows[1]).getByRole('link')).toHaveAttribute('href', addressOf('DM-SHOP-UC01-FL02'));
 
-    await openApp(`${addressOf('DM-SHOP-UC01-FL02')}?view=wiki`, served());
+    await openApp(`${addressOf('DM-SHOP-UC01-FL02')}?stage=graph`, served());
     await screen.findByRole('heading', { level: 1, name: 'Fill a basket from the terminal' });
     const through = screen.getByText(/^Through/).closest('p')!;
     expect(through.textContent).toBe('Through DM-IF02Terminal CLI');
@@ -34,7 +34,7 @@ describe('flows by interface', () => {
   });
 
   it('LA-V92-R78-T01 An interface lists its flows by capability and the use cases with no flow through it', async () => {
-    await openApp(`${addressOf('DM-IF02')}?view=wiki`, served());
+    await openApp(`${addressOf('DM-IF02')}?stage=graph`, served());
     await screen.findByRole('heading', { level: 1, name: 'Terminal' });
     const flows = section(/^Flows through it/);
     expect(within(flows).getByRole('heading', { level: 3, name: /^Buying/ })).toBeInTheDocument();
@@ -47,7 +47,7 @@ describe('flows by interface', () => {
     expect(within(missing).queryByRole('heading', { level: 3, name: /^Buying/ })).toBeNull();
 
     // Through the web app, every use case has its flow.
-    await openApp(`${addressOf('DM-IF01')}?view=wiki`, served());
+    await openApp(`${addressOf('DM-IF01')}?stage=graph`, served());
     await screen.findByRole('heading', { level: 1, name: 'Web app' });
     expect(within(section(/^Use cases with no flow through it/)).getByText('Every use case has a flow through this interface.')).toBeInTheDocument();
   });
