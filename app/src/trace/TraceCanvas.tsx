@@ -15,7 +15,7 @@ import { nodeShape, SHAPES } from '../graph/shapes';
 import { BORDER, labelLines, LABEL_PAD, LABEL_PAD_BLOCK, LINE_HEIGHT, META_FONT, setTextMeasure, TITLE_FONT, hasMarks, metaWidth, titleWidth, wrapLabel, wrapText, type TextMeasure, type WrappedLabel } from '../graph/text';
 import { TapCard, useTapToOpen } from '../graph/touch';
 import { useOpenSpace, type Insets, type OpenSpaceStore } from '../views/openSpace';
-import { BOX_H, BOX_W, LANE_COLUMN_LABELS, visibleIn, type TraceBox, type TracePicture } from './lanes';
+import { allBoxes, BOX_H, BOX_W, LANE_COLUMN_LABELS, visibleIn, type TraceBox, type TraceLine, type TracePicture } from './lanes';
 
 // Every frame draws what the camera shows of the picture: the boxes in view, each in its kind's
 // shape and its stage's colors with its label, and the arrows between them; far out, where a box is
@@ -29,7 +29,7 @@ import { BOX_H, BOX_W, LANE_COLUMN_LABELS, visibleIn, type TraceBox, type TraceP
 // link stands for gets the drawn focus ring, the camera bringing it into view (`ring`).
 
 /** The most boxes one frame draws as boxes (LA-PAT-APP-UX-R11); more in view are drawn as bars. */
-export const TRACE_MAX_DRAWN = 260;
+const TRACE_MAX_DRAWN = 260;
 /** A box under this many pixels tall on screen is drawn as a bar. */
 const BAR_BELOW_PX = 14;
 /** The least zoom: a large product's trace whole in the pane. */
@@ -44,8 +44,8 @@ const NO_INSETS: Insets = { left: 0, top: 0, right: 0, bottom: 0 };
 const MIN_FRAME = 120;
 
 /** One drawn box as the test hook reports it, in the page's pixels. */
-export interface TraceSceneBox { key: string; id: string; role: TraceBox['role']; column: string; lane: number; focus: boolean; hover: boolean; ring: boolean; lit: boolean | null; dashed: boolean; kind: string; stage: string; notes: string[]; name: string; rect: { left: number; top: number; width: number; height: number } }
-/** What the canvas draws now (LA-PAT-APP-UX-R12): its camera, boxes, bars and arrows. */
+export interface TraceSceneBox { key: string; id: string; role: TraceBox['role']; column: string; lane: number; opens: string | null; focus: boolean; hover: boolean; ring: boolean; lit: boolean | null; dashed: boolean; kind: string; stage: string; notes: string[]; name: string; rect: { left: number; top: number; width: number; height: number } }
+/** What the canvas draws now (LA-PAT-APP-UX-R12): its camera, boxes, bars and arrows; or, `whole`, every box and arrow of the picture as the camera would draw it. */
 export interface TraceScene {
   camera: Viewport;
   canvas: { left: number; top: number; width: number; height: number };
@@ -54,7 +54,7 @@ export interface TraceScene {
   lines: { key: string; source: string; target: string; tree: boolean; lit: boolean | null }[];
 }
 /** The canvas's element, with the hooks the tests read the drawn scene and hit-test through. */
-export type TraceHost = HTMLDivElement & { traceScene?: () => TraceScene; traceHit?: (clientX: number, clientY: number) => string | null };
+export type TraceHost = HTMLDivElement & { traceScene?: (whole?: boolean) => TraceScene; traceHit?: (clientX: number, clientY: number) => string | null };
 
 export interface TraceCanvasProps {
   index: SpecIndex;
@@ -259,9 +259,9 @@ function TraceScene({ index, focus, picture, onNavigate, onPeek, space, ring: ri
   }, [plates, index]);
 
   /** What a camera shows: the boxes in view as plates (or bars, far out or past the budget), and the arrows between them. */
-  const frameAt = useCallback((v: Viewport, s: { w: number; h: number }) => {
-    const seen = visibleIn(picture, viewRect(v, s.w, s.h));
-    const asBars = seen.boxes.length > TRACE_MAX_DRAWN || BOX_H * v.zoom < BAR_BELOW_PX;
+  const frameAt = useCallback((v: Viewport, s: { w: number; h: number }, whole = false) => {
+    const seen = visibleIn(picture, whole ? { x0: -Infinity, y0: -Infinity, x1: Infinity, y1: Infinity } : viewRect(v, s.w, s.h));
+    const asBars = !whole && (seen.boxes.length > TRACE_MAX_DRAWN || BOX_H * v.zoom < BAR_BELOW_PX);
     if (asBars) {
       const bars: Bar[] = seen.boxes.map((b) => ({ parent: b.id, x: b.x, y: b.y, w: b.w, h: b.h }));
       return { boxes: [] as TraceBox[], plates: [] as Plate[], bars, lines: [] as Line[] };
@@ -304,6 +304,14 @@ function TraceScene({ index, focus, picture, onNavigate, onPeek, space, ring: ri
   };
   useEffect(() => { requestPaint(); });
 
+  /** Each record's arrows, every copy's, worked out once per picture for the spotlight. */
+  const linesOf = useMemo(() => {
+    const by = new Map<string, TraceLine[]>();
+    for (const line of [...picture.tree.lines, ...picture.lanes.flatMap((l) => l.lines)]) {
+      for (const end of [line.source, line.target]) { const list = by.get(end); if (list) list.push(line); else by.set(end, [line]); }
+    }
+    return by;
+  }, [picture]);
   /** Lights a record's every copy, the arrows touching them and the boxes at their other ends; null lets go. */
   const spot = useCallback((id: string | null) => {
     onPeek?.('hover', id && index.byId.has(id) ? id : null);
@@ -316,16 +324,14 @@ function TraceScene({ index, focus, picture, onNavigate, onPeek, space, ring: ri
     if (s.id === id) return;
     const lit = new Set([id]);
     const litLines = new Set<string>();
-    const all = [...picture.tree.lines, ...picture.lanes.flatMap((l) => l.lines)];
-    for (const line of all) {
-      if (line.source !== id && line.target !== id) continue;
+    for (const line of linesOf.get(id) ?? []) {
       lit.add(line.source);
       lit.add(line.target);
       litLines.add(line.key);
     }
     spotlight.current = { id, lit, litLines, from: s.id === null ? value : 1, to: 1, start: performance.now() };
     requestPaint();
-  }, [picture, index, onPeek, requestPaint]);
+  }, [linesOf, index, onPeek, requestPaint]);
   useEffect(() => () => spot(null), [focus, picture]);
 
   const canOpen = useCallback((id: string) => id !== focus && index.byId.has(id), [focus, index]);
@@ -341,7 +347,7 @@ function TraceScene({ index, focus, picture, onNavigate, onPeek, space, ring: ri
     const s = sizeRef.current;
     if (!ringAt || !s) return;
     const lane = ringAt.lane === null ? undefined : picture.lanes.find((l) => l.obligation === ringAt.lane);
-    const box = lane?.boxes.find((b) => b.id === ringAt.id) ?? picture.tree.boxes.find((b) => b.id === ringAt.id) ?? picture.lanes.flatMap((l) => l.boxes).find((b) => b.id === ringAt.id);
+    const box = lane?.boxes.find((b) => b.id === ringAt.id) ?? allBoxes(picture).find((b) => b.id === ringAt.id);
     if (!box) return;
     const v = view.current;
     const frame = frameBox(s);
@@ -471,11 +477,11 @@ function TraceScene({ index, focus, picture, onNavigate, onPeek, space, ring: ri
       const r = canvas.current!.getBoundingClientRect();
       return hitAt(clientX - r.left, clientY - r.top)?.box.key ?? null;
     };
-    host.traceScene = () => {
+    host.traceScene = (whole = false) => {
       const s = sizeRef.current ?? { w: 0, h: 0 };
       const v = view.current;
       const r = canvas.current!.getBoundingClientRect();
-      const frame = frameAt(v, s);
+      const frame = frameAt(v, s, whole);
       const sp = spotlight.current;
       return {
         camera: { ...v },
@@ -485,7 +491,7 @@ function TraceScene({ index, focus, picture, onNavigate, onPeek, space, ring: ri
         boxes: frame.boxes.map((b, i) => {
           const p = frame.plates[i];
           return {
-            key: b.key, id: b.id, role: b.role, column: b.column, lane: b.lane, focus: b.id === focus, hover: hover.current === b.id, ring: ring.current === b.id,
+            key: b.key, id: b.id, role: b.role, column: b.column, lane: b.lane, opens: b.opens, focus: b.id === focus, hover: hover.current === b.id, ring: ring.current === b.id,
             lit: sp.id !== null && sp.lit ? sp.lit.has(b.id) : null, dashed: p.dashed, kind: p.kind, stage: p.stage, notes: b.notes, name: plateName(p, b.id === focus),
             rect: { left: r.left + b.x * v.zoom + v.x, top: r.top + b.y * v.zoom + v.y, width: b.w * v.zoom, height: b.h * v.zoom },
           };
@@ -494,7 +500,7 @@ function TraceScene({ index, focus, picture, onNavigate, onPeek, space, ring: ri
     };
   });
 
-  const armedBox = tapToOpen.armed ? picture.lanes.flatMap((l) => l.boxes).concat(picture.tree.boxes).find((b) => b.id === tapToOpen.armed) : undefined;
+  const armedBox = tapToOpen.armed ? allBoxes(picture).find((b) => b.id === tapToOpen.armed) : undefined;
   const armedPlate = armedBox ? plateFor(armedBox) : null;
   const headTop = inset.top;
   const fontPx = Math.min(12, 11 * Math.max(cz, 0.6));

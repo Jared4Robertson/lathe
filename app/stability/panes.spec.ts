@@ -72,7 +72,7 @@ test.describe('the stage and its panels', () => {
     expect(new URL(page.url()).search).toBe('?stage=erd');
     const trace = await step(page, 'stage', 'switch to Trace (Ctrl+3)', { keys, allow: [STAGE, '.header-strip-counts', '.side-bar'] }, async () => {
       await page.keyboard.press('Control+3');
-      await page.locator(`${STAGE} .trace-matrix`).first().waitFor();
+      await page.locator(`${STAGE} .trace-flow[data-ready]`).first().waitFor();
     });
     expectStable(trace);
     const graph = await step(page, 'stage', 'back to Graph (Ctrl+1)', { keys, allow: [STAGE, '.header-strip-counts', '.side-bar'] }, async () => {
