@@ -17,6 +17,7 @@
 // aggregate with no root, a command with no handler. The checks read the same views and tables.
 import { sqlName, sqlString, type SchemaDescription, type Stage } from './store/schema.ts';
 import { MEASURE_GAPS } from './trace/measures.ts';
+import { ROUTE_GAP_RULES } from './trace/routes.ts';
 
 /** The run by levels each test kind allows: a test at another level is reported by test-level-not-allowed and proves nothing. */
 export const ALLOWED_LEVELS: Readonly<Record<string, readonly string[]>> = {
@@ -84,11 +85,13 @@ const list = (items: readonly string[]) => items.map(sqlString).join(', ');
 /**
  * The tables the engine fills before the checks run: file_facts, a row for each record that names a file (a technical
  * record, a test, or a product's own kind with a file field), whether it exists and whether it names the record's own
- * ID; and test_level_allowed, the levels each test kind allows.
+ * ID; test_level_allowed, the levels each test kind allows; and source_file, each of the product's source files and
+ * whether a technical record names it or a folder holding it (trace/source-files.ts).
  */
 export const FACT_TABLES_SQL = `
 CREATE OR REPLACE TABLE file_facts (record VARCHAR NOT NULL, kind VARCHAR NOT NULL, file VARCHAR NOT NULL, file_exists BOOLEAN NOT NULL, contains_id BOOLEAN NOT NULL);
 CREATE OR REPLACE TABLE test_level_allowed (kind VARCHAR NOT NULL, level VARCHAR NOT NULL);
+CREATE OR REPLACE TABLE source_file (file VARCHAR NOT NULL, traced BOOLEAN NOT NULL);
 INSERT INTO test_level_allowed VALUES ${Object.entries(ALLOWED_LEVELS).flatMap(([kind, levels]) => levels.map((l) => `(${sqlString(kind)}, ${sqlString(l)})`)).join(', ')};`;
 
 /** One minimum the schema leaves to coverage: the records that fall short of it, each with a message. */
@@ -100,8 +103,13 @@ export interface GapRule {
   kinds: string[];
   /** What it reports, in one sentence. */
   summary: string;
-  /** A SELECT returning (id, message) for each record short of the minimum, for the schema it runs on. */
+  /**
+   * A SELECT returning (id, message) for each record short of the minimum, for the schema it runs on; for a file gap,
+   * (product, id, message), the id a file's path from the repo root.
+   */
   sql: (schema: SchemaDescription) => string;
+  /** The gap is about a file, not a record: it is reported under its product, outside every domain. */
+  file?: true;
 }
 
 const gap = (name: string, stage: Stage, kinds: string[], summary: string, sql: string | ((schema: SchemaDescription) => string)): GapRule => ({
@@ -176,6 +184,8 @@ WHERE NOT EXISTS (SELECT 1 FROM uc_requirement r WHERE r.use_case_id = u.id) AND
     `SELECT f.id, 'Flow ' || f.id || ' has no step on its main path.' AS message FROM flow f WHERE NOT EXISTS (SELECT 1 FROM flow_step s WHERE s.flow_id = f.id AND s.path = 'main')`),
   gap('endpoint-without-requirement', 'interaction-design', ['endpoint', 'api_requirement'], 'An endpoint with no API requirement.',
     `SELECT e.id, 'Endpoint ' || e.id || ' has no API requirement.' AS message FROM endpoint e WHERE NOT EXISTS (SELECT 1 FROM api_requirement r WHERE r.endpoint_id = e.id)`),
+  // Every route the code serves has an endpoint or a view (trace/routes.ts).
+  ...ROUTE_GAP_RULES,
   // Technical specification: one technical record per design record.
   missingImpl('aggregate-without-repository', 'aggregate', 'Aggregate', 'repository', 'aggregate_id', 'repository'),
   missingImpl('entity-without-data-model', 'entity', 'Entity', 'data_model', 'entity_id', 'data model'),
@@ -190,6 +200,14 @@ WHERE NOT EXISTS (SELECT 1 FROM uc_requirement r WHERE r.use_case_id = u.id) AND
   missingImpl('integration-without-adapter', 'integration', 'Integration', 'adapter', 'integration_id', 'adapter'),
   gap('view-without-ui-component', 'technical-specification', ['view', 'ui_component'], 'A view no UI component renders.',
     `SELECT v.id, 'View ' || v.id || ' is rendered by no UI component.' AS message FROM view v WHERE NOT EXISTS (SELECT 1 FROM renders r WHERE r.target_id = v.id)`),
+  // Every source file is named by a technical record, or sits in a folder one names. A repo holding several products
+  // reports the file once, under the first product by ID.
+  {
+    ...gap('code-file-untraced', 'technical-specification', [], 'A source file no technical record names, directly or through a folder.',
+      `SELECT (SELECT min(id) FROM product) AS product, f.file AS id, 'Source file ' || f.file || ' is named by no technical record, directly or through a folder.' AS message
+FROM source_file f WHERE NOT f.traced AND EXISTS (SELECT 1 FROM product)`),
+    file: true,
+  },
   // Test plan; an obligation's own test is its proof, counted above.
   gap('flow-without-test', 'test-plan', ['flow', 'flow_test'], 'A flow with no flow test of its main path.',
     `SELECT f.id, 'Flow ' || f.id || ' has no flow test.' AS message FROM flow f WHERE NOT EXISTS (SELECT 1 FROM flow_test t WHERE t.flow_id = f.id)`),
@@ -217,7 +235,8 @@ WHERE NOT EXISTS (SELECT 1 FROM uc_requirement r WHERE r.use_case_id = u.id) AND
  *   obligation, judged.
  * - coverage_scope (product, domain): each domain, and each product's place outside every domain (domain null).
  * - coverage_count, coverage_tests and coverage_gap: the counts per scope and obligation kind, the tests by state,
- *   and every gap: obligations not designed, built or proved, and records short of a minimum.
+ *   and every gap: obligations not designed, built or proved, records short of a minimum, and source files no
+ *   technical record names (a file gap, kind file, under its product).
  */
 export function coverageViewsSql(schema: SchemaDescription): string {
   const tests = TEST_KINDS.filter((k) => schema.tables[k]);
@@ -375,8 +394,11 @@ WITH missing AS (
   FROM coverage_item i JOIN meta_kind k ON k.name = i.kind WHERE NOT i.proved
   UNION ALL
   SELECT s.product_id, s.domain_id, g.id, r.kind, g.missing, 4, g.message
-  FROM (${GAP_RULES.map((g) => `SELECT id, ${sqlString(g.name)} AS missing, message FROM (${g.sql(schema)})`).join('\n    UNION ALL ')}) g
+  FROM (${GAP_RULES.filter((g) => !g.file).map((g) => `SELECT id, ${sqlString(g.name)} AS missing, message FROM (${g.sql(schema)})`).join('\n    UNION ALL ')}) g
   JOIN record_id r ON r.id = g.id JOIN record_scope s ON s.id = g.id
+  UNION ALL
+  SELECT g.product, NULL, g.id, 'file', g.missing, 4, g.message
+  FROM (${GAP_RULES.filter((g) => g.file).map((g) => `SELECT product, id, ${sqlString(g.name)} AS missing, message FROM (${g.sql(schema)})`).join('\n    UNION ALL ')}) g
 )
 SELECT * FROM missing;`;
 }
@@ -385,7 +407,7 @@ SELECT * FROM missing;`;
 export const COVERAGE_COUNTS_SQL = `SELECT product, domain, kind, label, proof_only, total, designed, built, proved, not_automated FROM coverage_count ORDER BY product, domain NULLS LAST, ord`;
 
 /** Every gap: (product, domain, id, kind, missing, message), by record. */
-export const COVERAGE_GAPS_SQL = `SELECT product, domain, id, kind, missing, message FROM coverage_gap ORDER BY product, domain NULLS LAST, id, ord, missing`;
+export const COVERAGE_GAPS_SQL = `SELECT product, domain, id, kind, missing, message FROM coverage_gap ORDER BY product, domain NULLS LAST, id, ord, missing, message`;
 
 /** One row per scope: its tests by state. */
 export const COVERAGE_TESTS_SQL = `SELECT product, domain, automated, manual, not_automated FROM coverage_tests ORDER BY product, domain NULLS LAST`;

@@ -110,6 +110,11 @@ describe('Traceability flows from the command line', () => {
     expect(tl.check().stdout).toContain('[outcome-not-served] Business outcome TL-BO01 is served by no capability.');
     tl.run('link', 'TL-LEND-CAP01', 'serves', 'TL-BO01');
     expect(tl.check().stdout).not.toMatch(/outcome-not-served|capability-serves-no-outcome/);
+    // S06: a source file no technical record names is a gap, until a record names its folder.
+    tl.write('src/lending/rules.ts', 'export const LOAN_DAYS = 14;\n');
+    expect(tl.check().stdout).toContain('[code-file-untraced] Source file src/lending/rules.ts is named by no technical record, directly or through a folder.');
+    tl.run('add', 'repository', '--id', 'TL-LEND-A1-REPO', '--title', 'Loans', '--aggregate_id', 'TL-LEND-A1', '--file', 'src/lending');
+    expect(tl.check().stdout).not.toContain('code-file-untraced');
     // S07: and an outcome nothing measures, until a test that runs measures it.
     expect(tl.check().stdout).toContain('[outcome-not-measured] Business outcome TL-BO01 is measured by nothing;');
     tl.run('link', 'TL-BO01', 'measured_by', 'TL-LEND-UC01-R01-T01');

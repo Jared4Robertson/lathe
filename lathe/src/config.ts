@@ -12,7 +12,29 @@ export interface LatheConfig {
   dataDir: string;
   /** The schema version the product's data is for; 1 when the config names none. */
   schema: number;
+  /** Globs, relative to the root, of the product's test files; DEFAULT_TESTS when the config names none. */
+  tests: string[];
+  /** Globs, relative to the root, of the product's source files, which code-file-untraced reads; DEFAULT_SOURCE when the config names none. */
+  source: string[];
+  /**
+   * The files, as glob patterns from the root, that declare the routes the product serves besides its endpoint
+   * handlers' files (a router, a server's entry, a client's route table); none when the config names none.
+   */
+  routers: string[];
 }
+
+/**
+ * The test files a product has when lathe.config.json names none: the common test and spec file names. node_modules,
+ * dist and the folders of another product (a folder with its own lathe.config.json) are never read, whatever the globs.
+ */
+export const DEFAULT_TESTS: readonly string[] = ['**/*.test.{ts,tsx,js,mjs}', '**/*.spec.{ts,tsx,js}'];
+
+/**
+ * The source files a product has when lathe.config.json names none: code in the common languages. Tests (the test
+ * globs, and files in test folders), configs, generated files and build output are left out whatever the globs
+ * (trace/source-files.ts).
+ */
+export const DEFAULT_SOURCE: readonly string[] = ['**/*.{ts,tsx,js,jsx,mjs,cjs,mts,cts,vue,svelte,py,rb,go,rs,java,kt,swift,cs,php}'];
 
 /** The most children of one kind a record has before too-many-children warns, when the product has no product_setting row. */
 export const DEFAULT_MAX_CHILDREN = 15;
@@ -22,10 +44,16 @@ interface ConfigFile {
   schema?: unknown;
   /** The folder of data files, one <table>.jsonl per table; default data. */
   data?: unknown;
+  /** Globs of the product's test files; default DEFAULT_TESTS. */
+  tests?: unknown;
+  /** Globs of the product's source files; default DEFAULT_SOURCE. */
+  source?: unknown;
+  /** Glob patterns of the router files; default none. */
+  routers?: unknown;
 }
 
 /** The keys lathe.config.json may hold; any other key is an error, never silently ignored. */
-const CONFIG_KEYS = ['schema', 'data'] as const;
+const CONFIG_KEYS = ['schema', 'data', 'tests', 'source', 'routers'] as const;
 
 /** The installed Lathe package's own folder (holding schema/ and data/), from source or from dist. */
 export const PACKAGE_DIR = (() => {
@@ -101,5 +129,24 @@ export function readConfig(root: string): LatheConfig {
   if (config.schema !== undefined && (typeof config.schema !== 'number' || !Number.isInteger(config.schema) || config.schema < 1)) {
     throw new Error(`${CONFIG_FILE}: schema must be a whole number from 1, such as 1.`);
   }
-  return { root, dataDir: path.resolve(root, (config.data as string | undefined) ?? 'data'), schema: (config.schema as number | undefined) ?? 1 };
+  const globs = (key: 'tests' | 'source', example: string) => {
+    const value = config[key];
+    if (value !== undefined && (!Array.isArray(value) || value.length === 0 || value.some((t) => typeof t !== 'string' || t.trim() === ''))) {
+      throw new Error(`${CONFIG_FILE}: ${key} must list globs of the ${key === 'tests' ? 'test' : 'source'} files, such as ["${example}"].`);
+    }
+    return value as string[] | undefined;
+  };
+  const tests = globs('tests', '**/*.test.ts');
+  const source = globs('source', 'src/**/*.ts');
+  if (config.routers !== undefined && (!Array.isArray(config.routers) || config.routers.some((r) => typeof r !== 'string' || r.trim() === ''))) {
+    throw new Error(`${CONFIG_FILE}: routers must be a list of file patterns from the root, such as ["src/router.ts"].`);
+  }
+  return {
+    root,
+    dataDir: path.resolve(root, (config.data as string | undefined) ?? 'data'),
+    schema: (config.schema as number | undefined) ?? 1,
+    tests: tests ?? [...DEFAULT_TESTS],
+    source: source ?? [...DEFAULT_SOURCE],
+    routers: (config.routers as string[] | undefined) ?? [],
+  };
 }

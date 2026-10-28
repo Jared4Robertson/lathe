@@ -1,3 +1,4 @@
+// The focus page of a record or group at its address, /<id> (LA-V96): the page bar and the Wiki, Graph and Model panes.
 import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode, type RefObject } from 'react';
 import { Icon } from '../components/icons';
 import { rowPlace } from '../specs/RecordText';
