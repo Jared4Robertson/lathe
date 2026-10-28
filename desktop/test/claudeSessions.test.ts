@@ -8,7 +8,7 @@ import { findClaude, listSessions, projectDirName, runningSessions, sessionTitle
 const home = mkdtempSync(path.join(os.tmpdir(), 'lathe-claude-home-'));
 const store = path.join(home, 'projects');
 const registry = path.join(home, 'sessions');
-const folder = '/Users/someone/Product_one.x';
+const folder = '/Users/person/Product_one.x';
 afterAll(() => rmSync(home, { recursive: true, force: true }));
 
 const ID = (n: number) => `0000000${n}-aaaa-bbbb-cccc-dddddddddddd`;
@@ -24,7 +24,7 @@ const prompt = (text: string) => ({ type: 'user', message: { role: 'user', conte
 
 describe('LA-PLT-UC19-R05-T01 The picker lists the folder\'s saved sessions by title and date, and warns of one open elsewhere', () => {
   it('names the store\'s folder as the CLI does', () => {
-    expect(projectDirName('/Users/someone/Product_one.x')).toBe('-Users-someone-Product-one-x');
+    expect(projectDirName('/Users/person/Product_one.x')).toBe('-Users-person-Product-one-x');
   });
 
   it('titles a session by its name, else its summary, else its first prompt', () => {

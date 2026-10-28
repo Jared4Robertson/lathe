@@ -363,7 +363,7 @@ function ToolRow({ item }: { item: Extract<ChatItem, { kind: 'tool' }> }) {
   );
 }
 
-const ANSWERED = { allowed: 'Allowed once', denied: 'Denied', cancelled: 'Withdrawn: the turn ended first' } as const;
+const ANSWERED = { allowed: 'Allowed once', denied: 'Denied', canceled: 'Withdrawn: the turn ended first' } as const;
 
 function PermissionPrompt({ item, answer }: { item: Extract<ChatItem, { kind: 'permission' }>; answer: (id: string, allow: boolean) => Promise<boolean> }) {
   const [sending, setSending] = useState(false);

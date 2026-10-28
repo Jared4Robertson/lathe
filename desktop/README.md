@@ -25,6 +25,7 @@ If Electron fails to start or pack because `node_modules/electron/dist` is missi
 - **The Dock.** Its badge counts the check errors in the focused window's product; its menu has New Window.
 - **Launch and error pages.** A launch view covers the window until the specs load, and an error page says why a folder could not be opened.
 - **Menus.** The app's commands are in the native menus, without taking any key from the app's own keymap. Settings (Cmd+,) opens Appearance.
+- **A chat with Claude.** Ctrl+Cmd+I (or the title bar's chat button, or View › Show or Hide Chat) opens a panel at the right that runs your own Claude Code in the window's folder: the `claude` CLI, headless, with your login, settings, skills, plugins, MCP servers and `CLAUDE.md` (`chat.ts`, `chatSession.ts`). It lists the folder's saved sessions to resume or fork, warns when one may be open in another Claude client, shows Claude's answers with record links, tool calls, permission prompts (Allow once or Deny) and the records each turn changed, and stops a turn on Escape. Lathe's MCP server gets two more tools there, `app_focus` and `app_open`, which reach the window through a local bridge (`bridge.ts`). Lathe finds `claude` on the PATH or where its installers put it; set `claudePath` in `settings.json` otherwise.
 
 What the app keeps (recent folders, window states, chrome colors, settings) is in small JSON files in Electron's user data folder.
 

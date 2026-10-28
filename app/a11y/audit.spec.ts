@@ -158,7 +158,7 @@ const DESKTOP: State[] = [
   { name: 'the chat, its session picker warning of a session open elsewhere', run: async (page) => {
     await withChat(page, RECORD.slice(1), 'picker');
     await open(page, RECORD, '.chat-session-open');
-    await page.locator('.chat-session-open', { hasText: 'Model the Explorer' }).click();
+    await page.locator('.chat-session-open', { hasText: 'Plan the graph stage' }).click();
     await page.locator('.chat-warning').waitFor();
   } },
   { name: 'a tooltip on keyboard focus', run: async (page) => {

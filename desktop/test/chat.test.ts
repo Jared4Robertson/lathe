@@ -63,8 +63,8 @@ describe('LA-PLT-UC19-R03-T02 The CLI\'s stream becomes the chat\'s text, tool r
   it('adds a permission prompt, withdrawn when the CLI cancels it', () => {
     const asked = run([{ type: 'control_request', request_id: 'p1', request: { subtype: 'can_use_tool', tool_name: 'Bash', input: { command: 'rm x' }, tool_use_id: 't3', decision_reason: 'Changes files' } }]);
     expect(asked.items).toMatchObject([{ kind: 'permission', id: 'p1', tool: 'Bash', summary: 'rm x', reason: 'Changes files', answer: 'pending' }]);
-    const cancelled = run([{ type: 'control_cancel_request', request_id: 'p1' }], asked);
-    expect(cancelled.items[0]).toMatchObject({ answer: 'cancelled' });
+    const canceled = run([{ type: 'control_cancel_request', request_id: 'p1' }], asked);
+    expect(canceled.items[0]).toMatchObject({ answer: 'canceled' });
   });
 
   it('ends the turn on its result, saying why when it failed or was stopped', () => {

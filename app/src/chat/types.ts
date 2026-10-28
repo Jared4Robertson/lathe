@@ -7,7 +7,7 @@ export type ChatItem =
   | { kind: 'assistant'; id: string; text: string; streaming: boolean }
   /** A tool call: `label` names it for the row ("lathe add"), `summary` is its input's one line. */
   | { kind: 'tool'; id: string; name: string; label: string; summary: string; input: string; result: string | null; status: 'running' | 'done' | 'error' }
-  | { kind: 'permission'; id: string; tool: string; label: string; summary: string; input: string; reason: string | null; answer: 'pending' | 'allowed' | 'denied' | 'cancelled' }
+  | { kind: 'permission'; id: string; tool: string; label: string; summary: string; input: string; reason: string | null; answer: 'pending' | 'allowed' | 'denied' | 'canceled' }
   | { kind: 'notice'; id: string; text: string; tone: 'info' | 'error' };
 
 /** idle: waiting for the Owner; running: a turn is under way; closed: no process (the next message starts one). */

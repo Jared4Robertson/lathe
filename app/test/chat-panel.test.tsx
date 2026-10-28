@@ -24,7 +24,7 @@ vi.mock('../src/events', () => ({
 const host = window as unknown as { latheDesktop?: LatheDesktop };
 const NOW = Date.now();
 const SESSIONS: ChatSessions = {
-  claude: '/Users/someone/.local/bin/claude',
+  claude: '/Users/person/.local/bin/claude',
   configured: false,
   current: null,
   sessions: [

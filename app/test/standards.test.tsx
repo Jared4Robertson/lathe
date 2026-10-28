@@ -499,10 +499,11 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
   it('LA-PAT-APP-UX-R09-T01 LA-PAT-APP-UX-R09-T02 Actions look like actions: standalone actions are the one Button, and links stay links for navigation in context', async () => {
     // The controls that are not standalone actions, and so keep their own form: tab close buttons, toggles in a group,
     // fold chevrons, the nav's rows and rail, the sheet handle, the open-pages list, the title bar's command center and a
-    // card's title, stretched over its card (LA-PAT-APP-UX-R14).
+    // card's title, stretched over its card (LA-PAT-APP-UX-R14), and the chat's session rows and tool rows.
     // In the source no raw <button> may take the Button's own classes; on the page they are allowed.
     const ALLOWED = ['tab-close', 'tree-toggle', 'nav-chevron', 'nav-row', 'nav-folder-head', 'nav-section-head', 'rail-item',
-      'view-segment', 'page-bar-pages', 'pages-open', 'sheet-handle', 'command-center', 'card-title'];
+      'view-segment', 'page-bar-pages', 'pages-open', 'sheet-handle', 'command-center', 'card-title',
+      'chat-session-open', 'chat-tool-row'];
     // On the page, the canvas library's own zoom controls are allowed too.
     const allowed = `.button, .icon-button, ${ALLOWED.map((c) => `.${c}`).join(', ')}, [role="group"] button[aria-pressed], .react-flow__controls-button`;
 
