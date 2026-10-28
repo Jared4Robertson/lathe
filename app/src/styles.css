@@ -883,6 +883,18 @@ a.row-link.row-link:focus-visible { outline: none; }
 .trace-ref.is-focus { padding: 0 4px; border-radius: 4px; background: var(--steel-bg); box-shadow: inset 0 0 0 1px var(--steel); }
 .trace-note { margin: 0 0 12px; max-width: 48rem; font-size: 0.9rem; }
 .trace-note.is-untraced { padding: 8px 12px; border: 1px solid var(--warn); border-radius: 6px; }
+/* On a wide screen the trace is drawn on the canvas (TraceCanvas.tsx) and the table is its accessible layer, visually hidden
+   (its links carry focus and the arrow keys; the canvas rings the box a focused link stands for). Its tools, note and paging
+   float in one row at the top of the open space; the column names ride the frame's top edge, following the camera across. */
+.trace-page.is-drawn > .trace-tools { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; }
+.trace-tools > :is(.trace-note, .trace-more) { margin: 0; }
+.trace-tools > .trace-note.is-untraced { padding: 2px 8px; }
+/* Show more pages the accessible table only (the canvas draws every lane): visually hidden until the keyboard reaches it. */
+.trace-more.is-keys:not(:focus-within) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.trace-access { position: absolute; top: 0; left: 0; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.trace-column-names { position: absolute; left: 0; right: 0; z-index: 1; height: 0; margin: 0; padding: 0; list-style: none; pointer-events: none; }
+.trace-column-names > li { position: absolute; top: 2px; box-sizing: border-box; padding: 0 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.trace-column-names > li > span { padding: 0 4px; border-radius: 4px; background: var(--paper); }
 
 /* ---------- Themes and the Appearance page (app/src/theme, LA-PAT-APP-CODE-R15) ---------- */
 /* A theme's chip in the picker and its preview on the page take the theme's tokens inline, so they draw with its colors. */

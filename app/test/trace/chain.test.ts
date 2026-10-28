@@ -22,10 +22,16 @@ describe('an obligation\'s chain', () => {
     expect(req.tests).toEqual(['P-D-UC01-R01-T01']);
     expect(files('P-D-UC01-R01')).toEqual(['src/loans.ts', 'test/lend.test.ts']);
     expect(req.files.find((f) => f.path === 'src/loans.ts')!.namedBy).toEqual(['P-D-CMD01-H']);
+    // Its links, each from the record nearer the obligation to the one it leads to: what the Trace stage draws its arrows from.
+    expect(req.links.map(([a, b]) => `${a} > ${b}`).sort()).toEqual([
+      'P-D-CMD01 > P-D-CMD01-H', 'P-D-CMD01-H > file:src/loans.ts', 'P-D-UC01-FL01 > P-D-UC01-FL01-S01', 'P-D-UC01-FL01-S01 > P-D-CMD01',
+      'P-D-UC01-FL01-S01 > P-V01', 'P-D-UC01-R01 > P-D-UC01-FL01', 'P-D-UC01-R01 > P-D-UC01-R01-T01', 'P-D-UC01-R01-T01 > file:test/lend.test.ts',
+    ]);
     // An invariant: its aggregate, the aggregate's repository and the table whose unique key enforces it.
     const inv = traceChain(index, 'P-D-INV01')!;
     expect(inv.design).toEqual(['P-D-A3']);
     expect(inv.build).toEqual(expect.arrayContaining(['P-D-A3-REPO', 'P-D-EN03-TB']));
+    expect(inv.links).toEqual(expect.arrayContaining([['P-D-INV01', 'P-D-A3'], ['P-D-A3', 'P-D-A3-REPO'], ['P-D-INV01', 'P-D-EN03-TB']]));
     expect(inv.tests).toEqual(['P-D-INV01-T']);
     // A constraint: its value object and the value object's value type.
     const con = traceChain(index, 'P-VO01-C01')!;
