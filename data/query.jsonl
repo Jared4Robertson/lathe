@@ -1,37 +1,37 @@
 {"id":"LA-AUT-QRY01","title":"Get the reference","read_model_id":"LA-AUT-RM01","description":"buildReference(root) (C46)"}
-{"id":"LA-AUT-QRY02","title":"Show a record","read_model_id":"LA-AUT-RM02","description":"show (C88)"}
+{"id":"LA-AUT-QRY02","title":"Get a record with its links","read_model_id":"LA-AUT-RM02","description":"show (C88)"}
 {"id":"LA-AUT-QRY03","title":"List a kind's records","read_model_id":"LA-AUT-RM02","description":"list (C88)"}
-{"id":"LA-AUT-QRY04","title":"Suggest the next ID","read_model_id":"LA-AUT-RM02","description":"nextId (C88)"}
+{"id":"LA-AUT-QRY04","title":"Get the next ID","read_model_id":"LA-AUT-RM02","description":"nextId (C88)"}
 {"id":"LA-AUT-QRY05","title":"Find a record's data file","read_model_id":"LA-AUT-RM02","description":"findDataFile (C67)"}
-{"id":"LA-CHK-QRY01","title":"Check the workspace","read_model_id":"LA-CHK-RM01","description":"one load of the product's data, then every problem: `data-refused` errors when the store refuses the data (and nothing else), else Lathe's checks then each product's, in DS01's order, a product's check reporting only on records of its product. `lathe check`, the MCP `check` tool and `GET /api/spec` all read it."}
+{"id":"LA-CHK-QRY01","title":"Get the workspace's problems","read_model_id":"LA-CHK-RM01","description":"one load of the product's data, then every problem: `data-refused` errors when the store refuses the data (and nothing else), else Lathe's checks then each product's, in DS01's order, a product's check reporting only on records of its product. `lathe check`, the MCP `check` tool and `GET /api/spec` all read it."}
 {"id":"LA-CHK-QRY02","title":"List a product's problems","read_model_id":"LA-CHK-RM01","description":"one product's problems, errors before warnings, grouped by check, then the problems that belong to no product under Workspace."}
-{"id":"LA-CHK-QRY03","title":"Count the errors of the product in front","read_model_id":"LA-CHK-RM01","description":"the number of errors of the focused window's space, its product's and the workspace's, as its Checks page counts them."}
-{"id":"LA-EXP-QRY01","title":"Read a record","read_model_id":"LA-EXP-RM01"}
+{"id":"LA-CHK-QRY03","title":"Get the error count of the product in front","read_model_id":"LA-CHK-RM01","description":"the number of errors of the focused window's space, its product's and the workspace's, as its Checks page counts them."}
+{"id":"LA-EXP-QRY01","title":"Get a record","read_model_id":"LA-EXP-RM01"}
 {"id":"LA-EXP-QRY02","title":"Find a record","read_model_id":"LA-EXP-RM01"}
 {"id":"LA-EXP-QRY03","title":"List a space's problems","read_model_id":"LA-EXP-RM01"}
-{"id":"LA-EXP-QRY04","title":"Read a record's form","read_model_id":"LA-EXP-RM01"}
-{"id":"LA-EXP-QRY05","title":"Read the nav","read_model_id":"LA-EXP-RM02"}
-{"id":"LA-EXP-QRY06","title":"Read a domain","read_model_id":"LA-EXP-RM02"}
-{"id":"LA-EXP-QRY07","title":"Read a group","read_model_id":"LA-EXP-RM02"}
-{"id":"LA-EXP-QRY08","title":"Frame a focus","read_model_id":"LA-EXP-RM03"}
-{"id":"LA-EXP-QRY10","title":"Draw an ERD","read_model_id":"LA-EXP-RM04"}
-{"id":"LA-EXP-QRY11","title":"Read a record's history","read_model_id":"LA-EXP-RM05"}
+{"id":"LA-EXP-QRY04","title":"Get a record's form","read_model_id":"LA-EXP-RM01"}
+{"id":"LA-EXP-QRY05","title":"Get the nav","read_model_id":"LA-EXP-RM02"}
+{"id":"LA-EXP-QRY06","title":"Get a domain","read_model_id":"LA-EXP-RM02"}
+{"id":"LA-EXP-QRY07","title":"Get a group","read_model_id":"LA-EXP-RM02"}
+{"id":"LA-EXP-QRY08","title":"Get a focus's frame","read_model_id":"LA-EXP-RM03"}
+{"id":"LA-EXP-QRY10","title":"Get an ERD","read_model_id":"LA-EXP-RM04"}
+{"id":"LA-EXP-QRY11","title":"Get a record's history","read_model_id":"LA-EXP-RM05"}
 {"id":"LA-EXP-QRY12","title":"List the spaces","read_model_id":"LA-EXP-RM06"}
-{"id":"LA-PLT-QRY01","title":"Load the workspace","read_model_id":"LA-PLT-RM01"}
+{"id":"LA-PLT-QRY01","title":"Get the workspace","read_model_id":"LA-PLT-RM01"}
 {"id":"LA-PLT-QRY02","title":"Get the product's data","read_model_id":"LA-PLT-RM01"}
 {"id":"LA-PLT-QRY03","title":"List the commands","read_model_id":"LA-PLT-RM02"}
 {"id":"LA-PLT-QRY04","title":"List the themes","read_model_id":"LA-PLT-RM03"}
-{"id":"LA-PLT-QRY05","title":"Export a theme file","read_model_id":"LA-PLT-RM03"}
+{"id":"LA-PLT-QRY05","title":"Get a theme file","read_model_id":"LA-PLT-RM03"}
 {"id":"LA-PLT-QRY06","title":"List the recent folders","read_model_id":"LA-PLT-RM04"}
-{"id":"LA-PLT-QRY07","title":"Hear when the data changes","read_model_id":"LA-PLT-RM01","description":"Tells an open page, as it happens, that the workspace it shows changed, so it loads the data again."}
-{"id":"LA-TRC-QRY01","title":"Count coverage","read_model_id":"LA-TRC-RM01","description":"Workspace.coverage[].obligations and .proved_by (the tests that count as each obligation's proof there); lathe check's coverage lines; the product and domain pages"}
+{"id":"LA-PLT-QRY07","title":"Get the data's changes as they happen","read_model_id":"LA-PLT-RM01","description":"Tells an open page, as it happens, that the workspace it shows changed, so it loads the data again."}
+{"id":"LA-TRC-QRY01","title":"Get coverage counts","read_model_id":"LA-TRC-RM01","description":"Workspace.coverage[].obligations and .proved_by (the tests that count as each obligation's proof there); lathe check's coverage lines; the product and domain pages"}
 {"id":"LA-TRC-QRY02","title":"List coverage gaps","read_model_id":"LA-TRC-RM02","description":"Coverage.gaps; the gap callouts and the not-designed, not-built and not-proved warnings"}
-{"id":"LA-TRC-QRY03","title":"Count tests by state","read_model_id":"LA-TRC-RM03","description":"Coverage.tests"}
+{"id":"LA-TRC-QRY03","title":"Get test counts by state","read_model_id":"LA-TRC-RM03","description":"Coverage.tests"}
 {"id":"LA-TRC-QRY04","title":"List the pattern rules a domain owes","read_model_id":"LA-TRC-RM04","description":"Coverage.pattern_rules, each followed rule's standing per domain: Patterns we follow, the pattern and pattern rule pages, and Traceability's owing domains"}
-{"id":"LA-TRC-QRY05","title":"Trace a record","read_model_id":"LA-TRC-RM06","description":"A record's Traceability section"}
-{"id":"LA-TRC-QRY06","title":"Trace an obligation","read_model_id":"LA-TRC-RM06","description":"The Trace stage's chain of one obligation."}
+{"id":"LA-TRC-QRY05","title":"Get a record's traceability","read_model_id":"LA-TRC-RM06","description":"A record's Traceability section"}
+{"id":"LA-TRC-QRY06","title":"Get an obligation's trace","read_model_id":"LA-TRC-RM06","description":"The Trace stage's chain of one obligation."}
 {"id":"LA-TRC-QRY07","title":"Find the files that are missing or silent","read_model_id":"LA-TRC-RM05","description":"The checks that read the file facts: a test's file missing or not naming it, a manual test's file naming it, and a technical record's file missing."}
-{"id":"LA-TRC-QRY08","title":"Trace routes both ways","read_model_id":"LA-TRC-RM05","description":"route_facts (each endpoint's and view's route, and whether the files of what implements it name it) and served_routes (each route the code serves): the endpoint-route-not-in-file and view-route-not-in-file checks and the route-without-record gap."}
+{"id":"LA-TRC-QRY08","title":"List routes traced both ways","read_model_id":"LA-TRC-RM05","description":"route_facts (each endpoint's and view's route, and whether the files of what implements it name it) and served_routes (each route the code serves): the endpoint-route-not-in-file and view-route-not-in-file checks and the route-without-record gap."}
 {"id":"LA-TRC-QRY09","title":"Find the tables their files do not define","read_model_id":"LA-TRC-RM07","description":"The table-schema-mismatch check, a query of table_facts."}
 {"id":"LA-TRC-QRY12","title":"Find the packages no record uses","read_model_id":"LA-TRC-RM02","description":"The packages the product's package.json files list that no technical record names: one package-not-accounted-for gap per product."}
-{"id":"LA-TRC-QRY13","title":"Trace the obligations under a record","read_model_id":"LA-TRC-RM06","description":"The Trace stage's matrix: every obligation under a record or group, grouped by its parent; or, for a record no matrix is about, the rows that hold it or the matrix around it (traceShape)."}
+{"id":"LA-TRC-QRY13","title":"List the obligations under a record","read_model_id":"LA-TRC-RM06","description":"The Trace stage's matrix: every obligation under a record or group, grouped by its parent; or, for a record no matrix is about, the rows that hold it or the matrix around it (traceShape)."}

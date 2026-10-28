@@ -35,6 +35,10 @@ Technical records have no tests of their own: each is proved by the tests of wha
 
 Most kinds take `given`, `when` and `then`: the state it starts from, the action, and what it expects. A constraint test takes `accepts` and `refuses` (the values the value object takes and refuses); a flow test takes `steps` (a list, one item per step of the main path) and `expected_result`.
 
+## Naming
+
+A test's `title` is the observable result, as one short sentence that is true when the test passes: "An overdue loan is refused a renewal". Never "Tests that…", "Test that…" or "Should…": `lathe check` warns of those. A test data set's title is a noun phrase for its contents, no article: "Complete example library". Every title is in sentence case, with no trailing period, and unique within its kind and product; the store refuses a duplicate or a trailing period. Detail goes in `given`, `when` and `then`.
+
 ## Run by
 
 Every test has a run by:
@@ -105,7 +109,7 @@ add  { "use_case_test": { "id": "TL-LEND-UC03-R04-T01", "title": "Borrowing a to
 A test data set built by a fixture, and a test that starts from it:
 
 ```
-add  { "test_data_set": { "id": "TL-LEND-TD01", "title": "An empty library and a test clock", "domain_id": "TL-LEND",
+add  { "test_data_set": { "id": "TL-LEND-TD01", "title": "Empty library with a test clock", "domain_id": "TL-LEND",
        "environment": "A fresh in-memory store.", "records": "No members, tools or loans; a clock the test sets.",
        "prepare": "Each test calls services() for a new store and clock.", "reset": "Nothing: each test has its own store.",
        "file": "test/helpers.ts" } }

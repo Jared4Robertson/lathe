@@ -12,7 +12,7 @@ import { workspace } from './fixtures/workspace';
 const served = () => {
   const data = workspace();
   addRows(data, 'interface', { id: 'DM-IF02', title: 'Terminal', product_id: 'DM', kind: 'CLI' });
-  addRows(data, 'flow', { id: 'DM-SHOP-UC01-FL02', title: 'Fill a basket from the terminal', use_case_id: 'DM-SHOP-UC01', interface_id: 'DM-IF02' });
+  addRows(data, 'flow', { id: 'DM-SHOP-UC01-FL02', title: 'Add an item to the basket through the terminal', use_case_id: 'DM-SHOP-UC01', interface_id: 'DM-IF02' });
   return { data };
 };
 
@@ -22,12 +22,12 @@ describe('flows by interface', () => {
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     const rows = within(within(section(/^Flows by interface/)).getByRole('list', { name: 'Flows of DM-SHOP-UC01' })).getAllByRole('listitem');
     // One row per flow, a whole-row link, with its interface's name, and its kind when the name does not say it.
-    expect(rows.map((r) => r.textContent)).toEqual(['DM-SHOP-UC01-FL01Fill a basketWeb app', 'DM-SHOP-UC01-FL02Fill a basket from the terminalTerminal · CLI']);
+    expect(rows.map((r) => r.textContent)).toEqual(['DM-SHOP-UC01-FL01Add an item to the basket in the web appWeb app', 'DM-SHOP-UC01-FL02Add an item to the basket through the terminalTerminal · CLI']);
     expect(within(rows[1]).getAllByRole('link')).toHaveLength(1);
     expect(within(rows[1]).getByRole('link')).toHaveAttribute('href', addressOf('DM-SHOP-UC01-FL02'));
 
     await openApp(`${addressOf('DM-SHOP-UC01-FL02')}?stage=graph`, served());
-    await screen.findByRole('heading', { level: 1, name: 'Fill a basket from the terminal' });
+    await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket through the terminal' });
     const through = screen.getByText(/^Through/).closest('p')!;
     expect(through.textContent).toBe('Through DM-IF02Terminal CLI');
     expect(within(through).getByRole('link')).toHaveAttribute('href', addressOf('DM-IF02'));
@@ -40,7 +40,7 @@ describe('flows by interface', () => {
     expect(within(flows).getByRole('heading', { level: 3, name: /^Buying/ })).toBeInTheDocument();
     expect(within(flows).queryByRole('heading', { level: 3, name: /^Paying/ })).toBeNull();
     const rows = within(within(flows).getByRole('list', { name: 'Flows through DM-IF02: Buying' })).getAllByRole('listitem');
-    expect(rows.map((r) => r.textContent)).toEqual(['DM-SHOP-UC01-FL02Fill a basket from the terminalAdd an item to the basket']);
+    expect(rows.map((r) => r.textContent)).toEqual(['DM-SHOP-UC01-FL02Add an item to the basket through the terminalAdd an item to the basket']);
     const missing = section(/^Use cases with no flow through it/);
     const without = within(within(missing).getByRole('list', { name: 'Use cases with no flow through DM-IF02: Paying' })).getAllByRole('listitem');
     expect(without.map((r) => r.textContent)).toEqual(['DM-PAY-UC01Pay by card']);

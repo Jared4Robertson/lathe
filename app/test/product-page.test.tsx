@@ -1,6 +1,6 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { main, openApp, section } from './helpers';
+import { main, openApp, section, stageOf } from './helpers';
 
 const card = (title: string) => within(section(/^Domains/)).getByText(title).closest('.card') as HTMLElement;
 const bars = (element: HTMLElement) =>
@@ -73,7 +73,9 @@ describe('product page', () => {
       ['stage stage-domain-model', 'Domain model1'],
       ['stage stage-interaction-design', 'Interaction design2'],
     ]);
-    expect(within(level).getByRole('heading', { name: /^Value objects/ })).toBeInTheDocument();
+    // Domain model holds only value objects, so it lists them itself; Interaction design keeps its folders.
+    expect(within(level).queryByRole('heading', { name: /^Value objects/ })).toBeNull();
+    expect(within(stageOf('domain-model', level)).getByRole('link', { name: /DM-VO01/ })).toBeInTheDocument();
     expect(within(level).getByRole('heading', { name: /^Views/ })).toBeInTheDocument();
     expect(within(level).getByRole('link', { name: /DM-V01\s*Basket page/ })).toHaveAttribute('href', '/DM-V01');
     // A domain's records are never listed in Shared.

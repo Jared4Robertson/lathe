@@ -17,7 +17,7 @@ vi.mock('../src/events', () => ({
 describe('reload on change', () => {
   it('LA-V61-R01-T01 An open spec page reloads the data when the server reports spec:changed', async () => {
     const { requests } = await openApp('/DM-SHOP-CMD01-H');
-    await screen.findByRole('heading', { level: 1, name: 'Basket service' });
+    await screen.findByRole('heading', { level: 1, name: 'addToBasket' });
     expect(requests.filter((r) => r === 'GET /api/spec')).toHaveLength(1);
 
     // An agent renames the command handler in its data file; the server sends spec:changed.

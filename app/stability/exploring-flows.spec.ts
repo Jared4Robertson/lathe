@@ -56,7 +56,7 @@ test.describe('Exploring flows', () => {
   test('LA-EXP-UC02-FL01-T follow a record\'s links: its page, a link by its relation, a row anywhere', async ({ page }) => {
     await openPage(page, '/LA-EXP-UC03-FL01');
     const wiki = page.locator(WIKI);
-    await expect(wikiTitle(page)).toHaveText('Walk the model as a graph');
+    await expect(wikiTitle(page)).toHaveText('Walk the model as a graph in the web app');
     // The places above it in the card's breadcrumb (the deep middle folded into "…"), the children in their table.
     const crumb = wiki.locator('.wiki-panel-head .breadcrumb');
     await expect(crumb.getByRole('link', { name: 'Lathe' })).toBeVisible();
@@ -303,7 +303,9 @@ test.describe('Exploring flows', () => {
     await expect(n.getByRole('button', { name: 'Fold Platform' })).toHaveAttribute('aria-expanded', 'true');
     const platform = n.getByRole('list', { name: 'Folders of Platform' });
     await expect(platform.getByRole('button', { name: /^Use cases \d+$/ })).toHaveAttribute('aria-expanded', 'true');
-    await expect(n.getByRole('list', { name: 'Use cases of Platform' }).getByRole('button', { name: /^Capabilities \d+$/ })).toHaveAttribute('aria-expanded', 'true');
+    // Use cases holds only capabilities, so it lists them itself, with no Capabilities folder between.
+    await expect(n.getByRole('list', { name: 'Use cases of Platform' }).getByRole('link', { name: /\S/ }).first()).toBeVisible();
+    await expect(n.getByRole('list', { name: 'Use cases of Platform' }).getByRole('button', { name: /^Capabilities \d+$/ })).toHaveCount(0);
     // Use cases lists the capabilities in order.
     await page.goto('/LA-EXP/use-cases');
     const caps = page.locator(WIKI).getByRole('link', { name: /^LA-EXP-CAP\d+/ });
@@ -452,9 +454,9 @@ test.describe('Exploring flows', () => {
     await expect(wiki.getByRole('list', { name: 'Integrations' }).getByRole('listitem').first()).toBeVisible();
     // The command and its endpoint, method and route; the endpoint's API requirements.
     await page.goto('/LA-AUT-CMD07');
-    await expect(wiki.getByRole('link', { name: 'LA-AUT-EP02 Write to the data' })).toBeVisible();
+    await expect(wiki.getByRole('link', { name: 'LA-AUT-EP02 POST /api/write' })).toBeVisible();
     await expect(wiki).toContainText('POST · /api/write');
-    await wiki.getByRole('link', { name: 'LA-AUT-EP02 Write to the data' }).click();
+    await wiki.getByRole('link', { name: 'LA-AUT-EP02 POST /api/write' }).click();
     await page.waitForURL((u) => u.pathname === '/LA-AUT-EP02');
     await expect(wiki.getByRole('link', { name: /^LA-AUT-EP02-R\d+/ }).first()).toBeVisible();
     // An integration lists the steps that exchange with its system.

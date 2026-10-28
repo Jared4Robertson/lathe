@@ -68,10 +68,11 @@ export const metaWidth = (text: string, font = META_FONT) => current.em(text, 'm
 /**
  * Breaks a text into lines no wider than `width` by `measure`, greedily, only after a space, so no
  * word is cut. A word wider than a line on its own is the one exception: it breaks after one of
- * `breaks` (a hyphen in a title or an ID) and, if a part is still too
- * wide, between characters. The lines joined give the text back; a space ending a line is not measured.
+ * `breaks` (a hyphen in a title or an ID, a code identifier's punctuation in a title), with `camel` also
+ * between the words of a camelCase identifier, and, if a part is still too wide, between characters. The
+ * lines joined give the text back; a space ending a line is not measured.
  */
-export function wrapText(text: string, width: number, measure: (s: string) => number, breaks = ''): string[] {
+export function wrapText(text: string, width: number, measure: (s: string) => number, breaks = '', camel = false): string[] {
   const fits = (s: string) => measure(s.trimEnd()) <= width;
   /** Greedy lines of some tokens; a line that is one token too wide is broken by `split`. */
   const greedy = (tokens: readonly string[], split: (token: string) => string[]): string[] => {
@@ -87,7 +88,8 @@ export function wrapText(text: string, width: number, measure: (s: string) => nu
   };
   const byChars = (word: string) => greedy([...word], (c) => [c]);
   const at = breaks.replace(/[\]\\^-]/g, '\\$&');
-  const byBreaks = (word: string) => greedy(word.match(new RegExp(`[^${at}]*[${at}]+|[^${at}]+`, 'g')) ?? [word], byChars);
+  const parts = new RegExp(camel ? `[^${at}]*?(?:[${at}]+|[a-z0-9](?=[A-Z]))|[^${at}]+` : `[^${at}]*[${at}]+|[^${at}]+`, 'g');
+  const byBreaks = (word: string) => greedy(word.match(parts) ?? [word], byChars);
   return greedy(text.match(/\S+\s*|\s+/g) ?? [], at ? byBreaks : byChars);
 }
 
@@ -124,6 +126,9 @@ export function marksOf(index: SpecIndex, id: string) {
 
 
 
+/** Where a title's word too wide for a line breaks: after a hyphen, or a code identifier's punctuation (LA-STD-MODELING-R09 titles code-bound records by their identifiers). */
+const TITLE_BREAKS = '-._:/(';
+
 /** A label's lines, as the canvas draws them: it wraps nothing itself. */
 export interface WrappedLabel {
   title: string[];
@@ -148,7 +153,7 @@ export function wrapLabel(lines: { title: string; meta: string }, { shape, marks
   const room = shape ? SHAPES[shape].room : NO_ROOM;
   const inner = width - 2 * LABEL_PAD - room.l - room.r;
   const label: WrappedLabel = {
-    title: wrapText(lines.title, inner, (s) => titleWidth(s), '-'),
+    title: wrapText(lines.title, inner, (s) => titleWidth(s), TITLE_BREAKS, true),
     meta: wrapText(lines.meta, inner - metaRoom({ marks, marked, centered }), (s) => metaWidth(s), '-'),
   };
   const pad = room.t + room.b;

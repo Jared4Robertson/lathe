@@ -58,7 +58,7 @@ export type StageName = 'graph' | 'erd' | 'trace';
 /** Every stage, in the stage switch's order. */
 export const STAGE_NAMES: readonly StageName[] = ['graph', 'erd', 'trace'];
 export const STAGE_LABELS: Record<StageName, string> = { graph: 'Graph', erd: 'ERD', trace: 'Trace' };
-/** The stage a page shows when its address names none. Every stage works on every focus (LA-PAT-APP-UX-R16). */
+/** The stage a page shows when its address names none. Every stage works on every focus (LA-PAT-APP-UX-R17). */
 export const DEFAULT_STAGE: StageName = 'graph';
 
 /** The stage a value names ("erd"), or null when it names none. */

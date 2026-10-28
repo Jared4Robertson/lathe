@@ -230,7 +230,7 @@ export function traceMatrix(index: SpecIndex, focus: string): TraceGroup[] {
 
 // ---------- What the Trace stage shows for any focus ----------
 //
-// Every stage works on every focus (LA-PAT-APP-UX-R16), so the Trace stage has a shape for each:
+// Every stage works on every focus (LA-PAT-APP-UX-R17), so the Trace stage has a shape for each:
 // - an obligation: its chain;
 // - a record or group with obligations under it: their matrix;
 // - a design, build or test record some chain holds: the rows it belongs to, each obligation whose

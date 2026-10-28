@@ -371,6 +371,7 @@ WHERE a.product_id IS DISTINCT FROM b.product_id`,
         .join('\nUNION ALL'),
     });
   }
+  queries.push(...titleQueries(schema));
   const productKinds = Object.values(schema.kinds).filter((k) => k.productId !== null);
   if (productKinds.length) {
     queries.push({
@@ -384,6 +385,73 @@ SELECT ${sqlString(k.name)} AS table_name, r.id AS row_key,
 FROM ${sqlName(k.name)} r LEFT JOIN record_scope s ON s.id = r.id
 WHERE s.product_id IS DISTINCT FROM ${sqlString(k.productId!)}`,
         )
+        .join('\nUNION ALL'),
+    });
+  }
+  return queries;
+}
+
+/** What a code-bound kind's title must match, by its form (meta_kind_title), and how the refusal says so. */
+const TITLE_FORMS = {
+  identifier: { pattern: '\\S+', says: 'one identifier exactly as in code, with no whitespace, such as LoanRow' },
+  invocation: { pattern: '[a-z0-9][^ ]*( [^ ]+)*', says: 'the invocation as typed, lower case first and words one space apart, such as lathe add' },
+  'kebab-case': { pattern: '[a-z0-9]+(-[a-z0-9]+)*', says: 'a kebab-case name, lower-case words joined by hyphens, such as event-tense' },
+} as const;
+
+/**
+ * The title refusals, over every kind, Lathe's and a product's own: a title unique within its kind and product
+ * (compared trimmed, and in any letter case unless the kind is code-bound), with no trailing period, and, for a code-bound kind, in its form.
+ */
+function titleQueries(schema: SchemaDescription): ValidationQuery[] {
+  const kinds = Object.values(schema.kinds).sort((a, b) => a.name.localeCompare(b.name));
+  if (!kinds.length) return [];
+  const titled = kinds
+    .map(
+      (k) =>
+        `SELECT ${sqlString(k.name)} AS kind, ${sqlString(k.label)} AS label, id, title, ${k.titleForm ? 'trim(title)' : 'lower(trim(title))'} AS same FROM ${sqlName(k.name)}`,
+    )
+    .join('\nUNION ALL ');
+  const queries: ValidationQuery[] = [
+    {
+      name: 'title-unique',
+      description:
+        "A title is unique within its kind and product, compared trimmed: two records of one kind are told apart by their titles. Titles in words compare in any letter case; a code-bound kind's identifiers compare exactly, as code does.",
+      sql: `
+WITH titled AS (${titled}),
+keyed AS (
+  SELECT t.kind, t.label, t.id, t.title, s.product_id, t.same
+  FROM titled t JOIN record_scope s ON s.id = t.id
+)
+SELECT a.kind AS table_name, a.id AS row_key,
+       a.label || ' ' || a.id || ' is titled "' || trim(a.title) || '", as is ' || string_agg(b.id, ', ' ORDER BY b.id)
+       || ' in product ' || coalesce(a.product_id, 'none') || '; give each ' || lower(a.label) || ' a title of its own' AS message
+FROM keyed a JOIN keyed b ON b.kind = a.kind AND b.same = a.same AND b.product_id IS NOT DISTINCT FROM a.product_id AND b.id <> a.id
+GROUP BY a.kind, a.label, a.id, a.title, a.product_id`,
+    },
+    {
+      name: 'title-period',
+      description: 'A title ends without a period: it is a name, a goal or one short statement, never prose.',
+      sql: `
+WITH titled AS (${titled})
+SELECT kind AS table_name, id AS row_key,
+       label || ' ' || id || ' is titled "' || title || '", which ends with a period; a title ends without one' AS message
+FROM titled WHERE regexp_matches(title, '\\.\\s*$')`,
+    },
+  ];
+  const formed = kinds.filter((k) => k.titleForm);
+  if (formed.length) {
+    queries.push({
+      name: 'title-form',
+      description:
+        "A code-bound kind's title is in its form (meta_kind_title): one identifier as in code with no whitespace, an invocation as typed, or a kebab-case name.",
+      sql: formed
+        .map((k) => {
+          const form = TITLE_FORMS[k.titleForm!];
+          return `
+SELECT ${sqlString(k.name)} AS table_name, id AS row_key,
+       ${sqlString(`${k.label} `)} || id || ' is titled "' || title || '"' || ${sqlString(`, but a ${k.label.toLowerCase()} is titled by ${form.says}; put the explanation in its description`)} AS message
+FROM ${sqlName(k.name)} WHERE NOT regexp_full_match(title, ${sqlString(form.pattern)})`;
+        })
         .join('\nUNION ALL'),
     });
   }

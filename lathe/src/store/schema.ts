@@ -128,7 +128,12 @@ export interface KindDescription {
   parents: KindParent[];
   /** The supertype tables its records are members of. */
   supertypes: string[];
+  /** For a code-bound kind, how its titles are written (meta_kind_title); null for a kind titled in words. */
+  titleForm: TitleForm | null;
 }
+
+/** How a code-bound kind's titles are written: one identifier, an invocation, or a kebab-case name. */
+type TitleForm = 'identifier' | 'invocation' | 'kebab-case';
 
 export interface RelationPair {
   source: string;
@@ -297,6 +302,9 @@ export async function describeSchema(connection: DuckDBConnection): Promise<Sche
     connection,
     'SELECT kind, parent_kind, column_name FROM meta_kind_parent ORDER BY kind, position',
   );
+  const titleForms = new Map(
+    (await rows<{ kind: string; form: TitleForm }>(connection, 'SELECT kind, form FROM meta_kind_title')).map((t) => [t.kind, t.form]),
+  );
   const kinds: Record<string, KindDescription> = {};
   for (const k of await rows<{
     name: string;
@@ -323,6 +331,7 @@ export async function describeSchema(connection: DuckDBConnection): Promise<Sche
       description: tables[k.name].description,
       parents: parents.filter((p) => p.kind === k.name).map((p) => ({ kind: p.parent_kind, column: p.column_name })),
       supertypes: Object.keys(supertypes).filter((s) => supertypes[s].includes(k.name)),
+      titleForm: titleForms.get(k.name) ?? null,
     };
   }
   const pairs = await rows<{ relation: string; source_kind: string; target_kind: string; description: string }>(

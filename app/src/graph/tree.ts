@@ -5,9 +5,9 @@ import { plural } from '../plural';
 
 // The graph's tree is the nav's tree: a product holds its Shared folder (its own stages, what it shares),
 // its domains, then its open questions; a domain holds its stages, then the folders outside every
-// stage (open questions); a stage holds one folder per kind; a folder holds the records that start a
+// stage (open questions); a stage holds one folder per kind, or the records of its only folder itself; a folder holds the records that start a
 // branch of the stage, by the same folder model the nav, the domain page and the group pages read
-// (specs/folders.ts). Every stage and folder is a level of the tree, like a file explorer, and is a
+// (specs/folders.ts). Every stage and folder shown is a level of the tree, like a file explorer, and is a
 // group node in the graph with an address of its own ("DM-SHOP/domain-model",
 // "DM-SHOP/domain-model/aggregate"). A record's children of its own stage fold under it, through one
 // group per kind when they are of more than one kind ("DM-SHOP-A1/command"); its children of a
@@ -100,7 +100,9 @@ export function treeOf(index: SpecIndex): Tree {
       add(under, stage.key);
       const shown = stage.folders.filter((f) => f.count > 0);
       group(stage.key, { label: stage.label, kind: null, count: stage.count, members: shown.flatMap((f) => f.records), owner: ownerId, role: 'stage' });
-      for (const f of shown) addFolder(stage.key, f, ownerId, 'folder');
+      // A stage with one folder holds that folder's records itself, the folder no level of the tree.
+      if (stage.direct) for (const r of stage.direct.records) { if (add(stage.key, r.id)) addRecord(r); }
+      else for (const f of shown) addFolder(stage.key, f, ownerId, 'folder');
     }
   };
   const addLoose = (ownerId: string) => {

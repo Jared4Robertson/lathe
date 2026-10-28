@@ -112,7 +112,7 @@ test.describe('keyboard', () => {
     await test.step('LA-V61-R43-T01 switching the stage is announced', () => expect(announcer(page)).toHaveText(/ERD stage/));
     // Focus stays on the button that was pressed.
     expect((await focused(page)).name).toBe('ERD');
-    // Every stage works on every focus: the switch never disables one (LA-PAT-APP-UX-R16).
+    // Every stage works on every focus: the switch never disables one (LA-PAT-APP-UX-R17).
     await expect(page.locator('.page-bar .stage-switch button[aria-disabled]')).toHaveCount(0);
     // Off a Mac, Ctrl+3 for the Trace stage and Ctrl+1 for the graph.
     await page.keyboard.press('Control+3');

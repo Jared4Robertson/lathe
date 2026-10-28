@@ -83,7 +83,7 @@ test.describe('Traceability flows', () => {
     await pane.getByRole('checkbox', { name: 'Gaps only' }).check();
     const left = await rows.count();
     for (let i = 0; i < Math.min(left, 20); i++) await expect(rows.nth(i).locator('td.is-gap').first()).toBeAttached();
-    // Every stage works on every focus (LA-PAT-APP-UX-R16): on a step, the rows it belongs to, the step marked in its cell.
+    // Every stage works on every focus (LA-PAT-APP-UX-R17): on a step, the rows it belongs to, the step marked in its cell.
     await openPage(page, `/${steps[0]}?stage=trace`, '.focus-stage .trace-matrix');
     await expect(pane.locator('.trace-matrix th[scope="row"]').filter({ hasText: REQUIREMENT })).toBeVisible();
     await expect(pane.locator('.trace-matrix td [aria-current="page"]').first()).toContainText(steps[0]);

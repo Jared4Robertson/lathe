@@ -11,7 +11,7 @@ import { modelIndex, modelWorkspace } from './fixtures/model';
 
 // The ERD stage: the entity-relationship diagram of a domain (its aggregates as boundaries around their
 // entities) or of an aggregate (with the aggregates it references, or that reference it, faded around it).
-// It works on every focus (LA-PAT-APP-UX-R16): any other record draws its domain's (or for a Shared
+// It works on every focus (LA-PAT-APP-UX-R17): any other record draws its domain's (or for a Shared
 // record its product's) ERD, its nearest entity or aggregate highlighted.
 
 const served = () => ({ data: modelWorkspace() });
@@ -25,7 +25,7 @@ const ends = (erd: { lines: { id: string; sourceEnd: string; targetEnd: string; 
   Object.fromEntries(erd.lines.map((l) => [l.id, `${l.sourceEnd}-${l.targetEnd}${l.dashed ? ' dashed' : ''}`]));
 
 describe('the ERD stage', () => {
-  const proveLaExpSp02T = async () => {
+  const proveErdOnEveryFocus = async () => {
     const i = index();
     // A domain, an aggregate and an entity draw their own diagram, as before.
     expect(modelScope(i, 'P-D')).toEqual({ level: 'domain', scope: 'P-D', highlight: null });
@@ -67,9 +67,8 @@ describe('the ERD stage', () => {
     fireEvent.keyDown(document.body, { key: 'g', code: 'KeyG', altKey: true });
     expect(window.location.search).toBe('?stage=graph');
   };
-  it('LA-EXP-SP02-T Every focus has an ERD stage: a domain\'s, an aggregate\'s or an entity\'s own diagram, otherwise its domain\'s or product\'s with its nearest entity or aggregate highlighted', proveLaExpSp02T);
-  it('LA-V96-R18-T01 Every focus has an ERD stage: a domain\'s, an aggregate\'s or an entity\'s own diagram, otherwise its domain\'s or product\'s with its nearest entity or aggregate highlighted', proveLaExpSp02T);
-  it('LA-PAT-APP-UX-R16-T03 The ERD stage works on every focus, the switch never disabled', proveLaExpSp02T);
+  it('LA-V96-R18-T01 Every focus has an ERD stage: a domain\'s, an aggregate\'s or an entity\'s own diagram, otherwise its domain\'s or product\'s with its nearest entity or aggregate highlighted', proveErdOnEveryFocus);
+  it('LA-PAT-APP-UX-R17-T03 The ERD stage works on every focus, the switch never disabled', proveErdOnEveryFocus);
 
   const proveLaV94R02T01 = async () => {
     const erd = domainErd(index(), 'P-D');

@@ -41,14 +41,14 @@ describe('lathe add', () => {
     const root = writeData(everyKind());
     expect((await lathe(root, 'add', 'view', '--id', 'TL-V02', '--title', 'Return desk')).out).toBe('Added view TL-V02: {"id":"TL-V02","title":"Return desk"}\nWrote data/view.jsonl\n');
     expect((await lathe(root, 'add', 'specification', '--id', 'TL-LEND-SP02', '--title', 'Tool needs repair', '--statement', 'A tool needs repair when its condition says so.')).status).toBe(0);
-    const endpoint = await lathe(root, 'add', 'endpoint', '--id', 'TL-LEND-EP02', '--title', 'List free tools', '--query_id', 'TL-LEND-QRY01', '--method', 'GET', '--route', '/tools');
-    expect(endpoint.out).toContain('Added endpoint TL-LEND-EP02: {"id":"TL-LEND-EP02","title":"List free tools","query_id":"TL-LEND-QRY01","method":"GET","route":"/tools"}');
+    const endpoint = await lathe(root, 'add', 'endpoint', '--id', 'TL-LEND-EP02', '--title', 'GET /tools', '--query_id', 'TL-LEND-QRY01', '--method', 'GET', '--route', '/tools');
+    expect(endpoint.out).toContain('Added endpoint TL-LEND-EP02: {"id":"TL-LEND-EP02","title":"GET /tools","query_id":"TL-LEND-QRY01","method":"GET","route":"/tools"}');
     expect((await lathe(root, 'add', 'table', '--id', 'TL-LEND-EN02-TB', '--title', 'Returns', '--entity_id', 'TL-LEND-EN02', '--name', 'returns', '--storage', 'table')).err).toContain('[entity-table]');
   });
 
   it('LA-AUT-UC01-R07-T01 says which parent to give when a kind has two, before the table rule', async () => {
     const root = writeData(everyKind());
-    const both = await lathe(root, 'add', 'endpoint', '--id', 'TL-LEND-EP02', '--title', 'X', '--command_id', 'TL-LEND-CMD01', '--query_id', 'TL-LEND-QRY01', '--method', 'GET', '--route', '/x');
+    const both = await lathe(root, 'add', 'endpoint', '--id', 'TL-LEND-EP02', '--title', 'GET /x', '--command_id', 'TL-LEND-CMD01', '--query_id', 'TL-LEND-QRY01', '--method', 'GET', '--route', '/x');
     expect(both.status).toBe(1);
     expect(both.err).toBe('Refused; nothing changed:\n  an endpoint sits under exactly one of command (command_id) or query (query_id); give only one, not command_id and query_id [parent]\n');
     expect((await lathe(root, 'add', 'question', '--id', 'TL-Q01', '--title', 'X', '--owner', 'Owner')).err).toContain(
@@ -193,7 +193,7 @@ describe('lathe move', () => {
   it('LA-AUT-UC01-R05-T03 moves a record between its two kinds of parent, clearing the other column', async () => {
     const root = writeData(everyKind());
     const result = await lathe(root, 'move', 'TL-LEND-EP01', '--parent', 'TL-LEND-QRY01');
-    expect(result.out).toContain('Changed endpoint TL-LEND-EP01: {"id":"TL-LEND-EP01","title":"Borrow a tool","method":"POST","route":"/loans","query_id":"TL-LEND-QRY01"}');
+    expect(result.out).toContain('Changed endpoint TL-LEND-EP01: {"id":"TL-LEND-EP01","title":"POST /loans","method":"POST","route":"/loans","query_id":"TL-LEND-QRY01"}');
   });
 
   it('LA-AUT-UC01-R07-T01 refuses a parent of the wrong kind, a record with no owner, and needs --parent', async () => {
@@ -267,7 +267,7 @@ describe('lathe show, list and next-id', () => {
         'Children:',
         '  TL-LEND-CMD01-CLI (cli_command): tl borrow',
         '  TL-LEND-CMD01-H (command_handler): openLoan',
-        '  TL-LEND-EP01 (endpoint): Borrow a tool',
+        '  TL-LEND-EP01 (endpoint): POST /loans',
         '  TL-LEND-PO01 (policy): Remind on loan',
         'Links:',
         '  Calls TL-LEND-DS01: Late fee [calls]',
@@ -292,8 +292,8 @@ describe('lathe show, list and next-id', () => {
     const root = writeData(everyKind());
     expect((await lathe(root, 'list', 'aggregate')).out).toBe('TL-LEND-A1  Loan\nTL-LEND-A2  Tool\n');
     expect((await lathe(root, 'list', 'entity', '--parent', 'TL-LEND-A1')).out).toBe('TL-LEND-EN01  Loan\nTL-LEND-EN02  Return\n');
-    expect((await lathe(root, 'list', 'endpoint', '--parent', 'TL-LEND-CMD01')).out).toBe('TL-LEND-EP01  Borrow a tool\n');
-    expect((await lathe(root, 'list', 'table', '--parent', 'TL-LEND-RM01')).out).toBe('TL-LEND-RM01-TB  Loans by member\n');
+    expect((await lathe(root, 'list', 'endpoint', '--parent', 'TL-LEND-CMD01')).out).toBe('TL-LEND-EP01  POST /loans\n');
+    expect((await lathe(root, 'list', 'table', '--parent', 'TL-LEND-RM01')).out).toBe('TL-LEND-RM01-TB  loans_by_member\n');
     expect((await lathe(root, 'list', 'view', '--parent', 'TL', '--json')).out).toBe(`${JSON.stringify([{ id: 'TL-V01', title: 'Catalog', route: '/catalog' }], null, 2)}\n`);
     expect((await lathe(root, 'list', 'specification', '--parent', 'TL-LEND')).out).toBe('TL-LEND-SP01  Tool is free\n');
     expect((await lathe(root, 'list', 'use_case_actor', '--parent', 'TL-LEND-UC01')).out).toBe('{"use_case_id":"TL-LEND-UC01","position":1,"role_name":"Member"}\n');

@@ -8,7 +8,7 @@ import { plural } from '../plural';
 import { Card, CardGrid } from '../shell/Card';
 
 // What the focus owes and how far it has come, as columns left to right: obligation, design, build,
-// tests, files (chain.ts). It works on every focus (LA-PAT-APP-UX-R16), by the shape chain.ts's
+// tests, files (chain.ts). It works on every focus (LA-PAT-APP-UX-R17), by the shape chain.ts's
 // traceShape gives it:
 // - an obligation: its chain, each column a list of cards;
 // - a record or group with obligations under it: a traceability matrix, one row per obligation

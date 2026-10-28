@@ -304,7 +304,7 @@ function currentBranch(index: SpecIndex, path: string): string[] {
  * as patterns, standards, and the value objects and views two or more domains use); its domains, each folding its stages
  * (Domain model, Use cases, Interaction design, Technical specification, Test plan) and its open questions;
  * then the product's open questions. Each stage holds one folder per kind, each listing the records
- * that start a branch of the stage. One level shows by default; every stage and folder folds on its
+ * that start a branch of the stage; a stage with one folder lists its records itself. One level shows by default; every stage and folder folds on its
  * own (remembered for the session) and shows its count, and the current page's branch opens itself.
  * A stage or folder with no records is left out. Names and order come from the schema's stages and kinds.
  */
@@ -355,12 +355,14 @@ function SpaceItems({ index, space, path, reveal }: { index: SpecIndex; space: S
       {recordRows(folder.records, `${folder.label} of ${owner}`, depth + 1)}
     </NavFolder>
   );
-  // An owner's stages with records, each folding its folders with records.
+  // An owner's stages with records, each folding its folders with records, or a stage with one folder its records.
   const stageRows = (stages: StageFolders[], owner: string, depth: number) => stages.filter((stage) => stage.count > 0).map((stage) => (
     <NavFolder key={stage.key} id={stage.key} depth={depth} label={stage.label} count={stage.count} open={isOpen(stage.key)} holds={holds(stage.key)} onToggle={() => toggle(stage.key)} stage={stage.stage}>
-      <ul className="nav-tree" aria-label={`${stage.label} of ${owner}`}>
-        {stage.folders.filter((f) => f.count > 0).map((f) => folderRow(f, owner, depth + 1))}
-      </ul>
+      {stage.direct ? recordRows(stage.direct.records, `${stage.label} of ${owner}`, depth + 1) : (
+        <ul className="nav-tree" aria-label={`${stage.label} of ${owner}`}>
+          {stage.folders.filter((f) => f.count > 0).map((f) => folderRow(f, owner, depth + 1))}
+        </ul>
+      )}
     </NavFolder>
   ));
   const ownStages = own.stages.filter((s) => s.count > 0);

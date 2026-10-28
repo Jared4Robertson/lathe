@@ -251,7 +251,7 @@ describe('one address, one stage', () => {
     const page = document.querySelector<HTMLElement>('.page-bar')!;
     expect(within(page.querySelector<HTMLElement>('.page-bar-start')!).getByRole('tab', { selected: true })).toHaveTextContent('P-D-UC01 Lend a thing');
     const order = (el: HTMLElement) => [...el.querySelectorAll<HTMLElement>('button, .pane-divider')].map((b) => b.classList.contains('pane-divider') ? '|' : b.getAttribute('aria-label'));
-    // Every stage works on every focus: three buttons, none disabled or dimmed (LA-PAT-APP-UX-R16).
+    // Every stage works on every focus: three buttons, none disabled or dimmed (LA-PAT-APP-UX-R17).
     expect(order(page.querySelector<HTMLElement>('.page-bar-actions')!)).toEqual(['Graph', 'ERD', 'Trace', '|', 'Collapse the wiki card', 'Hide the side bar']);
     expect(page.querySelector('[aria-disabled="true"], .is-unavailable')).toBeNull();
     expect(stageButton('Graph')).toHaveClass('icon-button', 'is-on');
@@ -326,7 +326,7 @@ describe('one address, one stage', () => {
 });
 
 describe('every stage on every focus', () => {
-  it('LA-PAT-APP-UX-R16-T01 Every stage works on every focus: the switch always holds three enabled stages, and each draws something', async () => {
+  it('LA-PAT-APP-UX-R17-T01 Every stage works on every focus: the switch always holds three enabled stages, and each draws something', async () => {
     for (const id of ['P-D-UC01', 'P-D-UC01-R01-T01', 'P-D-TM01']) {
       for (const stage of ['graph', 'erd', 'trace'] as const) {
         await openApp(`/${id}?stage=${stage}`, { data: modelWorkspace() });

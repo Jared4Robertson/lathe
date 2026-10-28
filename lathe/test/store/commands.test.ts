@@ -49,7 +49,7 @@ describe('add', () => {
     await store.apply([
       { op: 'add', table: 'specification', row: { id: 'TL-LEND-SP02', title: 'Member in good standing', statement: 'A member owes nothing.' } },
       { op: 'link', relation: 'reads', source: 'TL-LEND-SP02', target: 'TL-LEND-A1' },
-      { op: 'add', table: 'endpoint', row: { id: 'TL-LEND-EP02', title: 'Free tools', query_id: 'TL-LEND-QRY01', method: 'GET', route: '/tools/free' } },
+      { op: 'add', table: 'endpoint', row: { id: 'TL-LEND-EP02', title: 'GET /tools/free', query_id: 'TL-LEND-QRY01', method: 'GET', route: '/tools/free' } },
       { op: 'add', table: 'specification_test', row: { id: 'TL-LEND-SP02-T', title: 'Good standing', specification_id: 'TL-LEND-SP02', level: 'unit', state: 'manual', manual_reason: 'Not yet coded.' } },
     ]);
     expect(await store.query("SELECT * FROM record_scope WHERE id IN ('TL-LEND-SP02', 'TL-LEND-EP02', 'TL-LEND-SP02-T') ORDER BY id")).toEqual([

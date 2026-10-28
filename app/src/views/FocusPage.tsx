@@ -113,7 +113,7 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
 
   // The open tabs, and the active one's state. The stage is the tab's: the one the link named when
   // it opened, otherwise that of the tab it was opened from. Every stage works on every focus
-  // (LA-PAT-APP-UX-R16), so the switch never hides or disables one.
+  // (LA-PAT-APP-UX-R17), so the switch never hides or disables one.
   const tabs = usePageTabs(index, route, search);
   const tab = tabs.active;
   const { update } = tabs;

@@ -132,7 +132,7 @@ describe('format reference pages', () => {
   const proveLaV92R71T01 = async () => {
     // The side bar's Details, open in the Graph view.
     await openApp('/DM-SHOP-EP01?stage=graph');
-    await screen.findByRole('heading', { level: 1, name: 'Add to basket' });
+    await screen.findByRole('heading', { level: 1, name: 'POST /basket/items' });
     expect(within(sideBar()).getByRole('link', { name: 'Endpoint' })).toHaveAttribute('href', '/format/kinds/endpoint');
     expect(within(sideBar()).getByRole('link', { name: 'method' })).toHaveAttribute('href', '/format/kinds/endpoint#field-method');
 
