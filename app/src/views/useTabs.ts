@@ -18,7 +18,7 @@ import { sideStateFrom, type SideState } from './sideBarState';
 
 /** What a tab remembers of its page, besides the wiki card's scroll (kept apart, as it changes often). */
 export interface TabView {
-  /** The stage asked for, kept where the page does not offer it, so it comes back where offered. */
+  /** The stage the tab shows. */
   stage: StageName;
   /** The side bar on each stage: open or not, and its view. Absent modes use the last used. */
   side?: SideState;

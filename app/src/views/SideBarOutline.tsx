@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { LongList } from '../components/LongList';
 import { groupLabel } from '../graph/model';
 import { NodeLink, type GraphInfo } from '../graph/panel';
-import { erdFor } from '../erd/erd';
+import { ERD_EMPTY, erdFor } from '../erd/erd';
 import { obligationsUnder } from '../trace/chain';
 import { isObligation } from '../trace/offer';
 import { kindLabel, type SpecIndex } from '../specs/data';
@@ -71,8 +71,8 @@ function GraphOutline({ index, graph, onNavigate, hrefFor }: SideBarOutlineProps
 
 function ErdOutline({ index, focus, onNavigate, hrefFor }: SideBarOutlineProps) {
   const erd = useMemo(() => erdFor(index, focus), [index, focus]);
-  if (!erd) return <p className="hint">The ERD view shows the entities of a domain, an aggregate or an entity's aggregate.</p>;
-  if (erd.boxes.length === 0) return <p className="hint">{erd.level === 'domain' ? 'This domain has no aggregates yet.' : 'This aggregate has no entities yet.'}</p>;
+  if (!erd) return null;
+  if (erd.boxes.length === 0) return <p className="hint">{ERD_EMPTY[erd.level]}</p>;
   // What the diagram draws in focus, kind by kind in the schema's order, then the faded context.
   const inFocus = erd.boxes.filter((b) => !b.context);
   const kinds = [...new Set(inFocus.map((b) => b.kind))];

@@ -1,5 +1,4 @@
-import type { SpecIndex, SpecRoute } from '../specs/data';
-import { hasTrace } from '../trace/offer';
+import type { SpecRoute } from '../specs/data';
 
 // One address per thing, whichever stage shows it (LA-PAT-APP-CODE-R19). A record is at its bare
 // ID (`/LA-TRC-UC09`), a product and a domain included, whose one page is their overview (`/LA`,
@@ -59,7 +58,7 @@ export type StageName = 'graph' | 'erd' | 'trace';
 /** Every stage, in the stage switch's order. */
 export const STAGE_NAMES: readonly StageName[] = ['graph', 'erd', 'trace'];
 export const STAGE_LABELS: Record<StageName, string> = { graph: 'Graph', erd: 'ERD', trace: 'Trace' };
-/** The stage a page shows when its address names none, or names one the page does not offer. */
+/** The stage a page shows when its address names none. Every stage works on every focus (LA-PAT-APP-UX-R16). */
 export const DEFAULT_STAGE: StageName = 'graph';
 
 /** The stage a value names ("erd"), or null when it names none. */
@@ -73,25 +72,6 @@ export const stageFromSearch = (search: string): StageName | null => parseStage(
 
 /** An address with its stage in the query string. */
 export const withStage = (path: string, stage: StageName) => `${path}?stage=${stage}`;
-
-/** The kinds whose pages offer the ERD stage: a domain's ERD, an aggregate's, or an entity's aggregate's. */
-export const ERD_KINDS: ReadonlySet<string> = new Set(['domain', 'aggregate', 'entity']);
-
-/**
- * The stages a page offers: Graph everywhere; ERD only on the kinds it draws; Trace only on an
- * obligation, or a record or group with an obligation under it, so it is never empty.
- */
-export function stagesOffered(index: SpecIndex, focus: string): StageName[] {
-  const kind = index.byId.get(focus)?.kind;
-  return STAGE_NAMES.filter((s) => {
-    if (s === 'erd') return kind !== undefined && ERD_KINDS.has(kind);
-    if (s === 'trace') return hasTrace(index, focus);
-    return true;
-  });
-}
-
-/** The stage a page shows for the one asked for: that one where it is offered, else the graph. */
-export const stageShown = (asked: StageName, offered: readonly StageName[]): StageName => (offered.includes(asked) ? asked : DEFAULT_STAGE);
 
 /** The pages that show one focus (a record, group, product or domain) on the stage and in the wiki card. */
 export type FocusRoute = Extract<SpecRoute, { page: 'product' | 'domain' | 'record' | 'group' }>;
