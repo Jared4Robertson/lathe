@@ -6,7 +6,7 @@ import { buildWorkspace, indexWorkspace, type SpecIndex } from '../../src/specs/
 // it by fixtures/global-setup.ts, plus the problems, recorded exceptions and coverage the engine
 // would find, which each fixture module gives (no recorded exceptions unless it says so). A test may change a fixture's rows for its case with the helpers here.
 
-/** What the global setup loads of a fixture: what GET /api/spec serves, without the checks' findings. */
+/** What the global setup loads of a fixture: what GET /api/spec serves, without the checks' findings (one source, data). */
 export type FixtureRows = Omit<SpecData, 'problems' | 'exceptions' | 'coverage'>;
 
 declare module 'vitest' {
@@ -27,13 +27,14 @@ export const indexOf = (data: SpecData): SpecIndex => indexWorkspace(buildWorksp
 
 /** Adds rows to a table. */
 export function addRows(data: SpecData, table: string, ...rows: Row[]): SpecData {
-  data.tables[table] = [...(data.tables[table] ?? []), ...rows];
+  const { tables } = data.sources[0];
+  tables[table] = [...(tables[table] ?? []), ...rows];
   return data;
 }
 
 /** Changes a record's columns (null clears one). */
 export function setRow(data: SpecData, table: string, id: string, changes: Record<string, Value | null>): SpecData {
-  const row = (data.tables[table] ?? []).find((r) => r.id === id);
+  const row = (data.sources[0].tables[table] ?? []).find((r) => r.id === id);
   if (!row) throw new Error(`No ${table} row ${id}.`);
   for (const [column, value] of Object.entries(changes)) {
     if (value === null) delete row[column];
@@ -44,11 +45,12 @@ export function setRow(data: SpecData, table: string, id: string, changes: Recor
 
 /** Removes the rows of a table that match. */
 export function removeRows(data: SpecData, table: string, matches: (row: Row) => boolean): SpecData {
-  data.tables[table] = (data.tables[table] ?? []).filter((r) => !matches(r));
+  const { tables } = data.sources[0];
+  tables[table] = (tables[table] ?? []).filter((r) => !matches(r));
   return data;
 }
 
 /** Every record ID in the data, by its kind's table. */
 export function recordIds(data: SpecData): string[] {
-  return Object.keys(data.schema.kinds).flatMap((kind) => (data.tables[kind] ?? []).map((r) => String(r.id)));
+  return Object.keys(data.schema.kinds).flatMap((kind) => data.sources.flatMap((source) => source.tables[kind] ?? []).map((r) => String(r.id)));
 }

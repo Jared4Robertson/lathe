@@ -1,19 +1,21 @@
 // Lathe's HTTP API, shared by `lathe serve`, the desktop shell and the app's Vite dev server. Its shapes are in
 // contract.ts:
-//   GET  /api/spec                SpecData: the schema, every stored table's rows, where each record with no owner sits, and the checks' problems, the recorded exceptions and coverage
-//   POST /api/write               { commands } -> WriteAnswer: one transaction through the store's command layer
+//   GET  /api/spec                SpecData: the schema, each product folder's rows, where each record with no owner sits, and the checks' problems, the recorded exceptions and coverage
+//   POST /api/write               { commands } -> WriteAnswer: one transaction through the command layer of the product the commands name
 //   GET  /api/history?id=<ID>     HistoryAnswer: the commits that changed the record's rows (&skip=<n> for older ones)
-//   GET  /api/reference           the product's Reference (reference.ts): kinds, tables, relations, folders, checks
+//   GET  /api/reference           the workspace's own product's Reference (reference.ts): kinds, tables, relations, folders, checks
 //
-// The store of each product root is opened once and kept (on globalThis, so it outlives a reload of this module in
-// the dev server). Before each request the data folder's files are compared with what the store last read or wrote;
-// a change made by anything else (an editor, git) opens the store afresh.
+// The root is a workspace: its own product, and each other product its lathe.config.json lists under products, each
+// read from and written to its own folder. The store of each product root is opened once and kept (on globalThis, so
+// it outlives a reload of this module in the dev server). Before each request the data folder's files are compared
+// with what the store last read or wrote; a change made by anything else (an editor, git) opens the store afresh.
 import { existsSync, readdirSync, statSync } from 'node:fs';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import path from 'node:path';
-import { loadConfig } from '../config.ts';
+import { loadConfig, productClash, workspaceProducts, type LatheConfig } from '../config.ts';
 import { buildReference, loadWorkspace } from '../index.ts';
 import { describeKey, rowKey, type Row } from '../store/rows.ts';
+import type { SchemaDescription } from '../store/schema.ts';
 import { formatProblem, LATHE_DATA_DIR, openStore, StoreError, type Command, type Store } from '../store/store.ts';
 import type { RowChange, SpecData, WriteAnswer, WriteRequest } from './contract.ts';
 import { recordHistory } from './history.ts';
@@ -83,11 +85,11 @@ async function withStore<T>(root: string, task: (opened: Opened) => Promise<T>):
 }
 
 /**
- * Closes the stores this process opened, or the one of a root (for tests and a server shutting down), each once the
- * request it is serving (a load, a reload or a write) has finished.
+ * Closes the stores this process opened, or those of a workspace's products (for tests and a server shutting down),
+ * each once the request it is serving (a load, a reload or a write) has finished.
  */
 export async function closeStores(root?: string): Promise<void> {
-  const roots = root ? [loadConfig(root).root] : [...stores.keys()];
+  const roots = root ? workspaceProducts(root).map((config) => config.root) : [...stores.keys()];
   const all = roots.flatMap((r) => { const s = stores.get(r); stores.delete(r); return s ? [s] : []; });
   for (const pending of all) {
     try {
@@ -132,21 +134,64 @@ function tablesOf(store: Store): Record<string, Row[]> {
   return tables;
 }
 
+/**
+ * The schemas of several products' stores as one: Lathe's tables, kinds and relations once, each product's own kinds
+ * and relations added, and the pairs a product adds to one of Lathe's relations joined. A product's own table comes
+ * after the tables it points at in the load order, as in its own schema.
+ */
+export function joinSchemas(schemas: SchemaDescription[]): SchemaDescription {
+  const [first, ...rest] = schemas;
+  const joined: SchemaDescription = {
+    tables: { ...first.tables },
+    loadOrder: [...first.loadOrder],
+    kinds: { ...first.kinds },
+    relations: Object.fromEntries(Object.entries(first.relations).map(([name, r]) => [name, { ...r, pairs: [...r.pairs] }])),
+    supertypes: Object.fromEntries(Object.entries(first.supertypes).map(([name, members]) => [name, [...members]])),
+    stages: first.stages,
+  };
+  for (const schema of rest) {
+    for (const [name, table] of Object.entries(schema.tables)) joined.tables[name] ??= table;
+    for (const name of schema.loadOrder) if (!joined.loadOrder.includes(name)) joined.loadOrder.push(name);
+    for (const [name, kind] of Object.entries(schema.kinds)) joined.kinds[name] ??= kind;
+    for (const [name, relation] of Object.entries(schema.relations)) {
+      const known = joined.relations[name];
+      if (!known) { joined.relations[name] = { ...relation, pairs: [...relation.pairs] }; continue; }
+      for (const pair of relation.pairs) if (!known.pairs.some((p) => p.source === pair.source && p.target === pair.target)) known.pairs.push(pair);
+    }
+    for (const [name, members] of Object.entries(schema.supertypes)) {
+      const known = (joined.supertypes[name] ??= []);
+      for (const member of members) if (!known.includes(member)) known.push(member);
+    }
+  }
+  return joined;
+}
+
+/** A folder as the workspace names it: from its root, written with /. */
+const fromWorkspace = (workspace: string, dir: string) => path.relative(workspace, dir).split(path.sep).join('/') || '.';
+
+/** Every product the workspace shows, each from its own store, as one SpecData. */
 async function specData(root: string): Promise<SpecData> {
-  const config = loadConfig(root);
-  return withStore(config.root, async (opened) => {
+  const products = workspaceProducts(root);
+  const read = await Promise.all(products.map((config) => withStore(config.root, async (opened) => {
     opened.checks ??= checksOf(config.root);
-    const { problems, exceptions, coverage } = await opened.checks;
     return {
+      root: config.root,
       schema: opened.store.schema,
-      dataDir: path.relative(config.root, config.dataDir).split(path.sep).join('/'),
-      tables: tablesOf(opened.store),
+      source: { dataDir: fromWorkspace(products[0].root, config.dataDir), tables: tablesOf(opened.store) },
       placements: await opened.store.placements(),
-      problems,
-      exceptions,
-      coverage,
+      checked: await opened.checks,
     };
-  });
+  })));
+  const clash = productClash(products[0].root, read.map((r) => ({ root: r.root, ids: (r.source.tables.product ?? []).map((p) => String(p.id)) })));
+  if (clash) throw new Error(clash);
+  return {
+    schema: joinSchemas(read.map((r) => r.schema)),
+    sources: read.map((r) => r.source),
+    placements: Object.assign({}, ...read.map((r) => r.placements)),
+    problems: read.flatMap((r) => r.checked.problems),
+    exceptions: read.flatMap((r) => r.checked.exceptions),
+    coverage: read.flatMap((r) => r.checked.coverage),
+  };
 }
 
 // ---------- Writing ----------
@@ -239,8 +284,56 @@ function rowChanges(store: Store, before: Map<string, Row[]>, tables: string[]):
   return changes;
 }
 
-async function write(root: string, commands: Command[]): Promise<{ status: number; answer: WriteAnswer }> {
-  const config = loadConfig(root);
+/** The IDs and key values a command names, the record it changes first: what tells whose product it is. */
+function namedIds(command: Command): string[] {
+  const keyValues = (key: string | Record<string, unknown>) => (typeof key === 'string' ? [key] : Object.values(key).filter((v): v is string => typeof v === 'string'));
+  switch (command.op) {
+    case 'add': {
+      const { row } = command;
+      const ids = Object.entries(row).filter(([column]) => column === 'id' || column.endsWith('_id')).map(([, v]) => v);
+      return [row.id, ...ids].filter((v): v is string => typeof v === 'string');
+    }
+    case 'set':
+    case 'remove':
+      return keyValues(command.key);
+    case 'move':
+      return [command.id, command.parent];
+    case 'link':
+    case 'unlink':
+      return [command.source, command.target];
+  }
+}
+
+/**
+ * The product root a write goes to: the one whose store holds a record, or a product whose ID starts one, the
+ * commands name. A write naming none of them, such as a new product's, goes to the workspace's own folder; one naming
+ * records of two products is refused.
+ */
+async function writeRoot(products: LatheConfig[], commands: Command[]): Promise<{ root: string } | { refused: string }> {
+  const known = await Promise.all(products.map((config) => withStore(config.root, async (opened) => ({
+    root: config.root,
+    has: (id: string) => opened.store.record(id) !== undefined,
+    products: opened.store.rows('product').map((p) => String(p.id)),
+  }))));
+  const ownerOf = (id: string) =>
+    known.find((k) => k.has(id))?.root ?? known.find((k) => k.products.some((p) => id === p || id.startsWith(`${p}-`)))?.root;
+  const roots = new Set<string>();
+  for (const command of commands) {
+    const root = namedIds(command).map(ownerOf).find((r) => r !== undefined);
+    if (root) roots.add(root);
+  }
+  if (roots.size > 1) {
+    const folders = [...roots].map((r) => (r === products[0].root ? "the workspace's own folder" : fromWorkspace(products[0].root, r))).join(' and ');
+    return { refused: `A write changes one product: these commands name records in ${folders}. Send each product's commands as a write of its own.` };
+  }
+  return { root: [...roots][0] ?? products[0].root };
+}
+
+async function write(workspace: string, commands: Command[]): Promise<{ status: number; answer: WriteAnswer }> {
+  const products = workspaceProducts(workspace);
+  const routed = products.length === 1 ? { root: products[0].root } : await writeRoot(products, commands);
+  if ('refused' in routed) return { status: 422, answer: { ok: false, error: routed.refused, problems: [] } };
+  const config = products.find((p) => p.root === routed.root)!;
   return withStore(config.root, async (opened) => {
     const { store } = opened;
     const before = new Map(Object.keys(store.schema.tables).filter((t) => store.schema.tables[t].stored).map((t) => [t, store.rows(t)]));
@@ -312,9 +405,16 @@ export async function handleApi(root: string, req: IncomingMessage, res: ServerR
     if (!id) return (send(res, 400, { error: 'Give a record ID: /api/history?id=<ID>.' }), true);
     if (!Number.isInteger(skip) || skip < 0) return (send(res, 400, { error: 'skip is a whole number.' }), true);
     try {
-      const config = loadConfig(root);
-      const schema = await withStore(config.root, async (opened) => ({ schema: opened.store.schema, kind: opened.store.record(id)?.kind }));
-      const answer = await recordHistory(config.root, config.dataDir, schema.schema, id, schema.kind, skip);
+      // The record's history is in its own product's folder: the first product whose store holds it.
+      const products = workspaceProducts(root);
+      let found: { config: LatheConfig; schema: SchemaDescription; kind: string | undefined } | undefined;
+      for (const config of products) {
+        const seen = await withStore(config.root, async (opened) => ({ config, schema: opened.store.schema, kind: opened.store.record(id)?.kind }));
+        found ??= seen;
+        if (seen.kind) { found = seen; break; }
+      }
+      const { config, schema, kind } = found!;
+      const answer = await recordHistory(config.root, config.dataDir, schema, id, kind, skip);
       send(res, answer.state === 'no-record' ? 404 : 200, answer, { 'cache-control': 'no-store' });
     } catch (error) {
       send(res, 500, { error: storeMessage(error) });
@@ -324,8 +424,11 @@ export async function handleApi(root: string, req: IncomingMessage, res: ServerR
   return false;
 }
 
-/** The folders whose changes should make open pages reload, and the event each sends: the product's data and Lathe's (its checks). */
+/**
+ * The folders whose changes should make open pages reload, and the event each sends: the data folder of every product
+ * the workspace shows, and Lathe's (its checks).
+ */
 export function watchTargets(root: string): { dir: string; event: 'spec:changed' }[] {
-  const config = loadConfig(root);
-  return [...new Set([config.dataDir, LATHE_DATA_DIR])].map((dir) => ({ dir, event: 'spec:changed' as const }));
+  const dirs = workspaceProducts(root).map((config) => config.dataDir);
+  return [...new Set([...dirs, LATHE_DATA_DIR])].map((dir) => ({ dir, event: 'spec:changed' as const }));
 }

@@ -26,8 +26,8 @@ npm --prefix lathe install && npm --prefix app install && npm --prefix desktop i
 
 | What | Command |
 | --- | --- |
-| The web app, for working on Lathe | `npm --prefix app run dev` serves this repo at http://localhost:5199 and reloads as the data or app code change. `LATHE_ROOT=/path/to/product` points it at another product repo; `-- --port <n>` picks another port. |
-| Check the spec | `npm --prefix lathe run check` prints errors, warnings and coverage, and exits 1 on any error. |
+| The web app, for working on Lathe | `npm --prefix app run dev` serves this repo at http://localhost:5199 and reloads as the data or app code change. with the Tool Library beside Lathe, as this repo's `lathe.config.json` lists it under `products`. `LATHE_ROOT=/path/to/product` points it at another product repo (or workspace); `-- --port <n>` picks another port. |
+| Check the spec | `npm --prefix lathe run check` checks Lathe's spec and the Tool Library's, each on its own, prints errors, warnings and coverage, and exits 1 on any error. |
 | Change the spec | `npm --prefix lathe run lathe -- add <table> --root .. --<column> <value> ...`, and `set`, `move`, `link`, `unlink` and `remove`, through the command layer; or edit a record in the app. `lathe help` lists them. |
 | The reference | `npm --prefix lathe run reference` regenerates [lathe/REFERENCE.md](lathe/REFERENCE.md): stage by stage, every kind with its table, its checks and its coverage gaps, then every relation. |
 | Serve a built app | `npm --prefix lathe run build`, then `npm --prefix lathe run lathe -- serve --root ..` serves the built app at http://127.0.0.1:5330. |
@@ -49,7 +49,7 @@ Lathe's schema has a version (in [lathe/schema/version.json](lathe/schema/versio
 
 ## A tour of the app
 
-- **Spaces.** Each product is a space. The rail at the far left of the nav has one icon per product; Alt+1 to Alt+9 switch between them. The nav, quick find and Checks follow the current space.
+- **Spaces.** Each product is a space. A workspace shows its own product and each one its `lathe.config.json` lists under `products`. With two or more, the rail at the far left of the nav has one icon per product, and Alt+1 to Alt+9 switch between them; with one there is no rail. The nav, quick find and Checks follow the current space.
 - **The nav's stages.** Under each domain, the nav follows the schema's stages: domain model, use cases, interaction design, technical specification and test plan. Discovery, the first stage, holds the product's business outcomes, which the product page lists first and Shared holds in the nav.
 - **Views.** A record, group, domain or product page opens in one or more views side by side: **Wiki** (the record as a page: its body, fields, children, links in and out, and problems; a domain page adds its stages, coverage and open questions), **Graph** (the records around it as boxes and arrows, by level), and **Model** (on a domain, aggregate or entity page: the entity-relationship diagram of a domain's aggregates and their entities, or of one aggregate). Toggle them from the page bar or with Ctrl+W, Ctrl+G and Ctrl+M (Alt off a Mac); Ctrl+3 makes the focused view full screen. The address names the open views (`?view=wiki,graph`), so a link opens as it was seen.
 - **Tabs.** Each space keeps its own tabs, as VS Code's editors: a new page opens in the preview tab (italic) until you keep it (double-click, or Ctrl+K Enter). Ctrl+Tab cycles; Alt+Shift+W closes.

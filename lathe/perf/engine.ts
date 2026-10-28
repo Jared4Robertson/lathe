@@ -17,7 +17,7 @@ import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, 
 import { loadavg, tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { buildReference, loadWorkspace, openStore, sortRows, tableText, type LoadTimings, type Row } from '../src/index.ts';
+import { buildReference, CONFIG_FILE, loadWorkspace, openStore, SCHEMA_VERSION, sortRows, tableText, type LoadTimings, type Row } from '../src/index.ts';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repo = path.resolve(here, '../..');
@@ -64,6 +64,8 @@ async function syntheticProduct(): Promise<{ root: string }> {
   );
   const namesDropped = (row: Row) => Object.values(row).some((v) => typeof v === 'string' && dropped.has(v));
   mkdirSync(path.join(root, 'data'));
+  // Its config names this Lathe's schema version, as the copied data is for it.
+  writeFileSync(path.join(root, CONFIG_FILE), `${JSON.stringify({ schema: SCHEMA_VERSION })}\n`);
   for (const file of kept) {
     const table = schema.tables[file.slice(0, -'.jsonl'.length)];
     const own = readFileSync(path.join(source, file), 'utf8').split('\n').filter(Boolean).map((line) => JSON.parse(line) as Row).filter((row) => !namesDropped(row));

@@ -54,18 +54,19 @@ export function findDataFile(dataDir: string, id: string): string | null {
   return null;
 }
 
-/** Finds records' data files, reading the folder again when a record is not where it was last seen. */
+/** Finds records' data files in the workspace's data folders (one per product folder), reading them again when a record is not where it was last seen. */
 export class DataFiles {
   private readonly known = new Map<string, string>();
-  private readonly dataDir: string;
-  constructor(dataDir: string) {
-    this.dataDir = dataDir;
+  private readonly dataDirs: readonly string[];
+  constructor(dataDirs: readonly string[]) {
+    this.dataDirs = dataDirs;
   }
 
   find(id: string): string | null {
     const known = this.known.get(id);
     if (known && existsSync(known) && holds(readFileSync(known, 'utf8'), id)) return known;
-    const found = findDataFile(this.dataDir, id);
+    let found: string | null = null;
+    for (const dir of this.dataDirs) if ((found = findDataFile(dir, id))) break;
     if (found) this.known.set(id, found);
     else this.known.delete(id);
     return found;
