@@ -12,7 +12,15 @@ export interface LatheConfig {
   dataDir: string;
   /** The schema version the product's data is for; 1 when the config names none. */
   schema: number;
+  /** Globs, relative to the root, of the product's test files, which test-case-unnamed reads; DEFAULT_TESTS when the config names none. */
+  tests: string[];
 }
+
+/**
+ * The test files a product has when lathe.config.json names none: the common test and spec file names. node_modules,
+ * dist and the folders of another product (a folder with its own lathe.config.json) are never read, whatever the globs.
+ */
+export const DEFAULT_TESTS: readonly string[] = ['**/*.test.{ts,tsx,js,mjs}', '**/*.spec.{ts,tsx,js}'];
 
 /** The most children of one kind a record has before too-many-children warns, when the product has no product_setting row. */
 export const DEFAULT_MAX_CHILDREN = 15;
@@ -22,10 +30,12 @@ interface ConfigFile {
   schema?: unknown;
   /** The folder of data files, one <table>.jsonl per table; default data. */
   data?: unknown;
+  /** Globs of the product's test files; default DEFAULT_TESTS. */
+  tests?: unknown;
 }
 
 /** The keys lathe.config.json may hold; any other key is an error, never silently ignored. */
-const CONFIG_KEYS = ['schema', 'data'] as const;
+const CONFIG_KEYS = ['schema', 'data', 'tests'] as const;
 
 /** The installed Lathe package's own folder (holding schema/ and data/), from source or from dist. */
 export const PACKAGE_DIR = (() => {
@@ -101,5 +111,13 @@ export function readConfig(root: string): LatheConfig {
   if (config.schema !== undefined && (typeof config.schema !== 'number' || !Number.isInteger(config.schema) || config.schema < 1)) {
     throw new Error(`${CONFIG_FILE}: schema must be a whole number from 1, such as 1.`);
   }
-  return { root, dataDir: path.resolve(root, (config.data as string | undefined) ?? 'data'), schema: (config.schema as number | undefined) ?? 1 };
+  if (config.tests !== undefined && (!Array.isArray(config.tests) || config.tests.length === 0 || config.tests.some((t) => typeof t !== 'string' || t.trim() === ''))) {
+    throw new Error(`${CONFIG_FILE}: tests must list globs of the test files, such as ["**/*.test.ts"].`);
+  }
+  return {
+    root,
+    dataDir: path.resolve(root, (config.data as string | undefined) ?? 'data'),
+    schema: (config.schema as number | undefined) ?? 1,
+    tests: (config.tests as string[] | undefined) ?? [...DEFAULT_TESTS],
+  };
 }

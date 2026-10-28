@@ -1,11 +1,12 @@
 // The Lathe engine: loads a product's data/ folder through the store into the typed tables, runs the checks (rows of
 // the check table, Lathe's and the product's) against them, and computes coverage from views over them.
 import { existsSync, readdirSync, statSync } from 'node:fs';
-import { readFile, stat } from 'node:fs/promises';
+import { glob, readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import type { DuckDBConnection } from '@duckdb/node-api';
 import { COVERAGE_COUNTS_SQL, COVERAGE_GAPS_SQL, COVERAGE_PROOFS_SQL, COVERAGE_TESTS_SQL, PATTERN_RULE_STANDING_SQL, coverageViewsSql, FACT_TABLES_SQL, TEST_KINDS } from './coverage.ts';
-import { loadConfig } from './config.ts';
+import { CONFIG_FILE, loadConfig, readConfig } from './config.ts';
+import { readTestCases } from './test-cases.ts';
 import { orderChecks, referenceOf, type Reference } from './reference.ts';
 import { formatProblem, openStore, Store, StoreError, LATHE_DATA_DIR, type StoreOptions } from './store/store.ts';
 import { SCHEMA_DIR } from './store/schema.ts';
@@ -16,7 +17,7 @@ export type * from './types.ts';
 export type * from './reference.ts';
 export { renderReference, kindAnchor, tableAnchor, relationAnchor, stageAnchor, checkAnchor, gapAnchor, ENGINE_CHECKS } from './reference.ts';
 export { ALLOWED_LEVELS, GAP_RULES, OBLIGATION_COVERAGE, type GapRule } from './coverage.ts';
-export { loadConfig, readConfig, PACKAGE_DIR, CONFIG_FILE, DEFAULT_MAX_CHILDREN, SCHEMA_VERSION, SchemaVersionError, schemaVersionMessage, type LatheConfig } from './config.ts';
+export { loadConfig, readConfig, PACKAGE_DIR, CONFIG_FILE, DEFAULT_MAX_CHILDREN, DEFAULT_TESTS, SCHEMA_VERSION, SchemaVersionError, schemaVersionMessage, type LatheConfig } from './config.ts';
 export { upgradeProduct, readConverters, UPGRADES_DIR, type Converter, type ConverterStep, type RawData, type UpgradeNotes, type UpgradeResult } from './upgrade.ts';
 // The database-first store: the schema, loading data/*.jsonl, the command layer and the merge driver.
 export * from './store/index.ts';
@@ -55,6 +56,8 @@ interface FileFact {
   record: string;
   kind: string;
   file: string;
+  /** The file as a path from the product root with forward slashes; null when it lies outside the root. */
+  path: string | null;
   file_exists: boolean;
   /** Whether the file names the record's own ID as a whole ID; false when it is missing or a folder. */
   contains_id: boolean;
@@ -108,20 +111,55 @@ async function gatherFileFacts(root: string, store: Store): Promise<FileFact[]> 
   return Promise.all(named.map(async ({ kind, id, file }): Promise<FileFact> => {
     const { type, text } = await read(resolveInside(root, file));
     const exists = type === 'file' || (type === 'folder' && !tests.has(kind));
-    return { record: id, kind, file, file_exists: exists, contains_id: type === 'file' && mentionsId(text, id) };
+    const resolved = resolveInside(root, file);
+    return { record: id, kind, file, path: resolved && fromRoot(root, resolved), file_exists: exists, contains_id: type === 'file' && mentionsId(text, id) };
   }));
+}
+
+// A path under the root as a path from it with forward slashes, as test_case and file_facts.path hold it.
+const fromRoot = (root: string, resolved: string) => path.relative(root, resolved).split(path.sep).join('/');
+
+/** A test case in a test file, as test-case-unnamed reads it (test_case, with the IDs it names in test_case_id). */
+interface TestCaseFact {
+  file: string;
+  /** Its place among the file's test cases, from 1. */
+  position: number;
+  line: number;
+  name: string;
+  ids: string[];
+}
+
+// The test cases in the product's test files: the files matching the config's test globs (never in node_modules,
+// dist or another product's folder, one with its own lathe.config.json) and the files test records name, read as
+// text (test-cases.ts says what is recognized).
+async function gatherTestCases(root: string, globs: string[], facts: FileFact[]): Promise<TestCaseFact[]> {
+  const skip = (entry: string) => {
+    const name = path.basename(entry);
+    return name === 'node_modules' || name === 'dist' || (entry !== '' && entry !== '.' && existsSync(path.join(root, entry, CONFIG_FILE)));
+  };
+  const files = new Set<string>();
+  for await (const file of glob(globs, { cwd: root, exclude: skip })) files.add(String(file).split(path.sep).join('/'));
+  const tests = new Set(TEST_KINDS);
+  for (const f of facts) if (f.path !== null && f.file_exists && tests.has(f.kind)) files.add(f.path);
+  const read = await Promise.all([...files].sort().map(async (file) => {
+    const resolved = path.join(root, file);
+    if ((await entry(resolved)) !== 'file') return [];
+    return readTestCases(await readFile(resolved, 'utf8')).map((c, i): TestCaseFact => ({ file, position: i + 1, ...c }));
+  }));
+  return read.flat();
 }
 
 async function readRows<T>(connection: DuckDBConnection, sql: string): Promise<T[]> {
   return (await connection.runAndReadAll(sql)).getRowObjectsJson() as unknown as T[];
 }
 
-async function append(connection: DuckDBConnection, table: string, rows: (string | boolean | null)[][]) {
+async function append(connection: DuckDBConnection, table: string, rows: (string | number | boolean | null)[][]) {
   const appender = await connection.createAppender(table);
   for (const row of rows) {
     for (const value of row) {
       if (value === null) appender.appendNull();
       else if (typeof value === 'boolean') appender.appendBoolean(value);
+      else if (typeof value === 'number') appender.appendInteger(value);
       else appender.appendVarchar(value);
     }
     appender.endRow();
@@ -317,9 +355,12 @@ export async function readWorkspace(store: Store, root: string, timings?: Partia
   const order = await kindOrder(store);
   const read = await step('read records', () => readRecords(store, order));
   const facts = await step('file facts', () => gatherFileFacts(path.resolve(root), store));
+  const cases = await step('test cases', () => gatherTestCases(path.resolve(root), readConfig(root).tests, facts));
   const connection = store.connection;
   await connection.run(FACT_TABLES_SQL);
-  await append(connection, 'file_facts', facts.map((f) => [f.record, f.kind, f.file, f.file_exists, f.contains_id]));
+  await append(connection, 'file_facts', facts.map((f) => [f.record, f.kind, f.file, f.path, f.file_exists, f.contains_id]));
+  await append(connection, 'test_case', cases.map((c) => [c.file, c.position, c.line, c.name]));
+  await append(connection, 'test_case_id', cases.flatMap((c) => c.ids.map((id) => [c.file, c.position, id])));
   await step('coverage tables', () => connection.run(coverageViewsSql(store.schema)));
   lap('files');
   const scope = new Map(read.records.map((r) => [r.id, r.product]));

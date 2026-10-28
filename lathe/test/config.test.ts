@@ -1,9 +1,9 @@
 // lathe.config.json (LA-PLT-A10-REPO): it names the schema version and the data folder, and a setting Lathe does not
 // know is an error, never silently ignored.
-import { writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
-import { loadConfig, loadWorkspace, openStore, readConfig, SCHEMA_VERSION, SchemaVersionError, schemaVersionMessage } from '../src/index.ts';
+import { DEFAULT_TESTS, loadConfig, loadWorkspace, openStore, readConfig, SCHEMA_VERSION, SchemaVersionError, schemaVersionMessage } from '../src/index.ts';
 import { removeData, writeData } from './helpers.ts';
 
 afterAll(removeData);
@@ -23,6 +23,25 @@ describe('product configuration', () => {
     const root = writeData({});
     writeFileSync(path.join(root, 'lathe.config.json'), JSON.stringify({ data: 'spec-data' }));
     expect(loadConfig(root).dataDir).toBe(path.join(root, 'spec-data'));
+  });
+
+  it("LA-PLT-UC02-R07-T01 the config's tests globs choose the test files; node_modules, dist and another product's folder are never read", async () => {
+    const root = writeData({ product: [{ id: 'TL', title: 'Tool Library' }] });
+    const unnamed = "it('proves nothing anyone can find', () => {});\n";
+    for (const file of ['test/a.test.ts', 'checks/b.check.ts', 'node_modules/x/c.test.ts', 'dist/d.test.ts', 'other/test/e.test.ts']) {
+      mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
+      writeFileSync(path.join(root, file), unnamed);
+    }
+    writeFileSync(path.join(root, 'other', 'lathe.config.json'), JSON.stringify({ data: 'data' }));
+    const files = async () => (await loadWorkspace(root)).problems.filter((p) => p.check === 'test-case-unnamed').map((p) => p.message.split(':')[0]);
+    expect(loadConfig(root).tests).toEqual([...DEFAULT_TESTS]);
+    expect(await files()).toEqual(['test/a.test.ts']);
+    writeFileSync(path.join(root, 'lathe.config.json'), JSON.stringify({ data: 'data', tests: ['checks/**/*.ts', '**/*.test.ts'] }));
+    expect(await files()).toEqual(['checks/b.check.ts', 'test/a.test.ts']);
+    for (const tests of ['**/*.test.ts', [], [''], [3]]) {
+      writeFileSync(path.join(root, 'lathe.config.json'), JSON.stringify({ tests }));
+      expect(() => loadConfig(root)).toThrow(/tests must list globs/);
+    }
   });
 
   it('LA-PLT-UC17-R01-T01 a product whose data is for another schema version stops every load with what to do', async () => {
