@@ -155,8 +155,8 @@
 {"id":"LA-EXP-UC10-FL-S05","title":"They close a tab by its button, a middle-click or Alt+Shift+W","flow_id":"LA-EXP-UC10-FL","path":"main","position":5}
 {"id":"LA-EXP-UC10-FL-S06","title":"A reload brings back each space's tabs as they were","flow_id":"LA-EXP-UC10-FL","path":"main","position":6}
 {"id":"LA-EXP-UC11-FL-S01","title":"On a domain, aggregate or entity page the reader opens the Model view","flow_id":"LA-EXP-UC11-FL","path":"main","position":1}
-{"id":"LA-EXP-UC11-FL-S02","title":"A domain's ERD shows its aggregates, the reference lines between them and which hear which aggregates' events","flow_id":"LA-EXP-UC11-FL","path":"main","position":2}
-{"id":"LA-EXP-UC11-FL-S03","title":"They click an aggregate's box: its entities with their fields, its events and the faded ring around it","flow_id":"LA-EXP-UC11-FL","path":"main","position":3}
+{"id":"LA-EXP-UC11-FL-S02","title":"A domain's ERD shows its aggregates as boundaries around their entities, and the relationship and reference lines between them","flow_id":"LA-EXP-UC11-FL","path":"main","position":2}
+{"id":"LA-EXP-UC11-FL-S03","title":"They click an aggregate's box: its entities with their fields, and the aggregates around it faded","flow_id":"LA-EXP-UC11-FL","path":"main","position":3}
 {"id":"LA-EXP-UC11-FL-S04","title":"On an entity the same ERD picks it out","flow_id":"LA-EXP-UC11-FL","path":"main","position":4}
 {"id":"LA-EXP-UC11-FL-S05","title":"They read the key under the diagram","flow_id":"LA-EXP-UC11-FL","path":"main","position":5}
 {"id":"LA-EXP-UC12-FL-S01","title":"In the Graph view the side bar is open on Details, and follows the pointer over the boxes","flow_id":"LA-EXP-UC12-FL","path":"main","position":1}

@@ -1,16 +1,18 @@
 import './graph/setup';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { aggregateErd, domainErd, endPath, erdFor, lineGeometry } from '../src/model/erd';
-import { erdGraph } from '../src/model/layout';
+import { aggregateErd, domainErd, endPath, erdFor, lineGeometry, lineOffsets } from '../src/model/erd';
+import { erdGraph, layoutErd } from '../src/model/layout';
+import { ErdKey, FIT_MARGIN, fitRects, lineWords } from '../src/model/ModelView';
 import { viewsOffered, viewsShown } from '../src/views/address';
 import { openApp } from './helpers';
 import { modelIndex, modelWorkspace } from './fixtures/model';
 
-// The Model view: a domain's aggregates with what sits around them, and an aggregate's entities with
-// its commands, events and policies, in event storming colors; offered on the kinds it draws.
+// The Model view: the entity-relationship diagram of a domain (its aggregates as boundaries around their
+// entities) or of an aggregate (with the aggregates it references, or that reference it, faded around it);
+// offered on domain, aggregate and entity pages.
 
 const served = () => ({ data: modelWorkspace() });
 const index = () => modelIndex();
@@ -19,15 +21,16 @@ const box = (id: string) => modelPane().querySelector<HTMLElement>(`.react-flow_
 const boxesShown = () => waitFor(() => expect(modelPane().querySelectorAll('.react-flow__node').length).toBeGreaterThan(0));
 const viewToggle = (name: string) => within(screen.getByRole('group', { name: 'View' })).queryByRole('button', { name });
 const CSS = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
-const lineIds = (erd: { lines: { id: string }[] }) => erd.lines.map((l) => l.id).sort();
+const ends = (erd: { lines: { id: string; sourceEnd: string; targetEnd: string; dashed: boolean }[] }) =>
+  Object.fromEntries(erd.lines.map((l) => [l.id, `${l.sourceEnd}-${l.targetEnd}${l.dashed ? ' dashed' : ''}`]));
 
 describe('the Model view', () => {
   const proveLaExpSp02T = async () => {
     const i = index();
-    for (const id of ['P-D', 'P-D-A3', 'P-D-EN03', 'P-D-CMD01', 'P-D-EV01', 'P-D-PO01', 'P-D-RM01', 'P-D-QRY01', 'P-D-SP01']) {
-      expect(viewsOffered(i, id)).toEqual(['wiki', 'graph', 'model']);
+    for (const id of ['P-D', 'P-D-A3', 'P-D-EN03']) expect(viewsOffered(i, id)).toEqual(['wiki', 'graph', 'model']);
+    for (const id of ['P', 'P-D-UC01', 'P-VO01', 'P-D-UC01-FL', 'P-D-CMD01', 'P-D-EV01', 'P-D-PO01', 'P-D-RM01', 'P-D-QRY01', 'P-D-SP01']) {
+      expect(viewsOffered(i, id)).toEqual(['wiki', 'graph']);
     }
-    for (const id of ['P', 'P-D-UC01', 'P-VO01', 'P-D-UC01-FL']) expect(viewsOffered(i, id)).toEqual(['wiki', 'graph']);
     expect(viewsShown(['graph', 'model'], ['wiki', 'graph'])).toEqual(['graph']);
     expect(viewsShown(['model'], ['wiki', 'graph'])).toEqual(['wiki']);
 
@@ -49,97 +52,91 @@ describe('the Model view', () => {
     fireEvent.keyDown(document.body, { key: 'm', code: 'KeyM', altKey: true });
     expect(window.location.search).toBe('?view=wiki,graph');
   };
-  it('LA-EXP-SP02-T Model is offered on a domain and the kinds of its model, opens as a third pane after Wiki and Graph, and an address naming it elsewhere drops it', proveLaExpSp02T);
-  it('LA-V96-R18-T01 Model is offered only on a domain and the kinds of its model, as the third pane', proveLaExpSp02T);
+  it('LA-EXP-SP02-T The Model view is offered only on domain, aggregate and entity pages, opens after Wiki and Graph, and an address naming it elsewhere drops it', proveLaExpSp02T);
+  it('LA-V96-R18-T01 The Model view is offered only on domain, aggregate and entity pages, opens after Wiki and Graph, and an address naming it elsewhere drops it', proveLaExpSp02T);
 
   const proveLaV94R02T01 = async () => {
     const erd = domainErd(index(), 'P-D');
     const byId = new Map(erd.boxes.map((b) => [b.id, b]));
-    expect(erd.boxes.filter((b) => b.kind === 'aggregate' && !b.context).map((b) => b.id)).toEqual(['P-D-A1', 'P-D-A2', 'P-D-A3', 'P-D-A4']);
-    expect(byId.get('P-D-A3')).toMatchObject({
-      tone: 'current',
-      entities: [{ id: 'P-D-EN03', title: 'Loan', root: true }, { id: 'P-D-EN04', title: 'Return', root: false }, { id: 'P-D-EN05', title: 'Reminder', root: false }],
-      valueObjects: [],
+    // Entities and aggregates only: no command, event, policy, specification, read model or query.
+    expect([...new Set(erd.boxes.map((b) => b.kind))].sort()).toEqual(['aggregate', 'entity']);
+    expect(erd.boxes.filter((b) => b.kind === 'aggregate' && b.boundary).map((b) => b.id)).toEqual(['P-D-A1', 'P-D-A2', 'P-D-A3', 'P-D-A4']);
+    expect(erd.boxes.filter((b) => b.parent === 'P-D-A3').map((b) => [b.id, b.root])).toEqual([['P-D-EN03', true], ['P-D-EN04', false], ['P-D-EN05', false]]);
+    expect(byId.get('P-D-EN03')!.fields).toEqual([{ field: 'Loan ID', kind: 'whole number' }, { field: 'Thing', kind: '→ Thing' }, { field: 'Member', kind: '→ Member' }, { field: 'Due date', kind: 'date' }]);
+    expect(byId.get('P-D-EN01')!.fields).toContainEqual({ field: 'Name', kind: 'Name' });
+    // Another domain's aggregate: a closed box, gray and faded, labeled with its domain.
+    expect(byId.get('P-E-A1')).toMatchObject({ kind: 'aggregate', boundary: false, tone: 'other', owner: 'Accounts', context: true });
+    // Has one and has many between entities, with crow's feet; a dashed reference from the field's entity to the other aggregate's root.
+    expect(ends(erd)).toEqual({
+      'P-D-EN03|has_one|P-D-EN04': 'one-one',
+      'P-D-EN03|has_many|P-D-EN05': 'one-many',
+      'P-D-EN02|references|P-E-A1': 'none-arrow dashed',
+      'P-D-EN03|references|P-D-EN01': 'none-arrow dashed',
+      'P-D-EN03|references|P-D-EN02': 'none-arrow dashed',
+      'P-D-EN05|references|P-D-EN02': 'none-arrow dashed',
+      'P-D-EN06|references|P-D-EN01': 'none-arrow dashed',
     });
-    expect(byId.get('P-D-A1')).toMatchObject({ valueObjects: ['Name'] });
-    // Another domain's aggregate and its published event: gray, faded, named in parentheses.
-    expect(byId.get('P-E-A1')).toMatchObject({ kind: 'aggregate', tone: 'other', owner: '(Accounts)', foreign: true, context: true });
-    expect(byId.get('P-E-EV01')).toMatchObject({ kind: 'event', tone: 'other', context: true });
-    expect(Object.fromEntries(erd.boxes.filter((b) => b.kind !== 'aggregate').map((b) => [b.id, b.kind]))).toEqual({
-      'P-D-CMD01': 'command', 'P-D-CMD02': 'command', 'P-D-CMD03': 'command', 'P-D-CMD04': 'command', 'P-D-CMD05': 'command',
-      'P-D-EV01': 'event', 'P-D-EV02': 'event', 'P-D-EV03': 'event', 'P-E-EV01': 'event',
-      'P-D-PO01': 'policy', 'P-D-PO02': 'policy', 'P-D-SP01': 'specification', 'P-D-RM01': 'read_model', 'P-D-QRY01': 'query',
-    });
-    // References: one line per pair, many to one, with the fields that refer.
-    const refs = erd.lines.filter((l) => l.relation === 'refers_to');
-    expect(refs.map((l) => [l.id, l.sourceEnd, l.targetEnd, l.via])).toEqual([
-      ['P-D-A2|refers_to|P-E-A1', 'many', 'one', ['Member.Account']],
-      ['P-D-A3|refers_to|P-D-A1', 'many', 'one', ['Loan.Thing']],
-      ['P-D-A3|refers_to|P-D-A2', 'many', 'one', ['Loan.Member', 'Reminder.Member']],
-      ['P-D-A4|refers_to|P-D-A1', 'many', 'one', ['Shelf.Thing']],
-    ]);
-    // The event storming loop: policy invokes command, command changes its aggregate and raises events, a policy hears an event.
-    expect(lineIds(erd)).toEqual(expect.arrayContaining([
-      'P-D-PO02|invokes|P-D-CMD05', 'P-D-CMD05|changes|P-D-A1', 'P-D-CMD01|raises|P-D-EV01', 'P-D-EV01|hears|P-D-PO02',
-      'P-E-EV01|hears|P-D-PO01', 'P-D-CMD02|also_changes|P-D-A1', 'P-D-CMD01|checks|P-D-SP01', 'P-D-SP01|reads|P-D-A2',
-      'P-D-SP01|reads|P-D-A3', 'P-D-A1|reads|P-D-RM01', 'P-D-RM01|queries|P-D-QRY01',
-    ]));
-    const hears = erd.lines.find((l) => l.id === 'P-D-EV01|hears|P-D-PO02')!;
-    expect(hears).toMatchObject({ dashed: true, reversed: true, sourceEnd: 'none', targetEnd: 'arrow' });
-    // Events sit after their aggregate in the layout.
-    expect(erdGraph(erd).edges).toEqual(expect.arrayContaining([expect.objectContaining({ sources: ['P-D-A3'], targets: ['P-D-EV01'] })]));
+    expect(erd.lines.find((l) => l.id === 'P-D-EN02|references|P-E-A1')).toMatchObject({ via: ['Member.Account'], context: true });
+    // The top level lays out the boundaries along the references between them.
+    const sizes = new Map<string, { width: number; height: number }>();
+    expect(erdGraph(erd, sizes).edges).toEqual(expect.arrayContaining([expect.objectContaining({ sources: ['P-D-A3'], targets: ['P-D-A2'] })]));
+    expect(erdGraph(erd, sizes).children!.map((c) => c.id)).toEqual(['P-D-A1', 'P-D-A2', 'P-D-A3', 'P-D-A4', 'P-E-A1']);
+    // Each entity sits inside its boundary, below its head.
+    const rects = await layoutErd(erd);
+    for (const b of erd.boxes.filter((x) => x.parent)) {
+      const r = rects.get(b.id)!;
+      const at = rects.get(b.parent!)!;
+      expect(r.x).toBeGreaterThanOrEqual(at.x);
+      expect(r.y).toBeGreaterThan(at.y + 30);
+      expect(r.x + r.width).toBeLessThanOrEqual(at.x + at.width);
+      expect(r.y + r.height).toBeLessThanOrEqual(at.y + at.height);
+    }
 
     await openApp('/P-D?view=model', served());
     await screen.findByRole('heading', { level: 1, name: 'Domain' });
     await boxesShown();
     expect(box('P-D-A3')!.querySelector('.erd-box')).toHaveClass('erd-aggregate', 'tone-current');
-    expect(within(box('P-D-A3')!).getByRole('list', { name: 'Entities of Loan' })).toHaveTextContent('LoanrootReturnReminder');
-    expect(box('P-D-A1')).toHaveTextContent('Value objects: Name');
-    expect(box('P-D-CMD01')!.querySelector('.erd-box')).toHaveClass('erd-command');
-    expect(box('P-D-PO01')!.querySelector('.erd-box')).toHaveClass('erd-policy');
+    expect(box('P-D-A3')).toHaveAttribute('aria-label', 'Aggregate Loan');
+    expect(box('P-D-EN03')).toHaveAttribute('aria-label', 'Entity Loan, root');
+    expect(within(box('P-D-EN03')!).getByRole('list', { name: 'Fields of Loan' })).toHaveTextContent('Thing→ Thing');
     expect(box('P-E-A1')).toHaveClass('is-context');
-    expect(box('P-E-A1')).toHaveTextContent('(Accounts)');
+    expect(box('P-E-A1')).toHaveTextContent('Aggregate · Accounts');
+    expect(modelPane().querySelector('.erd-command, .erd-event, .erd-policy')).toBeNull();
     await waitFor(() => expect(modelPane().querySelectorAll('.erd-line')).toHaveLength(erd.lines.length));
-    expect(modelPane().querySelector('[data-line="P-D-EV01|hears|P-D-PO02"]')).toHaveClass('is-dashed', 'has-hover-label');
-    expect(modelPane().querySelector('[data-line="P-D-EV01|hears|P-D-PO02"] title')).toHaveTextContent('When a loan opens, mark the thing lent hears Loan opened');
-    expect(modelPane().querySelector('[data-line="P-D-A3|refers_to|P-D-A2"] title')).toHaveTextContent('Loan refers to Member (Loan.Member; Reminder.Member)');
+    expect(modelPane().querySelector('[data-line="P-D-EN03|references|P-D-EN02"]')).toHaveClass('is-dashed', 'has-hover-label');
+    expect(modelPane().querySelector('[data-line="P-D-EN03|references|P-D-EN02"] title')).toHaveTextContent('Loan references by ID Member (Loan.Member)');
+    expect(modelPane().querySelector('[data-line="P-D-EN03|has_many|P-D-EN05"] title')).toHaveTextContent('Loan has many Reminder');
   };
-  it('LA-V94-R02-T01 A domain\'s model draws each aggregate with its entities and value objects, one many-to-one line per aggregate it refers to, and the commands, events, policies, specifications, read models and queries around them', proveLaV94R02T01);
-  it('LA-V94-R01-T01 A domain\'s model draws its aggregates, the lines between them and their records', proveLaV94R02T01);
+  it('LA-V94-R02-T01 A domain\'s ERD draws each aggregate as a boundary around its entities with their fields, has one and has many lines with crow\'s feet, and a dashed reference from an entity to another aggregate\'s root', proveLaV94R02T01);
+  it('LA-V94-R01-T01 A domain\'s ERD draws a referenced aggregate of another domain as a closed box, gray and faded, labeled with its domain', proveLaV94R02T01);
 
   const proveLaV94R03T01 = async () => {
     const erd = aggregateErd(index(), 'P-D-A3');
     const byId = new Map(erd.boxes.map((b) => [b.id, b]));
-    expect(byId.get('P-D-EN03')).toMatchObject({
-      root: true,
-      fields: [{ field: 'Loan ID', kind: 'whole number' }, { field: 'Thing', kind: '→ Thing' }, { field: 'Member', kind: '→ Member' }, { field: 'Due date', kind: 'date' }],
-    });
-    expect(byId.get('P-D-A1')).toMatchObject({ kind: 'aggregate', context: true, tone: 'current' });
-    expect(byId.get('P-D-EV01')).toMatchObject({ kind: 'event', context: false, fields: [{ field: 'Loan', kind: '→ Loan' }, { field: 'Thing', kind: '→ Thing' }] });
-    // A policy elsewhere hearing its event is faded context; so is the aggregate a recorded exception also changes.
-    expect(byId.get('P-D-PO02')).toMatchObject({ kind: 'policy', context: true });
-    const ends = Object.fromEntries(erd.lines.map((l) => [l.id, `${l.sourceEnd}-${l.targetEnd}`]));
-    expect(ends).toMatchObject({
+    expect(byId.get('P-D-A3')).toMatchObject({ boundary: true, context: false });
+    expect(byId.get('P-D-EN03')).toMatchObject({ root: true, parent: 'P-D-A3' });
+    // The aggregates it references: closed boxes, faded.
+    expect(byId.get('P-D-A1')).toMatchObject({ kind: 'aggregate', boundary: false, context: true, tone: 'current' });
+    expect(erd.boxes.map((b) => b.id)).toEqual(['P-D-A3', 'P-D-EN03', 'P-D-EN04', 'P-D-EN05', 'P-D-A1', 'P-D-A2']);
+    expect(ends(erd)).toEqual({
       'P-D-EN03|has_one|P-D-EN04': 'one-one',
       'P-D-EN03|has_many|P-D-EN05': 'one-many',
-      'P-D-EN03|refers_to|P-D-A1': 'many-one',
-      'P-D-EN05|refers_to|P-D-A2': 'many-one',
-      'P-D-CMD01|changes|P-D-EN03': 'none-arrow',
-      'P-D-CMD01|raises|P-D-EV01': 'none-arrow',
-      'P-D-CMD02|also_changes|P-D-A1': 'none-arrow',
-      'P-D-CMD01|checks|P-D-SP01': 'none-arrow',
-      'P-D-EV01|hears|P-D-PO02': 'none-arrow',
+      'P-D-EN03|references|P-D-A1': 'none-arrow dashed',
+      'P-D-EN03|references|P-D-A2': 'none-arrow dashed',
+      'P-D-EN05|references|P-D-A2': 'none-arrow dashed',
     });
-    expect(erd.lines.find((l) => l.relation === 'also_changes')).toMatchObject({ dashed: true, via: ['The thing must be lendable again in the same transaction as its return.'] });
     // A crow's foot has three prongs and a bar; one is two bars; an arrow one stroke.
     expect(endPath({ x: 0, y: 0 }, { x: 100, y: 0 }, 'many').match(/M/g)).toHaveLength(4);
     expect(endPath({ x: 0, y: 0 }, { x: 100, y: 0 }, 'one').match(/M/g)).toHaveLength(2);
     expect(endPath({ x: 0, y: 0 }, { x: 100, y: 0 }, 'arrow').match(/M/g)).toHaveLength(1);
     expect(endPath({ x: 0, y: 0 }, { x: 100, y: 0 }, 'none')).toBe('');
-    // Lines run from box edge to box edge.
-    const g = lineGeometry({ x: 0, y: 0, width: 100, height: 50 }, { x: 300, y: 0, width: 100, height: 50 }, ['many', 'one']);
+    // Lines run from box edge to box edge, and lines between the same two boxes fan out.
+    const g = lineGeometry({ x: 0, y: 0, width: 100, height: 50 }, { x: 300, y: 0, width: 100, height: 50 }, ['one', 'many']);
     expect(g.from).toEqual({ x: 100, y: 25 });
     expect(g.to).toEqual({ x: 300, y: 25 });
+    const line = erd.lines[0];
+    const offsets = lineOffsets([{ ...line, id: 'a' }, { ...line, id: 'b' }]);
+    expect(offsets.get('a')).not.toBe(offsets.get('b'));
 
     await openApp('/P-D-A3?view=model', served());
     await screen.findByRole('heading', { level: 1, name: 'Loan' });
@@ -148,45 +145,37 @@ describe('the Model view', () => {
     expect(within(loan).getByText('root')).toHaveClass('erd-root');
     const fields = within(within(loan).getByRole('list', { name: 'Fields of Loan' })).getAllByRole('listitem').map((li) => li.textContent);
     expect(fields).toEqual(['Loan IDwhole number', 'Thing→ Thing', 'Member→ Member', 'Due datedate']);
-    expect(box('P-D-EV01')!.querySelector('.erd-box')).toHaveClass('erd-event');
-    expect(box('P-D-EV01')).toHaveAttribute('aria-label', 'Domain event Loan opened');
     expect(box('P-D-A1')).toHaveClass('is-context');
     await waitFor(() => expect(modelPane().querySelector('[data-line="P-D-EN03|has_many|P-D-EN05"]')).toHaveAttribute('data-ends', 'one-many'));
   };
-  it('LA-V94-R03-T01 An aggregate\'s model shows each entity\'s title, root mark and fields with their types, crow\'s-foot ends by cardinality, the aggregates it refers to faded, and its commands, events and policies', proveLaV94R03T01);
-  it('LA-V94-R01-T02 An aggregate\'s model shows its entities with their fields and crow\'s-foot ends', proveLaV94R03T01);
+  it('LA-V94-R03-T01 An aggregate\'s ERD shows each entity\'s title, root mark and fields with their types, has one and has many lines with crow\'s feet, and its references to the aggregates around it', proveLaV94R03T01);
+  it('LA-V94-R01-T02 An aggregate\'s ERD draws the aggregates it references as closed boxes, faded, with a dashed line from each referring entity', proveLaV94R03T01);
 
-  it('LA-V94-R04-T01 An entity, command, event or policy page draws its aggregate\'s model with that record highlighted; a read model, query or specification page its domain\'s', async () => {
+  it('LA-V94-R04-T01 An entity page draws its aggregate\'s ERD with the entity highlighted', async () => {
     expect(erdFor(index(), 'P-D-EN04')).toMatchObject({ level: 'aggregate', scope: 'P-D-A3' });
     expect(erdFor(index(), 'P-D-EN04')!.boxes.filter((b) => b.highlight).map((b) => b.id)).toEqual(['P-D-EN04']);
-    expect(erdFor(index(), 'P-D-CMD02')).toMatchObject({ level: 'aggregate', scope: 'P-D-A3' });
-    expect(erdFor(index(), 'P-D-EV02')!.boxes.filter((b) => b.highlight).map((b) => b.id)).toEqual(['P-D-EV02']);
-    // A policy belongs to its command's aggregate.
-    expect(erdFor(index(), 'P-D-PO01')).toMatchObject({ level: 'aggregate', scope: 'P-D-A2' });
-    expect(erdFor(index(), 'P-D-RM01')).toMatchObject({ level: 'domain', scope: 'P-D' });
-    expect(erdFor(index(), 'P-D-SP01')!.boxes.filter((b) => b.highlight).map((b) => b.id)).toEqual(['P-D-SP01']);
-    expect(erdFor(index(), 'P-D-UC01')).toBeNull();
+    for (const id of ['P-D-CMD02', 'P-D-EV02', 'P-D-PO01', 'P-D-RM01', 'P-D-SP01', 'P-D-UC01']) expect(erdFor(index(), id)).toBeNull();
 
     await openApp('/P-D-EN04?view=model', served());
     await screen.findByRole('heading', { level: 1, name: 'Return' });
     await boxesShown();
     expect(box('P-D-EN04')!.querySelector('.erd-box')).toHaveClass('is-highlight', 'is-focus');
+    expect(box('P-D-EN04')).toHaveAttribute('aria-label', 'Entity Return (this entity)');
     expect(box('P-D-EN03')!.querySelector('.erd-box')).not.toHaveClass('is-highlight');
-    expect(within(modelPane()).getByRole('group', { name: 'Key' })).toHaveTextContent('This record');
+    expect(within(modelPane()).getByRole('group', { name: 'Key' })).toHaveTextContent('This entity');
   });
 
-  it('LA-V94-R05-T01 Clicking a box goes to it, boxes show a hover state, and a key under the diagram explains the event storming colors and every line drawn', async () => {
+  it('LA-V94-R05-T01 Clicking a box goes to it, boxes show a hover state, and a key under the diagram lists only the boxes and lines drawn', async () => {
     await openApp('/P-D?view=wiki,model', served());
     await screen.findByRole('heading', { level: 1, name: 'Domain' });
     await boxesShown();
     const key = within(modelPane()).getByRole('group', { name: 'Key' });
-    const colors = within(key).getByRole('list', { name: 'Colors' });
-    for (const text of ['Policy', 'Command', 'Specification', 'Aggregate', 'Domain event', 'Read model', 'Query', 'This domain', 'Other domain, in parentheses']) expect(colors).toHaveTextContent(text);
+    const boxes = within(key).getByRole('list', { name: 'Boxes' });
+    expect(within(boxes).getAllByRole('listitem').map((li) => li.textContent?.trim())).toEqual(['Entity', 'root Root entity', 'Aggregate boundary', 'Other domain']);
     const lines = within(key).getByRole('list', { name: 'Lines' });
-    expect(lines).toHaveTextContent('Refers to (n:1)');
-    expect(lines).toHaveTextContent('Raises');
-    expect(lines).toHaveTextContent('Hears (later)');
-    expect(lines.querySelector('.erd-key-line.rel-hears.is-dashed')).not.toBeNull();
+    expect(within(lines).getAllByRole('listitem').map((li) => li.textContent?.trim())).toEqual(['Has one (1:1)', 'Has many (1:n)', 'Reference by ID']);
+    expect(lines.querySelector('.erd-key-line.rel-references.is-dashed')).not.toBeNull();
+    expect(lines.querySelector('.erd-key-line.rel-has_many:not(.is-dashed)')).not.toBeNull();
     // Under the diagram, keeping one height.
     expect(modelPane().querySelector('.model-canvas')!.compareDocumentPosition(key.closest('.erd-key')!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(CSS).toMatch(/\.erd-key\s*\{[^}]*block-size:\s*var\(--erd-key-height\)/);
@@ -200,21 +189,58 @@ describe('the Model view', () => {
     // Hover (LA-PAT-APP-UX-R01) on the shared ring and speed, off under reduced motion.
     expect(CSS).toMatch(/\.erd-box:not\(\.is-focus\):hover\s*\{[^}]*var\(--hover-ring\)/);
     expect(CSS).toMatch(/\.erd-box\s*\{[^}]*transition:\s*box-shadow var\(--hover-speed\)/);
-    // Colors come from the event storming tokens; another domain is gray.
-    expect(CSS).toMatch(/\.erd-box\s*\{[^}]*var\(--es-aggregate\)[^}]*var\(--es-aggregate-bg\)/);
-    for (const kind of ['command', 'event', 'policy']) expect(CSS).toMatch(new RegExp(`\\.erd-box\\.erd-${kind}\\s*\\{[^}]*var\\(--es-${kind}\\)`));
+    // Colors come from the domain model stage's tokens; another domain is gray.
+    expect(CSS).toMatch(/\.erd-box\s*\{[^}]*var\(--g-domain-model\)/);
+    expect(CSS).toMatch(/\.erd-box\.erd-aggregate\s*\{[^}]*var\(--g-domain-model-bg\)/);
     expect(CSS).toMatch(/\.erd-box\.tone-other\s*\{[^}]*var\(--muted\)[^}]*var\(--paper\)/);
   });
 
-  it('LA-EXP-DS11-T01 A domain\'s model draws each raises, checks, hears and reads link of its records exactly once', () => {
+  it('LA-V94-R06-T01 An aggregate\'s ERD fades the aggregates it references and those that reference it; a domain\'s ERD fades other domains\' aggregates', () => {
+    const thing = aggregateErd(index(), 'P-D-A1');
+    expect(thing.boxes.filter((b) => b.context).map((b) => b.id)).toEqual(['P-D-A3', 'P-D-A4']);
+    expect(ends(thing)).toEqual({ 'P-D-A3|references|P-D-EN01': 'none-arrow dashed', 'P-D-A4|references|P-D-EN01': 'none-arrow dashed' });
+    expect(thing.lines.map((l) => [l.via, l.context])).toEqual([[['Loan.Thing'], true], [['Shelf.Thing'], true]]);
+    // From the other side of a domain boundary: the referring aggregate is gray, labeled with its domain.
+    expect(aggregateErd(index(), 'P-E-A1').boxes.find((b) => b.id === 'P-D-A2')).toMatchObject({ tone: 'other', owner: 'Domain', context: true });
+    expect(domainErd(index(), 'P-D').boxes.filter((b) => b.context).map((b) => b.id)).toEqual(['P-E-A1']);
+  });
+
+  it('LA-V94-R06-T02 The opening frame fits every box, faded ones included, inside the margin at any canvas size, and the faded boxes are out of focus', async () => {
+    const rects = await layoutErd(aggregateErd(index(), 'P-D-A3'), 1.6);
+    for (const [width, height] of [[1200, 700], [600, 500], [320, 260]]) {
+      const v = fitRects(rects, width, height);
+      for (const r of rects.values()) {
+        expect(v.x + r.x * v.zoom).toBeGreaterThanOrEqual(FIT_MARGIN.left - 0.5);
+        expect(v.y + r.y * v.zoom).toBeGreaterThanOrEqual(FIT_MARGIN.top - 0.5);
+        expect(v.x + (r.x + r.width) * v.zoom).toBeLessThanOrEqual(width - FIT_MARGIN.right + 0.5);
+        expect(v.y + (r.y + r.height) * v.zoom).toBeLessThanOrEqual(height - FIT_MARGIN.bottom + 0.5);
+      }
+      expect(v.zoom).toBeLessThanOrEqual(1);
+    }
+    await openApp('/P-D-A3?view=model', served());
+    await screen.findByRole('heading', { level: 1, name: 'Loan' });
+    await boxesShown();
+    expect(box('P-D-A1')).toHaveAttribute('aria-hidden', 'true');
+    expect(within(modelPane()).getByRole('group', { name: 'Key' })).toHaveTextContent('Faded: around it');
+  });
+
+  it('LA-EXP-DS11-T01 An ERD draws exactly one line per relationship link and one per entity and aggregate it references', () => {
     const i = index();
     const erd = domainErd(i, 'P-D');
-    const drawn = new Set(erd.lines.map((l) => (l.reversed ? `${l.target}|${l.relation}|${l.source}` : `${l.source}|${l.relation}|${l.target}`)));
-    const links = i.workspace.links.filter((l) => ['raises', 'checks', 'hears', 'reads'].includes(l.relation) && (i.byId.get(l.source)?.domain === 'P-D'));
-    expect(links.length).toBeGreaterThan(8);
-    for (const l of links) expect(drawn.has(`${l.source}|${l.relation}|${l.target}`)).toBe(true);
+    const entities = new Set(erd.boxes.filter((b) => b.kind === 'entity').map((b) => b.id));
+    const links = i.workspace.links.filter((l) => ['has_one', 'has_many'].includes(l.relation) && entities.has(l.source));
+    expect(links.length).toBe(2);
+    for (const l of links) expect(erd.lines.filter((x) => x.source === l.source && x.target === l.target && x.relation === l.relation)).toHaveLength(1);
+    // Loan's two references to Member come from two entities: two lines; its Thing one line.
+    expect(erd.lines.filter((l) => l.relation === 'references')).toHaveLength(5);
     const ids = erd.lines.map((l) => l.id);
     expect(new Set(ids).size).toBe(ids.length);
+    // A line's words read from its source, the reference's fields its hover label.
+    const ref = erd.lines.find((l) => l.id === 'P-D-EN05|references|P-D-EN02')!;
+    const titles = new Map(erd.boxes.map((b) => [b.id, b.title]));
+    expect(lineWords(ref, 'References by ID', titles)).toEqual({ label: 'references by ID', title: 'Reminder references by ID Member (Reminder.Member)', hover: 'Reminder.Member' });
+    render(<ErdKey erd={erd} relations={i.workspace.relations} />);
+    expect(within(screen.getByRole('group', { name: 'Key' })).getByText('Reference by ID').closest('li')).toHaveAttribute('title', "A field holds the other aggregate's ID; the line points at its root.");
   });
 
   it('LA-V96-R09-T01 Above a graph or a model pane the page title keeps one fixed height, so the canvas never moves when the focus changes; in the wiki pane it wraps', async () => {

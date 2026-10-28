@@ -28,14 +28,6 @@
   --g-technical-specification: #B5512A; --g-technical-specification-bg: #F8E8DF;
   --g-test-plan: #A3365F; --g-test-plan-bg: #F7E4EC;
   --g-structural: var(--ink); --g-structural-bg: var(--sheet);
-  /* The Model view's event storming colors: aggregates yellow, commands blue, events orange, policies lilac, read
-     models and queries green, rules (invariants and specifications) pink. */
-  --es-aggregate: #7A6000; --es-aggregate-bg: #FFF4C2;
-  --es-command: #2E5FA8; --es-command-bg: #DCE8FA;
-  --es-event: #A84B12; --es-event-bg: #FFE3CC;
-  --es-policy: #7A4FA0; --es-policy-bg: #EEE2F8;
-  --es-read-model: #2F7148; --es-read-model-bg: #DDF2E3;
-  --es-rule: #9C3F6E; --es-rule-bg: #F8E1EE;
   --g-file: var(--muted);
   /* The title above a graph or a model pane: one fixed height, so the canvas below it never moves. */
   --pane-title-height: 104px;
@@ -71,12 +63,6 @@
     --g-interaction-design: #B9A0E6; --g-interaction-design-bg: #261E36;
     --g-technical-specification: #E88A5E; --g-technical-specification-bg: #3A2219;
     --g-test-plan: #E58AAE; --g-test-plan-bg: #3A1A27;
-    --es-aggregate: #E9C85A; --es-aggregate-bg: #332A0C;
-    --es-command: #8DB4F0; --es-command-bg: #172640;
-    --es-event: #F0A06A; --es-event-bg: #3B2414;
-    --es-policy: #C6A4EA; --es-policy-bg: #2A1E38;
-    --es-read-model: #7CC79A; --es-read-model-bg: #17301F;
-    --es-rule: #E796BF; --es-rule-bg: #3A1A2C;
     color-scheme: dark;
   }
 }
@@ -780,9 +766,9 @@ a.row-link.row-link:focus-visible { outline: none; }
 .pane-title.is-fixed h1 { font-size: 1.45rem; overflow-wrap: normal; }
 .pane-model > .pane-body > .model-page { flex: 1; }
 
-/* ---------- The Model view: a domain's model and an aggregate's (app/src/model) ---------- */
-/* Each kind in its event storming color (the --es-* tokens): aggregates and entities yellow, commands blue, events orange,
-   policies lilac, specifications pink, read models and queries green. Another domain's box is gray (--muted on --paper, dashed). */
+/* ---------- The Model view: a domain's ERD and an aggregate's (app/src/model) ---------- */
+/* Entities and aggregates in the domain model stage's colors: an aggregate a boundary tinted with its fill around its
+   entities, each entity a sheet edged in its color. Another domain's box is gray (--muted on --paper, dashed) and faded. */
 .model-page { flex: 1; min-height: 0; display: flex; flex-direction: column; container: model-page / inline-size; }
 .model-header { padding: 10px 20px; border-bottom: 1px solid var(--rule); }
 /* One line, cut with an ellipsis (its whole text in its tooltip), so the canvas below never moves (LA-PAT-APP-UX-R08). */
@@ -794,44 +780,32 @@ a.row-link.row-link:focus-visible { outline: none; }
 .model-flow .react-flow__node:focus { outline: none; }
 .model-flow .react-flow__node:focus-visible .erd-box { outline: 3px solid var(--steel); outline-offset: 3px; }
 .erd-handle { opacity: 0; pointer-events: none; }
-.erd-box { --box-edge: var(--es-aggregate); --box-fill: var(--es-aggregate-bg); width: 100%; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; overflow: hidden; border: 1.5px solid var(--box-edge); border-radius: var(--node-radius); background: var(--box-fill); color: var(--ink); cursor: pointer; transition: box-shadow var(--hover-speed); }
+.erd-box { --box-edge: var(--g-domain-model); --box-fill: var(--sheet); width: 100%; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; overflow: hidden; border: 1.5px solid var(--box-edge); border-radius: var(--node-radius); background: var(--box-fill); color: var(--ink); cursor: pointer; transition: box-shadow var(--hover-speed); }
 .erd-box:not(.is-focus):hover { box-shadow: 0 0 0 3px var(--hover-ring); }
 .erd-box.is-focus { cursor: default; }
-.erd-box.erd-command { --box-edge: var(--es-command); --box-fill: var(--es-command-bg); }
-.erd-box.erd-event { --box-edge: var(--es-event); --box-fill: var(--es-event-bg); }
-.erd-box.erd-policy { --box-edge: var(--es-policy); --box-fill: var(--es-policy-bg); }
-.erd-box.erd-specification { --box-edge: var(--es-rule); --box-fill: var(--es-rule-bg); }
-.erd-box:is(.erd-read_model, .erd-query) { --box-edge: var(--es-read-model); --box-fill: var(--es-read-model-bg); }
+/* An aggregate: the boundary its entities sit in (their places leave room for its head, BOUNDARY_PAD in erd.ts), or a closed box. */
+.erd-box.erd-aggregate { --box-fill: var(--g-domain-model-bg); padding: 8px 14px; }
 .erd-box.tone-other { border-style: dashed; --box-edge: var(--muted); --box-fill: var(--paper); }
 .erd-box.is-highlight, .erd-box.is-highlight:hover { box-shadow: 0 0 0 3px var(--ink); }
 @media (prefers-reduced-motion: reduce) { .erd-box { transition: none; } }
-/* Heights match boxSize in app/src/model/erd.ts: a title of up to two lines, the kind line, then 20px rows. */
+/* Heights match boxSize in app/src/model/erd.ts: an entity's title of up to two lines, then 20px rows; an aggregate's title on one line, then its kind line. */
 .erd-box-head { flex: none; display: flex; align-items: flex-start; justify-content: space-between; gap: 6px; min-width: 0; }
 .erd-box-head strong { font: 700 0.8125rem/1.25 var(--display); overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow-wrap: anywhere; }
+.erd-aggregate .erd-box-head strong { -webkit-line-clamp: 1; }
 .erd-summary { flex: none; font: 0.65625rem/1.3 var(--mono); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.erd-root { flex: none; font: 600 0.59375rem/1.4 var(--mono); text-transform: uppercase; letter-spacing: 0.06em; padding: 0 5px; border-radius: 3px; color: var(--es-aggregate-bg); background: var(--es-aggregate); }
+.erd-root { flex: none; font: 600 0.59375rem/1.4 var(--mono); text-transform: uppercase; letter-spacing: 0.06em; padding: 0 5px; border: 1px solid var(--g-domain-model); border-radius: 3px; color: var(--ink); background: var(--g-domain-model-bg); }
 .erd-fields { list-style: none; margin: 4px 0 0; padding: 4px 0 0; border-top: 1px solid var(--rule); display: grid; grid-template-columns: minmax(0, 1fr); }
 .erd-fields li { display: flex; justify-content: space-between; gap: 8px; height: 20px; align-items: center; font-size: 0.71875rem; }
 .erd-field { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .erd-field-kind { flex: 0 1 auto; min-width: 0; max-width: 55%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 0.65625rem var(--mono); color: var(--muted); }
 .erd-line-path, .erd-end { fill: none; stroke: var(--ink); stroke-width: 1.4; }
 .erd-line.is-dashed .erd-line-path, .erd-key-line.is-dashed .erd-line-path { stroke-dasharray: 6 4; }
-/* A line takes the color of what it leads to or comes from: a command's lines blue, an event's orange, a rule's pink, a read model's green. */
-:is(.erd-line, .erd-key-line):is(.rel-changes, .rel-also_changes, .rel-invokes) :is(.erd-line-path, .erd-end) { stroke: var(--es-command); }
-:is(.erd-line, .erd-key-line):is(.rel-raises, .rel-hears) :is(.erd-line-path, .erd-end) { stroke: var(--es-event); }
-:is(.erd-line, .erd-key-line):is(.rel-checks, .rel-selects_by) :is(.erd-line-path, .erd-end) { stroke: var(--es-rule); }
-:is(.erd-line, .erd-key-line):is(.rel-reads, .rel-queries) :is(.erd-line-path, .erd-end) { stroke: var(--es-read-model); }
 /* The key keeps one height whichever model it explains, scrolling what does not fit, so moving between a domain, an
    aggregate and an entity never resizes the canvas above it (LA-PAT-APP-UX-R08). */
 .erd-key { flex: none; box-sizing: border-box; block-size: var(--erd-key-height); overflow-y: auto; scrollbar-gutter: stable; display: flex; flex-direction: column; gap: 6px; padding: 10px 20px 12px; border-top: 1px solid var(--rule); font-size: 0.8rem; line-height: 1.4; color: var(--muted); }
-.erd-key-swatch { flex: none; display: inline-block; width: 18px; height: 11px; border: 1.5px solid var(--es-aggregate); background: var(--es-aggregate-bg); border-radius: 2px; }
-.erd-key-swatch.erd-key-command { border-color: var(--es-command); background: var(--es-command-bg); }
-.erd-key-swatch.erd-key-event { border-color: var(--es-event); background: var(--es-event-bg); }
-.erd-key-swatch.erd-key-policy { border-color: var(--es-policy); background: var(--es-policy-bg); }
-.erd-key-swatch.erd-key-specification { border-color: var(--es-rule); background: var(--es-rule-bg); }
-.erd-key-swatch:is(.erd-key-read_model, .erd-key-query) { border-color: var(--es-read-model); background: var(--es-read-model-bg); }
-.erd-key-swatch.erd-key-current { border-color: var(--ink); background: var(--sheet); }
-.erd-key-swatch.erd-key-other { border-style: dashed; border-color: var(--muted); background: var(--paper); }
+.erd-key-swatch { flex: none; display: inline-block; width: 18px; height: 11px; border: 1.5px solid var(--g-domain-model); background: var(--sheet); border-radius: 2px; }
+.erd-key-swatch.erd-key-aggregate { background: var(--g-domain-model-bg); }
+.erd-key-swatch.erd-key-other { border-style: dashed; border-color: var(--muted); background: var(--paper); opacity: var(--context-opacity); }
 /* One grid of fixed cells, their width set by the pane's width only: the lists add no box of their own, so a model
    with other entries changes what the cells say, never where the key's parts sit (LA-PAT-APP-UX-R08). */
 .erd-key-grid { display: grid; grid-template-columns: repeat(auto-fill, 9.5rem); gap: 2px 12px; }
@@ -854,21 +828,21 @@ a.row-link.row-link:focus-visible { outline: none; }
     padding: 10px 12px; border: 1px solid var(--rule); border-radius: var(--panel-radius); background: var(--sheet); box-shadow: 0 6px 20px var(--shadow);
   }
 }
-.erd-key-highlight { flex: none; display: inline-block; width: 14px; height: 10px; border: 1.5px solid var(--es-aggregate); background: var(--es-aggregate-bg); box-shadow: 0 0 0 2px var(--ink); border-radius: 2px; }
-/* The model's context (LA-V94-R06): faded and a little smaller, readable on hover, its lines faded with it. */
+.erd-key-highlight { flex: none; display: inline-block; width: 14px; height: 10px; border: 1.5px solid var(--g-domain-model); background: var(--sheet); box-shadow: 0 0 0 2px var(--ink); border-radius: 2px; }
+/* The ERD's context (LA-V94-R06): faded and a little smaller, readable on hover, its lines faded with it. */
 .model-flow .react-flow__node.is-context .erd-box { opacity: var(--context-opacity); scale: var(--context-scale); }
 .model-flow .react-flow__node.is-context:hover .erd-box { opacity: 1; }
 .model-flow .erd-line.is-context { opacity: var(--context-opacity); }
 .erd-key-context { flex: none; display: inline-block; width: 14px; height: 10px; border: 1.5px dashed var(--muted); background: var(--paper); border-radius: 2px; opacity: var(--context-opacity); }
 .model-flow::after { content: ""; position: absolute; inset: 0; z-index: 4; pointer-events: none; box-shadow: inset 0 0 var(--vignette) calc(var(--vignette) / 3) var(--paper); }
 @media (pointer: coarse) { .model-flow .react-flow__node.is-context.is-armed .erd-box { opacity: 1; } }
-/* A dashed line (a policy hearing an event, a recorded exception) shows its words on hover, over a wider unseen stroke
-   that is easy to point at, fading in on the shared hover speed. */
+/* A dashed reference line shows its fields on hover, over a wider unseen stroke that is easy to point at, fading in on
+   the shared hover speed. */
 .erd-line-hit { fill: none; stroke: transparent; stroke-width: 14; pointer-events: stroke; }
 .erd-line-label { font: 600 0.6875rem var(--mono); fill: var(--ink); stroke: var(--paper); stroke-width: 4px; paint-order: stroke; pointer-events: none; opacity: 0; transition: opacity var(--hover-speed); }
 .erd-line.has-hover-label:hover .erd-line-label { opacity: 1; }
 .erd-line.has-hover-label:hover :is(.erd-line-path, .erd-end) { stroke-width: 2.2; }
-/* By touch there is no hover: dashed lines always show their words (LA-PAT-APP-UX-R07). */
+/* By touch there is no hover: dashed lines always show their fields (LA-PAT-APP-UX-R07). */
 @media (pointer: coarse) { .erd-line.has-hover-label .erd-line-label { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .erd-line-label { transition: none; } }
 
