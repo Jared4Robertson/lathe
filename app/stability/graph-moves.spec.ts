@@ -7,7 +7,7 @@ import { cameraOf, clickBox, GRAPH, graphDrawn } from './scene';
 // differently before the person changed the settings) and pages that are not; the layout, depth
 // and Links switch stay as the person set them.
 
-const FLOW = 'LA-EXP-UC03-FL';
+const FLOW = 'LA-EXP-UC03-FL01';
 const LAYOUTS = { tree: 'Tree', nested: 'Nested', voronoi: 'Voronoi' } as const;
 
 const at = (page: Page) => new URL(page.url()).pathname.slice(1);

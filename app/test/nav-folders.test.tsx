@@ -158,7 +158,7 @@ describe('folders by stage', () => {
   const twoUseCases = () => {
     const w = workspace();
     addRows(w, 'use_case', { id: 'DM-SHOP-UC02', title: 'Empty the basket', capability_id: 'DM-SHOP-CAP01' });
-    addRows(w, 'flow', { id: 'DM-SHOP-UC02-FL', title: 'Empty a basket', use_case_id: 'DM-SHOP-UC02' });
+    addRows(w, 'flow', { id: 'DM-SHOP-UC02-FL01', title: 'Empty a basket', use_case_id: 'DM-SHOP-UC02' });
     return w;
   };
 
@@ -173,7 +173,7 @@ describe('folders by stage', () => {
       read_model: ['DM-SHOP-RM01'],
       term: ['DM-SHOP-TM01'],
       capability: ['DM-SHOP-CAP01'],
-      flow: ['DM-SHOP-UC01-FL', 'DM-SHOP-UC02-FL'],
+      flow: ['DM-SHOP-UC01-FL01', 'DM-SHOP-UC02-FL01'],
       endpoint: ['DM-SHOP-EP01'],
       table: ['DM-SHOP-EN01-TB'],
       command_handler: ['DM-SHOP-CMD01-H'],
@@ -185,7 +185,7 @@ describe('folders by stage', () => {
     expect(branchOf(index, 'DM-SHOP-UC02')).toEqual(['domain:DM-SHOP', 'DM-SHOP/use-cases', 'DM-SHOP/use-cases/capability']);
     expect(branchOf(index, 'DM-SHOP-CMD01')).toEqual(['domain:DM-SHOP', 'DM-SHOP/domain-model', 'DM-SHOP/domain-model/aggregate']);
     // A flow step folds under its flow, in Interaction design.
-    expect(branchOf(index, 'DM-SHOP-UC01-FL-S02')).toEqual(['domain:DM-SHOP', 'DM-SHOP/interaction-design', 'DM-SHOP/interaction-design/flow']);
+    expect(branchOf(index, 'DM-SHOP-UC01-FL01-S02')).toEqual(['domain:DM-SHOP', 'DM-SHOP/interaction-design', 'DM-SHOP/interaction-design/flow']);
     // In Shared: a constraint folds under its value object, which both domains use; so does the view.
     expect(branchOf(index, 'DM-VO01-C01')).toEqual(['DM/shared', 'DM/domain-model', 'DM/domain-model/value_object']);
     expect(productFolders(index, 'DM').stages.filter((s) => s.count > 0).map((s) => [s.label, s.folders.filter((f) => f.count > 0).map((f) => f.label)])).toEqual([

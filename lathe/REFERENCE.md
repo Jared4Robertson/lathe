@@ -970,7 +970,7 @@ How its use case is carried out: the steps on its main path and its alternate pa
 - **Parents:** [`use_case`](#kind-use_case) (`use_case_id`)
 - **Children:** [`flow_step`](#kind-flow_step), [`flow_test`](#kind-flow_test)
 - **Obligation:** no
-- **ID:** `<use case>-FL`, such as `TL-LEND-UC01-FL`; it starts with its parent's ID
+- **ID:** `<use case>-FL`, such as `TL-LEND-UC01-FL01`; it starts with its parent's ID
 - **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`step-order`](#check-step-order)
@@ -980,7 +980,7 @@ How its use case is carried out: the steps on its main path and its alternate pa
 
 | Column | Type | Required | Meaning |
 | --- | --- | --- | --- |
-| `id` | VARCHAR → `record_id` | yes | The flow's ID: its use case's ID and FL, such as TL-LEND-UC01-FL. |
+| `id` | VARCHAR → `record_id` | yes | The flow's ID: its use case's ID and FL, such as TL-LEND-UC01-FL01. |
 | `title` | VARCHAR | yes | The flow's name, such as Borrow a tool at the desk. |
 | `use_case_id` | VARCHAR → [`use_case`](#table-use_case) | yes | The use case it carries out; one flow per use case. |
 | `description` | VARCHAR | no | The path, in a paragraph. |
@@ -998,7 +998,7 @@ One step of a flow, in order on its path. It fulfills UC requirements of its own
 - **Parents:** [`flow`](#kind-flow) (`flow_id`)
 - **Children:** none
 - **Obligation:** no
-- **ID:** `<flow>-S<nn>`, such as `TL-LEND-UC01-FL-S01`; it starts with its parent's ID
+- **ID:** `<flow>-S<nn>`, such as `TL-LEND-UC01-FL01-S01`; it starts with its parent's ID
 - **Links out:** Exchanges with ([`exchanges_with`](#relation-exchanges_with)), Fulfills ([`fulfills`](#relation-fulfills)), Happens in ([`happens_in`](#relation-happens_in)), Invokes ([`invokes`](#relation-invokes))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`step-order`](#check-step-order)
@@ -1007,7 +1007,7 @@ One step of a flow, in order on its path. It fulfills UC requirements of its own
 
 | Column | Type | Required | Meaning |
 | --- | --- | --- | --- |
-| `id` | VARCHAR → `record_id` | yes | The step's ID: its flow's ID and S<nn>, such as TL-LEND-UC01-FL-S01. |
+| `id` | VARCHAR → `record_id` | yes | The step's ID: its flow's ID and S<nn>, such as TL-LEND-UC01-FL01-S01. |
 | `title` | VARCHAR | yes | What happens, in a few words. |
 | `flow_id` | VARCHAR → [`flow`](#table-flow) | yes | The flow it belongs to. |
 | `path` | VARCHAR | yes | The path through the flow the step is on, such as main or refused. |
@@ -2118,7 +2118,7 @@ A smoke test of its flow's main path, end to end.
 - **Children:** none
 - **Obligation:** no
 - **Run by levels:** `e2e-ui`, `e2e-api`, `manual`
-- **ID:** `<flow>-T`, such as `TL-LEND-UC01-FL-T`; it starts with its parent's ID
+- **ID:** `<flow>-T`, such as `TL-LEND-UC01-FL01-T`; it starts with its parent's ID
 - **Links out:** Starts from ([`starts_from`](#relation-starts_from))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed)
@@ -2127,7 +2127,7 @@ A smoke test of its flow's main path, end to end.
 
 | Column | Type | Required | Meaning |
 | --- | --- | --- | --- |
-| `id` | VARCHAR → `record_id` | yes | The test's ID: its flow's ID and T, such as TL-LEND-UC01-FL-T. |
+| `id` | VARCHAR → `record_id` | yes | The test's ID: its flow's ID and T, such as TL-LEND-UC01-FL01-T. |
 | `title` | VARCHAR | yes | What the test shows, in a sentence. |
 | `flow_id` | VARCHAR → [`flow`](#table-flow) | yes | The flow it proves; it has exactly one test. |
 | `level` | ENUM('unit', 'database', 'api', 'contract', 'e2e-api', 'e2e-ui', 'manual') | yes | The level it runs at: unit, database, api, contract, e2e-api, e2e-ui or manual. |

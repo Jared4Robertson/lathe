@@ -41,7 +41,7 @@ describe('the index from typed rows', () => {
 
   it('reads each relation table as links, both ways', () => {
     const index = indexOf(workspace());
-    expect(index.outgoing.get('DM-SHOP-UC01-FL-S01')!.map((l) => `${l.relation} ${l.target}`)).toContain('fulfills DM-SHOP-UC01-R01');
+    expect(index.outgoing.get('DM-SHOP-UC01-FL01-S01')!.map((l) => `${l.relation} ${l.target}`)).toContain('fulfills DM-SHOP-UC01-R01');
     expect(index.incoming.get('DM-SHOP-EV01')!.map((l) => `${l.relation} ${l.source}`)).toEqual(['raises DM-SHOP-CMD01']);
   });
 

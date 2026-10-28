@@ -55,7 +55,7 @@ describe('domain page', () => {
     expect(add).toHaveTextContent('Shopper');
 
     // Interaction design, technical specification and test plan list what starts a branch of their stage, with its fields.
-    expect(ids(section(/^Flows/))).toEqual(['DM-SHOP-UC01-FL']);
+    expect(ids(section(/^Flows/))).toEqual(['DM-SHOP-UC01-FL01']);
     expect(ids(section(/^Endpoints/))).toEqual(['DM-SHOP-EP01']);
     expect(section(/^Endpoints/)).toHaveTextContent('POST · /basket/items');
     expect(section(/^Tables/)).toHaveTextContent('baskets · table');

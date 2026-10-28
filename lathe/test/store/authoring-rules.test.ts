@@ -160,7 +160,7 @@ describe("Authoring's domain services", () => {
     };
     // The parent's ID.
     expect(await next('uc_requirement', 'TL-LEND-UC01')).toBe('TL-LEND-UC01-R02');
-    expect(await next('flow_step', 'TL-LEND-UC01-FL')).toBe('TL-LEND-UC01-FL-S02');
+    expect(await next('flow_step', 'TL-LEND-UC01-FL01')).toBe('TL-LEND-UC01-FL01-S02');
     expect(await next('constraint', 'TL-VO01')).toBe('TL-VO01-C02');
     // The domain's ID, from the domain or from the parent inside it.
     expect(await next('aggregate', 'TL-LEND')).toBe('TL-LEND-A5');

@@ -56,7 +56,7 @@ import { openStore } from '@jaredrob/lathe';
 
 const store = await openStore('/path/to/repo');           // loads data/*.jsonl, or throws a StoreError naming file, line and rule
 await store.add('uc_requirement', { id: 'TL-LEND-UC01-R02', title: 'Member is known', use_case_id: 'TL-LEND-UC01', statement: 'The library MUST refuse an unknown member.' });
-await store.link('fulfills', 'TL-LEND-UC01-FL-S01', 'TL-LEND-UC01-R02');
+await store.link('fulfills', 'TL-LEND-UC01-FL01-S01', 'TL-LEND-UC01-R02');
 const rows = await store.query('SELECT id, title FROM uc_requirement');
 await store.close();
 ```

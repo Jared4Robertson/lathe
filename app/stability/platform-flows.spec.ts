@@ -7,7 +7,7 @@ import { expectStable, openPage, step } from './measure';
 import { FOCUS, GRAPH_CANVAS, keepData, RECORD, SHELL } from './scenarios';
 import { cameraOf, sceneOf } from './scene';
 
-// Platform's flow tests that happen in the app (LA-PLT-UC03-FL to UC10-FL): one per flow, each
+// Platform's flow tests that happen in the app (LA-PLT-UC03-FL01 to UC10-FL01): one per flow, each
 // walking its main path in Chromium over the suite's copy of Lathe's data. The flows run through
 // the CLI or the server alone are proved in lathe/test/cli/platform-flows.test.ts, and the native
 // menus in the desktop smoke test.
@@ -56,7 +56,7 @@ async function drag(page: Page, from: { x: number; y: number }, to: { x: number;
 }
 
 test.describe('Platform flows in the app', () => {
-  test('LA-PLT-UC03-FL-T the page shows the files on disk: an Agent\'s write reloads it in place, and data that cannot load is said so', async ({ page }) => {
+  test('LA-PLT-UC03-FL01-T the page shows the files on disk: an Agent\'s write reloads it in place, and data that cannot load is said so', async ({ page }) => {
     const restore = keepData();
     try {
       await openPage(page, '/LA-EXP-UC03');
@@ -76,7 +76,7 @@ test.describe('Platform flows in the app', () => {
     await expect(page.locator(`${WIKI} .pane-title h1`)).toHaveText('Walk the model as a graph', { timeout: 20_000 });
   });
 
-  test('LA-PLT-UC04-FL-T work the app from the keyboard: the palette, VS Code keys, the announcement, a search box, the shortcuts sheet', async ({ page }) => {
+  test('LA-PLT-UC04-FL01-T work the app from the keyboard: the palette, VS Code keys, the announcement, a search box, the shortcuts sheet', async ({ page }) => {
     await openPage(page, RECORD);
     await page.keyboard.press('Control+Shift+p');
     await expect(palette(page)).toBeVisible();
@@ -115,7 +115,7 @@ test.describe('Platform flows in the app', () => {
     await expect(sheet.getByRole('rowheader', { name: 'Command palette' })).toBeVisible();
   });
 
-  test('LA-PLT-UC05-FL-T see each command\'s shortcut where it is used: a tooltip, the palette, the screen reader, a rebinding followed everywhere', async ({ page }) => {
+  test('LA-PLT-UC05-FL01-T see each command\'s shortcut where it is used: a tooltip, the palette, the screen reader, a rebinding followed everywhere', async ({ page }) => {
     await openPage(page, RECORD);
     const graphButton = page.getByRole('group', { name: 'View' }).getByRole('button', { name: 'Graph' });
     await graphButton.hover();
@@ -143,7 +143,7 @@ test.describe('Platform flows in the app', () => {
     await page.evaluate(() => localStorage.removeItem('lathe:keybindings'));
   });
 
-  test('LA-PLT-UC06-FL-T arrange the workbench: drag and step a gap, sizes kept, reset by double-click, fold by dragging small, hide the side bar', async ({ page }) => {
+  test('LA-PLT-UC06-FL01-T arrange the workbench: drag and step a gap, sizes kept, reset by double-click, fold by dragging small, hide the side bar', async ({ page }) => {
     await openPage(page, RECORD);
     const handle = page.getByRole('separator', { name: 'Resize the navigation' });
     const start = Number(await handle.getAttribute('aria-valuenow'));
@@ -176,7 +176,7 @@ test.describe('Platform flows in the app', () => {
     await expect(page.getByRole('complementary', { name: 'Side bar' })).toBeVisible();
   });
 
-  test('LA-PLT-UC07-FL-T choose and make a theme: g t, Escape, the palette, Appearance, duplicate, change, reset, delete, export, import', async ({ page, browser }) => {
+  test('LA-PLT-UC07-FL01-T choose and make a theme: g t, Escape, the palette, Appearance, duplicate, change, reset, delete, export, import', async ({ page, browser }) => {
     await openPage(page, RECORD);
     const html = page.locator('html');
     const before = await html.getAttribute('data-theme');
@@ -248,7 +248,7 @@ test.describe('Platform flows in the app', () => {
   test.describe('on a phone', () => {
     test.use({ viewport: { width: 375, height: 812 }, hasTouch: true, isMobile: true });
 
-    test('LA-PLT-UC08-FL-T read and move around Lathe on a phone: search, the graph by touch, the sheets, the nav, Open pages, a tablet', async ({ page }) => {
+    test('LA-PLT-UC08-FL01-T read and move around Lathe on a phone: search, the graph by touch, the sheets, the nav, Open pages, a tablet', async ({ page }) => {
       await openPage(page, '/LA', '.topbar');
       await expect(page.getByRole('banner')).toBeVisible();
       // Search from the top bar, and open a use case.
@@ -316,7 +316,7 @@ test.describe('Platform flows in the app', () => {
     });
   });
 
-  test('LA-PLT-UC09-FL-T read and move around without anything jumping: open, move, panes, folds, resize, the graph, a reload, overlays, the theme', async ({ page }) => {
+  test('LA-PLT-UC09-FL01-T read and move around without anything jumping: open, move, panes, folds, resize, the graph, a reload, overlays, the theme', async ({ page }) => {
     const KEYS = [...SHELL, ...FOCUS];
     const CONTENT = ['.pane-scroll', '.side-bar'];
     const TITLE = [FOCUS[1]];
@@ -382,7 +382,7 @@ test.describe('Platform flows in the app', () => {
     }));
   });
 
-  test('LA-PLT-UC10-FL-T use Lathe with a keyboard and a screen reader: Tab round, focus kept on the page, announcements, High contrast, a held dialog', async ({ page }) => {
+  test('LA-PLT-UC10-FL01-T use Lathe with a keyboard and a screen reader: Tab round, focus kept on the page, announcements, High contrast, a held dialog', async ({ page }) => {
     await openPage(page, RECORD);
     await page.keyboard.press('Control+Alt+b');
     await page.keyboard.press('Control+Alt+b');

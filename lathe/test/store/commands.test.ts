@@ -91,9 +91,9 @@ describe('record_scope', () => {
       { op: 'add', table: 'domain', row: { id: 'TL-CAT', title: 'Catalog', product_id: 'TL', subdomain_type: 'supporting' } },
       { op: 'add', table: 'capability', row: { id: 'TL-CAT-CAP01', title: 'Browsing', domain_id: 'TL-CAT', position: 1 } },
       { op: 'add', table: 'use_case', row: { id: 'TL-CAT-UC01', title: 'Browse the tools', capability_id: 'TL-CAT-CAP01' } },
-      { op: 'add', table: 'flow', row: { id: 'TL-CAT-UC01-FL', title: 'Browse', use_case_id: 'TL-CAT-UC01' } },
-      { op: 'add', table: 'flow_step', row: { id: 'TL-CAT-UC01-FL-S01', title: 'Open the catalog', flow_id: 'TL-CAT-UC01-FL', path: 'main', position: 1 } },
-      { op: 'link', relation: 'happens_in', source: 'TL-CAT-UC01-FL-S01', target: 'TL-V01' },
+      { op: 'add', table: 'flow', row: { id: 'TL-CAT-UC01-FL01', title: 'Browse', use_case_id: 'TL-CAT-UC01' } },
+      { op: 'add', table: 'flow_step', row: { id: 'TL-CAT-UC01-FL01-S01', title: 'Open the catalog', flow_id: 'TL-CAT-UC01-FL01', path: 'main', position: 1 } },
+      { op: 'link', relation: 'happens_in', source: 'TL-CAT-UC01-FL01-S01', target: 'TL-V01' },
       { op: 'add', table: 'value_object', row: { id: 'TL-VO02', title: 'Tool size' } },
       { op: 'add', table: 'value_object', row: { id: 'TL-VO03', title: 'Postcode' } },
       { op: 'add', table: 'read_model', row: { id: 'TL-CAT-RM01', title: 'Tools by size', domain_id: 'TL-CAT' } },
@@ -163,7 +163,7 @@ describe('move', () => {
     await store.add('capability', { id: 'TL-LEND-CAP02', title: 'Returns', domain_id: 'TL-LEND', position: 2 });
     const result = await store.move('TL-LEND-UC01', 'TL-LEND-CAP02');
     expect(result.tables).toEqual(['use_case']);
-    expect(await store.query("SELECT parent_id FROM record_parent WHERE id = 'TL-LEND-UC01-FL'")).toEqual([{ parent_id: 'TL-LEND-UC01' }]);
+    expect(await store.query("SELECT parent_id FROM record_parent WHERE id = 'TL-LEND-UC01-FL01'")).toEqual([{ parent_id: 'TL-LEND-UC01' }]);
     await store.close();
   });
 
@@ -237,7 +237,7 @@ describe('remove', () => {
     const { store } = await fresh();
     const problems = await refused(store, [{ op: 'remove', table: 'uc_requirement', key: 'TL-LEND-UC01-R01' }]);
     expect(problems).toEqual([expect.objectContaining({ rule: 'referenced' })]);
-    for (const line of ['TL-LEND-UC01-FL-S01 fulfills TL-LEND-UC01-R01', 'use_case_test TL-LEND-UC01-R01-T01 (uc_requirement_id)']) {
+    for (const line of ['TL-LEND-UC01-FL01-S01 fulfills TL-LEND-UC01-R01', 'use_case_test TL-LEND-UC01-R01-T01 (uc_requirement_id)']) {
       expect(problems[0].message).toContain(line);
     }
     expect(await refused(store, [{ op: 'remove', table: 'pattern_setting', key: { pattern_id: 'TL-PAT-ACT', position: 1 } }])).toEqual([
@@ -252,15 +252,15 @@ describe('remove', () => {
   it('LA-AUT-INV39-T removes a record with its parts and the links it starts', async () => {
     const { store, root } = await fresh();
     // The step's links are its own, so they go with it.
-    await store.remove('flow_step', 'TL-LEND-UC01-FL-S01');
+    await store.remove('flow_step', 'TL-LEND-UC01-FL01-S01');
     for (const table of ['fulfills', 'invokes', 'happens_in', 'exchanges_with']) {
       expect(store.rows(table)).toEqual([]);
       expect(readdirSync(path.join(root, 'data'))).not.toContain(`${table}.jsonl`);
     }
     // A use case goes with its actors, setting values and its own links, once nothing points at it.
     await store.apply([
-      { op: 'remove', table: 'flow_test', key: 'TL-LEND-UC01-FL-T' },
-      { op: 'remove', table: 'flow', key: 'TL-LEND-UC01-FL' },
+      { op: 'remove', table: 'flow_test', key: 'TL-LEND-UC01-FL01-T' },
+      { op: 'remove', table: 'flow', key: 'TL-LEND-UC01-FL01' },
       { op: 'remove', table: 'use_case_test', key: 'TL-LEND-UC01-R01-T01' },
       { op: 'remove', table: 'uc_requirement', key: 'TL-LEND-UC01-R01' },
       { op: 'unlink', relation: 'about', source: 'TL-LEND-Q01', target: 'TL-LEND-UC01' },
@@ -324,9 +324,9 @@ describe('a write', () => {
       { op: 'add', table: 'house_rule', row: { id: 'TL-LEND-HR01', title: 'Quiet', domain_id: 'TL-LEND', group_name: ' Noise' } },
       { op: 'add', table: 'house_rule', row: { id: 'TL-LEND-HR02', title: 'Tidy', domain_id: 'TL-LEND' } },
     ]);
-    expect(await store.query("SELECT id, label FROM record_group WHERE id IN ('TL-LEND-HR01', 'TL-LEND-HR02', 'TL-LEND-UC01-FL-S01') ORDER BY id")).toEqual([
+    expect(await store.query("SELECT id, label FROM record_group WHERE id IN ('TL-LEND-HR01', 'TL-LEND-HR02', 'TL-LEND-UC01-FL01-S01') ORDER BY id")).toEqual([
       { id: 'TL-LEND-HR01', label: ' Noise' },
-      { id: 'TL-LEND-UC01-FL-S01', label: 'main' },
+      { id: 'TL-LEND-UC01-FL01-S01', label: 'main' },
     ]);
     await store.close();
   });

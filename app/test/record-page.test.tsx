@@ -52,7 +52,7 @@ describe('record page', () => {
     const children = within(main()).getByRole('heading', { name: /^Children/ });
     expect(children).toHaveTextContent(/^Children\s*3$/);
     const items = [...children.closest('section')!.querySelectorAll('a.row-link')];
-    expect(items.map((a) => a.getAttribute('href'))).toEqual(expect.arrayContaining(['/DM-SHOP-UC01-R01', '/DM-SHOP-UC01-R02', '/DM-SHOP-UC01-FL']));
+    expect(items.map((a) => a.getAttribute('href'))).toEqual(expect.arrayContaining(['/DM-SHOP-UC01-R01', '/DM-SHOP-UC01-R02', '/DM-SHOP-UC01-FL01']));
     expect(within(side()).queryByRole('heading', { name: /^Children/ })).toBeNull();
 
     // Markdown in a text field is rendered.
@@ -66,17 +66,17 @@ describe('record page', () => {
     await screen.findByRole('heading', { level: 1, name: 'The basket shows the new item' });
     // A UC requirement is designed by the steps that fulfill it and proved by its tests.
     expect(traceGroups()).toEqual({
-      'Designed by': ['/DM-SHOP-UC01-FL-S01'],
+      'Designed by': ['/DM-SHOP-UC01-FL01-S01'],
       'Proved by': ['/DM-SHOP-UC01-R01-T01'],
     });
     // Raw in the side bar, as the link tables hold them.
     expect(within(side()).getByText('This record links to nothing.')).toBeInTheDocument();
-    expect(rawLinks('Links in')).toEqual(['fulfills DM-SHOP-UC01-FL-S01']);
+    expect(rawLinks('Links in')).toEqual(['fulfills DM-SHOP-UC01-FL01-S01']);
 
     // Follow it to the step, then see its links out by their labels.
     const user = userEvent.setup();
-    await user.click(within(section(/^Traceability/)).getByRole('link', { name: /DM-SHOP-UC01-FL-S01/ }));
-    expect(window.location.pathname).toBe('/DM-SHOP-UC01-FL-S01');
+    await user.click(within(section(/^Traceability/)).getByRole('link', { name: /DM-SHOP-UC01-FL01-S01/ }));
+    expect(window.location.pathname).toBe('/DM-SHOP-UC01-FL01-S01');
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Shopper adds the item');
     expect(traceGroups()).toMatchObject({
       Fulfills: ['/DM-SHOP-UC01-R01'],

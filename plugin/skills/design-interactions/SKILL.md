@@ -59,14 +59,14 @@ An outside system the product exchanges with is an `integration`, with `system` 
 The Return a tool flow: the librarian records the return (which invokes the command), a refused return, and the result. The Tool Library is an HTTP API with no UI, so it has no views and its steps happen in none; a product with a UI adds a `view` and links each step to it with `happens_in`.
 
 ```
-add  { "flow": { "id": "TL-LEND-UC04-FL", "title": "Return a tool", "use_case_id": "TL-LEND-UC04",
+add  { "flow": { "id": "TL-LEND-UC04-FL01", "title": "Return a tool", "use_case_id": "TL-LEND-UC04",
        "description": "How a librarian takes a tool back and closes its loan." } }
-add  { "flow_step": { "id": "TL-LEND-UC04-FL-S02", "title": "The librarian records the condition and, optionally, a note",
-       "flow_id": "TL-LEND-UC04-FL", "path": "main", "position": 2 } }
-link { "source": "TL-LEND-UC04-FL-S02", "relation": "invokes", "target": "TL-LEND-CMD06" }
-add  { "flow_step": { "id": "TL-LEND-UC04-FL-S03", "title": "A return with no valid condition, of an unknown loan or of a loan already returned is refused",
-       "flow_id": "TL-LEND-UC04-FL", "path": "refused", "position": 1 } }
-link { "source": "TL-LEND-UC04-FL-S03", "relation": "fulfills", "target": "TL-LEND-UC04-R01" }
+add  { "flow_step": { "id": "TL-LEND-UC04-FL01-S02", "title": "The librarian records the condition and, optionally, a note",
+       "flow_id": "TL-LEND-UC04-FL01", "path": "main", "position": 2 } }
+link { "source": "TL-LEND-UC04-FL01-S02", "relation": "invokes", "target": "TL-LEND-CMD06" }
+add  { "flow_step": { "id": "TL-LEND-UC04-FL01-S03", "title": "A return with no valid condition, of an unknown loan or of a loan already returned is refused",
+       "flow_id": "TL-LEND-UC04-FL01", "path": "refused", "position": 1 } }
+link { "source": "TL-LEND-UC04-FL01-S03", "relation": "fulfills", "target": "TL-LEND-UC04-R01" }
 ```
 
 The endpoint that exposes the command, and one of its API requirements:
@@ -84,7 +84,7 @@ A step that sends a reminder through an outside system:
 ```
 add  { "integration": { "id": "TL-INT01", "title": "Mail", "system": "The library's mail service",
        "description": "Sends members their due-date reminders." } }
-link { "source": "TL-LEND-UC03-FL-S04", "relation": "exchanges_with", "target": "TL-INT01" }
+link { "source": "TL-LEND-UC03-FL01-S04", "relation": "exchanges_with", "target": "TL-INT01" }
 ```
 
 ## Rules

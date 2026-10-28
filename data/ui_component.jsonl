@@ -1,6 +1,5 @@
 {"id":"LA-UI01","title":"Format pages","file":"app/src/format/FormatPages.tsx"}
 {"id":"LA-UI02","title":"Format reference","file":"app/src/format/reference.ts"}
-{"id":"LA-UI03","title":"Reference Markdown","file":"lathe/src/reference.ts"}
 {"id":"LA-UI04","title":"Desktop record actions","file":"app/src/shell/desktopRecord.tsx"}
 {"id":"LA-UI05","title":"Standard parts","file":"app/src/specs/StandardParts.tsx"}
 {"id":"LA-UI100","title":"the shared spec parts and TestStateTag","file":"app/src/specs/parts.tsx","description":"the shared spec parts and TestStateTag"}

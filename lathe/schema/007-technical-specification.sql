@@ -266,22 +266,22 @@ COMMENT ON COLUMN standard_rule.statement IS 'The rule, stated with MUST, MUST N
 COMMENT ON COLUMN standard_rule.group_name IS 'A short heading it is shown under among its siblings.';
 
 INSERT INTO meta_kind VALUES
-  ('repository', 'Repository', 'technical-specification', 29, false, '<aggregate>-REPO', 'TL-LEND-A1-REPO', 'parent', NULL),
-  ('data_model', 'Data model', 'technical-specification', 30, false, '<entity>-DM', 'TL-LEND-EN01-DM', 'parent', NULL),
-  ('value_type', 'Value type', 'technical-specification', 32, false, '<value object>-VT', 'TL-VO01-VT', 'parent', NULL),
-  ('predicate', 'Predicate', 'technical-specification', 33, false, '<specification>-PR', 'TL-LEND-SP01-PR', 'parent', NULL),
-  ('event_type', 'Event type', 'technical-specification', 34, false, '<domain event>-ET', 'TL-LEND-EV01-ET', 'parent', NULL),
-  ('projection', 'Projection', 'technical-specification', 35, false, '<read model>-PJ', 'TL-LEND-RM01-PJ', 'parent', NULL),
-  ('command_handler', 'Command handler', 'technical-specification', 36, false, '<command>-H', 'TL-LEND-CMD01-H', 'parent', NULL),
-  ('query_handler', 'Query handler', 'technical-specification', 37, false, '<query>-H', 'TL-LEND-QRY01-H', 'parent', NULL),
-  ('event_handler', 'Event handler', 'technical-specification', 38, false, '<policy>-H', 'TL-LEND-PO01-H', 'parent', NULL),
-  ('service', 'Service', 'technical-specification', 39, false, '<domain service>-SV', 'TL-LEND-DS01-SV', 'parent', NULL),
-  ('endpoint_handler', 'Endpoint handler', 'technical-specification', 41, false, '<endpoint>-H', 'TL-LEND-EP01-H', 'parent', NULL),
-  ('adapter', 'Adapter', 'technical-specification', 42, false, '<integration>-AD', 'TL-INT01-AD', 'parent', NULL),
-  ('table', 'Table', 'technical-specification', 31, false, '<entity or read model>-TB, or <domain>-TB<nn>', 'TL-LEND-EN01-TB', 'parent', NULL),
-  ('ui_component', 'UI component', 'technical-specification', 40, false, '<P>-UI<nn>', 'TL-UI01', 'product', NULL),
-  ('standard', 'Standard', 'technical-specification', 43, false, '<P>-STD-<name>', 'TL-STD-CODE', 'parent', NULL),
-  ('standard_rule', 'Standard rule', 'technical-specification', 44, true, '<standard>-R<nn>', 'TL-STD-CODE-R01', 'parent', NULL);
+  ('repository', 'Repository', 'technical-specification', 30, false, '<aggregate>-REPO', 'TL-LEND-A1-REPO', 'parent', NULL),
+  ('data_model', 'Data model', 'technical-specification', 31, false, '<entity>-DM', 'TL-LEND-EN01-DM', 'parent', NULL),
+  ('value_type', 'Value type', 'technical-specification', 33, false, '<value object>-VT', 'TL-VO01-VT', 'parent', NULL),
+  ('predicate', 'Predicate', 'technical-specification', 34, false, '<specification>-PR', 'TL-LEND-SP01-PR', 'parent', NULL),
+  ('event_type', 'Event type', 'technical-specification', 35, false, '<domain event>-ET', 'TL-LEND-EV01-ET', 'parent', NULL),
+  ('projection', 'Projection', 'technical-specification', 36, false, '<read model>-PJ', 'TL-LEND-RM01-PJ', 'parent', NULL),
+  ('command_handler', 'Command handler', 'technical-specification', 37, false, '<command>-H', 'TL-LEND-CMD01-H', 'parent', NULL),
+  ('query_handler', 'Query handler', 'technical-specification', 38, false, '<query>-H', 'TL-LEND-QRY01-H', 'parent', NULL),
+  ('event_handler', 'Event handler', 'technical-specification', 39, false, '<policy>-H', 'TL-LEND-PO01-H', 'parent', NULL),
+  ('service', 'Service', 'technical-specification', 40, false, '<domain service>-SV', 'TL-LEND-DS01-SV', 'parent', NULL),
+  ('endpoint_handler', 'Endpoint handler', 'technical-specification', 42, false, '<endpoint>-H', 'TL-LEND-EP01-H', 'parent', NULL),
+  ('adapter', 'Adapter', 'technical-specification', 43, false, '<integration>-AD', 'TL-INT01-AD', 'parent', NULL),
+  ('table', 'Table', 'technical-specification', 32, false, '<entity or read model>-TB, or <domain>-TB<nn>', 'TL-LEND-EN01-TB', 'parent', NULL),
+  ('ui_component', 'UI component', 'technical-specification', 41, false, '<P>-UI<nn>', 'TL-UI01', 'product', NULL),
+  ('standard', 'Standard', 'technical-specification', 44, false, '<P>-STD-<name>', 'TL-STD-CODE', 'parent', NULL),
+  ('standard_rule', 'Standard rule', 'technical-specification', 45, true, '<standard>-R<nn>', 'TL-STD-CODE-R01', 'parent', NULL);
 INSERT INTO meta_kind_parent VALUES
   ('repository', 'aggregate', 1, 'aggregate_id'),
   ('data_model', 'entity', 1, 'entity_id'),
