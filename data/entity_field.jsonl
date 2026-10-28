@@ -423,30 +423,29 @@
 {"entity_id":"LA-CHK-EN03","position":1,"name":"Product","meaning":"The product the settings are for.","type_aggregate_id":"LA-AUT-A1","required":true,"column_name":"product_id","example":"TL"}
 {"entity_id":"LA-CHK-EN03","position":2,"name":"Max children","meaning":"The most children of one kind a record of the product should hold; 15 when the product has no row.","type_value_object_id":"LA-VO43","required":true,"example":"15"}
 {"entity_id":"LA-CHK-EN03","position":3,"name":"Max entities per aggregate","meaning":"The most entities an aggregate of the product should hold; 7 when the product has no row.","type_value_object_id":"LA-VO93","required":true,"example":"7"}
-{"entity_id":"LA-EXP-EN01","position":1,"name":"Address","meaning":"Where the page is, to bookmark, share or reload.","type_value_object_id":"LA-VO90","required":true,"example":"/LA-AUT-A1?view=wiki,graph"}
+{"entity_id":"LA-EXP-EN01","position":1,"name":"Address","meaning":"Where the page is, to bookmark, share or reload.","type_value_object_id":"LA-VO90","required":true,"example":"/LA-AUT-A1?stage=graph"}
 {"entity_id":"LA-EXP-EN01","position":2,"name":"Page kind","meaning":"What sort of place it is: products, product, domain, record, group, checks, format or settings.","type":"text","required":true,"example":"record"}
 {"entity_id":"LA-EXP-EN01","position":3,"name":"Focus","meaning":"The record or group the page is about: a record ID, or a group's address.","type":"text","required":false,"example":"LA-AUT-A1"}
 {"entity_id":"LA-EXP-EN01","position":4,"name":"Group kind","meaning":"On a kind group's page, the kind of the focus's children shown.","type":"text","required":false,"example":"use_case"}
-{"entity_id":"LA-EXP-EN01","position":5,"name":"Views","meaning":"How the focus is shown, in pane order; it never changes the path.","type_value_object_id":"LA-VO91","required":true,"example":"wiki, graph"}
+{"entity_id":"LA-EXP-EN01","position":5,"name":"Stage","meaning":"How the focus is drawn behind the floating panels; it never changes the path.","type_value_object_id":"LA-VO91","required":true,"example":"graph"}
 {"entity_id":"LA-EXP-EN02","position":1,"name":"Product","meaning":"The product the space is.","type_aggregate_id":"LA-AUT-A1","required":true,"example":"TL"}
-{"entity_id":"LA-EXP-EN02","position":2,"name":"Last page","meaning":"The last page visited in the space, for this browser session only.","type_value_object_id":"LA-VO90","required":false,"example":"/TL-LEND-INV01?view=wiki,graph"}
+{"entity_id":"LA-EXP-EN02","position":2,"name":"Last page","meaning":"The last page visited in the space, for this browser session only.","type_value_object_id":"LA-VO90","required":false,"example":"/TL-LEND-INV01?stage=graph"}
 {"entity_id":"LA-EXP-EN02","position":3,"name":"Last chosen","meaning":"Whether it is the space the reader chose last, which stays current on a page outside every space (DS02).","type":"yes/no","required":true,"example":"yes"}
 {"entity_id":"LA-EXP-EN03","position":1,"name":"Product","meaning":"The product whose nav the row is in.","type_aggregate_id":"LA-AUT-A1","required":true,"example":"LA"}
 {"entity_id":"LA-EXP-EN03","position":2,"name":"Row","meaning":"The row: a record's ID, or a stage's or kind group's address.","type":"text","required":true,"example":"LA-EXP/domain-model"}
 {"entity_id":"LA-EXP-EN03","position":3,"name":"Folded","meaning":"Whether it is folded in the nav, for this browser session.","type":"yes/no","required":true,"example":"no"}
 {"entity_id":"LA-EXP-EN09","position":1,"name":"Space","meaning":"The space whose tabs these are.","type_aggregate_id":"LA-EXP-A2","required":true,"example":"LA"}
 {"entity_id":"LA-EXP-EN09","position":2,"name":"Active page","meaning":"The page of the tab shown, which the address names.","type_value_object_id":"LA-VO90","required":true,"example":"/LA-EXP-UC10"}
-{"entity_id":"LA-EXP-EN10","position":1,"name":"Page","meaning":"The page it holds, by its address path, without the views.","type_value_object_id":"LA-VO90","required":true,"example":"/LA-EXP-UC10"}
+{"entity_id":"LA-EXP-EN10","position":1,"name":"Page","meaning":"The page it holds, by its address path, without the stage.","type_value_object_id":"LA-VO90","required":true,"example":"/LA-EXP-UC10"}
 {"entity_id":"LA-EXP-EN10","position":2,"name":"Position","meaning":"Its place in the row, left to right.","type":"whole number","required":true,"example":"2"}
 {"entity_id":"LA-EXP-EN10","position":3,"name":"Preview","meaning":"Whether the next plain open replaces it.","type":"yes/no","required":true,"example":"yes"}
-{"entity_id":"LA-EXP-EN10","position":4,"name":"Views","meaning":"The views it has open, those its page does not offer included.","type_value_object_id":"LA-VO91","required":true,"example":"wiki, graph"}
-{"entity_id":"LA-EXP-EN10","position":5,"name":"Pane sizes","meaning":"Each open pane's weight, a whole number from 1 to 10000, which the gaps share out.","type":"text","required":true,"example":"wiki 160, graph 40"}
-{"entity_id":"LA-EXP-EN10","position":6,"name":"Wiki scroll","meaning":"How far down the wiki pane was, in pixels.","type":"whole number","required":true,"example":"120"}
-{"entity_id":"LA-EXP-EN10","position":7,"name":"Side bar","meaning":"For each view mode, whether the side bar is open and which of its views it shows (UC12-R02).","type":"text","required":true,"example":"graph: open, details"}
-{"entity_id":"LA-EXP-EN11","position":1,"name":"Settings","meaning":"The graph's layout, depth, trace, Links, minimap and filters.","type_value_object_id":"LA-VO92","required":true,"example":"nested, depth 2"}
-{"entity_id":"LA-PLT-EN02","position":1,"name":"Panel","meaning":"Which part of the page it is: the navigation, the wiki, graph, ERD or trace pane, or the side bar.","type":"text","required":true,"example":"Side bar"}
+{"entity_id":"LA-EXP-EN10","position":4,"name":"Stage","meaning":"The stage it shows, kept where its page does not offer it.","type_value_object_id":"LA-VO91","required":true,"example":"erd"}
+{"entity_id":"LA-EXP-EN10","position":5,"name":"Side bar","meaning":"For each stage, whether the side bar is open and which of its views it shows (UC12-R02).","type":"text","required":true,"example":"graph: open, details"}
+{"entity_id":"LA-EXP-EN10","position":6,"name":"Card scroll","meaning":"How far down the wiki card was, in pixels.","type":"whole number","required":true,"example":"120"}
+{"entity_id":"LA-EXP-EN11","position":1,"name":"Settings","meaning":"The graph's layout, depth, Links, minimap and filters, and the wiki card's open state and width.","type_value_object_id":"LA-VO92","required":true,"example":"nested, depth 2, card open"}
+{"entity_id":"LA-PLT-EN02","position":1,"name":"Panel","meaning":"Which part of the app it is: the navigation, the wiki card or the side bar.","type":"text","required":true,"example":"Side bar"}
 {"entity_id":"LA-PLT-EN02","position":2,"name":"Shown","meaning":"Whether it is on screen; a hidden panel keeps a control that brings it back.","type":"yes/no","required":true,"example":"yes"}
-{"entity_id":"LA-PLT-EN02","position":3,"name":"Size","meaning":"Its width in pixels (the navigation, the side bar), or a pane's share of the panes' width, within its limits.","type":"decimal","required":true,"example":"340"}
+{"entity_id":"LA-PLT-EN02","position":3,"name":"Size","meaning":"Its width in pixels, within its limits.","type":"decimal","required":true,"example":"340"}
 {"entity_id":"LA-PLT-EN03","position":1,"name":"Command ID","meaning":"The command's name in the keymap, unique.","type":"text","required":true,"example":"commandPalette"}
 {"entity_id":"LA-PLT-EN03","position":2,"name":"Title","meaning":"What it does, as the palette and the shortcuts sheet show it.","type":"text","required":true,"example":"Command palette"}
 {"entity_id":"LA-PLT-EN03","position":3,"name":"Group","meaning":"Where the shortcuts sheet lists it: Navigate, View, Graph or Lists.","type":"text","required":true,"example":"Navigate"}

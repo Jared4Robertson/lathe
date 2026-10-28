@@ -31,7 +31,7 @@
 {"id":"LA-EXP-TM01","title":"Page","domain_id":"LA-EXP","meaning":"One place in the app at its own address, showing one focus."}
 {"id":"LA-EXP-TM02","title":"Address","domain_id":"LA-EXP","meaning":"A page's path and its `view` query parameter."}
 {"id":"LA-EXP-TM03","title":"Focus","domain_id":"LA-EXP","meaning":"The product, domain, record or group a page is about."}
-{"id":"LA-EXP-TM04","title":"View","domain_id":"LA-EXP","meaning":"One way to read a focus, opened as a pane: Wiki, Graph or Model."}
+{"id":"LA-EXP-TM04","title":"Stage","domain_id":"LA-EXP","meaning":"The one way a focus page draws its focus, full window behind the floating panels: Graph, ERD or Trace."}
 {"id":"LA-EXP-TM05","title":"Space","domain_id":"LA-EXP","meaning":"One product as a place to work in, chosen from the rail."}
 {"id":"LA-EXP-TM06","title":"Rail","domain_id":"LA-EXP","meaning":"The column of space icons at the far left of the nav."}
 {"id":"LA-EXP-TM07","title":"Stage folder","domain_id":"LA-EXP","meaning":"One of a domain's five stages in the nav, listing its records by kind."}
@@ -42,10 +42,9 @@
 {"id":"LA-EXP-TM12","title":"Tab","domain_id":"LA-EXP","meaning":"One open page with its own views and settings, in a space's row of tabs."}
 {"id":"LA-EXP-TM13","title":"Preview tab","domain_id":"LA-EXP","meaning":"The tab a plain open replaces, shown in italics."}
 {"id":"LA-EXP-TM14","title":"Side bar","domain_id":"LA-EXP","meaning":"The page's last column, with its Details, Outline and History views."}
-{"id":"LA-EXP-TM15","title":"ERD","domain_id":"LA-EXP","meaning":"A domain's or an aggregate's model drawn as boxes and lines in the ERD view."}
+{"id":"LA-EXP-TM15","title":"ERD","domain_id":"LA-EXP","meaning":"A domain's or an aggregate's model drawn as boxes and lines on the ERD stage."}
 {"id":"LA-PLT-TM01","title":"Workbench","domain_id":"LA-PLT","meaning":"The wide-screen layout: panels a gap apart on the shell, every gap a resize handle."}
-{"id":"LA-PLT-TM02","title":"Panel","domain_id":"LA-PLT","meaning":"A part of the workbench a person shows, hides and resizes: the navigation, a pane or the side bar."}
-{"id":"LA-PLT-TM03","title":"Pane","domain_id":"LA-PLT","meaning":"One view of the page (Wiki, Graph, ERD or Trace), side by side with the others."}
+{"id":"LA-PLT-TM02","title":"Panel","domain_id":"LA-PLT","meaning":"A part of the app that floats over the stage, which a person shows, hides and resizes: the navigation, the tab panel, the wiki card or the side bar."}
 {"id":"LA-PLT-TM04","title":"Keymap","domain_id":"LA-PLT","meaning":"The one table of keyboard commands and their bindings, which every key, the palette, the sheet and every hint read."}
 {"id":"LA-PLT-TM05","title":"Theme","domain_id":"LA-PLT","meaning":"A named set of token values with a light set and a dark set."}
 {"id":"LA-PLT-TM06","title":"Color mode","domain_id":"LA-PLT","meaning":"System, Light or Dark: which of every theme's two sets shows."}
