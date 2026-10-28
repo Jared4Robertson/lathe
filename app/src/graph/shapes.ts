@@ -17,6 +17,10 @@ import type { SpecIndex } from '../specs/data';
 //
 // Pure data and geometry, with no React, so the Voronoi worker can read it.
 
+/** A leaf's box at text scale 1: the width a Tree box's label wraps at (text.ts), and the size a shape is drawn at. */
+export const NODE_WIDTH = 190;
+export const NODE_HEIGHT = 56;
+
 export type Shape =
   | 'box' | 'product' | 'hexagon' | 'folder' | 'slice'
   | 'double' | 'octagon' | 'flag' | 'parallelogram' | 'stadium' | 'page' | 'stack'

@@ -28,14 +28,13 @@ import {
   type Filters,
   type Neighborhood,
 } from './model';
-import type { Point } from './layout';
 import { DEFAULT_GRAPH_SETTINGS } from './settings';
 import { centerOf, graphMap, linkEnds, mapRootOf, parentLine, type GraphMap, type PlacedMap } from './map';
 import { nestedMap, type NestedMap, type NestedNode } from './nested';
 import { readyVoronoiMap, voronoiMap, type VoronoiMap, type VoronoiNode } from './voronoi';
 import { setTextMeasure, type TextMeasure } from './text';
 import { drawnFor, drawnKey, drawnNested, frameNested, frameOnMap, glideDuration, MAX_ZOOM, mergeDrawn, MIN_ZOOM, zoomPath, type Drawn, type Viewport } from './camera';
-import { EdgeHintChips, pastEdges, type Side } from './hints';
+import { EdgeHintChips, pastEdges, type Point, type Side } from './hints';
 import { readMotion } from './motion';
 import { nodeShape } from './shapes';
 import { Button } from '../components/Button';

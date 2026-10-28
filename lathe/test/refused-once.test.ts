@@ -26,7 +26,7 @@ describe('one problem per mistake', () => {
 
   it('LA-CHK-UC04-R07-T01 A row taking another record\'s ID is refused once, as unique-id naming that record\'s file and line, and the links to the ID are not', async () => {
     // EX-LEND-SP01 is the target of a checks link and the source of a reads link.
-    const twin = { id: 'EX-LEND-SP01', title: 'Twin', uc_requirement_id: 'EX-LEND-UC01-R01', level: 'api', state: 'not automated yet' };
+    const twin = { id: 'EX-LEND-SP01', title: 'Twin', uc_requirement_id: 'EX-LEND-UC01-R01', level: 'service', state: 'not automated yet' };
     expect(await refusals(adding(complete(), { use_case_test: [twin] }))).toEqual([
       expect.objectContaining({ rule: 'unique-id', file: 'data/use_case_test.jsonl', line: 3, message: expect.stringContaining('already a specification (data/specification.jsonl:1)') }),
     ]);
@@ -61,9 +61,9 @@ describe("a test's run by", () => {
     expect(await refusals(test({ state: undefined }))).toEqual([expect.objectContaining({ rule: 'required', message: 'use_case_test.state is required' })]);
   });
 
-  it('LA-TRC-UC03-R06-T01 A level other than the seven, or none, is refused', async () => {
+  it('LA-TRC-UC03-R06-T01 A level outside the five, or none, is refused', async () => {
     expect(await refusals(test({ level: 'smoke' }))).toEqual([
-      expect.objectContaining({ rule: 'column', message: 'use_case_test.level "smoke" is not one of unit, database, api, contract, e2e-api, e2e-ui, manual' }),
+      expect.objectContaining({ rule: 'column', message: 'use_case_test.level "smoke" is not one of unit, integration, service, system, browser' }),
     ]);
     expect(await refusals(test({ level: undefined }))).toEqual([expect.objectContaining({ rule: 'required', message: 'use_case_test.level is required' })]);
   });

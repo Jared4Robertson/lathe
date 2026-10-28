@@ -43,8 +43,8 @@ describe('Traceability flows from the command line', () => {
       ...LENDING,
       ...DESIGNED,
       add('uc_requirement', { id: 'TL-LEND-UC01-R02', title: 'A member in debt is refused', use_case_id: 'TL-LEND-UC01', statement: 'The library MUST refuse a member who owes a fee.' }),
-      add('use_case_test', { id: 'TL-LEND-UC01-R01-T01', title: 'A tool on loan is refused', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'api', state: 'automated', file: 'test/loans.test.ts' }),
-      add('use_case_test', { id: 'TL-LEND-UC01-R02-T01', title: 'A member in debt is refused', uc_requirement_id: 'TL-LEND-UC01-R02', level: 'api', state: 'not automated yet' }),
+      add('use_case_test', { id: 'TL-LEND-UC01-R01-T01', title: 'A tool on loan is refused', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'service', state: 'automated', file: 'test/loans.test.ts' }),
+      add('use_case_test', { id: 'TL-LEND-UC01-R02-T01', title: 'A member in debt is refused', uc_requirement_id: 'TL-LEND-UC01-R02', level: 'service', state: 'not automated yet' }),
     ]);
     tl.write('src/loans.ts', '// TL-LEND-CMD01-H\n');
     tl.write('test/loans.test.ts', "it('TL-LEND-UC01-R01-T01 a tool on loan is refused');\n");
@@ -91,10 +91,10 @@ describe('Traceability flows from the command line', () => {
     tl.run('add', 'use_case_test', '--id', 'TL-LEND-UC01-R01-T01', '--title', 'A tool on loan is refused', '--uc_requirement_id', 'TL-LEND-UC01-R01', '--level', 'unit', '--state', 'automated', '--file', 'test/loans.test.ts');
     tl.run('link', 'TL-LEND-UC01-R01-T01', 'checks_rule', 'TL-LEND-HR01');
     expect(coverage(tl, 'TL-LEND', 'uc_requirement')).toMatchObject({ total: 1, designed: 1, built: 1, proved: 0 });
-    tl.run('set', 'TL-LEND-UC01-R01-T01', '--level', 'api');
+    tl.run('set', 'TL-LEND-UC01-R01-T01', '--level', 'service');
     expect(coverage(tl, 'TL-LEND', 'uc_requirement')).toMatchObject({ total: 1, designed: 1, built: 1, proved: 1 });
     // S03: an obligation with only a test not automated yet counts as that, not proved.
-    tl.run('add', 'invariant_test', '--id', 'TL-LEND-INV01-T', '--title', 'One active loan per tool', '--invariant_id', 'TL-LEND-INV01', '--level', 'database', '--state', 'not automated yet');
+    tl.run('add', 'invariant_test', '--id', 'TL-LEND-INV01-T', '--title', 'One active loan per tool', '--invariant_id', 'TL-LEND-INV01', '--level', 'integration', '--state', 'not automated yet');
     expect(coverage(tl, 'TL-LEND', 'invariant')).toMatchObject({ total: 1, proved: 0, not_automated: 1 });
     // S04: one line per domain and obligation kind in the schema's order, the product's own kind after Lathe's.
     const out = tl.check().stdout;
@@ -129,18 +129,18 @@ describe('Traceability flows from the command line', () => {
       ['add', 'use_case_test', ...flags({ id: `${requirement}-T01`, title: 'A test', uc_requirement_id: requirement, ...run })];
     // S01, S02: the test under what it proves, automated with the file that runs it.
     tl.write('test/loans.test.ts', "it('TL-LEND-UC01-R01-T01 a tool on loan is refused');\n");
-    tl.run(...test('TL-LEND-UC01-R01', { level: 'api', state: 'automated', file: 'test/loans.test.ts' }));
+    tl.run(...test('TL-LEND-UC01-R01', { level: 'service', state: 'automated', file: 'test/loans.test.ts' }));
     // S03: a manual test gives its reason and its procedure.
-    tl.run(...test('TL-LEND-UC01-R02', { level: 'manual', state: 'manual', manual_reason: 'Manual because the fee is read off the paper ledger.', given: 'A member who owes a fee', when: 'They borrow a tool', then: 'The librarian refuses the loan' }));
+    tl.run(...test('TL-LEND-UC01-R02', { level: 'browser', state: 'manual', manual_reason: 'Manual because the fee is read off the paper ledger.', given: 'A member who owes a fee', when: 'They borrow a tool', then: 'The librarian refuses the loan' }));
     // S04: a test not automated yet may name its file; until the file exists that is a warning.
-    tl.run(...test('TL-LEND-UC01-R03', { level: 'api', state: 'not automated yet', file: 'test/dates.test.ts' }));
+    tl.run(...test('TL-LEND-UC01-R03', { level: 'service', state: 'not automated yet', file: 'test/dates.test.ts' }));
     const ws = tl.workspace();
     expect(ws.problems.filter((p) => p.check === 'test-file-missing').map((p) => [p.severity, p.record])).toEqual([['warning', 'TL-LEND-UC01-R03-T01']]);
     expect(ws.coverage.find((c) => c.domain === 'TL-LEND')?.tests).toEqual({ automated: 1, manual: 1, not_automated: 1 });
     // S05: an unknown state or level, an automated test with no file and a manual reason on a test that is not manual.
     const refusals = [
       tl.refused('set', 'TL-LEND-UC01-R03-T01', '--state', 'planned'),
-      tl.refused('set', 'TL-LEND-UC01-R03-T01', '--level', 'system'),
+      tl.refused('set', 'TL-LEND-UC01-R03-T01', '--level', 'e2e-ui'),
       tl.refused('set', 'TL-LEND-UC01-R03-T01', '--state', 'automated', '--file', ''),
       tl.refused('set', 'TL-LEND-UC01-R03-T01', '--manual_reason', 'Because.'),
     ];
@@ -179,7 +179,7 @@ describe('Traceability flows from the command line', () => {
     // S04: one pattern rule test per rule in each following domain, naming the domain.
     tl.write('test/actions.test.ts', ['TL-PAT-ACT-R01-T01', 'TL-PAT-ACT-R01-T02', 'TL-PAT-ACT-R02-T01'].map((id) => `it('${id}');\n`).join(''));
     for (const [id, rule, domain] of [['TL-PAT-ACT-R01-T01', 'TL-PAT-ACT-R01', 'TL-LEND'], ['TL-PAT-ACT-R01-T02', 'TL-PAT-ACT-R01', 'TL-SHOP'], ['TL-PAT-ACT-R02-T01', 'TL-PAT-ACT-R02', 'TL-LEND']]) {
-      tl.run('add', 'pattern_rule_test', '--id', id, '--title', 'A rule proved', '--pattern_rule_id', rule, '--domain_id', domain, '--level', 'api', '--state', 'automated', '--file', 'test/actions.test.ts');
+      tl.run('add', 'pattern_rule_test', '--id', id, '--title', 'A rule proved', '--pattern_rule_id', rule, '--domain_id', domain, '--level', 'service', '--state', 'automated', '--file', 'test/actions.test.ts');
     }
     const out = tl.check().stdout;
     expect(line(out, 'TL-LEND', 'pattern rule')).toBe('TL-LEND pattern rule: proof only, 2/2 proved');
@@ -204,7 +204,7 @@ describe('Traceability flows from the command line', () => {
     await tl.seed([...LENDING, add('uc_requirement', { id: 'TL-LEND-UC01-R02', title: 'A member in debt is refused', use_case_id: 'TL-LEND-UC01', statement: 'The library MUST refuse a member who owes a fee.' }), add('uc_requirement', { id: 'TL-LEND-UC01-R03', title: 'The due date is set', use_case_id: 'TL-LEND-UC01', statement: 'The loan MUST be due two weeks after it opens.' })]);
     // S01: the Agent writes the test's code, but names a longer ID, not the test's own.
     tl.write('test/loans.test.ts', "it('TL-LEND-UC01-R01-T011 a tool on loan is refused');\n");
-    tl.run('add', 'use_case_test', ...flags({ id: 'TL-LEND-UC01-R01-T01', title: 'A tool on loan is refused', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'api', state: 'automated', file: 'test/loans.test.ts' }));
+    tl.run('add', 'use_case_test', ...flags({ id: 'TL-LEND-UC01-R01-T01', title: 'A tool on loan is refused', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'service', state: 'automated', file: 'test/loans.test.ts' }));
     // S02, S03: the check reads the file for the whole ID, and a file that does not name its test is an error.
     const silent = tl.check();
     expect(silent.status).toBe(1);
@@ -213,8 +213,8 @@ describe('Traceability flows from the command line', () => {
     expect(problemsOf(tl.workspace(), 'test-file-missing-id')).toEqual([]);
     // S04: a manual test's file and one not automated yet are checked only for existing.
     tl.write('docs/ledger.md', 'How the ledger is read.\n');
-    tl.run('add', 'use_case_test', ...flags({ id: 'TL-LEND-UC01-R02-T01', title: 'A member in debt is refused', uc_requirement_id: 'TL-LEND-UC01-R02', level: 'manual', state: 'manual', manual_reason: 'Manual because the fee is read off the paper ledger.', file: 'docs/ledger.md' }));
-    tl.run('add', 'use_case_test', ...flags({ id: 'TL-LEND-UC01-R03-T01', title: 'The due date is set', uc_requirement_id: 'TL-LEND-UC01-R03', level: 'api', state: 'not automated yet', file: 'docs/ledger.md' }));
+    tl.run('add', 'use_case_test', ...flags({ id: 'TL-LEND-UC01-R02-T01', title: 'A member in debt is refused', uc_requirement_id: 'TL-LEND-UC01-R02', level: 'browser', state: 'manual', manual_reason: 'Manual because the fee is read off the paper ledger.', file: 'docs/ledger.md' }));
+    tl.run('add', 'use_case_test', ...flags({ id: 'TL-LEND-UC01-R03-T01', title: 'The due date is set', uc_requirement_id: 'TL-LEND-UC01-R03', level: 'service', state: 'not automated yet', file: 'docs/ledger.md' }));
     const ws = tl.workspace();
     expect(ws.problems.filter((p) => p.severity === 'error')).toEqual([]);
     expect(problemsOf(ws, 'test-file-missing-id')).toEqual([]);
@@ -235,9 +235,9 @@ describe('Traceability flows from the command line', () => {
       ...LENDING,
       add('uc_requirement', { id: 'TL-LEND-UC01-R02', title: 'A member in debt is refused', use_case_id: 'TL-LEND-UC01', statement: 'The library MUST refuse a member who owes a fee.' }),
       add('uc_requirement', { id: 'TL-LEND-UC01-R03', title: 'The due date is set', use_case_id: 'TL-LEND-UC01', statement: 'The loan MUST be due two weeks after it opens.' }),
-      add('use_case_test', { id: 'TL-LEND-UC01-R01-T01', title: 'A tool on loan is refused', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'api', state: 'automated', file: 'test/loans.test.ts' }),
-      add('use_case_test', { id: 'TL-LEND-UC01-R02-T01', title: 'A member in debt is refused', uc_requirement_id: 'TL-LEND-UC01-R02', level: 'manual', state: 'manual', manual_reason: 'Manual because the fee is read off the paper ledger.' }),
-      add('use_case_test', { id: 'TL-LEND-UC01-R03-T01', title: 'The due date is set', uc_requirement_id: 'TL-LEND-UC01-R03', level: 'api', state: 'not automated yet' }),
+      add('use_case_test', { id: 'TL-LEND-UC01-R01-T01', title: 'A tool on loan is refused', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'service', state: 'automated', file: 'test/loans.test.ts' }),
+      add('use_case_test', { id: 'TL-LEND-UC01-R02-T01', title: 'A member in debt is refused', uc_requirement_id: 'TL-LEND-UC01-R02', level: 'browser', state: 'manual', manual_reason: 'Manual because the fee is read off the paper ledger.' }),
+      add('use_case_test', { id: 'TL-LEND-UC01-R03-T01', title: 'The due date is set', uc_requirement_id: 'TL-LEND-UC01-R03', level: 'service', state: 'not automated yet' }),
       ...SHOP,
     ]);
     tl.write('test/loans.test.ts', "it('TL-LEND-UC01-R01-T01 a tool on loan is refused');\n");
@@ -291,8 +291,8 @@ describe('Traceability flows from the command line', () => {
       ...SHOP,
       ...PATTERN,
       link('TL-LEND', 'follows', 'TL-PAT-ACT'),
-      add('use_case_test', { id: 'TL-LEND-UC01-R01-T01', title: 'A tool on loan is refused', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'manual', state: 'manual', manual_reason: 'Manual because the librarian checks the shelf.', file: 'docs/shelf.md' }),
-      add('pattern_rule_test', { id: 'TL-PAT-ACT-R01-T01', title: 'A saved record reads the same', pattern_rule_id: 'TL-PAT-ACT-R01', domain_id: 'TL-SHOP', level: 'api', state: 'automated', file: 'test/actions.test.ts' }),
+      add('use_case_test', { id: 'TL-LEND-UC01-R01-T01', title: 'A tool on loan is refused', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'browser', state: 'manual', manual_reason: 'Manual because the librarian checks the shelf.', file: 'docs/shelf.md' }),
+      add('pattern_rule_test', { id: 'TL-PAT-ACT-R01-T01', title: 'A saved record reads the same', pattern_rule_id: 'TL-PAT-ACT-R01', domain_id: 'TL-SHOP', level: 'service', state: 'automated', file: 'test/actions.test.ts' }),
     ]);
     tl.write('test/actions.test.ts', "it('TL-PAT-ACT-R01-T01');\n");
     tl.write('docs/shelf.md', 'Look at the shelf.\n');

@@ -4,7 +4,14 @@
 -- refusal); an integration or a standard rule any number; a pattern rule one per domain that adopts it. A run by also
 -- gives the test's size and its markers. Then the test data sets, under a domain, that tests start from.
 
-CREATE TYPE test_level AS ENUM ('unit', 'database', 'api', 'contract', 'e2e-api', 'e2e-ui', 'manual');
+-- A test's level says only how it runs, cheapest first: unit (in process, no storage or I/O), integration (in process,
+-- with real storage: a database, files, git), service (through the product's interface in process, with real storage:
+-- an HTTP handler, a CLI command function, an MCP handler), system (the running product driven from outside through its
+-- real interface: HTTP to a running server, the real CLI or MCP process) and browser (a real browser or the desktop shell
+-- against the running app). The test kind says what it tests and the state who runs it: a manual test names the level a
+-- person exercises, such as browser for a person clicking through the app. A test runs at the lowest level that can
+-- observe its result.
+CREATE TYPE test_level AS ENUM ('unit', 'integration', 'service', 'system', 'browser');
 CREATE TYPE test_state AS ENUM ('automated', 'manual', 'not automated yet');
 -- A test's size besides small, the size of a test that gives none.
 CREATE TYPE test_size AS ENUM ('volume', 'worst case');
@@ -30,7 +37,7 @@ COMMENT ON TABLE constraint_test IS 'Proves its constraint: the values its value
 COMMENT ON COLUMN constraint_test.id IS 'The test''s ID: its constraint''s ID and T, such as TL-VO01-C01-T.';
 COMMENT ON COLUMN constraint_test.title IS 'What the test shows, in a sentence.';
 COMMENT ON COLUMN constraint_test.constraint_id IS 'The constraint it proves; it has exactly one test.';
-COMMENT ON COLUMN constraint_test.level IS 'The level it runs at: unit, database, api, contract, e2e-api, e2e-ui or manual.';
+COMMENT ON COLUMN constraint_test.level IS 'How it runs: unit, integration, service, system or browser, the lowest that can observe its result; a manual test names the level a person exercises.';
 COMMENT ON COLUMN constraint_test.state IS 'automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet.';
 COMMENT ON COLUMN constraint_test.file IS 'The file that runs it, from the product root; an automated test must name one.';
 COMMENT ON COLUMN constraint_test.manual_reason IS 'Why a person runs it rather than a file; a manual test must give one, and only a manual test.';
@@ -63,7 +70,7 @@ COMMENT ON TABLE invariant_test IS 'Proves its invariant: a change that would br
 COMMENT ON COLUMN invariant_test.id IS 'The test''s ID: its invariant''s ID and T, such as TL-LEND-INV01-T.';
 COMMENT ON COLUMN invariant_test.title IS 'What the test shows, in a sentence.';
 COMMENT ON COLUMN invariant_test.invariant_id IS 'The invariant it proves; it has exactly one test.';
-COMMENT ON COLUMN invariant_test.level IS 'The level it runs at: unit, database, api, contract, e2e-api, e2e-ui or manual.';
+COMMENT ON COLUMN invariant_test.level IS 'How it runs: unit, integration, service, system or browser, the lowest that can observe its result; a manual test names the level a person exercises.';
 COMMENT ON COLUMN invariant_test.state IS 'automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet.';
 COMMENT ON COLUMN invariant_test.file IS 'The file that runs it, from the product root; an automated test must name one.';
 COMMENT ON COLUMN invariant_test.manual_reason IS 'Why a person runs it rather than a file; a manual test must give one, and only a manual test.';
@@ -97,7 +104,7 @@ COMMENT ON TABLE specification_test IS 'Proves its specification: which records 
 COMMENT ON COLUMN specification_test.id IS 'The test''s ID: its specification''s ID and T, such as TL-LEND-SP01-T.';
 COMMENT ON COLUMN specification_test.title IS 'What the test shows, in a sentence.';
 COMMENT ON COLUMN specification_test.specification_id IS 'The specification it proves; it has exactly one test.';
-COMMENT ON COLUMN specification_test.level IS 'The level it runs at: unit, database, api, contract, e2e-api, e2e-ui or manual.';
+COMMENT ON COLUMN specification_test.level IS 'How it runs: unit, integration, service, system or browser, the lowest that can observe its result; a manual test names the level a person exercises.';
 COMMENT ON COLUMN specification_test.state IS 'automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet.';
 COMMENT ON COLUMN specification_test.file IS 'The file that runs it, from the product root; an automated test must name one.';
 COMMENT ON COLUMN specification_test.manual_reason IS 'Why a person runs it rather than a file; a manual test must give one, and only a manual test.';
@@ -131,7 +138,7 @@ COMMENT ON TABLE policy_test IS 'Proves its policy: when its event happens, its 
 COMMENT ON COLUMN policy_test.id IS 'The test''s ID: its policy''s ID and T, such as TL-LEND-PO01-T.';
 COMMENT ON COLUMN policy_test.title IS 'What the test shows, in a sentence.';
 COMMENT ON COLUMN policy_test.policy_id IS 'The policy it proves; it has exactly one test.';
-COMMENT ON COLUMN policy_test.level IS 'The level it runs at: unit, database, api, contract, e2e-api, e2e-ui or manual.';
+COMMENT ON COLUMN policy_test.level IS 'How it runs: unit, integration, service, system or browser, the lowest that can observe its result; a manual test names the level a person exercises.';
 COMMENT ON COLUMN policy_test.state IS 'automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet.';
 COMMENT ON COLUMN policy_test.file IS 'The file that runs it, from the product root; an automated test must name one.';
 COMMENT ON COLUMN policy_test.manual_reason IS 'Why a person runs it rather than a file; a manual test must give one, and only a manual test.';
@@ -165,7 +172,7 @@ COMMENT ON TABLE domain_service_test IS 'Proves its domain service: from the inp
 COMMENT ON COLUMN domain_service_test.id IS 'The test''s ID: its domain service''s ID and T<nn>, such as TL-LEND-DS01-T01.';
 COMMENT ON COLUMN domain_service_test.title IS 'What the test shows, in a sentence.';
 COMMENT ON COLUMN domain_service_test.domain_service_id IS 'The domain service it proves.';
-COMMENT ON COLUMN domain_service_test.level IS 'The level it runs at: unit, database, api, contract, e2e-api, e2e-ui or manual.';
+COMMENT ON COLUMN domain_service_test.level IS 'How it runs: unit, integration, service, system or browser, the lowest that can observe its result; a manual test names the level a person exercises.';
 COMMENT ON COLUMN domain_service_test.state IS 'automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet.';
 COMMENT ON COLUMN domain_service_test.file IS 'The file that runs it, from the product root; an automated test must name one.';
 COMMENT ON COLUMN domain_service_test.manual_reason IS 'Why a person runs it rather than a file; a manual test must give one, and only a manual test.';
@@ -199,7 +206,7 @@ COMMENT ON TABLE use_case_test IS 'Proves its UC requirement, at the level the u
 COMMENT ON COLUMN use_case_test.id IS 'The test''s ID: its UC requirement''s ID and T<nn>, such as TL-LEND-UC01-R01-T01.';
 COMMENT ON COLUMN use_case_test.title IS 'What the test shows, in a sentence.';
 COMMENT ON COLUMN use_case_test.uc_requirement_id IS 'The UC requirement it proves.';
-COMMENT ON COLUMN use_case_test.level IS 'The level it runs at: unit, database, api, contract, e2e-api, e2e-ui or manual.';
+COMMENT ON COLUMN use_case_test.level IS 'How it runs: unit, integration, service, system or browser, the lowest that can observe its result; a manual test names the level a person exercises.';
 COMMENT ON COLUMN use_case_test.state IS 'automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet.';
 COMMENT ON COLUMN use_case_test.file IS 'The file that runs it, from the product root; an automated test must name one.';
 COMMENT ON COLUMN use_case_test.manual_reason IS 'Why a person runs it rather than a file; a manual test must give one, and only a manual test.';
@@ -233,7 +240,7 @@ COMMENT ON TABLE view_test IS 'Proves its view requirement in the view.';
 COMMENT ON COLUMN view_test.id IS 'The test''s ID: its view requirement''s ID and T<nn>, such as TL-V01-R01-T01.';
 COMMENT ON COLUMN view_test.title IS 'What the test shows, in a sentence.';
 COMMENT ON COLUMN view_test.view_requirement_id IS 'The view requirement it proves.';
-COMMENT ON COLUMN view_test.level IS 'The level it runs at: unit, database, api, contract, e2e-api, e2e-ui or manual.';
+COMMENT ON COLUMN view_test.level IS 'How it runs: unit, integration, service, system or browser, the lowest that can observe its result; a manual test names the level a person exercises.';
 COMMENT ON COLUMN view_test.state IS 'automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet.';
 COMMENT ON COLUMN view_test.file IS 'The file that runs it, from the product root; an automated test must name one.';
 COMMENT ON COLUMN view_test.manual_reason IS 'Why a person runs it rather than a file; a manual test must give one, and only a manual test.';
@@ -267,7 +274,7 @@ COMMENT ON TABLE endpoint_test IS 'Proves its API requirement at the endpoint: t
 COMMENT ON COLUMN endpoint_test.id IS 'The test''s ID: its API requirement''s ID and T<nn>, such as TL-LEND-EP01-R01-T01.';
 COMMENT ON COLUMN endpoint_test.title IS 'What the test shows, in a sentence.';
 COMMENT ON COLUMN endpoint_test.api_requirement_id IS 'The API requirement it proves.';
-COMMENT ON COLUMN endpoint_test.level IS 'The level it runs at: unit, database, api, contract, e2e-api, e2e-ui or manual.';
+COMMENT ON COLUMN endpoint_test.level IS 'How it runs: unit, integration, service, system or browser, the lowest that can observe its result; a manual test names the level a person exercises.';
 COMMENT ON COLUMN endpoint_test.state IS 'automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet.';
 COMMENT ON COLUMN endpoint_test.file IS 'The file that runs it, from the product root; an automated test must name one.';
 COMMENT ON COLUMN endpoint_test.manual_reason IS 'Why a person runs it rather than a file; a manual test must give one, and only a manual test.';
@@ -296,11 +303,11 @@ CREATE TABLE flow_test (
   CHECK (state <> 'automated' OR file IS NOT NULL),
   CHECK ((state = 'manual') = (manual_reason IS NOT NULL))
 );
-COMMENT ON TABLE flow_test IS 'A smoke test of its flow''s main path, end to end, at the level that fits its interface: e2e-ui for a web app or desktop, e2e-api for an API, a CLI or agent tools, manual only with a reason.';
+COMMENT ON TABLE flow_test IS 'A smoke test of its flow''s main path, end to end, at the level that fits its interface: browser for a web app or desktop, system for an API, a CLI or agent tools.';
 COMMENT ON COLUMN flow_test.id IS 'The test''s ID: its flow''s ID and T, such as TL-LEND-UC01-FL01-T.';
 COMMENT ON COLUMN flow_test.title IS 'What the test shows, in a sentence.';
 COMMENT ON COLUMN flow_test.flow_id IS 'The flow it proves; it has exactly one test.';
-COMMENT ON COLUMN flow_test.level IS 'The level it runs at: unit, database, api, contract, e2e-api, e2e-ui or manual.';
+COMMENT ON COLUMN flow_test.level IS 'How it runs: unit, integration, service, system or browser, the lowest that can observe its result; a manual test names the level a person exercises.';
 COMMENT ON COLUMN flow_test.state IS 'automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet.';
 COMMENT ON COLUMN flow_test.file IS 'The file that runs it, from the product root; an automated test must name one.';
 COMMENT ON COLUMN flow_test.manual_reason IS 'Why a person runs it rather than a file; a manual test must give one, and only a manual test.';
@@ -333,7 +340,7 @@ COMMENT ON TABLE integration_test IS 'Proves an exchange with its integration''s
 COMMENT ON COLUMN integration_test.id IS 'The test''s ID: its integration''s ID and T<nn>, such as TL-INT01-T01.';
 COMMENT ON COLUMN integration_test.title IS 'What the test shows, in a sentence.';
 COMMENT ON COLUMN integration_test.integration_id IS 'The integration it proves.';
-COMMENT ON COLUMN integration_test.level IS 'The level it runs at: unit, database, api, contract, e2e-api, e2e-ui or manual.';
+COMMENT ON COLUMN integration_test.level IS 'How it runs: unit, integration, service, system or browser, the lowest that can observe its result; a manual test names the level a person exercises.';
 COMMENT ON COLUMN integration_test.state IS 'automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet.';
 COMMENT ON COLUMN integration_test.file IS 'The file that runs it, from the product root; an automated test must name one.';
 COMMENT ON COLUMN integration_test.manual_reason IS 'Why a person runs it rather than a file; a manual test must give one, and only a manual test.';
@@ -370,7 +377,7 @@ COMMENT ON COLUMN pattern_rule_test.id IS 'The test''s ID: its pattern rule''s I
 COMMENT ON COLUMN pattern_rule_test.title IS 'What the test shows, in a sentence.';
 COMMENT ON COLUMN pattern_rule_test.pattern_rule_id IS 'The pattern rule it proves.';
 COMMENT ON COLUMN pattern_rule_test.domain_id IS 'The domain it proves the rule in, one that follows the pattern itself or through a use case; one test per pattern rule and domain.';
-COMMENT ON COLUMN pattern_rule_test.level IS 'The level it runs at: unit, database, api, contract, e2e-api, e2e-ui or manual.';
+COMMENT ON COLUMN pattern_rule_test.level IS 'How it runs: unit, integration, service, system or browser, the lowest that can observe its result; a manual test names the level a person exercises.';
 COMMENT ON COLUMN pattern_rule_test.state IS 'automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet.';
 COMMENT ON COLUMN pattern_rule_test.file IS 'The file that runs it, from the product root; an automated test must name one.';
 COMMENT ON COLUMN pattern_rule_test.manual_reason IS 'Why a person runs it rather than a file; a manual test must give one, and only a manual test.';
@@ -404,7 +411,7 @@ COMMENT ON TABLE standard_rule_test IS 'Proves its standard rule in the product'
 COMMENT ON COLUMN standard_rule_test.id IS 'The test''s ID: its standard rule''s ID and T<nn>, such as TL-STD-CODE-R01-T01.';
 COMMENT ON COLUMN standard_rule_test.title IS 'What the test shows, in a sentence.';
 COMMENT ON COLUMN standard_rule_test.standard_rule_id IS 'The standard rule it proves.';
-COMMENT ON COLUMN standard_rule_test.level IS 'The level it runs at: unit, database, api, contract, e2e-api, e2e-ui or manual.';
+COMMENT ON COLUMN standard_rule_test.level IS 'How it runs: unit, integration, service, system or browser, the lowest that can observe its result; a manual test names the level a person exercises.';
 COMMENT ON COLUMN standard_rule_test.state IS 'automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet.';
 COMMENT ON COLUMN standard_rule_test.file IS 'The file that runs it, from the product root; an automated test must name one.';
 COMMENT ON COLUMN standard_rule_test.manual_reason IS 'Why a person runs it rather than a file; a manual test must give one, and only a manual test.';

@@ -1,7 +1,6 @@
 import { gapsOf, kindLabel, type SpecIndex } from '../specs/data';
-import { NODE_WIDTH } from './layout';
 import { groupKindLabel, groupLabel, groupMarks, groupOwner } from './model';
-import { nodeShape, SHAPES, type Room, type Shape } from './shapes';
+import { NODE_WIDTH, nodeShape, SHAPES, type Room, type Shape } from './shapes';
 
 // A box's label as part of the map (LA-EXP-DS06): its two lines, the kind and ID line and the
 // title, are sized once, in map units, when the map is built, and never change size relative to
