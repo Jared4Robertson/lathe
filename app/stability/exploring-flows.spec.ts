@@ -134,11 +134,12 @@ test.describe('Exploring flows', () => {
     const events = (await sceneOf(page)).boxes.find((b) => b.id === 'LA-EXP-A1/domain_event');
     expect(events?.group).toBe(true);
     expect((await sceneOf(page)).boxes.find((b) => b.id === 'LA-EXP-EV01')?.kind).toBe('domain_event');
-    // Under a pattern, its rules; follows is a cross-link once Links is on.
-    await page.goto('/LA-PAT-APP-UX?view=wiki,graph');
+    // Under a pattern, its rules; follows is a cross-link once Links is on. The graph has the page to itself: beside
+    // the wiki, a pattern's fifteen rules are each under MIN_DRAWN pixels tall and draw as one bar.
+    await page.goto('/LA-PAT-APP-UX?view=graph');
     await graphReady(page);
     expect((await sceneOf(page)).boxes.some((b) => b.id === 'LA-PAT-APP-UX-R01')).toBe(true);
-    // Links, by its key (the pane beside the wiki folds it into the toolbar's More).
+    // Links, by its key.
     await page.locator(FLOW).focus();
     await page.keyboard.press('l');
     await expect.poll(async () => (await sceneOf(page)).lines.some((l) => l.link && l.target === 'LA-PAT-APP-UX' && l.label === 'Follows')).toBe(true);
