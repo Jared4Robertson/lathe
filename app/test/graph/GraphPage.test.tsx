@@ -1,7 +1,8 @@
 import { fireResize } from './setup';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { GraphView } from '../../src/graph/GraphPage';
+import { GraphView, TRACE_IDLE_HINT } from '../../src/graph/GraphPage';
+import { TOOLTIP_DELAY } from '../../src/shell/Tooltip';
 import { DEFAULT_GRAPH_SETTINGS } from '../../src/graph/settings';
 import type { SpecData } from '../../../lathe/src/server/contract';
 import { openApp, startAtDepth } from '../helpers';
@@ -208,7 +209,7 @@ describe('graph page', () => {
     }
   });
 
-  it('LA-V93-R51-T02 Trace mode is offered for an obligation and shows only its chain and files, and not offered for a use case', async () => {
+  it('LA-V93-R51-T02 Trace mode is offered for an obligation and shows only its chain and files, and disabled for a use case', async () => {
     await showGraph('/P-D-UC01-R01');
     await waitFor(() => expect(node('P-D-UC01')).not.toBeNull());
     fireEvent.click(screen.getByRole('checkbox', { name: 'Trace mode' }));
@@ -225,7 +226,39 @@ describe('graph page', () => {
 
     fireEvent.click(node('P-D-UC01')!);
     await waitFor(() => expect(title()).toBe('Lend a thing'));
-    expect(screen.queryByRole('checkbox', { name: 'Trace mode' })).toBeNull();
+    expect(screen.getByRole('checkbox', { name: 'Trace mode' })).toHaveAttribute('aria-disabled', 'true');
+  });
+
+  it('LA-V93-R52-T02 The Trace switch is disabled with a hint where there is nothing to trace, and works on an obligation', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      await showGraph('/P-D-UC01', testWorkspace(), 1, false);
+      // In its slot, announced disabled and described by its hint; a click changes nothing.
+      const idle = screen.getByRole('checkbox', { name: 'Trace mode' });
+      expect(idle).toHaveAttribute('aria-disabled', 'true');
+      expect(idle).toHaveAccessibleDescription(TRACE_IDLE_HINT);
+      const toggle = idle.closest('label')!;
+      expect(toggle).toHaveClass('graph-trace-toggle', 'is-disabled');
+      fireEvent.click(idle);
+      expect(idle).not.toBeChecked();
+      expect(document.querySelector('.graph-flow')).toHaveAttribute('data-layout', 'tree');
+      // The hint shows on hover, although the control is disabled.
+      fireEvent.mouseEnter(toggle);
+      act(() => { vi.advanceTimersByTime(TOOLTIP_DELAY + 50); });
+      expect(screen.getByRole('tooltip')).toHaveTextContent(TRACE_IDLE_HINT);
+      fireEvent.mouseLeave(toggle);
+
+      // On an obligation it works as today.
+      fireEvent.click(node('P-D-UC01-R01')!);
+      await waitFor(() => expect(screen.getByRole('checkbox', { name: 'Trace mode' })).not.toHaveAttribute('aria-disabled'));
+      const live = screen.getByRole('checkbox', { name: 'Trace mode' });
+      expect(live.closest('label')).not.toHaveClass('is-disabled');
+      fireEvent.click(live);
+      expect(live).toBeChecked();
+      await waitFor(() => expect(document.querySelector('.graph-flow')).toHaveAttribute('data-layout', 'trace'));
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it.each(['LA-EXP-DS05-T02', 'LA-V93-R15-T04'])('%s The page draws the map in columns with a solid parent/child spine, and links between siblings never move anything', async () => {
