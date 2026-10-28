@@ -135,6 +135,14 @@ describe.skipIf(!prebuilt && !canBuild)('lathe serve', () => {
     expect(readFileSync(file, 'utf8')).toContain('A writer keeps a thought.');
   }, 30_000);
 
+  it('LA-PLT-EP02-R01-T01 GET /api/events opens an uncached event stream that starts connected', async () => {
+    const events = await fetch(`${BASE}/api/events`);
+    expect(events.status).toBe(200);
+    expect(events.headers.get('content-type')).toBe('text/event-stream');
+    expect(events.headers.get('cache-control')).toBe('no-cache');
+    expect(await readEvents(events, ': connected', 5000)).toMatch(/^: connected\n\n/);
+  });
+
   it('LA-AUT-UC03-R05-T01 The server has no way to change the meta-model', async () => {
     const schemaFiles = readdirSync(SCHEMA_DIR).map((name) => path.join(SCHEMA_DIR, name));
     const before = schemaFiles.map((file) => readFileSync(file, 'utf8'));

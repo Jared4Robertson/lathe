@@ -5,7 +5,7 @@ import { RecordLink, Section, isTestKind } from './parts';
 import { appliesWhenOf, appliesWhenText, settingOfRow, settingText } from './patterns';
 
 // A record's typed fields, in place of a Markdown body: its text fields (a rule's statement, a use
-// case's goal, a term's meaning, a test's Given, When and Then, an outcome's measure and target, a
+// case's goal, a term's meaning, a test's Given, When and Then, an outcome's measure, target and measure outside the code, a
 // test data set's environment and setup, the notes) on the page, read as Markdown, and its short
 // fields (a route, a method, a file, a level) as facts beside it. Its part rows show too: the fields of an entity, a value object, a domain event or a read model as a table,
 // each with its type (a basic type, a value object or a reference to an aggregate); a table's keys;
@@ -17,9 +17,10 @@ const LEAD_COLUMNS = ['statement', 'goal', 'meaning', 'description'] as const;
 const TITLED_COLUMNS: readonly { column: string; title: string }[] = [
   { column: 'identity', title: 'Identity' },
   { column: 'expected_result', title: 'Expected result' },
-  // A business outcome's measure and target.
+  // A business outcome's measure and target, and how it is measured outside the code when nothing in it can.
   { column: 'measure', title: 'Measure' },
   { column: 'target', title: 'Target' },
+  { column: 'measured_outside', title: 'Measured outside the code' },
   // A test data set: where it runs, what it starts with, and how to prepare and reset it.
   { column: 'environment', title: 'Environment' },
   { column: 'accounts', title: 'Accounts' },

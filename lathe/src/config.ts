@@ -16,6 +16,11 @@ export interface LatheConfig {
   tests: string[];
   /** Globs, relative to the root, of the product's source files, which code-file-untraced reads; DEFAULT_SOURCE when the config names none. */
   source: string[];
+  /**
+   * The files, as glob patterns from the root, that declare the routes the product serves besides its endpoint
+   * handlers' files (a router, a server's entry, a client's route table); none when the config names none.
+   */
+  routers: string[];
 }
 
 /**
@@ -43,10 +48,12 @@ interface ConfigFile {
   tests?: unknown;
   /** Globs of the product's source files; default DEFAULT_SOURCE. */
   source?: unknown;
+  /** Glob patterns of the router files; default none. */
+  routers?: unknown;
 }
 
 /** The keys lathe.config.json may hold; any other key is an error, never silently ignored. */
-const CONFIG_KEYS = ['schema', 'data', 'tests', 'source'] as const;
+const CONFIG_KEYS = ['schema', 'data', 'tests', 'source', 'routers'] as const;
 
 /** The installed Lathe package's own folder (holding schema/ and data/), from source or from dist. */
 export const PACKAGE_DIR = (() => {
@@ -131,11 +138,15 @@ export function readConfig(root: string): LatheConfig {
   };
   const tests = globs('tests', '**/*.test.ts');
   const source = globs('source', 'src/**/*.ts');
+  if (config.routers !== undefined && (!Array.isArray(config.routers) || config.routers.some((r) => typeof r !== 'string' || r.trim() === ''))) {
+    throw new Error(`${CONFIG_FILE}: routers must be a list of file patterns from the root, such as ["src/router.ts"].`);
+  }
   return {
     root,
     dataDir: path.resolve(root, (config.data as string | undefined) ?? 'data'),
     schema: (config.schema as number | undefined) ?? 1,
     tests: tests ?? [...DEFAULT_TESTS],
     source: source ?? [...DEFAULT_SOURCE],
+    routers: (config.routers as string[] | undefined) ?? [],
   };
 }

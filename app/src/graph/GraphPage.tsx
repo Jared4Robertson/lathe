@@ -1,3 +1,4 @@
+// The Graph view of an address, /<id>?view=graph (LA-V93).
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type KeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
 import { type SpecIndex } from '../specs/data';
 import { lowerLabel } from '../plural';
