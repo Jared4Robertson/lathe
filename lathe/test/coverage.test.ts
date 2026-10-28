@@ -228,4 +228,27 @@ describe("a product's own obligation kinds", () => {
     expect(ws.coverage[0].obligations.at(-1)?.kind).toBe('house_rule');
     expect(obligation(ws, 'EX-LEND', 'script')).toBeUndefined();
   });
+
+  it('LA-TRC-UC02-R09-T01 are proved by a product kind that names a file only when the file names it', async () => {
+    const data = adding(houseRules(), {
+      product_kind: [
+        { name: 'rule_check', product_id: 'EX', label: 'Rule check', description: 'A script that checks a rule.', parent_kind: 'domain', stage: 'test-plan', obligation: false },
+        { name: 'sign_off', product_id: 'EX', label: 'Sign-off', description: 'A person signing a rule off.', parent_kind: 'domain', stage: 'test-plan', obligation: false },
+      ],
+      product_kind_field: [{ kind: 'rule_check', position: 1, name: 'file', type: 'text', required: true, description: 'The file that runs it.' }],
+      product_relation: [
+        { name: 'checks_by_script', source_kind: 'rule_check', target_kind: 'house_rule', product_id: 'EX', role: 'proof', forward_label: 'Checks', reverse_label: 'Checked by', description: 'The script checks the rule.' },
+        { name: 'signs_off', source_kind: 'sign_off', target_kind: 'house_rule', product_id: 'EX', role: 'proof', forward_label: 'Signs off', reverse_label: 'Signed off by', description: 'The person signs the rule off.' },
+      ],
+      house_rule: [{ id: 'EX-LEND-HR03', title: 'Calm', domain_id: 'EX-LEND' }],
+      rule_check: [{ id: 'EX-LEND-RC01', title: 'tidy.sh', domain_id: 'EX-LEND', file: 'test/tidy.sh' }],
+      sign_off: [{ id: 'EX-LEND-SO01', title: 'Calm signed off', domain_id: 'EX-LEND' }],
+      checks_by_script: [{ source_id: 'EX-LEND-RC01', target_id: 'EX-LEND-HR02' }],
+      signs_off: [{ source_id: 'EX-LEND-SO01', target_id: 'EX-LEND-HR03' }],
+    });
+    // HR01 by a use case test, HR02 by the script whose file names it, HR03 by a sign-off that names no file.
+    expect(obligation(await loadData(data), 'EX-LEND', 'house_rule')).toMatchObject({ total: 3, proved: 3 });
+    // The script's file exists but leaves its ID out, so it no longer proves HR02; the sign-off still counts.
+    expect(obligation(await loadData(data, { silent: ['EX-LEND-RC01'] }), 'EX-LEND', 'house_rule')).toMatchObject({ total: 3, proved: 2 });
+  });
 });
