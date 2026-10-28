@@ -151,6 +151,23 @@ check('technical-file-missing', () => {
   });
 });
 
+check('test-data-set-file-missing', () => {
+  it('LA-AUT-UC13-R10-T01 a test data set whose file does not exist is an error when an automated test starts from it, else a warning; a folder will do', async () => {
+    const missing = await loadData(complete(), { missing: ['test/seed.ts'] });
+    expect(ofCheck(missing, 'test-data-set-file-missing')).toEqual([
+      { severity: 'error', check: 'test-data-set-file-missing', record: 'EX-LEND-TD01', message: 'Test data set EX-LEND-TD01 names test/seed.ts, which does not exist, so the automated tests that start from it cannot run.' },
+    ]);
+    // Only a test not automated yet starts from it: the seed may be named before it is written.
+    const later = changing(complete(), 'invariant_test', () => true, { state: 'not automated yet' });
+    expect(ofCheck(await loadData(later, { missing: ['test/seed.ts'] }), 'test-data-set-file-missing')).toEqual([
+      expect.objectContaining({ severity: 'warning', record: 'EX-LEND-TD01', message: 'Test data set EX-LEND-TD01 names test/seed.ts, which does not exist yet.' }),
+    ]);
+    // A folder of fixtures is a file that exists, and a data set is not a technical record.
+    const folder = await loadData(changing(complete(), 'test_data_set', () => true, { file: 'fixtures' }), { missing: ['fixtures'], files: { 'fixtures/loans.json': '[]\n' } });
+    expect(folder.problems).toEqual([]);
+  });
+});
+
 describe('nothing uses it', () => {
   let ws: Workspace;
   beforeAll(async () => {
@@ -158,6 +175,7 @@ describe('nothing uses it', () => {
     data = without(data, 'exchanges_with', () => true);
     data = without(data, 'checks', () => true);
     data = without(data, 'renders', () => true);
+    data = without(data, 'starts_from', () => true);
     data = changing(data, 'entity_field', (r) => r.type_value_object_id === 'EX-VO01', { type_value_object_id: undefined, type: 'text' });
     ws = await loadData(data);
   });
@@ -166,6 +184,7 @@ describe('nothing uses it', () => {
     ['integration-unused', 'EX-INT01', 'Integration EX-INT01 is used by nothing: flow steps exchange with it; link the steps that exchange with it with exchanges_with, or remove it.'],
     ['value-object-unused', 'EX-VO01', 'Value object EX-VO01 is used by nothing: fields of entities, value objects, events or read models are typed with it; type the fields that hold it with it, or remove it.'],
     ['specification-unused', 'EX-LEND-SP01', 'Specification EX-LEND-SP01 is used by nothing: commands check it and queries select by it; link the commands that check it or the queries that select by it, or remove it.'],
+    ['test-data-set-unused', 'EX-LEND-TD01', 'Test data set EX-LEND-TD01 is used by nothing: tests start from it; link the tests that start from it with starts_from, or remove it.'],
     ['ui-component-unused', 'EX-UI01', 'UI component EX-UI01 is used by nothing: it renders views; link the views it renders with renders, or remove it.'],
   ];
   for (const [name, record, message] of unused) {

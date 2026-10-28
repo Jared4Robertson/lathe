@@ -26,13 +26,14 @@ A write returns the rows it changed and the files it wrote, or the refusal with 
 
 | Skill | For |
 | --- | --- |
+| `discover-outcomes` | The discovery stage: the product's business outcomes, each a measurable statement with its measure and target, and the capabilities that serve them. |
 | `model-a-domain` | Domains as vertical slices of business capability, the order of the whole spec, and the domain model in event storming order: aggregates, entities and fields, commands and events (one aggregate per command, recorded exceptions, the outbox), invariants, value objects and constraints, specifications, policies, read models and queries, domain services and terms. |
 | `write-use-cases` | Capabilities, use cases with their actors and UC requirements, the product's roles, and the patterns use cases share with their settings and rules. |
 | `design-interactions` | Each use case's one flow and its steps (invoking a command or query, in a view, fulfilling UC requirements), views and view requirements, endpoints under their command or query with API requirements, and integrations. |
 | `write-the-technical-spec` | The one technical record that implements each design record, with its file; tables and their keys; event types and their delivery; the domain and application layers; standards. |
-| `plan-tests` | The test kinds, one per thing tested, each under what it proves, with its run by (level, state, and a file or manual reason), and test names that carry the test's ID. |
+| `plan-tests` | The test kinds, one per thing tested, each under what it proves, with its run by (level, state, a file or manual reason, size and markers), the test data sets tests start from, and test names that carry the test's ID. |
 | `check-and-fix` | Running the check, reading a refused write, fixing errors, and reporting warnings, gaps and coverage (designed, built, proved). |
-| `extend-the-meta-model` | A product's own kinds in any of the five stages, their fields and relations (with their labels), obligation kinds and relation roles, and a product's own checks. |
+| `extend-the-meta-model` | A product's own kinds in any of the six stages, their fields and relations (with their labels), obligation kinds and relation roles, and a product's own checks. |
 
 **Hook.** Before every `Write`, `Edit`, `MultiEdit` or `NotebookEdit`, [scripts/guard-data-files.mjs](scripts/guard-data-files.mjs) refuses an edit of a `.jsonl` file in a Lathe repo's data folder (the one `lathe.config.json` names, default `data/`, and `lathe/data/` in the Lathe repo), and tells the agent to use the tools instead. Every other edit goes through untouched.
 
@@ -62,7 +63,7 @@ plugin/
   scripts/mcp-server.mjs            starts the repo's own lathe mcp
   scripts/guard-data-files.mjs      what the hook runs
   scripts/lathe-root.mjs            what both scripts share: the repo root, its data folders, its lathe command
-  skills/<name>/SKILL.md            the seven skills
+  skills/<name>/SKILL.md            the eight skills
 ```
 
 The MCP server itself is `lathe mcp` in the Lathe package (`lathe/src/cli/mcp.ts`); its tests, and the tests of these scripts and of the skills' examples against the schema, are in `lathe/test/cli/`. Validate after changing the plugin: `claude plugin validate plugin`.

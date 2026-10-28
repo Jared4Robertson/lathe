@@ -67,11 +67,11 @@ export function lineStroke(look: Look, line: Pick<Line, 'link' | 'style'>): { co
 }
 
 /**
- * Every look a box is drawn in, by its swatch in the graph's key (panel.tsx): each of the five stages' colors, the
+ * Every look a box is drawn in, by its swatch in the graph's key (panel.tsx): each of the six stages' colors, the
  * structural records' (product, domain), a group's, a file's and an open question's.
  */
 export const BOX_LOOKS = [
-  'stage-domain-model', 'stage-use-cases', 'stage-interaction-design', 'stage-technical-specification', 'stage-test-plan',
+  'stage-discovery', 'stage-domain-model', 'stage-use-cases', 'stage-interaction-design', 'stage-technical-specification', 'stage-test-plan',
   'stage-structural', 'stage-group', 'stage-file', 'kind-question',
 ] as const;
 export type BoxLook = (typeof BOX_LOOKS)[number];
@@ -87,6 +87,7 @@ export function boxLook(p: Pick<Plate, 'file' | 'group' | 'kind' | 'stage'>): Bo
 /** A stage's edge and fill colors in the look; the structural colors for a box of no stage. */
 export function stageColors(look: Look, stage: Plate['stage']): { edge: string; fill: string } {
   switch (stage) {
+    case 'discovery': return { edge: look.discoveryEdge, fill: look.discoveryFill };
     case 'domain-model': return { edge: look.domainModelEdge, fill: look.domainModelFill };
     case 'use-cases': return { edge: look.useCasesEdge, fill: look.useCasesFill };
     case 'interaction-design': return { edge: look.interactionDesignEdge, fill: look.interactionDesignFill };

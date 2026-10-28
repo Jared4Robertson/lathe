@@ -1,8 +1,8 @@
 import { plural } from '../plural';
 import { textOf, byIdOrder, kindLabel, type SpecIndex, type SpecRecord, type Stage } from './data';
 
-// The folders a product's records are read in: the five stages (domain model, use cases, interaction
-// design, technical specification, test plan) from the schema, and in each stage one folder per kind,
+// The folders a product's records are read in: the six stages (discovery, domain model, use cases,
+// interaction design, technical specification, test plan) from the schema, those whose kinds can sit there, and in each stage one folder per kind,
 // in the schema's kind order. A domain has its stages; the product has its own for what it shares
 // (Shared): its patterns and standards, and each record with no owner (a value object, view,
 // integration or UI component) that two or more domains use, or none, with what sits under them. A
@@ -44,7 +44,7 @@ export interface StageFolders {
 }
 
 export interface OwnerFolders {
-  /** The five stages, in order. */
+  /** The stages whose kinds can sit here, in order: a domain has no discovery stage. */
   stages: StageFolders[];
   /** After the stages: one folder per kind outside every stage that has records, such as open questions. */
   loose: Folder[];
@@ -158,7 +158,9 @@ export const ownerFolders = perIndex((index: SpecIndex, ownerId: string): OwnerF
       // under its aggregate).
       .filter((f) => f.count > 0 || canStartIn(index, f.kind, owner.kind));
     return { key, stage: s.stage, label: s.label, description: s.description, folders, count: folders.reduce((n, f) => n + f.count, 0) };
-  });
+  })
+    // A stage none of whose kinds can be written here is left out: discovery's business outcomes sit under the product, never a domain.
+    .filter((s) => s.folders.length > 0);
   const looseKinds = [...new Set(roots.filter((r) => stageOfKind(index, r.kind) === null).map((r) => r.kind))].sort((a, b) => kindRank(index)(a) - kindRank(index)(b));
   const loose = looseKinds.map((kind) => folderOf(index, `${ownerId}/${kind}`, kind, roots.filter((r) => r.kind === kind)));
   return { stages, loose };
