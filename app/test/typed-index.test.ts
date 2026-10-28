@@ -35,7 +35,7 @@ describe('LA-PLT-EP01-R01-T03 the index from typed rows', () => {
     expect(typeof req.row.statement).toBe('string');
     expect(textOf(req.row, 'statement')).toBe(String(req.row.statement));
     expect(textOf(req.row, 'group_name')).toBe('');
-    const rows = data.tables.uc_requirement!;
+    const rows = data.sources[0].tables.uc_requirement!;
     expect(req.line).toBe(rows.findIndex((r) => r.id === req.id) + 1);
   });
 

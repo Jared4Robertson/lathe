@@ -23,12 +23,13 @@ export interface PackageFact {
 
 /**
  * The package folders, from the root: those the config lists, or else the root and each folder directly under it
- * (not hidden, not node_modules) that holds a package.json.
+ * (not hidden, not node_modules, not another product's folder, one with its own lathe.config.json) that holds a
+ * package.json.
  */
 function manifestFolders(root: string, listed: string[] | null): string[] {
   if (listed) return listed;
   const under = readdirSync(root, { withFileTypes: true })
-    .filter((e) => e.isDirectory() && !e.name.startsWith('.') && e.name !== 'node_modules' && existsSync(path.join(root, e.name, MANIFEST)))
+    .filter((e) => e.isDirectory() && !e.name.startsWith('.') && e.name !== 'node_modules' && existsSync(path.join(root, e.name, MANIFEST)) && !existsSync(path.join(root, e.name, CONFIG_FILE)))
     .map((e) => e.name)
     .sort();
   return [...(existsSync(path.join(root, MANIFEST)) ? ['.'] : []), ...under];

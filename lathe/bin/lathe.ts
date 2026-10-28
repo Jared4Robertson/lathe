@@ -4,7 +4,7 @@ import { existsSync } from 'node:fs';
 import { writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
-import { CONFIG_FILE, exceptionsText, loadWorkspace, mergeDataFiles, openStore, SCHEMA_VERSION, SchemaVersionError, StoreError, upgradeProduct, type Problem } from '../src/index.ts';
+import { CONFIG_FILE, exceptionsText, loadProducts, mergeDataFiles, openStore, SCHEMA_VERSION, SchemaVersionError, StoreError, upgradeProduct, type Problem, type Workspace } from '../src/index.ts';
 import { serve } from '../src/server/serve.ts';
 import { serveMcp } from '../src/cli/mcp.ts';
 import { DATA_COMMANDS, DATA_USAGE, runDataCommand } from '../src/cli/writers.ts';
@@ -22,11 +22,12 @@ Commands:
            print what changed and anything left to do by hand. Refuses a git working tree with changes,
            so the upgrade is one reviewable commit.
            --allow-dirty upgrades anyway.
-  check    Load the data and check it. Prints errors, warnings, the recorded exceptions (each command that
-           also changes another aggregate, with its reason) and coverage (one line per domain and obligation
-           kind); exits 1 on any error.
-           --json prints the whole workspace instead.
-  serve    Serve the web app for the product repo.  --port 5330 (default)
+  check    Load the data and check it: the product's, and that of each other product its ${CONFIG_FILE}
+           lists under products, each on its own. Prints errors, warnings, the recorded exceptions (each
+           command that also changes another aggregate, with its reason) and coverage (one line per domain
+           and obligation kind) per product; exits 1 on any error.
+           --json prints { products: [{ root, workspace }] } instead.
+  serve    Serve the web app for the product repo and each product it lists.  --port 5330 (default)
   merge-data <base> <ours> <theirs> <path>
            Git's merge driver for data/*.jsonl files (%O %A %B %P): merges the three versions row by row,
            writes the result over <ours>, and exits 1 on a real clash or a row that breaks its table's rules.
@@ -61,45 +62,59 @@ function fail(message: string): never {
 }
 
 async function check() {
-  const workspace = await loadWorkspace(root);
+  const products = await loadProducts(root);
+  const count = (n: number, noun: string) => `${n} ${noun}${n === 1 ? '' : 's'}`;
+  const sum = (severity: Problem['severity']) => products.reduce((n, { workspace }) => n + workspace.problems.filter((p) => p.severity === severity).length, 0);
+  const errors = sum('error');
+  if (values.json) {
+    const folder = (dir: string) => path.relative(root, dir).split(path.sep).join('/') || '.';
+    console.log(JSON.stringify({ products: products.map(({ config, workspace }) => ({ root: folder(config.root), workspace })) }, null, 2));
+  } else {
+    // Each product is reported on its own; a workspace with several ends with the sum.
+    products.forEach(({ config, workspace }, at) => {
+      if (at > 0) console.log('');
+      printProduct(config.root, workspace);
+    });
+    if (products.length > 1) console.log(`\nAll ${products.length} products: ${count(errors, 'error')}, ${count(sum('warning'), 'warning')}.`);
+  }
+  process.exitCode = errors ? 1 : 0;
+}
+
+/** One product's check: its errors, warnings, recorded exceptions and coverage, then its counts. */
+function printProduct(productRoot: string, workspace: Workspace) {
   const errors = workspace.problems.filter((p) => p.severity === 'error');
   const warnings = workspace.problems.filter((p) => p.severity === 'warning');
-  if (values.json) {
-    console.log(JSON.stringify(workspace, null, 2));
-  } else {
-    const line = (p: Problem) => `  [${p.check}]${p.record ? ` ${p.record}:` : ''} ${p.message}`;
-    console.log(`Checked ${workspace.records.length} records in ${root}`);
-    if (errors.length) console.log(`\nErrors (${errors.length}):\n${errors.map(line).join('\n')}`);
-    if (warnings.length) console.log(`\nWarnings (${warnings.length}):\n${warnings.map(line).join('\n')}`);
-    if (workspace.exceptions.length) console.log(`\n${exceptionsText(workspace.exceptions)}`);
-    if (workspace.coverage.length) {
-      console.log('\nCoverage:');
-      for (const c of workspace.coverage) {
-        const scope = c.domain ?? `${c.product} Shared`;
-        const counted = c.obligations.filter((o) => o.total > 0);
-        const kinds = new Set(counted.map((o) => o.kind));
-        const minimums = c.gaps.filter((g) => !['designed', 'built', 'proved'].includes(g.missing));
-        const tested = c.tests.automated + c.tests.manual + c.tests.not_automated;
-        if (!counted.length && !minimums.length && !tested) continue;
-        for (const o of counted) {
-          const of = (n: number) => `${n}/${o.total}`;
-          // A proof-only kind (a pattern rule) is not asked to be designed or built.
-          const design = o.proof_only ? 'proof only' : `${of(o.designed)} designed, ${of(o.built)} built`;
-          const waiting = o.not_automated ? `, ${of(o.not_automated)} not automated yet` : '';
-          console.log(`  ${scope} ${lowerLabel(o.label)}: ${design}, ${of(o.proved)} proved${waiting}`);
-          for (const g of c.gaps.filter((x) => x.kind === o.kind && kinds.has(x.kind) && ['designed', 'built', 'proved'].includes(x.missing))) console.log(`    gap: ${g.message}`);
-        }
-        if (tested) console.log(`  ${scope} tests: ${c.tests.automated} automated, ${c.tests.manual} manual, ${c.tests.not_automated} not automated yet`);
-        if (minimums.length) {
-          console.log(`  ${scope} records short of a minimum (${minimums.length}):`);
-          for (const g of minimums) console.log(`    [${g.missing}] ${g.message}`);
-        }
+  const line = (p: Problem) => `  [${p.check}]${p.record ? ` ${p.record}:` : ''} ${p.message}`;
+  console.log(`Checked ${workspace.records.length} records in ${productRoot}`);
+  if (errors.length) console.log(`\nErrors (${errors.length}):\n${errors.map(line).join('\n')}`);
+  if (warnings.length) console.log(`\nWarnings (${warnings.length}):\n${warnings.map(line).join('\n')}`);
+  if (workspace.exceptions.length) console.log(`\n${exceptionsText(workspace.exceptions)}`);
+  if (workspace.coverage.length) {
+    console.log('\nCoverage:');
+    for (const c of workspace.coverage) {
+      const scope = c.domain ?? `${c.product} Shared`;
+      const counted = c.obligations.filter((o) => o.total > 0);
+      const kinds = new Set(counted.map((o) => o.kind));
+      const minimums = c.gaps.filter((g) => !['designed', 'built', 'proved'].includes(g.missing));
+      const tested = c.tests.automated + c.tests.manual + c.tests.not_automated;
+      if (!counted.length && !minimums.length && !tested) continue;
+      for (const o of counted) {
+        const of = (n: number) => `${n}/${o.total}`;
+        // A proof-only kind (a pattern rule) is not asked to be designed or built.
+        const design = o.proof_only ? 'proof only' : `${of(o.designed)} designed, ${of(o.built)} built`;
+        const waiting = o.not_automated ? `, ${of(o.not_automated)} not automated yet` : '';
+        console.log(`  ${scope} ${lowerLabel(o.label)}: ${design}, ${of(o.proved)} proved${waiting}`);
+        for (const g of c.gaps.filter((x) => x.kind === o.kind && kinds.has(x.kind) && ['designed', 'built', 'proved'].includes(x.missing))) console.log(`    gap: ${g.message}`);
+      }
+      if (tested) console.log(`  ${scope} tests: ${c.tests.automated} automated, ${c.tests.manual} manual, ${c.tests.not_automated} not automated yet`);
+      if (minimums.length) {
+        console.log(`  ${scope} records short of a minimum (${minimums.length}):`);
+        for (const g of minimums) console.log(`    [${g.missing}] ${g.message}`);
       }
     }
-    const count = (n: number, noun: string) => `${n} ${noun}${n === 1 ? '' : 's'}`;
-    console.log(`\n${count(errors.length, 'error')}, ${count(warnings.length, 'warning')}.`);
   }
-  process.exitCode = errors.length ? 1 : 0;
+  const count = (n: number, noun: string) => `${n} ${noun}${n === 1 ? '' : 's'}`;
+  console.log(`\n${count(errors.length, 'error')}, ${count(warnings.length, 'warning')}.`);
 }
 
 async function init() {
