@@ -122,8 +122,7 @@ describe('product spaces', () => {
     const user = userEvent.setup();
     await user.click(within(panel()).getByRole('button', { name: 'Unfold Shopping' }));
     await user.click(within(within(panel()).getByRole('list', { name: 'Folders of Shopping' })).getByRole('button', { name: /^Use cases/ }));
-    await user.click(within(within(panel()).getByRole('list', { name: 'Use cases of Shopping' })).getByRole('button', { name: /^Capabilities/ }));
-    expect(within(panel()).getByRole('list', { name: 'Capabilities of Shopping' }).textContent).toBe('BuyingFilling the basketPaying for the basket');
+    expect(within(panel()).getByRole('list', { name: 'Use cases of Shopping' }).textContent).toBe('BuyingFilling the basketPaying for the basket');
     // The product's groups: its open questions.
     const groups = within(panel()).getByRole('list', { name: 'Groups of Demo shop' });
     expect(within(groups).getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual(['/DM/question']);
