@@ -1,6 +1,13 @@
 {"id":"LA-AUT-SP01-PR","title":"move's no-owner refusal","specification_id":"LA-AUT-SP01","file":"lathe/src/store/store.ts","description":"`move`'s no-owner refusal"}
 {"id":"LA-AUT-SP02-PR","title":"remove's referrer listing","specification_id":"LA-AUT-SP02","file":"lathe/src/store/store.ts","description":"`remove`'s referrer listing"}
 {"id":"LA-AUT-SP03-PR","title":"the clash detection in mergeData","specification_id":"LA-AUT-SP03","file":"lathe/src/store/merge.ts","description":"the clash detection in `mergeData`"}
+{"id":"LA-AUT-SP04-PR","title":"ID is in use","specification_id":"LA-AUT-SP04","file":"lathe/src/store/store.ts","description":"The registry check that refuses an ID another record has (`unique-id`)."}
+{"id":"LA-AUT-SP05-PR","title":"Parent can hold the kind","specification_id":"LA-AUT-SP05","file":"lathe/src/store/store.ts","description":"The foreign keys and one-of-two CHECKs of the parent columns, reported as `foreign-key`, `check` and `column` problems."}
+{"id":"LA-AUT-SP06-PR","title":"ID fits its scope","specification_id":"LA-AUT-SP06","file":"lathe/src/store/validation.ts","description":"The `id-prefix` validation query."}
+{"id":"LA-AUT-SP07-PR","title":"Relation allows the pair","specification_id":"LA-AUT-SP07","file":"lathe/src/store/validation.ts","description":"The `relation-pair` validation query, with the link tables' foreign keys."}
+{"id":"LA-AUT-SP08-PR","title":"Records share a product","specification_id":"LA-AUT-SP08","file":"lathe/src/store/validation.ts","description":"The `link-crosses-product` and `reference-crosses-product` validation queries."}
+{"id":"LA-AUT-SP09-PR","title":"Link stays in its scope","specification_id":"LA-AUT-SP09","file":"lathe/src/store/validation.ts","description":"The `link-scope` validation query."}
+{"id":"LA-AUT-SP10-PR","title":"Event is audible to the policy","specification_id":"LA-AUT-SP10","file":"lathe/src/store/validation.ts","description":"The `policy-hears-published` validation query."}
 {"id":"LA-EXP-SP01-PR","title":"spaceIndex's selection","specification_id":"LA-EXP-SP01","file":"app/src/specs/data.ts","description":"spaceIndex's selection, isWorkspaceProblem"}
 {"id":"LA-EXP-SP02-PR","title":"viewsOffered","specification_id":"LA-EXP-SP02","file":"app/src/views/address.ts","description":"viewsOffered, MODEL_KINDS"}
 {"id":"LA-EXP-SP03-PR","title":"splitsByKind","specification_id":"LA-EXP-SP03","file":"app/src/graph/tree.ts","description":"splitsByKind"}

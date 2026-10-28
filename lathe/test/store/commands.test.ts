@@ -201,7 +201,7 @@ describe('link and unlink', () => {
     await store.close();
   });
 
-  it('LA-AUT-INV05-T refuses a link its ends allow but its relation does not, a wrong kind at an end, and an unknown relation', async () => {
+  it('LA-AUT-SP07-T refuses a link its ends allow but its relation does not, a wrong kind at an end, and an unknown relation', async () => {
     const { store } = await fresh();
     // A second pair widens documents to a link table whose target is any record, so its pairs are what hold.
     await store.add('product_relation', { name: 'documents', source_kind: 'cli_command', target_kind: 'integration', product_id: 'TL', forward_label: 'Documents', reverse_label: 'Documented by', description: 'The CLI command is documented with the integration.' });

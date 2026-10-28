@@ -553,6 +553,7 @@ A word of the domain's glossary and what it means there, so specs, code and conv
 | `title` | VARCHAR | yes | The term, such as Loan. |
 | `domain_id` | VARCHAR → [`domain`](#table-domain) | yes | The domain whose language it belongs to. |
 | `meaning` | VARCHAR | yes | What it means in that domain. |
+| `group_name` | VARCHAR | no | A short heading it is shown under among its domain's terms, such as Records or Writing. |
 
 - **Key:** `id`
 - **Rule:** `("trim"(title) != '')`

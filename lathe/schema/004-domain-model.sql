@@ -189,13 +189,15 @@ CREATE TABLE term (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
   title VARCHAR NOT NULL CHECK (trim(title) <> ''),
   domain_id VARCHAR NOT NULL REFERENCES domain (id),
-  meaning VARCHAR NOT NULL CHECK (trim(meaning) <> '')
+  meaning VARCHAR NOT NULL CHECK (trim(meaning) <> ''),
+  group_name VARCHAR
 );
 COMMENT ON TABLE term IS 'A word of the domain''s glossary and what it means there, so specs, code and conversation use one language.';
 COMMENT ON COLUMN term.id IS 'The term''s ID, such as TL-LEND-TM01.';
 COMMENT ON COLUMN term.title IS 'The term, such as Loan.';
 COMMENT ON COLUMN term.domain_id IS 'The domain whose language it belongs to.';
 COMMENT ON COLUMN term.meaning IS 'What it means in that domain.';
+COMMENT ON COLUMN term.group_name IS 'A short heading it is shown under among its domain''s terms, such as Records or Writing.';
 
 -- Fields. Entity, value object, event and read model fields share one shape: a field's type is exactly one of a basic
 -- type, a value object, or a reference by ID to an aggregate (a reference to another domain's aggregate is allowed).

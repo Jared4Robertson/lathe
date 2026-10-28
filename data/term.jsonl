@@ -1,23 +1,23 @@
-{"id":"LA-AUT-TM01","title":"Product","domain_id":"LA-AUT","meaning":"The root of a set of specifications, its own space: its records link only to each other."}
-{"id":"LA-AUT-TM02","title":"Record","domain_id":"LA-AUT","meaning":"One row of a kind's table, with an ID unique across the store, a title, at most one parent, and its parts and links."}
-{"id":"LA-AUT-TM03","title":"Kind","domain_id":"LA-AUT","meaning":"A sort of record, with its own table, stage, parents and ID pattern. Lathe has fifty; a product may declare more."}
-{"id":"LA-AUT-TM04","title":"Stage","domain_id":"LA-AUT","meaning":"One of the five places a kind is read in, in order: domain model, use cases, interaction design, technical specification, test plan."}
-{"id":"LA-AUT-TM05","title":"Parent","domain_id":"LA-AUT","meaning":"The one record a record sits under, named by one of its kind's parent columns."}
-{"id":"LA-AUT-TM06","title":"Part","domain_id":"LA-AUT","meaning":"A row a record owns that is no record itself, such as an entity's fields or a table's keys, removed with it."}
-{"id":"LA-AUT-TM07","title":"Link","domain_id":"LA-AUT","meaning":"A row of a relation's table joining two records of one product."}
-{"id":"LA-AUT-TM08","title":"Relation","domain_id":"LA-AUT","meaning":"A sort of link, with the pairs of kinds it may join and its words read both ways."}
-{"id":"LA-AUT-TM09","title":"Obligation","domain_id":"LA-AUT","meaning":"A record that is owed design, build and proof: a constraint, invariant, specification, policy, domain service, UC requirement, view requirement, API requirement, pattern rule or standard rule."}
-{"id":"LA-AUT-TM10","title":"Designed, built, proved","domain_id":"LA-AUT","meaning":"An obligation's three states: its implementation specified, its technical record naming a file that exists, its test written at a level its kind allows."}
-{"id":"LA-AUT-TM11","title":"Technical record","domain_id":"LA-AUT","meaning":"The one record of a technical kind that implements a design record, naming its file."}
-{"id":"LA-AUT-TM12","title":"Run by","domain_id":"LA-AUT","meaning":"How a test runs: a level, a state, and its file or why it is manual."}
-{"id":"LA-AUT-TM13","title":"Product kind","domain_id":"LA-AUT","meaning":"A kind a product declares for itself, in any stage, under any kind."}
-{"id":"LA-AUT-TM14","title":"Command layer","domain_id":"LA-AUT","meaning":"The commands every writer uses to change data (add, set, move, link, unlink, remove, apply), each one transaction that the store accepts or refuses whole."}
-{"id":"LA-AUT-TM15","title":"Data file","domain_id":"LA-AUT","meaning":"`data/<table>.jsonl`: one table's rows, one JSON object per line, sorted by key. The source of truth, reviewed in git."}
-{"id":"LA-AUT-TM16","title":"Reference","domain_id":"LA-AUT","meaning":"Every kind, table, relation, stage and check of a product, generated from its schema and check rows."}
-{"id":"LA-AUT-TM17","title":"Refusal","domain_id":"LA-AUT","meaning":"A write the store does not accept, with every reason and no data changed."}
-{"id":"LA-AUT-TM18","title":"Recorded exception","domain_id":"LA-AUT","meaning":"Another aggregate of its domain that a command also changes in its transaction, named with the reason."}
-{"id":"LA-AUT-TM19","title":"Pattern","domain_id":"LA-AUT","meaning":"Behavior several use cases share, written once with its rules and settings; each follower answers its settings."}
-{"id":"LA-AUT-TM20","title":"Standard","domain_id":"LA-AUT","meaning":"Engineering rules the product's code follows, which technical records and tests meet."}
+{"id":"LA-AUT-TM01","title":"Product","domain_id":"LA-AUT","meaning":"The root of a set of specifications, its own space: its records link only to each other.","group_name":"Records"}
+{"id":"LA-AUT-TM02","title":"Record","domain_id":"LA-AUT","meaning":"One row of a kind's table, with an ID unique across the store, a title, at most one parent, and its parts and links.","group_name":"Records"}
+{"id":"LA-AUT-TM03","title":"Kind","domain_id":"LA-AUT","meaning":"A sort of record, with its own table, stage, parents and ID pattern. Lathe has fifty; a product may declare more.","group_name":"Records"}
+{"id":"LA-AUT-TM04","title":"Stage","domain_id":"LA-AUT","meaning":"One of the five places a kind is read in, in order: domain model, use cases, interaction design, technical specification, test plan.","group_name":"Records"}
+{"id":"LA-AUT-TM05","title":"Parent","domain_id":"LA-AUT","meaning":"The one record a record sits under, named by one of its kind's parent columns.","group_name":"Records"}
+{"id":"LA-AUT-TM06","title":"Part","domain_id":"LA-AUT","meaning":"A row a record owns that is no record itself, such as an entity's fields or a table's keys, removed with it.","group_name":"Records"}
+{"id":"LA-AUT-TM07","title":"Link","domain_id":"LA-AUT","meaning":"A row of a relation's table joining two records of one product.","group_name":"Records"}
+{"id":"LA-AUT-TM08","title":"Relation","domain_id":"LA-AUT","meaning":"A sort of link, with the pairs of kinds it may join and its words read both ways.","group_name":"Records"}
+{"id":"LA-AUT-TM09","title":"Obligation","domain_id":"LA-AUT","meaning":"A record that is owed design, build and proof: a constraint, invariant, specification, policy, domain service, UC requirement, view requirement, API requirement, pattern rule or standard rule.","group_name":"Proof"}
+{"id":"LA-AUT-TM10","title":"Designed, built, proved","domain_id":"LA-AUT","meaning":"An obligation's three states: its implementation specified, its technical record naming a file that exists, its test written at a level its kind allows.","group_name":"Proof"}
+{"id":"LA-AUT-TM11","title":"Technical record","domain_id":"LA-AUT","meaning":"The one record of a technical kind that implements a design record, naming its file.","group_name":"Proof"}
+{"id":"LA-AUT-TM12","title":"Run by","domain_id":"LA-AUT","meaning":"How a test runs: a level, a state, and its file or why it is manual.","group_name":"Proof"}
+{"id":"LA-AUT-TM13","title":"Product kind","domain_id":"LA-AUT","meaning":"A kind a product declares for itself, in any stage, under any kind.","group_name":"Records"}
+{"id":"LA-AUT-TM14","title":"Command layer","domain_id":"LA-AUT","meaning":"The commands every writer uses to change data (add, set, move, link, unlink, remove, apply), each one transaction that the store accepts or refuses whole.","group_name":"Writing"}
+{"id":"LA-AUT-TM15","title":"Data file","domain_id":"LA-AUT","meaning":"`data/<table>.jsonl`: one table's rows, one JSON object per line, sorted by key. The source of truth, reviewed in git.","group_name":"Writing"}
+{"id":"LA-AUT-TM16","title":"Reference","domain_id":"LA-AUT","meaning":"Every kind, table, relation, stage and check of a product, generated from its schema and check rows.","group_name":"Writing"}
+{"id":"LA-AUT-TM17","title":"Refusal","domain_id":"LA-AUT","meaning":"A write the store does not accept, with every reason and no data changed.","group_name":"Writing"}
+{"id":"LA-AUT-TM18","title":"Recorded exception","domain_id":"LA-AUT","meaning":"Another aggregate of its domain that a command also changes in its transaction, named with the reason.","group_name":"Writing"}
+{"id":"LA-AUT-TM19","title":"Pattern","domain_id":"LA-AUT","meaning":"Behavior several use cases share, written once with its rules and settings; each follower answers its settings.","group_name":"Records"}
+{"id":"LA-AUT-TM20","title":"Standard","domain_id":"LA-AUT","meaning":"Engineering rules the product's code follows, which technical records and tests meet.","group_name":"Records"}
 {"id":"LA-CHK-TM01","title":"Check","domain_id":"LA-CHK","meaning":"One rule the engine applies on every load: a row of the `check` table whose query returns a row for each problem."}
 {"id":"LA-CHK-TM02","title":"Problem","domain_id":"LA-CHK","meaning":"One thing a check found wrong or still to do in the loaded data. Problems are the result of a run, never stored."}
 {"id":"LA-CHK-TM03","title":"Error","domain_id":"LA-CHK","meaning":"A problem that means the data is broken. `lathe check` exits 1 on any error."}
