@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import { Link } from '../router';
 
-// The one breadcrumb (LA-PAT-APP-UX-R14): every trail of places above a page, in the header
+// The one breadcrumb (LA-PAT-APP-UX-R15): every trail of places above a page, in the header
 // strip, the wiki card and the phone's top bar, is this component. A trail of up to three items
 // shows in full; a longer one shows its first item (the product), a "…" button and its last item
 // (the immediate parent). The button opens a menu of the hidden levels, each a link, reached by

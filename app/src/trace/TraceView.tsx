@@ -1,11 +1,12 @@
-// The Trace stage of an address, /<id>?stage=trace (LA-TRC-UC10).
-import { useLayoutEffect, useMemo, useState, type FocusEvent, type MouseEvent, type PointerEvent, type ReactNode } from 'react';
+// The Trace view of an address, /<id>?view=trace (LA-TRC-UC10).
+import { useMemo, useState, type FocusEvent, type MouseEvent, type PointerEvent, type ReactNode } from 'react';
 import { Button } from '../components/Button';
 import { groupName, isGroup } from '../graph/model';
 import { kindLabel, type SpecIndex } from '../specs/data';
 import { isObligation } from './offer';
 import { gapColumns, TRACE_COLUMN_LABELS, TRACE_COLUMNS, traceChain, traceMatrix, untracedUnder, type TraceColumn, type TraceFile, type TraceRow } from './chain';
 import { plural } from '../plural';
+import { Card, CardGrid } from '../shell/Card';
 
 // What the focus owes and how far it has come, as columns left to right: obligation, design, build,
 // tests, files (chain.ts). On an obligation it is that obligation's chain, each column a list of
@@ -15,9 +16,7 @@ import { plural } from '../plural';
 // design, build and test records under the focus that no obligation's chain reaches (chain.ts,
 // untracedUnder), which the filter keeps. Every cell links to its record; a file
 // links to the record that names it. Long matrices show a page of rows at a time, so a product's
-// stays fast. Like the graph it never reads the address. It scrolls under the floating panels, its
-// content padded to the open space (openSpace.ts), so what it shows sits there; what it holds is
-// told to the header strip, and the "Gaps only" filter floats at the top of the open space.
+// stays fast. Like the graph it never reads the address, so it can sit in any pane.
 
 export interface TraceViewProps {
   index: SpecIndex;
@@ -26,8 +25,6 @@ export interface TraceViewProps {
   hrefFor: (id: string) => string;
   /** Called with the record under the pointer or keyboard focus, for the side bar's Details. */
   onPeek?: (kind: 'hover' | 'selected', id: string | null) => void;
-  /** Called with what the trace holds, for the header strip: "12 obligations · 3 with gaps · 4 untraced". */
-  onCounts?: (counts: string) => void;
 }
 
 /** How many matrix rows show before "Show more". */
@@ -76,31 +73,46 @@ function peekHandlers(props: TraceViewProps) {
   };
 }
 
-/** A link to a record in a cell or card: its ID, and its title where there is room. */
-function Ref({ id, props, compact, className }: { id: string; props: TraceViewProps; compact?: boolean; className?: string }) {
+/** A link to a record in a matrix cell: its ID. */
+function Ref({ id, props, className = 'trace-ref' }: { id: string; props: TraceViewProps; className?: string }) {
   const record = props.index.byId.get(id);
-  const title = record ? `${record.title} (${id})` : id;
+  return <TraceLink id={id} props={props} title={record ? `${record.title} (${id})` : id} className={className}><code>{id}</code></TraceLink>;
+}
+
+/** A record's card in a chain's column: its kind, ID and title; anywhere on it opens the record. */
+function RecordCard({ id, props, current = false }: { id: string; props: TraceViewProps; current?: boolean }) {
+  const record = props.index.byId.get(id);
   return (
-    <TraceLink id={id} props={props} title={title} className={className ?? 'trace-ref'}>
-      {compact ? <><code className="trace-id">{id}</code><span className="trace-title">{record?.title ?? ''}</span></> : (
-        <>
-          <small className="meta">{record ? kindLabel(props.index, record.kind) : ''}</small>
-          <code>{id}</code>
-          <span className="trace-card-title">{record?.title ?? ''}</span>
-        </>
-      )}
-    </TraceLink>
+    <Card
+      look="compact"
+      href={props.hrefFor(id)}
+      onFollow={() => props.onNavigate(id)}
+      current={current}
+      hint={record ? `${record.title} (${id})` : id}
+      data={{ 'data-trace-id': id }}
+      title={<><small className="meta">{record ? kindLabel(props.index, record.kind) : ''}</small><code>{id}</code><span className="trace-ref-title">{record?.title ?? ''}</span></>}
+    />
   );
 }
 
 /** A file, linked to the first record that names it. */
-function FileRef({ file, props, compact }: { file: TraceFile; props: TraceViewProps; compact?: boolean }) {
+function FileRef({ file, props }: { file: TraceFile; props: TraceViewProps }) {
   const title = `${file.path}, named by ${file.namedBy.join(', ')}`;
+  return <TraceLink id={file.namedBy[0]} props={props} title={title} className="trace-ref trace-file"><code>{file.path}</code></TraceLink>;
+}
+
+/** A file's card in a chain's column, opening the first record that names it. */
+function FileCard({ file, props }: { file: TraceFile; props: TraceViewProps }) {
+  const id = file.namedBy[0];
   return (
-    <TraceLink id={file.namedBy[0]} props={props} title={title} className={compact ? 'trace-ref trace-file' : 'trace-card trace-file'}>
-      <code>{file.path}</code>
-      {!compact && <small className="meta">Named by {file.namedBy.join(', ')}</small>}
-    </TraceLink>
+    <Card
+      look="compact"
+      href={props.hrefFor(id)}
+      onFollow={() => props.onNavigate(id)}
+      hint={`${file.path}, named by ${file.namedBy.join(', ')}`}
+      data={{ 'data-trace-id': id }}
+      title={<><code className="trace-file">{file.path}</code><small className="meta">Named by {file.namedBy.join(', ')}</small></>}
+    />
   );
 }
 
@@ -124,26 +136,23 @@ function TraceChainView(props: TraceViewProps) {
   const column = (c: TraceColumn): ReactNode => {
     if (itemsOf(row, c) === 0) return <p className="trace-cell-empty"><Empty row={row} column={c} /></p>;
     return (
-      <ul className="trace-cards" aria-label={TRACE_COLUMN_LABELS[c]}>
+      <CardGrid stack label={TRACE_COLUMN_LABELS[c]}>
         {c === 'files'
-          ? row.files.map((f) => <li key={f.path}><FileRef file={f} props={props} /></li>)
-          : row[c].map((id) => <li key={id}><Ref id={id} props={props} className="trace-card" /></li>)}
-      </ul>
+          ? row.files.map((f) => <FileCard key={f.path} file={f} props={props} />)
+          : row[c].map((id) => <RecordCard key={id} id={id} props={props} />)}
+      </CardGrid>
     );
   };
-  const { onCounts } = props;
-  useLayoutEffect(() => { onCounts?.(caption); }, [caption, onCounts]);
   return (
     <section className="trace-page" aria-label="Trace" {...peekHandlers(props)}>
+      <header className="trace-header">
+        <p className="trace-caption" title={caption}>{caption}</p>
+      </header>
       <div className="trace-scroll" role="region" tabIndex={0} aria-label="Traceability chain">
         <ol className="trace-chain">
           <li className="trace-column">
             <h3 className="trace-column-name">Obligation</h3>
-            <div className="trace-card is-focus" aria-current="page">
-              <small className="meta">{kindLabel(index, record.kind)}</small>
-              <code>{focus}</code>
-              <span className="trace-card-title">{record.title}</span>
-            </div>
+            <CardGrid stack label="Obligation"><RecordCard id={focus} props={props} current /></CardGrid>
           </li>
           {TRACE_COLUMNS.map((c) => (
             <li key={c} className="trace-column">
@@ -184,18 +193,17 @@ function TraceMatrixView(props: TraceViewProps) {
   const matching = gapsOnly ? withGaps : total;
   const drawn = visible.reduce((n, g) => n + g.rows.length, 0);
   const name = index.byId.get(focus)?.title ?? (isGroup(index, focus) ? groupName(index, focus) : focus);
-  const caption = `${total} ${total === 1 ? 'obligation' : 'obligations'} · ${withGaps} with gaps · ${untracedCount} untraced`;
-  const { onCounts } = props;
-  useLayoutEffect(() => { onCounts?.(caption); }, [caption, onCounts]);
   if (total === 0) return <p className="hint trace-none">Nothing under this page owes a design, a build or a test.</p>;
+  const caption = `${total} ${total === 1 ? 'obligation' : 'obligations'} · ${withGaps} with gaps · ${untracedCount} untraced`;
   return (
     <section className="trace-page" aria-label="Trace" {...peekHandlers(props)}>
-      <div className="trace-tools stage-tools" data-stage-tools="top">
+      <header className="trace-header">
+        <p className="trace-caption" title={caption}>{caption}</p>
         <label className="trace-filter">
           <input type="checkbox" checked={gapsOnly} onChange={(e) => { setGapsOnly(e.target.checked); setShown(TRACE_PAGE); }} />
           Gaps only
         </label>
-      </div>
+      </header>
       <div className="trace-scroll" role="region" tabIndex={0} aria-label="Traceability matrix">
         {matching === 0 ? <p className="hint trace-none">No gaps: every obligation here is designed, built, tested and named in a file.</p> : (
           <table className="data-table trace-matrix">
@@ -215,14 +223,14 @@ function TraceMatrixView(props: TraceViewProps) {
                 </tr>
                 {g.rows.map((row) => (
                   <tr key={row.obligation} className={gapColumns(row).length > 0 ? 'has-gap' : undefined}>
-                    <th scope="row"><Ref id={row.obligation} props={props} compact /></th>
+                    <th scope="row"><Ref id={row.obligation} props={props} /> <span className="trace-row-title">{index.byId.get(row.obligation)?.title}</span></th>
                     {TRACE_COLUMNS.map((c) => (
                       <td key={c} className={itemsOf(row, c) === 0 && !row.notOwed.has(c) ? 'is-gap' : undefined}>
                         {itemsOf(row, c) === 0 ? <Empty row={row} column={c} /> : (
                           <span className="trace-refs">
                             {c === 'files'
-                              ? row.files.map((f) => <FileRef key={f.path} file={f} props={props} compact />)
-                              : row[c].map((id) => <Ref key={id} id={id} props={props} compact />)}
+                              ? row.files.map((f) => <FileRef key={f.path} file={f} props={props} />)
+                              : row[c].map((id) => <Ref key={id} id={id} props={props} />)}
                           </span>
                         )}
                       </td>
@@ -246,7 +254,7 @@ function TraceMatrixView(props: TraceViewProps) {
               {untraced.map((g) => (
                 <div key={g.kind}>
                   <dt>{plural(kindLabel(index, g.kind))} <span className="section-count">{g.ids.length}</span></dt>
-                  <dd><span className="trace-refs">{g.ids.map((id) => <Ref key={id} id={id} props={props} compact />)}</span></dd>
+                  <dd><span className="trace-refs">{g.ids.map((id) => <Ref key={id} id={id} props={props} />)}</span></dd>
                 </div>
               ))}
             </dl>

@@ -85,8 +85,8 @@ describe('separate spaces', () => {
   it('LA-V97-R01-T01 The products page is the space chooser: each product with its name and domain count, nothing from inside it', async () => {
     await openApp('/', { data: crossingWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Products' });
-    const cards = [...main().querySelectorAll<HTMLAnchorElement>('a.card')];
-    expect(cards.map((c) => c.getAttribute('href'))).toEqual(['/DM', '/NF']);
+    const cards = [...screen.getByRole('list', { name: 'Products' }).querySelectorAll<HTMLElement>(':scope > .card')];
+    expect(cards.map((c) => c.querySelector('.card-title')?.getAttribute('href'))).toEqual(['/DM', '/NF']);
     expect(cards.map((c) => c.textContent)).toEqual(['DMDemo shop2 domains', 'NFNotebook1 domain']);
     expect(main().querySelector('.problem-badge, .coverage-bars, .problems')).toBeNull();
   });
