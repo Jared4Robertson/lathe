@@ -18,7 +18,7 @@ const FIRST_NODE = (view: 'graph' | 'erd') => (view === 'graph' ? '.pane-graph .
 test.describe('panes', () => {
   test('LA-V61-R29-T01 at 1024 px with three panes and the side bar open, no two panels overlap', async ({ page }) => {
     await page.setViewportSize({ width: 1024, height: 700 });
-    await openPage(page, `${AGGREGATE.split('?')[0]}?view=wiki,graph,erd`);
+    await openPage(page, `${AGGREGATE.split('?')[0]}?stage=erd`);
     await page.locator('.side-bar-column').waitFor();
     const spans = await page.evaluate(() => [document.querySelector('nav#nav'), ...document.querySelectorAll('.focus-views > .pane'), document.querySelector('.side-bar-column')]
       .map((e) => { const b = e!.getBoundingClientRect(); return { left: b.left, right: b.right }; }));
@@ -62,7 +62,7 @@ test.describe('panes', () => {
   });
 
   test('LA-V61-R29-T01 maximize a pane and come back', async ({ page }) => {
-    await openPage(page, `${RECORD}?view=wiki,graph`);
+    await openPage(page, `${RECORD}?stage=graph`);
     await page.locator('.pane-graph .graph-flow .graph-box').first().waitFor({ state: 'attached' });
     await page.locator('.pane-graph .graph-canvas').click({ position: { x: 5, y: 5 } });
     const full = await step(page, 'panes', 'maximize (Ctrl+3)', { keys: [NAV], allow: PANES }, async () => {

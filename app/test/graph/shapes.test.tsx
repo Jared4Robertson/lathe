@@ -52,7 +52,7 @@ describe('a shape for each kind', () => {
     // On the canvas a domain is drawn as the hexagon, its outline the polygon; every node in its kind's shape.
     cleanup();
     startAtDepth(1);
-    await openApp('/P?view=graph', { data: testWorkspace() });
+    await openApp('/P?stage=graph', { data: testWorkspace() });
     await waitFor(() => expect(drawnBox('P-D')).toBeDefined());
     expect(drawnBox('P-D')!.shape).toBe('hexagon');
     expect(drawnBox('P-D')!.polygon).toHaveLength(6);

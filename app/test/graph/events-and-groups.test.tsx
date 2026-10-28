@@ -10,7 +10,7 @@ import { lineStroke } from '../../src/graph/paint';
 import { shapeOf } from '../../src/graph/shapes';
 import { treeChildren, treeParent } from '../../src/graph/tree';
 import { navigate } from '../../src/router';
-import { GRAPH_KEY, graphSettings } from '../../src/graph/settings';
+import { SETTINGS_KEY, sessionSettings } from '../../src/graph/settings';
 import { openApp, startAtDepth } from '../helpers';
 import { indexOf } from '../fixtures/load';
 import { manyOfOneKindWorkspace, testIndex } from './workspace';
@@ -77,9 +77,9 @@ describe('components and tests in the graph', () => {
 describe('the trail', () => {
   it('LA-V93-R34-T01 The trail names a record by its title and ID, a group by its name alone, the full text in its tooltip, the current item bold', async () => {
     startAtDepth(1);
-    await openApp('/P-D-UC01?view=graph', { data: (await import('./workspace')).testWorkspace() });
+    await openApp('/P-D-UC01?stage=graph', { data: (await import('./workspace')).testWorkspace() });
     await waitFor(() => expect(boxElements().length).toBeGreaterThan(0));
-    act(() => navigate('/P-D/use-cases?view=graph'));
+    act(() => navigate('/P-D/use-cases?stage=graph'));
     const trail = () => within(screen.getByRole('navigation', { name: 'Records visited' }));
     await waitFor(() => expect(trail().getAllByRole('listitem')).toHaveLength(2));
     expect(trail().getAllByRole('listitem').map((li) => li.textContent)).toEqual(['Lend a thing (P-D-UC01)', 'Use cases']);
@@ -118,19 +118,19 @@ describe('the rules the graph keeps', () => {
   });
 
   it('LA-VO92-C01-T A graph\'s depth is a whole number from 1 to 3, and its layout one of tree, nested and voronoi', () => {
-    const stored = (layout: string, depth: number) => window.sessionStorage.setItem(GRAPH_KEY, JSON.stringify({ layout, depth, trace: false, hiddenKinds: [], hiddenRelations: [], links: false, minimap: false }));
+    const stored = (layout: string, depth: number) => window.sessionStorage.setItem(SETTINGS_KEY, JSON.stringify({ layout, depth, hiddenKinds: [], hiddenRelations: [], links: false, minimap: false, card: true, cardWidth: null }));
     for (const layout of ['tree', 'nested', 'voronoi'] as const) {
       for (const depth of [1, 2, 3]) {
         stored(layout, depth);
-        expect(graphSettings()).toMatchObject({ layout, depth });
+        expect(sessionSettings().graph).toMatchObject({ layout, depth });
       }
     }
     // Any other depth falls back to 1; any other layout drops the settings for the defaults.
     for (const depth of [0, 4, 2.5, -1]) {
       stored('nested', depth);
-      expect(graphSettings()).toMatchObject({ layout: 'nested', depth: 1 });
+      expect(sessionSettings().graph).toMatchObject({ layout: 'nested', depth: 1 });
     }
     stored('grid', 2);
-    expect(graphSettings()).toMatchObject({ layout: 'tree', depth: 1 });
+    expect(sessionSettings().graph).toMatchObject({ layout: 'tree', depth: 1 });
   });
 });

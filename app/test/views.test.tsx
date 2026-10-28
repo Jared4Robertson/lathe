@@ -52,14 +52,14 @@ describe('one address, three views', () => {
   });
 
   it('LA-VO90-C02-T An address names views only in its view query, never in its path', async () => {
-    expect(withView('/X', ['trace', 'erd', 'wiki'])).toBe('/X?view=wiki,erd,trace');
-    await openApp('/P-D-UC01?view=graph', served());
+    expect(withView('/X', ['trace', 'erd', 'wiki'])).toBe('/X?stage=trace');
+    await openApp('/P-D-UC01?stage=graph', served());
     expect(await screen.findByRole('region', { name: 'Graph pane' })).toBeInTheDocument();
-    expect(window.location.pathname + window.location.search).toBe('/P-D-UC01?view=graph');
+    expect(window.location.pathname + window.location.search).toBe('/P-D-UC01?stage=graph');
   });
 
   it('LA-V96-R03-T01 A record and a group each have one address, in every view', async () => {
-    await openApp('/P-D-UC01?view=graph', served());
+    await openApp('/P-D-UC01?stage=graph', served());
     expect(await screen.findByRole('region', { name: 'Graph pane' })).toBeInTheDocument();
     expect(window.location.pathname).toBe('/P-D-UC01');
     await openApp('/P-D/domain-model/term', served());
@@ -67,13 +67,13 @@ describe('one address, three views', () => {
   });
 
   it('LA-EXP-INV03-T The views a link names open and become the remembered ones; an address without views opens the last ones', async () => {
-    await openApp('/P-D-UC01?view=graph', served());
+    await openApp('/P-D-UC01?stage=graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     await openApp('/P-V01', served());
     await screen.findByRole('heading', { level: 1, name: 'Loan desk' });
     expect(viewToggle('Graph')).toHaveAttribute('aria-pressed', 'true');
     expect(viewToggle('Wiki')).toHaveAttribute('aria-pressed', 'false');
-    await openApp('/P-V01?view=wiki,graph', served());
+    await openApp('/P-V01?stage=graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Loan desk' });
     expect(screen.getByRole('button', { name: 'Close the wiki pane' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Close the graph pane' })).toBeInTheDocument();
@@ -99,13 +99,13 @@ describe('one address, three views', () => {
 
     // Graph opens beside the wiki, in order.
     fireEvent.click(viewToggle('Graph'));
-    expect(window.location.search).toBe('?view=wiki,graph');
+    expect(window.location.search).toBe('?stage=graph');
     expect([...document.querySelectorAll('.pane')].map((p) => p.getAttribute('aria-label'))).toEqual(['Wiki pane', 'Graph pane']);
     expect(viewToggle('Graph')).toHaveAttribute('aria-pressed', 'true');
     await graphShown();
     // Closing the wiki leaves the graph.
     fireEvent.click(screen.getByRole('button', { name: 'Close the wiki pane' }));
-    expect(window.location.search).toBe('?view=graph');
+    expect(window.location.search).toBe('?stage=graph');
     expect(screen.queryByRole('region', { name: 'Wiki pane' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Close the graph pane' })).toBeNull();
 
@@ -116,7 +116,7 @@ describe('one address, three views', () => {
     expect(viewToggle('Wiki')).toHaveAttribute('aria-pressed', 'false');
 
     // A link's views win, and become the remembered ones.
-    await openApp('/P-V01?view=wiki,graph', served());
+    await openApp('/P-V01?stage=graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Loan desk' });
     expect(screen.getByRole('button', { name: 'Close the wiki pane' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Close the graph pane' })).toBeInTheDocument();
@@ -128,7 +128,7 @@ describe('one address, three views', () => {
 
   /** Two panes, wiki and graph, with the gap between them. */
   const twoPanes = async () => {
-    await openApp('/P-D-UC01?view=wiki,graph', served());
+    await openApp('/P-D-UC01?stage=graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     return screen.getByRole('separator', { name: 'Resize the wiki and graph panes' });
   };
@@ -169,7 +169,7 @@ describe('one address, three views', () => {
   });
 
   it('LA-EXP-INV02-T Both panes show one focus: a node click moves the wiki, a wiki link moves the graph, Back moves both, and graph settings survive', async () => {
-    await openApp('/P-D-UC01?view=wiki,graph', served());
+    await openApp('/P-D-UC01?stage=graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     await waitFor(() => expect(isCenter('P-D-UC01')).toBe(true));
     fireEvent.click(screen.getByRole('button', { name: '2' }));
@@ -186,13 +186,13 @@ describe('one address, three views', () => {
     // A node in the graph moves the wiki: the flow step that fulfills it, reached by the Links switch.
     await waitFor(() => expect(node('P-D-UC01-FL01-S01')).not.toBeNull());
     fireEvent.click(node('P-D-UC01-FL01-S01')!);
-    expect(window.location.pathname + window.location.search).toBe('/P-D-UC01-FL01-S01?view=wiki,graph');
+    expect(window.location.pathname + window.location.search).toBe('/P-D-UC01-FL01-S01?stage=graph');
     await waitFor(() => expect(title()).toBe('Librarian lends the thing'));
     await waitFor(() => expect(isCenter('P-D-UC01-FL01-S01')).toBe(true));
   });
 
   it('LA-V96-R06-T01 Both panes follow one focus, Back moves both, and graph settings survive', async () => {
-    await openApp('/P-D-UC01?view=wiki,graph', served());
+    await openApp('/P-D-UC01?stage=graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     await waitFor(() => expect(isCenter('P-D-UC01')).toBe(true));
     fireEvent.click(screen.getByRole('button', { name: '2' }));
@@ -232,7 +232,7 @@ describe('one address, three views', () => {
 
   it('LA-V96-R08-T01 Product and domain pages have the same views, their graph centered on the product or domain', async () => {
     for (const [path, id, name] of [['/P', 'P', 'Product'], ['/P-D', 'P-D', 'Domain']]) {
-      await openApp(`${path}?view=wiki,graph`, served());
+      await openApp(`${path}?stage=graph`, served());
       await screen.findByRole('heading', { level: 1, name });
       expect(within(screen.getByRole('region', { name: 'Wiki pane' })).getAllByRole('heading').length).toBeGreaterThan(0);
       await waitFor(() => expect(isCenter(id)).toBe(true));
@@ -246,7 +246,7 @@ describe('one address, three views', () => {
       addRows(w, 'invariant', { id, title: `Rule ${i}`, aggregate_id: 'P-D-A3', statement: `Rule ${i} MUST hold.` });
     }
     // The aggregate holds entities, events and commands too, so its invariants are a group of their own in the tree.
-    await openApp('/P-D-A3/invariant?view=wiki,graph', { data: w });
+    await openApp('/P-D-A3/invariant?stage=graph', { data: w });
     await screen.findByRole('heading', { level: 1, name: 'Invariants (13)' });
     expect(within(screen.getByRole('region', { name: 'Wiki pane' })).getByRole('searchbox', { name: 'Filter invariants of P-D-A3/invariant' })).toBeInTheDocument();
     await waitFor(() => expect(within(sideBar()).getByRole('searchbox', { name: 'Filter connected records' })).toBeInTheDocument());
@@ -256,7 +256,7 @@ describe('one address, three views', () => {
   });
 
   it('LA-V96-R04-T02 Switching views by keyboard keeps focus, and the toggles show a focus ring', async () => {
-    await openApp('/P-D-UC01?view=wiki,graph', served());
+    await openApp('/P-D-UC01?stage=graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     // Focus inside the graph pane, then close the graph with the keyboard: focus moves to the Graph toggle, now on the wiki pane, not lost.
     const fullGraph = screen.getByRole('button', { name: 'Full screen: Graph' });
@@ -277,7 +277,7 @@ describe('one address, three views', () => {
 
   it('LA-V96-R04-T01 The page bar holds the tabs at its left and the view toggles, a divider and the side bar toggle at its right; each pane header names its view and holds its close and Full screen buttons; the pressed views and a shown side bar share one on look', async () => {
     // The side bar starts closed in the Wiki view; this test reads it open.
-    openSideBar('details', ['wiki', 'graph', 'erd', 'trace']);
+    openSideBar('details');
     await openApp('/P-D-UC01', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     const page = document.querySelector<HTMLElement>('.page-bar')!;
@@ -313,7 +313,7 @@ describe('one address, three views', () => {
 describe('the side bar', () => {
   /** A use case in the Graph view, where the side bar starts open. */
   const inGraph = async () => {
-    await openApp('/P-D-UC01?view=graph', served());
+    await openApp('/P-D-UC01?stage=graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     return within(sideBar());
   };
@@ -340,7 +340,7 @@ describe('the side bar', () => {
     expect(JSON.parse(window.localStorage.getItem('lathe:side-bar')!)).toMatchObject({ graph: { open: false } });
     // Remembered in the Graph view of another record, in a new session's first tab too.
     window.sessionStorage.clear();
-    await openApp('/P-V01?view=graph', served());
+    await openApp('/P-V01?stage=graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Loan desk' });
     expect(screen.queryByRole('complementary', { name: 'Side bar' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Show the side bar' }));
@@ -348,7 +348,7 @@ describe('the side bar', () => {
     expect(screen.getAllByRole('complementary', { name: 'Side bar' })).toHaveLength(1);
 
     // The Wiki view keeps its own choice: closed until opened there.
-    await openApp('/P-V01?view=wiki', served());
+    await openApp('/P-V01?stage=graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Loan desk' });
     expect(screen.queryByRole('complementary', { name: 'Side bar' })).toBeNull();
   });

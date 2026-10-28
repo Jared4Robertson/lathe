@@ -2,7 +2,7 @@ import './setup';
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { GRAPH_LAYOUTS, stepKey } from '../../src/graph/GraphPage';
-import { DEFAULT_GRAPH_SETTINGS, graphSettings, saveGraphSettings } from '../../src/graph/settings';
+import { DEFAULT_CARD, DEFAULT_GRAPH_SETTINGS, saveSessionSettings, sessionSettings } from '../../src/graph/settings';
 import { activateTab, closeTab, cycleTab, emptyTabs, keepTab } from '../../src/views/tabs';
 import { arrive, type PageTabs } from '../../src/views/useTabs';
 import type { GraphSettings } from '../../src/graph/GraphPage';
@@ -35,12 +35,12 @@ async function step(key: string) {
 describe('moving through the graph keeps how it is drawn', () => {
   it('LA-EXP-INV09-T Opening, activating, cycling and closing tabs never touch the graph settings; only the person\'s change does', () => {
     const mine: GraphSettings = { ...DEFAULT_GRAPH_SETTINGS, layout: 'nested', depth: 2, links: true };
-    saveGraphSettings(mine);
+    saveSessionSettings({ graph: mine, card: DEFAULT_CARD });
     const unchanged = (set: PageTabs) => {
-      expect(graphSettings()).toEqual(mine);
+      expect(sessionSettings().graph).toEqual(mine);
       expect(set.tabs.flatMap((t) => Object.keys(t.state))).not.toContain('graph');
     };
-    let set = arrive(emptyTabs(), '/P-D-UC01', ['graph'], true);
+    let set = arrive(emptyTabs(), '/P-D-UC01', 'graph', true);
     unchanged(set);
     set = keepTab(set, set.active!);
     set = arrive(set, '/P-V01', null, false);
@@ -53,14 +53,14 @@ describe('moving through the graph keeps how it is drawn', () => {
     set = closeTab(set, set.active!);
     unchanged(set);
     // The person's own change is the only one.
-    saveGraphSettings({ ...mine, layout: 'voronoi' });
-    expect(graphSettings().layout).toBe('voronoi');
+    saveSessionSettings({ graph: { ...mine, layout: 'voronoi' }, card: DEFAULT_CARD });
+    expect(sessionSettings().graph.layout).toBe('voronoi');
   });
 
   for (const { layout, label } of GRAPH_LAYOUTS) {
     it(`LA-V93-R72-T01 In the ${label} layout, the arrows, a click, Enter, a tab and Back keep the layout, depth and Links, in tabs open or new`, async () => {
       startAtDepth(1, 'tree');
-      await openApp(`/${FLOW}?view=graph`, { data: testWorkspace() });
+      await openApp(`/${FLOW}?stage=graph`, { data: testWorkspace() });
       await waitFor(() => expect(graphHost()).not.toBeNull());
       // A lasting tab on the flow, drawn as it starts; and one on its first step, where the person sets
       // the depth, the Links switch and the layout: the two tabs were drawn differently.
@@ -100,7 +100,7 @@ describe('moving through the graph keeps how it is drawn', () => {
         await new Promise((resolve) => window.addEventListener('popstate', resolve, { once: true }));
       });
       expect(drawn()).toEqual(set);
-      expect(graphSettings()).toMatchObject({ layout, depth: 2, links: true });
+      expect(sessionSettings().graph).toMatchObject({ layout, depth: 2, links: true });
 
       // The person's own change does change it: v steps to the next layout.
       fireEvent.keyDown(document.body, { key: 'v' });
@@ -109,12 +109,12 @@ describe('moving through the graph keeps how it is drawn', () => {
   }
 
   it('LA-V93-R72-T03 The graph\'s settings last the session: the Links switch comes back on reload', async () => {
-    await openApp('/DM-SHOP-UC01?view=graph');
+    await openApp('/DM-SHOP-UC01?stage=graph');
     const links = await screen.findByRole('button', { name: /^Links/ });
     expect(links).toHaveAttribute('aria-pressed', 'false');
     fireEvent.click(links);
     await waitFor(() => expect(screen.getByRole('button', { name: /^Links/ })).toHaveAttribute('aria-pressed', 'true'));
-    await openApp('/DM-SHOP-UC01?view=graph');
+    await openApp('/DM-SHOP-UC01?stage=graph');
     await waitFor(() => expect(screen.getByRole('button', { name: /^Links/ })).toHaveAttribute('aria-pressed', 'true'));
   });
 });

@@ -14,7 +14,7 @@ describe('bare-ID addresses', () => {
     window.sessionStorage.setItem('lathe:tabs', JSON.stringify({
       DM: { active: 't1', tabs: [tab('t1', '/DM-SHOP-UC01'), tab('t2', '/specs/DM/DM-SHOP'), tab('t3', '/records/DM-SHOP/use_case'), tab('t4', '/DM-SHOP/use_case')] },
     }));
-    window.sessionStorage.setItem('lathe:space-pages', JSON.stringify({ NF: '/specs/NF/NF-NOTE?view=graph' }));
+    window.sessionStorage.setItem('lathe:space-pages', JSON.stringify({ NF: '/specs/NF/NF-NOTE?stage=graph' }));
     await openApp('/DM-SHOP-UC01');
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     const tabs = [...document.querySelectorAll('.tab-strip [data-page]')].map((t) => t.getAttribute('data-page'));

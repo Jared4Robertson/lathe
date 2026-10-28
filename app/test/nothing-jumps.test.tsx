@@ -117,7 +117,7 @@ describe('nothing jumps (LA-PAT-APP-UX-R08)', () => {
 
   it('LA-V61-R38-T02 a count or caption that changes is one text, so a new number never moves the text after it', async () => {
     startAtDepth(1);
-    await openApp('/P-D-UC01-R01?view=graph', { data: testWorkspace() });
+    await openApp('/P-D-UC01-R01?stage=graph', { data: testWorkspace() });
     await waitFor(() => expect(document.querySelector('.graph-count')).not.toBeNull());
     const count = document.querySelector('.graph-count')!;
     expect([...count.childNodes].map((n) => n.nodeType)).toEqual([Node.TEXT_NODE]);
@@ -130,7 +130,7 @@ describe('nothing jumps (LA-PAT-APP-UX-R08)', () => {
 
   it('LA-V61-R38-T02 the graph canvas stays mounted when the graph re-centers', async () => {
     startAtDepth(1);
-    await openApp('/P-D-UC01-R01?view=graph', { data: testWorkspace() });
+    await openApp('/P-D-UC01-R01?stage=graph', { data: testWorkspace() });
     await waitFor(() => expect(document.querySelector('.graph-links button')).not.toBeNull());
     fireEvent.click(document.querySelector<HTMLElement>('.graph-links button')!);
     await waitFor(() => expect(boxElement('P-D-UC01-FL01-S01')).not.toBeNull());

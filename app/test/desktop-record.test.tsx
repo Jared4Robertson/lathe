@@ -43,7 +43,7 @@ const heading = () => screen.findByRole('heading', { level: 1, name: 'Add an ite
 describe('desktop record actions', () => {
   it('LA-V92-R74-T01 A record\'s facts offer Reveal, Open in editor and Copy ID in the desktop app, and nothing in a browser', async () => {
     // The side bar starts closed in the Wiki view; this test reads it open.
-    openSideBar('details', ['wiki', 'graph', 'erd', 'trace']);
+    openSideBar('details');
     await openApp('/DM-SHOP-UC01');
     await heading();
     expect(screen.queryByRole('group', { name: 'Data file of DM-SHOP-UC01' })).toBeNull();
@@ -103,7 +103,7 @@ describe('desktop record actions', () => {
       <div class="react-flow__node" data-id="DM-SHOP-UC01"><span id="in-node">x</span></div>
       <div class="react-flow__node" data-id="DM-SHOP/use_case"><span id="in-group">x</span></div>
       <div class="graph-flow" id="graph"><canvas id="graph-canvas"></canvas><div class="graph-box" data-id="DM-SHOP"><span id="in-box">x</span></div></div>
-      <a href="/DM-SHOP?view=graph"><span id="in-domain">x</span></a>
+      <a href="/DM-SHOP?stage=graph"><span id="in-domain">x</span></a>
       <a href="/NOPE"><span id="unknown">x</span></a>
       <a href="https://example.com"><span id="outside">x</span></a>
       <main id="main"><h1><span id="in-title">x</span></h1><p id="body">x</p></main>`;

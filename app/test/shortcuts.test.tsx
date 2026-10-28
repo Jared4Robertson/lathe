@@ -72,18 +72,18 @@ describe('keyboard shortcuts', () => {
     await openApp('/P-D-UC01', { data: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     press(document.body, '2', 'Digit2', { ctrlKey: true });
-    expect(window.location.search).toBe('?view=wiki,graph');
+    expect(window.location.search).toBe('?stage=graph');
     press(document.body, 'w', 'KeyW', { altKey: true });
-    expect(window.location.search).toBe('?view=graph');
+    expect(window.location.search).toBe('?stage=graph');
     // The last open view stays open.
     press(document.body, 'g', 'KeyG', { altKey: true });
-    expect(window.location.search).toBe('?view=graph');
+    expect(window.location.search).toBe('?stage=graph');
     press(document.body, '1', 'Digit1', { ctrlKey: true });
-    expect(window.location.search).toBe('?view=wiki,graph');
+    expect(window.location.search).toBe('?stage=graph');
     // Ctrl+4 and Alt+E do nothing where ERD is not offered; Ctrl+3 is not Split any more.
     press(document.body, '4', 'Digit4', { ctrlKey: true });
     press(document.body, 'e', 'KeyE', { altKey: true });
-    expect(window.location.search).toBe('?view=wiki,graph');
+    expect(window.location.search).toBe('?stage=graph');
 
     // Ctrl+3 maximizes the focused pane; Ctrl+3 again restores, and so does Escape.
     screen.getByRole('button', { name: 'Full screen: Graph' }).focus();
@@ -173,7 +173,7 @@ describe('keyboard shortcuts', () => {
     expect(options[0]).toHaveTextContent('Graph view on or off');
     expect(options[0]).toHaveTextContent('Alt+G');
     await user.keyboard('{Enter}');
-    await waitFor(() => expect(window.location.search).toBe('?view=wiki,graph'));
+    await waitFor(() => expect(window.location.search).toBe('?stage=graph'));
     // The palette has Expand all and Collapse all.
     press(document.body, 'P', 'KeyP', { ctrlKey: true, shiftKey: true });
     await user.type(within(screen.getByRole('dialog', { name: 'Command palette' })).getByRole('combobox'), 'all rows');
@@ -210,7 +210,7 @@ describe('keyboard shortcuts', () => {
   });
 
   it('LA-V61-R08-T06 In the graph, + and - change the depth and . frames the focus again, and no key turns a trace on', async () => {
-    await openApp('/P-D?view=graph', { data: testWorkspace() });
+    await openApp('/P-D?stage=graph', { data: testWorkspace() });
     await waitFor(() => expect(node('P-D/question')).not.toBeNull());
     press(document.body, '+', 'Equal', { shiftKey: true });
     expect(screen.getByRole('button', { name: '2' })).toHaveAttribute('aria-pressed', 'true');
@@ -226,7 +226,7 @@ describe('keyboard shortcuts', () => {
 
   it('LA-V61-R08-T07 F12, Shift+F12, Ctrl+Shift+E, Ctrl+Shift+I, / and Ctrl+- reach links, incoming links, the nav, the side bar, search and Back', async () => {
     // The side bar starts closed in the Wiki view; this test reads it open.
-    openSideBar('details', ['wiki', 'graph', 'erd', 'trace']);
+    openSideBar('details');
     await openApp('/P-D-UC01', { data: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     const sideBar = screen.getByRole('complementary', { name: 'Side bar' });

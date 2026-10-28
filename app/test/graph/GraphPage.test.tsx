@@ -29,7 +29,7 @@ async function back() {
 /** Opens a graph page at a depth (1 unless asked). Most tests here are about links, so they turn Links on unless asked not to. */
 async function showGraph(path: string, workspace: SpecData = testWorkspace(), depth = 1, links = true) {
   startAtDepth(depth);
-  await openApp(path.includes('?') ? path : `${path}?view=graph`, { data: workspace });
+  await openApp(path.includes('?') ? path : `${path}?stage=graph`, { data: workspace });
   await waitFor(() => expect(boxElements().length).toBeGreaterThan(0));
   if (links) fireEvent.click(screen.getByRole('button', { name: 'Links' }));
 }
@@ -42,7 +42,7 @@ describe('graph page', () => {
 
     fireEvent.click(node('P-V01')!);
     expect(window.location.pathname).toBe('/P-V01');
-    expect(window.location.search).toBe('?view=graph');
+    expect(window.location.search).toBe('?stage=graph');
     await waitFor(() => expect(title()).toBe('Loan desk'));
     // The view's own neighbor, the UI component that renders it, is now drawn.
     await waitFor(() => expect(node('P-UI01')).not.toBeNull());
@@ -202,7 +202,7 @@ describe('graph page', () => {
       const graph = within(screen.getByRole('group', { name: 'View' })).getByRole('button', { name: 'Graph' });
       expect(within(screen.getByRole('navigation', { name: 'Main' })).queryByRole('link', { name: 'Graph' })).toBeNull();
       fireEvent.click(graph);
-      expect(window.location.pathname + window.location.search).toBe(`${path}?view=wiki,graph`);
+      expect(window.location.pathname + window.location.search).toBe(`${path}?stage=graph`);
       await waitFor(() => expect(document.querySelector('.graph-box.is-focus')).not.toBeNull());
       expect(scene().boxes.some((b) => b.focus)).toBe(true);
     }
@@ -264,7 +264,7 @@ describe('graph groups on the page', () => {
     await showGraph('/P-D', testWorkspace(), 1, false);
     // The domain's side bar lists its stages, linking to their addresses.
     const link = sideBar().getByRole('link', { name: 'Use cases (1)' });
-    expect(link.getAttribute('href')).toBe('/P-D/use-cases?view=graph');
+    expect(link.getAttribute('href')).toBe('/P-D/use-cases?stage=graph');
     fireEvent.click(link);
     expect(window.location.pathname).toBe('/P-D/use-cases');
     await waitFor(() => expect(title()).toBe('Use cases (1)'));

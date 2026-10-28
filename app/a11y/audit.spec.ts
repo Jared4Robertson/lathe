@@ -25,17 +25,17 @@ const PAGES: State[] = [
   { name: 'record page', url: RECORD, ready: '.pane-title' },
   { name: 'interface page', url: '/LA-IF03', ready: '.interface-flows' },
   { name: 'group page', url: GROUP, ready: '.pane-title' },
-  { name: 'graph', url: `${RECORD}?view=graph`, ready: '.pane-graph .graph-flow .graph-box' },
-  { name: 'ERD view', url: `${AGGREGATE}?view=erd`, ready: '.pane-erd .erd-canvas' },
-  { name: 'Trace view, a chain', url: `${EDITED}?view=trace`, ready: '.pane-trace .trace-chain' },
-  { name: 'Trace view, a matrix', url: `${DOMAIN}?view=trace`, ready: '.pane-trace .trace-matrix' },
+  { name: 'graph', url: `${RECORD}?stage=graph`, ready: '.pane-graph .graph-flow .graph-box' },
+  { name: 'ERD view', url: `${AGGREGATE}?stage=erd`, ready: '.pane-erd .erd-canvas' },
+  { name: 'Trace view, a chain', url: `${EDITED}?stage=trace`, ready: '.pane-trace .trace-chain' },
+  { name: 'Trace view, a matrix', url: `${DOMAIN}?stage=trace`, ready: '.pane-trace .trace-matrix' },
   { name: 'Checks', url: `${PRODUCT}/checks`, ready: '#main h1' },
   { name: 'Format', url: '/format', ready: '#main h1' },
   { name: 'Appearance', url: '/settings/appearance', ready: '#main h1' },
 ].map((p) => ({ name: p.name, run: (page: Page) => open(page, p.url, p.ready) }));
 // The Trace view's matrix with only the rows that have a gap.
 PAGES.push({ name: 'Trace view, gaps only', run: async (page: Page) => {
-  await open(page, `${DOMAIN}?view=trace`, '.pane-trace .trace-matrix');
+  await open(page, `${DOMAIN}?stage=trace`, '.pane-trace .trace-matrix');
   await page.locator('.pane-trace').getByRole('checkbox', { name: 'Gaps only' }).check();
   await page.waitForTimeout(200);
 } });
@@ -66,7 +66,7 @@ PAGES.push(
 );
 // The graph in its Nested and Voronoi layouts (LA-V93-R21, LA-V93-R22): the same roles and names as the Tree layout.
 for (const layout of ['Nested', 'Voronoi'] as const) PAGES.push({ name: `graph, ${layout} layout`, run: async (page: Page) => {
-  await open(page, `${RECORD}?view=graph`, '.pane-graph .graph-flow .graph-box');
+  await open(page, `${RECORD}?stage=graph`, '.pane-graph .graph-flow .graph-box');
   await page.locator('.pane-graph .graph-layout button', { hasText: layout }).click();
   await page.locator(`.pane-graph .graph-flow[data-layout="${layout.toLowerCase()}"] .graph-box`).first().waitFor();
   await page.waitForTimeout(900);

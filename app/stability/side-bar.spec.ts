@@ -25,7 +25,7 @@ async function boxesInView(page: Page, except = ''): Promise<{ id: string; at: {
 
 test.describe('side bar', () => {
   test('LA-V95-R09-T01 switching the side bar\'s view moves nothing outside it', async ({ page }) => {
-    await openPage(page, `${RECORD}?view=wiki,graph`);
+    await openPage(page, `${RECORD}?stage=graph`);
     await page.locator('.graph-flow .graph-box').first().waitFor({ state: 'attached' });
     await page.waitForTimeout(600);
     for (const view of ['Outline', 'History', 'Details']) {
@@ -39,7 +39,7 @@ test.describe('side bar', () => {
   });
 
   test('LA-V95-R09-T01 Details following the node under the pointer moves nothing outside it', async ({ page }) => {
-    await openPage(page, `${RECORD}?view=wiki,graph`);
+    await openPage(page, `${RECORD}?stage=graph`);
     await page.locator('.graph-flow .graph-box[data-id^="LA-"]').first().waitFor({ state: 'attached' });
     await page.waitForTimeout(600);
     const r = await step(page, 'side bar', 'hover nodes, then leave', { keys: KEYS, allow: ALLOW }, async () => {

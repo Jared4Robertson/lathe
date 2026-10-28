@@ -7,7 +7,7 @@ import { FOCUS, GRAPH_CANVAS, RECORD, SHELL } from './scenarios';
 
 test.describe('theme', () => {
   test('LA-V61-R35-T01 switching theme moves nothing', async ({ page }) => {
-    await openPage(page, `${RECORD}?view=wiki,graph`);
+    await openPage(page, `${RECORD}?stage=graph`);
     await page.locator('.pane-graph .graph-flow .graph-box').first().waitFor({ state: 'attached' });
     await page.locator('#main').click({ position: { x: 300, y: 400 } });
     await page.keyboard.press('g');

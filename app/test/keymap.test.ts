@@ -51,9 +51,9 @@ describe('the keymap', () => {
     expect(keysOf('commandPalette')).toEqual(['Mod+Shift+P']);
     expect(keysOf('toggleNav')).toEqual(['Mod+B']);
     expect(keysOf('toggleSideBar')).toEqual(['Mod+Alt+B']);
-    expect(keysOf('viewGraph')).toEqual(['Ctrl+G', 'Ctrl+2']);
-    expect(keysOf('maximizePane')).toEqual(['Ctrl+3']);
-    expect(COMMANDS.some((c) => ['viewSplit', 'toggleSplit', 'toggleFullScreen'].includes(c.id))).toBe(false);
+    expect(keysOf('stageGraph')).toEqual(['Ctrl+G', 'Ctrl+1']);
+    expect(keysOf('toggleWikiCard')).toEqual(['w', 'Ctrl+W']);
+    expect(COMMANDS.some((c) => ['viewWiki', 'viewGraph', 'maximizePane', 'toggleFullScreen'].includes(c.id))).toBe(false);
     expect(keysOf('nextProblem')).toEqual(['F8']);
   });
 
@@ -125,25 +125,25 @@ describe('the keymap', () => {
 
   const keysOn = (id: string, mac: boolean) => resolveCommands({}, mac).find((c) => c.id === id)!.keys;
 
-  it('LA-V61-R08-T08 The view toggles have Ctrl+W, Ctrl+G, Ctrl+E and Ctrl+T on a Mac and Alt+W, Alt+G, Alt+E and Alt+T elsewhere, then Ctrl+1, 2, 4 and 5', () => {
-    expect(keysOn('viewWiki', true)).toEqual(['Ctrl+W', 'Ctrl+1']);
-    expect(keysOn('viewGraph', true)).toEqual(['Ctrl+G', 'Ctrl+2']);
-    expect(keysOn('viewErd', true)).toEqual(['Ctrl+E', 'Ctrl+4']);
-    expect(keysOn('viewTrace', true)).toEqual(['Ctrl+T', 'Ctrl+5']);
-    expect(keysOn('viewWiki', false)).toEqual(['Alt+W', 'Ctrl+1']);
-    expect(keysOn('viewGraph', false)).toEqual(['Alt+G', 'Ctrl+2']);
-    expect(keysOn('viewErd', false)).toEqual(['Alt+E', 'Ctrl+4']);
-    expect(keysOn('viewTrace', false)).toEqual(['Alt+T', 'Ctrl+5']);
+  it('LA-V61-R08-T08 The stage switch has Ctrl+G, Ctrl+E and Ctrl+T on a Mac and Alt+G, Alt+E and Alt+T elsewhere, then Ctrl+1, 2 and 3; the wiki card w, and Ctrl+W on a Mac or Alt+W elsewhere', () => {
+    expect(keysOn('toggleWikiCard', true)).toEqual(['w', 'Ctrl+W']);
+    expect(keysOn('stageGraph', true)).toEqual(['Ctrl+G', 'Ctrl+1']);
+    expect(keysOn('stageErd', true)).toEqual(['Ctrl+E', 'Ctrl+2']);
+    expect(keysOn('stageTrace', true)).toEqual(['Ctrl+T', 'Ctrl+3']);
+    expect(keysOn('toggleWikiCard', false)).toEqual(['w', 'Alt+W']);
+    expect(keysOn('stageGraph', false)).toEqual(['Alt+G', 'Ctrl+1']);
+    expect(keysOn('stageErd', false)).toEqual(['Alt+E', 'Ctrl+2']);
+    expect(keysOn('stageTrace', false)).toEqual(['Alt+T', 'Ctrl+3']);
   });
 
   it('LA-V61-R12-T02 A key means the platform\'s own key, and no platform is offered a browser key, even by an override', () => {
     // On a Mac, Ctrl is the Control key, so Ctrl+W is not Cmd+W.
-    expect(match(['Ctrl+W'], resolveCommands({}, true), true, all).command?.id).toBe('viewWiki');
+    expect(match(['Ctrl+W'], resolveCommands({}, true), true, all).command?.id).toBe('toggleWikiCard');
     expect(match(['Meta+W'], resolveCommands({}, true), true, all).command).toBeUndefined();
-    expect(match(['Alt+G'], resolveCommands({}, false), false, all).command?.id).toBe('viewGraph');
+    expect(match(['Alt+G'], resolveCommands({}, false), false, all).command?.id).toBe('stageGraph');
     expect(match(['Ctrl+G'], resolveCommands({}, false), false, all).command).toBeUndefined();
     // Off a Mac, Ctrl+W (close the tab) and Ctrl+G (find next) are reserved: never offered, even by an override.
-    expect(resolveCommands({ viewWiki: ['Ctrl+W'], viewGraph: ['Ctrl+G'] }, false).filter((c) => c.id === 'viewWiki' || c.id === 'viewGraph').map((c) => c.keys)).toEqual([[], []]);
+    expect(resolveCommands({ toggleWikiCard: ['Ctrl+W'], stageGraph: ['Ctrl+G'] }, false).filter((c) => c.id === 'toggleWikiCard' || c.id === 'stageGraph').map((c) => c.keys)).toEqual([[], []]);
     for (const mac of [true, false]) {
       const reserved = new Set(RESERVED.map((r) => normalizeBinding(r, mac)));
       for (const c of resolveCommands({}, mac)) for (const k of c.keys) expect(reserved.has(normalizeBinding(k, mac)), `${c.id} ${k}`).toBe(false);

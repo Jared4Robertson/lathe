@@ -42,7 +42,7 @@ async function cameraStill(page: Page) {
 
 for (const layout of ['tree', 'nested', 'voronoi'] as const) {
   test(`LA-V93-R72-T02 in the ${LAYOUTS[layout]} layout, the arrows and clicks keep the layout, depth and Links, into tabs open or new`, async ({ page }) => {
-    await openPage(page, `/${FLOW}?view=graph`);
+    await openPage(page, `/${FLOW}?stage=graph`);
     await graphDrawn(page);
     const canvas = page.locator(`${GRAPH}`);
     // A lasting tab on the flow, drawn as it starts (Tree, depth 1, Links off).

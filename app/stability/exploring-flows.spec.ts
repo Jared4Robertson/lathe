@@ -119,7 +119,7 @@ test.describe('Exploring flows', () => {
   });
 
   test('LA-EXP-UC04-FL01-T walk the graph through folder-like groups: a domain\'s stages and kinds, a group\'s address, events, a pattern\'s rules', async ({ page }) => {
-    await openPage(page, '/LA-EXP?view=wiki,graph');
+    await openPage(page, '/LA-EXP?stage=graph');
     await graphReady(page);
     const groups = (await sceneOf(page)).boxes.filter((b) => b.group && b.id.startsWith('LA-EXP/')).map((b) => b.id);
     expect(groups).toEqual(expect.arrayContaining(['LA-EXP/domain-model', 'LA-EXP/test-plan', 'LA-EXP/interaction-design/flow']));
@@ -129,13 +129,13 @@ test.describe('Exploring flows', () => {
     await page.waitForURL((u) => u.pathname === '/LA-EXP/interaction-design/flow');
     await expect(wikiTitle(page)).toHaveText(/^Flows \(\d+\)$/);
     // Under an aggregate, its events in a Domain events group.
-    await page.goto('/LA-EXP-A1?view=wiki,graph');
+    await page.goto('/LA-EXP-A1?stage=graph');
     await graphReady(page);
     const events = (await sceneOf(page)).boxes.find((b) => b.id === 'LA-EXP-A1/domain_event');
     expect(events?.group).toBe(true);
     expect((await sceneOf(page)).boxes.find((b) => b.id === 'LA-EXP-EV01')?.kind).toBe('domain_event');
     // Under a pattern, its rules; follows is a cross-link once Links is on.
-    await page.goto('/LA-PAT-APP-UX?view=wiki,graph');
+    await page.goto('/LA-PAT-APP-UX?stage=graph');
     await graphReady(page);
     expect((await sceneOf(page)).boxes.some((b) => b.id === 'LA-PAT-APP-UX-R01')).toBe(true);
     // Links, by its key (the pane beside the wiki folds it into the toolbar's More).
@@ -149,7 +149,7 @@ test.describe('Exploring flows', () => {
     await quickFind(page, 'LA-EXP-A1');
     await expect(wikiTitle(page)).toHaveText('Page');
     // An address names its views.
-    await page.goto('/LA-EXP-A1?view=wiki,graph,erd');
+    await page.goto('/LA-EXP-A1?stage=erd');
     await expect(page.locator('.focus-views > .pane')).toHaveCount(3);
     await graphReady(page);
     // Close ERD, resize the panes from the keyboard, show one alone.
@@ -213,7 +213,7 @@ test.describe('Exploring flows', () => {
     await focusDrawn(page, 'LA-EXP-UC03-FL01');
     await expect.poll(async () => (await sceneOf(page)).boxes.filter((b) => /^LA-EXP-UC03-FL01-S\d+$/.test(b.id)).length).toBe(9);
     // A requirement's Trace view names the step that fulfills it, with its flow and what it invokes.
-    await page.goto('/LA-EXP-UC03-R18?view=wiki,trace');
+    await page.goto('/LA-EXP-UC03-R18?stage=trace');
     const design = page.locator('.pane-trace .trace-column').nth(1);
     await expect(design.getByRole('link', { name: /LA-EXP-UC03-FL01-S01/ })).toBeVisible();
     await expect(design.getByRole('link', { name: /LA-EXP-UC03-FL01 / }).first()).toBeVisible();
@@ -317,7 +317,7 @@ test.describe('Exploring flows', () => {
     await folders.getByRole('button', { name: /^Test plan \d+/ }).click();
     await expect(nav(page).getByRole('list', { name: 'Test plan of Exploring' }).getByRole('button', { name: /^Constraint tests \d+$/ })).toBeVisible();
     // The graph reaches the same records through the same groups; the trail names each visit.
-    await page.goto('/LA-EXP?view=graph');
+    await page.goto('/LA-EXP?stage=graph');
     await graphReady(page);
     await page.locator(`${FLOW} .graph-box[data-id="LA-EXP/technical-specification"]`).focus();
     await page.keyboard.press('Enter');
@@ -399,7 +399,7 @@ test.describe('Exploring flows', () => {
         git('-c', 'user.name=Stability', '-c', 'user.email=stability@example.test', 'commit', '-q', '-am', `Retitle ${i}`);
       }
       writeFileSync(file, original);
-      await openPage(page, '/LA-EXP?view=wiki,graph');
+      await openPage(page, '/LA-EXP?stage=graph');
       await graphReady(page);
       const side = page.getByRole('complementary', { name: 'Side bar' });
       // In the Graph view Details is open and follows the pointer.
