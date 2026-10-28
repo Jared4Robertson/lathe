@@ -28,7 +28,7 @@ const platesOf = (map: PlacedMap): Plate[] => [...map.nodes.keys()].map((id) => 
 const maps = () => [graphMap(testIndex(), 'P'), nestedMap(testIndex(), 'P'), readyVoronoiMap(testIndex(), 'P')!] as PlacedMap[];
 
 describe('text sizing', () => {
-  it.each(['LA-EXP-DS06-T13', 'LA-EXP-DS10-T07', 'LA-PAT-APP-UX-R12-T02'])('%s Every label line is placed in map units at its face\'s size times its box\'s text scale, inside its box, in every layout', () => {
+  it('LA-EXP-DS06-T13 LA-EXP-DS10-T07 LA-PAT-APP-UX-R12-T02 Every label line is placed in map units at its face\'s size times its box\'s text scale, inside its box, in every layout', () => {
     for (const map of maps()) {
       for (const p of platesOf(map)) {
         expect(p.lines.length, p.id).toBeGreaterThan(0);
@@ -121,7 +121,7 @@ describe('hit testing', () => {
 });
 
 describe('culling', () => {
-  it.each(['LA-EXP-DS10-T08', 'LA-V93-R07-T02'])('%s Only boxes on screen are drawn: a box is culled once it lies wholly past an edge of the pane', () => {
+  it('LA-EXP-DS10-T08 LA-V93-R07-T02 Only boxes on screen are drawn: a box is culled once it lies wholly past an edge of the pane', () => {
     const cam = { cx: 500, cy: 400, zoom: 1, w: 1000, h: 800 };
     expect(onScreen({ x: 10, y: 10, w: 50, h: 50 }, cam)).toBe(true);
     expect(onScreen({ x: -60, y: 10, w: 50, h: 50 }, cam)).toBe(false);
