@@ -52,7 +52,7 @@ test.describe('Traceability flows', () => {
 
   test('LA-TRC-UC10-FL-T trace an obligation in the graph', async ({ page }) => {
     const spec = await served(page);
-    // The chain coverage traces: the steps that fulfill it, their flows, what they invoke and where they
+    // The chain coverage traces, and what it is for: the steps that fulfill it, their flows, what they invoke and where they
     // happen, the handlers of what they invoke, and the tests under it.
     const steps = rowsOf(spec, 'fulfills').filter((l) => l.target_id === REQUIREMENT).map((l) => String(l.source_id));
     const flows = rowsOf(spec, 'flow_step').filter((s) => steps.includes(String(s.id))).map((s) => String(s.flow_id));
@@ -60,14 +60,18 @@ test.describe('Traceability flows', () => {
     const views = rowsOf(spec, 'happens_in').filter((l) => steps.includes(String(l.source_id))).map((l) => String(l.target_id));
     const handlers = [...rowsOf(spec, 'command_handler'), ...rowsOf(spec, 'query_handler')].filter((h) => operations.includes(String(h.command_id ?? h.query_id))).map((h) => String(h.id));
     const tests = rowsOf(spec, 'use_case_test').filter((t) => t.uc_requirement_id === REQUIREMENT).map((t) => String(t.id));
-    expect(steps.length && tests.length).toBeTruthy();
+    // Why it is there: its use case, the use case's capability and the business outcomes that capability serves.
+    const useCase = String(rowsOf(spec, 'uc_requirement').find((r) => r.id === REQUIREMENT)!.use_case_id);
+    const capability = String(rowsOf(spec, 'use_case').find((u) => u.id === useCase)!.capability_id);
+    const outcomes = rowsOf(spec, 'serves').filter((l) => l.source_id === capability).map((l) => String(l.target_id));
+    expect(steps.length && tests.length && outcomes.length).toBeTruthy();
     // S01: the Reader focuses the obligation in the graph.
     await openPage(page, `/${REQUIREMENT}?view=graph`, '.pane-graph .graph-flow .graph-box');
     const boxes = () => page.locator('.pane-graph .graph-flow .graph-box').evaluateAll((els) => els.map((e) => e.getAttribute('data-id')!).sort());
     // S02: trace mode shows its chain alone, and the side bar lists it.
     await page.getByRole('checkbox', { name: 'Trace mode' }).check();
     await page.locator('.pane-graph .graph-flow[data-layout="trace"] .graph-box').first().waitFor({ state: 'attached' });
-    await expect.poll(boxes).toEqual([...new Set([REQUIREMENT, ...flows, ...steps, ...operations, ...handlers, ...views, ...tests])].sort());
+    await expect.poll(boxes).toEqual([...new Set([...outcomes, capability, useCase, REQUIREMENT, ...flows, ...steps, ...operations, ...handlers, ...views, ...tests])].sort());
     const chain = page.getByRole('complementary', { name: 'Side bar' }).getByRole('region', { name: /^Traceability chain \d+$/ });
     for (const id of [...steps, ...tests]) await expect(chain.getByRole('link', { name: new RegExp(`^${id} `) })).toBeVisible();
   });
