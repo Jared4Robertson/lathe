@@ -144,6 +144,15 @@ describe.skipIf(process.platform !== 'darwin')('The desktop app opens a product 
     expect(result.bridge?.isDesktop).toBe(true);
   });
 
+  it('LA-PLT-UC13-FL-T the Reader uses Lathe from the native menus: File, Edit, View, Window and Help, a View item run by its command ID, in the desktop app', () => {
+    // The app menu (named after the app) comes first on macOS.
+    expect(result.menu?.top.slice(1)).toEqual(['File', 'Edit', 'View', 'Window', 'Help']);
+    expect(result.menu?.view).toEqual(expect.arrayContaining(['Command Palette…', 'Wiki View', 'Graph View', 'Model View', 'Show or Hide Navigation', 'Show or Hide Side Bar']));
+    // View › Show or Hide Navigation, sent as its command ID, ran as if its keys had been pressed: the navigation folded away.
+    expect(result.navShown).toEqual({ before: true, after: false });
+    expect(result.bridge?.isDesktop).toBe(true);
+  });
+
   it('LA-V66-R02-T01 runs Help › Keyboard Shortcuts by its command ID', () => {
     expect(result.shortcutsOpened).toBe(true);
   });
