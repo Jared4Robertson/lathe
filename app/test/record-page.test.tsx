@@ -8,7 +8,7 @@ import { main, openApp, openSideBar, section, sideBar } from './helpers';
 // The record page's wiki shows its text fields, its parts (fields with their types, a table's keys,
 // a command's recorded exceptions), its Traceability, children and problems; the side bar's Details,
 // in the Wiki view, adds only what the page leaves out: the data file and line, the row's columns
-// as stored and the raw links (brief 64).
+// as stored and the raw links.
 const side = () => main().querySelector('aside.record-side') as HTMLElement;
 /** A stored column's value in the side bar. */
 const field = (name: string) => within(side()).getByText(name, { selector: 'dt code' }).closest('div')?.querySelector('dd')?.textContent;

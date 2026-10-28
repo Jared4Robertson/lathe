@@ -49,7 +49,7 @@ describe('keyboard shortcuts', () => {
     press(document.body, 'b', 'KeyB', { ctrlKey: true });
     expect(nav().className).not.toContain('is-rail');
 
-    // In the Wiki view the side bar starts closed (brief 64).
+    // In the Wiki view the side bar starts closed.
     expect(screen.queryByRole('complementary', { name: 'Side bar' })).toBeNull();
     press(document.body, '∫', 'KeyB', { ctrlKey: true, altKey: true });
     expect(screen.getByRole('complementary', { name: 'Side bar' })).toBeInTheDocument();
@@ -229,7 +229,7 @@ describe('keyboard shortcuts', () => {
   });
 
   it('LA-V61-R08-T07 F12, Shift+F12, Ctrl+Shift+E, Ctrl+Shift+I, / and Ctrl+- reach links, incoming links, the nav, the side bar, search and Back', async () => {
-    // The side bar starts closed in the Wiki view (brief 64); this test reads it open.
+    // The side bar starts closed in the Wiki view; this test reads it open.
     openSideBar('details', ['wiki', 'graph', 'model']);
     await openApp('/P-D-UC01', { data: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });

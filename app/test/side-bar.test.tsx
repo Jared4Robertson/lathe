@@ -8,7 +8,7 @@ import { main, openApp, openSideBar, sideBar } from './helpers';
 import { testWorkspace } from './graph/workspace';
 import { boxElement, hoverBox, leaveCanvas } from './graph/scene';
 
-// The side bar (brief 64, LA-EXP-UC12): a secondary side bar with three views,
+// The side bar (LA-EXP-UC12): a secondary side bar with three views,
 // Details, Outline and History, closed in the Wiki view and open in the Graph and Model views,
 // remembered per view mode and per tab.
 

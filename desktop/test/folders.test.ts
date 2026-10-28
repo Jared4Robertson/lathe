@@ -58,9 +58,9 @@ describe('LA-PLT-SP01-T A folder opens only when it holds lathe.config.json or a
     const names = productNames(path.join(root, 'data'));
     expect(productNames(path.join(root, 'missing'))).toEqual([]);
     expect(names).toEqual(['Lathe', 'Tool Library']);
-    expect(windowTitle('/Users/person/Development/Lathe', names, '/Users/owner')).toBe('Lathe, Tool Library — ~/Development/Lathe');
-    expect(windowTitle('/srv/product', [], '/Users/owner')).toBe('product — /srv/product');
-    expect(displayPath('/Users/jaredx', '/Users/owner')).toBe('/Users/jaredx');
+    expect(windowTitle('/Users/person/Development/Lathe', names, '/Users/person')).toBe('Lathe, Tool Library — ~/Development/Lathe');
+    expect(windowTitle('/srv/product', [], '/Users/person')).toBe('product — /srv/product');
+    expect(displayPath('/Users/personx', '/Users/person')).toBe('/Users/personx');
   });
 });
 
