@@ -20,3 +20,5 @@
 {"source_id":"LA-PLT-QRY03","target_id":"LA-PLT-DS01"}
 {"source_id":"LA-TRC-QRY01","target_id":"LA-TRC-DS01"}
 {"source_id":"LA-TRC-QRY01","target_id":"LA-TRC-DS02"}
+{"source_id":"LA-TRC-QRY02","target_id":"LA-TRC-DS03"}
+{"source_id":"LA-TRC-QRY08","target_id":"LA-TRC-DS04"}

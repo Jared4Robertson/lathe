@@ -1036,7 +1036,7 @@ A screen or page a person uses. It has no owner: it exists because flow steps ha
 - **ID:** `<P>-V<nn>`, such as `TL-V01`; it starts with its product's ID
 - **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about)), Hosts ([`happens_in`](#relation-happens_in)), Rendered by ([`renders`](#relation-renders))
-- **Checks:** [`view-unused`](#check-view-unused)
+- **Checks:** [`view-unused`](#check-view-unused), [`view-route-not-in-file`](#check-view-route-not-in-file)
 - **Gaps:** [`view-without-ui-component`](#gap-view-without-ui-component)
 
 <a id="table-view"></a>
@@ -1095,6 +1095,7 @@ An HTTP endpoint that exposes exactly one command or query, its parent. Flow ste
 - **ID:** `<P>-<D>-EP<nn>`, such as `TL-LEND-EP01`; it starts with its domain's ID
 - **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about))
+- **Checks:** [`endpoint-route-not-in-file`](#check-endpoint-route-not-in-file)
 - **Gaps:** [`endpoint-without-requirement`](#gap-endpoint-without-requirement), [`endpoint-without-handler`](#gap-endpoint-without-handler)
 
 <a id="table-endpoint"></a>
@@ -1205,6 +1206,26 @@ The steps on each path of a flow are numbered 1, 2, 3 and so on, without gaps.
 
 A flow's steps are read in `position` within their `path`, a short name such as main or refused, compared trimmed and in any letter case. The schema gives each step a whole number that no other step on its path has; a path whose positions skip a number is reported once, on the first step after the gap. Renumber the steps of the path to close the gap.
 
+<a id="check-endpoint-route-not-in-file"></a>
+
+### `endpoint-route-not-in-file`
+
+**Error** · Lathe's · Kinds: [`endpoint`](#kind-endpoint), [`endpoint_handler`](#kind-endpoint_handler)
+
+An endpoint whose handler's file does not name its method and route.
+
+An endpoint handler serves its endpoint's method and route, so its file names both: the route, written any way routes are written (`/tools/{toolId}`, `/tools/:toolId`, `/tools/<tool-id>`, `/tools/[toolId]`, a template's `${toolId}`, or a regular expression literal that matches it, such as `/^\/tools\/(\d+)$/`), in code, a string or a comment. Parameters match whatever their names, and only the path counts: a query string or fragment is not part of a route. The method is written in capitals, or called as `.post(`, on the route's line or within two lines of it. Then a reader of the record finds the code, and a route changed on one side and not the other is caught. A handler whose file does not exist yet is technical-file-missing instead. Correct the endpoint's method or route, or point its handler at the file that serves it.
+
+<a id="check-view-route-not-in-file"></a>
+
+### `view-route-not-in-file`
+
+**Error** · Lathe's · Kinds: [`view`](#kind-view), [`ui_component`](#kind-ui_component)
+
+A view whose route no file of the UI components that render it names.
+
+A view's route is the address it is shown at, and the UI components that render it show it there, so one of their files names the route, written any way routes are written (`/tools/{toolId}`, `/tools/:toolId`, `/tools/<tool-id>`, `/tools/[toolId]`, a template's `${toolId}`, or a regular expression literal that matches it, such as `/^\/tools\/(\d+)$/`), in code, a string or a comment. Parameters match whatever their names, and only the path counts: a query string or fragment is not part of a route. Then a reader of the record finds the code, and an address changed on one side and not the other is caught. A view with no route, or whose components' files do not exist yet, is not checked. Correct the view's route, or name it in the file of the component that shows the view at that address.
+
 ### Coverage gaps: interaction design
 
 Each is reported in coverage, under the record that falls short, never as a problem.
@@ -1214,6 +1235,7 @@ Each is reported in coverage, under the record that falls short, never as a prob
 | <a id="gap-use-case-without-flow"></a>`use-case-without-flow` | [`use_case`](#kind-use_case), [`flow`](#kind-flow) | A use case with no flow. |
 | <a id="gap-flow-without-main-path"></a>`flow-without-main-path` | [`flow`](#kind-flow), [`flow_step`](#kind-flow_step) | A flow with no step on its main path. |
 | <a id="gap-endpoint-without-requirement"></a>`endpoint-without-requirement` | [`endpoint`](#kind-endpoint), [`api_requirement`](#kind-api_requirement) | An endpoint with no API requirement. |
+| <a id="gap-route-without-record"></a>`route-without-record` | [`product`](#kind-product), [`endpoint`](#kind-endpoint), [`view`](#kind-view) | A route the code serves that no endpoint or view has. |
 
 <a id="stage-technical-specification"></a>
 
@@ -1576,7 +1598,7 @@ A piece of the user interface that renders one or more views. It has no owner: i
 - **ID:** `<P>-UI<nn>`, such as `TL-UI01`; it starts with its product's ID
 - **Links out:** Meets ([`meets`](#relation-meets)), Renders ([`renders`](#relation-renders))
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`ui-component-unused`](#check-ui-component-unused)
+- **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`ui-component-unused`](#check-ui-component-unused), [`view-route-not-in-file`](#check-view-route-not-in-file)
 
 <a id="table-ui_component"></a>
 
@@ -1602,7 +1624,7 @@ Serves its endpoint: reads the request, calls the command or query handler and w
 - **ID:** `<endpoint>-H`, such as `TL-LEND-EP01-H`; it starts with its parent's ID
 - **Links out:** Meets ([`meets`](#relation-meets))
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`technical-file-missing`](#check-technical-file-missing)
+- **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`endpoint-route-not-in-file`](#check-endpoint-route-not-in-file)
 
 <a id="table-endpoint_handler"></a>
 
@@ -1742,6 +1764,7 @@ Each is reported in coverage, under the record that falls short, never as a prob
 | <a id="gap-endpoint-without-handler"></a>`endpoint-without-handler` | [`endpoint`](#kind-endpoint), [`endpoint_handler`](#kind-endpoint_handler) | An endpoint with no endpoint handler. |
 | <a id="gap-integration-without-adapter"></a>`integration-without-adapter` | [`integration`](#kind-integration), [`adapter`](#kind-adapter) | An integration with no adapter. |
 | <a id="gap-view-without-ui-component"></a>`view-without-ui-component` | [`view`](#kind-view), [`ui_component`](#kind-ui_component) | A view no UI component renders. |
+| <a id="gap-code-file-untraced"></a>`code-file-untraced` |  | A source file no technical record names, directly or through a folder. |
 
 <a id="stage-test-plan"></a>
 
@@ -2374,6 +2397,7 @@ A product: the root of a set of specifications.
 - **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Parts:** [`role`](#table-role)
+- **Gaps:** [`route-without-record`](#gap-route-without-record)
 
 <a id="table-product"></a>
 
