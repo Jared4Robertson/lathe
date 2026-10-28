@@ -29,11 +29,13 @@ COMMENT ON COLUMN role.description IS 'Who takes the role and what they do.';
 
 CREATE TABLE product_setting (
   product_id VARCHAR PRIMARY KEY REFERENCES product (id),
-  max_children INTEGER NOT NULL CHECK (max_children >= 1)
+  max_children INTEGER NOT NULL CHECK (max_children >= 1),
+  max_entities_per_aggregate INTEGER NOT NULL CHECK (max_entities_per_aggregate >= 1)
 );
 COMMENT ON TABLE product_setting IS 'A product''s typed settings for its checks. A product without a row takes the defaults.';
 COMMENT ON COLUMN product_setting.product_id IS 'The product.';
 COMMENT ON COLUMN product_setting.max_children IS 'The most children of one kind a record should have before too-many-children warns; the default is 15.';
+COMMENT ON COLUMN product_setting.max_entities_per_aggregate IS 'The most entities an aggregate should have before aggregate-too-large warns; the default is 7.';
 
 INSERT INTO meta_kind VALUES ('product', 'Product', NULL, 1, false, '<P>', 'TL', NULL, NULL);
 INSERT INTO meta_table VALUES ('product', 'kind', NULL), ('role', 'part', 'product_id'), ('product_setting', 'checking', NULL);

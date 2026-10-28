@@ -339,7 +339,7 @@ check('step-order', () => {
 // max_children of 2.
 const houseRules = (groups: string[]) =>
   adding(complete(), {
-    product_setting: [{ product_id: 'EX', max_children: 2 }],
+    product_setting: [{ product_id: 'EX', max_children: 2, max_entities_per_aggregate: 7 }],
     product_kind: [{ name: 'house_rule', product_id: 'EX', label: 'House rule', description: 'A rule of the house.', parent_kind: 'domain', stage: 'use-cases', obligation: false }],
     product_kind_field: [{ kind: 'house_rule', position: 1, name: 'group_name', type: 'text', required: false, description: 'Its heading.' }],
     house_rule: groups.map((group_name, i) => ({ id: `EX-LEND-HR${String(i + 1).padStart(2, '0')}`, title: `Rule ${i}`, domain_id: 'EX-LEND', group_name })),
@@ -350,7 +350,7 @@ check('too-many-children', () => {
     Array.from({ length: n }, (_, i) => ({ id: `EX-LEND-UC01-R${String(i + 2).padStart(2, '0')}`, title: `Rule ${i}`, use_case_id: 'EX-LEND-UC01', statement: 'It MUST hold.', ...(group ? { group_name: group(i) } : {}) }));
 
   it('LA-CHK-UC06-R01-T01 a record with more children of one kind than max_children is a warning naming the parent, kind and count', async () => {
-    const ws = await loadData(adding(complete(), { product_setting: [{ product_id: 'EX', max_children: 3 }], uc_requirement: requirements(3) }));
+    const ws = await loadData(adding(complete(), { product_setting: [{ product_id: 'EX', max_children: 3, max_entities_per_aggregate: 7 }], uc_requirement: requirements(3) }));
     expect(ofCheck(ws, 'too-many-children')).toEqual([
       expect.objectContaining({ severity: 'warning', record: 'EX-LEND-UC01', message: expect.stringContaining('Use case EX-LEND-UC01 has 4 children of kind uc_requirement, more than the 3') }),
     ]);
@@ -368,7 +368,7 @@ check('too-many-children', () => {
   });
 
   it('LA-CHK-UC06-R06-T01 grouped requirements are counted per group, groups compared in any letter case', async () => {
-    const ws = await loadData(adding(complete(), { product_setting: [{ product_id: 'EX', max_children: 2 }], uc_requirement: requirements(4, (i) => (i < 3 ? (i ? 'Limits' : 'limits ') : 'Other')) }));
+    const ws = await loadData(adding(complete(), { product_setting: [{ product_id: 'EX', max_children: 2, max_entities_per_aggregate: 7 }], uc_requirement: requirements(4, (i) => (i < 3 ? (i ? 'Limits' : 'limits ') : 'Other')) }));
     expect(ofCheck(ws, 'too-many-children').map((p) => p.message)).toEqual([expect.stringContaining('has 3 children of kind uc_requirement in group Limits')]);
   });
 
@@ -377,6 +377,30 @@ check('too-many-children', () => {
     expect(ofCheck(await loadData(houseRules(under)), 'too-many-children')).toEqual([]);
     expect(ofCheck(await loadData(houseRules([...under, 'Yard', 'Yard', 'Yard'])), 'too-many-children').map((p) => p.message)).toEqual([
       expect.stringContaining('Domain EX-LEND has 3 children of kind house_rule in group Yard, more than the 2'),
+    ]);
+  });
+});
+
+check('aggregate-too-large', () => {
+  // Child entities of the loan (EX-LEND-A1, which holds the Loan and its Return), stored in its root's table.
+  const children = (n: number) =>
+    Array.from({ length: n }, (_, i) => ({ id: `EX-LEND-EN${String(i + 10).padStart(2, '0')}`, title: `Part ${i}`, aggregate_id: 'EX-LEND-A1', role: 'child', in_root_table: true }));
+
+  it('LA-CHK-UC06-R08-T01 an aggregate with more entities than max_entities_per_aggregate is a warning naming it, the count and the limit', async () => {
+    const at = (n: number) => adding(complete(), { product_setting: [{ product_id: 'EX', max_children: 15, max_entities_per_aggregate: 3 }], entity: children(n) });
+    expect(ofCheck(await loadData(at(1)), 'aggregate-too-large')).toEqual([]);
+    expect(ofCheck(await loadData(at(2)), 'aggregate-too-large')).toEqual([
+      {
+        severity: 'warning', check: 'aggregate-too-large', record: 'EX-LEND-A1',
+        message: "Aggregate EX-LEND-A1 has 4 entities, more than the 3 that the product's max_entities_per_aggregate setting allows; split it into smaller aggregates that each change together.",
+      },
+    ]);
+  });
+
+  it('LA-CHK-UC06-R09-T01 without the setting the limit is 7', async () => {
+    expect(ofCheck(await loadData(adding(complete(), { entity: children(5) })), 'aggregate-too-large')).toEqual([]);
+    expect(ofCheck(await loadData(adding(complete(), { entity: children(6) })), 'aggregate-too-large').map((p) => p.message)).toEqual([
+      expect.stringContaining('Aggregate EX-LEND-A1 has 8 entities, more than the 7'),
     ]);
   });
 });

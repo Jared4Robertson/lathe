@@ -17,7 +17,9 @@
 {"source_id":"LA-CHK-EN01-TB","target_id":"LA-STD-CODE-R01"}
 {"source_id":"LA-CHK-INV04-T","target_id":"LA-STD-CODE-R01"}
 {"source_id":"LA-CHK-RM01-PJ","target_id":"LA-STD-CODE-R03"}
+{"source_id":"LA-CHK-RM01-PJ","target_id":"LA-STD-MODELING-R01"}
 {"source_id":"LA-CHK-UC04-R12-T01","target_id":"LA-STD-PRINCIPLES-R03"}
+{"source_id":"LA-CHK-UC06-R08-T01","target_id":"LA-STD-MODELING-R01"}
 {"source_id":"LA-EXP-EP01-R02-T02","target_id":"LA-STD-CODE-R02"}
 {"source_id":"LA-EXP-QRY11-H","target_id":"LA-STD-CODE-R03"}
 {"source_id":"LA-INT01-AD","target_id":"LA-STD-PRINCIPLES-R02"}

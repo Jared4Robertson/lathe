@@ -407,6 +407,7 @@
 {"entity_id":"LA-CHK-EN01","position":8,"name":"Kinds","meaning":"The kinds it concerns, as a list of kind names; none for any kind.","type":"text","required":false,"example":"view"}
 {"entity_id":"LA-CHK-EN03","position":1,"name":"Product","meaning":"The product the settings are for.","type_aggregate_id":"LA-AUT-A1","required":true,"column_name":"product_id","example":"TL"}
 {"entity_id":"LA-CHK-EN03","position":2,"name":"Max children","meaning":"The most children of one kind a record of the product should hold; 15 when the product has no row.","type_value_object_id":"LA-VO43","required":true,"example":"15"}
+{"entity_id":"LA-CHK-EN03","position":3,"name":"Max entities per aggregate","meaning":"The most entities an aggregate of the product should hold; 7 when the product has no row.","type_value_object_id":"LA-VO93","required":true,"example":"7"}
 {"entity_id":"LA-EXP-EN01","position":1,"name":"Address","meaning":"Where the page is, to bookmark, share or reload.","type_value_object_id":"LA-VO90","required":true,"example":"/LA-AUT-A1?view=wiki,graph"}
 {"entity_id":"LA-EXP-EN01","position":2,"name":"Page kind","meaning":"What sort of place it is: products, product, domain, record, group, checks, format or settings.","type":"text","required":true,"example":"record"}
 {"entity_id":"LA-EXP-EN01","position":3,"name":"Focus","meaning":"The record or group the page is about: a record ID, or a group's address.","type":"text","required":false,"example":"LA-AUT-A1"}

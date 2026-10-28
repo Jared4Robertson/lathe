@@ -23,3 +23,4 @@
 {"value_object_id":"LA-VO92","position":5,"name":"Minimap","meaning":"Whether the minimap shows.","type":"yes/no","required":true}
 {"value_object_id":"LA-VO92","position":6,"name":"Hidden kinds","meaning":"The kinds the filters hide.","type":"text","required":false}
 {"value_object_id":"LA-VO92","position":7,"name":"Hidden relations","meaning":"The relations the filters hide.","type":"text","required":false}
+{"value_object_id":"LA-VO93","position":1,"name":"Limit","meaning":"The most entities an aggregate should hold.","type":"whole number","required":true}
