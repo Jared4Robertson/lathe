@@ -291,7 +291,7 @@ describe('themes', () => {
     expect(root().hasAttribute('data-mode')).toBe(false);
   });
 
-  it('The built-in themes: Lathe is the stylesheet unchanged, High contrast reaches AAA for text, and each passes AA for its text and controls in both modes', () => {
+  it('LA-V61-R48-T02 The built-in themes: Lathe is the stylesheet unchanged, High contrast reaches AAA for text, and each passes AA for its text and controls in both modes', () => {
     const css = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
     const block = (re: RegExp) => Object.fromEntries([...(css.match(re)?.[1] ?? '').matchAll(/(--[\w-]+):\s*([^;]+);/g)].map((m) => [m[1], m[2].trim()]));
     const rootLight = block(/^:root \{([\s\S]*?)\n\}/m);

@@ -63,7 +63,7 @@ describe('product page', () => {
     expect(main()).not.toHaveTextContent('NF-NOTE has no use cases yet');
   });
 
-  it('The product page lists what it shares in its stages, each in its stage\'s color', async () => {
+  it('LA-V90-R21-T02 The product page lists what it shares in its stages, each in its stage\'s color', async () => {
     await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     // Both domains use the value object and the view, so the product shares them.

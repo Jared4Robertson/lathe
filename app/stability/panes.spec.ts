@@ -16,7 +16,7 @@ const WIKI_BAR = '.pane-wiki > .pane-bar';
 const FIRST_NODE = (view: 'graph' | 'model') => (view === 'graph' ? '.pane-graph .graph-flow canvas' : `.pane-${view} .react-flow__node`);
 
 test.describe('panes', () => {
-  test('at 1024 px with three panes and the side bar open, no two panels overlap', async ({ page }) => {
+  test('LA-V61-R29-T01 at 1024 px with three panes and the side bar open, no two panels overlap', async ({ page }) => {
     await page.setViewportSize({ width: 1024, height: 700 });
     await openPage(page, `${AGGREGATE.split('?')[0]}?view=wiki,graph,model`);
     await page.locator('.side-bar-column').waitFor();

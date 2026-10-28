@@ -24,7 +24,7 @@ async function refusal(changed: Data): Promise<StoreProblem[]> {
   throw new Error('The data loaded, but it should have been refused.');
 }
 
-describe('the fixture', () => {
+describe('LA-AUT-UC01-R01-T05 the fixture', () => {
   it('has a record of every kind, and a row of every stored table', () => {
     const stored = schema.loadOrder;
     expect(stored.filter((table) => !data[table]?.length)).toEqual([]);
@@ -45,7 +45,7 @@ describe.each(kinds)('the %s table', (kind) => {
   const file = `data/${kind}.jsonl`;
 
   // A product and the kinds with no owner sit under nothing; every other kind has one parent.
-  if (schema.kinds[kind].parents.length) it('refuses a parent that does not exist', async () => {
+  if (schema.kinds[kind].parents.length) it('LA-CHK-UC04-R08-T02 refuses a parent that does not exist', async () => {
     const column = schema.kinds[kind].parents.map((p) => p.column).find((c) => row[c] !== undefined)!;
     const problems = await refusal(withTable(data, kind, [{ ...row, [column]: 'TL-NOPE' }, ...data[kind].slice(1)]));
     expect(problems).toContainEqual(expect.objectContaining({ rule: 'foreign-key', file, line: 1, table: kind }));
@@ -60,13 +60,13 @@ describe.each(kinds)('the %s table', (kind) => {
     expect(`${problems[0].file}:${problems[0].line} ${problems[0].message}`).toContain(`${file}:${data[kind].length + 1}`);
   });
 
-  it('refuses the same ID twice in its file', async () => {
+  it('LA-AUT-SP04-T refuses the same ID twice in its file', async () => {
     const problems = await refusal(withTable(data, kind, [...data[kind], row]));
     expect(problems).toEqual([expect.objectContaining({ rule: 'primary-key', file, line: data[kind].length + 1 })]);
   });
 
   const enums = table.columns.filter((c) => c.kind === 'enum');
-  if (enums.length) it('refuses a value its enum does not have', async () => {
+  if (enums.length) it('LA-AUT-INV04-T refuses a value its enum does not have', async () => {
     for (const column of enums) {
       const problems = await refusal(withTable(data, kind, [{ ...row, [column.name]: 'bogus' }, ...data[kind].slice(1)]));
       expect(problems).toEqual([expect.objectContaining({ rule: 'column', file, line: 1 })]);
@@ -106,7 +106,7 @@ describe('loading files', () => {
     }
   });
 
-  it('reads the data folder lathe.config.json names', async () => {
+  it('LA-PLT-UC02-R02-T03 reads the data folder lathe.config.json names', async () => {
     const root = writeData({});
     const { renameSync, writeFileSync } = await import('node:fs');
     const elsewhere = writeData(data);

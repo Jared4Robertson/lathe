@@ -5,4 +5,11 @@
 {"id":"LA-PLT-TOOL03","title":"Local build","domain_id":"LA-PLT","file":"desktop/scripts/stage-lathe.ts"}
 {"id":"LA-PLT-TOOL04","title":"App icon renderer","domain_id":"LA-PLT","file":"desktop/scripts/icon.ts"}
 {"id":"LA-PLT-TOOL05","title":"Brand preview builder","domain_id":"LA-PLT","file":"brand/build-preview.py"}
-{"id":"LA-PLT-TOOL06","title":"Schema converters","domain_id":"LA-PLT","file":"lathe/upgrades"}
+{"id":"LA-PLT-TOOL10","title":"Type checking","domain_id":"LA-PLT","file":"lathe/tsconfig.json"}
+{"id":"LA-PLT-TOOL11","title":"The app's React types","domain_id":"LA-PLT","file":"app/tsconfig.json"}
+{"id":"LA-PLT-TOOL12","title":"Unit and component test runner","domain_id":"LA-PLT","file":"app/vitest.config.ts"}
+{"id":"LA-PLT-TOOL13","title":"The app's build and dev server","domain_id":"LA-PLT","file":"app/vite.config.ts"}
+{"id":"LA-PLT-TOOL14","title":"Browser suites","domain_id":"LA-PLT","file":"app/stability/playwright.config.ts"}
+{"id":"LA-PLT-TOOL15","title":"Accessibility audit","domain_id":"LA-PLT","file":"app/a11y/axe.ts"}
+{"id":"LA-PLT-TOOL16","title":"Unused code finder","domain_id":"LA-PLT","file":"lathe/knip.json"}
+{"id":"LA-PLT-TOOL17","title":"Schema converters","domain_id":"LA-PLT","file":"lathe/upgrades"}

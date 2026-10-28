@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { optOutOfWindowRestoration, restorationDefaultsCommands } from '../src/persistence.ts';
 
-describe('LA-PLT-UC15-R15 The app opts out of macOS window restoration, so a killed run leaves nothing to reopen', () => {
+describe('LA-PLT-UC15-R15-T02 The app opts out of macOS window restoration, so a killed run leaves nothing to reopen', () => {
   it('sets ApplePersistenceIgnoreState and NSQuitAlwaysKeepsWindows on macOS', () => {
     const setUserDefault = vi.fn();
     expect(optOutOfWindowRestoration('darwin', setUserDefault)).toBe(true);

@@ -8,7 +8,7 @@ import { productKindWorkspace } from './fixtures/product-kinds';
 
 // The app's spec index, built from the typed rows GET /api/spec serves.
 
-describe('the index from typed rows', () => {
+describe('LA-PLT-EP01-R01-T03 the index from typed rows', () => {
   it('reads a record per row of each kind table, with its one parent, and its product and domain up the chain', () => {
     const index = indexOf(workspace());
     expect(index.byId.get('DM-SHOP-UC01')).toMatchObject({ kind: 'use_case', parent: 'DM-SHOP-CAP01', product: 'DM', domain: 'DM-SHOP', file: 'data/use_case.jsonl' });

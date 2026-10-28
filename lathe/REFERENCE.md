@@ -1295,7 +1295,7 @@ Loads and saves its aggregate, whole: the way command handlers reach the aggrega
 - **ID:** `<aggregate>-REPO`, such as `TL-LEND-A1-REPO`; it starts with its parent's ID
 - **Links out:** Meets ([`meets`](#relation-meets))
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`technical-file-missing`](#check-technical-file-missing)
+- **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest)
 
 <a id="table-repository"></a>
 
@@ -1323,7 +1323,7 @@ Its entity in code: the entity's data, behavior and mapping to its table. A comm
 - **ID:** `<entity>-DM`, such as `TL-LEND-EN01-DM`; it starts with its parent's ID
 - **Links out:** Meets ([`meets`](#relation-meets))
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`technical-file-missing`](#check-technical-file-missing)
+- **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest)
 
 <a id="table-data_model"></a>
 
@@ -1352,7 +1352,7 @@ Where an entity or a read model, its parent, is stored, in a database or not; or
 - **Links out:** Meets ([`meets`](#relation-meets))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Parts:** [`table_key`](#table-table_key)
-- **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`table-schema-mismatch`](#check-table-schema-mismatch)
+- **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`table-schema-mismatch`](#check-table-schema-mismatch), [`package-not-in-manifest`](#check-package-not-in-manifest)
 - **Gaps:** [`table-without-file`](#gap-table-without-file)
 
 <a id="table-table"></a>
@@ -1414,7 +1414,7 @@ Its value object in code, which checks the value object's constraints when a val
 - **ID:** `<value object>-VT`, such as `TL-VO01-VT`; it starts with its parent's ID
 - **Links out:** Meets ([`meets`](#relation-meets))
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`technical-file-missing`](#check-technical-file-missing)
+- **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest)
 
 <a id="table-value_type"></a>
 
@@ -1442,7 +1442,7 @@ Its specification in code: a yes-or-no test over the records it is given.
 - **ID:** `<specification>-PR`, such as `TL-LEND-SP01-PR`; it starts with its parent's ID
 - **Links out:** Meets ([`meets`](#relation-meets))
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`technical-file-missing`](#check-technical-file-missing)
+- **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest)
 
 <a id="table-predicate"></a>
 
@@ -1470,7 +1470,7 @@ Its domain event's shape in code; a contract with other domains when the event i
 - **ID:** `<domain event>-ET`, such as `TL-LEND-EV01-ET`; it starts with its parent's ID
 - **Links out:** Meets ([`meets`](#relation-meets))
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`event-not-by-outbox`](#check-event-not-by-outbox)
+- **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`event-not-by-outbox`](#check-event-not-by-outbox), [`package-not-in-manifest`](#check-package-not-in-manifest)
 
 <a id="table-event_type"></a>
 
@@ -1499,7 +1499,7 @@ Fills its read model's table and keeps it current, from events or as a view's qu
 - **ID:** `<read model>-PJ`, such as `TL-LEND-RM01-PJ`; it starts with its parent's ID
 - **Links out:** Meets ([`meets`](#relation-meets))
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`technical-file-missing`](#check-technical-file-missing)
+- **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest)
 
 <a id="table-projection"></a>
 
@@ -1527,7 +1527,7 @@ Carries out its command: an application service that owns the transaction, loads
 - **ID:** `<command>-H`, such as `TL-LEND-CMD01-H`; it starts with its parent's ID
 - **Links out:** Meets ([`meets`](#relation-meets))
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`technical-file-missing`](#check-technical-file-missing)
+- **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest)
 
 <a id="table-command_handler"></a>
 
@@ -1555,7 +1555,7 @@ Answers its query from its read model's table: an application service that chang
 - **ID:** `<query>-H`, such as `TL-LEND-QRY01-H`; it starts with its parent's ID
 - **Links out:** Meets ([`meets`](#relation-meets))
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`technical-file-missing`](#check-technical-file-missing)
+- **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest)
 
 <a id="table-query_handler"></a>
 
@@ -1583,7 +1583,7 @@ Carries out its policy: hears the policy's event and sends its command.
 - **ID:** `<policy>-H`, such as `TL-LEND-PO01-H`; it starts with its parent's ID
 - **Links out:** Meets ([`meets`](#relation-meets))
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`technical-file-missing`](#check-technical-file-missing)
+- **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest)
 
 <a id="table-event_handler"></a>
 
@@ -1611,7 +1611,7 @@ Its domain service in code. It never uses a repository or an outside system: its
 - **ID:** `<domain service>-SV`, such as `TL-LEND-DS01-SV`; it starts with its parent's ID
 - **Links out:** Meets ([`meets`](#relation-meets))
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`technical-file-missing`](#check-technical-file-missing)
+- **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest)
 
 <a id="table-service"></a>
 
@@ -1639,7 +1639,7 @@ A piece of the user interface that renders one or more views. It has no owner: i
 - **ID:** `<P>-UI<nn>`, such as `TL-UI01`; it starts with its product's ID
 - **Links out:** Meets ([`meets`](#relation-meets)), Renders ([`renders`](#relation-renders))
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`ui-component-unused`](#check-ui-component-unused), [`view-route-not-in-file`](#check-view-route-not-in-file)
+- **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`ui-component-unused`](#check-ui-component-unused), [`view-route-not-in-file`](#check-view-route-not-in-file), [`package-not-in-manifest`](#check-package-not-in-manifest)
 
 <a id="table-ui_component"></a>
 
@@ -1665,7 +1665,7 @@ Serves its endpoint: reads the request, calls the command or query handler and w
 - **ID:** `<endpoint>-H`, such as `TL-LEND-EP01-H`; it starts with its parent's ID
 - **Links out:** Meets ([`meets`](#relation-meets))
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`endpoint-route-not-in-file`](#check-endpoint-route-not-in-file)
+- **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`endpoint-route-not-in-file`](#check-endpoint-route-not-in-file), [`package-not-in-manifest`](#check-package-not-in-manifest)
 
 <a id="table-endpoint_handler"></a>
 
@@ -1693,7 +1693,7 @@ Talks to its integration's outside system, so the rest of the code does not.
 - **ID:** `<integration>-AD`, such as `TL-INT01-AD`; it starts with its parent's ID
 - **Links out:** Meets ([`meets`](#relation-meets))
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`technical-file-missing`](#check-technical-file-missing)
+- **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest)
 
 <a id="table-adapter"></a>
 
@@ -1797,6 +1797,16 @@ A table kept in a database whose file does not define it as the spec says: its n
 
 A table, view or materialized view that names a file is checked against that file read as text (a migration, a SQL schema, or code that creates it): the file defines a table or view of its name; every column its entity's or read model's fields give (a field's column_name, else its name in lower case with underscores; a value object of several fields flattened into its fields' columns; an entity's table also holds the fields of the children kept in its root's table); and each primary, unique and foreign key by its columns, a foreign key also by its target table. It recognizes CREATE TABLE and CREATE VIEW (OR REPLACE, TEMP, MATERIALIZED, IF NOT EXISTS) with their column definitions and inline or table PRIMARY KEY, UNIQUE and REFERENCES, the columns an AS SELECT body selects or names with AS, CREATE UNIQUE INDEX and ALTER TABLE ... ADD. It does not compare types, NOT NULL, CHECKs, a unique key's name or condition, or index keys, and it cannot see a statement built at run time from pieces the text does not show. A missing file is technical-file-missing instead. Change the file to match, or the spec when the file is right.
 
+<a id="check-package-not-in-manifest"></a>
+
+### `package-not-in-manifest`
+
+**Error** · Lathe's · Kinds: [`adapter`](#kind-adapter), [`repository`](#kind-repository), [`data_model`](#kind-data_model), [`table`](#kind-table), [`value_type`](#kind-value_type), [`predicate`](#kind-predicate), [`event_type`](#kind-event_type), [`projection`](#kind-projection), [`command_handler`](#kind-command_handler), [`query_handler`](#kind-query_handler), [`event_handler`](#kind-event_handler), [`service`](#kind-service), [`ui_component`](#kind-ui_component), [`endpoint_handler`](#kind-endpoint_handler)
+
+A record names a package that none of its product's package.json files lists.
+
+A package_use row says a technical record uses a package, so that every dependency is accounted for by what it serves. Naming a package no manifest lists is a stale or mistyped claim: the package was removed, renamed or never added, and the record no longer tells the truth about the code. Fix the name, add the dependency to the package.json the code runs from, or remove the package_use row.
+
 ### Coverage gaps: technical specification
 
 Each is reported in coverage, under the record that falls short, never as a problem.
@@ -1814,6 +1824,7 @@ Each is reported in coverage, under the record that falls short, never as a prob
 | <a id="gap-query-without-handler"></a>`query-without-handler` | [`query`](#kind-query), [`query_handler`](#kind-query_handler) | A query with no query handler. |
 | <a id="gap-endpoint-without-handler"></a>`endpoint-without-handler` | [`endpoint`](#kind-endpoint), [`endpoint_handler`](#kind-endpoint_handler) | An endpoint with no endpoint handler. |
 | <a id="gap-integration-without-adapter"></a>`integration-without-adapter` | [`integration`](#kind-integration), [`adapter`](#kind-adapter) | An integration with no adapter. |
+| <a id="gap-package-not-accounted-for"></a>`package-not-accounted-for` | [`product`](#kind-product), `package_use` | A product whose package.json files list a package no record of it uses. |
 | <a id="gap-table-without-file"></a>`table-without-file` | [`table`](#kind-table) | A table stored in a database table that names no file creating it. |
 | <a id="gap-view-without-ui-component"></a>`view-without-ui-component` | [`view`](#kind-view), [`ui_component`](#kind-ui_component) | A view no UI component renders. |
 | <a id="gap-code-file-untraced"></a>`code-file-untraced` |  | A source file no technical record names, directly or through a folder. |
@@ -1869,7 +1880,7 @@ Proves its constraint: the values its value object accepts and refuses.
 - **ID:** `<constraint>-T`, such as `TL-VO01-C01-T`; it starts with its parent's ID
 - **Links out:** Starts from ([`starts_from`](#relation-starts_from))
 - **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
-- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed)
+- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`test-case-unnamed`](#check-test-case-unnamed)
 
 <a id="table-constraint_test"></a>
 
@@ -1910,7 +1921,7 @@ Proves its invariant: a change that would break it is refused, and the aggregate
 - **ID:** `<invariant>-T`, such as `TL-LEND-INV01-T`; it starts with its parent's ID
 - **Links out:** Starts from ([`starts_from`](#relation-starts_from))
 - **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
-- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed)
+- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`test-case-unnamed`](#check-test-case-unnamed)
 
 <a id="table-invariant_test"></a>
 
@@ -1952,7 +1963,7 @@ Proves its specification: which records satisfy the predicate and which do not.
 - **ID:** `<specification>-T`, such as `TL-LEND-SP01-T`; it starts with its parent's ID
 - **Links out:** Starts from ([`starts_from`](#relation-starts_from))
 - **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
-- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed)
+- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`test-case-unnamed`](#check-test-case-unnamed)
 
 <a id="table-specification_test"></a>
 
@@ -1994,7 +2005,7 @@ Proves its policy: when its event happens, its command is sent.
 - **ID:** `<policy>-T`, such as `TL-LEND-PO01-T`; it starts with its parent's ID
 - **Links out:** Starts from ([`starts_from`](#relation-starts_from))
 - **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
-- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed)
+- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`test-case-unnamed`](#check-test-case-unnamed)
 
 <a id="table-policy_test"></a>
 
@@ -2036,7 +2047,7 @@ Proves its domain service: from the inputs given, the value or decision it retur
 - **ID:** `<domain service>-T<nn>`, such as `TL-LEND-DS01-T01`; it starts with its parent's ID
 - **Links out:** Starts from ([`starts_from`](#relation-starts_from))
 - **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
-- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed)
+- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`test-case-unnamed`](#check-test-case-unnamed)
 
 <a id="table-domain_service_test"></a>
 
@@ -2077,7 +2088,7 @@ Proves its UC requirement, at the level the use case is stated: what the actor d
 - **ID:** `<UC requirement>-T<nn>`, such as `TL-LEND-UC01-R01-T01`; it starts with its parent's ID
 - **Links out:** Starts from ([`starts_from`](#relation-starts_from))
 - **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
-- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed)
+- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`test-case-unnamed`](#check-test-case-unnamed)
 
 <a id="table-use_case_test"></a>
 
@@ -2118,7 +2129,7 @@ Proves its view requirement in the view.
 - **ID:** `<view requirement>-T<nn>`, such as `TL-V01-R01-T01`; it starts with its parent's ID
 - **Links out:** Starts from ([`starts_from`](#relation-starts_from))
 - **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
-- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed)
+- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`test-case-unnamed`](#check-test-case-unnamed)
 
 <a id="table-view_test"></a>
 
@@ -2159,7 +2170,7 @@ Proves its API requirement at the endpoint: the request and the response.
 - **ID:** `<API requirement>-T<nn>`, such as `TL-LEND-EP01-R01-T01`; it starts with its parent's ID
 - **Links out:** Starts from ([`starts_from`](#relation-starts_from))
 - **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
-- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed)
+- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`test-case-unnamed`](#check-test-case-unnamed)
 
 <a id="table-endpoint_test"></a>
 
@@ -2200,7 +2211,7 @@ A smoke test of its flow's main path, end to end, at the level that fits its int
 - **ID:** `<flow>-T`, such as `TL-LEND-UC01-FL01-T`; it starts with its parent's ID
 - **Links out:** Starts from ([`starts_from`](#relation-starts_from))
 - **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
-- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`flow-test-level-for-interface`](#check-flow-test-level-for-interface)
+- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`test-case-unnamed`](#check-test-case-unnamed), [`flow-test-level-for-interface`](#check-flow-test-level-for-interface)
 
 <a id="table-flow_test"></a>
 
@@ -2241,7 +2252,7 @@ Proves an exchange with its integration's outside system.
 - **ID:** `<integration>-T<nn>`, such as `TL-INT01-T01`; it starts with its parent's ID
 - **Links out:** Starts from ([`starts_from`](#relation-starts_from))
 - **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
-- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed)
+- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`test-case-unnamed`](#check-test-case-unnamed)
 
 <a id="table-integration_test"></a>
 
@@ -2282,7 +2293,7 @@ Proves its pattern rule in one domain that adopts the pattern: one test per patt
 - **ID:** `<pattern rule>-T<nn>`, such as `TL-PAT-ACT-R01-T01`; it starts with its parent's ID
 - **Links out:** Starts from ([`starts_from`](#relation-starts_from))
 - **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
-- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`pattern-rule-test-outside-followers`](#check-pattern-rule-test-outside-followers)
+- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`pattern-rule-test-outside-followers`](#check-pattern-rule-test-outside-followers), [`test-case-unnamed`](#check-test-case-unnamed)
 
 <a id="table-pattern_rule_test"></a>
 
@@ -2325,6 +2336,7 @@ Proves its standard rule in the product's code, such as a scan of the code for w
 - **ID:** `<standard rule>-T<nn>`, such as `TL-STD-CODE-R01-T01`; it starts with its parent's ID
 - **Links out:** Starts from ([`starts_from`](#relation-starts_from))
 - **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
+- **Checks:** [`test-case-unnamed`](#check-test-case-unnamed)
 
 <a id="table-standard_rule_test"></a>
 
@@ -2424,6 +2436,16 @@ A test data set whose file does not exist.
 
 A test data set's file is the seed or fixture that builds it, a file or a folder of files under the product root. When an automated test starts from it, a missing file means that test cannot run, so it is an error. Otherwise the plan may name the file before it is written, so it is a warning. Write the file, or fix the path (relative to the product root).
 
+<a id="check-test-case-unnamed"></a>
+
+### `test-case-unnamed`
+
+**Error** · Lathe's · Kinds: [`constraint_test`](#kind-constraint_test), [`invariant_test`](#kind-invariant_test), [`specification_test`](#kind-specification_test), [`policy_test`](#kind-policy_test), [`domain_service_test`](#kind-domain_service_test), [`use_case_test`](#kind-use_case_test), [`view_test`](#kind-view_test), [`endpoint_test`](#kind-endpoint_test), [`flow_test`](#kind-flow_test), [`integration_test`](#kind-integration_test), [`pattern_rule_test`](#kind-pattern_rule_test), [`standard_rule_test`](#kind-standard_rule_test)
+
+A test case in the product's test files names a test whose file it is in, so every test in the code leads back to the record it proves.
+
+test-file-missing-id follows a test record to its code; this check follows the code back. The engine reads the product's test files (those matching the tests globs in lathe.config.json, by default **/*.test.{ts,tsx,js,mjs} and **/*.spec.{ts,tsx,js}, never in node_modules, dist or another product's folder, and every file a test record names) as text and finds each test case: a call of it or test, with its modifiers and each forms, whose name is a string or template literal, inside the describe calls around it. A test case must name, in its own name, its describes' names or its each rows, the ID of a test (or of a product kind's record that proves an obligation) whose file is the file it is in. One that names none proves nothing anyone can find. Start its name, or its describe's, with the ID of the test it proves, adding that test when the spec lacks it, or remove the test case if it proves nothing.
+
 <a id="check-flow-test-level-for-interface"></a>
 
 ### `flow-test-level-for-interface`
@@ -2459,7 +2481,7 @@ A product: the root of a set of specifications.
 - **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Parts:** [`role`](#table-role)
-- **Gaps:** [`route-without-record`](#gap-route-without-record)
+- **Gaps:** [`route-without-record`](#gap-route-without-record), [`package-not-accounted-for`](#gap-package-not-accounted-for)
 
 <a id="table-product"></a>
 
@@ -2635,6 +2657,20 @@ A product's typed settings for its checks. A product without a row takes the def
 - **Rule:** `(max_entities_per_aggregate >= 1)`
 
 ### Other part tables: rows that belong to one record and are removed with it.
+
+<a id="table-package_use"></a>
+
+#### `package_use`
+
+A package a technical record uses: a dependency one of the product's package.json files lists, which the record accounts for, such as the package an adapter calls or a tooling record runs. Only a record of a kind in the technical specification may name one.
+
+| Column | Type | Required | Meaning |
+| --- | --- | --- | --- |
+| `record_id` | VARCHAR → `record_id` | yes | The technical record that uses the package: an adapter, a UI component, or a record of a product's own technical kind such as a tooling record. |
+| `package` | VARCHAR | yes | The package's name as package.json lists it, such as @duckdb/node-api. |
+
+- **Key:** `record_id`, `package`
+- **Rule:** `regexp_full_match(package, '(@[a-z0-9~-][a-z0-9._~-]*/)?[a-z0-9~-][a-z0-9._~-]*')`
 
 <a id="table-setting_value"></a>
 
