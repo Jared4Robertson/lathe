@@ -1,10 +1,11 @@
-// What the engine's tests share: products written with the store into a fresh folder, with the code files their
+// What the engine's tests share: products written as the store writes them into a fresh folder, with the code files their
 // records name, then loaded with Lathe's built-in checks. complete() is a small product with a record of nearly every
 // kind that gives no problem and no gap; sparse() falls short of every minimum coverage reports.
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { vi } from 'vitest';
-import { loadWorkspace, openStore, StoreError, type Command, type Problem, type Row, type StoreProblem, type Workspace } from '../src/index.ts';
+import { loadWorkspace, openStore, StoreError, type Problem, type Row, type StoreProblem, type Workspace } from '../src/index.ts';
+import { tableText } from '../src/store/rows.ts';
 import { DATABASE_STORAGES, expectedColumns } from '../src/trace/tables.ts';
 import { writeData, type Data } from './store/fixture.ts';
 
@@ -23,28 +24,21 @@ export interface BuildOptions {
 }
 
 /**
- * Writes the rows into a fresh product folder through the store's command layer (a link through link, every other
- * row through add), in the schema's load order, the product's own kinds after their declarations. Then writes each
- * file a record names, holding a comment line with the ID of each record that names it, and a CREATE TABLE for each
- * table kept in a database that names it, with the columns and keys the spec gives (table-schema-mismatch).
+ * Writes the rows into a fresh product folder as data files and loads them with every key and check, so rows the store
+ * would refuse fail the build; then writes each table's file as the store writes it (rows sorted by key, columns in
+ * the table's order). Then writes each file a record names, holding a comment line with the ID of each record that
+ * names it, and a CREATE TABLE for each table kept in a database that names it, with the columns and keys the spec
+ * gives (table-schema-mismatch).
  */
 export async function build(data: Data, options: BuildOptions = {}): Promise<string> {
-  const root = writeData({});
+  const root = writeData(data);
   const store = await openStore(root, { latheDataDir: null });
-  const done = new Set<string>();
   const creates = new Map<string, string[]>();
   try {
-    for (let pass = 0; pass < 2; pass++) {
-      const tables = store.schema.loadOrder.filter((t) => data[t]?.length && !done.has(t));
-      const commands = tables.flatMap((table): Command[] =>
-        data[table].map((row) =>
-          store.schema.tables[table].role === 'link'
-            ? { op: 'link', relation: table, source: String(row.source_id), target: String(row.target_id) }
-            : { op: 'add', table, row },
-        ),
-      );
-      if (commands.length) await store.apply(commands);
-      for (const t of tables) done.add(t);
+    const unknown = Object.keys(data).filter((t) => data[t].length && !store.schema.tables[t]);
+    if (unknown.length) throw new Error(`build: no table ${unknown.join(', ')}`);
+    for (const [name, rows] of Object.entries(data)) {
+      if (rows.length) writeFileSync(path.join(root, 'data', `${name}.jsonl`), tableText(store.schema.tables[name], store.rows(name)));
     }
     for (const table of store.rows('table')) {
       if (typeof table.file !== 'string' || !DATABASE_STORAGES.includes(String(table.storage))) continue;
@@ -61,8 +55,6 @@ export async function build(data: Data, options: BuildOptions = {}): Promise<str
   } finally {
     await store.close();
   }
-  const unknown = Object.keys(data).filter((t) => data[t].length && !done.has(t));
-  if (unknown.length) throw new Error(`build: no table ${unknown.join(', ')}`);
   const files = new Map<string, string[]>();
   for (const rows of Object.values(data)) {
     for (const row of rows) {
