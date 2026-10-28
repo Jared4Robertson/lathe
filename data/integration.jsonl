@@ -3,3 +3,5 @@
 {"id":"LA-INT03","title":"Code editor","system":"VS Code by default; Cursor, Zed, the system's default app or a command of the Owner's own"}
 {"id":"LA-INT04","title":"Git","system":"git","description":"The product folder's git repository: Git runs `lathe merge-data` for each data file `.gitattributes` names, and a record's history is read from it, never written."}
 {"id":"LA-INT61","title":"System browser","system":"The person's default browser","description":"Where a link to another site opens, outside the app."}
+{"id":"LA-INT62","title":"Electron","system":"The Electron runtime the desktop shell runs in","description":"In development the watcher starts Electron on the shell's last build, and restarts it when the main process or a preload changes; a build that fails leaves it running."}
+{"id":"LA-INT63","title":"electron-builder","system":"electron-builder, which packs the desktop app","description":"Packs the built shell and the staged Lathe package into an unsigned macOS app for this Mac's architecture in desktop/release/, which git ignores; it signs, notarizes and publishes nothing."}

@@ -10,7 +10,7 @@
 {"id":"LA-AUT-SP10-PR","title":"Event is audible to the policy","specification_id":"LA-AUT-SP10","file":"lathe/src/store/validation.ts","description":"The `policy-hears-published` validation query."}
 {"id":"LA-EXP-SP01-PR","title":"spaceIndex's selection","specification_id":"LA-EXP-SP01","file":"app/src/specs/data.ts","description":"spaceIndex's selection, isWorkspaceProblem"}
 {"id":"LA-EXP-SP02-PR","title":"viewsOffered","specification_id":"LA-EXP-SP02","file":"app/src/views/address.ts","description":"viewsOffered, MODEL_KINDS"}
-{"id":"LA-EXP-SP03-PR","title":"splitsByKind","specification_id":"LA-EXP-SP03","file":"app/src/graph/tree.ts","description":"splitsByKind"}
+{"id":"LA-EXP-SP03-PR","title":"treeOf's kind groups","specification_id":"LA-EXP-SP03","file":"app/src/graph/tree.ts","description":"treeOf: a record's children of more than one kind go through a group per kind; of one kind, straight under it."}
 {"id":"LA-EXP-SP04-PR","title":"filterKind","specification_id":"LA-EXP-SP04","file":"app/src/graph/model.ts","description":"filterKind, isFiltered"}
 {"id":"LA-EXP-SP05-PR","title":"the Links hop of neighborhood","specification_id":"LA-EXP-SP05","file":"app/src/graph/model.ts","description":"the Links hop of neighborhood"}
 {"id":"LA-PLT-SP01-PR","title":"checkFolder","specification_id":"LA-PLT-SP01","file":"desktop/src/folders.ts","description":"checkFolder"}
