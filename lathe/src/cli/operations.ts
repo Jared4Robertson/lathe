@@ -3,7 +3,7 @@
 // the check. Each operation opens the store afresh, so it always works on the data files as they are now (the Owner,
 // the app or git may have changed them since the last call). Writes never commit: the Agent or the Owner commits.
 import path from 'node:path';
-import { exceptionsText, loadProducts, type RecordedException } from '../index.ts';
+import { exceptionsText, loadProducts, type Coverage, type RecordedException } from '../index.ts';
 import { describeKey, rowKey, rowLine, type Row, type Value } from '../store/rows.ts';
 import { sqlString, type KindDescription, type SchemaDescription, type TableDescription } from '../store/schema.ts';
 import { SchemaVersionError } from '../config.ts';
@@ -358,8 +358,17 @@ export interface CheckProblem {
   message: string;
 }
 
-/** Runs the check on the workspace, every product it shows: their errors and warnings, and the recorded exceptions. */
-export async function check(root: string): Promise<{ errors: number; warnings: number; problems: CheckProblem[]; exceptions: RecordedException[] }> {
+/** One product's coverage, as `lathe check --json` gives it: the product's folder from the workspace root, and its coverage with its gaps. */
+export interface CheckedProduct {
+  root: string;
+  coverage: Coverage[];
+}
+
+/** A product's folder from the workspace root, with forward slashes: `.` for the root itself. */
+export const productFolder = (root: string, dir: string) => path.relative(root, dir).split(path.sep).join('/') || '.';
+
+/** Runs the check on the workspace, every product it shows: their errors and warnings, the recorded exceptions, and each product's coverage. */
+export async function check(root: string): Promise<{ errors: number; warnings: number; problems: CheckProblem[]; exceptions: RecordedException[]; products: CheckedProduct[] }> {
   const products = await loadProducts(root);
   const problems = products.flatMap(({ workspace }) => workspace.problems).map((p) => ({ severity: p.severity, check: p.check, record: p.record ?? null, message: p.message }));
   return {
@@ -367,6 +376,7 @@ export async function check(root: string): Promise<{ errors: number; warnings: n
     warnings: problems.filter((p) => p.severity === 'warning').length,
     problems,
     exceptions: products.flatMap(({ workspace }) => workspace.exceptions),
+    products: products.map(({ config, workspace }) => ({ root: productFolder(root, config.root), coverage: workspace.coverage })),
   };
 }
 
@@ -454,7 +464,40 @@ export function listText(table: string, rows: Row[]): string {
   return rows.map((r) => (typeof r.id === 'string' && typeof r.title === 'string' ? `${r.id}  ${r.title}` : JSON.stringify(r))).join('\n');
 }
 
-/** The check's problems, errors first, the recorded exceptions, and a count line. */
+/** A label inside a sentence: "Use case" -> "use case", but an acronym keeps its case ("UC requirement"). */
+const lowerLabel = (label: string) => (/^[A-Z]{2}/.test(label) ? label : label.charAt(0).toLowerCase() + label.slice(1));
+
+/**
+ * A product's coverage, one line per domain and obligation kind with how many are designed, built and proved, each
+ * gap under its kind, the tests per state, and the records short of a minimum; nothing for a scope with none of these.
+ */
+export function coverageLines(coverage: Coverage[]): string[] {
+  const lines: string[] = [];
+  for (const c of coverage) {
+    const scope = c.domain ?? `${c.product} Shared`;
+    const counted = c.obligations.filter((o) => o.total > 0);
+    const kinds = new Set(counted.map((o) => o.kind));
+    const minimums = c.gaps.filter((g) => !['designed', 'built', 'proved'].includes(g.missing));
+    const tested = c.tests.automated + c.tests.manual + c.tests.not_automated;
+    if (!counted.length && !minimums.length && !tested) continue;
+    for (const o of counted) {
+      const of = (n: number) => `${n}/${o.total}`;
+      // A proof-only kind (a pattern rule) is not asked to be designed or built.
+      const design = o.proof_only ? 'proof only' : `${of(o.designed)} designed, ${of(o.built)} built`;
+      const waiting = o.not_automated ? `, ${of(o.not_automated)} not automated yet` : '';
+      lines.push(`  ${scope} ${lowerLabel(o.label)}: ${design}, ${of(o.proved)} proved${waiting}`);
+      for (const g of c.gaps.filter((x) => x.kind === o.kind && kinds.has(x.kind) && ['designed', 'built', 'proved'].includes(x.missing))) lines.push(`    gap: ${g.message}`);
+    }
+    if (tested) lines.push(`  ${scope} tests: ${c.tests.automated} automated, ${c.tests.manual} manual, ${c.tests.not_automated} not automated yet`);
+    if (minimums.length) {
+      lines.push(`  ${scope} records short of a minimum (${minimums.length}):`);
+      for (const g of minimums) lines.push(`    [${g.missing}] ${g.message}`);
+    }
+  }
+  return lines;
+}
+
+/** The check's problems, errors first, the recorded exceptions, each product's coverage with its gaps, and a count line. */
 export function checkText(result: Awaited<ReturnType<typeof check>>): string {
   const line = (p: CheckProblem) => `  [${p.check}]${p.record ? ` ${p.record}:` : ''} ${p.message}`;
   const errors = result.problems.filter((p) => p.severity === 'error');
@@ -463,6 +506,11 @@ export function checkText(result: Awaited<ReturnType<typeof check>>): string {
   if (errors.length) parts.push(`Errors (${errors.length}):\n${errors.map(line).join('\n')}`);
   if (warnings.length) parts.push(`Warnings (${warnings.length}):\n${warnings.map(line).join('\n')}`);
   if (result.exceptions.length) parts.push(exceptionsText(result.exceptions));
+  // A workspace of several products names each one's folder over its coverage.
+  for (const product of result.products) {
+    const lines = coverageLines(product.coverage);
+    if (lines.length) parts.push(`Coverage${result.products.length > 1 ? ` of ${product.root}` : ''}:\n${lines.join('\n')}`);
+  }
   parts.push(`${count(result.errors, 'error')}, ${count(result.warnings, 'warning')}.`);
   return parts.join('\n\n');
 }
