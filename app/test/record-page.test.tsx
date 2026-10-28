@@ -2,6 +2,8 @@ import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { renderMarkdown } from '../src/specs/Markdown';
+import { factsOf } from '../src/specs/RecordText';
+import { addRows, indexOf } from './fixtures/load';
 import { modelWorkspace } from './fixtures/model';
 import { main, openApp, openSideBar, section, sideBar } from './helpers';
 
@@ -146,6 +148,12 @@ describe('record page', () => {
       ['loans_one_open_per_thing', 'unique', 'thing_id', 'enforces P-D-INV01A thing is lent to one member at a timewhere returned_at IS NULL'],
       ['unnamed', 'foreign', 'member_id', 'references P-D-EN02-TBMembers table'],
     ]);
+  });
+
+  it('LA-V92-R13-T01 A technical record shows the packages it uses as one fact', () => {
+    const index = indexOf(addRows(modelWorkspace(), 'package_use', { record_id: 'P-INT01-AD', package: 'nodemailer' }, { record_id: 'P-INT01-AD', package: '@scope/mjml' }));
+    const facts = factsOf(index, index.byId.get('P-INT01-AD')!);
+    expect(facts.filter((f) => f.column === null)).toEqual([{ column: null, label: 'packages', value: 'nodemailer, @scope/mjml' }]);
   });
 
   it('LA-V92-R13-T01 A command shows the other aggregates it also changes, each with its reason', async () => {

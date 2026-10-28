@@ -209,8 +209,9 @@ describe('pattern rules', () => {
 
 describe('LA-TRC-UC01-R05-T01 minimums', () => {
   it('a record short of each minimum is a gap, under its own scope, named by the rule', async () => {
-    // A source file no record names, for code-file-untraced, and a route no endpoint has, for route-without-record.
-    const ws = await loadData(sparse(), { files: { ...SPARSE_FILES.files, 'src/orphan.ts': 'export {};\n' } });
+    // A source file no record names, for code-file-untraced, a route no endpoint has, for route-without-record, and a
+    // package no record names, for package-not-accounted-for.
+    const ws = await loadData(sparse(), { files: { ...SPARSE_FILES.files, 'src/orphan.ts': 'export {};\n', 'package.json': '{ "dependencies": { "left-pad": "^1.3.0" } }\n' } });
     const found = new Set(ws.coverage.flatMap((c) => c.gaps.map((g) => g.missing)));
     for (const rule of GAP_RULES) expect(found.has(rule.name), rule.name).toBe(true);
     // A view's gap is the domain's whose flow step happens in it, as a use case's is its domain's.

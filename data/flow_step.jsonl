@@ -342,3 +342,7 @@
 {"id":"LA-TRC-UC16-FL-S01","title":"The Agent names, on each table a database keeps, the file that creates it","flow_id":"LA-TRC-UC16-FL","path":"main","position":1}
 {"id":"LA-TRC-UC16-FL-S02","title":"Lathe check reads each table's file and compares its name, columns and keys with the spec","flow_id":"LA-TRC-UC16-FL","path":"main","position":2}
 {"id":"LA-TRC-UC16-FL-S03","title":"A part the file does not define is a warning naming the table, the file and the part, and the Agent fixes the file or the spec","flow_id":"LA-TRC-UC16-FL","path":"refused","position":1}
+{"id":"LA-TRC-UC19-FL-S01","title":"The Agent adds a dependency to a package.json the product lists","flow_id":"LA-TRC-UC19-FL","path":"main","position":1}
+{"id":"LA-TRC-UC19-FL-S02","title":"Lathe check reports each package no record names as one gap on the product, with the manifests that list it","flow_id":"LA-TRC-UC19-FL","path":"main","position":2}
+{"id":"LA-TRC-UC19-FL-S03","title":"The Agent names the package on the technical record that uses it; the store refuses it on any other record","flow_id":"LA-TRC-UC19-FL","path":"main","position":3}
+{"id":"LA-TRC-UC19-FL-S04","title":"Once the package leaves the manifest, the record that still names it is an error until the Agent removes the name","flow_id":"LA-TRC-UC19-FL","path":"main","position":4}

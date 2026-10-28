@@ -16,6 +16,7 @@
 // the schema leaves to the checks because records are written stage by stage (GAP_RULES): a use case with no flow, an
 // aggregate with no root, a command with no handler. The checks read the same views and tables.
 import { sqlName, sqlString, type SchemaDescription, type Stage } from './store/schema.ts';
+import { PACKAGE_FACTS_SQL, PACKAGE_GAP_SQL } from './trace/packages.ts';
 import { MEASURE_GAPS } from './trace/measures.ts';
 import { ROUTE_GAP_RULES } from './trace/routes.ts';
 
@@ -89,7 +90,8 @@ const list = (items: readonly string[]) => items.map(sqlString).join(', ');
  * test files (its file as a path from the root, its place among the file's test cases, its line, and its name after
  * its describes' names), with test_case_id, each ID it or its describes name; test_level_allowed, the levels each test
  * kind allows; and source_file, each of the product's source files and whether a technical record names it or a
- * folder holding it (trace/source-files.ts).
+ * folder holding it (trace/source-files.ts); and package_facts, the packages the product's package.json files list
+ * (trace/packages.ts).
  */
 export const FACT_TABLES_SQL = `
 CREATE OR REPLACE TABLE file_facts (record VARCHAR NOT NULL, kind VARCHAR NOT NULL, file VARCHAR NOT NULL, path VARCHAR, file_exists BOOLEAN NOT NULL, contains_id BOOLEAN NOT NULL);
@@ -97,6 +99,7 @@ CREATE OR REPLACE TABLE test_case (file VARCHAR NOT NULL, position INTEGER NOT N
 CREATE OR REPLACE TABLE test_case_id (file VARCHAR NOT NULL, position INTEGER NOT NULL, id VARCHAR NOT NULL);
 CREATE OR REPLACE TABLE test_level_allowed (kind VARCHAR NOT NULL, level VARCHAR NOT NULL);
 CREATE OR REPLACE TABLE source_file (file VARCHAR NOT NULL, traced BOOLEAN NOT NULL);
+${PACKAGE_FACTS_SQL}
 INSERT INTO test_level_allowed VALUES ${Object.entries(ALLOWED_LEVELS).flatMap(([kind, levels]) => levels.map((l) => `(${sqlString(kind)}, ${sqlString(l)})`)).join(', ')};`;
 
 /** One minimum the schema leaves to coverage: the records that fall short of it, each with a message. */
@@ -203,6 +206,7 @@ WHERE NOT EXISTS (SELECT 1 FROM uc_requirement r WHERE r.use_case_id = u.id) AND
   missingImpl('query-without-handler', 'query', 'Query', 'query_handler', 'query_id', 'query handler'),
   missingImpl('endpoint-without-handler', 'endpoint', 'Endpoint', 'endpoint_handler', 'endpoint_id', 'endpoint handler'),
   missingImpl('integration-without-adapter', 'integration', 'Integration', 'adapter', 'integration_id', 'adapter'),
+  gap('package-not-accounted-for', 'technical-specification', ['product', 'package_use'], 'A product whose package.json files list a package no record of it uses.', PACKAGE_GAP_SQL),
   // A table stored as a table names the file that creates it, which table-schema-mismatch reads (trace/tables.ts).
   gap('table-without-file', 'technical-specification', ['table'], 'A table stored in a database table that names no file creating it.',
     `SELECT t.id, 'Table ' || t.id || ' is stored as a table but names no file that creates it.' AS message FROM "table" t WHERE t.storage = 'table' AND t.file IS NULL`),
