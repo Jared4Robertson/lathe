@@ -100,8 +100,7 @@ const LAYOUTS: Layout[] = [
 ];
 
 /** Every drawn box with no name, or whose label does not fit it, named with its layout, focus, depth, pane and size on screen. */
-function nameless(workspace: SpecData): { problems: string[]; frames: number } {
-  const whole = indexOf(workspace);
+function nameless(whole: SpecIndex): { problems: string[]; frames: number } {
   const problems: string[] = [];
   let frames = 0;
   for (const product of whole.products) {
@@ -147,18 +146,22 @@ function nameless(workspace: SpecData): { problems: string[]; frames: number } {
 }
 
 describe('every drawn box shows its name', () => {
-  let workspace: SpecData;
-  beforeAll(async () => { workspace = await repoData(); }, 60_000);
+  // One index of the repo's data for every test, so each product's maps are laid out once (they are kept per index)
+  // and the tests only frame and read them.
+  let whole: SpecIndex;
+  beforeAll(async () => {
+    whole = indexOf(await repoData());
+    for (const product of whole.products) for (const layout of LAYOUTS) layout.map(spaceIndex(whole, product.id), product.id);
+  }, 60_000);
 
   it('LA-PAT-APP-UX-R12-T01 In the Tree, Nested and Voronoi layouts, at every domain, stage and folder of every product, at depths 1 to 3 in two panes, siblings share one size and text scale and every drawn box shows its name', () => {
-    expect(indexOf(workspace).products.map((r) => r.id).sort()).toEqual(['LA', 'TL']);
-    const { problems, frames } = nameless(workspace);
+    expect(whole.products.map((r) => r.id).sort()).toEqual(['LA', 'TL']);
+    const { problems, frames } = nameless(whole);
     expect(frames).toBeGreaterThan(100);
     expect(problems.length, problems.slice(0, 40).join('\n')).toBe(0);
   }, 120_000);
 
-  it.each(['LA-EXP-DS06-T12', 'LA-EXP-DS09-T13'])("%s A framed box's header reads at about the same size on screen at every depth, and the camera can frame the deepest leaf", () => {
-    const whole = indexOf(workspace);
+  it("LA-EXP-DS06-T12 LA-EXP-DS09-T13 A framed box's header reads at about the same size on screen at every depth, and the camera can frame the deepest leaf", () => {
     for (const product of ['LA', 'TL']) {
       const index = spaceIndex(whole, product);
       for (const layout of LAYOUTS) {

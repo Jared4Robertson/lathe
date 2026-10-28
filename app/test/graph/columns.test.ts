@@ -15,7 +15,7 @@ describe('graph columns by tree depth', () => {
   const map = graphMap(index, 'P');
   const x = (id: string) => map.nodes.get(id)!.x;
 
-  it.each(['LA-EXP-DS05-T05', 'LA-V93-R15-T05'])('%s Siblings of mixed kinds share a column, in the model and on the canvas', async () => {
+  it('LA-EXP-DS05-T05 LA-V93-R15-T05 Siblings of mixed kinds share a column, in the model and on the canvas', async () => {
     // From the Domain model stage at depth 2: aggregates, the specification, the read model, the domain service
     // and the term are all one level below a folder.
     const n = neighborhood(index, 'P-D/domain-model', 2);
@@ -35,7 +35,7 @@ describe('graph columns by tree depth', () => {
     expect(new Set(['P-D-A1', 'P-D-A2', 'P-D-A3', 'P-D-A4'].map(x)).size).toBe(1);
   });
 
-  it.each(['LA-EXP-DS05-T06', 'LA-V93-R15-T06'])('%s The focus\'s ancestors sit one column each to its left and its descendants to its right', async () => {
+  it('LA-EXP-DS05-T06 LA-V93-R15-T06 The focus\'s ancestors sit one column each to its left and its descendants to its right', async () => {
     // The framed picture: the parent one column to the left, the descendants to the right.
     const column = columnOf(neighborhood(index, 'P-D-UC01', 3));
     expect(['P-D-CAP01', 'P-D-UC01', 'P-D-UC01-R01'].map((id) => column.get(id))).toEqual([0, 1, 2]);
@@ -44,7 +44,7 @@ describe('graph columns by tree depth', () => {
     for (let i = 1; i < chain.length; i++) expect(x(chain[i - 1])).toBeLessThan(x(chain[i]));
   });
 
-  it.each(['LA-EXP-DS05-T07', 'LA-V93-R15-T07'])('%s A cross-linked record sits one column after the record it is reached from, unless its tree position places it', () => {
+  it('LA-EXP-DS05-T07 LA-V93-R15-T07 A cross-linked record sits one column after the record it is reached from, unless its tree position places it', () => {
     // Without parent lines, what the step links to is reached from it, one column after it.
     const chain = neighborhood(index, 'P-D-UC01-FL01-S01', 1, { hiddenKinds: new Set(), hiddenRelations: new Set(['parent']) }, { links: true });
     const column = columnOf(chain);
@@ -64,7 +64,7 @@ describe('graph columns by tree depth', () => {
     expect(map.nodes.get('P-V01')!.parent).toBe('P-D/interaction-design/view');
   });
 
-  it.each(['LA-EXP-DS05-T08', 'LA-V93-R27-T02'])('%s A group sits in its own column between its parent and its members', () => {
+  it('LA-EXP-DS05-T08 LA-V93-R27-T02 A group sits in its own column between its parent and its members', () => {
     const grouped = graphMap(indexOf(groupedWorkspace()), 'P');
     const level = (id: string) => grouped.nodes.get(id)!.level;
     expect(level('P-D/domain-model/aggregate')).toBe(level('P-D/domain-model') + 1);

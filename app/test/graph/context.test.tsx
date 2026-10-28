@@ -30,7 +30,7 @@ async function showGraph(path: string, workspace: SpecData = testWorkspace(), de
 }
 
 describe('the graph tree, its depth and its camera', () => {
-  it.each(['LA-EXP-DS09-T06', 'LA-V93-R10-T06'])('%s Depth counts levels below a domain and a use case, as a file explorer does', () => {
+  it('LA-EXP-DS09-T06 LA-V93-R10-T06 Depth counts levels below a domain and a use case, as a file explorer does', () => {
     const index = testIndex();
     // From the domain: depth 1 its stages, depth 2 their folders (or, in a stage with one folder, its records), depth 3
     // what is in them.
@@ -49,7 +49,7 @@ describe('the graph tree, its depth and its camera', () => {
     }
   });
 
-  it.each(['LA-EXP-DS04-T03', 'LA-V93-R23-T06'])('%s The graph\'s tree is the nav\'s: a domain\'s five stages, a folder per kind, the records that start a branch of each stage, and a product\'s own stages and domains', () => {
+  it('LA-EXP-DS04-T03 LA-V93-R23-T06 The graph\'s tree is the nav\'s: a domain\'s five stages, a folder per kind, the records that start a branch of each stage, and a product\'s own stages and domains', () => {
     const index = testIndex();
     const { stages } = domainFolders(index, 'P-D');
     expect(treeChildren(index, 'P-D')).toEqual([...STAGES, 'P-D/question']);
@@ -93,7 +93,7 @@ describe('the graph tree, its depth and its camera', () => {
     }
   });
 
-  it.each(['LA-V93-R10-T07', 'LA-V93-R08-T02'])('%s The Links switch beside Depth is off by default, has a tooltip and the shortcut l, draws the center\'s links dashed, and is kept while walking', async () => {
+  it('LA-V93-R10-T07 LA-V93-R08-T02 The Links switch beside Depth is off by default, has a tooltip and the shortcut l, draws the center\'s links dashed, and is kept while walking', async () => {
     await showGraph('/P-D-UC01-FL01-S01');
     const links = screen.getByRole('button', { name: 'Links' });
     expect(links).toHaveAttribute('aria-pressed', 'false');
@@ -111,7 +111,7 @@ describe('the graph tree, its depth and its camera', () => {
     expect(screen.getByRole('button', { name: 'Links' })).toHaveAttribute('aria-pressed', 'true');
   });
 
-  it.each(['LA-EXP-DS09-T09', 'LA-EXP-DS10-T03'])('%s Every drawn box shows its label, however small on screen, and is a keyboard stop; the summary counts the framed picture', async () => {
+  it('LA-EXP-DS09-T09 LA-EXP-DS10-T03 Every drawn box shows its label, however small on screen, and is a keyboard stop; the summary counts the framed picture', async () => {
     // A use case with sixty requirements: framed from its domain, they are a few pixels tall each.
     const w = testWorkspace();
     for (let i = 3; i <= 60; i++) addRows(w, 'uc_requirement', { id: `P-D-UC01-R${String(i).padStart(2, '0')}`, title: `Rule ${i}`, use_case_id: 'P-D-UC01', statement: `Rule ${i} MUST hold.` });
@@ -257,7 +257,7 @@ describe('the graph tree, its depth and its camera', () => {
     }, 30_000);
   }
 
-  it.each(['LA-V93-R18-T01', 'LA-V93-R08-T03'])('%s With Links on, links draw as curves between their boxes, and the edge hints count the linked records past each edge', async () => {
+  it('LA-V93-R18-T01 LA-V93-R08-T03 With Links on, links draw as curves between their boxes, and the edge hints count the linked records past each edge', async () => {
     // The hints' arithmetic: a box's center past an edge counts for that edge; the plain pan moves half the canvas.
     const view = { x: 0, y: 0, zoom: 1 };
     expect(pastEdges([{ x: -10, y: 50 }, { x: 1200, y: -5 }, { x: 500, y: 900 }, { x: 500, y: 400 }], view, 1000, 800)).toEqual({ up: 1, down: 1, left: 1, right: 1 });
