@@ -94,7 +94,7 @@ The handler of Borrow a tool, the repository and data model of the Loan, and the
 add  { "command_handler": { "id": "TL-LEND-CMD05-H", "title": "LendingService.borrow", "command_id": "TL-LEND-CMD05",
        "file": "src/lending-service.ts",
        "description": "Runs the checks in order in one transaction and inserts the loan with its due date. It saves LoanOpened to the outbox in that transaction and runs the relay once it commits." } }
-add  { "repository": { "id": "TL-LEND-A3-REPO", "title": "Store.insertLoan", "aggregate_id": "TL-LEND-A3", "file": "src/store.ts",
+add  { "repository": { "id": "TL-LEND-A3-REPO", "title": "Store.findLoan", "aggregate_id": "TL-LEND-A3", "file": "src/store.ts",
        "description": "The Store class's loan methods: insertLoan, findLoan, activeLoansForMember, activeLoanForTool and markReturned on the SQLite store." } }
 add  { "data_model": { "id": "TL-LEND-EN04-DM", "title": "Loan", "entity_id": "TL-LEND-EN04", "file": "src/model.ts",
        "description": "The Loan interface; mapped from its row by toLoan in src/store.ts." } }

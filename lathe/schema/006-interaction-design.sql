@@ -88,11 +88,12 @@ CREATE TABLE endpoint (
   route VARCHAR NOT NULL CHECK (trim(route) <> ''),
   description VARCHAR,
   notes VARCHAR,
-  CHECK ((command_id IS NULL) <> (query_id IS NULL))
+  CHECK ((command_id IS NULL) <> (query_id IS NULL)),
+  CHECK (title = method::VARCHAR || ' ' || route)
 );
 COMMENT ON TABLE endpoint IS 'An HTTP endpoint that exposes exactly one command or query, its parent. Flow steps reach it through their command or query, never directly.';
 COMMENT ON COLUMN endpoint.id IS 'The endpoint''s ID, such as TL-LEND-EP01.';
-COMMENT ON COLUMN endpoint.title IS 'What the endpoint does, such as Borrow a tool.';
+COMMENT ON COLUMN endpoint.title IS 'Its method and route, one space apart, such as POST /loans: refused otherwise.';
 COMMENT ON COLUMN endpoint.command_id IS 'The command it exposes; exactly one of command and query is given.';
 COMMENT ON COLUMN endpoint.query_id IS 'The query it exposes; exactly one of command and query is given.';
 COMMENT ON COLUMN endpoint.method IS 'The HTTP method.';

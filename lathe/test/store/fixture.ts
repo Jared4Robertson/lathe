@@ -70,11 +70,11 @@ export function everyKind(): Data {
 
     // Interaction design.
     interface: [{ id: 'TL-IF01', title: 'Web app', product_id: 'TL', kind: 'web app' }],
-    flow: [{ id: 'TL-LEND-UC01-FL01', title: 'Borrow at the desk', use_case_id: 'TL-LEND-UC01', interface_id: 'TL-IF01' }],
+    flow: [{ id: 'TL-LEND-UC01-FL01', title: 'Borrow a tool in the web app', use_case_id: 'TL-LEND-UC01', interface_id: 'TL-IF01' }],
     flow_step: [{ id: 'TL-LEND-UC01-FL01-S01', title: 'Pick a tool', flow_id: 'TL-LEND-UC01-FL01', path: 'main', position: 1 }],
     view: [{ id: 'TL-V01', title: 'Catalog', route: '/catalog' }],
     view_requirement: [{ id: 'TL-V01-R01', title: 'Free tools first', view_id: 'TL-V01', statement: 'The catalog MUST list free tools first.' }],
-    endpoint: [{ id: 'TL-LEND-EP01', title: 'Borrow a tool', command_id: 'TL-LEND-CMD01', method: 'POST', route: '/loans' }],
+    endpoint: [{ id: 'TL-LEND-EP01', title: 'POST /loans', command_id: 'TL-LEND-CMD01', method: 'POST', route: '/loans' }],
     api_requirement: [{ id: 'TL-LEND-EP01-R01', title: 'Unknown tool', endpoint_id: 'TL-LEND-EP01', statement: 'An unknown tool MUST give 404.' }],
     integration: [{ id: 'TL-INT01', title: 'Mail', system: 'Mail service' }],
 
@@ -82,9 +82,9 @@ export function everyKind(): Data {
     repository: [{ id: 'TL-LEND-A1-REPO', title: 'LoanRepository', aggregate_id: 'TL-LEND-A1', file: 'src/lending/loans.ts' }],
     data_model: [{ id: 'TL-LEND-EN01-DM', title: 'Loan', entity_id: 'TL-LEND-EN01', file: 'src/lending/loan.ts' }],
     table: [
-      { id: 'TL-LEND-EN01-TB', title: 'Loans', entity_id: 'TL-LEND-EN01', name: 'loans', storage: 'table', file: 'migrations/001.sql' },
-      { id: 'TL-LEND-RM01-TB', title: 'Loans by member', read_model_id: 'TL-LEND-RM01', name: 'loans_by_member', storage: 'view' },
-      { id: 'TL-LEND-TB01', title: 'Outbox', domain_id: 'TL-LEND', name: 'outbox', storage: 'table' },
+      { id: 'TL-LEND-EN01-TB', title: 'loans', entity_id: 'TL-LEND-EN01', name: 'loans', storage: 'table', file: 'migrations/001.sql' },
+      { id: 'TL-LEND-RM01-TB', title: 'loans_by_member', read_model_id: 'TL-LEND-RM01', name: 'loans_by_member', storage: 'view' },
+      { id: 'TL-LEND-TB01', title: 'outbox', domain_id: 'TL-LEND', name: 'outbox', storage: 'table' },
     ],
     table_key: [
       { table_id: 'TL-LEND-EN01-TB', position: 1, type: 'primary', columns: ['id'] },

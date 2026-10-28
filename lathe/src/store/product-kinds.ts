@@ -81,6 +81,7 @@ export function productKindSql(
       `INSERT INTO meta_table VALUES (${literal(name)}, 'kind', NULL);`,
     );
     if (kind.obligation === true) statements.push(`INSERT INTO meta_supertype_member VALUES ('obligation', ${literal(name)});`);
+    if (kind.title_form) statements.push(`INSERT INTO meta_kind_title VALUES (${literal(name)}, ${literal(kind.title_form)});`);
     taken.add(name);
   };
   for (const kind of [...declarations.kinds].sort((a, b) => String(a.name).localeCompare(String(b.name)))) add(kind, []);

@@ -11,7 +11,46 @@ const REPO = path.join(here, '..', '..');
 /** The kinds whose statement states a rule: everything owed but specifications, policies and domain services, which define or react. */
 const RULE_KINDS = ['constraint', 'invariant', 'uc_requirement', 'view_requirement', 'api_requirement', 'pattern_rule', 'standard_rule'];
 
+/** The kinds titled by a name (LA-STD-MODELING-R05): a proper name or a noun phrase, one to four words. */
+const NAME_KINDS = ['product', 'integration', 'interface', 'domain', 'capability', 'aggregate', 'entity', 'value_object', 'term', 'read_model', 'pattern', 'standard', 'domain_service', 'view', 'ui_component', 'test_data_set', 'business_outcome'];
+
+/** Lathe's own spec and the Tool Library's. */
+const PRODUCTS = [
+  { root: REPO, dataDir: path.join(REPO, 'data') },
+  { root: path.join(REPO, 'examples', 'tool-library'), dataDir: path.join(REPO, 'examples', 'tool-library', 'data') },
+];
+
+/** Each record of the kinds in both products, as "ID: title". */
+async function titles(kinds: string[]): Promise<{ id: string; title: string }[]> {
+  const found: { id: string; title: string }[] = [];
+  for (const { root, dataDir } of PRODUCTS) {
+    const store = await openStore(root, { dataDir });
+    try {
+      for (const kind of kinds) for (const r of store.rows(kind)) found.push({ id: String(r.id), title: String(r.title) });
+    } finally {
+      await store.close();
+    }
+  }
+  return found;
+}
+
 describe("Lathe's own spec", () => {
+  it('LA-STD-MODELING-R05-T01 Every name in Lathe and the Tool Library is one to four words with no article first', async () => {
+    const named = await titles(NAME_KINDS);
+    expect(named.length).toBeGreaterThan(100);
+    const off = named.filter(({ title }) => {
+      const words = title.trim().split(/\s+/);
+      return words.length > 4 || /^(a|an|the)$/i.test(words[0]);
+    });
+    expect(off).toEqual([]);
+  });
+
+  it('LA-STD-MODELING-R07-T01 Every policy in Lathe and the Tool Library reads "When" an event, then its reaction', async () => {
+    const policies = await titles(['policy']);
+    expect(policies.length).toBeGreaterThan(1);
+    expect(policies.filter(({ title }) => !/^When [^,]+, \S/.test(title))).toEqual([]);
+  });
+
   it("LA-VO03-C02-T Every rule in Lathe's own spec states it with MUST, SHOULD or MAY under a short title", async () => {
     const store = await openStore(REPO, { dataDir: path.join(REPO, 'data') });
     try {

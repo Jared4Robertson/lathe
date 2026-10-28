@@ -216,8 +216,8 @@ export function complete(): Data {
 
     interface: [{ id: 'EX-IF01', title: 'Web app', product_id: 'EX', kind: 'web app' }],
     flow: [
-      { id: 'EX-LEND-UC01-FL01', title: 'Borrow at the desk', use_case_id: 'EX-LEND-UC01', interface_id: 'EX-IF01' },
-      { id: 'EX-LEND-UC02-FL01', title: 'Add at the desk', use_case_id: 'EX-LEND-UC02', interface_id: 'EX-IF01' },
+      { id: 'EX-LEND-UC01-FL01', title: 'Borrow a tool in the web app', use_case_id: 'EX-LEND-UC01', interface_id: 'EX-IF01' },
+      { id: 'EX-LEND-UC02-FL01', title: 'Add a tool in the web app', use_case_id: 'EX-LEND-UC02', interface_id: 'EX-IF01' },
     ],
     flow_step: [
       { id: 'EX-LEND-UC01-FL01-S01', title: 'Borrow a tool', flow_id: 'EX-LEND-UC01-FL01', path: 'main', position: 1 },
@@ -226,7 +226,7 @@ export function complete(): Data {
     ],
     view: [{ id: 'EX-V01', title: 'Catalog', route: '/catalog' }],
     view_requirement: [{ id: 'EX-V01-R01', title: 'Free tools first', view_id: 'EX-V01', statement: 'The catalog MUST list free tools first.' }],
-    endpoint: [{ id: 'EX-LEND-EP01', title: 'Borrow a tool', command_id: 'EX-LEND-CMD01', method: 'POST', route: '/loans' }],
+    endpoint: [{ id: 'EX-LEND-EP01', title: 'POST /loans', command_id: 'EX-LEND-CMD01', method: 'POST', route: '/loans' }],
     api_requirement: [{ id: 'EX-LEND-EP01-R01', title: 'Unknown tool', endpoint_id: 'EX-LEND-EP01', statement: 'An unknown tool MUST give 404.' }],
     integration: [{ id: 'EX-INT01', title: 'Mail', system: 'Mail service' }],
 
@@ -371,8 +371,8 @@ export function sparse(): Data {
     flow_step: [{ id: 'SP-D-UC02-FL01-S01', title: 'Refuse', flow_id: 'SP-D-UC02-FL01', path: 'refused', position: 1 }],
     view: [{ id: 'SP-V01', title: 'Catalog' }],
     endpoint: [
-      { id: 'SP-D-EP01', title: 'Add a tool', command_id: 'SP-D-CMD01', method: 'POST', route: '/tools' },
-      { id: 'SP-D-EP02', title: 'List loans', query_id: 'SP-D-QRY01', method: 'GET', route: '/loans' },
+      { id: 'SP-D-EP01', title: 'POST /tools', command_id: 'SP-D-CMD01', method: 'POST', route: '/tools' },
+      { id: 'SP-D-EP02', title: 'GET /loans', query_id: 'SP-D-QRY01', method: 'GET', route: '/loans' },
     ],
     endpoint_handler: [{ id: 'SP-D-EP02-H', title: 'getLoans', endpoint_id: 'SP-D-EP02', file: 'src/router.ts' }],
     integration: [{ id: 'SP-INT01', title: 'Mail' }],
