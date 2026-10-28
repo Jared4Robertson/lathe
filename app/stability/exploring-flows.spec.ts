@@ -13,7 +13,6 @@ import { clickBox, focusDrawn, sceneOf } from './scene';
 const WIKI = '.pane-wiki';
 const GRAPH_PANE = '.pane-graph';
 const FLOW = `${GRAPH_PANE} .graph-flow`;
-const at = (page: Page) => new URL(page.url()).pathname;
 const wikiTitle = (page: Page) => page.locator(`${WIKI} .pane-title h1`);
 const nav = (page: Page) => page.getByRole('navigation', { name: 'Main' });
 const sideBarViews = (page: Page) => page.getByRole('group', { name: 'Side bar views' });
