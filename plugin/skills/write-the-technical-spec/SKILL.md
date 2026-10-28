@@ -50,8 +50,9 @@ What follows from the tree is not stored: a command is carried out by its handle
 
 ## Tables and keys
 
-- An entity has at most one table, and a read model one. A child entity with `in_root_table: true` has none: its fields are columns of its root's table.
-- A table's columns follow from its entity's or read model's fields, a value object's fields flattened into columns, so a table stores only `name`, `storage` and its keys. An entity's table has `storage: "table"`, normalized and the source of truth. A read model's is a projection that can be rebuilt: usually a `view` over its domain's entity tables, whose query is its projection, or a `table` its projection fills from events (such as another domain's published events), or a `materialized view`.
+- Every stored thing names its storage. An entity has at most one table, and a read model one, even when it is not in a database. A child entity with `in_root_table: true` has none: its fields are columns of its root's table.
+- A table's columns follow from its entity's or read model's fields, a value object's fields flattened into columns, so a table stores only `name`, `storage` and its keys. An entity's table has `storage: "table"`, normalized and the source of truth, or `"browser storage"` when the browser keeps it (local or session storage; `name` is its key there, such as `lathe:tabs`, and `file` the code that reads and writes it). A read model's is a projection that can be rebuilt: usually a `view` over its domain's entity tables, whose query is its projection, or a `table` its projection fills from events (such as another domain's published events), or a `materialized view`, or `in memory` when its projection computes it on each load and nothing keeps it, or `browser storage`.
+- Keys are asked only of a `table`, `view` or `materialized view`: a table in `browser storage` or `in memory` has none, and no foreign key points at one.
 - Its keys are `table_key` rows, in `position` order: one `primary`; a `unique` key names the `invariant_id` it enforces, with a `condition` for a partial key; a `foreign` key names its `target_table_id`, a table of the same domain (a reference to another domain's aggregate stays a plain ID); and `index`. `columns` names the columns by their names in the database.
 
 ## Event types and the outbox
