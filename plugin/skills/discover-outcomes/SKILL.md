@@ -64,6 +64,9 @@ add  { "business_outcome": { "id": "TL-BO02", "title": "Tools back on time", "pr
        "target": "Under 5% each month by the end of the first year." } }
 link { "source": "TL-LEND-CAP03", "relation": "serves", "target": "TL-BO01" }
 link { "source": "TL-LEND-CAP03", "relation": "serves", "target": "TL-BO02" }
+add  { "product_kind": { "name": "report", "product_id": "TL", "label": "Report", "parent_kind": "domain",
+       "description": "A script that measures the library's business outcomes from its own records.",
+       "stage": "technical-specification", "obligation": false, "id_pattern": "<domain>-RP<nn>" } }
 add  { "product_relation": { "name": "measured_by", "source_kind": "business_outcome", "target_kind": "report", "product_id": "TL",
        "forward_label": "Measured by", "reverse_label": "Measures",
        "description": "The report measures the business outcome: it counts the measure from the library's records." } }
