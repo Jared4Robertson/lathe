@@ -879,6 +879,10 @@ a.row-link.row-link:focus-visible { outline: none; }
 .trace-untraced-kinds { margin: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
 .trace-untraced-kinds dt { font-size: 0.82rem; color: var(--muted); }
 .trace-untraced-kinds dd { margin: 2px 0 0; }
+/* The focus, marked wherever it sits in a matrix: its rows, or the matrix around it. A note above says why the matrix shows. */
+.trace-ref.is-focus { padding: 0 4px; border-radius: 4px; background: var(--steel-bg); box-shadow: inset 0 0 0 1px var(--steel); }
+.trace-note { margin: 0 0 12px; max-width: 48rem; font-size: 0.9rem; }
+.trace-note.is-untraced { padding: 8px 12px; border: 1px solid var(--warn); border-radius: 6px; }
 
 /* ---------- Themes and the Appearance page (app/src/theme, LA-PAT-APP-CODE-R15) ---------- */
 /* A theme's chip in the picker and its preview on the page take the theme's tokens inline, so they draw with its colors. */
@@ -970,7 +974,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 /* The header strip (HeaderStrip.tsx): directly under the active tab, one line: the trail, the kind, ID and title (cut
    with an ellipsis, whole in its tooltip), and the stage's counts at the right. */
 .header-strip { position: absolute; z-index: 3; top: calc(var(--float-inset) + var(--page-bar-height)); left: var(--nav-space); right: var(--side-space); box-sizing: border-box; height: var(--strip-height); display: flex; align-items: center; gap: 6px; padding: 0 10px; border: 1px solid var(--float-border); border-radius: 0 0 var(--panel-radius) var(--panel-radius); font-size: 0.8rem; white-space: nowrap; }
-.header-strip-trail { flex: 0 1000 auto; min-width: 2.5rem; }
+.header-strip-trail { flex: 0 1 auto; min-width: 0; max-width: 45%; overflow-x: clip; }
 .header-strip-sep { flex: none; color: var(--muted); }
 .header-strip-focus { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 6px; margin: 0; font: 600 0.8rem/1 var(--body); color: var(--ink); }
 .header-strip-focus .kind-badge { flex: none; font-size: 0.68rem; }
@@ -980,7 +984,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 /* The wiki card (WikiCard.tsx). */
 .wiki-card { position: absolute; z-index: 2; top: var(--below-strip); bottom: var(--float-inset); left: var(--nav-space); box-sizing: border-box; width: var(--card-width, clamp(300px, calc((100% - var(--nav-space) - var(--side-space)) / 3), 640px)); max-width: calc(100% - var(--nav-space) - var(--side-space)); display: flex; flex-direction: column; border: 1px solid var(--float-border); border-radius: var(--panel-radius); }
 .wiki-card-head { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 6px; min-height: 36px; padding: 2px 4px 2px 12px; border-bottom: 1px solid var(--float-border); font-size: 0.8rem; }
-.wiki-card-trail { flex: 1 1 auto; min-width: 0; }
+.wiki-card-trail { flex: 1 1 auto; min-width: 0; overflow-x: clip; }
 .wiki-card-scroll { flex: 1; min-height: 0; overflow-y: auto; scrollbar-gutter: stable; border-radius: 0 0 var(--panel-radius) var(--panel-radius); }
 .wiki-card-title { padding: 14px 20px 0; }
 .wiki-card-title h2 { margin: 2px 0 0; font: 700 1.35rem/1.25 var(--display); overflow-wrap: anywhere; }

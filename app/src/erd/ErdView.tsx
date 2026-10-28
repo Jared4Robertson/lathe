@@ -6,7 +6,7 @@ import { relationLabelOf } from '../specs/labels';
 import { readMotion } from '../graph/motion';
 import { Button } from '../components/Button';
 import { lowerLabel } from '../plural';
-import { erdFor, LINE_WORDS, lineGeometry, lineOffsets, RELATION_ENDS, type Erd, type ErdBox, type ErdKind, type ErdLine, type ErdRelation, type Rect } from './erd';
+import { ERD_EMPTY, erdEmpty, erdFor, LINE_WORDS, lineGeometry, lineOffsets, RELATION_ENDS, type Erd, type ErdBox, type ErdKind, type ErdLine, type ErdRelation, type Rect } from './erd';
 import { layoutErd } from './layout';
 import { TapCard, useTapToOpen } from '../graph/touch';
 import { EdgeHints } from './hints';
@@ -124,17 +124,15 @@ export const erdCounts = (erd: Erd) => {
 export function ErdView({ index, focus, onNavigate, onPeek, onCounts, space }: ErdViewProps) {
   const erd = useMemo(() => erdFor(index, focus), [index, focus]);
   useLayoutEffect(() => { onCounts?.(erd ? erdCounts(erd) : ''); }, [erd, onCounts]);
-  if (!erd) return <p className="hint erd-missing">The ERD stage shows the entities of a domain, an aggregate or an entity's aggregate.</p>;
+  if (!erd) return <p className="hint erd-missing">There's no record or group <code>{focus}</code>.</p>;
   const scope = index.byId.get(erd.scope);
-  const entities = erd.boxes.filter((b) => b.kind === 'entity').length;
-  const empty = erd.level === 'domain' ? erd.boxes.length === 0 : entities === 0;
-  const caption = erd.level === 'domain'
-    ? `The aggregates of ${scope?.title}, their entities and relationships`
-    : `The entities of ${scope?.title}, and the aggregates it references or that reference it`;
+  const caption = erd.level === 'aggregate'
+    ? `The entities of ${scope?.title}, and the aggregates it references or that reference it`
+    : `The aggregates of ${scope?.title}, their entities and relationships`;
   return (
     <section className="erd-page" aria-label={`ERD: ${caption}`}>
-      {empty ? (
-        <p className="placeholder erd-empty">{erd.level === 'domain' ? 'This domain has no aggregates yet.' : 'This aggregate has no entities yet.'}</p>
+      {erdEmpty(erd) ? (
+        <p className="placeholder erd-empty">{ERD_EMPTY[erd.level]}</p>
       ) : (
         <div className="erd-canvas">
           <ReactFlowProvider>

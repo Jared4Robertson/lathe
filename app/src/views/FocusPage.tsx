@@ -13,7 +13,7 @@ import { usePanelSize } from '../shell/prefs';
 import { trapTab, useNarrow } from '../shell/useNarrow';
 import { parseSpecRoute, type SpecIndex, type SpecState } from '../specs/data';
 import { NotFound } from '../specs/SpecPages';
-import { addressOf, HOME_PATH, focusOf, isFocusRoute, STAGE_LABELS, stagesOffered, stageShown, withStage, type FocusRoute, type StageName } from './address';
+import { addressOf, HOME_PATH, focusOf, isFocusRoute, STAGE_LABELS, withStage, type FocusRoute, type StageName } from './address';
 import { HeaderStrip } from './HeaderStrip';
 import { createOpenSpaceStore, useOpenSpaceMeasure } from './openSpace';
 import { PageBar } from './PageBar';
@@ -26,8 +26,8 @@ import { Button } from '../components/Button';
 
 // One page for one thing (a record, a group, a product or a domain), at one address. One stage
 // fills the window behind everything: the Graph, the ERD (of a domain, an aggregate or an entity's
-// aggregate; offered only there) or the Trace (an obligation's chain, or the matrix of the
-// obligations under the focus; offered only where there is one), switched in the page bar and named
+// aggregate, or of the domain or product around any other record) or the Trace (an obligation's chain, the
+// matrix of the obligations under the focus, or the rows that hold it), switched in the page bar and named
 // in the address (`?stage=erd`). Everything else floats over it as frosted panels: the nav (the
 // shell's), the tab panel (the page bar, then the header strip naming the focus), the wiki card (the
 // focus's wiki page) and the side bar (Details, Outline or History, SideBar.tsx). The stage frames
@@ -112,22 +112,21 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   const narrow = useNarrow();
 
   // The open tabs, and the active one's state. The stage is the tab's: the one the link named when
-  // it opened, otherwise that of the tab it was opened from. ERD and Trace show only where offered;
-  // a stage asked for but not offered here is kept, so it comes back on a page that offers it.
+  // it opened, otherwise that of the tab it was opened from. Every stage works on every focus
+  // (LA-PAT-APP-UX-R16), so the switch never hides or disables one.
   const tabs = usePageTabs(index, route, search);
   const tab = tabs.active;
   const { update } = tabs;
-  const offered = stagesOffered(index, focus);
-  const stage = stageShown(tab.state.stage, offered);
+  const stage = tab.state.stage;
 
   const setStage = useCallback((next: StageName) => {
-    if (!offered.includes(next) || next === stage) return;
+    if (next === stage) return;
     // Switching a tab's stage keeps it open, as in VS Code.
     update((s) => ({ ...s, stage: next }), true);
     rememberStage(next);
     navigate(withStage(window.location.pathname, next), true);
     announce(`${STAGE_LABELS[next]} stage`);
-  }, [offered, stage, update, announce]);
+  }, [stage, update, announce]);
 
   // The side bar: open or not, and its view, per stage and per tab; the last choices made start a
   // space's first tab. On a phone it is a drawer, opened on demand.
@@ -189,7 +188,7 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   const onGraph = useCallback((info: GraphInfo) => setGraphInfo(info), []);
   const [counts, setCounts] = useState('');
 
-  // A link keeps the stage asked for; the page it leads to shows it where offered.
+  // A link keeps the stage asked for.
   const asked = tab.state.stage;
   const hrefFor = useCallback((id: string) => withStage(addressOf(id), asked), [asked]);
   const onNavigate = useCallback((id: string) => navigate(hrefFor(id)), [hrefFor]);
@@ -247,8 +246,8 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
 
   // Commands.
   useCommand('stageGraph', () => setStage('graph'));
-  useCommand('stageErd', () => setStage('erd'), offered.includes('erd'));
-  useCommand('stageTrace', () => setStage('trace'), offered.includes('trace'));
+  useCommand('stageErd', () => setStage('erd'));
+  useCommand('stageTrace', () => setStage('trace'));
   useCommand('toggleWikiCard', () => setCardShown(!cardShown));
   useCommand('toggleSideBar', () => setShowing(!showing));
   useCommand('focusSideBar', () => openSideBarAt());
@@ -308,7 +307,6 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
       <PhoneLayout
         index={index}
         tabs={tabs}
-        offered={offered}
         stage={stage}
         onStage={setStage}
         stageBox={stageBox}
@@ -334,7 +332,6 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
       <PageBar
         index={index}
         tabs={tabs}
-        offered={offered}
         stage={stage}
         onStage={setStage}
         compact={false}
@@ -424,7 +421,6 @@ function CardHandle({ width, onWidth, onReset, onCollapse }: { width: number | n
 interface PhoneLayoutProps {
   index: SpecIndex;
   tabs: PageTabsApi;
-  offered: StageName[];
   stage: StageName;
   onStage: (stage: StageName) => void;
   stageBox: ReactNode;
@@ -446,7 +442,7 @@ interface PhoneLayoutProps {
  * the side bar as a drawer from the right.
  */
 function PhoneLayout(props: PhoneLayoutProps) {
-  const { index, tabs, offered, stage, onStage, stageBox, card, onCard, cardButton, sideBarShown, onSideBar, sideBarButton, sideBar, sideBarRef, layout } = props;
+  const { index, tabs, stage, onStage, stageBox, card, onCard, cardButton, sideBarShown, onSideBar, sideBarButton, sideBar, sideBarRef, layout } = props;
   const [pagesOpen, setPagesOpen] = useState(false);
   const pagesButton = useRef<HTMLButtonElement>(null);
   const pagesSheet = useRef<HTMLUListElement>(null);
@@ -464,7 +460,6 @@ function PhoneLayout(props: PhoneLayoutProps) {
       <PageBar
         index={index}
         tabs={tabs}
-        offered={offered}
         stage={stage}
         onStage={onStage}
         compact
