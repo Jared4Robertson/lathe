@@ -22,7 +22,8 @@ describe('record IDs are links', () => {
         const pages = [addressOf(id)];
         const link = code.closest('a');
         expect(link, `${id} on ${page} is not a link`).not.toBeNull();
-        expect(pages, `${id} on ${page} links to ${link!.getAttribute('href')}`).toContain(link!.getAttribute('href'));
+        // A link on a stage keeps the stage (`?stage=`); its path is the record's address.
+        expect(pages, `${id} on ${page} links to ${link!.getAttribute('href')}`).toContain(link!.getAttribute('href')!.split('?')[0]);
         checked++;
       }
     }

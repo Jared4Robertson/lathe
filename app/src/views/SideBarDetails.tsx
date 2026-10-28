@@ -133,7 +133,7 @@ function TraceSummary({ index, record }: { index: SpecIndex; record: SpecRecord 
           {gaps.length > 0 && (
             <ul className="plain side-bar-gaps">
               {gaps.map(({ domain, gap }) => (
-                <li key={`${domain} ${gap.kind}`} data-gap={gap.kind}>{!record.domain && <><code>{domain}</code> </>}<strong>{GAP_TEXT[gap.kind].title}</strong></li>
+                <li key={`${domain} ${gap.kind}`} data-gap={gap.kind}>{!record.domain && <><RecordLink index={index} id={domain} showTitle={false} /> </>}<strong>{GAP_TEXT[gap.kind].title}</strong></li>
               ))}
             </ul>
           )}
