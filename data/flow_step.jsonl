@@ -337,3 +337,6 @@
 {"id":"LA-TRC-UC15-FL-S03","title":"Lathe check reads the handlers' files and the router files for the routes their code serves, and lists each one no record has as a gap","flow_id":"LA-TRC-UC15-FL","path":"main","position":3}
 {"id":"LA-TRC-UC15-FL-S04","title":"A file that does not name its record's route is an error naming the record, the route and the file, and the Agent corrects one or the other","flow_id":"LA-TRC-UC15-FL","path":"refused","position":1}
 {"id":"LA-TRC-UC15-FL-S05","title":"A served route no record has is a gap, and the Agent adds its endpoint or view, or removes the route if nothing uses it","flow_id":"LA-TRC-UC15-FL","path":"refused","position":2}
+{"id":"LA-TRC-UC16-FL-S01","title":"The Agent names, on each table a database keeps, the file that creates it","flow_id":"LA-TRC-UC16-FL","path":"main","position":1}
+{"id":"LA-TRC-UC16-FL-S02","title":"Lathe check reads each table's file and compares its name, columns and keys with the spec","flow_id":"LA-TRC-UC16-FL","path":"main","position":2}
+{"id":"LA-TRC-UC16-FL-S03","title":"A part the file does not define is a warning naming the table, the file and the part, and the Agent fixes the file or the spec","flow_id":"LA-TRC-UC16-FL","path":"refused","position":1}
