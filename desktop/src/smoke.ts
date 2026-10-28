@@ -1,9 +1,11 @@
 // The smoke run (test/smoke.test.ts): with LATHE_DESKTOP_SMOKE set to a file, the shell opens the
 // folder in a hidden window, notes the launch view over it, waits for the page and its GET /api/spec
 // and for the launch view to lift, checks the app's own title bar and the chrome colors it sent, notes
-// the Dock icon, chooses Help › Keyboard Shortcuts, writes what it saw to that file as JSON, and quits.
+// the Dock icon, chooses Help › Keyboard Shortcuts, starts a reload by touching a data file and asking for the specs,
+// writes what it saw to that file as JSON, and quits while that reload is in progress.
 import type { BrowserWindow } from 'electron';
-import { writeFileSync } from 'node:fs';
+import { readdirSync, utimesSync, writeFileSync } from 'node:fs';
+import path from 'node:path';
 import type { Chrome } from './chrome.ts';
 
 export interface SmokeResult {
@@ -23,6 +25,8 @@ export interface SmokeResult {
   launch?: { seen?: string; lifted: boolean };
   /** The Dock icon the unpacked app set, with its size in pixels. */
   dockIcon?: { file: string; width: number; height: number } | null;
+  /** Whether a reload (a data file touched, the specs asked for) was still in progress when the run quit. */
+  reloadAtQuit?: boolean;
   error?: string;
 }
 
@@ -93,4 +97,18 @@ export async function runSmoke(
   runCommand('showShortcuts');
   result.shortcutsOpened = await until(() => js<boolean>('!!document.querySelector(\'[role="dialog"][aria-label="Keyboard shortcuts"]\')'), Boolean, 10_000);
   return result;
+}
+
+/**
+ * Starts a reload, as an edit does: touches the folder's data files, which the server's watcher sees, and asks for
+ * the specs, which loads them afresh. Resolves, a moment later, to whether that answer is still to come.
+ */
+export async function reloadInProgress(url: string, folder: string): Promise<boolean> {
+  const data = path.join(folder, 'data');
+  const later = new Date(Date.now() + 2_000);
+  for (const file of readdirSync(data).filter((f) => f.endsWith('.jsonl'))) utimesSync(path.join(data, file), later, later);
+  let answered = false;
+  void fetch(`${url}/api/spec`).then((res) => res.arrayBuffer()).then(() => (answered = true), () => undefined);
+  await sleep(20);
+  return !answered;
 }

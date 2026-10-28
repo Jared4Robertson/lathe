@@ -97,8 +97,9 @@ describe('The app icon is built for every platform', () => {
   });
 });
 
-/** One run of the real shell, which every test below reads. */
+/** One run of the real shell, which every test below reads, and the code it exited with. */
 let result: SmokeResult;
+let exitCode: number | null;
 
 describe.skipIf(process.platform !== 'darwin')('The desktop app opens a product folder in a window, bridges only window.latheDesktop and runs a menu command', () => {
   beforeAll(async () => {
@@ -111,9 +112,8 @@ describe.skipIf(process.platform !== 'darwin')('The desktop app opens a product 
     const done = new Promise<number | null>((resolve) => child.once('exit', (exit) => resolve(exit)));
     // The run quits by itself; one that hangs is asked to quit, and killed only if it will not.
     if (!(await exited(child, 90_000))) await stop(child);
-    const code = await done;
+    exitCode = await done;
     children.delete(child);
-    expect(code).toBe(0);
     result = JSON.parse(readFileSync(resultFile, 'utf8')) as SmokeResult;
     expect(result.error).toBeUndefined();
   }, 120_000);
@@ -166,5 +166,12 @@ describe.skipIf(process.platform !== 'darwin')('The desktop app opens a product 
 
   it("LA-V71-R01-T01 shows Lathe's icon in the Dock at full size", () => {
     expect(result.dockIcon).toEqual({ file: path.join(desktop, 'build', 'icon.png'), width: 1024, height: 1024 });
+  });
+
+  it('LA-PLT-UC11-R07-T01 quits cleanly, with exit code 0, while a reload is in progress', () => {
+    expect(result.reloadAtQuit).toBe(true);
+    // Before quitting waited for the servers, the engine's work outlived the process now and then, which ended it
+    // with no exit code ("terminating due to uncaught exception of type Napi::Error").
+    expect(exitCode).toBe(0);
   });
 });

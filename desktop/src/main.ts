@@ -20,8 +20,8 @@ import { aboutModel, errorModel, launchModel, launchStep, modelQuery, parseLocal
 import { menuTemplate } from './menu.ts';
 import { optOutOfWindowRestoration } from './persistence.ts';
 import { DataFiles, parseRecordRequest, recordMenuTemplate } from './records.ts';
-import { serveModulePath, startDev, startServe, type AppServer } from './servers.ts';
-import { runSmoke, smokeFile, writeSmoke } from './smoke.ts';
+import { serveModulePath, settleWithin, startDev, startServe, type AppServer } from './servers.ts';
+import { reloadInProgress, runSmoke, smokeFile, writeSmoke, type SmokeResult } from './smoke.ts';
 import { readJson, writeJson } from './store.ts';
 import { MIN_SIZE, parseWindowStates, saveWindow, windowFor, type WindowStates } from './windowState.ts';
 
@@ -34,6 +34,8 @@ const SMOKE = smokeFile();
 const MAC = process.platform === 'darwin';
 /** How long the launch view waits for the page's specs before it says Lathe did not answer. */
 const LAUNCH_TIMEOUT = 120_000;
+/** The longest quitting waits for the windows' servers to stop (LA-PLT-UC11-R07). */
+const QUIT_TIMEOUT = 10_000;
 
 // Scroll bars float over the page, as the system's do.
 app.commandLine.appendSwitch('enable-features', 'OverlayScrollbar');
@@ -87,6 +89,18 @@ let dropped: string | undefined;
 const log = (line: string) => {
   if (DEV) process.stdout.write(line.endsWith('\n') ? line : line + '\n');
 };
+
+/** The servers' stops in progress, closed windows' too, which quitting waits for. */
+const stopping = new Set<Promise<void>>();
+
+/** Stops a window's server, keeping its stop until it settles so quitting can wait for it. */
+function stopServer(server: AppServer | undefined): Promise<void> {
+  if (!server) return Promise.resolve();
+  const stop = server.stop().catch((error: unknown) => log(`Lathe: a server did not stop cleanly: ${String(error)}`));
+  stopping.add(stop);
+  void stop.finally(() => stopping.delete(stop));
+  return stop;
+}
 
 const dark = () => nativeTheme.shouldUseDarkColors;
 const entryOf = (contents: WebContents) => [...open.values()].find((e) => !e.win.isDestroyed() && e.win.webContents === contents);
@@ -271,7 +285,7 @@ async function startApp(entry: Entry): Promise<void> {
       if (SMOKE) return fail(message);
       return showError(entry, message);
     }
-    if (entry.win.isDestroyed()) return entry.server.stop();
+    if (entry.win.isDestroyed()) return stopServer(entry.server);
     log(`Lathe: ${entry.folder} from ${entry.server.label} at ${entry.server.url}`);
     keepLinksOutside(entry.win, entry.server.url);
   }
@@ -371,7 +385,7 @@ async function openFolder(input: string) {
     saveBounds(folder, win);
   });
   win.on('closed', () => {
-    entry.server?.stop();
+    void stopServer(entry.server);
     open.delete(folder);
     if (lastFocused === entry.win.id) lastFocused = null;
     updateBadge();
@@ -400,7 +414,9 @@ async function openFolder(input: string) {
       dockIcon: () => dockIcon,
     });
     void startApp(entry);
-    const result = await smoke.catch((error: unknown) => ({ error: error instanceof Error ? error.message : String(error) }));
+    const result: SmokeResult = await smoke.catch((error: unknown) => ({ error: error instanceof Error ? error.message : String(error) }));
+    // It quits while a reload is in progress, as the reader might (LA-PLT-UC11-R07).
+    if (entry.server) result.reloadAtQuit = await reloadInProgress(entry.server.url, entry.folder);
     writeSmoke(SMOKE, result);
     app.quit();
     return;
@@ -546,8 +562,20 @@ if (!SMOKE && !app.requestSingleInstanceLock()) {
   app.on('activate', () => {
     if (open.size === 0) void openOnLaunch();
   });
-  app.on('before-quit', () => {
-    for (const { server } of open.values()) server?.stop();
+  // Quitting waits until every window's server has stopped, so no database work outlives the process, and then
+  // quits again; a server that hangs is given up on after QUIT_TIMEOUT (LA-PLT-UC11-R07).
+  let quit: 'running' | 'stopping' | 'stopped' = 'running';
+  app.on('before-quit', (event) => {
+    if (quit === 'stopped') return;
+    event.preventDefault();
+    if (quit === 'stopping') return;
+    quit = 'stopping';
+    for (const { server } of open.values()) void stopServer(server);
+    void settleWithin([...stopping], QUIT_TIMEOUT).then((all) => {
+      if (!all) log(`Lathe: quitting without waiting longer for a server to stop (${QUIT_TIMEOUT / 1000} s).`);
+      quit = 'stopped';
+      app.quit();
+    });
   });
   // Stopped from a terminal (or restarted by the dev watcher): quit properly, so dev servers stop too.
   for (const signal of ['SIGINT', 'SIGTERM'] as const) process.on(signal, () => app.quit());
