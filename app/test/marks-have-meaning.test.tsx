@@ -19,7 +19,7 @@ import { modelWorkspace } from './fixtures/model';
 import { testWorkspace } from './graph/workspace';
 
 const CSS = readFileSync(path.resolve(import.meta.dirname, '../src/styles.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, ' ');
-/** The modifier classes a stylesheet gives an element class, as in `.erd-box.erd-event`. */
+/** The modifier classes a stylesheet gives an element class, as in `.erd-box.erd-aggregate`. */
 const modifiers = (base: string) =>
   new Set([...CSS.matchAll(new RegExp(`\\.${base}((?:\\.[A-Za-z0-9_-]+)+)`, 'g'))].flatMap((m) => m[1].split('.').filter(Boolean)));
 /** The words beside a key's mark: what the entry says it means. */
@@ -53,11 +53,10 @@ describe('the Graph view key', () => {
 
 describe('the Model view key', () => {
   // Box and line classes that answer the pointer or the keyboard, not marks with a meaning.
-  const INTERACTION = new Set(['is-focus', 'has-hover-label', 'has-event']);
-  // Every class the stylesheet gives a box or a line, and what in the ERD draws it, checked below: each box kind's
-  // event storming color (erd-<kind>, explained by its swatch), the other domain's tone, the highlight, dashes and fading.
-  const KINDS = ['aggregate', 'entity', 'command', 'event', 'policy', 'specification', 'read_model', 'query'];
-  const EXPLAINED = new Set(['tone-other', 'is-highlight', 'is-dashed', 'is-context', ...KINDS.map((k) => `erd-${k}`)]);
+  const INTERACTION = new Set(['is-focus', 'has-hover-label']);
+  // Every class the stylesheet gives a box or a line, and what in the ERD draws it, checked below: each box kind
+  // (erd-<kind>, explained by its swatch), the other domain's tone, the highlight, dashes and fading.
+  const EXPLAINED = new Set(['erd-aggregate', 'erd-entity', 'tone-other', 'is-highlight', 'is-dashed', 'is-context']);
 
   it('Every mark a styled ERD box or line can carry is one the key test explains', () => {
     const styled = [...modifiers('erd-box'), ...modifiers('erd-line')].filter((c) => !INTERACTION.has(c));
@@ -66,31 +65,32 @@ describe('the Model view key', () => {
 
   it('Every box, badge and line an ERD draws is in its key, with what it means', () => {
     const index = indexOf(modelWorkspace());
-    const scopes = index.workspace.records.filter((r) => ['domain', 'aggregate', 'entity', 'command', 'domain_event', 'policy', 'read_model'].includes(r.kind)).map((r) => r.id);
+    const scopes = index.workspace.records.filter((r) => ['domain', 'aggregate', 'entity'].includes(r.kind)).map((r) => r.id);
     const missing: string[] = [];
     let drawn = 0;
     for (const scope of scopes) {
       const erd = erdFor(index, scope);
       if (!erd) continue;
-      const { container, unmount } = render(<ErdKey erd={erd} highlight={erd.boxes.some((b) => b.highlight)} relations={index.workspace.relations} />);
+      const { container, unmount } = render(<ErdKey erd={erd} relations={index.workspace.relations} />);
       const needs = (what: string, selector: string) => {
         const el = container.querySelector(selector);
         if (!el || meaning(el) === '') missing.push(`${scope}: ${what} (${selector})`);
       };
+      const boxes = new Map(erd.boxes.map((b) => [b.id, b]));
+      // A faded box is explained by the other domain's entry when it is another domain's, else by the faded entry.
+      const fadedMark = (id: string) => (boxes.get(id)?.tone === 'other' ? '.tone-other .erd-key-other' : '.erd-key-context');
       for (const line of erd.lines) {
         drawn++;
         needs(`line ${line.relation}`, `.erd-key-line.rel-${line.relation}${line.dashed ? '.is-dashed' : ''}`);
-        if (line.context) needs('faded line', '.erd-key-context');
+        if (line.context) for (const end of [line.source, line.target]) if (boxes.get(end)?.context) needs('faded line', fadedMark(end));
       }
       for (const box of erd.boxes) {
         drawn++;
-        needs(`${box.tone} box`, `.tone-${box.tone}`);
-        needs(`${box.kind} box`, `.erd-key-swatch.erd-key-${box.kind}`);
+        if (box.tone === 'other') needs("another domain's box, labeled with its domain", '.tone-other .erd-key-other');
+        else needs(`${box.kind} box`, `.erd-key-swatch.erd-key-${box.kind}`);
         if (box.highlight) needs('highlighted box', '.erd-key-highlight');
         if (box.root) needs('root badge', '.erd-root');
-        if (box.context) needs('faded box', '.erd-key-context');
-        // A box from elsewhere carries its owner in parentheses, which its color's row explains.
-        if (box.foreign && !container.querySelector(`.tone-${box.tone}`)?.textContent?.includes('in parentheses')) missing.push(`${scope}: ${box.tone} box from elsewhere`);
+        if (box.context) needs('faded box', fadedMark(box.id));
       }
       unmount();
     }

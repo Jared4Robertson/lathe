@@ -156,7 +156,7 @@ function GraphOutline({ index, graph, onNavigate, hrefFor }: SideBarOutlineProps
 
 function ModelOutline({ index, focus, onNavigate, hrefFor }: SideBarOutlineProps) {
   const erd = useMemo(() => erdFor(index, focus), [index, focus]);
-  if (!erd) return <p className="hint">The Model view shows a domain, or an aggregate with its entities, commands, events and policies.</p>;
+  if (!erd) return <p className="hint">The Model view shows the entities of a domain, an aggregate or an entity's aggregate.</p>;
   if (erd.boxes.length === 0) return <p className="hint">{erd.level === 'domain' ? 'This domain has no aggregates yet.' : 'This aggregate has no entities yet.'}</p>;
   // What the diagram draws in focus, kind by kind in the schema's order, then the faded context.
   const inFocus = erd.boxes.filter((b) => !b.context);

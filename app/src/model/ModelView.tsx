@@ -10,37 +10,20 @@ import { layoutErd } from './layout';
 import { TapCard, useTapToOpen } from '../graph/touch';
 import { EdgeHints } from './hints';
 
-// The Model view: a domain's model (its aggregates and the commands, events, policies, specifications,
-// read models and queries around them) or an aggregate's (its entities and fields, and its commands,
-// events and policies), in event storming colors, drawn with React Flow and laid out by ELK left to
-// right in event storming order. An entity, command, event or policy page draws its aggregate's model
-// with that record highlighted. Clicking a box goes to it, as a graph node does. A key under the
-// diagram explains the colors and the lines. Like the graph view it never reads the address, so it
-// can sit in any pane.
+// The Model view: the entity-relationship diagram of a domain (each aggregate a boundary around its
+// entities) or of an aggregate (with the aggregates it references, or that reference it, faded around
+// it), drawn with React Flow and laid out by ELK. An entity page draws its aggregate's ERD with that
+// entity highlighted. Clicking a box goes to it, as a graph node does. A key under the diagram explains
+// the boxes and the lines. Like the graph view it never reads the address, so it can sit in any pane.
 
 /** What a box is called, in its accessible name, the key and the touch card. */
-export const BOX_KIND: Record<ErdKind, string> = {
-  aggregate: 'Aggregate', entity: 'Entity', command: 'Command', event: 'Domain event', policy: 'Policy',
-  specification: 'Specification', read_model: 'Read model', query: 'Query',
-};
-
-/** The key's order of the box kinds, as event storming reads them. */
-const KEY_ORDER: readonly ErdKind[] = ['policy', 'command', 'specification', 'aggregate', 'entity', 'event', 'read_model', 'query'];
+export const BOX_KIND: Record<ErdKind, string> = { aggregate: 'Aggregate', entity: 'Entity' };
 
 /** The key's lines in order, each with what its label alone does not say (its whole meaning is the entry's tooltip). */
 const LINE_KEY: Record<ErdRelation, { note: string; meaning: string }> = {
-  refers_to: { note: 'n:1', meaning: 'A field holds the other aggregate\'s ID: many to one.' },
   has_one: { note: '1:1', meaning: 'An entity has one of the other: one to one.' },
   has_many: { note: '1:n', meaning: 'An entity has many of the other: one to many.' },
-  changes: { note: '', meaning: 'The aggregate the command changes.' },
-  also_changes: { note: '', meaning: 'A recorded exception: another aggregate the command changes in the same transaction, with its reason.' },
-  raises: { note: '', meaning: 'The events the command raises.' },
-  hears: { note: 'later', meaning: 'The policy reacts to the event after it is saved, through the outbox.' },
-  invokes: { note: '', meaning: 'The command the policy runs.' },
-  checks: { note: 'first', meaning: 'A specification the command checks before acting.' },
-  reads: { note: '', meaning: 'What a read model or a specification reads.' },
-  queries: { note: '', meaning: 'A query the read model answers.' },
-  selects_by: { note: '', meaning: 'A specification the query selects by.' },
+  references: { note: '', meaning: "A field holds the other aggregate's ID; the line points at its root." },
 };
 const LINE_ORDER = Object.keys(LINE_KEY) as ErdRelation[];
 
@@ -54,20 +37,23 @@ export interface ModelViewProps {
 
 interface BoxData extends Record<string, unknown> { box: ErdBox; focus: boolean }
 /**
- * `label`: the line's words, read from its drawn source, from the schema's relations (LA-V92-R07)
- * or the Model view's own for what is no stored link. `title`: the whole sentence, for its tooltip.
- * `hover`: the words shown on a dashed line while it is hovered, or null.
+ * `label`: the line's words, read from its source, from the schema's relations (LA-V92-R07) or the
+ * Model view's own for a reference. `title`: the whole sentence, for its tooltip. `hover`: the fields
+ * shown on a dashed reference line while it is hovered, or null.
  */
 interface LineData extends Record<string, unknown> { line: ErdLine; source: Rect; target: Rect; offset: number; label: string; title: string; hover: string | null }
 type BoxNode = Node<BoxData>;
 type LineEdge = Edge<LineData>;
 
-/** A line's label, in sentence case: the relation's own words, or the Model view's for what is no stored link. */
+/** A line's label, in sentence case: the relation's own words, or the Model view's for a reference. */
 export function lineLabel(relations: readonly RelationRule[], relation: ErdRelation): string {
   const own = LINE_WORDS[relation];
   if (own) return own.charAt(0).toUpperCase() + own.slice(1);
   return relationLabelOf(relations, relation);
 }
+
+/** A box's kind line: "Aggregate", or "Aggregate · Accounts" for another domain's. */
+const kindLine = (box: ErdBox) => `${BOX_KIND[box.kind]}${box.owner ? ` · ${box.owner}` : ''}`;
 
 function BoxView({ data }: NodeProps<BoxNode>) {
   const { box } = data;
@@ -80,16 +66,8 @@ function BoxView({ data }: NodeProps<BoxNode>) {
         <strong>{box.title}</strong>
         {box.root && <span className="erd-root" title="The aggregate's root entity">root</span>}
       </div>
-      <small className="erd-summary">{BOX_KIND[box.kind]}{box.owner ? ` ${box.owner}` : ''}</small>
-      {box.kind === 'aggregate' && ((box.entities?.length ?? 0) > 0 || (box.valueObjects?.length ?? 0) > 0) && (
-        <ul className="erd-fields" aria-label={`Entities of ${box.title}`}>
-          {box.entities?.map((e) => <li key={e.id}><span className="erd-field">{e.title}</span>{e.root && <span className="erd-field-kind">root</span>}</li>)}
-          {(box.valueObjects?.length ?? 0) > 0 && (
-            <li title={`Value objects: ${box.valueObjects!.join(', ')}`}><span className="erd-field">Value objects: {box.valueObjects!.join(', ')}</span></li>
-          )}
-        </ul>
-      )}
-      {box.kind !== 'aggregate' && box.fields.length > 0 && (
+      {box.kind === 'aggregate' && <small className="erd-summary">{kindLine(box)}</small>}
+      {box.fields.length > 0 && (
         <ul className="erd-fields" aria-label={`Fields of ${box.title}`}>
           {box.fields.map((f) => <li key={f.field} title={`${f.field}: ${f.kind}`}><span className="erd-field">{f.field}</span><span className="erd-field-kind">{f.kind}</span></li>)}
         </ul>
@@ -117,15 +95,15 @@ function LineView({ data }: EdgeProps<LineEdge>) {
 }
 
 /**
- * A line's words: its label, the sentence it says, read the way its link runs ("Loan refers to Member
- * (Loan.Member)", "Suspend member hears Account closed"), and for a dashed line what shows on hover.
+ * A line's words: its label, the sentence it says ("Loan has many Reminder", "Loan references by ID
+ * Member (Loan.Member)"), and for a dashed reference the fields that show on hover.
  */
 export function lineWords(line: ErdLine, label: string, titles: ReadonlyMap<string, string>): { label: string; title: string; hover: string | null } {
   const name = (id: string) => titles.get(id) ?? id;
   const words = lowerLabel(label);
-  const sentence = line.reversed ? `${name(line.target)} ${words} ${name(line.source)}` : `${name(line.source)} ${words} ${name(line.target)}`;
+  const sentence = `${name(line.source)} ${words} ${name(line.target)}`;
   const title = line.via.length > 0 ? `${sentence} (${line.via.join('; ')})` : sentence;
-  return { label: words, title, hover: line.dashed ? words : null };
+  return { label: words, title, hover: line.dashed && line.via.length > 0 ? line.via.join(', ') : null };
 }
 
 const nodeTypes = { box: BoxView };
@@ -133,13 +111,14 @@ const edgeTypes = { line: LineView };
 
 export function ModelView({ index, focus, onNavigate, onPeek }: ModelViewProps) {
   const erd = useMemo(() => erdFor(index, focus), [index, focus]);
-  if (!erd) return <p className="hint model-missing">The Model view shows a domain, or an aggregate with its entities, commands, events and policies.</p>;
+  if (!erd) return <p className="hint model-missing">The Model view shows the entities of a domain, an aggregate or an entity's aggregate.</p>;
   const scope = index.byId.get(erd.scope);
-  const empty = erd.boxes.length === 0;
-  const counts = `${erd.boxes.length} ${erd.boxes.length === 1 ? 'box' : 'boxes'} · ${erd.lines.length} ${erd.lines.length === 1 ? 'line' : 'lines'}`;
+  const entities = erd.boxes.filter((b) => b.kind === 'entity').length;
+  const empty = erd.level === 'domain' ? erd.boxes.length === 0 : entities === 0;
+  const counts = `${entities} ${entities === 1 ? 'entity' : 'entities'} · ${erd.lines.length} ${erd.lines.length === 1 ? 'line' : 'lines'}`;
   const caption = erd.level === 'domain'
-    ? `The aggregates of ${scope?.title} and the commands, events, policies, rules and read models around them`
-    : `The entities of ${scope?.title}, and its commands, events and policies`;
+    ? `The aggregates of ${scope?.title}, their entities and relationships`
+    : `The entities of ${scope?.title}, and the aggregates it references or that reference it`;
   return (
     <section className="model-page" aria-label="Model">
       <header className="model-header">
@@ -147,7 +126,7 @@ export function ModelView({ index, focus, onNavigate, onPeek }: ModelViewProps) 
         <p className="model-caption" title={`${caption} · ${counts}`}>{`${caption} · ${counts}`}</p>
       </header>
       {empty ? (
-        <p className="placeholder model-empty">{erd.level === 'domain' ? 'This domain has no aggregates yet.' : 'This aggregate has no entities, commands or events yet.'}</p>
+        <p className="placeholder model-empty">{erd.level === 'domain' ? 'This domain has no aggregates yet.' : 'This aggregate has no entities yet.'}</p>
       ) : (
         <div className="model-canvas">
           <ReactFlowProvider>
@@ -155,13 +134,13 @@ export function ModelView({ index, focus, onNavigate, onPeek }: ModelViewProps) 
           </ReactFlowProvider>
         </div>
       )}
-      <ErdKey erd={erd} highlight={erd.boxes.some((b) => b.highlight)} relations={index.workspace.relations} />
+      <ErdKey erd={erd} relations={index.workspace.relations} />
     </section>
   );
 }
 
-/** The key under the diagram: the owners, the event storming colors of the kinds drawn, the badges and every kind of line drawn. */
-export function ErdKey({ erd, highlight, relations = [] }: { erd: Erd; highlight: boolean; relations?: readonly RelationRule[] }) {
+/** The key under the diagram: each kind of box, badge and line the ERD draws, and nothing it does not. */
+export function ErdKey({ erd, relations = [] }: { erd: Erd; relations?: readonly RelationRule[] }) {
   const [open, setOpen] = useState(false);
   const gridId = useId();
   const sample = (relation: ErdRelation, dashed: boolean) => {
@@ -174,26 +153,25 @@ export function ErdKey({ erd, highlight, relations = [] }: { erd: Erd; highlight
       </svg>
     );
   };
-  const kinds = KEY_ORDER.filter((k) => erd.boxes.some((b) => b.kind === k));
+  const own = erd.boxes.filter((b) => b.tone === 'current');
   const lines = [...new Map(erd.lines.map((l) => [l.relation, l])).values()].sort((a, b) => LINE_ORDER.indexOf(a.relation) - LINE_ORDER.indexOf(b.relation));
-  const other = erd.boxes.some((b) => b.tone === 'other');
-  // Every entry is a cell of one grid of fixed cells, the colors' first and then the lines', so a model with other
+  // Every entry is a cell of one grid of fixed cells, the boxes' first and then the lines', so a diagram with other
   // entries never moves the key itself, only what is written in its cells (LA-PAT-APP-UX-R08): each cell is keyed by
   // its place, so it stays where it is and only its words change, and the lines start on a row of their own. A
   // cell's whole meaning is its tooltip.
   const text = (words: string) => <span className="erd-key-text">{words}</span>;
   type Entry = { className?: string; title: string; mark: ReactNode; words: string };
-  const colors: Entry[] = [
-    ...kinds.map((k) => ({ title: BOX_KIND[k], mark: <span className={`erd-key-swatch erd-key-${k}`} aria-hidden="true" />, words: BOX_KIND[k] })),
-    { className: 'tone-current', title: "This domain's records", mark: <span className="erd-key-swatch erd-key-current" aria-hidden="true" />, words: 'This domain' },
-    ...(other ? [{ className: 'tone-other', title: "Another domain's records, its name in parentheses", mark: <span className="erd-key-swatch erd-key-other" aria-hidden="true" />, words: 'Other domain, in parentheses' }] : []),
-    ...(erd.boxes.some((b) => b.context) ? [{ title: erd.level === 'aggregate' ? 'Faded: records of other aggregates and domains' : 'Faded: records of other domains', mark: <span className="erd-key-context" aria-hidden="true" />, words: 'Faded: elsewhere' }] : []),
-    ...(erd.boxes.some((b) => b.root) ? [{ title: "The aggregate's root entity", mark: <span className="erd-root">root</span>, words: 'Root entity' }] : []),
-    ...(highlight ? [{ title: 'The record this page is about', mark: <span className="erd-key-highlight" aria-hidden="true" />, words: 'This record' }] : []),
+  const boxes: Entry[] = [
+    ...(own.some((b) => b.kind === 'entity') ? [{ title: 'An entity, with its fields and their types', mark: <span className="erd-key-swatch erd-key-entity" aria-hidden="true" />, words: 'Entity' }] : []),
+    ...(own.some((b) => b.root) ? [{ title: "The aggregate's root entity, the one references point at", mark: <span className="erd-root">root</span>, words: 'Root entity' }] : []),
+    ...(own.some((b) => b.kind === 'aggregate') ? [{ title: 'An aggregate: the boundary around its entities, or a closed box', mark: <span className="erd-key-swatch erd-key-aggregate" aria-hidden="true" />, words: 'Aggregate boundary' }] : []),
+    ...(erd.boxes.some((b) => b.tone === 'other') ? [{ className: 'tone-other', title: "Another domain's aggregate, faded and gray, labeled with its domain", mark: <span className="erd-key-swatch erd-key-other" aria-hidden="true" />, words: 'Other domain' }] : []),
+    ...(own.some((b) => b.context) ? [{ title: 'Faded: an aggregate this one references, or one that references it', mark: <span className="erd-key-context" aria-hidden="true" />, words: 'Faded: around it' }] : []),
+    ...(erd.boxes.some((b) => b.highlight) ? [{ title: 'The entity this page is about', mark: <span className="erd-key-highlight" aria-hidden="true" />, words: 'This entity' }] : []),
   ];
   const lineEntries: Entry[] = lines.map((l) => {
     const { note, meaning } = LINE_KEY[l.relation];
-    return { title: meaning, mark: sample(l.relation, l.dashed), words: `${lineLabel(relations, l.relation)}${note && ` (${note})`}` };
+    return { title: meaning, mark: sample(l.relation, l.dashed), words: `${l.relation === 'references' ? 'Reference by ID' : lineLabel(relations, l.relation)}${note && ` (${note})`}` };
   });
   const cells = (entries: Entry[]) => entries.map((e, i) => <li key={i} className={e.className} title={e.title}>{e.mark} {text(e.words)}</li>);
   return (
@@ -209,7 +187,7 @@ export function ErdKey({ erd, highlight, relations = [] }: { erd: Erd; highlight
         {open ? 'Hide the key' : 'Key'}
       </Button>
       <div className="erd-key-grid" id={gridId}>
-        <ul className="erd-key-ends" aria-label="Colors">{cells(colors)}</ul>
+        <ul className="erd-key-ends" aria-label="Boxes">{cells(boxes)}</ul>
         <ul className="erd-key-ends" aria-label="Lines">{cells(lineEntries)}</ul>
       </div>
     </div>
@@ -221,7 +199,7 @@ export const FIT_MARGIN = { left: 60, right: 24, top: 24, bottom: 24 };
 
 /**
  * The viewport that shows every box, faded context included, inside the margin, centered, never zoomed in past 1:
- * the opening frame of a model leaves nothing out. A big model stays legible by its compact layout (layout.ts).
+ * the opening frame of a diagram leaves nothing out. A big diagram stays legible by its compact layout (layout.ts).
  */
 export function fitRects(rects: Map<string, Rect>, width: number, height: number, margin = FIT_MARGIN) {
   const all = [...rects.values()];
@@ -239,6 +217,9 @@ export function fitRects(rects: Map<string, Rect>, width: number, height: number
   };
 }
 
+/** A box's accessible name: its kind, title and owner, its root mark, and whether the page is about it. */
+const boxName = (box: ErdBox) => `${BOX_KIND[box.kind]} ${box.title}${box.owner ? `, ${box.owner}` : ''}${box.root ? ', root' : ''}${box.highlight ? ' (this entity)' : ''}`;
+
 function ErdCanvas({ relations, erd, focus, onNavigate, onPeek }: { relations: readonly RelationRule[]; erd: Erd; focus: string; onNavigate: (id: string) => void; onPeek?: ModelViewProps['onPeek'] }) {
   const [placed, setPlaced] = useState<{ erd: Erd; rects: Map<string, Rect> } | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -247,7 +228,7 @@ function ErdCanvas({ relations, erd, focus, onNavigate, onPeek }: { relations: r
 
   useEffect(() => {
     let live = true;
-    // Laid out to about the canvas's shape, so a big model wraps into rows instead of one long band.
+    // Laid out to about the canvas's shape, so a big diagram wraps into rows instead of one long band.
     const box = wrapper.current?.getBoundingClientRect();
     const aspect = box && box.width > 0 && box.height > 0 ? box.width / box.height : 1.6;
     layoutErd(erd, aspect).then(
@@ -261,13 +242,15 @@ function ErdCanvas({ relations, erd, focus, onNavigate, onPeek }: { relations: r
     if (!placed) return { nodes: [] as BoxNode[], edges: [] as LineEdge[] };
     const { rects } = placed;
     const offsets = lineOffsets(placed.erd.lines);
-    const nodes: BoxNode[] = placed.erd.boxes.map((box) => {
+    const node = (box: ErdBox): BoxNode => {
       const r = rects.get(box.id) ?? { x: 0, y: 0, width: 0, height: 0 };
-      const isFocus = box.id === focus;
+      // An entity sits inside its boundary, placed from its corner, so React Flow draws its lines above the boundary.
+      const at = box.parent ? rects.get(box.parent) : undefined;
       return {
         id: box.id,
         type: 'box',
-        position: { x: r.x, y: r.y },
+        position: at ? { x: r.x - at.x, y: r.y - at.y } : { x: r.x, y: r.y },
+        ...(at ? { parentId: box.parent } : {}),
         width: r.width,
         height: r.height,
         draggable: false,
@@ -280,10 +263,12 @@ function ErdCanvas({ relations, erd, focus, onNavigate, onPeek }: { relations: r
         // A context box is out of focus: no keyboard stop, hidden from assistive technology, faded.
         ...(box.context
           ? { className: 'is-context', focusable: false, domAttributes: { 'aria-hidden': true } }
-          : { ariaLabel: `${BOX_KIND[box.kind]} ${box.title}${box.owner ? ` ${box.owner}` : ''}${box.root ? ', root' : ''}${box.highlight ? ' (this record)' : ''}` }),
-        data: { box, focus: isFocus },
+          : { ariaLabel: boxName(box) }),
+        data: { box, focus: box.id === focus },
       };
-    });
+    };
+    // Each boundary before its entities, as React Flow wants a parent before its children.
+    const nodes: BoxNode[] = placed.erd.boxes.filter((b) => !b.parent).flatMap((b) => [node(b), ...placed.erd.boxes.filter((m) => m.parent === b.id).map(node)]);
     const titles = new Map(placed.erd.boxes.map((b) => [b.id, b.title]));
     const edges: LineEdge[] = placed.erd.lines.map((line) => ({
       id: line.id,
@@ -304,7 +289,7 @@ function ErdCanvas({ relations, erd, focus, onNavigate, onPeek }: { relations: r
     const motion = readMotion();
     setViewport(fitRects(placed.rects, box.width, box.height), animate && motion.duration > 0 ? { duration: motion.duration, ease: motion.ease } : { duration: 0 });
   }, [placed, setViewport]);
-  // The edge hints count every box past an edge: the faded context, and what a big model leaves outside.
+  // The edge hints count every box past an edge: the faded context, and what a big diagram leaves outside.
   const centers = useMemo(() => (placed ? placed.erd.boxes.flatMap((b) => {
     const r = placed.rects.get(b.id);
     return r ? [{ x: r.x + r.width / 2, y: r.y + r.height / 2 }] : [];
@@ -381,7 +366,7 @@ function ErdCanvas({ relations, erd, focus, onNavigate, onPeek }: { relations: r
       {armedBox && (
         <TapCard
           kind={BOX_KIND[armedBox.kind]}
-          name={`${armedBox.title}${armedBox.owner ? ` ${armedBox.owner}` : ''}`}
+          name={`${armedBox.title}${armedBox.owner ? `, ${armedBox.owner}` : ''}`}
           onOpen={tap.openArmed}
           onDismiss={tap.clear}
         />

@@ -1,69 +1,38 @@
 import type { Row, SpecIndex, SpecRecord } from '../specs/data';
 import { textOf, byIdOrder, partsOf } from '../specs/data';
-import { commandsOf, eventsOf, hearingPolicies, heardEvent, policiesOf, raisedEvents } from './events';
 
-// The Model view's diagrams, as plain data (no React): what boxes and lines a domain's or an
-// aggregate's model draws, in event storming colors.
+// The Model view's diagrams, as plain data (no React): the entity-relationship diagram of a domain or
+// of an aggregate, entities and their relationships only.
 //
-// - A domain's model: one box per aggregate (yellow), listing its entities (the root marked) and the
-//   value objects their fields use; a many-to-one line from an aggregate to each aggregate its
-//   entities' fields refer to by ID (another domain's gray and faded, named in parentheses). Around
-//   the aggregates, in event storming order left to right: policies (lilac) invoking their command,
-//   commands (blue) changing their aggregate and raising events (orange), and the events heard by
-//   policies, which closes the loop; specifications (pink) that commands check and that read
-//   aggregates; read models (green) reading aggregates, with their queries and the specifications they
-//   select by. A policy hearing another domain's published event shows that event as faded context,
-//   and so does another domain's policy hearing one of this domain's events.
-// - An aggregate's model: its entities with their fields and each field's type (a basic type, a value
-//   object's title, or a reference to an aggregate), has_one and has_many lines with crow's feet,
-//   the aggregates its fields refer to as faded context; its commands, the events they raise, the
-//   policies invoking them, and the specifications they check; the policies hearing its events, and
-//   the events its policies hear from elsewhere, as context. An entity, command, event or policy page
-//   draws its aggregate's model with that record highlighted; a read model, query or specification
-//   page draws its domain's.
+// - A domain's ERD: each of its aggregates as a boundary around its entities (the root marked), each
+//   entity with its fields and their types; a has one or has many line between entities, with crow's
+//   feet; and a dashed reference-by-ID line from an entity holding a field typed by another aggregate
+//   to that aggregate's root. Another domain's aggregate is a closed box, faded, labeled with its domain.
+// - An aggregate's ERD: its boundary, entities and lines, with the aggregates it references, and those
+//   that reference it, faded around it as closed boxes.
+// - An entity's ERD is its aggregate's, with the entity highlighted.
 
 export type ErdLevel = 'domain' | 'aggregate';
-/** A line end: exactly one (two bars), many (a crow's foot), none (a plain end) or an arrowhead (where a flow leads). */
+/** A line end: exactly one (two bars), many (a crow's foot), none (a plain end) or an arrowhead (the aggregate a reference points at). */
 export type ErdEnd = 'one' | 'many' | 'none' | 'arrow';
-/** Who owns a box: the current domain or another one (gray, named in parentheses). */
+/** Who owns a box: the current domain or another one (gray, labeled with its domain). */
 export type ErdTone = 'current' | 'other';
-/** What a box is: a kind of record, each drawn in its event storming color. */
-export type ErdKind = 'aggregate' | 'entity' | 'command' | 'event' | 'policy' | 'specification' | 'read_model' | 'query';
+/** What a box is: an aggregate (a boundary around its entities, or a closed box) or an entity. */
+export type ErdKind = 'aggregate' | 'entity';
 
-/**
- * What a line stands for: a stored relation (`has_one`, `has_many`, `raises`, `hears`, `checks`, `reads`,
- * `selects_by`), or what the tree and the fields say (`refers_to`: a field typed by another aggregate;
- * `changes`: a command's own aggregate; `also_changes`: a recorded exception; `invokes`: a policy's command;
- * `queries`: a read model's query).
- */
-export type ErdRelation = 'has_one' | 'has_many' | 'refers_to' | 'changes' | 'also_changes' | 'raises' | 'hears' | 'invokes' | 'checks' | 'reads' | 'queries' | 'selects_by';
+/** What a line stands for: a stored `has_one` or `has_many` link, or a field typed by another aggregate (`references`). */
+export type ErdRelation = 'has_one' | 'has_many' | 'references';
 
-/** The ends each line draws, at its source and its target, as drawn. */
+/** The ends each line draws, at its source and its target. */
 export const RELATION_ENDS: Record<ErdRelation, [ErdEnd, ErdEnd]> = {
   has_one: ['one', 'one'],
   has_many: ['one', 'many'],
-  refers_to: ['many', 'one'],
-  changes: ['none', 'arrow'],
-  also_changes: ['none', 'arrow'],
-  raises: ['none', 'arrow'],
-  hears: ['none', 'arrow'],
-  invokes: ['none', 'arrow'],
-  checks: ['none', 'arrow'],
-  reads: ['none', 'arrow'],
-  queries: ['none', 'arrow'],
-  selects_by: ['none', 'arrow'],
+  references: ['none', 'arrow'],
 };
 
-/** The lines drawn dashed: a policy hearing an event (it follows later, through the outbox) and a recorded exception. */
-const DASHED: ReadonlySet<ErdRelation> = new Set(['hears', 'also_changes']);
-
-/** The words of the lines that stand for no stored relation, read from the line's source. */
+/** The words of a line that stands for no stored relation, read from the line's source. */
 export const LINE_WORDS: Partial<Record<ErdRelation, string>> = {
-  refers_to: 'refers to',
-  changes: 'changes',
-  also_changes: 'also changes',
-  invokes: 'invokes',
-  queries: 'is queried by',
+  references: 'references by ID',
 };
 
 export interface ErdField { field: string; kind: string }
@@ -72,21 +41,17 @@ export interface ErdBox {
   id: string;
   kind: ErdKind;
   title: string;
-  /** The owner in parentheses for a box from elsewhere: "(Accounts)" or "(Accounts · Account)"; null for the diagram's own boxes. */
+  /** The domain of a box from another domain ("Accounts"); null for the current domain's. */
   owner: string | null;
   tone: ErdTone;
-  /** True for a box of another domain. */
-  foreign: boolean;
   /** An entity that is its aggregate's root. */
   root: boolean;
-  /** An entity's, event's or read model's fields with their types (empty for the other kinds and for a box from elsewhere). */
+  /** An entity's fields with their types (empty for an aggregate). */
   fields: ErdField[];
-  /** On a domain's model, an aggregate's entities, the root first. */
-  entities?: { id: string; title: string; root: boolean }[];
-  /** On a domain's model, the titles of the value objects an aggregate's entities use. */
-  valueObjects?: string[];
-  /** The box it belongs to in the diagram, when that is drawn: an event's aggregate, a query's read model. */
+  /** An entity's aggregate, drawn as the boundary around it. */
   parent?: string;
+  /** An aggregate drawn as a boundary around its entities (a closed box otherwise). */
+  boundary: boolean;
   /** The record the page is about, highlighted. */
   highlight: boolean;
   /** Faded context: drawn out of focus and out of the keyboard order. */
@@ -101,14 +66,9 @@ export interface ErdLine {
   sourceEnd: ErdEnd;
   targetEnd: ErdEnd;
   dashed: boolean;
-  /** What the line stands for, in words for its tooltip: the referring fields ("Loan.Member"), or a recorded exception's reason. */
+  /** The fields a reference stands for ("Loan.Member"), for its tooltip and its hover label. */
   via: string[];
-  /**
-   * The line runs against its link, drawn from cause to effect: from an event to the policy hearing
-   * it (the link is the policy's `hears`), from an aggregate to the read model reading it.
-   */
-  reversed?: boolean;
-  /** To or between context boxes: drawn faded. */
+  /** To or from a context box: drawn faded. */
   context: boolean;
 }
 
@@ -123,7 +83,6 @@ export interface Erd {
 }
 
 const isRootEntity = (r: SpecRecord) => textOf(r.row, 'role') === 'root';
-const parentOf = (index: SpecIndex, r: SpecRecord | undefined) => (r?.parent ? index.byId.get(r.parent) : undefined);
 const childrenOfKind = (index: SpecIndex, id: string, kind: string) => (index.children.get(id) ?? []).filter((r) => r.kind === kind).sort(byIdOrder);
 const titleOf = (index: SpecIndex, id: string | null) => (id ? index.byId.get(id)?.title ?? id : '');
 const targets = (index: SpecIndex, id: string, relation: string) =>
@@ -132,12 +91,6 @@ const targets = (index: SpecIndex, id: string, relation: string) =>
 /** An aggregate's entities: the root first, then the children, in ID order. */
 export function entitiesOf(index: SpecIndex, aggregate: string): SpecRecord[] {
   return [...childrenOfKind(index, aggregate, 'entity')].sort((a, b) => Number(isRootEntity(b)) - Number(isRootEntity(a)) || byIdOrder(a, b));
-}
-
-/** The aggregate a record sits under (itself for an aggregate): an entity's, event's or command's, a policy's command's. */
-export function aggregateOf(index: SpecIndex, record: SpecRecord | undefined): SpecRecord | null {
-  for (let r = record, seen = 0; r && seen < 8; r = parentOf(index, r), seen++) if (r.kind === 'aggregate') return r;
-  return null;
 }
 
 /** A field's type in words: its basic type, its value object's title, or "→ Aggregate" for a reference. */
@@ -149,42 +102,47 @@ export function fieldType(index: SpecIndex, field: Row): string {
   return textOf(field, 'type');
 }
 
-const fieldsOf = (index: SpecIndex, id: string, table: string): ErdField[] =>
-  partsOf(index, id, table).map((f) => ({ field: textOf(f, 'name'), kind: fieldType(index, f) }));
+const fieldsOf = (index: SpecIndex, id: string): ErdField[] =>
+  partsOf(index, id, 'entity_field').map((f) => ({ field: textOf(f, 'name'), kind: fieldType(index, f) }));
 
-/** The value objects an aggregate's entities' fields use, in ID order. */
-function valueObjectsOf(index: SpecIndex, aggregate: string): SpecRecord[] {
-  const ids = new Set(entitiesOf(index, aggregate).flatMap((e) => partsOf(index, e.id, 'entity_field').map((f) => textOf(f, 'type_value_object_id')).filter(Boolean)));
-  return [...ids].map((id) => index.byId.get(id)).filter((r): r is SpecRecord => !!r).sort(byIdOrder);
-}
+interface Reference { entity: SpecRecord; target: SpecRecord; via: string[] }
 
-/** The aggregates an aggregate's entities refer to by ID, other than itself, each with the fields that refer ("Loan.Member"). */
-export function referencesOf(index: SpecIndex, aggregate: string): { target: SpecRecord; via: string[]; from: string[] }[] {
-  const found = new Map<string, { target: SpecRecord; via: string[]; from: string[] }>();
-  for (const e of entitiesOf(index, aggregate)) {
-    for (const f of partsOf(index, e.id, 'entity_field')) {
+/** The references by ID an aggregate's entities hold to other aggregates: one per entity and aggregate, with its fields ("Loan.Member"). */
+function referencesFrom(index: SpecIndex, aggregate: string): Reference[] {
+  const found = new Map<string, Reference>();
+  for (const entity of entitiesOf(index, aggregate)) {
+    for (const f of partsOf(index, entity.id, 'entity_field')) {
       const id = textOf(f, 'type_aggregate_id');
       const target = id ? index.byId.get(id) : undefined;
       if (!target || target.id === aggregate) continue;
-      const entry = found.get(id) ?? { target, via: [], from: [] };
-      entry.via.push(`${e.title}.${textOf(f, 'name')}`);
-      if (!entry.from.includes(e.id)) entry.from.push(e.id);
-      found.set(id, entry);
+      const key = `${entity.id}|${id}`;
+      const entry = found.get(key) ?? { entity, target, via: [] };
+      entry.via.push(`${entity.title}.${textOf(f, 'name')}`);
+      found.set(key, entry);
     }
   }
-  return [...found.values()].sort((a, b) => byIdOrder(a.target, b.target));
+  return [...found.values()].sort((a, b) => byIdOrder(a.entity, b.entity) || byIdOrder(a.target, b.target));
 }
 
-/** What the Model view draws for a page: a domain's model, or an aggregate's; null for any other page. */
+/** The aggregates whose entities hold a reference to an aggregate, in ID order. */
+function referencingAggregates(index: SpecIndex, aggregate: string): SpecRecord[] {
+  const found = new Map<string, SpecRecord>();
+  for (const r of index.workspace.records) {
+    if (r.kind !== 'entity' || !r.parent || r.parent === aggregate) continue;
+    if (!partsOf(index, r.id, 'entity_field').some((f) => textOf(f, 'type_aggregate_id') === aggregate)) continue;
+    const owner = index.byId.get(r.parent);
+    if (owner) found.set(owner.id, owner);
+  }
+  return [...found.values()].sort(byIdOrder);
+}
+
+/** What the Model view draws for a page: a domain's ERD, or an aggregate's (an entity's highlighted in it); null for any other page. */
 export function modelScope(index: SpecIndex, focus: string): { level: ErdLevel; scope: string; highlight: string | null } | null {
   const record = index.byId.get(focus);
   if (!record) return null;
   if (record.kind === 'domain') return { level: 'domain', scope: record.id, highlight: null };
-  if (['aggregate', 'entity', 'command', 'domain_event', 'policy'].includes(record.kind)) {
-    const aggregate = aggregateOf(index, record);
-    return aggregate ? { level: 'aggregate', scope: aggregate.id, highlight: record.kind === 'aggregate' ? null : record.id } : null;
-  }
-  if (['read_model', 'query', 'specification'].includes(record.kind) && record.domain) return { level: 'domain', scope: record.domain, highlight: record.id };
+  if (record.kind === 'aggregate') return { level: 'aggregate', scope: record.id, highlight: null };
+  if (record.kind === 'entity' && record.parent) return { level: 'aggregate', scope: record.parent, highlight: record.id };
   return null;
 }
 
@@ -201,36 +159,53 @@ class Builder {
   lines = new Map<string, ErdLine>();
   constructor(private index: SpecIndex, private domainId: string, private highlight: string | null) {}
 
-  /** A record's box: the current domain's, or another's (gray, its domain in parentheses), in focus or faded. */
-  box(record: SpecRecord, kind: ErdKind, extra: Partial<ErdBox> = {}, context = false): ErdBox {
-    const known = this.boxes.get(record.id);
-    if (known) return known;
-    const otherDomain = !!record.domain && record.domain !== this.domainId;
-    const box: ErdBox = {
-      id: record.id,
-      kind,
-      title: record.title,
-      owner: otherDomain ? `(${titleOf(this.index, record.domain)})` : null,
-      tone: otherDomain ? 'other' : 'current',
-      foreign: otherDomain,
-      root: false,
-      fields: [],
-      highlight: record.id === this.highlight,
-      context: context || otherDomain,
-      ...extra,
-    };
-    this.boxes.set(record.id, box);
-    return box;
+  /** An aggregate's box: a boundary around its entities, drawn with them, or a closed box (faded context). */
+  aggregate(record: SpecRecord, boundary: boolean, context = false) {
+    if (this.boxes.has(record.id)) return;
+    const other = !!record.domain && record.domain !== this.domainId;
+    this.boxes.set(record.id, {
+      id: record.id, kind: 'aggregate', title: record.title, owner: other ? titleOf(this.index, record.domain) : null, tone: other ? 'other' : 'current',
+      root: false, fields: [], boundary, highlight: record.id === this.highlight, context: context || other,
+    });
+    if (!boundary) return;
+    for (const e of entitiesOf(this.index, record.id)) {
+      this.boxes.set(e.id, {
+        id: e.id, kind: 'entity', title: e.title, owner: null, tone: 'current', root: isRootEntity(e), fields: fieldsOf(this.index, e.id),
+        parent: record.id, boundary: false, highlight: e.id === this.highlight, context: false,
+      });
+    }
   }
 
-  line(source: string, relation: ErdRelation, target: string, options: { via?: string[]; reversed?: boolean } = {}) {
+  line(source: string, relation: ErdRelation, target: string, via: string[] = []) {
     if (source === target || !this.boxes.has(source) || !this.boxes.has(target)) return;
     const id = `${source}|${relation}|${target}`;
     const known = this.lines.get(id);
-    if (known) { known.via.push(...(options.via ?? [])); return; }
+    if (known) { known.via.push(...via); return; }
     const [sourceEnd, targetEnd] = RELATION_ENDS[relation];
     const context = this.boxes.get(source)!.context || this.boxes.get(target)!.context;
-    this.lines.set(id, { id, source, target, relation, sourceEnd, targetEnd, dashed: DASHED.has(relation), via: [...(options.via ?? [])], reversed: options.reversed, context });
+    this.lines.set(id, { id, source, target, relation, sourceEnd, targetEnd, dashed: relation === 'references', via: [...via], context });
+  }
+
+  /** Where a reference to an aggregate ends: at its root entity when its boundary is drawn, else at its box. */
+  referenceEnd(aggregate: string): string {
+    const root = [...this.boxes.values()].find((b) => b.parent === aggregate && b.root);
+    return root?.id ?? aggregate;
+  }
+
+  /** The has one and has many lines between the entities drawn. */
+  relationships() {
+    for (const box of [...this.boxes.values()]) {
+      if (box.kind !== 'entity') continue;
+      for (const relation of ['has_one', 'has_many'] as const) for (const t of targets(this.index, box.id, relation)) this.line(box.id, relation, t.id);
+    }
+  }
+
+  /** The references by ID an aggregate's entities hold, each from its entity to the aggregate it names. */
+  references(aggregate: string, context: boolean) {
+    for (const ref of referencesFrom(this.index, aggregate)) {
+      this.aggregate(ref.target, false, context);
+      this.line(ref.entity.id, 'references', this.referenceEnd(ref.target.id), ref.via);
+    }
   }
 
   done(level: ErdLevel, scope: string): Erd {
@@ -238,125 +213,28 @@ class Builder {
   }
 }
 
-/** A command's box with what it raises and checks and the policies invoking it, each event's hearers, lines included. */
-function commandAround(index: SpecIndex, b: Builder, command: SpecRecord, aggregateBox: string, scopeAggregate: string | null) {
-  b.box(command, 'command');
-  b.line(command.id, 'changes', aggregateBox);
-  for (const change of partsOf(index, command.id, 'command_change')) {
-    const other = index.byId.get(textOf(change, 'aggregate_id'));
-    if (!other) continue;
-    b.box(other, 'aggregate', {}, true);
-    b.line(command.id, 'also_changes', other.id, { via: [textOf(change, 'reason')] });
-  }
-  for (const event of raisedEvents(index, command.id)) {
-    const owner = aggregateOf(index, event);
-    b.box(event, 'event', owner && b.boxes.has(owner.id) ? { parent: owner.id } : {});
-    b.line(command.id, 'raises', event.id);
-  }
-  for (const policy of policiesOf(index, command.id)) {
-    b.box(policy, 'policy');
-    b.line(policy.id, 'invokes', command.id);
-    const heard = heardEvent(index, policy.id);
-    if (heard) {
-      // On an aggregate's model, an event of another aggregate is context.
-      const elsewhere = !!scopeAggregate && aggregateOf(index, heard)?.id !== scopeAggregate;
-      const owner = aggregateOf(index, heard);
-      b.box(heard, 'event', owner && b.boxes.has(owner.id) ? { parent: owner.id } : {}, elsewhere);
-      b.line(heard.id, 'hears', policy.id, { reversed: true });
-    }
-  }
-  for (const spec of targets(index, command.id, 'checks')) {
-    b.box(spec, 'specification');
-    b.line(command.id, 'checks', spec.id);
-  }
-}
-
-/** A domain's model: its aggregates and what sits around them. */
+/** A domain's ERD: its aggregates as boundaries around their entities, with their relationships and references. */
 export function domainErd(index: SpecIndex, domainId: string, highlight: string | null = null): Erd {
   const b = new Builder(index, domainId, highlight);
   const aggregates = childrenOfKind(index, domainId, 'aggregate');
-  for (const a of aggregates) {
-    b.box(a, 'aggregate', {
-      entities: entitiesOf(index, a.id).map((e) => ({ id: e.id, title: e.title, root: isRootEntity(e) })),
-      valueObjects: valueObjectsOf(index, a.id).map((v) => v.title),
-    });
-  }
-  for (const a of aggregates) {
-    for (const ref of referencesOf(index, a.id)) {
-      b.box(ref.target, 'aggregate');
-      b.line(a.id, 'refers_to', ref.target.id, { via: ref.via });
-    }
-  }
-  for (const a of aggregates) for (const c of commandsOf(index, a.id)) commandAround(index, b, c, a.id, null);
-  // Events no command raises yet still belong on the board.
-  for (const a of aggregates) for (const e of eventsOf(index, a.id)) b.box(e, 'event', { parent: a.id });
-  // Another domain's policies hearing this domain's events: faded context.
-  for (const a of aggregates) {
-    for (const e of eventsOf(index, a.id)) {
-      for (const p of hearingPolicies(index, e.id)) {
-        if (p.domain === domainId) continue;
-        b.box(p, 'policy');
-        b.line(e.id, 'hears', p.id, { reversed: true });
-      }
-    }
-  }
-  // Specifications reading the domain's aggregates (a specification belongs to the domain its ID names).
-  const specs = index.workspace.records.filter((r) => r.kind === 'specification' && r.domain === domainId).sort(byIdOrder);
-  for (const s of specs) {
-    b.box(s, 'specification');
-    for (const a of targets(index, s.id, 'reads')) b.line(s.id, 'reads', a.id);
-  }
-  // Read models reading the aggregates, and their queries.
-  for (const rm of childrenOfKind(index, domainId, 'read_model')) {
-    b.box(rm, 'read_model', { fields: fieldsOf(index, rm.id, 'read_model_field') });
-    for (const a of targets(index, rm.id, 'reads')) b.line(a.id, 'reads', rm.id, { reversed: true });
-    for (const q of childrenOfKind(index, rm.id, 'query')) {
-      b.box(q, 'query', { parent: rm.id });
-      b.line(rm.id, 'queries', q.id);
-      for (const s of targets(index, q.id, 'selects_by')) {
-        b.box(s, 'specification');
-        b.line(q.id, 'selects_by', s.id);
-      }
-    }
-  }
+  for (const a of aggregates) b.aggregate(a, true);
+  b.relationships();
+  for (const a of aggregates) b.references(a.id, false);
   return b.done('domain', domainId);
 }
 
-/** An aggregate's model: its entities, fields and relationships, and the commands, events and policies around it. */
+/** An aggregate's ERD: its entities and relationships, with the aggregates it references, or that reference it, faded around it. */
 export function aggregateErd(index: SpecIndex, aggregateId: string, highlight: string | null = null): Erd {
   const aggregate = index.byId.get(aggregateId);
-  const domainId = aggregate?.domain ?? '';
-  const b = new Builder(index, domainId, highlight);
-  const own = entitiesOf(index, aggregateId);
-  for (const e of own) b.box(e, 'entity', { root: isRootEntity(e), fields: fieldsOf(index, e.id, 'entity_field') });
-  for (const e of own) {
-    for (const relation of ['has_one', 'has_many'] as const) {
-      for (const t of targets(index, e.id, relation)) {
-        if (!b.boxes.has(t.id)) continue;
-        b.line(e.id, relation, t.id);
-      }
-    }
-  }
-  // The aggregates its fields refer to: faded context, from each referring entity.
-  for (const ref of referencesOf(index, aggregateId)) {
-    b.box(ref.target, 'aggregate', {}, true);
-    for (const from of ref.from) {
-      const entity = index.byId.get(from)!;
-      b.line(from, 'refers_to', ref.target.id, { via: ref.via.filter((v) => v.startsWith(`${entity.title}.`)) });
-    }
-  }
-  const root = own.find((e) => isRootEntity(e)) ?? own[0];
-  const target = root?.id ?? aggregateId;
-  if (!root && aggregate) b.box(aggregate, 'aggregate');
-  for (const e of eventsOf(index, aggregateId)) b.box(e, 'event', { fields: fieldsOf(index, e.id, 'event_field'), parent: target });
-  for (const c of commandsOf(index, aggregateId)) commandAround(index, b, c, target, aggregateId);
-  // The policies elsewhere hearing its events: faded context.
-  for (const e of eventsOf(index, aggregateId)) {
-    for (const p of hearingPolicies(index, e.id)) {
-      if (b.boxes.has(p.id)) continue;
-      b.box(p, 'policy', {}, true);
-      b.line(e.id, 'hears', p.id, { reversed: true });
-    }
+  const b = new Builder(index, aggregate?.domain ?? '', highlight);
+  if (!aggregate) return b.done('aggregate', aggregateId);
+  b.aggregate(aggregate, true);
+  b.relationships();
+  b.references(aggregateId, true);
+  for (const other of referencingAggregates(index, aggregateId)) {
+    b.aggregate(other, false, true);
+    const via = referencesFrom(index, other.id).filter((r) => r.target.id === aggregateId).flatMap((r) => r.via);
+    b.line(other.id, 'references', b.referenceEnd(aggregateId), via);
   }
   return b.done('aggregate', aggregateId);
 }
@@ -366,20 +244,18 @@ export function aggregateErd(index: SpecIndex, aggregateId: string, highlight: s
 export type Point = { x: number; y: number };
 export interface Rect { x: number; y: number; width: number; height: number }
 
-/** A box with rows (fields, entities), and a sticky note (a command, policy, specification or query with none). */
+/** An entity's width, and a closed aggregate box's. */
 export const BOX_WIDTH = 210;
-export const STICKY_WIDTH = 170;
 /** The parts of a box's height, in CSS pixels at the default text size (styles.css .erd-box): its padding and border, a title line, the kind line, a row, and the rows' rule. */
 const FRAME = 22;
 const TITLE_LINE = 16;
 const KIND_LINE = 14;
 export const ROW = 20;
 const ROWS_RULE = 11;
+/** The room a boundary keeps around its entities: its head (one title line and the kind line) on top, and a gap on the other sides (styles.css .erd-boundary). */
+export const BOUNDARY_PAD = { top: FRAME / 2 + TITLE_LINE + KIND_LINE + 12, side: 14, bottom: 14 };
 /** About how many characters of a title fit on a line, by box width (the display face's bold at 0.8125rem). */
 const charsPerLine = (width: number) => Math.floor((width - 20) / 7.6);
-
-/** The rows a box lists: an entity's, event's or read model's fields; an aggregate's entities and its value objects' line. */
-export const boxRows = (box: ErdBox) => (box.kind === 'aggregate' ? (box.entities?.length ?? 0) + (box.valueObjects?.length ? 1 : 0) : box.fields.length);
 
 /** How many lines a title takes, at most two (a longer one ends with an ellipsis, its whole text in the box's tooltip). */
 export function titleLines(title: string, width: number, badge = false): number {
@@ -394,12 +270,11 @@ export function titleLines(title: string, width: number, badge = false): number 
   return Math.min(2, lines);
 }
 
-/** A box's size: a sticky note for a kind without rows; a box with rows grows with them. Each fits its title on up to two lines. */
+/** A closed aggregate box's size (its title on one line and its kind line), or an entity's (its title on up to two lines and its fields). A boundary's size is its entities' layout's. */
 export function boxSize(box: ErdBox): { width: number; height: number } {
-  const rows = boxRows(box);
-  const width = rows === 0 ? STICKY_WIDTH : BOX_WIDTH;
-  const head = FRAME + TITLE_LINE * titleLines(box.title, width, box.root) + KIND_LINE;
-  return { width, height: rows === 0 ? head : head + ROWS_RULE + ROW * rows };
+  if (box.kind === 'aggregate') return { width: BOX_WIDTH, height: FRAME + TITLE_LINE + KIND_LINE };
+  const head = FRAME + TITLE_LINE * titleLines(box.title, BOX_WIDTH, box.root);
+  return { width: BOX_WIDTH, height: box.fields.length === 0 ? head : head + ROWS_RULE + ROW * box.fields.length };
 }
 
 /** Where the line from a box's center toward (tx, ty) leaves the box. */
