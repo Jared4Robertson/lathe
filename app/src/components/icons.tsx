@@ -27,6 +27,12 @@ const PATHS: Record<string, string[]> = {
   history: ['M12 8v4l2 2', 'M3.05 11a9 9 0 1 1 .5 4m-.5 5v-5h5'],
   // A record's Edit and Remove actions (Add is `plus`).
   edit: ['M7 7h-1a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-1', 'M20.385 6.585a2.1 2.1 0 0 0-2.97-2.97l-8.415 8.385v3h3l8.385-8.415z', 'M16 5l3 3'],
+  // The chat panel (LA-PLT-UC19): its toggle, Send, Stop, its help and a session's fork.
+  chat: ['M8 9h8', 'M8 13h6', 'M18 4a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3h-5l-5 3v-3h-2a3 3 0 0 1-3-3v-8a3 3 0 0 1 3-3h12z'],
+  send: ['M12 19V5', 'M6 11l6-6l6 6'],
+  stop: ['M7 7h10v10H7z'],
+  help: ['M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0-18 0', 'M12 17v.01', 'M12 13.5a1.5 1.5 0 0 1 1-1.5a2.6 2.6 0 1 0-3-4'],
+  fork: ['M7 5m-2 0a2 2 0 1 0 4 0a2 2 0 1 0-4 0', 'M7 19m-2 0a2 2 0 1 0 4 0a2 2 0 1 0-4 0', 'M17 5m-2 0a2 2 0 1 0 4 0a2 2 0 1 0-4 0', 'M7 7v10', 'M17 7v2a3 3 0 0 1-3 3h-4a3 3 0 0 0-3 3'],
   trash: ['M4 7h16', 'M10 11v6', 'M14 11v6', 'M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12', 'M9 7v-3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3'],
 };
 

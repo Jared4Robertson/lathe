@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { AGGREGATE, DOMAIN, EDITED, PRODUCT, RECORD } from '../stability/scenarios';
 import { audit, LOOKS, useLook, type Finding } from './axe';
+import { withChat } from './chat';
 
 // LA-V61-R40-T01: every page and state the stability suite visits passes axe-core at WCAG 2.2 AA, at
 // desktop and phone widths, in the Lathe theme's light and dark and in High contrast's
@@ -28,8 +29,8 @@ const SHARED = '/LA-PAT-APP-UX';
 const STAGES = [
   { name: 'graph stage', url: `${RECORD}?stage=graph`, ready: '.focus-stage .graph-flow .graph-box' },
   { name: 'ERD stage', url: `${AGGREGATE}?stage=erd`, ready: '.focus-stage .erd-canvas' },
-  { name: 'Trace stage, a chain', url: `${EDITED}?stage=trace`, ready: '.focus-stage .trace-chain' },
-  { name: 'Trace stage, a matrix', url: `${DOMAIN}?stage=trace`, ready: '.focus-stage .trace-matrix' },
+  { name: 'Trace stage, a chain', url: `${EDITED}?stage=trace`, ready: '.focus-stage .trace-flow[data-ready]' },
+  { name: 'Trace stage, a domain\'s lanes', url: `${DOMAIN}?stage=trace`, ready: '.focus-stage .trace-flow[data-ready]' },
 ];
 
 /** Collapses the wiki card (w) and hides the side bar, so the stage has the whole window under the tab panel. */
@@ -64,24 +65,25 @@ const PAGES: State[] = [
   { name: 'group page', url: GROUP, ready: '.header-strip h1' },
   ...STAGES,
   // Every stage works on every focus (LA-PAT-APP-UX-R17): the shapes a stage takes outside its own kinds.
-  { name: 'Trace stage, the rows a flow step belongs to', url: `${STEP}?stage=trace`, ready: '.focus-stage .trace-matrix [aria-current="page"]' },
-  { name: 'Trace stage, an entity in its aggregate\'s matrix', url: `${ENTITY}?stage=trace`, ready: '.focus-stage .trace-note' },
+  { name: 'Trace stage, the lanes a flow step belongs to', url: `${STEP}?stage=trace`, ready: '.focus-stage .trace-flow[data-shape="rows"][data-ready]' },
+  { name: 'Trace stage, an entity in its aggregate\'s lanes', url: `${ENTITY}?stage=trace`, ready: '.focus-stage .trace-note' },
   { name: 'ERD stage on a use case', url: `${RECORD}?stage=erd`, ready: '.focus-stage .erd-canvas' },
   { name: 'ERD stage on a Shared record', url: `${SHARED}?stage=erd`, ready: '.focus-stage .erd-canvas' },
   { name: 'Checks', url: `${PRODUCT}/checks`, ready: '#main h1' },
   { name: 'Format', url: '/format', ready: '#main h1' },
   { name: 'Appearance', url: '/settings/appearance', ready: '#main h1' },
 ].map((p) => ({ name: p.name, run: (page: Page) => open(page, p.url, p.ready) }));
-// A design record nothing traces to: the untraced state, reached from the domain's Untraced list.
+// A design record nothing traces to: the untraced state, reached from the domain's Untraced list by the keyboard.
 PAGES.push({ name: 'Trace stage, an untraced record', run: async (page: Page) => {
   await open(page, `${DOMAIN}?stage=trace`, '.focus-stage .trace-untraced');
-  await page.locator('.focus-stage .trace-untraced a').first().click();
+  await page.locator('.focus-stage .trace-untraced a').first().focus();
+  await page.keyboard.press('Enter');
   await page.locator('.focus-stage .trace-note.is-untraced').waitFor();
   await page.waitForTimeout(400);
 } });
-// The Trace stage's matrix with only the rows that have a gap.
+// The Trace stage with only the lanes that have a gap.
 PAGES.push({ name: 'Trace stage, gaps only', run: async (page: Page) => {
-  await open(page, `${DOMAIN}?stage=trace`, '.focus-stage .trace-matrix');
+  await open(page, `${DOMAIN}?stage=trace`, '.focus-stage .trace-flow[data-ready]');
   await page.locator('.focus-stage').getByRole('checkbox', { name: 'Gaps only' }).check();
   await page.waitForTimeout(200);
 } });
@@ -145,6 +147,20 @@ const DESKTOP: State[] = [
     await open(page, EDITED, '.header-strip .crumb-more-button');
     await page.locator('.header-strip .crumb-more-button').click();
     await page.locator('.header-strip .crumb-menu').waitFor();
+  } },
+  // The desktop app's chat (LA-V99), with a stand-in for the shell: a conversation with a tool call open and a
+  // permission prompt, and the session picker with its warning about a session open in another client.
+  { name: 'the chat, a conversation with a tool call open and a permission prompt', run: async (page) => {
+    await withChat(page, RECORD.slice(1));
+    await open(page, RECORD, '.chat-log .chat-item');
+    await page.locator('.chat-tool-row').first().click();
+    await page.locator('.chat-tool-body').waitFor();
+  } },
+  { name: 'the chat, its session picker warning of a session open elsewhere', run: async (page) => {
+    await withChat(page, RECORD.slice(1), 'picker');
+    await open(page, RECORD, '.chat-session-open');
+    await page.locator('.chat-session-open', { hasText: 'Plan the graph stage' }).click();
+    await page.locator('.chat-warning').waitFor();
   } },
   { name: 'a tooltip on keyboard focus', run: async (page) => {
     await open(page, RECORD, '.header-strip h1');

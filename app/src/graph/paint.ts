@@ -62,6 +62,8 @@ const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 /** A line's stroke: color, width over its scale, dashes and opacity, as the stylesheet drew each relation's family. */
 export function lineStroke(look: Look, line: Pick<Line, 'link' | 'style'>): { color: string; width: number; dash: number[]; alpha: number } {
   if (!line.link) return { color: look.ink, width: 2, dash: [], alpha: 0.75 };
+  // A Trace stage's arrow (LA-V98): solid, in the links' color.
+  if (line.style === 'trace') return { color: look.linkEdge, width: 1.5, dash: [], alpha: 0.9 };
   if (line.style === 'event') return { color: look.spark, width: 1.2, dash: [4, 4], alpha: 1 };
   return { color: look.linkEdge, width: 1.2, dash: [6, 4], alpha: 1 };
 }
@@ -96,8 +98,12 @@ export function stageColors(look: Look, stage: Plate['stage']): { edge: string; 
   }
 }
 
-/** A box's edge and fill colors, by its look: an open question keeps its stage's fill. */
+/** The kind of a Trace stage's gap box (LA-V98-R04): an empty box, dashed, in the warning color. */
+export const GAP_KIND = 'gap';
+
+/** A box's edge and fill colors, by its look: an open question keeps its stage's fill; a Trace stage's gap is the warning color on the sheet. */
 export function boxColors(look: Look, p: Pick<Plate, 'group' | 'kind' | 'stage'>): { edge: string; fill: string } {
+  if (p.kind === GAP_KIND) return { edge: look.warn, fill: look.sheet };
   switch (boxLook(p)) {
     // A group is a folder outlined in its stage's color on the sheet, so it reads as its stage's and as a group.
     case 'stage-group': return { edge: p.stage === 'structural' ? look.muted : stageColors(look, p.stage).edge, fill: look.sheet };

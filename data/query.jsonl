@@ -24,6 +24,8 @@
 {"id":"LA-PLT-QRY05","title":"Get a theme file","read_model_id":"LA-PLT-RM03"}
 {"id":"LA-PLT-QRY06","title":"List the recent folders","read_model_id":"LA-PLT-RM04"}
 {"id":"LA-PLT-QRY07","title":"Get the data's changes as they happen","read_model_id":"LA-PLT-RM01","description":"Tells an open page, as it happens, that the workspace it shows changed, so it loads the data again."}
+{"id":"LA-PLT-QRY08","title":"List a folder's Claude Code sessions","read_model_id":"LA-PLT-RM05","description":"The window's folder's sessions, newest first, each by its name, summary or first prompt, with running or just written marked, and the `claude` the chat runs."}
+{"id":"LA-PLT-QRY09","title":"Get what the Reader is looking at","read_model_id":"LA-PLT-RM06","description":"The MCP tool app_focus: the window's page, focus, stage and selection, named by ID, kind and title; refused when no window is connected."}
 {"id":"LA-TRC-QRY01","title":"Get coverage counts","read_model_id":"LA-TRC-RM01","description":"Workspace.coverage[].obligations and .proved_by (the tests that count as each obligation's proof there); lathe check's coverage lines; the product and domain pages"}
 {"id":"LA-TRC-QRY02","title":"List coverage gaps","read_model_id":"LA-TRC-RM02","description":"Coverage.gaps; the gap callouts and the not-designed, not-built and not-proved warnings"}
 {"id":"LA-TRC-QRY03","title":"Get test counts by state","read_model_id":"LA-TRC-RM03","description":"Coverage.tests"}
@@ -34,4 +36,4 @@
 {"id":"LA-TRC-QRY08","title":"List routes traced both ways","read_model_id":"LA-TRC-RM05","description":"route_facts (each endpoint's and view's route, and whether the files of what implements it name it) and served_routes (each route the code serves): the endpoint-route-not-in-file and view-route-not-in-file checks and the route-without-record gap."}
 {"id":"LA-TRC-QRY09","title":"Find the tables their files do not define","read_model_id":"LA-TRC-RM07","description":"The table-schema-mismatch check, a query of table_facts."}
 {"id":"LA-TRC-QRY12","title":"Find the packages no record uses","read_model_id":"LA-TRC-RM02","description":"The packages the product's package.json files list that no technical record names: one package-not-accounted-for gap per product."}
-{"id":"LA-TRC-QRY13","title":"List the obligations under a record","read_model_id":"LA-TRC-RM06","description":"The Trace stage's matrix: every obligation under a record or group, grouped by its parent; or, for a record no matrix is about, the rows that hold it or the matrix around it (traceShape)."}
+{"id":"LA-TRC-QRY13","title":"List the obligations under a record","read_model_id":"LA-TRC-RM06","description":"The Trace stage's lanes: every obligation under a record or group, grouped by its parent; or, for a record no lanes are about, the lanes that hold it or the lanes around it (traceShape)."}

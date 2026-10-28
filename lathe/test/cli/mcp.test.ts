@@ -4,7 +4,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { PassThrough } from 'node:stream';
 import { afterAll, describe, expect, it } from 'vitest';
-import { openStore, SCHEMA_VERSION } from '../../src/index.ts';
+import { loadProducts, openStore, SCHEMA_VERSION } from '../../src/index.ts';
 import { callTool, serveMcp, tools, type Tool } from '../../src/cli/mcp.ts';
 import { everyKind, removeData, writeData } from '../store/fixture.ts';
 
@@ -174,11 +174,20 @@ describe('LA-AUT-UC01-R05-T10 each tool', () => {
     expect((await callTool(root, 'next_id', { kind: 'invariant', parent: 'TL-LEND-UC01' })).isError).toBe(true);
   });
 
-  it('check reports the errors and warnings with a count', async () => {
+  it('check reports the errors and warnings with a count, and each product\'s coverage with its gaps as lathe check --json gives it', async () => {
     const root = writeData(everyKind());
     const checked = await callTool(root, 'check', {});
-    expect(checked.structuredContent).toEqual({ errors: expect.any(Number), warnings: expect.any(Number), problems: expect.any(Array), exceptions: [{ command: 'TL-LEND-CMD01', aggregate: 'TL-LEND-A2', reason: 'The tool must never show as lent without its loan.' }] });
+    const [{ workspace }] = await loadProducts(root);
+    expect(checked.structuredContent).toEqual({
+      errors: expect.any(Number),
+      warnings: expect.any(Number),
+      problems: expect.any(Array),
+      exceptions: [{ command: 'TL-LEND-CMD01', aggregate: 'TL-LEND-A2', reason: 'The tool must never show as lent without its loan.' }],
+      products: [{ root: '.', coverage: workspace.coverage }],
+    });
+    expect(workspace.coverage.flatMap((c) => c.gaps).length).toBeGreaterThan(0);
     expect(checked.content[0].text).toContain('Recorded exceptions (1):\n  TL-LEND-CMD01 also changes aggregate TL-LEND-A2 in the same transaction: The tool must never show as lent without its loan.');
+    expect(checked.content[0].text).toMatch(/\n\nCoverage:\n {2}TL-LEND [^\n]+: \d+\/\d+ designed/);
     expect(checked.content[0].text).toMatch(/\d+ errors?, \d+ warnings?\.$/);
     expect(checked.isError).toBe((checked.structuredContent!.errors as number) > 0);
   });

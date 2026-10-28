@@ -6,10 +6,8 @@ import path from 'node:path';
 import { parseArgs } from 'node:util';
 import { CONFIG_FILE, exceptionsText, loadProducts, mergeDataFiles, openStore, SCHEMA_VERSION, SchemaVersionError, StoreError, upgradeProduct, type Problem, type Workspace } from '../src/index.ts';
 import { forOneCommand } from '../src/store/store.ts';
+import { coverageLines, productFolder } from '../src/cli/operations.ts';
 import { DATA_COMMANDS, DATA_USAGE, runDataCommand } from '../src/cli/writers.ts';
-
-/** A label inside a sentence: "Use case" -> "use case", but an acronym keeps its case ("UC requirement"). */
-const lowerLabel = (label: string) => (/^[A-Z]{2}/.test(label) ? label : label.charAt(0).toLowerCase() + label.slice(1));
 
 const USAGE = `Usage: lathe <command> [options]
 
@@ -68,8 +66,7 @@ async function check() {
   const sum = (severity: Problem['severity']) => products.reduce((n, { workspace }) => n + workspace.problems.filter((p) => p.severity === severity).length, 0);
   const errors = sum('error');
   if (values.json) {
-    const folder = (dir: string) => path.relative(root, dir).split(path.sep).join('/') || '.';
-    console.log(JSON.stringify({ products: products.map(({ config, workspace }) => ({ root: folder(config.root), workspace })) }, null, 2));
+    console.log(JSON.stringify({ products: products.map(({ config, workspace }) => ({ root: productFolder(root, config.root), workspace })) }, null, 2));
   } else {
     // Each product is reported on its own; a workspace with several ends with the sum.
     products.forEach(({ config, workspace }, at) => {
@@ -90,30 +87,8 @@ function printProduct(productRoot: string, workspace: Workspace) {
   if (errors.length) console.log(`\nErrors (${errors.length}):\n${errors.map(line).join('\n')}`);
   if (warnings.length) console.log(`\nWarnings (${warnings.length}):\n${warnings.map(line).join('\n')}`);
   if (workspace.exceptions.length) console.log(`\n${exceptionsText(workspace.exceptions)}`);
-  if (workspace.coverage.length) {
-    console.log('\nCoverage:');
-    for (const c of workspace.coverage) {
-      const scope = c.domain ?? `${c.product} Shared`;
-      const counted = c.obligations.filter((o) => o.total > 0);
-      const kinds = new Set(counted.map((o) => o.kind));
-      const minimums = c.gaps.filter((g) => !['designed', 'built', 'proved'].includes(g.missing));
-      const tested = c.tests.automated + c.tests.manual + c.tests.not_automated;
-      if (!counted.length && !minimums.length && !tested) continue;
-      for (const o of counted) {
-        const of = (n: number) => `${n}/${o.total}`;
-        // A proof-only kind (a pattern rule) is not asked to be designed or built.
-        const design = o.proof_only ? 'proof only' : `${of(o.designed)} designed, ${of(o.built)} built`;
-        const waiting = o.not_automated ? `, ${of(o.not_automated)} not automated yet` : '';
-        console.log(`  ${scope} ${lowerLabel(o.label)}: ${design}, ${of(o.proved)} proved${waiting}`);
-        for (const g of c.gaps.filter((x) => x.kind === o.kind && kinds.has(x.kind) && ['designed', 'built', 'proved'].includes(x.missing))) console.log(`    gap: ${g.message}`);
-      }
-      if (tested) console.log(`  ${scope} tests: ${c.tests.automated} automated, ${c.tests.manual} manual, ${c.tests.not_automated} not automated yet`);
-      if (minimums.length) {
-        console.log(`  ${scope} records short of a minimum (${minimums.length}):`);
-        for (const g of minimums) console.log(`    [${g.missing}] ${g.message}`);
-      }
-    }
-  }
+  const covered = coverageLines(workspace.coverage);
+  if (covered.length) console.log(`\nCoverage:\n${covered.join('\n')}`);
   console.log(`\n${count(errors.length, 'error')}, ${count(warnings.length, 'warning')}.`);
 }
 
