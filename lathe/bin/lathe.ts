@@ -5,8 +5,7 @@ import { writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
 import { CONFIG_FILE, exceptionsText, loadProducts, mergeDataFiles, openStore, SCHEMA_VERSION, SchemaVersionError, StoreError, upgradeProduct, type Problem, type Workspace } from '../src/index.ts';
-import { serve } from '../src/server/serve.ts';
-import { serveMcp } from '../src/cli/mcp.ts';
+import { forOneCommand } from '../src/store/store.ts';
 import { DATA_COMMANDS, DATA_USAGE, runDataCommand } from '../src/cli/writers.ts';
 
 /** A label inside a sentence: "Use case" -> "use case", but an acronym keeps its case ("UC requirement"). */
@@ -143,9 +142,11 @@ async function init() {
   console.log('\nNext: add a domain under the product, with its subdomain_type, then its aggregates, commands and events (`lathe add --help`), and run `lathe check`. The tables and their columns are in REFERENCE.md.');
 }
 
-function startServer() {
+// The server and the MCP server are loaded only for their own commands, so every other command starts sooner.
+async function startServer() {
   const port = Number(values.port ?? 5330);
   if (!Number.isInteger(port) || port <= 0) fail('--port must be a port number.');
+  const { serve } = await import('../src/server/serve.ts');
   let running: ReturnType<typeof serve>;
   try {
     running = serve({ root, port });
@@ -201,6 +202,8 @@ async function mergeData() {
   process.exitCode = result.clashes.length || result.problems.length ? 1 : 0;
 }
 
+// Every command but serve and mcp ends when it is done.
+if (command !== 'serve' && command !== 'mcp') forOneCommand();
 try {
   if (dataCommand) {
     process.exitCode = await runDataCommand(process.argv.slice(2));
@@ -213,8 +216,9 @@ try {
   } else if (command === 'upgrade') {
     await upgrade();
   } else if (command === 'serve') {
-    startServer();
+    await startServer();
   } else if (command === 'mcp') {
+    const { serveMcp } = await import('../src/cli/mcp.ts');
     await serveMcp(root);
   } else if (command === 'merge-data') {
     await mergeData();

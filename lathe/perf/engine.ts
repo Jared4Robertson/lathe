@@ -1,8 +1,11 @@
-// LA-PLT-UC01-R03-T01: the engine's performance budgets (LA-PLT-UC01-R03), measured: `npm --prefix lathe run test:perf`.
+// LA-PLT-UC01-R03-T01 LA-AUT-UC01-R09-T01: the engine's performance budgets (LA-PLT-UC01-R03, LA-AUT-UC01-R09),
+// measured: `npm --prefix lathe run test:perf`.
 //
 // - Loading Lathe's own spec (a cold load: the data files read and loaded with every key and rule, then checked)
 //   takes under 2 s.
 // - A live reload after one row changes takes under 500 ms.
+// - A cold CLI command (`lathe show <id>` on Lathe's spec, a fresh process with the schema cache in place) takes
+//   under 600 ms, from the process's start to its exit.
 // It also measures, without a budget, a synthetic product of about 10,000 records (Lathe's data copied six times
 // under other ID prefixes, in a temporary folder), and the reference.
 //
@@ -13,6 +16,7 @@
 // store's schema copy, reading the files, each table's insert, record_scope, each validation query, the commit, the
 // file facts, the coverage tables and each check), to find where the time goes.
 
+import { spawnSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { loadavg, tmpdir } from 'node:os';
 import path from 'node:path';
@@ -22,7 +26,7 @@ import { buildReference, CONFIG_FILE, loadWorkspace, openStore, SCHEMA_VERSION, 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repo = path.resolve(here, '../..');
 
-export const ENGINE_BUDGETS = { loadMs: 2000, reloadMs: 500 } as const;
+export const ENGINE_BUDGETS = { loadMs: 2000, reloadMs: 500, cliMs: 600 } as const;
 const MAX_LOAD = Number(process.env.PERF_MAX_LOAD ?? 12);
 const RUNS = 5;
 const PROFILE = process.argv.includes('--profile');
@@ -105,6 +109,22 @@ async function reload(root: string) {
   return [...runs].sort((a, b) => a.ms - b.ms)[Math.floor(runs.length / 2)];
 }
 
+/**
+ * A cold CLI command, as an Agent runs it: `lathe show` in a fresh process, timed from its start to its exit. The first
+ * run fills the schema cache, as any earlier command has on a working machine; then the median of RUNS.
+ */
+function cliShow(root: string, id: string): number {
+  const bin = path.join(here, '..', 'bin', 'lathe.ts');
+  const once = () => {
+    const start = performance.now();
+    const run = spawnSync(process.execPath, [bin, 'show', id, '--root', root], { encoding: 'utf8' });
+    if (run.status !== 0) throw new Error(`lathe show ${id} failed: ${run.stderr}`);
+    return performance.now() - start;
+  };
+  once();
+  return median(Array.from({ length: RUNS }, once));
+}
+
 /** The steps of a load, slowest first, with the totals of the inserts, validation queries and checks. */
 function profile(t: Partial<LoadTimings>): string {
   const steps = Object.entries(t.steps ?? {});
@@ -134,6 +154,7 @@ try {
   const live = await reload(lathe);
   judge("Lathe's spec, live reload", live.ms, ENGINE_BUDGETS.reloadMs, phases(live.timings));
   if (PROFILE) lines.push(`Steps of that reload (1 ms and over):\n${profile(live.timings)}`);
+  judge('A cold CLI command (lathe show)', cliShow(lathe, 'LA-PLT-UC01'), ENGINE_BUDGETS.cliMs, `median of ${RUNS} fresh processes`);
   const refs: number[] = [];
   for (let i = 0; i < RUNS; i++) { const t = performance.now(); await buildReference(lathe); refs.push(performance.now() - t); }
   judge('Reference (first, then cached)', refs[0], null, `cached ${median(refs.slice(1)).toFixed(1)} ms`);
