@@ -88,7 +88,7 @@ A house rule the schema cannot express, such as "every command has an endpoint",
 - `position`: its place in the run order; the product's checks run after Lathe's.
 - `severity`: `warning` for work still to do, `error` only for a broken workspace, as Lathe does, or `error_or_warning` when its rows say which.
 - `summary`: what it reports, in one sentence; `explanation`: why it matters, ending with how to fix what it reports. `REFERENCE.md` and the app show both.
-- `query`: one `SELECT` over the typed tables that returns a row for each problem it finds, with the columns Lathe's own checks return; read one of theirs with `list` on `check` and write yours the same way. The views `record_parent`, `record_scope` and `link` help: a record's parent, its product, domain and aggregate, and every link of every relation.
+- `query`: one `SELECT` over the typed tables that returns a row for each problem it finds, with the columns Lathe's own checks return; read one of theirs with `list` on `check` and write yours the same way. The views `record_parent`, `record_scope`, `link` and `record_group` help: a record's parent, its product, domain and aggregate, every link of every relation, and a record's group (a flow step's path, or the `group_name` of any kind that has one, yours included).
 - `kinds`: the kinds it concerns.
 
 Run the `check` tool after adding one and fix what it finds; a check whose query fails is an error naming the check.
