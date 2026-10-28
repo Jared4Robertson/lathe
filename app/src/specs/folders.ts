@@ -20,7 +20,7 @@ import { textOf, byIdOrder, kindLabel, type SpecIndex, type SpecRecord, type Sta
 //
 // A stage with only one folder shows that folder's records directly, with no folder level between (a domain's Use
 // cases holds only capabilities: "Use cases › Record authoring", not "Use cases › Capabilities › Record authoring");
-// the folder then has no row, group or address of its own (LA-PAT-APP-UX-R30). A stage with two or more folders keeps them.
+// the folder then has no row, group or address of its own (LA-PAT-APP-UX-R15). A stage with two or more folders keeps them.
 
 export interface Folder {
   /** A stable key, also the folder's address in the graph's tree: "DM-SHOP/domain-model/aggregate", or "DM-SHOP/question" outside the stages. */
