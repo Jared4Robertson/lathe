@@ -65,7 +65,11 @@ A product's engineering rules for its code, such as logging, error handling or n
 
 ## Kinds of code Lathe has no kind for
 
-Where no technical kind fits, such as a server's entry point, a CLI command or a migration, the product declares a kind of its own in the technical-specification stage (see `extend-the-meta-model`). The Tool Library's `src/server.ts` is an `entry_point`, a product kind under the domain.
+Where no technical kind fits, such as a server's entry point, a CLI command or a migration, the product declares a kind of its own in the technical-specification stage (see `extend-the-meta-model`). The Tool Library's `src/server.ts` is an `entry_point`, a product kind under the domain, and its tool configs are `tooling` records.
+
+## Packages
+
+Every package the product's `package.json` files list, dev dependencies included, is accounted for by the technical record that uses it: a `package_use` row naming the record and the package, such as `add { "package_use": { "record_id": "TL-INT01-AD", "package": "nodemailer" } }` for the adapter that sends mail. A package no record names is a `package-not-accounted-for` gap on the product; a record that names a package no manifest lists is a `package-not-in-manifest` error, so remove the row when the dependency goes. Only a technical record names one: a tool the product is checked or tested with (the type checker, the test runner) is named on a record of the product's own tooling kind, as the Tool Library's `tsconfig.json` and `vitest.config.ts` are. The package folders are those `lathe.config.json`'s `packages` lists, or else the root and each folder directly under it with a `package.json`.
 
 ## Example: the Tool Library
 

@@ -16,6 +16,7 @@
 // the schema leaves to the checks because records are written stage by stage (GAP_RULES): a use case with no flow, an
 // aggregate with no root, a command with no handler. The checks read the same views and tables.
 import { sqlName, sqlString, type SchemaDescription, type Stage } from './store/schema.ts';
+import { PACKAGE_FACTS_SQL, PACKAGE_GAP_SQL } from './trace/packages.ts';
 
 /** The run by levels each test kind allows: a test at another level is reported by test-level-not-allowed and proves nothing. */
 export const ALLOWED_LEVELS: Readonly<Record<string, readonly string[]>> = {
@@ -83,11 +84,13 @@ const list = (items: readonly string[]) => items.map(sqlString).join(', ');
 /**
  * The tables the engine fills before the checks run: file_facts, a row for each record that names a file (a technical
  * record, a test, or a product's own kind with a file field), whether it exists and whether it names the record's own
- * ID; and test_level_allowed, the levels each test kind allows.
+ * ID; test_level_allowed, the levels each test kind allows; and package_facts, the packages the product's package.json
+ * files list (trace/packages.ts).
  */
 export const FACT_TABLES_SQL = `
 CREATE OR REPLACE TABLE file_facts (record VARCHAR NOT NULL, kind VARCHAR NOT NULL, file VARCHAR NOT NULL, file_exists BOOLEAN NOT NULL, contains_id BOOLEAN NOT NULL);
 CREATE OR REPLACE TABLE test_level_allowed (kind VARCHAR NOT NULL, level VARCHAR NOT NULL);
+${PACKAGE_FACTS_SQL}
 INSERT INTO test_level_allowed VALUES ${Object.entries(ALLOWED_LEVELS).flatMap(([kind, levels]) => levels.map((l) => `(${sqlString(kind)}, ${sqlString(l)})`)).join(', ')};`;
 
 /** One minimum the schema leaves to coverage: the records that fall short of it, each with a message. */
@@ -186,6 +189,7 @@ WHERE NOT EXISTS (SELECT 1 FROM uc_requirement r WHERE r.use_case_id = u.id) AND
   missingImpl('query-without-handler', 'query', 'Query', 'query_handler', 'query_id', 'query handler'),
   missingImpl('endpoint-without-handler', 'endpoint', 'Endpoint', 'endpoint_handler', 'endpoint_id', 'endpoint handler'),
   missingImpl('integration-without-adapter', 'integration', 'Integration', 'adapter', 'integration_id', 'adapter'),
+  gap('package-not-accounted-for', 'technical-specification', ['product', 'package_use'], 'A product whose package.json files list a package no record of it uses.', PACKAGE_GAP_SQL),
   gap('view-without-ui-component', 'technical-specification', ['view', 'ui_component'], 'A view no UI component renders.',
     `SELECT v.id, 'View ' || v.id || ' is rendered by no UI component.' AS message FROM view v WHERE NOT EXISTS (SELECT 1 FROM renders r WHERE r.target_id = v.id)`),
   // Test plan; an obligation's own test is its proof, counted above.

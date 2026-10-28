@@ -12,6 +12,11 @@ export interface LatheConfig {
   dataDir: string;
   /** The schema version the product's data is for; 1 when the config names none. */
   schema: number;
+  /**
+   * The folders, from the root, whose package.json lists the product's packages (its runtime and dev dependencies);
+   * null when the config names none, and then the root and each folder directly under it that holds a package.json.
+   */
+  packages: string[] | null;
 }
 
 /** The most children of one kind a record has before too-many-children warns, when the product has no product_setting row. */
@@ -22,10 +27,12 @@ interface ConfigFile {
   schema?: unknown;
   /** The folder of data files, one <table>.jsonl per table; default data. */
   data?: unknown;
+  /** The package folders whose package.json lists the product's packages; default the root and the folders under it. */
+  packages?: unknown;
 }
 
 /** The keys lathe.config.json may hold; any other key is an error, never silently ignored. */
-const CONFIG_KEYS = ['schema', 'data'] as const;
+const CONFIG_KEYS = ['schema', 'data', 'packages'] as const;
 
 /** The installed Lathe package's own folder (holding schema/ and data/), from source or from dist. */
 export const PACKAGE_DIR = (() => {
@@ -101,5 +108,17 @@ export function readConfig(root: string): LatheConfig {
   if (config.schema !== undefined && (typeof config.schema !== 'number' || !Number.isInteger(config.schema) || config.schema < 1)) {
     throw new Error(`${CONFIG_FILE}: schema must be a whole number from 1, such as 1.`);
   }
-  return { root, dataDir: path.resolve(root, (config.data as string | undefined) ?? 'data'), schema: (config.schema as number | undefined) ?? 1 };
+  return { root, dataDir: path.resolve(root, (config.data as string | undefined) ?? 'data'), schema: (config.schema as number | undefined) ?? 1, packages: packageFolders(root, config.packages) };
+}
+
+// The package folders the config lists, each a folder inside the root, as paths from the root ('.' for the root).
+function packageFolders(root: string, value: unknown): string[] | null {
+  if (value === undefined) return null;
+  const shape = `${CONFIG_FILE}: packages must list folders inside the product root that hold a package.json, such as ["app", "server"].`;
+  if (!Array.isArray(value) || value.some((v) => typeof v !== 'string' || v.trim() === '')) throw new Error(shape);
+  return (value as string[]).map((folder) => {
+    const rel = path.relative(root, path.resolve(root, folder));
+    if (rel.startsWith('..') || path.isAbsolute(rel)) throw new Error(`${shape} ${folder} is outside it.`);
+    return rel.split(path.sep).join('/') || '.';
+  });
 }
