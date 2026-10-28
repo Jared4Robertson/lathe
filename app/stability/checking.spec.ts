@@ -5,8 +5,8 @@ import { served } from './flows';
 import { openPage } from './measure';
 import { keepData, PRODUCT } from './scenarios';
 
-// Checking's flow that the Owner walks in the app: reviewing every problem of a product on its
-// Checks page while an Agent writes, over the suite's copy of this repo's data. The flows run from
+// Checking's flows that the Owner walks in the app and in the desktop app: reviewing every problem of a product on
+// its Checks page while an Agent writes, over the suite's copy of this repo's data. The flows run from
 // the command line are in lathe/test/flows/checking.test.ts.
 
 const CHECKS = `${PRODUCT}/checks`;
@@ -60,10 +60,41 @@ test.describe('Checking flows', () => {
       await main.getByRole('heading', { name: /^view-unused \d+$/, level: 2 }).getByRole('link').click();
       await page.waitForURL((u) => u.pathname === '/format/checks/view-unused');
       await expect(page.locator('#main h1')).toHaveText('view-unused');
-      // S05: in the desktop app, the page sends the product's error count to the Dock badge.
+    } finally {
+      restore();
+    }
+  });
+
+  test("LA-CHK-UC07-R01-T01 every problem of a product shows in one place, as the data is after its latest change", async ({ page }) => {
+    const restore = keepData();
+    try {
+      const spec = await served(page);
+      const errors = spec.problems.filter((p) => p.severity === 'error').length;
+      await openPage(page, CHECKS, '#main h1');
+      const main = page.locator('#main');
+      await expect(main.getByText(new RegExp(`^${errors} errors? · \\d+ warnings?$`))).toBeVisible();
+      appendFileSync(path.join(process.env.STABILITY_ROOT!, 'data', 'view.jsonl'), `${JSON.stringify({ id: ADDED, title: 'A page nothing reaches' })}\n`);
+      await expect(main.getByText(new RegExp(`^${errors + 1} errors · \\d+ warnings?$`))).toBeVisible({ timeout: 20_000 });
+    } finally {
+      restore();
+    }
+  });
+
+  test('LA-CHK-UC07-FL02-T review every problem of a product in the desktop app', async ({ page }) => {
+    const restore = keepData();
+    try {
+      // S01: the product's Checks page in the desktop app, its bridge stood in for, sends its error count to the Dock badge.
+      const spec = await served(page);
+      const errors = spec.problems.filter((p) => p.severity === 'error').length;
       await page.addInitScript(desktopBridge);
       await openPage(page, CHECKS, '#main h1');
-      await expect.poll(() => page.evaluate(() => (window as unknown as { __counts: number[] }).__counts.at(-1))).toBe(errors + 1);
+      const main = page.locator('#main');
+      const badge = () => page.evaluate(() => (window as unknown as { __counts: number[] }).__counts.at(-1));
+      await expect.poll(badge).toBe(errors);
+      // S02, S05: a data file changes while the page is open; the page shows the new error and the badge counts it.
+      appendFileSync(path.join(process.env.STABILITY_ROOT!, 'data', 'view.jsonl'), `${JSON.stringify({ id: ADDED, title: 'A page nothing reaches' })}\n`);
+      await expect(main.getByRole('heading', { name: /^view-unused \d+$/, level: 2 })).toBeVisible({ timeout: 20_000 });
+      await expect.poll(badge).toBe(errors + 1);
     } finally {
       restore();
     }
