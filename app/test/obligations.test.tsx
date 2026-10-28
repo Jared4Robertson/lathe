@@ -131,7 +131,7 @@ describe('obligation kinds and test states', () => {
     await screen.findByRole('heading', { level: 1, name: 'The basket shows the new item' });
     const trace = section(/^Traceability/);
     const designed = within(trace).getByRole('heading', { name: /^Designed by/ }).closest('section') as HTMLElement;
-    expect(within(designed).getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual(['/DM-SHOP-UC01-FL-S01']);
+    expect(within(designed).getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual(['/DM-SHOP-UC01-FL01-S01']);
     const proved = within(trace).getByRole('heading', { name: /^Proved by/ }).closest('section') as HTMLElement;
     expect(within(proved).getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual(['/DM-SHOP-UC01-R01-T01']);
 
@@ -154,10 +154,10 @@ describe('obligation kinds and test states', () => {
 
     const user = userEvent.setup();
     const designed = screen.getByRole('heading', { name: /^Designed by/ }).closest('section') as HTMLElement;
-    const link = within(designed).getByRole('link', { name: /DM-SHOP-UC01-FL-S01/ });
-    expect(link).toHaveAttribute('href', '/DM-SHOP-UC01-FL-S01');
+    const link = within(designed).getByRole('link', { name: /DM-SHOP-UC01-FL01-S01/ });
+    expect(link).toHaveAttribute('href', '/DM-SHOP-UC01-FL01-S01');
     await user.click(link);
-    expect(onNavigate).toHaveBeenCalledWith('/DM-SHOP-UC01-FL-S01');
+    expect(onNavigate).toHaveBeenCalledWith('/DM-SHOP-UC01-FL01-S01');
     expect(window.location.pathname).toBe('/graph/DM-SHOP-UC01-R01');
 
     // Links in the header and side panel go through the host too.

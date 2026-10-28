@@ -100,7 +100,7 @@ describe('form generation from the schema', () => {
     expect(links.map((l) => l.relation)).toEqual(['exchanges_with', 'fulfills', 'happens_in', 'invokes']);
     const invokes = links.find((l) => l.relation === 'invokes')!;
     expect(invokes.targets).toEqual(['command', 'query']);
-    expect(linkTargets(index, invokes, 'DM', 'DM-SHOP-UC01-FL-S01').map((r) => r.id)).toEqual(['DM-SHOP-CMD01', 'DM-SHOP-QRY01']);
+    expect(linkTargets(index, invokes, 'DM', 'DM-SHOP-UC01-FL01-S01').map((r) => r.id)).toEqual(['DM-SHOP-CMD01', 'DM-SHOP-QRY01']);
     // A question may be about any record of its product.
     const about = linkForms(index, 'question').find((l) => l.relation === 'about')!;
     expect(about.targets).toEqual(['*']);
@@ -111,7 +111,7 @@ describe('form generation from the schema', () => {
     expect(addableKinds(schema, 'use_case')).toEqual(['uc_requirement', 'flow']);
     expect(addableKinds(schema, 'uc_requirement')).toEqual(['use_case_test']);
     expect(addableKinds(schema, 'command')).toEqual(['policy', 'endpoint', 'command_handler']);
-    expect(addableKinds(schema, 'product')).toEqual(['business_outcome', 'domain', 'value_object', 'pattern', 'view', 'integration', 'ui_component', 'standard', 'question']);
+    expect(addableKinds(schema, 'product')).toEqual(['business_outcome', 'domain', 'value_object', 'pattern', 'interface', 'view', 'integration', 'ui_component', 'standard', 'question']);
     expect(addableKinds(schema, 'domain')).toEqual(expect.arrayContaining(['aggregate', 'specification', 'read_model', 'capability', 'question']));
     expect(addableKinds(schema, 'domain')).not.toContain('value_object');
   });
@@ -123,6 +123,7 @@ describe('IDs for new records', () => {
     expect(suggestId(index, 'uc_requirement', 'DM-SHOP-UC01')).toBe('DM-SHOP-UC01-R03');
     expect(suggestId(index, 'use_case', 'DM-SHOP-CAP01')).toBe('DM-SHOP-UC02');
     expect(suggestId(index, 'aggregate', 'DM-SHOP')).toBe('DM-SHOP-A2');
+    // A flow's ID ends in the number of the first interface its use case has no flow through, or is left to finish.
     expect(suggestId(index, 'flow', 'DM-PAY-UC01')).toBe('DM-PAY-UC01-FL');
     expect(suggestId(index, 'use_case_test', 'DM-SHOP-UC01-R01')).toBe('DM-SHOP-UC01-R01-T02');
     expect(suggestId(index, 'invariant_test', 'DM-SHOP-INV01')).toBe('DM-SHOP-INV01-T');
@@ -178,7 +179,7 @@ describe('commands from a draft', () => {
 
   it('LA-V92-R08-T02 a form opened and left as it was sends no write', () => {
     const index = indexOf(workspace());
-    const record = index.byId.get('DM-SHOP-UC01-FL-S01')!;
+    const record = index.byId.get('DM-SHOP-UC01-FL01-S01')!;
     const draft = draftOf(index, record);
     expect(draftProblems(index, 'flow_step', draft, false).size).toBe(0);
     expect(commandsFor(index, 'flow_step', draft, record).commands).toEqual([]);
@@ -186,18 +187,18 @@ describe('commands from a draft', () => {
 
   it('LA-V92-R29-T02 changes only what changed: the columns set or cleared, a move, links taken and added, and a part table written again', () => {
     const index = indexOf(workspace());
-    const record = index.byId.get('DM-SHOP-UC01-FL-S01')!;
+    const record = index.byId.get('DM-SHOP-UC01-FL01-S01')!;
     const draft = draftOf(index, record);
-    expect(draft.parent).toBe('DM-SHOP-UC01-FL');
+    expect(draft.parent).toBe('DM-SHOP-UC01-FL01');
     expect(draft.links.invokes).toEqual(['DM-SHOP-CMD01']);
 
     draft.values.title = 'Shopper adds it';
     draft.values.description = '';
     draft.links.invokes = ['DM-SHOP-QRY01'];
     expect(commandsFor(index, 'flow_step', draft, record).commands).toEqual([
-      { op: 'set', table: 'flow_step', key: 'DM-SHOP-UC01-FL-S01', changes: { title: 'Shopper adds it', description: null } },
-      { op: 'unlink', relation: 'invokes', source: 'DM-SHOP-UC01-FL-S01', target: 'DM-SHOP-CMD01' },
-      { op: 'link', relation: 'invokes', source: 'DM-SHOP-UC01-FL-S01', target: 'DM-SHOP-QRY01' },
+      { op: 'set', table: 'flow_step', key: 'DM-SHOP-UC01-FL01-S01', changes: { title: 'Shopper adds it', description: null } },
+      { op: 'unlink', relation: 'invokes', source: 'DM-SHOP-UC01-FL01-S01', target: 'DM-SHOP-CMD01' },
+      { op: 'link', relation: 'invokes', source: 'DM-SHOP-UC01-FL01-S01', target: 'DM-SHOP-QRY01' },
     ]);
 
     // An endpoint moves between its two kinds of parent.
@@ -234,7 +235,7 @@ describe('before a removal', () => {
   it('LA-V92-R32-T03 names what still references the record, and what goes with it', () => {
     const index = indexOf(patternWorkspace());
     const referrers = referrersOf(index, 'DM-SHOP-UC01').map((r) => `${r.id} ${r.how}`);
-    expect(referrers).toEqual(['DM-SHOP-UC01-FL sits under it', 'DM-SHOP-UC01-R01 sits under it', 'DM-SHOP-UC01-R02 sits under it']);
+    expect(referrers).toEqual(['DM-SHOP-UC01-FL01 sits under it', 'DM-SHOP-UC01-R01 sits under it', 'DM-SHOP-UC01-R02 sits under it']);
     expect(referrersOf(index, 'DM-PAT-AUDIT').map((r) => r.how)).toEqual(expect.arrayContaining(['links to it (follows)', 'names it in a setting value row']));
     // A value object is named by the fields typed by it.
     expect(referrersOf(index, 'DM-VO01').map((r) => `${r.id} ${r.how}`)).toEqual(['DM-VO01-C01 sits under it', 'DM-SHOP-EN02 names it in a entity field row', 'DM-PAY-EV01 names it in a event field row']);

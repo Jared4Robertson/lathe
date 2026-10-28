@@ -9,6 +9,7 @@ import { latheApi } from '../server/lathe';
 import * as realApi from '../../lathe/src/server/api.ts';
 import type { SpecData, WriteAnswer } from '../../lathe/src/server/contract.ts';
 import { openStore } from '../../lathe/src/store/index.ts';
+import { SCHEMA_VERSION } from '../../lathe/src/config.ts';
 
 const engineDir = path.resolve(import.meta.dirname, '../../lathe');
 
@@ -64,6 +65,7 @@ let root = '';
 
 beforeAll(async () => {
   root = await mkdtemp(path.join(tmpdir(), 'lathe-app-'));
+  await writeFile(path.join(root, 'lathe.config.json'), `${JSON.stringify({ schema: SCHEMA_VERSION })}\n`);
   const store = await openStore(root);
   await store.apply([
     { op: 'add', table: 'product', row: { id: 'EX', title: 'Example' } },
@@ -198,6 +200,7 @@ describe('dev API plugin', () => {
     try {
       const data = path.join(product, 'data');
       await mkdir(data);
+      await writeFile(path.join(product, 'lathe.config.json'), `${JSON.stringify({ schema: SCHEMA_VERSION })}\n`);
       const fake = await start(async () => realApi, product);
       expect(fake.watched).toEqual([data, path.join(engineDir, 'data'), path.join(engineDir, 'schema')]);
       const change = (file: string) => {

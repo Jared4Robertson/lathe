@@ -222,7 +222,7 @@ describe('lathe link and unlink', () => {
     expect(pair.err).toContain('[foreign-key]');
     expect((await lathe(root, 'link', 'TL-LEND-CMD01', 'raises', 'TL-LEND-EV01')).err).toContain('TL-LEND-CMD01 already raises TL-LEND-EV01 [primary-key]');
     // A step invokes one operation.
-    expect((await lathe(root, 'link', 'TL-LEND-UC01-FL-S01', 'invokes', 'TL-LEND-QRY01')).err).toContain('[unique]');
+    expect((await lathe(root, 'link', 'TL-LEND-UC01-FL01-S01', 'invokes', 'TL-LEND-QRY01')).err).toContain('[unique]');
     expect((await lathe(root, 'unlink', 'TL-LEND-QRY01', 'calls', 'TL-LEND-DS01')).err).toContain('[missing]');
     expect((await lathe(root, 'link', 'TL-LEND-QRY01', 'calls')).status).toBe(2);
   });
@@ -234,7 +234,7 @@ describe('lathe remove', () => {
     const result = await lathe(root, 'remove', 'TL-LEND-UC01-R01');
     expect(result.status).toBe(1);
     expect(result.err).toContain('is referenced, so it stays');
-    await lathe(root, 'unlink', 'TL-LEND-UC01-FL-S01', 'fulfills', 'TL-LEND-UC01-R01');
+    await lathe(root, 'unlink', 'TL-LEND-UC01-FL01-S01', 'fulfills', 'TL-LEND-UC01-R01');
     await lathe(root, 'remove', 'TL-LEND-UC01-R01-T01');
     const removed = await lathe(root, 'remove', 'TL-LEND-UC01-R01');
     expect(removed.out).toBe(
@@ -272,7 +272,7 @@ describe('lathe show, list and next-id', () => {
         'Links:',
         '  Calls TL-LEND-DS01: Late fee [calls]',
         '  Checks TL-LEND-SP01: Tool is free [checks]',
-        '  Invoked by TL-LEND-UC01-FL-S01: Pick a tool [invokes, in]',
+        '  Invoked by TL-LEND-UC01-FL01-S01: Pick a tool [invokes, in]',
         '  Raises TL-LEND-EV01: Loan opened [raises]',
         '',
       ].join('\n'),
@@ -316,7 +316,7 @@ describe('lathe show, list and next-id', () => {
     // Parent-scoped, numbered.
     expect(await next(root, 'uc_requirement', '--parent', 'TL-LEND-UC01')).toBe('TL-LEND-UC01-R02');
     expect(await next(root, 'constraint', '--parent', 'TL-VO01')).toBe('TL-VO01-C02');
-    expect(await next(root, 'flow_step', '--parent', 'TL-LEND-UC01-FL')).toBe('TL-LEND-UC01-FL-S02');
+    expect(await next(root, 'flow_step', '--parent', 'TL-LEND-UC01-FL01')).toBe('TL-LEND-UC01-FL01-S02');
     expect(await next(root, 'use_case_test', '--parent', 'TL-LEND-UC01-R01')).toBe('TL-LEND-UC01-R01-T02');
   });
 
@@ -324,9 +324,12 @@ describe('lathe show, list and next-id', () => {
     const root = writeData(everyKind());
     expect(await next(root, 'repository', '--parent', 'TL-LEND-A2')).toBe('TL-LEND-A2-REPO');
     expect(await next(root, 'table', '--parent', 'TL-LEND-EN02')).toBe('TL-LEND-EN02-TB');
+    // A flow's ID ends in its interface's number: the first interface of the product the use case has no flow through.
     const taken = await lathe(root, 'next-id', 'flow', '--parent', 'TL-LEND-UC01');
     expect(taken.status).toBe(1);
-    expect(taken.err).toContain('TL-LEND-UC01 already has its flow: TL-LEND-UC01-FL');
+    expect(taken.err).toContain("TL-LEND-UC01 has a flow through every interface of TL; a flow's ID ends in its interface's number, so declare the interface first");
+    await lathe(root, 'add', 'interface', '--id', 'TL-IF02', '--title', 'CLI', '--product_id', 'TL', '--kind', 'CLI');
+    expect(await next(root, 'flow', '--parent', 'TL-LEND-UC01')).toBe('TL-LEND-UC01-FL02');
   });
 
   it('LA-AUT-UC01-R05-T07 gives the next ID of a kind with no owner or two possible parents, and refuses what has no next ID', async () => {
@@ -351,11 +354,11 @@ describe('the data after writes', () => {
   it('LA-AUT-UC01-R05-T01 loads with every key and check', async () => {
     const root = writeData(everyKind());
     await lathe(root, 'add', 'view', '--id', 'TL-V02', '--title', 'Desk');
-    await lathe(root, 'add', 'flow_step', '--id', 'TL-LEND-UC01-FL-S02', '--title', 'Return it', '--flow_id', 'TL-LEND-UC01-FL', '--path', 'main', '--position', '2');
-    await lathe(root, 'link', 'TL-LEND-UC01-FL-S02', 'happens_in', 'TL-V02');
+    await lathe(root, 'add', 'flow_step', '--id', 'TL-LEND-UC01-FL01-S02', '--title', 'Return it', '--flow_id', 'TL-LEND-UC01-FL01', '--path', 'main', '--position', '2');
+    await lathe(root, 'link', 'TL-LEND-UC01-FL01-S02', 'happens_in', 'TL-V02');
     const store = await openStore(root);
     expect(store.record('TL-V02')?.kind).toBe('view');
-    expect(store.rows('happens_in')).toContainEqual({ source_id: 'TL-LEND-UC01-FL-S02', target_id: 'TL-V02' });
+    expect(store.rows('happens_in')).toContainEqual({ source_id: 'TL-LEND-UC01-FL01-S02', target_id: 'TL-V02' });
     await store.close();
   });
 });

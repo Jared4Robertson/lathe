@@ -186,10 +186,13 @@ export function readConfig(root: string): LatheConfig {
   if (config.routers !== undefined && (!Array.isArray(config.routers) || config.routers.some((r) => typeof r !== 'string' || r.trim() === ''))) {
     throw new Error(`${CONFIG_FILE}: routers must be a list of file patterns from the root, such as ["src/router.ts"].`);
   }
+  // A config with no schema is for schema 1, the first versioned one. Lathe's own package, opened for its own
+  // reference and checks with no config of its own, is always at its own schema.
+  const unnamed = root === PACKAGE_DIR && !existsSync(file) ? SCHEMA_VERSION : 1;
   return {
     root,
     dataDir: path.resolve(root, (config.data as string | undefined) ?? 'data'),
-    schema: (config.schema as number | undefined) ?? 1,
+    schema: (config.schema as number | undefined) ?? unnamed,
     tests: tests ?? [...DEFAULT_TESTS],
     source: source ?? [...DEFAULT_SOURCE],
     routers: (config.routers as string[] | undefined) ?? [],

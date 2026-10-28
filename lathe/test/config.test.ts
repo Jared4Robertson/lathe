@@ -21,7 +21,7 @@ describe('product configuration', () => {
 
   it("LA-PLT-UC02-R02-T01 a product's lathe.config.json chooses the data folder", () => {
     const root = writeData({});
-    writeFileSync(path.join(root, 'lathe.config.json'), JSON.stringify({ data: 'spec-data' }));
+    writeFileSync(path.join(root, 'lathe.config.json'), JSON.stringify({ schema: SCHEMA_VERSION, data: 'spec-data' }));
     expect(loadConfig(root).dataDir).toBe(path.join(root, 'spec-data'));
   });
 
@@ -36,7 +36,7 @@ describe('product configuration', () => {
     const files = async () => (await loadWorkspace(root)).problems.filter((p) => p.check === 'test-case-unnamed').map((p) => p.message.split(':')[0]);
     expect(loadConfig(root).tests).toEqual([...DEFAULT_TESTS]);
     expect(await files()).toEqual(['test/a.test.ts']);
-    writeFileSync(path.join(root, 'lathe.config.json'), JSON.stringify({ data: 'data', tests: ['checks/**/*.ts', '**/*.test.ts'] }));
+    writeFileSync(path.join(root, 'lathe.config.json'), JSON.stringify({ schema: SCHEMA_VERSION, data: 'data', tests: ['checks/**/*.ts', '**/*.test.ts'] }));
     expect(await files()).toEqual(['checks/b.check.ts', 'test/a.test.ts']);
     for (const tests of ['**/*.test.ts', [], [''], [3]]) {
       writeFileSync(path.join(root, 'lathe.config.json'), JSON.stringify({ tests }));
@@ -49,6 +49,8 @@ describe('product configuration', () => {
     // No schema version is version 1, the first versioned schema.
     writeFileSync(path.join(root, 'lathe.config.json'), JSON.stringify({ data: 'data' }));
     expect(readConfig(root).schema).toBe(1);
+    expect(() => loadConfig(root)).toThrow(schemaVersionMessage(1, SCHEMA_VERSION));
+    writeFileSync(path.join(root, 'lathe.config.json'), JSON.stringify({ schema: SCHEMA_VERSION, data: 'data' }));
     expect(loadConfig(root).schema).toBe(SCHEMA_VERSION);
     // Data for a newer schema needs a newer Lathe; every load says so, and nothing is read.
     writeFileSync(path.join(root, 'lathe.config.json'), JSON.stringify({ schema: SCHEMA_VERSION + 1, data: 'data' }));

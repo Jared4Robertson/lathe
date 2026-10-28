@@ -37,7 +37,7 @@ const section = (markdown: string, heading: string) => {
 const HOUSE_KIND = { name: 'entry_point', product_id: 'TL', label: 'Entry point', description: 'A file the product starts from.', parent_kind: 'domain', stage: 'technical-specification', obligation: false };
 
 describe('Authoring flows', () => {
-  it('LA-AUT-UC02-FL-T split a product into domains by capability', () => {
+  it('LA-AUT-UC02-FL03-T split a product into domains by capability', () => {
     const tl = product();
     // S01: the modeling skill's first step is to find the product's business capabilities.
     const skill = readFileSync(path.join(LATHE_DIR, '..', 'plugin', 'skills', 'model-a-domain', 'SKILL.md'), 'utf8');
@@ -53,7 +53,7 @@ describe('Authoring flows', () => {
     expect(problemsOf(tl.workspace(), 'domain-named-for-technology')).toEqual([]);
   });
 
-  it('LA-AUT-UC03-FL-T change Lathe\'s schema with a migration', () => {
+  it('LA-AUT-UC03-FL03-T change Lathe\'s schema with a migration', () => {
     // A copy of the lathe package, so the migration changes only the copy.
     const dir = mkdtempSync(path.join(tmpdir(), 'lathe-flow-schema-'));
     temps.push(dir);
@@ -84,7 +84,7 @@ describe('Authoring flows', () => {
     expect(node(path.join(LATHE_DIR, 'bin', 'lathe.ts'), ['check', '--root', tl.root]).stdout).toContain('[data-refused]');
   });
 
-  it('LA-AUT-UC04-FL-T declare a product\'s own kinds and relations', async () => {
+  it('LA-AUT-UC04-FL03-T declare a product\'s own kinds and relations', async () => {
     const tl = product();
     await tl.seed(LENDING);
     const server = mcp(tl.root);
@@ -117,7 +117,7 @@ describe('Authoring flows', () => {
     expect(twice.join('\n')).toMatch(/data\/product_kind\.jsonl:2:.*line 1/);
   });
 
-  it('LA-AUT-UC05-FL-T organize a domain\'s use cases into capabilities and patterns', async () => {
+  it('LA-AUT-UC05-FL03-T organize a domain\'s use cases into capabilities and patterns', async () => {
     const tl = product();
     await tl.seed([...LENDING, add('use_case', { id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01' })]);
     // S01: the domain's capabilities in order; a repeated position is refused.
@@ -144,7 +144,7 @@ describe('Authoring flows', () => {
     expect(gapsOf(ws, 'TL-LEND')).toContain('proved TL-PAT-ACT-R01');
   });
 
-  it('LA-AUT-UC06-FL-T write a use case\'s flow as ordered steps', async () => {
+  it('LA-AUT-UC06-FL03-T write a use case\'s flow as ordered steps', async () => {
     const tl = product();
     await tl.seed([
       ...LENDING,
@@ -153,32 +153,35 @@ describe('Authoring flows', () => {
       add('uc_requirement', { id: 'TL-LEND-UC02-R01', title: 'The return is dated', use_case_id: 'TL-LEND-UC02', statement: 'The return MUST carry its date.' }),
       add('view', { id: 'TL-V01', title: 'Loan desk' }),
     ]);
-    // S01: the flow, and its steps in order on their paths.
-    tl.run('add', 'flow', '--id', 'TL-LEND-UC01-FL', '--title', 'Borrow a tool', '--use_case_id', 'TL-LEND-UC01');
+    // S01: the flow through the product's interface, its ID ending in the interface's number, and its steps in order on
+    // their paths.
+    tl.run('add', 'interface', '--id', 'TL-IF01', '--title', 'Loan desk', '--product_id', 'TL', '--kind', 'web app');
+    expect(tl.run('next-id', 'flow', '--parent', 'TL-LEND-UC01')).toBe('TL-LEND-UC01-FL01');
+    tl.run('add', 'flow', '--id', 'TL-LEND-UC01-FL01', '--title', 'Borrow a tool', '--use_case_id', 'TL-LEND-UC01', '--interface_id', 'TL-IF01');
     const step = (n: string, title: string, pathName: string, position: string) =>
-      tl.run('add', 'flow_step', '--id', `TL-LEND-UC01-FL-${n}`, '--title', title, '--flow_id', 'TL-LEND-UC01-FL', '--path', pathName, '--position', position);
+      tl.run('add', 'flow_step', '--id', `TL-LEND-UC01-FL01-${n}`, '--title', title, '--flow_id', 'TL-LEND-UC01-FL01', '--path', pathName, '--position', position);
     step('S01', 'The member asks for a tool at the desk', 'main', '1');
     step('S02', 'The librarian opens the loan', 'main', '3');
     step('S03', 'A tool on loan is refused', 'refused', '1');
     // S02: each step's requirements, operation and view.
-    tl.run('link', 'TL-LEND-UC01-FL-S01', 'happens_in', 'TL-V01');
-    tl.run('link', 'TL-LEND-UC01-FL-S02', 'invokes', 'TL-LEND-CMD01');
-    tl.run('link', 'TL-LEND-UC01-FL-S03', 'fulfills', 'TL-LEND-UC01-R01');
+    tl.run('link', 'TL-LEND-UC01-FL01-S01', 'happens_in', 'TL-V01');
+    tl.run('link', 'TL-LEND-UC01-FL01-S02', 'invokes', 'TL-LEND-CMD01');
+    tl.run('link', 'TL-LEND-UC01-FL01-S03', 'fulfills', 'TL-LEND-UC01-R01');
     // S04: the check reports the path that skips a number and the requirement no step fulfills.
     const ws = tl.workspace();
-    expect(problemsOf(ws, 'step-order')).toEqual([expect.stringMatching(/^TL-LEND-UC01-FL-S02: .*no step has position 2/)]);
+    expect(problemsOf(ws, 'step-order')).toEqual([expect.stringMatching(/^TL-LEND-UC01-FL01-S02: .*no step has position 2/)]);
     expect(problemsOf(ws, 'not-designed')).toEqual([expect.stringMatching(/^TL-LEND-UC01-R02: /), expect.stringMatching(/^TL-LEND-UC02-R01: /)]);
-    tl.run('set', 'TL-LEND-UC01-FL-S02', '--position', '2');
-    tl.run('link', 'TL-LEND-UC01-FL-S02', 'fulfills', 'TL-LEND-UC01-R02');
+    tl.run('set', 'TL-LEND-UC01-FL01-S02', '--position', '2');
+    tl.run('link', 'TL-LEND-UC01-FL01-S02', 'fulfills', 'TL-LEND-UC01-R02');
     const fixed = tl.workspace();
     expect(problemsOf(fixed, 'step-order')).toEqual([]);
     expect(problemsOf(fixed, 'not-designed')).toEqual([expect.stringMatching(/^TL-LEND-UC02-R01: /)]);
     // S03: a repeated position on a path, or a requirement of another use case, is refused.
-    tl.refused('add', 'flow_step', '--id', 'TL-LEND-UC01-FL-S04', '--title', 'Again', '--flow_id', 'TL-LEND-UC01-FL', '--path', 'main', '--position', '2');
-    expect(tl.refused('link', 'TL-LEND-UC01-FL-S01', 'fulfills', 'TL-LEND-UC02-R01')).toContain('step-fulfills-own-use-case');
+    tl.refused('add', 'flow_step', '--id', 'TL-LEND-UC01-FL01-S04', '--title', 'Again', '--flow_id', 'TL-LEND-UC01-FL01', '--path', 'main', '--position', '2');
+    expect(tl.refused('link', 'TL-LEND-UC01-FL01-S01', 'fulfills', 'TL-LEND-UC02-R01')).toContain('step-fulfills-own-use-case');
   });
 
-  it('LA-AUT-UC07-FL-T name records in text without linking them', async () => {
+  it('LA-AUT-UC07-FL03-T name records in text without linking them', async () => {
     const tl = product();
     await tl.seed(LENDING);
     // S01: a record whose text names records of this product and another, one in a code span.
@@ -196,7 +199,7 @@ describe('Authoring flows', () => {
     expect(tl.check().status).toBe(0);
   });
 
-  it('LA-AUT-UC08-FL-T read each kind\'s stage and order from the schema', () => {
+  it('LA-AUT-UC08-FL03-T read each kind\'s stage and order from the schema', () => {
     const tl = product();
     tl.run('add', 'domain', ...flags({ id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core' }));
     // S01: each kind's stage and place, in the reference and in the workspace, in the schema's one order.
@@ -213,7 +216,7 @@ describe('Authoring flows', () => {
     expect(tl.workspace().kinds.filter((k) => k.stage === 'use-cases').map((k) => k.kind)).toEqual([...kinds, 'house_rule']);
   });
 
-  it('LA-AUT-UC10-FL-T model each aggregate\'s entities and value objects', async () => {
+  it('LA-AUT-UC10-FL03-T model each aggregate\'s entities and value objects', async () => {
     const tl = product();
     await tl.seed([
       add('domain', { id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core' }),
@@ -243,7 +246,7 @@ describe('Authoring flows', () => {
     expect(ws.records.find((r) => r.id === 'TL-LEND-EN01')?.parts.entity_field.map((f) => f.name)).toEqual(['Due date', 'Borrower email', 'Tool']);
   });
 
-  it('LA-AUT-UC11-FL-T read the reference generated from the schema', async () => {
+  it('LA-AUT-UC11-FL03-T read the reference generated from the schema', async () => {
     const tl = product();
     await tl.seed(LENDING);
     // S01: the reference, written from the schema and the check rows, with its word for a use case.
@@ -265,7 +268,7 @@ describe('Authoring flows', () => {
     tl.refused('add', 'check', '--name', 'blank', '--product_id', 'TL', '--position', '2', '--severity', 'warning', '--summary', 'Blank.', '--query', 'SELECT 1');
   });
 
-  it('LA-AUT-UC12-FL-T model commands, the events they raise and the policies that hear them', async () => {
+  it('LA-AUT-UC12-FL03-T model commands, the events they raise and the policies that hear them', async () => {
     const tl = product();
     await tl.seed([
       add('domain', { id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core' }),
@@ -299,7 +302,7 @@ describe('Authoring flows', () => {
     expect(gapsOf(ws, 'TL-LEND').filter((g) => /^(policy-hears-nothing|event-not-raised)/.test(g))).toEqual([]);
   });
 
-  it('LA-AUT-UC13-FL-T write the test plan, one test kind per thing tested', async () => {
+  it('LA-AUT-UC13-FL03-T write the test plan, one test kind per thing tested', async () => {
     const tl = product();
     await tl.seed([
       ...LENDING,
@@ -336,7 +339,7 @@ describe('Authoring flows', () => {
     expect(problemsOf(tl.workspace(), 'test-data-set-file-missing')).toEqual([]);
   });
 
-  it('LA-AUT-UC22-FL-T write the business outcomes the product exists to achieve', async () => {
+  it('LA-AUT-UC22-FL03-T write the business outcomes the product exists to achieve', async () => {
     const tl = product();
     await tl.seed([...LENDING]);
     // S01: a measurable outcome under the product; one without its measure is refused.
@@ -363,7 +366,7 @@ describe('Authoring flows', () => {
     expect(tl.run('show', 'TL-BO01')).toContain('Measured by TL-LEND-UC01-R01-T01');
   });
 
-  it('LA-AUT-UC16-FL-T write the engineering standards the code follows', async () => {
+  it('LA-AUT-UC16-FL03-T write the engineering standards the code follows', async () => {
     const tl = product();
     await tl.seed([...LENDING, add('command_handler', { id: 'TL-LEND-CMD01-H', title: 'Open a loan', command_id: 'TL-LEND-CMD01', file: 'src/loans.ts' })]);
     tl.write('src/loans.ts', '// TL-LEND-CMD01-H\n');
@@ -384,7 +387,7 @@ describe('Authoring flows', () => {
     expect(ws.coverage.find((c) => c.domain === null)?.obligations.find((o) => o.kind === 'standard_rule')).toMatchObject({ total: 1, designed: 1, built: 1, proved: 1 });
   });
 
-  it('LA-AUT-UC17-FL-T write the technical records that build the design', async () => {
+  it('LA-AUT-UC17-FL03-T write the technical records that build the design', async () => {
     const tl = product();
     await tl.seed([
       ...LENDING,
@@ -408,12 +411,13 @@ describe('Authoring flows', () => {
     expect(ws.coverage.find((c) => c.domain === 'TL-LEND')?.obligations.find((o) => o.kind === 'invariant')).toMatchObject({ designed: 1, built: 1 });
   });
 
-  it('LA-AUT-UC18-FL-T write the views, endpoints and integrations a flow reaches', async () => {
+  it('LA-AUT-UC18-FL03-T write the views, endpoints and integrations a flow reaches', async () => {
     const tl = product();
     await tl.seed([
       ...LENDING,
-      add('flow', { id: 'TL-LEND-UC01-FL', title: 'Borrow a tool', use_case_id: 'TL-LEND-UC01' }),
-      add('flow_step', { id: 'TL-LEND-UC01-FL-S01', title: 'The member borrows a tool', flow_id: 'TL-LEND-UC01-FL', path: 'main', position: 1 }),
+      add('interface', { id: 'TL-IF01', title: 'Loan desk', product_id: 'TL', kind: 'web app' }),
+      add('flow', { id: 'TL-LEND-UC01-FL01', title: 'Borrow a tool', use_case_id: 'TL-LEND-UC01', interface_id: 'TL-IF01' }),
+      add('flow_step', { id: 'TL-LEND-UC01-FL01-S01', title: 'The member borrows a tool', flow_id: 'TL-LEND-UC01-FL01', path: 'main', position: 1 }),
     ]);
     // S01: an endpoint under the command it exposes.
     tl.run('add', 'endpoint', '--id', 'TL-LEND-EP01', '--title', 'Open a loan', '--command_id', 'TL-LEND-CMD01', '--method', 'POST', '--route', '/loans');
@@ -425,9 +429,9 @@ describe('Authoring flows', () => {
     // S03: the check reports the view and integration nothing uses, until a step links them.
     const unused = tl.workspace();
     expect([...problemsOf(unused, 'view-unused'), ...problemsOf(unused, 'integration-unused')]).toEqual([expect.stringMatching(/^TL-V01: /), expect.stringMatching(/^TL-INT01: /)]);
-    tl.run('link', 'TL-LEND-UC01-FL-S01', 'happens_in', 'TL-V01');
-    tl.run('link', 'TL-LEND-UC01-FL-S01', 'exchanges_with', 'TL-INT01');
-    tl.run('link', 'TL-LEND-UC01-FL-S01', 'invokes', 'TL-LEND-CMD01');
+    tl.run('link', 'TL-LEND-UC01-FL01-S01', 'happens_in', 'TL-V01');
+    tl.run('link', 'TL-LEND-UC01-FL01-S01', 'exchanges_with', 'TL-INT01');
+    tl.run('link', 'TL-LEND-UC01-FL01-S01', 'invokes', 'TL-LEND-CMD01');
     const ws = tl.workspace();
     expect(ws.problems.filter((p) => p.severity === 'error')).toEqual([]);
     // The view and the integration belong to the domain whose step uses them.
@@ -435,7 +439,7 @@ describe('Authoring flows', () => {
     expect(['TL-LEND-EP01', 'TL-V01', 'TL-INT01'].map(domainOf)).toEqual(['TL-LEND', 'TL-LEND', 'TL-LEND']);
   });
 
-  it('LA-AUT-UC19-FL-T merge two branches\' data', async () => {
+  it('LA-AUT-UC19-FL03-T merge two branches\' data', async () => {
     const tl = product();
     await tl.seed(LENDING);
     const git = (...args: string[]) => {
@@ -476,7 +480,7 @@ describe('Authoring flows', () => {
     git('merge', '--abort');
   });
 
-  it('LA-AUT-UC20-FL-T sort a domain\'s rules by what they do', async () => {
+  it('LA-AUT-UC20-FL03-T sort a domain\'s rules by what they do', async () => {
     const tl = product();
     await tl.seed([
       ...LENDING,
@@ -504,7 +508,7 @@ describe('Authoring flows', () => {
     expect(ws.coverage.find((c) => c.domain === 'TL-LEND')?.obligations.filter((o) => o.total).map((o) => [o.kind, o.total])).toEqual([['constraint', 1], ['invariant', 1], ['specification', 1], ['uc_requirement', 1]]);
   });
 
-  it('LA-AUT-UC21-FL-T model read models, queries, domain services and terms', async () => {
+  it('LA-AUT-UC21-FL03-T model read models, queries, domain services and terms', async () => {
     const tl = product();
     await tl.seed(LENDING);
     // S01: each read model with its fields, the aggregates it reads, and its queries.

@@ -169,6 +169,15 @@ export function suggestId(index: SpecIndex, kind: string, parentId: string | nul
   const product = parent ? (parent.kind === 'product' ? parent.id : parent.product) : null;
   const domain = parent ? (parent.kind === 'domain' ? parent.id : parent.domain) : null;
   const parentLabel = parent ? (index.kinds.get(parent.kind)?.label ?? parent.kind).toLowerCase() : '';
+  // A flow's ID ends in its interface's number: the first interface of the product the use case has no flow through.
+  if (kind === 'flow' && parent) {
+    const taken = new Set((index.children.get(parent.id) ?? []).filter((c) => c.kind === 'flow').map((c) => String(c.row.interface_id)));
+    const free = [...index.byId.values()]
+      .filter((r) => r.kind === 'interface' && r.product === product && !taken.has(r.id))
+      .map((r) => r.id)
+      .sort()[0];
+    return `${parent.id}-FL${free ? /-IF(\d+)$/.exec(free)?.[1] ?? '' : ''}`;
+  }
   const suggestions: string[] = [];
   // Alternatives are joined by "or" outside the placeholders ("<entity or read model>-TB, or <domain>-TB<nn>").
   for (const alternative of pattern.split(/,? or (?![^<]*>)/)) {

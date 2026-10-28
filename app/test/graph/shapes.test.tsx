@@ -20,7 +20,7 @@ const TABLE: Record<string, [Shape, string?]> = {
   constraint: ['octagon'], invariant: ['octagon'], specification: ['octagon'], domain_event: ['flag'], command: ['parallelogram'],
   read_model: ['box', 'lens'], query: ['parallelogram', 'lens'], policy: ['octagon', 'gear'], domain_service: ['box', 'gear'],
   term: ['box', 'marker'], capability: ['slice'], use_case: ['stadium'], uc_requirement: ['page'], pattern: ['stack'],
-  pattern_rule: ['octagon'], flow: ['chevron-bar'], flow_step: ['chevron'], view: ['window'], view_requirement: ['page'],
+  pattern_rule: ['octagon'], interface: ['window', 'plug'], flow: ['chevron-bar'], flow_step: ['chevron'], view: ['window'], view_requirement: ['page'],
   endpoint: ['port'], api_requirement: ['page'], integration: ['box', 'port'], repository: ['component'], data_model: ['component'],
   table: ['stripes'], value_type: ['component'], predicate: ['component'], event_type: ['component'], projection: ['component'],
   command_handler: ['component'], query_handler: ['component'], event_handler: ['component'], service: ['component'],

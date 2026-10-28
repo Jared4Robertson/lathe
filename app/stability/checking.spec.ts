@@ -32,7 +32,7 @@ function desktopBridge() {
 }
 
 test.describe('Checking flows', () => {
-  test('LA-CHK-UC07-FL-T review every problem of a product', async ({ page }) => {
+  test('LA-CHK-UC07-FL01-T review every problem of a product', async ({ page }) => {
     const restore = keepData();
     try {
       // S01: the product's Checks page: its problems counted, errors first, grouped by check.

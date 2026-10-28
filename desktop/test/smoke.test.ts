@@ -47,7 +47,7 @@ beforeAll(() => {
   execFileSync(path.join(desktop, 'node_modules', '.bin', 'tsc'), ['-p', 'tsconfig.build.json'], { cwd: desktop, stdio: 'inherit' });
   // No macOS window restoration for the unpacked Electron, even before it runs once (src/persistence.ts).
   if (process.platform === 'darwin') for (const args of restorationDefaultsCommands()) execFileSync('defaults', args);
-  write(path.join(product, 'lathe.config.json'), '{}\n');
+  write(path.join(product, 'lathe.config.json'), `${JSON.stringify({ schema: JSON.parse(readFileSync(path.join(desktop, '..', 'lathe', 'schema', 'version.json'), 'utf8')).schema })}\n`);
   write(path.join(product, 'data', 'product.jsonl'), '{"id":"SMK","title":"Smoke Shop","description":"A product for the desktop smoke test."}\n');
   write(path.join(product, 'data', 'domain.jsonl'), '{"id":"SMK-ORD","title":"Orders","product_id":"SMK","subdomain_type":"core","description":"Orders."}\n');
 }, 300_000);
@@ -144,7 +144,7 @@ describe.skipIf(process.platform !== 'darwin')('The desktop app opens a product 
     expect(result.bridge?.isDesktop).toBe(true);
   });
 
-  it('LA-PLT-UC13-FL-T the Reader uses Lathe from the native menus: File, Edit, View, Window and Help, a View item run by its command ID, in the desktop app', () => {
+  it('LA-PLT-UC13-FL02-T the Reader uses Lathe from the native menus: File, Edit, View, Window and Help, a View item run by its command ID, in the desktop app', () => {
     // The app menu (named after the app) comes first on macOS.
     expect(result.menu?.top.slice(1)).toEqual(['File', 'Edit', 'View', 'Window', 'Help']);
     expect(result.menu?.view).toEqual(expect.arrayContaining(['Command Palette…', 'Wiki View', 'Graph View', 'Model View', 'Show or Hide Navigation', 'Show or Hide Side Bar']));

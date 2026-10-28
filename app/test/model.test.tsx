@@ -28,7 +28,7 @@ describe('the Model view', () => {
   const proveLaExpSp02T = async () => {
     const i = index();
     for (const id of ['P-D', 'P-D-A3', 'P-D-EN03']) expect(viewsOffered(i, id)).toEqual(['wiki', 'graph', 'model']);
-    for (const id of ['P', 'P-D-UC01', 'P-VO01', 'P-D-UC01-FL', 'P-D-CMD01', 'P-D-EV01', 'P-D-PO01', 'P-D-RM01', 'P-D-QRY01', 'P-D-SP01']) {
+    for (const id of ['P', 'P-D-UC01', 'P-VO01', 'P-D-UC01-FL01', 'P-D-CMD01', 'P-D-EV01', 'P-D-PO01', 'P-D-RM01', 'P-D-QRY01', 'P-D-SP01']) {
       expect(viewsOffered(i, id)).toEqual(['wiki', 'graph']);
     }
     expect(viewsShown(['graph', 'model'], ['wiki', 'graph'])).toEqual(['graph']);

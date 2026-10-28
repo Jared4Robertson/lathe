@@ -18,15 +18,15 @@ const linkIds = (el: HTMLElement) => [...el.querySelectorAll('a')].map((a) => a.
 
 describe('flow steps on a flow page', () => {
   const proveLaV92R23T01 = async () => {
-    await openApp('/DM-SHOP-UC01-FL');
+    await openApp('/DM-SHOP-UC01-FL01');
     await screen.findByRole('heading', { level: 1, name: 'Fill a basket' });
     expect(steps().querySelector('h2')).toHaveTextContent('Steps3');
     const [mainPath] = tables();
     expect(within(mainPath).getAllByRole('columnheader').map((h) => h.textContent)).toEqual(['Step', 'What happens', 'Invokes', 'Happens in', 'Fulfills', 'Exchanges with']);
     const rows = bodyRows(mainPath);
-    expect(rows.map((r) => r.getAttribute('data-step'))).toEqual(['DM-SHOP-UC01-FL-S01', 'DM-SHOP-UC01-FL-S02']);
+    expect(rows.map((r) => r.getAttribute('data-step'))).toEqual(['DM-SHOP-UC01-FL01-S01', 'DM-SHOP-UC01-FL01-S02']);
     const [step, what, invokes, happensIn, fulfills, exchanges] = cells(rows[0]);
-    expect(step).toHaveTextContent('1DM-SHOP-UC01-FL-S01');
+    expect(step).toHaveTextContent('1DM-SHOP-UC01-FL01-S01');
     expect(what).toHaveTextContent('Shopper adds the item');
     expect(linkIds(invokes)).toEqual(['DM-SHOP-CMD01']);
     expect(linkIds(happensIn)).toEqual(['DM-V01']);
@@ -37,7 +37,7 @@ describe('flow steps on a flow page', () => {
     expect(linkIds(cells(rows[1])[2])).toEqual(['DM-SHOP-QRY01']);
 
     // A step exchanging with an integration.
-    await openApp('/P-D-UC01-FL', { data: modelWorkspace() });
+    await openApp('/P-D-UC01-FL01', { data: modelWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     const s02 = bodyRows(tables()[0])[1];
     expect(linkIds(cells(s02)[5])).toEqual(['P-INT01']);
@@ -46,20 +46,20 @@ describe('flow steps on a flow page', () => {
   it('LA-V92-R11-T01 A flow page shows its steps in order as a table', proveLaV92R23T01);
 
   it("LA-V92-R24-T01 Each step's description and the titles of what it links to are folded under its row", async () => {
-    await openApp('/DM-SHOP-UC01-FL');
+    await openApp('/DM-SHOP-UC01-FL01');
     await screen.findByRole('heading', { level: 1, name: 'Fill a basket' });
     const user = userEvent.setup();
     const [mainPath] = tables();
     expect(within(mainPath).queryByText('Add')).toBeNull();
-    const toggle = within(mainPath).getByRole('button', { name: 'Expand DM-SHOP-UC01-FL-S01' });
+    const toggle = within(mainPath).getByRole('button', { name: 'Expand DM-SHOP-UC01-FL01-S01' });
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
     await user.click(toggle);
-    const details = within(mainPath).getByRole('region', { name: 'Details of DM-SHOP-UC01-FL-S01' });
+    const details = within(mainPath).getByRole('region', { name: 'Details of DM-SHOP-UC01-FL01-S01' });
     expect(within(details).getByText('Add').tagName).toBe('STRONG');
     expect(within(details).getByRole('link', { name: /DM-SHOP-UC01-R01.*The basket shows the new item/ })).toBeInTheDocument();
     expect(details).toHaveTextContent('UC requirement');
     expect(within(details).getByRole('link', { name: /DM-SHOP-CMD01.*Add item/ })).toBeInTheDocument();
-    await user.click(within(mainPath).getByRole('button', { name: 'Collapse DM-SHOP-UC01-FL-S01' }));
+    await user.click(within(mainPath).getByRole('button', { name: 'Collapse DM-SHOP-UC01-FL01-S01' }));
     expect(within(mainPath).queryByRole('region')).toBeNull();
 
     // Expand all opens every row of every path, Collapse all closes them.
@@ -71,33 +71,33 @@ describe('flow steps on a flow page', () => {
 
   it('LA-V92-R25-T01 A step row carries its problems, and a flow without steps shows no steps table', async () => {
     const data = workspace();
-    data.problems.push({ severity: 'warning', check: 'not-proved', record: 'DM-SHOP-UC01-FL-S02', message: 'A step with a problem.' });
-    await openApp('/DM-SHOP-UC01-FL', { data });
+    data.problems.push({ severity: 'warning', check: 'not-proved', record: 'DM-SHOP-UC01-FL01-S02', message: 'A step with a problem.' });
+    await openApp('/DM-SHOP-UC01-FL01', { data });
     await screen.findByRole('heading', { level: 1, name: 'Fill a basket' });
     expect(cells(bodyRows(tables()[0])[1])[1]).toHaveTextContent('1 warning');
-    removeRows(data, 'happens_in', (l) => l.source_id === 'DM-PAY-UC01-FL-S01');
-    removeRows(data, 'flow_step', (s) => s.flow_id === 'DM-PAY-UC01-FL');
-    await openApp('/DM-PAY-UC01-FL', { data });
+    removeRows(data, 'happens_in', (l) => l.source_id === 'DM-PAY-UC01-FL01-S01');
+    removeRows(data, 'flow_step', (s) => s.flow_id === 'DM-PAY-UC01-FL01');
+    await openApp('/DM-PAY-UC01-FL01', { data });
     await screen.findByRole('heading', { level: 1, name: 'Pay at checkout' });
     expect(within(main()).queryByRole('heading', { name: /^Steps/ })).toBeNull();
   });
 
   it('LA-V92-R11-T02 Steps are ordered by their position as a number, then by ID', async () => {
     const data = workspace();
-    addRows(data, 'flow_step', { id: 'DM-SHOP-UC01-FL-S04', title: 'The basket shows a total', flow_id: 'DM-SHOP-UC01-FL', path: 'main', position: 10 });
-    await openApp('/DM-SHOP-UC01-FL', { data });
+    addRows(data, 'flow_step', { id: 'DM-SHOP-UC01-FL01-S04', title: 'The basket shows a total', flow_id: 'DM-SHOP-UC01-FL01', path: 'main', position: 10 });
+    await openApp('/DM-SHOP-UC01-FL01', { data });
     await screen.findByRole('heading', { level: 1, name: 'Fill a basket' });
-    expect(bodyRows(tables()[0]).map((r) => r.getAttribute('data-step'))).toEqual(['DM-SHOP-UC01-FL-S01', 'DM-SHOP-UC01-FL-S02', 'DM-SHOP-UC01-FL-S04']);
+    expect(bodyRows(tables()[0]).map((r) => r.getAttribute('data-step'))).toEqual(['DM-SHOP-UC01-FL01-S01', 'DM-SHOP-UC01-FL01-S02', 'DM-SHOP-UC01-FL01-S04']);
   });
 
   it('LA-V92-R26-T01 A flow with several paths shows a table per path, the main path first, then the others by name', async () => {
     const data = workspace();
-    addRows(data, 'flow_step', { id: 'DM-SHOP-UC01-FL-S04', title: 'A saved basket opens', flow_id: 'DM-SHOP-UC01-FL', path: 'api', position: 1 });
-    await openApp('/DM-SHOP-UC01-FL', { data });
+    addRows(data, 'flow_step', { id: 'DM-SHOP-UC01-FL01-S04', title: 'A saved basket opens', flow_id: 'DM-SHOP-UC01-FL01', path: 'api', position: 1 });
+    await openApp('/DM-SHOP-UC01-FL01', { data });
     await screen.findByRole('heading', { level: 1, name: 'Fill a basket' });
     expect([...steps().querySelectorAll('h3')].map((h) => h.firstChild?.textContent)).toEqual(['Main path', 'Api path', 'Refused path']);
     expect(tables().map((t) => bodyRows(t).map((tr) => tr.getAttribute('data-step')))).toEqual([
-      ['DM-SHOP-UC01-FL-S01', 'DM-SHOP-UC01-FL-S02'], ['DM-SHOP-UC01-FL-S04'], ['DM-SHOP-UC01-FL-S03'],
+      ['DM-SHOP-UC01-FL01-S01', 'DM-SHOP-UC01-FL01-S02'], ['DM-SHOP-UC01-FL01-S04'], ['DM-SHOP-UC01-FL01-S03'],
     ]);
     // The flow's steps are its table, not repeated as its children.
     expect(within(main()).queryByRole('heading', { name: /^Flow steps/ })).toBeNull();

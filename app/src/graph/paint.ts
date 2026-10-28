@@ -321,7 +321,8 @@ function paintBox(ctx: CanvasRenderingContext2D, p: Plate, cam: Camera, look: Lo
   let edge = colors.edge;
   let edgeWidth = p.border * zoom;
   if (p.edged) {
-    if (isFocus) { edge = look.ink; edgeWidth = Math.max(FOCUS_MIN_PX, 3 * s * zoom); }
+    // The focus is outlined in its own color (its stage's or kind's edge), only stronger: the highlight matches the box.
+    if (isFocus) { edge = colors.edge; edgeWidth = Math.max(FOCUS_MIN_PX, 3 * s * zoom); }
     if (hovered) { edge = look.steel; edgeWidth = 2.5 * s * zoom; }
     if (ringed || armed) { edge = look.steel; edgeWidth = Math.max(RING_MIN_PX, 3 * s * zoom); }
   } else {
@@ -334,7 +335,7 @@ function paintBox(ctx: CanvasRenderingContext2D, p: Plate, cam: Camera, look: Lo
     };
     if (armed) ring(look.steel, Math.max(RING_MIN_PX, 3 * zoom));
     else if (hovered) ring(look.hoverRing, 3 * s * zoom);
-    else if (isFocus) ring(look.ink, Math.max(FOCUS_MIN_PX, 2 * s * zoom));
+    else if (isFocus) ring(colors.edge, Math.max(FOCUS_MIN_PX, 2 * s * zoom));
   }
 
   outlinePath(ctx, p, p.outline, X, Y, zoom);

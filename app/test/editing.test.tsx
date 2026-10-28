@@ -147,8 +147,8 @@ describe('editing a record', () => {
 
   it('LA-V92-R30-T01 adds a link only to a valid target, and removes one', async () => {
     const user = userEvent.setup();
-    const { writes } = await openApp('/DM-SHOP-UC01-FL-S01', { write: () => ({ answer: ok }) });
-    await user.click(within(toolbar('DM-SHOP-UC01-FL-S01')).getByRole('button', { name: 'Edit' }));
+    const { writes } = await openApp('/DM-SHOP-UC01-FL01-S01', { write: () => ({ answer: ok }) });
+    await user.click(within(toolbar('DM-SHOP-UC01-FL01-S01')).getByRole('button', { name: 'Edit' }));
     const form = screen.getByRole('form');
     const links = within(form).getByRole('group', { name: 'Links' });
     const happensIn = within(links).getByRole('combobox', { name: /Add a link: Happens in/ });
@@ -158,7 +158,7 @@ describe('editing a record', () => {
     await user.click(within(links).getByRole('button', { name: /Remove the link Invokes DM-SHOP-CMD01/ }));
     await user.click(within(form).getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(writes).toHaveLength(1));
-    expect(writes[0]).toEqual([{ op: 'unlink', relation: 'invokes', source: 'DM-SHOP-UC01-FL-S01', target: 'DM-SHOP-CMD01' }]);
+    expect(writes[0]).toEqual([{ op: 'unlink', relation: 'invokes', source: 'DM-SHOP-UC01-FL01-S01', target: 'DM-SHOP-CMD01' }]);
   });
 });
 
@@ -259,7 +259,7 @@ describe('removing a record', () => {
     expect(panel).toHaveTextContent('These 3 still reference it');
     expect(within(panel).getByRole('link', { name: /DM-SHOP-UC01-R01/ }).closest('li')).toHaveTextContent('sits under it');
     expect(within(panel).getByRole('link', { name: /DM-SHOP-UC01-R02/ })).toBeInTheDocument();
-    expect(within(panel).getByRole('link', { name: /DM-SHOP-UC01-FL/ })).toBeInTheDocument();
+    expect(within(panel).getByRole('link', { name: /DM-SHOP-UC01-FL01/ })).toBeInTheDocument();
     expect(panel).toHaveTextContent('with its 1 part row');
     // Nothing is written until the person confirms.
     expect(writes).toHaveLength(0);

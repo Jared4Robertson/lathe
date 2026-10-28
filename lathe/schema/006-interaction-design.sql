@@ -1,18 +1,37 @@
--- Interaction design: each use case's one flow and its steps, views and view requirements, endpoints and API
--- requirements, and integrations. Views and integrations have no owner: flow steps use them.
+-- Interaction design: the product's interfaces, each use case's flows (one per interface it happens through) and
+-- their steps, views and view requirements, endpoints and API requirements, and integrations. Views and integrations
+-- have no owner: flow steps use them.
 
 CREATE TYPE http_method AS ENUM ('GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS');
+CREATE TYPE interface_kind AS ENUM ('web app', 'API', 'CLI', 'agent tools', 'desktop', 'other');
+
+CREATE TABLE interface (
+  id VARCHAR PRIMARY KEY REFERENCES record_id (id),
+  title VARCHAR NOT NULL CHECK (trim(title) <> ''),
+  product_id VARCHAR NOT NULL REFERENCES product (id),
+  kind interface_kind NOT NULL,
+  description VARCHAR
+);
+COMMENT ON TABLE interface IS 'A way people or programs use the product, such as its web app, its HTTP API or its command line. A use case happens through one or more interfaces, with one flow for each, and the kind says what that flow''s steps go through.';
+COMMENT ON COLUMN interface.id IS 'The interface''s ID: its product''s ID and IF<nn>, such as TL-IF01. Its number ends the ID of every flow through it.';
+COMMENT ON COLUMN interface.title IS 'The interface''s name, such as Web app, HTTP API, CLI, MCP tools or Desktop app.';
+COMMENT ON COLUMN interface.product_id IS 'The product it belongs to.';
+COMMENT ON COLUMN interface.kind IS 'What it is: web app or desktop (a flow''s steps happen in views), API (they call endpoints, through the command or query each exposes), CLI or agent tools (they run commands and queries), or other. A step of an API, CLI or agent tools flow happens in no view.';
+COMMENT ON COLUMN interface.description IS 'Who uses it and how, in a sentence or two.';
 
 CREATE TABLE flow (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
   title VARCHAR NOT NULL CHECK (trim(title) <> ''),
-  use_case_id VARCHAR NOT NULL UNIQUE REFERENCES use_case (id),
-  description VARCHAR
+  use_case_id VARCHAR NOT NULL REFERENCES use_case (id),
+  interface_id VARCHAR NOT NULL REFERENCES interface (id),
+  description VARCHAR,
+  UNIQUE (use_case_id, interface_id)
 );
-COMMENT ON TABLE flow IS 'How its use case is carried out: the steps on its main path and its alternate paths. A use case has exactly one flow, and the flow belongs only to it.';
-COMMENT ON COLUMN flow.id IS 'The flow''s ID: its use case''s ID and FL, such as TL-LEND-UC01-FL.';
+COMMENT ON TABLE flow IS 'How its use case is carried out through one interface: the steps on its main path and its alternate paths. A use case has one flow per interface it happens through, and each flow belongs only to it.';
+COMMENT ON COLUMN flow.id IS 'The flow''s ID: its use case''s ID, FL and its interface''s number, such as TL-LEND-UC01-FL01 for the flow through TL-IF01.';
 COMMENT ON COLUMN flow.title IS 'The flow''s name, such as Borrow a tool at the desk.';
-COMMENT ON COLUMN flow.use_case_id IS 'The use case it carries out; one flow per use case.';
+COMMENT ON COLUMN flow.use_case_id IS 'The use case it carries out.';
+COMMENT ON COLUMN flow.interface_id IS 'The interface it goes through, of the same product; at most one flow per use case and interface.';
 COMMENT ON COLUMN flow.description IS 'The path, in a paragraph.';
 
 CREATE TABLE flow_step (
@@ -24,8 +43,8 @@ CREATE TABLE flow_step (
   description VARCHAR,
   UNIQUE (flow_id, path, position)
 );
-COMMENT ON TABLE flow_step IS 'One step of a flow, in order on its path. It fulfills UC requirements of its own use case, invokes at most one command or query, happens in at most one view and may exchange with integrations.';
-COMMENT ON COLUMN flow_step.id IS 'The step''s ID: its flow''s ID and S<nn>, such as TL-LEND-UC01-FL-S01.';
+COMMENT ON TABLE flow_step IS 'One step of a flow, in order on its path. It fulfills UC requirements of its own use case, invokes at most one command or query, happens in at most one view (only on a web app, desktop or other interface) and may exchange with integrations.';
+COMMENT ON COLUMN flow_step.id IS 'The step''s ID: its flow''s ID and S<nn>, such as TL-LEND-UC01-FL01-S01.';
 COMMENT ON COLUMN flow_step.title IS 'What happens, in a few words.';
 COMMENT ON COLUMN flow_step.flow_id IS 'The flow it belongs to.';
 COMMENT ON COLUMN flow_step.path IS 'The path through the flow the step is on, such as main or refused.';
@@ -108,19 +127,21 @@ COMMENT ON COLUMN integration.system IS 'The outside system, such as Stripe.';
 COMMENT ON COLUMN integration.description IS 'What the product exchanges with it, in a sentence or two.';
 
 INSERT INTO meta_kind VALUES
-  ('flow', 'Flow', 'interaction-design', 22, false, '<use case>-FL', 'TL-LEND-UC01-FL', 'parent', NULL),
-  ('flow_step', 'Flow step', 'interaction-design', 23, false, '<flow>-S<nn>', 'TL-LEND-UC01-FL-S01', 'parent', NULL),
-  ('view', 'View', 'interaction-design', 24, false, '<P>-V<nn>', 'TL-V01', 'product', NULL),
-  ('view_requirement', 'View requirement', 'interaction-design', 25, true, '<view>-R<nn>', 'TL-V01-R01', 'parent', NULL),
-  ('endpoint', 'Endpoint', 'interaction-design', 26, false, '<P>-<D>-EP<nn>', 'TL-LEND-EP01', 'domain', NULL),
-  ('api_requirement', 'API requirement', 'interaction-design', 27, true, '<endpoint>-R<nn>', 'TL-LEND-EP01-R01', 'parent', NULL),
-  ('integration', 'Integration', 'interaction-design', 28, false, '<P>-INT<nn>', 'TL-INT01', 'product', NULL);
+  ('interface', 'Interface', 'interaction-design', 22, false, '<P>-IF<nn>', 'TL-IF01', 'parent', NULL),
+  ('flow', 'Flow', 'interaction-design', 23, false, '<use case>-FL<nn>', 'TL-LEND-UC01-FL01', 'parent', NULL),
+  ('flow_step', 'Flow step', 'interaction-design', 24, false, '<flow>-S<nn>', 'TL-LEND-UC01-FL01-S01', 'parent', NULL),
+  ('view', 'View', 'interaction-design', 25, false, '<P>-V<nn>', 'TL-V01', 'product', NULL),
+  ('view_requirement', 'View requirement', 'interaction-design', 26, true, '<view>-R<nn>', 'TL-V01-R01', 'parent', NULL),
+  ('endpoint', 'Endpoint', 'interaction-design', 27, false, '<P>-<D>-EP<nn>', 'TL-LEND-EP01', 'domain', NULL),
+  ('api_requirement', 'API requirement', 'interaction-design', 28, true, '<endpoint>-R<nn>', 'TL-LEND-EP01-R01', 'parent', NULL),
+  ('integration', 'Integration', 'interaction-design', 29, false, '<P>-INT<nn>', 'TL-INT01', 'product', NULL);
 INSERT INTO meta_kind_parent VALUES
+  ('interface', 'product', 1, 'product_id'),
   ('flow', 'use_case', 1, 'use_case_id'),
   ('flow_step', 'flow', 1, 'flow_id'),
   ('view_requirement', 'view', 1, 'view_id'),
   ('endpoint', 'command', 1, 'command_id'), ('endpoint', 'query', 2, 'query_id'),
   ('api_requirement', 'endpoint', 1, 'endpoint_id');
 INSERT INTO meta_table VALUES
-  ('flow', 'kind', NULL), ('flow_step', 'kind', NULL), ('view', 'kind', NULL), ('view_requirement', 'kind', NULL),
+  ('interface', 'kind', NULL), ('flow', 'kind', NULL), ('flow_step', 'kind', NULL), ('view', 'kind', NULL), ('view_requirement', 'kind', NULL),
   ('endpoint', 'kind', NULL), ('api_requirement', 'kind', NULL), ('integration', 'kind', NULL);

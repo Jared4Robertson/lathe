@@ -184,6 +184,28 @@ JOIN uc_requirement q ON q.id = l.target_id
 WHERE q.use_case_id <> f.use_case_id`,
     },
     {
+      name: 'flow-id-interface',
+      description: "A flow's ID is its use case's ID, FL and its interface's number: TL-LEND-UC01-FL01 is the flow of TL-LEND-UC01 through TL-IF01.",
+      sql: `
+SELECT 'flow' AS table_name, f.id AS row_key,
+       f.id || ' goes through ' || f.interface_id || ', so its ID is ' || f.use_case_id || '-FL' || n.number AS message
+FROM flow f
+CROSS JOIN LATERAL (SELECT regexp_extract(f.interface_id, '-IF([0-9]+)$', 1) AS number) n
+WHERE f.id <> f.use_case_id || '-FL' || n.number`,
+    },
+    {
+      name: 'step-fits-interface',
+      description: "A step of a flow through an API, a CLI or agent tools happens in no view: only a web app's, a desktop app's or another interface's steps happen in views.",
+      sql: `
+SELECT 'happens_in' AS table_name, l.source_id || chr(0) || l.target_id AS row_key,
+       l.source_id || ' is a step of ' || f.id || ', which goes through ' || i.id || ', an interface of kind ' || i.kind || ', so it cannot happen in view ' || l.target_id AS message
+FROM happens_in l
+JOIN flow_step s ON s.id = l.source_id
+JOIN flow f ON f.id = s.flow_id
+JOIN interface i ON i.id = f.interface_id
+WHERE i.kind IN ('API', 'CLI', 'agent tools')`,
+    },
+    {
       name: 'command-change-in-domain',
       description: "A command's recorded extra aggregate is another aggregate of its own domain.",
       sql: `

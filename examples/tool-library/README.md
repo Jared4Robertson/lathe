@@ -41,7 +41,7 @@ npm run typecheck   # tsc --noEmit
 - `test/outcomes.test.ts`: the outcome report (`TL-LEND-RP01`), over a month of loans made through the services.
 - `test/body-limit.test.ts`: the 64 KB body limit (`TL-LEND-EP06-R03-T01`), over HTTP and over a raw socket that sends a body that never ends.
 
-The five flow tests (`TL-LEND-UC0n-FL-T`) are manual: they walk the curl steps below against a running server, and their records say why.
+The five flow tests (`TL-LEND-UC0n-FL01-T`, one per use case through the HTTP API, `TL-IF01`) are manual: they walk the curl steps below against a running server, and their records say why.
 
 ## Run
 

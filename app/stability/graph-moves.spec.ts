@@ -7,7 +7,7 @@ import { cameraOf, clickBox, GRAPH, graphDrawn } from './scene';
 // differently before the person changed the settings) and pages that are not; the layout, depth
 // and Links switch stay as the person set them.
 
-const FLOW = 'LA-EXP-UC03-FL';
+const FLOW = 'LA-EXP-UC03-FL01';
 const LAYOUTS = { tree: 'Tree', nested: 'Nested', voronoi: 'Voronoi' } as const;
 /** The arrow for each step in each layout (LA-V93-R19): Tree steps Left out and Right in; Nested and Voronoi, Up out and Down in. */
 const NESTED = { out: 'ArrowUp', in: 'ArrowDown', previous: 'ArrowLeft', next: 'ArrowRight' } as const;

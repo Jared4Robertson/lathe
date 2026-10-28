@@ -76,10 +76,10 @@ describe('packages', () => {
     };
     const found = await loadData(complete(), { files });
     expect(packageGaps(found).map((g) => g.message)).toEqual(['Product EX depends on 2 packages no record uses: a (package.json), b (app/package.json).']);
-    const listed = await loadData(complete(), { files: { ...files, 'lathe.config.json': '{ "schema": 1, "packages": ["app/nested"] }\n' } });
+    const listed = await loadData(complete(), { files: { ...files, 'lathe.config.json': '{ "schema": 2, "packages": ["app/nested"] }\n' } });
     expect(packageGaps(listed).map((g) => g.message)).toEqual(['Product EX depends on a package no record uses: c (app/nested/package.json).']);
     // A listed folder with no package.json stops the load, as any config mistake does.
-    await expect(loadData(complete(), { files: { ...files, 'lathe.config.json': '{ "schema": 1, "packages": ["server"] }\n' } })).rejects.toThrow('lathe.config.json: packages names server, which holds no package.json.');
-    await expect(loadData(complete(), { files: { 'lathe.config.json': '{ "schema": 1, "packages": ["../elsewhere"] }\n' } })).rejects.toThrow(/packages must list folders inside the product root.*\.\.\/elsewhere is outside it/);
+    await expect(loadData(complete(), { files: { ...files, 'lathe.config.json': '{ "schema": 2, "packages": ["server"] }\n' } })).rejects.toThrow('lathe.config.json: packages names server, which holds no package.json.');
+    await expect(loadData(complete(), { files: { 'lathe.config.json': '{ "schema": 2, "packages": ["../elsewhere"] }\n' } })).rejects.toThrow(/packages must list folders inside the product root.*\.\.\/elsewhere is outside it/);
   });
 });

@@ -40,7 +40,7 @@ describe('the graph tree, its depth and its camera', () => {
     expect(two).toEqual(expect.arrayContaining(['P-D/domain-model/aggregate', 'P-D/use-cases/capability', 'P-D/technical-specification/table', 'P-D/test-plan/use_case_test']));
     expect(two).not.toContain('P-D-A1');
     const three = ids(neighborhood(index, 'P-D', 3));
-    expect(three).toEqual(expect.arrayContaining(['P-D-A1', 'P-D-CAP01', 'P-D-UC01-FL', 'P-D-EP01', 'P-D-EN03-TB', 'P-D-INV01-T']));
+    expect(three).toEqual(expect.arrayContaining(['P-D-A1', 'P-D-CAP01', 'P-D-UC01-FL01', 'P-D-EP01', 'P-D-EN03-TB', 'P-D-INV01-T']));
     expect(three).not.toContain('P-D-UC01');
     // From a use case in a capability: its capability is the parent at every depth; nothing further up.
     for (const depth of [1, 2, 3]) {
@@ -59,8 +59,8 @@ describe('the graph tree, its depth and its camera', () => {
     // Interaction design and its tests in the Test plan.
     expect(treeChildren(index, 'P-D-CAP01')).toEqual(['P-D-UC01']);
     expect(treeChildren(index, 'P-D-UC01')).toEqual(['P-D-UC01-R01', 'P-D-UC01-R02']);
-    expect(treeParent(index, 'P-D-UC01-FL')).toBe('P-D/interaction-design/flow');
-    expect(treeParent(index, 'P-D-UC01-FL-T')).toBe('P-D/test-plan/flow_test');
+    expect(treeParent(index, 'P-D-UC01-FL01')).toBe('P-D/interaction-design/flow');
+    expect(treeParent(index, 'P-D-UC01-FL01-T')).toBe('P-D/test-plan/flow_test');
     // One folder per kind, in the schema's kind order; an endpoint sits in Interaction design, under neither its command nor its query.
     // The view and the integration have no owner, but P-D is the one domain whose steps use them, so they sit in it.
     expect(treeChildren(index, 'P-D/interaction-design')).toEqual(['P-D/interaction-design/flow', 'P-D/interaction-design/view', 'P-D/interaction-design/endpoint', 'P-D/interaction-design/integration']);
@@ -74,10 +74,10 @@ describe('the graph tree, its depth and its camera', () => {
     // An aggregate's own stage folds under it, through a group per kind; a command's policy under the command.
     expect(treeChildren(index, 'P-D-A3')).toEqual(['P-D-A3/entity', 'P-D-A3/invariant', 'P-D-A3/domain_event', 'P-D-A3/command']);
     expect(treeChildren(index, 'P-D-CMD04')).toEqual(['P-D-PO01']);
-    // The product: its Shared folder (its own stages: the value object both domains use), then its domains.
+    // The product: its Shared folder (its own stages: the value object both domains use, the product's interface), then its domains.
     expect(treeChildren(index, 'P')).toEqual(['P/shared', 'P-D', 'P-E']);
-    expect(treeChildren(index, 'P/shared')).toEqual(['P/domain-model', 'P/technical-specification', 'P/test-plan']);
-    expect(groupLabel(index, 'P/shared')).toBe('Shared (3)');
+    expect(treeChildren(index, 'P/shared')).toEqual(['P/domain-model', 'P/interaction-design', 'P/technical-specification', 'P/test-plan']);
+    expect(groupLabel(index, 'P/shared')).toBe('Shared (4)');
     expect(labelLines(index, 'P/shared').meta).toBe('Folder · P');
     expect(labelLines(index, 'P/domain-model').meta).toBe('Stage · P');
     expect(treeChildren(index, 'P/domain-model/value_object')).toEqual(['P-VO01']);
@@ -89,7 +89,7 @@ describe('the graph tree, its depth and its camera', () => {
   });
 
   it.each(['LA-V93-R10-T07', 'LA-V93-R08-T02'])('%s The Links switch beside Depth is off by default, has a tooltip and the shortcut l, draws the center\'s links dashed, and is kept while walking', async () => {
-    await showGraph('/P-D-UC01-FL-S01');
+    await showGraph('/P-D-UC01-FL01-S01');
     const links = screen.getByRole('button', { name: 'Links' });
     expect(links).toHaveAttribute('aria-pressed', 'false');
     expect(links).toHaveAttribute('aria-keyshortcuts', 'L');
@@ -259,28 +259,28 @@ describe('the graph tree, its depth and its camera', () => {
     expect(panToward(view, 'right', 1000, 800)).toEqual({ x: -500, y: 0, zoom: 1 });
     expect(panToward(view, 'up', 1000, 800)).toEqual({ x: 0, y: 400, zoom: 1 });
 
-    await showGraph('/P-D-UC01-FL-S01');
+    await showGraph('/P-D-UC01-FL01-S01');
     fireEvent.click(screen.getByRole('button', { name: 'Links' }));
     // Every linked record is drawn, wherever it is in the map, and each link is a curve to it.
     await waitFor(() => expect(drawnLinks()).toHaveLength(3));
     for (const id of ['P-V01', 'P-D-CMD01', 'P-D-UC01-R01']) expect(node(id)).not.toBeNull();
     // Each link joins the focus's box to a linked record's, drawn as a curve (paint.ts); the tree's parent lines stay straight and level.
-    for (const l of drawnLinks()) expect([l.source, l.target]).toContain('P-D-UC01-FL-S01');
+    for (const l of drawnLinks()) expect([l.source, l.target]).toContain('P-D-UC01-FL01-S01');
     expect(parentLines().length).toBeGreaterThan(0);
     for (const l of parentLines()) expect(l.points[0][1]).toBe(l.points[1][1]);
   });
 
   it('LA-V93-R17-T01 Hovering or focusing a box spotlights it, its lines and the boxes it joins, and leaving restores the picture', async () => {
-    await showGraph('/P-D-UC01-FL-S01');
+    await showGraph('/P-D-UC01-FL01-S01');
     fireEvent.click(screen.getByRole('button', { name: 'Links' }));
     await waitFor(() => expect(node('P-V01')).not.toBeNull());
     const flow = graphHost()!;
     node('P-V01')!.focus();
     await waitFor(() => expect(flow.className).toContain('has-spotlight'));
     expect(drawnBox('P-V01')!.lit).toBe(true);
-    expect(drawnBox('P-D-UC01-FL-S01')!.lit).toBe(true);
-    expect(drawnBox('P-D-UC01-FL')!.lit).toBe(false);
-    expect(scene().lines.find((l) => l.source === 'P-D-UC01-FL-S01' && l.target === 'P-V01')!.lit).toBe(true);
+    expect(drawnBox('P-D-UC01-FL01-S01')!.lit).toBe(true);
+    expect(drawnBox('P-D-UC01-FL01')!.lit).toBe(false);
+    expect(scene().lines.find((l) => l.source === 'P-D-UC01-FL01-S01' && l.target === 'P-V01')!.lit).toBe(true);
     fireEvent.blur(node('P-V01')!);
     expect(flow.className).not.toContain('has-spotlight');
     expect(scene().spotlight).toBe(false);

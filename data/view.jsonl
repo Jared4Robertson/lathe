@@ -1,7 +1,6 @@
 {"id":"LA-V01","title":"Format page","route":"/format","description":"Lathe's record format: how records are kept, then an index of the kinds by stage, the relations and the checks by severity."}
 {"id":"LA-V02","title":"Kind page","route":"/format/kinds/<kind>","description":"What the reference says about one kind, its columns included, in the workbench, with the kind's facts in the side bar."}
 {"id":"LA-V03","title":"Check page","route":"/format/checks/<check>","description":"One check's severity, explanation, query and the problems it reports now, in the workbench, with the check's facts in the side bar."}
-{"id":"LA-V04","title":"Reference document","description":"`lathe/REFERENCE.md`, the reference as Markdown, committed so an Agent reads it without running anything."}
 {"id":"LA-V41","title":"Checks page","route":"/<product-id>/checks","description":"A space's Checks page: every problem of its product, errors first, grouped by check, then the workspace's under Workspace."}
 {"id":"LA-V51","title":"Product page","route":"/<product-id>","description":"The product's one page, at its ID: its description, its domains as cards with coverage bars (designed, built and proved) and tests by state, its summary of what Lathe counts across it, its open questions and its problems, with its facts, children and links both ways in the side bar."}
 {"id":"LA-V61","title":"Workbench","description":"The app's frame around every page: the navigation, the page bar and panes, the side bar, tooltips, the keys and the announcer, and on a phone the top bar and the sheets."}

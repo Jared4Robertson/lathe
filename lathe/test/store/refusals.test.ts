@@ -50,7 +50,7 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
       adding({
         use_case: [{ id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01' }],
         uc_requirement: [{ id: 'TL-LEND-UC02-R01', title: 'On time', use_case_id: 'TL-LEND-UC02', statement: 'A return MUST be dated.' }],
-        fulfills: [{ source_id: 'TL-LEND-UC01-FL-S01', target_id: 'TL-LEND-UC02-R01' }],
+        fulfills: [{ source_id: 'TL-LEND-UC01-FL01-S01', target_id: 'TL-LEND-UC02-R01' }],
       }),
     );
     expect(problems).toEqual([expect.objectContaining({ rule: 'step-fulfills-own-use-case', file: 'data/fulfills.jsonl', line: 2 })]);
@@ -140,15 +140,15 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
     }
   });
 
-  it('refuses a second flow for a use case', async () => {
-    const problems = await refusal(adding({ flow: [{ id: 'TL-LEND-UC01-FLB', title: 'Borrow online', use_case_id: 'TL-LEND-UC01' }] }));
+  it('refuses a second flow for a use case through one interface', async () => {
+    const problems = await refusal(adding({ flow: [{ id: 'TL-LEND-UC01-FLB', title: 'Borrow online', use_case_id: 'TL-LEND-UC01', interface_id: 'TL-IF01' }] }));
     expect(problems).toEqual([expect.objectContaining({ rule: 'unique', file: 'data/flow.jsonl', line: 2 })]);
   });
 
   it('refuses a second invariant test for one invariant, and a second test of each exactly-one kind', async () => {
     const problems = await refusal(adding({ invariant_test: [{ id: 'TL-LEND-INV01-TB', title: 'Again', invariant_id: 'TL-LEND-INV01', level: 'unit', state: 'not automated yet' }] }));
     expect(problems).toEqual([expect.objectContaining({ rule: 'unique', file: 'data/invariant_test.jsonl', line: 2 })]);
-    const flowTest = await refusal(adding({ flow_test: [{ id: 'TL-LEND-UC01-FL-TB', title: 'Again', flow_id: 'TL-LEND-UC01-FL', level: 'e2e-ui', state: 'not automated yet' }] }));
+    const flowTest = await refusal(adding({ flow_test: [{ id: 'TL-LEND-UC01-FL01-TB', title: 'Again', flow_id: 'TL-LEND-UC01-FL01', level: 'e2e-ui', state: 'not automated yet' }] }));
     expect(flowTest).toEqual([expect.objectContaining({ rule: 'unique', file: 'data/flow_test.jsonl' })]);
   });
 
@@ -255,9 +255,9 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
   });
 
   it('refuses a step invoking two operations, or happening in two views', async () => {
-    const invokes = await refusal(adding({ invokes: [{ source_id: 'TL-LEND-UC01-FL-S01', target_id: 'TL-LEND-QRY01' }] }));
+    const invokes = await refusal(adding({ invokes: [{ source_id: 'TL-LEND-UC01-FL01-S01', target_id: 'TL-LEND-QRY01' }] }));
     expect(invokes).toEqual([expect.objectContaining({ rule: 'unique', table: 'invokes' })]);
-    const views = await refusal(adding({ view: [{ id: 'TL-V02', title: 'Desk' }], happens_in: [{ source_id: 'TL-LEND-UC01-FL-S01', target_id: 'TL-V02' }] }));
+    const views = await refusal(adding({ view: [{ id: 'TL-V02', title: 'Desk' }], happens_in: [{ source_id: 'TL-LEND-UC01-FL01-S01', target_id: 'TL-V02' }] }));
     expect(views).toEqual([expect.objectContaining({ rule: 'unique', table: 'happens_in' })]);
   });
 

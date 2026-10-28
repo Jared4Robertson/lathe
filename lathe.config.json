@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 2,
   "data": "data",
   "products": ["examples/tool-library"],
   "tests": [
@@ -11,5 +11,11 @@
     "lathe/perf/**/*.ts",
     "desktop/src/smoke.ts"
   ],
-  "routers": ["lathe/src/server/serve.ts", "app/server/lathe.ts", "app/src/views/address.ts", "app/src/theme/ThemeCommands.tsx", "app/src/specs/data.ts"]
+  "routers": [
+    "lathe/src/server/serve.ts",
+    "app/server/lathe.ts",
+    "app/src/views/address.ts",
+    "app/src/theme/ThemeCommands.tsx",
+    "app/src/specs/data.ts"
+  ]
 }

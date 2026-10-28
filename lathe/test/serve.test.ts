@@ -6,6 +6,7 @@ import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSy
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { configuredRoot } from './store/fixture.ts';
 import { PACKAGE_DIR } from '../src/index.ts';
 import type { SpecData, WriteAnswer } from '../src/server/contract.ts';
 import { openStore, SCHEMA_DIR } from '../src/store/index.ts';
@@ -38,7 +39,7 @@ beforeAll(async () => {
     const build = spawnSync(VITE, ['build', '--outDir', appDir, '--emptyOutDir', '--logLevel', 'error'], { cwd: APP_SOURCE, encoding: 'utf8' });
     if (build.status !== 0) throw new Error(`Building the app failed:\n${build.stderr}`);
   }
-  root = mkdtempSync(path.join(tmpdir(), 'lathe-serve-'));
+  root = configuredRoot('lathe-serve-');
   temps.push(root);
   const store = await openStore(root);
   await store.apply([

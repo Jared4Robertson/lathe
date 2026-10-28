@@ -119,6 +119,7 @@ code { font: 0.86em var(--mono); }
 .spec-body a { color: var(--steel); text-decoration-thickness: 1px; text-underline-offset: 2px; }
 .spec-page a:focus-visible, .spec-page input:focus-visible, .spec-page button:focus-visible { outline: 2px solid var(--steel); outline-offset: 2px; border-radius: 4px; }
 .hint { margin: 0; color: var(--muted); font-size: 0.86rem; }
+.flow-interface { margin: 0 0 12px; color: var(--muted); }
 .spec-page > .error { margin: 12px 24px 0; }
 .spec-section { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
 .spec-section h2 { font-size: 1.05rem; display: flex; align-items: baseline; gap: 8px; }

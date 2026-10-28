@@ -174,7 +174,7 @@ describe('A table kept in a database is checked against the file that creates it
 });
 
 describe('Check a table against its file from the command line', () => {
-  it('LA-TRC-UC16-FL-T names a table\'s migration, checks it, and fixes the missing column', async () => {
+  it('LA-TRC-UC16-FL03-T names a table\'s migration, checks it, and fixes the missing column', async () => {
     const tl = product();
     await tl.seed([
       ...LENDING,
