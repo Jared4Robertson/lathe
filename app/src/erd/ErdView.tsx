@@ -1,4 +1,4 @@
-// The ERD view of a domain's, aggregate's or entity's address, /<domain-aggregate-or-entity-id>?view=erd (LA-V94).
+// The ERD stage of a domain's, aggregate's or entity's address, /<domain-aggregate-or-entity-id>?stage=erd (LA-V94).
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { Background, Controls, Handle, Position, ReactFlow, ReactFlowProvider, useReactFlow, type Edge, type EdgeProps, type Node, type NodeProps } from '@xyflow/react';
 import type { RelationRule, SpecIndex } from '../specs/data';
@@ -10,12 +10,13 @@ import { erdFor, LINE_WORDS, lineGeometry, lineOffsets, RELATION_ENDS, type Erd,
 import { layoutErd } from './layout';
 import { TapCard, useTapToOpen } from '../graph/touch';
 import { EdgeHints } from './hints';
+import { useOpenSpace, type OpenSpaceStore } from '../views/openSpace';
 
-// The ERD view: the entity-relationship diagram of a domain (each aggregate a boundary around its
+// The ERD stage: the entity-relationship diagram of a domain (each aggregate a boundary around its
 // entities) or of an aggregate (with the aggregates it references, or that reference it, faded around
 // it), drawn with React Flow and laid out by ELK. An entity page draws its aggregate's ERD with that
-// entity highlighted. Clicking a box goes to it, as a graph node does. A key under the diagram explains
-// the boxes and the lines. Like the graph view it never reads the address, so it can sit in any pane.
+// entity highlighted. Clicking a box goes to it, as a graph node does. A key floating at the foot of the open space explains
+// the boxes and the lines. Like the graph it never reads the address, and frames itself in the open space it is given.
 
 /** What a box is called, in its accessible name, the key and the touch card. */
 export const BOX_KIND: Record<ErdKind, string> = { aggregate: 'Aggregate', entity: 'Entity' };
@@ -34,6 +35,10 @@ export interface ErdViewProps {
   onNavigate: (id: string) => void;
   /** Called with the box under the pointer or keyboard focus (`hover`) and the one selected by a first tap (`selected`), for the side bar. */
   onPeek?: (kind: 'hover' | 'selected', id: string | null) => void;
+  /** Called with what the ERD draws, for the header strip: "4 entities · 3 lines". */
+  onCounts?: (counts: string) => void;
+  /** The open space the host's floating panels leave over the stage, where the diagram is fitted. */
+  space?: OpenSpaceStore;
 }
 
 interface BoxData extends Record<string, unknown> { box: ErdBox; focus: boolean }
@@ -110,32 +115,36 @@ export function lineWords(line: ErdLine, label: string, titles: ReadonlyMap<stri
 const nodeTypes = { box: BoxView };
 const edgeTypes = { line: LineView };
 
-export function ErdView({ index, focus, onNavigate, onPeek }: ErdViewProps) {
+/** What an ERD draws, for the header strip: "4 entities · 3 lines". */
+export const erdCounts = (erd: Erd) => {
+  const entities = erd.boxes.filter((b) => b.kind === 'entity').length;
+  return `${entities} ${entities === 1 ? 'entity' : 'entities'} · ${erd.lines.length} ${erd.lines.length === 1 ? 'line' : 'lines'}`;
+};
+
+export function ErdView({ index, focus, onNavigate, onPeek, onCounts, space }: ErdViewProps) {
   const erd = useMemo(() => erdFor(index, focus), [index, focus]);
-  if (!erd) return <p className="hint erd-missing">The ERD view shows the entities of a domain, an aggregate or an entity's aggregate.</p>;
+  useLayoutEffect(() => { onCounts?.(erd ? erdCounts(erd) : ''); }, [erd, onCounts]);
+  if (!erd) return <p className="hint erd-missing">The ERD stage shows the entities of a domain, an aggregate or an entity's aggregate.</p>;
   const scope = index.byId.get(erd.scope);
   const entities = erd.boxes.filter((b) => b.kind === 'entity').length;
   const empty = erd.level === 'domain' ? erd.boxes.length === 0 : entities === 0;
-  const counts = `${entities} ${entities === 1 ? 'entity' : 'entities'} · ${erd.lines.length} ${erd.lines.length === 1 ? 'line' : 'lines'}`;
   const caption = erd.level === 'domain'
     ? `The aggregates of ${scope?.title}, their entities and relationships`
     : `The entities of ${scope?.title}, and the aggregates it references or that reference it`;
   return (
-    <section className="erd-page" aria-label="ERD">
-      <header className="erd-header">
-        {/* One line of one text, cut with an ellipsis, its whole text in its tooltip: a new caption never moves anything (LA-PAT-APP-UX-R08). */}
-        <p className="erd-caption" title={`${caption} · ${counts}`}>{`${caption} · ${counts}`}</p>
-      </header>
+    <section className="erd-page" aria-label={`ERD: ${caption}`}>
       {empty ? (
         <p className="placeholder erd-empty">{erd.level === 'domain' ? 'This domain has no aggregates yet.' : 'This aggregate has no entities yet.'}</p>
       ) : (
         <div className="erd-canvas">
           <ReactFlowProvider>
-            <ErdCanvas relations={index.workspace.relations} erd={erd} focus={focus} onNavigate={onNavigate} onPeek={onPeek} />
+            <ErdCanvas relations={index.workspace.relations} erd={erd} focus={focus} onNavigate={onNavigate} onPeek={onPeek} space={space} />
           </ReactFlowProvider>
         </div>
       )}
-      <ErdKey erd={erd} relations={index.workspace.relations} />
+      <div className="erd-tools stage-tools" data-stage-tools="bottom">
+        <ErdKey erd={erd} relations={index.workspace.relations} />
+      </div>
     </section>
   );
 }
@@ -197,6 +206,8 @@ export function ErdKey({ erd, relations = [] }: { erd: Erd; relations?: readonly
 
 /** The margin a fit keeps around the boxes: wider at the left, clear of the zoom controls in the bottom left corner. */
 export const FIT_MARGIN = { left: 60, right: 24, top: 24, bottom: 24 };
+/** The least room, in px, a fit keeps the diagram in; less fits on the whole stage. */
+const MIN_FIT = 120;
 
 /**
  * The viewport that shows every box, faded context included, inside the margin, centered, never zoomed in past 1:
@@ -221,7 +232,7 @@ export function fitRects(rects: Map<string, Rect>, width: number, height: number
 /** A box's accessible name: its kind, title and owner, its root mark, and whether the page is about it. */
 const boxName = (box: ErdBox) => `${BOX_KIND[box.kind]} ${box.title}${box.owner ? `, ${box.owner}` : ''}${box.root ? ', root' : ''}${box.highlight ? ' (this entity)' : ''}`;
 
-function ErdCanvas({ relations, erd, focus, onNavigate, onPeek }: { relations: readonly RelationRule[]; erd: Erd; focus: string; onNavigate: (id: string) => void; onPeek?: ErdViewProps['onPeek'] }) {
+function ErdCanvas({ relations, erd, focus, onNavigate, onPeek, space }: { relations: readonly RelationRule[]; erd: Erd; focus: string; onNavigate: (id: string) => void; onPeek?: ErdViewProps['onPeek']; space?: OpenSpaceStore }) {
   const [placed, setPlaced] = useState<{ erd: Erd; rects: Map<string, Rect> } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const wrapper = useRef<HTMLDivElement>(null);
@@ -283,13 +294,28 @@ function ErdCanvas({ relations, erd, focus, onNavigate, onPeek }: { relations: r
     return { nodes, edges };
   }, [placed, focus, relations]);
 
-  // Fit every box, moving there with the shared motion (LA-PAT-APP-UX-R04), or at once.
+  // Fit every box in the frame, the open space the floating panels and the key leave over the
+  // stage (openSpace.ts), moving there with the shared motion (LA-PAT-APP-UX-R04), or at once.
+  const open = useOpenSpace(space);
+  const frame = open?.frame;
+  const margin = useMemo(() => (frame
+    ? { left: FIT_MARGIN.left + frame.left, right: FIT_MARGIN.right + frame.right, top: FIT_MARGIN.top + frame.top, bottom: FIT_MARGIN.bottom + frame.bottom }
+    : FIT_MARGIN), [frame]);
   const fit = useCallback((animate: boolean) => {
     const box = wrapper.current?.getBoundingClientRect();
     if (!placed || placed.rects.size === 0 || !box || box.width <= 0 || box.height <= 0) return;
     const motion = readMotion();
-    setViewport(fitRects(placed.rects, box.width, box.height), animate && motion.duration > 0 ? { duration: motion.duration, ease: motion.ease } : { duration: 0 });
-  }, [placed, setViewport]);
+    // An open space too small to fit anything in fits on the whole stage.
+    const room = box.width - margin.left - margin.right >= MIN_FIT && box.height - margin.top - margin.bottom >= MIN_FIT;
+    setViewport(fitRects(placed.rects, box.width, box.height, room ? margin : FIT_MARGIN), animate && motion.duration > 0 ? { duration: motion.duration, ease: motion.ease } : { duration: 0 });
+  }, [placed, setViewport, margin]);
+  // A panel collapsed, opened or resized: the diagram glides to the new open space.
+  const fittedMargin = useRef(margin);
+  useEffect(() => {
+    if (fittedMargin.current === margin) return;
+    fittedMargin.current = margin;
+    fit(true);
+  }, [margin, fit]);
   // The edge hints count every box past an edge: the faded context, and what a big diagram leaves outside.
   const centers = useMemo(() => (placed ? placed.erd.boxes.flatMap((b) => {
     const r = placed.rects.get(b.id);

@@ -1,7 +1,5 @@
-import { useCallback, useEffect, useMemo, useState, type RefObject } from 'react';
-import { Button } from '../components/Button';
+import { useMemo } from 'react';
 import { LongList } from '../components/LongList';
-import { readMotion } from '../graph/motion';
 import { groupLabel } from '../graph/model';
 import { NodeLink, type GraphInfo } from '../graph/panel';
 import { erdFor } from '../erd/erd';
@@ -11,9 +9,7 @@ import { kindLabel, type SpecIndex } from '../specs/data';
 import { listTitle } from '../specs/parts';
 import type { SideMode } from './sideBarState';
 
-// The side bar's Outline (LA-V95-R07): what the main view holds, as rows to jump to.
-// - Wiki: the page's sections and headings (Traceability and its groups, children, problems, the
-//   body's Markdown headings), each a row that scrolls the wiki there, the section in view marked.
+// The side bar's Outline (LA-V95-R07): what the stage holds, as rows to jump to.
 // - Graph: the records the camera frames, grouped by level from left to right.
 // - ERD: the boxes, those in focus first.
 // - Trace: the obligations the matrix rows hold, under their parents; nothing more for one obligation's chain.
@@ -24,7 +20,6 @@ export interface SideBarOutlineProps {
   focus: string;
   mode: SideMode;
   graph: GraphInfo | null;
-  wikiPane: RefObject<HTMLDivElement | null>;
   onNavigate: (id: string) => void;
   hrefFor: (id: string) => string;
 }
@@ -32,91 +27,7 @@ export interface SideBarOutlineProps {
 export function SideBarOutline(props: SideBarOutlineProps) {
   if (props.mode === 'graph') return <GraphOutline {...props} />;
   if (props.mode === 'erd') return <ErdOutline {...props} />;
-  if (props.mode === 'trace') return <TraceOutline {...props} />;
-  return <WikiOutline {...props} />;
-}
-
-// ---------- Wiki ----------
-
-interface Heading { key: string; text: string; depth: number; el: HTMLElement }
-
-/** A heading's own text, without its count. */
-const headingText = (el: HTMLElement) =>
-  [...el.childNodes].filter((n) => !(n instanceof Element && n.classList.contains('section-count'))).map((n) => n.textContent ?? '').join('').trim();
-
-/** The wiki's headings, below the page's own title, in page order. */
-export function wikiHeadings(pane: HTMLElement): Heading[] {
-  const found = [...pane.querySelectorAll<HTMLElement>('h1, h2, h3, h4, h5, h6')].filter((el) => !el.closest('.pane-title, .spec-header'));
-  const levels = found.map((el) => Number(el.tagName.slice(1)));
-  const top = Math.min(...levels);
-  return found.map((el, i) => ({ key: `${i} ${el.tagName}`, text: headingText(el), depth: levels[i] - top, el })).filter((h) => h.text);
-}
-
-/** How far below the pane's top a heading may sit and still be the section in view. */
-const IN_VIEW = 24;
-
-function WikiOutline({ index, focus, wikiPane }: SideBarOutlineProps) {
-  const [headings, setHeadings] = useState<Heading[]>([]);
-  const [current, setCurrent] = useState<string | null>(null);
-
-  // Read the headings as the page draws them, and again when its content changes (a fold, a reload).
-  useEffect(() => {
-    const pane = wikiPane.current;
-    if (!pane) { setHeadings([]); return; }
-    let frame = 0;
-    const read = () => {
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(() => setHeadings((before) => {
-        const next = wikiHeadings(pane);
-        return next.length === before.length && next.every((h, i) => h.el === before[i].el && h.text === before[i].text) ? before : next;
-      }));
-    };
-    setHeadings(wikiHeadings(pane));
-    const observer = typeof MutationObserver === 'undefined' ? null : new MutationObserver(read);
-    observer?.observe(pane, { childList: true, subtree: true, characterData: true });
-    return () => { observer?.disconnect(); cancelAnimationFrame(frame); };
-  }, [wikiPane, focus, index]);
-
-  // The section in view: the last heading at or above the pane's top, as the wiki scrolls.
-  useEffect(() => {
-    const pane = wikiPane.current;
-    if (!pane || headings.length === 0) { setCurrent(null); return; }
-    const mark = () => {
-      const top = pane.getBoundingClientRect().top + IN_VIEW;
-      let at: string | null = headings[0].key;
-      for (const h of headings) if (h.el.getBoundingClientRect().top <= top) at = h.key;
-      setCurrent(at);
-    };
-    mark();
-    pane.addEventListener('scroll', mark, { passive: true });
-    return () => pane.removeEventListener('scroll', mark);
-  }, [wikiPane, headings]);
-
-  const jump = useCallback((h: Heading) => {
-    const pane = wikiPane.current;
-    if (!pane) return;
-    const top = pane.scrollTop + h.el.getBoundingClientRect().top - pane.getBoundingClientRect().top - 8;
-    pane.scrollTo?.({ top, behavior: readMotion().duration > 0 ? 'smooth' : 'auto' });
-    setCurrent(h.key);
-  }, [wikiPane]);
-
-  if (!wikiPane.current && headings.length === 0) return <p className="hint">Open the Wiki view to see the page's outline.</p>;
-  if (headings.length === 0) return <p className="hint">This page has no sections.</p>;
-  return (
-    <LongList
-      label="Sections"
-      className="record-list outline-list"
-      items={headings}
-      itemKey={(h) => h.key}
-      searchText={(h) => h.text}
-      itemClassName={(h) => `outline-depth-${Math.min(h.depth, 4)}`}
-      render={(h) => (
-        <Button className="row-link outline-heading" aria-current={h.key === current ? 'location' : undefined} onClick={() => jump(h)}>
-          <span>{h.text}</span>
-        </Button>
-      )}
-    />
-  );
+  return <TraceOutline {...props} />;
 }
 
 // ---------- Graph ----------
