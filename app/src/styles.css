@@ -226,7 +226,9 @@ code { font: 0.86em var(--mono); }
 .record-side h3 { display: flex; gap: 6px; align-items: baseline; }
 .fields, .link-groups { margin: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
 .fields > div { display: grid; grid-template-columns: 90px 1fr; gap: 8px; font-size: 0.86rem; }
-.fields dt { color: var(--muted); text-transform: capitalize; }
+/* Field labels read in sentence case: only the first letter is a capital ("Served by", not "Served By"). */
+.fields dt { color: var(--muted); }
+.fields dt::first-letter { text-transform: uppercase; }
 .fields dd { margin: 0; overflow-wrap: anywhere; }
 .link-groups dt { font: 500 0.72rem var(--mono); color: var(--muted); }
 .link-groups dd { margin: 2px 0 0 8px; font-size: 0.88rem; }
