@@ -309,8 +309,8 @@ export interface ConstraintTestRow {
   title: string;
   /** The constraint it proves; it has exactly one test. */
   constraint_id: string;
-  /** The level it runs at: unit, database, api, contract, e2e-api, e2e-ui or manual. */
-  level: "unit" | "database" | "api" | "contract" | "e2e-api" | "e2e-ui" | "manual";
+  /** How it runs: unit, integration, service, system or browser, the lowest that can observe its result; a manual test names the level a person exercises. */
+  level: "unit" | "integration" | "service" | "system" | "browser";
   /** automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. */
   state: "automated" | "manual" | "not automated yet";
   /** The file that runs it, from the product root; an automated test must name one. */
@@ -383,8 +383,8 @@ export interface DomainServiceTestRow {
   title: string;
   /** The domain service it proves. */
   domain_service_id: string;
-  /** The level it runs at: unit, database, api, contract, e2e-api, e2e-ui or manual. */
-  level: "unit" | "database" | "api" | "contract" | "e2e-api" | "e2e-ui" | "manual";
+  /** How it runs: unit, integration, service, system or browser, the lowest that can observe its result; a manual test names the level a person exercises. */
+  level: "unit" | "integration" | "service" | "system" | "browser";
   /** automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. */
   state: "automated" | "manual" | "not automated yet";
   /** The file that runs it, from the product root; an automated test must name one. */
@@ -429,8 +429,8 @@ export interface EndpointTestRow {
   title: string;
   /** The API requirement it proves. */
   api_requirement_id: string;
-  /** The level it runs at: unit, database, api, contract, e2e-api, e2e-ui or manual. */
-  level: "unit" | "database" | "api" | "contract" | "e2e-api" | "e2e-ui" | "manual";
+  /** How it runs: unit, integration, service, system or browser, the lowest that can observe its result; a manual test names the level a person exercises. */
+  level: "unit" | "integration" | "service" | "system" | "browser";
   /** automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. */
   state: "automated" | "manual" | "not automated yet";
   /** The file that runs it, from the product root; an automated test must name one. */
@@ -613,7 +613,7 @@ export interface FedByRow {
   target_id: string;
 }
 
-/** A smoke test of its flow's main path, end to end, at the level that fits its interface: e2e-ui for a web app or desktop, e2e-api for an API, a CLI or agent tools, manual only with a reason. */
+/** A smoke test of its flow's main path, end to end, at the level that fits its interface: browser for a web app or desktop, system for an API, a CLI or agent tools. */
 export interface FlowTestRow {
   /** The test's ID: its flow's ID and T, such as TL-LEND-UC01-FL01-T. */
   id: string;
@@ -621,8 +621,8 @@ export interface FlowTestRow {
   title: string;
   /** The flow it proves; it has exactly one test. */
   flow_id: string;
-  /** The level it runs at: unit, database, api, contract, e2e-api, e2e-ui or manual. */
-  level: "unit" | "database" | "api" | "contract" | "e2e-api" | "e2e-ui" | "manual";
+  /** How it runs: unit, integration, service, system or browser, the lowest that can observe its result; a manual test names the level a person exercises. */
+  level: "unit" | "integration" | "service" | "system" | "browser";
   /** automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. */
   state: "automated" | "manual" | "not automated yet";
   /** The file that runs it, from the product root; an automated test must name one. */
@@ -729,8 +729,8 @@ export interface IntegrationTestRow {
   title: string;
   /** The integration it proves. */
   integration_id: string;
-  /** The level it runs at: unit, database, api, contract, e2e-api, e2e-ui or manual. */
-  level: "unit" | "database" | "api" | "contract" | "e2e-api" | "e2e-ui" | "manual";
+  /** How it runs: unit, integration, service, system or browser, the lowest that can observe its result; a manual test names the level a person exercises. */
+  level: "unit" | "integration" | "service" | "system" | "browser";
   /** automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. */
   state: "automated" | "manual" | "not automated yet";
   /** The file that runs it, from the product root; an automated test must name one. */
@@ -773,8 +773,8 @@ export interface InvariantTestRow {
   title: string;
   /** The invariant it proves; it has exactly one test. */
   invariant_id: string;
-  /** The level it runs at: unit, database, api, contract, e2e-api, e2e-ui or manual. */
-  level: "unit" | "database" | "api" | "contract" | "e2e-api" | "e2e-ui" | "manual";
+  /** How it runs: unit, integration, service, system or browser, the lowest that can observe its result; a manual test names the level a person exercises. */
+  level: "unit" | "integration" | "service" | "system" | "browser";
   /** automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. */
   state: "automated" | "manual" | "not automated yet";
   /** The file that runs it, from the product root; an automated test must name one. */
@@ -895,8 +895,8 @@ export interface PatternRuleTestRow {
   pattern_rule_id: string;
   /** The domain it proves the rule in, one that follows the pattern itself or through a use case; one test per pattern rule and domain. */
   domain_id: string;
-  /** The level it runs at: unit, database, api, contract, e2e-api, e2e-ui or manual. */
-  level: "unit" | "database" | "api" | "contract" | "e2e-api" | "e2e-ui" | "manual";
+  /** How it runs: unit, integration, service, system or browser, the lowest that can observe its result; a manual test names the level a person exercises. */
+  level: "unit" | "integration" | "service" | "system" | "browser";
   /** automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. */
   state: "automated" | "manual" | "not automated yet";
   /** The file that runs it, from the product root; an automated test must name one. */
@@ -927,8 +927,8 @@ export interface PolicyTestRow {
   title: string;
   /** The policy it proves; it has exactly one test. */
   policy_id: string;
-  /** The level it runs at: unit, database, api, contract, e2e-api, e2e-ui or manual. */
-  level: "unit" | "database" | "api" | "contract" | "e2e-api" | "e2e-ui" | "manual";
+  /** How it runs: unit, integration, service, system or browser, the lowest that can observe its result; a manual test names the level a person exercises. */
+  level: "unit" | "integration" | "service" | "system" | "browser";
   /** automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. */
   state: "automated" | "manual" | "not automated yet";
   /** The file that runs it, from the product root; an automated test must name one. */
@@ -1187,8 +1187,8 @@ export interface SpecificationTestRow {
   title: string;
   /** The specification it proves; it has exactly one test. */
   specification_id: string;
-  /** The level it runs at: unit, database, api, contract, e2e-api, e2e-ui or manual. */
-  level: "unit" | "database" | "api" | "contract" | "e2e-api" | "e2e-ui" | "manual";
+  /** How it runs: unit, integration, service, system or browser, the lowest that can observe its result; a manual test names the level a person exercises. */
+  level: "unit" | "integration" | "service" | "system" | "browser";
   /** automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. */
   state: "automated" | "manual" | "not automated yet";
   /** The file that runs it, from the product root; an automated test must name one. */
@@ -1219,8 +1219,8 @@ export interface StandardRuleTestRow {
   title: string;
   /** The standard rule it proves. */
   standard_rule_id: string;
-  /** The level it runs at: unit, database, api, contract, e2e-api, e2e-ui or manual. */
-  level: "unit" | "database" | "api" | "contract" | "e2e-api" | "e2e-ui" | "manual";
+  /** How it runs: unit, integration, service, system or browser, the lowest that can observe its result; a manual test names the level a person exercises. */
+  level: "unit" | "integration" | "service" | "system" | "browser";
   /** automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. */
   state: "automated" | "manual" | "not automated yet";
   /** The file that runs it, from the product root; an automated test must name one. */
@@ -1347,8 +1347,8 @@ export interface UseCaseTestRow {
   title: string;
   /** The UC requirement it proves. */
   uc_requirement_id: string;
-  /** The level it runs at: unit, database, api, contract, e2e-api, e2e-ui or manual. */
-  level: "unit" | "database" | "api" | "contract" | "e2e-api" | "e2e-ui" | "manual";
+  /** How it runs: unit, integration, service, system or browser, the lowest that can observe its result; a manual test names the level a person exercises. */
+  level: "unit" | "integration" | "service" | "system" | "browser";
   /** automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. */
   state: "automated" | "manual" | "not automated yet";
   /** The file that runs it, from the product root; an automated test must name one. */
@@ -1431,8 +1431,8 @@ export interface ViewTestRow {
   title: string;
   /** The view requirement it proves. */
   view_requirement_id: string;
-  /** The level it runs at: unit, database, api, contract, e2e-api, e2e-ui or manual. */
-  level: "unit" | "database" | "api" | "contract" | "e2e-api" | "e2e-ui" | "manual";
+  /** How it runs: unit, integration, service, system or browser, the lowest that can observe its result; a manual test names the level a person exercises. */
+  level: "unit" | "integration" | "service" | "system" | "browser";
   /** automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. */
   state: "automated" | "manual" | "not automated yet";
   /** The file that runs it, from the product root; an automated test must name one. */

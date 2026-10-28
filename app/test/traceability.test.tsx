@@ -145,7 +145,7 @@ describe('traceability', () => {
     expect(manual).toHaveTextContent('Manual because');
     expect(manual).toHaveTextContent('Run at the desk before each release.');
     expect(manual).not.toHaveTextContent('File');
-    expect(traceOf(model, model.byId.get('P-D-UC01-FL01-T')!).runBy).toMatchObject({ level: 'manual', state: 'manual', file: null });
+    expect(traceOf(model, model.byId.get('P-D-UC01-FL01-T')!).runBy).toMatchObject({ level: 'browser', state: 'manual', file: null });
   });
 
   it('LA-V92-R07-T01 No page shows a relation code as a heading or label: wiki, record facts, graph and Model view read the labels', async () => {

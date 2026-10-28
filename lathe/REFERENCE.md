@@ -1876,7 +1876,7 @@ Proves its constraint: the values its value object accepts and refuses.
 - **Parents:** [`constraint`](#kind-constraint) (`constraint_id`)
 - **Children:** none
 - **Obligation:** no
-- **Run by levels:** `unit`, `database`
+- **Run by levels:** `unit`, `integration`
 - **ID:** `<constraint>-T`, such as `TL-VO01-C01-T`; it starts with its parent's ID
 - **Links out:** Starts from ([`starts_from`](#relation-starts_from))
 - **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
@@ -1889,7 +1889,7 @@ Proves its constraint: the values its value object accepts and refuses.
 | `id` | VARCHAR → `record_id` | yes | The test's ID: its constraint's ID and T, such as TL-VO01-C01-T. |
 | `title` | VARCHAR | yes | What the test shows, in a sentence. |
 | `constraint_id` | VARCHAR → [`constraint`](#table-constraint) | yes | The constraint it proves; it has exactly one test. |
-| `level` | ENUM('unit', 'database', 'api', 'contract', 'e2e-api', 'e2e-ui', 'manual') | yes | The level it runs at: unit, database, api, contract, e2e-api, e2e-ui or manual. |
+| `level` | ENUM('unit', 'integration', 'service', 'system', 'browser') | yes | How it runs: unit, integration, service, system or browser, the lowest that can observe its result; a manual test names the level a person exercises. |
 | `state` | ENUM('automated', 'manual', 'not automated yet') | yes | automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. |
 | `file` | VARCHAR | no | The file that runs it, from the product root; an automated test must name one. |
 | `manual_reason` | VARCHAR | no | Why a person runs it rather than a file; a manual test must give one, and only a manual test. |
@@ -1917,7 +1917,7 @@ Proves its invariant: a change that would break it is refused, and the aggregate
 - **Parents:** [`invariant`](#kind-invariant) (`invariant_id`)
 - **Children:** none
 - **Obligation:** no
-- **Run by levels:** `unit`, `database`
+- **Run by levels:** `unit`, `integration`
 - **ID:** `<invariant>-T`, such as `TL-LEND-INV01-T`; it starts with its parent's ID
 - **Links out:** Starts from ([`starts_from`](#relation-starts_from))
 - **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
@@ -1930,7 +1930,7 @@ Proves its invariant: a change that would break it is refused, and the aggregate
 | `id` | VARCHAR → `record_id` | yes | The test's ID: its invariant's ID and T, such as TL-LEND-INV01-T. |
 | `title` | VARCHAR | yes | What the test shows, in a sentence. |
 | `invariant_id` | VARCHAR → [`invariant`](#table-invariant) | yes | The invariant it proves; it has exactly one test. |
-| `level` | ENUM('unit', 'database', 'api', 'contract', 'e2e-api', 'e2e-ui', 'manual') | yes | The level it runs at: unit, database, api, contract, e2e-api, e2e-ui or manual. |
+| `level` | ENUM('unit', 'integration', 'service', 'system', 'browser') | yes | How it runs: unit, integration, service, system or browser, the lowest that can observe its result; a manual test names the level a person exercises. |
 | `state` | ENUM('automated', 'manual', 'not automated yet') | yes | automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. |
 | `file` | VARCHAR | no | The file that runs it, from the product root; an automated test must name one. |
 | `manual_reason` | VARCHAR | no | Why a person runs it rather than a file; a manual test must give one, and only a manual test. |
@@ -1959,7 +1959,7 @@ Proves its specification: which records satisfy the predicate and which do not.
 - **Parents:** [`specification`](#kind-specification) (`specification_id`)
 - **Children:** none
 - **Obligation:** no
-- **Run by levels:** `unit`, `database`
+- **Run by levels:** `unit`, `integration`
 - **ID:** `<specification>-T`, such as `TL-LEND-SP01-T`; it starts with its parent's ID
 - **Links out:** Starts from ([`starts_from`](#relation-starts_from))
 - **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
@@ -1972,7 +1972,7 @@ Proves its specification: which records satisfy the predicate and which do not.
 | `id` | VARCHAR → `record_id` | yes | The test's ID: its specification's ID and T, such as TL-LEND-SP01-T. |
 | `title` | VARCHAR | yes | What the test shows, in a sentence. |
 | `specification_id` | VARCHAR → [`specification`](#table-specification) | yes | The specification it proves; it has exactly one test. |
-| `level` | ENUM('unit', 'database', 'api', 'contract', 'e2e-api', 'e2e-ui', 'manual') | yes | The level it runs at: unit, database, api, contract, e2e-api, e2e-ui or manual. |
+| `level` | ENUM('unit', 'integration', 'service', 'system', 'browser') | yes | How it runs: unit, integration, service, system or browser, the lowest that can observe its result; a manual test names the level a person exercises. |
 | `state` | ENUM('automated', 'manual', 'not automated yet') | yes | automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. |
 | `file` | VARCHAR | no | The file that runs it, from the product root; an automated test must name one. |
 | `manual_reason` | VARCHAR | no | Why a person runs it rather than a file; a manual test must give one, and only a manual test. |
@@ -2001,7 +2001,7 @@ Proves its policy: when its event happens, its command is sent.
 - **Parents:** [`policy`](#kind-policy) (`policy_id`)
 - **Children:** none
 - **Obligation:** no
-- **Run by levels:** `database`, `api`, `e2e-api`, `e2e-ui`, `manual`
+- **Run by levels:** `integration`, `service`, `system`, `browser`
 - **ID:** `<policy>-T`, such as `TL-LEND-PO01-T`; it starts with its parent's ID
 - **Links out:** Starts from ([`starts_from`](#relation-starts_from))
 - **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
@@ -2014,7 +2014,7 @@ Proves its policy: when its event happens, its command is sent.
 | `id` | VARCHAR → `record_id` | yes | The test's ID: its policy's ID and T, such as TL-LEND-PO01-T. |
 | `title` | VARCHAR | yes | What the test shows, in a sentence. |
 | `policy_id` | VARCHAR → [`policy`](#table-policy) | yes | The policy it proves; it has exactly one test. |
-| `level` | ENUM('unit', 'database', 'api', 'contract', 'e2e-api', 'e2e-ui', 'manual') | yes | The level it runs at: unit, database, api, contract, e2e-api, e2e-ui or manual. |
+| `level` | ENUM('unit', 'integration', 'service', 'system', 'browser') | yes | How it runs: unit, integration, service, system or browser, the lowest that can observe its result; a manual test names the level a person exercises. |
 | `state` | ENUM('automated', 'manual', 'not automated yet') | yes | automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. |
 | `file` | VARCHAR | no | The file that runs it, from the product root; an automated test must name one. |
 | `manual_reason` | VARCHAR | no | Why a person runs it rather than a file; a manual test must give one, and only a manual test. |
@@ -2056,7 +2056,7 @@ Proves its domain service: from the inputs given, the value or decision it retur
 | `id` | VARCHAR → `record_id` | yes | The test's ID: its domain service's ID and T<nn>, such as TL-LEND-DS01-T01. |
 | `title` | VARCHAR | yes | What the test shows, in a sentence. |
 | `domain_service_id` | VARCHAR → [`domain_service`](#table-domain_service) | yes | The domain service it proves. |
-| `level` | ENUM('unit', 'database', 'api', 'contract', 'e2e-api', 'e2e-ui', 'manual') | yes | The level it runs at: unit, database, api, contract, e2e-api, e2e-ui or manual. |
+| `level` | ENUM('unit', 'integration', 'service', 'system', 'browser') | yes | How it runs: unit, integration, service, system or browser, the lowest that can observe its result; a manual test names the level a person exercises. |
 | `state` | ENUM('automated', 'manual', 'not automated yet') | yes | automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. |
 | `file` | VARCHAR | no | The file that runs it, from the product root; an automated test must name one. |
 | `manual_reason` | VARCHAR | no | Why a person runs it rather than a file; a manual test must give one, and only a manual test. |
@@ -2084,7 +2084,7 @@ Proves its UC requirement, at the level the use case is stated: what the actor d
 - **Parents:** [`uc_requirement`](#kind-uc_requirement) (`uc_requirement_id`)
 - **Children:** none
 - **Obligation:** no
-- **Run by levels:** `api`, `e2e-api`, `e2e-ui`, `manual`
+- **Run by levels:** `service`, `system`, `browser`
 - **ID:** `<UC requirement>-T<nn>`, such as `TL-LEND-UC01-R01-T01`; it starts with its parent's ID
 - **Links out:** Starts from ([`starts_from`](#relation-starts_from))
 - **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
@@ -2097,7 +2097,7 @@ Proves its UC requirement, at the level the use case is stated: what the actor d
 | `id` | VARCHAR → `record_id` | yes | The test's ID: its UC requirement's ID and T<nn>, such as TL-LEND-UC01-R01-T01. |
 | `title` | VARCHAR | yes | What the test shows, in a sentence. |
 | `uc_requirement_id` | VARCHAR → [`uc_requirement`](#table-uc_requirement) | yes | The UC requirement it proves. |
-| `level` | ENUM('unit', 'database', 'api', 'contract', 'e2e-api', 'e2e-ui', 'manual') | yes | The level it runs at: unit, database, api, contract, e2e-api, e2e-ui or manual. |
+| `level` | ENUM('unit', 'integration', 'service', 'system', 'browser') | yes | How it runs: unit, integration, service, system or browser, the lowest that can observe its result; a manual test names the level a person exercises. |
 | `state` | ENUM('automated', 'manual', 'not automated yet') | yes | automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. |
 | `file` | VARCHAR | no | The file that runs it, from the product root; an automated test must name one. |
 | `manual_reason` | VARCHAR | no | Why a person runs it rather than a file; a manual test must give one, and only a manual test. |
@@ -2125,7 +2125,7 @@ Proves its view requirement in the view.
 - **Parents:** [`view_requirement`](#kind-view_requirement) (`view_requirement_id`)
 - **Children:** none
 - **Obligation:** no
-- **Run by levels:** `unit`, `e2e-ui`, `manual`
+- **Run by levels:** `unit`, `browser`
 - **ID:** `<view requirement>-T<nn>`, such as `TL-V01-R01-T01`; it starts with its parent's ID
 - **Links out:** Starts from ([`starts_from`](#relation-starts_from))
 - **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
@@ -2138,7 +2138,7 @@ Proves its view requirement in the view.
 | `id` | VARCHAR → `record_id` | yes | The test's ID: its view requirement's ID and T<nn>, such as TL-V01-R01-T01. |
 | `title` | VARCHAR | yes | What the test shows, in a sentence. |
 | `view_requirement_id` | VARCHAR → [`view_requirement`](#table-view_requirement) | yes | The view requirement it proves. |
-| `level` | ENUM('unit', 'database', 'api', 'contract', 'e2e-api', 'e2e-ui', 'manual') | yes | The level it runs at: unit, database, api, contract, e2e-api, e2e-ui or manual. |
+| `level` | ENUM('unit', 'integration', 'service', 'system', 'browser') | yes | How it runs: unit, integration, service, system or browser, the lowest that can observe its result; a manual test names the level a person exercises. |
 | `state` | ENUM('automated', 'manual', 'not automated yet') | yes | automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. |
 | `file` | VARCHAR | no | The file that runs it, from the product root; an automated test must name one. |
 | `manual_reason` | VARCHAR | no | Why a person runs it rather than a file; a manual test must give one, and only a manual test. |
@@ -2166,7 +2166,7 @@ Proves its API requirement at the endpoint: the request and the response.
 - **Parents:** [`api_requirement`](#kind-api_requirement) (`api_requirement_id`)
 - **Children:** none
 - **Obligation:** no
-- **Run by levels:** `contract`, `api`
+- **Run by levels:** `service`, `system`
 - **ID:** `<API requirement>-T<nn>`, such as `TL-LEND-EP01-R01-T01`; it starts with its parent's ID
 - **Links out:** Starts from ([`starts_from`](#relation-starts_from))
 - **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
@@ -2179,7 +2179,7 @@ Proves its API requirement at the endpoint: the request and the response.
 | `id` | VARCHAR → `record_id` | yes | The test's ID: its API requirement's ID and T<nn>, such as TL-LEND-EP01-R01-T01. |
 | `title` | VARCHAR | yes | What the test shows, in a sentence. |
 | `api_requirement_id` | VARCHAR → [`api_requirement`](#table-api_requirement) | yes | The API requirement it proves. |
-| `level` | ENUM('unit', 'database', 'api', 'contract', 'e2e-api', 'e2e-ui', 'manual') | yes | The level it runs at: unit, database, api, contract, e2e-api, e2e-ui or manual. |
+| `level` | ENUM('unit', 'integration', 'service', 'system', 'browser') | yes | How it runs: unit, integration, service, system or browser, the lowest that can observe its result; a manual test names the level a person exercises. |
 | `state` | ENUM('automated', 'manual', 'not automated yet') | yes | automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. |
 | `file` | VARCHAR | no | The file that runs it, from the product root; an automated test must name one. |
 | `manual_reason` | VARCHAR | no | Why a person runs it rather than a file; a manual test must give one, and only a manual test. |
@@ -2202,12 +2202,12 @@ Proves its API requirement at the endpoint: the request and the response.
 
 ### Flow test (`flow_test`)
 
-A smoke test of its flow's main path, end to end, at the level that fits its interface: e2e-ui for a web app or desktop, e2e-api for an API, a CLI or agent tools, manual only with a reason.
+A smoke test of its flow's main path, end to end, at the level that fits its interface: browser for a web app or desktop, system for an API, a CLI or agent tools.
 
 - **Parents:** [`flow`](#kind-flow) (`flow_id`)
 - **Children:** none
 - **Obligation:** no
-- **Run by levels:** `e2e-ui`, `e2e-api`, `manual`
+- **Run by levels:** `system`, `browser`
 - **ID:** `<flow>-T`, such as `TL-LEND-UC01-FL01-T`; it starts with its parent's ID
 - **Links out:** Starts from ([`starts_from`](#relation-starts_from))
 - **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
@@ -2220,7 +2220,7 @@ A smoke test of its flow's main path, end to end, at the level that fits its int
 | `id` | VARCHAR → `record_id` | yes | The test's ID: its flow's ID and T, such as TL-LEND-UC01-FL01-T. |
 | `title` | VARCHAR | yes | What the test shows, in a sentence. |
 | `flow_id` | VARCHAR → [`flow`](#table-flow) | yes | The flow it proves; it has exactly one test. |
-| `level` | ENUM('unit', 'database', 'api', 'contract', 'e2e-api', 'e2e-ui', 'manual') | yes | The level it runs at: unit, database, api, contract, e2e-api, e2e-ui or manual. |
+| `level` | ENUM('unit', 'integration', 'service', 'system', 'browser') | yes | How it runs: unit, integration, service, system or browser, the lowest that can observe its result; a manual test names the level a person exercises. |
 | `state` | ENUM('automated', 'manual', 'not automated yet') | yes | automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. |
 | `file` | VARCHAR | no | The file that runs it, from the product root; an automated test must name one. |
 | `manual_reason` | VARCHAR | no | Why a person runs it rather than a file; a manual test must give one, and only a manual test. |
@@ -2248,7 +2248,7 @@ Proves an exchange with its integration's outside system.
 - **Parents:** [`integration`](#kind-integration) (`integration_id`)
 - **Children:** none
 - **Obligation:** no
-- **Run by levels:** `contract`, `e2e-api`, `manual`
+- **Run by levels:** `integration`, `service`, `system`
 - **ID:** `<integration>-T<nn>`, such as `TL-INT01-T01`; it starts with its parent's ID
 - **Links out:** Starts from ([`starts_from`](#relation-starts_from))
 - **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
@@ -2261,7 +2261,7 @@ Proves an exchange with its integration's outside system.
 | `id` | VARCHAR → `record_id` | yes | The test's ID: its integration's ID and T<nn>, such as TL-INT01-T01. |
 | `title` | VARCHAR | yes | What the test shows, in a sentence. |
 | `integration_id` | VARCHAR → [`integration`](#table-integration) | yes | The integration it proves. |
-| `level` | ENUM('unit', 'database', 'api', 'contract', 'e2e-api', 'e2e-ui', 'manual') | yes | The level it runs at: unit, database, api, contract, e2e-api, e2e-ui or manual. |
+| `level` | ENUM('unit', 'integration', 'service', 'system', 'browser') | yes | How it runs: unit, integration, service, system or browser, the lowest that can observe its result; a manual test names the level a person exercises. |
 | `state` | ENUM('automated', 'manual', 'not automated yet') | yes | automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. |
 | `file` | VARCHAR | no | The file that runs it, from the product root; an automated test must name one. |
 | `manual_reason` | VARCHAR | no | Why a person runs it rather than a file; a manual test must give one, and only a manual test. |
@@ -2289,7 +2289,7 @@ Proves its pattern rule in one domain that adopts the pattern: one test per patt
 - **Parents:** [`pattern_rule`](#kind-pattern_rule) (`pattern_rule_id`)
 - **Children:** none
 - **Obligation:** no
-- **Run by levels:** `unit`, `database`, `api`, `contract`, `e2e-api`, `e2e-ui`, `manual`
+- **Run by levels:** `unit`, `integration`, `service`, `system`, `browser`
 - **ID:** `<pattern rule>-T<nn>`, such as `TL-PAT-ACT-R01-T01`; it starts with its parent's ID
 - **Links out:** Starts from ([`starts_from`](#relation-starts_from))
 - **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
@@ -2303,7 +2303,7 @@ Proves its pattern rule in one domain that adopts the pattern: one test per patt
 | `title` | VARCHAR | yes | What the test shows, in a sentence. |
 | `pattern_rule_id` | VARCHAR → [`pattern_rule`](#table-pattern_rule) | yes | The pattern rule it proves. |
 | `domain_id` | VARCHAR → [`domain`](#table-domain) | yes | The domain it proves the rule in, one that follows the pattern itself or through a use case; one test per pattern rule and domain. |
-| `level` | ENUM('unit', 'database', 'api', 'contract', 'e2e-api', 'e2e-ui', 'manual') | yes | The level it runs at: unit, database, api, contract, e2e-api, e2e-ui or manual. |
+| `level` | ENUM('unit', 'integration', 'service', 'system', 'browser') | yes | How it runs: unit, integration, service, system or browser, the lowest that can observe its result; a manual test names the level a person exercises. |
 | `state` | ENUM('automated', 'manual', 'not automated yet') | yes | automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. |
 | `file` | VARCHAR | no | The file that runs it, from the product root; an automated test must name one. |
 | `manual_reason` | VARCHAR | no | Why a person runs it rather than a file; a manual test must give one, and only a manual test. |
@@ -2332,7 +2332,7 @@ Proves its standard rule in the product's code, such as a scan of the code for w
 - **Parents:** [`standard_rule`](#kind-standard_rule) (`standard_rule_id`)
 - **Children:** none
 - **Obligation:** no
-- **Run by levels:** `unit`, `database`, `api`, `contract`, `e2e-api`, `e2e-ui`, `manual`
+- **Run by levels:** `unit`, `integration`, `service`, `system`, `browser`
 - **ID:** `<standard rule>-T<nn>`, such as `TL-STD-CODE-R01-T01`; it starts with its parent's ID
 - **Links out:** Starts from ([`starts_from`](#relation-starts_from))
 - **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
@@ -2345,7 +2345,7 @@ Proves its standard rule in the product's code, such as a scan of the code for w
 | `id` | VARCHAR → `record_id` | yes | The test's ID: its standard rule's ID and T<nn>, such as TL-STD-CODE-R01-T01. |
 | `title` | VARCHAR | yes | What the test shows, in a sentence. |
 | `standard_rule_id` | VARCHAR → [`standard_rule`](#table-standard_rule) | yes | The standard rule it proves. |
-| `level` | ENUM('unit', 'database', 'api', 'contract', 'e2e-api', 'e2e-ui', 'manual') | yes | The level it runs at: unit, database, api, contract, e2e-api, e2e-ui or manual. |
+| `level` | ENUM('unit', 'integration', 'service', 'system', 'browser') | yes | How it runs: unit, integration, service, system or browser, the lowest that can observe its result; a manual test names the level a person exercises. |
 | `state` | ENUM('automated', 'manual', 'not automated yet') | yes | automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. |
 | `file` | VARCHAR | no | The file that runs it, from the product root; an automated test must name one. |
 | `manual_reason` | VARCHAR | no | Why a person runs it rather than a file; a manual test must give one, and only a manual test. |
@@ -2404,7 +2404,7 @@ A manual test may name a file that holds the steps a person follows. Nothing tie
 
 A test whose run by level its test kind does not allow.
 
-Each test kind is run at the levels that can prove what it tests: a constraint test at unit or database (a constraint enforced by a SQL CHECK can only be tested against the database); an invariant or specification test at unit or database; a domain service test at unit; a policy test at database, api or e2e-api, or at e2e-ui or manual where only the running app shows the reaction; a use case test at api, e2e-api, e2e-ui or manual; a view test at unit, e2e-ui or manual; an endpoint test at contract or api; a flow test at e2e-ui, e2e-api or manual (and at the one that fits its flow's interface, flow-test-level-for-interface); an integration test at contract, e2e-api or manual; a pattern rule test at any level. A test at another level proves nothing in coverage. Run the test at an allowed level and set its level, or make it the test kind of what it really proves.
+A test's level says only how it runs, cheapest first: unit (in process, no storage or I/O), integration (in process, with real storage: a database, files, git), service (through the product's interface in process, with real storage), system (the running product driven from outside through its real interface) and browser (a real browser or the desktop shell against the running app); a manual test names the level a person exercises. Each test kind is run at the levels that can prove what it tests, and a test runs at the lowest of them that can observe its result: a constraint test at unit or integration (a constraint enforced by a SQL CHECK can only be tested against the database); an invariant or specification test at unit or integration; a domain service test at unit; a policy test at integration, service or system, or at browser where only the running app shows the reaction; a use case test at service, system or browser; a view test at unit or browser; an endpoint test at service or system; a flow test at system or browser (and at the one that fits its flow's interface, flow-test-level-for-interface); an integration test at integration, service or system; a pattern rule or standard rule test at any level. A test at another level proves nothing in coverage. Run the test at an allowed level and set its level, or make it the test kind of what it really proves.
 
 <a id="check-pattern-rule-test-outside-followers"></a>
 
@@ -2454,7 +2454,7 @@ test-file-missing-id follows a test record to its code; this check follows the c
 
 A flow test at a level that does not fit its flow's interface.
 
-A flow test walks its flow's main path the way its interface is used: through the pages (e2e-ui) for a web app or a desktop app, and through requests or commands (e2e-api) for an API, a CLI or agent tools. Manual is allowed for any interface, with its reason; a flow through an interface of kind other may be tested at any level a flow test allows. Run the test at the level that fits, or give the flow the interface it really goes through.
+A flow test walks its flow's main path the way its interface is used: in a real browser or the desktop shell (browser) for a web app or a desktop app, and from outside the running product through its requests or commands (system) for an API, a CLI or agent tools. A manual test names the level the person exercises, so it is held to the same fit. A flow through an interface of kind other may be tested at any level a flow test allows. Run the test at the level that fits, or give the flow the interface it really goes through.
 
 ### Coverage gaps: test plan
 

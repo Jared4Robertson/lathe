@@ -148,7 +148,7 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
   it('refuses a second invariant test for one invariant, and a second test of each exactly-one kind', async () => {
     const problems = await refusal(adding({ invariant_test: [{ id: 'TL-LEND-INV01-TB', title: 'Again', invariant_id: 'TL-LEND-INV01', level: 'unit', state: 'not automated yet' }] }));
     expect(problems).toEqual([expect.objectContaining({ rule: 'unique', file: 'data/invariant_test.jsonl', line: 2 })]);
-    const flowTest = await refusal(adding({ flow_test: [{ id: 'TL-LEND-UC01-FL01-TB', title: 'Again', flow_id: 'TL-LEND-UC01-FL01', level: 'e2e-ui', state: 'not automated yet' }] }));
+    const flowTest = await refusal(adding({ flow_test: [{ id: 'TL-LEND-UC01-FL01-TB', title: 'Again', flow_id: 'TL-LEND-UC01-FL01', level: 'browser', state: 'not automated yet' }] }));
     expect(flowTest).toEqual([expect.objectContaining({ rule: 'unique', file: 'data/flow_test.jsonl' })]);
   });
 

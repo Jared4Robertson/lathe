@@ -94,7 +94,7 @@ A usage mistake (a missing option, an unknown command, a bad port) exits 2.
 
 ## Upgrading
 
-Lathe's schema has a version: one whole number in [schema/version.json](schema/version.json), 1 for the first versioned schema, 2 since each flow goes through an interface (converter `upgrades/1-to-2.ts`). A product's `lathe.config.json` names the version its data is for (none is 1). Every load (`lathe check`, the data commands, `lathe serve`, the MCP tools, `loadWorkspace` and `openStore`) stops on data for another version, with one message and nothing read: data for an older schema says to run `npx lathe upgrade`; data for a newer one says the product needs a newer Lathe.
+Lathe's schema has a version: one whole number in [schema/version.json](schema/version.json), 1 for the first versioned schema, 2 since each flow goes through an interface and a test runs at one of five levels (converter `upgrades/1-to-2.ts`). A product's `lathe.config.json` names the version its data is for (none is 1). Every load (`lathe check`, the data commands, `lathe serve`, the MCP tools, `loadWorkspace` and `openStore`) stops on data for another version, with one message and nothing read: data for an older schema says to run `npx lathe upgrade`; data for a newer one says the product needs a newer Lathe.
 
 **Versions.** The package follows semantic versioning, and its major version tracks the schema: a breaking schema change (a table, column or rule that existing data may not pass, such as a renamed or removed column or a new required one) raises the schema version by one, adds a converter, and raises the major version. A new kind, an optional column or a new check is a minor version; a fix is a patch. Two releases with the same major version read the same data.
 
