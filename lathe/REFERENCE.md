@@ -12,7 +12,8 @@ The model is drawn from domain-driven design, CQRS and event storming, in six st
 outcomes the product exists to achieve), the domain model, use cases on top of it, their interaction design, the
 technical records that implement each design record, and the test plan. Links run from what is defined first to
 what is defined later. A capability names the outcomes it serves, so the trace runs from an outcome to its
-capabilities, their use cases, the code and the tests.
+capabilities, their use cases, the code and the tests. An outcome names what measures it (`measured_by`): a test,
+or a record of a product's own kind such as a report, or it says how it is measured outside the code.
 
 **Words.** What clean architecture calls a use case or an interactor is what Lathe calls a command handler
 (`command_handler`): the application service that carries out one command. A Lathe use case (`use_case`) is the
@@ -47,15 +48,15 @@ The business outcomes the product exists to achieve, each a measurable statement
 
 ### Business outcome (`business_outcome`)
 
-A business outcome: a measurable change the product exists to bring about, which its capabilities serve. The trace runs from it to a capability, a use case, the code and the tests.
+A business outcome: a measurable change the product exists to bring about, which its capabilities serve and its tests or records measure (measured_by). The trace runs from it to a capability, a use case, the code and the tests.
 
 - **Parents:** [`product`](#kind-product) (`product_id`)
 - **Children:** none
 - **Obligation:** no
 - **ID:** `<P>-BO<nn>`, such as `TL-BO01`; it starts with its parent's ID
-- **Links out:** none
+- **Links out:** Measured by ([`measured_by`](#relation-measured_by))
 - **Links in:** Questions about this ([`about`](#relation-about)), Served by ([`serves`](#relation-serves))
-- **Gaps:** [`outcome-not-served`](#gap-outcome-not-served)
+- **Gaps:** [`outcome-not-served`](#gap-outcome-not-served), [`outcome-not-measured`](#gap-outcome-not-measured)
 
 <a id="table-business_outcome"></a>
 
@@ -67,6 +68,7 @@ A business outcome: a measurable change the product exists to bring about, which
 | `statement` | VARCHAR | yes | The outcome, stated so it can be measured, in one sentence. |
 | `measure` | VARCHAR | yes | What is measured to know whether it is reached, and how. |
 | `target` | VARCHAR | yes | The value of the measure that counts as reached, and by when. |
+| `measured_outside` | VARCHAR | no | How the outcome is measured outside the code, when no test or record of the product can measure it (adoption by other repos, sales): who counts what, from where. Give it only then; an outcome the code can measure links what measures it with measured_by. |
 | `notes` | VARCHAR | no | Longer notes, such as where the measure comes from. |
 
 - **Key:** `id`
@@ -74,6 +76,7 @@ A business outcome: a measurable change the product exists to bring about, which
 - **Rule:** `("trim"("statement") != '')`
 - **Rule:** `("trim"(measure) != '')`
 - **Rule:** `("trim"("target") != '')`
+- **Rule:** `("trim"(measured_outside) != '')`
 
 ### Coverage gaps: discovery
 
@@ -82,6 +85,7 @@ Each is reported in coverage, under the record that falls short, never as a prob
 | Gap | Kinds | What it reports |
 | --- | --- | --- |
 | <a id="gap-outcome-not-served"></a>`outcome-not-served` | [`business_outcome`](#kind-business_outcome), [`capability`](#kind-capability) | A business outcome no capability serves. |
+| <a id="gap-outcome-not-measured"></a>`outcome-not-measured` | [`business_outcome`](#kind-business_outcome) | A business outcome no running test or record measures, and that names no measure outside the code. |
 
 <a id="stage-domain-model"></a>
 
@@ -1308,7 +1312,8 @@ Where an entity or a read model, its parent, is stored, in a database or not; or
 - **Links out:** Meets ([`meets`](#relation-meets))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Parts:** [`table_key`](#table-table_key)
-- **Checks:** [`technical-file-missing`](#check-technical-file-missing)
+- **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`table-schema-mismatch`](#check-table-schema-mismatch)
+- **Gaps:** [`table-without-file`](#gap-table-without-file)
 
 <a id="table-table"></a>
 
@@ -1742,6 +1747,16 @@ A ui component that nothing uses.
 
 A ui component has no owner: it exists because it renders views. One that nothing uses is a leftover, or a link is missing. Link the views it renders with renders, or remove it.
 
+<a id="check-table-schema-mismatch"></a>
+
+### `table-schema-mismatch`
+
+**Warning** · Lathe's · Kinds: [`table`](#kind-table)
+
+A table kept in a database whose file does not define it as the spec says: its name, a column or a key.
+
+A table, view or materialized view that names a file is checked against that file read as text (a migration, a SQL schema, or code that creates it): the file defines a table or view of its name; every column its entity's or read model's fields give (a field's column_name, else its name in lower case with underscores; a value object of several fields flattened into its fields' columns; an entity's table also holds the fields of the children kept in its root's table); and each primary, unique and foreign key by its columns, a foreign key also by its target table. It recognizes CREATE TABLE and CREATE VIEW (OR REPLACE, TEMP, MATERIALIZED, IF NOT EXISTS) with their column definitions and inline or table PRIMARY KEY, UNIQUE and REFERENCES, the columns an AS SELECT body selects or names with AS, CREATE UNIQUE INDEX and ALTER TABLE ... ADD. It does not compare types, NOT NULL, CHECKs, a unique key's name or condition, or index keys, and it cannot see a statement built at run time from pieces the text does not show. A missing file is technical-file-missing instead. Change the file to match, or the spec when the file is right.
+
 ### Coverage gaps: technical specification
 
 Each is reported in coverage, under the record that falls short, never as a problem.
@@ -1759,6 +1774,7 @@ Each is reported in coverage, under the record that falls short, never as a prob
 | <a id="gap-query-without-handler"></a>`query-without-handler` | [`query`](#kind-query), [`query_handler`](#kind-query_handler) | A query with no query handler. |
 | <a id="gap-endpoint-without-handler"></a>`endpoint-without-handler` | [`endpoint`](#kind-endpoint), [`endpoint_handler`](#kind-endpoint_handler) | An endpoint with no endpoint handler. |
 | <a id="gap-integration-without-adapter"></a>`integration-without-adapter` | [`integration`](#kind-integration), [`adapter`](#kind-adapter) | An integration with no adapter. |
+| <a id="gap-table-without-file"></a>`table-without-file` | [`table`](#kind-table) | A table stored in a database table that names no file creating it. |
 | <a id="gap-view-without-ui-component"></a>`view-without-ui-component` | [`view`](#kind-view), [`ui_component`](#kind-ui_component) | A view no UI component renders. |
 | <a id="gap-code-file-untraced"></a>`code-file-untraced` |  | A source file no technical record names, directly or through a folder. |
 
@@ -1812,7 +1828,7 @@ Proves its constraint: the values its value object accepts and refuses.
 - **Run by levels:** `unit`, `database`
 - **ID:** `<constraint>-T`, such as `TL-VO01-C01-T`; it starts with its parent's ID
 - **Links out:** Starts from ([`starts_from`](#relation-starts_from))
-- **Links in:** Questions about this ([`about`](#relation-about))
+- **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
 - **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`test-case-unnamed`](#check-test-case-unnamed)
 
 <a id="table-constraint_test"></a>
@@ -1853,7 +1869,7 @@ Proves its invariant: a change that would break it is refused, and the aggregate
 - **Run by levels:** `unit`, `database`
 - **ID:** `<invariant>-T`, such as `TL-LEND-INV01-T`; it starts with its parent's ID
 - **Links out:** Starts from ([`starts_from`](#relation-starts_from))
-- **Links in:** Questions about this ([`about`](#relation-about))
+- **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
 - **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`test-case-unnamed`](#check-test-case-unnamed)
 
 <a id="table-invariant_test"></a>
@@ -1895,7 +1911,7 @@ Proves its specification: which records satisfy the predicate and which do not.
 - **Run by levels:** `unit`, `database`
 - **ID:** `<specification>-T`, such as `TL-LEND-SP01-T`; it starts with its parent's ID
 - **Links out:** Starts from ([`starts_from`](#relation-starts_from))
-- **Links in:** Questions about this ([`about`](#relation-about))
+- **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
 - **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`test-case-unnamed`](#check-test-case-unnamed)
 
 <a id="table-specification_test"></a>
@@ -1937,7 +1953,7 @@ Proves its policy: when its event happens, its command is sent.
 - **Run by levels:** `database`, `api`, `e2e-api`, `e2e-ui`, `manual`
 - **ID:** `<policy>-T`, such as `TL-LEND-PO01-T`; it starts with its parent's ID
 - **Links out:** Starts from ([`starts_from`](#relation-starts_from))
-- **Links in:** Questions about this ([`about`](#relation-about))
+- **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
 - **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`test-case-unnamed`](#check-test-case-unnamed)
 
 <a id="table-policy_test"></a>
@@ -1979,7 +1995,7 @@ Proves its domain service: from the inputs given, the value or decision it retur
 - **Run by levels:** `unit`
 - **ID:** `<domain service>-T<nn>`, such as `TL-LEND-DS01-T01`; it starts with its parent's ID
 - **Links out:** Starts from ([`starts_from`](#relation-starts_from))
-- **Links in:** Questions about this ([`about`](#relation-about))
+- **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
 - **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`test-case-unnamed`](#check-test-case-unnamed)
 
 <a id="table-domain_service_test"></a>
@@ -2020,7 +2036,7 @@ Proves its UC requirement, at the level the use case is stated: what the actor d
 - **Run by levels:** `api`, `e2e-api`, `e2e-ui`, `manual`
 - **ID:** `<UC requirement>-T<nn>`, such as `TL-LEND-UC01-R01-T01`; it starts with its parent's ID
 - **Links out:** Starts from ([`starts_from`](#relation-starts_from))
-- **Links in:** Questions about this ([`about`](#relation-about))
+- **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
 - **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`test-case-unnamed`](#check-test-case-unnamed)
 
 <a id="table-use_case_test"></a>
@@ -2061,7 +2077,7 @@ Proves its view requirement in the view.
 - **Run by levels:** `unit`, `e2e-ui`, `manual`
 - **ID:** `<view requirement>-T<nn>`, such as `TL-V01-R01-T01`; it starts with its parent's ID
 - **Links out:** Starts from ([`starts_from`](#relation-starts_from))
-- **Links in:** Questions about this ([`about`](#relation-about))
+- **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
 - **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`test-case-unnamed`](#check-test-case-unnamed)
 
 <a id="table-view_test"></a>
@@ -2102,7 +2118,7 @@ Proves its API requirement at the endpoint: the request and the response.
 - **Run by levels:** `contract`, `api`
 - **ID:** `<API requirement>-T<nn>`, such as `TL-LEND-EP01-R01-T01`; it starts with its parent's ID
 - **Links out:** Starts from ([`starts_from`](#relation-starts_from))
-- **Links in:** Questions about this ([`about`](#relation-about))
+- **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
 - **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`test-case-unnamed`](#check-test-case-unnamed)
 
 <a id="table-endpoint_test"></a>
@@ -2143,7 +2159,7 @@ A smoke test of its flow's main path, end to end.
 - **Run by levels:** `e2e-ui`, `e2e-api`, `manual`
 - **ID:** `<flow>-T`, such as `TL-LEND-UC01-FL-T`; it starts with its parent's ID
 - **Links out:** Starts from ([`starts_from`](#relation-starts_from))
-- **Links in:** Questions about this ([`about`](#relation-about))
+- **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
 - **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`test-case-unnamed`](#check-test-case-unnamed)
 
 <a id="table-flow_test"></a>
@@ -2184,7 +2200,7 @@ Proves an exchange with its integration's outside system.
 - **Run by levels:** `contract`, `e2e-api`, `manual`
 - **ID:** `<integration>-T<nn>`, such as `TL-INT01-T01`; it starts with its parent's ID
 - **Links out:** Starts from ([`starts_from`](#relation-starts_from))
-- **Links in:** Questions about this ([`about`](#relation-about))
+- **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
 - **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`test-case-unnamed`](#check-test-case-unnamed)
 
 <a id="table-integration_test"></a>
@@ -2225,7 +2241,7 @@ Proves its pattern rule in one domain that adopts the pattern: one test per patt
 - **Run by levels:** `unit`, `database`, `api`, `contract`, `e2e-api`, `e2e-ui`, `manual`
 - **ID:** `<pattern rule>-T<nn>`, such as `TL-PAT-ACT-R01-T01`; it starts with its parent's ID
 - **Links out:** Starts from ([`starts_from`](#relation-starts_from))
-- **Links in:** Questions about this ([`about`](#relation-about))
+- **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
 - **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`pattern-rule-test-outside-followers`](#check-pattern-rule-test-outside-followers), [`test-case-unnamed`](#check-test-case-unnamed)
 
 <a id="table-pattern_rule_test"></a>
@@ -2268,7 +2284,7 @@ Proves its standard rule in the product's code, such as a scan of the code for w
 - **Run by levels:** `unit`, `database`, `api`, `contract`, `e2e-api`, `e2e-ui`, `manual`
 - **ID:** `<standard rule>-T<nn>`, such as `TL-STD-CODE-R01-T01`; it starts with its parent's ID
 - **Links out:** Starts from ([`starts_from`](#relation-starts_from))
-- **Links in:** Questions about this ([`about`](#relation-about))
+- **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
 - **Checks:** [`test-case-unnamed`](#check-test-case-unnamed)
 
 <a id="table-standard_rule_test"></a>
@@ -2763,6 +2779,30 @@ The flow step invokes the command or query: at most one per step.
 | --- | --- | --- |
 | [`flow_step`](#kind-flow_step) | [`command`](#kind-command) | The step sends the command. |
 | [`flow_step`](#kind-flow_step) | [`query`](#kind-query) | The step asks the query. |
+
+<a id="relation-measured_by"></a>
+
+### `measured_by`
+
+The business outcome is measured by the test or record: a test of any kind, or a record of a product's own kind (a report, a script, a check row) once the product adds that pair with a product_relation named measured_by. An outcome may be measured by several, and one test or record measure several outcomes.
+
+- **Reads:** Measured by / Measures
+- **Role:** none
+
+| From | To | Meaning |
+| --- | --- | --- |
+| [`business_outcome`](#kind-business_outcome) | [`constraint_test`](#kind-constraint_test) | The business outcome is measured by the constraint test. |
+| [`business_outcome`](#kind-business_outcome) | [`domain_service_test`](#kind-domain_service_test) | The business outcome is measured by the domain service test. |
+| [`business_outcome`](#kind-business_outcome) | [`endpoint_test`](#kind-endpoint_test) | The business outcome is measured by the endpoint test. |
+| [`business_outcome`](#kind-business_outcome) | [`flow_test`](#kind-flow_test) | The business outcome is measured by the flow test. |
+| [`business_outcome`](#kind-business_outcome) | [`integration_test`](#kind-integration_test) | The business outcome is measured by the integration test. |
+| [`business_outcome`](#kind-business_outcome) | [`invariant_test`](#kind-invariant_test) | The business outcome is measured by the invariant test. |
+| [`business_outcome`](#kind-business_outcome) | [`pattern_rule_test`](#kind-pattern_rule_test) | The business outcome is measured by the pattern rule test. |
+| [`business_outcome`](#kind-business_outcome) | [`policy_test`](#kind-policy_test) | The business outcome is measured by the policy test. |
+| [`business_outcome`](#kind-business_outcome) | [`specification_test`](#kind-specification_test) | The business outcome is measured by the specification test. |
+| [`business_outcome`](#kind-business_outcome) | [`standard_rule_test`](#kind-standard_rule_test) | The business outcome is measured by the standard rule test. |
+| [`business_outcome`](#kind-business_outcome) | [`use_case_test`](#kind-use_case_test) | The business outcome is measured by the use case test. |
+| [`business_outcome`](#kind-business_outcome) | [`view_test`](#kind-view_test) | The business outcome is measured by the view test. |
 
 <a id="relation-meets"></a>
 

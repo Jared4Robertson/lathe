@@ -60,9 +60,10 @@ export class ToolService {
     if (!text) throw new LendingError(400, 'invalid_request', 'Describe the damage in a note.');
     const tool = this.store.transaction(() => {
       this.require(id);
-      const saved = this.store.setToolCondition(id, 'needs_repair', text);
+      const reportedAt = this.now().toISOString();
+      const saved = this.store.setToolCondition(id, 'needs_repair', { note: text, reportedAt });
       // TL-LEND-EV03
-      this.outbox.save({ type: 'DamageReported', toolId: id, note: text, reportedAt: this.now().toISOString() });
+      this.outbox.save({ type: 'DamageReported', toolId: id, note: text, reportedAt });
       return saved;
     });
     this.outbox.relay();
