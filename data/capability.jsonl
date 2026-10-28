@@ -5,8 +5,8 @@
 {"id":"LA-CHK-CAP01","title":"Spec checking","domain_id":"LA-CHK","position":1,"description":"Running the checks, adding new ones, reviewing what they find, and keeping every change checked."}
 {"id":"LA-CHK-CAP02","title":"Problem detection","domain_id":"LA-CHK","position":2,"description":"The checks the schema cannot hold: records nothing uses, shape warnings, each mistake read once, and levels of the wrong size."}
 {"id":"LA-EXP-CAP01","title":"Spec reading","domain_id":"LA-EXP","position":1,"description":"Product, domain and record pages: coverage, obligation kinds and test states, finding a record and following its links, and changing a record on its page."}
-{"id":"LA-EXP-CAP02","title":"Workspace navigation","domain_id":"LA-EXP","position":2,"description":"One address per record, its Wiki, Graph and Model views as panes opened and closed side by side, the nav, the side bar, quick find and keyboard shortcuts."}
-{"id":"LA-EXP-CAP03","title":"Graph exploration","domain_id":"LA-EXP","position":3,"description":"Walking the model as a left-to-right graph with folder-like groups, and tracing an obligation to its code and tests."}
+{"id":"LA-EXP-CAP02","title":"Workspace navigation","domain_id":"LA-EXP","position":2,"description":"One address per record, its Wiki, Graph, ERD and Trace views as panes opened and closed side by side, the nav, the side bar, quick find and keyboard shortcuts."}
+{"id":"LA-EXP-CAP03","title":"Graph exploration","domain_id":"LA-EXP","position":3,"description":"Walking the model as a left-to-right graph with folder-like groups."}
 {"id":"LA-PLT-CAP01","title":"Workbench","domain_id":"LA-PLT","position":1,"description":"Panels, themes, phones, stability and accessibility: what every page stands on."}
 {"id":"LA-PLT-CAP02","title":"Keyboard control","domain_id":"LA-PLT","position":2,"description":"Commands, their keys and the hints that show them."}
 {"id":"LA-PLT-CAP03","title":"Spec serving","domain_id":"LA-PLT","position":3,"description":"Setting Lathe up in a product's repo, loading a workspace from code, writing through one command layer, and pages that follow the data files as they change."}

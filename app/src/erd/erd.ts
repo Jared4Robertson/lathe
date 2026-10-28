@@ -1,7 +1,7 @@
 import type { Row, SpecIndex, SpecRecord } from '../specs/data';
 import { textOf, byIdOrder, partsOf } from '../specs/data';
 
-// The Model view's diagrams, as plain data (no React): the entity-relationship diagram of a domain or
+// The ERD view's diagrams, as plain data (no React): the entity-relationship diagram of a domain or
 // of an aggregate, entities and their relationships only.
 //
 // - A domain's ERD: each of its aggregates as a boundary around its entities (the root marked), each
@@ -136,7 +136,7 @@ function referencingAggregates(index: SpecIndex, aggregate: string): SpecRecord[
   return [...found.values()].sort(byIdOrder);
 }
 
-/** What the Model view draws for a page: a domain's ERD, or an aggregate's (an entity's highlighted in it); null for any other page. */
+/** What the ERD view draws for a page: a domain's ERD, or an aggregate's (an entity's highlighted in it); null for any other page. */
 export function modelScope(index: SpecIndex, focus: string): { level: ErdLevel; scope: string; highlight: string | null } | null {
   const record = index.byId.get(focus);
   if (!record) return null;

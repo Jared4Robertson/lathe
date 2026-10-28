@@ -33,10 +33,10 @@ Size is the largest CLS value seen in one step, and the largest move of a key el
 
 | Scenario | Element | Moved | CLS | Cause | Fix | Status |
 |---|---|---|---|---|---|---|
-| ERD: domain to aggregate, aggregate to entity, Back | `.erd-key`, so `.model-canvas` | 22 to 44 px | 0.0318 to 0.1106 | The key had 2 line ends on a domain, up to 5 on an aggregate, one per row | One height for every ERD (`--erd-key-height`, 5.5rem), line ends in up to three rows, the rest scrolls | fixed |
+| ERD: domain to aggregate, aggregate to entity, Back | `.erd-key`, so `.erd-canvas` | 22 to 44 px | 0.0318 to 0.1106 | The key had 2 line ends on a domain, up to 5 on an aggregate, one per row | One height for every ERD (`--erd-key-height`, 5.5rem), line ends in up to three rows, the rest scrolls | fixed |
 | Graph re-center at depth 2 | `.graph-header`, `.graph-canvas` | 23.5 px | 0.0069 | The trail of visited records wrapped onto a second line once it grew | The trail is one line: earlier items shrink with an ellipsis, the center keeps its name, and it scrolls to the end | fixed |
 | Graph re-center (a requirement, a use case) | `.graph-toolbar` | (wraps at narrow panes) | | The toolbar wrapped when Trace mode appeared for some centers | The toolbar is one line; the count takes what is left, with an ellipsis | fixed |
-| ERD (narrow pane) | `.model-caption` | (wraps) | | The caption wrapped with long titles | One line, an ellipsis, its whole text in its tooltip | fixed |
+| ERD (narrow pane) | `.erd-caption` | (wraps) | | The caption wrapped with long titles | One line, an ellipsis, its whole text in its tooltip | fixed |
 | Moving between records | the wiki pane's title | its height | allowed | The wiki title wraps by length | A new page's title is new content, so it may be taller. Its box must not jump back, and it does not | ok |
 
 ### 3. Text after a changing number (fixed)
@@ -44,13 +44,13 @@ Size is the largest CLS value seen in one step, and the largest move of a key el
 | Scenario | Element | Moved | CLS | Cause | Fix | Status |
 |---|---|---|---|---|---|---|
 | Graph re-center at depth 3, changing the depth | `.graph-count` | a few px sideways | 0.0001 to 0.0288 | The count was several text nodes, right-aligned after the filters; a new number moved the text after it, and Trace mode appearing moved it all | One text, placed right after the depth (whose width never changes); Trace mode and Filters sit at the end | fixed |
-| ERD: Back to the domain | `.model-caption` | sideways | 0.0410 | The text after the bold title moved with the title's length | One text | fixed |
+| ERD: Back to the domain | `.erd-caption` | sideways | 0.0410 | The text after the bold title moved with the title's length | One text | fixed |
 
 ### 4. Measure, then correct (fixed)
 
 | Scenario | Element | Moved | CLS | Cause | Fix | Status |
 |---|---|---|---|---|---|---|
-| Opening the Model pane | the ERD's boxes | drawn at the default view, then moved | (a transform, not a shift) | `ModelView` fitted the picture in an effect after paint, and made a new `ResizeObserver` with each picture, whose first report cut each glide short | Fit before paint (`useLayoutEffect`); the first picture appears fitted; one observer for the canvas's life that acts only on a real size change, as the graph does | fixed |
+| Opening the Model pane | the ERD's boxes | drawn at the default view, then moved | (a transform, not a shift) | `ErdView` fitted the picture in an effect after paint, and made a new `ResizeObserver` with each picture, whose first report cut each glide short | Fit before paint (`useLayoutEffect`); the first picture appears fitted; one observer for the canvas's life that acts only on a real size change, as the graph does | fixed |
 | Re-centering the graph, opening the Graph pane | the inspector's "connections" section and legend | inserted a frame late | part of 0.0548 to 0.0841 (allowed area) | `GraphView` told the host what it draws in `useEffect`, so the inspector painted once without it | `useLayoutEffect`, so the inspector gets it in the same frame | fixed |
 | A link from a scrolled page | the wiki pane's scroll | | 0 | The scroll to the top runs in an effect | React flushes it before paint for clicks and keys. Measured frame by frame, the new page is never drawn at the old scroll | ok |
 

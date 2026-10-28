@@ -1,12 +1,12 @@
 import { kindLabel, type SpecIndex, type Stage as SchemaStage } from '../specs/data';
-import { FILE_KIND, groupKindLabel, stageOf } from './model';
+import { groupKindLabel, stageOf } from './model';
 import type { MapNode } from './map';
 import type { NestedNode } from './nested';
 import type { VoronoiNode } from './voronoi';
 import { treeGroup } from './tree';
 import { nodeShape, outlineOf, SHAPES, type Mark, type Outline, type Shape } from './shapes';
 import {
-  BORDER, FILE_FONT, LABEL_PAD, LABEL_PAD_BLOCK, labelFor, labelLines, LINE_HEIGHT, META_FONT,
+  BORDER, LABEL_PAD, LABEL_PAD_BLOCK, labelLines, LINE_HEIGHT, META_FONT,
   marksOf, textMeasure, TITLE_FONT, type Face, type WrappedLabel,
 } from './text';
 
@@ -16,10 +16,10 @@ import {
 // (paint.ts), so a label keeps its size in the map and is crisp at any zoom. A plate is made once
 // per map and node, from the lines the map broke its label into.
 
-/** How a box is drawn: a Tree box or a trace's in its kind's shape, a Nested box, a Voronoi cell. */
-export type PlateView = 'tree' | 'nested' | 'voronoi' | 'trace';
-/** Which colors a box takes: its stage's (a group's too, drawn as a folder), the structural records', a file's. */
-export type Stage = SchemaStage | 'structural' | 'file';
+/** How a box is drawn: a Tree box in its kind's shape, a Nested box, a Voronoi cell. */
+export type PlateView = 'tree' | 'nested' | 'voronoi';
+/** Which colors a box takes: its stage's (a group's too, drawn as a folder), or the structural records'. */
+export type Stage = SchemaStage | 'structural';
 
 /** One line of a label, at its place in the map: its text as the map broke it (a space it ends with is not drawn), its left end and baseline, its font size, and its width in map units. */
 export interface PlateLine { text: string; face: Face; size: number; x: number; baseline: number; top: number; height: number; width: number; tone: 'ink' | 'muted' }
@@ -33,14 +33,13 @@ export interface PlateBadge { label: string; tone: (typeof BADGE_TONES)[number];
 export interface Plate {
   id: string;
   kind: string;
-  /** The kind's name ("Use case"), or "Group" or "File". */
+  /** The kind's name ("Use case"), or "Group". */
   kindLabel: string;
   title: string;
-  /** The line above the title: "Use case · LA-EXP-UC03", "Group · LA-EXP", "File". */
+  /** The line above the title: "Use case · LA-EXP-UC03", "Group · LA-EXP". */
   meta: string;
   stage: Stage;
   group: boolean;
-  file: boolean;
   shape: Shape;
   view: PlateView;
   /** Its box in the map (a Voronoi cell's bounding box). */
@@ -48,14 +47,14 @@ export interface Plate {
   /** Its border's and outline's scale, and its text's. */
   scale: number;
   text: number;
-  /** Its outline: its kind's shape in the Tree view and a trace, a box in the Nested view, its polygon in the Voronoi view. */
+  /** Its outline: its kind's shape in the Tree view, a box in the Nested view, its polygon in the Voronoi view. */
   outline: Outline;
   /** Whether its edge is drawn inside its outline in the state's color (a polygon, a cell), rather than ringed outside it. */
   edged: boolean;
-  /** Its border's width and whether it is dashed (a file, an open question). */
+  /** Its border's width and whether it is dashed (an open question). */
   border: number;
   dashed: boolean;
-  /** What its shape draws inside its outline, in the Tree view and a trace. */
+  /** What its shape draws inside its outline, in the Tree view. */
   decoration: Shape | null;
   /** Where its label lies (its content box, or a cell's label box). */
   label: { x: number; y: number; w: number; h: number };
@@ -70,17 +69,16 @@ export interface Plate {
 
 /**
  * A node's colors: its kind's stage; for a group, the stage it is (a stage group) or its kind's stage (a folder or a
- * record's kind group); the structural colors for what has no stage; a file's.
+ * record's kind group); the structural colors for what has no stage.
  */
 function stageFor(index: SpecIndex, id: string, kind: string): Stage {
-  if (id.startsWith('file:')) return 'file';
   const group = index.byId.has(id) ? undefined : treeGroup(index, id);
   if (group?.role === 'stage') {
     const named = index.workspace.stages.find((s) => s.stage === id.split('/')[1]);
     return named ? named.stage : 'structural';
   }
   const stage = stageOf(index, group ? group.kind ?? '' : kind);
-  return stage === '' || stage === 'file' || stage === 'group' ? 'structural' : stage;
+  return stage === '' || stage === 'group' ? 'structural' : stage;
 }
 
 /** The size of an icon before the kind and ID line, at text scale 1: a shape's 14 by 10, a mark's 10 by 10, and the gap after each. */
@@ -106,7 +104,7 @@ function placeLines({ lines, box, centered, top, t, icons }: Place): { lines: Pl
   const m = textMeasure();
   const all = [
     ...lines.meta.map((text) => ({ text, face: 'meta' as Face, size: META_FONT * t, tone: 'muted' as const })),
-    ...lines.title.map((text) => ({ text, face: (lines.file ? 'meta' : 'title') as Face, size: (lines.file ? FILE_FONT : TITLE_FONT) * t, tone: 'ink' as const })),
+    ...lines.title.map((text) => ({ text, face: 'title' as Face, size: TITLE_FONT * t, tone: 'ink' as const })),
   ];
   const height = all.reduce((s, l) => s + l.size * LINE_HEIGHT, 0);
   let y = top ? box.top : box.top + (box.bottom - box.top - height) / 2;
@@ -154,28 +152,26 @@ function badgesAt(marks: { errors: number; warnings: number; gaps: string[] }, r
 /** Where a box's map node, a Nested one or a Voronoi one, comes from. */
 export type PlateSource =
   | { view: 'tree'; node: MapNode }
-  | { view: 'trace'; node: Pick<MapNode, 'x' | 'y' | 'w' | 'h' | 'text'> }
   | { view: 'nested'; node: NestedNode }
   | { view: 'voronoi'; node: VoronoiNode };
 
-/** A box's plate: its outline, colors' roles, and its label placed in it (LA-EXP-DS06, LA-EXP-DS07, LA-EXP-DS08, LA-V93-R06). `fileTitle` names a file box. */
-export function plateOf(index: SpecIndex, id: string, source: PlateSource, fileTitle?: string): Plate {
+/** A box's plate: its outline, colors' roles, and its label placed in it (LA-EXP-DS06, LA-EXP-DS07, LA-EXP-DS08, LA-V93-R06). */
+export function plateOf(index: SpecIndex, id: string, source: PlateSource): Plate {
   const { x, y, w, h, text: t } = source.node;
   const record = index.byId.get(id);
-  const file = id.startsWith('file:');
   const words = labelLines(index, id);
-  const kind = record ? record.kind : file ? FILE_KIND : treeGroup(index, id)?.kind ?? 'folder';
+  const kind = record ? record.kind : treeGroup(index, id)?.kind ?? 'folder';
   const { shape, mark } = nodeShape(index, id);
   const stage = stageFor(index, id, kind);
-  const marks = file ? { errors: 0, warnings: 0, gaps: [] } : marksOf(index, id);
+  const marks = marksOf(index, id);
   const marked = marks.errors + marks.warnings + marks.gaps.length > 0;
   const base = {
-    id, kind, kindLabel: record ? kindLabel(index, record.kind) : file ? 'File' : groupKindLabel(index, id), title: file ? fileTitle ?? words.title : words.title, meta: words.meta,
-    stage, group: !record && !file, file, shape, view: source.view, x, y, w, h, text: t, ...marks,
-    dashed: file || kind === 'question',
+    id, kind, kindLabel: record ? kindLabel(index, record.kind) : groupKindLabel(index, id), title: words.title, meta: words.meta,
+    stage, group: !record, shape, view: source.view, x, y, w, h, text: t, ...marks,
+    dashed: kind === 'question',
   };
 
-  if (source.view === 'tree' || source.view === 'trace') {
+  if (source.view === 'tree') {
     // Its kind's shape is its outline (LA-V93-R06); a polygon's edge is drawn inside it, so it has no border to pad past.
     // Its border grows with its text (LA-EXP-DS06): its box scale is its text scale.
     const scale = t;
@@ -184,9 +180,8 @@ export function plateOf(index: SpecIndex, id: string, source: PlateSource, fileT
     const border = (shape === 'product' ? 2.5 : BORDER) * scale;
     const inset = edged ? 0 : border;
     const { room } = SHAPES[shape];
-    // The lines its map broke its label into, centered or not; a trace's box's from text.ts, at the top left.
-    const centered = source.view === 'trace' ? false : source.node.centered;
-    const lines = source.view === 'trace' ? labelFor(index, id) : source.node.lines;
+    // The lines its map broke its label into, centered or not.
+    const { centered, lines } = source.node;
     const box = { left: x + inset + (LABEL_PAD + room.l) * t, right: x + w - inset - (LABEL_PAD + room.r) * t, top: y + inset + (LABEL_PAD_BLOCK + room.t) * t, bottom: y + h - inset - (LABEL_PAD_BLOCK + room.b) * t };
     const placed = placeLines({ lines, box, centered, top: false, t, icons: mark ? [{ draw: 'mark', name: mark }] : [] });
     // Its badge sits at its top right, inside its shape's room.
@@ -197,7 +192,7 @@ export function plateOf(index: SpecIndex, id: string, source: PlateSource, fileT
   // Nested and Voronoi (LA-EXP-DS07, LA-EXP-DS08): its border grows with its text; its shape is a mark before its kind and ID line.
   const scale = Math.max(0.5, t);
   const border = BORDER * scale;
-  const icons: Place['icons'] = [...(file ? [] : [{ draw: 'shape' as const, name: shape }]), ...(mark ? [{ draw: 'mark' as const, name: mark }] : [])];
+  const icons: Place['icons'] = [{ draw: 'shape' as const, name: shape }, ...(mark ? [{ draw: 'mark' as const, name: mark }] : [])];
   if (source.view === 'nested') {
     const n = source.node;
     const box = { left: x + border + LABEL_PAD * t, right: x + w - border - LABEL_PAD * t, top: y + border + LABEL_PAD_BLOCK * t, bottom: n.header > 0 ? y + n.header - border - LABEL_PAD_BLOCK * t : y + h - border - LABEL_PAD_BLOCK * t };

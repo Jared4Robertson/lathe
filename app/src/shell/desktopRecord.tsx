@@ -12,7 +12,7 @@ import './desktopRecord.css';
 
 /**
  * The record a right-click is on: a graph box (on the graph's canvas, the box under the point, found
- * by its hit test; in its keyboard layer, the focused box), a Model view node, a link to a record's
+ * by its hit test; in its keyboard layer, the focused box), an ERD view node, a link to a record's
  * page, or the page's own title.
  */
 export function recordIdAt(target: Element | null, pathname: string, known: (id: string) => boolean, at?: { x: number; y: number }): string | null {

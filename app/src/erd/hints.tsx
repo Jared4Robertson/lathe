@@ -2,7 +2,7 @@ import { useReactFlow, useStore } from '@xyflow/react';
 import { EdgeHintChips, panToward, pastEdges, type Point, type Side } from '../graph/hints';
 import { readMotion } from '../graph/motion';
 
-// The Model view's edge hints (LA-V93-R18, app/src/graph/hints.tsx): the chips over its
+// The ERD view's edge hints (LA-V93-R18, app/src/graph/hints.tsx): the chips over its
 // React Flow canvas, counting the boxes past each edge through React Flow's camera: the faded
 // context, and any box a model too big to fit at a legible zoom leaves outside.
 

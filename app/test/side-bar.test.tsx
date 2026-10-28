@@ -9,7 +9,7 @@ import { testWorkspace } from './graph/workspace';
 import { boxElement, hoverBox, leaveCanvas } from './graph/scene';
 
 // The side bar (LA-EXP-UC12): a secondary side bar with three views,
-// Details, Outline and History, closed in the Wiki view and open in the Graph and Model views,
+// Details, Outline and History, closed in the Wiki view and open in the Graph and ERD views,
 // remembered per view mode and per tab.
 
 const node = (id: string) => boxElement(id);
@@ -35,9 +35,10 @@ describe('the side bar', () => {
   const proveLaV95R04T01 = async () => {
     expect(sideModeOf(['wiki'], false)).toBe('wiki');
     expect(sideModeOf(['wiki', 'graph'], false)).toBe('graph');
-    expect(sideModeOf(['wiki', 'model'], false)).toBe('model');
+    expect(sideModeOf(['wiki', 'erd'], false)).toBe('erd');
+    expect(sideModeOf(['wiki', 'trace'], false)).toBe('trace');
     expect(sideModeOf(['graph'], true)).toBe('graph');
-    expect(sideStateFrom({ wiki: { open: 'yes', view: 'details' }, graph: { open: true, view: 'nope' }, model: { open: false, view: 'history' } })).toEqual({ model: { open: false, view: 'history' } });
+    expect(sideStateFrom({ wiki: { open: 'yes', view: 'details' }, graph: { open: true, view: 'nope' }, erd: { open: false, view: 'history' }, model: { open: true, view: 'details' } })).toEqual({ erd: { open: false, view: 'history' } });
 
     await openApp('/P-D-UC01', { data: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
@@ -131,7 +132,7 @@ describe('the side bar', () => {
   it('LA-V95-R06-T02 In the Wiki view Details shows only what the page does not: the data file and line, the columns of its row and the raw links; a focused or right-clicked record row shows that record', proveLaV95R06T02);
   it('LA-V95-R01-T01 In the Wiki view Details shows only what the page does not', proveLaV95R06T02);
 
-  it('LA-V95-R07-T01 Outline lists the wiki\'s sections, scrolls there on a click and marks the one in view; in the Model view it lists the boxes', async () => {
+  it('LA-V95-R07-T01 Outline lists the wiki\'s sections, scrolls there on a click and marks the one in view; in the ERD view it lists the boxes', async () => {
     openSideBar('outline');
     await openApp('/P-D-UC01', { data: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
@@ -146,9 +147,9 @@ describe('the side bar', () => {
     expect(scrollTo).toHaveBeenCalled();
     expect(problems).toHaveAttribute('aria-current', 'location');
 
-    // The Model view: the boxes, those in focus first.
-    openSideBar('outline', ['model']);
-    await openApp('/P-D?view=model', { data: modelWorkspace() });
+    // The ERD view: the boxes, those in focus first.
+    openSideBar('outline', ['erd']);
+    await openApp('/P-D?view=erd', { data: modelWorkspace() });
     await screen.findAllByRole('heading', { level: 1 });
     await waitFor(() => expect(side().getByRole('heading', { name: /^Aggregates/ })).toBeInTheDocument());
     const boxes = side().getByRole('list', { name: 'Aggregates' });

@@ -8,8 +8,8 @@
 {"id":"LA-UI103","title":"Flow steps","file":"app/src/specs/FlowSteps.tsx"}
 {"id":"LA-UI105","title":"Graph motion","file":"app/src/graph/motion.ts"}
 {"id":"LA-UI106","title":"Tab strip","file":"app/src/views/TabStrip.tsx"}
-{"id":"LA-UI107","title":"ERD layout","file":"app/src/model/layout.ts"}
-{"id":"LA-UI108","title":"Model view","file":"app/src/model/ModelView.tsx"}
+{"id":"LA-UI107","title":"ERD layout","file":"app/src/erd/layout.ts"}
+{"id":"LA-UI108","title":"ERD view","file":"app/src/erd/ErdView.tsx"}
 {"id":"LA-UI109","title":"Tap to open","file":"app/src/graph/touch.tsx"}
 {"id":"LA-UI110","title":"Edge hints","file":"app/src/graph/hints.tsx"}
 {"id":"LA-UI111","title":"Domain events section","file":"app/src/specs/DomainEvents.tsx"}
@@ -23,19 +23,18 @@
 {"id":"LA-UI120","title":"Graph text faces","file":"app/src/graph/fonts.ts"}
 {"id":"LA-UI121","title":"Graph look","file":"app/src/graph/look.ts"}
 {"id":"LA-UI122","title":"Hit testing","file":"app/src/graph/hit.ts"}
-{"id":"LA-UI123","title":"Model edge hints","file":"app/src/model/hints.tsx"}
+{"id":"LA-UI123","title":"ERD edge hints","file":"app/src/erd/hints.tsx"}
 {"id":"LA-UI124","title":"Record actions and form","file":"app/src/edit/Editing.tsx"}
-{"id":"LA-UI125","title":"Trace layout","file":"app/src/graph/layout.ts"}
 {"id":"LA-UI126","title":"Lathe logo","file":"app/src/LatheLogo.tsx","description":"Lathe's logo in the page's steel and spark colors."}
 {"id":"LA-UI127","title":"Actions slot","file":"app/src/components/ActionsSlot.tsx","description":"The place in a heading's row where a list's controls sit."}
 {"id":"LA-UI128","title":"Line icons","file":"app/src/components/icons.tsx","description":"The line icons drawn inline, with no icon font."}
-{"id":"LA-UI129","title":"Model icon","file":"app/src/model/ModelIcon.tsx","description":"The Model view's icon on the page bar."}
+{"id":"LA-UI129","title":"ERD icon","file":"app/src/erd/ErdIcon.tsx","description":"The ERD view's icon on the page bar."}
 {"id":"LA-UI130","title":"Shape marks","file":"app/src/graph/shape-icons.tsx","description":"The small marks of a kind's shape, in the boxes and the key."}
 {"id":"LA-UI131","title":"Quick pick","file":"app/src/theme/QuickPick.tsx","description":"A filter box over a list, as the theme picker shows it."}
 {"id":"LA-UI132","title":"Record text","file":"app/src/specs/RecordText.tsx","description":"A record's own text: its fields, parts and settings, by kind."}
 {"id":"LA-UI133","title":"Focus fade","file":"app/src/graph/fade.ts","description":"How strongly the graph draws each box for its focus: the focus's subtree at full strength, the trail and the rest faded."}
 {"id":"LA-UI134","title":"Flows by interface sections","file":"app/src/specs/InterfaceParts.tsx"}
-{"id":"LA-UI135","title":"Card","file":"app/src/shell/Card.tsx","description":"The one card: a title that is its link or button, stretched over the whole card, and what else the card holds; and the grid that lists cards."}
+{"id":"LA-UI135","title":"Trace view","file":"app/src/trace/TraceView.tsx","description":"The Trace view's pane: an obligation's chain, or the matrix of those under the focus."}
 {"id":"LA-UI52","title":"CoverageBars","file":"app/src/specs/ProductHealth.tsx","description":"CoverageBars, obligationGroups, ProductSummary, TestCountsLine, sumTestCounts"}
 {"id":"LA-UI53","title":"Traceability and its gap callouts","file":"app/src/specs/Traceability.tsx","description":"Traceability and its gap callouts, requirement table and run by"}
 {"id":"LA-UI54","title":"DomainPatterns","file":"app/src/specs/PatternParts.tsx","description":"DomainPatterns, PatternSections, PatternRuleSections, RuleMarks"}

@@ -4,6 +4,7 @@ import App from '../src/App';
 import type { SpecData, WriteAnswer } from '../../lathe/src/server/contract';
 import type { Command } from '../../lathe/src/store/store';
 import { workspace as fixtureWorkspace } from './fixtures/workspace';
+import type { ViewName } from '../src/views/address';
 
 export interface Served {
   /** What GET /api/spec answers: the component-test workspace by default. */
@@ -71,9 +72,9 @@ export function startAtDepth(depth: number, layout: 'tree' | 'nested' | 'voronoi
 
 /**
  * Opens the side bar in these view modes for the rest of the test, as if the person
- * had opened it there last (it starts closed in the Wiki view, open in the Graph and Model views).
+ * had opened it there last (it starts closed in the Wiki and Trace views, open in the Graph and ERD views).
  */
-export function openSideBar(view: 'details' | 'outline' | 'history' = 'details', modes: ('wiki' | 'graph' | 'model')[] = ['wiki']) {
+export function openSideBar(view: 'details' | 'outline' | 'history' = 'details', modes: ViewName[] = ['wiki']) {
   window.localStorage.setItem('lathe:side-bar', JSON.stringify(Object.fromEntries(modes.map((m) => [m, { open: true, view }]))));
 }
 

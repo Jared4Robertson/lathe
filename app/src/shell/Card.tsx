@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { MouseEvent, ReactNode } from 'react';
 import { Link } from '../router';
 
 // A card has one primary action, taken by clicking anywhere on it (LA-PAT-APP-UX-R14). This is the one way to draw a
@@ -11,6 +11,10 @@ type Primary =
   | {
       /** The address the card opens: its title is a real link, so Cmd/Ctrl-click opens a new tab. */
       href: string;
+      /** What a plain click does instead of the app's navigation, for a view that moves its own way (Cmd/Ctrl-click still opens a tab). */
+      onFollow?: () => void;
+      /** The card for the page the Reader is on (aria-current). */
+      current?: boolean;
       onActivate?: never;
       pressed?: never;
     }
@@ -18,6 +22,8 @@ type Primary =
       /** What the card does: its title is a button. */
       onActivate: () => void;
       href?: never;
+      onFollow?: never;
+      current?: never;
       /** For a card that is one choice among several: whether it is the one chosen (drawn as current). */
       pressed?: boolean;
     };
@@ -27,10 +33,14 @@ export type CardProps = Primary & {
   title: ReactNode;
   /** The accessible name, when the title alone does not say what the action does (such as "Use Graphite"). */
   label?: string;
+  /** A tooltip on the title, such as a long title in full. */
+  hint?: string;
+  /** Data attributes on the title, for a view that listens on its cards from above (such as `data-trace-id`). */
+  data?: { [attribute: `data-${string}`]: string };
   /** Drawn above the title and hidden from assistive technology, such as a preview. */
   media?: ReactNode;
-  /** A tile in a CardGrid (the default), or a bar that floats over a canvas. */
-  look?: 'tile' | 'bar';
+  /** A tile in a CardGrid (the default), a compact one in a narrow column, or a bar that floats over a canvas. */
+  look?: 'tile' | 'compact' | 'bar';
   /** A left edge in the stage's color, for a card that belongs to one stage. */
   accent?: boolean;
   /** A list item in a CardGrid (the default), or a box of its own. */
@@ -41,14 +51,19 @@ export type CardProps = Primary & {
   children?: ReactNode;
 };
 
-export function Card({ href, onActivate, pressed, title, label, media, look = 'tile', accent = false, as: Box = 'li', role, children }: CardProps) {
-  const className = ['card', look === 'bar' ? 'card-bar' : '', accent ? 'card-accent' : '', pressed ? 'is-current' : ''].filter(Boolean).join(' ');
+export function Card({ href, onFollow, current, onActivate, pressed, title, label, hint, data, media, look = 'tile', accent = false, as: Box = 'li', role, children }: CardProps) {
+  const className = ['card', look === 'bar' ? 'card-bar' : look === 'compact' ? 'card-compact' : '', accent ? 'card-accent' : '', pressed || current ? 'is-current' : ''].filter(Boolean).join(' ');
+  const follow = (e: MouseEvent<HTMLAnchorElement>) => {
+    if (!onFollow || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
+    onFollow();
+  };
   return (
     <Box className={className} role={role}>
       {media && <div className="card-media" aria-hidden="true">{media}</div>}
       {href !== undefined
-        ? <Link to={href} className="card-title" aria-label={label}>{title}</Link>
-        : <button type="button" className="card-title" aria-label={label} aria-pressed={pressed} onClick={onActivate}>{title}</button>}
+        ? <Link to={href} className="card-title" aria-label={label} title={hint} aria-current={current ? 'page' : undefined} onClick={follow} {...data}>{title}</Link>
+        : <button type="button" className="card-title" aria-label={label} title={hint} aria-pressed={pressed} onClick={onActivate} {...data}>{title}</button>}
       {children}
     </Box>
   );

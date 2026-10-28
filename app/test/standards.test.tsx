@@ -188,7 +188,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
 
   it.each(['LA-PAT-APP-UX-R03-T01', 'LA-PAT-APP-UX-R03-T02'])('%s The page bar holds the page\'s tabs and layout controls; each pane\'s header holds only that pane\'s actions, on wide and narrow screens alike', async () => {
     // The side bar starts closed in the Wiki view; this test reads it open.
-    openSideBar('details', ['wiki', 'graph', 'model']);
+    openSideBar('details', ['wiki', 'graph', 'erd', 'trace']);
     for (const [path, narrow] of [['/DM-SHOP-UC01?view=wiki', false], ['/DM-SHOP-UC01?view=wiki,graph', false], ['/DM-SHOP-UC01?view=wiki,graph', true]] as const) {
       if (narrow) vi.stubGlobal('matchMedia', (query: string) => ({ matches: true, media: query, addEventListener: () => {}, removeEventListener: () => {} }));
       await openApp(path);
@@ -231,12 +231,12 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
           expect(pane).toHaveClass('panel');
           expect(pane.firstElementChild).toHaveClass('pane-bar');
           const label = pane.querySelector('.pane-bar > .pane-head > .pane-name');
-          expect(label?.textContent?.trim()).toMatch(/^(Wiki|Graph|Model)$/);
+          expect(label?.textContent?.trim()).toMatch(/^(Wiki|Graph|ERD|Trace)$/);
           expect(label?.querySelector('button, a, [tabindex]')).toBeNull();
           const own = [...pane.querySelectorAll<HTMLElement>('.pane-bar button')];
           for (const b of own) {
             expect(b).toHaveClass('icon-button');
-            expect(b.getAttribute('aria-label')).toMatch(/^Close the (wiki|graph|model) pane$|^Full screen|^Leave full screen/);
+            expect(b.getAttribute('aria-label')).toMatch(/^Close the (wiki|graph|ERD|trace) pane$|^Full screen|^Leave full screen/);
           }
           // Close shows only when more than one pane is open.
           expect(own.some((b) => /^Close the/.test(b.getAttribute('aria-label') ?? ''))).toBe(panes.length > 1);
@@ -251,7 +251,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     expect(CSS).toMatch(/\.pane-bar \{[^}]*height: var\(--pane-bar-height\)/);
   });
 
-  it('LA-V96-R04-T03 Wiki, Graph and Model are pressed toggles in the page bar, the open ones shown as panes in that order, each naming its view and closable while another is open', async () => {
+  it('LA-V96-R04-T03 Wiki, Graph, ERD and Trace are pressed toggles in the page bar, the open ones shown as panes in that order, each naming its view and closable while another is open', async () => {
     await openApp('/DM-SHOP-UC01?view=wiki,graph');
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     const toggles = within(screen.getByRole('group', { name: 'View' })).getAllByRole('button');
@@ -367,13 +367,15 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     expect(ruleFor((s) => s === '.card-title:focus-visible::after').map((r) => r.body).join(';')).toMatch(/outline:/);
     expect(ruleFor((s) => s === '.card .card-title').map((r) => r.body).join(';')).toMatch(/cursor:\s*pointer/);
     expect(ruleFor((s) => /^\.card :is\(.*\bbutton\b.*\):not\(\.card-title\)$/.test(s)).map((r) => r.body).join(';')).toMatch(/position:\s*relative[\s\S]*z-index:\s*1/);
-    // Every card on the products, product, checks and Appearance pages: one primary action, its title, a real link or a
+    // Every card on the products, product, checks, record, Trace and Appearance pages: one primary action, its title, a real link or a
     // button with a name; and every problem row, the record's or else its check's, is never a dead box.
     let cards = 0;
     let problems = 0;
-    for (const path of ['/', '/DM', '/DM/checks', '/DM-SHOP-UC01-R01-T01', '/settings/appearance']) {
+    for (const path of ['/', '/DM', '/DM/checks', '/DM-SHOP-UC01-R01-T01', '/DM-SHOP-UC01-R01?view=trace', '/settings/appearance']) {
       await openApp(path);
       await screen.findByRole('heading', { level: 1 });
+      // The Trace view loads on its own: its chain's cards.
+      if (path.includes('trace')) await screen.findByRole('list', { name: 'Obligation' });
       const wrong = [...document.querySelectorAll<HTMLElement>('.card')].filter((card) => {
         cards += 1;
         const titles = card.querySelectorAll(':scope > .card-title');

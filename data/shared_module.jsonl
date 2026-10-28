@@ -1,6 +1,6 @@
 {"id":"LA-AUT-MOD01","title":"CLI data commands","domain_id":"LA-AUT","file":"lathe/src/cli/writers.ts"}
 {"id":"LA-EXP-MOD01","title":"Layout engine","domain_id":"LA-EXP","file":"app/src/elk.ts"}
-{"id":"LA-EXP-MOD02","title":"Domain event lookups","domain_id":"LA-EXP","file":"app/src/model/events.ts"}
+{"id":"LA-EXP-MOD02","title":"Domain event lookups","domain_id":"LA-EXP","file":"app/src/specs/events.ts"}
 {"id":"LA-EXP-MOD03","title":"Label plurals","domain_id":"LA-EXP","file":"app/src/plural.ts"}
 {"id":"LA-EXP-MOD04","title":"Side bar state","domain_id":"LA-EXP","file":"app/src/views/sideBarState.ts"}
 {"id":"LA-PLT-MOD01","title":"Phone layout","domain_id":"LA-PLT","file":"app/src/shell/useNarrow.ts"}
@@ -12,3 +12,4 @@
 {"id":"LA-PLT-MOD07","title":"Server contract","domain_id":"LA-PLT","file":"lathe/src/server/contract.ts"}
 {"id":"LA-PLT-MOD08","title":"Plugin scripts' shared helpers","domain_id":"LA-PLT","file":"plugin/scripts/lathe-root.mjs"}
 {"id":"LA-TRC-MOD01","title":"Outcome measure gap","domain_id":"LA-TRC","file":"lathe/src/trace/measures.ts"}
+{"id":"LA-TRC-MOD02","title":"Trace view offer","domain_id":"LA-TRC","file":"app/src/trace/offer.ts"}

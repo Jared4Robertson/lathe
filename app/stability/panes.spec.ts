@@ -3,7 +3,7 @@ import { expectStable, openPage, step } from './measure';
 import { AGGREGATE, RECORD } from './scenarios';
 import { sceneOf } from './scene';
 
-// LA-V61-R29-T01: opening and closing the Wiki, Graph and Model panes, the maximize command
+// LA-V61-R29-T01: opening and closing the Wiki, Graph and ERD panes, the maximize command
 // (Ctrl+3) and the side bar. The panes are what changes (each takes its share of the width),
 // so shifts inside `.focus-views` are the change itself; the nav, the pane bars' height and the
 // side bar must hold still, and a pane that stays open must not be thrown away and drawn anew.
@@ -13,12 +13,12 @@ const NAV = 'nav#nav';
 const SIDE_BAR = '.side-bar-column';
 const WIKI_BAR = '.pane-wiki > .pane-bar';
 /** A canvas's first box: it appears where the fitted picture puts it, never at the default view and then moved. The graph's canvas draws its boxes, so its drawing holds still and its camera frames the first picture at once. */
-const FIRST_NODE = (view: 'graph' | 'model') => (view === 'graph' ? '.pane-graph .graph-flow canvas' : `.pane-${view} .react-flow__node`);
+const FIRST_NODE = (view: 'graph' | 'erd') => (view === 'graph' ? '.pane-graph .graph-flow canvas' : `.pane-${view} .react-flow__node`);
 
 test.describe('panes', () => {
   test('LA-V61-R29-T01 at 1024 px with three panes and the side bar open, no two panels overlap', async ({ page }) => {
     await page.setViewportSize({ width: 1024, height: 700 });
-    await openPage(page, `${AGGREGATE.split('?')[0]}?view=wiki,graph,model`);
+    await openPage(page, `${AGGREGATE.split('?')[0]}?view=wiki,graph,erd`);
     await page.locator('.side-bar-column').waitFor();
     const spans = await page.evaluate(() => [document.querySelector('nav#nav'), ...document.querySelectorAll('.focus-views > .pane'), document.querySelector('.side-bar-column')]
       .map((e) => { const b = e!.getBoundingClientRect(); return { left: b.left, right: b.right }; }));
@@ -42,14 +42,14 @@ test.describe('panes', () => {
     expectStable(close);
   });
 
-  test('LA-V61-R29-T01 open and close the Model pane', async ({ page }) => {
+  test('LA-V61-R29-T01 open and close the ERD pane', async ({ page }) => {
     await openPage(page, AGGREGATE);
-    const open = await step(page, 'panes', 'open Model (Ctrl+4)', { keys: [NAV, SIDE_BAR, FIRST_NODE('model')], allow: PANES }, async () => {
+    const open = await step(page, 'panes', 'open ERD (Ctrl+4)', { keys: [NAV, SIDE_BAR, FIRST_NODE('erd')], allow: PANES }, async () => {
       await page.keyboard.press('Control+4');
-      await page.locator('.pane-model .model-flow .react-flow__node').first().waitFor();
+      await page.locator('.pane-erd .erd-flow .react-flow__node').first().waitFor();
     });
     expectStable(open);
-    const graph = await step(page, 'panes', 'add Graph beside Model', { keys: [NAV, SIDE_BAR, '.pane-model .model-canvas'], allow: PANES, resizes: ['.pane-model .model-canvas'] }, async () => {
+    const graph = await step(page, 'panes', 'add Graph beside ERD', { keys: [NAV, SIDE_BAR, '.pane-erd .erd-canvas'], allow: PANES, resizes: ['.pane-erd .erd-canvas'] }, async () => {
       await page.keyboard.press('Control+2');
       await page.locator('.pane-graph .graph-flow .graph-box').first().waitFor({ state: 'attached' });
     });

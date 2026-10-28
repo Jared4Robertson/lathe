@@ -26,11 +26,19 @@ const PAGES: State[] = [
   { name: 'interface page', url: '/LA-IF03', ready: '.interface-flows' },
   { name: 'group page', url: GROUP, ready: '.pane-title' },
   { name: 'graph', url: `${RECORD}?view=graph`, ready: '.pane-graph .graph-flow .graph-box' },
-  { name: 'Model view', url: `${AGGREGATE}?view=model`, ready: '.pane-model .model-canvas' },
+  { name: 'ERD view', url: `${AGGREGATE}?view=erd`, ready: '.pane-erd .erd-canvas' },
+  { name: 'Trace view, a chain', url: `${EDITED}?view=trace`, ready: '.pane-trace .trace-chain' },
+  { name: 'Trace view, a matrix', url: `${DOMAIN}?view=trace`, ready: '.pane-trace .trace-matrix' },
   { name: 'Checks', url: `${PRODUCT}/checks`, ready: '#main h1' },
   { name: 'Format', url: '/format', ready: '#main h1' },
   { name: 'Appearance', url: '/settings/appearance', ready: '#main h1' },
 ].map((p) => ({ name: p.name, run: (page: Page) => open(page, p.url, p.ready) }));
+// The Trace view's matrix with only the rows that have a gap.
+PAGES.push({ name: 'Trace view, gaps only', run: async (page: Page) => {
+  await open(page, `${DOMAIN}?view=trace`, '.pane-trace .trace-matrix');
+  await page.locator('.pane-trace').getByRole('checkbox', { name: 'Gaps only' }).check();
+  await page.waitForTimeout(200);
+} });
 // Changing records: the form generated from the schema (Edit and Add) and the question before a
 // removal with the store's refusal shown inline. None of them writes anything that stays: the
 // forms are not sent, and the store refuses the removal.
@@ -124,7 +132,7 @@ const BY_RULE: { record: string; says: string; rules: string[] }[] = [
 ];
 
 /** The Explorer's pages and states: where it shows the spec, as the domain LA-EXP owns them. */
-const EXPLORER = ['domain page', 'record page', 'group page', 'graph', 'Model view'];
+const EXPLORER = ['domain page', 'record page', 'group page', 'graph', 'ERD view', 'Trace view, a chain', 'Trace view, a matrix', 'Trace view, gaps only'];
 
 /** Audits the page, then names each record's share of the one run's findings, and the pattern rule's whole. */
 async function auditAll(page: Page, state: string) {
