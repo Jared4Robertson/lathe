@@ -1,6 +1,8 @@
 import { byIdOrder, textOf, type SpecIndex, type SpecRecord } from '../specs/data';
 import { designersOf } from '../specs/trace';
+import { isTestKind } from '../specs/parts';
 import { treeChildren } from '../graph/tree';
+import { isObligation } from './offer';
 
 // The Trace view's logic (LA-TRC-UC10), pure and tested directly: an obligation's traceability
 // chain, and the matrix of every obligation under a record or group.
@@ -39,12 +41,6 @@ export interface TraceRow {
 const DESIGNED_KINDS: ReadonlySet<string> = new Set(['uc_requirement', 'constraint', 'invariant']);
 /** The kinds that are proved only (LA-TRC-UC14): nothing designs or builds a pattern rule. */
 const PROVED_ONLY: ReadonlySet<string> = new Set(['pattern_rule']);
-
-/** An obligation: a constraint, invariant, specification, policy, domain service, UC, view or API requirement, pattern or standard rule, or a product's own obligation kind. */
-export const isObligation = (index: SpecIndex, id: string): boolean => {
-  const kind = index.byId.get(id)?.kind;
-  return !!kind && !!index.kinds.get(kind)?.obligation;
-};
 
 const stageOf = (index: SpecIndex, id: string) => index.kinds.get(index.byId.get(id)?.kind ?? '')?.stage ?? null;
 /** A record's children of one stage. */
@@ -150,15 +146,64 @@ export function obligationsUnder(index: SpecIndex, focus: string): string[] {
   return out;
 }
 
-/** Whether the Trace view has something to show: the focus is an obligation, or one sits under it. Stops at the first. */
-export function hasTrace(index: SpecIndex, focus: string): boolean {
+// ---------- Untraced: what no obligation's chain reaches ----------
+//
+// The engine's coverage has no record-level "untraced" gap (its only untraced gap, code-file-untraced, is about source
+// files), so this mirrors the relations coverage judges designed, built and proved by (specs/trace.ts designersOf and
+// buildersOf, as traceChain reads them): a record is traced when some obligation's chain, anywhere in the space, holds
+// it. Only the kinds a chain links by a trace relation are listed (a flow step fulfills, a command or query is invoked,
+// its handler builds, a UI component renders a view requirement's view, a test proves its parent); containers and
+// folders (a flow, a view, an aggregate, a stage) and kinds with no trace relation at all never are. A flow test proves
+// its flow, not an obligation, so it is never untraced either.
+
+/** The kinds a chain links by a trace relation, besides the tests. */
+const TRACED_KINDS: ReadonlySet<string> = new Set(['flow_step', 'command', 'query', 'command_handler', 'query_handler', 'ui_component']);
+
+const reachedCache = new WeakMap<SpecIndex, Set<string>>();
+/** Every record some obligation's chain holds, in the whole space, worked out once per index. */
+function reached(index: SpecIndex): Set<string> {
+  let known = reachedCache.get(index);
+  if (known) return known;
+  known = new Set();
+  for (const r of index.workspace.records) {
+    const row = traceChain(index, r.id);
+    if (!row) continue;
+    for (const id of [...row.design, ...row.build, ...row.tests]) known.add(id);
+  }
+  reachedCache.set(index, known);
+  return known;
+}
+
+/** Whether a record is of a kind a chain reaches by a trace relation (a test that proves an obligation included). */
+function traceable(index: SpecIndex, record: SpecRecord): boolean {
+  if (TRACED_KINDS.has(record.kind)) return true;
+  if (!isTestKind(index, record.kind) || record.kind === 'flow_test') return false;
+  return true;
+}
+
+/** A kind's untraced records under the focus. */
+export interface UntracedGroup { kind: string; ids: string[] }
+
+/** The design, build and test records under a record or group that no obligation's chain reaches, by kind in the schema's order. */
+export function untracedUnder(index: SpecIndex, focus: string): UntracedGroup[] {
+  const reach = reached(index);
+  const found: string[] = [];
   const seen = new Set<string>();
-  const find = (id: string): boolean => {
-    if (seen.has(id)) return false;
+  const walk = (id: string) => {
+    if (seen.has(id)) return;
     seen.add(id);
-    return isObligation(index, id) || treeChildren(index, id).some(find);
+    const record = index.byId.get(id);
+    if (record && traceable(index, record) && !reach.has(id)) found.push(id);
+    for (const c of treeChildren(index, id)) walk(c);
   };
-  return find(focus);
+  walk(focus);
+  const byKind = new Map<string, string[]>();
+  for (const id of inKindOrder(index, found)) {
+    const kind = index.byId.get(id)!.kind;
+    const ids = byKind.get(kind);
+    if (ids) ids.push(id); else byKind.set(kind, [id]);
+  }
+  return [...byKind].map(([kind, ids]) => ({ kind, ids }));
 }
 
 /** A matrix's rows under one parent: a use case's requirements, an aggregate's invariants, a pattern's rules. */

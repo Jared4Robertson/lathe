@@ -12,3 +12,4 @@
 {"id":"LA-PLT-MOD07","title":"Server contract","domain_id":"LA-PLT","file":"lathe/src/server/contract.ts"}
 {"id":"LA-PLT-MOD08","title":"Plugin scripts' shared helpers","domain_id":"LA-PLT","file":"plugin/scripts/lathe-root.mjs"}
 {"id":"LA-TRC-MOD01","title":"Outcome measure gap","domain_id":"LA-TRC","file":"lathe/src/trace/measures.ts"}
+{"id":"LA-TRC-MOD02","title":"Trace view offer","domain_id":"LA-TRC","file":"app/src/trace/offer.ts"}

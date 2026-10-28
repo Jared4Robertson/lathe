@@ -18,7 +18,7 @@ const FIRST_NODE = (view: 'graph' | 'erd') => (view === 'graph' ? '.pane-graph .
 test.describe('panes', () => {
   test('LA-V61-R29-T01 at 1024 px with three panes and the side bar open, no two panels overlap', async ({ page }) => {
     await page.setViewportSize({ width: 1024, height: 700 });
-    await openPage(page, `${AGGREGATE.split('?')[0]}?view=wiki,graph,model`);
+    await openPage(page, `${AGGREGATE.split('?')[0]}?view=wiki,graph,erd`);
     await page.locator('.side-bar-column').waitFor();
     const spans = await page.evaluate(() => [document.querySelector('nav#nav'), ...document.querySelectorAll('.focus-views > .pane'), document.querySelector('.side-bar-column')]
       .map((e) => { const b = e!.getBoundingClientRect(); return { left: b.left, right: b.right }; }));

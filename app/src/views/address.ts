@@ -1,5 +1,5 @@
 import type { SpecIndex, SpecRoute } from '../specs/data';
-import { hasTrace } from '../trace/chain';
+import { hasTrace } from '../trace/offer';
 
 // One address per thing, whichever views show it (LA-PAT-APP-CODE-R19). A record is at its bare
 // ID (`/LA-TRC-UC09`), a product and a domain included, whose one page is their overview (`/LA`,

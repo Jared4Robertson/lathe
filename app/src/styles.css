@@ -886,6 +886,12 @@ a.trace-card:hover { border-color: var(--steel); }
 .trace-ref { display: inline-flex; min-block-size: 24px; align-items: center; gap: 6px; }
 .trace-matrix td.is-gap { background: color-mix(in srgb, var(--warn) 8%, transparent); }
 .trace-more { margin: 12px 0 0; display: flex; gap: 8px; align-items: center; }
+/* What no obligation's chain reaches, under the matrix. */
+.trace-untraced { margin: 20px 0 0; }
+.trace-untraced > h3 { margin: 0 0 8px; font-size: 0.95rem; }
+.trace-untraced-kinds { margin: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+.trace-untraced-kinds dt { font-size: 0.82rem; color: var(--muted); }
+.trace-untraced-kinds dd { margin: 2px 0 0; }
 
 /* ---------- Themes and the Appearance page (app/src/theme, LA-PAT-APP-CODE-R15) ---------- */
 /* A theme's chip in the picker and its preview on the page take the theme's tokens inline, so they draw with its colors. */
