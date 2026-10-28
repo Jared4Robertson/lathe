@@ -213,8 +213,8 @@ function QuestionList({ index, questions }: { index: SpecIndex; questions: SpecR
 /**
  * A domain's or a product's records in its stages, as the side nav reads them: each stage under its
  * heading and color (Domain model, Use cases, Interaction design, Technical specification, Test plan),
- * and in it one section per kind with records, each record a row whose children of the same stage
- * fold under it. A stage with nothing yet says so. Then the folders outside the stages, except open
+ * and in it one section per kind with records (or, for a stage with one folder, its records directly), each record a
+ * row whose children of the same stage fold under it. A stage with nothing yet says so. Then the folders outside the stages, except open
  * questions, which the page lists itself.
  */
 function StageSections({ index, folders, query, level = 2 }: { index: SpecIndex; folders: OwnerFolders; query: string; level?: 2 | 3 }) {
@@ -238,7 +238,9 @@ function StageSections({ index, folders, query, level = 2 }: { index: SpecIndex;
       {folders.stages.map((stage) => (
         <div key={stage.key} className={`stage stage-${stage.stage}`}>
           <StageHeading className="stage-title"><StageMark stage={stage.stage} />{stage.label}<span className="section-count">{stage.count}</span></StageHeading>
-          {stage.count === 0 ? <p className="hint">Nothing yet.</p> : stage.folders.filter((f) => f.count > 0).map((f) => folderSection(f, levelBelow(level)))}
+          {stage.count === 0 ? <p className="hint">Nothing yet.</p>
+            : stage.direct ? tree(stage.direct.records, stage.direct.label)
+            : stage.folders.filter((f) => f.count > 0).map((f) => folderSection(f, levelBelow(level)))}
         </div>
       ))}
       {folders.loose.filter((f) => f.kind !== 'question').map((f) => folderSection(f, level))}

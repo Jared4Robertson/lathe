@@ -1,7 +1,7 @@
 import { fireEvent, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { main, openApp, openSideBar, section, sideBar } from './helpers';
+import { main, openApp, openSideBar, section, sideBar, stageOf } from './helpers';
 
 // Wiki pages and the side bar show one level below their record; deeper levels are folded under
 // a disclosure triangle, with their counts and marks still on the folded row.
@@ -12,7 +12,8 @@ describe('one level deep', () => {
   const proveLaV92R21T01 = async () => {
     await openApp('/DM-SHOP');
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
-    const capabilities = section(/^Capabilities/);
+    // Use cases holds only capabilities, so it lists them itself.
+    const capabilities = stageOf('use-cases');
     const cap = row(capabilities, 'DM-SHOP-CAP01');
     // Folded by default, with the count of what it holds.
     const toggle = within(cap).getByRole('button', { name: 'Expand DM-SHOP-CAP01' });
@@ -52,7 +53,7 @@ describe('one level deep', () => {
     await openApp('/DM-SHOP');
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     expect(row(section(/^Aggregates/), 'DM-SHOP-A1').querySelector('ul.nested')).not.toBeNull();
-    expect(row(section(/^Capabilities/), 'DM-SHOP-CAP01').querySelector('ul.nested')).not.toBeNull();
+    expect(row(stageOf('use-cases'), 'DM-SHOP-CAP01').querySelector('ul.nested')).not.toBeNull();
   };
   it('LA-V92-R21-T01 Folded rows keep their counts and marks, open and close by button, Expand all or arrow keys, and stay open while moving around', proveLaV92R21T01);
   it('LA-V92-R02-T01 Folded rows keep counts and marks and open by button, Expand all or arrow keys', proveLaV92R21T01);
@@ -64,7 +65,7 @@ describe('one level deep', () => {
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     const wiki = screen.getByRole('region', { name: 'Wiki pane' });
     // A domain's one page lists its records in their stages and folders, each with its own children folded.
-    const children = within(wiki).getByRole('heading', { name: /^Capabilities/ }).closest('section') as HTMLElement;
+    const children = stageOf('use-cases', wiki);
     const cap = row(children, 'DM-SHOP-CAP01');
     expect(cap).toHaveTextContent('1 use case');
     expect(cap.querySelector('ul.nested')).toBeNull();

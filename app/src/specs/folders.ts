@@ -17,6 +17,10 @@ import { textOf, byIdOrder, kindLabel, type SpecIndex, type SpecRecord, type Sta
 // a policy's test in Test plan). So every record has one place. The side nav, the domain and product
 // pages, the group pages and the graph's tree all read this one model, so they name and order things
 // the same way.
+//
+// A stage with only one folder shows that folder's records directly, with no folder level between (a domain's Use
+// cases holds only capabilities: "Use cases › Record authoring", not "Use cases › Capabilities › Record authoring");
+// the folder then has no row, group or address of its own (LA-PAT-APP-UX-R30). A stage with two or more folders keeps them.
 
 export interface Folder {
   /** A stable key, also the folder's address in the graph's tree: "DM-SHOP/domain-model/aggregate", or "DM-SHOP/question" outside the stages. */
@@ -39,6 +43,11 @@ export interface StageFolders {
   description: string;
   /** One folder per kind of the stage, in kind order; empty ones too. */
   folders: Folder[];
+  /**
+   * Its one folder when it has only one: the stage shows that folder's records directly, and the folder is no level
+   * of the nav, the graph's tree or the stage's page, with no address of its own. Null when it keeps its folders.
+   */
+  direct: Folder | null;
   /** The records in all its folders. */
   count: number;
 }
@@ -157,7 +166,7 @@ export const ownerFolders = perIndex((index: SpecIndex, ownerId: string): OwnerF
       // gains by use (a view, a value object), and neither lists a kind that always folds under another (an entity
       // under its aggregate).
       .filter((f) => f.count > 0 || canStartIn(index, f.kind, owner.kind));
-    return { key, stage: s.stage, label: s.label, description: s.description, folders, count: folders.reduce((n, f) => n + f.count, 0) };
+    return { key, stage: s.stage, label: s.label, description: s.description, folders, direct: folders.length === 1 ? folders[0] : null, count: folders.reduce((n, f) => n + f.count, 0) };
   })
     // A stage none of whose kinds can be written here is left out: discovery's business outcomes sit under the product, never a domain.
     .filter((s) => s.folders.length > 0);
@@ -202,7 +211,7 @@ export const allFolders = (folders: OwnerFolders): Folder[] => [...folders.stage
 
 /**
  * The keys of the nav rows that hold a record, from the outside in: its domain (for a record in a domain), its
- * stage and its folder, so the current page's branch can open itself. A record folded under another (a command under
+ * stage and its folder (none for a stage that shows its records directly), so the current page's branch can open itself. A record folded under another (a command under
  * its aggregate) opens the branch of the one listed.
  */
 export function branchOf(index: SpecIndex, id: string): string[] {
@@ -217,7 +226,7 @@ export function branchOf(index: SpecIndex, id: string): string[] {
     seen.add(r.id);
     const stage = folders.stages.find((s) => s.folders.some((f) => f.records.some((x) => x.id === r!.id)));
     const head = record.domain ? [`domain:${record.domain}`] : [sharedKey(owner)];
-    if (stage) return [...head, stage.key, stage.folders.find((f) => f.records.some((x) => x.id === r!.id))!.key];
+    if (stage) return stage.direct ? [...head, stage.key] : [...head, stage.key, stage.folders.find((f) => f.records.some((x) => x.id === r!.id))!.key];
     const loose = folders.loose.find((f) => f.records.some((x) => x.id === r!.id));
     if (loose) return [...head, loose.key];
   }
