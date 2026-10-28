@@ -79,6 +79,19 @@ export interface Problem {
   message: string;
 }
 
+/**
+ * A recorded exception: a command that also changes another aggregate of its domain in the same transaction (a
+ * command_change row), with the reason. Not a problem: lathe check lists every one, so each deviation stays deliberate
+ * and visible.
+ */
+export interface RecordedException {
+  /** The command. */
+  command: string;
+  /** The other aggregate it also changes. */
+  aggregate: string;
+  reason: string;
+}
+
 /** What one obligation, or one record that falls short of a minimum, still lacks. */
 export interface CoverageGap {
   /** The record that falls short. */
@@ -133,5 +146,7 @@ export interface Workspace {
   records: SpecRecord[];
   links: SpecLink[];
   problems: Problem[];
+  /** Every recorded exception, by command and aggregate. */
+  exceptions: RecordedException[];
   coverage: Coverage[];
 }

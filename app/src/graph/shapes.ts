@@ -134,6 +134,7 @@ const KIND_SHAPES: Readonly<Record<string, KindShape>> = {
   flow_test: TEST,
   integration_test: TEST,
   pattern_rule_test: TEST,
+  standard_rule_test: TEST,
   question: { shape: 'diamond' },
 };
 

@@ -1,4 +1,4 @@
-import type { Coverage, Problem } from '../../../lathe/src/types';
+import type { Coverage, Problem, RecordedException } from '../../../lathe/src/types';
 import type { SpecData } from '../../../lathe/src/server/contract';
 import { fixture, indexOf } from './load';
 import { gap, obligation } from './workspace';
@@ -19,7 +19,11 @@ import { gap, obligation } from './workspace';
 export const PROBLEMS: Problem[] = [
   { severity: 'error', check: 'test-file-missing', record: 'P-D-UC01-R01-T01', message: 'Test P-D-UC01-R01-T01 is run by test/lend.test.ts, which does not exist.' },
   { severity: 'warning', check: 'not-proved', record: 'P-D-INV02', message: 'No test proves invariant P-D-INV02.' },
-  { severity: 'warning', check: 'command-change-recorded', record: 'P-D-CMD02', message: 'Return thing also changes P-D-A1: the thing must be lendable again in the same transaction as its return.' },
+];
+
+/** Return thing's recorded exception, as the engine lists it from its command_change row. */
+export const EXCEPTIONS: RecordedException[] = [
+  { command: 'P-D-CMD02', aggregate: 'P-D-A1', reason: 'The thing must be lendable again in the same transaction as its return.' },
 ];
 
 const coverage = (): Coverage[] => [{
@@ -45,6 +49,6 @@ const coverage = (): Coverage[] => [{
   gaps: [],
 }];
 
-export const modelWorkspace = (): SpecData => fixture('model', { problems: structuredClone(PROBLEMS), coverage: coverage() });
+export const modelWorkspace = (): SpecData => fixture('model', { problems: structuredClone(PROBLEMS), exceptions: structuredClone(EXCEPTIONS), coverage: coverage() });
 
 export const modelIndex = () => indexOf(modelWorkspace());

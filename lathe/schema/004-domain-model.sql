@@ -132,7 +132,7 @@ CREATE TABLE command_change (
   reason VARCHAR NOT NULL CHECK (trim(reason) <> ''),
   PRIMARY KEY (command_id, aggregate_id)
 );
-COMMENT ON TABLE command_change IS 'A recorded exception to one aggregate per command: another aggregate of the same domain the command changes in the same transaction, and why. Checks list every one.';
+COMMENT ON TABLE command_change IS 'A recorded exception to one aggregate per command: another aggregate of the same domain the command changes in the same transaction, and why. lathe check and the Checks page list every one under Recorded exceptions, always visible and never a warning.';
 COMMENT ON COLUMN command_change.command_id IS 'The command that also changes the aggregate.';
 COMMENT ON COLUMN command_change.aggregate_id IS 'The other aggregate it changes in the same transaction: of the command''s domain, never its own.';
 COMMENT ON COLUMN command_change.reason IS 'Why the change cannot follow through an event and a policy.';

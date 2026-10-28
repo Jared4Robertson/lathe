@@ -284,6 +284,11 @@ something to look at. Lathe's own checks are in \`lathe/data/check.jsonl\`, load
 product adds its own as rows of its \`data/check.jsonl\` with its \`product_id\`. What the schema enforces is never a
 check: the store refuses it.
 
+**Recorded exceptions** are deliberate deviations recorded with their reason: a command that also changes another
+aggregate of its domain in the same transaction (a \`command_change\` row). They are not problems: \`lathe check\`
+and the Checks page list every one in a section of their own, with its command, aggregate and reason, so each stays
+visible.
+
 **Coverage** counts every obligation as designed, built and proved, per domain and for the product outside every
 domain, and lists as gaps each obligation still short of one, and each record short of a minimum the schema leaves to
 it (an "at least one" or "exactly one" that is missing while records are written stage by stage). An obligation is

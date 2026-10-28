@@ -9,9 +9,9 @@ CREATE TABLE capability (
   description VARCHAR,
   UNIQUE (domain_id, position)
 );
-COMMENT ON TABLE capability IS 'An ordered slice of a domain that groups its use cases, such as Membership or Lending.';
+COMMENT ON TABLE capability IS 'An ordered slice of a domain that groups its use cases, such as Catalog or Lending.';
 COMMENT ON COLUMN capability.id IS 'The capability''s ID, such as TL-LEND-CAP01.';
-COMMENT ON COLUMN capability.title IS 'The capability''s name, such as Membership.';
+COMMENT ON COLUMN capability.title IS 'The capability''s name, such as Catalog.';
 COMMENT ON COLUMN capability.domain_id IS 'The domain it belongs to.';
 COMMENT ON COLUMN capability.position IS 'Its place in the domain, from 1.';
 COMMENT ON COLUMN capability.description IS 'What the capability covers, in a sentence or two.';

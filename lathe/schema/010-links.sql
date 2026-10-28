@@ -34,7 +34,7 @@ COMMENT ON TABLE renders IS 'The UI component renders the view, or part of it.';
 CREATE TABLE follows (source_id VARCHAR NOT NULL REFERENCES follows_source (id), target_id VARCHAR NOT NULL REFERENCES pattern (id), PRIMARY KEY (source_id, target_id));
 COMMENT ON TABLE follows IS 'The domain or use case follows the pattern, and gives a value for each of its settings in setting_value rows.';
 CREATE TABLE meets (source_id VARCHAR NOT NULL REFERENCES meets_source (id), target_id VARCHAR NOT NULL REFERENCES standard_rule (id), PRIMARY KEY (source_id, target_id));
-COMMENT ON TABLE meets IS 'The technical record or test follows the standard rule.';
+COMMENT ON TABLE meets IS 'The technical record follows the standard rule: it shows where the rule is applied, and designs it.';
 CREATE TABLE about (source_id VARCHAR NOT NULL REFERENCES question (id), target_id VARCHAR NOT NULL REFERENCES record_id (id), PRIMARY KEY (source_id, target_id));
 COMMENT ON TABLE about IS 'The open question concerns the record.';
 
@@ -92,17 +92,6 @@ INSERT INTO meta_relation_pair VALUES
   ('meets', 'ui_component', 'standard_rule', 'The UI component follows the standard rule.'),
   ('meets', 'endpoint_handler', 'standard_rule', 'The endpoint handler follows the standard rule.'),
   ('meets', 'adapter', 'standard_rule', 'The adapter follows the standard rule.'),
-  ('meets', 'constraint_test', 'standard_rule', 'The test follows the standard rule.'),
-  ('meets', 'invariant_test', 'standard_rule', 'The test follows the standard rule.'),
-  ('meets', 'specification_test', 'standard_rule', 'The test follows the standard rule.'),
-  ('meets', 'policy_test', 'standard_rule', 'The test follows the standard rule.'),
-  ('meets', 'domain_service_test', 'standard_rule', 'The test follows the standard rule.'),
-  ('meets', 'use_case_test', 'standard_rule', 'The test follows the standard rule.'),
-  ('meets', 'view_test', 'standard_rule', 'The test follows the standard rule.'),
-  ('meets', 'endpoint_test', 'standard_rule', 'The test follows the standard rule.'),
-  ('meets', 'flow_test', 'standard_rule', 'The test follows the standard rule.'),
-  ('meets', 'integration_test', 'standard_rule', 'The test follows the standard rule.'),
-  ('meets', 'pattern_rule_test', 'standard_rule', 'The test follows the standard rule.'),
   ('about', 'question', '*', 'The open question concerns that record.');
 
 INSERT INTO meta_table SELECT name, 'link', NULL FROM meta_relation;

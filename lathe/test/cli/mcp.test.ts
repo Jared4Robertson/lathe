@@ -177,7 +177,8 @@ describe('each tool', () => {
   it('check reports the errors and warnings with a count', async () => {
     const root = writeData(everyKind());
     const checked = await callTool(root, 'check', {});
-    expect(checked.structuredContent).toEqual({ errors: expect.any(Number), warnings: expect.any(Number), problems: expect.any(Array) });
+    expect(checked.structuredContent).toEqual({ errors: expect.any(Number), warnings: expect.any(Number), problems: expect.any(Array), exceptions: [{ command: 'TL-LEND-CMD01', aggregate: 'TL-LEND-A2', reason: 'The tool must never show as lent without its loan.' }] });
+    expect(checked.content[0].text).toContain('Recorded exceptions (1):\n  TL-LEND-CMD01 also changes aggregate TL-LEND-A2 in the same transaction: The tool must never show as lent without its loan.');
     expect(checked.content[0].text).toMatch(/\d+ errors?, \d+ warnings?\.$/);
     expect(checked.isError).toBe((checked.structuredContent!.errors as number) > 0);
   });

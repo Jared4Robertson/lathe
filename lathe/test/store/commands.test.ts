@@ -275,19 +275,21 @@ describe('remove', () => {
 });
 
 describe('a write', () => {
-  it('LA-AUT-INV33-T is all or nothing: a refused command leaves the data and the files as they were', async () => {
-    const { store, root } = await fresh();
-    const before = files(root);
-    const problems = await refused(store, [
-      { op: 'add', table: 'view', row: { id: 'TL-V02', title: 'Desk' } },
-      { op: 'link', relation: 'renders', source: 'TL-UI01', target: 'TL-V02' },
-      { op: 'add', table: 'domain_service_test', row: { id: 'TL-LEND-DS01-T02', title: 'Broken', domain_service_id: 'TL-LEND-DS01', level: 'unit', state: 'automated' } },
-    ]);
-    expect(problems).toEqual([expect.objectContaining({ rule: 'check', command: 2 })]);
-    expect(store.record('TL-V02')).toBeUndefined();
-    expect(await store.query("SELECT id FROM view WHERE id = 'TL-V02'")).toEqual([]);
-    expect(files(root)).toEqual(before);
-    await store.close();
+  describe('LA-STD-PRINCIPLES-R01-T02 a refused write changes nothing', () => {
+    it('LA-AUT-INV33-T is all or nothing: a refused command leaves the data and the files as they were', async () => {
+      const { store, root } = await fresh();
+      const before = files(root);
+      const problems = await refused(store, [
+        { op: 'add', table: 'view', row: { id: 'TL-V02', title: 'Desk' } },
+        { op: 'link', relation: 'renders', source: 'TL-UI01', target: 'TL-V02' },
+        { op: 'add', table: 'domain_service_test', row: { id: 'TL-LEND-DS01-T02', title: 'Broken', domain_service_id: 'TL-LEND-DS01', level: 'unit', state: 'automated' } },
+      ]);
+      expect(problems).toEqual([expect.objectContaining({ rule: 'check', command: 2 })]);
+      expect(store.record('TL-V02')).toBeUndefined();
+      expect(await store.query("SELECT id FROM view WHERE id = 'TL-V02'")).toEqual([]);
+      expect(files(root)).toEqual(before);
+      await store.close();
+    });
   });
 
   it('declares a product kind in any stage and adds its records in one write', async () => {

@@ -220,7 +220,7 @@ export function tools(schema: SchemaDescription): Tool[] {
     },
     {
       name: 'check',
-      description: 'Run lathe check on the whole workspace: every error (fix them before going on) and every warning (gaps and work still to do).',
+      description: 'Run lathe check on the whole workspace: every error (fix them before going on), every warning (gaps and work still to do), and the recorded exceptions (deliberate deviations with their reasons, never problems).',
       inputSchema: { type: 'object', properties: {}, additionalProperties: false },
     },
   ];

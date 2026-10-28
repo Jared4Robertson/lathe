@@ -185,11 +185,11 @@ export interface CallsRow {
   target_id: string;
 }
 
-/** An ordered slice of a domain that groups its use cases, such as Membership or Lending. */
+/** An ordered slice of a domain that groups its use cases, such as Catalog or Lending. */
 export interface CapabilityRow {
   /** The capability's ID, such as TL-LEND-CAP01. */
   id: string;
-  /** The capability's name, such as Membership. */
+  /** The capability's name, such as Catalog. */
   title: string;
   /** The domain it belongs to. */
   domain_id: string;
@@ -235,7 +235,7 @@ export interface ChecksRow {
   target_id: string;
 }
 
-/** A recorded exception to one aggregate per command: another aggregate of the same domain the command changes in the same transaction, and why. Checks list every one. */
+/** A recorded exception to one aggregate per command: another aggregate of the same domain the command changes in the same transaction, and why. lathe check and the Checks page list every one under Recorded exceptions, always visible and never a warning. */
 export interface CommandChangeRow {
   /** The command that also changes the aggregate. */
   command_id: string;
@@ -497,7 +497,7 @@ export interface EventTypeRow {
   title: string;
   /** The domain event it implements; one event type each. */
   domain_event_id: string;
-  /** How the event reaches what hears it: in process, after the transaction commits; or outbox, saved in the same transaction as its aggregate and delivered reliably afterwards. An event a policy hears or another domain may hear is delivered by outbox. */
+  /** How the event reaches what hears it: in process, after the transaction commits; or outbox, saved in the same transaction as its aggregate and delivered reliably afterwards. An event a policy hears is delivered by outbox, since a lost reaction is a lost change; one that only keeps read models current (fed_by), where those read models are rebuilt from the data on every load, may be delivered in process. */
   delivery?: "in process" | "outbox";
   /** The file that holds its code, from the product root; it may not exist yet, and several records may share one file. */
   file?: string;
@@ -743,7 +743,7 @@ export interface StandardRow {
   description?: string;
 }
 
-/** One rule of a standard. Technical records and tests that follow it link to it with meets. */
+/** One rule of a standard. Technical records that follow it link to it with meets; its standard rule tests prove it. */
 export interface StandardRuleRow {
   /** The rule's ID: its standard's ID and R<nn>, such as TL-STD-CODE-R01. */
   id: string;
@@ -757,7 +757,7 @@ export interface StandardRuleRow {
   group_name?: string;
 }
 
-/** The technical record or test follows the standard rule. */
+/** The technical record follows the standard rule: it shows where the rule is applied, and designs it. */
 export interface MeetsRow {
   source_id: string;
   target_id: string;
@@ -1101,6 +1101,32 @@ export interface SpecificationTestRow {
   notes?: string;
 }
 
+/** Proves its standard rule in the product's code, such as a scan of the code for what the rule forbids or a test of a place that follows it. */
+export interface StandardRuleTestRow {
+  /** The test's ID: its standard rule's ID and T<nn>, such as TL-STD-CODE-R01-T01. */
+  id: string;
+  /** What the test shows, in a sentence. */
+  title: string;
+  /** The standard rule it proves. */
+  standard_rule_id: string;
+  /** The level it runs at: unit, database, api, contract, e2e-api, e2e-ui or manual. */
+  level: "unit" | "database" | "api" | "contract" | "e2e-api" | "e2e-ui" | "manual";
+  /** automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. */
+  state: "automated" | "manual" | "not automated yet";
+  /** The file that runs it, from the product root; an automated test must name one. */
+  file?: string;
+  /** Why a person runs it rather than a file; a manual test must give one, and only a manual test. */
+  manual_reason?: string;
+  /** The state the test starts from. */
+  given?: string;
+  /** What the test does. */
+  when?: string;
+  /** What the test expects. */
+  then?: string;
+  /** Longer notes on the test, such as when to run it. */
+  notes?: string;
+}
+
 /** Where an entity or a read model, its parent, is stored; or, under a domain, a table of the domain's own infrastructure that implements no design record, such as its outbox. Its columns follow from its parent's fields, a value object's fields flattened into columns, so it stores only what fields cannot say: its keys and indexes (table_key rows). An entity's table is always a table, normalized and the source of truth; a read model's is a projection that can be rebuilt, usually a view over its domain's entity tables. */
 export interface TableRow {
   /** The table's ID: its entity's or read model's ID and TB, such as TL-LEND-EN01-TB. */
@@ -1351,6 +1377,7 @@ export interface TableRows {
   service: ServiceRow;
   setting_value: SettingValueRow;
   specification_test: SpecificationTestRow;
+  standard_rule_test: StandardRuleTestRow;
   table: TableRow;
   table_key: TableKeyRow;
   term: TermRow;

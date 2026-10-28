@@ -21,7 +21,7 @@ COMMENT ON TABLE calls_source IS 'The records that use domain services: commands
 CREATE TABLE follows_source (id VARCHAR PRIMARY KEY, kind VARCHAR NOT NULL, FOREIGN KEY (id, kind) REFERENCES record_id (id, kind));
 COMMENT ON TABLE follows_source IS 'The records that may follow a pattern: domains and use cases.';
 CREATE TABLE meets_source (id VARCHAR PRIMARY KEY, kind VARCHAR NOT NULL, FOREIGN KEY (id, kind) REFERENCES record_id (id, kind));
-COMMENT ON TABLE meets_source IS 'The records that may meet a standard rule: the technical kinds and the test kinds.';
+COMMENT ON TABLE meets_source IS 'The records that may meet a standard rule: the technical kinds, which show where the rule is applied. A standard rule is proved by its standard rule tests.';
 
 INSERT INTO meta_table VALUES ('record_id', 'registry', NULL);
 INSERT INTO meta_table
@@ -35,5 +35,4 @@ INSERT INTO meta_supertype_member
   UNION ALL SELECT 'follows_source', kind FROM (VALUES ('domain'), ('use_case')) AS t (kind)
   UNION ALL SELECT 'meets_source', kind FROM (VALUES ('repository'), ('data_model'), ('table'), ('value_type'), ('predicate'),
     ('event_type'), ('projection'), ('command_handler'), ('query_handler'), ('event_handler'), ('service'), ('ui_component'),
-    ('endpoint_handler'), ('adapter'), ('constraint_test'), ('invariant_test'), ('specification_test'), ('policy_test'),
-    ('domain_service_test'), ('use_case_test'), ('view_test'), ('endpoint_test'), ('flow_test'), ('integration_test'), ('pattern_rule_test')) AS t (kind);
+    ('endpoint_handler'), ('adapter')) AS t (kind);

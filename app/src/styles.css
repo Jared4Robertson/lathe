@@ -175,7 +175,7 @@ code { font: 0.86em var(--mono); }
 .record-list > li.group { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
 .record-list.nested { margin-left: 18px; }
 .record-list.nested > li { background: var(--paper); }
-.record-list.gaps > li, .problems > li { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+.record-list.gaps > li, .record-list.exceptions > li, .problems > li { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
 .record-row { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; align-items: baseline; }
 .row-tags { display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline; }
 .meta { color: var(--muted); font-size: 0.8rem; }
@@ -194,7 +194,7 @@ code { font: 0.86em var(--mono); }
 .severity { font: 500 0.7rem var(--mono); text-transform: uppercase; letter-spacing: 0.05em; }
 .problem.error .severity { color: var(--error); }
 .problem.warning .severity { color: var(--warn); }
-.problem-text { flex: 1; min-width: 200px; }
+.problem-text, .exception-text { flex: 1; min-width: 200px; }
 .check-name { color: var(--muted); font-size: 0.75rem; }
 
 .markdown { max-width: 72ch; }

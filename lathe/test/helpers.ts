@@ -254,6 +254,7 @@ export function complete(): Data {
     ],
     integration_test: [{ id: 'EX-INT01-T01', title: 'A mail is sent', integration_id: 'EX-INT01', level: 'manual', state: 'manual', manual_reason: 'The mail service has no test mode.' }],
     pattern_rule_test: [{ id: 'EX-PAT-ACT-R01-T01', title: 'A saved tool reads the same', pattern_rule_id: 'EX-PAT-ACT-R01', domain_id: 'EX-LEND', ...automated('api', 'test/api.test.ts') }],
+    standard_rule_test: [{ id: 'EX-STD-CODE-R01-T01', title: 'No bare built-in import', standard_rule_id: 'EX-STD-CODE-R01', ...automated('unit', 'test/imports.test.ts') }],
 
     has_one: [{ source_id: 'EX-LEND-EN01', target_id: 'EX-LEND-EN02' }],
     raises: [
@@ -284,10 +285,7 @@ export function complete(): Data {
     renders: [{ source_id: 'EX-UI01', target_id: 'EX-V01' }],
     follows: [{ source_id: 'EX-LEND-UC02', target_id: 'EX-PAT-ACT' }],
     setting_value: [{ follower_id: 'EX-LEND-UC02', pattern_id: 'EX-PAT-ACT', setting: 'record', value: 'Tool' }],
-    meets: [
-      { source_id: 'EX-LEND-CMD01-H', target_id: 'EX-STD-CODE-R01' },
-      { source_id: 'EX-LEND-EP01-R01-T01', target_id: 'EX-STD-CODE-R01' },
-    ],
+    meets: [{ source_id: 'EX-LEND-CMD01-H', target_id: 'EX-STD-CODE-R01' }],
   };
 }
 

@@ -30,29 +30,31 @@ describe('the schema description', () => {
     }
   });
 
-  it('LA-AUT-UC03-R04-T01 gives every kind an id in the registry, a title and its parent columns', () => {
-    for (const kind of Object.values(schema.kinds)) {
-      const table = schema.tables[kind.name];
-      expect(table.primaryKey).toEqual(['id']);
-      expect(table.foreignKeys).toContainEqual({ columns: ['id'], table: 'record_id', references: ['id'] });
-      expect(table.columns.find((c) => c.name === 'title')?.required, kind.name).toBe(true);
-      for (const parent of kind.parents) {
-        const fk = table.foreignKeys.find((f) => f.columns[0] === parent.column && f.table === parent.kind);
-        expect(fk, `${kind.name}.${parent.column} -> ${parent.kind}`).toBeTruthy();
+  describe('LA-STD-PRINCIPLES-R02-T01 every kind is stored one way', () => {
+    it('LA-AUT-UC03-R04-T01 gives every kind an id in the registry, a title and its parent columns', () => {
+      for (const kind of Object.values(schema.kinds)) {
+        const table = schema.tables[kind.name];
+        expect(table.primaryKey).toEqual(['id']);
+        expect(table.foreignKeys).toContainEqual({ columns: ['id'], table: 'record_id', references: ['id'] });
+        expect(table.columns.find((c) => c.name === 'title')?.required, kind.name).toBe(true);
+        for (const parent of kind.parents) {
+          const fk = table.foreignKeys.find((f) => f.columns[0] === parent.column && f.table === parent.kind);
+          expect(fk, `${kind.name}.${parent.column} -> ${parent.kind}`).toBeTruthy();
+        }
+        // One parent: a lone parent column is required; two or three are all optional, with a CHECK that exactly one is given.
+        const columns = kind.parents.map((p) => table.columns.find((c) => c.name === p.column)!);
+        if (columns.length === 1) expect(columns[0].required, kind.name).toBe(true);
+        if (columns.length === 2) {
+          expect(columns.map((c) => c.required), kind.name).toEqual([false, false]);
+          expect(table.checks, kind.name).toContainEqual(expect.stringContaining(`(${columns[0].name} IS NULL) != (${columns[1].name} IS NULL)`));
+        }
+        if (columns.length === 3) {
+          expect(columns.map((c) => c.required), kind.name).toEqual([false, false, false]);
+          expect(table.checks.join(' '), kind.name).toContain('= 1');
+        }
+        expect(columns.length, kind.name).toBeLessThanOrEqual(3);
       }
-      // One parent: a lone parent column is required; two or three are all optional, with a CHECK that exactly one is given.
-      const columns = kind.parents.map((p) => table.columns.find((c) => c.name === p.column)!);
-      if (columns.length === 1) expect(columns[0].required, kind.name).toBe(true);
-      if (columns.length === 2) {
-        expect(columns.map((c) => c.required), kind.name).toEqual([false, false]);
-        expect(table.checks, kind.name).toContainEqual(expect.stringContaining(`(${columns[0].name} IS NULL) != (${columns[1].name} IS NULL)`));
-      }
-      if (columns.length === 3) {
-        expect(columns.map((c) => c.required), kind.name).toEqual([false, false, false]);
-        expect(table.checks.join(' '), kind.name).toContain('= 1');
-      }
-      expect(columns.length, kind.name).toBeLessThanOrEqual(3);
-    }
+    });
   });
 
   it('has the kinds with no owner the plan names, each taking its product or domain from its ID', () => {

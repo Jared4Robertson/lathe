@@ -3,11 +3,11 @@ import type { Row, SpecData, Value } from '../../../lathe/src/server/contract';
 import { buildWorkspace, indexWorkspace, type SpecIndex } from '../../src/specs/data';
 
 // The fixtures: each a data folder under fixtures/data/, written with the store and loaded through
-// it by fixtures/global-setup.ts, plus the problems and coverage the engine would find, which each
-// fixture module gives. A test may change a fixture's rows for its case with the helpers here.
+// it by fixtures/global-setup.ts, plus the problems, recorded exceptions and coverage the engine
+// would find, which each fixture module gives (no recorded exceptions unless it says so). A test may change a fixture's rows for its case with the helpers here.
 
 /** What the global setup loads of a fixture: what GET /api/spec serves, without the checks' findings. */
-export type FixtureRows = Omit<SpecData, 'problems' | 'coverage'>;
+export type FixtureRows = Omit<SpecData, 'problems' | 'exceptions' | 'coverage'>;
 
 declare module 'vitest' {
   export interface ProvidedContext {
@@ -16,10 +16,10 @@ declare module 'vitest' {
 }
 
 /** A fixture's data with the engine's findings, as GET /api/spec would serve it: a fresh copy each time. */
-export function fixture(name: string, found: Pick<SpecData, 'problems' | 'coverage'>): SpecData {
+export function fixture(name: string, found: Pick<SpecData, 'problems' | 'coverage'> & Partial<Pick<SpecData, 'exceptions'>>): SpecData {
   const rows = inject('fixtures')[name];
   if (!rows) throw new Error(`No fixture data folder ${name}.`);
-  return structuredClone({ ...rows, ...found });
+  return structuredClone({ exceptions: [], ...rows, ...found });
 }
 
 /** The index the app builds from the data. */

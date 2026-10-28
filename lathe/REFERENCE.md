@@ -22,6 +22,11 @@ something to look at. Lathe's own checks are in `lathe/data/check.jsonl`, loaded
 product adds its own as rows of its `data/check.jsonl` with its `product_id`. What the schema enforces is never a
 check: the store refuses it.
 
+**Recorded exceptions** are deliberate deviations recorded with their reason: a command that also changes another
+aggregate of its domain in the same transaction (a `command_change` row). They are not problems: `lathe check`
+and the Checks page list every one in a section of their own, with its command, aggregate and reason, so each stays
+visible.
+
 **Coverage** counts every obligation as designed, built and proved, per domain and for the product outside every
 domain, and lists as gaps each obligation still short of one, and each record short of a minimum the schema leaves to
 it (an "at least one" or "exactly one" that is missing while records are written stage by stage). An obligation is
@@ -77,7 +82,7 @@ The consistency boundary: a cluster of entities changed together as one unit, by
 - **ID:** `<P>-<D>-A<n>`, such as `TL-LEND-A1`; it starts with its domain's ID
 - **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about)), Read by ([`reads`](#relation-reads))
-- **Checks:** [`command-change-recorded`](#check-command-change-recorded), [`has-crosses-aggregate`](#check-has-crosses-aggregate), [`aggregate-too-large`](#check-aggregate-too-large)
+- **Checks:** [`has-crosses-aggregate`](#check-has-crosses-aggregate), [`aggregate-too-large`](#check-aggregate-too-large)
 - **Gaps:** [`aggregate-without-root`](#gap-aggregate-without-root), [`aggregate-without-command`](#gap-aggregate-without-command), [`aggregate-without-repository`](#gap-aggregate-without-repository)
 
 <a id="table-aggregate"></a>
@@ -362,7 +367,6 @@ A request to change exactly one aggregate, its parent. It checks specifications,
 - **Links out:** Calls ([`calls`](#relation-calls)), Checks ([`checks`](#relation-checks)), Raises ([`raises`](#relation-raises))
 - **Links in:** Questions about this ([`about`](#relation-about)), Invoked by ([`invokes`](#relation-invokes))
 - **Parts:** [`command_change`](#table-command_change)
-- **Checks:** [`command-change-recorded`](#check-command-change-recorded)
 - **Gaps:** [`command-without-handler`](#gap-command-without-handler)
 
 <a id="table-command"></a>
@@ -381,7 +385,7 @@ A request to change exactly one aggregate, its parent. It checks specifications,
 
 #### `command_change`
 
-A recorded exception to one aggregate per command: another aggregate of the same domain the command changes in the same transaction, and why. Checks list every one.
+A recorded exception to one aggregate per command: another aggregate of the same domain the command changes in the same transaction, and why. lathe check and the Checks page list every one under Recorded exceptions, always visible and never a warning.
 
 | Column | Type | Required | Meaning |
 | --- | --- | --- | --- |
@@ -581,16 +585,6 @@ A specification that nothing uses.
 
 A specification has no owner: it exists because commands check it and queries select by it. One that nothing uses is a leftover, or a link is missing. Link the commands that check it or the queries that select by it, or remove it.
 
-<a id="check-command-change-recorded"></a>
-
-### `command-change-recorded`
-
-**Warning** · Lathe's · Kinds: [`command`](#kind-command), [`aggregate`](#kind-aggregate)
-
-A command that also changes another aggregate in the same transaction: a recorded exception, listed with its reason.
-
-A command changes exactly one aggregate, its parent, and other aggregates follow through events and policies. A command may also change another aggregate of its own domain in the same transaction (a command_change row), with the reason the change cannot follow through an event; its handler owns that one transaction, and every touched aggregate's invariants hold. Each exception is listed so that it stays visible and deliberate. Keep it while the reason holds; otherwise raise an event and let a policy make the other change, and remove the row.
-
 <a id="check-event-not-by-outbox"></a>
 
 ### `event-not-by-outbox`
@@ -681,7 +675,7 @@ Capabilities, the use cases in them with their actors and UC requirements, and t
 
 ### Capability (`capability`)
 
-An ordered slice of a domain that groups its use cases, such as Membership or Lending.
+An ordered slice of a domain that groups its use cases, such as Catalog or Lending.
 
 - **Parents:** [`domain`](#kind-domain) (`domain_id`)
 - **Children:** [`use_case`](#kind-use_case)
@@ -697,7 +691,7 @@ An ordered slice of a domain that groups its use cases, such as Membership or Le
 | Column | Type | Required | Meaning |
 | --- | --- | --- | --- |
 | `id` | VARCHAR → `record_id` | yes | The capability's ID, such as TL-LEND-CAP01. |
-| `title` | VARCHAR | yes | The capability's name, such as Membership. |
+| `title` | VARCHAR | yes | The capability's name, such as Catalog. |
 | `domain_id` | VARCHAR → [`domain`](#table-domain) | yes | The domain it belongs to. |
 | `position` | INTEGER | yes | Its place in the domain, from 1. |
 | `description` | VARCHAR | no | What the capability covers, in a sentence or two. |
@@ -1369,7 +1363,7 @@ Its domain event's shape in code; a contract with other domains when the event i
 | `id` | VARCHAR → `record_id` | yes | The event type's ID: its domain event's ID and ET, such as TL-LEND-EV01-ET. |
 | `title` | VARCHAR | yes | Its name in code, such as LoanOpened. |
 | `domain_event_id` | VARCHAR → [`domain_event`](#table-domain_event) | yes | The domain event it implements; one event type each. |
-| `delivery` | ENUM('in process', 'outbox') | no | How the event reaches what hears it: in process, after the transaction commits; or outbox, saved in the same transaction as its aggregate and delivered reliably afterwards. An event a policy hears or another domain may hear is delivered by outbox. |
+| `delivery` | ENUM('in process', 'outbox') | no | How the event reaches what hears it: in process, after the transaction commits; or outbox, saved in the same transaction as its aggregate and delivered reliably afterwards. An event a policy hears is delivered by outbox, since a lost reaction is a lost change; one that only keeps read models current (fed_by), where those read models are rebuilt from the data on every load, may be delivered in process. |
 | `file` | VARCHAR | no | The file that holds its code, from the product root; it may not exist yet, and several records may share one file. |
 | `description` | VARCHAR | no | How it works, in a sentence or two. |
 
@@ -1628,14 +1622,14 @@ A library of engineering rules that holds for the product's code, such as loggin
 
 ### Standard rule (`standard_rule`)
 
-One rule of a standard. Technical records and tests that follow it link to it with meets.
+One rule of a standard. Technical records that follow it link to it with meets; its standard rule tests prove it.
 
 - **Parents:** [`standard`](#kind-standard) (`standard_id`)
-- **Children:** none
+- **Children:** [`standard_rule_test`](#kind-standard_rule_test)
 - **Obligation:** yes: designed, built and proved
   - **Designed:** A technical record meets it.
   - **Built:** A technical record that meets it names a file that exists.
-  - **Proved:** A test meets it.
+  - **Proved:** One of its standard rule tests.
 - **ID:** `<standard>-R<nn>`, such as `TL-STD-CODE-R01`; it starts with its parent's ID
 - **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about)), Met by ([`meets`](#relation-meets))
@@ -1713,7 +1707,7 @@ Proves its constraint: the values its value object accepts and refuses.
 - **Obligation:** no
 - **Run by levels:** `unit`, `database`
 - **ID:** `<constraint>-T`, such as `TL-VO01-C01-T`; it starts with its parent's ID
-- **Links out:** Meets ([`meets`](#relation-meets))
+- **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed)
 
@@ -1749,7 +1743,7 @@ Proves its invariant: a change that would break it is refused, and the aggregate
 - **Obligation:** no
 - **Run by levels:** `unit`, `database`
 - **ID:** `<invariant>-T`, such as `TL-LEND-INV01-T`; it starts with its parent's ID
-- **Links out:** Meets ([`meets`](#relation-meets))
+- **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed)
 
@@ -1786,7 +1780,7 @@ Proves its specification: which records satisfy the predicate and which do not.
 - **Obligation:** no
 - **Run by levels:** `unit`, `database`
 - **ID:** `<specification>-T`, such as `TL-LEND-SP01-T`; it starts with its parent's ID
-- **Links out:** Meets ([`meets`](#relation-meets))
+- **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed)
 
@@ -1823,7 +1817,7 @@ Proves its policy: when its event happens, its command is sent.
 - **Obligation:** no
 - **Run by levels:** `database`, `api`, `e2e-api`, `e2e-ui`, `manual`
 - **ID:** `<policy>-T`, such as `TL-LEND-PO01-T`; it starts with its parent's ID
-- **Links out:** Meets ([`meets`](#relation-meets))
+- **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed)
 
@@ -1860,7 +1854,7 @@ Proves its domain service: from the inputs given, the value or decision it retur
 - **Obligation:** no
 - **Run by levels:** `unit`
 - **ID:** `<domain service>-T<nn>`, such as `TL-LEND-DS01-T01`; it starts with its parent's ID
-- **Links out:** Meets ([`meets`](#relation-meets))
+- **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed)
 
@@ -1896,7 +1890,7 @@ Proves its UC requirement, at the level the use case is stated: what the actor d
 - **Obligation:** no
 - **Run by levels:** `api`, `e2e-api`, `e2e-ui`, `manual`
 - **ID:** `<UC requirement>-T<nn>`, such as `TL-LEND-UC01-R01-T01`; it starts with its parent's ID
-- **Links out:** Meets ([`meets`](#relation-meets))
+- **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed)
 
@@ -1932,7 +1926,7 @@ Proves its view requirement in the view.
 - **Obligation:** no
 - **Run by levels:** `unit`, `e2e-ui`, `manual`
 - **ID:** `<view requirement>-T<nn>`, such as `TL-V01-R01-T01`; it starts with its parent's ID
-- **Links out:** Meets ([`meets`](#relation-meets))
+- **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed)
 
@@ -1968,7 +1962,7 @@ Proves its API requirement at the endpoint: the request and the response.
 - **Obligation:** no
 - **Run by levels:** `contract`, `api`
 - **ID:** `<API requirement>-T<nn>`, such as `TL-LEND-EP01-R01-T01`; it starts with its parent's ID
-- **Links out:** Meets ([`meets`](#relation-meets))
+- **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed)
 
@@ -2004,7 +1998,7 @@ A smoke test of its flow's main path, end to end.
 - **Obligation:** no
 - **Run by levels:** `e2e-ui`, `e2e-api`, `manual`
 - **ID:** `<flow>-T`, such as `TL-LEND-UC01-FL-T`; it starts with its parent's ID
-- **Links out:** Meets ([`meets`](#relation-meets))
+- **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed)
 
@@ -2040,7 +2034,7 @@ Proves an exchange with its integration's outside system.
 - **Obligation:** no
 - **Run by levels:** `contract`, `e2e-api`, `manual`
 - **ID:** `<integration>-T<nn>`, such as `TL-INT01-T01`; it starts with its parent's ID
-- **Links out:** Meets ([`meets`](#relation-meets))
+- **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed)
 
@@ -2076,7 +2070,7 @@ Proves its pattern rule in one domain that adopts the pattern: one test per patt
 - **Obligation:** no
 - **Run by levels:** `unit`, `database`, `api`, `contract`, `e2e-api`, `e2e-ui`, `manual`
 - **ID:** `<pattern rule>-T<nn>`, such as `TL-PAT-ACT-R01-T01`; it starts with its parent's ID
-- **Links out:** Meets ([`meets`](#relation-meets))
+- **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`pattern-rule-test-outside-followers`](#check-pattern-rule-test-outside-followers)
 
@@ -2099,6 +2093,41 @@ Proves its pattern rule in one domain that adopts the pattern: one test per patt
 
 - **Key:** `id`
 - **Unique:** `pattern_rule_id`, `domain_id`
+- **Rule:** `("trim"(title) != '')`
+- **Rule:** `((state != 'automated') OR (file IS NOT NULL))`
+- **Rule:** `((state = 'manual') = (manual_reason IS NOT NULL))`
+
+<a id="kind-standard_rule_test"></a>
+
+### Standard rule test (`standard_rule_test`)
+
+Proves its standard rule in the product's code, such as a scan of the code for what the rule forbids or a test of a place that follows it.
+
+- **Parents:** [`standard_rule`](#kind-standard_rule) (`standard_rule_id`)
+- **Children:** none
+- **Obligation:** no
+- **Run by levels:** `unit`, `database`, `api`, `contract`, `e2e-api`, `e2e-ui`, `manual`
+- **ID:** `<standard rule>-T<nn>`, such as `TL-STD-CODE-R01-T01`; it starts with its parent's ID
+- **Links out:** none
+- **Links in:** Questions about this ([`about`](#relation-about))
+
+<a id="table-standard_rule_test"></a>
+
+| Column | Type | Required | Meaning |
+| --- | --- | --- | --- |
+| `id` | VARCHAR → `record_id` | yes | The test's ID: its standard rule's ID and T<nn>, such as TL-STD-CODE-R01-T01. |
+| `title` | VARCHAR | yes | What the test shows, in a sentence. |
+| `standard_rule_id` | VARCHAR → [`standard_rule`](#table-standard_rule) | yes | The standard rule it proves. |
+| `level` | ENUM('unit', 'database', 'api', 'contract', 'e2e-api', 'e2e-ui', 'manual') | yes | The level it runs at: unit, database, api, contract, e2e-api, e2e-ui or manual. |
+| `state` | ENUM('automated', 'manual', 'not automated yet') | yes | automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. |
+| `file` | VARCHAR | no | The file that runs it, from the product root; an automated test must name one. |
+| `manual_reason` | VARCHAR | no | Why a person runs it rather than a file; a manual test must give one, and only a manual test. |
+| `given` | VARCHAR | no | The state the test starts from. |
+| `when` | VARCHAR | no | What the test does. |
+| `then` | VARCHAR | no | What the test expects. |
+| `notes` | VARCHAR | no | Longer notes on the test, such as when to run it. |
+
+- **Key:** `id`
 - **Rule:** `("trim"(title) != '')`
 - **Rule:** `((state != 'automated') OR (file IS NOT NULL))`
 - **Rule:** `((state = 'manual') = (manual_reason IS NOT NULL))`
@@ -2543,7 +2572,7 @@ The flow step invokes the command or query: at most one per step.
 
 ### `meets`
 
-The technical record or test follows the standard rule.
+The technical record follows the standard rule: it shows where the rule is applied, and designs it.
 
 - **Reads:** Meets / Met by
 - **Role:** none
@@ -2552,29 +2581,18 @@ The technical record or test follows the standard rule.
 | --- | --- | --- |
 | [`adapter`](#kind-adapter) | [`standard_rule`](#kind-standard_rule) | The adapter follows the standard rule. |
 | [`command_handler`](#kind-command_handler) | [`standard_rule`](#kind-standard_rule) | The command handler follows the standard rule. |
-| [`constraint_test`](#kind-constraint_test) | [`standard_rule`](#kind-standard_rule) | The test follows the standard rule. |
 | [`data_model`](#kind-data_model) | [`standard_rule`](#kind-standard_rule) | The data model follows the standard rule. |
-| [`domain_service_test`](#kind-domain_service_test) | [`standard_rule`](#kind-standard_rule) | The test follows the standard rule. |
 | [`endpoint_handler`](#kind-endpoint_handler) | [`standard_rule`](#kind-standard_rule) | The endpoint handler follows the standard rule. |
-| [`endpoint_test`](#kind-endpoint_test) | [`standard_rule`](#kind-standard_rule) | The test follows the standard rule. |
 | [`event_handler`](#kind-event_handler) | [`standard_rule`](#kind-standard_rule) | The event handler follows the standard rule. |
 | [`event_type`](#kind-event_type) | [`standard_rule`](#kind-standard_rule) | The event type follows the standard rule. |
-| [`flow_test`](#kind-flow_test) | [`standard_rule`](#kind-standard_rule) | The test follows the standard rule. |
-| [`integration_test`](#kind-integration_test) | [`standard_rule`](#kind-standard_rule) | The test follows the standard rule. |
-| [`invariant_test`](#kind-invariant_test) | [`standard_rule`](#kind-standard_rule) | The test follows the standard rule. |
-| [`pattern_rule_test`](#kind-pattern_rule_test) | [`standard_rule`](#kind-standard_rule) | The test follows the standard rule. |
-| [`policy_test`](#kind-policy_test) | [`standard_rule`](#kind-standard_rule) | The test follows the standard rule. |
 | [`predicate`](#kind-predicate) | [`standard_rule`](#kind-standard_rule) | The predicate follows the standard rule. |
 | [`projection`](#kind-projection) | [`standard_rule`](#kind-standard_rule) | The projection follows the standard rule. |
 | [`query_handler`](#kind-query_handler) | [`standard_rule`](#kind-standard_rule) | The query handler follows the standard rule. |
 | [`repository`](#kind-repository) | [`standard_rule`](#kind-standard_rule) | The repository follows the standard rule. |
 | [`service`](#kind-service) | [`standard_rule`](#kind-standard_rule) | The service follows the standard rule. |
-| [`specification_test`](#kind-specification_test) | [`standard_rule`](#kind-standard_rule) | The test follows the standard rule. |
 | [`table`](#kind-table) | [`standard_rule`](#kind-standard_rule) | The table follows the standard rule. |
 | [`ui_component`](#kind-ui_component) | [`standard_rule`](#kind-standard_rule) | The UI component follows the standard rule. |
-| [`use_case_test`](#kind-use_case_test) | [`standard_rule`](#kind-standard_rule) | The test follows the standard rule. |
 | [`value_type`](#kind-value_type) | [`standard_rule`](#kind-standard_rule) | The value type follows the standard rule. |
-| [`view_test`](#kind-view_test) | [`standard_rule`](#kind-standard_rule) | The test follows the standard rule. |
 
 <a id="relation-raises"></a>
 

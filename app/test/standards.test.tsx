@@ -546,12 +546,14 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     expect(screen.queryByRole('region', { name: 'Graph pane' })).toBeNull();
   });
 
-  it.each(['LA-PAT-APP-CODE-R20-T01', 'LA-PAT-APP-CODE-R20-T02'])('%s Changes are hard cutovers: no redirect, alias, legacy path or second addressOf signature in the app or the engine', () => {
-    const sources = [...filesUnder(SRC, /\.(tsx?|css)$/), ...filesUnder(join(ROOT, 'lathe', 'src'), /\.ts$/)];
-    const kept = sources.flatMap((f) => where(f, readFileSync(f, 'utf8'), /legacy|redirect|\balias(?!:\s*string|})/i));
-    expect(kept).toEqual([]);
-    // One addressOf, taking the ID alone: a second signature (an overload or another declaration) is a compatibility layer.
-    const signatures = sources.flatMap((f) => where(f, readFileSync(f, 'utf8'), /function addressOf\b|\baddressOf\s*[:=]/));
-    expect(signatures.map((s) => s.replace(/^.*?:\d+: /, ''))).toEqual(['export function addressOf(id: string): string {']);
+  describe('LA-STD-PRINCIPLES-R04-T01 changes are hard cutovers', () => {
+    it.each(['LA-PAT-APP-CODE-R20-T01', 'LA-PAT-APP-CODE-R20-T02'])('%s Changes are hard cutovers: no redirect, alias, legacy path or second addressOf signature in the app or the engine', () => {
+      const sources = [...filesUnder(SRC, /\.(tsx?|css)$/), ...filesUnder(join(ROOT, 'lathe', 'src'), /\.ts$/)];
+      const kept = sources.flatMap((f) => where(f, readFileSync(f, 'utf8'), /legacy|redirect|\balias(?!:\s*string|})/i));
+      expect(kept).toEqual([]);
+      // One addressOf, taking the ID alone: a second signature (an overload or another declaration) is a compatibility layer.
+      const signatures = sources.flatMap((f) => where(f, readFileSync(f, 'utf8'), /function addressOf\b|\baddressOf\s*[:=]/));
+      expect(signatures.map((s) => s.replace(/^.*?:\d+: /, ''))).toEqual(['export function addressOf(id: string): string {']);
+    });
   });
 });

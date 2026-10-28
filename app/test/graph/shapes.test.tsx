@@ -27,7 +27,7 @@ const TABLE: Record<string, [Shape, string?]> = {
   ui_component: ['component'], endpoint_handler: ['component'], adapter: ['component'], standard: ['stack', 'ruler'],
   standard_rule: ['octagon', 'ruler'], constraint_test: ['shield'], invariant_test: ['shield'], specification_test: ['shield'],
   policy_test: ['shield'], domain_service_test: ['shield'], use_case_test: ['shield'], view_test: ['shield'], endpoint_test: ['shield'],
-  flow_test: ['shield'], integration_test: ['shield'], pattern_rule_test: ['shield'], question: ['diamond'],
+  flow_test: ['shield'], integration_test: ['shield'], pattern_rule_test: ['shield'], standard_rule_test: ['shield'], question: ['diamond'],
 };
 
 describe('a shape for each kind', () => {

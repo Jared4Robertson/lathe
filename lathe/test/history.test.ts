@@ -148,13 +148,15 @@ describe.skipIf(!hasGit)('record history', () => {
     expect([400, 404]).toContain((await get(repo, '/api/history?id=../data/use_case.jsonl')).status);
   });
 
-  it('LA-EXP-EP01-R02-T02 GET /api/history changes nothing in the repo', async () => {
-    const status = git(repo, 'status', '--porcelain');
-    const config = git(repo, 'config', '--local', '--list');
-    expect((await get(repo, `/api/history?id=${UC}`)).status).toBe(200);
-    expect((await get(repo, `/api/history?id=${UC}&skip=${HISTORY_PAGE}`)).status).toBe(200);
-    expect(git(repo, 'status', '--porcelain')).toBe(status);
-    expect(git(repo, 'config', '--local', '--list')).toBe(config);
+  describe('LA-STD-CODE-R02-T01 reading a record\'s history changes nothing in the repo', () => {
+    it('LA-EXP-EP01-R02-T02 GET /api/history changes nothing in the repo', async () => {
+      const status = git(repo, 'status', '--porcelain');
+      const config = git(repo, 'config', '--local', '--list');
+      expect((await get(repo, `/api/history?id=${UC}`)).status).toBe(200);
+      expect((await get(repo, `/api/history?id=${UC}&skip=${HISTORY_PAGE}`)).status).toBe(200);
+      expect(git(repo, 'status', '--porcelain')).toBe(status);
+      expect(git(repo, 'config', '--local', '--list')).toBe(config);
+    });
   });
 
   it('LA-INT04-T02 History runs git itself, inside the product root', async () => {

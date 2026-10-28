@@ -4,7 +4,7 @@ import { existsSync } from 'node:fs';
 import { writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
-import { CONFIG_FILE, loadWorkspace, mergeDataFiles, openStore, StoreError, type Problem } from '../src/index.ts';
+import { CONFIG_FILE, exceptionsText, loadWorkspace, mergeDataFiles, openStore, StoreError, type Problem } from '../src/index.ts';
 import { serve } from '../src/server/serve.ts';
 import { serveMcp } from '../src/cli/mcp.ts';
 import { DATA_COMMANDS, DATA_USAGE, runDataCommand } from '../src/cli/writers.ts';
@@ -17,8 +17,9 @@ const USAGE = `Usage: lathe <command> [options]
 Commands:
   init     Set up Lathe in a product repo: writes ${CONFIG_FILE} and a first product record in data/.
            --name "Tool Library" --prefix TL
-  check    Load the data and check it. Prints errors, warnings and coverage (one line per domain and
-           obligation kind); exits 1 on any error.
+  check    Load the data and check it. Prints errors, warnings, the recorded exceptions (each command that
+           also changes another aggregate, with its reason) and coverage (one line per domain and obligation
+           kind); exits 1 on any error.
            --json prints the whole workspace instead.
   serve    Serve the web app for the product repo.  --port 5330 (default)
   merge-data <base> <ours> <theirs> <path>
@@ -64,6 +65,7 @@ async function check() {
     console.log(`Checked ${workspace.records.length} records in ${root}`);
     if (errors.length) console.log(`\nErrors (${errors.length}):\n${errors.map(line).join('\n')}`);
     if (warnings.length) console.log(`\nWarnings (${warnings.length}):\n${warnings.map(line).join('\n')}`);
+    if (workspace.exceptions.length) console.log(`\n${exceptionsText(workspace.exceptions)}`);
     if (workspace.coverage.length) {
       console.log('\nCoverage:');
       for (const c of workspace.coverage) {

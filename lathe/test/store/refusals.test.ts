@@ -44,7 +44,7 @@ const merge = (...parts: Data[]): Data => {
   return out;
 };
 
-describe('refusals across tables', () => {
+describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the model is refused when it is written', () => {
   it('LA-AUT-INV08-T refuses a step fulfilling another use case\'s requirement', async () => {
     const problems = await refusal(
       adding({
