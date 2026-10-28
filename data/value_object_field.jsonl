@@ -2,6 +2,9 @@
 {"value_object_id":"LA-VO14","position":2,"name":"State","meaning":"automated, manual or not automated yet.","type":"text","required":true,"column_name":"state"}
 {"value_object_id":"LA-VO14","position":3,"name":"File","meaning":"The file that runs it, from the repo root; required when automated.","type":"text","required":false,"column_name":"file"}
 {"value_object_id":"LA-VO14","position":4,"name":"Manual reason","meaning":"Why a person runs it; given when manual, and only then.","type":"text","required":false,"column_name":"manual_reason"}
+{"value_object_id":"LA-VO41","position":1,"name":"Name","meaning":"Lower-case letters and digits in words joined by single hyphens, such as too-many-children.","type":"text","required":true,"column_name":"name","example":"too-many-children"}
+{"value_object_id":"LA-VO42","position":1,"name":"Severity","meaning":"error, warning, or error_or_warning when the check's query says which for each row.","type":"text","required":true,"column_name":"severity","example":"warning"}
+{"value_object_id":"LA-VO43","position":1,"name":"Max children","meaning":"The most children of one kind a record should hold: a whole number of at least 1.","type":"whole number","required":true,"column_name":"max_children","example":"15"}
 {"value_object_id":"LA-VO63","position":1,"name":"Format","meaning":"Always \"lathe-theme\".","type":"text","required":true}
 {"value_object_id":"LA-VO63","position":2,"name":"Version","meaning":"The file format's version, 1.","type":"whole number","required":true}
 {"value_object_id":"LA-VO63","position":3,"name":"Name","meaning":"The theme's name, 1 to 60 characters.","type":"text","required":true}
@@ -23,3 +26,4 @@
 {"value_object_id":"LA-VO92","position":5,"name":"Minimap","meaning":"Whether the minimap shows.","type":"yes/no","required":true}
 {"value_object_id":"LA-VO92","position":6,"name":"Hidden kinds","meaning":"The kinds the filters hide.","type":"text","required":false}
 {"value_object_id":"LA-VO92","position":7,"name":"Hidden relations","meaning":"The relations the filters hide.","type":"text","required":false}
+{"value_object_id":"LA-VO93","position":1,"name":"Limit","meaning":"The most entities an aggregate should hold.","type":"whole number","required":true}

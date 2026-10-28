@@ -9,7 +9,7 @@
 {"id":"LA-CHK-CMD01","title":"Add a check","aggregate_id":"LA-CHK-A1","description":"Adds a check row through the command layer: a name, a position, a severity, a summary, an explanation and one SELECT."}
 {"id":"LA-CHK-CMD02","title":"Change a check","aggregate_id":"LA-CHK-A1","description":"Changes a product's check row; Lathe's own are read-only."}
 {"id":"LA-CHK-CMD03","title":"Remove a check","aggregate_id":"LA-CHK-A1","description":"Removes a product's check row; Lathe's own are read-only."}
-{"id":"LA-CHK-CMD04","title":"Set the children limit","aggregate_id":"LA-CHK-A2","description":"Adds or changes the product's `product_setting` row, its children limit."}
+{"id":"LA-CHK-CMD04","title":"Set the product's limits","aggregate_id":"LA-CHK-A2","description":"Adds or changes the product's `product_setting` row: its children limit and its entities limit."}
 {"id":"LA-EXP-CMD01","title":"Open a page","aggregate_id":"LA-EXP-A1","description":"a view toggled on the same page replaces the history entry; any other move pushes one (INV01)."}
 {"id":"LA-EXP-CMD02","title":"Remember the page in its space","aggregate_id":"LA-EXP-A2","description":"sets the space's Last page and makes it the one last chosen."}
 {"id":"LA-EXP-CMD03","title":"Fold or unfold a nav row","aggregate_id":"LA-EXP-A3","description":"the fold buttons of app/src/shell/Nav.tsx"}

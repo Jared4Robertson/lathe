@@ -931,6 +931,8 @@ export interface ProductSettingRow {
   product_id: string;
   /** The most children of one kind a record should have before too-many-children warns; the default is 15. */
   max_children: number;
+  /** The most entities an aggregate should have before aggregate-too-large warns; the default is 7. */
+  max_entities_per_aggregate: number;
 }
 
 /** Fills its read model's table and keeps it current, from events or as a view's query. It writes only its own read model's table. */

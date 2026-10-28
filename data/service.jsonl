@@ -17,3 +17,4 @@
 {"id":"LA-PLT-DS03-SV","title":"windowFor","domain_service_id":"LA-PLT-DS03","file":"desktop/src/windowState.ts","description":"windowFor, DEFAULT_SIZE, MIN_SIZE"}
 {"id":"LA-PLT-DS04-SV","title":"openOnLaunch","domain_service_id":"LA-PLT-DS04","file":"desktop/src/main.ts","description":"openOnLaunch"}
 {"id":"LA-TRC-DS01-SV","title":"mentionsId","domain_service_id":"LA-TRC-DS01","file":"lathe/src/index.ts","description":"mentionsId"}
+{"id":"LA-TRC-DS02-SV","title":"ALLOWED_LEVELS","domain_service_id":"LA-TRC-DS02","file":"lathe/src/coverage.ts","description":"`ALLOWED_LEVELS`: the run by levels each test kind allows, which `test_level_allowed` holds for the checks and coverage."}

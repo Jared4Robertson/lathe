@@ -45,9 +45,10 @@ An error means the spec is broken. Do not leave one behind.
 ## Warnings: deliberate exceptions and loose ends
 
 - **A recorded exception** to one aggregate per command (`command_change`), with its reason. Each stays listed on purpose, so it stays visible: check the reason still holds, and prefer an event and a policy.
-- **An event that crosses a transaction** (a policy hears it, or it is published) whose event type is not delivered by outbox.
+- **An event a policy hears** whose event type is not delivered by outbox. An event that only feeds read models rebuilt on every load may go in process, and is not reported.
 - **A test at a level its kind does not allow** (see `plan-tests`).
 - **A level of the spec the wrong size**: more children of one kind than the product's `max_children` setting allows, or a capability with only one use case. Add a capability, or merge one. Do not raise `max_children` to silence the warning unless the user asks.
+- **An aggregate too large**: more entities than the product's `max_entities_per_aggregate` setting allows (7 by default). Split it into smaller aggregates that each change together (see `model-a-domain`); do not raise the setting unless the user asks.
 
 Fix the warnings your task is about; leave the rest and mention them.
 
