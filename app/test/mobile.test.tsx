@@ -173,7 +173,7 @@ describe('Lathe on a phone', () => {
 
   const proveLaV61R23T01 = async () => {
     phone();
-    window.sessionStorage.setItem('lathe:graph-settings', JSON.stringify({ layout: 'tree', depth: 1, trace: false, hiddenKinds: [], hiddenRelations: [], links: false, minimap: false }));
+    window.sessionStorage.setItem('lathe:session-settings', JSON.stringify({ layout: 'tree', depth: 1, hiddenKinds: [], hiddenRelations: [], links: false, minimap: false, card: true, cardWidth: null }));
     await openApp('/P-D-UC01-R01?stage=graph', served());
     // Links on, so the flow step that fulfills the UC requirement is drawn.
     fireEvent.click(await screen.findByRole('button', { name: 'Links' }));
