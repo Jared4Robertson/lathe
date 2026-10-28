@@ -19,7 +19,7 @@ const linkIds = (el: HTMLElement) => [...el.querySelectorAll('a')].map((a) => a.
 describe('flow steps on a flow page', () => {
   const proveLaV92R23T01 = async () => {
     await openApp('/DM-SHOP-UC01-FL01');
-    await screen.findByRole('heading', { level: 1, name: 'Fill a basket' });
+    await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket in the web app' });
     expect(steps().querySelector('h2')).toHaveTextContent('Steps3');
     const [mainPath] = tables();
     expect(within(mainPath).getAllByRole('columnheader').map((h) => h.textContent)).toEqual(['Step', 'What happens', 'Invokes', 'Happens in', 'Fulfills', 'Exchanges with']);
@@ -38,7 +38,7 @@ describe('flow steps on a flow page', () => {
 
     // A step exchanging with an integration.
     await openApp('/P-D-UC01-FL01', { data: modelWorkspace() });
-    await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
+    await screen.findByRole('heading', { level: 1, name: 'Lend a thing in the web app' });
     const s02 = bodyRows(tables()[0])[1];
     expect(linkIds(cells(s02)[5])).toEqual(['P-INT01']);
   };
@@ -47,7 +47,7 @@ describe('flow steps on a flow page', () => {
 
   it("LA-V92-R24-T01 Each step's description and the titles of what it links to are folded under its row", async () => {
     await openApp('/DM-SHOP-UC01-FL01');
-    await screen.findByRole('heading', { level: 1, name: 'Fill a basket' });
+    await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket in the web app' });
     const user = userEvent.setup();
     const [mainPath] = tables();
     expect(within(mainPath).queryByText('Add')).toBeNull();
@@ -73,12 +73,12 @@ describe('flow steps on a flow page', () => {
     const data = workspace();
     data.problems.push({ severity: 'warning', check: 'not-proved', record: 'DM-SHOP-UC01-FL01-S02', message: 'A step with a problem.' });
     await openApp('/DM-SHOP-UC01-FL01', { data });
-    await screen.findByRole('heading', { level: 1, name: 'Fill a basket' });
+    await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket in the web app' });
     expect(cells(bodyRows(tables()[0])[1])[1]).toHaveTextContent('1 warning');
     removeRows(data, 'happens_in', (l) => l.source_id === 'DM-PAY-UC01-FL01-S01');
     removeRows(data, 'flow_step', (s) => s.flow_id === 'DM-PAY-UC01-FL01');
     await openApp('/DM-PAY-UC01-FL01', { data });
-    await screen.findByRole('heading', { level: 1, name: 'Pay at checkout' });
+    await screen.findByRole('heading', { level: 1, name: 'Pay by card in the web app' });
     expect(within(main()).queryByRole('heading', { name: /^Steps/ })).toBeNull();
   });
 
@@ -86,7 +86,7 @@ describe('flow steps on a flow page', () => {
     const data = workspace();
     addRows(data, 'flow_step', { id: 'DM-SHOP-UC01-FL01-S04', title: 'The basket shows a total', flow_id: 'DM-SHOP-UC01-FL01', path: 'main', position: 10 });
     await openApp('/DM-SHOP-UC01-FL01', { data });
-    await screen.findByRole('heading', { level: 1, name: 'Fill a basket' });
+    await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket in the web app' });
     expect(bodyRows(tables()[0]).map((r) => r.getAttribute('data-step'))).toEqual(['DM-SHOP-UC01-FL01-S01', 'DM-SHOP-UC01-FL01-S02', 'DM-SHOP-UC01-FL01-S04']);
   });
 
@@ -94,7 +94,7 @@ describe('flow steps on a flow page', () => {
     const data = workspace();
     addRows(data, 'flow_step', { id: 'DM-SHOP-UC01-FL01-S04', title: 'A saved basket opens', flow_id: 'DM-SHOP-UC01-FL01', path: 'api', position: 1 });
     await openApp('/DM-SHOP-UC01-FL01', { data });
-    await screen.findByRole('heading', { level: 1, name: 'Fill a basket' });
+    await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket in the web app' });
     expect([...steps().querySelectorAll('h3')].map((h) => h.firstChild?.textContent)).toEqual(['Main path', 'Api path', 'Refused path']);
     expect(tables().map((t) => bodyRows(t).map((tr) => tr.getAttribute('data-step')))).toEqual([
       ['DM-SHOP-UC01-FL01-S01', 'DM-SHOP-UC01-FL01-S02'], ['DM-SHOP-UC01-FL01-S04'], ['DM-SHOP-UC01-FL01-S03'],

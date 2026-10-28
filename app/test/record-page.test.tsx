@@ -93,7 +93,7 @@ describe('record page', () => {
 
   it('LA-V92-R15-T01 A record body is sanitized before it is shown', async () => {
     await openApp('/DM-SHOP-CMD01-H');
-    await screen.findByRole('heading', { level: 1, name: 'Basket service' });
+    await screen.findByRole('heading', { level: 1, name: 'addToBasket' });
     const body = main().querySelector('.markdown') as HTMLElement;
     expect(body).toHaveTextContent('Holds baskets.');
     expect(body.querySelector('script')).toBeNull();
@@ -142,13 +142,13 @@ describe('record page', () => {
 
   it('LA-V92-R13-T01 A table shows its keys: the primary key, a unique key with the invariant it enforces and its condition, a foreign key with its target', async () => {
     await openApp('/P-D-EN03-TB', { data: modelWorkspace() });
-    await screen.findByRole('heading', { level: 1, name: 'Loans table' });
+    await screen.findByRole('heading', { level: 1, name: 'loans' });
     const keys = section(/^Keys/);
     expect(keys.querySelector('h2, h3')).toHaveTextContent(/^Keys\s*3$/);
     expect(rows(keys.querySelector('table')!)).toEqual([
       ['unnamed', 'primary', 'id', ''],
       ['loans_one_open_per_thing', 'unique', 'thing_id', 'enforces P-D-INV01A thing is lent to one member at a timewhere returned_at IS NULL'],
-      ['unnamed', 'foreign', 'member_id', 'references P-D-EN02-TBMembers table'],
+      ['unnamed', 'foreign', 'member_id', 'references P-D-EN02-TBmembers'],
     ]);
   });
 

@@ -72,7 +72,7 @@ describe('obligation kinds and test states', () => {
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     const user = userEvent.setup();
     const endpoints = within(stage('interaction-design')).getByRole('heading', { name: /^Endpoints/ }).closest('section') as HTMLElement;
-    const endpoint = within(endpoints).getByRole('link', { name: /^DM-SHOP-EP01\s*Add to basket/ }).closest('li') as HTMLElement;
+    const endpoint = within(endpoints).getByRole('link', { name: /^DM-SHOP-EP01\s*POST \/basket\/items/ }).closest('li') as HTMLElement;
     expect(endpoint).toHaveTextContent('2 children');
     await user.click(within(endpoint).getByRole('button', { name: 'Expand DM-SHOP-EP01' }));
     expect(ids(endpoint.querySelector('ul.nested') as HTMLElement)).toEqual(['DM-SHOP-EP01-R01', 'DM-SHOP-EP01-SC01']);

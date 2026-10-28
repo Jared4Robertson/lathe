@@ -83,8 +83,8 @@ describe('groups by stage and kind', () => {
     await screen.findByRole('heading', { level: 1, name: 'A 51st line is refused' });
     expect(within(await findList('Invariant tests of Shopping')).getByRole('link', { name: 'A 51st line is refused' })).toHaveAttribute('aria-current', 'page');
     await openApp('/DM-SHOP-EN01-TB');
-    await screen.findByRole('heading', { level: 1, name: 'Baskets table' });
-    expect(within(await findList('Tables of Shopping')).getByRole('link', { name: 'Baskets table' })).toHaveAttribute('aria-current', 'page');
+    await screen.findByRole('heading', { level: 1, name: 'baskets' });
+    expect(within(await findList('Tables of Shopping')).getByRole('link', { name: 'baskets' })).toHaveAttribute('aria-current', 'page');
   });
 
   it('LA-V90-R21-T01 Records with no owner sit in the one domain that uses them, or else in Shared by stage, and a specification in its domain\'s Domain model', async () => {
@@ -169,7 +169,7 @@ describe('groups by stage and kind', () => {
     const row = within(children).getByRole('link', { name: /DM-SHOP-EP01/ }).closest('li')!;
     expect(row.textContent).toContain('POST · /basket/items');
     await openApp('/DM-SHOP-EP01');
-    await screen.findByRole('heading', { level: 1, name: 'Add to basket' });
+    await screen.findByRole('heading', { level: 1, name: 'POST /basket/items' });
     const requirements = section(/^API requirements/);
     expect(within(main()).getByRole('heading', { name: /^API requirements/ })).toHaveTextContent('API requirements1');
     expect(within(requirements).getByRole('link', { name: /DM-SHOP-EP01-R01/ })).toHaveAttribute('href', '/DM-SHOP-EP01-R01');

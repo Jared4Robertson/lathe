@@ -62,7 +62,7 @@ describe('standards in the nav and the wiki', () => {
     expect(within(provedBy).getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual(['/DM-STD-CODE-R01-T01']);
 
     await openApp('/DM-SHOP-CMD01-H', served());
-    await screen.findByRole('heading', { level: 1, name: 'Basket service' });
+    await screen.findByRole('heading', { level: 1, name: 'addToBasket' });
     const meets = within(section(/^Traceability/)).getByRole('heading', { name: /^Meets/ }).closest('section')!;
     expect(within(meets).getByRole('link', { name: /DM-STD-CODE-R01/ })).toHaveAttribute('href', '/DM-STD-CODE-R01');
   });

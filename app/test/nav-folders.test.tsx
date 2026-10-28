@@ -61,7 +61,7 @@ describe('folders by stage', () => {
     await user.click(head(folders, /^Interaction design/));
     expect(rows(list('Interaction design of Shopping'))).toEqual(['Flows1', 'Endpoints1']);
     await user.click(head(list('Interaction design of Shopping'), /^Endpoints/));
-    expect(within(list('Endpoints of Shopping')).getAllByRole('link').map((a) => a.textContent)).toEqual(['Add to basket']);
+    expect(within(list('Endpoints of Shopping')).getAllByRole('link').map((a) => a.textContent)).toEqual(['POST /basket/items']);
     await user.click(head(folders, /^Open questions/));
     expect(within(list('Open questions of Shopping')).getByRole('link', { name: 'What happens to a basket overnight?' })).toHaveAttribute('href', '/DM-SHOP-Q01');
 
@@ -91,8 +91,8 @@ describe('folders by stage', () => {
 
   it("LA-V90-R18-T01 The current page's branch opens itself: a record's domain, stage and folder, and a domain page its domain", async () => {
     await openApp('/DM-SHOP-CMD01-H');
-    await screen.findByRole('heading', { level: 1, name: 'Basket service' });
-    expect(within(await findList('Command handlers of Shopping')).getByRole('link', { name: 'Basket service' })).toHaveAttribute('aria-current', 'page');
+    await screen.findByRole('heading', { level: 1, name: 'addToBasket' });
+    expect(within(await findList('Command handlers of Shopping')).getByRole('link', { name: 'addToBasket' })).toHaveAttribute('aria-current', 'page');
 
     // The domain page opens its domain.
     await openApp('/DM-PAY');
@@ -104,7 +104,7 @@ describe('folders by stage', () => {
   it('LA-V91-R05-T01 A group page opens the folder of its kind, and names its stage as the nav does', async () => {
     await openApp('/DM-SHOP/interaction-design/endpoint');
     await screen.findByRole('heading', { level: 1, name: /^Endpoints/ });
-    expect(within(await findList('Endpoints of Shopping')).getByRole('link', { name: 'Add to basket' })).toBeInTheDocument();
+    expect(within(await findList('Endpoints of Shopping')).getByRole('link', { name: 'POST /basket/items' })).toBeInTheDocument();
     expect(main().querySelector('.group-folder')).toHaveTextContent('Interaction design');
   });
 

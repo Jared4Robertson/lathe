@@ -146,6 +146,9 @@ describe('columns and text', () => {
     expect(wrapText('a well-formed', 13, chars, '-')).toEqual(['a well-formed']);
     expect(wrapText('abcdefghijkl', 5, chars)).toEqual(['abcde', 'fghij', 'kl']);
     expect(wrapText('app/src/graph/text.ts', 10, chars, '/')).toEqual(['app/src/', 'graph/', 'text.ts']);
+    // A code identifier too wide for a line breaks after its punctuation, or between its camelCase words.
+    expect(wrapText("Store.set('product_setting')", 12, chars, '-._:/(', true)).toEqual(['Store.set(', "'product_", "setting')"]);
+    expect(wrapText('optOutOfWindowRestoration', 12, chars, '-._:/(', true)).toEqual(['optOutOf', 'Window', 'Restoration']);
     // A longer title takes more lines; the badge's room and a shape's room leave less room on a line, and a shape's room above and below makes the box taller.
     const lines = { title: 'Walk the model as a graph', meta: 'Use case · LA-EXP-UC03' };
     expect(wrapLabel({ ...lines, title: `${lines.title} and on through every group in it` }).title.length).toBeGreaterThan(wrapLabel(lines).title.length);
@@ -245,7 +248,7 @@ describe('real titles', () => {
         return [{ title: row.title, kind: f.slice(0, -'.jsonl'.length), file: typeof row.file === 'string' ? row.file : undefined }];
       }));
 
-  it("LA-EXP-DS06-T10 Every title in Lathe's spec and the Tool Library wraps on whole words, none broken inside a word", () => {
+  it("LA-EXP-DS06-T10 Every title in Lathe's spec and the Tool Library wraps on whole words, an identifier too wide for a line only at its punctuation or camelCase words", () => {
     const repo = path.resolve(import.meta.dirname, '../../..');
     for (const product of ['lathe', 'tool-library']) {
       const all = records(path.join(repo, product === 'lathe' ? 'data' : 'examples/tool-library/data'));
@@ -254,8 +257,12 @@ describe('real titles', () => {
         // As its box breaks it: its kind's shape keeps room clear (the badge's room is beside the kind and ID line, not the title).
         const title = wrapLabel({ title: r.title, meta: '' }, { shape: shapeOf(r.kind).shape }).title;
         expect(title.join(''), r.title).toBe(r.title);
-        // Every line but the last ends after a space, or after a hyphen inside one word too wide for a line.
-        for (const line of title.slice(0, -1)) expect(/\s$/.test(line) || (line.endsWith('-') && !/\s/.test(line)), `${r.title}: "${line}"`).toBe(true);
+        // Every line but the last ends after a space or, inside one word too wide for a line, after a hyphen, a code
+        // identifier's punctuation, or between the words of a camelCase identifier.
+        title.slice(0, -1).forEach((line, i) => {
+          const inWord = !/\s/.test(line) && (/[-._:/(]$/.test(line) || (/[a-z0-9]$/.test(line) && /^[A-Z]/.test(title[i + 1])));
+          expect(/\s$/.test(line) || inWord, `${r.title}: "${line}"`).toBe(true);
+        });
         // A file's path breaks only after a slash or a hyphen.
         if (r.file) for (const line of wrapLabel({ title: r.file, meta: '' }, { file: true }).title.slice(0, -1)) expect(/[\s/-]$/.test(line), `${r.file}: "${line}"`).toBe(true);
       }
