@@ -145,9 +145,10 @@ test.describe('performance', () => {
     await record({ name: 'ERD view: domain ERD drawn after the page', value: laid, unit: 'ms', budget: null });
   });
 
-  test("LA-V98-R06-T02 opening the product's Trace pane takes under the view switch budget", async ({ page }) => {
-    await open(page, '/LA');
+  test("LA-V98-R06-T02 the Trace pane opens, and the product's whole matrix draws, within the view switch budget", async ({ page }) => {
     const rows = '.pane-trace .trace-matrix tbody tr';
+    // A use case's page, as the other view switches are measured: the Trace pane opened beside its wiki, once to load its code, then again.
+    await open(page, RECORD);
     const first = await work(page, async () => {
       await page.keyboard.press('Control+5');
       await page.locator(rows).first().waitFor();
@@ -158,8 +159,15 @@ test.describe('performance', () => {
       await page.keyboard.press('Control+5');
       await page.locator(rows).first().waitFor();
     });
-    const drawn = await page.locator(`${rows}:not(.group-row)`).count();
     await record({ name: 'Trace view: first open (loads its code)', value: first.workMs, unit: 'ms', budget: null, detail: `longest frame ${Math.round(first.worstFrameMs)} ms` });
-    await record({ name: "view switch: open the product's Trace pane", value: again.workMs, unit: 'ms', budget: BUDGETS.viewSwitchMs, detail: `${drawn} rows drawn; longest frame ${Math.round(again.worstFrameMs)} ms` });
+    await record({ name: 'view switch: open the Trace pane', value: again.workMs, unit: 'ms', budget: BUDGETS.viewSwitchMs, detail: `longest frame ${Math.round(again.worstFrameMs)} ms` });
+    // The product's whole matrix, its first page of rows and its Untraced section: from a domain's Trace view to the product's.
+    await open(page, `${DOMAIN}?view=trace`, rows);
+    const product = await work(page, async () => {
+      await page.evaluate(() => { window.history.pushState(null, '', '/LA?view=trace'); window.dispatchEvent(new PopStateEvent('popstate')); });
+      await page.waitForFunction(() => window.location.pathname === '/LA' && document.querySelector('.pane-trace .trace-untraced') !== null);
+    });
+    const drawn = await page.locator(`${rows}:not(.group-row)`).count();
+    await record({ name: "Trace view: the product's matrix drawn", value: product.workMs, unit: 'ms', budget: BUDGETS.viewSwitchMs, detail: `${drawn} rows drawn; longest frame ${Math.round(product.worstFrameMs)} ms` });
   });
 });

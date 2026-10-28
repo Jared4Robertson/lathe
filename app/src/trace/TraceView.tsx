@@ -1,7 +1,6 @@
 // The Trace view of an address, /<id>?view=trace (LA-TRC-UC10).
-import { useMemo, useState, type ReactNode } from 'react';
+import { useMemo, useState, type FocusEvent, type MouseEvent, type PointerEvent, type ReactNode } from 'react';
 import { Button } from '../components/Button';
-import { NodeLink } from '../graph/panel';
 import { groupName, isGroup } from '../graph/model';
 import { kindLabel, type SpecIndex } from '../specs/data';
 import { isObligation } from './offer';
@@ -45,22 +44,48 @@ export function TraceView(props: TraceViewProps) {
   return <TraceMatrixView key={focus} {...props} />;
 }
 
+/**
+ * A link to a record: a real address for new tabs, onNavigate on a plain click. Its `data-trace-id` lets the
+ * view's one set of listeners (peekHandlers) tell the side bar what is under the pointer, so a matrix of
+ * many links draws no listeners of its own.
+ */
+function TraceLink({ id, props, title, className, children }: { id: string; props: TraceViewProps; title: string; className: string; children: ReactNode }) {
+  const onClick = (e: MouseEvent<HTMLAnchorElement>) => {
+    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
+    props.onNavigate(id);
+  };
+  return <a href={props.hrefFor(id)} onClick={onClick} title={title} className={className} data-trace-id={id}>{children}</a>;
+}
+
+/** The record a pointer or focus event is on, by its link's `data-trace-id`. */
+const tracedAt = (target: EventTarget | null) => (target instanceof Element ? target.closest<HTMLElement>('a[data-trace-id]')?.dataset.traceId ?? null : null);
+
+/** The view's listeners that tell the side bar which record the pointer or keyboard focus is on. */
+function peekHandlers(props: TraceViewProps) {
+  const peek = (id: string | null) => props.onPeek?.('hover', id);
+  return {
+    onPointerOver: (e: PointerEvent) => peek(tracedAt(e.target)),
+    onPointerLeave: () => peek(null),
+    onFocus: (e: FocusEvent) => peek(tracedAt(e.target)),
+    onBlur: () => peek(null),
+  };
+}
+
 /** A link to a record in a cell or card: its ID, and its title where there is room. */
 function Ref({ id, props, compact, className }: { id: string; props: TraceViewProps; compact?: boolean; className?: string }) {
   const record = props.index.byId.get(id);
   const title = record ? `${record.title} (${id})` : id;
   return (
-    <span onPointerEnter={() => props.onPeek?.('hover', id)} onPointerLeave={() => props.onPeek?.('hover', null)} onFocus={() => props.onPeek?.('hover', id)} onBlur={() => props.onPeek?.('hover', null)}>
-      <NodeLink id={id} onNavigate={props.onNavigate} hrefFor={props.hrefFor} title={title} className={className ?? 'trace-ref'}>
-        {compact ? <code>{id}</code> : (
-          <>
-            <small className="meta">{record ? kindLabel(props.index, record.kind) : ''}</small>
-            <code>{id}</code>
-            <span className="trace-card-title">{record?.title ?? ''}</span>
-          </>
-        )}
-      </NodeLink>
-    </span>
+    <TraceLink id={id} props={props} title={title} className={className ?? 'trace-ref'}>
+      {compact ? <code>{id}</code> : (
+        <>
+          <small className="meta">{record ? kindLabel(props.index, record.kind) : ''}</small>
+          <code>{id}</code>
+          <span className="trace-card-title">{record?.title ?? ''}</span>
+        </>
+      )}
+    </TraceLink>
   );
 }
 
@@ -68,10 +93,10 @@ function Ref({ id, props, compact, className }: { id: string; props: TraceViewPr
 function FileRef({ file, props, compact }: { file: TraceFile; props: TraceViewProps; compact?: boolean }) {
   const title = `${file.path}, named by ${file.namedBy.join(', ')}`;
   return (
-    <NodeLink id={file.namedBy[0]} onNavigate={props.onNavigate} hrefFor={props.hrefFor} title={title} className={compact ? 'trace-ref trace-file' : 'trace-card trace-file'}>
+    <TraceLink id={file.namedBy[0]} props={props} title={title} className={compact ? 'trace-ref trace-file' : 'trace-card trace-file'}>
       <code>{file.path}</code>
       {!compact && <small className="meta">Named by {file.namedBy.join(', ')}</small>}
-    </NodeLink>
+    </TraceLink>
   );
 }
 
@@ -103,7 +128,7 @@ function TraceChainView(props: TraceViewProps) {
     );
   };
   return (
-    <section className="trace-page" aria-label="Trace">
+    <section className="trace-page" aria-label="Trace" {...peekHandlers(props)}>
       <header className="trace-header">
         <p className="trace-caption" title={caption}>{caption}</p>
       </header>
@@ -159,7 +184,7 @@ function TraceMatrixView(props: TraceViewProps) {
   if (total === 0) return <p className="hint trace-none">Nothing under this page owes a design, a build or a test.</p>;
   const caption = `${total} ${total === 1 ? 'obligation' : 'obligations'} · ${withGaps} with gaps · ${untracedCount} untraced`;
   return (
-    <section className="trace-page" aria-label="Trace">
+    <section className="trace-page" aria-label="Trace" {...peekHandlers(props)}>
       <header className="trace-header">
         <p className="trace-caption" title={caption}>{caption}</p>
         <label className="trace-filter">
