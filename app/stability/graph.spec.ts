@@ -7,7 +7,7 @@ import type { SceneHost } from '../src/graph/GraphPage';
 // LA-V61-R32-T01: re-centering the graph at depth 1, 2 and 3, and moving around the ERD. The camera
 // glides (the canvas draws each frame anew, which is no layout shift); the pane's title, the
 // graph's header and its canvas must hold still, and the canvas must not be mounted anew.
-// LA-EXP-DS05-T13: focusing a domain, a stage, a folder and a record, then Back and Forward, moves the
+// LA-V93-R16-T03: focusing a domain, a stage, a folder and a record, then Back and Forward, moves the
 // camera only: no box of the one map changes its place or its size.
 
 const PANE_TITLE = '.pane-graph .pane-title';
@@ -63,7 +63,7 @@ test.describe('graph', () => {
     }
   });
 
-  test('LA-EXP-DS05-T13 focusing anything moves the camera only: no box changes its place or size', async ({ page }) => {
+  test('LA-V93-R16-T03 focusing anything moves the camera only: no box changes its place or size', async ({ page }) => {
     await openPage(page, '/LA?view=graph');
     await nodes(page);
     const seen = new Map<string, string>();
@@ -95,7 +95,7 @@ test.describe('graph', () => {
       await check(move);
     }
     // The camera moved at every step; the map never did.
-    await test.step('LA-EXP-DS09-T10 the camera moved at every focus, Back and Forward', () => expect(new Set(cameras).size).toBeGreaterThan(5));
+    await test.step('LA-V93-R07-T03 the camera moved at every focus, Back and Forward', () => expect(new Set(cameras).size).toBeGreaterThan(5));
     await test.step('LA-V93-R16-T03 focusing moved the camera only: no box of the map changed its place or size', () => expect(seen.size).toBeGreaterThan(50));
   });
 
@@ -173,7 +173,7 @@ test.describe('graph', () => {
     await page.locator('.pane-graph .graph-layout button', { hasText: 'Tree' }).click();
   });
 
-  test('LA-EXP-DS06-T05 at depth 2 on a domain, the domain, its stages and their folders are framed in the canvas, each showing its full title wrapped on whole words', async ({ page }) => {
+  test('LA-V93-R10-T08 at depth 2 on a domain, the domain, its stages and their folders are framed in the canvas, each showing its full title wrapped on whole words', async ({ page }) => {
     await openPage(page, `${DOMAIN}?view=graph`);
     await nodes(page);
     await page.locator('.graph-depth button', { hasText: '2' }).click();
@@ -204,7 +204,7 @@ test.describe('graph', () => {
       expect(level(1).length).toBeGreaterThanOrEqual(2);
       expect(level(2).filter((id) => shown.includes(id)).length * 2, 'half the folders are framed').toBeGreaterThanOrEqual(level(2).length);
     });
-    await test.step('LA-EXP-DS10-T05 every drawn box shows its label, its full title wrapped on whole words', () => {
+    await test.step('LA-V93-R29-T03 every drawn box shows its label, its full title wrapped on whole words', () => {
       for (const b of boxes) {
         expect(b.title, `${b.id} is labeled`).not.toBeNull();
         // The tooltip is "title (ID)" or, for a group, "title (in owner)": the label shows the whole title.
@@ -240,7 +240,7 @@ test.describe('graph', () => {
     }
   });
 
-  test('LA-EXP-DS06-T07 no label is clipped: each line fits its width and height, and the label fits its box, in light and dark, focused or not, at several zooms', async ({ page }) => {
+  test('LA-V93-R29-T04 no label is clipped: each line fits its width and height, and the label fits its box, in light and dark, focused or not, at several zooms', async ({ page }) => {
     for (const scheme of ['light', 'dark'] as const) {
       await page.emulateMedia({ colorScheme: scheme });
       for (const focus of [DOMAIN, `${DOMAIN}/use-cases`]) {
@@ -261,7 +261,7 @@ test.describe('graph', () => {
     }
   });
 
-  test('LA-EXP-DS06-T08 a label keeps its size in the map when the focus changes and the camera zooms', async ({ page }) => {
+  test('LA-V93-R29-T05 a label keeps its size in the map when the focus changes and the camera zooms', async ({ page }) => {
     await openPage(page, `${DOMAIN}?view=graph`);
     await nodes(page);
     const target = `${DOMAIN.slice(1)}/interaction-design`;
@@ -284,7 +284,7 @@ test.describe('graph', () => {
     await page.locator('.pane-graph .graph-zoom-in').click();
     await page.waitForTimeout(600);
     const zoomed = await size();
-    await test.step('LA-EXP-DS10-T06 zooming the camera draws the label at its map size times the zoom', () => {
+    await test.step('LA-V93-R07-T04 zooming the camera draws the label at its map size times the zoom', () => {
       expect(zoomed.zoom).toBeGreaterThan(focused.zoom);
       expect(zoomed.font).toBe(before.font);
       expect(zoomed.lines).toEqual(before.lines);

@@ -38,5 +38,6 @@
 {"id":"LA-PLT-CMD19","title":"Add a recent folder","aggregate_id":"LA-PLT-A9"}
 {"id":"LA-PLT-CMD20","title":"Clear the recent folders","aggregate_id":"LA-PLT-A9"}
 {"id":"LA-PLT-CMD21","title":"Set up a product repo","aggregate_id":"LA-PLT-A10","description":"`lathe init`: writes `lathe.config.json` and adds the product's first record through the command layer."}
+{"id":"LA-PLT-CMD22","title":"Opt out of window restoration","aggregate_id":"LA-PLT-A6","description":"As the shell starts, tells macOS to keep no window state for Lathe, which reopens its own product windows."}
 {"id":"LA-TRC-CMD01","title":"Follow a pattern","aggregate_id":"LA-TRC-A3","description":"Links a domain or a use case to a pattern with `follows`."}
 {"id":"LA-TRC-CMD02","title":"Give a setting value","aggregate_id":"LA-TRC-A3","description":"Gives one of a followed pattern's settings its value, or a not-applicable reason, as a `setting_value` row."}
