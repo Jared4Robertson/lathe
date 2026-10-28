@@ -3,6 +3,7 @@ import { type SpecIndex } from '../specs/data';
 import { lowerLabel } from '../plural';
 import { useCommand } from '../shell/commands';
 import { Tooltip } from '../shell/Tooltip';
+import { COMMANDS, formatBinding, isMac } from '../shell/keymap';
 import { Icon } from '../components/icons';
 import { NodeLink, type GraphInfo } from './panel';
 import { TapCard, useTapToOpen } from './touch';
@@ -122,8 +123,22 @@ export const nextLayout = (layout: GraphLayout): GraphLayout => GRAPH_LAYOUTS[(G
 
 /** A step through the tree: out to the parent, in to the first child, to the previous or next sibling. */
 type Step = 'out' | 'in' | 'previous' | 'next';
-/** The step each plain arrow key takes while the graph has focus: Left out, Right in, Up and Down along the siblings. */
-export const ARROW_STEPS: Readonly<Record<string, Step>> = { ArrowLeft: 'out', ArrowRight: 'in', ArrowUp: 'previous', ArrowDown: 'next' };
+/** Each step's keymap command, in the toolbar's order, which is the same in every view. */
+const STEP_COMMANDS: Readonly<Record<Step, string>> = { out: 'graphStepOut', in: 'graphStepIn', previous: 'graphStepPrevious', next: 'graphStepNext' };
+const STEPS = Object.keys(STEP_COMMANDS) as Step[];
+/** Whether a view draws children inside their parent (Nested and Voronoi), and so steps by the keymap's `nestedKeys`. */
+const nestsChildren = (layout: GraphLayout) => layout !== 'tree';
+/**
+ * The plain arrow key that takes a step in a view, from the keymap (LA-V93-R19): in the Tree view Left out, Right in, Up
+ * and Down across; in the Nested and Voronoi views, which draw children inside their parent, Up out, Down in, Left and
+ * Right across.
+ */
+export function stepKey(layout: GraphLayout, step: Step): string {
+  const command = COMMANDS.find((c) => c.id === STEP_COMMANDS[step])!;
+  return ((nestsChildren(layout) ? command.nestedKeys : undefined) ?? command.keys)[0];
+}
+/** The step a plain arrow key takes in a view, or none. */
+export const arrowStep = (layout: GraphLayout, key: string): Step | undefined => STEPS.find((s) => stepKey(layout, s) === key);
 
 /** Where a step goes from a node: its parent, its first child, or its previous or next sibling in the tree. */
 export function stepTarget(index: SpecIndex, focus: string, step: Step): string | null {
@@ -282,12 +297,8 @@ export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted,
     );
   }
   const counts = graphSummary(graph);
-  const steps = [
-    { step: 'out' as const, command: 'graphStepOut', label: 'Step out to the parent', mark: '←' },
-    { step: 'in' as const, command: 'graphStepIn', label: 'Step in to the first child', mark: '→' },
-    { step: 'previous' as const, command: 'graphStepPrevious', label: 'Step to the previous sibling', mark: '↑' },
-    { step: 'next' as const, command: 'graphStepNext', label: 'Step to the next sibling', mark: '↓' },
-  ];
+  // The step buttons keep their places in every view; each shows the arrow that takes its step in this one.
+  const steps = STEPS.map((step) => ({ step, command: STEP_COMMANDS[step], label: COMMANDS.find((c) => c.id === STEP_COMMANDS[step])!.title, mark: formatBinding(stepKey(layout, step), isMac()) }));
   const traceable = canTrace(index, focus);
   const moreControls = (
     <>
@@ -307,7 +318,7 @@ export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted,
       </div>
       <div className="graph-steps" role="group" aria-label="Step through the tree">
         {steps.map((s) => (
-          <Tooltip key={s.step} label={s.label} command={s.command}>
+          <Tooltip key={s.step} label={s.label} command={s.command} nested={nestsChildren(layout)}>
             <Button className="graph-step" aria-label={s.label} disabled={!stepTarget(index, focus, s.step)} onClick={stepTo(s.step)}>{s.mark}</Button>
           </Tooltip>
         ))}
@@ -1010,14 +1021,15 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
     onNavigate(id);
   };
   // The keys while the graph has focus (its canvas, after a click, or one of its boxes; never a text field): the plain
-  // arrows step through the tree, each step moving the graph's focus (Left to the parent, Right to the first child, Up
-  // and Down to the previous and next sibling); Enter centers on the box with keyboard focus. Tab and Shift+Tab step
-  // through the boxes, as the page's own focus order.
+  // arrows step through the tree, each step moving the graph's focus, by the view's keys (stepKey: in the Tree view Left
+  // to the parent, Right to the first child, Up and Down across the siblings; in the Nested and Voronoi views Up to the
+  // parent, Down to the first child, Left and Right across); Enter centers on the box with keyboard focus. Tab and
+  // Shift+Tab step through the boxes, as the page's own focus order.
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement;
     if (target.closest?.('input, textarea, select, [contenteditable="true"]')) return;
     if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
-    const step = ARROW_STEPS[e.key];
+    const step = arrowStep(layout, e.key);
     if (step) {
       e.preventDefault();
       const to = stepTarget(index, focus, step);
