@@ -68,7 +68,7 @@ describe('tabs for open pages', () => {
     expect(tabs()).toEqual(['The loan is recorded', 'Loan desk*<']);
   });
 
-  it('LA-EXP-PO02-T A page opened shows in a tab: a link to an open page activates it, and Back reopens a closed page as the preview', async () => {
+  it('LA-V96-R10-T03 A page opened shows in a tab: a link to an open page activates it, and Back reopens a closed page as the preview', async () => {
     await firstTab();
     const first = tab('Lend a thing');
     // The active preview tab's tooltip names the keep command; its close button, the close command.
@@ -107,7 +107,7 @@ describe('tabs for open pages', () => {
     expect(tabs()).toEqual(['The loan is recorded', 'Terms (1)*<']);
   });
 
-  it('LA-EXP-PO03-T The address follows the active tab, clicked or cycled', async () => {
+  it('LA-V96-R13-T02 The address follows the active tab, clicked or cycled', async () => {
     await firstTab();
     fireEvent.doubleClick(tab('Lend a thing'));
     await go('/P-V01', 'Loan desk');

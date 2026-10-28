@@ -12,3 +12,5 @@
 {"source_id":"LA-CHK-UC08-FL-S04","target_id":"LA-INT01"}
 {"source_id":"LA-EXP-UC12-FL-S03","target_id":"LA-INT04"}
 {"source_id":"LA-PLT-UC11-FL-S04","target_id":"LA-INT61"}
+{"source_id":"LA-PLT-UC12-FL-S03","target_id":"LA-INT62"}
+{"source_id":"LA-PLT-UC12-FL-S05","target_id":"LA-INT63"}
