@@ -35,7 +35,17 @@ export interface TraceRow {
   files: TraceFile[];
   /** The columns its kind does not owe: a pattern rule is proved only; most kinds are designed by their technical records. */
   notOwed: ReadonlySet<TraceColumn>;
+  /**
+   * The chain's actual links, each from the record nearer the obligation to the one it leads to, left to right: the
+   * obligation to a step's flow (or the step), a flow to its step, a step to where it happens and what it invokes, an
+   * operation or a design record to what builds it, the obligation to its tests, and a record to a file it names
+   * (`file:<path>`, fileKey). What the Trace stage draws its arrows from.
+   */
+  links: readonly (readonly [string, string])[];
 }
+
+/** A file's key among a chain's links and the Trace stage's boxes. */
+export const fileKey = (path: string) => `file:${path}`;
 
 /** The kinds designed before the technical specification: a step, a value object, an aggregate. */
 const DESIGNED_KINDS: ReadonlySet<string> = new Set(['uc_requirement', 'constraint', 'invariant']);
@@ -87,32 +97,36 @@ function chainOf(index: SpecIndex, id: string): TraceRow | null {
   const record = index.byId.get(id)!;
   const design = new Set<string>();
   const build = new Set<string>();
-  const technical = (of: string) => { for (const t of childrenIn(index, of, 'technical-specification')) build.add(t.id); };
+  const links = new Map<string, readonly [string, string]>();
+  const link = (from: string, to: string) => { links.set(`${from}\n${to}`, [from, to]); };
+  const technical = (of: string) => { for (const t of childrenIn(index, of, 'technical-specification')) { build.add(t.id); link(of, t.id); } };
 
   if (record.kind === 'uc_requirement') {
     // The steps that fulfill it, each with its flow, the views it happens in and what it invokes; that operation's handler builds it.
     for (const step of linked(index, id, 'fulfills', 'in')) {
       design.add(step);
       const flow = index.byId.get(step)?.parent;
-      if (flow && index.byId.get(flow)?.kind === 'flow') design.add(flow);
-      for (const view of linked(index, step, 'happens_in', 'out')) design.add(view);
-      for (const op of linked(index, step, 'invokes', 'out')) { design.add(op); technical(op); }
+      if (flow && index.byId.get(flow)?.kind === 'flow') { design.add(flow); link(id, flow); link(flow, step); } else link(id, step);
+      for (const view of linked(index, step, 'happens_in', 'out')) { design.add(view); link(step, view); }
+      for (const op of linked(index, step, 'invokes', 'out')) { design.add(op); link(step, op); technical(op); }
     }
   }
   if ((record.kind === 'constraint' || record.kind === 'invariant') && record.parent && index.byId.has(record.parent)) {
     // Its value object (and the value type that implements it), or its aggregate (and the aggregate's repository).
     design.add(record.parent);
+    link(id, record.parent);
     technical(record.parent);
   }
   if (record.kind === 'invariant') {
     // Each table whose unique key enforces it.
-    for (const table of enforcing(index).get(id) ?? []) build.add(table);
+    for (const table of enforcing(index).get(id) ?? []) { build.add(table); link(id, table); }
   }
   technical(id);
   // What specifies its implementation as coverage counts it: the components rendering a view requirement's view, an API
   // requirement's endpoint handler, what meets a standard rule.
-  for (const d of designersOf(index, record)) if (stageOf(index, d) === 'technical-specification') build.add(d);
+  for (const d of designersOf(index, record)) if (stageOf(index, d) === 'technical-specification') { build.add(d); link(id, d); }
   const tests = childrenIn(index, id, 'test-plan').map((t) => t.id);
+  for (const t of tests) link(id, t);
 
   const files = new Map<string, string[]>();
   const builders = inKindOrder(index, build);
@@ -122,6 +136,7 @@ function chainOf(index: SpecIndex, id: string): TraceRow | null {
     if (!path) continue;
     const by = files.get(path);
     if (by) by.push(named); else files.set(path, [named]);
+    link(named, fileKey(path));
   }
   const notOwed = new Set<TraceColumn>();
   if (PROVED_ONLY.has(record.kind)) { notOwed.add('design'); notOwed.add('build'); }
@@ -133,6 +148,7 @@ function chainOf(index: SpecIndex, id: string): TraceRow | null {
     tests: proofs,
     files: [...files].map(([path, namedBy]) => ({ path, namedBy })).sort((a, b) => a.path.localeCompare(b.path)),
     notOwed,
+    links: [...links.values()],
   };
 }
 
