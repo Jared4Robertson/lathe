@@ -12,7 +12,8 @@ CREATE TABLE product_kind (
   stage stage,
   obligation BOOLEAN NOT NULL,
   id_pattern VARCHAR,
-  id_example VARCHAR
+  id_example VARCHAR,
+  title_form title_form
 );
 COMMENT ON TABLE product_kind IS 'A kind a product adds to Lathe''s, such as a report or a CLI command. Its records sit under one parent kind, and its fields are product_kind_field rows.';
 COMMENT ON COLUMN product_kind.name IS 'The kind''s name, in lower case with underscores, which is also its table''s name; it must not be a table Lathe already has.';
@@ -24,6 +25,7 @@ COMMENT ON COLUMN product_kind.stage IS 'The stage its records belong to, any of
 COMMENT ON COLUMN product_kind.obligation IS 'Whether a record of the kind is an obligation, to be designed, built and proved. An obligation kind joins the obligation supertype.';
 COMMENT ON COLUMN product_kind.id_pattern IS 'How its IDs are written, its own pattern, such as <command>-CLI.';
 COMMENT ON COLUMN product_kind.id_example IS 'An example ID.';
+COMMENT ON COLUMN product_kind.title_form IS 'For a code-bound kind, how its titles are written (meta_kind_title): identifier, invocation or kebab-case; none for a kind titled in words.';
 
 CREATE TABLE product_kind_field (
   kind VARCHAR NOT NULL REFERENCES product_kind (name),

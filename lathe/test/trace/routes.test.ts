@@ -75,7 +75,7 @@ describe('Routes kept in step from the command line', () => {
     // S01: an Agent writes an endpoint and its handler, whose file names the route with its parameter written another way.
     await tl.seed([
       ...LENDING,
-      add('endpoint', { id: 'TL-LEND-EP01', title: 'Open a loan', command_id: 'TL-LEND-CMD01', method: 'POST', route: '/tools/{toolId}/loans' }),
+      add('endpoint', { id: 'TL-LEND-EP01', title: 'POST /tools/{toolId}/loans', command_id: 'TL-LEND-CMD01', method: 'POST', route: '/tools/{toolId}/loans' }),
       add('endpoint_handler', { id: 'TL-LEND-EP01-H', title: 'postLoan', endpoint_id: 'TL-LEND-EP01', file: 'src/router.ts' }),
     ]);
     tl.write('src/router.ts', "// TL-LEND-EP01-H\nrouter.post('/tools/:id/loans', openLoan);\n");

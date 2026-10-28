@@ -36,12 +36,10 @@ The spec is typed data in the repo's `data/` folder, one table per kind. Change 
 
 ## Naming
 
-Every record's `title` is in sentence case, with no trailing period, and unique within its kind and product; the store refuses a duplicate or a trailing period. Names take 1 to 4 words, goals 2 to 6, statements one short sentence; detail goes in the `goal`, `statement` or `description`.
+Every record's `title` is in sentence case, with no trailing period, and unique within its kind and product; the store refuses a duplicate or a trailing period (`LA-STD-MODELING-R04`). Names take 1 to 4 words, goals 2 to 6, statements one short sentence; detail goes in the `goal`, `statement` or `description`. Capabilities and use cases have their own section below.
 
 | Kind | Title | Good | Not |
 | --- | --- | --- | --- |
-| capability | a noun phrase for a lasting ability | Invoice management | Managing invoices |
-| use case | an imperative verb and its object: the actor's goal | Borrow a tool | Tool borrowing screen |
 | pattern | a singular noun phrase, no article | Librarian action | The librarian actions |
 | UC requirement, pattern rule | a sentence that is true when the rule holds | An unavailable tool is refused with the reason | Unavailable tool handling |
 

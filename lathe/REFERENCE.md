@@ -336,7 +336,7 @@ A named predicate over one or more aggregates of one domain (Evans), such as Mem
 - **ID:** `<P>-<D>-SP<nn>`, such as `TL-LEND-SP01`; it starts with its domain's ID
 - **Links out:** Reads ([`reads`](#relation-reads))
 - **Links in:** Questions about this ([`about`](#relation-about)), Checked by ([`checks`](#relation-checks)), Selects for ([`selects_by`](#relation-selects_by))
-- **Checks:** [`specification-unused`](#check-specification-unused)
+- **Checks:** [`specification-unused`](#check-specification-unused), [`specification-title-article`](#check-specification-title-article)
 - **Gaps:** [`specification-reads-nothing`](#gap-specification-reads-nothing)
 
 <a id="table-specification"></a>
@@ -513,6 +513,7 @@ A question asked of one read model, its parent. It changes nothing, and may sele
 - **ID:** `<P>-<D>-QRY<nn>`, such as `TL-LEND-QRY01`; it starts with its domain's ID
 - **Links out:** Calls ([`calls`](#relation-calls)), Selects by ([`selects_by`](#relation-selects_by))
 - **Links in:** Questions about this ([`about`](#relation-about)), Invoked by ([`invokes`](#relation-invokes))
+- **Checks:** [`query-title-verb`](#check-query-title-verb)
 - **Gaps:** [`query-without-handler`](#gap-query-without-handler)
 
 <a id="table-query"></a>
@@ -697,6 +698,26 @@ An aggregate with more entities than its product's max_entities_per_aggregate se
 
 The setting is the product's product_setting row (7 when it has none). An aggregate is the smallest cluster of entities that must stay consistent after one command: one transaction changes it, and everything in it is loaded, locked and saved together. Most need a root and a few children; one that holds many entities is usually several clusters that change at different times, held together only by references, so every command pays for all of them and two people's changes clash for no reason. A rule that spans two aggregates is checked by a specification, or followed through an event and a policy. Split it into smaller aggregates that each change together.
 
+<a id="check-specification-title-article"></a>
+
+### `specification-title-article`
+
+**Warning** · Lathe's · Kinds: [`specification`](#kind-specification)
+
+A specification whose title starts with an article: A, An or The.
+
+A specification is a yes/no condition a record meets or not, and its title names that condition with no article, such as "Tool is available" or "Member in good standing", so a command's or query's list of the specifications it checks reads as a list of conditions. Drop the article from the start of the title.
+
+<a id="check-query-title-verb"></a>
+
+### `query-title-verb`
+
+**Warning** · Lathe's · Kinds: [`query`](#kind-query)
+
+A query whose title does not start with Get, List or Find.
+
+A query asks for data and changes nothing, so its title starts with the verb that says what comes back: Get for one thing, List for several, Find for a search, such as "Get a member's loans", "List overdue loans" or "Find a tool by name". A query titled like a command ("Check the workspace", "Export a theme") reads as a change. Retitle the query with Get, List or Find.
+
 ### Coverage gaps: domain model
 
 Each is reported in coverage, under the record that falls short, never as a problem.
@@ -766,7 +787,7 @@ An actor's goal: its actors (use_case_actor rows), its UC requirements and its f
 - **Links out:** Follows ([`follows`](#relation-follows))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Parts:** [`use_case_actor`](#table-use_case_actor)
-- **Checks:** [`pattern-setting-missing`](#check-pattern-setting-missing), [`pattern-not-followed`](#check-pattern-not-followed), [`title-breaks-convention`](#check-title-breaks-convention)
+- **Checks:** [`pattern-setting-missing`](#check-pattern-setting-missing), [`pattern-not-followed`](#check-pattern-not-followed), [`title-breaks-convention`](#check-title-breaks-convention), [`flow-title-off-pattern`](#check-flow-title-off-pattern)
 - **Gaps:** [`use-case-without-actor`](#gap-use-case-without-actor), [`use-case-without-requirement`](#gap-use-case-without-requirement), [`use-case-without-flow`](#gap-use-case-without-flow)
 
 <a id="table-use_case"></a>
@@ -987,7 +1008,7 @@ A way people or programs use the product, such as its web app, its HTTP API or i
 - **ID:** `<P>-IF<nn>`, such as `TL-IF01`; it starts with its parent's ID
 - **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`flow-test-level-for-interface`](#check-flow-test-level-for-interface), [`title-breaks-convention`](#check-title-breaks-convention)
+- **Checks:** [`flow-test-level-for-interface`](#check-flow-test-level-for-interface), [`title-breaks-convention`](#check-title-breaks-convention), [`flow-title-off-pattern`](#check-flow-title-off-pattern)
 - **Gaps:** [`interface-without-flow`](#gap-interface-without-flow)
 
 <a id="table-interface"></a>
@@ -1015,7 +1036,7 @@ How its use case is carried out through one interface: the steps on its main pat
 - **ID:** `<use case>-FL<nn>`, such as `TL-LEND-UC01-FL01`; it starts with its parent's ID
 - **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`step-order`](#check-step-order), [`flow-test-level-for-interface`](#check-flow-test-level-for-interface)
+- **Checks:** [`step-order`](#check-step-order), [`flow-test-level-for-interface`](#check-flow-test-level-for-interface), [`flow-title-off-pattern`](#check-flow-title-off-pattern)
 - **Gaps:** [`flow-without-main-path`](#gap-flow-without-main-path), [`flow-without-test`](#gap-flow-without-test)
 
 <a id="table-flow"></a>
@@ -1142,7 +1163,7 @@ An HTTP endpoint that exposes exactly one command or query, its parent. Flow ste
 | Column | Type | Required | Meaning |
 | --- | --- | --- | --- |
 | `id` | VARCHAR → `record_id` | yes | The endpoint's ID, such as TL-LEND-EP01. |
-| `title` | VARCHAR | yes | What the endpoint does, such as Borrow a tool. |
+| `title` | VARCHAR | yes | Its method and route, one space apart, such as POST /loans: refused otherwise. |
 | `command_id` | VARCHAR → [`command`](#table-command) | no | The command it exposes; exactly one of command and query is given. |
 | `query_id` | VARCHAR → [`query`](#table-query) | no | The query it exposes; exactly one of command and query is given. |
 | `method` | ENUM('GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS') | yes | The HTTP method. |
@@ -1154,6 +1175,7 @@ An HTTP endpoint that exposes exactly one command or query, its parent. Flow ste
 - **Rule:** `("trim"(title) != '')`
 - **Rule:** `("trim"(route) != '')`
 - **Rule:** `((command_id IS NULL) != (query_id IS NULL))`
+- **Rule:** `(title = ((CAST("method" AS VARCHAR) || ' ') || route))`
 
 <a id="kind-api_requirement"></a>
 
@@ -1275,6 +1297,16 @@ A step of a flow through an API that invokes a command or query no endpoint expo
 
 A flow through an interface of kind API happens as requests: each step that invokes a command or query calls the endpoint that exposes it, so an endpoint must expose what the step invokes. (A step of a flow through a web app, a desktop app, a CLI or agent tools names its command or query the same way; only an API's are reached through endpoints. A step of an API, CLI or agent tools flow that happens in a view is refused by the store, step-fits-interface.) Add the endpoint under the command or query, or have the step invoke what an endpoint exposes.
 
+<a id="check-flow-title-off-pattern"></a>
+
+### `flow-title-off-pattern`
+
+**Warning** · Lathe's · Kinds: [`flow`](#kind-flow), [`use_case`](#kind-use_case), [`interface`](#kind-interface)
+
+A flow whose title is not its use case's title, then in or through, then its interface's title.
+
+A use case has one flow per interface it happens through, so a flow's title is its use case's title with its interface's: "Borrow a tool in the web app", "Borrow a tool through the HTTP API". Then each flow of a use case reads as the same goal in another place, and a renamed use case or interface shows in every flow that still has the old title. The check compares in any letter case and allows "in" or "through", with or without "the" before the interface. Retitle the flow as its use case's title, then in or through, then its interface's title.
+
 ### Coverage gaps: interaction design
 
 Each is reported in coverage, under the record that falls short, never as a problem.
@@ -1303,6 +1335,7 @@ Loads and saves its aggregate, whole: the way command handlers reach the aggrega
 - **Children:** none
 - **Obligation:** no
 - **ID:** `<aggregate>-REPO`, such as `TL-LEND-A1-REPO`; it starts with its parent's ID
+- **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
 - **Links out:** Meets ([`meets`](#relation-meets))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest)
@@ -1331,6 +1364,7 @@ Its entity in code: the entity's data, behavior and mapping to its table. A comm
 - **Children:** none
 - **Obligation:** no
 - **ID:** `<entity>-DM`, such as `TL-LEND-EN01-DM`; it starts with its parent's ID
+- **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
 - **Links out:** Meets ([`meets`](#relation-meets))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest)
@@ -1359,6 +1393,7 @@ Where an entity or a read model, its parent, is stored, in a database or not; or
 - **Children:** none
 - **Obligation:** no
 - **ID:** `<entity or read model>-TB, or <domain>-TB<nn>`, such as `TL-LEND-EN01-TB`; it starts with its parent's ID
+- **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
 - **Links out:** Meets ([`meets`](#relation-meets))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Parts:** [`table_key`](#table-table_key)
@@ -1422,6 +1457,7 @@ Its value object in code, which checks the value object's constraints when a val
 - **Children:** none
 - **Obligation:** no
 - **ID:** `<value object>-VT`, such as `TL-VO01-VT`; it starts with its parent's ID
+- **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
 - **Links out:** Meets ([`meets`](#relation-meets))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest)
@@ -1450,6 +1486,7 @@ Its specification in code: a yes-or-no test over the records it is given.
 - **Children:** none
 - **Obligation:** no
 - **ID:** `<specification>-PR`, such as `TL-LEND-SP01-PR`; it starts with its parent's ID
+- **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
 - **Links out:** Meets ([`meets`](#relation-meets))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest)
@@ -1478,6 +1515,7 @@ Its domain event's shape in code; a contract with other domains when the event i
 - **Children:** none
 - **Obligation:** no
 - **ID:** `<domain event>-ET`, such as `TL-LEND-EV01-ET`; it starts with its parent's ID
+- **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
 - **Links out:** Meets ([`meets`](#relation-meets))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`event-not-by-outbox`](#check-event-not-by-outbox), [`package-not-in-manifest`](#check-package-not-in-manifest)
@@ -1507,6 +1545,7 @@ Fills its read model's table and keeps it current, from events or as a view's qu
 - **Children:** none
 - **Obligation:** no
 - **ID:** `<read model>-PJ`, such as `TL-LEND-RM01-PJ`; it starts with its parent's ID
+- **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
 - **Links out:** Meets ([`meets`](#relation-meets))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest)
@@ -1535,6 +1574,7 @@ Carries out its command: an application service that owns the transaction, loads
 - **Children:** none
 - **Obligation:** no
 - **ID:** `<command>-H`, such as `TL-LEND-CMD01-H`; it starts with its parent's ID
+- **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
 - **Links out:** Meets ([`meets`](#relation-meets))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest)
@@ -1563,6 +1603,7 @@ Answers its query from its read model's table: an application service that chang
 - **Children:** none
 - **Obligation:** no
 - **ID:** `<query>-H`, such as `TL-LEND-QRY01-H`; it starts with its parent's ID
+- **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
 - **Links out:** Meets ([`meets`](#relation-meets))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest)
@@ -1591,6 +1632,7 @@ Carries out its policy: hears the policy's event and sends its command.
 - **Children:** none
 - **Obligation:** no
 - **ID:** `<policy>-H`, such as `TL-LEND-PO01-H`; it starts with its parent's ID
+- **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
 - **Links out:** Meets ([`meets`](#relation-meets))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest)
@@ -1619,6 +1661,7 @@ Its domain service in code. It never uses a repository or an outside system: its
 - **Children:** none
 - **Obligation:** no
 - **ID:** `<domain service>-SV`, such as `TL-LEND-DS01-SV`; it starts with its parent's ID
+- **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
 - **Links out:** Meets ([`meets`](#relation-meets))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest)
@@ -1673,6 +1716,7 @@ Serves its endpoint: reads the request, calls the command or query handler and w
 - **Children:** none
 - **Obligation:** no
 - **ID:** `<endpoint>-H`, such as `TL-LEND-EP01-H`; it starts with its parent's ID
+- **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
 - **Links out:** Meets ([`meets`](#relation-meets))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`endpoint-route-not-in-file`](#check-endpoint-route-not-in-file), [`package-not-in-manifest`](#check-package-not-in-manifest)
@@ -1701,6 +1745,7 @@ Talks to its integration's outside system, so the rest of the code does not.
 - **Children:** none
 - **Obligation:** no
 - **ID:** `<integration>-AD`, such as `TL-INT01-AD`; it starts with its parent's ID
+- **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
 - **Links out:** Meets ([`meets`](#relation-meets))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest)
@@ -1890,7 +1935,7 @@ Proves its constraint: the values its value object accepts and refuses.
 - **ID:** `<constraint>-T`, such as `TL-VO01-C01-T`; it starts with its parent's ID
 - **Links out:** Starts from ([`starts_from`](#relation-starts_from))
 - **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
-- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`test-case-unnamed`](#check-test-case-unnamed)
+- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`test-case-unnamed`](#check-test-case-unnamed), [`test-title-not-a-result`](#check-test-title-not-a-result)
 
 <a id="table-constraint_test"></a>
 
@@ -1931,7 +1976,7 @@ Proves its invariant: a change that would break it is refused, and the aggregate
 - **ID:** `<invariant>-T`, such as `TL-LEND-INV01-T`; it starts with its parent's ID
 - **Links out:** Starts from ([`starts_from`](#relation-starts_from))
 - **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
-- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`test-case-unnamed`](#check-test-case-unnamed)
+- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`test-case-unnamed`](#check-test-case-unnamed), [`test-title-not-a-result`](#check-test-title-not-a-result)
 
 <a id="table-invariant_test"></a>
 
@@ -1973,7 +2018,7 @@ Proves its specification: which records satisfy the predicate and which do not.
 - **ID:** `<specification>-T`, such as `TL-LEND-SP01-T`; it starts with its parent's ID
 - **Links out:** Starts from ([`starts_from`](#relation-starts_from))
 - **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
-- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`test-case-unnamed`](#check-test-case-unnamed)
+- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`test-case-unnamed`](#check-test-case-unnamed), [`test-title-not-a-result`](#check-test-title-not-a-result)
 
 <a id="table-specification_test"></a>
 
@@ -2015,7 +2060,7 @@ Proves its policy: when its event happens, its command is sent.
 - **ID:** `<policy>-T`, such as `TL-LEND-PO01-T`; it starts with its parent's ID
 - **Links out:** Starts from ([`starts_from`](#relation-starts_from))
 - **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
-- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`test-case-unnamed`](#check-test-case-unnamed)
+- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`test-case-unnamed`](#check-test-case-unnamed), [`test-title-not-a-result`](#check-test-title-not-a-result)
 
 <a id="table-policy_test"></a>
 
@@ -2057,7 +2102,7 @@ Proves its domain service: from the inputs given, the value or decision it retur
 - **ID:** `<domain service>-T<nn>`, such as `TL-LEND-DS01-T01`; it starts with its parent's ID
 - **Links out:** Starts from ([`starts_from`](#relation-starts_from))
 - **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
-- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`test-case-unnamed`](#check-test-case-unnamed)
+- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`test-case-unnamed`](#check-test-case-unnamed), [`test-title-not-a-result`](#check-test-title-not-a-result)
 
 <a id="table-domain_service_test"></a>
 
@@ -2098,7 +2143,7 @@ Proves its UC requirement, at the level the use case is stated: what the actor d
 - **ID:** `<UC requirement>-T<nn>`, such as `TL-LEND-UC01-R01-T01`; it starts with its parent's ID
 - **Links out:** Starts from ([`starts_from`](#relation-starts_from))
 - **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
-- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`test-case-unnamed`](#check-test-case-unnamed)
+- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`test-case-unnamed`](#check-test-case-unnamed), [`test-title-not-a-result`](#check-test-title-not-a-result)
 
 <a id="table-use_case_test"></a>
 
@@ -2139,7 +2184,7 @@ Proves its view requirement in the view.
 - **ID:** `<view requirement>-T<nn>`, such as `TL-V01-R01-T01`; it starts with its parent's ID
 - **Links out:** Starts from ([`starts_from`](#relation-starts_from))
 - **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
-- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`test-case-unnamed`](#check-test-case-unnamed)
+- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`test-case-unnamed`](#check-test-case-unnamed), [`test-title-not-a-result`](#check-test-title-not-a-result)
 
 <a id="table-view_test"></a>
 
@@ -2180,7 +2225,7 @@ Proves its API requirement at the endpoint: the request and the response.
 - **ID:** `<API requirement>-T<nn>`, such as `TL-LEND-EP01-R01-T01`; it starts with its parent's ID
 - **Links out:** Starts from ([`starts_from`](#relation-starts_from))
 - **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
-- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`test-case-unnamed`](#check-test-case-unnamed)
+- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`test-case-unnamed`](#check-test-case-unnamed), [`test-title-not-a-result`](#check-test-title-not-a-result)
 
 <a id="table-endpoint_test"></a>
 
@@ -2221,7 +2266,7 @@ A smoke test of its flow's main path, end to end, at the level that fits its int
 - **ID:** `<flow>-T`, such as `TL-LEND-UC01-FL01-T`; it starts with its parent's ID
 - **Links out:** Starts from ([`starts_from`](#relation-starts_from))
 - **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
-- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`test-case-unnamed`](#check-test-case-unnamed), [`flow-test-level-for-interface`](#check-flow-test-level-for-interface)
+- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`test-case-unnamed`](#check-test-case-unnamed), [`flow-test-level-for-interface`](#check-flow-test-level-for-interface), [`test-title-not-a-result`](#check-test-title-not-a-result)
 
 <a id="table-flow_test"></a>
 
@@ -2262,7 +2307,7 @@ Proves an exchange with its integration's outside system.
 - **ID:** `<integration>-T<nn>`, such as `TL-INT01-T01`; it starts with its parent's ID
 - **Links out:** Starts from ([`starts_from`](#relation-starts_from))
 - **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
-- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`test-case-unnamed`](#check-test-case-unnamed)
+- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`test-case-unnamed`](#check-test-case-unnamed), [`test-title-not-a-result`](#check-test-title-not-a-result)
 
 <a id="table-integration_test"></a>
 
@@ -2303,7 +2348,7 @@ Proves its pattern rule in one domain that adopts the pattern: one test per patt
 - **ID:** `<pattern rule>-T<nn>`, such as `TL-PAT-ACT-R01-T01`; it starts with its parent's ID
 - **Links out:** Starts from ([`starts_from`](#relation-starts_from))
 - **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
-- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`pattern-rule-test-outside-followers`](#check-pattern-rule-test-outside-followers), [`test-case-unnamed`](#check-test-case-unnamed)
+- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`pattern-rule-test-outside-followers`](#check-pattern-rule-test-outside-followers), [`test-case-unnamed`](#check-test-case-unnamed), [`test-title-not-a-result`](#check-test-title-not-a-result)
 
 <a id="table-pattern_rule_test"></a>
 
@@ -2346,7 +2391,7 @@ Proves its standard rule in the product's code, such as a scan of the code for w
 - **ID:** `<standard rule>-T<nn>`, such as `TL-STD-CODE-R01-T01`; it starts with its parent's ID
 - **Links out:** Starts from ([`starts_from`](#relation-starts_from))
 - **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
-- **Checks:** [`test-case-unnamed`](#check-test-case-unnamed)
+- **Checks:** [`test-case-unnamed`](#check-test-case-unnamed), [`test-title-not-a-result`](#check-test-title-not-a-result)
 
 <a id="table-standard_rule_test"></a>
 
@@ -2466,6 +2511,16 @@ A flow test at a level that does not fit its flow's interface.
 
 A flow test walks its flow's main path the way its interface is used: in a real browser or the desktop shell (browser) for a web app or a desktop app, and from outside the running product through its requests or commands (system) for an API, a CLI or agent tools. A manual test names the level the person exercises, so it is held to the same fit. A flow through an interface of kind other may be tested at any level a flow test allows. Run the test at the level that fits, or give the flow the interface it really goes through.
 
+<a id="check-test-title-not-a-result"></a>
+
+### `test-title-not-a-result`
+
+**Warning** · Lathe's · Kinds: [`constraint_test`](#kind-constraint_test), [`invariant_test`](#kind-invariant_test), [`specification_test`](#kind-specification_test), [`policy_test`](#kind-policy_test), [`domain_service_test`](#kind-domain_service_test), [`use_case_test`](#kind-use_case_test), [`view_test`](#kind-view_test), [`endpoint_test`](#kind-endpoint_test), [`flow_test`](#kind-flow_test), [`integration_test`](#kind-integration_test), [`pattern_rule_test`](#kind-pattern_rule_test), [`standard_rule_test`](#kind-standard_rule_test)
+
+A test titled by what it does or ought to do, starting with "Tests that" or "Should", rather than by the result it shows.
+
+A test's title is the observable result it shows, one short sentence that is true when the test passes, such as "An overdue loan is refused a renewal": a reader of the test plan learns what holds without opening the test. A title that starts with "Tests that", "Test that", "Tests whether", "Tests if" or "Should" says what the test checks or hopes for instead. A title that only starts with the noun "Tests", such as "Tests run in order", is not read. Rewrite the title as the result.
+
 ### Coverage gaps: test plan
 
 Each is reported in coverage, under the record that falls short, never as a problem.
@@ -2574,6 +2629,7 @@ A kind a product adds to Lathe's, such as a report or a CLI command. Its records
 | `obligation` | BOOLEAN | yes | Whether a record of the kind is an obligation, to be designed, built and proved. An obligation kind joins the obligation supertype. |
 | `id_pattern` | VARCHAR | no | How its IDs are written, its own pattern, such as <command>-CLI. |
 | `id_example` | VARCHAR | no | An example ID. |
+| `title_form` | ENUM('identifier', 'invocation', 'kebab-case') | no | For a code-bound kind, how its titles are written (meta_kind_title): identifier, invocation or kebab-case; none for a kind titled in words. |
 
 - **Key:** `name`
 - **Rule:** `regexp_full_match("name", '[a-z][a-z0-9_]*')`
