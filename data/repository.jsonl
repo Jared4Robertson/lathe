@@ -24,5 +24,6 @@
 {"id":"LA-PLT-A3-REPO","title":"COMMANDS","aggregate_id":"LA-PLT-A3","file":"app/src/shell/keymap.ts","description":"COMMANDS, SPACE_KEYS, readOverrides (lathe:keybindings)"}
 {"id":"LA-PLT-A4-REPO","title":"themeStore","aggregate_id":"LA-PLT-A4","file":"app/src/theme/store.ts","description":"themeStore, STORAGE_KEYS: the person's themes, the chosen one, the mode and its stylesheet"}
 {"id":"LA-PLT-A6-REPO","title":"parseWindowStates","aggregate_id":"LA-PLT-A6","file":"desktop/src/windowState.ts","description":"parseWindowStates, saveWindow (window-state.json)"}
+{"id":"LA-PLT-A7-REPO","title":"open","aggregate_id":"LA-PLT-A7","file":"desktop/src/main.ts","description":"The map of open windows (open): each entry holds its window's server (entry.server) while the shell runs."}
 {"id":"LA-PLT-A9-REPO","title":"parseRecent","aggregate_id":"LA-PLT-A9","file":"desktop/src/folders.ts","description":"parseRecent (recent-folders.json)"}
 {"id":"LA-TRC-A3-REPO","title":"the store's follows links and setting_value rows","aggregate_id":"LA-TRC-A3","file":"lathe/src/store/store.ts","description":"the store's follows links and setting_value rows"}

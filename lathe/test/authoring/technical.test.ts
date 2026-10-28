@@ -113,7 +113,7 @@ describe('the technical specification', () => {
   it("LA-AUT-UC17-R08-T01 A table stores its name, its storage and its keys, its columns following from its record's fields", async () => {
     expect(schema.tables.table.columns.map((c) => c.name)).toEqual(['id', 'title', 'entity_id', 'read_model_id', 'domain_id', 'name', 'storage', 'file', 'description']);
     expect(requiredOf(schema, 'table')).toEqual(['name', 'storage']);
-    expect(schema.tables.table.columns.find((c) => c.name === 'storage')!.values).toEqual(['table', 'view', 'materialized view']);
+    expect(schema.tables.table.columns.find((c) => c.name === 'storage')!.values).toEqual(['table', 'view', 'materialized view', 'browser storage', 'file', 'in memory']);
     expect(schema.tables.table_key).toMatchObject({ role: 'part', ownerColumn: 'table_id' });
     expect(schema.tables.table.description).toContain("Its columns follow from its parent's fields, a value object's fields flattened into columns, so it stores only what fields cannot say");
     // The column names come from the fields; the keys name them.

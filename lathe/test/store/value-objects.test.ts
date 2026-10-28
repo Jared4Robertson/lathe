@@ -133,16 +133,20 @@ describe("Authoring's value objects", () => {
     expect(await refusals(adding({ read_model_field: fields }))).toEqual([]);
   });
 
-  it('LA-VO10-C01-T A table stored other than as a table, a view or a materialized view is refused', async () => {
-    expect(await refusals(firstRow('table', { storage: 'index' }))).toEqual(notOneOf('table', 'storage', 'index', ['table', 'view', 'materialized view']));
-    expect(
-      await refusals(
-        adding({
-          read_model: [{ id: 'TL-LEND-RM02', title: 'Overdue loans', domain_id: 'TL-LEND' }],
-          table: [{ id: 'TL-LEND-RM02-TB', title: 'Overdue loans', read_model_id: 'TL-LEND-RM02', name: 'overdue_loans', storage: 'materialized view' }],
-        }),
-      ),
-    ).toEqual([]);
+  it('LA-VO10-C01-T A table storage other than the six (table, view, materialized view, browser storage, file, in memory) is refused', async () => {
+    const storages = ['table', 'view', 'materialized view', 'browser storage', 'file', 'in memory'];
+    expect(await refusals(firstRow('table', { storage: 'index' }))).toEqual(notOneOf('table', 'storage', 'index', storages));
+    for (const storage of storages.slice(2)) {
+      expect(
+        await refusals(
+          adding({
+            read_model: [{ id: 'TL-LEND-RM02', title: 'Overdue loans', domain_id: 'TL-LEND' }],
+            table: [{ id: 'TL-LEND-RM02-TB', title: 'Overdue loans', read_model_id: 'TL-LEND-RM02', name: 'overdue_loans', storage }],
+          }),
+        ),
+        storage,
+      ).toEqual([]);
+    }
   });
 
   it("LA-VO11-C01-T A key type other than primary, unique, foreign or index is refused", async () => {

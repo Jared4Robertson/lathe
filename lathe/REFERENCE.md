@@ -591,9 +591,9 @@ A specification has no owner: it exists because commands check it and queries se
 
 **Warning** · Lathe's · Kinds: [`domain_event`](#kind-domain_event), [`event_type`](#kind-event_type), [`policy`](#kind-policy)
 
-An event a policy hears, whose aggregate is stored in a table, whose event type is not delivered by outbox.
+An event a policy hears, whose aggregate is stored in a database table, whose event type is not delivered by outbox.
 
-An event a policy hears is delivered by outbox: saved in the same transaction as its aggregate and delivered reliably afterwards, since a lost reaction is a lost change. That is every event a policy hears whose aggregate is stored in a table (an entity of the aggregate has a table), in its own domain or, when published, in another. An event inside one process with no transaction to join, such as one heard in the same browser tab, is exempt. So is an event that only keeps read models current (fed_by), where those read models are rebuilt from the data on every load: it may be delivered in process, since the next load rebuilds what a lost delivery missed. Its event type records the delivery; one a policy hears that is delivered in process, with no delivery given, or no event type at all, leaves the reaction to chance. Give the event an event type delivered by outbox.
+An event a policy hears is delivered by outbox: saved in the same transaction as its aggregate and delivered reliably afterwards, since a lost reaction is a lost change. That is every event a policy hears whose aggregate is stored in a database table (an entity of the aggregate has a table whose storage is `table`), in its own domain or, when published, in another. An event inside one process with no transaction to join, such as one whose aggregate is kept in browser storage, a file or in memory and is heard in the same browser tab or process, is exempt. So is an event that only keeps read models current (fed_by), where those read models are rebuilt from the data on every load: it may be delivered in process, since the next load rebuilds what a lost delivery missed. Its event type records the delivery; one a policy hears that is delivered in process, with no delivery given, or no event type at all, leaves the reaction to chance. Give the event an event type delivered by outbox.
 
 <a id="check-has-crosses-aggregate"></a>
 
@@ -653,7 +653,7 @@ Each is reported in coverage, under the record that falls short, never as a prob
 | --- | --- | --- |
 | <a id="gap-domain-without-aggregate"></a>`domain-without-aggregate` | [`domain`](#kind-domain), [`aggregate`](#kind-aggregate) | A domain with no aggregate. |
 | <a id="gap-aggregate-without-root"></a>`aggregate-without-root` | [`aggregate`](#kind-aggregate), [`entity`](#kind-entity) | An aggregate with no root entity. |
-| <a id="gap-aggregate-without-command"></a>`aggregate-without-command` | [`aggregate`](#kind-aggregate), [`command`](#kind-command) | An aggregate no command changes. |
+| <a id="gap-aggregate-without-command"></a>`aggregate-without-command` | [`aggregate`](#kind-aggregate), [`command`](#kind-command) | An aggregate no command changes, directly or through a recorded exception. |
 | <a id="gap-entity-without-fields"></a>`entity-without-fields` | [`entity`](#kind-entity), `entity_field` | An entity with no fields. |
 | <a id="gap-value-object-without-fields"></a>`value-object-without-fields` | [`value_object`](#kind-value_object), `value_object_field` | A value object with no fields. |
 | <a id="gap-event-without-fields"></a>`event-without-fields` | [`domain_event`](#kind-domain_event), `event_field` | A domain event that carries no fields. |
@@ -1228,7 +1228,7 @@ Its entity in code: the entity's data, behavior and mapping to its table. A comm
 
 ### Table (`table`)
 
-Where an entity or a read model, its parent, is stored; or, under a domain, a table of the domain's own infrastructure that implements no design record, such as its outbox. Its columns follow from its parent's fields, a value object's fields flattened into columns, so it stores only what fields cannot say: its keys and indexes (table_key rows). An entity's table is always a table, normalized and the source of truth; a read model's is a projection that can be rebuilt, usually a view over its domain's entity tables.
+Where an entity or a read model, its parent, is stored, in a database or not; or, under a domain, a table of the domain's own infrastructure that implements no design record, such as its outbox. Its columns follow from its parent's fields, a value object's fields flattened into columns, so it stores only what fields cannot say: its keys and indexes (table_key rows). An entity's table holds its rows, the source of truth: a table, normalized, or the browser storage, file or memory that keeps them; a read model's is a projection that can be rebuilt, usually a view over its domain's entity tables, or computed in memory on each load.
 
 - **Parents:** [`entity`](#kind-entity) (`entity_id`), [`read_model`](#kind-read_model) (`read_model_id`), [`domain`](#kind-domain) (`domain_id`)
 - **Children:** none
@@ -1248,9 +1248,9 @@ Where an entity or a read model, its parent, is stored; or, under a domain, a ta
 | `entity_id` | VARCHAR → [`entity`](#table-entity) | no | The entity it stores; exactly one of entity, read model and domain is given. An entity has at most one table: a child entity marked in_root_table has none and is stored in its root's. |
 | `read_model_id` | VARCHAR → [`read_model`](#table-read_model) | no | The read model it stores; exactly one of entity, read model and domain is given, and a read model has one table. |
 | `domain_id` | VARCHAR → [`domain`](#table-domain) | no | The domain whose own infrastructure it stores, such as its outbox, when it stores no entity or read model; its ID is the domain's and TB with a number, such as TL-LEND-TB01, and its storage is a table. |
-| `name` | VARCHAR | yes | Its name in the database, such as loans. |
-| `storage` | ENUM('table', 'view', 'materialized view') | yes | table: rows of its own; view: a query over other tables; materialized view: a query's result, kept. An entity's table is always table. |
-| `file` | VARCHAR | no | The file that creates it, such as a migration, from the product root; it may not exist yet. |
+| `name` | VARCHAR | yes | Its name where it is stored: in the database, such as loans, the key it is kept under in browser storage, such as lathe:tabs, or the file's name, such as window-state.json. |
+| `storage` | ENUM('table', 'view', 'materialized view', 'browser storage', 'file', 'in memory') | yes | table: rows of its own in a database; view: a query over other tables; materialized view: a query's result, kept; browser storage: kept by the browser (local or session storage, or its history), under the key its name gives; file: kept in a file of its own that the program reads and writes whole, such as a JSON file, named by its name; in memory: kept only while the program runs, or computed on each load. An entity's table holds rows of its own, so it is never a view or a materialized view. Keys are asked only of a table in a database: browser storage, a file and in memory have none. |
+| `file` | VARCHAR | no | The file that creates it, such as a migration, or that reads and writes it, from the product root; it may not exist yet. |
 | `description` | VARCHAR | no | Anything its keys do not say, in a sentence or two. |
 
 - **Key:** `id`
@@ -1260,13 +1260,13 @@ Where an entity or a read model, its parent, is stored; or, under a domain, a ta
 - **Rule:** `("trim"("name") != '')`
 - **Rule:** `(((CAST((entity_id IS NOT NULL) AS INTEGER) + CAST((read_model_id IS NOT NULL) AS INTEGER)) + CAST((domain_id IS NOT NULL) AS INTEGER)) = 1)`
 - **Rule:** `((domain_id IS NULL) OR ("storage" = 'table'))`
-- **Rule:** `((entity_id IS NULL) OR ("storage" = 'table'))`
+- **Rule:** `((entity_id IS NULL) OR (NOT ("storage" IN ('view', 'materialized view'))))`
 
 <a id="table-table_key"></a>
 
 #### `table_key`
 
-One key or index of a table, in order: its primary key, a unique key with the invariant it enforces, a foreign key with the table it points at, or an index. A foreign key points at a table of the same domain: a reference to another domain's aggregate stays a plain ID.
+One key or index of a table in a database (never of browser storage, a file or in memory), in order: its primary key, a unique key with the invariant it enforces, a foreign key with the table it points at, or an index. A foreign key points at a table of the same domain: a reference to another domain's aggregate stays a plain ID.
 
 | Column | Type | Required | Meaning |
 | --- | --- | --- | --- |

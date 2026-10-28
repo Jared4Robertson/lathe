@@ -1,10 +1,29 @@
+{"value_object_id":"LA-VO01","position":1,"name":"ID","meaning":"Capital letters and digits in parts joined by hyphens, starting with a letter: its scope's ID, a hyphen and its own code.","type":"text","required":true,"example":"TL-LEND-UC03-R02"}
+{"value_object_id":"LA-VO02","position":1,"name":"Title","meaning":"The record's name in a few words; never blank.","type":"text","required":true,"example":"Borrow a tool"}
+{"value_object_id":"LA-VO03","position":1,"name":"Statement","meaning":"The rule or requirement in full, with MUST, SHOULD or MAY; never blank.","type":"text","required":true,"example":"A tool MUST NOT have two active loans."}
+{"value_object_id":"LA-VO04","position":1,"name":"Position","meaning":"Its place among its siblings, from 1.","type":"whole number","required":true,"example":"1"}
+{"value_object_id":"LA-VO05","position":1,"name":"Path","meaning":"The path a step is on: main for the main path, or another name such as refused; never blank.","type":"text","required":true,"example":"main"}
+{"value_object_id":"LA-VO06","position":1,"name":"Identifier","meaning":"Lower-case letters, digits and underscores, starting with a letter.","type":"text","required":true,"example":"entry_point"}
+{"value_object_id":"LA-VO07","position":1,"name":"Subdomain type","meaning":"core, supporting or generic.","type":"text","required":true,"example":"core"}
+{"value_object_id":"LA-VO08","position":1,"name":"Role","meaning":"root or child.","type":"text","required":true,"example":"root"}
+{"value_object_id":"LA-VO09","position":1,"name":"Type","meaning":"text, whole number, decimal, date, time, date and time, or yes/no.","type":"text","required":true,"example":"date"}
+{"value_object_id":"LA-VO10","position":1,"name":"Storage","meaning":"table, view, materialized view, browser storage, file or in memory.","type":"text","required":true,"example":"table"}
+{"value_object_id":"LA-VO11","position":1,"name":"Type","meaning":"primary, unique, foreign or index.","type":"text","required":true,"example":"unique"}
+{"value_object_id":"LA-VO12","position":1,"name":"Method","meaning":"GET, POST, PUT, PATCH, DELETE, HEAD or OPTIONS.","type":"text","required":true,"example":"POST"}
+{"value_object_id":"LA-VO13","position":1,"name":"Delivery","meaning":"in process or outbox.","type":"text","required":true,"example":"outbox"}
 {"value_object_id":"LA-VO14","position":1,"name":"Level","meaning":"unit, database, api, contract, e2e-api, e2e-ui or manual.","type":"text","required":true,"column_name":"level"}
 {"value_object_id":"LA-VO14","position":2,"name":"State","meaning":"automated, manual or not automated yet.","type":"text","required":true,"column_name":"state"}
 {"value_object_id":"LA-VO14","position":3,"name":"File","meaning":"The file that runs it, from the repo root; required when automated.","type":"text","required":false,"column_name":"file"}
 {"value_object_id":"LA-VO14","position":4,"name":"Manual reason","meaning":"Why a person runs it; given when manual, and only then.","type":"text","required":false,"column_name":"manual_reason"}
+{"value_object_id":"LA-VO15","position":1,"name":"Type","meaning":"text, integer, boolean or date.","type":"text","required":true,"example":"text"}
+{"value_object_id":"LA-VO16","position":1,"name":"Stage","meaning":"domain-model, use-cases, interaction-design, technical-specification or test-plan.","type":"text","required":true,"example":"use-cases"}
+{"value_object_id":"LA-VO17","position":1,"name":"Role","meaning":"design or proof.","type":"text","required":true,"example":"proof"}
+{"value_object_id":"LA-VO18","position":1,"name":"Group","meaning":"The heading as first written; two groups are one when they are equal trimmed and in any letter case.","type":"text","required":true,"example":"Missing links"}
 {"value_object_id":"LA-VO41","position":1,"name":"Name","meaning":"Lower-case letters and digits in words joined by single hyphens, such as too-many-children.","type":"text","required":true,"column_name":"name","example":"too-many-children"}
 {"value_object_id":"LA-VO42","position":1,"name":"Severity","meaning":"error, warning, or error_or_warning when the check's query says which for each row.","type":"text","required":true,"column_name":"severity","example":"warning"}
 {"value_object_id":"LA-VO43","position":1,"name":"Max children","meaning":"The most children of one kind a record should hold: a whole number of at least 1.","type":"whole number","required":true,"column_name":"max_children","example":"15"}
+{"value_object_id":"LA-VO61","position":1,"name":"Keys","meaning":"One chord, or chords separated by spaces for a sequence, each its modifiers then one key joined by +; Mod is Cmd on a Mac and Ctrl elsewhere.","type":"text","required":true,"example":"Mod+Shift+P"}
+{"value_object_id":"LA-VO62","position":1,"name":"Values","meaning":"Each token's value by its name in the app's token table, as a JSON object.","type":"text","required":true,"example":"{\"--ink\": \"#1d2433\"}"}
 {"value_object_id":"LA-VO63","position":1,"name":"Format","meaning":"Always \"lathe-theme\".","type":"text","required":true}
 {"value_object_id":"LA-VO63","position":2,"name":"Version","meaning":"The file format's version, 1.","type":"whole number","required":true}
 {"value_object_id":"LA-VO63","position":3,"name":"Name","meaning":"The theme's name, 1 to 60 characters.","type":"text","required":true}
@@ -19,6 +38,9 @@
 {"value_object_id":"LA-VO64","position":6,"name":"Full screen","meaning":"Whether it was full screen.","type":"yes/no","required":true}
 {"value_object_id":"LA-VO65","position":1,"name":"Background","meaning":"An opaque hex color for the window's background.","type":"text","required":true}
 {"value_object_id":"LA-VO65","position":2,"name":"Foreground","meaning":"An opaque hex color for the window's controls.","type":"text","required":true}
+{"value_object_id":"LA-VO90","position":1,"name":"Path","meaning":"The page's path: a record's bare ID, a group's place in the graph's tree, or one of the app's own pages.","type":"text","required":true,"example":"/LA-AUT-A1"}
+{"value_object_id":"LA-VO90","position":2,"name":"Views","meaning":"The views open, named only in the `view` query parameter.","type_value_object_id":"LA-VO91","required":false,"example":"wiki,graph"}
+{"value_object_id":"LA-VO91","position":1,"name":"Views","meaning":"wiki, graph and model, at least one, each at most once and in that order, separated by commas.","type":"text","required":true,"example":"wiki,graph"}
 {"value_object_id":"LA-VO92","position":1,"name":"Layout","meaning":"tree, nested or voronoi.","type":"text","required":true}
 {"value_object_id":"LA-VO92","position":2,"name":"Depth","meaning":"How many levels below the focus the camera frames, 1 to 3.","type":"whole number","required":true}
 {"value_object_id":"LA-VO92","position":3,"name":"Trace","meaning":"Whether trace mode is on.","type":"yes/no","required":true}

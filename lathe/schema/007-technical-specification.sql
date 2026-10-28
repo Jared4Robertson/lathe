@@ -175,7 +175,7 @@ COMMENT ON COLUMN adapter.integration_id IS 'The integration it talks to; one ad
 COMMENT ON COLUMN adapter.file IS 'The file that holds its code, from the product root; it may not exist yet, and several records may share one file.';
 COMMENT ON COLUMN adapter.description IS 'How it works, in a sentence or two.';
 
-CREATE TYPE table_storage AS ENUM ('table', 'view', 'materialized view');
+CREATE TYPE table_storage AS ENUM ('table', 'view', 'materialized view', 'browser storage', 'file', 'in memory');
 CREATE TYPE key_type AS ENUM ('primary', 'unique', 'foreign', 'index');
 
 CREATE TABLE "table" (
@@ -190,17 +190,17 @@ CREATE TABLE "table" (
   description VARCHAR,
   CHECK ((entity_id IS NOT NULL)::INTEGER + (read_model_id IS NOT NULL)::INTEGER + (domain_id IS NOT NULL)::INTEGER = 1),
   CHECK (domain_id IS NULL OR storage = 'table'),
-  CHECK (entity_id IS NULL OR storage = 'table')
+  CHECK (entity_id IS NULL OR storage NOT IN ('view', 'materialized view'))
 );
-COMMENT ON TABLE "table" IS 'Where an entity or a read model, its parent, is stored; or, under a domain, a table of the domain''s own infrastructure that implements no design record, such as its outbox. Its columns follow from its parent''s fields, a value object''s fields flattened into columns, so it stores only what fields cannot say: its keys and indexes (table_key rows). An entity''s table is always a table, normalized and the source of truth; a read model''s is a projection that can be rebuilt, usually a view over its domain''s entity tables.';
+COMMENT ON TABLE "table" IS 'Where an entity or a read model, its parent, is stored, in a database or not; or, under a domain, a table of the domain''s own infrastructure that implements no design record, such as its outbox. Its columns follow from its parent''s fields, a value object''s fields flattened into columns, so it stores only what fields cannot say: its keys and indexes (table_key rows). An entity''s table holds its rows, the source of truth: a table, normalized, or the browser storage, file or memory that keeps them; a read model''s is a projection that can be rebuilt, usually a view over its domain''s entity tables, or computed in memory on each load.';
 COMMENT ON COLUMN "table".id IS 'The table''s ID: its entity''s or read model''s ID and TB, such as TL-LEND-EN01-TB.';
 COMMENT ON COLUMN "table".title IS 'The table as people read it, such as Loans.';
 COMMENT ON COLUMN "table".entity_id IS 'The entity it stores; exactly one of entity, read model and domain is given. An entity has at most one table: a child entity marked in_root_table has none and is stored in its root''s.';
 COMMENT ON COLUMN "table".read_model_id IS 'The read model it stores; exactly one of entity, read model and domain is given, and a read model has one table.';
 COMMENT ON COLUMN "table".domain_id IS 'The domain whose own infrastructure it stores, such as its outbox, when it stores no entity or read model; its ID is the domain''s and TB with a number, such as TL-LEND-TB01, and its storage is a table.';
-COMMENT ON COLUMN "table".name IS 'Its name in the database, such as loans.';
-COMMENT ON COLUMN "table".storage IS 'table: rows of its own; view: a query over other tables; materialized view: a query''s result, kept. An entity''s table is always table.';
-COMMENT ON COLUMN "table".file IS 'The file that creates it, such as a migration, from the product root; it may not exist yet.';
+COMMENT ON COLUMN "table".name IS 'Its name where it is stored: in the database, such as loans, the key it is kept under in browser storage, such as lathe:tabs, or the file''s name, such as window-state.json.';
+COMMENT ON COLUMN "table".storage IS 'table: rows of its own in a database; view: a query over other tables; materialized view: a query''s result, kept; browser storage: kept by the browser (local or session storage, or its history), under the key its name gives; file: kept in a file of its own that the program reads and writes whole, such as a JSON file, named by its name; in memory: kept only while the program runs, or computed on each load. An entity''s table holds rows of its own, so it is never a view or a materialized view. Keys are asked only of a table in a database: browser storage, a file and in memory have none.';
+COMMENT ON COLUMN "table".file IS 'The file that creates it, such as a migration, or that reads and writes it, from the product root; it may not exist yet.';
 COMMENT ON COLUMN "table".description IS 'Anything its keys do not say, in a sentence or two.';
 
 CREATE TABLE table_key (
@@ -217,7 +217,7 @@ CREATE TABLE table_key (
   CHECK (condition IS NULL OR type = 'unique'),
   CHECK ((type = 'foreign') = (target_table_id IS NOT NULL))
 );
-COMMENT ON TABLE table_key IS 'One key or index of a table, in order: its primary key, a unique key with the invariant it enforces, a foreign key with the table it points at, or an index. A foreign key points at a table of the same domain: a reference to another domain''s aggregate stays a plain ID.';
+COMMENT ON TABLE table_key IS 'One key or index of a table in a database (never of browser storage, a file or in memory), in order: its primary key, a unique key with the invariant it enforces, a foreign key with the table it points at, or an index. A foreign key points at a table of the same domain: a reference to another domain''s aggregate stays a plain ID.';
 COMMENT ON COLUMN table_key.table_id IS 'The table.';
 COMMENT ON COLUMN table_key.position IS 'The key''s place among the table''s keys, from 1.';
 COMMENT ON COLUMN table_key.type IS 'primary (at most one per table), unique, foreign or index.';
