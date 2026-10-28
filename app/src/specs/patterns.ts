@@ -1,12 +1,10 @@
 import { textOf, byIdOrder, partsOf, provedByOf, type Row, type SpecIndex, type SpecRecord } from './data';
 
 // Patterns and their rules, as the pages show them (lathe/REFERENCE.md). A domain
-// follows a pattern when the domain itself or any of its use cases `follows` it, and then owes each
-// of the pattern's rules: proved there as the engine's coverage says (a pattern rule test naming the domain that
-// counts as proof), and not automated yet when only one not automated yet does. A rule does not apply in a
-// domain when it names a setting that all the domain's following use cases mark not applicable with
-// a reason (unless the domain follows the pattern itself), or when no follower there meets its
-// applies-when condition: it is waived there. Pure logic, tested directly.
+// follows a pattern when the domain itself or any of its use cases `follows` it. Whether it owes each of
+// the pattern's rules there, or the rule is not applicable or waived, and whether the rule is proved there,
+// are the engine's answers (Coverage.pattern_rules and proved_by); the page only shows them, with the
+// settings and reasons behind them. Pure logic, tested directly.
 
 /** What a follower gives one of a pattern's settings (a setting_value row): a value, or the reason it does not apply. */
 export interface SettingValue {
@@ -48,13 +46,6 @@ export function appliesWhenOf(rule: SpecRecord): AppliesWhen | null {
 
 /** The condition as a phrase: "scope is not single". */
 export const appliesWhenText = (c: AppliesWhen) => `${c.setting} is ${c.not ? 'not ' : ''}${c.value}`;
-
-/** Whether a follower's value for the setting meets the condition: a real value, compared trimmed and in any letter case. */
-export function meetsAppliesWhen(c: AppliesWhen, given: SettingValue | undefined): boolean {
-  const value = given?.value?.trim() ?? '';
-  if (value === '' || notApplicableReason(given) !== null) return false;
-  return (value.toLowerCase() === c.value.toLowerCase()) !== c.not;
-}
 
 /** A pattern's settings, from its pattern_setting rows, in order. */
 export const settingsOf = (index: SpecIndex, pattern: SpecRecord) => partsOf(index, pattern.id, 'pattern_setting').map((r) => textOf(r, 'name'));
@@ -144,27 +135,26 @@ export type RuleStatus =
  */
 export function ruleStatus(index: SpecIndex, rule: SpecRecord, domainId: string, followed: Followed): RuleStatus {
   const { useCases } = followed;
-  const setting = textOf(rule.row, 'setting')?.trim();
-  if (setting && !followed.byDomain && useCases.length > 0) {
-    const reasons = useCases.map((uc) => ({ useCase: uc.id, reason: notApplicableReason(settingValue(index, uc.id, rule.parent ?? '', setting)) }));
-    if (reasons.every((r) => r.reason !== null)) {
-      return { applies: false, why: 'not-applicable', setting, reasons: reasons.map((r) => ({ useCase: r.useCase, reason: r.reason! })) };
-    }
+  const pattern = rule.parent ?? '';
+  // Whether the rule applies is the engine's answer (Coverage.pattern_rules); it lists every rule of every pattern a
+  // domain follows, so a rule it leaves out (only when the checks could not run) reads as owed and not proved.
+  const standing = index.coverage.get(domainId)?.pattern_rules[rule.id] ?? 'owed';
+  if (standing === 'not-applicable') {
+    const setting = textOf(rule.row, 'setting').trim();
+    const reasons = useCases.map((uc) => ({ useCase: uc.id, reason: notApplicableReason(settingValue(index, uc.id, pattern, setting)) ?? '' }));
+    return { applies: false, why: 'not-applicable', setting, reasons };
   }
-  const condition = appliesWhenOf(rule);
-  if (condition) {
-    const given = (f: SpecRecord) => settingValue(index, f.id, rule.parent ?? '', condition.setting);
+  if (standing === 'waived') {
+    const condition = appliesWhenOf(rule) ?? { setting: '', not: false, value: '' };
     const domain = index.byId.get(domainId);
     const followers = [...(followed.byDomain && domain ? [domain] : []), ...useCases];
-    if (!followers.some((f) => meetsAppliesWhen(condition, given(f)))) {
-      const values = new Map<string, string>();
-      for (const f of followers) {
-        const g = given(f);
-        const value = g?.value?.trim() ?? '';
-        if (value !== '' && notApplicableReason(g) === null && !values.has(value.toLowerCase())) values.set(value.toLowerCase(), value);
-      }
-      return { applies: false, why: 'waived', condition, given: [...values.values()] };
+    const values = new Map<string, string>();
+    for (const f of followers) {
+      const g = settingValue(index, f.id, pattern, condition.setting);
+      const value = g?.value?.trim() ?? '';
+      if (value !== '' && notApplicableReason(g) === null && !values.has(value.toLowerCase())) values.set(value.toLowerCase(), value);
     }
+    return { applies: false, why: 'waived', condition, given: [...values.values()] };
   }
   const notAutomatedBy = (index.children.get(rule.id) ?? [])
     .filter((t) => t.kind === 'pattern_rule_test' && textOf(t.row, 'domain_id') === domainId && textOf(t.row, 'state') === 'not automated yet')

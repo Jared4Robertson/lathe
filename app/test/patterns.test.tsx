@@ -1,15 +1,13 @@
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import path from 'node:path';
 import { fireEvent, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { loadWorkspace } from '../../lathe/src/index';
 import type { SpecData } from '../../lathe/src/server/contract';
 import { textOf } from '../src/specs/data';
-import { followingDomains, notApplicableReason, patternsFollowedBy, ruleStatus, settingValue, settingsOf } from '../src/specs/patterns';
-import { patternWorkspace } from './fixtures/patterns';
+import { followingDomains, notApplicableReason, patternsFollowedBy, ruleStatus, rulesOf, settingValue, settingsOf } from '../src/specs/patterns';
+import { owingDomains } from '../src/specs/trace';
+import { expectStandingsAsEngine, servedByEngine } from './fixtures/engine';
+import { patternWorkspace, withStandings } from './fixtures/patterns';
 import { openApp, section } from './helpers';
-import { addRows, fixture, indexOf, removeRows } from './fixtures/load';
+import { addRows, indexOf, removeRows } from './fixtures/load';
 
 // Patterns in the app: the domain page's "Patterns we follow", a pattern's page and a pattern
 // rule's page, from a workspace where two domains follow one pattern: DM-SHOP itself and through
@@ -23,16 +21,28 @@ function twoDomains(): SpecData {
     { follower_id: 'DM-PAY-UC01', pattern_id: 'DM-PAT-AUDIT', setting: 'retention', not_applicable: 'Payments keep no records' },
     { follower_id: 'DM-PAY-UC01', pattern_id: 'DM-PAT-AUDIT', setting: 'who', value: 'Shopper' },
   );
-  return addRows(ws, 'pattern_rule_test', {
+  addRows(ws, 'pattern_rule_test', {
     id: 'DM-PAT-AUDIT-R01-T02', title: 'A payment is recorded', pattern_rule_id: 'DM-PAT-AUDIT-R01', domain_id: 'DM-PAY', level: 'api', state: 'not automated yet',
   });
+  return withStandings(ws, 'DM-PAY', { R01: 'owed', R02: 'not-applicable', R03: 'waived' });
+}
+
+/** Paying follows the pattern itself, not through a use case. */
+function payItself(): SpecData {
+  const ws = twoDomains();
+  removeRows(ws, 'follows', (l) => l.source_id === 'DM-PAY-UC01');
+  removeRows(ws, 'setting_value', (v) => v.follower_id === 'DM-PAY-UC01');
+  addRows(ws, 'follows', { source_id: 'DM-PAY', target_id: 'DM-PAT-AUDIT' });
+  return withStandings(ws, 'DM-PAY', { R01: 'owed', R02: 'owed', R03: 'waived' });
 }
 
 const index = () => indexOf(twoDomains());
 const rowOf = (scope: HTMLElement, id: string) => within(scope).getByRole('link', { name: new RegExp(`^${id}(?!-)`) }).closest('.record-row') as HTMLElement;
 
 describe('pattern logic', () => {
-  it('LA-V91-R54-T01 A domain follows the patterns it or its use cases follow, and a pattern lists its following domains', () => {
+  it('LA-V91-R54-T01 A domain follows the patterns it or its use cases follow, and a pattern lists its following domains', async () => {
+    // The hand-written standings of these workspaces are the engine's.
+    for (const ws of [patternWorkspace(), twoDomains(), payItself()]) await expectStandingsAsEngine(ws);
     const ix = index();
     expect(patternsFollowedBy(ix, 'DM-SHOP').map((f) => [f.pattern.id, f.byDomain, f.useCases.map((u) => u.id)])).toEqual([['DM-PAT-AUDIT', true, ['DM-SHOP-UC01']]]);
     expect(patternsFollowedBy(ix, 'NF-NOTE')).toEqual([]);
@@ -115,11 +125,7 @@ describe('Patterns we follow, on the domain page', () => {
   });
 
   it('LA-V91-R54-T05 A pattern the domain itself follows is listed, followed by the whole domain, and every rule applies', async () => {
-    const ws = twoDomains();
-    // Paying follows the pattern itself, not through a use case.
-    removeRows(ws, 'follows', (l) => l.source_id === 'DM-PAY-UC01');
-    removeRows(ws, 'setting_value', (v) => v.follower_id === 'DM-PAY-UC01');
-    addRows(ws, 'follows', { source_id: 'DM-PAY', target_id: 'DM-PAT-AUDIT' });
+    const ws = payItself();
     const ix = indexOf(ws);
     expect(patternsFollowedBy(ix, 'DM-PAY').map((f) => [f.pattern.id, f.byDomain, f.useCases.length])).toEqual([['DM-PAT-AUDIT', true, 0]]);
     // A rule with a setting still applies: no use case of the domain can mark it not applicable.
@@ -131,13 +137,8 @@ describe('Patterns we follow, on the domain page', () => {
   });
 
   it('LA-V91-R54-T06 A rule whose pattern rule test names a file that does not exist is not proved, as coverage says', async () => {
-    // The patterns fixture through the real engine, in a product folder with no code files: DM-PAT-AUDIT-R01-T01 is
+    // The patterns workspace through the real engine, in a product folder with no code files: DM-PAT-AUDIT-R01-T01 is
     // automated and run by test/audit.test.ts, which does not exist there, so it proves nothing.
-    const root = await mkdtemp(path.join(tmpdir(), 'lathe-patterns-'));
-    const served = async (): Promise<SpecData> => {
-      const ws = await loadWorkspace(root, { dataDir: path.join(import.meta.dirname, 'fixtures/data/patterns'), latheDataDir: null });
-      return fixture('patterns', { problems: ws.problems, exceptions: ws.exceptions, coverage: ws.coverage });
-    };
     const rule = async (data: SpecData) => {
       await openApp('/DM-SHOP', { data });
       await screen.findByRole('heading', { level: 1, name: 'Shopping' });
@@ -147,22 +148,42 @@ describe('Patterns we follow, on the domain page', () => {
       if (expand) fireEvent.click(expand);
       return within(rowOf(patterns, 'DM-PAT-AUDIT-R01')).getByText(/proved$/);
     };
-    try {
-      const missing = await served();
-      const shop = missing.coverage.find((c) => c.domain === 'DM-SHOP')!;
-      expect(shop.proved_by['DM-PAT-AUDIT-R01']).toBeUndefined();
-      expect(shop.gaps).toContainEqual(expect.objectContaining({ id: 'DM-PAT-AUDIT-R01', missing: 'proved' }));
-      expect(await rule(missing)).toHaveTextContent('not proved');
-      expect(within(section(/^Coverage/).querySelector('[data-kind="pattern_rule"]') as HTMLElement).getByRole('img', { name: /^proved: 0 of / })).toBeInTheDocument();
+    const missing = await servedByEngine(patternWorkspace());
+    const shop = missing.coverage.find((c) => c.domain === 'DM-SHOP')!;
+    expect(shop.proved_by['DM-PAT-AUDIT-R01']).toBeUndefined();
+    expect(shop.gaps).toContainEqual(expect.objectContaining({ id: 'DM-PAT-AUDIT-R01', missing: 'proved' }));
+    expect(await rule(missing)).toHaveTextContent('not proved');
+    expect(within(section(/^Coverage/).querySelector('[data-kind="pattern_rule"]') as HTMLElement).getByRole('img', { name: /^proved: 0 of / })).toBeInTheDocument();
 
-      // Once the file exists and names the test, coverage and the list both say proved.
-      await mkdir(path.join(root, 'test'));
-      await writeFile(path.join(root, 'test/audit.test.ts'), "it('DM-PAT-AUDIT-R01-T01 Adding an item is recorded', () => {});\n");
-      const backed = await served();
-      expect(backed.coverage.find((c) => c.domain === 'DM-SHOP')!.proved_by['DM-PAT-AUDIT-R01']).toEqual(['DM-PAT-AUDIT-R01-T01']);
-      expect(await rule(backed)).toHaveTextContent(/^proved$/);
-    } finally {
-      await rm(root, { recursive: true, force: true });
+    // Once the file exists and names the test, coverage and the list both say proved.
+    const backed = await servedByEngine(patternWorkspace(), { 'test/audit.test.ts': "it('DM-PAT-AUDIT-R01-T01 Adding an item is recorded', () => {});\n" });
+    expect(backed.coverage.find((c) => c.domain === 'DM-SHOP')!.proved_by['DM-PAT-AUDIT-R01']).toEqual(['DM-PAT-AUDIT-R01-T01']);
+    expect(await rule(backed)).toHaveTextContent(/^proved$/);
+  });
+
+  it('LA-V91-R54-T07 Whether a rule applies in a domain is the engine\'s answer, on every page that shows it', async () => {
+    // Each workspace through the real engine: owed, not applicable through a use case's setting, waived by an
+    // applies-when condition, and a domain that follows the pattern itself.
+    const marks = { owed: /proved$/, 'not-applicable': /^not applicable$/, waived: /^Waived here/ };
+    for (const ws of [twoDomains(), payItself()]) {
+      const data = await servedByEngine(ws);
+      const ix = indexOf(data);
+      for (const followed of followingDomains(ix, 'DM-PAT-AUDIT')) {
+        const standings = ix.coverage.get(followed.domain)!.pattern_rules;
+        await openApp(`/${followed.domain}`, { data });
+        await screen.findByRole('heading', { level: 1, name: ix.byId.get(followed.domain)!.title });
+        const patterns = section(/^Patterns we follow/);
+        const expand = within(patterns).queryByRole('button', { name: `Expand ${followed.domain}:DM-PAT-AUDIT` });
+        if (expand) fireEvent.click(expand);
+        for (const rule of rulesOf(ix, 'DM-PAT-AUDIT')) {
+          const standing = standings[rule.id];
+          expect(standing, `${rule.id} in ${followed.domain}`).toBeDefined();
+          const status = ruleStatus(ix, rule, followed.domain, followed);
+          expect(status.applies ? 'owed' : status.why).toBe(standing);
+          expect(owingDomains(ix, rule).includes(followed.domain)).toBe(standing === 'owed');
+          expect(within(rowOf(patterns, rule.id)).getAllByText(marks[standing]).length).toBeGreaterThan(0);
+        }
+      }
     }
   });
 

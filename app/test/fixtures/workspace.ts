@@ -26,6 +26,7 @@ const shopCoverage = (): Coverage => ({
   ],
   tests: { automated: 1, manual: 0, not_automated: 1 },
   proved_by: { 'DM-SHOP-UC01-R01': ['DM-SHOP-UC01-R01-T01'] },
+  pattern_rules: {},
   gaps: [
     gap('DM-SHOP-INV01', 'invariant', 'built'),
     gap('DM-SHOP-INV01', 'invariant', 'proved'),
@@ -43,6 +44,7 @@ const payCoverage = (): Coverage => ({
   ],
   tests: { automated: 0, manual: 0, not_automated: 0 },
   proved_by: {},
+  pattern_rules: {},
   gaps: [
     gap('DM-PAY-UC01-R01', 'uc_requirement', 'designed'),
     gap('DM-PAY-UC01-R01', 'uc_requirement', 'proved'),
@@ -59,6 +61,7 @@ const dmCoverage = (): Coverage => ({
   ],
   tests: { automated: 0, manual: 0, not_automated: 0 },
   proved_by: {},
+  pattern_rules: {},
   gaps: [
     gap('DM-VO01-C01', 'constraint', 'designed'),
     gap('DM-VO01-C01', 'constraint', 'proved'),
@@ -76,6 +79,7 @@ const noteCoverage = (): Coverage => ({
   ],
   tests: { automated: 0, manual: 0, not_automated: 0 },
   proved_by: {},
+  pattern_rules: {},
   gaps: [],
 });
 

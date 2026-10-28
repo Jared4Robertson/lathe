@@ -14,6 +14,6 @@
 {"id":"LA-TRC-RM01-PJ","title":"COVERAGE_VIEWS_SQL","read_model_id":"LA-TRC-RM01","file":"lathe/src/coverage.ts","description":"COVERAGE_VIEWS_SQL: obligation_kind, coverage_owed, coverage_proof, coverage_item, coverage_count; pattern rules counted for proof alone"}
 {"id":"LA-TRC-RM02-PJ","title":"the coverage_gap view","read_model_id":"LA-TRC-RM02","file":"lathe/src/coverage.ts","description":"the coverage_gap view"}
 {"id":"LA-TRC-RM03-PJ","title":"the coverage_tests view","read_model_id":"LA-TRC-RM03","file":"lathe/src/coverage.ts","description":"the coverage_tests view"}
-{"id":"LA-TRC-RM04-PJ","title":"the owed_pattern_rules view","read_model_id":"LA-TRC-RM04","file":"lathe/src/coverage.ts","description":"the owed_pattern_rules view"}
+{"id":"LA-TRC-RM04-PJ","title":"the pattern_rule_standing table","read_model_id":"LA-TRC-RM04","file":"lathe/src/coverage.ts","description":"the pattern_rule_standing table and the owed_pattern_rules view over it"}
 {"id":"LA-TRC-RM05-PJ","title":"gatherFileFacts","read_model_id":"LA-TRC-RM05","file":"lathe/src/index.ts","description":"gatherFileFacts"}
 {"id":"LA-TRC-RM06-PJ","title":"traceOf","read_model_id":"LA-TRC-RM06","file":"app/src/specs/trace.ts","description":"traceOf, designersOf, buildersOf and notAutomatedTestsOf: what designs, builds and proves the record, by group, from the space's index; what proves it in a domain is the tests coverage counts as its proof there."}
