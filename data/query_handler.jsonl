@@ -30,3 +30,4 @@
 {"id":"LA-TRC-QRY04-H","title":"patternsFollowedBy","query_id":"LA-TRC-QRY04","file":"app/src/specs/patterns.ts","description":"patternsFollowedBy, followingDomains, ruleStatus"}
 {"id":"LA-TRC-QRY05-H","title":"traceOf","query_id":"LA-TRC-QRY05","file":"app/src/specs/trace.ts","description":"traceOf, judge, owingDomains, isBuilt"}
 {"id":"LA-TRC-QRY06-H","title":"traceChain","query_id":"LA-TRC-QRY06","file":"app/src/graph/model.ts","description":"traceChain"}
+{"id":"LA-TRC-QRY07-H","title":"the file checks","query_id":"LA-TRC-QRY07","file":"lathe/data/check.jsonl","description":"The test-file-missing, test-file-missing-id, manual-test-file-silent and technical-file-missing checks, each a query of file_facts."}

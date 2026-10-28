@@ -1,0 +1,1 @@
+{"id":"TL-LEND-RM01-PJ","title":"ToolService.entry","read_model_id":"TL-LEND-RM01","file":"src/tool-service.ts","description":"Builds each tool's catalog entry from its row and its active loan, with its status from toolStatus."}

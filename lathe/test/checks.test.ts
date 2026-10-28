@@ -289,11 +289,14 @@ check('event-not-by-outbox', () => {
     ]);
   });
 
-  it('LA-CHK-UC04-R13-T01 an event a policy hears whose aggregate is stored in no table, such as one inside a browser tab, is exempt', async () => {
+  it('LA-CHK-UC04-R13-T01 an event a policy hears whose aggregate is in no database table, such as one kept in browser storage, a file or in memory, is exempt', async () => {
     let data = changing(complete(), 'event_type', (r) => r.id === 'EX-LEND-EV01-ET', { delivery: 'in process' });
-    data = without(data, 'table_key', (r) => r.table_id === 'EX-LEND-EN01-TB');
-    data = without(data, 'table', (r) => r.id === 'EX-LEND-EN01-TB');
-    expect(ofCheck(await loadData(data), 'event-not-by-outbox')).toEqual([]);
+    data = without(data, 'table_key', (r) => r.table_id === 'EX-LEND-EN01-TB' || r.target_table_id === 'EX-LEND-EN01-TB');
+    expect(ofCheck(await loadData(without(data, 'table', (r) => r.id === 'EX-LEND-EN01-TB')), 'event-not-by-outbox')).toEqual([]);
+    for (const storage of ['browser storage', 'file', 'in memory']) {
+      const kept = changing(data, 'table', (r) => r.id === 'EX-LEND-EN01-TB', { storage });
+      expect(ofCheck(await loadData(kept), 'event-not-by-outbox'), storage).toEqual([]);
+    }
   });
 });
 

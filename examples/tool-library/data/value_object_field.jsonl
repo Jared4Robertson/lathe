@@ -1,0 +1,4 @@
+{"value_object_id":"TL-VO01","position":1,"name":"Name","meaning":"The name as given, trimmed of surrounding spaces; never blank.","type":"text","required":true,"example":"Cordless drill"}
+{"value_object_id":"TL-VO02","position":1,"name":"Address","meaning":"The address, trimmed and in lower case.","type":"text","required":true,"example":"ana@example.org"}
+{"value_object_id":"TL-VO03","position":1,"name":"Condition","meaning":"`good` or `needs_repair`.","type":"text","required":true,"example":"needs_repair"}
+{"value_object_id":"TL-VO04","position":1,"name":"Text","meaning":"What was written, trimmed; never blank.","type":"text","required":true,"example":"Chuck wobbles"}
