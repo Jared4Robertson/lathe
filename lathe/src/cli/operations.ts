@@ -6,6 +6,7 @@ import path from 'node:path';
 import { exceptionsText, loadWorkspace, type RecordedException } from '../index.ts';
 import { describeKey, rowKey, rowLine, type Row, type Value } from '../store/rows.ts';
 import { sqlString, type KindDescription, type SchemaDescription, type TableDescription } from '../store/schema.ts';
+import { SchemaVersionError } from '../config.ts';
 import { openStore, StoreError, type Command, type Store, type StoreProblem } from '../store/store.ts';
 
 /** One row a write added, changed or removed. */
@@ -76,7 +77,9 @@ export async function readSchema(root: string): Promise<SchemaDescription> {
   let store: Store;
   try {
     store = await openStore(root);
-  } catch {
+  } catch (error) {
+    // Data for another schema version is not read at all.
+    if (error instanceof SchemaVersionError) throw error;
     // A data folder that does not exist loads as empty data, with Lathe's schema.
     store = await openStore(root, { dataDir: path.join(root, '.lathe-schema-only') });
   }

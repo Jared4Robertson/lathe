@@ -1,6 +1,6 @@
 # Lathe desktop
 
-Lathe as a desktop app: an Electron shell around the Lathe web app and server. Each window shows one product folder (a folder with `lathe.config.json` or a `data/` folder of the product's data files), served by Lathe's own `serve()` on a free local port: the same server, reading and writing the data through the store, as `lathe serve` and the app's dev server. Its specification is part of the Platform domain (`LA-PLT`) in Lathe's own data.
+Lathe as a desktop app: an Electron shell around the Lathe web app and server. Each window shows one product folder (a folder with `lathe.config.json` or a `data/` folder of the product's data files), served by Lathe's own `serve()` on a free local port, from the product's own installed Lathe (`node_modules/@jaredrob/lathe`, built) when it has one and the app's bundled copy otherwise, so a product is read by the Lathe its data was written for (About names which, as "Opened with"): the same server, reading and writing the data through the store, as `lathe serve` and the app's dev server. Its specification is part of the Platform domain (`LA-PLT`) in Lathe's own data.
 
 ## Run it
 

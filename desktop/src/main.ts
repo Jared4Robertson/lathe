@@ -7,7 +7,7 @@
 // (LATHE_DESKTOP_DEV=1) loads the app's Vite dev server instead, so app changes hot-reload.
 import { app, BrowserWindow, clipboard, dialog, ipcMain, Menu, nativeImage, nativeTheme, screen, session, shell, systemPreferences, WebContentsView, type MenuItemConstructorOptions, type WebContents } from 'electron';
 import { execFile } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { applyChrome, chromeWindowOptions, parseSavedChrome, startChrome, type Chrome, type SavedChrome } from './chrome.ts';
@@ -20,7 +20,7 @@ import { aboutModel, errorModel, launchModel, launchStep, modelQuery, parseLocal
 import { menuTemplate } from './menu.ts';
 import { optOutOfWindowRestoration } from './persistence.ts';
 import { DataFiles, parseRecordRequest, recordMenuTemplate } from './records.ts';
-import { serveModulePath, settleWithin, startDev, startServe, type AppServer } from './servers.ts';
+import { latheFor, latheLabel, packageVersion, serveModulePath, settleWithin, startDev, startServe, type AppServer } from './servers.ts';
 import { reloadInProgress, runSmoke, smokeFile, writeSmoke, type SmokeResult } from './smoke.ts';
 import { readJson, writeJson } from './store.ts';
 import { MIN_SIZE, parseWindowStates, saveWindow, windowFor, type WindowStates } from './windowState.ts';
@@ -62,6 +62,8 @@ interface Entry {
   product: string;
   win: BrowserWindow;
   server?: AppServer;
+  /** Which Lathe the window's server runs, as About says it: the product's own, the bundled copy, or the source. */
+  lathe?: string;
   chrome?: Chrome;
   /** The launch view or error page over the app's page, while it shows. */
   overlay?: { view: WebContentsView; model: LaunchModel };
@@ -279,14 +281,22 @@ async function specError(entry: Entry): Promise<string> {
 async function startApp(entry: Entry): Promise<void> {
   if (!entry.server) {
     try {
-      entry.server = DEV ? await startDev(REPO_ROOT, entry.folder, log) : await startServe(serveModulePath(REPO_ROOT, app.isPackaged ? { resourcesPath: process.resourcesPath } : null), entry.folder);
+      if (DEV) {
+        entry.server = await startDev(REPO_ROOT, entry.folder, log);
+        entry.lathe = 'Lathe from source';
+      } else {
+        // The product's own installed Lathe when it has one, else the app's bundled copy.
+        const lathe = latheFor(entry.folder, bundledServe());
+        entry.server = await startServe(lathe.modulePath, entry.folder);
+        entry.lathe = latheLabel(lathe);
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       if (SMOKE) return fail(message);
       return showError(entry, message);
     }
     if (entry.win.isDestroyed()) return stopServer(entry.server);
-    log(`Lathe: ${entry.folder} from ${entry.server.label} at ${entry.server.url}`);
+    log(`Lathe: ${entry.folder} from ${entry.server.label} (${entry.lathe}) at ${entry.server.url}`);
     keepLinksOutside(entry.win, entry.server.url);
   }
   const url = entry.server.url;
@@ -473,16 +483,8 @@ function updateBadge() {
   app.dock.setBadge(badgeFor(counts, focused && counts.has(focused.id) ? focused.id : null, lastFocused));
 }
 
-/** The engine's version, from the package serve() comes from. */
-function engineVersion(): string | null {
-  const serve = serveModulePath(REPO_ROOT, app.isPackaged ? { resourcesPath: process.resourcesPath } : null);
-  try {
-    const pkg = JSON.parse(readFileSync(path.resolve(path.dirname(serve), '..', '..', '..', 'package.json'), 'utf8')) as { version?: unknown };
-    return typeof pkg.version === 'string' ? pkg.version : null;
-  } catch {
-    return null;
-  }
-}
+/** The app's own copy of Lathe's serve(): packed inside the app, or this repo's lathe/dist. */
+const bundledServe = () => serveModulePath(REPO_ROOT, app.isPackaged ? { resourcesPath: process.resourcesPath } : null);
 
 function showAbout() {
   if (about && !about.win.isDestroyed()) {
@@ -491,10 +493,13 @@ function showAbout() {
     return;
   }
   const colors = startChrome(savedChrome, dark());
-  const model = aboutModel({ app: app.getVersion(), engine: engineVersion(), electron: process.versions.electron, chrome: process.versions.chrome, node: process.versions.node }, colors);
+  const front = focusedProductWindow();
+  const product = [...open.values()].find((e) => e.win === front);
+  const versions = { app: app.getVersion(), engine: packageVersion(bundledServe()), electron: process.versions.electron, chrome: process.versions.chrome, node: process.versions.node };
+  const model = aboutModel(versions, colors, product?.lathe ? { lathe: product.lathe } : null);
   const win = new BrowserWindow({
     width: 300,
-    height: 330,
+    height: 350,
     resizable: false,
     minimizable: false,
     maximizable: false,
