@@ -16,7 +16,7 @@ capabilities, their use cases, the code and the tests.
 
 **Words.** What clean architecture calls a use case or an interactor is what Lathe calls a command handler
 (`command_handler`): the application service that carries out one command. A Lathe use case (`use_case`) is the
-actor's goal, one level up: its flow's steps invoke commands and queries.
+actor's goal, one level up: its flows' steps, one flow per interface it happens through, invoke commands and queries.
 
 **Checks** are rows of the `check` table. Each holds the query that finds its problems: a SELECT over the tables
 returning `severity`, `record` and `message` for each problem. An error means the data is broken; a warning is

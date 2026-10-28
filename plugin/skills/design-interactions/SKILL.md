@@ -1,11 +1,11 @@
 ---
 name: design-interactions
-description: Write or change a Lathe product's interaction design - each use case's one flow and its steps (which invoke a command or query, happen in a view, exchange with integrations and fulfill the use case's requirements), the views and their view requirements, the endpoints that expose commands and queries with their API requirements, and integrations. Use when designing how a use case is carried out, its screens, routes, request and response rules, or the outside systems it talks to, in a repo with lathe.config.json.
+description: Write or change a Lathe product's interaction design - the product's interfaces (web app, API, CLI, agent tools, desktop), each use case's flows, one per interface it happens through, and their steps (which invoke a command or query, happen in a view, exchange with integrations and fulfill the use case's requirements), the views and their view requirements, the endpoints that expose commands and queries with their API requirements, and integrations. Use when designing how a use case is carried out, its screens, routes, request and response rules, or the outside systems it talks to, in a repo with lathe.config.json.
 ---
 
 # Design interactions
 
-The interaction design says how each use case is carried out: the steps a person or a client takes (the flow), the screens they happen in (views), the HTTP endpoints that expose the domain's commands and queries, the outside systems the product exchanges with (integrations), and the rules each view and endpoint must follow. Write it after the domain model (`model-a-domain`) and the use cases (`write-use-cases`): a step links back to the command or query it invokes and the UC requirements it fulfills.
+The interaction design says how each use case is carried out through each interface it happens through: the product's interfaces, the steps a person or a client takes through one of them (a flow), the screens they happen in (views), the HTTP endpoints that expose the domain's commands and queries, the outside systems the product exchanges with (integrations), and the rules each view and endpoint must follow. Write it after the domain model (`model-a-domain`) and the use cases (`write-use-cases`): a step links back to the command or query it invokes and the UC requirements it fulfills.
 
 ## How you write
 
@@ -17,13 +17,14 @@ The spec is typed data in the repo's `data/` folder, one table per kind. Change 
 ## Before you write
 
 1. `show` the use case and its UC requirements, and the commands and queries its steps will invoke, with their events and specifications.
-2. `list` the product's views and integrations (`parent`: the product) and the domain's endpoints (`list` `endpoint` with a command or query as `parent`) before adding one: views and integrations are shared by every flow that uses them.
+2. `list` the product's interfaces, views and integrations (`parent`: the product) and the domain's endpoints (`list` `endpoint` with a command or query as `parent`) before adding one: views and integrations are shared by every flow that uses them.
 
 ## The records
 
 | Kind | Parent | ID | Holds |
 | --- | --- | --- | --- |
-| `flow` | its use case (exactly one) | `<use case>-FL` | `description`: how the use case is carried out. |
+| `interface` | the product | `<P>-IF<nn>` | A way the product is used, such as Web app, HTTP API, CLI, MCP tools or Desktop app. `kind`: `web app`, `API`, `CLI`, `agent tools`, `desktop` or `other`; `description`. |
+| `flow` | its use case | `<use case>-FL<nn>`, `<nn>` its interface's number | `interface_id`: the interface it goes through, at most one flow per use case and interface; `description`: how the use case is carried out through it. |
 | `flow_step` | the flow | `<flow>-S<nn>` | `path` (such as `main` or `refused`), `position` on that path, from 1; `description`. Links: `invokes` at most one command or query, `happens_in` at most one view, `exchanges_with` integrations, `fulfills` UC requirements of its own use case. |
 | `view` | none | `<P>-V<nn>` | A screen or page. `route`, `description`, `notes`. |
 | `view_requirement` | the view | `<view>-R<nn>` | `statement`: one rule the view must follow. |
@@ -31,13 +32,20 @@ The spec is typed data in the repo's `data/` folder, one table per kind. Change 
 | `api_requirement` | the endpoint | `<endpoint>-R<nn>` | `statement`: one rule the endpoint must follow. |
 | `integration` | none | `<P>-INT<nn>` | An outside system, such as a mail service. `system`: its name; `description`. |
 
+## Interfaces
+
+- Declare each interface the product offers once, under the product: its web app, its HTTP API, its command line, its tools for agents, its desktop app. Its `kind` says what a flow's steps go through: views (`web app`, `desktop`), endpoints (`API`), commands and queries run directly (`CLI`, `agent tools`), or anything (`other`).
+- An interface no flow goes through is a gap: either a use case happens through it, or it is not an interface yet.
+
 ## Flows and steps
 
-- **One flow per use case,** belonging only to it; `next_id` gives its one ID. Alternate courses are paths within the flow, not other flows.
+- **One flow per interface a use case happens through,** each belonging only to its use case. Its ID is the use case's ID, `FL` and the interface's number: `TL-LEND-UC04-FL01` goes through `TL-IF01`, and the store refuses any other. `next_id` with the use case as `parent` gives the flow through the first interface it has none through yet. Alternate courses are paths within a flow, not other flows.
+- **Every UC requirement is fulfilled in every flow of its use case:** a requirement one flow misses is not designed. A rule only one interface can meet (a disabled button, a status code) is a view or API requirement instead.
+- **Steps fit their interface.** A web app or desktop flow's steps happen in views. An API flow's steps invoke the command or query an endpoint exposes (one no endpoint exposes is warned of, `step-without-endpoint`). A CLI or agent tools flow's steps invoke the command or query the CLI command or tool runs. A step of an API, CLI or agent tools flow happens in no view: the store refuses it.
 - One `flow_step` per step. Its `path` and `position` place it: every path is numbered 1, 2, 3 on its own, and two steps in one place are refused. A flow with one course gives every step `path: "main"`; a refusal or an alternate course is its own path, such as `refused`.
 - A step `invokes` at most one command or query: the domain operation it carries out. A step that only shows a result invokes nothing. Steps reach endpoints through their command or query, never directly.
 - A step `happens_in` at most one view, and `exchanges_with` each integration it talks to.
-- A step `fulfills` the UC requirements it carries out, and only requirements of its own use case (the store refuses another's). Every UC requirement needs at least one step that fulfills it; one that has none is a gap.
+- A step `fulfills` the UC requirements it carries out, and only requirements of its own use case (the store refuses another's). Every UC requirement needs a step that fulfills it in each flow of its use case; one a flow misses is a gap.
 
 ## Views and view requirements
 
@@ -56,10 +64,17 @@ An outside system the product exchanges with is an `integration`, with `system` 
 
 ## Example: the Tool Library
 
-The Return a tool flow: the librarian records the return (which invokes the command), a refused return, and the result. The Tool Library is an HTTP API with no UI, so it has no views and its steps happen in none; a product with a UI adds a `view` and links each step to it with `happens_in`.
+The Tool Library has one interface, its HTTP API, so each use case has one flow, through it, and its steps happen in no view; a product with a web app adds that interface, a second flow through it and a `view` each of its steps happens in.
 
 ```
-add  { "flow": { "id": "TL-LEND-UC04-FL01", "title": "Return a tool", "use_case_id": "TL-LEND-UC04",
+add  { "interface": { "id": "TL-IF01", "title": "HTTP API", "product_id": "TL", "kind": "API",
+       "description": "The library's JSON API over HTTP, the only way into it." } }
+```
+
+The Return a tool flow through it: the librarian records the return (which invokes the command an endpoint exposes), a refused return, and the result.
+
+```
+add  { "flow": { "id": "TL-LEND-UC04-FL01", "title": "Return a tool", "use_case_id": "TL-LEND-UC04", "interface_id": "TL-IF01",
        "description": "How a librarian takes a tool back and closes its loan." } }
 add  { "flow_step": { "id": "TL-LEND-UC04-FL01-S02", "title": "The librarian records the condition and, optionally, a note",
        "flow_id": "TL-LEND-UC04-FL01", "path": "main", "position": 2 } }
