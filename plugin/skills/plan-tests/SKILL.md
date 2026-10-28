@@ -68,6 +68,10 @@ it('TL-LEND-INV01-T A second member with the same email is rejected, whatever it
 
 When one test in code proves two records, split it into one test per record, each named with its own ID. IDs are matched whole: `TL-LEND-INV01-T` is not found in `TL-LEND-INV01-T2`.
 
+The other way round, every test case in the product's test files names a test record whose `file` is that file, or `lathe check` reports it (`test-case-unnamed`, an error). The test files are those matching the `tests` globs of `lathe.config.json` (by default `**/*.test.{ts,tsx,js,mjs}` and `**/*.spec.{ts,tsx,js}`; never node_modules, dist or another product's folder) and every file a test record names. The check reads code as text: a test case is a call of `it` or `test` (with `.only`, `.skip`, `.todo`, `.fails`, `.concurrent`, `.skipIf(…)`, `.runIf(…)`, `.each(…)` and the like) whose name is a string or template literal, and it inherits the names of the `describe` (or `test.describe`) calls around it. So the ID may sit in the test's own name, in a describe around several tests that prove one record, or in the rows of `it.each(['TL-LEND-UC01-R01-T01', 'TL-LEND-UC01-R01-T02'])('%s …')`. A name that is not a literal, and a test made by a helper function, are not recognized; tests inside strings and comments are not test cases.
+
+For a test case the check reports: link it to the record it proves (add that test record, with this file and the level the test runs at, when the spec lacks it, and the requirement when the test proves something real the spec does not say), or delete it when it proves nothing. Shared setup and helper files with no test cases are fine.
+
 ## Automated, manual or not automated yet
 
 Write the test with its record when you can. Use `not automated yet` (no `file`) when the code it tests is not written, or the test needs something not in place yet, such as a browser runner; say in `given`, `when` and `then` what it will check, and in `notes` why it waits. When it is written, `set` its `state` to `automated` and its `file` in one write. Use `manual` only for what code cannot sensibly check, such as a smoke test of the README's steps, with the reason.

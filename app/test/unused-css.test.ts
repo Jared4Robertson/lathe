@@ -58,7 +58,7 @@ const used = (name: string) =>
   tokens.has(name) ||
   prefixes.some((p) => name.startsWith(p) && name.length > p.length && (strings.has(name.slice(p.length)) || /^\d+$/.test(name.slice(p.length))));
 
-describe('unused CSS', () => {
+describe('LA-STD-PRINCIPLES-R04-T04 unused CSS', () => {
   it('Every class selector in the app stylesheets is used in app/src', () => {
     const unused = stylesheets.flatMap(classSelectors).filter((s) => !used(s.name));
     const named = new Map<string, string>();

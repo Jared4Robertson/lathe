@@ -1,11 +1,12 @@
 // The Lathe engine: loads a product's data/ folder through the store into the typed tables, runs the checks (rows of
 // the check table, Lathe's and the product's) against them, and computes coverage from views over them.
-import { existsSync, readdirSync, statSync } from 'node:fs';
-import { readFile, stat } from 'node:fs/promises';
+import { existsSync, readdirSync, statSync, type Dirent } from 'node:fs';
+import { glob, readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import type { DuckDBConnection } from '@duckdb/node-api';
 import { COVERAGE_COUNTS_SQL, COVERAGE_GAPS_SQL, COVERAGE_PROOFS_SQL, COVERAGE_TESTS_SQL, PATTERN_RULE_STANDING_SQL, coverageViewsSql, FACT_TABLES_SQL, TEST_KINDS } from './coverage.ts';
-import { loadConfig, type LatheConfig } from './config.ts';
+import { CONFIG_FILE, loadConfig, type LatheConfig } from './config.ts';
+import { readTestCases } from './trace/test-cases.ts';
 import { isTraced, normalizePath, sourceFiles } from './trace/source-files.ts';
 import { orderChecks, referenceOf, type Reference } from './reference.ts';
 import { formatProblem, openStore, Store, StoreError, LATHE_DATA_DIR, type StoreOptions } from './store/store.ts';
@@ -58,6 +59,8 @@ interface FileFact {
   record: string;
   kind: string;
   file: string;
+  /** The file as a path from the product root with forward slashes; null when it lies outside the root. */
+  path: string | null;
   file_exists: boolean;
   /** Whether the file names the record's own ID as a whole ID; false when it is missing or a folder. */
   contains_id: boolean;
@@ -111,8 +114,39 @@ async function gatherFileFacts(root: string, store: Store): Promise<FileFact[]> 
   return Promise.all(named.map(async ({ kind, id, file }): Promise<FileFact> => {
     const { type, text } = await read(resolveInside(root, file));
     const exists = type === 'file' || (type === 'folder' && !tests.has(kind));
-    return { record: id, kind, file, file_exists: exists, contains_id: type === 'file' && mentionsId(text, id) };
+    const resolved = resolveInside(root, file);
+    return { record: id, kind, file, path: resolved && normalizePath(path.relative(root, resolved)), file_exists: exists, contains_id: type === 'file' && mentionsId(text, id) };
   }));
+}
+
+/** A test case in a test file, as test-case-unnamed reads it (test_case, with the IDs it names in test_case_id). */
+interface TestCaseFact {
+  file: string;
+  /** Its place among the file's test cases, from 1. */
+  position: number;
+  line: number;
+  name: string;
+  ids: string[];
+}
+
+// The test cases in the product's test files: the files matching the config's test globs (never in node_modules,
+// dist, a dot-folder or another product's folder, one with its own lathe.config.json) and the files test records
+// name, read as text (test-cases.ts says what is recognized).
+async function gatherTestCases(root: string, globs: readonly string[], facts: FileFact[]): Promise<TestCaseFact[]> {
+  const skip = (entry: Dirent) =>
+    entry.isDirectory() && (entry.name === 'node_modules' || entry.name === 'dist' || entry.name.startsWith('.') || existsSync(path.join(entry.parentPath, entry.name, CONFIG_FILE)));
+  const files = new Set<string>();
+  for await (const entry of glob([...globs], { cwd: root, exclude: skip, withFileTypes: true })) {
+    if (entry.isFile()) files.add(normalizePath(path.relative(root, path.join(entry.parentPath, entry.name))));
+  }
+  const tests = new Set(TEST_KINDS);
+  for (const f of facts) if (f.path !== null && f.file_exists && tests.has(f.kind)) files.add(f.path);
+  const read = await Promise.all([...files].sort().map(async (file) => {
+    const resolved = path.join(root, file);
+    if ((await entry(resolved)) !== 'file') return [];
+    return readTestCases(await readFile(resolved, 'utf8')).map((c, i): TestCaseFact => ({ file, position: i + 1, ...c }));
+  }));
+  return read.flat();
 }
 
 // The product's source files, each with whether a technical record (of a technical-specification kind, Lathe's or the
@@ -130,12 +164,13 @@ async function readRows<T>(connection: DuckDBConnection, sql: string): Promise<T
   return (await connection.runAndReadAll(sql)).getRowObjectsJson() as unknown as T[];
 }
 
-async function append(connection: DuckDBConnection, table: string, rows: (string | boolean | null)[][]) {
+async function append(connection: DuckDBConnection, table: string, rows: (string | number | boolean | null)[][]) {
   const appender = await connection.createAppender(table);
   for (const row of rows) {
     for (const value of row) {
       if (value === null) appender.appendNull();
       else if (typeof value === 'boolean') appender.appendBoolean(value);
+      else if (typeof value === 'number') appender.appendInteger(value);
       else appender.appendVarchar(value);
     }
     appender.endRow();
@@ -339,10 +374,13 @@ export async function readWorkspace(store: Store, config: Pick<LatheConfig, 'roo
     step('source files', () => gatherSourceFiles({ ...config, root: path.resolve(config.root) }, store)),
     step('route facts', () => gatherRouteFacts({ ...config, root: path.resolve(config.root) }, store)),
   ]);
+  const cases = await step('test cases', () => gatherTestCases(path.resolve(config.root), config.tests, facts));
   const connection = store.connection;
   await connection.run(FACT_TABLES_SQL);
-  await append(connection, 'file_facts', facts.map((f) => [f.record, f.kind, f.file, f.file_exists, f.contains_id]));
+  await append(connection, 'file_facts', facts.map((f) => [f.record, f.kind, f.file, f.path, f.file_exists, f.contains_id]));
   await append(connection, 'source_file', sources.map((f) => [f.file, f.traced]));
+  await append(connection, 'test_case', cases.map((c) => [c.file, c.position, c.line, c.name]));
+  await append(connection, 'test_case_id', cases.flatMap((c) => c.ids.map((id) => [c.file, c.position, id])));
   await writeRouteFacts(connection, routes);
   const tableFacts = await step('table facts', () => gatherTableFacts(path.resolve(config.root), store));
   await connection.run(TABLE_FACTS_SQL);

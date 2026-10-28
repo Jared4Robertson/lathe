@@ -38,7 +38,7 @@ Every problem names its check in brackets. `REFERENCE.md` in the Lathe package (
 An error means the spec is broken. Do not leave one behind.
 
 - **Nothing uses it.** A view no step happens in, an integration no step exchanges with, a value object no field is typed by, a specification nothing checks or selects by, a UI component that renders no view. Link what uses it, or remove it.
-- **Files.** An automated test whose file is missing, or does not name the test's ID.
+- **Files.** An automated test whose file is missing, or does not name the test's ID. The other way round, a test case in the code that names no test of its file (`test-case-unnamed`, with the file and line): name it with the ID of the test it proves, adding that test (and the requirement) when the spec lacks it, or delete it when it proves nothing (see `plan-tests`).
 - **A pattern rule test** naming a domain that does not follow the pattern.
 - Fix the record that is wrong, not the one that reports it. Never change a product's own kinds or checks to make an error go away unless the user asked for that (see `extend-the-meta-model`).
 

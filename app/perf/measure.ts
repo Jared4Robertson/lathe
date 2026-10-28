@@ -7,13 +7,12 @@ import { MAX_LOAD } from './budgets';
 //   style, layout, paint, garbage collection), read through the DevTools protocol before and after
 //   a step, so the work is counted whether or not it came in long frames;
 // - the longest frame: the long animation frames (`long-animation-frame`, 50 ms or more) in the step;
-// - memory: the JavaScript heap in use after a garbage collection.
 // A step runs its action, then waits until no long frame has come for 300 ms.
 
 export interface PerfResult {
   name: string;
   value: number;
-  unit: 'ms' | 'KB' | 'MB' | 'frames';
+  unit: 'ms' | 'KB' | 'frames';
   budget: number | null;
   /** 'ok', 'over', 'measured' (no budget) or 'not judged' (the machine was busy). */
   verdict: string;
@@ -104,14 +103,6 @@ export async function work(page: Page, action: () => Promise<unknown>, settle = 
     slowFrames: gaps.filter((g) => g > 20).length,
     frames: gaps.length,
   };
-}
-
-/** The JavaScript heap in use, in MB, after a garbage collection. */
-export async function heapMb(page: Page): Promise<number> {
-  const s = await cdp(page);
-  await s.send('HeapProfiler.collectGarbage');
-  const { metrics } = await s.send('Performance.getMetrics');
-  return (metrics.find((m) => m.name === 'JSHeapUsedSize')?.value ?? 0) / 1024 / 1024;
 }
 
 /** Records one measurement, and holds it to its budget unless the machine is busy. */
