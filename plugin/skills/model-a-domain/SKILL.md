@@ -21,6 +21,8 @@ Ask of each candidate domain:
 
 A candidate that fails these is a layer or a platform concern, not a domain. Give each domain its `subdomain_type`: `core` for the product's edge, `supporting` for what the core needs but is not its edge, `generic` for what is solved the same way everywhere. It guides how much modeling the domain deserves.
 
+Like a domain, each capability inside it (a slice that groups its use cases, written with `write-use-cases`) is named for what it does, as a noun phrase for a lasting ability of the business, such as Invoice management, Member registration or Lending, never an -ing phrase ("Managing invoices"), "The ..." or a screen, tool or technology. Its use cases are named for one goal of their actor, verb first, such as Borrow a tool or Approve an invoice, never for an interface ("Approve an invoice from the web app"). `write-use-cases` has both conventions with examples, and the `title-breaks-convention` check warns of the parts it can read.
+
 ## Principles
 
 Lathe follows four principles (`LA-STD-PRINCIPLES`), and so does a model written with it:

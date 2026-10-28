@@ -6,6 +6,8 @@
 {"source_id":"LA-CHK-EN01-TB","target_id":"LA-STD-CODE-R05"}
 {"source_id":"LA-CHK-RM01-PJ","target_id":"LA-STD-CODE-R03"}
 {"source_id":"LA-CHK-RM01-PJ","target_id":"LA-STD-MODELING-R01"}
+{"source_id":"LA-CHK-RM01-PJ","target_id":"LA-STD-MODELING-R02"}
+{"source_id":"LA-CHK-RM01-PJ","target_id":"LA-STD-MODELING-R03"}
 {"source_id":"LA-EXP-QRY11-H","target_id":"LA-STD-CODE-R03"}
 {"source_id":"LA-INT01-AD","target_id":"LA-STD-PRINCIPLES-R02"}
 {"source_id":"LA-INT03-AD","target_id":"LA-STD-CODE-R03"}

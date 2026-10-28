@@ -109,7 +109,7 @@ test.describe('Traceability flows', () => {
     }
   });
 
-  test('LA-TRC-UC12-FL01-T see the patterns a domain follows and the rules it owes', async ({ page }) => {
+  test('LA-TRC-UC12-FL01-T see the pattern rules a domain owes', async ({ page }) => {
     const spec = await served(page);
     const followed = rowsOf(spec, 'follows').filter((l) => l.source_id === EXP).map((l) => String(l.target_id));
     expect(followed.length).toBeGreaterThan(0);
@@ -158,7 +158,7 @@ test.describe('Traceability flows', () => {
     await expect(page.locator(`${WIKI} .coverage`).last().getByLabel('Tests by state')).toHaveText(`Tests ${testsText(ofDomain(TRC))}`);
   });
 
-  test('LA-TRC-UC14-FL01-T see what designs, builds and proves a record', async ({ page }) => {
+  test('LA-TRC-UC14-FL01-T trace a record', async ({ page }) => {
     const spec = await served(page);
     const steps = rowsOf(spec, 'fulfills').filter((l) => l.target_id === REQUIREMENT).map((l) => String(l.source_id));
     const tests = rowsOf(spec, 'use_case_test').filter((t) => t.uc_requirement_id === REQUIREMENT);
