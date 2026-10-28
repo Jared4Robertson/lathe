@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { addRows, indexOf } from '../fixtures/load';
 import { modelWorkspace } from '../fixtures/model';
+import { gap } from '../fixtures/workspace';
 import { untracedUnder } from '../../src/trace/chain';
 import { allBoxes, BOX_H, tracePicture, visibleIn, type LaneColumn, type TracePicture } from '../../src/trace/lanes';
 
@@ -68,11 +69,13 @@ describe('the Trace stage\'s picture', () => {
   });
 
   it('LA-V98-R04-T03 A lane\'s gap is a dashed box in its column, and Gaps only keeps only the lanes with one', () => {
-    const index = indexOf(modelWorkspace());
+    // A specification nothing implements or proves, as coverage reports it: a gap box in the build and tests columns, none for its design.
+    const data = modelWorkspace();
+    data.coverage[0].gaps.push(gap('P-D-SP01', 'specification', 'built'), gap('P-D-SP01', 'specification', 'proved'));
+    const index = indexOf(data);
     const domain = tracePicture(index, 'P-D');
-    // A specification nothing implements or proves: a gap box in the build, tests and files columns, none for the design it does not owe.
     const gaps = laneOf(domain, 'P-D-SP01').boxes.filter((b) => b.role === 'gap');
-    expect(gaps.map((b) => [b.column, b.words?.title])).toEqual([['build', 'Not built'], ['tests', 'No tests'], ['files', 'No files']]);
+    expect(gaps.map((b) => [b.column, b.words?.title])).toEqual([['build', 'Not built'], ['tests', 'Not proved']]);
     // A traced requirement has none.
     expect(laneOf(domain, 'P-D-UC01-R01').boxes.some((b) => b.role === 'gap')).toBe(false);
     expect(domain.counts.withGaps).toBe(domain.lanes.filter((l) => l.obligation && l.gaps.length > 0).length);

@@ -6,7 +6,7 @@ import { buildWorkspace, indexWorkspace, type SpecIndex } from '../../src/specs/
 // it by fixtures/global-setup.ts, plus the problems, recorded exceptions and coverage the engine
 // would find, which each fixture module gives (no recorded exceptions unless it says so). A test may change a fixture's rows for its case with the helpers here.
 
-/** What the global setup loads of a fixture: what GET /api/spec serves, without the checks' findings (one source, data). */
+/** What the global setup loads of a fixture: what GET /api/spec serves, with the engine's chains but without the checks' findings (one source, data). */
 export type FixtureRows = Omit<SpecData, 'problems' | 'exceptions' | 'coverage'>;
 
 declare module 'vitest' {

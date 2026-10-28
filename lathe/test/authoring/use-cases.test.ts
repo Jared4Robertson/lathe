@@ -111,7 +111,7 @@ describe('flows', () => {
     expect(record(good, 'EX-LEND-UC01-FL01-S02')).toMatchObject({ parent: 'EX-LEND-UC01-FL01', fields: { path: 'main', position: 2 } });
     const from = (id: string) => good.links.filter((l) => l.source === id).map((l) => `${l.relation} ${l.target}`).sort();
     expect(from('EX-LEND-UC01-FL01-S01')).toEqual(['fulfills EX-LEND-UC01-R01', 'happens_in EX-V01', 'invokes EX-LEND-CMD01']);
-    expect(from('EX-LEND-UC01-FL01-S02')).toEqual(['exchanges_with EX-INT01', 'invokes EX-LEND-QRY01']);
+    expect(from('EX-LEND-UC01-FL01-S02')).toEqual(['exchanges_with EX-INT01', 'fulfills EX-LEND-UC01-R01', 'invokes EX-LEND-QRY01']);
   });
 
   it('LA-AUT-UC06-R01-T02 A well-formed flow raises no step problem; a second flow through one interface, a repeated position, a step fulfilling another use case and a second invoke are refused', async () => {

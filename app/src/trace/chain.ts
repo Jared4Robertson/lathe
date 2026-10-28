@@ -1,24 +1,28 @@
-import { byIdOrder, textOf, type SpecIndex, type SpecRecord } from '../specs/data';
-import { designersOf } from '../specs/trace';
-import { isTestKind } from '../specs/parts';
+import { byIdOrder, type SpecIndex, type SpecRecord } from '../specs/data';
 import { treeChildren, treeParent } from '../graph/tree';
 import { isObligation } from './offer';
 
 // The Trace view's logic (LA-TRC-UC10), pure and tested directly: an obligation's traceability
 // chain, and the matrix of every obligation under a record or group.
 //
-// A chain reads left to right in four columns after the obligation: what designs it (for a UC
-// requirement the flow steps that fulfill it, their flows, the views they happen in and the commands
-// and queries they invoke; a constraint's value object; an invariant's aggregate), the technical
-// records that build it, the tests that prove it, and the files those name. A matrix is one chain
-// per obligation under the focus, in the tree's order (graph/tree.ts, the nav's tree), grouped by
-// each obligation's parent (a use case, an aggregate, a view, a pattern). An applicable cell left
-// empty is a gap.
+// The engine owns what traces to what (Workspace.chains, worked out with coverage) and what is
+// missing (Coverage.gaps): this only reads them. A chain reads left to right in four columns after
+// the obligation: what designs it (for a UC requirement the flow steps that fulfill it, their flows,
+// the views they happen in, the commands and queries they invoke and the integrations they exchange
+// with; a constraint's value object; an invariant's aggregate; a policy's command), the technical
+// records that build it, its tests, and the files those name. Its gaps are coverage's: not
+// designed, not built, not proved. A record of a kind a chain reaches that no chain does is
+// coverage's record-untraced gap. A matrix is one chain per obligation under the focus, in the
+// tree's order (graph/tree.ts, the nav's tree), grouped by each obligation's parent.
 
 /** The columns after the obligation, left to right. */
 export type TraceColumn = 'design' | 'build' | 'tests' | 'files';
 export const TRACE_COLUMNS: readonly TraceColumn[] = ['design', 'build', 'tests', 'files'];
 export const TRACE_COLUMN_LABELS: Record<TraceColumn, string> = { design: 'Design', build: 'Build', tests: 'Tests', files: 'Files' };
+
+/** The columns a coverage gap falls in: not designed, not built, not proved. */
+export type GapColumn = 'design' | 'build' | 'tests';
+const GAP_COLUMN: Record<string, GapColumn> = { designed: 'design', built: 'build', proved: 'tests' };
 
 /** A file a technical record or a test names, with the records that name it. */
 export interface TraceFile {
@@ -33,13 +37,14 @@ export interface TraceRow {
   build: string[];
   tests: string[];
   files: TraceFile[];
-  /** The columns its kind does not owe: a pattern rule is proved only; most kinds are designed by their technical records. */
-  notOwed: ReadonlySet<TraceColumn>;
+  /** Its gaps, as coverage reports them wherever it is owed, in column order. */
+  gaps: GapColumn[];
+  /** Whether only proof is asked of its kind (a pattern rule), as coverage says: its design and build are not owed. */
+  proofOnly: boolean;
   /**
-   * The chain's actual links, each from the record nearer the obligation to the one it leads to, left to right: the
-   * obligation to a step's flow (or the step), a flow to its step, a step to where it happens and what it invokes, an
-   * operation or a design record to what builds it, the obligation to its tests, and a record to a file it names
-   * (`file:<path>`, fileKey). What the Trace stage draws its arrows from.
+   * The chain's links, each from the record nearer the obligation to the one it leads to, left to right, as the engine
+   * gives them, and from each build or test record to a file it names (`file:<path>`, fileKey). What the Trace stage
+   * draws its arrows from.
    */
   links: readonly (readonly [string, string])[];
 }
@@ -47,114 +52,62 @@ export interface TraceRow {
 /** A file's key among a chain's links and the Trace stage's boxes. */
 export const fileKey = (path: string) => `file:${path}`;
 
-/** The kinds designed before the technical specification: a step, a value object, an aggregate. */
-const DESIGNED_KINDS: ReadonlySet<string> = new Set(['uc_requirement', 'constraint', 'invariant']);
-/** The kinds that are proved only (LA-TRC-UC14): nothing designs or builds a pattern rule. */
-const PROVED_ONLY: ReadonlySet<string> = new Set(['pattern_rule']);
-
-const stageOf = (index: SpecIndex, id: string) => index.kinds.get(index.byId.get(id)?.kind ?? '')?.stage ?? null;
-/** A record's children of one stage. */
-const childrenIn = (index: SpecIndex, id: string, stage: string) => (index.children.get(id) ?? []).filter((c) => index.kinds.get(c.kind)?.stage === stage);
-const linked = (index: SpecIndex, id: string, relation: string, way: 'out' | 'in') =>
-  (way === 'out' ? index.outgoing.get(id) ?? [] : index.incoming.get(id) ?? []).filter((l) => l.relation === relation).map((l) => (way === 'out' ? l.target : l.source));
-
-const kindRanks = new WeakMap<SpecIndex, Map<string, number>>();
-/** IDs in the schema's kind order, then by ID, each once. */
-function inKindOrder(index: SpecIndex, ids: Iterable<string>): string[] {
-  let rank = kindRanks.get(index);
-  if (!rank) { rank = new Map(index.workspace.kinds.map((k, i) => [k.kind, i])); kindRanks.set(index, rank); }
-  const ranks = rank;
-  const of = (id: string) => ranks.get(index.byId.get(id)?.kind ?? '') ?? ranks.size;
-  return [...new Set(ids)].filter((id) => index.byId.has(id)).sort((a, b) => of(a) - of(b) || byIdOrder({ id: a }, { id: b }));
+interface Found {
+  /** Each obligation's coverage gaps, by what it misses, over every scope that owes it. */
+  missing: Map<string, Set<string>>;
+  /** The records coverage reports untraced. */
+  untraced: Set<string>;
+  /** The kinds whose obligations owe only proof. */
+  proofOnly: Set<string>;
 }
 
-const enforcers = new WeakMap<SpecIndex, Map<string, string[]>>();
-/** The tables whose unique key enforces each invariant, read once per index. */
-function enforcing(index: SpecIndex): Map<string, string[]> {
-  let known = enforcers.get(index);
+const foundCache = new WeakMap<SpecIndex, Found>();
+/** What coverage reports, read once per index. */
+function found(index: SpecIndex): Found {
+  let known = foundCache.get(index);
   if (known) return known;
-  known = new Map();
-  for (const p of index.workspace.parts) {
-    if (p.table !== 'table_key' || typeof p.row.invariant_id !== 'string') continue;
-    const tables = known.get(p.row.invariant_id);
-    if (tables) tables.push(p.owner); else known.set(p.row.invariant_id, [p.owner]);
+  known = { missing: new Map(), untraced: new Set(), proofOnly: new Set() };
+  for (const c of index.coverage.values()) {
+    for (const o of c.obligations) if (o.proof_only) known.proofOnly.add(o.kind);
+    for (const g of c.gaps) {
+      if (g.missing === 'record-untraced') { known.untraced.add(g.id); continue; }
+      if (!GAP_COLUMN[g.missing]) continue;
+      const set = known.missing.get(g.id);
+      if (set) set.add(g.missing); else known.missing.set(g.id, new Set([g.missing]));
+    }
   }
-  enforcers.set(index, known);
+  foundCache.set(index, known);
   return known;
 }
 
+/** Whether coverage reports a record untraced: of a kind a chain reaches, and reached by none. */
+export const isUntraced = (index: SpecIndex, id: string): boolean => found(index).untraced.has(id);
+
 const chains = new WeakMap<SpecIndex, Map<string, TraceRow | null>>();
-/** An obligation's chain, or null for any other record, worked out once per index: the matrix and Untraced share them. */
+/** An obligation's chain, or null for any other record, read once per index: the matrix and Untraced share them. */
 export function traceChain(index: SpecIndex, id: string): TraceRow | null {
   let known = chains.get(index);
   if (!known) { known = new Map(); chains.set(index, known); }
-  if (!known.has(id)) known.set(id, chainOf(index, id));
+  if (!known.has(id)) known.set(id, rowOf(index, id));
   return known.get(id)!;
 }
 
-function chainOf(index: SpecIndex, id: string): TraceRow | null {
+function rowOf(index: SpecIndex, id: string): TraceRow | null {
   if (!isObligation(index, id)) return null;
-  const record = index.byId.get(id)!;
-  const design = new Set<string>();
-  const build = new Set<string>();
-  const links = new Map<string, readonly [string, string]>();
-  const link = (from: string, to: string) => { links.set(`${from}\n${to}`, [from, to]); };
-  const technical = (of: string) => { for (const t of childrenIn(index, of, 'technical-specification')) { build.add(t.id); link(of, t.id); } };
-
-  if (record.kind === 'uc_requirement') {
-    // The steps that fulfill it, each with its flow, the views it happens in and what it invokes; that operation's handler builds it.
-    for (const step of linked(index, id, 'fulfills', 'in')) {
-      design.add(step);
-      const flow = index.byId.get(step)?.parent;
-      if (flow && index.byId.get(flow)?.kind === 'flow') { design.add(flow); link(id, flow); link(flow, step); } else link(id, step);
-      for (const view of linked(index, step, 'happens_in', 'out')) { design.add(view); link(step, view); }
-      for (const op of linked(index, step, 'invokes', 'out')) { design.add(op); link(step, op); technical(op); }
-    }
-  }
-  if ((record.kind === 'constraint' || record.kind === 'invariant') && record.parent && index.byId.has(record.parent)) {
-    // Its value object (and the value type that implements it), or its aggregate (and the aggregate's repository).
-    design.add(record.parent);
-    link(id, record.parent);
-    technical(record.parent);
-  }
-  if (record.kind === 'invariant') {
-    // Each table whose unique key enforces it.
-    for (const table of enforcing(index).get(id) ?? []) { build.add(table); link(id, table); }
-  }
-  technical(id);
-  // What specifies its implementation as coverage counts it: the components rendering a view requirement's view, an API
-  // requirement's endpoint handler, what meets a standard rule.
-  for (const d of designersOf(index, record)) if (stageOf(index, d) === 'technical-specification') { build.add(d); link(id, d); }
-  const tests = childrenIn(index, id, 'test-plan').map((t) => t.id);
-  for (const t of tests) link(id, t);
-
-  const files = new Map<string, string[]>();
-  const builders = inKindOrder(index, build);
-  const proofs = inKindOrder(index, tests);
-  for (const named of [...builders, ...proofs]) {
-    const path = textOf(index.byId.get(named)!.row, 'file').trim();
-    if (!path) continue;
-    const by = files.get(path);
-    if (by) by.push(named); else files.set(path, [named]);
-    link(named, fileKey(path));
-  }
-  const notOwed = new Set<TraceColumn>();
-  if (PROVED_ONLY.has(record.kind)) { notOwed.add('design'); notOwed.add('build'); }
-  else if (!DESIGNED_KINDS.has(record.kind)) notOwed.add('design');
+  const chain = index.chains.get(id);
+  const files = (chain?.files ?? []).map((f) => ({ path: f.path, namedBy: f.named_by }));
+  const missing = found(index).missing.get(id) ?? new Set<string>();
   return {
     obligation: id,
-    design: inKindOrder(index, design),
-    build: builders,
-    tests: proofs,
-    files: [...files].map(([path, namedBy]) => ({ path, namedBy })).sort((a, b) => a.path.localeCompare(b.path)),
-    notOwed,
-    links: [...links.values()],
+    design: chain?.design ?? [],
+    build: chain?.build ?? [],
+    tests: chain?.tests ?? [],
+    files,
+    gaps: (['designed', 'built', 'proved'] as const).filter((m) => missing.has(m)).map((m) => GAP_COLUMN[m]),
+    proofOnly: found(index).proofOnly.has(index.byId.get(id)!.kind),
+    links: [...(chain?.links ?? []), ...files.flatMap((f) => f.namedBy.map((r) => [r, fileKey(f.path)] as const))],
   };
 }
-
-/** The columns of a row that are owed and empty: its gaps. */
-export const gapColumns = (row: TraceRow): TraceColumn[] =>
-  TRACE_COLUMNS.filter((c) => !row.notOwed.has(c) && (c === 'files' ? row.files.length === 0 : row[c].length === 0));
 
 /** Every obligation under a record or group in the tree (itself, when it is one), in the tree's order. */
 export function obligationsUnder(index: SpecIndex, focus: string): string[] {
@@ -170,62 +123,51 @@ export function obligationsUnder(index: SpecIndex, focus: string): string[] {
   return out;
 }
 
-// ---------- Untraced: what no obligation's chain reaches ----------
-//
-// The engine's coverage has no record-level "untraced" gap (its only untraced gap, code-file-untraced, is about source
-// files), so this mirrors the relations coverage judges designed, built and proved by (specs/trace.ts designersOf and
-// buildersOf, as traceChain reads them): a record is traced when some obligation's chain, anywhere in the space, holds
-// it. Only the kinds a chain links by a trace relation are listed (a flow step fulfills, a command or query is invoked,
-// its handler builds, a UI component renders a view requirement's view, a test proves its parent); containers and
-// folders (a flow, a view, an aggregate, a stage) and kinds with no trace relation at all never are. A flow test proves
-// its flow, not an obligation, so it is never untraced either.
-
-/** The kinds a chain links by a trace relation, besides the tests. */
-const TRACED_KINDS: ReadonlySet<string> = new Set(['flow_step', 'command', 'query', 'command_handler', 'query_handler', 'ui_component']);
+// ---------- Untraced: what no obligation's chain reaches, as coverage reports it ----------
 
 const holdersCache = new WeakMap<SpecIndex, Map<string, string[]>>();
-/** For every record some obligation's chain holds, in the whole space, the obligations whose chains hold it; worked out once per index. */
+/** For every record some obligation's chain holds, in the whole space, the obligations whose chains hold it; read once per index. */
 function holders(index: SpecIndex): Map<string, string[]> {
   let known = holdersCache.get(index);
   if (known) return known;
   known = new Map();
-  for (const r of index.workspace.records) {
-    const row = traceChain(index, r.id);
-    if (!row) continue;
-    for (const id of new Set([...row.design, ...row.build, ...row.tests])) {
+  for (const chain of index.chains.values()) {
+    if (!index.byId.has(chain.obligation)) continue;
+    for (const id of new Set([...chain.design, ...chain.build, ...chain.tests])) {
       const by = known.get(id);
-      if (by) by.push(r.id); else known.set(id, [r.id]);
+      if (by) by.push(chain.obligation); else known.set(id, [chain.obligation]);
     }
   }
   holdersCache.set(index, known);
   return known;
 }
 
-/** Whether a record is of a kind a chain reaches by a trace relation (a test that proves an obligation included). */
-function traceable(index: SpecIndex, record: SpecRecord): boolean {
-  if (TRACED_KINDS.has(record.kind)) return true;
-  if (!isTestKind(index, record.kind) || record.kind === 'flow_test') return false;
-  return true;
+const kindRanks = new WeakMap<SpecIndex, Map<string, number>>();
+/** IDs in the schema's kind order, then by ID. */
+function inKindOrder(index: SpecIndex, ids: readonly string[]): string[] {
+  let rank = kindRanks.get(index);
+  if (!rank) { rank = new Map(index.workspace.kinds.map((k, i) => [k.kind, i])); kindRanks.set(index, rank); }
+  const ranks = rank;
+  const of = (id: string) => ranks.get(index.byId.get(id)?.kind ?? '') ?? ranks.size;
+  return [...ids].sort((a, b) => of(a) - of(b) || byIdOrder({ id: a }, { id: b }));
 }
 
 /** A kind's untraced records under the focus. */
 export interface UntracedGroup { kind: string; ids: string[] }
 
-/** The design, build and test records under a record or group that no obligation's chain reaches, by kind in the schema's order. */
+/** The records under a record or group that coverage reports untraced, by kind in the schema's order. */
 export function untracedUnder(index: SpecIndex, focus: string): UntracedGroup[] {
-  const reach = holders(index);
-  const found: string[] = [];
+  const listed: string[] = [];
   const seen = new Set<string>();
   const walk = (id: string) => {
     if (seen.has(id)) return;
     seen.add(id);
-    const record = index.byId.get(id);
-    if (record && traceable(index, record) && !reach.has(id)) found.push(id);
+    if (isUntraced(index, id)) listed.push(id);
     for (const c of treeChildren(index, id)) walk(c);
   };
   walk(focus);
   const byKind = new Map<string, string[]>();
-  for (const id of inKindOrder(index, found)) {
+  for (const id of inKindOrder(index, listed)) {
     const kind = index.byId.get(id)!.kind;
     const ids = byKind.get(kind);
     if (ids) ids.push(id); else byKind.set(kind, [id]);
@@ -249,10 +191,10 @@ export function traceMatrix(index: SpecIndex, focus: string): TraceGroup[] {
 // Every stage works on every focus (LA-PAT-APP-UX-R17), so the Trace stage has a shape for each:
 // - an obligation: its chain;
 // - a record or group with obligations under it: their matrix;
-// - a design, build or test record some chain holds: the rows it belongs to, each obligation whose
-//   chain holds it, with the record marked in its cell;
-// - a design, build or test record no chain holds: the untraced state, with the matrix of the
-//   nearest container with obligations below it for context, the record marked;
+// - a record some chain holds: the rows it belongs to, each obligation whose chain holds it, with
+//   the record marked in its cell;
+// - a record coverage reports untraced: the untraced state, with the matrix of the nearest
+//   container with obligations below it for context, the record marked;
 // - any other record (an entity, a value object, a term): the matrix of the nearest container with
 //   obligations (its aggregate, its domain, its product), the record marked.
 
@@ -280,9 +222,8 @@ export function traceShape(index: SpecIndex, focus: string): TraceShape {
   if (own.length > 0) return { shape: 'matrix', groups: groupRows(index, own) };
   const held = holdersOf(index, focus);
   if (held.length > 0) return { shape: 'rows', groups: groupRows(index, held) };
-  const record = index.byId.get(focus);
   const scope = nearestWithObligations(index, focus);
-  return { shape: 'context', untraced: !!record && traceable(index, record), scope, groups: scope ? traceMatrix(index, scope) : [] };
+  return { shape: 'context', untraced: isUntraced(index, focus), scope, groups: scope ? traceMatrix(index, scope) : [] };
 }
 
 /** Rows of obligations, grouped by each obligation's parent in the order given. */

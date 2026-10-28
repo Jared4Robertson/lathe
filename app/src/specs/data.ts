@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { Coverage, Kind, Problem, RecordedException, RelationRule, StageRule } from '../../../lathe/src/types';
+import type { Coverage, Kind, Problem, RecordedException, RelationRule, StageRule, TraceChain } from '../../../lathe/src/types';
 import type { Row, SpecData, Value } from '../../../lathe/src/server/contract';
 import type { SchemaDescription, Stage } from '../../../lathe/src/store/schema';
 import { onLatheEvent } from '../events';
 import { isRecordId, SPACE_CHECKS } from '../views/address';
 
-export type { Coverage, Kind, Problem, RecordedException, RelationRule, Row, SchemaDescription, SpecData, Stage, StageRule, Value };
+export type { Coverage, Kind, Problem, RecordedException, RelationRule, Row, SchemaDescription, SpecData, Stage, StageRule, TraceChain, Value };
 
 // The app's spec index, built from the typed rows GET /api/spec serves (lathe/src/server/contract.ts):
 // a record per row of a kind's table, its parent from the one of its kind's parent columns that
@@ -72,6 +72,8 @@ export interface Workspace {
   /** The recorded exceptions: each command that also changes another aggregate, with its reason. Never problems. */
   exceptions: RecordedException[];
   coverage: Coverage[];
+  /** Every obligation's traceability chain, as the engine works it out. */
+  chains: TraceChain[];
 }
 
 /** A column's value as text: '' when it has none, a list joined by commas, a number or true/false written out. */
@@ -202,6 +204,7 @@ export function buildWorkspace(data: SpecData): Workspace {
     problems: data.problems,
     exceptions: data.exceptions,
     coverage: data.coverage,
+    chains: data.chains,
   };
 }
 
@@ -217,6 +220,8 @@ export interface SpecIndex {
   problemsFor: Map<string, Problem[]>;
   /** Coverage by domain, and by product for its records outside every domain. */
   coverage: Map<string, Coverage>;
+  /** Each obligation's traceability chain, as the engine works it out, by obligation ID. */
+  chains: Map<string, TraceChain>;
   products: SpecRecord[];
   domainsOf: Map<string, SpecRecord[]>;
 }
@@ -262,6 +267,7 @@ export function indexWorkspace(workspace: Workspace): SpecIndex {
     parts,
     problemsFor,
     coverage: new Map(workspace.coverage.map((c) => [c.domain ?? c.product, c])),
+    chains: new Map(workspace.chains.map((c) => [c.obligation, c])),
     products: records.filter((r) => r.kind === 'product'),
     domainsOf,
   };
@@ -318,6 +324,7 @@ export function spaceIndex(index: SpecIndex, product: string): SpecIndex {
     problems: workspace.problems.filter((p) => !p.record || !elsewhere(p.record)),
     exceptions: workspace.exceptions.filter((e) => inSpace(index.byId.get(e.command))),
     coverage: workspace.coverage.filter((c) => c.product === product),
+    chains: workspace.chains.filter((c) => inSpace(index.byId.get(c.obligation))),
   });
   known.set(product, space);
   return space;

@@ -112,14 +112,14 @@ function send(res: ServerResponse, status: number, body: unknown, headers: Recor
 const message = (error: unknown) => (error instanceof Error ? error.message : String(error));
 const storeMessage = (error: unknown) => (error instanceof StoreError ? error.problems.map(formatProblem).join('\n') : message(error));
 
-type Checked = Pick<SpecData, 'problems' | 'exceptions' | 'coverage'>;
+type Checked = Pick<SpecData, 'problems' | 'exceptions' | 'coverage' | 'chains'>;
 
 async function checksOf(root: string): Promise<Checked> {
   try {
     const workspace = await loadWorkspace(root);
-    return { problems: workspace.problems, exceptions: workspace.exceptions, coverage: workspace.coverage };
+    return { problems: workspace.problems, exceptions: workspace.exceptions, coverage: workspace.coverage, chains: workspace.chains };
   } catch (error) {
-    return { problems: [{ severity: 'error', check: 'engine', record: null, message: `The checks could not run: ${message(error)}` }], exceptions: [], coverage: [] };
+    return { problems: [{ severity: 'error', check: 'engine', record: null, message: `The checks could not run: ${message(error)}` }], exceptions: [], coverage: [], chains: [] };
   }
 }
 
@@ -191,6 +191,7 @@ async function specData(root: string): Promise<SpecData> {
     problems: read.flatMap((r) => r.checked.problems),
     exceptions: read.flatMap((r) => r.checked.exceptions),
     coverage: read.flatMap((r) => r.checked.coverage),
+    chains: read.flatMap((r) => r.checked.chains),
   };
 }
 

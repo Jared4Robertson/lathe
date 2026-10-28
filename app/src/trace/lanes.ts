@@ -1,6 +1,6 @@
 import { byIdOrder, type SpecIndex } from '../specs/data';
 import { isTestKind } from '../specs/parts';
-import { fileKey, gapColumns, holdersOf, obligationsUnder, traceChain, traceShape, untracedUnder, type TraceColumn, type TraceRow } from './chain';
+import { fileKey, holdersOf, obligationsUnder, traceChain, traceShape, untracedUnder, type GapColumn, type TraceRow } from './chain';
 
 // The Trace stage's picture (LA-V98), pure and tested directly: what it draws for a focus, laid out
 // once in map units, left to right.
@@ -14,9 +14,9 @@ import { fileKey, gapColumns, holdersOf, obligationsUnder, traceChain, traceShap
 //   several repeated under each and marked "also serves"; a domain from its capabilities, their
 //   outcomes as notes on the capability's box; a capability, a use case or a parent from itself),
 //   each parent as tall as its children (the graph's Tree rule). Each lane is an obligation's chain
-//   across the columns after it; an owed column left empty is a gap, a dashed empty box in its
-//   column. A record held by several lanes is repeated in each, with "in N lanes" on each copy. The
-//   design, build and test records no chain reaches sit in an Untraced lane at the bottom.
+//   across the columns after it; each gap coverage reports (not designed, not built, not proved)
+//   is a dashed box in its column. A record held by several lanes is repeated in each, with "in N lanes" on each copy. The
+//   records coverage reports untraced (record-untraced) sit in an Untraced lane at the bottom.
 // - A record that is no obligation: the lanes that hold it, the record marked as the focus; a record
 //   nothing traces to (or any other record) the lanes of the nearest container with obligations,
 //   the record in the Untraced lane when it is untraced.
@@ -78,8 +78,8 @@ export interface TraceLane {
   height: number;
   boxes: TraceBox[];
   lines: TraceLine[];
-  /** Its gaps (TraceRow's): the columns it owes and nothing fills. */
-  gaps: TraceColumn[];
+  /** Its gaps (TraceRow's): the columns coverage reports missing. */
+  gaps: GapColumn[];
 }
 
 /** What the picture is of, for the header strip and the note over it. */
@@ -156,14 +156,14 @@ function columnOf(index: SpecIndex, id: string, fallback: LaneColumn): LaneColum
 }
 
 /** A gap's words, by its column. */
-const GAP_WORDS: Record<TraceColumn, string> = { design: 'Not designed', build: 'Not built', tests: 'No tests', files: 'No files' };
+const GAP_WORDS: Record<GapColumn, string> = { design: 'Not designed', build: 'Not built', tests: 'Not proved' };
 
 /** One lane's boxes before placing: each column's items in order, and its links. */
 interface LaneDraft {
   obligation: string | null;
   columns: Map<LaneColumn, { id: string; role: BoxRole; opens: string | null; notes: string[]; words?: { title: string; meta: string } }[]>;
   links: (readonly [string, string])[];
-  gaps: TraceColumn[];
+  gaps: GapColumn[];
   /** Its "why" path in the tree (lanes mode), outermost first. */
   path: Why[];
 }
@@ -174,9 +174,9 @@ const push = (d: LaneDraft, column: LaneColumn, item: LaneDraft['columns'] exten
   else if (!list.some((x) => x.id === item.id)) list.push(item);
 };
 
-/** A lane's draft from an obligation's chain: its records by column, its files, a gap box in each owed empty column. */
+/** A lane's draft from an obligation's chain: its records by column, its files, a gap box in each column coverage reports missing. */
 function laneOf(index: SpecIndex, row: TraceRow, path: Why[]): LaneDraft {
-  const d: LaneDraft = { obligation: row.obligation, columns: new Map(), links: [...row.links], gaps: gapColumns(row), path };
+  const d: LaneDraft = { obligation: row.obligation, columns: new Map(), links: [...row.links], gaps: row.gaps, path };
   const record = (id: string) => ({ id, role: 'record' as const, opens: id, notes: [] });
   push(d, 'obligation', record(row.obligation));
   for (const id of row.design) push(d, columnOf(index, id, 'design'), record(id));
