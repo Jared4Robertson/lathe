@@ -207,7 +207,7 @@ describe("Authoring's value objects", () => {
     expect(await refusals(adding({ product_kind_field: fields }))).toEqual([]);
   });
 
-  it('LA-VO16-C01-T A stage other than the five is refused', async () => {
+  it('LA-VO16-C01-T A stage other than the six is refused', async () => {
     const stages = ['discovery', 'domain-model', 'use-cases', 'interaction-design', 'technical-specification', 'test-plan'];
     for (const stage of ['build', 'Test plan']) {
       expect(await refusals(firstRow('product_kind', { stage })), stage).toEqual(notOneOf('product_kind', 'stage', stage, stages));

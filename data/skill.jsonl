@@ -4,4 +4,5 @@
 {"id":"LA-AUT-SK04","title":"Plan tests","domain_id":"LA-AUT","file":"plugin/skills/plan-tests/SKILL.md"}
 {"id":"LA-AUT-SK05","title":"Write the technical spec","domain_id":"LA-AUT","file":"plugin/skills/write-the-technical-spec/SKILL.md"}
 {"id":"LA-AUT-SK06","title":"Write use cases","domain_id":"LA-AUT","file":"plugin/skills/write-use-cases/SKILL.md"}
+{"id":"LA-AUT-SK07","title":"Discover outcomes","domain_id":"LA-AUT","file":"plugin/skills/discover-outcomes/SKILL.md"}
 {"id":"LA-CHK-SK01","title":"Check and fix","domain_id":"LA-CHK","file":"plugin/skills/check-and-fix/SKILL.md"}

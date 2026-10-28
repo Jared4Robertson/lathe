@@ -18,6 +18,7 @@
 {"id":"LA-AUT-UC19-FL","title":"Merge two branches' data","use_case_id":"LA-AUT-UC19"}
 {"id":"LA-AUT-UC20-FL","title":"Sort a domain's rules","use_case_id":"LA-AUT-UC20"}
 {"id":"LA-AUT-UC21-FL","title":"Model read models, queries, domain services and terms","use_case_id":"LA-AUT-UC21"}
+{"id":"LA-AUT-UC22-FL","title":"Write the business outcomes","use_case_id":"LA-AUT-UC22"}
 {"id":"LA-CHK-UC01-FL","title":"Check the workspace and fix its errors","use_case_id":"LA-CHK-UC01"}
 {"id":"LA-CHK-UC02-FL","title":"Add a check","use_case_id":"LA-CHK-UC02"}
 {"id":"LA-CHK-UC04-FL","title":"Find structural problems","use_case_id":"LA-CHK-UC04"}

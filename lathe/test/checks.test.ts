@@ -152,7 +152,9 @@ check('technical-file-missing', () => {
 });
 
 check('test-data-set-file-missing', () => {
-  it('LA-AUT-UC13-R10-T01 a test data set whose file does not exist is an error when an automated test starts from it, else a warning; a folder will do', async () => {
+  it('LA-AUT-UC13-R09-T01 a test data set no test starts from is an error; one whose file does not exist is an error when an automated test starts from it, else a warning; a folder will do', async () => {
+    const unused = await loadData(without(complete(), 'starts_from', () => true));
+    expect(ofCheck(unused, 'test-data-set-unused').map((p) => [p.severity, p.record])).toEqual([['error', 'EX-LEND-TD01']]);
     const missing = await loadData(complete(), { missing: ['test/seed.ts'] });
     expect(ofCheck(missing, 'test-data-set-file-missing')).toEqual([
       { severity: 'error', check: 'test-data-set-file-missing', record: 'EX-LEND-TD01', message: 'Test data set EX-LEND-TD01 names test/seed.ts, which does not exist, so the automated tests that start from it cannot run.' },
