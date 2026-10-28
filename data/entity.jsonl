@@ -74,6 +74,7 @@
 {"id":"LA-EXP-EN03","title":"Nav row","aggregate_id":"LA-EXP-A3","role":"root","description":"A row of the nav that folds, and whether the reader has it folded."}
 {"id":"LA-EXP-EN09","title":"Tab group","aggregate_id":"LA-EXP-A5","role":"root","description":"The tabs open in one space, in order, with one active."}
 {"id":"LA-EXP-EN10","title":"Tab","aggregate_id":"LA-EXP-A5","role":"child","in_root_table":true,"description":"One open page, with what it shows and where the reader was in it."}
+{"id":"LA-EXP-EN11","title":"Graph settings","aggregate_id":"LA-EXP-A6","role":"root","description":"How the graph is drawn for this browser session."}
 {"id":"LA-PLT-EN02","title":"Panel","aggregate_id":"LA-PLT-A2","role":"root","description":"One part of the page's layout, which always shows the page's focus and can be hidden without losing it."}
 {"id":"LA-PLT-EN03","title":"Keyboard command","aggregate_id":"LA-PLT-A3","role":"root","description":"Something a person can do from anywhere in the app, listed once in the keymap."}
 {"id":"LA-PLT-EN04","title":"Key binding","aggregate_id":"LA-PLT-A3","role":"child","in_root_table":true,"description":"One chord or sequence that runs the command, never shared with another command active at the same time."}

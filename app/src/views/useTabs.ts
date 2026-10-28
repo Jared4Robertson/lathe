@@ -1,6 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { GraphLayout, GraphSettings } from '../graph/GraphPage';
-import { NO_FILTERS } from '../graph/model';
 import { navigate } from '../router';
 import { isNumber, readPref, writePref } from '../shell/prefs';
 import { productOfPath } from '../shell/spaces';
@@ -14,9 +12,9 @@ import { sideStateFrom, type SideState } from './sideBarState';
 // - a new address opens its page as tabs.ts says: the tab it is open in, or the preview tab;
 // - the address names the active tab's views, so a link, a reload, Back and Forward work as before;
 // - activating, cycling or closing a tab moves the address to the tab now active.
-// Each tab keeps its own views, pane sizes, wiki scroll and graph settings. A new tab starts from
-// the active tab's, or for a space's first tab from the last ones used (the remembered view, sizes
-// and graph settings).
+// Each tab keeps its own views, pane sizes and wiki scroll. A new tab starts from the active tab's,
+// or for a space's first tab from the last ones used (the remembered view and sizes). How the graph
+// is drawn is not a tab's: it is one setting for the session (graph/settings.ts).
 
 /** What a tab remembers of its page, besides the wiki's scroll (kept apart, as it changes often). */
 export interface TabView {
@@ -24,7 +22,6 @@ export interface TabView {
   views: ViewName[];
   /** Each pane's weight, which the gaps share out. */
   sizes: Record<ViewName, number>;
-  graph: GraphSettings;
   /** The side bar in each view mode: open or not, and its view. Absent modes use the last used. */
   side?: SideState;
 }
@@ -33,7 +30,6 @@ export type PageTabs = TabSet<TabView>;
 
 const TABS_KEY = 'lathe:tabs';
 export const VIEW_KEY = 'lathe:view';
-export const GRAPH_KEY = 'lathe:graph-settings';
 export const PANE_SIZE_KEY = (v: ViewName) => `lathe:pane-size:${v}`;
 /** Each pane's share of the width is a weight; equal weights share the space evenly. */
 export const PANE_WEIGHT = 100;
@@ -43,51 +39,19 @@ const isString = (v: unknown): v is string => typeof v === 'string';
 const isAny = (_v: unknown): _v is unknown => true;
 const isWeight = (v: unknown): v is number => isNumber(v) && v >= PANE_WEIGHT_MIN && v <= PANE_WEIGHT_MAX;
 
-// ---------- Graph settings, stored ----------
-
-interface StoredSettings { layout: GraphLayout; depth: number; trace: boolean; hiddenKinds: string[]; hiddenRelations: string[]; links: boolean; minimap: boolean }
-/** Stored settings in today's form; anything else (an older form included) is dropped for the defaults. */
-const isStored = (v: unknown): v is StoredSettings => {
-  if (!v || typeof v !== 'object') return false;
-  const s = v as StoredSettings;
-  return (s.layout === 'tree' || s.layout === 'nested' || s.layout === 'voronoi') && isNumber(s.depth) && typeof s.trace === 'boolean' && Array.isArray(s.hiddenKinds) && Array.isArray(s.hiddenRelations)
-    && typeof s.links === 'boolean' && typeof s.minimap === 'boolean';
-};
-
-export const DEFAULT_SETTINGS: GraphSettings = { layout: 'tree', depth: 1, trace: false, filters: NO_FILTERS, links: false, minimap: false };
-
-function settingsFrom(s: unknown): GraphSettings | null {
-  if (!isStored(s)) return null;
-  return {
-    layout: s.layout,
-    depth: [1, 2, 3].includes(s.depth) ? s.depth : 1,
-    trace: s.trace === true,
-    filters: { hiddenKinds: new Set(s.hiddenKinds), hiddenRelations: new Set(s.hiddenRelations) },
-    links: s.links,
-    minimap: s.minimap,
-  };
-}
-function storedFrom(s: GraphSettings): StoredSettings {
-  return { layout: s.layout, depth: s.depth, trace: s.trace, hiddenKinds: [...s.filters.hiddenKinds], hiddenRelations: [...s.filters.hiddenRelations], links: s.links, minimap: s.minimap };
-}
-
-/** The graph settings last used, for a space's first tab. */
-export const lastSettings = (): GraphSettings => settingsFrom(readPref<unknown>(GRAPH_KEY, null, isAny, 'session')) ?? DEFAULT_SETTINGS;
-export const saveLastSettings = (s: GraphSettings) => writePref(GRAPH_KEY, storedFrom(s), 'session');
-
 /** The views last open, for a space's first tab. */
 export const rememberedViews = (): ViewName[] => parseViews(readPref<string>(VIEW_KEY, 'wiki', isString));
 
-/** What a space's first tab starts with: the views, sizes and graph settings last used. */
+/** What a space's first tab starts with: the views and sizes last used. */
 export function firstTabView(): TabView {
   const views = rememberedViews();
   const sizes = Object.fromEntries(VIEW_NAMES.map((v) => [v, readPref<number>(PANE_SIZE_KEY(v), PANE_WEIGHT, isWeight)])) as Record<ViewName, number>;
-  return { views: views.length > 0 ? views : ['wiki'], sizes, graph: lastSettings() };
+  return { views: views.length > 0 ? views : ['wiki'], sizes };
 }
 
 // ---------- Stored tab sets ----------
 
-interface StoredTab { views: string; sizes: Record<string, number>; graph: StoredSettings; scroll: number; side?: SideState }
+interface StoredTab { views: string; sizes: Record<string, number>; scroll: number; side?: SideState }
 
 function tabViewFrom(v: unknown): (TabView & { scroll: number }) | null {
   if (!v || typeof v !== 'object') return null;
@@ -96,7 +60,7 @@ function tabViewFrom(v: unknown): (TabView & { scroll: number }) | null {
   const first = firstTabView();
   const sizes = Object.fromEntries(VIEW_NAMES.map((name) => [name, isWeight(s.sizes?.[name]) ? s.sizes![name] : first.sizes[name]])) as Record<ViewName, number>;
   const side = sideStateFrom(s.side);
-  return { views: views.length > 0 ? views : ['wiki'], sizes, graph: settingsFrom(s.graph) ?? first.graph, scroll: isNumber(s.scroll) && s.scroll >= 0 ? s.scroll : 0, ...(Object.keys(side).length > 0 ? { side } : {}) };
+  return { views: views.length > 0 ? views : ['wiki'], sizes, scroll: isNumber(s.scroll) && s.scroll >= 0 ? s.scroll : 0, ...(Object.keys(side).length > 0 ? { side } : {}) };
 }
 
 const scrollKey = (t: { key: string; page: string }) => `${t.key} ${t.page}`;
@@ -130,7 +94,7 @@ function saveAll(all: Record<string, PageTabs>, scrolls: Map<string, number>) {
         key: t.key,
         page: t.page,
         preview: t.preview,
-        state: { views: t.state.views.join(','), sizes: t.state.sizes, graph: storedFrom(t.state.graph), scroll: scrolls.get(scrollKey(t)) ?? 0, ...(t.state.side ? { side: t.state.side } : {}) },
+        state: { views: t.state.views.join(','), sizes: t.state.sizes, scroll: scrolls.get(scrollKey(t)) ?? 0, ...(t.state.side ? { side: t.state.side } : {}) },
       })),
     };
   }

@@ -31,6 +31,7 @@ import {
   type Neighborhood,
 } from './model';
 import { boxExit, traceGrid, type Point } from './layout';
+import { DEFAULT_GRAPH_SETTINGS } from './settings';
 import { centerOf, graphMap, linkEnds, mapRootOf, parentLine, type GraphMap, type PlacedMap } from './map';
 import { nestedMap, type NestedMap, type NestedNode } from './nested';
 import { readyVoronoiMap, voronoiMap, type VoronoiMap, type VoronoiNode } from './voronoi';
@@ -116,7 +117,6 @@ const DEPTHS = [1, 2, 3];
 const TOOLBAR_TIERS = ['full', 'compact', 'narrow', 'menu'] as const;
 /** Depth is how many levels below the focus the camera frames, folders and stages included. The Nested and Voronoi cameras frame the focus's box or cell, whatever the depth, so they have none. */
 const DEPTH_LABELS = ['Frame the focus and its children', 'Frame two levels below the focus', 'Frame three levels below the focus'];
-export const DEFAULT_GRAPH_SETTINGS: GraphSettings = { layout: 'tree', depth: 1, filters: NO_FILTERS, trace: false, links: false, minimap: false };
 /** The view after this one, for the switch's command. */
 export const nextLayout = (layout: GraphLayout): GraphLayout => GRAPH_LAYOUTS[(GRAPH_LAYOUTS.findIndex((l) => l.layout === layout) + 1) % GRAPH_LAYOUTS.length].layout;
 

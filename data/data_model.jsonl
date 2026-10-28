@@ -74,6 +74,7 @@
 {"id":"LA-EXP-EN03-DM","title":"the folded rows' set","entity_id":"LA-EXP-EN03","file":"app/src/shell/Nav.tsx","description":"the folded rows' set"}
 {"id":"LA-EXP-EN09-DM","title":"TabSet","entity_id":"LA-EXP-EN09","file":"app/src/views/tabs.ts","description":"TabSet"}
 {"id":"LA-EXP-EN10-DM","title":"Tab","entity_id":"LA-EXP-EN10","file":"app/src/views/tabs.ts","description":"Tab, with TabView in useTabs.ts"}
+{"id":"LA-EXP-EN11-DM","title":"GraphSettings","entity_id":"LA-EXP-EN11","file":"app/src/graph/settings.ts","description":"GraphSettings, read by graphSettings and written by saveGraphSettings"}
 {"id":"LA-PLT-EN02-DM","title":"usePanelSize","entity_id":"LA-PLT-EN02","file":"app/src/shell/prefs.ts","description":"usePanelSize and usePref: a panel's size within its limits and whether it shows, remembered, with a reset; each panel's key, default and limits sit beside it (NAV_WIDTH in App.tsx)."}
 {"id":"LA-PLT-EN03-DM","title":"Command","entity_id":"LA-PLT-EN03","file":"app/src/shell/keymap.ts","description":"Command"}
 {"id":"LA-PLT-EN04-DM","title":"Command.keys","entity_id":"LA-PLT-EN04","file":"app/src/shell/keymap.ts","description":"Command.keys, otherKeys (a child on its root's type)"}
