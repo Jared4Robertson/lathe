@@ -48,6 +48,7 @@ An error means the spec is broken. Do not leave one behind.
 - **An event a policy hears** whose event type is not delivered by outbox. An event that only keeps read models current, rebuilt on every load, may stay in process and is not reported.
 - **A test at a level its kind does not allow** (see `plan-tests`).
 - **A level of the spec the wrong size**: more children of one kind than the product's `max_children` setting allows, or a capability with only one use case. Add a capability, or merge one. Do not raise `max_children` to silence the warning unless the user asks.
+- **An aggregate too large**: more entities than the product's `max_entities_per_aggregate` setting allows (7 by default). Split it into smaller aggregates that each change together (see `model-a-domain`); do not raise the setting unless the user asks.
 
 Fix the warnings your task is about; leave the rest and mention them.
 
