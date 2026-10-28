@@ -27,7 +27,7 @@ describe('LA-AUT-UC15-R01-T01 The record actions take only a known action and a 
       { id: 'SMK' },
       { action: 'delete', id: 'SMK' },
       { action: 'reveal', id: '../../etc/passwd' },
-      { action: 'reveal', id: '/Users/me/.ssh/id_rsa' },
+      { action: 'reveal', id: '/Users/person/.ssh/id_rsa' },
       { action: 'reveal', id: 'smk-ord' },
       { action: 'reveal', id: 'SMK--ORD' },
       { action: 'reveal', id: 'SMK-ORD/requirement' },

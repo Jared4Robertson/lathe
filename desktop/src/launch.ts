@@ -75,7 +75,7 @@ export function aboutModel(versions: { app: string; engine: string | null; elect
 }
 
 /** The repo, and its data reference (every table, column, relation and check), which the About window links to. */
-export const REPO_URL = 'https://github.com/Jared4Robertson/SDLC-RSI';
+export const REPO_URL = 'https://github.com/Jared4Robertson/lathe';
 export const REFERENCE_URL = `${REPO_URL}/blob/main/lathe/REFERENCE.md`;
 
 /** A button press from a local page, when it is one of the actions that page shows; else null. */
