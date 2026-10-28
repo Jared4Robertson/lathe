@@ -12,7 +12,7 @@ COMMENT ON COLUMN meta_migration.name IS 'The migration''s file name.';
 
 CREATE TYPE table_role AS ENUM ('meta', 'registry', 'supertype', 'kind', 'part', 'link', 'declaration', 'checking', 'result');
 -- The stages, in the order a product is modeled: links run from what is defined first to what is defined later.
-CREATE TYPE stage AS ENUM ('domain-model', 'use-cases', 'interaction-design', 'technical-specification', 'test-plan');
+CREATE TYPE stage AS ENUM ('discovery', 'domain-model', 'use-cases', 'interaction-design', 'technical-specification', 'test-plan');
 CREATE TYPE id_scope AS ENUM ('product', 'domain', 'parent');
 CREATE TYPE link_role AS ENUM ('design', 'proof');
 CREATE TYPE link_scope AS ENUM ('product', 'domain', 'aggregate');
@@ -34,7 +34,7 @@ CREATE TABLE meta_stage (
   label VARCHAR NOT NULL,
   description VARCHAR NOT NULL
 );
-COMMENT ON TABLE meta_stage IS 'The stages a product is modeled in, in order: domain model, use cases, interaction design, technical specification and test plan. Kinds are colored and ordered by stage; product, role and open questions sit outside them.';
+COMMENT ON TABLE meta_stage IS 'The stages a product is modeled in, in order: discovery, domain model, use cases, interaction design, technical specification and test plan. Kinds are colored and ordered by stage; product, role and open questions sit outside them.';
 COMMENT ON COLUMN meta_stage.name IS 'The stage''s name, such as domain-model.';
 COMMENT ON COLUMN meta_stage.position IS 'The stage''s place in the order, from 1.';
 COMMENT ON COLUMN meta_stage.label IS 'The stage''s name as people read it.';
@@ -120,8 +120,9 @@ INSERT INTO meta_table VALUES
   ('meta_relation_pair', 'meta', NULL), ('meta_supertype_member', 'meta', NULL);
 
 INSERT INTO meta_stage VALUES
-  ('domain-model', 1, 'Domain model', 'Domains and their aggregates, entities, value objects, rules (constraints, invariants, specifications and policies), events, commands, read models, queries, domain services and glossary terms.'),
-  ('use-cases', 2, 'Use cases', 'Capabilities, the use cases in them with their actors and UC requirements, and the patterns use cases and domains follow.'),
-  ('interaction-design', 3, 'Interaction design', 'Each use case''s flow and its steps, and the views, endpoints and integrations the steps reach, with their requirements.'),
-  ('technical-specification', 4, 'Technical specification', 'The technical record that implements each design record, such as a command''s handler or an entity''s table, and the standards code meets.'),
-  ('test-plan', 5, 'Test plan', 'The tests, one kind per thing tested, each proving exactly its parent.');
+  ('discovery', 1, 'Discovery', 'The business outcomes the product exists to achieve, each a measurable statement with its measure and target, which its capabilities serve.'),
+  ('domain-model', 2, 'Domain model', 'Domains and their aggregates, entities, value objects, rules (constraints, invariants, specifications and policies), events, commands, read models, queries, domain services and glossary terms.'),
+  ('use-cases', 3, 'Use cases', 'Capabilities, the use cases in them with their actors and UC requirements, and the patterns use cases and domains follow.'),
+  ('interaction-design', 4, 'Interaction design', 'Each use case''s flow and its steps, and the views, endpoints and integrations the steps reach, with their requirements.'),
+  ('technical-specification', 5, 'Technical specification', 'The technical record that implements each design record, such as a command''s handler or an entity''s table, and the standards code meets.'),
+  ('test-plan', 6, 'Test plan', 'The tests, one kind per thing tested, each proving exactly its parent, and the test data sets they start from.');

@@ -8,9 +8,11 @@ components), which exist because other records use them. Other relationships are
 table, and an ID is unique across every kind. Every write goes through the command layer (the CLI, the app and the
 plugin's tools), which validates it in one transaction and rewrites the lines it changed; git is the history.
 
-The model is drawn from domain-driven design, CQRS and event storming, in five stages: the domain model, use cases on
-top of it, their interaction design, the technical records that implement each design record, and the test plan.
-Links run from what is defined first to what is defined later.
+The model is drawn from domain-driven design, CQRS and event storming, in six stages: discovery (the business
+outcomes the product exists to achieve), the domain model, use cases on top of it, their interaction design, the
+technical records that implement each design record, and the test plan. Links run from what is defined first to
+what is defined later. A capability names the outcomes it serves, so the trace runs from an outcome to its
+capabilities, their use cases, the code and the tests.
 
 **Words.** What clean architecture calls a use case or an interactor is what Lathe calls a command handler
 (`command_handler`): the application service that carries out one command. A Lathe use case (`use_case`) is the
@@ -35,6 +37,52 @@ exists and names the test's ID.
 
 <!-- Generated from the schema, the check rows and the coverage rules by `npm --prefix lathe run reference`. Do not edit it by hand. -->
 
+<a id="stage-discovery"></a>
+
+## Discovery
+
+The business outcomes the product exists to achieve, each a measurable statement with its measure and target, which its capabilities serve.
+
+<a id="kind-business_outcome"></a>
+
+### Business outcome (`business_outcome`)
+
+A business outcome: a measurable change the product exists to bring about, which its capabilities serve. The trace runs from it to a capability, a use case, the code and the tests.
+
+- **Parents:** [`product`](#kind-product) (`product_id`)
+- **Children:** none
+- **Obligation:** no
+- **ID:** `<P>-BO<nn>`, such as `TL-BO01`; it starts with its parent's ID
+- **Links out:** none
+- **Links in:** Questions about this ([`about`](#relation-about)), Served by ([`serves`](#relation-serves))
+- **Gaps:** [`outcome-not-served`](#gap-outcome-not-served)
+
+<a id="table-business_outcome"></a>
+
+| Column | Type | Required | Meaning |
+| --- | --- | --- | --- |
+| `id` | VARCHAR → `record_id` | yes | The outcome's ID: its product's ID and BO<nn>, such as TL-BO01. |
+| `title` | VARCHAR | yes | The outcome in a few words, such as More tools in use. |
+| `product_id` | VARCHAR → [`product`](#table-product) | yes | The product it belongs to. |
+| `statement` | VARCHAR | yes | The outcome, stated so it can be measured, in one sentence. |
+| `measure` | VARCHAR | yes | What is measured to know whether it is reached, and how. |
+| `target` | VARCHAR | yes | The value of the measure that counts as reached, and by when. |
+| `notes` | VARCHAR | no | Longer notes, such as where the measure comes from. |
+
+- **Key:** `id`
+- **Rule:** `("trim"(title) != '')`
+- **Rule:** `("trim"("statement") != '')`
+- **Rule:** `("trim"(measure) != '')`
+- **Rule:** `("trim"("target") != '')`
+
+### Coverage gaps: discovery
+
+Each is reported in coverage, under the record that falls short, never as a problem.
+
+| Gap | Kinds | What it reports |
+| --- | --- | --- |
+| <a id="gap-outcome-not-served"></a>`outcome-not-served` | [`business_outcome`](#kind-business_outcome), [`capability`](#kind-capability) | A business outcome no capability serves. |
+
 <a id="stage-domain-model"></a>
 
 ## Domain model
@@ -48,7 +96,7 @@ Domains and their aggregates, entities, value objects, rules (constraints, invar
 A part of the product with its own model, language and owner, for one business capability: what DDD calls a bounded context. Domains meet only through published events.
 
 - **Parents:** [`product`](#kind-product) (`product_id`)
-- **Children:** [`aggregate`](#kind-aggregate), [`read_model`](#kind-read_model), [`domain_service`](#kind-domain_service), [`term`](#kind-term), [`capability`](#kind-capability), [`table`](#kind-table), [`question`](#kind-question)
+- **Children:** [`aggregate`](#kind-aggregate), [`read_model`](#kind-read_model), [`domain_service`](#kind-domain_service), [`term`](#kind-term), [`capability`](#kind-capability), [`table`](#kind-table), [`test_data_set`](#kind-test_data_set), [`question`](#kind-question)
 - **Obligation:** no
 - **ID:** `<P>-<D>`, such as `TL-LEND`; it starts with its parent's ID
 - **Links out:** Follows ([`follows`](#relation-follows))
@@ -681,10 +729,10 @@ An ordered slice of a domain that groups its use cases, such as Catalog or Lendi
 - **Children:** [`use_case`](#kind-use_case)
 - **Obligation:** no
 - **ID:** `<P>-<D>-CAP<nn>`, such as `TL-LEND-CAP01`; it starts with its domain's ID
-- **Links out:** none
+- **Links out:** Serves ([`serves`](#relation-serves))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`lone-child`](#check-lone-child)
-- **Gaps:** [`capability-without-use-case`](#gap-capability-without-use-case)
+- **Gaps:** [`capability-serves-no-outcome`](#gap-capability-serves-no-outcome), [`capability-without-use-case`](#gap-capability-without-use-case)
 
 <a id="table-capability"></a>
 
@@ -901,6 +949,7 @@ Each is reported in coverage, under the record that falls short, never as a prob
 
 | Gap | Kinds | What it reports |
 | --- | --- | --- |
+| <a id="gap-capability-serves-no-outcome"></a>`capability-serves-no-outcome` | [`capability`](#kind-capability), [`business_outcome`](#kind-business_outcome) | A capability that serves no business outcome. |
 | <a id="gap-capability-without-use-case"></a>`capability-without-use-case` | [`capability`](#kind-capability), [`use_case`](#kind-use_case) | A capability with no use case. |
 | <a id="gap-use-case-without-actor"></a>`use-case-without-actor` | [`use_case`](#kind-use_case), `use_case_actor` | A use case with no actor. |
 | <a id="gap-use-case-without-requirement"></a>`use-case-without-requirement` | [`use_case`](#kind-use_case), [`uc_requirement`](#kind-uc_requirement) | A use case with no UC requirement that follows no pattern. |
@@ -1694,7 +1743,39 @@ Each is reported in coverage, under the record that falls short, never as a prob
 
 ## Test plan
 
-The tests, one kind per thing tested, each proving exactly its parent.
+The tests, one kind per thing tested, each proving exactly its parent, and the test data sets they start from.
+
+<a id="kind-test_data_set"></a>
+
+### Test data set (`test_data_set`)
+
+What some tests start from: the environment, the accounts and the starting records, how to prepare and reset them, and the file that builds them. Tests link to it with starts_from.
+
+- **Parents:** [`domain`](#kind-domain) (`domain_id`)
+- **Children:** none
+- **Obligation:** no
+- **ID:** `<P>-<D>-TD<nn>`, such as `TL-LEND-TD01`; it starts with its domain's ID
+- **Links out:** none
+- **Links in:** Questions about this ([`about`](#relation-about)), Started from by ([`starts_from`](#relation-starts_from))
+- **Checks:** [`test-data-set-unused`](#check-test-data-set-unused), [`test-data-set-file-missing`](#check-test-data-set-file-missing)
+
+<a id="table-test_data_set"></a>
+
+| Column | Type | Required | Meaning |
+| --- | --- | --- | --- |
+| `id` | VARCHAR → `record_id` | yes | The data set's ID: its domain's ID and TD<nn>, such as TL-LEND-TD01. |
+| `title` | VARCHAR | yes | The data set in a few words, such as Two members, one tool on loan. |
+| `domain_id` | VARCHAR → [`domain`](#table-domain) | yes | The domain whose tests it serves. |
+| `environment` | VARCHAR | no | Where it runs: the database, server or browser storage it is built in. |
+| `accounts` | VARCHAR | no | The accounts and roles it signs in as. |
+| `records` | VARCHAR | no | The records it starts with. |
+| `prepare` | VARCHAR | no | How to prepare it before a test. |
+| `reset` | VARCHAR | no | How to reset it after a test, so the next starts clean. |
+| `file` | VARCHAR | no | The seed or fixture that builds it, from the product root. |
+| `description` | VARCHAR | no | What it is for, in a sentence or two. |
+
+- **Key:** `id`
+- **Rule:** `("trim"(title) != '')`
 
 <a id="kind-constraint_test"></a>
 
@@ -1707,7 +1788,7 @@ Proves its constraint: the values its value object accepts and refuses.
 - **Obligation:** no
 - **Run by levels:** `unit`, `database`
 - **ID:** `<constraint>-T`, such as `TL-VO01-C01-T`; it starts with its parent's ID
-- **Links out:** none
+- **Links out:** Starts from ([`starts_from`](#relation-starts_from))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed)
 
@@ -1722,6 +1803,9 @@ Proves its constraint: the values its value object accepts and refuses.
 | `state` | ENUM('automated', 'manual', 'not automated yet') | yes | automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. |
 | `file` | VARCHAR | no | The file that runs it, from the product root; an automated test must name one. |
 | `manual_reason` | VARCHAR | no | Why a person runs it rather than a file; a manual test must give one, and only a manual test. |
+| `size` | ENUM('volume', 'worst case') | no | How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle). |
+| `smoke` | BOOLEAN | no | Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise. |
+| `external` | BOOLEAN | no | Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. |
 | `accepts` | VARCHAR | no | Values the value object accepts, such as a@b.org. |
 | `refuses` | VARCHAR | no | Values it refuses, and how. |
 | `notes` | VARCHAR | no | Longer notes on the test, such as when to run it. |
@@ -1729,6 +1813,8 @@ Proves its constraint: the values its value object accepts and refuses.
 - **Key:** `id`
 - **Unique:** `constraint_id`
 - **Rule:** `("trim"(title) != '')`
+- **Rule:** `smoke`
+- **Rule:** `"external"`
 - **Rule:** `((state != 'automated') OR (file IS NOT NULL))`
 - **Rule:** `((state = 'manual') = (manual_reason IS NOT NULL))`
 
@@ -1743,7 +1829,7 @@ Proves its invariant: a change that would break it is refused, and the aggregate
 - **Obligation:** no
 - **Run by levels:** `unit`, `database`
 - **ID:** `<invariant>-T`, such as `TL-LEND-INV01-T`; it starts with its parent's ID
-- **Links out:** none
+- **Links out:** Starts from ([`starts_from`](#relation-starts_from))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed)
 
@@ -1758,6 +1844,9 @@ Proves its invariant: a change that would break it is refused, and the aggregate
 | `state` | ENUM('automated', 'manual', 'not automated yet') | yes | automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. |
 | `file` | VARCHAR | no | The file that runs it, from the product root; an automated test must name one. |
 | `manual_reason` | VARCHAR | no | Why a person runs it rather than a file; a manual test must give one, and only a manual test. |
+| `size` | ENUM('volume', 'worst case') | no | How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle). |
+| `smoke` | BOOLEAN | no | Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise. |
+| `external` | BOOLEAN | no | Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. |
 | `given` | VARCHAR | no | The state the test starts from. |
 | `when` | VARCHAR | no | What the test does. |
 | `then` | VARCHAR | no | What the test expects. |
@@ -1766,6 +1855,8 @@ Proves its invariant: a change that would break it is refused, and the aggregate
 - **Key:** `id`
 - **Unique:** `invariant_id`
 - **Rule:** `("trim"(title) != '')`
+- **Rule:** `smoke`
+- **Rule:** `"external"`
 - **Rule:** `((state != 'automated') OR (file IS NOT NULL))`
 - **Rule:** `((state = 'manual') = (manual_reason IS NOT NULL))`
 
@@ -1780,7 +1871,7 @@ Proves its specification: which records satisfy the predicate and which do not.
 - **Obligation:** no
 - **Run by levels:** `unit`, `database`
 - **ID:** `<specification>-T`, such as `TL-LEND-SP01-T`; it starts with its parent's ID
-- **Links out:** none
+- **Links out:** Starts from ([`starts_from`](#relation-starts_from))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed)
 
@@ -1795,6 +1886,9 @@ Proves its specification: which records satisfy the predicate and which do not.
 | `state` | ENUM('automated', 'manual', 'not automated yet') | yes | automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. |
 | `file` | VARCHAR | no | The file that runs it, from the product root; an automated test must name one. |
 | `manual_reason` | VARCHAR | no | Why a person runs it rather than a file; a manual test must give one, and only a manual test. |
+| `size` | ENUM('volume', 'worst case') | no | How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle). |
+| `smoke` | BOOLEAN | no | Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise. |
+| `external` | BOOLEAN | no | Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. |
 | `given` | VARCHAR | no | The state the test starts from. |
 | `when` | VARCHAR | no | What the test does. |
 | `then` | VARCHAR | no | What the test expects. |
@@ -1803,6 +1897,8 @@ Proves its specification: which records satisfy the predicate and which do not.
 - **Key:** `id`
 - **Unique:** `specification_id`
 - **Rule:** `("trim"(title) != '')`
+- **Rule:** `smoke`
+- **Rule:** `"external"`
 - **Rule:** `((state != 'automated') OR (file IS NOT NULL))`
 - **Rule:** `((state = 'manual') = (manual_reason IS NOT NULL))`
 
@@ -1817,7 +1913,7 @@ Proves its policy: when its event happens, its command is sent.
 - **Obligation:** no
 - **Run by levels:** `database`, `api`, `e2e-api`, `e2e-ui`, `manual`
 - **ID:** `<policy>-T`, such as `TL-LEND-PO01-T`; it starts with its parent's ID
-- **Links out:** none
+- **Links out:** Starts from ([`starts_from`](#relation-starts_from))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed)
 
@@ -1832,6 +1928,9 @@ Proves its policy: when its event happens, its command is sent.
 | `state` | ENUM('automated', 'manual', 'not automated yet') | yes | automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. |
 | `file` | VARCHAR | no | The file that runs it, from the product root; an automated test must name one. |
 | `manual_reason` | VARCHAR | no | Why a person runs it rather than a file; a manual test must give one, and only a manual test. |
+| `size` | ENUM('volume', 'worst case') | no | How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle). |
+| `smoke` | BOOLEAN | no | Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise. |
+| `external` | BOOLEAN | no | Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. |
 | `given` | VARCHAR | no | The state the test starts from. |
 | `when` | VARCHAR | no | What the test does. |
 | `then` | VARCHAR | no | What the test expects. |
@@ -1840,6 +1939,8 @@ Proves its policy: when its event happens, its command is sent.
 - **Key:** `id`
 - **Unique:** `policy_id`
 - **Rule:** `("trim"(title) != '')`
+- **Rule:** `smoke`
+- **Rule:** `"external"`
 - **Rule:** `((state != 'automated') OR (file IS NOT NULL))`
 - **Rule:** `((state = 'manual') = (manual_reason IS NOT NULL))`
 
@@ -1854,7 +1955,7 @@ Proves its domain service: from the inputs given, the value or decision it retur
 - **Obligation:** no
 - **Run by levels:** `unit`
 - **ID:** `<domain service>-T<nn>`, such as `TL-LEND-DS01-T01`; it starts with its parent's ID
-- **Links out:** none
+- **Links out:** Starts from ([`starts_from`](#relation-starts_from))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed)
 
@@ -1869,6 +1970,9 @@ Proves its domain service: from the inputs given, the value or decision it retur
 | `state` | ENUM('automated', 'manual', 'not automated yet') | yes | automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. |
 | `file` | VARCHAR | no | The file that runs it, from the product root; an automated test must name one. |
 | `manual_reason` | VARCHAR | no | Why a person runs it rather than a file; a manual test must give one, and only a manual test. |
+| `size` | ENUM('volume', 'worst case') | no | How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle). |
+| `smoke` | BOOLEAN | no | Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise. |
+| `external` | BOOLEAN | no | Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. |
 | `given` | VARCHAR | no | The state the test starts from. |
 | `when` | VARCHAR | no | What the test does. |
 | `then` | VARCHAR | no | What the test expects. |
@@ -1876,6 +1980,8 @@ Proves its domain service: from the inputs given, the value or decision it retur
 
 - **Key:** `id`
 - **Rule:** `("trim"(title) != '')`
+- **Rule:** `smoke`
+- **Rule:** `"external"`
 - **Rule:** `((state != 'automated') OR (file IS NOT NULL))`
 - **Rule:** `((state = 'manual') = (manual_reason IS NOT NULL))`
 
@@ -1890,7 +1996,7 @@ Proves its UC requirement, at the level the use case is stated: what the actor d
 - **Obligation:** no
 - **Run by levels:** `api`, `e2e-api`, `e2e-ui`, `manual`
 - **ID:** `<UC requirement>-T<nn>`, such as `TL-LEND-UC01-R01-T01`; it starts with its parent's ID
-- **Links out:** none
+- **Links out:** Starts from ([`starts_from`](#relation-starts_from))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed)
 
@@ -1905,6 +2011,9 @@ Proves its UC requirement, at the level the use case is stated: what the actor d
 | `state` | ENUM('automated', 'manual', 'not automated yet') | yes | automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. |
 | `file` | VARCHAR | no | The file that runs it, from the product root; an automated test must name one. |
 | `manual_reason` | VARCHAR | no | Why a person runs it rather than a file; a manual test must give one, and only a manual test. |
+| `size` | ENUM('volume', 'worst case') | no | How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle). |
+| `smoke` | BOOLEAN | no | Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise. |
+| `external` | BOOLEAN | no | Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. |
 | `given` | VARCHAR | no | The state the test starts from. |
 | `when` | VARCHAR | no | What the test does. |
 | `then` | VARCHAR | no | What the test expects. |
@@ -1912,6 +2021,8 @@ Proves its UC requirement, at the level the use case is stated: what the actor d
 
 - **Key:** `id`
 - **Rule:** `("trim"(title) != '')`
+- **Rule:** `smoke`
+- **Rule:** `"external"`
 - **Rule:** `((state != 'automated') OR (file IS NOT NULL))`
 - **Rule:** `((state = 'manual') = (manual_reason IS NOT NULL))`
 
@@ -1926,7 +2037,7 @@ Proves its view requirement in the view.
 - **Obligation:** no
 - **Run by levels:** `unit`, `e2e-ui`, `manual`
 - **ID:** `<view requirement>-T<nn>`, such as `TL-V01-R01-T01`; it starts with its parent's ID
-- **Links out:** none
+- **Links out:** Starts from ([`starts_from`](#relation-starts_from))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed)
 
@@ -1941,6 +2052,9 @@ Proves its view requirement in the view.
 | `state` | ENUM('automated', 'manual', 'not automated yet') | yes | automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. |
 | `file` | VARCHAR | no | The file that runs it, from the product root; an automated test must name one. |
 | `manual_reason` | VARCHAR | no | Why a person runs it rather than a file; a manual test must give one, and only a manual test. |
+| `size` | ENUM('volume', 'worst case') | no | How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle). |
+| `smoke` | BOOLEAN | no | Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise. |
+| `external` | BOOLEAN | no | Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. |
 | `given` | VARCHAR | no | The state the test starts from. |
 | `when` | VARCHAR | no | What the test does. |
 | `then` | VARCHAR | no | What the test expects. |
@@ -1948,6 +2062,8 @@ Proves its view requirement in the view.
 
 - **Key:** `id`
 - **Rule:** `("trim"(title) != '')`
+- **Rule:** `smoke`
+- **Rule:** `"external"`
 - **Rule:** `((state != 'automated') OR (file IS NOT NULL))`
 - **Rule:** `((state = 'manual') = (manual_reason IS NOT NULL))`
 
@@ -1962,7 +2078,7 @@ Proves its API requirement at the endpoint: the request and the response.
 - **Obligation:** no
 - **Run by levels:** `contract`, `api`
 - **ID:** `<API requirement>-T<nn>`, such as `TL-LEND-EP01-R01-T01`; it starts with its parent's ID
-- **Links out:** none
+- **Links out:** Starts from ([`starts_from`](#relation-starts_from))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed)
 
@@ -1977,6 +2093,9 @@ Proves its API requirement at the endpoint: the request and the response.
 | `state` | ENUM('automated', 'manual', 'not automated yet') | yes | automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. |
 | `file` | VARCHAR | no | The file that runs it, from the product root; an automated test must name one. |
 | `manual_reason` | VARCHAR | no | Why a person runs it rather than a file; a manual test must give one, and only a manual test. |
+| `size` | ENUM('volume', 'worst case') | no | How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle). |
+| `smoke` | BOOLEAN | no | Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise. |
+| `external` | BOOLEAN | no | Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. |
 | `given` | VARCHAR | no | The state the test starts from. |
 | `when` | VARCHAR | no | What the test does. |
 | `then` | VARCHAR | no | What the test expects. |
@@ -1984,6 +2103,8 @@ Proves its API requirement at the endpoint: the request and the response.
 
 - **Key:** `id`
 - **Rule:** `("trim"(title) != '')`
+- **Rule:** `smoke`
+- **Rule:** `"external"`
 - **Rule:** `((state != 'automated') OR (file IS NOT NULL))`
 - **Rule:** `((state = 'manual') = (manual_reason IS NOT NULL))`
 
@@ -1998,7 +2119,7 @@ A smoke test of its flow's main path, end to end.
 - **Obligation:** no
 - **Run by levels:** `e2e-ui`, `e2e-api`, `manual`
 - **ID:** `<flow>-T`, such as `TL-LEND-UC01-FL-T`; it starts with its parent's ID
-- **Links out:** none
+- **Links out:** Starts from ([`starts_from`](#relation-starts_from))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed)
 
@@ -2013,6 +2134,9 @@ A smoke test of its flow's main path, end to end.
 | `state` | ENUM('automated', 'manual', 'not automated yet') | yes | automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. |
 | `file` | VARCHAR | no | The file that runs it, from the product root; an automated test must name one. |
 | `manual_reason` | VARCHAR | no | Why a person runs it rather than a file; a manual test must give one, and only a manual test. |
+| `size` | ENUM('volume', 'worst case') | no | How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle). |
+| `smoke` | BOOLEAN | no | Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise. |
+| `external` | BOOLEAN | no | Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. |
 | `steps` | VARCHAR[] | no | What the test does along the main path, step by step. |
 | `expected_result` | VARCHAR | no | What it expects at the end. |
 | `notes` | VARCHAR | no | Longer notes on the test, such as when to run it. |
@@ -2020,6 +2144,8 @@ A smoke test of its flow's main path, end to end.
 - **Key:** `id`
 - **Unique:** `flow_id`
 - **Rule:** `("trim"(title) != '')`
+- **Rule:** `smoke`
+- **Rule:** `"external"`
 - **Rule:** `((state != 'automated') OR (file IS NOT NULL))`
 - **Rule:** `((state = 'manual') = (manual_reason IS NOT NULL))`
 
@@ -2034,7 +2160,7 @@ Proves an exchange with its integration's outside system.
 - **Obligation:** no
 - **Run by levels:** `contract`, `e2e-api`, `manual`
 - **ID:** `<integration>-T<nn>`, such as `TL-INT01-T01`; it starts with its parent's ID
-- **Links out:** none
+- **Links out:** Starts from ([`starts_from`](#relation-starts_from))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed)
 
@@ -2049,6 +2175,9 @@ Proves an exchange with its integration's outside system.
 | `state` | ENUM('automated', 'manual', 'not automated yet') | yes | automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. |
 | `file` | VARCHAR | no | The file that runs it, from the product root; an automated test must name one. |
 | `manual_reason` | VARCHAR | no | Why a person runs it rather than a file; a manual test must give one, and only a manual test. |
+| `size` | ENUM('volume', 'worst case') | no | How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle). |
+| `smoke` | BOOLEAN | no | Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise. |
+| `external` | BOOLEAN | no | Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. |
 | `given` | VARCHAR | no | The state the test starts from. |
 | `when` | VARCHAR | no | What the test does. |
 | `then` | VARCHAR | no | What the test expects. |
@@ -2056,6 +2185,8 @@ Proves an exchange with its integration's outside system.
 
 - **Key:** `id`
 - **Rule:** `("trim"(title) != '')`
+- **Rule:** `smoke`
+- **Rule:** `"external"`
 - **Rule:** `((state != 'automated') OR (file IS NOT NULL))`
 - **Rule:** `((state = 'manual') = (manual_reason IS NOT NULL))`
 
@@ -2070,7 +2201,7 @@ Proves its pattern rule in one domain that adopts the pattern: one test per patt
 - **Obligation:** no
 - **Run by levels:** `unit`, `database`, `api`, `contract`, `e2e-api`, `e2e-ui`, `manual`
 - **ID:** `<pattern rule>-T<nn>`, such as `TL-PAT-ACT-R01-T01`; it starts with its parent's ID
-- **Links out:** none
+- **Links out:** Starts from ([`starts_from`](#relation-starts_from))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`pattern-rule-test-outside-followers`](#check-pattern-rule-test-outside-followers)
 
@@ -2086,6 +2217,9 @@ Proves its pattern rule in one domain that adopts the pattern: one test per patt
 | `state` | ENUM('automated', 'manual', 'not automated yet') | yes | automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. |
 | `file` | VARCHAR | no | The file that runs it, from the product root; an automated test must name one. |
 | `manual_reason` | VARCHAR | no | Why a person runs it rather than a file; a manual test must give one, and only a manual test. |
+| `size` | ENUM('volume', 'worst case') | no | How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle). |
+| `smoke` | BOOLEAN | no | Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise. |
+| `external` | BOOLEAN | no | Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. |
 | `given` | VARCHAR | no | The state the test starts from. |
 | `when` | VARCHAR | no | What the test does. |
 | `then` | VARCHAR | no | What the test expects. |
@@ -2094,6 +2228,8 @@ Proves its pattern rule in one domain that adopts the pattern: one test per patt
 - **Key:** `id`
 - **Unique:** `pattern_rule_id`, `domain_id`
 - **Rule:** `("trim"(title) != '')`
+- **Rule:** `smoke`
+- **Rule:** `"external"`
 - **Rule:** `((state != 'automated') OR (file IS NOT NULL))`
 - **Rule:** `((state = 'manual') = (manual_reason IS NOT NULL))`
 
@@ -2108,7 +2244,7 @@ Proves its standard rule in the product's code, such as a scan of the code for w
 - **Obligation:** no
 - **Run by levels:** `unit`, `database`, `api`, `contract`, `e2e-api`, `e2e-ui`, `manual`
 - **ID:** `<standard rule>-T<nn>`, such as `TL-STD-CODE-R01-T01`; it starts with its parent's ID
-- **Links out:** none
+- **Links out:** Starts from ([`starts_from`](#relation-starts_from))
 - **Links in:** Questions about this ([`about`](#relation-about))
 
 <a id="table-standard_rule_test"></a>
@@ -2122,6 +2258,9 @@ Proves its standard rule in the product's code, such as a scan of the code for w
 | `state` | ENUM('automated', 'manual', 'not automated yet') | yes | automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. |
 | `file` | VARCHAR | no | The file that runs it, from the product root; an automated test must name one. |
 | `manual_reason` | VARCHAR | no | Why a person runs it rather than a file; a manual test must give one, and only a manual test. |
+| `size` | ENUM('volume', 'worst case') | no | How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle). |
+| `smoke` | BOOLEAN | no | Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise. |
+| `external` | BOOLEAN | no | Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. |
 | `given` | VARCHAR | no | The state the test starts from. |
 | `when` | VARCHAR | no | What the test does. |
 | `then` | VARCHAR | no | What the test expects. |
@@ -2129,6 +2268,8 @@ Proves its standard rule in the product's code, such as a scan of the code for w
 
 - **Key:** `id`
 - **Rule:** `("trim"(title) != '')`
+- **Rule:** `smoke`
+- **Rule:** `"external"`
 - **Rule:** `((state != 'automated') OR (file IS NOT NULL))`
 - **Rule:** `((state = 'manual') = (manual_reason IS NOT NULL))`
 
@@ -2184,6 +2325,26 @@ A pattern rule test names a domain that follows its pattern and owes its rule.
 
 A pattern rule test proves its rule in one domain that follows the pattern: the domain itself follows it, or one of its use cases does. A test naming a domain that does not follow the pattern proves the rule where nothing owes it, an error. One naming a following domain where the rule is waived (every following use case there marks its setting not applicable, or no follower there meets its applies-when setting) counts for nothing, a warning. Name a domain that owes the rule, link the domain or its use case to the pattern with `follows`, or remove the test.
 
+<a id="check-test-data-set-unused"></a>
+
+### `test-data-set-unused`
+
+**Error** · Lathe's · Kinds: [`test_data_set`](#kind-test_data_set)
+
+A test data set that no test starts from.
+
+A test data set exists because tests start from it: it is prepared before them and reset after. One that no test starts from is a leftover, or a link is missing. Link the tests that start from it with starts_from, or remove it.
+
+<a id="check-test-data-set-file-missing"></a>
+
+### `test-data-set-file-missing`
+
+**Error or warning** · Lathe's · Kinds: [`test_data_set`](#kind-test_data_set)
+
+A test data set whose file does not exist.
+
+A test data set's file is the seed or fixture that builds it, a file or a folder of files under the product root. When an automated test starts from it, a missing file means that test cannot run, so it is an error. Otherwise the plan may name the file before it is written, so it is a warning. Write the file, or fix the path (relative to the product root).
+
 ### Coverage gaps: test plan
 
 Each is reported in coverage, under the record that falls short, never as a problem.
@@ -2203,7 +2364,7 @@ The product, the roles its records name and its open questions, which belong to 
 A product: the root of a set of specifications.
 
 - **Parents:** none (a root record)
-- **Children:** [`domain`](#kind-domain), [`pattern`](#kind-pattern), [`standard`](#kind-standard), [`question`](#kind-question)
+- **Children:** [`business_outcome`](#kind-business_outcome), [`domain`](#kind-domain), [`pattern`](#kind-pattern), [`standard`](#kind-standard), [`question`](#kind-question)
 - **Obligation:** no
 - **ID:** `<P>`, such as `TL`
 - **Links out:** none
@@ -2287,7 +2448,7 @@ A kind a product adds to Lathe's, such as a report or a CLI command. Its records
 | `label` | VARCHAR | yes | The kind's name as people read it, such as Report. |
 | `description` | VARCHAR | yes | What a record of the kind is. |
 | `parent_kind` | VARCHAR | yes | The kind its records sit under, their one parent: one of Lathe's or another product kind. Its table gets a required <parent_kind>_id column. |
-| `stage` | ENUM('domain-model', 'use-cases', 'interaction-design', 'technical-specification', 'test-plan') | no | The stage its records belong to, any of the five, if one; such as technical-specification for a kind of code Lathe has no kind for. |
+| `stage` | ENUM('discovery', 'domain-model', 'use-cases', 'interaction-design', 'technical-specification', 'test-plan') | no | The stage its records belong to, any of the six, if one; such as technical-specification for a kind of code Lathe has no kind for. |
 | `obligation` | BOOLEAN | yes | Whether a record of the kind is an obligation, to be designed, built and proved. An obligation kind joins the obligation supertype. |
 | `id_pattern` | VARCHAR | no | How its IDs are written, its own pattern, such as <command>-CLI. |
 | `id_example` | VARCHAR | no | An example ID. |
@@ -2646,6 +2807,43 @@ The query selects the records that satisfy the specification, of its own domain.
 | From | To | Meaning |
 | --- | --- | --- |
 | [`query`](#kind-query) | [`specification`](#kind-specification) | The query selects the records that satisfy the specification. |
+
+<a id="relation-serves"></a>
+
+### `serves`
+
+The capability serves the business outcome: what it is for. A capability may serve several outcomes, and an outcome be served by several capabilities.
+
+- **Reads:** Serves / Served by
+- **Role:** none
+
+| From | To | Meaning |
+| --- | --- | --- |
+| [`capability`](#kind-capability) | [`business_outcome`](#kind-business_outcome) | The capability serves the business outcome. |
+
+<a id="relation-starts_from"></a>
+
+### `starts_from`
+
+The test starts from the test data set: it is prepared before the test and reset after.
+
+- **Reads:** Starts from / Started from by
+- **Role:** none
+
+| From | To | Meaning |
+| --- | --- | --- |
+| [`constraint_test`](#kind-constraint_test) | [`test_data_set`](#kind-test_data_set) | The constraint test starts from the test data set. |
+| [`domain_service_test`](#kind-domain_service_test) | [`test_data_set`](#kind-test_data_set) | The domain service test starts from the test data set. |
+| [`endpoint_test`](#kind-endpoint_test) | [`test_data_set`](#kind-test_data_set) | The endpoint test starts from the test data set. |
+| [`flow_test`](#kind-flow_test) | [`test_data_set`](#kind-test_data_set) | The flow test starts from the test data set. |
+| [`integration_test`](#kind-integration_test) | [`test_data_set`](#kind-test_data_set) | The integration test starts from the test data set. |
+| [`invariant_test`](#kind-invariant_test) | [`test_data_set`](#kind-test_data_set) | The invariant test starts from the test data set. |
+| [`pattern_rule_test`](#kind-pattern_rule_test) | [`test_data_set`](#kind-test_data_set) | The pattern rule test starts from the test data set. |
+| [`policy_test`](#kind-policy_test) | [`test_data_set`](#kind-test_data_set) | The policy test starts from the test data set. |
+| [`specification_test`](#kind-specification_test) | [`test_data_set`](#kind-test_data_set) | The specification test starts from the test data set. |
+| [`standard_rule_test`](#kind-standard_rule_test) | [`test_data_set`](#kind-test_data_set) | The standard rule test starts from the test data set. |
+| [`use_case_test`](#kind-use_case_test) | [`test_data_set`](#kind-test_data_set) | The use case test starts from the test data set. |
+| [`view_test`](#kind-view_test) | [`test_data_set`](#kind-test_data_set) | The view test starts from the test data set. |
 
 ## Checks of any kind
 

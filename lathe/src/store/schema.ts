@@ -90,7 +90,7 @@ export interface TableDescription {
 }
 
 /** A stage, in the order a product is modeled; links run from what is defined first to what is defined later. */
-export type Stage = 'domain-model' | 'use-cases' | 'interaction-design' | 'technical-specification' | 'test-plan';
+export type Stage = 'discovery' | 'domain-model' | 'use-cases' | 'interaction-design' | 'technical-specification' | 'test-plan';
 
 /** What a kind's IDs start with, followed by a hyphen: its product's ID, its domain's ID or its parent's ID. */
 export type IdScope = 'product' | 'domain' | 'parent';

@@ -23,7 +23,7 @@ export interface Kind {
   description: string;
 }
 
-/** A stage, in order: domain model, use cases, interaction design, technical specification, test plan. */
+/** A stage, in order: discovery, domain model, use cases, interaction design, technical specification, test plan. */
 export interface StageRule {
   stage: Stage;
   position: number;

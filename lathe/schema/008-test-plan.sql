@@ -1,10 +1,13 @@
 -- The test plan: one test kind per thing tested, each under exactly what it proves. Every test has a run by: its level,
 -- its state, and the file that runs it or why it is manual. A constraint, invariant, specification, policy or flow has
 -- exactly one test; a domain service, UC requirement, view requirement or API requirement at least one (a check, not a
--- refusal); an integration or a standard rule any number; a pattern rule one per domain that adopts it.
+-- refusal); an integration or a standard rule any number; a pattern rule one per domain that adopts it. A run by also
+-- gives the test's size and its markers. Then the test data sets, under a domain, that tests start from.
 
 CREATE TYPE test_level AS ENUM ('unit', 'database', 'api', 'contract', 'e2e-api', 'e2e-ui', 'manual');
 CREATE TYPE test_state AS ENUM ('automated', 'manual', 'not automated yet');
+-- A test's size besides small, the size of a test that gives none.
+CREATE TYPE test_size AS ENUM ('volume', 'worst case');
 
 CREATE TABLE constraint_test (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
@@ -14,6 +17,9 @@ CREATE TABLE constraint_test (
   state test_state NOT NULL,
   file VARCHAR,
   manual_reason VARCHAR,
+  size test_size,
+  smoke BOOLEAN CHECK (smoke),
+  external BOOLEAN CHECK (external),
   accepts VARCHAR,
   refuses VARCHAR,
   notes VARCHAR,
@@ -28,6 +34,9 @@ COMMENT ON COLUMN constraint_test.level IS 'The level it runs at: unit, database
 COMMENT ON COLUMN constraint_test.state IS 'automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet.';
 COMMENT ON COLUMN constraint_test.file IS 'The file that runs it, from the product root; an automated test must name one.';
 COMMENT ON COLUMN constraint_test.manual_reason IS 'Why a person runs it rather than a file; a manual test must give one, and only a manual test.';
+COMMENT ON COLUMN constraint_test.size IS 'How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle).';
+COMMENT ON COLUMN constraint_test.smoke IS 'Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise.';
+COMMENT ON COLUMN constraint_test.external IS 'Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise.';
 COMMENT ON COLUMN constraint_test.accepts IS 'Values the value object accepts, such as a@b.org.';
 COMMENT ON COLUMN constraint_test.refuses IS 'Values it refuses, and how.';
 COMMENT ON COLUMN constraint_test.notes IS 'Longer notes on the test, such as when to run it.';
@@ -40,6 +49,9 @@ CREATE TABLE invariant_test (
   state test_state NOT NULL,
   file VARCHAR,
   manual_reason VARCHAR,
+  size test_size,
+  smoke BOOLEAN CHECK (smoke),
+  external BOOLEAN CHECK (external),
   given VARCHAR,
   "when" VARCHAR,
   "then" VARCHAR,
@@ -55,6 +67,9 @@ COMMENT ON COLUMN invariant_test.level IS 'The level it runs at: unit, database,
 COMMENT ON COLUMN invariant_test.state IS 'automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet.';
 COMMENT ON COLUMN invariant_test.file IS 'The file that runs it, from the product root; an automated test must name one.';
 COMMENT ON COLUMN invariant_test.manual_reason IS 'Why a person runs it rather than a file; a manual test must give one, and only a manual test.';
+COMMENT ON COLUMN invariant_test.size IS 'How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle).';
+COMMENT ON COLUMN invariant_test.smoke IS 'Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise.';
+COMMENT ON COLUMN invariant_test.external IS 'Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise.';
 COMMENT ON COLUMN invariant_test.given IS 'The state the test starts from.';
 COMMENT ON COLUMN invariant_test."when" IS 'What the test does.';
 COMMENT ON COLUMN invariant_test."then" IS 'What the test expects.';
@@ -68,6 +83,9 @@ CREATE TABLE specification_test (
   state test_state NOT NULL,
   file VARCHAR,
   manual_reason VARCHAR,
+  size test_size,
+  smoke BOOLEAN CHECK (smoke),
+  external BOOLEAN CHECK (external),
   given VARCHAR,
   "when" VARCHAR,
   "then" VARCHAR,
@@ -83,6 +101,9 @@ COMMENT ON COLUMN specification_test.level IS 'The level it runs at: unit, datab
 COMMENT ON COLUMN specification_test.state IS 'automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet.';
 COMMENT ON COLUMN specification_test.file IS 'The file that runs it, from the product root; an automated test must name one.';
 COMMENT ON COLUMN specification_test.manual_reason IS 'Why a person runs it rather than a file; a manual test must give one, and only a manual test.';
+COMMENT ON COLUMN specification_test.size IS 'How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle).';
+COMMENT ON COLUMN specification_test.smoke IS 'Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise.';
+COMMENT ON COLUMN specification_test.external IS 'Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise.';
 COMMENT ON COLUMN specification_test.given IS 'The state the test starts from.';
 COMMENT ON COLUMN specification_test."when" IS 'What the test does.';
 COMMENT ON COLUMN specification_test."then" IS 'What the test expects.';
@@ -96,6 +117,9 @@ CREATE TABLE policy_test (
   state test_state NOT NULL,
   file VARCHAR,
   manual_reason VARCHAR,
+  size test_size,
+  smoke BOOLEAN CHECK (smoke),
+  external BOOLEAN CHECK (external),
   given VARCHAR,
   "when" VARCHAR,
   "then" VARCHAR,
@@ -111,6 +135,9 @@ COMMENT ON COLUMN policy_test.level IS 'The level it runs at: unit, database, ap
 COMMENT ON COLUMN policy_test.state IS 'automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet.';
 COMMENT ON COLUMN policy_test.file IS 'The file that runs it, from the product root; an automated test must name one.';
 COMMENT ON COLUMN policy_test.manual_reason IS 'Why a person runs it rather than a file; a manual test must give one, and only a manual test.';
+COMMENT ON COLUMN policy_test.size IS 'How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle).';
+COMMENT ON COLUMN policy_test.smoke IS 'Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise.';
+COMMENT ON COLUMN policy_test.external IS 'Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise.';
 COMMENT ON COLUMN policy_test.given IS 'The state the test starts from.';
 COMMENT ON COLUMN policy_test."when" IS 'What the test does.';
 COMMENT ON COLUMN policy_test."then" IS 'What the test expects.';
@@ -124,6 +151,9 @@ CREATE TABLE domain_service_test (
   state test_state NOT NULL,
   file VARCHAR,
   manual_reason VARCHAR,
+  size test_size,
+  smoke BOOLEAN CHECK (smoke),
+  external BOOLEAN CHECK (external),
   given VARCHAR,
   "when" VARCHAR,
   "then" VARCHAR,
@@ -139,6 +169,9 @@ COMMENT ON COLUMN domain_service_test.level IS 'The level it runs at: unit, data
 COMMENT ON COLUMN domain_service_test.state IS 'automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet.';
 COMMENT ON COLUMN domain_service_test.file IS 'The file that runs it, from the product root; an automated test must name one.';
 COMMENT ON COLUMN domain_service_test.manual_reason IS 'Why a person runs it rather than a file; a manual test must give one, and only a manual test.';
+COMMENT ON COLUMN domain_service_test.size IS 'How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle).';
+COMMENT ON COLUMN domain_service_test.smoke IS 'Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise.';
+COMMENT ON COLUMN domain_service_test.external IS 'Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise.';
 COMMENT ON COLUMN domain_service_test.given IS 'The state the test starts from.';
 COMMENT ON COLUMN domain_service_test."when" IS 'What the test does.';
 COMMENT ON COLUMN domain_service_test."then" IS 'What the test expects.';
@@ -152,6 +185,9 @@ CREATE TABLE use_case_test (
   state test_state NOT NULL,
   file VARCHAR,
   manual_reason VARCHAR,
+  size test_size,
+  smoke BOOLEAN CHECK (smoke),
+  external BOOLEAN CHECK (external),
   given VARCHAR,
   "when" VARCHAR,
   "then" VARCHAR,
@@ -167,6 +203,9 @@ COMMENT ON COLUMN use_case_test.level IS 'The level it runs at: unit, database, 
 COMMENT ON COLUMN use_case_test.state IS 'automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet.';
 COMMENT ON COLUMN use_case_test.file IS 'The file that runs it, from the product root; an automated test must name one.';
 COMMENT ON COLUMN use_case_test.manual_reason IS 'Why a person runs it rather than a file; a manual test must give one, and only a manual test.';
+COMMENT ON COLUMN use_case_test.size IS 'How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle).';
+COMMENT ON COLUMN use_case_test.smoke IS 'Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise.';
+COMMENT ON COLUMN use_case_test.external IS 'Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise.';
 COMMENT ON COLUMN use_case_test.given IS 'The state the test starts from.';
 COMMENT ON COLUMN use_case_test."when" IS 'What the test does.';
 COMMENT ON COLUMN use_case_test."then" IS 'What the test expects.';
@@ -180,6 +219,9 @@ CREATE TABLE view_test (
   state test_state NOT NULL,
   file VARCHAR,
   manual_reason VARCHAR,
+  size test_size,
+  smoke BOOLEAN CHECK (smoke),
+  external BOOLEAN CHECK (external),
   given VARCHAR,
   "when" VARCHAR,
   "then" VARCHAR,
@@ -195,6 +237,9 @@ COMMENT ON COLUMN view_test.level IS 'The level it runs at: unit, database, api,
 COMMENT ON COLUMN view_test.state IS 'automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet.';
 COMMENT ON COLUMN view_test.file IS 'The file that runs it, from the product root; an automated test must name one.';
 COMMENT ON COLUMN view_test.manual_reason IS 'Why a person runs it rather than a file; a manual test must give one, and only a manual test.';
+COMMENT ON COLUMN view_test.size IS 'How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle).';
+COMMENT ON COLUMN view_test.smoke IS 'Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise.';
+COMMENT ON COLUMN view_test.external IS 'Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise.';
 COMMENT ON COLUMN view_test.given IS 'The state the test starts from.';
 COMMENT ON COLUMN view_test."when" IS 'What the test does.';
 COMMENT ON COLUMN view_test."then" IS 'What the test expects.';
@@ -208,6 +253,9 @@ CREATE TABLE endpoint_test (
   state test_state NOT NULL,
   file VARCHAR,
   manual_reason VARCHAR,
+  size test_size,
+  smoke BOOLEAN CHECK (smoke),
+  external BOOLEAN CHECK (external),
   given VARCHAR,
   "when" VARCHAR,
   "then" VARCHAR,
@@ -223,6 +271,9 @@ COMMENT ON COLUMN endpoint_test.level IS 'The level it runs at: unit, database, 
 COMMENT ON COLUMN endpoint_test.state IS 'automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet.';
 COMMENT ON COLUMN endpoint_test.file IS 'The file that runs it, from the product root; an automated test must name one.';
 COMMENT ON COLUMN endpoint_test.manual_reason IS 'Why a person runs it rather than a file; a manual test must give one, and only a manual test.';
+COMMENT ON COLUMN endpoint_test.size IS 'How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle).';
+COMMENT ON COLUMN endpoint_test.smoke IS 'Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise.';
+COMMENT ON COLUMN endpoint_test.external IS 'Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise.';
 COMMENT ON COLUMN endpoint_test.given IS 'The state the test starts from.';
 COMMENT ON COLUMN endpoint_test."when" IS 'What the test does.';
 COMMENT ON COLUMN endpoint_test."then" IS 'What the test expects.';
@@ -236,6 +287,9 @@ CREATE TABLE flow_test (
   state test_state NOT NULL,
   file VARCHAR,
   manual_reason VARCHAR,
+  size test_size,
+  smoke BOOLEAN CHECK (smoke),
+  external BOOLEAN CHECK (external),
   steps VARCHAR[],
   expected_result VARCHAR,
   notes VARCHAR,
@@ -250,6 +304,9 @@ COMMENT ON COLUMN flow_test.level IS 'The level it runs at: unit, database, api,
 COMMENT ON COLUMN flow_test.state IS 'automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet.';
 COMMENT ON COLUMN flow_test.file IS 'The file that runs it, from the product root; an automated test must name one.';
 COMMENT ON COLUMN flow_test.manual_reason IS 'Why a person runs it rather than a file; a manual test must give one, and only a manual test.';
+COMMENT ON COLUMN flow_test.size IS 'How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle).';
+COMMENT ON COLUMN flow_test.smoke IS 'Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise.';
+COMMENT ON COLUMN flow_test.external IS 'Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise.';
 COMMENT ON COLUMN flow_test.steps IS 'What the test does along the main path, step by step.';
 COMMENT ON COLUMN flow_test.expected_result IS 'What it expects at the end.';
 COMMENT ON COLUMN flow_test.notes IS 'Longer notes on the test, such as when to run it.';
@@ -262,6 +319,9 @@ CREATE TABLE integration_test (
   state test_state NOT NULL,
   file VARCHAR,
   manual_reason VARCHAR,
+  size test_size,
+  smoke BOOLEAN CHECK (smoke),
+  external BOOLEAN CHECK (external),
   given VARCHAR,
   "when" VARCHAR,
   "then" VARCHAR,
@@ -277,6 +337,9 @@ COMMENT ON COLUMN integration_test.level IS 'The level it runs at: unit, databas
 COMMENT ON COLUMN integration_test.state IS 'automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet.';
 COMMENT ON COLUMN integration_test.file IS 'The file that runs it, from the product root; an automated test must name one.';
 COMMENT ON COLUMN integration_test.manual_reason IS 'Why a person runs it rather than a file; a manual test must give one, and only a manual test.';
+COMMENT ON COLUMN integration_test.size IS 'How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle).';
+COMMENT ON COLUMN integration_test.smoke IS 'Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise.';
+COMMENT ON COLUMN integration_test.external IS 'Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise.';
 COMMENT ON COLUMN integration_test.given IS 'The state the test starts from.';
 COMMENT ON COLUMN integration_test."when" IS 'What the test does.';
 COMMENT ON COLUMN integration_test."then" IS 'What the test expects.';
@@ -291,6 +354,9 @@ CREATE TABLE pattern_rule_test (
   state test_state NOT NULL,
   file VARCHAR,
   manual_reason VARCHAR,
+  size test_size,
+  smoke BOOLEAN CHECK (smoke),
+  external BOOLEAN CHECK (external),
   given VARCHAR,
   "when" VARCHAR,
   "then" VARCHAR,
@@ -308,6 +374,9 @@ COMMENT ON COLUMN pattern_rule_test.level IS 'The level it runs at: unit, databa
 COMMENT ON COLUMN pattern_rule_test.state IS 'automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet.';
 COMMENT ON COLUMN pattern_rule_test.file IS 'The file that runs it, from the product root; an automated test must name one.';
 COMMENT ON COLUMN pattern_rule_test.manual_reason IS 'Why a person runs it rather than a file; a manual test must give one, and only a manual test.';
+COMMENT ON COLUMN pattern_rule_test.size IS 'How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle).';
+COMMENT ON COLUMN pattern_rule_test.smoke IS 'Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise.';
+COMMENT ON COLUMN pattern_rule_test.external IS 'Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise.';
 COMMENT ON COLUMN pattern_rule_test.given IS 'The state the test starts from.';
 COMMENT ON COLUMN pattern_rule_test."when" IS 'What the test does.';
 COMMENT ON COLUMN pattern_rule_test."then" IS 'What the test expects.';
@@ -321,6 +390,9 @@ CREATE TABLE standard_rule_test (
   state test_state NOT NULL,
   file VARCHAR,
   manual_reason VARCHAR,
+  size test_size,
+  smoke BOOLEAN CHECK (smoke),
+  external BOOLEAN CHECK (external),
   given VARCHAR,
   "when" VARCHAR,
   "then" VARCHAR,
@@ -336,24 +408,27 @@ COMMENT ON COLUMN standard_rule_test.level IS 'The level it runs at: unit, datab
 COMMENT ON COLUMN standard_rule_test.state IS 'automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet.';
 COMMENT ON COLUMN standard_rule_test.file IS 'The file that runs it, from the product root; an automated test must name one.';
 COMMENT ON COLUMN standard_rule_test.manual_reason IS 'Why a person runs it rather than a file; a manual test must give one, and only a manual test.';
+COMMENT ON COLUMN standard_rule_test.size IS 'How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle).';
+COMMENT ON COLUMN standard_rule_test.smoke IS 'Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise.';
+COMMENT ON COLUMN standard_rule_test.external IS 'Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise.';
 COMMENT ON COLUMN standard_rule_test.given IS 'The state the test starts from.';
 COMMENT ON COLUMN standard_rule_test."when" IS 'What the test does.';
 COMMENT ON COLUMN standard_rule_test."then" IS 'What the test expects.';
 COMMENT ON COLUMN standard_rule_test.notes IS 'Longer notes on the test, such as when to run it.';
 
 INSERT INTO meta_kind VALUES
-  ('constraint_test', 'Constraint test', 'test-plan', 44, false, '<constraint>-T', 'TL-VO01-C01-T', 'parent', NULL),
-  ('invariant_test', 'Invariant test', 'test-plan', 45, false, '<invariant>-T', 'TL-LEND-INV01-T', 'parent', NULL),
-  ('specification_test', 'Specification test', 'test-plan', 46, false, '<specification>-T', 'TL-LEND-SP01-T', 'parent', NULL),
-  ('policy_test', 'Policy test', 'test-plan', 47, false, '<policy>-T', 'TL-LEND-PO01-T', 'parent', NULL),
-  ('domain_service_test', 'Domain service test', 'test-plan', 48, false, '<domain service>-T<nn>', 'TL-LEND-DS01-T01', 'parent', NULL),
-  ('use_case_test', 'Use case test', 'test-plan', 49, false, '<UC requirement>-T<nn>', 'TL-LEND-UC01-R01-T01', 'parent', NULL),
-  ('view_test', 'View test', 'test-plan', 50, false, '<view requirement>-T<nn>', 'TL-V01-R01-T01', 'parent', NULL),
-  ('endpoint_test', 'Endpoint test', 'test-plan', 51, false, '<API requirement>-T<nn>', 'TL-LEND-EP01-R01-T01', 'parent', NULL),
-  ('flow_test', 'Flow test', 'test-plan', 52, false, '<flow>-T', 'TL-LEND-UC01-FL-T', 'parent', NULL),
-  ('integration_test', 'Integration test', 'test-plan', 53, false, '<integration>-T<nn>', 'TL-INT01-T01', 'parent', NULL),
-  ('pattern_rule_test', 'Pattern rule test', 'test-plan', 54, false, '<pattern rule>-T<nn>', 'TL-PAT-ACT-R01-T01', 'parent', NULL),
-  ('standard_rule_test', 'Standard rule test', 'test-plan', 55, false, '<standard rule>-T<nn>', 'TL-STD-CODE-R01-T01', 'parent', NULL);
+  ('constraint_test', 'Constraint test', 'test-plan', 46, false, '<constraint>-T', 'TL-VO01-C01-T', 'parent', NULL),
+  ('invariant_test', 'Invariant test', 'test-plan', 47, false, '<invariant>-T', 'TL-LEND-INV01-T', 'parent', NULL),
+  ('specification_test', 'Specification test', 'test-plan', 48, false, '<specification>-T', 'TL-LEND-SP01-T', 'parent', NULL),
+  ('policy_test', 'Policy test', 'test-plan', 49, false, '<policy>-T', 'TL-LEND-PO01-T', 'parent', NULL),
+  ('domain_service_test', 'Domain service test', 'test-plan', 50, false, '<domain service>-T<nn>', 'TL-LEND-DS01-T01', 'parent', NULL),
+  ('use_case_test', 'Use case test', 'test-plan', 51, false, '<UC requirement>-T<nn>', 'TL-LEND-UC01-R01-T01', 'parent', NULL),
+  ('view_test', 'View test', 'test-plan', 52, false, '<view requirement>-T<nn>', 'TL-V01-R01-T01', 'parent', NULL),
+  ('endpoint_test', 'Endpoint test', 'test-plan', 53, false, '<API requirement>-T<nn>', 'TL-LEND-EP01-R01-T01', 'parent', NULL),
+  ('flow_test', 'Flow test', 'test-plan', 54, false, '<flow>-T', 'TL-LEND-UC01-FL-T', 'parent', NULL),
+  ('integration_test', 'Integration test', 'test-plan', 55, false, '<integration>-T<nn>', 'TL-INT01-T01', 'parent', NULL),
+  ('pattern_rule_test', 'Pattern rule test', 'test-plan', 56, false, '<pattern rule>-T<nn>', 'TL-PAT-ACT-R01-T01', 'parent', NULL),
+  ('standard_rule_test', 'Standard rule test', 'test-plan', 57, false, '<standard rule>-T<nn>', 'TL-STD-CODE-R01-T01', 'parent', NULL);
 INSERT INTO meta_kind_parent VALUES
   ('constraint_test', 'constraint', 1, 'constraint_id'),
   ('invariant_test', 'invariant', 1, 'invariant_id'),
@@ -380,3 +455,31 @@ INSERT INTO meta_table VALUES
   ('integration_test', 'kind', NULL),
   ('pattern_rule_test', 'kind', NULL),
   ('standard_rule_test', 'kind', NULL);
+
+CREATE TABLE test_data_set (
+  id VARCHAR PRIMARY KEY REFERENCES record_id (id),
+  title VARCHAR NOT NULL CHECK (trim(title) <> ''),
+  domain_id VARCHAR NOT NULL REFERENCES domain (id),
+  environment VARCHAR,
+  accounts VARCHAR,
+  records VARCHAR,
+  prepare VARCHAR,
+  reset VARCHAR,
+  file VARCHAR,
+  description VARCHAR
+);
+COMMENT ON TABLE test_data_set IS 'What some tests start from: the environment, the accounts and the starting records, how to prepare and reset them, and the file that builds them. Tests link to it with starts_from.';
+COMMENT ON COLUMN test_data_set.id IS 'The data set''s ID: its domain''s ID and TD<nn>, such as TL-LEND-TD01.';
+COMMENT ON COLUMN test_data_set.title IS 'The data set in a few words, such as Two members, one tool on loan.';
+COMMENT ON COLUMN test_data_set.domain_id IS 'The domain whose tests it serves.';
+COMMENT ON COLUMN test_data_set.environment IS 'Where it runs: the database, server or browser storage it is built in.';
+COMMENT ON COLUMN test_data_set.accounts IS 'The accounts and roles it signs in as.';
+COMMENT ON COLUMN test_data_set.records IS 'The records it starts with.';
+COMMENT ON COLUMN test_data_set.prepare IS 'How to prepare it before a test.';
+COMMENT ON COLUMN test_data_set.reset IS 'How to reset it after a test, so the next starts clean.';
+COMMENT ON COLUMN test_data_set.file IS 'The seed or fixture that builds it, from the product root.';
+COMMENT ON COLUMN test_data_set.description IS 'What it is for, in a sentence or two.';
+
+INSERT INTO meta_kind VALUES ('test_data_set', 'Test data set', 'test-plan', 45, false, '<P>-<D>-TD<nn>', 'TL-LEND-TD01', 'domain', NULL);
+INSERT INTO meta_kind_parent VALUES ('test_data_set', 'domain', 1, 'domain_id');
+INSERT INTO meta_table VALUES ('test_data_set', 'kind', NULL);
