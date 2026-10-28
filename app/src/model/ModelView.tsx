@@ -324,7 +324,7 @@ function ErdCanvas({ relations, erd, focus, onNavigate, onPeek }: { relations: r
   }, []);
 
   const go = (id: string) => { if (id !== focus) onNavigate(id); };
-  // By touch, a first tap selects a box and a second tap (or the card's Open chip) opens it.
+  // By touch, a first tap selects a box and a second tap (or a tap on its card) opens it.
   const canOpen = useCallback((id: string) => id !== focus, [focus]);
   const tap = useTapToOpen(onNavigate, canOpen, wrapper, focus);
   const armedBox = tap.armed ? erd.boxes.find((b) => b.id === tap.armed) : undefined;

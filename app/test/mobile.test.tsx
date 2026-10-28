@@ -178,15 +178,16 @@ describe('Lathe on a phone', () => {
     // A finger's tap on the box drawn on the canvas.
     tapAt(pointOn('P-D-UC01-FL01-S01'));
     expect(window.location.pathname).toBe('/P-D-UC01-R01');
-    const card = await waitFor(() => { const c = document.querySelector<HTMLElement>('.tap-card'); expect(c).not.toBeNull(); return c!; });
-    expect(card).toHaveAttribute('role', 'status');
+    const card = await waitFor(() => { const c = document.querySelector<HTMLElement>('.card[role="status"]'); expect(c).not.toBeNull(); return c!; });
     expect(card).toHaveTextContent('Librarian lends the thing');
+    // The card is one button, its title, named for what it does.
+    expect(within(card).getAllByRole('button').map((b) => b.getAttribute('aria-label'))).toEqual(['Open Librarian lends the thing', 'Let go of the selection']);
     expect(node()).toHaveClass('is-armed');
     expect(drawnBox('P-D-UC01-FL01-S01')!.armed).toBe(true);
     // A tap on the canvas lets go.
     tapEmpty();
-    await waitFor(() => expect(document.querySelector('.tap-card')).toBeNull());
-    // The chip opens it (selected again, here by the box in the keyboard's layer).
+    await waitFor(() => expect(document.querySelector('.card[role="status"]')).toBeNull());
+    // A tap on the card opens it (selected again, here by the box in the keyboard's layer).
     fireEvent.click(node());
     fireEvent.click(screen.getByRole('button', { name: 'Open Librarian lends the thing' }));
     expect(window.location.pathname).toBe('/P-D-UC01-FL01-S01');
@@ -197,8 +198,8 @@ describe('Lathe on a phone', () => {
     expect(isTap({ pointerType: '' } as unknown as Event, true)).toBe(true);
     expect(isTap({ pointerType: '' } as unknown as Event, false)).toBe(false);
   };
-  it('LA-V61-R23-T01 By touch, a first tap on a graph node selects it and shows its name with an Open chip; a second tap or the chip opens it, and a tap on the canvas lets go', proveLaV61R23T01);
-  it('LA-V93-R02-T01 By touch, a first tap on a graph node selects it and a second tap or the Open chip opens it', proveLaV61R23T01);
+  it('LA-V61-R23-T01 By touch, a first tap on a graph node selects it and a second tap or a tap on its card opens it', proveLaV61R23T01);
+  it('LA-V93-R02-T01 By touch, a first tap on a graph node selects it and a second tap or a tap on its card opens it', proveLaV61R23T01);
 
   it('LA-V61-R25-T01 The theme-color meta follows the theme\'s --sheet token', async () => {
     function Host() { useThemeColor(); const r = useRef(null); return <div ref={r} />; }

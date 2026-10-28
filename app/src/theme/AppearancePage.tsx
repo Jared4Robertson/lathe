@@ -1,6 +1,7 @@
 import { useEffect, useId, useState, type CSSProperties, type ChangeEvent } from 'react';
 import { Button, buttonClass } from '../components/Button';
 import { Link, navigate, useLocation } from '../router';
+import { Card, CardGrid } from '../shell/Card';
 import { shownMode } from './apply';
 import { auditContrast } from './audit';
 import { formatRatio, parseColor, toHex } from './contrast';
@@ -115,24 +116,25 @@ function ThemeList() {
         </div>
       </div>
       {message && <p className={message.ok ? 'hint' : 'error inline-error'} role={message.ok ? 'status' : 'alert'}>{message.text}</p>}
-      <ul className="theme-list" aria-labelledby={heading}>
+      <CardGrid label="Themes">
         {themes.map((t) => (
-          <li key={t.id} className={`theme-card${t.id === active.id ? ' is-current' : ''}`}>
-            <ThemePreview theme={t} mode={shows} />
-            <div className="theme-card-name">
-              <strong>{t.name}</strong>
-              <small>{t.id === active.id ? 'In use' : t.builtIn ? 'Built in' : 'Yours'}</small>
-            </div>
-            <div className="theme-card-actions">
-              <Button aria-pressed={t.id === active.id} label={`Use ${t.name}`} onClick={() => choose(t.id)}>Use</Button>
+          <Card
+            key={t.id}
+            onActivate={() => choose(t.id)}
+            pressed={t.id === active.id}
+            label={`Use ${t.name}`}
+            media={<ThemePreview theme={t} mode={shows} />}
+            title={<><strong>{t.name}</strong><small>{t.id === active.id ? 'In use' : t.builtIn ? 'Built in' : 'Yours'}</small></>}
+          >
+            <div className="theme-actions">
               {t.builtIn
                 ? <Button label={`Duplicate and edit ${t.name}`} onClick={() => navigate(editPath(duplicate(t.id)))}>Duplicate and edit</Button>
                 : <Link to={editPath(t.id)} className={buttonClass()} aria-label={`Edit ${t.name}`} onClick={() => choose(t.id)}>Edit</Link>}
               <Button label={`Export ${t.name}`} onClick={() => download(t.name, exportFile(t.id))}>Export</Button>
             </div>
-          </li>
+          </Card>
         ))}
-      </ul>
+      </CardGrid>
     </section>
   );
 }

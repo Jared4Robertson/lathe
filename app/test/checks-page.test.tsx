@@ -19,8 +19,9 @@ describe('checks page', () => {
       { check: 'test-file-missing', severities: ['error'], records: ['/DM-SHOP-UC01-R01-T01'] },
       { check: 'not-designed', severities: ['warning'], records: ['/DM-PAY-UC01-R01'] },
       { check: 'not-proved', severities: ['warning', 'warning'], records: ['/DM-SHOP-INV01', '/DM-SHOP-UC01-R02'] },
-      { check: 'Workspace', severities: ['error'], records: ['workspace'] },
-      { check: 'engine', severities: ['error'], records: ['workspace'] },
+      { check: 'Workspace', severities: ['error'], records: ['/format/checks/engine'] },
+      // A workspace problem names no record, so its row opens its check (LA-PAT-APP-UX-R14).
+      { check: 'engine', severities: ['error'], records: ['/format/checks/engine'] },
     ]);
     expect(main().textContent).not.toContain('NF-NOTE');
     // Demo shop records no exception, so it has no such section.
