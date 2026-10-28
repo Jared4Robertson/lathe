@@ -267,10 +267,14 @@ WITH proofs AS (
   FROM test_run t JOIN obligation o ON o.id = t.parent_id
   -- A standard rule: the tests that meet it.
   UNION ALL SELECT m.target_id, t.id, NULL, t.state, t.level_allowed AND t.backed FROM meets m JOIN test_run t ON t.id = m.source_id
-  -- A product's own obligation kind: the sources of its proof links; one that is not a test counts as it stands.
-  UNION ALL SELECT l.target_id, l.source_id, NULL, coalesce(t.state, 'automated'), coalesce(t.level_allowed AND t.backed, true)
+  -- A product's own obligation kind: the sources of its proof links. A test is backed as test_run says; a record of a
+  -- product kind that names a file is backed only when that file exists and names it, as a test is; one that names
+  -- no file counts as it stands.
+  UNION ALL SELECT l.target_id, l.source_id, NULL, coalesce(t.state, 'automated'),
+    coalesce(t.level_allowed AND t.backed, f.file_exists AND f.contains_id, true)
   FROM link l JOIN meta_relation r ON r.name = l.relation AND r.role = 'proof' JOIN obligation o ON o.id = l.target_id
-  LEFT JOIN test_run t ON t.id = l.source_id WHERE o.kind NOT IN (${lathe})
+  LEFT JOIN test_run t ON t.id = l.source_id LEFT JOIN file_facts f ON f.record = l.source_id
+  WHERE o.kind NOT IN (${lathe})
 )
 SELECT *, state IN ('automated', 'manual') AND valid AS counts FROM proofs;
 
