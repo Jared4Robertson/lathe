@@ -91,8 +91,6 @@
 {"table_id":"LA-AUT-EN43-TB","position":1,"type":"primary","columns":["use_case_id","position"]}
 {"table_id":"LA-AUT-EN43-TB","position":2,"type":"unique","columns":["use_case_id","role_name"]}
 {"table_id":"LA-AUT-EN43-TB","position":3,"type":"foreign","columns":["use_case_id"],"target_table_id":"LA-AUT-EN11-TB"}
-{"table_id":"LA-AUT-EN44-TB","position":1,"type":"primary","columns":["follower_id","pattern_id","setting"]}
-{"table_id":"LA-AUT-EN44-TB","position":2,"type":"foreign","columns":["pattern_id","setting"],"target_table_id":"LA-AUT-EN15-TB"}
 {"table_id":"LA-AUT-EN45-TB","position":1,"type":"primary","columns":["id"]}
 {"table_id":"LA-AUT-EN45-TB","position":2,"type":"foreign","columns":["view_id"],"target_table_id":"LA-AUT-EN20-TB"}
 {"table_id":"LA-AUT-EN46-TB","position":1,"type":"primary","columns":["id"]}

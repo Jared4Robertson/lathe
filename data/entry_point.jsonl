@@ -1,8 +1,8 @@
-{"id":"LA-EXP-ENTRY01","title":"Voronoi layout worker","domain_id":"LA-EXP","file":"app/src/graph/voronoi.worker.ts"}
-{"id":"LA-PLT-ENTRY01","title":"Desktop shell start-up","domain_id":"LA-PLT","file":"desktop/src/main.ts"}
-{"id":"LA-PLT-ENTRY02","title":"Single-instance lock","domain_id":"LA-PLT","file":"desktop/src/instance.ts"}
-{"id":"LA-PLT-ENTRY03","title":"Window restoration off","domain_id":"LA-PLT","file":"desktop/src/persistence.ts"}
-{"id":"LA-PLT-ENTRY04","title":"Dev API plugin","domain_id":"LA-PLT","file":"app/server/lathe.ts"}
-{"id":"LA-PLT-ENTRY05","title":"Web app start-up","domain_id":"LA-PLT","file":"app/src/main.tsx"}
-{"id":"LA-PLT-ENTRY06","title":"Page preload","domain_id":"LA-PLT","file":"desktop/src/preload.cts"}
-{"id":"LA-PLT-ENTRY07","title":"Shell pages' preload","domain_id":"LA-PLT","file":"desktop/src/local-preload.cts"}
+{"id":"LA-EXP-ENTRY01","title":"voronoi.worker.ts","domain_id":"LA-EXP","file":"app/src/graph/voronoi.worker.ts"}
+{"id":"LA-PLT-ENTRY01","title":"main.ts","domain_id":"LA-PLT","file":"desktop/src/main.ts"}
+{"id":"LA-PLT-ENTRY02","title":"instance.ts","domain_id":"LA-PLT","file":"desktop/src/instance.ts"}
+{"id":"LA-PLT-ENTRY03","title":"persistence.ts","domain_id":"LA-PLT","file":"desktop/src/persistence.ts"}
+{"id":"LA-PLT-ENTRY04","title":"latheApi","domain_id":"LA-PLT","file":"app/server/lathe.ts"}
+{"id":"LA-PLT-ENTRY05","title":"main.tsx","domain_id":"LA-PLT","file":"app/src/main.tsx"}
+{"id":"LA-PLT-ENTRY06","title":"preload.cts","domain_id":"LA-PLT","file":"desktop/src/preload.cts"}
+{"id":"LA-PLT-ENTRY07","title":"local-preload.cts","domain_id":"LA-PLT","file":"desktop/src/local-preload.cts"}

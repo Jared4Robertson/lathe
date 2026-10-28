@@ -3,23 +3,23 @@
 {"id":"LA-AUT-CMD03-H","title":"move","command_id":"LA-AUT-CMD03","file":"lathe/src/store/store.ts","description":"`move`: builds the new state in one transaction, validates it, then rewrites the files it changed, one write at a time"}
 {"id":"LA-AUT-CMD04-H","title":"link","command_id":"LA-AUT-CMD04","file":"lathe/src/store/store.ts","description":"`link`: builds the new state in one transaction, validates it, then rewrites the files it changed, one write at a time"}
 {"id":"LA-AUT-CMD05-H","title":"unlink","command_id":"LA-AUT-CMD05","file":"lathe/src/store/store.ts","description":"`unlink`: builds the new state in one transaction, validates it, then rewrites the files it changed, one write at a time"}
-{"id":"LA-AUT-CMD06-H","title":"remove","command_id":"LA-AUT-CMD06","file":"lathe/src/store/store.ts","description":"`remove`: builds the new state in one transaction, validates it, then rewrites the files it changed, one write at a time"}
+{"id":"LA-AUT-CMD06-H","title":"Store.remove","command_id":"LA-AUT-CMD06","file":"lathe/src/store/store.ts","description":"`remove`: builds the new state in one transaction, validates it, then rewrites the files it changed, one write at a time"}
 {"id":"LA-AUT-CMD07-H","title":"apply","command_id":"LA-AUT-CMD07","file":"lathe/src/store/store.ts","description":"`apply`: builds the new state in one transaction, validates it, then rewrites the files it changed, one write at a time"}
-{"id":"LA-AUT-CMD08-H","title":"mergeData, mergeDataFiles","command_id":"LA-AUT-CMD08","file":"lathe/src/store/merge.ts","description":"`mergeData`, `mergeDataFiles`"}
-{"id":"LA-CHK-CMD01-H","title":"add on check","command_id":"LA-CHK-CMD01","file":"lathe/src/store/store.ts","description":"`add` on `check`: the command layer's write."}
-{"id":"LA-CHK-CMD02-H","title":"set on check","command_id":"LA-CHK-CMD02","file":"lathe/src/store/store.ts","description":"`set` on `check`, refusing Lathe's own (`built-in`)."}
-{"id":"LA-CHK-CMD03-H","title":"remove on check","command_id":"LA-CHK-CMD03","file":"lathe/src/store/store.ts","description":"`remove` on `check`, refusing Lathe's own."}
-{"id":"LA-CHK-CMD04-H","title":"add and set on product_setting","command_id":"LA-CHK-CMD04","file":"lathe/src/store/store.ts"}
+{"id":"LA-AUT-CMD08-H","title":"mergeDataFiles","command_id":"LA-AUT-CMD08","file":"lathe/src/store/merge.ts","description":"`mergeDataFiles`, which reads the three versions of a data file and merges them with `mergeData`."}
+{"id":"LA-CHK-CMD01-H","title":"Store.add('check')","command_id":"LA-CHK-CMD01","file":"lathe/src/store/store.ts","description":"`add` on `check`: the command layer's write."}
+{"id":"LA-CHK-CMD02-H","title":"Store.set('check')","command_id":"LA-CHK-CMD02","file":"lathe/src/store/store.ts","description":"`set` on `check`, refusing Lathe's own (`built-in`)."}
+{"id":"LA-CHK-CMD03-H","title":"Store.remove('check')","command_id":"LA-CHK-CMD03","file":"lathe/src/store/store.ts","description":"`remove` on `check`, refusing Lathe's own."}
+{"id":"LA-CHK-CMD04-H","title":"Store.set('product_setting')","command_id":"LA-CHK-CMD04","file":"lathe/src/store/store.ts","description":"`add` and `set` on `product_setting`, through the store's command layer."}
 {"id":"LA-EXP-CMD01-H","title":"navigate","command_id":"LA-EXP-CMD01","file":"app/src/router.tsx","description":"navigate"}
 {"id":"LA-EXP-CMD02-H","title":"useSpaceState","command_id":"LA-EXP-CMD02","file":"app/src/shell/spaces.tsx","description":"useSpaceState"}
-{"id":"LA-EXP-CMD03-H","title":"the folders' fold toggles","command_id":"LA-EXP-CMD03","file":"app/src/shell/Nav.tsx","description":"the folders' fold toggles"}
-{"id":"LA-EXP-CMD04-H","title":"usePageTabs","command_id":"LA-EXP-CMD04","file":"app/src/views/useTabs.ts","description":"usePageTabs, through openTab, keepTab, closeTab, activateTab, cycleTab, updateTab"}
-{"id":"LA-EXP-CMD05-H","title":"usePageTabs","command_id":"LA-EXP-CMD05","file":"app/src/views/useTabs.ts","description":"usePageTabs, through openTab, keepTab, closeTab, activateTab, cycleTab, updateTab"}
-{"id":"LA-EXP-CMD06-H","title":"usePageTabs","command_id":"LA-EXP-CMD06","file":"app/src/views/useTabs.ts","description":"usePageTabs, through openTab, keepTab, closeTab, activateTab, cycleTab, updateTab"}
-{"id":"LA-EXP-CMD07-H","title":"usePageTabs","command_id":"LA-EXP-CMD07","file":"app/src/views/useTabs.ts","description":"usePageTabs, through openTab, keepTab, closeTab, activateTab, cycleTab, updateTab"}
-{"id":"LA-EXP-CMD08-H","title":"usePageTabs","command_id":"LA-EXP-CMD08","file":"app/src/views/useTabs.ts","description":"usePageTabs, through openTab, keepTab, closeTab, activateTab, cycleTab, updateTab"}
+{"id":"LA-EXP-CMD03-H","title":"SpaceItems.toggle","command_id":"LA-EXP-CMD03","file":"app/src/shell/Nav.tsx","description":"The folders' fold toggles: `toggle` in `SpaceItems` flips a row's entry in `lathe:nav-folders`, opening the branch down to the current page."}
+{"id":"LA-EXP-CMD04-H","title":"openTab","command_id":"LA-EXP-CMD04","file":"app/src/views/useTabs.ts","description":"`openTab` (app/src/views/tabs.ts), called by `arrive` in `usePageTabs` on each address."}
+{"id":"LA-EXP-CMD05-H","title":"keepTab","command_id":"LA-EXP-CMD05","file":"app/src/views/useTabs.ts","description":"`keepTab`, reached through `usePageTabs`' `keep`."}
+{"id":"LA-EXP-CMD06-H","title":"closeTab","command_id":"LA-EXP-CMD06","file":"app/src/views/useTabs.ts","description":"`closeTab`, reached through `usePageTabs`' `close`."}
+{"id":"LA-EXP-CMD07-H","title":"activateTab","command_id":"LA-EXP-CMD07","file":"app/src/views/useTabs.ts","description":"`activateTab` and `cycleTab`, reached through `usePageTabs`' `activate` and `cycle`."}
+{"id":"LA-EXP-CMD08-H","title":"updateTab","command_id":"LA-EXP-CMD08","file":"app/src/views/useTabs.ts","description":"`updateTab`, reached through `usePageTabs`' `update`: pane sizes, wiki scroll and the side bar's state."}
 {"id":"LA-EXP-CMD09-H","title":"useGraphSettings","command_id":"LA-EXP-CMD09","file":"app/src/graph/settings.ts","description":"useGraphSettings: the session's settings, and the setter the graph calls for the person's own change"}
-{"id":"LA-PLT-CMD01-H","title":"usePanelSize's setter","command_id":"LA-PLT-CMD01","file":"app/src/shell/prefs.ts","description":"usePanelSize's setter, within the limits"}
+{"id":"LA-PLT-CMD01-H","title":"usePanelSize.set","command_id":"LA-PLT-CMD01","file":"app/src/shell/prefs.ts","description":"`usePanelSize`'s setter, `set`, which keeps the size within the panel's limits."}
 {"id":"LA-PLT-CMD02-H","title":"toggleNav","command_id":"LA-PLT-CMD02","file":"app/src/App.tsx","description":"toggleNav, and the side bar, view and full screen commands the shell registers"}
 {"id":"LA-PLT-CMD03-H","title":"choose","command_id":"LA-PLT-CMD03","file":"app/src/theme/ThemeProvider.tsx"}
 {"id":"LA-PLT-CMD04-H","title":"setMode","command_id":"LA-PLT-CMD04","file":"app/src/theme/ThemeProvider.tsx"}
@@ -27,21 +27,21 @@
 {"id":"LA-PLT-CMD06-H","title":"importFile","command_id":"LA-PLT-CMD06","file":"app/src/theme/ThemeProvider.tsx"}
 {"id":"LA-PLT-CMD07-H","title":"update","command_id":"LA-PLT-CMD07","file":"app/src/theme/ThemeProvider.tsx"}
 {"id":"LA-PLT-CMD08-H","title":"reset","command_id":"LA-PLT-CMD08","file":"app/src/theme/ThemeProvider.tsx"}
-{"id":"LA-PLT-CMD09-H","title":"remove","command_id":"LA-PLT-CMD09","file":"app/src/theme/ThemeProvider.tsx"}
+{"id":"LA-PLT-CMD09-H","title":"remove","command_id":"LA-PLT-CMD09","file":"app/src/theme/ThemeProvider.tsx","description":"`remove` in `ThemeProvider`: deletes a theme copy."}
 {"id":"LA-PLT-CMD10-H","title":"openFolder","command_id":"LA-PLT-CMD10","file":"desktop/src/main.ts","description":"openFolder"}
-{"id":"LA-PLT-CMD11-H","title":"the window's close and closed handlers","command_id":"LA-PLT-CMD11","file":"desktop/src/main.ts","description":"the window's close and closed handlers"}
+{"id":"LA-PLT-CMD11-H","title":"win.on('close')","command_id":"LA-PLT-CMD11","file":"desktop/src/main.ts","description":"The window's close and closed handlers in `openFolder`: `close` saves the window's bounds, `closed` stops its server and forgets it."}
 {"id":"LA-PLT-CMD12-H","title":"saveBounds","command_id":"LA-PLT-CMD12","file":"desktop/src/main.ts","description":"saveBounds"}
 {"id":"LA-PLT-CMD13-H","title":"applyChrome","command_id":"LA-PLT-CMD13","file":"desktop/src/chrome.ts","description":"applyChrome"}
-{"id":"LA-PLT-CMD14-H","title":"the lathe","command_id":"LA-PLT-CMD14","file":"desktop/src/main.ts","description":"the lathe:error-count handler, updateBadge"}
+{"id":"LA-PLT-CMD14-H","title":"updateBadge","command_id":"LA-PLT-CMD14","file":"desktop/src/main.ts","description":"The `lathe:error-count` handler, which keeps the window's error count, and `updateBadge`."}
 {"id":"LA-PLT-CMD15-H","title":"startServe","command_id":"LA-PLT-CMD15","file":"desktop/src/servers.ts","description":"startServe, startDev"}
-{"id":"LA-PLT-CMD16-H","title":"each server's stop","command_id":"LA-PLT-CMD16","file":"desktop/src/servers.ts","description":"each server's stop"}
+{"id":"LA-PLT-CMD16-H","title":"AppServer.stop","command_id":"LA-PLT-CMD16","file":"desktop/src/servers.ts","description":"Each server's `stop`, from `startServe` or `startDev`."}
 {"id":"LA-PLT-CMD17-H","title":"serve","command_id":"LA-PLT-CMD17","file":"lathe/src/server/serve.ts","description":"serve"}
 {"id":"LA-PLT-CMD19-H","title":"addRecent","command_id":"LA-PLT-CMD19","file":"desktop/src/folders.ts","description":"addRecent"}
-{"id":"LA-PLT-CMD20-H","title":"clearRecent in refreshMenu","command_id":"LA-PLT-CMD20","file":"desktop/src/main.ts","description":"clearRecent in refreshMenu"}
+{"id":"LA-PLT-CMD20-H","title":"clearRecent","command_id":"LA-PLT-CMD20","file":"desktop/src/main.ts","description":"`clearRecent` in `refreshMenu`: clears the system's recent documents and remembers an empty list."}
 {"id":"LA-PLT-CMD21-H","title":"init","command_id":"LA-PLT-CMD21","file":"lathe/bin/lathe.ts","description":"init"}
-{"id":"LA-PLT-CMD22-H","title":"the window restoration opt-out","command_id":"LA-PLT-CMD22","file":"desktop/src/persistence.ts","description":"optOutOfWindowRestoration: sets ApplePersistenceIgnoreState and NSQuitAlwaysKeepsWindows on macOS, and nothing elsewhere."}
+{"id":"LA-PLT-CMD22-H","title":"optOutOfWindowRestoration","command_id":"LA-PLT-CMD22","file":"desktop/src/persistence.ts","description":"The window restoration opt-out, `optOutOfWindowRestoration`: sets ApplePersistenceIgnoreState and NSQuitAlwaysKeepsWindows on macOS, and nothing elsewhere."}
 {"id":"LA-PLT-CMD23-H","title":"readOverrides","command_id":"LA-PLT-CMD23","file":"app/src/shell/keymap.ts","description":"readOverrides and resolveCommands: unknown commands, bad values and browser essentials dropped."}
 {"id":"LA-PLT-CMD24-H","title":"upgradeProduct","command_id":"LA-PLT-CMD24","file":"lathe/src/upgrade.ts","description":"upgradeProduct, readConverters"}
 {"id":"LA-PLT-CMD25-H","title":"mcp-server.mjs","command_id":"LA-PLT-CMD25","file":"plugin/scripts/mcp-server.mjs","description":"The launcher, with installedLathe, versionWarning and warnOnce in lathe-root.mjs"}
-{"id":"LA-TRC-CMD01-H","title":"link on follows","command_id":"LA-TRC-CMD01","file":"lathe/src/store/store.ts","description":"link on follows"}
-{"id":"LA-TRC-CMD02-H","title":"add and set on setting_value","command_id":"LA-TRC-CMD02","file":"lathe/src/store/store.ts","description":"add and set on setting_value"}
+{"id":"LA-TRC-CMD01-H","title":"Store.link('follows')","command_id":"LA-TRC-CMD01","file":"lathe/src/store/store.ts","description":"`link` on `follows`, through the store's command layer."}
+{"id":"LA-TRC-CMD02-H","title":"Store.set('setting_value')","command_id":"LA-TRC-CMD02","file":"lathe/src/store/store.ts","description":"`add` and `set` on `setting_value`, through the store's command layer."}
