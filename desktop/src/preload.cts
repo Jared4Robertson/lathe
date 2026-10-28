@@ -10,7 +10,12 @@
 //   setErrorCount       sends the product's number of check errors, for the Dock badge (dock.ts);
 //   revealRecord, openRecordInEditor, copyRecordId, showRecordMenu
 //                       the record actions, by record ID only (the main process checks the request and
-//                       finds the data file itself, records.ts).
+//                       finds the data file itself, records.ts);
+//   chat                the chat panel's Claude Code (LA-PLT-UC19): the folder's saved sessions, open one
+//                       (new, resumed or forked), send a message, answer a permission prompt, stop the
+//                       turn, and subscribe to the chat's patches (chat.ts);
+//   onAppRequest        answers the app bridge's questions (bridge.ts): what the Reader is looking at,
+//                       and opening a record, for Lathe's MCP tools run by the chat's Claude Code.
 // Until the app subscribes, a menu choice presses the command's default keys in the page, so the
 // app's keymap runs it as if typed.
 const { contextBridge, ipcRenderer } = require('electron') as typeof import('electron');
@@ -36,6 +41,25 @@ ipcRenderer.on('lathe:command', (_event, message: { id: string; presses: KeyPres
 ipcRenderer.on('lathe:full-screen', (_event, value: unknown) => {
   fullScreen = value === true;
   for (const listener of fullScreenListeners) listener(fullScreen);
+});
+
+type PatchListener = (patch: unknown) => void;
+type AppRequestHandler = (request: unknown) => unknown;
+const patchListeners = new Set<PatchListener>();
+let appRequestHandler: AppRequestHandler | null = null;
+
+ipcRenderer.on('lathe:chat', (_event, patch: unknown) => {
+  for (const listener of patchListeners) listener(patch);
+});
+
+ipcRenderer.on('lathe:app-request', (_event, request: { id?: unknown }) => {
+  const id = request?.id;
+  if (typeof id !== 'string') return;
+  const reply = (answer: unknown) => ipcRenderer.send('lathe:app-answer', { id, answer });
+  if (!appRequestHandler) return reply(null);
+  Promise.resolve()
+    .then(() => appRequestHandler?.(request))
+    .then(reply, () => reply(null));
 });
 
 const recordAction = (action: string) => (id: unknown) => {
@@ -71,4 +95,29 @@ contextBridge.exposeInMainWorld('latheDesktop', {
   openRecordInEditor: recordAction('open-in-editor'),
   copyRecordId: recordAction('copy-id'),
   showRecordMenu: recordAction('menu'),
+  chat: {
+    sessions: () => ipcRenderer.invoke('lathe:chat-sessions'),
+    open: (choice: unknown) => ipcRenderer.invoke('lathe:chat-open', choice),
+    send: (text: unknown) => ipcRenderer.invoke('lathe:chat-send', text),
+    answer: (id: unknown, allow: unknown) => ipcRenderer.invoke('lathe:chat-answer', { id, allow }),
+    stop: () => ipcRenderer.invoke('lathe:chat-stop'),
+    /** Subscribes to the chat's patches; the first is the whole chat, when there is one. */
+    onPatch(listener: PatchListener) {
+      if (typeof listener !== 'function') return () => {};
+      patchListeners.add(listener);
+      void ipcRenderer.invoke('lathe:chat-state').then((whole: unknown) => {
+        if (whole && patchListeners.has(listener)) listener(whole);
+      });
+      return () => {
+        patchListeners.delete(listener);
+      };
+    },
+  },
+  onAppRequest(handler: AppRequestHandler) {
+    if (typeof handler !== 'function') return () => {};
+    appRequestHandler = handler;
+    return () => {
+      if (appRequestHandler === handler) appRequestHandler = null;
+    };
+  },
 });
