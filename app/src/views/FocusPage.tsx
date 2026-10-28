@@ -289,7 +289,7 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
     ),
     trace: (
       <Suspense fallback={<p className="hint graph-loading">Loading the trace…</p>}>
-        <TraceView index={index} focus={focus} onNavigate={onNavigate} hrefFor={hrefFor} onPeek={peek.set} onCounts={setCounts} />
+        <TraceView index={index} focus={focus} onNavigate={onNavigate} hrefFor={hrefFor} onPeek={peek.set} onCounts={setCounts} space={space} />
       </Suspense>
     ),
   };
