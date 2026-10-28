@@ -84,7 +84,7 @@ function topLevel(selector: string): string[] {
 const BASE_ELEMENTS = new Set(['html', 'body', 'h1', 'h2', 'h3', 'h4', 'p', 'a', 'code', 'pre', 'kbd', 'small', 'strong', 'button', 'input', 'textarea', 'select', 'table', 'th', 'td', 'svg']);
 
 describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
-  it('LA-PAT-APP-CODE-R01-T01 Layout lives in the markup: no stylesheet rule moves or restyles an element from outside its component', async () => {
+  it.each(['LA-PAT-APP-CODE-R01-T01', 'LA-PAT-APP-CODE-R01-T02'])('%s Layout lives in the markup: no stylesheet rule moves or restyles an element from outside its component', async () => {
     expect(where('app/src/styles.css', CSS, /display:\s*contents|:has\(/)).toEqual([]);
     // A section's own header row holds its list's Expand all: the button sits inside the header.
     await openApp('/DM-SHOP-CAP01');
@@ -95,7 +95,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     if (bulk) expect(header.contains(bulk)).toBe(true);
   });
 
-  it('LA-PAT-APP-CODE-R02-T01 Styles are set by class: no selector names only elements, beyond the base styles', () => {
+  it.each(['LA-PAT-APP-CODE-R02-T01', 'LA-PAT-APP-CODE-R02-T02'])('%s Styles are set by class: no selector names only elements, beyond the base styles', () => {
     const bare = styleRules(CSS)
       .flatMap((r) => topLevel(r.selector).map((s) => ({ s: s.trim(), line: r.line })))
       .filter(({ s }) => s !== ':root' && !/[.#[]/.test(s))
@@ -104,7 +104,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     expect(bare).toEqual([]);
   });
 
-  it('LA-PAT-APP-CODE-R03-T01 Colors and shadows are tokens: color values appear only where :root defines them', () => {
+  it.each(['LA-PAT-APP-CODE-R03-T01', 'LA-PAT-APP-CODE-R03-T02'])('%s Colors and shadows are tokens: color values appear only where :root defines them', () => {
     const literal = /#[0-9a-fA-F]{3,8}\b|\b(?:rgb|rgba|hsl|hsla)\(/;
     const outside = styleRules(CSS)
       .filter((r) => r.selector !== ':root' && literal.test(r.body))
@@ -115,21 +115,21 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     expect(inline).toEqual([]);
   });
 
-  it('LA-PAT-APP-CODE-R04-T01 Generic components know nothing of specs, the graph or the shell: they import only React, each other and the text helpers', () => {
+  it.each(['LA-PAT-APP-CODE-R04-T01', 'LA-PAT-APP-CODE-R04-T02'])('%s Generic components know nothing of specs, the graph or the shell: they import only React, each other and the text helpers', () => {
     const imports = filesUnder(join(SRC, 'components'), /\.tsx?$/).flatMap((f) =>
       where(f, readFileSync(f, 'utf8'), /^import .* from '(?!react\b|react-dom\b|\.\/|\.\.\/plural')/),
     );
     expect(imports).toEqual([]);
   });
 
-  it('LA-PAT-APP-CODE-R05-T01 Kind labels become plural only through plural() and lowercase only through lowerLabel()', () => {
+  it.each(['LA-PAT-APP-CODE-R05-T01', 'LA-PAT-APP-CODE-R05-T02'])('%s Kind labels become plural only through plural() and lowercase only through lowerLabel()', () => {
     const naive = filesUnder(SRC, /\.tsx?$/)
       .filter((f) => !f.endsWith('plural.ts'))
       .flatMap((f) => where(f, readFileSync(f, 'utf8'), /\$\{[^}]*[lL]abel[^}]*\}s\b|[lL]abel\)?\s*\+\s*'s'|[lL]abel(?:\([^)]*\))?\.(?:charAt\(0\)\.)?toLowerCase\(\)/));
     expect(naive).toEqual([]);
   });
 
-  it('LA-PAT-APP-CODE-R06-T01 Every button and link on the main pages has an accessible name', async () => {
+  it.each(['LA-PAT-APP-CODE-R06-T01', 'LA-PAT-APP-CODE-R06-T02'])('%s Every button and link on the main pages has an accessible name', async () => {
     for (const path of ['/', '/DM-SHOP', '/DM-SHOP-UC01', '/DM-SHOP-UC01?view=graph']) {
       await openApp(path);
       // The role queries compute each control's accessible name; keep the ones whose name is empty.
@@ -142,7 +142,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     }
   });
 
-  it('LA-PAT-APP-UX-R01-T01 Everything clickable shows a hover state: each pointer-cursor rule has a :hover rule for the same class', () => {
+  it.each(['LA-PAT-APP-UX-R01-T01', 'LA-PAT-APP-UX-R01-T02'])('%s Everything clickable shows a hover state: each pointer-cursor rule has a :hover rule for the same class', () => {
     const rules = styleRules(CSS);
     const hovers = rules.flatMap((r) => topLevel(r.selector)).filter((s) => s.includes(':hover'));
     const missing = rules
@@ -159,7 +159,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     for (const token of ['--hover-bg', '--hover-ring', '--hover-speed']) expect(CSS).toContain(`${token}:`);
   });
 
-  it('LA-PAT-APP-UX-R02-T01 The workbench: panels sit on the shell a gap apart, and every gap between two panels is the one ResizeHandle', async () => {
+  it.each(['LA-PAT-APP-UX-R02-T01', 'LA-PAT-APP-UX-R02-T02'])('%s The workbench: panels sit on the shell a gap apart, and every gap between two panels is the one ResizeHandle', async () => {
     for (const token of ['--shell:', '--panel-gap:', '--panel-radius:']) expect(CSS).toContain(token);
     // One implementation: no other component draws a separator of its own.
     const separators = filesUnder(SRC, /\.tsx$/).filter((f) => !f.endsWith('ResizeHandle.tsx')).flatMap((f) => where(f, readFileSync(f, 'utf8'), /role="separator"/));
@@ -173,14 +173,14 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     for (const panel of [document.querySelector('#nav'), ...document.querySelectorAll('.pane'), document.querySelector('.side-bar-column')]) expect(panel).toHaveClass('panel');
   });
 
-  it('LA-PAT-APP-CODE-R10-T01 Every grid says its columns, a single column being minmax(0, 1fr), so content shrinks with its panel', () => {
+  it.each(['LA-PAT-APP-CODE-R10-T01', 'LA-PAT-APP-CODE-R10-T02'])('%s Every grid says its columns, a single column being minmax(0, 1fr), so content shrinks with its panel', () => {
     const unsized = styleRules(CSS)
       .filter((r) => /display:\s*(?:inline-)?grid/.test(r.body) && !/grid-template-columns/.test(r.body) && !/place-items/.test(r.body))
       .map((r) => `app/src/styles.css:${r.line}: ${r.selector}`);
     expect(unsized).toEqual([]);
   });
 
-  it('LA-PAT-APP-UX-R03-T01 The page bar holds the page\'s tabs and layout controls; each pane\'s header holds only that pane\'s actions, on wide and narrow screens alike', async () => {
+  it.each(['LA-PAT-APP-UX-R03-T01', 'LA-PAT-APP-UX-R03-T02'])('%s The page bar holds the page\'s tabs and layout controls; each pane\'s header holds only that pane\'s actions, on wide and narrow screens alike', async () => {
     // The side bar starts closed in the Wiki view (brief 64); this test reads it open.
     openSideBar('details', ['wiki', 'graph', 'model']);
     for (const [path, narrow] of [['/DM-SHOP-UC01?view=wiki', false], ['/DM-SHOP-UC01?view=wiki,graph', false], ['/DM-SHOP-UC01?view=wiki,graph', true]] as const) {
@@ -290,7 +290,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     expect(ownTiming).toEqual([]);
   });
 
-  it('LA-PAT-APP-CODE-R15-T01 Themes only set tokens: a theme file holds token names only, its stylesheet sets them on :root, and every built-in passes AA for text in both modes', () => {
+  it.each(['LA-PAT-APP-CODE-R15-T01', 'LA-PAT-APP-CODE-R15-T02'])('%s Themes only set tokens: a theme file holds token names only, its stylesheet sets them on :root, and every built-in passes AA for text in both modes', () => {
     const dir = join(SRC, 'theme', 'themes');
     const files = readdirSync(dir).filter((f) => f.endsWith('.json'));
     expect(files.length).toBe(BUILT_IN_THEMES.length);
@@ -318,7 +318,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     expect(failing).toEqual([]);
   });
 
-  it('LA-PAT-APP-UX-R05-T01 A row that leads to one record is one link: every record row on the domain and record pages has exactly one row link, stretched over the row', async () => {
+  it.each(['LA-PAT-APP-UX-R05-T01', 'LA-PAT-APP-UX-R05-T02'])('%s A row that leads to one record is one link: every record row on the domain and record pages has exactly one row link, stretched over the row', async () => {
     // The stylesheet: rows are positioned, the row link's ::after covers the row and shows its hover
     // and focus, and one rule lifts the row's other controls above it.
     const rules = styleRules(CSS);
@@ -349,7 +349,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     }
   });
 
-  it('LA-PAT-APP-CODE-R07-T01 Code, specs and docs use American spelling', () => {
+  it.each(['LA-PAT-APP-CODE-R07-T01', 'LA-PAT-APP-CODE-R07-T02'])('%s Code, specs and docs use American spelling', () => {
     // Built from parts, so this file does not trip its own check.
     const british = ['col' + 'our', 'behavi' + 'our', 'neighb' + 'our', 'fav' + 'our', 'hon' + 'our', 'cent' + 're', 'model' + 'ling', 'model' + 'led',
       '(?<!aria-)label' + 'led', 'cancel' + 'led', 'travel' + 'led', 'organi' + 's', 'recogni' + 's', 'summari' + 's', 'saniti' + 's', 'prioriti' + 's',
@@ -397,7 +397,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
 
   it('LA-V61-R19-T02 Everything works by touch: on a coarse pointer every clickable control is at least 44 x 44 px, as itself or through a target stretched around it', touchTargets);
   it('LA-V61-R26-T01 Every control is a touch target of at least 44 x 44 px on a coarse pointer', touchTargets);
-  it('LA-PAT-APP-UX-R07-T01 Everything works by touch: on a coarse pointer every clickable control is at least 44 x 44 px', touchTargets);
+  it.each(['LA-PAT-APP-UX-R07-T01', 'LA-PAT-APP-UX-R07-T02'])('%s Everything works by touch: on a coarse pointer every clickable control is at least 44 x 44 px', touchTargets);
 
   it('Nothing is reachable only by hover: a control a hover reveals is always shown on a coarse pointer, and every tooltip also shows on keyboard focus', () => {
     const rules = styleRules(CSS);
@@ -452,7 +452,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     }
   });
 
-  it('LA-PAT-APP-UX-R09-T01 Actions look like actions: standalone actions are the one Button, and links stay links for navigation in context', async () => {
+  it.each(['LA-PAT-APP-UX-R09-T01', 'LA-PAT-APP-UX-R09-T02'])('%s Actions look like actions: standalone actions are the one Button, and links stay links for navigation in context', async () => {
     // The controls that are not standalone actions, and so keep their own form: tab close buttons, toggles in a group,
     // fold chevrons, the nav's rows and rail, the sheet handle, the open-pages list and the title bar's command center.
     // In the source no raw <button> may take the Button's own classes; on the page they are allowed.
@@ -504,7 +504,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     }
   });
 
-  it('LA-PAT-APP-CODE-R19-T01 One address per thing: only address.ts makes a record or group address, and every address is an ID or a lowercase app page', async () => {
+  it.each(['LA-PAT-APP-CODE-R19-T01', 'LA-PAT-APP-CODE-R19-T02'])('%s One address per thing: only address.ts makes a record or group address, and every address is an ID or a lowercase app page', async () => {
     // The source: no path built by hand under the old prefixes, or from an ID, outside address.ts (the desktop menus included).
     const sources = [...filesUnder(SRC, /\.tsx?$/), ...filesUnder(join(ROOT, 'desktop', 'src'), /\.ts$/)]
       .filter((f) => !f.endsWith(join('views', 'address.ts')));
@@ -546,7 +546,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     expect(screen.queryByRole('region', { name: 'Graph pane' })).toBeNull();
   });
 
-  it('LA-PAT-APP-CODE-R20-T01 Changes are hard cutovers: no redirect, alias, legacy path or second addressOf signature in the app or the engine', () => {
+  it.each(['LA-PAT-APP-CODE-R20-T01', 'LA-PAT-APP-CODE-R20-T02'])('%s Changes are hard cutovers: no redirect, alias, legacy path or second addressOf signature in the app or the engine', () => {
     const sources = [...filesUnder(SRC, /\.(tsx?|css)$/), ...filesUnder(join(ROOT, 'lathe', 'src'), /\.ts$/)];
     const kept = sources.flatMap((f) => where(f, readFileSync(f, 'utf8'), /legacy|redirect|\balias(?!:\s*string|})/i));
     expect(kept).toEqual([]);
