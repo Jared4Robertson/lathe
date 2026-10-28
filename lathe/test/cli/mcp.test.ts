@@ -164,7 +164,7 @@ describe('each tool', () => {
       links: expect.arrayContaining([{ relation: 'has_many', label: 'Has many', direction: 'out', id: 'TL-LEND-EN02', title: 'Return' }]),
     });
     expect(shown.content[0].text).toContain('Entity TL-LEND-EN01: Loan');
-    expect((await callTool(root, 'show', { id: 'TL-V01' })).structuredContent).toMatchObject({ parent: null, scope: { product: 'TL', domain: null } });
+    expect((await callTool(root, 'show', { id: 'TL-V01' })).structuredContent).toMatchObject({ parent: null, scope: { product: 'TL', domain: 'TL-LEND' } });
     expect((await callTool(root, 'show', { id: 'TL-NOPE' })).isError).toBe(true);
     const listed = await callTool(root, 'list', { table: 'invariant', parent: 'TL-LEND-A1' });
     expect(listed.structuredContent).toEqual({ rows: [expect.objectContaining({ id: 'TL-LEND-INV01' })] });

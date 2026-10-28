@@ -62,26 +62,28 @@ describe('the graph tree, its depth and its camera', () => {
     expect(treeParent(index, 'P-D-UC01-FL')).toBe('P-D/interaction-design/flow');
     expect(treeParent(index, 'P-D-UC01-FL-T')).toBe('P-D/test-plan/flow_test');
     // One folder per kind, in the schema's kind order; an endpoint sits in Interaction design, under neither its command nor its query.
-    expect(treeChildren(index, 'P-D/interaction-design')).toEqual(['P-D/interaction-design/flow', 'P-D/interaction-design/endpoint']);
+    // The view and the integration have no owner, but P-D is the one domain whose steps use them, so they sit in it.
+    expect(treeChildren(index, 'P-D/interaction-design')).toEqual(['P-D/interaction-design/flow', 'P-D/interaction-design/view', 'P-D/interaction-design/endpoint', 'P-D/interaction-design/integration']);
     expect(groupLabel(index, 'P-D/interaction-design/flow')).toBe('Flows (1)');
     expect(groupMembers(index, 'P-D/interaction-design/endpoint').map((r) => r.id)).toEqual(['P-D-EP01', 'P-D-EP02']);
     expect(treeChildren(index, 'P-D/technical-specification')).toEqual([
       'P-D/technical-specification/repository', 'P-D/technical-specification/data_model', 'P-D/technical-specification/table',
-      'P-D/technical-specification/command_handler', 'P-D/technical-specification/endpoint_handler',
+      'P-D/technical-specification/command_handler', 'P-D/technical-specification/ui_component', 'P-D/technical-specification/endpoint_handler',
+      'P-D/technical-specification/adapter',
     ]);
     // An aggregate's own stage folds under it, through a group per kind; a command's policy under the command.
     expect(treeChildren(index, 'P-D-A3')).toEqual(['P-D-A3/entity', 'P-D-A3/invariant', 'P-D-A3/domain_event', 'P-D-A3/command']);
     expect(treeChildren(index, 'P-D-CMD04')).toEqual(['P-D-PO01']);
-    // The product: its Product level (its own stages, what sits at product level), then its domains.
-    expect(treeChildren(index, 'P')).toEqual(['P/product-level', 'P-D', 'P-E']);
-    expect(treeChildren(index, 'P/product-level')).toEqual(['P/domain-model', 'P/interaction-design', 'P/technical-specification', 'P/test-plan']);
-    expect(groupLabel(index, 'P/product-level')).toBe('Product level (7)');
-    expect(labelLines(index, 'P/product-level').meta).toBe('Level · P');
+    // The product: its Shared folder (its own stages: the value object both domains use), then its domains.
+    expect(treeChildren(index, 'P')).toEqual(['P/shared', 'P-D', 'P-E']);
+    expect(treeChildren(index, 'P/shared')).toEqual(['P/domain-model', 'P/technical-specification', 'P/test-plan']);
+    expect(groupLabel(index, 'P/shared')).toBe('Shared (3)');
+    expect(labelLines(index, 'P/shared').meta).toBe('Folder · P');
     expect(labelLines(index, 'P/domain-model').meta).toBe('Stage · P');
     expect(treeChildren(index, 'P/domain-model/value_object')).toEqual(['P-VO01']);
     expect(treeChildren(index, 'P-VO01')).toEqual(['P-VO01-C01']);
     // Every child's parent is the node that lists it.
-    for (const id of ['P', 'P/product-level', 'P-D', 'P-D/domain-model', 'P-D/test-plan', 'P-D/interaction-design', 'P-D-A3', 'P/technical-specification']) {
+    for (const id of ['P', 'P/shared', 'P-D', 'P-D/domain-model', 'P-D/test-plan', 'P-D/interaction-design', 'P-D-A3', 'P/technical-specification']) {
       for (const c of treeChildren(index, id)) expect(treeParent(index, c)).toBe(id);
     }
   });
@@ -131,7 +133,7 @@ describe('the graph tree, its depth and its camera', () => {
     // The summary counts the framed picture: the domain, its parent and three levels below it.
     const n = neighborhood(indexOf(w), 'P-D', 3);
     expect(document.querySelector('.graph-count')!.textContent).toBe(graphSummary(n));
-    expect(graphSummary(n)).toBe('27 records · 23 groups · 49 links');
+    expect(graphSummary(n)).toBe('31 records · 27 groups · 57 links');
   });
 
   it('LA-V93-R20-T01 Filters have a Minimap switch, off by default and kept while walking, and the minimap is an overview of the whole map', async () => {

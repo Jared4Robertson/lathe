@@ -7,7 +7,7 @@ import { treeParent } from '../graph/tree';
 import { LatheLogo } from '../LatheLogo';
 import { Link } from '../router';
 import { parseSpecRoute, type SpecIndex, type SpecRecord, type SpecState, type Stage } from '../specs/data';
-import { branchOf, domainFolders, productFolders, productLevelKey, type Folder, type StageFolders } from '../specs/folders';
+import { branchOf, domainFolders, productFolders, sharedKey, type Folder, type StageFolders } from '../specs/folders';
 import { recordText, StageMark } from '../specs/parts';
 import { useShortcutHint } from './commands';
 import { SPACE_KEYS, spaceCommandId } from './keymap';
@@ -20,7 +20,7 @@ import { addressOf, checksPathOf, HOME_PATH } from '../views/address';
 
 // The side navigation. At its far left is the space rail: one square icon per product (each
 // product is its own space). Beside it, the panel, all of it the current space's: a quick find of
-// the space, its overview, its own stages (what sits at product level), its domains (each folded
+// the space, its overview, its own stages (what it shares, in Shared), its domains (each folded
 // into its five stages and their folders) and its groups, then Tools (the space's Checks), a section that folds on its
 // own, and a footer with Appearance and where the specs come from (the record format is a command and a
 // link in the shortcuts sheet). The nav
@@ -289,8 +289,8 @@ function currentBranch(index: SpecIndex, path: string): string[] {
 }
 
 /**
- * The current space in the panel: its overview; its own stages (what sits at product level, such as
- * value objects, patterns, views and standards); its domains, each folding its five stages (Domain
+ * The current space in the panel: its overview; its own stages (Shared: what it shares, such as
+ * patterns, standards, and the value objects and views two or more domains use); its domains, each folding its five stages (Domain
  * model, Use cases, Interaction design, Technical specification, Test plan) and its open questions;
  * then the product's open questions. Each stage holds one folder per kind, each listing the records
  * that start a branch of the stage. One level shows by default; every stage and folder folds on its
@@ -366,9 +366,9 @@ function SpaceItems({ index, space, path, reveal }: { index: SpecIndex; space: S
         </li>
       </ul>
       {ownStages.length > 0 && (
-        // What sits at product level, in one folder before the domains, as the graph's tree has it.
-        <ul className="nav-tree nav-shared" aria-label={`Product level of ${space.title}`}>
-          <NavFolder id={productLevelKey(space.id)} depth={0} label="Product level" count={ownStages.reduce((n, s) => n + s.count, 0)} open={isOpen(productLevelKey(space.id))} holds={holds(productLevelKey(space.id))} onToggle={() => toggle(productLevelKey(space.id))}>
+        // What the product shares, in one folder before the domains, as the graph's tree has it.
+        <ul className="nav-tree nav-shared" aria-label={`Shared in ${space.title}`}>
+          <NavFolder id={sharedKey(space.id)} depth={0} label="Shared" count={ownStages.reduce((n, s) => n + s.count, 0)} open={isOpen(sharedKey(space.id))} holds={holds(sharedKey(space.id))} onToggle={() => toggle(sharedKey(space.id))}>
             <ul className="nav-tree" aria-label={`Stages of ${space.title}`}>
               {stageRows(ownStages, space.title, 1)}
             </ul>

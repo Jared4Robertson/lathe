@@ -53,8 +53,10 @@ describe('graph camera', () => {
           expect(y0 < h - 0.5 && y1 > h + 0.5, `${focus}: ${n.id} cut at the bottom`).toBe(false);
         }
       }
-      // No box under the focus's parent is cut by the right edge: the frame ends before the next column, or past the last.
-      for (const n of [...map.nodes.values()].filter(under)) {
+      // No box in view under the focus's parent is cut by the right edge: the frame ends before the next column, or
+      // past the last. A box above or below the pane is not on screen, so the right edge cannot cut it.
+      const inView = (n: { y: number; h: number }) => screen(0, n.y + n.h).y > 0.5 && screen(0, n.y).y < h - 0.5;
+      for (const n of [...map.nodes.values()].filter((n) => under(n) && inView(n))) {
         const [x0, x1] = [screen(n.x, 0).x, screen(n.x + n.w, 0).x];
         expect(x0 < w - 0.5 && x1 > w + 0.5, `${focus}: ${n.id} cut at the right`).toBe(false);
       }

@@ -1,7 +1,7 @@
 // What the app's server answers, shared by the server (api.ts, history.ts) and the web app, which imports these
 // types only. The server reads the product's data through the store and serves the typed rows as they are.
 //
-//   GET  /api/spec               SpecData: the schema, every stored table's rows, and the checks' problems and coverage
+//   GET  /api/spec               SpecData: the schema, every stored table's rows, where each record with no owner sits, and the checks' problems and coverage
 //   POST /api/write              { commands: Command[] } -> WriteAnswer: one transaction through the store's command layer
 //   GET  /api/history?id=<ID>    HistoryAnswer: the commits that changed the record's rows (&skip=<n> for older ones)
 import type { Command, StoreProblem } from '../store/store.ts';
@@ -18,6 +18,12 @@ export interface SpecData {
   dataDir: string;
   /** The rows of every stored table that has any, sorted by key, as the data files hold them. */
   tables: Record<string, Row[]>;
+  /**
+   * Where each record with no owner sits, from the store's record_scope (Store.placements): its product, and its
+   * domain, the one that uses it (or a specification's, from its ID), or null when the product shares it. What sits
+   * under it follows it.
+   */
+  placements: Record<string, { product: string | null; domain: string | null }>;
   /** What the checks found. */
   problems: Problem[];
   coverage: Coverage[];

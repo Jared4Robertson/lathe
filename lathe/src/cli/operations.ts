@@ -250,7 +250,7 @@ export async function list(root: string, table: string, parent?: string): Promis
       const columns = [...parentColumns(schema, table)];
       if (columns.length) return rows.filter((r) => columns.some((c) => r[c] === parent));
       if (table === 'product') refuse('command', 'a product sits under nothing, so --parent does not apply');
-      // A kind with no owner: the records of the product or domain its IDs start with.
+      // A kind with no owner: the records of the product, or of the domain its IDs start with or that uses them.
       const ids = new Set(
         (await store.query<{ id: string }>(`SELECT id FROM record_scope WHERE product_id = ${sqlString(parent)} OR domain_id = ${sqlString(parent)}`)).map((r) => r.id),
       );
@@ -409,7 +409,7 @@ export function writtenText(written: Written): string {
 export function shownText(shown: Shown): string {
   const lines = [`${shown.label} ${shown.row.id}: ${shown.row.title}`, `  kind: ${shown.kind}`];
   if (shown.parent) lines.push(`  parent: ${shown.parent}`);
-  else if (shown.kind !== 'product') lines.push(`  no owner; in ${shown.scope.domain ? `domain ${shown.scope.domain}` : `product ${shown.scope.product}`}`);
+  else if (shown.kind !== 'product') lines.push(`  no owner; ${shown.scope.domain ? `in domain ${shown.scope.domain}` : `shared in product ${shown.scope.product}`}`);
   for (const [column, value] of Object.entries(shown.row)) if (column !== 'id' && column !== 'title') lines.push(`  ${column}: ${Array.isArray(value) ? value.join(', ') : value}`);
   for (const part of shown.parts) {
     lines.push(`${part.table}:`);

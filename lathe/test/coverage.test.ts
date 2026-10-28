@@ -1,4 +1,4 @@
-// Coverage: every obligation designed, built and proved, per domain and for the product outside the domains, and the
+// Coverage: every obligation designed, built and proved, per domain and for what the product shares, and the
 // records short of a minimum. Each case starts from the complete product, where everything is covered.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { GAP_RULES, type Workspace } from '../src/index.ts';
@@ -14,24 +14,43 @@ beforeAll(async () => {
 });
 
 describe('coverage of the complete product', () => {
-  it('LA-TRC-UC02-R01-T01 counts every obligation kind, in kind order, per domain and for the product outside the domains', () => {
+  it('LA-TRC-UC02-R01-T01 counts every obligation kind, in kind order, per domain and for what the product shares', () => {
     expect(clean.coverage.map((c) => [c.product, c.domain])).toEqual([['EX', 'EX-LEND'], ['EX', null]]);
     const lending = clean.coverage[0];
     expect(lending.obligations.map((o) => o.kind)).toEqual(['constraint', 'invariant', 'specification', 'policy', 'domain_service', 'uc_requirement', 'pattern_rule', 'view_requirement', 'api_requirement', 'standard_rule']);
     expect(obligation(clean, 'EX-LEND', 'uc_requirement')).toMatchObject({ label: 'UC requirement', proof_only: false, ...covered(2) });
     expect(obligation(clean, 'EX-LEND', 'pattern_rule')).toMatchObject({ proof_only: true, ...covered(1) });
     for (const kind of ['invariant', 'specification', 'policy', 'domain_service', 'api_requirement']) expect(obligation(clean, 'EX-LEND', kind), kind).toMatchObject(covered(1));
-    // A constraint, a view requirement and a standard rule sit outside every domain: under a value object, a view, a standard.
-    for (const kind of ['constraint', 'view_requirement', 'standard_rule']) {
-      expect(obligation(clean, null, kind), kind).toMatchObject(covered(1));
-      expect(obligation(clean, 'EX-LEND', kind), kind).toMatchObject({ total: 0 });
+    // A constraint and a view requirement follow their value object and view into the one domain that uses them; a
+    // standard rule is shared, under its standard.
+    for (const kind of ['constraint', 'view_requirement']) {
+      expect(obligation(clean, 'EX-LEND', kind), kind).toMatchObject(covered(1));
+      expect(obligation(clean, null, kind), kind).toMatchObject({ total: 0 });
     }
+    expect(obligation(clean, null, 'standard_rule')).toMatchObject(covered(1));
+    expect(obligation(clean, 'EX-LEND', 'standard_rule')).toMatchObject({ total: 0 });
     expect(gaps(clean)).toEqual([]);
   });
 
+  it("LA-TRC-UC02-R08-T01 A constraint counts in its value object's domain, or in Shared when two domains use it", async () => {
+    expect(obligation(clean, 'EX-LEND', 'constraint')).toMatchObject(covered(1));
+    // A second domain's entity has a field typed by the value object: the product shares it, with its constraint.
+    const shared = await loadData(
+      adding(complete(), {
+        domain: [{ id: 'EX-SHOP', title: 'Shop', product_id: 'EX', subdomain_type: 'supporting' }],
+        aggregate: [{ id: 'EX-SHOP-A1', title: 'Order', domain_id: 'EX-SHOP' }],
+        entity: [{ id: 'EX-SHOP-EN01', title: 'Order', aggregate_id: 'EX-SHOP-A1', role: 'root' }],
+        entity_field: [{ entity_id: 'EX-SHOP-EN01', position: 1, name: 'Buyer email', meaning: 'Where the receipt goes.', type_value_object_id: 'EX-VO01', required: true }],
+      }),
+    );
+    expect(obligation(shared, null, 'constraint')).toMatchObject(covered(1));
+    expect(obligation(shared, 'EX-LEND', 'constraint')).toMatchObject({ total: 0 });
+    expect(obligation(shared, 'EX-SHOP', 'constraint')).toMatchObject({ total: 0 });
+  });
+
   it('LA-TRC-UC06-R02-T01 counts the tests of each scope by state', () => {
-    expect(clean.coverage[0].tests).toEqual({ automated: 9, manual: 1, not_automated: 0 });
-    expect(clean.coverage[1].tests).toEqual({ automated: 2, manual: 1, not_automated: 0 });
+    expect(clean.coverage[0].tests).toEqual({ automated: 11, manual: 2, not_automated: 0 });
+    expect(clean.coverage[1].tests).toEqual({ automated: 0, manual: 0, not_automated: 0 });
   });
 });
 
@@ -53,7 +72,7 @@ describe('designed and built', () => {
       'designed EX-LEND-UC02-R01', // no step fulfills it
       'designed EX-STD-CODE-R01', // no technical record meets it
     ]);
-    expect(obligation(ws, null, 'constraint')).toMatchObject({ total: 1, designed: 1, built: 0, proved: 1 });
+    expect(obligation(ws, 'EX-LEND', 'constraint')).toMatchObject({ total: 1, designed: 1, built: 0, proved: 1 });
   });
 
   it('LA-TRC-UC01-R04-T01 an obligation is built once the technical record that implements it names a file that exists, counted apart from designed and proved', () => {
@@ -102,13 +121,13 @@ describe('proved', () => {
   it('LA-TRC-UC02-R03-T01 only an automated or manual test at an allowed level, whose file names it, proves', () => {
     expect(gaps(ws)).toEqual(['proved EX-LEND-PO01', 'proved EX-LEND-SP01', 'proved EX-STD-CODE-R01', 'proved EX-VO01-C01']);
     // A manual test proves.
-    expect(obligation(ws, null, 'view_requirement')).toMatchObject(covered(1));
+    expect(obligation(ws, 'EX-LEND', 'view_requirement')).toMatchObject(covered(1));
   });
 
   it('LA-TRC-UC02-R07-T01 a test at a level its kind does not allow proves nothing', () => {
     // The constraint's test runs at api, which a constraint test does not allow.
-    expect(obligation(ws, null, 'constraint')).toMatchObject({ total: 1, proved: 0 });
-    expect(ws.coverage.find((c) => c.domain === null)?.gaps.find((g) => g.id === 'EX-VO01-C01')?.missing).toBe('proved');
+    expect(obligation(ws, 'EX-LEND', 'constraint')).toMatchObject({ total: 1, proved: 0 });
+    expect(ws.coverage.find((c) => c.domain === 'EX-LEND')?.gaps.find((g) => g.id === 'EX-VO01-C01')?.missing).toBe('proved');
   });
 
   it('LA-TRC-UC01-R02-T02 an automated test whose file does not name it leaves its obligation unproved, listed as a gap', () => {
@@ -118,7 +137,7 @@ describe('proved', () => {
   it('LA-TRC-UC02-R03-T01 a test not automated yet leaves its obligation unproved, counted and named as such', () => {
     expect(obligation(ws, 'EX-LEND', 'specification')).toMatchObject({ total: 1, proved: 0, not_automated: 1 });
     expect(ws.coverage[0].gaps.find((g) => g.id === 'EX-LEND-SP01')?.message).toBe('Specification EX-LEND-SP01 is not proved yet: its test is not automated yet.');
-    expect(ws.coverage[0].tests).toEqual({ automated: 8, manual: 1, not_automated: 1 });
+    expect(ws.coverage[0].tests).toEqual({ automated: 9, manual: 3, not_automated: 1 });
   });
 
   it('a standard rule is proved by a test that meets it', () => {
@@ -175,8 +194,8 @@ describe('minimums', () => {
     const ws = await loadData(sparse());
     const found = new Set(ws.coverage.flatMap((c) => c.gaps.map((g) => g.missing)));
     for (const rule of GAP_RULES) expect(found.has(rule.name), rule.name).toBe(true);
-    // A view sits outside every domain, so its gap is the product's; a use case's is its domain's.
-    expect(ws.coverage.find((c) => c.domain === null)?.gaps).toContainEqual({ id: 'SP-V01', kind: 'view', missing: 'view-without-ui-component', message: 'View SP-V01 is rendered by no UI component.' });
+    // A view's gap is the domain's whose flow step happens in it, as a use case's is its domain's.
+    expect(ws.coverage.find((c) => c.domain === 'SP-D')?.gaps).toContainEqual({ id: 'SP-V01', kind: 'view', missing: 'view-without-ui-component', message: 'View SP-V01 is rendered by no UI component.' });
     expect(ws.coverage.find((c) => c.domain === 'SP-D')?.gaps).toContainEqual({ id: 'SP-D-UC01', kind: 'use_case', missing: 'use-case-without-flow', message: 'Use case SP-D-UC01 has no flow.' });
     expect(ws.coverage.find((c) => c.domain === 'SP-E')?.gaps).toEqual([{ id: 'SP-E', kind: 'domain', missing: 'domain-without-aggregate', message: 'Domain SP-E has no aggregate.' }]);
     // Gaps are coverage, never problems.

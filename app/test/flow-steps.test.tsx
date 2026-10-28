@@ -2,7 +2,7 @@ import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { modelWorkspace } from './fixtures/model';
-import { addRows } from './fixtures/load';
+import { addRows, removeRows } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
 import { main, openApp, section } from './helpers';
 
@@ -75,9 +75,10 @@ describe('flow steps on a flow page', () => {
     await openApp('/DM-SHOP-UC01-FL', { data });
     await screen.findByRole('heading', { level: 1, name: 'Fill a basket' });
     expect(cells(bodyRows(tables()[0])[1])[1]).toHaveTextContent('1 warning');
-    addRows(data, 'flow', { id: 'DM-PAY-UC01-FL', title: 'Pay at the till', use_case_id: 'DM-PAY-UC01' });
+    removeRows(data, 'happens_in', (l) => l.source_id === 'DM-PAY-UC01-FL-S01');
+    removeRows(data, 'flow_step', (s) => s.flow_id === 'DM-PAY-UC01-FL');
     await openApp('/DM-PAY-UC01-FL', { data });
-    await screen.findByRole('heading', { level: 1, name: 'Pay at the till' });
+    await screen.findByRole('heading', { level: 1, name: 'Pay at checkout' });
     expect(within(main()).queryByRole('heading', { name: /^Steps/ })).toBeNull();
   });
 
