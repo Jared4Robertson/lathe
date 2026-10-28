@@ -3,11 +3,11 @@ import { describe, expect, it } from 'vitest';
 import './graph/setup';
 import { openApp, openSideBar } from './helpers';
 
-// Follow-ups from brief 56: a stage or folder group is named by its own name, and a tab keeps the graph's switches.
+// A stage or folder group is named by its own name, and a tab keeps the graph's switches.
 
 describe('group names and tab settings', () => {
   it('LA-V93-R25-T03 A stage or folder group page names the group by its own name, not by a kind ("Domain model", never "Domain models")', async () => {
-    // The side bar starts closed in the Wiki view (brief 64); this test reads it open.
+    // The side bar starts closed in the Wiki view; this test reads it open.
     openSideBar('details', ['wiki', 'graph', 'model']);
     await openApp('/DM-SHOP/domain-model?view=wiki');
     await screen.findByRole('heading', { level: 1, name: /^Domain model/ });

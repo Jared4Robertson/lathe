@@ -106,7 +106,7 @@ describe('obligation kinds and test states', () => {
   });
 
   it('LA-V92-R51-T01 The record page shows a test state and how the test is run, and says one not automated yet is not proof', async () => {
-    // The state is a fact in the side bar's Details, open in the Graph view (brief 64).
+    // The state is a fact in the side bar's Details, open in the Graph view.
     await openApp('/DM-SHOP-INV01-T?view=wiki,graph', served());
     await screen.findByRole('heading', { level: 1, name: 'A 51st line is refused' });
     expect(field('State')).toHaveTextContent('not automated yet');

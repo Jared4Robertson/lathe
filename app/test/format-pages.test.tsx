@@ -130,7 +130,7 @@ describe('format reference pages', () => {
   });
 
   const proveLaV92R71T01 = async () => {
-    // The side bar's Details, open in the Graph view (brief 64).
+    // The side bar's Details, open in the Graph view.
     await openApp('/DM-SHOP-EP01?view=wiki,graph');
     await screen.findByRole('heading', { level: 1, name: 'Add to basket' });
     expect(within(sideBar()).getByRole('link', { name: 'Endpoint' })).toHaveAttribute('href', '/format/kinds/endpoint');

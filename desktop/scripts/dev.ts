@@ -1,7 +1,7 @@
 // `npm --prefix desktop run dev`: builds the shell, starts Electron in development mode
 // (LATHE_DESKTOP_DEV=1, so windows load the app's Vite dev server and app changes hot-reload),
 // and rebuilds and restarts Electron whenever the main process or preload changes.
-// Arguments are passed on: `npm --prefix desktop run dev -- ~/Development/S2_sandbox`.
+// Arguments are passed on: `npm --prefix desktop run dev -- ~/Development/tool-library`.
 import { spawn, spawnSync, type ChildProcess } from 'node:child_process';
 import { watch } from 'node:fs';
 import path from 'node:path';

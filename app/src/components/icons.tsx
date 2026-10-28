@@ -22,7 +22,7 @@ const PATHS: Record<string, string[]> = {
   // The graph's zoom buttons, and a record's Add.
   plus: ['M12 5v14', 'M5 12h14'],
   minus: ['M5 12h14'],
-  // The side bar's views (brief 64): Details is `info`; Outline and History.
+  // The side bar's views: Details is `info`; Outline and History.
   outline: ['M9 6h11', 'M12 12h8', 'M15 18h5', 'M5 6v.01', 'M8 12v.01', 'M11 18v.01'],
   history: ['M12 8v4l2 2', 'M3.05 11a9 9 0 1 1 .5 4m-.5 5v-5h5'],
   // A record's Edit and Remove actions (Add is `plus`).
