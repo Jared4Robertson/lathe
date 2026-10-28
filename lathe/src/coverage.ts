@@ -9,7 +9,7 @@
 // - built: a technical record that implements it names a file that exists;
 // - proved: a test of it exists, automated or manual, at a level its test kind allows (ALLOWED_LEVELS), and an
 //   automated test's file exists and names the test's ID.
-// A pattern rule asks for proof only: it is owed by each domain that follows its pattern (owed_pattern_rules) and
+// A pattern rule asks for proof only: it is owed by each domain that follows its pattern (pattern_rule_standing) and
 // proved there by its pattern rule test naming that domain.
 //
 // Besides obligations, coverage reports the records short of a minimum, the "at least one" and "exactly one" rules
@@ -198,15 +198,21 @@ WHERE NOT EXISTS (SELECT 1 FROM uc_requirement r WHERE r.use_case_id = u.id) AND
  * per load, so the checks and the coverage queries that read it share the work):
  * - test_run (id, kind, parent_id, domain_id, level, state, file, level_allowed, backed): every test with its run by;
  *   backed says an automated test's file exists and names the test's ID (true for any other state).
- * - owed_pattern_rules (domain, id): each pattern rule a domain owes. A domain follows a pattern when the domain itself
- *   follows it or one of its use cases does; these are the pattern's followers there. A following domain owes each
- *   rule of the pattern, except a rule whose setting every following use case there marks not applicable (when the
- *   domain does not follow the pattern itself), and a rule with an applies-when setting no follower there meets.
+ * - pattern_rule_standing (domain, id, standing): each rule of each pattern a domain follows, and whether the domain
+ *   owes it. A domain follows a pattern when the domain itself follows it or one of its use cases does; these are the
+ *   pattern's followers there. A following domain owes each rule of the pattern ('owed'), except a rule whose setting
+ *   every following use case there marks not applicable, when the domain does not follow the pattern itself
+ *   ('not-applicable'), and a rule with an applies-when setting no follower there meets ('waived'). The one answer to
+ *   "does this rule apply here", which coverage and the app read.
+ * - owed_pattern_rules (domain, id): the rules a domain owes.
  * - obligation_impl (obligation_id, impl_id): the technical records that implement each obligation.
  * - obligation_proof (obligation_id, test_id, domain_id, state, counts): the tests of each obligation; counts when it
  *   is automated or manual, at an allowed level and backed.
- * - coverage_item (product, domain, id, kind, proof_only, designed, built, proved, not_automated): each obligation a
- *   domain, or the product outside every domain, owes.
+ * - coverage_owed (product, domain, id, kind): each obligation a domain, or the product outside every domain, owes.
+ * - coverage_proof (product, domain, id, test_id): the tests that count as an owed obligation's proof where it is owed
+ *   (a pattern rule's naming the owing domain); the one answer to "proved", which coverage_item and the app read.
+ * - coverage_item (product, domain, id, kind, proof_only, designed, built, proved, not_automated): each owed
+ *   obligation, judged.
  * - coverage_scope (product, domain): each domain, and each product's place outside every domain (domain null).
  * - coverage_count, coverage_tests and coverage_gap: the counts per scope and obligation kind, the tests by state,
  *   and every gap: obligations not designed, built or proved, and records short of a minimum.
@@ -234,7 +240,7 @@ SELECT t.*, EXISTS (SELECT 1 FROM test_level_allowed a WHERE a.kind = t.kind AND
 FROM (${testRun}) t
 LEFT JOIN file_facts f ON f.record = t.id;
 
-CREATE OR REPLACE VIEW owed_pattern_rules AS
+CREATE OR REPLACE TABLE pattern_rule_standing AS
 WITH followers AS (
   SELECT DISTINCT s.domain_id AS domain, f.target_id AS pattern, f.source_id AS follower, false AS by_domain
   FROM follows f JOIN use_case u ON u.id = f.source_id JOIN record_scope s ON s.id = u.id
@@ -254,7 +260,10 @@ judged AS (
   LEFT JOIN setting_value wv ON wv.follower_id = f.follower AND wv.pattern_id = r.pattern_id AND wv.setting = r.applies_when_setting
   GROUP BY f.domain, r.id
 )
-SELECT domain, id FROM judged WHERE NOT not_applicable AND meets;
+SELECT domain, id, CASE WHEN not_applicable THEN 'not-applicable' WHEN NOT meets THEN 'waived' ELSE 'owed' END AS standing FROM judged;
+
+CREATE OR REPLACE VIEW owed_pattern_rules AS
+SELECT domain, id FROM pattern_rule_standing WHERE standing = 'owed';
 
 CREATE OR REPLACE TABLE obligation_impl AS
 -- A constraint: its value object's value type.
@@ -296,12 +305,17 @@ WITH proofs AS (
 )
 SELECT *, state IN ('automated', 'manual') AND valid AS counts FROM proofs;
 
+CREATE OR REPLACE VIEW coverage_owed AS
+SELECT s.product_id AS product, s.domain_id AS domain, o.id, o.kind FROM obligation o JOIN record_scope s ON s.id = o.id WHERE o.kind <> 'pattern_rule'
+UNION ALL
+SELECT s.product_id, p.domain, p.id, 'pattern_rule' FROM owed_pattern_rules p JOIN record_scope s ON s.id = p.domain;
+
+-- The tests that count as each owed obligation's proof where it is owed: a pattern rule's only in the owing domain.
+CREATE OR REPLACE TABLE coverage_proof AS
+SELECT o.product, o.domain, o.id, p.test_id
+FROM coverage_owed o JOIN obligation_proof p ON p.obligation_id = o.id AND p.counts AND (o.kind <> 'pattern_rule' OR p.domain_id = o.domain);
+
 CREATE OR REPLACE TABLE coverage_item AS
-WITH owed AS (
-  SELECT s.product_id AS product, s.domain_id AS domain, o.id, o.kind FROM obligation o JOIN record_scope s ON s.id = o.id WHERE o.kind <> 'pattern_rule'
-  UNION ALL
-  SELECT s.product_id, p.domain, p.id, 'pattern_rule' FROM owed_pattern_rules p JOIN record_scope s ON s.id = p.domain
-)
 SELECT o.product, o.domain, o.id, o.kind,
   o.kind IN (${list(PROOF_ONLY)}) AS proof_only,
   o.kind IN (${list(DESIGNED_BY_CONSTRUCTION)})
@@ -309,9 +323,9 @@ SELECT o.product, o.domain, o.id, o.kind,
     OR (o.kind NOT IN (${list([...DESIGNED_BY_CONSTRUCTION, 'uc_requirement'])}) AND EXISTS (SELECT 1 FROM obligation_impl i WHERE i.obligation_id = o.id)) AS designed,
   o.kind IN (${list(PROOF_ONLY)})
     OR EXISTS (SELECT 1 FROM obligation_impl i JOIN file_facts f ON f.record = i.impl_id AND f.file_exists WHERE i.obligation_id = o.id) AS built,
-  EXISTS (SELECT 1 FROM obligation_proof p WHERE p.obligation_id = o.id AND p.counts AND (o.kind <> 'pattern_rule' OR p.domain_id = o.domain)) AS proved,
+  EXISTS (SELECT 1 FROM coverage_proof p WHERE p.id = o.id AND p.domain IS NOT DISTINCT FROM o.domain) AS proved,
   EXISTS (SELECT 1 FROM obligation_proof p WHERE p.obligation_id = o.id AND p.state = 'not automated yet' AND (o.kind <> 'pattern_rule' OR p.domain_id = o.domain)) AS has_not_automated
-FROM owed o;
+FROM coverage_owed o;
 
 CREATE OR REPLACE VIEW coverage_scope AS
 SELECT product_id AS product, id AS domain FROM domain
@@ -373,3 +387,9 @@ export const COVERAGE_GAPS_SQL = `SELECT product, domain, id, kind, missing, mes
 
 /** One row per scope: its tests by state. */
 export const COVERAGE_TESTS_SQL = `SELECT product, domain, automated, manual, not_automated FROM coverage_tests ORDER BY product, domain NULLS LAST`;
+
+/** One row per test that counts as an owed obligation's proof: (product, domain, id, test_id). */
+export const COVERAGE_PROOFS_SQL = `SELECT product, domain, id, test_id FROM coverage_proof ORDER BY product, domain NULLS LAST, id, test_id`;
+
+/** One row per rule of each pattern a domain follows, with its standing there: (product, domain, id, standing). */
+export const PATTERN_RULE_STANDING_SQL = `SELECT s.product_id AS product, p.domain, p.id, p.standing FROM pattern_rule_standing p JOIN record_scope s ON s.id = p.domain ORDER BY product, p.domain, p.id`;

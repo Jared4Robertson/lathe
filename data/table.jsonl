@@ -99,6 +99,6 @@
 {"id":"LA-TRC-RM01-TB","title":"coverage_count","read_model_id":"LA-TRC-RM01","name":"coverage_count","storage":"view","file":"lathe/src/coverage.ts","description":"coverage_count, storage view"}
 {"id":"LA-TRC-RM02-TB","title":"coverage_gap","read_model_id":"LA-TRC-RM02","name":"coverage_gap","storage":"materialized view","file":"lathe/src/coverage.ts","description":"coverage_gap, a query's result kept as a table for each load"}
 {"id":"LA-TRC-RM03-TB","title":"coverage_tests","read_model_id":"LA-TRC-RM03","name":"coverage_tests","storage":"view","file":"lathe/src/coverage.ts","description":"coverage_tests, storage view"}
-{"id":"LA-TRC-RM04-TB","title":"owed_pattern_rules","read_model_id":"LA-TRC-RM04","name":"owed_pattern_rules","storage":"view","file":"lathe/src/coverage.ts","description":"owed_pattern_rules, storage view"}
+{"id":"LA-TRC-RM04-TB","title":"pattern_rule_standing","read_model_id":"LA-TRC-RM04","name":"pattern_rule_standing","storage":"table","file":"lathe/src/coverage.ts","description":"pattern_rule_standing, storage table; owed_pattern_rules is the view of its owed rows"}
 {"id":"LA-TRC-RM05-TB","title":"file_facts","read_model_id":"LA-TRC-RM05","name":"file_facts","storage":"table","file":"lathe/src/coverage.ts","description":"file_facts (FACT_TABLES_SQL), storage table, filled by its projection on every load"}
 {"id":"LA-TRC-RM06-TB","title":"Trace","read_model_id":"LA-TRC-RM06","name":"Trace","storage":"in memory","file":"app/src/specs/trace.ts","description":"Worked out from the space's index on each request."}
