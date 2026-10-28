@@ -20,14 +20,14 @@ export async function withChat(page: Page, record: string, open: 'conversation' 
     ];
     let status = 'idle';
     let listener: ((patch: unknown) => void) | null = null;
-    const emit = (reset: boolean) => listener?.({ reset, sessionId: 's1', status, items: items.map((item, at) => ({ at, item })) });
+    const emit = (reset: boolean) => listener?.({ reset, sessionId: 'session-1', status, items: items.map((item, at) => ({ at, item })) });
     const sessions = {
       claude: '/usr/local/bin/claude',
       configured: false,
-      current: open === 'conversation' ? 's1' : null,
+      current: open === 'conversation' ? 'session-1' : null,
       sessions: [
-        { id: 's1', title: `Tests for ${record}`, updated: Date.now() - 5 * 60_000, openElsewhere: null },
-        { id: 'c2', title: 'Model the Explorer', updated: Date.now() - 26 * 3_600_000, openElsewhere: 'running' },
+        { id: 'session-1', title: `Tests for ${record}`, updated: Date.now() - 5 * 60_000, openElsewhere: null },
+        { id: 'session-2', title: 'Plan the graph stage', updated: Date.now() - 26 * 3_600_000, openElsewhere: 'running' },
       ],
     };
     const chat = {

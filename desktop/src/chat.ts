@@ -14,7 +14,7 @@ export type ChatItem =
   | { kind: 'user'; id: string; text: string }
   | { kind: 'assistant'; id: string; text: string; streaming: boolean }
   | { kind: 'tool'; id: string; name: string; label: string; summary: string; input: string; result: string | null; status: 'running' | 'done' | 'error' }
-  | { kind: 'permission'; id: string; tool: string; label: string; summary: string; input: string; reason: string | null; answer: 'pending' | 'allowed' | 'denied' | 'cancelled' }
+  | { kind: 'permission'; id: string; tool: string; label: string; summary: string; input: string; reason: string | null; answer: 'pending' | 'allowed' | 'denied' | 'canceled' }
   | { kind: 'notice'; id: string; text: string; tone: 'info' | 'error' };
 
 /** idle: waiting for the Owner; running: a turn is under way; closed: no process (the next message starts one). */
@@ -140,7 +140,7 @@ const update = <K extends ChatItem['kind']>(items: ChatItem[], id: string, kind:
 
 /** Every prompt still waiting is withdrawn (the turn stopped, or the process ended). */
 export const withdrawPrompts = (items: ChatItem[]): ChatItem[] =>
-  items.some((i) => i.kind === 'permission' && i.answer === 'pending') ? items.map((i) => (i.kind === 'permission' && i.answer === 'pending' ? { ...i, answer: 'cancelled' } : i)) : items;
+  items.some((i) => i.kind === 'permission' && i.answer === 'pending') ? items.map((i) => (i.kind === 'permission' && i.answer === 'pending' ? { ...i, answer: 'canceled' } : i)) : items;
 
 /** The panel's own bookkeeping while it reads the stream: the message being streamed. */
 export interface StreamCursor { messageId: string | null; notices: number }
@@ -239,7 +239,7 @@ export function applyLine(state: ChatState, cursor: StreamCursor, line: string):
     }
     case 'control_cancel_request': {
       const id = str(message.request_id);
-      return id ? { state: { ...state, items: update(state.items, id, 'permission', (p) => (p.answer === 'pending' ? { ...p, answer: 'cancelled' } : p)) }, cursor } : same;
+      return id ? { state: { ...state, items: update(state.items, id, 'permission', (p) => (p.answer === 'pending' ? { ...p, answer: 'canceled' } : p)) }, cursor } : same;
     }
     case 'result': {
       const items = withdrawPrompts(state.items).map((i) => (i.kind === 'assistant' && i.streaming ? { ...i, streaming: false } : i.kind === 'tool' && i.status === 'running' ? { ...i, status: 'error' as const, result: i.result ?? 'Stopped before it finished.' } : i));

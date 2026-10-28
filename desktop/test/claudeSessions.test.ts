@@ -24,7 +24,7 @@ const prompt = (text: string) => ({ type: 'user', message: { role: 'user', conte
 
 describe('LA-PLT-UC19-R05-T01 The picker lists the folder\'s saved sessions by title and date, and warns of one open elsewhere', () => {
   it('names the store\'s folder as the CLI does', () => {
-    expect(projectDirName('/Users/person/Product_one.x')).toBe('-Users-someone-Product-one-x');
+    expect(projectDirName('/Users/person/Product_one.x')).toBe('-Users-person-Product-one-x');
   });
 
   it('titles a session by its name, else its summary, else its first prompt', () => {

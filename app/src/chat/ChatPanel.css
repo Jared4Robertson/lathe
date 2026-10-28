@@ -68,7 +68,7 @@
 
 /* A permission prompt. */
 .chat-permission { padding: 8px 10px; border: 1px solid var(--steel); border-radius: 6px; background: var(--sheet); display: grid; gap: 6px; }
-.chat-permission.is-allowed, .chat-permission.is-denied, .chat-permission.is-cancelled { border-color: var(--float-border); }
+.chat-permission.is-allowed, .chat-permission.is-denied, .chat-permission.is-canceled { border-color: var(--float-border); }
 .chat-permission p { margin: 0; }
 .chat-permission-ask code { overflow-wrap: anywhere; }
 .chat-permission-input summary { font-size: 0.78rem; color: var(--muted); cursor: pointer; }

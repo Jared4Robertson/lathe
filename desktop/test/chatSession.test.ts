@@ -113,7 +113,7 @@ describe('LA-PLT-UC19-R04-T01 A permission prompt waits for the Owner, and Stop 
     expect(chat.stop()).toBe(true);
     expect(chat.state.status).toBe('stopping');
     await until((s) => s.status === 'idle');
-    expect(chat.state.items.find((i) => i.kind === 'permission')).toMatchObject({ answer: 'cancelled' });
+    expect(chat.state.items.find((i) => i.kind === 'permission')).toMatchObject({ answer: 'canceled' });
     expect(chat.state.items.at(-1)).toMatchObject({ kind: 'notice', text: 'Stopped.' });
     // The next message goes to the same process.
     expect(chat.send('hello')).toBe(true);
