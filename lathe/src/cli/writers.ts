@@ -4,7 +4,6 @@
 import path from 'node:path';
 import type { ColumnDescription, SchemaDescription, TableDescription } from '../store/schema.ts';
 import type { Value } from '../store/rows.ts';
-import type { CommandIo } from './check.ts';
 import {
   list,
   listText,
@@ -147,7 +146,7 @@ export function tableHelp(schema: SchemaDescription, name?: string): string {
 const relative = (root: string, file: string) => path.relative(root, file) || file;
 
 /** Runs one data command; returns the exit code: 0 done, 1 refused, 2 bad usage. */
-export async function runDataCommand(args: string[], io: CommandIo = { out: (t) => console.log(t), err: (t) => console.error(t) }): Promise<number> {
+export async function runDataCommand(args: string[], io: { out: (text: string) => void; err: (text: string) => void } = { out: (t) => console.log(t), err: (t) => console.error(t) }): Promise<number> {
   const { positionals, flags } = parse(args);
   const [command, ...rest] = positionals;
   const root = path.resolve(flags.get('root')?.at(-1) ?? process.cwd());

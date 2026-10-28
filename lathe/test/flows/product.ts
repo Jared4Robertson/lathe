@@ -1,40 +1,34 @@
-// What the flow tests share: a temporary product repo, the `lathe` command's own functions run on it in process (the
-// data commands and the check, as bin/lathe.ts runs them, with their output and exit code), and the store's own writes
-// for the records a flow starts from. Each flow test seeds what its use case assumes exists, then walks the flow's
-// steps through the command or the MCP server (served in process on a pair of streams), as the Owner or an Agent
-// would. The command and the server as processes are proved in cli/; a step that needs a process of its own (a copied
-// package, git's merge driver, a hook) runs one with node().
-import { spawnSync } from 'node:child_process';
+// What the flow tests share: a temporary product repo, the real `lathe` command run on it as a child process, and the
+// store's own writes for the records a flow starts from. Each flow test seeds what its use case assumes exists, then
+// walks the flow's steps through the command, as the Owner or an Agent would.
+import { spawn, spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { PassThrough } from 'node:stream';
 import { fileURLToPath } from 'node:url';
 import { vi } from 'vitest';
-import { runCheck } from '../../src/cli/check.ts';
-import { serveMcp } from '../../src/cli/mcp.ts';
-import { DATA_COMMANDS, runDataCommand } from '../../src/cli/writers.ts';
 import { openStore, SCHEMA_VERSION, type Command, type Row, type Workspace } from '../../src/index.ts';
 
-// A flow walks many steps, each loading the product afresh, which takes seconds when the machine is busy.
+// Each flow runs the command many times, each a new process that loads the product.
 vi.setConfig({ testTimeout: 180_000, hookTimeout: 180_000 });
 
 export const LATHE_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+const BIN = path.join(LATHE_DIR, 'bin', 'lathe.ts');
 
 export interface Result { status: number | null; stdout: string; stderr: string }
 
 export interface Product {
   root: string;
-  /** Runs `lathe <args> --root <product>`: a data command or the check. */
-  lathe(...args: string[]): Promise<Result>;
+  /** Runs `lathe <args> --root <product>`. */
+  lathe(...args: string[]): Result;
   /** Runs the command and expects it to succeed with nothing on stderr; returns its output. */
-  run(...args: string[]): Promise<string>;
+  run(...args: string[]): string;
   /** Runs the command and expects the store to refuse it; returns the refusal. */
-  refused(...args: string[]): Promise<string>;
+  refused(...args: string[]): string;
   /** Runs `lathe check`; returns its status and output. */
-  check(): Promise<Result>;
+  check(): Result;
   /** Runs `lathe check --json` and parses the workspace it prints. */
-  workspace(): Promise<Workspace>;
+  workspace(): Workspace;
   /** Writes the commands through the store in one transaction: what the flow starts from. */
   seed(commands: Command[]): Promise<void>;
   /** Reads a file of the product repo. */
@@ -63,38 +57,24 @@ export function product(): Product {
   writeFileSync(path.join(root, 'lathe.config.json'), `${JSON.stringify({ schema: SCHEMA_VERSION })}\n`);
   mkdirSync(path.join(root, 'data'));
   writeFileSync(path.join(root, 'data', 'product.jsonl'), '{"id":"TL","title":"Tool Library"}\n');
-  const lathe = async (...args: string[]): Promise<Result> => {
-    const stdout: string[] = [];
-    const stderr: string[] = [];
-    const io = { out: (text: string) => stdout.push(`${text}\n`), err: (text: string) => stderr.push(`${text}\n`) };
-    let status: number;
-    if (!(DATA_COMMANDS as readonly string[]).includes(args[0]) && args[0] !== 'check') throw new Error(`The flows run only the data commands and the check in process, not lathe ${args[0]}.`);
-    try {
-      status = args[0] === 'check' ? await runCheck(root, { json: args.includes('--json') }, io) : await runDataCommand([...args, '--root', root], io);
-    } catch (error) {
-      // What the process does with an error the command does not catch: prints it and exits 1.
-      status = 1;
-      io.err(error instanceof Error ? (error.stack ?? error.message) : String(error));
-    }
-    return { status, stdout: stdout.join(''), stderr: stderr.join('') };
-  };
+  const lathe = (...args: string[]) => node(BIN, [...args, '--root', root]);
   return {
     root,
     lathe,
-    async run(...args) {
-      const result = await lathe(...args);
+    run(...args) {
+      const result = lathe(...args);
       if (result.status !== 0 || result.stderr) throw new Error(`lathe ${args.join(' ')} failed (${result.status}):\n${result.stderr}${result.stdout}`);
       return result.stdout.trim();
     },
-    async refused(...args) {
-      const result = await lathe(...args);
+    refused(...args) {
+      const result = lathe(...args);
       if (result.status !== 1 || !result.stderr.startsWith('Refused; nothing changed:')) {
         throw new Error(`lathe ${args.join(' ')} was not refused (${result.status}):\n${result.stderr}${result.stdout}`);
       }
       return result.stderr;
     },
     check: () => lathe('check'),
-    workspace: async () => (JSON.parse((await lathe('check', '--json')).stdout) as { products: { workspace: Workspace }[] }).products[0].workspace,
+    workspace: () => (JSON.parse(lathe('check', '--json').stdout) as { products: { workspace: Workspace }[] }).products[0].workspace,
     async seed(commands) {
       const store = await openStore(root);
       try {
@@ -114,16 +94,14 @@ export function product(): Product {
 
 interface McpReply { result?: { isError?: boolean; content: { text: string }[]; tools?: { name: string; inputSchema: unknown }[] }; error?: unknown }
 
-/** A `lathe mcp` server on the product, as the plugin starts it but in process on a pair of streams: requests, tool calls and the notifications it sends. */
+/** A `lathe mcp` server on the product, as the plugin starts it: requests, tool calls and the notifications it sends. */
 export function mcp(root: string) {
-  const input = new PassThrough();
-  const output = new PassThrough();
-  const serving = serveMcp(root, input, output);
+  const server = spawn(process.execPath, [BIN, 'mcp', '--root', root], { stdio: ['pipe', 'pipe', 'pipe'] });
   const notifications: string[] = [];
   const waiting = new Map<number, (reply: McpReply) => void>();
   let buffer = '';
-  output.setEncoding('utf8');
-  output.on('data', (chunk: string) => {
+  server.stdout.setEncoding('utf8');
+  server.stdout.on('data', (chunk: string) => {
     buffer += chunk;
     for (let at = buffer.indexOf('\n'); at >= 0; at = buffer.indexOf('\n')) {
       const message = JSON.parse(buffer.slice(0, at));
@@ -137,17 +115,18 @@ export function mcp(root: string) {
     new Promise<McpReply>((resolve) => {
       const id = ++next;
       waiting.set(id, resolve);
-      input.write(`${JSON.stringify({ jsonrpc: '2.0', id, method, params })}\n`);
+      server.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', id, method, params })}\n`);
     });
   return {
     request,
     notifications,
     initialize: () => request('initialize', { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'flow test', version: '1' } }),
     call: (name: string, args: object) => request('tools/call', { name, arguments: args }),
-    close: () => {
-      input.end();
-      return serving;
-    },
+    close: () =>
+      new Promise<void>((resolve) => {
+        server.on('close', () => resolve());
+        server.stdin.end();
+      }),
   };
 }
 
