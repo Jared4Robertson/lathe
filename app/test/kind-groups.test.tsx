@@ -129,7 +129,7 @@ describe('groups by stage and kind', () => {
     // Each test with its level, its file when automated, and its state.
     await openApp('/DM-SHOP');
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
-    expect(section(/^Use case tests/).textContent).toContain('api · test/basket.test.tsautomated');
+    expect(section(/^Use case tests/).textContent).toContain('service · test/basket.test.tsautomated');
     expect(section(/^Invariant tests/).textContent).toContain('unitnot automated yet');
   });
 
