@@ -24,7 +24,7 @@
 {"id":"LA-PLT-QRY04","title":"List the themes","read_model_id":"LA-PLT-RM03"}
 {"id":"LA-PLT-QRY05","title":"Export a theme file","read_model_id":"LA-PLT-RM03"}
 {"id":"LA-PLT-QRY06","title":"List the recent folders","read_model_id":"LA-PLT-RM04"}
-{"id":"LA-TRC-QRY01","title":"Count coverage","read_model_id":"LA-TRC-RM01","description":"Workspace.coverage[].obligations; lathe check's coverage lines; the product and domain pages"}
+{"id":"LA-TRC-QRY01","title":"Count coverage","read_model_id":"LA-TRC-RM01","description":"Workspace.coverage[].obligations and .proved_by (the tests that count as each obligation's proof there); lathe check's coverage lines; the product and domain pages"}
 {"id":"LA-TRC-QRY02","title":"List coverage gaps","read_model_id":"LA-TRC-RM02","description":"Coverage.gaps; the gap callouts and the not-designed, not-built and not-proved warnings"}
 {"id":"LA-TRC-QRY03","title":"Count tests by state","read_model_id":"LA-TRC-RM03","description":"Coverage.tests"}
 {"id":"LA-TRC-QRY04","title":"List the pattern rules a domain owes","read_model_id":"LA-TRC-RM04","description":"Patterns we follow, the pattern and pattern rule pages"}
