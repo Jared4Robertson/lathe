@@ -10,15 +10,15 @@
 {"id":"LA-CHK-CMD02","title":"Change a check","aggregate_id":"LA-CHK-A1","description":"Changes a product's check row; Lathe's own are read-only."}
 {"id":"LA-CHK-CMD03","title":"Remove a check","aggregate_id":"LA-CHK-A1","description":"Removes a product's check row; Lathe's own are read-only."}
 {"id":"LA-CHK-CMD04","title":"Set the product's limits","aggregate_id":"LA-CHK-A2","description":"Adds or changes the product's `product_setting` row: its children limit and its entities limit."}
-{"id":"LA-EXP-CMD01","title":"Open a page","aggregate_id":"LA-EXP-A1","description":"a view toggled on the same page replaces the history entry; any other move pushes one (INV01)."}
+{"id":"LA-EXP-CMD01","title":"Open a page","aggregate_id":"LA-EXP-A1","description":"a stage switched on the same page replaces the history entry; any other move pushes one (INV01)."}
 {"id":"LA-EXP-CMD02","title":"Remember the page in its space","aggregate_id":"LA-EXP-A2","description":"sets the space's Last page and makes it the one last chosen."}
 {"id":"LA-EXP-CMD03","title":"Fold or unfold a nav row","aggregate_id":"LA-EXP-A3","description":"the fold buttons of app/src/shell/Nav.tsx"}
 {"id":"LA-EXP-CMD04","title":"Open the page in a tab","aggregate_id":"LA-EXP-A5","description":"activates the page's tab, or replaces the preview tab's page, or opens a new tab after the active one (a new, kept tab on Cmd- or Ctrl-click)."}
 {"id":"LA-EXP-CMD05","title":"Keep a tab open","aggregate_id":"LA-EXP-A5","description":"keepTab"}
 {"id":"LA-EXP-CMD06","title":"Close a tab","aggregate_id":"LA-EXP-A5","description":"closeTab"}
 {"id":"LA-EXP-CMD07","title":"Activate a tab","aggregate_id":"LA-EXP-A5","description":"activateTab, cycleTab"}
-{"id":"LA-EXP-CMD08","title":"Change a tab's state","aggregate_id":"LA-EXP-A5","description":"updateTab; pane sizes, wiki scroll and the side bar's state"}
-{"id":"LA-EXP-CMD09","title":"Change the graph settings","aggregate_id":"LA-EXP-A6","description":"The graph's toolbar (layout, depth, Links, trace, filters, minimap) and the v, + and - keys; nothing else changes them."}
+{"id":"LA-EXP-CMD08","title":"Change a tab's state","aggregate_id":"LA-EXP-A5","description":"updateTab; the stage, the wiki card scroll and the side bar's state"}
+{"id":"LA-EXP-CMD09","title":"Change the session settings","aggregate_id":"LA-EXP-A6","description":"The graph's toolbar (layout, depth, Links, filters, minimap), the v, + and - keys, and the wiki card's toggle, w key and resize handle; nothing else changes them."}
 {"id":"LA-PLT-CMD01","title":"Resize a panel","aggregate_id":"LA-PLT-A2","description":"by drag or keys, within the panel's limits; a double-click resets it; a drag below the fold threshold hides it instead (CMD02)."}
 {"id":"LA-PLT-CMD02","title":"Show or hide a panel","aggregate_id":"LA-PLT-A2"}
 {"id":"LA-PLT-CMD03","title":"Choose a theme","aggregate_id":"LA-PLT-A4"}

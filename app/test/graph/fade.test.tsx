@@ -43,7 +43,7 @@ describe('focus fade', () => {
   it.each(LAYOUTS)('LA-V93-R73-T01 In the %s layout the focus and its subtree are drawn at full strength, the trail at its own, and every other box faded; the fade follows the focus', async (layout) => {
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({ x: 0, y: 0, top: 0, left: 0, width: 1000, height: 800, right: 1000, bottom: 800, toJSON: () => ({}) } as DOMRect);
     startAtDepth(1, layout);
-    await openApp('/P-D-UC01?view=graph', { data: testWorkspace() });
+    await openApp('/P-D-UC01?stage=graph', { data: testWorkspace() });
     await waitFor(() => expect(isCenter('P-D-UC01')).toBe(true));
     await waitFor(() => expectFade(layout, 'P-D-UC01'), { timeout: 3000 });
     const places = expectFade(layout, 'P-D-UC01');

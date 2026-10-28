@@ -4,7 +4,8 @@ import App from '../src/App';
 import type { SpecData, WriteAnswer } from '../../lathe/src/server/contract';
 import type { Command } from '../../lathe/src/store/store';
 import { workspace as fixtureWorkspace } from './fixtures/workspace';
-import type { ViewName } from '../src/views/address';
+import { STAGE_NAMES, type StageName } from '../src/views/address';
+import { SETTINGS_KEY } from '../src/graph/settings';
 
 export interface Served {
   /** What GET /api/spec answers: the component-test workspace by default. */
@@ -74,14 +75,14 @@ export function section(name: string | RegExp) {
 
 /** Starts the graph at a depth for the session, as if the person had chosen it (the default is 1). */
 export function startAtDepth(depth: number, layout: 'tree' | 'nested' | 'voronoi' = 'tree') {
-  window.sessionStorage.setItem('lathe:graph-settings', JSON.stringify({ layout, depth, trace: false, hiddenKinds: [], hiddenRelations: [], links: false, minimap: false }));
+  window.sessionStorage.setItem(SETTINGS_KEY, JSON.stringify({ layout, depth, hiddenKinds: [], hiddenRelations: [], links: false, minimap: false, card: true, cardWidth: null }));
 }
 
 /**
- * Opens the side bar in these view modes for the rest of the test, as if the person
- * had opened it there last (it starts closed in the Wiki and Trace views, open in the Graph and ERD views).
+ * Opens the side bar on these stages for the rest of the test, as if the person
+ * had opened it there last (it starts open on the graph and the ERD, closed on the trace).
  */
-export function openSideBar(view: 'details' | 'outline' | 'history' = 'details', modes: ViewName[] = ['wiki']) {
+export function openSideBar(view: 'details' | 'outline' | 'history' = 'details', modes: readonly StageName[] = STAGE_NAMES) {
   window.localStorage.setItem('lathe:side-bar', JSON.stringify(Object.fromEntries(modes.map((m) => [m, { open: true, view }]))));
 }
 

@@ -7,8 +7,8 @@ import { openApp, openSideBar } from './helpers';
 // A list of one kind is titled by that kind ("Constraints"); one of several kinds stays "Children"
 // or "Members". The title, the list's accessible name and its search box all follow.
 
-const wiki = () => screen.getByRole('region', { name: 'Wiki pane' });
-// The side bar's Details holds a product's and a domain's own facts, their overview being the page.
+const wiki = () => screen.getByRole('region', { name: 'Wiki card' });
+// The side bar's Details, beside the wiki card.
 const sideBar = () => screen.getByRole('complementary', { name: 'Side bar' });
 /** The side bar never repeats a list the wiki shows. */
 const noListInSideBar = (name: RegExp) => { expect(within(sideBar()).queryByRole('list', { name })).toBeNull(); expect(within(sideBar()).queryByRole('heading', { name })).toBeNull(); };
@@ -34,18 +34,20 @@ describe('list titles', () => {
     fireEvent.click(within(wiki()).getByRole('button', { name: 'Expand DM-SHOP-CAP01' }));
     expect(within(wiki()).getByRole('list', { name: 'Use cases of DM-SHOP-CAP01' })).toBeInTheDocument();
 
-    // Children of several kinds stay "Children", each row tagged by its kind: a product's, on its one page, in the
-    // side bar's Details, as the product's overview does not list them as children.
-    await openApp('/DM');
-    await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
-    expect(within(sideBar()).getByRole('heading', { level: 3, name: /^Children/ })).toBeInTheDocument();
-    const mixed = within(sideBar()).getByRole('list', { name: 'Children' });
-    expect(within(mixed).getAllByText('Domain', { selector: 'small' }).length).toBeGreaterThan(0);
+    // Children of several kinds stay "Children", each row tagged by its kind: a command's handler and endpoint.
+    await openApp('/DM-SHOP-CMD01');
+    await screen.findByRole('heading', { level: 1, name: 'Add item' });
+    expect(within(wiki()).getByRole('heading', { level: 2, name: /^Children/ })).toHaveTextContent('Children2');
+    const mixed = within(wiki()).getByRole('list', { name: 'Children of DM-SHOP-CMD01' });
+    expect(within(mixed).getByText('Command handler', { selector: 'small' })).toBeInTheDocument();
+    expect(within(mixed).getByText('Endpoint', { selector: 'small' })).toBeInTheDocument();
+    noListInSideBar(/^Children/);
 
     // A group's members are titled by their kind, in the wiki only.
     await openApp('/DM-SHOP/interaction-design/flow');
     await screen.findByRole('heading', { level: 1, name: /^Flows/ });
-    expect(within(wiki()).getByRole('heading', { level: 2, name: /^Flows/ })).toHaveTextContent('Flows1');
+    // The card's own title is "Flows (1)"; the members' section is titled by the kind.
+    expect(within(wiki()).getByRole('heading', { level: 2, name: /^Flows\s*1$/ })).toHaveTextContent('Flows1');
     expect(within(wiki()).queryByRole('heading', { name: /^Members/ })).toBeNull();
     expect(within(wiki()).getByRole('list', { name: 'Flows of DM-SHOP/interaction-design/flow' })).toBeInTheDocument();
     noListInSideBar(/^Flows/);

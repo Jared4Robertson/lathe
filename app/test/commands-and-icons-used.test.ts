@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { COMMANDS, SPACE_KEYS, spaceCommandId } from '../src/shell/keymap';
 import { SIDE_VIEW_ICONS } from '../src/views/sideBarState';
-import { VIEW_NAMES } from '../src/views/address';
+import { STAGE_NAMES } from '../src/views/address';
 
 const src = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../src');
 const walk = (dir: string): string[] =>
@@ -41,7 +41,7 @@ describe('LA-STD-PRINCIPLES-R04-T03 commands', () => {
   it('Every command a button, a tooltip or a run names is in the keymap', () => {
     const ids = new Set(COMMANDS.map((c) => c.id));
     const named = [
-      ...[...source.matchAll(/command=(?:"([^"]+)"|\{([^}]+)\})/g)].flatMap((m) => (m[1] ? [m[1]] : quoted(m[2]))),
+      ...[...source.matchAll(/(?<![-\w])command=(?:"([^"]+)"|\{([^}]+)\})/g)].flatMap((m) => (m[1] ? [m[1]] : quoted(m[2]))),
       ...[...source.matchAll(/(?:useShortcutHint|\brun)\(\s*'([^']+)'/g)].map((m) => m[1]),
       ...[...source.matchAll(/useCommand\(\s*'([^']+)'/g)].map((m) => m[1]),
     ];
@@ -55,12 +55,12 @@ describe('LA-STD-PRINCIPLES-R04-T03 icons', () => {
     const icons = [...table.matchAll(/^\s+'?([a-z][a-z-]*)'?:/gm)].map((m) => m[1]);
     expect(icons.length).toBeGreaterThan(10);
     // Where an icon is named: an Icon's or a control's name or icon attribute, an icon map, and the
-    // page bar, which draws each view's icon by the view's name.
+    // page bar, which draws each stage's icon by the stage's name.
     const drawn = new Set([
       ...[...outsideIcons.matchAll(/\b(?:name|icon)=(?:"([^"]+)"|\{([^}]+)\})/g)].flatMap((m) => (m[1] ? [m[1]] : quoted(m[2]))),
       ...[...outsideIcons.matchAll(/\bicon:\s*'([^']+)'/g)].map((m) => m[1]),
       ...Object.values(SIDE_VIEW_ICONS),
-      ...VIEW_NAMES,
+      ...STAGE_NAMES,
     ]);
     expect(icons.filter((name) => !drawn.has(name))).toEqual([]);
   });

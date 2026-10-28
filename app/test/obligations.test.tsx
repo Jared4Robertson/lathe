@@ -4,10 +4,19 @@ import { describe, expect, it, vi } from 'vitest';
 import type { SpecData } from '../../lathe/src/server/contract';
 import { RecordContent } from '../src/specs/RecordContent';
 import { productKindWorkspace } from './fixtures/product-kinds';
-import { main, openApp, section } from './helpers';
-// The Graph view, where the side bar is open, needs a ResizeObserver in jsdom.
+import { main, openApp, section as pageSection } from './helpers';
+// The Graph stage, where the side bar is open, needs a ResizeObserver in jsdom.
 import './graph/setup';
 import { addRows, indexOf } from './fixtures/load';
+
+/** A section of the page: in the wiki card on a focus page, which the side bar beside it may echo. */
+const section = (name: string | RegExp) => {
+  const card = document.querySelector<HTMLElement>('.wiki-panel');
+  if (!card) return pageSection(name);
+  const element = within(card).getByRole('heading', { name }).closest('section');
+  expect(element).not.toBeNull();
+  return element as HTMLElement;
+};
 
 // Coverage per obligation kind (a product's own obligation kind among them), proof still owed, what sits
 // under an endpoint, test states, and the Traceability of an obligation, on the product-kinds workspace:
@@ -107,20 +116,20 @@ describe('obligation kinds and test states', () => {
 
   it('LA-V92-R51-T01 The record page shows a test state and how the test is run, and says one not automated yet is not proof', async () => {
     // The state is a fact in the side bar's Details, open in the Graph view.
-    await openApp('/DM-SHOP-INV01-T?view=wiki,graph', served());
+    await openApp('/DM-SHOP-INV01-T?stage=graph', served());
     await screen.findByRole('heading', { level: 1, name: 'A 51st line is refused' });
     expect(field('State')).toHaveTextContent('not automated yet');
     expect(within(side()).queryByText('state', { selector: 'dt' })).toBeNull();
     expect(screen.getByRole('note')).toHaveTextContent('Not automated yet. No file runs it, so it does not count as proof');
 
-    await openApp('/DM-SHOP-UC01-R02-T01?view=wiki,graph', served());
+    await openApp('/DM-SHOP-UC01-R02-T01?stage=graph', served());
     await screen.findByRole('heading', { level: 1, name: 'A person fills a basket to 50' });
     expect(field('State')).toHaveTextContent('manual');
     expect(screen.queryByRole('note')).toBeNull();
     const runBy = section(/^Run by/);
     expect(runBy).toHaveTextContent('Manual becauseA person fills the basket by hand.');
 
-    await openApp('/DM-SHOP-UC01-R01-T01?view=wiki,graph', served());
+    await openApp('/DM-SHOP-UC01-R01-T01?stage=graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Adding an item shows it' });
     expect(field('State')).toHaveTextContent('automated');
     expect(section(/^Run by/)).toHaveTextContent('test/basket.test.ts');

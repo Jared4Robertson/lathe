@@ -1,22 +1,27 @@
-// The Trace view of an address, /<id>?view=trace (LA-TRC-UC10).
-import { useMemo, useState, type FocusEvent, type MouseEvent, type PointerEvent, type ReactNode } from 'react';
+// The Trace stage of an address, /<id>?stage=trace (LA-TRC-UC10).
+import { useLayoutEffect, useMemo, useState, type FocusEvent, type MouseEvent, type PointerEvent, type ReactNode } from 'react';
 import { Button } from '../components/Button';
 import { groupName, isGroup } from '../graph/model';
 import { kindLabel, type SpecIndex } from '../specs/data';
-import { isObligation } from './offer';
-import { gapColumns, TRACE_COLUMN_LABELS, TRACE_COLUMNS, traceChain, traceMatrix, untracedUnder, type TraceColumn, type TraceFile, type TraceRow } from './chain';
+import { gapColumns, TRACE_COLUMN_LABELS, TRACE_COLUMNS, traceChain, traceShape, untracedUnder, type TraceColumn, type TraceFile, type TraceGroup, type TraceRow } from './chain';
 import { plural } from '../plural';
 import { Card, CardGrid } from '../shell/Card';
 
 // What the focus owes and how far it has come, as columns left to right: obligation, design, build,
-// tests, files (chain.ts). On an obligation it is that obligation's chain, each column a list of
-// cards. On a record or group with obligations under it (a use case, an aggregate, a view, a domain,
-// a stage, a product) it is a traceability matrix: one row per obligation, grouped by its parent,
-// each empty cell a visible gap, with a "Gaps only" filter, and under it the Untraced section: the
-// design, build and test records under the focus that no obligation's chain reaches (chain.ts,
-// untracedUnder), which the filter keeps. Every cell links to its record; a file
-// links to the record that names it. Long matrices show a page of rows at a time, so a product's
-// stays fast. Like the graph it never reads the address, so it can sit in any pane.
+// tests, files (chain.ts). It works on every focus (LA-PAT-APP-UX-R17), by the shape chain.ts's
+// traceShape gives it:
+// - an obligation: its chain, each column a list of cards;
+// - a record or group with obligations under it: a traceability matrix, one row per obligation
+//   grouped by its parent, each empty cell a visible gap, with a "Gaps only" filter, and under it the
+//   Untraced section (the design, build and test records under the focus no chain reaches);
+// - a design, build or test record a chain holds: the rows it belongs to, the record marked;
+// - a record nothing traces to: the untraced state, with the matrix of the nearest container with
+//   obligations below it, the record marked; any other record: that container's matrix, marked.
+// Every cell shows each record's ID and title and links to it; a file links to the record that
+// names it. Long matrices show a page of rows at a time, so a product's stays fast. It never reads
+// the address. It scrolls under the floating panels, its content padded to the open space
+// (openSpace.ts); what it holds is told to the header strip, and the "Gaps only" filter floats at
+// the top of the open space.
 
 export interface TraceViewProps {
   index: SpecIndex;
@@ -25,6 +30,8 @@ export interface TraceViewProps {
   hrefFor: (id: string) => string;
   /** Called with the record under the pointer or keyboard focus, for the side bar's Details. */
   onPeek?: (kind: 'hover' | 'selected', id: string | null) => void;
+  /** Called with what the trace holds, for the header strip: "12 obligations · 3 with gaps · 4 untraced". */
+  onCounts?: (counts: string) => void;
 }
 
 /** How many matrix rows show before "Show more". */
@@ -39,16 +46,57 @@ const NOT_OWED: Record<'design' | 'build', string> = {
 /** A column's empty cell, as a gap in words. */
 const MISSING: Record<TraceColumn, string> = { design: 'No design', build: 'Not built', tests: 'No tests', files: 'No files' };
 
+const count = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
+
 export function TraceView(props: TraceViewProps) {
   const { index, focus } = props;
-  if (isObligation(index, focus)) return <TraceChainView key={focus} {...props} />;
-  return <TraceMatrixView key={focus} {...props} />;
+  const shape = useMemo(() => traceShape(index, focus), [index, focus]);
+  const nameOf = (id: string) => index.byId.get(id)?.title ?? (isGroup(index, id) ? groupName(index, id) : id);
+  const name = nameOf(focus);
+  switch (shape.shape) {
+    case 'chain': return <TraceChainView key={focus} {...props} />;
+    case 'matrix':
+      return <TraceMatrixView key={focus} {...props} groups={shape.groups} untracedOf={focus} label={`Traceability matrix of ${name}`} />;
+    case 'rows': {
+      const n = shape.groups.reduce((s, g) => s + g.rows.length, 0);
+      return (
+        <TraceMatrixView
+          key={focus}
+          {...props}
+          groups={shape.groups}
+          label={`The obligations whose chains hold ${name}`}
+          caption={`${count(n, 'obligation')} ${n === 1 ? 'holds' : 'hold'} this record`}
+          lead={<p className="trace-note">The rows this record belongs to: each requirement or rule whose chain holds it, the record marked in its cell.</p>}
+        />
+      );
+    }
+    case 'context': {
+      const scopeName = shape.scope ? nameOf(shape.scope) : '';
+      const lead = (
+        <p className={`trace-note${shape.untraced ? ' is-untraced' : ''}`}>
+          {shape.untraced ? 'Nothing traces to this record: it serves no requirement or rule.' : 'This record sits outside every chain: no requirement or rule names it.'}
+          {shape.scope && <> Below, the matrix of <strong>{scopeName}</strong>, around it.</>}
+        </p>
+      );
+      return (
+        <TraceMatrixView
+          key={focus}
+          {...props}
+          groups={shape.groups}
+          untracedOf={shape.scope ?? undefined}
+          label={shape.scope ? `Traceability matrix of ${scopeName}` : `Trace of ${name}`}
+          caption={shape.untraced ? 'Untraced' : shape.scope ? `Outside the chains · matrix of ${scopeName}` : 'Outside the chains'}
+          lead={lead}
+        />
+      );
+    }
+  }
 }
 
 /**
  * A link to a record: a real address for new tabs, onNavigate on a plain click. Its `data-trace-id` lets the
  * view's one set of listeners (peekHandlers) tell the side bar what is under the pointer, so a matrix of
- * many links draws no listeners of its own.
+ * many links draws no listeners of its own. The focus itself is marked as the current page.
  */
 function TraceLink({ id, props, title, className, children }: { id: string; props: TraceViewProps; title: string; className: string; children: ReactNode }) {
   const onClick = (e: MouseEvent<HTMLAnchorElement>) => {
@@ -56,11 +104,16 @@ function TraceLink({ id, props, title, className, children }: { id: string; prop
     e.preventDefault();
     props.onNavigate(id);
   };
-  return <a href={props.hrefFor(id)} onClick={onClick} title={title} className={className} data-trace-id={id}>{children}</a>;
+  const current = id === props.focus;
+  return (
+    <a href={props.hrefFor(id)} onClick={onClick} title={title} className={`${className}${current ? ' is-focus' : ''}`} aria-current={current ? 'page' : undefined} data-trace-id={id}>
+      {children}
+    </a>
+  );
 }
 
 /** The record a pointer or focus event is on, by its link's `data-trace-id`. */
-const tracedAt = (target: EventTarget | null) => (target instanceof Element ? target.closest<HTMLElement>('a[data-trace-id]')?.dataset.traceId ?? null : null);
+const tracedAt = (target: EventTarget | null) => (target instanceof Element ? target.closest<HTMLElement>('[data-trace-id]')?.dataset.traceId ?? null : null);
 
 /** The view's listeners that tell the side bar which record the pointer or keyboard focus is on. */
 function peekHandlers(props: TraceViewProps) {
@@ -73,10 +126,15 @@ function peekHandlers(props: TraceViewProps) {
   };
 }
 
-/** A link to a record in a matrix cell: its ID. */
+/** A link to a record in a matrix cell: its ID, which never wraps, and its title, cut with an ellipsis (whole in its tooltip). */
 function Ref({ id, props, className = 'trace-ref' }: { id: string; props: TraceViewProps; className?: string }) {
   const record = props.index.byId.get(id);
-  return <TraceLink id={id} props={props} title={record ? `${record.title} (${id})` : id} className={className}><code>{id}</code></TraceLink>;
+  return (
+    <TraceLink id={id} props={props} title={record ? `${record.title} (${id})` : id} className={className}>
+      <code className="trace-id">{id}</code>
+      {record && <span className="trace-title">{record.title}</span>}
+    </TraceLink>
+  );
 }
 
 /** A record's card in a chain's column: its kind, ID and title; anywhere on it opens the record. */
@@ -90,7 +148,7 @@ function RecordCard({ id, props, current = false }: { id: string; props: TraceVi
       current={current}
       hint={record ? `${record.title} (${id})` : id}
       data={{ 'data-trace-id': id }}
-      title={<><small className="meta">{record ? kindLabel(props.index, record.kind) : ''}</small><code>{id}</code><span className="trace-ref-title">{record?.title ?? ''}</span></>}
+      title={<><small className="meta">{record ? kindLabel(props.index, record.kind) : ''}</small><code className="trace-id">{id}</code><span className="trace-ref-title">{record?.title ?? ''}</span></>}
     />
   );
 }
@@ -98,7 +156,7 @@ function RecordCard({ id, props, current = false }: { id: string; props: TraceVi
 /** A file, linked to the first record that names it. */
 function FileRef({ file, props }: { file: TraceFile; props: TraceViewProps }) {
   const title = `${file.path}, named by ${file.namedBy.join(', ')}`;
-  return <TraceLink id={file.namedBy[0]} props={props} title={title} className="trace-ref trace-file"><code>{file.path}</code></TraceLink>;
+  return <TraceLink id={file.namedBy[0]} props={props} title={title} className="trace-ref trace-file"><code className="trace-id">{file.path}</code></TraceLink>;
 }
 
 /** A file's card in a chain's column, opening the first record that names it. */
@@ -128,11 +186,12 @@ const itemsOf = (row: TraceRow, column: TraceColumn): number => (column === 'fil
 // ---------- One obligation's chain ----------
 
 function TraceChainView(props: TraceViewProps) {
-  const { index, focus } = props;
+  const { index, focus, onCounts } = props;
   const row = useMemo(() => traceChain(index, focus)!, [index, focus]);
   const gaps = gapColumns(row);
   const record = index.byId.get(focus)!;
-  const caption = `${kindLabel(index, record.kind)} · ${TRACE_COLUMNS.map((c) => `${itemsOf(row, c)} ${TRACE_COLUMN_LABELS[c].toLowerCase()}`).join(' · ')}${gaps.length > 0 ? ` · ${gaps.length} ${gaps.length === 1 ? 'gap' : 'gaps'}` : ''}`;
+  const caption = `${kindLabel(index, record.kind)} · ${TRACE_COLUMNS.map((c) => `${itemsOf(row, c)} ${TRACE_COLUMN_LABELS[c].toLowerCase()}`).join(' · ')}${gaps.length > 0 ? ` · ${count(gaps.length, 'gap')}` : ''}`;
+  useLayoutEffect(() => { onCounts?.(caption); }, [caption, onCounts]);
   const column = (c: TraceColumn): ReactNode => {
     if (itemsOf(row, c) === 0) return <p className="trace-cell-empty"><Empty row={row} column={c} /></p>;
     return (
@@ -145,9 +204,6 @@ function TraceChainView(props: TraceViewProps) {
   };
   return (
     <section className="trace-page" aria-label="Trace" {...peekHandlers(props)}>
-      <header className="trace-header">
-        <p className="trace-caption" title={caption}>{caption}</p>
-      </header>
       <div className="trace-scroll" role="region" tabIndex={0} aria-label="Traceability chain">
         <ol className="trace-chain">
           <li className="trace-column">
@@ -166,12 +222,23 @@ function TraceChainView(props: TraceViewProps) {
   );
 }
 
-// ---------- The matrix of every obligation under a record or group ----------
+// ---------- A matrix: of the obligations under a record or group, of the rows holding a record, or around it ----------
 
-function TraceMatrixView(props: TraceViewProps) {
-  const { index, focus } = props;
-  const groups = useMemo(() => traceMatrix(index, focus), [index, focus]);
-  const untraced = useMemo(() => untracedUnder(index, focus), [index, focus]);
+interface MatrixProps extends TraceViewProps {
+  groups: TraceGroup[];
+  /** The table's accessible name. */
+  label: string;
+  /** Whose Untraced section shows under the matrix; none when absent. */
+  untracedOf?: string;
+  /** What the header strip says, when not the matrix's own counts. */
+  caption?: string;
+  /** A note above the matrix: why it shows what it shows. */
+  lead?: ReactNode;
+}
+
+function TraceMatrixView(props: MatrixProps) {
+  const { index, groups, label, untracedOf, caption: given, lead, onCounts } = props;
+  const untraced = useMemo(() => (untracedOf ? untracedUnder(index, untracedOf) : []), [index, untracedOf]);
   const untracedCount = untraced.reduce((n, g) => n + g.ids.length, 0);
   const [gapsOnly, setGapsOnly] = useState(false);
   const [shown, setShown] = useState(TRACE_PAGE);
@@ -180,7 +247,7 @@ function TraceMatrixView(props: TraceViewProps) {
   // The rows the filter keeps, then the first `shown` of them, each group with its heading.
   const visible = useMemo(() => {
     let left = shown;
-    const out: typeof groups = [];
+    const out: TraceGroup[] = [];
     for (const g of groups) {
       if (left <= 0) break;
       const rows = (gapsOnly ? g.rows.filter((r) => gapColumns(r).length > 0) : g.rows).slice(0, left);
@@ -192,22 +259,23 @@ function TraceMatrixView(props: TraceViewProps) {
   }, [groups, gapsOnly, shown]);
   const matching = gapsOnly ? withGaps : total;
   const drawn = visible.reduce((n, g) => n + g.rows.length, 0);
-  const name = index.byId.get(focus)?.title ?? (isGroup(index, focus) ? groupName(index, focus) : focus);
-  if (total === 0) return <p className="hint trace-none">Nothing under this page owes a design, a build or a test.</p>;
-  const caption = `${total} ${total === 1 ? 'obligation' : 'obligations'} · ${withGaps} with gaps · ${untracedCount} untraced`;
+  const caption = given ?? `${count(total, 'obligation')} · ${withGaps} with gaps · ${untracedCount} untraced`;
+  useLayoutEffect(() => { onCounts?.(caption); }, [caption, onCounts]);
   return (
     <section className="trace-page" aria-label="Trace" {...peekHandlers(props)}>
-      <header className="trace-header">
-        <p className="trace-caption" title={caption}>{caption}</p>
-        <label className="trace-filter">
-          <input type="checkbox" checked={gapsOnly} onChange={(e) => { setGapsOnly(e.target.checked); setShown(TRACE_PAGE); }} />
-          Gaps only
-        </label>
-      </header>
-      <div className="trace-scroll" role="region" tabIndex={0} aria-label="Traceability matrix">
-        {matching === 0 ? <p className="hint trace-none">No gaps: every obligation here is designed, built, tested and named in a file.</p> : (
+      {total > 0 && (
+        <div className="trace-tools stage-tools" data-stage-tools="top">
+          <label className="trace-filter">
+            <input type="checkbox" checked={gapsOnly} onChange={(e) => { setGapsOnly(e.target.checked); setShown(TRACE_PAGE); }} />
+            Gaps only
+          </label>
+        </div>
+      )}
+      <div className="trace-scroll" role="region" tabIndex={0} aria-label={label}>
+        {lead}
+        {total === 0 ? null : matching === 0 ? <p className="hint trace-none">No gaps: every obligation here is designed, built, tested and named in a file.</p> : (
           <table className="data-table trace-matrix">
-            <caption className="sr-only">Traceability matrix of {name}</caption>
+            <caption className="sr-only">{label}</caption>
             <thead>
               <tr>
                 <th scope="col">Obligation</th>
@@ -223,7 +291,7 @@ function TraceMatrixView(props: TraceViewProps) {
                 </tr>
                 {g.rows.map((row) => (
                   <tr key={row.obligation} className={gapColumns(row).length > 0 ? 'has-gap' : undefined}>
-                    <th scope="row"><Ref id={row.obligation} props={props} /> <span className="trace-row-title">{index.byId.get(row.obligation)?.title}</span></th>
+                    <th scope="row"><Ref id={row.obligation} props={props} /></th>
                     {TRACE_COLUMNS.map((c) => (
                       <td key={c} className={itemsOf(row, c) === 0 && !row.notOwed.has(c) ? 'is-gap' : undefined}>
                         {itemsOf(row, c) === 0 ? <Empty row={row} column={c} /> : (
@@ -247,19 +315,21 @@ function TraceMatrixView(props: TraceViewProps) {
             <span className="hint"> {drawn} of {matching} shown</span>
           </p>
         )}
-        <section className="trace-untraced" aria-labelledby="trace-untraced">
-          <h3 id="trace-untraced">Untraced <span className="section-count">{untracedCount}</span></h3>
-          {untracedCount === 0 ? <p className="hint">Everything here serves a requirement or rule.</p> : (
-            <dl className="trace-untraced-kinds">
-              {untraced.map((g) => (
-                <div key={g.kind}>
-                  <dt>{plural(kindLabel(index, g.kind))} <span className="section-count">{g.ids.length}</span></dt>
-                  <dd><span className="trace-refs">{g.ids.map((id) => <Ref key={id} id={id} props={props} />)}</span></dd>
-                </div>
-              ))}
-            </dl>
-          )}
-        </section>
+        {untracedOf && (
+          <section className="trace-untraced" aria-labelledby="trace-untraced">
+            <h3 id="trace-untraced">Untraced <span className="section-count">{untracedCount}</span></h3>
+            {untracedCount === 0 ? <p className="hint">Everything here serves a requirement or rule.</p> : (
+              <dl className="trace-untraced-kinds">
+                {untraced.map((g) => (
+                  <div key={g.kind}>
+                    <dt>{plural(kindLabel(index, g.kind))} <span className="section-count">{g.ids.length}</span></dt>
+                    <dd><span className="trace-refs">{g.ids.map((id) => <Ref key={id} id={id} props={props} />)}</span></dd>
+                  </div>
+                ))}
+              </dl>
+            )}
+          </section>
+        )}
       </div>
     </section>
   );

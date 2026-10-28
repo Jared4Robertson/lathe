@@ -1,28 +1,26 @@
 import type { MouseEvent, ReactNode } from 'react';
 import { Button } from '../components/Button';
-import { LongList } from '../components/LongList';
 import { kindFieldPath, kindPagePath } from '../format/reference';
-import { groupLabel, groupMarks, groupMembers, groupOwner, isGroup, parseGroupId } from '../graph/model';
+import { groupLabel, groupMarks, groupMembers } from '../graph/model';
 import { treeGroup } from '../graph/tree';
 import { GraphConnections, type GraphInfo } from '../graph/panel';
 import { lowerLabel } from '../plural';
 import { Link } from '../router';
 import { DesktopRecordActions } from '../shell/desktopRecord';
-import { kindLabel, parentColumns, problemOrder, type SpecIndex, type SpecRecord } from '../specs/data';
+import { kindLabel, problemOrder, type SpecIndex, type SpecRecord } from '../specs/data';
 import { factsOf, rowPlace } from '../specs/RecordText';
-import { ProblemList, RecordLink, RecordTree, StageFact, gapText, TestStateTag, idText, isTestKind, listTitle } from '../specs/parts';
+import { ProblemList, RecordLink, StageFact, gapText, TestStateTag, isTestKind } from '../specs/parts';
 import { parentlessText } from '../specs/RecordContent';
 import { GAP_TEXT } from '../specs/Traceability';
 import { traceOf } from '../specs/trace';
 import type { SideMode } from './sideBarState';
 
 // The side bar's Details (LA-V95-R06): what the page does not already show, with no repeats.
-// - In the Graph and ERD views: the node under the pointer or keyboard focus, else the selected
-//   one, else the page's record: its kind, title, ID, short fields, data file and parent, and a
-//   compact Traceability summary in the relations' labels, with Open (and, in the desktop app,
-//   Reveal and Open in editor). The graph adds what it connects to the center.
-// - In the Wiki view: a record row that has focus or was right-clicked, as above; otherwise only
-//   what the page leaves out: the data file and line, the row's columns and the raw links.
+// The node under the pointer or keyboard focus on the stage, else the one selected (a stage's box
+// tapped once, or a row of the wiki card focused or right-clicked), else the page's record: its
+// kind, title, ID, short fields, data file and parent, and a compact Traceability summary in the
+// relations' labels, with Open (and, in the desktop app, Reveal and Open in editor). The graph adds
+// what it connects to the center.
 
 export interface SideBarDetailsProps {
   index: SpecIndex;
@@ -39,15 +37,12 @@ export interface SideBarDetailsProps {
 }
 
 export function SideBarDetails({ index, focus, target, mode, how, graph, onNavigate, hrefFor }: SideBarDetailsProps) {
-  const pageFacts = mode === 'wiki' && how === 'page';
   const record = index.byId.get(target);
   return (
     <>
-      {pageFacts
-        ? (record ? <RawFacts index={index} record={record} /> : <RawGroupFacts index={index} gid={target} />)
-        : (record
-          ? <RecordDetails index={index} record={record} focus={focus} how={how} onNavigate={onNavigate} hrefFor={hrefFor} />
-          : <GroupDetails index={index} gid={target} focus={focus} how={how} onNavigate={onNavigate} hrefFor={hrefFor} />)}
+      {record
+        ? <RecordDetails index={index} record={record} focus={focus} how={how} onNavigate={onNavigate} hrefFor={hrefFor} />
+        : <GroupDetails index={index} gid={target} focus={focus} how={how} onNavigate={onNavigate} hrefFor={hrefFor} />}
       {mode === 'graph' && graph && <GraphConnections index={index} info={graph} onNavigate={onNavigate} hrefFor={hrefFor} />}
     </>
   );
@@ -138,7 +133,7 @@ function TraceSummary({ index, record }: { index: SpecIndex; record: SpecRecord 
           {gaps.length > 0 && (
             <ul className="plain side-bar-gaps">
               {gaps.map(({ domain, gap }) => (
-                <li key={`${domain} ${gap.kind}`} data-gap={gap.kind}>{!record.domain && <><code>{domain}</code> </>}<strong>{GAP_TEXT[gap.kind].title}</strong></li>
+                <li key={`${domain} ${gap.kind}`} data-gap={gap.kind}>{!record.domain && <><RecordLink index={index} id={domain} showTitle={false} /> </>}<strong>{GAP_TEXT[gap.kind].title}</strong></li>
               ))}
             </ul>
           )}
@@ -184,94 +179,5 @@ function GroupDetails({ index, gid, focus, how, onNavigate, hrefFor }: { index: 
         )}
       </Part>
     </>
-  );
-}
-
-// ---------- In the Wiki view, with nothing selected: only what the page does not show ----------
-
-/** The record as its data file has it: the file and line, the row's columns and the raw links both ways. */
-function RawFacts({ index, record }: { index: SpecIndex; record: SpecRecord }) {
-  const parents = parentColumns(index.workspace.schema, record.kind);
-  const columns = Object.entries(record.row);
-  const out = index.outgoing.get(record.id) ?? [];
-  const into = index.incoming.get(record.id) ?? [];
-  return (
-    <>
-      <section className="side-bar-section" aria-labelledby="side-file">
-        <h3 id="side-file">Data file</h3>
-        <p className="side-file"><code>{rowPlace(record)}</code></p>
-        <DesktopRecordActions id={record.id} />
-      </section>
-      <section className="side-bar-section" aria-labelledby="side-header">
-        <h3 id="side-header">Columns</h3>
-        <dl className="fields side-raw">
-          {columns.map(([name, value]) => <div key={name}><dt><code>{name}</code></dt><dd>{parents.has(name) && typeof value === 'string' ? <RecordLink index={index} id={value} showTitle={false} /> : <code>{JSON.stringify(value)}</code>}</dd></div>)}
-        </dl>
-      </section>
-      <section className="side-bar-section" aria-labelledby="side-links-out">
-        <h3 id="side-links-out">Links out <span className="section-count">{out.length}</span></h3>
-        <RawLinks index={index} links={out.map((l) => ({ relation: l.relation, id: l.target }))} label="Links out" empty="This record links to nothing." />
-      </section>
-      <section className="side-bar-section" aria-labelledby="side-links-in">
-        <h3 id="side-links-in" tabIndex={-1} className="links-in-heading">Links in <span className="section-count">{into.length}</span></h3>
-        <RawLinks index={index} links={into.map((l) => ({ relation: l.relation, id: l.source }))} label="Links in" empty="Nothing links to this record." />
-      </section>
-      {(record.kind === 'product' || record.kind === 'domain') && <OverviewFacts index={index} record={record} />}
-    </>
-  );
-}
-
-/**
- * A product's or a domain's page is its overview, which lists its domains or its folders but not
- * the record's own parent, children and problems: those stay in Details.
- */
-function OverviewFacts({ index, record }: { index: SpecIndex; record: SpecRecord }) {
-  const children = index.children.get(record.id) ?? [];
-  const problems = [...(index.problemsFor.get(record.id) ?? [])].sort(problemOrder);
-  const childrenTitle = listTitle(index, children, 'Children');
-  return (
-    <>
-      <Part title="Parent" id="side-parent">
-        {record.parent ? <RecordLink index={index} id={record.parent} /> : <p className="hint">None (top level).</p>}
-      </Part>
-      <Part title={childrenTitle} count={children.length} id="side-children">
-        {children.length === 0 ? <p className="hint">None.</p> : <RecordTree index={index} records={children} label={childrenTitle} showKind bulk={false} />}
-      </Part>
-      <Part title="Problems" count={problems.length} id="side-own-problems">
-        <ProblemList index={index} problems={problems} showRecord={false} />
-      </Part>
-    </>
-  );
-}
-
-/** Links as the header writes them: the relation's name and the other record's ID. */
-function RawLinks({ index, links, label, empty }: { index: SpecIndex; links: { relation: string; id: string }[]; label: string; empty: string }) {
-  if (links.length === 0) return <p className="hint">{empty}</p>;
-  return (
-    <LongList
-      label={label}
-      className="plain side-raw-links"
-      items={links}
-      itemKey={(l) => `${l.relation} ${l.id}`}
-      searchText={(l) => `${l.relation} ${idText(index, l.id)}`}
-      render={(l) => <><code className="side-relation">{l.relation}</code> <RecordLink index={index} id={l.id} showTitle={false} /></>}
-    />
-  );
-}
-
-/** A group page has no file of its own: its kind and parent, as its address names them. */
-function RawGroupFacts({ index, gid }: { index: SpecIndex; gid: string }) {
-  const parsed = parseGroupId(gid);
-  if (!parsed || !isGroup(index, gid)) return <p className="hint">There's no record or group <code>{gid}</code>.</p>;
-  return (
-    <section className="side-bar-section" aria-labelledby="side-group">
-      <h3 id="side-group">Group</h3>
-      <p className="hint">A group has no row of its own: its address names it by its parent and its place in the tree. Select a row to see that record's details.</p>
-      <dl className="fields side-raw">
-        <div><dt>Name</dt><dd>{groupLabel(index, gid)}</dd></div>
-        <div><dt><code>parent</code></dt><dd><RecordLink index={index} id={groupOwner(index, gid)} showTitle={false} /></dd></div>
-        <div><dt><code>path</code></dt><dd><code>{[parsed.kind, ...parsed.path].join('/')}</code></dd></div>
-      </dl>
-    </section>
   );
 }

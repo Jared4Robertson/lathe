@@ -12,7 +12,7 @@ import { textOf, byIdOrder, partsOf } from '../specs/data';
 //   that reference it, faded around it as closed boxes.
 // - An entity's ERD is its aggregate's, with the entity highlighted.
 
-export type ErdLevel = 'domain' | 'aggregate';
+export type ErdLevel = 'product' | 'domain' | 'aggregate';
 /** A line end: exactly one (two bars), many (a crow's foot), none (a plain end) or an arrowhead (the aggregate a reference points at). */
 export type ErdEnd = 'one' | 'many' | 'none' | 'arrow';
 /** Who owns a box: the current domain or another one (gray, labeled with its domain). */
@@ -136,33 +136,68 @@ function referencingAggregates(index: SpecIndex, aggregate: string): SpecRecord[
   return [...found.values()].sort(byIdOrder);
 }
 
-/** What the ERD view draws for a page: a domain's ERD, or an aggregate's (an entity's highlighted in it); null for any other page. */
+/**
+ * What the ERD stage draws for a focus (LA-PAT-APP-UX-R17: every stage works on every focus): a
+ * domain's ERD; an aggregate's (an entity's highlighted in it); for a group, its owner's. For any
+ * other record, its domain's ERD with the nearest entity or aggregate above it highlighted, or for a
+ * Shared record (one in no domain) and a product, the product's ERD. Null only for an unknown focus.
+ */
 export function modelScope(index: SpecIndex, focus: string): { level: ErdLevel; scope: string; highlight: string | null } | null {
+  const slash = focus.indexOf('/');
+  if (slash > 0) return modelScope(index, focus.slice(0, slash));
   const record = index.byId.get(focus);
   if (!record) return null;
   if (record.kind === 'domain') return { level: 'domain', scope: record.id, highlight: null };
   if (record.kind === 'aggregate') return { level: 'aggregate', scope: record.id, highlight: null };
   if (record.kind === 'entity' && record.parent) return { level: 'aggregate', scope: record.parent, highlight: record.id };
+  if (record.kind === 'product') return { level: 'product', scope: record.id, highlight: null };
+  let highlight: string | null = null;
+  for (let at: SpecRecord | undefined = record; at; at = at.parent ? index.byId.get(at.parent) : undefined) {
+    if (at.kind === 'entity' || at.kind === 'aggregate') { highlight = at.id; break; }
+  }
+  if (record.domain) return { level: 'domain', scope: record.domain, highlight };
+  if (record.product) return { level: 'product', scope: record.product, highlight };
   return null;
 }
 
-/** The diagram for a page, or null when the page has none. */
+/** The diagram for a focus, or null for an unknown one. */
 export function erdFor(index: SpecIndex, focus: string): Erd | null {
   const scope = modelScope(index, focus);
   if (!scope) return null;
+  if (scope.level === 'product') return productErd(index, scope.scope, scope.highlight);
   return scope.level === 'domain' ? domainErd(index, scope.scope, scope.highlight) : aggregateErd(index, scope.scope, scope.highlight);
+}
+
+/** What an ERD with nothing to draw says, by its level. */
+export const ERD_EMPTY: Record<ErdLevel, string> = {
+  product: 'This product has no aggregates yet.',
+  domain: 'This domain has no aggregates yet.',
+  aggregate: 'This aggregate has no entities yet.',
+};
+
+/** Whether an ERD has nothing to draw: no aggregate for a product or a domain, no entity for an aggregate. */
+export const erdEmpty = (erd: Erd) => (erd.level === 'aggregate' ? !erd.boxes.some((b) => b.kind === 'entity') : erd.boxes.length === 0);
+
+/** A product's ERD, for a Shared record: every domain's aggregates as boundaries, none drawn as another domain's. */
+export function productErd(index: SpecIndex, productId: string, highlight: string | null = null): Erd {
+  const b = new Builder(index, '', highlight, true);
+  const aggregates = index.workspace.records.filter((r) => r.kind === 'aggregate' && r.product === productId).sort(byIdOrder);
+  for (const a of aggregates) b.aggregate(a, true);
+  b.relationships();
+  for (const a of aggregates) b.references(a.id, false);
+  return b.done('product', productId);
 }
 
 /** Builds a diagram's boxes and lines, each once. */
 class Builder {
   boxes = new Map<string, ErdBox>();
   lines = new Map<string, ErdLine>();
-  constructor(private index: SpecIndex, private domainId: string, private highlight: string | null) {}
+  constructor(private index: SpecIndex, private domainId: string, private highlight: string | null, private wholeProduct = false) {}
 
   /** An aggregate's box: a boundary around its entities, drawn with them, or a closed box (faded context). */
   aggregate(record: SpecRecord, boundary: boolean, context = false) {
     if (this.boxes.has(record.id)) return;
-    const other = !!record.domain && record.domain !== this.domainId;
+    const other = !this.wholeProduct && !!record.domain && record.domain !== this.domainId;
     this.boxes.set(record.id, {
       id: record.id, kind: 'aggregate', title: record.title, owner: other ? titleOf(this.index, record.domain) : null, tone: other ? 'other' : 'current',
       root: false, fields: [], boundary, highlight: record.id === this.highlight, context: context || other,

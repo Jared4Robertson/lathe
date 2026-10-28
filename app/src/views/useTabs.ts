@@ -3,64 +3,48 @@ import { navigate } from '../router';
 import { isNumber, readPref, writePref } from '../shell/prefs';
 import { productOfPath } from '../shell/spaces';
 import type { SpecIndex } from '../specs/data';
-import { focusOf, isFocusPath, parseViews, pathOf, VIEW_NAMES, viewsFromSearch, withView, type FocusRoute, type ViewName } from './address';
+import { DEFAULT_STAGE, focusOf, isFocusPath, parseStage, pathOf, stageFromSearch, withStage, type FocusRoute, type StageName } from './address';
 import { activateTab, activeTab, closeTab, cycleTab, emptyTabs, keepTab, openTab, parseTabSet, tabFor, updateTab, type Tab, type TabSet } from './tabs';
 import { sideStateFrom, type SideState } from './sideBarState';
 
 // The open tabs of the focus page, one tab set per space, kept for the browser session, and the
 // address kept in step with the active tab (LA-PAT-APP-UX-R06):
 // - a new address opens its page as tabs.ts says: the tab it is open in, or the preview tab;
-// - the address names the active tab's views, so a link, a reload, Back and Forward work as before;
+// - the address names the active tab's stage, so a link, a reload, Back and Forward work as before;
 // - activating, cycling or closing a tab moves the address to the tab now active.
-// Each tab keeps its own views, pane sizes and wiki scroll. A new tab starts from the active tab's,
-// or for a space's first tab from the last ones used (the remembered view and sizes). How the graph
-// is drawn is not a tab's: it is one setting for the session (graph/settings.ts).
+// Each tab keeps its own stage, side bar and wiki card scroll. A new tab starts from the active
+// tab's, or for a space's first tab from the stage last used. How the graph is drawn, and the wiki
+// card's open state and width, are not a tab's: they are one setting for the session (graph/settings.ts).
 
-/** What a tab remembers of its page, besides the wiki's scroll (kept apart, as it changes often). */
+/** What a tab remembers of its page, besides the wiki card's scroll (kept apart, as it changes often). */
 export interface TabView {
-  /** The views asked for, those the page does not offer included, so they come back where offered. */
-  views: ViewName[];
-  /** Each pane's weight, which the gaps share out. */
-  sizes: Record<ViewName, number>;
-  /** The side bar in each view mode: open or not, and its view. Absent modes use the last used. */
+  /** The stage the tab shows. */
+  stage: StageName;
+  /** The side bar on each stage: open or not, and its view. Absent modes use the last used. */
   side?: SideState;
 }
 export type PageTab = Tab<TabView>;
 export type PageTabs = TabSet<TabView>;
 
 const TABS_KEY = 'lathe:tabs';
-export const VIEW_KEY = 'lathe:view';
-export const PANE_SIZE_KEY = (v: ViewName) => `lathe:pane-size:${v}`;
-/** Each pane's share of the width is a weight; equal weights share the space evenly. */
-export const PANE_WEIGHT = 100;
-export const PANE_WEIGHT_MIN = 1;
-export const PANE_WEIGHT_MAX = 10000;
+export const STAGE_KEY = 'lathe:stage';
 const isString = (v: unknown): v is string => typeof v === 'string';
 const isAny = (_v: unknown): _v is unknown => true;
-const isWeight = (v: unknown): v is number => isNumber(v) && v >= PANE_WEIGHT_MIN && v <= PANE_WEIGHT_MAX;
 
-/** The views last open, for a space's first tab. */
-export const rememberedViews = (): ViewName[] => parseViews(readPref<string>(VIEW_KEY, 'wiki', isString));
-
-/** What a space's first tab starts with: the views and sizes last used. */
-export function firstTabView(): TabView {
-  const views = rememberedViews();
-  const sizes = Object.fromEntries(VIEW_NAMES.map((v) => [v, readPref<number>(PANE_SIZE_KEY(v), PANE_WEIGHT, isWeight)])) as Record<ViewName, number>;
-  return { views: views.length > 0 ? views : ['wiki'], sizes };
-}
+/** What a space's first tab starts with: the stage last used. */
+export const firstTabView = (): TabView => ({ stage: parseStage(readPref<string>(STAGE_KEY, DEFAULT_STAGE, isString)) ?? DEFAULT_STAGE });
 
 // ---------- Stored tab sets ----------
 
-interface StoredTab { views: string; sizes: Record<string, number>; scroll: number; side?: SideState }
+interface StoredTab { stage: string; scroll: number; side?: SideState }
 
 function tabViewFrom(v: unknown): (TabView & { scroll: number }) | null {
   if (!v || typeof v !== 'object') return null;
   const s = v as Partial<StoredTab>;
-  const views = parseViews(typeof s.views === 'string' ? s.views : '');
-  const first = firstTabView();
-  const sizes = Object.fromEntries(VIEW_NAMES.map((name) => [name, isWeight(s.sizes?.[name]) ? s.sizes![name] : first.sizes[name]])) as Record<ViewName, number>;
+  const stage = parseStage(typeof s.stage === 'string' ? s.stage : '');
+  if (!stage) return null;
   const side = sideStateFrom(s.side);
-  return { views: views.length > 0 ? views : ['wiki'], sizes, scroll: isNumber(s.scroll) && s.scroll >= 0 ? s.scroll : 0, ...(Object.keys(side).length > 0 ? { side } : {}) };
+  return { stage, scroll: isNumber(s.scroll) && s.scroll >= 0 ? s.scroll : 0, ...(Object.keys(side).length > 0 ? { side } : {}) };
 }
 
 const scrollKey = (t: { key: string; page: string }) => `${t.key} ${t.page}`;
@@ -94,35 +78,33 @@ function saveAll(all: Record<string, PageTabs>, scrolls: Map<string, number>) {
         key: t.key,
         page: t.page,
         preview: t.preview,
-        state: { views: t.state.views.join(','), sizes: t.state.sizes, scroll: scrolls.get(scrollKey(t)) ?? 0, ...(t.state.side ? { side: t.state.side } : {}) },
+        state: { stage: t.state.stage, scroll: scrolls.get(scrollKey(t)) ?? 0, ...(t.state.side ? { side: t.state.side } : {}) },
       })),
     };
   }
   writePref(TABS_KEY, out, 'session');
 }
 
-const sameViews = (a: readonly ViewName[], b: readonly ViewName[]) => a.length === b.length && a.every((v, i) => v === b[i]);
-
 /**
  * The tab set after arriving at an address: the page's tab activated, or the page opened in the
- * preview tab with the views the address names, else those of the tab that was active. The views
- * an address names win over the tab's own only on the page already active, or on the first load
- * (a shared link or a reload); a link to a page open in another tab activates that tab as it was.
+ * preview tab with the stage the address names, else that of the tab that was active. The stage an
+ * address names wins over the tab's own only on the page already active, or on the first load (a
+ * shared link or a reload); a link to a page open in another tab activates that tab as it was.
  */
-export function arrive(set: PageTabs, page: string, linked: ViewName[] | null, first: boolean): PageTabs {
+export function arrive(set: PageTabs, page: string, linked: StageName | null, first: boolean): PageTabs {
   const open = tabFor(set, page);
   const wasActive = open !== undefined && open.key === set.active;
   let next = openTab(set, page, (from) => {
     const base = from?.state ?? firstTabView();
-    return { ...base, views: linked ?? base.views };
+    return { ...base, stage: linked ?? base.stage };
   });
-  if (open && linked && (first || wasActive) && !sameViews(open.state.views, linked)) {
-    next = updateTab(next, open.key, (s) => ({ ...s, views: linked }));
+  if (open && linked && (first || wasActive) && open.state.stage !== linked) {
+    next = updateTab(next, open.key, (s) => ({ ...s, stage: linked }));
   }
   return next;
 }
 
-export const addressOfTab = (t: PageTab) => withView(t.page, t.state.views);
+export const addressOfTab = (t: PageTab) => withStage(t.page, t.state.stage);
 
 export interface PageTabsApi {
   set: PageTabs;
@@ -137,10 +119,13 @@ export interface PageTabsApi {
   setScroll: (t: PageTab, top: number) => void;
 }
 
+/** Remembers the stage last chosen, for a space's first tab. */
+export const rememberStage = (stage: StageName) => writePref(STAGE_KEY, stage);
+
 export function usePageTabs(index: SpecIndex, route: FocusRoute, search: string): PageTabsApi {
   const page = pathOf(route);
   const space = productOfPath(index, page) ?? index.byId.get(focusOf(route))?.product ?? '';
-  const linked = viewsFromSearch(search);
+  const linked = stageFromSearch(search);
   const scrolls = useRef<Map<string, number>>(null as unknown as Map<string, number>);
   if (!scrolls.current) scrolls.current = new Map();
   const [all, setAll] = useState<Record<string, PageTabs>>(() => loadAll(scrolls.current));
@@ -156,10 +141,10 @@ export function usePageTabs(index: SpecIndex, route: FocusRoute, search: string)
   const set = all[space] ?? emptyTabs<TabView>();
   const active = activeTab(set) ?? { key: '', page, preview: true, state: firstTabView() };
 
-  // The address names the active tab's views: a link to a page open in another tab shows it as it was.
+  // The address names the active tab's stage: a link to a page open in another tab shows it as it was.
   useEffect(() => {
     if (synced !== here || active.page !== page) return;
-    if (linked && !sameViews(linked, active.state.views)) navigate(addressOfTab(active), true);
+    if (linked && linked !== active.state.stage) navigate(addressOfTab(active), true);
   }, [synced, here, active, page, linked]);
 
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);

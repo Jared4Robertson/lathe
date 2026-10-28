@@ -13,13 +13,13 @@ const served = () => ({ data: modelWorkspace() });
 
 describe('domain events in the wiki', () => {
   it("LA-V92-R09-T03 An aggregate's events are listed under their kind's plural label, Domain events", async () => {
-    await openApp(`${addressOf('P-D-A3')}?view=wiki`, served());
+    await openApp(`${addressOf('P-D-A3')}?stage=graph`, served());
     await screen.findByRole('heading', { level: 1, name: 'Loan' });
     expect(within(section(/^Domain events/)).getByRole('list', { name: 'Domain events of P-D-A3' })).toBeInTheDocument();
   });
 
   it('LA-V92-R60-T01 An aggregate\'s page lists its domain events titled "Domain events", each row a whole link saying what raises it, how many policies hear it and whether it is published', async () => {
-    await openApp(`${addressOf('P-D-A3')}?view=wiki`, served());
+    await openApp(`${addressOf('P-D-A3')}?stage=graph`, served());
     await screen.findByRole('heading', { level: 1, name: 'Loan' });
     const list = within(section(/^Domain events/)).getByRole('list', { name: 'Domain events of P-D-A3' });
     const rows = within(list).getAllByRole('listitem');
@@ -31,7 +31,7 @@ describe('domain events in the wiki', () => {
     expect(within(rows[0]).getAllByRole('link')).toHaveLength(1);
     expect(within(rows[0]).getByRole('link')).toHaveAttribute('href', addressOf('P-D-EV01'));
 
-    await openApp(`${addressOf('P-D-A2')}?view=wiki`, served());
+    await openApp(`${addressOf('P-D-A2')}?stage=graph`, served());
     await screen.findByRole('heading', { level: 1, name: 'Member' });
     const member = within(within(section(/^Domain events/)).getByRole('list', { name: 'Domain events of P-D-A2' })).getAllByRole('listitem');
     expect(member.map((r) => r.textContent)).toEqual(['P-D-EV03Member joinedpublishedRaised by Register member']);

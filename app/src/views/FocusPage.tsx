@@ -1,73 +1,69 @@
-// The focus page of a record or group at its address, /<id> (LA-V96): the page bar and the Wiki, Graph and ERD panes.
-import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode, type RefObject } from 'react';
+// The focus page of a record or group at its address, /<id> (LA-V96): the stage and the panels floating over it.
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react';
 import { Icon } from '../components/icons';
-import { rowPlace } from '../specs/RecordText';
-import { Editable } from '../edit/Editing';
 import { ResizeHandle } from '../components/ResizeHandle';
 import { expandAllOnPage } from '../components/TreeList';
-import { useGraphSettings } from '../graph/settings';
-import { groupLabel, groupMembers, groupName, groupOwner, isGroup } from '../graph/model';
-import { treeGroup, treeParent } from '../graph/tree';
+import { CARD_MAX, CARD_MIN, useSessionSettings } from '../graph/settings';
+import { isGroup } from '../graph/model';
 import type { GraphInfo } from '../graph/panel';
 import { entryState, lastAddressMove, Link, navigate, noteInEntry, onLeaveEntry } from '../router';
 import { useAnnounce, useCommand } from '../shell/commands';
 import { BottomSheet } from '../shell/BottomSheet';
-import { Tooltip } from '../shell/Tooltip';
-import { usePanelSize, writePref } from '../shell/prefs';
-import { useNarrow } from '../shell/useNarrow';
-import type { Problem, SpecIndex, SpecRecord, SpecState } from '../specs/data';
-import { Markdown } from '../specs/Markdown';
-import { KindBadge, PageHeader, ProblemBadge, RecordTree, Section, listTitle } from '../specs/parts';
-import { RecordContent, RecordEyebrow } from '../specs/RecordContent';
-import { foldedChildren } from '../specs/folders';
-import { DomainWiki, NotFound, ProductWiki, problemsUnder } from '../specs/SpecPages';
-import { addressOf, HOME_PATH, focusOf, VIEW_LABELS, VIEW_NAMES, VIEW_WORDS, viewsFromSearch, viewsOffered, viewsShown, withView, type FocusRoute, type ViewName } from './address';
+import { usePanelSize } from '../shell/prefs';
+import { trapTab, useNarrow } from '../shell/useNarrow';
+import { parseSpecRoute, type SpecIndex, type SpecState } from '../specs/data';
+import { NotFound } from '../specs/SpecPages';
+import { addressOf, HOME_PATH, focusOf, isFocusRoute, STAGE_LABELS, stageFromSearch, withStage, type FocusRoute, type StageName } from './address';
+import { HeaderStrip } from './HeaderStrip';
+import { createOpenSpaceStore, useOpenSpaceMeasure } from './openSpace';
+import { PageBar, STAGE_COMMANDS } from './PageBar';
 import { SideBar } from './SideBar';
-import { createPeekStore, saveLastSide, SIDE_VIEW_LABELS, sideFor, sideModeOf, type SideModeState, type SideView } from './sideBarState';
-import { PageBar, ViewIcon } from './PageBar';
+import { createPeekStore, saveLastSide, SIDE_VIEW_LABELS, sideFor, type SideModeState, type SideView } from './sideBarState';
 import { TAB_PANEL_ID, tabId, tabLabel } from './TabStrip';
-import { PANE_SIZE_KEY, PANE_WEIGHT, PANE_WEIGHT_MAX, PANE_WEIGHT_MIN, VIEW_KEY, usePageTabs, type PageTabsApi } from './useTabs';
+import { rememberStage, usePageTabs, type PageTabsApi } from './useTabs';
+import { WikiCard } from './WikiCard';
 import { Button } from '../components/Button';
 
-// One page for one thing (a record, a group, a product or a domain), at one address, in up to
-// four views, each a pane you open and close: Wiki (the page to read), Graph (the graph centered
-// on it), ERD (the ERD of a domain, an aggregate or an entity's aggregate; offered only there) and
-// Trace (an obligation's chain, or the matrix of the obligations under the focus; offered only where
-// there is one). The open panes sit side by side in the order Wiki, Graph, ERD, Trace, with a handle to drag in every
-// gap. Every pane shows the same focus: clicking a node or a box changes the address and the others
-// follow. Any pane can be maximized. The side bar, the page's last column, shows
-// Details, Outline or History for what the open views show (SideBar.tsx); it is open or closed,
-// and on one view, per view mode and per tab.
+// One page for one thing (a record, a group, a product or a domain), at one address. One stage
+// fills the window behind everything: the Graph, the ERD (of a domain, an aggregate or an entity's
+// aggregate, or of the domain or product around any other record) or the Trace (an obligation's chain, the
+// matrix of the obligations under the focus, or the rows that hold it), switched in the page bar and named
+// in the address (`?stage=erd`). Everything else floats over it as frosted panels: the nav (the
+// shell's), the tab panel (the page bar, then the header strip naming the focus), the wiki card (the
+// focus's wiki page) and the side bar (Details, Outline or History, SideBar.tsx). The stage frames
+// its focus in the open space the panels leave (openSpace.ts), and every part follows one focus:
+// a click on the stage, a link in the card, a tab, Back and Forward all change the address.
 //
-// Several pages can be open at once, as tabs in the leftmost pane's title bar (useTabs.ts and
-// tabs.ts); each tab keeps its own views, pane sizes and wiki scroll. How the graph is drawn is
-// one setting for the session, not a tab's (graph/settings.ts).
+// Several pages can be open at once, as tabs (useTabs.ts and tabs.ts); each tab keeps its own
+// stage, side bar and wiki card scroll. How the graph is drawn and the wiki card's open state and
+// width are one setting for the session, not a tab's (graph/settings.ts).
 
 const GraphView = lazy(() => import('../graph/GraphPage').then((m) => ({ default: m.GraphView })));
 const ErdView = lazy(() => import('../erd/ErdView').then((m) => ({ default: m.ErdView })));
 const TraceView = lazy(() => import('../trace/TraceView').then((m) => ({ default: m.TraceView })));
 
 const SIDE_BAR_WIDTH_KEY = 'lathe:side-bar-width';
-/** The narrowest a pane gets, and the limits of one pane's share of the two panes beside a gap, in percent. */
-const PANE_MIN_PX = 220;
-const GAP_MIN = 20;
-const GAP_MAX = 80;
-const lower = (v: ViewName) => VIEW_WORDS[v];
-/** The key a history entry notes the wiki's scroll under. */
-const WIKI_SCROLL = 'wikiScroll';
+/** The key a history entry notes the wiki card's scroll under. */
+const CARD_SCROLL = 'cardScroll';
+/**
+ * How long the focus must rest before the wiki card draws its page, in ms. A focus that moves after
+ * a rest draws at once; moves that follow each other closer than this (arrowing through the stage)
+ * draw only the one they settle on, so the card never draws a page per step.
+ */
+export const CARD_SETTLE_MS = 180;
 
 // ---------- The page ----------
 
 export function FocusPage({ spec, route, search }: { spec: SpecState; route: FocusRoute; search: string }) {
   const { index } = spec;
   let body: ReactNode;
-  if (!index) body = <div className="placeholder"><p>{spec.error ? `Couldn't load the specs: ${spec.error}` : 'Loading specs…'}</p></div>;
+  if (!index) body = <div className="placeholder focus-missing panel"><p>{spec.error ? `Couldn't load the specs: ${spec.error}` : 'Loading specs…'}</p></div>;
   else {
     const problem = invalid(index, route);
     body = problem ?? <Focused index={index} route={route} search={search} />;
   }
   return (
-    <main className="focus-page" id="main">
+    <main className="stage-page" id="main">
       {spec.error && index && <p className="error">Couldn't reload the specs: {spec.error}</p>}
       {body}
     </main>
@@ -76,19 +72,38 @@ export function FocusPage({ spec, route, search }: { spec: SpecState; route: Foc
 
 function invalid(index: SpecIndex, route: FocusRoute): ReactNode | null {
   if (route.page === 'product') {
-    return index.byId.get(route.product)?.kind === 'product' ? null : <NotFound what="product" id={route.product} />;
+    return index.byId.get(route.product)?.kind === 'product' ? null : <div className="focus-missing panel"><NotFound what="product" id={route.product} /></div>;
   }
   if (route.page === 'domain') {
     const d = index.byId.get(route.domain);
-    return d?.kind === 'domain' && d.product === route.product ? null : <NotFound what="domain" id={route.domain} />;
+    return d?.kind === 'domain' && d.product === route.product ? null : <div className="focus-missing panel"><NotFound what="domain" id={route.domain} /></div>;
   }
   const id = focusOf(route);
   if (route.page === 'record' ? index.byId.has(id) : isGroup(index, id)) return null;
   return (
-    <div className="placeholder">
+    <div className="placeholder focus-missing panel">
       <p>There's no record or group <code>{id}</code>. <Link to={HOME_PATH}>See all products</Link>.</p>
     </div>
   );
+}
+
+/**
+ * A value that follows `value` once it rests: at once after a rest, and when it moves again within
+ * `ms`, only once it has rested that long. Set before paint, so no frame shows the old value after a rest.
+ */
+function useSettled<T>(value: T, ms: number): T {
+  const [settled, setSettled] = useState(value);
+  const lastMove = useRef(-Infinity);
+  useLayoutEffect(() => {
+    if (Object.is(value, settled)) return;
+    const now = performance.now();
+    const rested = now - lastMove.current > ms;
+    lastMove.current = now;
+    if (rested) { setSettled(value); return; }
+    const timer = setTimeout(() => setSettled(value), ms);
+    return () => clearTimeout(timer);
+  }, [value, settled, ms]);
+  return settled;
 }
 
 function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute; search: string }) {
@@ -96,116 +111,45 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   const announce = useAnnounce();
   const narrow = useNarrow();
 
-  // The open tabs, and the active one's state. The open views are the tab's: those the link named
-  // when it opened, otherwise those of the tab it was opened from ("wiki,graph"; the old single
-  // names and "split" read the same way). ERD and Trace show only where offered; the views asked for
-  // but not offered here are kept, so they come back on a page that offers them.
+  // The open tabs, and the active one's state. The stage is the tab's: the one the link named when
+  // it opened, otherwise that of the tab it was opened from. Every stage works on every focus
+  // (LA-PAT-APP-UX-R17), so the switch never hides or disables one.
   const tabs = usePageTabs(index, route, search);
   const tab = tabs.active;
   const { update } = tabs;
-  const asked = tab.state.views;
-  const askedKey = asked.join(',');
-  // The views a link names become the ones remembered, for the first tab of a new session.
-  const linked = viewsFromSearch(search) !== null;
-  useEffect(() => { if (linked && !narrow) writePref(VIEW_KEY, askedKey); }, [linked, askedKey, narrow]);
-  const offered = viewsOffered(index, focus);
-  const open = viewsShown(asked, offered);
-  const openKey = open.join(',');
+  const stage = tab.state.stage;
 
-  const toggles = useRef<Partial<Record<ViewName, HTMLButtonElement | null>>>({});
-  const lastToggled = useRef<ViewName | null>(null);
-
-  // A maximized pane: the only one shown, until it is restored.
-  const [fullState, setFull] = useState<ViewName | null>(null);
-  const full = fullState && open.includes(fullState) ? fullState : null;
-  const fullButtons = useRef<Partial<Record<ViewName, HTMLButtonElement | null>>>({});
-
-  const setViews = useCallback((next: ViewName[], message: string) => {
-    const keep = asked.filter((v) => !offered.includes(v));
-    const views = VIEW_NAMES.filter((v) => next.includes(v) || keep.includes(v));
-    // Switching a tab's views keeps it open, as in VS Code.
-    update((s) => ({ ...s, views }), true);
-    writePref(VIEW_KEY, views.join(','));
-    navigate(withView(window.location.pathname, views), true);
-    setFull(null);
-    announce(message);
-  }, [asked, offered, update, announce]);
-
-  /**
-   * On a phone one view shows at a time: this one, named in the address and kept by the tab. The
-   * views remembered for a wider screen are left alone, and the views not offered here are kept.
-   */
-  const showOnly = useCallback((view: ViewName) => {
-    if (!offered.includes(view) || (open.length === 1 && open[0] === view)) return;
-    const keep = asked.filter((v) => !offered.includes(v));
-    const views = VIEW_NAMES.filter((v) => v === view || keep.includes(v));
-    update((s) => ({ ...s, views }));
-    navigate(withView(window.location.pathname, views), true);
-    announce(`${VIEW_LABELS[view]} view`);
-  }, [asked, offered, open, update, announce]);
-
-  /** Turns a view on or off; the last open view stays open. On a phone, shows that view alone. */
-  const toggleView = useCallback((view: ViewName) => {
-    if (narrow) { showOnly(view); return; }
-    if (!offered.includes(view)) return;
-    lastToggled.current = view;
-    if (open.includes(view)) {
-      if (open.length === 1) { announce(`The ${lower(view)} view stays open: it is the only one`); return; }
-      setViews(open.filter((v) => v !== view), `${VIEW_LABELS[view]} view closed`);
-    } else {
-      setViews([...open, view], `${VIEW_LABELS[view]} view opened`);
-    }
-  }, [narrow, showOnly, offered, open, setViews, announce]);
-
-  // Keep focus when the element that had it went away with a pane: on the toggle just used. Only
-  // when the panes change: on a first load focus stays at the start, where Tab finds the skip link.
-  const shownPanes = useRef(openKey);
+  const setStage = useCallback((next: StageName) => {
+    if (next === stage) return;
+    // Switching a tab's stage keeps it open, as in VS Code.
+    update((s) => ({ ...s, stage: next }), true);
+    // A phone's switch leaves the stage remembered for a wide screen alone.
+    if (!narrow) rememberStage(next);
+    navigate(withStage(window.location.pathname, next), true);
+    announce(`${STAGE_LABELS[next]} stage`);
+  }, [stage, narrow, update, announce]);
+  // The stage a link names becomes the one remembered, for the first tab of a new session.
+  const linked = stageFromSearch(search);
+  useEffect(() => { if (linked && !narrow) rememberStage(linked); }, [linked, narrow]);
+  // Focus lost with the stage it was on (a key switched the stage) lands on the new stage's button
+  // in the switch. On a first load focus stays at the start, where Tab finds the skip link.
+  const shownStage = useRef(stage);
   useEffect(() => {
-    if (shownPanes.current === openKey) return;
-    shownPanes.current = openKey;
+    if (shownStage.current === stage) return;
+    shownStage.current = stage;
     const active = document.activeElement;
     if (active && active !== document.body && active.isConnected) return;
-    const view = lastToggled.current && toggles.current[lastToggled.current] ? lastToggled.current : open[0];
-    toggles.current[view]?.focus();
-  }, [openKey]);
+    document.querySelector<HTMLElement>(`.page-bar [data-command="${STAGE_COMMANDS[stage]}"]`)?.focus();
+  }, [stage]);
 
-  const toggleFull = useCallback((pane: ViewName) => {
-    setFull((f) => {
-      const next = f === pane ? null : pane;
-      announce(next ? `${VIEW_LABELS[next]} pane full screen. Escape returns.` : 'Full screen closed');
-      return next;
-    });
-  }, [announce]);
-  useEffect(() => {
-    if (full) fullButtons.current[full]?.focus();
-  }, [full]);
-  const leaveFull = useCallback(() => {
-    const pane = full;
-    setFull(null);
-    announce('Full screen closed');
-    setTimeout(() => { if (pane) fullButtons.current[pane]?.focus(); }, 0);
-  }, [full, announce]);
-
-  // Pane sizes: the tab's weight per view, so each gap between two open panes resizes them. The
-  // last sizes set are also remembered, for the first tab of a new session.
-  const setSize = useCallback((v: ViewName, weight: number) => {
-    const w = Math.round(Math.min(PANE_WEIGHT_MAX, Math.max(PANE_WEIGHT_MIN, weight)));
-    update((s) => (s.sizes[v] === w ? s : { ...s, sizes: { ...s.sizes, [v]: w } }));
-    writePref(PANE_SIZE_KEY(v), w);
-  }, [update]);
-  const sizes = Object.fromEntries(VIEW_NAMES.map((v) => [v, [tab.state.sizes[v] ?? PANE_WEIGHT, (w: number) => setSize(v, w)] as const])) as Record<ViewName, readonly [number, (w: number) => void]>;
-  const views = useRef<HTMLDivElement>(null);
-  const paneEl = (v: ViewName) => views.current?.querySelector<HTMLElement>(`:scope > .pane-${v}`) ?? null;
-
-  // The side bar: open or not, and its view, per view mode and per tab; the last
-  // choices made start a space's first tab. On a phone it is a sheet, opened on demand.
-  const sideMode = sideModeOf(open, narrow);
-  const side = sideFor(tab.state.side, sideMode);
+  // The side bar: open or not, and its view, per stage and per tab; the last choices made start a
+  // space's first tab. On a phone it is a drawer, opened on demand.
+  const side = sideFor(tab.state.side, stage);
   const setSide = useCallback((patch: Partial<SideModeState>) => {
     const next = { ...side, ...patch };
-    update((s) => ({ ...s, side: { ...s.side, [sideMode]: next } }));
-    saveLastSide(sideMode, next);
-  }, [side, sideMode, update]);
+    update((s) => ({ ...s, side: { ...s.side, [stage]: next } }));
+    saveLastSide(stage, next);
+  }, [side, stage, update]);
   const [sideBarWidth, setSideBarWidth, resetSideBarWidth] = usePanelSize(SIDE_BAR_WIDTH_KEY, 340, 260, 640);
   const layout = useRef<HTMLDivElement>(null);
   const [drawer, setDrawer] = useState(false);
@@ -223,7 +167,7 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
     announce(`${SIDE_VIEW_LABELS[view]} in the side bar`);
   }, [side.view, setSide, announce]);
   useEffect(() => { setDrawer(false); }, [focus, narrow]);
-  // What the canvases and the wiki tell the side bar: the node under the pointer, the one selected.
+  // What the stages and the wiki card tell the side bar: the node under the pointer, the one selected.
   const [peek] = useState(createPeekStore);
   useLayoutEffect(() => { peek.clear(); }, [peek, focus]);
   const openSideBarAt = useCallback((selector?: string) => {
@@ -236,32 +180,54 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
     }, 0);
   }, [showing, setShowing, side.view, setSide]);
 
-  // How the graph is drawn is one setting for the session, whatever the tab or page (LA-V93-R72):
-  // moving through the graph never changes it, only the person's own change in the graph does.
-  const [settings, setSettings] = useGraphSettings();
+  // How the graph is drawn, and the wiki card's open state and width, are one setting for the
+  // session, whatever the tab or page (LA-V93-R72): moving through the stage never changes them.
+  const { graph: settings, setGraph, card, setCard } = useSessionSettings();
+  const [sheet, setSheet] = useState(false);
+  const cardButton = useRef<HTMLButtonElement>(null);
+  const cardShown = narrow ? sheet : card.open;
+  const setCardShown = useCallback((show: boolean) => {
+    if (narrow) setSheet(show); else setCard({ open: show });
+    announce(show ? 'Wiki card shown' : 'Wiki card collapsed');
+    if (!show) setTimeout(() => cardButton.current?.focus(), 0);
+  }, [narrow, setCard, announce]);
+  const collapseCard = useCallback(() => setCardShown(false), [setCardShown]);
+  // Made once per width, so the memoized card draws again only for a new page.
+  const cardHandle = useMemo(() => (
+    <CardHandle width={card.width} onWidth={(width) => setCard({ width })} onReset={() => setCard({ width: null })} onCollapse={collapseCard} />
+  ), [card.width, setCard, collapseCard]);
+  useEffect(() => { setSheet(false); }, [narrow]);
+
   const [graphInfo, setGraphInfo] = useState<GraphInfo | null>(null);
   const onGraph = useCallback((info: GraphInfo) => setGraphInfo(info), []);
+  const [counts, setCounts] = useState('');
 
-  // A link keeps the views asked for; the page it leads to shows those it offers.
-  const hrefFor = useCallback((id: string) => withView(addressOf(id), asked), [index, askedKey]);
+  // A link keeps the stage asked for.
+  const asked = tab.state.stage;
+  const hrefFor = useCallback((id: string) => withStage(addressOf(id), asked), [asked]);
   const onNavigate = useCallback((id: string) => navigate(hrefFor(id)), [hrefFor]);
 
-  // The wiki's scroll is the tab's: it comes back when the tab is active again. Within a tab, a new
+  // The wiki card follows the focus once it settles, and draws only then.
+  const resting = useSettled(focus, CARD_SETTLE_MS);
+  // A page the index no longer holds (another space's, or one just removed) is never drawn: the card takes the focus at once.
+  const settledFocus = index.byId.has(resting) || isGroup(index, resting) ? resting : focus;
+  const cardRoute = useCardRoute(index, settledFocus, route);
+
+  // The card's scroll is the tab's: it comes back when the tab is active again. Within a tab, a new
   // page starts at the top, and Back and Forward come back to where that history entry was scrolled
   // (noted in the entry), set before paint so the page is never drawn at the wrong place (UX-R08).
-  const wikiPane = useRef<HTMLDivElement>(null);
-  const wikiOpen = open.includes('wiki');
+  const cardScroll = useRef<HTMLDivElement>(null);
   const tabRef = useRef(tab);
   tabRef.current = tab;
   const shown = useRef<{ key: string; page: string } | null>(null);
   useLayoutEffect(() => {
     const before = shown.current;
-    shown.current = { key: tab.key, page: tab.page };
-    const el = wikiPane.current;
+    shown.current = { key: tab.key, page: settledFocus };
+    const el = cardScroll.current;
     if (!el) return;
     let top = tabs.scrollOf(tabRef.current);
-    if (before && before.key === tab.key && before.page !== tab.page) {
-      const noted = entryState<number>(WIKI_SCROLL);
+    if (before && before.key === tab.key && before.page !== settledFocus) {
+      const noted = entryState<number>(CARD_SCROLL);
       top = lastAddressMove() === 'pop' && typeof noted === 'number' ? noted : 0;
       tabs.setScroll(tabRef.current, top);
     }
@@ -273,33 +239,32 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
     const observer = new ResizeObserver(() => { el.scrollTop = top; observer.disconnect(); });
     for (const child of el.children) observer.observe(child);
     return () => observer.disconnect();
-  }, [tab.key, tab.page, wikiOpen, tabs.scrollOf, tabs.setScroll]);
-  // The entry notes the wiki's scroll as it changes (after a pause) and as a new page is opened from it.
+  }, [tab.key, settledFocus, cardShown, tabs.scrollOf, tabs.setScroll]);
+  // The entry notes the card's scroll as it changes (after a pause) and as a new page is opened from it.
   const noteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const noteScroll = useCallback(() => {
     if (noteTimer.current) { clearTimeout(noteTimer.current); noteTimer.current = null; }
-    if (wikiPane.current) noteInEntry(WIKI_SCROLL, Math.round(wikiPane.current.scrollTop));
+    if (cardScroll.current) noteInEntry(CARD_SCROLL, Math.round(cardScroll.current.scrollTop));
   }, []);
   useEffect(() => onLeaveEntry(noteScroll), [noteScroll]);
   useEffect(() => () => { if (noteTimer.current) clearTimeout(noteTimer.current); }, []);
-  const onWikiScroll = useCallback(() => {
-    if (!wikiPane.current) return;
-    tabs.setScroll(tabRef.current, wikiPane.current.scrollTop);
+  const onCardScroll = useCallback(() => {
+    if (!cardScroll.current) return;
+    tabs.setScroll(tabRef.current, cardScroll.current.scrollTop);
     if (noteTimer.current) clearTimeout(noteTimer.current);
     noteTimer.current = setTimeout(noteScroll, 200);
   }, [tabs.setScroll, noteScroll]);
 
+  // The open space the floating panels leave over the stage, where it frames the focus.
+  const [space] = useState(createOpenSpaceStore);
+  const stageEl = useRef<HTMLDivElement>(null);
+  useOpenSpaceMeasure(stageEl, space, layout);
+
   // Commands.
-  useCommand('viewWiki', () => toggleView('wiki'));
-  useCommand('viewGraph', () => toggleView('graph'));
-  useCommand('viewErd', () => toggleView('erd'), offered.includes('erd'));
-  useCommand('viewTrace', () => toggleView('trace'), offered.includes('trace'));
-  useCommand('maximizePane', () => {
-    if (full) { leaveFull(); return; }
-    const inPane = (document.activeElement as HTMLElement | null)?.closest?.<HTMLElement>('.pane')?.dataset.view;
-    toggleFull(open.find((v) => v === inPane) ?? open[0]);
-  });
-  useCommand('escape', leaveFull, full !== null);
+  useCommand('stageGraph', () => setStage('graph'));
+  useCommand('stageErd', () => setStage('erd'));
+  useCommand('stageTrace', () => setStage('trace'));
+  useCommand('toggleWikiCard', () => setCardShown(!cardShown));
   useCommand('toggleSideBar', () => setShowing(!showing));
   useCommand('focusSideBar', () => openSideBarAt());
   useCommand('showReferences', () => openSideBarAt('.links-in-heading'), index.byId.has(focus));
@@ -311,124 +276,45 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   useCommand('nextTab', () => tabs.cycle(1), tabs.set.tabs.length > 1);
   useCommand('previousTab', () => tabs.cycle(-1), tabs.set.tabs.length > 1);
 
-  const content: Record<ViewName, ReactNode> = {
-    wiki: <WikiContent index={index} route={route} />,
+  const content: Record<StageName, ReactNode> = {
     graph: (
       <Suspense fallback={<p className="hint graph-loading">Loading the graph…</p>}>
-        <GraphView index={index} focus={focus} onNavigate={onNavigate} hrefFor={hrefFor} settings={settings} onSettingsChange={setSettings} onGraph={onGraph} onPeek={peek.set} />
+        <GraphView index={index} focus={focus} onNavigate={onNavigate} settings={settings} onSettingsChange={setGraph} onGraph={onGraph} onPeek={peek.set} onCounts={setCounts} space={space} />
       </Suspense>
     ),
     erd: (
       <Suspense fallback={<p className="hint graph-loading">Loading the ERD…</p>}>
-        <ErdView index={index} focus={focus} onNavigate={onNavigate} onPeek={peek.set} />
+        <ErdView index={index} focus={focus} onNavigate={onNavigate} onPeek={peek.set} onCounts={setCounts} space={space} />
       </Suspense>
     ),
     trace: (
       <Suspense fallback={<p className="hint graph-loading">Loading the trace…</p>}>
-        <TraceView index={index} focus={focus} onNavigate={onNavigate} hrefFor={hrefFor} onPeek={peek.set} />
+        <TraceView index={index} focus={focus} onNavigate={onNavigate} hrefFor={hrefFor} onPeek={peek.set} onCounts={setCounts} />
       </Suspense>
     ),
   };
+  const stageBox = (
+    <div ref={stageEl} className="focus-stage" data-stage={stage} aria-label={`${STAGE_LABELS[stage]} stage`} role="region">
+      {content[stage]}
+    </div>
+  );
 
-  /** The pane shown furthest left (the maximized one, when one is), which carries the page's title. */
-  const leftmost: ViewName = full ?? open[0];
-
-  /**
-   * One pane: a panel with one slim header (LA-PAT-APP-UX-R03), naming its view at the left and
-   * holding only the pane's own actions at the right, all icon buttons in one style: its close
-   * button when more than one pane is open, and its full screen button. The page's tabs, the View
-   * toggles and the side bar toggle are the page bar's.
-   */
-  const pane = (view: ViewName) => {
-    const isFull = full === view;
-    const name = VIEW_LABELS[view];
-    return (
-      <section
-        key={view}
-        data-view={view}
-        className={`pane panel pane-${view}${isFull ? ' is-fullscreen' : ''}`}
-        aria-label={`${name} pane`}
-        inert={full !== null && !isFull ? true : undefined}
-        onKeyDown={isFull ? (e: KeyboardEvent) => { if (e.key === 'Escape' && !e.defaultPrevented) { e.preventDefault(); leaveFull(); } } : undefined}
-      >
-        <div className="pane-bar">
-          <div className="pane-head">
-            <span className="pane-name"><ViewIcon view={view} size={15} /> {name}</span>
-          </div>
-          <div className="pane-actions">
-            {open.length > 1 && (
-              <Tooltip label={`Close the ${lower(view)} pane`}>
-                <Button variant="icon" className="pane-close" label={`Close the ${lower(view)} pane`} onClick={() => toggleView(view)}>
-                  <Icon name="x" size={14} />
-                </Button>
-              </Tooltip>
-            )}
-            <Tooltip label={isFull ? 'Leave full screen' : 'Full screen'} command={isFull ? 'escape' : 'maximizePane'} placement="left">
-              <Button
-                variant="icon"
-                ref={(el) => { fullButtons.current[view] = el; }}
-                aria-pressed={isFull}
-                label={isFull ? `Leave full screen (${name})` : `Full screen: ${name}`}
-                onClick={() => (isFull ? leaveFull() : toggleFull(view))}
-              >
-                <Icon name={isFull ? 'minimize' : 'maximize'} size={16} />
-              </Button>
-            </Tooltip>
-          </div>
-        </div>
-        <div className={view === 'wiki' ? 'pane-scroll' : 'pane-body'} ref={view === 'wiki' ? wikiPane : undefined} onScroll={view === 'wiki' ? onWikiScroll : undefined}>
-          {view === leftmost && <PageTitle index={index} route={route} fixed={view !== 'wiki'} />}
-          {content[view]}
-        </div>
-      </section>
-    );
-  };
-
-
-  /** The handle in the gap between two open panes: the left one's share of the two, in percent. */
-  const gap = (a: ViewName, b: ViewName) => {
-    const [wa, setA] = sizes[a];
-    const [wb, setB] = sizes[b];
-    const total = wa + wb;
-    const value = Math.round((wa / total) * 100);
-    const valueAt = (clientX: number) => {
-      const left = paneEl(a)?.getBoundingClientRect();
-      const right = paneEl(b)?.getBoundingClientRect();
-      return left && right && right.right > left.left ? ((clientX - left.left) / (right.right - left.left)) * 100 : value;
-    };
-    return (
-      <ResizeHandle
-        key={`${a}-${b}`}
-        className="pane-gap"
-        label={`Resize the ${lower(a)} and ${lower(b)} panes`}
-        value={value}
-        min={GAP_MIN}
-        max={GAP_MAX}
-        step={5}
-        bigStep={10}
-        valueAt={valueAt}
-        onChange={(pct) => { const next = Math.round((total * pct) / 100); setA(next); setB(total - next); }}
-        onReset={() => { setA(Math.round(total / 2)); setB(total - Math.round(total / 2)); }}
-      />
-    );
-  };
-
-  const sideBar = (drawer: boolean) => (
+  const sideBar = (asDrawer: boolean) => (
     <SideBar
       ref={sideBarEl}
       index={index}
       focus={focus}
-      mode={sideMode}
+      mode={stage}
       view={side.view}
       onView={setSideView}
-      graph={open.includes('graph') ? graphInfo : null}
+      graph={stage === 'graph' ? graphInfo : null}
       peek={peek}
-      wikiPane={wikiPane}
-      wikiOpen={wikiOpen}
+      card={cardScroll}
+      cardOpen={cardShown}
       onNavigate={onNavigate}
       hrefFor={hrefFor}
       onClose={() => setShowing(false)}
-      drawer={drawer}
+      drawer={asDrawer}
     />
   );
 
@@ -436,63 +322,61 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
     return (
       <PhoneLayout
         index={index}
-        route={route}
-        front={open[0]}
-        offered={offered}
         tabs={tabs}
-        onView={showOnly}
-        wikiPane={wikiPane}
-        onWikiScroll={onWikiScroll}
-        content={content[open[0]]}
+        stage={stage}
+        onStage={setStage}
+        stageBox={stageBox}
+        strip={<HeaderStrip index={index} focus={focus} counts={counts} />}
+        card={cardShown ? <WikiCard ref={cardScroll} index={index} route={cardRoute} onScroll={onCardScroll} onCollapse={collapseCard} sheet /> : null}
+        onCard={setCardShown}
+        cardButton={cardButton}
         sideBarShown={showing}
         onSideBar={setShowing}
         sideBarButton={sideBarButton}
         sideBar={sideBar(true)}
         sideBarRef={sideBarEl}
+        layout={layout}
       />
     );
   }
 
-
-  // Each pane keeps its least width while there is room, and shares the width evenly when there isn't, so a pane
-  // never runs under the side bar (LA-PAT-APP-UX-R02).
-  const share = `calc((100% - ${open.length - 1} * var(--panel-gap)) / ${open.length})`;
-  const columns = open.map((v) => `minmax(min(${PANE_MIN_PX}px, ${share}), ${sizes[v][0]}fr)`).join(' var(--panel-gap) ');
-  const panesMin = `calc(${open.length} * ${PANE_MIN_PX}px + ${open.length - 1} * var(--panel-gap))`;
   return (
     <div
       ref={layout}
-      className={`focus-layout${showing ? ' with-side-bar' : ''}`}
-      style={{ '--side-bar-width': `${sideBarWidth}px`, '--panes-min': panesMin } as CSSProperties}
+      className={`stage-layout${showing ? ' with-side-bar' : ''}${cardShown ? ' with-wiki' : ''}`}
+      style={{ '--side-bar-width': `${sideBarWidth}px`, ...(card.width !== null ? { '--card-width': `${card.width}px` } : {}) } as CSSProperties}
     >
-      <div className="focus-main">
-        <PageBar
-          index={index}
-          tabs={tabs}
-          offered={offered}
-          open={open}
-          onView={toggleView}
-          compact={false}
-          sideBarShown={showing}
-          onSideBar={setShowing}
-          sideBarButton={sideBarButton}
-          toggles={toggles}
-        />
-        <div
-          ref={views}
-          id={TAB_PANEL_ID}
-          role="tabpanel"
-          aria-labelledby={tab.key ? tabId(tab.key) : undefined}
-          className={`focus-views panes-${open.length}`}
-          data-views={openKey}
-          style={open.length > 1 ? { gridTemplateColumns: columns } : undefined}
-        >
-          {open.flatMap((v, i) => (i === 0 ? [pane(v)] : [gap(open[i - 1], v), pane(v)]))}
-        </div>
+      <PageBar
+        index={index}
+        tabs={tabs}
+        stage={stage}
+        onStage={setStage}
+        compact={false}
+        cardShown={cardShown}
+        onCard={setCardShown}
+        cardButton={cardButton}
+        sideBarShown={showing}
+        onSideBar={setShowing}
+        sideBarButton={sideBarButton}
+      />
+      <div id={TAB_PANEL_ID} role="tabpanel" aria-labelledby={tab.key ? tabId(tab.key) : undefined} className="tab-body">
+        <HeaderStrip index={index} focus={focus} counts={counts} />
+        {cardShown && (
+          <WikiCard
+            ref={cardScroll}
+            index={index}
+            route={cardRoute}
+            onScroll={onCardScroll}
+            onCollapse={collapseCard}
+            handle={cardHandle}
+          />
+        )}
+        {stageBox}
       </div>
-      {showing ? (
-        <>
+      {showing && (
+        <div className="side-bar-column" data-floating="right">
           <ResizeHandle
+            className="side-bar-handle"
             label="Resize the side bar"
             side="after"
             value={sideBarWidth}
@@ -500,15 +384,51 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
             max={640}
             step={16}
             bigStep={64}
-            valueAt={(x) => (layout.current?.getBoundingClientRect().right ?? x) - x}
+            valueAt={(x) => (layout.current?.getBoundingClientRect().right ?? x) - x - 8}
             onChange={setSideBarWidth}
             onReset={resetSideBarWidth}
             collapseBelow={160}
             onCollapse={() => setShowing(false)}
           />
-          <div className="side-bar-column panel">{sideBar(false)}</div>
-        </>
-      ) : null}
+          {sideBar(false)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** The route of the page the wiki card shows: the settled focus's, or the address's own once they agree. */
+function useCardRoute(index: SpecIndex, settled: string, route: FocusRoute): FocusRoute {
+  const [last, setLast] = useState<{ focus: string; route: FocusRoute }>({ focus: focusOf(route), route });
+  if (focusOf(route) === settled && (last.focus !== settled || last.route !== route)) {
+    setLast({ focus: settled, route });
+    return route;
+  }
+  if (last.focus === settled) return last.route;
+  const parsed = parseSpecRoute(addressOf(settled), index);
+  return isFocusRoute(parsed) ? parsed : route;
+}
+
+/** The handle at the wiki card's right edge: drag or arrow keys for its width, double-click to reset, drag small to collapse. */
+function CardHandle({ width, onWidth, onReset, onCollapse }: { width: number | null; onWidth: (w: number) => void; onReset: () => void; onCollapse: () => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const cardLeft = () => ref.current?.closest('.wiki-panel')?.getBoundingClientRect().left ?? 0;
+  const value = width ?? Math.max(CARD_MIN, Math.round(ref.current?.closest('.wiki-panel')?.getBoundingClientRect().width ?? CARD_MIN));
+  return (
+    <div ref={ref} className="wiki-panel-handle">
+      <ResizeHandle
+        label="Resize the wiki card"
+        value={value}
+        min={CARD_MIN}
+        max={CARD_MAX}
+        step={16}
+        bigStep={64}
+        valueAt={(x) => x - cardLeft()}
+        onChange={onWidth}
+        onReset={onReset}
+        collapseBelow={200}
+        onCollapse={onCollapse}
+      />
     </div>
   );
 }
@@ -517,50 +437,54 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
 
 interface PhoneLayoutProps {
   index: SpecIndex;
-  route: FocusRoute;
-  /** The one view shown: the first of those the address names. */
-  front: ViewName;
-  offered: ViewName[];
   tabs: PageTabsApi;
-  onView: (view: ViewName) => void;
-  wikiPane: RefObject<HTMLDivElement | null>;
-  onWikiScroll: () => void;
-  content: ReactNode;
+  stage: StageName;
+  onStage: (stage: StageName) => void;
+  stageBox: ReactNode;
+  /** The header strip, under the compact page bar. */
+  strip: ReactNode;
+  /** The wiki card, while its sheet is open. */
+  card: ReactNode;
+  onCard: (show: boolean) => void;
+  cardButton: RefObject<HTMLButtonElement | null>;
   sideBarShown: boolean;
   onSideBar: (show: boolean) => void;
   sideBarButton: RefObject<HTMLButtonElement | null>;
   sideBar: ReactNode;
   sideBarRef: RefObject<HTMLElement | null>;
+  layout: RefObject<HTMLDivElement | null>;
 }
 
 /**
- * On a phone (notes/mobile-design.md) the page shows one view at a time, full width, with no pane
- * headers and no handles. The page bar is the same bar as on a wide screen, compact, under the
- * shell's top bar (which names the page): the open pages as a sheet, the View switch, and the
- * side bar as a bottom sheet.
+ * On a phone (notes/mobile-design.md) the stage stays full screen under the shell's top bar and the
+ * compact page bar: the open pages as a sheet, the stage switch, the wiki card as a bottom sheet and
+ * the side bar as a drawer from the right.
  */
 function PhoneLayout(props: PhoneLayoutProps) {
-  const { index, route, front, offered, tabs, onView, wikiPane, onWikiScroll, content, sideBarShown, onSideBar, sideBarButton, sideBar, sideBarRef } = props;
+  const { index, tabs, stage, onStage, stageBox, strip, card, onCard, cardButton, sideBarShown, onSideBar, sideBarButton, sideBar, sideBarRef, layout } = props;
   const [pagesOpen, setPagesOpen] = useState(false);
   const pagesButton = useRef<HTMLButtonElement>(null);
   const pagesSheet = useRef<HTMLUListElement>(null);
+  const drawerBox = useRef<HTMLDivElement>(null);
   const count = tabs.set.tabs.length;
   const closePages = useCallback(() => { setPagesOpen(false); setTimeout(() => pagesButton.current?.focus(), 0); }, []);
   useEffect(() => { if (pagesOpen) pagesSheet.current?.querySelector<HTMLElement>('[aria-current], button')?.focus(); }, [pagesOpen]);
-  // The side bar sheet takes focus as it opens; closing it gives focus back to its button.
+  // The side bar drawer takes focus as it opens; closing it gives focus back to its button.
   useEffect(() => { if (sideBarShown) sideBarRef.current?.focus(); }, [sideBarShown, sideBarRef]);
-  const page = focusOf(route);
+  const page = tabs.active.page;
   useEffect(() => { setPagesOpen(false); }, [page]);
 
   return (
-    <div className="focus-layout is-phone">
+    <div ref={layout} className="stage-layout is-phone">
       <PageBar
         index={index}
         tabs={tabs}
-        offered={offered}
-        open={[front]}
-        onView={onView}
+        stage={stage}
+        onStage={onStage}
         compact
+        cardShown={card !== null}
+        onCard={onCard}
+        cardButton={cardButton}
         sideBarShown={sideBarShown}
         onSideBar={onSideBar}
         sideBarButton={sideBarButton}
@@ -568,16 +492,30 @@ function PhoneLayout(props: PhoneLayoutProps) {
         onPages={() => setPagesOpen(true)}
         pagesButton={pagesButton}
       />
-      <section data-view={front} className={`pane panel pane-${front}`} aria-label={`${VIEW_LABELS[front]} pane`}>
-        <div className={front === 'wiki' ? 'pane-scroll' : 'pane-body'} ref={front === 'wiki' ? wikiPane : undefined} onScroll={front === 'wiki' ? onWikiScroll : undefined}>
-          {front === 'wiki' && <PageTitle index={index} route={route} />}
-          {content}
-        </div>
-      </section>
-      {sideBarShown && (
-        <BottomSheet label="Side bar" className="side-bar-sheet" onClose={() => onSideBar(false)}>
-          {sideBar}
+      {strip}
+      {stageBox}
+      {card && (
+        <BottomSheet label="Wiki card" className="wiki-panel-sheet" onClose={() => onCard(false)}>
+          {card}
         </BottomSheet>
+      )}
+      {sideBarShown && (
+        <>
+          <div className="drawer-backdrop" onMouseDown={() => onSideBar(false)} />
+          <div
+            ref={drawerBox}
+            className="side-bar-drawer"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Side bar"
+            onKeyDown={(e) => {
+              if (e.key === 'Escape' && !e.defaultPrevented) { e.preventDefault(); onSideBar(false); return; }
+              trapTab(e, drawerBox.current);
+            }}
+          >
+            {sideBar}
+          </div>
+        </>
       )}
       {pagesOpen && (
         <BottomSheet label="Open pages" className="pages-sheet" onClose={closePages}>
@@ -614,103 +552,6 @@ function PhoneLayout(props: PhoneLayoutProps) {
           </ul>
           <p className="hint pages-hint">A page you open replaces the preview (in italics); keep one to hold it open.</p>
         </BottomSheet>
-      )}
-    </div>
-  );
-}
-
-// ---------- Title ----------
-
-/** The page's title: its eyebrow, title, ID and problems, at the top of the pane that shows it. */
-function PageTitle({ index, route, fixed = false }: { index: SpecIndex; route: FocusRoute; fixed?: boolean }) {
-  const focus = focusOf(route);
-  let eyebrow: ReactNode;
-  let title: string;
-  let id: string | undefined = focus;
-  let problems: Problem[];
-  if (route.page === 'product') {
-    const product = index.byId.get(focus)!;
-    eyebrow = <>Product · {rowPlace(product)}</>;
-    title = product.title;
-    problems = problemsUnder(index, 'product', focus);
-  } else if (route.page === 'domain') {
-    const domain = index.byId.get(focus)!;
-    const product = index.byId.get(route.product)!;
-    eyebrow = <><Link to={addressOf(product.id)}>{product.title}</Link> · <KindBadge index={index} kind="domain" /> · {rowPlace(domain)}</>;
-    title = domain.title;
-    problems = problemsUnder(index, 'domain', focus);
-  } else if (route.page === 'record') {
-    const record = index.byId.get(focus)!;
-    eyebrow = <RecordEyebrow index={index} record={record} />;
-    title = record.title;
-    problems = index.problemsFor.get(focus) ?? [];
-  } else {
-    const parent = index.byId.get(groupOwner(index, focus))!;
-    // The stage and folders above the group in the tree, named as in the side nav and the domain page: "Domain model › Aggregates".
-    const folder: string[] = [];
-    for (let at = treeParent(index, focus); at !== null && !index.byId.has(at); at = treeParent(index, at)) folder.unshift(treeGroup(index, at)?.label ?? at);
-    eyebrow = <><Link to={addressOf(parent.id)}>{parent.title}</Link> · {folder.length > 0 && <span className="group-folder">{folder.join(' › ')} · </span>}Group</>;
-    title = groupLabel(index, focus);
-    id = undefined;
-    problems = groupMembers(index, focus).flatMap((m) => index.problemsFor.get(m.id) ?? []);
-  }
-  return (
-    // Above a graph, an ERD or a trace the title keeps one fixed height (one line, cut with an ellipsis,
-    // the whole title in its tooltip), so what is below never moves when the focus changes. The header
-    // is keyed by the focus: a new page's header is new content drawn in place, never the last one's
-    // badge slid along by a title of another length (UX-R08). The title's box itself stays.
-    <div className={`pane-title${fixed ? ' is-fixed' : ''}`} title={fixed ? title : undefined}>
-      <PageHeader key={focus} eyebrow={eyebrow} title={title} id={id}>
-        <ProblemBadge problems={problems} />
-      </PageHeader>
-    </div>
-  );
-}
-
-// ---------- Wiki content ----------
-
-function WikiContent({ index, route }: { index: SpecIndex; route: FocusRoute }) {
-  switch (route.page) {
-    case 'product': return <Editable key={route.product} index={index} id={route.product}><ProductWiki index={index} id={route.product} /></Editable>;
-    case 'domain': return <Editable key={route.domain} index={index} id={route.domain}><DomainWiki index={index} id={route.domain} /></Editable>;
-    case 'record': return <Editable key={route.id} index={index} id={route.id}><div className="spec-body"><RecordContent index={index} id={route.id} header={false} side={false} /></div></Editable>;
-    case 'group': return <GroupWiki index={index} gid={focusOf(route)} />;
-  }
-}
-
-/** A group's wiki page: its parent, its kind, and its members, each with its coverage marks and its own children folded. */
-function GroupWiki({ index, gid }: { index: SpecIndex; gid: string }) {
-  const parent = groupOwner(index, gid);
-  const kind = treeGroup(index, gid)?.kind;
-  const members = groupMembers(index, gid);
-  const parentRecord = index.byId.get(parent)!;
-  const group = treeGroup(index, gid);
-  const stage = group?.role === 'stage' ? index.workspace.stages.find((s) => groupName(index, gid) === s.label) : undefined;
-  const description = kind ? index.kinds.get(kind)?.description : stage?.description;
-  // In a stage or its folders, a row folds only what is of its own stage, as in the nav; under a record, all its children.
-  const nested = group?.role === 'kind' && index.byId.has(parent) && parentRecord.kind !== 'product' && parentRecord.kind !== 'domain' ? undefined : (r: SpecRecord) => foldedChildren(index, r);
-  // A list of one kind is titled by that kind ("Use cases", "Commands"); a mixed one stays "Members".
-  const membersTitle = listTitle(index, members, 'Members');
-  const kinds = [...new Set(members.map((m) => m.kind))];
-  return (
-    <div className="spec-body">
-      <p className="group-intro">
-        {groupName(index, gid)} of <Link to={addressOf(parent)} className="record-link"><code>{parent}</code> <span>{parentRecord.title}</span></Link>
-      </p>
-      {description && <Markdown source={description} />}
-      {/* A stage lists its folders, one section per kind. */}
-      {kinds.length > 1 ? kinds.map((k) => {
-        const records = members.filter((m) => m.kind === k);
-        const title = listTitle(index, records, 'Members');
-        return (
-          <Section key={k} title={title} count={records.length}>
-            <RecordTree index={index} records={records} label={`${title} of ${gid}`} nested={nested} />
-          </Section>
-        );
-      }) : (
-        <Section title={membersTitle} count={members.length}>
-          <RecordTree index={index} records={members} label={`${membersTitle} of ${gid}`} nested={nested} />
-        </Section>
       )}
     </div>
   );

@@ -417,9 +417,3 @@ export function kindGroups(index: SpecIndex): { stage: Stage | ''; title: string
 /** The relations kept by the "traceability only" filter preset: the tree and the links an obligation's chain follows. */
 export const TRACE_RELATIONS = new Set([PARENT, 'serves', 'fulfills', 'invokes', 'happens_in', 'meets']);
 
-
-/** Keeps the breadcrumb trail: going back to a record in the trail cuts the trail there. */
-export function nextTrail(trail: string[], focus: string, max = 8): string[] {
-  const at = trail.indexOf(focus);
-  return (at >= 0 ? trail.slice(0, at + 1) : [...trail, focus]).slice(-max);
-}

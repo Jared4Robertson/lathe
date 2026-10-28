@@ -6,7 +6,7 @@ import { DOMAIN, FOCUS, PRODUCT, RECORD, SHELL } from './scenarios';
 test.describe('first load', () => {
   for (const [name, url] of [['product page', PRODUCT], ['domain page', DOMAIN], ['record page', RECORD]] as const) {
     test(`LA-V61-R27-T01 ${name}`, async ({ page }) => {
-      const r = await firstLoad(page, `first load: ${name}`, url, { keys: [...SHELL, ...FOCUS], ready: '.focus-views .pane-title' });
+      const r = await firstLoad(page, `first load: ${name}`, url, { keys: [...SHELL, ...FOCUS], ready: '.header-strip h1' });
       expectStable(r);
     });
   }
@@ -18,7 +18,7 @@ test.describe('first load', () => {
       await new Promise((resolve) => setTimeout(resolve, 2500));
       await route.continue();
     });
-    const r = await test.step('LA-V61-R38-T01 fonts that arrive late push nothing the Reader sees', () => firstLoad(page, 'first load: record page, slow fonts', RECORD, { keys: [...SHELL, ...FOCUS], ready: '.focus-views .pane-title', settle: 4000 }));
+    const r = await test.step('LA-V61-R38-T01 fonts that arrive late push nothing the Reader sees', () => firstLoad(page, 'first load: record page, slow fonts', RECORD, { keys: [...SHELL, ...FOCUS], ready: '.header-strip h1', settle: 4000 }));
     expectStable(r);
   });
 });

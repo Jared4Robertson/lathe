@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { addRows, indexOf } from '../fixtures/load';
 import { patternWorkspace } from '../fixtures/patterns';
-import { gapColumns, obligationsUnder, traceChain, traceMatrix, untracedUnder } from '../../src/trace/chain';
-import { hasTrace, isObligation } from '../../src/trace/offer';
+import { gapColumns, holdersOf, obligationsUnder, traceChain, traceMatrix, traceShape, untracedUnder } from '../../src/trace/chain';
+import { isObligation } from '../../src/trace/offer';
 import { testIndex, testWorkspace } from '../graph/workspace';
 
 // The Trace view's logic (app/src/trace/chain.ts): an obligation's chain, and the matrix of every
@@ -73,9 +73,13 @@ describe('the matrix under a record or group', () => {
     // A stage of the domain, and the product: what is under them.
     expect(traceMatrix(index, 'P-D/use-cases').flatMap((g) => g.rows.map((r) => r.obligation))).toContain('P-D-UC01-R01');
     expect(traceMatrix(index, 'P').flatMap((g) => g.rows.map((r) => r.obligation))).toEqual(expect.arrayContaining(rows));
-    // The view is offered only where there is something.
-    for (const id of ['P', 'P-D', 'P-D/use-cases', 'P-D-UC01', 'P-D-A3', 'P-D-UC01-R01']) expect(hasTrace(index, id), id).toBe(true);
-    for (const id of ['P-D-UC01-R01-T01', 'P-D-UC01-FL01-S01', 'P-D-CMD01-H']) expect(hasTrace(index, id), id).toBe(false);
+    // Every focus has a shape (LA-PAT-APP-UX-R17): a chain, a matrix, the rows that hold it, or the matrix around it.
+    for (const id of ['P', 'P-D', 'P-D/use-cases', 'P-D-UC01', 'P-D-A3']) expect(traceShape(index, id).shape, id).toBe('matrix');
+    expect(traceShape(index, 'P-D-UC01-R01').shape).toBe('chain');
+    for (const id of ['P-D-UC01-R01-T01', 'P-D-UC01-FL01-S01', 'P-D-CMD01-H']) expect([id, traceShape(index, id).shape, holdersOf(index, id)]).toEqual([id, 'rows', ['P-D-UC01-R01']]);
+    expect(traceShape(index, 'P-D-CMD02')).toMatchObject({ shape: 'context', untraced: true, scope: 'P-D-A3' });
+    expect(traceShape(index, 'P-D-EN03')).toMatchObject({ shape: 'context', untraced: false, scope: 'P-D-A3' });
+    expect(traceShape(index, 'P-D-TM01')).toMatchObject({ shape: 'context', untraced: false });
     expect(traceMatrix(index, 'P-D-UC01-R01-T01')).toEqual([]);
   });
 });

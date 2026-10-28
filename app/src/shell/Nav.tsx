@@ -163,7 +163,7 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
   );
 
   if (collapsed && !drawer) {
-    return <nav ref={ref} className={className} aria-label="Main" id="nav" onClickCapture={onClickCapture}>{rail}</nav>;
+    return <nav ref={ref} className={className} aria-label="Main" id="nav" data-floating="left" onClickCapture={onClickCapture}>{rail}</nav>;
   }
 
   return (
@@ -172,6 +172,7 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
       className={className}
       aria-label="Main"
       id="nav"
+      data-floating={drawer ? undefined : 'left'}
       onKeyDown={(e) => {
         if (!keyboard) setKeyboard(true);
         if (drawer && e.key === 'Escape' && !e.defaultPrevented) { e.preventDefault(); onCloseDrawer(); return; }

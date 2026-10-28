@@ -2,15 +2,15 @@ import { fireEvent, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { openApp, openSideBar } from './helpers';
 
-// Resizing the workbench's panels from the keyboard and by double-click, and collapsing by drag
+// Resizing the floating panels (the nav, the wiki card, the side bar) from the keyboard and by double-click, and collapsing by drag
 // (LA-PAT-APP-UX-R02). Pointer drags need real layout, so they are checked in the browser.
 
 const handle = (name: string) => screen.getByRole('separator', { name });
 
 describe('resizable panels', () => {
   const proveLaV61R02T02 = async () => {
-    // The side bar starts closed in the Wiki view; this test reads it open.
-    openSideBar('details', ['wiki', 'graph', 'erd', 'trace']);
+    // The test reads the side bar open on every stage.
+    openSideBar('details');
     await openApp('/DM-SHOP-UC01');
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     const nav = handle('Resize the navigation');
@@ -33,13 +33,23 @@ describe('resizable panels', () => {
     expect(sideBar).toHaveAttribute('aria-valuenow', '356');
     fireEvent.keyDown(sideBar, { key: 'Home' });
     expect(sideBar).toHaveAttribute('aria-valuenow', '260');
+
+    // The wiki card sits before its handle, so Right grows it; its width is the session's.
+    const card = handle('Resize the wiki card');
+    fireEvent.keyDown(card, { key: 'Home' });
+    expect(card).toHaveAttribute('aria-valuenow', '300');
+    fireEvent.keyDown(card, { key: 'ArrowRight', shiftKey: true });
+    expect(card).toHaveAttribute('aria-valuenow', '364');
+    expect(JSON.parse(window.sessionStorage.getItem('lathe:session-settings')!)).toMatchObject({ cardWidth: 364 });
+    fireEvent.doubleClick(card);
+    expect(JSON.parse(window.sessionStorage.getItem('lathe:session-settings')!)).toMatchObject({ cardWidth: null });
   };
   it('LA-V61-R02-T02 A handle resizes its panel with the arrow keys, Shift, Home and End, remembers it, and double-click resets it', proveLaV61R02T02);
   it('LA-V61-R03-T02 A handle resizes its panel with the arrow keys, Shift, Home and End, remembers it, and double-click resets it', proveLaV61R02T02);
 
   const proveLaV61R03T03 = async () => {
-    // The side bar starts closed in the Wiki view; this test reads it open.
-    openSideBar('details', ['wiki', 'graph', 'erd', 'trace']);
+    // The test reads the side bar open on every stage.
+    openSideBar('details');
     window.localStorage.setItem('lathe:nav-width', '400');
     window.localStorage.setItem('lathe:side-bar-width', '9999');
     await openApp('/DM-SHOP-UC01');
