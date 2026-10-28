@@ -33,3 +33,4 @@
 {"id":"LA-TRC-QRY06","title":"Trace an obligation in the graph","read_model_id":"LA-TRC-RM06","description":"The graph's trace mode"}
 {"id":"LA-TRC-QRY07","title":"Find the files that are missing or silent","read_model_id":"LA-TRC-RM05","description":"The checks that read the file facts: a test's file missing or not naming it, a manual test's file naming it, and a technical record's file missing."}
 {"id":"LA-TRC-QRY08","title":"Trace routes both ways","read_model_id":"LA-TRC-RM05","description":"route_facts (each endpoint's and view's route, and whether the files of what implements it name it) and served_routes (each route the code serves): the endpoint-route-not-in-file and view-route-not-in-file checks and the route-without-record gap."}
+{"id":"LA-TRC-QRY09","title":"Find the tables their files do not define","read_model_id":"LA-TRC-RM07","description":"The table-schema-mismatch check, a query of table_facts."}

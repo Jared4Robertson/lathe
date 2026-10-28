@@ -198,6 +198,9 @@ WHERE NOT EXISTS (SELECT 1 FROM uc_requirement r WHERE r.use_case_id = u.id) AND
   missingImpl('query-without-handler', 'query', 'Query', 'query_handler', 'query_id', 'query handler'),
   missingImpl('endpoint-without-handler', 'endpoint', 'Endpoint', 'endpoint_handler', 'endpoint_id', 'endpoint handler'),
   missingImpl('integration-without-adapter', 'integration', 'Integration', 'adapter', 'integration_id', 'adapter'),
+  // A table stored as a table names the file that creates it, which table-schema-mismatch reads (trace/tables.ts).
+  gap('table-without-file', 'technical-specification', ['table'], 'A table stored in a database table that names no file creating it.',
+    `SELECT t.id, 'Table ' || t.id || ' is stored as a table but names no file that creates it.' AS message FROM "table" t WHERE t.storage = 'table' AND t.file IS NULL`),
   gap('view-without-ui-component', 'technical-specification', ['view', 'ui_component'], 'A view no UI component renders.',
     `SELECT v.id, 'View ' || v.id || ' is rendered by no UI component.' AS message FROM view v WHERE NOT EXISTS (SELECT 1 FROM renders r WHERE r.target_id = v.id)`),
   // Every source file is named by a technical record, or sits in a folder one names. A repo holding several products

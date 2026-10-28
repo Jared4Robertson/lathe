@@ -10,6 +10,7 @@ import { isTraced, normalizePath, sourceFiles } from './trace/source-files.ts';
 import { orderChecks, referenceOf, type Reference } from './reference.ts';
 import { formatProblem, openStore, Store, StoreError, LATHE_DATA_DIR, type StoreOptions } from './store/store.ts';
 import { SCHEMA_DIR } from './store/schema.ts';
+import { gatherTableFacts, TABLE_FACTS_SQL } from './trace/tables.ts';
 import type { Row } from './store/rows.ts';
 import { gatherRouteFacts, writeRouteFacts } from './trace/routes.ts';
 import type { Coverage, CoverageGap, Kind, ObligationCoverage, PatternRuleStanding, Problem, RecordedException, RelationRule, SpecLink, SpecRecord, StageRule, TestCounts, Workspace } from './types.ts';
@@ -343,6 +344,9 @@ export async function readWorkspace(store: Store, config: Pick<LatheConfig, 'roo
   await append(connection, 'file_facts', facts.map((f) => [f.record, f.kind, f.file, f.file_exists, f.contains_id]));
   await append(connection, 'source_file', sources.map((f) => [f.file, f.traced]));
   await writeRouteFacts(connection, routes);
+  const tableFacts = await step('table facts', () => gatherTableFacts(path.resolve(config.root), store));
+  await connection.run(TABLE_FACTS_SQL);
+  await append(connection, 'table_facts', tableFacts.map((f) => [f.record, f.name, f.file, f.part, f.expected, f.found]));
   await step('coverage tables', () => connection.run(coverageViewsSql(store.schema)));
   lap('files');
   const scope = new Map(read.records.map((r) => [r.id, r.product]));

@@ -245,7 +245,7 @@ describe('Policies', () => {
     const returned = lending.return(loan.id, { condition: 'needs_repair', note: 'Bit stuck' });
     expect(returned).toMatchObject({ returnCondition: 'needs_repair', returnNote: 'Bit stuck', late: false });
     // With no event handler hearing Tool returned, the tool is untouched: only the policy takes it out of lending.
-    expect(tools.get(t.id)).toMatchObject({ condition: 'good', damageNote: null, status: 'available' });
+    expect(tools.get(t.id)).toMatchObject({ condition: 'good', damageNote: null, damageReportedAt: null, status: 'available' });
     expect(delivered.at(-1)).toEqual({
       type: 'ToolReturned',
       loanId: loan.id,
@@ -273,7 +273,7 @@ describe('Policies', () => {
     lending.return(loans[0], { condition: 'needs_repair', note: 'Chuck wobbles' });
     expect(delivered.map((e) => e.type)).toEqual(['ToolReturned', 'DamageReported']);
     expect(delivered[1]).toEqual({ type: 'DamageReported', toolId: chuck, note: 'Chuck wobbles', reportedAt: clock.now().toISOString() });
-    expect(tools.get(chuck)).toMatchObject({ condition: 'needs_repair', damageNote: 'Chuck wobbles', status: 'needs_repair' });
+    expect(tools.get(chuck)).toMatchObject({ condition: 'needs_repair', damageNote: 'Chuck wobbles', damageReportedAt: clock.now().toISOString(), status: 'needs_repair' });
     expect(outboxRows(store).slice(-2)).toEqual([
       { type: 'ToolReturned', delivered_at: clock.now().toISOString() },
       { type: 'DamageReported', delivered_at: clock.now().toISOString() },
