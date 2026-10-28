@@ -1,4 +1,4 @@
-// Tables against the real schema (LA-TRC-UC15): a table kept in a database is checked against the file that creates
+// Tables against the real schema (LA-TRC-UC16): a table kept in a database is checked against the file that creates
 // it, read as text, by its name, its columns and its keys; a table stored as a table with no file is a gap.
 import { afterAll, describe, expect, it } from 'vitest';
 import { openStore, type Row } from '../src/index.ts';
@@ -68,7 +68,7 @@ CREATE TABLE loans (id INTEGER, due_date TEXT);
 const VIEWS = 'CREATE OR REPLACE VIEW member_list AS SELECT m.id, m.email AS name FROM members m;\n';
 
 describe('A table kept in a database is checked against the file that creates it', () => {
-  it('LA-TRC-UC15-R01-T01 a file that lacks the table, a column or a key is a warning for each', async () => {
+  it('LA-TRC-UC16-R01-T01 a file that lacks the table, a column or a key is a warning for each', async () => {
     const ws = await loadData(LIBRARY, { files: { 'db/schema.sql': SCHEMA, 'db/views.sql': VIEWS } });
     const found = ofCheck(ws, 'table-schema-mismatch');
     expect(found.every((p) => p.severity === 'warning')).toBe(true);
@@ -93,7 +93,7 @@ describe('A table kept in a database is checked against the file that creates it
     expect(ofCheck(missing, 'technical-file-missing').map((p) => p.record).sort()).toEqual(['PX-LEND-EN01-TB', 'PX-LEND-EN02-TB', 'PX-LEND-EN03-TB']);
   });
 
-  it('LA-TRC-UC15-R02-T01 the columns come from column names, field names, flattened value objects and children kept in the root\'s table', async () => {
+  it('LA-TRC-UC16-R02-T01 the columns come from column names, field names, flattened value objects and children kept in the root\'s table', async () => {
     const data: Data = {
       ...LIBRARY,
       value_object: [
@@ -161,7 +161,7 @@ describe('A table kept in a database is checked against the file that creates it
     expect(defs.get('counts')!.bodies).toHaveLength(1);
   });
 
-  it('LA-TRC-UC15-R03-T01 a table stored as a table with no file is a gap; one in browser storage is not', async () => {
+  it('LA-TRC-UC16-R03-T01 a table stored as a table with no file is a gap; one in browser storage is not', async () => {
     const data = changing(
       { ...LIBRARY, table: [...LIBRARY.table.filter((t) => t.id !== 'PX-LEND-RM01-TB'), { id: 'PX-LEND-RM01-TB', title: 'member list', read_model_id: 'PX-LEND-RM01', name: 'memberList', storage: 'browser storage' }] },
       'table',
@@ -174,7 +174,7 @@ describe('A table kept in a database is checked against the file that creates it
 });
 
 describe('Check a table against its file from the command line', () => {
-  it('LA-TRC-UC15-FL-T names a table\'s migration, checks it, and fixes the missing column', async () => {
+  it('LA-TRC-UC16-FL-T names a table\'s migration, checks it, and fixes the missing column', async () => {
     const tl = product();
     await tl.seed([
       ...LENDING,

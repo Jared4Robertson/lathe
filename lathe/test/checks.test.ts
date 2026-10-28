@@ -47,7 +47,7 @@ const check = (name: string, body: () => void) => {
 };
 
 check('table-schema-mismatch', () => {
-  it('LA-TRC-UC15-R01-T01 a table kept in a database whose file leaves out a column is a warning', async () => {
+  it('LA-TRC-UC16-R01-T01 a table kept in a database whose file leaves out a column is a warning', async () => {
     const ws = await loadData(complete(), { files: { 'src/schema.sql': 'CREATE TABLE loans (id INTEGER PRIMARY KEY);\nCREATE TABLE tools (id INTEGER PRIMARY KEY);\n' } });
     const found = ofCheck(ws, 'table-schema-mismatch');
     expect(found.length).toBeGreaterThan(0);
