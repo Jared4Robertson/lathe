@@ -11,7 +11,14 @@ import { add, LATHE_DIR, LENDING, link, mcp, product, removeProducts, type Produ
 afterAll(removeProducts);
 
 interface Problem { severity: string; check: string; record: string | null; message: string }
-interface Checked { errors: number; warnings: number; problems: Problem[]; exceptions: { command: string; aggregate: string; reason: string }[] }
+interface Gap { id: string; kind: string; missing: string; message: string }
+interface Checked {
+  errors: number;
+  warnings: number;
+  problems: Problem[];
+  exceptions: { command: string; aggregate: string; reason: string }[];
+  products: { root: string; coverage: { domain: string | null; gaps: Gap[] }[] }[];
+}
 
 /** A product seeded with the commands, and an MCP server on it; `walk` closes the server when the flow is done. */
 async function agent(seed: Command[] = []) {
@@ -60,6 +67,9 @@ async function walk(seed: Command[], flow: (a: Agent) => Promise<void>) {
 }
 
 const found = (checked: Checked, check: string) => checked.problems.filter((p) => p.check === check).map((p) => `${p.record}: ${p.message}`);
+/** The coverage gaps of a kind the check tool gives, every product's and domain's, as `missing record`. */
+const gaps = (checked: Checked, missing: string) =>
+  checked.products.flatMap((p) => p.coverage).flatMap((c) => c.gaps).filter((g) => g.missing === missing).map((g) => `${g.missing} ${g.id}`);
 const data = (tl: Product, table: string) => tl.read(`data/${table}.jsonl`).split('\n').filter(Boolean).map((l) => JSON.parse(l));
 
 /** A product kind several flows declare. */
@@ -175,6 +185,61 @@ describe('Authoring flows through the MCP tools', () => {
       expect(found(await a.check(), 'pattern-setting-missing')).toEqual([expect.stringMatching(/^TL-LEND-UC02: /)]);
       await a.ok('add', { setting_value: { follower_id: 'TL-LEND-UC02', pattern_id: 'TL-PAT-ACT', setting: 'record', value: 'Return' } });
       expect(found(await a.check(), 'pattern-setting-missing')).toEqual([]);
+    });
+  });
+
+  it('LA-AUT-UC06-FL04-T write a use case\'s flow as ordered steps through the MCP tools', async () => {
+    await walk([
+      ...LENDING,
+      add('uc_requirement', { id: 'TL-LEND-UC01-R02', title: 'The due date is set', use_case_id: 'TL-LEND-UC01', statement: 'The loan MUST be due two weeks after it opens.' }),
+      add('use_case', { id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01' }),
+      add('uc_requirement', { id: 'TL-LEND-UC02-R01', title: 'The return is dated', use_case_id: 'TL-LEND-UC02', statement: 'The return MUST carry its date.' }),
+      add('view', { id: 'TL-V01', title: 'Loan desk' }),
+    ], async (a) => {
+      // S01: the interfaces, then a flow through each of two, its ID ending in the interface's number, and its steps in
+      // order on their paths.
+      await a.ok('add', { interface: { id: 'TL-IF01', title: 'Loan desk', product_id: 'TL', kind: 'web app' } });
+      await a.ok('add', { interface: { id: 'TL-IF02', title: 'Lending API', product_id: 'TL', kind: 'API' } });
+      await a.ok('add', { interface: { id: 'TL-IF03', title: 'Librarian tools', product_id: 'TL', kind: 'agent tools' } });
+      await a.ok('add', { flow: { id: 'TL-LEND-UC01-FL01', title: 'Borrow a tool', use_case_id: 'TL-LEND-UC01', interface_id: 'TL-IF01' } });
+      await a.ok('add', { flow: { id: 'TL-LEND-UC01-FL02', title: 'Borrow a tool through the API', use_case_id: 'TL-LEND-UC01', interface_id: 'TL-IF02' } });
+      const step = (flow: string, n: string, title: string, pathName: string, position: number) =>
+        a.ok('add', { flow_step: { id: `${flow}-${n}`, title, flow_id: flow, path: pathName, position } });
+      await step('TL-LEND-UC01-FL01', 'S01', 'The member asks for a tool at the desk', 'main', 1);
+      await step('TL-LEND-UC01-FL01', 'S02', 'The librarian opens the loan', 'main', 3);
+      await step('TL-LEND-UC01-FL01', 'S03', 'A tool on loan is refused', 'refused', 1);
+      await step('TL-LEND-UC01-FL02', 'S01', 'The client opens the loan', 'main', 1);
+      // S02: each step's requirements, operation and, in the web app flow, view.
+      await a.ok('link', { source: 'TL-LEND-UC01-FL01-S01', relation: 'happens_in', target: 'TL-V01' });
+      await a.ok('link', { source: 'TL-LEND-UC01-FL01-S02', relation: 'invokes', target: 'TL-LEND-CMD01' });
+      await a.ok('link', { source: 'TL-LEND-UC01-FL01-S03', relation: 'fulfills', target: 'TL-LEND-UC01-R01' });
+      await a.ok('link', { source: 'TL-LEND-UC01-FL02-S01', relation: 'invokes', target: 'TL-LEND-CMD01' });
+      for (const r of ['R01', 'R02']) await a.ok('link', { source: 'TL-LEND-UC01-FL02-S01', relation: 'fulfills', target: `TL-LEND-UC01-${r}` });
+      await a.ok('add', { flow_test: { id: 'TL-LEND-UC01-FL02-T', title: 'Borrow a tool through the API', flow_id: 'TL-LEND-UC01-FL02', level: 'browser', state: 'not automated yet' } });
+      // S03: a second flow through one interface, a flow ID not ending in its interface's number and a repeated position.
+      await a.refused('add', { flow: { id: 'TL-LEND-UC01-FL01', title: 'Again', use_case_id: 'TL-LEND-UC01', interface_id: 'TL-IF01' } });
+      await a.refused('add', { flow: { id: 'TL-LEND-UC01-FL03', title: 'Through the wrong interface', use_case_id: 'TL-LEND-UC01', interface_id: 'TL-IF01' } });
+      await a.refused('add', { flow_step: { id: 'TL-LEND-UC01-FL01-S04', title: 'Again', flow_id: 'TL-LEND-UC01-FL01', path: 'main', position: 1 } });
+      // S04: a view in the API flow, and a requirement of another use case.
+      await a.refused('link', { source: 'TL-LEND-UC01-FL02-S01', relation: 'happens_in', target: 'TL-V01' });
+      expect(await a.refused('link', { source: 'TL-LEND-UC01-FL01-S01', relation: 'fulfills', target: 'TL-LEND-UC02-R01' })).toContain('step-fulfills-own-use-case');
+      // S05: the skipped number, the requirement the flow misses, the API step no endpoint reaches, the flow test at a
+      // level its interface does not fit, and the interface no flow goes through, a gap in the product's coverage.
+      const checked = await a.check();
+      expect(found(checked, 'step-order')).toEqual([expect.stringMatching(/^TL-LEND-UC01-FL01-S02: .*no step has position 2/)]);
+      expect(found(checked, 'not-designed')).toContainEqual(expect.stringMatching(/^TL-LEND-UC01-R02: .*TL-LEND-UC01-FL01/));
+      expect(found(checked, 'step-without-endpoint')).toEqual([expect.stringMatching(/^TL-LEND-UC01-FL02-S01: /)]);
+      expect(found(checked, 'flow-test-level-for-interface')).toEqual([expect.stringMatching(/^TL-LEND-UC01-FL02-T: /)]);
+      expect(gaps(checked, 'interface-without-flow')).toEqual(['interface-without-flow TL-IF03']);
+      // The Agent fixes each and checks again.
+      await a.ok('set', { flow_step: { id: 'TL-LEND-UC01-FL01-S02', position: 2 } });
+      await a.ok('link', { source: 'TL-LEND-UC01-FL01-S02', relation: 'fulfills', target: 'TL-LEND-UC01-R02' });
+      await a.ok('set', { flow_test: { id: 'TL-LEND-UC01-FL02-T', level: 'system' } });
+      await a.ok('add', { flow: { id: 'TL-LEND-UC01-FL03', title: 'Borrow a tool through the librarian tools', use_case_id: 'TL-LEND-UC01', interface_id: 'TL-IF03' } });
+      const fixed = await a.check();
+      expect(fixed.problems.filter((p) => ['step-order', 'flow-test-level-for-interface'].includes(p.check))).toEqual([]);
+      expect(found(fixed, 'not-designed').filter((m) => m.includes('TL-LEND-UC01-FL01'))).toEqual([]);
+      expect(gaps(fixed, 'interface-without-flow')).toEqual([]);
     });
   });
 
@@ -411,6 +476,47 @@ describe('Checking flows through the MCP tools', () => {
       expect(a.tl.read('data/check.jsonl')).toContain('"name":"aggregate-without-command"');
       // S02: the check tool runs it among the others.
       expect(found(await a.check(), 'aggregate-without-command')).toEqual(['TL-LEND-A2: Aggregate TL-LEND-A2 has no command.']);
+    });
+  });
+
+  it('LA-CHK-UC04-FL04-T find structural problems through the MCP tools', async () => {
+    // Stages written at different times: a view nothing uses yet, a use case with no flow, a test at a level its kind
+    // does not allow, and a policy hearing an event of a stored aggregate that is delivered in process.
+    await walk([
+      ...LENDING,
+      add('table', { id: 'TL-LEND-EN01-TB', title: 'Loans', entity_id: 'TL-LEND-EN01', name: 'loan', storage: 'table' }),
+      add('aggregate', { id: 'TL-LEND-A2', title: 'Tool', domain_id: 'TL-LEND' }),
+      add('command', { id: 'TL-LEND-CMD02', title: 'Open a reminder', aggregate_id: 'TL-LEND-A1' }),
+      { op: 'add', table: 'command_change', row: { command_id: 'TL-LEND-CMD01', aggregate_id: 'TL-LEND-A2', reason: 'The tool must never show as lent without its loan.' } },
+      add('policy', { id: 'TL-LEND-PO01', title: 'Remind on loan', command_id: 'TL-LEND-CMD02', statement: 'Whenever a loan is opened, the library MUST open its reminder.' }),
+      link('TL-LEND-PO01', 'hears', 'TL-LEND-EV01'),
+      add('event_type', { id: 'TL-LEND-EV01-ET', title: 'Loan opened', domain_event_id: 'TL-LEND-EV01', delivery: 'in process' }),
+      add('view', { id: 'TL-V01', title: 'Loan page' }),
+      add('use_case_test', { id: 'TL-LEND-UC01-R01-T01', title: 'A tool on loan is refused', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'integration', state: 'not automated yet' }),
+    ], async (a) => {
+      // S01, S03: the check tool on the product; what nothing uses is an error.
+      const checked = await a.check();
+      expect(found(checked, 'view-unused')).toEqual([expect.stringMatching(/^TL-V01: /)]);
+      expect(checked.problems.find((p) => p.check === 'view-unused')!.severity).toBe('error');
+      // S04: the shape warnings, the recorded exception listed apart, and the use case with no flow a gap in its domain's
+      // coverage, never a problem.
+      expect(found(checked, 'test-level-not-allowed')).toEqual([expect.stringMatching(/^TL-LEND-UC01-R01-T01: /)]);
+      expect(found(checked, 'event-not-by-outbox')).toEqual([expect.stringMatching(/^TL-LEND-EV01: /)]);
+      expect(checked.exceptions).toEqual([expect.objectContaining({ command: 'TL-LEND-CMD01', aggregate: 'TL-LEND-A2' })]);
+      expect(checked.problems.map((p) => p.record)).not.toContain('TL-LEND-CMD01');
+      expect(checked.products[0].coverage.find((c) => c.domain === 'TL-LEND')!.gaps).toContainEqual(expect.objectContaining({ id: 'TL-LEND-UC01', missing: 'use-case-without-flow' }));
+      expect(found(checked, 'use-case-without-flow')).toEqual([]);
+      // S05: the Agent fixes the error and the warnings, and calls the check tool again.
+      await a.ok('remove', { id: 'TL-V01' });
+      await a.ok('set', { use_case_test: { id: 'TL-LEND-UC01-R01-T01', level: 'service' } });
+      await a.ok('set', { event_type: { id: 'TL-LEND-EV01-ET', delivery: 'outbox' } });
+      expect((await a.check()).problems.filter((p) => ['view-unused', 'test-level-not-allowed', 'event-not-by-outbox'].includes(p.check))).toEqual([]);
+      // S02: a test given its parent's ID is refused once, naming its rule, file and line, and nothing that follows from it.
+      appendFileSync(path.join(a.tl.root, 'data', 'use_case_test.jsonl'), '{"id":"TL-LEND-UC01-R01","title":"Given its parent\'s ID","uc_requirement_id":"TL-LEND-UC01-R01","level":"service","state":"not automated yet"}\n');
+      const refused = await a.check();
+      expect(refused.problems).toHaveLength(1);
+      expect(refused.problems[0]).toMatchObject({ severity: 'error', check: 'data-refused' });
+      expect(refused.problems[0].message).toMatch(/^data\/use_case_test\.jsonl:2: .*\[[a-z-]+\]$/);
     });
   });
 
