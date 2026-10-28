@@ -19,6 +19,11 @@ export interface Command {
   keys: string[];
   /** The bindings off a Mac, when they differ (Ctrl+W closes the tab there, so Alt+W instead). */
   otherKeys?: string[];
+  /**
+   * The graph's step keys in the Nested and Voronoi views, when they differ from `keys` (the Tree view's). Those
+   * views draw children inside their parent, so Up and Down step out and in and Left and Right step across.
+   */
+  nestedKeys?: string[];
   when: CommandContext;
   /** Handled by the component it belongs to (arrow keys in the graph), listed here so the sheet shows it. */
   local?: boolean;
@@ -82,12 +87,14 @@ export const COMMANDS: readonly Command[] = [
   { id: 'graphFit', title: 'Frame the focus again', group: 'Graph', keys: ['.'], when: 'graph' },
   { id: 'graphLinks', title: 'Links on or off: the center\'s own links, one step', group: 'Graph', keys: ['l'], when: 'graph' },
   { id: 'graphLayout', title: 'Tree, Nested or Voronoi layout: parents beside their children, or made of them as boxes or cells', group: 'Graph', keys: ['v'], when: 'graph' },
-  // Stepping through the tree, as a file explorer does, with the plain arrows while the graph has focus (after a click on
-  // its canvas or a box); never while a text field has it. Each step moves the graph's focus. Tab steps through the boxes.
-  { id: 'graphStepOut', title: 'Step out to the parent', group: 'Graph', keys: ['ArrowLeft'], when: 'graph', local: true },
-  { id: 'graphStepIn', title: 'Step in to the first child', group: 'Graph', keys: ['ArrowRight'], when: 'graph', local: true },
-  { id: 'graphStepPrevious', title: 'Step to the previous sibling', group: 'Graph', keys: ['ArrowUp'], when: 'graph', local: true },
-  { id: 'graphStepNext', title: 'Step to the next sibling', group: 'Graph', keys: ['ArrowDown'], when: 'graph', local: true },
+  // Stepping through the tree with the plain arrows while the graph has focus (after a click on its canvas or a box); never
+  // while a text field has it. Each step moves the graph's focus. Tab steps through the boxes. The Tree view steps as a
+  // file explorer does (Left out, Right in, Up and Down across); the Nested and Voronoi views, which draw children inside
+  // their parent, step Up out, Down in, and Left and Right across (`nestedKeys`).
+  { id: 'graphStepOut', title: 'Step out to the parent', group: 'Graph', keys: ['ArrowLeft'], nestedKeys: ['ArrowUp'], when: 'graph', local: true },
+  { id: 'graphStepIn', title: 'Step in to the first child', group: 'Graph', keys: ['ArrowRight'], nestedKeys: ['ArrowDown'], when: 'graph', local: true },
+  { id: 'graphStepPrevious', title: 'Step to the previous sibling', group: 'Graph', keys: ['ArrowUp'], nestedKeys: ['ArrowLeft'], when: 'graph', local: true },
+  { id: 'graphStepNext', title: 'Step to the next sibling', group: 'Graph', keys: ['ArrowDown'], nestedKeys: ['ArrowRight'], when: 'graph', local: true },
   // Lists
   { id: 'focusSearch', title: 'Focus the nearest search box', group: 'Lists', keys: ['/'], when: 'global' },
   { id: 'treeExpand', title: 'Expand the row (or move into it)', group: 'Lists', keys: ['ArrowRight'], when: 'list', local: true },

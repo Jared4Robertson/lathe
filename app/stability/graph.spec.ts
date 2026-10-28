@@ -408,12 +408,12 @@ const PARITY: { feature: string; run: (page: Page, layout: Layout) => Promise<vo
     },
   },
   {
-    feature: 'once the graph has focus, the plain Left arrow steps out to the parent',
-    run: async (page) => {
+    feature: 'once the graph has focus, the plain arrow that steps out in this layout (Left in Tree, Up in Nested and Voronoi) steps out to the parent',
+    run: async (page, layout) => {
       const here = path(page);
       // The graph pane takes focus as a click on its canvas gives it.
       await page.locator('.pane-graph .graph-flow').focus();
-      await page.keyboard.press('ArrowLeft');
+      await page.keyboard.press(layout === 'tree' ? 'ArrowLeft' : 'ArrowUp');
       await page.waitForURL((u) => u.pathname !== here);
       await page.goBack();
       await page.waitForURL((u) => u.pathname === here);

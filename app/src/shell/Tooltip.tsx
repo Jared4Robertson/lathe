@@ -43,12 +43,14 @@ export interface TooltipProps {
   label: string;
   /** The keymap command whose shortcut the control runs. */
   command?: string;
+  /** Shows a graph step's Nested and Voronoi keys (`nestedKeys`) rather than the Tree view's. */
+  nested?: boolean;
   placement?: Placement;
   children: ReactElement<ChildProps>;
 }
 
-export function Tooltip({ label, command, placement = 'bottom', children }: TooltipProps) {
-  const hint = useShortcutHint(command);
+export function Tooltip({ label, command, nested = false, placement = 'bottom', children }: TooltipProps) {
+  const hint = useShortcutHint(command, nested);
   const { mac } = useKeymap();
   const id = useId();
   const [at, setAt] = useState<{ x: number; y: number } | null>(null);

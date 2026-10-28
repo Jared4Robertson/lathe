@@ -26,7 +26,7 @@ A write returns the rows it changed and the files it wrote, or the refusal with 
 
 | Skill | For |
 | --- | --- |
-| `discover-outcomes` | The discovery stage: the product's business outcomes, each a measurable statement with its measure and target, and the capabilities that serve them. |
+| `discover-outcomes` | The discovery stage: the product's business outcomes, each a measurable statement with its measure and target, the capabilities that serve them and what measures them. |
 | `model-a-domain` | Domains as vertical slices of business capability, the order of the whole spec, and the domain model in event storming order: aggregates, entities and fields, commands and events (one aggregate per command, recorded exceptions, the outbox), invariants, value objects and constraints, specifications, policies, read models and queries, domain services and terms. |
 | `write-use-cases` | Capabilities, use cases with their actors and UC requirements, the product's roles, and the patterns use cases share with their settings and rules. |
 | `design-interactions` | The product's interfaces, each use case's flows (one per interface) and their steps (invoking a command or query, in a view, fulfilling UC requirements), views and view requirements, endpoints under their command or query with API requirements, and integrations. |

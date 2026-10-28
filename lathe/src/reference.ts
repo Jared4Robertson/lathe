@@ -274,7 +274,8 @@ The model is drawn from domain-driven design, CQRS and event storming, in six st
 outcomes the product exists to achieve), the domain model, use cases on top of it, their interaction design, the
 technical records that implement each design record, and the test plan. Links run from what is defined first to
 what is defined later. A capability names the outcomes it serves, so the trace runs from an outcome to its
-capabilities, their use cases, the code and the tests.
+capabilities, their use cases, the code and the tests. An outcome names what measures it (\`measured_by\`): a test,
+or a record of a product's own kind such as a report, or it says how it is measured outside the code.
 
 **Words.** What clean architecture calls a use case or an interactor is what Lathe calls a command handler
 (\`command_handler\`): the application service that carries out one command. A Lathe use case (\`use_case\`) is the

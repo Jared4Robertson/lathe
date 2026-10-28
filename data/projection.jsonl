@@ -17,3 +17,4 @@
 {"id":"LA-TRC-RM04-PJ","title":"the pattern_rule_standing table","read_model_id":"LA-TRC-RM04","file":"lathe/src/coverage.ts","description":"the pattern_rule_standing table and the owed_pattern_rules view over it"}
 {"id":"LA-TRC-RM05-PJ","title":"gatherFileFacts","read_model_id":"LA-TRC-RM05","file":"lathe/src/index.ts","description":"gatherFileFacts"}
 {"id":"LA-TRC-RM06-PJ","title":"traceOf","read_model_id":"LA-TRC-RM06","file":"app/src/specs/trace.ts","description":"traceOf, designersOf, buildersOf and notAutomatedTestsOf: what designs, builds and proves the record, by group, from the space's index; what proves it in a domain is the tests coverage counts as its proof there."}
+{"id":"LA-TRC-RM07-PJ","title":"gatherTableFacts","read_model_id":"LA-TRC-RM07","file":"lathe/src/trace/tables.ts","description":"gatherTableFacts, with readDefinitions and expectedColumns"}

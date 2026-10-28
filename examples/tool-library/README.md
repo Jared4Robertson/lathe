@@ -9,7 +9,7 @@ The specification is in [data/](data/), one JSON Lines file per table of Lathe's
 - **Domain model:** three aggregates (Member, Tool, Loan) with five entities; four value objects (`TL-VO01` Name to `TL-VO04` Note) and their constraints; six invariants (`TL-LEND-INV..`), four specifications (`TL-LEND-SP..`), six commands with the events they raise, the Catalog read model (worked out in memory on each request) and its query, one policy (a tool returned needing repair is taken out of lending), the Library calendar domain service and the glossary.
 - **Use cases:** five use cases under three capabilities, each with its UC requirements (`TL-LEND-UC0n-R0n`) and one flow, whose steps invoke the commands and the query over the HTTP API (the example has no UI, so it has no views).
 - **Interaction design:** seven endpoints (`TL-LEND-EP0n`), each under the command or query it exposes; the API's own rules (each body's fields, each error's status and code, what a success returns) are API requirements (`TL-LEND-EP0n-R0n`).
-- **Technical specification:** the repositories, data models, tables, value types, predicates, event types, handlers and service that implement them, each naming its file, and the Tool Library's own Entry point kind for `src/server.ts`.
+- **Technical specification:** the repositories, data models, tables, value types, predicates, event types, handlers and service that implement them, each naming its file, and the Tool Library's own Entry point kind for `src/server.ts`, and its own Report kind for `src/outcomes.ts`, which measures the business outcomes.
 - **Test plan:** one test kind per thing tested. Every source file names its technical records, and every automated test's name starts with its test record ID, so Lathe can trace each obligation to code and tests.
 
 ## Events and eventual consistency
@@ -38,6 +38,7 @@ npm run typecheck   # tsc --noEmit
 
 - `test/domain-rules.test.ts`: the constraint tests (`TL-VO0n-C0n-T`), invariant tests (`TL-LEND-INV0n-T`), specification tests (`TL-LEND-SP0n-T`), the policy test (`TL-LEND-PO01-T`) and the domain service test (`TL-LEND-DS01-T01`), against the model, the command handlers, the outbox and an in-memory database.
 - `test/api.test.ts`: the use case tests (`TL-LEND-UC0n-R0n-T0n`), the endpoint tests (`TL-LEND-EP0n-R0n-T0n`) and the Librarian action pattern's rule tests (`TL-PAT-LIBRARIAN-ACTION-R0n-T01`), over HTTP on a free local port. A use case test and an endpoint test that share a scenario run one helper each.
+- `test/outcomes.test.ts`: the outcome report (`TL-LEND-RP01`), over a month of loans made through the services.
 - `test/body-limit.test.ts`: the 64 KB body limit (`TL-LEND-EP06-R03-T01`), over HTTP and over a raw socket that sends a body that never ends.
 
 The five flow tests (`TL-LEND-UC0n-FL01-T`, one per use case through the HTTP API, `TL-IF01`) are manual: they walk the curl steps below against a running server, and their records say why.
@@ -53,6 +54,14 @@ TIME_ZONE=Europe/London npm start  # count days in another time zone
 `TIME_ZONE` is the library's time zone, an IANA name; it defaults to `America/New_York`. A `library.db` created before due dates became dates has a `due_at` column; delete it and start again.
 
 Stop it with Ctrl-C.
+
+## Measure the business outcomes
+
+```sh
+DB=library.db npm run outcomes -- 2026-03   # one month, counted in TIME_ZONE
+```
+
+The report (`TL-LEND-RP01`) prints, as JSON, each business outcome's measure for the month from the library's own records: loans opened per tool in the catalog (`TL-BO01`), the share of loans due that month returned late or still out and overdue (`TL-BO02`), loans opened on a tool that needed repair, from the damage and repair events the outbox keeps (`TL-BO03`), and the members who opened a loan in the 90 days to the month's end (`TL-BO04`). Each outcome links to it with `measured_by`.
 
 ## API
 
@@ -90,3 +99,4 @@ curl -s -X POST localhost:5310/tools/1/repair
 | `src/lending-service.ts` | The command handlers `TL-LEND-CMD05-H` and `CMD06-H`: borrowing and returning. |
 | `src/router.ts` | The endpoint handlers `TL-LEND-EP01-H` to `EP07-H`: the HTTP API. It gives the command handlers one outbox, subscribes the event handler and runs the relay once at start. |
 | `src/server.ts` | The entry point `TL-LEND-ENTRY01`. |
+| `src/outcomes.ts` | The report `TL-LEND-RP01`: the business outcomes' measures for a month. |

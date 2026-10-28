@@ -349,11 +349,20 @@ describe('Authoring flows', () => {
     expect(gapsOf(before, 'TL-LEND')).toContain('capability-serves-no-outcome TL-LEND-CAP01');
     expect(gapsOf(before, null)).toContain('outcome-not-served TL-BO01');
     expect(before.kinds.find((k) => k.kind === 'business_outcome')).toMatchObject({ stage: 'discovery' });
-    // S02: each capability linked to the outcomes it serves closes both gaps.
+    expect(gapsOf(before, null)).toContain('outcome-not-measured TL-BO01');
+    // S02: each capability linked to the outcomes it serves closes both of those gaps.
     tl.run('link', 'TL-LEND-CAP01', 'serves', 'TL-BO01');
-    const after = tl.workspace();
-    expect([...gapsOf(after, 'TL-LEND'), ...gapsOf(after, null)].filter((g) => g.includes('outcome'))).toEqual([]);
+    const served = tl.workspace();
+    expect([...gapsOf(served, 'TL-LEND'), ...gapsOf(served, null)].filter((g) => g.includes('outcome'))).toEqual(['outcome-not-measured TL-BO01']);
     expect(tl.run('show', 'TL-BO01')).toContain('Served by TL-LEND-CAP01');
+    // S03: each outcome linked to the test that measures it; a test not automated yet measures nothing.
+    tl.run('add', 'use_case_test', ...flags({ id: 'TL-LEND-UC01-R01-T01', title: 'Loans are counted per tool', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'api', state: 'not automated yet' }));
+    tl.run('link', 'TL-BO01', 'measured_by', 'TL-LEND-UC01-R01-T01');
+    expect(gapsOf(tl.workspace(), null)).toEqual(['outcome-not-measured TL-BO01']);
+    tl.write('test/loans.test.ts', "it('TL-LEND-UC01-R01-T01 loans are counted per tool');\n");
+    tl.run('set', 'TL-LEND-UC01-R01-T01', '--state', 'automated', '--file', 'test/loans.test.ts');
+    expect(gapsOf(tl.workspace(), null)).toEqual([]);
+    expect(tl.run('show', 'TL-BO01')).toContain('Measured by TL-LEND-UC01-R01-T01');
   });
 
   it('LA-AUT-UC16-FL03-T write the engineering standards the code follows', async () => {
