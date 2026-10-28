@@ -30,7 +30,7 @@
 {"id":"LA-AUT-UC19-FL03","title":"Merge two branches' data","use_case_id":"LA-AUT-UC19","interface_id":"LA-IF03"}
 {"id":"LA-AUT-UC20-FL03","title":"Sort a domain's rules","use_case_id":"LA-AUT-UC20","interface_id":"LA-IF03"}
 {"id":"LA-AUT-UC20-FL04","title":"Sort a domain's rules by what they do through the MCP tools","use_case_id":"LA-AUT-UC20","interface_id":"LA-IF04"}
-{"id":"LA-AUT-UC21-FL03","title":"Model read models, queries, domain services and terms","use_case_id":"LA-AUT-UC21","interface_id":"LA-IF03"}
+{"id":"LA-AUT-UC21-FL03","title":"Model read models and queries","use_case_id":"LA-AUT-UC21","interface_id":"LA-IF03"}
 {"id":"LA-AUT-UC21-FL04","title":"Model read models, queries, domain services and terms through the MCP tools","use_case_id":"LA-AUT-UC21","interface_id":"LA-IF04"}
 {"id":"LA-AUT-UC22-FL03","title":"Write the business outcomes","use_case_id":"LA-AUT-UC22","interface_id":"LA-IF03"}
 {"id":"LA-AUT-UC22-FL04","title":"Write the business outcomes the product exists to achieve through the MCP tools","use_case_id":"LA-AUT-UC22","interface_id":"LA-IF04"}
@@ -65,9 +65,9 @@
 {"id":"LA-PLT-UC04-FL01","title":"Work the app from the keyboard","use_case_id":"LA-PLT-UC04","interface_id":"LA-IF01"}
 {"id":"LA-PLT-UC05-FL01","title":"Learn a shortcut from where it is used","use_case_id":"LA-PLT-UC05","interface_id":"LA-IF01"}
 {"id":"LA-PLT-UC06-FL01","title":"Arrange the workbench","use_case_id":"LA-PLT-UC06","interface_id":"LA-IF01"}
-{"id":"LA-PLT-UC07-FL01","title":"Choose and make a theme","use_case_id":"LA-PLT-UC07","interface_id":"LA-IF01"}
+{"id":"LA-PLT-UC07-FL01","title":"Set how Lathe looks","use_case_id":"LA-PLT-UC07","interface_id":"LA-IF01"}
 {"id":"LA-PLT-UC08-FL01","title":"Read Lathe on a phone","use_case_id":"LA-PLT-UC08","interface_id":"LA-IF01"}
-{"id":"LA-PLT-UC09-FL01","title":"Read and move around without anything jumping","use_case_id":"LA-PLT-UC09","interface_id":"LA-IF01"}
+{"id":"LA-PLT-UC09-FL01","title":"Read without anything jumping","use_case_id":"LA-PLT-UC09","interface_id":"LA-IF01"}
 {"id":"LA-PLT-UC10-FL01","title":"Use Lathe by keyboard and screen reader","use_case_id":"LA-PLT-UC10","interface_id":"LA-IF01"}
 {"id":"LA-PLT-UC11-FL02","title":"Open a product in a window","use_case_id":"LA-PLT-UC11","interface_id":"LA-IF02"}
 {"id":"LA-PLT-UC12-FL02","title":"Change Lathe and see the desktop app reload","use_case_id":"LA-PLT-UC12","interface_id":"LA-IF02"}

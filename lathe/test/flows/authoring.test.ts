@@ -258,7 +258,7 @@ describe('Authoring flows', () => {
     tl.refused('add', 'check', '--name', 'blank', '--product_id', 'TL', '--position', '2', '--severity', 'warning', '--summary', 'Blank.', '--query', 'SELECT 1');
   });
 
-  it('LA-AUT-UC12-FL03-T model commands, the events they raise and the policies that hear them', async () => {
+  it('LA-AUT-UC12-FL03-T model commands and their events', async () => {
     const tl = product();
     await tl.seed([
       add('domain', { id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core' }),
@@ -292,7 +292,7 @@ describe('Authoring flows', () => {
     expect(gapsOf(ws, 'TL-LEND').filter((g) => /^(policy-hears-nothing|event-not-raised)/.test(g))).toEqual([]);
   });
 
-  it('LA-AUT-UC13-FL03-T write the test plan, one test kind per thing tested', async () => {
+  it('LA-AUT-UC13-FL03-T write the test plan', async () => {
     const tl = product();
     await tl.seed([
       ...LENDING,
@@ -401,7 +401,7 @@ describe('Authoring flows', () => {
     expect(ws.coverage.find((c) => c.domain === 'TL-LEND')?.obligations.find((o) => o.kind === 'invariant')).toMatchObject({ designed: 1, built: 1 });
   });
 
-  it('LA-AUT-UC18-FL03-T write the views, endpoints and integrations a flow reaches', async () => {
+  it('LA-AUT-UC18-FL03-T write what a flow reaches', async () => {
     const tl = product();
     await tl.seed([
       ...LENDING,
@@ -498,7 +498,7 @@ describe('Authoring flows', () => {
     expect(ws.coverage.find((c) => c.domain === 'TL-LEND')?.obligations.filter((o) => o.total).map((o) => [o.kind, o.total])).toEqual([['constraint', 1], ['invariant', 1], ['specification', 1], ['uc_requirement', 1]]);
   });
 
-  it('LA-AUT-UC21-FL03-T model read models, queries, domain services and terms', async () => {
+  it('LA-AUT-UC21-FL03-T model read models and queries', async () => {
     const tl = product();
     await tl.seed(LENDING);
     // S01: each read model with its fields, the aggregates it reads, and its queries.

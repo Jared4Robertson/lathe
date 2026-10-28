@@ -735,7 +735,7 @@ An ordered slice of a domain that groups its use cases, such as Catalog or Lendi
 - **ID:** `<P>-<D>-CAP<nn>`, such as `TL-LEND-CAP01`; it starts with its domain's ID
 - **Links out:** Serves ([`serves`](#relation-serves))
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`lone-child`](#check-lone-child)
+- **Checks:** [`lone-child`](#check-lone-child), [`title-breaks-convention`](#check-title-breaks-convention)
 - **Gaps:** [`capability-serves-no-outcome`](#gap-capability-serves-no-outcome), [`capability-without-use-case`](#gap-capability-without-use-case)
 
 <a id="table-capability"></a>
@@ -766,7 +766,7 @@ An actor's goal: its actors (use_case_actor rows), its UC requirements and its f
 - **Links out:** Follows ([`follows`](#relation-follows))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Parts:** [`use_case_actor`](#table-use_case_actor)
-- **Checks:** [`pattern-setting-missing`](#check-pattern-setting-missing), [`pattern-not-followed`](#check-pattern-not-followed)
+- **Checks:** [`pattern-setting-missing`](#check-pattern-setting-missing), [`pattern-not-followed`](#check-pattern-not-followed), [`title-breaks-convention`](#check-title-breaks-convention)
 - **Gaps:** [`use-case-without-actor`](#gap-use-case-without-actor), [`use-case-without-requirement`](#gap-use-case-without-requirement), [`use-case-without-flow`](#gap-use-case-without-flow)
 
 <a id="table-use_case"></a>
@@ -947,6 +947,16 @@ A capability or a group with exactly one child.
 
 A level that holds one record groups nothing. A capability with exactly one child is reported, counting its own children of every kind (its use cases, and the records of a product's own kinds under it) but not theirs; one with none is a coverage gap instead. A group (the `group_name` of every kind that has one, read from the record_group view: terms, UC requirements, view requirements, API requirements, pattern rules, standard rules and a product's own kinds) is counted among its parent's children of one kind, compared trimmed and in any letter case, and reported on that parent. Merge it into a neighbor, or give it more.
 
+<a id="check-title-breaks-convention"></a>
+
+### `title-breaks-convention`
+
+**Warning** · Lathe's · Kinds: [`capability`](#kind-capability), [`use_case`](#kind-use_case), [`interface`](#kind-interface)
+
+A capability or use case title that breaks its naming convention: an interface named in it, a capability starting with The or an -ing word, or a list.
+
+A capability is named as a noun phrase for a lasting ability of the business, two to four words: subject and activity noun, such as Invoice management or Member registration, or a single noun when the area is clear on its own, such as Catalog or Lending. A use case is named for one goal of its actor, verb first: verb and object, such as Borrow a tool or Approve an invoice, two to six words. Neither names a screen, a tool or a technology: a use case happens through interfaces, with one flow each, so the interface belongs to its flows, not its title. The check reads only the mechanical parts, in any letter case and as whole words: a use case or capability title that holds one of its product's interface titles or the words command line, CLI, desktop app, web app, MCP, API, agent tools, command layer or page (or their plurals); a capability title of two or more words that starts with "The" or with an -ing word (a word of five or more letters ending in -ing, other than the few that are not verbs, such as thing, string and evening), so a single noun such as Lending passes; and either title that holds a list, a comma followed later by "and" or "or". Two goals joined by "and" with no comma are not read, nor is a use case title that does not start with a verb. Rename the capability or use case by the convention.
+
 ### Coverage gaps: use cases
 
 Each is reported in coverage, under the record that falls short, never as a problem.
@@ -977,7 +987,7 @@ A way people or programs use the product, such as its web app, its HTTP API or i
 - **ID:** `<P>-IF<nn>`, such as `TL-IF01`; it starts with its parent's ID
 - **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`flow-test-level-for-interface`](#check-flow-test-level-for-interface)
+- **Checks:** [`flow-test-level-for-interface`](#check-flow-test-level-for-interface), [`title-breaks-convention`](#check-title-breaks-convention)
 - **Gaps:** [`interface-without-flow`](#gap-interface-without-flow)
 
 <a id="table-interface"></a>

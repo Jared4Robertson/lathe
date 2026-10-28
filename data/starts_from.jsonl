@@ -486,6 +486,8 @@
 {"source_id":"LA-STD-CODE-R01-T01","target_id":"LA-AUT-TD02"}
 {"source_id":"LA-STD-CODE-R01-T01","target_id":"LA-EXP-TD03"}
 {"source_id":"LA-STD-MODELING-R01-T01","target_id":"LA-AUT-TD02"}
+{"source_id":"LA-STD-MODELING-R02-T01","target_id":"LA-AUT-TD02"}
+{"source_id":"LA-STD-MODELING-R03-T01","target_id":"LA-AUT-TD02"}
 {"source_id":"LA-STD-PRINCIPLES-R01-T01","target_id":"LA-AUT-TD01"}
 {"source_id":"LA-STD-PRINCIPLES-R01-T02","target_id":"LA-AUT-TD01"}
 {"source_id":"LA-STD-PRINCIPLES-R03-T01","target_id":"LA-AUT-TD02"}
