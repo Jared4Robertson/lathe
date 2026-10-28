@@ -27,7 +27,7 @@ const meaning = (el: Element | null) => (el?.closest('li, tr')?.textContent ?? '
 
 afterEach(cleanup);
 
-describe('the Graph view key', () => {
+describe('LA-V93-R12-T06 the Graph view key', () => {
   it('Every box look, badge and line style the Graph view can draw is in its key, with what it means', () => {
     const { container } = render(<Legend />);
     const entry = (selector: string) => container.querySelector(selector);
@@ -51,7 +51,7 @@ describe('the Graph view key', () => {
   });
 });
 
-describe('the Model view key', () => {
+describe('LA-V94-R05-T02 the Model view key', () => {
   // Box and line classes that answer the pointer or the keyboard, not marks with a meaning.
   const INTERACTION = new Set(['is-focus', 'has-hover-label']);
   // Every class the stylesheet gives a box or a line, and what in the ERD draws it, checked below: each box kind

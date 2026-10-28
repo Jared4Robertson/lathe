@@ -3,7 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { expect, test, type Page } from '@playwright/test';
 import { BUDGETS } from './budgets';
-import { heapMb, installProbes, quiet, record, work } from './measure';
+import { installProbes, quiet, record, work } from './measure';
 import { focusDrawn, reachableBoxes, sceneOf } from '../stability/scene';
 
 // LA-PAT-APP-UX-R11-T01 and LA-V61-R37-T01 to T04: the app's performance budgets (LA-PAT-APP-UX-R11), on the production build.
@@ -123,32 +123,6 @@ test.describe('performance', () => {
     await record({ name: `${label}: frames over 20 ms`, value: Math.max(...slow), unit: 'frames', budget: BUDGETS.recenterSlowFrames + 1, detail: `worst of 3: ${slow.join(', ')}; at most ${BUDGETS.recenterSlowFrames}` });
   });
 
-  // The canvas's free camera on Lathe's map (LA-EXP-DS09): a wheel zoom in and out about the pointer, and a drag pan, in each layout.
-  for (const layout of ['Tree', 'Nested', 'Voronoi'] as const) test(`zoom and pan on Lathe's map are measured, frame by frame, in the ${layout} layout`, async ({ page }) => {
-    await open(page, '/LA?view=graph');
-    await boxesDrawn(page);
-    if (layout !== 'Tree') {
-      await page.locator('.graph-layout button', { hasText: layout }).click();
-      await boxesDrawn(page, layout.toLowerCase());
-    }
-    await quiet(page, 900);
-    const box = (await page.locator('.pane-graph .graph-canvas').boundingBox())!;
-    const mid = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
-    await page.mouse.move(mid.x, mid.y);
-    const zoom = await work(page, async () => {
-      for (let i = 0; i < 20; i++) { await page.mouse.wheel(0, -120); await page.waitForTimeout(16); }
-      for (let i = 0; i < 20; i++) { await page.mouse.wheel(0, 120); await page.waitForTimeout(16); }
-    });
-    const pan = await work(page, async () => {
-      await page.mouse.down();
-      for (let i = 1; i <= 40; i++) await page.mouse.move(mid.x - i * 8, mid.y - i * 4);
-      await page.mouse.up();
-    });
-    const boxes = (await sceneOf(page)).boxes.length;
-    await record({ name: `${layout} zoom on LA: longest frame`, value: zoom.worstFrameMs, unit: 'ms', budget: null, detail: `${Math.round(zoom.workMs)} ms work over ${zoom.frames} frames, ${zoom.slowFrames} over 20 ms; ${boxes} boxes in the last picture` });
-    await record({ name: `${layout} pan on LA: longest frame`, value: pan.worstFrameMs, unit: 'ms', budget: null, detail: `${Math.round(pan.workMs)} ms work over ${pan.frames} frames, ${pan.slowFrames} over 20 ms` });
-  });
-
   test('LA-V61-R37-T04 opening the Model pane takes under 100 ms of main-thread work', async ({ page }) => {
     await open(page, AGGREGATE);
     const first = await work(page, async () => {
@@ -169,23 +143,5 @@ test.describe('performance', () => {
     await page.locator('.pane-model .model-flow .react-flow__node').first().waitFor();
     const laid = (await page.evaluate(() => performance.now())) - start;
     await record({ name: 'Model view: domain ERD drawn after the page', value: laid, unit: 'ms', budget: null });
-  });
-
-  test('memory after 50 navigations', async ({ page }) => {
-    await open(page, `${RECORD}?view=wiki,graph`);
-    await boxesDrawn(page);
-    const start = await heapMb(page);
-    const links = await page.evaluate(() => [...new Set([...document.querySelectorAll<HTMLAnchorElement>('#nav a[href^="/LA"]')].map((a) => a.getAttribute('href')!))]
-      // Record and group pages only: a space's Checks page has no views to open.
-      .filter((href) => !href.endsWith('/checks')).slice(0, 25));
-    for (let i = 0; i < 50; i++) {
-      const href = links[i % links.length];
-      await page.evaluate((href) => { history.pushState(null, '', `${href}?view=wiki,graph`); dispatchEvent(new PopStateEvent('popstate')); }, href);
-      await page.locator(TITLE).first().waitFor();
-      await page.waitForTimeout(150);
-    }
-    await quiet(page, 900);
-    const end = await heapMb(page);
-    await record({ name: 'JS heap after 50 navigations', value: end, unit: 'MB', budget: null, detail: `${start.toFixed(1)} MB before, ${(end - start).toFixed(1)} MB more` });
   });
 });

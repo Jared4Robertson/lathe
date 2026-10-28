@@ -31,7 +31,7 @@ function resolve(from: string, spec: string): string | null {
 }
 
 describe('the first load', () => {
-  it('reaches no React Flow and no ELK through static imports', () => {
+  it('LA-V61-R37-T05 reaches no React Flow and no ELK through static imports', () => {
     const seen = new Set<string>();
     const found: string[] = [];
     const walk = (file: string, via: string[]) => {
