@@ -35,6 +35,10 @@ CREATE TABLE follows (source_id VARCHAR NOT NULL REFERENCES follows_source (id),
 COMMENT ON TABLE follows IS 'The domain or use case follows the pattern, and gives a value for each of its settings in setting_value rows.';
 CREATE TABLE meets (source_id VARCHAR NOT NULL REFERENCES meets_source (id), target_id VARCHAR NOT NULL REFERENCES standard_rule (id), PRIMARY KEY (source_id, target_id));
 COMMENT ON TABLE meets IS 'The technical record follows the standard rule: it shows where the rule is applied, and designs it.';
+CREATE TABLE serves (source_id VARCHAR NOT NULL REFERENCES capability (id), target_id VARCHAR NOT NULL REFERENCES business_outcome (id), PRIMARY KEY (source_id, target_id));
+COMMENT ON TABLE serves IS 'The capability serves the business outcome: what it is for. A capability may serve several outcomes, and an outcome be served by several capabilities.';
+CREATE TABLE starts_from (source_id VARCHAR NOT NULL REFERENCES test (id), target_id VARCHAR NOT NULL REFERENCES test_data_set (id), PRIMARY KEY (source_id, target_id));
+COMMENT ON TABLE starts_from IS 'The test starts from the test data set: it is prepared before the test and reset after.';
 CREATE TABLE about (source_id VARCHAR NOT NULL REFERENCES question (id), target_id VARCHAR NOT NULL REFERENCES record_id (id), PRIMARY KEY (source_id, target_id));
 COMMENT ON TABLE about IS 'The open question concerns the record.';
 
@@ -55,6 +59,8 @@ INSERT INTO meta_relation VALUES
   ('renders', NULL, 'product', 'Renders', 'Rendered by', NULL),
   ('follows', NULL, 'product', 'Follows', 'Followed by', NULL),
   ('meets', NULL, 'product', 'Meets', 'Met by', NULL),
+  ('serves', NULL, 'product', 'Serves', 'Served by', NULL),
+  ('starts_from', NULL, 'product', 'Starts from', 'Started from by', NULL),
   ('about', NULL, 'product', 'About', 'Questions about this', NULL);
 
 INSERT INTO meta_relation_pair VALUES
@@ -92,6 +98,19 @@ INSERT INTO meta_relation_pair VALUES
   ('meets', 'ui_component', 'standard_rule', 'The UI component follows the standard rule.'),
   ('meets', 'endpoint_handler', 'standard_rule', 'The endpoint handler follows the standard rule.'),
   ('meets', 'adapter', 'standard_rule', 'The adapter follows the standard rule.'),
+  ('serves', 'capability', 'business_outcome', 'The capability serves the business outcome.'),
+  ('starts_from', 'constraint_test', 'test_data_set', 'The constraint test starts from the test data set.'),
+  ('starts_from', 'invariant_test', 'test_data_set', 'The invariant test starts from the test data set.'),
+  ('starts_from', 'specification_test', 'test_data_set', 'The specification test starts from the test data set.'),
+  ('starts_from', 'policy_test', 'test_data_set', 'The policy test starts from the test data set.'),
+  ('starts_from', 'domain_service_test', 'test_data_set', 'The domain service test starts from the test data set.'),
+  ('starts_from', 'use_case_test', 'test_data_set', 'The use case test starts from the test data set.'),
+  ('starts_from', 'view_test', 'test_data_set', 'The view test starts from the test data set.'),
+  ('starts_from', 'endpoint_test', 'test_data_set', 'The endpoint test starts from the test data set.'),
+  ('starts_from', 'flow_test', 'test_data_set', 'The flow test starts from the test data set.'),
+  ('starts_from', 'integration_test', 'test_data_set', 'The integration test starts from the test data set.'),
+  ('starts_from', 'pattern_rule_test', 'test_data_set', 'The pattern rule test starts from the test data set.'),
+  ('starts_from', 'standard_rule_test', 'test_data_set', 'The standard rule test starts from the test data set.'),
   ('about', 'question', '*', 'The open question concerns that record.');
 
 INSERT INTO meta_table SELECT name, 'link', NULL FROM meta_relation;

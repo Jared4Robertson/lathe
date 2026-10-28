@@ -120,6 +120,9 @@ WHERE NOT EXISTS (SELECT 1 FROM ${sqlName(table)} t WHERE t.${sqlName(column)} =
 
 /** The "at least one" and "exactly one" minimums, by stage, reported as coverage gaps. */
 export const GAP_RULES: GapRule[] = [
+  // Discovery: the trace runs from a business outcome through the capabilities that serve it.
+  gap('outcome-not-served', 'discovery', ['business_outcome', 'capability'], 'A business outcome no capability serves.',
+    `SELECT o.id, 'Business outcome ' || o.id || ' is served by no capability.' AS message FROM business_outcome o WHERE NOT EXISTS (SELECT 1 FROM serves s WHERE s.target_id = o.id)`),
   // Domain model.
   gap('domain-without-aggregate', 'domain-model', ['domain', 'aggregate'], 'A domain with no aggregate.',
     `SELECT d.id, 'Domain ' || d.id || ' has no aggregate.' AS message FROM domain d WHERE NOT EXISTS (SELECT 1 FROM aggregate a WHERE a.domain_id = d.id)`),
@@ -152,6 +155,8 @@ WHERE NOT EXISTS (SELECT 1 FROM reads r WHERE r.source_id = m.id)${schema.relati
   gap('domain-service-not-called', 'domain-model', ['domain_service', 'command', 'query'], 'A domain service no command or query calls.',
     `SELECT s.id, 'Domain service ' || s.id || ' is called by no command or query.' AS message FROM domain_service s WHERE NOT EXISTS (SELECT 1 FROM calls c WHERE c.target_id = s.id)`),
   // Use cases.
+  gap('capability-serves-no-outcome', 'use-cases', ['capability', 'business_outcome'], 'A capability that serves no business outcome.',
+    `SELECT c.id, 'Capability ' || c.id || ' serves no business outcome.' AS message FROM capability c WHERE NOT EXISTS (SELECT 1 FROM serves s WHERE s.source_id = c.id)`),
   gap('capability-without-use-case', 'use-cases', ['capability', 'use_case'], 'A capability with no use case.',
     `SELECT c.id, 'Capability ' || c.id || ' has no use case.' AS message FROM capability c WHERE NOT EXISTS (SELECT 1 FROM use_case u WHERE u.capability_id = c.id)`),
   gap('use-case-without-actor', 'use-cases', ['use_case', 'use_case_actor'], 'A use case with no actor.',

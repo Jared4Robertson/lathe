@@ -270,9 +270,11 @@ components), which exist because other records use them. Other relationships are
 table, and an ID is unique across every kind. Every write goes through the command layer (the CLI, the app and the
 plugin's tools), which validates it in one transaction and rewrites the lines it changed; git is the history.
 
-The model is drawn from domain-driven design, CQRS and event storming, in five stages: the domain model, use cases on
-top of it, their interaction design, the technical records that implement each design record, and the test plan.
-Links run from what is defined first to what is defined later.
+The model is drawn from domain-driven design, CQRS and event storming, in six stages: discovery (the business
+outcomes the product exists to achieve), the domain model, use cases on top of it, their interaction design, the
+technical records that implement each design record, and the test plan. Links run from what is defined first to
+what is defined later. A capability names the outcomes it serves, so the trace runs from an outcome to its
+capabilities, their use cases, the code and the tests.
 
 **Words.** What clean architecture calls a use case or an interactor is what Lathe calls a command handler
 (\`command_handler\`): the application service that carries out one command. A Lathe use case (\`use_case\`) is the
