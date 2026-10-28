@@ -9,7 +9,7 @@ import { testWorkspace } from './graph/workspace';
 import { boxElements } from './graph/scene';
 
 // Tabs for open pages, as editors are in VS Code (LA-EXP-UC10): the preview tab, lasting tabs,
-// closing and cycling, each tab's own views, scroll and graph settings, and the address following
+// closing and cycling, each tab's own views and scroll, and the address following
 // the active tab, so a reload brings every tab back (LA-PAT-APP-UX-R06).
 
 const served = () => ({ data: testWorkspace() });
@@ -187,7 +187,7 @@ describe('tabs for open pages', () => {
     expect(address()).toBe('/P-D-UC01?view=wiki,graph');
   });
 
-  it('LA-V96-R14-T01 Each tab keeps its own views, wiki scroll and graph settings', async () => {
+  it('LA-V96-R14-T01 Each tab keeps its own views and wiki scroll, and the graph\'s settings are the session\'s, whatever the tab', async () => {
     await firstTab();
     // Opening the graph keeps the preview tab, and sets its depth.
     fireEvent.click(viewToggle('Graph'));
@@ -197,22 +197,22 @@ describe('tabs for open pages', () => {
     wiki().scrollTop = 120;
     fireEvent.scroll(wiki());
 
-    // A new tab starts from the active one's views and settings; change them there.
+    // A new tab starts from the active one's views, with the same depth; change them there.
     await go('/P-V01', 'Loan desk');
     expect(address()).toBe('/P-V01');
     expect(viewToggle('Graph')).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByRole('button', { name: '2' })).toHaveAttribute('aria-pressed', 'true');
     expect(wiki().scrollTop).toBe(0);
-    fireEvent.click(screen.getByRole('button', { name: '1' }));
+    fireEvent.click(screen.getByRole('button', { name: '3' }));
     fireEvent.click(screen.getByRole('button', { name: 'Close the graph pane' }));
     expect(tabs()).toEqual(['Lend a thing', 'Loan desk<']);
 
-    // Back on the first tab: its two panes, its depth and its scroll.
+    // Back on the first tab: its two panes and its scroll, and the depth last set, not its own.
     fireEvent.click(tab('Lend a thing'));
     await waitFor(() => expect(title()).toBe('Lend a thing'));
     expect(address()).toBe('/P-D-UC01?view=wiki,graph');
     expect(screen.getByRole('region', { name: 'Graph pane' })).toBeInTheDocument();
-    await waitFor(() => expect(screen.getByRole('button', { name: '2' })).toHaveAttribute('aria-pressed', 'true'));
+    await waitFor(() => expect(screen.getByRole('button', { name: '3' })).toHaveAttribute('aria-pressed', 'true'));
     expect(wiki().scrollTop).toBe(120);
     // And the second: the wiki alone.
     fireEvent.click(tab('Loan desk'));
@@ -222,6 +222,9 @@ describe('tabs for open pages', () => {
     // A link naming other views to a page open in a tab shows the tab as it was, and the address says so.
     await go('/P-D-UC01?view=wiki', 'Lend a thing');
     await waitFor(() => expect(address()).toBe('/P-D-UC01?view=wiki,graph'));
+    // A tab stores no graph settings.
+    const stored = JSON.parse(window.sessionStorage.getItem('lathe:tabs')!) as Record<string, { tabs: { state: object }[] }>;
+    expect(Object.values(stored).flatMap((set) => set.tabs.map((t) => Object.keys(t.state))).flat()).not.toContain('graph');
   });
 
   it('LA-V96-R15-T04 Reloading brings back each tab\'s views', async () => {

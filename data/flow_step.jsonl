@@ -152,7 +152,7 @@
 {"id":"LA-EXP-UC10-FL-S01","title":"A plain open shows the page in the preview tab, or activates the tab it is open in","flow_id":"LA-EXP-UC10-FL","path":"main","position":1}
 {"id":"LA-EXP-UC10-FL-S02","title":"The reader keeps the tab by a double-click, Ctrl+K then Enter, or a change to its views","flow_id":"LA-EXP-UC10-FL","path":"main","position":2}
 {"id":"LA-EXP-UC10-FL-S03","title":"They flip between tabs with Ctrl+Tab, or the desktop menu","flow_id":"LA-EXP-UC10-FL","path":"main","position":3}
-{"id":"LA-EXP-UC10-FL-S04","title":"Each tab keeps its own views, pane sizes, scroll and graph settings","flow_id":"LA-EXP-UC10-FL","path":"main","position":4}
+{"id":"LA-EXP-UC10-FL-S04","title":"Each tab keeps its own views, pane sizes and scroll; the graph is drawn the same in every tab","flow_id":"LA-EXP-UC10-FL","path":"main","position":4}
 {"id":"LA-EXP-UC10-FL-S05","title":"They close a tab by its button, a middle-click or Alt+Shift+W","flow_id":"LA-EXP-UC10-FL","path":"main","position":5}
 {"id":"LA-EXP-UC10-FL-S06","title":"A reload brings back each space's tabs as they were","flow_id":"LA-EXP-UC10-FL","path":"main","position":6}
 {"id":"LA-EXP-UC11-FL-S01","title":"On a domain, aggregate or entity page the reader opens the Model view","flow_id":"LA-EXP-UC11-FL","path":"main","position":1}

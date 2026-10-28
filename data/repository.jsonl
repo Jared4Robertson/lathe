@@ -19,6 +19,7 @@
 {"id":"LA-EXP-A2-REPO","title":"lathe","aggregate_id":"LA-EXP-A2","file":"app/src/shell/spaces.tsx","description":"lathe:space, lathe:space-pages in session storage"}
 {"id":"LA-EXP-A3-REPO","title":"lathe","aggregate_id":"LA-EXP-A3","file":"app/src/shell/Nav.tsx","description":"lathe:nav-folders, lathe:nav-sections in session storage"}
 {"id":"LA-EXP-A5-REPO","title":"lathe","aggregate_id":"LA-EXP-A5","file":"app/src/views/useTabs.ts","description":"lathe:tabs in session storage, parseTabSet"}
+{"id":"LA-EXP-A6-REPO","title":"lathe","aggregate_id":"LA-EXP-A6","file":"app/src/graph/settings.ts","description":"lathe:graph-settings in session storage, graphSettings and saveGraphSettings"}
 {"id":"LA-PLT-A10-REPO","title":"loadConfig","aggregate_id":"LA-PLT-A10","file":"lathe/src/config.ts","description":"loadConfig: reads lathe.config.json and refuses data for another schema version; readConfig reads it whatever the version, for lathe upgrade."}
 {"id":"LA-PLT-A2-REPO","title":"readPref","aggregate_id":"LA-PLT-A2","file":"app/src/shell/prefs.ts","description":"readPref, writePref, usePanelSize: sizes and shown states in local storage"}
 {"id":"LA-PLT-A3-REPO","title":"COMMANDS","aggregate_id":"LA-PLT-A3","file":"app/src/shell/keymap.ts","description":"COMMANDS, SPACE_KEYS, readOverrides (lathe:keybindings)"}

@@ -10,7 +10,7 @@ import { lineStroke } from '../../src/graph/paint';
 import { shapeOf } from '../../src/graph/shapes';
 import { treeChildren, treeParent } from '../../src/graph/tree';
 import { navigate } from '../../src/router';
-import { GRAPH_KEY, lastSettings } from '../../src/views/useTabs';
+import { GRAPH_KEY, graphSettings } from '../../src/graph/settings';
 import { openApp, startAtDepth } from '../helpers';
 import { indexOf } from '../fixtures/load';
 import { manyOfOneKindWorkspace, testIndex } from './workspace';
@@ -122,15 +122,15 @@ describe('the rules the graph keeps', () => {
     for (const layout of ['tree', 'nested', 'voronoi'] as const) {
       for (const depth of [1, 2, 3]) {
         stored(layout, depth);
-        expect(lastSettings()).toMatchObject({ layout, depth });
+        expect(graphSettings()).toMatchObject({ layout, depth });
       }
     }
     // Any other depth falls back to 1; any other layout drops the settings for the defaults.
     for (const depth of [0, 4, 2.5, -1]) {
       stored('nested', depth);
-      expect(lastSettings()).toMatchObject({ layout: 'nested', depth: 1 });
+      expect(graphSettings()).toMatchObject({ layout: 'nested', depth: 1 });
     }
     stored('grid', 2);
-    expect(lastSettings()).toMatchObject({ layout: 'tree', depth: 1 });
+    expect(graphSettings()).toMatchObject({ layout: 'tree', depth: 1 });
   });
 });

@@ -17,7 +17,8 @@
 {"id":"LA-EXP-CMD05","title":"Keep a tab open","aggregate_id":"LA-EXP-A5","description":"keepTab"}
 {"id":"LA-EXP-CMD06","title":"Close a tab","aggregate_id":"LA-EXP-A5","description":"closeTab"}
 {"id":"LA-EXP-CMD07","title":"Activate a tab","aggregate_id":"LA-EXP-A5","description":"activateTab, cycleTab"}
-{"id":"LA-EXP-CMD08","title":"Change a tab's state","aggregate_id":"LA-EXP-A5","description":"updateTab; pane sizes, wiki scroll, graph settings and the side bar's state"}
+{"id":"LA-EXP-CMD08","title":"Change a tab's state","aggregate_id":"LA-EXP-A5","description":"updateTab; pane sizes, wiki scroll and the side bar's state"}
+{"id":"LA-EXP-CMD09","title":"Change the graph settings","aggregate_id":"LA-EXP-A6","description":"The graph's toolbar (layout, depth, Links, trace, filters, minimap) and the v, + and - keys; nothing else changes them."}
 {"id":"LA-PLT-CMD01","title":"Resize a panel","aggregate_id":"LA-PLT-A2","description":"by drag or keys, within the panel's limits; a double-click resets it; a drag below the fold threshold hides it instead (CMD02)."}
 {"id":"LA-PLT-CMD02","title":"Show or hide a panel","aggregate_id":"LA-PLT-A2"}
 {"id":"LA-PLT-CMD03","title":"Choose a theme","aggregate_id":"LA-PLT-A4"}

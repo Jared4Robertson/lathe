@@ -4,7 +4,7 @@ import { rowPlace } from '../specs/RecordText';
 import { Editable } from '../edit/Editing';
 import { ResizeHandle } from '../components/ResizeHandle';
 import { expandAllOnPage } from '../components/TreeList';
-import type { GraphSettings } from '../graph/GraphPage';
+import { useGraphSettings } from '../graph/settings';
 import { groupLabel, groupMembers, groupName, groupOwner, isGroup } from '../graph/model';
 import { treeGroup, treeParent } from '../graph/tree';
 import type { GraphInfo } from '../graph/panel';
@@ -25,7 +25,7 @@ import { SideBar } from './SideBar';
 import { createPeekStore, saveLastSide, SIDE_VIEW_LABELS, sideFor, sideModeOf, type SideModeState, type SideView } from './sideBarState';
 import { PageBar, ViewIcon } from './PageBar';
 import { TAB_PANEL_ID, tabId, tabLabel } from './TabStrip';
-import { PANE_SIZE_KEY, PANE_WEIGHT, PANE_WEIGHT_MAX, PANE_WEIGHT_MIN, VIEW_KEY, saveLastSettings, usePageTabs, type PageTabsApi, type TabView } from './useTabs';
+import { PANE_SIZE_KEY, PANE_WEIGHT, PANE_WEIGHT_MAX, PANE_WEIGHT_MIN, VIEW_KEY, usePageTabs, type PageTabsApi } from './useTabs';
 import { Button } from '../components/Button';
 
 // One page for one thing (a record, a group, a product or a domain), at one address, in up to
@@ -38,7 +38,8 @@ import { Button } from '../components/Button';
 // and on one view, per view mode and per tab.
 //
 // Several pages can be open at once, as tabs in the leftmost pane's title bar (useTabs.ts and
-// tabs.ts); each tab keeps its own views, pane sizes, wiki scroll and graph settings.
+// tabs.ts); each tab keeps its own views, pane sizes and wiki scroll. How the graph is drawn is
+// one setting for the session, not a tab's (graph/settings.ts).
 
 const GraphView = lazy(() => import('../graph/GraphPage').then((m) => ({ default: m.GraphView })));
 const ModelView = lazy(() => import('../model/ModelView').then((m) => ({ default: m.ModelView })));
@@ -232,9 +233,9 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
     }, 0);
   }, [showing, setShowing, side.view, setSide]);
 
-  // Graph settings are the tab's, and survive moving between pages and views; the last ones set start a new session's first tab.
-  const settings = tab.state.graph;
-  const setSettings = useCallback((s: GraphSettings) => { update((t: TabView) => ({ ...t, graph: s })); saveLastSettings(s); }, [update]);
+  // How the graph is drawn is one setting for the session, whatever the tab or page (LA-V93-R72):
+  // moving through the graph never changes it, only the person's own change in the graph does.
+  const [settings, setSettings] = useGraphSettings();
   const [graphInfo, setGraphInfo] = useState<GraphInfo | null>(null);
   const onGraph = useCallback((info: GraphInfo) => setGraphInfo(info), []);
 

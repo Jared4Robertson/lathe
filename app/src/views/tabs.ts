@@ -1,6 +1,6 @@
 // Tabs for open pages, as editors are in VS Code. A tab is one open page (a record, group, product
 // or domain, by its address path) with its own state: the views it shows, its pane sizes, where the
-// wiki was scrolled, its graph settings. A tab set is an ordered row of tabs with one active.
+// wiki was scrolled. A tab set is an ordered row of tabs with one active.
 //
 // Opening a page by a plain click opens it in the preview tab (italic, replaced by the next plain
 // open); keeping a tab, by double-click, the "Keep open" command or switching its views, makes it

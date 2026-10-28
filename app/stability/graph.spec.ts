@@ -566,7 +566,7 @@ for (const layout of ['tree', 'nested', 'voronoi'] as const) {
         }
         expect(out).toEqual([]);
       });
-      await test.step('the layout is kept with the tab across a reload', async () => {
+      await test.step('the layout is kept for the session across a reload', async () => {
         await page.reload();
         await nodes(page);
         await expect(page.locator('.pane-graph .graph-layout button[aria-pressed="true"]')).toHaveText(LAYOUT_NAMES[layout]);
