@@ -24,7 +24,7 @@ export type Shape =
   | 'diamond';
 
 /** A small glyph a kind adds before its kind and ID line: a shape shared with another kind, told apart. */
-export type Mark = 'value' | 'gear' | 'lens' | 'marker' | 'ruler' | 'port' | 'target' | 'data';
+export type Mark = 'value' | 'gear' | 'lens' | 'marker' | 'ruler' | 'port' | 'target' | 'data' | 'plug';
 
 export interface KindShape { shape: Shape; mark?: Mark }
 
@@ -58,7 +58,7 @@ export const SHAPES: Readonly<Record<Shape, ShapeSpec>> = {
   stack: { name: 'stacked boxes', kinds: 'Pattern (a standard with a ruler)', room: { l: 0, r: 5, t: 5, b: 0 }, draw: 'clipped' },
   'chevron-bar': { name: 'a chevron bar', kinds: 'Flow', room: { l: 6, r: 16, t: 0, b: 0 }, draw: 'clipped' },
   chevron: { name: 'a chevron', kinds: 'Flow step', room: { l: 6, r: 6, t: 0, b: 0 }, draw: 'clipped' },
-  window: { name: 'a window with a top bar', kinds: 'View', room: { l: 0, r: 0, t: 6, b: 0 }, draw: 'box' },
+  window: { name: 'a window with a top bar', kinds: 'View (an interface with a plug)', room: { l: 0, r: 0, t: 6, b: 0 }, draw: 'box' },
   port: { name: 'a box with a port notch on its left', kinds: 'Endpoint', room: { l: 2, r: 0, t: 0, b: 0 }, draw: 'clipped' },
   component: { name: 'a box with component tabs', kinds: 'Technical records: repository, data model, value type, predicate, event type, projection, handlers, service, UI component, adapter', room: { l: 4, r: 0, t: 0, b: 0 }, draw: 'clipped' },
   stripes: { name: 'a striped box', kinds: 'Table', room: { l: 0, r: 0, t: 5, b: 5 }, draw: 'box' },
@@ -76,6 +76,7 @@ export const MARKS: Readonly<Record<Mark, string>> = {
   port: 'a port: an integration, drawn as a plain box',
   target: 'a target: a business outcome, drawn as a plain box',
   data: 'a cylinder: a test data set, drawn as a plain box',
+  plug: 'a plug: an interface, drawn as a view',
 };
 
 const TECHNICAL: KindShape = { shape: 'component' };
@@ -103,6 +104,7 @@ const KIND_SHAPES: Readonly<Record<string, KindShape>> = {
   uc_requirement: { shape: 'page' },
   pattern: { shape: 'stack' },
   pattern_rule: { shape: 'octagon' },
+  interface: { shape: 'window', mark: 'plug' },
   flow: { shape: 'chevron-bar' },
   flow_step: { shape: 'chevron' },
   view: { shape: 'window' },

@@ -111,7 +111,7 @@ describe('form generation from the schema', () => {
     expect(addableKinds(schema, 'use_case')).toEqual(['uc_requirement', 'flow']);
     expect(addableKinds(schema, 'uc_requirement')).toEqual(['use_case_test']);
     expect(addableKinds(schema, 'command')).toEqual(['policy', 'endpoint', 'command_handler']);
-    expect(addableKinds(schema, 'product')).toEqual(['business_outcome', 'domain', 'value_object', 'pattern', 'view', 'integration', 'ui_component', 'standard', 'question']);
+    expect(addableKinds(schema, 'product')).toEqual(['business_outcome', 'domain', 'value_object', 'pattern', 'interface', 'view', 'integration', 'ui_component', 'standard', 'question']);
     expect(addableKinds(schema, 'domain')).toEqual(expect.arrayContaining(['aggregate', 'specification', 'read_model', 'capability', 'question']));
     expect(addableKinds(schema, 'domain')).not.toContain('value_object');
   });
@@ -123,7 +123,8 @@ describe('IDs for new records', () => {
     expect(suggestId(index, 'uc_requirement', 'DM-SHOP-UC01')).toBe('DM-SHOP-UC01-R03');
     expect(suggestId(index, 'use_case', 'DM-SHOP-CAP01')).toBe('DM-SHOP-UC02');
     expect(suggestId(index, 'aggregate', 'DM-SHOP')).toBe('DM-SHOP-A2');
-    expect(suggestId(index, 'flow', 'DM-PAY-UC01')).toBe('DM-PAY-UC01-FL01');
+    // A flow's ID ends in the number of the first interface its use case has no flow through, or is left to finish.
+    expect(suggestId(index, 'flow', 'DM-PAY-UC01')).toBe('DM-PAY-UC01-FL');
     expect(suggestId(index, 'use_case_test', 'DM-SHOP-UC01-R01')).toBe('DM-SHOP-UC01-R01-T02');
     expect(suggestId(index, 'invariant_test', 'DM-SHOP-INV01')).toBe('DM-SHOP-INV01-T');
     // An endpoint takes its domain's scope from its command or query.

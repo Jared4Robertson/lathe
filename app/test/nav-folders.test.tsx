@@ -130,12 +130,12 @@ describe('folders by stage', () => {
     await openApp('/DM', { data: patternWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     // One Shared folder before the domains holds the product's own stages, as the graph's tree has it.
-    expect(rows(list('Shared in Demo shop'))).toEqual(['Shared4']);
+    expect(rows(list('Shared in Demo shop'))).toEqual(['Shared5']);
     const user = userEvent.setup();
     await user.click(head(list('Shared in Demo shop'), /^Shared/));
     const own = list('Stages of Demo shop');
     // A pattern rule test sits under its rule, in Shared too.
-    expect(rows(own)).toEqual(['Domain model1', 'Use cases1', 'Interaction design1', 'Test plan1']);
+    expect(rows(own)).toEqual(['Domain model1', 'Use cases1', 'Interaction design2', 'Test plan1']);
     await user.click(head(own, /^Use cases/));
     await user.click(head(list('Use cases of Demo shop'), /^Patterns/));
     expect(within(list('Patterns of Demo shop')).getByRole('link', { name: 'Audited action' })).toHaveAttribute('href', '/DM-PAT-AUDIT');
@@ -190,7 +190,7 @@ describe('folders by stage', () => {
     expect(branchOf(index, 'DM-VO01-C01')).toEqual(['DM/shared', 'DM/domain-model', 'DM/domain-model/value_object']);
     expect(productFolders(index, 'DM').stages.filter((s) => s.count > 0).map((s) => [s.label, s.folders.filter((f) => f.count > 0).map((f) => f.label)])).toEqual([
       ['Domain model', ['Value objects']],
-      ['Interaction design', ['Views']],
+      ['Interaction design', ['Interfaces', 'Views']],
     ]);
   });
 
@@ -221,7 +221,7 @@ describe('folders by stage', () => {
     expect(of('value_object')).toBeUndefined();
     expect(branchOf(index, 'P-VO01')).toEqual(['P/shared', 'P/domain-model', 'P/domain-model/value_object']);
     expect(index.byId.get('P-VO01-C01')?.domain).toBeNull();
-    expect(productFolders(index, 'P').stages.flatMap((s) => s.folders).filter((f) => f.count > 0).map((f) => f.kind)).toEqual(['value_object', 'value_type', 'constraint_test']);
+    expect(productFolders(index, 'P').stages.flatMap((s) => s.folders).filter((f) => f.count > 0).map((f) => f.kind)).toEqual(['value_object', 'interface', 'value_type', 'constraint_test']);
   });
 
   it("LA-EXP-DS03-T04 A product's own kind gets its folder in its stage, or after the stages when it has no stage; the path names its stage", () => {
