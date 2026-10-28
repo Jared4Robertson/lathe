@@ -87,11 +87,12 @@
 {"entity_id":"LA-AUT-EN15","position":2,"name":"Position","meaning":"The setting's place in the pattern, from 1.","type_value_object_id":"LA-VO04","required":true}
 {"entity_id":"LA-AUT-EN15","position":3,"name":"Name","meaning":"The setting's name, in lower case with underscores, such as required_input.","type_value_object_id":"LA-VO06","required":true}
 {"entity_id":"LA-AUT-EN15","position":4,"name":"Meaning","meaning":"What a follower decides in it.","type":"text","required":false}
-{"entity_id":"LA-AUT-EN18","position":1,"name":"ID","meaning":"The flow's ID: its use case's ID and FL, such as TL-LEND-UC01-FL.","type_value_object_id":"LA-VO01","required":true}
+{"entity_id":"LA-AUT-EN18","position":1,"name":"ID","meaning":"The flow's ID: its use case's ID, FL and its interface's number, such as TL-LEND-UC01-FL01 for the flow through TL-IF01.","type_value_object_id":"LA-VO01","required":true}
 {"entity_id":"LA-AUT-EN18","position":2,"name":"Title","meaning":"The flow's name, such as Borrow a tool at the desk.","type_value_object_id":"LA-VO02","required":true}
-{"entity_id":"LA-AUT-EN18","position":3,"name":"Use case","meaning":"The use case it carries out; one flow per use case.","type_value_object_id":"LA-VO01","required":true,"column_name":"use_case_id"}
-{"entity_id":"LA-AUT-EN18","position":4,"name":"Description","meaning":"The path, in a paragraph.","type":"text","required":false}
-{"entity_id":"LA-AUT-EN19","position":1,"name":"ID","meaning":"The step's ID: its flow's ID and S<nn>, such as TL-LEND-UC01-FL-S01.","type_value_object_id":"LA-VO01","required":true}
+{"entity_id":"LA-AUT-EN18","position":3,"name":"Use case","meaning":"The use case it carries out; one flow per use case and interface.","type_value_object_id":"LA-VO01","required":true,"column_name":"use_case_id"}
+{"entity_id":"LA-AUT-EN18","position":4,"name":"Interface","meaning":"The interface it goes through, of the same product.","type_value_object_id":"LA-VO01","required":true,"column_name":"interface_id"}
+{"entity_id":"LA-AUT-EN18","position":5,"name":"Description","meaning":"The path, in a paragraph.","type":"text","required":false}
+{"entity_id":"LA-AUT-EN19","position":1,"name":"ID","meaning":"The step's ID: its flow's ID and S<nn>, such as TL-LEND-UC01-FL01-S01.","type_value_object_id":"LA-VO01","required":true}
 {"entity_id":"LA-AUT-EN19","position":2,"name":"Title","meaning":"What happens, in a few words.","type_value_object_id":"LA-VO02","required":true}
 {"entity_id":"LA-AUT-EN19","position":3,"name":"Flow","meaning":"The flow it belongs to.","type_value_object_id":"LA-VO01","required":true,"column_name":"flow_id"}
 {"entity_id":"LA-AUT-EN19","position":4,"name":"Path","meaning":"The path through the flow the step is on, such as main or refused.","type_value_object_id":"LA-VO05","required":true}
@@ -374,7 +375,7 @@
 {"entity_id":"LA-AUT-EN71","position":6,"name":"When","meaning":"What the test does.","type":"text","required":false}
 {"entity_id":"LA-AUT-EN71","position":7,"name":"Then","meaning":"What the test expects.","type":"text","required":false}
 {"entity_id":"LA-AUT-EN71","position":8,"name":"Notes","meaning":"Longer notes on the test, such as when to run it.","type":"text","required":false}
-{"entity_id":"LA-AUT-EN72","position":1,"name":"ID","meaning":"The test's ID: its flow's ID and T, such as TL-LEND-UC01-FL-T.","type_value_object_id":"LA-VO01","required":true}
+{"entity_id":"LA-AUT-EN72","position":1,"name":"ID","meaning":"The test's ID: its flow's ID and T, such as TL-LEND-UC01-FL01-T.","type_value_object_id":"LA-VO01","required":true}
 {"entity_id":"LA-AUT-EN72","position":2,"name":"Title","meaning":"What the test shows, in a sentence.","type_value_object_id":"LA-VO02","required":true}
 {"entity_id":"LA-AUT-EN72","position":3,"name":"Flow","meaning":"The flow it proves; it has exactly one test.","type_value_object_id":"LA-VO01","required":true,"column_name":"flow_id"}
 {"entity_id":"LA-AUT-EN72","position":4,"name":"Run by","meaning":"How the test runs: its level, its state, and its file or why it is manual.","type_value_object_id":"LA-VO14","required":true}
@@ -406,6 +407,11 @@
 {"entity_id":"LA-AUT-EN75","position":6,"name":"When","meaning":"What the test does.","type":"text","required":false}
 {"entity_id":"LA-AUT-EN75","position":7,"name":"Then","meaning":"What the test expects.","type":"text","required":false}
 {"entity_id":"LA-AUT-EN75","position":8,"name":"Notes","meaning":"Longer notes on the test, such as when to run it.","type":"text","required":false}
+{"entity_id":"LA-AUT-EN76","position":1,"name":"ID","meaning":"The interface's ID: its product's ID and IF<nn>, such as TL-IF01. Its number ends the ID of every flow through it.","type_value_object_id":"LA-VO01","required":true}
+{"entity_id":"LA-AUT-EN76","position":2,"name":"Title","meaning":"The interface's name, such as Web app, HTTP API, CLI, MCP tools or Desktop app.","type_value_object_id":"LA-VO02","required":true}
+{"entity_id":"LA-AUT-EN76","position":3,"name":"Product","meaning":"The product it belongs to.","type_value_object_id":"LA-VO01","required":true,"column_name":"product_id"}
+{"entity_id":"LA-AUT-EN76","position":4,"name":"Kind","meaning":"What it is: web app or desktop (its flows' steps happen in views), API (they call endpoints), CLI or agent tools (they run commands and queries), or other.","type":"text","required":true}
+{"entity_id":"LA-AUT-EN76","position":5,"name":"Description","meaning":"Who uses it and how.","type":"text","required":false}
 {"entity_id":"LA-CHK-EN01","position":1,"name":"Name","meaning":"The check's name, the key of its row across Lathe's checks and every product's.","type_value_object_id":"LA-VO41","required":true,"example":"value-object-unused"}
 {"entity_id":"LA-CHK-EN01","position":2,"name":"Product","meaning":"The product a product's own check belongs to; none for Lathe's checks.","type_aggregate_id":"LA-AUT-A1","required":false,"column_name":"product_id","example":"LA"}
 {"entity_id":"LA-CHK-EN01","position":3,"name":"Position","meaning":"When it runs: Lathe's checks in position order, then each product's own.","type":"whole number","required":true,"example":"4"}

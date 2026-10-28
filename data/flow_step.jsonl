@@ -25,10 +25,10 @@
 {"id":"LA-AUT-UC05-FL03-S02","title":"They move each use case under its capability","flow_id":"LA-AUT-UC05-FL03","path":"main","position":2}
 {"id":"LA-AUT-UC05-FL03-S03","title":"They write shared behavior once, as a pattern with its rules and settings","flow_id":"LA-AUT-UC05-FL03","path":"main","position":3}
 {"id":"LA-AUT-UC05-FL03-S04","title":"Each follower links the pattern and answers its settings; each following domain owes its rules","flow_id":"LA-AUT-UC05-FL03","path":"main","position":4}
-{"id":"LA-AUT-UC06-FL03-S01","title":"They add the use case's flow, and its steps in order on their paths","flow_id":"LA-AUT-UC06-FL03","path":"main","position":1}
+{"id":"LA-AUT-UC06-FL03-S01","title":"They declare the product's interfaces, then add each use case's flow through one, its ID ending in the interface's number, and its steps in order on their paths","flow_id":"LA-AUT-UC06-FL03","path":"main","position":1}
 {"id":"LA-AUT-UC06-FL03-S02","title":"They link each step to the requirements it fulfills, the command or query it invokes and the view it happens in","flow_id":"LA-AUT-UC06-FL03","path":"main","position":2}
-{"id":"LA-AUT-UC06-FL03-S03","title":"A repeated position on a path, or a requirement of another use case, is refused","flow_id":"LA-AUT-UC06-FL03","path":"refused","position":1}
-{"id":"LA-AUT-UC06-FL03-S04","title":"`lathe check` reports a path that skips a number and a requirement no step fulfills","flow_id":"LA-AUT-UC06-FL03","path":"main","position":3}
+{"id":"LA-AUT-UC06-FL03-S03","title":"A second flow through one interface, a flow ID not ending in its interface's number, a view in an API, CLI or agent tools flow, a repeated position, or a requirement of another use case, is refused","flow_id":"LA-AUT-UC06-FL03","path":"refused","position":1}
+{"id":"LA-AUT-UC06-FL03-S04","title":"`lathe check` reports a path that skips a number, a requirement a flow misses, an API step no endpoint reaches, a flow test at a level its interface does not fit and an interface no flow goes through","flow_id":"LA-AUT-UC06-FL03","path":"main","position":3}
 {"id":"LA-AUT-UC07-FL03-S01","title":"They write a record whose text names other records, in any product's IDs","flow_id":"LA-AUT-UC07-FL03","path":"main","position":1}
 {"id":"LA-AUT-UC07-FL03-S02","title":"The record shows its text as written; only its links relate it","flow_id":"LA-AUT-UC07-FL03","path":"main","position":2}
 {"id":"LA-AUT-UC07-FL03-S03","title":"`lathe check` reports nothing about IDs in text","flow_id":"LA-AUT-UC07-FL03","path":"main","position":3}

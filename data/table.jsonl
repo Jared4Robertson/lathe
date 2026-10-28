@@ -67,6 +67,7 @@
 {"id":"LA-AUT-EN73-TB","title":"integration_test","entity_id":"LA-AUT-EN73","name":"integration_test","storage":"table","file":"lathe/schema/008-test-plan.sql"}
 {"id":"LA-AUT-EN74-TB","title":"pattern_rule_test","entity_id":"LA-AUT-EN74","name":"pattern_rule_test","storage":"table","file":"lathe/schema/008-test-plan.sql"}
 {"id":"LA-AUT-EN75-TB","title":"standard_rule_test","entity_id":"LA-AUT-EN75","name":"standard_rule_test","storage":"table","file":"lathe/schema/008-test-plan.sql"}
+{"id":"LA-AUT-EN76-TB","title":"interface","entity_id":"LA-AUT-EN76","name":"interface","storage":"table","file":"lathe/schema/006-interaction-design.sql"}
 {"id":"LA-AUT-RM01-TB","title":"Reference","read_model_id":"LA-AUT-RM01","name":"Reference","storage":"in memory","file":"lathe/src/index.ts","description":"Computed on request and kept in referenceCache while no data file or migration changes."}
 {"id":"LA-AUT-RM02-TB","title":"Shown","read_model_id":"LA-AUT-RM02","name":"Shown","storage":"in memory","file":"lathe/src/cli/operations.ts","description":"Computed from the store on each request."}
 {"id":"LA-CHK-EN01-TB","title":"check","entity_id":"LA-CHK-EN01","name":"check","storage":"table","file":"lathe/schema/011-checking.sql"}

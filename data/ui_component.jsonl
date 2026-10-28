@@ -33,6 +33,7 @@
 {"id":"LA-UI130","title":"Shape marks","file":"app/src/graph/shape-icons.tsx","description":"The small marks of a kind's shape, in the boxes and the key."}
 {"id":"LA-UI131","title":"Quick pick","file":"app/src/theme/QuickPick.tsx","description":"A filter box over a list, as the theme picker shows it."}
 {"id":"LA-UI132","title":"Record text","file":"app/src/specs/RecordText.tsx","description":"A record's own text: its fields, parts and settings, by kind."}
+{"id":"LA-UI133","title":"Flows by interface sections","file":"app/src/specs/InterfaceParts.tsx"}
 {"id":"LA-UI52","title":"CoverageBars","file":"app/src/specs/ProductHealth.tsx","description":"CoverageBars, obligationGroups, ProductSummary, TestCountsLine, sumTestCounts"}
 {"id":"LA-UI53","title":"Traceability and its gap callouts","file":"app/src/specs/Traceability.tsx","description":"Traceability and its gap callouts, requirement table and run by"}
 {"id":"LA-UI54","title":"DomainPatterns","file":"app/src/specs/PatternParts.tsx","description":"DomainPatterns, PatternSections, PatternRuleSections, RuleMarks"}

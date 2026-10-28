@@ -10,6 +10,7 @@ import { PatternRuleSections, PatternSections } from './PatternParts';
 import { FlowSteps } from './FlowSteps';
 import { StandardSections } from './StandardParts';
 import { DomainEvents } from './DomainEvents';
+import { FlowInterface, InterfaceFlows, UseCaseFlows } from './InterfaceParts';
 import { LongList } from '../components/LongList';
 import { DesktopRecordActions } from '../shell/desktopRecord';
 import { Grouped, KindBadge, NavigateContext, StageFact, PageHeader, ProblemBadge, ProblemList, RecordLink, RecordTree, Section, SpecLink, TestStateTag, idText, isTestKind, listTitle, notAutomatedYet } from './parts';
@@ -94,7 +95,8 @@ export function RecordEyebrow({ index, record }: { index: SpecIndex; record: Spe
 function RecordBody({ index, record, actions, header, side }: { index: SpecIndex; record: SpecRecord; actions?: ReactNode; header: boolean; side: boolean }) {
   const { id } = record;
   // An aggregate's domain events and a flow's steps have their own sections, so its children list leaves them out.
-  const children = (index.children.get(id) ?? []).filter((c) => !(record.kind === 'aggregate' && c.kind === 'domain_event') && !(record.kind === 'flow' && c.kind === 'flow_step'));
+  // So do a use case's flows, listed by interface.
+  const children = (index.children.get(id) ?? []).filter((c) => !(record.kind === 'aggregate' && c.kind === 'domain_event') && !(record.kind === 'flow' && c.kind === 'flow_step') && !(record.kind === 'use_case' && c.kind === 'flow'));
   const problems = index.problemsFor.get(id) ?? [];
   const isTest = isTestKind(index, record.kind);
   // A list of one kind is titled by that kind ("Commands"); a mixed one stays "Children".
@@ -114,7 +116,10 @@ function RecordBody({ index, record, actions, header, side }: { index: SpecIndex
               <strong>Not automated yet.</strong> No file runs it, so it does not count as proof of what it proves.
             </p>
           )}
+          {record.kind === 'flow' && <FlowInterface index={index} flow={record} />}
           <RecordText index={index} record={record} />
+          {record.kind === 'use_case' && <UseCaseFlows index={index} useCase={record} />}
+          {record.kind === 'interface' && <InterfaceFlows index={index} iface={record} />}
           {record.kind === 'pattern' && <PatternSections index={index} pattern={record} />}
           {record.kind === 'pattern_rule' && <PatternRuleSections index={index} rule={record} />}
           {record.kind === 'standard' && <StandardSections index={index} standard={record} />}
