@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { fireEvent, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { patternWorkspace } from './fixtures/patterns';
-import { openApp, section } from './helpers';
+import { openApp, section, stageOf } from './helpers';
 
 // A row that leads to one record is one link (LA-PAT-APP-UX-R05): anywhere on the row opens the
 // record, and the row's other controls keep doing what they do.
@@ -39,7 +39,7 @@ describe('the whole row is clickable', () => {
   it('LA-V92-R17-T01 A click on a row opens its record, and a click on its chevron or second link does what that control does', async () => {
     await openApp('/DM-SHOP');
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
-    const uc = rowOf(section(/^Capabilities/), 'DM-SHOP-CAP01');
+    const uc = rowOf(stageOf('use-cases'), 'DM-SHOP-CAP01');
     expect(uc).toHaveClass('tree-row');
 
     // The chevron folds the row and stays on the page.

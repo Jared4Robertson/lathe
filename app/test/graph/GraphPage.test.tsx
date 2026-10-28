@@ -102,15 +102,15 @@ describe('graph page', () => {
     const depth = within(screen.getByRole('group', { name: 'Depth' }));
     expect(depth.getAllByRole('button').map((b) => b.textContent)).toEqual(['1', '2', '3']);
     expect(depth.getByRole('button', { name: '1' })).toHaveAttribute('aria-pressed', 'true');
-    await waitFor(() => expect(node('P-D/use-cases/capability')).not.toBeNull());
+    await waitFor(() => expect(node('P-D-CAP01')).not.toBeNull());
     expect(scene().lines.filter((l) => l.style !== 'structure')).toEqual([]);
     const count = () => document.querySelector('.graph-count')!.textContent;
     const viewport = () => scene().camera;
     const one = count();
-    // Depth 2 frames the folder's records too: more in the picture, and the camera takes them in.
+    // Depth 2 frames the capability's use cases too: more in the picture, and the camera takes them in.
     fireEvent.click(depth.getByRole('button', { name: '2' }));
     await waitFor(() => expect(count()).not.toBe(one));
-    expect(count()).toBe('2 records · 2 groups · 3 links');
+    expect(count()).toBe('3 records · 1 group · 3 links');
     expect(viewport().zoom).toBeGreaterThan(0);
     // Links brings in what the focus links to, dashed in their own color; a stage links to nothing.
     await showGraph(`/${STEP}`, testWorkspace(), 1, false);
@@ -263,26 +263,31 @@ describe('graph groups on the page', () => {
   it('LA-V93-R25-T02 A group has its own address showing its parent to the left and its members to the right, and Back works', async () => {
     await showGraph('/P-D', testWorkspace(), 1, false);
     // The domain's side bar lists its stages, linking to their addresses.
-    const link = sideBar().getByRole('link', { name: 'Use cases (1)' });
-    expect(link.getAttribute('href')).toBe('/P-D/use-cases?view=graph');
+    const link = sideBar().getByRole('link', { name: /^Domain model \(\d+\)$/ });
+    const stageTitle = link.textContent!;
+    expect(link.getAttribute('href')).toBe('/P-D/domain-model?view=graph');
     fireEvent.click(link);
-    expect(window.location.pathname).toBe('/P-D/use-cases');
-    await waitFor(() => expect(title()).toBe('Use cases (1)'));
-    await waitFor(() => expect(groupNode('P-D/use-cases')?.focus).toBe(true));
+    expect(window.location.pathname).toBe('/P-D/domain-model');
+    await waitFor(() => expect(title()).toBe(stageTitle));
+    await waitFor(() => expect(groupNode('P-D/domain-model')?.focus).toBe(true));
     const left = (id: string) => drawnBox(id)!.map.x;
-    expect(left('P-D')).toBeLessThan(left('P-D/use-cases'));
-    expect(left('P-D/use-cases')).toBeLessThan(left('P-D/use-cases/capability'));
-    expect(groupNode('P-D/use-cases')!.focus).toBe(true);
+    expect(left('P-D')).toBeLessThan(left('P-D/domain-model'));
+    expect(left('P-D/domain-model')).toBeLessThan(left('P-D/domain-model/aggregate'));
+    expect(groupNode('P-D/domain-model')!.focus).toBe(true);
     const trail = within(screen.getByRole('navigation', { name: 'Records visited' }));
     // A record by its title and ID; a group by its name alone, its parent named in its tooltip.
-    expect(trail.getAllByRole('listitem').map((li) => li.textContent)).toEqual(['Domain (P-D)', 'Use cases']);
-    expect(trail.getByText('Use cases').closest('[aria-current]')).toHaveAttribute('title', 'Use cases of P-D');
+    expect(trail.getAllByRole('listitem').map((li) => li.textContent)).toEqual(['Domain (P-D)', 'Domain model']);
+    expect(trail.getByText('Domain model').closest('[aria-current]')).toHaveAttribute('title', 'Domain model of P-D');
 
-    fireEvent.click(sideBar().getByRole('link', { name: /Capabilities/ }));
-    expect(window.location.pathname).toBe('/P-D/use-cases/capability');
+    fireEvent.click(sideBar().getByRole('link', { name: /Aggregates/ }));
+    expect(window.location.pathname).toBe('/P-D/domain-model/aggregate');
     await back();
-    expect(window.location.pathname).toBe('/P-D/use-cases');
-    await waitFor(() => expect(title()).toBe('Use cases (1)'));
+    expect(window.location.pathname).toBe('/P-D/domain-model');
+    await waitFor(() => expect(title()).toBe(stageTitle));
+
+    // A stage with one folder (Use cases) holds its records itself; its folder has no address.
+    await openApp('/P-D/use-cases/capability', { data: testWorkspace() });
+    await screen.findByText(/There's no record or group/);
 
     // An address for a group that does not exist says so.
     await openApp('/P-D/flow', { data: testWorkspace() });

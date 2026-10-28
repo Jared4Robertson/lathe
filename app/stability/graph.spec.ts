@@ -77,7 +77,7 @@ test.describe('graph', () => {
     };
     await check('the product');
     const keys = [PANE_BAR, PANE_TITLE, GRAPH_HEADER, GRAPH_CANVAS, DRAWING];
-    for (const id of ['LA-EXP', 'LA-EXP/use-cases', 'LA-EXP/use-cases/capability', 'LA-EXP-CAP03', 'LA-EXP-UC03']) {
+    for (const id of ['LA-EXP', 'LA-EXP/use-cases', 'LA-EXP-CAP03', 'LA-EXP-UC03']) {
       const before = new URL(page.url()).pathname;
       const r = await test.step(`LA-EXP-UC04-R10-T01 the Reader reaches ${id} through the stages and kind groups the nav shows`, () =>
         step(page, 'graph', `focus ${id}`, { keys, allow: ['.side-bar', GRAPH_BOXES] }, async () => {
