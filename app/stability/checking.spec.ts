@@ -11,7 +11,7 @@ import { keepData, PRODUCT } from './scenarios';
 
 const CHECKS = `${PRODUCT}/checks`;
 /** A view the suite adds while the page is open; nothing uses it, so it is an error. */
-const ADDED = 'LA-V98';
+const ADDED = 'LA-V990';
 
 /** The desktop shell's bridge, stood in for: it keeps each error count the page sends for the Dock badge. */
 function desktopBridge() {

@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { indexOf } from '../fixtures/load';
+import { addRows, indexOf } from '../fixtures/load';
 import { patternWorkspace } from '../fixtures/patterns';
-import { gapColumns, hasTrace, isObligation, obligationsUnder, traceChain, traceMatrix } from '../../src/trace/chain';
-import { testIndex } from '../graph/workspace';
+import { gapColumns, obligationsUnder, traceChain, traceMatrix, untracedUnder } from '../../src/trace/chain';
+import { hasTrace, isObligation } from '../../src/trace/offer';
+import { testIndex, testWorkspace } from '../graph/workspace';
 
 // The Trace view's logic (app/src/trace/chain.ts): an obligation's chain, and the matrix of every
 // obligation under a record or group.
@@ -76,5 +77,27 @@ describe('the matrix under a record or group', () => {
     for (const id of ['P', 'P-D', 'P-D/use-cases', 'P-D-UC01', 'P-D-A3', 'P-D-UC01-R01']) expect(hasTrace(index, id), id).toBe(true);
     for (const id of ['P-D-UC01-R01-T01', 'P-D-UC01-FL01-S01', 'P-D-CMD01-H']) expect(hasTrace(index, id), id).toBe(false);
     expect(traceMatrix(index, 'P-D-UC01-R01-T01')).toEqual([]);
+  });
+});
+
+describe('what no obligation reaches', () => {
+  it('LA-V98-R07-T01 Untraced lists the steps, operations, handlers, components and tests no obligation reaches, by kind', () => {
+    const index = testIndex();
+    const of = (focus: string, i = index) => Object.fromEntries(untracedUnder(i, focus).map((g) => [g.kind, g.ids]));
+    // Under the domain: a step that fulfills nothing, the commands and the query no fulfilling step invokes, by kind in the schema's order.
+    const domain = untracedUnder(index, 'P-D');
+    expect(domain.map((g) => g.kind)).toEqual(['command', 'query', 'flow_step']);
+    expect(of('P-D').flow_step).toEqual(['P-D-UC01-FL01-S02']);
+    expect(of('P-D').command).toContain('P-D-CMD02');
+    // What a chain reaches is not listed, nor a container, a flow test or anything of another kind.
+    const listed = domain.flatMap((g) => g.ids);
+    for (const id of ['P-D-UC01-FL01-S01', 'P-D-CMD01', 'P-D-CMD01-H', 'P-D-UC01-FL01', 'P-V01', 'P-D-A3', 'P-D-UC01-FL01-T', 'P-D-UC01-R01-T01', 'P-D-EN03']) expect(listed, id).not.toContain(id);
+    // Only what is under the focus: an aggregate's own command, and nothing under a use case.
+    expect(of('P-D-A3')).toEqual({ command: ['P-D-CMD02'] });
+    expect(untracedUnder(index, 'P-D-UC01')).toEqual([]);
+    // Once the step fulfills a requirement, it is traced.
+    const w = testWorkspace();
+    addRows(w, 'fulfills', { source_id: 'P-D-UC01-FL01-S02', target_id: 'P-D-UC01-R01' });
+    expect(of('P-D/interaction-design', indexOf(w))).toEqual({});
   });
 });

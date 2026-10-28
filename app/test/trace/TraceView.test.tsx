@@ -5,7 +5,7 @@ import { addRows } from '../fixtures/load';
 import { modelIndex, modelWorkspace } from '../fixtures/model';
 import { viewsOffered } from '../../src/views/address';
 import { TRACE_PAGE } from '../../src/trace/TraceView';
-import { obligationsUnder } from '../../src/trace/chain';
+import { obligationsUnder, untracedUnder } from '../../src/trace/chain';
 import { openApp } from '../helpers';
 
 // The Trace view (LA-V98): an obligation's chain as columns, or the matrix of every obligation under
@@ -87,6 +87,26 @@ describe('the Trace view', () => {
     await matrix();
     fireEvent.click(within(tracePane()).getByRole('checkbox', { name: 'Gaps only' }));
     if (within(tracePane()).queryByRole('table') === null) expect(tracePane()).toHaveTextContent('No gaps');
+  });
+
+  it('LA-V98-R07-T02 The matrix ends with its Untraced section, counted in the header and kept by Gaps only', async () => {
+    await openApp('/P-D?view=trace', served());
+    await matrix();
+    const section = () => within(tracePane()).getByRole('region', { name: /^Untraced/ });
+    const expected = untracedUnder(modelIndex(), 'P-D');
+    const count = expected.reduce((n, g) => n + g.ids.length, 0);
+    expect(count).toBeGreaterThan(0);
+    expect(tracePane().querySelector('.trace-caption')).toHaveTextContent(`· ${count} untraced`);
+    expect(within(section()).getByText('Flow steps')).toBeInTheDocument();
+    expect(within(section()).getByRole('link', { name: 'P-D-UC01-FL01-S02' })).toHaveAttribute('href', '/P-D-UC01-FL01-S02?view=trace');
+    expect(within(section()).getAllByRole('link')).toHaveLength(count);
+    // Gaps only keeps it.
+    fireEvent.click(within(tracePane()).getByRole('checkbox', { name: 'Gaps only' }));
+    expect(within(section()).getAllByRole('link')).toHaveLength(count);
+    // Where everything is reached it says so.
+    await openApp('/P-D-UC01?view=trace', served());
+    await matrix();
+    expect(section()).toHaveTextContent('Everything here serves a requirement or rule.');
   });
 
   it('LA-V98-R05-T01 Every cell links to its record, and a file to the record that names it', async () => {

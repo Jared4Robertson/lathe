@@ -144,12 +144,12 @@ test.describe('Exploring flows', () => {
     await expect.poll(async () => (await sceneOf(page)).lines.some((l) => l.link && l.target === 'LA-PAT-APP-UX' && l.label === 'Follows')).toBe(true);
   });
 
-  test('LA-EXP-UC05-FL01-T read a record as wiki, graph and model side by side: quick find, panes, links, Back, the nav and the side bar', async ({ page }) => {
+  test('LA-EXP-UC05-FL01-T read a record as wiki, graph and ERD side by side: quick find, panes, links, Back, the nav and the side bar', async ({ page }) => {
     await openPage(page, '/LA');
     await quickFind(page, 'LA-EXP-A1');
     await expect(wikiTitle(page)).toHaveText('Page');
     // An address names its views.
-    await page.goto('/LA-EXP-A1?view=wiki,graph,model');
+    await page.goto('/LA-EXP-A1?view=wiki,graph,erd');
     await expect(page.locator('.focus-views > .pane')).toHaveCount(3);
     await graphReady(page);
     // Close ERD, resize the panes from the keyboard, show one alone.
