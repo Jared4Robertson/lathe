@@ -79,17 +79,17 @@ describe('a product\'s own kinds', () => {
     expect(report.records.find((r) => r.id === 'EX-LEND-REP01')).toMatchObject({ kind: 'report', parent: 'EX-LEND', domain: 'EX-LEND', fields: { paper: 'A4' } });
   });
 
-  it('LA-AUT-UC08-R02-T01 A product places its own kind in one of the five stages, or none, and cannot add a stage or change one of Lathe\'s kinds', async () => {
+  it('LA-AUT-UC08-R02-T01 A product places its own kind in one of the six stages, or none, and cannot add a stage or change one of Lathe\'s kinds', async () => {
     expect(report.stages).toEqual(plain.stages);
     expect(report.kinds.find((k) => k.kind === 'report')!.stage).toBe('domain-model');
     const kind = everyKind().product_kind[0];
-    // Any of the five stages, or none, loads.
+    // Any of the six stages, or none, loads.
     for (const stage of [...plain.stages.map((s) => s.stage), undefined]) {
       expect(await refusals(changing(everyKind(), 'product_kind', () => true, { stage })), String(stage)).toEqual([]);
     }
     const unstaged = await openStore(writeData(changing(everyKind(), 'product_kind', () => true, { stage: undefined })), { latheDataDir: null });
     expect(unstaged.schema.kinds.cli_command.stage).toBeNull();
-    expect(unstaged.schema.stages).toHaveLength(5);
+    expect(unstaged.schema.stages).toHaveLength(6);
     await unstaged.close();
     // A stage Lathe does not have is refused, and so is a kind with the name of one of Lathe's.
     expect(await refusals(withTable(everyKind(), 'product_kind', [{ ...kind, stage: 'deployment' }]))).toEqual([
@@ -130,13 +130,14 @@ describe('a product\'s own relations', () => {
 });
 
 describe('stages', () => {
-  it('LA-AUT-UC08-R01-T01 The engine loads the five stages in order and each kind\'s stage and position, with the product and open questions outside them', () => {
+  it('LA-AUT-UC08-R01-T01 The engine loads the six stages in order and each kind\'s stage and position, with the product and open questions outside them', () => {
     expect(plain.stages.map((s) => [s.position, s.stage, s.label])).toEqual([
-      [1, 'domain-model', 'Domain model'],
-      [2, 'use-cases', 'Use cases'],
-      [3, 'interaction-design', 'Interaction design'],
-      [4, 'technical-specification', 'Technical specification'],
-      [5, 'test-plan', 'Test plan'],
+      [1, 'discovery', 'Discovery'],
+      [2, 'domain-model', 'Domain model'],
+      [3, 'use-cases', 'Use cases'],
+      [4, 'interaction-design', 'Interaction design'],
+      [5, 'technical-specification', 'Technical specification'],
+      [6, 'test-plan', 'Test plan'],
     ]);
     for (const s of plain.stages) expect(s.description.trim(), s.stage).not.toBe('');
     // Kinds come in position order, 1, 2, 3..., stage by stage.

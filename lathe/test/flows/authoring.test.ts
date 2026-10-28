@@ -202,7 +202,7 @@ describe('Authoring flows', () => {
     // S01: each kind's stage and place, in the reference and in the workspace, in the schema's one order.
     const before = reference(tl);
     const stages = [...before.matchAll(/^## (.+)$/gm)].map((m) => m[1]);
-    expect(stages.slice(0, 5)).toEqual(['Domain model', 'Use cases', 'Interaction design', 'Technical specification', 'Test plan']);
+    expect(stages.slice(0, 6)).toEqual(['Discovery', 'Domain model', 'Use cases', 'Interaction design', 'Technical specification', 'Test plan']);
     const kinds = [...section(before, '## Use cases').matchAll(/^### (.+) \(`(\w+)`\)$/gm)].map((m) => m[2]);
     expect(kinds).toEqual(['capability', 'use_case', 'uc_requirement', 'pattern', 'pattern_rule']);
     const ws = tl.workspace();

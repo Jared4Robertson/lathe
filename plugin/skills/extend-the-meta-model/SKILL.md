@@ -73,9 +73,9 @@ add  { "entry_point": { "id": "TL-LEND-ENTRY01", "title": "server.ts", "domain_i
 A relation of the product's own, from a kind of its own to one of Lathe's:
 
 ```
-add  { "product_relation": { "name": "serves", "source_kind": "entry_point", "target_kind": "endpoint", "product_id": "TL",
-       "forward_label": "Serves", "reverse_label": "Served by", "description": "The entry point serves the endpoint when the product starts." } }
-link { "source": "TL-LEND-ENTRY01", "relation": "serves", "target": "TL-LEND-EP01" }
+add  { "product_relation": { "name": "starts_up", "source_kind": "entry_point", "target_kind": "endpoint", "product_id": "TL",
+       "forward_label": "Starts up", "reverse_label": "Started up by", "description": "The entry point starts up the endpoint when the product starts." } }
+link { "source": "TL-LEND-ENTRY01", "relation": "starts_up", "target": "TL-LEND-EP01" }
 ```
 
 Give every kind, field and relation a plain `description`; the app shows it.
