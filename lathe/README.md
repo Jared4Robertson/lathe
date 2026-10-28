@@ -39,6 +39,7 @@ The source of truth is `data/<table>.jsonl` at the product repo's root: one file
 | --- | --- | --- |
 | `schema` | `1` | The schema version the data is for (see [Upgrading](#upgrading)). |
 | `data` | `data` | The folder of data files. |
+| `routers` | none | Glob patterns, from the root, of the files besides the endpoint handlers' that declare the routes the product serves (a server's entry, a client's route table). `lathe check` reads them and the handlers' files for served routes, and lists each one no endpoint or view has as a `route-without-record` gap. |
 
 Any other key, or a file that is not one JSON object, is refused when the config is read. A product's settings are data too: `product_setting.max_children` (15 when the product has no row) is the most children of one kind a record has before the `too-many-children` warning. `product_setting.max_entities_per_aggregate` (7 when the product has no row) is the most entities an aggregate has before the `aggregate-too-large` warning; a settings row gives both.
 

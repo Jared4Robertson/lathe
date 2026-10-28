@@ -12,6 +12,11 @@ export interface LatheConfig {
   dataDir: string;
   /** The schema version the product's data is for; 1 when the config names none. */
   schema: number;
+  /**
+   * The files, as glob patterns from the root, that declare the routes the product serves besides its endpoint
+   * handlers' files (a router, a server's entry, a client's route table); none when the config names none.
+   */
+  routers: string[];
 }
 
 /** The most children of one kind a record has before too-many-children warns, when the product has no product_setting row. */
@@ -22,10 +27,12 @@ interface ConfigFile {
   schema?: unknown;
   /** The folder of data files, one <table>.jsonl per table; default data. */
   data?: unknown;
+  /** Glob patterns of the router files; default none. */
+  routers?: unknown;
 }
 
 /** The keys lathe.config.json may hold; any other key is an error, never silently ignored. */
-const CONFIG_KEYS = ['schema', 'data'] as const;
+const CONFIG_KEYS = ['schema', 'data', 'routers'] as const;
 
 /** The installed Lathe package's own folder (holding schema/ and data/), from source or from dist. */
 export const PACKAGE_DIR = (() => {
@@ -101,5 +108,8 @@ export function readConfig(root: string): LatheConfig {
   if (config.schema !== undefined && (typeof config.schema !== 'number' || !Number.isInteger(config.schema) || config.schema < 1)) {
     throw new Error(`${CONFIG_FILE}: schema must be a whole number from 1, such as 1.`);
   }
-  return { root, dataDir: path.resolve(root, (config.data as string | undefined) ?? 'data'), schema: (config.schema as number | undefined) ?? 1 };
+  if (config.routers !== undefined && (!Array.isArray(config.routers) || config.routers.some((r) => typeof r !== 'string' || r.trim() === ''))) {
+    throw new Error(`${CONFIG_FILE}: routers must be a list of file patterns from the root, such as ["src/router.ts"].`);
+  }
+  return { root, routers: (config.routers as string[] | undefined) ?? [], dataDir: path.resolve(root, (config.data as string | undefined) ?? 'data'), schema: (config.schema as number | undefined) ?? 1 };
 }

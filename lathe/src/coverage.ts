@@ -16,6 +16,7 @@
 // the schema leaves to the checks because records are written stage by stage (GAP_RULES): a use case with no flow, an
 // aggregate with no root, a command with no handler. The checks read the same views and tables.
 import { sqlName, sqlString, type SchemaDescription, type Stage } from './store/schema.ts';
+import { ROUTE_GAP_RULES } from './trace/routes.ts';
 
 /** The run by levels each test kind allows: a test at another level is reported by test-level-not-allowed and proves nothing. */
 export const ALLOWED_LEVELS: Readonly<Record<string, readonly string[]>> = {
@@ -174,6 +175,8 @@ WHERE NOT EXISTS (SELECT 1 FROM uc_requirement r WHERE r.use_case_id = u.id) AND
     `SELECT f.id, 'Flow ' || f.id || ' has no step on its main path.' AS message FROM flow f WHERE NOT EXISTS (SELECT 1 FROM flow_step s WHERE s.flow_id = f.id AND s.path = 'main')`),
   gap('endpoint-without-requirement', 'interaction-design', ['endpoint', 'api_requirement'], 'An endpoint with no API requirement.',
     `SELECT e.id, 'Endpoint ' || e.id || ' has no API requirement.' AS message FROM endpoint e WHERE NOT EXISTS (SELECT 1 FROM api_requirement r WHERE r.endpoint_id = e.id)`),
+  // Every route the code serves has an endpoint or a view (trace/routes.ts).
+  ...ROUTE_GAP_RULES,
   // Technical specification: one technical record per design record.
   missingImpl('aggregate-without-repository', 'aggregate', 'Aggregate', 'repository', 'aggregate_id', 'repository'),
   missingImpl('entity-without-data-model', 'entity', 'Entity', 'data_model', 'entity_id', 'data model'),
@@ -383,7 +386,7 @@ SELECT * FROM missing;`;
 export const COVERAGE_COUNTS_SQL = `SELECT product, domain, kind, label, proof_only, total, designed, built, proved, not_automated FROM coverage_count ORDER BY product, domain NULLS LAST, ord`;
 
 /** Every gap: (product, domain, id, kind, missing, message), by record. */
-export const COVERAGE_GAPS_SQL = `SELECT product, domain, id, kind, missing, message FROM coverage_gap ORDER BY product, domain NULLS LAST, id, ord, missing`;
+export const COVERAGE_GAPS_SQL = `SELECT product, domain, id, kind, missing, message FROM coverage_gap ORDER BY product, domain NULLS LAST, id, ord, missing, message`;
 
 /** One row per scope: its tests by state. */
 export const COVERAGE_TESTS_SQL = `SELECT product, domain, automated, manual, not_automated FROM coverage_tests ORDER BY product, domain NULLS LAST`;
