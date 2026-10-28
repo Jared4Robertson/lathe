@@ -5,6 +5,7 @@
 {"id":"LA-AUT-CK05","title":"step-order","domain_id":"LA-AUT","file":"lathe/data/check.jsonl"}
 {"id":"LA-AUT-CK06","title":"actor-not-a-role","domain_id":"LA-AUT","file":"data/check.jsonl"}
 {"id":"LA-AUT-CK07","title":"step-without-endpoint","domain_id":"LA-AUT","file":"lathe/data/check.jsonl"}
+{"id":"LA-AUT-CK08","title":"title-breaks-convention","domain_id":"LA-AUT","file":"lathe/data/check.jsonl"}
 {"id":"LA-CHK-CK01","title":"too-many-children","domain_id":"LA-CHK","file":"lathe/data/check.jsonl"}
 {"id":"LA-CHK-CK02","title":"lone-child","domain_id":"LA-CHK","file":"lathe/data/check.jsonl"}
 {"id":"LA-CHK-CK04","title":"test-level-not-allowed","domain_id":"LA-CHK","file":"lathe/data/check.jsonl"}

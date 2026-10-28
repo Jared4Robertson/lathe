@@ -176,7 +176,7 @@ test.describe('Platform flows in the app', () => {
     await expect(page.getByRole('complementary', { name: 'Side bar' })).toBeVisible();
   });
 
-  test('LA-PLT-UC07-FL01-T choose and make a theme: g t, Escape, the palette, Appearance, duplicate, change, reset, delete, export, import', async ({ page, browser }) => {
+  test('LA-PLT-UC07-FL01-T set how Lathe looks: g t, Escape, the palette, Appearance, duplicate, change, reset, delete, export, import', async ({ page, browser }) => {
     await openPage(page, RECORD);
     const html = page.locator('html');
     const before = await html.getAttribute('data-theme');
@@ -248,7 +248,7 @@ test.describe('Platform flows in the app', () => {
   test.describe('on a phone', () => {
     test.use({ viewport: { width: 375, height: 812 }, hasTouch: true, isMobile: true });
 
-    test('LA-PLT-UC08-FL01-T read and move around Lathe on a phone: search, the graph by touch, the sheets, the nav, Open pages, a tablet', async ({ page }) => {
+    test('LA-PLT-UC08-FL01-T read the spec on a phone: search, the graph by touch, the sheets, the nav, Open pages, a tablet', async ({ page }) => {
       await openPage(page, '/LA', '.topbar');
       await expect(page.getByRole('banner')).toBeVisible();
       // Search from the top bar, and open a use case.
@@ -316,7 +316,7 @@ test.describe('Platform flows in the app', () => {
     });
   });
 
-  test('LA-PLT-UC09-FL01-T read and move around without anything jumping: open, move, panes, folds, resize, the graph, a reload, overlays, the theme', async ({ page }) => {
+  test('LA-PLT-UC09-FL01-T read without anything jumping: open, move, panes, folds, resize, the graph, a reload, overlays, the theme', async ({ page }) => {
     const KEYS = [...SHELL, ...FOCUS];
     const CONTENT = ['.pane-scroll', '.side-bar'];
     const TITLE = [FOCUS[1]];
