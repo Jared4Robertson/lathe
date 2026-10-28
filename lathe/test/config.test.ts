@@ -36,7 +36,7 @@ describe('product configuration', () => {
     const files = async () => (await loadWorkspace(root)).problems.filter((p) => p.check === 'test-case-unnamed').map((p) => p.message.split(':')[0]);
     expect(loadConfig(root).tests).toEqual([...DEFAULT_TESTS]);
     expect(await files()).toEqual(['test/a.test.ts']);
-    writeFileSync(path.join(root, 'lathe.config.json'), JSON.stringify({ data: 'data', tests: ['checks/**/*.ts', '**/*.test.ts'] }));
+    writeFileSync(path.join(root, 'lathe.config.json'), JSON.stringify({ schema: SCHEMA_VERSION, data: 'data', tests: ['checks/**/*.ts', '**/*.test.ts'] }));
     expect(await files()).toEqual(['checks/b.check.ts', 'test/a.test.ts']);
     for (const tests of ['**/*.test.ts', [], [''], [3]]) {
       writeFileSync(path.join(root, 'lathe.config.json'), JSON.stringify({ tests }));
