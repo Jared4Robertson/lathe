@@ -95,6 +95,11 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     if (bulk) expect(header.contains(bulk)).toBe(true);
   });
 
+  it.each(['LA-PAT-APP-UX-R13-T01', 'LA-PAT-APP-UX-R13-T02'])('%s No style title-cases a label word by word', () => {
+    const sheets = [...filesUnder(join(ROOT, 'app/src'), /\.css$/), ...filesUnder(join(ROOT, 'desktop'), /\.(css|html)$/)];
+    expect(sheets.flatMap((file) => where(file, readFileSync(file, 'utf8'), /text-transform:\s*capitalize/))).toEqual([]);
+  });
+
   it.each(['LA-PAT-APP-CODE-R02-T01', 'LA-PAT-APP-CODE-R02-T02'])('%s Styles are set by class: no selector names only elements, beyond the base styles', () => {
     const bare = styleRules(CSS)
       .flatMap((r) => topLevel(r.selector).map((s) => ({ s: s.trim(), line: r.line })))
