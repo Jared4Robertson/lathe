@@ -142,6 +142,58 @@ check('test-file-missing-id', () => {
   });
 });
 
+check('test-case-unnamed', () => {
+  const unnamed = (ws: Workspace) => ofCheck(ws, 'test-case-unnamed').map((p) => [p.severity, p.record, p.message.split(': the test case ')[0]]);
+
+  it('LA-TRC-UC05-R07-T01 a test case naming no test whose file it is in is an error; one named in its describe or each rows is not', async () => {
+    const api = [
+      "import { describe, it } from 'vitest';",
+      "it('EX-LEND-UC01-R01-T01 a lent tool is refused', () => {});",
+      "describe('EX-LEND-UC02-R01-T01 a nameless tool', () => {",
+      "  it('is refused', () => {});",
+      "  describe.each([1, 2])('with %s spaces', () => { it.skip('is refused too', () => {}); });",
+      '});',
+      "it.each(['EX-LEND-EP01-R01-T01', 'EX-PAT-ACT-R01-T01'])('%s answers', () => {});",
+      "it('proves something nobody can find', () => {});",
+      "it('EX-V01-R01-T01 names a test of another file', () => {});",
+      "const fixture = \"it('a test written inside a string', () => {})\"; // it('nor in a comment')",
+      'const tagged = `',
+      "  test('nor inside a template literal')",
+      '`;',
+      "test.each`a | b`('a table each with no ID', () => {});",
+      '',
+    ].join('\n');
+    const spec = [
+      "import { test } from '@playwright/test';",
+      "test.describe('the catalog', () => {",
+      "  test.beforeEach(async () => {});",
+      "  test('EX-V01-R01-T01 free tools come first', async () => { await test.step('opens the page', async () => {}); });",
+      "  test.skip('a skipped Playwright test with no ID', async () => {});",
+      '});',
+      '',
+    ].join('\n');
+    const ws = await loadData(complete(), { files: { 'test/api.test.ts': api, 'e2e/catalog.spec.ts': spec } });
+    expect(unnamed(ws)).toEqual([
+      ['error', null, 'e2e/catalog.spec.ts:5'],
+      ['error', null, 'test/api.test.ts:8'],
+      ['error', null, 'test/api.test.ts:9'],
+      ['error', null, 'test/api.test.ts:14'],
+    ]);
+    expect(ofCheck(ws, 'test-case-unnamed')[1].message).toBe(
+      'test/api.test.ts:8: the test case "proves something nobody can find" names no test whose file is test/api.test.ts; start its name, or its describe\'s, with the ID of the test it proves, or remove it if it proves nothing.',
+    );
+    expect(ofCheck(ws, 'test-case-unnamed')[0].message).toContain('"the catalog > a skipped Playwright test with no ID"');
+    // The complete product's test files hold no test cases, so none is unnamed.
+    expect(ofCheck(clean, 'test-case-unnamed')).toEqual([]);
+  });
+
+  it('LA-TRC-UC05-R07-T02 a file a test names is read for test cases, whatever its name', async () => {
+    const data = changing(complete(), 'standard_rule_test', () => true, { file: 'checks/imports.ts' });
+    const ws = await loadData(data, { files: { 'checks/imports.ts': "// EX-STD-CODE-R01-T01\nit('EX-STD-CODE-R01-T01 no bare import', () => {});\ntest('an import check with no ID', () => {});\n" } });
+    expect(unnamed(ws)).toEqual([['error', null, 'checks/imports.ts:3']]);
+  });
+});
+
 check('manual-test-file-silent', () => {
   it('LA-TRC-UC08-R03-T01 a manual test whose file exists but never names it is a warning', async () => {
     const data = changing(complete(), 'integration_test', () => true, { file: 'manual/mail.md' });

@@ -39,6 +39,7 @@ The source of truth is `data/<table>.jsonl` at the product repo's root: one file
 | --- | --- | --- |
 | `schema` | `1` | The schema version the data is for (see [Upgrading](#upgrading)). |
 | `data` | `data` | The folder of data files. |
+| `tests` | `["**/*.test.{ts,tsx,js,mjs}", "**/*.spec.{ts,tsx,js}"]` | Globs of the test files, from the root, whose test cases `test-case-unnamed` reads; node_modules, dist and a folder with its own `lathe.config.json` are never read. |
 
 Any other key, or a file that is not one JSON object, is refused when the config is read. A product's settings are data too: `product_setting.max_children` (15 when the product has no row) is the most children of one kind a record has before the `too-many-children` warning. `product_setting.max_entities_per_aggregate` (7 when the product has no row) is the most entities an aggregate has before the `aggregate-too-large` warning; a settings row gives both.
 
@@ -128,6 +129,7 @@ Every converter's `files` phase runs in order, then every `records` phase in ord
 
 1. Opens the store: reads `data/*.jsonl`, and Lathe's own `data/check.jsonl` from this package beside it, into the typed tables, with every key, rule and validation query. Data the store refuses becomes `data-refused` errors naming the file, line and rule, and nothing else is checked until it is fixed.
 2. Scans the code: the `file` of every technical record and test (and of a product's own kind with a file field), into `file_facts`: does it exist (a technical record's may be a folder), and does it name the record's own ID as a whole ID.
+   It also reads the test cases of the product's test files (the `tests` globs of `lathe.config.json` and every file a test names) into `test_case` and `test_case_id`, as text: each call of `it` or `test` (with its modifiers and `each` forms) whose name is a string or template literal, under the names of the `describe` calls around it, and the IDs those names and `each` rows name. Strings and comments are skipped; a name that is not a literal, and a test made by a helper function, are not recognized ([src/test-cases.ts](src/test-cases.ts)).
 3. Works out coverage (see below) and runs every check row: Lathe's in position order, then each product's. A product's check reports only on records of its product.
 4. Reads coverage per domain, and per product outside the domains.
 
@@ -169,7 +171,9 @@ A query can read every typed table, the `record_parent`, `link` and `record_grou
 
 | Table or view | Columns |
 | --- | --- |
-| `file_facts` | `record`, `kind`, `file`, `file_exists`, `contains_id`: each record that names a file |
+| `file_facts` | `record`, `kind`, `file`, `path` (the file from the root, with forward slashes; NULL outside it), `file_exists`, `contains_id`: each record that names a file |
+| `test_case` | `file`, `position`, `line`, `name`: each test case in the product's test files, its name after its describes' names |
+| `test_case_id` | `file`, `position`, `id`: each ID a test case, its describes or its `each` rows name |
 | `test_level_allowed` | `kind`, `level`: the run by levels each test kind allows |
 | `test_run` | `id`, `kind`, `parent_id`, `domain_id` (a pattern rule test's), `level`, `state`, `file`, `level_allowed`, `backed`: every test with its run by |
 | `pattern_rule_standing` | `domain`, `id`, `standing`: each rule of each pattern a domain follows, `owed`, `not-applicable` or `waived` there; the app reads it as `Coverage.pattern_rules` |
