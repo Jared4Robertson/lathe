@@ -48,6 +48,7 @@ export function everyKind(): Data {
     term: [{ id: 'TL-LEND-TM01', title: 'Loan', domain_id: 'TL-LEND', meaning: 'One tool lent to one member until it is returned.' }],
 
     // Use cases.
+    business_outcome: [{ id: 'TL-BO01', title: 'More tools in use', product_id: 'TL', statement: 'Members borrow more of the tools the library holds.', measure: 'Loans opened per tool per month.', target: 'Two loans per tool per month within a year.' }],
     capability: [{ id: 'TL-LEND-CAP01', title: 'Lending', domain_id: 'TL-LEND', position: 1 }],
     use_case: [{ id: 'TL-LEND-UC01', title: 'Borrow a tool', capability_id: 'TL-LEND-CAP01', goal: 'Take a tool home.' }],
     use_case_actor: [{ use_case_id: 'TL-LEND-UC01', position: 1, role_name: 'Member' }],
@@ -113,7 +114,8 @@ export function everyKind(): Data {
     view_test: [{ id: 'TL-V01-R01-T01', title: 'Free tools come first', view_requirement_id: 'TL-V01-R01', level: 'e2e-ui', state: 'automated', file: 'e2e/catalog.spec.ts' }],
     endpoint_test: [{ id: 'TL-LEND-EP01-R01-T01', title: 'Unknown tool gives 404', api_requirement_id: 'TL-LEND-EP01-R01', level: 'api', state: 'automated', file: 'test/api.test.ts' }],
     flow_test: [{ id: 'TL-LEND-UC01-FL-T', title: 'Borrow end to end', flow_id: 'TL-LEND-UC01-FL', level: 'e2e-ui', state: 'automated', file: 'e2e/borrow.spec.ts', steps: ['Open the catalog', 'Borrow a tool'], expected_result: 'The loan is listed.' }],
-    integration_test: [{ id: 'TL-INT01-T01', title: 'A mail is sent', integration_id: 'TL-INT01', level: 'manual', state: 'manual', manual_reason: 'The mail service has no test mode.' }],
+    test_data_set: [{ id: 'TL-LEND-TD01', title: 'One tool on loan', domain_id: 'TL-LEND', environment: 'A fresh database.', accounts: 'One member.', records: 'One tool, on loan to the member.', prepare: 'Run the seed.', reset: 'Drop the database.', file: 'test/seed.ts', description: 'What the lending tests start from.' }],
+    integration_test: [{ id: 'TL-INT01-T01', title: 'A mail is sent', integration_id: 'TL-INT01', level: 'manual', state: 'manual', manual_reason: 'The mail service has no test mode.', size: 'volume', smoke: true, external: true }],
     pattern_rule_test: [{ id: 'TL-PAT-ACT-R01-T01', title: 'A saved tool reads the same', pattern_rule_id: 'TL-PAT-ACT-R01', domain_id: 'TL-LEND', ...automated('test/catalog.test.ts') }],
     standard_rule_test: [{ id: 'TL-STD-CODE-R01-T01', title: 'No bare built-in import', standard_rule_id: 'TL-STD-CODE-R01', ...automated('test/imports.test.ts') }],
 
@@ -142,6 +144,8 @@ export function everyKind(): Data {
     setting_value: [{ follower_id: 'TL-LEND-UC01', pattern_id: 'TL-PAT-ACT', setting: 'record', value: 'Tool' }],
     meets: [{ source_id: 'TL-LEND-CMD01-H', target_id: 'TL-STD-CODE-R01' }],
     about: [{ source_id: 'TL-LEND-Q01', target_id: 'TL-LEND-UC01' }],
+    serves: [{ source_id: 'TL-LEND-CAP01', target_id: 'TL-BO01' }],
+    starts_from: [{ source_id: 'TL-INT01-T01', target_id: 'TL-LEND-TD01' }],
 
     // A product's own kind, a technical kind under the command, with a relation of its own.
     product_kind: [{ name: 'cli_command', product_id: 'TL', label: 'CLI command', description: "A command of the library's CLI.", parent_kind: 'command', stage: 'technical-specification', obligation: false, id_pattern: '<command>-CLI' }],
