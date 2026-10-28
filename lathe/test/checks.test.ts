@@ -154,10 +154,10 @@ check('manual-test-file-silent', () => {
 check('test-level-not-allowed', () => {
   it('LA-CHK-UC04-R04-T01 a test at a level its kind does not allow is a warning naming the allowed levels', async () => {
     let data = changing(complete(), 'constraint_test', () => true, { level: 'api' });
-    data = changing(data, 'flow_test', (r) => r.id === 'EX-LEND-UC01-FL-T', { level: 'api' });
+    data = changing(data, 'flow_test', (r) => r.id === 'EX-LEND-UC01-FL01-T', { level: 'api' });
     const ws = await loadData(data);
     expect(ofCheck(ws, 'test-level-not-allowed').map((p) => p.message)).toEqual([
-      'Flow test EX-LEND-UC01-FL-T runs at level api, which a flow test does not allow; run it at e2e-api, e2e-ui, manual.',
+      'Flow test EX-LEND-UC01-FL01-T runs at level api, which a flow test does not allow; run it at e2e-api, e2e-ui, manual.',
       'Constraint test EX-VO01-C01-T runs at level api, which a constraint test does not allow; run it at database, unit.',
     ]);
     // A constraint enforced by a SQL CHECK is tested at database level, which a constraint test allows.
@@ -243,7 +243,7 @@ describe('nothing uses it', () => {
 describe('coverage gaps as warnings', () => {
   let ws: Workspace;
   beforeAll(async () => {
-    let data = without(complete(), 'fulfills', (r) => r.source_id === 'EX-LEND-UC02-FL-S01');
+    let data = without(complete(), 'fulfills', (r) => r.source_id === 'EX-LEND-UC02-FL01-S01');
     data = changing(data, 'specification_test', () => true, { state: 'not automated yet' });
     ws = await loadData(data, { missing: ['src/dates.ts'] });
   });
@@ -404,14 +404,14 @@ check('step-order', () => {
   it('LA-AUT-INV18-T a path whose positions skip a number is reported once, on the first step after the gap', async () => {
     const data = adding(complete(), {
       flow_step: [
-        { id: 'EX-LEND-UC01-FL-S03', title: 'Refused', flow_id: 'EX-LEND-UC01-FL', path: 'refused', position: 2 },
-        { id: 'EX-LEND-UC01-FL-S04', title: 'Told why', flow_id: 'EX-LEND-UC01-FL', path: 'Refused', position: 3 },
+        { id: 'EX-LEND-UC01-FL01-S03', title: 'Refused', flow_id: 'EX-LEND-UC01-FL01', path: 'refused', position: 2 },
+        { id: 'EX-LEND-UC01-FL01-S04', title: 'Told why', flow_id: 'EX-LEND-UC01-FL01', path: 'Refused', position: 3 },
       ],
     });
     expect(ofCheck(await loadData(data), 'step-order')).toEqual([
       {
-        severity: 'error', check: 'step-order', record: 'EX-LEND-UC01-FL-S03',
-        message: 'Flow step EX-LEND-UC01-FL-S03 has position 2 on path refused in flow EX-LEND-UC01-FL, but no step of that path has position 1; number the steps of a path 1, 2, 3 and so on, with no gaps.',
+        severity: 'error', check: 'step-order', record: 'EX-LEND-UC01-FL01-S03',
+        message: 'Flow step EX-LEND-UC01-FL01-S03 has position 2 on path refused in flow EX-LEND-UC01-FL01, but no step of that path has position 1; number the steps of a path 1, 2, 3 and so on, with no gaps.',
       },
     ]);
   });
@@ -451,13 +451,13 @@ check('too-many-children', () => {
 
   it("LA-CHK-UC06-R05-T01 a flow's steps are counted per path, named when not main", async () => {
     const steps = (path: string, n: number, from: number) =>
-      Array.from({ length: n }, (_, i) => ({ id: `EX-LEND-UC01-FL-S${String(from + i).padStart(2, '0')}`, title: `Step ${from + i}`, flow_id: 'EX-LEND-UC01-FL', path, position: i + 1 + (path === 'main' ? 2 : 0) }));
+      Array.from({ length: n }, (_, i) => ({ id: `EX-LEND-UC01-FL01-S${String(from + i).padStart(2, '0')}`, title: `Step ${from + i}`, flow_id: 'EX-LEND-UC01-FL01', path, position: i + 1 + (path === 'main' ? 2 : 0) }));
     const limit = { product_setting: [{ product_id: 'EX', max_children: 3, max_entities_per_aggregate: 7 }] };
     const even = adding(complete(), { ...limit, flow_step: [...steps('main', 1, 3), ...steps('refused', 3, 4)] });
     expect(ofCheck(await loadData(even), 'too-many-children')).toEqual([]);
     const over = adding(complete(), { ...limit, flow_step: [...steps('main', 1, 3), ...steps('refused', 4, 4)] });
     expect(ofCheck(await loadData(over), 'too-many-children').map((p) => p.message)).toEqual([
-      expect.stringContaining('Flow EX-LEND-UC01-FL has 4 children of kind flow_step on path refused, more than the 3'),
+      expect.stringContaining('Flow EX-LEND-UC01-FL01 has 4 children of kind flow_step on path refused, more than the 3'),
     ]);
   });
 

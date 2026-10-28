@@ -18,7 +18,7 @@ const REQUIREMENT = 'LA-TRC-UC10-R03';
 const WIKI = '.pane-wiki';
 
 test.describe('Traceability flows', () => {
-  test('LA-TRC-UC09-FL-T see each domain\'s coverage and the product\'s summary', async ({ page }) => {
+  test('LA-TRC-UC09-FL01-T see each domain\'s coverage and the product\'s summary', async ({ page }) => {
     const spec = await served(page);
     await openPage(page, PRODUCT);
     const wiki = page.locator(WIKI);
@@ -50,7 +50,7 @@ test.describe('Traceability flows', () => {
     await expect(page.locator(`${WIKI} .pane-title h1`)).toHaveText('Traceability');
   });
 
-  test('LA-TRC-UC10-FL-T trace an obligation in the graph', async ({ page }) => {
+  test('LA-TRC-UC10-FL01-T trace an obligation in the graph', async ({ page }) => {
     const spec = await served(page);
     // The chain coverage traces, and what it is for: the steps that fulfill it, their flows, what they invoke and where they
     // happen, the handlers of what they invoke, and the tests under it.
@@ -76,7 +76,7 @@ test.describe('Traceability flows', () => {
     for (const id of [...steps, ...tests]) await expect(chain.getByRole('link', { name: new RegExp(`^${id} `) })).toBeVisible();
   });
 
-  test('LA-TRC-UC11-FL-T see every obligation kind and test state', async ({ page }) => {
+  test('LA-TRC-UC11-FL01-T see every obligation kind and test state', async ({ page }) => {
     const spec = await served(page);
     const coverage = spec.coverage.find((c) => c.domain === TRC)!;
     // S01: a product, then a domain, with one coverage group per obligation kind it has.
@@ -100,7 +100,7 @@ test.describe('Traceability flows', () => {
     }
   });
 
-  test('LA-TRC-UC12-FL-T see the patterns a domain follows and the rules it owes', async ({ page }) => {
+  test('LA-TRC-UC12-FL01-T see the patterns a domain follows and the rules it owes', async ({ page }) => {
     const spec = await served(page);
     const followed = rowsOf(spec, 'follows').filter((l) => l.source_id === EXP).map((l) => String(l.target_id));
     expect(followed.length).toBeGreaterThan(0);
@@ -130,7 +130,7 @@ test.describe('Traceability flows', () => {
     await expect(traced.getByRole('link', { name: EXP, exact: true })).toBeVisible();
   });
 
-  test('LA-TRC-UC13-FL-T see tests by state with each domain\'s coverage', async ({ page }) => {
+  test('LA-TRC-UC13-FL01-T see tests by state with each domain\'s coverage', async ({ page }) => {
     const spec = await served(page);
     const ofDomain = (id: string) => spec.coverage.find((c) => c.domain === id)!.tests;
     // S01: each domain card's tests by state.
@@ -149,7 +149,7 @@ test.describe('Traceability flows', () => {
     await expect(page.locator(`${WIKI} .coverage`).last().getByLabel('Tests by state')).toHaveText(`Tests ${testsText(ofDomain(TRC))}`);
   });
 
-  test('LA-TRC-UC14-FL-T see what designs, builds and proves a record', async ({ page }) => {
+  test('LA-TRC-UC14-FL01-T see what designs, builds and proves a record', async ({ page }) => {
     const spec = await served(page);
     const steps = rowsOf(spec, 'fulfills').filter((l) => l.target_id === REQUIREMENT).map((l) => String(l.source_id));
     const tests = rowsOf(spec, 'use_case_test').filter((t) => t.uc_requirement_id === REQUIREMENT);

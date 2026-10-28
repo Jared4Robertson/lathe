@@ -40,7 +40,7 @@ npm run typecheck   # tsc --noEmit
 - `test/api.test.ts`: the use case tests (`TL-LEND-UC0n-R0n-T0n`), the endpoint tests (`TL-LEND-EP0n-R0n-T0n`) and the Librarian action pattern's rule tests (`TL-PAT-LIBRARIAN-ACTION-R0n-T01`), over HTTP on a free local port. A use case test and an endpoint test that share a scenario run one helper each.
 - `test/body-limit.test.ts`: the 64 KB body limit (`TL-LEND-EP06-R03-T01`), over HTTP and over a raw socket that sends a body that never ends.
 
-The five flow tests (`TL-LEND-UC0n-FL-T`) are manual: they walk the curl steps below against a running server, and their records say why.
+The five flow tests (`TL-LEND-UC0n-FL01-T`, one per use case through the HTTP API, `TL-IF01`) are manual: they walk the curl steps below against a running server, and their records say why.
 
 ## Run
 

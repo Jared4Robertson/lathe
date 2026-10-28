@@ -39,7 +39,7 @@ describe('traceability', () => {
     const index = indexOf(workspace());
     let trace = show(index, 'DM-SHOP-UC01-R01');
     expect(groupTitles(trace)).toEqual(['Designed by', 'Proved by']);
-    expect(groupIds(trace, 'Designed by')).toEqual(['DM-SHOP-UC01-FL-S01']);
+    expect(groupIds(trace, 'Designed by')).toEqual(['DM-SHOP-UC01-FL01-S01']);
     expect(groupIds(trace, 'Proved by')).toEqual(['DM-SHOP-UC01-R01-T01']);
     // A step is no technical record: no built mark; designed, built (through the handler of the command its step invokes) and proved: no gap.
     expect(trace.querySelector('[data-mark="built"]')).toBeNull();
@@ -115,8 +115,8 @@ describe('traceability', () => {
     const rows = [...table.querySelectorAll('tbody tr[data-requirement]')] as HTMLElement[];
     expect(rows.map((r) => r.dataset.requirement)).toEqual(['DM-SHOP-UC01-R01', 'DM-SHOP-UC01-R02']);
     const cells = (r: HTMLElement) => [...r.querySelectorAll('td')].map((td) => td.textContent);
-    expect(cells(rows[0])).toEqual(['DM-SHOP-UC01-FL-S01', 'DM-SHOP-CMD01-H', 'DM-SHOP-UC01-R01-T01']);
-    expect(cells(rows[1])).toEqual(['DM-SHOP-UC01-FL-S03', 'not built', 'not proved']);
+    expect(cells(rows[0])).toEqual(['DM-SHOP-UC01-FL01-S01', 'DM-SHOP-CMD01-H', 'DM-SHOP-UC01-R01-T01']);
+    expect(cells(rows[1])).toEqual(['DM-SHOP-UC01-FL01-S03', 'not built', 'not proved']);
     expect(within(rows[0]).getAllByRole('link').map((a) => a.getAttribute('href'))).toContain('/DM-SHOP-UC01-R01-T01');
     // R02 sits under its group's heading.
     expect(table.querySelector('tbody[data-group="Refusals"]')).toHaveTextContent('Refusals');
@@ -138,14 +138,14 @@ describe('traceability', () => {
 
     // A manual flow test: no file, its reason.
     const model = indexOf(modelWorkspace());
-    trace = show(model, 'P-D-UC01-FL-T');
-    expect(groupIds(trace, 'Proves')).toEqual(['P-D-UC01-FL']);
+    trace = show(model, 'P-D-UC01-FL01-T');
+    expect(groupIds(trace, 'Proves')).toEqual(['P-D-UC01-FL01']);
     const manual = within(trace).getByRole('heading', { level: 3, name: 'Run by' }).closest('section') as HTMLElement;
     expect(manual).toHaveTextContent(/Level\s*manual/);
     expect(manual).toHaveTextContent('Manual because');
     expect(manual).toHaveTextContent('Run at the desk before each release.');
     expect(manual).not.toHaveTextContent('File');
-    expect(traceOf(model, model.byId.get('P-D-UC01-FL-T')!).runBy).toMatchObject({ level: 'manual', state: 'manual', file: null });
+    expect(traceOf(model, model.byId.get('P-D-UC01-FL01-T')!).runBy).toMatchObject({ level: 'manual', state: 'manual', file: null });
   });
 
   it('LA-V92-R07-T01 No page shows a relation code as a heading or label: wiki, record facts, graph and Model view read the labels', async () => {
@@ -167,8 +167,8 @@ describe('traceability', () => {
     expect(offenders).toEqual([]);
 
     // The graph's edges, legend and connections, and the Model view's lines, read the same labels.
-    expect(graphEdgeLabel(index, { source: 'P-D-UC01-FL-S01', relation: 'fulfills', target: 'P-D-UC01-R01' })).toBe('Fulfills');
-    expect(graphEdgeLabel(index, { source: 'P-D-UC01-FL-S01', relation: 'fulfills', target: 'P-D-UC01-R01' }, 'target')).toBe('Fulfilled by');
+    expect(graphEdgeLabel(index, { source: 'P-D-UC01-FL01-S01', relation: 'fulfills', target: 'P-D-UC01-R01' })).toBe('Fulfills');
+    expect(graphEdgeLabel(index, { source: 'P-D-UC01-FL01-S01', relation: 'fulfills', target: 'P-D-UC01-R01' }, 'target')).toBe('Fulfilled by');
     expect(graphRelationLabel('happens_in', index)).toBe('Happens in');
     expect(graphRelationLabel('parent', index)).toBe('parent / child');
     expect(relationLabelOf(index.workspace.relations, 'hears', 'target')).toBe('Heard by');
@@ -192,6 +192,6 @@ describe('traceability', () => {
     // The steps that fulfill a UC requirement show once, as Designed by.
     trace = show(index, 'P-D-UC01-R01');
     expect(groupTitles(trace)).not.toContain('Fulfilled by');
-    expect(groupIds(trace, 'Designed by')).toEqual(['P-D-UC01-FL-S01']);
+    expect(groupIds(trace, 'Designed by')).toEqual(['P-D-UC01-FL01-S01']);
   });
 });

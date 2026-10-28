@@ -113,7 +113,7 @@ Once it is written: `set { "endpoint_test": { "id": "TL-LEND-EP05-R02-T01", "sta
 A manual flow test, a pattern rule test in the domain that adopts the pattern, and a standard rule test:
 
 ```
-add  { "flow_test": { "id": "TL-LEND-UC04-FL-T", "title": "The README returns a tool against a running server", "flow_id": "TL-LEND-UC04-FL",
+add  { "flow_test": { "id": "TL-LEND-UC04-FL01-T", "title": "The README returns a tool against a running server", "flow_id": "TL-LEND-UC04-FL01",
        "level": "manual", "state": "manual",
        "manual_reason": "It checks what a newcomer meets: the real entry point, the documented port and the README's commands as written.",
        "steps": ["Start the server with npm start", "Borrow a tool with the README's command", "Return it with the README's command"],

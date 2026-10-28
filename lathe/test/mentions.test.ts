@@ -74,21 +74,21 @@ describe('IDs in text', () => {
       view: [{ id: 'NX-V01', title: 'Elsewhere' }],
       happens_in: [],
     });
-    both.happens_in = [...both.happens_in.filter((l) => l.source_id !== 'EX-LEND-UC02-FL-S01'), { source_id: 'EX-LEND-UC02-FL-S01', target_id: 'NX-V01' }];
+    both.happens_in = [...both.happens_in.filter((l) => l.source_id !== 'EX-LEND-UC02-FL01-S01'), { source_id: 'EX-LEND-UC02-FL01-S01', target_id: 'NX-V01' }];
     return both;
   };
 
   it('LA-AUT-SP08-T A link from a record of one product to a record of another is refused, whatever the relation', async () => {
     expect(await refusals(crossing())).toEqual([
-      expect.objectContaining({ rule: 'link-crosses-product', table: 'happens_in', message: expect.stringContaining('EX-LEND-UC02-FL-S01 is in product EX') }),
+      expect.objectContaining({ rule: 'link-crosses-product', table: 'happens_in', message: expect.stringContaining('EX-LEND-UC02-FL01-S01 is in product EX') }),
     ]);
   });
 
   it('LA-CHK-UC01-R04-T02 A link into another product in a data file is a data-refused error', async () => {
     const root = await build(adding(complete(), { product: [{ id: 'NX', title: 'Next product' }], view: [{ id: 'NX-V01', title: 'Elsewhere' }] }));
     const file = path.join(root, 'data', 'happens_in.jsonl');
-    writeFileSync(file, readFileSync(file, 'utf8').replace(/("source_id":"EX-LEND-UC02-FL-S01","target_id":")[^"]+/, '$1NX-V01'));
+    writeFileSync(file, readFileSync(file, 'utf8').replace(/("source_id":"EX-LEND-UC02-FL01-S01","target_id":")[^"]+/, '$1NX-V01'));
     const loaded = await loadWorkspace(root);
-    expect(loaded.problems).toEqual([expect.objectContaining({ severity: 'error', check: 'data-refused', message: expect.stringContaining('EX-LEND-UC02-FL-S01 is in product EX') })]);
+    expect(loaded.problems).toEqual([expect.objectContaining({ severity: 'error', check: 'data-refused', message: expect.stringContaining('EX-LEND-UC02-FL01-S01 is in product EX') })]);
   });
 });

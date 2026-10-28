@@ -36,31 +36,31 @@ describe('graph neighborhood', () => {
   });
 
   it.each(['LA-EXP-SP05-T', 'LA-V93-R10-T02'])('%s The Links switch adds the records the focused record links to and from, one hop, in focus, with their links', () => {
-    const n = neighborhood(index, 'P-D-UC01-FL-S01', 1, undefined, { links: true });
-    expect(ids(n)).toEqual(['P-D-CMD01', 'P-D-UC01-FL', 'P-D-UC01-FL-S01', 'P-D-UC01-R01', 'P-V01']);
+    const n = neighborhood(index, 'P-D-UC01-FL01-S01', 1, undefined, { links: true });
+    expect(ids(n)).toEqual(['P-D-CMD01', 'P-D-UC01-FL01', 'P-D-UC01-FL01-S01', 'P-D-UC01-R01', 'P-V01']);
     expect(n.edges.filter((e) => e.relation !== 'parent').map((e) => `${e.source} ${e.relation} ${e.target}`).sort()).toEqual([
-      'P-D-UC01-FL-S01 fulfills P-D-UC01-R01',
-      'P-D-UC01-FL-S01 happens_in P-V01',
-      'P-D-UC01-FL-S01 invokes P-D-CMD01',
+      'P-D-UC01-FL01-S01 fulfills P-D-UC01-R01',
+      'P-D-UC01-FL01-S01 happens_in P-V01',
+      'P-D-UC01-FL01-S01 invokes P-D-CMD01',
     ]);
     // Each one step from the focus, reached from it; they bring nothing of their own.
     for (const id of ['P-D-CMD01', 'P-D-UC01-R01', 'P-V01']) {
       expect(n.nodes.find((x) => x.id === id)).toMatchObject({ distance: 1 });
-      expect(n.via.get(id)).toBe('P-D-UC01-FL-S01');
+      expect(n.via.get(id)).toBe('P-D-UC01-FL01-S01');
     }
     // Off by default; at any depth the links are the focus's own, not its neighbors'.
-    expect(neighborhood(index, 'P-D-UC01-FL-S01', 1).edges.some((e) => e.relation !== 'parent')).toBe(false);
-    expect(ids(neighborhood(index, 'P-D-UC01-FL-S01', 3, undefined, { links: true }))).not.toContain('P-D-EV01');
+    expect(neighborhood(index, 'P-D-UC01-FL01-S01', 1).edges.some((e) => e.relation !== 'parent')).toBe(false);
+    expect(ids(neighborhood(index, 'P-D-UC01-FL01-S01', 3, undefined, { links: true }))).not.toContain('P-D-EV01');
     // A linked record joins the focus.
-    expect(ids(neighborhood(index, 'P-D-UC01-R01', 1, undefined, { links: true }))).toContain('P-D-UC01-FL-S01');
-    expect(n).toEqual(neighborhood(index, 'P-D-UC01-FL-S01', 1, undefined, { links: true }));
+    expect(ids(neighborhood(index, 'P-D-UC01-R01', 1, undefined, { links: true }))).toContain('P-D-UC01-FL01-S01');
+    expect(n).toEqual(neighborhood(index, 'P-D-UC01-FL01-S01', 1, undefined, { links: true }));
   });
 
   it.each(['LA-EXP-SP04-T', 'LA-V93-R13-T01'])('%s Filters hide kinds and relations, nothing is reached through them, and the focus is never hidden', () => {
     const links = { links: true };
-    expect(ids(neighborhood(index, 'P-D-UC01-FL-S01', 1, filters(['view']), links))).not.toContain('P-V01');
+    expect(ids(neighborhood(index, 'P-D-UC01-FL01-S01', 1, filters(['view']), links))).not.toContain('P-V01');
     // Hiding invokes keeps the command out and drops its edge.
-    const noInvokes = neighborhood(index, 'P-D-UC01-FL-S01', 1, filters([], ['invokes']), links);
+    const noInvokes = neighborhood(index, 'P-D-UC01-FL01-S01', 1, filters([], ['invokes']), links);
     expect(ids(noInvokes)).not.toContain('P-D-CMD01');
     expect(noInvokes.edges.some((e) => e.relation === 'invokes')).toBe(false);
     // Hiding use cases cuts the tree there: nothing above the requirement is reached.
@@ -72,8 +72,8 @@ describe('graph neighborhood', () => {
     // The focus stays even when its own kind is hidden.
     expect(ids(neighborhood(index, 'P-D-UC01-R01', 1, filters(['uc_requirement'])))).toContain('P-D-UC01-R01');
     // Without parent lines there is no tree: the focus and, with Links on, its links.
-    expect(ids(neighborhood(index, 'P-D-UC01-FL-S01', 3, filters([], ['parent'])))).toEqual(['P-D-UC01-FL-S01']);
-    expect(ids(neighborhood(index, 'P-D-UC01-FL-S01', 3, filters([], ['parent', 'fulfills']), links))).toEqual(['P-D-CMD01', 'P-D-UC01-FL-S01', 'P-V01']);
+    expect(ids(neighborhood(index, 'P-D-UC01-FL01-S01', 3, filters([], ['parent'])))).toEqual(['P-D-UC01-FL01-S01']);
+    expect(ids(neighborhood(index, 'P-D-UC01-FL01-S01', 3, filters([], ['parent', 'fulfills']), links))).toEqual(['P-D-CMD01', 'P-D-UC01-FL01-S01', 'P-V01']);
   });
 
   it('LA-V93-R51-T01 Trace mode shows what designs, builds and proves an obligation, and the files they name', () => {
@@ -82,7 +82,7 @@ describe('graph neighborhood', () => {
     // On its left, why it is there: its use case and the use case's capability.
     const t = traceChain(index, 'P-D-UC01-R01');
     expect(ids(t)).toEqual([
-      'P-D-CAP01', 'P-D-CMD01', 'P-D-CMD01-H', 'P-D-UC01', 'P-D-UC01-FL', 'P-D-UC01-FL-S01', 'P-D-UC01-R01', 'P-D-UC01-R01-T01', 'P-V01',
+      'P-D-CAP01', 'P-D-CMD01', 'P-D-CMD01-H', 'P-D-UC01', 'P-D-UC01-FL01', 'P-D-UC01-FL01-S01', 'P-D-UC01-R01', 'P-D-UC01-R01-T01', 'P-V01',
       fileNodeId('src/loans.ts'), fileNodeId('test/lend.test.ts'),
     ].sort());
     expect(t.edges.map((e) => `${e.source} ${e.relation} ${e.target}`).sort()).toEqual([
@@ -90,15 +90,15 @@ describe('graph neighborhood', () => {
       'P-D-CMD01 parent P-D-CMD01-H',
       'P-D-CMD01-H names file:src/loans.ts',
       'P-D-UC01 parent P-D-UC01-R01',
-      'P-D-UC01-FL parent P-D-UC01-FL-S01',
-      'P-D-UC01-FL-S01 fulfills P-D-UC01-R01',
-      'P-D-UC01-FL-S01 happens_in P-V01',
-      'P-D-UC01-FL-S01 invokes P-D-CMD01',
+      'P-D-UC01-FL01 parent P-D-UC01-FL01-S01',
+      'P-D-UC01-FL01-S01 fulfills P-D-UC01-R01',
+      'P-D-UC01-FL01-S01 happens_in P-V01',
+      'P-D-UC01-FL01-S01 invokes P-D-CMD01',
       'P-D-UC01-R01 parent P-D-UC01-R01-T01',
       'P-D-UC01-R01-T01 names file:test/lend.test.ts',
     ]);
     // Steps that fulfill nothing are not part of the chain.
-    expect(ids(t)).not.toContain('P-D-UC01-FL-S02');
+    expect(ids(t)).not.toContain('P-D-UC01-FL01-S02');
     // An invariant: its aggregate and the aggregate's repository, the table whose unique key enforces it, its test.
     const inv = traceChain(index, 'P-D-INV01');
     expect(ids(inv)).toEqual(['P-D-A3', 'P-D-A3-REPO', 'P-D-EN03-TB', 'P-D-INV01', 'P-D-INV01-T', fileNodeId('src/loans.ts'), fileNodeId('test/loans.test.ts')].sort());
@@ -108,7 +108,7 @@ describe('graph neighborhood', () => {
     // An obligation nothing implements or proves has only itself.
     expect(ids(traceChain(index, 'P-D-SP01'))).toEqual(['P-D-SP01']);
     // Filters apply to the chain too.
-    expect(ids(traceChain(index, 'P-D-UC01-R01', filters(['use_case_test', 'file', 'use_case'])))).toEqual(['P-D-CMD01', 'P-D-CMD01-H', 'P-D-UC01-FL', 'P-D-UC01-FL-S01', 'P-D-UC01-R01', 'P-V01']);
+    expect(ids(traceChain(index, 'P-D-UC01-R01', filters(['use_case_test', 'file', 'use_case'])))).toEqual(['P-D-CMD01', 'P-D-CMD01-H', 'P-D-UC01-FL01', 'P-D-UC01-FL01-S01', 'P-D-UC01-R01', 'P-V01']);
   });
 
   it('LA-V93-R51-T03 A UC requirement\'s trace starts from the business outcomes its capability serves, each in a column of its own', () => {
@@ -119,7 +119,7 @@ describe('graph neighborhood', () => {
     const t = traceChain(outcomes, 'P-D-UC01-R01');
     expect(t.edges.map((e) => `${e.source} ${e.relation} ${e.target}`)).toEqual(expect.arrayContaining(['P-D-CAP01 serves P-BO01', 'P-D-CAP01 parent P-D-UC01', 'P-D-UC01 parent P-D-UC01-R01']));
     const column = new Map(t.nodes.map((x) => [x.id, x.column]));
-    expect(['P-BO01', 'P-D-CAP01', 'P-D-UC01', 'P-D-UC01-R01', 'P-D-UC01-FL-S01', 'P-D-CMD01-H', 'P-D-UC01-R01-T01'].map((id) => column.get(id))).toEqual([
+    expect(['P-BO01', 'P-D-CAP01', 'P-D-UC01', 'P-D-UC01-R01', 'P-D-UC01-FL01-S01', 'P-D-CMD01-H', 'P-D-UC01-R01-T01'].map((id) => column.get(id))).toEqual([
       TRACE_COLUMNS.outcome, TRACE_COLUMNS.capability, TRACE_COLUMNS.useCase, TRACE_COLUMNS.obligation, TRACE_COLUMNS.step, TRACE_COLUMNS.technical, TRACE_COLUMNS.test,
     ]);
     // Hiding the serves relation leaves the outcome out.
@@ -199,7 +199,7 @@ describe('graph neighborhood', () => {
 
     const traced = traceGrid(traceChain(index, 'P-D-UC01-R01')).positions;
     const x = (id: string) => traced.get(id)!.x;
-    const order = ['P-D-UC01-R01', 'P-D-UC01-FL', 'P-D-UC01-FL-S01', 'P-V01', 'P-D-CMD01-H', 'P-D-UC01-R01-T01', 'file:test/lend.test.ts'];
+    const order = ['P-D-UC01-R01', 'P-D-UC01-FL01', 'P-D-UC01-FL01-S01', 'P-V01', 'P-D-CMD01-H', 'P-D-UC01-R01-T01', 'file:test/lend.test.ts'];
     for (let i = 1; i < order.length; i++) expect(x(order[i - 1])).toBeLessThan(x(order[i]));
     expect(x('P-D-CMD01')).toBe(x('P-V01'));
     expect(x('file:src/loans.ts')).toBe(x('file:test/lend.test.ts'));

@@ -84,9 +84,9 @@ describe('graph groups', () => {
     expect(groups(shelf)).toEqual(['P-D-A4/command', 'P-D-A4/entity', 'P-D/domain-model/aggregate']);
     expect(records(shelf)).toEqual(['P-D-A4']);
     // Cross-links still go record to record.
-    const step = neighborhood(index, 'P-D-UC01-FL-S01', 3, undefined, { links: true });
+    const step = neighborhood(index, 'P-D-UC01-FL01-S01', 3, undefined, { links: true });
     expect(step.edges.filter((e) => e.relation !== 'parent').every((e) => !parseGroupId(e.source) && !parseGroupId(e.target))).toBe(true);
-    expect(step.edges.map((e) => e.id)).toContain('P-D-UC01-FL-S01|fulfills|P-D-UC01-R01');
+    expect(step.edges.map((e) => e.id)).toContain('P-D-UC01-FL01-S01|fulfills|P-D-UC01-R01');
   });
 
   it('LA-V93-R10-T04 At depth 1 the graph frames the tree around the focus: its parent or folder at the left edge, its children or their groups, and no other links', () => {

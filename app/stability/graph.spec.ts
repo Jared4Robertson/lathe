@@ -352,7 +352,7 @@ async function labeledInView(page: Page, orFocus = false): Promise<{ id: string;
 }
 
 /** A flow step of RECORD's use case: it invokes a query, fulfills a requirement and happens in a view, so Links has something to draw. */
-const LINKED = `${RECORD}-FL-S01`;
+const LINKED = `${RECORD}-FL01-S01`;
 
 /** The table: each feature of the graph, checked the same way in either layout. */
 const PARITY: { feature: string; run: (page: Page, layout: Layout) => Promise<void> }[] = [

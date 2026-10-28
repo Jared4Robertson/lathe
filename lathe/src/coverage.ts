@@ -3,7 +3,8 @@
 // Every obligation (a member of the obligation supertype: constraints, invariants, specifications, policies, domain
 // services, UC requirements, view requirements, API requirements, pattern rules, standard rules and a product's own
 // obligation kinds) is counted as:
-// - designed: its implementation is specified. A UC requirement is designed once a flow step fulfills it, a standard
+// - designed: its implementation is specified. A UC requirement is designed once a step of each of its use case's
+//   flows (one per interface) fulfills it, a standard
 //   rule once a technical record meets it, a product's own obligation once a design link targets it; the others by
 //   construction (DESIGNED_BY_CONSTRUCTION);
 // - built: a technical record that implements it names a file that exists;
@@ -49,7 +50,7 @@ export const OBLIGATION_COVERAGE: Readonly<Record<string, { designed: string; bu
   policy: { designed: 'By construction, under its command.', built: 'Its event handler names a file that exists.', proved: 'Its policy test.' },
   domain_service: { designed: 'By construction, under its domain.', built: 'Its service names a file that exists.', proved: 'One of its domain service tests.' },
   uc_requirement: {
-    designed: 'A step of its use case\'s flow fulfills it.',
+    designed: 'A step of each of its use case\'s flows fulfills it: one flow per interface the use case happens through, and at least one.',
     built:
       "A fulfilling step's command or query handler, a UI component of the view it happens in, or the adapter of an integration it exchanges with or a record of a product's own kind under that integration, names a file that exists.",
     proved: 'One of its use case tests.',
@@ -170,6 +171,8 @@ WHERE NOT EXISTS (SELECT 1 FROM uc_requirement r WHERE r.use_case_id = u.id) AND
   // Interaction design.
   gap('use-case-without-flow', 'interaction-design', ['use_case', 'flow'], 'A use case with no flow.',
     `SELECT u.id, 'Use case ' || u.id || ' has no flow.' AS message FROM use_case u WHERE NOT EXISTS (SELECT 1 FROM flow f WHERE f.use_case_id = u.id)`),
+  gap('interface-without-flow', 'interaction-design', ['interface', 'flow'], 'An interface no flow goes through.',
+    `SELECT i.id, 'Interface ' || i.id || ' has no flow: no use case happens through it yet.' AS message FROM interface i WHERE NOT EXISTS (SELECT 1 FROM flow f WHERE f.interface_id = i.id)`),
   gap('flow-without-main-path', 'interaction-design', ['flow', 'flow_step'], 'A flow with no step on its main path.',
     `SELECT f.id, 'Flow ' || f.id || ' has no step on its main path.' AS message FROM flow f WHERE NOT EXISTS (SELECT 1 FROM flow_step s WHERE s.flow_id = f.id AND s.path = 'main')`),
   gap('endpoint-without-requirement', 'interaction-design', ['endpoint', 'api_requirement'], 'An endpoint with no API requirement.',
@@ -206,6 +209,8 @@ WHERE NOT EXISTS (SELECT 1 FROM uc_requirement r WHERE r.use_case_id = u.id) AND
  *   "does this rule apply here", which coverage and the app read.
  * - owed_pattern_rules (domain, id): the rules a domain owes.
  * - obligation_impl (obligation_id, impl_id): the technical records that implement each obligation.
+ * - uc_requirement_flow (id, flow_id, fulfilled): each UC requirement with each flow of its use case, and whether a
+ *   step of that flow fulfills it; designed means every one does.
  * - obligation_proof (obligation_id, test_id, domain_id, state, counts): the tests of each obligation; counts when it
  *   is automated or manual, at an allowed level and backed.
  * - coverage_owed (product, domain, id, kind): each obligation a domain, or the product outside every domain, owes.
@@ -315,11 +320,16 @@ CREATE OR REPLACE TABLE coverage_proof AS
 SELECT o.product, o.domain, o.id, p.test_id
 FROM coverage_owed o JOIN obligation_proof p ON p.obligation_id = o.id AND p.counts AND (o.kind <> 'pattern_rule' OR p.domain_id = o.domain);
 
+-- Each UC requirement with each flow of its use case, and whether a step of that flow fulfills it.
+CREATE OR REPLACE TABLE uc_requirement_flow AS
+SELECT q.id, f.id AS flow_id, EXISTS (SELECT 1 FROM fulfills l JOIN flow_step s ON s.id = l.source_id WHERE l.target_id = q.id AND s.flow_id = f.id) AS fulfilled
+FROM uc_requirement q JOIN flow f ON f.use_case_id = q.use_case_id;
+
 CREATE OR REPLACE TABLE coverage_item AS
 SELECT o.product, o.domain, o.id, o.kind,
   o.kind IN (${list(PROOF_ONLY)}) AS proof_only,
   o.kind IN (${list(DESIGNED_BY_CONSTRUCTION)})
-    OR (o.kind = 'uc_requirement' AND EXISTS (SELECT 1 FROM fulfills f WHERE f.target_id = o.id))
+    OR (o.kind = 'uc_requirement' AND EXISTS (SELECT 1 FROM uc_requirement_flow m WHERE m.id = o.id) AND NOT EXISTS (SELECT 1 FROM uc_requirement_flow m WHERE m.id = o.id AND NOT m.fulfilled))
     OR (o.kind NOT IN (${list([...DESIGNED_BY_CONSTRUCTION, 'uc_requirement'])}) AND EXISTS (SELECT 1 FROM obligation_impl i WHERE i.obligation_id = o.id)) AS designed,
   o.kind IN (${list(PROOF_ONLY)})
     OR EXISTS (SELECT 1 FROM obligation_impl i JOIN file_facts f ON f.record = i.impl_id AND f.file_exists WHERE i.obligation_id = o.id) AS built,
@@ -361,7 +371,8 @@ GROUP BY s.product, s.domain;
 
 CREATE OR REPLACE TABLE coverage_gap AS
 WITH missing AS (
-  SELECT i.product, i.domain, i.id, i.kind, 'designed' AS missing, 1 AS ord, k.label || ' ' || i.id || ' is not designed yet.' AS message
+  SELECT i.product, i.domain, i.id, i.kind, 'designed' AS missing, 1 AS ord, k.label || ' ' || i.id || ' is not designed yet'
+    || coalesce(': no step of ' || (SELECT string_agg(m.flow_id, ', ' ORDER BY m.flow_id) FROM uc_requirement_flow m WHERE m.id = i.id AND NOT m.fulfilled) || ' fulfills it.', '.') AS message
   FROM coverage_item i JOIN meta_kind k ON k.name = i.kind WHERE NOT i.designed
   UNION ALL
   SELECT i.product, i.domain, i.id, i.kind, 'built', 2, k.label || ' ' || i.id || ' is not built yet: no file of what implements it exists.'

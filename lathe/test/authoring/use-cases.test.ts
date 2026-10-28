@@ -38,7 +38,7 @@ describe('capabilities', () => {
   });
 
   it("LA-AUT-UC05-R02-T01 A use case under a capability, and everything under it, belongs to the capability's domain and counts in its coverage", async () => {
-    for (const id of ['EX-LEND-CAP01', 'EX-LEND-UC01', 'EX-LEND-UC01-R01', 'EX-LEND-UC01-FL', 'EX-LEND-UC01-FL-S01', 'EX-LEND-UC01-R01-T01']) {
+    for (const id of ['EX-LEND-CAP01', 'EX-LEND-UC01', 'EX-LEND-UC01-R01', 'EX-LEND-UC01-FL01', 'EX-LEND-UC01-FL01-S01', 'EX-LEND-UC01-R01-T01']) {
       expect(record(good, id).domain, id).toBe('EX-LEND');
     }
     expect(record(good, 'EX-PAT-ACT').domain).toBeNull();
@@ -103,10 +103,10 @@ describe('flows', () => {
     expect(pairsOf(schema, 'invokes')).toEqual(['flow_step>command', 'flow_step>query']);
     expect(pairsOf(schema, 'happens_in')).toEqual(['flow_step>view']);
     expect(pairsOf(schema, 'exchanges_with')).toEqual(['flow_step>integration']);
-    expect(record(good, 'EX-LEND-UC01-FL-S02')).toMatchObject({ parent: 'EX-LEND-UC01-FL', fields: { path: 'main', position: 2 } });
+    expect(record(good, 'EX-LEND-UC01-FL01-S02')).toMatchObject({ parent: 'EX-LEND-UC01-FL01', fields: { path: 'main', position: 2 } });
     const from = (id: string) => good.links.filter((l) => l.source === id).map((l) => `${l.relation} ${l.target}`).sort();
-    expect(from('EX-LEND-UC01-FL-S01')).toEqual(['fulfills EX-LEND-UC01-R01', 'happens_in EX-V01', 'invokes EX-LEND-CMD01']);
-    expect(from('EX-LEND-UC01-FL-S02')).toEqual(['exchanges_with EX-INT01', 'invokes EX-LEND-QRY01']);
+    expect(from('EX-LEND-UC01-FL01-S01')).toEqual(['fulfills EX-LEND-UC01-R01', 'happens_in EX-V01', 'invokes EX-LEND-CMD01']);
+    expect(from('EX-LEND-UC01-FL01-S02')).toEqual(['exchanges_with EX-INT01', 'invokes EX-LEND-QRY01']);
   });
 
   it('LA-AUT-UC06-R01-T02 A well-formed flow raises no step problem; a second flow, a repeated position, a step fulfilling another use case and a second invoke are refused', async () => {
@@ -116,7 +116,7 @@ describe('flows', () => {
     const flow = data.flow[0];
     const step = data.flow_step[0];
     expect((await refusals(adding(data, { flow: [{ ...flow, id: 'TL-LEND-UC01-FL2' }] }))).map((p) => p.rule)).toEqual(['unique']);
-    expect((await refusals(adding(data, { flow_step: [{ ...step, id: 'TL-LEND-UC01-FL-S02' }] }))).map((p) => p.rule)).toEqual(['unique']);
+    expect((await refusals(adding(data, { flow_step: [{ ...step, id: 'TL-LEND-UC01-FL01-S02' }] }))).map((p) => p.rule)).toEqual(['unique']);
     expect(await refusals(adding(data, { fulfills: [{ source_id: step.id, target_id: 'TL-LEND-UC02-R01' }] }))).toEqual([
       expect.objectContaining({ rule: 'step-fulfills-own-use-case' }),
     ]);

@@ -173,23 +173,23 @@ describe('Lathe on a phone', () => {
     await openApp('/P-D-UC01-R01?view=graph', served());
     // Links on, so the flow step that fulfills the UC requirement is drawn.
     fireEvent.click(await screen.findByRole('button', { name: 'Links' }));
-    await waitFor(() => expect(boxElement('P-D-UC01-FL-S01')).not.toBeNull());
-    const node = () => boxElement('P-D-UC01-FL-S01')!;
+    await waitFor(() => expect(boxElement('P-D-UC01-FL01-S01')).not.toBeNull());
+    const node = () => boxElement('P-D-UC01-FL01-S01')!;
     // A finger's tap on the box drawn on the canvas.
-    tapAt(pointOn('P-D-UC01-FL-S01'));
+    tapAt(pointOn('P-D-UC01-FL01-S01'));
     expect(window.location.pathname).toBe('/P-D-UC01-R01');
     const card = await waitFor(() => { const c = document.querySelector<HTMLElement>('.tap-card'); expect(c).not.toBeNull(); return c!; });
     expect(card).toHaveAttribute('role', 'status');
     expect(card).toHaveTextContent('Librarian lends the thing');
     expect(node()).toHaveClass('is-armed');
-    expect(drawnBox('P-D-UC01-FL-S01')!.armed).toBe(true);
+    expect(drawnBox('P-D-UC01-FL01-S01')!.armed).toBe(true);
     // A tap on the canvas lets go.
     tapEmpty();
     await waitFor(() => expect(document.querySelector('.tap-card')).toBeNull());
     // The chip opens it (selected again, here by the box in the keyboard's layer).
     fireEvent.click(node());
     fireEvent.click(screen.getByRole('button', { name: 'Open Librarian lends the thing' }));
-    expect(window.location.pathname).toBe('/P-D-UC01-FL-S01');
+    expect(window.location.pathname).toBe('/P-D-UC01-FL01-S01');
     // A click that says it came from a mouse opens at once; a finger's or a pen's selects first.
     expect(isTap({ pointerType: 'mouse' } as unknown as Event, true)).toBe(false);
     expect(isTap({ pointerType: 'touch' } as unknown as Event, false)).toBe(true);

@@ -10,7 +10,7 @@ import { RECORD } from './scenarios';
 const WITH_PROBLEM = '/LA-TRC-UC10-R03';
 
 test.describe('Authoring flows', () => {
-  test('LA-AUT-UC14-FL-T read how each kind and check works, from where I am', async ({ page }) => {
+  test('LA-AUT-UC14-FL01-T read how each kind and check works, from where I am', async ({ page }) => {
     // S01: the record format, from the command palette.
     await openPage(page, RECORD);
     await page.keyboard.press('Control+Shift+p');
