@@ -11,7 +11,7 @@
 {"id":"LA-PLT-RM02","title":"Keymap","domain_id":"LA-PLT","description":"Every keyboard command with its bindings as the platform shows them, which every hint, the palette and the sheet read."}
 {"id":"LA-PLT-RM03","title":"Themes","domain_id":"LA-PLT","description":"Every theme, which one is in use and the color mode."}
 {"id":"LA-PLT-RM04","title":"Recent folders","domain_id":"LA-PLT","description":"The recent folders, latest first, as File › Open Recent and the Dock menu list them."}
-{"id":"LA-TRC-RM01","title":"Coverage","domain_id":"LA-TRC","description":"Per domain and obligation kind: how many obligations are designed, built, proved and not automated yet, out of the total."}
+{"id":"LA-TRC-RM01","title":"Coverage","domain_id":"LA-TRC","description":"Per domain and obligation kind: how many obligations are designed, built, proved and not automated yet, out of the total; and per obligation, the tests that count as its proof there."}
 {"id":"LA-TRC-RM02","title":"Coverage gaps","domain_id":"LA-TRC","description":"Each obligation not designed, built or proved, with what it lacks."}
 {"id":"LA-TRC-RM03","title":"Tests by state","domain_id":"LA-TRC","description":"Each domain's tests by state: automated, manual and not automated yet."}
 {"id":"LA-TRC-RM04","title":"Owed pattern rules","domain_id":"LA-TRC","description":"Each pattern rule each following domain owes, with its standing there."}

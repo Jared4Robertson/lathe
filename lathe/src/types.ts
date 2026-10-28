@@ -134,6 +134,12 @@ export interface Coverage {
   /** Every obligation kind in the schema, in kind order. */
   obligations: ObligationCoverage[];
   tests: TestCounts;
+  /**
+   * For each obligation proved here, the tests that count as its proof, in ID order: automated or manual, at a level
+   * its test kind allows, an automated test's file naming it; for a pattern rule, those naming this domain. An
+   * obligation not proved here is absent. The one answer to "proved": the app reads it, never works it out.
+   */
+  proved_by: Record<string, string[]>;
   /** The obligations not yet designed, built or proved, then the records short of a minimum (gap rules), by record. */
   gaps: CoverageGap[];
 }
