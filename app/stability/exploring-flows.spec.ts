@@ -434,9 +434,9 @@ test.describe('Exploring flows', () => {
     await expect(wiki.getByRole('list', { name: 'Integrations' }).getByRole('listitem').first()).toBeVisible();
     // The command and its endpoint, method and route; the endpoint's API requirements.
     await page.goto('/LA-AUT-CMD07');
-    await expect(wiki.getByRole('link', { name: 'LA-AUT-EP02 Write to the data' })).toBeVisible();
+    await expect(wiki.getByRole('link', { name: 'LA-AUT-EP02 POST /api/write' })).toBeVisible();
     await expect(wiki).toContainText('POST · /api/write');
-    await wiki.getByRole('link', { name: 'LA-AUT-EP02 Write to the data' }).click();
+    await wiki.getByRole('link', { name: 'LA-AUT-EP02 POST /api/write' }).click();
     await page.waitForURL((u) => u.pathname === '/LA-AUT-EP02');
     await expect(wiki.getByRole('link', { name: /^LA-AUT-EP02-R\d+/ }).first()).toBeVisible();
     // An integration lists the steps that exchange with its system.

@@ -280,7 +280,7 @@ describe('Authoring flows through the MCP tools', () => {
   });
 
   it('LA-AUT-UC16-FL04-T write the engineering standards the code follows through the MCP tools', async () => {
-    await walk([...LENDING, add('command_handler', { id: 'TL-LEND-CMD01-H', title: 'Open a loan', command_id: 'TL-LEND-CMD01', file: 'src/loans.ts' })], async (a) => {
+    await walk([...LENDING, add('command_handler', { id: 'TL-LEND-CMD01-H', title: 'openLoan', command_id: 'TL-LEND-CMD01', file: 'src/loans.ts' })], async (a) => {
       a.tl.write('src/loans.ts', '// TL-LEND-CMD01-H\n');
       a.tl.write('test/standards.test.ts', "it('TL-STD-LOG-R01-T01 no console.log in src');\n");
       // S01: a standard and its rule.
@@ -292,7 +292,7 @@ describe('Authoring flows through the MCP tools', () => {
       // S03: the standard with its rule, what meets it and its test.
       expect(await a.ok('show', { id: 'TL-STD-LOG' })).toContain('TL-STD-LOG-R01 (standard_rule): No console.log');
       const rule = await a.ok('show', { id: 'TL-STD-LOG-R01' });
-      expect(rule).toContain('TL-LEND-CMD01-H: Open a loan [meets, in]');
+      expect(rule).toContain('TL-LEND-CMD01-H: openLoan [meets, in]');
       expect(rule).toContain('TL-STD-LOG-R01-T01 (standard_rule_test): No console.log in src');
     });
   });
@@ -304,7 +304,7 @@ describe('Authoring flows through the MCP tools', () => {
       { op: 'add', table: 'entity_field', row: { entity_id: 'TL-LEND-EN01', position: 2, name: 'Tool ID', meaning: 'The tool lent.', type: 'text', required: true } },
     ], async (a) => {
       // S01: the technical records under the design records they implement, naming their file.
-      await a.ok('add', { command_handler: { id: 'TL-LEND-CMD01-H', title: 'Open a loan', command_id: 'TL-LEND-CMD01', file: 'src/loans.ts' } });
+      await a.ok('add', { command_handler: { id: 'TL-LEND-CMD01-H', title: 'openLoan', command_id: 'TL-LEND-CMD01', file: 'src/loans.ts' } });
       await a.ok('add', { repository: { id: 'TL-LEND-A1-REPO', title: 'Loans', aggregate_id: 'TL-LEND-A1', file: 'src/loans.ts' } });
       expect(found(await a.check(), 'technical-file-missing').sort()).toEqual([expect.stringMatching(/^TL-LEND-A1-REPO: /), expect.stringMatching(/^TL-LEND-CMD01-H: /)]);
       a.tl.write('src/loans.ts', '// TL-LEND-CMD01-H TL-LEND-A1-REPO\n');
@@ -326,7 +326,7 @@ describe('Authoring flows through the MCP tools', () => {
       add('flow_step', { id: 'TL-LEND-UC01-FL01-S01', title: 'The member borrows a tool', flow_id: 'TL-LEND-UC01-FL01', path: 'main', position: 1 }),
     ], async (a) => {
       // S01: an endpoint under the command it exposes.
-      await a.ok('add', { endpoint: { id: 'TL-LEND-EP01', title: 'Open a loan', command_id: 'TL-LEND-CMD01', method: 'POST', route: '/loans' } });
+      await a.ok('add', { endpoint: { id: 'TL-LEND-EP01', title: 'POST /loans', command_id: 'TL-LEND-CMD01', method: 'POST', route: '/loans' } });
       // S02: view requirements under views and API requirements under endpoints.
       await a.ok('add', { view: { id: 'TL-V01', title: 'Loan desk', route: '/loans' } });
       await a.ok('add', { view_requirement: { id: 'TL-V01-R01', title: 'The due date shows', view_id: 'TL-V01', statement: 'The desk MUST show the loan\'s due date.' } });

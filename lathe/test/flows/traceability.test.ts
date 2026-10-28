@@ -13,7 +13,7 @@ const DESIGNED = [
   add('flow_step', { id: 'TL-LEND-UC01-FL01-S01', title: 'The member borrows a free tool', flow_id: 'TL-LEND-UC01-FL01', path: 'main', position: 1 }),
   link('TL-LEND-UC01-FL01-S01', 'invokes', 'TL-LEND-CMD01'),
   link('TL-LEND-UC01-FL01-S01', 'fulfills', 'TL-LEND-UC01-R01'),
-  add('command_handler', { id: 'TL-LEND-CMD01-H', title: 'Open a loan', command_id: 'TL-LEND-CMD01', file: 'src/loans.ts' }),
+  add('command_handler', { id: 'TL-LEND-CMD01-H', title: 'openLoan', command_id: 'TL-LEND-CMD01', file: 'src/loans.ts' }),
 ];
 
 /** A pattern with one setting and two rules, the second depending on the setting. */
@@ -75,7 +75,7 @@ describe('Traceability flows from the command line', () => {
       { op: 'add', table: 'value_object_field', row: { value_object_id: 'TL-VO01', position: 1, name: 'Address', meaning: 'The address as typed.', type: 'text', required: true } },
       { op: 'add', table: 'entity_field', row: { entity_id: 'TL-LEND-EN01', position: 2, name: 'Borrower email', meaning: 'Where reminders go.', type_value_object_id: 'TL-VO01', required: true } },
       add('constraint', { id: 'TL-VO01-C01', title: 'One at sign', value_object_id: 'TL-VO01', statement: 'An email address MUST hold exactly one @.' }),
-      add('value_type', { id: 'TL-VO01-VT', title: 'Email address', value_object_id: 'TL-VO01', file: 'src/email.ts' }),
+      add('value_type', { id: 'TL-VO01-VT', title: 'EmailAddress', value_object_id: 'TL-VO01', file: 'src/email.ts' }),
       add('invariant', { id: 'TL-LEND-INV01', title: 'One active loan per tool', aggregate_id: 'TL-LEND-A1', statement: 'A tool MUST NOT have two active loans.' }),
       add('product_kind', { name: 'house_rule', product_id: 'TL', label: 'House rule', description: 'A rule of the house.', parent_kind: 'domain', stage: 'use-cases', obligation: true }),
       add('product_relation', { name: 'checks_rule', source_kind: 'use_case_test', target_kind: 'house_rule', product_id: 'TL', role: 'proof', forward_label: 'Checks', reverse_label: 'Checked by', description: 'The test checks the rule.' }),
@@ -126,7 +126,7 @@ describe('Traceability flows from the command line', () => {
     const tl = product();
     await tl.seed([...LENDING, add('uc_requirement', { id: 'TL-LEND-UC01-R02', title: 'A member in debt is refused', use_case_id: 'TL-LEND-UC01', statement: 'The library MUST refuse a member who owes a fee.' }), add('uc_requirement', { id: 'TL-LEND-UC01-R03', title: 'The due date is set', use_case_id: 'TL-LEND-UC01', statement: 'The loan MUST be due two weeks after it opens.' })]);
     const test = (requirement: string, run: Record<string, string>) =>
-      ['add', 'use_case_test', ...flags({ id: `${requirement}-T01`, title: 'A test', uc_requirement_id: requirement, ...run })];
+      ['add', 'use_case_test', ...flags({ id: `${requirement}-T01`, title: `${requirement} holds`, uc_requirement_id: requirement, ...run })];
     // S01, S02: the test under what it proves, automated with the file that runs it.
     tl.write('test/loans.test.ts', "it('TL-LEND-UC01-R01-T01 a tool on loan is refused');\n");
     tl.run(...test('TL-LEND-UC01-R01', { level: 'service', state: 'automated', file: 'test/loans.test.ts' }));
@@ -179,7 +179,7 @@ describe('Traceability flows from the command line', () => {
     // S04: one pattern rule test per rule in each following domain, naming the domain.
     tl.write('test/actions.test.ts', ['TL-PAT-ACT-R01-T01', 'TL-PAT-ACT-R01-T02', 'TL-PAT-ACT-R02-T01'].map((id) => `it('${id}');\n`).join(''));
     for (const [id, rule, domain] of [['TL-PAT-ACT-R01-T01', 'TL-PAT-ACT-R01', 'TL-LEND'], ['TL-PAT-ACT-R01-T02', 'TL-PAT-ACT-R01', 'TL-SHOP'], ['TL-PAT-ACT-R02-T01', 'TL-PAT-ACT-R02', 'TL-LEND']]) {
-      tl.run('add', 'pattern_rule_test', '--id', id, '--title', 'A rule proved', '--pattern_rule_id', rule, '--domain_id', domain, '--level', 'service', '--state', 'automated', '--file', 'test/actions.test.ts');
+      tl.run('add', 'pattern_rule_test', '--id', id, '--title', `${rule} holds in ${domain}`, '--pattern_rule_id', rule, '--domain_id', domain, '--level', 'service', '--state', 'automated', '--file', 'test/actions.test.ts');
     }
     const out = tl.check().stdout;
     expect(line(out, 'TL-LEND', 'pattern rule')).toBe('TL-LEND pattern rule: proof only, 2/2 proved');

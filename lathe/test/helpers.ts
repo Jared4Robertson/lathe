@@ -367,7 +367,7 @@ export function sparse(): Data {
       { id: 'SP-IF01', title: 'Web app', product_id: 'SP', kind: 'web app' },
       { id: 'SP-IF02', title: 'CLI', product_id: 'SP', kind: 'CLI' },
     ],
-    flow: [{ id: 'SP-D-UC02-FL01', title: 'Return', use_case_id: 'SP-D-UC02', interface_id: 'SP-IF01' }],
+    flow: [{ id: 'SP-D-UC02-FL01', title: 'Return a tool in the web app', use_case_id: 'SP-D-UC02', interface_id: 'SP-IF01' }],
     flow_step: [{ id: 'SP-D-UC02-FL01-S01', title: 'Refuse', flow_id: 'SP-D-UC02-FL01', path: 'refused', position: 1 }],
     view: [{ id: 'SP-V01', title: 'Catalog' }],
     endpoint: [
