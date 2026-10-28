@@ -62,7 +62,7 @@ describe('domain page', () => {
     expect(ids(section(/^Command handlers/))).toEqual(['DM-SHOP-CMD01-H']);
     expect(section(/^Command handlers/)).toHaveTextContent('src/basket.ts');
     expect(ids(section(/^Use case tests/))).toEqual(['DM-SHOP-UC01-R01-T01']);
-    expect(section(/^Use case tests/)).toHaveTextContent('api · test/basket.test.ts');
+    expect(section(/^Use case tests/)).toHaveTextContent('service · test/basket.test.ts');
     // A test not automated yet is marked so.
     expect(within(section(/^Invariant tests/)).getByText('not automated yet')).toHaveClass('test-state', 'not-automated');
     // Both domains use the value object and the view, so the product shares them: the domain lists neither.
