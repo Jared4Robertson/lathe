@@ -1,5 +1,5 @@
-// Discovery and test data (LA-AUT-UC22, LA-AUT-UC13, LA-TRC-UC02, LA-TRC-UC03): a product's business outcomes and
-// the capabilities that serve them, the test data sets tests start from, and a test's size and markers, proved
+// Discovery and test data (LA-AUT-UC22, LA-AUT-UC13, LA-TRC-UC02, LA-TRC-UC03): a product's business outcomes, the
+// capabilities that serve them and what measures them, the test data sets tests start from, and a test's size and markers, proved
 // through the store and the engine's load.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { SchemaDescription } from '../../src/index.ts';
@@ -28,7 +28,7 @@ describe('business outcomes', () => {
       expect(await rules(withTable(data, 'business_outcome', [{ ...outcome, [column]: '  ' }]))).toEqual(['column']);
     }
     // Its ID starts with its product's.
-    expect(await rules(withTable(withTable(data, 'serves', []), 'business_outcome', [{ ...outcome, id: 'XX-BO01' }]))).toEqual(['id-prefix']);
+    expect(await rules(withTable(withTable(withTable(data, 'serves', []), 'measured_by', []), 'business_outcome', [{ ...outcome, id: 'XX-BO01' }]))).toEqual(['id-prefix']);
   });
 
   it('LA-AUT-UC22-R02-T01 A capability serves any number of business outcomes, and an outcome is served by any number of capabilities, of its own product', async () => {
@@ -50,6 +50,40 @@ describe('business outcomes', () => {
     expect(await rules(other)).toEqual(['link-crosses-product']);
   });
 
+  it('LA-AUT-UC22-R04-T01 An outcome is measured by tests of any kind, or by records of the product\'s own kinds it allows, or says how it is measured outside the code', async () => {
+    expect(schema.relations.measured_by).toMatchObject({ scope: 'product', role: null, forwardLabel: 'Measured by', reverseLabel: 'Measures', sourceTable: 'business_outcome', targetTable: 'record_id' });
+    // Every test kind, and nothing else of Lathe's, measures an outcome.
+    const testKinds = Object.values(schema.kinds).filter((k) => k.stage === 'test-plan' && k.name !== 'test_data_set').map((k) => k.name).sort();
+    expect(schema.relations.measured_by.pairs.map((p) => p.source)).toEqual(testKinds.map(() => 'business_outcome'));
+    expect(schema.relations.measured_by.pairs.map((p) => p.target).sort()).toEqual(testKinds);
+    const data = everyKind();
+    const several = adding(data, { measured_by: [{ source_id: 'TL-BO01', target_id: 'TL-LEND-INV01-T' }, { source_id: 'TL-BO01', target_id: 'TL-INT01-T01' }] });
+    expect(await refusals(several)).toEqual([]);
+    // A record that is not a test is refused, until the product allows its own kind with a product_relation.
+    expect(await rules(adding(data, { measured_by: [{ source_id: 'TL-BO01', target_id: 'TL-LEND-UC01' }] }))).toEqual(['relation-pair']);
+    const kind = data.product_kind[0];
+    const record = data[String(kind.name)][0];
+    expect(await rules(adding(data, { measured_by: [{ source_id: 'TL-BO01', target_id: String(record.id) }] }))).toEqual(['relation-pair']);
+    const allowed = adding(data, {
+      product_relation: [{ name: 'measured_by', source_kind: 'business_outcome', target_kind: String(kind.name), product_id: 'TL', forward_label: 'Measured by', reverse_label: 'Measures', description: 'The outcome is measured by the report.' }],
+      measured_by: [{ source_id: 'TL-BO01', target_id: String(record.id) }],
+    });
+    expect(await refusals(allowed)).toEqual([]);
+    // Only an outcome is measured; never by a test of another product.
+    expect(await rules(adding(data, { measured_by: [{ source_id: 'TL-LEND-UC01', target_id: 'TL-LEND-INV01-T' }] }))).toEqual(['foreign-key']);
+    const other = adding(data, {
+      product: [{ id: 'XX', title: 'Other' }],
+      business_outcome: [{ id: 'XX-BO01', title: 'Other', product_id: 'XX', statement: 'Something else happens.', measure: 'How often.', target: 'Often.' }],
+      measured_by: [{ source_id: 'XX-BO01', target_id: 'TL-LEND-INV01-T' }],
+    });
+    expect(await rules(other)).toEqual(['link-crosses-product']);
+    // How it is measured outside the code is optional text, never blank.
+    expect(schema.tables.business_outcome.columns.find((c) => c.name === 'measured_outside')).toMatchObject({ required: false });
+    const outcome = data.business_outcome[0];
+    expect(await refusals(withTable(data, 'business_outcome', [{ ...outcome, measured_outside: 'Counted by the Owner from the sales ledger each month.' }]))).toEqual([]);
+    expect(await rules(withTable(data, 'business_outcome', [{ ...outcome, measured_outside: '  ' }]))).toEqual(['column']);
+  });
+
   it('LA-AUT-UC22-R03-T01 Discovery is the first stage, before the domain model, and the business outcome is its kind', () => {
     expect(schema.stages.map((s) => s.name)).toEqual(['discovery', 'domain-model', 'use-cases', 'interaction-design', 'technical-specification', 'test-plan']);
     expect(schema.stages[0]).toMatchObject({ position: 1, label: 'Discovery' });
@@ -68,6 +102,30 @@ describe('business outcomes', () => {
     expect(unlinked.coverage.find((c) => c.domain === 'EX-LEND')?.gaps).toEqual([{ id: 'EX-LEND-CAP01', kind: 'capability', missing: 'capability-serves-no-outcome', message: 'Capability EX-LEND-CAP01 serves no business outcome.' }]);
     // Gaps, never problems.
     expect(unlinked.problems).toEqual([]);
+  });
+});
+
+describe('measuring outcomes', () => {
+  it('LA-TRC-UC02-R13-T01 A business outcome nothing that runs measures, and that names no measure outside the code, is a coverage gap', async () => {
+    expect(gaps(await loadData(complete()))).toEqual([]);
+    const unmeasured = await loadData(without(complete(), 'measured_by', () => true));
+    expect(gaps(unmeasured)).toEqual(['outcome-not-measured EX-BO01']);
+    // The product's gap, outside every domain; a gap, never a problem.
+    expect(unmeasured.coverage.find((c) => c.domain === null)?.gaps).toEqual([{
+      id: 'EX-BO01', kind: 'business_outcome', missing: 'outcome-not-measured',
+      message: 'Business outcome EX-BO01 is measured by nothing; link the tests or records that measure it with measured_by, or say how it is measured outside the code.',
+    }]);
+    expect(unmeasured.problems).toEqual([]);
+    // A test not automated yet measures nothing, so the gap stays and says why.
+    const planned = await loadData(changing(complete(), 'use_case_test', (r) => r.id === 'EX-LEND-UC01-R01-T01', { state: 'not automated yet', file: undefined }));
+    expect(planned.coverage.find((c) => c.domain === null)?.gaps.map((g) => g.message)).toEqual([
+      'Business outcome EX-BO01 is measured by nothing that runs: each test that measures it is not automated yet, or its file is missing or does not name it; link the tests or records that measure it with measured_by, or say how it is measured outside the code.',
+    ]);
+    // A manual test measures it, and so does saying how it is measured outside the code.
+    const manual = await loadData(changing(complete(), 'measured_by', () => true, { target_id: 'EX-INT01-T01' }));
+    expect(gaps(manual)).toEqual([]);
+    const outside = await loadData(changing(without(complete(), 'measured_by', () => true), 'business_outcome', () => true, { measured_outside: 'Counted by the Owner from the loan ledger each month.' }));
+    expect(gaps(outside)).toEqual([]);
   });
 });
 

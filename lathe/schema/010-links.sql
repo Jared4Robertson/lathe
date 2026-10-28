@@ -37,6 +37,8 @@ CREATE TABLE meets (source_id VARCHAR NOT NULL REFERENCES meets_source (id), tar
 COMMENT ON TABLE meets IS 'The technical record follows the standard rule: it shows where the rule is applied, and designs it.';
 CREATE TABLE serves (source_id VARCHAR NOT NULL REFERENCES capability (id), target_id VARCHAR NOT NULL REFERENCES business_outcome (id), PRIMARY KEY (source_id, target_id));
 COMMENT ON TABLE serves IS 'The capability serves the business outcome: what it is for. A capability may serve several outcomes, and an outcome be served by several capabilities.';
+CREATE TABLE measured_by (source_id VARCHAR NOT NULL REFERENCES business_outcome (id), target_id VARCHAR NOT NULL REFERENCES record_id (id), PRIMARY KEY (source_id, target_id));
+COMMENT ON TABLE measured_by IS 'The business outcome is measured by the test or record: a test of any kind, or a record of a product''s own kind (a report, a script, a check row) once the product adds that pair with a product_relation named measured_by. An outcome may be measured by several, and one test or record measure several outcomes.';
 CREATE TABLE starts_from (source_id VARCHAR NOT NULL REFERENCES test (id), target_id VARCHAR NOT NULL REFERENCES test_data_set (id), PRIMARY KEY (source_id, target_id));
 COMMENT ON TABLE starts_from IS 'The test starts from the test data set: it is prepared before the test and reset after.';
 CREATE TABLE about (source_id VARCHAR NOT NULL REFERENCES question (id), target_id VARCHAR NOT NULL REFERENCES record_id (id), PRIMARY KEY (source_id, target_id));
@@ -60,6 +62,7 @@ INSERT INTO meta_relation VALUES
   ('follows', NULL, 'product', 'Follows', 'Followed by', NULL),
   ('meets', NULL, 'product', 'Meets', 'Met by', NULL),
   ('serves', NULL, 'product', 'Serves', 'Served by', NULL),
+  ('measured_by', NULL, 'product', 'Measured by', 'Measures', NULL),
   ('starts_from', NULL, 'product', 'Starts from', 'Starting point of', NULL),
   ('about', NULL, 'product', 'About', 'Questions about this', NULL);
 
@@ -99,6 +102,18 @@ INSERT INTO meta_relation_pair VALUES
   ('meets', 'endpoint_handler', 'standard_rule', 'The endpoint handler follows the standard rule.'),
   ('meets', 'adapter', 'standard_rule', 'The adapter follows the standard rule.'),
   ('serves', 'capability', 'business_outcome', 'The capability serves the business outcome.'),
+  ('measured_by', 'business_outcome', 'constraint_test', 'The business outcome is measured by the constraint test.'),
+  ('measured_by', 'business_outcome', 'invariant_test', 'The business outcome is measured by the invariant test.'),
+  ('measured_by', 'business_outcome', 'specification_test', 'The business outcome is measured by the specification test.'),
+  ('measured_by', 'business_outcome', 'policy_test', 'The business outcome is measured by the policy test.'),
+  ('measured_by', 'business_outcome', 'domain_service_test', 'The business outcome is measured by the domain service test.'),
+  ('measured_by', 'business_outcome', 'use_case_test', 'The business outcome is measured by the use case test.'),
+  ('measured_by', 'business_outcome', 'view_test', 'The business outcome is measured by the view test.'),
+  ('measured_by', 'business_outcome', 'endpoint_test', 'The business outcome is measured by the endpoint test.'),
+  ('measured_by', 'business_outcome', 'flow_test', 'The business outcome is measured by the flow test.'),
+  ('measured_by', 'business_outcome', 'integration_test', 'The business outcome is measured by the integration test.'),
+  ('measured_by', 'business_outcome', 'pattern_rule_test', 'The business outcome is measured by the pattern rule test.'),
+  ('measured_by', 'business_outcome', 'standard_rule_test', 'The business outcome is measured by the standard rule test.'),
   ('starts_from', 'constraint_test', 'test_data_set', 'The constraint test starts from the test data set.'),
   ('starts_from', 'invariant_test', 'test_data_set', 'The invariant test starts from the test data set.'),
   ('starts_from', 'specification_test', 'test_data_set', 'The specification test starts from the test data set.'),

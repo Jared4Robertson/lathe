@@ -33,3 +33,4 @@
 {"id":"LA-TRC-QRY06-H","title":"traceChain","query_id":"LA-TRC-QRY06","file":"app/src/graph/model.ts","description":"traceChain"}
 {"id":"LA-TRC-QRY07-H","title":"the file checks","query_id":"LA-TRC-QRY07","file":"lathe/data/check.jsonl","description":"The test-file-missing, test-file-missing-id, manual-test-file-silent, technical-file-missing and test-case-unnamed checks, each a query of file_facts (test-case-unnamed of test_case too)."}
 {"id":"LA-TRC-QRY08-H","title":"gatherRouteFacts","query_id":"LA-TRC-QRY08","file":"lathe/src/trace/routes.ts","description":"gatherRouteFacts, namesRoute and servedRoutes, written into route_facts and served_routes by writeRouteFacts; the gap rule ROUTE_GAP_RULES."}
+{"id":"LA-TRC-QRY09-H","title":"table-schema-mismatch","query_id":"LA-TRC-QRY09","file":"lathe/data/check.jsonl","description":"The table-schema-mismatch check."}

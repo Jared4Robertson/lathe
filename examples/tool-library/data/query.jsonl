@@ -1,1 +1,2 @@
 {"id":"TL-LEND-QRY01","title":"List the catalog","read_model_id":"TL-LEND-RM01","description":"Every tool in the catalog, in ID order, with its status."}
+{"id":"TL-LEND-QRY02","title":"Measure the outcomes of a month","read_model_id":"TL-LEND-RM02"}
