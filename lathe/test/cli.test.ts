@@ -54,6 +54,17 @@ describe('lathe check', () => {
     expect(gaps).toContain('  SP Shared records short of a minimum (');
   });
 
+  it("LA-TRC-UC06-R03-T01 After a domain's obligation lines the check prints one line of its tests by state", () => {
+    const lines = lathe('check', '--root', broken).stdout.split('\n');
+    const tests = lines.findIndex((l) => l === '  EX-LEND tests: 10 automated, 2 manual, 1 not automated yet');
+    expect(tests).toBeGreaterThan(-1);
+    // Every EX-LEND obligation line comes before it, and none after.
+    const domainLines = lines.map((l, i) => [l, i] as const).filter(([l]) => /^ {2}EX-LEND [a-z ]+: /.test(l) && !l.startsWith('  EX-LEND tests:'));
+    expect(domainLines.length).toBeGreaterThan(5);
+    for (const [, i] of domainLines) expect(i).toBeLessThan(tests);
+    expect(lines.filter((l) => l.startsWith('  EX-LEND tests:'))).toHaveLength(1);
+  });
+
   it('LA-CHK-UC01-R02-T01 The check exits 1 on any error and 0 otherwise, whatever the warnings and gaps', () => {
     expect(lathe('check', '--root', broken).status).toBe(1);
     const good = lathe('check', '--root', clean);

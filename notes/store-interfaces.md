@@ -85,7 +85,7 @@ The full description, with every column's meaning, is `store.schema` at run time
 | `product_kind` (declaration) | name | name, product_id, label, description, parent_kind, stage? (domain-model/use-cases/interaction-design/technical-specification/test-plan), obligation (bool), id_pattern?, id_example? |
 | `product_kind_field` (declaration) | kind, position | kind, position (int), name, type (text/integer/boolean/date), required (bool), description |
 | `product_relation` (declaration) | name, source_kind, target_kind | name, source_kind, target_kind, product_id, role? (design/proof), forward_label, reverse_label, description |
-| `product_setting` (checking) | product_id | product_id, max_children (int) |
+| `product_setting` (checking) | product_id | product_id, max_children (int), max_entities_per_aggregate (int) |
 | `read_model_field` (part) | read_model_id, position | read_model_id, position (int), name, meaning, type? (text/whole number/decimal/date/time/date and time/yes/no), type_value_object_id?, type_aggregate_id?, required (bool), column_name?, example? |
 | `role` (part) | product_id, name | product_id, name, description? |
 | `setting_value` (part) | follower_id, pattern_id, setting | follower_id, pattern_id, setting, value?, not_applicable? |

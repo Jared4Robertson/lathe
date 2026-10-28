@@ -27,6 +27,7 @@
 {"id":"LA-CHK-TM07","title":"Refusal","domain_id":"LA-CHK","meaning":"A row the store will not load or write, reported once as a `data-refused` error naming the file, the line and the rule."}
 {"id":"LA-CHK-TM08","title":"Children limit","domain_id":"LA-CHK","meaning":"The most children of one kind a record of a product should hold: its `max_children` setting, 15 by default."}
 {"id":"LA-CHK-TM09","title":"Lone child","domain_id":"LA-CHK","meaning":"The one record a capability or a group holds, which makes the level group nothing."}
+{"id":"LA-CHK-TM10","title":"Entities limit","domain_id":"LA-CHK","meaning":"The most entities an aggregate of a product should hold: its `max_entities_per_aggregate` setting, 7 by default."}
 {"id":"LA-EXP-TM01","title":"Page","domain_id":"LA-EXP","meaning":"One place in the app at its own address, showing one focus."}
 {"id":"LA-EXP-TM02","title":"Address","domain_id":"LA-EXP","meaning":"A page's path and its `view` query parameter."}
 {"id":"LA-EXP-TM03","title":"Focus","domain_id":"LA-EXP","meaning":"The product, domain, record or group a page is about."}

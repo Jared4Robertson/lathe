@@ -79,7 +79,7 @@
 {"id":"LA-CHK-UC04-FL-S01","title":"The Owner or an Agent runs lathe check on a product whose stages were written at different times","flow_id":"LA-CHK-UC04-FL","path":"main","position":1}
 {"id":"LA-CHK-UC04-FL-S02","title":"A row the schema refuses is refused once, naming its rule, file and line, and nothing that only follows from it is reported","flow_id":"LA-CHK-UC04-FL","path":"refused","position":1}
 {"id":"LA-CHK-UC04-FL-S03","title":"Each view, integration, value object, specification or UI component that nothing uses is an error","flow_id":"LA-CHK-UC04-FL","path":"main","position":2}
-{"id":"LA-CHK-UC04-FL-S04","title":"The shape warnings name a use case with no flow, a test at a level its kind does not allow, each recorded exception and each event not delivered by outbox","flow_id":"LA-CHK-UC04-FL","path":"main","position":3}
+{"id":"LA-CHK-UC04-FL-S04","title":"The shape warnings name a test at a level its kind does not allow, each recorded exception and each event a policy hears not delivered by outbox; coverage names each use case with no flow","flow_id":"LA-CHK-UC04-FL","path":"main","position":3}
 {"id":"LA-CHK-UC04-FL-S05","title":"They fix each error and work through the warnings as the stages fill in","flow_id":"LA-CHK-UC04-FL","path":"main","position":4}
 {"id":"LA-CHK-UC05-FL-S01","title":"The Owner decides a rule belongs to their product, not to Lathe","flow_id":"LA-CHK-UC05-FL","path":"main","position":1}
 {"id":"LA-CHK-UC05-FL-S02","title":"They add it as a check row with the product's product_id, through lathe add check or the app","flow_id":"LA-CHK-UC05-FL","path":"main","position":2}
@@ -88,8 +88,8 @@
 {"id":"LA-CHK-UC05-FL-S05","title":"A product check whose query fails is an error naming the check, and the other checks still run","flow_id":"LA-CHK-UC05-FL","path":"refused","position":2}
 {"id":"LA-CHK-UC05-FL-S06","title":"A checks key in lathe.config.json is refused as an unknown setting","flow_id":"LA-CHK-UC05-FL","path":"refused","position":3}
 {"id":"LA-CHK-UC05-FL-S07","title":"They fix what the new check finds and run lathe check again until it is clean","flow_id":"LA-CHK-UC05-FL","path":"main","position":4}
-{"id":"LA-CHK-UC06-FL-S01","title":"The Owner sets the product's children limit, or leaves the default of 15","flow_id":"LA-CHK-UC06-FL","path":"main","position":1}
-{"id":"LA-CHK-UC06-FL-S02","title":"Lathe check warns of each record with more children of one kind than the limit, counting a flow's steps per path and requirements and rules per group","flow_id":"LA-CHK-UC06-FL","path":"main","position":2}
+{"id":"LA-CHK-UC06-FL-S01","title":"The Owner sets the product's children and entities limits, or leaves the defaults of 15 and 7","flow_id":"LA-CHK-UC06-FL","path":"main","position":1}
+{"id":"LA-CHK-UC06-FL-S02","title":"Lathe check warns of each record with more children of one kind than the limit, counting a flow's steps per path and requirements and rules per group, and of each aggregate with more entities than its limit","flow_id":"LA-CHK-UC06-FL","path":"main","position":2}
 {"id":"LA-CHK-UC06-FL-S03","title":"It warns of each capability or group with one child","flow_id":"LA-CHK-UC06-FL","path":"main","position":3}
 {"id":"LA-CHK-UC06-FL-S04","title":"The Owner or an Agent adds a level or merges one, and checks again","flow_id":"LA-CHK-UC06-FL","path":"main","position":4}
 {"id":"LA-CHK-UC07-FL-S01","title":"While an Agent writes records, the Owner keeps the product's Checks page open: its problems, errors first, grouped by check, and the workspace's below","flow_id":"LA-CHK-UC07-FL","path":"main","position":1}
@@ -283,7 +283,7 @@
 {"id":"LA-TRC-UC04-FL-S04","title":"An Agent writes one pattern rule test per rule in each following domain, naming the domain","flow_id":"LA-TRC-UC04-FL","path":"main","position":3}
 {"id":"LA-TRC-UC04-FL-S05","title":"Lathe check counts each rule once in each domain that owes it, leaving out where it is not applicable or waived","flow_id":"LA-TRC-UC04-FL","path":"main","position":4}
 {"id":"LA-TRC-UC04-FL-S06","title":"The gaps and not-proved warnings name each rule with the domain that still owes it","flow_id":"LA-TRC-UC04-FL","path":"main","position":5}
-{"id":"LA-TRC-UC04-FL-S07","title":"A pattern nobody follows, and any obligation outside every domain, is a warning","flow_id":"LA-TRC-UC04-FL","path":"main","position":6}
+{"id":"LA-TRC-UC04-FL-S07","title":"A pattern nobody follows is a warning, and an obligation outside every domain counts in the product's Shared coverage","flow_id":"LA-TRC-UC04-FL","path":"main","position":6}
 {"id":"LA-TRC-UC05-FL-S01","title":"The Agent writes the test's code, naming the test's own ID in its name","flow_id":"LA-TRC-UC05-FL","path":"main","position":1}
 {"id":"LA-TRC-UC05-FL-S02","title":"Lathe check reads each automated test's file for the test's ID, as a whole ID","flow_id":"LA-TRC-UC05-FL","path":"main","position":2}
 {"id":"LA-TRC-UC05-FL-S03","title":"A file that does not name its test is an error naming the test and the file, and the Agent names it","flow_id":"LA-TRC-UC05-FL","path":"refused","position":1}

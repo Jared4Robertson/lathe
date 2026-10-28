@@ -3,7 +3,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { openStore, LATHE_DATA_DIR, type Workspace } from '../src/index.ts';
 import path from 'node:path';
-import { adding, changing, complete, gaps, loadData, ofCheck, records, removeData, without } from './helpers.ts';
+import { adding, changing, complete, gaps, loadData, ofCheck, records, refusals, removeData, without } from './helpers.ts';
 
 afterAll(removeData);
 
@@ -58,6 +58,19 @@ check('test-file-missing', () => {
     expect(ofCheck(ws, 'test-file-missing')[2].message).toBe('Constraint test EX-VO01-C01-T names the file test/email.test.ts, which does not exist.');
   });
 
+  it('LA-TRC-UC03-R03-T01 only an automated test needs a file and only a manual test gives a reason; a test not automated yet may name a file to come', async () => {
+    const test = (changes: Record<string, string | undefined>) => changing(complete(), 'use_case_test', (r) => r.id === 'EX-LEND-UC01-R01-T01', changes);
+    const refused = async (changes: Record<string, string | undefined>) => (await refusals(test(changes))).map((p) => p.rule);
+    expect(await refused({ file: undefined })).toEqual(['check']);
+    expect(await refused({ state: 'manual', level: 'manual', file: undefined })).toEqual(['check']);
+    expect(await refused({ manual_reason: 'Looked at by eye.' })).toEqual(['check']);
+    expect(await refused({ state: 'not automated yet', file: undefined })).toEqual([]);
+    expect(await refused({ state: 'manual', level: 'manual', file: undefined, manual_reason: 'Looked at by eye.' })).toEqual([]);
+    const later = await loadData(test({ state: 'not automated yet', file: 'test/later.test.ts' }), { missing: ['test/later.test.ts'] });
+    expect(ofCheck(later, 'test-file-missing').map((p) => [p.severity, p.record])).toEqual([['warning', 'EX-LEND-UC01-R01-T01']]);
+    expect(later.problems.filter((p) => p.severity === 'error')).toEqual([]);
+  });
+
   it('a folder is not a test file', async () => {
     const ws = await loadData(changing(complete(), 'policy_test', () => true, { file: 'src' }), { missing: ['src'] });
     expect(records(ofCheck(ws, 'test-file-missing'))).toEqual(['EX-LEND-PO01-T']);
@@ -83,6 +96,16 @@ check('test-file-missing-id', () => {
     const ws = await loadData(complete(), { files });
     expect(records(ofCheck(ws, 'test-file-missing-id'))).toEqual(['EX-LEND-INV01-T']);
   });
+  it('LA-TRC-DS01-T01 an ID is found only as a whole ID, never inside a longer one or as the start of a child ID', async () => {
+    const file = (text: string) => ({ files: { 'test/loans.test.ts': `${text}\nit('EX-LEND-SP01-T ok');\nit('EX-LEND-PO01-T ok');\n` } });
+    const named = async (text: string) => records(ofCheck(await loadData(complete(), file(text)), 'test-file-missing-id')).length === 0;
+    expect(await named("it('EX-LEND-INV01-T refuses a second loan')")).toBe(true);
+    expect(await named('// (EX-LEND-INV01-T), at the end of a line: EX-LEND-INV01-T')).toBe(true);
+    expect(await named("it('EX-LEND-INV01-T2 is another test')")).toBe(false);
+    expect(await named("it('EX-LEND-INV01-T-B is a child')")).toBe(false);
+    expect(await named("it('XEX-LEND-INV01-T is another prefix')")).toBe(false);
+    expect(await named("it('PRE-EX-LEND-INV01-T is longer')")).toBe(false);
+  });
 });
 
 check('manual-test-file-silent', () => {
@@ -95,7 +118,7 @@ check('manual-test-file-silent', () => {
 });
 
 check('test-level-not-allowed', () => {
-  it('a test at a level its kind does not allow is a warning naming the allowed levels', async () => {
+  it('LA-CHK-UC04-R04-T01 a test at a level its kind does not allow is a warning naming the allowed levels', async () => {
     let data = changing(complete(), 'constraint_test', () => true, { level: 'api' });
     data = changing(data, 'flow_test', (r) => r.id === 'EX-LEND-UC01-FL-T', { level: 'api' });
     const ws = await loadData(data);
@@ -146,7 +169,7 @@ describe('nothing uses it', () => {
   ];
   for (const [name, record, message] of unused) {
     check(name, () => {
-      it(`a record that nothing uses is a ${name} error`, () => {
+      it(`LA-CHK-UC04-R09-T01 a record that nothing uses is a ${name} error`, () => {
         expect(ofCheck(ws, name)).toEqual([{ severity: 'error', check: name, record, message }]);
       });
     });
@@ -189,7 +212,7 @@ describe('coverage gaps as warnings', () => {
 });
 
 check('pattern-rule-test-outside-followers', () => {
-  it('a pattern rule test naming a domain that does not follow the pattern is an error; one where the rule is waived is a warning', async () => {
+  it('LA-TRC-UC08-R02-T01 a pattern rule test naming a domain that does not follow the pattern is an error; one where the rule is waived is a warning', async () => {
     let data = adding(complete(), { domain: [{ id: 'EX-SHOP', title: 'Shop', product_id: 'EX', subdomain_type: 'supporting' }] });
     data = adding(data, { pattern_rule_test: [{ id: 'EX-PAT-ACT-R01-T02', title: 'In the shop', pattern_rule_id: 'EX-PAT-ACT-R01', domain_id: 'EX-SHOP', level: 'api', state: 'not automated yet' }] });
     const ws = await loadData(data);
@@ -240,24 +263,24 @@ check('command-change-recorded', () => {
 });
 
 check('event-not-by-outbox', () => {
-  it('LA-CHK-UC04-R13-T01 an event a policy hears, or a published one, not delivered by outbox is a warning', async () => {
+  it('LA-CHK-UC04-R13-T01 an event a policy hears not delivered by outbox is a warning; one that only feeds read models, published or not, may go in process', async () => {
     let data = changing(complete(), 'event_type', (r) => r.id === 'EX-LEND-EV01-ET', { delivery: 'in process' });
     data = changing(data, 'domain_event', (r) => r.id === 'EX-LEND-EV02', { published: true });
+    data = adding(data, { fed_by: [{ source_id: 'EX-LEND-RM01', target_id: 'EX-LEND-EV02' }] });
     const ws = await loadData(data);
     expect(ofCheck(ws, 'event-not-by-outbox').map((p) => p.message)).toEqual([
       'Domain event EX-LEND-EV01 is heard by policy EX-LEND-PO01, but its event type EX-LEND-EV01-ET is delivered in process; deliver it by outbox.',
-      'Domain event EX-LEND-EV02 is published, but its event type EX-LEND-EV02-ET is delivered in process; deliver it by outbox.',
     ]);
   });
 
-  it('LA-CHK-UC04-R13-T01 an event with no event type, or whose event type gives no delivery, is reported too', async () => {
-    let data = without(complete(), 'event_type', (r) => r.id === 'EX-LEND-EV01-ET');
-    data = changing(data, 'event_type', () => true, { delivery: undefined });
-    data = changing(data, 'domain_event', (r) => r.id === 'EX-LEND-EV02', { published: true });
-    const ws = await loadData(data);
-    expect(ofCheck(ws, 'event-not-by-outbox').map((p) => p.message)).toEqual([
+  it('LA-CHK-UC04-R13-T01 an event a policy hears with no event type, or whose event type gives no delivery, is reported too', async () => {
+    const untyped = without(complete(), 'event_type', (r) => r.id === 'EX-LEND-EV01-ET');
+    expect(ofCheck(await loadData(untyped), 'event-not-by-outbox').map((p) => p.message)).toEqual([
       'Domain event EX-LEND-EV01 is heard by policy EX-LEND-PO01, but has no event type; give it one delivered by outbox.',
-      'Domain event EX-LEND-EV02 is published, but its event type EX-LEND-EV02-ET gives no delivery; deliver it by outbox.',
+    ]);
+    const undelivered = changing(complete(), 'event_type', () => true, { delivery: undefined });
+    expect(ofCheck(await loadData(undelivered), 'event-not-by-outbox').map((p) => p.message)).toEqual([
+      'Domain event EX-LEND-EV01 is heard by policy EX-LEND-PO01, but its event type EX-LEND-EV01-ET gives no delivery; deliver it by outbox.',
     ]);
   });
 
@@ -336,7 +359,7 @@ check('step-order', () => {
 // max_children of 2.
 const houseRules = (groups: string[]) =>
   adding(complete(), {
-    product_setting: [{ product_id: 'EX', max_children: 2 }],
+    product_setting: [{ product_id: 'EX', max_children: 2, max_entities_per_aggregate: 7 }],
     product_kind: [{ name: 'house_rule', product_id: 'EX', label: 'House rule', description: 'A rule of the house.', parent_kind: 'domain', stage: 'use-cases', obligation: false }],
     product_kind_field: [{ kind: 'house_rule', position: 1, name: 'group_name', type: 'text', required: false, description: 'Its heading.' }],
     house_rule: groups.map((group_name, i) => ({ id: `EX-LEND-HR${String(i + 1).padStart(2, '0')}`, title: `Rule ${i}`, domain_id: 'EX-LEND', group_name })),
@@ -347,7 +370,7 @@ check('too-many-children', () => {
     Array.from({ length: n }, (_, i) => ({ id: `EX-LEND-UC01-R${String(i + 2).padStart(2, '0')}`, title: `Rule ${i}`, use_case_id: 'EX-LEND-UC01', statement: 'It MUST hold.', ...(group ? { group_name: group(i) } : {}) }));
 
   it('LA-CHK-UC06-R01-T01 a record with more children of one kind than max_children is a warning naming the parent, kind and count', async () => {
-    const ws = await loadData(adding(complete(), { product_setting: [{ product_id: 'EX', max_children: 3 }], uc_requirement: requirements(3) }));
+    const ws = await loadData(adding(complete(), { product_setting: [{ product_id: 'EX', max_children: 3, max_entities_per_aggregate: 7 }], uc_requirement: requirements(3) }));
     expect(ofCheck(ws, 'too-many-children')).toEqual([
       expect.objectContaining({ severity: 'warning', record: 'EX-LEND-UC01', message: expect.stringContaining('Use case EX-LEND-UC01 has 4 children of kind uc_requirement, more than the 3') }),
     ]);
@@ -364,8 +387,20 @@ check('too-many-children', () => {
     expect(ofCheck(ws, 'too-many-children')).toEqual([]);
   });
 
+  it("LA-CHK-UC06-R05-T01 a flow's steps are counted per path, named when not main", async () => {
+    const steps = (path: string, n: number, from: number) =>
+      Array.from({ length: n }, (_, i) => ({ id: `EX-LEND-UC01-FL-S${String(from + i).padStart(2, '0')}`, title: `Step ${from + i}`, flow_id: 'EX-LEND-UC01-FL', path, position: i + 1 + (path === 'main' ? 2 : 0) }));
+    const limit = { product_setting: [{ product_id: 'EX', max_children: 3, max_entities_per_aggregate: 7 }] };
+    const even = adding(complete(), { ...limit, flow_step: [...steps('main', 1, 3), ...steps('refused', 3, 4)] });
+    expect(ofCheck(await loadData(even), 'too-many-children')).toEqual([]);
+    const over = adding(complete(), { ...limit, flow_step: [...steps('main', 1, 3), ...steps('refused', 4, 4)] });
+    expect(ofCheck(await loadData(over), 'too-many-children').map((p) => p.message)).toEqual([
+      expect.stringContaining('Flow EX-LEND-UC01-FL has 4 children of kind flow_step on path refused, more than the 3'),
+    ]);
+  });
+
   it('LA-CHK-UC06-R06-T01 grouped requirements are counted per group, groups compared in any letter case', async () => {
-    const ws = await loadData(adding(complete(), { product_setting: [{ product_id: 'EX', max_children: 2 }], uc_requirement: requirements(4, (i) => (i < 3 ? (i ? 'Limits' : 'limits ') : 'Other')) }));
+    const ws = await loadData(adding(complete(), { product_setting: [{ product_id: 'EX', max_children: 2, max_entities_per_aggregate: 7 }], uc_requirement: requirements(4, (i) => (i < 3 ? (i ? 'Limits' : 'limits ') : 'Other')) }));
     expect(ofCheck(ws, 'too-many-children').map((p) => p.message)).toEqual([expect.stringContaining('has 3 children of kind uc_requirement in group Limits')]);
   });
 
@@ -378,6 +413,30 @@ check('too-many-children', () => {
   });
 });
 
+check('aggregate-too-large', () => {
+  // Child entities of the loan (EX-LEND-A1, which holds the Loan and its Return), stored in its root's table.
+  const children = (n: number) =>
+    Array.from({ length: n }, (_, i) => ({ id: `EX-LEND-EN${String(i + 10).padStart(2, '0')}`, title: `Part ${i}`, aggregate_id: 'EX-LEND-A1', role: 'child', in_root_table: true }));
+
+  it('LA-CHK-UC06-R08-T01 an aggregate with more entities than max_entities_per_aggregate is a warning naming it, the count and the limit', async () => {
+    const at = (n: number) => adding(complete(), { product_setting: [{ product_id: 'EX', max_children: 15, max_entities_per_aggregate: 3 }], entity: children(n) });
+    expect(ofCheck(await loadData(at(1)), 'aggregate-too-large')).toEqual([]);
+    expect(ofCheck(await loadData(at(2)), 'aggregate-too-large')).toEqual([
+      {
+        severity: 'warning', check: 'aggregate-too-large', record: 'EX-LEND-A1',
+        message: "Aggregate EX-LEND-A1 has 4 entities, more than the 3 that the product's max_entities_per_aggregate setting allows; split it into smaller aggregates that each change together.",
+      },
+    ]);
+  });
+
+  it('LA-CHK-UC06-R09-T01 without the setting the limit is 7', async () => {
+    expect(ofCheck(await loadData(adding(complete(), { entity: children(5) })), 'aggregate-too-large')).toEqual([]);
+    expect(ofCheck(await loadData(adding(complete(), { entity: children(6) })), 'aggregate-too-large').map((p) => p.message)).toEqual([
+      expect.stringContaining('Aggregate EX-LEND-A1 has 8 entities, more than the 7'),
+    ]);
+  });
+});
+
 check('lone-child', () => {
   it('LA-CHK-UC06-R03-T01 a capability with exactly one use case is a warning naming it', async () => {
     const data = changing(complete(), 'use_case', (r) => r.id === 'EX-LEND-UC02', { capability_id: 'EX-LEND-CAP02' });
@@ -386,6 +445,28 @@ check('lone-child', () => {
       'Capability EX-LEND-CAP01 has only one use case, EX-LEND-UC01; merge it into a neighboring capability, or give it more.',
       'Capability EX-LEND-CAP02 has only one use case, EX-LEND-UC02; merge it into a neighboring capability, or give it more.',
     ]);
+  });
+
+  it("LA-CHK-UC06-R04-T01 a capability's own children of every kind are counted, not theirs; none or two are not reported", async () => {
+    // CAP02 holds one use case with two requirements: one child of its own.
+    let data = changing(complete(), 'use_case', (r) => r.id === 'EX-LEND-UC02', { capability_id: 'EX-LEND-CAP02' });
+    data = adding(data, {
+      capability: [
+        { id: 'EX-LEND-CAP02', title: 'Catalog', domain_id: 'EX-LEND', position: 2 },
+        { id: 'EX-LEND-CAP03', title: 'Repairs', domain_id: 'EX-LEND', position: 3 },
+      ],
+      uc_requirement: [{ id: 'EX-LEND-UC02-R02', title: 'Tool is priced', use_case_id: 'EX-LEND-UC02', statement: 'The library MUST refuse a tool with no price.' }],
+    });
+    expect(ofCheck(await loadData(data), 'lone-child').map((p) => p.record)).toEqual(['EX-LEND-CAP01', 'EX-LEND-CAP02']);
+    // A record of a product's own kind under CAP02 is a second child of it; CAP03 has none.
+    const noted = adding(data, {
+      product_kind: [{ name: 'note', product_id: 'EX', label: 'Note', description: 'A note.', parent_kind: 'capability', stage: 'use-cases', obligation: false }],
+      note: [
+        { id: 'EX-LEND-CAP01-N01', title: 'Lending is busy', capability_id: 'EX-LEND-CAP01' },
+        { id: 'EX-LEND-CAP02-N01', title: 'Prices change', capability_id: 'EX-LEND-CAP02' },
+      ],
+    });
+    expect(ofCheck(await loadData(noted), 'lone-child')).toEqual([]);
   });
 
   it('LA-CHK-UC06-R07-T01 a group with one member is a warning on its parent, standard rules included', async () => {
