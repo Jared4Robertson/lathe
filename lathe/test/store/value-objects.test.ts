@@ -133,8 +133,8 @@ describe("Authoring's value objects", () => {
     expect(await refusals(adding({ read_model_field: fields }))).toEqual([]);
   });
 
-  it('LA-VO10-C01-T A table stored other than as a table, a view, a materialized view, browser storage or in memory is refused', async () => {
-    const storages = ['table', 'view', 'materialized view', 'browser storage', 'in memory'];
+  it('LA-VO10-C01-T A table storage other than the six (table, view, materialized view, browser storage, file, in memory) is refused', async () => {
+    const storages = ['table', 'view', 'materialized view', 'browser storage', 'file', 'in memory'];
     expect(await refusals(firstRow('table', { storage: 'index' }))).toEqual(notOneOf('table', 'storage', 'index', storages));
     for (const storage of storages.slice(2)) {
       expect(

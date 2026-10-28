@@ -1,6 +1,6 @@
 // The catalog: adds tools, lists them with their status, and records damage and repair.
-// Spec: the command handlers TL-LEND-CMD02-H, CMD03-H and CMD04-H and the query handler TL-LEND-QRY01-H
-// (examples/tool-library/data/).
+// Spec: the command handlers TL-LEND-CMD02-H, CMD03-H and CMD04-H, the query handler TL-LEND-QRY01-H and the
+// catalog's projection TL-LEND-RM01-PJ, kept in memory only (TL-LEND-RM01-TB) (examples/tool-library/data/).
 // Each command handler saves its event to the outbox in its transaction and runs the relay once it commits.
 import type { Outbox } from './events.ts';
 import { LendingError, needsRepair, parseName, parseNote, toolStatus, type CatalogEntry, type Clock, type Tool } from './model.ts';
@@ -90,6 +90,7 @@ export class ToolService {
     return tool;
   }
 
+  /** TL-LEND-RM01-PJ: a tool's catalog entry, from its row and its active loan, worked out on each request. */
   private entry(tool: Tool): CatalogEntry {
     return { ...tool, status: toolStatus(tool, this.store.activeLoanForTool(tool.id) !== undefined) };
   }

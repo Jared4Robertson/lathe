@@ -74,10 +74,12 @@
 {"id":"LA-EXP-EN03-DM","title":"the folded rows' set","entity_id":"LA-EXP-EN03","file":"app/src/shell/Nav.tsx","description":"the folded rows' set"}
 {"id":"LA-EXP-EN09-DM","title":"TabSet","entity_id":"LA-EXP-EN09","file":"app/src/views/tabs.ts","description":"TabSet"}
 {"id":"LA-EXP-EN10-DM","title":"Tab","entity_id":"LA-EXP-EN10","file":"app/src/views/tabs.ts","description":"Tab, with TabView in useTabs.ts"}
+{"id":"LA-PLT-EN02-DM","title":"usePanelSize","entity_id":"LA-PLT-EN02","file":"app/src/shell/prefs.ts","description":"usePanelSize and usePref: a panel's size within its limits and whether it shows, remembered, with a reset; each panel's key, default and limits sit beside it (NAV_WIDTH in App.tsx)."}
 {"id":"LA-PLT-EN03-DM","title":"Command","entity_id":"LA-PLT-EN03","file":"app/src/shell/keymap.ts","description":"Command"}
 {"id":"LA-PLT-EN04-DM","title":"Command.keys","entity_id":"LA-PLT-EN04","file":"app/src/shell/keymap.ts","description":"Command.keys, otherKeys (a child on its root's type)"}
 {"id":"LA-PLT-EN06-DM","title":"Theme","entity_id":"LA-PLT-EN06","file":"app/src/theme/theme.ts","description":"Theme"}
 {"id":"LA-PLT-EN08-DM","title":"Entry","entity_id":"LA-PLT-EN08","file":"desktop/src/main.ts","description":"Entry"}
+{"id":"LA-PLT-EN09-DM","title":"addRecent","entity_id":"LA-PLT-EN09","file":"desktop/src/folders.ts","description":"A recent folder is its absolute path, a string in the list addRecent orders latest first and RECENT_LIMIT caps."}
 {"id":"LA-PLT-EN10-DM","title":"AppServer","entity_id":"LA-PLT-EN10","file":"desktop/src/servers.ts","description":"AppServer"}
 {"id":"LA-PLT-EN14-DM","title":"ThemeState","entity_id":"LA-PLT-EN14","file":"app/src/theme/store.ts","description":"ThemeState"}
 {"id":"LA-PLT-EN15-DM","title":"the recent folders list","entity_id":"LA-PLT-EN15","file":"desktop/src/folders.ts","description":"the recent folders list, RECENT_LIMIT"}
