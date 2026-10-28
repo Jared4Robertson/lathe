@@ -14,8 +14,7 @@ Lathe describes itself in its own format: its specification is the data in [data
 | [plugin/](plugin/) | The Claude Code plugin: skills for writing records, MCP tools that write through the command layer, and a hook that refuses hand edits to data files. |
 | [data/](data/) | Lathe's own specification (product `LA`), with this repo's own checks in `data/check.jsonl`. |
 | [examples/tool-library/](examples/tool-library/) | The example product (`TL`): its code, whose tests carry their spec IDs, and its specification in its own `data/`. |
-| [NOTES.md](NOTES.md) | The thinking and decisions so far. |
-| [notes/briefs/](notes/briefs/) | Reusable briefs for agents working on Lathe. |
+| [notes/](notes/) | Notes for contributors: the store's interfaces, the audits behind the accessibility and stability suites, the phone layout's design, and the plan for what comes next. |
 
 ## Run it
 

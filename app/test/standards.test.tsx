@@ -181,7 +181,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
   });
 
   it.each(['LA-PAT-APP-UX-R03-T01', 'LA-PAT-APP-UX-R03-T02'])('%s The page bar holds the page\'s tabs and layout controls; each pane\'s header holds only that pane\'s actions, on wide and narrow screens alike', async () => {
-    // The side bar starts closed in the Wiki view (brief 64); this test reads it open.
+    // The side bar starts closed in the Wiki view; this test reads it open.
     openSideBar('details', ['wiki', 'graph', 'model']);
     for (const [path, narrow] of [['/DM-SHOP-UC01?view=wiki', false], ['/DM-SHOP-UC01?view=wiki,graph', false], ['/DM-SHOP-UC01?view=wiki,graph', true]] as const) {
       if (narrow) vi.stubGlobal('matchMedia', (query: string) => ({ matches: true, media: query, addEventListener: () => {}, removeEventListener: () => {} }));

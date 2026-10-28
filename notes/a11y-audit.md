@@ -38,7 +38,7 @@ Before: 156 findings in 5 rules; 94 of the 100 audit tests failed (on a phone, t
 
 ## `target-size`: targets under 24 px with neighbors too close (WCAG 2.5.8)
 
-`LA-BRW-DR323`. **Record links listed in a Traceability cell** on a record page (`.trace-cell > .record-link`) were 16 px tall with 2 px between rows, so a 24 px circle on one touched the next. Fix: they are 24 px tall (`min-block-size: 24px` in `app/src/styles.css`). The side bar (brief 64, merged while this ran) lists a record's links the same way in its Details view (`.side-trace-groups dd`), with 4 px between rows; the same fix is in `app/src/views/SideBar.css`. Links inside sentences are exempt in WCAG and were not flagged.
+`LA-BRW-DR323`. **Record links listed in a Traceability cell** on a record page (`.trace-cell > .record-link`) were 16 px tall with 2 px between rows, so a 24 px circle on one touched the next. Fix: they are 24 px tall (`min-block-size: 24px` in `app/src/styles.css`). The side bar lists a record's links the same way in its Details view (`.side-trace-groups dd`), with 4 px between rows; the same fix is in `app/src/views/SideBar.css`. Links inside sentences are exempt in WCAG and were not flagged.
 
 ## `scrollable-region-focusable`: a scroll box the keyboard could not scroll (WCAG 2.1.1)
 
@@ -46,8 +46,8 @@ Before: 156 findings in 5 rules; 94 of the 100 audit tests failed (on a phone, t
 
 - Markdown code blocks (`<pre>`, `app/src/specs/Markdown.tsx`) and the Format page's example header (`app/src/format/FormatPages.tsx`), seen on a phone;
 - the shortcuts sheet's groups (`app/src/shell/commands.tsx`), a region named "Shortcuts";
-- the ERD's key in the Model view (`app/src/model/ModelView.tsx`, a one-line attribute in brief 56's area);
-- the graph's trail on a phone (`app/src/graph/GraphPage.tsx`, a one-line attribute in brief 56's area).
+- the ERD's key in the Model view (`app/src/model/ModelView.tsx`, a one-line attribute);
+- the graph's trail on a phone (`app/src/graph/GraphPage.tsx`, a one-line attribute).
 
 ## `color-contrast`: muted text on the shell (WCAG 1.4.3)
 
@@ -63,4 +63,4 @@ Before: 156 findings in 5 rules; 94 of the 100 audit tests failed (on a phone, t
 ## Left for later
 
 - The page tab's close button is hidden from screen readers; the tab could announce its Delete shortcut too, but the Tooltip sets the tab's `aria-keyshortcuts` from the keep command, and both would need one attribute.
-- The graph's trail is a tab stop on every page with the graph open, even when it does not overflow; making it one only when it scrolls needs a measure in `GraphPage.tsx` (brief 56's area).
+- The graph's trail is a tab stop on every page with the graph open, even when it does not overflow; making it one only when it scrolls needs a measure in `GraphPage.tsx`.

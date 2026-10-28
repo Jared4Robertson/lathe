@@ -1,6 +1,6 @@
 # Lathe on a phone: design decisions
 
-Brief 52. The records are `LA-BRW-UC116` (and its requirements), `LA-BRW-DR220` to `DR223`, components `C210` to `C215`, tests `T460` to `T471`, and the standard `LA-PAT-APP-UX-R07`. The page bar (`LA-PAT-APP-UX-R03`) was designed at the same time, at Jared's request, so the wide and the narrow layouts are one design at two widths.
+The records are `LA-BRW-UC116` (and its requirements), `LA-BRW-DR220` to `DR223`, components `C210` to `C215`, tests `T460` to `T471`, and the standard `LA-PAT-APP-UX-R07`. The page bar (`LA-PAT-APP-UX-R03`) was designed at the same time, at the Owner's request, so the wide and the narrow layouts are one design at two widths.
 
 ## The principle
 
@@ -19,12 +19,12 @@ Each decision lists the options weighed, the choice and why.
 ### 2. The page bar is one design at two widths
 
 - **Options:** (a) a bottom tab bar on the phone (Wiki, Graph, Model, Pages, Inspector), the classic thumb-zone pattern; (b) the wide screen's page bar, compact, under the top bar.
-- **Chosen:** (b), per Jared's page bar decision. A tab is a page and the panes are views of it, so the page bar holds what belongs to the page: the tabs, the View group and the inspector toggle. On a phone the same bar sits under the top bar: the tabs fold into an "Open pages" button with a count, the View group becomes a segmented switch (Wiki, Graph, Model; icons and labels, labels dropped under 380 px), and the inspector toggle stays at the far right, beside where the inspector would be.
+- **Chosen:** (b), per the Owner's page bar decision. A tab is a page and the panes are views of it, so the page bar holds what belongs to the page: the tabs, the View group and the inspector toggle. On a phone the same bar sits under the top bar: the tabs fold into an "Open pages" button with a count, the View group becomes a segmented switch (Wiki, Graph, Model; icons and labels, labels dropped under 380 px), and the inspector toggle stays at the far right, beside where the inspector would be.
 - **Why:** one design is easier to learn and to keep consistent; the controls are where they are on the desktop. The bottom bar's thumb-reach advantage is smaller than it looks here: the switch is used once per page, not continuously, and sheets that need a thumb (the inspector, the open pages, the canvas card) do sit at the bottom.
 
 ### 3. One view at a time, without forgetting the wide screen's views
 
-- **Chosen:** the phone shows the first view the address names (`?view=wiki,graph` shows the wiki). Tapping Graph shows the graph alone and writes `?view=graph` (replacing the history entry, as the desktop toggles do) and the tab's views. It does not write the views remembered for a wide screen (`lathe:view`), so a phone visit never collapses Jared's desktop set.
+- **Chosen:** the phone shows the first view the address names (`?view=wiki,graph` shows the wiki). Tapping Graph shows the graph alone and writes `?view=graph` (replacing the history entry, as the desktop toggles do) and the tab's views. It does not write the views remembered for a wide screen (`lathe:view`), so a phone visit never collapses the Reader's desktop set.
 - **Why:** the address must say what is on screen (UX-R06); the remembered set is a wide-screen preference.
 - No pane headers (nothing to close or maximize when only one pane shows) and no resize handles.
 
@@ -46,7 +46,7 @@ Each decision lists the options weighed, the choice and why.
 │ Read a record as a wiki page, a      │  a record page: the wiki, full width
 │ graph or a model, side by side       │
 │ LA-BRW-UC50                          │
-│ Jared opens any record, group, …     │
+│ Owner opens any record, group, …     │
 │ UC requirements 13                   │
 │ [ Filter by ID or title ]  13 of 13  │
 │ ┌──────────────────────────────────┐ │

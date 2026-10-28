@@ -61,7 +61,7 @@ export function sideFor(tabState: SideState | undefined, mode: SideMode): SideMo
 // ---------- What the canvases tell the side bar ----------
 
 /**
- * The node a canvas has under the pointer or keyboard focus (`hover`, the spotlight of brief 56)
+ * The node a canvas has under the pointer or keyboard focus (`hover`, the spotlight)
  * and the one selected (`selected`: tapped once, or a wiki row focused or right-clicked). It is a
  * small store, so a hover redraws only the side bar, never the canvas.
  */
