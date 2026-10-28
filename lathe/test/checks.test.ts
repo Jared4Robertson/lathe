@@ -332,6 +332,16 @@ check('step-order', () => {
   });
 });
 
+// A product's own kind with a group_name field, its records under domain EX-LEND in the groups given, under a
+// max_children of 2.
+const houseRules = (groups: string[]) =>
+  adding(complete(), {
+    product_setting: [{ product_id: 'EX', max_children: 2 }],
+    product_kind: [{ name: 'house_rule', product_id: 'EX', label: 'House rule', description: 'A rule of the house.', parent_kind: 'domain', stage: 'use-cases', obligation: false }],
+    product_kind_field: [{ kind: 'house_rule', position: 1, name: 'group_name', type: 'text', required: false, description: 'Its heading.' }],
+    house_rule: groups.map((group_name, i) => ({ id: `EX-LEND-HR${String(i + 1).padStart(2, '0')}`, title: `Rule ${i}`, domain_id: 'EX-LEND', group_name })),
+  });
+
 check('too-many-children', () => {
   const requirements = (n: number, group?: (i: number) => string) =>
     Array.from({ length: n }, (_, i) => ({ id: `EX-LEND-UC01-R${String(i + 2).padStart(2, '0')}`, title: `Rule ${i}`, use_case_id: 'EX-LEND-UC01', statement: 'It MUST hold.', ...(group ? { group_name: group(i) } : {}) }));
@@ -358,6 +368,14 @@ check('too-many-children', () => {
     const ws = await loadData(adding(complete(), { product_setting: [{ product_id: 'EX', max_children: 2 }], uc_requirement: requirements(4, (i) => (i < 3 ? (i ? 'Limits' : 'limits ') : 'Other')) }));
     expect(ofCheck(ws, 'too-many-children').map((p) => p.message)).toEqual([expect.stringContaining('has 3 children of kind uc_requirement in group Limits')]);
   });
+
+  it("LA-CHK-UC06-R06-T02 a product kind's records are counted per group_name", async () => {
+    const under = ['Noise', 'Noise', 'Tools', 'tools '];
+    expect(ofCheck(await loadData(houseRules(under)), 'too-many-children')).toEqual([]);
+    expect(ofCheck(await loadData(houseRules([...under, 'Yard', 'Yard', 'Yard'])), 'too-many-children').map((p) => p.message)).toEqual([
+      expect.stringContaining('Domain EX-LEND has 3 children of kind house_rule in group Yard, more than the 2'),
+    ]);
+  });
 });
 
 check('lone-child', () => {
@@ -377,6 +395,12 @@ check('lone-child', () => {
     const ws = await loadData(data);
     expect(ofCheck(ws, 'lone-child').map((p) => p.message)).toEqual([
       'Standard EX-STD-CODE\'s group "Imports" has only one standard rule, EX-STD-CODE-R01; merge it into a neighboring group, or give it more.',
+    ]);
+  });
+
+  it("LA-CHK-UC06-R07-T02 a product kind's group with one member is a lone-child warning", async () => {
+    expect(ofCheck(await loadData(houseRules(['Noise', 'noise', 'Yard'])), 'lone-child').map((p) => p.message)).toEqual([
+      'Domain EX-LEND\'s group "Yard" has only one house rule, EX-LEND-HR03; merge it into a neighboring group, or give it more.',
     ]);
   });
 });
