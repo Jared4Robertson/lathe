@@ -174,7 +174,9 @@ A query can read every typed table, the `record_parent`, `link` and `record_grou
 | `test_run` | `id`, `kind`, `parent_id`, `domain_id` (a pattern rule test's), `level`, `state`, `file`, `level_allowed`, `backed`: every test with its run by |
 | `owed_pattern_rules` | `domain`, `id`: each pattern rule a domain owes, as a follower of its pattern, unless not applicable or waived there |
 | `obligation_impl`, `obligation_proof` | the technical records that implement each obligation, and the tests that prove it |
-| `coverage_item` | `product`, `domain`, `id`, `kind`, `proof_only`, `designed`, `built`, `proved`, `has_not_automated`: each obligation a domain, or the product outside the domains, owes |
+| `coverage_owed` | `product`, `domain`, `id`, `kind`: each obligation a domain, or the product outside the domains, owes |
+| `coverage_proof` | `product`, `domain`, `id`, `test_id`: the tests that count as an owed obligation's proof where it is owed (a pattern rule's naming the owing domain); the app reads them as `Coverage.proved_by` |
+| `coverage_item` | `product`, `domain`, `id`, `kind`, `proof_only`, `designed`, `built`, `proved`, `has_not_automated`: each owed obligation, judged |
 | `coverage_count`, `coverage_gap`, `coverage_tests` | the counts per scope and obligation kind, every gap (`missing` is designed, built, proved or a gap rule's name, with its `message`) and the tests by state |
 
 If a check's query fails to run, the engine reports that as an error under the check's name rather than crashing. After adding or changing one of Lathe's checks, run `npm --prefix lathe run reference` to regenerate REFERENCE.md; a test fails when it is out of date.

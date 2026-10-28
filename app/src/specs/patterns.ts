@@ -1,9 +1,9 @@
-import { textOf, byIdOrder, partsOf, type Row, type SpecIndex, type SpecRecord } from './data';
+import { textOf, byIdOrder, partsOf, provedByOf, type Row, type SpecIndex, type SpecRecord } from './data';
 
 // Patterns and their rules, as the pages show them (lathe/REFERENCE.md). A domain
 // follows a pattern when the domain itself or any of its use cases `follows` it, and then owes each
-// of the pattern's rules: proved there when a pattern rule test under the rule names the domain and
-// is automated or manual, and not automated yet when only one not automated yet does. A rule does not apply in a
+// of the pattern's rules: proved there as the engine's coverage says (a pattern rule test naming the domain that
+// counts as proof), and not automated yet when only one not automated yet does. A rule does not apply in a
 // domain when it names a setting that all the domain's following use cases mark not applicable with
 // a reason (unless the domain follows the pattern itself), or when no follower there meets its
 // applies-when condition: it is waived there. Pure logic, tested directly.
@@ -132,7 +132,7 @@ export type RuleStatus =
   | { applies: false; why: 'waived'; condition: AppliesWhen; given: string[] }
   | {
       applies: true;
-      /** The rule's tests that name the domain, automated or manual: its proof there. */
+      /** The rule's tests that count as its proof in the domain, as the engine's coverage says. */
       provedBy: string[];
       /** Its tests in the domain not automated yet. */
       notAutomatedBy: string[];
@@ -166,12 +166,9 @@ export function ruleStatus(index: SpecIndex, rule: SpecRecord, domainId: string,
       return { applies: false, why: 'waived', condition, given: [...values.values()] };
     }
   }
-  const provedBy: string[] = [];
-  const notAutomatedBy: string[] = [];
-  for (const test of index.children.get(rule.id) ?? []) {
-    if (test.kind !== 'pattern_rule_test' || textOf(test.row, 'domain_id') !== domainId) continue;
-    (textOf(test.row, 'state') === 'not automated yet' ? notAutomatedBy : provedBy).push(test.id);
-  }
-  const sorted = (ids: string[]) => [...new Set(ids)].sort((a, b) => a.localeCompare(b, 'en', { numeric: true }));
-  return { applies: true, provedBy: sorted(provedBy), notAutomatedBy: sorted(notAutomatedBy) };
+  const notAutomatedBy = (index.children.get(rule.id) ?? [])
+    .filter((t) => t.kind === 'pattern_rule_test' && textOf(t.row, 'domain_id') === domainId && textOf(t.row, 'state') === 'not automated yet')
+    .sort(byIdOrder)
+    .map((t) => t.id);
+  return { applies: true, provedBy: provedByOf(index, rule.id, domainId), notAutomatedBy };
 }

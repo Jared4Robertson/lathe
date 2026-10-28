@@ -14,6 +14,7 @@ export function patternWorkspace(): SpecData {
     ? {
       ...c,
       obligations: [...c.obligations, obligation('pattern_rule', 'Pattern rule', 2, 2, 2, 1, 0, true)],
+      proved_by: { ...c.proved_by, 'DM-PAT-AUDIT-R01': ['DM-PAT-AUDIT-R01-T01'] },
       gaps: [...c.gaps, gap('DM-PAT-AUDIT-R02', 'pattern_rule', 'proved')],
     }
     : c));

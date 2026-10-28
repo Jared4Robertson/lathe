@@ -4,7 +4,7 @@ import { graphEdgeLabel, graphRelationLabel } from '../src/graph/model';
 import { type SpecIndex } from '../src/specs/data';
 import { linkLabel, relationLabelOf } from '../src/specs/labels';
 import { RecordContent } from '../src/specs/RecordContent';
-import { buildersOf, designersOf, judge, owingDomains, testsOf, traceOf } from '../src/specs/trace';
+import { buildersOf, designersOf, judge, notAutomatedTestsOf, owingDomains, traceOf } from '../src/specs/trace';
 import { modelWorkspace } from './fixtures/model';
 import { patternWorkspace } from './fixtures/patterns';
 import { workspace } from './fixtures/workspace';
@@ -77,7 +77,7 @@ describe('traceability', () => {
     trace = show(index, 'DM-SHOP-INV01');
     expect(gapKinds(trace)).toContain('not-automated');
     expect(trace).toHaveTextContent('Not proved yet: its test is not automated yet.');
-    expect(testsOf(index, index.byId.get('DM-SHOP-INV01')!)).toEqual({ proved: [], notAutomated: ['DM-SHOP-INV01-T'] });
+    expect(notAutomatedTestsOf(index, index.byId.get('DM-SHOP-INV01')!)).toEqual(['DM-SHOP-INV01-T']);
     cleanup();
 
     // A pattern rule, per following domain, proved by its tests that name the domain; it needs no design.
