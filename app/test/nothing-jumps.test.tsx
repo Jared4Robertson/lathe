@@ -136,7 +136,7 @@ describe('nothing jumps (LA-PAT-APP-UX-R08)', () => {
     expect(source).toMatch(/useLayoutEffect\(\(\) => \{ onGraph\?\.\(/);
     const model = readFileSync(join(__dirname, '..', 'src', 'erd', 'ErdView.tsx'), 'utf8');
     // The ERD is fitted before its first paint, and observes its size once (each new observer reported the size again and cut the glide short).
-    expect(model).toMatch(/useLayoutEffect\(\(\) => \{\n\s*if \(!placed\) return;\n\s*fit\(fitted\.current\);/);
+    expect(model).toMatch(/useLayoutEffect\(\(\) => \{\n\s*if \(!placed\) return;\n\s*if \(fit\(fitted\.current\)\) fitted\.current = true;/);
     expect(model).toMatch(/observer\.observe\(el\);\n\s*return \(\) => observer\.disconnect\(\);\n\s*\}, \[\]\);/);
   });
 
