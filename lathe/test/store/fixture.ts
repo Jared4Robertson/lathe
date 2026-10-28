@@ -3,7 +3,7 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import type { Row } from '../../src/index.ts';
+import { SCHEMA_VERSION, type Row } from '../../src/index.ts';
 
 export type Data = Record<string, Row[]>;
 
@@ -69,7 +69,8 @@ export function everyKind(): Data {
     ],
 
     // Interaction design.
-    flow: [{ id: 'TL-LEND-UC01-FL01', title: 'Borrow at the desk', use_case_id: 'TL-LEND-UC01' }],
+    interface: [{ id: 'TL-IF01', title: 'Web app', product_id: 'TL', kind: 'web app' }],
+    flow: [{ id: 'TL-LEND-UC01-FL01', title: 'Borrow at the desk', use_case_id: 'TL-LEND-UC01', interface_id: 'TL-IF01' }],
     flow_step: [{ id: 'TL-LEND-UC01-FL01-S01', title: 'Pick a tool', flow_id: 'TL-LEND-UC01-FL01', path: 'main', position: 1 }],
     view: [{ id: 'TL-V01', title: 'Catalog', route: '/catalog' }],
     view_requirement: [{ id: 'TL-V01-R01', title: 'Free tools first', view_id: 'TL-V01', statement: 'The catalog MUST list free tools first.' }],
@@ -166,14 +167,25 @@ export function removeData(): void {
   for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true });
 }
 
-/** A fresh folder (a product repo root) holding the data as data/<table>.jsonl files, one JSON object per line. */
+/**
+ * A fresh folder (a product repo root) holding the data as data/<table>.jsonl files, one JSON object per line, and a
+ * lathe.config.json naming this Lathe's schema version.
+ */
 export function writeData(data: Data): string {
   const root = mkdtempSync(path.join(tmpdir(), 'lathe-store-'));
   roots.push(root);
   mkdirSync(path.join(root, 'data'));
+  writeFileSync(path.join(root, 'lathe.config.json'), `${JSON.stringify({ schema: SCHEMA_VERSION, data: 'data' }, null, 2)}\n`);
   for (const [table, rows] of Object.entries(data)) {
     if (rows.length) writeFileSync(path.join(root, 'data', `${table}.jsonl`), rows.map((r) => `${JSON.stringify(r)}\n`).join(''));
   }
+  return root;
+}
+
+/** A fresh, empty folder named by its prefix in the temp folder, with a lathe.config.json naming this Lathe's schema version. */
+export function configuredRoot(prefix: string): string {
+  const root = mkdtempSync(path.join(tmpdir(), prefix));
+  writeFileSync(path.join(root, 'lathe.config.json'), `${JSON.stringify({ schema: SCHEMA_VERSION })}\n`);
   return root;
 }
 

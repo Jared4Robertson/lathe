@@ -153,8 +153,10 @@ describe('Authoring flows', () => {
       add('uc_requirement', { id: 'TL-LEND-UC02-R01', title: 'The return is dated', use_case_id: 'TL-LEND-UC02', statement: 'The return MUST carry its date.' }),
       add('view', { id: 'TL-V01', title: 'Loan desk' }),
     ]);
-    // S01: the flow, and its steps in order on their paths.
-    tl.run('add', 'flow', '--id', 'TL-LEND-UC01-FL01', '--title', 'Borrow a tool', '--use_case_id', 'TL-LEND-UC01');
+    // S01: the flow through the product's interface, its ID ending in the interface's number, and its steps in order on
+    // their paths.
+    expect(tl.run('next-id', 'flow', '--parent', 'TL-LEND-UC01')).toBe('TL-LEND-UC01-FL01');
+    tl.run('add', 'flow', '--id', 'TL-LEND-UC01-FL01', '--title', 'Borrow a tool', '--use_case_id', 'TL-LEND-UC01', '--interface_id', 'TL-IF01');
     const step = (n: string, title: string, pathName: string, position: string) =>
       tl.run('add', 'flow_step', '--id', `TL-LEND-UC01-FL01-${n}`, '--title', title, '--flow_id', 'TL-LEND-UC01-FL01', '--path', pathName, '--position', position);
     step('S01', 'The member asks for a tool at the desk', 'main', '1');
@@ -403,7 +405,7 @@ describe('Authoring flows', () => {
     const tl = product();
     await tl.seed([
       ...LENDING,
-      add('flow', { id: 'TL-LEND-UC01-FL01', title: 'Borrow a tool', use_case_id: 'TL-LEND-UC01' }),
+      add('flow', { id: 'TL-LEND-UC01-FL01', title: 'Borrow a tool', use_case_id: 'TL-LEND-UC01', interface_id: 'TL-IF01' }),
       add('flow_step', { id: 'TL-LEND-UC01-FL01-S01', title: 'The member borrows a tool', flow_id: 'TL-LEND-UC01-FL01', path: 'main', position: 1 }),
     ]);
     // S01: an endpoint under the command it exposes.

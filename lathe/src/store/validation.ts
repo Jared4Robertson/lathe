@@ -198,7 +198,7 @@ WHERE f.id <> f.use_case_id || '-FL' || n.number`,
       description: "A step of a flow through an API, a CLI or agent tools happens in no view: only a web app's, a desktop app's or another interface's steps happen in views.",
       sql: `
 SELECT 'happens_in' AS table_name, l.source_id || chr(0) || l.target_id AS row_key,
-       l.source_id || ' is a step of ' || f.id || ', which goes through ' || i.id || ', a ' || i.kind || ' interface, so it cannot happen in view ' || l.target_id AS message
+       l.source_id || ' is a step of ' || f.id || ', which goes through ' || i.id || ', an interface of kind ' || i.kind || ', so it cannot happen in view ' || l.target_id AS message
 FROM happens_in l
 JOIN flow_step s ON s.id = l.source_id
 JOIN flow f ON f.id = s.flow_id

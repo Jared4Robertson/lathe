@@ -185,9 +185,10 @@ export function complete(): Data {
     pattern_setting: [{ pattern_id: 'EX-PAT-ACT', position: 1, name: 'record', meaning: 'The record the action saves.' }],
     pattern_rule: [{ id: 'EX-PAT-ACT-R01', title: 'A saved record reads the same', pattern_id: 'EX-PAT-ACT', statement: 'A saved record MUST read the same everywhere.' }],
 
+    interface: [{ id: 'EX-IF01', title: 'Web app', product_id: 'EX', kind: 'web app' }],
     flow: [
-      { id: 'EX-LEND-UC01-FL01', title: 'Borrow at the desk', use_case_id: 'EX-LEND-UC01' },
-      { id: 'EX-LEND-UC02-FL01', title: 'Add at the desk', use_case_id: 'EX-LEND-UC02' },
+      { id: 'EX-LEND-UC01-FL01', title: 'Borrow at the desk', use_case_id: 'EX-LEND-UC01', interface_id: 'EX-IF01' },
+      { id: 'EX-LEND-UC02-FL01', title: 'Add at the desk', use_case_id: 'EX-LEND-UC02', interface_id: 'EX-IF01' },
     ],
     flow_step: [
       { id: 'EX-LEND-UC01-FL01-S01', title: 'Borrow a tool', flow_id: 'EX-LEND-UC01-FL01', path: 'main', position: 1 },
@@ -327,7 +328,11 @@ export function sparse(): Data {
       { id: 'SP-D-UC02', title: 'Return a tool', capability_id: 'SP-D-CAP02' },
     ],
     pattern: [{ id: 'SP-PAT-X', title: 'Ruleless', product_id: 'SP' }],
-    flow: [{ id: 'SP-D-UC02-FL01', title: 'Return', use_case_id: 'SP-D-UC02' }],
+    interface: [
+      { id: 'SP-IF01', title: 'Web app', product_id: 'SP', kind: 'web app' },
+      { id: 'SP-IF02', title: 'CLI', product_id: 'SP', kind: 'CLI' },
+    ],
+    flow: [{ id: 'SP-D-UC02-FL01', title: 'Return', use_case_id: 'SP-D-UC02', interface_id: 'SP-IF01' }],
     flow_step: [{ id: 'SP-D-UC02-FL01-S01', title: 'Refuse', flow_id: 'SP-D-UC02-FL01', path: 'refused', position: 1 }],
     view: [{ id: 'SP-V01', title: 'Catalog' }],
     endpoint: [{ id: 'SP-D-EP01', title: 'Add a tool', command_id: 'SP-D-CMD01', method: 'POST', route: '/tools' }],
