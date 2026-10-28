@@ -126,6 +126,34 @@ let databases = 0;
 // One empty data database per schema database, copied while nothing waits on it, so a load or write starts filling
 // straight away. It holds the schema and the meta-model's rows, never a product's data (LA-PLT-UC01-R04).
 const spares = new Map<string, Promise<string>>();
+// The work the engine does on no store's behalf (spares being copied, schema databases being built), until it
+// settles. closeEngine waits for it: native work still running when a process exits ends it with an engine error.
+const background = new Set<Promise<unknown>>();
+// The stores opening or open, which closeEngine leaves the engine running for.
+let live = 0;
+
+function inBackground<T>(work: Promise<T>): Promise<T> {
+  background.add(work);
+  const settled = () => background.delete(work);
+  work.then(settled, settled);
+  return work;
+}
+
+/**
+ * Waits for the engine's background work, then closes the shared DuckDB instance when no store is opening or open
+ * (another server in the process may still use it). The next openStore starts the engine afresh. A process that
+ * is about to exit calls it after closing its stores, so no native work outlives the JavaScript that awaits it.
+ */
+export async function closeEngine(): Promise<void> {
+  while (background.size) await Promise.allSettled([...background]);
+  if (live > 0 || !engine) return;
+  const closing = engine;
+  engine = undefined;
+  spares.clear();
+  schemaDatabases.clear();
+  const opened = await closing.catch(() => undefined);
+  opened?.instance.closeSync();
+}
 
 function sharedEngine(): Promise<Engine> {
   engine ??= (async () => {
@@ -151,8 +179,15 @@ export async function openStore(root: string, options: StoreOptions = {}): Promi
   const latheDataDir = options.latheDataDir === undefined ? LATHE_DATA_DIR : options.latheDataDir;
   // Lathe's own folder opened as a product's (Lathe's package itself) is loaded once, as the product's.
   const beside = latheDataDir === null || path.resolve(latheDataDir) === dataDir ? null : path.resolve(latheDataDir);
-  const { instance, baseSchema } = await sharedEngine();
-  const store = new Store(instance, await instance.connect(), baseSchema, dataDir, beside, options.steps);
+  live++;
+  let store: Store;
+  try {
+    const { instance, baseSchema } = await sharedEngine();
+    store = new Store(instance, await instance.connect(), baseSchema, dataDir, beside, options.steps);
+  } catch (error) {
+    live--;
+    throw error;
+  }
   try {
     await store.load();
   } catch (error) {
@@ -178,6 +213,7 @@ export class Store {
   /** The rows loaded from latheDataDir, which no write changes or writes out. */
   private builtIn = new WeakSet<Row>();
   private queue: Promise<unknown> = Promise.resolve();
+  private closing: Promise<void> | undefined;
   private readonly steps: Record<string, number> | undefined;
 
   constructor(instance: DuckDBInstance, connection: DuckDBConnection, baseSchema: SchemaDescription, dataDir: string, latheDataDir: string | null, steps?: Record<string, number>) {
@@ -246,11 +282,19 @@ export class Store {
     return this.origins.get(row);
   }
 
-  /** Drops the store's databases and closes its connection. */
-  async close(): Promise<void> {
-    await this.main.run(`USE ${BASE_DB}`);
-    if (this.dataDb) await this.detach(this.dataDb);
-    this.main.closeSync();
+  /** Waits for the write in progress, then drops the store's databases and closes its connection. A second call does nothing. */
+  close(): Promise<void> {
+    this.closing ??= (async () => {
+      await this.queue;
+      try {
+        await this.main.run(`USE ${BASE_DB}`);
+        if (this.dataDb) await this.detach(this.dataDb);
+      } finally {
+        this.main.closeSync();
+        live--;
+      }
+    })();
+    return this.closing;
   }
 
   // Loading.
@@ -359,7 +403,7 @@ export class Store {
           builder.closeSync();
         }
       })();
-      schemaDatabases.set(sql, built);
+      schemaDatabases.set(sql, inBackground(built));
       built.catch(() => schemaDatabases.delete(sql));
     }
     return built;
@@ -489,7 +533,7 @@ export class Store {
 
   private prepareSpare(schemaDb: string, schema: SchemaDescription) {
     if (spares.has(schemaDb)) return;
-    const spare = this.copySchema(schemaDb, schema);
+    const spare = inBackground(this.copySchema(schemaDb, schema));
     spares.set(schemaDb, spare);
     spare.catch(() => spares.delete(schemaDb));
   }

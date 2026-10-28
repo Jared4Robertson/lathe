@@ -888,7 +888,7 @@ No domain owes its rules, so they count in no domain's coverage. Link the use ca
 
 A capability or a group with exactly one child.
 
-A level that holds one record groups nothing. A capability with one use case is reported; one with none is a coverage gap instead. A group (the `group_name` of UC requirements, view requirements, API requirements, pattern rules and standard rules) is counted among its parent's children of one kind, compared trimmed and in any letter case, and reported on that parent. Merge it into a neighbor, or give it more.
+A level that holds one record groups nothing. A capability with one use case is reported; one with none is a coverage gap instead. A group (the `group_name` of every kind that has one, read from the record_group view: UC requirements, view requirements, API requirements, pattern rules, standard rules and a product's own kinds) is counted among its parent's children of one kind, compared trimmed and in any letter case, and reported on that parent. Merge it into a neighbor, or give it more.
 
 ### Coverage gaps: use cases
 
@@ -2658,7 +2658,7 @@ Coverage counts an obligation as proved once a test of it is automated or manual
 
 A record with more children of one kind than its product's max_children setting.
 
-The setting is the product's product_setting row (15 when it has none). A parent with that many children of one kind is missing a level between them, such as a capability or another aggregate. Children are counted per kind. Tests are exempt: they are read under what they prove. A flow's steps are counted per path, since each path reads as its own list, and UC requirements, view requirements, API requirements, pattern rules and standard rules per `group_name`, since each group reads under its own heading; the ungrouped ones are one list. Paths and groups are compared trimmed and in any letter case. Add a level, or a group, and move the children into it.
+The setting is the product's product_setting row (15 when it has none). A parent with that many children of one kind is missing a level between them, such as a capability or another aggregate. Children are counted per kind. Tests are exempt: they are read under what they prove. Children are also counted per group, read from the record_group view, since each group reads under its own heading: a flow's steps per path, since each path reads as its own list, and the records of every kind with a `group_name` (UC requirements, view requirements, API requirements, pattern rules, standard rules and a product's own kinds) per `group_name`; the ungrouped ones are one list. Paths and groups are compared trimmed and in any letter case. Add a level, or a group, and move the children into it.
 
 <a id="check-data-refused"></a>
 

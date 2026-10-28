@@ -83,13 +83,18 @@ async function withStore<T>(root: string, task: (opened: Opened) => Promise<T>):
   return run;
 }
 
-/** Closes the stores this process opened, or the one of a root (for tests and a server shutting down). */
+/**
+ * Closes the stores this process opened, or the one of a root (for tests and a server shutting down), each once the
+ * request it is serving (a load, a reload or a write) has finished.
+ */
 export async function closeStores(root?: string): Promise<void> {
   const roots = root ? [loadConfig(root).root] : [...stores.keys()];
   const all = roots.flatMap((r) => { const s = stores.get(r); stores.delete(r); return s ? [s] : []; });
   for (const pending of all) {
     try {
-      await (await pending).store.close();
+      const opened = await pending;
+      await opened.queue;
+      await opened.store.close();
     } catch {
       // A store that never opened has nothing to close.
     }

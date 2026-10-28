@@ -268,6 +268,21 @@ describe('a write', () => {
     await reopened.close();
   });
 
+  it("LA-CHK-UC02-R02-T03 the record_group view covers a product kind's group_name and a flow step's path", async () => {
+    const { store } = await fresh();
+    await store.apply([
+      { op: 'add', table: 'product_kind', row: { name: 'house_rule', product_id: 'TL', label: 'House rule', description: 'A rule of the house.', parent_kind: 'domain', stage: 'use-cases', obligation: false } },
+      { op: 'add', table: 'product_kind_field', row: { kind: 'house_rule', position: 1, name: 'group_name', type: 'text', required: false, description: 'Its heading.' } },
+      { op: 'add', table: 'house_rule', row: { id: 'TL-LEND-HR01', title: 'Quiet', domain_id: 'TL-LEND', group_name: ' Noise' } },
+      { op: 'add', table: 'house_rule', row: { id: 'TL-LEND-HR02', title: 'Tidy', domain_id: 'TL-LEND' } },
+    ]);
+    expect(await store.query("SELECT id, label FROM record_group WHERE id IN ('TL-LEND-HR01', 'TL-LEND-HR02', 'TL-LEND-UC01-FL-S01') ORDER BY id")).toEqual([
+      { id: 'TL-LEND-HR01', label: ' Noise' },
+      { id: 'TL-LEND-UC01-FL-S01', label: 'main' },
+    ]);
+    await store.close();
+  });
+
   it('LA-AUT-INV34-T refuses an aggregate with two roots by its validation query, before any file changes', async () => {
     const { store } = await fresh();
     expect(await refused(store, [{ op: 'set', table: 'entity', key: 'TL-LEND-EN02', changes: { role: 'root', in_root_table: null } }])).toEqual([
