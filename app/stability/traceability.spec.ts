@@ -25,7 +25,7 @@ test.describe('Traceability flows', () => {
     // S01: each domain card's coverage bars, as coverage counts them.
     const domains = rowsOf(spec, 'domain').filter((d) => d.product_id === 'LA');
     for (const d of domains) {
-      const card = wiki.locator('article.domain-card').filter({ has: page.getByRole('link', { name: `${d.id} ${d.title}` }) });
+      const card = wiki.getByRole('list', { name: 'Domains' }).locator('.card').filter({ has: page.getByRole('link', { name: `${d.id} ${d.title}` }) });
       const c = spec.coverage.find((x) => x.domain === d.id)!;
       for (const o of c.obligations.filter((x) => x.total > 0 && !x.proof_only)) {
         await expect(card.locator(`.coverage-group[data-kind="${o.kind}"]`).getByRole('img', { name: `designed: ${o.designed} of ${o.total}` })).toBeVisible();
@@ -63,7 +63,7 @@ test.describe('Traceability flows', () => {
     expect(steps.length && tests.length).toBeTruthy();
     const pane = page.locator('.pane-trace');
     const column = (name: string) => pane.locator('.trace-column').filter({ has: page.locator('.trace-column-name', { hasText: new RegExp(`^${name}`) }) });
-    const ids = (name: string) => column(name).locator('a.trace-card code').allTextContents();
+    const ids = (name: string) => column(name).locator('a.card-title code').allTextContents();
     // S01, S02: the requirement's Trace view: its chain, column by column, every card a link.
     await openPage(page, `/${REQUIREMENT}?view=trace`, '.pane-trace .trace-chain');
     await expect(pane.locator('[aria-current="page"]')).toContainText(REQUIREMENT);
@@ -146,7 +146,7 @@ test.describe('Traceability flows', () => {
     await openPage(page, PRODUCT);
     const wiki = page.locator(WIKI);
     for (const d of rowsOf(spec, 'domain').filter((x) => x.product_id === 'LA')) {
-      const card = wiki.locator('article.domain-card').filter({ has: page.getByRole('link', { name: `${d.id} ${d.title}` }) });
+      const card = wiki.getByRole('list', { name: 'Domains' }).locator('.card').filter({ has: page.getByRole('link', { name: `${d.id} ${d.title}` }) });
       await expect(card.getByLabel('Tests by state')).toHaveText(`Tests ${testsText(ofDomain(String(d.id)))}`);
     }
     // S02: the Summary's tests by state in total.

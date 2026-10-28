@@ -946,7 +946,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
 
   /** Whether a box can be focused by a click: a record or a group, not the focus. */
   const canOpen = useCallback((id: string) => id !== focus && isGraphNode(index, id), [focus, index]);
-  // By touch, a first tap selects a node and a second tap (or the card's Open chip) opens it.
+  // By touch, a first tap selects a node and a second tap (or a tap on its card) opens it.
   const tapToOpen = useTapToOpen(onNavigate, canOpen, wrapper, focus);
   tap.current = tapToOpen;
   const armedPlate = tapToOpen.armed ? plateFor(tapToOpen.armed) : null;
