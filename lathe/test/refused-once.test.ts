@@ -104,7 +104,7 @@ describe('checks and product settings', () => {
   });
 
   it('LA-VO43-C01-T A children limit is a whole number of at least 1', async () => {
-    const limit = (max_children: unknown) => refusals(adding(complete(), { product_setting: [{ product_id: 'EX', max_children: max_children as number }] }));
+    const limit = (max_children: unknown) => refusals(adding(complete(), { product_setting: [{ product_id: 'EX', max_children: max_children as number, max_entities_per_aggregate: 7 }] }));
     expect(await limit(1)).toEqual([]);
     expect(await limit(0)).toEqual([expect.objectContaining({ rule: 'check', table: 'product_setting', file: 'data/product_setting.jsonl' })]);
     expect(await limit('two')).toEqual([expect.objectContaining({ rule: 'column', message: 'product_setting.max_children "two" is not a whole number' })]);
@@ -112,7 +112,7 @@ describe('checks and product settings', () => {
   });
 
   it('LA-CHK-INV05-T A product has at most one settings row', async () => {
-    const two = adding(complete(), { product_setting: [{ product_id: 'EX', max_children: 3 }, { product_id: 'EX', max_children: 4 }] });
+    const two = adding(complete(), { product_setting: [{ product_id: 'EX', max_children: 3, max_entities_per_aggregate: 7 }, { product_id: 'EX', max_children: 4, max_entities_per_aggregate: 7 }] });
     expect(await refusals(two)).toEqual([expect.objectContaining({ rule: 'primary-key', file: 'data/product_setting.jsonl', line: 2, message: 'product_setting EX is already on line 1' })]);
   });
 

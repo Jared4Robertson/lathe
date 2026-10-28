@@ -390,7 +390,7 @@ check('too-many-children', () => {
   it("LA-CHK-UC06-R05-T01 a flow's steps are counted per path, named when not main", async () => {
     const steps = (path: string, n: number, from: number) =>
       Array.from({ length: n }, (_, i) => ({ id: `EX-LEND-UC01-FL-S${String(from + i).padStart(2, '0')}`, title: `Step ${from + i}`, flow_id: 'EX-LEND-UC01-FL', path, position: i + 1 + (path === 'main' ? 2 : 0) }));
-    const limit = { product_setting: [{ product_id: 'EX', max_children: 3 }] };
+    const limit = { product_setting: [{ product_id: 'EX', max_children: 3, max_entities_per_aggregate: 7 }] };
     const even = adding(complete(), { ...limit, flow_step: [...steps('main', 1, 3), ...steps('refused', 3, 4)] });
     expect(ofCheck(await loadData(even), 'too-many-children')).toEqual([]);
     const over = adding(complete(), { ...limit, flow_step: [...steps('main', 1, 3), ...steps('refused', 4, 4)] });
