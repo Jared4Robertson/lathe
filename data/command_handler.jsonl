@@ -39,5 +39,6 @@
 {"id":"LA-PLT-CMD20-H","title":"clearRecent in refreshMenu","command_id":"LA-PLT-CMD20","file":"desktop/src/main.ts","description":"clearRecent in refreshMenu"}
 {"id":"LA-PLT-CMD21-H","title":"init","command_id":"LA-PLT-CMD21","file":"lathe/bin/lathe.ts","description":"init"}
 {"id":"LA-PLT-CMD22-H","title":"the window restoration opt-out","command_id":"LA-PLT-CMD22","file":"desktop/src/persistence.ts","description":"optOutOfWindowRestoration: sets ApplePersistenceIgnoreState and NSQuitAlwaysKeepsWindows on macOS, and nothing elsewhere."}
+{"id":"LA-PLT-CMD23-H","title":"readOverrides","command_id":"LA-PLT-CMD23","file":"app/src/shell/keymap.ts","description":"readOverrides and resolveCommands: unknown commands, bad values and browser essentials dropped."}
 {"id":"LA-TRC-CMD01-H","title":"link on follows","command_id":"LA-TRC-CMD01","file":"lathe/src/store/store.ts","description":"link on follows"}
 {"id":"LA-TRC-CMD02-H","title":"add and set on setting_value","command_id":"LA-TRC-CMD02","file":"lathe/src/store/store.ts","description":"add and set on setting_value"}

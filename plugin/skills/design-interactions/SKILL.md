@@ -56,19 +56,16 @@ An outside system the product exchanges with is an `integration`, with `system` 
 
 ## Example: the Tool Library
 
-The Return a tool flow: the librarian opens the Return desk, records the return (which invokes the command), a refused return, and the result:
+The Return a tool flow: the librarian records the return (which invokes the command), a refused return, and the result. The Tool Library is an HTTP API with no UI, so it has no views and its steps happen in none; a product with a UI adds a `view` and links each step to it with `happens_in`.
 
 ```
 add  { "flow": { "id": "TL-LEND-UC04-FL", "title": "Return a tool", "use_case_id": "TL-LEND-UC04",
        "description": "How a librarian takes a tool back and closes its loan." } }
-add  { "view": { "id": "TL-V02", "title": "Return desk", "description": "The librarian's page for returns and repairs." } }
 add  { "flow_step": { "id": "TL-LEND-UC04-FL-S02", "title": "The librarian records the condition and, optionally, a note",
        "flow_id": "TL-LEND-UC04-FL", "path": "main", "position": 2 } }
 link { "source": "TL-LEND-UC04-FL-S02", "relation": "invokes", "target": "TL-LEND-CMD06" }
-link { "source": "TL-LEND-UC04-FL-S02", "relation": "happens_in", "target": "TL-V02" }
 add  { "flow_step": { "id": "TL-LEND-UC04-FL-S03", "title": "A return with no valid condition, of an unknown loan or of a loan already returned is refused",
        "flow_id": "TL-LEND-UC04-FL", "path": "refused", "position": 1 } }
-link { "source": "TL-LEND-UC04-FL-S03", "relation": "happens_in", "target": "TL-V02" }
 link { "source": "TL-LEND-UC04-FL-S03", "relation": "fulfills", "target": "TL-LEND-UC04-R01" }
 ```
 
