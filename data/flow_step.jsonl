@@ -282,6 +282,7 @@
 {"id":"LA-TRC-UC02-FL-S03","title":"An obligation with only a test not automated yet counts as not automated yet, not proved","flow_id":"LA-TRC-UC02-FL","path":"main","position":3}
 {"id":"LA-TRC-UC02-FL-S04","title":"The report prints one line per domain and obligation kind","flow_id":"LA-TRC-UC02-FL","path":"main","position":4}
 {"id":"LA-TRC-UC02-FL-S05","title":"The report lists an outcome nothing serves and a capability that serves none as gaps","flow_id":"LA-TRC-UC02-FL","path":"main","position":5}
+{"id":"LA-TRC-UC02-FL-S06","title":"The report lists a source file no technical record names as a gap, until a record names it or its folder","flow_id":"LA-TRC-UC02-FL","path":"main","position":6}
 {"id":"LA-TRC-UC03-FL-S01","title":"The Agent writes the test under the record it proves, with its level and state","flow_id":"LA-TRC-UC03-FL","path":"main","position":1}
 {"id":"LA-TRC-UC03-FL-S02","title":"An automated test names the file that runs it","flow_id":"LA-TRC-UC03-FL","path":"automated","position":1}
 {"id":"LA-TRC-UC03-FL-S03","title":"A manual test gives the reason it is manual, and its procedure in given, when and then","flow_id":"LA-TRC-UC03-FL","path":"manual","position":1}

@@ -28,7 +28,7 @@
 import { glob, readdir, readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import type { DuckDBConnection } from '@duckdb/node-api';
-import { readConfig } from '../config.ts';
+import type { LatheConfig } from '../config.ts';
 import type { GapRule } from '../coverage.ts';
 import type { Store } from '../store/store.ts';
 
@@ -331,7 +331,7 @@ async function filesUnder(root: string, folder: string): Promise<string[]> {
  * Reads what the route checks need from the code: each endpoint's and view's route against the files of what
  * implements it, and the routes served in the endpoint handlers' files and the router files the config names.
  */
-export async function gatherRouteFacts(root: string, store: Store): Promise<{ facts: RouteFact[]; served: ServedFact[] }> {
+export async function gatherRouteFacts({ root, routers }: Pick<LatheConfig, 'root' | 'routers'>, store: Store): Promise<{ facts: RouteFact[]; served: ServedFact[] }> {
   const texts = new Map<string, Promise<{ files: string[]; texts: string[] }>>();
   // A named file or folder: the files in it that exist, and their texts.
   const read = (file: string) => {
@@ -397,7 +397,7 @@ export async function gatherRouteFacts(root: string, store: Store): Promise<{ fa
     if (product) owners.set(String(h.file), new Set([...(owners.get(String(h.file)) ?? []), product]));
   }
   const routerFiles: string[] = [];
-  for (const pattern of readConfig(root).routers) {
+  for (const pattern of routers) {
     for await (const file of glob(pattern, { cwd: root, exclude: (name) => ['node_modules', '.git'].includes(path.basename(name)) })) routerFiles.push(file);
   }
   const served: ServedFact[] = [];
