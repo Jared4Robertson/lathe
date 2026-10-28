@@ -77,7 +77,7 @@ The consistency boundary: a cluster of entities changed together as one unit, by
 - **ID:** `<P>-<D>-A<n>`, such as `TL-LEND-A1`; it starts with its domain's ID
 - **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about)), Read by ([`reads`](#relation-reads))
-- **Checks:** [`command-change-recorded`](#check-command-change-recorded), [`has-crosses-aggregate`](#check-has-crosses-aggregate)
+- **Checks:** [`command-change-recorded`](#check-command-change-recorded), [`has-crosses-aggregate`](#check-has-crosses-aggregate), [`aggregate-too-large`](#check-aggregate-too-large)
 - **Gaps:** [`aggregate-without-root`](#gap-aggregate-without-root), [`aggregate-without-command`](#gap-aggregate-without-command), [`aggregate-without-repository`](#gap-aggregate-without-repository)
 
 <a id="table-aggregate"></a>
@@ -107,7 +107,7 @@ A record the domain keeps, with an identity: its aggregate's root or one of its 
 - **Links out:** Has many ([`has_many`](#relation-has_many)), Has one ([`has_one`](#relation-has_one))
 - **Links in:** Questions about this ([`about`](#relation-about)), Part of ([`has_many`](#relation-has_many)), Part of ([`has_one`](#relation-has_one))
 - **Parts:** [`entity_field`](#table-entity_field)
-- **Checks:** [`has-crosses-aggregate`](#check-has-crosses-aggregate), [`entity-unreferenced`](#check-entity-unreferenced)
+- **Checks:** [`has-crosses-aggregate`](#check-has-crosses-aggregate), [`entity-unreferenced`](#check-entity-unreferenced), [`aggregate-too-large`](#check-aggregate-too-large)
 - **Gaps:** [`entity-without-fields`](#gap-entity-without-fields), [`entity-without-data-model`](#gap-entity-without-data-model), [`entity-without-table`](#gap-entity-without-table)
 
 <a id="table-entity"></a>
@@ -640,6 +640,16 @@ A domain is named for a technology layer or delivery channel rather than a busin
 
 A domain is a vertical slice of business capability: it owns its model, its use cases, their interaction design, the technical records that implement them and their tests. Technology is expressed through the technical kinds inside each domain, never as a domain of its own. A domain whose title or domain code (its ID after the product prefix, such as LEND in TL-LEND) names a technology splits one capability across several domains. The words are web app, frontend, front end, backend, back end, API, UI, server, database, DB, desktop, mobile, engine, infrastructure, infra and Electron, matched as whole words in any letter case, with or without a space or hyphen inside the two-word ones, and in the plural. Only the title and code are read, never the description. Name the domain for the capability it serves.
 
+<a id="check-aggregate-too-large"></a>
+
+### `aggregate-too-large`
+
+**Warning** · Lathe's · Kinds: [`aggregate`](#kind-aggregate), [`entity`](#kind-entity)
+
+An aggregate with more entities than its product's max_entities_per_aggregate setting.
+
+The setting is the product's product_setting row (7 when it has none). An aggregate is the smallest cluster of entities that must stay consistent after one command: one transaction changes it, and everything in it is loaded, locked and saved together. Most need a root and a few children; one that holds many entities is usually several clusters that change at different times, held together only by references, so every command pays for all of them and two people's changes clash for no reason. A rule that spans two aggregates is checked by a specification, or followed through an event and a policy. Split it into smaller aggregates that each change together.
+
 ### Coverage gaps: domain model
 
 Each is reported in coverage, under the record that falls short, never as a problem.
@@ -751,7 +761,7 @@ One rule a use case must follow. Steps of the use case's own flow fulfill it.
 - **Children:** [`use_case_test`](#kind-use_case_test)
 - **Obligation:** yes: designed, built and proved
   - **Designed:** A step of its use case's flow fulfills it.
-  - **Built:** A fulfilling step's command or query handler, or a UI component of the view it happens in, names a file that exists.
+  - **Built:** A fulfilling step's command or query handler, a UI component of the view it happens in, or the adapter of an integration it exchanges with or a record of a product's own kind under that integration, names a file that exists.
   - **Proved:** One of its use case tests.
 - **ID:** `<use case>-R<nn>`, such as `TL-LEND-UC01-R01`; it starts with its parent's ID
 - **Links out:** none
@@ -2337,9 +2347,11 @@ A product's typed settings for its checks. A product without a row takes the def
 | --- | --- | --- | --- |
 | `product_id` | VARCHAR → [`product`](#table-product) | yes | The product. |
 | `max_children` | INTEGER | yes | The most children of one kind a record should have before too-many-children warns; the default is 15. |
+| `max_entities_per_aggregate` | INTEGER | yes | The most entities an aggregate should have before aggregate-too-large warns; the default is 7. |
 
 - **Key:** `product_id`
 - **Rule:** `(max_children >= 1)`
+- **Rule:** `(max_entities_per_aggregate >= 1)`
 
 ### Other part tables: rows that belong to one record and are removed with it.
 

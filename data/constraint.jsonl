@@ -32,3 +32,4 @@
 {"id":"LA-VO90-C02","title":"Views are named only in the query","value_object_id":"LA-VO90","statement":"An address MUST name views only in its `view` query parameter (`?view=wiki,graph`), never in its path, so the views never change the path."}
 {"id":"LA-VO91-C01","title":"A view set holds Wiki, Graph and Model in order","value_object_id":"LA-VO91","statement":"A view set MUST hold at least one of `wiki`, `graph` and `model`, each at most once, always in that order."}
 {"id":"LA-VO92-C01","title":"Depth is 1 to 3, and the layout is one of three","value_object_id":"LA-VO92","statement":"A graph's depth MUST be a whole number from 1 to 3, and its layout one of `tree`, `nested` and `voronoi`."}
+{"id":"LA-VO93-C01","title":"An entities limit is a whole number of at least 1","value_object_id":"LA-VO93","statement":"An entities limit MUST be a whole number of at least 1; the store refuses any other value, naming the table."}

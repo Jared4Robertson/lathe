@@ -49,7 +49,8 @@ export const OBLIGATION_COVERAGE: Readonly<Record<string, { designed: string; bu
   domain_service: { designed: 'By construction, under its domain.', built: 'Its service names a file that exists.', proved: 'One of its domain service tests.' },
   uc_requirement: {
     designed: 'A step of its use case\'s flow fulfills it.',
-    built: "A fulfilling step's command or query handler, or a UI component of the view it happens in, names a file that exists.",
+    built:
+      "A fulfilling step's command or query handler, a UI component of the view it happens in, or the adapter of an integration it exchanges with or a record of a product's own kind under that integration, names a file that exists.",
     proved: 'One of its use case tests.',
   },
   view_requirement: { designed: 'By construction, under its view.', built: 'A UI component that renders its view names a file that exists.', proved: 'One of its view tests.' },
@@ -212,6 +213,12 @@ export function coverageViewsSql(schema: SchemaDescription): string {
     })
     .join('\nUNION ALL ');
   const lathe = list(LATHE_OBLIGATIONS);
+  // A product's own kinds that sit under an integration, each with the column naming it.
+  const integrationParts = Object.values(schema.kinds)
+    .filter((k) => k.productId !== null)
+    .flatMap((k) => k.parents.filter((p) => p.kind === 'integration').map((p) => ({ kind: k.name, column: p.column })))
+    .map(({ kind, column }) => `\nUNION ALL SELECT f.target_id, p.id FROM fulfills f JOIN exchanges_with x ON x.source_id = f.source_id JOIN ${sqlName(kind)} p ON p.${sqlName(column)} = x.target_id`)
+    .join('');
   return `
 CREATE OR REPLACE TABLE test_run AS
 SELECT t.*, EXISTS (SELECT 1 FROM test_level_allowed a WHERE a.kind = t.kind AND a.level = t.level) AS level_allowed,
@@ -254,6 +261,9 @@ UNION ALL SELECT domain_service_id, id FROM service
 UNION ALL SELECT f.target_id, h.id FROM fulfills f JOIN invokes i ON i.source_id = f.source_id JOIN command_handler h ON h.command_id = i.target_id
 UNION ALL SELECT f.target_id, h.id FROM fulfills f JOIN invokes i ON i.source_id = f.source_id JOIN query_handler h ON h.query_id = i.target_id
 UNION ALL SELECT f.target_id, r.source_id FROM fulfills f JOIN happens_in h ON h.source_id = f.source_id JOIN renders r ON r.target_id = h.target_id
+-- ... and what carries out the integrations they exchange with: each one's adapter, and the records of a product's
+-- own kinds under it (such as a plugin hook).
+UNION ALL SELECT f.target_id, a.id FROM fulfills f JOIN exchanges_with x ON x.source_id = f.source_id JOIN adapter a ON a.integration_id = x.target_id${integrationParts}
 -- A view requirement: the UI components of its view; an API requirement: its endpoint's handler.
 UNION ALL SELECT q.id, r.source_id FROM view_requirement q JOIN renders r ON r.target_id = q.view_id
 UNION ALL SELECT q.id, h.id FROM api_requirement q JOIN endpoint_handler h ON h.endpoint_id = q.endpoint_id

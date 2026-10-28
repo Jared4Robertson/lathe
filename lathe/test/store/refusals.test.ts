@@ -245,6 +245,17 @@ describe('refusals across tables', () => {
     expect(views).toEqual([expect.objectContaining({ rule: 'unique', table: 'happens_in' })]);
   });
 
+  it('LA-VO93-C01-T refuses an entities limit below 1, or one that is not a whole number', async () => {
+    const limit = (value: unknown) => {
+      const data = everyKind();
+      data.product_setting = [{ ...data.product_setting[0], max_entities_per_aggregate: value as Row[string] }];
+      return data;
+    };
+    expect(await refusal(limit(0))).toEqual([expect.objectContaining({ rule: 'check', table: 'product_setting' })]);
+    expect(await refusal(limit(2.5))).toEqual([expect.objectContaining({ table: 'product_setting' })]);
+    await loads(limit(1));
+  });
+
   it('LA-VO14-C03-T refuses an automated test with no file', async () => {
     const data = everyKind();
     const { file: _file, ...noFile } = data.invariant_test[0];
