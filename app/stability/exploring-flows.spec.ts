@@ -4,7 +4,7 @@ import path from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
 import { openPage } from './measure';
 import { keepData } from './scenarios';
-import { clickBox, focusDrawn, sceneOf } from './scene';
+import { clickBox, focusDrawn, sceneOf, traceDrawn, traceSceneOf } from './scene';
 
 // Exploring's flow tests (LA-EXP-UC01-FL01 to UC13-FL01): one per flow, each walking its main path in
 // Chromium over the suite's copy of Lathe's data, as the Reader does. They prove the flow end to
@@ -224,17 +224,24 @@ test.describe('Exploring flows', () => {
     await graphReady(page);
     await focusDrawn(page, 'LA-EXP-UC03-FL01');
     await expect.poll(async () => (await sceneOf(page)).boxes.filter((b) => /^LA-EXP-UC03-FL01-S\d+$/.test(b.id)).length).toBe(9);
-    // A requirement's Trace view names the step that fulfills it, with its flow and what it invokes.
+    // A requirement's Trace stage draws the step that fulfills it, with its flow and what it invokes, an arrow for each link.
     await page.goto('/LA-EXP-UC03-R18?stage=trace');
-    const design = page.locator('.focus-stage .trace-column').nth(1);
-    await expect(design.getByRole('link', { name: /LA-EXP-UC03-FL01-S01/ })).toBeVisible();
-    await expect(design.getByRole('link', { name: /LA-EXP-UC03-FL01 / }).first()).toBeVisible();
-    await expect(design.getByRole('link', { name: /LA-EXP-CMD01/ }).first()).toBeVisible();
-    await design.getByRole('link', { name: /LA-EXP-UC03-FL01-S01/ }).click();
+    await traceDrawn(page);
+    const chain = await traceSceneOf(page, true);
+    expect(chain.boxes.find((b) => b.id === 'LA-EXP-UC03-FL01-S01')?.column).toBe('step');
+    expect(chain.boxes.find((b) => b.id === 'LA-EXP-UC03-FL01')?.column).toBe('flow');
+    expect(chain.boxes.find((b) => b.id === 'LA-EXP-CMD01')?.column).toBe('design');
+    expect(chain.lines.map((l) => `${l.source} > ${l.target}`)).toEqual(expect.arrayContaining(['LA-EXP-UC03-FL01 > LA-EXP-UC03-FL01-S01', 'LA-EXP-UC03-FL01-S01 > LA-EXP-CMD01']));
+    // From the keyboard, through the table under the canvas: the step's link, then Enter.
+    const design = page.locator('.focus-stage .trace-access .trace-column').nth(1);
+    await design.getByRole('link', { name: /LA-EXP-UC03-FL01-S01/ }).focus();
+    await page.keyboard.press('Enter');
     await page.waitForURL((u) => u.pathname === '/LA-EXP-UC03-FL01-S01');
-    // The step's own page in the wiki card, shown again (w); the Trace stage now shows the rows it belongs to.
+    // The step's own page in the wiki card, shown again (w); the Trace stage now draws the lanes it belongs to, the step as the focus.
     await page.keyboard.press('w');
     await expect(page.locator(WIKI).getByRole('link', { name: /LA-EXP-CMD01/ }).first()).toBeVisible();
+    await traceDrawn(page);
+    expect((await traceSceneOf(page, true)).boxes.filter((b) => b.focus).map((b) => b.id)).toContain('LA-EXP-UC03-FL01-S01');
     await expect(page.locator('.focus-stage .trace-matrix [aria-current="page"]').first()).toContainText('LA-EXP-UC03-FL01-S01');
   });
 

@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import { openPage } from './measure';
 import { rowsOf, served, testsText } from './flows';
 import { PRODUCT } from './scenarios';
+import { traceDrawn, traceSceneOf } from './scene';
 
 // Traceability's flows that the Reader walks in the app, each on its main path, over the suite's copy
 // of this repo's data: the product's and the domains' coverage, the Trace stage, every
@@ -64,28 +65,49 @@ test.describe('Traceability flows', () => {
     const pane = page.locator('.focus-stage');
     const column = (name: string) => pane.locator('.trace-column').filter({ has: page.locator('.trace-column-name', { hasText: new RegExp(`^${name}`) }) });
     const ids = (name: string) => column(name).locator('a.card-title code').allTextContents();
-    // S01, S02: the requirement's Trace stage: its chain, column by column, every card a link.
-    await openPage(page, `/${REQUIREMENT}?stage=trace`, '.focus-stage .trace-chain');
-    await expect(pane.locator('[aria-current="page"]')).toContainText(REQUIREMENT);
-    expect((await ids('Design')).sort()).toEqual([...new Set([...steps, ...flows, ...views, ...operations])].sort());
-    expect(await ids('Build')).toEqual(expect.arrayContaining(handlers));
-    expect((await ids('Tests')).sort()).toEqual([...tests].sort());
-    // S03: the use case's matrix, a row per requirement under it, then the domain's, grouped by parent.
+    /** The ids the canvas draws in some columns, every box of its picture. */
+    const drawnIn = async (...columns: string[]) => [...new Set((await traceSceneOf(page, true)).boxes.filter((b) => columns.includes(b.column)).map((b) => b.id))].sort();
+    // S01, S02: the requirement's Trace stage: its chain drawn on the canvas, column by column, from its use case on, and the same in the table under it.
     const useCase = String(rowsOf(spec, 'uc_requirement').find((r) => r.id === REQUIREMENT)!.use_case_id);
+    await openPage(page, `/${REQUIREMENT}?stage=trace`);
+    await traceDrawn(page);
+    const chain = await traceSceneOf(page, true);
+    expect(chain.boxes.filter((b) => b.focus).map((b) => b.id)).toEqual([REQUIREMENT]);
+    expect(chain.boxes.find((b) => b.column === 'parent')?.id).toBe(useCase);
+    expect(await drawnIn('flow', 'step', 'design')).toEqual([...new Set([...steps, ...flows, ...views, ...operations])].sort());
+    expect(await drawnIn('build')).toEqual(expect.arrayContaining(handlers));
+    expect(await drawnIn('tests')).toEqual([...tests].sort());
+    expect(chain.lines.some((l) => l.source === REQUIREMENT && tests.includes(l.target))).toBe(true);
+    await expect(pane.locator('.trace-access [aria-current="page"]')).toContainText(REQUIREMENT);
+    expect((await ids('Design')).sort()).toEqual([...new Set([...steps, ...flows, ...views, ...operations])].sort());
+    expect((await ids('Tests')).sort()).toEqual([...tests].sort());
+    // S03: the use case's lanes, one per requirement under it, under its box; then the domain's, under its capabilities.
     const requirements = rowsOf(spec, 'uc_requirement').filter((r) => r.use_case_id === useCase).map((r) => String(r.id));
-    await openPage(page, `/${useCase}?stage=trace`, '.focus-stage .trace-matrix');
+    await openPage(page, `/${useCase}?stage=trace`);
+    await traceDrawn(page);
+    expect(await drawnIn('obligation')).toEqual([...requirements].sort());
+    expect((await traceSceneOf(page, true)).boxes.filter((b) => b.lane === -1).map((b) => b.id)).toEqual([useCase]);
     const rows = pane.locator('.trace-matrix tbody tr:not(.group-row)');
     await expect(rows).toHaveCount(requirements.length);
-    await openPage(page, `/${TRC}?stage=trace`, '.focus-stage .trace-matrix');
-    await expect(pane.locator('.trace-matrix tr.group-row').first()).toBeVisible();
+    await openPage(page, `/${TRC}?stage=trace`);
+    await traceDrawn(page);
+    const capabilities = rowsOf(spec, 'capability').filter((c) => c.domain_id === TRC).map((c) => String(c.id));
+    expect((await traceSceneOf(page, true)).boxes.filter((b) => b.lane === -1 && b.column === 'capability').map((b) => b.id)).toEqual(expect.arrayContaining(capabilities.filter((c) => rowsOf(spec, 'use_case').some((u) => u.capability_id === c))));
     expect(await pane.locator('.trace-matrix tr.group-row').count()).toBeGreaterThan(1);
-    // S04: Gaps only keeps the rows with a gap, and each of them has one.
+    // S04: Gaps only keeps the lanes with a gap, each with a dashed gap box, and the table's rows with one.
     await pane.getByRole('checkbox', { name: 'Gaps only' }).check();
+    await traceDrawn(page);
+    const gapped = await traceSceneOf(page, true);
+    const lanes = new Set(gapped.boxes.filter((b) => b.lane >= 0 && b.column === 'obligation' && b.role === 'record').map((b) => b.lane));
+    for (const lane of lanes) expect(gapped.boxes.some((b) => b.lane === lane && b.role === 'gap' && b.dashed), `lane ${lane} has a gap`).toBe(true);
     const left = await rows.count();
     for (let i = 0; i < Math.min(left, 20); i++) await expect(rows.nth(i).locator('td.is-gap').first()).toBeAttached();
-    // Every stage works on every focus (LA-PAT-APP-UX-R17): on a step, the rows it belongs to, the step marked in its cell.
-    await openPage(page, `/${steps[0]}?stage=trace`, '.focus-stage .trace-matrix');
-    await expect(pane.locator('.trace-matrix th[scope="row"]').filter({ hasText: REQUIREMENT })).toBeVisible();
+    // Every stage works on every focus (LA-PAT-APP-UX-R17): on a step, the lanes it belongs to, the step drawn as the focus.
+    await openPage(page, `/${steps[0]}?stage=trace`);
+    await traceDrawn(page);
+    const held = await traceSceneOf(page, true);
+    expect(held.boxes.filter((b) => b.column === 'obligation').map((b) => b.id)).toContain(REQUIREMENT);
+    expect(held.boxes.filter((b) => b.focus).every((b) => b.id === steps[0])).toBe(true);
     await expect(pane.locator('.trace-matrix td [aria-current="page"]').first()).toContainText(steps[0]);
   });
 
