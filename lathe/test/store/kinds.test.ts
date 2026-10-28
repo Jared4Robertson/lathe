@@ -52,7 +52,7 @@ describe.each(kinds)('the %s table', (kind) => {
     expect(problems.find((p) => p.file === file)!.message).toContain('TL-NOPE');
   });
 
-  it('LA-AUT-INV01-T refuses an ID another record has, of any kind', async () => {
+  it('LA-AUT-SP04-T refuses an ID another record has, of any kind', async () => {
     const other = kind === 'domain' ? 'TL' : 'TL-LEND';
     const problems = await refusal(withTable(data, kind, [...data[kind], { ...row, id: other }]));
     expect(problems).toEqual([expect.objectContaining({ rule: 'unique-id', key: other })]);

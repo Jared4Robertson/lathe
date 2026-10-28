@@ -1,9 +1,6 @@
 {"source_id":"LA-AUT-A1-REPO","target_id":"LA-STD-PRINCIPLES-R01"}
 {"source_id":"LA-AUT-EN37-TB","target_id":"LA-STD-PRINCIPLES-R03"}
-{"source_id":"LA-AUT-INV03-T","target_id":"LA-STD-PRINCIPLES-R01"}
-{"source_id":"LA-AUT-INV07-T","target_id":"LA-STD-PRINCIPLES-R01"}
 {"source_id":"LA-AUT-INV08-T","target_id":"LA-STD-PRINCIPLES-R01"}
-{"source_id":"LA-AUT-INV09-T","target_id":"LA-STD-PRINCIPLES-R01"}
 {"source_id":"LA-AUT-INV10-T","target_id":"LA-STD-PRINCIPLES-R01"}
 {"source_id":"LA-AUT-INV11-T","target_id":"LA-STD-PRINCIPLES-R01"}
 {"source_id":"LA-AUT-INV12-T","target_id":"LA-STD-PRINCIPLES-R01"}
@@ -12,6 +9,9 @@
 {"source_id":"LA-AUT-INV15-T","target_id":"LA-STD-PRINCIPLES-R01"}
 {"source_id":"LA-AUT-INV33-T","target_id":"LA-STD-PRINCIPLES-R01"}
 {"source_id":"LA-AUT-QRY05-H","target_id":"LA-STD-CODE-R03"}
+{"source_id":"LA-AUT-SP06-T","target_id":"LA-STD-PRINCIPLES-R01"}
+{"source_id":"LA-AUT-SP09-T","target_id":"LA-STD-PRINCIPLES-R01"}
+{"source_id":"LA-AUT-SP10-T","target_id":"LA-STD-PRINCIPLES-R01"}
 {"source_id":"LA-AUT-UC03-R04-T01","target_id":"LA-STD-PRINCIPLES-R02"}
 {"source_id":"LA-AUT-UC16-R01-T01","target_id":"LA-STD-CODE-R03"}
 {"source_id":"LA-AUT-UC16-R02-T01","target_id":"LA-STD-CODE-R03"}

@@ -1151,6 +1151,8 @@ export interface TermRow {
   domain_id: string;
   /** What it means in that domain. */
   meaning: string;
+  /** A short heading it is shown under among its domain's terms, such as Records or Writing. */
+  group_name?: string;
 }
 
 /** One actor of a use case, in order: a role of the use case's product. */

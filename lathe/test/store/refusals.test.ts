@@ -57,7 +57,7 @@ describe('refusals across tables', () => {
     expect(problems[0].message).toContain('cannot fulfill TL-LEND-UC02-R01, a requirement of TL-LEND-UC02');
   });
 
-  it("LA-AUT-INV09-T refuses a policy hearing another domain's unpublished event, and lets it hear a published one", async () => {
+  it("LA-AUT-SP10-T refuses a policy hearing another domain's unpublished event, and lets it hear a published one", async () => {
     const data = adding(catalog);
     data.hears = [{ source_id: 'TL-LEND-PO01', target_id: 'TL-CAT-EV01' }];
     const problems = await refusal(data);
@@ -72,7 +72,7 @@ describe('refusals across tables', () => {
     expect(problems).toEqual([expect.objectContaining({ rule: 'unique', file: 'data/hears.jsonl' })]);
   });
 
-  it('LA-AUT-INV07-T refuses a command and a specification in different domains', async () => {
+  it('LA-AUT-SP09-T refuses a command and a specification in different domains', async () => {
     const problems = await refusal(adding(merge(catalog, { reads: [{ source_id: 'TL-CAT-SP01', target_id: 'TL-CAT-A1' }], checks: [{ source_id: 'TL-LEND-CMD01', target_id: 'TL-CAT-SP01' }] })));
     expect(problems).toEqual([expect.objectContaining({ rule: 'link-scope', file: 'data/checks.jsonl', line: 2 })]);
     expect(problems[0].message).toBe('TL-LEND-CMD01 is in domain TL-LEND, so it cannot checks TL-CAT-SP01, which is in domain TL-CAT: checks links records of one domain');
@@ -191,7 +191,7 @@ describe('refusals across tables', () => {
     // A link from it would cross products too, so the prefix rule is the one reported for a lone record.
   });
 
-  it("LA-AUT-INV03-T refuses an ID that does not start with its parent's or domain's ID", async () => {
+  it("LA-AUT-SP06-T refuses an ID that does not start with its parent's or domain's ID", async () => {
     const problems = await refusal(adding({ uc_requirement: [{ id: 'TL-LEND-UC09-R01', title: 'Lost', use_case_id: 'TL-LEND-UC01', statement: 'x' }] }));
     expect(problems).toEqual([expect.objectContaining({ rule: 'id-prefix', message: 'TL-LEND-UC09-R01 is a UC requirement under TL-LEND-UC01, so its ID starts with TL-LEND-UC01-' })]);
   });
