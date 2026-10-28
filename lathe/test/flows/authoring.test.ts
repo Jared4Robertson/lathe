@@ -313,9 +313,9 @@ describe('Authoring flows', () => {
     ]);
     tl.write('test/loans.test.ts', "it('TL-LEND-INV01-T one active loan per tool');\nit('TL-LEND-UC01-R01-T01 a tool on loan is refused');\n");
     // S01: each test under the record it tests, of the kind named after it, with its run by.
-    tl.run('add', 'invariant_test', ...flags({ id: 'TL-LEND-INV01-T', title: 'One active loan per tool', invariant_id: 'TL-LEND-INV01', level: 'database', state: 'automated', file: 'test/loans.test.ts', given: 'A tool on an active loan', when: 'A second loan opens', then: 'It is refused' }));
-    tl.run('add', 'use_case_test', ...flags({ id: 'TL-LEND-UC01-R01-T01', title: 'A tool on loan is refused', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'api', state: 'automated', file: 'test/loans.test.ts' }));
-    tl.refused('add', 'use_case_test', ...flags({ id: 'TL-LEND-INV01-T01', title: 'Under the wrong kind', uc_requirement_id: 'TL-LEND-INV01', level: 'api', state: 'not automated yet' }));
+    tl.run('add', 'invariant_test', ...flags({ id: 'TL-LEND-INV01-T', title: 'One active loan per tool', invariant_id: 'TL-LEND-INV01', level: 'integration', state: 'automated', file: 'test/loans.test.ts', given: 'A tool on an active loan', when: 'A second loan opens', then: 'It is refused' }));
+    tl.run('add', 'use_case_test', ...flags({ id: 'TL-LEND-UC01-R01-T01', title: 'A tool on loan is refused', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'service', state: 'automated', file: 'test/loans.test.ts' }));
+    tl.refused('add', 'use_case_test', ...flags({ id: 'TL-LEND-INV01-T01', title: 'Under the wrong kind', uc_requirement_id: 'TL-LEND-INV01', level: 'service', state: 'not automated yet' }));
     expect(tl.workspace().coverage.find((c) => c.domain === 'TL-LEND')?.obligations.filter((o) => o.proved).map((o) => o.kind)).toEqual(['invariant', 'uc_requirement']);
     // S02: a long list of requirements sorted into groups.
     for (const [id, group] of [['TL-LEND-UC01-R01', 'Refusals'], ['TL-LEND-UC01-R02', 'Refusals'], ['TL-LEND-UC01-R03', 'Dates'], ['TL-LEND-UC01-R04', 'Dates']]) tl.run('set', id, '--group_name', group);
@@ -357,7 +357,7 @@ describe('Authoring flows', () => {
     expect([...gapsOf(served, 'TL-LEND'), ...gapsOf(served, null)].filter((g) => g.includes('outcome'))).toEqual(['outcome-not-measured TL-BO01']);
     expect(tl.run('show', 'TL-BO01')).toContain('Served by TL-LEND-CAP01');
     // S03: each outcome linked to the test that measures it; a test not automated yet measures nothing.
-    tl.run('add', 'use_case_test', ...flags({ id: 'TL-LEND-UC01-R01-T01', title: 'Loans are counted per tool', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'api', state: 'not automated yet' }));
+    tl.run('add', 'use_case_test', ...flags({ id: 'TL-LEND-UC01-R01-T01', title: 'Loans are counted per tool', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'service', state: 'not automated yet' }));
     tl.run('link', 'TL-BO01', 'measured_by', 'TL-LEND-UC01-R01-T01');
     expect(gapsOf(tl.workspace(), null)).toEqual(['outcome-not-measured TL-BO01']);
     tl.write('test/loans.test.ts', "it('TL-LEND-UC01-R01-T01 loans are counted per tool');\n");

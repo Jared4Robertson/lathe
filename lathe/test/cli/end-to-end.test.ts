@@ -50,7 +50,7 @@ const REQUIREMENT = { id: 'TL-LEND-UC01-R01', title: 'A tool on loan is refused'
 const INTERFACE = { id: 'TL-IF01', title: 'HTTP API', product_id: 'TL', kind: 'API' };
 const FLOW = { id: 'TL-LEND-UC01-FL01', title: 'Borrow a tool', use_case_id: 'TL-LEND-UC01', interface_id: 'TL-IF01' };
 const STEP = { id: 'TL-LEND-UC01-FL01-S01', title: 'The member borrows a free tool', flow_id: 'TL-LEND-UC01-FL01', path: 'main', position: 1 };
-const TEST = { id: 'TL-LEND-UC01-R01-T01', title: 'A tool on loan is refused', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'api', state: 'not automated yet', given: 'A tool on loan', when: 'A member borrows it', then: 'It is refused' };
+const TEST = { id: 'TL-LEND-UC01-R01-T01', title: 'A tool on loan is refused', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'service', state: 'not automated yet', given: 'A tool on loan', when: 'A member borrows it', then: 'It is refused' };
 const LINKS: [string, string, string][] = [
   ['TL-LEND-CMD01', 'raises', 'TL-LEND-EV01'],
   ['TL-LEND-UC01-FL01-S01', 'invokes', 'TL-LEND-CMD01'],

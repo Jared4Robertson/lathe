@@ -167,8 +167,39 @@ describe('the schema version', () => {
     expect(read('flow_step')).toContain('"id":"TL-LEND-UC01-FL01-S01"');
     expect(read('flow_test')).toContain('"id":"TL-LEND-UC01-FL01-T","title":"Borrow end to end","flow_id":"TL-LEND-UC01-FL01"');
     expect(read('flow_test')).toContain('"steps":["Run TL-LEND-UC01-FL01-S01"]');
+    expect(read('flow_test')).toContain('"level":"system"');
     expect(read('fulfills')).toBe(line({ source_id: 'TL-LEND-UC01-FL01-S01', target_id: 'TL-LEND-UC01-R01' }));
     expect(read('uc_requirement')).toContain('as TL-LEND-UC01-FL01-S01 shows.');
     expect(readConfig(root).schema).toBe(2);
+  });
+  it('LA-AUT-UC03-R08-T03 1-to-2 gives every test one of the five levels, and a manual test the level that fits its kind', async () => {
+    const [step] = (await readConverters(UPGRADES_DIR)).filter((c) => c.from === 1);
+    const manual = { state: 'manual', manual_reason: 'By hand.' };
+    const tables: Record<string, Record<string, unknown>[]> = {
+      constraint_test: [{ id: 'C1', level: 'database' }, { id: 'C2', level: 'unit' }],
+      endpoint_test: [{ id: 'E1', level: 'api' }, { id: 'E2', level: 'contract' }],
+      use_case_test: [{ id: 'U1', level: 'e2e-api' }, { id: 'U2', level: 'e2e-ui' }, { id: 'U3', level: 'manual', ...manual }],
+      flow_test: [{ id: 'F1', level: 'manual', ...manual }],
+      view_test: [{ id: 'V1', level: 'manual', ...manual }],
+      policy_test: [{ id: 'P1', level: 'manual', ...manual }],
+      integration_test: [{ id: 'I1', level: 'manual', ...manual }],
+      standard_rule_test: [{ id: 'S1', level: 'manual', ...manual }],
+    };
+    const changes: string[] = [];
+    const todos: string[] = [];
+    await step!.converter.files!(
+      { tables: () => Object.keys(tables), read: (table) => tables[table] ?? [], write: (table, rows) => void (tables[table] = rows) },
+      { changed: (text) => changes.push(text), todo: (text) => todos.push(text) },
+    );
+    const levels = Object.fromEntries(Object.values(tables).flat().map((row) => [row.id, row.level]));
+    expect(levels).toEqual({
+      C1: 'integration', C2: 'unit', E1: 'service', E2: 'service', U1: 'system', U2: 'browser', U3: 'browser',
+      F1: 'browser', V1: 'browser', P1: 'browser', I1: 'integration', S1: 'unit',
+    });
+    expect(tables.use_case_test![2]).toEqual({ id: 'U3', level: 'browser', ...manual });
+    expect(changes).toEqual([
+      'Every test runs at one of the five levels: 1 database to integration, 4 manual to browser, 1 e2e-api to system, 1 e2e-ui to browser, 1 api to service, 1 contract to service, 1 manual to integration, 1 manual to unit.',
+    ]);
+    expect(todos).toEqual([expect.stringMatching(/^Each manual test now names the level a person exercises/)]);
   });
 });

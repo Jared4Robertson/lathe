@@ -85,7 +85,7 @@ describe('Checking flows', () => {
       link('TL-LEND-PO01', 'hears', 'TL-LEND-EV01'),
       add('event_type', { id: 'TL-LEND-EV01-ET', title: 'Loan opened', domain_event_id: 'TL-LEND-EV01', delivery: 'in process' }),
       add('view', { id: 'TL-V01', title: 'Loan page' }),
-      add('use_case_test', { id: 'TL-LEND-UC01-R01-T01', title: 'A tool on loan is refused', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'database', state: 'not automated yet' }),
+      add('use_case_test', { id: 'TL-LEND-UC01-R01-T01', title: 'A tool on loan is refused', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'integration', state: 'not automated yet' }),
     ]);
     // S01, S03: what nothing uses is an error.
     const ws = tl.workspace();
@@ -99,12 +99,12 @@ describe('Checking flows', () => {
     expect(out).toContain('[use-case-without-flow] ');
     // S05: they fix the error and the warnings as the stages fill in.
     tl.run('remove', 'TL-V01');
-    tl.run('set', 'TL-LEND-UC01-R01-T01', '--level', 'api');
+    tl.run('set', 'TL-LEND-UC01-R01-T01', '--level', 'service');
     tl.run('set', 'TL-LEND-EV01-ET', '--delivery', 'outbox');
     const fixed = tl.workspace();
     expect(fixed.problems.filter((p) => ['view-unused', 'test-level-not-allowed', 'event-not-by-outbox'].includes(p.check))).toEqual([]);
     // S02: a test given its parent's ID is refused once, naming its rule, file and line, and nothing that follows from it.
-    appendFileSync(path.join(tl.root, 'data', 'use_case_test.jsonl'), '{"id":"TL-LEND-UC01-R01","title":"Given its parent\'s ID","uc_requirement_id":"TL-LEND-UC01-R01","level":"api","state":"not automated yet"}\n');
+    appendFileSync(path.join(tl.root, 'data', 'use_case_test.jsonl'), '{"id":"TL-LEND-UC01-R01","title":"Given its parent\'s ID","uc_requirement_id":"TL-LEND-UC01-R01","level":"service","state":"not automated yet"}\n');
     const refused = tl.workspace();
     expect(refused.problems).toHaveLength(1);
     expect(refused.problems[0]).toMatchObject({ severity: 'error', check: 'data-refused' });

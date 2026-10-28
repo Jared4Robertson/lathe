@@ -144,7 +144,7 @@ describe('flows', () => {
       interface: [{ id: 'EX-IF02', title: 'CLI', product_id: 'EX', kind: 'CLI' }],
       flow: [{ id: 'EX-LEND-UC01-FL02', title: 'Borrow from the terminal', use_case_id: 'EX-LEND-UC01', interface_id: 'EX-IF02' }],
       flow_step: [{ id: 'EX-LEND-UC01-FL02-S01', title: 'Run borrow', flow_id: 'EX-LEND-UC01-FL02', path: 'main', position: 1 }],
-      flow_test: [{ id: 'EX-LEND-UC01-FL02-T', title: 'Borrow from the terminal', flow_id: 'EX-LEND-UC01-FL02', level: 'manual', state: 'manual', manual_reason: 'Done at the desk.' }],
+      flow_test: [{ id: 'EX-LEND-UC01-FL02-T', title: 'Borrow from the terminal', flow_id: 'EX-LEND-UC01-FL02', level: 'system', state: 'manual', manual_reason: 'Done at the desk.' }],
     });
     const short = await loadData(data);
     expect(obligation(short, 'EX-LEND', 'uc_requirement')).toMatchObject({ total: 2, designed: 1 });

@@ -21,20 +21,23 @@ import { PACKAGE_FACTS_SQL, PACKAGE_GAP_SQL } from './trace/packages.ts';
 import { MEASURE_GAPS } from './trace/measures.ts';
 import { ROUTE_GAP_RULES } from './trace/routes.ts';
 
-/** The run by levels each test kind allows: a test at another level is reported by test-level-not-allowed and proves nothing. */
+/**
+ * The run by levels each test kind allows, cheapest first: a test at another level is reported by
+ * test-level-not-allowed and proves nothing. A level says only how a test runs, automated or by a person.
+ */
 export const ALLOWED_LEVELS: Readonly<Record<string, readonly string[]>> = {
-  constraint_test: ['unit', 'database'],
-  invariant_test: ['unit', 'database'],
-  specification_test: ['unit', 'database'],
-  policy_test: ['database', 'api', 'e2e-api', 'e2e-ui', 'manual'],
+  constraint_test: ['unit', 'integration'],
+  invariant_test: ['unit', 'integration'],
+  specification_test: ['unit', 'integration'],
+  policy_test: ['integration', 'service', 'system', 'browser'],
   domain_service_test: ['unit'],
-  use_case_test: ['api', 'e2e-api', 'e2e-ui', 'manual'],
-  view_test: ['unit', 'e2e-ui', 'manual'],
-  endpoint_test: ['contract', 'api'],
-  flow_test: ['e2e-ui', 'e2e-api', 'manual'],
-  integration_test: ['contract', 'e2e-api', 'manual'],
-  pattern_rule_test: ['unit', 'database', 'api', 'contract', 'e2e-api', 'e2e-ui', 'manual'],
-  standard_rule_test: ['unit', 'database', 'api', 'contract', 'e2e-api', 'e2e-ui', 'manual'],
+  use_case_test: ['service', 'system', 'browser'],
+  view_test: ['unit', 'browser'],
+  endpoint_test: ['service', 'system'],
+  flow_test: ['system', 'browser'],
+  integration_test: ['integration', 'service', 'system'],
+  pattern_rule_test: ['unit', 'integration', 'service', 'system', 'browser'],
+  standard_rule_test: ['unit', 'integration', 'service', 'system', 'browser'],
 };
 
 /** The kinds whose records are tests: Lathe's kinds with a run by. */
@@ -90,15 +93,15 @@ const list = (items: readonly string[]) => items.map(sqlString).join(', ');
  * it), whether it exists and whether it names the record's own ID; test_case, each test case read from the product's
  * test files (its file as a path from the root, its place among the file's test cases, its line, and its name after
  * its describes' names), with test_case_id, each ID it or its describes name; test_level_allowed, the levels each test
- * kind allows; and source_file, each of the product's source files and whether a technical record names it or a
- * folder holding it (trace/source-files.ts); and package_facts, the packages the product's package.json files list
- * (trace/packages.ts).
+ * kind allows (typed by the schema's test_level, so a level it does not know fails the load); source_file, each of
+ * the product's source files and whether a technical record names it or a folder holding it (trace/source-files.ts);
+ * and package_facts, the packages the product's package.json files list (trace/packages.ts).
  */
 export const FACT_TABLES_SQL = `
 CREATE OR REPLACE TABLE file_facts (record VARCHAR NOT NULL, kind VARCHAR NOT NULL, file VARCHAR NOT NULL, path VARCHAR, file_exists BOOLEAN NOT NULL, contains_id BOOLEAN NOT NULL);
 CREATE OR REPLACE TABLE test_case (file VARCHAR NOT NULL, position INTEGER NOT NULL, line INTEGER NOT NULL, name VARCHAR NOT NULL);
 CREATE OR REPLACE TABLE test_case_id (file VARCHAR NOT NULL, position INTEGER NOT NULL, id VARCHAR NOT NULL);
-CREATE OR REPLACE TABLE test_level_allowed (kind VARCHAR NOT NULL, level VARCHAR NOT NULL);
+CREATE OR REPLACE TABLE test_level_allowed (kind VARCHAR NOT NULL, level test_level NOT NULL);
 CREATE OR REPLACE TABLE source_file (file VARCHAR NOT NULL, traced BOOLEAN NOT NULL);
 ${PACKAGE_FACTS_SQL}
 INSERT INTO test_level_allowed VALUES ${Object.entries(ALLOWED_LEVELS).flatMap(([kind, levels]) => levels.map((l) => `(${sqlString(kind)}, ${sqlString(l)})`)).join(', ')};`;

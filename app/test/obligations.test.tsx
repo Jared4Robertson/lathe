@@ -16,7 +16,7 @@ import { addRows, indexOf } from './fixtures/load';
 /** The workspace with a manual test of DM-SHOP-UC01-R02 beside the automated and the not automated yet ones. */
 function workspace(): SpecData {
   return addRows(productKindWorkspace(), 'use_case_test', {
-    id: 'DM-SHOP-UC01-R02-T01', title: 'A person fills a basket to 50', uc_requirement_id: 'DM-SHOP-UC01-R02', level: 'manual', state: 'manual', manual_reason: 'A person fills the basket by hand.',
+    id: 'DM-SHOP-UC01-R02-T01', title: 'A person fills a basket to 50', uc_requirement_id: 'DM-SHOP-UC01-R02', level: 'browser', state: 'manual', manual_reason: 'A person fills the basket by hand.',
   });
 }
 const served = () => ({ data: workspace() });

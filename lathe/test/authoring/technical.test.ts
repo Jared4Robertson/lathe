@@ -141,7 +141,7 @@ describe('standards', () => {
     expect(meets.pairs.map((p) => p.source).sort()).toEqual(technical().sort());
     expect(parentsOf(schema, 'standard_rule_test')).toEqual(['standard_rule.standard_rule_id']);
     expect([schema.kinds.standard_rule_test].map((k) => [k.stage, k.idPattern, k.obligation])).toEqual([['test-plan', '<standard rule>-T<nn>', false]]);
-    expect(ALLOWED_LEVELS.standard_rule_test).toEqual(['unit', 'database', 'api', 'contract', 'e2e-api', 'e2e-ui', 'manual']);
+    expect(ALLOWED_LEVELS.standard_rule_test).toEqual(['unit', 'integration', 'service', 'system', 'browser']);
     described(reference, ['standard', 'standard_rule', 'standard_rule_test'], ['meets']);
     expect(reference.relations.find((r) => r.relation === 'meets')).toMatchObject({ role: '', forward_label: 'Meets', reverse_label: 'Met by' });
     // A requirement or a test cannot meet a rule, and a rule that does not exist cannot be met.
