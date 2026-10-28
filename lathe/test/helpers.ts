@@ -5,6 +5,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { vi } from 'vitest';
 import { loadWorkspace, openStore, StoreError, type Command, type Problem, type Row, type StoreProblem, type Workspace } from '../src/index.ts';
+import { DATABASE_STORAGES, expectedColumns } from '../src/trace/tables.ts';
 import { writeData, type Data } from './store/fixture.ts';
 
 export { removeData, withTable, writeData, type Data } from './store/fixture.ts';
@@ -24,12 +25,14 @@ export interface BuildOptions {
 /**
  * Writes the rows into a fresh product folder through the store's command layer (a link through link, every other
  * row through add), in the schema's load order, the product's own kinds after their declarations. Then writes each
- * file a record names, holding a comment line with the ID of each record that names it.
+ * file a record names, holding a comment line with the ID of each record that names it, and a CREATE TABLE for each
+ * table kept in a database that names it, with the columns and keys the spec gives (table-schema-mismatch).
  */
 export async function build(data: Data, options: BuildOptions = {}): Promise<string> {
   const root = writeData({});
   const store = await openStore(root, { latheDataDir: null });
   const done = new Set<string>();
+  const creates = new Map<string, string[]>();
   try {
     for (let pass = 0; pass < 2; pass++) {
       const tables = store.schema.loadOrder.filter((t) => data[t]?.length && !done.has(t));
@@ -42,6 +45,18 @@ export async function build(data: Data, options: BuildOptions = {}): Promise<str
       );
       if (commands.length) await store.apply(commands);
       for (const t of tables) done.add(t);
+    }
+    for (const table of store.rows('table')) {
+      if (typeof table.file !== 'string' || !DATABASE_STORAGES.includes(String(table.storage))) continue;
+      const keys = store.rows('table_key').filter((k) => k.table_id === table.id).flatMap((k) => {
+        const columns = (k.columns as string[]).join(', ');
+        if (k.type === 'primary') return [`PRIMARY KEY (${columns})`];
+        if (k.type === 'unique') return [`UNIQUE (${columns})`];
+        const target = store.rows('table').find((t) => t.id === k.target_table_id)?.name;
+        return k.type === 'foreign' ? [`FOREIGN KEY (${columns}) REFERENCES ${target}`] : [];
+      });
+      const body = [...expectedColumns(store, table).map((c) => `"${c}" TEXT`), ...keys].join(', ');
+      creates.set(table.file, [...(creates.get(table.file) ?? []), `CREATE TABLE "${table.name}" (${body});`]);
     }
   } finally {
     await store.close();
@@ -57,6 +72,7 @@ export async function build(data: Data, options: BuildOptions = {}): Promise<str
       files.set(row.file, lines);
     }
   }
+  for (const [file, statements] of creates) files.set(file, [...(files.get(file) ?? []), ...statements]);
   for (const [file, lines] of files) {
     if (options.missing?.includes(file) || options.files?.[file] !== undefined) continue;
     write(root, file, `${lines.join('\n')}\n`);
@@ -314,6 +330,7 @@ export function sparse(): Data {
       { id: 'SP-D-RM01', title: 'Free tools', domain_id: 'SP-D' },
       { id: 'SP-D-RM02', title: 'Loans', domain_id: 'SP-D' },
     ],
+    table: [{ id: 'SP-D-TB01', title: 'Outbox', domain_id: 'SP-D', name: 'outbox', storage: 'table' }],
     query: [{ id: 'SP-D-QRY01', title: 'List loans', read_model_id: 'SP-D-RM02' }],
     specification: [{ id: 'SP-D-SP01', title: 'Tool is free', statement: 'A tool is free when no loan names it.' }],
     policy: [{ id: 'SP-D-PO01', title: 'React', command_id: 'SP-D-CMD01', statement: 'Whenever something happens, the library MUST add a tool.' }],

@@ -9,6 +9,7 @@ import { loadConfig } from './config.ts';
 import { orderChecks, referenceOf, type Reference } from './reference.ts';
 import { formatProblem, openStore, Store, StoreError, LATHE_DATA_DIR, type StoreOptions } from './store/store.ts';
 import { SCHEMA_DIR } from './store/schema.ts';
+import { gatherTableFacts, TABLE_FACTS_SQL } from './trace/tables.ts';
 import type { Row } from './store/rows.ts';
 import type { Coverage, CoverageGap, Kind, ObligationCoverage, PatternRuleStanding, Problem, RecordedException, RelationRule, SpecLink, SpecRecord, StageRule, TestCounts, Workspace } from './types.ts';
 
@@ -320,6 +321,9 @@ export async function readWorkspace(store: Store, root: string, timings?: Partia
   const connection = store.connection;
   await connection.run(FACT_TABLES_SQL);
   await append(connection, 'file_facts', facts.map((f) => [f.record, f.kind, f.file, f.file_exists, f.contains_id]));
+  const tableFacts = await step('table facts', () => gatherTableFacts(path.resolve(root), store));
+  await connection.run(TABLE_FACTS_SQL);
+  await append(connection, 'table_facts', tableFacts.map((f) => [f.record, f.name, f.file, f.part, f.expected, f.found]));
   await step('coverage tables', () => connection.run(coverageViewsSql(store.schema)));
   lap('files');
   const scope = new Map(read.records.map((r) => [r.id, r.product]));
