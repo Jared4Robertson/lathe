@@ -69,7 +69,7 @@ afterEach(() => {
   document.documentElement.removeAttribute('data-title-bar');
 });
 
-describe('LA-PLT-UC19-R01-T04 The chat is offered in the desktop app on a wide window, and nowhere else', () => {
+describe('LA-V99-R01-T01 The chat floats at the right, measured by the stage, and its toggle and key show and hide it', () => {
   it('floats over the stage as a panel the stage measures, shown and hidden by its toggle and key', async () => {
     fakeChat();
     await openApp('/DM-SHOP-UC01');
@@ -85,6 +85,9 @@ describe('LA-PLT-UC19-R01-T04 The chat is offered in the desktop app on a wide w
     expect(toggle).toHaveAttribute('aria-pressed', 'true');
   });
 
+});
+
+describe('LA-PLT-UC19-R01-T04 The chat is offered in the desktop app on a wide window, and nowhere else', () => {
   it('is not drawn in a browser', async () => {
     await openApp('/DM-SHOP-UC01');
     expect(screen.queryByRole('complementary', { name: 'Chat with Claude' })).toBeNull();

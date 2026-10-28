@@ -40,6 +40,7 @@
 {"id":"LA-UI138","title":"Breadcrumb","file":"app/src/shell/Breadcrumb.tsx","description":"The one trail of places above a page, collapsed past three places with a menu of the hidden levels."}
 {"id":"LA-UI139","title":"Open space","file":"app/src/views/openSpace.ts","description":"The stage's measure of what the floating panels leave of it, as CSS variables and a store the stages frame their focus in."}
 {"id":"LA-UI140","title":"Wiki card","file":"app/src/views/WikiCard.tsx","description":"The focus's wiki page, floating over the left of the open space: its breadcrumb, title and content, its collapse button and resize handle."}
+{"id":"LA-UI141","title":"Chat panel","file":"app/src/chat/ChatPanel.tsx","description":"The chat panel: its head, the session picker, the log with its tool rows, permission prompts and record diffs, and the composer."}
 {"id":"LA-UI52","title":"CoverageBars","file":"app/src/specs/ProductHealth.tsx","description":"CoverageBars, obligationGroups, ProductSummary, TestCountsLine, sumTestCounts"}
 {"id":"LA-UI53","title":"Traceability section","file":"app/src/specs/Traceability.tsx","description":"Traceability and its gap callouts, requirement table and run by."}
 {"id":"LA-UI54","title":"DomainPatterns","file":"app/src/specs/PatternParts.tsx","description":"DomainPatterns, PatternSections, PatternRuleSections, RuleMarks"}
