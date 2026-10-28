@@ -59,15 +59,15 @@ describe('the index from typed rows', () => {
     const ws = buildWorkspace(workspace());
     const positions = ws.kinds.map((k) => ws.schema.kinds[k.kind].position);
     expect(positions).toEqual([...positions].sort((a, b) => a! - b!));
-    expect(ws.kinds.slice(0, 3).map((k) => k.kind)).toEqual(['product', 'domain', 'aggregate']);
+    expect(ws.kinds.slice(0, 3).map((k) => k.kind)).toEqual(['product', 'business_outcome', 'domain']);
     expect(ws.kinds.at(-1)!.kind).toBe('question');
     const requirement = ws.kinds.find((k) => k.kind === 'uc_requirement')!;
     expect(requirement).toMatchObject({ label: 'UC requirement', stage: 'use-cases', parent_kinds: ['use_case'], obligation: true, id_scope: 'parent' });
     expect(requirement.required_fields).toEqual(['statement']);
     expect(ws.kinds.find((k) => k.kind === 'endpoint')!.parent_kinds).toEqual(['command', 'query']);
     expect(ws.kinds.find((k) => k.kind === 'view')).toMatchObject({ parent_kinds: [], id_scope: 'product' });
-    expect(ws.stages.map((s) => s.stage)).toEqual(['domain-model', 'use-cases', 'interaction-design', 'technical-specification', 'test-plan']);
-    expect(ws.stages[0]).toMatchObject({ label: 'Domain model' });
+    expect(ws.stages.map((s) => s.stage)).toEqual(['discovery', 'domain-model', 'use-cases', 'interaction-design', 'technical-specification', 'test-plan']);
+    expect(ws.stages[0]).toMatchObject({ label: 'Discovery' });
     expect(ws.relations).toContainEqual(expect.objectContaining({ relation: 'fulfills', source_kind: 'flow_step', target_kind: 'uc_requirement', role: 'design', forward_label: 'Fulfills' }));
   });
 

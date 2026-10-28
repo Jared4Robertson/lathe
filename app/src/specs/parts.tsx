@@ -155,8 +155,11 @@ const STATE_MEANING: Record<TestState, string> = {
 /** The class a state's tag takes. */
 const STATE_CLASS: Record<TestState, string> = { automated: 'automated', manual: 'manual', 'not automated yet': 'not-automated' };
 
-/** Whether a kind is a test: one of the test plan's kinds. */
-export const isTestKind = (index: SpecIndex, kind: string) => index.kinds.get(kind)?.stage === 'test-plan';
+/** Whether a kind is a test: one of the test plan's kinds with a run by (a test data set is in the test plan, and not a test). */
+export const isTestKind = (index: SpecIndex, kind: string) => {
+  const k = index.kinds.get(kind);
+  return k?.stage === 'test-plan' && k.required_fields.includes('state');
+};
 
 /** A test's state, from its run by: automated, manual or not automated yet. */
 export const testState = (record: SpecRecord): string => textOf(record.row, 'state').trim();
@@ -221,7 +224,8 @@ const ROW_FIELDS: Record<string, string[]> = {
 const rowFields = (index: SpecIndex, kind: string): string[] => {
   const stage = index.kinds.get(kind)?.stage;
   if (ROW_FIELDS[kind]) return ROW_FIELDS[kind];
-  if (stage === 'test-plan') return ['level', 'file'];
+  if (isTestKind(index, kind)) return ['level', 'file'];
+  if (stage === 'test-plan') return ['file'];
   if (stage === 'technical-specification') return ['file'];
   return [];
 };

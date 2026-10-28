@@ -19,9 +19,10 @@
   --steel: #2E6A88; --steel-bg: #E4EEF3; --spark: #B5512A; --spark-bg: #F8E8DF; --warn: #875C00;
   /* The workbench: panels sit on the shell, a gap apart, and every gap between two panels resizes them (LA-PAT-APP-UX-R02). */
   --shell: #DDE3E6; --panel-gap: 6px; --panel-radius: 8px;
-  /* Errors take the spark color. Each of the five stages has its own color and fill, used wherever a kind shows its
+  /* Errors take the spark color. Each of the six stages has its own color and fill, used wherever a kind shows its
      stage (the graph, the nav, badges); the product and open questions are structural, in ink. */
   --error: #9E4320; --error-bg: var(--spark-bg); /* darker than --spark, so error text passes AA on its tint */
+  --g-discovery: #75640E; --g-discovery-bg: #F4EFD8;
   --g-domain-model: #2E6A88; --g-domain-model-bg: #E4EEF3;
   --g-use-cases: #2F7148; --g-use-cases-bg: #E2F1E7;
   --g-interaction-design: #6A4C9C; --g-interaction-design-bg: #EEE8F6;
@@ -58,6 +59,7 @@
     --on-mark: #11171B; /* dark text on the bright dark-mode marks passes AA; white did not */
     --error: var(--spark);
     --shell: #0A0F12;
+    --g-discovery: #D6C060; --g-discovery-bg: #2E2912;
     --g-domain-model: #7DB4D0; --g-domain-model-bg: #1A2E3A;
     --g-use-cases: #7CC79A; --g-use-cases-bg: #17301F;
     --g-interaction-design: #B9A0E6; --g-interaction-design-bg: #261E36;
@@ -135,11 +137,17 @@ code { font: 0.86em var(--mono); }
 .stage { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; padding-top: 6px; border-top: 2px solid var(--stage-color, var(--rule)); }
 .stage-title { display: flex; align-items: center; gap: 8px; font: 500 0.78rem var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink); padding-top: 6px; }
 /* Each stage's color, for its mark, its badges and its rule (the graph reads the same tokens). */
+.stage-discovery { --stage-color: var(--g-discovery); --stage-fill: var(--g-discovery-bg); }
 .stage-domain-model { --stage-color: var(--g-domain-model); --stage-fill: var(--g-domain-model-bg); }
 .stage-use-cases { --stage-color: var(--g-use-cases); --stage-fill: var(--g-use-cases-bg); }
 .stage-interaction-design { --stage-color: var(--g-interaction-design); --stage-fill: var(--g-interaction-design-bg); }
 .stage-technical-specification { --stage-color: var(--g-technical-specification); --stage-fill: var(--g-technical-specification-bg); }
 .stage-test-plan { --stage-color: var(--g-test-plan); --stage-fill: var(--g-test-plan-bg); }
+/* A product's business outcomes: each a block, its statement, then its measure, target and the capabilities serving it. */
+.outcome-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+.outcome { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; padding: 8px 12px; border-left: 3px solid var(--stage-color, var(--rule)); background: var(--sheet); }
+.outcome-statement { margin: 0; }
+.served-by { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; }
 .stage-mark { flex: none; display: inline-block; width: 10px; height: 10px; border-radius: 2px; border: 1.5px solid var(--stage-color, var(--g-structural)); background: var(--stage-fill, var(--g-structural-bg)); }
 .kind-badge { display: inline-block; font: 500 0.72rem var(--mono); padding: 0 6px; border-radius: 4px; border: 1px solid var(--stage-color, var(--rule)); background: var(--stage-fill, var(--sheet)); color: var(--ink); white-space: nowrap; }
 
@@ -322,6 +330,7 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 /* Edges: parent/child is the solid spine of the tree; every other relation is a lighter, dashed cross-link. A parent line
    grows with its child box (--edge-scale), as the box's border does, so it reads at the zoom that reads the box. */
 .graph-swatch { display: inline-block; width: 18px; height: 11px; border: 1.5px solid var(--g-structural); background: var(--g-structural-bg); border-radius: 2px; }
+.graph-swatch.stage-discovery { border-color: var(--g-discovery); background: var(--g-discovery-bg); }
 .graph-swatch.stage-domain-model { border-color: var(--g-domain-model); background: var(--g-domain-model-bg); }
 .graph-swatch.stage-use-cases { border-color: var(--g-use-cases); background: var(--g-use-cases-bg); }
 .graph-swatch.stage-interaction-design { border-color: var(--g-interaction-design); background: var(--g-interaction-design-bg); }

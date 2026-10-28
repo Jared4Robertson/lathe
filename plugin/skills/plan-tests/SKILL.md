@@ -1,6 +1,6 @@
 ---
 name: plan-tests
-description: Write or change Lathe test records and the tests they name - one test kind per thing tested (constraint, invariant, specification, policy, domain service, use case, view, endpoint, flow, integration, pattern rule and standard rule tests), each under what it proves, with its run by (level, state, and a file or a manual reason). Use when planning which tests prove which obligations, writing a test for a Lathe test record, or deciding whether a test is automated, manual or not automated yet, in a repo with lathe.config.json.
+description: Write or change Lathe test records and the tests they name - one test kind per thing tested (constraint, invariant, specification, policy, domain service, use case, view, endpoint, flow, integration, pattern rule and standard rule tests), each under what it proves, with its run by (level, state, a file or a manual reason, size and markers), and the test data sets tests start from. Use when planning which tests prove which obligations, writing a test for a Lathe test record, or deciding whether a test is automated, manual or not automated yet, in a repo with lathe.config.json.
 ---
 
 # Plan tests
@@ -44,7 +44,17 @@ Every test has a run by:
 - `file`: the test file, from the product root. Required when automated; give it otherwise only when the file exists.
 - `manual_reason`: why a person runs it rather than a file. Required when manual, and only then; a manual test's level is usually `manual`.
 
-The store refuses an automated test with no file, and a manual reason on a test that is not manual.
+- `size`: leave it out for a small test, the usual case (a few records); `volume` for one that runs on many records to show it holds at scale; `worst case` for one that runs on the slowest or largest input the product must still handle.
+- `smoke`: `true` for a smoke test, one of the few run first, after a build or a deploy, to show the product works at all. Leave it out otherwise.
+- `external`: `true` for a test that reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Leave it out otherwise.
+
+The store refuses an automated test with no file, a manual reason on a test that is not manual, and a `smoke` or `external` of `false` (leave it out instead).
+
+## Test data sets
+
+Some tests start from prepared data: an environment, accounts and starting records, built by a seed or fixture file. Describe each such set once, as a `test_data_set` under the domain whose tests use it (ID `<P>-<D>-TD<nn>`, from `next_id` with the domain as `parent`): its `environment` (where it runs), `accounts` (who it signs in as), `records` (what it starts with), `prepare` and `reset` (how to set it up before a test and clean up after), and `file` (the seed or fixture that builds it, from the product root; a file or a folder). Then link each test that starts from it, with `starts_from` (test to data set).
+
+A data set no test starts from is an error (`test-data-set-unused`). A data set whose file does not exist is reported too (`test-data-set-file-missing`): an error when an automated test starts from it, since that test cannot run, and a warning otherwise.
 
 ## The test names its ID
 
@@ -77,6 +87,16 @@ add  { "constraint_test": { "id": "TL-VO02-C02-T", "title": "An email address is
 add  { "use_case_test": { "id": "TL-LEND-UC03-R04-T01", "title": "Borrowing a tool on loan or needing repair is refused with the reason",
        "uc_requirement_id": "TL-LEND-UC03-R04", "level": "api", "state": "automated", "file": "test/api.test.ts",
        "given": "One tool on loan and one needing repair", "when": "A member borrows each", "then": "Each is refused, saying which" } }
+```
+
+A test data set built by a fixture, and a test that starts from it:
+
+```
+add  { "test_data_set": { "id": "TL-LEND-TD01", "title": "An empty library and a test clock", "domain_id": "TL-LEND",
+       "environment": "A fresh in-memory store.", "records": "No members, tools or loans; a clock the test sets.",
+       "prepare": "Each test calls services() for a new store and clock.", "reset": "Nothing: each test has its own store.",
+       "file": "test/helpers.ts" } }
+link { "source": "TL-LEND-INV01-T", "relation": "starts_from", "target": "TL-LEND-TD01" }
 ```
 
 An endpoint test not automated yet, then automated:

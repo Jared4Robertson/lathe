@@ -24,7 +24,7 @@ The spec is typed data in the repo's `data/` folder, one table per kind. Change 
 
 | Kind | Parent | ID | Holds |
 | --- | --- | --- | --- |
-| `capability` | the domain | `<P>-<D>-CAP<nn>` | `position`: its place in the domain, unique there. `description`: what it covers. |
+| `capability` | the domain | `<P>-<D>-CAP<nn>` | `position`: its place in the domain, unique there. `description`: what it covers. Link: `serves` the business outcomes it serves (the `discover-outcomes` skill). |
 | `use_case` | a capability | `<P>-<D>-UC<nn>` | `goal`: what the actor wants, in one sentence. `notes`: anything longer, such as the order of checks. Its actors are `use_case_actor` rows. Link: `follows` the patterns it shares. |
 | `use_case_actor` (part) | the use case | its `position` | `role_name`: one of the product's roles. |
 | `uc_requirement` | the use case | `<use case>-R<nn>` | Title: the rule in a few words. `statement`: the rule with MUST / MUST NOT / SHOULD / MAY. `group_name`: a heading once there are more than about 8. |
@@ -36,7 +36,7 @@ The spec is typed data in the repo's `data/` folder, one table per kind. Change 
 
 ## Capabilities
 
-Every use case sits in a capability: an ordered slice of its domain, such as 01 Catalog, 02 Lending. Add the domain's capabilities first, then each use case under the one it belongs to. Move a use case to another capability with `move`; its ID never changes. A capability with no use case, or one with a single use case, is a gap the check reports.
+Every use case sits in a capability: an ordered slice of its domain, such as 01 Catalog, 02 Lending. Add the domain's capabilities first, then each use case under the one it belongs to. Move a use case to another capability with `move`; its ID never changes. A capability with no use case, or one with a single use case, is a gap the check reports, and so is a capability that serves no business outcome.
 
 ## Roles
 
@@ -65,7 +65,7 @@ When two or more use cases would state the same rules, write those rules once as
 
 ## Example: the Tool Library
 
-A capability, a use case in it with its actor, and a UC requirement:
+A capability with the outcome it serves, a use case in it with its actor, and a UC requirement:
 
 ```
 add  { "capability": { "id": "TL-LEND-CAP03", "title": "Lending", "domain_id": "TL-LEND", "position": 3,
@@ -73,6 +73,7 @@ add  { "capability": { "id": "TL-LEND-CAP03", "title": "Lending", "domain_id": "
 add  { "use_case": { "id": "TL-LEND-UC03", "title": "Borrow a tool", "capability_id": "TL-LEND-CAP03",
        "goal": "A member borrows an available tool for the loan period.",
        "notes": "The checks run in this order, and the first that fails is the reason given: unknown member, unknown tool, an overdue loan, the loan limit, the tool needing repair, the tool on loan." } }
+link { "source": "TL-LEND-CAP03", "relation": "serves", "target": "TL-BO01" }
 add  { "use_case_actor": { "use_case_id": "TL-LEND-UC03", "position": 1, "role_name": "Member" } }
 add  { "uc_requirement": { "id": "TL-LEND-UC03-R04", "title": "An unavailable tool is refused with the reason", "use_case_id": "TL-LEND-UC03",
        "statement": "Borrowing MUST be refused when the tool is on loan or needs repair, and the member MUST be told which." } }

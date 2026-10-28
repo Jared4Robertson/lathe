@@ -1756,7 +1756,7 @@ What some tests start from: the environment, the accounts and the starting recor
 - **Obligation:** no
 - **ID:** `<P>-<D>-TD<nn>`, such as `TL-LEND-TD01`; it starts with its domain's ID
 - **Links out:** none
-- **Links in:** Questions about this ([`about`](#relation-about)), Started from by ([`starts_from`](#relation-starts_from))
+- **Links in:** Questions about this ([`about`](#relation-about)), Starting point of ([`starts_from`](#relation-starts_from))
 - **Checks:** [`test-data-set-unused`](#check-test-data-set-unused), [`test-data-set-file-missing`](#check-test-data-set-file-missing)
 
 <a id="table-test_data_set"></a>
@@ -2827,7 +2827,7 @@ The capability serves the business outcome: what it is for. A capability may ser
 
 The test starts from the test data set: it is prepared before the test and reset after.
 
-- **Reads:** Starts from / Started from by
+- **Reads:** Starts from / Starting point of
 - **Role:** none
 
 | From | To | Meaning |

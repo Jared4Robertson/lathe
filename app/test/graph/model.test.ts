@@ -79,14 +79,17 @@ describe('graph neighborhood', () => {
   it('LA-V93-R51-T01 Trace mode shows what designs, builds and proves an obligation, and the files they name', () => {
     // A UC requirement: the step that fulfills it, its flow, where it happens and what it invokes, that command's
     // handler, the test under the requirement, and their files.
+    // On its left, why it is there: its use case and the use case's capability.
     const t = traceChain(index, 'P-D-UC01-R01');
     expect(ids(t)).toEqual([
-      'P-D-CMD01', 'P-D-CMD01-H', 'P-D-UC01-FL', 'P-D-UC01-FL-S01', 'P-D-UC01-R01', 'P-D-UC01-R01-T01', 'P-V01',
+      'P-D-CAP01', 'P-D-CMD01', 'P-D-CMD01-H', 'P-D-UC01', 'P-D-UC01-FL', 'P-D-UC01-FL-S01', 'P-D-UC01-R01', 'P-D-UC01-R01-T01', 'P-V01',
       fileNodeId('src/loans.ts'), fileNodeId('test/lend.test.ts'),
     ].sort());
     expect(t.edges.map((e) => `${e.source} ${e.relation} ${e.target}`).sort()).toEqual([
+      'P-D-CAP01 parent P-D-UC01',
       'P-D-CMD01 parent P-D-CMD01-H',
       'P-D-CMD01-H names file:src/loans.ts',
+      'P-D-UC01 parent P-D-UC01-R01',
       'P-D-UC01-FL parent P-D-UC01-FL-S01',
       'P-D-UC01-FL-S01 fulfills P-D-UC01-R01',
       'P-D-UC01-FL-S01 happens_in P-V01',
@@ -94,8 +97,7 @@ describe('graph neighborhood', () => {
       'P-D-UC01-R01 parent P-D-UC01-R01-T01',
       'P-D-UC01-R01-T01 names file:test/lend.test.ts',
     ]);
-    // The parent use case and steps that fulfill nothing are not part of the chain.
-    expect(ids(t)).not.toContain('P-D-UC01');
+    // Steps that fulfill nothing are not part of the chain.
     expect(ids(t)).not.toContain('P-D-UC01-FL-S02');
     // An invariant: its aggregate and the aggregate's repository, the table whose unique key enforces it, its test.
     const inv = traceChain(index, 'P-D-INV01');
@@ -106,7 +108,22 @@ describe('graph neighborhood', () => {
     // An obligation nothing implements or proves has only itself.
     expect(ids(traceChain(index, 'P-D-SP01'))).toEqual(['P-D-SP01']);
     // Filters apply to the chain too.
-    expect(ids(traceChain(index, 'P-D-UC01-R01', filters(['use_case_test', 'file'])))).toEqual(['P-D-CMD01', 'P-D-CMD01-H', 'P-D-UC01-FL', 'P-D-UC01-FL-S01', 'P-D-UC01-R01', 'P-V01']);
+    expect(ids(traceChain(index, 'P-D-UC01-R01', filters(['use_case_test', 'file', 'use_case'])))).toEqual(['P-D-CMD01', 'P-D-CMD01-H', 'P-D-UC01-FL', 'P-D-UC01-FL-S01', 'P-D-UC01-R01', 'P-V01']);
+  });
+
+  it('LA-V93-R51-T03 A UC requirement\'s trace starts from the business outcomes its capability serves, each in a column of its own', () => {
+    const w = testWorkspace();
+    addRows(w, 'business_outcome', { id: 'P-BO01', title: 'More things lent', product_id: 'P', statement: 'Members borrow more.', measure: 'Loans per month.', target: 'Twice as many in a year.' });
+    addRows(w, 'serves', { source_id: 'P-D-CAP01', target_id: 'P-BO01' });
+    const outcomes = indexOf(w);
+    const t = traceChain(outcomes, 'P-D-UC01-R01');
+    expect(t.edges.map((e) => `${e.source} ${e.relation} ${e.target}`)).toEqual(expect.arrayContaining(['P-D-CAP01 serves P-BO01', 'P-D-CAP01 parent P-D-UC01', 'P-D-UC01 parent P-D-UC01-R01']));
+    const column = new Map(t.nodes.map((x) => [x.id, x.column]));
+    expect(['P-BO01', 'P-D-CAP01', 'P-D-UC01', 'P-D-UC01-R01', 'P-D-UC01-FL-S01', 'P-D-CMD01-H', 'P-D-UC01-R01-T01'].map((id) => column.get(id))).toEqual([
+      TRACE_COLUMNS.outcome, TRACE_COLUMNS.capability, TRACE_COLUMNS.useCase, TRACE_COLUMNS.obligation, TRACE_COLUMNS.step, TRACE_COLUMNS.technical, TRACE_COLUMNS.test,
+    ]);
+    // Hiding the serves relation leaves the outcome out.
+    expect(ids(traceChain(outcomes, 'P-D-UC01-R01', filters([], ['serves'])))).not.toContain('P-BO01');
   });
 
   it('LA-V93-R52-T01 Trace mode is offered for every obligation, and for nothing else', () => {

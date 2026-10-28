@@ -20,8 +20,8 @@ import { addressOf, checksPathOf, HOME_PATH } from '../views/address';
 
 // The side navigation. At its far left is the space rail: one square icon per product (each
 // product is its own space). Beside it, the panel, all of it the current space's: a quick find of
-// the space, its overview, its own stages (what it shares, in Shared), its domains (each folded
-// into its five stages and their folders) and its groups, then Tools (the space's Checks), a section that folds on its
+// the space, its overview, its own stages (its business outcomes and what it shares, in Shared), its domains (each
+// folded into its stages and their folders) and its groups, then Tools (the space's Checks), a section that folds on its
 // own, and a footer with Appearance and where the specs come from (the record format is a command and a
 // link in the shortcuts sheet). The nav
 // collapses to the rail alone (remembered), and on a narrow screen it is a drawer that keeps
@@ -289,9 +289,9 @@ function currentBranch(index: SpecIndex, path: string): string[] {
 }
 
 /**
- * The current space in the panel: its overview; its own stages (Shared: what it shares, such as
- * patterns, standards, and the value objects and views two or more domains use); its domains, each folding its five stages (Domain
- * model, Use cases, Interaction design, Technical specification, Test plan) and its open questions;
+ * The current space in the panel: its overview; its own stages (Shared: its business outcomes and what it shares, such
+ * as patterns, standards, and the value objects and views two or more domains use); its domains, each folding its stages
+ * (Domain model, Use cases, Interaction design, Technical specification, Test plan) and its open questions;
  * then the product's open questions. Each stage holds one folder per kind, each listing the records
  * that start a branch of the stage. One level shows by default; every stage and folder folds on its
  * own (remembered for the session) and shows its count, and the current page's branch opens itself.

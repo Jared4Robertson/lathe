@@ -24,7 +24,7 @@ export type Shape =
   | 'diamond';
 
 /** A small glyph a kind adds before its kind and ID line: a shape shared with another kind, told apart. */
-export type Mark = 'value' | 'gear' | 'lens' | 'marker' | 'ruler' | 'port';
+export type Mark = 'value' | 'gear' | 'lens' | 'marker' | 'ruler' | 'port' | 'target' | 'data';
 
 export interface KindShape { shape: Shape; mark?: Mark }
 
@@ -48,7 +48,7 @@ export const SHAPES: Readonly<Record<Shape, ShapeSpec>> = {
   hexagon: { name: 'a hexagon', kinds: 'Domain', room: { l: 12, r: 12, t: 0, b: 0 }, draw: 'clipped' },
   folder: { name: 'a folder with a tab', kinds: 'Stage, folder or group, with its count', room: { l: 0, r: 0, t: 8, b: 0 }, draw: 'clipped' },
   double: { name: 'a double border', kinds: 'Aggregate', room: { l: 2, r: 2, t: 2, b: 2 }, draw: 'box' },
-  box: { name: 'a plain box', kinds: 'Entity (a value object, read model, domain service, term or integration with its mark), and any kind a product adds', room: NO_ROOM, draw: 'box' },
+  box: { name: 'a plain box', kinds: 'Entity (a business outcome, value object, read model, domain service, term, integration or test data set with its mark), and any kind a product adds', room: NO_ROOM, draw: 'box' },
   octagon: { name: 'an octagon', kinds: 'Constraint, invariant, specification, pattern rule (a policy with a gear, a standard rule with a ruler)', room: NO_ROOM, draw: 'clipped' },
   flag: { name: 'a flag, notched on the right', kinds: 'Domain event', room: { l: 0, r: 10, t: 0, b: 0 }, draw: 'clipped' },
   parallelogram: { name: 'a slanted box', kinds: 'Command (a query with a lens)', room: { l: 8, r: 8, t: 0, b: 0 }, draw: 'clipped' },
@@ -74,6 +74,8 @@ export const MARKS: Readonly<Record<Mark, string>> = {
   marker: 'a marker: a glossary term, drawn as a plain box',
   ruler: 'a ruler: a standard or a standard rule, drawn as a pattern or a pattern rule',
   port: 'a port: an integration, drawn as a plain box',
+  target: 'a target: a business outcome, drawn as a plain box',
+  data: 'a cylinder: a test data set, drawn as a plain box',
 };
 
 const TECHNICAL: KindShape = { shape: 'component' };
@@ -81,6 +83,7 @@ const TEST: KindShape = { shape: 'shield' };
 
 const KIND_SHAPES: Readonly<Record<string, KindShape>> = {
   product: { shape: 'product' },
+  business_outcome: { shape: 'box', mark: 'target' },
   domain: { shape: 'hexagon' },
   aggregate: { shape: 'double' },
   entity: { shape: 'box' },
@@ -123,6 +126,7 @@ const KIND_SHAPES: Readonly<Record<string, KindShape>> = {
   adapter: TECHNICAL,
   standard: { shape: 'stack', mark: 'ruler' },
   standard_rule: { shape: 'octagon', mark: 'ruler' },
+  test_data_set: { shape: 'box', mark: 'data' },
   constraint_test: TEST,
   invariant_test: TEST,
   specification_test: TEST,

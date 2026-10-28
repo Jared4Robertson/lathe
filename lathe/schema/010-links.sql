@@ -60,7 +60,7 @@ INSERT INTO meta_relation VALUES
   ('follows', NULL, 'product', 'Follows', 'Followed by', NULL),
   ('meets', NULL, 'product', 'Meets', 'Met by', NULL),
   ('serves', NULL, 'product', 'Serves', 'Served by', NULL),
-  ('starts_from', NULL, 'product', 'Starts from', 'Started from by', NULL),
+  ('starts_from', NULL, 'product', 'Starts from', 'Starting point of', NULL),
   ('about', NULL, 'product', 'About', 'Questions about this', NULL);
 
 INSERT INTO meta_relation_pair VALUES

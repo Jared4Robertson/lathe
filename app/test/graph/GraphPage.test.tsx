@@ -213,12 +213,14 @@ describe('graph page', () => {
     fireEvent.click(screen.getByRole('checkbox', { name: 'Trace mode' }));
     await waitFor(() => expect(node('file:src/loans.ts')).not.toBeNull());
     expect(node('file:test/lend.test.ts')).not.toBeNull();
-    // The use case leaves the picture: it fades out where it was, and is then dropped.
-    await waitFor(() => expect(node('P-D-UC01')).toBeNull());
+    // On the trace's left, why the requirement is there: its use case and the use case's capability.
+    expect(node('P-D-UC01')).not.toBeNull();
+    expect(node('P-D-CAP01')).not.toBeNull();
     expect(sideBar().getByText('src/loans.ts')).toBeTruthy();
-    // Escape leaves trace mode.
+    // Escape leaves trace mode: the files leave the picture, fading out where they were, and are then dropped.
     fireEvent.keyDown(screen.getByRole('checkbox', { name: 'Trace mode' }), { key: 'Escape' });
-    await waitFor(() => expect(node('P-D-UC01')).not.toBeNull());
+    await waitFor(() => expect(node('file:src/loans.ts')).toBeNull());
+    expect(node('P-D-UC01')).not.toBeNull();
 
     fireEvent.click(node('P-D-UC01')!);
     await waitFor(() => expect(title()).toBe('Lend a thing'));

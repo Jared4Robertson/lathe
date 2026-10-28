@@ -1,5 +1,6 @@
 import { textOf, byIdOrder, type SpecIndex, type SpecLink, type SpecRecord } from './data';
 import { linkLabel } from './labels';
+import { isTestKind } from './parts';
 import { patternsFollowedBy, ruleStatus } from './patterns';
 
 // What a record's Traceability section shows (LA-TRC-UC14), on the new model's tree: an obligation
@@ -157,7 +158,13 @@ export interface Trace {
   /** For a use case: its UC requirements, each judged in the use case's domain. */
   requirements: { record: SpecRecord; judgment: Judgment | null }[];
   /** For a test: how it is run: its level and state, and its file or why it is manual. */
-  runBy: { level: string; state: string; file: string | null; missing: boolean; manualReason: string | null } | null;
+  runBy: {
+    level: string; state: string; file: string | null; missing: boolean; manualReason: string | null;
+    /** Its size: small when the test gives none, volume or worst case. */
+    size: string;
+    /** Its markers, smoke and external, those it sets. */
+    markers: string[];
+  } | null;
 }
 
 /**
@@ -198,7 +205,7 @@ export function traceOf(index: SpecIndex, record: SpecRecord, skip: ReadonlySet<
     return trace;
   }
 
-  if (kind?.stage === 'test-plan') {
+  if (isTestKind(index, record.kind)) {
     const state = textOf(record.row, 'state');
     const file = textOf(record.row, 'file').trim() || null;
     trace.groups = [
@@ -212,6 +219,8 @@ export function traceOf(index: SpecIndex, record: SpecRecord, skip: ReadonlySet<
       file,
       missing: !!file && (index.problemsFor.get(record.id) ?? []).some((p) => p.check === 'test-file-missing'),
       manualReason: textOf(record.row, 'manual_reason').trim() || null,
+      size: textOf(record.row, 'size').trim() || 'small',
+      markers: (['smoke', 'external'] as const).filter((m) => record.row[m] === true),
     };
     return trace;
   }
