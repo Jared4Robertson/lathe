@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
-# The full check, the one definition of "this commit passes": run it here, in a cloud session, or on any
-# CI runner. It installs every package, runs each step, records each step's real exit code (never through a
-# pipe) and writes a summary to $CI_RESULT (default: ci-result.md in the repo root). It exits non-zero if any
-# step failed. The performance suites (timing budgets need a quiet machine) and the desktop smoke test (macOS
-# only) are not part of it; run those locally.
+# The checks, one definition of each: run them here, in a cloud session, or on any CI runner.
+#   scripts/ci.sh            the merge gate: types, knip, every package's unit tests and lathe check.
+#   scripts/ci.sh --browser  the browser batch: the stability and accessibility suites, run in batches on
+#                            main, never as a merge gate.
+# It installs what it needs, records each step's real exit code (never through a pipe) and writes a summary
+# to $CI_RESULT (default: ci-result.md in the repo root). It exits non-zero if any step failed. The
+# performance suites (timing budgets need a quiet machine) and the desktop smoke test (macOS only) run locally.
 set -u
 cd "$(dirname "$0")/.."
 result="${CI_RESULT:-ci-result.md}"
@@ -25,7 +27,13 @@ step() {
 
 step "Node 26" 'node --version | grep -q "^v26\."'
 step "Install" 'npm ci --prefix lathe && npm ci --prefix app && npm ci --prefix desktop && npm ci --prefix examples/tool-library'
+mode="${1:-gate}"
+if [ "$mode" = "--browser" ]; then
 step "Install Chromium" 'cd app && npx playwright install --with-deps chromium'
+step "Stability suite" 'npm --prefix app run test:stability'
+step "Accessibility suite" 'npm --prefix app run test:a11y'
+
+else
 step "Lathe types" 'npm --prefix lathe run typecheck'
 step "App types" 'cd app && npx tsc --noEmit'
 step "Desktop types" 'npm --prefix desktop run typecheck'
@@ -36,11 +44,9 @@ step "App tests" 'npm --prefix app test'
 step "Desktop tests" 'npm --prefix desktop test'
 step "Tool Library tests" 'npm --prefix examples/tool-library test'
 step "lathe check" 'npm --prefix lathe run check'
-step "Stability suite" 'npm --prefix app run test:stability'
-step "Accessibility suite" 'npm --prefix app run test:a11y'
-
+fi
 {
-  echo "# Full check of $(git rev-parse HEAD)"
+  echo "# $([ "$mode" = "--browser" ] && echo "Browser batch" || echo "Merge gate") of $(git rev-parse HEAD)"
   echo
   echo "Branch: $(git rev-parse --abbrev-ref HEAD). Result: $([ $failed -eq 0 ] && echo PASSED || echo FAILED)."
   echo
