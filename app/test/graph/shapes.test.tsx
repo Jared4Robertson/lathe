@@ -30,7 +30,7 @@ const TABLE: Record<string, [Shape, string?]> = {
 };
 
 describe('a shape for each kind', () => {
-  it.each(['LA-V93-R12-T02', 'LA-V93-R05-T01'])('%s A domain node has the hexagon class and its outline, and the tree lines meet that outline', async () => {
+  it('LA-V93-R12-T02 LA-V93-R05-T01 A domain node has the hexagon class and its outline, and the tree lines meet that outline', async () => {
     // The chamfer grows with the box scale, at most a quarter of the width.
     const chamfer = (w: number, h: number, scale: number) => outlineInset({ x: 0, y: 0, w, h }, 'hexagon', scale, 0, 'left');
     expect(chamfer(NODE_WIDTH, NODE_HEIGHT, 1)).toBe(12);
@@ -62,7 +62,7 @@ describe('a shape for each kind', () => {
     expect(boxes.filter((b) => b.shape === 'hexagon')).toHaveLength(boxes.filter((b) => b.kind === 'domain').length);
   });
 
-  it.each(['LA-V93-R12-T04', 'LA-V93-R06-T01'])('%s Every kind is drawn in its own shape, a group as a folder and a kind a product adds as a plain box, each shape keeping its label and badge clear of its notches and corners at every size, and the key shows every shape and mark', () => {
+  it('LA-V93-R12-T04 LA-V93-R06-T01 Every kind is drawn in its own shape, a group as a folder and a kind a product adds as a plain box, each shape keeping its label and badge clear of its notches and corners at every size, and the key shows every shape and mark', () => {
     // Every kind of the meta-model has the shape (and mark) the table gives it.
     for (const { kind } of indexOf(testWorkspace()).workspace.kinds) {
       expect(TABLE[kind], `${kind} is in the table`).toBeDefined();

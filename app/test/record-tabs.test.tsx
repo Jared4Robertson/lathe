@@ -251,7 +251,7 @@ describe('tabs for open pages', () => {
     expect(address()).toBe('/P-V01?stage=erd');
   });
 
-  it.each(['LA-PAT-APP-UX-R06-T01', 'LA-PAT-APP-UX-R06-T02'])('%s Reloading brings back the same tabs, the preview, the active tab and each tab\'s stage', async () => {
+  it('LA-PAT-APP-UX-R06-T01 LA-PAT-APP-UX-R06-T02 Reloading brings back the same tabs, the preview, the active tab and each tab\'s stage', async () => {
     await openApp('/P-D-UC01?stage=graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     fireEvent.doubleClick(tab('Lend a thing'));

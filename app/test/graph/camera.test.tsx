@@ -30,7 +30,7 @@ const reducedMotion = () =>
 describe('graph camera', () => {
   const map = graphMap(testIndex(), 'P');
 
-  it.each(['LA-EXP-DS09-T03', 'LA-EXP-DS10-T01'])('%s The camera frames the focus and the levels the depth shows below it, the parent at the left edge', () => {
+  it('LA-EXP-DS09-T03 LA-EXP-DS10-T01 The camera frames the focus and the levels the depth shows below it, the parent at the left edge', () => {
     const w = 1000;
     const h = 800;
     const strip = Math.min(PARENT_STRIP_MAX, w * PARENT_STRIP);
@@ -108,7 +108,7 @@ describe('graph camera on the page', () => {
     await waitFor(() => expect(moves()).toBeGreaterThan(0));
   }
 
-  it.each(['LA-EXP-DS05-T10', 'LA-EXP-DS09-T04', 'LA-V93-R16-T01'])('%s Focusing a child glides the camera on the shared motion, and no box moves or changes size', async () => {
+  it('LA-EXP-DS05-T10 LA-EXP-DS09-T04 LA-V93-R16-T01 Focusing a child glides the camera on the shared motion, and no box moves or changes size', async () => {
     await open();
     // The first picture appears at once, framed.
     expect(glides()).toBe(0);
@@ -135,7 +135,7 @@ describe('graph camera on the page', () => {
     await waitFor(() => expect(camera()).toEqual(roundCamera(frameOnMap(graphMap(testIndex(), 'P'), 'P-D-UC01', 1, 1000, 800))), { timeout: 3000 });
   });
 
-  it.each(['LA-EXP-DS09-T05', 'LA-V93-R01-T01', 'LA-V93-R16-T02'])('%s Under reduced motion focusing frames the new focus at once', async () => {
+  it('LA-EXP-DS09-T05 LA-V93-R01-T01 LA-V93-R16-T02 Under reduced motion focusing frames the new focus at once', async () => {
     reducedMotion();
     await open();
     const first = moves();
@@ -195,7 +195,7 @@ describe('graph camera in the Nested layout', () => {
     await waitFor(() => expect(camera()).toEqual(roundCamera(frameNested(nestedMap(testIndex(), 'P'), 'P-D-UC01', 1000, 800))), { timeout: 3000 });
   });
 
-  it.each(['LA-EXP-DS09-T12', 'LA-V93-R22-T02'])('%s On the page, the Voronoi layout draws each cell as its outline, the pointer taking the outline and not its box, and focusing a child glides to its cell', async () => {
+  it('LA-EXP-DS09-T12 LA-V93-R22-T02 On the page, the Voronoi layout draws each cell as its outline, the pointer taking the outline and not its box, and focusing a child glides to its cell', async () => {
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({ x: 0, y: 0, top: 0, left: 0, width: 1000, height: 800, right: 1000, bottom: 800, toJSON: () => ({}) } as DOMRect);
     startAtDepth(1, 'voronoi');
     await openApp('/P-D-UC01?stage=graph', { data: testWorkspace() });

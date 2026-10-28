@@ -142,7 +142,7 @@ describe('the Voronoi map', () => {
     for (const [id, cell] of small) big.get(id)!.forEach(([x, y], i) => { expect((x - 500) / 10).toBeCloseTo(cell[i][0], 6); expect((y + 20) / 10).toBeCloseTo(cell[i][1], 6); });
   });
 
-  it.each(['LA-EXP-DS06-T11', 'LA-EXP-DS08-T02'])("%s Siblings share one text scale, at most their size's, and each label wraps on whole words inside its outline", () => {
+  it("LA-EXP-DS06-T11 LA-EXP-DS08-T02 Siblings share one text scale, at most their size's, and each label wraps on whole words inside its outline", () => {
     for (const map of [...maps(), wide(2, 5), uneven([40, 3, 12, 1, 25])]) {
       for (const group of siblingGroups(map)) {
         // One scale, no more than the smallest sibling's size allows.

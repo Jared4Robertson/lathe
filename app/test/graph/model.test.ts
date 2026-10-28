@@ -10,7 +10,7 @@ const filters = (kinds: string[] = [], relations: string[] = []): Filters => ({ 
 describe('graph neighborhood', () => {
   const index = testIndex();
 
-  it.each(['LA-EXP-DS09-T01', 'LA-V93-R10-T01'])('%s Depth counts levels of the tree below the focus, stages and folders included, with the parent kept; siblings and links are not added', () => {
+  it('LA-EXP-DS09-T01 LA-V93-R10-T01 Depth counts levels of the tree below the focus, stages and folders included, with the parent kept; siblings and links are not added', () => {
     // Depth 1: the requirement and its use case, the parent at the left edge. Its test is in the test plan, not below it.
     const one = neighborhood(index, 'P-D-UC01-R01', 1);
     expect(one.nodes[0]).toMatchObject({ id: 'P-D-UC01-R01', distance: 0 });
@@ -38,7 +38,7 @@ describe('graph neighborhood', () => {
     expect(ids(aggregate)).not.toContain('P-D-A1');
   });
 
-  it.each(['LA-EXP-SP05-T', 'LA-V93-R10-T02'])('%s The Links switch adds the records the focused record links to and from, one hop, in focus, with their links', () => {
+  it('LA-EXP-SP05-T LA-V93-R10-T02 The Links switch adds the records the focused record links to and from, one hop, in focus, with their links', () => {
     const n = neighborhood(index, 'P-D-UC01-FL01-S01', 1, undefined, { links: true });
     expect(ids(n)).toEqual(['P-D-CMD01', 'P-D-UC01-FL01', 'P-D-UC01-FL01-S01', 'P-D-UC01-R01', 'P-V01']);
     expect(n.edges.filter((e) => e.relation !== 'parent').map((e) => `${e.source} ${e.relation} ${e.target}`).sort()).toEqual([
@@ -59,7 +59,7 @@ describe('graph neighborhood', () => {
     expect(n).toEqual(neighborhood(index, 'P-D-UC01-FL01-S01', 1, undefined, { links: true }));
   });
 
-  it.each(['LA-EXP-SP04-T', 'LA-V93-R13-T01'])('%s Filters hide kinds and relations, nothing is reached through them, and the focus is never hidden', () => {
+  it('LA-EXP-SP04-T LA-V93-R13-T01 Filters hide kinds and relations, nothing is reached through them, and the focus is never hidden', () => {
     const links = { links: true };
     expect(ids(neighborhood(index, 'P-D-UC01-FL01-S01', 1, filters(['view']), links))).not.toContain('P-V01');
     // Hiding invokes keeps the command out and drops its edge.
@@ -112,7 +112,7 @@ describe('graph neighborhood', () => {
     expect(new Set(folders.map((id) => dc.get(id)))).toEqual(new Set([dc.get('P-D/domain-model')! + 1]));
   });
 
-  it.each(['LA-EXP-DS06-T01', 'LA-V93-R15-T02'])('%s The graph reads left to right by column', async () => {
+  it('LA-EXP-DS06-T01 LA-V93-R15-T02 The graph reads left to right by column', async () => {
     const map = graphMap(index, 'P');
     // Siblings share one x and one width, each column right of its parent's.
     for (const parent of map.nodes.values()) {
@@ -128,7 +128,7 @@ describe('graph neighborhood', () => {
     for (let i = 1; i < chain.length; i++) expect(col(chain[i - 1])).toBeLessThan(col(chain[i]));
   });
 
-  it.each(['LA-V93-R15-T03', 'LA-V93-R08-T01'])('%s Links between records in one column are drawn but never change the map', async () => {
+  it('LA-V93-R15-T03 LA-V93-R08-T01 Links between records in one column are drawn but never change the map', async () => {
     const w = testWorkspace();
     addRows(w, 'entity', { id: 'P-D-EN07', title: 'Tag', aggregate_id: 'P-D-A3', role: 'child' });
     const before = graphMap(indexOf(w), 'P');
