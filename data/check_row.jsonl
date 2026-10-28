@@ -28,4 +28,5 @@
 {"id":"LA-TRC-CK13","title":"test-data-set-file-missing","domain_id":"LA-TRC","file":"lathe/data/check.jsonl"}
 {"id":"LA-TRC-CK14","title":"endpoint-route-not-in-file","domain_id":"LA-TRC","file":"lathe/data/check.jsonl"}
 {"id":"LA-TRC-CK15","title":"view-route-not-in-file","domain_id":"LA-TRC","file":"lathe/data/check.jsonl"}
+{"id":"LA-TRC-CK16","title":"table-schema-mismatch","domain_id":"LA-TRC","file":"lathe/data/check.jsonl"}
 {"id":"LA-TRC-CK18","title":"package-not-in-manifest","domain_id":"LA-TRC","file":"lathe/data/check.jsonl"}

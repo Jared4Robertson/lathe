@@ -45,15 +45,17 @@ CREATE TABLE business_outcome (
   statement VARCHAR NOT NULL CHECK (trim(statement) <> ''),
   measure VARCHAR NOT NULL CHECK (trim(measure) <> ''),
   target VARCHAR NOT NULL CHECK (trim(target) <> ''),
+  measured_outside VARCHAR CHECK (trim(measured_outside) <> ''),
   notes VARCHAR
 );
-COMMENT ON TABLE business_outcome IS 'A business outcome: a measurable change the product exists to bring about, which its capabilities serve. The trace runs from it to a capability, a use case, the code and the tests.';
+COMMENT ON TABLE business_outcome IS 'A business outcome: a measurable change the product exists to bring about, which its capabilities serve and its tests or records measure (measured_by). The trace runs from it to a capability, a use case, the code and the tests.';
 COMMENT ON COLUMN business_outcome.id IS 'The outcome''s ID: its product''s ID and BO<nn>, such as TL-BO01.';
 COMMENT ON COLUMN business_outcome.title IS 'The outcome in a few words, such as More tools in use.';
 COMMENT ON COLUMN business_outcome.product_id IS 'The product it belongs to.';
 COMMENT ON COLUMN business_outcome.statement IS 'The outcome, stated so it can be measured, in one sentence.';
 COMMENT ON COLUMN business_outcome.measure IS 'What is measured to know whether it is reached, and how.';
 COMMENT ON COLUMN business_outcome.target IS 'The value of the measure that counts as reached, and by when.';
+COMMENT ON COLUMN business_outcome.measured_outside IS 'How the outcome is measured outside the code, when no test or record of the product can measure it (adoption by other repos, sales): who counts what, from where. Give it only then; an outcome the code can measure links what measures it with measured_by.';
 COMMENT ON COLUMN business_outcome.notes IS 'Longer notes, such as where the measure comes from.';
 
 INSERT INTO meta_kind VALUES

@@ -167,7 +167,7 @@ export interface ApiRequirementRow {
   group_name?: string;
 }
 
-/** A business outcome: a measurable change the product exists to bring about, which its capabilities serve. The trace runs from it to a capability, a use case, the code and the tests. */
+/** A business outcome: a measurable change the product exists to bring about, which its capabilities serve and its tests or records measure (measured_by). The trace runs from it to a capability, a use case, the code and the tests. */
 export interface BusinessOutcomeRow {
   /** The outcome's ID: its product's ID and BO<nn>, such as TL-BO01. */
   id: string;
@@ -181,6 +181,8 @@ export interface BusinessOutcomeRow {
   measure: string;
   /** The value of the measure that counts as reached, and by when. */
   target: string;
+  /** How the outcome is measured outside the code, when no test or record of the product can measure it (adoption by other repos, sales): who counts what, from where. Give it only then; an outcome the code can measure links what measures it with measured_by. */
+  measured_outside?: string;
   /** Longer notes, such as where the measure comes from. */
   notes?: string;
 }
@@ -781,6 +783,12 @@ export interface InvariantTestRow {
 
 /** The flow step invokes the command or query: at most one per step. */
 export interface InvokesRow {
+  source_id: string;
+  target_id: string;
+}
+
+/** The business outcome is measured by the test or record: a test of any kind, or a record of a product's own kind (a report, a script, a check row) once the product adds that pair with a product_relation named measured_by. An outcome may be measured by several, and one test or record measure several outcomes. */
+export interface MeasuredByRow {
   source_id: string;
   target_id: string;
 }
@@ -1487,6 +1495,7 @@ export interface TableRows {
   invariant: InvariantRow;
   invariant_test: InvariantTestRow;
   invokes: InvokesRow;
+  measured_by: MeasuredByRow;
   standard: StandardRow;
   standard_rule: StandardRuleRow;
   meets: MeetsRow;

@@ -72,6 +72,7 @@
 {"id":"LA-AUT-UC21-FL-S02","title":"They add domain services and the domain's terms","flow_id":"LA-AUT-UC21-FL","path":"main","position":2}
 {"id":"LA-AUT-UC22-FL-S01","title":"They add each business outcome under the product, with its statement, measure and target","flow_id":"LA-AUT-UC22-FL","path":"main","position":1}
 {"id":"LA-AUT-UC22-FL-S02","title":"They link each capability to the outcomes it serves","flow_id":"LA-AUT-UC22-FL","path":"main","position":2}
+{"id":"LA-AUT-UC22-FL-S03","title":"They link each outcome to the tests or records that measure it, or say how it is measured outside the code","flow_id":"LA-AUT-UC22-FL","path":"main","position":3}
 {"id":"LA-CHK-UC01-FL-S01","title":"The Agent runs lathe check, or the MCP check tool, on the product root","flow_id":"LA-CHK-UC01-FL","path":"main","position":1}
 {"id":"LA-CHK-UC01-FL-S02","title":"Data the store refuses becomes data-refused errors naming the file, the line and the rule, and nothing else is checked","flow_id":"LA-CHK-UC01-FL","path":"refused","position":1}
 {"id":"LA-CHK-UC01-FL-S03","title":"The command prints every error, then every warning, each naming its check and record, then one coverage line per domain and obligation kind","flow_id":"LA-CHK-UC01-FL","path":"main","position":2}
@@ -283,6 +284,7 @@
 {"id":"LA-TRC-UC02-FL-S04","title":"The report prints one line per domain and obligation kind","flow_id":"LA-TRC-UC02-FL","path":"main","position":4}
 {"id":"LA-TRC-UC02-FL-S05","title":"The report lists an outcome nothing serves and a capability that serves none as gaps","flow_id":"LA-TRC-UC02-FL","path":"main","position":5}
 {"id":"LA-TRC-UC02-FL-S06","title":"The report lists a source file no technical record names as a gap, until a record names it or its folder","flow_id":"LA-TRC-UC02-FL","path":"main","position":6}
+{"id":"LA-TRC-UC02-FL-S07","title":"The report lists an outcome nothing that runs measures as a gap","flow_id":"LA-TRC-UC02-FL","path":"main","position":7}
 {"id":"LA-TRC-UC03-FL-S01","title":"The Agent writes the test under the record it proves, with its level and state","flow_id":"LA-TRC-UC03-FL","path":"main","position":1}
 {"id":"LA-TRC-UC03-FL-S02","title":"An automated test names the file that runs it","flow_id":"LA-TRC-UC03-FL","path":"automated","position":1}
 {"id":"LA-TRC-UC03-FL-S03","title":"A manual test gives the reason it is manual, and its procedure in given, when and then","flow_id":"LA-TRC-UC03-FL","path":"manual","position":1}
@@ -335,6 +337,9 @@
 {"id":"LA-TRC-UC15-FL-S03","title":"Lathe check reads the handlers' files and the router files for the routes their code serves, and lists each one no record has as a gap","flow_id":"LA-TRC-UC15-FL","path":"main","position":3}
 {"id":"LA-TRC-UC15-FL-S04","title":"A file that does not name its record's route is an error naming the record, the route and the file, and the Agent corrects one or the other","flow_id":"LA-TRC-UC15-FL","path":"refused","position":1}
 {"id":"LA-TRC-UC15-FL-S05","title":"A served route no record has is a gap, and the Agent adds its endpoint or view, or removes the route if nothing uses it","flow_id":"LA-TRC-UC15-FL","path":"refused","position":2}
+{"id":"LA-TRC-UC16-FL-S01","title":"The Agent names, on each table a database keeps, the file that creates it","flow_id":"LA-TRC-UC16-FL","path":"main","position":1}
+{"id":"LA-TRC-UC16-FL-S02","title":"Lathe check reads each table's file and compares its name, columns and keys with the spec","flow_id":"LA-TRC-UC16-FL","path":"main","position":2}
+{"id":"LA-TRC-UC16-FL-S03","title":"A part the file does not define is a warning naming the table, the file and the part, and the Agent fixes the file or the spec","flow_id":"LA-TRC-UC16-FL","path":"refused","position":1}
 {"id":"LA-TRC-UC19-FL-S01","title":"The Agent adds a dependency to a package.json the product lists","flow_id":"LA-TRC-UC19-FL","path":"main","position":1}
 {"id":"LA-TRC-UC19-FL-S02","title":"Lathe check reports each package no record names as one gap on the product, with the manifests that list it","flow_id":"LA-TRC-UC19-FL","path":"main","position":2}
 {"id":"LA-TRC-UC19-FL-S03","title":"The Agent names the package on the technical record that uses it; the store refuses it on any other record","flow_id":"LA-TRC-UC19-FL","path":"main","position":3}

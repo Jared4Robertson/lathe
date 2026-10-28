@@ -77,29 +77,34 @@
 {"read_model_id":"LA-PLT-RM04","position":1,"name":"Folder","meaning":"A recent folder, latest first.","type":"text","required":true}
 {"read_model_id":"LA-PLT-RM04","position":2,"name":"Shown as","meaning":"The folder with the home folder as `~`.","type":"text","required":true}
 {"read_model_id":"LA-TRC-RM01","position":1,"name":"Domain","meaning":"The domain counted.","type_aggregate_id":"LA-AUT-A1","required":true,"example":"TL-LEND"}
-{"read_model_id":"LA-TRC-RM01","position":2,"name":"Obligation kind","meaning":"The obligation kind counted.","type":"text","required":true,"example":"invariant"}
+{"read_model_id":"LA-TRC-RM01","position":2,"name":"Obligation kind","meaning":"The obligation kind counted.","type":"text","required":true,"column_name":"kind","example":"invariant"}
 {"read_model_id":"LA-TRC-RM01","position":3,"name":"Total","meaning":"How many the domain owes.","type":"whole number","required":true,"example":"6"}
 {"read_model_id":"LA-TRC-RM01","position":4,"name":"Designed","meaning":"How many have their design specified (UC02-R02).","type":"whole number","required":true,"example":"6"}
 {"read_model_id":"LA-TRC-RM01","position":5,"name":"Built","meaning":"How many have that design's technical record naming a file that exists.","type":"whole number","required":true,"example":"6"}
 {"read_model_id":"LA-TRC-RM01","position":6,"name":"Proved","meaning":"How many an automated or manual test proves, at a level its kind allows.","type":"whole number","required":true,"example":"6"}
-{"read_model_id":"LA-TRC-RM01","position":7,"name":"Not automated yet","meaning":"How many are not proved but have a test not automated yet.","type":"whole number","required":true,"example":"0"}
+{"read_model_id":"LA-TRC-RM01","position":7,"name":"Not automated yet","meaning":"How many are not proved but have a test not automated yet.","type":"whole number","required":true,"column_name":"not_automated","example":"0"}
 {"read_model_id":"LA-TRC-RM02","position":1,"name":"Domain","meaning":"The domain that owes the obligation.","type_aggregate_id":"LA-AUT-A1","required":true,"example":"TL-LEND"}
-{"read_model_id":"LA-TRC-RM02","position":2,"name":"Obligation","meaning":"The obligation's ID.","type":"text","required":true,"example":"TL-LEND-EP06-R03"}
+{"read_model_id":"LA-TRC-RM02","position":2,"name":"Obligation","meaning":"The obligation's ID.","type":"text","required":true,"column_name":"id","example":"TL-LEND-EP06-R03"}
 {"read_model_id":"LA-TRC-RM02","position":3,"name":"Kind","meaning":"The obligation's kind.","type":"text","required":true,"example":"api_requirement"}
 {"read_model_id":"LA-TRC-RM02","position":4,"name":"Missing","meaning":"What it lacks: `designed`, `built` or `proved`.","type":"text","required":true,"example":"proved"}
 {"read_model_id":"LA-TRC-RM03","position":1,"name":"Domain","meaning":"The domain counted.","type_aggregate_id":"LA-AUT-A1","required":true,"example":"TL-LEND"}
 {"read_model_id":"LA-TRC-RM03","position":2,"name":"Automated","meaning":"The domain's tests that run as code.","type":"whole number","required":true,"example":"59"}
 {"read_model_id":"LA-TRC-RM03","position":3,"name":"Manual","meaning":"The domain's tests a person carries out.","type":"whole number","required":true,"example":"5"}
-{"read_model_id":"LA-TRC-RM03","position":4,"name":"Not automated yet","meaning":"The domain's tests not automated yet.","type":"whole number","required":true,"example":"0"}
+{"read_model_id":"LA-TRC-RM03","position":4,"name":"Not automated yet","meaning":"The domain's tests not automated yet.","type":"whole number","required":true,"column_name":"not_automated","example":"0"}
 {"read_model_id":"LA-TRC-RM04","position":1,"name":"Domain","meaning":"A domain that follows the rule's pattern.","type_aggregate_id":"LA-AUT-A1","required":true,"example":"TL-LEND"}
-{"read_model_id":"LA-TRC-RM04","position":2,"name":"Pattern rule","meaning":"The rule's ID.","type":"text","required":true,"example":"TL-PAT-LIBRARIAN-ACTION-R01"}
+{"read_model_id":"LA-TRC-RM04","position":2,"name":"Pattern rule","meaning":"The rule's ID.","type":"text","required":true,"column_name":"id","example":"TL-PAT-LIBRARIAN-ACTION-R01"}
 {"read_model_id":"LA-TRC-RM04","position":3,"name":"Standing","meaning":"`owed`, `not applicable` or `waived` (SP02 to SP04).","type":"text","required":true,"example":"owed"}
-{"read_model_id":"LA-TRC-RM04","position":4,"name":"Reasons","meaning":"For not applicable, each following use case and its reason; for waived, the values given.","type":"text","required":false,"example":"TL-LEND-UC03: nothing is saved"}
 {"read_model_id":"LA-TRC-RM05","position":1,"name":"Record","meaning":"The test or technical record that names the file.","type":"text","required":true,"example":"TL-LEND-INV01-T"}
 {"read_model_id":"LA-TRC-RM05","position":2,"name":"File","meaning":"The file, from the product root.","type":"text","required":true,"example":"test/domain-rules.test.ts"}
-{"read_model_id":"LA-TRC-RM05","position":3,"name":"Exists","meaning":"Whether the file exists.","type":"yes/no","required":true,"example":"yes"}
-{"read_model_id":"LA-TRC-RM05","position":4,"name":"Names its ID","meaning":"For a test, whether the file names the test's ID as a whole ID (DS01).","type":"yes/no","required":true,"example":"yes"}
+{"read_model_id":"LA-TRC-RM05","position":3,"name":"Exists","meaning":"Whether the file exists.","type":"yes/no","required":true,"column_name":"file_exists","example":"yes"}
+{"read_model_id":"LA-TRC-RM05","position":4,"name":"Names its ID","meaning":"For a test, whether the file names the test's ID as a whole ID (DS01).","type":"yes/no","required":true,"column_name":"contains_id","example":"yes"}
 {"read_model_id":"LA-TRC-RM06","position":1,"name":"Record","meaning":"The record traced.","type":"text","required":true,"example":"TL-LEND-UC03-R02"}
 {"read_model_id":"LA-TRC-RM06","position":2,"name":"Group","meaning":"The group it falls in, by its label: Designed by, Proved by, or a link's label.","type":"text","required":true,"example":"Proved by"}
 {"read_model_id":"LA-TRC-RM06","position":3,"name":"Linked record","meaning":"The record in the group.","type":"text","required":true,"example":"TL-LEND-UC03-R02-T01"}
 {"read_model_id":"LA-TRC-RM06","position":4,"name":"Mark","meaning":"built or not built for a design; the state for a test.","type":"text","required":false,"example":"automated"}
+{"read_model_id":"LA-TRC-RM07","position":1,"name":"Record","meaning":"The table record.","type":"text","required":true,"example":"LA-TRC-RM07-TB"}
+{"read_model_id":"LA-TRC-RM07","position":2,"name":"Name","meaning":"The table's name, as the spec gives it.","type":"text","required":true,"example":"table_facts"}
+{"read_model_id":"LA-TRC-RM07","position":3,"name":"File","meaning":"The file it names, from the product root.","type":"text","required":true,"example":"lathe/src/trace/tables.ts"}
+{"read_model_id":"LA-TRC-RM07","position":4,"name":"Part","meaning":"What is expected: table, column, primary, unique or foreign.","type":"text","required":true,"example":"column"}
+{"read_model_id":"LA-TRC-RM07","position":5,"name":"Expected","meaning":"The table's name, the column, or the key's columns and target table.","type":"text","required":true,"example":"found"}
+{"read_model_id":"LA-TRC-RM07","position":6,"name":"Found","meaning":"Whether the file defines it.","type":"yes/no","required":true,"example":"yes"}
