@@ -7,9 +7,10 @@ import type { SpecData } from '../../../lathe/src/server/contract';
 import { openApp, startAtDepth } from '../helpers';
 import { testIndex, testWorkspace } from './workspace';
 import { marksOf } from '../../src/graph/text';
-import { boxElement, boxElements, cameraOf, drawnBox, graphHost, scene } from './scene';
+import { createOpenSpaceStore } from '../../src/views/openSpace';
+import { boxElement, boxElements, cameraOf, drawnBox, graphHost, isCenter, scene } from './scene';
 
-// The graph as the focus page hosts it: in the Graph view of a record's, group's, product's or
+// The graph as the focus page hosts it: on the Graph stage of a record's, group's, product's or
 // domain's own address, with the side bar beside it.
 
 const node = (id: string) => boxElement(id);
@@ -35,7 +36,7 @@ async function showGraph(path: string, workspace: SpecData = testWorkspace(), de
 }
 
 describe('graph page', () => {
-  it.each(['LA-V93-R10-T03', 'LA-V93-R11-T02'])('%s Clicking a node re-centers the graph and changes the address, Back walks back, and the trail shows the path', async () => {
+  it.each(['LA-V93-R10-T03', 'LA-V93-R11-T02'])('%s Clicking a node re-centers the graph and changes the address, Back walks back, and no visited trail is drawn', async () => {
     await showGraph(`/${STEP}`);
     expect(title()).toBe('Librarian lends the thing');
     await waitFor(() => expect(node('P-V01')).not.toBeNull());
@@ -44,28 +45,16 @@ describe('graph page', () => {
     expect(window.location.pathname).toBe('/P-V01');
     expect(window.location.search).toBe('?stage=graph');
     await waitFor(() => expect(title()).toBe('Loan desk'));
+    await waitFor(() => expect(isCenter('P-V01')).toBe(true));
     // The view's own neighbor, the UI component that renders it, is now drawn.
     await waitFor(() => expect(node('P-UI01')).not.toBeNull());
-    const trail = within(screen.getByRole('navigation', { name: 'Records visited' }));
-    expect(trail.getAllByRole('listitem').map((li) => li.textContent)).toEqual([`Librarian lends the thing (${STEP})`, 'Loan desk (P-V01)']);
+    // The graph keeps no trail of its own: the header strip's breadcrumb names where the focus sits, Back walks the path.
+    expect(screen.queryByRole('navigation', { name: 'Records visited' })).toBeNull();
 
     await back();
     expect(window.location.pathname).toBe(`/${STEP}`);
     await waitFor(() => expect(title()).toBe('Librarian lends the thing'));
-    expect(trail.getAllByRole('listitem').map((li) => li.textContent)).toEqual([`Librarian lends the thing (${STEP})`]);
-  });
-
-  it('LA-V61-R41-T03 The trail is a Tab stop only while it overflows', async () => {
-    await showGraph(`/${STEP}`);
-    const list = () => screen.getByRole('navigation', { name: 'Records visited' }).querySelector('ol')!;
-    // It fits: its links are the stops, and the list itself is not one.
-    expect(list()).not.toHaveAttribute('tabindex');
-    // It overflows: the list takes focus, so the keyboard can scroll it.
-    const widths = { scrollWidth: 900, clientWidth: 300 };
-    for (const [key, value] of Object.entries(widths)) Object.defineProperty(list(), key, { configurable: true, value });
-    await waitFor(() => expect(node('P-V01')).not.toBeNull());
-    fireEvent.click(node('P-V01')!);
-    await waitFor(() => expect(list()).toHaveAttribute('tabindex', '0'));
+    await waitFor(() => expect(isCenter(STEP)).toBe(true));
   });
 
   it('LA-V95-R02-T01 The side bar shows the kind, title, problems, coverage gaps and a link to the record page', async () => {
@@ -104,7 +93,7 @@ describe('graph page', () => {
     expect(depth.getByRole('button', { name: '1' })).toHaveAttribute('aria-pressed', 'true');
     await waitFor(() => expect(node('P-D/use-cases/capability')).not.toBeNull());
     expect(scene().lines.filter((l) => l.style !== 'structure')).toEqual([]);
-    const count = () => document.querySelector('.graph-count')!.textContent;
+    const count = () => document.querySelector('.header-strip-counts')!.textContent;
     const viewport = () => scene().camera;
     const one = count();
     // Depth 2 frames the folder's records too: more in the picture, and the camera takes them in.
@@ -192,16 +181,19 @@ describe('graph page', () => {
     expect((screen.getByRole('checkbox', { name: 'View' }) as HTMLInputElement).checked).toBe(true);
   });
 
-  it('LA-V96-R01-T01 Record, domain and product pages show the graph in their Graph view, and the nav has no Graph item', async () => {
+  it('LA-V96-R01-T01 Record, domain and product pages show their graph on the Graph stage, the stage a page opens on, and the nav has no Graph item', async () => {
     for (const path of ['/P-D-UC01-R01', '/P-D', '/P']) {
-      // Each page starts with the wiki alone (no view remembered, no tab to take one from); the Graph toggle opens the graph beside it.
-      window.localStorage.removeItem('lathe:view');
+      // Each page starts on the Graph stage (no stage remembered, no tab to take one from); the switch comes back to it.
+      window.localStorage.removeItem('lathe:stage');
       window.sessionStorage.removeItem('lathe:tabs');
       await openApp(path, { data: testWorkspace() });
       await screen.findByRole('heading', { level: 1 });
-      const graph = within(screen.getByRole('group', { name: 'View' })).getByRole('button', { name: 'Graph' });
+      const stage = (name: string) => within(screen.getByRole('group', { name: 'Stage' })).getByRole('button', { name });
+      expect(stage('Graph')).toHaveAttribute('aria-pressed', 'true');
       expect(within(screen.getByRole('navigation', { name: 'Main' })).queryByRole('link', { name: 'Graph' })).toBeNull();
-      fireEvent.click(graph);
+      await waitFor(() => expect(document.querySelector('.graph-box.is-focus')).not.toBeNull());
+      fireEvent.click(stage('Trace'));
+      fireEvent.click(stage('Graph'));
       expect(window.location.pathname + window.location.search).toBe(`${path}?stage=graph`);
       await waitFor(() => expect(document.querySelector('.graph-box.is-focus')).not.toBeNull());
       expect(scene().boxes.some((b) => b.focus)).toBe(true);
@@ -273,10 +265,9 @@ describe('graph groups on the page', () => {
     expect(left('P-D')).toBeLessThan(left('P-D/use-cases'));
     expect(left('P-D/use-cases')).toBeLessThan(left('P-D/use-cases/capability'));
     expect(groupNode('P-D/use-cases')!.focus).toBe(true);
-    const trail = within(screen.getByRole('navigation', { name: 'Records visited' }));
-    // A record by its title and ID; a group by its name alone, its parent named in its tooltip.
-    expect(trail.getAllByRole('listitem').map((li) => li.textContent)).toEqual(['Domain (P-D)', 'Use cases']);
-    expect(trail.getByText('Use cases').closest('[aria-current]')).toHaveAttribute('title', 'Use cases of P-D');
+    // The header strip's breadcrumb names where the group sits: its domain, by its title, the ID in its tooltip.
+    const crumbs = within(screen.getByRole('navigation', { name: 'Breadcrumb' }));
+    expect(crumbs.getByRole('link', { name: 'Domain (P-D)' })).toHaveAttribute('title', 'Domain (P-D)');
 
     fireEvent.click(sideBar().getByRole('link', { name: /Capabilities/ }));
     expect(window.location.pathname).toBe('/P-D/use-cases/capability');
@@ -304,23 +295,20 @@ describe('graph groups on the page', () => {
     expect(marksOf(testIndex(), 'P-D/question')).toEqual({ errors: 0, warnings: 0, gaps: [] });
   });
 
-  it('LA-V96-R02-T01 The graph is a component that takes its focus and reports moves through onNavigate, without reading or changing the address', async () => {
+  it('LA-V96-R02-T01 The graph is a component that takes its focus and reports moves through onNavigate and what it draws through onCounts, without reading or changing the address', async () => {
     window.history.replaceState(null, '', '/somewhere-else');
     const moves: string[] = [];
+    const counts: string[] = [];
     const index = testIndex();
-    const props = { index, onNavigate: (id: string) => moves.push(id), hrefFor: (id: string) => `/${id}` };
+    const props = { index, onNavigate: (id: string) => moves.push(id), onCounts: (c: string) => counts.push(c) };
     const { rerender } = render(<GraphView {...props} settings={{ ...DEFAULT_GRAPH_SETTINGS, links: true }} focus={STEP} />);
     await waitFor(() => expect(node('P-V01')).not.toBeNull());
+    expect(counts.at(-1)).toMatch(/^\d+ records? · .*\d+ links?$/);
     fireEvent.click(node('P-V01')!);
     expect(moves).toEqual(['P-V01']);
     expect(window.location.pathname).toBe('/somewhere-else');
-
-    // Its links carry the host's addresses; a plain click goes through onNavigate.
     rerender(<GraphView {...props} settings={{ ...DEFAULT_GRAPH_SETTINGS, links: true }} focus="P-V01" />);
-    const link = within(screen.getByRole('navigation', { name: 'Records visited' })).getByRole('link', { name: `Librarian lends the thing (${STEP})` });
-    expect(link.getAttribute('href')).toBe(`/${STEP}`);
-    fireEvent.click(link);
-    expect(moves).toEqual(['P-V01', STEP]);
+    await waitFor(() => expect(isCenter('P-V01')).toBe(true));
     expect(window.location.pathname).toBe('/somewhere-else');
 
     // When its container changes size, it fits the picture to the new size.
@@ -334,6 +322,30 @@ describe('graph groups on the page', () => {
     flow.getBoundingClientRect = sized(300, 800);
     act(() => fireResize(flow));
     await waitFor(() => expect(viewport()).not.toBe(wide));
+  });
+
+  it('LA-V96-R05-T02 The graph frames its focus in the open space its host\'s panels leave, and moves when that space changes', async () => {
+    const space = createOpenSpaceStore();
+    render(<GraphView index={testIndex()} onNavigate={() => {}} settings={DEFAULT_GRAPH_SETTINGS} focus={STEP} space={space} />);
+    await waitFor(() => expect(node(STEP)).not.toBeNull());
+    const flow = graphHost()!;
+    flow.getBoundingClientRect = () => ({ x: 0, y: 0, top: 0, left: 0, width: 1200, height: 800, right: 1200, bottom: 800, toJSON: () => ({}) }) as DOMRect;
+    act(() => fireResize(flow));
+    await waitFor(() => expect(drawnBox(STEP)).toBeDefined());
+    // A panel over the left 500 px and one over the right 300: the focus sits between them.
+    const none = { left: 0, top: 0, right: 0, bottom: 0 };
+    const frame = { left: 500, top: 60, right: 300, bottom: 0 };
+    act(() => space.set({ open: none, frame }));
+    await waitFor(() => {
+      const r = drawnBox(STEP)!.rect;
+      expect(r.left).toBeGreaterThanOrEqual(frame.left - 1);
+      expect(r.left + r.width).toBeLessThanOrEqual(1200 - frame.right + 1);
+      expect(r.top).toBeGreaterThanOrEqual(frame.top - 1);
+    });
+    // The panels gone, the camera moves back over the whole stage.
+    const framed = cameraOf();
+    act(() => space.set({ open: none, frame: none }));
+    await waitFor(() => expect(cameraOf()).not.toBe(framed));
   });
 });
 

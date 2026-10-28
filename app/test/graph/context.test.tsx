@@ -132,7 +132,7 @@ describe('the graph tree, its depth and its camera', () => {
     expect(keyboardOrder(boxes)).toEqual(['a', 'c', 'b']);
     // The summary counts the framed picture: the domain, its parent and three levels below it.
     const n = neighborhood(indexOf(w), 'P-D', 3);
-    expect(document.querySelector('.graph-count')!.textContent).toBe(graphSummary(n));
+    await waitFor(() => expect(document.querySelector('.header-strip-counts')!.textContent).toBe(graphSummary(n)));
     expect(graphSummary(n)).toBe('31 records · 27 groups · 57 links');
   });
 

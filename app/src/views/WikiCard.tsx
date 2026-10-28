@@ -1,5 +1,5 @@
 import { forwardRef, memo, type ReactNode, type UIEvent } from 'react';
-import { Breadcrumb } from '../components/Breadcrumb';
+import { Breadcrumb } from '../shell/Breadcrumb';
 import { Button } from '../components/Button';
 import { Icon } from '../components/icons';
 import { Editable } from '../edit/Editing';
@@ -40,16 +40,16 @@ export const WikiCard = memo(forwardRef<HTMLDivElement, WikiCardProps>(function 
   const focus = focusOf(route);
   const trail = focusTrail(index, focus);
   return (
-    <section className={`wiki-card${sheet ? ' is-sheet' : ''}`} aria-label="Wiki card" data-floating={sheet ? undefined : 'left'} data-page={focus}>
-      <div className="wiki-card-head">
-        {trail.length > 0 ? <Breadcrumb items={trail} label="Wiki card breadcrumb" className="wiki-card-trail" /> : <span className="wiki-card-trail" />}
+    <section aria-label="Wiki card" className={`wiki-panel${sheet ? ' is-sheet' : ''}`} data-floating={sheet ? undefined : 'left'} data-page={focus}>
+      <div className="wiki-panel-head">
+        {trail.length > 0 ? <Breadcrumb items={trail} label="Wiki card breadcrumb" className="wiki-panel-trail" /> : <span className="wiki-panel-trail" />}
         <Tooltip label="Collapse the wiki card" command="toggleWikiCard" placement="left">
-          <Button variant="icon" className="wiki-card-collapse" label="Collapse the wiki card" onClick={onCollapse}>
+          <Button variant="icon" label="Collapse the wiki card" className="wiki-panel-collapse" onClick={onCollapse}>
             <Icon name={sheet ? 'x' : 'sidebar-left'} size={16} />
           </Button>
         </Tooltip>
       </div>
-      <div className="wiki-card-scroll" ref={scroller} onScroll={onScroll}>
+      <div className="wiki-panel-scroll" ref={scroller} onScroll={onScroll}>
         <CardTitle key={focus} index={index} route={route} />
         <WikiContent index={index} route={route} />
       </div>
@@ -68,7 +68,7 @@ function CardTitle({ index, route }: { index: SpecIndex; route: FocusRoute }) {
   else if (record) problems = index.problemsFor.get(focus) ?? [];
   else problems = groupMembers(index, focus).flatMap((m) => index.problemsFor.get(m.id) ?? []);
   return (
-    <header className="wiki-card-title spec-header">
+    <header className="wiki-panel-title spec-header">
       <div>
         <p className="eyebrow">{record ? <KindBadge index={index} kind={record.kind} /> : 'Group'}</p>
         <h2>{record?.title ?? groupLabel(index, focus)}</h2>

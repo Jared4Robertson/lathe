@@ -9,8 +9,8 @@ import { openApp } from './helpers';
 import { testWorkspace } from './graph/workspace';
 import { boxElement, drawnBox, pointOn, tapAt, tapEmpty } from './graph/scene';
 
-// Lathe on a phone (notes/mobile-design.md): a compact top bar, the page bar compact under it, one
-// view at a time, sheets for the nav, the side bar, the open pages and quick find, and taps that
+// Lathe on a phone (notes/mobile-design.md): a compact top bar, the page bar compact under it, the
+// stage full screen, sheets for the nav, the wiki card, the open pages and quick find, the side bar a drawer, and taps that
 // select before they open on the graph and the ERD. Proves LA-V61-R17 to R07 and R09, LA-V61-R18,
 // LA-V93-R02 and LA-V61-R42, and the side bar sheet of LA-V95-R03.
 
@@ -23,12 +23,12 @@ function phone() {
 
 const topbar = () => document.querySelector<HTMLElement>('.topbar')!;
 const pageBar = () => document.querySelector<HTMLElement>('.page-bar')!;
-const segment = (name: string) => within(within(pageBar()).getByRole('group', { name: 'View' })).getByRole('button', { name });
+const segment = (name: string) => within(within(pageBar()).getByRole('group', { name: 'Stage' })).getByRole('button', { name });
 
 describe('Lathe on a phone', () => {
   const proveLaV61R17T01 = async () => {
     phone();
-    window.localStorage.setItem('lathe:view', '"wiki,graph"');
+    window.localStorage.setItem('lathe:stage', '"trace"');
     await openApp('/P-D-UC01?stage=graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     // The top bar: the menu, the title on one line under a link one step up, and quick find.
@@ -36,25 +36,33 @@ describe('Lathe on a phone', () => {
     expect(topbar().querySelector('.topbar-title')).toHaveTextContent('Lend a thing');
     expect(within(topbar()).getByRole('link', { name: 'Up to Lending' })).toHaveAttribute('href', '/P-D-CAP01?stage=graph');
     expect(within(topbar()).getByRole('button', { name: 'Quick find' })).toBeInTheDocument();
-    // One view: the first the address names; no pane headers and no handles.
-    expect([...document.querySelectorAll('.pane')].map((p) => p.getAttribute('aria-label'))).toEqual(['Wiki pane']);
-    expect(document.querySelector('.pane-bar')).toBeNull();
+    // Under it the compact page bar and the header strip; the stage fills the rest. No panels float, no handles.
+    expect(document.querySelector('.stage-layout.is-phone > .header-strip')).not.toBeNull();
+    expect(screen.getByRole('region', { name: 'Graph stage' })).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Wiki card' })).toBeNull();
     expect(screen.queryAllByRole('separator').filter((s) => s.hasAttribute('aria-valuenow'))).toEqual([]);
-    expect(segment('Wiki')).toHaveAttribute('aria-pressed', 'true');
-    expect(segment('Graph')).toHaveAttribute('aria-pressed', 'false');
-    // Switching shows the graph alone and says so in the address; the wide screen's views stay remembered.
-    fireEvent.click(segment('Graph'));
-    expect(window.location.search).toBe('?stage=graph');
-    await waitFor(() => expect([...document.querySelectorAll('.pane')].map((p) => p.getAttribute('aria-label'))).toEqual(['Graph pane']));
+    expect(within(within(pageBar()).getByRole('group', { name: 'Stage' })).getAllByRole('button').map((b) => b.getAttribute('aria-label'))).toEqual(['Graph', 'ERD', 'Trace']);
     expect(segment('Graph')).toHaveAttribute('aria-pressed', 'true');
-    expect(window.localStorage.getItem('lathe:view')).toBe('"wiki,graph"');
+    // Switching shows the ERD and says so in the address; the wide screen's remembered stage stays.
+    fireEvent.click(segment('ERD'));
+    expect(window.location.search).toBe('?stage=erd');
+    expect(await screen.findByRole('region', { name: 'ERD stage' })).toBeInTheDocument();
+    expect(segment('ERD')).toHaveAttribute('aria-pressed', 'true');
+    expect(window.localStorage.getItem('lathe:stage')).toBe('"trace"');
+    // The wiki card is a bottom sheet, opened from the page bar, over the stage.
+    fireEvent.click(within(pageBar()).getByRole('button', { name: 'Show the wiki card' }));
+    const sheet = screen.getByRole('dialog', { name: 'Wiki card' });
+    expect(sheet).toHaveClass('bottom-sheet', 'is-half');
+    expect(within(sheet).getByRole('region', { name: 'Wiki card' })).toHaveAttribute('data-page', 'P-D-UC01');
+    fireEvent.keyDown(sheet, { key: 'Escape' });
+    expect(screen.queryByRole('dialog', { name: 'Wiki card' })).toBeNull();
     // A page that names no product parent goes up to all products; a domain up to its product.
     await openApp('/P-D?stage=graph', served());
     await waitFor(() => expect(topbar().querySelector('.topbar-title')).toHaveTextContent('Domain'));
     expect(within(topbar()).getByRole('link', { name: 'Up to Product' })).toHaveAttribute('href', '/P?stage=graph');
   };
-  it('LA-V61-R17-T01 A phone shows a compact top bar with the title and a step up, and one view at a time switched from the page bar, leaving the views remembered for a wide screen alone', proveLaV61R17T01);
-  it('LA-V61-R18-T01 A phone shows one view at a time, switched from the page bar, leaving the views remembered for a wide screen alone', proveLaV61R17T01);
+  it('LA-V61-R17-T01 A phone shows a compact top bar with the title and a step up, the header strip, and the stage full screen switched from the page bar, leaving the stage remembered for a wide screen alone', proveLaV61R17T01);
+  it('LA-V61-R18-T01 A phone shows the stage full screen, the wiki card a bottom sheet from the page bar', proveLaV61R17T01);
 
   const proveLaV61R20T01 = async () => {
     phone();
@@ -62,25 +70,21 @@ describe('Lathe on a phone', () => {
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     const toggle = within(pageBar()).getByRole('button', { name: 'Show the side bar' });
     fireEvent.click(toggle);
-    const sheet = screen.getByRole('dialog', { name: 'Side bar' });
-    expect(sheet).toHaveClass('bottom-sheet', 'is-half');
-    expect(sheet).toHaveAttribute('aria-modal', 'true');
+    const drawer = screen.getByRole('dialog', { name: 'Side bar' });
+    expect(drawer).toHaveClass('side-bar-drawer');
+    expect(drawer).toHaveAttribute('aria-modal', 'true');
     await waitFor(() => expect(screen.getByRole('complementary', { name: 'Side bar' })).toHaveFocus());
-    fireEvent.click(within(sheet).getByRole('button', { name: 'Expand the side bar to full height' }));
-    expect(sheet).toHaveClass('is-full');
-    fireEvent.click(within(sheet).getByRole('button', { name: 'Shrink the side bar to half height' }));
-    expect(sheet).toHaveClass('is-half');
-    // Tab stays inside the sheet.
-    const buttons = within(sheet).getAllByRole('button');
+    // Tab stays inside the drawer.
+    const buttons = within(drawer).getAllByRole('button');
     buttons[buttons.length - 1].focus();
     fireEvent.keyDown(buttons[buttons.length - 1], { key: 'Tab' });
-    expect(document.activeElement && sheet.contains(document.activeElement)).toBe(true);
-    fireEvent.keyDown(sheet, { key: 'Escape' });
+    expect(document.activeElement && drawer.contains(document.activeElement)).toBe(true);
+    fireEvent.keyDown(drawer, { key: 'Escape' });
     expect(screen.queryByRole('dialog', { name: 'Side bar' })).toBeNull();
     await waitFor(() => expect(within(pageBar()).getByRole('button', { name: 'Show the side bar' })).toHaveFocus());
   };
-  it('LA-V61-R20-T01 The side bar is a bottom sheet: it opens at half height with focus inside, its handle takes it to full height and back, Escape closes it and focus returns', proveLaV61R20T01);
-  it('LA-V95-R03-T03 The side bar is a bottom sheet that opens at half height with focus inside, and Escape closes it', proveLaV61R20T01);
+  it('LA-V61-R20-T01 The side bar is a drawer: it opens with focus inside, keeps Tab inside, Escape closes it and focus returns', proveLaV61R20T01);
+  it('LA-V95-R03-T03 The side bar is a drawer on a phone, and Escape closes it', proveLaV61R20T01);
 
   it('LA-V61-R20-T02 A drag on a sheet\'s handle settles by distance and speed: up to full height, down to half, down from half away', () => {
     expect(settle('half', -50, 0.1)).toBe('full');

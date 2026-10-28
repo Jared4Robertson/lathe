@@ -1,7 +1,5 @@
 import './setup';
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { act, screen, waitFor, within } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { relationStyle } from '../../src/graph/GraphPage';
 import { edgesOf, graphEdgeLabel, groupLabel, neighborhood, NO_FILTERS } from '../../src/graph/model';
@@ -9,17 +7,13 @@ import { PLAIN_LOOK as DEFAULT_LOOK } from '../../src/graph/look';
 import { lineStroke } from '../../src/graph/paint';
 import { shapeOf } from '../../src/graph/shapes';
 import { treeChildren, treeParent } from '../../src/graph/tree';
-import { navigate } from '../../src/router';
 import { SETTINGS_KEY, sessionSettings } from '../../src/graph/settings';
-import { openApp, startAtDepth } from '../helpers';
+import { openApp } from '../helpers';
 import { indexOf } from '../fixtures/load';
 import { manyOfOneKindWorkspace, testIndex } from './workspace';
-import { boxElements } from './scene';
 
-// The graph's tree and links for domain events, technical records and tests, the trail, and the
+// The graph's tree and links for domain events, technical records and tests, and the
 // rules its settings and its kind groups keep (LA-V93, LA-EXP-SP03, LA-VO92).
-
-const CSS = readFileSync(join(__dirname, '..', '..', 'src', 'styles.css'), 'utf8');
 
 describe('domain events in the graph', () => {
   const index = testIndex();
@@ -71,27 +65,6 @@ describe('components and tests in the graph', () => {
       expect(folder.startsWith('P-D/test-plan/')).toBe(true);
       for (const test of treeChildren(index, folder)) expect(index.byId.get(test)?.kind).toBe(folder.split('/').pop());
     }
-  });
-});
-
-describe('the trail', () => {
-  it('LA-V93-R34-T01 The trail names a record by its title and ID, a group by its name alone, the full text in its tooltip, the current item bold', async () => {
-    startAtDepth(1);
-    await openApp('/P-D-UC01?stage=graph', { data: (await import('./workspace')).testWorkspace() });
-    await waitFor(() => expect(boxElements().length).toBeGreaterThan(0));
-    act(() => navigate('/P-D/use-cases?stage=graph'));
-    const trail = () => within(screen.getByRole('navigation', { name: 'Records visited' }));
-    await waitFor(() => expect(trail().getAllByRole('listitem')).toHaveLength(2));
-    expect(trail().getAllByRole('listitem').map((li) => li.textContent)).toEqual(['Lend a thing (P-D-UC01)', 'Use cases']);
-    const record = trail().getByRole('link', { name: 'Lend a thing (P-D-UC01)' });
-    expect(record).toHaveAttribute('title', 'Lend a thing (P-D-UC01)');
-    expect(record.querySelector('code.trail-id')).toHaveTextContent('(P-D-UC01)');
-    const current = trail().getByText('Use cases').closest('[aria-current="page"]')!;
-    expect(current).toHaveAttribute('title', 'Use cases of P-D');
-    expect(current).toHaveAttribute('aria-label', 'Use cases of P-D');
-    // A long name is cut short with an ellipsis; the current item stays bold.
-    expect(CSS).toMatch(/\.graph-trail \.trail-name \{[^}]*text-overflow: ellipsis/);
-    expect(CSS).toMatch(/\.graph-trail \[aria-current="page"\] \.trail-name \{[^}]*font-weight: 700/);
   });
 });
 

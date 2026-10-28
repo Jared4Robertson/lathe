@@ -73,7 +73,6 @@ export const COMMANDS: readonly Command[] = [
   // Elsewhere Ctrl+T opens a browser tab, so Alt.
   { id: 'stageTrace', title: 'Trace stage', group: 'View', keys: ['Ctrl+T', 'Ctrl+3'], otherKeys: ['Alt+T', 'Ctrl+3'], when: 'page' },
   { id: 'toggleWikiCard', title: 'Show or collapse the wiki card', group: 'View', keys: ['w', 'Ctrl+W'], otherKeys: ['w', 'Alt+W'], when: 'page' },
-  { id: 'escape', title: 'Clear or close the innermost thing', group: 'View', keys: ['Escape'], when: 'global' },
   { id: 'expandAll', title: 'Expand all rows on this page', group: 'View', keys: [], when: 'page' },
   { id: 'collapseAll', title: 'Collapse all rows on this page', group: 'View', keys: [], when: 'page' },
   // Themes (app/src/theme). VS Code's Cmd+K Cmd+T cannot be used: Mod+K is a whole binding (quick open), and a sequence may not start with one.

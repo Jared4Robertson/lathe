@@ -40,9 +40,9 @@ describe('shortcut hints', () => {
     expect(screen.queryByRole('tooltip')).toBeNull();
 
     // Keyboard focus: at once; Escape closes it.
-    const graphToggle = within(await screen.findByRole('group', { name: 'View' })).getByRole('button', { name: 'Graph', pressed: false });
+    const graphToggle = within(await screen.findByRole('group', { name: 'Stage' })).getByRole('button', { name: 'ERD', pressed: false });
     keyFocus(graphToggle);
-    expect(tooltip()).toHaveTextContent('Graph view Alt+G');
+    expect(tooltip()).toHaveTextContent('ERD stage Alt+E');
     fireEvent.keyDown(graphToggle, { key: 'Escape' });
     expect(screen.queryByRole('tooltip')).toBeNull();
     act(() => graphToggle.blur());
@@ -57,8 +57,8 @@ describe('shortcut hints', () => {
   it('LA-V61-R16-T01 A tooltip never gets in the way: one at a time, none on a click, and Escape closes it', async () => {
     await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
-    const view = await screen.findByRole('group', { name: 'View' });
-    const graphToggle = within(view).getByRole('button', { name: 'Graph', pressed: false });
+    const view = await screen.findByRole('group', { name: 'Stage' });
+    const graphToggle = within(view).getByRole('button', { name: 'ERD', pressed: false });
     keyFocus(within(nav()).getByRole('button', { name: 'Collapse the navigation' }));
     keyFocus(graphToggle);
     expect(screen.getAllByRole('tooltip')).toHaveLength(1);
@@ -72,7 +72,7 @@ describe('shortcut hints', () => {
   });
 
   const proveLaPltDs01T01 = async () => {
-    // The side bar starts closed in the Wiki view; this test reads it open.
+
     openSideBar('details');
     // In Apple's order: ⌃ ⌥ ⇧ ⌘.
     expect(formatBinding('Mod+Shift+P', true)).toBe('⇧⌘P');
@@ -95,12 +95,12 @@ describe('shortcut hints', () => {
 
     fireEvent.keyDown(document.body, { key: 'p', code: 'KeyP', metaKey: true, shiftKey: true });
     const palette = screen.getByRole('dialog', { name: 'Command palette' });
-    await userEvent.setup().type(within(palette).getByRole('combobox'), 'graph view');
+    await userEvent.setup().type(within(palette).getByRole('combobox'), 'graph stage');
     expect(within(palette).getAllByRole('option')[0].querySelector('kbd')).toHaveTextContent('⌃G');
     fireEvent.keyDown(within(palette).getByRole('combobox'), { key: 'Escape' });
-    // On a Mac the view toggles show Ctrl+W, Ctrl+G and Ctrl+M (Cmd+W stays the browser's).
-    for (const [name, keys, shown] of [['Wiki', 'Control+W Control+1', '⌃W'], ['Graph', 'Control+G Control+2', '⌃G']]) {
-      const toggle = within(screen.getByRole('group', { name: 'View' })).getByRole('button', { name });
+    // On a Mac the stage switch shows Ctrl+G, Ctrl+E and Ctrl+T (Cmd+W stays the browser's).
+    for (const [name, keys, shown] of [['Graph', 'Control+G Control+1', '⌃G'], ['ERD', 'Control+E Control+2', '⌃E']]) {
+      const toggle = within(screen.getByRole('group', { name: 'Stage' })).getByRole('button', { name });
       expect(toggle).toHaveAttribute('aria-keyshortcuts', keys);
       keyFocus(toggle);
       expect(tooltip().querySelector('kbd')).toHaveTextContent(shown);
@@ -137,10 +137,10 @@ describe('shortcut hints', () => {
     expect(collapse).toHaveAttribute('aria-keyshortcuts', 'Control+J');
     keyFocus(collapse);
     expect(tooltip()).toHaveTextContent('Collapse the navigation Ctrl+J');
-    const graph = within(screen.getByRole('group', { name: 'View' })).getByRole('button', { name: 'Graph' });
+    const graph = within(screen.getByRole('group', { name: 'Stage' })).getByRole('button', { name: 'Graph' });
     expect(graph).toHaveAttribute('aria-keyshortcuts', 'Alt+G');
     keyFocus(graph);
-    expect(tooltip()).toHaveTextContent('Graph view Alt+G');
+    expect(tooltip()).toHaveTextContent('Graph stage Alt+G');
 
     openPalette();
     const palette = screen.getByRole('dialog', { name: 'Command palette' });
@@ -150,11 +150,11 @@ describe('shortcut hints', () => {
     fireEvent.keyDown(document.body, { key: '?', code: 'Slash', shiftKey: true });
     const sheet = screen.getByRole('dialog', { name: 'Keyboard shortcuts' });
     expect(within(sheet).getByRole('rowheader', { name: 'Show or hide the navigation' }).nextElementSibling).toHaveTextContent('Ctrl+J');
-    expect(within(sheet).getByRole('rowheader', { name: 'Graph view on or off' }).nextElementSibling).toHaveTextContent('Alt+G');
+    expect(within(sheet).getByRole('rowheader', { name: 'Graph stage' }).nextElementSibling).toHaveTextContent('Alt+G');
   });
 
   const proveLaPltDs01T02 = async () => {
-    // The side bar starts closed in the Wiki view; this test reads it open.
+
     openSideBar('details');
     expect(ariaKeyShortcuts(['Mod+P', 'Mod+K'], false)).toBe('Control+P Control+K');
     expect(ariaKeyShortcuts(['Mod+P'], true)).toBe('Meta+P');
@@ -168,17 +168,17 @@ describe('shortcut hints', () => {
     expect(within(nav()).getByRole('combobox', { name: 'Quick find' })).toHaveAttribute('aria-keyshortcuts', 'Control+P Control+K');
     expect(within(within(nav()).getByRole('list', { name: 'Spaces' })).getAllByRole('link')[0]).toHaveAttribute('aria-keyshortcuts', 'Alt+1');
     expect(within(nav()).getByRole('link', { name: /^Checks \d+/ })).toHaveAttribute('aria-keyshortcuts', 'Control+Shift+M');
-    // Off a Mac: Alt+W and Alt+G first, as Ctrl+W closes the tab and Ctrl+G finds the next match.
-    for (const [name, keys] of [['Wiki', 'Alt+W Control+1'], ['Graph', 'Alt+G Control+2']]) {
-      expect(within(screen.getByRole('group', { name: 'View' })).getByRole('button', { name })).toHaveAttribute('aria-keyshortcuts', keys);
+    // Off a Mac: Alt+G and Alt+E first, as Ctrl+G finds the next match.
+    for (const [name, keys] of [['Graph', 'Alt+G Control+1'], ['ERD', 'Alt+E Control+2']]) {
+      expect(within(screen.getByRole('group', { name: 'Stage' })).getByRole('button', { name })).toHaveAttribute('aria-keyshortcuts', keys);
     }
-    expect(screen.getByRole('button', { name: 'Full screen: Wiki' })).toHaveAttribute('aria-keyshortcuts', 'Control+3');
+    expect(screen.getByRole('button', { name: 'Collapse the wiki card', expanded: true })).toHaveAttribute('aria-keyshortcuts', 'W Alt+W');
     // The corner toggle and the side bar's own close button.
     expect(screen.getByRole('button', { name: 'Hide the side bar', expanded: true })).toHaveAttribute('aria-keyshortcuts', 'Control+Alt+B');
     expect(within(screen.getByRole('complementary', { name: 'Side bar' })).getByRole('button', { name: 'Hide the side bar' })).toHaveAttribute('aria-keyshortcuts', 'Control+Alt+B');
 
-    // In the graph: the depth buttons and full screen.
-    fireEvent.keyDown(document.body, { key: '2', code: 'Digit2', ctrlKey: true });
+    // On the Graph stage: the depth buttons.
+    fireEvent.keyDown(document.body, { key: '1', code: 'Digit1', ctrlKey: true });
     await waitFor(() => expect(screen.getByRole('group', { name: 'Depth' })).toBeInTheDocument());
     expect(within(screen.getByRole('group', { name: 'Depth' })).getByRole('button', { name: '2' })).toHaveAttribute('aria-keyshortcuts', 'Plus =');
     // At depth 1 nothing is below it; one step up, - leads back to 1.
@@ -186,7 +186,7 @@ describe('shortcut hints', () => {
     fireEvent.click(within(screen.getByRole('group', { name: 'Depth' })).getByRole('button', { name: '2' }));
     await waitFor(() => expect(within(screen.getByRole('group', { name: 'Depth' })).getByRole('button', { name: '1' })).toHaveAttribute('aria-keyshortcuts', '-'));
     expect(within(screen.getByRole('group', { name: 'Depth' })).getByRole('button', { name: '3' })).toHaveAttribute('aria-keyshortcuts', 'Plus =');
-    expect(screen.getByRole('button', { name: 'Full screen: Graph' })).toHaveAttribute('aria-keyshortcuts', 'Control+3');
+    expect(screen.getByRole('button', { name: 'Frame the focus' })).toHaveAttribute('aria-keyshortcuts', '.');
   };
   it('LA-PLT-DS01-T02 Every control with a shortcut carries aria-keyshortcuts from the keymap', proveLaPltDs01T02);
   it('LA-V61-R12-T01 Every control with a shortcut names the platform\'s keys in aria-keyshortcuts', proveLaPltDs01T02);

@@ -1,6 +1,6 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { main, openApp, openSideBar } from './helpers';
+import { openApp, openSideBar } from './helpers';
 
 // Addresses are bare IDs (LA-PAT-APP-CODE-R19): tabs and space pages saved at anything else are
 // dropped (LA-PAT-APP-CODE-R20), and a product's and a domain's one page loses nothing the
@@ -10,7 +10,7 @@ const sideBar = () => screen.getByRole('complementary', { name: 'Side bar' });
 
 describe('bare-ID addresses', () => {
   it('LA-V96-R15-T03 Tabs and space pages saved at anything but a page\'s address are dropped, not converted', async () => {
-    const tab = (key: string, page: string) => ({ key, page, preview: false, state: { views: 'wiki' } });
+    const tab = (key: string, page: string) => ({ key, page, preview: false, state: { stage: 'graph' } });
     window.sessionStorage.setItem('lathe:tabs', JSON.stringify({
       DM: { active: 't1', tabs: [tab('t1', '/DM-SHOP-UC01'), tab('t2', '/specs/DM/DM-SHOP'), tab('t3', '/records/DM-SHOP/use_case'), tab('t4', '/DM-SHOP/use_case')] },
     }));
@@ -30,9 +30,12 @@ describe('bare-ID addresses', () => {
     for (const [path, title, body] of [['/DM', 'Demo shop', /A demo product for the/], ['/DM-SHOP', 'Shopping', /People pick goods and pay/]] as const) {
       await openApp(path);
       await screen.findByRole('heading', { level: 1, name: title });
-      expect(within(main()).getAllByText(body).length).toBeGreaterThan(0);
-      for (const name of [/^Parent/, /^Links out/, /^Links in/, /^Problems/]) expect(within(sideBar()).getByRole('heading', { name })).toBeInTheDocument();
-      expect(within(sideBar()).getByText('Data file')).toBeInTheDocument();
+      // Its text and its problems in the wiki card; its facts and its links both ways (Traceability) in the side bar.
+      const card = within(screen.getByRole('region', { name: 'Wiki card' }));
+      expect(card.getAllByText(body).length).toBeGreaterThan(0);
+      expect(card.getByRole('heading', { name: /^Problems in this/ })).toBeInTheDocument();
+      expect(within(sideBar()).getByRole('heading', { name: /^Traceability/ })).toBeInTheDocument();
+      for (const fact of ['Data file', 'Parent']) expect(within(sideBar()).getByText(fact, { selector: 'dt' })).toBeInTheDocument();
       // No second page to send the Reader to.
       expect(screen.queryByRole('link', { name: /Open the (product|domain) overview/ })).toBeNull();
     }

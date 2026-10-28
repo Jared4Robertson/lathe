@@ -3,7 +3,7 @@ import { Icon } from '../components/icons';
 import { groupLabel } from '../graph/model';
 import { parseSpecRoute, type SpecIndex } from '../specs/data';
 import { addressOf, HOME_PATH, focusOf, isFocusRoute, stageFromSearch, withStage } from '../views/address';
-import { Breadcrumb } from '../components/Breadcrumb';
+import { Breadcrumb } from './Breadcrumb';
 import { QuickFind } from './QuickFind';
 import { trapTab } from './useNarrow';
 import { Button } from '../components/Button';

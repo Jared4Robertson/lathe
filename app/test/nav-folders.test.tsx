@@ -105,7 +105,9 @@ describe('folders by stage', () => {
     await openApp('/DM-SHOP/interaction-design/endpoint');
     await screen.findByRole('heading', { level: 1, name: /^Endpoints/ });
     expect(within(await findList('Endpoints of Shopping')).getByRole('link', { name: 'Add to basket' })).toBeInTheDocument();
-    expect(main().querySelector('.group-folder')).toHaveTextContent('Interaction design');
+    // The header strip's breadcrumb names the stage folder it sits in (shown, or among the levels its "…" hides).
+    const trail = main().querySelector<HTMLElement>('.header-strip .breadcrumb')!;
+    expect(`${trail.textContent} ${trail.querySelector('.crumb-more-button')?.getAttribute('title') ?? ''}`).toContain('Interaction design');
   });
 
   /** Shopping's page, with Test plan renamed and put first in the schema. */

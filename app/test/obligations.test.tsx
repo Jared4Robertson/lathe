@@ -4,10 +4,19 @@ import { describe, expect, it, vi } from 'vitest';
 import type { SpecData } from '../../lathe/src/server/contract';
 import { RecordContent } from '../src/specs/RecordContent';
 import { productKindWorkspace } from './fixtures/product-kinds';
-import { main, openApp, section } from './helpers';
-// The Graph view, where the side bar is open, needs a ResizeObserver in jsdom.
+import { main, openApp, section as pageSection } from './helpers';
+// The Graph stage, where the side bar is open, needs a ResizeObserver in jsdom.
 import './graph/setup';
 import { addRows, indexOf } from './fixtures/load';
+
+/** A section of the page: in the wiki card on a focus page, which the side bar beside it may echo. */
+const section = (name: string | RegExp) => {
+  const card = document.querySelector<HTMLElement>('.wiki-panel');
+  if (!card) return pageSection(name);
+  const element = within(card).getByRole('heading', { name }).closest('section');
+  expect(element).not.toBeNull();
+  return element as HTMLElement;
+};
 
 // Coverage per obligation kind (a product's own obligation kind among them), proof still owed, what sits
 // under an endpoint, test states, and the Traceability of an obligation, on the product-kinds workspace:

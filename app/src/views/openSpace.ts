@@ -114,11 +114,13 @@ export function useOpenSpaceMeasure(stage: RefObject<HTMLElement | null>, store:
       for (const w of now) if (!watched.has(w)) { sizes.observe(w); watched.add(w); }
     };
     watch();
-    // A panel or a stage's tools coming or going: measured once a frame at most.
-    let frame: number | null = null;
+    // A panel or a stage's tools coming or going: a burst of changes is measured once, after it.
+    let queued = false;
+    let live = true;
     const later = () => {
-      if (frame !== null) return;
-      frame = requestAnimationFrame(() => { frame = null; watch(); measure(); });
+      if (queued) return;
+      queued = true;
+      queueMicrotask(() => { queued = false; if (live) { watch(); measure(); } });
     };
     // The panels' parents (the app, the page's layout), their children only; and the stage, whose
     // tools come with its content (a lazily loaded stage, an ERD laid out).
@@ -128,7 +130,7 @@ export function useOpenSpaceMeasure(stage: RefObject<HTMLElement | null>, store:
     comings.observe(el, { childList: true, subtree: true });
     window.addEventListener('resize', measure);
     return () => {
-      if (frame !== null) cancelAnimationFrame(frame);
+      live = false;
       sizes.disconnect();
       comings.disconnect();
       window.removeEventListener('resize', measure);

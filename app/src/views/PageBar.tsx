@@ -96,7 +96,7 @@ export function PageBar(props: PageBarProps) {
           <Button
             variant="icon"
             ref={cardButton}
-            className={`wiki-card-toggle${cardShown ? ' is-on' : ''}`}
+            className={`wiki-panel-toggle${cardShown ? ' is-on' : ''}`}
             label={cardLabel}
             aria-expanded={cardShown}
             onClick={() => onCard(!cardShown)}

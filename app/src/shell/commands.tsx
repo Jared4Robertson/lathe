@@ -293,7 +293,7 @@ function CommandPalette({ commands, mac, available, titleOf, onClose, onRun }: L
   const [active, setActive] = useState(0);
   const listId = useId();
   const q = query.trim().toLowerCase();
-  const items = commands.filter((c) => !c.local && !c.browser && c.id !== 'commandPalette' && c.id !== 'escape' && available(c.id) && (!q || titleOf(c).toLowerCase().includes(q) || c.id.toLowerCase().includes(q)));
+  const items = commands.filter((c) => !c.local && !c.browser && c.id !== 'commandPalette' && available(c.id) && (!q || titleOf(c).toLowerCase().includes(q) || c.id.toLowerCase().includes(q)));
   const at = Math.min(active, Math.max(0, items.length - 1));
   const onKeyDown = (e: ReactKeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'ArrowDown') { e.preventDefault(); setActive((at + 1) % Math.max(1, items.length)); }

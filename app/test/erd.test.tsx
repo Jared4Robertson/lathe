@@ -3,59 +3,73 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { aggregateErd, domainErd, endPath, erdFor, lineGeometry, lineOffsets } from '../src/erd/erd';
+import { aggregateErd, domainErd, endPath, erdFor, lineGeometry, lineOffsets, modelScope } from '../src/erd/erd';
 import { erdGraph, layoutErd } from '../src/erd/layout';
 import { ErdKey, FIT_MARGIN, fitRects, lineWords } from '../src/erd/ErdView';
-import { viewsOffered, viewsShown } from '../src/views/address';
 import { openApp } from './helpers';
 import { modelIndex, modelWorkspace } from './fixtures/model';
 
-// The ERD view: the entity-relationship diagram of a domain (its aggregates as boundaries around their
-// entities) or of an aggregate (with the aggregates it references, or that reference it, faded around it);
-// offered on domain, aggregate and entity pages.
+// The ERD stage: the entity-relationship diagram of a domain (its aggregates as boundaries around their
+// entities) or of an aggregate (with the aggregates it references, or that reference it, faded around it).
+// It works on every focus (LA-PAT-APP-UX-R16): any other record draws its domain's (or for a Shared
+// record its product's) ERD, its nearest entity or aggregate highlighted.
 
 const served = () => ({ data: modelWorkspace() });
 const index = () => modelIndex();
-const modelPane = () => screen.getByRole('region', { name: 'ERD pane' });
+const modelPane = () => screen.getByRole('region', { name: 'ERD stage' });
 const box = (id: string) => modelPane().querySelector<HTMLElement>(`.react-flow__node[data-id="${id}"]`);
 const boxesShown = () => waitFor(() => expect(modelPane().querySelectorAll('.react-flow__node').length).toBeGreaterThan(0));
-const viewToggle = (name: string) => within(screen.getByRole('group', { name: 'View' })).queryByRole('button', { name });
+const stageButton = (name: string) => within(screen.getByRole('group', { name: 'Stage' })).getByRole('button', { name });
 const CSS = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
 const ends = (erd: { lines: { id: string; sourceEnd: string; targetEnd: string; dashed: boolean }[] }) =>
   Object.fromEntries(erd.lines.map((l) => [l.id, `${l.sourceEnd}-${l.targetEnd}${l.dashed ? ' dashed' : ''}`]));
 
-describe('the ERD view', () => {
+describe('the ERD stage', () => {
   const proveLaExpSp02T = async () => {
     const i = index();
-    // The Trace view is offered by what is under a page, not by its kind (LA-V98-R01): left out here.
-    const erdAmong = (id: string) => viewsOffered(i, id).filter((v) => v !== 'trace');
-    for (const id of ['P-D', 'P-D-A3', 'P-D-EN03']) expect(erdAmong(id)).toEqual(['wiki', 'graph', 'erd']);
+    // A domain, an aggregate and an entity draw their own diagram, as before.
+    expect(modelScope(i, 'P-D')).toEqual({ level: 'domain', scope: 'P-D', highlight: null });
+    expect(modelScope(i, 'P-D-A3')).toEqual({ level: 'aggregate', scope: 'P-D-A3', highlight: null });
+    expect(modelScope(i, 'P-D-EN03')).toEqual({ level: 'aggregate', scope: 'P-D-A3', highlight: 'P-D-EN03' });
+    // Any other record: its domain's ERD, its nearest entity or aggregate highlighted when it has one.
+    expect(modelScope(i, 'P-D-UC01')).toEqual({ level: 'domain', scope: 'P-D', highlight: null });
+    expect(modelScope(i, 'P-D-CMD01')).toEqual({ level: 'domain', scope: 'P-D', highlight: 'P-D-A3' });
+    expect(modelScope(i, 'P-D-CMD01-H')).toEqual({ level: 'domain', scope: 'P-D', highlight: 'P-D-A3' });
+    expect(modelScope(i, 'P-D-EV02')).toEqual({ level: 'domain', scope: 'P-D', highlight: 'P-D-A3' });
+    // A group: its owner's. A Shared record and a product: the product's ERD.
+    expect(modelScope(i, 'P-D-A3/invariant')).toEqual({ level: 'aggregate', scope: 'P-D-A3', highlight: null });
+    expect(modelScope(i, 'P-D/use-cases')).toEqual({ level: 'domain', scope: 'P-D', highlight: null });
+    expect(modelScope(i, 'P-VO01')).toEqual({ level: 'product', scope: 'P', highlight: null });
+    expect(modelScope(i, 'P')).toEqual({ level: 'product', scope: 'P', highlight: null });
     for (const id of ['P', 'P-D-UC01', 'P-VO01', 'P-D-UC01-FL01', 'P-D-CMD01', 'P-D-EV01', 'P-D-PO01', 'P-D-RM01', 'P-D-QRY01', 'P-D-SP01']) {
-      expect(erdAmong(id)).toEqual(['wiki', 'graph']);
+      expect(erdFor(i, id)!.boxes.length, id).toBeGreaterThan(0);
     }
-    expect(viewsShown(['graph', 'erd'], ['wiki', 'graph'])).toEqual(['graph']);
-    expect(viewsShown(['erd'], ['wiki', 'graph'])).toEqual(['wiki']);
+    expect(erdFor(i, 'P-D-CMD01')!.boxes.filter((b) => b.highlight).map((b) => b.id)).toEqual(['P-D-A3']);
+    // The product's ERD draws every domain's aggregates as its own, none as another domain's.
+    expect(erdFor(i, 'P')!.boxes.filter((b) => b.kind === 'aggregate' && b.boundary).map((b) => b.id)).toEqual(expect.arrayContaining(['P-D-A3', 'P-E-A1']));
+    expect(erdFor(i, 'P')!.boxes.some((b) => b.tone === 'other')).toBe(false);
 
-    // Elsewhere there is no ERD toggle to press, and a link naming it shows the rest.
-    await openApp('/P-D-UC01?view=graph,erd', served());
+    // The switch always offers the ERD: on a use case it draws the domain's diagram.
+    await openApp('/P-D-UC01?stage=erd', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
-    expect(viewToggle('ERD')).toBeNull();
-    expect([...document.querySelectorAll('.pane')].map((p) => p.getAttribute('aria-label'))).toEqual(['Graph pane']);
+    expect(stageButton('ERD')).toHaveAttribute('aria-pressed', 'true');
+    expect(stageButton('ERD')).not.toHaveAttribute('aria-disabled');
+    await boxesShown();
+    expect(box('P-D-A3')).not.toBeNull();
 
-    // On an aggregate: ERD opens with its toggle or Ctrl+4, in the order Wiki, Graph, ERD.
+    // On an aggregate: Ctrl+2 switches to the ERD stage, Alt+G back to the graph (off a Mac).
     await openApp('/P-D-A3?stage=graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Loan' });
-    expect(viewToggle('ERD')).toHaveAttribute('aria-pressed', 'false');
-    fireEvent.keyDown(document.body, { key: '4', code: 'Digit4', ctrlKey: true });
+    expect(stageButton('ERD')).toHaveAttribute('aria-pressed', 'false');
+    fireEvent.keyDown(document.body, { key: '2', code: 'Digit2', ctrlKey: true });
     expect(window.location.search).toBe('?stage=erd');
-    expect([...document.querySelectorAll('.pane')].map((p) => p.getAttribute('aria-label'))).toEqual(['Wiki pane', 'Graph pane', 'ERD pane']);
     await boxesShown();
-    // Alt+E turns it off again (off a Mac).
-    fireEvent.keyDown(document.body, { key: 'e', code: 'KeyE', altKey: true });
+    fireEvent.keyDown(document.body, { key: 'g', code: 'KeyG', altKey: true });
     expect(window.location.search).toBe('?stage=graph');
   };
-  it('LA-EXP-SP02-T The ERD view is offered only on domain, aggregate and entity pages, opens after Wiki and Graph, and an address naming it elsewhere drops it', proveLaExpSp02T);
-  it('LA-V96-R18-T01 The ERD view is offered only on domain, aggregate and entity pages, opens after Wiki and Graph, and an address naming it elsewhere drops it', proveLaExpSp02T);
+  it('LA-EXP-SP02-T Every focus has an ERD stage: a domain\'s, an aggregate\'s or an entity\'s own diagram, otherwise its domain\'s or product\'s with its nearest entity or aggregate highlighted', proveLaExpSp02T);
+  it('LA-V96-R18-T01 Every focus has an ERD stage: a domain\'s, an aggregate\'s or an entity\'s own diagram, otherwise its domain\'s or product\'s with its nearest entity or aggregate highlighted', proveLaExpSp02T);
+  it('LA-PAT-APP-UX-R16-T03 The ERD stage works on every focus, the switch never disabled', proveLaExpSp02T);
 
   const proveLaV94R02T01 = async () => {
     const erd = domainErd(index(), 'P-D');
@@ -156,7 +170,8 @@ describe('the ERD view', () => {
   it('LA-V94-R04-T01 An entity page draws its aggregate\'s ERD with the entity highlighted', async () => {
     expect(erdFor(index(), 'P-D-EN04')).toMatchObject({ level: 'aggregate', scope: 'P-D-A3' });
     expect(erdFor(index(), 'P-D-EN04')!.boxes.filter((b) => b.highlight).map((b) => b.id)).toEqual(['P-D-EN04']);
-    for (const id of ['P-D-CMD02', 'P-D-EV02', 'P-D-PO01', 'P-D-RM01', 'P-D-SP01', 'P-D-UC01']) expect(erdFor(index(), id)).toBeNull();
+    // A record that is no entity draws its domain's ERD instead, its aggregate highlighted.
+    expect(erdFor(index(), 'P-D-CMD02')).toMatchObject({ level: 'domain', scope: 'P-D' });
 
     await openApp('/P-D-EN04?stage=erd', served());
     await screen.findByRole('heading', { level: 1, name: 'Return' });
@@ -219,6 +234,14 @@ describe('the ERD view', () => {
       }
       expect(v.zoom).toBeLessThanOrEqual(1);
     }
+    // In the open space the host's panels leave: the margin grows by their insets, so every box sits between them.
+    const open = { left: FIT_MARGIN.left + 400, right: FIT_MARGIN.right + 300, top: FIT_MARGIN.top + 80, bottom: FIT_MARGIN.bottom };
+    const v = fitRects(rects, 1400, 900, open);
+    for (const r of rects.values()) {
+      expect(v.x + r.x * v.zoom).toBeGreaterThanOrEqual(open.left - 0.5);
+      expect(v.x + (r.x + r.width) * v.zoom).toBeLessThanOrEqual(1400 - open.right + 0.5);
+      expect(v.y + r.y * v.zoom).toBeGreaterThanOrEqual(open.top - 0.5);
+    }
     await openApp('/P-D-A3?stage=erd', served());
     await screen.findByRole('heading', { level: 1, name: 'Loan' });
     await boxesShown();
@@ -244,40 +267,4 @@ describe('the ERD view', () => {
     render(<ErdKey erd={erd} relations={i.workspace.relations} />);
     expect(within(screen.getByRole('group', { name: 'Key' })).getByText('Reference by ID').closest('li')).toHaveAttribute('title', "A field holds the other aggregate's ID; the line points at its root.");
   });
-
-  it('LA-V96-R09-T01 Above a graph, ERD or trace pane the page title keeps one fixed height, so the canvas never moves when the focus changes; in the wiki pane it wraps', async () => {
-    await openApp('/P-D-A3?stage=graph', served());
-    await screen.findByRole('heading', { level: 1, name: 'Loan' });
-    const title = () => screen.getByRole('heading', { level: 1 }).closest<HTMLElement>('.pane-title')!;
-    expect(title()).toHaveClass('is-fixed');
-    expect(title()).toHaveAttribute('title', 'Loan');
-    expect(CSS).toMatch(/\.pane-title\.is-fixed\s*\{[^}]*height:\s*var\(--pane-title-height\)/);
-    expect(CSS).toMatch(/--pane-title-height:\s*\d+px/);
-    expect(CSS).toMatch(/\.pane-title\.is-fixed :is\(\.eyebrow, h1, \.record-id\)\s*\{[^}]*white-space:\s*nowrap[^}]*text-overflow:\s*ellipsis/);
-    await openApp('/P-D-EN03?stage=erd', served());
-    await screen.findByRole('heading', { level: 1, name: 'Loan' });
-    expect(title()).toHaveClass('is-fixed');
-    await openApp('/P-D-UC01?stage=trace', served());
-    await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
-    expect(title()).toHaveClass('is-fixed');
-    await openApp('/P-D-A3?stage=graph', served());
-    await screen.findByRole('heading', { level: 1, name: 'Loan' });
-    expect(title()).not.toHaveClass('is-fixed');
-  });
-
-  const proveLaV61R02T03 = async () => {
-    await openApp('/P-D-A3?stage=erd', served());
-    await screen.findByRole('heading', { level: 1, name: 'Loan' });
-    const first = screen.getByRole('separator', { name: 'Resize the wiki and graph panes' });
-    const second = screen.getByRole('separator', { name: 'Resize the graph and ERD panes' });
-    fireEvent.keyDown(second, { key: 'ArrowRight' });
-    expect(second).toHaveAttribute('aria-valuenow', '55');
-    expect(first).toHaveAttribute('aria-valuenow', '48');
-    const views = document.querySelector<HTMLElement>('.focus-views')!;
-    expect(views.style.gridTemplateColumns).toBe('minmax(min(220px, calc((100% - 2 * var(--panel-gap)) / 3)), 100fr) var(--panel-gap) minmax(min(220px, calc((100% - 2 * var(--panel-gap)) / 3)), 110fr) var(--panel-gap) minmax(min(220px, calc((100% - 2 * var(--panel-gap)) / 3)), 90fr)');
-    fireEvent.doubleClick(second);
-    expect(views.style.gridTemplateColumns).toBe('minmax(min(220px, calc((100% - 2 * var(--panel-gap)) / 3)), 100fr) var(--panel-gap) minmax(min(220px, calc((100% - 2 * var(--panel-gap)) / 3)), 100fr) var(--panel-gap) minmax(min(220px, calc((100% - 2 * var(--panel-gap)) / 3)), 100fr)');
-  };
-  it('LA-V61-R02-T03 With three panes open each gap is its own handle, resizing only the two panes beside it', proveLaV61R02T03);
-  it('LA-V61-R03-T04 With three panes open each gap is its own handle, resizing only the two panes beside it', proveLaV61R02T03);
 });
