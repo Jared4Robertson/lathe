@@ -596,9 +596,9 @@ A command changes exactly one aggregate, its parent, and other aggregates follow
 
 **Warning** · Lathe's · Kinds: [`domain_event`](#kind-domain_event), [`event_type`](#kind-event_type), [`policy`](#kind-policy)
 
-A published event, or an event a policy hears whose aggregate is stored in a table, whose event type is not delivered by outbox.
+An event a policy hears, whose aggregate is stored in a table, whose event type is not delivered by outbox.
 
-An event that crosses a transaction is delivered by outbox: saved in the same transaction as its aggregate and delivered reliably afterwards, so a reaction is never lost. That is every published event, and every event a policy hears whose aggregate is stored in a table (an entity of the aggregate has a table). An event inside one process with no transaction to join, such as one heard in the same browser tab, is exempt. Its event type records the delivery; one delivered in process, with no delivery given, or no event type at all, leaves the reaction to chance. Give the event an event type delivered by outbox.
+An event a policy hears is delivered by outbox: saved in the same transaction as its aggregate and delivered reliably afterwards, because a lost reaction is a lost change. That holds whether the policy is of the event's own domain or hears it published from another. An event that only keeps read models current (fed_by), where those read models are rebuilt from the data on every load, may be delivered in process: the next load repairs whatever a lost event missed. A read model kept across loads and filled from its events is not repaired that way, so its events go by outbox too; the check cannot see how a read model is filled, so that one is the modeler's to get right. An event whose aggregate is stored in no table, such as one heard in the same browser tab, has no transaction to join and is exempt. Its event type records the delivery; one a policy hears that is delivered in process, gives no delivery, or has no event type at all leaves the reaction to chance. Give the event an event type delivered by outbox.
 
 <a id="check-has-crosses-aggregate"></a>
 
