@@ -124,8 +124,9 @@ function ThemeList() {
             pressed={t.id === active.id}
             label={`Use ${t.name}`}
             media={<ThemePreview theme={t} mode={shows} />}
-            title={<><strong>{t.name}</strong><small>{t.id === active.id ? 'In use' : t.builtIn ? 'Built in' : 'Yours'}</small></>}
+            title={<strong>{t.name}</strong>}
           >
+            <small>{t.id === active.id ? 'In use' : t.builtIn ? 'Built in' : 'Yours'}</small>
             <div className="theme-actions">
               {t.builtIn
                 ? <Button label={`Duplicate and edit ${t.name}`} onClick={() => navigate(editPath(duplicate(t.id)))}>Duplicate and edit</Button>

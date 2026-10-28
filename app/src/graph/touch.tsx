@@ -65,8 +65,7 @@ export function TapCard({ kind, name, onOpen, onDismiss }: { kind: string; name:
       look="bar"
       role="status"
       onActivate={onOpen}
-      label={`Open ${name}`}
-      title={<><span className="tap-text"><small>{kind}</small><strong>{name}</strong></span><Icon name="chevron-right" size={18} /></>}
+      title={<><span className="tap-text"><span className="sr-only">Open</span>{' '}<small>{kind}</small>{' '}<strong>{name}</strong></span><Icon name="chevron-right" size={18} /></>}
     >
       <Button variant="icon" className="tap-dismiss" label="Let go of the selection" onClick={onDismiss}><Icon name="x" size={16} /></Button>
     </Card>
