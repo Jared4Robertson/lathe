@@ -92,9 +92,9 @@ describe('groups by stage and kind', () => {
     await openApp('/P', { data: modelWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Product' });
     const user = userEvent.setup();
-    expect(rows(list('Shared in Product'))).toEqual(['Shared3']);
+    expect(rows(list('Shared in Product'))).toEqual(['Shared4']);
     await user.click(head(list('Shared in Product'), /^Shared/));
-    expect(rows(list('Stages of Product'))).toEqual(['Domain model1', 'Technical specification1', 'Test plan1']);
+    expect(rows(list('Stages of Product'))).toEqual(['Domain model1', 'Interaction design1', 'Technical specification1', 'Test plan1']);
     const shared = section(/^Shared/);
     expect(within(shared).getAllByRole('link', { name: /P-VO01/ })[0]).toHaveAttribute('href', '/P-VO01');
     // One domain's flow steps use the view and the integration: they sit in its Interaction design, with the specification in its Domain model.

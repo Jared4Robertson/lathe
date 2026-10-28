@@ -74,10 +74,10 @@ describe('the graph tree, its depth and its camera', () => {
     // An aggregate's own stage folds under it, through a group per kind; a command's policy under the command.
     expect(treeChildren(index, 'P-D-A3')).toEqual(['P-D-A3/entity', 'P-D-A3/invariant', 'P-D-A3/domain_event', 'P-D-A3/command']);
     expect(treeChildren(index, 'P-D-CMD04')).toEqual(['P-D-PO01']);
-    // The product: its Shared folder (its own stages: the value object both domains use), then its domains.
+    // The product: its Shared folder (its own stages: the value object both domains use, the product's interface), then its domains.
     expect(treeChildren(index, 'P')).toEqual(['P/shared', 'P-D', 'P-E']);
-    expect(treeChildren(index, 'P/shared')).toEqual(['P/domain-model', 'P/technical-specification', 'P/test-plan']);
-    expect(groupLabel(index, 'P/shared')).toBe('Shared (3)');
+    expect(treeChildren(index, 'P/shared')).toEqual(['P/domain-model', 'P/interaction-design', 'P/technical-specification', 'P/test-plan']);
+    expect(groupLabel(index, 'P/shared')).toBe('Shared (4)');
     expect(labelLines(index, 'P/shared').meta).toBe('Folder · P');
     expect(labelLines(index, 'P/domain-model').meta).toBe('Stage · P');
     expect(treeChildren(index, 'P/domain-model/value_object')).toEqual(['P-VO01']);
