@@ -332,3 +332,8 @@
 {"id":"LA-TRC-UC14-FL-S02","title":"Below its text, its Traceability lists what designs, builds and proves it, with a callout for each gap","flow_id":"LA-TRC-UC14-FL","path":"main","position":2}
 {"id":"LA-TRC-UC14-FL-S03","title":"They follow a test to its record page: what it proves and its run by","flow_id":"LA-TRC-UC14-FL","path":"main","position":3}
 {"id":"LA-TRC-UC14-FL-S04","title":"They follow a gap's callout to the page of the check that reports it","flow_id":"LA-TRC-UC14-FL","path":"main","position":4}
+{"id":"LA-TRC-UC15-FL-S01","title":"The Agent writes an endpoint or a view with its route, and names the route in the code that serves it","flow_id":"LA-TRC-UC15-FL","path":"main","position":1}
+{"id":"LA-TRC-UC15-FL-S02","title":"Lathe check reads each endpoint handler's and UI component's file for its record's route, in the normal form","flow_id":"LA-TRC-UC15-FL","path":"main","position":2}
+{"id":"LA-TRC-UC15-FL-S03","title":"Lathe check reads the handlers' files and the router files for the routes their code serves, and lists each one no record has as a gap","flow_id":"LA-TRC-UC15-FL","path":"main","position":3}
+{"id":"LA-TRC-UC15-FL-S04","title":"A file that does not name its record's route is an error naming the record, the route and the file, and the Agent corrects one or the other","flow_id":"LA-TRC-UC15-FL","path":"refused","position":1}
+{"id":"LA-TRC-UC15-FL-S05","title":"A served route no record has is a gap, and the Agent adds its endpoint or view, or removes the route if nothing uses it","flow_id":"LA-TRC-UC15-FL","path":"refused","position":2}

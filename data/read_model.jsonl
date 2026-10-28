@@ -15,5 +15,5 @@
 {"id":"LA-TRC-RM02","title":"Coverage gaps","domain_id":"LA-TRC","description":"Each obligation not designed, built or proved, with what it lacks."}
 {"id":"LA-TRC-RM03","title":"Tests by state","domain_id":"LA-TRC","description":"Each domain's tests by state: automated, manual and not automated yet."}
 {"id":"LA-TRC-RM04","title":"Owed pattern rules","domain_id":"LA-TRC","description":"Each pattern rule each following domain owes, with its standing there."}
-{"id":"LA-TRC-RM05","title":"File facts","domain_id":"LA-TRC","description":"Each test and technical record that names a file: whether the file exists, and whether a test's file names its ID."}
+{"id":"LA-TRC-RM05","title":"File facts","domain_id":"LA-TRC","description":"Each test and technical record that names a file: whether the file exists, and whether a test's file names its ID. With them, each endpoint's and view's route and whether the files of what implements it name it, and each route the code serves."}
 {"id":"LA-TRC-RM06","title":"Record trace","domain_id":"LA-TRC","description":"The records that design, build and prove one record, by group."}
