@@ -751,7 +751,7 @@ One rule a use case must follow. Steps of the use case's own flow fulfill it.
 - **Children:** [`use_case_test`](#kind-use_case_test)
 - **Obligation:** yes: designed, built and proved
   - **Designed:** A step of its use case's flow fulfills it.
-  - **Built:** A fulfilling step's command or query handler, or a UI component of the view it happens in, names a file that exists.
+  - **Built:** A fulfilling step's command or query handler, a UI component of the view it happens in, or the adapter of an integration it exchanges with or a record of a product's own kind under that integration, names a file that exists.
   - **Proved:** One of its use case tests.
 - **ID:** `<use case>-R<nn>`, such as `TL-LEND-UC01-R01`; it starts with its parent's ID
 - **Links out:** none
